@@ -7219,7 +7219,9 @@ function updateCurrentScheduleNextButton(){
     // Guardian Cover and D-1..D-5 the page explains but Next stays enabled (D1); clearing the
     // box here whenever Next was not blocked is what would have wiped the explanation on the
     // first edit.
-    guidanceContainer.innerHTML=incomplete?window.renderLocalSectionGuidance(route,rawErrors,Infinity,{message:advice},type):'';
+    // Milestone 63F: a sidebar-only rule has no validator message to list, so it names what it still wants.
+    const wants=policy?policy.sidebarOnlyWants(type,route,window.D):[];
+    guidanceContainer.innerHTML=incomplete?window.renderLocalSectionGuidance(route,rawErrors,Infinity,{message:advice,wants},type):'';
   }
 }
 

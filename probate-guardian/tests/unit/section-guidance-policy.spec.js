@@ -127,6 +127,48 @@ describe('the bridge', () => {
     vi.resetModules();
     await import('../../src/core/status/section-guidance-policy.js');
     expect(Object.keys(window.sectionGuidancePolicy).sort())
-      .toEqual(['blocksNext', 'guidanceAdvice', 'isSectionIncomplete', 'sectionCheckKey']);
+      .toEqual(['blocksNext', 'guidanceAdvice', 'isSectionIncomplete', 'pageAlsoOwns', 'sectionCheckKey', 'sidebarOnlyWants']);
+  });
+});
+
+// Milestone 63F. Two things the box could not say, both derived from the sidebar's own rule.
+import { pageAlsoOwns, sidebarOnlyWants } from '../../src/core/status/section-guidance-policy.js';
+
+describe('pageAlsoOwns() — a field rendered on two pages can be explained on either', () => {
+  test("Simplified Part III also owns the two period dates the validator files under the Cover", () => {
+    expect(pageAlsoOwns('simplified', '/p3')).toEqual(['periodFrom', 'periodTo']);
+  });
+
+  test('no other page claims foreign errors', () => {
+    expect(pageAlsoOwns('simplified', '/p4')).toEqual([]);
+    expect(pageAlsoOwns('annual', '/p3')).toEqual([]);
+    expect(pageAlsoOwns('nonsense', '/p3')).toEqual([]);
+  });
+});
+
+describe('sidebarOnlyWants() — what a sidebar-only rule still wants, as items the box can link to', () => {
+  const paths = (items) => items.map((i) => i.path);
+
+  test('Plan - Annual 3G: an unanswered page wants one benefit, or None, or Other', () => {
+    const items = sidebarOnlyWants('planAnnual', '/p4', { benefits: {} });
+    expect(paths(items)).toEqual(['q3BenefitsNone']);
+    expect(items[0].label).toMatch(/benefit/i);
+  });
+
+  test('Plan - Minors Preparer & Attorney: wants only what is blank', () => {
+    expect(paths(sidebarOnlyWants('planMinor', '/p7', {}))).toEqual(['preparer_name', 'attorney_name', 'attorney_signatureDate']);
+    expect(paths(sidebarOnlyWants('planMinor', '/p7', { preparer_name: 'P', attorney_signatureDate: '2027-01-01' }))).toEqual(['attorney_name']);
+    expect(sidebarOnlyWants('planMinor', '/p7', { preparer_name: 'P', attorney_name: 'A', attorney_signatureDate: '2027-01-01' })).toEqual([]);
+  });
+
+  test('a page with no sidebar-only rule wants nothing', () => {
+    expect(sidebarOnlyWants('planMinor', '/p3', {})).toEqual([]);
+    expect(sidebarOnlyWants('annual', '/p3', {})).toEqual([]);
+    expect(sidebarOnlyWants('guardian', '/d4', {})).toEqual([]);
+  });
+
+  test('missing data is not an error', () => {
+    expect(() => sidebarOnlyWants('planMinor', '/p7', undefined)).not.toThrow();
+    expect(() => sidebarOnlyWants('planAnnual', '/p4', null)).not.toThrow();
   });
 });

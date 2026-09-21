@@ -13,7 +13,7 @@ further items will be appended as they are raised.
 | **63C** | Hosted build: a failed feature chunk reloads the page instead of showing the "could not be loaded" panel | **IMPLEMENTED 2026-09-21** (D5 + D12: panel, no auto-reload, with Amendment A) — unit 1340/1340; hosted-build profile 34 passed, 0 failed; see the implementation record under 63C |
 | **63D** | The preparer's signature-authorization note is on 6 of the 16 pages that capture a signature, and on one page that doesn't | **IMPLEMENTED 2026-09-21** (D6: the note on all 16 signing pages, none elsewhere; Simplified Part III's copy moved to Part IV) — unit 1587/1587; 80 affected e2e passed, 0 failed; see the implementation record under 63D |
 | **63E** | UCN on the printed filing, on the Case # line of the header, all forms | **IMPLEMENTED 2026-09-21** (D7: page 1 one line, running header UCN over Case #; D8: optional, omitted when blank; D9: Plan - Minors prints UCN and Case # separately; D10: Excel does not carry it) — unit 1631/1631; 245 affected e2e passed, 0 failed; see the implementation record under 63E |
-| **63F** | Three pages the sidebar marks incomplete that the validators cannot list (Simplified Part III, Plan-Annual 3G, Plan-Minor Preparer & Attorney) — split from 63A's R5 | Proposed — **not authorized**; nothing implemented |
+| **63F** | Three pages the sidebar marks incomplete that the validators cannot list (Simplified Part III, Plan-Annual 3G, Plan-Minor Preparer & Attorney) — split from 63A's R5 | **IMPLEMENTED 2026-09-21** (D13: option 1) — unit 1637/1637; the invariant walk is strict again (no exemptions); see the implementation record under 63F |
 
 ---
 
@@ -451,8 +451,8 @@ the three need a new "what this page still wants" mechanism, one needs an alias 
 code, and it reaches a third page. So per the bound recorded under R5, **63A did not
 expand**: those three pages are named, commented exemptions from the invariant walk's
 "lists an item" clause *only* (the box must still be present and its advice must still fit;
-the exemption fails the test once a page starts listing items). Written up as **63F** below;
-not authorized, nothing built.
+the exemption fails the test once a page starts listing items). Written up as **63F** below
+— and then built, on the requester's instruction; see its implementation record.
 
 **Tests (red first).** New `tests/unit/section-guidance-policy.spec.js` (27 cases; the
 module did not exist). New `tests/e2e/section-guidance-invariant.spec.ts` (7, one per type):
@@ -1395,7 +1395,9 @@ instructed.
 ## 63F — Pages the sidebar marks incomplete that the validators cannot list
 
 Raised 2026-09-21 by 63A's bounded R5 investigation, under the stop-and-split rule
-recorded there. **Proposed — not authorized. Nothing in this item is implemented.**
+recorded there. **Built the same day, on the requester's instruction** ("I thought I said to
+do the rest of 63"): decision D11 had already said to fix these pages, and the split was
+my own bound, not a scope limit he set. See the implementation record at the end of this item.
 
 ### What a filer sees
 
@@ -1419,7 +1421,7 @@ no links, so the filer is told the page is unfinished and not what is missing:
    differ, so that a filer is prompted for things the court's form does not require. Where
    the sidebar has a rule the validator lacks, there is no message anywhere to list.
 
-### Decision needed — D13
+### Decision needed — D13 — **DECIDED 2026-09-21: option 1**
 
 1. **A small "what this page still wants" descriptor (recommended).** For a sidebar rule
    with no validator counterpart, a table entry (key → the items, each a label and a field
@@ -1444,6 +1446,34 @@ Files: `src/core/status/section-guidance-policy.js` or a sibling for the descrip
 `src/core/status/section-status.js` / `adaptValidationErrors()`; the three validators or the
 descriptor table; the invariant walk (**delete** `NO_LISTABLE_ITEMS_YET`, so the walk becomes
 strict); `TEST-INDEX.md`. Red-first: the walk's exemptions are the failing tests.
+
+### 63F — implementation record (2026-09-21)
+
+**Changed.** In `src/core/status/section-guidance-policy.js`: `pageAlsoOwns(type, route)` — a field
+rendered on two pages can be explained on either (Simplified Part III owns `periodFrom` and
+`periodTo`, whose validator messages are filed under the Cover) — and `sidebarOnlyWants(type,
+route, data)` — what a sidebar-only rule still wants, as items the box can link to: Plan-Annual 3G's
+"answer a benefit, or None, or Other" (jumps to the None checkbox) and Plan-Minors Preparer &
+Attorney's blank ones of preparer name / attorney name / attorney signature date. Both are on
+`window.sectionGuidancePolicy` (no new `window` name). `renderLocalSectionGuidance()` claims the
+aliased errors (rewriting their jump route to the current page, so the link stays on Part III rather
+than sending the filer to the Cover) and appends the wants that no validator message already names.
+`legacy-app.js`'s live patch passes the wants for a page the sidebar marks incomplete. **The export
+validators are unchanged** — option 2 of D13 (make the export demand these) was rejected for the
+reason recorded above (`AGENTS.md` §4): the box only tells the filer what the sidebar is waiting for.
+
+**Tests (red first).** The invariant walk's three named exemptions are **removed**, so it is strict for
+all seven filing types; against the pre-63F source it failed on exactly `/p3`, `/p4` and `/p7`.
+New `tests/e2e/sidebar-only-wants.spec.ts` (5) proves **parity**: doing exactly what a list says turns
+the sidebar mark green and clears the box (Simplified: the two dates, only the missing one listed, links
+land on Part III; Plan-Annual: the None checkbox, and answering any benefit also satisfies it;
+Plan-Minors: the three blanks shrinking as each is supplied) — 4 of 5 failed before. Unit: 6 cases for the
+two functions in `section-guidance-policy.spec.js` (blank and satisfied pages, no rule elsewhere, missing
+data never throws) and the bridge-keys assertion. `TEST-INDEX.md` updated.
+
+**Verification of this item.** Unit **1637/1637**; `npm run check:types` clean; window-bridge and index
+guards pass. The full regression is re-run after this change (it touches shared guidance code) — result
+in the section below.
 
 ---
 
@@ -1500,7 +1530,7 @@ not begin until the previous one is committed and green.
 | 63C | **AUTHORIZED — IMPLEMENTED** | 2026-09-21, Alan (requester) | includes Amendment A; committed locally, not pushed |
 | 63D | **AUTHORIZED — IMPLEMENTED** | 2026-09-21, Alan (requester) | committed locally; pushed with the rest of MS 63 after the final e2e |
 | 63E | **AUTHORIZED — IMPLEMENTED** | 2026-09-21, Alan (requester) | D10: Excel does not carry UCN; help-guide sentence included; committed locally |
-| 63F | **not authorized** | — | written up 2026-09-21 by 63A's stop-and-split rule; nothing built |
+| 63F | **AUTHORIZED — IMPLEMENTED** | 2026-09-21, Alan (requester): "do the rest of 63" | D13 decided: option 1 (the recommended one). Split out of 63A by its own stop-and-split bound, then built on the requester's instruction that D11 meant "fix it" |
 
 **Recommended execution order** (from the second review; adopted here as a
 recommendation, not a decision):

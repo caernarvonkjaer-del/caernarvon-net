@@ -26,24 +26,6 @@ import { freshStartNoPassword } from './support/target';
 const VERIFY_NONE = 'Add at least one item, or check the box verifying there are none, before continuing.';
 const REQUIRED_ITEMS = 'Complete the required items on this page before continuing.';
 
-// Three pages are marked incomplete by a sidebar rule the validators cannot list,
-// so their box shows the (correctly worded) generic sentence and no jump links.
-// They are exempt from the "lists an item" clause ONLY -- the box must still be
-// present and its advice must still fit -- and the exemption is checked for
-// staleness: once one of these pages does list items, the test fails until its
-// entry is removed. Written up as Milestone 63F; not silently accepted.
-//   Simplified /p3       the sidebar wants the two period dates, which the validator
-//                        files under the Cover ('/'); the same fields are on Part III.
-//   Plan-Annual /p4      the sidebar wants a benefit chosen (or "none"/"other"); no
-//                        validator rule exists, so there is nothing to list.
-//   Plan-Minor /p7       the sidebar wants preparer/attorney names and an attorney
-//                        signature date; no validator rule exists for them.
-const NO_LISTABLE_ITEMS_YET: Record<string, string[]> = {
-  simplified: ['/p3'],
-  planAnnual: ['/p4'],
-  planMinor: ['/p7'],
-};
-
 const TYPES = [
   { label: 'Initial Inventory', type: 'guardian' },
   { label: 'Annual Accounting', type: 'annual' },
@@ -96,10 +78,7 @@ for (const { label, type } of TYPES) {
       // missing items, each a link that jumps to the field; a page that shows only
       // a generic sentence tells the filer to do something without saying what.
       const jumpItems = await guidance.locator('button[data-form-action="jump-to-field"]').count();
-      const exempt = (NO_LISTABLE_ITEMS_YET[type] || []).includes(mark.route);
-      if (exempt) {
-        if (jumpItems > 0) problems.push(`${at}: now lists items — remove it from NO_LISTABLE_ITEMS_YET (Milestone 63F)`);
-      } else if (jumpItems === 0 && !(hasVerifyNoneBox && boxText.includes(VERIFY_NONE))) {
+      if (jumpItems === 0 && !(hasVerifyNoneBox && boxText.includes(VERIFY_NONE))) {
         problems.push(`${at}: the explanation lists nothing the filer can jump to — only a generic sentence`);
       }
 

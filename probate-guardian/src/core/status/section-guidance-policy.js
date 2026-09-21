@@ -88,6 +88,59 @@ export function guidanceAdvice({ hasVerifyNoneBox }) {
   return hasVerifyNoneBox ? VERIFY_NONE_ADVICE : REQUIRED_ITEMS_ADVICE;
 }
 
+// ---------------------------------------------------------------------------------------------------------
+// Milestone 63F. Pages the sidebar marks incomplete that the validators cannot fully list.
+//
+// The sidebar asks "have you finished with this page?"; the export gate asks "does this satisfy the court?",
+// and AGENTS.md section 4 lets them differ. On three pages that left the box with a generic sentence and
+// nothing to jump to, for two different reasons:
+//
+//   1. Route ownership. Simplified's period dates are rendered on the Cover AND on Part III, but the one
+//      validator message for each is filed under the Cover, so Part III could not explain a mark that
+//      depends on them.                                                        -> pageAlsoOwns()
+//   2. Sidebar-only rules. Plan - Annual 3G and Plan - Minors Preparer & Attorney have rules the validators
+//      do not, so there is no message anywhere to list.                       -> sidebarOnlyWants()
+//
+// The export is deliberately NOT changed to demand these (option 2 of D13, rejected): the box only tells the
+// filer what the sidebar is waiting for. sidebarOnlyWants() is consulted only for a page the sidebar already
+// says is incomplete, and lists only what is blank, so it mirrors -- rather than restates -- the rule;
+// tests/e2e/sidebar-only-wants.spec.ts proves that doing exactly what it lists turns the mark green.
+
+const PAGE_ALSO_OWNS = {
+  simplified: { '/p3': ['periodFrom', 'periodTo'] },
+};
+
+/** Field paths a page renders and may explain even though their validator message is routed elsewhere. */
+export function pageAlsoOwns(type, route) {
+  const owned = PAGE_ALSO_OWNS[type] && PAGE_ALSO_OWNS[type][route];
+  return owned ? [...owned] : [];
+}
+
+const blank = (value) => value === undefined || value === null || String(value).trim() === '';
+
+/**
+ * What a sidebar-only rule still wants, as { label, path } items the guidance box can render as jump links.
+ * Empty for every page that has no such rule, and for a page whose rule is already satisfied.
+ */
+export function sidebarOnlyWants(type, route, data) {
+  const d = data || {};
+  if (type === 'planAnnual' && route === '/p4') {
+    // pa-p4: any benefit answered (eligible or applied for), or "None of the above", or "Other".
+    const answered = Object.values(d.benefits || {}).some((b) => b && (b.eligible || b.appliedFor));
+    if (answered || d.q3BenefitsNone || d.q3BenefitsOther) return [];
+    return [{ label: 'Answer at least one benefit above, or check "None of the above" or "Other"', path: 'q3BenefitsNone' }];
+  }
+  if (type === 'planMinor' && route === '/p7') {
+    // pm-p7: preparer name, attorney name and the attorney's signature date.
+    return [
+      ['preparer_name', 'Preparer name'],
+      ['attorney_name', 'Attorney name'],
+      ['attorney_signatureDate', 'Attorney signature date'],
+    ].filter(([key]) => blank(d[key])).map(([path, label]) => ({ label, path }));
+  }
+  return [];
+}
+
 if (typeof window !== 'undefined') {
-  window.sectionGuidancePolicy = { sectionCheckKey, isSectionIncomplete, blocksNext, guidanceAdvice };
+  window.sectionGuidancePolicy = { sectionCheckKey, isSectionIncomplete, blocksNext, guidanceAdvice, pageAlsoOwns, sidebarOnlyWants };
 }

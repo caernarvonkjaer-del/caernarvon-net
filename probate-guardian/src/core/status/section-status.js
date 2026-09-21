@@ -1,6 +1,7 @@
 // Milestone 24: Section Status and Bounded Navigation Guidance Renderer
 
 import { adaptValidationErrors } from '../validation/validation-adapter.js';
+import { pageAlsoOwns } from './section-guidance-policy.js';
 
 /**
  * Computes section-level status and local missing fields.
@@ -36,6 +37,23 @@ export function renderLocalSectionGuidance(currentRoute, rawErrors = [], maxItem
   const localErrors = structured.filter(
     (e) => e.route === currentRoute || (currentRoute === '/' && (e.route === '/' || (e.section && e.section.toLowerCase().includes('cover'))))
   );
+
+  // Milestone 63F. Two ways a page can owe the filer something its validator messages do not list here.
+  // (1) A field rendered on two pages (Simplified's period dates: Cover and Part III) has one message filed
+  //     under one of them: the other page claims it, and its jump link lands on THIS page's copy of the field.
+  for (const e of structured) {
+    if (e.route !== currentRoute && pageAlsoOwns(filingType, currentRoute).includes(e.path)) {
+      localErrors.push({ ...e, route: currentRoute });
+    }
+  }
+  // (2) A sidebar-only rule has no validator message at all: list what it still wants, unless a message
+  //     already names that field. The caller supplies these only for a page the sidebar marks incomplete.
+  if (options && Array.isArray(options.wants)) {
+    const named = new Set(localErrors.map((e) => e.path));
+    for (const w of options.wants) {
+      if (!named.has(w.path)) localErrors.push({ route: currentRoute, path: w.path, label: w.label, message: w.label });
+    }
+  }
 
   if (localErrors.length === 0) {
     if (options && options.message) {
