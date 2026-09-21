@@ -46,7 +46,7 @@ prints $0.00. `D.bondAmount` is the display string "$25,000"; schedule money
 fields store numbers.
 *Change:* D-4 Bond Amount uses the same numeric handler as schedule money
 fields (strip `$` and `,`, store a number, format on display); one-time
-normalization on load parses an existing string ("$25,000" → 25000). Form
+normalization on load parses an existing string ("$25,000" → 25000). **Caution (review):** the stock decimal handler (`legacy-app.js:6583`) stores `parseFloat(val)||0`, so clearing the field would write 0, not `''` — 64A-1 must preserve blank (§4) and the validator must not read a real 0 as "unentered" differently from blank. Form
 ref: PART V, B26.
 *Accept:* enter `25,000` or `$25,000` → `D.bondAmount === 25000` → page 5
 prints $25,000.00; a `.sav` saved before the fix reloads to the same.
@@ -352,7 +352,11 @@ previously-unanswered field reading as "No".
 
 ### 8. The spec's open questions, plus those this review adds
 
-**D1 — Summary I/II layout. DECIDED 2026-09-21: option 1.** (1) Keep the app's Gross / Debts / Net table
+**D1 — Summary I/II layout. DECIDED 2026-09-21: option 1; REOPENED and CHANGED to option 2 the same day.** Reopened
+because 2.1's eight schedule rows each carry one meaningful amount, so a Gross / Debts / Net table would
+print mostly empty cells (§3: cost changed). **Final: the form's single Amount column** — headers
+Schedule | Title | Amount; A-2 and B-4 print negative; the two net rows and the grand total print bold.
+Original options: (1) Keep the app's Gross / Debts / Net table
 but with the form's rows and labels (recommended: 2.1 asks only for the row
 breakdown; the table reads better than the form's single column, and the
 PDF is a filing, not a facsimile). (2) The form's single-column layout.
@@ -388,8 +392,9 @@ against the bundled file.
 ### Milestone checklist (`AGENTS.md` §8)
 
 1. **Data model** — new: `serviceIndicateIf`, `preparer.asOfDate`,
-   `scheduleC2[].claimantAttorney`; changed type: `bondAmount` (string →
-   number, Guardian only). CSV rows and `verify:data-model` in the same
+   `scheduleC2[].claimantAttorney`; `bondAmount` changes runtime type (string →
+   number, Guardian only) but **the CSV already declares it `decimal,currency`
+   (rows 136, 302), so no type row changes**. CSV rows and `verify:data-model` in the same
    commit as each.
 2. **Legacy data migration** — `bondAmount` string → number on load
    (Guardian-scoped; §4: a blank stays blank, never 0). New keys missing
@@ -402,7 +407,7 @@ against the bundled file.
    fixture per §7.
 4. **Test coverage & index** — below.
 5. **Export / import / portability** — Excel: PART V!G26 numeric (1.1); PART
-   VI J24, PART IV H8, C-2 attorney column (2.4, 2.5, 3.4) mapped both ways;
+   VI J24, PART IV H8, C-2 attorney (2.4, 2.5, 3.4) — the workbook has **no separate attorney column**: C7 is only the instruction and the attorney would share cell C(r+2) with the claimant name, so how import splits it (e.g. on `/ Atty:`, risking misparse of a name containing a slash) is an open design choice, not settled;
    `guardian-inventory-excel-schedule-layout.spec.ts` and the date-roundtrip
    unit spec extended. PDF: Parts I–VI restructured; bookmarks renamed.
    Conversions Guardian → Annual/Simplified: the new keys do not map
@@ -834,6 +839,17 @@ recommended first.
   and record what was seen here. If they do not reproduce, 64A-3 shrinks to match.
   Content items are proven by PDF text extraction, not by eye.
 - **D15 — workbook identity. DECIDED 2026-09-21: accept the content match.**
+- **D16 — Waived bond and D-4's required fields. DECIDED 2026-09-21: when the bond is waived, Bond Amount, Bond Period From, Bond Period To and Bonding Company are all not required; built inside 64A-1.**
+  Raised by the review of this milestone: `validateGuardian()` requires all four
+  even after the filer answers that the court waived the bond (`index.js:1282`),
+  so a guardian with a waiver order cannot file without inventing a surety and
+  dates. **Not authorized** until 64A-1 is (§3). Conditions: the readiness item
+  and the validator error change together (§4 readiness invariant); a blank
+  stays `''`, never 0; an unanswered waiver question keeps the four required
+  (tri-state, §4); un-waiving restores the requirement without deleting entered
+  values; the PDF Bond lines (`pdf-model.js:644–645`) must print sensibly with a
+  waiver and no bond details (what prints is a 64A-2 decision, not yet made);
+  add to 64A-1's fixture audit.
 
 ### Milestone checklist (`AGENTS.md` §8)
 
@@ -924,7 +940,7 @@ D7's bond-base acceptance is recorded but is not a delivery authorization.
 
 | Delivery | Authorized? | Notes |
 | :-- | :-- | :-- |
-| 64A-1 — bond amount, Summary B-2 row, C-3 and B-4 validation | not yet | small, independent |
+| 64A-1 — bond amount (numeric; blank stays blank; Excel import numeric), waived-bond validation (D16), Summary B-2 row, C-3 and B-4 validation | not yet | small, independent |
 | 64B-1 — carrying totals and the D-4 restricted basis (D7), shared row helper, partial-ownership fixture | not yet | the only item that changes a submitted number |
 | 64A-2 — Verified Initial Inventory print rewrite, new fields, fixture | not yet | |
 | 64B-2 — E/F-1/F-2 first pages (D8), trust columns, Part XI panel wording (D13) | not yet | |
@@ -932,9 +948,12 @@ D7's bond-base acceptance is recorded but is not a delivery authorization.
 | ~~64B-3~~ — Excel Part XI | dropped | D9 keeps 58D |
 
 **Recommended order:** 64A-1 → 64B-1 → 64A-2 and 64B-2 (not in parallel) → 64A-3
-last, once every content change has settled. **Against MS 63:** 63E edits the
-same `pdf-model.js` files and PDF text assertions as 64A-2 / 64B-2, so land those
-first if 63E is not to re-touch the same expected strings twice.
+last, once every content change has settled. **Against MS 63:** 63E is
+authorized (2026-09-21) and MS 64 is not, so **63E lands first**; 64A-2 / 64B-2
+then build their expected-string baselines on 63E's UCN headers.
+64A-1 (guardian files) and 64B-1 (annual `totals.js` and its callers) appear to
+share no files and can be reviewed in either order — confirm with a file-list
+check when authorized (§2).
 
 **Open before you authorize** — nothing that can be checked without
 implementing. What remains is the authorization itself and three stated
