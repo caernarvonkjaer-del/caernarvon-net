@@ -2,7 +2,7 @@
 
 ## Status
 
-**Proposed & implemented same session.** Ten small, low-risk dashboard/app
+**Proposed & implemented same session.** Twelve small, low-risk dashboard/app
 changes requested ahead of an upcoming test session. None touch persisted
 case data, validation, or export logic.
 
@@ -20,6 +20,8 @@ case data, validation, or export logic.
 | 8 | Sixth Judicial Circuit as the first-use default, user-changeable, stored in localStorage | New module-level preference, additive |
 | 9 | Rename "Probate Guardian" → "Guardian Forms" everywhere it's a descriptive label | ~74 text replacements across 24 files; two items flagged, not changed — see below |
 | 10 | Add Total/Open/Closed Filings cards to the dashboard summary strip, six-across responsive layout | Three new cards + one new metrics field each; CSS grid change |
+| 11 | Remember (localStorage) that the "Offline access available" notice was answered; don't show it again | One new module + two call-site changes in pwa-ui.js |
+| 12 | Activity Log: do not log automatic saves; update its description card and help text to say only manual saves are logged | One option on beginRecordingExport + one call site; existing log entries untouched |
 
 ### 1. Hide "Comment Card"
 
@@ -268,9 +270,96 @@ Active Filings; `dashboard-visual.spec.ts` has a layout-overflow check that
 would exercise the new breakpoints if run. Neither was touched or run, per
 instruction to hold e2e work this session.
 
+### 11. "Offline access" notice asked once per device
+
+**Status: implemented; unit-tested; e2e held.**
+
+The hosted PWA build offers "Offline access available" (`pwa-ui.js`,
+`offerOfflinePack()`) on every load until the offline pack is downloaded, so a
+filer who clicked Dismiss saw it again next visit.
+
+- New `src/core/offline-access-preference.js` (modeled on
+  `theme-preference.js`): a per-device flag, localStorage key
+  `pg-offline-access-answered`, value `'accepted'` (clicked Download) or
+  `'dismissed'` (clicked Dismiss on the offer). Reads/writes are guarded for
+  storage that throws or is absent. Kept out of `pwa-ui.js` because that file
+  has top-level side effects that need a live `document`, so its decision
+  logic couldn't be unit-tested there.
+- `shouldOfferOfflineAccess(status)` decides whether to show the offer:
+  nothing to offer when offline access is unavailable or already ready; first
+  use -> ask; `'dismissed'` -> stay quiet; **flag absent -> ask** (cleared
+  local cache, as requested); `'accepted'` -> ask again.
+- **"Unless it becomes relevant" is my interpretation, not spelled out:** I
+  read it as "the filer said yes but this version's pack isn't downloaded" --
+  a new version shipped (the pack is per-version) or the earlier download
+  didn't finish -- so an `'accepted'` answer with the pack not ready
+  re-offers, while `'dismissed'` stays quiet even across versions. If you
+  meant something narrower or wider (e.g. also re-ask a dismisser after a new
+  version), it's a one-line change in `shouldOfferOfflineAccess()`.
+- The other PWA notices (Update ready, Preparing/ready/incomplete, unavailable)
+  are separate and unaffected. The download-failure notice's Retry/Dismiss
+  doesn't change the answer, so a filer who accepted and hit a failed download
+  is offered it again next load.
+- `help/index.html`'s "Offline access" paragraph updated to say the notice
+  isn't shown again unless site data is cleared or a later version's files
+  haven't been downloaded.
+
+Tests: new `tests/unit/offline-access-preference.spec.js` (10 tests) --
+round-trip, invalid/throwing/absent storage, first-use offer, dismissed stays
+quiet, flag-cleared re-offers, accepted-but-not-ready re-offers, ready/
+unavailable never offer. `pwa-ui.js`'s wiring (two click handlers) is not
+unit-reachable; `tests/e2e/offline.spec.ts` covers the notice in a browser
+and was not run or edited, per the standing hold on e2e.
+
+### 12. Activity Log: automatic saves are no longer logged
+
+**Status: implemented; unit-tested; e2e held.**
+
+Every save to the open `.sav` file wrote a "Backup saved" entry
+(`DATA_EXPORT`) to the Activity Log — including the debounced save after
+each edit and the interval sweep — so a working session filled the log with
+"Auto-saved N form(s) in the background" and pushed out the entries that
+matter (unlocks, failed attempts, manual backups, restores). The log also
+rides inside every save, so it grew the file each time.
+
+- `writeCaseToHandle(handle, viaTimer)` (`src/core/persistence/case-file.js`)
+  no longer logs when `viaTimer` is true. That flag is set by both automatic
+  paths — `silentAutoExport()` (interval) and `saveData()` in `legacy-app.js`
+  (per-edit debounce) — so both are covered by the one change. Manual saves
+  (`saveBackupNow()` → `viaTimer=false`, and `exportCaseFileZip()`) still log.
+- `beginRecordingExport(message, wardId, { log = true })` gained a `log`
+  option. With `log:false` it still advances the save clock, so the "Last
+  backup" indicator and the auto-save status are unchanged, but writes no
+  entry and its rollback doesn't truncate the log.
+- The old "Auto-saved N form(s) in the background" message no longer exists.
+- Failed automatic writes were never logged (only the manual export path logs
+  failures), so nothing changes there.
+- **Existing entries are not removed.** A `.sav` saved before this change may
+  still hold a run of "Auto-saved…" rows; they'll keep showing in its Activity
+  Log. Hiding or purging them is a separate decision — say if you want it.
+
+Descriptions updated to say only manual saves are logged:
+- The Activity Log page's description card (`pageActivityLog()` in
+  `legacy-app.js`): "…and every backup you save manually or restore.
+  Automatic saves are not logged."
+- In-app Help panel (`help-content.js`, two places) and the standalone user
+  guide (`help/index.html`: the Activity Log paragraph and the privacy bullet).
+
+Tests (`tests/unit/case-file.spec.js`, new "activity log: automatic saves are
+not logged" block, 5 tests): `log:false` advances the clock with no entry and
+its rollback leaves other entries alone; the default still logs; an automatic
+`writeCaseToHandle` writes nothing to the log but still sets the last-backup
+time; a manual one logs "Saved N form(s) to existing backup file"; a failed
+automatic write leaves both the log and the clock untouched. The debounced
+`saveData()` call site itself lives in the classic script `legacy-app.js`, so
+it's covered through `writeCaseToHandle` rather than directly. No e2e was run
+or edited, per the standing hold; `dashboard-backup.spec.ts` and
+`backup-restore-sav.spec.ts` read `auditLog.enc` but only assert on entries
+their own tests add or on manual exports.
+
 ## Verification
 
-- `npm run test:unit`: full suite green, 1309/1309.
+- `npm run test:unit`: full suite green, 1324/1324.
 - e2e specs touched by hand for items 1-8 (`routes.spec.ts`,
   `guided-tour-navigation.spec.ts`); items 9-10's e2e specs were
   **deliberately left unupdated and unrun, on the requester's explicit

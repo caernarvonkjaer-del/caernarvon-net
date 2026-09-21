@@ -13,7 +13,7 @@ export const HELP_CONTENT = Object.freeze({
     <div class="help-section-title">Along the Way</div>
     <p><strong>Filing progress:</strong> The bar near the top of the sidebar tracks how much of the current ward's filing is complete, with a "Jump to…" link straight to the next incomplete section.</p>
     <p><strong>Light &amp; dark mode:</strong> Use the sun/moon button in the sidebar to switch appearance. It's remembered per device.</p>
-    <p><strong>Activity Log:</strong> Every unlock and backup on this device is recorded — open it from the link at the bottom of this help panel.</p>`
+    <p><strong>Activity Log:</strong> Every unlock and manual backup on this device is recorded (automatic saves are not) — open it from the link at the bottom of this help panel.</p>`
   },
   'inventory-select': {
     title: 'Choose Inventory Type',
@@ -185,7 +185,7 @@ export const HELP_CONTENT = Object.freeze({
     <div class="help-section-title">Restoring from Backup</div>
     <p>Use <strong>Open Backup (.sav)</strong> to restore from a backup file you previously saved.</p>
     <div class="help-section-title">Activity Log</div>
-    <p>Every unlock and backup made on this device is recorded in the Activity Log, linked at the bottom of this help panel — useful for confirming a backup actually ran.</p>`
+    <p>Every unlock and manual backup made on this device is recorded in the Activity Log, linked at the bottom of this help panel — useful for confirming a backup actually ran. Automatic saves are not logged.</p>`
   }
 });
 

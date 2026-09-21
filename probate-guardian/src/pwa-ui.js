@@ -1,4 +1,5 @@
 import { confirmModal } from './core/ui/dialogs.js';
+import { shouldOfferOfflineAccess, writeOfflineAccessAnswer } from './core/offline-access-preference.js';
 
 const isHostedPwaBuild = document.querySelector('meta[name="pg-build"][content="web"]');
 
@@ -78,10 +79,10 @@ if (isHostedPwaBuild && location.protocol !== 'file:' && 'serviceWorker' in navi
     if (!worker) return;
     try {
       const status = await postWorkerMessage(worker, { type: 'GET_OFFLINE_STATUS' }, 15000);
-      if (status.available && !status.ready) {
+      if (shouldOfferOfflineAccess(status)) {
         showPwaNotice('Offline access available', 'Download all forms and export tools for use without a connection.', [
-          { label: 'Download', action: downloadOfflinePack },
-          { label: 'Dismiss', className: 'btn btn-outline-secondary btn-sm', action: hidePwaNotice },
+          { label: 'Download', action: () => { writeOfflineAccessAnswer('accepted'); downloadOfflinePack(); } },
+          { label: 'Dismiss', className: 'btn btn-outline-secondary btn-sm', action: () => { writeOfflineAccessAnswer('dismissed'); hidePwaNotice(); } },
         ]);
       }
     } catch (error) {

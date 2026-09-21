@@ -2154,8 +2154,9 @@ async function loadTemplate(type){
 // in plaintext inside a file this app actively encourages emailing and
 // copying around. Deliberately does NOT call autoSave() itself:
 // writeCaseToHandle() logs its own DATA_EXPORT entry as part of every
-// save, and having that schedule another save would loop forever, one save
-// always triggering the next. An entry logged for any other reason rides
+// manual save (automatic saves are not logged -- Milestone 62), and having
+// that schedule another save would loop forever, one save always
+// triggering the next. An entry logged for any other reason rides
 // along in whatever save happens next instead — exactly as independent of
 // the ward-edit debounce as the old IDB store's own audit log always was.
 async function appendAuditLogEntry(entry){
@@ -2321,7 +2322,7 @@ function pageActivityLog(){
     `<option value="${k}">${esc(ACTIVITY_EVENT_META[k].label)}</option>`).join('');
   return `<div class="schedule-page">
     <h1>Activity Log</h1>
-    <div class="schedule-instructions">A record of security-relevant events on this device — unlocks, failed password attempts, and every backup saved or restored. Nothing here is transmitted anywhere; it's stored the same way your case data is, on this device only.</div>
+    <div class="schedule-instructions">A record of security-relevant events on this device — unlocks, failed password attempts, and every backup you save manually or restore. Automatic saves are not logged. Nothing here is transmitted anywhere; it's stored the same way your case data is, on this device only.</div>
     <div id="storage-usage-readout" class="storage-readout">Checking storage…</div>
     <div class="activity-log-toolbar">
       <span class="dashboard-search-wrap activity-log-search-wrap">${ic('search',15)}<label class="visually-hidden" for="activity-log-search">Search activity log details</label><input type="text" id="activity-log-search" class="form-control form-control-sm dashboard-search-input" placeholder="Search details…" data-form-input="activity-log"></span>

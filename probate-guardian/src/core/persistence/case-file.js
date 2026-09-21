@@ -352,17 +352,20 @@ export function updateLastSavedIndicator() {
   }
 }
 
-export async function beginRecordingExport(message, wardId = null) {
+// `log: false` still advances the save clock (the "Last backup" indicator
+// depends on it) but writes no Activity Log entry, and its rollback leaves the
+// log alone.
+export async function beginRecordingExport(message, wardId = null, { log = true } = {}) {
   const previousLastExportAt = getLastExportAt();
   const auditEntries = (typeof window !== 'undefined' && window._auditLogEntries) || [];
   const auditLenBefore = auditEntries.length;
   setLastExportAt(Date.now());
-  if (typeof window !== 'undefined' && typeof window.auditLog === 'function') {
+  if (log && typeof window !== 'undefined' && typeof window.auditLog === 'function') {
     await window.auditLog('DATA_EXPORT', message, true, wardId);
   }
   return function rollback() {
     setLastExportAt(previousLastExportAt);
-    if (typeof window !== 'undefined' && window._auditLogEntries) {
+    if (log && typeof window !== 'undefined' && window._auditLogEntries) {
       window._auditLogEntries.length = auditLenBefore;
     }
   };
@@ -424,10 +427,12 @@ const SAVE_FAILURE_THRESHOLD = 2;
 export async function writeCaseToHandle(handle, viaTimer) {
   const caseFile = getCaseFile();
   const count = (caseFile.wards || []).length;
-  const message = viaTimer
-    ? `Auto-saved ${count} form(s) in the background`
-    : `Saved ${count} form(s) to existing backup file`;
-  const rollback = await beginRecordingExport(message);
+  // Milestone 62: automatic saves are not written to the Activity Log. `viaTimer`
+  // is true for both the interval sweep (silentAutoExport) and the debounced
+  // save after every edit (legacy-app.js saveData()), so logging them would
+  // bury the entries that matter -- unlocks, manual backups, restores -- and,
+  // because the log rides inside every save, grow the file on each one.
+  const rollback = await beginRecordingExport(`Saved ${count} form(s) to existing backup file`, null, { log: !viaTimer });
   try {
     const { blob } = await buildCaseFileBlob();
     const writable = await handle.createWritable();

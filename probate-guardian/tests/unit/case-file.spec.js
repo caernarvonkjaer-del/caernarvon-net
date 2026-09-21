@@ -258,3 +258,100 @@ describe('save timestamp indicator: one clock, only advanced by a real save', ()
     expect(window._lastExportAt).toBeNull();
   });
 });
+
+// Milestone 62: only manual saves reach the Activity Log. writeCaseToHandle()'s
+// `viaTimer` is true for the interval sweep AND the debounced save after each
+// edit, so both stay out of the log while still advancing the save clock.
+describe('activity log: automatic saves are not logged', () => {
+  let logged;
+  let priorAuditLog;
+  let priorEntries;
+  let priorMode;
+  let priorDispatch;
+
+  beforeEach(async () => {
+    const { getSecurityMode, setSecurityMode } = await import('../../src/core/persistence/crypto.js');
+    priorMode = getSecurityMode();
+    setSecurityMode('none');
+    logged = [];
+    priorAuditLog = window.auditLog;
+    priorEntries = window._auditLogEntries;
+    window._auditLogEntries = [];
+    priorDispatch = window.dispatchEvent;
+    window.dispatchEvent = () => true;
+    window.auditLog = async (type, message, ok) => {
+      logged.push({ type, message, ok });
+      window._auditLogEntries.push({ type, message, ok });
+    };
+    setCaseFile({
+      activeWardId: null, guardianName: 'G', guardianEmail: '',
+      parties: [], cases: [], dismissedPartyPairs: [],
+      wards: [{ wardId: 'w-1', wardName: 'One', caseNumber: '1' }, { wardId: 'w-2', wardName: 'Two', caseNumber: '2' }],
+    });
+  });
+
+  afterEach(async () => {
+    const { setSecurityMode } = await import('../../src/core/persistence/crypto.js');
+    setSecurityMode(priorMode);
+    if (priorAuditLog === undefined) delete window.auditLog;
+    else window.auditLog = priorAuditLog;
+    if (priorEntries === undefined) delete window._auditLogEntries;
+    else window._auditLogEntries = priorEntries;
+    if (priorDispatch === undefined) delete window.dispatchEvent;
+    else window.dispatchEvent = priorDispatch;
+    delete window._lastExportAt;
+    delete window._dirtySinceExport;
+  });
+
+  const fakeHandle = () => ({
+    name: 'case.sav',
+    createWritable: async () => ({ write: async () => {}, close: async () => {} }),
+  });
+
+  test('beginRecordingExport with log:false advances the clock but writes no entry', async () => {
+    const { beginRecordingExport, setLastExportAt, getLastExportAt } =
+      await import('../../src/core/persistence/case-file.js');
+    setLastExportAt(null);
+    const rollback = await beginRecordingExport('quiet', null, { log: false });
+    expect(getLastExportAt()).toBeGreaterThan(0);
+    expect(logged).toEqual([]);
+
+    // Its rollback must not truncate entries someone else logged meanwhile.
+    window._auditLogEntries.push({ type: 'UNLOCK_SUCCESS' });
+    rollback();
+    expect(getLastExportAt()).toBeNull();
+    expect(window._auditLogEntries).toEqual([{ type: 'UNLOCK_SUCCESS' }]);
+  });
+
+  test('beginRecordingExport still logs by default', async () => {
+    const { beginRecordingExport } = await import('../../src/core/persistence/case-file.js');
+    await beginRecordingExport('manual write');
+    expect(logged).toEqual([{ type: 'DATA_EXPORT', message: 'manual write', ok: true }]);
+  });
+
+  test('an automatic write (viaTimer=true) is not logged but still counts as the last backup', async () => {
+    const { writeCaseToHandle, setLastExportAt, getLastExportAt } =
+      await import('../../src/core/persistence/case-file.js');
+    setLastExportAt(null);
+    const count = await writeCaseToHandle(fakeHandle(), true);
+    expect(count).toBe(2);
+    expect(logged).toEqual([]);
+    expect(getLastExportAt()).toBeGreaterThan(0);
+  });
+
+  test('a manual write (viaTimer=false) is logged as a backup save', async () => {
+    const { writeCaseToHandle } = await import('../../src/core/persistence/case-file.js');
+    await writeCaseToHandle(fakeHandle(), false);
+    expect(logged).toEqual([{ type: 'DATA_EXPORT', message: 'Saved 2 form(s) to existing backup file', ok: true }]);
+  });
+
+  test('a failed automatic write leaves the log and the save clock untouched', async () => {
+    const { writeCaseToHandle, setLastExportAt, getLastExportAt } =
+      await import('../../src/core/persistence/case-file.js');
+    setLastExportAt(null);
+    const failing = { name: 'case.sav', createWritable: async () => { throw new Error('disk full'); } };
+    await expect(writeCaseToHandle(failing, true)).rejects.toThrow('disk full');
+    expect(logged).toEqual([]);
+    expect(getLastExportAt()).toBeNull();
+  });
+});
