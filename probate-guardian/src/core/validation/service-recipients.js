@@ -84,6 +84,31 @@ export function serviceRecipientIssues({ rows, attestation, startedFields, missi
   return { needsAttestation: false, firstRowMissing, extraRows };
 }
 
+/**
+ * Milestone 63B. Whether the page should show the "No recipients are required"
+ * question -- the page's half of D16, defined next to the validator's half so the
+ * two cannot drift. D16 says a filer who lists a recipient "never sees the
+ * question"; the validation honoured that but the three pages rendered the Yes/No
+ * unconditionally, so it looked required to filers it had no bearing on.
+ *
+ * Shown when the validator could ask it -- Recipient 1 not started -- and when
+ * 'Yes' is selected: the cards are hidden then, and this control is the only way
+ * back to them (section 4, non-destructive toggling). A stale 'No' beside a
+ * listed recipient is consistent ("someone must be served", and one is listed),
+ * so it hides, and the validator already ignores it.
+ *
+ * @param {object}   args
+ * @param {any[]}    args.rows           The recipient collection.
+ * @param {string}   args.attestation    The tri-state: '' | 'Yes' | 'No'.
+ * @param {string[]} args.startedFields  Fields that make a row "started".
+ * @returns {boolean}
+ */
+export function attestationRelevant({ rows, attestation, startedFields }) {
+  if (attestation === 'Yes') return true;
+  const list = Array.isArray(rows) ? rows : [];
+  return !recipientRowStarted(list[0], startedFields);
+}
+
 // Bridged for legacy-app.js's hand-written nav checks (a-p10, s-p6), which are
 // a classic script and cannot import. The Initial Inventory needs no bridge:
 // it derives its nav state from validate() through errorRoute(), so an issue

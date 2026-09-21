@@ -15,9 +15,14 @@ import { createIssue } from '../../core/validation/issue-registry.js';
 import { effectiveAnswer, isYes as triYes, dependentQuestionState } from '../../core/validation/dependent-question.js';
 import { renderSignatureStateControl, mountSignatureStateControls } from '../../core/signature/signature-state-control.js';
 import { serviceRecipientIssues } from '../../core/validation/service-recipients.js';
+import { renderServiceAttestationRow } from '../../core/form/service-attestation-visibility.js';
 // Milestone 57B: carried verbatim from MILESTONE-57-PROPOSAL.md section 57B.
 // The wording is load bearing (section 8 #8). Do not paraphrase or re-voice it.
 const ATTESTATION_57B = 'No recipients are required for this certificate (filer attestation - app does not determine legal necessity)';
+// Milestone 63B: what makes a D-5 recipient card "started". One list for the
+// validator and for the page, which shows the attestation only while Recipient 1
+// is not started, so the two read the same data the same way.
+const RECIPIENT_STARTED_FIELDS = ['name', 'address', 'cityStateZip'];
 // Guardian Inventory -- Milestone 8A page/nav/validation extraction, plus
 // Milestone 8B (print/PDF/Excel import/export). Dynamically imported by
 // legacy-app.js's mountGuardianFeature()/mountGuardianNav() bridge, using
@@ -1162,7 +1167,7 @@ function pageD5(){
   return `<div class="schedule-page">
   <h1>Part VI: Certificate of Service</h1>
   <h2 style="color:var(--ink);margin:.75rem 0 .4rem;font-size:.95rem;">Recipients</h2>
-  <div class="row g-3 mb-3"><div class="col-12">${window.yesNoCheckboxS('serviceNoRecipients',ATTESTATION_57B,D.serviceNoRecipients,false,'/d5')}</div></div>
+  ${renderServiceAttestationRow({html:window.yesNoCheckboxS('serviceNoRecipients',ATTESTATION_57B,D.serviceNoRecipients,false,'/d5'),rows:D.serviceRecipients,attestation:D.serviceNoRecipients,startedFields:RECIPIENT_STARTED_FIELDS,recipientsPath:'serviceRecipients',attestationPath:'serviceNoRecipients'})}
   ${D.serviceNoRecipients==='Yes'?'':`<div class="row g-3 card-grid-2col">${cards}</div>${addBtn2}`}
   <h2 style="color:var(--ink);margin:.75rem 0 .4rem;font-size:.95rem;">Attorney Certification</h2>
   <div class="attorney-certification-card entry-card">
@@ -1302,7 +1307,7 @@ export function validateGuardian(){
     const rec=serviceRecipientIssues({
       rows:d.serviceRecipients,
       attestation:d.serviceNoRecipients,
-      startedFields:['name','address','cityStateZip'],
+      startedFields:RECIPIENT_STARTED_FIELDS,
       missingFields:(r)=>RECIPIENT_FIELDS.filter(([k])=>!String(r[k]||'').trim()).map(([,label])=>label),
     });
     if(rec.needsAttestation)req('',`D-5 — ${ATTESTATION_57B}`,'serviceNoRecipients');

@@ -13,7 +13,7 @@ intermittent test; everything else is landed or closed.**
 
 | Still open | State |
 | --- | --- |
-| **57B** | Certificate-of-service recipient rules. **Execution-ready — see the 57B section.** Not authorized |
+| **57B** | Certificate-of-service recipient rules. **LANDED 2026-09-20 in `f517df9`, without a recorded authorization; kept on review 2026-09-21; the "no recipients" question's visibility corrected in Milestone 63B** (see the 57B section) |
 | **57E-1** | `hasTrust: 'Yes'` with every trust field blank exports silently. **Execution-ready — see the 57E-1 section.** Not authorized |
 | `routes.spec.ts:84` | Intermittent, **not** order-dependent, and not diagnosed — see the note at the end of this document |
 
@@ -1131,10 +1131,22 @@ enumerates types by hand.
 
 ---
 
-## 57B - Certificate of Service Recipient Rules (EXECUTION-READY 2026-09-19)
+## 57B - Certificate of Service Recipient Rules (LANDED 2026-09-20)
 
-**Not authorized.** Implements **D7**, **D16** and **D17**. Re-derived against
-`master` on 2026-09-19.
+**LANDED 2026-09-20 in `f517df9` (fixture follow-up `b16c931`), without a
+recorded authorization** — every other item that landed that night names Alan;
+this one does not, and the repository cannot say whether it was cleared
+verbally. **Kept on review 2026-09-21** (Milestone 63B, decision D4): the
+requester chose to keep it and record it as landed. One defect found on that
+review is corrected in 63B: D16 says a filer who lists a recipient "never sees
+the question", but the three pages rendered the Yes/No unconditionally; it is now
+shown only while it applies (`attestationRelevant()`, `service-attestation-
+visibility.js`). The text below is the design as it stood when the item was
+"execution-ready" on 2026-09-19 and is kept as the record of intent; where it
+says the fields "exist nowhere", that is no longer true.
+
+Implements **D7**, **D16** and **D17**. Re-derived against `master` on
+2026-09-19.
 
 ### What a filer can do today that they should not
 

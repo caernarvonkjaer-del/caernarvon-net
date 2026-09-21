@@ -9,7 +9,7 @@ further items will be appended as they are raised.
 | Item | Summary | Status |
 | :-- | :-- | :-- |
 | **63A** | Guardian Inventory marks six pages incomplete but never says why | Proposed — **D1, D2, D11 decided** (explain, don't block; all filing types; fix R5 routing in 63A); **authorized 2026-09-21** (execution order below) |
-| **63B** | Certificate of Service: the "no recipients" Yes/No (57B) is shown to every filer, not only when it applies | Proposed — **D3 decided** (show only when Recipient 1 is blank); **D4 decided** (57B recorded as landed without a recorded authorization); **authorized 2026-09-21** (execution order below) |
+| **63B** | Certificate of Service: the "no recipients" Yes/No (57B) is shown to every filer, not only when it applies | **IMPLEMENTED 2026-09-21** (D3: shown only while it applies; D4: 57B recorded as landed without a recorded authorization) — unit 1353/1353; 151 affected e2e passed, 0 failed; see the implementation record under 63B |
 | **63C** | Hosted build: a failed feature chunk reloads the page instead of showing the "could not be loaded" panel | **IMPLEMENTED 2026-09-21** (D5 + D12: panel, no auto-reload, with Amendment A) — unit 1340/1340; hosted-build profile 34 passed, 0 failed; see the implementation record under 63C |
 | **63D** | The preparer's signature-authorization note is on 6 of the 16 pages that capture a signature, and on one page that doesn't | Proposed — **D6 decided** (option 1); **authorized 2026-09-21** (execution order below) |
 | **63E** | UCN on the printed filing, on the Case # line of the header, all forms | Proposed — **D7–D10 decided** (option 1 each; Excel does not carry UCN); **authorized 2026-09-21** (execution order below) |
@@ -620,6 +620,54 @@ after), so the in-place `d-none` toggle the design depends on is feasible.
 **Accepted verification boundary:** the toggle itself is a design; it is proved
 by the new e2e (Test plan #2) after implementation, not before.
 
+### 63B — implementation record (2026-09-21)
+
+**Changed.**
+- `src/core/validation/service-recipients.js`: new `attestationRelevant()` —
+  shown when Recipient 1 is not started, and always when 'Yes' is selected.
+- New `src/core/form/service-attestation-visibility.js` — the page half, shared
+  by the three certificate pages: `renderServiceAttestationRow()` wraps the
+  existing Yes/No in a row that is always rendered and hidden with `d-none`, and
+  carries what the toggle needs on its own data attributes;
+  `syncServiceAttestationVisibility()` re-evaluates it from the live model. It
+  subscribes once to the `pg:field-written` event the shared write path already
+  dispatches, so no page binds anything and nothing outlives a page, and no name
+  was added to `window`. *Deviation from the write-up:* the plan had each page
+  call the predicate itself; three identical copies of the toggle would have been
+  the drift 57B's own comments warn about, so the helper is shared.
+- The three pages (`guardian-inventory` D-5, `annual-accounting` Part X,
+  `simplified-accounting` Part VI) render through it, and each now has one
+  `RECIPIENT_STARTED_FIELDS` list used by **both** its validator and its page.
+- The Annual-only hint ("* Recipient 1 name is required unless you attest below…")
+  is removed, as recommended in the write-up: when the question is visible it *is*
+  the hint, and when it is hidden the hint would point at nothing. Nothing
+  referenced it.
+- **The toggle happens on change/blur, not per keystroke** — a filer typing
+  Recipient 1's first character would otherwise see the question above it vanish
+  and the field jump up under their cursor.
+- Wording untouched, verbatim (`ATTESTATION_57B`).
+- **D4:** `MILESTONE-57-RESCOPE.md` (the status row and the 57B section header and
+  opening) and `MILESTONE-57-PROPOSAL.md` (the 57B status) now say *landed
+  2026-09-20 in `f517df9` without a recorded authorization; kept on review
+  2026-09-21*, with the "exist nowhere" statement marked as history.
+
+**Tests (red first).** `service-recipients.spec.js` +6 cases (`attestationRelevant`,
+incl. agreement with `serviceRecipientIssues()`) and new
+`service-attestation-visibility.spec.js` (7): both failed before the change
+(function and module missing). New `tests/e2e/service-attestation-visibility.spec.ts`
+(9 cases, three per page): before the change the six "hides once it doesn't
+apply" cases failed with `Expected: hidden / Received: visible` and the two
+Yes/No cases per page passed as regression guards; after, all nine pass,
+including the same-`#main-content` assertion that proves typing does not
+re-render the page. `TEST-INDEX.md`: two new rows, one extended.
+
+**Verification.** Unit **1353/1353** (1,340 + 13); `npm run check:types` clean;
+`window-bridge`, `checklist-export-parity` and the index guard pass. Existing
+specs that exercise these pages, on the source target — `navigation-status.contract`,
+`pdf-table-semantics`, `pdf-form-specific`, `annual-mount`, `simplified-mount`,
+`guardian-inventory-mount`, `dependent-question-gate`, `checklist-export-parity`:
+**151 passed, 0 failed**. The full `npm test` regression was **not** run.
+
 ---
 
 ## 63C — Hosted build: a failed feature chunk reloads the page instead of explaining
@@ -1212,7 +1260,7 @@ not begin until the previous one is committed and green.
 | Item | Authorized? | When / by | Notes |
 | :-- | :-- | :-- | :-- |
 | 63A | **AUTHORIZED** | 2026-09-21, Alan (requester) — all five, in the order below | includes the bounded R5 investigation (stop-and-split rule) |
-| 63B | **AUTHORIZED** | 2026-09-21, Alan (requester) | D4's 57-doc edits are part of this delivery |
+| 63B | **AUTHORIZED — IMPLEMENTED** | 2026-09-21, Alan (requester) | D4's 57-doc edits made in the same commit; committed locally, not pushed |
 | 63C | **AUTHORIZED — IMPLEMENTED** | 2026-09-21, Alan (requester) | includes Amendment A; committed locally, not pushed |
 | 63D | **AUTHORIZED** | 2026-09-21, Alan (requester) | |
 | 63E | **AUTHORIZED** | 2026-09-21, Alan (requester) | D10: Excel does not carry UCN; help-guide sentence included |

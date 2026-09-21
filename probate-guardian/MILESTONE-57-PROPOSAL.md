@@ -74,10 +74,15 @@ the scope below records what was originally asked for.
 
 ## 57B — Certificate of Service Recipient Rules & Portability
 
-### Status: REVERTED. Design settled, not authorized (2026-09-19)
+### Status: LANDED 2026-09-20 in `f517df9`, without a recorded authorization; kept on review 2026-09-21
 
-Reverted with the rest of Milestone 57. `certNoRecipients` and
-`serviceNoRecipients` exist nowhere in `src/` or in the data model. Decision
+*History, kept:* this item was reverted with the rest of Milestone 57 and then
+re-designed (2026-09-19); it landed again on 2026-09-20 in `f517df9` with no
+recorded authorization, and on 2026-09-21 (Milestone 63B, decision D4) the
+requester chose to keep it. `certNoRecipients` and `serviceNoRecipients` now
+exist in `src/` and in the data model; the "No recipients" question is shown only
+while it applies (63B). The paragraph that follows describes the state when this
+section was last written and is otherwise unchanged. Decision
 **D7** (a service attestation does not survive a filing conversion) and the
 executable design are in `MILESTONE-57-RESCOPE.md`. The filer-attestation
 wording below is load bearing and should be carried across verbatim.

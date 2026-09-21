@@ -34,9 +34,14 @@ import { renderReportingPeriodFields } from '../../core/form/cards/ward-demograp
 // they sign cannot drift apart.
 import { REMUNERATION_DECLARATION } from '../../core/filing/statutory-text.js';
 import { serviceRecipientIssues } from '../../core/validation/service-recipients.js';
+import { renderServiceAttestationRow } from '../../core/form/service-attestation-visibility.js';
 // Milestone 57B: carried verbatim from MILESTONE-57-PROPOSAL.md section 57B.
 // The wording is load bearing (section 8 #8). Do not paraphrase or re-voice it.
 const ATTESTATION_57B = 'No recipients are required for this certificate (filer attestation - app does not determine legal necessity)';
+// Milestone 63B: what makes a Part VI recipient card "started". One list for the
+// validator and for the page, which shows the attestation only while Recipient 1
+// is not started, so the two read the same data the same way.
+const RECIPIENT_STARTED_FIELDS = ['name', 'line2', 'line3', 'line4'];
 // Simplified Accounting — the pilot feature extraction (Milestone 2, Phase
 // D of INDEX-SPLIT-PLAN.md's migration sequence). Dynamically imported by
 // legacy-app.js's mountSimplifiedFeature()/mountSimplifiedNav() bridges,
@@ -591,9 +596,7 @@ function pagePart6(){
       <div class="col-md-8">${inpS('certIndicator','Indicate if (e.g. hand-delivered, mailed)',d.certIndicator,true)}</div>
     </div>
     <h2 style="color:var(--ink);margin:.75rem 0 .4rem;font-size:.95rem;">Recipients</h2>
-    <div class="row g-3 mb-3">
-      <div class="col-12">${yesNoCheckboxS('certNoRecipients',ATTESTATION_57B,d.certNoRecipients,false,'/p6')}</div>
-    </div>
+    ${renderServiceAttestationRow({html:yesNoCheckboxS('certNoRecipients',ATTESTATION_57B,d.certNoRecipients,false,'/p6'),rows:d.certRecipients,attestation:d.certNoRecipients,startedFields:RECIPIENT_STARTED_FIELDS,recipientsPath:'certRecipients',attestationPath:'certNoRecipients'})}
     ${d.certNoRecipients==='Yes'?'':`<div class="row g-3 card-grid-2col mb-3">
       ${cards}
     </div>
@@ -773,7 +776,7 @@ export function validateSimplified(){
     const rec=serviceRecipientIssues({
       rows:d.certRecipients,
       attestation:d.certNoRecipients,
-      startedFields:['name','line2','line3','line4'],
+      startedFields:RECIPIENT_STARTED_FIELDS,
       missingFields:(r)=>((r.name||'').trim()?[]:['Name and Address']),
     });
     if(rec.needsAttestation)req('',`Part VI — ${ATTESTATION_57B}`,'certNoRecipients');

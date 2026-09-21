@@ -20,11 +20,16 @@ import { filingCopy, resolveFilingDescriptor } from '../../core/filing/filing-de
 import { renderFormField, renderSelectField } from '../../core/form/form-fields.js';
 import { issueFactory } from '../../core/validation/validation-issue.js';
 import { serviceRecipientIssues } from '../../core/validation/service-recipients.js';
+import { renderServiceAttestationRow } from '../../core/form/service-attestation-visibility.js';
 // Milestone 57B: carried verbatim from MILESTONE-57-PROPOSAL.md section 57B.
 // The wording is load bearing -- it keeps the app on the right side of
 // asserting a legal conclusion for the filer (section 8 #8). Do not
 // paraphrase, shorten, or re-voice it.
 const ATTESTATION_57B = 'No recipients are required for this certificate (filer attestation - app does not determine legal necessity)';
+// Milestone 63B: what makes a Part X recipient card "started". One list for the
+// validator and for the page, which shows the attestation only while Recipient 1
+// is not started, so the two read the same data the same way.
+const RECIPIENT_STARTED_FIELDS = ['name', 'line2', 'line3', 'line4'];
 import { GUARDIANSHIP_TYPE_OPTIONS, optionsWithLegacyValue } from '../../core/form/guardianship-options.js';
 import { addCollectionRow, duplicateCollectionRow, removeCollectionRow } from '../../core/form/schedule-definitions.js';
 import { checkSignatureState, inferLegacySignatureState } from '../../core/validation/signature-state.js';
@@ -1429,12 +1434,9 @@ function pagePart10Annual(){
   <div class="row g-2 mb-3">
     <div class="col-md-4">${inpD('Date of Service',d.certDate,"D.certDate=this.value",true,'date')}</div>
     <div class="col-md-6">${inpD('Indicate if (e.g. hand-delivered, mailed)',d.certIndicator,"D.certIndicator=this.value")}</div>
-    <div class="col-12"><div style="color:var(--danger-text);font-size:.75rem;font-weight:600;margin-top:.25rem;">* Recipient 1 name is required unless you attest below that none are required</div></div>
   </div>
   <h2 style="color:var(--ink);margin:.75rem 0 .4rem;font-size:.95rem;">Recipients</h2>
-  <div class="row g-3 mb-3">
-    <div class="col-12">${yesNoCheckboxD(ATTESTATION_57B,d.certNoRecipients,'certNoRecipients','/p10')}</div>
-  </div>
+  ${renderServiceAttestationRow({html:yesNoCheckboxD(ATTESTATION_57B,d.certNoRecipients,'certNoRecipients','/p10'),rows:d.certRecipients,attestation:d.certNoRecipients,startedFields:RECIPIENT_STARTED_FIELDS,recipientsPath:'certRecipients',attestationPath:'certNoRecipients'})}
   ${d.certNoRecipients==='Yes'?'':`<div class="row g-3 card-grid-2col mb-3">
     ${cards}
   </div>`}
@@ -1616,7 +1618,7 @@ export function validateAnnual(){
     const rec=serviceRecipientIssues({
       rows:d.certRecipients,
       attestation:d.certNoRecipients,
-      startedFields:['name','line2','line3','line4'],
+      startedFields:RECIPIENT_STARTED_FIELDS,
       // Family-owned: the accountings' address lines are optional in
       // probate-guardian-data-model.csv, so a name is what completes a card.
       missingFields:(r)=>((r.name||'').trim()?[]:['Name']),

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { serviceRecipientIssues, recipientRowStarted } from '../../src/core/validation/service-recipients.js';
+import { serviceRecipientIssues, recipientRowStarted, attestationRelevant } from '../../src/core/validation/service-recipients.js';
 
 // Milestone 57B. Three families had three different rules over the same idea,
 // producing two opposite defects: the Initial Inventory blocked export on an
@@ -74,5 +74,53 @@ describe('recipientRowStarted()', () => {
   test('an empty list with no answer asks, rather than assuming none are required', () => {
     expect(run([], '').needsAttestation).toBe(true);
     expect(run(undefined, '').needsAttestation).toBe(true);
+  });
+});
+
+// Milestone 63B. D16 says a filer who lists a recipient "never sees the
+// question", but the three pages rendered the Yes/No unconditionally -- only the
+// requirement was conditional, not the visibility. attestationRelevant() is the
+// page's half of the rule, defined next to the validator's so neither can drift
+// from the other: the question is shown exactly when serviceRecipientIssues()
+// could ask it, plus when 'Yes' is selected (the cards are hidden then, and the
+// control is the only way back).
+describe('attestationRelevant() — Milestone 63B, D3', () => {
+  const rel = (rows, attestation) => attestationRelevant({ rows, attestation, startedFields: FIELDS });
+
+  test('a blank Recipient 1 shows the question', () => {
+    expect(rel([{ name: '', line2: '' }], '')).toBe(true);
+    expect(rel([{}], '')).toBe(true);
+  });
+
+  test('missing or empty rows show it too — nothing is listed', () => {
+    expect(rel([], '')).toBe(true);
+    expect(rel(undefined, '')).toBe(true);
+  });
+
+  test("a started Recipient 1 hides it when the answer is '' or 'No'", () => {
+    expect(rel([{ name: 'A Person' }], '')).toBe(false);
+    expect(rel([{ name: '', line2: '1 Main St' }], '')).toBe(false);
+    expect(rel([{ name: 'A Person' }], 'No')).toBe(false);
+  });
+
+  test("'Yes' always shows it, even with a recipient typed — the cards are hidden and this is the way back", () => {
+    expect(rel([{ name: 'A Person' }], 'Yes')).toBe(true);
+    expect(rel([{ name: '' }], 'Yes')).toBe(true);
+  });
+
+  test('a started Recipient 2 does not hide it — only Recipient 1 answers the question', () => {
+    expect(rel([{ name: '' }, { name: 'Second' }], '')).toBe(true);
+  });
+
+  test('it agrees with serviceRecipientIssues() everywhere the validator would ask', () => {
+    const cases = [
+      [[{ name: '', line2: '' }], ''], [[], ''], [[{ name: 'A' }], ''], [[{ name: 'A' }], 'No'],
+      [[{ name: '' }], 'No'], [[{ name: 'A' }], 'Yes'], [[{ name: '' }], 'Yes'],
+    ];
+    for (const [rows, attestation] of cases) {
+      const asked = run(rows, attestation).needsAttestation;
+      // Wherever the validator asks, the page must be showing the question.
+      if (asked) expect(rel(rows, attestation), JSON.stringify([rows, attestation])).toBe(true);
+    }
   });
 });
