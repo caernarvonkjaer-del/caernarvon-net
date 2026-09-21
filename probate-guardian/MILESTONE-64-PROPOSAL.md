@@ -8,8 +8,8 @@ further items will be appended as they are raised.
 
 | Item | Summary | Status |
 | :-- | :-- | :-- |
-| **64A** | Guardian Inventory: printed filing and validation corrected against the Sixth Circuit Verified Initial Inventory, Rev. 11/17/2022 | Proposed — **D1–D6 resolved** (D6: bundled template confirmed Rev. 11/17/2022); awaiting go-ahead |
-| **64B** | Annual / Final / Trust Accounting: carrying-value totals, empty-schedule pages, trust columns, Part XI in Excel, against the Sixth Circuit Annual Accounting, Revision 11/17/2022 | Proposed — **D7–D11 decided** (workbook basis for D-4 restricted; always print E/F-1/F-2 first pages; keep 58D for Part XI; three-part delivery; release note only); awaiting go-ahead |
+| **64A** | Guardian Inventory: printed filing and validation corrected against the Sixth Circuit Verified Initial Inventory, Rev. 11/17/2022 | Proposed — **D1–D6 resolved**, **D12 decided** (no revision stamp); workbook cell references checked 2026-09-21; **not yet authorized**; 64A-3 has a render-baseline prerequisite (D14) |
+| **64B** | Annual / Final / Trust Accounting: carrying-value totals, empty-schedule pages, trust columns, Part XI in Excel, against the Sixth Circuit Annual Accounting, Revision 11/17/2022 | Proposed — **D7–D11, D13, D15 decided** (workbook basis for D-4 restricted; always print E/F-1/F-2 first pages; keep 58D for Part XI; three-part delivery; release note only; fix the Part XI panel wording in 64B-2; workbook accepted by content); Part IX `H13` traced, trust-table widths measured; **not yet authorized** |
 
 ---
 
@@ -228,10 +228,21 @@ estate / real property to report").
   — Order dated [bondWaivedDate]" (PART V B15).
 
 > **Master check.** Fee schedule: only the base and the determination print
-> today (`pdf-model.js:598–605`) — confirmed. Rev stamp: absent; whether the
-> engine has a per-page footer slot is **unverified**. Waiver: **already
-> printed** — "Date of the order waiving the bond" appears when Yes
-> (`pdf-model.js:653–656`); only the label needs the form's B15 wording.
+> today (`pdf-model.js:598–605`) — confirmed; PART V B8/B9 read from the
+> bundled workbook and match (the $85.00 / $0.00 amounts live in other cells,
+> not read). **Rev stamp — differs from the spec: it is a cell, not a footer.**
+> SUMMARY I B40 holds "Rev. 11/17/2022" as ordinary cell text at the foot of
+> that one sheet, and the sheet has no header/footer definition at all. The
+> engine's shared footer is "form subtitle — ward name" on the left and "Page N
+> of M" on the right (`pdf-engine.js:394–407`). **D12 (decided 2026-09-21):
+> leave the stamp off**, so nothing is added and no Guardian-only branch enters
+> the shared footer; the printed filing then carries no revision identification
+> of the court form — recorded so that is a choice, not an omission. **Waiver —
+> already printed** ("Date of the order waiving the bond" when Yes,
+> `pdf-model.js:653–656`) **and the spec's proposed sentence is not the form's.**
+> PART V B15 reads *"If the surety bond has been waived, note the date of the
+> order……"*; template wins (§5), so use that wording, not "Surety bond waived
+> by court order? Yes — Order dated".
 
 ### 3. P3 — Validation stricter than the form
 
@@ -368,7 +379,7 @@ form's labels exactly.
 - **64A-3, layout:** item 5 via the engine (D4).
 - 3.3 stays in MS 63.
 
-**D6 — Confirm the bundled template is Rev. 11/17/2022. CLOSED 2026-09-21 — confirmed.** The decoded `templates/guardian-template.js` contains the shared strings "Rev. 11/17/2022" and "IN THE CIRCUIT COURT, SIXTH JUDICIAL CIRCUIT, FLORIDA"; SUMMARY I is present. (The spec's cell references were still not re-read against it.) The repo bundles
+**D6 — Confirm the bundled template is Rev. 11/17/2022. CLOSED 2026-09-21 — confirmed.** The decoded `templates/guardian-template.js` contains the shared strings "Rev. 11/17/2022" and "IN THE CIRCUIT COURT, SIXTH JUDICIAL CIRCUIT, FLORIDA"; SUMMARY I is present. (Its cell references were then read — see 64A's "Workbook cell check" below.) The repo bundles
 `a_InitialInventory (3).xlsx`; the spec reviewed *Initial Inventory 111722
 1.xlsx*. Decode `templates/guardian-template.js` and read SUMMARY I!B40 before
 64A-2 starts; if they differ, the spec's cell references need re-checking
@@ -458,10 +469,32 @@ bond cell; which tests assert the affected strings (match counts:
 `pdf-table-semantics` 2, `pdf-form-specific` 1, `verified-inventory-workflow` 1,
 `guardian-inventory-totals` 1).
 
-Not checked: the form cell references (the bundled workbook itself was confirmed
-Rev. 11/17/2022 — D6), the page-footer slot for the rev stamp, the
-orphan pages (the spec's observation of the rendered PDF is taken as given),
-and item 6's "confirmed matching" list, which is the spec's own review.
+**Workbook cell check (2026-09-21).** The bundled Guardian workbook was decoded
+and every cell the spec cites was read with an address-safe parser:
+
+| Spec item | Cells | Result |
+| :-- | :-- | :-- |
+| 2.3 SDB in Part I | SUMMARY I B26 / D26 / E26 / H26 | ✓ text as quoted; D26 and H26 are the Yes/No inputs |
+| 2.1 Summary I rows | SUMMARY I B30–B39 | ✓ eight schedule rows (A-1, A-2, B-1…B-4 in B30/31/34–37), two net rows (B32, B38), grand total B39; **B33 is a sub-header** ("SCHEDULE B: Cash / Personal Property / Intangible Assets / Liabilities"). The descriptive titles are not in column B. |
+| 2.2 C-2 negative | SUMMARY II H9 | ✓ `=-'C-2 LAWSUIT AGAINST 1'!H50` |
+| 2.5 oath | PART III B6 | ✓ verbatim, with "PENALITIES" |
+| 2.5 preparer | PART IV B6–B11, H8, G12 | ✓ heading B6; sentence B7 (the spec said B6–B11); "Ward's Name" B8; as-of "Date" H8; signature "Date" G12 |
+| 2.5 attorney | PART IV B18–B23 | ✓ heading, /s/ note, "notifies the Court … as of ………" (B20), "Date:" (B21), the representation (B22), **B23 = "Select County"** (the county slot) |
+| 2.4 certificate | PART VI B7, B8, B24, J24, J25 | ✓ 744.362(1) sentence; "on this date"; "Indicate if:"; **J25's validation list is exactly** "Ward is totally incapacitated, Ward is under 14 years old, N/A" |
+| 2.7 waiver / bond | PART V B15, B26, H18–H23 | ✓ B15 wording above; "Bond Amount" B26 with G26 an empty input; H18 `='B-1 CASH pg 1'!J56`, H23 `=G20+G21+G22` |
+| 3.1 / 3.2 / 3.4 | C-3 C6/C8/C11; B-4 C6/C7; C-2 C7 | ✓ quoted instructions match; C-2 C7 is "Name of claimant/petitioner **and their attorney** in suit/description of lawsuit" |
+
+**Two things the reading adds to 2.5.** The form itself contains typos the app
+must not copy: "PENALITIES" (the spec noted it) **and a lowercase-L "l have
+compiled" (PART IV B7) and "l have not audited" (B22) where "I" is meant** — use
+"I". And the preparer sentence is one run with the ward's name and the as-of
+date as blank slots (B7 → B8 → H8), which supports printing them inline.
+
+Not checked: the spec's rendered-PDF observations (orphaned headings, the
+mostly-blank page 3, the "Restrict ed?" wrap) — **decided 2026-09-21 (D14): render
+and inspect a baseline ourselves as a prerequisite to 64A-3**, when the full
+fixture exists; and item 6's "confirmed matching" list, which is the spec's own
+review.
 
 ---
 
@@ -536,16 +569,24 @@ line follows.
 > `t.schD4_restricted` (`pdf-model.js:1025`) and the unrestricted line as
 > `t.schD4_ward − t.schD4_restricted` (`:1028`). The workbook matches the spec
 > for carrying: D-2 `I` unformulated, `J20 = G20*H20`, `I52` a plain `SUM`; D-3
-> `H` carrying plain, `I31 = F31*G31`; Part VI/VII pull `D26 = D-2!I53`, `D27 =
-> D-3!H48`, `D28 = D-4!I55` — all plain sums of Carrying Value. **No new
+> `H` carrying plain, `I31 = F31*G31`; Part VI/VII pull `F26 = D-2!I53`, `F27 =
+> D-3!H48`, `F28 = D-4!I55` (carrying) and `H26/H27/H28 = D-2!J53 / D-3!I48 /
+> D-4!J55` (ward value) — the carrying ones are plain sums of Carrying Value. **No new
 > permission is needed for the carrying fix** (§5: matching the template).
 >
 > *Differs — D-4 Restricted Amt and the bond line.* The workbook's D-4 sheet has
 > `J = G*H` (Full Amount × Ward's %) and **`K = IF(F="Yes", J, 0)`** — the
 > restricted amount is the **Ward's Value of the restricted lines, not Carrying
-> Value at all**, scaled or not. Part IX's `D13` is `D-4!K55` (the sum of that
-> column) and `D16` is `D-4!J55 − H13`. (`H13` was not traced; the app's
-> `schD4_ward − schD4_restricted` has the same shape.) So:
+> Value at all**, scaled or not. **Part IX, fully traced (2026-09-21):** `H13 = D-4!K55` (the sum of that column,
+> pages 1 and 2); `G16 = D-4!J55 − H13`; `G14 = D-1!K59 − D-1!J59`; `G15 =
+> D-3!I48`; **`H17 = SUM(G14:G16)`** — the bond requirement. That is exactly the
+> app's `bondReq = (schD1_total − schD1_restricted) + schD3_ward + (schD4_ward −
+> schD4_restricted)` (`totals.js:42`) term for term, so the *only* place the app
+> departs from the workbook is the D-4 restricted base. *(Record correction: an
+> earlier audit pass of mine labelled some of these formulas with the wrong cell
+> addresses — `D13`/`D16`, and `D26–D28` on Part VI/VII — because its regex could
+> attribute a formula to the preceding self-closed cell. The formulas were right;
+> the addresses above are from a re-run with an address-safe parser.)* So:
 >
 > | Line: Full $100,000, Ward's 50%, Carrying $80,000, Restricted = Yes | Restricted | "Unrestricted" (D-4 ward − restricted) |
 > | :-- | --: | --: |
@@ -639,8 +680,30 @@ after Type of Trust.
 > `tests/unit/pdf-model-column-integrity.spec.js` fails unless `colWidths` and
 > `colAlign` match the headers and sum to 100, and the existing comment
 > (`:982–984`) records that an earlier 10/10 split collided headers and wrapped a
-> `$49,075.00` — the new widths are to be measured with the embedded font, as
-> 63E's were, not estimated.
+> `$49,075.00`. **Measured (2026-09-21)** with the embedded Liberation Sans at the
+> engine's table sizes — headers bold 8 pt with 6 pt of padding, body 8 pt
+> regular with 10 pt, a token that cannot wrap (a date, an amount, an account
+> number) must fit its column, worst-case tokens chosen deliberately:
+>
+> | Column | Driven by | Minimum width | % of 468 pt |
+> | :-- | :-- | --: | --: |
+> | # | body "1" | 14.4 pt | 3.1 |
+> | Name of Trust | "Supplemental" | 58.9 | 12.6 |
+> | Trustee | "Fiduciary" | 42.5 | 9.1 |
+> | Account # | a 16-digit number | 81.2 | 17.4 |
+> | Date Created | "06/12/2009" | 50.0 | 10.7 |
+> | Type of Trust | "Testamentary" | 58.9 | 12.6 |
+> | After GID? | header | 25.1 | 5.4 |
+> | Ward's % | "33.33%" | 37.1 | 7.9 |
+> | Ward's Amount | "$12,345,678.00" | 65.6 | 14.0 |
+>
+> The minimums sum to **92.8 %**, so nine columns fit with 7.2 % to spare. A
+> workable set is `[4, 14, 10, 18, 11, 13, 6, 8, 16]` (sums to 100; every column
+> at or above its minimum). To be confirmed in a generated PDF at
+> implementation — the margins on Ward's % (8 vs 7.9) are thin. **Side finding:**
+> today's 14 % Account # column is 65.5 pt, which cannot hold a 16-digit account
+> number unbroken (81.2 pt needed), so the current table already overflows for
+> long numbers; the new set fixes that incidentally.
 
 ### 11. Excel export: Part XI has no data rows
 
@@ -676,6 +739,18 @@ round-trips them into `D.remuneration`.
 > leftover to consider at implementation, not decided here: the readiness
 > panel's wording (the spec quotes "2 entries would be left out") against the
 > existing `unsupported` sentence in `excel.js:105–106`.
+
+> **Wording found while checking D9 (a reviewer's open point).** The Excel-limit
+> panel (`excelCapacityPanel()`, `legacy-app.js:6247–6266`) renders `${count} of
+> ${cap}` and "${count − cap} entries would be left out of the Excel file", under
+> a heading that says the court's form "has a fixed number of rows per schedule,
+> and these have more entries than will fit". For Part XI (`cap: 0`) that reads
+> "2 of 0 … 2 entries would be left out" — wrong for a sheet with **no grid**. The
+> right sentence exists (`ANNUAL_EXCEL_CAPS.remuneration.unsupported`, and
+> `excel-capacity.js` uses it in the issue message) but the panel row ignores
+> `o.unsupported`. **D13 (decided 2026-09-21): fix it in 64B-2** — the row shows
+> the `unsupported` sentence and drops the "N of 0" count when it is present.
+> No test covers this panel today (`excel-cap-panel` appears in no spec).
 
 ### 12. Confirmed matching the form (spec's own list — no change)
 
@@ -747,6 +822,19 @@ recommended first.
   filing with a D-2/D-3/D-4 line where Ward's % < 100 and Carrying Value is
   entered (new detection and UI work). 3. Neither.
 
+- **D12 (64A, item 2.7) — revision stamp. DECIDED 2026-09-21: leave it off**
+  (options were: once at the foot of Summary I, as the workbook has it —
+  recommended; every page footer, the spec's; leave off). The recommended option
+  was not taken; recorded as your decision.
+- **D13 — Part XI panel wording. DECIDED 2026-09-21: option 1 — fix in 64B-2.**
+- **D14 — render baseline (64A-3). DECIDED 2026-09-21: prerequisite to 64A-3
+  only.** Before the engine's layout is touched, render the post-64A-2 full
+  fixture, inspect the pages the spec names (the A-2 heading at a page foot, the
+  Part IV attorney split, the near-empty page 3, the "Restricted?" header wrap),
+  and record what was seen here. If they do not reproduce, 64A-3 shrinks to match.
+  Content items are proven by PDF text extraction, not by eye.
+- **D15 — workbook identity. DECIDED 2026-09-21: accept the content match.**
+
 ### Milestone checklist (`AGENTS.md` §8)
 
 1. **Data model** — none new: `trusts[].dateCreated/trustType` and the schedule
@@ -814,9 +902,45 @@ continuation-sheet pruning; which fixtures use `wardPct: 100`; and — by decodi
 `templates/annual-template.js` — the workbook's "Revision 11/17/2022" and
 Sixth Circuit heading, PART I C9, the D-2/D-3/D-4 column formulas and page
 totals, Part VI/VII and Part IX's cross-sheet links, PART VIII B14–B17, and
-PART XI's extent (A1:G80, 34 merged cells, no validation). Not checked: `H13` on
-Part IX; a generated PDF from the corrected code; the spec's rendered-PDF
-observations (taken as given); §12's "confirmed" list, which is the spec's own
-review; and that the bundled workbook and the extension's
-*Annual Accounting 111722.xlsx* are the same file (both say Revision
-11/17/2022).
+PART XI's extent (A1:G80, 34 merged cells, no validation). **Added 2026-09-21:**
+Part IX traced through `H17`; the Part VI/VII addresses re-read with an
+address-safe parser; the trust-table column minimums measured; the panel wording
+read. **Workbook identity (D15, decided: accept by content).** The bundled Annual
+workbook is "Revision 11/17/2022", 90 sheets, created 2015-09-04, last modified
+2022-12-27; every fact the spec quotes from its file matches it (PART I C9
+verbatim, D-2 C14, the D-2 formulas and page total, PART VIII B15/B16, PART XI's
+extent). That is agreement by content, **not proof of the same file**; the bundled
+workbook is authoritative under §5 in any case. Not checked: a generated PDF from
+the corrected code; the spec's rendered-PDF observations (64A-3's prerequisite,
+D14); §12's "confirmed" list, which is the spec's own review.
+
+---
+
+## Authorization record and execution order (Milestone 64)
+
+**Nothing in Milestone 64 is authorized** (`AGENTS.md` §3). On 2026-09-21 you
+answered "None yet" to authorizing any delivery, and set MS 63 as the next work.
+D7's bond-base acceptance is recorded but is not a delivery authorization.
+
+| Delivery | Authorized? | Notes |
+| :-- | :-- | :-- |
+| 64A-1 — bond amount, Summary B-2 row, C-3 and B-4 validation | not yet | small, independent |
+| 64B-1 — carrying totals and the D-4 restricted basis (D7), shared row helper, partial-ownership fixture | not yet | the only item that changes a submitted number |
+| 64A-2 — Verified Initial Inventory print rewrite, new fields, fixture | not yet | |
+| 64B-2 — E/F-1/F-2 first pages (D8), trust columns, Part XI panel wording (D13) | not yet | |
+| 64A-3 — layout / orphans | not yet | prerequisite: D14 render baseline |
+| ~~64B-3~~ — Excel Part XI | dropped | D9 keeps 58D |
+
+**Recommended order:** 64A-1 → 64B-1 → 64A-2 and 64B-2 (not in parallel) → 64A-3
+last, once every content change has settled. **Against MS 63:** 63E edits the
+same `pdf-model.js` files and PDF text assertions as 64A-2 / 64B-2, so land those
+first if 63E is not to re-touch the same expected strings twice.
+
+**Open before you authorize** — nothing that can be checked without
+implementing. What remains is the authorization itself and three stated
+boundaries: the Annual workbook is accepted by content, not file identity (D15);
+the spec's rendered-PDF observations are unverified until 64A-3's prerequisite
+(D14); and the generated PDFs do not exist until the print work is built.
+Working tree: commit only `MILESTONE-64-PROPOSAL.md` (and any other file a step
+names); the zip, `WCAG_2.1_AA_regex-structural.md`, `help.md` and the PDF
+deletion are not part of this work.
