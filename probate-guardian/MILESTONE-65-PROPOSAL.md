@@ -7,7 +7,7 @@ document authorizes nothing on its own — a proposal is not execution.
 
 | Item | Summary | Status |
 | :-- | :-- | :-- |
-| **65A** | D-5 Certificate of Service: "Indicate if" label names the Ward | Proposed 2026-09-22; D1 decided; not yet built |
+| **65A** | D-5 Certificate of Service: "Indicate if" label names the Ward | **IMPLEMENTED 2026-09-22** — unit red-first, green after |
 | **65B** | Helpful Resources disclaimer: carve out Pinellas Clerk sites from "not affiliated" | Proposed 2026-09-22; D2 decided; not yet built |
 | **65C** | Helpful Resources disclaimer: add a "provided free by the Clerk" line; shrink the section 1pt | Proposed 2026-09-22; D3 decided; not yet built |
 | **65D** | Hide the Comment Card link on the Start New Form page too (dashboard's own copy was hidden by Milestone 62; this one wasn't) | Proposed 2026-09-22; D4 decided; not yet built |

@@ -1195,7 +1195,7 @@ function pageD5(){
   <h2 style="color:var(--ink);margin:.75rem 0 .4rem;font-size:.95rem;">Attorney Certification</h2>
   <div class="attorney-certification-card entry-card">
     <div class="entry-card-body">
-      ${formRow(col(4,reqLabel('Service Date (on this date)')+dateInput('serviceDate')),col(8,reqLabel('Indicate if')+selectInput('serviceIndicateIf',[['','— Select —'],['Ward is totally incapacitated','Ward is totally incapacitated'],['Ward is under 14 years old','Ward is under 14 years old'],['N/A','N/A']],D.serviceIndicateIf)))}
+      ${formRow(col(4,reqLabel('Service Date (on this date)')+dateInput('serviceDate')),col(8,reqLabel('Indicate if Ward is:')+selectInput('serviceIndicateIf',[['','— Select —'],['Ward is totally incapacitated','Ward is totally incapacitated'],['Ward is under 14 years old','Ward is under 14 years old'],['N/A','N/A']],D.serviceIndicateIf)))}
       ${formRow(col(5,reqLabel("Attorney's Name")+textInput('serviceAttorney.name','','name')),col(3,reqLabel('Signature Date')+dateInput('serviceAttorney.signatureDate')),col(4,reqLabel('Florida Bar Number')+textInput('serviceAttorney.barNumber','','barNumber')))}
       ${formRow(col(4,reqLabel('Phone')+textInput('serviceAttorney.phone','','phone')),col(8,reqLabel('Street Address')+textInput('serviceAttorney.streetAddress','','address')))}
       ${formRow(col(6,reqLabel('City / State / Zip')+textInput('serviceAttorney.cityStateZip','','zip')))}
@@ -1360,7 +1360,7 @@ export function validateGuardian(){
   // totally incapacitated / Ward is under 14 years old / N/A. 'N/A' is a
   // real, complete answer -- not a stand-in for unanswered -- so req()'s
   // truthy check is exactly right: it only flags the empty string.
-  req(d.serviceIndicateIf,'D-5 — Indicate if','serviceIndicateIf');
+  req(d.serviceIndicateIf,'D-5 — Indicate if Ward is:','serviceIndicateIf');
   req(d.serviceAttorney.name,'D-5 Attorney — Name','serviceAttorney.name');errors.push(...checkSignatureState({state:inferLegacySignatureState(d.serviceAttorney.signatureState,d.serviceAttorney.signatureDate),date:d.serviceAttorney.signatureDate,image:d.serviceAttorney.signatureImage,sectionLabel:'D-5 Attorney',roleLabel:'',filingType:T,datePath:'serviceAttorney.signatureDate',imagePath:'serviceAttorney.signatureImage'}));req(d.serviceAttorney.barNumber,'D-5 Attorney — Bar Number','serviceAttorney.barNumber');req(d.serviceAttorney.phone,'D-5 Attorney — Phone','serviceAttorney.phone');req(d.serviceAttorney.streetAddress,'D-5 Attorney — Street Address','serviceAttorney.streetAddress');req(d.serviceAttorney.cityStateZip,'D-5 Attorney — City/State/Zip','serviceAttorney.cityStateZip');
   return errors;
 }

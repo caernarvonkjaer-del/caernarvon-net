@@ -813,7 +813,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
         // all before this.
         type: 'notice',
         tag: 'P',
-        text: `Indicate if: ${d.serviceIndicateIf || '—'}`,
+        text: `Indicate if Ward is: ${d.serviceIndicateIf || '—'}`,
       },
       {
         type: 'signature-block',

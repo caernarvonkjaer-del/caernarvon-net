@@ -189,7 +189,12 @@ describe('Milestone 64A-2, item 2.7: the two-line audit fee schedule prints abov
 // certify that a copy of this inventory has been furnished to:"); B24 "on
 // this date"; J24/J25 "Indicate if:" (Ward is totally incapacitated / Ward
 // is under 14 years old / N/A), never printed at all before this.
-describe('Milestone 64A-2, item 2.4: Certificate of Service restores the statutory cite and prints "Indicate if:"', () => {
+//
+// Milestone 65A renamed the on-screen label, the PDF sentence, and the
+// export-blocking error message from bare "Indicate if" to "Indicate if
+// Ward is:" (D1, decided 2026-09-22) -- the dropdown's three option strings
+// (still "Ward is totally incapacitated" etc.) are unchanged.
+describe('Milestone 64A-2/65A: Certificate of Service restores the statutory cite and prints "Indicate if Ward is:"', () => {
   const base = (extra = {}) => ({
     wardName: 'Harold Thomas Bennett', caseNumber: '26-002487-GD', county: 'Pasco',
     scheduleA1: [], scheduleA2: [], scheduleB1: [], scheduleB2: [], scheduleB3: [], scheduleB4: [],
@@ -207,12 +212,12 @@ describe('Milestone 64A-2, item 2.4: Certificate of Service restores the statuto
     expect(notice.text).toContain('03/01/2026');
   });
 
-  test('prints "Indicate if: [value]" after the recipient list', () => {
+  test('prints "Indicate if Ward is: [value]" after the recipient list', () => {
     const model = buildVerifiedInventoryModel(base({ serviceIndicateIf: 'Ward is under 14 years old' }));
     const d5 = model.sections.find((s) => s.id === 'd5');
-    const indicateBlock = d5.blocks.find((b) => b.type === 'notice' && /Indicate if:/.test(b.text));
+    const indicateBlock = d5.blocks.find((b) => b.type === 'notice' && /Indicate if Ward is:/.test(b.text));
     expect(indicateBlock).toBeDefined();
-    expect(indicateBlock.text).toBe('Indicate if: Ward is under 14 years old');
+    expect(indicateBlock.text).toBe('Indicate if Ward is: Ward is under 14 years old');
   });
 });
 
