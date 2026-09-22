@@ -96,6 +96,19 @@ function normalizeGuardians() {
     autoSave();
   }
 }
+// Milestone 64A-1, item 1.1. D-4's Bond Amount used to be free text (e.g.
+// "$25,000"), formatted however the filer typed it; numInput() now stores it
+// as a plain number, matching every other currency field. A .sav saved
+// before this fix still has the old string -- this parses it once on load.
+// A genuinely blank amount stays blank ('' or undefined), never coerced to 0
+// (AGENTS.md section 4's tri-state rule, extended here: 0 would read as "no
+// bond amount entered" as wrongly as the old "$25,000" string that failed
+// parseFloat() and printed $0.00).
+export function normalizeBondAmountValue(v) {
+  if (typeof v !== 'string' || !v.trim()) return v;
+  const parsed = parseFloat(v.replace(/[^0-9.]/g, ''));
+  return Number.isFinite(parsed) ? parsed : v;
+}
 function ensureLazyModules() {
   if (_printModule && _excelModule) return Promise.resolve();
   if (!_lazyModulesPromise) {
@@ -111,6 +124,7 @@ export async function mount(container, page) {
   await ensureLazyModules();
   normalizeGuardians();
   sanitizeNegativeAmounts();
+  D.bondAmount = normalizeBondAmountValue(D.bondAmount);
   let html;
   switch(page){
     case '/':     html=pageHome();break;
@@ -1145,7 +1159,7 @@ function pageD4(){
     <div class="col-12 col-lg-6">
       <div class="summary-box h-100 mb-0">
         <h2 class="subsection-heading">Surety Bond Details</h2>
-        ${formRow(col(4,reqLabel('Bond Amount')+textInput('bondAmount','e.g., $50,000')),col(3,reqLabel('Bond Period – From')+dateInput('bondPeriodFrom')),col(3,reqLabel('Bond Period – To')+dateInput('bondPeriodTo')))}
+        ${formRow(col(4,reqLabel('Bond Amount')+numInput('bondAmount')),col(3,reqLabel('Bond Period – From')+dateInput('bondPeriodFrom')),col(3,reqLabel('Bond Period – To')+dateInput('bondPeriodTo')))}
         ${formRow(col(12,reqLabel('Name of Bonding Company')+textInput('bondingCompany','','name')))}
         ${yesNoRadioHTML('bondWaived','Has the surety bond been waived by court order?',effectiveAnswer(D.bondWaived,D.bondWaivedDate),'bondWaived',true,'/d4')}
         <div id="bond-waived-row" class="${triYes(effectiveAnswer(D.bondWaived,D.bondWaivedDate))?'':'d-none'}">
@@ -1296,7 +1310,14 @@ export function validateGuardian(){
       message:'D-4 — The bond is marked waived, so the date of the order waiving it is required.',
     }));
   }
-  req(d.bondAmount,'D-4 — Bond Amount','bondAmount');if(!d.bondPeriodFrom)push('D-4 — Bond Period From is required.','bondPeriodFrom');if(!d.bondPeriodTo)push('D-4 — Bond Period To is required.','bondPeriodTo');req(d.bondingCompany,'D-4 — Bonding Company','bondingCompany');
+  // D16 (2026-09-21, Alan). A guardian with a court order waiving the bond
+  // has no surety, no bond period, and no bonding company to enter -- these
+  // four are required only when the bond is NOT on record as waived. An
+  // unanswered waiver question is not the same as "waived" (tri-state,
+  // AGENTS.md section 4), so it still requires all four, same as "No".
+  if (!triYes(d.bondWaived)) {
+    req(d.bondAmount,'D-4 — Bond Amount','bondAmount');if(!d.bondPeriodFrom)push('D-4 — Bond Period From is required.','bondPeriodFrom');if(!d.bondPeriodTo)push('D-4 — Bond Period To is required.','bondPeriodTo');req(d.bondingCompany,'D-4 — Bonding Company','bondingCompany');
+  }
   // Milestone 40C-C. Guardian Inventory was deliberately excluded from
   // Milestone 34-1A's date-ordering work because it has no accounting period,
   // but it does have a bond period, and that pair had no order check at all --

@@ -113,3 +113,42 @@ describe('Milestone 64A-1, item 3.1: Schedule C-3 Action Date and Case Number', 
     expect(errors.some(e => e.path === 'scheduleC3.0.estimatedSettlement')).toBe(true);
   });
 });
+
+describe('Milestone 64A-1, D16: D-4 bond fields when the bond is waived', () => {
+  // A guardian with a court order waiving the bond has no surety, no bond
+  // period, and no bonding company -- requiring those four fields anyway
+  // blocked exactly the filer who has the waiver order in hand.
+  test('bondWaived Yes relaxes Bond Amount, Bond Period From/To, and Bonding Company', () => {
+    Object.assign(window.D, {
+      bondWaived: 'Yes', bondWaivedDate: '2026-03-01',
+      bondAmount: '', bondPeriodFrom: null, bondPeriodTo: null, bondingCompany: '',
+    });
+    const errors = validateGuardian();
+    expect(errors.some(e => e.path === 'bondAmount')).toBe(false);
+    expect(errors.some(e => e.path === 'bondPeriodFrom')).toBe(false);
+    expect(errors.some(e => e.path === 'bondPeriodTo')).toBe(false);
+    expect(errors.some(e => e.path === 'bondingCompany')).toBe(false);
+  });
+
+  test('bondWaived No still requires all four fields', () => {
+    Object.assign(window.D, {
+      bondWaived: 'No', bondAmount: '', bondPeriodFrom: null, bondPeriodTo: null, bondingCompany: '',
+    });
+    const errors = validateGuardian();
+    expect(errors.some(e => e.path === 'bondAmount')).toBe(true);
+    expect(errors.some(e => e.path === 'bondPeriodFrom')).toBe(true);
+    expect(errors.some(e => e.path === 'bondPeriodTo')).toBe(true);
+    expect(errors.some(e => e.path === 'bondingCompany')).toBe(true);
+  });
+
+  test('an unanswered bond-waiver question still requires all four fields (tri-state: unanswered is not waived)', () => {
+    Object.assign(window.D, {
+      bondWaived: '', bondAmount: '', bondPeriodFrom: null, bondPeriodTo: null, bondingCompany: '',
+    });
+    const errors = validateGuardian();
+    expect(errors.some(e => e.path === 'bondAmount')).toBe(true);
+    expect(errors.some(e => e.path === 'bondPeriodFrom')).toBe(true);
+    expect(errors.some(e => e.path === 'bondPeriodTo')).toBe(true);
+    expect(errors.some(e => e.path === 'bondingCompany')).toBe(true);
+  });
+});
