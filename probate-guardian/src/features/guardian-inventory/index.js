@@ -927,7 +927,7 @@ function pageScheduleB3(){
 function pageScheduleB4(){
   const entries=D.scheduleB4.map((e,i)=>entryCard(`Liability ${i+1}`,i,'b4',`
     ${formRow(col(5,reqLabel('Lending Institution / Creditor')+textInput(`scheduleB4.${i}.lenderName`,'','name')),col(3,reqLabel('Type')+selectInput(`scheduleB4.${i}.liabilityType`,[['Loan','Loan'],['Note','Note'],['Other Debt','Other Debt']])),col(4,optLabel('Account Number')+textInput(`scheduleB4.${i}.accountNumber`,'','accountNumber')))}
-    ${formRow(col(12,reqLabel('Related Personal Property Asset (if secured)')+textInput(`scheduleB4.${i}.relatedProperty`,'e.g., 1992 Toyota Corolla (B-2, Item 2)')))}
+    ${formRow(col(12,optLabel('Related Personal Property Asset (if secured)')+textInput(`scheduleB4.${i}.relatedProperty`,'e.g., 1992 Toyota Corolla (B-2, Item 2)')))}
     ${formRow(col(12,reqLabel('Lender Street Address / City / State / Zip')+textInput(`scheduleB4.${i}.lenderAddress`,'','address')))}
     ${formRow(col(4,reqLabel('Full Liability Balance ($)')+numInput(`scheduleB4.${i}.fullLiabilityBalance`)),col(4,reqLabel("Ward's % (0-100)")+numInput(`scheduleB4.${i}.wardPercent`)),col(4,optLabel("Ward's Liability Balance (calculated)")+calcInput(`scheduleB4.${i}.wardB4`)))}
   `)).join('');
@@ -1249,7 +1249,12 @@ export function validateGuardian(){
     }
     req(e.streetAddress,`${p} — Street Address`,`${k}.streetAddress`);req(e.cityStateZip,`${p} — City/State/Zip`,`${k}.cityStateZip`);req(e.valuationMethod,`${p} — Valuation Method`,`${k}.valuationMethod`);if(e.fullAssetValue<=0)push(`${p} — Full Asset Value must be > 0.`,`${k}.fullAssetValue`);});
   d.scheduleB3.forEach((e,i)=>{const p=`B-3 row ${i+1}`,k=`scheduleB3.${i}`;req(e.description,`${p} — Description`,`${k}.description`);req(e.streetAddress,`${p} — Street Address`,`${k}.streetAddress`);req(e.cityStateZip,`${p} — City/State/Zip`,`${k}.cityStateZip`);if(e.fullAssetValue<=0)push(`${p} — Full Asset Value must be > 0.`,`${k}.fullAssetValue`);});
-  d.scheduleB4.forEach((e,i)=>{const p=`B-4 row ${i+1}`,k=`scheduleB4.${i}`;req(e.lenderName,`${p} — Lender Name`,`${k}.lenderName`);req(e.relatedProperty,`${p} — Related Property`,`${k}.relatedProperty`);req(e.lenderAddress,`${p} — Lender Address`,`${k}.lenderAddress`);if(e.fullLiabilityBalance<=0)push(`${p} — Full Liability Balance must be > 0.`,`${k}.fullLiabilityBalance`);});
+  // Milestone 64A-1, item 3.2. Form B-4 (C6/C7) lists unsecured debts --
+  // credit cards, medical/facility bills, notes, tax and judgment liens --
+  // and secured ones separately; the form never requires every B-4 entry to
+  // name a related asset, so relatedProperty is optional. Print shows
+  // "Unsecured" when it's blank (pdf-model.js).
+  d.scheduleB4.forEach((e,i)=>{const p=`B-4 row ${i+1}`,k=`scheduleB4.${i}`;req(e.lenderName,`${p} — Lender Name`,`${k}.lenderName`);req(e.lenderAddress,`${p} — Lender Address`,`${k}.lenderAddress`);if(e.fullLiabilityBalance<=0)push(`${p} — Full Liability Balance must be > 0.`,`${k}.fullLiabilityBalance`);});
   d.scheduleC1.forEach((e,i)=>{const p=`C-1 row ${i+1}`,k=`scheduleC1.${i}`;req(e.payerName,`${p} — Payer Name`,`${k}.payerName`);req(e.typeOfIncome,`${p} — Type of Income`,`${k}.typeOfIncome`);req(e.payerAddress,`${p} — Payer Address`,`${k}.payerAddress`);req(e.paymentBasis,`${p} — Basis for Payment`,`${k}.paymentBasis`);if(e.annualIncomeAmount<=0)push(`${p} — Annual Income Amount must be > 0.`,`${k}.annualIncomeAmount`);});
   d.scheduleC2.forEach((e,i)=>{const p=`C-2 row ${i+1}`,k=`scheduleC2.${i}`;req(e.claimantName,`${p} — Claimant Name`,`${k}.claimantName`);req(e.lawsuitDescription,`${p} — Lawsuit Description`,`${k}.lawsuitDescription`);req(e.courtJurisdiction,`${p} — Court/Jurisdiction`,`${k}.courtJurisdiction`);req(e.caseNumber,`${p} — Case Number`,`${k}.caseNumber`);if(!e.dateFiled)push(`${p} — Date Filed is required.`,`${k}.dateFiled`);if(e.amountOfClaim<=0)push(`${p} — Amount of Claim must be > 0.`,`${k}.amountOfClaim`);});
   d.scheduleC3.forEach((e,i)=>{const p=`C-3 row ${i+1}`,k=`scheduleC3.${i}`;req(e.defendantName,`${p} — Defendant Name`,`${k}.defendantName`);req(e.actionDescription,`${p} — Action Description`,`${k}.actionDescription`);req(e.status,`${p} — Status`,`${k}.status`);req(e.courtJurisdiction,`${p} — Court/Jurisdiction`,`${k}.courtJurisdiction`);if(!e.actionDate)push(`${p} — Action Date is required.`,`${k}.actionDate`);if(e.estimatedSettlement<=0)push(`${p} — Estimated Settlement must be > 0.`,`${k}.estimatedSettlement`);});

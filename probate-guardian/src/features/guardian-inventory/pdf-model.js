@@ -374,7 +374,10 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     'Schedule B-4: Debts on Personal Property',
     'Schedule B-4: Debts on Personal Property',
     ['Lender / Creditor', 'Lender Address', 'Related Personal Property', 'Type', 'Full Liability Balance', "Ward's %", "Ward's Liability Balance"],
-    (d.scheduleB4 || []).map(r => [nameWithSubLines(r.lenderName, acctLine(r)), r.lenderAddress || '', r.relatedProperty || '', r.liabilityType || '', fmt(r.fullLiabilityBalance), fmtPct(r.wardPercent), fmt(gc.wardB4(r))]),
+    // Milestone 64A-1, item 3.2. relatedProperty is now optional (form B-4
+    // C6/C7 lists unsecured debts too); "Unsecured" prints when blank rather
+    // than an empty cell.
+    (d.scheduleB4 || []).map(r => [nameWithSubLines(r.lenderName, acctLine(r)), r.lenderAddress || '', r.relatedProperty || 'Unsecured', r.liabilityType || '', fmt(r.fullLiabilityBalance), fmtPct(r.wardPercent), fmt(gc.wardB4(r))]),
     "Schedule B-4 Total (Ward's Liability Balance)",
     totalB4,
     'debts on personal property',

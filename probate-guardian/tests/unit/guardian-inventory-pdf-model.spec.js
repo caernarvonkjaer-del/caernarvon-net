@@ -320,6 +320,17 @@ describe('Milestones 60B-60E: every UI-captured schedule field reaches the PDF',
     expect(flat(row(model, 'b4'))).toContain('1992 Toyota Corolla');
   });
 
+  // Milestone 64A-1, item 3.2. Related Personal Property Asset (if secured)
+  // is now optional (form B-4 C6/C7 lists unsecured debts too), so a row
+  // with none must still print something in that column rather than a blank
+  // cell that reads as a data-entry gap.
+  test('64A-1: Schedule B-4 prints "Unsecured" in the Related Property column when the row has none', () => {
+    const model = buildVerifiedInventoryModel(base({
+      scheduleB4: [{ lenderName: 'Capital One', liabilityType: 'Credit Card', lenderAddress: '123 Main St, Largo FL 33770', fullLiabilityBalance: '1000', wardPercent: '100' }],
+    }));
+    expect(row(model, 'b4')).toContain('Unsecured');
+  });
+
   test('60C: Schedule C-4 prints the trust type and the trustee account number -- the form has a column for each', () => {
     const model = buildVerifiedInventoryModel(base({
       scheduleC4: [{ trustName: 'Deependofthe Pooled Trust', trusteeName: 'Chas Addams, Trustee', trustType: 'Pooled', accountNumber: '34567890', trustAmount: '2000', wardPercent: '100' }],
