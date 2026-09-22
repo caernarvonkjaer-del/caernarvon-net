@@ -432,7 +432,9 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     'Schedule C-3: Claims and Lawsuits by the Ward',
     'Schedule C-3: Lawsuits & Claims by Ward',
     ['Defendant Name', 'Action Description', 'Court / Case #', 'Status', 'Action Date', 'Estimated Settlement', "Ward's %", "Ward's Share"],
-    (d.scheduleC3 || []).map(r => [r.defendantName || '', r.actionDescription || '', `${r.courtJurisdiction || ''} ${r.caseNumber || ''}`.trim(), r.status || '', fmtDate(r.actionDate), fmt(r.estimatedSettlement), fmtPct(r.wardPercent), fmt(gc.wardC3(r))]),
+    // Milestone 64A-1, item 3.1. actionDate is now optional (form C-3 C8: "if
+    // filed"); "Not yet filed" prints when blank rather than an empty cell.
+    (d.scheduleC3 || []).map(r => [r.defendantName || '', r.actionDescription || '', `${r.courtJurisdiction || ''} ${r.caseNumber || ''}`.trim(), r.status || '', fmtDate(r.actionDate) || 'Not yet filed', fmt(r.estimatedSettlement), fmtPct(r.wardPercent), fmt(gc.wardC3(r))]),
     "Schedule C-3 Total (Ward's Share of Estimated Settlements)",
     totalC3,
     'claims or lawsuits by the ward',

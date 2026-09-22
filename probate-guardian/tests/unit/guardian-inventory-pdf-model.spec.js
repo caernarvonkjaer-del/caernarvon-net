@@ -331,6 +331,16 @@ describe('Milestones 60B-60E: every UI-captured schedule field reaches the PDF',
     expect(row(model, 'b4')).toContain('Unsecured');
   });
 
+  // Milestone 64A-1, item 3.1. Action Date is now optional (form C-3 C8: "if
+  // filed"), so an action the ward intends to bring but hasn't filed yet
+  // must still print something in that column rather than a blank cell.
+  test('64A-1: Schedule C-3 prints "Not yet filed" in the Action Date column when the row has none', () => {
+    const model = buildVerifiedInventoryModel(base({
+      scheduleC3: [{ defendantName: 'John Smith', actionDescription: 'Negligence', status: 'Pre-suit investigation', courtJurisdiction: 'Pinellas County Circuit Court', estimatedSettlement: '5000', wardPercent: '100' }],
+    }));
+    expect(row(model, 'c3')).toContain('Not yet filed');
+  });
+
   test('60C: Schedule C-4 prints the trust type and the trustee account number -- the form has a column for each', () => {
     const model = buildVerifiedInventoryModel(base({
       scheduleC4: [{ trustName: 'Deependofthe Pooled Trust', trusteeName: 'Chas Addams, Trustee', trustType: 'Pooled', accountNumber: '34567890', trustAmount: '2000', wardPercent: '100' }],

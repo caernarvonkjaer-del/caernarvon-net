@@ -84,3 +84,32 @@ describe('Milestone 64A-1, item 3.2: Schedule B-4 "Related Personal Property Ass
     expect(errors.some(e => e.path === 'scheduleB4.0.fullLiabilityBalance')).toBe(true);
   });
 });
+
+describe('Milestone 64A-1, item 3.1: Schedule C-3 Action Date and Case Number', () => {
+  // Form C-3: C6 "Include those lawsuits that are intended to be brought,
+  // even if not yet filed"; C8 "If an Action has been filed by the Ward,
+  // indicate the Date"; C11 "Case number, if filed." A lawsuit the ward
+  // intends to bring but hasn't filed yet has neither a date nor a case
+  // number by definition -- requiring them blocked the exact case the form
+  // itself describes.
+  test('a C-3 row with no Action Date no longer raises an Action Date error', () => {
+    window.D.scheduleC3 = [{
+      defendantName: 'John Smith', actionDescription: 'Negligence',
+      status: 'Pre-suit investigation', courtJurisdiction: 'Pinellas County Circuit Court',
+      estimatedSettlement: 5000, wardPercent: 100,
+      // actionDate intentionally omitted -- not yet filed.
+    }];
+    const errors = validateGuardian();
+    expect(errors.some(e => e.path === 'scheduleC3.0.actionDate')).toBe(false);
+  });
+
+  test('a C-3 row still requires Defendant, Action Description, Status, Court/Jurisdiction, and a positive Estimated Settlement', () => {
+    window.D.scheduleC3 = [{ estimatedSettlement: 0, wardPercent: 100 }];
+    const errors = validateGuardian();
+    expect(errors.some(e => e.path === 'scheduleC3.0.defendantName')).toBe(true);
+    expect(errors.some(e => e.path === 'scheduleC3.0.actionDescription')).toBe(true);
+    expect(errors.some(e => e.path === 'scheduleC3.0.status')).toBe(true);
+    expect(errors.some(e => e.path === 'scheduleC3.0.courtJurisdiction')).toBe(true);
+    expect(errors.some(e => e.path === 'scheduleC3.0.estimatedSettlement')).toBe(true);
+  });
+});
