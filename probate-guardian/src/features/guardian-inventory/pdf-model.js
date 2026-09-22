@@ -550,21 +550,30 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     ],
   };
 
+  // Milestone 64A-2, item 2.5. Part III is the guardian's oath ALONE. The
+  // preparer's block used to sit directly under this perjury oath with no
+  // statement of its own, so a preparer -- whom the form explicitly tells not
+  // to sign at all if they are the guardian, co-guardian or attorney --
+  // appeared to be swearing the guardian's oath. It moves to Part IV below,
+  // with the form's own compilation statement. Oath text is the form's own
+  // (Part III B6); the form spells it "PENALITIES", corrected here.
   sections.push({
     id: 'd1_d2',
-    title: 'Part III & IV — ATTESTATIONS & OATHS OF GUARDIAN & PREPARER',
-    bookmarkTitle: 'Guardian & Preparer Attestation (D-1 & D-2)',
-    parentBookmark: 'Part IV - Attestations & Oaths',
+    title: 'Part III — GUARDIAN(S) ATTESTATION(S)',
+    // Bookmark labels are the PDF outline's short navigation text, not the
+    // printed heading (same split as item 2.6). Kept free of the heading's
+    // "(s)" parentheses, which the PDF string encoder backslash-escapes.
+    bookmarkTitle: 'Part III - Guardian Attestations (D-1)',
+    parentBookmark: null,
     level: 1,
     pageBreakBefore: true,
     blocks: [
       {
         type: 'notice',
         tag: 'P',
-        text: 'Under penalties of perjury, I declare that I have read the foregoing Verified Initial Inventory and that the facts stated in it are true and complete to the best of my knowledge and belief.',
+        text: 'UNDER PENALTIES OF PERJURY, I declare that I have read the foregoing, and the facts alleged are true, to the best of my knowledge and belief.',
       },
       ...guardianBlocks,
-      preparerBlock,
     ],
   });
 
@@ -579,18 +588,51 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     'Address': composePdfAddressLines(attorney.streetAddress, attorney.cityStateZip),
   };
 
+  // Milestone 64A-2, item 2.5. Part IV holds BOTH the preparer and the
+  // guardian attorney, each under its own heading with the form's own
+  // wording (Part IV B6-B11 and B18-B23). The preparer's "as of" date is
+  // its own field where entered, falling back to the signature date.
+  const preparerAsOf = fmtDate(preparer.asOfDate) || fmtDate(preparer.signatureDate);
   sections.push({
     id: 'd2_attorney',
-    title: 'Part III-B — ATTORNEY ATTESTATION',
-    bookmarkTitle: 'Attorney Attestation (D-2)',
-    parentBookmark: 'Part IV - Attestations & Oaths',
+    title: 'Part IV — PREPARER & GUARDIAN ATTORNEY ATTESTATIONS',
+    bookmarkTitle: 'Part IV - Preparer & Attorney Attestations (D-2)',
+    parentBookmark: null,
     level: 1,
     pageBreakBefore: false,
     blocks: [
       {
         type: 'notice',
         tag: 'P',
-        text: 'The undersigned attorney certifies that this Verified Initial Inventory complies with the applicable Florida Statutes and Florida Probate Rules.',
+        title: 'PREPARER SIGNATURE',
+        text: `I have compiled the accompanying Verified Initial Inventory of assets and liabilities arising from cash transactions, current market valuation, and current estimated market valuation of the guardianship of ${wardName || '[Ward]'} as of ${preparerAsOf || '[date]'}.`,
+      },
+      {
+        type: 'notice',
+        tag: 'P',
+        text: 'This compilation is limited to presenting information in the form of a Verified Initial Inventory information and is the representation of the Guardian. I have not audited or reviewed the accompanying Verified Initial Inventory and, accordingly, do not express an opinion or any other form of assurance on it.',
+      },
+      {
+        type: 'notice',
+        tag: 'P',
+        text: 'If you are the Guardian, Co-Guardian, or Guardian Attorney - DO NOT SIGN HERE.',
+      },
+      preparerBlock,
+      {
+        type: 'notice',
+        tag: 'P',
+        title: 'GUARDIAN ATTORNEY SIGNATURE',
+        text: 'The attorney may use an electronic signature "/s/".',
+      },
+      {
+        type: 'notice',
+        tag: 'P',
+        text: `The undersigned Attorney hereby notifies the Court of the filing of the Verified Initial Inventory as of ${fmtDate(attorney.filingDate) || '[date]'}.`,
+      },
+      {
+        type: 'notice',
+        tag: 'P',
+        text: `This Verified Initial Inventory is the representation of the Guardian. I have not audited the accompanying Verified Initial Inventory. The undersigned Attorney represents that he/she has examined the contents of the Inventory and that it conforms to the requirements of the Florida Guardianship Law and the standards for inventories in ${county || '[County]'} County, Florida.`,
       },
       {
         type: 'signature-block',
@@ -614,8 +656,12 @@ export function buildVerifiedInventoryModel(D, options = {}) {
   // 16. Part V: Audit Fee, Bond & Safe Deposit (D-3 & D-4)
   sections.push({
     id: 'd3_d4',
-    title: 'Part V — AUDIT FEE, BOND & SAFE DEPOSIT BOX',
-    bookmarkTitle: 'Part V - Audit Fee, Bond & Safe Deposit (D-3 & D-4)',
+    // Milestone 64A-2, item 2.5. The form's own Part V heading; "Schedule
+    // D-3"/"D-4" are this app's nav labels, not form terms, so they leave
+    // the printed page (the sub-heads below use the form's AUDIT FEE
+    // SCHEDULE / SURETY BOND REQUIREMENT wording instead).
+    title: 'Part V — OTHER INFORMATION',
+    bookmarkTitle: 'Part V - Other Information',
     parentBookmark: null,
     level: 1,
     pageBreakBefore: false,
@@ -623,7 +669,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
       {
         type: 'key-value-grid',
         tag: 'Table',
-        title: 'Schedule D-3: Safe Deposit Box & Audit Fee',
+        title: 'AUDIT FEE SCHEDULE',
         items: [
           { label: 'Does the ward have a safe deposit box?', value: triText(d.hasSafeDepositBox) },
           ...(triIsYes(d.hasSafeDepositBox) ? [
@@ -678,7 +724,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
       {
         type: 'key-value-grid',
         tag: 'Table',
-        title: 'Schedule D-4: Guardian Bond',
+        title: 'SURETY BOND REQUIREMENT',
         items: [
           { label: 'Bond Amount', value: fmt(d.bondAmount) },
           { label: 'Bond Period', value: `${fmtDate(d.bondPeriodFrom)} to ${fmtDate(d.bondPeriodTo)}` },

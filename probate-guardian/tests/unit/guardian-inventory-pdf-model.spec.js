@@ -216,6 +216,67 @@ describe('Milestone 64A-2, item 2.4: Certificate of Service restores the statuto
   });
 });
 
+// Milestone 64A-2, item 2.5. The three attestations were the app's own
+// paraphrases, and the preparer's signature block sat underneath the
+// guardian's perjury oath -- so a preparer (who is often not the guardian,
+// and whom the form explicitly tells NOT to sign if they are) appeared to be
+// swearing the guardian's oath. The form separates them: Part III is the
+// guardian's oath alone; Part IV holds the preparer's compilation statement
+// and the attorney's notification, each with its own heading and its own
+// wording. Part headings follow the form too (Part V is "OTHER INFORMATION",
+// and the app's own "Schedule D-3"/"D-4" nav labels are not form terms).
+describe('Milestone 64A-2, item 2.5: attestation wording and Part structure follow the form', () => {
+  const base = (extra = {}) => ({
+    wardName: 'Harold Thomas Bennett', caseNumber: '26-002487-GD', county: 'Pinellas',
+    scheduleA1: [], scheduleA2: [], scheduleB1: [], scheduleB2: [], scheduleB3: [], scheduleB4: [],
+    scheduleC1: [], scheduleC2: [], scheduleC3: [], scheduleC4: [], scheduleC5: [],
+    guardians: [{ name: 'Rachel M. Alvarez', signatureDate: '2026-03-01' }],
+    preparer: { name: 'Marcus Thorne', signatureDate: '2026-03-02' },
+    attorney: { name: 'Robert Vance', filingDate: '2026-03-03', signatureDate: '2026-03-03' },
+    ...extra,
+  });
+  const section = (model, id) => model.sections.find((s) => s.id === id);
+  const notices = (sec) => sec.blocks.filter((b) => b.type === 'notice').map((b) => b.text);
+
+  test('Part III is the guardian\'s oath alone, in the form\'s words', () => {
+    const part3 = section(buildVerifiedInventoryModel(base()), 'd1_d2');
+    expect(part3.title).toBe('Part III — GUARDIAN(S) ATTESTATION(S)');
+    expect(notices(part3)).toContain(
+      'UNDER PENALTIES OF PERJURY, I declare that I have read the foregoing, and the facts alleged are true, to the best of my knowledge and belief.',
+    );
+    // The preparer no longer signs beneath the guardian's perjury oath.
+    expect(part3.blocks.some((b) => b.type === 'signature-block' && b.role === 'Preparer')).toBe(false);
+    expect(part3.blocks.some((b) => b.type === 'signature-block' && /^Guardian/.test(b.role))).toBe(true);
+  });
+
+  test('Part IV carries the preparer\'s compilation statement, the do-not-sign warning, and the preparer block', () => {
+    const part4 = section(buildVerifiedInventoryModel(base()), 'd2_attorney');
+    expect(part4.title).toBe('Part IV — PREPARER & GUARDIAN ATTORNEY ATTESTATIONS');
+    const text = notices(part4).join('\n');
+    expect(text).toContain('I have compiled the accompanying Verified Initial Inventory of assets and liabilities arising from cash transactions, current market valuation, and current estimated market valuation of the guardianship of Harold Thomas Bennett as of 03/02/2026.');
+    expect(text).toContain('This compilation is limited to presenting information in the form of a Verified Initial Inventory information and is the representation of the Guardian. I have not audited or reviewed the accompanying Verified Initial Inventory and, accordingly, do not express an opinion or any other form of assurance on it.');
+    expect(text).toContain('If you are the Guardian, Co-Guardian, or Guardian Attorney - DO NOT SIGN HERE.');
+    expect(part4.blocks.some((b) => b.type === 'signature-block' && b.role === 'Preparer')).toBe(true);
+  });
+
+  test('Part IV carries the attorney\'s own notification wording, with the filing date and county', () => {
+    const part4 = section(buildVerifiedInventoryModel(base()), 'd2_attorney');
+    const text = notices(part4).join('\n');
+    expect(text).toContain('The undersigned Attorney hereby notifies the Court of the filing of the Verified Initial Inventory as of 03/03/2026.');
+    expect(text).toContain('This Verified Initial Inventory is the representation of the Guardian. I have not audited the accompanying Verified Initial Inventory. The undersigned Attorney represents that he/she has examined the contents of the Inventory and that it conforms to the requirements of the Florida Guardianship Law and the standards for inventories in Pinellas County, Florida.');
+    // The app's prior paraphrase is gone.
+    expect(text).not.toContain('complies with the applicable Florida Statutes and Florida Probate Rules');
+  });
+
+  test('Part V is "OTHER INFORMATION" and prints no "Schedule D-3"/"D-4" nav labels', () => {
+    const model = buildVerifiedInventoryModel(base());
+    const part5 = section(model, 'd3_d4');
+    expect(part5.title).toBe('Part V — OTHER INFORMATION');
+    const blockTitles = part5.blocks.map((b) => b.title).filter(Boolean);
+    expect(blockTitles.some((t) => /Schedule D-3|Schedule D-4/.test(t))).toBe(false);
+  });
+});
+
 describe('guardian inventory PDF model', () => {
   test('prints Part III as a body heading before the asset schedules', () => {
     const model = buildVerifiedInventoryModel({
@@ -272,7 +333,7 @@ describe('guardian inventory PDF model', () => {
     });
 
     const d3Section = model.sections.find((section) => section.id === 'd3_d4');
-    const d3Table = d3Section.blocks.find((block) => block.title === 'Schedule D-3: Safe Deposit Box & Audit Fee');
+    const d3Table = d3Section.blocks.find((block) => block.title === 'AUDIT FEE SCHEDULE');
 
     expect(d3Table.items.some((item) => item.label === 'Initial inventory of safe deposit box filed?')).toBe(false);
     expect(d3Table.items.find((item) => item.label === 'Does the ward have a safe deposit box?').value).toBe('No');
@@ -654,7 +715,7 @@ describe('Milestone 60H: Part V prints the bond-waiver answer and the bond-requi
     ...extra,
   });
   const partV = (model) => model.sections.find(s => s.id === 'd3_d4');
-  const bondGrid = (model) => partV(model).blocks.find(b => b.title === 'Schedule D-4: Guardian Bond');
+  const bondGrid = (model) => partV(model).blocks.find(b => b.title === 'SURETY BOND REQUIREMENT');
   const item = (grid, label) => grid.items.find(i => i.label === label);
   const WAIVED = 'Surety bond waived by court order?';
   const WAIVED_DATE = 'Date of the order waiving the bond';
@@ -726,7 +787,7 @@ describe('Milestone 60H: Part V prints the bond-waiver answer and the bond-requi
     // The table sits where the form puts it: after the audit fee / safe deposit
     // box block and before the bond amount / period / company block.
     const blocks = partV(model).blocks;
-    expect(blocks.indexOf(table)).toBeGreaterThan(blocks.findIndex(b => b.title === 'Schedule D-3: Safe Deposit Box & Audit Fee'));
+    expect(blocks.indexOf(table)).toBeGreaterThan(blocks.findIndex(b => b.title === 'AUDIT FEE SCHEDULE'));
     expect(blocks.indexOf(table)).toBeLessThan(blocks.indexOf(bondGrid(model)));
   });
 });

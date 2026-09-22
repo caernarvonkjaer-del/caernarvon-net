@@ -212,9 +212,15 @@ test.describe('Non-Raster PDF Generation, Signatures & Bookmarks', () => {
     expect(rawPdfString).toContain('Schedule C-3: Lawsuits & Claims by Ward');
     expect(rawPdfString).toContain('Schedule C-4: Trusts');
     expect(rawPdfString).toContain('Schedule C-5: Joint / Other Property');
-    expect(rawPdfString).toContain('Guardian & Preparer Attestation');
-    expect(rawPdfString).toContain('Attorney Attestation');
-    expect(rawPdfString).toContain('Part V - Audit Fee, Bond & Safe Deposit');
+    // Milestone 64A-2, item 2.5: the bookmark tree follows the form's own Part
+    // structure. The preparer moved out of the guardian's Part III oath into
+    // Part IV beside the attorney, so the old combined "Guardian & Preparer
+    // Attestation" bookmark (and the separate "Attorney Attestation" one)
+    // became two Parts that match the printed headings. Part V is the form's
+    // "Other Information", not the app's "Audit Fee, Bond & Safe Deposit".
+    expect(rawPdfString).toContain('Part III - Guardian Attestations');
+    expect(rawPdfString).toContain('Part IV - Preparer & Attorney Attestations');
+    expect(rawPdfString).toContain('Part V - Other Information');
     expect(rawPdfString).toContain('Part VI - Certificate of Service');
 
     // Verify Schedule C-2 precedes Schedule C-3 in the bookmark stream
