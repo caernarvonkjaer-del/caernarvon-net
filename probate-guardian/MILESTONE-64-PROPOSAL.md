@@ -864,9 +864,25 @@ recommended first.
      small and self-contained.
   2. Orphan control for the two real instances. Per item 5's master check the
      engine has only `pageBreakBefore` per section and no keep-with-next, so
-     this is an **engine feature** reaching all seven filing types' PDFs and
-     their layout specs (D4 already scoped it separately). Needs its own
-     go-ahead on that blast radius before it is built.
+     the class fix is an **engine feature** reaching all seven filing types'
+     PDFs and their layout specs (D4 already scoped it separately).
+
+     **DECIDED 2026-09-22: targeted fix, no engine change.** Set
+     `pageBreakBefore` on the `assets` section (the heading-only "Part III —
+     ASSETS OF THE WARD" divider). Measured after: the divider heads page 2
+     with Schedule A-1 beneath it, **and the C-5 orphan clears as a side
+     effect of the reflow** — C-5 lands mid-page 4 with its own table under
+     it, the document stays 7 pages, and the single sparse page becomes *less*
+     sparse (40 content runs against 27 before any fix).
+
+     Forcing a break on C-5 as well was tried and measured **worse** — 8
+     pages, and two sparse pages (17 and 26 runs) instead of one — so it was
+     dropped. One line is the whole fix.
+
+     **What this does not do:** C-5 is un-stranded by where the content
+     happens to fall on this fixture, not by a rule. A filing with a
+     different data shape can strand C-5 or another heading again. Only
+     keep-with-next fixes the class, and that remains unbuilt and unauthorized.
 
   The temporary spec that produced this (`tests/e2e/zz-d14-render-baseline.spec.ts`)
   is deleted in the same commit; the figures above are the record.

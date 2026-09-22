@@ -355,11 +355,16 @@ describe('guardian inventory PDF model', () => {
     const assetsIndex = model.sections.findIndex(section => section.id === 'assets');
     const firstScheduleIndex = model.sections.findIndex(section => section.id === 'a1');
 
+    // Milestone 64A-3 (D14 baseline) set pageBreakBefore on this divider: it
+    // is a heading-only section, and it was stranding alone at the foot of
+    // page 1 with the schedules it introduces starting page 2. This case's
+    // own intent -- that the divider is a body heading sitting immediately
+    // before the first schedule -- is asserted below and unchanged.
     expect(model.sections[assetsIndex]).toMatchObject({
       title: 'Part III — ASSETS OF THE WARD',
       bookmarkTitle: 'Part III - Assets of the Ward',
       level: 1,
-      pageBreakBefore: false,
+      pageBreakBefore: true,
       blocks: [],
     });
     expect(firstScheduleIndex).toBe(assetsIndex + 1);
