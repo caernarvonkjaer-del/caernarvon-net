@@ -504,6 +504,10 @@ export async function doSaveExcel(){
       // number was the odd one out -- it went to J29, the street address's
       // box, while the street address went to the J28 caption.
       setCell(p6,'G25',fmtD(inv.serviceDate));
+      // Milestone 64A-2, item 2.4. J24 is the workbook's own pre-printed
+      // "Indicate if:" caption (confirmed by reading the real cell, not
+      // assumed); the answer goes in J25, its own empty box, directly below.
+      setCell(p6,'J25',inv.serviceIndicateIf||'');
       setCell(p6,'G27',fmtD(inv.serviceAttorney.signatureDate));
       // J27 is the workbook's formula for the attorney's name, from
       // SUMMARY I D24, exactly as on PART IV.
@@ -639,6 +643,7 @@ function parseInitialInventoryWorkbook(wb){
     // and the same one-way reasoning dependent-question.js enforces for 57A.
     serviceNoRecipients:'',
     serviceDate:dt(ws('PART VI'),'G25'),
+    serviceIndicateIf:txt(ws('PART VI'),'J25'),
     serviceAttorney:(()=>{const p6=ws('PART VI');return{signatureDate:dt(p6,'G27'),name:txt(si,'D24'),barNumber:txt(p6,'B29'),streetAddress:txt(p6,'J29'),phone:txt(p6,'B31'),cityStateZip:txt(p6,'J31')};})()
   };
   capitalizeImportedFields(inv);

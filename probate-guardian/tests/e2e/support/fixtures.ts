@@ -45,6 +45,8 @@ export const MINIMAL_VALID_GUARDIAN = {
   // needs no order date.
   bondWaived: 'No',
   serviceDate: '2026-01-02',
+  // Milestone 64A-2, item 2.4.
+  serviceIndicateIf: 'N/A',
   scheduleNoItems: {
     a1: true, a2: true, b1: true, b2: true, b3: true, b4: true,
     c1: true, c2: true, c3: true, c4: true, c5: true,

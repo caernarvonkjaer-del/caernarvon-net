@@ -5697,6 +5697,10 @@ function emptyDataGuardian(){
     serviceNoRecipients:'',
     serviceRecipients:[{name:'',address:'',cityStateZip:''},{name:'',address:'',cityStateZip:''}],
     serviceDate:null,serviceAttorney:{name:'',barNumber:'',phone:'',streetAddress:'',cityStateZip:'',signatureState:'',signatureImage:''},
+    // Milestone 64A-2, item 2.4. Form PART VI J24/J25: 'Indicate if:' -- Ward
+    // is totally incapacitated / Ward is under 14 years old / N/A. Required;
+    // '' is unanswered and 'N/A' is a real, complete answer, not coerced.
+    serviceIndicateIf:'',
     // Witnesses present during the physical inventory of the ward's personal
     // effects. Optional (not export-blocking) -- the Cover page reminder
     // states the requirement, but not every inventory necessarily has a

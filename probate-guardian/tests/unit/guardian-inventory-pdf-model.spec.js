@@ -184,6 +184,38 @@ describe('Milestone 64A-2, item 2.7: the two-line audit fee schedule prints abov
   });
 });
 
+// Milestone 64A-2, item 2.4. Form PART VI B8 states the statutory cite the
+// print had dropped ("Pursuant to the Florida Statute 744.362(1), I hereby
+// certify that a copy of this inventory has been furnished to:"); B24 "on
+// this date"; J24/J25 "Indicate if:" (Ward is totally incapacitated / Ward
+// is under 14 years old / N/A), never printed at all before this.
+describe('Milestone 64A-2, item 2.4: Certificate of Service restores the statutory cite and prints "Indicate if:"', () => {
+  const base = (extra = {}) => ({
+    wardName: 'Harold Thomas Bennett', caseNumber: '26-002487-GD', county: 'Pasco',
+    scheduleA1: [], scheduleA2: [], scheduleB1: [], scheduleB2: [], scheduleB3: [], scheduleB4: [],
+    scheduleC1: [], scheduleC2: [], scheduleC3: [], scheduleC4: [], scheduleC5: [],
+    ...extra,
+  });
+
+  test('the certification sentence carries the § 744.362(1) cite and "on this date"', () => {
+    const model = buildVerifiedInventoryModel(base({ serviceDate: '2026-03-01', serviceIndicateIf: 'N/A' }));
+    const d5 = model.sections.find((s) => s.id === 'd5');
+    const notice = d5.blocks.find((b) => b.type === 'notice' && /744\.362/.test(b.text));
+    expect(notice).toBeDefined();
+    expect(notice.text).toContain('Pursuant to the Florida Statute 744.362(1)');
+    expect(notice.text).toContain('on this date');
+    expect(notice.text).toContain('03/01/2026');
+  });
+
+  test('prints "Indicate if: [value]" after the recipient list', () => {
+    const model = buildVerifiedInventoryModel(base({ serviceIndicateIf: 'Ward is under 14 years old' }));
+    const d5 = model.sections.find((s) => s.id === 'd5');
+    const indicateBlock = d5.blocks.find((b) => b.type === 'notice' && /Indicate if:/.test(b.text));
+    expect(indicateBlock).toBeDefined();
+    expect(indicateBlock.text).toBe('Indicate if: Ward is under 14 years old');
+  });
+});
+
 describe('guardian inventory PDF model', () => {
   test('prints Part III as a body heading before the asset schedules', () => {
     const model = buildVerifiedInventoryModel({

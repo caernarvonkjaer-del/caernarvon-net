@@ -47,7 +47,7 @@ function baseGuardianData(overrides = {}) {
     preparer: { name: '', ssnEin: '', phone: '', streetAddress: '', cityStateZip: '', signatureDate: null, signatureState: '', signatureImage: '' },
     attorney: { name: '', barNumber: '', phone: '', streetAddress: '', cityStateZip: '', signatureDate: null, filingDate: null, signatureState: '', signatureImage: '' },
     bondAmount: '', bondPeriodFrom: null, bondPeriodTo: null, bondingCompany: '', bondWaived: '', bondWaivedDate: '',
-    serviceNoRecipients: '',
+    serviceNoRecipients: '', serviceIndicateIf: '',
     serviceRecipients: [{ name: '', address: '', cityStateZip: '' }, { name: '', address: '', cityStateZip: '' }],
     serviceDate: null, serviceAttorney: { name: '', barNumber: '', phone: '', streetAddress: '', cityStateZip: '', signatureState: '', signatureImage: '' },
     witnesses: [],
@@ -150,5 +150,29 @@ describe('Milestone 64A-1, D16: D-4 bond fields when the bond is waived', () => 
     expect(errors.some(e => e.path === 'bondPeriodFrom')).toBe(true);
     expect(errors.some(e => e.path === 'bondPeriodTo')).toBe(true);
     expect(errors.some(e => e.path === 'bondingCompany')).toBe(true);
+  });
+});
+
+describe('Milestone 64A-2, item 2.4: D-5 "Indicate if:" is required', () => {
+  // Form PART VI J24 "Indicate if:" with list (J25): Ward is totally
+  // incapacitated / Ward is under 14 years old / N/A. No such field existed
+  // before; D-5 never asked, and never validated on it.
+  test('unanswered serviceIndicateIf blocks D-5', () => {
+    window.D.serviceIndicateIf = '';
+    const errors = validateGuardian();
+    expect(errors.some(e => e.path === 'serviceIndicateIf')).toBe(true);
+  });
+
+  test('"N/A" is a real, complete answer -- not treated as unanswered', () => {
+    window.D.serviceIndicateIf = 'N/A';
+    const errors = validateGuardian();
+    expect(errors.some(e => e.path === 'serviceIndicateIf')).toBe(false);
+  });
+
+  test('either of the two substantive answers satisfies it', () => {
+    window.D.serviceIndicateIf = 'Ward is totally incapacitated';
+    expect(validateGuardian().some(e => e.path === 'serviceIndicateIf')).toBe(false);
+    window.D.serviceIndicateIf = 'Ward is under 14 years old';
+    expect(validateGuardian().some(e => e.path === 'serviceIndicateIf')).toBe(false);
   });
 });

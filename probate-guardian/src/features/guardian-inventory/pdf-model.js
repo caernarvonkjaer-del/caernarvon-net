@@ -712,9 +712,13 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     pageBreakBefore: false,
     blocks: [
       {
+        // Milestone 64A-2, item 2.4. Form PART VI B8 + B24, combined into one
+        // sentence (the form has them as separate cells; the app's prior
+        // sentence already combined a certify-clause with a date the same
+        // way, dropping the statutory cite entirely).
         type: 'notice',
         tag: 'P',
-        text: `I certify that a copy of this Verified Initial Inventory was served on ${fmtDate(d.serviceDate) || 'the date indicated below'} to the following persons:`,
+        text: `Pursuant to the Florida Statute 744.362(1), I hereby certify that a copy of this inventory has been furnished to the following persons on this date, ${fmtDate(d.serviceDate) || 'the date indicated below'}:`,
       },
       ...(d.serviceRecipients && d.serviceRecipients.length && d.serviceNoRecipients !== 'Yes' ? [
         {
@@ -732,6 +736,13 @@ export function buildVerifiedInventoryModel(D, options = {}) {
           text: 'None listed.',
         }
       ]),
+      {
+        // Milestone 64A-2, item 2.4. Form PART VI J24/J25, never printed at
+        // all before this.
+        type: 'notice',
+        tag: 'P',
+        text: `Indicate if: ${d.serviceIndicateIf || '—'}`,
+      },
       {
         type: 'signature-block',
         tag: 'Part',

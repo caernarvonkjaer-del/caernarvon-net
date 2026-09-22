@@ -142,6 +142,8 @@ test.describe('Simplified Part II reports the figures the filer entered', () => 
 const INV = {
   bondAmount: '25000', bondPeriodFrom: '2026-02-02', bondPeriodTo: '2027-03-03',
   bondingCompany: 'Gulf Surety',
+  // Milestone 64A-2, item 2.4.
+  serviceIndicateIf: 'N/A',
 };
 
 async function exportGuardian(page: import('@playwright/test').Page) {
@@ -222,6 +224,13 @@ test.describe('Initial Inventory fills its boxes, not its captions', () => {
     expect(c.get('B31')?.text).toBe('SVC-PHONE');
     expect(c.get('J31')?.text).toBe('SVC-CITY');
     expect(c.get('J27')?.formula, "the attorney's name is linked").toBe("'SUMMARY I '!D24");
+    // Milestone 64A-2, item 2.4. J24 holds the workbook's own pre-printed
+    // "Indicate if:" caption (confirmed by reading the real cell -- read-first,
+    // not the master check's shorthand, which named J24 for what is really
+    // J25); the answer belongs in J25, the caption's own empty box, or
+    // writing it would silently destroy the caption (AGENTS.md section 10, P1).
+    expect(c.get('J24')?.text, 'the "Indicate if:" caption survives').toBe('Indicate if:');
+    expect(c.get('J25')?.text, '"Indicate if:" answer').toBe('N/A');
   });
 
   test('everything written still reads back into the app', async ({ page }) => {
@@ -242,8 +251,10 @@ test.describe('Initial Inventory fills its boxes, not its captions', () => {
         preparerName: d.preparer?.name, preparerPhone: d.preparer?.phone,
         attyBar: d.attorney?.barNumber, attySig: d.attorney?.signatureDate, attyFiling: d.attorney?.filingDate,
         svcBar: d.serviceAttorney?.barNumber, svcStreet: d.serviceAttorney?.streetAddress,
+        serviceIndicateIf: d.serviceIndicateIf,
       };
     });
+    expect(back.serviceIndicateIf).toBe('N/A'); // Milestone 64A-2, item 2.4.
     expect(back.bondAmount).toBe('25000');
     expect(back.bondPeriodFrom).toBe('2026-02-02');
     expect(back.bondPeriodTo).toBe('2027-03-03');
