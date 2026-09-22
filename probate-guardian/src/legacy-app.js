@@ -6256,20 +6256,45 @@ function pct(v){if(v===''||v===null||v===undefined)return 1;const p=parseFloat(v
 // fallback can never differ from this version's plain info.label.
 
 function excelCapacityPanel(over){
-  const rows=over.map(o=>`<div class="validation-group">
+  // Milestone 64B-2, item 11 / D13. A cap entry may carry an `unsupported`
+  // sentence instead of a row limit: Part XI is the case -- the court's
+  // workbook has no entry area for it at all, so `cap` is 0 and the
+  // count-of-cap shape rendered "2 of 0" with "2 entries would be left out",
+  // which is both nonsense and an understatement (all of them are left out,
+  // and not because a schedule filled up). Those entries show the same
+  // sentence the blocking issue uses and no count badge; a genuine row
+  // overflow is unchanged.
+  const rows=over.map(o=>{
+    const badge=o.unsupported?'':`<span class="validation-count">${o.count} of ${o.cap}</span>`;
+    const detail=o.unsupported
+      ?esc(o.unsupported)
+      :`${o.count-o.cap} entr${o.count-o.cap===1?'y':'ies'} would be left out of the Excel file`;
+    return `<div class="validation-group">
       <div class="validation-group-head">
         <span class="validation-group-name">${esc(o.label)}</span>
-        <span class="validation-count">${o.count} of ${o.cap}</span>
+        ${badge}
         <button type="button" class="validation-go" data-form-action="navigate" data-route="${esc(o.route)}">Go to section ${ic('external',13)}</button>
       </div>
-      <div class="validation-fields"><span class="validation-field">${o.count-o.cap} entr${o.count-o.cap===1?'y':'ies'} would be left out of the Excel file</span></div>
-    </div>`).join('');
+      <div class="validation-fields"><span class="validation-field">${detail}</span></div>
+    </div>`;
+  }).join('');
+  // The heading is panel wording too (D13): "Too many entries" contradicts an
+  // item reporting that the workbook has no entry area at all. When a real
+  // row overflow is also present the heading is accurate for that part, so it
+  // only changes when every entry is an unsupported schedule.
+  const allUnsupported=over.length>0&&over.every(o=>o.unsupported);
+  const title=allUnsupported
+    ?"The Excel template cannot carry part of this filing"
+    :'Too many entries for the Excel template';
+  const sub=allUnsupported
+    ?`<strong>Save as PDF instead</strong> — the PDF includes every entry, in full.`
+    :`The court's Excel form has a fixed number of rows per schedule, and these have more entries than will fit. <strong>Save as PDF instead</strong> — the PDF includes every entry. To use Excel, reduce these schedules or file the extras on a continuation sheet.`;
   return `<div class="validation-panel excel-cap-panel no-print">
     <div class="validation-head">
       ${ic('alert',17)}
       <div>
-        <div class="validation-title">Too many entries for the Excel template</div>
-        <div class="validation-sub">The court's Excel form has a fixed number of rows per schedule, and these have more entries than will fit. <strong>Save as PDF instead</strong> — the PDF includes every entry. To use Excel, reduce these schedules or file the extras on a continuation sheet.</div>
+        <div class="validation-title">${title}</div>
+        <div class="validation-sub">${sub}</div>
       </div>
     </div>
     ${rows}

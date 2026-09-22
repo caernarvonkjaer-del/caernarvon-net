@@ -1,5 +1,6 @@
 import { describe, expect, test, beforeAll } from 'vitest';
 import { checkExcelCapacity, getExcelCapacityIssues } from '../../src/core/excel/excel-capacity.js';
+import { extractLegacyFunction } from './support/legacy-source-extract.js';
 
 // Milestone 58D — Part XI, Guardian(s) Declaration of Remuneration.
 //
@@ -68,5 +69,69 @@ describe('58D: the empty-state declaration is reachable', () => {
   test('a new Annual filing starts with no placeholder row', () => {
     if (typeof emptyDataAnnual !== 'function') return; // not exported; covered by e2e
     expect(emptyDataAnnual().remuneration).toEqual([]);
+  });
+});
+
+// Milestone 64B-2, item 11 / D13. 58D got the blocking ISSUE right (above)
+// but left the on-screen panel behind. excelCapacityPanel() ignores the
+// `unsupported` text entirely and hardcodes a row-count shape, so a filer who
+// entered two remuneration entries and opened Print Preview read:
+//
+//   Part XI — Remuneration            2 of 0
+//   2 entries would be left out of the Excel file
+//
+// "2 of 0" is nonsense, and "would be left out" understates it -- ALL of them
+// are, and not because the schedule is full but because the court's workbook
+// has no entry area for Part XI at all. The panel now uses the same
+// `unsupported` sentence the blocking issue uses, and drops the count-of-cap
+// badge for those entries.
+describe('64B-2 / D13: the Excel-limit panel explains an unsupported schedule instead of counting rows', () => {
+  const panelHtml = (over) => {
+    const src = extractLegacyFunction('excelCapacityPanel');
+    // esc() and ic() are legacy globals the panel calls; stub them to the
+    // minimum this assertion needs (identity escape, empty icon markup).
+    const make = new Function('esc', 'ic', `${src}; return excelCapacityPanel;`);
+    return make((s) => String(s ?? ''), () => '')(over);
+  };
+
+  const UNSUPPORTED = "the court's Excel workbook has no entry area for Part XI, so remuneration cannot be written to it. File this accounting as PDF, where Part XI prints in full.";
+
+  test('an unsupported schedule shows its explanation, not "2 of 0"', () => {
+    const html = panelHtml([{ label: 'Part XI — Remuneration', route: '/p11', cap: 0, count: 2, unsupported: UNSUPPORTED }]);
+    expect(html).toContain('no entry area for Part XI');
+    expect(html).toContain('File this accounting as PDF');
+    expect(html).not.toContain('2 of 0');
+    expect(html).not.toContain('would be left out');
+  });
+
+  test('a genuine row overflow still reports its count and how many would be dropped', () => {
+    const html = panelHtml([{ label: 'Schedule A — Income', route: '/scha', cap: 20, count: 23 }]);
+    expect(html).toContain('23 of 20');
+    expect(html).toContain('3 entries would be left out of the Excel file');
+  });
+
+  // The panel heading is panel wording too, and "Too many entries for the
+  // Excel template" directly contradicts an item that says there is no entry
+  // area at all. It stays as-is whenever a real overflow is present, because
+  // then it is accurate for that part.
+  test('a panel holding only unsupported schedules does not claim there are too many entries', () => {
+    const html = panelHtml([{ label: 'Part XI — Remuneration', route: '/p11', cap: 0, count: 2, unsupported: UNSUPPORTED }]);
+    expect(html).not.toContain('Too many entries for the Excel template');
+    expect(html).toContain('Save as PDF instead');
+  });
+
+  test('a mixed panel keeps the too-many heading, which is accurate for the overflow', () => {
+    const html = panelHtml([
+      { label: 'Schedule A — Income', route: '/scha', cap: 20, count: 23 },
+      { label: 'Part XI — Remuneration', route: '/p11', cap: 0, count: 2, unsupported: UNSUPPORTED },
+    ]);
+    expect(html).toContain('Too many entries for the Excel template');
+    expect(html).toContain('23 of 20');
+    expect(html).toContain('no entry area for Part XI');
+  });
+
+  test('one entry over a real cap stays singular', () => {
+    const html = panelHtml([{ label: 'Schedule A — Income', route: '/scha', cap: 20, count: 21 }]);
+    expect(html).toContain('1 entry would be left out of the Excel file');
   });
 });
