@@ -86,6 +86,36 @@ describe('Milestone 64A-2, item 2.2: Summary II prints C-2 negative and the form
   });
 });
 
+// Milestone 64A-2, item 2.3. Form SUMMARY I B26 "Does Ward have a Safe
+// Deposit Box?" (D26) and E26 "If yes, has the Safe Deposit Box Inventory
+// been filed?" (H26) never printed on Part I at all -- only Part V (Schedule
+// D-3) asked, and only when the answer was Yes. Part I now asks both,
+// always, printing "N/A" for the second when the first isn't Yes; Part V's
+// existing behavior (omit the second line entirely unless Yes) is untouched.
+describe('Milestone 64A-2, item 2.3: Part I prints the Safe Deposit Box questions', () => {
+  const base = (extra = {}) => ({
+    wardName: 'Harold Thomas Bennett', caseNumber: '26-002487-GD', county: 'Pasco',
+    scheduleA1: [], scheduleA2: [], scheduleB1: [], scheduleB2: [], scheduleB3: [], scheduleB4: [],
+    scheduleC1: [], scheduleC2: [], scheduleC3: [], scheduleC4: [], scheduleC5: [],
+    ...extra,
+  });
+  const part1Items = (model) => model.sections.find((s) => s.id === 'cover').blocks[0].items;
+
+  test('SDB Yes, filed No: Part I prints both answers', () => {
+    const model = buildVerifiedInventoryModel(base({ hasSafeDepositBox: 'Yes', safeDepositBoxFiled: 'No' }));
+    const items = part1Items(model);
+    expect(items).toContainEqual({ label: 'Does Ward have a Safe Deposit Box?', value: 'Yes' });
+    expect(items).toContainEqual({ label: 'If yes, has the Safe Deposit Box Inventory been filed?', value: 'No' });
+  });
+
+  test('SDB No: Part I prints "No" and "N/A", not the omission Part V uses', () => {
+    const model = buildVerifiedInventoryModel(base({ hasSafeDepositBox: 'No' }));
+    const items = part1Items(model);
+    expect(items).toContainEqual({ label: 'Does Ward have a Safe Deposit Box?', value: 'No' });
+    expect(items).toContainEqual({ label: 'If yes, has the Safe Deposit Box Inventory been filed?', value: 'N/A' });
+  });
+});
+
 describe('guardian inventory PDF model', () => {
   test('prints Part III as a body heading before the asset schedules', () => {
     const model = buildVerifiedInventoryModel({

@@ -147,6 +147,13 @@ export function buildVerifiedInventoryModel(D, options = {}) {
           { label: 'Attorney for Guardian', value: d.attorneyForGuardian || '' },
           { label: 'Type of Guardianship', value: d.typeOfGuardianship || 'Plenary' },
           { label: 'Amended Form?', value: triText(d.amendedForm, d.isAmended) },
+          // Milestone 64A-2, item 2.3. Form SUMMARY I B26/E26 -- these never
+          // printed on Part I before, only on Part V (Schedule D-3), and only
+          // the second one when Yes. Part V's own behavior (below) is
+          // untouched; Part I always asks both, printing "N/A" for the
+          // second whenever the first isn't Yes.
+          { label: 'Does Ward have a Safe Deposit Box?', value: triText(d.hasSafeDepositBox) },
+          { label: 'If yes, has the Safe Deposit Box Inventory been filed?', value: triIsYes(d.hasSafeDepositBox) ? triText(d.safeDepositBoxFiled) : 'N/A' },
         ],
       },
       ...(d.witnesses && d.witnesses.length ? [{
