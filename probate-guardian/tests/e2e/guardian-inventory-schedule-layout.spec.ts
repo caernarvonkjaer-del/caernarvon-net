@@ -274,6 +274,55 @@ test.describe('Milestone 60B-60E: widened Guardian Inventory schedules stay read
   // (6pt floor) instead of splitting it (the next test, which narrows a
   // column on purpose -- with the widened columns alone this test passes even
   // without the engine change, so it cannot be the engine change's proof).
+  // Milestone 64A-3, from the D14 render baseline (measured 2026-09-22). The
+  // Schedules B-1 and B-3 "Restricted?" column headers were breaking MID-WORD
+  // -- "Restrict" on one line and "ed?" on the next, measured at p2 y=438.5
+  // (B-1) and y=219.0 (B-3). A clerk reading the filed page sees a header
+  // that looks like a typo. "Restricted?" is the court workbook's own header
+  // text (B-1 sheet E17, B-3 sheet E16), so it cannot be shortened to fit:
+  // the column has to be wide enough for it. Neighbouring headers that wrap
+  // at word boundaries ("Restricted Asset Amount", "In Safe Deposit Box?")
+  // are correct and deliberately not asserted here.
+  test('the B-1 and B-3 "Restricted?" headers are one intact run, never broken mid-word', async ({ page }) => {
+    test.setTimeout(150_000);
+    // Its own filing rather than the shared fixture: that one populates
+    // A-2/B-2/C-1/C-3/C-4 only, and an empty Guardian schedule prints a "No
+    // entries" notice with no table -- so B-1 and B-3 would contribute no
+    // headers at all and this would pass vacuously.
+    await freshStartNoPassword(page);
+    await createWard(page, 'Restricted Header Ward', 'guardian');
+    await fillMinimalValidGuardianWard(page);
+    await page.evaluate(() => {
+      const d = (window as any).D;
+      d.scheduleB1 = [{ institutionName: 'Raymond James Bank', accountType: 'Checking', accountNumber: '4821', streetAddress: '880 Carillon Pkwy', cityStateZip: 'St. Petersburg, FL 33716', fullAssetAmount: 38250, wardPercent: 100, restricted: 'No' }];
+      d.scheduleB3 = [{ description: 'Vanguard Index Fund', streetAddress: '100 Vanguard Blvd', cityStateZip: 'Malvern, PA 19355', fullAssetValue: 65000, wardPercent: 100, restricted: 'No', inSafeDepositBox: 'No' }];
+      d.scheduleNoItems = { ...(d.scheduleNoItems || {}), b1: false, b3: false };
+      (window as any).autoSave();
+    });
+    await page.evaluate(() => (window as any).flushPendingSave());
+    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.locator('#print-doc-container .pdf-page').first().waitFor({ state: 'visible', timeout: 30000 });
+    await page.evaluate(() => {
+      for (const el of document.querySelectorAll('#print-doc-container .pdf-page')) {
+        (el as HTMLElement).style.display = 'block';
+      }
+    });
+    const runs = await collectRuns(page);
+
+    // Non-vacuity: both tables must actually be on the page. Checked on the
+    // schedule titles, not a cell value -- an institution name wraps at word
+    // boundaries inside its own column, so no single run holds all of it.
+    expect(runs.some((r) => r.text.startsWith('Schedule B-1: Cash Assets')), 'B-1 table did not render').toBe(true);
+    expect(runs.some((r) => r.text.startsWith('Schedule B-3: Intangible Assets')), 'B-3 table did not render').toBe(true);
+
+    const intact = runs.filter((r) => r.text.trim() === 'Restricted?');
+    expect(intact.length, 'expected an intact "Restricted?" header in both B-1 and B-3').toBeGreaterThanOrEqual(2);
+
+    // The mid-word halves must not appear at all.
+    const broken = runs.filter((r) => r.text.trim() === 'Restrict' || r.text.trim() === 'ed?');
+    expect(broken.map((r) => r.text), 'a "Restricted?" header is still breaking mid-word').toEqual([]);
+  });
+
   test('a date, a percentage and a seven-figure amount each stay one intact token, while prose still wraps', async ({ page }) => {
     test.setTimeout(150_000);
     await openGuardianPreview(page);

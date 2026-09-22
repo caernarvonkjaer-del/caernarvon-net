@@ -353,7 +353,12 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     "Schedule B-1 Total (Ward's Asset Amount)",
     totalB1,
     'cash assets / cash equivalent assets',
-    [14, 16, 8, 14, 13, 9, 13, 13],
+    // Milestone 64A-3 (D14 baseline): 'Restricted?' is the workbook's own
+    // header (B-1 sheet E17) and cannot be shortened, but at 8% of 468pt
+    // (37.4pt) it broke mid-word as 'Restrict' / 'ed?'. Widened to 12%
+    // (56.2pt), taken from Address, which wraps at word boundaries and is
+    // meant to occupy several lines anyway.
+    [14, 12, 12, 14, 13, 9, 13, 13],
     ['left', 'left', 'center', 'left', 'right', 'right', 'right', 'right'],
     [restrictedCash]
   );
@@ -389,7 +394,9 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     "Schedule B-3 Total (Ward's Value)",
     totalB3,
     'intangible assets',
-    [15, 12, 12, 8, 8, 8, 12, 12, 13],
+    // Same fix as B-1: 'Restricted?' (workbook B-3 sheet E16) needs 12% to
+    // stay one word; taken from Description, which wraps as prose.
+    [11, 12, 12, 8, 12, 8, 12, 12, 13],
     ['left', 'left', 'right', 'right', 'center', 'center', 'right', 'right', 'right'],
     [t.restrictedIntang, t.totalSdbB3]
   );
