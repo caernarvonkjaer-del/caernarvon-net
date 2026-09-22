@@ -141,6 +141,10 @@ body{margin:0;font-family:'Segoe UI Variable Text','Segoe UI',system-ui,-apple-s
 .nav-link-item.active .nav-check.incomplete{color:var(--danger-text);}
 
 .topnav-btn{display:inline-flex;align-items:center;justify-content:center;gap:.4rem;padding:.35rem .75rem;font-size:.8rem;font-weight:600;color:var(--ink-2);background:var(--surface);border:1px solid var(--line);border-radius:var(--r);cursor:pointer;transition:border-color .15s,color .15s,box-shadow .15s,background .15s;font-family:inherit;line-height:normal;white-space:nowrap;box-shadow:var(--sh-1);}
+/* Milestone 65E: Report a Bug's border uses the brand token (#820024) so it
+   stands out from the other topnav buttons (Comment Card, theme, Help),
+   which keep the neutral border above. */
+.topnav-btn[data-feedback-open="bug"]{border-color:var(--brand);}
 .topnav-btn:hover{border-color:var(--brand-200);color:var(--brand-text);background:var(--brand-050);box-shadow:var(--sh-2);}
 .topnav-btn:active{box-shadow:none;transform:translateY(1px);}
 .topnav-help{width:2.25rem;padding:0;font-weight:700;font-size:.95rem;}

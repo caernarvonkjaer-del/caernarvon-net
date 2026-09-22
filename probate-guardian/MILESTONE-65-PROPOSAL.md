@@ -2,8 +2,11 @@
 
 ## Status
 
-**Proposed — not authorized; nothing implemented.** Per `AGENTS.md` §3, this
-document authorizes nothing on its own — a proposal is not execution.
+**Landed 2026-09-22.** Authorized the same day ("Commit, then build all 5,
+unit tests only") and implemented in full: 65A–65E, each red-first, unit
+tests only per the requester's instruction (no e2e run for this milestone).
+Final full unit regression: **1713/1713 passed** (120 files) — see the
+Final regression section at the end.
 
 | Item | Summary | Status |
 | :-- | :-- | :-- |
@@ -11,7 +14,7 @@ document authorizes nothing on its own — a proposal is not execution.
 | **65B** | Helpful Resources disclaimer: carve out Pinellas Clerk sites from "not affiliated" | **IMPLEMENTED 2026-09-22** — unit red-first, green after |
 | **65C** | Helpful Resources disclaimer: add a "provided free by the Clerk" line; shrink the section 1pt | **IMPLEMENTED 2026-09-22** — unit red-first, green after |
 | **65D** | Hide the Comment Card link on the Start New Form page too (dashboard's own copy was hidden by Milestone 62; this one wasn't) | **IMPLEMENTED 2026-09-22** — unit red-first, green after; window-bridge allowlist + `.d.ts` regenerated |
-| **65E** | "Report a Bug" button: border color `--brand` (`#820024`) | Proposed 2026-09-22; not yet built |
+| **65E** | "Report a Bug" button: border color `--brand` (`#820024`) | **IMPLEMENTED 2026-09-22** — CSS only, no test impact |
 
 ---
 
@@ -418,4 +421,46 @@ still applies on hover; this item only changes the resting-state border.
 Cosmetic only: no `window.D` key changes, no export/import path touched, no
 `probate-guardian-data-model.csv` change, no migration, no test impact
 (no existing test asserts `.topnav-btn` border color).
+
+---
+
+## Final regression, and the push
+
+Per the requester's instruction ("Commit, then build all 5, unit tests
+only"), no e2e run was requested or performed for this milestone — every
+item above was verified red-first with targeted `npx vitest run` passes, and
+the batch closed with a full `npx vitest run` (no path filter): **120 files,
+1713/1713 tests passed.** (The run's first invocation failed all 120 files
+with a `Cannot read properties of undefined (reading 'config')`/`Vitest
+failed to find the runner` error, an environment-level first-invocation
+flake observed repeatedly on this machine this session on both single-file
+and full-suite runs, unrelated to any of this milestone's changes; an
+immediate retry with no changes passed clean. Worth knowing if it recurs —
+retry before treating it as a regression.)
+
+`node scripts/audit-window-bridge.mjs --declare` was re-run after 65D's new
+`window.SHOW_COMMENT_CARD_LINK` assignment; `window-bridge.d.ts` now carries
+485 names (+1), and `window-bridge.spec.js` / `test-index-guard.spec.js` are
+both green.
+
+**Filer-observable changes worth a release note:**
+
+- D-5's "Indicate if" question (Guardian Inventory Certificate of Service)
+  now reads "Indicate if Ward is:" on screen, in the printed PDF, and in the
+  export-blocking error list. The dropdown's three answers are unchanged.
+- The Helpful Resources panel's disclaimer (dashboard sidebar, and the
+  standalone user guide) now says "Other than Pinellas Clerk sites,
+  Guardian Forms is not affiliated..." and adds "This service is provided,
+  Free to Use, by the Pinellas County Clerk of the Circuit Court and
+  Comptroller." The dashboard panel's disclaimer text is slightly smaller.
+- The Comment Card link on the Start New Form page is now hidden, matching
+  the dashboard toolbar (both were already supposed to be hidden per
+  Milestone 62's intent; only the dashboard's copy actually was).
+- The "Report a Bug" button's border is now the app's brand maroon on both
+  surfaces (dashboard toolbar and Start New Form page), instead of the
+  neutral gray shared by the other toolbar buttons.
+
+**Not run:** any e2e/Playwright profile, `check:types`, `verify:data-model`
+— none were requested, and none of the five items touch `window.D`,
+export/import code, or `probate-guardian-data-model.csv`.
 
