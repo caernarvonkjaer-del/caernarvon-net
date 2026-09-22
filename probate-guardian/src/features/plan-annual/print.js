@@ -20,6 +20,7 @@ import { authorizeFilingOutput } from '../../core/filing/output-authorization.js
 import { renderOutputAdvisories } from '../../core/filing/output-advisories.js';
 import { renderReadinessCard } from '../../core/filing/readiness-card.js';
 import { alertModal } from '../../core/ui/dialogs.js';
+import { beginExport } from '../../core/ui/export-guard.js';
 
 const {
   highlightErrors, validationPanel,
@@ -74,6 +75,11 @@ export async function doSavePdf(){
     await alertModal(`Cannot export — ${authorization.issues.length} required field${authorization.issues.length === 1 ? '' : 's'} missing. See the list on this page.`);
     return;
   }
+  // Milestone 67: disables the button for the export's duration, so a second
+  // click while it's still generating can't fire a second download and get
+  // both blocked by the browser as "multiple files."
+  const btn = beginExport('[data-form-action="save-pdf-plan-annual"]');
+  if (!btn) return;
   const ward=(window.D.wardName||'AnnualGuardianshipPlan').replace(/[^a-z0-9]/gi,'_');
   try{
     const model = buildPlanAnnualModel(window.D);
@@ -82,6 +88,8 @@ export async function doSavePdf(){
   }catch(e){
     console.error('PDF export failed',e);
     await alertModal('PDF export failed: '+e.message);
+  }finally{
+    btn.disabled = false;
   }
 }
 

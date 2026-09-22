@@ -22,6 +22,7 @@ import { planSchB4Export } from '../../core/excel/b4-export-plan.js';
 import { createBankAccountId } from '../../core/accounting/bank-accounts.js';
 import { alertModal } from '../../core/ui/dialogs.js';
 import { setStatus, scheduleStatusClear } from '../../core/ui/transient-status.js';
+import { beginExport } from '../../core/ui/export-guard.js';
 
 const {
   renderPage, ensureTemplate, calcTotalsAnnual,
@@ -150,6 +151,11 @@ export async function doSaveExcel(){
     renderPage('/print');
     return;
   }
+  // Milestone 67: disables the button for the export's duration, so a second
+  // click while it's still generating can't fire a second download and get
+  // both blocked by the browser as "multiple files."
+  const btn = beginExport('[data-annual-action="save-excel"]');
+  if (!btn) return;
   try{
     const inv=window.D;
     const templateB64=await ensureTemplate('annual');
@@ -524,6 +530,8 @@ export async function doSaveExcel(){
   }catch(err){
     console.error('Excel export failed:',err);
     await alertModal('Excel export failed: '+err.message);
+  }finally{
+    btn.disabled = false;
   }
 }
 export async function importExcel(input){

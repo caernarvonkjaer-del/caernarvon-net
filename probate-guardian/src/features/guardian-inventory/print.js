@@ -21,6 +21,7 @@ import { renderReadinessCard } from '../../core/filing/readiness-card.js';
 import { renderOutputAdvisories } from '../../core/filing/output-advisories.js';
 import { alertModal } from '../../core/ui/dialogs.js';
 import { setStatus, clearStatusNow } from '../../core/ui/transient-status.js';
+import { beginExport } from '../../core/ui/export-guard.js';
 
 function buildModelForPreview(D){
   return buildVerifiedInventoryModel(D, {
@@ -88,6 +89,11 @@ export async function doSavePdf(){
     await alertModal(`Cannot export — ${authorization.issues.length} required field${authorization.issues.length === 1 ? '' : 's'} missing. See the list on this page.`);
     return;
   }
+  // Milestone 67: disables the button for the export's duration, so a second
+  // click while a big filing is still generating can't fire a second
+  // download and get both blocked by the browser as "multiple files."
+  const btn = beginExport('[data-inventory-action="save-pdf"]');
+  if (!btn) return;
   const stat=document.getElementById('export-status');
   setStatus(stat,'Generating PDF…');
   const stem=(window.D.wardName||'GuardianInventory').trim().replace(/\s+/g,'_');
@@ -103,6 +109,7 @@ export async function doSavePdf(){
     console.error('PDF export failed',e);
     await alertModal('PDF export failed: '+e.message);
   }finally{
+    btn.disabled = false;
     // Immediate, not scheduled: the PDF action has no success
     // message of its own to leave on screen. Going through setStatus still
     // cancels any clear an earlier Excel export scheduled, so this element

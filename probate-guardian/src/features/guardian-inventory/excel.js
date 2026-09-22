@@ -21,6 +21,7 @@ import {
 } from '../../core/excel/guardian-inventory-pages.js';
 import { alertModal } from '../../core/ui/dialogs.js';
 import { setStatus, scheduleStatusClear } from '../../core/ui/transient-status.js';
+import { beginExport } from '../../core/ui/export-guard.js';
 
 const {
   renderPage, ensureTemplate, saveData, navigate,
@@ -127,6 +128,11 @@ export async function doSaveExcel(){
     renderPage('/print');
     return;
   }
+  // Milestone 67: disables the button for the export's duration, so a second
+  // click while it's still generating can't fire a second download and get
+  // both blocked by the browser as "multiple files."
+  const btn = beginExport('[data-inventory-action="save-excel"]');
+  if (!btn) return;
   const stat=document.getElementById('export-status');
   setStatus(stat,'Preparing Excel export…');
   try{
@@ -561,6 +567,7 @@ export async function doSaveExcel(){
     console.error(e);
     setStatus(stat,'❌ '+e.message);
   }finally{
+    btn.disabled = false;
     scheduleStatusClear(stat);
   }
 }

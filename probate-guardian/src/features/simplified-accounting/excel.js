@@ -9,6 +9,7 @@ import { getExcelJS, saveWorkbookFile, setCell } from '../../core/excel/excel-en
 import { readCellText } from '../../core/excel/cell-reader.js';
 import { alertModal, confirmModal } from '../../core/ui/dialogs.js';
 import { setStatus, scheduleStatusClear } from '../../core/ui/transient-status.js';
+import { beginExport } from '../../core/ui/export-guard.js';
 
 const {
   renderPage, ensureTemplate, calcTotals, guardianHasAnyData,
@@ -51,6 +52,11 @@ export async function doSaveExcel(){
     renderPage('/print');
     return;
   }
+  // Milestone 67: disables the button for the export's duration, so a second
+  // click while it's still generating can't fire a second download and get
+  // both blocked by the browser as "multiple files."
+  const btn = beginExport('[data-simplified-action="save-excel"]');
+  if (!btn) return;
   try{
     const inv=window.D;
     const templateB64=await ensureTemplate('simplified');
@@ -256,6 +262,8 @@ export async function doSaveExcel(){
   }catch(err){
     console.error('Excel export failed:',err);
     await alertModal('Excel export failed: '+err.message);
+  }finally{
+    btn.disabled = false;
   }
 }
 
