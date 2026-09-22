@@ -216,10 +216,22 @@ export function expectedLegalCopy(id: FilingType): ExpectedLegalCopy {
         ],
       };
     case 'guardian':
+      // Milestone 64A-2, item 2.5: the court form's own Part III / Part IV
+      // headings and attestation wording (Part III B6, Part IV B11). The
+      // preparer no longer signs under the guardian's perjury oath. Fragments
+      // are kept short enough to sit on one printed line, because this layer
+      // matches the extracted text as a raw substring and a line wrap would
+      // split a longer one. The app's former paraphrases are prohibited, so a
+      // regression back to them fails here rather than passing silently.
       return {
-        requiredHeadings: ['ATTESTATIONS & OATHS OF GUARDIAN & PREPARER', 'ATTORNEY ATTESTATION'],
+        requiredHeadings: ['GUARDIAN(S) ATTESTATION(S)', 'PREPARER & GUARDIAN ATTORNEY ATTESTATIONS'],
         requiredStatements: [
-          'Under penalties of perjury, I declare that I have read the foregoing Verified Initial Inventory',
+          'UNDER PENALTIES OF PERJURY, I declare that I have read the foregoing',
+          'If you are the Guardian, Co-Guardian, or Guardian Attorney - DO NOT SIGN HERE.',
+        ],
+        prohibitedStatements: [
+          'I have read the foregoing Verified Initial Inventory and that the facts stated',
+          'complies with the applicable Florida Statutes and Florida Probate Rules',
         ],
       };
     case 'planAnnual':
