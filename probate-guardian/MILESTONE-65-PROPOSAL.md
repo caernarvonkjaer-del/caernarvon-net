@@ -10,7 +10,7 @@ document authorizes nothing on its own — a proposal is not execution.
 | **65A** | D-5 Certificate of Service: "Indicate if" label names the Ward | **IMPLEMENTED 2026-09-22** — unit red-first, green after |
 | **65B** | Helpful Resources disclaimer: carve out Pinellas Clerk sites from "not affiliated" | **IMPLEMENTED 2026-09-22** — unit red-first, green after |
 | **65C** | Helpful Resources disclaimer: add a "provided free by the Clerk" line; shrink the section 1pt | **IMPLEMENTED 2026-09-22** — unit red-first, green after |
-| **65D** | Hide the Comment Card link on the Start New Form page too (dashboard's own copy was hidden by Milestone 62; this one wasn't) | Proposed 2026-09-22; D4 decided; not yet built |
+| **65D** | Hide the Comment Card link on the Start New Form page too (dashboard's own copy was hidden by Milestone 62; this one wasn't) | **IMPLEMENTED 2026-09-22** — unit red-first, green after; window-bridge allowlist + `.d.ts` regenerated |
 | **65E** | "Report a Bug" button: border color `--brand` (`#820024`) | Proposed 2026-09-22; not yet built |
 
 ---

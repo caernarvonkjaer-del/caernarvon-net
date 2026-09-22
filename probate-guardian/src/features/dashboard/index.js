@@ -57,16 +57,16 @@ function option(value, label, selectedValue) {
   return `<option value="${esc(value)}"${value === selectedValue ? ' selected' : ''}>${esc(label)}</option>`;
 }
 
-// Milestone 62: hidden for the initial test rollout (#820024), requester
-// intends to reinstate it afterward. Flip this back to true to bring the
-// link back — the markup (and the GovQA URL user-guide-drift-guard.spec.js
-// scans for) stays in source either way.
-const SHOW_COMMENT_CARD_LINK = false;
-
-function dashboardToolbarActionsHTML() {
+// Milestone 62 hid this for the initial test rollout (#820024), intending to
+// reinstate it later. Milestone 65D moved the flag to legacy-app.js (as
+// window.SHOW_COMMENT_CARD_LINK) and put the Start New Form page's identical
+// link behind the same one, so both surfaces flip together instead of
+// needing two edits. The markup (and the GovQA URL) stays in source either
+// way -- only its inclusion in the rendered string is gated.
+export function dashboardToolbarActionsHTML() {
   const isDark = typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme') === 'dark';
   const helpOpen = typeof document !== 'undefined' && document.getElementById('help-panel')?.style.display === 'flex';
-  const commentCardLink = SHOW_COMMENT_CARD_LINK
+  const commentCardLink = window.SHOW_COMMENT_CARD_LINK
     ? `<a class="topnav-btn" href="https://pinellascountyfl.govqa.us/WEBAPP/_rs/(S(ymqkyi4ihgwnngmluraqqkeh))/RequestOpen.aspx?sSessionID=&rqst=23" target="_blank" rel="noopener noreferrer">${ic('message', 16)} Comment Card<span class="visually-hidden"> (opens in a new tab)</span></a>`
     : '';
   return `<div class="dashboard-toolbar-actions">

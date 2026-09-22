@@ -414,6 +414,7 @@ interface Window {
   setupAutoExportTimer: any;
   setupFallbackSaveReminder: any;
   setupLastSavedTicker: any;
+  SHOW_COMMENT_CARD_LINK: any;
   showAddWardModal: any;
   showAddWardModalForType: any;
   showAutoExportReminder: any;

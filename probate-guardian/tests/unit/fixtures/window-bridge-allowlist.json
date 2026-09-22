@@ -1103,6 +1103,10 @@
     },
     {
       "file": "src/legacy-app.js",
+      "name": "SHOW_COMMENT_CARD_LINK"
+    },
+    {
+      "file": "src/legacy-app.js",
       "name": "addPlanGuardian"
     },
     {

@@ -5567,13 +5567,27 @@ async function doDeleteWardYear(){
 // ═══════════════════════════════════════════════════════
 // INVENTORY TYPE SELECTOR PAGE
 // ═══════════════════════════════════════════════════════
+// Milestone 62 hid the Comment Card link on the dashboard toolbar for the
+// initial test rollout (#820024), intending to reinstate it later. This page
+// carries the identical link (same URL, same label) and was left rendering
+// unconditionally -- a gap Milestone 65D closes by putting both surfaces
+// behind one shared flag, set once here, so a future reinstate is one flip
+// instead of two. The markup (and the GovQA URL user-guide-drift-guard.spec.js
+// once scanned for, before help/index.html stopped mentioning the hidden
+// control) stays in source either way.
+const SHOW_COMMENT_CARD_LINK = false;
+window.SHOW_COMMENT_CARD_LINK = SHOW_COMMENT_CARD_LINK;
+
 function pageInventorySelector(){
+  const commentCardLink = SHOW_COMMENT_CARD_LINK
+    ? `<a class="topnav-btn" href="https://pinellascountyfl.govqa.us/WEBAPP/_rs/(S(ymqkyi4ihgwnngmluraqqkeh))/RequestOpen.aspx?sSessionID=&rqst=23" target="_blank" rel="noopener noreferrer">${ic('message',16)} Comment Card<span class="visually-hidden"> (opens in a new tab)</span></a>`
+    : '';
   return `<div style="max-width:900px;margin:0 auto;">
   <h1 style="font-size:1.8rem;color:var(--ink);margin-bottom:2rem;text-align:center;">Start New Form</h1>
   <p style="text-align:center;color:var(--ink-3);margin-bottom:2rem;font-size:.95rem;">Select the form type for a ward. You can manage multiple wards of different types.</p>
   <div class="feedback-entry-actions" aria-label="Beta feedback">
     <button type="button" class="topnav-btn" data-feedback-open="bug">${ic('bug',16)} Report a Bug</button>
-    <a class="topnav-btn" href="https://pinellascountyfl.govqa.us/WEBAPP/_rs/(S(ymqkyi4ihgwnngmluraqqkeh))/RequestOpen.aspx?sSessionID=&rqst=23" target="_blank" rel="noopener noreferrer">${ic('message',16)} Comment Card<span class="visually-hidden"> (opens in a new tab)</span></a>
+    ${commentCardLink}
   </div>
   <div class="inventory-selector">
     <div class="inventory-card" data-form-action="add-ward-type" data-inventory-type="guardian" role="button" tabindex="0" aria-label="Create Initial Inventory ward">
