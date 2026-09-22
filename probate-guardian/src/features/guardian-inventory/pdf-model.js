@@ -276,25 +276,14 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     bookmarkTitle: 'Part III - Assets of the Ward',
     parentBookmark: null,
     level: 1,
-    // Milestone 64A-3 (D14 baseline): this is a heading-only Part divider
-    // (no blocks), and it was the entire lowest content of page 1 while the
-    // schedule it introduces started page 2 -- a heading with nothing under
-    // it. The engine has no keep-with-next, so the break is forced here
-    // instead; the divider now heads the page its schedules are on. Chosen
-    // over adding keep-with-next to the shared engine, which would reach all
-    // seven filing types (decided 2026-09-22).
-    //
-    // This one line is the whole of the orphan fix. The baseline's OTHER
-    // orphan -- Schedule C-5's heading at the foot of page 3 -- clears as a
-    // side effect of the reflow, measured: C-5 lands mid-page with its table
-    // beneath it, the document stays 7 pages, and the one sparse page gets
-    // less sparse (40 content runs, against 27 before any fix). Forcing a
-    // break on C-5 as well was tried and measured worse -- 8 pages and two
-    // sparse pages -- so it was dropped. Note what that means: C-5 is
-    // un-stranded by where the content happens to fall, not by a rule, so a
-    // filing with a different data shape could strand it or another heading
-    // again. Only keep-with-next fixes the class.
-    pageBreakBefore: true,
+    // No forced break. This heading-only Part divider used to strand alone at
+    // the foot of page 1 (D14 baseline). Milestone 64A-3 forced a page break
+    // here as a stopgap; Milestone 64 D4 then taught the shared PDF engine to
+    // keep a section heading with its first unit -- and for a heading-only
+    // section, with the NEXT section's heading and first unit -- so the engine
+    // now does this by rule and the special case is retired. Measured
+    // identical: the divider heads page 2 above Schedule A-1 either way.
+    pageBreakBefore: false,
     blocks: [],
   });
 

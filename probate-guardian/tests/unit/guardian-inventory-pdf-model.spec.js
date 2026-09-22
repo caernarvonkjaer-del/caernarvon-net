@@ -355,16 +355,17 @@ describe('guardian inventory PDF model', () => {
     const assetsIndex = model.sections.findIndex(section => section.id === 'assets');
     const firstScheduleIndex = model.sections.findIndex(section => section.id === 'a1');
 
-    // Milestone 64A-3 (D14 baseline) set pageBreakBefore on this divider: it
-    // is a heading-only section, and it was stranding alone at the foot of
-    // page 1 with the schedules it introduces starting page 2. This case's
-    // own intent -- that the divider is a body heading sitting immediately
-    // before the first schedule -- is asserted below and unchanged.
+    // No forced break: Milestone 64 D4's engine keep-with-next keeps this
+    // heading-only divider with the section after it, retiring the stopgap
+    // break 64A-3 put here. That the divider actually lands above Schedule
+    // A-1 on the rendered page is proven in guardian-inventory-schedule-layout
+    // .spec.ts; this case's own intent -- a body heading immediately before
+    // the first schedule -- is asserted below and unchanged.
     expect(model.sections[assetsIndex]).toMatchObject({
       title: 'Part III — ASSETS OF THE WARD',
       bookmarkTitle: 'Part III - Assets of the Ward',
       level: 1,
-      pageBreakBefore: true,
+      pageBreakBefore: false,
       blocks: [],
     });
     expect(firstScheduleIndex).toBe(assetsIndex + 1);

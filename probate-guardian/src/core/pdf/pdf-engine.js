@@ -445,6 +445,49 @@ export async function generateCourtFormPdf(model, options = {}) {
     return false;
   };
 
+  // Milestone 64 / D4: keep-with-next, for SECTION headings.
+  //
+  // A section heading used to reserve only its own 30pt before drawing, so it
+  // could be the last thing on a page with everything it introduces on the
+  // next one. Measured on a fully populated Verified Initial Inventory: the
+  // heading-only "Part III — ASSETS OF THE WARD" divider alone at the foot of
+  // page 1, and Schedule C-5's heading at the foot of page 3 with its table on
+  // page 4. A section heading now reserves its own height PLUS the first unit
+  // of what follows, and breaks to the next page instead of stranding.
+  //
+  // Each figure is the one-line minimum that proves the heading is not ALONE
+  // -- not a comfortable amount -- because reserving more pushes headings to
+  // new pages that had room. A first, more generous set was measured and cost
+  // a page on every Verified Initial Inventory.
+  //
+  // Deliberately NOT applied to block sub-headings (table, grid and checklist
+  // titles), decided 2026-09-22 on measurement: doing so fixes one more real
+  // orphan (Guardian's "Surety Bond Requirement (calculated)" table title at a
+  // page foot) but the reflow it causes adds a page to every Verified Initial
+  // Inventory, even at the smallest reservation that fixes it. Section-heading
+  // keep-with-next alone changed the page count of none of the seven filing
+  // types on their standard fixtures.
+  const FIRST_UNIT_PT = {
+    table: 38,                 // header row (>= 18) + one data row
+    'key-value-grid': 20,      // one label/value row
+    checklist: 20,             // one checklist line
+    notice: 14,                // one line of body text
+    'signature-block': 20,     // the role line
+    'supporting-documents': 20,
+  };
+  const SECTION_HEADING_PT = 30;
+  const firstUnitHeight = (section, nextSection) => {
+    const first = ((section && section.blocks) || [])[0];
+    // A heading-only section is a Part divider: what must stay with it is the
+    // next section's heading and that section's own first unit. Depth is
+    // bounded at one -- two dividers in a row would be a model bug, and
+    // recursing further could reserve most of a page.
+    if (!first) {
+      return nextSection ? SECTION_HEADING_PT + firstUnitHeight(nextSection, null) : 0;
+    }
+    return FIRST_UNIT_PT[first.type] ?? 26;
+  };
+
   // Reported 2026-09-18, with a screenshot of Simplified Annual Accounting's
   // Part IV: a guardian's address ran past the right margin of the court
   // document and collided with its own label --
@@ -759,7 +802,7 @@ export async function generateCourtFormPdf(model, options = {}) {
     // triggers a page break, pageNum increments and the heading lands on
     // the new page. Registering the bookmark before this check would stamp
     // it to the old page, making it jump one page short.
-    checkPageSpace(30, sec.title);
+    checkPageSpace(SECTION_HEADING_PT + firstUnitHeight(sec, sections[sIdx + 1]), sec.title);
 
     // Register Outline / Bookmarks after the heading's page is settled
     if (doc.outline && typeof doc.outline.add === 'function') {

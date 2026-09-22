@@ -1,6 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import { freshStartNoPassword, createWard, fillMinimalValidGuardianWard } from './support/target';
-import { extractPdfTextItems } from './support/pdf-extract';
+import { extractPdfTextItems, extractPdfTextRuns } from './support/pdf-extract';
 
 // Milestone 60B-60E added two or three columns to Verified Initial Inventory
 // schedules that were already wide (A-2, C-1, C-3, C-4 gained the most). Every
@@ -283,6 +283,66 @@ test.describe('Milestone 60B-60E: widened Guardian Inventory schedules stay read
   // the column has to be wide enough for it. Neighbouring headers that wrap
   // at word boundaries ("Restricted Asset Amount", "In Safe Deposit Box?")
   // are correct and deliberately not asserted here.
+  // Milestone 64 D4: keep-with-next in the shared PDF engine. On a fully
+  // populated inventory the D14 baseline measured two section headings
+  // stranded at a page foot -- the heading-only "Part III — ASSETS OF THE
+  // WARD" divider as the last line of page 1, and Schedule C-5's heading as
+  // the last line of page 3 with its table overleaf. Reads the generated PDF,
+  // not the model, because this is a fact about where the engine breaks.
+  test('no section heading is the last content on its page (engine keep-with-next)', async ({ page }) => {
+    test.setTimeout(150_000);
+    await freshStartNoPassword(page);
+    await createWard(page, 'Keep With Next Ward', 'guardian');
+    await fillMinimalValidGuardianWard(page);
+    await page.evaluate(() => {
+      const d = (window as any).D;
+      Object.assign(d, {
+        scheduleNoItems: {},
+        scheduleA1: [{ propertyDescription: 'Primary Residence', streetAddress: '1420 5th Ave N', cityStateZip: 'St. Petersburg, FL 33705', fullAssetValue: 250000, wardPercent: 100 }],
+        scheduleA2: [{ lenderName: 'Wells Fargo Home Mortgage', lenderAddress: 'PO Box 10335', lenderCityStateZip: 'Des Moines, IA 50306', liabilityType: 'Mortgage', fullDebtBalance: 45000, wardPercent: 100 }],
+        scheduleB1: [{ institutionName: 'Raymond James Bank', accountType: 'Checking', accountNumber: '4821', streetAddress: '880 Carillon Pkwy', cityStateZip: 'St. Petersburg, FL 33716', fullAssetAmount: 38250, wardPercent: 100, restricted: 'No' }],
+        scheduleB2: [{ description: '2021 Toyota Camry', streetAddress: '1420 5th Ave N', cityStateZip: 'St. Petersburg, FL 33705', valuationMethod: 'KBB', fullAssetValue: 18500, wardPercent: 100 }],
+        scheduleB3: [{ description: 'Vanguard Index Fund', streetAddress: '100 Vanguard Blvd', cityStateZip: 'Malvern, PA 19355', fullAssetValue: 65000, wardPercent: 100, restricted: 'No' }],
+        scheduleB4: [{ lenderName: 'Capital One', lenderAddress: '1680 Capital One Dr, McLean, VA 22102', liabilityType: 'Credit Card', fullLiabilityBalance: 3200, wardPercent: 100 }],
+        scheduleC1: [{ payerName: 'Social Security Administration', payerAddress: '6401 Security Blvd', payerCityStateZip: 'Baltimore, MD 21235', typeOfIncome: 'Retirement', frequencyOfPayment: 'Monthly', paymentBasis: 'Monthly', annualIncomeAmount: 22200, wardPercent: 100 }],
+        scheduleC2: [{ claimantName: 'Bob Jones', claimantAttorney: 'John Smith', lawsuitDescription: 'Restitution', courtJurisdiction: '6th Judicial/Pinellas', caseNumber: '25-1234-CC', claimantAddress: '1000 Bayshore Dr NE', claimantCityStateZip: 'St Petersburg, FL 33710', dateFiled: '2025-06-01', amountOfClaim: 5000, wardPercent: 100 }],
+        scheduleC3: [{ defendantName: 'Acme Corp', actionDescription: 'Negligence', status: 'Mediation scheduled', courtJurisdiction: '6th Judicial/Pinellas', estimatedSettlement: 15000, wardPercent: 100 }],
+        scheduleC4: [{ trustName: 'Bennett Special Needs Trust', trusteeName: 'Chas Addams', trusteeAddress: '1 Trust Way', trusteeCityStateZip: 'Tampa, FL 33601', dateCreated: '2020-01-01', trustAmount: 49075, wardPercent: 100 }],
+        scheduleC5: [{ assetDescription: 'Joint checking account', ownerName: 'Sarah Bennett', ownerAddress: '1420 5th Ave N', ownerCityStateZip: 'St. Petersburg, FL 33705', relationshipToWard: 'Daughter', totalAssetValue: 8000, jointOwnerPercent: 50 }],
+      });
+      (window as any).autoSave();
+    });
+    const { pdf, sectionTitles } = await page.evaluate(async () => {
+      const { buildVerifiedInventoryModel, generateVerifiedInventoryPdf } = await (window as any).loadGuardianPdf();
+      const model = buildVerifiedInventoryModel((window as any).D, { printDate: '2026-09-22' });
+      const doc = await generateVerifiedInventoryPdf(model);
+      return { pdf: doc.output(), sectionTitles: model.sections.map((s: any) => String(s.title)) };
+    });
+    const runs = await extractPdfTextRuns(pdf);
+    const lastPage = Math.max(...runs.map((r) => r.page));
+    // The running header and footer print on every page and are not content.
+    const chrome = /IN THE CIRCUIT COURT|^Page \d+ of \d+$|^PROBATE DIVISION|^Ward: |^IN RE:|^CASE #|^UCN|^Verified Initial Inventory — /;
+    const content = runs.filter((r) => r.y >= 90 && r.text.trim() && !chrome.test(r.text));
+
+    const stranded: string[] = [];
+    for (let p = 1; p < lastPage; p++) {
+      const onPage = content.filter((r) => r.page === p).sort((a, b) => b.y - a.y);
+      const lowest = onPage[onPage.length - 1]?.text.trim() ?? '';
+      // A wrapped heading's first run is a prefix of its title.
+      if (lowest.length >= 12 && sectionTitles.some((t) => t === lowest || t.startsWith(lowest))) {
+        stranded.push(`p${p}: ${lowest}`);
+      }
+    }
+    expect(stranded, 'a section heading is the last content on its page').toEqual([]);
+
+    // Non-vacuity: the divider must sit on the same page as, and above, A-1.
+    const divider = runs.find((r) => r.text.startsWith('Part III — ASSETS'));
+    const a1 = runs.find((r) => r.text.startsWith('Schedule A-1: Real Estate'));
+    expect(divider && a1, 'Part III divider or Schedule A-1 not found').toBeTruthy();
+    expect(divider!.page).toBe(a1!.page);
+    expect(divider!.y).toBeGreaterThan(a1!.y);
+  });
+
   test('the B-1 and B-3 "Restricted?" headers are one intact run, never broken mid-word', async ({ page }) => {
     test.setTimeout(150_000);
     // Its own filing rather than the shared fixture: that one populates

@@ -884,6 +884,37 @@ recommended first.
      different data shape can strand C-5 or another heading again. Only
      keep-with-next fixes the class, and that remains unbuilt and unauthorized.
 
+     **SUPERSEDED 2026-09-22 by D4, built.** Keep-with-next now exists in the
+     shared engine (`src/core/pdf/pdf-engine.js`), and the forced break above
+     is retired -- the engine keeps both headings by rule.
+
+- **D4 built 2026-09-22 -- engine keep-with-next, section headings, all seven
+  filing types.** Decisions, in order: reach **automatic for every filing type**
+  (not opt-in); then, once the cost was measured, **section headings only**, not
+  table/grid/checklist sub-headings.
+
+  A section heading reserves its own 30pt plus the one-line minimum of its first
+  block (table 38, grid/checklist/signature-block/supporting-docs 20, notice 14);
+  a heading-only section reserves the next section's heading and first unit.
+
+  | Measured | Before | After |
+  | :-- | --: | --: |
+  | Guardian (standard fixture) pages | 6 | 6 |
+  | Guardian (all 11 schedules) pages | 7 | 7 |
+  | Annual / Plan Annual / Plan Minor / Plan Initial / Plan Simplified pages | 13 / 14 / 6 / 10 / 3 | 13 / 14 / 6 / 10 / 3 |
+  | Guardian section headings stranded (full fixture) | 2 | 0 |
+
+  **Page count changed for no filing type.** Final and Trust Accounting render
+  through the Annual model and are covered by it.
+
+  **Not done, by decision:** sub-heading keep-with-next. It would also fix one
+  real orphan -- Guardian's "Surety Bond Requirement (calculated)" table title
+  at a page foot -- but the reflow adds a page to every Verified Initial
+  Inventory, even at the smallest reservation that fixes it (tried at 38pt and
+  24pt: 6 -> 7 and 7 -> 8 pages either way). That orphan remains, recorded here.
+  A first, more generous set of section reservations also cost a page and left
+  a 5-run page; the one-line minimums above replaced it.
+
   The temporary spec that produced this (`tests/e2e/zz-d14-render-baseline.spec.ts`)
   is deleted in the same commit; the figures above are the record.
 - **D15 — workbook identity. DECIDED 2026-09-21: accept the content match.**
@@ -1006,7 +1037,7 @@ D7's bond-base acceptance is recorded but is not a delivery authorization.
 | 64B-1 — carrying totals and the D-4 restricted basis (D7), shared row helper, partial-ownership fixture | not yet | the only item that changes a submitted number |
 | 64A-2 — Verified Initial Inventory print rewrite, new fields, fixture | not yet | |
 | 64B-2 — E/F-1/F-2 first pages (D8), trust columns, Part XI panel wording (D13) | not yet | |
-| 64A-3 — layout / orphans | not yet | D14 baseline MEASURED 2026-09-22: shrinks to (a) the B-1/B-3 `Restrict\|ed?` mid-word header break, small and self-contained, and (b) orphan control, an engine feature across all seven filing types needing its own go-ahead. The Part IV split and the near-empty page 3 do not reproduce |
+| 64A-3 — layout / orphans | done 2026-09-22 | B-1/B-3 `Restricted?` header widened; orphan control built into the engine as D4 (section headings, all seven types, no page-count change); table sub-heading keep-with-next declined on its measured page cost |
 | ~~64B-3~~ — Excel Part XI | dropped | D9 keeps 58D |
 
 **Recommended order:** 64A-1 → 64B-1 → 64A-2 and 64B-2 (not in parallel) → 64A-3
