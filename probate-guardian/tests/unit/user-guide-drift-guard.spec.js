@@ -175,14 +175,6 @@ const GUIDE_CONTROLS = {
       { file: 'src/legacy-app.js', pattern: /data-feedback-open="bug"/ },
     ],
   },
-  'dashboard-comment-card': {
-    label: 'Comment Card',
-    // The Pinellas Clerk's GovQA form. Same two surfaces as Report a Bug.
-    evidence: [
-      { file: 'src/features/dashboard/index.js', pattern: /pinellascountyfl\.govqa\.us/ },
-      { file: 'src/legacy-app.js', pattern: /pinellascountyfl\.govqa\.us/ },
-    ],
-  },
   'annotation-note-color': {
     label: 'Note color',
     evidence: [{ file: 'src/core/pdf/pdf-annotate.js', pattern: /'Note color'/ }],
