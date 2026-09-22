@@ -94,7 +94,7 @@ function dashboardHeaderHTML() {
   return `<header class="dashboard-page-header">
     <div class="dashboard-page-title">
       <div class="dashboard-page-kicker">Status - overview</div>
-      <h1>All Filings — Dashboard <span class="dashboard-test-system-label">TEST SYSTEM</span></h1>
+      <h1>All Filings — Dashboard <span class="dashboard-test-system-label">TEST SYSTEM - Do not use for filing</span></h1>
       <p>Review exceptions, deadlines, and court status across active filings.</p>
     </div>
     <div class="dashboard-header-actions">
