@@ -7,7 +7,7 @@ import { resolveActiveDocPeriod } from '../../core/pdf/supplemental-pdf.js';
 import { resolveDescriptorForInventoryType } from '../../core/filing/filing-descriptor.js';
 import { composePdfAddressLines } from '../../core/pdf/address-format.js';
 import { maskSSN } from '../../core/pdf/ssn-format.js';
-import { calcTotalsGuardian, makeGuardianCalc, isRestrictedAnswer, isInSafeDepositBox, AUDIT_FEE_THRESHOLD } from './totals.js';
+import { calcTotalsGuardian, makeGuardianCalc, isRestrictedAnswer, isInSafeDepositBox, AUDIT_FEE_THRESHOLD, AUDIT_FEE_OVER_THRESHOLD } from './totals.js';
 import { effectiveAnswer } from '../../core/validation/dependent-question.js';
 
 export function buildVerifiedInventoryModel(D, options = {}) {
@@ -633,6 +633,12 @@ export function buildVerifiedInventoryModel(D, options = {}) {
           // $25,000, else $0 -- no upper tiers (those were Annual's, printed
           // here by mistake until Milestone 60A). The base is shown too, as
           // the live UI does, so the reader can check the determination.
+          // Milestone 64A-2, item 2.7. PART V B8/B9 states the fee schedule
+          // itself before the determination -- only the base and the
+          // determination printed before this, never the rule the
+          // determination applies.
+          { label: 'Property Value in Excess of $25,000', value: fmt(AUDIT_FEE_OVER_THRESHOLD) },
+          { label: 'Property Value Below $25,000', value: fmt(0) },
           { label: 'Total Inventory Value (audit-fee base)', value: fmt(totalRealPersonal) },
           {
             label: 'Audit Fee Determination',

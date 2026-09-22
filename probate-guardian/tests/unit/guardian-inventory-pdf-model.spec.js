@@ -159,6 +159,31 @@ describe('Milestone 64A-2, item 2.6: printed schedule titles match the court for
   });
 });
 
+// Milestone 64A-2, item 2.7. Form PART V B8/B9 states the fee schedule
+// itself ("Property Value in Excess of $25,000 ... $85.00" / "below $25,000
+// ... $0.00") before the determination; the print only showed the base
+// figure and the determination, never the rule those numbers come from.
+describe('Milestone 64A-2, item 2.7: the two-line audit fee schedule prints above the determination', () => {
+  test('prints both fee-schedule lines before Audit Fee Determination', () => {
+    const model = buildVerifiedInventoryModel({
+      wardName: 'Harold Thomas Bennett', caseNumber: '26-002487-GD', county: 'Pasco',
+      scheduleA1: [], scheduleA2: [], scheduleB1: [], scheduleB2: [], scheduleB3: [], scheduleB4: [],
+      scheduleC1: [], scheduleC2: [], scheduleC3: [], scheduleC4: [], scheduleC5: [],
+    });
+    const items = model.sections.find((s) => s.id === 'd3_d4').blocks[0].items;
+    const labels = items.map((i) => i.label);
+    const excessIndex = labels.indexOf('Property Value in Excess of $25,000');
+    const belowIndex = labels.indexOf('Property Value Below $25,000');
+    const determinationIndex = labels.indexOf('Audit Fee Determination');
+    expect(excessIndex).toBeGreaterThan(-1);
+    expect(belowIndex).toBeGreaterThan(-1);
+    expect(items[excessIndex].value).toBe('$85.00');
+    expect(items[belowIndex].value).toBe('$0.00');
+    expect(excessIndex).toBeLessThan(determinationIndex);
+    expect(belowIndex).toBeLessThan(determinationIndex);
+  });
+});
+
 describe('guardian inventory PDF model', () => {
   test('prints Part III as a body heading before the asset schedules', () => {
     const model = buildVerifiedInventoryModel({
