@@ -838,6 +838,38 @@ recommended first.
   Part IV attorney split, the near-empty page 3, the "Restricted?" header wrap),
   and record what was seen here. If they do not reproduce, 64A-3 shrinks to match.
   Content items are proven by PDF text extraction, not by eye.
+
+  **BASELINE MEASURED 2026-09-22, after 64A-2 landed.** Rendered the full
+  fixture (every one of the eleven schedules populated, not the
+  all-verified-empty minimal one) through `generateVerifiedInventoryPdf()` and
+  read back every text run's page and x/y with `extractPdfTextRuns()`. The
+  document is **7 pages**. Two of the spec's four claims do not reproduce, one
+  reproduces with different instances, and one is worse than described. A first
+  pass of this measurement was itself wrong and was redone: it sorted runs by y
+  and took the lowest as "the end of the page", which is the running footer, so
+  every page looked like it ended mid-caption. The numbers below exclude the
+  caption and footer bands.
+
+  | Spec claim | Measured |
+  | :-- | :-- |
+  | "Schedule A-2" orphaned at the foot of page 1 | **Does not reproduce.** A-2 sits mid-page at p2 y=549/480. But orphaned headings are real, with two *different* instances: **"Part III — ASSETS OF THE WARD"** is the entire lowest content of p1 (y=119) while Schedule A-1 starts p2 — it is a heading-only section (`blocks: []`), so it strands by nature; and **"Schedule C-5: Joint Owners of Ward's Assets"** is the lowest content of p3 (y=120) with its table on p4. |
+  | Part IV attorney heading + statement on one page, signature block on the next | **Does not reproduce.** "GUARDIAN ATTORNEY SIGNATURE" (p6 y=642), both attorney statements (p6 y=591, y=535) and the attorney signature block (p6 y=474) are all on page 6 together. Part IV as a *section* spans p5→p6, but no signature block is split from its own statements. |
+  | Page 3 mostly blank | **Does not reproduce.** p3 is the second-densest page (129 content runs vs p2's 136). The light page is **p4 — 27 runs, lowest content at y=572**, so roughly three-quarters of its content area is empty. Cause is visible and deliberate: p4 carries only Schedule C-5's tail, because Part III sets `pageBreakBefore: true`. Not an orphan-control problem. |
+  | B-1 header wraps as "Restrict ed?" | **Confirmed, and in two schedules, not one.** Schedule B-1 (p2 y=438.5): `x216="Restrict"` with `x224="ed?"` on the line below — a mid-word break. Schedule B-3 (p2 y=219.0): `x296="Restrict"` / `x304="ed?"`, the same break, which the spec did not name. Neighbouring headers that wrap at word boundaries ("Restricted Asset Amount" → "Restricted" / "Asset Amount"; "Restricted (not bonded)") are fine and are not this defect. |
+
+  **So 64A-3 shrinks to two items of very different cost**, and they should not
+  be bundled:
+  1. The mid-word `Restrict|ed?` break in the B-1 and B-3 column headers. A
+     column-width or header-text change in `pdf-model.js` — no engine change,
+     small and self-contained.
+  2. Orphan control for the two real instances. Per item 5's master check the
+     engine has only `pageBreakBefore` per section and no keep-with-next, so
+     this is an **engine feature** reaching all seven filing types' PDFs and
+     their layout specs (D4 already scoped it separately). Needs its own
+     go-ahead on that blast radius before it is built.
+
+  The temporary spec that produced this (`tests/e2e/zz-d14-render-baseline.spec.ts`)
+  is deleted in the same commit; the figures above are the record.
 - **D15 — workbook identity. DECIDED 2026-09-21: accept the content match.**
 - **D16 — Waived bond and D-4's required fields. DECIDED 2026-09-21: when the bond is waived, Bond Amount, Bond Period From, Bond Period To and Bonding Company are all not required; built inside 64A-1.**
   Raised by the review of this milestone: `validateGuardian()` requires all four
@@ -958,7 +990,7 @@ D7's bond-base acceptance is recorded but is not a delivery authorization.
 | 64B-1 — carrying totals and the D-4 restricted basis (D7), shared row helper, partial-ownership fixture | not yet | the only item that changes a submitted number |
 | 64A-2 — Verified Initial Inventory print rewrite, new fields, fixture | not yet | |
 | 64B-2 — E/F-1/F-2 first pages (D8), trust columns, Part XI panel wording (D13) | not yet | |
-| 64A-3 — layout / orphans | not yet | prerequisite: D14 render baseline |
+| 64A-3 — layout / orphans | not yet | D14 baseline MEASURED 2026-09-22: shrinks to (a) the B-1/B-3 `Restrict\|ed?` mid-word header break, small and self-contained, and (b) orphan control, an engine feature across all seven filing types needing its own go-ahead. The Part IV split and the near-empty page 3 do not reproduce |
 | ~~64B-3~~ — Excel Part XI | dropped | D9 keeps 58D |
 
 **Recommended order:** 64A-1 → 64B-1 → 64A-2 and 64B-2 (not in parallel) → 64A-3
@@ -973,7 +1005,7 @@ check when authorized (§2).
 implementing. What remains is the authorization itself and three stated
 boundaries: the Annual workbook is accepted by content, not file identity (D15);
 the spec's rendered-PDF observations are unverified until 64A-3's prerequisite
-(D14); and the generated PDFs do not exist until the print work is built.
+(D14 -- measured 2026-09-22, recorded under D14); and the generated PDFs do not exist until the print work is built.
 Working tree: commit only `MILESTONE-64-PROPOSAL.md` (and any other file a step
 names); the zip, `WCAG_2.1_AA_regex-structural.md`, `help.md` and the PDF
 deletion are not part of this work.
