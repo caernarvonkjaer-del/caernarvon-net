@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { freshStartNoPassword, createWard } from '../e2e/support/target';
 
-// Milestone 56G / 59B: capture harness for help/index.html's figures.
+// Milestone 56G / 59B / 66: capture harness for help/index.html's figures.
 //
 // NOT part of the regression suite -- it is dedicated documentation tooling
 // discovered exclusively via playwright.capture.config.ts and invoked via
@@ -140,6 +140,99 @@ test('probe: does a blocked preview carry the shell actions?', async ({ page }) 
   });
 });
 
+// Milestone 66. D-4 and D-5's existing figures predate two required
+// questions this milestone documents in prose: 64A-1/D16's "Has the surety
+// bond been waived by court order?" (D-4) and 64A-2/65A's "Indicate if Ward
+// is:" (D-5). Neither control existed when the current images were captured
+// -- confirmed by opening both extracted from help/index.html before writing
+// this test, not assumed from a milestone doc's say-so (AGENTS.md section 2):
+// D-4's image runs straight from "Name of Bonding Company" to "If bond
+// waived - date of order" with no Yes/No question between them, and D-5's
+// image shows "Service Date (on this date)" alone on its row with nothing
+// where the dropdown now sits.
+/**
+ * Both floating toasts the dashboard capture test above already knows to
+ * dismiss (the PWA offline-access offer and the "Save Your First Backup"
+ * reminder) also float over a freshly created ward's first schedule pages,
+ * arriving on their own timers rather than at page load -- the same G4
+ * problem this file's own history names: "a syntactically fine image of the
+ * wrong thing." Dismissed here so D-4/D-5's captures show the form, not a
+ * toast sitting on top of it.
+ */
+async function dismissFloatingToasts(page: import('@playwright/test').Page) {
+  const reminder = page.locator('[data-shell-action="hide-auto-export-reminder"]');
+  if (await reminder.count()) await reminder.click();
+  const toast = page.locator('#pwa-status-notice');
+  if (await toast.count()) {
+    const d = toast.getByRole('button', { name: 'Dismiss', exact: true });
+    if (await d.count()) await d.click();
+  }
+  await page.waitForTimeout(300);
+}
+
+test('capture: D-4 Bond & Surety Info with the waiver question', async ({ page }) => {
+  await freshStartNoPassword(page);
+  await createWard(page, WARD, 'guardian');
+  await page.evaluate(() => (window as any).navigate('/d4'));
+  await page.waitForURL(/#\/d4$/);
+  await dismissFloatingToasts(page);
+
+  // Scoped to input[...], not the bare attribute selector -- 63A/63F's jump-to-
+  // field links in the "Complete these items" box carry the same data-field-path
+  // on a <button>, and a strict-mode locator match on both is exactly the kind
+  // of thing this file's own header warns about verifying rather than assuming.
+  await page.locator('input[data-bind="bondAmount"]').fill('140000');
+  await page.locator('input[data-field-path="bondPeriodFrom"]').fill('03/15/2026');
+  await page.locator('input[data-field-path="bondPeriodTo"]').fill('03/15/2027');
+  await page.locator('input[data-field-path="bondingCompany"]').fill('Western Surety Company');
+  await page.locator('#yesno_bondWaived_no').check();
+  await page.locator('[data-yes-no-group="bondWaived"]').click();
+  await page.waitForTimeout(300);
+
+  // The question this figure exists to show. Assert before shooting so a
+  // silent miss (e.g. the toggle regressing back out of the page) cannot ship
+  // a screenshot that fails to demonstrate its own caption.
+  await expect(page.locator('[data-yes-no-group="bondWaived"]')).toBeVisible();
+  await expect(page.locator('[data-yes-no-group="bondWaived"]')).toContainText('Has the surety bond been waived by court order?');
+
+  const row = page.locator('#main-content .row.g-3').first();
+  await row.screenshot({ path: path.join(OUT, 'd4-bond.jpg'), quality: 82, type: 'jpeg' });
+});
+
+test('capture: D-5 Certificate of Service with Indicate if Ward is', async ({ page }) => {
+  await freshStartNoPassword(page);
+  await createWard(page, WARD, 'guardian');
+  await page.evaluate(() => (window as any).navigate('/d5'));
+  await page.waitForURL(/#\/d5$/);
+  await dismissFloatingToasts(page);
+
+  // See the D-4 test above: scoped to input/select[...], not the bare
+  // attribute, for the same jump-to-field-button collision.
+  await page.locator('input[data-field-path="serviceRecipients.0.name"]').fill('Harold J. Whitfield');
+  await page.locator('input[data-field-path="serviceRecipients.0.address"]').fill('1850 Coffee Pot Blvd NE');
+  await page.locator('input[data-field-path="serviceRecipients.0.cityStateZip"]').fill('St. Petersburg, FL 33704');
+  await page.locator('input[data-field-path="serviceRecipients.1.name"]').fill('Clerk of the Circuit Court, Probate Division');
+  await page.locator('input[data-field-path="serviceRecipients.1.address"]').fill('315 Court St, Room 106');
+  await page.locator('input[data-field-path="serviceRecipients.1.cityStateZip"]').fill('Clearwater, FL 33756');
+  await page.locator('input[data-field-path="serviceDate"]').fill('05/04/2026');
+  await page.locator('select[data-bind="serviceIndicateIf"]').selectOption('Ward is totally incapacitated');
+  await page.locator('input[data-field-path="serviceAttorney.name"]').fill('Daniel R. Okafor, Esq.');
+  await page.locator('input[data-field-path="serviceAttorney.signatureDate"]').fill('05/04/2026');
+  await page.locator('input[data-field-path="serviceAttorney.barNumber"]').fill('0123456');
+  await page.locator('input[data-field-path="serviceAttorney.phone"]').fill('(727) 555-0188');
+  await page.locator('input[data-field-path="serviceAttorney.streetAddress"]').fill('150 2nd Ave N, Suite 800');
+  await page.locator('input[data-field-path="serviceAttorney.cityStateZip"]').fill('St. Petersburg, FL 33701');
+  await page.locator('h1').first().click();
+  await page.waitForTimeout(300);
+
+  // The field this figure exists to show -- Milestone 64A-2/65A's required
+  // "Indicate if Ward is:" dropdown, absent from the current image.
+  await expect(page.locator('select[data-bind="serviceIndicateIf"]')).toBeVisible();
+  await expect(page.locator('select[data-bind="serviceIndicateIf"]')).toHaveValue('Ward is totally incapacitated');
+
+  await page.screenshot({ path: path.join(OUT, 'd5-certificate.jpg'), quality: 82, type: 'jpeg' });
+});
+
 test.afterAll(() => {
   const expectedFiles = [
     'signature-draw.jpg',
@@ -149,6 +242,8 @@ test.afterAll(() => {
     'help-panel.jpg',
     'preview-blocked.jpg',
     'blocked-preview-probe.json',
+    'd4-bond.jpg',
+    'd5-certificate.jpg',
   ];
 
   const actualFiles = fs.readdirSync(OUT).filter((f) => fs.statSync(path.join(OUT, f)).isFile());

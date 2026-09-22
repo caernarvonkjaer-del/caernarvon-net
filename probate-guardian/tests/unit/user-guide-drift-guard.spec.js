@@ -74,6 +74,12 @@ const RETIRED_TERMS = [
   // snapshot, launch preferences, the theme, and cross-tab coordination data
   // carrying the ward name and case number in plain localStorage.
   'no hidden copy elsewhere',
+  // Milestone 62 renamed the app "Probate Guardian" -> "Guardian Forms"
+  // (item 9). The guide's own prose was already clean (0 hits) when Milestone
+  // 66 checked -- this ratchets it. It does NOT catch the old name sitting in
+  // an embedded screenshot's pixels, which is a different, larger problem
+  // Milestone 66's findings record separately: this scan only ever sees text.
+  'Probate Guardian',
 ];
 
 describe('help/index.html does not reacquire a retired term', () => {
@@ -193,6 +199,50 @@ const GUIDE_CONTROLS = {
     // The proposal flagged this as possibly needing exclusion for lack of a
     // stable marker; it has one.
     evidence: [{ file: 'index.html', pattern: /data-shell-action="export-help"/ }],
+  },
+  // Milestone 66. Three controls the guide never mentioned before this pass --
+  // two are new (64A-1/D16, 64A-2/65A), one is old (57B/63B) but was never
+  // documented at all, found only by reading the D-5/Part VI/Part X source
+  // directly rather than trusting the guide's prior silence on it.
+  'guardian-bond-waived': {
+    label: 'Has the surety bond been waived by court order?',
+    // Guardian Inventory D-4 only -- the Annual/Trust family's own bond
+    // section (Part IX) has no waiver toggle; this control does not exist
+    // there.
+    evidence: [{ file: 'src/features/guardian-inventory/index.js', pattern: /'Has the surety bond been waived by court order\?'/ }],
+  },
+  'guardian-indicate-if-ward': {
+    label: 'Indicate if Ward is:',
+    // Guardian Inventory D-5 only (65A's own finding: the identically-worded
+    // "Indicate if" on Annual/Simplified's certificate pages is a different
+    // question -- method of service, not the ward's status -- and is not
+    // this control).
+    evidence: [{ file: 'src/features/guardian-inventory/index.js', pattern: /reqLabel\('Indicate if Ward is:'\)/ }],
+  },
+  'service-no-recipients-attestation': {
+    label: 'No recipients are required for this certificate',
+    // Three surfaces, all required (per the rule above): Initial Inventory
+    // D-5, Annual/Final/Trust Part X, Simplified Part VI. Each file declares
+    // its own ATTESTATION_57B constant rather than importing a shared one.
+    evidence: [
+      { file: 'src/features/guardian-inventory/index.js', pattern: /const ATTESTATION_57B\s*=\s*'No recipients are required for this certificate/ },
+      { file: 'src/features/annual-accounting/index.js', pattern: /const ATTESTATION_57B\s*=\s*'No recipients are required for this certificate/ },
+      { file: 'src/features/simplified-accounting/index.js', pattern: /const ATTESTATION_57B\s*=\s*'No recipients are required for this certificate/ },
+    ],
+  },
+  'guardian-c2-claimant-attorney': {
+    label: "Claimant's Attorney (if any)",
+    // Guardian Inventory C-2 only (64A-2, item 3.4).
+    evidence: [{ file: 'src/features/guardian-inventory/index.js', pattern: /optLabel\("Claimant's Attorney \(if any\)"\)/ }],
+  },
+  'guardian-preparer-as-of-date': {
+    label: 'Compilation "as of" date',
+    // Guardian Inventory D-2 only (64A-2, item 2.5's second half).
+    evidence: [{ file: 'src/features/guardian-inventory/index.js', pattern: /optLabel\('Compilation "as of" date/ }],
+  },
+  'dashboard-test-system-label': {
+    label: 'TEST SYSTEM - Do not use for filing',
+    evidence: [{ file: 'src/features/dashboard/index.js', pattern: /TEST SYSTEM - Do not use for filing/ }],
   },
 };
 
