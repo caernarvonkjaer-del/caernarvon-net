@@ -391,6 +391,16 @@ test.describe('PDF Accessibility: Accounting & Inventory Filing-Specific Coverag
     expect(inspection.rawPdfString).toContain('/Keywords (Florida, Probate, Guardianship, Annual Accounting)');
     expect(inspection.rawPdfString).not.toContain('/Subtype /Image');
 
+    // Milestone 64B-2, item 10.1 / D8. This fixture's schF2 is deliberately
+    // empty while schE and schF1 are populated, so it proves the empty case
+    // reaches the page and not just the model: every schedule prints its
+    // first page. Asserted on the section list rather than the page count
+    // because every numPages assertion in this suite is a >= lower bound,
+    // which a newly added page can never fail -- they cannot detect this.
+    expect(inspection.sectionTitles).toContain('SCHEDULE E: Bank Transfers During Period');
+    expect(inspection.sectionTitles).toContain('SCHEDULE F-1: Sales of Real Property During Period');
+    expect(inspection.sectionTitles).toContain('SCHEDULE F-2: Sales of Personal Property During Period');
+
     // Table regularity: all tables have uniform row widths
     expect(inspection.totalTables).toBeGreaterThanOrEqual(10);
     expect(inspection.irregularTables).toBe(0);

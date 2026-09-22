@@ -848,9 +848,17 @@ export function buildAnnualAccountingModel(D, options = {}) {
     ],
   });
 
-  // ── Schedule E: Bank Transfers (Conditional) ──────────────────────────────
-  if ((d.schE || []).length > 0) {
-    const schERows = d.schE.map((r, i) => [
+  // ── Schedule E: Bank Transfers ────────────────────────────────────────────
+  // Milestone 64B-2, item 10.1 / D8. These three schedules used to disappear
+  // entirely when empty, unlike every other schedule on this form, which
+  // always prints its first page with a "No entries" row. Form C9 expects the
+  // page, and the Excel path already shipped all three, so one filing could
+  // hand the clerk a workbook with Schedule F-1 and a PDF without it. The
+  // placeholder is the existing "No entries" row, NOT a "nothing to report"
+  // declaration -- the court's workbook collects no such declaration
+  // (AGENTS.md section 4).
+  {
+    const schERows = (d.schE || []).map((r, i) => [
       String(i + 1),
       r.bankName || '',
       fmtD(r.transferInDate),
@@ -871,7 +879,7 @@ export function buildAnnualAccountingModel(D, options = {}) {
           tag: 'Table',
           title: 'Schedule E: Bank Transfers During Period',
           headers: ['#', 'Bank Name / Account #', 'Transfer In Date', 'Transfer In Amt', 'Transfer Out Date', 'Transfer Out Amt'],
-          rows: schERows,
+          rows: schERows.length ? schERows : [['—', 'No entries', '—', '—', '—', '—']],
           colWidths: [6, 34, 15, 15, 15, 15],
           colAlign: ['center', 'left', 'left', 'right', 'left', 'right'],
         },
@@ -879,9 +887,10 @@ export function buildAnnualAccountingModel(D, options = {}) {
     });
   }
 
-  // ── Schedule F-1: Sales of Real Property (Conditional) ────────────────────
-  if ((d.schF1 || []).length > 0) {
-    const schF1Rows = d.schF1.map((r, i) => [
+  // ── Schedule F-1: Sales of Real Property ──────────────────────────────────
+  // Always prints its first page -- see Schedule E's note (item 10.1 / D8).
+  {
+    const schF1Rows = (d.schF1 || []).map((r, i) => [
       String(i + 1),
       r.description || '',
       r.bank || '',
@@ -890,7 +899,7 @@ export function buildAnnualAccountingModel(D, options = {}) {
       fmtS(r.salePrice),
     ]);
     const num = (v) => { const n = parseFloat(v); return isNaN(n) ? 0 : n; };
-    const totalF1 = d.schF1.reduce((s, r) => s + num(r.salePrice), 0);
+    const totalF1 = (d.schF1 || []).reduce((s, r) => s + num(r.salePrice), 0);
     sections.push({
       id: 'schF1',
       title: 'SCHEDULE F-1: Sales of Real Property During Period',
@@ -904,7 +913,7 @@ export function buildAnnualAccountingModel(D, options = {}) {
           tag: 'Table',
           title: 'Schedule F-1: Sales of Real Property During Period',
           headers: ['#', 'Description', 'Bank', 'Account #', 'Court Order Date', 'Sale Price'],
-          rows: schF1Rows,
+          rows: schF1Rows.length ? schF1Rows : [['—', 'No entries', '—', '—', '—', '$0.00']],
           totals: { label: 'Schedule F-1 Total', value: fmtS(totalF1) },
           colWidths: [6, 34, 16, 14, 16, 14],
           colAlign: ['center', 'left', 'left', 'left', 'left', 'right'],
@@ -913,9 +922,10 @@ export function buildAnnualAccountingModel(D, options = {}) {
     });
   }
 
-  // ── Schedule F-2: Sales of Personal Property (Conditional) ────────────────
-  if ((d.schF2 || []).length > 0) {
-    const schF2Rows = d.schF2.map((r, i) => [
+  // ── Schedule F-2: Sales of Personal Property ──────────────────────────────
+  // Always prints its first page -- see Schedule E's note (item 10.1 / D8).
+  {
+    const schF2Rows = (d.schF2 || []).map((r, i) => [
       String(i + 1),
       r.description || '',
       r.bank || '',
@@ -924,7 +934,7 @@ export function buildAnnualAccountingModel(D, options = {}) {
       fmtS(r.salePrice),
     ]);
     const num = (v) => { const n = parseFloat(v); return isNaN(n) ? 0 : n; };
-    const totalF2 = d.schF2.reduce((s, r) => s + num(r.salePrice), 0);
+    const totalF2 = (d.schF2 || []).reduce((s, r) => s + num(r.salePrice), 0);
     sections.push({
       id: 'schF2',
       title: 'SCHEDULE F-2: Sales of Personal Property During Period',
@@ -938,7 +948,7 @@ export function buildAnnualAccountingModel(D, options = {}) {
           tag: 'Table',
           title: 'Schedule F-2: Sales of Personal Property During Period',
           headers: ['#', 'Description', 'Bank', 'Account #', 'Court Order Date', 'Sale Price'],
-          rows: schF2Rows,
+          rows: schF2Rows.length ? schF2Rows : [['—', 'No entries', '—', '—', '—', '$0.00']],
           totals: { label: 'Schedule F-2 Total', value: fmtS(totalF2) },
           colWidths: [6, 34, 16, 14, 16, 14],
           colAlign: ['center', 'left', 'left', 'left', 'left', 'right'],

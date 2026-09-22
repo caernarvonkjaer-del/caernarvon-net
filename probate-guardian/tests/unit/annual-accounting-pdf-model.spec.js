@@ -113,3 +113,46 @@ describe('Milestone 64B-1: printed Carrying Value is unscaled; D-4 Restricted Am
   });
 });
 
+
+// Milestone 64B-2, item 10.1 / D8 (decided 2026-09-21: always print the first
+// page). Schedules E, F-1 and F-2 were the only three that vanished entirely
+// when empty -- every other schedule (A, B-1..B-4, C, D-1..D-5) always prints
+// its first page with a "No entries" row. The court's form C9 requires the
+// page, and AGENTS.md section 4 records that the Clerk accepts blank
+// schedules, so a filing with no bank transfers was being handed over missing
+// a page the form expects. The Excel path already shipped all three first
+// pages, so for one filing the workbook had Schedule F-1 and the PDF did not.
+// Uses the existing "No entries" row form, not a new "nothing to report"
+// declaration -- that distinction is the whole of section 4's sidebar/export
+// rule.
+describe('Milestone 64B-2, item 10.1: Schedules E, F-1 and F-2 always print their first page', () => {
+  const emptyModel = () => buildAnnualAccountingModel({ inventoryType: 'annual' });
+
+  test.each([
+    ['schE', 'SCHEDULE E: Bank Transfers During Period'],
+    ['schF1', 'SCHEDULE F-1: Sales of Real Property During Period'],
+    ['schF2', 'SCHEDULE F-2: Sales of Personal Property During Period'],
+  ])('%s prints even with no rows entered', (id, title) => {
+    const section = emptyModel().sections.find((s) => s.id === id);
+    expect(section, `${id} section must exist on an empty filing`).toBeDefined();
+    expect(section.title).toBe(title);
+  });
+
+  test.each([['schE'], ['schF1'], ['schF2']])('%s empty row is a "No entries" row with one cell per header', (id) => {
+    const table = emptyModel().sections.find((s) => s.id === id).blocks.find((b) => b.type === 'table');
+    expect(table.rows).toHaveLength(1);
+    expect(table.rows[0]).toHaveLength(table.headers.length);
+    expect(table.rows[0].join(' ')).toContain('No entries');
+  });
+
+  test('a populated schedule still prints its real rows, not the placeholder', () => {
+    const model = buildAnnualAccountingModel({
+      inventoryType: 'annual',
+      schE: [{ bankName: 'Chase ***1234', transferInDate: '2026-02-01', transferInAmt: '500' }],
+    });
+    const table = model.sections.find((s) => s.id === 'schE').blocks.find((b) => b.type === 'table');
+    expect(table.rows).toHaveLength(1);
+    expect(table.rows[0].join(' ')).toContain('Chase ***1234');
+    expect(table.rows[0].join(' ')).not.toContain('No entries');
+  });
+});
