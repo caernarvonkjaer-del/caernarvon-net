@@ -841,7 +841,8 @@ recommended first.
 - **D15 — workbook identity. DECIDED 2026-09-21: accept the content match.**
 - **D16 — Waived bond and D-4's required fields. DECIDED 2026-09-21: when the bond is waived, Bond Amount, Bond Period From, Bond Period To and Bonding Company are all not required; built inside 64A-1.**
   Raised by the review of this milestone: `validateGuardian()` requires all four
-  even after the filer answers that the court waived the bond (`index.js:1282`),
+  even after the filer answers that the court waived the bond (`index.js:1289`,
+  was `:1282` before MS 63 — see the staleness note under Authorization record),
   so a guardian with a waiver order cannot file without inventing a surety and
   dates. **Not authorized** until 64A-1 is (§3). Conditions: the readiness item
   and the validator error change together (§4 readiness invariant); a blank
@@ -933,6 +934,19 @@ D14); §12's "confirmed" list, which is the spec's own review.
 ---
 
 ## Authorization record and execution order (Milestone 64)
+
+**Line-number staleness (2026-09-22).** MS 63 landed after this proposal's line
+references were checked (`git pull` to `69caf61`). It added the UCN field and a
+`preparer-note.js` refactor to `guardian-inventory/index.js` (+37/−) and one line
+each to `guardian-inventory/pdf-model.js` and `annual-accounting/pdf-model.js`
+— exactly the files most of this proposal's citations point into. A diff of
+`6b0384c..69caf61` confirms the cited content is unchanged (only shifted down
+~6-7 lines by the new UCN row and imports); the `bondAmount` validator line
+noted above moved `:1282`→`:1289` as the one example checked directly. Every
+other `index.js`/`pdf-model.js` line citation in this document should be
+treated as approximate and re-confirmed against current master before it is
+used to edit code, per AGENTS.md's "a path printed by a resolver is a
+prediction, not proof" rule (§1) applied to line numbers.
 
 **Nothing in Milestone 64 is authorized** (`AGENTS.md` §3). On 2026-09-21 you
 answered "None yet" to authorizing any delivery, and set MS 63 as the next work.
