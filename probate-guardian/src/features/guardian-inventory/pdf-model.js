@@ -200,16 +200,20 @@ export function buildVerifiedInventoryModel(D, options = {}) {
         colAlign: ['left', 'left', 'right'],
       },
       {
+        // Milestone 64A-2, item 2.2 (with 2.6's Summary II title/row labels
+        // folded in, since both name the same text). Form: SUMMARY II H9 =
+        // -'C-2'!H50 -- Lawsuits Pending Against the Ward is a liability
+        // against the ward and prints negative, matching A-2/B-4 on Summary I.
         type: 'table',
         tag: 'Table',
-        title: 'Summary II — Other Assets & Sources of Income',
+        title: 'Summary II — Other Financial Information',
         headers: ['Schedule', 'Schedule Title', 'Reported Amount / Value'],
         rows: [
-          ['Schedule C-1', 'Periodic Income', fmt(totalC1)],
-          ['Schedule C-2', 'Claims & Lawsuits Against the Ward', fmt(totalC2)],
-          ['Schedule C-3', 'Claims & Lawsuits by the Ward', fmt(totalC3)],
-          ['Schedule C-4', 'Trusts', fmt(totalC4)],
-          ['Schedule C-5', 'Joint / Other Property', fmt(totalC5)],
+          ['Schedule C-1', 'Income (Annualized)', fmt(totalC1)],
+          ['Schedule C-2', 'Lawsuits Pending Against the Ward', fmt(-totalC2)],
+          ['Schedule C-3', 'Lawsuits Pending by the Ward', fmt(totalC3)],
+          ['Schedule C-4', 'Value of Trusts for the Ward', fmt(totalC4)],
+          ['Schedule C-5', "Joint Owners of Ward's Assets", fmt(totalC5)],
         ],
         colWidths: [20, 55, 25],
         colAlign: ['left', 'left', 'right'],

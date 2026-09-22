@@ -52,6 +52,40 @@ describe('Milestone 64A-2, item 2.1: Summary I lists every schedule individually
   });
 });
 
+// Milestone 64A-2, item 2.2. Form SUMMARY II: H9 = -'C-2'!H50 (a liability
+// against the ward, printed negative like A-2/B-4 on Summary I); its five
+// row labels and section title are also the form's own (this item and part
+// of 2.6's title table cover the same Summary II text, so both land here).
+describe('Milestone 64A-2, item 2.2: Summary II prints C-2 negative and the form\'s own labels', () => {
+  const base = (extra = {}) => ({
+    wardName: 'Harold Thomas Bennett', caseNumber: '26-002487-GD', county: 'Pasco',
+    scheduleA1: [], scheduleA2: [], scheduleB1: [], scheduleB2: [], scheduleB3: [], scheduleB4: [],
+    scheduleC1: [], scheduleC2: [], scheduleC3: [], scheduleC4: [], scheduleC5: [],
+    ...extra,
+  });
+
+  test('prints the form\'s own section title and five row labels, with C-2 negative', () => {
+    const model = buildVerifiedInventoryModel(base({
+      scheduleC1: [{ payerName: 'SSA', annualIncomeAmount: '1000', wardPercent: '100' }],
+      scheduleC2: [{ claimantName: 'Claimant', amountOfClaim: '1000', wardPercent: '100' }],
+      scheduleC3: [{ defendantName: 'Defendant', estimatedSettlement: '1000', wardPercent: '100' }],
+      scheduleC4: [{ trustName: 'Trust', trustAmount: '1000', wardPercent: '100' }],
+      scheduleC5: [{ assetDescription: 'Joint account', totalAssetValue: '1000', jointOwnerPercent: '100' }],
+    }));
+    const summary = model.sections.find((s) => s.id === 'summary');
+    const summaryII = summary.blocks[1];
+    expect(summaryII.title).toBe('Summary II — Other Financial Information');
+    expect(summaryII.rows.map((r) => r[1])).toEqual([
+      'Income (Annualized)',
+      'Lawsuits Pending Against the Ward',
+      'Lawsuits Pending by the Ward',
+      'Value of Trusts for the Ward',
+      "Joint Owners of Ward's Assets",
+    ]);
+    expect(summaryII.rows[1][2]).toBe('-$1,000.00');
+  });
+});
+
 describe('guardian inventory PDF model', () => {
   test('prints Part III as a body heading before the asset schedules', () => {
     const model = buildVerifiedInventoryModel({
@@ -295,7 +329,9 @@ describe('Milestone 60A: PDF totals come from the shared Guardian calculator', (
     // rather than a "Schedule A"/"Schedule B" debts column.
     expect(summaryI(model).rows[1]).toEqual(['A-2', 'Real Estate Liabilities', '-$500.00']);
     expect(summaryI(model).rows[6]).toEqual(['B-4', 'Liabilities / Secured and Unsecured Debt / Notes / Loans', '-$500.00']);
-    expect(summaryII(model).rows.map(r => r[2])).toEqual(['$500.00', '$500.00', '$500.00', '$500.00', '$500.00']);
+    // Milestone 64A-2, item 2.2: C-2 (Lawsuits Pending Against the Ward)
+    // prints negative on Summary II, matching the form's own H9 = -'C-2'!H50.
+    expect(summaryII(model).rows.map(r => r[2])).toEqual(['$500.00', '-$500.00', '$500.00', '$500.00', '$500.00']);
   });
 
   test('a blank Ward\'s % is 0%, as in the workbook, and is printed as unanswered rather than as 100%', () => {
