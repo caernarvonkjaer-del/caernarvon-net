@@ -398,121 +398,92 @@ function tooltip(key){
 // WALKTHROUGH SYSTEM (Phase 4) - Type-Specific Tours
 // ═══════════════════════════════════════════════════════
 const WALKTHROUGH_GUARDIAN=[
-  {element:'#help-toggle-btn',title:'1. Help Button',text:'Click the "?" button anytime for in-app help, tips, a downloadable user guide, and an Activity Log of every unlock and backup on this device.',position:'left'},
-  {element:'.ward-picker-select',title:'2. Your Active Ward',text:'This dropdown shows your current ward. You can switch between multiple guardianship cases here, and each one saves independently.',position:'right'},
-  {element:'#theme-toggle-btn',title:'3. Light & Dark Mode',text:'Switch between light and dark appearance here. Your choice is remembered, and the app opens in light mode until you choose otherwise.',position:'left'},
-  {element:'.ward-progress',title:'4. Filing Progress',text:'Tracks how many sections of this ward\'s filing are complete, computed live from what you\'ve actually entered. Use "Jump to…" to go straight to the next incomplete section.',position:'right'},
-  {element:'[data-page="/"]',title:'5. Cover Page',text:'Start here. This is where you enter basic case information: Ward name, Case Number, Guardianship Inception Date, County, and Guardian details. The Summary page next to it totals every schedule once you\'ve filled them in.',position:'bottom'},
-  {element:'[data-nav="a1"]',title:'6. Schedule A-1: Real Estate Assets',text:'List all real estate owned by or with the ward\'s interest. Include properties, residences, and land. Enter the ward\'s percentage ownership.',position:'right'},
-  {element:'[data-nav="a2"]',title:'7. Schedule A-2: Real Estate Liabilities',text:'List mortgages, liens, and debts against real estate. The app calculates net real estate value automatically.',position:'right'},
-  {element:'[data-nav="b1"]',title:'8. Schedule B-1: Cash Assets',text:'List all bank accounts, savings, checking, CDs, money market accounts. Include each account separately with the ward\'s percentage. If several accounts are nearly identical, use the "Duplicate" button on an entry instead of re-typing it.',position:'right'},
-  {element:'[data-nav="b2"]',title:'9. Schedule B-2: Personal Property',text:'Vehicles, jewelry, furniture, art, collections. Everything of value that isn\'t real estate or cash. Provide carrying value (depreciated worth).',position:'right'},
-  {element:'[data-nav="b3"]',title:'10. Schedule B-3: Intangible Assets',text:'Stocks, bonds, mutual funds, business interests, patents, copyrights. List each security or intangible asset with current value.',position:'right'},
-  {element:'[data-nav="b4"]',title:'11. Schedule B-4: Personal Property Liabilities',text:'Debts against personal property: car loans, credit card debt, personal loans. These reduce your total asset value.',position:'right'},
-  {element:'[data-nav="c1"]',title:'12. Schedule C-1: Income',text:'Annual income to the ward: interest, dividends, rental income, Social Security. Enter annualized amounts.',position:'right'},
-  {element:'[data-nav="c2"]',title:'13. Schedule C-2: Lawsuits Against Ward',text:'Any pending lawsuits where the ward is being sued. Include case number and claimed damages.',position:'right'},
-  {element:'[data-nav="c3"]',title:'14. Schedule C-3: Lawsuits by Ward',text:'Any lawsuits where the ward is suing someone else. Include case number and claimed recovery amount.',position:'right'},
-  {element:'[data-nav="c4"]',title:'15. Schedule C-4: Trusts',text:'Any trusts where the ward is a beneficiary. List trustee, trust property, and the ward\'s interest percentage.',position:'right'},
-  {element:'[data-nav="c5"]',title:'16. Schedule C-5: Joint Owners',text:'Properties or accounts owned jointly with others. List the co-owner and the ward\'s percentage of the total.',position:'right'},
-  {element:'[data-nav="d1"]',title:'17. Part III: Guardian Attestation',text:'Guardian signs and dates here under oath that the inventory is true and complete. One guardian must sign.',position:'bottom'},
-  {element:'[data-nav="d2"]',title:'18. Part IV: Preparer Information',text:'If someone else prepared this form (paralegal, accountant), their contact info and signature goes here.',position:'bottom'},
-  {element:'[data-nav="d3"]',title:'19. Part V: Attorney & Audit Fee',text:'Your attorney signs and dates here. Audit fee is calculated based on total estate value per state law.',position:'bottom'},
-  {element:'[data-nav="d4"]',title:'20. Part VI: Bond & Surety Info',text:'Information about your guardianship bond. This section may not apply to all guardianships.',position:'bottom'},
-  {element:'[data-nav="d5"]',title:'21. Part VII: Certificate of Service',text:'Proof that you served copies of the inventory on required parties: attorney, beneficiaries, etc.',position:'bottom'},
-  {element:'[data-page="/print"]',title:'22. Print Preview & Export',text:'When complete, click here to review your entire form and export as PDF (best for courts) or Excel for filing. Anything still missing is listed here, grouped by section, with a link straight to it.',position:'left'},
+  {element:'#help-toggle-btn',title:'1. Help',text:'Open Help for field guidance, the User Guide, backup controls, shared records, the Activity Log, and the guided tour.',position:'left'},
+  {element:'.ward-picker-select',title:'2. Active Filing',text:'Switch between filings here. Each filing is stored in the case file and keeps its own progress.',position:'right'},
+  {element:'#theme-toggle-btn',title:'3. Appearance',text:'Use the sun/moon button to switch light or dark mode. This display preference is remembered on this device.',position:'left'},
+  {element:'.ward-progress',title:'4. Filing Progress',text:'The progress indicator updates as you work. Use “Jump to…” to open an incomplete section; review the readiness panel before exporting.',position:'right'},
+  {element:'[data-page="/"]',title:'5. Cover',text:'Enter the case and guardian information shown on the filing. The sidebar then takes you through the inventory schedules, preparer and attorney sections, bond information, and Certificate of Service.',position:'bottom'},
+  {element:'[data-nav="b1"]',title:'6. Inventory schedules',text:'Complete the schedules that apply to this filing. Add rows when needed, and review the calculated totals after entering values.',position:'right'},
+  {element:'[data-nav="d5"]',title:'7. Certificate of Service',text:'Review the recipients and attestation in the Certificate of Service section. The app can check entered fields, but it cannot determine whom you must serve.',position:'bottom'},
+  {element:'[data-page="/print"]',title:'8. Print Preview',text:'Print Preview lists missing items and readiness reminders. Review the filing, then export the available PDF or Excel output; save a .sav backup separately.',position:'left'},
 ];
 
 const WALKTHROUGH_SIMPLIFIED=[
-  {element:'#help-toggle-btn',title:'1. Help Resources',text:'Stuck? Click "?" anytime for explanations, tips, downloadable guides designed specifically for Simplified Accounting, and an Activity Log of every unlock and backup on this device.',position:'left'},
-  {element:'.ward-picker-select',title:'2. Your Ward',text:'Switch between wards here. Each guardianship case is tracked separately, with its own income/expense summary.',position:'right'},
-  {element:'#theme-toggle-btn',title:'3. Light & Dark Mode',text:'Switch between light and dark appearance here. Your choice is remembered, and the app opens in light mode until you choose otherwise.',position:'left'},
-  {element:'.ward-progress',title:'4. Filing Progress',text:'Tracks how many sections of this ward\'s filing are complete, computed live from what you\'ve actually entered. Use "Jump to…" to go straight to the next incomplete section.',position:'right'},
-  {element:'[data-page="/"]',title:'5. Cover Page',text:'Enter basic case information: Ward name, Case Number, dates, and county. This auto-populates all schedule headers.',position:'bottom'},
-  {element:'[data-page="/p2"]',title:'6. Accounting Summary',text:'This is the heart of Simplified Accounting. You only report: Starting Balance, Income (interest/settlements/taxes), Expenses, and Remaining Balance.',position:'bottom'},
-  {element:'[data-page="/p3"]',title:'7. Guardian Signature',text:'Sign and date here, certifying under oath that this accounting is true and complete. This is your sworn statement.',position:'bottom'},
-  {element:'[data-page="/print"]',title:'8. Export & File',text:'Click Print Preview to review your complete form. Simplified Accounting is much shorter—perfect for courts that accept it. Anything still missing is listed here, with a link straight to it.',position:'left'},
+  {element:'#help-toggle-btn',title:'1. Help',text:'Open Help for Simplified Annual Accounting guidance, backups, the Activity Log, and the User Guide.',position:'left'},
+  {element:'.ward-picker-select',title:'2. Active Filing',text:'Switch between filings here. Your case file keeps each filing separate.',position:'right'},
+  {element:'#theme-toggle-btn',title:'3. Appearance',text:'Switch light or dark mode with the sun/moon button; the preference stays on this device.',position:'left'},
+  {element:'.ward-progress',title:'4. Filing Progress',text:'Use the progress indicator and “Jump to…” to find incomplete sections, then check Print Preview readiness.',position:'right'},
+  {element:'[data-page="/"]',title:'5. Cover',text:'Enter the case information for this accounting period.',position:'bottom'},
+  {element:'[data-page="/p2"]',title:'6. Accounting Summary',text:'Enter the balances, income, expenses, and other fields shown on this page. Review the calculated result before signing.',position:'bottom'},
+  {element:'[data-page="/p3"]',title:'7. Signatures',text:'Complete the signature section for the people shown in the filing. Do not treat the tour as legal advice.',position:'bottom'},
+  {element:'[data-page="/print"]',title:'8. Print Preview',text:'Review missing items and readiness reminders, then export the PDF. Simplified Annual Accounting does not offer Excel output.',position:'left'},
 ];
 
-// Rewritten — every selector below was previously wrong (missing the "a-"
-// prefix buildNavAnnual() actually uses on data-nav, e.g. "a-scha" not
-// "scha"), so 8 of the original 12 steps silently failed to resolve and the
-// tour skipped straight from Part III to Print Preview. The schedule
-// descriptions were also inaccurate: Annual Accounting has no "beginning of
-// year" / "end of year" asset schedules — it's Income (A), Disbursements
-// (B1-B4), Capital Adjustments (C), Assets & Liabilities (D1-D5), Transfers
-// (E), and Sales (F1-F2). Text below is drawn from each schedule's own
-// on-page instructions, not reconstructed from memory.
+// Annual, Final, and Trust Accounting share the same schedule workspace.
 const WALKTHROUGH_ANNUAL=[
-  {element:'#help-toggle-btn',title:'1. Get Help Anytime',text:'Click "?" for help, contextual tips, a downloadable guide for Annual Accounting, and an Activity Log of every unlock and backup on this device.',position:'left'},
-  {element:'.ward-picker-select',title:'2. Select Your Ward',text:'Use this dropdown to switch between guardianship cases. Each has its own annual accounting records.',position:'right'},
-  {element:'#theme-toggle-btn',title:'3. Light & Dark Mode',text:'Switch between light and dark appearance here. Your choice is remembered, and the app opens in light mode until you choose otherwise.',position:'left'},
-  {element:'.ward-progress',title:'4. Filing Progress',text:'Tracks how many sections of this accounting are complete, computed live from what you\'ve actually entered. Use "Jump to…" to go straight to the next incomplete section.',position:'right'},
-  {element:'[data-page="/p2"]',title:'5. Part II: Guardian Certification',text:'Guardian certifies they have receipts for all spending and will keep records for 3 years. Read this carefully—it\'s a legal requirement.',position:'bottom'},
-  {element:'[data-page="/p3"]',title:'6. Part III: Guardian Signatures',text:'Guardian signs here under oath that this accounting is correct. Can have multiple guardians sign.',position:'bottom'},
-  {element:'[data-nav="a-scha"]',title:'7. Schedule A: Income',text:'All income received during the period: SSI, retirement, disability benefits, interest, or rental income. Don\'t include proceeds from selling an asset — those belong in Schedule C.',position:'right'},
-  {element:'[data-nav="a-schb4"]',title:'8. Schedule B-4: All Other Disbursements',text:'The catch-all disbursement schedule most guardians use most — list payments in check-number order. Schedules B-1 through B-3 have their own pages for attorney fees, guardian fees, and other court-ordered payments. If several disbursements are nearly identical, use "Duplicate" on an entry instead of re-typing it.',position:'right'},
-  {element:'[data-nav="a-schc"]',title:'9. Schedule C: Capital Adjustments',text:'Gains or losses in asset values, newly discovered assets, and purchases during the period. Enter losses as negative numbers.',position:'right'},
-  {element:'[data-nav="a-schd1"]',title:'10. Schedule D-1: Cash Assets',text:'Every liquid account as of the end of the period — checking, savings, CDs, money market, trust accounts. List each one separately. Schedules D-2 through D-5 cover real estate, personal property, intangible assets, and liabilities.',position:'right'},
-  {element:'[data-nav="a-p67"]',title:'11. Parts VI & VII: Reconciliation',text:'The app checks that net assets computed from the accounting activity (income, disbursements, gains/losses) match net assets computed from the Schedule D asset/liability listings. These must agree. If they don\'t, correct the schedules — or, if the difference is right as filed, write an explanation on that page; it is required before export and is printed on the finished document.',position:'bottom'},
-  {element:'[data-page="/print"]',title:'12. Print Preview & Export',text:'Review your complete annual accounting and export as PDF (recommended) or Excel. Anything still missing — including an unbalanced accounting — is listed here, grouped by section, with a link straight to it.',position:'left'},
+  {element:'#help-toggle-btn',title:'1. Help',text:'Open Help for Annual, Final, or Trust Accounting guidance, backups, the Activity Log, and the User Guide.',position:'left'},
+  {element:'.ward-picker-select',title:'2. Active Filing',text:'Switch between filings here. Annual, Final, and Trust Accounting use the same accounting workspace with their own filing record.',position:'right'},
+  {element:'#theme-toggle-btn',title:'3. Appearance',text:'Switch light or dark mode with the sun/moon button; the preference stays on this device.',position:'left'},
+  {element:'.ward-progress',title:'4. Filing Progress',text:'Use the progress indicator and “Jump to…” to find incomplete sections. A schedule prompt is a navigation aid; Print Preview is where export readiness is checked.',position:'right'},
+  {element:'[data-page="/"]',title:'5. Cover',text:'Enter the case and accounting-period information shown on this filing.',position:'bottom'},
+  {element:'[data-page="/p2"]',title:'6. Certification',text:'Review the certification information shown on this page before continuing.',position:'bottom'},
+  {element:'[data-nav="a-scha"]',title:'7. Accounting schedules',text:'Work through the schedules in the sidebar: income, disbursements, capital adjustments, assets and liabilities, transfers, and sales. The exact fields depend on the filing.',position:'right'},
+  {element:'[data-page="/p3"]',title:'8. Signatures',text:'Complete the signature section and review the Certificate of Service fields in the filing. The app records entered information; it does not determine service obligations.',position:'bottom'},
+  {element:'[data-page="/print"]',title:'9. Print Preview',text:'Review missing items, readiness reminders, totals, and the rendered filing, then export the available PDF or Excel output.',position:'left'},
 ];
 
 const WALKTHROUGH_PLAN_SIMPLIFIED=[
-  {element:'#help-toggle-btn',title:'1. Get Help Anytime',text:'Click "?" for guidance on this form, plus an Activity Log of every unlock and backup on this device.',position:'left'},
-  {element:'.ward-picker-select',title:'2. Select Your Ward',text:'Switch between cases here. A Plan reports on the ward as a person; an Accounting reports on their money. If you file both, give each record the same case number and the dashboard will group them together.',position:'right'},
-  {element:'.ward-progress',title:'3. Filing Progress',text:'Tracks how much of this plan is complete, computed live from what you\'ve actually written. Use "Jump to…" to go straight to the next unanswered section.',position:'right'},
-  {element:'[data-page="/"]',title:'4. Cover',text:'Case number, ward name, and the reporting period this plan covers.',position:'bottom'},
-  {element:'[data-page="/p2"]',title:'5. The Plan',text:'The heart of the form — nine questions about the past year: where the ward lived, their medical care, their diagnosis, social activities, how they interact with others, whether any rights should be restored, advance directives, and any payment you received.',position:'bottom'},
-  {element:'[data-page="/p3"]',title:'6. Signatures',text:'Each guardian or guardian advocate signs under penalty of perjury, with their contact details. At least one signature is required.',position:'bottom'},
-  {element:'[data-page="/print"]',title:'7. Review & File',text:'Print Preview lists anything still missing, and adds a readiness check mirroring what the Clerk of Court looks for — including reminders for steps the app can\'t verify, like serving copies. Export as PDF when ready; this form has no Excel version.',position:'left'},
+  {element:'#help-toggle-btn',title:'1. Help',text:'Open Help for this plan, backups, the Activity Log, and the User Guide.',position:'left'},
+  {element:'.ward-picker-select',title:'2. Active Filing',text:'Switch between filings here. A Plan records information about the ward as a person; an Accounting records money and property.',position:'right'},
+  {element:'#theme-toggle-btn',title:'3. Appearance',text:'Switch light or dark mode with the sun/moon button; the preference stays on this device.',position:'left'},
+  {element:'.ward-progress',title:'4. Filing Progress',text:'Use the progress indicator and “Jump to…” to find unanswered sections.',position:'right'},
+  {element:'[data-page="/"]',title:'5. Cover',text:'Enter the case and reporting-period information shown on this plan.',position:'bottom'},
+  {element:'[data-page="/p2"]',title:'6. Plan pages',text:'Complete the questions and records presented by this plan. Add rows where the page provides an Add control.',position:'bottom'},
+  {element:'[data-page="/p3"]',title:'7. Signatures',text:'Review the signature and contact fields shown on the filing.',position:'bottom'},
+  {element:'[data-page="/print"]',title:'8. Print Preview',text:'Review missing items and readiness reminders, then export the PDF. This plan has no Excel output.',position:'left'},
 ];
 
 const WALKTHROUGH_PLAN_ANNUAL=[
-  {element:'#help-toggle-btn',title:'1. Get Help Anytime',text:'Click "?" for guidance on this form, plus an Activity Log of every unlock and backup on this device.',position:'left'},
-  {element:'.ward-picker-select',title:'2. Select Your Ward',text:'Switch between cases here. A Plan reports on the ward as a person; an Accounting reports on their money. If you file both, give each record the same case number and the dashboard will group them together.',position:'right'},
-  {element:'.ward-progress',title:'3. Filing Progress',text:'Tracks how much of this plan is complete, computed live from what you\'ve actually entered. Use "Jump to…" to go straight to the next unfinished section.',position:'right'},
-  {element:'[data-page="/"]',title:'4. Cover',text:'Case number, ward name, reporting period, and where the ward currently lives.',position:'bottom'},
-  {element:'[data-page="/p2"]',title:'5. Residences',text:'Every place the ward lived during the past 12 months. Add a row for each — the court checks this against the address on file.',position:'right'},
-  {element:'[data-page="/p3"]',title:'6. Residence & Care Plan',text:'Whether the ward moved, the residential setting best suited to them, and how you plan to provide medical, mental-health, personal, and social care.',position:'right'},
-  {element:'[data-page="/p5"]',title:'7. Medical Treatment',text:'Each provider who treated the ward during the year, with their address and how many visits. Add a row per provider.',position:'right'},
-  {element:'[data-page="/p6"]',title:'8. Skills & Rights',text:'The ward\'s social abilities, what you did to build their capacity, and — importantly — whether any removed rights could now be restored. Saying a right could be restored means filing a separate petition.',position:'right'},
-  {element:'[data-page="/p7"]',title:'9. Daily Living',text:'Rate the ward on sixteen activities of daily living. These ratings tell the court how the ward\'s independence is changing year to year.',position:'right'},
-  {element:'[data-page="/p11"]',title:'10. Signatures',text:'Each guardian signs under penalty of perjury with full contact details, then the attorney certifies the filing.',position:'right'},
-  {element:'[data-page="/print"]',title:'11. Review & File',text:'Print Preview lists anything still missing and adds a readiness check mirroring what the Clerk of Court reviews — including the separately-filed physician\'s report. Export as PDF; this form has no Excel version.',position:'left'},
+  {element:'#help-toggle-btn',title:'1. Help',text:'Open Help for this plan, backups, the Activity Log, and the User Guide.',position:'left'},
+  {element:'.ward-picker-select',title:'2. Active Filing',text:'Switch between filings here. A Plan records the ward\'s residence, care, and wellbeing.',position:'right'},
+  {element:'#theme-toggle-btn',title:'3. Appearance',text:'Switch light or dark mode with the sun/moon button; the preference stays on this device.',position:'left'},
+  {element:'.ward-progress',title:'4. Filing Progress',text:'Use the progress indicator and “Jump to…” to find unfinished sections.',position:'right'},
+  {element:'[data-page="/"]',title:'5. Cover',text:'Enter the case, reporting-period, and current-residence information shown on this plan.',position:'bottom'},
+  {element:'[data-page="/p2"]',title:'6. Residence and care',text:'Complete the residence, care, treatment, skills, rights, and daily-living pages presented by the plan.',position:'right'},
+  {element:'[data-page="/p11"]',title:'7. Signatures',text:'Review the guardian and attorney fields shown on the filing.',position:'right'},
+  {element:'[data-page="/print"]',title:'8. Print Preview',text:'Review missing items and readiness reminders, then export the PDF. This plan has no Excel output.',position:'left'},
 ];
 
 const WALKTHROUGH_PLAN_INITIAL=[
-  {element:'#help-toggle-btn',title:'1. Get Help Anytime',text:'Click "?" for guidance on this form, plus an Activity Log of every unlock and backup on this device.',position:'left'},
-  {element:'.ward-picker-select',title:'2. Select Your Ward',text:'Switch between cases here. A Plan reports on the ward as a person; an Accounting reports on their money. If you file both, give each record the same case number and the dashboard will group them together.',position:'right'},
-  {element:'.ward-progress',title:'3. Filing Progress',text:'Tracks how much of this plan is complete, computed live from what you\'ve actually entered. Use "Jump to…" to go straight to the next unfinished section.',position:'right'},
-  {element:'[data-page="/"]',title:'4. Cover',text:'Case number, ward name, Guardianship Inception Date, the date Letters were signed, and where the ward currently lives. This report is due within 60 days after the Letters of Guardianship are signed.',position:'bottom'},
-  {element:'[data-page="/p2"]',title:'5. Residential Setting & Medical Care',text:'The residential setting best suited to the ward, and the medical services you propose providing during the plan period.',position:'right'},
-  {element:'[data-page="/p5"]',title:'6. Examining Providers',text:'Every physical or mental examination you\'ve secured or plan to secure, with each provider\'s address and the approximate exam date. Add a row per provider.',position:'right'},
-  {element:'[data-page="/p6"]',title:'7. Daily Living',text:'Rate the ward on fifteen activities of daily living — this tells the court how much support the ward needs.',position:'right'},
-  {element:'[data-page="/p8"]',title:'8. Advance Directives',text:'Either confirm there are no pre-existing advance directives (and how you verified that), or record the ones the ward executed, including whether a court has suspended or revoked them.',position:'right'},
-  {element:'[data-page="/p9"]',title:'9. Signatures',text:'Each guardian signs under penalty of perjury, certifying the plan reflects the ward\'s wishes and rights. Up to four guardians can sign.',position:'right'},
-  {element:'[data-page="/print"]',title:'10. Review & File',text:'Print Preview lists anything still missing and adds a readiness check. Export as PDF; this form has no Excel version.',position:'left'},
+  {element:'#help-toggle-btn',title:'1. Help',text:'Open Help for this plan, backups, the Activity Log, and the User Guide.',position:'left'},
+  {element:'.ward-picker-select',title:'2. Active Filing',text:'Switch between filings here. Each filing remains separate in the case file.',position:'right'},
+  {element:'#theme-toggle-btn',title:'3. Appearance',text:'Switch light or dark mode with the sun/moon button; the preference stays on this device.',position:'left'},
+  {element:'.ward-progress',title:'4. Filing Progress',text:'Use the progress indicator and “Jump to…” to find unfinished sections.',position:'right'},
+  {element:'[data-page="/"]',title:'5. Cover',text:'Enter the case and guardianship information shown on this initial plan.',position:'bottom'},
+  {element:'[data-page="/p2"]',title:'6. Plan pages',text:'Complete the residential setting, care, provider, daily-living, and advance-directive pages presented by the plan.',position:'right'},
+  {element:'[data-page="/p9"]',title:'7. Signatures',text:'Review the guardian signature and contact fields shown on the filing.',position:'right'},
+  {element:'[data-page="/print"]',title:'8. Print Preview',text:'Review missing items and readiness reminders, then export the PDF. This plan has no Excel output.',position:'left'},
 ];
 
 const WALKTHROUGH_PLAN_MINOR=[
-  {element:'#help-toggle-btn',title:'1. Get Help Anytime',text:'Click "?" for guidance on this form, plus an Activity Log of every unlock and backup on this device.',position:'left'},
-  {element:'.ward-picker-select',title:'2. Select Your Ward',text:'Switch between cases here. A Plan reports on the ward as a person; an Accounting reports on their money. If you file both, give each record the same case number and the dashboard will group them together.',position:'right'},
-  {element:'.ward-progress',title:'3. Filing Progress',text:'Tracks how much of this plan is complete, computed live from what you\'ve actually entered. Use "Jump to…" to go straight to the next unfinished section.',position:'right'},
-  {element:'[data-page="/"]',title:'4. Cover',text:'UCN, Case #, reporting period, and whether this filing is amended, professional, or public guardianship. This is the annual plan used specifically when the ward is a minor.',position:'bottom'},
-  {element:'[data-page="/p3"]',title:'5. Treatment Providers',text:'Every medical or mental-health provider who treated the minor during the past year, with their address and number of visits.',position:'right'},
-  {element:'[data-page="/p5"]',title:'6. Education & Social Development',text:'A summary of the minor\'s school progress, social development, how they communicate, their interpersonal relationships, and any unmet social needs.',position:'right'},
-  {element:'[data-page="/p6"]',title:'7. Guardian Signatures',text:'Each guardian signs under penalty of perjury, certifying the plan reflects the minor\'s wishes and rights.',position:'right'},
-  {element:'[data-page="/p7"]',title:'8. Preparer & Attorney',text:'This form has its own Preparer certification, separate from the attorney certification — fill in whoever actually prepared the filing.',position:'right'},
-  {element:'[data-page="/print"]',title:'9. Review & File',text:'Print Preview lists anything still missing and adds a readiness check. Export as PDF; this form has no Excel version.',position:'left'},
+  {element:'#help-toggle-btn',title:'1. Help',text:'Open Help for this plan, backups, the Activity Log, and the User Guide.',position:'left'},
+  {element:'.ward-picker-select',title:'2. Active Filing',text:'Switch between filings here. Each filing remains separate in the case file.',position:'right'},
+  {element:'#theme-toggle-btn',title:'3. Appearance',text:'Switch light or dark mode with the sun/moon button; the preference stays on this device.',position:'left'},
+  {element:'.ward-progress',title:'4. Filing Progress',text:'Use the progress indicator and “Jump to…” to find unfinished sections.',position:'right'},
+  {element:'[data-page="/"]',title:'5. Cover',text:'Enter the UCN, case number, reporting period, and other fields shown on this minor filing.',position:'bottom'},
+  {element:'[data-page="/p3"]',title:'6. Treatment providers',text:'Complete the provider records presented by the plan, adding rows where needed.',position:'right'},
+  {element:'[data-page="/p6"]',title:'7. Signatures',text:'Review the guardian signature fields shown on the filing.',position:'right'},
+  {element:'[data-page="/p7"]',title:'8. Preparer and attorney',text:'Complete the preparer and attorney fields shown on this filing.',position:'right'},
+  {element:'[data-page="/print"]',title:'9. Print Preview',text:'Review missing items and readiness reminders, then export the PDF. This plan has no Excel output.',position:'left'},
 ];
 
 const WALKTHROUGH_DASHBOARD=[
-  {element:'#help-toggle-btn',title:'1. Help & Guidance',text:'Click "?" anytime for in-app help, the standalone User Guide, an Activity Log of unlocks and backups, and shared party records.',position:'left'},
-  {element:'#new-ward-btn, [data-dashboard-action="add-ward"]',title:'2. Create New Filing',text:'Start here to add a new ward or filing. Choose between Initial Inventory, Annual Accounting, Simplified Accounting, or one of four Guardianship Plans.',position:'bottom'},
+  {element:'#help-toggle-btn',title:'1. Help & Guidance',text:'Click "?" for in-app help, the User Guide, Activity Log, shared party records, backup controls, and the guided tour.',position:'left'},
+  {element:'#new-ward-btn, [data-dashboard-action="add-ward"]',title:'2. Create New Filing',text:'Choose a current filing type: Initial Inventory, Simplified Annual Accounting, Annual Accounting, Final Accounting, Trust Accounting, Simplified Annual Plan, Annual Guardianship Plan, Initial Guardianship Plan, or Annual Plan — Minors. Starting a new case also asks how to protect the case data.',position:'bottom'},
   {element:'.dashboard-summary-strip',title:'3. Status Overview',text:'Tracks urgent action items and approaching deadlines across all active wards.',position:'bottom'},
   {element:'#dashboard-search',title:'4. Search & Filter',text:'Quickly locate any filing by ward name, case number, or contact details.',position:'bottom'},
   {element:'#theme-toggle-btn',title:'5. Light & Dark Appearance',text:'Switch between light and dark mode here. Your preference is remembered across sessions on this device.',position:'left'},
-  {element:'.dashboard-triage-queue, .dashboard-empty',title:'6. All Filings Queue',text:'Manage all active and closed guardianship cases. Click "Continue" or "Edit" to resume working on a filing, or "+ Add Your First Ward" to begin.',position:'top'},
+  {element:'.dashboard-triage-queue, .dashboard-empty',title:'6. All Filings Queue',text:'Resume, edit, close, or find filings from one place. The case file is a local .sav file: use Save Backup (.sav) and Open Backup (.sav) to move or restore it. Automatic saving depends on the browser and an authorized file; keep manual backups.',position:'top'},
 ];
 
 let WALKTHROUGH_STEPS=[];

@@ -4,7 +4,7 @@ import { freshStartNoPassword } from './support/target';
 // Milestone 43G: split from one test looping all seven filing types in a
 // single run, where one early failure masked the other six results.
 
-const shellSteps = /Help|Ward|Light & Dark|Filing Progress|Select Your Ward/;
+const shellSteps = /Help|Ward|Light & Dark|Appearance|Active Filing|Filing Progress|Select Your Ward/;
 
 for (const formType of ['guardian', 'simplified', 'annual', 'planSimplified', 'planAnnual', 'planInitial', 'planMinor']) {
   test(`guided-tour filing steps remain attached to active sidebar navigation (${formType})`, async ({ page }) => {
