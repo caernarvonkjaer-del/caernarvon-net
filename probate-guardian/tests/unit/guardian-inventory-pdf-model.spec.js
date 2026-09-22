@@ -268,6 +268,28 @@ describe('Milestone 64A-2, item 2.5: attestation wording and Part structure foll
     expect(text).not.toContain('complies with the applicable Florida Statutes and Florida Probate Rules');
   });
 
+  // Item 2.5's second half: preparer.asOfDate is the compilation statement's
+  // own "as of" date (form PART IV H9, beside the G9 "as of" caption),
+  // distinct from the signature date it falls back to when blank.
+  test("the compilation statement uses the preparer's own as-of date when entered", () => {
+    const model = buildVerifiedInventoryModel(base({
+      preparer: { name: 'Marcus Thorne', signatureDate: '2026-03-02', asOfDate: '2026-01-15' },
+    }));
+    const text = section(model, 'd2_attorney').blocks
+      .filter((b2) => b2.type === 'notice').map((b2) => b2.text).join(String.fromCharCode(10));
+    expect(text).toContain('guardianship of Harold Thomas Bennett as of 01/15/2026.');
+    expect(text).not.toContain('as of 03/02/2026.');
+  });
+
+  test('a blank as-of date falls back to the signature date, never printing an empty "as of"', () => {
+    const model = buildVerifiedInventoryModel(base({
+      preparer: { name: 'Marcus Thorne', signatureDate: '2026-03-02' },
+    }));
+    const text = section(model, 'd2_attorney').blocks
+      .filter((b2) => b2.type === 'notice').map((b2) => b2.text).join(String.fromCharCode(10));
+    expect(text).toContain('as of 03/02/2026.');
+  });
+
   test('Part V is "OTHER INFORMATION" and prints no "Schedule D-3"/"D-4" nav labels', () => {
     const model = buildVerifiedInventoryModel(base());
     const part5 = section(model, 'd3_d4');

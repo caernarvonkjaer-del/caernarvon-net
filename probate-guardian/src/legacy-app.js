@@ -5683,7 +5683,10 @@ function emptyDataGuardian(){
     // state: not yet reviewed), never as falsely confirmed empty.
     scheduleNoItems:{},
     guardians:[{name:'',ssnEin:'',phone:'',streetAddress:'',cityStateZip:'',signatureDate:null,signatureState:'',signatureImage:''}],
-    preparer:{name:'',ssnEin:'',phone:'',streetAddress:'',cityStateZip:'',signatureDate:null,signatureState:'',signatureImage:''},
+    // Milestone 64A-2, item 2.5: asOfDate is the compilation statement's own
+    // "as of" date (form PART IV H9), distinct from the signature date it
+    // falls back to when blank.
+    preparer:{name:'',ssnEin:'',phone:'',streetAddress:'',cityStateZip:'',signatureDate:null,asOfDate:null,signatureState:'',signatureImage:''},
     attorney:{name:'',barNumber:'',phone:'',streetAddress:'',cityStateZip:'',signatureDate:null,filingDate:null,signatureState:'',signatureImage:''},
     // bondWaived is the tri-state ('', 'Yes', 'No') behind bondWaivedDate.
     // A blank date alone could not distinguish "waived, date not entered"

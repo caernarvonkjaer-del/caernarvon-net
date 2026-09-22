@@ -156,6 +156,9 @@ async function exportGuardian(page: import('@playwright/test').Page) {
     d.preparer = {
       name: 'PREPARER-NAME', ssnEin: 'PREPARER-SSN', phone: 'PREPARER-PHONE',
       streetAddress: 'PREPARER-STREET', cityStateZip: 'PREPARER-CITY', signatureDate: '2026-04-04',
+      // Milestone 64A-2, item 2.5: distinct from the signature date, so a
+      // fallback could not make this assertion pass by accident.
+      asOfDate: '2026-04-01',
     };
     d.attorney = {
       name: 'ATTY-NAME', barNumber: 'ATTY-BAR', phone: 'ATTY-PHONE',
@@ -201,6 +204,12 @@ test.describe('Initial Inventory fills its boxes, not its captions', () => {
     expect(c.get('B17')?.text).toBe('PREPARER-PHONE');
     expect(c.get('I17')?.text).toBe('PREPARER-CITY');
     expect(c.get('G13')?.text).toBe('2026-04-04');
+    // Milestone 64A-2, item 2.5. H8 is the workbook's own "Date " caption and
+    // H9 the box beneath it; B9 beside them stays the SUMMARY I ward-name
+    // formula, never overwritten.
+    expect(c.get('H8')?.text, 'the "Date" caption survives').toBe('Date ');
+    expect(c.get('H9')?.text, 'the compilation as-of date').toBe('2026-04-01');
+    expect(c.get('B9')?.formula, 'the ward-name formula survives').toBe("'SUMMARY I '!C7");
     // Two distinct dates on this page, and the name stays linked.
     expect(c.get('C21')?.text, 'the notification Date:').toBe('2026-06-06');
     expect(c.get('G26')?.text, 'the Attorney Signature date').toBe('2026-05-05');
@@ -252,9 +261,11 @@ test.describe('Initial Inventory fills its boxes, not its captions', () => {
         attyBar: d.attorney?.barNumber, attySig: d.attorney?.signatureDate, attyFiling: d.attorney?.filingDate,
         svcBar: d.serviceAttorney?.barNumber, svcStreet: d.serviceAttorney?.streetAddress,
         serviceIndicateIf: d.serviceIndicateIf,
+        preparerAsOf: d.preparer?.asOfDate,
       };
     });
     expect(back.serviceIndicateIf).toBe('N/A'); // Milestone 64A-2, item 2.4.
+    expect(back.preparerAsOf).toBe('2026-04-01'); // Milestone 64A-2, item 2.5.
     expect(back.bondAmount).toBe('25000');
     expect(back.bondPeriodFrom).toBe('2026-02-02');
     expect(back.bondPeriodTo).toBe('2027-03-03');

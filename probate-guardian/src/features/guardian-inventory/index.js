@@ -1083,6 +1083,7 @@ function pageD2(){
     </div>
     <div class="entry-card-body">
       ${formRow(col(5,reqLabel("Preparer's Name")+textInput('preparer.name','','name')),col(3,reqLabel('Date')+dateInput('preparer.signatureDate')),col(4,reqLabel('SSN / EIN')+textInput('preparer.ssnEin','','ssn')))}
+      ${formRow(col(5,optLabel('Compilation "as of" date (defaults to the signature date)')+dateInput('preparer.asOfDate')))}
       ${formRow(col(4,reqLabel('Phone Number')+textInput('preparer.phone','','phone')),col(8,reqLabel('Street Address')+textInput('preparer.streetAddress','','address')))}
       ${formRow(col(6,reqLabel('City / State / Zip')+textInput('preparer.cityStateZip','','zip')))}
       ${renderSignatureStateControl({ path: 'preparer', state: inferLegacySignatureState(D.preparer.signatureState, D.preparer.signatureDate), route: '/d2', signatureImage: D.preparer.signatureImage })}

@@ -455,6 +455,12 @@ export async function doSaveExcel(){
       // the box for it is I13:K13. Every field here used to be written to the
       // caption row, so a filed inventory had twelve printed labels replaced
       // by values and twelve empty boxes underneath them.
+      // Milestone 64A-2, item 2.5. The compilation statement's "as of" date.
+      // H8 is the workbook's own "Date " CAPTION and H9 the box beneath it
+      // (same caption-above-box shape as the rest of this block, confirmed by
+      // reading the real template); B9 next to it is a formula pulling the
+      // ward name from SUMMARY I C7 and is left alone.
+      setCell(p4,'H9',fmtD(inv.preparer.asOfDate));
       setCell(p4,'G13',fmtD(inv.preparer.signatureDate));
       setCell(p4,'I13',inv.preparer.name||'');
       setCell(p4,'B15',inv.preparer.ssnEin||'');
@@ -628,7 +634,7 @@ function parseInitialInventoryWorkbook(wb){
     // The same input-box addresses doSaveExcel() writes. Both sides used to
     // read and write the caption row instead, together, which is why the
     // round trip agreed with itself while the filed form was wrong.
-    preparer:(()=>{const p4=ws('PART IV');return{signatureDate:dt(p4,'G13'),name:txt(p4,'I13'),ssnEin:txt(p4,'B15'),streetAddress:txt(p4,'I15'),phone:txt(p4,'B17'),cityStateZip:txt(p4,'I17')};})(),
+    preparer:(()=>{const p4=ws('PART IV');return{signatureDate:dt(p4,'G13'),asOfDate:dt(p4,'H9'),name:txt(p4,'I13'),ssnEin:txt(p4,'B15'),streetAddress:txt(p4,'I15'),phone:txt(p4,'B17'),cityStateZip:txt(p4,'I17')};})(),
     // name comes from SUMMARY I D24, the cell the form's own I26 formula
     // reads, rather than from a formula cell's cached result.
     attorney:(()=>{const p4=ws('PART IV');return{signatureDate:dt(p4,'G26'),filingDate:dt(p4,'C21'),name:txt(si,'D24'),barNumber:txt(p4,'B28'),streetAddress:txt(p4,'I28'),phone:txt(p4,'B30'),cityStateZip:txt(p4,'I30')};})(),
