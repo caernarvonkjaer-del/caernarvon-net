@@ -554,7 +554,7 @@ export function showAutoExportReminder(firstTime) {
   if (titleEl && textEl) {
     if (firstTime) {
       titleEl.textContent = 'Save Your First Backup';
-      textEl.textContent = "It only takes a moment, and protects your case's data if something happens to this browser.";
+      textEl.textContent = 'Save a .sav case file now. In Chrome or Edge, choosing a file enables automatic saving; otherwise save backups manually.';
     } else {
       titleEl.textContent = 'Unsaved Changes';
       textEl.textContent = 'You have changes since your last backup file.';

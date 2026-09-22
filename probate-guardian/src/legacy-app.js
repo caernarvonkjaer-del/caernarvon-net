@@ -2649,9 +2649,10 @@ async function saveData(){
   // that depend on it having landed before acting further (lockApp() wiping
   // memory, beforeunload) aren't racing an in-flight IndexedDB write.
   if(_dirtySinceExport){
-    const cached=await saveSessionRestoreCache();
-    if(!cached)showSaveError();
-    else hideSaveError();
+    // This is only a best-effort crash-recovery snapshot. It is not the
+    // durable .sav case file, so an IndexedDB/cache failure must not look
+    // like a failed case-file save (and must not clear a real write error).
+    await saveSessionRestoreCache();
   }
   // No "last saved" stamp here: at this point no handle has been checked,
   // no permission verified, and no write attempted. writeCaseToHandle()

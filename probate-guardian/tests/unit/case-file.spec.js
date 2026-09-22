@@ -244,6 +244,15 @@ describe('save timestamp indicator: one clock, only advanced by a real save', ()
     expect(() => new vm.Script(source, { filename: 'legacy-app.js' })).not.toThrow();
   });
 
+  test('recovery-cache failures do not invoke the durable save-error banner', async () => {
+    const { readFile } = await import('node:fs/promises');
+    const source = await readFile(new URL('../../src/legacy-app.js', import.meta.url), 'utf8');
+    const recoveryBlock = source.match(/if\(_dirtySinceExport\)\{([\s\S]*?)\n  \}\n  \/\/ No "last saved" stamp/);
+    expect(recoveryBlock, 'saveData recovery-cache block should remain explicit').not.toBeNull();
+    expect(recoveryBlock[1]).not.toMatch(/showSaveError\(\)/);
+    expect(recoveryBlock[1]).not.toMatch(/hideSaveError\(\)/);
+  });
+
   test('beginRecordingExport advances the clock and its rollback restores it', async () => {
     const { beginRecordingExport, setLastExportAt, getLastExportAt } =
       await import('../../src/core/persistence/case-file.js');
