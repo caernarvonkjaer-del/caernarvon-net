@@ -2,14 +2,17 @@
 
 ## Status
 
-**Draft — a proposal, not a work order. Authorizes no change** (`AGENTS.md` §3).
-Nothing in this document has been implemented. Items 64A–64B are written up;
-further items will be appended as they are raised.
+**Landed 2026-09-22.** Authorized 2026-09-21 ("Begin 64 in dependency order,
+then any order you want. Do each item sequentially, unit test, move to the
+next.") and implemented in full: 64A-1, 64B-1, 64A-2, 64B-2, 64A-3, and the D4
+engine change the D14 baseline led to. See the Authorization record near the
+end of this document for delivery-by-delivery detail and commits, and the
+Final regression section at the very end for the closing test run.
 
 | Item | Summary | Status |
 | :-- | :-- | :-- |
-| **64A** | Guardian Inventory: printed filing and validation corrected against the Sixth Circuit Verified Initial Inventory, Rev. 11/17/2022 | Proposed — **D1–D6 resolved**, **D12 decided** (no revision stamp); workbook cell references checked 2026-09-21; **not yet authorized**; 64A-3 has a render-baseline prerequisite (D14) |
-| **64B** | Annual / Final / Trust Accounting: carrying-value totals, empty-schedule pages, trust columns, Part XI in Excel, against the Sixth Circuit Annual Accounting, Revision 11/17/2022 | Proposed — **D7–D11, D13, D15 decided** (workbook basis for D-4 restricted; always print E/F-1/F-2 first pages; keep 58D for Part XI; three-part delivery; release note only; fix the Part XI panel wording in 64B-2; workbook accepted by content); Part IX `H13` traced, trust-table widths measured; **not yet authorized** |
+| **64A** | Guardian Inventory: printed filing and validation corrected against the Sixth Circuit Verified Initial Inventory, Rev. 11/17/2022 | **Landed 2026-09-22** — D1–D6, D12, D16 decided; 64A-1/64A-2/64A-3 all implemented; 64A-3's render-baseline prerequisite (D14) measured, and its D4 engine follow-on landed |
+| **64B** | Annual / Final / Trust Accounting: carrying-value totals, empty-schedule pages, trust columns, Part XI in Excel, against the Sixth Circuit Annual Accounting, Revision 11/17/2022 | **Landed 2026-09-22** — D7–D11, D13, D15 decided; 64B-1/64B-2 both implemented; 64B-3 (Excel Part XI) dropped per D9 |
 
 ---
 
@@ -1027,32 +1030,110 @@ treated as approximate and re-confirmed against current master before it is
 used to edit code, per AGENTS.md's "a path printed by a resolver is a
 prediction, not proof" rule (§1) applied to line numbers.
 
-**Nothing in Milestone 64 is authorized** (`AGENTS.md` §3). On 2026-09-21 you
-answered "None yet" to authorizing any delivery, and set MS 63 as the next work.
-D7's bond-base acceptance is recorded but is not a delivery authorization.
+**All of Milestone 64 is authorized and landed** (`AGENTS.md` §3). On
+2026-09-21 you answered "None yet" and set MS 63 as the next work; MS 63
+landed the same day, and on 2026-09-21 you then authorized MS 64 whole
+("Begin 64 in dependency order, then any order you want. Do each item
+sequentially, unit test, move to the next."). Execution ran 2026-09-21 to
+2026-09-22, sequentially, in the order below, each item unit-tested before
+the next began.
 
 | Delivery | Authorized? | Notes |
 | :-- | :-- | :-- |
-| 64A-1 — bond amount (numeric; blank stays blank; Excel import numeric), waived-bond validation (D16), Summary B-2 row, C-3 and B-4 validation | not yet | small, independent |
-| 64B-1 — carrying totals and the D-4 restricted basis (D7), shared row helper, partial-ownership fixture | not yet | the only item that changes a submitted number |
-| 64A-2 — Verified Initial Inventory print rewrite, new fields, fixture | not yet | |
-| 64B-2 — E/F-1/F-2 first pages (D8), trust columns, Part XI panel wording (D13) | not yet | |
-| 64A-3 — layout / orphans | done 2026-09-22 | B-1/B-3 `Restricted?` header widened; orphan control built into the engine as D4 (section headings, all seven types, no page-count change); table sub-heading keep-with-next declined on its measured page cost |
+| 64A-1 — bond amount (numeric; blank stays blank; Excel import numeric), waived-bond validation (D16), Summary B-2 row, C-3 and B-4 validation | done 2026-09-21 | `d18447c`, `e7f036c`, `fcd2452`, `ed115ed` |
+| 64B-1 — carrying totals and the D-4 restricted basis (D7), shared row helper, partial-ownership fixture | done 2026-09-21 | `27a4b7b`; the only item that changed a submitted number |
+| 64A-2 — Verified Initial Inventory print rewrite, new fields, fixture | done 2026-09-21/22 | `40c2147`, `2b97932`, `944b1de`, `f6a3ceb`, `4521c9a`, `da908f6`, `8227643`, `0c227ad`, `7e5d8b3`, `0cafd7d` |
+| 64B-2 — E/F-1/F-2 first pages (D8), trust columns, Part XI panel wording (D13) | done 2026-09-21 | `15875b4`, `2ae794d`, `0e5a9ec` |
+| 64A-3 — layout / orphans | done 2026-09-22 | `55e5cf6`, `ca74842`; B-1/B-3 `Restricted?` header widened; D14 baseline `1e4a6f1` |
+| D4 — engine keep-with-next (64A-3's follow-on, not a separate delivery) | done 2026-09-22 | `5fc827f`; section headings only (your answer, over "all block sub-headings too"), all seven filing types, no page-count change |
 | ~~64B-3~~ — Excel Part XI | dropped | D9 keeps 58D |
 
-**Recommended order:** 64A-1 → 64B-1 → 64A-2 and 64B-2 (not in parallel) → 64A-3
-last, once every content change has settled. **Against MS 63:** 63E is
-authorized (2026-09-21) and MS 64 is not, so **63E lands first**; 64A-2 / 64B-2
-then build their expected-string baselines on 63E's UCN headers.
-64A-1 (guardian files) and 64B-1 (annual `totals.js` and its callers) appear to
-share no files and can be reviewed in either order — confirm with a file-list
-check when authorized (§2).
+**Order executed:** 63E landed first (2026-09-21, ahead of MS 64), then
+64A-1 → 64B-1 → 64A-2 → 64B-2 → 64A-3 → D4, matching the recommended order —
+64A-1 and 64B-1 shared no files and cost nothing to sequence either way; 64A-2
+and 64B-2 built their expected-string baselines on 63E's UCN headers as
+planned; 64A-3 ran last, once every content change had settled, and its D14
+render-baseline prerequisite led directly into the D4 engine change.
 
-**Open before you authorize** — nothing that can be checked without
-implementing. What remains is the authorization itself and three stated
-boundaries: the Annual workbook is accepted by content, not file identity (D15);
-the spec's rendered-PDF observations are unverified until 64A-3's prerequisite
-(D14 -- measured 2026-09-22, recorded under D14); and the generated PDFs do not exist until the print work is built.
-Working tree: commit only `MILESTONE-64-PROPOSAL.md` (and any other file a step
-names); the zip, `WCAG_2.1_AA_regex-structural.md`, `help.md` and the PDF
-deletion are not part of this work.
+Three boundaries noted before authorization, resolved by landing: the Annual
+workbook was accepted by content, not file identity (D15) — unchanged, still
+the accepted basis; the spec's rendered-PDF observations were unverified
+until 64A-3's prerequisite — resolved by D14's 2026-09-22 measurement; the
+generated PDFs didn't exist until the print work was built — they do now, and
+the Final regression section below is the test run against them.
+
+### Final regression, and the push (2026-09-22)
+
+Run once, after every MS 64 delivery had landed, as instructed. Nothing
+failed here; two items below shipped red earlier and were caught and fixed
+before this run, not by it.
+
+| Gate | Result |
+| :-- | :-- |
+| `npm test` — unit | **1709 / 1709** |
+| `npm test` — full source e2e | **752 passed, 6 skipped, 0 failed** (26.8 min). The 6 skips are the cases that run only on the hosted target. |
+| `npm run test:e2e:web` — hosted profile | **34 passed, 2 skipped, 0 failed** (1.3 min). The 2 skips are the source-only cases. Same 34/2 split as MS 63 — the D4 engine change didn't move anything here. |
+| `npm run check:types`, `verify:data-model`, window-bridge and `TEST-INDEX.md` guards | clean / OK (945 data-model rows). `check:types` run directly (`tsc --noEmit`, not just the npm wrapper) — see below for why this matters this time. |
+
+**For your attention** (none of these blocked the push):
+
+- **Two commits shipped with a spec red, caught late, not at commit time.**
+  Item 2.4 (`da908f6`, D-5's "Indicate if" field) broke
+  `field-kind-inference.spec.js` — `serviceIndicateIf` contains "ein", the
+  SSN/EIN-masking heuristic's collision string — and stayed red for two
+  commits before being fixed in `7e5d8b3`. Item 2.5 (`8227643`, the
+  attestation-wording rewrite) broke `output-semantics.artifact.spec.ts` — a
+  stale heading in `filing-matrix.ts` — and stayed red for **eight** commits;
+  it surfaced only incidentally during the D4 blast-radius run and was fixed
+  in `0cafd7d`. Routine per-item testing would not have caught it. Both are
+  closed now. The lesson is the one AGENTS.md already states: a targeted pass
+  is not proof the unit suite is green.
+- **`check:types` was not run at all until this pass**, despite this
+  milestone changing `tests/e2e/support/fixtures.ts` and `filing-matrix.ts` —
+  both inside its checked scope (`AGENTS.md` §2). It is clean now, but it
+  should have been run at 64A-2/64A-3, not held to the end.
+- **The Guardian "Surety Bond Requirement (calculated)" table title can still
+  print alone at the foot of a page.** Known since D14, left as-is: fixing it
+  costs a page on every Verified Initial Inventory at every reservation size
+  tried (38pt and 24pt both moved 6→7 and 7→8 pages). D4 fixed every
+  stranded section heading; this one remaining orphan is a table
+  sub-heading, deliberately out of scope for the same page-cost reason.
+- **The Excel C-2 round trip merges the attorney into the claimant name.**
+  `c2ClaimantLine()` writes "Atty X for Y" into one cell because the form
+  defines no delimiter for a separate attorney line and any one this app
+  invented could misparse the form's own worked example; the importer does
+  not split it back (decided 2026-09-22). `claimantAttorney` is optional for
+  this reason.
+- **D16's on-screen bond-field labels still show as required when the bond
+  is waived.** `reqLabel()` on Bond Amount / Bond Period From / Bond Period
+  To / Bonding Company (`index.js:1164–1165`) is unconditional, but
+  `validateGuardian()` correctly skips all four when `bondWaived` is Yes
+  (`index.js:1320–1321`) — confirmed by reading both call sites directly.
+  Cosmetic only: export is never blocked by this; the label copy just
+  doesn't (yet) reflect the exemption.
+
+**Filer-observable changes worth a release note:**
+
+- A new required question, D-5 "Indicate if:" (Ward is totally incapacitated
+  / under 14 / N/A), blocks export of an existing Guardian inventory until
+  answered — a filing saved before this milestone needs one more answer
+  before it can export again.
+- Schedule D-2/D-3/D-4 Carrying Value and D-4's Restricted Amt now match the
+  court's own workbook math instead of double-applying the ward's
+  percentage; a filing exported before this milestone and re-printed after
+  it will show different figures on these lines (D11: release note only —
+  no filing has been submitted from this app, so there is nothing to
+  remediate).
+- Schedules E, F-1 and F-2 now always print their first page, with a
+  "No entries" row when empty, instead of being omitted.
+- The Verified Initial Inventory's Part III/IV/V are restructured and
+  reworded to the form's own language: Part III is the guardian oath alone;
+  Part IV is "PREPARER & GUARDIAN ATTORNEY ATTESTATIONS"; Part V is
+  "OTHER INFORMATION" (audit fee schedule and surety bond requirement).
+- A waived surety bond no longer requires a bond amount, period, or bonding
+  company to export.
+- Summary I/II, all 11 schedule titles, Part I's Safe Deposit Box questions,
+  and the audit fee schedule now print the form's own wording and rows.
+
+**Not run:** the Firefox, WebKit, Edge and portable profiles
+(`test:e2e:all-profiles` / `test:release`).
