@@ -855,7 +855,7 @@ test.describe('PDF Accessibility: Accounting & Inventory Filing-Specific Coverag
     expect(text1).toContain('Secondary Email');
     expect(text1).toContain('service@vancelaw.com');
     const partThreeIndex = text1.indexOf('Part III — ASSETS OF THE WARD');
-    const scheduleA1Index = text1.indexOf('Schedule A-1: Real Property Assets');
+    const scheduleA1Index = text1.indexOf('Schedule A-1: Real Estate / Real Property'); // Milestone 64A-2, item 2.6: form title
     expect(partThreeIndex).toBeGreaterThan(-1);
     expect(scheduleA1Index).toBeGreaterThan(partThreeIndex);
     // Layout underline artifact tagged

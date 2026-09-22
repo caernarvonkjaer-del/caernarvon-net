@@ -292,7 +292,7 @@ test.describe('Non-Raster PDF Generation, Signatures & Bookmarks', () => {
     }, fixture);
 
     const extractedText = await extractPdfText(pdfInspection.rawPdfString);
-    expect(extractedText).toContain('Schedule B-1: Cash & Financial Accounts');
+    expect(extractedText).toContain('Schedule B-1: Cash Assets / Cash Equivalent Assets'); // Milestone 64A-2, item 2.6: form title
     expect(extractedText).toContain('Supporting Documents');
     expect(extractedText).toContain('Statement verifies the restricted depository balance.');
     expect(extractedText).toContain('Uploaded bank statement support page');

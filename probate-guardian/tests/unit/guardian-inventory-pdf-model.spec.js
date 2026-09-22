@@ -116,6 +116,49 @@ describe('Milestone 64A-2, item 2.3: Part I prints the Safe Deposit Box question
   });
 });
 
+// Milestone 64A-2, item 2.6. The entry pages already use the form's own
+// schedule titles; the print used the app's own paraphrases instead
+// (templates/guardian-template.js is the reference). This also updates the
+// "verified none" sentence's noun to match, per the item's own example
+// ("no real estate / real property to report"). Bookmark strings (a
+// separate, shorter navigation label) are untouched -- 2.6 names what
+// prints on the page, not the outline tree.
+describe('Milestone 64A-2, item 2.6: printed schedule titles match the court form', () => {
+  const base = (extra = {}) => ({
+    wardName: 'Harold Thomas Bennett', caseNumber: '26-002487-GD', county: 'Pasco',
+    scheduleA1: [], scheduleA2: [], scheduleB1: [], scheduleB2: [], scheduleB3: [], scheduleB4: [],
+    scheduleC1: [], scheduleC2: [], scheduleC3: [], scheduleC4: [], scheduleC5: [],
+    ...extra,
+  });
+
+  test.each([
+    ['a1', 'Schedule A-1: Real Estate / Real Property'],
+    ['a2', 'Schedule A-2: Real Estate Liabilities (Mortgages / Notes / Loans)'],
+    ['b1', 'Schedule B-1: Cash Assets / Cash Equivalent Assets'],
+    ['b2', 'Schedule B-2: Personal Property Assets'],
+    ['b3', 'Schedule B-3: Intangible Assets'],
+    ['b4', 'Schedule B-4: Liabilities / Secured and Unsecured Debts / Notes / Loans'],
+    ['c1', 'Schedule C-1: Income (Annualized)'],
+    ['c2', 'Schedule C-2: Lawsuits Pending Against the Ward'],
+    ['c3', 'Schedule C-3: Lawsuits Pending by the Ward'],
+    ['c4', 'Schedule C-4: Value of Trusts for the Ward'],
+    ['c5', "Schedule C-5: Joint Owners of Ward's Assets"],
+  ])('%s prints the form title %j', (id, expectedTitle) => {
+    const model = buildVerifiedInventoryModel(base());
+    expect(model.sections.find((s) => s.id === id).title).toBe(expectedTitle);
+  });
+
+  test('an empty schedule\'s "verified none" sentence uses the form\'s sense of the schedule, not the app\'s old paraphrase', () => {
+    const model = buildVerifiedInventoryModel(base({
+      scheduleNoItems: { a1: true, a2: true },
+    }));
+    const a1Notice = model.sections.find((s) => s.id === 'a1').blocks[0];
+    const a2Notice = model.sections.find((s) => s.id === 'a2').blocks[0];
+    expect(a1Notice.text).toBe('The filer verifies there are no real estate / real property to report for this schedule.');
+    expect(a2Notice.text).toBe('The filer verifies there are no real estate liabilities to report for this schedule.');
+  });
+});
+
 describe('guardian inventory PDF model', () => {
   test('prints Part III as a body heading before the asset schedules', () => {
     const model = buildVerifiedInventoryModel({
@@ -147,7 +190,7 @@ describe('guardian inventory PDF model', () => {
     });
     expect(firstScheduleIndex).toBe(assetsIndex + 1);
     expect(model.sections[firstScheduleIndex]).toMatchObject({
-      title: 'Schedule A-1: Real Property Assets',
+      title: 'Schedule A-1: Real Estate / Real Property', // Milestone 64A-2, item 2.6: form title
       parentBookmark: 'Part III - Assets of the Ward',
       level: 2,
       pageBreakBefore: false,

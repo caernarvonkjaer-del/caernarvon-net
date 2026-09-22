@@ -296,13 +296,13 @@ export function buildVerifiedInventoryModel(D, options = {}) {
   // field (it is B-2's), so the column was blank on every filing.
   addScheduleSection(
     'a1',
-    'Schedule A-1: Real Property Assets',
+    'Schedule A-1: Real Estate / Real Property',
     'Schedule A-1: Real Property',
     ['Property Description', 'Location Address', 'Full Value', "Ward's %", "Ward's Value", 'Personal Residence?', 'Income Property?'],
     (d.scheduleA1 || []).map(r => [nameWithSubLines(r.propertyDescription, r.notes ? { text: r.notes, italic: true } : null), composePdfAddressLines(r.streetAddress, r.cityStateZip), fmt(r.fullAssetValue), fmtPct(r.wardPercent), fmt(gc.wardVal(r)), triText(r.residence, r.isPersonalResidence), triText(r.income, r.isIncomeProperty)]),
     "Schedule A-1 Total (Ward's Value)",
     totalA1,
-    'real property assets',
+    'real estate / real property',
     [21, 22, 13, 9, 13, 11, 11],
     ['left', 'left', 'right', 'right', 'right', 'center', 'center'],
     null,
@@ -314,13 +314,13 @@ export function buildVerifiedInventoryModel(D, options = {}) {
   // replaces a `relatedProperty` column that read a field A-2 rows never had.
   addScheduleSection(
     'a2',
-    'Schedule A-2: Debts on Real Property',
+    'Schedule A-2: Real Estate Liabilities (Mortgages / Notes / Loans)',
     'Schedule A-2: Debts on Real Property',
     ['Lender / Liability Description', 'Lender Address', 'Type', 'Full Debt Balance', "Ward's %", "Ward's Debt Balance"],
     (d.scheduleA2 || []).map(r => [nameWithSubLines(r.lenderName, acctLine(r), r.notes ? { text: r.notes, italic: true } : null), composePdfAddressLines(r.lenderAddress, r.lenderCityStateZip), r.liabilityType || '', fmt(r.fullDebtBalance), fmtPct(r.wardPercent), fmt(gc.wardDebt(r))]),
     "Schedule A-2 Total (Ward's Debt Balance)",
     totalA2,
-    'debts on real property',
+    'real estate liabilities',
     [25, 23, 9, 14, 9, 20],
     ['left', 'left', 'left', 'right', 'right', 'right']
   );
@@ -346,13 +346,13 @@ export function buildVerifiedInventoryModel(D, options = {}) {
   // the engine places multi-value totals.
   addScheduleSection(
     'b1',
-    'Schedule B-1: Cash & Financial Accounts',
+    'Schedule B-1: Cash Assets / Cash Equivalent Assets',
     'Schedule B-1: Cash & Financial Accounts',
     ['Institution Name', 'Address', 'Restricted?', 'Account Type & Number', 'Full Asset Amount', "Ward's %", "Ward's Asset Amount", 'Restricted Asset Amount'],
     (d.scheduleB1 || []).map(r => [r.institutionName || '', composePdfAddressLines(r.streetAddress, r.cityStateZip), triText(r.restricted, r.isRestricted), `${r.accountType || ''} ${r.accountNumber ? '— Acct ' + r.accountNumber : ''}`.trim(), fmt(r.fullAssetAmount), fmtPct(r.wardPercent), fmt(gc.wardAmt(r)), isRestrictedAnswer(r) ? fmt(gc.wardAmt(r)) : '—']),
     "Schedule B-1 Total (Ward's Asset Amount)",
     totalB1,
-    'cash and financial accounts',
+    'cash assets / cash equivalent assets',
     [14, 16, 8, 14, 13, 9, 13, 13],
     ['left', 'left', 'center', 'left', 'right', 'right', 'right', 'right'],
     [restrictedCash]
@@ -379,7 +379,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
   // Schedule B-3
   addScheduleSection(
     'b3',
-    'Schedule B-3: Intangible & Other Personal Property',
+    'Schedule B-3: Intangible Assets',
     'Schedule B-3: Intangible & Other Personal Property',
     // Milestone 60K: the form's "Restricted" (column I, =IF(E="Yes",H,0)) and
     // "Amount In Safe Deposit Box" (column K) figures, each totalled at rows
@@ -388,7 +388,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     (d.scheduleB3 || []).map(r => [r.description || '', composePdfAddressLines(r.streetAddress, r.cityStateZip), fmt(r.fullAssetValue), fmtPct(r.wardPercent), triText(r.restricted, r.isRestricted), triText(r.inSafeDepositBox), fmt(gc.wardB3(r)), isRestrictedAnswer(r) ? fmt(gc.wardB3(r)) : '—', isInSafeDepositBox(r) ? fmt(gc.sdbB3(r)) : '—']),
     "Schedule B-3 Total (Ward's Value)",
     totalB3,
-    'intangible personal property assets',
+    'intangible assets',
     [15, 12, 12, 8, 8, 8, 12, 12, 13],
     ['left', 'left', 'right', 'right', 'center', 'center', 'right', 'right', 'right'],
     [t.restrictedIntang, t.totalSdbB3]
@@ -399,7 +399,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
   // required UI field, so its column stays.
   addScheduleSection(
     'b4',
-    'Schedule B-4: Debts on Personal Property',
+    'Schedule B-4: Liabilities / Secured and Unsecured Debts / Notes / Loans',
     'Schedule B-4: Debts on Personal Property',
     ['Lender / Creditor', 'Lender Address', 'Related Personal Property', 'Type', 'Full Liability Balance', "Ward's %", "Ward's Liability Balance"],
     // Milestone 64A-1, item 3.2. relatedProperty is now optional (form B-4
@@ -408,7 +408,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     (d.scheduleB4 || []).map(r => [nameWithSubLines(r.lenderName, acctLine(r)), r.lenderAddress || '', r.relatedProperty || 'Unsecured', r.liabilityType || '', fmt(r.fullLiabilityBalance), fmtPct(r.wardPercent), fmt(gc.wardB4(r))]),
     "Schedule B-4 Total (Ward's Liability Balance)",
     totalB4,
-    'debts on personal property',
+    'liabilities / secured and unsecured debts',
     [18, 18, 17, 8, 14, 9, 16],
     ['left', 'left', 'left', 'left', 'right', 'right', 'right']
   );
@@ -418,7 +418,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
   // three lines), Ward's % and Ward's Annual Income Amount.
   addScheduleSection(
     'c1',
-    'Schedule C-1: Periodic Income',
+    'Schedule C-1: Income (Annualized)',
     'Schedule C-1: Periodic Income',
     // r.frequencyOfPayment was previously silently dropped -- present in
     // the HTML preview's "Frequency" column but never read here.
@@ -426,7 +426,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     (d.scheduleC1 || []).map(r => [composePdfAddressLines(r.payerName, r.payerAddress, r.payerCityStateZip), r.typeOfIncome || '', r.frequencyOfPayment || '', r.paymentBasis || '', fmt(r.annualIncomeAmount), fmtPct(r.wardPercent), fmt(gc.wardC1(r))]),
     "Schedule C-1 Total (Ward's Annual Income)",
     totalC1,
-    'periodic income sources',
+    'income',
     [23, 12, 10, 15, 14, 9, 17],
     ['left', 'left', 'left', 'left', 'right', 'right', 'right']
   );
@@ -435,7 +435,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
   // 60B: Ward's % and Ward's Share of Claim (the form's column label).
   addScheduleSection(
     'c2',
-    'Schedule C-2: Claims and Lawsuits Against the Ward',
+    'Schedule C-2: Lawsuits Pending Against the Ward',
     'Schedule C-2: Lawsuits & Claims Against Ward',
     ['Claimant Name & Address', 'Lawsuit / Claim Description', 'Court / Case #', 'Date Filed', 'Amount of Claim', "Ward's %", "Ward's Share of Claim"],
     // r.claimantAddress was previously silently dropped -- present in the
@@ -447,7 +447,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     (d.scheduleC2 || []).map(r => [nameWithSubLines(r.claimantName, r.claimantAddress ? { text: r.claimantAddress } : null, r.claimantCityStateZip ? { text: r.claimantCityStateZip } : null), r.lawsuitDescription || '', `${r.courtJurisdiction || ''} ${r.caseNumber || ''}`.trim(), fmtDate(r.dateFiled), fmt(r.amountOfClaim), fmtPct(r.wardPercent), fmt(gc.wardC2(r))]),
     "Schedule C-2 Total (Ward's Share of Claims)",
     totalC2,
-    'claims or lawsuits against the ward',
+    'lawsuits pending against the ward',
     [21, 18, 14, 11, 13, 9, 14],
     ['left', 'left', 'left', 'center', 'right', 'right', 'right']
   );
@@ -457,7 +457,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
   // Ward's % and Ward's Share.
   addScheduleSection(
     'c3',
-    'Schedule C-3: Claims and Lawsuits by the Ward',
+    'Schedule C-3: Lawsuits Pending by the Ward',
     'Schedule C-3: Lawsuits & Claims by Ward',
     ['Defendant Name', 'Action Description', 'Court / Case #', 'Status', 'Action Date', 'Estimated Settlement', "Ward's %", "Ward's Share"],
     // Milestone 64A-1, item 3.1. actionDate is now optional (form C-3 C8: "if
@@ -465,7 +465,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     (d.scheduleC3 || []).map(r => [r.defendantName || '', r.actionDescription || '', `${r.courtJurisdiction || ''} ${r.caseNumber || ''}`.trim(), r.status || '', fmtDate(r.actionDate) || 'Not yet filed', fmt(r.estimatedSettlement), fmtPct(r.wardPercent), fmt(gc.wardC3(r))]),
     "Schedule C-3 Total (Ward's Share of Estimated Settlements)",
     totalC3,
-    'claims or lawsuits by the ward',
+    'lawsuits pending by the ward',
     [14, 15, 12, 12, 11, 14, 9, 13],
     ['left', 'left', 'left', 'left', 'center', 'right', 'right', 'right']
   );
@@ -475,7 +475,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
   // 60C: Account Number and Type -- the form has a column for each.
   addScheduleSection(
     'c4',
-    'Schedule C-4: Trusts',
+    'Schedule C-4: Value of Trusts for the Ward',
     'Schedule C-4: Trusts',
     ['Trust Name', 'Trustee Name & Address', 'Date Created', 'Account Number', 'Type', 'Trust Amount', "Ward's %", "Ward's Share"],
     // The trustee's NAME is deliberately passed as the first line, not as part
@@ -494,7 +494,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
   // the form's own "Joint Owner's %" / "Joint Owner's Value" columns.
   addScheduleSection(
     'c5',
-    'Schedule C-5: Joint / Other Property',
+    "Schedule C-5: Joint Owners of Ward's Assets",
     'Schedule C-5: Joint / Other Property',
     ['Asset Description', "Joint Owner's Name & Address", 'Relationship to Ward', 'Total Asset Value', "Joint Owner's %", "Joint Owner's Value"],
     // Owner's NAME on its own line above the address block -- see C-4 above;
