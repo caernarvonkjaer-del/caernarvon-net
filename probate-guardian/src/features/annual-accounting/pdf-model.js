@@ -975,6 +975,12 @@ export function buildAnnualAccountingModel(D, options = {}) {
       t.name || '',
       t.trustee || '',
       t.accountNo || '',
+      // Milestone 64B-2, item 10.2. Form PART VIII B15 "Date Trust created:"
+      // and B16 "Type of Trust:" -- captured all along and written to Excel,
+      // but never printed, so the filed workbook and the filed PDF disagreed
+      // for the same trust.
+      fmtD(t.dateCreated),
+      t.trustType || '',
       t.createdAfterGID || '',
       t.wardPct ? `${t.wardPct}%` : '100%',
       fmtS(t.wardAmount),
@@ -983,13 +989,22 @@ export function buildAnnualAccountingModel(D, options = {}) {
       type: 'table',
       tag: 'Table',
       title: 'Trust Accounts Details',
-      headers: ['#', 'Name of Trust', 'Trustee', 'Account #', 'After GID?', "Ward's %", "Ward's Amount"],
+      headers: ['#', 'Name of Trust', 'Trustee', 'Account #', 'Date Created', 'Type of Trust', 'After GID?', "Ward's %", "Ward's Amount"],
       rows: trustRows,
       // Keep the final percentage and currency columns wide enough for their
       // distinct headers and a normal dollar amount. The prior 10/10 split
       // collided the headers and wrapped `$49,075.00` in the Trust PDF.
-      colWidths: [5, 25, 18, 14, 10, 12, 16],
-      colAlign: ['center', 'left', 'left', 'left', 'center', 'right', 'right'],
+      //
+      // Milestone 64B-2, item 10.2 widened this from seven columns to nine.
+      // Widths come from the proposal's own measurement of the embedded
+      // Liberation Sans at this engine's table sizes, taking the worst-case
+      // unbreakable token per column (a 16-digit account number, "06/12/2009",
+      // "33.33%", "$12,345,678.00"); the minimums sum to 92.8%, so nine fit.
+      // Side effect worth knowing: Account # goes 14% -> 18%, which is the
+      // first width that can hold a 16-digit number unbroken -- the old
+      // seven-column table already overflowed for long account numbers.
+      colWidths: [4, 14, 10, 18, 11, 13, 6, 8, 16],
+      colAlign: ['center', 'left', 'left', 'left', 'center', 'left', 'center', 'right', 'right'],
     });
   }
 

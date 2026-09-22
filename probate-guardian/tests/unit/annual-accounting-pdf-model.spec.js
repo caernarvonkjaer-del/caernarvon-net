@@ -13,8 +13,13 @@ describe('Trust Accounting PDF model', () => {
     const part8 = model.sections.find((section) => section.id === 'part8');
     const details = part8.blocks.find((block) => block.title === 'Trust Accounts Details');
 
+    // Milestone 64B-2, item 10.2 widened this table from seven columns to
+    // nine (Date Created, Type of Trust). The intent of this case is
+    // unchanged: the last two columns stay distinct and wide enough for their
+    // headers and a normal dollar amount -- 8% and 16% of 468pt here, against
+    // the measured minimums of 7.9% and 14.0%.
     expect(details.headers.slice(-2)).toEqual(["Ward's %", "Ward's Amount"]);
-    expect(details.colWidths).toEqual([5, 25, 18, 14, 10, 12, 16]);
+    expect(details.colWidths).toEqual([4, 14, 10, 18, 11, 13, 6, 8, 16]);
     expect(details.colWidths.reduce((total, width) => total + width, 0)).toBe(100);
   });
 
@@ -154,5 +159,63 @@ describe('Milestone 64B-2, item 10.1: Schedules E, F-1 and F-2 always print thei
     expect(table.rows).toHaveLength(1);
     expect(table.rows[0].join(' ')).toContain('Chase ***1234');
     expect(table.rows[0].join(' ')).not.toContain('No entries');
+  });
+});
+
+// Milestone 64B-2, item 10.2. Form PART VIII B15 "Date Trust created:" and
+// B16 "Type of Trust:" are required per trust, and the app captures both
+// (trusts[n].dateCreated, .trustType) -- but the printed Trust Accounts
+// Details table listed neither. The Excel export already wrote both, so for
+// the same trust the filed workbook carried the date and type and the filed
+// PDF did not. Column order follows the form: Name, Trustee, Account #, Date
+// Created, Type of Trust, then the app's own "After GID?" and the ward
+// figures.
+describe('Milestone 64B-2, item 10.2: Part VIII prints Date Created and Type of Trust', () => {
+  const trustModel = () => buildAnnualAccountingModel({
+    inventoryType: 'annual',
+    trusts: [
+      { hasTrust: 'Yes', name: 'Bennett Family Revocable Trust', trustee: 'Rachel M. Alvarez', accountNo: '***7777', dateCreated: '2009-06-12', trustType: 'Revocable Living', createdAfterGID: 'No', wardPct: 100, wardAmount: 50000 },
+      { name: 'Bennett Special Needs Trust', trustee: 'Chas Addams', accountNo: '***8888', dateCreated: '2024-09-15', trustType: 'Special Needs', createdAfterGID: 'Yes', wardPct: 50, wardAmount: 24000 },
+    ],
+  });
+  const details = (model) => model.sections.find((s) => s.id === 'part8').blocks
+    .find((b) => b.title === 'Trust Accounts Details');
+
+  test("the form's two columns are present, in the form's order", () => {
+    expect(details(trustModel()).headers).toEqual([
+      '#', 'Name of Trust', 'Trustee', 'Account #', 'Date Created', 'Type of Trust', 'After GID?', "Ward's %", "Ward's Amount",
+    ]);
+  });
+
+  test('each trust prints its own date and type', () => {
+    const rows = details(trustModel()).rows;
+    expect(rows[0][4]).toBe('06/12/2009');
+    expect(rows[0][5]).toBe('Revocable Living');
+    expect(rows[1][4]).toBe('09/15/2024');
+    expect(rows[1][5]).toBe('Special Needs');
+  });
+
+  test('widths and alignments still reconcile with nine columns', () => {
+    const d = details(trustModel());
+    expect(d.colWidths).toHaveLength(d.headers.length);
+    expect(d.colAlign).toHaveLength(d.headers.length);
+    expect(d.colWidths.reduce((a, b) => a + b, 0)).toBe(100);
+    // Minimums measured in the proposal (embedded Liberation Sans at the
+    // engine's table sizes) for the tokens that cannot wrap.
+    const minimums = { 'Account #': 17.4, 'Date Created': 10.7, "Ward's %": 7.9, "Ward's Amount": 14.0 };
+    for (const [header, min] of Object.entries(minimums)) {
+      const width = d.colWidths[d.headers.indexOf(header)];
+      expect(width, `${header} needs >= ${min}%`).toBeGreaterThanOrEqual(min);
+    }
+  });
+
+  test('a trust with no date or type entered leaves those cells blank, not "undefined"', () => {
+    const model = buildAnnualAccountingModel({
+      inventoryType: 'annual',
+      trusts: [{ name: 'Older Trust', trustee: 'T', accountNo: '1', wardPct: 100, wardAmount: 1 }],
+    });
+    const row = details(model).rows[0];
+    expect(row[4]).toBe('');
+    expect(row[5]).toBe('');
   });
 });
