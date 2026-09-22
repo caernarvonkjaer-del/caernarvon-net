@@ -183,4 +183,34 @@ test.describe('Verified Initial Inventory Workflow & Usability Improvements', ()
     const d3Status = page.locator('text=D-3 — Audit Fee & Safe Deposit');
     await expect(d3Status).toBeVisible();
   });
+
+  // Milestone 64A-1, item 4.1. The Summary page's "Part V -- Audit Fee &
+  // Bond Calculation" box lists Restricted/Unrestricted Cash and
+  // Intangibles by dollar figure, but its "Personal Property (B-2)" line
+  // has always been a hardcoded blank (index.js's rightCards line had
+  // `value:''`, no binding) -- so a filer with $22,500 of B-2 personal
+  // property sees that line rendered empty next to five sibling lines that
+  // all show a figure, with no way to tell from the Summary page whether
+  // entered B-2 data ever reached the calculation at all. The schedule-link
+  // value already on the same page (#totalB2, "Schedule B-2 -- Personal
+  // Property Assets") already computes the correct figure from the same
+  // calc.totalB2(); the fix binds the Part V line to the same value rather
+  // than hand-coding the expected string.
+  test('Summary page Part V box shows the Personal Property (B-2) total, not a blank line', async ({ page }) => {
+    await openGuardianWard(page, 'Harold Thomas Bennett');
+    await page.evaluate(() => (window as any).navigate('/b2'));
+    await page.locator('[data-inventory-action="add-entry"][data-schedule="b2"]').click();
+    await dismissScheduleDocPrompt(page);
+    await page.locator('#b2-description-0').fill('Household furnishings');
+    await page.locator('input[data-bind="scheduleB2.0.fullAssetValue"]').fill('22500');
+    await page.locator('input[data-bind="scheduleB2.0.wardPercent"]').fill('100');
+
+    await page.evaluate(() => (window as any).navigate('/summary'));
+    const provenTotal = await page.locator('#totalB2').innerText();
+    expect(provenTotal).not.toBe('');
+
+    const partVLine = page.locator('#personalPropertyB2Home');
+    await expect(partVLine).toBeVisible();
+    await expect(partVLine).toHaveText(provenTotal);
+  });
 });

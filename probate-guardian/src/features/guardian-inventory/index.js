@@ -743,7 +743,7 @@ function getSummaryConfigGuardian(){
           {label:'Restricted Cash (B-1)',value:fmt(calc.restrictedCash()),id:'restrictedCash'},
           {label:'Restricted Intangibles (B-3)',value:fmt(calc.restrictedIntang()),id:'restrictedIntang'},
           {label:'Unrestricted Cash (B-1)',value:fmt(calc.unrestrictedCash()),id:'unrestrictedCash'},
-          {label:'Personal Property (B-2)',value:''},
+          {label:'Personal Property (B-2)',value:fmt(calc.totalB2()),id:'personalPropertyB2Home'},
           {label:'Unrestricted Intangibles (B-3)',value:fmt(calc.unrestrictedIntang()),id:'unrestrictedIntang'},
           {label:'Bond Requirement (liquid, unrestricted)',value:fmt(calc.bondRequired()),id:'bondRequired',isTotal:true},
         ],
