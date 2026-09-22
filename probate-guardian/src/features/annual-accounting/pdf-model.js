@@ -1,7 +1,7 @@
 // Structured intermediate representation for Annual Guardianship Accounting PDF generation.
 // Maps window.D into the unified, accessible court document model (WCAG 2.1 Level AA).
 
-import { calcTotalsAnnual, annualReconcileState, n as toAmount } from './totals.js';
+import { calcTotalsAnnual, annualReconcileState, n as toAmount, scheduleDRow } from './totals.js';
 import { REMUNERATION_DECLARATION, REMUNERATION_NONE_REPORTED } from '../../core/filing/statutory-text.js';
 import { yesNoText } from '../../core/form/form-contract.js';
 import { filingCopy, resolveFilingDescriptor } from '../../core/filing/filing-descriptor.js';
@@ -698,13 +698,12 @@ export function buildAnnualAccountingModel(D, options = {}) {
   });
 
   // ── Schedule D-2: Real Estate ─────────────────────────────────────────────
+  // Milestone 64B-1, item 9.1 / D7: cv (Carrying Value) is now unscaled --
+  // the workbook never multiplies it by Ward's %, only wv is. Shared with
+  // totals.js's schD2_carrying/schD2_ward via scheduleDRow() so this table
+  // and the schedule total it prints can't drift again.
   const schD2Rows = (d.schD2 || []).map((r, i) => {
-    const p = parseFloat(r.wardPct);
-    const wardFraction = isNaN(p) ? 0 : p > 1 ? p / 100 : p;
-    const full = parseFloat(r.fullValue) || 0;
-    const carry = parseFloat(r.carryingValue) || 0;
-    const wv = full * wardFraction;
-    const cv = carry * wardFraction;
+    const { cv, wv } = scheduleDRow(r, 'fullValue');
     return [
       String(i + 1),
       r.description || '',
@@ -738,20 +737,16 @@ export function buildAnnualAccountingModel(D, options = {}) {
   });
 
   // ── Schedule D-3: Personal Property ───────────────────────────────────────
+  // Milestone 64B-1, item 9.1 / D7: see Schedule D-2's comment above.
   const schD3Rows = (d.schD3 || []).map((r, i) => {
-    const p = parseFloat(r.wardPct);
-    const wardFraction = isNaN(p) ? 0 : p > 1 ? p / 100 : p;
-    const full = parseFloat(r.fullAmount) || 0;
-    const carry = parseFloat(r.carryingValue) || 0;
-    const wa = full * wardFraction;
-    const cv = carry * wardFraction;
+    const { cv, wv } = scheduleDRow(r);
     return [
       String(i + 1),
       r.description || '',
       fmtS(r.fullAmount),
       r.wardPct ? `${r.wardPct}%` : '100%',
       fmtS(cv),
-      fmtS(wa),
+      fmtS(wv),
     ];
   });
   sections.push({
@@ -776,14 +771,14 @@ export function buildAnnualAccountingModel(D, options = {}) {
   });
 
   // ── Schedule D-4: Intangible Assets ───────────────────────────────────────
+  // Milestone 64B-1, item 9.1 / D7: cv is unscaled, matching D-2/D-3. Restricted
+  // Amt (ra) is Full Amount x Ward's % on a restricted line -- the workbook's
+  // K = IF(F="Yes", G*H, 0) -- never Carrying Value, scaled or not (D7,
+  // accepted 2026-09-21: this is the one figure in this milestone that
+  // changes a submitted number).
   const schD4Rows = (d.schD4 || []).map((r, i) => {
-    const p = parseFloat(r.wardPct);
-    const wardFraction = isNaN(p) ? 0 : p > 1 ? p / 100 : p;
-    const full = parseFloat(r.fullAmount) || 0;
-    const carry = parseFloat(r.carryingValue) || 0;
-    const wv = full * wardFraction;
-    const cv = carry * wardFraction;
-    const ra = r.restricted === 'Yes' ? cv : 0;
+    const { cv, wv } = scheduleDRow(r);
+    const ra = r.restricted === 'Yes' ? wv : 0;
     return [
       String(i + 1),
       r.description || '',

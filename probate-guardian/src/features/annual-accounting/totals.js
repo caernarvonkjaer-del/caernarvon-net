@@ -12,6 +12,24 @@ export function pct(v) {
   return isNaN(p) ? 1 : p > 1 ? p / 100 : p;
 }
 
+// Milestone 64B-1, item 9.1 / D7. Shared by calcTotalsAnnual() below and by
+// pdf-model.js's D-2/D-3/D-4 row builders, so the two stop computing this
+// independently (they drifted once already -- see this milestone's
+// proposal, section 9.1). Schedules D-2, D-3 and D-4 each store a plain
+// entered "Carrying Value" the workbook never scales (form column I/H/I;
+// the page total is a plain SUM of that column) -- `cv` is that value,
+// unscaled. `wv` is the figure Ward's % DOES apply to: Full Value/Amount x
+// Ward's %, the workbook's own G*H, which is also what D-4's Restricted Amt
+// is built from on a restricted line (K = IF(F="Yes", G*H, 0)) -- never from
+// Carrying Value. `fullField` differs by schedule ('fullValue' for D-2,
+// 'fullAmount' for D-3/D-4).
+export function scheduleDRow(r, fullField = 'fullAmount') {
+  const full = n(r[fullField]);
+  const carry = n(r.carryingValue);
+  const wardFraction = pct(r.wardPct);
+  return { full, carry, wardFraction, cv: carry, wv: full * wardFraction };
+}
+
 export function calcTotalsAnnual(customD) {
   const d = customD || (typeof window !== 'undefined' ? window.D : null) || {};
   const schA = (d.schA || []).reduce((s, r) => s + n(r.amount), 0);
@@ -28,13 +46,13 @@ export function calcTotalsAnnual(customD) {
   // Schedule D totals
   const schD1_restricted = (d.schD1 || []).reduce((s, r) => s + (r.restricted === 'Yes' ? n(r.fullAmount) * pct(r.wardPct) : 0), 0);
   const schD1_total = (d.schD1 || []).reduce((s, r) => s + n(r.fullAmount) * pct(r.wardPct), 0);
-  const schD2_carrying = (d.schD2 || []).reduce((s, r) => s + n(r.carryingValue) * pct(r.wardPct), 0);
-  const schD2_ward = (d.schD2 || []).reduce((s, r) => s + n(r.fullValue) * pct(r.wardPct), 0);
-  const schD3_carrying = (d.schD3 || []).reduce((s, r) => s + n(r.carryingValue) * pct(r.wardPct), 0);
-  const schD3_ward = (d.schD3 || []).reduce((s, r) => s + n(r.fullAmount) * pct(r.wardPct), 0);
-  const schD4_restricted = (d.schD4 || []).reduce((s, r) => s + (r.restricted === 'Yes' ? n(r.carryingValue) * pct(r.wardPct) : 0), 0);
-  const schD4_carrying = (d.schD4 || []).reduce((s, r) => s + n(r.carryingValue) * pct(r.wardPct), 0);
-  const schD4_ward = (d.schD4 || []).reduce((s, r) => s + n(r.fullAmount) * pct(r.wardPct), 0);
+  const schD2_carrying = (d.schD2 || []).reduce((s, r) => s + scheduleDRow(r, 'fullValue').cv, 0);
+  const schD2_ward = (d.schD2 || []).reduce((s, r) => s + scheduleDRow(r, 'fullValue').wv, 0);
+  const schD3_carrying = (d.schD3 || []).reduce((s, r) => s + scheduleDRow(r).cv, 0);
+  const schD3_ward = (d.schD3 || []).reduce((s, r) => s + scheduleDRow(r).wv, 0);
+  const schD4_restricted = (d.schD4 || []).reduce((s, r) => s + (r.restricted === 'Yes' ? scheduleDRow(r).wv : 0), 0);
+  const schD4_carrying = (d.schD4 || []).reduce((s, r) => s + scheduleDRow(r).cv, 0);
+  const schD4_ward = (d.schD4 || []).reduce((s, r) => s + scheduleDRow(r).wv, 0);
   const schD5_total = (d.schD5 || []).reduce((s, r) => s + n(r.fullDebt) * pct(r.wardPct), 0);
   const netAssetsFromD = schD1_total + schD2_ward + schD3_ward + schD4_ward - schD5_total;
 
