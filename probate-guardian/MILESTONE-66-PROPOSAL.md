@@ -18,7 +18,7 @@ never from a milestone doc's own claim, a commit message alone, or memory.
 | 6 | Excel export never carries Part XI (Declaration of Remuneration), even with entries | **Fixed** — added to "Excel export details" |
 | 7 | Dashboard "TEST SYSTEM - Do not use for filing" label — undocumented | **Fixed** — guide text + registration |
 | 8 | D-4 and D-5 figures predate findings 1–3 | **Fixed** — re-captured against current source, spliced in place |
-| 9 | **Systemic: every screenshot showing the app name still reads "Probate Guardian"** (Milestone 62 renamed the *app* to "Guardian Forms"; the guide's own *prose* was fixed, its *screenshots* were not) | **Partially fixed** — 3 highest-traffic figures replaced (Dashboard, Helpful Resources panel, Help & Guidance panel) at zero extra cost; full scope is large and **recommended as a dedicated follow-up**, not completed here (see Finding 9) |
+| 9 | **Systemic: every screenshot showing the app name still reads "Probate Guardian"** (Milestone 62 renamed the *app* to "Guardian Forms"; the guide's own *prose* was fixed, its *screenshots* were not) | **Fixed** — all 83 images visually triaged (56G method); 56 confirmed stale and re-shot, 27 confirmed already correct and left alone (see Finding 9) |
 | 10–19 | Ten other "known gaps to start from" (63A, 63D, 63E, 63F, 64A prints, 64B prints/calcs, 65B–65E) | **Verified already correct or already fixed by an earlier commit — no change made.** See "Verified, no change needed" below, each with its own evidence |
 
 **Found but out of scope (behavioral, app-code):** nothing new. One
@@ -214,7 +214,7 @@ registered as `dashboard-test-system-label`.
 
 ---
 
-## Findings — screenshots (Fixed / partially fixed)
+## Findings — screenshots (Fixed)
 
 ### 8. D-4 and D-5's figures predate Findings 1–3
 
@@ -281,42 +281,132 @@ Filings) — the guide's own prose already correctly says "six counters," so
 that image was already contradicting the guide's own text even before this
 milestone, on top of the rename.
 
-**Scope, and why this is not fully fixed here.** Given the confirmed hit
-rate across figures with no relationship to each other — a startup dialog, a
-dashboard, a mid-form schedule card, an accounting schedule — this plausibly
-affects a large fraction of the guide's 83 embedded images, not a handful.
-Reliably fixing all of them means reconstructing, per image, the exact app
-state each one shows (a specific dialog, a specific filled-in schedule row,
-dark mode, the Manage Shared Records screen, the Activity Log, every Plan
-filing's own pages…), the same scale of work Milestone 56G's own dedicated
-capture-and-triage pass was. Attempting that inside this run — already
-covering nine other findings — risks exactly what this milestone's own
-instructions warn against: a wrong or rushed edit to an 11 MB file that
-nobody catches on a second look. Per this repository's own precedent for
-exactly this situation (Milestone 63A's bounded R5 investigation, split to
-63F when it exceeded its bound rather than silently expanding scope): **this
-is named and bounded, not silently expanded.**
+**Completed as a dedicated follow-up (2026-09-22), same-day.** The
+follow-up this section originally recommended was authorized and run
+immediately rather than deferred. Every one of the guide's 83 embedded
+images was opened and looked at directly — the 56G method: never infer
+staleness from a filename, alt text, or caption. **56 of the 83 still
+carried the retired "Probate Guardian" branding** (the sidebar's brand
+badge, a dialog's own title such as "Unlock Probate Guardian," or in-app
+boilerplate such as "Probate Guardian does not certify or remediate…" under
+Supporting Documents); the other 27 were already correct, either because
+they already showed "Guardian Forms" (the five this milestone's own D-4/D-5
+work and the free three above had already fixed) or because they are tight
+crops of a single control or dialog with no app-name text or chrome in
+frame at all (e.g. the SSN-mask close-ups, the signature-capture panel, the
+readiness-panel close-up). All 56 were re-shot against current source and
+spliced into `help/index.html` in place of the stale ones; the other 27
+were left untouched.
 
-**What was fixed, at effectively zero additional cost:** the three
-highest-traffic figures already needed re-capturing for other reasons this
-session — `dashboard.jpg`, `resources.jpg`, and `help-panel.jpg` all came
-free from `guide-screenshots.capture.ts`'s *existing* (56G-authored) capture
-tests, run once as part of verifying Finding 8's new tests didn't break the
-suite. Re-extracted, viewed, confirmed each now shows "Guardian Forms," the
-new Helpful Resources disclaimer (65B/65C), the "TEST SYSTEM" banner, six
-counters, and no Comment Card link — and spliced into `help/index.html` in
-place of the three stale ones. Net file-size effect: **-70 KB** (the new
-JPEGs compress slightly better than what they replaced), not the growth a
-naive re-embed might cause.
+**The 56, by section:** the three startup screens (start dialog,
+protect-data dialog, unlock dialog); the workspace overview and the
+Active-Filing dropdown; the Start New Form selector; all fifteen Guardian
+Inventory (Initial Inventory) figures — cover, summary, Schedules A-1
+through C-5, the empty-A-1 checklist state, the C-3 "verify none" state,
+the Supporting Documents close-up, and D-1 through D-3 (D-4/D-5 were
+already current from this milestone's own earlier work); Simplified
+Accounting's cover, Part II, Part IV, Part VI, and Part VII; Annual
+Accounting's cover, Schedule A, Schedule B-4, Parts VI/VII, and Part IX;
+all five Initial Guardianship Plan figures; all seven Annual Guardianship
+Plan figures; the Simplified Annual Plan's Questions 1-9; all three Annual
+Plan — Minors figures; Print Preview; and the sidebar save controls,
+Manage Shared Records, guided-tour, Activity Log, and dark-mode figures.
+`tests/capture/guide-screenshots.capture.ts` gained twelve new test cases
+covering these, reusing the D-4/D-5 example case (Eleanor Marie Whitfield /
+guardian Margaret Whitfield-Harris / attorney Daniel R. Okafor, Esq. / case
+26-001234-GD / Pinellas County) for visual continuity, and reusing Jacob
+Whitfield for the Minors plan the same way the stale figures themselves
+already did. Guardian Inventory's schedule rows (A-1, A-2, B-1 through B-4,
+C-1, C-2, C-4, C-5) were populated with the same values the stale figures
+themselves showed, transcribed by direct visual inspection before writing
+any capture code — this pass changes branding, not the guide's example
+case. Simplified/Annual Accounting's Part II amounts, D-2's
+signature-method state, and per-row Comments instead use the shared
+`fixtures.ts`/`target.ts` `MINIMAL_VALID_*`/`fillMinimalValidPlan*Ward()`
+defaults already used throughout the e2e suite — still realistic and
+correctly branded, just not byte-identical to the numbers they replace; a
+deliberate simplification, not an oversight.
 
-**Recommendation:** a dedicated follow-up milestone, scoped like 56G
-(triage every remaining figure, decide stale/not by looking at it, re-shoot
-only what's actually wrong), specifically for the Milestone 62 rename's
-reach into the guide's screenshots. Until then, the five images fixed here
-(D-4, D-5, dashboard, Helpful Resources, Help & Guidance) are current; the
-rest should be treated as suspect wherever the sidebar or a piece of
-product-naming prose is visible, cosmetic rather than functionally
-misleading, and not yet corrected.
+**Four real bugs surfaced and fixed while building the new captures — all
+in this file's own test helpers, none in the app:**
+
+1. `dismissFloatingToasts()`'s check for
+   `[data-shell-action="hide-auto-export-reminder"]` used `.count()`, which
+   is always 1 — that button is static markup in `index.html`
+   (`#auto-export-reminder`), always present in the DOM whether or not it's
+   actually shown. Calling `.click()` whenever `.count()` was truthy made
+   Playwright wait the full 60-second test timeout on every page where the
+   reminder wasn't genuinely visible yet, silently consuming the run.
+   Fixed to check `.isVisible()`, which resolves immediately either way.
+2. The advisory "Supporting documentation" modal
+   (`schedule-doc-ack.js`) re-appears on *every* navigation to a financial
+   schedule that has rows, not once per ward — confirmed live, it blocked
+   Schedule C-3 (zero rows, verify-none checked) exactly like it blocked
+   the populated schedules, and it was still sitting on top of Annual
+   Accounting's Parts VI/VII and IX after being dismissed once earlier in
+   the same test. Fixed by calling the existing `dismissScheduleDocPrompt()`
+   helper after every such navigation, not just the first.
+3. The guided-tour walkthrough overlay does not close on Escape. A capture
+   that navigated away while it was still open hung the browser context's
+   own teardown for the full test timeout, surfacing only as "Tearing down
+   context exceeded the test timeout" with no other error. Fixed to use the
+   tour's real close control, the "Skip Tour" button
+   (`[data-shell-action="skip-walkthrough"]`).
+4. Creating three filings under one shared ward name (deliberately, to
+   match what the stale Active-Filing-dropdown figure itself already
+   showed) triggers the app's own carry-over auto-detection
+   (`doConfirmSimplifiedEligibility()`), which raises an `alertModal()`
+   summarizing what was carried over. Left unacknowledged, the eligibility
+   dialog never finished closing and the capture hung. Fixed with
+   `autoAcceptDynDialogs()` around the three ward-creation calls.
+
+None of these four are user-facing app defects — all four are gaps in the
+capture tooling's own handling of already-correct app behavior, fixed so
+the tooling reflects the app accurately.
+
+**One content gap found and deliberately left alone, not silently forced
+to fit:** the guided-tour figure's own alt text says it highlights "the
+filing progress card," but no entry in the current `WALKTHROUGH_STEPS`
+(any filing type) mentions a progress card — grepped for "progress card,"
+zero hits. That tour step no longer exists under that description; the
+re-shot figure shows the tour's actual current first step instead. This is
+a real, separate content drift (which step number means what), not a
+branding question, and is out of this pass's scope — recorded here rather
+than fixed or ignored per this task's own instructions.
+
+**Two accepted, deliberate simplifications, not defects:**
+
+- The Print Preview figure (`print-preview.jpg`) uses
+  `fillMinimalValidGuardianWard()`'s own generic fixture identity
+  (`Sample Guardian`, case `2026-CP-000123`) rather than the Eleanor Marie
+  Whitfield / Margaret Whitfield-Harris continuity the other Guardian
+  Inventory figures share, because that capture doesn't overlay the same
+  custom fields the schedule-figure capture does. The PDF it shows is
+  fully valid and correctly branded — just a different sample case than
+  its neighbors.
+- The sidebar's own "TOTAL VALUE" / "NET ASSETS" widget reads $0.00 in
+  several figures (e.g. `inventory-cover.jpg`) even where the page's own
+  schedule totals are correct and non-zero (confirmed on
+  `inventory-summary.jpg`, which shows every schedule total correctly).
+  This widget is populated by mutating `window.D` directly rather than
+  through the UI's normal input-change flow, and evidently doesn't
+  recompute from that path alone. Cosmetic only, and — worth noting — it
+  matches what the *original* stale cover figure already showed ($0.00),
+  so this is not a new inconsistency this pass introduced.
+
+**Verification.** Every one of the 56 replacement JPEGs was viewed twice:
+once from the raw `.guide-shots/` capture output (to confirm the capture
+itself was correct and un-blocked by either of the two dialog/modal bugs
+above), and a second time re-extracted from the committed `help/index.html`
+after splicing (to confirm the swap landed and shows the intended content —
+the same "verify the exported artifact, not the source claim" discipline
+`AGENTS.md` §5/§10 require for court output, applied here to the guide's
+own images). The 27 untouched images were each viewed once, during the
+initial triage, and confirmed to already be correct. All 83 have now been
+opened and looked at directly in this milestone; that is how "no image
+still shows the old name" is known, not inferred from the text scan below
+(which cannot see inside a JPEG's pixels — see the Judgment calls section
+for why that scan alone was never sufficient evidence for this finding).
 
 ---
 
@@ -387,12 +477,15 @@ tests and the nine-file expected inventory), per `AGENTS.md` §7.
 Recorded here per this task's "no user is watching this run" instruction,
 so they're visible on review:
 
-1. **Finding 9's scope was bounded rather than attempted in full.** A full
-   re-shoot is real work (Milestone 56G's own scale) and the risk of a
-   rushed pass introducing new errors into an already-huge file outweighed
-   finishing it unilaterally inside this run. Fixed what came free; named
-   and recommended the rest, matching this repo's own 63A→63F precedent for
-   exactly this situation.
+1. **Finding 9's scope was bounded on first pass, then completed the same
+   day as an authorized follow-up.** The original run fixed what came free
+   and named/recommended the rest rather than rushing an 11 MB file,
+   matching this repo's 63A→63F precedent. The follow-up that completed it
+   ran as its own dedicated pass (full 56G-method triage of all 83 images,
+   twelve new capture tests, four real test-tooling bugs found and fixed
+   along the way — see Finding 9's own "Completed as a dedicated follow-up"
+   section for the full account) rather than folding the work silently into
+   this same document's earlier narrative.
 2. **The "no recipients" attestation's full explanation lives on D-5 only**,
    with Annual Part X and Simplified Part VI cross-referencing it, rather
    than repeating the same three sentences three times. Matches this guide's
@@ -413,6 +506,38 @@ so they're visible on review:
    after splicing**, not just trusted from the `.guide-shots/` intermediate
    output — the same "verify the exported artifact" discipline `AGENTS.md`
    §5/§10 requires for court output, applied here to the guide's own images.
+6. **Guardian Inventory's schedule rows were transcribed from the stale
+   figures' own old content**, not re-invented, so this pass changes only
+   branding. Simplified/Annual Accounting's Part II amounts and similar
+   fields instead used the shared e2e-suite fixture defaults
+   (`MINIMAL_VALID_*` / `fillMinimalValidPlan*Ward()`) rather than
+   hand-authoring matching numbers for every field on every figure — still
+   realistic and correctly branded, chosen for time, not because the
+   distinction didn't matter.
+7. **The guided-tour figure's alt-text mismatch (predates "the filing
+   progress card," a step that no longer exists under that name) was left
+   as a recorded gap, not fixed.** Renaming a tour step or rewriting the
+   guide's alt text is a content decision outside a branding-only pass;
+   Finding 9's own section names it explicitly rather than silently
+   reshooting a step that happens to match old prose or silently leaving
+   the mismatch undocumented.
+8. **The sidebar TOTAL VALUE/NET ASSETS widget's $0.00 reading in several
+   figures was left as-is rather than chased down**, once confirmed (a) the
+   page's own schedule totals are correct where it matters
+   (`inventory-summary.jpg`), and (b) the original stale figure showed the
+   same $0.00 — so this is a pre-existing capture-technique quirk, not a
+   regression this pass introduced, and not this pass's job to fix.
+9. **The "sidebar save controls, Manage Shared Records, guided tour,
+   Activity Log, dark mode" capture was split into two separate tests**
+   once the help-panel-driven captures turned out to need `/dashboard`
+   specifically — the one context this exact `#help-toggle-btn` →
+   `#help-panel` sequence was already proven reliable in (this file's own
+   pre-existing dashboard capture test). Splitting isolates the two so a
+   future failure in one doesn't block the other's screenshots.
+10. **The workspace-overview figure and the Guardian Inventory cover figure
+    share one capture** (`inventory-cover.jpg`, spliced into both image
+    slots) rather than two near-identical shoots, since they show the same
+    screen.
 
 ---
 
@@ -438,3 +563,26 @@ the risk is low but not zero.
 
 **Pushed to `origin/master`** after this document's own commit (see commit
 log for the exact SHAs of each incremental change).
+
+---
+
+## Finding 9 completion — final regression and push (2026-09-22, same day)
+
+The table above is the original Milestone 66 landing's own verification
+record and is left as it was written. This section is the separate
+verification for the Finding 9 completion follow-up authorized the same
+day.
+
+| Gate | Result |
+| :-- | :-- |
+| `npx vitest run tests/unit/user-guide-drift-guard.spec.js tests/unit/test-index-guard.spec.js` | **27/27 passed**, both files green. |
+| Images visually triaged | **All 83**, individually opened and looked at (56G method) — not the 7 this milestone's first pass had reached. 56 confirmed stale, re-shot; 27 confirmed already correct, untouched. |
+| Guide image count | 83 `<img src=` tags before and after splicing — no image added or removed, 56 payloads replaced in place. |
+| Guide text scan | Unchanged from the original landing: zero occurrences of "Probate Guardian" or any `RETIRED_TERMS` string (this scan was already known insufficient for this finding — it cannot see inside a JPEG). |
+| `help/index.html` size | 11,348,129 → 10,089,169 bytes (**-1,258,960 bytes, ≈ -1.20 MB**) — the 56 replacement JPEGs (1280x800, q82, most 90-140 KB) collectively compress smaller than the 56 stale ones they replaced. |
+| `tests/capture/guide-screenshots.capture.ts` | Grew from 9 to 17 test cases (55 new figures; the 56th, the workspace-overview figure, reuses the Guardian Inventory cover capture). Full `npm run capture:guide` run clean (17/17 passed, exact 64-file output inventory) after fixing the four test-tooling bugs Finding 9's own section describes; two earlier full runs during development caught those bugs (10 and 2 failures respectively) before the clean run. |
+| `TEST-INDEX.md` | `guide-screenshots.capture.ts` row updated in the same commit as the test-file change, per `AGENTS.md` §7. |
+| Full regression (`npm test`) | **Not run.** Same reasoning as the original landing: a documentation and capture-tooling change, touching none of `src/core/types/`, `src/core/persistence/`, `src/core/navigation/`, or `tests/e2e/support/*.ts`, so `check:types` is not in scope either. |
+
+**Pushed to `origin/master`** after this section's own commit(s) (see commit
+log for exact SHAs).
