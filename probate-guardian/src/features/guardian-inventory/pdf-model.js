@@ -170,17 +170,34 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     pageBreakBefore: false,
     blocks: [
       {
+        // Milestone 64A-2, item 2.1 / D1 (decided 2026-09-21). The form's
+        // SUMMARY I (rows 30-39) lists each schedule individually, not a
+        // Gross/Debts/Net rollup of "Schedule A" and "Schedule B" -- this
+        // prints the form's own rows, labels and order, reusing the same
+        // schedule totals the on-screen Summary and the individual schedule
+        // tables already use. A-2 and B-4 print negative (liabilities), and
+        // the two net-of-liabilities lines are ordinary rows: the PDF engine
+        // supports one bold `totals` row per table, already spent on the
+        // grand total below, so the two net lines print at the same weight
+        // as the schedule rows above them, distinguished by their own label
+        // rather than by boldness.
         type: 'table',
         tag: 'Table',
         title: 'Summary I — Real & Personal Property',
-        headers: ['Schedule', 'Schedule Title', 'Gross Value', 'Debts / Liabilities', 'Net Value'],
+        headers: ['Schedule', 'Title', 'Amount'],
         rows: [
-          ['Schedule A', 'Real Property Assets', fmt(totalA1), fmt(totalA2), fmt(netA)],
-          ['Schedule B', 'Personal Property Assets', fmt(totalB1 + totalB2 + totalB3), fmt(totalB4), fmt(netB)],
+          ['A-1', 'Real Estate / Real Property', fmt(totalA1)],
+          ['A-2', 'Real Estate Liabilities', fmt(-totalA2)],
+          ['', 'Real Estate Assets, Net of Liabilities', fmt(netA)],
+          ['B-1', 'Cash Assets / Cash Equivalent Assets', fmt(totalB1)],
+          ['B-2', 'Personal Property Assets', fmt(totalB2)],
+          ['B-3', 'Intangible Assets', fmt(totalB3)],
+          ['B-4', 'Liabilities / Secured and Unsecured Debt / Notes / Loans', fmt(-totalB4)],
+          ['', 'Cash / Personal Property / Intangible Assets, Net of Liabilities', fmt(netB)],
         ],
-        totals: { label: 'TOTAL REAL & PERSONAL PROPERTY (Net Value)', value: fmt(totalRealPersonal) },
-        colWidths: [18, 34, 16, 16, 16],
-        colAlign: ['left', 'left', 'right', 'right', 'right'],
+        totals: { label: 'VERIFIED INITIAL INVENTORY OF GUARDIAN', value: fmt(totalRealPersonal) },
+        colWidths: [12, 58, 30],
+        colAlign: ['left', 'left', 'right'],
       },
       {
         type: 'table',

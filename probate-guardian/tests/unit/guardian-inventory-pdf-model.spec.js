@@ -1,6 +1,57 @@
 import { describe, expect, test } from 'vitest';
 import { buildVerifiedInventoryModel } from '../../src/features/guardian-inventory/pdf-model.js';
 
+// Milestone 64A-2, item 2.1 / D1 (decided 2026-09-21, reopened same day: the
+// app's Gross/Debts/Net table would have printed mostly empty cells for a
+// single-figure schedule row, so the final layout is the form's own single
+// Amount column instead). Printed Part II used to collapse eleven schedules
+// into two rows ("Schedule A" / "Schedule B") under Gross/Debts/Net headers
+// that don't match anything on the court's own SUMMARY I. The form lists
+// each schedule individually (A-1, A-2, a net-of-liabilities line, B-1
+// through B-4, a second net line, and the grand total) -- this pins that the
+// print now matches, using the same schedule totals as the on-screen
+// Summary and the individual schedule tables elsewhere on the page.
+describe('Milestone 64A-2, item 2.1: Summary I lists every schedule individually, not two collapsed rows', () => {
+  const base = (extra = {}) => ({
+    wardName: 'Harold Thomas Bennett', caseNumber: '26-002487-GD', county: 'Pasco',
+    scheduleA1: [], scheduleA2: [], scheduleB1: [], scheduleB2: [], scheduleB3: [], scheduleB4: [],
+    scheduleC1: [], scheduleC2: [], scheduleC3: [], scheduleC4: [], scheduleC5: [],
+    ...extra,
+  });
+
+  test('prints A-1, A-2 (negative), net of liabilities, B-1 through B-4 (B-4 negative), the second net line, and the grand total, in that order', () => {
+    const model = buildVerifiedInventoryModel(base({
+      scheduleA1: [{ propertyDescription: 'Home', fullAssetValue: '100000', wardPercent: '100' }],
+      scheduleA2: [{ lenderName: 'Bank', fullDebtBalance: '20000', wardPercent: '100' }],
+      scheduleB1: [{ institutionName: 'Bank', fullAssetAmount: '5000', wardPercent: '100', restricted: 'No' }],
+      scheduleB2: [{ description: 'Furniture', fullAssetValue: '3000', wardPercent: '100' }],
+      scheduleB3: [{ description: 'Stocks', fullAssetValue: '2000', wardPercent: '100' }],
+      scheduleB4: [{ lenderName: 'Card Co', fullLiabilityBalance: '1000', wardPercent: '100' }],
+    }));
+    const summary = model.sections.find((s) => s.id === 'summary').blocks[0];
+
+    expect(summary.headers).toEqual(['Schedule', 'Title', 'Amount']);
+    expect(summary.rows).toEqual([
+      ['A-1', 'Real Estate / Real Property', '$100,000.00'],
+      ['A-2', 'Real Estate Liabilities', '-$20,000.00'],
+      ['', 'Real Estate Assets, Net of Liabilities', '$80,000.00'],
+      ['B-1', 'Cash Assets / Cash Equivalent Assets', '$5,000.00'],
+      ['B-2', 'Personal Property Assets', '$3,000.00'],
+      ['B-3', 'Intangible Assets', '$2,000.00'],
+      ['B-4', 'Liabilities / Secured and Unsecured Debt / Notes / Loans', '-$1,000.00'],
+      ['', 'Cash / Personal Property / Intangible Assets, Net of Liabilities', '$9,000.00'],
+    ]);
+    expect(summary.totals).toEqual({ label: 'VERIFIED INITIAL INVENTORY OF GUARDIAN', value: '$89,000.00' });
+  });
+
+  test('an empty filing prints all zeroes in the Amount column, not blank cells', () => {
+    const model = buildVerifiedInventoryModel(base());
+    const summary = model.sections.find((s) => s.id === 'summary').blocks[0];
+    expect(summary.rows.map((row) => row.at(-1))).toEqual(Array(8).fill('$0.00'));
+    expect(summary.totals.value).toBe('$0.00');
+  });
+});
+
 describe('guardian inventory PDF model', () => {
   test('prints Part III as a body heading before the asset schedules', () => {
     const model = buildVerifiedInventoryModel({
@@ -239,9 +290,11 @@ describe('Milestone 60A: PDF totals come from the shared Guardian calculator', (
     }
     // The per-row restricted amount in B-1 is the ward's share too.
     expect(model.sections.find(s => s.id === 'b1').blocks[0].rows[0].at(-1)).toBe('$500.00');
-    // And the summaries read the same figures.
-    expect(summaryI(model).rows[0][3]).toBe('$500.00'); // Schedule A debts
-    expect(summaryI(model).rows[1][3]).toBe('$500.00'); // Schedule B debts
+    // And the summaries read the same figures. Milestone 64A-2, item 2.1:
+    // Summary I now lists A-2 and B-4 individually (negative, as liabilities)
+    // rather than a "Schedule A"/"Schedule B" debts column.
+    expect(summaryI(model).rows[1]).toEqual(['A-2', 'Real Estate Liabilities', '-$500.00']);
+    expect(summaryI(model).rows[6]).toEqual(['B-4', 'Liabilities / Secured and Unsecured Debt / Notes / Loans', '-$500.00']);
     expect(summaryII(model).rows.map(r => r[2])).toEqual(['$500.00', '$500.00', '$500.00', '$500.00', '$500.00']);
   });
 
@@ -260,7 +313,10 @@ describe('Milestone 60A: PDF totals come from the shared Guardian calculator', (
       scheduleA1: [{ propertyDescription: 'Home', fullAssetValue: '1000', wardPercent: '100' }],
       scheduleA2: [{ lenderName: 'Lender', fullDebtBalance: '5000', wardPercent: '100' }],
     }));
-    expect(summaryI(model).rows[0][4]).toBe('-$4,000.00');
+    // Milestone 64A-2, item 2.1: the net-of-liabilities line is now its own
+    // row ("Real Estate Assets, Net of Liabilities"), not column 4 of a
+    // "Schedule A" rollup row.
+    expect(summaryI(model).rows[2]).toEqual(['', 'Real Estate Assets, Net of Liabilities', '-$4,000.00']);
     expect(summaryI(model).totals.value).toBe('-$4,000.00');
   });
 });
