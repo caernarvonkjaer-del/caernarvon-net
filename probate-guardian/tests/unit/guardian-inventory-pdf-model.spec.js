@@ -216,6 +216,40 @@ describe('Milestone 64A-2, item 2.4: Certificate of Service restores the statuto
   });
 });
 
+// Milestone 64A-2, item 3.4. Form C-2's C7 asks for the "Name of
+// claimant/petitioner and their attorney", and the form's own worked example
+// puts both on one line ("Atty John Smith for Bob Jones, plaintiff"). The app
+// captured only the claimant, so a filer who knew opposing counsel had
+// nowhere to record them and the printed line was missing half of what C7
+// asks for. The attorney is optional -- a claim with no attorney of record
+// prints exactly as it did.
+describe("Milestone 64A-2, item 3.4: C-2 prints the claimant's attorney on the name line", () => {
+  const base = (extra = {}) => ({
+    wardName: 'Harold Thomas Bennett', caseNumber: '26-002487-GD', county: 'Pasco',
+    scheduleA1: [], scheduleA2: [], scheduleB1: [], scheduleB2: [], scheduleB3: [], scheduleB4: [],
+    scheduleC1: [], scheduleC2: [], scheduleC3: [], scheduleC4: [], scheduleC5: [],
+    ...extra,
+  });
+  const c2Row = (model) => model.sections.find((s) => s.id === 'c2').blocks[0].rows[0];
+
+  test("the attorney prints with the claimant on the name cell", () => {
+    const model = buildVerifiedInventoryModel(base({
+      scheduleC2: [{ claimantName: 'Bob Jones', claimantAttorney: 'John Smith', amountOfClaim: '1000', wardPercent: '100' }],
+    }));
+    expect(JSON.stringify(c2Row(model))).toContain('John Smith');
+    expect(JSON.stringify(c2Row(model))).toContain('Bob Jones');
+  });
+
+  test('a claim with no attorney of record prints the claimant alone, unchanged', () => {
+    const model = buildVerifiedInventoryModel(base({
+      scheduleC2: [{ claimantName: 'Bob Jones', amountOfClaim: '1000', wardPercent: '100' }],
+    }));
+    const first = c2Row(model)[0];
+    expect(typeof first === 'string' ? first : first.main).toBe('Bob Jones');
+    expect(JSON.stringify(c2Row(model))).not.toContain('Atty');
+  });
+});
+
 // Milestone 64A-2, item 2.5. The three attestations were the app's own
 // paraphrases, and the preparer's signature block sat underneath the
 // guardian's perjury oath -- so a preparer (who is often not the guardian,

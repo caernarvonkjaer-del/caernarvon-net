@@ -70,16 +70,27 @@ describe('field-kind inference', () => {
   });
 
   it('no shipped control path infers its kind by an accidental mid-word match', () => {
-    // Word matching and substring matching may disagree on exactly one path:
-    // `committeeIncorporated`, the defect this guard exists for. Any new entry
-    // here is a newly added field whose name collides with a needle -- read the
-    // reported path and decide which classification is correct before touching
-    // this list.
+    // Word matching and substring matching may disagree on exactly two paths.
+    // Any new entry here is a newly added field whose name collides with a
+    // needle -- read the reported path and decide which classification is
+    // correct before touching this list.
+    //
+    // 1. `committeeIncorporated` -- the defect this guard exists for.
+    // 2. `serviceIndicateIf` (Milestone 64A-2, item 2.4) -- lowercased, it
+    //    contains "ein" ("servic-ein-dicateif"), so substring matching would
+    //    treat the D-5 "Indicate if:" dropdown as an SSN/EIN field and mask
+    //    its value. The shipped word-boundary matcher classifies it as plain
+    //    text, which is correct: it is an enum of three court-supplied
+    //    phrases, with nothing sensitive in it. Listed here as a known,
+    //    decided collision, not as a tolerated failure.
     const divergent = controlPaths
       .filter((p) => substringKind(p) !== getControlKind(textControl(p)))
       .map((p) => `${p}: substring=${substringKind(p)} word=${getControlKind(textControl(p))}`);
 
-    expect(divergent).toEqual(['committeeIncorporated: substring=ssn word=text']);
+    expect(divergent).toEqual([
+      'committeeIncorporated: substring=ssn word=text',
+      'serviceIndicateIf: substring=ssn word=text',
+    ]);
   });
 
   // Milestone 43C: the whole-word path/kind pairs this test asserted

@@ -6307,7 +6307,10 @@ const mk = {
   b3:()=>({description:'',streetAddress:'',cityStateZip:'',restricted:'',fullAssetValue:0,wardPercent:100,inSafeDepositBox:''}),
   b4:()=>({lenderName:'',relatedProperty:'',accountNumber:'',lenderAddress:'',liabilityType:'Loan',fullLiabilityBalance:0,wardPercent:100}),
   c1:()=>({payerName:'',payerAddress:'',payerCityStateZip:'',typeOfIncome:'',frequencyOfPayment:'Monthly',paymentBasis:'',annualIncomeAmount:0,wardPercent:100}),
-  c2:()=>({claimantName:'',lawsuitDescription:'',courtJurisdiction:'',caseNumber:'',claimantAddress:'',claimantCityStateZip:'',dateFiled:null,amountOfClaim:0,wardPercent:100}),
+  // Milestone 64A-2, item 3.4: claimantAttorney -- form C-2 C7 asks for the
+  // claimant AND their attorney; optional, since not every claim has counsel
+  // of record.
+  c2:()=>({claimantName:'',claimantAttorney:'',lawsuitDescription:'',courtJurisdiction:'',caseNumber:'',claimantAddress:'',claimantCityStateZip:'',dateFiled:null,amountOfClaim:0,wardPercent:100}),
   c3:()=>({defendantName:'',actionDescription:'',status:'',courtJurisdiction:'',caseNumber:'',actionDate:null,estimatedSettlement:0,wardPercent:100}),
   c4:()=>({trustName:'',trusteeName:'',trusteeAddress:'',trusteeCityStateZip:'',dateCreated:null,accountNumber:'',trustType:'Pooled',trustAmount:0,wardPercent:100}),
   c5:()=>({assetDescription:'',ownerName:'',ownerAddress:'',ownerCityStateZip:'',relationshipToWard:'',totalAssetValue:0,jointOwnerPercent:50}),

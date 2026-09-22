@@ -431,6 +431,18 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     ['left', 'left', 'left', 'left', 'right', 'right', 'right']
   );
 
+  // Milestone 64A-2, item 3.4. Form C-2 C7 asks for the "Name of
+  // claimant/petitioner and their attorney" on one line, and the form's own
+  // worked example writes it as prose: "Atty John Smith for Bob Jones,
+  // plaintiff". Same shape here, and the claimant alone when no attorney is
+  // recorded.
+  const c2ClaimantLine = (r) => {
+    const claimant = (r.claimantName || '').trim();
+    const atty = (r.claimantAttorney || '').trim();
+    if (!atty) return claimant;
+    return claimant ? `Atty ${atty} for ${claimant}` : `Atty ${atty}`;
+  };
+
   // Schedule C-2: Claims and Lawsuits Against the Ward (Corrected Sequence).
   // 60B: Ward's % and Ward's Share of Claim (the form's column label).
   addScheduleSection(
@@ -444,7 +456,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     // 60K: the claimant's city/state/ZIP is its own stored line now (the form's
     // fifth C-2 line); a save made before 60K holds the whole address in
     // claimantAddress and prints exactly as it did.
-    (d.scheduleC2 || []).map(r => [nameWithSubLines(r.claimantName, r.claimantAddress ? { text: r.claimantAddress } : null, r.claimantCityStateZip ? { text: r.claimantCityStateZip } : null), r.lawsuitDescription || '', `${r.courtJurisdiction || ''} ${r.caseNumber || ''}`.trim(), fmtDate(r.dateFiled), fmt(r.amountOfClaim), fmtPct(r.wardPercent), fmt(gc.wardC2(r))]),
+    (d.scheduleC2 || []).map(r => [nameWithSubLines(c2ClaimantLine(r), r.claimantAddress ? { text: r.claimantAddress } : null, r.claimantCityStateZip ? { text: r.claimantCityStateZip } : null), r.lawsuitDescription || '', `${r.courtJurisdiction || ''} ${r.caseNumber || ''}`.trim(), fmtDate(r.dateFiled), fmt(r.amountOfClaim), fmtPct(r.wardPercent), fmt(gc.wardC2(r))]),
     "Schedule C-2 Total (Ward's Share of Claims)",
     totalC2,
     'lawsuits pending against the ward',

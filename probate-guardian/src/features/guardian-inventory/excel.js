@@ -336,6 +336,14 @@ export async function doSaveExcel(){
       }
     };
 
+    // Mirrors pdf-model.js's line of the same name, so the workbook and the
+    // printed filing show the claimant/attorney line identically.
+    const c2ClaimantLine=(e)=>{
+      const claimant=(e.claimantName||'').trim();
+      const atty=(e.claimantAttorney||'').trim();
+      if(!atty)return claimant;
+      return claimant?`Atty ${atty} for ${claimant}`:`Atty ${atty}`;
+    };
     const fillScheduleC2=(entries)=>{
       const pages=SCHEDULE_C2_PAGES;
       let idx=0;
@@ -348,7 +356,15 @@ export async function doSaveExcel(){
         const desc=`${e.lawsuitDescription||''}${e.caseNumber?' / '+e.caseNumber:''}`;
         setCell(pg,`C${r}`,desc);
         setCell(pg,`C${r+1}`,e.courtJurisdiction||'');
-        setCell(pg,`C${r+2}`,e.claimantName||'');
+        // Milestone 64A-2, item 3.4. The form gives the claimant and their
+        // attorney ONE free-text line (C7), and its own example writes it as
+        // "Atty John Smith for Bob Jones, plaintiff". The combined line is
+        // written here; the importer deliberately does NOT split it back
+        // (decided 2026-09-22) -- the form defines no delimiter, and any the
+        // app invented would misparse the form's own example. A round trip
+        // therefore merges the attorney into claimantName, which is recorded
+        // in the CSV row and is why claimantAttorney is optional.
+        setCell(pg,`C${r+2}`,c2ClaimantLine(e));
         setCell(pg,`C${r+3}`,e.claimantAddress||'');
         // Milestone 60K: the form's fifth C-2 line (worked example row 18: "St Petersburg, FL 33710").
         setCell(pg,`C${r+4}`,e.claimantCityStateZip||'');
