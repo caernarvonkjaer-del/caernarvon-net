@@ -2703,8 +2703,9 @@ export function resourcesPanelHTML(groups, { selectedCircuit = getDefaultCircuit
     </div>
     ${groupsHTML}
     <div class="sidebar-resource-disclaimer">
-      <p>These are independent government and third-party sites. Guardian Forms is not affiliated with them and does not control their content.</p>
+      <p>These are independent government and third-party sites. Other than Pinellas Clerk sites, Guardian Forms is not affiliated with them and does not control their content.</p>
       <p>This application is tuned for local requirements for the 6th Judicial Circuit. Please review requirements for other Florida Judicial Circuits before using.</p>
+      <p>This service is provided, Free to Use, by the Pinellas County Clerk of the Circuit Court and Comptroller.</p>
     </div>
   </section>`;
 }
