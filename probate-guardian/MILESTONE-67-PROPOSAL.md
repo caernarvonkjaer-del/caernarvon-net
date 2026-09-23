@@ -17,7 +17,7 @@ Listed in build order.
 | # | Item | Subject | Decision | Build |
 | --- | --- | --- | --- | --- |
 | 1 | 67F | Questions whose answers reveal nothing; one files data in the wrong box | **DECIDED** — route only reveal-gating controls; no data migration | **LANDED 2026-09-23** — 40 controls, not the 5 first listed; see the build record under 67F |
-| 2 | 67C | Every Annual/Final/Trust Excel export opens with Excel's corruption warning | **DECIDED** — strip defined names pointing outside the file | Independent |
+| 2 | 67C | Every Annual/Final/Trust Excel export opens with Excel's corruption warning | **DECIDED** — strip defined names pointing outside the file | **LANDED 2026-09-23** — see the build record under 67C |
 | 3 | 67D | Every Annual/Final/Trust Excel export destroys the Bond Period formulas | **DECIDED** — stop writing them; PDF falls back to the accounting period | Independent |
 | 4 | 67E | Every exported date is written as text, not as a date | **DECIDED** — write real dates | Independent |
 | 5 | 67A | Preparer block is mandatory on filings the app itself says have no preparer | **DECIDED** — name the preparer on the guardian/attorney cards; PDF prints the name | Independent |
@@ -973,6 +973,46 @@ recommended.
    three Excel-producing filing types, so the fix lands once and covers
    Guardian Inventory and Simplified Accounting too. Verify each still exports
    cleanly — Guardian is the one with a live internal name to protect.
+
+### Build record — LANDED 2026-09-23
+
+**What a filer now sees.** An Annual, Final or Trust Accounting saved as Excel
+opens in Excel with no repair dialog. Because that repair was what stripped
+the workbook's computed values, the summary page, schedule totals, Schedule
+B-4 summary and Part IX bond calculation show their numbers.
+
+**The build.** `saveWorkbookFile()` (`src/core/excel/excel-engine.js`) now
+drops, alongside the `.wvu.` custom-view names it already dropped, any defined
+name whose target contains an external-workbook marker (`[n]`). The test is on
+the *target*: Annual's `yesORno → '[1]DropDownData'!$A$6:$A$8` goes;
+Guardian's `yesORno → DropDownData!$A$6:$A$8`, which a live dropdown reads,
+stays, as does every other name. No cell, formula or filed value changes.
+
+**Verification.**
+
+- **Red first**, against the unfixed exporter: the new case in
+  `tests/e2e/excel-defined-names.spec.ts` failed naming exactly
+  `yesORno -> '[1]DropDownData'!$A$6:$A$8`; the file's other five cases
+  passed, including the new assertion that Guardian's internal `yesORno` is
+  present — so the fix could not pass by over-stripping. Green: 6/6.
+- **Cross-form (§8.9):** `tests/e2e/excel-form-field-placement.spec.ts`
+  (Simplified and Guardian exports, plus a Guardian re-import) ran with it:
+  **14/14 in 2.0 min** across the two files. All three exporters share the
+  changed function and all three still export and read back.
+- **Unit:** `tests/unit/excel-engine.spec.js` +3 cases pinning the predicate
+  (Annual's orphan dropped, Guardian's same-named internal target kept, print
+  areas and `.wvu.` handling unchanged): 13/13.
+- `TEST-INDEX.md` rows rescoped for both specs; no new file, so no index row
+  needed.
+
+**Still open, unchanged from the item:** the tester saw blank totals after
+repair, which this machine's Excel did not reproduce (it repaired by removing
+only the name, and every total computed). The corruption itself is now gone,
+which removes the whole class regardless of how a given Excel build repaired
+it. If a tester still sees blank totals on a post-67C export, that is a new
+finding, not this one.
+
+Landed in the commit whose subject begins `fix(milestone-67C):`.
 
 ---
 

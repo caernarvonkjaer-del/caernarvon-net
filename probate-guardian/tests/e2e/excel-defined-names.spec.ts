@@ -153,6 +153,35 @@ test.describe('the exported workbook keeps the names its formulas depend on', ()
       expect([...defined.keys()], `${name} was stripped; its dropdown loses its list`)
         .toContain(name);
     }
+    // Milestone 67C: Guardian's yesORno is the same name Annual's orphan
+    // carries, but here it points INSIDE the workbook and a live dropdown
+    // reads it. This is what keeps the external-reference filter below keyed
+    // on the target rather than the name.
+    expect(defined.get('yesORno')?.target, 'Guardian\'s yesORno must stay internal and present').toContain('DropDownData');
+    expect(defined.get('yesORno')?.target).not.toMatch(/\[\d+\]/);
+  });
+
+  // Milestone 67C. The Annual template defines yesORno as
+  // [1]DropDownData!$A$6:$A$8 -- a range in a DIFFERENT workbook, resolvable
+  // only through the template's externalLink parts, which ExcelJS does not
+  // write. The export kept the name and dropped the parts it needs, so Excel
+  // opened every Annual, Final and Trust export with "We found a problem with
+  // some content in ..." and, on repair, removed the name -- its own repair
+  // log is quoted in MILESTONE-67-PROPOSAL.md, Appendix A. The tester's blank
+  // summary page, missing schedule totals, empty B-4 summary and unpopulated
+  // bond calculation were all downstream of that repair.
+  //
+  // Nothing in the Annual workbook reads the name (it has no DropDownData
+  // sheet at all -- the name was inherited when the Clerk authored this
+  // workbook from the Guardian one), so dropping it changes no cell.
+  test('no defined name points at an external workbook -- the cause of the repair dialog', async ({ annualWorkbook }) => {
+    const { defined } = await workbookMeta(annualWorkbook);
+    const external = [...defined.entries()]
+      .filter(([, e]) => /\[\d+\]/.test(e.target))
+      .map(([n, e]) => `${n} -> ${e.target}`);
+    expect(external, 'a target of the form [n]Sheet!range names a workbook the file does not carry; Excel reports the file as damaged')
+      .toEqual([]);
+    expect([...defined.keys()], 'yesORno is the known orphan').not.toContain('yesORno');
   });
 
   // Custom-view leftovers are per-user Excel metadata, meaningless in a filed

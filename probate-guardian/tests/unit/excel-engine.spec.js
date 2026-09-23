@@ -6,6 +6,7 @@ import {
   numValue,
   percentValue,
   sanitizeCellValue,
+  saveWorkbookFile,
 } from '../../src/core/excel/excel-engine.js';
 
 // Milestone 51D rewrote this spec down to the module's surviving exports. It
@@ -143,6 +144,54 @@ describe('Excel Engine unit tests', () => {
       const cell = { value: undefined };
       const sheet = { getCell: () => cell };
       expect(setCell(sheet, 'B2', 'v')).toBe(cell);
+    });
+  });
+
+  // Milestone 67C. The Annual template defines yesORno as a range in ANOTHER
+  // workbook ([1]DropDownData!$A$6:$A$8). ExcelJS never writes the external-
+  // link parts that would resolve it, so the exported file carried a pointer
+  // to nothing and Excel opened every Annual/Final/Trust export with its
+  // repair dialog. The filter keys on the target, not the name: Guardian's
+  // yesORno is the same name pointing inside its own workbook, read by a live
+  // dropdown, and must survive. tests/e2e/excel-defined-names.spec.ts proves
+  // both against real exports; this pins the predicate itself.
+  describe('saveWorkbookFile drops defined names that point outside the workbook', () => {
+    const namesAfterSave = async (model) => {
+      const names = { model };
+      const workbook = { definedNames: names, xlsx: { writeBuffer: async () => new Uint8Array([1]) } };
+      // No window: the function returns after writing the buffer, before the
+      // browser-only download step.
+      const original = globalThis.window;
+      if (original !== undefined) delete globalThis.window;
+      try {
+        await saveWorkbookFile(workbook, 'x.xlsx');
+      } finally {
+        if (original !== undefined) globalThis.window = original;
+      }
+      return names.model.map((e) => e.name);
+    };
+
+    it("removes Annual's orphan and keeps every name the workbook resolves itself", async () => {
+      expect(await namesAfterSave([
+        { name: 'yesORno', ranges: ["'[1]DropDownData'!$A$6:$A$8"] },
+        { name: 'Name_of_Ward', ranges: ["'PART I'!$C$3"] },
+        { name: 'From_Date', ranges: ["'PART I'!$E$18"] },
+        { name: '_xlnm.Print_Area', ranges: ["'PART XI'!$A$1:$L$40"], localSheetId: 57 },
+      ])).toEqual(['Name_of_Ward', 'From_Date', '_xlnm.Print_Area']);
+    });
+
+    it("keeps Guardian's same-named yesORno because its target is internal", async () => {
+      expect(await namesAfterSave([
+        { name: 'yesORno', ranges: ['DropDownData!$A$6:$A$8'] },
+        { name: 'countyname', ranges: ['DropDownData!$B$2:$B$68'] },
+      ])).toEqual(['yesORno', 'countyname']);
+    });
+
+    it('still drops per-user custom-view names alongside', async () => {
+      expect(await namesAfterSave([
+        { name: 'Z_9E3F.wvu.PrintArea', ranges: ["'PART I'!$A$1:$L$50"], localSheetId: 0 },
+        { name: 'Case_Number', ranges: ["'PART I'!$H$4"] },
+      ])).toEqual(['Case_Number']);
     });
   });
 });

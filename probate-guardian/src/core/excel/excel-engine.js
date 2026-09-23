@@ -174,10 +174,29 @@ export async function saveWorkbookFile(workbook, filename) {
   //
   // Print areas are NOT in this model -- ExcelJS keeps them on
   // worksheet.pageSetup.printArea -- so they were never affected either way.
+  //
+  // Milestone 67C: a name whose target lives in ANOTHER workbook goes too.
+  // The Annual template defines yesORno as [1]DropDownData!$A$6:$A$8 -- a
+  // range in an external file, resolvable only through the template's
+  // externalLink parts, which ExcelJS does not write. Keeping the name while
+  // dropping the parts it needs made Excel open every Annual, Final and Trust
+  // export with "We found a problem with some content" and, on repair, remove
+  // the name itself (Excel's own repair log is quoted in
+  // MILESTONE-67-PROPOSAL.md, Appendix A). Nothing in the Annual workbook
+  // reads it -- it has no DropDownData sheet at all; the name was inherited
+  // when the Clerk authored this workbook from the Guardian one.
+  //
+  // The test is on the TARGET, not the name. Guardian's yesORno is the same
+  // name pointing inside its own workbook, and a live dropdown reads it.
+  const refersOutsideWorkbook = (entry) => {
+    const ranges = Array.isArray(entry?.ranges) ? entry.ranges : [entry?.ranges ?? ''];
+    return ranges.some((range) => /\[\d+\]/.test(String(range ?? '')));
+  };
   try {
     const names = workbook.definedNames;
     if (names && Array.isArray(names.model)) {
-      names.model = names.model.filter((entry) => !String(entry?.name || '').includes('.wvu.'));
+      names.model = names.model.filter((entry) =>
+        !String(entry?.name || '').includes('.wvu.') && !refersOutsideWorkbook(entry));
     }
   } catch (e) {}
 
