@@ -1403,7 +1403,7 @@ function pagePart9Annual(){
           <div class="col-md-6">${selD("Guardian's Relationship to Ward",d.guardianRelationship,"D.guardianRelationship=this.value",GUARDIAN_REL)}</div>
         </div>
         <div class="row g-2 mb-2">
-          <div class="col-md-6">${yesNoRadioAnnualHTML('restrictedDepository','Restricted depository?',effectiveAnswer(d.restrictedDepository,d.restrictedDepositoryReceiptDate),'restrictedDepository',true,'restricted_depository')}</div>
+          <div class="col-md-6">${yesNoRadioAnnualHTML('restrictedDepository','Restricted depository?',effectiveAnswer(d.restrictedDepository,d.restrictedDepositoryReceiptDate),'restrictedDepository',true,'restricted_depository','/p9')}</div>
           ${triYes(effectiveAnswer(d.restrictedDepository,d.restrictedDepositoryReceiptDate))?`<div class="col-md-6">${inpD('Date of Most Recent Receipt',d.restrictedDepositoryReceiptDate,"D.restrictedDepositoryReceiptDate=this.value",true,'date')}</div>`:''}
         </div>
         <div class="row g-2">

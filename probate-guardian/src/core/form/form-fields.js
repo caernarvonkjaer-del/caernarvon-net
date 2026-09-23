@@ -351,14 +351,22 @@ export function renderRadioGroupField({
   required = false,
   hint = '',
   id = null,
+  route = '',
 } = {}) {
   const groupId = id || path;
   const name = `radio_${groupId}`;
   const reqMark = required ? '<span class="req">*</span>' : '';
   const hintHtml = hint ? `<div class="plan-field-hint">${hint}</div>` : '';
+  // Milestone 67F: a radio whose answer reveals another field (Initial Plan
+  // Q2/Q4/Q5's "Other" explanation boxes) needs the page re-rendered on
+  // change, and src/form-events.js re-renders only when the control carries
+  // data-form-route -- the same attribute renderYesNoField() already emits.
+  // Left empty, nothing changes: a route costs the filer their scroll
+  // position, so only reveal-gating call sites pass one.
+  const routeAttr = route ? ` data-form-route="${esc(route)}"` : '';
   const btns = options.map((o, i) => `
     <div class="form-check form-check-inline">
-      <input class="form-check-input" type="radio" name="${name}" id="${groupId}_${i}" value="${esc(o)}" ${value === o ? 'checked' : ''} data-form-path="${esc(path)}">
+      <input class="form-check-input" type="radio" name="${name}" id="${groupId}_${i}" value="${esc(o)}" ${value === o ? 'checked' : ''} data-form-path="${esc(path)}"${routeAttr}>
       <label class="form-check-label" for="${groupId}_${i}">${esc(o)}</label>
     </div>`).join('');
   return `<fieldset class="mb-3">
@@ -380,10 +388,18 @@ export function renderCheckboxField({
   label = '',
   checked = false,
   id = null,
+  route = '',
 } = {}) {
   const checkboxId = id || path;
+  // Milestone 67F: same contract as renderRadioGroupField() above. Before
+  // this, a checkbox that gates a reveal (Annual Plan Q11's "NO
+  // remuneration", every "Other (explain)" box) could not ask for one, so
+  // the field it revealed appeared only after the filer left the page and
+  // came back -- and on Q11 the name they typed meanwhile landed in the
+  // other branch's box.
+  const routeAttr = route ? ` data-form-route="${esc(route)}"` : '';
   return `<div class="form-check plan-check">
-    <input class="form-check-input" type="checkbox" id="${checkboxId}" ${checked ? 'checked' : ''} data-form-path="${esc(path)}" data-form-value="boolean">
+    <input class="form-check-input" type="checkbox" id="${checkboxId}" ${checked ? 'checked' : ''} data-form-path="${esc(path)}" data-form-value="boolean"${routeAttr}>
     <label class="form-check-label" for="${checkboxId}">${label}</label>
   </div>`;
 }

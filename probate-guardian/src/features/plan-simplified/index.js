@@ -252,7 +252,7 @@ function pagePlanSQuestions(){
       +chkP('q8LivingWill','Living Will / Anatomical Gift',d.q8LivingWill)
       +chkP('q8Surrogate','Healthcare Surrogate Designation',d.q8Surrogate)
       +chkP('q8POA','Power of Attorney',d.q8POA)
-      +chkP('q8Other','Other Advance Directive',d.q8Other)
+      +chkP('q8Other','Other Advance Directive',d.q8Other,'/p2')
       +(d.q8Other?`<div class="plan-conditional mt-2">${inpS('q8OtherText','Describe the other advance directive',d.q8OtherText,true)}</div>`:'')
       +chkP('q8None','NONE',d.q8None))}
 

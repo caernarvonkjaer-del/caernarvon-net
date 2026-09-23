@@ -261,6 +261,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`tests\e2e\case-write-through.spec.ts`](<tests/e2e/case-write-through.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\closed-filing-sync.spec.ts`](<tests/e2e/closed-filing-sync.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\combobox-keyboard-nav.spec.ts`](<tests/e2e/combobox-keyboard-nav.spec.ts>) | Automated test covering the named behavior or contract. |
+| [`tests\e2e\conditional-reveal-routes.spec.ts`](<tests/e2e/conditional-reveal-routes.spec.ts>) | Milestone 67F: a question's answer reveals its dependent field on the click; guard sweeps every unrouted checkbox/radio on all six forms for hidden reveal gates. |
 | [`tests\e2e\continue-prompt-banner.spec.ts`](<tests/e2e/continue-prompt-banner.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\convert-ward.spec.ts`](<tests/e2e/convert-ward.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\cover-county.spec.ts`](<tests/e2e/cover-county.spec.ts>) | Automated test covering the named behavior or contract. |

@@ -245,6 +245,21 @@ describe('renderRadioGroupField', () => {
     expect(html).toContain('value="Yes"');
     expect(html).toContain('value="No"');
   });
+
+  // Milestone 67F: a radio group whose answer reveals another field must be
+  // able to ask for a page re-render, and form-events.js grants one only to
+  // a control carrying data-form-route. Every option gets the attribute --
+  // the filer may pick any of them -- and a group given no route emits none,
+  // so the ~20 groups that gate nothing keep their scroll position.
+  it('emits data-form-route on every option when given a route, and on none otherwise', () => {
+    const routed = renderRadioGroupField({
+      path: 'q2Setting', options: ['Private Residence', 'Other'], route: '/p2',
+    });
+    expect(routed.match(/data-form-route="\/p2"/g)).toHaveLength(2);
+
+    const unrouted = renderRadioGroupField({ path: 'q2Setting', options: ['Private Residence', 'Other'] });
+    expect(unrouted).not.toContain('data-form-route');
+  });
 });
 
 describe('renderCheckboxField', () => {
@@ -265,6 +280,17 @@ describe('renderCheckboxField', () => {
   it('renders unchecked when checked is false', () => {
     const html = renderCheckboxField({ path: 'q9DNR', label: 'DNR', checked: false });
     expect(html).not.toContain('checked>');
+  });
+
+  // Milestone 67F: same contract as the radio group above. Annual Plan Q11's
+  // "NO remuneration" box swaps which name field is on the page, so it must
+  // re-render on the click; a plain "check all that apply" box must not.
+  it('emits data-form-route only when given a route', () => {
+    const routed = renderCheckboxField({ path: 'q11NoRemuneration', label: 'No remuneration', route: '/p10' });
+    expect(routed).toContain('data-form-value="boolean" data-form-route="/p10"');
+
+    const unrouted = renderCheckboxField({ path: 'q3MedDentist', label: 'Dentist' });
+    expect(unrouted).not.toContain('data-form-route');
   });
 });
 

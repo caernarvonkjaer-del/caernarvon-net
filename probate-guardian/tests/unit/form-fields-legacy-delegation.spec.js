@@ -74,6 +74,33 @@ describe('legacy call-site delegation to Tier 1 primitives (Milestone 41-1)', ()
     expect(delegated).toBe(direct);
   });
 
+  // Milestone 67F: the three helpers that could not carry a route -- which is
+  // why the Initial Plan's explanation boxes, Annual's receipt-date field and
+  // Annual Plan Q11's name field never appeared on the click -- now forward
+  // one as their trailing argument. Trailing, so every existing call site is
+  // unchanged; the tests above still pass with no route at all.
+  it('chkP(), radioP() and yesNoRadioAnnualHTML() forward a trailing route argument to the Tier 1 primitive', () => {
+    const chkP = loadWithWindow('chkP', { renderCheckboxField });
+    expect(chkP('q11NoRemuneration', 'No remuneration', false, '/p10'))
+      .toBe(renderCheckboxField({ path: 'q11NoRemuneration', label: 'No remuneration', checked: false, id: 'q11NoRemuneration', route: '/p10' }));
+
+    const radioP = loadWithWindow('radioP', { renderRadioGroupField });
+    expect(radioP('q2Setting', '', 'Other', ['Private Residence', 'Other'], false, '', '/p2'))
+      .toBe(renderRadioGroupField({ path: 'q2Setting', label: '', value: 'Other', options: ['Private Residence', 'Other'], required: false, hint: '', id: 'q2Setting', route: '/p2' }));
+
+    // yesNoRadioAnnualHTML() delegates through yesNoRadioHTML(), so both are
+    // loaded into one scope; the route must survive both hops and land in
+    // the annual-bound output next to data-annual-path.
+    const body = `${extractLegacyFunction('yesNoRadioHTML')}; ${extractLegacyFunction('yesNoRadioAnnualHTML')}; return yesNoRadioAnnualHTML;`;
+    // eslint-disable-next-line no-new-func
+    const yesNoRadioAnnualHTML = new Function('window', body)({ renderYesNoField });
+    const annual = yesNoRadioAnnualHTML('restrictedDepository', 'Restricted depository?', '', 'restrictedDepository', true, 'restricted_depository', '/p9');
+    expect(annual).toBe(renderYesNoField({
+      path: 'restrictedDepository', label: 'Restricted depository?', value: '', id: 'restrictedDepository', required: true, route: '/p9', binding: 'annual', tooltipKey: 'restricted_depository',
+    }));
+    expect(annual).toContain('data-annual-path="restrictedDepository" data-form-value="yes-no" data-form-route="/p9"');
+  });
+
   // Milestone 41-1's own audit (flagged as an open question by the
   // milestone proposal) found chkP() is the only genuine checkbox among
   // the three candidates: yesNoCheckboxS() and yesNoCheckboxD() are not

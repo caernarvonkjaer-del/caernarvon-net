@@ -5880,8 +5880,11 @@ function txtP(id,label,val,rows=4,req=false,hint=''){
   return window.renderTextareaField({ path: id, label, value: val, rows, required: req, hint, id });
 }
 
-function chkP(id,label,checked){
-  return window.renderCheckboxField({ path: id, label, checked, id });
+// Milestone 67F: `route` is passed only by call sites whose checkbox reveals
+// another field -- it makes the page re-render on change (form-events.js),
+// which is what shows the revealed field without leaving the page.
+function chkP(id,label,checked,route=''){
+  return window.renderCheckboxField({ path: id, label, checked, id, route });
 }
 // Explicit binary answers retain the literal 'Yes'/'No' string contract used
 // by validators and every output format. Unlike the former checkbox, a radio
@@ -5943,15 +5946,17 @@ function yesNoCheckboxD(label,val,setter,reqOrRoute=false){
   const req=typeof reqOrRoute==='boolean'?reqOrRoute:false;
   return yesNoRadioHTML(path||label,label,val,path,req,route);
 }
-function yesNoRadioAnnualHTML(id,label,val,path,req=false,tooltipKey=''){
-  return yesNoRadioHTML(id,label,val,path,req,'','annual',tooltipKey);
+// Milestone 67F: `route` was hardcoded '' here, so Annual's "Restricted
+// depository?" could never reveal its receipt-date field on the click.
+function yesNoRadioAnnualHTML(id,label,val,path,req=false,tooltipKey='',route=''){
+  return yesNoRadioHTML(id,label,val,path,req,route,'annual',tooltipKey);
 }
 
 // Inline radio group. Also used later for the Annual/Initial plans' 3-way
 // ADL ratings ("no help" / "some assistance" / "cannot do at all"), which is
 // why the options are a parameter rather than hardcoded Yes/No.
-function radioP(id,label,val,options=['Yes','No'],req=false,hint=''){
-  return window.renderRadioGroupField({ path: id, label, value: val, options, required: req, hint, id });
+function radioP(id,label,val,options=['Yes','No'],req=false,hint='',route=''){
+  return window.renderRadioGroupField({ path: id, label, value: val, options, required: req, hint, id, route });
 }
 
 function pageNavS(prev,next){

@@ -319,23 +319,23 @@ function pagePlanICover(){
 
 function pagePlanISettingMedical(){
   const d=window.D;
-  const cb=(id,label)=>chkP(id,label,d[id]);
+  const cb=(id,label,route='')=>chkP(id,label,d[id],route);
   return `<div class="schedule-page">
     <h1>2–3. Residential Setting &amp; Medical Services</h1>
     ${planQ('2','The guardian states the place and kind of residential setting best suited for the needs of the Ward is:',
-      radioP('q2Setting','',d.q2Setting,['Assisted Living (ALF)','Group Home','Intermediate','Private Residence','Skilled Nursing','Specialized','State Hospital','Other'])
+      radioP('q2Setting','',d.q2Setting,['Assisted Living (ALF)','Group Home','Intermediate','Private Residence','Skilled Nursing','Specialized','State Hospital','Other'],false,'','/p2')
       +(d.q2Setting==='Other'?`<div class="plan-conditional mt-2">${txtP('q2Explain','Explanation',d.q2Explain,3)}</div>`:''))}
     ${planQ('3','For the plan period, the guardian proposes the following as to the provision of medical services for the Ward:',
       planCheckGroup('',
         cb('q3MedPrimary','Routine examination by primary care physician')
         +cb('q3MedDentist','Routine examination by dentist')
         +cb('q3MedOphthalmologist','Routine examination by Ophthalmologist')
-        +cb('q3MedSpecialist','Routine examination by Specialist')
+        +cb('q3MedSpecialist','Routine examination by Specialist','/p2')
         +cb('q3MedPT','Physical Therapy')
         +cb('q3MedST','Speech Therapy')
         +cb('q3MedOT','Occupational Therapy')
         +cb('q3MedWardDecides','The ward retains the right to make their own decision')
-        +cb('q3MedOther','Other'),
+        +cb('q3MedOther','Other','/p2'),
         'q3MedExplain',d.q3MedExplain,d.q3MedOther)
       +(d.q3MedSpecialist?`<div class="plan-conditional mt-2">${inpS('q3MedSpecialistArea','Specialist — area of specialty',d.q3MedSpecialistArea)}</div>`:''))}
     ${renderScheduleDocsSection('planISettingMedical')}
@@ -348,10 +348,10 @@ function pagePlanIMentalPersonal(){
   return `<div class="schedule-page">
     <h1>4–5. Mental Health &amp; Personal Care</h1>
     ${planQ('4','For the plan period, the guardian proposes the following as to the provision of mental health services for the Ward:',
-      radioP('q4Mental','',d.q4Mental,['Routine examination by Psychiatrist/Psychologist','Ongoing Treatment Outpatient','Ongoing Treatment Inpatient','None','Other'])
+      radioP('q4Mental','',d.q4Mental,['Routine examination by Psychiatrist/Psychologist','Ongoing Treatment Outpatient','Ongoing Treatment Inpatient','None','Other'],false,'','/p3')
       +((d.q4Mental==='Other'||d.q4Mental==='None')?`<div class="plan-conditional mt-2">${txtP('q4Explain','Explanation',d.q4Explain,3)}</div>`:''))}
     ${planQ('5','For the plan period, the guardian proposes the following as to the provision of personal care of the ward, such as bathing, grooming and feeding:',
-      radioP('q5Personal','',d.q5Personal,['Care Facility','Nurses and Aides','Family and Friends','Other'])
+      radioP('q5Personal','',d.q5Personal,['Care Facility','Nurses and Aides','Family and Friends','Other'],false,'','/p3')
       +(d.q5Personal==='Other'?`<div class="plan-conditional mt-2">${txtP('q5Explain','Explanation',d.q5Explain,3)}</div>`:''))}
     ${renderScheduleDocsSection('planIMentalPersonal')}
     ${pageNavS('/p2','/p4')}
@@ -360,7 +360,7 @@ function pagePlanIMentalPersonal(){
 
 function pagePlanISocialBenefits(){
   const d=window.D;
-  const cb=(id,label)=>chkP(id,label,d[id]);
+  const cb=(id,label,route='')=>chkP(id,label,d[id],route);
   return `<div class="schedule-page">
     <h1>6–7. Socialization &amp; Benefits</h1>
     ${planQ('6','For the plan period, the guardian proposes the following to provide for socialization and/or recreational services for the Ward (e.g.: arranging friends and family to visit, encourage participation in facility or day program activities):',
@@ -370,7 +370,7 @@ function pagePlanISocialBenefits(){
         +cb('q6FamilyFriends','Family and Friends')
         +cb('q6DayProgram','Day Program')
         +cb('q6WardDecides','The Ward retains the right to make their own decision')
-        +cb('q6Other','Other'),
+        +cb('q6Other','Other','/p4'),
         'q6Explain',d.q6Explain,d.q6Other))}
     ${planQ('7','The Ward has the following health insurance, accident insurance, private benefits, or governmental benefits received to meet any part of the costs of medical, mental health or related services:',
       planCheckGroup('',
@@ -385,9 +385,9 @@ function pagePlanISocialBenefits(){
         +yesNoCheckboxS('q7Medicare','Medicare',d.q7Medicare)
         +yesNoCheckboxS('q7Medicaid','Medicaid',d.q7Medicaid)
         +yesNoCheckboxS('q7Va','VA',d.q7Va)
-        +yesNoCheckboxS('q7Trusts','Trusts (explain type and how it covers costs below)',d.q7Trusts)
-        +yesNoCheckboxS('q7PendingBenefits','Pending Benefits (explain why not yet receiving, or date applied, below)',d.q7PendingBenefits)
-        +cb('q7Other','Other'),
+        +yesNoCheckboxS('q7Trusts','Trusts (explain type and how it covers costs below)',d.q7Trusts,false,'/p4')
+        +yesNoCheckboxS('q7PendingBenefits','Pending Benefits (explain why not yet receiving, or date applied, below)',d.q7PendingBenefits,false,'/p4')
+        +cb('q7Other','Other','/p4'),
         // Milestone 40C-H: same predicate as validatePlanInitial() and
         // computeNavChecks() so all three agree. This one was already correct;
         // it is the reference the other two were brought in line with.
@@ -452,7 +452,7 @@ function pagePlanIADLs(){
 
 function pagePlanIDisabilities(){
   const d=window.D;
-  const cb=(id,label)=>chkP(id,label,d[id]);
+  const cb=(id,label,route='')=>chkP(id,label,d[id],route);
   return `<div class="schedule-page">
     <h1>10B–D. Disabilities &amp; Assistive Devices</h1>
     ${planQ('B','The mental disabilities of the Ward are:',
@@ -465,7 +465,7 @@ function pagePlanIDisabilities(){
         +cb('mentalDevelopmental','Developmental Disabilities')
         +cb('mentalSubstance','Induced by substance abuse')
         +cb('mentalSchizophrenia','Schizophrenia or related disorders')
-        +cb('mentalOther','Other'),
+        +cb('mentalOther','Other','/p7'),
         'mentalExplain',d.mentalExplain,d.mentalOther))}
     ${planQ('C','The physical disabilities of the Ward are:',
       planCheckGroup('',
@@ -475,7 +475,7 @@ function pagePlanIDisabilities(){
         +cb('physDiabetic','Diabetic')
         +cb('physParkinsons',"Parkinson's disease")
         +cb('physArthritis','Severe arthritis')
-        +cb('physOther','Other'),
+        +cb('physOther','Other','/p7'),
         'physExplain',d.physExplain,d.physOther))}
     ${planQ('D','The assistive devices currently used by the Ward are:',
       planCheckGroup('',
@@ -487,7 +487,7 @@ function pagePlanIDisabilities(){
         +cb('usesProsthetics','Prosthetics')
         +cb('usesGlasses','Glasses')
         +cb('usesNone','None')
-        +cb('usesOther','Other'),
+        +cb('usesOther','Other','/p7'),
         'usesExplain',d.usesExplain,d.usesOther))}
     ${renderScheduleDocsSection('planIDisabilities')}
     ${pageNavS('/p6','/p8')}
@@ -496,7 +496,7 @@ function pagePlanIDisabilities(){
 
 function pagePlanIDirectives(){
   const d=window.D;
-  const cb=(id,label)=>chkP(id,label,d[id]);
+  const cb=(id,label,route='')=>chkP(id,label,d[id],route);
   const dirs=(d.q11Directives||[]).map((r,i)=>{
     return `<div class="col-12"><div class="entry-card mb-2">
       <div class="entry-card-header">
@@ -547,7 +547,7 @@ function pagePlanIDirectives(){
         cb('q11ExecDNR','Order Not to Resuscitate, F.S. 401.45(3) ("DNR")')
         +cb('q11ExecHealthcare','Advance Directive for Healthcare (healthcare surrogate, living will, or anatomical gift)')
         +cb('q11ExecPOA','Durable Power of Attorney, F.S. Chapter 709')
-        +cb('q11ExecOther','Other'),
+        +cb('q11ExecOther','Other','/p8'),
         'q11ExecOtherText',d.q11ExecOtherText,d.q11ExecOther,'Describe the "Other" directive.')
       +(dirs?`<div class="row g-3 schedule-entry-grid">${dirs}</div>`:'')
       +`<button class="btn btn-outline-primary btn-sm mt-2" data-form-action="add-plan-row" data-collection="q11Directives" data-row-type="directive" data-route="/p8">+ Add Directive</button>`
@@ -562,7 +562,7 @@ function pagePlanIDirectives(){
         +cb('needsProsthetics','Prosthetics')
         +cb('needsGlasses','Glasses')
         +cb('needsNone','None')
-        +cb('needsOther','Other'),
+        +cb('needsOther','Other','/p8'),
         'needsExplain',d.needsExplain,d.needsOther))}
     ${planQ('F','Are the recommendations of the examining committee incorporated into this plan?',
       yesNoCheckboxS('committeeIncorporated','Recommendations of the examining committee are incorporated into this plan',d.committeeIncorporated,false,'/p8')
@@ -574,7 +574,7 @@ function pagePlanIDirectives(){
 
 function pagePlanISignatures(){
   const d=window.D;
-  const cb=(id,label)=>chkP(id,label,d[id]);
+  const cb=(id,label,route='')=>chkP(id,label,d[id],route);
   const g=(i,title)=>{
     const gd=(d.planGuardians||[])[i]||{};
     return `<div class="col-12 col-lg-6"><div class="entry-card mb-0 h-100">

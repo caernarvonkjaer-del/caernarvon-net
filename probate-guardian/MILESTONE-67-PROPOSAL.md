@@ -7,15 +7,16 @@ not approved. Nothing here may be implemented without the requester's explicit,
 named approval of that specific item (AGENTS.md §3). Approving one item
 authorizes only that item.
 
-**All six items are decided as of 2026-09-23. None is built.** Deciding is not
-authorizing: per §3 and the standing rule, implementation still needs an
-explicit go-ahead naming the item.
+**All six items are decided as of 2026-09-23.** The requester authorized
+execution of the whole milestone in the recommended order on 2026-09-23
+("execute MS 67 in your recommended order"). Each item's row below records
+whether it has landed.
 
 Listed in build order.
 
 | # | Item | Subject | Decision | Build |
 | --- | --- | --- | --- | --- |
-| 1 | 67F | Questions whose answers reveal nothing; one files data in the wrong box | **DECIDED** — route only reveal-gating controls; no data migration | **Do first** — 67B depends on it |
+| 1 | 67F | Questions whose answers reveal nothing; one files data in the wrong box | **DECIDED** — route only reveal-gating controls; no data migration | **LANDED 2026-09-23** — 40 controls, not the 5 first listed; see the build record under 67F |
 | 2 | 67C | Every Annual/Final/Trust Excel export opens with Excel's corruption warning | **DECIDED** — strip defined names pointing outside the file | Independent |
 | 3 | 67D | Every Annual/Final/Trust Excel export destroys the Bond Period formulas | **DECIDED** — stop writing them; PDF falls back to the accounting period | Independent |
 | 4 | 67E | Every exported date is written as text, not as a date | **DECIDED** — write real dates | Independent |
@@ -1521,6 +1522,117 @@ fifth instance arrives with the next form.
 Settled above. Recorded separately here because it is a data decision rather
 than a rendering one, and because "we chose not to migrate" is the kind of thing
 a later reader will otherwise assume was an oversight.
+
+### Build record — LANDED 2026-09-23
+
+**What a filer now sees.** Answering a question shows the field it asks for,
+on the click, without leaving the page. On the Annual Plan's Question 11,
+ticking *"I have received NO remuneration"* swaps in the declaring-guardian
+name box, and the name typed into it is saved as `q11NoRemunerationName` —
+the field the validator reads — so the "declaring guardian's name" flag now
+clears. Annual Part IX's *"Restricted depository? Yes"* reveals the receipt
+date. The Initial Plan's Q2, Q4 and Q5 *"Other"* answers reveal their
+explanation boxes. Existing wrong-box data is untouched, as decided.
+
+**The count was 40, not 5.** The "known set" of five call sites in the
+decision above was what the tester's report exposed. The audit this item
+required of the Minor and Simplified Plans (§8.9) was widened to every
+conditional render in all five forms and found 37 by reading; the guard test
+then corrected the reading in both directions:
+
+- **Three the reading missed**, all on the Initial Plan's Q7 (Benefits):
+  `q7Trusts` and `q7PendingBenefits` — `yesNoCheckboxS()` calls, a helper
+  that *could* carry a route but was not given one — and the `q7Other` box.
+  Each reveals the shared explanation box.
+- **Two the reading found that the guard could not see** on a fresh filing:
+  `q10ExecOther` (Annual Plan) and `q11ExecOther` (Initial Plan) render only
+  inside the "the ward executed directives" reveal. The guard grew a second
+  pass for exactly this — see below.
+
+| Form | Page | Controls routed |
+| --- | --- | --- |
+| Initial Plan | `/p2` | `q2Setting` (radio), `q3MedSpecialist`, `q3MedOther` |
+| | `/p3` | `q4Mental` (radio), `q5Personal` (radio) |
+| | `/p4` | `q6Other`, `q7Trusts`, `q7PendingBenefits`, `q7Other` |
+| | `/p7` | `mentalOther`, `physOther`, `usesOther` |
+| | `/p8` | `q11ExecOther`, `needsOther` |
+| Annual Plan | `/p3` | `q3SettingOther`, `q3MedSpecialist`, `q3MedNone`, `q3MedOther`, `q3MentalNone`, `q3MentalOther`, `q3PersonalNone`, `q3PersonalOther`, `q3SocialNone`, `q3SocialOther` |
+| | `/p4` | `q3BenefitsNone`, `q3BenefitsOther` |
+| | `/p8` | `q9MentalOther`, `q9PhysOther`, `q9UsesOther`, `q9NeedsOther` |
+| | `/p9` | `q10NoDirectives`, `q10ExecOther` |
+| | `/p10` | `q11NoRemuneration` |
+| Plan Minor | `/p4` | `q4Primary`, `q4Dentist`, `q4Specialist`, `q4Other` |
+| | `/p5` | `q5Other` |
+| Plan Simplified | `/p2` | `q8Other` |
+| Annual Accounting | `/p9` | `restrictedDepository` (yes/no) |
+| **Total** | | **40** (14 + 19 + 5 + 1 + 1) |
+
+Guardian Inventory needed nothing: every reveal there already carried a route,
+and the guard confirmed it (below). Every other checkbox and radio in the app
+— the "check all that apply" siblings, the per-row schedule flags — is
+unchanged and does not re-render, per the decision.
+
+**The build, as landed.**
+
+- `renderRadioGroupField()` and `renderCheckboxField()`
+  (`src/core/form/form-fields.js`) take `route` and emit `data-form-route`
+  when given one, exactly as `renderYesNoField()` already did. Given none,
+  their output is byte-identical to before.
+- `chkP()`, `radioP()` and `yesNoRadioAnnualHTML()` (`src/legacy-app.js`)
+  take `route` as a **trailing** argument and forward it. Trailing so that
+  every existing call site is untouched — `yesNoRadioAnnualHTML()`'s four
+  per-row schedule flags still pass `tooltipKey` in the same position.
+- Each page's local `cb(id,label)` shorthand became `cb(id,label,route='')`;
+  the 40 call sites above pass their page's route.
+
+**The guard** (`tests/e2e/conditional-reveal-routes.spec.ts`) works by
+observation, not by reading templates: on every page of all six forms it
+clicks every checkbox and radio that carries no `data-form-route`, forces the
+render a routed control would have requested, and compares the set of bound
+fields before and after. A control whose click changed that set is a reveal
+gate with no route, and the failure names it by page, id and path. Pass 2
+opens every *routed* checkbox gate on the page (setting the model directly,
+so the test's own render is the only one running) and sweeps what that
+exposed — that is how the nested `q10ExecOther`/`q11ExecOther` are covered.
+Runs in the browser in one evaluate per page: roughly 300 controls across
+the six forms in about 60 seconds.
+
+Its limits, stated: pass 2 opens checkbox gates only, not radio ones, so a
+reveal nested inside a "Yes" radio's block on a fresh filing would still be
+missed; none exists today. And it compares *which fields exist*, so a control
+that only changes a label, a hint or a completion marker is deliberately not
+a reveal.
+
+**Verification.**
+
+- Unit: `tests/unit/form-fields.spec.js` (+2 cases: route emitted on every
+  option / on the box, none when absent) and
+  `tests/unit/form-fields-legacy-delegation.spec.js` (+1: all three helpers
+  forward the trailing route, including through the two hops of
+  `yesNoRadioAnnualHTML()` → `yesNoRadioHTML()` → `renderYesNoField()`).
+  34/34 pass.
+- E2E, **red first** with the seven source files stashed: 10 of 11 tests
+  failed for the stated reason — the five symptom tests because the revealed
+  field was absent (`element(s) not found`), five guards listing their
+  offenders. The **Guardian Inventory guard passed** on the unfixed code,
+  which is the false-positive check: a form where every reveal is routed
+  reports nothing. Pass 2 was proven separately by stripping
+  `q10ExecOther`'s route and re-running the Annual Plan guard alone: it
+  named exactly that control. Green: 11/11 in 1.1 min.
+- `tests/unit/test-index-guard.spec.js` passes with the new `TEST-INDEX.md`
+  row; `file_index.md` lists the new spec.
+- Neighbouring specs (the four plan mounts, `annual-mount`,
+  `dependent-question-gate`, `plan-benefits-tristate`,
+  `form-entry.contract`, `plan-readiness.contract`,
+  `guardianship-selection-controls`): **85/85 passed, 7.8 min.**
+
+**Accepted cost.** Each of the 40 controls now re-renders its page on change,
+which resets scroll position and focus — the same cost Milestone 37-4
+accepted for `q10Executed`/`q11Executed`, and the reason nothing else was
+routed.
+
+Landed in the commit whose subject begins `fix(milestone-67F):` —
+`git log --grep="milestone-67F"` finds it.
 
 ### Cross-cutting checklist (AGENTS.md §8)
 

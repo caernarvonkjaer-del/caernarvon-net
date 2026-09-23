@@ -297,15 +297,15 @@ function pagePlanMMedical(){
     <h1>4. Provision of Medical Services</h1>
     <div class="schedule-instructions">For the plan period, the guardian proposes the following as to the provision of medical services for the Minor.</div>
     <div class="plan-check-grid">
-      ${chkP('q4Primary','Routine examination by primary care physician',d.q4Primary)}
+      ${chkP('q4Primary','Routine examination by primary care physician',d.q4Primary,'/p4')}
     </div>
     ${d.q4Primary?freq('q4PrimaryFreq',d.q4PrimaryFreq):''}
     <div class="plan-check-grid mt-2">
-      ${chkP('q4Dentist','Routine examination by dentist',d.q4Dentist)}
+      ${chkP('q4Dentist','Routine examination by dentist',d.q4Dentist,'/p4')}
     </div>
     ${d.q4Dentist?freq('q4DentistFreq',d.q4DentistFreq):''}
     <div class="plan-check-grid mt-2">
-      ${chkP('q4Specialist','Routine examination by specialist',d.q4Specialist)}
+      ${chkP('q4Specialist','Routine examination by specialist',d.q4Specialist,'/p4')}
     </div>
     ${d.q4Specialist?freq('q4SpecialistFreq',d.q4SpecialistFreq):''}
     <div class="plan-check-grid mt-2">
@@ -313,7 +313,7 @@ function pagePlanMMedical(){
       ${chkP('q4ST','Speech Therapy',d.q4ST)}
       ${chkP('q4OT','Occupational Therapy',d.q4OT)}
       ${chkP('q4MinorDecides','The Minor retains the right to make his or her own decision',d.q4MinorDecides)}
-      ${chkP('q4Other','Other',d.q4Other)}
+      ${chkP('q4Other','Other',d.q4Other,'/p4')}
     </div>
     ${d.q4Other?`<div class="plan-conditional mt-2">${txtP('q4Explain','Explanation (required if "Other" checked)',d.q4Explain,3)}</div>`:''}
     ${renderScheduleDocsSection('planMMedical')}
@@ -323,7 +323,7 @@ function pagePlanMMedical(){
 
 function pagePlanMEducation(){
   const d=window.D;
-  const cb=(id,label)=>chkP(id,label,d[id]);
+  const cb=(id,label,route='')=>chkP(id,label,d[id],route);
   return `<div class="schedule-page">
     <h1>5. Education &amp; Social Development</h1>
     ${txtP('q5SchoolProgress',"A. Summary of the Minor's school progress report",d.q5SchoolProgress,4)}
@@ -335,7 +335,7 @@ function pagePlanMEducation(){
         cb('q5NoUnmetNeeds','No Unmet Needs')
         +cb('q5DoesNotCareToSocialize','The Minor does not care to socialize')
         +cb('q5UnmetNeeds','Unmet Needs')
-        +cb('q5Other','Other'),
+        +cb('q5Other','Other','/p5'),
         'q5Explain',d.q5Explain,d.q5Other))}
     ${renderScheduleDocsSection('planMEducation')}
     ${pageNavS('/p4','/p6')}
@@ -344,7 +344,7 @@ function pagePlanMEducation(){
 
 function pagePlanMSignatures(){
   const d=window.D;
-  const cb=(id,label)=>chkP(id,label,d[id]);
+  const cb=(id,label,route='')=>chkP(id,label,d[id],route);
   const g=(i,title)=>{
     const gd=(d.planGuardians||[])[i]||{};
     return `<div class="col-12 col-lg-6"><div class="entry-card mb-0 h-100">

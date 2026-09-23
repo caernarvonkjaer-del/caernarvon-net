@@ -288,7 +288,7 @@ function pagePlanAResidences(){
 
 function pagePlanACarePlan(){
   const d=window.D;
-  const cb=(id,label)=>chkP(id,label,d[id]);
+  const cb=(id,label,route='')=>chkP(id,label,d[id],route);
   return `<div class="schedule-page">
     <h1>2–3. Residence Change &amp; Care Plan</h1>
     ${planQ(2,"If the ward's address has changed since the last plan was filed",
@@ -304,7 +304,7 @@ function pagePlanACarePlan(){
         [cb('q3SettingALF','Assisted Living (ALF)'),cb('q3SettingGroupHome','Group Home'),
          cb('q3SettingIntermediate','Intermediate'),cb('q3SettingPrivate','Private Residence'),
          cb('q3SettingSkilled','Skilled Nursing'),cb('q3SettingSpecialized','Specialized'),
-         cb('q3SettingStateHospital','State Hospital'),cb('q3SettingOther','Other')].join(''),
+         cb('q3SettingStateHospital','State Hospital'),cb('q3SettingOther','Other','/p3')].join(''),
         'q3SettingExplain',d.q3SettingExplain,d.q3SettingOther)
       +planCheckGroup('The guardian will ensure this remains the best setting by:',
         [cb('q3EnsureAssessing','Periodically assessing needs'),
@@ -314,11 +314,11 @@ function pagePlanACarePlan(){
         [cb('q3MedPrimary','Routine examination by primary care physician'),
          cb('q3MedDentist','Routine examination by dentist'),
          cb('q3MedOphthalmologist','Routine examination by ophthalmologist'),
-         cb('q3MedSpecialist','Routine examination by specialist'),
+         cb('q3MedSpecialist','Routine examination by specialist','/p3'),
          cb('q3MedPhysicalTherapy','Physical therapy'),cb('q3MedSpeechTherapy','Speech therapy'),
          cb('q3MedOccupationalTherapy','Occupational therapy'),
          cb('q3MedWardDecides','The ward retains the right to make their own decision'),
-         cb('q3MedNone','None'),cb('q3MedOther','Other')].join(''),
+         cb('q3MedNone','None','/p3'),cb('q3MedOther','Other','/p3')].join(''),
         'q3MedExplain',d.q3MedExplain,d.q3MedOther||d.q3MedNone)
       +(d.q3MedSpecialist?`<div class="plan-conditional mb-3">${inpS('q3MedSpecialistArea','Area of specialty',d.q3MedSpecialistArea,true)}</div>`:'')
       +planCheckGroup('Provision for mental health services:',
@@ -326,18 +326,18 @@ function pagePlanACarePlan(){
          cb('q3MentalWardDecides','Ward retains the right to make own decisions'),
          cb('q3MentalOutpatient','Ongoing treatment — outpatient'),
          cb('q3MentalInpatient','Ongoing treatment — inpatient'),
-         cb('q3MentalNone','None'),cb('q3MentalOther','Other')].join(''),
+         cb('q3MentalNone','None','/p3'),cb('q3MentalOther','Other','/p3')].join(''),
         'q3MentalExplain',d.q3MentalExplain,d.q3MentalOther||d.q3MentalNone)
       +planCheckGroup('Provision for personal care (bathing, grooming, feeding):',
         [cb('q3PersonalFacility','Care facility'),cb('q3PersonalNurses','Nurses and aides'),
          cb('q3PersonalFamily','Family and friends'),cb('q3PersonalWithout','Ward does without assistance'),
-         cb('q3PersonalNone','None; ward can provide own personal care'),cb('q3PersonalOther','Other')].join(''),
+         cb('q3PersonalNone','None; ward can provide own personal care','/p3'),cb('q3PersonalOther','Other','/p3')].join(''),
         'q3PersonalExplain',d.q3PersonalExplain,d.q3PersonalOther||d.q3PersonalNone)
       +planCheckGroup('Provision for socialization and recreational activities:',
         [cb('q3SocialFacility','Care facility'),cb('q3SocialNurses','Nurses and aides'),
          cb('q3SocialFamily','Family and friends'),
          cb('q3SocialWardDecides','The ward retains the right to make their own decision'),
-         cb('q3SocialNone','None'),cb('q3SocialOther','Other')].join(''),
+         cb('q3SocialNone','None','/p3'),cb('q3SocialOther','Other','/p3')].join(''),
         'q3SocialExplain',d.q3SocialExplain,d.q3SocialOther||d.q3SocialNone))}
     ${renderScheduleDocsSection('planACarePlan')}
     ${pageNavS('/p2','/p4')}
@@ -363,8 +363,8 @@ function pagePlanABenefits(){
       <tbody>${rows}</tbody>
     </table>
     <div class="plan-check-grid mt-3">
-      ${chkP('q3BenefitsNone','None of the above',d.q3BenefitsNone)}
-      ${chkP('q3BenefitsOther','Other (explain below)',d.q3BenefitsOther)}
+      ${chkP('q3BenefitsNone','None of the above',d.q3BenefitsNone,'/p4')}
+      ${chkP('q3BenefitsOther','Other (explain below)',d.q3BenefitsOther,'/p4')}
     </div>
     ${(d.q3BenefitsOther||d.q3BenefitsNone)?`<div class="plan-conditional mt-2">${txtP('q3BenefitsExplain','Explanation',d.q3BenefitsExplain,3)}</div>`:''}
     ${renderScheduleDocsSection('planABenefits')}
@@ -457,12 +457,12 @@ function pagePlanAADLs(){
 
 function pagePlanADisabilities(){
   const d=window.D;
-  const cb=(id,label)=>chkP(id,label,d[id]);
+  const cb=(id,label,route='')=>chkP(id,label,d[id],route);
   const devices=(prefix)=>[
     cb(prefix+'Dentures','Dentures'),cb(prefix+'HearingAid','Hearing aid'),
     cb(prefix+'Wheelchair','Wheelchair'),cb(prefix+'Walker','Walker / cane'),
     cb(prefix+'Crutches','Crutches'),cb(prefix+'Prosthetics','Prosthetics'),
-    cb(prefix+'Glasses','Glasses'),cb(prefix+'None','None'),cb(prefix+'Other','Other')].join('');
+    cb(prefix+'Glasses','Glasses'),cb(prefix+'None','None'),cb(prefix+'Other','Other','/p8')].join('');
   return `<div class="schedule-page">
     <h1>9. Disabilities &amp; Assistive Devices</h1>
     ${planQ(9,'Disabilities and assistive devices',
@@ -472,13 +472,13 @@ function pagePlanADisabilities(){
          cb('q9MentalDevelopmental','Developmental disabilities'),cb('q9MentalIntellectual','Intellectual disability'),
          cb('q9MentalSchizophrenia','Schizophrenia or related disorders'),cb('q9MentalDepression','Depression'),
          cb('q9MentalSubstance','Induced by substance abuse'),
-         cb('q9MentalNone','Ward has no mental disabilities'),cb('q9MentalOther','Other')].join(''),
+         cb('q9MentalNone','Ward has no mental disabilities'),cb('q9MentalOther','Other','/p8')].join(''),
         'q9MentalExplain',d.q9MentalExplain,d.q9MentalOther)
       +planCheckGroup('The physical disabilities of the ward are:',
         [cb('q9PhysMobility','Mobility'),cb('q9PhysBlindness','Blindness'),
          cb('q9PhysDeafness','Deafness'),cb('q9PhysDiabetic','Diabetic'),
          cb('q9PhysParkinsons',"Parkinson's disease"),cb('q9PhysArthritis','Severe arthritis'),
-         cb('q9PhysNone','Ward has no physical disabilities'),cb('q9PhysOther','Other')].join(''),
+         cb('q9PhysNone','Ward has no physical disabilities'),cb('q9PhysOther','Other','/p8')].join(''),
         'q9PhysExplain',d.q9PhysExplain,d.q9PhysOther)
       +planCheckGroup('Assistive devices the ward currently uses:',devices('q9Uses'),
         'q9UsesExplain',d.q9UsesExplain,d.q9UsesOther)
@@ -491,7 +491,7 @@ function pagePlanADisabilities(){
 
 function pagePlanADirectives(){
   const d=window.D;
-  const cb=(id,label)=>chkP(id,label,d[id]);
+  const cb=(id,label,route='')=>chkP(id,label,d[id],route);
   // Milestone 37-4: a plain chkP() checkbox doesn't re-render this page on
   // change (no data-form-route), which is fine for most checkboxes here but
   // not this one -- the type controls, cards, and Add Directive button below
@@ -530,7 +530,7 @@ function pagePlanADirectives(){
   return `<div class="schedule-page">
     <h1>10. Advance Directives</h1>
     ${planQ(10,'Pre-existing orders and advance directives',
-      `<div class="plan-check-grid">${cb('q10NoDirectives','There are NO pre-existing DNR orders or other advance directives')}</div>
+      `<div class="plan-check-grid">${cb('q10NoDirectives','There are NO pre-existing DNR orders or other advance directives','/p9')}</div>
       ${d.q10NoDirectives?`<div class="plan-conditional mt-2 mb-3">
         <label class="form-label">Steps taken to verify there are none:</label>
         <div class="plan-check-grid">
@@ -546,7 +546,7 @@ function pagePlanADirectives(){
           ${cb('q10ExecDNR','Order Not to Resuscitate (DNR), F.S. 401.45(3)')}
           ${cb('q10ExecHealthcare','Advance Directive for Healthcare (surrogate, living will, anatomical gift)')}
           ${cb('q10ExecPOA','Durable Power of Attorney, F.S. Chapter 709')}
-          ${cb('q10ExecOther','Other')}
+          ${cb('q10ExecOther','Other','/p9')}
         </div>
         ${d.q10ExecOther?`<div class="mt-2">${inpS('q10ExecOtherText','Describe the other directive',d.q10ExecOtherText,true)}</div>`:''}
         <h3 style="font-size:.85rem;font-weight:650;margin:1rem 0 .5rem;">Details for each directive</h3>
@@ -564,7 +564,7 @@ function pagePlanARemuneration(){
   return `<div class="schedule-page">
     <h1>11. Remuneration</h1>
     ${planQ(11,'Declaration of remuneration',
-      `<div class="plan-check-grid">${chkP('q11NoRemuneration','I have received NO remuneration from any source for services rendered to or on behalf of the ward',d.q11NoRemuneration)}</div>
+      `<div class="plan-check-grid">${chkP('q11NoRemuneration','I have received NO remuneration from any source for services rendered to or on behalf of the ward',d.q11NoRemuneration,'/p10')}</div>
       ${d.q11NoRemuneration
         ? `<div class="plan-conditional mt-2">${inpS('q11NoRemunerationName',"Declaring guardian's name",d.q11NoRemunerationName,true)}</div>`
         : `<div class="plan-conditional mt-2">
@@ -584,7 +584,7 @@ function pagePlanARemuneration(){
 function pagePlanASignatures(){
   const d=window.D;
   const g=window.normalizePlanGuardians(d);
-  const cb=(id,label)=>chkP(id,label,d[id]);
+  const cb=(id,label,route='')=>chkP(id,label,d[id],route);
   const block=(i,label)=>{
     const p=g[i]||{};
     const reqMark=i===0?'<span class="req">*</span>':'';
