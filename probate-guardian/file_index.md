@@ -47,7 +47,6 @@ This index inventories repository files retained as source or project artifacts.
 | [`playwright.capture.config.ts`](<playwright.capture.config.ts>) | Build, tooling, or configuration source. |
 | [`playwright.config.ts`](<playwright.config.ts>) | Build, tooling, or configuration source. |
 | [`probate-guardian-data-model.csv`](<probate-guardian-data-model.csv>) | Data-model or structured reference source. |
-| [`probate-forms-portable.zip`](<probate-forms-portable.zip>) | Deployment/package archive. |
 | [`README.md`](<README.md>) | Project overview and orientation. |
 | [`reference\legal\administrative-orders\AO-2024-025-guardianship-procedures.txt`](<reference/legal/administrative-orders/AO-2024-025-guardianship-procedures.txt>) | Circuit administrative-order reference for guardianship procedures. |
 | [`reference\legal\administrative-orders\AO-2024-025-guardianship-procedures.pdf`](<reference/legal/administrative-orders/AO-2024-025-guardianship-procedures.pdf>) | Reference document. |
