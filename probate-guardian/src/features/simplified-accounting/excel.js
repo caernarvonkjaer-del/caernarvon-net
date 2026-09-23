@@ -5,7 +5,7 @@
 import { validateSimplified } from './index.js';
 import { authorizeFilingOutput } from '../../core/filing/output-authorization.js';
 import { getExcelCapacityIssues } from '../../core/excel/excel-capacity.js';
-import { getExcelJS, saveWorkbookFile, setCell } from '../../core/excel/excel-engine.js';
+import { getExcelJS, saveWorkbookFile, setCell, setDateCell } from '../../core/excel/excel-engine.js';
 import { readCellText } from '../../core/excel/cell-reader.js';
 import { alertModal, confirmModal } from '../../core/ui/dialogs.js';
 import { setStatus, scheduleStatusClear } from '../../core/ui/transient-status.js';
@@ -62,14 +62,8 @@ export async function doSaveExcel(){
     const templateB64=await ensureTemplate('simplified');
     if(!templateB64){await alertModal('Template not loaded. Please import the Excel template first.');return;}
 
-    // Milestone 51 follow-up: `instanceof Date` guard. Without it,
-    // String(dateObj).substring(0,10) writes a locale/timezone-dependent
-    // "Tue May 19" into a filed workbook for a 2026-05-20T00:00:00Z date --
-    // wrong format AND a day early. The length>=10 branch is left exactly as
-    // it was: its type preservation (a short numeric input stays a number, so
-    // setCell writes a numeric cell) is why this is not merged with
-    // legacy fmtDate. See tests/unit/date-truncation-helpers.spec.js.
-    const fmtD=s=>{const v=s instanceof Date?s.toISOString():s;return (v&&String(v).length>=10)?String(v).substring(0,10):(v||'');};
+    // Dates are written through setDateCell() (Milestone 67E) -- a real Excel
+    // date, not ISO text; the local string formatter that lived here is gone.
     // Milestone 51D: setCell now comes from core/excel/excel-engine.js. The local
     // closure this replaces was byte-identical in all three feature excel.js files
     // apart from a null-sheet guard, and routed text through the same
@@ -106,8 +100,8 @@ export async function doSaveExcel(){
       // and destroyed the =H4 formula the workbook fills the Case Number box
       // with, leaving the period end date in its place there and on the COVER
       // page, which reads D14. The period boxes themselves printed blank.
-      setCell(p1,'E13',fmtD(inv.periodFrom));
-      setCell(p1,'H13',fmtD(inv.periodTo));
+      setDateCell(p1,'E13',inv.periodFrom);
+      setDateCell(p1,'H13',inv.periodTo);
       // D12 (=C4) and D14 (=H4) are the workbook's own formulas: the ward name
       // and case number reach Part I from the header cells written above. The
       // app writes the inputs and leaves the formulas alone -- AGENTS.md
@@ -121,7 +115,7 @@ export async function doSaveExcel(){
       // to go to D13, which is the printed "From" label, so a required and
       // sensitive field was both destroying a label and appearing unmasked on
       // a form that never asked for it (the PDF prints it through maskSSN).
-      setCell(p1,'F4',fmtD(inv.gid));
+      setDateCell(p1,'F4',inv.gid);
       setCell(p1,'G2',inv.county||'');
       setCell(p1,'I5',inv.amendedForm||'');
       const t=calcTotals();
@@ -164,7 +158,7 @@ export async function doSaveExcel(){
       // literals over them replaced live propagation with a snapshot and, on
       // C10/F10, destroyed it for every later edit. AGENTS.md section 5.
       const g1=inv.guardians[0]||{};
-      setCell(p34,'D15',fmtD(g1.signatureDate));
+      setDateCell(p34,'D15',g1.signatureDate);
       setCell(p34,'B17',g1.ssn||'');
       setCell(p34,'B19',g1.phone||'');
       setCell(p34,'B21',g1.email||'');
@@ -174,7 +168,7 @@ export async function doSaveExcel(){
       setCell(p34,'F23',g1.residenceCityStateZip||'');
       const g2=inv.guardians[1]||{};
       if(guardianHasAnyData(g2)){
-        setCell(p34,'D25',fmtD(g2.signatureDate));
+        setDateCell(p34,'D25',g2.signatureDate);
         setCell(p34,'F25',g2.name||'');
         setCell(p34,'B27',g2.ssn||'');
         setCell(p34,'B29',g2.phone||'');
@@ -186,7 +180,7 @@ export async function doSaveExcel(){
       }
       const g3=inv.guardians[2]||{};
       if(guardianHasAnyData(g3)){
-        setCell(p34,'D35',fmtD(g3.signatureDate));
+        setDateCell(p34,'D35',g3.signatureDate);
         setCell(p34,'F35',g3.name||'');
         setCell(p34,'B37',g3.ssn||'');
         setCell(p34,'B39',g3.phone||'');
@@ -210,7 +204,7 @@ export async function doSaveExcel(){
       setCell(p56,'B21',inv.attorney_phone||'');
       setCell(p56,'J19',inv.attorney_street||'');
       setCell(p56,'J21',inv.attorney_cityStateZip||'');
-      setCell(p56,'H39',fmtD(inv.certServiceDate));
+      setDateCell(p56,'H39',inv.certServiceDate);
       setCell(p56,'J39',inv.certIndicator||'');
       const r=inv.certRecipients;
       [[27,28,29,30],[27,28,29,30]].forEach((_,side)=>{
@@ -229,7 +223,7 @@ export async function doSaveExcel(){
       });
       // B41 already reads '/s/' and J41 is the "[linked to Part I]" formula --
       // see the note above the Part V signature block.
-      setCell(p56,'H41',fmtD(inv.certAttySignDate||inv.attorney_signatureDate));
+      setDateCell(p56,'H41',inv.certAttySignDate||inv.attorney_signatureDate);
       setCell(p56,'B43',inv.certAttyBarNumber||inv.attorney_barNumber||'');
       setCell(p56,'B45',inv.certAttyPhone||inv.attorney_phone||'');
       setCell(p56,'J43',inv.certAttyStreet||inv.attorney_street||'');

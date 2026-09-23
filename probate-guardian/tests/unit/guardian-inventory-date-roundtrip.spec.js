@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { readRepoSource, sliceBalancedFunction } from './support/legacy-source-extract.js';
+import { setDateCell, toExcelSerialDate } from '../../src/core/excel/excel-engine.js';
 
 // Milestone 57 review: Guardian Inventory's importer dt() only handled a Date
 // object or an Excel serial number. A date string fell through to
@@ -16,23 +17,20 @@ import { readRepoSource, sliceBalancedFunction } from './support/legacy-source-e
 // strictly more permissive than the exporter and costs nothing -- a workbook
 // touched by Excel, produced by a clerk, or exported by an older build can
 // still hand back US-format text. What is NOT claimed any more is that this
-// fixes a live self-round-trip defect; the first test below now pins the
-// reverted ISO exporter rather than 57F's MM/DD/YYYY one.
+// fixes a live self-round-trip defect.
 //
-// Neither closure is exported (both are local to doSaveExcel()/
-// parseInitialInventoryWorkbook() in guardian-inventory/excel.js, matching
-// this repo's other per-file Excel date closures -- see
-// date-truncation-helpers.spec.js), so they are sliced out of the real
-// source and evaluated, the same technique bar-number.spec.js established
-// for legacy-app.js closures.
+// Milestone 67E retired the per-file fmtD string formatter: the exporter now
+// writes every date through the shared setDateCell() -- an Excel serial under
+// a date format -- and ExcelJS hands that back on import as a Date at UTC
+// midnight (or the bare serial, should the format ever be lost). The first
+// test below pins THAT round trip, across the year boundary, in place of the
+// ISO-text one it used to pin.
+//
+// dt() is not exported (it is local to parseInitialInventoryWorkbook() in
+// guardian-inventory/excel.js), so it is sliced out of the real source and
+// evaluated, the same technique bar-number.spec.js established for
+// legacy-app.js closures.
 const EXCEL_FILE = 'src/features/guardian-inventory/excel.js';
-
-function loadFmtD() {
-  const source = readRepoSource(EXCEL_FILE);
-  const body = sliceBalancedFunction(source, 'const fmtD=s=>{');
-  expect(body, 'fmtD not found (or braces unbalanced) in ' + EXCEL_FILE).toBeTruthy();
-  return new Function(`${body}\nreturn fmtD;`)();
-}
 
 function loadDt() {
   const source = readRepoSource(EXCEL_FILE);
@@ -44,19 +42,26 @@ function loadDt() {
 }
 
 describe('Guardian Inventory Excel date round-trip (gid, dateFiled, actionDate, dateCreated)', () => {
-  // Pins the exporter format so a future change to it is a deliberate,
-  // visible decision rather than a silent one -- which is exactly how 57F
-  // broke the round-trip.
-  test('fmtD() writes ISO, matching the reverted (pre-57F) exporter', () => {
-    const fmtD = loadFmtD();
-    expect(fmtD('2026-10-01')).toBe('2026-10-01');
-  });
-
-  test('dt() reads whatever fmtD() just wrote back as ISO -- the round-trip itself', () => {
-    const fmtD = loadFmtD();
+  // Pins the exporter's output and the importer's reading of it together, so
+  // a future change to either side is a deliberate, visible decision rather
+  // than a silent one -- which is exactly how 57F broke the round-trip.
+  test('the exporter writes a serial and dt() reads it back as the same ISO day -- the round-trip itself', () => {
     const dt = loadDt();
-    const exported = fmtD('2026-10-01');
-    expect(dt({ F7: exported }, 'F7')).toBe('2026-10-01');
+    const cells = {};
+    const sheet = {
+      getCell: (a) => (cells[a] = cells[a] || { value: undefined, numFmt: 'mm/dd/yy;@' }),
+      workbook: { properties: { date1904: false } },
+    };
+    for (const iso of ['2026-10-01', '2025-12-31', '2026-01-01']) {
+      setDateCell(sheet, 'F7', iso);
+      const serial = cells.F7.value;
+      expect(serial, `${iso} is written as its serial`).toBe(toExcelSerialDate(iso));
+      // What ExcelJS hands back under a date format: a Date at UTC midnight,
+      // built the way its excelToDate() builds it.
+      expect(dt({ F7: new Date(Math.round(24 * (serial - 25569) * 3600 * 1000)) }, 'F7')).toBe(iso);
+      // And the bare serial, should the format ever be lost.
+      expect(dt({ F7: serial }, 'F7')).toBe(iso);
+    }
   });
 
   test('dt() still accepts an ISO string, a Date, and a two-digit year', () => {

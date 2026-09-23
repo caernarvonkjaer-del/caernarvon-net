@@ -189,8 +189,11 @@ test.describe('Initial Inventory fills its boxes, not its captions', () => {
     expect(c.get('D27')?.text, 'the From: caption').toBe('From:');
     expect(c.get('F27')?.text, 'the To: caption').toBe('To:');
     expect(c.get('G26')?.text, 'the bond amount box').toBe('25000');
-    expect(c.get('E27')?.text, 'the bond period start box').toBe('2026-02-02');
-    expect(c.get('G27')?.text, 'the bond period end box').toBe('2027-03-03');
+    // Milestone 67E: dates are Excel serials now, not ISO text -- 2026-02-02
+    // is 46055 and 2027-03-03 is 46449 (excel-date-cells.spec.ts owns the
+    // date contract; these pin placement).
+    expect(c.get('E27')?.text, 'the bond period start box').toBe('46055');
+    expect(c.get('G27')?.text, 'the bond period end box').toBe('46449');
     expect(c.get('D28')?.text, 'the bonding company box').toBe('Gulf Surety');
   });
 
@@ -203,16 +206,16 @@ test.describe('Initial Inventory fills its boxes, not its captions', () => {
     expect(c.get('I15')?.text).toBe('PREPARER-STREET');
     expect(c.get('B17')?.text).toBe('PREPARER-PHONE');
     expect(c.get('I17')?.text).toBe('PREPARER-CITY');
-    expect(c.get('G13')?.text).toBe('2026-04-04');
+    expect(c.get('G13')?.text, 'preparer signature 2026-04-04 as a serial').toBe('46116');
     // Milestone 64A-2, item 2.5. H8 is the workbook's own "Date " caption and
     // H9 the box beneath it; B9 beside them stays the SUMMARY I ward-name
     // formula, never overwritten.
     expect(c.get('H8')?.text, 'the "Date" caption survives').toBe('Date ');
-    expect(c.get('H9')?.text, 'the compilation as-of date').toBe('2026-04-01');
+    expect(c.get('H9')?.text, 'the compilation as-of date 2026-04-01 as a serial').toBe('46113');
     expect(c.get('B9')?.formula, 'the ward-name formula survives').toBe("'SUMMARY I '!C7");
     // Two distinct dates on this page, and the name stays linked.
-    expect(c.get('C21')?.text, 'the notification Date:').toBe('2026-06-06');
-    expect(c.get('G26')?.text, 'the Attorney Signature date').toBe('2026-05-05');
+    expect(c.get('C21')?.text, 'the notification Date: 2026-06-06 as a serial').toBe('46179');
+    expect(c.get('G26')?.text, 'the Attorney Signature date 2026-05-05 as a serial').toBe('46147');
     expect(c.get('I26')?.formula, "the attorney's name is linked to SUMMARY I").toBe("'SUMMARY I '!D24");
     expect(c.get('B28')?.text).toBe('ATTY-BAR');
     expect(c.get('I28')?.text).toBe('ATTY-STREET');
@@ -225,8 +228,8 @@ test.describe('Initial Inventory fills its boxes, not its captions', () => {
     const c = await sheetCells(await exportGuardian(page), 'PART VI');
     expect(c.get('B28')?.text, "the Bar Number caption").toBe("Attorney's Bar Number");
     expect(c.get('J28')?.text, 'the Street Address caption').toBe("Attorney's Street Address");
-    expect(c.get('G25')?.text, 'the service date').toBe('2026-08-08');
-    expect(c.get('G27')?.text, 'the attorney signature date').toBe('2026-07-07');
+    expect(c.get('G25')?.text, 'the service date 2026-08-08 as a serial').toBe('46242');
+    expect(c.get('G27')?.text, 'the attorney signature date 2026-07-07 as a serial').toBe('46210');
     // These two used to be swapped onto each other's cells.
     expect(c.get('B29')?.text, 'bar number').toBe('SVC-BAR');
     expect(c.get('J29')?.text, 'street address').toBe('SVC-STREET');

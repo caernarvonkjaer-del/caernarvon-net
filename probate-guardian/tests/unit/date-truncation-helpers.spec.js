@@ -23,11 +23,11 @@ const { fmtDate } = await import('../../src/core/excel/cell-reader.js');
 // cost is one expression and the failure mode is a wrong date in a sworn
 // statement.
 describe('Group A date-truncation helpers: Date objects', () => {
-  // Two of the five Group A copies are importable as of Milestone 53B, which
+  // Both remaining Group A copies are importable as of Milestone 53B, which
   // moved legacy-app.js's fmtDate into src/core/excel/cell-reader.js -- it was
   // a classic-script global before and could only be source-scanned. The other
-  // three are closures local to their excel.js writers, which the source scan
-  // below covers instead.
+  // three were closures local to their excel.js writers until Milestone 67E
+  // retired them (see the source-scan block below).
   test('fmtD() normalizes a Date through toISOString(), not Date#toString()', () => {
     expect(fmtD(new Date('2026-05-20T00:00:00Z'))).toBe('2026-05-20');
     // A timestamp late in the UTC day is the case a local-timezone conversion
@@ -71,25 +71,26 @@ describe('Group A date-truncation helpers: Date objects', () => {
   });
 });
 
-// A source scan, because four of the five copies cannot be imported: one is a
-// top-level function in a classic script and three are closures inside an
-// exported function's body. This asserts the guard is present in all five rather
-// than re-implementing their logic here, which would prove nothing about the
+// A source scan, because this copy was a top-level function in a classic
+// script when the guard was written (it is importable since Milestone 53B,
+// but the scan is kept: it proves the guard precedes the first String() call,
+// which the behavioural test cannot). Asserting the guard is present rather
+// than re-implementing the logic here, which would prove nothing about the
 // shipped code.
+//
+// Milestone 67E: the three excel.js closures (annual's fD, guardian's and
+// simplified's fmtD) that used to be scanned alongside are DELETED. Every
+// Excel date write now goes through setDateCell()/toExcelSerialDate() in
+// src/core/excel/excel-engine.js, which never stringifies a Date at all --
+// it takes the UTC year, month and day and writes a serial. tests/unit/
+// excel-engine.spec.js covers that path and asserts the closures stay gone.
 describe('Group A date-truncation helpers: every copy carries the Date guard', () => {
   const COPIES = [
     // Milestone 53B moved this copy out of legacy-app.js (a classic script) into
-    // an ES module; the guard it carries is unchanged.
+    // an ES module; the guard it carries is unchanged. Milestone 53C made
+    // annual-accounting/index.js's fmtD a re-export of it, covered by the
+    // identity assertion above, which is strictly stronger than a scan.
     { file: 'src/core/excel/cell-reader.js', name: 'fmtDate' },
-    // Milestone 53C deleted annual-accounting/index.js's fmtD declaration: it is
-    // now a re-export of the cell-reader.js copy above, so there is no body here
-    // to scan and scanning for one would fail. The identity assertion in the
-    // behavioural block above is what covers it instead -- and it is strictly
-    // stronger, since it proves the same function object rather than a
-    // separately-guarded lookalike.
-    { file: 'src/features/annual-accounting/excel.js', name: 'fD' },
-    { file: 'src/features/guardian-inventory/excel.js', name: 'fmtD' },
-    { file: 'src/features/simplified-accounting/excel.js', name: 'fmtD' },
   ];
 
   // Matches either declaration shape: `function name(s){...}` /
@@ -102,7 +103,7 @@ describe('Group A date-truncation helpers: every copy carries the Date guard', (
     return m ? m[1] : null;
   }
 
-  test('finds all five copies, so a rename cannot make this pass vacuously', () => {
+  test('finds the copy, so a rename cannot make this pass vacuously', () => {
     for (const { file, name } of COPIES) {
       const source = fs.readFileSync(path.resolve(process.cwd(), file), 'utf8');
       expect(bodyOf(source, name), `${name} must still be findable in ${file}`).toBeTruthy();

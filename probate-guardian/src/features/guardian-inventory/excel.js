@@ -10,7 +10,7 @@
 import { validateGuardian } from './index.js';
 import { authorizeFilingOutput } from '../../core/filing/output-authorization.js';
 import { getExcelCapacityIssues } from '../../core/excel/excel-capacity.js';
-import { getExcelJS, saveWorkbookFile, setCell } from '../../core/excel/excel-engine.js';
+import { getExcelJS, saveWorkbookFile, setCell, setDateCell } from '../../core/excel/excel-engine.js';
 import { readCellText, unwrapCellValue } from '../../core/excel/cell-reader.js';
 import { pruneSheets } from '../../core/excel/sheet-pruning.js';
 import {
@@ -140,14 +140,8 @@ export async function doSaveExcel(){
     const templateB64=await ensureTemplate('guardian');
     if(!templateB64){await alertModal('Template not loaded. Please import the Excel template first.');return;}
 
-    // Milestone 51 follow-up: `instanceof Date` guard. Without it,
-    // String(dateObj).substring(0,10) writes a locale/timezone-dependent
-    // "Tue May 19" into a filed workbook for a 2026-05-20T00:00:00Z date --
-    // wrong format AND a day early. The length>=10 branch is left exactly as
-    // it was: its type preservation (a short numeric input stays a number, so
-    // setCell writes a numeric cell) is why this is not merged with
-    // legacy fmtDate. See tests/unit/date-truncation-helpers.spec.js.
-    const fmtD=s=>{const v=s instanceof Date?s.toISOString():s;return (v&&String(v).length>=10)?String(v).substring(0,10):(v||'');};
+    // Dates are written through setDateCell() (Milestone 67E) -- a real Excel
+    // date, not ISO text; the local string formatter that lived here is gone.
     // Milestone 51D: this is the canonical tri-state Excel writer for this app,
     // and it stays local deliberately. core/excel/excel-engine.js used to export a
     // yesNo(bool) under the SAME NAME that returned 'No' for '', null and
@@ -176,7 +170,7 @@ export async function doSaveExcel(){
     if(si){
       setCell(si,'C7',inv.wardName||'');
       setCell(si,'H7',inv.caseNumber||'');
-      setCell(si,'F7',fmtD(inv.gid));
+      setDateCell(si,'F7',inv.gid);
       setCell(si,'G3',inv.county||'');
       setCell(si,'D23',inv.guardianName||'');
       setCell(si,'D24',inv.attorneyForGuardian||'');
@@ -374,7 +368,7 @@ export async function doSaveExcel(){
         setCell(pg,`C${r+3}`,e.claimantAddress||'');
         // Milestone 60K: the form's fifth C-2 line (worked example row 18: "St Petersburg, FL 33710").
         setCell(pg,`C${r+4}`,e.claimantCityStateZip||'');
-        setCell(pg,`E${r}`,fmtD(e.dateFiled));
+        setDateCell(pg,`E${r}`,e.dateFiled);
         setCell(pg,`F${r}`,e.amountOfClaim||'');
         setCell(pg,`G${r}`,pctCell(e.wardPercent));
         idx++;
@@ -395,7 +389,7 @@ export async function doSaveExcel(){
         setCell(pg,`C${r}`,desc);
         setCell(pg,`C${r+1}`,e.status||'');
         setCell(pg,`C${r+2}`,e.courtJurisdiction||'');
-        setCell(pg,`E${r}`,fmtD(e.actionDate));
+        setDateCell(pg,`E${r}`,e.actionDate);
         setCell(pg,`F${r}`,e.estimatedSettlement||'');
         setCell(pg,`G${r}`,pctCell(e.wardPercent));
         idx++;
@@ -415,7 +409,7 @@ export async function doSaveExcel(){
         setCell(pg,`C${r+1}`,e.trusteeName||'');
         setCell(pg,`C${r+2}`,e.trusteeAddress||'');
         setCell(pg,`C${r+3}`,e.trusteeCityStateZip||'');
-        setCell(pg,`E${r}`,fmtD(e.dateCreated));
+        setDateCell(pg,`E${r}`,e.dateCreated);
         setCell(pg,`F${r}`,e.accountNumber||'');
         setCell(pg,`H${r}`,e.trustType||'Pooled');
         setCell(pg,`I${r}`,e.trustAmount||'');
@@ -461,7 +455,7 @@ export async function doSaveExcel(){
       for(let i=0;i<Math.min(inv.guardians.length,3);i++){
         const b=7+i*6;
         const g=inv.guardians[i];
-        setCell(p3,`D${b}`,fmtD(g.signatureDate));
+        setDateCell(p3,`D${b}`,g.signatureDate);
         setCell(p3,`F${b+1}`,g.name||'');
         setCell(p3,`B${b+2}`,g.ssnEin||'');
         setCell(p3,`F${b+2}`,g.streetAddress||'');
@@ -482,8 +476,8 @@ export async function doSaveExcel(){
       // (same caption-above-box shape as the rest of this block, confirmed by
       // reading the real template); B9 next to it is a formula pulling the
       // ward name from SUMMARY I C7 and is left alone.
-      setCell(p4,'H9',fmtD(inv.preparer.asOfDate));
-      setCell(p4,'G13',fmtD(inv.preparer.signatureDate));
+      setDateCell(p4,'H9',inv.preparer.asOfDate);
+      setDateCell(p4,'G13',inv.preparer.signatureDate);
       setCell(p4,'I13',inv.preparer.name||'');
       setCell(p4,'B15',inv.preparer.ssnEin||'');
       setCell(p4,'I15',inv.preparer.streetAddress||'');
@@ -494,8 +488,8 @@ export async function doSaveExcel(){
       // Signature". The signature date used to go to the G25 caption and the
       // filing date to G26, so the signature date never appeared at all and
       // never survived a round trip.
-      setCell(p4,'C21',fmtD(inv.attorney.filingDate));
-      setCell(p4,'G26',fmtD(inv.attorney.signatureDate));
+      setDateCell(p4,'C21',inv.attorney.filingDate);
+      setDateCell(p4,'G26',inv.attorney.signatureDate);
       // I26 is the workbook's own formula pulling the attorney's name from
       // SUMMARY I D24 -- the form links the two -- so the app writes that cell
       // and leaves this one alone (AGENTS.md section 5).
@@ -514,8 +508,8 @@ export async function doSaveExcel(){
       // had all three bond boxes empty -- on the page the court uses to check
       // the surety bond.
       setCell(p5,'G26',inv.bondAmount||'');
-      setCell(p5,'E27',fmtD(inv.bondPeriodFrom));
-      setCell(p5,'G27',fmtD(inv.bondPeriodTo));
+      setDateCell(p5,'E27',inv.bondPeriodFrom);
+      setDateCell(p5,'G27',inv.bondPeriodTo);
       setCell(p5,'D28',inv.bondingCompany||'');
       setCell(p5,'G15',inv.bondWaivedDate||'');
     }
@@ -531,12 +525,12 @@ export async function doSaveExcel(){
       // were already right; the certificate's own fields were not. The bar
       // number was the odd one out -- it went to J29, the street address's
       // box, while the street address went to the J28 caption.
-      setCell(p6,'G25',fmtD(inv.serviceDate));
+      setDateCell(p6,'G25',inv.serviceDate);
       // Milestone 64A-2, item 2.4. J24 is the workbook's own pre-printed
       // "Indicate if:" caption (confirmed by reading the real cell, not
       // assumed); the answer goes in J25, its own empty box, directly below.
       setCell(p6,'J25',inv.serviceIndicateIf||'');
-      setCell(p6,'G27',fmtD(inv.serviceAttorney.signatureDate));
+      setDateCell(p6,'G27',inv.serviceAttorney.signatureDate);
       // J27 is the workbook's formula for the attorney's name, from
       // SUMMARY I D24, exactly as on PART IV.
       setCell(p6,'B29',inv.serviceAttorney.barNumber||'');
@@ -617,10 +611,12 @@ function parseInitialInventoryWorkbook(wb){
   const num=(s,a)=>Number(rawv(s,a))||0;
   // Mirrors annual-accounting/excel.js's gcDate(): a date cell may come back
   // as a real Date, an Excel serial number, an ISO string, or US-format text
-  // (this app's own fmtD() writes 'MM/DD/YYYY' — see doSaveExcel() above —
-  // so re-importing a file this app just exported used to hand back
-  // '10/01/2026' verbatim, 10 characters unchanged but not the ISO
-  // 'YYYY-MM-DD' every date field elsewhere expects).
+  // (an older build of this app wrote 'MM/DD/YYYY' text, so re-importing a
+  // file it exported used to hand back '10/01/2026' verbatim, 10 characters
+  // unchanged but not the ISO 'YYYY-MM-DD' every date field elsewhere
+  // expects). Since Milestone 67E every date is written as a serial under a
+  // date format, which ExcelJS hands back as a Date at UTC midnight -- the
+  // first branch below, read by UTC components, so the day cannot shift.
   const dt=(s,a)=>{
     const v=rawv(s,a);
     if(v==null||v==='')return null;

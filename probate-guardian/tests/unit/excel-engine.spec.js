@@ -7,6 +7,8 @@ import {
   percentValue,
   sanitizeCellValue,
   saveWorkbookFile,
+  toExcelSerialDate,
+  setDateCell,
 } from '../../src/core/excel/excel-engine.js';
 
 // Milestone 51D rewrote this spec down to the module's surviving exports. It
@@ -192,6 +194,113 @@ describe('Excel Engine unit tests', () => {
         { name: 'Z_9E3F.wvu.PrintArea', ranges: ["'PART I'!$A$1:$L$50"], localSheetId: 0 },
         { name: 'Case_Number', ranges: ["'PART I'!$H$4"] },
       ])).toEqual(['Case_Number']);
+    });
+  });
+
+  // Milestone 67E. Every date the app wrote into a filed workbook was text --
+  // '2026-01-01' as a shared string -- in cells the court's form had
+  // formatted for US dates, so the clerk saw ISO text where the form shows
+  // 10/2/2015, and the column sorted as text. A filing date is a calendar
+  // day, not an instant: the serial is computed from the year, month and day
+  // alone, so no timezone can shift it in either direction (this repository
+  // has already shipped and fixed one timezone-shifted date, commit 656cccf).
+  // tests/e2e/excel-date-cells.spec.ts proves the result in the generated
+  // files; this pins the arithmetic and the cell contract.
+  describe('date cells are written as Excel serials (Milestone 67E)', () => {
+    // Anchored on two facts, not on the helper's own formula: 2026-01-01 is
+    // 20454 days after the Unix epoch, and Excel's 1900 system puts the epoch
+    // at 25569; the court's own example row in the Annual template holds
+    // 42279 for 2015-10-02.
+    it('toExcelSerialDate turns a calendar day into the 1900-system serial', () => {
+      expect(toExcelSerialDate('2026-01-01')).toBe(46023);
+      expect(toExcelSerialDate('2015-10-02')).toBe(42279);
+      expect(toExcelSerialDate('1899-12-31')).toBe(1);
+      expect(toExcelSerialDate('2024-02-29')).toBe(45351);
+      expect(toExcelSerialDate('2025-12-31')).toBe(46022);
+    });
+
+    it('resolves every accepted input form to the same day, with no timezone involved', () => {
+      expect(toExcelSerialDate('2026-01-01T00:00:00.000Z')).toBe(46023);
+      // A Date late in the UTC day is the case a local-timezone conversion
+      // would shift backwards.
+      expect(toExcelSerialDate(new Date('2026-01-01T23:59:59Z'))).toBe(46023);
+      expect(toExcelSerialDate('01/01/2026')).toBe(46023);
+      expect(toExcelSerialDate('1/1/2026')).toBe(46023);
+    });
+
+    it('honours the 1904 date system when the workbook uses it', () => {
+      expect(toExcelSerialDate('2026-01-01', { date1904: true })).toBe(46023 - 1462);
+    });
+
+    it('returns null for anything that is not a calendar day', () => {
+      for (const v of ['', null, undefined, 'abc', '2026-02-30', '2026-13-01', '2026-1', 0, 46023]) {
+        expect(toExcelSerialDate(v), `toExcelSerialDate(${JSON.stringify(v)})`).toBeNull();
+      }
+    });
+
+    const fakeSheet = (date1904 = false) => {
+      const cells = {};
+      return {
+        cells,
+        getCell: (addr) => (cells[addr] = cells[addr] || { value: undefined, numFmt: undefined }),
+        workbook: { properties: { date1904 } },
+      };
+    };
+
+    it('setDateCell writes the serial and gives an unformatted cell a date format', () => {
+      // 'PART IV, V'!H31 and the court-order-date columns on SCH B-1/B-2/B-3
+      // are General in the template; a serial in a General cell shows as
+      // 46392, so the writer supplies the form's own mm/dd/yy;@.
+      const sheet = fakeSheet();
+      setDateCell(sheet, 'H31', '2027-01-05');
+      expect(sheet.cells.H31.value).toBe(46392);
+      expect(sheet.cells.H31.numFmt).toBe('mm/dd/yy;@');
+    });
+
+    it("setDateCell keeps the court's own date format when the cell has one", () => {
+      const sheet = fakeSheet();
+      sheet.getCell('F5').numFmt = 'm/d/yyyy';
+      setDateCell(sheet, 'F5', '2025-01-01');
+      expect(sheet.cells.F5.value).toBe(45658);
+      expect(sheet.cells.F5.numFmt).toBe('m/d/yyyy');
+    });
+
+    it('setDateCell follows the workbook date system', () => {
+      const sheet = fakeSheet(true);
+      setDateCell(sheet, 'E18', '2026-01-01');
+      expect(sheet.cells.E18.value).toBe(46023 - 1462);
+    });
+
+    it('setDateCell writes blank as an empty cell and unparseable text as sanitized text, as setCell would', () => {
+      const sheet = fakeSheet();
+      setDateCell(sheet, 'A1', '');
+      expect(sheet.cells.A1.value).toBeNull();
+      setDateCell(sheet, 'A2', null);
+      expect(sheet.cells.A2.value).toBeNull();
+      setDateCell(sheet, 'A3', 'abc');
+      expect(sheet.cells.A3.value).toBe('abc');
+      expect(sheet.cells.A3.numFmt).toBeUndefined();
+      setDateCell(sheet, 'A4', '=x');
+      expect(sheet.cells.A4.value).toBe("'=x");
+    });
+
+    it('setDateCell tolerates a missing sheet and returns the cell it wrote', () => {
+      expect(setDateCell(null, 'A1', '2026-01-01')).toBeNull();
+      const sheet = fakeSheet();
+      expect(setDateCell(sheet, 'B2', '2026-01-01')).toBe(sheet.cells.B2);
+    });
+
+    // Introducing the helper is not the deliverable; routing every date write
+    // through it is. The three per-exporter string formatters (annual's fD,
+    // guardian's and simplified's fmtD) are deleted, so a date write that
+    // bypassed setDateCell would have to reinvent one -- and this fails if
+    // any comes back.
+    it('the three exporters keep no string date formatter of their own', () => {
+      for (const file of ['src/features/annual-accounting/excel.js', 'src/features/guardian-inventory/excel.js', 'src/features/simplified-accounting/excel.js']) {
+        const src = fs.readFileSync(path.resolve(process.cwd(), file), 'utf8');
+        expect(src, `${file} still declares or calls fD()/fmtD()`).not.toMatch(/\b(fD|fmtD)\s*=|\b(fD|fmtD)\s*\(/);
+        expect(src, `${file} writes dates through setDateCell()`).toContain('setDateCell(');
+      }
     });
   });
 });

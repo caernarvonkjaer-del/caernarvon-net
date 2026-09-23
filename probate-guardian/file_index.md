@@ -272,6 +272,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`tests\e2e\dependent-question-gate.spec.ts`](<tests/e2e/dependent-question-gate.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\excel-b4-multi-account.spec.ts`](<tests/e2e/excel-b4-multi-account.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\excel-blank-page-pruning.spec.ts`](<tests/e2e/excel-blank-page-pruning.spec.ts>) | Automated test covering the named behavior or contract. |
+| [`tests\e2e\excel-date-cells.spec.ts`](<tests/e2e/excel-date-cells.spec.ts>) | Milestone 67E: exported dates are Excel serials under a date format on all three exporters; coverage sweep and year-boundary re-import. |
 | [`tests\e2e\excel-defined-names.spec.ts`](<tests/e2e/excel-defined-names.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\excel-form-field-placement.spec.ts`](<tests/e2e/excel-form-field-placement.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\excel-import-cell-shapes.spec.ts`](<tests/e2e/excel-import-cell-shapes.spec.ts>) | Automated test covering the named behavior or contract. |

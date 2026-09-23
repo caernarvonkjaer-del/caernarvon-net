@@ -14,7 +14,7 @@ import { authorizeFilingOutput } from '../../core/filing/output-authorization.js
 import { getExcelCapacityIssues } from '../../core/excel/excel-capacity.js';
 import { createIssue } from '../../core/validation/issue-registry.js';
 import { resolveFilingDescriptor } from '../../core/filing/filing-descriptor.js';
-import { getExcelJS, numValue, percentValue, saveWorkbookFile, setCell } from '../../core/excel/excel-engine.js';
+import { getExcelJS, numValue, percentValue, saveWorkbookFile, setCell, setDateCell } from '../../core/excel/excel-engine.js';
 import { readCellText, unwrapCellValue } from '../../core/excel/cell-reader.js';
 import { planB4PagesToKeep, isB4RegisterSheetName, b4PageNumber, SCH_B4_ACCOUNT_BLOCKS, B4_REGISTER_PREFIX } from '../../core/excel/b4-register-pages.js';
 import { pruneSheets } from '../../core/excel/sheet-pruning.js';
@@ -167,14 +167,9 @@ export async function doSaveExcel(){
     // sanitizeForExcel() the shared version delegates to.
     // nv/pv were local closures character-identical to core numValue/percentValue.
     const nv=numValue, pv=percentValue;
-    // Milestone 51 follow-up: `instanceof Date` guard. Without it,
-    // String(dateObj).substring(0,10) writes a locale/timezone-dependent
-    // "Tue May 19" into a filed workbook for a 2026-05-20T00:00:00Z date --
-    // wrong format AND a day early. The length>=10 branch is left exactly as
-    // it was: its type preservation (a short numeric input stays a number, so
-    // setCell writes a numeric cell) is why this is not merged with
-    // legacy fmtDate. See tests/unit/date-truncation-helpers.spec.js.
-    const fD=s=>{const v=s instanceof Date?s.toISOString():s;return (v&&String(v).length>=10)?String(v).substring(0,10):(v||'');};
+    // Dates are written through setDateCell() (Milestone 67E): a real Excel
+    // date -- the serial under a date format -- rather than the ISO text the
+    // local string formatter that used to live here produced.
 
     // One plan for Schedule B-4, built before anything is written: the writer
     // and the pruner must agree on exactly which pages are in use.
@@ -191,8 +186,8 @@ export async function doSaveExcel(){
     const p1=workbook.getWorksheet('PART I');
     if(p1){
       setCell(p1,'C5',inv.wardName); setCell(p1,'I5',inv.caseNumber);
-      setCell(p1,'F5',fD(inv.gid));
-      setCell(p1,'E18',fD(inv.periodFrom)); setCell(p1,'H18',fD(inv.periodTo));
+      setDateCell(p1,'F5',inv.gid);
+      setDateCell(p1,'E18',inv.periodFrom); setDateCell(p1,'H18',inv.periodTo);
       setCell(p1,'D20',inv.guardian); setCell(p1,'D21',inv.attorney);
       setCell(p1,'D22',inv.typeOfGuardianship);
       setCell(p1,'J6',inv.amendedForm); setCell(p1,'H4',filingDescriptor?.filingTypeValue||inv.filingType);
@@ -215,20 +210,20 @@ export async function doSaveExcel(){
       // E18/H18 which are written above, so writing the same values here as
       // literals only replaced live propagation with a snapshot.
       // Guardian 1
-      setCell(p23,'D25',fD(g1.signatureDate)); setCell(p23,'F25',g1.name||'');
+      setDateCell(p23,'D25',g1.signatureDate); setCell(p23,'F25',g1.name||'');
       setCell(p23,'B27',g1.ssn||''); setCell(p23,'B29',g1.phone||''); setCell(p23,'B31',g1.email||'');
       setCell(p23,'F27',g1.mailingStreet||''); setCell(p23,'F29',g1.mailingCityStateZip||'');
       setCell(p23,'F31',g1.officeStreet||''); setCell(p23,'F33',g1.officeCityStateZip||'');
       // Guardian 2
       if(guardianHasAnyData(g2)){
-        setCell(p23,'D35',fD(g2.signatureDate)); setCell(p23,'F35',g2.name||'');
+        setDateCell(p23,'D35',g2.signatureDate); setCell(p23,'F35',g2.name||'');
         setCell(p23,'B37',g2.ssn||''); setCell(p23,'B39',g2.phone||''); setCell(p23,'B41',g2.email||'');
         setCell(p23,'F37',g2.mailingStreet||''); setCell(p23,'F39',g2.mailingCityStateZip||'');
         setCell(p23,'F41',g2.officeStreet||''); setCell(p23,'F43',g2.officeCityStateZip||'');
       }
       // Guardian 3
       if(guardianHasAnyData(g3)){
-        setCell(p23,'D45',fD(g3.signatureDate)); setCell(p23,'F45',g3.name||'');
+        setDateCell(p23,'D45',g3.signatureDate); setCell(p23,'F45',g3.name||'');
         setCell(p23,'B47',g3.ssn||''); setCell(p23,'B49',g3.phone||''); setCell(p23,'B51',g3.email||'');
         setCell(p23,'F47',g3.mailingStreet||''); setCell(p23,'F49',g3.mailingCityStateZip||'');
         setCell(p23,'F51',g3.officeStreet||''); setCell(p23,'F53',g3.officeCityStateZip||'');
@@ -242,11 +237,11 @@ export async function doSaveExcel(){
       // D11/J11 and D26/J26 below are =From_Date/=To_Date -- see PART II, III.
       // Signature date columns: D is inside the merged "Preparer's/Attorney
       // Signature" label cell (B:G); the real Date value lives at H.
-      setCell(p45,'J15',p.name||''); setCell(p45,'H15',fD(p.signatureDate));
+      setCell(p45,'J15',p.name||''); setDateCell(p45,'H15',p.signatureDate);
       setCell(p45,'B17',p.ssn||''); setCell(p45,'B19',p.phone||'');
       setCell(p45,'J17',p.street||''); setCell(p45,'J19',p.cityStateZip||'');
 
-      setCell(p45,'H31',fD(inv.attorney_signatureDate));
+      setDateCell(p45,'H31',inv.attorney_signatureDate);
       setCell(p45,'B33',inv.attorney_bar||''); setCell(p45,'B35',inv.attorney_phone||'');
       setCell(p45,'J33',inv.attorney_street||''); setCell(p45,'J35',inv.attorney_cityStateZip||'');
     }
@@ -295,7 +290,7 @@ export async function doSaveExcel(){
     const sb1=workbook.getWorksheet('SCH B-1 ATTORNEY FEES');
     if(sb1){
       inv.schB1.forEach((r,i)=>{
-        if(i<24){const row=10+i; setCell(sb1,`C${row}`,r.bankAcct||''); setCell(sb1,`E${row}`,r.checkNo||''); setCell(sb1,`F${row}`,fD(r.periodFrom)); setCell(sb1,`G${row}`,fD(r.periodTo)); setCell(sb1,`H${row}`,fD(r.datePaid)); setCell(sb1,`I${row}`,r.payee||''); setCell(sb1,`J${row}`,fD(r.courtOrderDate)); setCell(sb1,`K${row}`,nv(r.amount));}
+        if(i<24){const row=10+i; setCell(sb1,`C${row}`,r.bankAcct||''); setCell(sb1,`E${row}`,r.checkNo||''); setDateCell(sb1,`F${row}`,r.periodFrom); setDateCell(sb1,`G${row}`,r.periodTo); setDateCell(sb1,`H${row}`,r.datePaid); setCell(sb1,`I${row}`,r.payee||''); setDateCell(sb1,`J${row}`,r.courtOrderDate); setCell(sb1,`K${row}`,nv(r.amount));}
       });
     }
 
@@ -303,7 +298,7 @@ export async function doSaveExcel(){
     const sb2=workbook.getWorksheet('SCH B-2 GUARDIAN FEES');
     if(sb2){
       inv.schB2.forEach((r,i)=>{
-        if(i<24){const row=10+i; setCell(sb2,`C${row}`,r.bankAcct||''); setCell(sb2,`E${row}`,r.checkNo||''); setCell(sb2,`F${row}`,fD(r.periodFrom)); setCell(sb2,`G${row}`,fD(r.periodTo)); setCell(sb2,`H${row}`,fD(r.datePaid)); setCell(sb2,`I${row}`,r.payee||''); setCell(sb2,`J${row}`,fD(r.courtOrderDate)); setCell(sb2,`K${row}`,nv(r.amount));}
+        if(i<24){const row=10+i; setCell(sb2,`C${row}`,r.bankAcct||''); setCell(sb2,`E${row}`,r.checkNo||''); setDateCell(sb2,`F${row}`,r.periodFrom); setDateCell(sb2,`G${row}`,r.periodTo); setDateCell(sb2,`H${row}`,r.datePaid); setCell(sb2,`I${row}`,r.payee||''); setDateCell(sb2,`J${row}`,r.courtOrderDate); setCell(sb2,`K${row}`,nv(r.amount));}
       });
     }
 
@@ -312,7 +307,7 @@ export async function doSaveExcel(){
     const sb3=workbook.getWorksheet('SCH B-3 OTHER CO DISB');
     if(sb3){
       inv.schB3.forEach((r,i)=>{
-        if(i<24){const row=10+i; setCell(sb3,`C${row}`,r.bankAcct||''); setCell(sb3,`E${row}`,r.checkNo||''); setCell(sb3,`F${row}`,fD(r.datePaid)); setCell(sb3,`G${row}`,r.payee||''); setCell(sb3,`H${row}`,fD(r.courtOrderDate)); setCell(sb3,`I${row}`,nv(r.amount));}
+        if(i<24){const row=10+i; setCell(sb3,`C${row}`,r.bankAcct||''); setCell(sb3,`E${row}`,r.checkNo||''); setDateCell(sb3,`F${row}`,r.datePaid); setCell(sb3,`G${row}`,r.payee||''); setDateCell(sb3,`H${row}`,r.courtOrderDate); setCell(sb3,`I${row}`,nv(r.amount));}
       });
     }
 
@@ -342,7 +337,7 @@ export async function doSaveExcel(){
         pageRows.rows.forEach((r, i) => {
           const row = pageRows.firstRow + i;
           setCell(ws, `C${row}`, r.checkNo || '');
-          setCell(ws, `D${row}`, fD(r.datePaid));
+          setDateCell(ws, `D${row}`, r.datePaid);
           setCell(ws, `E${row}`, r.category || '');
           setCell(ws, `G${row}`, r.payee || '');
           setCell(ws, `I${row}`, nv(r.amount));
@@ -354,7 +349,7 @@ export async function doSaveExcel(){
     const scC=workbook.getWorksheet('SCH C CAPITAL ADJ p1');
     if(scC){
       inv.schC.forEach((r,i)=>{
-        if(i<6){const row=31+(i*4); setCell(scC,`C${row}`,r.description||''); setCell(scC,`E${row}`,fD(r.date)); setCell(scC,`F${row}`,nv(r.gain)); setCell(scC,`G${row}`,nv(r.loss));}
+        if(i<6){const row=31+(i*4); setCell(scC,`C${row}`,r.description||''); setDateCell(scC,`E${row}`,r.date); setCell(scC,`F${row}`,nv(r.gain)); setCell(scC,`G${row}`,nv(r.loss));}
       });
     }
 
@@ -409,7 +404,7 @@ export async function doSaveExcel(){
     const seE=workbook.getWorksheet('SCH E BANK TRANS p1');
     if(seE){
       inv.schE.forEach((r,i)=>{
-        if(i<27){const row=14+i; setCell(seE,`C${row}`,r.bankName||''); setCell(seE,`E${row}`,fD(r.transferInDate)); setCell(seE,`F${row}`,nv(r.transferInAmt)); setCell(seE,`G${row}`,fD(r.transferOutDate)); setCell(seE,`H${row}`,nv(r.transferOutAmt));}
+        if(i<27){const row=14+i; setCell(seE,`C${row}`,r.bankName||''); setDateCell(seE,`E${row}`,r.transferInDate); setCell(seE,`F${row}`,nv(r.transferInAmt)); setDateCell(seE,`G${row}`,r.transferOutDate); setCell(seE,`H${row}`,nv(r.transferOutAmt));}
       });
     }
 
@@ -420,7 +415,7 @@ export async function doSaveExcel(){
     const sf1=workbook.getWorksheet('SCH F-1 SALES REAL PROP p1');
     if(sf1){
       inv.schF1.forEach((r,i)=>{
-        if(i<8){const row=19+(i*5); setCell(sf1,`C${row}`,r.description||''); setCell(sf1,`F${row}`,r.bank||''); setCell(sf1,`G${row}`,r.accountNo||''); setCell(sf1,`H${row}`,fD(r.courtOrderDate)); setCell(sf1,`I${row}`,nv(r.salePrice));}
+        if(i<8){const row=19+(i*5); setCell(sf1,`C${row}`,r.description||''); setCell(sf1,`F${row}`,r.bank||''); setCell(sf1,`G${row}`,r.accountNo||''); setDateCell(sf1,`H${row}`,r.courtOrderDate); setCell(sf1,`I${row}`,nv(r.salePrice));}
       });
     }
 
@@ -428,7 +423,7 @@ export async function doSaveExcel(){
     const sf2=workbook.getWorksheet('SCH F-2 SALES PERSONAL PROP p1');
     if(sf2){
       inv.schF2.forEach((r,i)=>{
-        if(i<11){const row=17+(i*4); setCell(sf2,`C${row}`,r.description||''); setCell(sf2,`F${row}`,r.bank||''); setCell(sf2,`G${row}`,r.accountNo||''); setCell(sf2,`H${row}`,fD(r.courtOrderDate)); setCell(sf2,`I${row}`,nv(r.salePrice));}
+        if(i<11){const row=17+(i*4); setCell(sf2,`C${row}`,r.description||''); setCell(sf2,`F${row}`,r.bank||''); setCell(sf2,`G${row}`,r.accountNo||''); setDateCell(sf2,`H${row}`,r.courtOrderDate); setCell(sf2,`I${row}`,nv(r.salePrice));}
       });
     }
 
@@ -450,7 +445,7 @@ export async function doSaveExcel(){
         setCell(p8,`D${rows[1]}`,t.name||'');
         setCell(p8,`D${rows[2]}`,t.trustee||'');
         setCell(p8,`D${rows[3]}`,t.accountNo||'');
-        setCell(p8,`D${rows[4]}`,fD(t.dateCreated));
+        setDateCell(p8,`D${rows[4]}`,t.dateCreated);
         setCell(p8,`D${rows[5]}`,t.trustType||'');
         setCell(p8,`D${rows[6]}`,t.wardPct||'');
         setCell(p8,`D${rows[7]}`,nv(t.wardAmount));
@@ -476,7 +471,7 @@ export async function doSaveExcel(){
     const p9=workbook.getWorksheet('PART IX ');
     if(p9){
       setCell(p9,'G8',inv.guardianRelationship||'');
-      setCell(p9,'G9',fD(inv.restrictedDepositoryReceiptDate));
+      setDateCell(p9,'G9',inv.restrictedDepositoryReceiptDate);
       setCell(p9,'H20',nv(inv.bondAmount));
       setCell(p9,'D22',inv.bondingCompany||'');
     }
@@ -494,9 +489,9 @@ export async function doSaveExcel(){
       setCell(p10,'I11',r[1]&&r[1].name||''); setCell(p10,'I12',r[1]&&r[1].line2||''); setCell(p10,'I13',r[1]&&r[1].line3||''); setCell(p10,'I14',r[1]&&r[1].line4||'');
       setCell(p10,'B17',r[2]&&r[2].name||''); setCell(p10,'B18',r[2]&&r[2].line2||''); setCell(p10,'B19',r[2]&&r[2].line3||''); setCell(p10,'B20',r[2]&&r[2].line4||'');
       setCell(p10,'I17',r[3]&&r[3].name||''); setCell(p10,'I18',r[3]&&r[3].line2||''); setCell(p10,'I19',r[3]&&r[3].line3||''); setCell(p10,'I20',r[3]&&r[3].line4||'');
-      setCell(p10,'G23',fD(inv.certDate));
+      setDateCell(p10,'G23',inv.certDate);
       setCell(p10,'K23',inv.certIndicator||'');
-      setCell(p10,'G25',fD(inv.certAttySignDate));
+      setDateCell(p10,'G25',inv.certAttySignDate);
     }
 
     // Part XI — remuneration is NOT written to the workbook. Milestone 58D.

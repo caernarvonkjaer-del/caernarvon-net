@@ -35,6 +35,10 @@ const TYPE = 'Plenary';
 const SSN = '123-45-6789';
 const FROM = '2026-01-01';
 const TO = '2026-12-31';
+// Milestone 67E: the file holds dates as Excel serials, not ISO text.
+// excel-date-cells.spec.ts owns that contract; here they only pin placement.
+const FROM_SERIAL = '46023';
+const TO_SERIAL = '46387';
 
 const dec = (s: string) => s.replace(/&apos;/g, "'").replace(/&quot;/g, '"')
   .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
@@ -125,8 +129,8 @@ test.describe('Simplified Part I writes each value beside its own label', () => 
     expect(cells.get('H4')?.text, 'H4 is the Case Number box').toBe(CASE);
 
     // r13 "For the Period": From in E13:F13, To in H13:I13.
-    expect(cells.get('E13')?.text, 'period From belongs in E13').toBe(FROM);
-    expect(cells.get('H13')?.text, 'period To belongs in H13').toBe(TO);
+    expect(cells.get('E13')?.text, 'period From belongs in E13').toBe(FROM_SERIAL);
+    expect(cells.get('H13')?.text, 'period To belongs in H13').toBe(TO_SERIAL);
 
     // r15/r16/r17, each beside its own label.
     expect(cells.get('D15')?.text, 'D15 is the Attorney for Guardian box').toBe(ATTORNEY);

@@ -127,6 +127,97 @@ export function setCell(sheet, addr, value) {
 }
 
 /**
+ * The Excel serial for a calendar day -- the day count Excel stores a date
+ * as (1 = 1900-01-01 in the 1900 system) -- or null when the value is not a
+ * calendar day.
+ *
+ * Milestone 67E. Every date the app wrote into a filed workbook used to be
+ * the ISO string '2026-01-01', so the clerk saw text where the court's form
+ * shows 10/2/2015 and the column sorted as text. A filing date is a calendar
+ * day, not an instant: the serial is computed from the year, month and day
+ * alone, so no timezone can shift it in either direction. A Date is read by
+ * its UTC components, which is how every writer here already normalised one
+ * (toISOString()); this repository has shipped and fixed one timezone-shifted
+ * date before (commit 656cccf).
+ *
+ * Accepts the stored YYYY-MM-DD (with or without a time part), a Date, and
+ * the US M/D/YYYY text an older .sav may still hold. A number is NOT accepted
+ * -- it is already a serial as far as ExcelJS is concerned -- and neither is
+ * anything else; setDateCell() hands those to setCell() unchanged.
+ *
+ * Linear like ExcelJS's own dateToExcel() (25569 + ms / 864e5), so a value
+ * written here reads back as the same day. Excel's 1900 system also counts a
+ * 1900-02-29 that never happened, which puts the two off by one for days
+ * before 1900-03-01 -- none of which can appear on a guardianship filing.
+ *
+ * @param {any} value
+ * @param {{ date1904?: boolean }} [options]
+ * @returns {number | null}
+ */
+export function toExcelSerialDate(value, { date1904 = false } = {}) {
+  let y, m, d;
+  if (value instanceof Date) {
+    if (Number.isNaN(value.getTime())) return null;
+    y = value.getUTCFullYear(); m = value.getUTCMonth() + 1; d = value.getUTCDate();
+  } else if (typeof value === 'string') {
+    const s = value.trim();
+    let match = /^(\d{4})-(\d{2})-(\d{2})(?:[T\s].*)?$/.exec(s);
+    if (match) {
+      y = +match[1]; m = +match[2]; d = +match[3];
+    } else {
+      match = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(s);
+      if (!match) return null;
+      m = +match[1]; d = +match[2]; y = +match[3];
+    }
+  } else {
+    return null;
+  }
+  const ms = Date.UTC(y, m - 1, d);
+  // Date.UTC normalises 2026-02-30 to March 2 without complaint; a day that
+  // does not exist is not a date.
+  const check = new Date(ms);
+  if (check.getUTCFullYear() !== y || check.getUTCMonth() !== m - 1 || check.getUTCDate() !== d) return null;
+  return ms / 86400000 + 25569 - (date1904 ? 1462 : 0);
+}
+
+/** A date format, as Excel judges one: a y, m or d outside brackets and quotes. */
+function isDateNumFmt(numFmt) {
+  if (!numFmt) return false;
+  return /[ymd]/i.test(String(numFmt).replace(/\[[^\]]*]/g, '').replace(/"[^"]*"/g, ''));
+}
+
+/**
+ * Writes a calendar day as a real Excel date: the serial, under a date number
+ * format. The cell keeps the court's own format where the template gave it
+ * one (mm/dd/yy;@ almost everywhere, m/d/yyyy on a few); a cell the template
+ * left General -- 'PART IV, V'!H31 and the court-order-date columns on SCH
+ * B-1/B-2/B-3 in the Annual workbook -- gets the form's prevailing
+ * mm/dd/yy;@, since a serial under General would display as 46392.
+ *
+ * Blank writes an empty cell, and text that is not a calendar day is written
+ * as text, exactly as setCell() would -- so a stray value stays visible
+ * rather than being silently dropped. Every date write in the three
+ * exporters goes through here (tests/unit/excel-engine.spec.js asserts the
+ * old per-file string formatters stay gone).
+ *
+ * @param {any} sheet
+ * @param {string} addr
+ * @param {any} value
+ * @returns {any} The cell
+ */
+export function setDateCell(sheet, addr, value) {
+  if (!sheet) return null;
+  if (value == null || value === '') return setCell(sheet, addr, null);
+  const date1904 = !!sheet.workbook?.properties?.date1904;
+  const serial = toExcelSerialDate(value, { date1904 });
+  if (serial == null) return setCell(sheet, addr, value);
+  const cell = sheet.getCell(addr);
+  cell.value = serial;
+  if (!isDateNumFmt(cell.numFmt)) cell.numFmt = 'mm/dd/yy;@';
+  return cell;
+}
+
+/**
  * Converts a value to numeric, defaulting to 0.
  * @param {any} val
  * @returns {number}

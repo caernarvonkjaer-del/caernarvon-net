@@ -19,7 +19,7 @@ Listed in build order.
 | 1 | 67F | Questions whose answers reveal nothing; one files data in the wrong box | **DECIDED** — route only reveal-gating controls; no data migration | **LANDED 2026-09-23** — 40 controls, not the 5 first listed; see the build record under 67F |
 | 2 | 67C | Every Annual/Final/Trust Excel export opens with Excel's corruption warning | **DECIDED** — strip defined names pointing outside the file | **LANDED 2026-09-23** — see the build record under 67C |
 | 3 | 67D | Every Annual/Final/Trust Excel export destroys the Bond Period formulas | **DECIDED** — stop writing them; PDF falls back to the accounting period | **LANDED 2026-09-23** — see the build record under 67D |
-| 4 | 67E | Every exported date is written as text, not as a date | **DECIDED** — write real dates | Independent |
+| 4 | 67E | Every exported date is written as text, not as a date | **DECIDED** — write real dates | **LANDED 2026-09-23** — see the build record under 67E |
 | 5 | 67A | Preparer block is mandatory on filings the app itself says have no preparer | **DECIDED** — name the preparer on the guardian/attorney cards; PDF prints the name | Independent |
 | 6 | 67B | Bond fields block filings on Annual/Final/Trust **and Guardian Inventory** | **DECIDED** — nothing in the bond block gates export; warn only, one shared path | **After 67F** |
 
@@ -1484,6 +1484,92 @@ reviewer notices.
 9. **Cross-form method consistency.** `setCell()` is shared by all three Excel
    exporters, so Guardian Inventory and Simplified Accounting write dates the
    same way and would be fixed — and would need re-testing — together.
+
+### Build record — LANDED 2026-09-23
+
+**What a filer now sees.** Every date in a filed workbook — Annual, Final,
+Trust, Initial Inventory and Simplified — displays in the form's own US format
+(`01/01/26` where the court formatted the cell `mm/dd/yy;@`, `1/1/2026` where
+it used `m/d/yyyy`), sorts chronologically, and works in date arithmetic. Four
+cells the court's Annual template left without any date format — the attorney
+signature date on `PART IV, V` and the court-order-date columns on Schedules
+B-1, B-2 and B-3 — now show a date too (`mm/dd/yy;@`, the form's prevailing
+format) instead of the raw serial they would otherwise have displayed.
+
+**The build, as decided.**
+
+- `src/core/excel/excel-engine.js`: `toExcelSerialDate(value, {date1904})`
+  turns a calendar day into the 1900-system serial from year, month and day
+  alone — a Date is read by its UTC components — accepting the stored
+  `YYYY-MM-DD` (with or without a time part), a `Date`, and the US `M/D/YYYY`
+  an older `.sav` may hold; anything else is `null`. `setDateCell(sheet,
+  addr, value)` writes the serial, keeps the court's own date format where the
+  template gave one, supplies `mm/dd/yy;@` where the cell was General, and
+  falls back to `setCell()` for blank or unparseable input so a stray value
+  stays visible. It honours `workbook.properties.date1904`; all three
+  templates were checked and are 1900-based.
+- The three exporters' string formatters — Annual's `fD`, Guardian's and
+  Simplified's `fmtD` — are deleted, and every date write (28 in Annual, 13 in
+  Guardian, 8 in Simplified) goes through `setDateCell()`. A unit source scan
+  fails if any formatter or bypass comes back.
+- **The reader, verified component-wise as the decision required.** ExcelJS
+  converts a numeric cell under a date format to a `Date` at UTC midnight
+  (`excelToDate`: `new Date(Math.round(24*(serial-25569)*3600*1000))`), and
+  all three importers take the day from that `Date` with `toISOString()`,
+  which is UTC — so no local offset enters on the way back either. The
+  year-boundary round trip below is the proof; no reader change was needed.
+- The template survey behind the four General cells is recorded here so it
+  is not redone: every other date target already carried `mm/dd/yy;@` or
+  builtin format 14, and no target sits inside a merge as a non-master cell
+  (the write-targets guard would have said so).
+- **The coverage guard keys on the value, not the cell.** The decision
+  described it as "any cell whose template number format is a date format
+  holds a string." Built that way, its first run reported four cells per
+  workbook that are not dates at all: the court's own templates put date
+  number formats on the attorney bar number (`'PART IV, V'!B33`), Schedule
+  B-1's check number (`E10`), and the guardian's name and type of
+  guardianship on Guardian's `SUMMARY I` (`D23`, `D25`). Text under a date
+  format displays as text, so nothing is wrong with them. The guard now
+  flags any app-written cell holding date-*shaped* text — the ISO string the
+  retired formatters produced, or US `M/D/YYYY` — on any sheet, formatted or
+  not. That is both more precise and stronger: a writer missed on a General
+  cell would have escaped the format-keyed version entirely.
+
+**Verification.**
+
+- **Unit, red first:** `tests/unit/excel-engine.spec.js` +10 cases — 10
+  failed against the pre-67E engine (no helper; the source scan found
+  `fD`/`fmtD`). Green: 23/23. Serials are anchored on two facts, not the
+  helper's own formula: 2026-01-01 = 46023, and the court's own example row
+  in the Annual template, 2015-10-02 = 42279. `date-truncation-helpers.spec.js`
+  rescoped to the one surviving copy (`cell-reader.js`).
+- **E2E, red first** (`tests/e2e/excel-date-cells.spec.ts`, new): all three
+  exporters failed with `Received: "s"` — the checked date cells were shared
+  strings. Green: **3/3 in 44 s**, and with every Excel export/import
+  neighbour (`excel-form-field-placement`, `simplified-part1-identity-cells`,
+  `excel-defined-names`, `annual-bond-period`, `annual-mount`,
+  `guardian-inventory-mount`, `simplified-mount`, `excel-pruned-roundtrip`,
+  `excel-b4-multi-account`, `excel-import-cell-shapes`,
+  `guardian-inventory-excel-schedule-layout`, `excel-blank-page-pruning`,
+  `guardian-blank-page-pruning`): **80/82 in 10.9 min**, the two failures
+  being the format-keyed sweep's false positives described above, fixed in
+  the spec and re-run green.
+- **Coverage guard proven to bite:** with one Simplified date write
+  (`'PARTS III, IV'!D15`, a cell no exact assertion checks) temporarily put
+  back to text, the Simplified test failed naming exactly
+  `'PARTS III, IV'!D15 = "2027-01-05"` and nothing else; the writer was then
+  restored and the spec re-run green.
+- **Fixture audit (§8.3):** `excel-form-field-placement.spec.ts` (eight
+  Guardian date boxes) and `simplified-part1-identity-cells.spec.ts` (E13/H13)
+  asserted the ISO text and now assert the serials. A third was found only
+  by running the whole unit suite: `guardian-inventory-date-roundtrip.spec.js`
+  sliced Guardian's deleted `fmtD` out of the source by name. It now pins the
+  real round trip — `setDateCell()`'s serial, the UTC-midnight `Date` ExcelJS
+  builds from it, and the bare serial all read back through `dt()` as the
+  same day, across the year boundary. All three rows rescoped; unit suite
+  122 files / 1,740 tests green after it.
+
+Landed in the commit whose subject begins `fix(milestone-67E):`.
 
 ---
 
