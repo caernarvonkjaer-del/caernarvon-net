@@ -150,6 +150,17 @@ pipelines) and Archetype 3 (React/FastAPI full-stack) projects elsewhere —
 irrelevant to this repo's code, but relevant to §2's Python note if you ever
 touch Archetype 2 tooling from this machine.
 
+**Repository file index and reference documents.** [`file_index.md`](file_index.md)
+is the canonical inventory of repository files and their purposes. The legal
+and historical source documents used for authority checks live under
+[`reference/`](reference/), grouped by type. Any commit that adds, removes,
+renames, or moves a repository file must update `file_index.md` in the same
+commit. Any new statute, administrative order, workslip, or original court-form
+reference belongs under `reference/` rather than at the repository root; update
+`reference/README.md` when its organization changes. Do not move or delete a
+reference document merely to tidy it if a proposal, test, or source path relies
+on its location—update the dependent path and the index together.
+
 ---
 
 ## 2. Git, Concurrency & Execution Discipline
