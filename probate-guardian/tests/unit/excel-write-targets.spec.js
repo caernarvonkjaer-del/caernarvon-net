@@ -45,16 +45,18 @@ const ALLOWED = new Map([
   ['guardian|SUMMARY I |I8', 'amended form: dropdown default'],
   ['guardian|SUMMARY I |D26', 'safe deposit box: dropdown default'],
   ['guardian|SUMMARY I |H26', 'safe deposit box filed: dropdown default'],
-  // The three cells the court's form computes for itself that the app writes
-  // a literal over. DECIDED 2026-09-19 (Alan, by name): conform to the form,
-  // allow the overwrite, warn on it. Removing the write would silently discard
-  // something the filer typed, so it stays -- but the divergence is no longer
-  // invisible: src/core/filing/form-derived-fields.js raises an advisory when
-  // the entered value differs from the one the form derives, and it surfaces
-  // on the print page through the existing renderOutputAdvisories() panel.
-  // See tests/unit/form-derived-fields.spec.js.
-  ['annual|PART IX |E21', 'bond period start: form derives it from the accounting period; overwrite allowed, advisory on divergence'],
-  ['annual|PART IX |G21', 'bond period end: form derives it from the accounting period; overwrite allowed, advisory on divergence'],
+  // The one cell the court's form computes for itself that the app still
+  // writes a literal over. DECIDED 2026-09-19 (Alan, by name): conform to the
+  // form, allow the overwrite, warn on it -- src/core/filing/form-derived-
+  // fields.js raises an advisory when the entered value differs from the one
+  // the form derives, surfaced on the print page through the existing
+  // renderOutputAdvisories() panel. See tests/unit/form-derived-fields.spec.js.
+  //
+  // 'PART IX '!E21/G21 (the bond period, = From_Date / = To_Date) were on
+  // this list until Milestone 67D. DECIDED 2026-09-23: the bond period IS the
+  // accounting period, so the app no longer writes those two cells and the
+  // form's formulas fill them. The advisory on a differing typed value stays;
+  // the allowance does not, so a reintroduced write fails this test.
   ['annual|PART II, III|F25', 'guardian 1 name: form links it to PART I; overwrite allowed, advisory on divergence'],
 ]);
 

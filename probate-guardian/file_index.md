@@ -249,6 +249,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`tests\capture\guide-screenshots.capture.ts`](<tests/capture/guide-screenshots.capture.ts>) | Build, tooling, or configuration source. |
 | [`tests\capture\pin-web-target.ts`](<tests/capture/pin-web-target.ts>) | Build, tooling, or configuration source. |
 | [`tests\e2e\annotation-toolbar-containment.spec.ts`](<tests/e2e/annotation-toolbar-containment.spec.ts>) | Automated test covering the named behavior or contract. |
+| [`tests\e2e\annual-bond-period.spec.ts`](<tests/e2e/annual-bond-period.spec.ts>) | Milestone 67D: Annual export keeps the Part IX bond-period formulas; re-import, advisory wording and PDF fallback. |
 | [`tests\e2e\annual-field-formatting.spec.ts`](<tests/e2e/annual-field-formatting.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\annual-mount.spec.ts`](<tests/e2e/annual-mount.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\annual-schedule-consistency.spec.ts`](<tests/e2e/annual-schedule-consistency.spec.ts>) | Automated test covering the named behavior or contract. |

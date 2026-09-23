@@ -459,16 +459,25 @@ export async function doSaveExcel(){
 
     // Part IX — bond. Real header merges: G8:H8 (Guardian's Relationship
     // value, anchor G), G9:H9 (Restricted Depository Receipt Date, anchor
-    // G), B20:G20 label / H20 value (Bond Amount, already correct),
-    // "From:"/E21 value / "To:"/G21 value (Bond Period), D22:H22
+    // G), B20:G20 label / H20 value (Bond Amount, already correct), D22:H22
     // (Bonding Company, anchor D).
+    //
+    // The Bond Period boxes -- E21 "From:" and G21 "To:" -- are NOT written.
+    // The court's workbook fills them itself: E21 is `=From_Date` and G21 is
+    // `=To_Date`, the defined names carrying the accounting period. This used
+    // to write bondPeriodFrom/bondPeriodTo over both, which destroyed the
+    // formulas on every export -- a blank input wrote empty over them, a
+    // typed one froze a literal -- and Excel's repair could not bring them
+    // back. Milestone 67D (decided 2026-09-23): the bond period is the
+    // accounting period, so the formulas stay and fill the boxes. A typed
+    // bond period that differs still reaches the PDF, and the filer is
+    // warned (src/core/filing/form-derived-fields.js). AGENTS.md section 5:
+    // never write into a formula cell.
     const p9=workbook.getWorksheet('PART IX ');
     if(p9){
       setCell(p9,'G8',inv.guardianRelationship||'');
       setCell(p9,'G9',fD(inv.restrictedDepositoryReceiptDate));
       setCell(p9,'H20',nv(inv.bondAmount));
-      setCell(p9,'E21',fD(inv.bondPeriodFrom));
-      setCell(p9,'G21',fD(inv.bondPeriodTo));
       setCell(p9,'D22',inv.bondingCompany||'');
     }
 
@@ -817,8 +826,14 @@ export async function importExcel(input){
         D.guardianRelationship=gcStr(p9,'G8')||D.guardianRelationship;
         D.restrictedDepositoryReceiptDate=gcDate(p9,'G9');
         D.bondAmount=gcNum(p9,'H20');
-        D.bondPeriodFrom=gcDate(p9,'E21');
-        D.bondPeriodTo=gcDate(p9,'G21');
+        // E21/G21 are the workbook's own `=From_Date` / `=To_Date` formulas
+        // (Milestone 67D). A file this app just wrote carries no computed
+        // value for them -- Excel only calculates when it opens the file --
+        // so reading them would hand back blank and wipe the field on every
+        // round trip. The bond period IS the accounting period, read from
+        // PART I above; take it from there.
+        D.bondPeriodFrom=D.periodFrom||'';
+        D.bondPeriodTo=D.periodTo||'';
         D.bondingCompany=gcStr(p9,'D22');
       }
 

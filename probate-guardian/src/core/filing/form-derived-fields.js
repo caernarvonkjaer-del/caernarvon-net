@@ -1,5 +1,5 @@
-// Fields the court's Annual Accounting workbook computes for itself, which the
-// app writes a literal over.
+// Fields the court's Annual Accounting workbook computes for itself, where
+// the app keeps a field of its own.
 //
 // Two cells in the annual template are formulas, not input boxes:
 //
@@ -8,24 +8,30 @@
 //   'PART II, III'!F25     Guardian #1's name, linked to PART I's Guardian
 //
 // The app keeps its own field for each -- bondPeriodFrom / bondPeriodTo and
-// guardians[0].name -- and writes them into those cells, replacing the
-// formula. Dropping the write would silently discard something the filer
-// typed, so it stays; but until now the divergence was invisible. A filer
-// could enter a bond period that disagreed with the accounting period, or a
-// Guardian #1 name that disagreed with the Guardian named in Part I, and the
-// filed workbook would carry the contradiction with nothing saying so -- while
-// the on-screen form, which still shows the derived value, agreed with neither.
+// guardians[0].name. Until 2026-09-19 a divergence between the app's field
+// and the form's own value was invisible: a filer could enter a bond period
+// that disagreed with the accounting period, or a Guardian #1 name that
+// disagreed with the Guardian named in Part I, and nothing said so. Decided
+// then: warn on it. These are advisories, not blocks -- the app has no
+// standing to overrule the filer, only to say the two no longer match.
 //
-// Decided 2026-09-19: conform to the form, allow the overwrite, warn on it.
-// These are advisories, not blocks. The filer may have a real reason -- a bond
-// written for a term that is not the accounting year is an ordinary thing --
-// and the app has no standing to decide that for them. It does have standing
-// to say the two no longer match.
+// The two cells are now handled differently, and the messages say which:
+//
+//   Guardian #1 (F25): the app still writes its field over the formula
+//   (decided 2026-09-19; the ALLOWED entry in tests/unit/excel-write-
+//   targets.spec.js records it), so the filed Excel carries what was typed.
+//
+//   Bond period (E21/G21): Milestone 67D, decided 2026-09-23 -- the bond
+//   period IS the accounting period. The app no longer writes those cells;
+//   the form's formulas fill them. A typed bond period that differs still
+//   reaches the PDF, but the filed Excel will show the accounting period, and
+//   the advisory tells the filer so in the words approved for it. Silent when
+//   the app's field is blank: the form derives it, and a warning would push
+//   the filer to fill in what the form fills for them.
 //
 // Annual family only. The Initial Inventory's bond cells are genuine input
 // boxes in its own template, so there is nothing derived there to disagree
-// with; see the ALLOWED map in tests/unit/excel-write-targets.spec.js, which
-// lists exactly these three cells and no others.
+// with.
 
 const ANNUAL_ENGINE = new Set(['annual', 'finalAccounting', 'trustAccounting']);
 
@@ -69,9 +75,12 @@ export function formDerivedOverwriteWarnings(filing, descriptor = null) {
       field: `bondPeriod${edge === 'from' ? 'From' : 'To'}`,
       entered: a,
       derived: b,
-      message: `Part IX — ${label} (${a}) differs from ${derivedLabel} (${b}). `
-        + "The court's form derives the bond period from the accounting period; this filing will be "
-        + 'exported with the date you entered instead. Confirm it is right before filing.',
+      // Wording approved by the requester 2026-09-23 (Milestone 67D); the two
+      // sentences ship verbatim, then the values so the filer sees which is
+      // which.
+      message: 'Part IX — The bond period entered differs from the accounting period. '
+        + 'The filed Excel will show the accounting period. '
+        + `${label} entered: ${a}; ${derivedLabel}: ${b}.`,
     });
   }
 

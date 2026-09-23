@@ -1061,7 +1061,11 @@ export function buildAnnualAccountingModel(D, options = {}) {
         title: 'Bond Policy Details',
         items: [
           { label: 'Bond Amount', value: fmtS(d.bondAmount) },
-          { label: 'Bond Period', value: `From: ${fmtD(d.bondPeriodFrom)}   To: ${fmtD(d.bondPeriodTo)}` },
+          // Milestone 67D: the filed Excel fills the bond period from the
+          // accounting period by formula; when the app's own boxes are blank
+          // the PDF says the same, so the two documents agree. A typed value
+          // still prints, and the print page warns when it differs.
+          { label: 'Bond Period', value: `From: ${fmtD(d.bondPeriodFrom || d.periodFrom)}   To: ${fmtD(d.bondPeriodTo || d.periodTo)}` },
           { label: 'Name of Bonding Company', value: d.bondingCompany || '' },
         ],
       },

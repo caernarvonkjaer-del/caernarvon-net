@@ -18,7 +18,7 @@ Listed in build order.
 | --- | --- | --- | --- | --- |
 | 1 | 67F | Questions whose answers reveal nothing; one files data in the wrong box | **DECIDED** — route only reveal-gating controls; no data migration | **LANDED 2026-09-23** — 40 controls, not the 5 first listed; see the build record under 67F |
 | 2 | 67C | Every Annual/Final/Trust Excel export opens with Excel's corruption warning | **DECIDED** — strip defined names pointing outside the file | **LANDED 2026-09-23** — see the build record under 67C |
-| 3 | 67D | Every Annual/Final/Trust Excel export destroys the Bond Period formulas | **DECIDED** — stop writing them; PDF falls back to the accounting period | Independent |
+| 3 | 67D | Every Annual/Final/Trust Excel export destroys the Bond Period formulas | **DECIDED** — stop writing them; PDF falls back to the accounting period | **LANDED 2026-09-23** — see the build record under 67D |
 | 4 | 67E | Every exported date is written as text, not as a date | **DECIDED** — write real dates | Independent |
 | 5 | 67A | Preparer block is mandatory on filings the app itself says have no preparer | **DECIDED** — name the preparer on the guardian/attorney cards; PDF prints the name | Independent |
 | 6 | 67B | Bond fields block filings on Annual/Final/Trust **and Guardian Inventory** | **DECIDED** — nothing in the bond block gates export; warn only, one shared path | **After 67F** |
@@ -1236,6 +1236,66 @@ fields are redundant.
 9. **Cross-form method consistency.** Guardian Inventory has its own bond block
    and its own PART V writes. Read them before building (§8.9) and report
    whether the same formula-overwrite exists there — do not fix it silently.
+
+### Build record — LANDED 2026-09-23
+
+**What a filer now sees.** On the filed Annual, Final or Trust workbook, Part
+IX's Bond Period From/To show the accounting period — filled by the court's
+own formulas, which the export no longer destroys. The PDF shows the same
+dates when the filer left the bond-period boxes blank, so the two filed
+documents agree. A filer who types a different bond period still gets it on
+the PDF, and the print page tells them, in the approved words, that *"The
+bond period entered differs from the accounting period. The filed Excel will
+show the accounting period."* Re-importing an export no longer wipes the
+field.
+
+**The build, as decided.**
+
+- `src/features/annual-accounting/excel.js`: the two `setCell` calls on
+  `PART IX ` E21/G21 are deleted; the template's `=From_Date` / `=To_Date`
+  survive. The importer no longer reads those cells — a freshly written
+  formula cell carries no computed value — and sets `bondPeriodFrom`/`To`
+  from the accounting period it read from `PART I`.
+- `src/features/annual-accounting/pdf-model.js`: the Bond Period line falls
+  back to `periodFrom`/`periodTo` per edge when the app's field is blank.
+- `src/core/filing/form-derived-fields.js`: the existing per-edge advisory
+  keeps its code and field, and its message now carries the approved two
+  sentences verbatim followed by both values. Still silent when the app's
+  field is blank. The Guardian #1 advisory is untouched.
+- The `ALLOWED` entries for E21/G21 in `tests/unit/excel-write-targets.spec.js`
+  are removed, so a reintroduced write fails that guard.
+
+**§8.9 — Guardian Inventory checked, no change needed.** Its `PART V` bond
+cells (G26/E27/G27/D28) are plain input boxes in its own template — the
+write-targets guard passes for the Guardian exporter with no allowance for
+them, which is the proof. The Inventory has no accounting period to derive a
+bond period from and must collect one.
+
+**Verification.**
+
+- **Unit, red first:** with the two allowances removed and the writes still
+  present, `excel-write-targets.spec.js` failed naming
+  `'PART IX '!E21 holds the workbook's formula =From_Date` and the same for
+  G21; `form-derived-fields.spec.js` failed on the old wording. Green after
+  the change: 5/5 and 10/10.
+- **E2E, red first** (`tests/e2e/annual-bond-period.spec.ts`, new), against
+  the unfixed exporter, advisory and PDF model: E21's formula came back
+  `null`; the advisory count was 0; the blank-field PDF printed `From: To:`.
+  (The PDF test's first run failed on the test's own helper — the PDF draws
+  "From: …" and "To: …" as two runs — fixed and re-run red before any source
+  changed.) Green, run with every neighbour that exports, re-imports or
+  prints an Annual workbook (`annual-mount`, `excel-defined-names`,
+  `excel-pruned-roundtrip`, `excel-b4-multi-account`, `pdf-form-specific`):
+  **37/37 in 4.6 min.**
+- `TEST-INDEX.md`: new row, two rescoped rows, category row; `file_index.md`
+  row; `test-index-guard` passes.
+
+**Accepted cost, unchanged from the decision:** a typed bond period that
+differs from the accounting period survives in the app and the PDF, is
+absent from the Excel, and is replaced by the accounting period on
+re-import. The advisory is what makes that visible.
+
+Landed in the commit whose subject begins `fix(milestone-67D):`.
 
 ---
 

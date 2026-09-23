@@ -4,16 +4,22 @@ import { formDerivedOverwriteWarnings } from '../../src/core/filing/form-derived
 // Three cells in the annual template are formulas the court's form computes
 // for itself -- 'PART IX '!E21/G21 (the bond period, = From_Date / = To_Date)
 // and 'PART II, III'!F25 (Guardian #1, linked to PART I's Guardian). The app
-// keeps its own field for each and writes a literal over the formula.
+// keeps its own field for each.
 //
-// Decided 2026-09-19: the write stays, because dropping it would silently
+// Decided 2026-09-19: the writes stay, because dropping them would silently
 // discard something the filer typed, but the divergence is reported. Before
 // this, a filing could go to the clerk with a bond period that disagreed with
 // its own accounting period, or two different names for the same guardian,
 // and nothing anywhere said so.
 //
-// These are advisories, never blocks: a bond written for a term other than the
-// accounting year is ordinary, and the app has no standing to overrule it.
+// Milestone 67D (decided 2026-09-23) reversed the bond-period half: the bond
+// period IS the accounting period, the app no longer writes E21/G21, and the
+// form's formulas fill them. The advisory survives with new words: a typed
+// bond period that differs still reaches the PDF, but the filed Excel will
+// show the accounting period, and the filer is told so before filing.
+//
+// These are advisories, never blocks: the app has no standing to overrule a
+// bond written for a term other than the accounting year.
 
 const annual = (extra = {}) => ({
   inventoryType: 'annual',
@@ -40,8 +46,12 @@ describe('form-derived cells the filing overwrites', () => {
       .toEqual(['form-derived.bond-period.from', 'form-derived.bond-period.to']);
   });
 
-  test('the message names both values, so the filer can see which is which', () => {
+  // Milestone 67D: the wording was approved by the requester on 2026-09-23 and
+  // is what ships -- both sentences, verbatim -- followed by the two values so
+  // the filer can see which is which.
+  test('the message says, in the approved words, that the Excel will show the accounting period, and names both values', () => {
     const [w] = formDerivedOverwriteWarnings(annual({ bondPeriodFrom: '2025-07-01' }));
+    expect(w.message).toContain('The bond period entered differs from the accounting period. The filed Excel will show the accounting period.');
     expect(w.message).toContain('2025-07-01');
     expect(w.message).toContain('2026-01-01');
     expect(w.severity).toBe('advisory');
