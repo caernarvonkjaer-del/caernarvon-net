@@ -61,5 +61,14 @@ a `master` commit is missing from it.
 
 | SHA | Date | Summary | Files touched | Disposition | Proving test(s) | Branch commit | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- |
+| `945b5a8e0eb3290bac3ce345a4910c81208392e4` | 2026-09-24 | Annual import no longer stops at the first Schedule D ward percentage (a local r2 in annual-accounting/excel.js; found by this milestone's audit) | `src/features/annual-accounting/excel.js`, `src/core/types/window-bridge.d.ts`, `tests/e2e/annual-import-ward-percentage.spec.ts`, `TEST-INDEX.md`, `file_index.md` | merges-cleanly | `tests/e2e/annual-import-ward-percentage.spec.ts` | -- | open |
 
-No `master` commits since the branch point as of 2026-09-24.
+Notes on open rows:
+
+- `945b5a8`: the branch has not touched the Annual importer, so the change merges
+  as is (the two index files need an ordinary textual merge). When it lands on
+  the branch, the dependency ratchet's `windowReads` and
+  `lexicalOnlyWindowReads` sets lose `src/features/annual-accounting/excel.js::r2`:
+  regenerate the baseline with `node scripts/ms70-dependency-audit.mjs
+  --write-baseline` in the same commit, and the assertion counts for the new
+  spec.
