@@ -85,6 +85,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`scripts\ms70-declaration-dispositions.mjs`](<scripts/ms70-declaration-dispositions.mjs>) | Milestone 70 draft disposition (delete-as-dead, test-only, move) and target delivery for every top-level declaration of legacy-app.js, from reference evidence, plus the duplicates modules also define; --write regenerates the baseline JSON. |
 | [`scripts\ms70-dependency-audit.mjs`](<scripts/ms70-dependency-audit.mjs>) | Milestone 70 parser-based dependency audit: implicit classic globals, window writes/reads (including defineProperty), captures off window, bare cross-boundary references, unowned and lexical-only window reads, the import graph, cycles and layer violations; --write-baseline regenerates the ratchet baseline and dependency inventory. |
 | [`scripts\ms70-e2e-global-inventory.mjs`](<scripts/ms70-e2e-global-inventory.mjs>) | Milestone 70 inventory of the application names the browser suite reaches through window and its in-place writes to live case state; --write regenerates tests/baseline/ms70-e2e-globals.json. |
+| [`scripts\ms70-fixture-inventory.mjs`](<scripts/ms70-fixture-inventory.mjs>) | Milestone 70 inventory of the browser test support layer: every export, the specs that use it, and the fixture factories 70C must update with the application factories; --write regenerates the JSON. |
 | [`scripts\ms70-ledger-guard.mjs`](<scripts/ms70-ledger-guard.mjs>) | Milestone 70 ledger guard: fails when a master commit after the milestone-70 branch point is missing from MILESTONE-70-FIX-LEDGER.md; --merge also fails on open rows; reports the re-implement count for decision D7. |
 | [`scripts\run-e2e-profile.mjs`](<scripts/run-e2e-profile.mjs>) | Repository file. |
 | [`scripts\run-guide-capture.mjs`](<scripts/run-guide-capture.mjs>) | Repository file. |
@@ -267,6 +268,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`tests\baseline\ms70-dependency-baseline.json`](<tests/baseline/ms70-dependency-baseline.json>) | Milestone 70 ratchet baseline: the dependency sets that may only shrink during the migration (tests/unit/ms70-dependency-ratchet.spec.js). |
 | [`tests\baseline\ms70-dependency-inventory.json`](<tests/baseline/ms70-dependency-inventory.json>) | Milestone 70 dependency inventory: every edge between application files, with direction, plus classic declarations, cycles, layer violations and unowned reads. Informational. |
 | [`tests\baseline\ms70-e2e-globals.json`](<tests/baseline/ms70-e2e-globals.json>) | Milestone 70 inventory of the application names the browser suite reaches through window and its in-place state writes, from which GuardianForms.testing is designed. Informational. |
+| [`tests\baseline\ms70-fixture-inventory.json`](<tests/baseline/ms70-fixture-inventory.json>) | Milestone 70 inventory of browser test support exports, their users, and the fixture factories. Informational. |
 | [`tests\baseline\ms70-testing-adapter-design.json`](<tests/baseline/ms70-testing-adapter-design.json>) | Milestone 70 draft window.GuardianForms schema: the production version member and the 21 proposed GuardianForms.testing members, with the destination of every name the browser suite reaches (reviewed:false until confirmed in 70T). |
 | [`tests\capture\guide-screenshots.capture.ts`](<tests/capture/guide-screenshots.capture.ts>) | Build, tooling, or configuration source. |
 | [`tests\capture\pin-web-target.ts`](<tests/capture/pin-web-target.ts>) | Build, tooling, or configuration source. |
@@ -463,6 +465,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`tests\unit\ms70-declaration-dispositions.spec.js`](<tests/unit/ms70-declaration-dispositions.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\ms70-dependency-ratchet.spec.js`](<tests/unit/ms70-dependency-ratchet.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\ms70-e2e-global-inventory.spec.js`](<tests/unit/ms70-e2e-global-inventory.spec.js>) | Automated test covering the named behavior or contract. |
+| [`tests\unit\ms70-fixture-inventory.spec.js`](<tests/unit/ms70-fixture-inventory.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\ms70-ledger-guard.spec.js`](<tests/unit/ms70-ledger-guard.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\ms70-testing-adapter-design.spec.js`](<tests/unit/ms70-testing-adapter-design.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\native-dialog-guard.spec.js`](<tests/unit/native-dialog-guard.spec.js>) | Automated test covering the named behavior or contract. |

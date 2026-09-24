@@ -1,0 +1,521 @@
+{
+ "generatedBy": "node scripts/ms70-fixture-inventory.mjs --write",
+ "note": "Milestone 70, 70A: every export of the browser test support layer, which specs use it, and which are fixture factories that must change with the application factories 70C moves (AGENTS.md section 8.3). Informational.",
+ "summary": {
+  "supportModules": 12,
+  "exports": 67,
+  "factories": 16,
+  "unusedExports": [
+   "case-file-shape.contract.ts::validParty",
+   "case-file-shape.contract.ts::validSharedCase",
+   "case-file-shape.contract.ts::validWardRecord",
+   "case-file-shape.contract.ts::validCaseFile",
+   "case-file-shape.contract.ts::missingWardId",
+   "case-file-shape.contract.ts::invalidWardIdType",
+   "case-file-shape.contract.ts::missingPartyRequiredProps",
+   "case-file-shape.contract.ts::invalidGuardianNameType",
+   "case-file-shape.contract.ts::invalidDismissedPartyPairs",
+   "fixtures.ts::MINIMAL_VALID",
+   "target-profile.ts::targetProfile",
+   "target-profile.ts::skipTemporaryGap",
+   "target.ts::startNewWard",
+   "target.ts::freshStartWardNoPassword",
+   "target.ts::readDynDialogMessage",
+   "target.ts::fillDynPrompt",
+   "window-api.ts::navigateTo",
+   "window-api.ts::addFiling",
+   "window-api.ts::activeFiling",
+   "window-api.ts::caseFileSnapshot",
+   "window-api.ts::flushSave"
+  ]
+ },
+ "factories": [
+  "filing-matrix.ts::FILING_MATRIX (1 specs)",
+  "fixture-completeness.ts::installFixtureSupport (3 specs)",
+  "fixture-completeness.ts::expectFileableFixture (3 specs)",
+  "fixtures.ts::MINIMAL_VALID_GUARDIAN (3 specs)",
+  "fixtures.ts::MINIMAL_VALID_ANNUAL (2 specs)",
+  "fixtures.ts::MINIMAL_VALID_SIMPLIFIED (2 specs)",
+  "fixtures.ts::MINIMAL_VALID_PLAN_ANNUAL (1 specs)",
+  "plan-fixture.ts::registerPlanMountTests (4 specs)",
+  "supplemental-pdf-fixture.ts::buildSupplementalAttachmentFixture (4 specs)",
+  "target.ts::fillMinimalValidGuardianWard (21 specs)",
+  "target.ts::fillMinimalValidSimplifiedWard (14 specs)",
+  "target.ts::fillMinimalValidPlanSimplifiedWard (15 specs)",
+  "target.ts::fillMinimalValidPlanAnnualWard (13 specs)",
+  "target.ts::fillMinimalValidPlanMinorWard (13 specs)",
+  "target.ts::fillMinimalValidPlanInitialWard (15 specs)",
+  "target.ts::fillMinimalValidAnnualWard (22 specs)"
+ ],
+ "helpers": [
+  {
+   "module": "tests/e2e/support/case-file-shape.contract.ts",
+   "name": "validParty",
+   "kind": "value",
+   "specFiles": 0,
+   "factory": false
+  },
+  {
+   "module": "tests/e2e/support/case-file-shape.contract.ts",
+   "name": "validSharedCase",
+   "kind": "value",
+   "specFiles": 0,
+   "factory": false
+  },
+  {
+   "module": "tests/e2e/support/case-file-shape.contract.ts",
+   "name": "validWardRecord",
+   "kind": "value",
+   "specFiles": 0,
+   "factory": false
+  },
+  {
+   "module": "tests/e2e/support/case-file-shape.contract.ts",
+   "name": "validCaseFile",
+   "kind": "value",
+   "specFiles": 0,
+   "factory": false
+  },
+  {
+   "module": "tests/e2e/support/case-file-shape.contract.ts",
+   "name": "missingWardId",
+   "kind": "value",
+   "specFiles": 0,
+   "factory": false
+  },
+  {
+   "module": "tests/e2e/support/case-file-shape.contract.ts",
+   "name": "invalidWardIdType",
+   "kind": "value",
+   "specFiles": 0,
+   "factory": false
+  },
+  {
+   "module": "tests/e2e/support/case-file-shape.contract.ts",
+   "name": "missingPartyRequiredProps",
+   "kind": "value",
+   "specFiles": 0,
+   "factory": false
+  },
+  {
+   "module": "tests/e2e/support/case-file-shape.contract.ts",
+   "name": "invalidGuardianNameType",
+   "kind": "value",
+   "specFiles": 0,
+   "factory": false
+  },
+  {
+   "module": "tests/e2e/support/case-file-shape.contract.ts",
+   "name": "invalidDismissedPartyPairs",
+   "kind": "value",
+   "specFiles": 0,
+   "factory": false
+  },
+  {
+   "module": "tests/e2e/support/filing-matrix.ts",
+   "name": "FILING_MATRIX",
+   "kind": "value",
+   "specFiles": 1,
+   "factory": true
+  },
+  {
+   "module": "tests/e2e/support/filing-matrix.ts",
+   "name": "filingCapabilities",
+   "kind": "function",
+   "specFiles": 2,
+   "factory": false
+  },
+  {
+   "module": "tests/e2e/support/filing-matrix.ts",
+   "name": "expectedPdfMetadataTitle",
+   "kind": "function",
+   "specFiles": 2,
+   "factory": false
+  },
+  {
+   "module": "tests/e2e/support/filing-matrix.ts",
+   "name": "expectedLegalCopy",
+   "kind": "function",
+   "specFiles": 1,
+   "factory": false
+  },
+  {
+   "module": "tests/e2e/support/fixture-completeness.ts",
+   "name": "installFixtureSupport",
+   "kind": "function",
+   "specFiles": 3,
+   "factory": true
+  },
+  {
+   "module": "tests/e2e/support/fixture-completeness.ts",
+   "name": "expectFileableFixture",
+   "kind": "function",
+   "specFiles": 3,
+   "factory": true
+  },
+  {
+   "module": "tests/e2e/support/fixtures.ts",
+   "name": "MINIMAL_VALID_GUARDIAN",
+   "kind": "value",
+   "specFiles": 3,
+   "factory": true
+  },
+  {
+   "module": "tests/e2e/support/fixtures.ts",
+   "name": "MINIMAL_VALID_ANNUAL",
+   "kind": "value",
+   "specFiles": 2,
+   "factory": true
+  },
+  {
+   "module": "tests/e2e/support/fixtures.ts",
+   "name": "MINIMAL_VALID_SIMPLIFIED",
+   "kind": "value",
+   "specFiles": 2,
+   "factory": true
+  },
+  {
+   "module": "tests/e2e/support/fixtures.ts",
+   "name": "MINIMAL_VALID_PLAN_ANNUAL",
+   "kind": "value",
+   "specFiles": 1,
+   "factory": true
+  },
+  {
+   "module": "tests/e2e/support/fixtures.ts",
+   "name": "MINIMAL_VALID",
+   "kind": "value",
+   "specFiles": 0,
+   "factory": false
+  },
+  {
+   "module": "tests/e2e/support/pdf-extract.ts",
+   "name": "extractPdfTextRuns",
+   "kind": "function",
+   "specFiles": 4,
+   "factory": false
+  },
+  {
+   "module": "tests/e2e/support/pdf-extract.ts",
+   "name": "extractPdfText",
+   "kind": "function",
+   "specFiles": 18,
+   "factory": false
+  },
+  {
+   "module": "tests/e2e/support/pdf-extract.ts",
+   "name": "extractPdfTextItems",
+   "kind": "function",
+   "specFiles": 3,
+   "factory": false
+  },
+  {
+   "module": "tests/e2e/support/pdf-extract.ts",
+   "name": "getPdfMetadata",
+   "kind": "function",
+   "specFiles": 1,
+   "factory": false
+  },
+  {
+   "module": "tests/e2e/support/pdf-extract.ts",
+   "name": "inspectPdf",
+   "kind": "function",
+   "specFiles": 1,
+   "factory": false
+  },
+  {
+   "module": "tests/e2e/support/plan-fixture.ts",
+   "name": "registerPlanMountTests",
+   "kind": "function",
+   "specFiles": 4,
+   "factory": true
+  },
+  {
+   "module": "tests/e2e/support/stream.ts",
+   "name": "readAll",
+   "kind": "function",
+   "specFiles": 19,
+   "factory": false
+  },
+  {
+   "module": "tests/e2e/support/supplemental-pdf-fixture.ts",
+   "name": "buildSupplementalAttachmentFixture",
+   "kind": "function",
+   "specFiles": 4,
+   "factory": true
+  },
+  {
+   "module": "tests/e2e/support/target-profile.ts",
+   "name": "currentTarget",
+   "kind": "value",
+   "specFiles": 7,
+   "factory": false
+  },
+  {
+   "module": "tests/e2e/support/target-profile.ts",
+   "name": "currentTargetProfile",
+   "kind": "value",
+   "specFiles": 1,
+   "factory": false
+  },
+  {
+   "module": "tests/e2e/support/target-profile.ts",
+   "name": "targetProfile",
+   "kind": "function",
+   "specFiles": 0,
+   "factory": false
+  },
+  {
+   "module": "tests/e2e/support/target-profile.ts",
+   "name": "skipExpectedTargetExclusion",
+   "kind": "function",
+   "specFiles": 6,
+   "factory": false
+  },
+  {
+   "module": "tests/e2e/support/target-profile.ts",
+   "name": "skipEnvironmentLimitation",
+   "kind": "function",
+   "specFiles": 3,
+   "factory": false
+  },
+  {
+   "module": "tests/e2e/support/target-profile.ts",
+   "name": "skipTemporaryGap",
+   "kind": "function",
+   "specFiles": 0,
+   "factory": false
+  },
+  {
+   "module": "tests/e2e/support/target.ts",
+   "name": "gotoApp",
+   "kind": "function",
+   "specFiles": 17,
+   "factory": false
+  },
+  {
+   "module": "tests/e2e/support/target.ts",
+   "name": "startNewCase",
+   "kind": "function",
+   "specFiles": 13,
+   "factory": false
+  },
+  {
+   "module": "tests/e2e/support/target.ts",
+   "name": "startNewWard",
+   "kind": "value",
+   "specFiles": 0,
+   "factory": false
+  },
+  {
+   "module": "tests/e2e/support/target.ts",
+   "name": "chooseNoPassword",
+   "kind": "function",
+   "specFiles": 11,
+   "factory": false
+  },
+  {
+   "module": "tests/e2e/support/target.ts",
+   "name": "chooseEncrypted",
+   "kind": "function",
+   "specFiles": 5,
+   "factory": false
+  },
+  {
+   "module": "tests/e2e/support/target.ts",
+   "name": "freshStartNoPassword",
+   "kind": "function",
+   "specFiles": 103,
+   "factory": false
+  },
+  {
+   "module": "tests/e2e/support/target.ts",
+   "name": "freshStartWardNoPassword",
+   "kind": "value",
+   "specFiles": 0,
+   "factory": false
+  },
+  {
+   "module": "tests/e2e/support/target.ts",
+   "name": "createWard",
+   "kind": "function",
+   "specFiles": 84,
+   "factory": false
+  },
+  {
+   "module": "tests/e2e/support/target.ts",
+   "name": "fillMinimalValidGuardianWard",
+   "kind": "function",
+   "specFiles": 21,
+   "factory": true
+  },
+  {
+   "module": "tests/e2e/support/target.ts",
+   "name": "createSimplifiedWard",
+   "kind": "function",
+   "specFiles": 20,
+   "factory": false
+  },
+  {
+   "module": "tests/e2e/support/target.ts",
+   "name": "fillMinimalValidSimplifiedWard",
+   "kind": "function",
+   "specFiles": 14,
+   "factory": true
+  },
+  {
+   "module": "tests/e2e/support/target.ts",
+   "name": "fillMinimalValidPlanSimplifiedWard",
+   "kind": "function",
+   "specFiles": 15,
+   "factory": true
+  },
+  {
+   "module": "tests/e2e/support/target.ts",
+   "name": "fillMinimalValidPlanAnnualWard",
+   "kind": "function",
+   "specFiles": 13,
+   "factory": true
+  },
+  {
+   "module": "tests/e2e/support/target.ts",
+   "name": "fillMinimalValidPlanMinorWard",
+   "kind": "function",
+   "specFiles": 13,
+   "factory": true
+  },
+  {
+   "module": "tests/e2e/support/target.ts",
+   "name": "fillMinimalValidPlanInitialWard",
+   "kind": "function",
+   "specFiles": 15,
+   "factory": true
+  },
+  {
+   "module": "tests/e2e/support/target.ts",
+   "name": "fillMinimalValidAnnualWard",
+   "kind": "function",
+   "specFiles": 22,
+   "factory": true
+  },
+  {
+   "module": "tests/e2e/support/target.ts",
+   "name": "crossCheckNavAndSummaryStatus",
+   "kind": "function",
+   "specFiles": 5,
+   "factory": false
+  },
+  {
+   "module": "tests/e2e/support/target.ts",
+   "name": "exportAndCapture",
+   "kind": "function",
+   "specFiles": 6,
+   "factory": false
+  },
+  {
+   "module": "tests/e2e/support/target.ts",
+   "name": "assertNoInlineEventHandlers",
+   "kind": "function",
+   "specFiles": 1,
+   "factory": false
+  },
+  {
+   "module": "tests/e2e/support/target.ts",
+   "name": "extractFormContentSnapshot",
+   "kind": "function",
+   "specFiles": 6,
+   "factory": false
+  },
+  {
+   "module": "tests/e2e/support/target.ts",
+   "name": "readDynDialogMessage",
+   "kind": "function",
+   "specFiles": 0,
+   "factory": false
+  },
+  {
+   "module": "tests/e2e/support/target.ts",
+   "name": "acceptDynDialog",
+   "kind": "function",
+   "specFiles": 19,
+   "factory": false
+  },
+  {
+   "module": "tests/e2e/support/target.ts",
+   "name": "dismissDynDialog",
+   "kind": "function",
+   "specFiles": 5,
+   "factory": false
+  },
+  {
+   "module": "tests/e2e/support/target.ts",
+   "name": "escapeDynDialog",
+   "kind": "function",
+   "specFiles": 1,
+   "factory": false
+  },
+  {
+   "module": "tests/e2e/support/target.ts",
+   "name": "fillDynPrompt",
+   "kind": "function",
+   "specFiles": 0,
+   "factory": false
+  },
+  {
+   "module": "tests/e2e/support/target.ts",
+   "name": "autoAcceptDynDialogs",
+   "kind": "function",
+   "specFiles": 1,
+   "factory": false
+  },
+  {
+   "module": "tests/e2e/support/target.ts",
+   "name": "dismissScheduleDocPrompt",
+   "kind": "function",
+   "specFiles": 10,
+   "factory": false
+  },
+  {
+   "module": "tests/e2e/support/window-api.ts",
+   "name": "navigateTo",
+   "kind": "function",
+   "specFiles": 0,
+   "factory": false
+  },
+  {
+   "module": "tests/e2e/support/window-api.ts",
+   "name": "addFiling",
+   "kind": "function",
+   "specFiles": 0,
+   "factory": false
+  },
+  {
+   "module": "tests/e2e/support/window-api.ts",
+   "name": "activeFiling",
+   "kind": "function",
+   "specFiles": 0,
+   "factory": false
+  },
+  {
+   "module": "tests/e2e/support/window-api.ts",
+   "name": "caseFileSnapshot",
+   "kind": "function",
+   "specFiles": 0,
+   "factory": false
+  },
+  {
+   "module": "tests/e2e/support/window-api.ts",
+   "name": "flushSave",
+   "kind": "function",
+   "specFiles": 0,
+   "factory": false
+  },
+  {
+   "module": "tests/e2e/support/xlsx-extract.ts",
+   "name": "extractXlsx",
+   "kind": "function",
+   "specFiles": 4,
+   "factory": false
+  }
+ ]
+}
