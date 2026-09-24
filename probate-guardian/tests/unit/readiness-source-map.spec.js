@@ -13,8 +13,10 @@ import { FILING_TYPE_KEYS } from '../../src/core/filing/filing-descriptor.js';
 const NINE = ['guardian', 'simplified', 'annual', 'finalAccounting', 'trustAccounting', 'planSimplified', 'planAnnual', 'planInitial', 'planMinor'];
 const PLAN_KEYS = NINE.filter((k) => k.startsWith('plan'));
 // Predicate-row counts per Plan, matching each parity spec's ALL_AUTO_IDS
-// (Plan Initial's 20th, plan.q7explain, was added by Milestone 40C-H).
-const PLAN_PREDICATE_COUNTS = { planSimplified: 13, planAnnual: 18, planInitial: 20, planMinor: 14 };
+// (Plan Initial's 20th, plan.q7explain, was added by Milestone 40C-H; its
+// 21st, cover.period, by Milestone 68B when the reporting period became
+// required there as on the other Plans).
+const PLAN_PREDICATE_COUNTS = { planSimplified: 13, planAnnual: 18, planInitial: 21, planMinor: 14 };
 
 // What prepareFilingOutput() makes of a Plan validator's plain-string issue.
 const legacyString = (message) => createIssue('validation.legacy-unmapped', { message });

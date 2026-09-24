@@ -316,6 +316,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`tests\e2e\plan-benefits-tristate.spec.ts`](<tests/e2e/plan-benefits-tristate.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\plan-directive-cards.spec.ts`](<tests/e2e/plan-directive-cards.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\plan-initial-mount.spec.ts`](<tests/e2e/plan-initial-mount.spec.ts>) | Automated test covering the named behavior or contract. |
+| [`tests\e2e\plan-initial-period.spec.ts`](<tests/e2e/plan-initial-period.spec.ts>) | Milestone 68B: the Initial Plan requires its reporting period -- every filer-facing surface says so, export stops on it, and the PDF cover prints it once entered. |
 | [`tests\e2e\plan-minor-mount.spec.ts`](<tests/e2e/plan-minor-mount.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\plan-pdf-wcag-compliance.spec.ts`](<tests/e2e/plan-pdf-wcag-compliance.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\plan-readiness.contract.spec.ts`](<tests/e2e/plan-readiness.contract.spec.ts>) | Automated test covering the named behavior or contract. |

@@ -2,6 +2,7 @@ import { renderSummaryPage, navStatus, formatSummaryDate } from '../../core/summ
 import { renderSelectField } from '../../core/form/form-fields.js';
 import { GUARDIANSHIP_LIFECYCLE_OPTIONS, optionsWithLegacyValue } from '../../core/form/guardianship-options.js';
 import { checkSignatureState, inferLegacySignatureState } from '../../core/validation/signature-state.js';
+import { checkDateOrder } from '../../core/validation/date-rules.js';
 import { isPlanInitialAttorneyStarted } from '../../core/validation/attorney-block.js';
 import { issueFactory } from '../../core/validation/validation-issue.js';
 import { rowStarted } from '../../core/validation/row-started.js';
@@ -283,7 +284,7 @@ function pagePlanICover(){
             <div class="col-12">${renderSelectField({path:'successorGuardianship',label:'Successor Guardianship? (if applicable)',value:d.successorGuardianship,options:optionsWithLegacyValue(GUARDIANSHIP_LIFECYCLE_OPTIONS,d.successorGuardianship)})}</div>
             <div class="col-md-6">${inpS('inceptionDate','Guardianship Inception Date',d.inceptionDate,true,'date')}</div>
             <div class="col-md-6">${inpS('lettersSignedDate','Date Letters Were Signed',d.lettersSignedDate,true,'date')}</div>
-            ${renderReportingPeriodFields({ periodFrom: d.periodFrom, periodTo: d.periodTo, fromLabel: 'For the Period From', toLabel: 'Through', required: false })}
+            ${renderReportingPeriodFields({ periodFrom: d.periodFrom, periodTo: d.periodTo, fromLabel: 'For the Period From', toLabel: 'Through' })}
           </div>
         </div>
       </div>
@@ -660,6 +661,15 @@ export function validatePlanInitial(){
   req(d.wardName,'Cover — Name of Ward is required','wardName');
   req(d.caseNumber,'Cover — Case Number is required','caseNumber');
   req(d.county,'Cover — County is required','county');
+  // Milestone 68B: the reporting period is required, as on the Annual and
+  // Simplified Plans. There was no rule here at all -- an Initial Plan with
+  // both dates blank exported a cover reading "For the period   through".
+  req(d.periodFrom,'Cover — Reporting Period From is required','periodFrom');
+  req(d.periodTo,'Cover — Reporting Period To is required','periodTo');
+  errs.push(...checkDateOrder(d.periodFrom,d.periodTo,{
+    sectionLabel:'Cover',earlierLabel:'Reporting Period From',laterLabel:'Reporting Period To',allowSameDay:false,
+    filingType:T,laterPath:'periodTo',
+  }));
   req(d.inceptionDate,'Cover — Guardianship Inception Date is required','inceptionDate');
   req(d.lettersSignedDate,'Cover — Date Letters Were Signed is required','lettersSignedDate');
   req(d.guardianNames,'Cover — Guardian Name(s) is required','guardianNames');

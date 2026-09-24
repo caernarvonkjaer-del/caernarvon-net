@@ -7048,8 +7048,12 @@ function computeNavChecks(){
     const adls=D.adls||{};
     const directives=window.startedRows(D.q11Directives);
     const checks={
+      // Milestone 68B: the reporting period is required and ordered, as on
+      // the other Plans' covers -- mirroring validatePlanInitial().
       'pi-cover':filled(D.wardName)&&filled(D.caseNumber)&&filled(D.county)&&filled(D.inceptionDate)
-        &&filled(D.lettersSignedDate)&&filled(D.guardianNames)&&filled(D.wardLiving)
+        &&filled(D.lettersSignedDate)&&filled(D.periodFrom)&&filled(D.periodTo)
+        &&datesOrdered(D.periodFrom,D.periodTo,false)
+        &&filled(D.guardianNames)&&filled(D.wardLiving)
         &&filled(D.residenceAddress)&&filled(D.residenceCityStateZip),
       'pi-p2':filled(D.q2Setting)&&(D.q2Setting!=='Other'||filled(D.q2Explain))
         &&anyOf(D.q3MedPrimary,D.q3MedDentist,D.q3MedOphthalmologist,D.q3MedSpecialist,D.q3MedPT,
@@ -7114,7 +7118,7 @@ function computeNavChecks(){
         ||(filled(D.attorney_name)&&filled(D.attorney_email)&&filled(D.attorney_signatureDate)),
     };
     const incomplete={
-      'pi-cover':!checks['pi-cover']&&hasAny(D.wardName,D.caseNumber,D.inceptionDate,D.lettersSignedDate,D.guardianNames,D.wardLiving,D.residenceAddress),
+      'pi-cover':!checks['pi-cover']&&hasAny(D.wardName,D.caseNumber,D.inceptionDate,D.lettersSignedDate,D.periodFrom,D.periodTo,D.guardianNames,D.wardLiving,D.residenceAddress),
       'pi-p2':!checks['pi-p2']&&hasAny(D.q2Setting,D.q3MedPrimary,D.q3MedDentist,D.q3MedOphthalmologist,D.q3MedSpecialist,D.q3MedPT,D.q3MedST,D.q3MedOT,D.q3MedWardDecides,D.q3MedOther),
       'pi-p3':!checks['pi-p3']&&hasAny(D.q4Mental,D.q5Personal),
       'pi-p4':!checks['pi-p4']&&anyOf(D.q6CareFacility,D.q6NursesAides,D.q6FamilyFriends,D.q6DayProgram,D.q6WardDecides,D.q6Other,

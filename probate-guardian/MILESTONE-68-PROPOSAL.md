@@ -14,7 +14,7 @@ or stop a filing outright; the rest prevent a filer from recording the truth.
 | --- | --- | --- | --- | --- |
 | 68D | Period end date cut off on every Annual cover page | Wrong data on a filed document | **DECIDED** — fix the wrap width, derived from the layout | **LANDED 2026-09-24** — see the build record under 68D; Plan Initial rendered |
 | 68A | Plan signatures must be dated after the period being planned for | **Blocks filing**; only remedy is a false sworn date | **DECIDED** — remove the rule from Plans; keep it on accountings | **LANDED 2026-09-24** — audit found 8 sites on three Plans (Minor had it too; Initial never did); see the build record under 68A |
-| 68B | Initial Plan files with no reporting period, unflagged | Incomplete document filed, silently | **DECIDED** — require it, as the other Plans do | Ready to build |
+| 68B | Initial Plan files with no reporting period, unflagged | Incomplete document filed, silently | **DECIDED** — require it, as the other Plans do | **LANDED 2026-09-24** — see the build record under 68B |
 | 68C | No certificate of service on any Plan type | App states a requirement it cannot meet | **DECIDED** — build on all four; optional on Simplified; fix its wrong text | Ready to build |
 | 68E | Initial Plan Q5 accepts one answer where several apply | Cannot record the truth | **DECIDED** — the court's form is a checkbox list; convert to multi-select — Q5, Q4 and any other radio-rendered checkbox list the form shows (settled 2026-09-24) | Ready — 67F landed |
 | 68F | Assistive-devices "None" can be ticked alongside real selections | A filed plan can state both | **DECIDED** — no "None" added (form has none); fix mutual exclusion on D and E | Ready — 67F landed |
@@ -610,6 +610,61 @@ not require a period on this form — in which case blocking would be wrong.
 9. **Cross-form method consistency.** `renderReportingPeriodFields()` is shared.
    Check what each filing type passes for `required` and report the full matrix
    before changing the default.
+
+### Build record — LANDED 2026-09-24
+
+**The `required` matrix (§8.9), checked before touching the default.** Seven
+callers of `renderReportingPeriodFields()`: Annual Accounting, Simplified
+Accounting (two pages), Annual Plan, Simplified Plan and Minor Plan all take
+the default (`required: true`, with their own labels); the Initial Plan was
+the only caller passing `required: false`. The default is untouched; the
+Initial Plan's override is removed.
+
+**What a filer now gets.** "For the Period From" and "Through" carry the
+required marker. With either blank: the export gate lists "Cover — Reporting
+Period From is required" / "… To is required", the sidebar's Cover dot and
+the Summary line show incomplete, the readiness card carries its own
+"Reporting period is stated" item with a jump link, and Save as PDF is
+disabled. A period that ends before it begins is refused with the same
+message the other Plans use. Entered, everything clears and the PDF cover
+prints "01/01/2026 through 12/31/2026". **A plan saved before today with a
+blank period shows its Cover incomplete the next time it is opened** — the
+filing was incomplete; the user guide's Initial Plan section now says so.
+
+**Where the rule lives — three places, because there was none in any of
+them.** `validatePlanInitial()` (two `req()`s and the From/To
+`checkDateOrder()`, mirroring the Annual Plan's), `computeNavChecks()`'s
+`pi-cover` (presence and order, mirroring the validator), and the readiness
+config's `planInitialAutomatic()` (`cover.period`, with its field map and
+jump target). The data-model rows for `periodFrom`/`periodTo` (`common`
+scope, `conditional`) now say where they are required.
+
+**Correction to this item's own §8.3.** It said
+`fillMinimalValidPlanInitialWard()` "populates the period today". It did
+not — the fixture set no period at all, which is why nothing had ever
+noticed the gap. It does now (2026-01-01 to 2026-12-31), and the Initial
+Plan's byte-exact Cover snapshot gains the two required markers and the two
+dates.
+
+**Tests.** `tests/e2e/plan-initial-period.spec.ts` (new): every surface
+above, blank then backwards then entered, through to the PDF's cover line.
+**Red first** against the unchanged source, every surface soft-asserted so
+one run shows the whole picture: no required marker on either date, the
+gate returning `[]`, `computeNavChecks()`, the sidebar dot and the Summary
+line all "complete", no readiness item, Save as PDF enabled. Green: the
+10-spec neighbour set (the new spec, `plan-initial-mount`,
+`navigation-status.contract`, `readiness-card.contract`,
+`plan-readiness.contract`, `date-validation.contract`,
+`signature-capture.contract`, `pdf-cover-geometry`, `party-resolver`,
+`plan-pdf-wcag-compliance`) ran **232 of 234, 20.7 min**; the two failures
+were the Initial Plan's Cover and Signatures page snapshots, whose
+"Supporting Documents" note changed from "set the accounting period on the
+Cover page…" to "accounting period 01/01/2026 to 12/31/2026" once the
+fixture had a period — updated, **8/8, 1.1 min.** `plan-initial-parity.spec.js`
+gains the `cover.period` condition (21 now) and two cases;
+`readiness-source-map.spec.js`'s row count for this Plan goes 20 → 21. Unit
+**124 files / 1,771 green**; `verify:data-model` OK (951 rows);
+`check:types` clean.
 
 ---
 

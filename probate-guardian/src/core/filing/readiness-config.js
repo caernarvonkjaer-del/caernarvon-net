@@ -195,6 +195,8 @@ function planInitialAutomatic(d) {
   return [
     { id: 'cover.wardCaseCounty', label: 'Ward name, case number and county are on the plan', ok: has(d.wardName) && has(d.caseNumber) && has(d.county) },
     { id: 'cover.dates', label: 'Guardianship Inception Date and date Letters were signed are stated', ok: has(d.inceptionDate) && has(d.lettersSignedDate) },
+    // Milestone 68B: required now, as on the other Plans; there was no item.
+    { id: 'cover.period', label: 'Reporting period is stated', ok: has(d.periodFrom) && has(d.periodTo) },
     { id: 'cover.guardianNames', label: "Guardian name(s) are on the plan", ok: has(d.guardianNames) },
     { id: 'signatures.guardian1.core', label: 'Signed and dated by a guardian', ok: has(g0.name) && signedAndDated({
       state: g0.signatureState,
@@ -490,6 +492,7 @@ const PLAN_PREDICATE_ISSUE_PATHS = Object.freeze({
   planInitial: {
     'cover.wardCaseCounty': ['wardName', 'caseNumber', 'county'],
     'cover.dates': ['inceptionDate', 'lettersSignedDate'],
+    'cover.period': ['periodFrom', 'periodTo'],
     'cover.guardianNames': ['guardianNames'],
     'cover.wardResidence': ['wardLiving', 'residenceAddress', 'residenceCityStateZip'],
     'plan.q2': ['q2Setting'],
@@ -599,6 +602,7 @@ export const PLAN_PREDICATE_ROUTES = Object.freeze({
   planInitial: {
     'cover.wardCaseCounty': { route: '/', path: 'wardName' },
     'cover.dates': { route: '/', path: 'inceptionDate' },
+    'cover.period': { route: '/', path: 'periodFrom' },
     'cover.guardianNames': { route: '/', path: 'guardianNames' },
     'cover.wardResidence': { route: '/', path: 'wardLiving' },
     'plan.q2': { route: '/p2', path: 'q2Setting' },

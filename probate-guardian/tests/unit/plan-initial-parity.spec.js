@@ -49,6 +49,9 @@ const BASELINE = Object.freeze({
   county: 'Orange',
   inceptionDate: '2025-06-01',
   lettersSignedDate: '2025-06-01',
+  // Milestone 68B: the reporting period is required on this Plan now.
+  periodFrom: '2025-06-01',
+  periodTo: '2026-05-31',
   guardianNames: 'Pat Rivera',
   wardLiving: 'Private residence',
   residenceAddress: '456 Oak Ave',
@@ -82,6 +85,8 @@ const ALL_AUTO_IDS = [
   // Milestone 40C-H: the Question 7 conditional explanation was an export
   // blocker with no readiness item, so 20 conditions now, not 19.
   'plan.q7explain',
+  // Milestone 68B: the reporting period is required, with its own item -- 21.
+  'cover.period',
 ];
 
 describe('Plan Initial readiness baseline', () => {
@@ -102,6 +107,9 @@ const CASES = [
   { autoId: 'cover.wardCaseCounty', override: { county: '' }, message: 'Cover — County is required' },
   { autoId: 'cover.dates', override: { inceptionDate: '' }, message: 'Cover — Guardianship Inception Date is required' },
   { autoId: 'cover.dates', override: { lettersSignedDate: '' }, message: 'Cover — Date Letters Were Signed is required' },
+  // Milestone 68B: the period, required like the other Plans'.
+  { autoId: 'cover.period', override: { periodFrom: '' }, message: 'Cover — Reporting Period From is required' },
+  { autoId: 'cover.period', override: { periodTo: '' }, message: 'Cover — Reporting Period To is required' },
   { autoId: 'cover.guardianNames', override: { guardianNames: '' }, message: 'Cover — Guardian Name(s) is required' },
   // Milestone 40C-H: the Question 7 conditional explanation, now a readiness
   // condition in its own right rather than an export blocker with no visible

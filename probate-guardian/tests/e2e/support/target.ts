@@ -272,6 +272,9 @@ export async function fillMinimalValidPlanInitialWard(page: Page): Promise<void>
       wardName: d.wardName || 'Plan Initial Export Test Ward',
       caseNumber: '2026-CP-000654',
       county: 'Pinellas',
+      // Milestone 68B: the reporting period is required on this Plan now.
+      periodFrom: '2026-01-01',
+      periodTo: '2026-12-31',
       inceptionDate: '2026-01-05',
       lettersSignedDate: '2026-01-06',
       guardianNames: 'Sample Guardian',
