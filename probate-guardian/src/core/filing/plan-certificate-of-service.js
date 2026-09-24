@@ -143,6 +143,10 @@ export function planCertificateOfServiceSection(filing, cfg = {}, fmtDate = (v) 
   const d = filing || {};
   const recipients = (d.certRecipients || []).filter((r) => r && (r.name || r.line2 || r.line3 || r.line4));
   const signer = resolveCertSigner(d, cfg);
+  // Heterogeneous PDF blocks (notice, table, signature-block): typed as such
+  // so tsc, which reaches this file through state.js, does not infer the
+  // element type from the first block alone.
+  /** @type {Array<Record<string, any>>} */
   const blocks = [
     { type: 'notice', tag: 'P', text: `I hereby certify that a copy of this ${cfg.planNoun || 'plan'} has been furnished to:` },
   ];
