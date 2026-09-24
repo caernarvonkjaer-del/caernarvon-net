@@ -728,18 +728,22 @@ work that needs the requester's go-ahead, and then joins the ledger.
      are genuinely empty, so validation skips them.
    - The Plans' and other party cards (certificate recipients, witnesses,
      plan rows) lose the same clean-up; not probed one by one.
-   Fixing it is `master` work needing the requester's go-ahead: load the
-   module, and give it the schedule table it reads from `window` (a `const`
-   in `legacy-app.js` today).
+   **Fixed on `master`** with the requester's go-ahead (`b28bf25`, red
+   first): `main.js` loads the module and `legacy-app.js` publishes the
+   schedule table. Seven older tests written while the clean-up was not
+   running (51E, 57C-R, and this session's own 68C follow-up) had assumed
+   untouched cards survive a page change; each was updated to the restored
+   design with its reason. Ledger row: re-implement.
 3. **Two guarded calls to functions nothing defines** (characterized).
    - `window.isHelpPanelOpen`: the router falls back to reading the help
      panel's visibility and behaves correctly; `legacy-app.js`'s Preview &
      Export header has no fallback, so its help button is drawn with
      `aria-expanded="false"` while the help panel is open, until the next
-     toggle -- a screen reader is told help is collapsed when it is open.
-     Confirmed in the code; not reproduced in a browser, because the probe's
-     click on the help toggle did not open the panel (itself unexplained,
-     and worth a look).
+     toggle. Lower impact than it first looked: since Milestone 48, "?"
+     inside a filing opens the user guide for the current page rather than
+     the panel (`shell-events.js`), so the panel can be open on Preview &
+     Export only if it was left open from the dashboard. That is also why the
+     probe's click opened no panel. Confirmed in the code; not reproduced.
    - `window.renderYearManagerBody`: the Year Manager dialog is dead code.
      Nothing calls `showYearManagerModal()`, and no `#yearManagerModal`
      element exists in the page or its fragment; filers see nothing. Year
