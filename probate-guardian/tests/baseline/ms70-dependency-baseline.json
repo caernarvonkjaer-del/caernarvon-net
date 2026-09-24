@@ -820,6 +820,9 @@
     "src/core/filing/output-preflight.js::D",
     "src/core/filing/output-preflight.js::isOutputAcknowledgedFor",
     "src/core/filing/output-preflight.js::setPath",
+    "src/core/filing/readiness-config.js::INITIAL_ADLS",
+    "src/core/filing/readiness-config.js::PLAN_ADLS",
+    "src/core/filing/readiness-config.js::PLAN_RIGHTS",
     "src/core/form/cards/case-caption-card.js::countyInputS",
     "src/core/form/commit-coordinator.js::D",
     "src/core/form/commit-coordinator.js::_transientDrafts",
@@ -891,7 +894,14 @@
     "src/core/navigation/router.js::isHelpPanelOpen",
     "src/core/navigation/router.js::linkLabelsToInputs",
     "src/core/navigation/router.js::loadAndRenderActivityLog",
+    "src/core/navigation/router.js::mountAnnualFeature",
     "src/core/navigation/router.js::mountDashboardFeature",
+    "src/core/navigation/router.js::mountGuardianFeature",
+    "src/core/navigation/router.js::mountPlanAnnualFeature",
+    "src/core/navigation/router.js::mountPlanInitialFeature",
+    "src/core/navigation/router.js::mountPlanMinorFeature",
+    "src/core/navigation/router.js::mountPlanSimplifiedFeature",
+    "src/core/navigation/router.js::mountSimplifiedFeature",
     "src/core/navigation/router.js::pageActivityLog",
     "src/core/navigation/router.js::pageInventorySelector",
     "src/core/navigation/router.js::pagePartyManagement",
@@ -916,6 +926,13 @@
     "src/core/navigation/ward-lifecycle.js::formEngine",
     "src/core/navigation/ward-lifecycle.js::initializeEmptyData",
     "src/core/navigation/ward-lifecycle.js::linkLabelsToInputs",
+    "src/core/navigation/ward-lifecycle.js::mountAnnualFeature",
+    "src/core/navigation/ward-lifecycle.js::mountGuardianFeature",
+    "src/core/navigation/ward-lifecycle.js::mountPlanAnnualFeature",
+    "src/core/navigation/ward-lifecycle.js::mountPlanInitialFeature",
+    "src/core/navigation/ward-lifecycle.js::mountPlanMinorFeature",
+    "src/core/navigation/ward-lifecycle.js::mountPlanSimplifiedFeature",
+    "src/core/navigation/ward-lifecycle.js::mountSimplifiedFeature",
     "src/core/navigation/ward-lifecycle.js::navigate",
     "src/core/navigation/ward-lifecycle.js::notifyProbateGuardianTabStateChanged",
     "src/core/navigation/ward-lifecycle.js::pruneBlankCards",
@@ -1768,5 +1785,8 @@
     "src/core/types/parties.js",
     "src/core/types/schedules.js",
     "src/features/guardian-inventory/pdf-accessibility.js"
+  ],
+  "computedWindowReads": [
+    "src/core/filing/readiness-config.js::window[name]"
   ]
 }

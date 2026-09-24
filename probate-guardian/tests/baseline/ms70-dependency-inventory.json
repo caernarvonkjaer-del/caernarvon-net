@@ -3007,6 +3007,27 @@
    "evalTime": false
   },
   {
+   "from": "src/core/filing/readiness-config.js",
+   "to": "src/legacy-app.js",
+   "kind": "window",
+   "name": "PLAN_RIGHTS",
+   "evalTime": false
+  },
+  {
+   "from": "src/core/filing/readiness-config.js",
+   "to": "src/legacy-app.js",
+   "kind": "window",
+   "name": "PLAN_ADLS",
+   "evalTime": false
+  },
+  {
+   "from": "src/core/filing/readiness-config.js",
+   "to": "src/legacy-app.js",
+   "kind": "window",
+   "name": "INITIAL_ADLS",
+   "evalTime": false
+  },
+  {
    "from": "src/core/form/cards/case-caption-card.js",
    "to": "src/legacy-app.js",
    "kind": "window",
@@ -5002,6 +5023,55 @@
    "evalTime": false
   },
   {
+   "from": "src/core/navigation/router.js",
+   "to": "src/legacy-app.js",
+   "kind": "window",
+   "name": "mountGuardianFeature",
+   "evalTime": false
+  },
+  {
+   "from": "src/core/navigation/router.js",
+   "to": "src/legacy-app.js",
+   "kind": "window",
+   "name": "mountSimplifiedFeature",
+   "evalTime": false
+  },
+  {
+   "from": "src/core/navigation/router.js",
+   "to": "src/legacy-app.js",
+   "kind": "window",
+   "name": "mountAnnualFeature",
+   "evalTime": false
+  },
+  {
+   "from": "src/core/navigation/router.js",
+   "to": "src/legacy-app.js",
+   "kind": "window",
+   "name": "mountPlanSimplifiedFeature",
+   "evalTime": false
+  },
+  {
+   "from": "src/core/navigation/router.js",
+   "to": "src/legacy-app.js",
+   "kind": "window",
+   "name": "mountPlanAnnualFeature",
+   "evalTime": false
+  },
+  {
+   "from": "src/core/navigation/router.js",
+   "to": "src/legacy-app.js",
+   "kind": "window",
+   "name": "mountPlanInitialFeature",
+   "evalTime": false
+  },
+  {
+   "from": "src/core/navigation/router.js",
+   "to": "src/legacy-app.js",
+   "kind": "window",
+   "name": "mountPlanMinorFeature",
+   "evalTime": false
+  },
+  {
    "from": "src/core/navigation/ward-county.js",
    "to": "src/core/state.js",
    "kind": "window",
@@ -5615,6 +5685,55 @@
    "to": "src/legacy-app.js",
    "kind": "window",
    "name": "updateSidebar",
+   "evalTime": false
+  },
+  {
+   "from": "src/core/navigation/ward-lifecycle.js",
+   "to": "src/legacy-app.js",
+   "kind": "window",
+   "name": "mountGuardianFeature",
+   "evalTime": false
+  },
+  {
+   "from": "src/core/navigation/ward-lifecycle.js",
+   "to": "src/legacy-app.js",
+   "kind": "window",
+   "name": "mountSimplifiedFeature",
+   "evalTime": false
+  },
+  {
+   "from": "src/core/navigation/ward-lifecycle.js",
+   "to": "src/legacy-app.js",
+   "kind": "window",
+   "name": "mountAnnualFeature",
+   "evalTime": false
+  },
+  {
+   "from": "src/core/navigation/ward-lifecycle.js",
+   "to": "src/legacy-app.js",
+   "kind": "window",
+   "name": "mountPlanSimplifiedFeature",
+   "evalTime": false
+  },
+  {
+   "from": "src/core/navigation/ward-lifecycle.js",
+   "to": "src/legacy-app.js",
+   "kind": "window",
+   "name": "mountPlanAnnualFeature",
+   "evalTime": false
+  },
+  {
+   "from": "src/core/navigation/ward-lifecycle.js",
+   "to": "src/legacy-app.js",
+   "kind": "window",
+   "name": "mountPlanInitialFeature",
+   "evalTime": false
+  },
+  {
+   "from": "src/core/navigation/ward-lifecycle.js",
+   "to": "src/legacy-app.js",
+   "kind": "window",
+   "name": "mountPlanMinorFeature",
    "evalTime": false
   },
   {

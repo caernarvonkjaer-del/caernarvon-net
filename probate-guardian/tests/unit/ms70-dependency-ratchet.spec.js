@@ -112,6 +112,25 @@ describe('fault injection: the audit sees what it must (the 70A gate)', () => {
     expect(r.unownedWindowReads.map((u) => u.name)).toEqual(['orphaned']);
   });
 
+  test('computed window lookups: known name builders resolve to their names; every other one is recorded', () => {
+    // router.js and ward-lifecycle.js mount filings with
+    // window[mountFeatureFnName(engine)]; missing it made the first
+    // dispositions pass call all seven mount functions dead.
+    const r = auditSources(new Map(Object.entries({
+      'src/legacy.js': ['function mountAnnualFeature(){}', 'const TABLE=[];', 'window.TABLE=TABLE;'].join('\n'),
+      'src/core/filing/filing-descriptor.js': "export const D = { a: { engineId: 'annual' } };",
+      'src/router.js': [
+        "import './core/filing/filing-descriptor.js';",
+        'const mountFeatureFnName = (e) => e;',
+        'const legacyGlobal = (n) => window[n];',
+        "export const go = (engine) => window[mountFeatureFnName(engine)]() + legacyGlobal('TABLE').length;",
+      ].join('\n'),
+    })), ['src/legacy.js']);
+    const reads = r.windowReads.filter((w) => w.file === 'src/router.js').map((w) => `${w.name}:${w.via}`);
+    expect(reads).toEqual(expect.arrayContaining(['mountAnnualFeature:mountFeatureFnName', 'TABLE:legacyGlobal']));
+    expect(r.computedWindowReads.filter((c) => !c.resolved).map((c) => c.text)).toEqual(['n']);
+  });
+
   test('the comparison reports growth and staleness separately', () => {
     const cmp = compareRatchet({ s: ['kept', 'new'] }, { s: ['kept', 'gone'] });
     expect(cmp.s).toEqual({ grown: ['new'], stale: ['gone'] });

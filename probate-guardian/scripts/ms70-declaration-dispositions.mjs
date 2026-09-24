@@ -1,0 +1,175 @@
+// Milestone 70, 70A: "Classify every legacy top-level function/binding as
+// move, delete as dead/duplicate, temporary wrapper, or approved external
+// facade, with a named target delivery and module." This builds that
+// classification as a reviewable draft, from evidence rather than by hand:
+//
+//   - each top-level declaration of src/legacy-app.js, with its kind, lines
+//     and the monolith section it sits in (the file's own banner comments);
+//   - how often the monolith itself references it, resolved through real
+//     scoping (scripts/ms70-dependency-audit.mjs's analyzer), so a local
+//     variable of the same name does not count;
+//   - which modules use it, through window or by bare name (the dependency
+//     audit), and how many browser specs reach it (tests/baseline/
+//     ms70-e2e-globals.json).
+//
+// Dispositions it proposes:
+//   delete-as-dead   nothing references it anywhere; confirm before deleting
+//   test-only        only tests reach it; it leaves production and moves
+//                    behind GuardianForms.testing (70T) or a direct import
+//   move             live code; moves in its section's delivery, keeping a
+//                    one-line classic wrapper while classic callers remain
+// No declaration is proposed as an external facade: the plan's default for
+// window.GuardianForms is no member (70A), and each one must be argued for.
+//
+// The delivery comes from the section; a few names are placed by hand where
+// the section is not the right home (computeNavChecks and its callers belong
+// to 70D, for instance). Every entry starts `reviewed: false`.
+//
+// Usage (from probate-guardian/):
+//   node scripts/ms70-declaration-dispositions.mjs            summary
+//   node scripts/ms70-declaration-dispositions.mjs --write    tests/baseline/ms70-declaration-dispositions.json
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { parse } from 'acorn';
+import { analyze, auditApplication } from './ms70-dependency-audit.mjs';
+
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+export const DISPOSITIONS_PATH = 'tests/baseline/ms70-declaration-dispositions.json';
+export const DISPOSITION_KINDS = ['delete-as-dead', 'test-only', 'move'];
+export const DELIVERIES = ['70B', '70C', '70D', '70E', '70F', '70G', '70H', '70I', '70J', '70K', '70L'];
+
+// Section title (the line after a banner rule) -> delivery.
+const SECTION_DELIVERY = [
+  [/^ICON SET/, '70B'], [/^THEME/, '70H'], [/^GLOBAL STATE & CONFIG/, '70C'], [/^HELP SYSTEM/, '70H'],
+  [/^TOOLTIP SYSTEM/, '70H'], [/^WALKTHROUGH SYSTEM/, '70H'], [/^STORAGE STRATEGY/, '70I'], [/^COMMON HELPERS/, '70B'],
+  [/^COUNTY AUTOCOMPLETE/, '70B'], [/^COUNTY → CIRCUIT/, '70B'], [/^VALIDATION SUMMARY/, '70F'], [/^PRINT-PREVIEW PAGER/, '70F'],
+  [/^SECURITY: VALIDATION AND AUDIT/, '70I'], [/^ENCRYPTION AT REST/, '70I'], [/^IN-MEMORY STATE OPERATIONS/, '70E'],
+  [/^ACTIVITY LOG/, '70H'], [/^PARTY MANAGEMENT/, '70G'], [/^EXPORT \/ IMPORT/, '70I'], [/^SESSION-RESTORE CACHE/, '70I'],
+  [/^OPEN \/ START AT LAUNCH/, '70I'], [/^WARD MANAGEMENT/, '70G'], [/^WARD ACTIVATION/, '70G'], [/^INVENTORY TYPE MANAGEMENT/, '70C'],
+  [/^MODAL FUNCTIONS/, '70H'], [/^ROUTER/, '70K'], [/^CONVERT EXISTING WARD/, '70G'], [/^MULTI-YEAR ACCOUNTING/, '70G'],
+  [/^INVENTORY TYPE SELECTOR PAGE/, '70H'], [/^WIZARD: GUARDIAN INVENTORY/, '70C'], [/extracted into src\/features|createFeatureBridge/, '70K'],
+  [/^EXCEL TEMPLATE CAPACITY/, '70F'], [/^DATA MODEL/, '70C'], [/^CALCULATIONS/, '70B'], [/^Page navigation helper/, '70F'],
+  [/^FORM BINDING ENGINE/, '70F'], [/^SCHEDULE SUPPORTING DOCUMENTS/, '70F'], [/^td\(\)\/tdR\(\)/, '70F'], [/^INIT\b/, '70K'],
+];
+// Names whose section is not their home.
+const NAME_DELIVERY = {
+  computeNavChecks: '70D', updateNavDots: '70D', applyNavChecks: '70D', getWardProgress: '70D', pageCompleteness: '70D',
+  isScheduleIncomplete: '70D', updateCurrentScheduleNextButton: '70D', initApp: '70K',
+};
+
+/** The monolith's sections: [{ line, title, delivery }] in file order. */
+export function sectionsOf(source) {
+  const lines = source.split(/\r?\n/);
+  const out = [];
+  for (let i = 0; i < lines.length - 1; i++) {
+    if (!/^\/\/ *(═|=){3,}/.test(lines[i])) continue;
+    const title = lines[i + 1].replace(/^\/\/ */, '').trim();
+    const hit = SECTION_DELIVERY.find(([re]) => re.test(title));
+    if (hit) out.push({ line: i + 2, title: title.slice(0, 80), delivery: hit[1] });
+  }
+  return out;
+}
+
+/** Top-level declarations with their extent and how often the file itself references each. */
+export function declarationsOf(source) {
+  const ast = parse(source, { ecmaVersion: 'latest', sourceType: 'script', locations: true });
+  const decls = [];
+  for (const st of ast.body) {
+    const push = (name, kind) => decls.push({ name, kind, line: st.loc.start.line, lines: st.loc.end.line - st.loc.start.line + 1 });
+    if (st.type === 'FunctionDeclaration') push(st.id.name, 'function');
+    else if (st.type === 'ClassDeclaration') push(st.id.name, 'class');
+    else if (st.type === 'VariableDeclaration') {
+      for (const d of st.declarations) if (d.id.type === 'Identifier') push(d.id.name, st.kind);
+    }
+  }
+  const counts = new Map(decls.map((d) => [d.name, 0]));
+  analyze(ast, {
+    onRef(id, scope) {
+      if (!counts.has(id.name)) return;
+      let root = scope;
+      while (root.parent) root = root.parent;
+      if (scope.lookup(id.name) === root) counts.set(id.name, counts.get(id.name) + 1);
+    },
+  });
+  // A `window.X` read inside the monolith of its own function also keeps it alive.
+  for (const m of source.matchAll(/\bwindow\.([A-Za-z_$][\w$]*)/g)) if (counts.has(m[1])) counts.set(m[1], counts.get(m[1]) + 1);
+  return decls.map((d) => ({ ...d, internalRefs: counts.get(d.name) }));
+}
+
+export function buildDispositions(root = ROOT) {
+  const legacyRel = 'src/legacy-app.js';
+  const source = fs.readFileSync(path.join(root, legacyRel), 'utf8');
+  const sections = sectionsOf(source);
+  const audit = auditApplication(root);
+  const e2e = JSON.parse(fs.readFileSync(path.join(root, 'tests/baseline/ms70-e2e-globals.json'), 'utf8')).byName || {};
+  const unitSlices = new Map();
+  for (const f of fs.readdirSync(path.join(root, 'tests/unit')).filter((x) => x.endsWith('.js'))) {
+    const text = fs.readFileSync(path.join(root, 'tests/unit', f), 'utf8');
+    for (const m of text.matchAll(/(?:extractLegacyFunction|sliceBalancedFunction)\([^'"`]*['"`]([A-Za-z_$][\w$]*)['"`]/g)) {
+      unitSlices.set(m[1], (unitSlices.get(m[1]) || 0) + 1);
+    }
+  }
+  // Names a module also exports: the "existing duplicates" 70A must list,
+  // since the plan allows one implementation per concern.
+  const exportedBy = new Map();
+  for (const file of audit.files.filter((f) => f !== legacyRel && !audit.classic.includes(f))) {
+    const ast = parse(fs.readFileSync(path.join(root, file), 'utf8'), { ecmaVersion: 'latest', sourceType: 'module' });
+    for (const st of ast.body) {
+      if (st.type !== 'ExportNamedDeclaration') continue;
+      const names = [];
+      if (st.declaration?.id) names.push(st.declaration.id.name);
+      for (const d of st.declaration?.declarations || []) if (d.id.type === 'Identifier') names.push(d.id.name);
+      for (const sp of st.specifiers || []) names.push(sp.exported.name ?? sp.exported.value);
+      for (const n of names) { if (!exportedBy.has(n)) exportedBy.set(n, []); exportedBy.get(n).push(file); }
+    }
+  }
+  const consumers = new Map();
+  const note = (name, file) => { if (file === legacyRel) return; if (!consumers.has(name)) consumers.set(name, new Set()); consumers.get(name).add(file); };
+  for (const r of [...audit.windowReads, ...audit.windowDestructures]) note(r.name, r.file);
+  for (const b of audit.bareCrossBoundary) note(b.name, b.file);
+
+  const declarations = declarationsOf(source).map((d) => {
+    const section = [...sections].reverse().find((s) => s.line <= d.line) || { title: '(before the first section)', delivery: '70B' };
+    const moduleConsumers = [...(consumers.get(d.name) || [])].sort();
+    const e2eFiles = e2e[d.name]?.files || 0;
+    const slices = unitSlices.get(d.name) || 0;
+    let disposition = 'move';
+    if (d.internalRefs === 0 && moduleConsumers.length === 0) disposition = e2eFiles || slices ? 'test-only' : 'delete-as-dead';
+    return {
+      name: d.name, kind: d.kind, line: d.line, lines: d.lines, section: section.title,
+      internalRefs: d.internalRefs, moduleConsumers, e2eFiles, unitSlices: slices,
+      duplicateOf: exportedBy.get(d.name) || [],
+      disposition, delivery: NAME_DELIVERY[d.name] || section.delivery,
+      wrapperWhile: disposition === 'move' && moduleConsumers.length ? 'modules read it through window or by bare name' : null,
+      reviewed: false,
+    };
+  });
+  const summary = {
+    total: declarations.length, byDisposition: {}, byDelivery: {},
+    duplicates: declarations.filter((d) => d.duplicateOf.length).length,
+    liveDuplicates: declarations.filter((d) => d.duplicateOf.length && d.disposition === 'move').map((d) => `${d.name} (${d.duplicateOf.join(', ')})`),
+  };
+  for (const d of declarations) {
+    summary.byDisposition[d.disposition] = (summary.byDisposition[d.disposition] || 0) + 1;
+    summary.byDelivery[d.delivery] = (summary.byDelivery[d.delivery] || 0) + 1;
+  }
+  return { summary, declarations };
+}
+
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const result = buildDispositions();
+  console.log(JSON.stringify(result.summary, null, 1));
+  const dead = result.declarations.filter((d) => d.disposition === 'delete-as-dead');
+  console.log(`delete-as-dead candidates (${dead.length}):`, dead.map((d) => `${d.name}@${d.line}`).join(' '));
+  const testOnly = result.declarations.filter((d) => d.disposition === 'test-only');
+  console.log(`test-only (${testOnly.length}):`, testOnly.map((d) => d.name).join(' '));
+  if (process.argv.includes('--write')) {
+    fs.writeFileSync(path.join(ROOT, DISPOSITIONS_PATH), JSON.stringify({
+      generatedBy: 'node scripts/ms70-declaration-dispositions.mjs --write',
+      note: 'Milestone 70, 70A: a proposed disposition and target delivery for every top-level declaration of src/legacy-app.js, built from reference evidence. A draft for review: every entry is reviewed:false until someone confirms it. delete-as-dead means nothing references it anywhere; confirm before deleting.',
+      ...result,
+    }, null, 1) + '\n');
+    console.log(`wrote ${DISPOSITIONS_PATH}`);
+  }
+}

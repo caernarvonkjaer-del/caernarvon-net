@@ -82,6 +82,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`scripts\measure-baseline.mjs`](<scripts/measure-baseline.mjs>) | Repository file. |
 | [`scripts\measure-lifecycle.mjs`](<scripts/measure-lifecycle.mjs>) | Repository file. |
 | [`scripts\ms70-assertion-counts.mjs`](<scripts/ms70-assertion-counts.mjs>) | Milestone 70 per-spec assertion counter: static expect calls and test declarations in every unit and browser spec; --write-baseline --reason records drops. |
+| [`scripts\ms70-declaration-dispositions.mjs`](<scripts/ms70-declaration-dispositions.mjs>) | Milestone 70 draft disposition (delete-as-dead, test-only, move) and target delivery for every top-level declaration of legacy-app.js, from reference evidence, plus the duplicates modules also define; --write regenerates the baseline JSON. |
 | [`scripts\ms70-dependency-audit.mjs`](<scripts/ms70-dependency-audit.mjs>) | Milestone 70 parser-based dependency audit: implicit classic globals, window writes/reads (including defineProperty), captures off window, bare cross-boundary references, unowned and lexical-only window reads, the import graph, cycles and layer violations; --write-baseline regenerates the ratchet baseline and dependency inventory. |
 | [`scripts\ms70-e2e-global-inventory.mjs`](<scripts/ms70-e2e-global-inventory.mjs>) | Milestone 70 inventory of the application names the browser suite reaches through window and its in-place writes to live case state; --write regenerates tests/baseline/ms70-e2e-globals.json. |
 | [`scripts\ms70-ledger-guard.mjs`](<scripts/ms70-ledger-guard.mjs>) | Milestone 70 ledger guard: fails when a master commit after the milestone-70 branch point is missing from MILESTONE-70-FIX-LEDGER.md; --merge also fails on open rows; reports the re-implement count for decision D7. |
@@ -261,6 +262,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`tests\baseline\milestone-13-web.json`](<tests/baseline/milestone-13-web.json>) | JSON configuration or fixture data. |
 | [`tests\baseline\milestone-59-runtime.json`](<tests/baseline/milestone-59-runtime.json>) | JSON configuration or fixture data. |
 | [`tests\baseline\ms70-assertion-counts.json`](<tests/baseline/ms70-assertion-counts.json>) | Milestone 70 per-spec assertion counts and drop log (tests/unit/ms70-assertion-counts.spec.js). |
+| [`tests\baseline\ms70-declaration-dispositions.json`](<tests/baseline/ms70-declaration-dispositions.json>) | Milestone 70 reviewable draft: each legacy-app.js declaration with its section, references, consumers, module duplicates, proposed disposition and delivery (reviewed:false until confirmed). |
 | [`tests\baseline\ms70-dependency-baseline.json`](<tests/baseline/ms70-dependency-baseline.json>) | Milestone 70 ratchet baseline: the dependency sets that may only shrink during the migration (tests/unit/ms70-dependency-ratchet.spec.js). |
 | [`tests\baseline\ms70-dependency-inventory.json`](<tests/baseline/ms70-dependency-inventory.json>) | Milestone 70 dependency inventory: every edge between application files, with direction, plus classic declarations, cycles, layer violations and unowned reads. Informational. |
 | [`tests\baseline\ms70-e2e-globals.json`](<tests/baseline/ms70-e2e-globals.json>) | Milestone 70 inventory of the application names the browser suite reaches through window and its in-place state writes, from which GuardianForms.testing is designed. Informational. |
@@ -456,6 +458,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`tests\unit\issue-registry.spec.js`](<tests/unit/issue-registry.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\live-region.spec.js`](<tests/unit/live-region.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\ms70-assertion-counts.spec.js`](<tests/unit/ms70-assertion-counts.spec.js>) | Automated test covering the named behavior or contract. |
+| [`tests\unit\ms70-declaration-dispositions.spec.js`](<tests/unit/ms70-declaration-dispositions.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\ms70-dependency-ratchet.spec.js`](<tests/unit/ms70-dependency-ratchet.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\ms70-e2e-global-inventory.spec.js`](<tests/unit/ms70-e2e-global-inventory.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\ms70-ledger-guard.spec.js`](<tests/unit/ms70-ledger-guard.spec.js>) | Automated test covering the named behavior or contract. |

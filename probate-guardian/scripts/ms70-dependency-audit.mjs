@@ -58,8 +58,12 @@ class Scope {
     return s;
   }
   resolves(name) {
-    for (let s = this; s; s = s.parent) if (s.names.has(name)) return true;
-    return false;
+    return this.lookup(name) !== null;
+  }
+  /** The scope that binds `name`, or null when it is free. */
+  lookup(name) {
+    for (let s = this; s; s = s.parent) if (s.names.has(name)) return s;
+    return null;
   }
 }
 
@@ -116,7 +120,7 @@ function declareLexical(scope, statements) {
  * identifier in reference position (reads and writes) and `onNode(node, ctx)`
  * for every node. ctx.fnDepth is 0 while code runs at evaluation time.
  */
-function analyze(ast, { onRef, onNode }) {
+export function analyze(ast, { onRef, onNode = () => {} }) {
   const program = new Scope(null, 'program');
   hoistInto(program, ast.body);
   declareLexical(program, ast.body);
@@ -283,6 +287,7 @@ export function analyzeFile(rel, source, { classic = false } = {}) {
     file: rel, classic,
     declarations: [], // classic only: { name, kind, line }
     windowWrites: [], windowReads: [], windowDestructures: [],
+    computedWindowReads: [], // { text, line, builder? } -- window[expr] whose name is not a literal
     freeRefs: new Map(), // name -> { line, evalTime, write }
     imports: [],         // { source, kind: 'static' | 'dynamic', line }
   };
@@ -327,6 +332,21 @@ export function analyzeFile(rel, source, { classic = false } = {}) {
           && node.object.type === 'Identifier' && GLOBAL_OBJECTS.has(node.object.name)) {
         const name = staticPropName(node);
         if (name) out.windowReads.push({ name, line: node.loc.start.line, evalTime });
+        else if (node.computed) {
+          // A name built at runtime. router.js and ward-lifecycle.js mount
+          // filings with window[mountFeatureFnName(engine)], which a static
+          // scan cannot see -- the first dispositions pass proposed the
+          // seven mount functions as dead because of it. Known builders are
+          // expanded by auditSources(); every other one is recorded.
+          const p = node.property;
+          const builder = p.type === 'CallExpression' && p.callee.type === 'Identifier' ? p.callee.name : null;
+          out.computedWindowReads.push({ text: source.slice(p.start, p.end), line: node.loc.start.line, builder });
+        }
+      }
+      // readiness-config.js's legacyGlobal('NAME') is window['NAME'] behind a helper.
+      if (node.type === 'CallExpression' && node.callee.type === 'Identifier' && node.callee.name === 'legacyGlobal'
+          && node.arguments[0] && node.arguments[0].type === 'Literal' && typeof node.arguments[0].value === 'string') {
+        out.windowReads.push({ name: node.arguments[0].value, line: node.loc.start.line, evalTime, via: 'legacyGlobal' });
       }
       if (node.type === 'VariableDeclarator' && node.init && node.init.type === 'Identifier'
           && GLOBAL_OBJECTS.has(node.init.name) && node.id.type === 'ObjectPattern') {
@@ -474,6 +494,31 @@ export function auditSources(files, classic, moduleEntries = null) {
     if (!classicDecl.has(d.name)) classicDecl.set(d.name, []);
     classicDecl.get(d.name).push({ file: r.file, kind: d.kind });
   }
+  // Expand window[mountFeatureFnName(engine)] into the names it can produce,
+  // from the engine ids src/core/filing/filing-descriptor.js declares.
+  const engineIds = new Set();
+  const descriptorSource = files.get('src/core/filing/filing-descriptor.js');
+  if (descriptorSource) {
+    const dast = parse(descriptorSource, { ecmaVersion: 'latest', sourceType: 'module' });
+    const visitProps = (node) => {
+      if (!node || typeof node !== 'object') return;
+      if (Array.isArray(node)) { node.forEach(visitProps); return; }
+      if (node.type === 'Property' && !node.computed && node.key.type === 'Identifier' && node.key.name === 'engineId'
+          && node.value.type === 'Literal' && typeof node.value.value === 'string') engineIds.add(node.value.value);
+      for (const k in node) if (k !== 'type' && node[k] && typeof node[k] === 'object') visitProps(node[k]);
+    };
+    visitProps(dast);
+  }
+  const mountName = (id) => `mount${id.charAt(0).toUpperCase()}${id.slice(1)}Feature`;
+  for (const r of results) {
+    for (const c of r.computedWindowReads) {
+      if (c.builder === 'mountFeatureFnName') {
+        for (const id of engineIds) r.windowReads.push({ name: mountName(id), line: c.line, evalTime: false, via: 'mountFeatureFnName' });
+        c.resolved = [...engineIds].map(mountName);
+      }
+    }
+  }
+
   const windowProvider = new Map(); // name -> Set(files) that make it a window property
   const addProvider = (name, file) => { if (!windowProvider.has(name)) windowProvider.set(name, new Set()); windowProvider.get(name).add(file); };
   for (const r of results) if (reachable.has(r.file)) for (const w of r.windowWrites) addProvider(w.name, r.file);
@@ -537,6 +582,7 @@ export function auditSources(files, classic, moduleEntries = null) {
     windowWrites: results.flatMap((r) => r.windowWrites.map((w) => ({ file: r.file, ...w }))),
     windowReads: results.flatMap((r) => r.windowReads.map((w) => ({ file: r.file, ...w }))),
     windowDestructures: results.flatMap((r) => r.windowDestructures.map((w) => ({ file: r.file, ...w }))),
+    computedWindowReads: results.flatMap((r) => r.computedWindowReads.map((c) => ({ file: r.file, ...c }))),
     bareCrossBoundary,
     unownedWindowReads: [...unownedWindowReads].map(([name, set]) => ({ name, files: [...set].sort() })).sort((a, b) => a.name.localeCompare(b.name)),
     lexicalOnlyWindowReads,
@@ -582,6 +628,7 @@ export function ratchetSets(result) {
     cycles: uniq(result.cycles.map((c) => c.join(' <-> '))),
     layerViolations: uniq(result.layerViolations.map((v) => `${v.from} -> ${v.to} (${v.rule})`)),
     unreachableModules: uniq(result.unreachableModules),
+    computedWindowReads: uniq(result.computedWindowReads.filter((c) => !c.resolved).map((c) => `${c.file}::window[${c.text}]`)),
   };
 }
 
@@ -627,6 +674,7 @@ function summarize(result, sets) {
     `window reads of names declared only with let/const/class (not window properties): ${count('lexicalOnlyWindowReads')}`,
     `static import cycles: ${count('cycles')}`,
     `layer violations: ${count('layerViolations')}`,
+    `computed window[...] lookups: ${result.computedWindowReads.length} (${result.computedWindowReads.filter((c) => c.resolved).length} resolved from known name builders; ${count('computedWindowReads')} unresolved)`,
     `modules nothing loads: ${count('unreachableModules')}${count('unreachableModules') ? ` (${sets.unreachableModules.join(', ')})` : ''}`,
     `dependency edges: ${result.edges.length}`,
   ];
