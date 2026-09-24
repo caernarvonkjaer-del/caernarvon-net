@@ -657,6 +657,8 @@ on the `milestone-70` branch unless it says otherwise.
 | Assertion-count baseline | `122d0e9` | `scripts/ms70-assertion-counts.mjs`; `tests/baseline/ms70-assertion-counts.json`. Seen failing on a real spec with one `expect` removed (15 to 14). |
 | Browser-suite global inventory | `122d0e9` | `scripts/ms70-e2e-global-inventory.mjs`; `tests/baseline/ms70-e2e-globals.json` -- what `GuardianForms.testing` is designed from. |
 | `portable-http` profile (T1), brought up | `02ecde4`, then the headers commit | `scripts/serve-portable-http.mjs`; `PG_TARGET=portable-http`; `npm run test:e2e:portable-http`; also part of `test:release` through the `all` profile. **Gate item: the one bring-up run (D2) 33/33, 0 skipped**, including the five ward-lock tests and the backup lock test the `file://` profile skips. The parity spec was seen failing for the stated reason with `dist/portable/fragments` removed. Production's headers then captured with the requester's go-ahead (one GET of `https://www.mypinellasclerk.gov/Portals/0/Guardian-Forms/index.html`, recorded in `tests/e2e/support/production-headers.json`), the profile moved to production's own `/Portals/0/Guardian-Forms/` path, and `Cache-Control`, `X-Frame-Options` and `X-XSS-Protection` replayed with HTML sent as plain `text/html`; rerun 33/33, and the header check seen failing with the replay removed. |
+| Load-aware audit | `b9b5381` | The audit counts a module's `window.X` as a provider only if something loads that module, and ratchets the modules nothing loads (8). Seen failing against the previous baseline, naming exactly the nine new entries. |
+| Declaration dispositions (draft) and computed lookups | `90bc235` | `scripts/ms70-declaration-dispositions.mjs`; `tests/baseline/ms70-declaration-dispositions.json`: all 474 declarations -- 459 move, 1 test-only, 14 delete-as-dead candidates -- each with a delivery, `reviewed: false`. The audit now records computed `window[...]` lookups and resolves the two known name builders; the first draft had wrongly proposed the seven `mount<Engine>Feature` functions as dead. |
 | Security contract | `f4f368b` | `tests/unit/crypto-contract.spec.js` 8/8 and `tests/e2e/security-contract.spec.ts` 3/3, each seen failing with the fault injected (iterations 100,000, a 16-byte IV, an extractable key; auto-lock at 14 minutes, lockout threshold 6, a stored copy of the password). |
 
 **Parsed figures that replace this plan's estimates.** The Verified planning
@@ -778,6 +780,24 @@ to 2 and returns text -- unresolved which is right.
   `src/features/guardian-inventory/pdf-accessibility.js`, a one-line
   re-export nothing imports (the real module under `src/core/pdf/` loads
   normally; a "delete as dead" disposition).
+- **Names built at runtime.** `router.js` and `ward-lifecycle.js` mount a
+  filing through `window[mountFeatureFnName(engine)]`, and
+  `readiness-config.js` reads tables through `legacyGlobal('NAME')`. A static
+  scan that ignores computed lookups calls the seven mount functions dead --
+  the dispositions draft's first pass did exactly that. The audit resolves
+  both builders now and ratchets every other computed lookup (one remains,
+  inside `legacyGlobal` itself). The lesson generalizes: a "delete as dead"
+  disposition needs a reference search that covers names built at runtime,
+  and each one is confirmed before anything is deleted.
+- **The existing-duplicates list.** 36 monolith declarations share a name
+  with something a module exports. About 22 are live duplicates -- both
+  copies in use -- among them `esc`, `r2`, `getActiveWard`, `getCaseFile`,
+  the county-to-circuit tables, `CRYPTO_VERIFIER_PLAINTEXT`, and the
+  session-cache and launch-preference helpers; the list is in
+  `summary.liveDuplicates` of the dispositions draft. The rest are dead
+  monolith copies of module-owned names (the 14 delete-as-dead candidates
+  are mostly these). 70B proves each live pair behaves the same before one
+  copy goes; they are not assumed equal because they share a name.
 - `window.navigate` has two publishers, `main.js` and `router.js`, which
   publish the same imported function: a duplicate publication, not a
   conflict. Recorded for the duplicate list.
@@ -792,9 +812,9 @@ to 2 and returns text -- unresolved which is right.
   15-minute inactivity lock, and a lock that clears the key and the
   in-memory case.
 
-**Still open in 70A.** The disposition of each of the 474 monolith
-declarations; the current reason for each `window` export and the full
-duplicate list; the `.sav` fixture corpus (current and historical, plus
+**Still open in 70A.** Reviewing the dispositions draft (every entry is
+`reviewed: false`); the current reason for each `window` export; the `.sav`
+fixture corpus (current and historical, plus
 corrupt and wrong-password cases); the mixed-version characterization; the
 year-rollover characterization; the fixture-helper inventory; the baseline
 measurements (`measure:baseline`/`measure:lifecycle` with `--output`); the
