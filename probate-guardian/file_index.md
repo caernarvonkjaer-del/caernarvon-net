@@ -303,6 +303,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`tests\e2e\party-write-through.spec.ts`](<tests/e2e/party-write-through.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\pdf-accessibility-and-signatures.spec.ts`](<tests/e2e/pdf-accessibility-and-signatures.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\pdf-annotate.spec.ts`](<tests/e2e/pdf-annotate.spec.ts>) | Automated test covering the named behavior or contract. |
+| [`tests\e2e\pdf-cover-geometry.spec.ts`](<tests/e2e/pdf-cover-geometry.spec.ts>) | Milestone 68D: the cover page's key-value grid measured from the generated PDF -- every value run's right edge stays inside its column, on all five cover-page filings. |
 | [`tests\e2e\pdf-evidence-lab.spec.ts`](<tests/e2e/pdf-evidence-lab.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\pdf-fonts-and-xmp.spec.ts`](<tests/e2e/pdf-fonts-and-xmp.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\pdf-form-specific.spec.ts`](<tests/e2e/pdf-form-specific.spec.ts>) | Automated test covering the named behavior or contract. |

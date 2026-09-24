@@ -12,7 +12,7 @@ or stop a filing outright; the rest prevent a filer from recording the truth.
 
 | Item | Subject | Severity | Decision | Build |
 | --- | --- | --- | --- | --- |
-| 68D | Period end date cut off on every Annual cover page | Wrong data on a filed document | **DECIDED** — fix the wrap width, derived from the layout | Ready — render Plan Initial during build |
+| 68D | Period end date cut off on every Annual cover page | Wrong data on a filed document | **DECIDED** — fix the wrap width, derived from the layout | **LANDED 2026-09-24** — see the build record under 68D; Plan Initial rendered |
 | 68A | Plan signatures must be dated after the period being planned for | **Blocks filing**; only remedy is a false sworn date | **DECIDED** — remove the rule from Plans; keep it on accountings | **Blocked** — audit Plan Initial and Plan Minor first |
 | 68B | Initial Plan files with no reporting period, unflagged | Incomplete document filed, silently | **DECIDED** — require it, as the other Plans do | Ready to build |
 | 68C | No certificate of service on any Plan type | App states a requirement it cannot meet | **DECIDED** — build on all four; optional on Simplified; fix its wrong text | Ready to build |
@@ -181,6 +181,89 @@ other value — the long-name truncation stays broken, silently.
 9. **Cross-form method consistency.** Simplified's overrun into the page margin
    is a second, milder instance of the same geometry being wrong. Fix or
    consciously accept it in the same pass rather than leaving one behind.
+
+### Build record — LANDED 2026-09-24
+
+**What a filer now gets.** The Annual, Final and Trust Accounting cover
+prints its period as "From: 01/01/2026   To:" on one line and "12/31/2026"
+on the next — the whole year, nothing painted over. A long ward name or
+attorney name wraps to two or three lines inside its cell. The Simplified
+Accounting's period and attorney, in column 2, stay inside the table border.
+The Plans, which were never clipped, render exactly as before.
+
+**The change.** One place: the key-value grid in
+`src/core/pdf/pdf-engine.js`. The value wrap width is now derived from the
+column geometry — `contentWidth / 2 − KV_VALUE_X (115) − KV_VALUE_PAD (4)` =
+**115pt** at the 468pt content width — instead of the hardcoded 148, and a
+value that spans the row (no second item) gets `contentWidth − 115 − 4` =
+349pt (was 343). Both places the value text is drawn use the same
+`KV_VALUE_X`, so the wrap width and the drawing position cannot drift apart
+again. No pdf-model changed; the period strings are untouched and simply
+wrap.
+
+**The test, and why it is not a text assertion.**
+`tests/e2e/pdf-cover-geometry.spec.ts` (new), one test per cover-page filing
+(Annual Accounting, Simplified Accounting, Initial / Annual / Minor Plan),
+with a 57-character ward name, a 39-character attorney name and a 2026
+period. It reads every drawn run's position **and width** from the generated
+file (`width` added to `extractPdfTextRuns()` in
+`tests/e2e/support/pdf-extract.ts`; `check:types` clean) and asserts each
+grid value's right edge against the boundary the engine lays out: **306pt**
+(where column 2's background begins) for a paired column-1 value, **540pt**
+(the table border) for a column-2 or full-width value — both computed from
+the margins and content width, never from the wrap constant. The reported
+case is asserted by name, then the two names, then every grid value on the
+page, all soft so one run lists every overrun.
+
+**Red first, against the 148pt constant** — the numbers match this item's
+own measurements to the hundredth, and add two cases it did not list:
+
+| Filing | Run | Right edge | Limit |
+| --- | --- | --- | --- |
+| Annual | `To: 12/31/2026` | 310.53 | 306 |
+| Annual | `Bartholomew Fitzgerald-Cunningham,` (attorney) | 321.22 | 306 |
+| Annual | `Bartholomew Fitzgerald-Cunningham` (ward name, first line) | 319.00 | 306 — **not listed above** |
+| Simplified | `From: 01/01/2026  To: 12/31/2026` (column 2) | 542.31 | 540 |
+| Simplified | ward name, first line | 319.00 | 306 |
+| Simplified | attorney (column 2) | 555.22 | 540 — **not listed above**: 15pt into the margin |
+
+The three Plans passed before and after; Plan Initial's period
+(`01/01/2026 through 12/31/2026`, 111.6pt) fits the 115pt width on one line.
+Green: **5/5, 52.7 s.**
+
+**Completion gate met — Plan Initial rendered, not inferred.** All five
+covers were rasterised at 6× from the PDFs the green run generated, and the
+Annual, Simplified and Plan Initial pages were looked at: the full end year
+is visible, the names wrap, nothing is painted over, and Plan Initial's
+period sits on one line with clearance to its column edge.
+
+**Neighbours:** the 16 PDF, cover-page and mount specs that read generated
+PDFs or snapshot the plan pages (`annual-bond-period`, `pdf-form-specific`,
+`pdf-table-semantics`, `pdf-preview-viewer`,
+`pdf-accessibility-and-signatures`, `supplemental-pdf-accounting`,
+`pdf-evidence-lab`, `pdf-fonts-and-xmp`, the four `plan-*-mount`,
+`simplified-mount`, `annual-mount`, `guardian-inventory-mount`,
+`plan-readiness.contract`) — **126 passed, 1 failed, 14.0 min.** The one
+failure was `annual-bond-period.spec.ts`'s own reader: it assumed the Bond
+Period value sat on one line and took the first `To:` run, which is now
+`"To:"` alone because the value wraps like the cover's (`Received: "From:
+03/01/2026 To:"`). The reader now parses both dates out of the runs that
+follow the label; the PDF itself was right. Re-run green: 3/3, 48.2 s.
+Unit suite 124 files / 1,769 green; `check:types` clean.
+
+**Discovery (§8.9), reported not fixed.** The page header — the bold "IN
+RE: THE GUARDIANSHIP OF <ward name>" line every filing prints above its
+title — is not wrapped: with the 57-character test name its run ends at
+**x = 614.1 on a 612pt page**, past the physical page edge, on every filing
+type. A real name of roughly 45 characters or more would be clipped by the
+printer. It is a different code path from the grid (the caption block, not
+the key-value rows) and is not part of this item; it needs its own scoping
+if the requester wants it.
+
+**§8.8, restated for the requester.** Every Annual, Final and Trust
+Accounting PDF generated before this change states a period ending in an
+incomplete year. That is a defect on documents already filed, not only a bug
+now fixed.
 
 ---
 

@@ -53,7 +53,7 @@ async function pageTextItems(pdf: any): Promise<string[][]> {
   return pages;
 }
 
-export type PdfTextRun = { page: number; text: string; x: number; y: number };
+export type PdfTextRun = { page: number; text: string; x: number; y: number; width: number };
 
 /**
  * Every text run with its position on the page, taken from the generated PDF
@@ -66,6 +66,11 @@ export type PdfTextRun = { page: number; text: string; x: number; y: number };
  * space (y measured from the bottom of the page, so a LARGER y is higher up).
  * That is the only way to assert a layout fact -- "this block reserved enough
  * height that what follows it starts below" -- against the filed artifact.
+ *
+ * Milestone 68D adds `width`, the run's drawn width in the same units, so a
+ * test can assert the run's right edge (x + width) stays inside its column.
+ * Text extraction alone cannot catch an overrun: the characters are all
+ * present in the text layer even when a later opaque rectangle covers them.
  */
 export async function extractPdfTextRuns(pdfData: Uint8Array | string): Promise<PdfTextRun[]> {
   return withPdfDocument(pdfData, async (pdf) => {
@@ -75,7 +80,7 @@ export async function extractPdfTextRuns(pdfData: Uint8Array | string): Promise<
       const content = await page.getTextContent();
       for (const item of content.items as any[]) {
         const t = item.transform || [];
-        runs.push({ page: p, text: String(item.str), x: Number(t[4]) || 0, y: Number(t[5]) || 0 });
+        runs.push({ page: p, text: String(item.str), x: Number(t[4]) || 0, y: Number(t[5]) || 0, width: Number(item.width) || 0 });
       }
     }
     return runs;

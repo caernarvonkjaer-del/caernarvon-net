@@ -89,12 +89,14 @@ async function bondPeriodLine(pdf: Buffer) {
   const pages = await extractPdfTextItems(pdf);
   const page = pages.find((items) => items.some((s) => s.includes('Bond Policy Details')));
   expect(page, 'the PDF has a Bond Policy Details block').toBeTruthy();
-  const after = page!.slice(page!.indexOf('Bond Period') + 1);
-  const from = after.find((s) => /^From:/.test(s.trim()));
-  const to = after.find((s) => /^To:/.test(s.trim()));
-  expect(from, `a "From:" run after the Bond Period label: ${JSON.stringify(after.slice(0, 8))}`).toBeTruthy();
-  expect(to, `a "To:" run after the Bond Period label: ${JSON.stringify(after.slice(0, 8))}`).toBeTruthy();
-  return `${from!.trim()} ${to!.trim()}`.replace(/\s+/g, ' ');
+  // Milestone 68D wraps the grid's values at the real column width, so the
+  // Bond Period now spans two lines ("From: 03/01/2026   To:" / "02/28/2027")
+  // and pdf.js splits each line at its gaps. Read the dates out of the runs
+  // that follow the label rather than expecting one run per endpoint.
+  const after = page!.slice(page!.indexOf('Bond Period') + 1, page!.indexOf('Bond Period') + 9).join(' ').replace(/\s+/g, ' ');
+  const m = /From: (\d{2}\/\d{2}\/\d{4}) To: (\d{2}\/\d{2}\/\d{4})/.exec(after);
+  expect(m, `"From: <date> To: <date>" after the Bond Period label: ${JSON.stringify(after)}`).toBeTruthy();
+  return `From: ${m![1]} To: ${m![2]}`;
 }
 
 test.describe('Milestone 67D: the Bond Period is the accounting period', () => {

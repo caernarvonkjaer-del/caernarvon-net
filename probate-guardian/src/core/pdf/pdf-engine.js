@@ -972,8 +972,24 @@ export async function generateCourtFormPdf(model, options = {}) {
         // into the value's start position and visually collide with it.
         // Both sides are now measured and wrapped, and the row height
         // grows to fit whichever side needs more lines.
+        //
+        // Milestone 68D: the value wrap width is derived from the column
+        // geometry, not hardcoded. Each column is half the content width and
+        // its value text starts KV_VALUE_X into it, so a value may use what
+        // remains before the column's right edge -- column 2's background,
+        // or the table border -- less an inner pad. The old constant (148)
+        // exceeded the real 119, and because the loop below draws column 2's
+        // opaque background AFTER column 1's text, any value in that 29pt
+        // window was painted over: every Annual/Final/Trust cover lost the
+        // last digit of its period's end year, and long ward and attorney
+        // names lost their tails. A value that spans the row (no item2) has
+        // the same right edge as column 2 does: the border.
         const KV_LABEL_MAX_W = 98; // usable width inside the 110pt label column
-        const KV_VALUE_MAX_W = 148; // usable width inside each ~155pt value column
+        const KV_COL_W = contentWidth / 2;
+        const KV_VALUE_X = 115; // value text starts here, inside its column
+        const KV_VALUE_PAD = 4;
+        const KV_VALUE_MAX_W = KV_COL_W - KV_VALUE_X - KV_VALUE_PAD; // 115 at the 468pt content width
+        const KV_FULL_VALUE_MAX_W = contentWidth - KV_VALUE_X - KV_VALUE_PAD; // 349: item1 spanning the row
         const KV_LINE_H = 10;
         const KV_MIN_ROW_H = 18;
 
@@ -999,10 +1015,10 @@ export async function generateCourtFormPdf(model, options = {}) {
           const item2 = items[i + 1];
           // When item2 is absent, item1's value cell gets ColSpan:3 and
           // actually has the full remaining row width to work with, not
-          // just the ~155pt paired-column width -- measuring it against
-          // the narrow width would force-wrap values that have plenty of
+          // just the paired-column width -- measuring it against the
+          // narrow width would force-wrap values that have plenty of
           // room, splitting them across lines for no reason.
-          const item1ValueMaxW = item2 ? KV_VALUE_MAX_W : (contentWidth - 125);
+          const item1ValueMaxW = item2 ? KV_VALUE_MAX_W : KV_FULL_VALUE_MAX_W;
           const m1 = measureKvItem(item1, item1ValueMaxW);
           const m2 = measureKvItem(item2, KV_VALUE_MAX_W);
           const rowHeight = Math.max(KV_MIN_ROW_H, (Math.max(m1.lines, m2.lines) * KV_LINE_H) + 8);
@@ -1050,7 +1066,7 @@ export async function generateCourtFormPdf(model, options = {}) {
           doc.setFont('PGSans', 'normal');
           doc.setFontSize(8);
           doc.setTextColor(17, 24, 39);
-          doc.text(m1.valueLines, margin + 115, curY + 12);
+          doc.text(m1.valueLines, margin + KV_VALUE_X, curY + 12);
           writeMarkedContentEnd(doc);
 
           // Column 2 if present
@@ -1088,7 +1104,7 @@ export async function generateCourtFormPdf(model, options = {}) {
             doc.setFont('PGSans', 'normal');
             doc.setFontSize(8);
             doc.setTextColor(17, 24, 39);
-            doc.text(m2.valueLines, col2X + 115, curY + 12);
+            doc.text(m2.valueLines, col2X + KV_VALUE_X, curY + 12);
             writeMarkedContentEnd(doc);
           } else {
             // Fill remainder of row with empty layout border for visual symmetry
