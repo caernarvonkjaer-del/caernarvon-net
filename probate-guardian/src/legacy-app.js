@@ -7758,8 +7758,12 @@ function renderScheduleDocsSection(scheduleKey){
   const [pf,pt]=period.split('__');
   const fmtPf=pf?formatDisplayDate(pf)||pf:'';
   const fmtPt=pt?formatDisplayDate(pt)||pt:'';
+  // Milestone 68H: a plan looks forward over a reporting period (744.367(1),
+  // 744.3675); only the accountings report on an accounting period. The
+  // dashboard already says "reporting period" for the Plans.
+  const periodWord=String(activeInventoryType||'').startsWith('plan')?'reporting period':'accounting period';
   const periodNote=activeInventoryType==='guardian'?''
-    :(fmtPf||fmtPt?` — accounting period ${fmtPf||'?'} to ${fmtPt||'?'}`:' — set the accounting period on the Cover page to file these by year');
+    :(fmtPf||fmtPt?` — ${periodWord} ${fmtPf||'?'} to ${fmtPt||'?'}`:` — set the ${periodWord} on the Cover page to file these by year`);
   const filesHtml=slot.files.length?slot.files.map((f,i)=>{
     const status=f.technicalStatus||'pending';
     const warnings=Array.isArray(f.technicalWarnings)?f.technicalWarnings:[];

@@ -20,7 +20,7 @@ or stop a filing outright; the rest prevent a filer from recording the truth.
 | 68F | Assistive-devices "None" can be ticked alongside real selections | A filed plan can state both | **DECIDED** — no "None" added (form has none); fix mutual exclusion on D and E | **LANDED 2026-09-24** — see the build record under 68F |
 | 68G | Annual Plan Q6 cannot state a right is **not** restorable | **Statutory** — §744.3675(3)(b) requires that statement | **DECIDED** — the form's four columns: Yes / No / Not Removed / Needs to be Restored; stored values unchanged, "No" added (settled 2026-09-24) | **LANDED 2026-09-24** — see the build record under 68G |
 | 68I | Initial Plan asks for two dates that look redundant | Real distinction, unexplained | **DECIDED** — keep both, explain them; the tester's premise holds only for original guardians | **LANDED 2026-09-24** — see the build record under 68I |
-| 68H | All three Plans call their period an "accounting period" | Wrong against the statute | **DECIDED** — "reporting period" for Plans | Ready to build |
+| 68H | All three Plans call their period an "accounting period" | Wrong against the statute | **DECIDED** — "reporting period" for Plans | **LANDED 2026-09-24** — all four Plans; see the build record under 68H |
 
 ### Provenance and scope
 
@@ -1557,6 +1557,29 @@ commit, which is where this change will show up as "failing" tests.
 branch. *Downside:* the accountings genuinely do have an accounting period, and
 the Annual Accounting's own validator messages already say "Accounting Period
 To" — so this would introduce a new inconsistency to remove an old one.
+
+### Build record — LANDED 2026-09-24
+
+**What a filer now gets.** On every Plan's pages the Supporting Documents
+heading reads "— reporting period 01/01/2026 to 12/31/2026", or "— set the
+reporting period on the Cover page to file these by year" when the dates are
+blank. The accountings keep "accounting period". **All four Plans**, not the
+three the item names: the Minor Plan shares the same heading and said
+"accounting period" too.
+
+**The change.** One line in the shared `renderScheduleDocsSection()`
+(`src/legacy-app.js`): the word is "reporting period" for any Plan type and
+"accounting period" otherwise, in both the dated and the blank message. The
+Initial Inventory still shows no period, as before.
+
+**Tests.** The eight byte-exact snapshot strings in `plan-annual-mount`,
+`plan-minor-mount`, `plan-initial-mount` and `plan-simplified-mount` were
+moved to "reporting period" first and **run red, 8/8**, each diff exactly
+`- … reporting period …` / `+ … accounting period …`. Green with the
+accounting controls that must not change — `simplified-mount`,
+`annual-mount` and `schedule-docs-period-key` (which asserts "accounting
+period" on an Annual Accounting in both its dated and blank forms): **56/56**.
+Unit 126 files / 1,792 green.
 
 ---
 
