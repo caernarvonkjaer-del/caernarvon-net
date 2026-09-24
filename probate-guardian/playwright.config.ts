@@ -86,6 +86,9 @@ const TARGETS = {
   dev:      { command: 'npx vite --port 5183 --strictPort', url: 'http://localhost:5183/', baseURL: 'http://localhost:5183/' },
   web:      { command: 'npx vite preview --outDir dist/web --port 4183 --strictPort', url: 'http://localhost:4183/probate-guardian/', baseURL: 'http://localhost:4183/probate-guardian/' },
   portable: null, // no server — tests/e2e/support/target.ts builds a literal file:// URL instead
+  // Milestone 70, 70A (T1): dist/portable served from a subfolder over
+  // http://localhost, as the DNN site serves it in production.
+  'portable-http': { command: 'node scripts/serve-portable-http.mjs --port=4341', url: 'http://localhost:4341/dnn/guardian-forms/index.html', baseURL: 'http://localhost:4341/dnn/guardian-forms/index.html' },
 };
 
 const webServer = TARGETS[target]

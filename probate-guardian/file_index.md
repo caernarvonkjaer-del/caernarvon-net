@@ -87,6 +87,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`scripts\ms70-ledger-guard.mjs`](<scripts/ms70-ledger-guard.mjs>) | Milestone 70 ledger guard: fails when a master commit after the milestone-70 branch point is missing from MILESTONE-70-FIX-LEDGER.md; --merge also fails on open rows; reports the re-implement count for decision D7. |
 | [`scripts\run-e2e-profile.mjs`](<scripts/run-e2e-profile.mjs>) | Repository file. |
 | [`scripts\run-guide-capture.mjs`](<scripts/run-guide-capture.mjs>) | Repository file. |
+| [`scripts\serve-portable-http.mjs`](<scripts/serve-portable-http.mjs>) | Milestone 70 (T1) host for the portable-http e2e profile: serves dist/portable from a subfolder on http://localhost, the way the DNN site serves the portable package in production. |
 | [`scripts\verify-data-model.mjs`](<scripts/verify-data-model.mjs>) | Repository file. |
 | [`src\assets\embedded-fonts.js`](<src/assets/embedded-fonts.js>) | Build, tooling, or configuration source. |
 | [`src\assets\LICENSE-LiberationSans.txt`](<src/assets/LICENSE-LiberationSans.txt>) | Text reference or run instructions. |
@@ -346,6 +347,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`tests\e2e\plan-started-row.spec.ts`](<tests/e2e/plan-started-row.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\preparer-flag.spec.ts`](<tests/e2e/preparer-flag.spec.ts>) | Milestone 67A: identifying a guardian or attorney as the preparer drops the preparer block, unblocks export, prints the name, keeps the workbook cells empty, and survives re-import. |
 | [`tests\e2e\preparer-note-placement.spec.ts`](<tests/e2e/preparer-note-placement.spec.ts>) | Automated test covering the named behavior or contract. |
+| [`tests\e2e\portable-http-parity.spec.ts`](<tests/e2e/portable-http-parity.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\print-preview-signature-jump.spec.ts`](<tests/e2e/print-preview-signature-jump.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\pwa-registration.spec.ts`](<tests/e2e/pwa-registration.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\readiness-card.contract.spec.ts`](<tests/e2e/readiness-card.contract.spec.ts>) | Automated test covering the named behavior or contract. |
@@ -497,6 +499,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`tests\unit\section-guidance-policy.spec.js`](<tests/unit/section-guidance-policy.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\section-status.spec.js`](<tests/unit/section-status.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\security-source-audit.spec.js`](<tests/unit/security-source-audit.spec.js>) | Automated test covering the named behavior or contract. |
+| [`tests\unit\serve-portable-http.spec.js`](<tests/unit/serve-portable-http.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\service-attestation-visibility.spec.js`](<tests/unit/service-attestation-visibility.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\service-recipients.spec.js`](<tests/unit/service-recipients.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\sheet-pruning.spec.js`](<tests/unit/sheet-pruning.spec.js>) | Automated test covering the named behavior or contract. |

@@ -66,6 +66,11 @@ const PROFILES = {
   source: { target: 'source', browser: 'chromium', build: null, specs: null },
   web: { target: 'web', browser: 'chromium', build: 'build:web', specs: HOSTED_PARITY_SPECS },
   portable: { target: 'portable', browser: 'chromium', build: 'build:portable', specs: PORTABLE_PARITY_SPECS },
+  // Milestone 70, 70A (T1): the portable build as production serves it --
+  // from a subfolder over http, where the filing lock, fragment loading and
+  // startup take the branches file:// skips. The production gate at MS 70's
+  // checkpoints and merge.
+  'portable-http': { target: 'portable-http', browser: 'chromium', build: 'build:portable', specs: [...PORTABLE_PARITY_SPECS, 'tests/e2e/portable-http-parity.spec.ts'] },
   firefox: { target: 'source', browser: 'firefox', build: null, specs: CROSS_BROWSER_SMOKE_SPECS },
   webkit: { target: 'source', browser: 'webkit', build: null, specs: CROSS_BROWSER_SMOKE_SPECS },
   edge: { target: 'source', browser: 'edge', build: null, specs: CROSS_BROWSER_SMOKE_SPECS },
