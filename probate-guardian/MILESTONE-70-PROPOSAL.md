@@ -30,21 +30,25 @@ repeating Milestone 27's old file-move list.
 
 ### Decisions recorded 2026-09-24
 
-The requester settled seven further questions after a review of this plan:
+The requester settled nine further questions after reviews of this plan
+(D7's trigger was set after Codex's review of 2026-09-24):
 
 | # | Question | Decision | What it means for the work |
 | --- | --- | --- | --- |
 | D1 | How does MS 70 coexist with production fixes? | **MS 70 is built on a dedicated branch, `milestone-70`.** Bug fixes keep landing on `master` and keep shipping to production. When the MS 70 work is done, the fixes that landed on `master` in the meantime are re-constituted in the new code before the branch merges. | A scoped exception to AGENTS.md section 2 ("direct to master; never create feature branches"), for MS 70 work only. Production zips are built from `master` only; nothing built from the branch is deployed before the merge. See **Branch workflow and the master-fix ledger**. |
-| D2 | What must pass before a delivery lands? | **The shipped-build profiles run at checkpoints only** -- 70I, 70J, before deletion in 70L, and at the merge -- not on every delivery. | Safe because the branch never ships mid-migration. Every delivery still runs its targeted source tests and the static ratchets, which cost seconds. The merge to `master` is the real release and carries the full gate. |
-| D3 | How do browser tests set up and read data once the globals are gone? | **Through `GuardianForms.testing`, switched on by the test runner before the page loads.** | The adapter's code ships inside the production build, but the `testing` member is attached to the namespace only when the test runner enables it before the app starts, and it can never be enabled from a URL. Release tests therefore exercise the exact package that is deployed. See **The approved `window.GuardianForms` boundary** and **70T**. |
+| D2 | What must pass before a delivery lands? | **The shipped-build profiles run at checkpoints only** -- 70I, 70J, before deletion in 70L, and at the merge -- not on every delivery. The one exception is 70A, which runs the new `portable-http` profile once to bring it up: the profile has to be shown working against the unmigrated build before any checkpoint relies on it. | Safe because the branch never ships mid-migration. Every delivery still runs its targeted source tests and the static ratchets. The merge to `master` is the real release and carries the full gate. |
+| D3 | How do browser tests set up and read data once the globals are gone? | **Through `GuardianForms.testing`, switched on by the test runner before the page loads.** | The adapter's code ships inside the production build, but the `testing` member is attached to the namespace only when the test runner enables it before the app starts, and it can never be enabled from a URL. The enabling flag is runner-owned, read once and deleted during boot, so `window.GuardianForms` stays the only application-owned global (T3). Release tests therefore exercise the exact package that is deployed. See **The approved `window.GuardianForms` boundary** and **70T**. |
 | D4 | Pause for a tester pass after 70J's ownership flip? | **No pause.** 70K follows on automated evidence. | 70J is a one-way door within the branch; this plan no longer claims it can be reverted on its own (see 70J). |
-| D5 | A tester pass on the test system before the branch merges? | **No. The merge proceeds on automated evidence alone.** | The automated merge gate -- including the `portable-http` profile that reproduces production -- is the whole check. Recorded plainly: production receives the entire migration in one deploy, and the first person to use the migrated application is a filer on production. |
+| D5 | A tester pass on the test system before the branch merges? | **No tester pass.** The merge proceeds on automated evidence plus the requester's release sign-off (D8). | No tester exercises the migrated application before production does: it reaches production in one deploy, and the first person to use it interactively is a filer. This is a conscious risk decision, not evidence that automation makes the release safe; its mitigations are D8, the rollback contract, and the rollback runbook in **Reconstitution and merge**. |
 | D6 | Freeze `master` while the ledger closes? | **Yes -- a short, announced freeze** on non-urgent `master` changes while the last fixes are re-constituted and the merge gate runs. | Urgent fixes still land on `master` and join the ledger. The ledger cannot keep growing while the merge gate is running. |
-| D7 | Carry `master`'s fixes over only at the end? | **At the end, with a review at 70I.** | At the 70I checkpoint the ledger is reviewed; if it already holds more re-implementations than one delivery's worth of work, `master` is merged into the branch there so the final port is smaller. Otherwise reconstitution stays at the end. |
+| D7 | Carry `master`'s fixes over only at the end? | **At the end, with a review at 70I.** If the ledger then holds **10 or more rows marked "re-implement"**, `master` is merged into the branch at 70I. | The trigger is a count read straight from the ledger, not a judgment of effort, so anyone checking it gets the same answer. For scale, seven `master` commits touched the monolith on 2026-09-24 alone. Below the threshold, reconstitution stays at the end. |
+| D8 | Add a release sign-off to D5? | **Yes -- the requester signs off before the merge deploys.** | A release packet is assembled at the merge gate: the gate results, the package's file list compared with the last pre-merge zip, and each filing type's generated PDF and workbook side by side with the pre-merge build's output for the same synthetic case. No tester is involved; the merge waits for the sign-off. |
+| D9 | How may converted browser tests change case data? | **Setup versus behavior.** A raw `patchFiling()` may only arrange a test's starting data; any test whose result depends on what an edit triggers makes that edit through `setField()` or the real UI. | Each data write in a converted spec is classified and recorded in 70T. A write moved to the real path may expose a test that passed only because it skipped the app's own processing; that is reported and resolved, not suppressed. Assertion counts remain a tripwire, not proof that a converted test means what it meant. |
 
 No question is open as of this revision. New ones are added under **Open
 decisions**, as numbered options with a recommendation, the moment they
-surface.
+surface; the technical choices the plan owner settled (T1-T3) are listed
+there too, open to review.
 
 ### Document ownership
 
@@ -116,7 +120,7 @@ will regenerate it after any work already in flight has landed.
 | State ownership | `src/core/state.js` describes itself as a thin adapter around legacy globals. It reads and writes `window.caseFile` and `window.D`; the monolith still owns the underlying lexical state and many save/activity flags. |
 | Build special case | `vite.config.js` copies `src/legacy-app.js` as a static file, and `scripts/generate-service-worker.mjs` treats it as a critical asset, instead of Vite compiling it as part of the module graph. |
 | Test coupling | About 83 of the 115 browser spec files read or write `window.D`, `window.caseFile`, or `currentPage` inside `page.evaluate()`, and at least 31 of them write into the live filing in place -- at least 177 sites such as `Object.assign(w.D, patch)` followed by `autoSave()` -- which a copy-only adapter cannot serve without new commands. Milestone 42C counted 83 distinct app-defined names the browser suite reaches through `window` (`tests/e2e/support/window-api.ts`). On the unit side, specs evaluate monolith source through `tests/unit/support/legacy-source-extract.js` or source slicing, read `legacy-app.js` to pin its content, carry hand-copied mirrors of monolith code, or stub `window` (see **Known legacy-coupled test migrations**). These counts come from text searches and are lower bounds; 70A replaces them with parser counts. |
-| Production configuration | Production is the **portable** build served over HTTPS from a subfolder of the DNN site. It registers no service worker: only the web build carries the `pg-build=web` marker that `src/pwa-ui.js` requires. The `portable` e2e profile opens that same build as a literal `file://` page and runs six parity specs. Four code paths branch on `file:` versus HTTP(S) -- the cross-tab filing lock (`src/core/ward-lock.js`, bypassed entirely under `file:`), fragment loading (`src/fragment-loader.js`), and two template-cache startup steps in `legacy-app.js` (effectively dead today, since all three court templates are bundled) -- so no current profile runs the shipped portable bundle through the branches production takes. The source profile does take those branches, but against unbundled source. |
+| Production configuration | Production is the **portable** build served over HTTPS from a subfolder of the DNN site. It registers no service worker: only the web build carries the `pg-build=web` marker that `src/pwa-ui.js` requires. The `portable` e2e profile opens that same build as a literal `file://` page and runs six parity specs. Four code paths branch on `file:` versus HTTP(S) -- the cross-tab filing lock (`src/core/ward-lock.js`, bypassed entirely under `file:`), fragment loading (`src/fragment-loader.js`), and two template-fetch startup steps in `legacy-app.js` (effectively dead today, since all three court templates are bundled) -- so no current profile runs the shipped portable bundle through the branches production takes. The source profile does take those branches, but against unbundled source. |
 | Continuous integration | `.github/workflows/probate-guardian-tests.yml` runs only on manual dispatch (`workflow_dispatch`); nothing runs automatically on a push. Every ratchet in this plan is therefore enforced by the unit suite that agents run, and CI is available on demand for any branch, including `milestone-70`. |
 | Existing duplicates | The single-implementation rule is already broken in places. `PBKDF2_ITERATIONS` and `CRYPTO_VERIFIER_PLAINTEXT` are defined in both `legacy-app.js` (lines 1701-1702) and `src/core/persistence/crypto.js`; the `pg-launch-pref` and `pg-session-cache` database names and the `hasOpenedBefore` key also exist in both the monolith and their modules. |
 | Stale export rationales | Comments in `legacy-app.js` and the Plan Annual, Initial and Minor feature modules say a `window` export exists so that a rendered `onclick="..."` attribute still resolves. No such attribute remains in the source, and the page's `script-src 'self'` policy would block one. A comment's stated reason for an export is not evidence that the export is still needed. |
@@ -327,7 +331,12 @@ real controls rather than bypassing the UI.
 shipped build, but the member is attached to `window.GuardianForms` only when
 the test runner enables it before the application starts: a Playwright init
 script sets a documented pre-boot flag, which the composition root reads
-exactly once. On an ordinary launch the member does not exist. It is never enabled by a URL, query
+exactly once. On an ordinary launch the member does not exist. The flag
+itself is runner-owned, not application-owned: one documented `window`
+property that the init script defines, that the composition root reads once
+and deletes during boot, and that the bridge audit lists as the single
+runner-owned name (T3). The final-state rule -- `window.GuardianForms` is the
+only application-owned global -- therefore stays true. It is never enabled by a URL, query
 parameter, stored preference, or anything reachable from the running UI, and
 enabling it after startup has no effect. Release tests therefore exercise the
 exact package that is deployed; a separate test build would have meant the
@@ -358,7 +367,8 @@ must preserve these contracts:
 | Completion and export | Sidebar completion, readiness, and export validation keep their current distinct jobs. In particular, the 14 Annual schedules stay stricter in the sidebar than in the export gate; MS 70 may not "unify" that intentional difference. |
 | Workflow | Creation, switching, locking, deletion, rename, carryover, conversion, prior-year rollover, activity history, and party/case write-through behave the same for all filing identities. |
 | Startup | Terms acceptance remains the first application interaction. Fresh start, remembered file, recovery, encrypted unlock, wrong-password handling, import/drop, and cross-tab lock paths keep their current outcomes. |
-| Mixed versions during a deploy | Production has no service worker, so nothing forces open tabs to update: after the merge deploys, a filer can have a pre-MS-70 tab and a post-MS-70 tab open on the same case at once. Everything the two share must stay compatible in **both** directions: the IndexedDB databases (`pg-session-cache` recovery snapshots, `pg-launch-pref` remembered file and first-run flag, the template cache), the `pg-*` localStorage keys (terms acceptance, theme, last position, default circuit, offline-access answer, tab heartbeats, tab-warning dismissal), the `probate-guardian-tabs` BroadcastChannel message shape, and the `pg-ward-<id>` Web Lock names. An old tab must not misread, overwrite, or fail to honor what a new tab writes, and the reverse. |
+| Mixed versions during a deploy | Production has no service worker, so nothing forces open tabs to update: after the merge deploys, a filer can have a pre-MS-70 tab and a post-MS-70 tab open on the same case at once, and a tab reloaded into the new version keeps its own sessionStorage. What the versions share must stay compatible in **both** directions, by kind. **IndexedDB:** `pg-session-cache` (recovery snapshots) and `pg-launch-pref` (remembered file handle, first-run flag). **localStorage:** `pg-theme-v1`, `pg.termsAccepted`, `pg-last-position`, `pg-default-circuit`, `pg-offline-access-answered`, `pg-tab-heartbeats-v1`. **sessionStorage:** `pg-tab-warning-dismissed-v1`, and on the web build `pg-update-reload-pending-v1`. **BroadcastChannel and Web Locks:** the `probate-guardian-tabs` message shape and the `pg-ward-<id>` lock names. **Service-worker CacheStorage:** `pg-shell-<version>` and `pg-offline-<version>`, web build only and absent from production. **Process-local state is excluded:** the in-memory court-template cache (`_templateCache`, which replaced the old IndexedDB template store), the encryption key and module state are not shared between versions. The unlock-failure count travels inside the `.sav` archive's app state and is covered by the archive contract. An old tab must not misread, overwrite, or fail to honor what a new tab writes, and the reverse. |
+| Rollback | Rolling back redeploys the last pre-merge zip, so an archive saved by the migrated version must open in the pre-merge version without loss, and recovery snapshots it wrote must not break the old version's startup. Tested at the merge gate with archives saved by the branch head and opened by the pre-merge build. |
 | UI/accessibility | Existing labels, route URLs, focus behavior, announcements, responsive layout, theme behavior, delegated controls, and print suppression remain unchanged unless a separately approved defect fix says otherwise. |
 | Offline/portable | Source, hosted web (with its service worker), and portable builds work without a network. The portable build is `index.html` plus its `lib/`, `icons/`, `src/`, `help/` and `fragments/` folders -- not a single file, before or after MS 70. It keeps working both as production runs it (served over HTTPS from a DNN subfolder, no service worker) and double-clicked from disk (`file://`), with no dangling chunk request, console error, or page error in either. |
 
@@ -418,6 +428,9 @@ visible and bounded.
   is committed to `milestone-70`; everything else stays direct-to-master.
   Without it, an agent following section 2 as written will either push MS 70
   work to `master` or refuse the branch. The merge removes the note.
+- **Recording D1 authorizes nothing by itself.** Creating the branch and
+  editing AGENTS.md are 70A's first steps, and happen only when the requester
+  approves 70A under the repository's normal gating.
 - The repository's other rules apply on the branch unchanged: sync before
   starting, commit only your own delivery's files, `TEST-INDEX.md` and
   `file_index.md` in the same commit, red-first proof for any fix, and never a
@@ -450,10 +463,10 @@ visible and bounded.
 
 ### Reconstitution and merge (decided: at the end, reviewed at 70I)
 
-Per D7, the ledger is reviewed at the 70I checkpoint: if it already holds
-more re-implementations than one delivery's worth of work, `master` is merged
-into the branch there, through the same ledger rows, so the final port is
-smaller. Everything else is carried over at the end:
+Per D7, the ledger is reviewed at the 70I checkpoint: if it holds 10 or more
+rows marked "re-implement", `master` is merged into the branch there, through
+the same ledger rows, so the final port is smaller. Everything else is carried
+over at the end:
 
 1. Close the ledger under a short freeze on non-urgent `master` changes (D6),
    announced to every agent before it starts. A production hot-fix during the
@@ -461,15 +474,29 @@ smaller. Everything else is carried over at the end:
 2. Re-constitute every open ledger row on the branch.
 3. Run the merge gate on the branch head: the ledger guard, the full release
    tier (with the requester's approval at the time), the `portable-http`
-   profile, and a literal `file://` portable smoke. Per D5 no tester pass
-   follows; this gate is the whole check before production.
-4. Merge `milestone-70` into `master` with a merge commit, not a squash, so the
+   profile, a literal `file://` portable smoke, and the rollback test --
+   archives saved by the branch head open in the pre-merge build without loss
+   (**Contracts: Rollback**).
+4. Assemble the release packet and obtain the requester's sign-off (D8): the
+   gate results; the package's file list compared with the last pre-merge
+   zip; and, for each filing type, the generated PDF and workbook side by side
+   with the pre-merge build's output for the same synthetic case. Per D5 no
+   tester pass follows; the gate and this sign-off are the whole check before
+   production.
+5. Merge `milestone-70` into `master` with a merge commit, not a squash, so the
    delivery commits stay individually reviewable. Git will report a
    modify/delete conflict on `legacy-app.js` for every `master` change to it;
    each resolves as the deletion only because its ledger row is already
    closed, and the guard is what proves that.
-5. Build the deployment zip from the merged `master`. Keep the last pre-merge
-   zip: production rollback is redeploying it and reverting the merge commit.
+6. Build the deployment zip from the merged `master` and deploy it.
+
+**Rollback runbook** -- written before the merge, and part of the release
+packet. Keep the last pre-merge zip with the SHA it was built from. To roll
+back: redeploy that zip to the production folder exactly as a normal
+deployment, then revert the merge commit on `master` (`git revert -m 1
+<merge-commit>`) so the next zip built from `master` is the pre-merge code.
+Filers lose nothing that the rollback contract covers: archives they saved on
+the migrated version open in the version rolled back to.
 
 ---
 
@@ -554,13 +581,23 @@ Every delivery lands on the `milestone-70` branch (D1).
 - Create the branch, the scoped AGENTS.md exception on `master`, and the
   ledger with its guard script (see **Branch workflow and the master-fix
   ledger**).
-- Add a production-parity e2e profile, `portable-http`: build `dist/portable`,
-  serve it over HTTP from a non-root subfolder as the DNN site does, and run
-  the portable parity specs plus the specs covering the four protocol-
-  dependent paths (cross-tab lock, fragment loading, template cache, startup).
-  Record which of those specs skip or take a bypass under `file:` today. This
-  profile, not the `file://` one, is the production gate at checkpoints and at
-  the merge.
+- Add a production-parity e2e profile, `portable-http` (T1): build
+  `dist/portable` and serve it from a non-root subfolder on `http://localhost`
+  through a small Node static server with no new dependency, then run the
+  portable parity specs plus the specs covering the four protocol-dependent
+  paths (cross-tab lock, fragment loading, template fetch, startup). Record
+  which of those specs skip or take a bypass under `file:` today. Parity with
+  production is asserted, not assumed. The application's only protocol
+  branches test for `file:` -- none distinguishes HTTP from HTTPS (checked
+  2026-09-24) -- and `localhost` is a secure context, so every run asserts
+  `window.isSecureContext === true`, that the page's path is the subfolder,
+  and that `navigator.serviceWorker.getRegistrations()` returns none. The
+  production site's response headers are captured once, with the requester's
+  go-ahead since it contacts production, and the security-relevant ones --
+  content-security policy, content types, caching -- are replayed; any that
+  cannot be is recorded as a known difference. This profile, not the
+  `file://` one, is the production gate at checkpoints and at the merge; 70A
+  runs it once to bring it up (D2).
 - Add an import-cycle and layering check to the ratchet, parser-based like the
   existing audit, with no new dependency. Moving classic code into modules
   creates cycles, and a cycle can pass under the source profile's native ES
@@ -577,9 +614,12 @@ Every delivery lands on the `milestone-70` branch (D1).
   synthetic cases from it. Record each fixture's source SHA. Fixtures written
   by today's code prove only today's shape.
 - Characterize the mixed-version surfaces (**Contracts: Mixed versions during
-  a deploy**): every IndexedDB database and store, `pg-*` localStorage key,
-  BroadcastChannel message shape and Web Lock name, with a test that a record
-  written by one version is read correctly by the other.
+  a deploy**) by kind -- IndexedDB databases and stores, localStorage and
+  sessionStorage keys, BroadcastChannel message shapes, Web Lock names, and
+  the web build's CacheStorage names -- with a test that a record written by
+  one version is read correctly by the other. List the process-local caches
+  as excluded, with the reason, so their absence is a decision rather than an
+  oversight.
 - Design `GuardianForms.testing` from the real inventory -- the names the
   browser suite reaches and every in-place write site -- before 70T starts.
 - Record each browser and unit spec's assertion count (a parser count of
@@ -592,8 +632,9 @@ Every delivery lands on the `milestone-70` branch (D1).
 audit catches a deliberately injected implicit global and a bare cross-boundary
 reference, the cycle check catches a deliberately injected cycle, the ledger
 guard fails on a deliberately unlisted `master` commit, the historical and
-current format-v1 fixtures open successfully, the `portable-http` profile is
-green against the unmigrated build, and the unit suite rejects any unapproved
+current format-v1 fixtures open successfully, the `portable-http` profile passes
+its one bring-up run (D2) against the unmigrated build with its parity
+assertions, and the unit suite rejects any unapproved
 increase in the compatibility surface. The exact final facade is a
 reviewed artifact of this delivery, not an open-ended promise to preserve all
 current debugging habits.
@@ -619,10 +660,14 @@ against the unmigrated monolith.
   globals, enabled per D3. Commands are validated and named:
   - seed or import a case; create, activate and delete a filing;
   - `patchFiling(patch)`, with today's semantics -- assign in place, then save,
-    exactly what specs do now with `Object.assign(w.D, patch); w.autoSave()` --
-    so converting a spec does not change what it sets up;
-  - `setField(path, value)`, through the real form write path, for specs that
-    mean to exercise that path;
+    exactly what specs do now with `Object.assign(w.D, patch); w.autoSave()`.
+    **Setup only (D9):** it may arrange a test's starting data and nothing
+    else, because it bypasses the normalization, side effects and validation
+    a real edit triggers;
+  - `setField(path, value)`, through the real form write path. Any test whose
+    result depends on what an edit triggers -- normalization, sidebar marks,
+    saving, validation -- makes that edit through `setField()` or the real
+    UI;
   - navigate; flush a pending save.
 
   Queries return copies: the case snapshot, the active filing, validation
@@ -632,10 +677,16 @@ against the unmigrated monolith.
   `window-api.ts`, `target.ts`, the fixtures, `fixture-completeness.ts`,
   `plan-fixture.ts` -- so most specs change through their helpers rather than
   line by line.
-- Migrate the remaining specs file by file. Each converted spec keeps or
-  raises its 70A assertion count; any drop is reviewed and recorded with its
-  reason, not waved through. Controls whose behavior is under test are still
-  clicked for real.
+- Migrate the remaining specs file by file, classifying each data write as
+  setup or behavior (D9) and recording the classification. A write moved from
+  a raw patch to `setField()` may make a test fail that passed before: that is
+  a finding about today's test, reported and resolved, never suppressed. Each
+  converted spec keeps or raises its 70A assertion count, and any drop is
+  reviewed and recorded with its reason -- but the count is a tripwire, not
+  proof that a converted test still means what it meant. That proof is the
+  classification review plus the suite passing against the unmigrated
+  monolith. Controls whose behavior is under test are still clicked for
+  real.
 - Add a guard: a browser spec may reference no app global other than
   `GuardianForms`. Converted files join the guard as they land until it covers
   the whole suite.
@@ -646,7 +697,8 @@ against the unmigrated monolith.
 ### Gate
 
 Every browser spec reaches app state only through `GuardianForms.testing` or
-the real UI; no spec lost an assertion without a recorded reason; and the
+the real UI; every data write in a converted spec is classified as setup or
+behavior (D9); no spec lost an assertion without a recorded reason; and the
 whole source suite is green on the adapter against the **unmigrated**
 monolith -- a full `npm test`, so it is requested from the requester at the
 time, per AGENTS.md section 2. A later failure then points at the migration,
@@ -895,9 +947,8 @@ for approval to run `npm run test:verify` at this checkpoint. As a checkpoint
 `portable` and `portable-http` profiles, and `build:web` with its profile. The
 mixed-version tests from 70A run here, because 70I moves the owners of the
 shared recovery cache and launch preferences. The master-fix ledger is
-reviewed here too (D7): if it already holds more re-implementations than one
-delivery's worth of work, `master` is merged into the branch at this
-checkpoint.
+reviewed here too (D7): if it holds 10 or more rows marked "re-implement",
+`master` is merged into the branch at this checkpoint.
 
 ---
 
@@ -1105,7 +1156,8 @@ the typed adapter, and stays inside the type-check gate.
    top-level destructures, import cycles and layers, assertion counts. Run
    `npm run check:types` whenever the checked navigation, persistence, state,
    or E2E-support graph is touched. Per D2, the shipped-build profiles do not
-   run on every delivery; the branch does not ship until it merges.
+   run on every delivery; the branch does not ship until it merges. 70A runs
+   `portable-http` once, to bring the new profile up.
 2. **70T:** the whole source suite, green on the adapter against the
    unmigrated monolith -- a full `npm test`, requested at the time.
 3. **70D:** old/new differential completion parity across all fixtures before
@@ -1119,7 +1171,8 @@ the typed adapter, and stays inside the type-check gate.
    profile, including `portable-http`.
 6. **Merge gate:** the ledger guard; request authorization for
    `npm run test:release`; the `portable-http` profile; the literal portable
-   `file://` smoke; and the package inventory. `test:quick` is useful during
+   `file://` smoke; the rollback test; the package inventory; and the
+   requester's sign-off on the release packet (D8). `test:quick` is useful during
    slices but is not a merge/release gate.
 
 `npm run verify:data-model` should remain green and the CSV should remain
@@ -1142,7 +1195,9 @@ MS 70 is complete only when all of the following are true:
    zero top-level application-API destructures from `window`.
 5. The only application-owned global is the frozen, documented
    `window.GuardianForms` namespace. Every member has a named external purpose;
-   test-only members are absent unless explicitly enabled.
+   test-only members are absent unless explicitly enabled. The test runner's
+   pre-boot flag (D3, T3) is runner-owned and deleted during boot, so it is
+   not an application global.
 6. The bridge/dependency audit reports zero unowned app globals, zero implicit
    classic application globals, and zero unclassified cross-boundary edges.
 7. Blank creation, normalization, routes, completion, and dashboard progress
@@ -1174,6 +1229,10 @@ MS 70 is complete only when all of the following are true:
 16. Browser storage written by a pre-MS-70 tab is read correctly by a
     post-MS-70 tab and the reverse, for every surface in the mixed-version
     contract.
+17. An archive saved by the migrated version opens in the pre-merge build
+    without loss (the rollback contract).
+18. The requester's release sign-off (D8) is recorded against the release
+    packet for the merge commit.
 
 ---
 
@@ -1193,7 +1252,8 @@ MS 70 is complete only when all of the following are true:
 | Migration becomes an unreviewable rewrite | Small dependency-ordered deliveries, one canonical implementation per concern, wrappers only as temporary delegates, and release-ready state after each landing. |
 | Production fixes are lost or mis-ported at the merge | The master-fix ledger, kept current throughout; a guard that fails on any unlisted `master` commit; each ported fix proven by its own red-first test on the branch. |
 | Tests pass on source but the shipped bundle fails | The import-cycle and layering check on every delivery; the `portable-http` and `portable` profiles at every checkpoint and at the merge. |
-| The shipped configuration is never tested | The `portable-http` profile reproduces production -- the portable bundle over HTTPS from a subfolder -- and gates the checkpoints and the merge. |
+| The shipped configuration is never tested | The `portable-http` profile mirrors production -- the portable bundle served from a subfolder in a secure context, with production's security headers replayed and its parity asserted on every run -- and gates the checkpoints and the merge. |
+| The release is decided on automated evidence (D5) | Recorded as a conscious risk, not as proof of safety. Mitigated by the requester's sign-off on a packet of real output (D8), the rollback contract, and the rollback runbook. |
 | A rewritten test stops proving what it proved | 70T migrates the browser suite before any code moves, against the unmigrated monolith, with per-spec assertion counts compared to the 70A baseline. |
 | An old and a new tab corrupt shared browser storage after the deploy | The mixed-version contract, characterized in 70A and tested at 70I and the merge. |
 | Governance documents describe code that has moved | Migration method step 7: living references are updated in the same commit as the move, AGENTS.md section 4 in 70D. |
@@ -1237,8 +1297,9 @@ last pre-merge zip and revert the merge commit.
 5. **Export/import/portability.** Court artifact mappings do not change. `.sav`
    and workbook import paths are characterized before ownership moves. Source,
    web, service worker, and literal portable builds are explicit final gates,
-   and the portable build served over HTTP from a subfolder -- how production
-   runs it -- gates every checkpoint and the merge (`portable-http`).
+   and the portable build served from a subfolder in a secure context,
+   mirroring how production runs it, gates every checkpoint and the merge
+   (`portable-http`).
 6. **Security and sensitivity.** No new sensitive data is stored. The test and
    diagnostic API is redacted, the crypto key remains memory-only, imports stay
    hardened, and the plan accurately limits encryption/lockout claims to local
@@ -1278,7 +1339,7 @@ shape is:
 | `index.html`, `vite.config.js`, service-worker generator | Remove the legacy classic-file special case at 70L. |
 | `README.md`, `AGENTS.md`, `TEST-INDEX.md`, `file_index.md` | Describe the landed architecture and keep repository governance synchronized. |
 | `MILESTONE-70-FIX-LEDGER.md` and its guard script | Branch-only record of every `master` fix to re-constitute (D1); retired at the merge once every row is closed. |
-| `scripts/run-e2e-profile.mjs`, `playwright.config.ts`, `tests/e2e/support/target.ts` | The `portable-http` profile: the portable bundle served over HTTP from a subfolder. |
+| `scripts/run-e2e-profile.mjs`, `playwright.config.ts`, `tests/e2e/support/target.ts` | The `portable-http` profile: the portable bundle served from a subfolder on `http://localhost` by a small Node static server (T1). |
 | `AGENTS.md` section 2 (on `master`) | The scoped branch exception, added at branch creation and removed by the merge. |
 
 The permanent architecture should not contain a folder named `legacy` merely
@@ -1308,12 +1369,40 @@ an output difference.
 
 ## Open decisions
 
-None as of this revision. O1-O3 of the previous revision were decided on
-2026-09-24 and moved to **Decisions recorded 2026-09-24** as D5 (no tester
-pass before the merge), D6 (a short, announced `master` freeze while the
-ledger closes) and D7 (fixes carried over at the end, with a ledger review at
-70I). New questions are added here, as numbered options with a
-recommendation, the moment they surface.
+None open as of this revision. O1-O3 of the first revision became D5-D7.
+Codex's review of 2026-09-24 raised three more, which the requester decided
+as D8 (release sign-off), D9 (test writes: setup versus behavior) and D7's
+trigger (10 re-implement rows). New questions are added here, as numbered
+options with a recommendation, the moment they surface.
+
+### Technical choices settled by the plan owner (open to review)
+
+These are implementation choices with a conventional answer rather than
+product or scope calls. The requester can overrule any of them.
+
+- **T1 -- How `portable-http` is served.** A small Node static server, built
+  on the standard library's `http` module with no new dependency, mounts
+  `dist/portable` at a non-root subfolder on `http://localhost`. Chosen over
+  `vite preview` so the mount path and the replayed response headers are
+  entirely under the test's control. Chosen over local HTTPS with a
+  self-signed certificate because the application has no code that
+  distinguishes HTTP from HTTPS and `localhost` is already a secure context,
+  so a certificate would add setup without adding coverage. The profile
+  asserts both facts on every run, so the choice is re-verified rather than
+  trusted.
+- **T2 -- How the ledger is represented.** A markdown table in
+  `MILESTONE-70-FIX-LEDGER.md`, one row per `master` commit keyed by its full
+  SHA. The guard parses the SHAs and compares them with
+  `git rev-list <branch-point>..origin/master`. Chosen over commit trailers,
+  which cannot be added to commits other agents have already pushed without
+  rewriting `master`'s history, and over git notes, which are not pushed or
+  fetched by default and do not appear in ordinary review.
+- **T3 -- How the test flag reaches the app.** A single documented `window`
+  property set by the Playwright init script, read once and deleted by the
+  composition root, and listed by the bridge audit as the one runner-owned
+  name (D3). Chosen over a DOM attribute because the global object is the one
+  place an init script can write that is certain to exist before the
+  application's first script runs.
 
 ---
 
@@ -1340,3 +1429,16 @@ recommendation, the moment they surface.
   (merge on automated evidence, no tester pass), D6 (short announced `master`
   freeze while the ledger closes) and D7 (end-of-work reconstitution with a
   ledger review at 70I); the merge procedure and 70I updated to match.
+- **2026-09-24 -- Claude.** Codex's review of the D1-D7 revision applied, all
+  eight points: 70A's one bring-up run of `portable-http` made explicit in
+  D2; `portable-http` defined as a secure-context, subfolder, no-service-worker
+  profile with production's security headers replayed and parity asserted on
+  every run (T1); the mixed-version contract rewritten by storage kind, with
+  the template cache corrected to process-local memory and
+  `pg-tab-warning-dismissed-v1` corrected to sessionStorage; the test flag
+  made runner-owned and deleted at boot (T3); technical choices T1-T3 listed
+  as reviewable; D9 (setup-versus-behavior test writes) added to 70T; D8
+  (requester release sign-off), the rollback contract and the rollback
+  runbook added to the merge; D7 given a countable trigger of 10 re-implement
+  rows; and a note that recording D1 authorizes neither the branch nor the
+  AGENTS.md edit. Completion criteria 17-18 added.
