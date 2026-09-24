@@ -6944,6 +6944,12 @@ function computeNavChecks(){
     const filled=v=>v!==''&&v!==null&&v!==undefined&&v!==false;
     const hasAny=(...vals)=>vals.some(v=>filled(v));
     const g0=(D.planGuardians||[])[0]||{};
+    // Anything entered on the (optional) Certificate of Service: the shared
+    // rule in plan-certificate-of-service.js, bridged like serviceRecipientIssues;
+    // the fallback is this key's former test, should the bridge be missing.
+    const certStarted=typeof window.planCertificateStarted==='function'
+      ?window.planCertificateStarted(D)
+      :((D.certRecipients||[]).some(r=>r&&hasAny(r.name,r.line2,r.line3,r.line4))||filled(D.certNoRecipients)||filled(D.certDate));
     // Q8 is answered once ANY box is ticked (NONE is itself a box), so a
     // boolean-or is the completion test rather than a filled() on each.
     const q8Answered=!!(D.q8DNR||D.q8LivingWill||D.q8Surrogate||D.q8POA||D.q8Other||D.q8None)
@@ -6966,13 +6972,17 @@ function computeNavChecks(){
       // Milestone 68C: the Certificate of Service. The sidebar asks (someone
       // listed, or "no recipients are required" answered Yes -- the
       // accountings' rule, through the same bridge); export never demands.
-      'ps-p4':recipientsSettled(D.certRecipients,D.certNoRecipients),
+      // Follow-up, 2026-09-24: this form's certificate is not required (the
+      // Clerk's own Simplified Plan checklist), so until the filer starts it
+      // the page counts as finished -- no mark, no guidance, and its Preview
+      // & Export button stays open. Once started, it is asked like any Plan's.
+      'ps-p4':!certStarted||recipientsSettled(D.certRecipients,D.certNoRecipients),
     };
     const incomplete={
       'ps-cover':!checks['ps-cover']&&hasAny(D.wardName,D.caseNumber,D.periodFrom,D.periodTo),
       'ps-p2':!checks['ps-p2']&&hasAny(D.q1Residences,D.q2BestPlacement,D.q3MedicalTreatment,D.q4Diagnosis,D.q5SocialServices,D.q6Interaction,D.q7RestoreRights,D.q9Remuneration,D.q8DNR,D.q8LivingWill,D.q8Surrogate,D.q8POA,D.q8Other,D.q8None),
       'ps-p3':!checks['ps-p3']&&hasAny(g0.name,g0.signatureDate,g0.email,g0.phone,g0.mailingAddress),
-      'ps-p4':!checks['ps-p4']&&((D.certRecipients||[]).some(r=>r&&hasAny(r.name,r.line2,r.line3,r.line4))||filled(D.certNoRecipients)||filled(D.certDate)),
+      'ps-p4':!checks['ps-p4']&&certStarted,
     };
     return {checks,incomplete};
   } else if(activeInventoryType==='planAnnual'){

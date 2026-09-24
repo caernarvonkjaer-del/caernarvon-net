@@ -100,6 +100,17 @@ export function certificateRecipientsSettled(filing) {
   return !rec.needsAttestation && rec.firstRowMissing.length === 0 && rec.extraRows.length === 0;
 }
 
+/**
+ * Whether a filing type's certificate is optional: only the Simplified
+ * Plan's, whose certificate the Clerk's own Simplified Plan checklist says is
+ * not required. Decided once, here, so the print preview, the page's guidance
+ * box and the sidebar cannot disagree. Follow-up, 2026-09-24: until the filer
+ * starts an optional certificate, none of the three mentions it -- every
+ * Simplified Plan filer who skipped it was being told "Not completed", shown
+ * an unfinished page, and kept from the page's Preview & Export button.
+ */
+export const certificateOptional = (type) => type === 'planSimplified';
+
 /** Anything at all entered on the certificate page. */
 export function certificateStarted(filing) {
   if (!filing) return false;
@@ -112,16 +123,16 @@ export function certificateStarted(filing) {
 
 /**
  * What the print preview says. Advisory only, never a blocker. An untouched
- * certificate gets one line; a started one is told what is still blank.
+ * certificate gets one line -- none at all where it is optional; a started
+ * one is told what is still blank, optional or not.
  */
 export function planCertificateAdvisories(filing, { section = 'Certificate of Service', optional = false } = {}) {
   if (!filing) return [];
   const out = [];
   const advise = (code, field, message) => out.push({ code: `plan-certificate.${code}`, severity: 'advisory', field, message: `${section} — ${message}` });
   if (!certificateStarted(filing)) {
-    advise('not-started', 'certRecipients.0.name', optional
-      ? "Not completed. The Clerk's checklist does not require a certificate of service for this plan; if you serve copies, record who was served here. The plan can be filed without it."
-      : "Not completed. The Clerk's checklist asks whether a certificate of service was filed; list who was served, or state that no recipients are required. The plan can be filed without it.");
+    if (optional) return out;
+    advise('not-started', 'certRecipients.0.name', "Not completed. The Clerk's checklist asks whether a certificate of service was filed; list who was served, or state that no recipients are required. The plan can be filed without it.");
     return out;
   }
   const rec = certificateRecipientIssues(filing);
@@ -179,4 +190,11 @@ export function planCertificateOfServiceSection(filing, cfg = {}, fmtDate = (v) 
     pageBreakBefore: true,
     blocks,
   };
+}
+
+// The classic legacy-app.js sidebar reaches the "started" rule through window,
+// as it reaches serviceRecipientIssues (Milestone 57B): a second reading of the
+// same data in that file is how the sidebar and its sources drift apart.
+if (typeof window !== 'undefined') {
+  window.planCertificateStarted = certificateStarted;
 }

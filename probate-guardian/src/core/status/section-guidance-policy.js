@@ -1,5 +1,5 @@
 import { serviceRecipientIssues } from '../validation/service-recipients.js';
-import { CERT_RECIPIENT_STARTED_FIELDS } from '../filing/plan-certificate-of-service.js';
+import { CERT_RECIPIENT_STARTED_FIELDS, certificateOptional, certificateStarted } from '../filing/plan-certificate-of-service.js';
 // Milestone 63A. Three questions that one function used to answer as one.
 //
 // On a Guardian Inventory the sidebar marked six pages incomplete -- Cover and
@@ -149,6 +149,9 @@ export function sidebarOnlyWants(type, route, data) {
   // for it. Routed by sidebar prefix rather than by type key, like the
   // Annual family above.
   if (CERT_ROUTE_BY_PREFIX[PREFIX[type]] === route) {
+    // Not asked at all where the certificate is optional (the Simplified
+    // Plan) until the filer starts it -- the sidebar's rule, same source.
+    if (certificateOptional(type) && !certificateStarted(d)) return [];
     const rec = serviceRecipientIssues({
       rows: d.certRecipients, attestation: d.certNoRecipients, startedFields: CERT_RECIPIENT_STARTED_FIELDS,
       missingFields: (r) => (blank(r?.name) ? ['Name'] : []),

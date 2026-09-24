@@ -332,6 +332,7 @@ interface Window {
   PLAN_BENEFITS: any;
   PLAN_RIGHT_STATES: any;
   PLAN_RIGHTS: any;
+  planCertificateStarted: any;
   planCheckGroup: any;
   planQ: any;
   planRightLabel: any;

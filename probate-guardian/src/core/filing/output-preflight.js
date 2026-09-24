@@ -6,7 +6,7 @@ import { resolveFilingDescriptor } from './filing-descriptor.js';
 import { countyDriftWarnings } from '../case-county-drift.js';
 import { formDerivedOverwriteWarnings } from './form-derived-fields.js';
 import { bondDepositoryAdvisories } from './bond-depository.js';
-import { planCertificateAdvisories } from './plan-certificate-of-service.js';
+import { planCertificateAdvisories, certificateOptional } from './plan-certificate-of-service.js';
 
 // Milestone 67B. The page each form asks the bond / restricted-depository
 // question on, by the registry's own engine id (the Annual family shares
@@ -59,9 +59,9 @@ export function prepareFilingOutput(data, baseIssues = [], options = {}) {
     ...(bondSection ? bondDepositoryAdvisories(target, { section: bondSection }) : []),
     // Milestone 68C: the Plans' Certificate of Service gates nothing; what it
     // still wants is said here. Not required at all on the Simplified Plan,
-    // per the Clerk's own checklist, and its wording says so.
+    // per the Clerk's own checklist, so an untouched one says nothing there.
     ...(identity.descriptor?.family === 'plan'
-      ? planCertificateAdvisories(target, { optional: identity.descriptor.engineId === 'planSimplified' })
+      ? planCertificateAdvisories(target, { optional: certificateOptional(identity.descriptor.engineId) })
       : []),
   ];
 

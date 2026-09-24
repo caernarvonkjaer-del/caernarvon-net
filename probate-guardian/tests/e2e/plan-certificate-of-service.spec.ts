@@ -93,9 +93,13 @@ for (const form of FORMS) {
       await form.fill(page);
       await go(page, form.route);
 
-      // Blank: the sidebar asks, and the page says why.
-      expect(await navKey(page, form.navKey)).toBe(false);
-      await expect(page.locator('#page-local-guidance'), 'the page explains the mark').toContainText(/recipient/i);
+      // Blank: the sidebar asks, and the page says why -- except on the
+      // Simplified Plan, whose certificate is not required, where an
+      // untouched one asks nothing (its own test, below).
+      if (!form.optional) {
+        expect(await navKey(page, form.navKey)).toBe(false);
+        await expect(page.locator('#page-local-guidance'), 'the page explains the mark').toContainText(/recipient/i);
+      }
 
       // The question is asked only while Recipient 1 is blank (the
       // accountings' D16 rule), so the data that must survive it lives in a
@@ -103,6 +107,7 @@ for (const form of FORMS) {
       await page.locator('#main-content [data-form-action="add-plan-row"][data-collection="certRecipients"]').click();
       await nameInput(page, 1).fill('Kept Recipient');
       await nameInput(page, 1).blur();
+      expect(await navKey(page, form.navKey), 'started, Recipient 1 blank: the sidebar asks on every Plan').toBe(false);
       await expect(page.locator('#yesno_certNoRecipients_yes'), 'Recipient 1 blank: the question is visible').toBeVisible();
       await page.locator('#yesno_certNoRecipients_yes').check();
       await expect(nameInput(page, 1), 'Yes hides the cards').toHaveCount(0);
@@ -148,6 +153,47 @@ for (const form of FORMS) {
         const card = page.locator('#filing-readiness-card');
         await expect(card).toContainText(/does not require a certificate of service/i);
         await expect(card).not.toContainText(/and file the certificate of service/i);
+      });
+
+      // Follow-up, 2026-09-24. Every Simplified Plan filer who skipped the
+      // certificate -- which the Clerk does not require -- was told "Not
+      // completed" on Preview & Export, saw the page marked unfinished in the
+      // sidebar, and could never reach every-section-complete. Decided: say
+      // nothing until the filer starts it; from then on, ask like any Plan.
+      test('an untouched certificate asks nothing anywhere; a started one asks like every other Plan', async ({ page }) => {
+        test.setTimeout(120_000);
+        await freshStartNoPassword(page);
+        await createWard(page, 'Simplified Plan Certificate Untouched', form.type);
+        await form.fill(page);
+        const mark = () => page.evaluate((k) => {
+          const r = (window as any).computeNavChecks();
+          return { done: !!r.checks[k], incomplete: !!r.incomplete[k] };
+        }, form.navKey);
+        const guidance = page.locator('#page-local-guidance', { hasText: /recipient/i });
+        const advisory = page.locator('.alert-warning li', { hasText: 'Certificate of Service —' });
+
+        expect(await mark(), 'untouched: the sidebar counts the page finished').toEqual({ done: true, incomplete: false });
+        await go(page, form.route);
+        await expect(page.locator('#main-content h1')).toContainText('Certificate of Service');
+        await expect(guidance, 'untouched: the page asks for nothing').toHaveCount(0);
+        await expect(page.locator('#page-next-btn'), 'untouched: the way on to Preview & Export is open').toBeEnabled();
+        await page.evaluate(() => (window as any).flushPendingSave());
+        await go(page, '/print');
+        await expect(page.locator(form.pdfButton)).toBeEnabled({ timeout: 20_000 });
+        await expect(advisory, 'untouched: Preview & Export says nothing about it').toHaveCount(0);
+
+        // Entering anything starts it; from then on it is asked like any Plan's.
+        await go(page, form.route);
+        await page.locator('#certDate').fill('2026-03-01');
+        await page.locator('#certDate').blur();
+        expect(await mark(), 'started: marked unfinished').toEqual({ done: false, incomplete: true });
+        await page.evaluate(() => (window as any).flushPendingSave());
+        await go(page, form.route);
+        await expect(guidance, 'started: the page says what it still wants').toHaveCount(1);
+        await go(page, '/print');
+        await expect(page.locator(form.pdfButton), 'still never blocks export').toBeEnabled({ timeout: 20_000 });
+        await expect(advisory.first(), 'started: Preview & Export says what is blank').toBeVisible();
+        await expect(advisory.filter({ hasText: 'No recipient is listed' })).toHaveCount(1);
       });
     }
   });

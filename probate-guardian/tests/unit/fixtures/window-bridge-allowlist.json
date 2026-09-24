@@ -54,6 +54,10 @@
       "name": "prepareFilingOutput"
     },
     {
+      "file": "src/core/filing/plan-certificate-of-service.js",
+      "name": "planCertificateStarted"
+    },
+    {
       "file": "src/core/form/commit-coordinator.js",
       "name": "_transientDrafts"
     },

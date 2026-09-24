@@ -15,7 +15,7 @@ or stop a filing outright; the rest prevent a filer from recording the truth.
 | 68D | Period end date cut off on every Annual cover page | Wrong data on a filed document | **DECIDED** — fix the wrap width, derived from the layout | **LANDED 2026-09-24** — see the build record under 68D; Plan Initial rendered |
 | 68A | Plan signatures must be dated after the period being planned for | **Blocks filing**; only remedy is a false sworn date | **DECIDED** — remove the rule from Plans; keep it on accountings | **LANDED 2026-09-24** — audit found 8 sites on three Plans (Minor had it too; Initial never did); see the build record under 68A |
 | 68B | Initial Plan files with no reporting period, unflagged | Incomplete document filed, silently | **DECIDED** — require it, as the other Plans do | **LANDED 2026-09-24** — see the build record under 68B |
-| 68C | No certificate of service on any Plan type | App states a requirement it cannot meet | **DECIDED** — build on all four; optional on Simplified; fix its wrong text; date + method optional and "Certified by the filer" settled at build (2026-09-24) | **LANDED 2026-09-24** — see the build record under 68C |
+| 68C | No certificate of service on any Plan type | App states a requirement it cannot meet | **DECIDED** — build on all four; optional on Simplified; fix its wrong text; date + method optional and "Certified by the filer" settled at build (2026-09-24) | **LANDED 2026-09-24** — see the build record under 68C; follow-up the same day: an untouched Simplified Plan certificate asks nothing |
 | 68E | Initial Plan Q5 accepts one answer where several apply | Cannot record the truth | **DECIDED** — the court's form is a checkbox list; convert to multi-select — Q5, Q4 and any other radio-rendered checkbox list the form shows (settled 2026-09-24) | **LANDED 2026-09-24** — Q2, Q4 and Q5 (the form's page 2, rendered and looked at); see the build record under 68E |
 | 68F | Assistive-devices "None" can be ticked alongside real selections | A filed plan can state both | **DECIDED** — no "None" added (form has none); fix mutual exclusion on D and E | **LANDED 2026-09-24** — see the build record under 68F |
 | 68G | Annual Plan Q6 cannot state a right is **not** restorable | **Statutory** — §744.3675(3)(b) requires that statement | **DECIDED** — the form's four columns: Yes / No / Not Removed / Needs to be Restored; stored values unchanged, "No" added (settled 2026-09-24) | **LANDED 2026-09-24** — see the build record under 68G |
@@ -989,6 +989,47 @@ certificate in any PDF (4), the Simplified card still calling it a local
 requirement (1). Green: the 15-spec neighbour set (the new spec, the four `plan-*-mount` snapshots, `navigation-status.contract`, `readiness-card.contract`, `plan-readiness.contract`, `sidebar-only-wants`, `section-guidance-invariant`, `plan-pdf-wcag-compliance`, `pdf-form-specific`, `signature-capture.contract`, `plan-signature-date`, `plan-initial-period`) ran **231 of 241, 28.2 min**, every failure test-side: the page's `h1` carries the shell's injected "All Filings ?" text (matched by containment now); the yes/no radios are named `yesno_<id>_yes/_no`; the four attestation cases ticked Yes with Recipient 1 already named, which the accountings' D16 rule hides the question for — the retained data now lives in a second card, and the case also proves that naming Recipient 1 retires the question; and the Annual and Simplified Plan Signatures-page snapshots read "Next →" now that those pages lead on to the certificate. Rescoped: the three affected specs 27/27, and the certificate spec alone **13/13, 1.8 min** on the unchanged source. `tests/unit/plan-certificate-of-service.spec.js`
 (new, 10 cases) covers the shared rules; `plan-readiness-county.spec.js`'s
 two Simplified cases now assert the corrected local text; unit **125 of 126 files / 1,790 of 1,791 green** — the one failure is the index guard naming the two Milestone 68E spec files already staged in the tree, which 68E's commit indexes; `security-source-audit` failed once while a concurrent e2e run was writing `test-results/` and passes 3/3 alone and in the full suite.
+
+**Follow-up, 2026-09-24 — an untouched Simplified Plan certificate asks
+nothing.** Found after the build: every Simplified Plan filer who skipped the
+certificate, which the Clerk does not require, was told "Certificate of
+Service — Not completed" on Preview & Export and saw the page marked
+unfinished in the sidebar, so the plan never reached every-section-complete.
+The page's own **Preview & Export →** button was also disabled, because the
+Plans disable a page's forward button while the sidebar marks the page.
+Decided by the requester: say nothing until the filer starts the
+certificate; from then on, ask as the other Plans do. The shared module now
+decides once which certificate is optional, `certificateOptional(type)`
+(the Simplified Plan's only), and the print preview, the page's guidance box
+and the sidebar each combine it with the module's existing
+`certificateStarted` rule, which reaches `legacy-app.js` as
+`window.planCertificateStarted` the way `serviceRecipientIssues` does. The
+sidebar's "incomplete" mark for `ps-p4` uses that same "started" rule
+instead of its own shorter list, which ignored the method and the signature
+fields. The Annual, Initial and Minor Plans are unchanged.
+
+*Tests.* **Red first:** the new unit cases failed 4 of 4 for the stated
+reasons (the guidance box and the preview each still asked about an
+untouched Simplified certificate; no `certificateOptional`; no bridge), and
+the new browser case failed on every untouched-state check: the sidebar
+mark, the guidance box, a **disabled** Preview & Export button, and the "Not
+completed" warning (all four seen at once with soft assertions in a
+throwaway copy of the spec, deleted). The Annual/Initial/Minor "unchanged"
+unit case passed before and after. Green: `plan-certificate-of-service`,
+`section-guidance-policy` and `window-bridge` unit specs 70/70;
+`check:types` clean; `plan-certificate-of-service`,
+`section-guidance-invariant` and `guided-tour-navigation` browser specs
+29/29 (6.1 min); `sidebar-only-wants`, `plan-simplified-mount` and
+`plan-readiness.contract` 29/29 (3.3 min).
+
+*Discovery, reported and not changed (§8.9):* on the Annual, Initial and
+Minor Plans the certificate page's **Preview & Export →** button stays
+disabled until someone is listed or "no recipients are required" is
+answered Yes. A throwaway probe on the three untouched pages confirmed it
+(disabled on all three; enabled on the Simplified Plan after this fix). The
+sidebar's links still reach Preview & Export, and export itself is never
+blocked. It is the same forward-button gating every Plan page has; whether
+it belongs on a page nothing requires is the requester's call.
 
 **Discovery carried from the decision note above (§8.9):** the "Local Sixth
 Judicial Circuit requirement" wording on the Initial, Annual and Minor

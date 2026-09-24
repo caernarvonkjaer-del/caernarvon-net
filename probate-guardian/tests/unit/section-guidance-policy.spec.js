@@ -192,3 +192,22 @@ describe('sidebarOnlyWants() — what a sidebar-only rule still wants, as items 
     expect(() => sidebarOnlyWants('planAnnual', '/p4', null)).not.toThrow();
   });
 });
+
+// Milestone 68C follow-up, 2026-09-24. The Plans' Certificate of Service is
+// asked, never demanded; on the Simplified Plan, whose certificate the Clerk
+// does not require, an untouched one is not asked about at all.
+describe('sidebarOnlyWants() -- the Plans\' Certificate of Service', () => {
+  const blankCert = { certRecipients: [{ name: '', line2: '', line3: '', line4: '' }], certNoRecipients: '', certDate: '' };
+  const paths = (type, route, data) => sidebarOnlyWants(type, route, data).map((w) => w.path);
+
+  test('the Simplified Plan asks nothing until the filer starts the certificate, then asks like every other Plan', () => {
+    expect(sidebarOnlyWants('planSimplified', '/p4', blankCert)).toEqual([]);
+    expect(paths('planSimplified', '/p4', { ...blankCert, certDate: '2026-03-01' })).toEqual(['certRecipients.0.name']);
+  });
+
+  test('the Annual, Initial and Minor Plans ask from the start -- unchanged', () => {
+    for (const [type, route] of [['planAnnual', '/p12'], ['planInitial', '/p11'], ['planMinor', '/p8']]) {
+      expect(paths(type, route, blankCert), type).toEqual(['certRecipients.0.name']);
+    }
+  });
+});

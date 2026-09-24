@@ -1,7 +1,7 @@
-import { describe, expect, test } from 'vitest';
+import { afterEach, describe, expect, test, vi } from 'vitest';
 import {
   ATTESTATION_57B, CERT_SIGNER_OPTIONS, emptyCertificateOfService, migratePlanCertificateOfService,
-  resolveCertSigner, certificateRecipientsSettled, certificateStarted, planCertificateAdvisories,
+  resolveCertSigner, certificateRecipientsSettled, certificateStarted, certificateOptional, planCertificateAdvisories,
   planCertificateOfServiceSection,
 } from '../../src/core/filing/plan-certificate-of-service.js';
 
@@ -73,17 +73,22 @@ describe('settled and started -- the sidebar and the print preview', () => {
     expect(certificateStarted({ ...emptyCertificateOfService(), certSignatureState: 'none' }), 'an explicit "none" is not a start').toBe(false);
   });
 
-  test('advisories: one line for an untouched certificate (its wording says not required on the Simplified Plan), otherwise what is blank; every one advisory', () => {
+  test('advisories: one line for an untouched certificate (none at all where it is optional), otherwise what is blank; every one advisory', () => {
     const codes = (f, opts) => planCertificateAdvisories(f, opts).map((a) => a.code);
     const untouched = planCertificateAdvisories(emptyCertificateOfService(), { section: 'Certificate of Service' });
     expect(untouched).toHaveLength(1);
     expect(untouched[0]).toMatchObject({ code: 'plan-certificate.not-started', severity: 'advisory', field: 'certRecipients.0.name' });
     expect(untouched[0].message).toMatch(/^Certificate of Service — /);
     expect(untouched[0].message).toContain('can be filed without it');
-    expect(planCertificateAdvisories(emptyCertificateOfService(), { optional: true })[0].message).toContain('does not require a certificate of service');
+    // Follow-up, 2026-09-24: on the Simplified Plan, whose certificate the
+    // Clerk does not require, an untouched one says nothing at all -- every
+    // filer who skipped it was being told "Not completed" about a page their
+    // form does not need.
+    expect(planCertificateAdvisories(emptyCertificateOfService(), { optional: true })).toEqual([]);
 
     const started = { ...emptyCertificateOfService(), certIndicator: 'mailed' };
     expect(codes(started)).toEqual(['plan-certificate.recipients', 'plan-certificate.date', 'plan-certificate.signature']);
+    expect(codes(started, { optional: true }), 'once started, an optional certificate is told the same as any other').toEqual(codes(started));
     const complete = { ...emptyCertificateOfService(), certRecipients: [{ name: 'Sam', line2: '', line3: '', line4: '' }], certDate: '2026-03-01', certSignatureState: 'typed', certSignatureDate: '2026-03-01' };
     expect(codes(complete)).toEqual([]);
     const attested = { ...emptyCertificateOfService(), certNoRecipients: 'Yes', certDate: '2026-03-01', certSignatureDate: '2026-03-01' };
@@ -125,5 +130,28 @@ describe('the PDF section', () => {
   test('nothing entered prints "No service recipients listed." rather than an empty table', () => {
     const s = planCertificateOfServiceSection(emptyCertificateOfService(), cfg, fmt);
     expect(s.blocks[1]).toMatchObject({ type: 'notice', text: 'No service recipients listed.' });
+  });
+});
+
+// Follow-up, 2026-09-24. Which Plan's certificate is optional is decided once,
+// here, so the print preview, the page's guidance box and the sidebar cannot
+// disagree about it.
+describe('which certificate is optional', () => {
+  test('only the Simplified Plan\'s, per the Clerk\'s own Simplified Plan checklist', () => {
+    expect(certificateOptional('planSimplified')).toBe(true);
+    for (const type of ['planAnnual', 'planInitial', 'planMinor', 'annual', 'simplified', 'guardian', '', undefined]) {
+      expect(certificateOptional(type), String(type)).toBe(false);
+    }
+  });
+});
+
+describe('the bridge', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  test('publishes certificateStarted on window for the classic legacy-app.js sidebar, the same function, not a copy', async () => {
+    vi.stubGlobal('window', {});
+    vi.resetModules();
+    const mod = await import('../../src/core/filing/plan-certificate-of-service.js');
+    expect(window.planCertificateStarted).toBe(mod.certificateStarted);
   });
 });
