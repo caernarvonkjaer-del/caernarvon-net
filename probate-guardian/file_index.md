@@ -41,6 +41,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`MILESTONE-66-PROPOSAL.md`](<MILESTONE-66-PROPOSAL.md>) | Project documentation or policy reference. |
 | [`MILESTONE-67-PROPOSAL.md`](<MILESTONE-67-PROPOSAL.md>) | Project documentation or policy reference. |
 | [`MILESTONE-68-PROPOSAL.md`](<MILESTONE-68-PROPOSAL.md>) | Project documentation or policy reference. |
+| [`MILESTONE-68.75-PROPOSAL.md`](<MILESTONE-68.75-PROPOSAL.md>) | Draft Milestone 68¾ proposal for a centrally switched test-system warning at the beginning of every filing-page title. |
 | [`MILESTONE-ARCHIVE.md`](<MILESTONE-ARCHIVE.md>) | Project documentation or policy reference. |
 | [`package-lock.json`](<package-lock.json>) | Node project metadata and locked dependency manifest. |
 | [`package.json`](<package.json>) | Node project metadata and locked dependency manifest. |
