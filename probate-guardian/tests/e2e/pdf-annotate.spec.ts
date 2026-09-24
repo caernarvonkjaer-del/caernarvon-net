@@ -158,6 +158,15 @@ test.describe('Print Preview annotation (Milestone 39-A mechanism, 45B rollout)'
     await page.evaluate(() => (window as any).navigate('/print'));
     const pdfPage = page.locator('#print-doc-container .pdf-page').first();
     await pdfPage.waitFor({ state: 'visible', timeout: 15000 });
+    // Bring the page to the top of the screen first, as a filer about to
+    // annotate it would. The note below is placed and then re-selected at
+    // fixed page coordinates, and pdf.js does not show a selected note's
+    // toolbar while the note sits at the bottom edge of the viewport. That
+    // made this test depend on how much sits above the preview: Milestone
+    // 68C's Certificate of Service advisory added one line to every Plan's
+    // Preview & Export and the toolbar case failed, though the toolbar
+    // appears normally once the page is in view (verified both ways).
+    await pdfPage.evaluate((el) => el.scrollIntoView({ block: 'start' }));
 
     await page.locator('[data-annotate-action="toggle"]').click();
     const noteBtn = page.locator('[data-annotate-action="note"]');
