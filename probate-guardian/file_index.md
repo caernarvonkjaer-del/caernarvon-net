@@ -42,6 +42,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`MILESTONE-67-PROPOSAL.md`](<MILESTONE-67-PROPOSAL.md>) | Project documentation or policy reference. |
 | [`MILESTONE-68-PROPOSAL.md`](<MILESTONE-68-PROPOSAL.md>) | Project documentation or policy reference. |
 | [`MILESTONE-68.75-PROPOSAL.md`](<MILESTONE-68.75-PROPOSAL.md>) | Draft Milestone 68¾ proposal for a centrally switched test-system warning at the beginning of every filing-page title. |
+| [`MILESTONE-70-FIX-LEDGER.md`](<MILESTONE-70-FIX-LEDGER.md>) | Milestone 70 branch-only ledger of every master commit made after the milestone-70 branch point, each with its disposition, proving test and status, so production fixes are carried into the migrated code before the merge (decision D1); also the delivery owners and the branch-only settings to undo at the merge. |
 | [`MILESTONE-70-PROPOSAL.md`](<MILESTONE-70-PROPOSAL.md>) | Draft Milestone 70 plan to retire Guardian Forms' classic application monolith through staged ES-module services, canonical state, a narrow namespaced browser API, and source/web/portable compatibility gates. |
 | [`MILESTONE-ARCHIVE.md`](<MILESTONE-ARCHIVE.md>) | Project documentation or policy reference. |
 | [`package-lock.json`](<package-lock.json>) | Node project metadata and locked dependency manifest. |
@@ -80,6 +81,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`scripts\generate-service-worker.mjs`](<scripts/generate-service-worker.mjs>) | Repository file. |
 | [`scripts\measure-baseline.mjs`](<scripts/measure-baseline.mjs>) | Repository file. |
 | [`scripts\measure-lifecycle.mjs`](<scripts/measure-lifecycle.mjs>) | Repository file. |
+| [`scripts\ms70-ledger-guard.mjs`](<scripts/ms70-ledger-guard.mjs>) | Milestone 70 ledger guard: fails when a master commit after the milestone-70 branch point is missing from MILESTONE-70-FIX-LEDGER.md; --merge also fails on open rows; reports the re-implement count for decision D7. |
 | [`scripts\run-e2e-profile.mjs`](<scripts/run-e2e-profile.mjs>) | Repository file. |
 | [`scripts\run-guide-capture.mjs`](<scripts/run-guide-capture.mjs>) | Repository file. |
 | [`scripts\verify-data-model.mjs`](<scripts/verify-data-model.mjs>) | Repository file. |
@@ -441,6 +443,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`tests\unit\help-guide-pdf-orphan.spec.js`](<tests/unit/help-guide-pdf-orphan.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\issue-registry.spec.js`](<tests/unit/issue-registry.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\live-region.spec.js`](<tests/unit/live-region.spec.js>) | Automated test covering the named behavior or contract. |
+| [`tests\unit\ms70-ledger-guard.spec.js`](<tests/unit/ms70-ledger-guard.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\native-dialog-guard.spec.js`](<tests/unit/native-dialog-guard.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\offline-access-preference.spec.js`](<tests/unit/offline-access-preference.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\output-authorization.spec.js`](<tests/unit/output-authorization.spec.js>) | Automated test covering the named behavior or contract. |

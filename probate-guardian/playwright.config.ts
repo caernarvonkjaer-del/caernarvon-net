@@ -75,10 +75,16 @@ function defaultChromiumExecutablePath() {
 
 const chromiumExecutablePath = defaultChromiumExecutablePath();
 
+// Milestone 70 branch only (MILESTONE-70-FIX-LEDGER.md, "Branch-only
+// settings"): master's worktree serves its tests on 4321/4173 and reuses a
+// server already listening there (reuseExistingServer, below). With master
+// and milestone-70 checked out side by side, a run in either worktree could
+// silently test the other's files. The branch therefore uses its own ports.
+// Restore 4321/4173 in the merge.
 const TARGETS = {
-  source:   { command: 'npx vite preview --outDir . --port 4321 --strictPort', url: 'http://localhost:4321/index.html', baseURL: 'http://localhost:4321/index.html' },
-  dev:      { command: 'npx vite --port 5173 --strictPort', url: 'http://localhost:5173/', baseURL: 'http://localhost:5173/' },
-  web:      { command: 'npx vite preview --outDir dist/web --port 4173 --strictPort', url: 'http://localhost:4173/probate-guardian/', baseURL: 'http://localhost:4173/probate-guardian/' },
+  source:   { command: 'npx vite preview --outDir . --port 4331 --strictPort', url: 'http://localhost:4331/index.html', baseURL: 'http://localhost:4331/index.html' },
+  dev:      { command: 'npx vite --port 5183 --strictPort', url: 'http://localhost:5183/', baseURL: 'http://localhost:5183/' },
+  web:      { command: 'npx vite preview --outDir dist/web --port 4183 --strictPort', url: 'http://localhost:4183/probate-guardian/', baseURL: 'http://localhost:4183/probate-guardian/' },
   portable: null, // no server — tests/e2e/support/target.ts builds a literal file:// URL instead
 };
 
