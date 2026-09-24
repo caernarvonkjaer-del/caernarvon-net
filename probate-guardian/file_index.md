@@ -87,7 +87,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`scripts\ms70-ledger-guard.mjs`](<scripts/ms70-ledger-guard.mjs>) | Milestone 70 ledger guard: fails when a master commit after the milestone-70 branch point is missing from MILESTONE-70-FIX-LEDGER.md; --merge also fails on open rows; reports the re-implement count for decision D7. |
 | [`scripts\run-e2e-profile.mjs`](<scripts/run-e2e-profile.mjs>) | Repository file. |
 | [`scripts\run-guide-capture.mjs`](<scripts/run-guide-capture.mjs>) | Repository file. |
-| [`scripts\serve-portable-http.mjs`](<scripts/serve-portable-http.mjs>) | Milestone 70 (T1) host for the portable-http e2e profile: serves dist/portable from a subfolder on http://localhost, the way the DNN site serves the portable package in production. |
+| [`scripts\serve-portable-http.mjs`](<scripts/serve-portable-http.mjs>) | Milestone 70 (T1) host for the portable-http e2e profile: serves dist/portable from production's /Portals/0/Guardian-Forms/ subfolder on http://localhost with production's captured headers, the way the DNN site serves the portable package. |
 | [`scripts\verify-data-model.mjs`](<scripts/verify-data-model.mjs>) | Repository file. |
 | [`src\assets\embedded-fonts.js`](<src/assets/embedded-fonts.js>) | Build, tooling, or configuration source. |
 | [`src\assets\LICENSE-LiberationSans.txt`](<src/assets/LICENSE-LiberationSans.txt>) | Text reference or run instructions. |
@@ -378,6 +378,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`tests\e2e\support\fixtures.ts`](<tests/e2e/support/fixtures.ts>) | Build, tooling, or configuration source. |
 | [`tests\e2e\support\pdf-extract.ts`](<tests/e2e/support/pdf-extract.ts>) | Build, tooling, or configuration source. |
 | [`tests\e2e\support\plan-fixture.ts`](<tests/e2e/support/plan-fixture.ts>) | Build, tooling, or configuration source. |
+| [`tests\e2e\support\production-headers.json`](<tests/e2e/support/production-headers.json>) | Milestone 70 (T1): response headers of the production page, captured once with the requester's go-ahead, replayed by scripts/serve-portable-http.mjs for the portable-http profile. |
 | [`tests\e2e\support\stream.ts`](<tests/e2e/support/stream.ts>) | Build, tooling, or configuration source. |
 | [`tests\e2e\support\supplemental-pdf-fixture.ts`](<tests/e2e/support/supplemental-pdf-fixture.ts>) | Build, tooling, or configuration source. |
 | [`tests\e2e\support\target-profile.ts`](<tests/e2e/support/target-profile.ts>) | Build, tooling, or configuration source. |

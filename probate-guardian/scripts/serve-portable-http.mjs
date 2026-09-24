@@ -11,22 +11,27 @@
 // (tests/e2e/portable-http-parity.spec.ts) asserts that on every run rather
 // than trusting it.
 //
-// Production's own response headers are not replayed yet: capturing them
-// contacts the production site and waits for the requester's go-ahead
-// (70A). Until then only Content-Type is sent.
+// Production's response headers were captured once, with the requester's
+// go-ahead, into tests/e2e/support/production-headers.json; the ones that can
+// change how the page behaves are replayed on every response here, and HTML
+// is sent as plain "text/html" with no charset, as production sends it. Only
+// index.html was requested, so the same headers are assumed for the other
+// files -- unverified, and recorded as such in that file.
 //
-// Usage: node scripts/serve-portable-http.mjs [--port=4341] [--base=/dnn/guardian-forms/]
+// Usage: node scripts/serve-portable-http.mjs [--port=4341] [--base=/Portals/0/Guardian-Forms/]
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+export const PRODUCTION = JSON.parse(fs.readFileSync(path.join(ROOT, 'tests', 'e2e', 'support', 'production-headers.json'), 'utf8'));
 export const DEFAULT_PORT = 4341;
-export const DEFAULT_BASE = '/dnn/guardian-forms/';
+// Production's own folder on the DNN site, capitals and all.
+export const DEFAULT_BASE = PRODUCTION.basePath;
 
 const MIME = {
-  '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8',
+  '.html': PRODUCTION.htmlContentType, '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8',
   '.css': 'text/css; charset=utf-8', '.json': 'application/json; charset=utf-8', '.map': 'application/json; charset=utf-8',
   '.webmanifest': 'application/manifest+json', '.png': 'image/png', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml',
   '.ico': 'image/x-icon', '.woff': 'font/woff', '.woff2': 'font/woff2', '.ttf': 'font/ttf', '.txt': 'text/plain; charset=utf-8',
@@ -55,7 +60,7 @@ export function startServer({ port = DEFAULT_PORT, base = DEFAULT_BASE, dir = pa
     const target = resolveRequest(req.url, { base, dir });
     if (target?.redirect) { res.writeHead(302, { Location: target.redirect }); res.end(); return; }
     if (!target || !fs.existsSync(target.file) || !fs.statSync(target.file).isFile()) { res.writeHead(404); res.end('Not found'); return; }
-    res.writeHead(200, { 'Content-Type': MIME[path.extname(target.file).toLowerCase()] || 'application/octet-stream' });
+    res.writeHead(200, { ...PRODUCTION.replayed, 'Content-Type': MIME[path.extname(target.file).toLowerCase()] || 'application/octet-stream' });
     if (req.method === 'HEAD') { res.end(); return; }
     fs.createReadStream(target.file).pipe(res);
   });

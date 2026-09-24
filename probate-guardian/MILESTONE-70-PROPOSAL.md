@@ -656,7 +656,7 @@ on the `milestone-70` branch unless it says otherwise.
 | Parser-based dependency audit and ratchet | `0f86677` | `scripts/ms70-dependency-audit.mjs`; `tests/baseline/ms70-dependency-{baseline,inventory}.json`. **Gate items: seen failing on the real tree** for an injected implicit global in `legacy-app.js`, a bare `esc()` call in `src/core/case-resolver.js`, and a two-way import between `state.js` and `case-resolver.js`, each restored; `ms70-dependency-ratchet.spec.js` 19/19. |
 | Assertion-count baseline | `122d0e9` | `scripts/ms70-assertion-counts.mjs`; `tests/baseline/ms70-assertion-counts.json`. Seen failing on a real spec with one `expect` removed (15 to 14). |
 | Browser-suite global inventory | `122d0e9` | `scripts/ms70-e2e-global-inventory.mjs`; `tests/baseline/ms70-e2e-globals.json` -- what `GuardianForms.testing` is designed from. |
-| `portable-http` profile (T1), brought up | `02ecde4` | `scripts/serve-portable-http.mjs`; `PG_TARGET=portable-http`; `npm run test:e2e:portable-http`; also part of `test:release` through the `all` profile. **Gate item: the one bring-up run (D2) 33/33, 0 skipped**, including the five ward-lock tests and the backup lock test the `file://` profile skips. The parity spec was seen failing for the stated reason with `dist/portable/fragments` removed. |
+| `portable-http` profile (T1), brought up | `02ecde4`, then the headers commit | `scripts/serve-portable-http.mjs`; `PG_TARGET=portable-http`; `npm run test:e2e:portable-http`; also part of `test:release` through the `all` profile. **Gate item: the one bring-up run (D2) 33/33, 0 skipped**, including the five ward-lock tests and the backup lock test the `file://` profile skips. The parity spec was seen failing for the stated reason with `dist/portable/fragments` removed. Production's headers then captured with the requester's go-ahead (one GET of `https://www.mypinellasclerk.gov/Portals/0/Guardian-Forms/index.html`, recorded in `tests/e2e/support/production-headers.json`), the profile moved to production's own `/Portals/0/Guardian-Forms/` path, and `Cache-Control`, `X-Frame-Options` and `X-XSS-Protection` replayed with HTML sent as plain `text/html`; rerun 33/33, and the header check seen failing with the replay removed. |
 | Security contract | `f4f368b` | `tests/unit/crypto-contract.spec.js` 8/8 and `tests/e2e/security-contract.spec.ts` 3/3, each seen failing with the fault injected (iterations 100,000, a 16-byte IV, an extractable key; auto-lock at 14 minutes, lockout threshold 6, a stored copy of the password). |
 
 **Parsed figures that replace this plan's estimates.** The Verified planning
@@ -712,6 +712,24 @@ work that needs the requester's go-ahead, and then joins the ledger.
    by the router and ward lifecycle through `window`, where it does not
    exist; nothing reads it. Harmless; a "delete as dead" disposition.
 
+Item 1 is fixed on `master` (`945b5a8`, with the requester's go-ahead,
+red first) and recorded in the ledger. Its test found a further defect,
+reported, not fixed: the shared exporter's `percentValue()`
+(`src/core/excel/excel-engine.js`) treats any value up to 1 as already a
+fraction, so a ward share entered as 1% is written to the court workbook as
+100% (0.5% as 50%). Cross-form, Guardian Inventory's importer rounds an
+imported percentage to 6 decimals and returns a number where Annual's rounds
+to 2 and returns text -- unresolved which is right.
+
+5. **Production caches the application for a year.** The production server
+   sends `index.html` -- 7.1 MB, holding nearly all of the application's code
+   in the portable build -- with `Cache-Control: public,max-age=31536000`.
+   With no service worker, a browser that has the page may run that copy
+   without checking for a newer one for up to a year; a normal reload usually
+   revalidates, but a filer returning through a bookmark may not see a deploy
+   at all. This is hosting configuration on the county's IIS server, not code
+   in this repository.
+
 **Findings -- for this plan.**
 
 - `vite.config.js` calls `dist/portable`'s copy of `fragments/` "unused at
@@ -722,6 +740,12 @@ work that needs the requester's go-ahead, and then joins the ledger.
 - `window.navigate` has two publishers, `main.js` and `router.js`, which
   publish the same imported function: a duplicate publication, not a
   conflict. Recorded for the duplicate list.
+- The mixed-version window is not "the minutes after a deploy". Because of
+  finding 5, a filer can keep running a pre-merge copy of the application for
+  as long as the cached page lasts, so the mixed-version contract has to hold
+  for that long -- and a rollback may never reach a filer whose browser still
+  holds the migrated copy. Unless production's caching changes, it belongs
+  in the release packet (D8).
 - The lock and unlock behavior pinned by the security contract is exactly
   what 70I moves: 5 failures, 30 seconds doubling to a 5-minute cap, a
   15-minute inactivity lock, and a lock that clears the key and the
@@ -733,9 +757,8 @@ duplicate list; the `.sav` fixture corpus (current and historical, plus
 corrupt and wrong-password cases); the mixed-version characterization; the
 year-rollover characterization; the fixture-helper inventory; the baseline
 measurements (`measure:baseline`/`measure:lifecycle` with `--output`); the
-`GuardianForms` schema; capturing production's response headers for
-`portable-http` (it contacts production, so it waits for the requester's
-go-ahead and the production URL); and the per-delivery estimate.
+`GuardianForms` schema; the characterization of findings 2 and 3 (approved,
+tests only); and the per-delivery estimate.
 
 ---
 

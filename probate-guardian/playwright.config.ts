@@ -88,7 +88,7 @@ const TARGETS = {
   portable: null, // no server — tests/e2e/support/target.ts builds a literal file:// URL instead
   // Milestone 70, 70A (T1): dist/portable served from a subfolder over
   // http://localhost, as the DNN site serves it in production.
-  'portable-http': { command: 'node scripts/serve-portable-http.mjs --port=4341', url: 'http://localhost:4341/dnn/guardian-forms/index.html', baseURL: 'http://localhost:4341/dnn/guardian-forms/index.html' },
+  'portable-http': { command: 'node scripts/serve-portable-http.mjs --port=4341', url: 'http://localhost:4341/Portals/0/Guardian-Forms/index.html', baseURL: 'http://localhost:4341/Portals/0/Guardian-Forms/index.html' },
 };
 
 const webServer = TARGETS[target]

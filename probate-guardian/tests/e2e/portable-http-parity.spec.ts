@@ -1,4 +1,7 @@
 import { test, expect } from '@playwright/test';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { freshStartNoPassword } from './support/target';
 import { currentTarget, skipExpectedTargetExclusion } from './support/target-profile';
 
@@ -18,7 +21,9 @@ import { currentTarget, skipExpectedTargetExclusion } from './support/target-pro
 // Remove it and every modal on the production site stops opening while the
 // file:// profile stays green.
 
-const BASE = '/dnn/guardian-forms/';
+// Production's folder and headers, captured once (support/production-headers.json).
+const PRODUCTION = JSON.parse(fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), 'support', 'production-headers.json'), 'utf8'));
+const BASE: string = PRODUCTION.basePath;
 
 test.describe('portable-http: parity with how production serves the portable build (Milestone 70, 70A)', () => {
   test('served from a subfolder in a secure context, with no service worker, the real filing lock, and fragments fetched from the package', async ({ page }) => {
@@ -27,9 +32,12 @@ test.describe('portable-http: parity with how production serves the portable bui
     page.on('pageerror', (e) => problems.push(`page error: ${e.message}`));
     page.on('console', (m) => { if (m.type() === 'error') problems.push(`console error: ${m.text()}`); });
     const requests: { path: string; status: number }[] = [];
+    let pageHeaders: Record<string, string> = {};
     page.on('response', (r) => {
       const url = new URL(r.url());
-      if (url.origin === 'http://localhost:4341') requests.push({ path: url.pathname, status: r.status() });
+      if (url.origin !== 'http://localhost:4341') return;
+      requests.push({ path: url.pathname, status: r.status() });
+      if (url.pathname === `${BASE}index.html` || url.pathname === BASE) pageHeaders = r.headers();
     });
 
     await freshStartNoPassword(page);
@@ -47,6 +55,12 @@ test.describe('portable-http: parity with how production serves the portable bui
     expect(facts.webBuildMarker, 'the portable package, not the hosted web build').toBe(false);
     expect(facts.registrations, 'no service worker, as in production').toBe(0);
     expect(facts.webLocks, 'Web Locks exist, so the cross-tab filing lock is real rather than bypassed').toBe(true);
+
+    // The page arrives with production's headers.
+    expect(pageHeaders['content-type'], 'HTML sent as production sends it').toBe(PRODUCTION.htmlContentType);
+    for (const [name, value] of Object.entries(PRODUCTION.replayed as Record<string, string>)) {
+      expect(pageHeaders[name.toLowerCase()], `production's ${name}`).toBe(value);
+    }
 
     // A real click on a control whose dialog lives in the lazy fragment.
     await page.locator('[data-feedback-open]').first().click();
