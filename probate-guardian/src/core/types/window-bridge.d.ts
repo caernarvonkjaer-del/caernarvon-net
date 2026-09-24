@@ -412,6 +412,7 @@ interface Window {
   setAccountingFilingType: any;
   setPartyIdForSlot: any;
   setPath: any;
+  setTestSystemTitleWarningEnabledForTest: any;
   setupAmountFieldValidation: any;
   setupAutoExportTimer: any;
   setupFallbackSaveReminder: any;

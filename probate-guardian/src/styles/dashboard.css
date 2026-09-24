@@ -136,7 +136,6 @@
 .dashboard-page-header{display:flex;align-items:flex-end;justify-content:space-between;gap:1.25rem;margin-bottom:1rem;}
 .dashboard-page-title{min-width:0;}
 .dashboard-page-title h1{margin:0;color:var(--ink);}
-.dashboard-test-system-label{color:#820024;}
 .dashboard-page-title p{margin:.3rem 0 0;color:var(--ink-3);font-size:.86rem;}
 .dashboard-page-kicker{margin-bottom:.2rem;color:var(--brand-text);font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:0;}
 .dashboard-header-actions{display:flex;align-items:flex-end;justify-content:flex-end;gap:.6rem;flex-wrap:wrap;}

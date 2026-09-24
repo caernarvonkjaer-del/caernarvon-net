@@ -1106,6 +1106,10 @@
       "name": "planRightLabel"
     },
     {
+      "file": "src/core/ui/test-system-title.js",
+      "name": "setTestSystemTitleWarningEnabledForTest"
+    },
+    {
       "file": "src/legacy-app.js",
       "name": "SCHEDULE_NAV_KEYS"
     },

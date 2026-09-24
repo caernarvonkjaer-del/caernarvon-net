@@ -175,6 +175,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`src\core\types\window-bridge.d.ts`](<src/core/types/window-bridge.d.ts>) | Build, tooling, or configuration source. |
 | [`src\core\ui\dialogs.js`](<src/core/ui/dialogs.js>) | Build, tooling, or configuration source. |
 | [`src\core\ui\export-guard.js`](<src/core/ui/export-guard.js>) | Build, tooling, or configuration source. |
+| [`src\core\ui\test-system-title.js`](<src/core/ui/test-system-title.js>) | Milestone 68¾A: the one constant and one switch for the "TEST SYSTEM - Do not use for filing" title warning, and the idempotent decorator the router applies to every title surface. |
 | [`src\core\ui\transient-status.js`](<src/core/ui/transient-status.js>) | Build, tooling, or configuration source. |
 | [`src\core\validation\attorney-block.js`](<src/core/validation/attorney-block.js>) | Build, tooling, or configuration source. |
 | [`src\core\validation\date-rules.js`](<src/core/validation/date-rules.js>) | Build, tooling, or configuration source. |
@@ -373,6 +374,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`tests\e2e\tab-and-update.spec.ts`](<tests/e2e/tab-and-update.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\terms-acceptance.spec.ts`](<tests/e2e/terms-acceptance.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\theme-prepaint.spec.ts`](<tests/e2e/theme-prepaint.spec.ts>) | Automated test covering the named behavior or contract. |
+| [`tests\e2e\test-system-title-prefix.spec.ts`](<tests/e2e/test-system-title-prefix.spec.ts>) | Milestone 68¾A: every filing page, the dashboard and the Preview & Export banner begin their title with the test-system warning, once; outputs carry none. |
 | [`tests\e2e\ucn-cover-field.spec.ts`](<tests/e2e/ucn-cover-field.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\unlock.spec.ts`](<tests/e2e/unlock.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\user-guide-wiring.spec.ts`](<tests/e2e/user-guide-wiring.spec.ts>) | Automated test covering the named behavior or contract. |

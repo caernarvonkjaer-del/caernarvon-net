@@ -257,7 +257,12 @@ const GUIDE_CONTROLS = {
   },
   'dashboard-test-system-label': {
     label: 'TEST SYSTEM - Do not use for filing',
-    evidence: [{ file: 'src/features/dashboard/index.js', pattern: /TEST SYSTEM - Do not use for filing/ }],
+    // Milestone 68¾A: one shared constant now puts the warning at the start
+    // of every filing page's title and the dashboard's, applied by the router.
+    evidence: [
+      { file: 'src/core/ui/test-system-title.js', pattern: /TEST_SYSTEM_TITLE_WARNING = 'TEST SYSTEM - Do not use for filing'/ },
+      { file: 'src/core/navigation/router.js', pattern: /decorateTestSystemTitles\(/ },
+    ],
   },
 };
 

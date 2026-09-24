@@ -228,6 +228,12 @@ body{margin:0;font-family:'Segoe UI Variable Text','Segoe UI',system-ui,-apple-s
 .form-header-actions .topnav-btn{height:32px;padding:0 .75rem;font-size:.8rem;font-weight:600;box-sizing:border-box;}
 .form-header-actions .topnav-theme,.form-header-actions .topnav-help{width:32px;padding:0;}
 @media print{.form-header-actions,.dashboard-toolbar-actions{display:none!important;}}
+/* Milestone 68¾A: the test-system warning at the start of every title
+   (src/core/ui/test-system-title.js). The warning and the title wrap as one
+   unit beside the header buttons; the warning is hidden when printing. */
+.test-system-title{min-width:0;flex:1 1 auto;overflow-wrap:anywhere;}
+.test-system-title-prefix{color:var(--brand-text);font-weight:700;}
+@media print{.test-system-title-prefix{display:none!important;}}
 .schedule-instructions{background:var(--accent-050);border:1px solid #dbe7f4;border-left:3px solid var(--accent);border-radius:var(--r-sm);padding:.75rem 1rem;margin-bottom:1.25rem;font-size:.88rem;line-height:1.6;color:var(--ink-2);}
 [data-theme="dark"] .schedule-instructions{border-color:#22384d;}
 .schedule-page{display:flex;flex-direction:column;min-height:100%;}

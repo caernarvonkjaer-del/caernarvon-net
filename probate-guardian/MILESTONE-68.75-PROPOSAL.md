@@ -2,9 +2,10 @@
 
 ## Status
 
-**Draft. This document authorizes no change.** The delivery below is proposed,
-not approved. Nothing here may be implemented without the requester's explicit,
-named approval of **Milestone 68¾** (AGENTS.md §3).
+**68¾A — LANDED 2026-09-24.** Approved by the requester on 2026-09-24 ("roll
+the MS 68.75 work into your current task list"), built after Milestone 68 so
+the page snapshots it changes were not being edited concurrently. See the
+build record at the end of this document.
 
 ## What a tester will see
 
@@ -228,3 +229,56 @@ file set unless implementation also touches a checked TypeScript support file.
 - refactoring page templates or the router beyond the existing title-decoration
   seam; or
 - making the warning a general-purpose announcement/banner system.
+
+---
+
+## Build record — 68¾A LANDED 2026-09-24
+
+**What a tester now sees.** Every page inside every filing — all nine filing
+types, every route, Annual/Final/Trust included — the dashboard, and the
+Preview & Export banner begin their visible title with
+**TEST SYSTEM - Do not use for filing - **, once, in the brand color. The
+reported example reads exactly "TEST SYSTEM - Do not use for filing -
+Verified Initial Inventory — Case Information"; the dashboard reads "TEST
+SYSTEM - Do not use for filing - All Filings — Dashboard" (its old trailing
+label is gone). Nothing is added to a PDF, workbook, `.sav` file, metadata,
+filename or the browser-tab title, and print CSS hides the warning.
+
+**As designed, one place.** `src/core/ui/test-system-title.js` holds the one
+constant, the one switch (`TEST_SYSTEM_TITLE_WARNING_ENABLED`) and the
+decorator; `router.js`'s existing post-render header path calls it — first
+thing in `attachFormHeaderActions()`, so before the dashboard and
+hidden-heading early returns, and once more after the dashboard mounts. It
+wraps the warning and the original title in one span, so they wrap together
+beside the header buttons, and marks it so the router's mutation observer
+can call it any number of times without doubling it. The warning is real
+DOM text: in the heading's accessible name, copyable, testable.
+
+**One finding during the build.** The Initial Inventory's Preview & Export
+banner opens with a `<span>`, where the other forms' open with a `<div>`; the
+first design targeted `div:first-child` and missed it (the matrix test
+caught it: "guardian /print has a visible title surface"). The decorator
+now takes the banner's first child, whatever the element.
+
+**Switch-off seam.** `setTestSystemTitleWarningEnabledForTest(false)` flips
+the switch for the current page load only — nothing stored — and restores
+every title on screen node for node; a reload returns to the constant. It is
+a deliberate `window.*` global (allowlisted, declarations regenerated), used
+only by the spec. The normal removal path remains the constant.
+
+**Tests.** `tests/e2e/test-system-title-prefix.spec.ts` (new, driven from
+`FILING_MATRIX`): every route of every type starts with the warning once; the
+reported example exactly; re-render, field write, theme change and
+navigate-away-and-back never duplicate it; header buttons visible and named;
+the dashboard; Preview & Export's banner, with the downloaded PDF and
+workbook carrying no warning; the seam switched off restoring every title;
+no overlap at 390px. **Red first: 14/14 failed** before the decorator was
+wired, the nine type cases on the bare titles. First green run 79/91: eleven
+byte-exact page snapshots (`annual-mount`, `simplified-mount`, the four
+`plan-*-mount`) differing only in their title line gaining the prefix —
+the expected change, applied to exactly those eleven lines — and the
+Inventory banner above. Then **91/91** with `routes.spec.ts` (10.5 min).
+Unit 126 files / 1,792 green; `check:types` clean (the router is in the
+checked set). The guide's dashboard sentence now describes the warning on
+every title, and the drift guard's `dashboard-test-system-label` control
+points at the shared constant and the router call.

@@ -3,6 +3,7 @@ import { getCaseFile } from '../state.js';
 import { FILING_ENGINE_IDS, mountFeatureFnName } from '../filing/filing-descriptor.js';
 import { resetReadinessCardState } from '../filing/readiness-card.js';
 import { saveLastPosition } from '../persistence/recovery-cache.js';
+import { decorateTestSystemTitles } from '../ui/test-system-title.js';
 
 let _currentPage = '/dashboard';
 
@@ -130,6 +131,8 @@ export async function renderPage(page) {
     if (typeof window !== 'undefined' && typeof window.mountDashboardFeature === 'function') {
       await window.mountDashboardFeature(page);
     }
+    // Milestone 68¾A: the dashboard's title carries the test-system warning too.
+    decorateTestSystemTitles(el);
     return;
   }
 
@@ -206,6 +209,11 @@ export async function renderPage(page) {
 
 export function attachFormHeaderActions(container = (typeof document !== 'undefined' ? document.getElementById('main-content') : null)) {
   if (!container || typeof document === 'undefined') return;
+  // Milestone 68¾A: the test-system warning goes on every title surface --
+  // the dashboard, a filing page's heading, and the Preview & Export banner
+  // -- before any early return below. Idempotent, so this function's
+  // mutation observer calling it again never doubles the warning.
+  decorateTestSystemTitles(container);
   if (container.querySelector('[data-dashboard-root], .dashboard-page-header')) return;
 
   const h1 = container.querySelector('.schedule-page > h1, .schedule-page h1');
