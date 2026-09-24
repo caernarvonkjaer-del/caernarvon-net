@@ -366,6 +366,17 @@ function walkJs(dir, out = []) {
   return out;
 }
 
+/** Module entry points: index.html's <script type="module" src> tags. */
+export function moduleEntriesFromHtml(html) {
+  const out = [];
+  for (const m of html.matchAll(/<script\b([^>]*)>/g)) {
+    const attrs = m[1];
+    const src = /\bsrc\s*=\s*"([^"]+)"/.exec(attrs)?.[1];
+    if (src && /\btype\s*=\s*"module"/.test(attrs)) out.push(src.replace(/^\.\//, ''));
+  }
+  return out;
+}
+
 /** Application classic scripts: index.html's <script src> tags without type="module", outside lib/. */
 export function classicScriptsFromHtml(html) {
   const out = [];
@@ -428,13 +439,34 @@ export function layerViolation(from, to) {
 
 /**
  * Run the audit over an in-memory application: `files` maps a repo-relative
- * path to its source, `classic` lists the classic-script paths. Exported so
- * the ratchet's fault-injection tests can audit a synthetic application.
+ * path to its source, `classic` lists the classic-script paths, and
+ * `moduleEntries` the page's module entry points (null: treat every module as
+ * loaded). Exported so the ratchet's fault-injection tests can audit a
+ * synthetic application.
+ *
+ * Reachability matters. A module's `window.X = ...` publishes X only if
+ * something loads that module. Milestone 42E deleted legacy-app.js's
+ * pruneBlankCards() as a "runtime-dead twin" of src/core/form/prune-cards.js's
+ * -- but nothing imported prune-cards.js, so the deleted copy was the only
+ * live one and blank-card pruning silently stopped. So providers count only
+ * from loaded files, and modules nothing loads are listed.
  */
-export function auditSources(files, classic) {
+export function auditSources(files, classic, moduleEntries = null) {
   const classicSet = new Set(classic);
   const results = [...files.keys()].sort().map((rel) => analyzeFile(rel, files.get(rel), { classic: classicSet.has(rel) }));
   const known = new Set(files.keys());
+
+  // Reachability from the page's entry points, through static and dynamic imports.
+  const importsOf = new Map(results.map((r) => [r.file, r.imports.map((imp) => resolveImport(r.file, imp.source, known)).filter((t) => t && known.has(t))]));
+  const reachable = new Set();
+  const queue = [...classicSet, ...(moduleEntries || results.filter((r) => !r.classic).map((r) => r.file))].filter((f) => known.has(f));
+  while (queue.length) {
+    const f = queue.shift();
+    if (reachable.has(f)) continue;
+    reachable.add(f);
+    for (const t of importsOf.get(f) || []) if (!reachable.has(t)) queue.push(t);
+  }
+  const unreachableModules = results.map((r) => r.file).filter((f) => !reachable.has(f));
 
   // Providers.
   const classicDecl = new Map(); // name -> [{ file, kind }]
@@ -444,7 +476,7 @@ export function auditSources(files, classic) {
   }
   const windowProvider = new Map(); // name -> Set(files) that make it a window property
   const addProvider = (name, file) => { if (!windowProvider.has(name)) windowProvider.set(name, new Set()); windowProvider.get(name).add(file); };
-  for (const r of results) for (const w of r.windowWrites) addProvider(w.name, r.file);
+  for (const r of results) if (reachable.has(r.file)) for (const w of r.windowWrites) addProvider(w.name, r.file);
   for (const [name, decls] of classicDecl) for (const d of decls) if (d.kind === 'function' || d.kind === 'var') addProvider(name, d.file);
 
   const edges = [];
@@ -510,6 +542,7 @@ export function auditSources(files, classic) {
     lexicalOnlyWindowReads,
     cycles: findCycles(graph),
     layerViolations,
+    unreachableModules,
     edges,
   };
 }
@@ -548,6 +581,7 @@ export function ratchetSets(result) {
     lexicalOnlyWindowReads: uniq(result.lexicalOnlyWindowReads.map((r) => `${r.file}::${r.name}`)),
     cycles: uniq(result.cycles.map((c) => c.join(' <-> '))),
     layerViolations: uniq(result.layerViolations.map((v) => `${v.from} -> ${v.to} (${v.rule})`)),
+    unreachableModules: uniq(result.unreachableModules),
   };
 }
 
@@ -569,12 +603,14 @@ export function compareRatchet(current, baseline) {
 
 /** Audit the real application under `projectRoot`. */
 export function auditApplication(projectRoot = ROOT) {
-  const classic = classicScriptsFromHtml(fs.readFileSync(path.join(projectRoot, 'index.html'), 'utf8'));
+  const html = fs.readFileSync(path.join(projectRoot, 'index.html'), 'utf8');
+  const classic = classicScriptsFromHtml(html);
+  const moduleEntries = moduleEntriesFromHtml(html);
   const files = new Map();
   for (const abs of walkJs(path.join(projectRoot, 'src')).sort()) {
     files.set(path.relative(projectRoot, abs).replace(/\\/g, '/'), fs.readFileSync(abs, 'utf8'));
   }
-  return auditSources(files, classic);
+  return auditSources(files, classic, moduleEntries);
 }
 
 function summarize(result, sets) {
@@ -591,6 +627,7 @@ function summarize(result, sets) {
     `window reads of names declared only with let/const/class (not window properties): ${count('lexicalOnlyWindowReads')}`,
     `static import cycles: ${count('cycles')}`,
     `layer violations: ${count('layerViolations')}`,
+    `modules nothing loads: ${count('unreachableModules')}${count('unreachableModules') ? ` (${sets.unreachableModules.join(', ')})` : ''}`,
     `dependency edges: ${result.edges.length}`,
   ];
   return lines.join('\n');
@@ -616,6 +653,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
       edges: result.edges,
       cycles: result.cycles,
       layerViolations: result.layerViolations,
+      unreachableModules: result.unreachableModules,
       unownedWindowReads: result.unownedWindowReads,
       lexicalOnlyWindowReads: result.lexicalOnlyWindowReads,
     };

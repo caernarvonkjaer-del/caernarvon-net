@@ -698,16 +698,46 @@ work that needs the requester's go-ahead, and then joins the ledger.
    The importer writes into the open filing as it reads: in the reproduction
    the Cover's case number imported and D-1 came back empty, so the filing
    can be left half-imported. No existing test imports a ward percentage.
-2. **Blank schedule rows are never pruned.** `pruneBlankCards()`, run on
-   every page change and filing switch, reads `window.BLANK_SCHEDULE_ENTRY`,
-   which is undefined at runtime (a `const` in `legacy-app.js`), so its
-   schedule branch never runs. What that leaves in a filing's data and
-   output is not yet characterized.
-3. **Two guarded calls to functions nothing defines.**
-   `window.isHelpPanelOpen` (the Preview & Export header's help control) and
-   `window.renderYearManagerBody` (called before the Year Manager dialog
-   opens) have no provider anywhere, so both calls are silently skipped.
-   Effect on what a filer sees not yet characterized.
+2. **Blank-card clean-up does not run at all** (characterized with the
+   requester's go-ahead). The first reading -- the schedule table undefined
+   -- was the smaller half. `src/core/form/prune-cards.js` is imported by
+   nothing, so `window.pruneBlankCards` never exists and the router's and
+   filing lifecycle's guarded calls are skipped for every card: schedule
+   rows, party cards, plan rows. Milestone 42E (`a5b5b52`, 2026-09-13)
+   deleted `legacy-app.js`'s copy as a "runtime-dead twin" of the module's;
+   nothing imported the module then either, so the deleted copy was the only
+   live one. Observed effects:
+   - **Guardian Inventory -- blocks export.** A row added with **+ Add** on a
+     schedule and left untouched (A-1 probed) survives leaving the page,
+     marks A-1 unfinished, disables that schedule page's Next button, and
+     fails export validation four times ("A-1 row 1 -- Property Description",
+     "Street Address", "City/State/Zip", "Full Asset Value must be > 0"). A
+     Guardian blank row is not empty -- the ward's share starts at 100 and the
+     value at 0 -- so validation treats it as a started row. A filer who
+     clicks **+ Add** by mistake cannot export until they find and remove a
+     card they never touched.
+   - **Annual Accounting -- a false "unfinished" mark.** An untouched
+     Schedule A row survives and marks Schedule A unfinished; an untouched
+     co-guardian card survives. Export is not blocked: Annual's blank rows
+     are genuinely empty, so validation skips them.
+   - The Plans' and other party cards (certificate recipients, witnesses,
+     plan rows) lose the same clean-up; not probed one by one.
+   Fixing it is `master` work needing the requester's go-ahead: load the
+   module, and give it the schedule table it reads from `window` (a `const`
+   in `legacy-app.js` today).
+3. **Two guarded calls to functions nothing defines** (characterized).
+   - `window.isHelpPanelOpen`: the router falls back to reading the help
+     panel's visibility and behaves correctly; `legacy-app.js`'s Preview &
+     Export header has no fallback, so its help button is drawn with
+     `aria-expanded="false"` while the help panel is open, until the next
+     toggle -- a screen reader is told help is collapsed when it is open.
+     Confirmed in the code; not reproduced in a browser, because the probe's
+     click on the help toggle did not open the panel (itself unexplained,
+     and worth a look).
+   - `window.renderYearManagerBody`: the Year Manager dialog is dead code.
+     Nothing calls `showYearManagerModal()`, and no `#yearManagerModal`
+     element exists in the page or its fragment; filers see nothing. Year
+     rollover runs through other code. A "delete as dead" disposition.
 4. **Dead state.** `_visitedPages` is declared in `legacy-app.js` and written
    by the router and ward lifecycle through `window`, where it does not
    exist; nothing reads it. Harmless; a "delete as dead" disposition.
@@ -737,6 +767,17 @@ to 2 and returns text -- unresolved which is right.
   portable build fetches it; removing it would stop every fragment-backed
   dialog on the live site while the `file://` profile stayed green. The
   `portable-http` parity spec now guards it.
+- **The audit now follows what is actually loaded.** A module's
+  `window.X = ...` publishes X only if something loads that module; the regex
+  audit behind Milestone 42E's twin deletions never checked, and neither did
+  this milestone's first parser pass. The audit now walks the page's entry
+  points through static and dynamic imports, counts providers only from
+  loaded files, and ratchets the list of modules nothing loads: eight today
+  -- `prune-cards.js` (finding 2), six `src/core/types/*.js` modules that hold
+  type definitions for the type checker and are not meant to run, and
+  `src/features/guardian-inventory/pdf-accessibility.js`, a one-line
+  re-export nothing imports (the real module under `src/core/pdf/` loads
+  normally; a "delete as dead" disposition).
 - `window.navigate` has two publishers, `main.js` and `router.js`, which
   publish the same imported function: a duplicate publication, not a
   conflict. Recorded for the duplicate list.
@@ -757,8 +798,7 @@ duplicate list; the `.sav` fixture corpus (current and historical, plus
 corrupt and wrong-password cases); the mixed-version characterization; the
 year-rollover characterization; the fixture-helper inventory; the baseline
 measurements (`measure:baseline`/`measure:lifecycle` with `--output`); the
-`GuardianForms` schema; the characterization of findings 2 and 3 (approved,
-tests only); and the per-delivery estimate.
+`GuardianForms` schema; and the per-delivery estimate.
 
 ---
 

@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { describe, expect, test } from 'vitest';
 import {
-  BASELINE_PATH, auditSources, auditApplication, ratchetSets, compareRatchet, classicScriptsFromHtml, layerViolation,
+  BASELINE_PATH, auditSources, auditApplication, ratchetSets, compareRatchet, classicScriptsFromHtml, moduleEntriesFromHtml, layerViolation,
 } from '../../scripts/ms70-dependency-audit.mjs';
 
 // Milestone 70, 70A. The ratchet that keeps the migration honest: while the
@@ -97,6 +97,21 @@ describe('fault injection: the audit sees what it must (the 70A gate)', () => {
     expect(layerViolation('src/features/a/x.js', 'src/core/y.js')).toBeNull();
   });
 
+  test('a module nothing loads publishes nothing: its window.X does not count, and it is listed', () => {
+    // Milestone 42E deleted legacy-app.js's pruneBlankCards() as a twin of
+    // prune-cards.js's -- but nothing imported prune-cards.js, so pruning
+    // silently stopped. Reachability is what would have caught it.
+    const r = auditSources(new Map(Object.entries({
+      'src/legacy.js': '',
+      'src/main.js': ["import './a.js';", "export const lazy = () => import('./lazy.js');"].join('\n'),
+      'src/a.js': 'export const run = () => window.orphaned() + window.lazyPublished();',
+      'src/lazy.js': 'window.lazyPublished = () => 1;',
+      'src/orphan.js': 'window.orphaned = () => 1;',
+    })), ['src/legacy.js'], ['src/main.js']);
+    expect(r.unreachableModules).toEqual(['src/orphan.js']);
+    expect(r.unownedWindowReads.map((u) => u.name)).toEqual(['orphaned']);
+  });
+
   test('the comparison reports growth and staleness separately', () => {
     const cmp = compareRatchet({ s: ['kept', 'new'] }, { s: ['kept', 'gone'] });
     expect(cmp.s).toEqual({ grown: ['new'], stale: ['gone'] });
@@ -105,6 +120,7 @@ describe('fault injection: the audit sees what it must (the 70A gate)', () => {
   test('classic scripts come from index.html, excluding vendored lib/ and module scripts', () => {
     expect(classicScriptsFromHtml('<script src="./src/prepaint.js"></script><script src="lib/jszip.min.js"></script><script type="module" src="./src/main.js"></script><script src="./src/legacy-app.js"></script>'))
       .toEqual(['src/prepaint.js', 'src/legacy-app.js']);
+    expect(moduleEntriesFromHtml('<script src="./src/legacy-app.js"></script><script type="module" src="./src/main.js"></script>')).toEqual(['src/main.js']);
   });
 });
 

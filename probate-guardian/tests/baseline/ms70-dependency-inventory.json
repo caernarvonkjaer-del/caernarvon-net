@@ -4562,20 +4562,6 @@
   },
   {
    "from": "src/core/navigation/router.js",
-   "to": "src/core/form/prune-cards.js",
-   "kind": "window",
-   "name": "pruneBlankCards",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/router.js",
-   "to": "src/core/form/prune-cards.js",
-   "kind": "window",
-   "name": "pruneBlankCards",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/router.js",
    "to": "src/core/navigation/ward-lifecycle.js",
    "kind": "window",
    "name": "enterDashboardEditingFocus",
@@ -5041,13 +5027,6 @@
    "to": "src/core/form/form-contract.js",
    "kind": "window",
    "name": "commitPendingFieldValues",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/ward-lifecycle.js",
-   "to": "src/core/form/prune-cards.js",
-   "kind": "window",
-   "name": "pruneBlankCards",
    "evalTime": false
   },
   {
@@ -22693,6 +22672,16 @@
  ],
  "cycles": [],
  "layerViolations": [],
+ "unreachableModules": [
+  "src/core/form/prune-cards.js",
+  "src/core/types/case-file.js",
+  "src/core/types/filing.js",
+  "src/core/types/form-contract.js",
+  "src/core/types/index.js",
+  "src/core/types/parties.js",
+  "src/core/types/schedules.js",
+  "src/features/guardian-inventory/pdf-accessibility.js"
+ ],
  "unownedWindowReads": [
   {
    "name": "addEventListener",
@@ -22810,6 +22799,13 @@
    "files": [
     "src/core/pdf/pdf-preview.js",
     "src/legacy-app.js"
+   ]
+  },
+  {
+   "name": "pruneBlankCards",
+   "files": [
+    "src/core/navigation/router.js",
+    "src/core/navigation/ward-lifecycle.js"
    ]
   },
   {

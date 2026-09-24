@@ -1748,6 +1748,7 @@
   ],
   "unownedWindowReads": [
     "isHelpPanelOpen",
+    "pruneBlankCards",
     "renderYearManagerBody"
   ],
   "lexicalOnlyWindowReads": [
@@ -1757,5 +1758,15 @@
     "src/features/annual-accounting/excel.js::r2"
   ],
   "cycles": [],
-  "layerViolations": []
+  "layerViolations": [],
+  "unreachableModules": [
+    "src/core/form/prune-cards.js",
+    "src/core/types/case-file.js",
+    "src/core/types/filing.js",
+    "src/core/types/form-contract.js",
+    "src/core/types/index.js",
+    "src/core/types/parties.js",
+    "src/core/types/schedules.js",
+    "src/features/guardian-inventory/pdf-accessibility.js"
+  ]
 }
