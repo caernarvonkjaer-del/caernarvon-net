@@ -396,6 +396,8 @@ export function renderCheckboxField({
   checked = false,
   id = null,
   route = '',
+  exclusiveGroup = '',
+  exclusiveRole = '',
 } = {}) {
   const checkboxId = id || path;
   // Milestone 67F: same contract as renderRadioGroupField() above. Before
@@ -405,8 +407,12 @@ export function renderCheckboxField({
   // came back -- and on Q11 the name they typed meanwhile landed in the
   // other branch's box.
   const routeAttr = route ? ` data-form-route="${esc(route)}"` : '';
+  // Milestone 68E: a list whose options include "None" marks every box with
+  // its group and the None box with role "none"; form-events.js keeps them
+  // mutually exclusive on the click (core/form/exclusive-none.js).
+  const exclusiveAttrs = exclusiveGroup ? ` data-exclusive-group="${esc(exclusiveGroup)}" data-exclusive-role="${esc(exclusiveRole || 'member')}"` : '';
   return `<div class="form-check plan-check">
-    <input class="form-check-input" type="checkbox" id="${checkboxId}" ${checked ? 'checked' : ''} data-form-path="${esc(path)}" data-form-value="boolean"${routeAttr}>
+    <input class="form-check-input" type="checkbox" id="${checkboxId}" ${checked ? 'checked' : ''} data-form-path="${esc(path)}" data-form-value="boolean"${routeAttr}${exclusiveAttrs}>
     <label class="form-check-label" for="${checkboxId}">${label}</label>
   </div>`;
 }

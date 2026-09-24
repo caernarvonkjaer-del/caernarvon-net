@@ -5274,13 +5274,13 @@ function resetYearlyFieldsForNewYear(data,type){
     data.inceptionDate='';data.lettersSignedDate='';data.successorGuardianship='';
     data.wardLiving='';data.residenceAddress='';data.residenceCityStateZip='';data.residencePhone='';
     data.mailingAddress='';data.mailingCityStateZip='';data.q1PreexistingDirectives='';
-    data.q2Setting='';data.q2Explain='';
+    data.q2ALF=false;data.q2GroupHome=false;data.q2Intermediate=false;data.q2PrivateResidence=false;data.q2SkilledNursing=false;data.q2Specialized=false;data.q2StateHospital=false;data.q2Other=false;data.q2Explain='';
     data.q3MedPrimary=false;data.q3MedDentist=false;data.q3MedOphthalmologist=false;
     data.q3MedSpecialist=false;data.q3MedSpecialistArea='';data.q3MedPT=false;
     data.q3MedST=false;data.q3MedOT=false;data.q3MedWardDecides=false;
     data.q3MedOther=false;data.q3MedExplain='';
-    data.q4Mental='';data.q4Explain='';
-    data.q5Personal='';data.q5Explain='';
+    data.q4Psych=false;data.q4Outpatient=false;data.q4Inpatient=false;data.q4None=false;data.q4Other=false;data.q4Explain='';
+    data.q5CareFacility=false;data.q5NursesAides=false;data.q5FamilyFriends=false;data.q5Other=false;data.q5Explain='';
     data.q6CareFacility=false;data.q6NursesAides=false;data.q6FamilyFriends=false;
     data.q6DayProgram=false;data.q6WardDecides=false;data.q6Other=false;data.q6Explain='';
     data.q7SocialSecurity='';data.q7Ssdi='';data.q7Hmo='';data.q7Ssi='';
@@ -7065,13 +7065,14 @@ function computeNavChecks(){
         &&datesOrdered(D.periodFrom,D.periodTo,false)
         &&filled(D.guardianNames)&&filled(D.wardLiving)
         &&filled(D.residenceAddress)&&filled(D.residenceCityStateZip),
-      'pi-p2':filled(D.q2Setting)&&(D.q2Setting!=='Other'||filled(D.q2Explain))
+      // Milestone 68E: questions 2, 4 and 5 are checkbox lists, mirroring validatePlanInitial().
+      'pi-p2':anyOf(D.q2ALF,D.q2GroupHome,D.q2Intermediate,D.q2PrivateResidence,D.q2SkilledNursing,D.q2Specialized,D.q2StateHospital,D.q2Other)&&(!D.q2Other||filled(D.q2Explain))
         &&anyOf(D.q3MedPrimary,D.q3MedDentist,D.q3MedOphthalmologist,D.q3MedSpecialist,D.q3MedPT,
                 D.q3MedST,D.q3MedOT,D.q3MedWardDecides,D.q3MedOther)
         &&(!D.q3MedSpecialist||filled(D.q3MedSpecialistArea))
         &&(!D.q3MedOther||filled(D.q3MedExplain)),
-      'pi-p3':filled(D.q4Mental)&&(D.q4Mental!=='Other'&&D.q4Mental!=='None'||filled(D.q4Explain))
-        &&filled(D.q5Personal)&&(D.q5Personal!=='Other'||filled(D.q5Explain)),
+      'pi-p3':anyOf(D.q4Psych,D.q4Outpatient,D.q4Inpatient,D.q4None,D.q4Other)&&(!(D.q4Other||D.q4None)||filled(D.q4Explain))
+        &&anyOf(D.q5CareFacility,D.q5NursesAides,D.q5FamilyFriends,D.q5Other)&&(!D.q5Other||filled(D.q5Explain)),
       'pi-p4':anyOf(D.q6CareFacility,D.q6NursesAides,D.q6FamilyFriends,D.q6DayProgram,D.q6WardDecides,D.q6Other)
         &&(!D.q6Other||filled(D.q6Explain))
         &&(anyOf(D.q7SocialSecurity,D.q7Ssdi,D.q7Hmo,D.q7Ssi,D.q7StateSupplement,D.q7InstitutionalCare,
@@ -7131,8 +7132,8 @@ function computeNavChecks(){
     };
     const incomplete={
       'pi-cover':!checks['pi-cover']&&hasAny(D.wardName,D.caseNumber,D.inceptionDate,D.lettersSignedDate,D.periodFrom,D.periodTo,D.guardianNames,D.wardLiving,D.residenceAddress),
-      'pi-p2':!checks['pi-p2']&&hasAny(D.q2Setting,D.q3MedPrimary,D.q3MedDentist,D.q3MedOphthalmologist,D.q3MedSpecialist,D.q3MedPT,D.q3MedST,D.q3MedOT,D.q3MedWardDecides,D.q3MedOther),
-      'pi-p3':!checks['pi-p3']&&hasAny(D.q4Mental,D.q5Personal),
+      'pi-p2':!checks['pi-p2']&&hasAny(D.q2ALF,D.q2GroupHome,D.q2Intermediate,D.q2PrivateResidence,D.q2SkilledNursing,D.q2Specialized,D.q2StateHospital,D.q2Other,D.q3MedPrimary,D.q3MedDentist,D.q3MedOphthalmologist,D.q3MedSpecialist,D.q3MedPT,D.q3MedST,D.q3MedOT,D.q3MedWardDecides,D.q3MedOther),
+      'pi-p3':!checks['pi-p3']&&hasAny(D.q4Psych,D.q4Outpatient,D.q4Inpatient,D.q4None,D.q4Other,D.q5CareFacility,D.q5NursesAides,D.q5FamilyFriends,D.q5Other),
       'pi-p4':!checks['pi-p4']&&anyOf(D.q6CareFacility,D.q6NursesAides,D.q6FamilyFriends,D.q6DayProgram,D.q6WardDecides,D.q6Other,
               D.q7SocialSecurity,D.q7Ssdi,D.q7Hmo,D.q7Ssi,D.q7Medicare,D.q7Medicaid,D.q7Va,D.q7Trusts),
       'pi-p5':!checks['pi-p5']&&(D.q9Providers||[]).some(r=>r&&hasAny(r.name,r.providerType,r.examDate,r.street,r.cityStateZip,r.phone)),

@@ -307,6 +307,18 @@ describe('renderCheckboxField', () => {
     const unrouted = renderCheckboxField({ path: 'q3MedDentist', label: 'Dentist' });
     expect(unrouted).not.toContain('data-form-route');
   });
+
+  // Milestone 68E: a checkbox list with a "None" option marks its boxes so
+  // form-events.js can keep "None" and the other boxes mutually exclusive
+  // (core/form/exclusive-none.js). A plain box emits nothing extra.
+  it('emits the exclusivity group and role only when given a group, defaulting the role to member', () => {
+    const none = renderCheckboxField({ path: 'q4None', label: 'None', exclusiveGroup: 'q4', exclusiveRole: 'none' });
+    expect(none).toContain('data-exclusive-group="q4" data-exclusive-role="none"');
+    const member = renderCheckboxField({ path: 'q4Psych', label: 'Psych', exclusiveGroup: 'q4' });
+    expect(member).toContain('data-exclusive-group="q4" data-exclusive-role="member"');
+    const plain = renderCheckboxField({ path: 'q3MedDentist', label: 'Dentist' });
+    expect(plain).not.toContain('data-exclusive');
+  });
 });
 
 // Milestone 51C2. legacy-app.js's yesNoCheckboxD(label, val, setter, ...) used

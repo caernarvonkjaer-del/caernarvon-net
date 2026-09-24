@@ -109,8 +109,8 @@ const CONDITIONAL_FIXTURES = {
     planGuardians: [{ signatureState: 'typed' }],
   },
   planInitial: {
-    q2Setting: 'Other', q3MedSpecialist: true, q3MedOther: true,
-    q4Mental: 'Other', q5Personal: 'Other', q6Other: true,
+    q2Other: true, q3MedSpecialist: true, q3MedOther: true,
+    q4Other: true, q5Other: true, q6Other: true,
     q7Trusts: 'Yes',
     mentalOther: true, physOther: true, usesOther: true, needsOther: true,
     q11ExecOther: true, committeeIncorporated: 'No',

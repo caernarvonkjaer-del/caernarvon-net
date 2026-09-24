@@ -72,10 +72,11 @@ const CONFIGS: WcagConfig[] = [
       residenceCityStateZip: 'Clearwater, FL 33755',
       residencePhone: '727-555-0101',
       q1PreexistingDirectives: 'None on file.',
-      q2Setting: 'Private Residence',
+      q2PrivateResidence: true,
       q3MedPrimary: true,
       q3MedDentist: true,
-      q4Mental: 'None',
+      q4None: true,
+      q4Explain: 'No mental health services are needed at this time.',
       q9Providers: [
         { name: 'Ann Rivera', providerType: 'Primary Care', examDate: '2026-01-05', street: '1 Med Plz', cityStateZip: 'Clearwater, FL 33755' },
       ],

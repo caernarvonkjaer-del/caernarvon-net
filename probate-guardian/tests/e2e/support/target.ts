@@ -281,10 +281,10 @@ export async function fillMinimalValidPlanInitialWard(page: Page): Promise<void>
       wardLiving: 'In a facility (Skilled Nursing, Assisted Living, etc.)',
       residenceAddress: '123 Main St',
       residenceCityStateZip: 'Clearwater, FL 33755',
-      q2Setting: 'Assisted Living (ALF)',
+      q2ALF: true, // Milestone 68E: checkbox lists, one boolean per option
       q3MedPrimary: true,
-      q4Mental: 'Routine examination by Psychiatrist/Psychologist',
-      q5Personal: 'Care Facility',
+      q4Psych: true,
+      q5CareFacility: true,
       q6CareFacility: true,
       q9Providers: [{ name: 'Dr. Sample Provider', providerType: 'Primary Care Physician', examDate: '2026-01-10', street: '', cityStateZip: '', phone: '' }],
       adls,

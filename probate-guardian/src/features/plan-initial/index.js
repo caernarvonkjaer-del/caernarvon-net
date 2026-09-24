@@ -10,6 +10,8 @@ import { isAffirmative } from '../../core/form/form-contract.js';
 import { renderSignatureStateControl, mountSignatureStateControls } from '../../core/signature/signature-state-control.js';
 import { migratePlanCertificateOfService } from '../../core/filing/plan-certificate-of-service.js';
 import { renderPlanCertificateOfServicePage } from '../../core/form/plan-certificate-of-service-page.js';
+import { migratePlanInitialMultiselect, Q2_OPTIONS, Q4_OPTIONS, Q5_OPTIONS, anyChecked } from '../../core/filing/plan-initial-multiselect.js';
+import { renderCheckboxField } from '../../core/form/form-fields.js';
 import { preparerNoteHTML } from '../../core/signature/preparer-note.js';
 // Milestone 41-3: Cover page's "Ward & Case Information" box has the exact
 // same field order as Plan Simplified's (wardName, caseNumber, county) --
@@ -147,6 +149,9 @@ export async function mount(container, page) {
   // Milestone 68C: a plan saved before the Certificate of Service existed
   // gains its fields on load. Idempotent, so every mount may call it.
   if (migratePlanCertificateOfService(window.D)) window.autoSave?.();
+  // Milestone 68E: questions 2, 4 and 5 saved as one string read back as
+  // their boxes. Idempotent, so every mount may call it.
+  if (migratePlanInitialMultiselect(window.D)) window.autoSave?.();
   let html;
   let isPrint = false;
   if (page === '/print') {
@@ -332,8 +337,11 @@ function pagePlanISettingMedical(){
   return `<div class="schedule-page">
     <h1>2–3. Residential Setting &amp; Medical Services</h1>
     ${planQ('2','The guardian states the place and kind of residential setting best suited for the needs of the Ward is:',
-      radioP('q2Setting','',d.q2Setting,['Assisted Living (ALF)','Group Home','Intermediate','Private Residence','Skilled Nursing','Specialized','State Hospital','Other'],false,'','/p2')
-      +(d.q2Setting==='Other'?`<div class="plan-conditional mt-2">${txtP('q2Explain','Explanation',d.q2Explain,3)}</div>`:''))}
+      // Milestone 68E: a checkbox list, as on the court's form (page 2); Other
+      // reveals its explanation on the click (67F).
+      planCheckGroup('',
+        Q2_OPTIONS.map((o)=>renderCheckboxField({ path:o.key, label:o.label, checked:!!d[o.key], id:o.key, route:o.key==='q2Other'?'/p2':'' })).join(''),
+        'q2Explain',d.q2Explain,d.q2Other))}
     ${planQ('3','For the plan period, the guardian proposes the following as to the provision of medical services for the Ward:',
       planCheckGroup('',
         cb('q3MedPrimary','Routine examination by primary care physician')
@@ -357,11 +365,15 @@ function pagePlanIMentalPersonal(){
   return `<div class="schedule-page">
     <h1>4–5. Mental Health &amp; Personal Care</h1>
     ${planQ('4','For the plan period, the guardian proposes the following as to the provision of mental health services for the Ward:',
-      radioP('q4Mental','',d.q4Mental,['Routine examination by Psychiatrist/Psychologist','Ongoing Treatment Outpatient','Ongoing Treatment Inpatient','None','Other'],false,'','/p3')
-      +((d.q4Mental==='Other'||d.q4Mental==='None')?`<div class="plan-conditional mt-2">${txtP('q4Explain','Explanation',d.q4Explain,3)}</div>`:''))}
+      // Milestone 68E: a checkbox list, as on the court's form; None is
+      // exclusive with the other boxes and, like Other, reveals the explanation.
+      planCheckGroup('',
+        Q4_OPTIONS.map((o)=>renderCheckboxField({ path:o.key, label:o.label, checked:!!d[o.key], id:o.key, route:(o.key==='q4Other'||o.key==='q4None')?'/p3':'', exclusiveGroup:'q4', exclusiveRole:o.key==='q4None'?'none':'member' })).join(''),
+        'q4Explain',d.q4Explain,d.q4Other||d.q4None))}
     ${planQ('5','For the plan period, the guardian proposes the following as to the provision of personal care of the ward, such as bathing, grooming and feeding:',
-      radioP('q5Personal','',d.q5Personal,['Care Facility','Nurses and Aides','Family and Friends','Other'],false,'','/p3')
-      +(d.q5Personal==='Other'?`<div class="plan-conditional mt-2">${txtP('q5Explain','Explanation',d.q5Explain,3)}</div>`:''))}
+      planCheckGroup('',
+        Q5_OPTIONS.map((o)=>renderCheckboxField({ path:o.key, label:o.label, checked:!!d[o.key], id:o.key, route:o.key==='q5Other'?'/p3':'' })).join(''),
+        'q5Explain',d.q5Explain,d.q5Other))}
     ${renderScheduleDocsSection('planIMentalPersonal')}
     ${pageNavS('/p2','/p4')}
   </div>`;
@@ -685,17 +697,19 @@ export function validatePlanInitial(){
   req(d.residenceAddress,'Cover — Address where ward resides is required','residenceAddress');
   req(d.residenceCityStateZip,'Cover — City/State/ZIP is required','residenceCityStateZip');
 
-  req(d.q2Setting,'2–3. Setting & Medical Care — Best-suited residential setting is required','q2Setting');
-  if(d.q2Setting==='Other')req(d.q2Explain,'2–3. Setting & Medical Care — Explanation for "Other" residential setting is required','q2Explain');
+  // Milestone 68E: questions 2, 4 and 5 are checkbox lists -- at least one
+  // box, and an explanation when Other (or, on 4, None) is ticked.
+  if(!anyChecked(d,Q2_OPTIONS))errs.push(issue('2–3. Setting & Medical Care — Best-suited residential setting is required','q2ALF'));
+  if(d.q2Other)req(d.q2Explain,'2–3. Setting & Medical Care — Explanation for "Other" residential setting is required','q2Explain');
   const anyMed=d.q3MedPrimary||d.q3MedDentist||d.q3MedOphthalmologist||d.q3MedSpecialist||d.q3MedPT||d.q3MedST||d.q3MedOT||d.q3MedWardDecides||d.q3MedOther;
   if(!anyMed)errs.push(issue('2–3. Setting & Medical Care — At least one medical service option is required','q3MedPrimary'));
   if(d.q3MedSpecialist)req(d.q3MedSpecialistArea,'2–3. Setting & Medical Care — Specialist area of specialty is required','q3MedSpecialistArea');
   if(d.q3MedOther)req(d.q3MedExplain,'2–3. Setting & Medical Care — Explanation for "Other" medical service is required','q3MedExplain');
 
-  req(d.q4Mental,'4–5. Mental Health & Personal Care — Mental health service provision is required','q4Mental');
-  if(d.q4Mental==='Other'||d.q4Mental==='None')req(d.q4Explain,'4–5. Mental Health & Personal Care — Explanation is required','q4Explain');
-  req(d.q5Personal,'4–5. Mental Health & Personal Care — Personal care provision is required','q5Personal');
-  if(d.q5Personal==='Other')req(d.q5Explain,'4–5. Mental Health & Personal Care — Explanation for "Other" personal care is required','q5Explain');
+  if(!anyChecked(d,Q4_OPTIONS))errs.push(issue('4–5. Mental Health & Personal Care — Mental health service provision is required','q4Psych'));
+  if(d.q4Other||d.q4None)req(d.q4Explain,'4–5. Mental Health & Personal Care — Explanation is required','q4Explain');
+  if(!anyChecked(d,Q5_OPTIONS))errs.push(issue('4–5. Mental Health & Personal Care — Personal care provision is required','q5CareFacility'));
+  if(d.q5Other)req(d.q5Explain,'4–5. Mental Health & Personal Care — Explanation for "Other" personal care is required','q5Explain');
 
   const anySocial=d.q6CareFacility||d.q6NursesAides||d.q6FamilyFriends||d.q6DayProgram||d.q6WardDecides||d.q6Other;
   if(!anySocial)errs.push(issue('6–7. Socialization & Benefits — At least one socialization/recreation option is required','q6CareFacility'));

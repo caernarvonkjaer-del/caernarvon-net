@@ -2,6 +2,7 @@ import * as SupplementalPdf from './core/pdf/supplemental-pdf.js';
 import { writeDraftValue, finalizeFieldValue } from './core/form/form-contract.js';
 import { focusFieldByPath } from './core/validation/validation-adapter.js';
 import { claimPreparer, PREPARER_FLAG_CHANGE } from './core/form/preparer-flag.js';
+import { applyExclusiveChoice } from './core/form/exclusive-none.js';
 import './core/filing/filing-descriptor.js';
 import './core/filing/output-preflight.js';
 import './core/form/form-fields.js';
@@ -121,6 +122,11 @@ document.addEventListener('change', (event) => {
     // clear on the click.
     if (control.dataset.formChange === PREPARER_FLAG_CHANGE && control.checked && window.D) {
       claimPreparer(window.D, control.dataset.formPath);
+    }
+    // Milestone 68E: a "None" box clears its siblings and a sibling clears
+    // "None", in the model and the DOM, before any route re-render.
+    if (control instanceof HTMLInputElement && control.type === 'checkbox' && control.dataset.exclusiveGroup && window.D) {
+      applyExclusiveChoice(window.D, control);
     }
     if (control.dataset.formRoute && window.renderPage) {
       window.renderPage(control.dataset.formRoute);

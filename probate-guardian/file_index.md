@@ -111,6 +111,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`src\core\filing\plan-tristate.js`](<src/core/filing/plan-tristate.js>) | Build, tooling, or configuration source. |
 | [`src\core\filing\readiness-card.js`](<src/core/filing/readiness-card.js>) | Build, tooling, or configuration source. |
 | [`src\core\filing\plan-certificate-of-service.js`](<src/core/filing/plan-certificate-of-service.js>) | Milestone 68C: the Plans' shared certificate of service -- fields, migration, the "Certified by" signer rule, the sidebar's settled rule, print-preview advisories and the PDF section; one implementation for all four Plans, no DOM imports. |
+| [`src\core\filing\plan-initial-multiselect.js`](<src/core/filing/plan-initial-multiselect.js>) | Milestone 68E: the Initial Plan's questions 2, 4 and 5 as checkbox lists -- option keys and labels, the empty shape, and the migration from the retired one-string answers. |
 | [`src\core\filing\readiness-config.js`](<src/core/filing/readiness-config.js>) | Build, tooling, or configuration source. |
 | [`src\core\filing\schedule-doc-ack.js`](<src/core/filing/schedule-doc-ack.js>) | Build, tooling, or configuration source. |
 | [`src\core\filing\statutory-text.js`](<src/core/filing/statutory-text.js>) | Build, tooling, or configuration source. |
@@ -120,6 +121,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`src\core\form\cards\ward-demographics-card.js`](<src/core/form/cards/ward-demographics-card.js>) | Build, tooling, or configuration source. |
 | [`src\core\form\commit-coordinator.js`](<src/core/form/commit-coordinator.js>) | Build, tooling, or configuration source. |
 | [`src\core\form\date-parser.js`](<src/core/form/date-parser.js>) | Build, tooling, or configuration source. |
+| [`src\core\form\exclusive-none.js`](<src/core/form/exclusive-none.js>) | Milestone 68E/68F: a checkbox list's "None" clears its siblings and a sibling clears "None", from data-exclusive-group/-role attributes on the boxes; called from form-events.js after the changed box is written. |
 | [`src\core\form\form-contract.js`](<src/core/form/form-contract.js>) | Build, tooling, or configuration source. |
 | [`src\core\form\form-fields.js`](<src/core/form/form-fields.js>) | Build, tooling, or configuration source. |
 | [`src\core\form\guardianship-options.js`](<src/core/form/guardianship-options.js>) | Build, tooling, or configuration source. |
@@ -319,6 +321,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`tests\e2e\plan-benefits-tristate.spec.ts`](<tests/e2e/plan-benefits-tristate.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\plan-directive-cards.spec.ts`](<tests/e2e/plan-directive-cards.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\plan-certificate-of-service.spec.ts`](<tests/e2e/plan-certificate-of-service.spec.ts>) | Milestone 68C: the Certificate of Service page on all four Plans -- rows, attestation, sidebar, PDF, and that nothing on it gates export. |
+| [`tests\e2e\plan-initial-multiselect.spec.ts`](<tests/e2e/plan-initial-multiselect.spec.ts>) | Milestone 68E: Initial Plan questions 2, 4 and 5 as checkbox lists -- several answers, None exclusivity, Other reveals, legacy migration, export gate. |
 | [`tests\e2e\plan-initial-mount.spec.ts`](<tests/e2e/plan-initial-mount.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\plan-initial-period.spec.ts`](<tests/e2e/plan-initial-period.spec.ts>) | Milestone 68B: the Initial Plan requires its reporting period -- every filer-facing surface says so, export stops on it, and the PDF cover prints it once entered. |
 | [`tests\e2e\plan-minor-mount.spec.ts`](<tests/e2e/plan-minor-mount.spec.ts>) | Automated test covering the named behavior or contract. |
@@ -449,6 +452,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`tests\unit\plan-co-guardian-pdf.spec.js`](<tests/unit/plan-co-guardian-pdf.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\plan-directive-cards.spec.js`](<tests/unit/plan-directive-cards.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\plan-certificate-of-service.spec.js`](<tests/unit/plan-certificate-of-service.spec.js>) | Milestone 68C: the shared Plan certificate-of-service module -- migration, signer resolution, settled/started rules, advisories and the PDF section. |
+| [`tests\unit\plan-initial-multiselect.spec.js`](<tests/unit/plan-initial-multiselect.spec.js>) | Milestone 68E: the option lists and legacy migration for the Initial Plan's converted questions. |
 | [`tests\unit\plan-initial-parity.spec.js`](<tests/unit/plan-initial-parity.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\plan-minor-parity.spec.js`](<tests/unit/plan-minor-parity.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\plan-readiness-county.spec.js`](<tests/unit/plan-readiness-county.spec.js>) | Automated test covering the named behavior or contract. |

@@ -1,4 +1,5 @@
 import { emptyCertificateOfService } from './filing/plan-certificate-of-service.js';
+import { emptyPlanInitialMultiselect } from './filing/plan-initial-multiselect.js';
 // Thin adapters around legacy-app.js's global state, for ES modules that
 // can't reach a classic script's lexical scope directly. legacy-app.js is a
 // classic (non-module) script, so its top-level function declarations and
@@ -340,15 +341,17 @@ export function emptyDataPlanInitial() {
     mailingAddress:'', mailingCityStateZip:'',
     q1PreexistingDirectives:'',
     // Q2 — residential setting best suited to the ward
-    q2Setting:'', q2Explain:'',
+    q2Explain:'',
     // Q3 — medical services
     q3MedPrimary:false, q3MedDentist:false, q3MedOphthalmologist:false,
     q3MedSpecialist:false, q3MedSpecialistArea:'', q3MedPT:false,
     q3MedST:false, q3MedOT:false, q3MedWardDecides:false, q3MedOther:false, q3MedExplain:'',
     // Q4 — mental health services
-    q4Mental:'', q4Explain:'',
+    // Milestone 68E: questions 2, 4 and 5 as checkbox lists, one boolean per option.
+    ...emptyPlanInitialMultiselect(),
+    q4Explain:'',
     // Q5 — personal care
-    q5Personal:'', q5Explain:'',
+    q5Explain:'',
     // Q6 — socialization / recreation
     q6CareFacility:false, q6NursesAides:false, q6FamilyFriends:false, q6DayProgram:false,
     q6WardDecides:false, q6Other:false, q6Explain:'',

@@ -21,6 +21,7 @@
 // Manual rows are the concise filer reminders MILESTONE-38B-SOURCE-INVENTORY.md
 // names for each filing; unsupported families are counted, never rendered.
 
+import { Q2_OPTIONS, Q4_OPTIONS, Q5_OPTIONS, anyChecked } from './plan-initial-multiselect.js';
 import { FILING_TYPE_KEYS, resolveDescriptorForInventoryType } from './filing-descriptor.js';
 import { hasSixthCircuitLocalGuidance } from './county-guidance.js';
 import { resolveRouteFromSection } from '../validation/validation-adapter.js';
@@ -211,10 +212,11 @@ function planInitialAutomatic(d) {
     }) },
     { id: 'signatures.guardian1.contact', label: 'Guardian address, phone and SSN/EIN provided', ok: has(g0.street) && has(g0.phone) && has(g0.ssn) },
     { id: 'cover.wardResidence', label: "Ward's current living arrangement and address, including city/state/ZIP, are stated", ok: has(d.wardLiving) && has(d.residenceAddress) && has(d.residenceCityStateZip) },
-    { id: 'plan.q2', label: 'Question 2 — best-suited residential setting selected', ok: has(d.q2Setting) },
+    // Milestone 68E: checkbox lists now -- any box ticked.
+    { id: 'plan.q2', label: 'Question 2 — best-suited residential setting selected', ok: anyChecked(d, Q2_OPTIONS) },
     { id: 'plan.q3', label: 'Question 3 — medical service provisions selected', ok: !!(d.q3MedPrimary || d.q3MedDentist || d.q3MedOphthalmologist || d.q3MedSpecialist || d.q3MedPT || d.q3MedST || d.q3MedOT || d.q3MedWardDecides || d.q3MedOther) },
-    { id: 'plan.q4', label: 'Question 4 — mental health service provision selected', ok: has(d.q4Mental) },
-    { id: 'plan.q5', label: 'Question 5 — personal care provision selected', ok: has(d.q5Personal) },
+    { id: 'plan.q4', label: 'Question 4 — mental health service provision selected', ok: anyChecked(d, Q4_OPTIONS) },
+    { id: 'plan.q5', label: 'Question 5 — personal care provision selected', ok: anyChecked(d, Q5_OPTIONS) },
     { id: 'plan.q6q7', label: 'Question 6 — socialization/recreation option selected', ok: !!(d.q6CareFacility || d.q6NursesAides || d.q6FamilyFriends || d.q6DayProgram || d.q6WardDecides || d.q6Other) },
     // Milestone 40C-H: same isAffirmative() predicate as the validator, so
     // 'No' cannot be mistaken for a yes.
@@ -500,10 +502,10 @@ const PLAN_PREDICATE_ISSUE_PATHS = Object.freeze({
     'cover.period': ['periodFrom', 'periodTo'],
     'cover.guardianNames': ['guardianNames'],
     'cover.wardResidence': ['wardLiving', 'residenceAddress', 'residenceCityStateZip'],
-    'plan.q2': ['q2Setting'],
+    'plan.q2': Q2_OPTIONS.map((o) => o.key),
     'plan.q3': ['q3MedPrimary'],
-    'plan.q4': ['q4Mental'],
-    'plan.q5': ['q5Personal'],
+    'plan.q4': Q4_OPTIONS.map((o) => o.key),
+    'plan.q5': Q5_OPTIONS.map((o) => o.key),
     'plan.q6q7': ['q6CareFacility'],
     'plan.q7explain': ['q7Explain'],
     'plan.q9providers': ['q9Providers[].name'],
@@ -610,10 +612,10 @@ export const PLAN_PREDICATE_ROUTES = Object.freeze({
     'cover.period': { route: '/', path: 'periodFrom' },
     'cover.guardianNames': { route: '/', path: 'guardianNames' },
     'cover.wardResidence': { route: '/', path: 'wardLiving' },
-    'plan.q2': { route: '/p2', path: 'q2Setting' },
+    'plan.q2': { route: '/p2', path: 'q2ALF' },
     'plan.q3': { route: '/p2', path: 'q3MedPrimary' },
-    'plan.q4': { route: '/p3', path: 'q4Mental' },
-    'plan.q5': { route: '/p3', path: 'q5Personal' },
+    'plan.q4': { route: '/p3', path: 'q4Psych' },
+    'plan.q5': { route: '/p3', path: 'q5CareFacility' },
     'plan.q6q7': { route: '/p4', path: 'q6CareFacility' },
     'plan.q7explain': { route: '/p4', path: 'q7Explain' },
     'plan.q9providers': { route: '/p5', path: 'q9Providers.0.name' },

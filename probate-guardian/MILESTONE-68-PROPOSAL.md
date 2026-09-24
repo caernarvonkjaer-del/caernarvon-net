@@ -16,7 +16,7 @@ or stop a filing outright; the rest prevent a filer from recording the truth.
 | 68A | Plan signatures must be dated after the period being planned for | **Blocks filing**; only remedy is a false sworn date | **DECIDED** — remove the rule from Plans; keep it on accountings | **LANDED 2026-09-24** — audit found 8 sites on three Plans (Minor had it too; Initial never did); see the build record under 68A |
 | 68B | Initial Plan files with no reporting period, unflagged | Incomplete document filed, silently | **DECIDED** — require it, as the other Plans do | **LANDED 2026-09-24** — see the build record under 68B |
 | 68C | No certificate of service on any Plan type | App states a requirement it cannot meet | **DECIDED** — build on all four; optional on Simplified; fix its wrong text; date + method optional and "Certified by the filer" settled at build (2026-09-24) | **LANDED 2026-09-24** — see the build record under 68C |
-| 68E | Initial Plan Q5 accepts one answer where several apply | Cannot record the truth | **DECIDED** — the court's form is a checkbox list; convert to multi-select — Q5, Q4 and any other radio-rendered checkbox list the form shows (settled 2026-09-24) | Ready — 67F landed |
+| 68E | Initial Plan Q5 accepts one answer where several apply | Cannot record the truth | **DECIDED** — the court's form is a checkbox list; convert to multi-select — Q5, Q4 and any other radio-rendered checkbox list the form shows (settled 2026-09-24) | **LANDED 2026-09-24** — Q2, Q4 and Q5 (the form's page 2, rendered and looked at); see the build record under 68E |
 | 68F | Assistive-devices "None" can be ticked alongside real selections | A filed plan can state both | **DECIDED** — no "None" added (form has none); fix mutual exclusion on D and E | Ready — 67F landed |
 | 68G | Annual Plan Q6 cannot state a right is **not** restorable | **Statutory** — §744.3675(3)(b) requires that statement | **DECIDED** — the form's four columns: Yes / No / Not Removed / Needs to be Restored; stored values unchanged, "No" added (settled 2026-09-24) | Ready — 67F landed |
 | 68I | Initial Plan asks for two dates that look redundant | Real distinction, unexplained | **DECIDED** — keep both, explain them; the tester's premise holds only for original guardians | Ready to build |
@@ -1112,6 +1112,60 @@ Data model row 439 changes type and needs a migration rule (§8.1, §8.2); the
 conditional reveal behind `radioP()` — if 68E converts this control, coordinate
 with 67F rather than fixing the reveal twice. PDF rendering of `q5Personal` must
 handle a set. Test coverage must drive the real click (§6 corollary).
+
+### Build record — LANDED 2026-09-24
+
+**Which questions, decided by the form, not by inference.** Page 2 of
+`reference/plan-forms/plan-initial-original.pdf` was rasterised and looked
+at: questions **2, 3, 4 and 5 all use the same checkbox glyphs**, and
+question 6 on page 3 likewise. The app already rendered 3 and 6 as
+checkboxes; **2, 4 and 5 were radio groups** and all three convert. Question
+2's stem reads singular ("the … setting best suited … is:"), but the form
+offers it as a checkbox list and the requester's rule is that the form
+decides — recorded here so nobody re-litigates it from the wording.
+
+**What a filer now gets.** On questions 2, 4 and 5 they tick every answer
+that applies; each ticked row prints ticked on the PDF. "Other" reveals its
+explanation on the click and a blank explanation still blocks, as before;
+on question 4 "None" does the same, and **"None" is exclusive** — ticking it
+clears the other boxes and ticking any other box clears "None", on the
+click, in the model and on screen — since a plan cannot state both. Nothing
+ticked on a question is still an export issue, the sidebar agrees, and the
+readiness card's three items are unchanged in name.
+
+**Shape.** One boolean per option (`q2ALF` … `q2Other`, `q4Psych` …
+`q4Other`, `q5CareFacility` … `q5Other`; 17 in all), the shape questions 3,
+6 and 7 already use on this form and the Annual Plan uses for the same
+residential-setting question — not an array, so nothing on this form stores
+a list where its siblings store booleans. The three enum rows
+(`q2Setting`, `q4Mental`, `q5Personal`) leave the data model; 17 boolean rows
+enter; the three `…Explain` rows' conditions now name the boxes.
+`verify:data-model` OK (1,009 rows).
+
+**Legacy filings (§8.2).** On load, a saved single value ticks the one box
+it named and the retired scalar is removed. A value that names no option —
+the parity fixture had stored free text like "Weekly counseling provided by
+community mental health center" in the enum, so real filings may too — lands
+under **Other with the text kept as the explanation**, never dropped. Blank
+stays blank (never coerced). `src/core/filing/plan-initial-multiselect.js`
+holds the option lists and the migration; the exclusivity rule is
+`src/core/form/exclusive-none.js`, driven by two data attributes the checkbox
+renderer now emits and applied from `form-events.js` after the changed box is
+written — **68F reuses it as-is** for the assistive-devices "None" boxes.
+
+**Tests.** `tests/e2e/plan-initial-multiselect.spec.ts` (new, real clicks):
+several answers on all three questions through to the PDF's "Yes —"/"No —"
+rows; None exclusivity in both directions; Other/None reveals and the blank
+explanation blocking; the legacy shape reading back, free text under Other;
+nothing ticked still blocking. **Red first, 5/5 failed** against the radio
+pages (no such boxes to click, no migration, the validator blind to the new
+boxes — `Received array: []`). Green: the 12-spec neighbour set (the new spec, `conditional-reveal-routes`, `plan-initial-mount`, `plan-pdf-wcag-compliance`, `readiness-card.contract`, `plan-readiness.contract`, `navigation-status.contract`, `pdf-cover-geometry`, `plan-signature-date`, `plan-initial-period`, `plan-certificate-of-service`, `signature-capture.contract`) **221/221, 21.7 min**, first run. Unit:
+`tests/unit/plan-initial-multiselect.spec.js` (new, 6 cases);
+`plan-initial-parity`, `readiness-predicate-coverage`, the 67F reveal-route
+case and the WCAG fixture re-pointed at the boxes; full suite **126 files /
+1,791 green**; `check:types` clean (which also caught a 68C typing slip,
+fixed in its own commit). The Initial Plan mount snapshots cover the Cover
+and Signatures pages only, so none changed.
 
 ---
 

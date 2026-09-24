@@ -182,18 +182,18 @@ test.describe('Milestone 67F: answering a question reveals its field on the clic
 
     await page.evaluate(() => (window as any).navigate('/p2'));
     await expect(page.locator('#main-content [data-form-path="q2Explain"]')).toHaveCount(0);
-    await page.locator('#q2Setting_7').check(); // Other
+    await page.locator('#q2Other').check(); // Other
     await expect(page.locator('#main-content [data-form-path="q2Explain"]')).toBeVisible();
 
     await page.evaluate(() => (window as any).navigate('/p3'));
     await expect(page.locator('#main-content [data-form-path="q4Explain"]')).toHaveCount(0);
-    await page.locator('#q4Mental_4').check(); // Other
+    await page.locator('#q4Other').check(); // Other
     await expect(page.locator('#main-content [data-form-path="q4Explain"]')).toBeVisible();
 
     await expect(page.locator('#main-content [data-form-path="q5Explain"]')).toHaveCount(0);
-    await page.locator('#q5Personal_3').check(); // Other
+    await page.locator('#q5Other').check(); // Other
     await expect(page.locator('#main-content [data-form-path="q5Explain"]')).toBeVisible();
-    await expect(page.locator('#q4Mental_4'), 'Q4 keeps its answer through Q5\'s re-render').toBeChecked();
+    await expect(page.locator('#q4Other'), 'Q4 keeps its answer through Q5\'s re-render').toBeChecked();
   });
 
   // Two of the forms the proposal said to audit before building: they use
