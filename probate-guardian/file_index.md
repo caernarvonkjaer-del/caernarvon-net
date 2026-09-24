@@ -42,6 +42,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`MILESTONE-67-PROPOSAL.md`](<MILESTONE-67-PROPOSAL.md>) | Project documentation or policy reference. |
 | [`MILESTONE-68-PROPOSAL.md`](<MILESTONE-68-PROPOSAL.md>) | Project documentation or policy reference. |
 | [`MILESTONE-68.75-PROPOSAL.md`](<MILESTONE-68.75-PROPOSAL.md>) | Draft Milestone 68¾ proposal for a centrally switched test-system warning at the beginning of every filing-page title. |
+| [`MILESTONE-70-PROPOSAL.md`](<MILESTONE-70-PROPOSAL.md>) | Draft Milestone 70 plan to retire Guardian Forms' classic application monolith through staged ES-module services, canonical state, a narrow namespaced browser API, and source/web/portable compatibility gates. |
 | [`MILESTONE-ARCHIVE.md`](<MILESTONE-ARCHIVE.md>) | Project documentation or policy reference. |
 | [`package-lock.json`](<package-lock.json>) | Node project metadata and locked dependency manifest. |
 | [`package.json`](<package.json>) | Node project metadata and locked dependency manifest. |
