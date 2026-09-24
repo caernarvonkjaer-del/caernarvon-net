@@ -16,9 +16,9 @@ or stop a filing outright; the rest prevent a filer from recording the truth.
 | 68A | Plan signatures must be dated after the period being planned for | **Blocks filing**; only remedy is a false sworn date | **DECIDED** — remove the rule from Plans; keep it on accountings | **Blocked** — audit Plan Initial and Plan Minor first |
 | 68B | Initial Plan files with no reporting period, unflagged | Incomplete document filed, silently | **DECIDED** — require it, as the other Plans do | Ready to build |
 | 68C | No certificate of service on any Plan type | App states a requirement it cannot meet | **DECIDED** — build on all four; optional on Simplified; fix its wrong text | Ready to build |
-| 68E | Initial Plan Q5 accepts one answer where several apply | Cannot record the truth | **DECIDED** — the court's form is a checkbox list; convert to multi-select. Q4 has the same defect (reported, not proposed) | Blocked on 67F |
-| 68F | Assistive-devices "None" can be ticked alongside real selections | A filed plan can state both | **DECIDED** — no "None" added (form has none); fix mutual exclusion on D and E | Blocked on 67F |
-| 68G | Annual Plan Q6 cannot state a right is **not** restorable | **Statutory** — §744.3675(3)(b) requires that statement | **DECIDED** — add a fourth state; relabelling rejected (rewrites stored answers) | Blocked on 67F |
+| 68E | Initial Plan Q5 accepts one answer where several apply | Cannot record the truth | **DECIDED** — the court's form is a checkbox list; convert to multi-select — Q5, Q4 and any other radio-rendered checkbox list the form shows (settled 2026-09-24) | Ready — 67F landed |
+| 68F | Assistive-devices "None" can be ticked alongside real selections | A filed plan can state both | **DECIDED** — no "None" added (form has none); fix mutual exclusion on D and E | Ready — 67F landed |
+| 68G | Annual Plan Q6 cannot state a right is **not** restorable | **Statutory** — §744.3675(3)(b) requires that statement | **DECIDED** — the form's four columns: Yes / No / Not Removed / Needs to be Restored; stored values unchanged, "No" added (settled 2026-09-24) | Ready — 67F landed |
 | 68I | Initial Plan asks for two dates that look redundant | Real distinction, unexplained | **DECIDED** — keep both, explain them; the tester's premise holds only for original guardians | Ready to build |
 | 68H | All three Plans call their period an "accounting period" | Wrong against the statute | **DECIDED** — "reporting period" for Plans | Ready to build |
 
@@ -705,9 +705,19 @@ radioP('q5Personal','',d.q5Personal,['Care Facility','Nurses and Aides','Family 
 mutually exclusive by definition. The stored field is scalar: `q5Personal` is
 typed `enum` in `probate-guardian-data-model.csv:439`, not a list.
 
-### Decision needed
+### Decision — SETTLED 2026-09-24: convert every radio-rendered checkbox list
 
-**Option 1 — Convert to checkboxes (RECOMMENDED).** Several answers may be true
+**Scope, as the requester set it:** Q5, Q4, and any other Initial Plan
+question the court's form (`reference/plan-forms/plan-initial-original.pdf`)
+shows as a checkbox list but the app renders single-select — Q3 and Q6 are
+audited against the form during the build and converted only if they are the
+same shape. The form is the authority for which questions qualify. One
+data-model migration pattern (a saved single value becomes a one-item set)
+applied to each affected field; the PDF renders each as a list.
+
+**Superseded options, for the record:**
+
+**Option 1 — Convert to checkboxes (RECOMMENDED — CHOSEN, widened as above).** Several answers may be true
 at once, so the control should allow several. *Filer sees:* they tick every
 arrangement that applies. *Cost:* the stored field changes from one value to a
 set, which is a data-model change plus a migration for existing filings (a saved
@@ -1001,10 +1011,22 @@ on the form; (c) is addressed indirectly through the petition obligation.**
 readiness config already tracks *"Question 5 — social skills and capacity-building
 activities described"*. Confirm before relying on it.
 
-### Decision needed
+### Decision — SETTLED 2026-09-24: the form's four columns
+
+The table's "relabelling rejected" and this section's "match the form's four
+columns exactly" were in conflict; the requester settled it on the form.
+**Q6 shows the court's four columns — Yes / No / Not Removed / Needs to be
+Restored.** A fourth stored state is added for the "No" column. The existing
+`Capable of restoration` keeps its stored value and is *displayed* as "Yes";
+`Not removed` and `Needs to be restored` keep both value and label. No saved
+answer changes meaning — the objection the table recorded was to relabelling
+`Needs to be restored` as "No" (Option 2 below), which this does not do.
+Migration: none; a blank right stays blank (never guessed, as below).
+
+**Superseded options, for the record:**
 
 **Option 1 — Add a fourth state, "Removed, not capable of restoration"
-(RECOMMENDED — now backed by §744.3675(3)(b), not preference).** Spelled out rather than a bare "No", because the column is not
+(RECOMMENDED as originally written — now backed by §744.3675(3)(b), not preference).** Spelled out rather than a bare "No", because the column is not
 a yes/no question — it is a status. *Filer sees:* an accurate answer for the
 common case of a right that was removed and remains appropriate to leave
 removed. *Cost:* one enum value across twelve fields, a migration decision for
