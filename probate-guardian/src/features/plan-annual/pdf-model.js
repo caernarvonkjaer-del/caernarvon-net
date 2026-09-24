@@ -331,7 +331,9 @@ export function buildPlanAnnualModel(D) {
         headers: ['Right', 'Status'],
         colWidths: [65, 35],
         colAlign: ['left', 'left'],
-        rows: planRights.map(([k, label]) => [label, rights[k] || '']),
+        // Milestone 68G: the form's word for the stored value ("Yes" for
+        // 'Capable of restoration'); the bridge is legacy-app.js's planRightLabel.
+        rows: planRights.map(([k, label]) => [label, (typeof window !== 'undefined' && typeof window.planRightLabel === 'function') ? window.planRightLabel(rights[k]) : (rights[k] || '')]),
       },
       {
         type: 'key-value-grid',

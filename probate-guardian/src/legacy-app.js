@@ -4034,7 +4034,21 @@ const PLAN_RIGHTS=[
   ['medical','Right to consent to medical treatment'],
   ['social','Right to make decisions about social environment or other aspects of social life'],
 ];
-const PLAN_RIGHT_STATES=['Not removed','Needs to be restored','Capable of restoration'];
+// Milestone 68G: the court's Annual Plan question 6 has FOUR columns -- Yes /
+// No / Not Removed / Needs to be Restored (plan-annual-original.pdf, page 6)
+// -- and the app had dropped "No", so a right that was removed and is not
+// capable of restoration had no honest answer (744.3675(3)(b) requires a
+// statement of whether rights can be restored). Each entry is the STORED value
+// and the LABEL the form uses; the three existing values are unchanged so no
+// saved answer changes meaning, and "Capable of restoration" is shown as the
+// form's "Yes". Order is the form's column order.
+const PLAN_RIGHT_STATES=[
+  {value:'Capable of restoration',label:'Yes'},
+  {value:'No',label:'No'},
+  {value:'Not removed',label:'Not Removed'},
+  {value:'Needs to be restored',label:'Needs to be Restored'},
+];
+const planRightLabel=(value)=>{const s=PLAN_RIGHT_STATES.find(x=>x.value===value);return s?s.label:(value||'');};
 const PLAN_ADLS=[
   ['eating','Eating'],['prepareMeals','Prepare meals'],
   ['heavyChores','Heavy chores (e.g. vacuuming)'],['lightHousekeeping','Light housekeeping'],
@@ -4062,6 +4076,7 @@ const PLAN_BENEFITS=[
 // be real window properties (Milestone 4, Phase A).
 window.PLAN_RIGHTS=PLAN_RIGHTS;
 window.PLAN_RIGHT_STATES=PLAN_RIGHT_STATES;
+window.planRightLabel=planRightLabel;
 window.PLAN_ADLS=PLAN_ADLS;
 window.PLAN_ADL_RATINGS=PLAN_ADL_RATINGS;
 window.PLAN_BENEFITS=PLAN_BENEFITS;

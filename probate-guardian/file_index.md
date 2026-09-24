@@ -317,6 +317,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`tests\e2e\pdf-structure-tags.spec.ts`](<tests/e2e/pdf-structure-tags.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\pdf-table-semantics.spec.ts`](<tests/e2e/pdf-table-semantics.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\persistence-recovery.contract.spec.ts`](<tests/e2e/persistence-recovery.contract.spec.ts>) | Automated test covering the named behavior or contract. |
+| [`tests\e2e\plan-annual-rights-no.spec.ts`](<tests/e2e/plan-annual-rights-no.spec.ts>) | Milestone 68G: Annual Plan question 6 in the court form's four columns, including "No". |
 | [`tests\e2e\plan-annual-mount.spec.ts`](<tests/e2e/plan-annual-mount.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\plan-benefits-tristate.spec.ts`](<tests/e2e/plan-benefits-tristate.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\plan-directive-cards.spec.ts`](<tests/e2e/plan-directive-cards.spec.ts>) | Automated test covering the named behavior or contract. |

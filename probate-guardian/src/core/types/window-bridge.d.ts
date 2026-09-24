@@ -334,6 +334,7 @@ interface Window {
   PLAN_RIGHTS: any;
   planCheckGroup: any;
   planQ: any;
+  planRightLabel: any;
   prepareFilingOutput: any;
   printCurrentFilingPdf: any;
   promptModal: any;

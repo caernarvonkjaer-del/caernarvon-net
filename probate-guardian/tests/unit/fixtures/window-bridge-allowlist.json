@@ -1103,6 +1103,10 @@
     },
     {
       "file": "src/legacy-app.js",
+      "name": "planRightLabel"
+    },
+    {
+      "file": "src/legacy-app.js",
       "name": "SCHEDULE_NAV_KEYS"
     },
     {

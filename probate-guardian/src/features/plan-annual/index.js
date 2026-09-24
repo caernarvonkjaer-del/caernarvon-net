@@ -415,8 +415,10 @@ function pagePlanARights(){
   const d=window.D;
   const r=d.rights||{};
   const rows=PLAN_RIGHTS.map(([k,label])=>{
+    // Milestone 68G: four columns, the court form's -- the stored value is
+    // the radio's value, the form's word is what the filer sees.
     const cells=PLAN_RIGHT_STATES.map(s=>
-      `<td class="text-center"><input class="form-check-input" type="radio" name="right_${k}" value="${esc(s)}" ${r[k]===s?'checked':''} data-form-path="rights.${k}" aria-label="${esc(label)} — ${esc(s)}"></td>`).join('');
+      `<td class="text-center"><input class="form-check-input" type="radio" name="right_${k}" value="${esc(s.value)}" ${r[k]===s.value?'checked':''} data-form-path="rights.${k}" aria-label="${esc(label)} — ${esc(s.label)}"></td>`).join('');
     return `<tr><td>${label}</td>${cells}</tr>`;
   }).join('');
   const anyRestorable=PLAN_RIGHTS.some(([k])=>r[k]==='Capable of restoration');
@@ -429,10 +431,10 @@ function pagePlanARights(){
         'For example: encouragement, physical or mental therapy, rehabilitative services. Say whether these activities were effective.'))}
     ${planQ(6,'Is the ward now capable of having any of these rights restored?',
       `<table class="table plan-rights-table">
-        <thead><tr><th>Right</th>${PLAN_RIGHT_STATES.map(s=>`<th class="text-center" style="width:9rem">${s}</th>`).join('')}</tr></thead>
+        <thead><tr><th>Right</th>${PLAN_RIGHT_STATES.map(s=>`<th class="text-center" style="width:9rem">${esc(s.label)}</th>`).join('')}</tr></thead>
         <tbody>${rows}</tbody>
       </table>`,
-      'Mark each right with its current status. <strong>"Capable of restoration" is a formal statement</strong> — if the physician\'s report agrees, you must file a separate petition to restore that right. This plan does not restore anything on its own.')}
+      'Mark each right with its current status, in the court form\'s four columns. <strong>"Yes" (capable of restoration) is a formal statement</strong> — if the physician\'s report agrees, you must file a separate petition to restore that right. This plan does not restore anything on its own.')}
     ${planQ(7,"Disagreement with the physician's report",
       txtP('q7RightsExplain','Explanation',d.q7RightsExplain,4,false,
         "Required only if you marked a right as capable of restoration but disagree with what the physician's report says about it."),
