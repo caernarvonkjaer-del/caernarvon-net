@@ -114,12 +114,12 @@ will regenerate it after any work already in flight has landed.
 | --- | --- |
 | Legacy core | `src/legacy-app.js` is 457,190 bytes and about 8,300 physical lines, with 345 top-level function declarations and 129 top-level bindings. Classic top-level function declarations become implicit globals even when there is no `window.X =` line. |
 | Hybrid boot | `index.html` loads `src/legacy-app.js` as a parser-blocking classic script and then `src/main.js` as a module. `main.js` waits for module evaluation and calls `window.initApp()`. |
-| Explicit global bridge | The current audit finds 319 `window.X =` assignment sites across 60 JavaScript files and 358 distinct application-defined names consumed from `window`. It does not yet see every implicit classic global or bare identifier dependency. |
+| Explicit global bridge | The parser-based 70A audit finds 337 `window`/`globalThis` write sites, including 13 `Object.defineProperty` publications the regex audit misses (see the 70A build record). The current regex audit finds 319 `window.X =` assignment sites across 60 JavaScript files and 358 distinct application-defined names consumed from `window`. It does not yet see every implicit classic global or bare identifier dependency. |
 | Highest fan-out globals | `D` is consumed by 41 files; `autoSave` by 14; `renderPage` and `setPath` by 13 each; `ic` and `navigate` by 12 each; and `computeNavChecks` by 8. |
 | Feature coupling | Eighteen feature files destructure application services from `window` at module evaluation time. Those captured references create both ordering constraints and difficult test setup. |
 | State ownership | `src/core/state.js` describes itself as a thin adapter around legacy globals. It reads and writes `window.caseFile` and `window.D`; the monolith still owns the underlying lexical state and many save/activity flags. |
 | Build special case | `vite.config.js` copies `src/legacy-app.js` as a static file, and `scripts/generate-service-worker.mjs` treats it as a critical asset, instead of Vite compiling it as part of the module graph. |
-| Test coupling | About 83 of the 115 browser spec files read or write `window.D`, `window.caseFile`, or `currentPage` inside `page.evaluate()`, and at least 31 of them write into the live filing in place -- at least 177 sites such as `Object.assign(w.D, patch)` followed by `autoSave()` -- which a copy-only adapter cannot serve without new commands. Milestone 42C counted 83 distinct app-defined names the browser suite reaches through `window` (`tests/e2e/support/window-api.ts`). On the unit side, specs evaluate monolith source through `tests/unit/support/legacy-source-extract.js` or source slicing, read `legacy-app.js` to pin its content, carry hand-copied mirrors of monolith code, or stub `window` (see **Known legacy-coupled test migrations**). These counts come from text searches and are lower bounds; 70A replaces them with parser counts. |
+| Test coupling | Parsed in 70A (`tests/baseline/ms70-e2e-globals.json`; see the 70A build record): 112 of the 115 browser spec files reach application globals inside `page.evaluate()`, 158 distinct application names in all (Milestone 42C had listed 83), and 42 files write into live case state in place -- 237 sites such as `Object.assign(w.D, patch)` followed by `autoSave()` -- which a copy-only adapter cannot serve without new commands. The text-search estimates first written here (about 83 files; at least 31 files and 177 sites) were low. On the unit side, specs evaluate monolith source through `tests/unit/support/legacy-source-extract.js` or source slicing, read `legacy-app.js` to pin its content, carry hand-copied mirrors of monolith code, or stub `window` (see **Known legacy-coupled test migrations**). These counts come from text searches and are lower bounds; 70A replaces them with parser counts. |
 | Production configuration | Production is the **portable** build served over HTTPS from a subfolder of the DNN site. It registers no service worker: only the web build carries the `pg-build=web` marker that `src/pwa-ui.js` requires. The `portable` e2e profile opens that same build as a literal `file://` page and runs six parity specs. Four code paths branch on `file:` versus HTTP(S) -- the cross-tab filing lock (`src/core/ward-lock.js`, bypassed entirely under `file:`), fragment loading (`src/fragment-loader.js`), and two template-fetch startup steps in `legacy-app.js` (effectively dead today, since all three court templates are bundled) -- so no current profile runs the shipped portable bundle through the branches production takes. The source profile does take those branches, but against unbundled source. |
 | Continuous integration | `.github/workflows/probate-guardian-tests.yml` runs only on manual dispatch (`workflow_dispatch`); nothing runs automatically on a push. Every ratchet in this plan is therefore enforced by the unit suite that agents run, and CI is available on demand for any branch, including `milestone-70`. |
 | Existing duplicates | The single-implementation rule is already broken in places. `PBKDF2_ITERATIONS` and `CRYPTO_VERIFIER_PLAINTEXT` are defined in both `legacy-app.js` (lines 1701-1702) and `src/core/persistence/crypto.js`; the `pg-launch-pref` and `pg-session-cache` database names and the `hasOpenedBefore` key also exist in both the monolith and their modules. |
@@ -638,6 +638,104 @@ assertions, and the unit suite rejects any unapproved
 increase in the compatibility surface. The exact final facade is a
 reviewed artifact of this delivery, not an open-ended promise to preserve all
 current debugging habits.
+
+### 70A build record (in progress)
+
+Approved by the requester on 2026-09-24 ("Approve, skip the regression":
+70A starts without a full `npm test` on `master` first). Everything below is
+on the `milestone-70` branch unless it says otherwise.
+
+**Done, with evidence.**
+
+| Item | Commit | Evidence |
+| --- | --- | --- |
+| Scoped AGENTS.md exception (D1), on `master` | `a9c9930` | The branch point. |
+| Branch `milestone-70`, as a separate worktree | -- | Checked out at `D:\caernarvon-net-ms70` so the main folder stays on `master`: Codex commits in that folder, and a folder holds one branch. The drive is not NTFS, so the worktree has its own `npm ci` install. |
+| Branch-only test ports | `add5403` | `playwright.config.ts` serves on 4331/4183/5183: `master` uses 4321/4173/5173 and reuses a server already listening, so with both worktrees in use a run could silently test the other's files. Restored at the merge (ledger, "Branch-only settings"). `startup.spec.ts` 7/7 on the new ports. |
+| Master-fix ledger and guard | `add5403` | `MILESTONE-70-FIX-LEDGER.md`; `scripts/ms70-ledger-guard.mjs`. **Gate item: seen failing** against real history (branch point moved back to `9c61cbb`: all five later `master` commits reported unlisted); `ms70-ledger-guard.spec.js` 8/8. |
+| Parser-based dependency audit and ratchet | `0f86677` | `scripts/ms70-dependency-audit.mjs`; `tests/baseline/ms70-dependency-{baseline,inventory}.json`. **Gate items: seen failing on the real tree** for an injected implicit global in `legacy-app.js`, a bare `esc()` call in `src/core/case-resolver.js`, and a two-way import between `state.js` and `case-resolver.js`, each restored; `ms70-dependency-ratchet.spec.js` 19/19. |
+| Assertion-count baseline | `122d0e9` | `scripts/ms70-assertion-counts.mjs`; `tests/baseline/ms70-assertion-counts.json`. Seen failing on a real spec with one `expect` removed (15 to 14). |
+| Browser-suite global inventory | `122d0e9` | `scripts/ms70-e2e-global-inventory.mjs`; `tests/baseline/ms70-e2e-globals.json` -- what `GuardianForms.testing` is designed from. |
+| `portable-http` profile (T1), brought up | `02ecde4` | `scripts/serve-portable-http.mjs`; `PG_TARGET=portable-http`; `npm run test:e2e:portable-http`; also part of `test:release` through the `all` profile. **Gate item: the one bring-up run (D2) 33/33, 0 skipped**, including the five ward-lock tests and the backup lock test the `file://` profile skips. The parity spec was seen failing for the stated reason with `dist/portable/fragments` removed. |
+| Security contract | `f4f368b` | `tests/unit/crypto-contract.spec.js` 8/8 and `tests/e2e/security-contract.spec.ts` 3/3, each seen failing with the fault injected (iterations 100,000, a 16-byte IV, an extractable key; auto-lock at 14 minutes, lockout threshold 6, a stored copy of the password). |
+
+**Parsed figures that replace this plan's estimates.** The Verified planning
+baseline's "Test coupling" row said its counts were text-search lower
+bounds; the parsers put the real numbers higher, so 70T is larger than first
+written:
+
+- 112 of the 115 browser spec files reach application globals (not "about
+  83"); `navigate` alone is used by 86 and `D` by 78.
+- The browser suite reaches 158 distinct application names (Milestone 42C
+  had listed 83).
+- 237 in-place writes to live case state, in 42 files (not "at least 177 in
+  at least 31"): 214 assignments, 17 `Object.assign`, 3 array mutators, 3
+  root replacements; 16 computed `window[...]` accesses.
+- 337 `window`/`globalThis` write sites (the regex audit's 319 missed the 13
+  `Object.defineProperty` publications, among them `currentPage`, `D`,
+  `caseFile` and `_cryptoKey`); 219 captures off `window` at load time, in 18
+  files; 474 implicit globals, all in `legacy-app.js`.
+- 50 bare cross-boundary references the old audit could not see: the
+  monolith calls 47 module-published functions by bare name, and three
+  modules call monolith functions by bare name with no `window.` anywhere
+  (`formDisplayName` in annual-accounting, `saveData` in guardian-inventory,
+  `updateNavDots` in simplified-accounting).
+- 0 static import cycles and 0 layer violations today.
+- The assertion baseline: 245 spec files, 6,098 static `expect` calls, 1,759
+  test declarations at the time of `122d0e9` (that commit's message says
+  "246" and "6,100+"; the recorded baseline is the authority).
+
+**Findings -- production defects on `master`, reported, not fixed here.**
+Each is present in the build deployed on 2026-09-24. Fixing one is `master`
+work that needs the requester's go-ahead, and then joins the ledger.
+
+1. **Annual Accounting import stops at the first ward percentage.** Importing
+   an Annual workbook with a ward percentage on any of Schedules D-1 to D-5
+   fails with "Import failed: r2 is not a function". The exporter writes a
+   percentage as a fraction (50% as 0.5), so a plain export then re-import
+   triggers it. `annual-accounting/excel.js` takes `r2` off `window`, but
+   `legacy-app.js` declares it with `const`, which is not a window property.
+   The importer writes into the open filing as it reads: in the reproduction
+   the Cover's case number imported and D-1 came back empty, so the filing
+   can be left half-imported. No existing test imports a ward percentage.
+2. **Blank schedule rows are never pruned.** `pruneBlankCards()`, run on
+   every page change and filing switch, reads `window.BLANK_SCHEDULE_ENTRY`,
+   which is undefined at runtime (a `const` in `legacy-app.js`), so its
+   schedule branch never runs. What that leaves in a filing's data and
+   output is not yet characterized.
+3. **Two guarded calls to functions nothing defines.**
+   `window.isHelpPanelOpen` (the Preview & Export header's help control) and
+   `window.renderYearManagerBody` (called before the Year Manager dialog
+   opens) have no provider anywhere, so both calls are silently skipped.
+   Effect on what a filer sees not yet characterized.
+4. **Dead state.** `_visitedPages` is declared in `legacy-app.js` and written
+   by the router and ward lifecycle through `window`, where it does not
+   exist; nothing reads it. Harmless; a "delete as dead" disposition.
+
+**Findings -- for this plan.**
+
+- `vite.config.js` calls `dist/portable`'s copy of `fragments/` "unused at
+  runtime". That is true only over `file://`. Over HTTP -- production -- the
+  portable build fetches it; removing it would stop every fragment-backed
+  dialog on the live site while the `file://` profile stayed green. The
+  `portable-http` parity spec now guards it.
+- `window.navigate` has two publishers, `main.js` and `router.js`, which
+  publish the same imported function: a duplicate publication, not a
+  conflict. Recorded for the duplicate list.
+- The lock and unlock behavior pinned by the security contract is exactly
+  what 70I moves: 5 failures, 30 seconds doubling to a 5-minute cap, a
+  15-minute inactivity lock, and a lock that clears the key and the
+  in-memory case.
+
+**Still open in 70A.** The disposition of each of the 474 monolith
+declarations; the current reason for each `window` export and the full
+duplicate list; the `.sav` fixture corpus (current and historical, plus
+corrupt and wrong-password cases); the mixed-version characterization; the
+year-rollover characterization; the fixture-helper inventory; the baseline
+measurements (`measure:baseline`/`measure:lifecycle` with `--output`); the
+`GuardianForms` schema; capturing production's response headers for
+`portable-http` (it contacts production, so it waits for the requester's
+go-ahead and the production URL); and the per-delivery estimate.
 
 ---
 
