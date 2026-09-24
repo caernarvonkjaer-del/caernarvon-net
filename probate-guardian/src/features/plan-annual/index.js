@@ -4,6 +4,8 @@ import { checkSignatureState, inferLegacySignatureState } from '../../core/valid
 import { issueFactory } from '../../core/validation/validation-issue.js';
 import { startedRows } from '../../core/validation/row-started.js';
 import { renderSignatureStateControl, mountSignatureStateControls } from '../../core/signature/signature-state-control.js';
+import { migratePlanCertificateOfService } from '../../core/filing/plan-certificate-of-service.js';
+import { renderPlanCertificateOfServicePage } from '../../core/form/plan-certificate-of-service-page.js';
 import { preparerNoteHTML } from '../../core/signature/preparer-note.js';
 // Milestone 41-3: Tier 2 cards. This page's periodFrom/periodTo labels are
 // renderReportingPeriodFields()'s own defaults, so it reuses with zero
@@ -96,6 +98,9 @@ function ensurePrintModule() {
 }
 
 export async function mount(container, page) {
+  // Milestone 68C: a plan saved before the Certificate of Service existed
+  // gains its fields on load. Idempotent, so every mount may call it.
+  if (migratePlanCertificateOfService(window.D)) window.autoSave?.();
   let html;
   let isPrint = false;
   if (page === '/print') {
@@ -116,6 +121,7 @@ export async function mount(container, page) {
       case '/p9':  html = pagePlanADirectives(); break;
       case '/p10': html = pagePlanARemuneration(); break;
       case '/p11': html = pagePlanASignatures(); break;
+      case '/p12': html = pagePlanACertificate(); break;
       default:     html = pagePlanACover();
     }
   }
@@ -123,10 +129,10 @@ export async function mount(container, page) {
   container.scrollTop = 0;
   signatureHandles.get(container)?.forEach((h) => h.destroy());
   signatureHandles.delete(container);
-  if (page === '/p11') {
+  if (page === '/p11' || page === '/p12') {
     signatureHandles.set(container, mountSignatureStateControls(container, {
       setImage: (imagePath, dataUrl) => window.setPath(window.D, imagePath, dataUrl),
-      route: '/p11',
+      route: page,
     }));
   }
   if (isPrint) await _printModule.mountPreview();
@@ -159,6 +165,7 @@ function buildNavPlanAnnual(container){
       ${item('/p9','pa-p9','10&nbsp;&nbsp;Advance Directives')}
       ${item('/p10','pa-p10','11&nbsp;&nbsp;Remuneration')}
       ${item('/p11','pa-p11','Signatures')}
+      ${item('/p12','pa-p12','Certificate of Service')}
     </div>
     <div class="nav-section">
       <div class="nav-section-label">Output</div>
@@ -200,6 +207,7 @@ function getSummaryConfigPlanAnnual(){
           {label:'10. Advance Directives',route:'/p9',status:navStatus(nav,'pa-p9')},
           {label:'11. Remuneration',route:'/p10',status:navStatus(nav,'pa-p10')},
           {label:'Signatures',route:'/p11',status:navStatus(nav,'pa-p11')},
+          {label:'Certificate of Service',route:'/p12',status:navStatus(nav,'pa-p12')},
         ],
       },
     ],
@@ -650,7 +658,7 @@ function pagePlanASignatures(){
       </div>
     </div>
     ${renderScheduleDocsSection('planASignatures')}
-    ${pageNavS('/p10',null)}
+    ${pageNavS('/p10','/p12')}
   </div>`;
 }
 
@@ -794,3 +802,13 @@ export function validatePlanAnnual(){
 // exposing this lets the shared guidance panel itemize Plan Annual's own
 // missing fields instead of only showing a generic message.
 window.validatePlanAnnual = validatePlanAnnual;
+
+// ── Certificate of Service (Milestone 68C) ───────────────────────────────
+// Shared with the other three Plans; see core/filing/plan-certificate-of-service.js.
+const CERT_CFG = { attorneyName: (d) => d.attorney || '', planNoun: 'plan' };
+function pagePlanACertificate(){
+  return `<div class="schedule-page">
+    ${renderPlanCertificateOfServicePage({ filing: window.D, route: '/p12', cfg: CERT_CFG })}
+    ${pageNavS('/p11',null)}
+  </div>`;
+}

@@ -15,7 +15,7 @@ or stop a filing outright; the rest prevent a filer from recording the truth.
 | 68D | Period end date cut off on every Annual cover page | Wrong data on a filed document | **DECIDED** — fix the wrap width, derived from the layout | **LANDED 2026-09-24** — see the build record under 68D; Plan Initial rendered |
 | 68A | Plan signatures must be dated after the period being planned for | **Blocks filing**; only remedy is a false sworn date | **DECIDED** — remove the rule from Plans; keep it on accountings | **LANDED 2026-09-24** — audit found 8 sites on three Plans (Minor had it too; Initial never did); see the build record under 68A |
 | 68B | Initial Plan files with no reporting period, unflagged | Incomplete document filed, silently | **DECIDED** — require it, as the other Plans do | **LANDED 2026-09-24** — see the build record under 68B |
-| 68C | No certificate of service on any Plan type | App states a requirement it cannot meet | **DECIDED** — build on all four; optional on Simplified; fix its wrong text | Ready to build |
+| 68C | No certificate of service on any Plan type | App states a requirement it cannot meet | **DECIDED** — build on all four; optional on Simplified; fix its wrong text; date + method optional and "Certified by the filer" settled at build (2026-09-24) | **LANDED 2026-09-24** — see the build record under 68C |
 | 68E | Initial Plan Q5 accepts one answer where several apply | Cannot record the truth | **DECIDED** — the court's form is a checkbox list; convert to multi-select — Q5, Q4 and any other radio-rendered checkbox list the form shows (settled 2026-09-24) | Ready — 67F landed |
 | 68F | Assistive-devices "None" can be ticked alongside real selections | A filed plan can state both | **DECIDED** — no "None" added (form has none); fix mutual exclusion on D and E | Ready — 67F landed |
 | 68G | Annual Plan Q6 cannot state a right is **not** restorable | **Statutory** — §744.3675(3)(b) requires that statement | **DECIDED** — the form's four columns: Yes / No / Not Removed / Needs to be Restored; stored values unchanged, "No" added (settled 2026-09-24) | Ready — 67F landed |
@@ -789,6 +789,42 @@ needs service."
 direction that blocking should be rare: the certificate is captured and printed,
 and its absence is not an export gate on any plan type.
 
+**Settled 2026-09-24, at build time — two points the row list left open.**
+
+1. **Date and method, optional.** The accountings' certificate records a Date
+   of Service and a method ("hand-delivered, mailed") and prints them in the
+   certificate sentence; the row list above named only recipients and the
+   attestation. The Plans' certificate carries both, optional, so the PDF can
+   read "furnished to the recipients listed below on 03/01/2026 | mailed".
+2. **Certified by the filer.** The requester asked how the court's form does
+   it. **It does not:** none of the four plan forms in `reference/plan-forms/`
+   contains a certificate of service — each ends with "Certification and
+   Signature of Guardian(s)" and "… of Guardian's Attorney" (the Minor Plan
+   adds a preparer). The Probate Rules put the duty to serve on the
+   guardian: Rule 5.690(b) for the initial report and 5.695(b) for the annual
+   plan ("Copies of the annual plan and accounting shall be served on the
+   ward, unless the ward is a minor or is totally incapacitated, and the
+   attorney for the ward, if any … on such other persons as the court may
+   direct"); Rule 5.041 sends service to Fla. R. Gen. Prac. & Jud. Admin.
+   2.516, whose certificate is signed by "the attorney or party" (2.516 is
+   cited by the rules in the repository, not reproduced in them). So the
+   certificate is signed by whoever serves: **one "Certified by" block with
+   a Guardian / Attorney choice** — shown as Attorney when the plan names
+   one, otherwise Guardian 1, the name carried from the plan — with the date
+   and the same signature-state control the plan's own signatures use. Not
+   the accountings' attorney-only block (most Plan filers are pro se and
+   would have nowhere to sign), and not "no block at all" (a certificate
+   under 2.516 is signed as such).
+3. **AO 2024-025 says nothing about serving plans** (its text was searched
+   for "certificate of service", "serve" and "service of"). The readiness
+   text this app shows on three Plans — "Local Sixth Judicial Circuit
+   requirement: serve a copy on all interested persons and file the
+   certificate of service" — is therefore not traceable to the order it
+   implies. §8.9: reported here, not changed by this item, which corrects
+   only the Simplified Plan's text as decided; the "local requirement"
+   attribution on the other three is for the requester to re-source or
+   reword.
+
 **Superseded options, for the record:**
 
 **Option 1 — Add the existing certificate-of-service card to the Plans
@@ -897,6 +933,69 @@ previously-exportable filing fail.
    direction that blocking should be rare.
 5. Simplified Plan only: its readiness text no longer calls the certificate a
    requirement. Assert on the rendered string, since that wording is the defect.
+
+### Build record — LANDED 2026-09-24
+
+**What a filer now gets.** Every Plan has a **Certificate of Service** page,
+last before Print Preview: recipient cards in the accountings' shape (name
+and three free address lines; add as many as needed, remove any but the
+first), the "No recipients are required for this certificate" attestation
+that appears only when nobody is listed and hides the cards — never clears
+them — when answered Yes, a Date of Service and a method, and one
+**Certified by** block: a Guardian / Attorney choice shown as Attorney when
+the plan names one and Guardian 1 otherwise, the printed name carried from
+the plan, a date, and the same signature-state control the plan's own
+signatures use. Nothing on the page is required to file. The PDF appends
+the certificate as its own section: "I hereby certify that a copy of this
+plan has been furnished to:", the recipients (or the attestation), "on this
+date: 03/01/2026 | mailed", and "Certified by (Guardian)" with the
+signature. The Simplified Plan's page and readiness card say the
+certificate is **not required for this form** — the Clerk's own checklist —
+instead of calling it a local requirement.
+
+**Where the sidebar and the gate stand.** The sidebar asks (someone listed,
+or the attestation Yes — the accountings' recipient rule through the same
+bridge) and the page explains the mark with jump links; the export gate
+never demands anything. The print preview carries the certificate's
+advisories: one line for an untouched certificate, otherwise what is still
+blank. This is the 67B pattern (sidebar-only rule + advisories), applied to
+a whole page.
+
+**One implementation, four forms.** `src/core/filing/plan-certificate-of-service.js`
+(fields, migration, who certifies, the settled rule, the advisories, the PDF
+section — no DOM imports, so the state factories, the print preflight and
+the four PDF models import it) and
+`src/core/form/plan-certificate-of-service-page.js` (the page body). Each
+Plan adds one route, one nav item, one summary line, one page-nav link, its
+`CERT_CFG` (which field holds the attorney's name) and a migration call on
+mount, so a plan saved before today gains the fields on load. Recipient rows
+ride the Plans' existing +Add/Remove row path (row type `certRecipient`).
+Data model: 44 rows (11 per Plan), the recipient rows classified `personal`
+as decided; `verify:data-model` OK (995 rows). The user guide gains the page
+in each Plan's page list and a bullet, with the Simplified Plan's saying not
+required; the drift guard's `service-no-recipients-attestation` control now
+has nine evidence surfaces (the three accounting pages, the shared
+declaration, the page renderer, and the four Plans' calls).
+
+**Tests.** `tests/e2e/plan-certificate-of-service.spec.ts` (new, one
+describe per Plan, through the real buttons): the page and its nav item
+exist; add/remove; blank, attested, named and half-finished certificates
+raise no export issue and Save as PDF stays enabled; the attestation hides
+without deleting and restores on No; the sidebar asks until settled and the
+page explains; the PDF's recipients, date, method and signer; the
+Simplified readiness text. **Red first: 13/13 failed** against the source
+before any Plan had the page — no heading (4), no recipient inputs (4), no
+certificate in any PDF (4), the Simplified card still calling it a local
+requirement (1). Green: the 15-spec neighbour set (the new spec, the four `plan-*-mount` snapshots, `navigation-status.contract`, `readiness-card.contract`, `plan-readiness.contract`, `sidebar-only-wants`, `section-guidance-invariant`, `plan-pdf-wcag-compliance`, `pdf-form-specific`, `signature-capture.contract`, `plan-signature-date`, `plan-initial-period`) ran **231 of 241, 28.2 min**, every failure test-side: the page's `h1` carries the shell's injected "All Filings ?" text (matched by containment now); the yes/no radios are named `yesno_<id>_yes/_no`; the four attestation cases ticked Yes with Recipient 1 already named, which the accountings' D16 rule hides the question for — the retained data now lives in a second card, and the case also proves that naming Recipient 1 retires the question; and the Annual and Simplified Plan Signatures-page snapshots read "Next →" now that those pages lead on to the certificate. Rescoped: the three affected specs 27/27, and the certificate spec alone **13/13, 1.8 min** on the unchanged source. `tests/unit/plan-certificate-of-service.spec.js`
+(new, 10 cases) covers the shared rules; `plan-readiness-county.spec.js`'s
+two Simplified cases now assert the corrected local text; unit **125 of 126 files / 1,790 of 1,791 green** — the one failure is the index guard naming the two Milestone 68E spec files already staged in the tree, which 68E's commit indexes; `security-source-audit` failed once while a concurrent e2e run was writing `test-results/` and passes 3/3 alone and in the full suite.
+
+**Discovery carried from the decision note above (§8.9):** the "Local Sixth
+Judicial Circuit requirement" wording on the Initial, Annual and Minor
+Plans' service reminders is not traceable to AO 2024-025's text and is left
+as it was; the accountings' `certRecipients` rows remain classified `none`
+while the Plans' are `personal` — the inconsistency this item's own §8
+predicted, reported here, not fixed.
 
 ---
 

@@ -13,15 +13,25 @@ function manualTextFor(inventoryType, county) {
   return getFilingReadiness(inventoryType, { county, planGuardians: [{}] }).manual.map((row) => row.label).join('\n');
 }
 
+// Milestone 68C: the Pinellas/Pasco item used to call the certificate a
+// "Local Sixth Judicial Circuit requirement". The Clerk's own Simplified Plan
+// review checklist says a certificate of service is NOT required for this
+// form, so the local wording now says so (and still states the statutory
+// service duty); the two local cases assert the correction, not the old claim.
 describe('Simplified Plan readiness -- county-gated certificate-of-service wording', () => {
-  test('Pinellas renders the local Sixth Circuit required-manual filing item', () => {
+  const NOT_REQUIRED = "The Clerk's Simplified Plan checklist does not require a certificate of service";
+
+  test('Pinellas renders the local item, which says the certificate is not required for this form', () => {
     const manual = manualTextFor('planSimplified', 'Pinellas');
-    expect(manual).toContain('Local Sixth Judicial Circuit requirement: serve a copy on all interested persons, and file the certificate of service.');
+    expect(manual).toContain(NOT_REQUIRED);
+    expect(manual).toContain("Serve a copy of this plan on the ward");
+    expect(manual).not.toContain('Local Sixth Judicial Circuit requirement');
   });
 
-  test('Pasco renders the same local requirement as Pinellas', () => {
+  test('Pasco renders the same local item as Pinellas', () => {
     const manual = manualTextFor('planSimplified', 'Pasco');
-    expect(manual).toContain('Local Sixth Judicial Circuit requirement: serve a copy on all interested persons, and file the certificate of service.');
+    expect(manual).toContain(NOT_REQUIRED);
+    expect(manual).not.toContain('Local Sixth Judicial Circuit requirement');
   });
 
   test('a non-Sixth-Circuit county renders the statutory instruction, with no certificate-of-service filing and no Pinellas/Pasco/Sixth Circuit text', () => {

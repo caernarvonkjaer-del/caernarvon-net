@@ -109,6 +109,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`src\core\filing\output-preflight.js`](<src/core/filing/output-preflight.js>) | Build, tooling, or configuration source. |
 | [`src\core\filing\plan-tristate.js`](<src/core/filing/plan-tristate.js>) | Build, tooling, or configuration source. |
 | [`src\core\filing\readiness-card.js`](<src/core/filing/readiness-card.js>) | Build, tooling, or configuration source. |
+| [`src\core\filing\plan-certificate-of-service.js`](<src/core/filing/plan-certificate-of-service.js>) | Milestone 68C: the Plans' shared certificate of service -- fields, migration, the "Certified by" signer rule, the sidebar's settled rule, print-preview advisories and the PDF section; one implementation for all four Plans, no DOM imports. |
 | [`src\core\filing\readiness-config.js`](<src/core/filing/readiness-config.js>) | Build, tooling, or configuration source. |
 | [`src\core\filing\schedule-doc-ack.js`](<src/core/filing/schedule-doc-ack.js>) | Build, tooling, or configuration source. |
 | [`src\core\filing\statutory-text.js`](<src/core/filing/statutory-text.js>) | Build, tooling, or configuration source. |
@@ -121,6 +122,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`src\core\form\form-contract.js`](<src/core/form/form-contract.js>) | Build, tooling, or configuration source. |
 | [`src\core\form\form-fields.js`](<src/core/form/form-fields.js>) | Build, tooling, or configuration source. |
 | [`src\core\form\guardianship-options.js`](<src/core/form/guardianship-options.js>) | Build, tooling, or configuration source. |
+| [`src\core\form\plan-certificate-of-service-page.js`](<src/core/form/plan-certificate-of-service-page.js>) | Milestone 68C: the Plans' Certificate of Service page body -- recipient cards on the Plans' row path, the shared attestation toggle, date and method, and the "Certified by" block; markup only, the rules live in core/filing/plan-certificate-of-service.js. |
 | [`src\core\form\preparer-flag.js`](<src/core/form/preparer-flag.js>) | Milestone 67A: "This person prepared this filing" -- who is identified as the preparer, the one-preparer rule, and the checkbox/notice/PDF-line renderers shared by Guardian Inventory and Annual Accounting. |
 | [`src\core\form\prune-cards.js`](<src/core/form/prune-cards.js>) | Build, tooling, or configuration source. |
 | [`src\core\form\schedule-definitions.js`](<src/core/form/schedule-definitions.js>) | Build, tooling, or configuration source. |
@@ -315,6 +317,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`tests\e2e\plan-annual-mount.spec.ts`](<tests/e2e/plan-annual-mount.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\plan-benefits-tristate.spec.ts`](<tests/e2e/plan-benefits-tristate.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\plan-directive-cards.spec.ts`](<tests/e2e/plan-directive-cards.spec.ts>) | Automated test covering the named behavior or contract. |
+| [`tests\e2e\plan-certificate-of-service.spec.ts`](<tests/e2e/plan-certificate-of-service.spec.ts>) | Milestone 68C: the Certificate of Service page on all four Plans -- rows, attestation, sidebar, PDF, and that nothing on it gates export. |
 | [`tests\e2e\plan-initial-mount.spec.ts`](<tests/e2e/plan-initial-mount.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\plan-initial-period.spec.ts`](<tests/e2e/plan-initial-period.spec.ts>) | Milestone 68B: the Initial Plan requires its reporting period -- every filer-facing surface says so, export stops on it, and the PDF cover prints it once entered. |
 | [`tests\e2e\plan-minor-mount.spec.ts`](<tests/e2e/plan-minor-mount.spec.ts>) | Automated test covering the named behavior or contract. |
@@ -444,6 +447,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`tests\unit\plan-annual-source-notes.spec.js`](<tests/unit/plan-annual-source-notes.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\plan-co-guardian-pdf.spec.js`](<tests/unit/plan-co-guardian-pdf.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\plan-directive-cards.spec.js`](<tests/unit/plan-directive-cards.spec.js>) | Automated test covering the named behavior or contract. |
+| [`tests\unit\plan-certificate-of-service.spec.js`](<tests/unit/plan-certificate-of-service.spec.js>) | Milestone 68C: the shared Plan certificate-of-service module -- migration, signer resolution, settled/started rules, advisories and the PDF section. |
 | [`tests\unit\plan-initial-parity.spec.js`](<tests/unit/plan-initial-parity.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\plan-minor-parity.spec.js`](<tests/unit/plan-minor-parity.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\plan-readiness-county.spec.js`](<tests/unit/plan-readiness-county.spec.js>) | Automated test covering the named behavior or contract. |

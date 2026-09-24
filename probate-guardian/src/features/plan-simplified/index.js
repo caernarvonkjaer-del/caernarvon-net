@@ -3,6 +3,8 @@ import { checkDateOrder } from '../../core/validation/date-rules.js';
 import { checkSignatureState, inferLegacySignatureState } from '../../core/validation/signature-state.js';
 import { issueFactory } from '../../core/validation/validation-issue.js';
 import { renderSignatureStateControl, mountSignatureStateControls } from '../../core/signature/signature-state-control.js';
+import { migratePlanCertificateOfService } from '../../core/filing/plan-certificate-of-service.js';
+import { renderPlanCertificateOfServicePage } from '../../core/form/plan-certificate-of-service-page.js';
 import { preparerNoteHTML } from '../../core/signature/preparer-note.js';
 // Milestone 41-2: Tier 2 card templates. Plan Simplified is the pilot --
 // smallest surface, fastest full-cycle verification. Each card returns a
@@ -92,6 +94,9 @@ function ensurePrintModule() {
 }
 
 export async function mount(container, page) {
+  // Milestone 68C: a plan saved before the Certificate of Service existed
+  // gains its fields on load. Idempotent, so every mount may call it.
+  if (migratePlanCertificateOfService(window.D)) window.autoSave?.();
   let html;
   let isPrint = false;
   if (page === '/print') {
@@ -104,6 +109,7 @@ export async function mount(container, page) {
       case '/summary':   html = renderSummaryPage(getSummaryConfigPlanSimplified()); break;
       case '/p2':        html = pagePlanSQuestions(); break;
       case '/p3': html = pagePlanSSignatures(); break;
+      case '/p4': html = pagePlanSCertificate(); break;
       default:    html = pagePlanSCover();
     }
   }
@@ -112,14 +118,14 @@ export async function mount(container, page) {
   container.scrollTop = 0;
   signatureHandles.get(container)?.forEach((h) => h.destroy());
   signatureHandles.delete(container);
-  if (page === '/p3') {
+  if (page === '/p3' || page === '/p4') {
     signatureHandles.set(container, mountSignatureStateControls(container, {
       // Milestone 39-C: mountSignatureStateControls() now hands back the
       // already-fully-resolved image path (it may be a flat scalar path
       // like `attorney_signatureImage` for other roles, not always
       // `${cardId}.signatureImage`) -- write it directly, no concatenation.
       setImage: (imagePath, dataUrl) => window.setPath(window.D, imagePath, dataUrl),
-      route: '/p3',
+      route: page,
     }));
   }
   if (isPrint) await _printModule.mountPreview();
@@ -145,6 +151,7 @@ function buildNavPlanSimplified(container){
       <button class="nav-link-item" data-page="/summary" data-nav="ps-summary" data-form-action="navigate" data-route="/summary">Summary</button>
       <button class="nav-link-item" data-page="/p2" data-nav="ps-p2" data-form-action="navigate" data-route="/p2">The Plan — Questions 1–9</button>
       <button class="nav-link-item" data-page="/p3" data-nav="ps-p3" data-form-action="navigate" data-route="/p3">Signatures</button>
+      <button class="nav-link-item" data-page="/p4" data-nav="ps-p4" data-form-action="navigate" data-route="/p4">Certificate of Service</button>
     </div>
     <div class="nav-section">
       <div class="nav-section-label">Output</div>
@@ -180,6 +187,7 @@ function getSummaryConfigPlanSimplified(){
         {label:'Cover',route:'/',status:navStatus(nav,'ps-cover')},
         {label:'The Plan — Questions 1–9',route:'/p2',status:navStatus(nav,'ps-p2')},
         {label:'Signatures',route:'/p3',status:navStatus(nav,'ps-p3')},
+        {label:'Certificate of Service (not required)',route:'/p4',status:navStatus(nav,'ps-p4')},
       ],
     }],
     rightCards:[],
@@ -331,7 +339,7 @@ function pagePlanSSignatures(){
       </div>
     </div>
     ${renderScheduleDocsSection('planSignatures')}
-    ${pageNavS('/p2',null)}
+    ${pageNavS('/p2','/p4')}
   </div>`;
 }
 
@@ -402,3 +410,15 @@ export function validatePlanSimplified(){
 // exposing this lets the shared guidance panel itemize Plan Simplified's own
 // missing fields instead of only showing a generic message.
 window.validatePlanSimplified = validatePlanSimplified;
+
+// ── Certificate of Service (Milestone 68C) ───────────────────────────────
+// Shared with the other three Plans; see core/filing/plan-certificate-of-service.js.
+// Offered as not required on this form: the Clerk's Simplified Plan checklist
+// says so, and the page and the readiness card say the same.
+const CERT_CFG = { attorneyName: (d) => d.attorney || '', planNoun: 'plan', optional: true };
+function pagePlanSCertificate(){
+  return `<div class="schedule-page">
+    ${renderPlanCertificateOfServicePage({ filing: window.D, route: '/p4', cfg: CERT_CFG })}
+    ${pageNavS('/p3',null)}
+  </div>`;
+}

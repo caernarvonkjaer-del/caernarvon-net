@@ -1,3 +1,4 @@
+import { emptyCertificateOfService } from './filing/plan-certificate-of-service.js';
 // Thin adapters around legacy-app.js's global state, for ES modules that
 // can't reach a classic script's lexical scope directly. legacy-app.js is a
 // classic (non-module) script, so its top-level function declarations and
@@ -198,6 +199,8 @@ export function emptyDataSimplified() {
 export function emptyDataPlanSimplified() {
   return {
     planTriStateSchemaVersion:2,
+    // Milestone 68C: the Certificate of Service, on every Plan.
+    ...emptyCertificateOfService(),
     wardName:'', caseNumber:'', ucn:'', periodFrom:'', periodTo:'', county:'',
     q1Residences:'', q2BestPlacement:'', q3MedicalTreatment:'', q4Diagnosis:'',
     q5SocialServices:'', q6Interaction:'',
@@ -239,6 +242,8 @@ export function emptyDataPlanAnnual() {
   const benefits = {}; window.PLAN_BENEFITS.forEach(([k]) => benefits[k] = { eligible: '', appliedFor: '' });
   return {
     planTriStateSchemaVersion:2,
+    // Milestone 68C: the Certificate of Service, on every Plan.
+    ...emptyCertificateOfService(),
     // Cover
     wardName:'', caseNumber:'', ucn:'', ssn:'', county:'',
     periodFrom:'', periodTo:'', gid:'', guardian:'', attorney:'',
@@ -325,6 +330,8 @@ export function emptyDataPlanInitial() {
   const adls = {}; window.INITIAL_ADLS.forEach(([k]) => adls[k] = '');
   return {
     planTriStateSchemaVersion:2,
+    // Milestone 68C: the Certificate of Service, on every Plan.
+    ...emptyCertificateOfService(),
     // Cover
     wardName:'', caseNumber:'', ucn:'', county:'', periodFrom:'', periodTo:'',
     inceptionDate:'', lettersSignedDate:'', successorGuardianship:'',
@@ -401,6 +408,8 @@ export function emptyDataPlanInitial() {
 export function emptyDataPlanMinor() {
   return {
     planTriStateSchemaVersion:2,
+    // Milestone 68C: the Certificate of Service, on every Plan.
+    ...emptyCertificateOfService(),
     // Cover
     wardName:'', county:'', ucn:'', ref:'', periodFrom:'', periodTo:'',
     amendedForm:'', amendedVersion:'', professionalGuardian:'', publicGuardian:'',

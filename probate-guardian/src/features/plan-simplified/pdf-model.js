@@ -6,6 +6,7 @@
 // non-raster PDF.
 
 import { resolveDescriptorForInventoryType } from '../../core/filing/filing-descriptor.js';
+import { planCertificateOfServiceSection } from '../../core/filing/plan-certificate-of-service.js';
 import { triStateText } from '../../core/form/form-contract.js';
 
 export function buildPlanSimplifiedModel(D) {
@@ -168,6 +169,10 @@ export function buildPlanSimplifiedModel(D) {
       },
     ],
   });
+
+  // Milestone 68C: the Certificate of Service, last, on every Plan (offered
+  // as not required on this one).
+  sections.push(planCertificateOfServiceSection(d, { attorneyName: (f) => f.attorney || '', planNoun: 'plan', optional: true }, fmtDate));
 
   return { metadata, sections };
 }

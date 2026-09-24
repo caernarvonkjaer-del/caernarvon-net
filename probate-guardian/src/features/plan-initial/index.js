@@ -8,6 +8,8 @@ import { issueFactory } from '../../core/validation/validation-issue.js';
 import { rowStarted } from '../../core/validation/row-started.js';
 import { isAffirmative } from '../../core/form/form-contract.js';
 import { renderSignatureStateControl, mountSignatureStateControls } from '../../core/signature/signature-state-control.js';
+import { migratePlanCertificateOfService } from '../../core/filing/plan-certificate-of-service.js';
+import { renderPlanCertificateOfServicePage } from '../../core/form/plan-certificate-of-service-page.js';
 import { preparerNoteHTML } from '../../core/signature/preparer-note.js';
 // Milestone 41-3: Cover page's "Ward & Case Information" box has the exact
 // same field order as Plan Simplified's (wardName, caseNumber, county) --
@@ -142,6 +144,9 @@ function ensurePrintModule() {
 }
 
 export async function mount(container, page) {
+  // Milestone 68C: a plan saved before the Certificate of Service existed
+  // gains its fields on load. Idempotent, so every mount may call it.
+  if (migratePlanCertificateOfService(window.D)) window.autoSave?.();
   let html;
   let isPrint = false;
   if (page === '/print') {
@@ -161,6 +166,7 @@ export async function mount(container, page) {
       case '/p8':  html = pagePlanIDirectives(); break;
       case '/p9':  html = pagePlanISignatures(); break;
       case '/p10': html = pagePlanIAttorney(); break;
+      case '/p11': html = pagePlanICertificate(); break;
       default:     html = pagePlanICover();
     }
   }
@@ -168,7 +174,7 @@ export async function mount(container, page) {
   container.scrollTop = 0;
   signatureHandles.get(container)?.forEach((h) => h.destroy());
   signatureHandles.delete(container);
-  if (page === '/p9' || page === '/p10') {
+  if (page === '/p9' || page === '/p10' || page === '/p11') {
     signatureHandles.set(container, mountSignatureStateControls(container, {
       setImage: (imagePath, dataUrl) => window.setPath(window.D, imagePath, dataUrl),
       route: page,
@@ -219,6 +225,7 @@ function buildNavPlanInitial(container){
       ${item('/p8','pi-p8','11&nbsp;&nbsp;Advance Directives')}
       ${item('/p9','pi-p9','Signatures')}
       ${item('/p10','pi-p10','Attorney Certification')}
+      ${item('/p11','pi-p11','Certificate of Service')}
     </div>
     <div class="nav-section">
       <div class="nav-section-label">Output</div>
@@ -260,6 +267,7 @@ function getSummaryConfigPlanInitial(){
           {label:'11. Advance Directives',route:'/p8',status:navStatus(nav,'pi-p8')},
           {label:'Signatures',route:'/p9',status:navStatus(nav,'pi-p9')},
           {label:'Attorney Certification',route:'/p10',status:navStatus(nav,'pi-p10')},
+          {label:'Certificate of Service',route:'/p11',status:navStatus(nav,'pi-p11')},
         ],
       },
     ],
@@ -647,7 +655,7 @@ function pagePlanIAttorney(){
       </div>
     </div>
     ${renderScheduleDocsSection('planIAttorney')}
-    ${pageNavS('/p9','/print')}
+    ${pageNavS('/p9','/p11')}
   </div>`;
 }
 
@@ -792,3 +800,13 @@ export function validatePlanInitial(){
 // exposing this lets the shared guidance panel itemize Plan Initial's own
 // missing fields instead of only showing a generic message.
 window.validatePlanInitial = validatePlanInitial;
+
+// ── Certificate of Service (Milestone 68C) ───────────────────────────────
+// Shared with the other three Plans; see core/filing/plan-certificate-of-service.js.
+const CERT_CFG = { attorneyName: (d) => d.attorney_name || '', planNoun: 'plan' };
+function pagePlanICertificate(){
+  return `<div class="schedule-page">
+    ${renderPlanCertificateOfServicePage({ filing: window.D, route: '/p11', cfg: CERT_CFG })}
+    ${pageNavS('/p10',null)}
+  </div>`;
+}

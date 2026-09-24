@@ -6082,6 +6082,8 @@ function planEmptyRow(kind){
   if(kind==='initialProvider')return emptyInitialProvider();
   if(kind==='minorResidence')return emptyMinorResidence();
   if(kind==='minorProvider')return emptyMinorProvider();
+  // Milestone 68C: the Plans' Certificate of Service recipient card.
+  if(kind==='certRecipient')return {name:'',line2:'',line3:'',line4:''};
   return {};
 }
 function addPlanRow(arrName,kind,route){
@@ -6946,11 +6948,16 @@ function computeNavChecks(){
       // written before the period it plans for, so a signature is not
       // ordered against it. Presence only, matching validatePlanSimplified().
       'ps-p3':filled(g0.name)&&filled(g0.signatureDate),
+      // Milestone 68C: the Certificate of Service. The sidebar asks (someone
+      // listed, or "no recipients are required" answered Yes -- the
+      // accountings' rule, through the same bridge); export never demands.
+      'ps-p4':recipientsSettled(D.certRecipients,D.certNoRecipients),
     };
     const incomplete={
       'ps-cover':!checks['ps-cover']&&hasAny(D.wardName,D.caseNumber,D.periodFrom,D.periodTo),
       'ps-p2':!checks['ps-p2']&&hasAny(D.q1Residences,D.q2BestPlacement,D.q3MedicalTreatment,D.q4Diagnosis,D.q5SocialServices,D.q6Interaction,D.q7RestoreRights,D.q9Remuneration,D.q8DNR,D.q8LivingWill,D.q8Surrogate,D.q8POA,D.q8Other,D.q8None),
       'ps-p3':!checks['ps-p3']&&hasAny(g0.name,g0.signatureDate,g0.email,g0.phone,g0.mailingAddress),
+      'ps-p4':!checks['ps-p4']&&((D.certRecipients||[]).some(r=>r&&hasAny(r.name,r.line2,r.line3,r.line4))||filled(D.certNoRecipients)||filled(D.certDate)),
     };
     return {checks,incomplete};
   } else if(activeInventoryType==='planAnnual'){
@@ -7014,6 +7021,8 @@ function computeNavChecks(){
       // `if(d.attorney)req(d.attorney_email,...)`.
       'pa-p11':filled(g0.name)&&filled(g0.signatureDate)
         &&(!D.attorney||filled(D.attorney_email)),
+      // Milestone 68C: the Certificate of Service -- see Plan Simplified's ps-p4.
+      'pa-p12':recipientsSettled(D.certRecipients,D.certNoRecipients),
     };
     const incomplete={
       'pa-cover':!checks['pa-cover']&&hasAny(D.wardName,D.caseNumber,D.gid,D.periodFrom,D.periodTo,D.guardian,D.wardLiving,D.residenceAddress),
@@ -7029,6 +7038,7 @@ function computeNavChecks(){
       'pa-p9':!checks['pa-p9']&&anyOf(D.q10NoDirectives,D.q10Executed),
       'pa-p10':!checks['pa-p10']&&anyOf(D.q11NoRemuneration,D.q11ReceivedName,D.q11Amount,D.q11From),
       'pa-p11':!checks['pa-p11']&&hasAny(g0.name,g0.signatureDate,g0.phone,g0.email,g0.ssn),
+      'pa-p12':!checks['pa-p12']&&((D.certRecipients||[]).some(r=>r&&hasAny(r.name,r.line2,r.line3,r.line4))||filled(D.certNoRecipients)||filled(D.certDate)),
     };
     return {checks,incomplete};
   } else if(activeInventoryType==='planInitial'){
@@ -7116,6 +7126,8 @@ function computeNavChecks(){
       // requirement is asserted against a filing that may not have one.
       'pi-p10':!(typeof window.isPlanInitialAttorneyStarted==='function'&&window.isPlanInitialAttorneyStarted(D))
         ||(filled(D.attorney_name)&&filled(D.attorney_email)&&filled(D.attorney_signatureDate)),
+      // Milestone 68C: the Certificate of Service -- see Plan Simplified's ps-p4.
+      'pi-p11':recipientsSettled(D.certRecipients,D.certNoRecipients),
     };
     const incomplete={
       'pi-cover':!checks['pi-cover']&&hasAny(D.wardName,D.caseNumber,D.inceptionDate,D.lettersSignedDate,D.periodFrom,D.periodTo,D.guardianNames,D.wardLiving,D.residenceAddress),
@@ -7130,6 +7142,7 @@ function computeNavChecks(){
       'pi-p9':!checks['pi-p9']&&hasAny(g0.name,g0.signatureDate,g0.phone,g0.ssn),
       // Milestone 58C: same predicate as the check above, not a third list.
       'pi-p10':!checks['pi-p10']&&typeof window.isPlanInitialAttorneyStarted==='function'&&window.isPlanInitialAttorneyStarted(D),
+      'pi-p11':!checks['pi-p11']&&((D.certRecipients||[]).some(r=>r&&hasAny(r.name,r.line2,r.line3,r.line4))||filled(D.certNoRecipients)||filled(D.certDate)),
     };
     return {checks,incomplete};
   } else if(activeInventoryType==='planMinor'){
@@ -7179,6 +7192,8 @@ function computeNavChecks(){
       'pm-p6':anyOf(D.certIncapacitated,D.certMinor,D.certConsulted,D.certNoRestriction,D.certProvidesCare,D.certPhysicianAttached)
         &&filled(g0.name)&&filled(g0.signatureDate),
       'pm-p7':filled(D.preparer_name)&&filled(D.attorney_name)&&filled(D.attorney_signatureDate),
+      // Milestone 68C: the Certificate of Service -- see Plan Simplified's ps-p4.
+      'pm-p8':recipientsSettled(D.certRecipients,D.certNoRecipients),
     };
     const incomplete={
       'pm-cover':!checks['pm-cover']&&hasAny(D.wardName,D.county,D.periodFrom,D.periodTo,D.guardianName,D.q1ResidenceName),
@@ -7188,6 +7203,7 @@ function computeNavChecks(){
       'pm-p5':!checks['pm-p5']&&hasAny(D.q5SchoolProgress,D.q5SocialDevelopment,D.q5Communicates,D.q5Interpersonal),
       'pm-p6':!checks['pm-p6']&&hasAny(g0.name,g0.signatureDate,g0.phone,g0.tin),
       'pm-p7':!checks['pm-p7']&&hasAny(D.preparer_name,D.attorney_name,D.attorney_signatureDate),
+      'pm-p8':!checks['pm-p8']&&((D.certRecipients||[]).some(r=>r&&hasAny(r.name,r.line2,r.line3,r.line4))||filled(D.certNoRecipients)||filled(D.certDate)),
     };
     return {checks,incomplete};
   }
@@ -7866,6 +7882,7 @@ const PAGES_PLAN_SIMPLIFIED=[
   {id:'/summary', label:'Summary'},
   {id:'/p2',      label:'The Plan'},
   {id:'/p3',   label:'Signatures'},
+  {id:'/p4',   label:'Certificate of Service'},
   {id:'/print',label:'Print Preview'},
 ];
 const PAGES_PLAN_ANNUAL=[
@@ -7881,6 +7898,7 @@ const PAGES_PLAN_ANNUAL=[
   {id:'/p9',   label:'10. Advance Directives'},
   {id:'/p10',  label:'11. Remuneration'},
   {id:'/p11',  label:'Signatures'},
+  {id:'/p12',  label:'Certificate of Service'},
   {id:'/print',label:'Print Preview'},
 ];
 const PAGES_PLAN_INITIAL=[
@@ -7895,6 +7913,7 @@ const PAGES_PLAN_INITIAL=[
   {id:'/p8',   label:'11. Advance Directives'},
   {id:'/p9',   label:'Signatures'},
   {id:'/p10',  label:'Attorney Certification'},
+  {id:'/p11',  label:'Certificate of Service'},
   {id:'/print',label:'Print Preview'},
 ];
 const PAGES_PLAN_MINOR=[
@@ -7906,6 +7925,7 @@ const PAGES_PLAN_MINOR=[
   {id:'/p5',   label:'5. Education & Social Development'},
   {id:'/p6',   label:'Guardian Signatures'},
   {id:'/p7',   label:'Preparer & Attorney'},
+  {id:'/p8',   label:'Certificate of Service'},
   {id:'/print',label:'Print Preview'},
 ];
 const PAGES={

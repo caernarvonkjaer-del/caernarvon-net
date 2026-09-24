@@ -233,6 +233,16 @@ const GUIDE_CONTROLS = {
       { file: 'src/features/guardian-inventory/index.js', pattern: /const ATTESTATION_57B\s*=\s*'No recipients are required for this certificate/ },
       { file: 'src/features/annual-accounting/index.js', pattern: /const ATTESTATION_57B\s*=\s*'No recipients are required for this certificate/ },
       { file: 'src/features/simplified-accounting/index.js', pattern: /const ATTESTATION_57B\s*=\s*'No recipients are required for this certificate/ },
+      // Milestone 68C: the four Plans render the same control through one
+      // shared module -- the words are declared there once and each Plan's
+      // page calls its renderer, so the evidence is the declaration plus the
+      // call in each form (the 67B bond-question pattern).
+      { file: 'src/core/filing/plan-certificate-of-service.js', pattern: /export const ATTESTATION_57B\s*=\s*'No recipients are required for this certificate/ },
+      { file: 'src/core/form/plan-certificate-of-service-page.js', pattern: /label: ATTESTATION_57B/ },
+      { file: 'src/features/plan-annual/index.js', pattern: /renderPlanCertificateOfServicePage\(/ },
+      { file: 'src/features/plan-simplified/index.js', pattern: /renderPlanCertificateOfServicePage\(/ },
+      { file: 'src/features/plan-initial/index.js', pattern: /renderPlanCertificateOfServicePage\(/ },
+      { file: 'src/features/plan-minor/index.js', pattern: /renderPlanCertificateOfServicePage\(/ },
     ],
   },
   'guardian-c2-claimant-attorney': {

@@ -5,6 +5,7 @@
 // html2pdf/html2canvas export with a tagged, accessible, non-raster PDF.
 
 import { resolveDescriptorForInventoryType } from '../../core/filing/filing-descriptor.js';
+import { planCertificateOfServiceSection } from '../../core/filing/plan-certificate-of-service.js';
 import { caseNumberOf } from '../../core/case-resolver.js';
 import { triStateText } from '../../core/form/form-contract.js';
 import { maskSSN } from '../../core/pdf/ssn-format.js';
@@ -293,6 +294,9 @@ export function buildPlanMinorModel(D) {
       ]),
     ],
   });
+
+  // Milestone 68C: the Certificate of Service, last, on every Plan.
+  sections.push(planCertificateOfServiceSection(d, { attorneyName: (f) => f.attorney_name || '', planNoun: 'plan' }, fmtDate));
 
   return { metadata, sections };
 }

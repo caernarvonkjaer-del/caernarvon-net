@@ -5,6 +5,8 @@ import { checkSignatureState, inferLegacySignatureState } from '../../core/valid
 import { issueFactory } from '../../core/validation/validation-issue.js';
 import { rowStarted } from '../../core/validation/row-started.js';
 import { renderSignatureStateControl, mountSignatureStateControls } from '../../core/signature/signature-state-control.js';
+import { migratePlanCertificateOfService } from '../../core/filing/plan-certificate-of-service.js';
+import { renderPlanCertificateOfServicePage } from '../../core/form/plan-certificate-of-service-page.js';
 import { preparerNoteHTML } from '../../core/signature/preparer-note.js';
 // Milestone 41-3: Tier 2/1 adoption for Plan Minor. renderReportingPeriodFields()
 // already supports overridable from/to labels (built for exactly this kind
@@ -86,6 +88,9 @@ function ensurePrintModule() {
 }
 
 export async function mount(container, page) {
+  // Milestone 68C: a plan saved before the Certificate of Service existed
+  // gains its fields on load. Idempotent, so every mount may call it.
+  if (migratePlanCertificateOfService(window.D)) window.autoSave?.();
   let html;
   let isPrint = false;
   if (page === '/print') {
@@ -102,6 +107,7 @@ export async function mount(container, page) {
       case '/p5': html = pagePlanMEducation(); break;
       case '/p6': html = pagePlanMSignatures(); break;
       case '/p7': html = pagePlanMPreparerAttorney(); break;
+      case '/p8': html = pagePlanMCertificate(); break;
       default:    html = pagePlanMCover();
     }
   }
@@ -109,7 +115,7 @@ export async function mount(container, page) {
   container.scrollTop = 0;
   signatureHandles.get(container)?.forEach((h) => h.destroy());
   signatureHandles.delete(container);
-  if (page === '/p6' || page === '/p7') {
+  if (page === '/p6' || page === '/p7' || page === '/p8') {
     signatureHandles.set(container, mountSignatureStateControls(container, {
       setImage: (imagePath, dataUrl) => window.setPath(window.D, imagePath, dataUrl),
       route: page,
@@ -141,6 +147,7 @@ function buildNavPlanMinor(container){
       ${item('/p5','pm-p5','5&nbsp;&nbsp;Education &amp; Social Development')}
       ${item('/p6','pm-p6','Guardian Signatures')}
       ${item('/p7','pm-p7','Preparer &amp; Attorney')}
+      ${item('/p8','pm-p8','Certificate of Service')}
     </div>
     <div class="nav-section">
       <div class="nav-section-label">Output</div>
@@ -173,6 +180,7 @@ function getSummaryConfigPlanMinor(){
           {label:'5. Education & Social Development',route:'/p5',status:navStatus(nav,'pm-p5')},
           {label:'Guardian Signatures',route:'/p6',status:navStatus(nav,'pm-p6')},
           {label:'Preparer & Attorney',route:'/p7',status:navStatus(nav,'pm-p7')},
+          {label:'Certificate of Service',route:'/p8',status:navStatus(nav,'pm-p8')},
         ],
       },
     ],
@@ -430,7 +438,7 @@ function pagePlanMPreparerAttorney(){
       </div>
     </div>
     ${renderScheduleDocsSection('planMPreparerAttorney')}
-    ${pageNavS('/p6','/print')}
+    ${pageNavS('/p6','/p8')}
   </div>`;
 }
 
@@ -533,3 +541,13 @@ export function validatePlanMinor(){
 // exposing this lets the shared guidance panel itemize Plan Minor's own
 // missing fields instead of only showing a generic message.
 window.validatePlanMinor = validatePlanMinor;
+
+// ── Certificate of Service (Milestone 68C) ───────────────────────────────
+// Shared with the other three Plans; see core/filing/plan-certificate-of-service.js.
+const CERT_CFG = { attorneyName: (d) => d.attorney_name || '', planNoun: 'plan' };
+function pagePlanMCertificate(){
+  return `<div class="schedule-page">
+    ${renderPlanCertificateOfServicePage({ filing: window.D, route: '/p8', cfg: CERT_CFG })}
+    ${pageNavS('/p7',null)}
+  </div>`;
+}

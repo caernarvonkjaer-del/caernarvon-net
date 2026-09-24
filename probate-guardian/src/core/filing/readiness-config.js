@@ -105,8 +105,13 @@ function planSimplifiedManual(d, local) {
   const f = 'planSimplified.readiness.attachments-and-service';
   return [
     { id: `${f}.deadline`, label: 'File within the deadline set by the court for your case.' },
+    // Milestone 68C: this used to call the certificate a "Local Sixth
+    // Judicial Circuit requirement". The Clerk's own Simplified Plan review
+    // checklist says a certificate of service is NOT required for this form
+    // (reference/legal/workslips/GD ANN Work Slip Review Simplified Plan.docx),
+    // so the local text now says so; the statutory service duty stands.
     { id: `${f}.service`, label: serviceReminder(local,
-      'Local Sixth Judicial Circuit requirement: serve a copy on all interested persons, and file the certificate of service.',
+      "Serve a copy of this plan on the ward -- unless the ward is a minor or was declared totally incapacitated -- and on the ward's attorney, if any (F.S. 744.367(3)(b)). The Clerk's Simplified Plan checklist does not require a certificate of service; if you serve copies, the Certificate of Service page records who was served and prints with the plan.",
       "Serve a copy of this plan on the ward -- unless the ward is a minor or was declared totally incapacitated -- and on the ward's attorney, if any. Provide additional copies to anyone else the court directs (F.S. 744.367(3)(b))."),
     },
     { id: `${f}.relocation`, label: "If the ward relocated: file a Notice of Change of Residence within 15 days for moves to an adjacent county (F.S. 744.1098(2)), and obtain a prior court order for moves to non-adjacent counties or out of state (F.S. 744.1098(1))." },

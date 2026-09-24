@@ -4,7 +4,8 @@ export const BLANK_CARD_COLLECTIONS = {
   guardians: { min: 1, types: ['guardian', 'annual', 'simplified'] },
   serviceRecipients: { min: 1, types: ['guardian'] },
   witnesses: { min: 0, types: ['guardian'] },
-  certRecipients: { min: 1, types: ['annual', 'simplified'] },
+  // Milestone 68C: the four Plans carry the accountings' recipient shape.
+  certRecipients: { min: 1, types: ['annual', 'simplified', 'planAnnual', 'planSimplified', 'planInitial', 'planMinor'] },
   remuneration: { min: 0, types: ['annual', 'simplified'] },
   // Plan-family repeatable rows, each already served by +Add/Remove.
   q1Residences: { min: 0, types: ['planAnnual'] },

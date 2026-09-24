@@ -1,3 +1,5 @@
+import { serviceRecipientIssues } from '../validation/service-recipients.js';
+import { CERT_RECIPIENT_STARTED_FIELDS } from '../filing/plan-certificate-of-service.js';
 // Milestone 63A. Three questions that one function used to answer as one.
 //
 // On a Guardian Inventory the sidebar marked six pages incomplete -- Cover and
@@ -123,6 +125,9 @@ const blank = (value) => value === undefined || value === null || String(value).
 // restated here (tests/unit/filing-type-enumeration-guard.spec.js).
 const isAnnualFamily = (type) => PREFIX[type] === 'a-';
 
+// Milestone 68C: each Plan's Certificate of Service route, by sidebar prefix.
+const CERT_ROUTE_BY_PREFIX = { 'pa-': '/p12', 'ps-': '/p4', 'pi-': '/p11', 'pm-': '/p8' };
+
 /**
  * What a sidebar-only rule still wants, as { label, path } items the guidance box can render as jump links.
  * Empty for every page that has no such rule, and for a page whose rule is already satisfied.
@@ -138,6 +143,21 @@ export function sidebarOnlyWants(type, route, data) {
   if ((type === 'guardian' && route === '/d4') || (isAnnualFamily(type) && route === '/p9')) {
     if (!blank(d.bondDepositoryState)) return [];
     return [{ label: 'State which applies: a restricted depository, a bond, both, or a bond waived by court order', path: 'bondDepositoryState' }];
+  }
+  // Milestone 68C. The Plans' Certificate of Service is asked, never
+  // demanded: nothing on it gates export, so no validator message exists
+  // for it. Routed by sidebar prefix rather than by type key, like the
+  // Annual family above.
+  if (CERT_ROUTE_BY_PREFIX[PREFIX[type]] === route) {
+    const rec = serviceRecipientIssues({
+      rows: d.certRecipients, attestation: d.certNoRecipients, startedFields: CERT_RECIPIENT_STARTED_FIELDS,
+      missingFields: (r) => (blank(r?.name) ? ['Name'] : []),
+    });
+    const wants = [];
+    if (rec.needsAttestation) wants.push({ label: 'List at least one recipient who was served, or state that no recipients are required', path: 'certRecipients.0.name' });
+    rec.firstRowMissing.forEach(() => wants.push({ label: 'Recipient 1 name', path: 'certRecipients.0.name' }));
+    rec.extraRows.forEach(({ index }) => wants.push({ label: `Recipient ${index + 1} name (finish the card, or remove it)`, path: `certRecipients.${index}.name` }));
+    return wants;
   }
   if (type === 'planAnnual' && route === '/p4') {
     // pa-p4: any benefit answered (eligible or applied for), or "None of the above", or "Other".

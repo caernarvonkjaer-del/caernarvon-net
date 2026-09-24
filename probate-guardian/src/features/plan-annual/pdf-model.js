@@ -5,6 +5,7 @@
 // html2pdf/html2canvas export with a tagged, accessible, non-raster PDF.
 
 import { resolveDescriptorForInventoryType } from '../../core/filing/filing-descriptor.js';
+import { planCertificateOfServiceSection } from '../../core/filing/plan-certificate-of-service.js';
 import { maskSSN } from '../../core/pdf/ssn-format.js';
 import { startedRows } from '../../core/validation/row-started.js';
 
@@ -604,6 +605,9 @@ export function buildPlanAnnualModel(D) {
       },
     ],
   });
+
+  // Milestone 68C: the Certificate of Service, last, on every Plan.
+  sections.push(planCertificateOfServiceSection(d, { attorneyName: (f) => f.attorney || '', planNoun: 'plan' }, fmtDate));
 
   return { metadata, sections };
 }
