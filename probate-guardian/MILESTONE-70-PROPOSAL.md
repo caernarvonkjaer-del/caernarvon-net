@@ -209,13 +209,22 @@ preferences belong to their respective services. In particular, no store
 snapshot or browser facade may expose a `CryptoKey`, password, verifier payload,
 or mutable reference to the full case.
 
-The ownership flip happens late. First, the store API will adapt today's
-legacy-owned objects while callers migrate. Only after every whole-case
-replacement uses `replaceCaseFile()`, every activation uses the filing lifecycle
-service, and no remaining classic code writes the bare state variables will the
-module become the owner. JavaScript cannot observe arbitrary reassignment of a
-classic script's top-level lexical `let`, so pretending to make the store
-canonical earlier would create two authorities.
+The ownership flip happens late, but the interim adapter is not allowed to
+become a second state store. During the transition it reads the same object
+references that the legacy owner holds; its transaction method delegates to one
+legacy bridge writer and then emits the resulting change. It does not maintain
+a shadow case, copy changes back and forth, or silently reconcile two versions.
+There is one authority at a time, with the adapter making that authority
+explicit to migrated callers.
+
+Only after every whole-case replacement uses `replaceCaseFile()`, every
+activation uses the filing lifecycle service, and no remaining classic code
+reads or writes the bare state variables will the module become the owner. A
+`window` getter/setter cannot reliably solve this earlier: JavaScript cannot
+observe arbitrary reassignment of a classic script's top-level lexical `let`
+(`caseFile` is one of those bindings), and a proxy around `window.D` cannot
+observe every mutation of the object it returns. Pretending that such a proxy
+is canonical would hide, rather than remove, the dual-authority hazard.
 
 ### Filing registry
 
@@ -375,6 +384,21 @@ atomically stay in the same commit even when that makes a delivery larger.
 - Record a machine-readable MS 70 baseline under `tests/baseline/`, including
   bridge counts, dependency edges, feature lazy boundaries, source/web/portable
   asset inventories, and representative startup/performance measurements.
+- Make the measurement reproducible rather than descriptive. Extend the
+  existing `scripts/measure-baseline.mjs` and `scripts/measure-lifecycle.mjs`
+  with an explicit output path and MS 70 record shape, then run the same
+  commands at the beginning and end of the migration:
+  `npm run measure:baseline -- --target=source --output=<ms70-source.json>`,
+  `npm run measure:baseline -- --target=web --output=<ms70-web.json>`,
+  `npm run measure:baseline -- --target=portable --output=<ms70-portable.json>`
+  (after the corresponding web/portable build), and
+  `npm run measure:lifecycle -- --output=<ms70-lifecycle.json>`. Keep the
+  existing milestone-13 records untouched. The records must include the
+  Chromium/browser and Node versions, git SHA, navigation timing, evaluated
+  application script bytes, resource count, script duration, heap samples
+  after the route cycle, lifecycle heap/node growth, and console/page errors.
+  Treat memory samples as measurements to compare and investigate, not as a
+  fabricated hard threshold before the baseline exists.
 - Add a ratchet test: newly extracted modules cannot add application globals,
   top-level feature destructures from `window`, or undeclared facade members.
   Legacy implicit globals are an explicit shrinking grandfather list until 70L.
@@ -418,6 +442,10 @@ current debugging habits.
 - Consolidate only when behavior is proven equal. Output/caption/circuit
   differences are not assumed to be duplication merely because functions look
   similar.
+- When a leaf service is extracted, migrate every ESM consumer that currently
+  destructures that service from `window` in the same delivery. The 18-file
+  zero-destructure criterion is a final gate, but it is not permission to leave
+  an already-extracted service dependent on a top-level global until 70K.
 - Convert affected source-slicing tests to import the canonical implementation.
   Known examples include bar-number formatting, Excel sanitization, date
   helpers, and legacy field wrapper tests. Delete wrapper-only assertions once
@@ -440,6 +468,9 @@ falls by the number promised for 70B.
 - Create the eager filing registry and per-engine model modules.
 - Move blank filing/row/card factories, type aliases, route metadata, display
   metadata, and idempotent normalization out of the classic file.
+- Update feature consumers of each moved factory/descriptor in the same commit;
+  the eager registry must not be introduced as a second source while features
+  continue reading the old global copy.
 - Keep form-specific row factories separate where schemas differ. Do not invent
   a generic accounting/plan row merely to reduce file count.
 - Remove `src/core/state.js` callbacks into legacy constants/factories. Creating
@@ -470,6 +501,9 @@ ordering rather than hiding a value/default change.
   differential parity across every form fixture before switching callers.
 - Make dashboard progress accept a filing explicitly. Delete the current
   technique that swaps `window.D` and active type to reuse sidebar logic.
+- Migrate completion consumers as each evaluator is extracted. Any temporary
+  dispatcher is a delegating compatibility wrapper, not a reason for a feature
+  to capture `computeNavChecks` from `window` at module evaluation time.
 - Put completion evaluators in the eager registry so unopened filings can show
   progress without importing their render/output pack.
 - Convert checklist/source-slicing tests to imported completion tests and keep
@@ -491,6 +525,11 @@ it. Readiness remains a separate export-linked surface.
 
 - Introduce the transaction/select/subscribe API while it still delegates to
   the legacy-owned case and active filing.
+- Keep this as a zero-copy, single-writer adapter: no private shadow
+  `caseFile`/`D`, no bidirectional synchronization loop, and no writable
+  `window` proxy that claims to observe lexical `caseFile` reassignment. The
+  adapter must either read the live legacy reference or call the one explicit
+  bridge that owns the transition.
 - Migrate ESM feature modules and core modules from `window.D`,
   `window.caseFile`, `window.getActiveWard()`, and window-backed references to
   the service/context API.
@@ -502,9 +541,10 @@ it. Readiness remains a separate export-linked surface.
 
 ### Gate
 
-No ESM production module treats a browser global as state authority. Existing
-object identity and live update behavior remain intact. A transaction causes
-each required side effect once, and direct mutation outside an approved
+No ESM production module treats a browser global as its state API. The
+transition still has one legacy authority, not two synchronized stores;
+existing object identity and live update behavior remain intact. A transaction
+causes each required side effect once, and direct mutation outside an approved
 transition path is rejected by the audit/test guard where mechanically
 detectable.
 
@@ -524,6 +564,13 @@ detectable.
 - Keep semantic checkbox/radio behavior, dynamic-array re-indexing, focus, and
   accessible names exactly as documented in the repository rules.
 - Give feature-local listeners, observers, and timers the route abort signal.
+- Define the teardown contract explicitly. A feature's `dispose()` aborts its
+  listeners/observers and cancels its route-owned timers, animation frames, and
+  pending UI work. The autosave service owns its debounce: leaving the active
+  filing flushes or cancels the pending save before the active pointer/lock is
+  changed, while a same-filing page change may retain the debounce against that
+  same filing. Preserve the existing `flushPendingSave()` and bound-filing
+  guards as behavior contracts while moving them behind the service.
 - Convert the affected `afterChange`, field-helper, schedule-document, capacity,
   and form-contract tests to direct imports/observable browser behavior.
 
@@ -532,6 +579,8 @@ detectable.
 All filing mount contracts and the shared form-entry/navigation contracts pass
 with no feature importing form services from `window`. Repeated mount/unmount
 does not duplicate a listener, observer, autosave call, or validation update.
+An edit followed by rapid route navigation or filing switching saves the old
+filing exactly once and cannot write its data into the newly active filing.
 
 ---
 
@@ -654,7 +703,12 @@ This checkpoint also warrants requester approval for a full verification tier.
   commit so an older async mount cannot overwrite a newer route or read the
   wrong active filing.
 - Convert every feature's top-level `const { ... } = window` dependency capture
-  to imports or mount context. Keep at least today's feature-level lazy loading.
+  that remains after the earlier lockstep migrations to imports or mount
+  context. Keep at least today's feature-level lazy loading.
+- Preserve the Vite-visible dynamic-import boundary in `src/features-loader.js`
+  (or replace it with an equally visible registry). The portable single-file
+  build must still discover and inline the lazy feature graphs; a runtime
+  `file://` module request is not an acceptable substitute.
 - Create `startGuardianForms(services)` and call it directly from `main.js`
   after the terms gate. No `window.initApp` boot-order contract remains.
 - Install the reviewed, frozen `window.GuardianForms` namespace. Enable its
@@ -698,8 +752,10 @@ explicit platform/vendor globals.
   `TEST-INDEX.md`, architecture comments, and package/build documentation.
 - Re-run the baseline measurements and record facts, not promises: source/web/
   portable asset lists, initial/eager bytes, first route readiness, first
-  feature mount, and first PDF/Excel action. Investigate a material regression;
-  do not hold completion to an invented performance percentage.
+  feature mount, and first PDF/Excel action. Use the exact versioned commands
+  and output schema established in 70A, and retain both before/after JSON
+  records. Investigate a material regression; do not hold completion to an
+  invented performance percentage.
 - Inspect the built packages and open the portable build over literal `file://`
   with console and page-error capture.
 
@@ -821,8 +877,8 @@ MS 70 is complete only when all of the following are true:
     startup/save/open has no console or page error; the approved release gate is
     green on the release commit.
 13. Before/after measurements are recorded. Any startup or first-feature
-    regression is explained and accepted or corrected; no unsupported speedup
-    claim appears in the build record.
+  regression is explained and accepted or corrected; no unsupported speedup
+  claim appears in the build record.
 
 ---
 
