@@ -19,7 +19,7 @@ or stop a filing outright; the rest prevent a filer from recording the truth.
 | 68E | Initial Plan Q5 accepts one answer where several apply | Cannot record the truth | **DECIDED** — the court's form is a checkbox list; convert to multi-select — Q5, Q4 and any other radio-rendered checkbox list the form shows (settled 2026-09-24) | **LANDED 2026-09-24** — Q2, Q4 and Q5 (the form's page 2, rendered and looked at); see the build record under 68E |
 | 68F | Assistive-devices "None" can be ticked alongside real selections | A filed plan can state both | **DECIDED** — no "None" added (form has none); fix mutual exclusion on D and E | **LANDED 2026-09-24** — see the build record under 68F |
 | 68G | Annual Plan Q6 cannot state a right is **not** restorable | **Statutory** — §744.3675(3)(b) requires that statement | **DECIDED** — the form's four columns: Yes / No / Not Removed / Needs to be Restored; stored values unchanged, "No" added (settled 2026-09-24) | **LANDED 2026-09-24** — see the build record under 68G |
-| 68I | Initial Plan asks for two dates that look redundant | Real distinction, unexplained | **DECIDED** — keep both, explain them; the tester's premise holds only for original guardians | Ready to build |
+| 68I | Initial Plan asks for two dates that look redundant | Real distinction, unexplained | **DECIDED** — keep both, explain them; the tester's premise holds only for original guardians | **LANDED 2026-09-24** — see the build record under 68I |
 | 68H | All three Plans call their period an "accounting period" | Wrong against the statute | **DECIDED** — "reporting period" for Plans | Ready to build |
 
 ### Provenance and scope
@@ -1650,6 +1650,30 @@ typed.
 would be wrong for successor guardianships and would mis-anchor the §744.362(1)
 deadline. Recorded so the tester's suggestion is visibly considered rather than
 ignored.
+
+### Build record — LANDED 2026-09-24 (Option 1)
+
+**What a filer now gets.** Both dates stay on the Initial Plan's Cover, as on
+the court's form, and each now says what it is beneath the field:
+*Guardianship Inception Date* — "When this guardianship began. For an
+original guardian this is usually the same day the letters were signed."
+*Date Letters Were Signed* — "When this guardian's letters were signed. For
+a successor guardian this is later than the inception date, and the 60-day
+deadline for this plan runs from it (F.S. 744.362(1))." Both keep "Use
+MM/DD/YYYY" and remain required. No prefill (Option 2) and no data change.
+
+**How.** The two fields move from `inpS()`, which takes no help text, to the
+same Tier 1 `renderFormField()` it delegates to, with the `hint` that
+renderer already supports — so the hint is the input's `aria-describedby`
+text for screen readers, not a tooltip a keyboard user may never reach.
+
+**Tests.** `tests/e2e/plan-initial-dates-explained.spec.ts` (new): each input
+is described by its hint, the hint says what the field is (the letters hint
+naming the successor case and the 60-day deadline), and the date format line
+survives. **Red first**: `Expected pattern: /when this guardianship began/i,
+Received string: "Use MM/DD/YYYY"`. Green with `plan-initial-mount` (whose
+Cover snapshot now carries the two hints — the one expected diff) and
+`form-entry.contract`: 16/17 then, after the snapshot update, 9/9.
 
 ---
 

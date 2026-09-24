@@ -324,6 +324,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`tests\e2e\plan-certificate-of-service.spec.ts`](<tests/e2e/plan-certificate-of-service.spec.ts>) | Milestone 68C: the Certificate of Service page on all four Plans -- rows, attestation, sidebar, PDF, and that nothing on it gates export. |
 | [`tests\e2e\plan-initial-multiselect.spec.ts`](<tests/e2e/plan-initial-multiselect.spec.ts>) | Milestone 68E: Initial Plan questions 2, 4 and 5 as checkbox lists -- several answers, None exclusivity, Other reveals, legacy migration, export gate. |
 | [`tests\e2e\plan-initial-assistive-none.spec.ts`](<tests/e2e/plan-initial-assistive-none.spec.ts>) | Milestone 68F: on the Initial Plan's 10D/10E assistive-devices lists, "None" and the device boxes are mutually exclusive on the click. |
+| [`tests\e2e\plan-initial-dates-explained.spec.ts`](<tests/e2e/plan-initial-dates-explained.spec.ts>) | Milestone 68I: the Initial Plan Cover explains how the inception date and the letters date differ. |
 | [`tests\e2e\plan-initial-mount.spec.ts`](<tests/e2e/plan-initial-mount.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\plan-initial-period.spec.ts`](<tests/e2e/plan-initial-period.spec.ts>) | Milestone 68B: the Initial Plan requires its reporting period -- every filer-facing surface says so, export stops on it, and the PDF cover prints it once entered. |
 | [`tests\e2e\plan-minor-mount.spec.ts`](<tests/e2e/plan-minor-mount.spec.ts>) | Automated test covering the named behavior or contract. |

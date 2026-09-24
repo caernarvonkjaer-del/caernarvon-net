@@ -302,8 +302,10 @@ function pagePlanICover(){
             ${renderWardIdentityFields({ wardName: d.wardName, wardNameRequired: true })}
             ${renderCaseCaptionFields({ caseNumber: d.caseNumber, county: d.county, ucn: d.ucn ?? '' })}
             <div class="col-12">${renderSelectField({path:'successorGuardianship',label:'Successor Guardianship? (if applicable)',value:d.successorGuardianship,options:optionsWithLegacyValue(GUARDIANSHIP_LIFECYCLE_OPTIONS,d.successorGuardianship)})}</div>
-            <div class="col-md-6">${inpS('inceptionDate','Guardianship Inception Date',d.inceptionDate,true,'date')}</div>
-            <div class="col-md-6">${inpS('lettersSignedDate','Date Letters Were Signed',d.lettersSignedDate,true,'date')}</div>
+            <!-- Milestone 68I: the court's form asks for both dates, and they differ
+                 for a successor guardian; each hint says how. -->
+            <div class="col-md-6">${renderFormField({ path:'inceptionDate', id:'inceptionDate', label:'Guardianship Inception Date', value:d.inceptionDate, type:'date', required:true, hint:"Use MM/DD/YYYY. When this guardianship began. For an original guardian this is usually the same day the letters were signed." })}</div>
+            <div class="col-md-6">${renderFormField({ path:'lettersSignedDate', id:'lettersSignedDate', label:'Date Letters Were Signed', value:d.lettersSignedDate, type:'date', required:true, hint:"Use MM/DD/YYYY. When this guardian's letters were signed. For a successor guardian this is later than the inception date, and the 60-day deadline for this plan runs from it (F.S. 744.362(1))." })}</div>
             ${renderReportingPeriodFields({ periodFrom: d.periodFrom, periodTo: d.periodTo, fromLabel: 'For the Period From', toLabel: 'Through' })}
           </div>
         </div>
