@@ -62,6 +62,7 @@ a `master` commit is missing from it.
 | SHA | Date | Summary | Files touched | Disposition | Proving test(s) | Branch commit | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `945b5a8e0eb3290bac3ce345a4910c81208392e4` | 2026-09-24 | Annual import no longer stops at the first Schedule D ward percentage (a local r2 in annual-accounting/excel.js; found by this milestone's audit) | `src/features/annual-accounting/excel.js`, `src/core/types/window-bridge.d.ts`, `tests/e2e/annual-import-ward-percentage.spec.ts`, `TEST-INDEX.md`, `file_index.md` | merges-cleanly | `tests/e2e/annual-import-ward-percentage.spec.ts` | -- | open |
+| `b28bf2516bd5100741bdfff9db759ce87f52672b` | 2026-09-24 | Restore blank-card clean-up (main.js imports prune-cards.js; legacy-app.js publishes BLANK_SCHEDULE_ENTRY); tests that assumed untouched cards survive updated | `src/main.js`, `src/legacy-app.js`, `tests/unit/fixtures/window-bridge-allowlist.json`, `tests/e2e/blank-card-pruning.spec.ts`, `tests/e2e/guardian-inventory-collection-controls.spec.ts`, `tests/e2e/plan-certificate-of-service.spec.ts`, `tests/e2e/schedule-doc-ack.spec.ts`, `TEST-INDEX.md`, `file_index.md` | re-implement | `tests/e2e/blank-card-pruning.spec.ts` | -- | open |
 
 Notes on open rows:
 
@@ -72,3 +73,11 @@ Notes on open rows:
   regenerate the baseline with `node scripts/ms70-dependency-audit.mjs
   --write-baseline` in the same commit, and the assertion counts for the new
   spec.
+- `b28bf25`: re-implement, although it would merge textually today. It edits
+  `legacy-app.js`, which the branch deletes, and it adds a `window` global
+  (`BLANK_SCHEDULE_ENTRY`) the ratchet forbids on the branch. Carried over,
+  the schedule table belongs with the clean-up in `prune-cards.js` (or the
+  70C registry), imported rather than read off `window`, and the composition
+  root keeps loading the module. The dependency baseline then loses
+  `prune-cards.js` from `unreachableModules` and `pruneBlankCards` from
+  `unownedWindowReads` -- regenerate it in the same commit.
