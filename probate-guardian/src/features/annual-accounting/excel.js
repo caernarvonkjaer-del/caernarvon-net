@@ -32,8 +32,14 @@ const {
   getImportProgressEl, validateImportFile, assertWorkbookWithinLimits,
   capitalizeImportedFields,
   sanitizeObjectDataInPlace, autoSave, getCurrentPage,
-  r2,
 } = window;
+
+// Rounds to cents, the same formula as legacy-app.js's top-level r2. That
+// one is declared with const, which never makes a window property, so the
+// r2 this file used to take off window above was always undefined: the
+// first Schedule D ward percentage stopped every Annual import with
+// "r2 is not a function" (tests/e2e/annual-import-ward-percentage.spec.ts).
+const r2 = (v) => Math.round(v * 100) / 100;
 
 // Line 20 (net assets computed from the accounting) and Line 30 (net assets
 // from the Schedule D listings) -- moved here from legacy-app.js's top

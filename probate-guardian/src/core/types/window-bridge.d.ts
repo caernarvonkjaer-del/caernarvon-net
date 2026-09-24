@@ -343,7 +343,6 @@ interface Window {
   pvSelect: any;
   pvStep: any;
   queueAllScheduleDocValidations: any;
-  r2: any;
   radioP: any;
   readRememberedFile: any;
   readRoleFields: any;
