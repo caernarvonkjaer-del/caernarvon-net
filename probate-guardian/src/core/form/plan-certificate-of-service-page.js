@@ -17,6 +17,7 @@ import { renderServiceAttestationRow } from './service-attestation-visibility.js
 import { renderFormField, renderYesNoField, renderRadioGroupField, esc } from './form-fields.js';
 import { renderSignatureStateControl } from '../signature/signature-state-control.js';
 import { inferLegacySignatureState } from '../validation/signature-state.js';
+import { preparerNoteHTML } from '../signature/preparer-note.js';
 
 export function renderPlanCertificateOfServicePage({ filing, route, cfg = {} }) {
   const d = filing || {};
@@ -34,7 +35,10 @@ export function renderPlanCertificateOfServicePage({ filing, route, cfg = {} }) 
   const lead = cfg.optional
     ? "The Clerk's checklist does not require a certificate of service for this plan; if you serve copies, record who was served here."
     : "The Clerk's checklist asks whether a certificate of service was filed.";
+  // Milestone 63D: a page that captures a signature shows the preparer note
+  // first under its heading, as every other signing page does.
   return `<h1>Certificate of Service</h1>
+    ${preparerNoteHTML()}
     <div class="schedule-instructions">${lead} I hereby certify that a copy of this ${esc(cfg.planNoun || 'plan')} has been furnished to the recipients listed below. Nothing on this page is required to file; the print preview notes what is still blank.</div>
     <div class="row g-2 mb-3">
       <div class="col-md-4">${renderFormField({ path: 'certDate', label: 'Date of Service', value: d.certDate || '', type: 'date', id: 'certDate' })}</div>

@@ -31,6 +31,16 @@ const featureIndexFiles = fs.readdirSync(path.join(root, 'src/features'))
   .map((dir) => `src/features/${dir}/index.js`)
   .filter((rel) => fs.existsSync(path.join(root, rel)));
 
+// Milestone 68C put a signing page in a SHARED module -- the Plans' Certificate
+// of Service, src/core/form/plan-certificate-of-service-page.js -- which this
+// scan did not read, so the page shipped without the note and only the
+// rendered spec caught it. Shared page modules follow the *-page.js naming, and
+// are scanned alongside the feature modules.
+const sharedPageFiles = fs.readdirSync(path.join(root, 'src/core/form'))
+  .filter((name) => name.endsWith('-page.js'))
+  .map((name) => `src/core/form/${name}`);
+const pageFiles = [...featureIndexFiles, ...sharedPageFiles];
+
 // Splits a module into its top-level functions. Anything between two functions
 // (module constants) rides along with the earlier one, which is harmless: none of
 // it renders a signature control or the note.
@@ -45,7 +55,7 @@ function topLevelFunctions(source) {
   }));
 }
 
-const pages = featureIndexFiles.flatMap((file) =>
+const pages = pageFiles.flatMap((file) =>
   topLevelFunctions(read(file)).map((fn) => ({ file, ...fn, signs: fn.body.includes('renderSignatureStateControl(') })));
 const signingPages = pages.filter((p) => p.signs);
 const otherPages = pages.filter((p) => !p.signs);
@@ -56,6 +66,7 @@ describe('Milestone 63D: the preparer-authorization note is where a signature ca
     // has to prove the scan sees something in each module that captures signatures.
     const filesWithSignatures = new Set(signingPages.map((p) => p.file));
     expect([...filesWithSignatures].sort()).toEqual([
+      'src/core/form/plan-certificate-of-service-page.js',
       'src/features/annual-accounting/index.js',
       'src/features/guardian-inventory/index.js',
       'src/features/plan-annual/index.js',
@@ -83,7 +94,7 @@ describe('Milestone 63D: the preparer-authorization note is where a signature ca
     },
   );
 
-  test.each(featureIndexFiles)('%s has no hand-typed copy of the note', (file) => {
+  test.each(pageFiles)('%s has no hand-typed copy of the note', (file) => {
     const code = read(file);
     expect(code).not.toContain(PREPARER_NOTE_TEXT);
     expect(code).not.toContain('class="preparer-note"');
