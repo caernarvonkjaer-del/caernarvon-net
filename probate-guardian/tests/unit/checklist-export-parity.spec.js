@@ -143,10 +143,21 @@ describe('checklist and export validator field parity', () => {
     // pa-p11 now references bare `D.attorney` directly (via
     // `&&(!D.attorney||filled(D.attorney_email))`), so it is no longer
     // invisible to computeNavChecks().
-    planAnnual: ['attorney_signatureImage', 'attorney_signatureState'],
-    // Milestone 55B closed both of this filing type's gaps -- ps-p3 now
-    // references both attorney_signatureDate and preparer_signatureDate
-    // (the two "Borrowed" relationships attached to the guardian's own key).
+    //
+    // Milestone 68A reopened `attorney_signatureDate` here and
+    // `preparer_signatureDate` on planMinor below: the only sidebar
+    // reference 55B added was the date-order check against the reporting
+    // period, and that rule was wrong for the Plans (a plan is written
+    // before the period it plans for), so it is gone from both the validator
+    // and the sidebar. These are the pre-55B gaps again -- the validator
+    // still reaches the fields through checkSignatureState() while the
+    // sidebar keys do not name them -- not a new drift, and the rule above
+    // ("shrink this list, never grow it") yields to removing a rule that
+    // could only be satisfied by a false date on a sworn filing.
+    // planSimplified stays empty: its validator named those two date fields
+    // ONLY in the removed date-order calls, so with them gone it requires
+    // nothing the sidebar ignores.
+    planAnnual: ['attorney_signatureDate', 'attorney_signatureImage', 'attorney_signatureState'],
     planSimplified: [],
     // Milestone 40C-E closed four of this list's gaps: `ucn`/`ref` (the Cover's
     // case identity, either one satisfying it), `amendedForm` (which must be
@@ -156,7 +167,7 @@ describe('checklist and export validator field parity', () => {
     // they are the same pre-existing gap the comment above describes.
     // Milestone 55B additionally closed `preparer_signatureDate` (pm-p7 now
     // references it via the new date-order check).
-    planMinor: ['attorney_signatureImage', 'attorney_signatureState', 'preparer_signatureImage', 'preparer_signatureState'],
+    planMinor: ['attorney_signatureImage', 'attorney_signatureState', 'preparer_signatureDate', 'preparer_signatureImage', 'preparer_signatureState'],
     // Milestone 55D closed the `attorney_signatureState` gap this list used
     // to carry: the rewritten pi-p10 now references `D.attorney_signatureState`
     // directly in its "started" predicate (mirroring the validator's own

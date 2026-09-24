@@ -390,18 +390,12 @@ export function validatePlanSimplified(){
   req(g.email,'Signatures — Guardian 1 email is required','planGuardians.0.email');
   req(g.phone,'Signatures — Guardian 1 phone is required','planGuardians.0.phone');
   req(g.mailingAddress,'Signatures — Guardian 1 mailing address is required','planGuardians.0.mailingAddress');
-  errs.push(...checkDateOrder(d.periodTo,g.signatureDate,{
-    sectionLabel:'Signatures',earlierLabel:'Reporting Period To',laterLabel:'Guardian 1 date signed',allowSameDay:true,
-    filingType:T,laterPath:'planGuardians.0.signatureDate',
-  }));
-  errs.push(...checkDateOrder(d.periodTo,d.preparer_signatureDate,{
-    sectionLabel:'Signatures',earlierLabel:'Reporting Period To',laterLabel:'Preparer date signed',allowSameDay:true,
-    filingType:T,laterPath:'preparer_signatureDate',
-  }));
-  errs.push(...checkDateOrder(d.periodTo,d.attorney_signatureDate,{
-    sectionLabel:'Signatures',earlierLabel:'Reporting Period To',laterLabel:'Attorney date signed',allowSameDay:true,
-    filingType:T,laterPath:'attorney_signatureDate',
-  }));
+  // Milestone 68A: no date order between the guardian's, preparer's or
+  // attorney's signature and the reporting period -- a plan is written
+  // before the period it plans for (see Plan Annual's note). This form
+  // raised the rule three times, so a filer with a preparer and an attorney
+  // had to post-date three signatures. checkSignatureState() still catches a
+  // missing or malformed date.
   return errs;
 }
 // Milestone 33, Phase 2.3: see annual-accounting/index.js's identical comment --

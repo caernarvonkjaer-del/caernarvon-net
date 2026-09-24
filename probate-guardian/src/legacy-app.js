@@ -6940,16 +6940,12 @@ function computeNavChecks(){
         &&filled(D.q7RestoreRights)&&(D.q7RestoreRights!=='Yes'||filled(D.q7RestoreExplain))
         &&q8Answered
         &&filled(D.q9Remuneration)&&(D.q9Remuneration!=='Yes'||filled(D.q9RemunerationExplain)),
-      // Milestone 55B: the guardian date-order check here is an exact fit --
-      // this key already labels the guardian's own signature. Preparer and
-      // attorney are "Borrowed": neither role has its own key in this filing
-      // type, so their date-order checks attach here too rather than being
-      // silently left unresolved (see MILESTONE-55-PROPOSAL.md's 55B section
-      // for the labeling trade-off this accepts).
-      'ps-p3':filled(g0.name)&&filled(g0.signatureDate)
-        &&datesOrdered(D.periodTo,g0.signatureDate,true)
-        &&datesOrdered(D.periodTo,D.preparer_signatureDate,true)
-        &&datesOrdered(D.periodTo,D.attorney_signatureDate,true),
+      // Milestone 55B attached date-order checks here (the guardian's as an
+      // exact fit, the preparer's and attorney's "Borrowed" onto this key);
+      // Milestone 68A removed them with the validator's rule -- a plan is
+      // written before the period it plans for, so a signature is not
+      // ordered against it. Presence only, matching validatePlanSimplified().
+      'ps-p3':filled(g0.name)&&filled(g0.signatureDate),
     };
     const incomplete={
       'ps-cover':!checks['ps-cover']&&hasAny(D.wardName,D.caseNumber,D.periodFrom,D.periodTo),
@@ -7006,20 +7002,17 @@ function computeNavChecks(){
       'pa-p9':(!!D.q10NoDirectives!==!!D.q10Executed)&&(!D.q10ExecOther||filled(D.q10ExecOtherText)),
       'pa-p10':D.q11NoRemuneration?filled(D.q11NoRemunerationName)
                                   :hasAny(D.q11ReceivedName,D.q11Amount,D.q11From),
-      // Milestone 55B: guardian date-order is an exact fit (this key already
-      // labels the guardian's signature); attorney is "Borrowed" -- no
-      // attorney-specific key exists in this filing type, so its date-order
-      // check attaches here rather than being silently left unresolved (see
-      // MILESTONE-55-PROPOSAL.md's 55B section for the labeling trade-off).
-      // This is also the reported defect: the screenshot's "Signatures —
-      // Guardian date signed must be on or after Reporting Period To" issue.
+      // Milestone 55B attached the guardian's and (Borrowed) the attorney's
+      // date-order checks here; Milestone 68A removed them with the
+      // validator's rule -- "Guardian date signed must be on or after
+      // Reporting Period To" was the reported defect, and a plan is written
+      // before the period it plans for. Presence only now, matching
+      // validatePlanAnnual().
       // Milestone 55D: attorney email requiredness is gated on the same
       // bare `D.attorney` truthiness the validator uses -- a blank
       // attorney card is unaffected, matching validatePlanAnnual()'s
       // `if(d.attorney)req(d.attorney_email,...)`.
       'pa-p11':filled(g0.name)&&filled(g0.signatureDate)
-        &&datesOrdered(D.periodTo,g0.signatureDate,true)
-        &&datesOrdered(D.periodTo,D.attorney_signatureDate,true)
         &&(!D.attorney||filled(D.attorney_email)),
     };
     const incomplete={
@@ -7174,16 +7167,14 @@ function computeNavChecks(){
       'pm-p5':filled(D.q5SchoolProgress)&&filled(D.q5SocialDevelopment)&&filled(D.q5Communicates)&&filled(D.q5Interpersonal)
         &&anyOf(D.q5NoUnmetNeeds,D.q5DoesNotCareToSocialize,D.q5UnmetNeeds,D.q5Other)
         &&(!D.q5Other||filled(D.q5Explain)),
+      // Milestone 55B ordered the guardian's, preparer's and attorney's
+      // signature dates against the reporting period on pm-p6/pm-p7;
+      // Milestone 68A removed those checks with the validator's rule -- a
+      // plan is written before the period it plans for. Presence only now,
+      // matching validatePlanMinor().
       'pm-p6':anyOf(D.certIncapacitated,D.certMinor,D.certConsulted,D.certNoRestriction,D.certProvidesCare,D.certPhysicianAttached)
-        &&filled(g0.name)&&filled(g0.signatureDate)
-        &&datesOrdered(D.periodTo,g0.signatureDate,true),
-      // Milestone 55B: pm-p7 already labels "Preparer & Attorney" combined
-      // (its validator sectionLabel), so both date-order checks are exact
-      // fits here -- not a labeling trade-off the way Plan Simplified's and
-      // Plan Annual's Borrowed sites are.
-      'pm-p7':filled(D.preparer_name)&&filled(D.attorney_name)&&filled(D.attorney_signatureDate)
-        &&datesOrdered(D.periodTo,D.preparer_signatureDate,true)
-        &&datesOrdered(D.periodTo,D.attorney_signatureDate,true),
+        &&filled(g0.name)&&filled(g0.signatureDate),
+      'pm-p7':filled(D.preparer_name)&&filled(D.attorney_name)&&filled(D.attorney_signatureDate),
     };
     const incomplete={
       'pm-cover':!checks['pm-cover']&&hasAny(D.wardName,D.county,D.periodFrom,D.periodTo,D.guardianName,D.q1ResidenceName),

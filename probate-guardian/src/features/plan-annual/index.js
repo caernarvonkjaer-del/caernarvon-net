@@ -760,14 +760,12 @@ export function validatePlanAnnual(){
   req(g0.mailingStreet,'Signatures — Guardian mailing street address is required','planGuardians.0.mailingStreet');
   req(g0.phone,'Signatures — Guardian phone number is required','planGuardians.0.phone');
   req(g0.ssn,'Signatures — Guardian SSN/EIN is required','planGuardians.0.ssn');
-  errs.push(...checkDateOrder(d.periodTo,g0.signatureDate,{
-    sectionLabel:'Signatures',earlierLabel:'Reporting Period To',laterLabel:'Guardian date signed',allowSameDay:true,
-    filingType:T,laterPath:'planGuardians.0.signatureDate',
-  }));
-  errs.push(...checkDateOrder(d.periodTo,d.attorney_signatureDate,{
-    sectionLabel:'Signatures',earlierLabel:'Reporting Period To',laterLabel:'Attorney date signed',allowSameDay:true,
-    filingType:T,laterPath:'attorney_signatureDate',
-  }));
+  // Milestone 68A: no date order between a signature and the reporting
+  // period. A plan is written BEFORE the period it plans for, so the rule
+  // the accountings correctly keep ("sign after the period you report on")
+  // had no honest remedy here -- the only way past it was a post-dated
+  // signature on a sworn filing. checkSignatureState() above still catches a
+  // missing or malformed date.
   // Milestone 39-C: the attorney card has never had any requiredness of its
   // own ("Leave blank if no attorney is involved") -- name is passed here
   // (unlike Guardian's omission above) because nothing else in this

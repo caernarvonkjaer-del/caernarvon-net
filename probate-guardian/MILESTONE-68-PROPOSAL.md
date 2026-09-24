@@ -13,7 +13,7 @@ or stop a filing outright; the rest prevent a filer from recording the truth.
 | Item | Subject | Severity | Decision | Build |
 | --- | --- | --- | --- | --- |
 | 68D | Period end date cut off on every Annual cover page | Wrong data on a filed document | **DECIDED** — fix the wrap width, derived from the layout | **LANDED 2026-09-24** — see the build record under 68D; Plan Initial rendered |
-| 68A | Plan signatures must be dated after the period being planned for | **Blocks filing**; only remedy is a false sworn date | **DECIDED** — remove the rule from Plans; keep it on accountings | **Blocked** — audit Plan Initial and Plan Minor first |
+| 68A | Plan signatures must be dated after the period being planned for | **Blocks filing**; only remedy is a false sworn date | **DECIDED** — remove the rule from Plans; keep it on accountings | **LANDED 2026-09-24** — audit found 8 sites on three Plans (Minor had it too; Initial never did); see the build record under 68A |
 | 68B | Initial Plan files with no reporting period, unflagged | Incomplete document filed, silently | **DECIDED** — require it, as the other Plans do | Ready to build |
 | 68C | No certificate of service on any Plan type | App states a requirement it cannot meet | **DECIDED** — build on all four; optional on Simplified; fix its wrong text | Ready to build |
 | 68E | Initial Plan Q5 accepts one answer where several apply | Cannot record the truth | **DECIDED** — the court's form is a checkbox list; convert to multi-select — Q5, Q4 and any other radio-rendered checkbox list the form shows (settled 2026-09-24) | Ready — 67F landed |
@@ -409,6 +409,86 @@ wrong; warning someone about a correct date trains them to ignore warnings.
    doing before anyone proposes a replacement rule, not before removing this one.
 9. **Cross-form method consistency.** The accountings' use of the same helper is
    correct and must not be changed. Check Initial Plan and Plan Minor, as above.
+
+### Build record — LANDED 2026-09-24
+
+**The audit the decision required, and what it found.** The item counted
+five call sites on two Plans and had not checked the other two. Grepping
+every Plan validator for `checkDateOrder(d.periodTo` and driving each form:
+
+| Plan | Call sites | Signers |
+| --- | --- | --- |
+| Annual Plan | 2 (`plan-annual/index.js:763-770`) | guardian, attorney |
+| Simplified Plan | 3 (`plan-simplified/index.js:393-404`) | guardian 1, preparer, attorney |
+| **Minor Plan — not in the item** | **3** (`plan-minor/index.js:498-501, 529-536`) | guardian, preparer, attorney |
+| Initial Plan | **0** | — its only `checkDateOrder` calls order the period itself |
+
+So the fix landed on three Plans (eight sites), not two (five), and the
+Initial Plan's freedom from the rule is now observed at runtime by the new
+spec rather than assumed. The accountings' identical rule
+(`annual-accounting/index.js:1587, 1613, 1639, 1645`;
+`simplified-accounting/index.js:746, 759, 775`) is untouched.
+
+**A second copy of the rule, in the sidebar.** Milestone 55B had mirrored
+every one of those eight checks into `computeNavChecks()` so the sidebar
+would agree with the export gate: `ps-p3` (three `datesOrdered()` terms),
+`pa-p11` (two), `pm-p6` (one), `pm-p7` (two). Removing the validator's rule
+alone would have left the sidebar marking Signatures incomplete for a
+filing export now accepts — the exact disagreement 55B existed to prevent,
+inverted. All eight terms are removed with the rule; the keys keep their
+presence checks. `readiness-config.js` never mirrored it (checked), so the
+readiness↔export invariant (AGENTS.md §4) holds without change.
+
+**What a filer now gets.** A guardian who signs a plan for the coming year
+with today's date files it: no "date signed must be on or after Reporting
+Period To" on any Plan, Save as PDF enabled, Signatures marked complete. A
+missing or malformed signature date is still caught by
+`checkSignatureState()`, so an unsigned plan is no more exportable than
+before.
+
+**Fixtures (§8.3).** The Plan fixtures signed on 01/05/2027, 01/11/2027 and
+01/12/2027 for 2026 periods — dates that existed only to satisfy this
+rule. They now sign at the start of the plan year (2026-01-05 / -11 / -12),
+and the three byte-exact page snapshots that carried the old dates
+(`plan-annual-mount`, `plan-minor-mount`, `plan-simplified-mount`) are
+updated with them. The Initial Plan fixture already signed in 2026.
+`checklist-export-parity.spec.js`'s known-gap list grows back by the four
+field names 55B's date checks had made visible to its static scan
+(`attorney_signatureDate` on Annual Plan; both date fields on Simplified;
+`preparer_signatureDate` on Minor) — the pre-55B gaps again, not a new
+drift, and the reason is recorded in that list.
+
+**Tests.** `tests/e2e/plan-signature-date.spec.ts` (new): every signer on
+all four Plans dated before the period even starts, then the validator, the
+sidebar key(s) and the real Save as PDF button — plus an Annual Accounting
+control that must still block. `navigation-status.contract.spec.ts`'s four
+55B Plan cases (Annual ×2, Simplified, Minor) and
+`date-validation.contract.spec.ts`'s three Plan signer-date cases are
+rescoped to assert the sidebar and gate agree there is no such rule; their
+period-order and GID cases are untouched. **Red first, 6 failed / 2 passed**
+against the unchanged source: the three Plans that carried the rule failed
+in both specs; the Initial Plan and the accounting control passed
+throughout. Green: the 12-spec neighbour set (the new spec,
+`navigation-status.contract`, `date-validation.contract`, the four
+`plan-*-mount` snapshots, `plan-readiness.contract`,
+`readiness-card.contract`, `pdf-form-specific`, `plan-pdf-wcag-compliance`,
+`signature-capture.contract`) ran **229 of 233, 22.2 min** with exactly the
+four field-path cases above failing — they asserted the rule by field path,
+which the first search for its message text missed — and **25/25, 2.1 min**
+once rescoped. Unit: **124 files / 1,769 green** after
+`checklist-export-parity` and `readiness-predicate-coverage` were re-listed
+(the latter's assertion is what proved Plan Simplified's two signer-date
+issues are no longer emitted at all); `check:types` clean.
+
+**User guide.** The Milestone 55B sentence that a section can be incomplete
+because "a signature dated before the period it covers" is out of order now
+says an *accounting* signed before the period it reports on, and adds that a
+plan's signature dates are not ordered against its period.
+
+**§8.2, restated for the requester.** Filings already exported carry the
+post-dated signatures their filers entered to get past this rule. Nothing
+in the app can identify or correct them; those dates are on filed
+documents.
 
 ---
 

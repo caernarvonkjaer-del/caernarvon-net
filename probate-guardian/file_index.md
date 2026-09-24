@@ -319,6 +319,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`tests\e2e\plan-minor-mount.spec.ts`](<tests/e2e/plan-minor-mount.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\plan-pdf-wcag-compliance.spec.ts`](<tests/e2e/plan-pdf-wcag-compliance.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\plan-readiness.contract.spec.ts`](<tests/e2e/plan-readiness.contract.spec.ts>) | Automated test covering the named behavior or contract. |
+| [`tests\e2e\plan-signature-date.spec.ts`](<tests/e2e/plan-signature-date.spec.ts>) | Milestone 68A: a Plan signed before the period it plans for files -- no signature-date order against the reporting period on any of the four Plans; the accountings keep theirs. |
 | [`tests\e2e\plan-simplified-mount.spec.ts`](<tests/e2e/plan-simplified-mount.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\plan-started-row.spec.ts`](<tests/e2e/plan-started-row.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\preparer-flag.spec.ts`](<tests/e2e/preparer-flag.spec.ts>) | Milestone 67A: identifying a guardian or attorney as the preparer drops the preparer block, unblocks export, prints the name, keeps the workbook cells empty, and survives re-import. |

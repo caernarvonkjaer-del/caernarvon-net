@@ -196,8 +196,9 @@ export async function fillMinimalValidPlanSimplifiedWard(page: Page): Promise<vo
       q8DNR: false, q8LivingWill: false, q8Surrogate: false, q8POA: false, q8Other: false, q8None: true,
       q9Remuneration: 'No',
     });
+    // Milestone 68A: signed at the start of the plan year (see fixtures.ts).
     d.planGuardians = [
-      { name: 'Sample Guardian', signatureDate: '2027-01-05', email: 'guardian@example.com', phone: '555-555-5555', mailingAddress: '123 Main St, Clearwater, FL 33755' },
+      { name: 'Sample Guardian', signatureDate: '2026-01-05', email: 'guardian@example.com', phone: '555-555-5555', mailingAddress: '123 Main St, Clearwater, FL 33755' },
       { name: '', signatureDate: '', email: '', phone: '', mailingAddress: '' },
     ];
     (window as any).autoSave();
@@ -247,13 +248,14 @@ export async function fillMinimalValidPlanMinorWard(page: Page): Promise<void> {
       q5Interpersonal: 'Maintains healthy relationships with family and friends.',
       q5NoUnmetNeeds: true,
       certConsulted: true,
+      // Milestone 68A: signed at the start of the plan year (see fixtures.ts).
       preparer_name: 'Sample Preparer',
-      preparer_signatureDate: '2027-01-12',
+      preparer_signatureDate: '2026-01-12',
       attorney_name: 'Sample Attorney',
-      attorney_signatureDate: '2027-01-12',
+      attorney_signatureDate: '2026-01-12',
     });
     d.planGuardians = [
-      { name: 'Sample Guardian', tin: '123-45-6789', phone: '555-555-5555', mailingStreet: '123 Main St', mailingCityStateZip: 'Clearwater, FL 33755', relationship: 'Parent', email: 'guardian@example.com', signatureDate: '2027-01-11' },
+      { name: 'Sample Guardian', tin: '123-45-6789', phone: '555-555-5555', mailingStreet: '123 Main St', mailingCityStateZip: 'Clearwater, FL 33755', relationship: 'Parent', email: 'guardian@example.com', signatureDate: '2026-01-11' },
       { name: '', tin: '', phone: '', mailingStreet: '', mailingCityStateZip: '', relationship: '', email: '', signatureDate: '' },
     ];
     (window as any).autoSave();

@@ -53,8 +53,10 @@ const DELIBERATELY_UNCOVERED = {
     'q8OtherText',           // description required only when "Other" directive is checked
     'q8None',                // NONE-and-also-listed consistency rule
     'q9RemunerationExplain', // explanation required only when payment was received
-    'preparer_signatureDate', // date-order only; Plan Simplified has no preparer predicate row
-    'attorney_signatureDate', // date-order only; no attorney predicate row on this Plan
+    // Milestone 68A removed the Plans' signature-after-period rule, which
+    // was the only emitter of a preparer_signatureDate or an
+    // attorney_signatureDate issue on this Plan; both left this list with it
+    // (this assertion is what proved neither is emitted any more).
   ],
   planAnnual: [
     'q3SettingExplain',      // explain the "Other" residential setting
@@ -77,9 +79,11 @@ const DELIBERATELY_UNCOVERED = {
 // Empty data fires only a validator's UNCONDITIONAL requirements. These
 // fixtures turn on every conditional trigger at once -- each "explain the
 // Other you just checked" rule, each consistency rule, each per-row name
-// requirement, and the date-order rules (a signature date before the period
-// end) -- while leaving the dependent field blank, so the conditional half of
-// each validator is exercised too. Without this, a newly-added conditional
+// requirement, and the date-order rules -- while leaving the dependent field
+// blank, so the conditional half of each validator is exercised too. (The
+// pre-period signature dates below date from when the Plans ordered a
+// signature against the reporting period; Milestone 68A removed that rule,
+// and they now exercise only the signature-state rules.) Without this, a newly-added conditional
 // requirement would slip past the coverage check entirely; that is exactly how
 // planSimplified's own q9RemunerationExplain went unlisted when this suite
 // first landed.

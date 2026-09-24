@@ -210,7 +210,10 @@ export const MINIMAL_VALID_PLAN_ANNUAL = {
   q11NoRemunerationName: 'Sample Guardian',
   certPhysicianAttached: true,
   planGuardians: [
-    { name: 'Sample Guardian', ssn: '123-45-6789', phone: '555-555-5555', email: 'guardian@example.com', signatureDate: '2027-01-05', mailingStreet: '123 Main St', mailingCityStateZip: 'Clearwater, FL 33755', officeStreet: '', officeCityStateZip: '', relationship: 'Professional Guardian' },
+    // Milestone 68A: signed at the start of the plan year, not after it --
+    // the post-dated 2027 signature this fixture used to carry existed only
+    // to satisfy a rule the Plans never should have had.
+    { name: 'Sample Guardian', ssn: '123-45-6789', phone: '555-555-5555', email: 'guardian@example.com', signatureDate: '2026-01-05', mailingStreet: '123 Main St', mailingCityStateZip: 'Clearwater, FL 33755', officeStreet: '', officeCityStateZip: '', relationship: 'Professional Guardian' },
     { name: '', ssn: '', phone: '', email: '', signatureDate: '', mailingStreet: '', mailingCityStateZip: '', officeStreet: '', officeCityStateZip: '', relationship: '' },
     { name: '', ssn: '', phone: '', email: '', signatureDate: '', mailingStreet: '', mailingCityStateZip: '', officeStreet: '', officeCityStateZip: '', relationship: '' },
   ],

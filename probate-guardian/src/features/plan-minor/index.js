@@ -495,10 +495,10 @@ export function validatePlanMinor(){
   req(g0.mailingStreet,'Guardian Signatures — Guardian mailing street address is required','planGuardians.0.mailingStreet');
   req(g0.phone,'Guardian Signatures — Guardian phone is required','planGuardians.0.phone');
   req(g0.tin,'Guardian Signatures — Guardian SSN/EIN is required','planGuardians.0.tin');
-  errs.push(...checkDateOrder(d.periodTo,g0.signatureDate,{
-    sectionLabel:'Guardian Signatures',earlierLabel:'Reporting Period To',laterLabel:'Guardian signature date',allowSameDay:true,
-    filingType:T,laterPath:'planGuardians.0.signatureDate',
-  }));
+  // Milestone 68A: no date order between any signature and the reporting
+  // period -- a plan is written before the period it plans for (see Plan
+  // Annual's note). checkSignatureState() still catches a missing or
+  // malformed date; the same applies to the preparer and attorney below.
 
   // Milestone 35-3: preparer and attorney are optional roles (pro se filers
   // and Guardian Advocates need neither) -- required only once the filer has
@@ -526,14 +526,6 @@ export function validatePlanMinor(){
       filingType:T, datePath:'attorney_signatureDate', imagePath:'attorney_signatureImage',
     }));
   }
-  errs.push(...checkDateOrder(d.periodTo,d.preparer_signatureDate,{
-    sectionLabel:'Preparer & Attorney',earlierLabel:'Reporting Period To',laterLabel:'Preparer signature date',allowSameDay:true,
-    filingType:T,laterPath:'preparer_signatureDate',
-  }));
-  errs.push(...checkDateOrder(d.periodTo,d.attorney_signatureDate,{
-    sectionLabel:'Preparer & Attorney',earlierLabel:'Reporting Period To',laterLabel:'Attorney signature date',allowSameDay:true,
-    filingType:T,laterPath:'attorney_signatureDate',
-  }));
 
   return errs;
 }

@@ -180,7 +180,11 @@ test.describe('Plan Annual date-order validation', () => {
     expect(found?.path).toBe('periodFrom');
   });
 
-  test('rejects an attorney date signed before the reporting period ends, resolving to attorney_signatureDate not the guardian (regression: bare "date signed" check used to win)', async ({ page }) => {
+  // Milestone 68A: a plan is written before the period it plans for, so no
+  // signature date is ordered against the reporting period any more (the
+  // rule this case used to prove the field-path resolution of is gone). The
+  // period's own order, above, still resolves to its field.
+  test('does not order an attorney date signed before the reporting period ends (68A)', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Plan Annual Attorney Order Ward', 'planAnnual');
     await page.evaluate(() => {
@@ -190,13 +194,13 @@ test.describe('Plan Annual date-order validation', () => {
       w.D.attorney_signatureDate = '2026-06-01';
     });
 
-    const found = await page.evaluate(() => {
+    const ordered = await page.evaluate(() => {
       const w = window as any;
       const raw = w.validatePlanAnnual();
       const structured = w.adaptValidationErrors(raw, 'planAnnual');
-      return structured.find((e: any) => e.section === 'Signatures' && e.message.includes('Attorney date signed'));
+      return structured.filter((e: any) => /date signed must be on or after/.test(e.message)).map((e: any) => e.path);
     });
-    expect(found?.path).toBe('attorney_signatureDate');
+    expect(ordered, 'no signer date is ordered against the period').toEqual([]);
   });
 });
 
@@ -220,7 +224,9 @@ test.describe('Plan Minor date-order validation', () => {
     expect(found?.path).toBe('periodTo');
   });
 
-  test('rejects a preparer signature date before the reporting period ends, resolving to preparer_signatureDate (new field-path branch)', async ({ page }) => {
+  // Milestone 68A: see the Plan Annual note above -- no signer date is
+  // ordered against the reporting period on any Plan.
+  test('does not order a preparer signature date before the reporting period ends (68A)', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Plan Minor Preparer Order Ward', 'planMinor');
     await page.evaluate(() => {
@@ -230,13 +236,13 @@ test.describe('Plan Minor date-order validation', () => {
       w.D.preparer_signatureDate = '2026-06-01';
     });
 
-    const found = await page.evaluate(() => {
+    const ordered = await page.evaluate(() => {
       const w = window as any;
       const raw = w.validatePlanMinor();
       const structured = w.adaptValidationErrors(raw, 'planMinor');
-      return structured.find((e: any) => e.message.includes('Preparer signature date'));
+      return structured.filter((e: any) => /signature date must be on or after/.test(e.message)).map((e: any) => e.path);
     });
-    expect(found?.path).toBe('preparer_signatureDate');
+    expect(ordered, 'no signer date is ordered against the period').toEqual([]);
   });
 });
 
@@ -260,7 +266,9 @@ test.describe('Plan Simplified date-order validation', () => {
     expect(found?.path).toBe('periodTo');
   });
 
-  test('rejects a preparer and an attorney date signed before the reporting period ends, resolving to distinct targets (regression: bare "date signed" check used to win)', async ({ page }) => {
+  // Milestone 68A: see the Plan Annual note above -- no signer date is
+  // ordered against the reporting period on any Plan.
+  test('does not order a preparer or an attorney date signed before the reporting period ends (68A)', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Plan Simplified Preparer Attorney Order Ward', 'planSimplified');
     await page.evaluate(() => {
@@ -271,16 +279,13 @@ test.describe('Plan Simplified date-order validation', () => {
       w.D.attorney_signatureDate = '2026-06-02';
     });
 
-    const paths = await page.evaluate(() => {
+    const ordered = await page.evaluate(() => {
       const w = window as any;
       const raw = w.validatePlanSimplified();
       const structured = w.adaptValidationErrors(raw, 'planSimplified');
-      return {
-        preparer: structured.find((e: any) => e.message.includes('Preparer date signed'))?.path,
-        attorney: structured.find((e: any) => e.message.includes('Attorney date signed'))?.path,
-      };
+      return structured.filter((e: any) => /date signed must be on or after/.test(e.message)).map((e: any) => e.path);
     });
-    expect(paths).toEqual({ preparer: 'preparer_signatureDate', attorney: 'attorney_signatureDate' });
+    expect(ordered, 'no signer date is ordered against the period').toEqual([]);
   });
 });
 
