@@ -34,6 +34,19 @@ async function addGuardianRow(page: Page, schedule: string) {
   await page.locator(`[data-inventory-action="add-entry"][data-schedule="${schedule}"]`).click();
 }
 
+/**
+ * Types into the first A-1 row, so it carries the filer's work. An untouched
+ * +Add row is removed when the filer leaves the page (blank-card clean-up,
+ * src/core/form/prune-cards.js); these cases were written on 2026-09-17,
+ * while that clean-up was not running, and assumed an untouched row
+ * survived a round trip. What they test is the question, not the clean-up.
+ */
+async function giveA1RowContent(page: Page) {
+  const description = page.locator('#main-content [data-bind="scheduleA1.0.propertyDescription"]');
+  await description.fill('Family home');
+  await description.blur();
+}
+
 /** No dialog should appear; allow the mount hook time to have fired if it were going to. */
 async function expectNoDialog(page: Page, why: string) {
   await page.waitForTimeout(400);
@@ -92,6 +105,7 @@ test.describe('Milestone 57C-R: supplemental-documentation acknowledgement', () 
     await addGuardianRow(page, 'a1');
     await dismissDynDialog(page);
     expect(await page.evaluate(() => (window as any).D.scheduleA1.length), 'Cancel must not discard the row').toBe(1);
+    await giveA1RowContent(page);
 
     await goto(page, '/summary');
     await goto(page, '/a1');
@@ -158,6 +172,7 @@ test.describe('Milestone 57C-R: supplemental-documentation acknowledgement', () 
 
     await addGuardianRow(page, 'a1');
     await dismissDynDialog(page);
+    await giveA1RowContent(page);
     const unacknowledged = await snapshot();
 
     await goto(page, '/summary');

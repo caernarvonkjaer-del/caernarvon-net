@@ -1047,6 +1047,10 @@
     },
     {
       "file": "src/legacy-app.js",
+      "name": "BLANK_SCHEDULE_ENTRY"
+    },
+    {
+      "file": "src/legacy-app.js",
       "name": "D"
     },
     {

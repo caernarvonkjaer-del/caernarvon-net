@@ -263,6 +263,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`tests\e2e\annual-mount.spec.ts`](<tests/e2e/annual-mount.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\annual-schedule-consistency.spec.ts`](<tests/e2e/annual-schedule-consistency.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\backup-restore-sav.spec.ts`](<tests/e2e/backup-restore-sav.spec.ts>) | Automated test covering the named behavior or contract. |
+| [`tests\e2e\blank-card-pruning.spec.ts`](<tests/e2e/blank-card-pruning.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\bond-depository.spec.ts`](<tests/e2e/bond-depository.spec.ts>) | Milestone 67B: nothing in the bond block gates export; the four-state question's reveals, advisories, legacy migration, PDF lines, workbook cells and the Excel import round trip on both forms. |
 | [`tests\e2e\carryover-workflow.spec.ts`](<tests/e2e/carryover-workflow.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\case-file-core-fields-roundtrip.spec.ts`](<tests/e2e/case-file-core-fields-roundtrip.spec.ts>) | Automated test covering the named behavior or contract. |

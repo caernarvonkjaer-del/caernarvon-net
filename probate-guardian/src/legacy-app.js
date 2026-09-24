@@ -6386,6 +6386,9 @@ const BLANK_SCHEDULE_ENTRY = {
   schF1:()=>({description:'',bank:'',accountNo:'',courtOrderDate:'',salePrice:''}),
   schF2:()=>({description:'',bank:'',accountNo:'',courtOrderDate:'',salePrice:''}),
 };
+// src/core/form/prune-cards.js reads this table off window; a top-level
+// const is never a window property, so it has to be published.
+window.BLANK_SCHEDULE_ENTRY=BLANK_SCHEDULE_ENTRY;
 
 // The other card family: party cards (guardians, certificate-of-service
 // recipients, witnesses) and the Plan forms' repeatable rows. Unlike the
@@ -6405,13 +6408,12 @@ const BLANK_SCHEDULE_ENTRY = {
 // affordance for it, because pruning cards the user has no way to recreate
 // would lock them out of the form entirely.
 //
-// Milestone 37-4 note: this const and pruneBlankCards() below are shadowed
-// at runtime by src/core/form/prune-cards.js, which does `window.
-// BLANK_CARD_COLLECTIONS = ...` / `window.pruneBlankCards = ...` on module
-// load -- a classic-script function declaration IS a window property (see
-// this file's other such comments), so the later module-script assignment
-// wins and every bare `pruneBlankCards()` call in this file actually runs
-// that module's version. Edit core/form/prune-cards.js's copy, not this one.
+// Not the live table: src/core/form/prune-cards.js keeps its own
+// BLANK_CARD_COLLECTIONS, which has since diverged from this copy, and
+// nothing reads this one. (This note used to say the module shadowed this
+// file "on module load"; nothing loaded the module, which is how Milestone
+// 42E came to delete the only live pruneBlankCards() in 2026-09. main.js
+// imports the module now.) Edit core/form/prune-cards.js's copy.
 const BLANK_CARD_COLLECTIONS = {
   guardians:{min:1,types:['guardian','annual','simplified']},
   serviceRecipients:{min:1,types:['guardian']},

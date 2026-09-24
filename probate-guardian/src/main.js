@@ -35,6 +35,13 @@ import './core/filing/delete-confirmation.js';
 // dashboard filings that have never been opened.
 import './core/validation/service-recipients.js';
 import './core/status/section-guidance-policy.js';
+// Blank-card clean-up: the router and the filing lifecycle call
+// window.pruneBlankCards() when a filer leaves a page or switches filings.
+// Nothing loaded this module until 2026-09-24, and Milestone 42E had deleted
+// legacy-app.js's copy as its "twin" on 2026-09-13, so untouched +Add cards
+// stayed -- on the Guardian Inventory, blocking export. Found by Milestone
+// 70's dependency audit (tests/e2e/blank-card-pruning.spec.ts).
+import './core/form/prune-cards.js';
 import './core/persistence/crypto.js';
 import './core/persistence/launch-preferences.js';
 import './core/persistence/recovery-cache.js';

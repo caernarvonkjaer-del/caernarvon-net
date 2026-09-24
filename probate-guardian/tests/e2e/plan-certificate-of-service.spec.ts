@@ -111,18 +111,10 @@ for (const form of FORMS) {
       await nameInput(page, 1).fill('Kept Recipient');
       await nameInput(page, 1).blur();
       expect(await navKey(page, form.navKey), 'started, Recipient 1 blank: the sidebar asks on every Plan').toBe(false);
-      // Marked unfinished on every Plan now, and the button still works --
-      // clicked for real, as a filer would.
+      // Marked unfinished on every Plan now, and the button still works. The
+      // real click is its own test below: leaving the page cleans up the
+      // untouched first card, which the rest of this test still needs.
       await expect(page.locator('#page-next-btn'), 'marked: the button stays enabled').toBeEnabled();
-      // The "Save Your First Backup" reminder pops up on its own timer and can
-      // sit over the button; a filer closes it, and so does this test
-      // (user-guide-wiring.spec.ts's pattern).
-      const reminder = page.locator('[data-shell-action="hide-auto-export-reminder"]');
-      if (await reminder.isVisible().catch(() => false)) await reminder.click();
-      await page.locator('#page-next-btn').click();
-      await expect(page.locator(form.pdfButton), 'the click reaches Preview & Export').toBeVisible({ timeout: 20_000 });
-      await go(page, form.route);
-      await expect(nameInput(page, 1), 'back on the page, nothing lost').toHaveValue('Kept Recipient');
       await expect(page.locator('#yesno_certNoRecipients_yes'), 'Recipient 1 blank: the question is visible').toBeVisible();
       await page.locator('#yesno_certNoRecipients_yes').check();
       await expect(nameInput(page, 1), 'Yes hides the cards').toHaveCount(0);
@@ -136,6 +128,26 @@ for (const form of FORMS) {
       await nameInput(page, 0).blur();
       expect(await navKey(page, form.navKey), 'named: the sidebar is satisfied').toBe(true);
       await expect(page.locator('[data-service-attestation]'), 'someone is listed: the question hides').toHaveClass(/d-none/);
+    });
+
+    test('clicked for real while the page is marked, the button reaches Preview & Export; leaving removes the untouched card and keeps the named one', async ({ page }) => {
+      await freshStartNoPassword(page);
+      await createWard(page, `${form.label} Certificate Click`, form.type);
+      await form.fill(page);
+      await go(page, form.route);
+      await page.locator('#main-content [data-form-action="add-plan-row"][data-collection="certRecipients"]').click();
+      await nameInput(page, 1).fill('Kept Recipient');
+      await nameInput(page, 1).blur();
+      expect(await navKey(page, form.navKey), 'Recipient 1 blank: the page is marked').toBe(false);
+      // The "Save Your First Backup" reminder pops up on its own timer and can
+      // sit over the button; a filer closes it, and so does this test
+      // (user-guide-wiring.spec.ts's pattern).
+      const reminder = page.locator('[data-shell-action="hide-auto-export-reminder"]');
+      if (await reminder.isVisible().catch(() => false)) await reminder.click();
+      await page.locator('#page-next-btn').click();
+      await expect(page.locator(form.pdfButton), 'the click reaches Preview & Export').toBeVisible({ timeout: 20_000 });
+      expect(await page.evaluate(() => (window as any).D.certRecipients.map((r: any) => r.name)), 'the untouched first card is cleaned up; the named one is kept')
+        .toEqual(['Kept Recipient']);
     });
 
     test('the PDF prints the certificate with its recipients, date, method and the "Certified by" signer', async ({ page }) => {

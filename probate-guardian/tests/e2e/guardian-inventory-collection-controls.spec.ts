@@ -153,11 +153,17 @@ test.describe('Milestone 51E: Initial Inventory collection Add/Remove controls',
     const addRecipient = page.locator('[data-inventory-action="add-recipient"]');
     const removeRecipient = page.locator('[data-inventory-action="remove-recipient"]');
 
-    // Service recipients default to two rows, and Remove renders on every row
-    // while more than one remains.
-    expect(await page.evaluate(() => (window as any).D.serviceRecipients.length)).toBe(2);
-    await expect(removeRecipient).toHaveCount(2);
+    // A new Inventory seeds two blank recipient rows, and leaving a page trims
+    // untouched ones to the one card the page always keeps (blank-card
+    // clean-up, src/core/form/prune-cards.js). This test was written on
+    // 2026-09-15, while that clean-up was not running (2026-09-13 to
+    // 2026-09-24; tests/e2e/blank-card-pruning.spec.ts), and first recorded
+    // the untrimmed two. Remove renders on every row while more than one
+    // remains.
+    expect(await page.evaluate(() => (window as any).D.serviceRecipients.length)).toBe(1);
+    await expect(removeRecipient).toHaveCount(0);
 
+    await addRecipient.click();
     await addRecipient.click();
     await expect(removeRecipient).toHaveCount(3);
 
@@ -169,8 +175,8 @@ test.describe('Milestone 51E: Initial Inventory collection Add/Remove controls',
     });
     await goto(page, RECIPIENT_ROUTE);
 
-    // Unlike guardians, recipient rows are not pruned when blank, so entered
-    // values simply survive the re-render each handler triggers.
+    // Named rows survive the re-render each handler triggers; the clean-up
+    // only ever removes rows nobody typed into.
     await removeRecipient.nth(1).click();
 
     const names = await page.evaluate(() => (window as any).D.serviceRecipients.map((r: any) => r.name));
@@ -184,6 +190,9 @@ test.describe('Milestone 51E: Initial Inventory collection Add/Remove controls',
     await goto(page, RECIPIENT_ROUTE);
 
     const addRecipient = page.locator('[data-inventory-action="add-recipient"]');
+    // One card after the clean-up (see the test above), so three adds reach
+    // the maximum of four.
+    await addRecipient.click();
     await addRecipient.click();
     await addRecipient.click();
 
