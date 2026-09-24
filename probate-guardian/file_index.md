@@ -88,6 +88,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`scripts\ms70-ledger-guard.mjs`](<scripts/ms70-ledger-guard.mjs>) | Milestone 70 ledger guard: fails when a master commit after the milestone-70 branch point is missing from MILESTONE-70-FIX-LEDGER.md; --merge also fails on open rows; reports the re-implement count for decision D7. |
 | [`scripts\run-e2e-profile.mjs`](<scripts/run-e2e-profile.mjs>) | Repository file. |
 | [`scripts\run-guide-capture.mjs`](<scripts/run-guide-capture.mjs>) | Repository file. |
+| [`scripts\ms70-testing-adapter-design.mjs`](<scripts/ms70-testing-adapter-design.mjs>) | Milestone 70 proposed window.GuardianForms schema: production members with their consumer, and GuardianForms.testing designed from the names the browser suite reaches; --write regenerates the design JSON. |
 | [`scripts\serve-portable-http.mjs`](<scripts/serve-portable-http.mjs>) | Milestone 70 (T1) host for the portable-http e2e profile: serves dist/portable from production's /Portals/0/Guardian-Forms/ subfolder on http://localhost with production's captured headers, the way the DNN site serves the portable package. |
 | [`scripts\verify-data-model.mjs`](<scripts/verify-data-model.mjs>) | Repository file. |
 | [`src\assets\embedded-fonts.js`](<src/assets/embedded-fonts.js>) | Build, tooling, or configuration source. |
@@ -266,6 +267,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`tests\baseline\ms70-dependency-baseline.json`](<tests/baseline/ms70-dependency-baseline.json>) | Milestone 70 ratchet baseline: the dependency sets that may only shrink during the migration (tests/unit/ms70-dependency-ratchet.spec.js). |
 | [`tests\baseline\ms70-dependency-inventory.json`](<tests/baseline/ms70-dependency-inventory.json>) | Milestone 70 dependency inventory: every edge between application files, with direction, plus classic declarations, cycles, layer violations and unowned reads. Informational. |
 | [`tests\baseline\ms70-e2e-globals.json`](<tests/baseline/ms70-e2e-globals.json>) | Milestone 70 inventory of the application names the browser suite reaches through window and its in-place state writes, from which GuardianForms.testing is designed. Informational. |
+| [`tests\baseline\ms70-testing-adapter-design.json`](<tests/baseline/ms70-testing-adapter-design.json>) | Milestone 70 draft window.GuardianForms schema: the production version member and the 21 proposed GuardianForms.testing members, with the destination of every name the browser suite reaches (reviewed:false until confirmed in 70T). |
 | [`tests\capture\guide-screenshots.capture.ts`](<tests/capture/guide-screenshots.capture.ts>) | Build, tooling, or configuration source. |
 | [`tests\capture\pin-web-target.ts`](<tests/capture/pin-web-target.ts>) | Build, tooling, or configuration source. |
 | [`tests\e2e\annotation-toolbar-containment.spec.ts`](<tests/e2e/annotation-toolbar-containment.spec.ts>) | Automated test covering the named behavior or contract. |
@@ -462,6 +464,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`tests\unit\ms70-dependency-ratchet.spec.js`](<tests/unit/ms70-dependency-ratchet.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\ms70-e2e-global-inventory.spec.js`](<tests/unit/ms70-e2e-global-inventory.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\ms70-ledger-guard.spec.js`](<tests/unit/ms70-ledger-guard.spec.js>) | Automated test covering the named behavior or contract. |
+| [`tests\unit\ms70-testing-adapter-design.spec.js`](<tests/unit/ms70-testing-adapter-design.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\native-dialog-guard.spec.js`](<tests/unit/native-dialog-guard.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\offline-access-preference.spec.js`](<tests/unit/offline-access-preference.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\output-authorization.spec.js`](<tests/unit/output-authorization.spec.js>) | Automated test covering the named behavior or contract. |
