@@ -360,6 +360,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`tests\e2e\schedule-docs-period-key.spec.ts`](<tests/e2e/schedule-docs-period-key.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\section-guidance-invariant.spec.ts`](<tests/e2e/section-guidance-invariant.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\security.spec.ts`](<tests/e2e/security.spec.ts>) | Automated test covering the named behavior or contract. |
+| [`tests\e2e\security-contract.spec.ts`](<tests/e2e/security-contract.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\service-attestation-visibility.spec.ts`](<tests/e2e/service-attestation-visibility.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\sidebar-only-wants.spec.ts`](<tests/e2e/sidebar-only-wants.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\signature-block-address-margin.spec.ts`](<tests/e2e/signature-block-address-margin.spec.ts>) | Automated test covering the named behavior or contract. |
@@ -412,6 +413,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`tests\unit\comment-card-hide.spec.js`](<tests/unit/comment-card-hide.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\content-corrections.spec.js`](<tests/unit/content-corrections.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\convert-targets.spec.js`](<tests/unit/convert-targets.spec.js>) | Automated test covering the named behavior or contract. |
+| [`tests\unit\crypto-contract.spec.js`](<tests/unit/crypto-contract.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\county-guidance.spec.js`](<tests/unit/county-guidance.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\dashboard-resources.spec.js`](<tests/unit/dashboard-resources.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\dashboard-view-model.spec.js`](<tests/unit/dashboard-view-model.spec.js>) | Automated test covering the named behavior or contract. |
