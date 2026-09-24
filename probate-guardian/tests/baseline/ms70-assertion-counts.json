@@ -1,0 +1,991 @@
+{
+ "generatedBy": "node scripts/ms70-assertion-counts.mjs --write-baseline",
+ "note": "Milestone 70 per-spec assertion counts (static expect calls). tests/unit/ms70-assertion-counts.spec.js fails when a spec falls below its count; lowering it requires --reason, recorded in dropLog. A tripwire, not proof of equivalence (decision D9).",
+ "totals": {
+  "expects": 6098,
+  "tests": 1759
+ },
+ "counts": {
+  "tests/e2e/annotation-toolbar-containment.spec.ts": {
+   "expects": 21,
+   "tests": 3
+  },
+  "tests/e2e/annual-bond-period.spec.ts": {
+   "expects": 19,
+   "tests": 3
+  },
+  "tests/e2e/annual-field-formatting.spec.ts": {
+   "expects": 26,
+   "tests": 7
+  },
+  "tests/e2e/annual-mount.spec.ts": {
+   "expects": 46,
+   "tests": 14
+  },
+  "tests/e2e/annual-schedule-consistency.spec.ts": {
+   "expects": 19,
+   "tests": 3
+  },
+  "tests/e2e/backup-restore-sav.spec.ts": {
+   "expects": 41,
+   "tests": 8
+  },
+  "tests/e2e/bond-depository.spec.ts": {
+   "expects": 50,
+   "tests": 6
+  },
+  "tests/e2e/carryover-workflow.spec.ts": {
+   "expects": 34,
+   "tests": 5
+  },
+  "tests/e2e/case-file-core-fields-roundtrip.spec.ts": {
+   "expects": 6,
+   "tests": 2
+  },
+  "tests/e2e/case-file-protection.spec.ts": {
+   "expects": 16,
+   "tests": 5
+  },
+  "tests/e2e/case-file-roundtrip.spec.ts": {
+   "expects": 12,
+   "tests": 3
+  },
+  "tests/e2e/case-resolver.spec.ts": {
+   "expects": 18,
+   "tests": 5
+  },
+  "tests/e2e/case-write-through.spec.ts": {
+   "expects": 5,
+   "tests": 2
+  },
+  "tests/e2e/closed-filing-sync.spec.ts": {
+   "expects": 18,
+   "tests": 1
+  },
+  "tests/e2e/combobox-keyboard-nav.spec.ts": {
+   "expects": 22,
+   "tests": 3
+  },
+  "tests/e2e/conditional-reveal-routes.spec.ts": {
+   "expects": 23,
+   "tests": 6
+  },
+  "tests/e2e/continue-prompt-banner.spec.ts": {
+   "expects": 14,
+   "tests": 4
+  },
+  "tests/e2e/convert-ward.spec.ts": {
+   "expects": 26,
+   "tests": 6
+  },
+  "tests/e2e/cover-county.spec.ts": {
+   "expects": 26,
+   "tests": 7
+  },
+  "tests/e2e/dashboard-backup.spec.ts": {
+   "expects": 49,
+   "tests": 9
+  },
+  "tests/e2e/dashboard-visual.spec.ts": {
+   "expects": 37,
+   "tests": 6
+  },
+  "tests/e2e/date-validation.contract.spec.ts": {
+   "expects": 33,
+   "tests": 18
+  },
+  "tests/e2e/excel-b4-multi-account.spec.ts": {
+   "expects": 16,
+   "tests": 3
+  },
+  "tests/e2e/excel-blank-page-pruning.spec.ts": {
+   "expects": 17,
+   "tests": 4
+  },
+  "tests/e2e/excel-date-cells.spec.ts": {
+   "expects": 16,
+   "tests": 3
+  },
+  "tests/e2e/excel-defined-names.spec.ts": {
+   "expects": 17,
+   "tests": 6
+  },
+  "tests/e2e/excel-form-field-placement.spec.ts": {
+   "expects": 71,
+   "tests": 8
+  },
+  "tests/e2e/excel-import-cell-shapes.spec.ts": {
+   "expects": 11,
+   "tests": 2
+  },
+  "tests/e2e/excel-pruned-roundtrip.spec.ts": {
+   "expects": 12,
+   "tests": 2
+  },
+  "tests/e2e/export-button-guard.spec.ts": {
+   "expects": 9,
+   "tests": 2
+  },
+  "tests/e2e/feature-load-failure.spec.ts": {
+   "expects": 18,
+   "tests": 3
+  },
+  "tests/e2e/filing-identity.contract.spec.ts": {
+   "expects": 10,
+   "tests": 1
+  },
+  "tests/e2e/form-entry-ux.spec.ts": {
+   "expects": 35,
+   "tests": 5
+  },
+  "tests/e2e/form-entry.contract.spec.ts": {
+   "expects": 26,
+   "tests": 8
+  },
+  "tests/e2e/form-field-labels.spec.ts": {
+   "expects": 4,
+   "tests": 2
+  },
+  "tests/e2e/guardian-blank-page-pruning.spec.ts": {
+   "expects": 23,
+   "tests": 6
+  },
+  "tests/e2e/guardian-inventory-collection-controls.spec.ts": {
+   "expects": 29,
+   "tests": 8
+  },
+  "tests/e2e/guardian-inventory-excel-schedule-layout.spec.ts": {
+   "expects": 21,
+   "tests": 3
+  },
+  "tests/e2e/guardian-inventory-mount.spec.ts": {
+   "expects": 59,
+   "tests": 13
+  },
+  "tests/e2e/guardian-inventory-schedule-layout.spec.ts": {
+   "expects": 41,
+   "tests": 7
+  },
+  "tests/e2e/guardian-inventory-tri-state-radios.spec.ts": {
+   "expects": 9,
+   "tests": 2
+  },
+  "tests/e2e/guardianship-selection-controls.spec.ts": {
+   "expects": 8,
+   "tests": 1
+  },
+  "tests/e2e/guided-tour-navigation.spec.ts": {
+   "expects": 9,
+   "tests": 2
+  },
+  "tests/e2e/highlight-toolbar-style.spec.ts": {
+   "expects": 37,
+   "tests": 4
+  },
+  "tests/e2e/legacy-ward-data-normalization.spec.ts": {
+   "expects": 15,
+   "tests": 4
+  },
+  "tests/e2e/navigation-status.contract.spec.ts": {
+   "expects": 141,
+   "tests": 55
+  },
+  "tests/e2e/offline.spec.ts": {
+   "expects": 26,
+   "tests": 5
+  },
+  "tests/e2e/output-semantics.artifact.spec.ts": {
+   "expects": 38,
+   "tests": 2
+  },
+  "tests/e2e/page-structure.spec.ts": {
+   "expects": 4,
+   "tests": 1
+  },
+  "tests/e2e/party-dedupe.spec.ts": {
+   "expects": 48,
+   "tests": 3
+  },
+  "tests/e2e/party-resolver.spec.ts": {
+   "expects": 178,
+   "tests": 29
+  },
+  "tests/e2e/party-write-through.spec.ts": {
+   "expects": 4,
+   "tests": 1
+  },
+  "tests/e2e/pdf-accessibility-and-signatures.spec.ts": {
+   "expects": 58,
+   "tests": 4
+  },
+  "tests/e2e/pdf-annotate.spec.ts": {
+   "expects": 72,
+   "tests": 12
+  },
+  "tests/e2e/pdf-cover-geometry.spec.ts": {
+   "expects": 5,
+   "tests": 1
+  },
+  "tests/e2e/pdf-evidence-lab.spec.ts": {
+   "expects": 4,
+   "tests": 1
+  },
+  "tests/e2e/pdf-fonts-and-xmp.spec.ts": {
+   "expects": 17,
+   "tests": 3
+  },
+  "tests/e2e/pdf-form-specific.spec.ts": {
+   "expects": 134,
+   "tests": 8
+  },
+  "tests/e2e/pdf-notice-title.spec.ts": {
+   "expects": 4,
+   "tests": 2
+  },
+  "tests/e2e/pdf-preview-viewer.spec.ts": {
+   "expects": 35,
+   "tests": 6
+  },
+  "tests/e2e/pdf-structure-tags.spec.ts": {
+   "expects": 70,
+   "tests": 3
+  },
+  "tests/e2e/pdf-table-semantics.spec.ts": {
+   "expects": 23,
+   "tests": 2
+  },
+  "tests/e2e/persistence-recovery.contract.spec.ts": {
+   "expects": 16,
+   "tests": 4
+  },
+  "tests/e2e/plan-annual-mount.spec.ts": {
+   "expects": 2,
+   "tests": 2
+  },
+  "tests/e2e/plan-annual-rights-no.spec.ts": {
+   "expects": 13,
+   "tests": 2
+  },
+  "tests/e2e/plan-benefits-tristate.spec.ts": {
+   "expects": 11,
+   "tests": 2
+  },
+  "tests/e2e/plan-certificate-of-service.spec.ts": {
+   "expects": 42,
+   "tests": 5
+  },
+  "tests/e2e/plan-directive-cards.spec.ts": {
+   "expects": 19,
+   "tests": 2
+  },
+  "tests/e2e/plan-initial-assistive-none.spec.ts": {
+   "expects": 8,
+   "tests": 1
+  },
+  "tests/e2e/plan-initial-dates-explained.spec.ts": {
+   "expects": 4,
+   "tests": 1
+  },
+  "tests/e2e/plan-initial-mount.spec.ts": {
+   "expects": 10,
+   "tests": 3
+  },
+  "tests/e2e/plan-initial-multiselect.spec.ts": {
+   "expects": 32,
+   "tests": 5
+  },
+  "tests/e2e/plan-initial-period.spec.ts": {
+   "expects": 13,
+   "tests": 1
+  },
+  "tests/e2e/plan-minor-mount.spec.ts": {
+   "expects": 2,
+   "tests": 2
+  },
+  "tests/e2e/plan-pdf-wcag-compliance.spec.ts": {
+   "expects": 6,
+   "tests": 1
+  },
+  "tests/e2e/plan-readiness.contract.spec.ts": {
+   "expects": 18,
+   "tests": 5
+  },
+  "tests/e2e/plan-signature-date.spec.ts": {
+   "expects": 5,
+   "tests": 2
+  },
+  "tests/e2e/plan-simplified-mount.spec.ts": {
+   "expects": 2,
+   "tests": 2
+  },
+  "tests/e2e/plan-started-row.spec.ts": {
+   "expects": 4,
+   "tests": 2
+  },
+  "tests/e2e/preparer-flag.spec.ts": {
+   "expects": 43,
+   "tests": 3
+  },
+  "tests/e2e/preparer-note-placement.spec.ts": {
+   "expects": 5,
+   "tests": 1
+  },
+  "tests/e2e/print-preview-signature-jump.spec.ts": {
+   "expects": 6,
+   "tests": 2
+  },
+  "tests/e2e/pwa-registration.spec.ts": {
+   "expects": 2,
+   "tests": 1
+  },
+  "tests/e2e/readiness-card.contract.spec.ts": {
+   "expects": 37,
+   "tests": 5
+  },
+  "tests/e2e/recovery-cache.spec.ts": {
+   "expects": 9,
+   "tests": 3
+  },
+  "tests/e2e/routes.spec.ts": {
+   "expects": 149,
+   "tests": 17
+  },
+  "tests/e2e/save-pipeline-boot.spec.ts": {
+   "expects": 4,
+   "tests": 2
+  },
+  "tests/e2e/schb4-bank-accounts-ui.spec.ts": {
+   "expects": 17,
+   "tests": 3
+  },
+  "tests/e2e/schedule-card-layout.spec.ts": {
+   "expects": 76,
+   "tests": 15
+  },
+  "tests/e2e/schedule-doc-ack.spec.ts": {
+   "expects": 12,
+   "tests": 7
+  },
+  "tests/e2e/schedule-docs-period-key.spec.ts": {
+   "expects": 23,
+   "tests": 4
+  },
+  "tests/e2e/section-guidance-invariant.spec.ts": {
+   "expects": 2,
+   "tests": 1
+  },
+  "tests/e2e/security.spec.ts": {
+   "expects": 7,
+   "tests": 3
+  },
+  "tests/e2e/service-attestation-visibility.spec.ts": {
+   "expects": 10,
+   "tests": 3
+  },
+  "tests/e2e/sidebar-only-wants.spec.ts": {
+   "expects": 24,
+   "tests": 5
+  },
+  "tests/e2e/signature-block-address-margin.spec.ts": {
+   "expects": 20,
+   "tests": 5
+  },
+  "tests/e2e/signature-capture.contract.spec.ts": {
+   "expects": 137,
+   "tests": 36
+  },
+  "tests/e2e/signature-stamp-reuse.spec.ts": {
+   "expects": 14,
+   "tests": 4
+  },
+  "tests/e2e/signature-style-removal.spec.ts": {
+   "expects": 2,
+   "tests": 1
+  },
+  "tests/e2e/simplified-mount.spec.ts": {
+   "expects": 22,
+   "tests": 8
+  },
+  "tests/e2e/simplified-part1-identity-cells.spec.ts": {
+   "expects": 28,
+   "tests": 6
+  },
+  "tests/e2e/simplified-remuneration.spec.ts": {
+   "expects": 28,
+   "tests": 4
+  },
+  "tests/e2e/startup.spec.ts": {
+   "expects": 22,
+   "tests": 7
+  },
+  "tests/e2e/supplemental-pdf-accounting.spec.ts": {
+   "expects": 18,
+   "tests": 4
+  },
+  "tests/e2e/tab-and-update.spec.ts": {
+   "expects": 11,
+   "tests": 5
+  },
+  "tests/e2e/terms-acceptance.spec.ts": {
+   "expects": 12,
+   "tests": 2
+  },
+  "tests/e2e/test-system-title-prefix.spec.ts": {
+   "expects": 25,
+   "tests": 6
+  },
+  "tests/e2e/theme-prepaint.spec.ts": {
+   "expects": 15,
+   "tests": 5
+  },
+  "tests/e2e/ucn-cover-field.spec.ts": {
+   "expects": 6,
+   "tests": 1
+  },
+  "tests/e2e/unlock.spec.ts": {
+   "expects": 9,
+   "tests": 1
+  },
+  "tests/e2e/user-guide-wiring.spec.ts": {
+   "expects": 10,
+   "tests": 6
+  },
+  "tests/e2e/validation-structured-paths.spec.ts": {
+   "expects": 6,
+   "tests": 1
+  },
+  "tests/e2e/vendor-loader-retry.spec.ts": {
+   "expects": 6,
+   "tests": 1
+  },
+  "tests/e2e/verified-inventory-workflow.spec.ts": {
+   "expects": 26,
+   "tests": 7
+  },
+  "tests/e2e/ward-lock.spec.ts": {
+   "expects": 40,
+   "tests": 8
+  },
+  "tests/unit/amended-form-line.spec.js": {
+   "expects": 8,
+   "tests": 5
+  },
+  "tests/unit/annual-accounting-pdf-model.spec.js": {
+   "expects": 43,
+   "tests": 12
+  },
+  "tests/unit/annual-accounting-totals.spec.js": {
+   "expects": 16,
+   "tests": 9
+  },
+  "tests/unit/annual-pdf-schb4-attribution.spec.js": {
+   "expects": 32,
+   "tests": 15
+  },
+  "tests/unit/b4-block-map.spec.js": {
+   "expects": 9,
+   "tests": 2
+  },
+  "tests/unit/b4-export-plan.spec.js": {
+   "expects": 48,
+   "tests": 15
+  },
+  "tests/unit/b4-register-pages.spec.js": {
+   "expects": 17,
+   "tests": 9
+  },
+  "tests/unit/bar-number.spec.js": {
+   "expects": 10,
+   "tests": 5
+  },
+  "tests/unit/bond-depository.spec.js": {
+   "expects": 67,
+   "tests": 20
+  },
+  "tests/unit/boot-ordering.spec.js": {
+   "expects": 6,
+   "tests": 4
+  },
+  "tests/unit/case-county-drift.spec.js": {
+   "expects": 15,
+   "tests": 6
+  },
+  "tests/unit/case-file.spec.js": {
+   "expects": 63,
+   "tests": 19
+  },
+  "tests/unit/cell-reader.spec.js": {
+   "expects": 15,
+   "tests": 4
+  },
+  "tests/unit/checklist-export-parity.spec.js": {
+   "expects": 14,
+   "tests": 6
+  },
+  "tests/unit/circuit-lookup.spec.js": {
+   "expects": 51,
+   "tests": 9
+  },
+  "tests/unit/comment-card-hide.spec.js": {
+   "expects": 8,
+   "tests": 5
+  },
+  "tests/unit/content-corrections.spec.js": {
+   "expects": 12,
+   "tests": 4
+  },
+  "tests/unit/convert-targets.spec.js": {
+   "expects": 19,
+   "tests": 5
+  },
+  "tests/unit/county-guidance.spec.js": {
+   "expects": 16,
+   "tests": 3
+  },
+  "tests/unit/dashboard-resources.spec.js": {
+   "expects": 69,
+   "tests": 26
+  },
+  "tests/unit/dashboard-view-model.spec.js": {
+   "expects": 34,
+   "tests": 9
+  },
+  "tests/unit/date-parser.spec.js": {
+   "expects": 56,
+   "tests": 13
+  },
+  "tests/unit/date-range-no-mutation.spec.js": {
+   "expects": 14,
+   "tests": 8
+  },
+  "tests/unit/date-rules.spec.js": {
+   "expects": 11,
+   "tests": 7
+  },
+  "tests/unit/date-truncation-helpers.spec.js": {
+   "expects": 25,
+   "tests": 6
+  },
+  "tests/unit/delete-confirmation.spec.js": {
+   "expects": 17,
+   "tests": 8
+  },
+  "tests/unit/excel-capacity-issues.spec.js": {
+   "expects": 31,
+   "tests": 7
+  },
+  "tests/unit/excel-engine.spec.js": {
+   "expects": 63,
+   "tests": 23
+  },
+  "tests/unit/excel-write-targets.spec.js": {
+   "expects": 3,
+   "tests": 3
+  },
+  "tests/unit/export-guard.spec.js": {
+   "expects": 5,
+   "tests": 3
+  },
+  "tests/unit/feature-bridge.spec.js": {
+   "expects": 21,
+   "tests": 7
+  },
+  "tests/unit/feature-exports.spec.js": {
+   "expects": 1,
+   "tests": 1
+  },
+  "tests/unit/feedback-message.spec.js": {
+   "expects": 9,
+   "tests": 3
+  },
+  "tests/unit/field-kind-inference.spec.js": {
+   "expects": 6,
+   "tests": 5
+  },
+  "tests/unit/filing-capability-matrix.spec.js": {
+   "expects": 14,
+   "tests": 4
+  },
+  "tests/unit/filing-county-defaults.spec.js": {
+   "expects": 52,
+   "tests": 21
+  },
+  "tests/unit/filing-descriptor.spec.js": {
+   "expects": 17,
+   "tests": 6
+  },
+  "tests/unit/filing-type-enumeration-guard.spec.js": {
+   "expects": 2,
+   "tests": 2
+  },
+  "tests/unit/form-cards.spec.js": {
+   "expects": 42,
+   "tests": 15
+  },
+  "tests/unit/form-contract.spec.js": {
+   "expects": 145,
+   "tests": 39
+  },
+  "tests/unit/form-derived-fields.spec.js": {
+   "expects": 26,
+   "tests": 10
+  },
+  "tests/unit/form-fields-legacy-delegation.spec.js": {
+   "expects": 15,
+   "tests": 7
+  },
+  "tests/unit/form-fields.spec.js": {
+   "expects": 96,
+   "tests": 29
+  },
+  "tests/unit/form-write-side-effects.spec.js": {
+   "expects": 23,
+   "tests": 10
+  },
+  "tests/unit/guardian-blank-page-pruning.spec.js": {
+   "expects": 24,
+   "tests": 10
+  },
+  "tests/unit/guardian-bond-amount.spec.js": {
+   "expects": 6,
+   "tests": 6
+  },
+  "tests/unit/guardian-inventory-64a1-validation.spec.js": {
+   "expects": 18,
+   "tests": 9
+  },
+  "tests/unit/guardian-inventory-date-roundtrip.spec.js": {
+   "expects": 10,
+   "tests": 3
+  },
+  "tests/unit/guardian-inventory-pdf-model.spec.js": {
+   "expects": 142,
+   "tests": 48
+  },
+  "tests/unit/guardian-inventory-totals.spec.js": {
+   "expects": 74,
+   "tests": 21
+  },
+  "tests/unit/guardian-inventory-yes-no-radio.spec.js": {
+   "expects": 12,
+   "tests": 5
+  },
+  "tests/unit/guardian-page-map.spec.js": {
+   "expects": 9,
+   "tests": 6
+  },
+  "tests/unit/guardianship-options.spec.js": {
+   "expects": 9,
+   "tests": 5
+  },
+  "tests/unit/guided-tour-content.spec.js": {
+   "expects": 12,
+   "tests": 3
+  },
+  "tests/unit/help-guide-pdf-orphan.spec.js": {
+   "expects": 2,
+   "tests": 2
+  },
+  "tests/unit/issue-registry.spec.js": {
+   "expects": 35,
+   "tests": 15
+  },
+  "tests/unit/live-region.spec.js": {
+   "expects": 9,
+   "tests": 2
+  },
+  "tests/unit/ms70-assertion-counts.spec.js": {
+   "expects": 6,
+   "tests": 4
+  },
+  "tests/unit/ms70-dependency-ratchet.spec.js": {
+   "expects": 18,
+   "tests": 11
+  },
+  "tests/unit/ms70-e2e-global-inventory.spec.js": {
+   "expects": 3,
+   "tests": 1
+  },
+  "tests/unit/ms70-ledger-guard.spec.js": {
+   "expects": 15,
+   "tests": 8
+  },
+  "tests/unit/native-dialog-guard.spec.js": {
+   "expects": 1,
+   "tests": 1
+  },
+  "tests/unit/offline-access-preference.spec.js": {
+   "expects": 19,
+   "tests": 10
+  },
+  "tests/unit/output-authorization.spec.js": {
+   "expects": 25,
+   "tests": 10
+  },
+  "tests/unit/output-gate-inventory.spec.js": {
+   "expects": 24,
+   "tests": 4
+  },
+  "tests/unit/output-preflight-typed.spec.js": {
+   "expects": 18,
+   "tests": 5
+  },
+  "tests/unit/output-revision-wiring.spec.js": {
+   "expects": 17,
+   "tests": 9
+  },
+  "tests/unit/part-xi-remuneration.spec.js": {
+   "expects": 23,
+   "tests": 11
+  },
+  "tests/unit/pdf-address-format.spec.js": {
+   "expects": 4,
+   "tests": 3
+  },
+  "tests/unit/pdf-cert-service-address.spec.js": {
+   "expects": 13,
+   "tests": 9
+  },
+  "tests/unit/pdf-engine-notice-title.spec.js": {
+   "expects": 14,
+   "tests": 7
+  },
+  "tests/unit/pdf-model-column-integrity.spec.js": {
+   "expects": 4,
+   "tests": 3
+  },
+  "tests/unit/plan-annual-parity.spec.js": {
+   "expects": 21,
+   "tests": 6
+  },
+  "tests/unit/plan-annual-pdf-model.spec.js": {
+   "expects": 2,
+   "tests": 2
+  },
+  "tests/unit/plan-annual-source-notes.spec.js": {
+   "expects": 4,
+   "tests": 3
+  },
+  "tests/unit/plan-certificate-of-service.spec.js": {
+   "expects": 50,
+   "tests": 12
+  },
+  "tests/unit/plan-co-guardian-pdf.spec.js": {
+   "expects": 8,
+   "tests": 4
+  },
+  "tests/unit/plan-directive-cards.spec.js": {
+   "expects": 10,
+   "tests": 7
+  },
+  "tests/unit/plan-initial-multiselect.spec.js": {
+   "expects": 31,
+   "tests": 6
+  },
+  "tests/unit/plan-initial-parity.spec.js": {
+   "expects": 32,
+   "tests": 12
+  },
+  "tests/unit/plan-minor-parity.spec.js": {
+   "expects": 23,
+   "tests": 6
+  },
+  "tests/unit/plan-readiness-county.spec.js": {
+   "expects": 18,
+   "tests": 8
+  },
+  "tests/unit/plan-simplified-certification-pages.spec.js": {
+   "expects": 10,
+   "tests": 3
+  },
+  "tests/unit/plan-simplified-certification-schema.spec.js": {
+   "expects": 6,
+   "tests": 3
+  },
+  "tests/unit/plan-simplified-filing-help.spec.js": {
+   "expects": 10,
+   "tests": 4
+  },
+  "tests/unit/plan-simplified-parity.spec.js": {
+   "expects": 17,
+   "tests": 4
+  },
+  "tests/unit/plan-started-row.spec.js": {
+   "expects": 20,
+   "tests": 15
+  },
+  "tests/unit/plan-tristate.spec.js": {
+   "expects": 27,
+   "tests": 13
+  },
+  "tests/unit/preparer-flag-validation.spec.js": {
+   "expects": 12,
+   "tests": 5
+  },
+  "tests/unit/preparer-flag.spec.js": {
+   "expects": 43,
+   "tests": 15
+  },
+  "tests/unit/preparer-note.spec.js": {
+   "expects": 11,
+   "tests": 3
+  },
+  "tests/unit/print-annotation-persistence.spec.js": {
+   "expects": 9,
+   "tests": 8
+  },
+  "tests/unit/prune-cards.spec.js": {
+   "expects": 29,
+   "tests": 11
+  },
+  "tests/unit/readiness-card.spec.js": {
+   "expects": 52,
+   "tests": 18
+  },
+  "tests/unit/readiness-predicate-coverage.spec.js": {
+   "expects": 19,
+   "tests": 10
+  },
+  "tests/unit/readiness-source-map.spec.js": {
+   "expects": 47,
+   "tests": 12
+  },
+  "tests/unit/recovery-cache-last-position.spec.js": {
+   "expects": 9,
+   "tests": 7
+  },
+  "tests/unit/remuneration-declaration.spec.js": {
+   "expects": 22,
+   "tests": 11
+  },
+  "tests/unit/router.spec.js": {
+   "expects": 7,
+   "tests": 3
+  },
+  "tests/unit/schedule-definitions.spec.js": {
+   "expects": 21,
+   "tests": 5
+  },
+  "tests/unit/schedule-doc-ack.spec.js": {
+   "expects": 57,
+   "tests": 28
+  },
+  "tests/unit/section-guidance-policy.spec.js": {
+   "expects": 56,
+   "tests": 25
+  },
+  "tests/unit/section-status.spec.js": {
+   "expects": 10,
+   "tests": 4
+  },
+  "tests/unit/security-source-audit.spec.js": {
+   "expects": 10,
+   "tests": 3
+  },
+  "tests/unit/service-attestation-visibility.spec.js": {
+   "expects": 13,
+   "tests": 7
+  },
+  "tests/unit/service-recipients.spec.js": {
+   "expects": 29,
+   "tests": 17
+  },
+  "tests/unit/sheet-pruning.spec.js": {
+   "expects": 30,
+   "tests": 15
+  },
+  "tests/unit/signature-block-fields.spec.js": {
+   "expects": 12,
+   "tests": 10
+  },
+  "tests/unit/signature-capture.spec.js": {
+   "expects": 47,
+   "tests": 27
+  },
+  "tests/unit/signature-completeness.spec.js": {
+   "expects": 20,
+   "tests": 8
+  },
+  "tests/unit/signature-stamp-history.spec.js": {
+   "expects": 26,
+   "tests": 11
+  },
+  "tests/unit/simplified-no-blank-pages.spec.js": {
+   "expects": 5,
+   "tests": 4
+  },
+  "tests/unit/skip-classification-audit.spec.js": {
+   "expects": 1,
+   "tests": 1
+  },
+  "tests/unit/ssn-format.spec.js": {
+   "expects": 15,
+   "tests": 8
+  },
+  "tests/unit/supplemental-pdf.spec.js": {
+   "expects": 18,
+   "tests": 10
+  },
+  "tests/unit/tab-state.spec.js": {
+   "expects": 12,
+   "tests": 3
+  },
+  "tests/unit/template-print-areas.spec.js": {
+   "expects": 6,
+   "tests": 3
+  },
+  "tests/unit/test-index-guard.spec.js": {
+   "expects": 3,
+   "tests": 2
+  },
+  "tests/unit/theme-persistence.spec.js": {
+   "expects": 43,
+   "tests": 20
+  },
+  "tests/unit/transient-status.spec.js": {
+   "expects": 13,
+   "tests": 6
+  },
+  "tests/unit/types-contract.spec.js": {
+   "expects": 12,
+   "tests": 1
+  },
+  "tests/unit/ucn-header.spec.js": {
+   "expects": 25,
+   "tests": 12
+  },
+  "tests/unit/user-guide-drift-guard.spec.js": {
+   "expects": 8,
+   "tests": 3
+  },
+  "tests/unit/validation-adapter.spec.js": {
+   "expects": 21,
+   "tests": 7
+  },
+  "tests/unit/validation-issue.spec.js": {
+   "expects": 30,
+   "tests": 9
+  },
+  "tests/unit/ward-carryover.spec.js": {
+   "expects": 79,
+   "tests": 19
+  },
+  "tests/unit/ward-lock.spec.js": {
+   "expects": 27,
+   "tests": 10
+  },
+  "tests/unit/window-bridge.spec.js": {
+   "expects": 8,
+   "tests": 5
+  },
+  "tests/unit/xlsx-extract.spec.js": {
+   "expects": 22,
+   "tests": 4
+  },
+  "tests/unit/yes-no-radio-migration.spec.js": {
+   "expects": 13,
+   "tests": 3
+  }
+ },
+ "dropLog": []
+}

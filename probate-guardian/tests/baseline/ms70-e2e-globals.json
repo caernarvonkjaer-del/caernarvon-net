@@ -1,0 +1,3122 @@
+{
+ "generatedBy": "node scripts/ms70-e2e-global-inventory.mjs --write",
+ "note": "Milestone 70, 70A: application names the browser suite reaches through window, and its in-place writes to live case state. GuardianForms.testing (70T) is designed from this. Informational.",
+ "summary": {
+  "specFiles": 115,
+  "specFilesTouchingAppGlobals": 112,
+  "supportFilesTouchingAppGlobals": 4,
+  "distinctAppNames": 158,
+  "inPlaceStateWriteSites": 237,
+  "filesWithInPlaceStateWrites": 42,
+  "writeKinds": {
+   "object-assign": 17,
+   "assign": 214,
+   "mutator": 3,
+   "replace-root": 3
+  },
+  "computedWindowAccesses": 16
+ },
+ "byName": {
+  "navigate": {
+   "files": 86,
+   "uses": 428
+  },
+  "D": {
+   "files": 78,
+   "uses": 574
+  },
+  "flushPendingSave": {
+   "files": 31,
+   "uses": 53
+  },
+  "autoSave": {
+   "files": 29,
+   "uses": 62
+  },
+  "addWard": {
+   "files": 20,
+   "uses": 60
+  },
+  "caseFile": {
+   "files": 18,
+   "uses": 116
+  },
+  "computeNavChecks": {
+   "files": 12,
+   "uses": 60
+  },
+  "switchWard": {
+   "files": 12,
+   "uses": 29
+  },
+  "loadGuardianPdf": {
+   "files": 9,
+   "uses": 18
+  },
+  "showAddWardModalForType": {
+   "files": 8,
+   "uses": 10
+  },
+  "loadAnnualPdf": {
+   "files": 6,
+   "uses": 10
+  },
+  "validateGuardian": {
+   "files": 6,
+   "uses": 14
+  },
+  "validateAnnual": {
+   "files": 5,
+   "uses": 24
+  },
+  "validatePlanAnnual": {
+   "files": 5,
+   "uses": 14
+  },
+  "__pgBuildFixture": {
+   "files": 4,
+   "uses": 13
+  },
+  "__pgFixtureIssues": {
+   "files": 4,
+   "uses": 16
+  },
+  "buildCaseFileBlob": {
+   "files": 4,
+   "uses": 7
+  },
+  "getCaseFile": {
+   "files": 4,
+   "uses": 19
+  },
+  "loadSimplifiedPdf": {
+   "files": 4,
+   "uses": 9
+  },
+  "renderPage": {
+   "files": 4,
+   "uses": 7
+  },
+  "resolveParty": {
+   "files": 4,
+   "uses": 8
+  },
+  "validatePlanInitial": {
+   "files": 4,
+   "uses": 8
+  },
+  "__pgPlanDefaults": {
+   "files": 3,
+   "uses": 3
+  },
+  "_dirtySinceExport": {
+   "files": 3,
+   "uses": 5
+  },
+  "buildSingleWardExportBlob": {
+   "files": 3,
+   "uses": 7
+  },
+  "clearSessionRestoreCache": {
+   "files": 3,
+   "uses": 5
+  },
+  "commitCoverCounty": {
+   "files": 3,
+   "uses": 4
+  },
+  "currentPage": {
+   "files": 3,
+   "uses": 4
+  },
+  "getActiveWard": {
+   "files": 3,
+   "uses": 7
+  },
+  "lockApp": {
+   "files": 3,
+   "uses": 3
+  },
+  "validatePlanMinor": {
+   "files": 3,
+   "uses": 15
+  },
+  "validatePlanSimplified": {
+   "files": 3,
+   "uses": 6
+  },
+  "validateSimplified": {
+   "files": 3,
+   "uses": 9
+  },
+  "__pgMergeFixture": {
+   "files": 2,
+   "uses": 4
+  },
+  "__testPromise": {
+   "files": 2,
+   "uses": 10
+  },
+  "_sessionCacheGet": {
+   "files": 2,
+   "uses": 3
+  },
+  "adaptValidationErrors": {
+   "files": 2,
+   "uses": 38
+  },
+  "addEntry": {
+   "files": 2,
+   "uses": 2
+  },
+  "calcTotalsAnnual": {
+   "files": 2,
+   "uses": 4
+  },
+  "carryOverFields": {
+   "files": 2,
+   "uses": 3
+  },
+  "casesGroupingWards": {
+   "files": 2,
+   "uses": 3
+  },
+  "createCase": {
+   "files": 2,
+   "uses": 5
+  },
+  "createParty": {
+   "files": 2,
+   "uses": 34
+  },
+  "dismissPartyPair": {
+   "files": 2,
+   "uses": 4
+  },
+  "doSavePdfPlanAnnual": {
+   "files": 2,
+   "uses": 3
+  },
+  "doSavePdfPlanInitial": {
+   "files": 2,
+   "uses": 3
+  },
+  "doSavePdfPlanMinor": {
+   "files": 2,
+   "uses": 3
+  },
+  "ensureWardPartyForFiling": {
+   "files": 2,
+   "uses": 2
+  },
+  "exportGuardianDataZip": {
+   "files": 2,
+   "uses": 2
+  },
+  "getOrCreateCaseForWard": {
+   "files": 2,
+   "uses": 3
+  },
+  "loadCaseFileHandle": {
+   "files": 2,
+   "uses": 5
+  },
+  "loadPlanAnnualPdf": {
+   "files": 2,
+   "uses": 2
+  },
+  "markDirtySinceExport": {
+   "files": 2,
+   "uses": 3
+  },
+  "normalizeWardData": {
+   "files": 2,
+   "uses": 6
+  },
+  "pgHasUnsavedChanges": {
+   "files": 2,
+   "uses": 5
+  },
+  "prepareFilingOutput": {
+   "files": 2,
+   "uses": 2
+  },
+  "rememberCaseFileHandle": {
+   "files": 2,
+   "uses": 5
+  },
+  "resolveCase": {
+   "files": 2,
+   "uses": 2
+  },
+  "saveBlobAs": {
+   "files": 2,
+   "uses": 2
+  },
+  "showConvertWardModal": {
+   "files": 2,
+   "uses": 4
+  },
+  "showPickPartyModal": {
+   "files": 2,
+   "uses": 2
+  },
+  "updateNavDots": {
+   "files": 2,
+   "uses": 2
+  },
+  "wardPartyForFiling": {
+   "files": 2,
+   "uses": 3
+  },
+  "__autoSaves": {
+   "files": 1,
+   "uses": 3
+  },
+  "__lastCaseWriteBlob": {
+   "files": 1,
+   "uses": 2
+  },
+  "__mockHandleWriteCount": {
+   "files": 1,
+   "uses": 3
+  },
+  "__readinessToggled": {
+   "files": 1,
+   "uses": 3
+  },
+  "__saveOrder": {
+   "files": 1,
+   "uses": 4
+  },
+  "__swMessages": {
+   "files": 1,
+   "uses": 4
+  },
+  "__writeCallCount": {
+   "files": 1,
+   "uses": 4
+  },
+  "acquireWardLock": {
+   "files": 1,
+   "uses": 2
+  },
+  "activeInventoryType": {
+   "files": 1,
+   "uses": 1
+  },
+  "addSignatureImage": {
+   "files": 1,
+   "uses": 1
+  },
+  "annualReconcileState": {
+   "files": 1,
+   "uses": 1
+  },
+  "auditLog": {
+   "files": 1,
+   "uses": 4
+  },
+  "backfillWardPartyCounties": {
+   "files": 1,
+   "uses": 1
+  },
+  "backfillWardPartyIdentity": {
+   "files": 1,
+   "uses": 1
+  },
+  "calc": {
+   "files": 1,
+   "uses": 4
+  },
+  "calcTotalsGuardian": {
+   "files": 1,
+   "uses": 1
+  },
+  "caseNumberOf": {
+   "files": 1,
+   "uses": 2
+  },
+  "circuitCourtCaption": {
+   "files": 1,
+   "uses": 3
+  },
+  "circuitForCounty": {
+   "files": 1,
+   "uses": 1
+  },
+  "closedFilingDrift": {
+   "files": 1,
+   "uses": 5
+  },
+  "closeModal": {
+   "files": 1,
+   "uses": 1
+  },
+  "confirmDeleteWard": {
+   "files": 1,
+   "uses": 3
+  },
+  "convertExistingWard": {
+   "files": 1,
+   "uses": 3
+  },
+  "convertTargetsFor": {
+   "files": 1,
+   "uses": 2
+  },
+  "convertToSimplified": {
+   "files": 1,
+   "uses": 1
+  },
+  "dehydrateIntoParty": {
+   "files": 1,
+   "uses": 2
+  },
+  "deleteWard": {
+   "files": 1,
+   "uses": 1
+  },
+  "describeConversion": {
+   "files": 1,
+   "uses": 1
+  },
+  "doSaveExcelGuardian": {
+   "files": 1,
+   "uses": 1
+  },
+  "doSavePdfGuardian": {
+   "files": 1,
+   "uses": 1
+  },
+  "duplicateEntry": {
+   "files": 1,
+   "uses": 1
+  },
+  "emptyPlanDirective": {
+   "files": 1,
+   "uses": 1
+  },
+  "filingDriftFromParties": {
+   "files": 1,
+   "uses": 2
+  },
+  "findDuplicateCandidates": {
+   "files": 1,
+   "uses": 4
+  },
+  "finishSingleWardExport": {
+   "files": 1,
+   "uses": 1
+  },
+  "focusFieldByPath": {
+   "files": 1,
+   "uses": 14
+  },
+  "getCurrentLockedWardId": {
+   "files": 1,
+   "uses": 2
+  },
+  "getIssueDefinition": {
+   "files": 1,
+   "uses": 1
+  },
+  "getRecentlyOpenedWards": {
+   "files": 1,
+   "uses": 1
+  },
+  "getScheduleDocSlot": {
+   "files": 1,
+   "uses": 5
+  },
+  "getWardProgress": {
+   "files": 1,
+   "uses": 2
+  },
+  "hasOpenedCaseBefore": {
+   "files": 1,
+   "uses": 1
+  },
+  "hydrateFromParty": {
+   "files": 1,
+   "uses": 5
+  },
+  "identitySlotForPath": {
+   "files": 1,
+   "uses": 20
+  },
+  "importExcelGuardian": {
+   "files": 1,
+   "uses": 1
+  },
+  "INITIAL_ADLS": {
+   "files": 1,
+   "uses": 1
+  },
+  "initializeEmptyData": {
+   "files": 1,
+   "uses": 4
+  },
+  "isContinuePromptShown": {
+   "files": 1,
+   "uses": 2
+  },
+  "isPartyPairDismissed": {
+   "files": 1,
+   "uses": 4
+  },
+  "isPlanInitialAttorneyStarted": {
+   "files": 1,
+   "uses": 2
+  },
+  "loadAppState": {
+   "files": 1,
+   "uses": 1
+  },
+  "loadAuditLogEntries": {
+   "files": 1,
+   "uses": 1
+  },
+  "loadCaseFileFromZip": {
+   "files": 1,
+   "uses": 3
+  },
+  "loadFragment": {
+   "files": 1,
+   "uses": 1
+  },
+  "loadPlanMinorPdf": {
+   "files": 1,
+   "uses": 1
+  },
+  "loadPlanSimplifiedPdf": {
+   "files": 1,
+   "uses": 1
+  },
+  "loadSimplifiedFeature": {
+   "files": 1,
+   "uses": 1
+  },
+  "mergeParties": {
+   "files": 1,
+   "uses": 8
+  },
+  "normalizeScheduleDocsAck": {
+   "files": 1,
+   "uses": 1
+  },
+  "openFloridaCourtPortal": {
+   "files": 1,
+   "uses": 1
+  },
+  "PLAN_ADLS": {
+   "files": 1,
+   "uses": 1
+  },
+  "PLAN_RIGHTS": {
+   "files": 1,
+   "uses": 1
+  },
+  "planReadinessChecks": {
+   "files": 1,
+   "uses": 1
+  },
+  "planReadinessPanel": {
+   "files": 1,
+   "uses": 1
+  },
+  "readRememberedFile": {
+   "files": 1,
+   "uses": 1
+  },
+  "readRoleFields": {
+   "files": 1,
+   "uses": 7
+  },
+  "referenceCountForParty": {
+   "files": 1,
+   "uses": 3
+  },
+  "releaseWardLock": {
+   "files": 1,
+   "uses": 1
+  },
+  "renderScheduleDocsSection": {
+   "files": 1,
+   "uses": 2
+  },
+  "saveBackupNow": {
+   "files": 1,
+   "uses": 1
+  },
+  "saveData": {
+   "files": 1,
+   "uses": 1
+  },
+  "saveSessionRestoreCache": {
+   "files": 1,
+   "uses": 1
+  },
+  "scheduleDocPeriodKey": {
+   "files": 1,
+   "uses": 4
+  },
+  "setPartyIdForSlot": {
+   "files": 1,
+   "uses": 1
+  },
+  "setTestSystemTitleWarningEnabledForTest": {
+   "files": 1,
+   "uses": 1
+  },
+  "showAddWardModal": {
+   "files": 1,
+   "uses": 1
+  },
+  "showRenameWardModal": {
+   "files": 1,
+   "uses": 1
+  },
+  "showSimplifiedEligibilityModal": {
+   "files": 1,
+   "uses": 2
+  },
+  "showWardLockedModal": {
+   "files": 1,
+   "uses": 2
+  },
+  "startedRows": {
+   "files": 1,
+   "uses": 2
+  },
+  "startNewWardYear": {
+   "files": 1,
+   "uses": 1
+  },
+  "startWalkthrough": {
+   "files": 1,
+   "uses": 1
+  },
+  "subPartiesOf": {
+   "files": 1,
+   "uses": 5
+  },
+  "switchWardYear": {
+   "files": 1,
+   "uses": 1
+  },
+  "syncFilingSlotWithParty": {
+   "files": 1,
+   "uses": 2
+  },
+  "syncIdentityField": {
+   "files": 1,
+   "uses": 6
+  },
+  "triggerImportZip": {
+   "files": 1,
+   "uses": 1
+  },
+  "unloadWard": {
+   "files": 1,
+   "uses": 4
+  },
+  "unmergeParty": {
+   "files": 1,
+   "uses": 7
+  },
+  "updateSidebar": {
+   "files": 1,
+   "uses": 2
+  },
+  "validateWardBackupOverwrite": {
+   "files": 1,
+   "uses": 1
+  },
+  "wardCountyMergeConflict": {
+   "files": 1,
+   "uses": 2
+  },
+  "wardId": {
+   "files": 1,
+   "uses": 1
+  },
+  "wardName": {
+   "files": 1,
+   "uses": 1
+  },
+  "writeRoleFields": {
+   "files": 1,
+   "uses": 19
+  }
+ },
+ "files": {
+  "tests/e2e/annotation-toolbar-containment.spec.ts": {
+   "names": {
+    "navigate": 1
+   },
+   "writes": [],
+   "computed": 0
+  },
+  "tests/e2e/annual-bond-period.spec.ts": {
+   "names": {
+    "autoSave": 5,
+    "D": 12,
+    "flushPendingSave": 2,
+    "navigate": 5
+   },
+   "writes": [
+    {
+     "kind": "object-assign",
+     "target": "D",
+     "line": 74
+    },
+    {
+     "kind": "object-assign",
+     "target": "D",
+     "line": 151
+    },
+    {
+     "kind": "assign",
+     "target": "D.bondPeriodFrom",
+     "line": 156
+    },
+    {
+     "kind": "assign",
+     "target": "D.bondPeriodTo",
+     "line": 157
+    },
+    {
+     "kind": "assign",
+     "target": "D.bondPeriodFrom",
+     "line": 166
+    },
+    {
+     "kind": "assign",
+     "target": "D.bondPeriodTo",
+     "line": 167
+    },
+    {
+     "kind": "assign",
+     "target": "D.bondPeriodFrom",
+     "line": 181
+    },
+    {
+     "kind": "assign",
+     "target": "D.bondPeriodTo",
+     "line": 182
+    }
+   ],
+   "computed": 0
+  },
+  "tests/e2e/annual-field-formatting.spec.ts": {
+   "names": {
+    "__autoSaves": 3,
+    "autoSave": 1,
+    "D": 9,
+    "navigate": 7
+   },
+   "writes": [],
+   "computed": 0
+  },
+  "tests/e2e/annual-mount.spec.ts": {
+   "names": {
+    "D": 14,
+    "navigate": 20,
+    "showPickPartyModal": 1,
+    "switchWard": 2
+   },
+   "writes": [
+    {
+     "kind": "assign",
+     "target": "D.schA",
+     "line": 218
+    }
+   ],
+   "computed": 0
+  },
+  "tests/e2e/annual-schedule-consistency.spec.ts": {
+   "names": {
+    "computeNavChecks": 7,
+    "D": 1,
+    "navigate": 6
+   },
+   "writes": [
+    {
+     "kind": "assign",
+     "target": "D.trusts",
+     "line": 181
+    }
+   ],
+   "computed": 0
+  },
+  "tests/e2e/backup-restore-sav.spec.ts": {
+   "names": {
+    "__mockHandleWriteCount": 3,
+    "_dirtySinceExport": 1,
+    "addWard": 3,
+    "buildCaseFileBlob": 1,
+    "caseFile": 11,
+    "clearSessionRestoreCache": 1,
+    "D": 7,
+    "getCurrentLockedWardId": 2,
+    "rememberCaseFileHandle": 1,
+    "switchWard": 3
+   },
+   "writes": [
+    {
+     "kind": "assign",
+     "target": "D.caseNumber",
+     "line": 273
+    },
+    {
+     "kind": "assign",
+     "target": "D.caseNumber",
+     "line": 311
+    }
+   ],
+   "computed": 0
+  },
+  "tests/e2e/bond-depository.spec.ts": {
+   "names": {
+    "autoSave": 3,
+    "D": 12,
+    "flushPendingSave": 2,
+    "navigate": 11,
+    "updateNavDots": 1
+   },
+   "writes": [
+    {
+     "kind": "object-assign",
+     "target": "D",
+     "line": 74
+    }
+   ],
+   "computed": 1
+  },
+  "tests/e2e/carryover-workflow.spec.ts": {
+   "names": {
+    "caseFile": 8,
+    "closeModal": 1,
+    "D": 15,
+    "flushPendingSave": 1,
+    "showSimplifiedEligibilityModal": 2
+   },
+   "writes": [
+    {
+     "kind": "assign",
+     "target": "D.attorney",
+     "line": 18
+    },
+    {
+     "kind": "assign",
+     "target": "D.guardianName",
+     "line": 26
+    },
+    {
+     "kind": "assign",
+     "target": "D.wardName",
+     "line": 27
+    },
+    {
+     "kind": "assign",
+     "target": "D.caseNumber",
+     "line": 28
+    }
+   ],
+   "computed": 0
+  },
+  "tests/e2e/case-file-core-fields-roundtrip.spec.ts": {
+   "names": {
+    "caseFile": 12,
+    "dismissPartyPair": 1
+   },
+   "writes": [
+    {
+     "kind": "assign",
+     "target": "caseFile.wards",
+     "line": 49
+    },
+    {
+     "kind": "assign",
+     "target": "caseFile.parties",
+     "line": 50
+    },
+    {
+     "kind": "assign",
+     "target": "caseFile.cases",
+     "line": 51
+    },
+    {
+     "kind": "assign",
+     "target": "caseFile.dismissedPartyPairs",
+     "line": 52
+    },
+    {
+     "kind": "assign",
+     "target": "caseFile.selectedCircuit",
+     "line": 88
+    }
+   ],
+   "computed": 0
+  },
+  "tests/e2e/case-file-protection.spec.ts": {
+   "names": {
+    "__lastCaseWriteBlob": 2,
+    "__testPromise": 4,
+    "__writeCallCount": 4,
+    "addWard": 1,
+    "buildCaseFileBlob": 4,
+    "buildSingleWardExportBlob": 1,
+    "caseFile": 3,
+    "loadCaseFileHandle": 4,
+    "lockApp": 1,
+    "navigate": 1,
+    "rememberCaseFileHandle": 4,
+    "saveBlobAs": 1,
+    "saveData": 1,
+    "triggerImportZip": 1,
+    "validateWardBackupOverwrite": 1,
+    "wardId": 1,
+    "wardName": 1
+   },
+   "writes": [],
+   "computed": 0
+  },
+  "tests/e2e/case-file-roundtrip.spec.ts": {
+   "names": {
+    "caseFile": 2,
+    "switchWard": 2
+   },
+   "writes": [],
+   "computed": 0
+  },
+  "tests/e2e/case-resolver.spec.ts": {
+   "names": {
+    "caseFile": 2,
+    "caseNumberOf": 2,
+    "casesGroupingWards": 2,
+    "createCase": 3,
+    "getOrCreateCaseForWard": 2,
+    "resolveCase": 1
+   },
+   "writes": [],
+   "computed": 0
+  },
+  "tests/e2e/case-write-through.spec.ts": {
+   "names": {
+    "autoSave": 2,
+    "caseFile": 10,
+    "casesGroupingWards": 1,
+    "D": 1,
+    "getOrCreateCaseForWard": 1,
+    "navigate": 1,
+    "resolveCase": 1,
+    "showAddWardModalForType": 1
+   },
+   "writes": [
+    {
+     "kind": "assign",
+     "target": "D.caseNumber",
+     "line": 15
+    }
+   ],
+   "computed": 0
+  },
+  "tests/e2e/closed-filing-sync.spec.ts": {
+   "names": {
+    "caseFile": 6,
+    "commitCoverCounty": 1,
+    "D": 4,
+    "navigate": 10,
+    "resolveParty": 1,
+    "showAddWardModalForType": 1,
+    "switchWard": 5
+   },
+   "writes": [],
+   "computed": 0
+  },
+  "tests/e2e/combobox-keyboard-nav.spec.ts": {
+   "names": {
+    "getActiveWard": 1,
+    "showAddWardModal": 1,
+    "showConvertWardModal": 1
+   },
+   "writes": [],
+   "computed": 0
+  },
+  "tests/e2e/conditional-reveal-routes.spec.ts": {
+   "names": {
+    "D": 11,
+    "emptyPlanDirective": 1,
+    "navigate": 7,
+    "renderPage": 4
+   },
+   "writes": [
+    {
+     "kind": "assign",
+     "target": "D.[?]",
+     "line": 87
+    }
+   ],
+   "computed": 0
+  },
+  "tests/e2e/continue-prompt-banner.spec.ts": {
+   "names": {
+    "getRecentlyOpenedWards": 1,
+    "isContinuePromptShown": 2,
+    "unloadWard": 4
+   },
+   "writes": [],
+   "computed": 0
+  },
+  "tests/e2e/convert-ward.spec.ts": {
+   "names": {
+    "__testPromise": 6,
+    "calcTotalsAnnual": 1,
+    "convertExistingWard": 3,
+    "convertTargetsFor": 2,
+    "D": 4,
+    "describeConversion": 1,
+    "getActiveWard": 4,
+    "showConvertWardModal": 3
+   },
+   "writes": [],
+   "computed": 0
+  },
+  "tests/e2e/cover-county.spec.ts": {
+   "names": {
+    "carryOverFields": 2,
+    "caseFile": 4,
+    "circuitCourtCaption": 3,
+    "circuitForCounty": 1,
+    "D": 7,
+    "ensureWardPartyForFiling": 1,
+    "validateAnnual": 1
+   },
+   "writes": [],
+   "computed": 0
+  },
+  "tests/e2e/dashboard-backup.spec.ts": {
+   "names": {
+    "_sessionCacheGet": 1,
+    "addWard": 2,
+    "auditLog": 4,
+    "buildCaseFileBlob": 1,
+    "buildSingleWardExportBlob": 4,
+    "caseFile": 8,
+    "commitCoverCounty": 1,
+    "D": 1,
+    "finishSingleWardExport": 1,
+    "getCaseFile": 7,
+    "hasOpenedCaseBefore": 1,
+    "loadAuditLogEntries": 1,
+    "loadCaseFileHandle": 1,
+    "markDirtySinceExport": 2,
+    "navigate": 3,
+    "pgHasUnsavedChanges": 4,
+    "saveBackupNow": 1,
+    "saveBlobAs": 1,
+    "saveSessionRestoreCache": 1,
+    "startNewWardYear": 1,
+    "switchWard": 2,
+    "switchWardYear": 1,
+    "wardPartyForFiling": 1
+   },
+   "writes": [],
+   "computed": 0
+  },
+  "tests/e2e/dashboard-visual.spec.ts": {
+   "names": {
+    "addWard": 7,
+    "getCaseFile": 2,
+    "navigate": 4
+   },
+   "writes": [],
+   "computed": 0
+  },
+  "tests/e2e/date-validation.contract.spec.ts": {
+   "names": {
+    "adaptValidationErrors": 15,
+    "D": 45,
+    "validateAnnual": 5,
+    "validateGuardian": 2,
+    "validatePlanAnnual": 3,
+    "validatePlanMinor": 2,
+    "validatePlanSimplified": 2,
+    "validateSimplified": 2
+   },
+   "writes": [
+    {
+     "kind": "assign",
+     "target": "D.periodFrom",
+     "line": 28
+    },
+    {
+     "kind": "assign",
+     "target": "D.periodTo",
+     "line": 29
+    },
+    {
+     "kind": "assign",
+     "target": "D.periodFrom",
+     "line": 45
+    },
+    {
+     "kind": "assign",
+     "target": "D.periodTo",
+     "line": 46
+    },
+    {
+     "kind": "assign",
+     "target": "D.gid",
+     "line": 61
+    },
+    {
+     "kind": "assign",
+     "target": "D.periodFrom",
+     "line": 62
+    },
+    {
+     "kind": "assign",
+     "target": "D.periodTo",
+     "line": 63
+    },
+    {
+     "kind": "assign",
+     "target": "D.periodFrom",
+     "line": 79
+    },
+    {
+     "kind": "assign",
+     "target": "D.periodTo",
+     "line": 80
+    },
+    {
+     "kind": "assign",
+     "target": "D.guardians.0",
+     "line": 81
+    },
+    {
+     "kind": "assign",
+     "target": "D.periodFrom",
+     "line": 101
+    },
+    {
+     "kind": "assign",
+     "target": "D.periodTo",
+     "line": 102
+    },
+    {
+     "kind": "assign",
+     "target": "D.periodFrom",
+     "line": 118
+    },
+    {
+     "kind": "assign",
+     "target": "D.periodTo",
+     "line": 119
+    },
+    {
+     "kind": "assign",
+     "target": "D.attorney_signatureDate",
+     "line": 120
+    },
+    {
+     "kind": "assign",
+     "target": "D.periodFrom",
+     "line": 137
+    },
+    {
+     "kind": "assign",
+     "target": "D.periodTo",
+     "line": 138
+    },
+    {
+     "kind": "assign",
+     "target": "D.gid",
+     "line": 154
+    },
+    {
+     "kind": "assign",
+     "target": "D.periodFrom",
+     "line": 155
+    },
+    {
+     "kind": "assign",
+     "target": "D.periodTo",
+     "line": 156
+    },
+    {
+     "kind": "assign",
+     "target": "D.periodFrom",
+     "line": 176
+    },
+    {
+     "kind": "assign",
+     "target": "D.periodTo",
+     "line": 177
+    },
+    {
+     "kind": "assign",
+     "target": "D.attorney_signatureDate",
+     "line": 178
+    },
+    {
+     "kind": "assign",
+     "target": "D.periodFrom",
+     "line": 195
+    },
+    {
+     "kind": "assign",
+     "target": "D.periodTo",
+     "line": 196
+    },
+    {
+     "kind": "assign",
+     "target": "D.periodFrom",
+     "line": 214
+    },
+    {
+     "kind": "assign",
+     "target": "D.periodTo",
+     "line": 215
+    },
+    {
+     "kind": "assign",
+     "target": "D.preparer_signatureDate",
+     "line": 216
+    },
+    {
+     "kind": "assign",
+     "target": "D.periodFrom",
+     "line": 233
+    },
+    {
+     "kind": "assign",
+     "target": "D.periodTo",
+     "line": 234
+    },
+    {
+     "kind": "assign",
+     "target": "D.periodFrom",
+     "line": 252
+    },
+    {
+     "kind": "assign",
+     "target": "D.periodTo",
+     "line": 253
+    },
+    {
+     "kind": "assign",
+     "target": "D.preparer_signatureDate",
+     "line": 254
+    },
+    {
+     "kind": "assign",
+     "target": "D.attorney_signatureDate",
+     "line": 255
+    },
+    {
+     "kind": "assign",
+     "target": "D.bondPeriodFrom",
+     "line": 357
+    },
+    {
+     "kind": "assign",
+     "target": "D.bondPeriodTo",
+     "line": 358
+    },
+    {
+     "kind": "assign",
+     "target": "D.bondPeriodFrom",
+     "line": 374
+    },
+    {
+     "kind": "assign",
+     "target": "D.bondPeriodTo",
+     "line": 375
+    }
+   ],
+   "computed": 0
+  },
+  "tests/e2e/excel-b4-multi-account.spec.ts": {
+   "names": {
+    "autoSave": 2,
+    "D": 4,
+    "flushPendingSave": 2,
+    "navigate": 2
+   },
+   "writes": [],
+   "computed": 0
+  },
+  "tests/e2e/excel-blank-page-pruning.spec.ts": {
+   "names": {
+    "autoSave": 1,
+    "D": 1,
+    "flushPendingSave": 1,
+    "navigate": 1
+   },
+   "writes": [],
+   "computed": 0
+  },
+  "tests/e2e/excel-date-cells.spec.ts": {
+   "names": {
+    "autoSave": 1,
+    "D": 3,
+    "flushPendingSave": 1,
+    "navigate": 2
+   },
+   "writes": [],
+   "computed": 0
+  },
+  "tests/e2e/excel-defined-names.spec.ts": {
+   "names": {
+    "flushPendingSave": 2,
+    "navigate": 2
+   },
+   "writes": [],
+   "computed": 0
+  },
+  "tests/e2e/excel-form-field-placement.spec.ts": {
+   "names": {
+    "autoSave": 2,
+    "D": 4,
+    "flushPendingSave": 2,
+    "navigate": 3
+   },
+   "writes": [
+    {
+     "kind": "object-assign",
+     "target": "D",
+     "line": 75
+    }
+   ],
+   "computed": 0
+  },
+  "tests/e2e/excel-import-cell-shapes.spec.ts": {
+   "names": {
+    "D": 7,
+    "navigate": 1
+   },
+   "writes": [],
+   "computed": 0
+  },
+  "tests/e2e/excel-pruned-roundtrip.spec.ts": {
+   "names": {
+    "autoSave": 1,
+    "D": 3,
+    "flushPendingSave": 1,
+    "navigate": 1
+   },
+   "writes": [],
+   "computed": 0
+  },
+  "tests/e2e/export-button-guard.spec.ts": {
+   "names": {
+    "navigate": 2
+   },
+   "writes": [],
+   "computed": 0
+  },
+  "tests/e2e/feature-load-failure.spec.ts": {
+   "names": {
+    "addWard": 3,
+    "navigate": 2
+   },
+   "writes": [],
+   "computed": 0
+  },
+  "tests/e2e/filing-identity.contract.spec.ts": {
+   "names": {
+    "autoSave": 1,
+    "D": 1,
+    "flushPendingSave": 1,
+    "navigate": 2
+   },
+   "writes": [
+    {
+     "kind": "assign",
+     "target": "D.filingType",
+     "line": 12
+    }
+   ],
+   "computed": 0
+  },
+  "tests/e2e/form-entry-ux.spec.ts": {
+   "names": {
+    "D": 7,
+    "navigate": 3
+   },
+   "writes": [],
+   "computed": 0
+  },
+  "tests/e2e/form-entry.contract.spec.ts": {
+   "names": {
+    "D": 5,
+    "navigate": 12
+   },
+   "writes": [],
+   "computed": 0
+  },
+  "tests/e2e/form-field-labels.spec.ts": {
+   "names": {
+    "addWard": 2,
+    "navigate": 2
+   },
+   "writes": [],
+   "computed": 0
+  },
+  "tests/e2e/guardian-blank-page-pruning.spec.ts": {
+   "names": {
+    "autoSave": 1,
+    "D": 3,
+    "flushPendingSave": 1,
+    "navigate": 2
+   },
+   "writes": [],
+   "computed": 0
+  },
+  "tests/e2e/guardian-inventory-collection-controls.spec.ts": {
+   "names": {
+    "D": 16,
+    "navigate": 1
+   },
+   "writes": [
+    {
+     "kind": "assign",
+     "target": "D.guardians.1.name",
+     "line": 43
+    },
+    {
+     "kind": "assign",
+     "target": "D.guardians.1.name",
+     "line": 90
+    },
+    {
+     "kind": "assign",
+     "target": "D.guardians.1.name",
+     "line": 114
+    }
+   ],
+   "computed": 2
+  },
+  "tests/e2e/guardian-inventory-excel-schedule-layout.spec.ts": {
+   "names": {
+    "autoSave": 2,
+    "calcTotalsGuardian": 1,
+    "D": 9,
+    "flushPendingSave": 2,
+    "navigate": 4
+   },
+   "writes": [
+    {
+     "kind": "object-assign",
+     "target": "D",
+     "line": 171
+    }
+   ],
+   "computed": 0
+  },
+  "tests/e2e/guardian-inventory-mount.spec.ts": {
+   "names": {
+    "addEntry": 1,
+    "computeNavChecks": 4,
+    "D": 19,
+    "doSaveExcelGuardian": 1,
+    "doSavePdfGuardian": 1,
+    "duplicateEntry": 1,
+    "importExcelGuardian": 1,
+    "navigate": 17,
+    "showPickPartyModal": 1,
+    "switchWard": 3
+   },
+   "writes": [],
+   "computed": 0
+  },
+  "tests/e2e/guardian-inventory-schedule-layout.spec.ts": {
+   "names": {
+    "autoSave": 3,
+    "D": 5,
+    "flushPendingSave": 2,
+    "loadGuardianPdf": 2,
+    "navigate": 2
+   },
+   "writes": [],
+   "computed": 0
+  },
+  "tests/e2e/guardian-inventory-tri-state-radios.spec.ts": {
+   "names": {
+    "addEntry": 1,
+    "D": 2,
+    "navigate": 2
+   },
+   "writes": [],
+   "computed": 0
+  },
+  "tests/e2e/guardianship-selection-controls.spec.ts": {
+   "names": {
+    "D": 4
+   },
+   "writes": [],
+   "computed": 0
+  },
+  "tests/e2e/guided-tour-navigation.spec.ts": {
+   "names": {
+    "addWard": 2,
+    "navigate": 1,
+    "startWalkthrough": 1
+   },
+   "writes": [],
+   "computed": 0
+  },
+  "tests/e2e/highlight-toolbar-style.spec.ts": {
+   "names": {
+    "navigate": 1
+   },
+   "writes": [],
+   "computed": 0
+  },
+  "tests/e2e/legacy-ward-data-normalization.spec.ts": {
+   "names": {
+    "calc": 4,
+    "D": 3,
+    "normalizeWardData": 4
+   },
+   "writes": [],
+   "computed": 0
+  },
+  "tests/e2e/navigation-status.contract.spec.ts": {
+   "names": {
+    "adaptValidationErrors": 23,
+    "computeNavChecks": 38,
+    "convertToSimplified": 1,
+    "D": 100,
+    "doSavePdfPlanAnnual": 1,
+    "doSavePdfPlanInitial": 1,
+    "doSavePdfPlanMinor": 1,
+    "focusFieldByPath": 14,
+    "getIssueDefinition": 1,
+    "isPlanInitialAttorneyStarted": 2,
+    "navigate": 27,
+    "normalizeWardData": 2,
+    "validateAnnual": 15,
+    "validateGuardian": 8,
+    "validatePlanAnnual": 8,
+    "validatePlanInitial": 5,
+    "validatePlanMinor": 12,
+    "validatePlanSimplified": 3,
+    "validateSimplified": 6
+   },
+   "writes": [
+    {
+     "kind": "assign",
+     "target": "D.guardians.0",
+     "line": 324
+    },
+    {
+     "kind": "mutator",
+     "target": "D.guardians.push",
+     "line": 336
+    },
+    {
+     "kind": "assign",
+     "target": "D.preparer.signatureState",
+     "line": 365
+    },
+    {
+     "kind": "assign",
+     "target": "D.attorney.signatureState",
+     "line": 366
+    },
+    {
+     "kind": "assign",
+     "target": "D.bondDepositoryState",
+     "line": 410
+    },
+    {
+     "kind": "assign",
+     "target": "D.serviceRecipients",
+     "line": 426
+    },
+    {
+     "kind": "assign",
+     "target": "D.guardians",
+     "line": 501
+    },
+    {
+     "kind": "assign",
+     "target": "D.schB1",
+     "line": 532
+    },
+    {
+     "kind": "assign",
+     "target": "D.schD1",
+     "line": 580
+    },
+    {
+     "kind": "assign",
+     "target": "D.schD5",
+     "line": 588
+    },
+    {
+     "kind": "assign",
+     "target": "D.schC",
+     "line": 612
+    },
+    {
+     "kind": "assign",
+     "target": "D.guardians.0",
+     "line": 633
+    },
+    {
+     "kind": "assign",
+     "target": "D.q1Residences",
+     "line": 685
+    },
+    {
+     "kind": "assign",
+     "target": "D.q9Providers",
+     "line": 709
+    },
+    {
+     "kind": "assign",
+     "target": "D.attorney_bar",
+     "line": 733
+    },
+    {
+     "kind": "assign",
+     "target": "D.preparer_signatureDate",
+     "line": 760
+    },
+    {
+     "kind": "assign",
+     "target": "D.preparer_signatureDate",
+     "line": 763
+    },
+    {
+     "kind": "assign",
+     "target": "D.attorney_signatureDate",
+     "line": 768
+    },
+    {
+     "kind": "assign",
+     "target": "D.attorney_signatureDate",
+     "line": 771
+    },
+    {
+     "kind": "assign",
+     "target": "D.attorney_name",
+     "line": 776
+    },
+    {
+     "kind": "assign",
+     "target": "D.attorney_signatureState",
+     "line": 780
+    },
+    {
+     "kind": "assign",
+     "target": "D.q7RestoreRights",
+     "line": 805
+    },
+    {
+     "kind": "assign",
+     "target": "D.q7RestoreExplain",
+     "line": 806
+    },
+    {
+     "kind": "assign",
+     "target": "D.q9Remuneration",
+     "line": 807
+    },
+    {
+     "kind": "assign",
+     "target": "D.q9RemunerationExplain",
+     "line": 808
+    },
+    {
+     "kind": "assign",
+     "target": "D.q4Providers",
+     "line": 858
+    },
+    {
+     "kind": "assign",
+     "target": "D.ucn",
+     "line": 895
+    },
+    {
+     "kind": "assign",
+     "target": "D.ref",
+     "line": 896
+    },
+    {
+     "kind": "assign",
+     "target": "D.ucn",
+     "line": 909
+    },
+    {
+     "kind": "assign",
+     "target": "D.ref",
+     "line": 910
+    },
+    {
+     "kind": "assign",
+     "target": "D.amendedForm",
+     "line": 924
+    },
+    {
+     "kind": "assign",
+     "target": "D.amendedForm",
+     "line": 936
+    },
+    {
+     "kind": "assign",
+     "target": "D.amendedForm",
+     "line": 949
+    },
+    {
+     "kind": "assign",
+     "target": "D.amendedVersion",
+     "line": 950
+    },
+    {
+     "kind": "assign",
+     "target": "D.planGuardians.0.signatureDate",
+     "line": 1005
+    },
+    {
+     "kind": "assign",
+     "target": "D.attorney",
+     "line": 1020
+    },
+    {
+     "kind": "assign",
+     "target": "D.attorney_email",
+     "line": 1021
+    },
+    {
+     "kind": "assign",
+     "target": "D.attorney_signatureDate",
+     "line": 1022
+    },
+    {
+     "kind": "assign",
+     "target": "D.preparer_name",
+     "line": 1042
+    },
+    {
+     "kind": "assign",
+     "target": "D.preparer_signatureDate",
+     "line": 1043
+    },
+    {
+     "kind": "assign",
+     "target": "D.attorney",
+     "line": 1044
+    },
+    {
+     "kind": "assign",
+     "target": "D.attorney_signatureDate",
+     "line": 1045
+    },
+    {
+     "kind": "assign",
+     "target": "D.attorney_signatureDate",
+     "line": 1071
+    },
+    {
+     "kind": "assign",
+     "target": "D.periodFrom",
+     "line": 1081
+    },
+    {
+     "kind": "assign",
+     "target": "D.periodTo",
+     "line": 1082
+    },
+    {
+     "kind": "assign",
+     "target": "D.attorney_signatureDate",
+     "line": 1099
+    },
+    {
+     "kind": "assign",
+     "target": "D.preparer_name",
+     "line": 1114
+    },
+    {
+     "kind": "assign",
+     "target": "D.attorney_name",
+     "line": 1115
+    },
+    {
+     "kind": "assign",
+     "target": "D.attorney_signatureDate",
+     "line": 1121
+    },
+    {
+     "kind": "assign",
+     "target": "D.attorney_email",
+     "line": 1161
+    },
+    {
+     "kind": "assign",
+     "target": "D.attorney_email",
+     "line": 1178
+    },
+    {
+     "kind": "assign",
+     "target": "D.attorney",
+     "line": 1196
+    },
+    {
+     "kind": "assign",
+     "target": "D.attorney_signatureState",
+     "line": 1197
+    },
+    {
+     "kind": "assign",
+     "target": "D.attorney_email",
+     "line": 1198
+    },
+    {
+     "kind": "assign",
+     "target": "D.attorney",
+     "line": 1213
+    },
+    {
+     "kind": "assign",
+     "target": "D.attorney_email",
+     "line": 1214
+    },
+    {
+     "kind": "assign",
+     "target": "D.attorney_signatureDate",
+     "line": 1215
+    },
+    {
+     "kind": "assign",
+     "target": "D.attorney_signatureState",
+     "line": 1216
+    },
+    {
+     "kind": "assign",
+     "target": "D.attorney_name",
+     "line": 1231
+    },
+    {
+     "kind": "assign",
+     "target": "D.attorney_email",
+     "line": 1232
+    },
+    {
+     "kind": "assign",
+     "target": "D.attorney_signatureDate",
+     "line": 1233
+    },
+    {
+     "kind": "assign",
+     "target": "D.attorney_signatureState",
+     "line": 1234
+    },
+    {
+     "kind": "assign",
+     "target": "D.attorney_bar",
+     "line": 1235
+    },
+    {
+     "kind": "assign",
+     "target": "D.[?]",
+     "line": 1278
+    },
+    {
+     "kind": "assign",
+     "target": "D.[?]",
+     "line": 1279
+    },
+    {
+     "kind": "assign",
+     "target": "D.attorney_name",
+     "line": 1303
+    },
+    {
+     "kind": "assign",
+     "target": "D.attorney_bar",
+     "line": 1304
+    },
+    {
+     "kind": "assign",
+     "target": "D.attorney_email",
+     "line": 1305
+    },
+    {
+     "kind": "assign",
+     "target": "D.attorney_signatureDate",
+     "line": 1306
+    },
+    {
+     "kind": "assign",
+     "target": "D.attorney_signatureState",
+     "line": 1307
+    },
+    {
+     "kind": "assign",
+     "target": "D.attorney",
+     "line": 1329
+    },
+    {
+     "kind": "assign",
+     "target": "D.attorney_email",
+     "line": 1330
+    },
+    {
+     "kind": "assign",
+     "target": "D.attorney_name",
+     "line": 1341
+    },
+    {
+     "kind": "assign",
+     "target": "D.attorney_email",
+     "line": 1342
+    },
+    {
+     "kind": "assign",
+     "target": "D.certNoRecipients",
+     "line": 1390
+    },
+    {
+     "kind": "assign",
+     "target": "D.certRecipients",
+     "line": 1391
+    },
+    {
+     "kind": "assign",
+     "target": "D.serviceRecipients",
+     "line": 1414
+    },
+    {
+     "kind": "assign",
+     "target": "D.certRecipients",
+     "line": 1433
+    },
+    {
+     "kind": "assign",
+     "target": "D.certNoRecipients",
+     "line": 1439
+    },
+    {
+     "kind": "assign",
+     "target": "D.certNoRecipients",
+     "line": 1441
+    },
+    {
+     "kind": "assign",
+     "target": "D.trusts",
+     "line": 1528
+    },
+    {
+     "kind": "assign",
+     "target": "D.remuneration",
+     "line": 1620
+    },
+    {
+     "kind": "assign",
+     "target": "D.scheduleNoItems.remuneration",
+     "line": 1621
+    },
+    {
+     "kind": "assign",
+     "target": "D.remuneration",
+     "line": 1633
+    },
+    {
+     "kind": "assign",
+     "target": "D.scheduleNoItems",
+     "line": 1634
+    },
+    {
+     "kind": "assign",
+     "target": "D.scheduleNoItems",
+     "line": 1649
+    },
+    {
+     "kind": "assign",
+     "target": "D.remuneration",
+     "line": 1653
+    },
+    {
+     "kind": "assign",
+     "target": "D.remuneration",
+     "line": 1670
+    },
+    {
+     "kind": "assign",
+     "target": "D.[?]",
+     "line": 1818
+    },
+    {
+     "kind": "assign",
+     "target": "D.[?]",
+     "line": 1819
+    },
+    {
+     "kind": "assign",
+     "target": "D.[?]",
+     "line": 1820
+    }
+   ],
+   "computed": 2
+  },
+  "tests/e2e/offline.spec.ts": {
+   "names": {
+    "addWard": 1
+   },
+   "writes": [],
+   "computed": 0
+  },
+  "tests/e2e/output-semantics.artifact.spec.ts": {
+   "names": {
+    "autoSave": 1,
+    "D": 2,
+    "flushPendingSave": 1,
+    "loadAnnualPdf": 1,
+    "navigate": 1
+   },
+   "writes": [
+    {
+     "kind": "assign",
+     "target": "D.filingType",
+     "line": 13
+    }
+   ],
+   "computed": 0
+  },
+  "tests/e2e/page-structure.spec.ts": {
+   "names": {
+    "addWard": 1,
+    "navigate": 1
+   },
+   "writes": [],
+   "computed": 0
+  },
+  "tests/e2e/party-dedupe.spec.ts": {
+   "names": {
+    "caseFile": 4,
+    "commitCoverCounty": 2,
+    "createParty": 2,
+    "D": 7,
+    "navigate": 6,
+    "resolveParty": 3,
+    "showAddWardModalForType": 1
+   },
+   "writes": [],
+   "computed": 0
+  },
+  "tests/e2e/party-resolver.spec.ts": {
+   "names": {
+    "backfillWardPartyCounties": 1,
+    "backfillWardPartyIdentity": 1,
+    "buildCaseFileBlob": 1,
+    "buildSingleWardExportBlob": 2,
+    "carryOverFields": 1,
+    "caseFile": 14,
+    "closedFilingDrift": 5,
+    "createCase": 2,
+    "createParty": 32,
+    "dehydrateIntoParty": 2,
+    "dismissPartyPair": 3,
+    "ensureWardPartyForFiling": 1,
+    "filingDriftFromParties": 2,
+    "findDuplicateCandidates": 4,
+    "hydrateFromParty": 5,
+    "identitySlotForPath": 20,
+    "isPartyPairDismissed": 4,
+    "loadCaseFileFromZip": 3,
+    "mergeParties": 8,
+    "readRoleFields": 7,
+    "referenceCountForParty": 3,
+    "resolveParty": 3,
+    "setPartyIdForSlot": 1,
+    "subPartiesOf": 5,
+    "syncFilingSlotWithParty": 2,
+    "syncIdentityField": 6,
+    "unmergeParty": 7,
+    "wardCountyMergeConflict": 2,
+    "wardPartyForFiling": 2,
+    "writeRoleFields": 19
+   },
+   "writes": [
+    {
+     "kind": "mutator",
+     "target": "caseFile.wards.push",
+     "line": 1558
+    }
+   ],
+   "computed": 0
+  },
+  "tests/e2e/party-write-through.spec.ts": {
+   "names": {
+    "caseFile": 1,
+    "D": 1,
+    "navigate": 3,
+    "resolveParty": 1,
+    "switchWard": 1
+   },
+   "writes": [],
+   "computed": 0
+  },
+  "tests/e2e/pdf-accessibility-and-signatures.spec.ts": {
+   "names": {
+    "autoSave": 2,
+    "D": 2,
+    "loadGuardianPdf": 3,
+    "loadPlanAnnualPdf": 1,
+    "navigate": 1,
+    "showAddWardModalForType": 1
+   },
+   "writes": [
+    {
+     "kind": "object-assign",
+     "target": "D",
+     "line": 52
+    }
+   ],
+   "computed": 0
+  },
+  "tests/e2e/pdf-annotate.spec.ts": {
+   "names": {
+    "__saveOrder": 4,
+    "autoSave": 1,
+    "D": 10,
+    "navigate": 18
+   },
+   "writes": [],
+   "computed": 0
+  },
+  "tests/e2e/pdf-cover-geometry.spec.ts": {
+   "names": {
+    "autoSave": 1,
+    "D": 1,
+    "flushPendingSave": 1,
+    "navigate": 1
+   },
+   "writes": [
+    {
+     "kind": "object-assign",
+     "target": "D",
+     "line": 148
+    }
+   ],
+   "computed": 0
+  },
+  "tests/e2e/pdf-evidence-lab.spec.ts": {
+   "names": {
+    "D": 1,
+    "loadAnnualPdf": 1
+   },
+   "writes": [],
+   "computed": 0
+  },
+  "tests/e2e/pdf-fonts-and-xmp.spec.ts": {
+   "names": {
+    "loadAnnualPdf": 1,
+    "loadGuardianPdf": 2
+   },
+   "writes": [],
+   "computed": 0
+  },
+  "tests/e2e/pdf-form-specific.spec.ts": {
+   "names": {
+    "__pgBuildFixture": 8,
+    "__pgFixtureIssues": 10,
+    "__pgPlanDefaults": 1,
+    "annualReconcileState": 1,
+    "calcTotalsAnnual": 3,
+    "D": 1,
+    "loadAnnualPdf": 3,
+    "loadGuardianPdf": 3,
+    "loadPlanAnnualPdf": 1,
+    "loadPlanMinorPdf": 1,
+    "loadSimplifiedPdf": 5
+   },
+   "writes": [
+    {
+     "kind": "replace-root",
+     "target": "D",
+     "line": 578
+    }
+   ],
+   "computed": 0
+  },
+  "tests/e2e/pdf-notice-title.spec.ts": {
+   "names": {
+    "loadGuardianPdf": 1,
+    "loadPlanSimplifiedPdf": 1
+   },
+   "writes": [],
+   "computed": 0
+  },
+  "tests/e2e/pdf-preview-viewer.spec.ts": {
+   "names": {
+    "D": 2,
+    "loadGuardianPdf": 2,
+    "navigate": 7
+   },
+   "writes": [],
+   "computed": 0
+  },
+  "tests/e2e/pdf-structure-tags.spec.ts": {
+   "names": {
+    "__pgBuildFixture": 2,
+    "__pgFixtureIssues": 3,
+    "autoSave": 2,
+    "D": 3,
+    "loadGuardianPdf": 3,
+    "loadSimplifiedPdf": 1,
+    "showAddWardModalForType": 1
+   },
+   "writes": [
+    {
+     "kind": "object-assign",
+     "target": "D",
+     "line": 31
+    }
+   ],
+   "computed": 0
+  },
+  "tests/e2e/pdf-table-semantics.spec.ts": {
+   "names": {
+    "__pgBuildFixture": 2,
+    "__pgFixtureIssues": 2,
+    "loadAnnualPdf": 1,
+    "loadGuardianPdf": 1
+   },
+   "writes": [],
+   "computed": 0
+  },
+  "tests/e2e/persistence-recovery.contract.spec.ts": {
+   "names": {
+    "caseFile": 3,
+    "D": 3,
+    "flushPendingSave": 1,
+    "lockApp": 1,
+    "navigate": 3,
+    "switchWard": 3
+   },
+   "writes": [],
+   "computed": 0
+  },
+  "tests/e2e/plan-annual-mount.spec.ts": {
+   "names": {
+    "doSavePdfPlanAnnual": 2,
+    "navigate": 2
+   },
+   "writes": [],
+   "computed": 0
+  },
+  "tests/e2e/plan-annual-rights-no.spec.ts": {
+   "names": {
+    "autoSave": 1,
+    "D": 3,
+    "flushPendingSave": 1,
+    "navigate": 1,
+    "validatePlanAnnual": 1
+   },
+   "writes": [
+    {
+     "kind": "assign",
+     "target": "D.rights.travel",
+     "line": 67
+    },
+    {
+     "kind": "assign",
+     "target": "D.rights.marry",
+     "line": 68
+    }
+   ],
+   "computed": 0
+  },
+  "tests/e2e/plan-benefits-tristate.spec.ts": {
+   "names": {
+    "D": 4,
+    "navigate": 2
+   },
+   "writes": [],
+   "computed": 0
+  },
+  "tests/e2e/plan-certificate-of-service.spec.ts": {
+   "names": {
+    "autoSave": 2,
+    "computeNavChecks": 2,
+    "D": 5,
+    "flushPendingSave": 3,
+    "navigate": 1
+   },
+   "writes": [
+    {
+     "kind": "object-assign",
+     "target": "D",
+     "line": 118
+    },
+    {
+     "kind": "object-assign",
+     "target": "D",
+     "line": 180
+    }
+   ],
+   "computed": 1
+  },
+  "tests/e2e/plan-directive-cards.spec.ts": {
+   "names": {
+    "D": 1,
+    "navigate": 2
+   },
+   "writes": [],
+   "computed": 0
+  },
+  "tests/e2e/plan-initial-assistive-none.spec.ts": {
+   "names": {
+    "D": 1,
+    "navigate": 1
+   },
+   "writes": [],
+   "computed": 0
+  },
+  "tests/e2e/plan-initial-dates-explained.spec.ts": {
+   "names": {
+    "navigate": 1
+   },
+   "writes": [],
+   "computed": 0
+  },
+  "tests/e2e/plan-initial-mount.spec.ts": {
+   "names": {
+    "D": 1,
+    "doSavePdfPlanInitial": 2,
+    "navigate": 3
+   },
+   "writes": [
+    {
+     "kind": "assign",
+     "target": "D.[?]",
+     "line": 118
+    }
+   ],
+   "computed": 0
+  },
+  "tests/e2e/plan-initial-multiselect.spec.ts": {
+   "names": {
+    "autoSave": 2,
+    "computeNavChecks": 1,
+    "D": 4,
+    "flushPendingSave": 1,
+    "navigate": 1,
+    "validatePlanInitial": 1
+   },
+   "writes": [],
+   "computed": 0
+  },
+  "tests/e2e/plan-initial-period.spec.ts": {
+   "names": {
+    "autoSave": 1,
+    "computeNavChecks": 1,
+    "D": 2,
+    "flushPendingSave": 1,
+    "navigate": 4,
+    "validatePlanInitial": 1
+   },
+   "writes": [
+    {
+     "kind": "assign",
+     "target": "D.periodFrom",
+     "line": 27
+    },
+    {
+     "kind": "assign",
+     "target": "D.periodTo",
+     "line": 28
+    }
+   ],
+   "computed": 0
+  },
+  "tests/e2e/plan-minor-mount.spec.ts": {
+   "names": {
+    "doSavePdfPlanMinor": 2,
+    "navigate": 2
+   },
+   "writes": [],
+   "computed": 0
+  },
+  "tests/e2e/plan-pdf-wcag-compliance.spec.ts": {
+   "names": {},
+   "writes": [],
+   "computed": 1
+  },
+  "tests/e2e/plan-readiness.contract.spec.ts": {
+   "names": {
+    "D": 5,
+    "navigate": 5,
+    "planReadinessChecks": 1,
+    "planReadinessPanel": 1
+   },
+   "writes": [
+    {
+     "kind": "assign",
+     "target": "D.planGuardians.0.mailingStreet",
+     "line": 9
+    },
+    {
+     "kind": "assign",
+     "target": "D.planGuardians.0.street",
+     "line": 19
+    },
+    {
+     "kind": "assign",
+     "target": "D.planGuardians.0.mailingStreet",
+     "line": 29
+    },
+    {
+     "kind": "assign",
+     "target": "D.planGuardians.0.phone",
+     "line": 39
+    },
+    {
+     "kind": "assign",
+     "target": "D.certPhysicianAttached",
+     "line": 126
+    }
+   ],
+   "computed": 1
+  },
+  "tests/e2e/plan-signature-date.spec.ts": {
+   "names": {
+    "autoSave": 2,
+    "computeNavChecks": 2,
+    "D": 2,
+    "flushPendingSave": 2,
+    "navigate": 1
+   },
+   "writes": [
+    {
+     "kind": "assign",
+     "target": "D.guardians.0.signatureDate",
+     "line": 113
+    }
+   ],
+   "computed": 1
+  },
+  "tests/e2e/plan-simplified-mount.spec.ts": {
+   "names": {
+    "D": 2,
+    "navigate": 2
+   },
+   "writes": [
+    {
+     "kind": "assign",
+     "target": "D.attorney_name",
+     "line": 73
+    },
+    {
+     "kind": "assign",
+     "target": "D.attorney_bar",
+     "line": 74
+    }
+   ],
+   "computed": 0
+  },
+  "tests/e2e/plan-started-row.spec.ts": {
+   "names": {
+    "computeNavChecks": 1,
+    "D": 3,
+    "startedRows": 2,
+    "validatePlanAnnual": 1
+   },
+   "writes": [],
+   "computed": 0
+  },
+  "tests/e2e/preparer-flag.spec.ts": {
+   "names": {
+    "autoSave": 8,
+    "computeNavChecks": 1,
+    "D": 21,
+    "flushPendingSave": 1,
+    "navigate": 10,
+    "prepareFilingOutput": 1,
+    "validateAnnual": 2,
+    "validateGuardian": 1
+   },
+   "writes": [
+    {
+     "kind": "object-assign",
+     "target": "D.preparer",
+     "line": 84
+    },
+    {
+     "kind": "object-assign",
+     "target": "D.preparer",
+     "line": 121
+    },
+    {
+     "kind": "object-assign",
+     "target": "D.preparer",
+     "line": 163
+    },
+    {
+     "kind": "object-assign",
+     "target": "D.preparer",
+     "line": 194
+    },
+    {
+     "kind": "object-assign",
+     "target": "D.preparer",
+     "line": 249
+    },
+    {
+     "kind": "assign",
+     "target": "D.guardians.0.isPreparer",
+     "line": 257
+    },
+    {
+     "kind": "assign",
+     "target": "D.caseNumber",
+     "line": 285
+    },
+    {
+     "kind": "object-assign",
+     "target": "D.preparer",
+     "line": 304
+    },
+    {
+     "kind": "assign",
+     "target": "D.guardians.0.isPreparer",
+     "line": 312
+    },
+    {
+     "kind": "assign",
+     "target": "D.guardians.0.isPreparer",
+     "line": 322
+    }
+   ],
+   "computed": 0
+  },
+  "tests/e2e/preparer-note-placement.spec.ts": {
+   "names": {
+    "addWard": 1,
+    "navigate": 1
+   },
+   "writes": [],
+   "computed": 0
+  },
+  "tests/e2e/print-preview-signature-jump.spec.ts": {
+   "names": {
+    "D": 2,
+    "navigate": 2
+   },
+   "writes": [
+    {
+     "kind": "assign",
+     "target": "D.preparer.signatureState",
+     "line": 46
+    }
+   ],
+   "computed": 0
+  },
+  "tests/e2e/readiness-card.contract.spec.ts": {
+   "names": {
+    "__readinessToggled": 3,
+    "D": 4,
+    "navigate": 2,
+    "renderPage": 1
+   },
+   "writes": [
+    {
+     "kind": "assign",
+     "target": "D.filingType",
+     "line": 10
+    },
+    {
+     "kind": "assign",
+     "target": "D.county",
+     "line": 83
+    },
+    {
+     "kind": "assign",
+     "target": "D.wardName",
+     "line": 161
+    },
+    {
+     "kind": "assign",
+     "target": "D.planGuardians.0.mailingStreet",
+     "line": 197
+    }
+   ],
+   "computed": 0
+  },
+  "tests/e2e/recovery-cache.spec.ts": {
+   "names": {
+    "_sessionCacheGet": 2,
+    "currentPage": 2,
+    "exportGuardianDataZip": 1,
+    "flushPendingSave": 1,
+    "navigate": 2
+   },
+   "writes": [],
+   "computed": 0
+  },
+  "tests/e2e/routes.spec.ts": {
+   "names": {
+    "_dirtySinceExport": 1,
+    "activeInventoryType": 1,
+    "addWard": 22,
+    "caseFile": 6,
+    "clearSessionRestoreCache": 1,
+    "confirmDeleteWard": 3,
+    "currentPage": 1,
+    "D": 4,
+    "flushPendingSave": 1,
+    "getCaseFile": 9,
+    "navigate": 17,
+    "showAddWardModalForType": 1,
+    "showRenameWardModal": 1,
+    "updateSidebar": 2
+   },
+   "writes": [
+    {
+     "kind": "assign",
+     "target": "caseFile.activeWardId",
+     "line": 157
+    }
+   ],
+   "computed": 0
+  },
+  "tests/e2e/schb4-bank-accounts-ui.spec.ts": {
+   "names": {
+    "autoSave": 3,
+    "D": 4,
+    "navigate": 3
+   },
+   "writes": [],
+   "computed": 0
+  },
+  "tests/e2e/schedule-card-layout.spec.ts": {
+   "names": {
+    "addWard": 7,
+    "D": 18,
+    "navigate": 41
+   },
+   "writes": [
+    {
+     "kind": "assign",
+     "target": "D.q1Residences",
+     "line": 268
+    },
+    {
+     "kind": "assign",
+     "target": "D.schB4",
+     "line": 309
+    },
+    {
+     "kind": "assign",
+     "target": "D.scheduleB1",
+     "line": 325
+    },
+    {
+     "kind": "assign",
+     "target": "D.guardians",
+     "line": 554
+    },
+    {
+     "kind": "assign",
+     "target": "D.guardians.0.name",
+     "line": 578
+    },
+    {
+     "kind": "assign",
+     "target": "D.guardians",
+     "line": 599
+    },
+    {
+     "kind": "assign",
+     "target": "D.guardians",
+     "line": 640
+    }
+   ],
+   "computed": 0
+  },
+  "tests/e2e/schedule-doc-ack.spec.ts": {
+   "names": {
+    "computeNavChecks": 1,
+    "D": 5,
+    "navigate": 1,
+    "normalizeScheduleDocsAck": 1,
+    "validateGuardian": 1
+   },
+   "writes": [
+    {
+     "kind": "assign",
+     "target": "D.scheduleB2",
+     "line": 91
+    }
+   ],
+   "computed": 0
+  },
+  "tests/e2e/schedule-docs-period-key.spec.ts": {
+   "names": {
+    "D": 13,
+    "getScheduleDocSlot": 5,
+    "navigate": 9,
+    "renderScheduleDocsSection": 2,
+    "scheduleDocPeriodKey": 4
+   },
+   "writes": [
+    {
+     "kind": "assign",
+     "target": "D.periodFrom",
+     "line": 41
+    },
+    {
+     "kind": "assign",
+     "target": "D.periodTo",
+     "line": 42
+    },
+    {
+     "kind": "assign",
+     "target": "D.periodFrom",
+     "line": 70
+    },
+    {
+     "kind": "assign",
+     "target": "D.periodTo",
+     "line": 71
+    },
+    {
+     "kind": "assign",
+     "target": "D.periodFrom",
+     "line": 89
+    },
+    {
+     "kind": "assign",
+     "target": "D.periodTo",
+     "line": 90
+    },
+    {
+     "kind": "assign",
+     "target": "D.periodFrom",
+     "line": 117
+    },
+    {
+     "kind": "assign",
+     "target": "D.periodTo",
+     "line": 118
+    },
+    {
+     "kind": "assign",
+     "target": "D.periodFrom",
+     "line": 123
+    },
+    {
+     "kind": "assign",
+     "target": "D.periodTo",
+     "line": 124
+    },
+    {
+     "kind": "assign",
+     "target": "D.periodFrom",
+     "line": 212
+    },
+    {
+     "kind": "assign",
+     "target": "D.periodTo",
+     "line": 213
+    }
+   ],
+   "computed": 0
+  },
+  "tests/e2e/section-guidance-invariant.spec.ts": {
+   "names": {
+    "addWard": 1,
+    "navigate": 1
+   },
+   "writes": [],
+   "computed": 0
+  },
+  "tests/e2e/security.spec.ts": {
+   "names": {
+    "loadFragment": 1
+   },
+   "writes": [],
+   "computed": 0
+  },
+  "tests/e2e/service-attestation-visibility.spec.ts": {
+   "names": {
+    "addWard": 1,
+    "D": 2,
+    "navigate": 3
+   },
+   "writes": [
+    {
+     "kind": "assign",
+     "target": "D.[?].0",
+     "line": 81
+    }
+   ],
+   "computed": 0
+  },
+  "tests/e2e/sidebar-only-wants.spec.ts": {
+   "names": {
+    "addWard": 1,
+    "currentPage": 1,
+    "D": 5,
+    "navigate": 1,
+    "updateNavDots": 1
+   },
+   "writes": [
+    {
+     "kind": "assign",
+     "target": "D.periodFrom",
+     "line": 55
+    },
+    {
+     "kind": "assign",
+     "target": "D.preparer_name",
+     "line": 103
+    }
+   ],
+   "computed": 0
+  },
+  "tests/e2e/signature-block-address-margin.spec.ts": {
+   "names": {
+    "autoSave": 1,
+    "D": 2,
+    "flushPendingSave": 1,
+    "loadSimplifiedPdf": 1,
+    "navigate": 1
+   },
+   "writes": [],
+   "computed": 0
+  },
+  "tests/e2e/signature-capture.contract.spec.ts": {
+   "names": {
+    "D": 45,
+    "navigate": 51
+   },
+   "writes": [
+    {
+     "kind": "assign",
+     "target": "D.planGuardians.0.signatureDate",
+     "line": 47
+    },
+    {
+     "kind": "assign",
+     "target": "D.planGuardians.0.signatureDate",
+     "line": 325
+    },
+    {
+     "kind": "assign",
+     "target": "D.planGuardians.0.signatureDate",
+     "line": 415
+    },
+    {
+     "kind": "assign",
+     "target": "D.planGuardians.0.signatureDate",
+     "line": 521
+    },
+    {
+     "kind": "assign",
+     "target": "D.guardians.0.signatureDate",
+     "line": 624
+    },
+    {
+     "kind": "assign",
+     "target": "D.guardians.0.signatureDate",
+     "line": 703
+    },
+    {
+     "kind": "assign",
+     "target": "D.attorney_signatureState",
+     "line": 747
+    },
+    {
+     "kind": "assign",
+     "target": "D.guardians.0.signatureDate",
+     "line": 804
+    },
+    {
+     "kind": "assign",
+     "target": "D.preparer.signatureState",
+     "line": 872
+    },
+    {
+     "kind": "assign",
+     "target": "D.preparer.signatureImage",
+     "line": 878
+    }
+   ],
+   "computed": 0
+  },
+  "tests/e2e/signature-stamp-reuse.spec.ts": {
+   "names": {
+    "addSignatureImage": 1,
+    "caseFile": 3,
+    "D": 9,
+    "navigate": 5,
+    "renderPage": 1
+   },
+   "writes": [
+    {
+     "kind": "assign",
+     "target": "D.planGuardians.0.signatureImage",
+     "line": 93
+    }
+   ],
+   "computed": 0
+  },
+  "tests/e2e/signature-style-removal.spec.ts": {
+   "names": {
+    "addWard": 1,
+    "navigate": 1
+   },
+   "writes": [],
+   "computed": 0
+  },
+  "tests/e2e/simplified-mount.spec.ts": {
+   "names": {
+    "D": 5,
+    "navigate": 10,
+    "openFloridaCourtPortal": 1,
+    "switchWard": 2
+   },
+   "writes": [],
+   "computed": 0
+  },
+  "tests/e2e/simplified-part1-identity-cells.spec.ts": {
+   "names": {
+    "autoSave": 1,
+    "D": 3,
+    "flushPendingSave": 1,
+    "navigate": 2
+   },
+   "writes": [],
+   "computed": 0
+  },
+  "tests/e2e/simplified-remuneration.spec.ts": {
+   "names": {
+    "autoSave": 5,
+    "computeNavChecks": 1,
+    "D": 11,
+    "flushPendingSave": 8,
+    "loadSimplifiedFeature": 1,
+    "loadSimplifiedPdf": 2,
+    "navigate": 2
+   },
+   "writes": [
+    {
+     "kind": "assign",
+     "target": "D.remuneration.0.amount",
+     "line": 84
+    },
+    {
+     "kind": "object-assign",
+     "target": "D.remuneration.0",
+     "line": 93
+    },
+    {
+     "kind": "assign",
+     "target": "D.scheduleNoItems.remuneration",
+     "line": 106
+    },
+    {
+     "kind": "assign",
+     "target": "D.remuneration",
+     "line": 138
+    }
+   ],
+   "computed": 0
+  },
+  "tests/e2e/startup.spec.ts": {
+   "names": {
+    "getActiveWard": 2,
+    "getWardProgress": 2,
+    "navigate": 1,
+    "readRememberedFile": 1,
+    "validateGuardian": 1
+   },
+   "writes": [],
+   "computed": 0
+  },
+  "tests/e2e/supplemental-pdf-accounting.spec.ts": {
+   "names": {
+    "D": 4,
+    "loadAnnualPdf": 3,
+    "loadGuardianPdf": 1
+   },
+   "writes": [],
+   "computed": 0
+  },
+  "tests/e2e/support/fixture-completeness.ts": {
+   "names": {
+    "__pgBuildFixture": 1,
+    "__pgFixtureIssues": 1,
+    "__pgMergeFixture": 2,
+    "__pgPlanDefaults": 1,
+    "D": 3,
+    "initializeEmptyData": 4,
+    "PLAN_ADLS": 1,
+    "PLAN_RIGHTS": 1,
+    "prepareFilingOutput": 1
+   },
+   "writes": [
+    {
+     "kind": "replace-root",
+     "target": "D",
+     "line": 159
+    },
+    {
+     "kind": "replace-root",
+     "target": "D",
+     "line": 169
+    }
+   ],
+   "computed": 5
+  },
+  "tests/e2e/support/plan-fixture.ts": {
+   "names": {
+    "navigate": 6,
+    "switchWard": 2
+   },
+   "writes": [],
+   "computed": 0
+  },
+  "tests/e2e/support/target.ts": {
+   "names": {
+    "__pgMergeFixture": 2,
+    "__pgPlanDefaults": 1,
+    "autoSave": 4,
+    "computeNavChecks": 1,
+    "D": 4,
+    "exportGuardianDataZip": 1,
+    "flushPendingSave": 4,
+    "INITIAL_ADLS": 1,
+    "showAddWardModalForType": 2
+   },
+   "writes": [],
+   "computed": 0
+  },
+  "tests/e2e/support/window-api.ts": {
+   "names": {
+    "addWard": 1,
+    "D": 1,
+    "flushPendingSave": 1,
+    "getCaseFile": 1,
+    "navigate": 1
+   },
+   "writes": [],
+   "computed": 0
+  },
+  "tests/e2e/tab-and-update.spec.ts": {
+   "names": {
+    "__swMessages": 4,
+    "markDirtySinceExport": 1,
+    "pgHasUnsavedChanges": 1
+   },
+   "writes": [],
+   "computed": 0
+  },
+  "tests/e2e/test-system-title-prefix.spec.ts": {
+   "names": {
+    "flushPendingSave": 1,
+    "navigate": 1,
+    "renderPage": 1,
+    "setTestSystemTitleWarningEnabledForTest": 1
+   },
+   "writes": [],
+   "computed": 0
+  },
+  "tests/e2e/theme-prepaint.spec.ts": {
+   "names": {
+    "addWard": 1,
+    "loadAppState": 1,
+    "navigate": 1
+   },
+   "writes": [],
+   "computed": 0
+  },
+  "tests/e2e/ucn-cover-field.spec.ts": {
+   "names": {
+    "addWard": 1,
+    "D": 2,
+    "navigate": 3,
+    "validateAnnual": 1,
+    "validateGuardian": 1,
+    "validatePlanAnnual": 1,
+    "validatePlanInitial": 1,
+    "validatePlanMinor": 1,
+    "validatePlanSimplified": 1,
+    "validateSimplified": 1
+   },
+   "writes": [],
+   "computed": 0
+  },
+  "tests/e2e/unlock.spec.ts": {
+   "names": {
+    "caseFile": 1,
+    "lockApp": 1,
+    "switchWard": 1
+   },
+   "writes": [],
+   "computed": 0
+  },
+  "tests/e2e/user-guide-wiring.spec.ts": {
+   "names": {
+    "navigate": 7
+   },
+   "writes": [],
+   "computed": 0
+  },
+  "tests/e2e/validation-structured-paths.spec.ts": {
+   "names": {
+    "addWard": 1,
+    "D": 1
+   },
+   "writes": [],
+   "computed": 2
+  },
+  "tests/e2e/vendor-loader-retry.spec.ts": {
+   "names": {
+    "navigate": 1
+   },
+   "writes": [],
+   "computed": 0
+  },
+  "tests/e2e/verified-inventory-workflow.spec.ts": {
+   "names": {
+    "navigate": 5,
+    "showAddWardModalForType": 2
+   },
+   "writes": [],
+   "computed": 0
+  },
+  "tests/e2e/ward-lock.spec.ts": {
+   "names": {
+    "_dirtySinceExport": 3,
+    "acquireWardLock": 2,
+    "caseFile": 18,
+    "clearSessionRestoreCache": 3,
+    "D": 1,
+    "deleteWard": 1,
+    "flushPendingSave": 3,
+    "releaseWardLock": 1,
+    "showWardLockedModal": 2,
+    "switchWard": 3
+   },
+   "writes": [
+    {
+     "kind": "mutator",
+     "target": "caseFile.wards.push",
+     "line": 190
+    }
+   ],
+   "computed": 0
+  }
+ }
+}
