@@ -145,8 +145,34 @@ export function buildDispositions(root = ROOT) {
       reviewed: false,
     };
   });
+  // Every window publication with the consumers that actually read it. A
+  // comment's stated reason for an export is not evidence it is still needed
+  // (the 70A baseline found exports kept "so onclick=... resolves" long
+  // after no such attribute remained); this is the evidence.
+  const readersOf = new Map();
+  const addReader = (name, file) => { if (!readersOf.has(name)) readersOf.set(name, new Set()); readersOf.get(name).add(file); };
+  for (const r of [...audit.windowReads, ...audit.windowDestructures]) addReader(r.name, r.file);
+  for (const bref of audit.bareCrossBoundary) addReader(bref.name, bref.file);
+  const unreachable = new Set(audit.unreachableModules);
+  const exportKeys = new Map();
+  for (const w of audit.windowWrites) {
+    const key = `${w.file}::${w.name}`;
+    if (exportKeys.has(key)) continue;
+    const readers = [...(readersOf.get(w.name) || [])].filter((f) => f !== w.file).sort();
+    const e2eFiles = e2e[w.name]?.files || 0;
+    let reason;
+    if (unreachable.has(w.file)) reason = 'publisher-never-loaded';
+    else if (readers.some((f) => f === legacyRel)) reason = readers.length > 1 ? 'monolith-and-modules' : 'monolith-only';
+    else if (readers.length) reason = 'modules-only';
+    else if (e2eFiles) reason = 'tests-only';
+    else reason = 'no-consumer';
+    exportKeys.set(key, { file: w.file, name: w.name, via: w.via || 'assignment', readers, e2eFiles, reason });
+  }
+  const windowExports = [...exportKeys.values()].sort((x, y) => x.file.localeCompare(y.file) || x.name.localeCompare(y.name));
+
   const summary = {
     total: declarations.length, byDisposition: {}, byDelivery: {},
+    windowExportsByReason: windowExports.reduce((acc, x) => ({ ...acc, [x.reason]: (acc[x.reason] || 0) + 1 }), {}),
     duplicates: declarations.filter((d) => d.duplicateOf.length).length,
     liveDuplicates: declarations.filter((d) => d.duplicateOf.length && d.disposition === 'move').map((d) => `${d.name} (${d.duplicateOf.join(', ')})`),
   };
@@ -154,7 +180,7 @@ export function buildDispositions(root = ROOT) {
     summary.byDisposition[d.disposition] = (summary.byDisposition[d.disposition] || 0) + 1;
     summary.byDelivery[d.delivery] = (summary.byDelivery[d.delivery] || 0) + 1;
   }
-  return { summary, declarations };
+  return { summary, declarations, windowExports };
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
@@ -162,6 +188,8 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   console.log(JSON.stringify(result.summary, null, 1));
   const dead = result.declarations.filter((d) => d.disposition === 'delete-as-dead');
   console.log(`delete-as-dead candidates (${dead.length}):`, dead.map((d) => `${d.name}@${d.line}`).join(' '));
+  const noConsumer = result.windowExports.filter((x) => x.reason === 'no-consumer');
+  console.log(`window exports with no consumer (${noConsumer.length}):`, noConsumer.map((x) => `${x.file.replace('src/', '')}::${x.name}`).join(' '));
   const testOnly = result.declarations.filter((d) => d.disposition === 'test-only');
   console.log(`test-only (${testOnly.length}):`, testOnly.map((d) => d.name).join(' '));
   if (process.argv.includes('--write')) {

@@ -19,6 +19,14 @@
    "70K": 91,
    "70D": 7
   },
+  "windowExportsByReason": {
+   "no-consumer": 65,
+   "tests-only": 32,
+   "monolith-only": 109,
+   "modules-only": 98,
+   "monolith-and-modules": 22,
+   "publisher-never-loaded": 4
+  },
   "duplicates": 36,
   "liveDuplicates": [
    "HELP_CONTENT (src/features/help/help-content.js)",
@@ -8395,6 +8403,3325 @@
    "delivery": "70K",
    "wrapperWhile": null,
    "reviewed": false
+  }
+ ],
+ "windowExports": [
+  {
+   "file": "src/core/case-county-drift.js",
+   "name": "countyDriftWarnings",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 0,
+   "reason": "no-consumer"
+  },
+  {
+   "file": "src/core/case-resolver.js",
+   "name": "caseNumberOf",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 1,
+   "reason": "tests-only"
+  },
+  {
+   "file": "src/core/case-resolver.js",
+   "name": "casesGroupingWards",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 2,
+   "reason": "tests-only"
+  },
+  {
+   "file": "src/core/case-resolver.js",
+   "name": "countyOf",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 0,
+   "reason": "no-consumer"
+  },
+  {
+   "file": "src/core/case-resolver.js",
+   "name": "createCase",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 2,
+   "reason": "tests-only"
+  },
+  {
+   "file": "src/core/case-resolver.js",
+   "name": "getOrCreateCaseForWard",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 2,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/case-resolver.js",
+   "name": "resolveCase",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 2,
+   "reason": "tests-only"
+  },
+  {
+   "file": "src/core/feature-bridge.js",
+   "name": "createFeatureBridge",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/feature-bridge.js",
+   "name": "disposeActiveFeature",
+   "via": "assignment",
+   "readers": [
+    "src/core/navigation/router.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/core/filing/delete-confirmation.js",
+   "name": "deleteFilingConfirmation",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/filing/filing-descriptor.js",
+   "name": "applyAccountingFilingType",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/filing/filing-descriptor.js",
+   "name": "resolveDescriptorForInventoryType",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/filing/filing-descriptor.js",
+   "name": "resolveFilingDescriptor",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 0,
+   "reason": "no-consumer"
+  },
+  {
+   "file": "src/core/filing/output-preflight.js",
+   "name": "prepareFilingOutput",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 2,
+   "reason": "tests-only"
+  },
+  {
+   "file": "src/core/filing/plan-certificate-of-service.js",
+   "name": "planCertificateStarted",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/form/commit-coordinator.js",
+   "name": "_transientDrafts",
+   "via": "assignment",
+   "readers": [
+    "src/core/form/form-contract.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/core/form/commit-coordinator.js",
+   "name": "commitStoredDateDrafts",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/form/commit-coordinator.js",
+   "name": "formatDraftIssues",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 0,
+   "reason": "no-consumer"
+  },
+  {
+   "file": "src/core/form/commit-coordinator.js",
+   "name": "getFieldDraftDisplay",
+   "via": "assignment",
+   "readers": [
+    "src/core/form/form-fields.js",
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-and-modules"
+  },
+  {
+   "file": "src/core/form/commit-coordinator.js",
+   "name": "getFieldDraftIssues",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 0,
+   "reason": "no-consumer"
+  },
+  {
+   "file": "src/core/form/form-contract.js",
+   "name": "_transientDrafts",
+   "via": "assignment",
+   "readers": [
+    "src/core/form/commit-coordinator.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/core/form/form-contract.js",
+   "name": "commitPendingFieldValues",
+   "via": "assignment",
+   "readers": [
+    "src/core/navigation/router.js",
+    "src/core/navigation/ward-lifecycle.js",
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-and-modules"
+  },
+  {
+   "file": "src/core/form/form-contract.js",
+   "name": "finalizeFieldValue",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 0,
+   "reason": "no-consumer"
+  },
+  {
+   "file": "src/core/form/form-contract.js",
+   "name": "formatCityStateZip",
+   "via": "assignment",
+   "readers": [
+    "src/core/form/form-fields.js",
+    "src/features/guardian-inventory/index.js",
+    "src/features/simplified-accounting/index.js",
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-and-modules"
+  },
+  {
+   "file": "src/core/form/form-contract.js",
+   "name": "formatSafeTitleCase",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/form/form-contract.js",
+   "name": "getFieldDraftIssueMessages",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 0,
+   "reason": "no-consumer"
+  },
+  {
+   "file": "src/core/form/form-contract.js",
+   "name": "runFieldWriteSideEffects",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/form/form-contract.js",
+   "name": "sanitizeStoredText",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/form/form-contract.js",
+   "name": "writeDraftValue",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 0,
+   "reason": "no-consumer"
+  },
+  {
+   "file": "src/core/form/form-fields.js",
+   "name": "renderCheckboxField",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/form/form-fields.js",
+   "name": "renderFormField",
+   "via": "assignment",
+   "readers": [
+    "src/features/guardian-inventory/index.js",
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-and-modules"
+  },
+  {
+   "file": "src/core/form/form-fields.js",
+   "name": "renderRadioGroupField",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/form/form-fields.js",
+   "name": "renderSelectField",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 0,
+   "reason": "no-consumer"
+  },
+  {
+   "file": "src/core/form/form-fields.js",
+   "name": "renderTextareaField",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/form/form-fields.js",
+   "name": "renderYesNoField",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/form/preparer-flag.js",
+   "name": "resolvePreparer",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/form/prune-cards.js",
+   "name": "BLANK_CARD_COLLECTIONS",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 0,
+   "reason": "publisher-never-loaded"
+  },
+  {
+   "file": "src/core/form/prune-cards.js",
+   "name": "isBlankCard",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 0,
+   "reason": "publisher-never-loaded"
+  },
+  {
+   "file": "src/core/form/prune-cards.js",
+   "name": "isBlankScheduleEntry",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 0,
+   "reason": "publisher-never-loaded"
+  },
+  {
+   "file": "src/core/form/prune-cards.js",
+   "name": "pruneBlankCards",
+   "via": "assignment",
+   "readers": [
+    "src/core/navigation/router.js",
+    "src/core/navigation/ward-lifecycle.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "publisher-never-loaded"
+  },
+  {
+   "file": "src/core/form/schedule-definitions.js",
+   "name": "addCollectionRow",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 0,
+   "reason": "no-consumer"
+  },
+  {
+   "file": "src/core/form/schedule-definitions.js",
+   "name": "duplicateCollectionRow",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 0,
+   "reason": "no-consumer"
+  },
+  {
+   "file": "src/core/form/schedule-definitions.js",
+   "name": "removeCollectionRow",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 0,
+   "reason": "no-consumer"
+  },
+  {
+   "file": "src/core/form/schedule-definitions.js",
+   "name": "SCHEDULE_SCHEMAS",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 0,
+   "reason": "no-consumer"
+  },
+  {
+   "file": "src/core/modals/convert-ward-modal.js",
+   "name": "convertSourceItems",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/modals/convert-ward-modal.js",
+   "name": "convertTargetsFor",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 1,
+   "reason": "tests-only"
+  },
+  {
+   "file": "src/core/modals/convert-ward-modal.js",
+   "name": "showConvertWardModal",
+   "via": "assignment",
+   "readers": [
+    "src/features/dashboard/index.js"
+   ],
+   "e2eFiles": 2,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/core/modals/convert-ward-modal.js",
+   "name": "updateConvertTargetOptions",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/modals/year-manager-modal.js",
+   "name": "getWardPriorYears",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 0,
+   "reason": "no-consumer"
+  },
+  {
+   "file": "src/core/modals/year-manager-modal.js",
+   "name": "saveCurrentYearToHistory",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 0,
+   "reason": "no-consumer"
+  },
+  {
+   "file": "src/core/modals/year-manager-modal.js",
+   "name": "showYearManagerModal",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 0,
+   "reason": "no-consumer"
+  },
+  {
+   "file": "src/core/navigation/router.js",
+   "name": "attachFormHeaderActions",
+   "via": "assignment",
+   "readers": [
+    "src/core/feature-bridge.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/core/navigation/router.js",
+   "name": "closeMobileSidebar",
+   "via": "assignment",
+   "readers": [
+    "src/core/navigation/ward-lifecycle.js",
+    "src/shell-events.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/core/navigation/router.js",
+   "name": "currentPage",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 3,
+   "reason": "tests-only"
+  },
+  {
+   "file": "src/core/navigation/router.js",
+   "name": "navigate",
+   "via": "assignment",
+   "readers": [
+    "src/core/navigation/ward-lifecycle.js",
+    "src/core/persistence/case-file.js",
+    "src/core/validation/validation-adapter.js",
+    "src/features/annual-accounting/index.js",
+    "src/features/dashboard/index.js",
+    "src/features/guardian-inventory/excel.js",
+    "src/features/guardian-inventory/index.js",
+    "src/features/simplified-accounting/index.js",
+    "src/form-events.js",
+    "src/legacy-app.js",
+    "src/shell-events.js"
+   ],
+   "e2eFiles": 86,
+   "reason": "monolith-and-modules"
+  },
+  {
+   "file": "src/core/navigation/router.js",
+   "name": "renderPage",
+   "via": "assignment",
+   "readers": [
+    "src/core/signature/signature-state-control.js",
+    "src/features/annual-accounting/excel.js",
+    "src/features/annual-accounting/print.js",
+    "src/features/guardian-inventory/excel.js",
+    "src/features/guardian-inventory/index.js",
+    "src/features/guardian-inventory/print.js",
+    "src/features/plan-annual/print.js",
+    "src/features/plan-initial/print.js",
+    "src/features/plan-minor/print.js",
+    "src/features/plan-simplified/print.js",
+    "src/features/simplified-accounting/excel.js",
+    "src/features/simplified-accounting/print.js",
+    "src/form-events.js",
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 4,
+   "reason": "monolith-and-modules"
+  },
+  {
+   "file": "src/core/navigation/router.js",
+   "name": "toggleMobileSidebar",
+   "via": "assignment",
+   "readers": [
+    "src/shell-events.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/core/navigation/ward-county.js",
+   "name": "backfillWardPartyCounties",
+   "via": "assignment",
+   "readers": [
+    "src/core/persistence/case-file.js",
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 1,
+   "reason": "monolith-and-modules"
+  },
+  {
+   "file": "src/core/navigation/ward-county.js",
+   "name": "commitCoverCounty",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 3,
+   "reason": "tests-only"
+  },
+  {
+   "file": "src/core/navigation/ward-county.js",
+   "name": "ensureWardPartyForFiling",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 2,
+   "reason": "tests-only"
+  },
+  {
+   "file": "src/core/navigation/ward-county.js",
+   "name": "hydrateCountyFromWardParty",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/navigation/ward-county.js",
+   "name": "inferWardPartyCounty",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 0,
+   "reason": "no-consumer"
+  },
+  {
+   "file": "src/core/navigation/ward-county.js",
+   "name": "maybeCommitCoverCounty",
+   "via": "assignment",
+   "readers": [
+    "src/core/form/form-contract.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/core/navigation/ward-county.js",
+   "name": "normalizeCountyName",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/navigation/ward-county.js",
+   "name": "wardCountyMergeConflict",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 1,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/navigation/ward-county.js",
+   "name": "wardPartyCounty",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 0,
+   "reason": "no-consumer"
+  },
+  {
+   "file": "src/core/navigation/ward-county.js",
+   "name": "wardPartyForFiling",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 2,
+   "reason": "tests-only"
+  },
+  {
+   "file": "src/core/navigation/ward-lifecycle.js",
+   "name": "_dirtySinceExport",
+   "via": "assignment",
+   "readers": [
+    "src/core/persistence/case-file.js"
+   ],
+   "e2eFiles": 3,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/core/navigation/ward-lifecycle.js",
+   "name": "activateWard",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/navigation/ward-lifecycle.js",
+   "name": "activeInventoryType",
+   "via": "assignment",
+   "readers": [
+    "src/core/form/prune-cards.js",
+    "src/core/navigation/router.js",
+    "src/core/validation/validation-adapter.js"
+   ],
+   "e2eFiles": 1,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/core/navigation/ward-lifecycle.js",
+   "name": "addWard",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 20,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/navigation/ward-lifecycle.js",
+   "name": "carryOverFieldsForAccounting",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/navigation/ward-lifecycle.js",
+   "name": "carryOverFieldsForPlan",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/navigation/ward-lifecycle.js",
+   "name": "carrySourcesFor",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/navigation/ward-lifecycle.js",
+   "name": "carryWardsFor",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/navigation/ward-lifecycle.js",
+   "name": "createWardId",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/navigation/ward-lifecycle.js",
+   "name": "currentPage",
+   "via": "assignment",
+   "readers": [
+    "src/core/navigation/router.js"
+   ],
+   "e2eFiles": 3,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/core/navigation/ward-lifecycle.js",
+   "name": "deleteWard",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 1,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/navigation/ward-lifecycle.js",
+   "name": "enterDashboardEditingFocus",
+   "via": "assignment",
+   "readers": [
+    "src/core/navigation/router.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/core/navigation/ward-lifecycle.js",
+   "name": "extractCarryIdentity",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/navigation/ward-lifecycle.js",
+   "name": "renameWard",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/navigation/ward-lifecycle.js",
+   "name": "switchWard",
+   "via": "assignment",
+   "readers": [
+    "src/features/dashboard/index.js",
+    "src/legacy-app.js",
+    "src/modal-events.js"
+   ],
+   "e2eFiles": 12,
+   "reason": "monolith-and-modules"
+  },
+  {
+   "file": "src/core/navigation/ward-lifecycle.js",
+   "name": "unloadWard",
+   "via": "assignment",
+   "readers": [
+    "src/core/persistence/case-file.js",
+    "src/features/dashboard/index.js",
+    "src/shell-events.js"
+   ],
+   "e2eFiles": 1,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/core/party-resolver.js",
+   "name": "addSignatureImage",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 1,
+   "reason": "tests-only"
+  },
+  {
+   "file": "src/core/party-resolver.js",
+   "name": "backfillWardPartyIdentity",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 1,
+   "reason": "tests-only"
+  },
+  {
+   "file": "src/core/party-resolver.js",
+   "name": "closedFilingDrift",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 1,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/party-resolver.js",
+   "name": "createParty",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 2,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/party-resolver.js",
+   "name": "dehydrateIntoParty",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 1,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/party-resolver.js",
+   "name": "dismissPartyPair",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 2,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/party-resolver.js",
+   "name": "filingDriftFromParties",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 1,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/party-resolver.js",
+   "name": "findDuplicateCandidates",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 1,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/party-resolver.js",
+   "name": "getActiveSignatureImage",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 0,
+   "reason": "no-consumer"
+  },
+  {
+   "file": "src/core/party-resolver.js",
+   "name": "getPartyIdForSlot",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 0,
+   "reason": "no-consumer"
+  },
+  {
+   "file": "src/core/party-resolver.js",
+   "name": "getSignatureImageById",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 0,
+   "reason": "no-consumer"
+  },
+  {
+   "file": "src/core/party-resolver.js",
+   "name": "hydrateFromParty",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 1,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/party-resolver.js",
+   "name": "identitySlotForPath",
+   "via": "assignment",
+   "readers": [
+    "src/core/form/form-contract.js"
+   ],
+   "e2eFiles": 1,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/core/party-resolver.js",
+   "name": "isFilingClosed",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 0,
+   "reason": "no-consumer"
+  },
+  {
+   "file": "src/core/party-resolver.js",
+   "name": "isPartyPairDismissed",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 1,
+   "reason": "tests-only"
+  },
+  {
+   "file": "src/core/party-resolver.js",
+   "name": "listSignatureImages",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 0,
+   "reason": "no-consumer"
+  },
+  {
+   "file": "src/core/party-resolver.js",
+   "name": "mergeParties",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 1,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/party-resolver.js",
+   "name": "namesNearlyMatch",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 0,
+   "reason": "no-consumer"
+  },
+  {
+   "file": "src/core/party-resolver.js",
+   "name": "normalizePartyName",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 0,
+   "reason": "no-consumer"
+  },
+  {
+   "file": "src/core/party-resolver.js",
+   "name": "partyForSignaturePath",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 0,
+   "reason": "no-consumer"
+  },
+  {
+   "file": "src/core/party-resolver.js",
+   "name": "readRoleFields",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 1,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/party-resolver.js",
+   "name": "reconcileSlotWithParty",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/party-resolver.js",
+   "name": "referenceCountForParty",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 1,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/party-resolver.js",
+   "name": "resolveParty",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 4,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/party-resolver.js",
+   "name": "setPartyIdForSlot",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 1,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/party-resolver.js",
+   "name": "slotsReferencing",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/party-resolver.js",
+   "name": "subPartiesOf",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 1,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/party-resolver.js",
+   "name": "syncFilingSlotWithParty",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 1,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/party-resolver.js",
+   "name": "syncIdentityField",
+   "via": "assignment",
+   "readers": [
+    "src/core/form/form-contract.js"
+   ],
+   "e2eFiles": 1,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/core/party-resolver.js",
+   "name": "unmergeParty",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 1,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/party-resolver.js",
+   "name": "writeRoleFields",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 1,
+   "reason": "tests-only"
+  },
+  {
+   "file": "src/core/pdf/html2pdf-loader.js",
+   "name": "getHtml2Pdf",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 0,
+   "reason": "no-consumer"
+  },
+  {
+   "file": "src/core/persistence/case-file.js",
+   "name": "_caseFileHandle",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 0,
+   "reason": "no-consumer"
+  },
+  {
+   "file": "src/core/persistence/case-file.js",
+   "name": "_dirtySinceExport",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 3,
+   "reason": "tests-only"
+  },
+  {
+   "file": "src/core/persistence/case-file.js",
+   "name": "_lastExportAt",
+   "via": "assignment",
+   "readers": [
+    "src/core/navigation/ward-lifecycle.js",
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-and-modules"
+  },
+  {
+   "file": "src/core/persistence/case-file.js",
+   "name": "_saveTimer",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 0,
+   "reason": "no-consumer"
+  },
+  {
+   "file": "src/core/persistence/case-file.js",
+   "name": "backupAllWardsNow",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 0,
+   "reason": "no-consumer"
+  },
+  {
+   "file": "src/core/persistence/case-file.js",
+   "name": "beginRecordingExport",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 0,
+   "reason": "no-consumer"
+  },
+  {
+   "file": "src/core/persistence/case-file.js",
+   "name": "buildCaseFileBlob",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 4,
+   "reason": "tests-only"
+  },
+  {
+   "file": "src/core/persistence/case-file.js",
+   "name": "buildSingleWardExportBlob",
+   "via": "assignment",
+   "readers": [
+    "src/features/dashboard/index.js"
+   ],
+   "e2eFiles": 3,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/core/persistence/case-file.js",
+   "name": "CASE_FILE_FORMAT_VERSION",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 0,
+   "reason": "no-consumer"
+  },
+  {
+   "file": "src/core/persistence/case-file.js",
+   "name": "exportCaseFileZip",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 0,
+   "reason": "no-consumer"
+  },
+  {
+   "file": "src/core/persistence/case-file.js",
+   "name": "exportGuardianDataZip",
+   "via": "assignment",
+   "readers": [
+    "src/features/dashboard/index.js"
+   ],
+   "e2eFiles": 2,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/core/persistence/case-file.js",
+   "name": "finishSingleWardExport",
+   "via": "assignment",
+   "readers": [
+    "src/features/dashboard/index.js"
+   ],
+   "e2eFiles": 1,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/core/persistence/case-file.js",
+   "name": "forgetCaseFileHandle",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 0,
+   "reason": "no-consumer"
+  },
+  {
+   "file": "src/core/persistence/case-file.js",
+   "name": "formatRelativeTime",
+   "via": "assignment",
+   "readers": [
+    "src/features/dashboard/index.js",
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-and-modules"
+  },
+  {
+   "file": "src/core/persistence/case-file.js",
+   "name": "getLastExportAt",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/persistence/case-file.js",
+   "name": "getWardFileName",
+   "via": "assignment",
+   "readers": [
+    "src/features/dashboard/index.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/core/persistence/case-file.js",
+   "name": "getWardFileStem",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 0,
+   "reason": "no-consumer"
+  },
+  {
+   "file": "src/core/persistence/case-file.js",
+   "name": "handleBackupImportChange",
+   "via": "assignment",
+   "readers": [
+    "src/shell-events.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/core/persistence/case-file.js",
+   "name": "hideAutoExportReminder",
+   "via": "assignment",
+   "readers": [
+    "src/shell-events.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/core/persistence/case-file.js",
+   "name": "importGuardianDataZip",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js",
+    "src/shell-events.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-and-modules"
+  },
+  {
+   "file": "src/core/persistence/case-file.js",
+   "name": "importSavArchiveOrWard",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 0,
+   "reason": "no-consumer"
+  },
+  {
+   "file": "src/core/persistence/case-file.js",
+   "name": "isAutoSaveArmed",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/persistence/case-file.js",
+   "name": "loadAutoExportPrefs",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/persistence/case-file.js",
+   "name": "loadCaseFileHandle",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 2,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/persistence/case-file.js",
+   "name": "markDirtySinceExport",
+   "via": "assignment",
+   "readers": [
+    "src/core/party-resolver.js",
+    "src/core/pdf/pdf-preview.js",
+    "src/core/signature/signature-state-control.js",
+    "src/features/dashboard/index.js"
+   ],
+   "e2eFiles": 2,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/core/persistence/case-file.js",
+   "name": "refreshAutoSaveArmedStatus",
+   "via": "assignment",
+   "readers": [
+    "src/core/navigation/ward-lifecycle.js",
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-and-modules"
+  },
+  {
+   "file": "src/core/persistence/case-file.js",
+   "name": "rememberCaseFileHandle",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 2,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/persistence/case-file.js",
+   "name": "restoreBackupSavFile",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 0,
+   "reason": "no-consumer"
+  },
+  {
+   "file": "src/core/persistence/case-file.js",
+   "name": "saveAutoExportIntervalPref",
+   "via": "assignment",
+   "readers": [
+    "src/shell-events.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/core/persistence/case-file.js",
+   "name": "saveBackupNow",
+   "via": "assignment",
+   "readers": [
+    "src/modal-events.js",
+    "src/shell-events.js"
+   ],
+   "e2eFiles": 1,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/core/persistence/case-file.js",
+   "name": "saveBlobAs",
+   "via": "assignment",
+   "readers": [
+    "src/features/dashboard/index.js",
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 2,
+   "reason": "monolith-and-modules"
+  },
+  {
+   "file": "src/core/persistence/case-file.js",
+   "name": "setupAutoExportTimer",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/persistence/case-file.js",
+   "name": "setupFallbackSaveReminder",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/persistence/case-file.js",
+   "name": "setupLastSavedTicker",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/persistence/case-file.js",
+   "name": "showAutoExportReminder",
+   "via": "assignment",
+   "readers": [
+    "src/core/navigation/ward-lifecycle.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/core/persistence/case-file.js",
+   "name": "silentAutoExport",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 0,
+   "reason": "no-consumer"
+  },
+  {
+   "file": "src/core/persistence/case-file.js",
+   "name": "suggestedCaseFileName",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 0,
+   "reason": "no-consumer"
+  },
+  {
+   "file": "src/core/persistence/case-file.js",
+   "name": "triggerImportZip",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 1,
+   "reason": "tests-only"
+  },
+  {
+   "file": "src/core/persistence/case-file.js",
+   "name": "triggerOpenBackupSav",
+   "via": "assignment",
+   "readers": [
+    "src/shell-events.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/core/persistence/case-file.js",
+   "name": "updateLastSavedIndicator",
+   "via": "assignment",
+   "readers": [
+    "src/core/navigation/ward-lifecycle.js",
+    "src/features/dashboard/index.js",
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-and-modules"
+  },
+  {
+   "file": "src/core/persistence/case-file.js",
+   "name": "validateWardBackupOverwrite",
+   "via": "assignment",
+   "readers": [
+    "src/features/dashboard/index.js"
+   ],
+   "e2eFiles": 1,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/core/persistence/case-file.js",
+   "name": "writeCaseToHandle",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/persistence/crypto.js",
+   "name": "_b64FromBytes",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 0,
+   "reason": "no-consumer"
+  },
+  {
+   "file": "src/core/persistence/crypto.js",
+   "name": "_bytesFromB64",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 0,
+   "reason": "no-consumer"
+  },
+  {
+   "file": "src/core/persistence/crypto.js",
+   "name": "_cryptoKey",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 0,
+   "reason": "no-consumer"
+  },
+  {
+   "file": "src/core/persistence/crypto.js",
+   "name": "_securityMode",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 0,
+   "reason": "no-consumer"
+  },
+  {
+   "file": "src/core/persistence/crypto.js",
+   "name": "CRYPTO_VERIFIER_PLAINTEXT",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 0,
+   "reason": "no-consumer"
+  },
+  {
+   "file": "src/core/persistence/crypto.js",
+   "name": "decryptJSON",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/persistence/crypto.js",
+   "name": "decryptJSONWithKey",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/persistence/crypto.js",
+   "name": "deriveAndVerifyKey",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/persistence/crypto.js",
+   "name": "deriveKeyFromPassword",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/persistence/crypto.js",
+   "name": "encryptJSON",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/persistence/crypto.js",
+   "name": "generateSaltB64",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/persistence/crypto.js",
+   "name": "PBKDF2_ITERATIONS",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 0,
+   "reason": "no-consumer"
+  },
+  {
+   "file": "src/core/persistence/crypto.js",
+   "name": "PLAIN_MODE_PREFIX",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 0,
+   "reason": "no-consumer"
+  },
+  {
+   "file": "src/core/persistence/launch-preferences.js",
+   "name": "forgetPersistedCaseFileHandle",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/persistence/launch-preferences.js",
+   "name": "handleRememberedFileFailure",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/persistence/launch-preferences.js",
+   "name": "hasOpenedCaseBefore",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 1,
+   "reason": "tests-only"
+  },
+  {
+   "file": "src/core/persistence/launch-preferences.js",
+   "name": "loadAppState",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 1,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/persistence/launch-preferences.js",
+   "name": "loadPersistedCaseFileHandle",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/persistence/launch-preferences.js",
+   "name": "markCaseOpenedBefore",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/persistence/launch-preferences.js",
+   "name": "readRememberedFile",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 1,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/persistence/launch-preferences.js",
+   "name": "runRememberedHandleOperation",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/persistence/launch-preferences.js",
+   "name": "saveAppState",
+   "via": "assignment",
+   "readers": [
+    "src/features/dashboard/index.js",
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-and-modules"
+  },
+  {
+   "file": "src/core/persistence/launch-preferences.js",
+   "name": "savePersistedCaseFileHandle",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 0,
+   "reason": "no-consumer"
+  },
+  {
+   "file": "src/core/persistence/recovery-cache.js",
+   "name": "clearLastPosition",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/persistence/recovery-cache.js",
+   "name": "clearSessionRestoreCache",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 3,
+   "reason": "tests-only"
+  },
+  {
+   "file": "src/core/persistence/recovery-cache.js",
+   "name": "loadLastPosition",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/persistence/recovery-cache.js",
+   "name": "saveSessionRestoreCache",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 1,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/persistence/templates.js",
+   "name": "EMBEDDED_TEMPLATES",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 0,
+   "reason": "no-consumer"
+  },
+  {
+   "file": "src/core/persistence/templates.js",
+   "name": "embeddedTemplate",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/state.js",
+   "name": "_appState",
+   "via": "assignment",
+   "readers": [
+    "src/core/navigation/ward-lifecycle.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/core/state.js",
+   "name": "_templateCache",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 0,
+   "reason": "no-consumer"
+  },
+  {
+   "file": "src/core/state.js",
+   "name": "caseFile",
+   "via": "assignment",
+   "readers": [
+    "src/core/case-resolver.js",
+    "src/core/party-resolver.js",
+    "src/shell-events.js"
+   ],
+   "e2eFiles": 18,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/core/state.js",
+   "name": "D",
+   "via": "assignment",
+   "readers": [
+    "src/core/excel/excel-capacity.js",
+    "src/core/filing/output-preflight.js",
+    "src/core/form/commit-coordinator.js",
+    "src/core/form/form-contract.js",
+    "src/core/form/prune-cards.js",
+    "src/core/form/schedule-definitions.js",
+    "src/core/form/service-attestation-visibility.js",
+    "src/core/navigation/ward-county.js",
+    "src/core/pdf/pdf-engine.js",
+    "src/core/signature/signature-state-control.js",
+    "src/features/annual-accounting/excel.js",
+    "src/features/annual-accounting/index.js",
+    "src/features/annual-accounting/print.js",
+    "src/features/annual-accounting/totals.js",
+    "src/features/guardian-inventory/excel.js",
+    "src/features/guardian-inventory/index.js",
+    "src/features/guardian-inventory/print.js",
+    "src/features/guardian-inventory/totals.js",
+    "src/features/help/help-content.js",
+    "src/features/plan-annual/index.js",
+    "src/features/plan-annual/print.js",
+    "src/features/plan-initial/index.js",
+    "src/features/plan-initial/print.js",
+    "src/features/plan-minor/index.js",
+    "src/features/plan-minor/print.js",
+    "src/features/plan-simplified/index.js",
+    "src/features/plan-simplified/print.js",
+    "src/features/simplified-accounting/excel.js",
+    "src/features/simplified-accounting/index.js",
+    "src/features/simplified-accounting/print.js",
+    "src/form-events.js",
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 78,
+   "reason": "monolith-and-modules"
+  },
+  {
+   "file": "src/core/state.js",
+   "name": "emptyDataAnnual",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/state.js",
+   "name": "emptyDataPlanAnnual",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/state.js",
+   "name": "emptyDataPlanInitial",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/state.js",
+   "name": "emptyDataPlanMinor",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/state.js",
+   "name": "emptyDataPlanSimplified",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/state.js",
+   "name": "emptyDataSimplified",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/status/live-region.js",
+   "name": "announceStatus",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 0,
+   "reason": "no-consumer"
+  },
+  {
+   "file": "src/core/status/section-guidance-policy.js",
+   "name": "sectionGuidancePolicy",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/status/section-status.js",
+   "name": "computeSectionStatus",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 0,
+   "reason": "no-consumer"
+  },
+  {
+   "file": "src/core/status/section-status.js",
+   "name": "renderLocalSectionGuidance",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/theme-preference.js",
+   "name": "readStoredTheme",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 0,
+   "reason": "no-consumer"
+  },
+  {
+   "file": "src/core/theme-preference.js",
+   "name": "resolvePaintTheme",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 0,
+   "reason": "no-consumer"
+  },
+  {
+   "file": "src/core/theme-preference.js",
+   "name": "seedStoredThemeFromLegacy",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/theme-preference.js",
+   "name": "THEME_STORAGE_KEY",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 0,
+   "reason": "no-consumer"
+  },
+  {
+   "file": "src/core/theme-preference.js",
+   "name": "writeStoredTheme",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/ui/dialogs.js",
+   "name": "alertModal",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/ui/dialogs.js",
+   "name": "confirmModal",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/ui/dialogs.js",
+   "name": "promptModal",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 0,
+   "reason": "no-consumer"
+  },
+  {
+   "file": "src/core/ui/test-system-title.js",
+   "name": "setTestSystemTitleWarningEnabledForTest",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 1,
+   "reason": "tests-only"
+  },
+  {
+   "file": "src/core/validation/attorney-block.js",
+   "name": "isPlanInitialAttorneyStarted",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 1,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/validation/row-started.js",
+   "name": "rowStarted",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 0,
+   "reason": "no-consumer"
+  },
+  {
+   "file": "src/core/validation/row-started.js",
+   "name": "startedRows",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 1,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/validation/service-recipients.js",
+   "name": "recipientRowStarted",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 0,
+   "reason": "no-consumer"
+  },
+  {
+   "file": "src/core/validation/service-recipients.js",
+   "name": "serviceRecipientIssues",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/validation/signature-state.js",
+   "name": "isSignatureComplete",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/core/validation/validation-adapter.js",
+   "name": "adaptValidationErrors",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 2,
+   "reason": "tests-only"
+  },
+  {
+   "file": "src/core/validation/validation-adapter.js",
+   "name": "focusFieldByPath",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 1,
+   "reason": "tests-only"
+  },
+  {
+   "file": "src/core/validation/validation-issue.js",
+   "name": "issueMessage",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 0,
+   "reason": "no-consumer"
+  },
+  {
+   "file": "src/core/validation/validation-issue.js",
+   "name": "validationIssue",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 0,
+   "reason": "no-consumer"
+  },
+  {
+   "file": "src/core/ward-lock.js",
+   "name": "acquireWardLock",
+   "via": "assignment",
+   "readers": [
+    "src/core/navigation/ward-lifecycle.js"
+   ],
+   "e2eFiles": 1,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/core/ward-lock.js",
+   "name": "getCurrentLockedWardId",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 1,
+   "reason": "tests-only"
+  },
+  {
+   "file": "src/core/ward-lock.js",
+   "name": "releaseWardLock",
+   "via": "assignment",
+   "readers": [
+    "src/core/navigation/ward-lifecycle.js",
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 1,
+   "reason": "monolith-and-modules"
+  },
+  {
+   "file": "src/features-loader.js",
+   "name": "loadAnnualFeature",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/features-loader.js",
+   "name": "loadAnnualPdf",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 6,
+   "reason": "tests-only"
+  },
+  {
+   "file": "src/features-loader.js",
+   "name": "loadDashboardFeature",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/features-loader.js",
+   "name": "loadGuardianFeature",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/features-loader.js",
+   "name": "loadGuardianPdf",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 9,
+   "reason": "tests-only"
+  },
+  {
+   "file": "src/features-loader.js",
+   "name": "loadPlanAnnualFeature",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/features-loader.js",
+   "name": "loadPlanAnnualPdf",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 2,
+   "reason": "tests-only"
+  },
+  {
+   "file": "src/features-loader.js",
+   "name": "loadPlanInitialFeature",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/features-loader.js",
+   "name": "loadPlanInitialPdf",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 0,
+   "reason": "no-consumer"
+  },
+  {
+   "file": "src/features-loader.js",
+   "name": "loadPlanMinorFeature",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/features-loader.js",
+   "name": "loadPlanMinorPdf",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 1,
+   "reason": "tests-only"
+  },
+  {
+   "file": "src/features-loader.js",
+   "name": "loadPlanSimplifiedFeature",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/features-loader.js",
+   "name": "loadPlanSimplifiedPdf",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 1,
+   "reason": "tests-only"
+  },
+  {
+   "file": "src/features-loader.js",
+   "name": "loadSimplifiedFeature",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 1,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/features-loader.js",
+   "name": "loadSimplifiedPdf",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 4,
+   "reason": "tests-only"
+  },
+  {
+   "file": "src/features/annual-accounting/index.js",
+   "name": "duplicateAnnualRow",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 0,
+   "reason": "no-consumer"
+  },
+  {
+   "file": "src/features/annual-accounting/index.js",
+   "name": "validateAnnual",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 5,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/features/annual-accounting/print.js",
+   "name": "printCurrentFilingPdf",
+   "via": "assignment",
+   "readers": [
+    "src/features/plan-simplified/index.js",
+    "src/form-events.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/features/annual-accounting/totals.js",
+   "name": "annualReconcileState",
+   "via": "assignment",
+   "readers": [
+    "src/features/annual-accounting/excel.js",
+    "src/features/annual-accounting/index.js",
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 1,
+   "reason": "monolith-and-modules"
+  },
+  {
+   "file": "src/features/annual-accounting/totals.js",
+   "name": "calcTotalsAnnual",
+   "via": "assignment",
+   "readers": [
+    "src/features/annual-accounting/excel.js",
+    "src/features/annual-accounting/index.js",
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 2,
+   "reason": "monolith-and-modules"
+  },
+  {
+   "file": "src/features/guardian-inventory/index.js",
+   "name": "addEntry",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 2,
+   "reason": "tests-only"
+  },
+  {
+   "file": "src/features/guardian-inventory/index.js",
+   "name": "duplicateEntry",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 1,
+   "reason": "tests-only"
+  },
+  {
+   "file": "src/features/guardian-inventory/index.js",
+   "name": "validateGuardian",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 6,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/features/guardian-inventory/print.js",
+   "name": "printCurrentFilingPdf",
+   "via": "assignment",
+   "readers": [
+    "src/features/plan-simplified/index.js",
+    "src/form-events.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/features/guardian-inventory/totals.js",
+   "name": "calcTotalsGuardian",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 1,
+   "reason": "tests-only"
+  },
+  {
+   "file": "src/features/guardian-inventory/totals.js",
+   "name": "makeGuardianCalc",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/features/help/help-content.js",
+   "name": "HELP_CONTENT",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/features/plan-annual/index.js",
+   "name": "doSavePdfPlanAnnual",
+   "via": "assignment",
+   "readers": [
+    "src/form-events.js"
+   ],
+   "e2eFiles": 2,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/features/plan-annual/index.js",
+   "name": "validatePlanAnnual",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 5,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/features/plan-annual/print.js",
+   "name": "printCurrentFilingPdf",
+   "via": "assignment",
+   "readers": [
+    "src/features/plan-simplified/index.js",
+    "src/form-events.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/features/plan-initial/index.js",
+   "name": "doSavePdfPlanInitial",
+   "via": "assignment",
+   "readers": [
+    "src/form-events.js"
+   ],
+   "e2eFiles": 2,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/features/plan-initial/index.js",
+   "name": "validatePlanInitial",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 4,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/features/plan-initial/print.js",
+   "name": "printCurrentFilingPdf",
+   "via": "assignment",
+   "readers": [
+    "src/features/plan-simplified/index.js",
+    "src/form-events.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/features/plan-minor/index.js",
+   "name": "doSavePdfPlanMinor",
+   "via": "assignment",
+   "readers": [
+    "src/form-events.js"
+   ],
+   "e2eFiles": 2,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/features/plan-minor/index.js",
+   "name": "validatePlanMinor",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 3,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/features/plan-minor/print.js",
+   "name": "printCurrentFilingPdf",
+   "via": "assignment",
+   "readers": [
+    "src/features/plan-simplified/index.js",
+    "src/form-events.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/features/plan-simplified/index.js",
+   "name": "validatePlanSimplified",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 3,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/features/plan-simplified/print.js",
+   "name": "printCurrentFilingPdf",
+   "via": "assignment",
+   "readers": [
+    "src/features/plan-simplified/index.js",
+    "src/form-events.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/features/simplified-accounting/index.js",
+   "name": "validateSimplified",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 3,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/features/simplified-accounting/print.js",
+   "name": "printCurrentFilingPdf",
+   "via": "assignment",
+   "readers": [
+    "src/features/plan-simplified/index.js",
+    "src/form-events.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/form-events.js",
+   "name": "PGSupplementalPdf",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/fragment-loader.js",
+   "name": "loadFragment",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 1,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/legacy-app.js",
+   "name": "_appState",
+   "via": "defineProperty",
+   "readers": [
+    "src/core/navigation/ward-lifecycle.js",
+    "src/core/state.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/legacy-app.js",
+   "name": "_auditLogEntries",
+   "via": "defineProperty",
+   "readers": [
+    "src/core/persistence/case-file.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/legacy-app.js",
+   "name": "_autoExportIntervalMinutes",
+   "via": "defineProperty",
+   "readers": [
+    "src/core/persistence/case-file.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/legacy-app.js",
+   "name": "_cryptoKey",
+   "via": "defineProperty",
+   "readers": [
+    "src/core/persistence/crypto.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/legacy-app.js",
+   "name": "_dirtySinceExport",
+   "via": "defineProperty",
+   "readers": [
+    "src/core/persistence/case-file.js"
+   ],
+   "e2eFiles": 3,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/legacy-app.js",
+   "name": "_lastExportAt",
+   "via": "defineProperty",
+   "readers": [
+    "src/core/navigation/ward-lifecycle.js",
+    "src/core/persistence/case-file.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/legacy-app.js",
+   "name": "_saveTimer",
+   "via": "defineProperty",
+   "readers": [
+    "src/core/persistence/case-file.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/legacy-app.js",
+   "name": "_securityMode",
+   "via": "defineProperty",
+   "readers": [
+    "src/core/persistence/crypto.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/legacy-app.js",
+   "name": "_templateCache",
+   "via": "defineProperty",
+   "readers": [
+    "src/core/state.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/legacy-app.js",
+   "name": "activeInventoryType",
+   "via": "defineProperty",
+   "readers": [
+    "src/core/form/prune-cards.js",
+    "src/core/navigation/router.js",
+    "src/core/validation/validation-adapter.js"
+   ],
+   "e2eFiles": 1,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/legacy-app.js",
+   "name": "addPlanGuardian",
+   "via": "assignment",
+   "readers": [
+    "src/form-events.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/legacy-app.js",
+   "name": "addToRecentlyOpened",
+   "via": "assignment",
+   "readers": [
+    "src/core/navigation/ward-lifecycle.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/legacy-app.js",
+   "name": "auditLog",
+   "via": "assignment",
+   "readers": [
+    "src/core/persistence/case-file.js",
+    "src/features/dashboard/index.js"
+   ],
+   "e2eFiles": 1,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/legacy-app.js",
+   "name": "calc",
+   "via": "assignment",
+   "readers": [
+    "src/features/guardian-inventory/index.js"
+   ],
+   "e2eFiles": 1,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/legacy-app.js",
+   "name": "caseFile",
+   "via": "assignment",
+   "readers": [
+    "src/core/case-resolver.js",
+    "src/core/party-resolver.js",
+    "src/core/state.js",
+    "src/shell-events.js"
+   ],
+   "e2eFiles": 18,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/legacy-app.js",
+   "name": "closeWardLockedModal",
+   "via": "assignment",
+   "readers": [
+    "src/modal-events.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/legacy-app.js",
+   "name": "collapseSaveControls",
+   "via": "assignment",
+   "readers": [
+    "src/shell-events.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/legacy-app.js",
+   "name": "collapseWardControls",
+   "via": "assignment",
+   "readers": [
+    "src/shell-events.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/legacy-app.js",
+   "name": "currentPage",
+   "via": "defineProperty",
+   "readers": [
+    "src/core/navigation/router.js"
+   ],
+   "e2eFiles": 3,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/legacy-app.js",
+   "name": "D",
+   "via": "assignment",
+   "readers": [
+    "src/core/excel/excel-capacity.js",
+    "src/core/filing/output-preflight.js",
+    "src/core/form/commit-coordinator.js",
+    "src/core/form/form-contract.js",
+    "src/core/form/prune-cards.js",
+    "src/core/form/schedule-definitions.js",
+    "src/core/form/service-attestation-visibility.js",
+    "src/core/navigation/ward-county.js",
+    "src/core/pdf/pdf-engine.js",
+    "src/core/signature/signature-state-control.js",
+    "src/core/state.js",
+    "src/features/annual-accounting/excel.js",
+    "src/features/annual-accounting/index.js",
+    "src/features/annual-accounting/print.js",
+    "src/features/annual-accounting/totals.js",
+    "src/features/guardian-inventory/excel.js",
+    "src/features/guardian-inventory/index.js",
+    "src/features/guardian-inventory/print.js",
+    "src/features/guardian-inventory/totals.js",
+    "src/features/help/help-content.js",
+    "src/features/plan-annual/index.js",
+    "src/features/plan-annual/print.js",
+    "src/features/plan-initial/index.js",
+    "src/features/plan-initial/print.js",
+    "src/features/plan-minor/index.js",
+    "src/features/plan-minor/print.js",
+    "src/features/plan-simplified/index.js",
+    "src/features/plan-simplified/print.js",
+    "src/features/simplified-accounting/excel.js",
+    "src/features/simplified-accounting/index.js",
+    "src/features/simplified-accounting/print.js",
+    "src/form-events.js"
+   ],
+   "e2eFiles": 78,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/legacy-app.js",
+   "name": "emptyRowAnnual",
+   "via": "assignment",
+   "readers": [
+    "src/core/state.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/legacy-app.js",
+   "name": "fmt",
+   "via": "assignment",
+   "readers": [
+    "src/features/guardian-inventory/index.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/legacy-app.js",
+   "name": "formatDisplayDate",
+   "via": "assignment",
+   "readers": [
+    "src/features/plan-annual/index.js",
+    "src/features/plan-initial/index.js",
+    "src/features/plan-minor/index.js",
+    "src/features/plan-simplified/index.js",
+    "src/features/simplified-accounting/index.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/legacy-app.js",
+   "name": "getCaseFile",
+   "via": "assignment",
+   "readers": [
+    "src/core/filing/output-authorization.js",
+    "src/features/dashboard/index.js"
+   ],
+   "e2eFiles": 4,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/legacy-app.js",
+   "name": "getProbateGuardianTabState",
+   "via": "assignment",
+   "readers": [
+    "src/pwa-ui.js",
+    "src/tab-coordination.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/legacy-app.js",
+   "name": "getRecentlyOpenedWards",
+   "via": "assignment",
+   "readers": [
+    "src/features/dashboard/index.js"
+   ],
+   "e2eFiles": 1,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/legacy-app.js",
+   "name": "handleStartupOpenInputChange",
+   "via": "assignment",
+   "readers": [
+    "src/startup-events.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/legacy-app.js",
+   "name": "INITIAL_ADL_RATINGS",
+   "via": "assignment",
+   "readers": [
+    "src/features/plan-initial/index.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/legacy-app.js",
+   "name": "INITIAL_ADLS",
+   "via": "assignment",
+   "readers": [
+    "src/core/filing/readiness-config.js",
+    "src/core/state.js",
+    "src/features/plan-initial/index.js",
+    "src/features/plan-initial/pdf-model.js"
+   ],
+   "e2eFiles": 1,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/legacy-app.js",
+   "name": "INVENTORY_TYPE_META",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 0,
+   "reason": "no-consumer"
+  },
+  {
+   "file": "src/legacy-app.js",
+   "name": "INVENTORY_TYPES",
+   "via": "assignment",
+   "readers": [
+    "src/core/modals/convert-ward-modal.js",
+    "src/features/dashboard/index.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/legacy-app.js",
+   "name": "isContinuePromptShown",
+   "via": "assignment",
+   "readers": [
+    "src/features/dashboard/index.js"
+   ],
+   "e2eFiles": 1,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/legacy-app.js",
+   "name": "isScheduleIncomplete",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 0,
+   "reason": "no-consumer"
+  },
+  {
+   "file": "src/legacy-app.js",
+   "name": "markContinuePromptShown",
+   "via": "assignment",
+   "readers": [
+    "src/features/dashboard/index.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/legacy-app.js",
+   "name": "mk",
+   "via": "assignment",
+   "readers": [
+    "src/features/guardian-inventory/excel.js",
+    "src/features/guardian-inventory/index.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/legacy-app.js",
+   "name": "normalizePlanGuardians",
+   "via": "assignment",
+   "readers": [
+    "src/features/plan-annual/index.js",
+    "src/features/plan-initial/index.js",
+    "src/features/plan-minor/index.js",
+    "src/features/plan-simplified/index.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/legacy-app.js",
+   "name": "normalizeWardData",
+   "via": "assignment",
+   "readers": [
+    "src/core/state.js"
+   ],
+   "e2eFiles": 2,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/legacy-app.js",
+   "name": "openCaseFileAtLaunch",
+   "via": "assignment",
+   "readers": [
+    "src/startup-events.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/legacy-app.js",
+   "name": "openUserGuide",
+   "via": "assignment",
+   "readers": [
+    "src/shell-events.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/legacy-app.js",
+   "name": "openUserGuideForCurrentPage",
+   "via": "assignment",
+   "readers": [
+    "src/shell-events.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/legacy-app.js",
+   "name": "openWardFileAtLaunch",
+   "via": "assignment",
+   "readers": [
+    "src/startup-events.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/legacy-app.js",
+   "name": "PAGES_GUARDIAN",
+   "via": "assignment",
+   "readers": [
+    "src/features/guardian-inventory/index.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/legacy-app.js",
+   "name": "PG_APP_VERSION",
+   "via": "assignment",
+   "readers": [
+    "src/tab-coordination.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/legacy-app.js",
+   "name": "pgHasUnsavedChanges",
+   "via": "assignment",
+   "readers": [
+    "src/pwa-ui.js"
+   ],
+   "e2eFiles": 2,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/legacy-app.js",
+   "name": "PLAN_ADL_RATINGS",
+   "via": "assignment",
+   "readers": [
+    "src/features/plan-annual/index.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/legacy-app.js",
+   "name": "PLAN_ADLS",
+   "via": "assignment",
+   "readers": [
+    "src/core/filing/readiness-config.js",
+    "src/core/state.js",
+    "src/features/plan-annual/index.js",
+    "src/features/plan-annual/pdf-model.js"
+   ],
+   "e2eFiles": 1,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/legacy-app.js",
+   "name": "PLAN_BENEFITS",
+   "via": "assignment",
+   "readers": [
+    "src/core/state.js",
+    "src/features/plan-annual/index.js",
+    "src/features/plan-annual/pdf-model.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/legacy-app.js",
+   "name": "PLAN_RIGHT_STATES",
+   "via": "assignment",
+   "readers": [
+    "src/features/plan-annual/index.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/legacy-app.js",
+   "name": "PLAN_RIGHTS",
+   "via": "assignment",
+   "readers": [
+    "src/core/filing/readiness-config.js",
+    "src/core/state.js",
+    "src/features/plan-annual/index.js",
+    "src/features/plan-annual/pdf-model.js"
+   ],
+   "e2eFiles": 1,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/legacy-app.js",
+   "name": "planRightLabel",
+   "via": "assignment",
+   "readers": [
+    "src/features/plan-annual/pdf-model.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/legacy-app.js",
+   "name": "queueAllScheduleDocValidations",
+   "via": "assignment",
+   "readers": [
+    "src/features/annual-accounting/print.js",
+    "src/features/guardian-inventory/print.js",
+    "src/features/plan-annual/print.js",
+    "src/features/plan-initial/print.js",
+    "src/features/plan-minor/print.js",
+    "src/features/plan-simplified/print.js",
+    "src/features/simplified-accounting/print.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/legacy-app.js",
+   "name": "removePlanGuardian",
+   "via": "assignment",
+   "readers": [
+    "src/form-events.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/legacy-app.js",
+   "name": "SCHEDULE_NAV_KEYS",
+   "via": "assignment",
+   "readers": [
+    "src/features/guardian-inventory/index.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/legacy-app.js",
+   "name": "setAccountingFilingType",
+   "via": "assignment",
+   "readers": [
+    "src/features/annual-accounting/excel.js",
+    "src/features/annual-accounting/index.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/legacy-app.js",
+   "name": "SHOW_COMMENT_CARD_LINK",
+   "via": "assignment",
+   "readers": [
+    "src/features/dashboard/index.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/legacy-app.js",
+   "name": "showWardLockedModal",
+   "via": "assignment",
+   "readers": [
+    "src/core/navigation/ward-lifecycle.js"
+   ],
+   "e2eFiles": 1,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/legacy-app.js",
+   "name": "startNewCaseAtLaunch",
+   "via": "assignment",
+   "readers": [
+    "src/startup-events.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/legacy-app.js",
+   "name": "startNewWardAtLaunch",
+   "via": "assignment",
+   "readers": [
+    "src/startup-events.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/main.js",
+   "name": "caseFile",
+   "via": "defineProperty",
+   "readers": [
+    "src/core/case-resolver.js",
+    "src/core/party-resolver.js",
+    "src/core/state.js",
+    "src/shell-events.js"
+   ],
+   "e2eFiles": 18,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/main.js",
+   "name": "D",
+   "via": "defineProperty",
+   "readers": [
+    "src/core/excel/excel-capacity.js",
+    "src/core/filing/output-preflight.js",
+    "src/core/form/commit-coordinator.js",
+    "src/core/form/form-contract.js",
+    "src/core/form/prune-cards.js",
+    "src/core/form/schedule-definitions.js",
+    "src/core/form/service-attestation-visibility.js",
+    "src/core/navigation/ward-county.js",
+    "src/core/pdf/pdf-engine.js",
+    "src/core/signature/signature-state-control.js",
+    "src/core/state.js",
+    "src/features/annual-accounting/excel.js",
+    "src/features/annual-accounting/index.js",
+    "src/features/annual-accounting/print.js",
+    "src/features/annual-accounting/totals.js",
+    "src/features/guardian-inventory/excel.js",
+    "src/features/guardian-inventory/index.js",
+    "src/features/guardian-inventory/print.js",
+    "src/features/guardian-inventory/totals.js",
+    "src/features/help/help-content.js",
+    "src/features/plan-annual/index.js",
+    "src/features/plan-annual/print.js",
+    "src/features/plan-initial/index.js",
+    "src/features/plan-initial/print.js",
+    "src/features/plan-minor/index.js",
+    "src/features/plan-minor/print.js",
+    "src/features/plan-simplified/index.js",
+    "src/features/plan-simplified/print.js",
+    "src/features/simplified-accounting/excel.js",
+    "src/features/simplified-accounting/index.js",
+    "src/features/simplified-accounting/print.js",
+    "src/form-events.js",
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 78,
+   "reason": "monolith-and-modules"
+  },
+  {
+   "file": "src/main.js",
+   "name": "isOutputAcknowledgedFor",
+   "via": "assignment",
+   "readers": [
+    "src/core/filing/output-preflight.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "modules-only"
+  },
+  {
+   "file": "src/main.js",
+   "name": "markFilingRevisionChanged",
+   "via": "assignment",
+   "readers": [
+    "src/core/form/commit-coordinator.js",
+    "src/core/form/form-contract.js",
+    "src/core/form/schedule-definitions.js",
+    "src/core/party-resolver.js",
+    "src/features/annual-accounting/excel.js",
+    "src/features/guardian-inventory/excel.js",
+    "src/features/simplified-accounting/excel.js",
+    "src/features/simplified-accounting/guardian-compatibility.js",
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 0,
+   "reason": "monolith-and-modules"
+  },
+  {
+   "file": "src/main.js",
+   "name": "navigate",
+   "via": "assignment",
+   "readers": [
+    "src/core/navigation/ward-lifecycle.js",
+    "src/core/persistence/case-file.js",
+    "src/core/validation/validation-adapter.js",
+    "src/features/annual-accounting/index.js",
+    "src/features/dashboard/index.js",
+    "src/features/guardian-inventory/excel.js",
+    "src/features/guardian-inventory/index.js",
+    "src/features/simplified-accounting/index.js",
+    "src/form-events.js",
+    "src/legacy-app.js",
+    "src/shell-events.js"
+   ],
+   "e2eFiles": 86,
+   "reason": "monolith-and-modules"
+  },
+  {
+   "file": "src/main.js",
+   "name": "needsScheduleAck",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 0,
+   "reason": "no-consumer"
+  },
+  {
+   "file": "src/main.js",
+   "name": "normalizeScheduleDocsAck",
+   "via": "assignment",
+   "readers": [
+    "src/legacy-app.js"
+   ],
+   "e2eFiles": 1,
+   "reason": "monolith-only"
+  },
+  {
+   "file": "src/main.js",
+   "name": "recordScheduleAck",
+   "via": "assignment",
+   "readers": [],
+   "e2eFiles": 0,
+   "reason": "no-consumer"
   }
  ]
 }

@@ -40,6 +40,15 @@ describe('the draft against src/legacy-app.js', () => {
     expect(listed.filter((n) => !current.includes(n)), 'entries for declarations that no longer exist').toEqual([]);
   });
 
+  test('every window export is listed with the consumers that read it and an allowed reason', () => {
+    const reasons = ['no-consumer', 'tests-only', 'monolith-only', 'modules-only', 'monolith-and-modules', 'publisher-never-loaded'];
+    expect(draft.windowExports.length).toBeGreaterThan(0);
+    expect(draft.windowExports.filter((x) => !reasons.includes(x.reason)).map((x) => `${x.file}::${x.name}`)).toEqual([]);
+    // The publisher nothing loads is the Milestone 42E failure: its exports reach no one.
+    expect(draft.windowExports.filter((x) => x.file === 'src/core/form/prune-cards.js').map((x) => x.reason))
+      .toEqual(expect.arrayContaining(['publisher-never-loaded']));
+  });
+
   test('every entry carries an allowed disposition and a delivery', () => {
     const bad = draft.declarations.filter((d) => !DISPOSITION_KINDS.includes(d.disposition) || !DELIVERIES.includes(d.delivery));
     expect(bad.map((d) => d.name)).toEqual([]);
