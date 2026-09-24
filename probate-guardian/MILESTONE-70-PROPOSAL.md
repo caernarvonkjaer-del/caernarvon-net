@@ -30,7 +30,7 @@ repeating Milestone 27's old file-move list.
 
 ### Decisions recorded 2026-09-24
 
-The requester settled four further questions after a review of this plan:
+The requester settled seven further questions after a review of this plan:
 
 | # | Question | Decision | What it means for the work |
 | --- | --- | --- | --- |
@@ -38,9 +38,13 @@ The requester settled four further questions after a review of this plan:
 | D2 | What must pass before a delivery lands? | **The shipped-build profiles run at checkpoints only** -- 70I, 70J, before deletion in 70L, and at the merge -- not on every delivery. | Safe because the branch never ships mid-migration. Every delivery still runs its targeted source tests and the static ratchets, which cost seconds. The merge to `master` is the real release and carries the full gate. |
 | D3 | How do browser tests set up and read data once the globals are gone? | **Through `GuardianForms.testing`, switched on by the test runner before the page loads.** | The adapter's code ships inside the production build, but the `testing` member is attached to the namespace only when the test runner enables it before the app starts, and it can never be enabled from a URL. Release tests therefore exercise the exact package that is deployed. See **The approved `window.GuardianForms` boundary** and **70T**. |
 | D4 | Pause for a tester pass after 70J's ownership flip? | **No pause.** 70K follows on automated evidence. | 70J is a one-way door within the branch; this plan no longer claims it can be reverted on its own (see 70J). |
+| D5 | A tester pass on the test system before the branch merges? | **No. The merge proceeds on automated evidence alone.** | The automated merge gate -- including the `portable-http` profile that reproduces production -- is the whole check. Recorded plainly: production receives the entire migration in one deploy, and the first person to use the migrated application is a filer on production. |
+| D6 | Freeze `master` while the ledger closes? | **Yes -- a short, announced freeze** on non-urgent `master` changes while the last fixes are re-constituted and the merge gate runs. | Urgent fixes still land on `master` and join the ledger. The ledger cannot keep growing while the merge gate is running. |
+| D7 | Carry `master`'s fixes over only at the end? | **At the end, with a review at 70I.** | At the 70I checkpoint the ledger is reviewed; if it already holds more re-implementations than one delivery's worth of work, `master` is merged into the branch there so the final port is smaller. Otherwise reconstitution stays at the end. |
 
-Questions that remain open are listed, with options, under **Open
-decisions** near the end of this document.
+No question is open as of this revision. New ones are added under **Open
+decisions**, as numbered options with a recommendation, the moment they
+surface.
 
 ### Document ownership
 
@@ -444,16 +448,21 @@ visible and bounded.
   cannot be converted without changing what it asserts is reported, not
   quietly weakened.
 
-### Reconstitution and merge (decided: at the end)
+### Reconstitution and merge (decided: at the end, reviewed at 70I)
 
-1. Close the ledger. If O2's freeze is adopted, announce it to every agent
-   first; a production hot-fix during the freeze still goes to `master` and
-   into the ledger. If not, rerun the ledger guard immediately before the
-   merge, and any late commit reopens reconstitution.
+Per D7, the ledger is reviewed at the 70I checkpoint: if it already holds
+more re-implementations than one delivery's worth of work, `master` is merged
+into the branch there, through the same ledger rows, so the final port is
+smaller. Everything else is carried over at the end:
+
+1. Close the ledger under a short freeze on non-urgent `master` changes (D6),
+   announced to every agent before it starts. A production hot-fix during the
+   freeze still goes to `master` and into the ledger.
 2. Re-constitute every open ledger row on the branch.
 3. Run the merge gate on the branch head: the ledger guard, the full release
    tier (with the requester's approval at the time), the `portable-http`
-   profile, and a literal `file://` portable smoke.
+   profile, and a literal `file://` portable smoke. Per D5 no tester pass
+   follows; this gate is the whole check before production.
 4. Merge `milestone-70` into `master` with a merge commit, not a squash, so the
    delivery commits stay individually reviewable. Git will report a
    modify/delete conflict on `legacy-app.js` for every `master` change to it;
@@ -885,7 +894,10 @@ for approval to run `npm run test:verify` at this checkpoint. As a checkpoint
 (D2) it also runs the shipped-build profiles: `build:portable` with the
 `portable` and `portable-http` profiles, and `build:web` with its profile. The
 mixed-version tests from 70A run here, because 70I moves the owners of the
-shared recovery cache and launch preferences.
+shared recovery cache and launch preferences. The master-fix ledger is
+reviewed here too (D7): if it already holds more re-implementations than one
+delivery's worth of work, `master` is merged into the branch at this
+checkpoint.
 
 ---
 
@@ -1296,35 +1308,12 @@ an output difference.
 
 ## Open decisions
 
-Each is the requester's call. The first option is the recommendation.
-
-**O1 -- Test-system pass before the merge.**
-1. *(Recommended)* Deploy the merge candidate to the test system -- the build
-   that carries the TEST SYSTEM title warning -- and have the office's tester
-   run a short scripted checklist of everyday tasks (open a case, edit, switch
-   filings, save, restore from a backup, print and export each filing type)
-   before the merge. Production receives the whole migration in one deploy,
-   so this is its only human check. It adds calendar time at the end, not
-   during the work. This is not the post-70J pause declined in D4.
-2. Merge on automated evidence alone. Faster; the first person to use the
-   migrated application is a filer on production.
-
-**O2 -- Freeze `master` while the ledger closes.**
-1. *(Recommended)* A short, announced freeze on non-urgent `master` changes
-   while the ledger's last rows are re-constituted and the merge gate runs.
-   Urgent fixes still land on `master` and join the ledger. Without it, the
-   ledger can keep growing while the merge gate is running.
-2. No freeze. The ledger guard is rerun just before the merge, and any late
-   commit reopens reconstitution.
-
-**O3 -- Sync `master` into the branch before the end.**
-D1 re-constitutes fixes at the end. The ledger makes the cost visible either
-way; this question is only about when it is paid.
-1. *(Recommended)* Keep D1 as decided, and revisit at 70I: if the ledger by
-   then holds more re-implementations than one delivery's worth of work,
-   merge `master` into the branch at that checkpoint so the final port is
-   smaller.
-2. Re-constitute strictly at the end, whatever the ledger shows.
+None as of this revision. O1-O3 of the previous revision were decided on
+2026-09-24 and moved to **Decisions recorded 2026-09-24** as D5 (no tester
+pass before the merge), D6 (a short, announced `master` freeze while the
+ledger closes) and D7 (fixes carried over at the end, with a ledger review at
+70I). New questions are added here, as numbered options with a
+recommendation, the moment they surface.
 
 ---
 
@@ -1347,3 +1336,7 @@ way; this question is only about when it is paid.
   in criterion 12; the merge procedure, including the modify/delete conflicts
   the ledger resolves; and open decisions O1-O3. Ownership of further
   revisions recorded under **Document ownership**.
+- **2026-09-24 -- Claude.** O1-O3 decided by the requester and recorded as D5
+  (merge on automated evidence, no tester pass), D6 (short announced `master`
+  freeze while the ledger closes) and D7 (end-of-work reconstitution with a
+  ledger review at 70I); the merge procedure and 70I updated to match.
