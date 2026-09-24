@@ -82,7 +82,20 @@ export function isSectionIncomplete(checks, checkKey) {
 export function blocksNext({ type, checkKey, incomplete, guardianScheduleKeys }) {
   if (!incomplete) return false;
   if (type === 'guardian') return (guardianScheduleKeys || []).includes(checkKey);
+  // Milestone 68C follow-up, 2026-09-24. A Plan's Certificate of Service is
+  // asked, never demanded -- the page itself says nothing on it is required to
+  // file -- yet its mark disabled the page's own button to Preview & Export.
+  // Decided by the requester: explain, do not block (as on the Guardian
+  // Inventory's non-schedule pages above).
+  if (isPlanCertificateKey(type, checkKey)) return false;
   return true;
+}
+
+/** The sidebar key of this Plan's Certificate of Service page (CERT_ROUTE_BY_PREFIX, below). */
+function isPlanCertificateKey(type, checkKey) {
+  const prefix = PREFIX[type];
+  const route = prefix && CERT_ROUTE_BY_PREFIX[prefix];
+  return !!route && checkKey === prefix + route.slice(1);
 }
 
 /** Question 3. */

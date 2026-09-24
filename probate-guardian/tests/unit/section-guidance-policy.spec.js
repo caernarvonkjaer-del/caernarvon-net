@@ -104,6 +104,25 @@ describe('blocksNext() — question 2, a per-type policy (D1: explain, do not bl
       expect(block(type, `${type}-any`, true), type).toBe(true);
     }
   });
+
+  // Milestone 68C follow-up, 2026-09-24. The page says nothing on it is
+  // required to file, and its button to Preview & Export was disabled until
+  // someone was listed. Decided by the requester: keep the button working;
+  // the sidebar mark and the page's reminder still ask.
+  test("a Plan's Certificate of Service page is explained but never blocks Next, on all four Plans", () => {
+    for (const [type, key] of [['planAnnual', 'pa-p12'], ['planSimplified', 'ps-p4'], ['planInitial', 'pi-p11'], ['planMinor', 'pm-p8']]) {
+      expect(block(type, key, true), `${type} ${key}`).toBe(false);
+    }
+  });
+
+  test("the Plans' other pages still block, and another form's page of the same name is not exempted", () => {
+    expect(block('planAnnual', 'pa-p11', true)).toBe(true);
+    expect(block('planSimplified', 'ps-p3', true)).toBe(true);
+    expect(block('planInitial', 'pi-p10', true)).toBe(true);
+    expect(block('planMinor', 'pm-p7', true)).toBe(true);
+    expect(block('planAnnual', 'pm-p8', true), 'a Minor Plan key on an Annual Plan').toBe(true);
+    expect(block('simplified', 's-p4', true), 'the Simplified Accounting').toBe(true);
+  });
 });
 
 describe('guidanceAdvice() — question 3 (D2): advice must fit the page', () => {

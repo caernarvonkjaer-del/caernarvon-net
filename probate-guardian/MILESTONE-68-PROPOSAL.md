@@ -15,7 +15,7 @@ or stop a filing outright; the rest prevent a filer from recording the truth.
 | 68D | Period end date cut off on every Annual cover page | Wrong data on a filed document | **DECIDED** — fix the wrap width, derived from the layout | **LANDED 2026-09-24** — see the build record under 68D; Plan Initial rendered |
 | 68A | Plan signatures must be dated after the period being planned for | **Blocks filing**; only remedy is a false sworn date | **DECIDED** — remove the rule from Plans; keep it on accountings | **LANDED 2026-09-24** — audit found 8 sites on three Plans (Minor had it too; Initial never did); see the build record under 68A |
 | 68B | Initial Plan files with no reporting period, unflagged | Incomplete document filed, silently | **DECIDED** — require it, as the other Plans do | **LANDED 2026-09-24** — see the build record under 68B |
-| 68C | No certificate of service on any Plan type | App states a requirement it cannot meet | **DECIDED** — build on all four; optional on Simplified; fix its wrong text; date + method optional and "Certified by the filer" settled at build (2026-09-24) | **LANDED 2026-09-24** — see the build record under 68C; follow-up the same day: an untouched Simplified Plan certificate asks nothing |
+| 68C | No certificate of service on any Plan type | App states a requirement it cannot meet | **DECIDED** — build on all four; optional on Simplified; fix its wrong text; date + method optional and "Certified by the filer" settled at build (2026-09-24) | **LANDED 2026-09-24** — see the build record under 68C; follow-ups the same day: an untouched Simplified Plan certificate asks nothing, and no Plan's certificate page disables its Preview & Export button |
 | 68E | Initial Plan Q5 accepts one answer where several apply | Cannot record the truth | **DECIDED** — the court's form is a checkbox list; convert to multi-select — Q5, Q4 and any other radio-rendered checkbox list the form shows (settled 2026-09-24) | **LANDED 2026-09-24** — Q2, Q4 and Q5 (the form's page 2, rendered and looked at); see the build record under 68E |
 | 68F | Assistive-devices "None" can be ticked alongside real selections | A filed plan can state both | **DECIDED** — no "None" added (form has none); fix mutual exclusion on D and E | **LANDED 2026-09-24** — see the build record under 68F |
 | 68G | Annual Plan Q6 cannot state a right is **not** restorable | **Statutory** — §744.3675(3)(b) requires that statement | **DECIDED** — the form's four columns: Yes / No / Not Removed / Needs to be Restored; stored values unchanged, "No" added (settled 2026-09-24) | **LANDED 2026-09-24** — see the build record under 68G |
@@ -1022,14 +1022,33 @@ unit case passed before and after. Green: `plan-certificate-of-service`,
 29/29 (6.1 min); `sidebar-only-wants`, `plan-simplified-mount` and
 `plan-readiness.contract` 29/29 (3.3 min).
 
-*Discovery, reported and not changed (§8.9):* on the Annual, Initial and
-Minor Plans the certificate page's **Preview & Export →** button stays
-disabled until someone is listed or "no recipients are required" is
-answered Yes. A throwaway probe on the three untouched pages confirmed it
-(disabled on all three; enabled on the Simplified Plan after this fix). The
-sidebar's links still reach Preview & Export, and export itself is never
-blocked. It is the same forward-button gating every Plan page has; whether
-it belongs on a page nothing requires is the requester's call.
+**Second follow-up, 2026-09-24 — no Plan's certificate page disables its
+button.** Found while testing the first: on the Annual, Initial and Minor
+Plans the certificate page's **Preview & Export →** button stayed disabled
+until someone was listed or "no recipients are required" was answered Yes
+(a throwaway probe on the three untouched pages confirmed it), and on the
+Simplified Plan the same happened once the certificate was started. The
+page itself says nothing on it is required to file. The sidebar's links
+still reached Preview & Export and export was never blocked, but the page's
+own way on was locked. Put to the requester; decided: keep the button
+working. `blocksNext()` in `section-guidance-policy.js` now exempts each
+Plan's certificate page, found through the same `CERT_ROUTE_BY_PREFIX` the
+guidance box uses, as it already exempts the Guardian Inventory's
+non-schedule pages. The sidebar mark and the page's reminder still ask; the
+button is never locked. Every other Plan page still blocks as before.
+
+*Tests.* **Red first:** the new unit case failed (`planAnnual pa-p12:
+expected true to be false`) while its companion — the Plans' other pages,
+and another form's page of the same name, still block — passed; the browser
+cases failed 5 of 5 on a disabled button (the Annual, Minor and Initial
+Plans from the start, the Simplified Plan in both of its cases once
+started). Green after one test-side fix: the real click on the button was
+intercepted by the app's "Save Your First Backup" reminder, which the test
+now closes first, as `user-guide-wiring.spec.ts` does. Unit 126 files /
+1,800 tests; `plan-certificate-of-service`, `section-guidance-invariant`,
+`sidebar-only-wants`, `guided-tour-navigation` and the four `plan-*-mount`
+specs 63/63 (8.1 min); `plan-readiness.contract`, `plan-initial-period`,
+`plan-signature-date` and `preparer-flag` 26/26 (4.6 min).
 
 **Discovery carried from the decision note above (§8.9):** the "Local Sixth
 Judicial Circuit requirement" wording on the Initial, Annual and Minor

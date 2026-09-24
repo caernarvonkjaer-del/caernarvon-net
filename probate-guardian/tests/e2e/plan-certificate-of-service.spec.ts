@@ -100,6 +100,9 @@ for (const form of FORMS) {
         expect(await navKey(page, form.navKey)).toBe(false);
         await expect(page.locator('#page-local-guidance'), 'the page explains the mark').toContainText(/recipient/i);
       }
+      // Follow-up, 2026-09-24: asked, never demanded -- the mark never locks
+      // the page's own way on to Preview & Export.
+      await expect(page.locator('#page-next-btn'), 'blank: Preview & Export is one click away').toBeEnabled();
 
       // The question is asked only while Recipient 1 is blank (the
       // accountings' D16 rule), so the data that must survive it lives in a
@@ -108,6 +111,18 @@ for (const form of FORMS) {
       await nameInput(page, 1).fill('Kept Recipient');
       await nameInput(page, 1).blur();
       expect(await navKey(page, form.navKey), 'started, Recipient 1 blank: the sidebar asks on every Plan').toBe(false);
+      // Marked unfinished on every Plan now, and the button still works --
+      // clicked for real, as a filer would.
+      await expect(page.locator('#page-next-btn'), 'marked: the button stays enabled').toBeEnabled();
+      // The "Save Your First Backup" reminder pops up on its own timer and can
+      // sit over the button; a filer closes it, and so does this test
+      // (user-guide-wiring.spec.ts's pattern).
+      const reminder = page.locator('[data-shell-action="hide-auto-export-reminder"]');
+      if (await reminder.isVisible().catch(() => false)) await reminder.click();
+      await page.locator('#page-next-btn').click();
+      await expect(page.locator(form.pdfButton), 'the click reaches Preview & Export').toBeVisible({ timeout: 20_000 });
+      await go(page, form.route);
+      await expect(nameInput(page, 1), 'back on the page, nothing lost').toHaveValue('Kept Recipient');
       await expect(page.locator('#yesno_certNoRecipients_yes'), 'Recipient 1 blank: the question is visible').toBeVisible();
       await page.locator('#yesno_certNoRecipients_yes').check();
       await expect(nameInput(page, 1), 'Yes hides the cards').toHaveCount(0);
@@ -190,6 +205,7 @@ for (const form of FORMS) {
         await page.evaluate(() => (window as any).flushPendingSave());
         await go(page, form.route);
         await expect(guidance, 'started: the page says what it still wants').toHaveCount(1);
+        await expect(page.locator('#page-next-btn'), 'started and marked: the way on is still open').toBeEnabled();
         await go(page, '/print');
         await expect(page.locator(form.pdfButton), 'still never blocks export').toBeEnabled({ timeout: 20_000 });
         await expect(advisory.first(), 'started: Preview & Export says what is blank').toBeVisible();
