@@ -131,7 +131,12 @@ async function templateSheets(name) {
   return out;
 }
 
-/** (sheet, cell, line) for every setCell whose worksheet variable resolves. */
+/**
+ * (sheet, cell, line) for every setCell / setDateCell whose worksheet
+ * variable resolves. setDateCell() (Milestone 67E) writes the same cells the
+ * string writer used to, so it is policed the same way -- a date written
+ * onto a caption or a formula is no less a defect for being a real date.
+ */
 function writeTargets(jsPath) {
   const src = readFileSync(jsPath, 'utf8');
   const varSheet = new Map();
@@ -139,7 +144,7 @@ function writeTargets(jsPath) {
     varSheet.set(m[1], m[2]);
   }
   const out = [];
-  for (const m of src.matchAll(/setCell\(\s*(\w+)\s*,\s*['`]([A-Z]+)(\d+)['`]/g)) {
+  for (const m of src.matchAll(/set(?:Date)?Cell\(\s*(\w+)\s*,\s*['`]([A-Z]+)(\d+)['`]/g)) {
     const sheet = varSheet.get(m[1]);
     if (!sheet) continue;
     out.push({ sheet, cell: `${m[2]}${m[3]}`, line: src.slice(0, m.index).split('\n').length });

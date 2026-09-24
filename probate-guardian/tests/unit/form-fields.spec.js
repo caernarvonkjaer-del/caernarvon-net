@@ -251,6 +251,21 @@ describe('renderRadioGroupField', () => {
   // a control carrying data-form-route. Every option gets the attribute --
   // the filer may pick any of them -- and a group given no route emits none,
   // so the ~20 groups that gate nothing keep their scroll position.
+  // Milestone 67B: the bond / restricted-depository question stores a code
+  // and shows a sentence, so an option may be a { value, label } pair.
+  it('accepts { value, label } options, storing the value and showing the label', () => {
+    const html = renderRadioGroupField({
+      path: 'bondDepositoryState', value: 'bond-waived',
+      options: [{ value: 'bond-only', label: 'Bond only' }, { value: 'bond-waived', label: 'Bond waived by court order' }],
+    });
+    expect(html).toContain('value="bond-only"');
+    expect(html).toContain('>Bond only</label>');
+    expect(html).toMatch(/value="bond-waived" checked/);
+    expect(html).not.toMatch(/value="bond-only" checked/);
+    expect(html).toContain('>Bond waived by court order</label>');
+    expect(html).not.toContain('[object Object]');
+  });
+
   it('emits data-form-route on every option when given a route, and on none otherwise', () => {
     const routed = renderRadioGroupField({
       path: 'q2Setting', options: ['Private Residence', 'Other'], route: '/p2',

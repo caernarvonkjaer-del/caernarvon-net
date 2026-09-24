@@ -5,6 +5,14 @@
 import { resolveFilingDescriptor } from './filing-descriptor.js';
 import { countyDriftWarnings } from '../case-county-drift.js';
 import { formDerivedOverwriteWarnings } from './form-derived-fields.js';
+import { bondDepositoryAdvisories } from './bond-depository.js';
+
+// Milestone 67B. The page each form asks the bond / restricted-depository
+// question on, by the registry's own engine id (the Annual family shares
+// one); every other type has no bond block and gets no advisory.
+const bondSectionFor = (descriptor) => (
+  descriptor?.engineId === 'guardian' ? 'D-4' : descriptor?.engineId === 'annual' ? 'Part IX' : ''
+);
 import {
   commitStoredDateDrafts,
   formatDraftIssues,
@@ -38,12 +46,16 @@ export function prepareFilingOutput(data, baseIssues = [], options = {}) {
     && typeof window.isOutputAcknowledgedFor === 'function'
     && window.isOutputAcknowledgedFor(target, identity.descriptor);
   const messages = acknowledged && structuredIssues.every(issue => issue.bypassable !== false) ? [] : rawMessages;
+  const bondSection = bondSectionFor(identity.descriptor);
   const advisories = [
     ...countyDriftWarnings(target),
     // Cells the court's form computes for itself that this filing overwrites
     // with a different value. Advisory by decision, not by omission -- see
     // form-derived-fields.js.
     ...formDerivedOverwriteWarnings(target, identity.descriptor),
+    // Milestone 67B: nothing in the bond block gates export on either form;
+    // what it still wants is said here, in the same non-blocking channel.
+    ...(bondSection ? bondDepositoryAdvisories(target, { section: bondSection }) : []),
   ];
 
   return {

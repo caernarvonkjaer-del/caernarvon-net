@@ -770,11 +770,13 @@ describe('Milestones 60B-60E: every UI-captured schedule field reaches the PDF',
 });
 
 // Milestone 60H. Two things Part V captured or computed and never printed:
-// the bond-waiver answer/date (index.js requires bondWaived and, when Yes,
-// bondWaivedDate; the workbook records the date at PART V!G15) and the
-// bond-requirement breakdown the workbook itemizes at PART V rows 18-23 and
-// the live UI already shows on its Part V page.
-describe('Milestone 60H: Part V prints the bond-waiver answer and the bond-requirement breakdown', () => {
+// the bond arrangement and the bond-requirement breakdown the workbook
+// itemizes at PART V rows 18-23 and the live UI already shows on its Part V
+// page. Milestone 67B replaced 60H's Yes/No waiver line with the requester-
+// approved sentence per state: a waived bond and a restricted depository each
+// print their line in place of the bond details; bond-only and unanswered
+// print the bond details as before.
+describe('Milestone 60H / 67B: Part V prints the bond arrangement and the bond-requirement breakdown', () => {
   const base = (extra = {}) => ({
     wardName: 'Harold Thomas Bennett', caseNumber: '26-002487-GD', county: 'Pasco',
     scheduleA1: [], scheduleA2: [], scheduleB1: [], scheduleB2: [], scheduleB3: [], scheduleB4: [],
@@ -784,32 +786,37 @@ describe('Milestone 60H: Part V prints the bond-waiver answer and the bond-requi
   const partV = (model) => model.sections.find(s => s.id === 'd3_d4');
   const bondGrid = (model) => partV(model).blocks.find(b => b.title === 'SURETY BOND REQUIREMENT');
   const item = (grid, label) => grid.items.find(i => i.label === label);
-  const WAIVED = 'Surety bond waived by court order?';
-  const WAIVED_DATE = 'Date of the order waiving the bond';
+  const STATUS = 'Bond status';
 
-  test('a waived bond prints Yes and the order date', () => {
-    const grid = bondGrid(buildVerifiedInventoryModel(base({ bondWaived: 'Yes', bondWaivedDate: '2026-03-04' })));
-    expect(item(grid, WAIVED).value).toBe('Yes');
-    expect(item(grid, WAIVED_DATE).value).toBe('03/04/2026');
+  test('a waived bond prints the order date, in the approved words, and no bond details', () => {
+    const grid = bondGrid(buildVerifiedInventoryModel(base({ bondDepositoryState: 'bond-waived', bondWaivedDate: '2026-03-04', bondAmount: '5000' })));
+    expect(item(grid, STATUS).value).toBe('Bond waived by court order dated 03/04/2026.');
+    expect(item(grid, 'Bond Amount')).toBeUndefined();
   });
 
-  test('a bond not waived prints No and no date line', () => {
-    const grid = bondGrid(buildVerifiedInventoryModel(base({ bondWaived: 'No', bondWaivedDate: '' })));
-    expect(item(grid, WAIVED).value).toBe('No');
-    expect(item(grid, WAIVED_DATE)).toBeUndefined();
+  test('a restricted depository alone prints the receipt date; with a bond, the bond details too', () => {
+    const only = bondGrid(buildVerifiedInventoryModel(base({ bondDepositoryState: 'depository-only', restrictedDepositoryReceiptDate: '2026-02-02' })));
+    expect(item(only, STATUS).value).toBe('Assets held in a restricted depository. Most recent receipt dated 02/02/2026.');
+    expect(item(only, 'Bond Amount')).toBeUndefined();
+    const both = bondGrid(buildVerifiedInventoryModel(base({ bondDepositoryState: 'bond-and-depository', restrictedDepositoryReceiptDate: '2026-02-02', bondAmount: '5000' })));
+    expect(item(both, STATUS).value).toBe('Assets held in a restricted depository. Most recent receipt dated 02/02/2026.');
+    expect(item(both, 'Bond Amount').value).toBe('$5,000.00');
   });
 
-  // AGENTS.md section 4: unanswered is never coerced to No. And Milestone 57A's
-  // legacy rule: a filing saved before the question existed has the date and
-  // no answer, and a date can only have been entered because the bond WAS
-  // waived -- so it reads Yes; an absent date stays unanswered.
-  test('unanswered stays unanswered ("—"), and a legacy save with only the date reads as Yes', () => {
-    const blank = bondGrid(buildVerifiedInventoryModel(base({ bondWaived: '', bondWaivedDate: '' })));
-    expect(item(blank, WAIVED).value).toBe('—');
-    expect(item(blank, WAIVED_DATE)).toBeUndefined();
-    const legacy = bondGrid(buildVerifiedInventoryModel(base({ bondWaivedDate: '2026-03-04' })));
-    expect(item(legacy, WAIVED).value).toBe('Yes');
-    expect(item(legacy, WAIVED_DATE).value).toBe('03/04/2026');
+  test('bond only and unanswered print the bond details as before, with no status line', () => {
+    for (const state of ['bond-only', '']) {
+      const grid = bondGrid(buildVerifiedInventoryModel(base({ bondDepositoryState: state, bondAmount: '5000', bondingCompany: 'Gulf Surety' })));
+      expect(item(grid, STATUS), state).toBeUndefined();
+      expect(item(grid, 'Bond Amount').value).toBe('$5,000.00');
+      expect(item(grid, 'Bonding Company').value).toBe('Gulf Surety');
+    }
+  });
+
+  // A filing saved before 67B is migrated on mount; the model builder also
+  // infers, so an un-migrated object prints the same thing.
+  test('a legacy save carrying only the waiver date prints the waived line', () => {
+    const grid = bondGrid(buildVerifiedInventoryModel(base({ bondWaivedDate: '2026-03-04' })));
+    expect(item(grid, STATUS).value).toBe('Bond waived by court order dated 03/04/2026.');
   });
 
   // Hand-computed against PART V rows 18-23 (the same fixture as

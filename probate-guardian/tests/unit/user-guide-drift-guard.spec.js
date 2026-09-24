@@ -204,12 +204,17 @@ const GUIDE_CONTROLS = {
   // two are new (64A-1/D16, 64A-2/65A), one is old (57B/63B) but was never
   // documented at all, found only by reading the D-5/Part VI/Part X source
   // directly rather than trusting the guide's prior silence on it.
-  'guardian-bond-waived': {
-    label: 'Has the surety bond been waived by court order?',
-    // Guardian Inventory D-4 only -- the Annual/Trust family's own bond
-    // section (Part IX) has no waiver toggle; this control does not exist
-    // there.
-    evidence: [{ file: 'src/features/guardian-inventory/index.js', pattern: /'Has the surety bond been waived by court order\?'/ }],
+  'bond-depository-arrangement': {
+    label: 'Which applies to this guardianship?',
+    // Milestone 67B replaced the Inventory's "Has the surety bond been waived
+    // by court order?" (and the Annual family's "Restricted depository?")
+    // with one four-state question on both D-4 and Part IX. The label lives
+    // in the shared module; each form renders it by that constant.
+    evidence: [
+      { file: 'src/core/filing/bond-depository.js', pattern: /BOND_DEPOSITORY_QUESTION = 'Which applies to this guardianship\?'/ },
+      { file: 'src/features/guardian-inventory/index.js', pattern: /label:BOND_DEPOSITORY_QUESTION/ },
+      { file: 'src/features/annual-accounting/index.js', pattern: /label:BOND_DEPOSITORY_QUESTION/ },
+    ],
   },
   'guardian-indicate-if-ward': {
     label: 'Indicate if Ward is:',

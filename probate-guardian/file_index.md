@@ -98,6 +98,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`src\core\feedback\feedback-config.js`](<src/core/feedback/feedback-config.js>) | Build, tooling, or configuration source. |
 | [`src\core\feedback\feedback-message.js`](<src/core/feedback/feedback-message.js>) | Build, tooling, or configuration source. |
 | [`src\core\feedback\feedback-modal.js`](<src/core/feedback/feedback-modal.js>) | Build, tooling, or configuration source. |
+| [`src\core\filing\bond-depository.js`](<src/core/filing/bond-depository.js>) | Milestone 67B: the four-state bond / restricted-depository question shared by Guardian Inventory and Annual Accounting -- states, reveals, legacy-shape migration, print-preview advisories and PDF lines. |
 | [`src\core\filing\county-guidance.js`](<src/core/filing/county-guidance.js>) | Build, tooling, or configuration source. |
 | [`src\core\filing\delete-confirmation.js`](<src/core/filing/delete-confirmation.js>) | Build, tooling, or configuration source. |
 | [`src\core\filing\escape-html.js`](<src/core/filing/escape-html.js>) | Build, tooling, or configuration source. |
@@ -172,7 +173,6 @@ This index inventories repository files retained as source or project artifacts.
 | [`src\core\ui\transient-status.js`](<src/core/ui/transient-status.js>) | Build, tooling, or configuration source. |
 | [`src\core\validation\attorney-block.js`](<src/core/validation/attorney-block.js>) | Build, tooling, or configuration source. |
 | [`src\core\validation\date-rules.js`](<src/core/validation/date-rules.js>) | Build, tooling, or configuration source. |
-| [`src\core\validation\dependent-question.js`](<src/core/validation/dependent-question.js>) | Build, tooling, or configuration source. |
 | [`src\core\validation\issue-registry.js`](<src/core/validation/issue-registry.js>) | Build, tooling, or configuration source. |
 | [`src\core\validation\row-started.js`](<src/core/validation/row-started.js>) | Build, tooling, or configuration source. |
 | [`src\core\validation\service-recipients.js`](<src/core/validation/service-recipients.js>) | Build, tooling, or configuration source. |
@@ -255,6 +255,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`tests\e2e\annual-mount.spec.ts`](<tests/e2e/annual-mount.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\annual-schedule-consistency.spec.ts`](<tests/e2e/annual-schedule-consistency.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\backup-restore-sav.spec.ts`](<tests/e2e/backup-restore-sav.spec.ts>) | Automated test covering the named behavior or contract. |
+| [`tests\e2e\bond-depository.spec.ts`](<tests/e2e/bond-depository.spec.ts>) | Milestone 67B: nothing in the bond block gates export; the four-state question's reveals, advisories, legacy migration, PDF lines, workbook cells and the Excel import round trip on both forms. |
 | [`tests\e2e\carryover-workflow.spec.ts`](<tests/e2e/carryover-workflow.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\case-file-core-fields-roundtrip.spec.ts`](<tests/e2e/case-file-core-fields-roundtrip.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\case-file-protection.spec.ts`](<tests/e2e/case-file-protection.spec.ts>) | Automated test covering the named behavior or contract. |
@@ -270,7 +271,6 @@ This index inventories repository files retained as source or project artifacts.
 | [`tests\e2e\dashboard-backup.spec.ts`](<tests/e2e/dashboard-backup.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\dashboard-visual.spec.ts`](<tests/e2e/dashboard-visual.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\date-validation.contract.spec.ts`](<tests/e2e/date-validation.contract.spec.ts>) | Automated test covering the named behavior or contract. |
-| [`tests\e2e\dependent-question-gate.spec.ts`](<tests/e2e/dependent-question-gate.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\excel-b4-multi-account.spec.ts`](<tests/e2e/excel-b4-multi-account.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\excel-blank-page-pruning.spec.ts`](<tests/e2e/excel-blank-page-pruning.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\excel-date-cells.spec.ts`](<tests/e2e/excel-date-cells.spec.ts>) | Milestone 67E: exported dates are Excel serials under a date format on all three exporters; coverage sweep and year-boundary re-import. |
@@ -368,6 +368,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`tests\e2e\verified-inventory-workflow.spec.ts`](<tests/e2e/verified-inventory-workflow.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\ward-lock.spec.ts`](<tests/e2e/ward-lock.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\amended-form-line.spec.js`](<tests/unit/amended-form-line.spec.js>) | Automated test covering the named behavior or contract. |
+| [`tests\unit\bond-depository.spec.js`](<tests/unit/bond-depository.spec.js>) | Milestone 67B: the bond-depository module -- states, reveals, migration table (incl. neither a zero bond amount nor the period dates alone counting as a bond), advisories and PDF lines. |
 | [`tests\unit\annual-accounting-pdf-model.spec.js`](<tests/unit/annual-accounting-pdf-model.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\annual-accounting-totals.spec.js`](<tests/unit/annual-accounting-totals.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\annual-pdf-schb4-attribution.spec.js`](<tests/unit/annual-pdf-schb4-attribution.spec.js>) | Automated test covering the named behavior or contract. |
@@ -392,7 +393,6 @@ This index inventories repository files retained as source or project artifacts.
 | [`tests\unit\date-rules.spec.js`](<tests/unit/date-rules.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\date-truncation-helpers.spec.js`](<tests/unit/date-truncation-helpers.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\delete-confirmation.spec.js`](<tests/unit/delete-confirmation.spec.js>) | Automated test covering the named behavior or contract. |
-| [`tests\unit\dependent-question.spec.js`](<tests/unit/dependent-question.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\excel-capacity-issues.spec.js`](<tests/unit/excel-capacity-issues.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\excel-engine.spec.js`](<tests/unit/excel-engine.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\excel-write-targets.spec.js`](<tests/unit/excel-write-targets.spec.js>) | Automated test covering the named behavior or contract. |

@@ -8,8 +8,8 @@ import { resolveDescriptorForInventoryType } from '../../core/filing/filing-desc
 import { composePdfAddressLines } from '../../core/pdf/address-format.js';
 import { maskSSN } from '../../core/pdf/ssn-format.js';
 import { calcTotalsGuardian, makeGuardianCalc, isRestrictedAnswer, isInSafeDepositBox, AUDIT_FEE_THRESHOLD, AUDIT_FEE_OVER_THRESHOLD } from './totals.js';
-import { effectiveAnswer } from '../../core/validation/dependent-question.js';
 import { preparedByLine } from '../../core/form/preparer-flag.js';
+import { inferBondDepositoryState, bondDepositoryPdfLines, revealsBond } from '../../core/filing/bond-depository.js';
 
 export function buildVerifiedInventoryModel(D, options = {}) {
   const d = D || {};
@@ -766,24 +766,24 @@ export function buildVerifiedInventoryModel(D, options = {}) {
         type: 'key-value-grid',
         tag: 'Table',
         title: 'SURETY BOND REQUIREMENT',
-        items: [
-          { label: 'Bond Amount', value: fmt(d.bondAmount) },
-          { label: 'Bond Period', value: `${fmtDate(d.bondPeriodFrom)} to ${fmtDate(d.bondPeriodTo)}` },
-          { label: 'Bonding Company', value: d.bondingCompany || '' },
-          // Milestone 60H: the bond-waiver answer (Milestone 57A's app-side
-          // question; PART V row 15 records only the order date) and, when
-          // waived, that date. effectiveAnswer() is the same predicate the UI
-          // and validator use: an explicit answer wins, a legacy save with the
-          // date and no answer reads Yes, and an absent date is UNANSWERED --
-          // never coerced to No (AGENTS.md section 4).
-          ...(() => {
-            const waived = effectiveAnswer(d.bondWaived, d.bondWaivedDate);
-            return [
-              { label: 'Surety bond waived by court order?', value: waived || '—' },
-              ...(waived === 'Yes' ? [{ label: 'Date of the order waiving the bond', value: fmtDate(d.bondWaivedDate) }] : []),
-            ];
-          })(),
-        ],
+        // Milestone 67B (replacing 60H's Yes/No waiver line): the arrangement
+        // prints as the requester-approved sentence per state -- a waived
+        // bond and a restricted depository each print their line in place of
+        // the bond details; bond-only and unanswered print the details as
+        // before. inferBondDepositoryState() reads the state, or a legacy
+        // save's old fields, the same way the UI and the validator do.
+        items: (() => {
+          const state = inferBondDepositoryState(d);
+          const details = (revealsBond(state) || !state) ? [
+            { label: 'Bond Amount', value: fmt(d.bondAmount) },
+            { label: 'Bond Period', value: `${fmtDate(d.bondPeriodFrom)} to ${fmtDate(d.bondPeriodTo)}` },
+            { label: 'Bonding Company', value: d.bondingCompany || '' },
+          ] : [];
+          return [
+            ...bondDepositoryPdfLines(d, fmtDate).map((line) => ({ label: 'Bond status', value: line })),
+            ...details,
+          ];
+        })(),
       },
     ],
   });

@@ -9,6 +9,7 @@ import { composePdfAddressLines } from '../../core/pdf/address-format.js';
 import { maskSSN } from '../../core/pdf/ssn-format.js';
 import { b4AccountHeading } from '../../core/accounting/bank-accounts.js';
 import { preparedByLine } from '../../core/form/preparer-flag.js';
+import { inferBondDepositoryState, bondDepositoryPdfLines, revealsBond } from '../../core/filing/bond-depository.js';
 
 export const DISB_CATS = [
   'Accounting',
@@ -1068,15 +1069,26 @@ export function buildAnnualAccountingModel(D, options = {}) {
         type: 'key-value-grid',
         tag: 'Table',
         title: 'Bond Policy Details',
-        items: [
-          { label: 'Bond Amount', value: fmtS(d.bondAmount) },
-          // Milestone 67D: the filed Excel fills the bond period from the
-          // accounting period by formula; when the app's own boxes are blank
-          // the PDF says the same, so the two documents agree. A typed value
-          // still prints, and the print page warns when it differs.
-          { label: 'Bond Period', value: `From: ${fmtD(d.bondPeriodFrom || d.periodFrom)}   To: ${fmtD(d.bondPeriodTo || d.periodTo)}` },
-          { label: 'Name of Bonding Company', value: d.bondingCompany || '' },
-        ],
+        // Milestone 67B: the arrangement prints as the requester-approved
+        // sentence per state -- a waived bond and a restricted depository
+        // each print their line in place of the bond details; bond-only and
+        // unanswered print the details as before.
+        items: (() => {
+          const state = inferBondDepositoryState(d);
+          const details = (revealsBond(state) || !state) ? [
+            { label: 'Bond Amount', value: fmtS(d.bondAmount) },
+            // Milestone 67D: the filed Excel fills the bond period from the
+            // accounting period by formula; when the app's own boxes are blank
+            // the PDF says the same, so the two documents agree. A typed value
+            // still prints, and the print page warns when it differs.
+            { label: 'Bond Period', value: `From: ${fmtD(d.bondPeriodFrom || d.periodFrom)}   To: ${fmtD(d.bondPeriodTo || d.periodTo)}` },
+            { label: 'Name of Bonding Company', value: d.bondingCompany || '' },
+          ] : [];
+          return [
+            ...bondDepositoryPdfLines(d, fmtD).map((line) => ({ label: 'Bond status', value: line })),
+            ...details,
+          ];
+        })(),
       },
     ],
   });

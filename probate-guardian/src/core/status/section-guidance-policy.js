@@ -118,12 +118,27 @@ export function pageAlsoOwns(type, route) {
 
 const blank = (value) => value === undefined || value === null || String(value).trim() === '';
 
+// The Annual family -- annual, finalAccounting, trustAccounting -- shares Part
+// IX; PREFIX above already identifies it as 'a-', so the three keys are not
+// restated here (tests/unit/filing-type-enumeration-guard.spec.js).
+const isAnnualFamily = (type) => PREFIX[type] === 'a-';
+
 /**
  * What a sidebar-only rule still wants, as { label, path } items the guidance box can render as jump links.
  * Empty for every page that has no such rule, and for a page whose rule is already satisfied.
  */
 export function sidebarOnlyWants(type, route, data) {
   const d = data || {};
+  // Milestone 67B. The bond / restricted-depository arrangement (D-4 on the
+  // Inventory, Part IX on the Annual family) is asked, never demanded: nothing
+  // in the bond block gates export, so no validator message exists for it,
+  // and the sidebar's mark would otherwise be unexplained -- the very defect
+  // 63A fixed. AGENTS.md section 4: the sidebar asks "have you finished with
+  // this page?", the export gate asks "does this satisfy the court?".
+  if ((type === 'guardian' && route === '/d4') || (isAnnualFamily(type) && route === '/p9')) {
+    if (!blank(d.bondDepositoryState)) return [];
+    return [{ label: 'State which applies: a restricted depository, a bond, both, or a bond waived by court order', path: 'bondDepositoryState' }];
+  }
   if (type === 'planAnnual' && route === '/p4') {
     // pa-p4: any benefit answered (eligible or applied for), or "None of the above", or "Other".
     const answered = Object.values(d.benefits || {}).some((b) => b && (b.eligible || b.appliedFor));

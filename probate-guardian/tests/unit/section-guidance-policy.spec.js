@@ -161,10 +161,30 @@ describe('sidebarOnlyWants() — what a sidebar-only rule still wants, as items 
     expect(sidebarOnlyWants('planMinor', '/p7', { preparer_name: 'P', attorney_name: 'A', attorney_signatureDate: '2027-01-01' })).toEqual([]);
   });
 
+  // Milestone 67B. The bond / restricted-depository arrangement is asked, never
+  // demanded: no validator message exists for it, so the sidebar's mark on
+  // D-4 / Part IX names what it is waiting for here. Blank means unanswered;
+  // any of the four states satisfies it, and its revealed fields are never
+  // wanted -- they are advisory on the print preview instead.
+  test('Inventory D-4 and Annual-family Part IX: the arrangement, until it is stated', () => {
+    const wantsState = (items) => { expect(paths(items)).toEqual(['bondDepositoryState']); expect(items[0].label).toMatch(/restricted depository, a bond, both, or a bond waived/i); };
+    wantsState(sidebarOnlyWants('guardian', '/d4', {}));
+    wantsState(sidebarOnlyWants('guardian', '/d4', { bondDepositoryState: '', bondAmount: '5000' }));
+    for (const type of ['annual', 'finalAccounting', 'trustAccounting']) wantsState(sidebarOnlyWants(type, '/p9', {}));
+    for (const state of ['depository-only', 'bond-and-depository', 'bond-only', 'bond-waived']) {
+      expect(sidebarOnlyWants('guardian', '/d4', { bondDepositoryState: state }), state).toEqual([]);
+      expect(sidebarOnlyWants('annual', '/p9', { bondDepositoryState: state, bondAmount: '' }), state).toEqual([]);
+    }
+    // Only those pages, and only those types.
+    expect(sidebarOnlyWants('guardian', '/p9', {})).toEqual([]);
+    expect(sidebarOnlyWants('annual', '/d4', {})).toEqual([]);
+    expect(sidebarOnlyWants('simplified', '/p9', {})).toEqual([]);
+  });
+
   test('a page with no sidebar-only rule wants nothing', () => {
     expect(sidebarOnlyWants('planMinor', '/p3', {})).toEqual([]);
     expect(sidebarOnlyWants('annual', '/p3', {})).toEqual([]);
-    expect(sidebarOnlyWants('guardian', '/d4', {})).toEqual([]);
+    expect(sidebarOnlyWants('guardian', '/d3', {})).toEqual([]);
   });
 
   test('missing data is not an error', () => {

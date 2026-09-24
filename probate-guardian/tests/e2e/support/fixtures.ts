@@ -40,10 +40,11 @@ export const MINIMAL_VALID_GUARDIAN = {
   bondPeriodFrom: '2026-01-01',
   bondPeriodTo: '2027-01-01',
   bondingCompany: 'Sample Bonding Co',
-  // Milestone 57A added a required Yes/No for the bond waiver. A filing this
-  // fixture describes is meant to be export-ready, so it answers it; 'No'
-  // needs no order date.
-  bondWaived: 'No',
+  // Milestone 57A added a required Yes/No for the bond waiver; Milestone 67B
+  // replaced it with the four-state arrangement, which nothing requires. A
+  // filing this fixture describes states it anyway, matching the bond
+  // details above.
+  bondDepositoryState: 'bond-only',
   serviceDate: '2026-01-02',
   // Milestone 64A-2, item 2.4.
   serviceIndicateIf: 'N/A',
@@ -84,9 +85,10 @@ export const MINIMAL_VALID_ANNUAL = {
   startingBalance: '10000',
   bondAmount: '5000',
   bondingCompany: 'Sample Bonding Co.',
-  // Milestone 57A added a required Yes/No for the restricted depository.
-  // 'No' needs no receipt date.
-  restrictedDepository: 'No',
+  // Milestone 57A added a required Yes/No for the restricted depository;
+  // Milestone 67B replaced it with the four-state arrangement, which nothing
+  // requires. Stated anyway, matching the bond details above.
+  bondDepositoryState: 'bond-only',
   certDate: '2026-12-31',
   schA: [{ payer: 'Social Security', description: 'Monthly benefit', bank: 'Sample Bank', accountNo: '1234', amount: '500' }],
   // Line 20 (starting balance + income - disbursements) will not equal Line 30

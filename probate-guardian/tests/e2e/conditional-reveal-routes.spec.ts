@@ -160,7 +160,9 @@ test.describe('Milestone 67F: answering a question reveals its field on the clic
     expect(saved.received || '').toBe('');
   });
 
-  test('Annual Accounting Part IX: "Restricted depository? Yes" reveals the receipt-date field', async ({ page }) => {
+  // Milestone 67B replaced the Yes/No "Restricted depository?" with the
+  // four-state arrangement question; the reveal it gates is the same field.
+  test('Annual Accounting Part IX: "Restricted depository only" reveals the receipt-date field', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Depository Reveal Ward', 'annual');
     await page.evaluate(() => (window as any).navigate('/p9'));
@@ -168,10 +170,10 @@ test.describe('Milestone 67F: answering a question reveals its field on the clic
     const receiptDate = page.locator('#main-content [data-form-path="restrictedDepositoryReceiptDate"]');
     await expect(receiptDate).toHaveCount(0);
 
-    await page.locator('#yesno_restrictedDepository_yes').check();
+    await page.locator('#bondDepositoryState_0').check();
 
     await expect(receiptDate, 'Date of Most Recent Receipt appears on the click').toBeVisible();
-    await expect(page.locator('#yesno_restrictedDepository_yes')).toBeChecked();
+    await expect(page.locator('#bondDepositoryState_0')).toBeChecked();
   });
 
   test('Initial Plan Q2, Q4 and Q5: choosing "Other" reveals the explanation box', async ({ page }) => {

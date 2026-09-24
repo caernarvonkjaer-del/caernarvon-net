@@ -21,7 +21,7 @@ Listed in build order.
 | 3 | 67D | Every Annual/Final/Trust Excel export destroys the Bond Period formulas | **DECIDED** — stop writing them; PDF falls back to the accounting period | **LANDED 2026-09-23** — see the build record under 67D |
 | 4 | 67E | Every exported date is written as text, not as a date | **DECIDED** — write real dates | **LANDED 2026-09-23** — see the build record under 67E |
 | 5 | 67A | Preparer block is mandatory on filings the app itself says have no preparer | **DECIDED** — name the preparer on the guardian/attorney cards; PDF prints the name | **LANDED 2026-09-23** — see the build record under 67A |
-| 6 | 67B | Bond fields block filings on Annual/Final/Trust **and Guardian Inventory** | **DECIDED** — nothing in the bond block gates export; warn only, one shared path | **After 67F** |
+| 6 | 67B | Bond fields block filings on Annual/Final/Trust **and Guardian Inventory** | **DECIDED** — nothing in the bond block gates export; warn only, one shared path | **LANDED 2026-09-23** — see the build record under 67B |
 
 67C, 67D and 67E all touch the Excel export path and share its test surface, so
 building them together is cheaper than separately — but none depends on another,
@@ -900,6 +900,136 @@ followed by Option 3 is a coherent path.
    side effect. Simplified Accounting's bond handling was still not examined.
    Read it before building (§8.9) and report
    whether it shares the defect; do not fix it silently.
+
+### Build record — LANDED 2026-09-23
+
+**What a filer now sees.** On the Initial Inventory's D-4 and the
+Annual/Final/Trust Accounting's Part IX, under *Surety Bond Details*, one
+question — *"Which applies to this guardianship?"* — with the tester's four
+answers: *Restricted depository only / Bond and restricted depository / Bond
+only / Bond waived by court order.* Each answer reveals only its fields, on
+the click: the receipt date, the bond amount / period / company, the date of
+the order. None of them is required and none of them blocks Save as PDF or
+Save as Excel — a guardian with a waived bond files. The sidebar marks the
+page unfinished until the question is answered, the page explains that and
+links to the question, and the Preview & Export page lists anything left
+blank as a reminder. The filed PDF prints the approved sentence for the
+arrangement; the filed Excel is unchanged.
+
+**The build, as decided.**
+
+- `src/core/filing/bond-depository.js` (new, shared): the four states and
+  what each reveals; `inferBondDepositoryState()` / `migrateBondDepository()`
+  — the migration table from §8.2, run on every mount of either form, never
+  coercing a blank into a state; `bondDepositoryAdvisories()`, the one
+  producer both forms use, wired into `prepareFilingOutput()`'s advisory
+  channel; and `bondDepositoryPdfLines()`, the approved sentences.
+- **Every bond blocker is gone** — the six listed in the decision: Annual's
+  two `req()` calls, Inventory's four-field block, its unanswered-waiver
+  push and its `filing.bond-waiver.incomplete` blocker; and, with them, the
+  Annual's `filing.restricted-depository.incomplete`. Milestone 57A's
+  `dependent-question.js`, its unit spec and its e2e gate spec are deleted
+  (nothing consumes them once both tri-states are gone), and both registry
+  codes are retired. The Milestone 63A coverage that gate spec carried —
+  "the page says what the red mark is waiting for" — now lives in the new
+  spec, on the new question, on both forms.
+- The two retired tri-states — Inventory `bondWaived`, Annual
+  `restrictedDepository` — are removed from the row factories and the data
+  model and deleted from a filing on load after inference. `bondWaivedDate`
+  is a real date now (it was free text) and is written to `PART V` G15 as an
+  Excel date; `restrictedDepositoryReceiptDate` is new on the Inventory and
+  `bondWaivedDate` new on the Annual, neither with a workbook cell.
+- **Four things the first green run turned up, all fixed here.** (1) The
+  Inventory module's `D` is a Proxy over `window.D` with `get`/`set` traps
+  only, so the migration's `'bondWaived' in D` answered false and the retired
+  key survived the mount — a pre-67B filing would have carried `bondWaived`
+  forever, harmless but contrary to the bullet above. The mount migrates
+  `window.D` itself now. (2) Neither Excel importer ran the migration, though
+  the module's own comment said it did: a workbook carrying a waiver date
+  (Inventory G15) or a receipt date (Annual G9) into a filing with the
+  question unanswered showed the answer those imply on the page — the render
+  infers — while the sidebar kept asking for it, because nothing stored it.
+  Both importers migrate after the read; an answer the filing already had
+  survives, since the workbook has no cell that could contradict it. (In
+  the red run with those calls disabled the state was still set, because
+  both forms re-mount after an import and the mount migrates — so the
+  importer calls make the stored answer deterministic at save time rather
+  than being the only path to it.) (3) The Annual writes a blank Bond
+  Amount to `PART IX` H20 as the number 0 (`numValue`) and reads it back
+  as 0. (4) Milestone 67D's Annual importer derives `bondPeriodFrom`/`To`
+  from the accounting period for every workbook. Under §8.2's "bond
+  details entered", (3) and (4) each turned a depository-only filing into
+  "bond and restricted depository" on re-import — the red run's actual
+  failure. So "bond details" now means **a bond amount or a bonding
+  company**: a zero amount is not a bond, and the period dates alone
+  count as nothing (on the Inventory they are only reachable behind a
+  bond answer anyway; a legacy `.sav` carrying only period dates is now
+  asked rather than read as bond-only). The spec's Excel test re-imports
+  the file it exported and checks (2)–(4); the unit spec checks (3) and
+  (4) directly.
+- **The sidebar asks; export does not demand.** The decision's own phrase.
+  Annual's hand-built `'a-p9'` is simply "answered"; the Inventory's D-4,
+  whose sidebar derives from validator errors, gets the app's first
+  sidebar-only rule on a non-Plan form (`computeNavChecks()` +
+  `sidebarOnlyWants()` in `section-guidance-policy.js`), so the mark is
+  explained on the page as 63A/63F require. On the Annual family this also
+  gates the page's Next button, as every non-Inventory page's mark does —
+  no stricter than the Bond Amount requirement it replaces.
+- `renderRadioGroupField()` accepts `{ value, label }` options, so the stored
+  value is the code and the filer reads the sentence.
+- **One correction to the item's own text.** §8.5 said "the [Annual]
+  workbook has no cell for … the receipt date." It has one — `PART IX` G9,
+  which the app has written since Milestone 57 — and it continues to. The
+  state and the waiver date have no Annual cell, as stated.
+
+**§8.9 — Simplified Accounting checked.** Its `validateSimplified()` has no
+bond requirements, its workbook has no bond block, and it does not share the
+defect. Nothing there changes.
+
+**Verification.**
+
+- Unit: `tests/unit/bond-depository.spec.js` (18 cases: the states,
+  the migration table incl. never-coerce, the zero-amount case and the
+  period-dates-alone case — each red first against the prior body
+  (`0: expected true to be false`; `the bond period dates alone are not a bond — expected true to be false`, 1 failed / 17 passed each time, 18/18 restored) — the advisories per
+  state, the PDF lines) and `section-guidance-policy.spec.js` (+1), `form-fields.spec.js`
+  (+1); `guardian-inventory-64a1-validation.spec.js`'s D16 block and
+  `guardian-inventory-pdf-model.spec.js`'s 60H block rescoped to the new
+  rule. `excel-write-targets.spec.js` now also polices `setDateCell()`
+  targets, which 67E had moved out of its regex's reach — a gap found while
+  auditing this item, closed here. Full unit suite: **124 files / 1,767
+  green**; `verify:data-model` OK (951 rows); `check:types` clean.
+- E2E, **red first** (`tests/e2e/bond-depository.spec.ts`, new, run against
+  the pre-67B forms before any source changed): 9 of 10 failed for the
+  stated reasons — the gate raised `D-4 — Bond Amount` … and `Part IX — Bond
+  Amount` …, the arrangement radios did not exist, no migration ran, and
+  both PDF exports were blocked. (The tenth, Annual's advisory test, passed
+  because the shared advisory hook was already on disk and the test ends
+  with the fields filled.) Green: **12/12, 2.2 min** on the final source.
+  The import round trip added afterwards was itself run red against the
+  earlier inference rule (Annual: `Expected: "depository-only"`,
+  `Received: "bond-and-depository"`). Neighbours: the D-4 / Part IX,
+  sidebar, fixture and output specs (`guardian-inventory-mount`,
+  `annual-mount`, `navigation-status.contract`, `conditional-reveal-routes`,
+  `section-guidance-invariant`, `sidebar-only-wants`,
+  `readiness-card.contract`, `form-entry.contract`,
+  `guardian-inventory-tri-state-radios`, `pdf-form-specific`,
+  `pdf-table-semantics`, `verified-inventory-workflow`, `preparer-flag` and
+  the rest of that 247-test set) — **242 passed, 30.2 min**, the only 5
+  failures being this spec's own pre-fix cases, all green in the 12/12 run.
+- User guide: the D-4 and Part IX text is rewritten for the new question
+  and the drift guard's declared control re-pointed at it. The two figures
+  that showed the retired questions (`d4-bond.jpg`, `annual-p9-bond.jpg`)
+  were re-shot with the capture harness (`npm run capture:guide`, 17/17,
+  7.1 min — the D-4 capture step now ticks "Bond only" to reveal the bond
+  fields) and spliced into `help/index.html` by their `alt` text, replacing
+  only those two payloads; both were viewed and show the new question. One
+  cosmetic note for the requester: the four options render as an inline
+  radio row that wraps onto two lines at desktop width — the same rendering
+  the Initial Plan's eight-option residence question uses; a stacked layout
+  would be a small `renderRadioGroupField()` option if wanted.
+
+Landed in the commit whose subject begins `fix(milestone-67B):`.
 
 ---
 

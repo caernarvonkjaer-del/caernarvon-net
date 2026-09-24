@@ -12,6 +12,7 @@ import { authorizeFilingOutput } from '../../core/filing/output-authorization.js
 import { getExcelCapacityIssues } from '../../core/excel/excel-capacity.js';
 import { getExcelJS, saveWorkbookFile, setCell, setDateCell } from '../../core/excel/excel-engine.js';
 import { hasIdentifiedPreparer } from '../../core/form/preparer-flag.js';
+import { migrateBondDepository } from '../../core/filing/bond-depository.js';
 import { readCellText, unwrapCellValue } from '../../core/excel/cell-reader.js';
 import { pruneSheets } from '../../core/excel/sheet-pruning.js';
 import {
@@ -519,7 +520,10 @@ export async function doSaveExcel(){
       setDateCell(p5,'E27',inv.bondPeriodFrom);
       setDateCell(p5,'G27',inv.bondPeriodTo);
       setCell(p5,'D28',inv.bondingCompany||'');
-      setCell(p5,'G15',inv.bondWaivedDate||'');
+      // Milestone 67B: a real date now (it was free text), like every other
+      // date since 67E. The arrangement itself has no cell; only the order
+      // date the form's own line asks for reaches the workbook.
+      setDateCell(p5,'G15',inv.bondWaivedDate);
     }
 
     const p6=workbook.getWorksheet('PART VI');
@@ -603,6 +607,13 @@ export async function importExcel(input){
     (importedData.guardians||[]).forEach((g,i)=>{g.isPreparer=!namesOutsidePreparer&&!!prior.guardians?.[i]?.isPreparer;});
     if(importedData.attorney)importedData.attorney.isPreparer=!namesOutsidePreparer&&!!prior.attorney?.isPreparer;
     Object.assign(window.D,importedData);
+    // Milestone 67B: the workbook has no cell for the bond / restricted
+    // depository arrangement, and importedData carries no key for it, so an
+    // answer this filing already had survives the assign. A blank one is read
+    // from what the workbook did carry (the G15 waiver date, the bond
+    // details) -- otherwise the page would show the answer those imply while
+    // the sidebar kept asking for it.
+    migrateBondDepository(window.D);
     saveData();
     window.markFilingRevisionChanged?.('excel-import');
     setStatus(prog,'✓ Import complete!');
@@ -677,12 +688,13 @@ function parseInitialInventoryWorkbook(wb){
     // Milestone 64A-1, item 1.1: bondAmount is now stored numeric (matching
     // every other currency field's num() reader), not the display string
     // txt() previously returned.
-    bondAmount:num(ws('PART V'),'G26'),bondPeriodFrom:dt(ws('PART V'),'E27'),bondPeriodTo:dt(ws('PART V'),'G27'),bondingCompany:txt(ws('PART V'),'D28'),bondWaivedDate:txt(ws('PART V'),'G15'),
+    bondAmount:num(ws('PART V'),'G26'),bondPeriodFrom:dt(ws('PART V'),'E27'),bondPeriodTo:dt(ws('PART V'),'G27'),bondingCompany:txt(ws('PART V'),'D28'),bondWaivedDate:dt(ws('PART V'),'G15')||'',
     serviceRecipients:(()=>{const p6=ws('PART VI');const all=[{name:txt(p6,'B13'),address:txt(p6,'B14'),cityStateZip:txt(p6,'B15')},{name:txt(p6,'H13'),address:txt(p6,'H14'),cityStateZip:txt(p6,'H15')},{name:txt(p6,'B19'),address:txt(p6,'B20'),cityStateZip:txt(p6,'B21')},{name:txt(p6,'H19'),address:txt(p6,'H20'),cityStateZip:txt(p6,'H21')}];const filtered=all.filter(r=>r.name||r.address||r.cityStateZip);return filtered.length>0?filtered:[mk.recipient()];})(),
     // Milestone 57B: imported as unanswered, never inferred. A blank PART VI
     // means the workbook carries no recipients; it does NOT mean the filer
     // attested that none are required. That is the section 4 tri-state rule,
-    // and the same one-way reasoning dependent-question.js enforces for 57A.
+    // and the same one-way reasoning bond-depository.js keeps for the bond
+    // arrangement (Milestone 67B): an absent answer is never coerced.
     serviceNoRecipients:'',
     serviceDate:dt(ws('PART VI'),'G25'),
     serviceIndicateIf:txt(ws('PART VI'),'J25'),

@@ -40,7 +40,8 @@ import { confirmModal, alertModal } from '../../core/ui/dialogs.js';
 import { SCH_B4_ACCOUNT_BLOCKS } from '../../core/excel/b4-register-pages.js';
 import { b4AccountHeading, createBankAccountId } from '../../core/accounting/bank-accounts.js';
 import { createIssue } from '../../core/validation/issue-registry.js';
-import { effectiveAnswer, isYes as triYes, dependentQuestionState } from '../../core/validation/dependent-question.js';
+import { migrateBondDepository, inferBondDepositoryState, BOND_DEPOSITORY_OPTIONS, BOND_DEPOSITORY_QUESTION, revealsBond, revealsDepository, revealsWaiver } from '../../core/filing/bond-depository.js';
+import { renderRadioGroupField } from '../../core/form/form-fields.js';
 
 // The court's workbook has one Schedule B-4 register block per bank account.
 // Read from the block map rather than written as a literal so the form and
@@ -123,6 +124,10 @@ function ensureLazyModules() {
 export async function mount(container, page) {
   await ensureLazyModules();
   window.sanitizeNegativeAmounts();
+  // Milestone 67B: a filing saved before the four-state bond question reads
+  // back with the state its old fields implied, and the retired
+  // restrictedDepository tri-state is dropped. Idempotent.
+  if (migrateBondDepository(window.D)) autoSave();
   let html;
   switch (page) {
     case '/':      html = pagePart1Annual(); break;
@@ -1418,16 +1423,25 @@ function pagePart9Annual(){
         <div class="row g-2 mb-2">
           <div class="col-md-6">${selD("Guardian's Relationship to Ward",d.guardianRelationship,"D.guardianRelationship=this.value",GUARDIAN_REL)}</div>
         </div>
-        <div class="row g-2 mb-2">
-          <div class="col-md-6">${yesNoRadioAnnualHTML('restrictedDepository','Restricted depository?',effectiveAnswer(d.restrictedDepository,d.restrictedDepositoryReceiptDate),'restrictedDepository',true,'restricted_depository','/p9')}</div>
-          ${triYes(effectiveAnswer(d.restrictedDepository,d.restrictedDepositoryReceiptDate))?`<div class="col-md-6">${inpD('Date of Most Recent Receipt',d.restrictedDepositoryReceiptDate,"D.restrictedDepositoryReceiptDate=this.value",true,'date')}</div>`:''}
-        </div>
+        ${(()=>{
+          // Milestone 67B: one four-state question replaces "Restricted
+          // depository?", and each state reveals only the fields it needs --
+          // none of them required. Nothing in this block gates export; the
+          // print preview warns instead, and the sidebar asks. The per-row
+          // Restricted? flags on D-1/D-4 still feed the bond calculation at
+          // left; this records the arrangement only. Routed (67F) so the
+          // reveal appears on the click.
+          const state=inferBondDepositoryState(d);
+          return `<div class="row g-2 mb-2"><div class="col-12">${renderRadioGroupField({ path:'bondDepositoryState', id:'bondDepositoryState', label:BOND_DEPOSITORY_QUESTION, value:state, options:BOND_DEPOSITORY_OPTIONS, hint:'Not required to file. Each answer shows only the fields it needs.', route:'/p9' })}</div></div>
         <div class="row g-2">
-          <div class="col-md-6">${inpD('Bond Amount',d.bondAmount,"D.bondAmount=this.value",false,'number')}</div>
+          ${revealsDepository(state)?`<div class="col-md-6">${inpD('Date of Most Recent Receipt',d.restrictedDepositoryReceiptDate,"D.restrictedDepositoryReceiptDate=this.value",false,'date')}</div>`:''}
+          ${revealsBond(state)?`<div class="col-md-6">${inpD('Bond Amount',d.bondAmount,"D.bondAmount=this.value",false,'number')}</div>
           <div class="col-md-6">${inpD('Name of Bonding Company',d.bondingCompany,"D.bondingCompany=this.value")}</div>
           <div class="col-md-6">${inpD('Bond Period From',d.bondPeriodFrom,"D.bondPeriodFrom=this.value",false,'date')}</div>
-          <div class="col-md-6">${inpD('Bond Period To',d.bondPeriodTo,"D.bondPeriodTo=this.value",false,'date')}</div>
-        </div>
+          <div class="col-md-6">${inpD('Bond Period To',d.bondPeriodTo,"D.bondPeriodTo=this.value",false,'date')}</div>`:''}
+          ${revealsWaiver(state)?`<div class="col-md-6">${inpD('Date of the order waiving the bond',d.bondWaivedDate,"D.bondWaivedDate=this.value",false,'date')}</div>`:''}
+        </div>`;
+        })()}
       </div>
     </div>
   </div>
@@ -1535,19 +1549,13 @@ export function validateAnnual(){
   req(d.filingType,'Part I — Filing Type','filingType');
   req(d.amendedForm,'Part I — Amended Form?','amendedForm');
   req(d.startingBalance,'Part II — Starting Balance','startingBalance');
-  // Milestone 57A / D6. PART IX asks only for the date of the most recent
-  // receipt, never whether a restricted depository applies, so this answer
-  // stays in the app and is not written to the workbook. It is what lets the
-  // app tell "applies, date still missing" from "does not apply".
-  const rdState = dependentQuestionState(d.restrictedDepository, d.restrictedDepositoryReceiptDate);
-  if (rdState === 'unanswered') {
-    errs.push(issue('Part IX — Please indicate whether a restricted depository applies (Yes or No).','restrictedDepository'));
-  } else if (rdState === 'missing-detail') {
-    errs.push(createIssue('filing.restricted-depository.incomplete', {
-      path:'restrictedDepositoryReceiptDate', section:'Part IX', label:'Date of Most Recent Receipt',
-      message:'Part IX — A restricted depository applies, so the date of the most recent receipt is required.',
-    }));
-  }
+  // Milestone 67B (decided 2026-09-23): nothing in the Part IX bond block
+  // gates export -- Milestone 57A's "restricted depository?" question and
+  // its receipt-date blocker are gone, and so are the Bond Amount / Bonding
+  // Company requirements further down, which the UI and the data model had
+  // always called optional. The four-state arrangement question is asked by
+  // the sidebar and what it still wants is said on the print preview
+  // (src/core/filing/bond-depository.js), never here.
   errs.push(...checkDateOrder(d.periodFrom,d.periodTo,{
     sectionLabel:'Part I',earlierLabel:'Accounting Period From',laterLabel:'Accounting Period To',allowSameDay:false,
     filingType:T,laterPath:'periodTo',
@@ -1632,8 +1640,7 @@ export function validateAnnual(){
     sectionLabel:'Part V',earlierLabel:'Accounting Period To',laterLabel:'Attorney Signature Date',allowSameDay:true,
     filingType:T,laterPath:'attorney_signatureDate',
   }));
-  req(d.bondAmount,'Part IX — Bond Amount','bondAmount');
-  req(d.bondingCompany,'Part IX — Bonding Company','bondingCompany');
+  // Part IX's bond fields: nothing required (Milestone 67B; see the note above).
   req(d.certDate,'Part X — Certificate of Service Date','certDate');
   errs.push(...checkDateOrder(d.periodTo,d.certDate,{
     sectionLabel:'Part X',earlierLabel:'Accounting Period To',laterLabel:'Certificate of Service Date',allowSameDay:true,

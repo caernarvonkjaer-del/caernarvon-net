@@ -16,6 +16,7 @@ import { createIssue } from '../../core/validation/issue-registry.js';
 import { resolveFilingDescriptor } from '../../core/filing/filing-descriptor.js';
 import { getExcelJS, numValue, percentValue, saveWorkbookFile, setCell, setDateCell } from '../../core/excel/excel-engine.js';
 import { hasIdentifiedPreparer } from '../../core/form/preparer-flag.js';
+import { migrateBondDepository } from '../../core/filing/bond-depository.js';
 import { readCellText, unwrapCellValue } from '../../core/excel/cell-reader.js';
 import { planB4PagesToKeep, isB4RegisterSheetName, b4PageNumber, SCH_B4_ACCOUNT_BLOCKS, B4_REGISTER_PREFIX } from '../../core/excel/b4-register-pages.js';
 import { pruneSheets } from '../../core/excel/sheet-pruning.js';
@@ -881,6 +882,13 @@ export async function importExcel(input){
       // the D-1/D-2/D-4 restricted/residence/income columns — none of which
       // that keyword list matches. In-place because D is window.D itself.
       sanitizeObjectDataInPlace(D);
+      // Milestone 67B: the workbook has no cell for the bond / restricted
+      // depository arrangement, so the answer this filing already had stands
+      // (the import never touches it). A blank one is read from what the
+      // workbook did carry (the G9 receipt date, the bond details) --
+      // otherwise the page would show the answer those imply while the
+      // sidebar kept asking for it.
+      migrateBondDepository(D);
       autoSave();
       window.markFilingRevisionChanged?.('excel-import');
       setStatus(prog,'✓ Template loaded and data imported successfully.');

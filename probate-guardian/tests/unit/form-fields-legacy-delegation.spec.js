@@ -94,11 +94,13 @@ describe('legacy call-site delegation to Tier 1 primitives (Milestone 41-1)', ()
     const body = `${extractLegacyFunction('yesNoRadioHTML')}; ${extractLegacyFunction('yesNoRadioAnnualHTML')}; return yesNoRadioAnnualHTML;`;
     // eslint-disable-next-line no-new-func
     const yesNoRadioAnnualHTML = new Function('window', body)({ renderYesNoField });
-    const annual = yesNoRadioAnnualHTML('restrictedDepository', 'Restricted depository?', '', 'restrictedDepository', true, 'restricted_depository', '/p9');
+    // (The sample is a per-row schedule flag; Milestone 67B retired the
+    // "Restricted depository?" question this test first used as its sample.)
+    const annual = yesNoRadioAnnualHTML('schD1_0_restricted', 'Restricted?', '', 'schD1.0.restricted', true, 'restricted', '/schd1');
     expect(annual).toBe(renderYesNoField({
-      path: 'restrictedDepository', label: 'Restricted depository?', value: '', id: 'restrictedDepository', required: true, route: '/p9', binding: 'annual', tooltipKey: 'restricted_depository',
+      path: 'schD1.0.restricted', label: 'Restricted?', value: '', id: 'schD1_0_restricted', required: true, route: '/schd1', binding: 'annual', tooltipKey: 'restricted',
     }));
-    expect(annual).toContain('data-annual-path="restrictedDepository" data-form-value="yes-no" data-form-route="/p9"');
+    expect(annual).toContain('data-annual-path="schD1.0.restricted" data-form-value="yes-no" data-form-route="/schd1"');
   });
 
   // Milestone 41-1's own audit (flagged as an open question by the

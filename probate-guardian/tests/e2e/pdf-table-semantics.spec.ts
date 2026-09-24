@@ -139,7 +139,7 @@ test.describe('PDF Accessibility: Table Semantics, ColSpan & Multi-Page Continua
         // until Milestone 60H added the bond-waiver answer (four, even);
         // answering Yes adds its order date, restoring five. Asserting the
         // padding without a grid that needs padding would prove nothing.
-        bondWaived: 'Yes',
+        bondDepositoryState: 'bond-waived',
         bondWaivedDate: '2026-01-20',
         scheduleA1: mockItems,
         scheduleA2: [],

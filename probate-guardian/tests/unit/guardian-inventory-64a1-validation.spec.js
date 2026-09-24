@@ -114,42 +114,39 @@ describe('Milestone 64A-1, item 3.1: Schedule C-3 Action Date and Case Number', 
   });
 });
 
-describe('Milestone 64A-1, D16: D-4 bond fields when the bond is waived', () => {
-  // A guardian with a court order waiving the bond has no surety, no bond
-  // period, and no bonding company -- requiring those four fields anyway
-  // blocked exactly the filer who has the waiver order in hand.
-  test('bondWaived Yes relaxes Bond Amount, Bond Period From/To, and Bonding Company', () => {
+// Milestone 64A-1's D16 relaxed the four bond fields only when the bond was
+// on record as waived. Milestone 67B (decided 2026-09-23) went the rest of
+// the way: nothing in the D-4 bond block gates export at all -- the court's
+// form asks for the bond details where they apply, which is not the court
+// refusing a filing without them, and the requester's rule is that blocking
+// should be rare. The print preview warns instead (bond-depository.spec.js).
+describe('Milestone 67B: nothing in the D-4 bond block gates export', () => {
+  const BOND_PATHS = ['bondAmount', 'bondPeriodFrom', 'bondPeriodTo', 'bondingCompany', 'bondWaivedDate', 'restrictedDepositoryReceiptDate', 'bondDepositoryState'];
+  const bondIssues = () => validateGuardian().filter(e => BOND_PATHS.includes(e.path) || /^D-4/.test(String(e.message ?? e)));
+
+  test.each([
+    ['unanswered', ''],
+    ['restricted depository only', 'depository-only'],
+    ['bond and restricted depository', 'bond-and-depository'],
+    ['bond only', 'bond-only'],
+    ['bond waived by court order', 'bond-waived'],
+  ])('%s with every bond field blank raises no D-4 issue', (_label, state) => {
     Object.assign(window.D, {
-      bondWaived: 'Yes', bondWaivedDate: '2026-03-01',
-      bondAmount: '', bondPeriodFrom: null, bondPeriodTo: null, bondingCompany: '',
+      bondDepositoryState: state,
+      bondAmount: '', bondPeriodFrom: null, bondPeriodTo: null, bondingCompany: '', bondWaivedDate: '', restrictedDepositoryReceiptDate: '',
     });
-    const errors = validateGuardian();
-    expect(errors.some(e => e.path === 'bondAmount')).toBe(false);
-    expect(errors.some(e => e.path === 'bondPeriodFrom')).toBe(false);
-    expect(errors.some(e => e.path === 'bondPeriodTo')).toBe(false);
-    expect(errors.some(e => e.path === 'bondingCompany')).toBe(false);
+    expect(bondIssues()).toEqual([]);
   });
 
-  test('bondWaived No still requires all four fields', () => {
-    Object.assign(window.D, {
-      bondWaived: 'No', bondAmount: '', bondPeriodFrom: null, bondPeriodTo: null, bondingCompany: '',
-    });
-    const errors = validateGuardian();
-    expect(errors.some(e => e.path === 'bondAmount')).toBe(true);
-    expect(errors.some(e => e.path === 'bondPeriodFrom')).toBe(true);
-    expect(errors.some(e => e.path === 'bondPeriodTo')).toBe(true);
-    expect(errors.some(e => e.path === 'bondingCompany')).toBe(true);
+  test('a bond period entered backwards is still reported -- that is an ordering check, not a requirement', () => {
+    Object.assign(window.D, { bondDepositoryState: 'bond-only', bondPeriodFrom: '2026-12-31', bondPeriodTo: '2026-01-01' });
+    expect(validateGuardian().some(e => e.path === 'bondPeriodTo')).toBe(true);
   });
 
-  test('an unanswered bond-waiver question still requires all four fields (tri-state: unanswered is not waived)', () => {
-    Object.assign(window.D, {
-      bondWaived: '', bondAmount: '', bondPeriodFrom: null, bondPeriodTo: null, bondingCompany: '',
-    });
-    const errors = validateGuardian();
-    expect(errors.some(e => e.path === 'bondAmount')).toBe(true);
-    expect(errors.some(e => e.path === 'bondPeriodFrom')).toBe(true);
-    expect(errors.some(e => e.path === 'bondPeriodTo')).toBe(true);
-    expect(errors.some(e => e.path === 'bondingCompany')).toBe(true);
+  test('the retired bondWaived tri-state is not consulted -- a legacy Yes with no date blocks nothing', () => {
+    Object.assign(window.D, { bondWaived: 'Yes', bondWaivedDate: '', bondDepositoryState: '' });
+    expect(bondIssues()).toEqual([]);
+    expect(validateGuardian().some(e => e.code === 'filing.bond-waiver.incomplete')).toBe(false);
   });
 });
 

@@ -5678,10 +5678,12 @@ function emptyDataGuardian(){
     // falls back to when blank.
     preparer:{name:'',ssnEin:'',phone:'',streetAddress:'',cityStateZip:'',signatureDate:null,asOfDate:null,signatureState:'',signatureImage:''},
     attorney:{name:'',barNumber:'',phone:'',streetAddress:'',cityStateZip:'',signatureDate:null,filingDate:null,signatureState:'',signatureImage:'',isPreparer:false},
-    // bondWaived is the tri-state ('', 'Yes', 'No') behind bondWaivedDate.
-    // A blank date alone could not distinguish "waived, date not entered"
-    // from "not waived" -- see core/validation/dependent-question.js.
-    bondAmount:'',bondPeriodFrom:null,bondPeriodTo:null,bondingCompany:'',bondWaived:'',bondWaivedDate:'',
+    // bondDepositoryState (Milestone 67B): which arrangement applies --
+    // restricted depository only, bond and depository, bond only, or bond
+    // waived by court order; '' is unanswered and is never coerced. It
+    // replaced the 57A bondWaived tri-state (inferred on load, see
+    // core/filing/bond-depository.js). None of the bond fields is required.
+    bondAmount:'',bondPeriodFrom:null,bondPeriodTo:null,bondingCompany:'',bondDepositoryState:'',bondWaivedDate:'',restrictedDepositoryReceiptDate:'',
     // Milestone 57B: filer attestation that no one requires service.
     // Tri-state, never coerced (section 4): '' is unanswered, and an
     // empty recipient list must never infer 'Yes'. Asked only when no
@@ -6775,6 +6777,11 @@ function computeNavChecks(){
       const key=route==='/'?'cover':route?route.slice(1):null;
       if(key&&key in checks)checks[key]=false;
     });
+    // Milestone 67B: D-4's bond / restricted-depository arrangement is asked,
+    // never demanded -- nothing in that block gates export, so no validator
+    // issue exists for it and the sidebar asks here. section-guidance-
+    // policy.js's sidebarOnlyWants() is what explains the mark on the page.
+    if(!D.bondDepositoryState)checks.d4=false;
     return {checks,incomplete:{}};
   } else if(activeInventoryType==='simplified'){
     const filled=v=>v!==''&&v!==null&&v!==undefined;
@@ -6861,15 +6868,13 @@ function computeNavChecks(){
       // Part VIII is satisfied either by naming a trust or by certifying there
       // are none, matching the verifiedEmpty pattern the other Annual checks use.
       'a-p8':verifiedEmpty('a-p8')||verifiedEmpty('p8')||(D.trusts||[]).some(t=>t.name),
-      // Milestone 57A: the restricted-depository question counts toward Part
-      // IX being complete, so the sidebar and the export validator agree on
-      // what this page still owes. tests/unit/checklist-export-parity.spec.js
-      // fails if they drift -- which is the discipline the reverted attempt
-      // broke. Answered means Yes or No; a legacy filing with a receipt date
-      // and no answer reads as Yes (core/validation/dependent-question.js).
-      'a-p9':filled(D.bondAmount)&&filled(D.bondingCompany)
-        &&(D.restrictedDepository==='Yes'||D.restrictedDepository==='No'||filled(D.restrictedDepositoryReceiptDate))
-        &&(D.restrictedDepository==='No'||filled(D.restrictedDepositoryReceiptDate)),
+      // Milestone 67B: the sidebar asks which bond / restricted-depository
+      // arrangement applies; nothing in the block gates export, so this is
+      // the one sidebar-only rule on the page (section-guidance-policy.js's
+      // sidebarOnlyWants() explains the mark). AGENTS.md section 4: the
+      // sidebar asks "have you finished?", the gate asks "does this satisfy
+      // the court?", and they are allowed to differ.
+      'a-p9':filled(D.bondDepositoryState),
       'a-p10':filled(D.certDate)&&recipientsSettled(D.certRecipients,D.certNoRecipients)
         &&datesOrdered(D.periodTo,D.certDate,true),
       // Milestone 58D: Part XI is complete once it is ANSWERED -- either the
@@ -7452,11 +7457,8 @@ function afterChange(path){
   // Conditional SDB field
   const sdbContainer=document.getElementById('sdb-filed-row');
   if(sdbContainer)sdbContainer.style.display=(D.hasSafeDepositBox==='Yes'||D.hasSafeDepositBox===true)?'':'none';
-  // Conditional bond-waiver date (Milestone 57A). Hidden, never cleared: a
-  // filer who answers Yes, types the order date, then switches to No must get
-  // the date back intact when they switch to Yes again.
-  const waivedContainer=document.getElementById('bond-waived-row');
-  if(waivedContainer)waivedContainer.style.display=(D.bondWaived==='Yes'||D.bondWaived===true||(!D.bondWaived&&String(D.bondWaivedDate||'').trim()))?'':'none';
+  // The D-4 bond arrangement's reveals are re-rendered by their routed radio
+  // (Milestone 67B, on 67F's mechanism); no live patch is needed here.
 }
 
 function updateCalcFields(){

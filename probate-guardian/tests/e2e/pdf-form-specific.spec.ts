@@ -246,7 +246,7 @@ test.describe('PDF Accessibility: Accounting & Inventory Filing-Specific Coverag
         // This filing carries a depository receipt date, so the Part IX
         // question it answers is 'Yes' -- the base answers 'No', which would
         // have the filing deny a depository and then produce its receipt.
-        restrictedDepository: 'Yes',
+        bondDepositoryState: 'bond-and-depository',
         restrictedDepositoryReceiptDate: '2025-02-01',
         reconcileExplanation: 'Discrepancy due to late bank adjustment on vehicle proceeds.',
         attorney_bar: '0184920',

@@ -13,7 +13,8 @@ import { checkDateOrder } from '../../core/validation/date-rules.js';
 import { checkExcelCapacity } from '../../core/excel/excel-capacity.js';
 import { issueFactory } from '../../core/validation/validation-issue.js';
 import { createIssue } from '../../core/validation/issue-registry.js';
-import { effectiveAnswer, isYes as triYes, dependentQuestionState } from '../../core/validation/dependent-question.js';
+import { migrateBondDepository, inferBondDepositoryState, BOND_DEPOSITORY_OPTIONS, BOND_DEPOSITORY_QUESTION, revealsBond, revealsDepository, revealsWaiver } from '../../core/filing/bond-depository.js';
+import { renderRadioGroupField } from '../../core/form/form-fields.js';
 import { renderSignatureStateControl, mountSignatureStateControls } from '../../core/signature/signature-state-control.js';
 import { preparerNoteHTML } from '../../core/signature/preparer-note.js';
 import { hasIdentifiedPreparer, preparerFlagCheckboxHTML, preparerWaivedNoticeHTML } from '../../core/form/preparer-flag.js';
@@ -126,6 +127,12 @@ function ensureLazyModules() {
 export async function mount(container, page) {
   await ensureLazyModules();
   normalizeGuardians();
+  // Milestone 67B: a filing saved before the four-state bond question reads
+  // back with the state its old fields implied, and the retired bondWaived
+  // tri-state is dropped. Idempotent, so every mount may call it. window.D
+  // itself, not this module's D proxy: the migration deletes a key, and the
+  // proxy forwards reads and writes but not `in` or `delete`.
+  if (migrateBondDepository(window.D)) saveData();
   sanitizeNegativeAmounts();
   D.bondAmount = normalizeBondAmountValue(D.bondAmount);
   let html;
@@ -1173,12 +1180,21 @@ function pageD4(){
     <div class="col-12 col-lg-6">
       <div class="summary-box h-100 mb-0">
         <h2 class="subsection-heading">Surety Bond Details</h2>
-        ${formRow(col(4,reqLabel('Bond Amount')+numInput('bondAmount')),col(3,reqLabel('Bond Period – From')+dateInput('bondPeriodFrom')),col(3,reqLabel('Bond Period – To')+dateInput('bondPeriodTo')))}
-        ${formRow(col(12,reqLabel('Name of Bonding Company')+textInput('bondingCompany','','name')))}
-        ${yesNoRadioHTML('bondWaived','Has the surety bond been waived by court order?',effectiveAnswer(D.bondWaived,D.bondWaivedDate),'bondWaived',true,'/d4')}
-        <div id="bond-waived-row" class="${triYes(effectiveAnswer(D.bondWaived,D.bondWaivedDate))?'':'d-none'}">
-          ${formRow(col(12,reqLabel('Date of the order waiving the bond')+textInput('bondWaivedDate')))}
-        </div>
+        ${(()=>{
+          // Milestone 67B: one four-state question replaces "has the surety
+          // bond been waived?", and each state reveals only the fields it
+          // needs -- none of them required. Nothing in this block gates
+          // export; the print preview warns instead, and the sidebar asks.
+          // The per-row Restricted? flags on B-1/B-3 still feed the bond
+          // calculation above; this records the arrangement only. The radio
+          // is routed (67F) so the reveal appears on the click.
+          const state=inferBondDepositoryState(D);
+          return renderRadioGroupField({ path:'bondDepositoryState', id:'bondDepositoryState', label:BOND_DEPOSITORY_QUESTION, value:state, options:BOND_DEPOSITORY_OPTIONS, hint:'Not required to file. Each answer shows only the fields it needs.', route:'/d4' })
+            +(revealsDepository(state)?formRow(col(6,optLabel('Date of most recent restricted depository receipt')+dateInput('restrictedDepositoryReceiptDate'))):'')
+            +(revealsBond(state)?formRow(col(4,optLabel('Bond Amount')+numInput('bondAmount')),col(3,optLabel('Bond Period – From')+dateInput('bondPeriodFrom')),col(3,optLabel('Bond Period – To')+dateInput('bondPeriodTo')))
+              +formRow(col(12,optLabel('Name of Bonding Company')+textInput('bondingCompany','','name'))):'')
+            +(revealsWaiver(state)?formRow(col(6,optLabel('Date of the order waiving the bond')+dateInput('bondWaivedDate'))):'');
+        })()}
       </div>
     </div>
   </div>
@@ -1318,27 +1334,16 @@ export function validateGuardian(){
   } else if (sdbIsYes(d.hasSafeDepositBox) && !sdbAnswered(d.safeDepositBoxFiled)) {
     push('D-3 — Please indicate whether the Safe Deposit Box inventory has been filed (Yes or No).','safeDepositBoxFiled');
   }
-  // Milestone 57A / D6. The court's form has no Yes/No for this -- it asks
-  // only for the order date -- so the answer never reaches the workbook. It
-  // exists so the app can tell "waived, date still missing" from "not
-  // waived", which a blank date alone cannot.
-  const bondWaiverState = dependentQuestionState(d.bondWaived, d.bondWaivedDate);
-  if (bondWaiverState === 'unanswered') {
-    push('D-4 — Please indicate whether the surety bond has been waived (Yes or No).','bondWaived');
-  } else if (bondWaiverState === 'missing-detail') {
-    errors.push(createIssue('filing.bond-waiver.incomplete', {
-      path:'bondWaivedDate', section:'D-4', label:'Date of the order waiving the bond',
-      message:'D-4 — The bond is marked waived, so the date of the order waiving it is required.',
-    }));
-  }
-  // D16 (2026-09-21, Alan). A guardian with a court order waiving the bond
-  // has no surety, no bond period, and no bonding company to enter -- these
-  // four are required only when the bond is NOT on record as waived. An
-  // unanswered waiver question is not the same as "waived" (tri-state,
-  // AGENTS.md section 4), so it still requires all four, same as "No".
-  if (!triYes(d.bondWaived)) {
-    req(d.bondAmount,'D-4 — Bond Amount','bondAmount');if(!d.bondPeriodFrom)push('D-4 — Bond Period From is required.','bondPeriodFrom');if(!d.bondPeriodTo)push('D-4 — Bond Period To is required.','bondPeriodTo');req(d.bondingCompany,'D-4 — Bonding Company','bondingCompany');
-  }
+  // Milestone 67B (decided 2026-09-23): nothing in the D-4 bond block gates
+  // export. Milestone 57A's Yes/No waiver question and its order-date
+  // blocker, and 64A-1 D16's four bond-field requirements, are gone -- the
+  // court's form asks for the bond details where they apply, which is not
+  // the court refusing a filing without them, and the requester's rule is
+  // that blocking should be rare and a warning is enough here. The
+  // four-state arrangement question is asked by the sidebar (section-
+  // guidance-policy.js) and what it still wants is said on the print preview
+  // (src/core/filing/bond-depository.js), never here. The bond-period
+  // ordering check below stays: a reversed range is an error, not a blank.
   // Milestone 40C-C. Guardian Inventory was deliberately excluded from
   // Milestone 34-1A's date-ordering work because it has no accounting period,
   // but it does have a bond period, and that pair had no order check at all --

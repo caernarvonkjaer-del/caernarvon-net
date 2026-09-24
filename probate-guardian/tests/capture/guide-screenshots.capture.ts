@@ -199,19 +199,22 @@ test('capture: D-4 Bond & Surety Info with the waiver question', async ({ page }
   // field links in the "Complete these items" box carry the same data-field-path
   // on a <button>, and a strict-mode locator match on both is exactly the kind
   // of thing this file's own header warns about verifying rather than assuming.
+  // Milestone 67B: the four-state arrangement question replaced "Has the
+  // surety bond been waived?"; "Bond only" reveals the bond fields.
+  await page.locator('#bondDepositoryState_2').check();
+  await page.waitForTimeout(300);
   await page.locator('input[data-bind="bondAmount"]').fill('140000');
   await page.locator('input[data-field-path="bondPeriodFrom"]').fill('03/15/2026');
   await page.locator('input[data-field-path="bondPeriodTo"]').fill('03/15/2027');
   await page.locator('input[data-field-path="bondingCompany"]').fill('Western Surety Company');
-  await page.locator('#yesno_bondWaived_no').check();
-  await page.locator('[data-yes-no-group="bondWaived"]').click();
+  await page.locator('input[data-field-path="bondingCompany"]').blur();
   await page.waitForTimeout(300);
 
   // The question this figure exists to show. Assert before shooting so a
-  // silent miss (e.g. the toggle regressing back out of the page) cannot ship
-  // a screenshot that fails to demonstrate its own caption.
-  await expect(page.locator('[data-yes-no-group="bondWaived"]')).toBeVisible();
-  await expect(page.locator('[data-yes-no-group="bondWaived"]')).toContainText('Has the surety bond been waived by court order?');
+  // silent miss (e.g. the question regressing back out of the page) cannot
+  // ship a screenshot that fails to demonstrate its own caption.
+  await expect(page.locator('#bondDepositoryState_2')).toBeChecked();
+  await expect(page.locator('#main-content')).toContainText('Which applies to this guardianship?');
 
   const row = page.locator('#main-content .row.g-3').first();
   await row.screenshot({ path: path.join(OUT, 'd4-bond.jpg'), quality: 82, type: 'jpeg' });

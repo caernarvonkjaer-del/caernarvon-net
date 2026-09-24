@@ -364,11 +364,18 @@ export function renderRadioGroupField({
   // Left empty, nothing changes: a route costs the filer their scroll
   // position, so only reveal-gating call sites pass one.
   const routeAttr = route ? ` data-form-route="${esc(route)}"` : '';
-  const btns = options.map((o, i) => `
+  // Milestone 67B: an option may be a plain string (stored as shown) or a
+  // { value, label } pair, for a question whose stored value is a code
+  // ('bond-waived') and whose label is the sentence the filer reads.
+  const btns = options.map((o, i) => {
+    const optValue = o && typeof o === 'object' ? o.value : o;
+    const optLabel = o && typeof o === 'object' ? o.label : o;
+    return `
     <div class="form-check form-check-inline">
-      <input class="form-check-input" type="radio" name="${name}" id="${groupId}_${i}" value="${esc(o)}" ${value === o ? 'checked' : ''} data-form-path="${esc(path)}"${routeAttr}>
-      <label class="form-check-label" for="${groupId}_${i}">${esc(o)}</label>
-    </div>`).join('');
+      <input class="form-check-input" type="radio" name="${name}" id="${groupId}_${i}" value="${esc(optValue)}" ${value === optValue ? 'checked' : ''} data-form-path="${esc(path)}"${routeAttr}>
+      <label class="form-check-label" for="${groupId}_${i}">${esc(optLabel)}</label>
+    </div>`;
+  }).join('');
   return `<fieldset class="mb-3">
     <legend class="form-label">${label}${reqMark}</legend>
     ${hintHtml}

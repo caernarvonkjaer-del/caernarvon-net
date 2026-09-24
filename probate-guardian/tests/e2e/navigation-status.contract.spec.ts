@@ -366,8 +366,9 @@ test.describe('Guardian Inventory navigation/status contract', () => {
   // (#page-local-guidance was drawn only for gated pages), so there was no
   // on-page UI surface to click through here and these tests drove the two
   // functions directly. Since 63A the box renders on those pages -- the
-  // page-level behaviour is proved in dependent-question-gate.spec.ts (D-4's
-  // reporter case) and section-guidance-invariant.spec.ts -- but the path
+  // page-level behaviour is proved in bond-depository.spec.ts (D-4's
+  // reporter case, since Milestone 67B) and section-guidance-invariant.spec.ts
+  // -- but the path
   // derivation is still worth proving in isolation: adaptValidationErrors() and
   // focusFieldByPath() are the two functions a jump link uses, and the bugs
   // recorded here (D-1's hardcoded guardian-#1 fallback; D-2's Preparer/Attorney
@@ -451,20 +452,13 @@ test.describe('Guardian Inventory navigation/status contract', () => {
     await page.evaluate((p) => (window as any).focusFieldByPath('/d3', p), sdbPath);
     await expect(page.locator(`[data-form-path="${sdbPath}"]`).first()).toBeFocused();
 
+    // Milestone 67B: D-4's bond fields no longer raise validator issues (nothing
+    // in the bond block gates export), so their paths are exercised through
+    // the jump-to-field helper directly rather than through an issue.
     await page.evaluate(() => (window as any).navigate('/d4'));
-    const bondPaths = await page.evaluate(() => {
-      const raw = (window as any).validateGuardian();
-      const structured = (window as any).adaptValidationErrors(raw, 'guardian');
-      return {
-        amount: structured.find((e: any) => e.section === 'D-4' && e.label.includes('Bond Amount'))?.path,
-        from: structured.find((e: any) => e.section === 'D-4' && e.label.includes('Bond Period From'))?.path,
-        to: structured.find((e: any) => e.section === 'D-4' && e.label.includes('Bond Period To'))?.path,
-        company: structured.find((e: any) => e.section === 'D-4' && e.label.includes('Bonding Company'))?.path,
-      };
-    });
-    expect(bondPaths).toEqual({ amount: 'bondAmount', from: 'bondPeriodFrom', to: 'bondPeriodTo', company: 'bondingCompany' });
-    await page.evaluate((p) => (window as any).focusFieldByPath('/d4', p), bondPaths.company);
-    await expect(page.locator(`[data-bind="${bondPaths.company}"]`)).toBeFocused();
+    await page.evaluate(() => { (window as any).D.bondDepositoryState = 'bond-only'; (window as any).navigate('/d4'); });
+    await page.evaluate((p) => (window as any).focusFieldByPath('/d4', p), 'bondingCompany');
+    await expect(page.locator('[data-bind="bondingCompany"]')).toBeFocused();
   });
 
   test('D-5 resolves its three distinct shapes: bare service date, recipient rows, and attorney', async ({ page }) => {
