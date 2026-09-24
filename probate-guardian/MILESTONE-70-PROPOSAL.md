@@ -730,8 +730,9 @@ work that needs the requester's go-ahead, and then joins the ledger.
      plan rows) lose the same clean-up; not probed one by one.
    **Fixed on `master`** with the requester's go-ahead (`b28bf25`, red
    first): `main.js` loads the module and `legacy-app.js` publishes the
-   schedule table. Seven older tests written while the clean-up was not
-   running (51E, 57C-R, and this session's own 68C follow-up) had assumed
+   schedule table. Five tests -- eight failing runs -- written while the
+   clean-up was not running (two from 51E, two from 57C-R, and this session's
+   own 68C follow-up, which runs once per Plan) had assumed
    untouched cards survive a page change; each was updated to the restored
    design with its reason. Ledger row: re-implement.
 3. **Two guarded calls to functions nothing defines** (characterized).
