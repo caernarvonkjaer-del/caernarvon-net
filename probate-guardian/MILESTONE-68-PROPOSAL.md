@@ -17,7 +17,7 @@ or stop a filing outright; the rest prevent a filer from recording the truth.
 | 68B | Initial Plan files with no reporting period, unflagged | Incomplete document filed, silently | **DECIDED** — require it, as the other Plans do | **LANDED 2026-09-24** — see the build record under 68B |
 | 68C | No certificate of service on any Plan type | App states a requirement it cannot meet | **DECIDED** — build on all four; optional on Simplified; fix its wrong text; date + method optional and "Certified by the filer" settled at build (2026-09-24) | **LANDED 2026-09-24** — see the build record under 68C |
 | 68E | Initial Plan Q5 accepts one answer where several apply | Cannot record the truth | **DECIDED** — the court's form is a checkbox list; convert to multi-select — Q5, Q4 and any other radio-rendered checkbox list the form shows (settled 2026-09-24) | **LANDED 2026-09-24** — Q2, Q4 and Q5 (the form's page 2, rendered and looked at); see the build record under 68E |
-| 68F | Assistive-devices "None" can be ticked alongside real selections | A filed plan can state both | **DECIDED** — no "None" added (form has none); fix mutual exclusion on D and E | Ready — 67F landed |
+| 68F | Assistive-devices "None" can be ticked alongside real selections | A filed plan can state both | **DECIDED** — no "None" added (form has none); fix mutual exclusion on D and E | **LANDED 2026-09-24** — see the build record under 68F |
 | 68G | Annual Plan Q6 cannot state a right is **not** restorable | **Statutory** — §744.3675(3)(b) requires that statement | **DECIDED** — the form's four columns: Yes / No / Not Removed / Needs to be Restored; stored values unchanged, "No" added (settled 2026-09-24) | Ready — 67F landed |
 | 68I | Initial Plan asks for two dates that look redundant | Real distinction, unexplained | **DECIDED** — keep both, explain them; the tester's premise holds only for original guardians | Ready to build |
 | 68H | All three Plans call their period an "accounting period" | Wrong against the statute | **DECIDED** — "reporting period" for Plans | Ready to build |
@@ -1268,6 +1268,32 @@ shape (`state.js:365`). Migration: default `false`, which reads as "not
 answered" exactly as today — no existing filing changes meaning. Tests must
 drive the real click (§6 corollary) and assert the clearing in both directions,
 plus that 10d's pre-existing "None" now clears too.
+
+### Build record — LANDED 2026-09-24
+
+**What a filer now gets.** On 10D (assistive devices used) and 10E (assistive
+devices needed), ticking "None" clears every device box and ticking a device
+clears "None" — on the click, in the saved answer and on screen — so a filed
+plan can no longer state both. Unticking "None" clears nothing else. No
+"None" is added to 10B or 10C: the court's form has none there (page 6),
+and the reversal above stands.
+
+**How, and why it is small.** The rule is the one 68E built for question
+4's "None" (`src/core/form/exclusive-none.js`, applied from `form-events.js`
+through two data attributes the checkbox renderer emits). 10D's and 10E's
+boxes now carry those attributes — group `uses` / `needs`, the "None" box in
+role `none` — and nothing else changes: no data-model rows (the booleans
+already existed), no readiness or validator change (the lists still need any
+one box), no migration (an old filing with both "None" and a device ticked
+keeps both until the filer touches the list, which is the moment the rule
+can act; nothing is guessed on load).
+
+**Tests.** `tests/e2e/plan-initial-assistive-none.spec.ts` (new, real clicks,
+one case per list): the fixture ticks "None"; a device clears it; two
+devices then "None" clears both; unticking "None" leaves the question
+unanswered. **Red first, 2/2 failed**: "a device clears None — Expected: not
+checked, Received: checked". Green: with the Initial Plan neighbours (`plan-initial-multiselect`, `conditional-reveal-routes`, `plan-initial-mount`, `readiness-card.contract`, `plan-pdf-wcag-compliance`) **51/51, 5.8 min**, first run. The guide's 10B–D bullet says
+what the lists do and why the disabilities lists have no "None".
 
 ---
 

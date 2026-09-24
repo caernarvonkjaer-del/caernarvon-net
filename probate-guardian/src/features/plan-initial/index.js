@@ -12,6 +12,13 @@ import { migratePlanCertificateOfService } from '../../core/filing/plan-certific
 import { renderPlanCertificateOfServicePage } from '../../core/form/plan-certificate-of-service-page.js';
 import { migratePlanInitialMultiselect, Q2_OPTIONS, Q4_OPTIONS, Q5_OPTIONS, anyChecked } from '../../core/filing/plan-initial-multiselect.js';
 import { renderCheckboxField } from '../../core/form/form-fields.js';
+
+// Milestone 68F: a checkbox in a list whose "None" must stay exclusive with
+// the other boxes (10D devices used, 10E devices needed) -- the boxes carry
+// their group and role and form-events.js applies the rule on the click
+// (core/form/exclusive-none.js, built for question 4 in 68E).
+const exclusiveBox = (d, id, label, group, role = 'member', route = '') =>
+  renderCheckboxField({ path: id, label, checked: !!d[id], id, route, exclusiveGroup: group, exclusiveRole: role });
 import { preparerNoteHTML } from '../../core/signature/preparer-note.js';
 // Milestone 41-3: Cover page's "Ward & Case Information" box has the exact
 // same field order as Plan Simplified's (wardName, caseNumber, county) --
@@ -500,15 +507,16 @@ function pagePlanIDisabilities(){
         'physExplain',d.physExplain,d.physOther))}
     ${planQ('D','The assistive devices currently used by the Ward are:',
       planCheckGroup('',
-        cb('usesDentures','Dentures')
-        +cb('usesHearingAid','Hearing Aid')
-        +cb('usesWheelchair','Wheelchair')
-        +cb('usesWalker','Walker/Cane')
-        +cb('usesCrutches','Crutches')
-        +cb('usesProsthetics','Prosthetics')
-        +cb('usesGlasses','Glasses')
-        +cb('usesNone','None')
-        +cb('usesOther','Other','/p7'),
+        // Milestone 68F: "None" clears the devices and a device clears "None".
+        exclusiveBox(d,'usesDentures','Dentures','uses')
+        +exclusiveBox(d,'usesHearingAid','Hearing Aid','uses')
+        +exclusiveBox(d,'usesWheelchair','Wheelchair','uses')
+        +exclusiveBox(d,'usesWalker','Walker/Cane','uses')
+        +exclusiveBox(d,'usesCrutches','Crutches','uses')
+        +exclusiveBox(d,'usesProsthetics','Prosthetics','uses')
+        +exclusiveBox(d,'usesGlasses','Glasses','uses')
+        +exclusiveBox(d,'usesNone','None','uses','none')
+        +exclusiveBox(d,'usesOther','Other','uses','member','/p7'),
         'usesExplain',d.usesExplain,d.usesOther))}
     ${renderScheduleDocsSection('planIDisabilities')}
     ${pageNavS('/p6','/p8')}
@@ -575,15 +583,16 @@ function pagePlanIDirectives(){
       :''))}
     ${planQ('E','The assistive devices needed by the Ward (devices needed but not currently owned) are:',
       planCheckGroup('',
-        cb('needsDentures','Dentures')
-        +cb('needsHearingAid','Hearing Aid')
-        +cb('needsWheelchair','Wheelchair')
-        +cb('needsWalker','Walker/Cane')
-        +cb('needsCrutches','Crutches')
-        +cb('needsProsthetics','Prosthetics')
-        +cb('needsGlasses','Glasses')
-        +cb('needsNone','None')
-        +cb('needsOther','Other','/p8'),
+        // Milestone 68F: "None" clears the devices and a device clears "None".
+        exclusiveBox(d,'needsDentures','Dentures','needs')
+        +exclusiveBox(d,'needsHearingAid','Hearing Aid','needs')
+        +exclusiveBox(d,'needsWheelchair','Wheelchair','needs')
+        +exclusiveBox(d,'needsWalker','Walker/Cane','needs')
+        +exclusiveBox(d,'needsCrutches','Crutches','needs')
+        +exclusiveBox(d,'needsProsthetics','Prosthetics','needs')
+        +exclusiveBox(d,'needsGlasses','Glasses','needs')
+        +exclusiveBox(d,'needsNone','None','needs','none')
+        +exclusiveBox(d,'needsOther','Other','needs','member','/p8'),
         'needsExplain',d.needsExplain,d.needsOther))}
     ${planQ('F','Are the recommendations of the examining committee incorporated into this plan?',
       yesNoCheckboxS('committeeIncorporated','Recommendations of the examining committee are incorporated into this plan',d.committeeIncorporated,false,'/p8')
