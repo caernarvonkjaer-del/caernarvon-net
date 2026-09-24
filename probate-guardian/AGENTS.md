@@ -166,6 +166,15 @@ on its location—update the dependent path and the index together.
 ## 2. Git, Concurrency & Execution Discipline
 
 - **Direct to master.** Commit and push directly; never create feature branches.
+  - **Exception: Milestone 70 only** (decision D1 in `MILESTONE-70-PROPOSAL.md`,
+    recorded 2026-09-24). Milestone 70 work, and only Milestone 70 work, is
+    committed to the `milestone-70` branch, never to `master`. Everything else,
+    including production bug fixes made while Milestone 70 is under way, stays
+    direct-to-master exactly as above. Agents working on `master` need do
+    nothing extra: the Milestone 70 delivery owner records every `master`
+    commit made after the branch point in the branch's
+    `MILESTONE-70-FIX-LEDGER.md`, so each fix is carried into the migrated
+    code before the branch merges. The merge removes this note.
 - **Concurrent tree.** Multiple agents/collaborators may edit or push at the same time.
   - Sync with `master` before starting; `git status`/`git log` before editing — a change you didn't make is not stale by default.
   - Commit **only your own task's files**; never sweep in unrelated concurrent work.
