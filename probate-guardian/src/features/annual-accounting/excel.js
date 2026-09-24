@@ -15,6 +15,7 @@ import { getExcelCapacityIssues } from '../../core/excel/excel-capacity.js';
 import { createIssue } from '../../core/validation/issue-registry.js';
 import { resolveFilingDescriptor } from '../../core/filing/filing-descriptor.js';
 import { getExcelJS, numValue, percentValue, saveWorkbookFile, setCell, setDateCell } from '../../core/excel/excel-engine.js';
+import { hasIdentifiedPreparer } from '../../core/form/preparer-flag.js';
 import { readCellText, unwrapCellValue } from '../../core/excel/cell-reader.js';
 import { planB4PagesToKeep, isB4RegisterSheetName, b4PageNumber, SCH_B4_ACCOUNT_BLOCKS, B4_REGISTER_PREFIX } from '../../core/excel/b4-register-pages.js';
 import { pruneSheets } from '../../core/excel/sheet-pruning.js';
@@ -237,9 +238,16 @@ export async function doSaveExcel(){
       // D11/J11 and D26/J26 below are =From_Date/=To_Date -- see PART II, III.
       // Signature date columns: D is inside the merged "Preparer's/Attorney
       // Signature" label cell (B:G); the real Date value lives at H.
+      //
+      // Milestone 67A: while a guardian or the attorney is identified as the
+      // preparer, the outside-preparer block is not filed -- whatever was
+      // typed into it stays in the app (section 4) but must not reach the
+      // workbook, so these cells are left as the template has them, empty.
+      if(!hasIdentifiedPreparer(inv)){
       setCell(p45,'J15',p.name||''); setDateCell(p45,'H15',p.signatureDate);
       setCell(p45,'B17',p.ssn||''); setCell(p45,'B19',p.phone||'');
       setCell(p45,'J17',p.street||''); setCell(p45,'J19',p.cityStateZip||'');
+      }
 
       setDateCell(p45,'H31',inv.attorney_signatureDate);
       setCell(p45,'B33',inv.attorney_bar||''); setCell(p45,'B35',inv.attorney_phone||'');
@@ -621,17 +629,23 @@ export async function importExcel(input){
       const p23=workbook.getWorksheet('PART II, III');
       if(p23){
         const guardianRows=[[25,27,29,31,33],[35,37,39,41,43],[45,47,49,51,53]];
-        D.guardians=guardianRows.map(rows=>{
+        // Milestone 67A: "this person prepared this filing" has no cell in
+        // the workbook. Carry the flags this filing already had over to the
+        // rebuilt rows by position; the PART IV, V block below clears them
+        // again if the workbook names an outside preparer.
+        const priorFlags=(D.guardians||[]).map(g=>!!g?.isPreparer);
+        D.guardians=guardianRows.map((rows,i)=>{
           const [sigRow,ssnRow,phoneRow,emailRow,streetRow]=rows;
           return {
             name:gcStr(p23,`F${sigRow}`), signatureDate:gcDate(p23,`D${sigRow}`),
             ssn:gcStr(p23,`B${ssnRow}`), mailingStreet:gcStr(p23,`F${ssnRow}`),
             phone:gcStr(p23,`B${phoneRow}`), mailingCityStateZip:gcStr(p23,`F${phoneRow}`),
             email:gcStr(p23,`B${emailRow}`), officeStreet:gcStr(p23,`F${emailRow}`),
-            officeCityStateZip:gcStr(p23,`F${streetRow}`), signatureDateLabel:''
+            officeCityStateZip:gcStr(p23,`F${streetRow}`), signatureDateLabel:'',
+            isPreparer:!!priorFlags[i]
           };
         }).filter((g,i)=>i===0||guardianHasAnyData(g));
-        while(D.guardians.length<1)D.guardians.push({name:'',ssn:'',phone:'',email:'',mailingStreet:'',mailingCityStateZip:'',officeStreet:'',officeCityStateZip:'',signatureDate:'',signatureDateLabel:''});
+        while(D.guardians.length<1)D.guardians.push({name:'',ssn:'',phone:'',email:'',mailingStreet:'',mailingCityStateZip:'',officeStreet:'',officeCityStateZip:'',signatureDate:'',signatureDateLabel:'',isPreparer:false});
       }
 
       // PART IV, V — preparer and attorney
@@ -642,6 +656,14 @@ export async function importExcel(input){
           ssn:gcStr(p45,'B17'), phone:gcStr(p45,'B19'),
           street:gcStr(p45,'J17'), cityStateZip:gcStr(p45,'J19')
         };
+        // Milestone 67A: a workbook that names an outside preparer is the
+        // stronger statement -- it clears any guardian/attorney flag this
+        // filing carried. Empty preparer cells leave the flags alone (see
+        // PART II, III above): a silent absence must not un-name the preparer.
+        if(String(D.preparer.name||'').trim()){
+          (D.guardians||[]).forEach(g=>{if(g)g.isPreparer=false;});
+          D.attorney_isPreparer=false;
+        }
         D.attorney_signatureDate=gcDate(p45,'H31');
         D.attorney_bar=gcStr(p45,'B33'); D.attorney_phone=gcStr(p45,'B35');
         D.attorney_street=gcStr(p45,'J33'); D.attorney_cityStateZip=gcStr(p45,'J35');

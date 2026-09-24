@@ -134,6 +134,10 @@
       "name": "renderYesNoField"
     },
     {
+      "file": "src/core/form/preparer-flag.js",
+      "name": "resolvePreparer"
+    },
+    {
       "file": "src/core/form/prune-cards.js",
       "name": "BLANK_CARD_COLLECTIONS"
     },

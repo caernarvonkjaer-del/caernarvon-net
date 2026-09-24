@@ -9,6 +9,7 @@ import { composePdfAddressLines } from '../../core/pdf/address-format.js';
 import { maskSSN } from '../../core/pdf/ssn-format.js';
 import { calcTotalsGuardian, makeGuardianCalc, isRestrictedAnswer, isInSafeDepositBox, AUDIT_FEE_THRESHOLD, AUDIT_FEE_OVER_THRESHOLD } from './totals.js';
 import { effectiveAnswer } from '../../core/validation/dependent-question.js';
+import { preparedByLine } from '../../core/form/preparer-flag.js';
 
 export function buildVerifiedInventoryModel(D, options = {}) {
   const d = D || {};
@@ -619,6 +620,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
   // wording (Part IV B6-B11 and B18-B23). The preparer's "as of" date is
   // its own field where entered, falling back to the signature date.
   const preparerAsOf = fmtDate(preparer.asOfDate) || fmtDate(preparer.signatureDate);
+  const preparedBy = preparedByLine(d);
   sections.push({
     id: 'd2_attorney',
     title: 'Part IV — PREPARER & GUARDIAN ATTORNEY ATTESTATIONS',
@@ -627,6 +629,18 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     level: 1,
     pageBreakBefore: false,
     blocks: [
+      // Milestone 67A: with a guardian or the attorney identified as the
+      // preparer, the outside accountant's compilation disclaimer, the form's
+      // "DO NOT SIGN HERE" and the signature block are replaced by one line
+      // naming the person -- the Clerk's condition for accepting a filing
+      // with no outside preparer. The named guardian is never placed into
+      // the compilation attestation or made to sign it.
+      ...(preparedBy ? [{
+        type: 'notice',
+        tag: 'P',
+        title: 'PREPARER SIGNATURE',
+        text: preparedBy,
+      }] : [
       {
         type: 'notice',
         tag: 'P',
@@ -644,6 +658,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
         text: 'If you are the Guardian, Co-Guardian, or Guardian Attorney - DO NOT SIGN HERE.',
       },
       preparerBlock,
+      ]),
       {
         type: 'notice',
         tag: 'P',

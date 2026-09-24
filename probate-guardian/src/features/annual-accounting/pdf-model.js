@@ -8,6 +8,7 @@ import { filingCopy, resolveFilingDescriptor } from '../../core/filing/filing-de
 import { composePdfAddressLines } from '../../core/pdf/address-format.js';
 import { maskSSN } from '../../core/pdf/ssn-format.js';
 import { b4AccountHeading } from '../../core/accounting/bank-accounts.js';
+import { preparedByLine } from '../../core/form/preparer-flag.js';
 
 export const DISB_CATS = [
   'Accounting',
@@ -277,6 +278,12 @@ export function buildAnnualAccountingModel(D, options = {}) {
 
   // ── Part IV: Preparer Attestation ─────────────────────────────────────────
   const p = d.preparer || {};
+  // Milestone 67A: with a guardian or the attorney identified as the
+  // preparer, the outside accountant's compilation statement and signature
+  // block are replaced by one line naming the person -- the Clerk's
+  // condition for accepting a filing with no outside preparer. The named
+  // guardian is never placed into the compilation attestation.
+  const preparedBy = preparedByLine(d);
   sections.push({
     id: 'part4',
     title: 'Part IV — PREPARER ATTESTATION',
@@ -284,7 +291,9 @@ export function buildAnnualAccountingModel(D, options = {}) {
     parentBookmark: null,
     level: 1,
     pageBreakBefore: false,
-    blocks: [
+    blocks: preparedBy ? [
+      { type: 'notice', tag: 'P', text: preparedBy },
+    ] : [
       {
         type: 'notice',
         tag: 'P',

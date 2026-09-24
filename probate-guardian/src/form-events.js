@@ -1,6 +1,7 @@
 import * as SupplementalPdf from './core/pdf/supplemental-pdf.js';
 import { writeDraftValue, finalizeFieldValue } from './core/form/form-contract.js';
 import { focusFieldByPath } from './core/validation/validation-adapter.js';
+import { claimPreparer, PREPARER_FLAG_CHANGE } from './core/form/preparer-flag.js';
 import './core/filing/filing-descriptor.js';
 import './core/filing/output-preflight.js';
 import './core/form/form-fields.js';
@@ -113,6 +114,13 @@ document.addEventListener('change', (event) => {
       if (collection && window.D && !(window.D[collection] || []).length) {
         window.D[collection] = [window.emptyPlanDirective()];
       }
+    }
+    // Milestone 67A: only one party may be the preparer. The ticked box has
+    // just been written above; clear every other guardian/attorney flag
+    // before the route re-render below, so the other cards' boxes visibly
+    // clear on the click.
+    if (control.dataset.formChange === PREPARER_FLAG_CHANGE && control.checked && window.D) {
+      claimPreparer(window.D, control.dataset.formPath);
     }
     if (control.dataset.formRoute && window.renderPage) {
       window.renderPage(control.dataset.formRoute);

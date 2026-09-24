@@ -11,6 +11,7 @@ import { validateGuardian } from './index.js';
 import { authorizeFilingOutput } from '../../core/filing/output-authorization.js';
 import { getExcelCapacityIssues } from '../../core/excel/excel-capacity.js';
 import { getExcelJS, saveWorkbookFile, setCell, setDateCell } from '../../core/excel/excel-engine.js';
+import { hasIdentifiedPreparer } from '../../core/form/preparer-flag.js';
 import { readCellText, unwrapCellValue } from '../../core/excel/cell-reader.js';
 import { pruneSheets } from '../../core/excel/sheet-pruning.js';
 import {
@@ -476,6 +477,12 @@ export async function doSaveExcel(){
       // (same caption-above-box shape as the rest of this block, confirmed by
       // reading the real template); B9 next to it is a formula pulling the
       // ward name from SUMMARY I C7 and is left alone.
+      // Milestone 67A: while a guardian or the attorney is identified as the
+      // preparer, the outside-preparer block is not filed. Whatever was typed
+      // into it before the box was ticked stays in the app (section 4) but
+      // must not reach the workbook -- hidden is not filed -- so the cells
+      // are left as the template has them, empty.
+      if(!hasIdentifiedPreparer(inv)){
       setDateCell(p4,'H9',inv.preparer.asOfDate);
       setDateCell(p4,'G13',inv.preparer.signatureDate);
       setCell(p4,'I13',inv.preparer.name||'');
@@ -483,6 +490,7 @@ export async function doSaveExcel(){
       setCell(p4,'I15',inv.preparer.streetAddress||'');
       setCell(p4,'B17',inv.preparer.phone||'');
       setCell(p4,'I17',inv.preparer.cityStateZip||'');
+      }
       // The attorney block has two different dates on the form: C21 is the
       // "Date:" on the notification line above, G26 the one beside "Attorney
       // Signature". The signature date used to go to the G25 caption and the
@@ -585,6 +593,15 @@ export async function importExcel(input){
     // an imported file is never retained past this parse, so the app's own
     // bundled blank template is what every later "Export as Excel" uses.
     const importedData=sanitizeObjectData(parseInitialInventoryWorkbook(workbook));
+    // Milestone 67A: the workbook has no cell for "this person prepared this
+    // filing". A workbook that names an outside preparer is the stronger
+    // statement and clears the flags; one whose preparer cells are empty
+    // keeps whatever this filing already had, matched to the guardian rows
+    // by position -- a silent absence must not un-name the preparer.
+    const namesOutsidePreparer=!!String(importedData.preparer?.name||'').trim();
+    const prior=window.D||{};
+    (importedData.guardians||[]).forEach((g,i)=>{g.isPreparer=!namesOutsidePreparer&&!!prior.guardians?.[i]?.isPreparer;});
+    if(importedData.attorney)importedData.attorney.isPreparer=!namesOutsidePreparer&&!!prior.attorney?.isPreparer;
     Object.assign(window.D,importedData);
     saveData();
     window.markFilingRevisionChanged?.('excel-import');

@@ -20,7 +20,7 @@ Listed in build order.
 | 2 | 67C | Every Annual/Final/Trust Excel export opens with Excel's corruption warning | **DECIDED** — strip defined names pointing outside the file | **LANDED 2026-09-23** — see the build record under 67C |
 | 3 | 67D | Every Annual/Final/Trust Excel export destroys the Bond Period formulas | **DECIDED** — stop writing them; PDF falls back to the accounting period | **LANDED 2026-09-23** — see the build record under 67D |
 | 4 | 67E | Every exported date is written as text, not as a date | **DECIDED** — write real dates | **LANDED 2026-09-23** — see the build record under 67E |
-| 5 | 67A | Preparer block is mandatory on filings the app itself says have no preparer | **DECIDED** — name the preparer on the guardian/attorney cards; PDF prints the name | Independent |
+| 5 | 67A | Preparer block is mandatory on filings the app itself says have no preparer | **DECIDED** — name the preparer on the guardian/attorney cards; PDF prints the name | **LANDED 2026-09-23** — see the build record under 67A |
 | 6 | 67B | Bond fields block filings on Annual/Final/Trust **and Guardian Inventory** | **DECIDED** — nothing in the bond block gates export; warn only, one shared path | **After 67F** |
 
 67C, 67D and 67E all touch the Excel export path and share its test surface, so
@@ -384,6 +384,108 @@ written into them.
    form's court original has no preparer/attorney certification page"). Read
    Simplified Accounting's preparer rules before building, and report whether it
    shares this defect — do not silently expand scope to fix it (§8.9).
+
+### Build record — LANDED 2026-09-23
+
+**What a filer now sees.** On the Initial Inventory's guardian cards (D-1)
+and the Annual/Final/Trust Accounting's (Part III), and on each form's
+attorney card (D-2 / Part V), a checkbox: *"This person prepared this filing
+(no outside preparer)."* Ticking it on their own card lets a guardian who
+followed "DO NOT SIGN HERE" export. The Preparer page then shows, in place
+of the card, *"No outside preparer. Sample Guardian (Guardian #1) is
+identified as the preparer of this filing, so the Preparer block is not
+required and is not filed"* — with where the box lives, since it is on a
+different page. The filed PDF prints *"Prepared by Sample Guardian,
+guardian. No outside preparer."* where the compilation attestation and
+signature block were; the filed Excel's preparer cells stay empty. Ticking a
+second card clears the first on the click. Deleting the flagged guardian
+brings the block, and its requirements, back.
+
+**The build, as decided.**
+
+- `src/core/form/preparer-flag.js` (new, shared by both forms):
+  `resolvePreparer()` names the first flagged guardian or the flagged
+  attorney, reading the name live from the row; `claimPreparer()` clears
+  every other flag when a box is ticked; `preparedByLine()`,
+  `preparerFlagCheckboxHTML()` and `preparerWaivedNoticeHTML()` are the
+  three renderers. It handles both attorney shapes — the Inventory's
+  `attorney` object (`attorney.isPreparer`) and the Annual family's flat
+  keys (`attorney_isPreparer`) — without inventing the other's key.
+- The flag lives on the row: `guardians[].isPreparer` in both row
+  factories (`mk.guardian()`, `emptyDataGuardian()`,
+  `SCHEDULE_SCHEMAS.guardians`, `emptyDataAnnual()`), `attorney.isPreparer`
+  on the Inventory, `attorney_isPreparer` on Annual. Four new data-model rows;
+  the eight preparer-block rows that were `required` are now `conditional`
+  on nobody being flagged, and the two SSN rows the discovery note D-2 found
+  recorded as `optional` while the validator required them are now
+  `conditional` too. `npm run verify:data-model` passes (949 rows).
+- The checkbox is routed (Milestone 67F's mechanism) and carries
+  `data-form-change="preparer-flag"`; `src/form-events.js` runs
+  `claimPreparer()` on the tick, before the re-render, so the other cards'
+  boxes visibly clear.
+- Validators: `validateGuardian()` and `validateAnnual()` skip the preparer
+  block — its six requirements and its signature check — while a preparer is
+  identified. A flagged co-guardian card counts as started (in
+  `guardianHasData()`, `guardianHasAnyData()`, the D-1 visibility filter and
+  the validator's row filter), so a flagged row must still supply its name.
+- Sidebar: Guardian's D-2 derives from the validator's own errors, so it
+  followed for free; Annual's hand-built `'a-p4'` check reaches
+  `window.resolvePreparer` through the bridge (allowlist and declaration
+  updated) and falls through to the full-block rule if the bridge is absent.
+- PDF: both models replace the compilation statement, the form's "DO NOT
+  SIGN HERE" and the signature block with the one line. The guardian is
+  never placed into the compilation attestation, so the form's own
+  prohibition holds either way the Clerk's condition is read.
+- Excel: both writers skip the preparer cells while a preparer is
+  identified. **This goes one step beyond the decision's "Excel needs no
+  change,"** and follows from it: the decision keeps typed preparer data
+  when the card hides (§4), and filing that hidden data would name an
+  outside preparer the filer withdrew. Hidden is not filed. The importers
+  carry the flags over by row position when the workbook's preparer cells
+  are empty — a silent absence must not un-name the preparer — and clear
+  them when the workbook names an outside preparer, the stronger statement.
+
+**§8.9 — Simplified Accounting checked.** It has no preparer block at all
+(`party-resolver.js`: "this type has no preparer"), so it does not share the
+defect and nothing here applies to it. The Simplified Plan's optional,
+unprinted preparer fields (Milestone 61E) are unaffected.
+
+**Verification.**
+
+- Unit: `tests/unit/preparer-flag.spec.js` (15 cases, both shapes, the
+  deletion consequences that justify a row flag over an index) and
+  `tests/unit/preparer-flag-validation.spec.js` (`validateGuardian()` under
+  the flag, incl. the legacy-row case). `validateAnnual()` cannot be imported
+  under Node; the e2e covers it. Full unit suite after the change: **124
+  files / 1,761 tests green.** Two guards caught real things on the way and
+  were satisfied without exceptions: the filing-type enumeration guard
+  (the Annual family is now identified through the descriptor's `engineId`
+  and the policy's existing prefix map rather than by listing its three
+  keys) and the form-events shape spec (the change hook reads the box's own
+  `data-form-path` rather than adding a fifth `boundPath()` call).
+- E2E, **red first with all ten changed source files stashed**
+  (`tests/e2e/preparer-flag.spec.ts`, new): all three failed — the
+  Inventory and Annual tests timed out waiting for
+  `#preparer_flag_guardians_0_isPreparer`, a control that did not exist, and
+  the re-import test found Save as Excel still disabled with the block still
+  required. Green: **3/3 in 1.2 min**, after three defects in the *test*
+  were fixed on the way (Guardian's inputs carry `data-field-path`, not
+  `data-form-path`; the import-completion wait checked a field that was
+  already right before the import; the page-local guidance box duplicates an
+  input's `data-field-path` on its jump link) — each visible in the run log
+  and none in the app. Run with every preparer, signature, navigation and
+  export neighbour (`guardian-inventory-mount`, `annual-mount`,
+  `signature-capture.contract`, `navigation-status.contract`,
+  `form-entry.contract`, `readiness-card.contract`,
+  `print-preview-signature-jump`, `preparer-note-placement`,
+  `conditional-reveal-routes`, `excel-form-field-placement`,
+  `excel-date-cells`, `pdf-form-specific`, `dependent-question-gate`):
+  **240/243 in 23.5 min** — the three being the two spec defects above and
+  one Milestone 63A test that the *uncommitted* 67B sidebar rule already on
+  disk had made ambiguous (a second "waived" link on D-4); with that one
+  file stashed the 63A tests pass 2/2, and 67B retargets them anyway.
+
+Landed in the commit whose subject begins `fix(milestone-67A):`.
 
 ---
 
@@ -1877,7 +1979,9 @@ resolved.
 **D-2. Annual's `preparer.ssn` is classified `government-id` but marked
 `optional` in the CSV (row 117) while the validator requires it**
 (`index.js:1579`). Same three-way disagreement as 67B's table. Worth folding
-into whichever option is chosen for 67A.
+into whichever option is chosen for 67A. *Folded into 67A's build
+2026-09-23: both SSN rows (Annual and Inventory) are now `conditional` on
+nobody being flagged as the preparer, matching what the validators do.*
 
 ---
 

@@ -35,6 +35,7 @@ import { addCollectionRow, duplicateCollectionRow, removeCollectionRow } from '.
 import { checkSignatureState, inferLegacySignatureState } from '../../core/validation/signature-state.js';
 import { renderSignatureStateControl, mountSignatureStateControls } from '../../core/signature/signature-state-control.js';
 import { preparerNoteHTML } from '../../core/signature/preparer-note.js';
+import { hasIdentifiedPreparer, preparerFlagCheckboxHTML, preparerWaivedNoticeHTML } from '../../core/form/preparer-flag.js';
 import { confirmModal, alertModal } from '../../core/ui/dialogs.js';
 import { SCH_B4_ACCOUNT_BLOCKS } from '../../core/excel/b4-register-pages.js';
 import { b4AccountHeading, createBankAccountId } from '../../core/accounting/bank-accounts.js';
@@ -680,6 +681,7 @@ function pagePart3Annual(){
           <div class="col-md-5">${inpD(`${labels[i]}'s Name`,g.name,`D.guardians[${i}].name=this.value`,true)}</div>
           <div class="col-md-3">${inpDWithTooltip('Signature Date','signature_date',g.signatureDate,`D.guardians[${i}].signatureDate=this.value`,true,'date')}</div>
           <div class="col-12">${renderSignatureStateControl({ path: `guardians.${i}`, state: inferLegacySignatureState(g.signatureState, g.signatureDate), route: '/p3', signatureImage: g.signatureImage })}</div>
+          <div class="col-12">${preparerFlagCheckboxHTML({ path: `guardians.${i}.isPreparer`, checked: !!g.isPreparer, route: '/p3' })}</div>
           <div class="col-md-4">${inpDWithTooltip('SSN / EIN','ssn_ein',g.ssn,`D.guardians[${i}].ssn=this.value`,true)}</div>
           <div class="col-md-4">${inpD('Phone Number',g.phone,`D.guardians[${i}].phone=this.value`,true)}</div>
           <div class="col-md-8">${inpD('Email Address',g.email,`D.guardians[${i}].email=this.value`,true)}</div>
@@ -706,6 +708,19 @@ function pagePart3Annual(){
 function pagePart4Annual(){
   const d=window.D; const p=d.preparer;
   const copy=filingCopy(annualDescriptor(d));
+  // Milestone 67A: while a guardian (Part III) or the attorney (Part V) is
+  // identified as the preparer, the outside-preparer block is neither
+  // required nor filed. The page says who is named and where the box lives
+  // rather than showing nothing; whatever was typed into the block stays
+  // stored (section 4) and returns when the box is unticked.
+  if(hasIdentifiedPreparer(d)){
+    return `<div class="schedule-page">
+  <h1>Part IV — Preparer Attestation</h1>
+  ${preparerNoteHTML()}
+  ${preparerWaivedNoticeHTML(d,{cardLocation:'Part III (the guardian card) or Part V (the attorney card)'})}
+  ${pageNavAnnual('/p3','/p5')}
+  </div>`;
+  }
   return `<div class="schedule-page">
   <h1>Part IV — Preparer Attestation</h1>
   ${preparerNoteHTML()}
@@ -756,6 +771,7 @@ function pagePart5Annual(){
             <div class="col-md-5">${inpD("Attorney Name (linked to Part I)",d.attorney,"D.attorney=this.value")}</div>
             <div class="col-md-3">${inpDWithTooltip("Signature Date",'signature_date',d.attorney_signatureDate,"D.attorney_signatureDate=this.value",true,'date')}</div>
             <div class="col-12">${renderSignatureStateControl({ path: 'attorney', state: inferLegacySignatureState(d.attorney_signatureState, d.attorney_signatureDate), route: '/p5', signatureImage: d.attorney_signatureImage, statePath: 'attorney_signatureState', imagePath: 'attorney_signatureImage' })}</div>
+            <div class="col-12">${preparerFlagCheckboxHTML({ path: 'attorney_isPreparer', checked: !!d.attorney_isPreparer, route: '/p5' })}</div>
             <div class="col-md-4">${inpD("Bar Number",d.attorney_bar,"D.attorney_bar=this.value",true)}</div>
             <div class="col-md-4">${inpD("Phone Number",d.attorney_phone,"D.attorney_phone=this.value",true)}</div>
             <div class="col-md-4">${inpD("Primary Email (e-filing)",d.attorney_email,"D.attorney_email=this.value",true,'email')}</div>
@@ -1565,6 +1581,12 @@ export function validateAnnual(){
       filingType:T,laterPath:`${k}.signatureDate`,
     }));
   });
+  // Milestone 67A: the outside-preparer block is required only while nobody
+  // is identified as the preparer. The form itself tells a guardian,
+  // co-guardian or guardian attorney "DO NOT SIGN HERE"; the Clerk accepts
+  // the filing when one of them is named as the preparer instead
+  // (src/core/form/preparer-flag.js). Part V below is unchanged.
+  if(!hasIdentifiedPreparer(d)){
   req(d.preparer.name,'Part IV — Preparer Name','preparer.name');
   // Milestone 39-C: replaces the old unconditional
   // req(d.preparer.signatureDate,...) -- name omitted: d.preparer.name is
@@ -1584,6 +1606,7 @@ export function validateAnnual(){
     sectionLabel:'Part IV',earlierLabel:'Accounting Period To',laterLabel:'Preparer Signature Date',allowSameDay:true,
     filingType:T,laterPath:'preparer.signatureDate',
   }));
+  }
   req(d.attorney_bar,'Part V — Attorney Bar Number','attorney_bar');
   req(d.attorney_phone,'Part V — Attorney Phone','attorney_phone');
   // Milestone 55D: attorney_email already rendered a required asterisk

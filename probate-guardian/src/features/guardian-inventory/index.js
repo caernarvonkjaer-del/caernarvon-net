@@ -16,6 +16,7 @@ import { createIssue } from '../../core/validation/issue-registry.js';
 import { effectiveAnswer, isYes as triYes, dependentQuestionState } from '../../core/validation/dependent-question.js';
 import { renderSignatureStateControl, mountSignatureStateControls } from '../../core/signature/signature-state-control.js';
 import { preparerNoteHTML } from '../../core/signature/preparer-note.js';
+import { hasIdentifiedPreparer, preparerFlagCheckboxHTML, preparerWaivedNoticeHTML } from '../../core/form/preparer-flag.js';
 import { serviceRecipientIssues } from '../../core/validation/service-recipients.js';
 import { renderServiceAttestationRow } from '../../core/form/service-attestation-visibility.js';
 // Milestone 57B: carried verbatim from MILESTONE-57-PROPOSAL.md section 57B.
@@ -69,6 +70,8 @@ function guardianHasData(guardian) {
     // image before typing a name must not be silently pruned by
     // normalizeGuardians() -- that image can't be recreated once discarded.
     guardian?.signatureImage,
+    // Milestone 67A: a card ticked as the preparer is not a blank card.
+    guardian?.isPreparer,
   ].some(value => String(value || '').trim());
 }
 function normalizeGuardians() {
@@ -1041,7 +1044,7 @@ function pageD1(){
   // a brand-new filing with no guardian data typed in yet renders zero
   // cards here, with no way to even see the required Guardian #1 fields.
   const partyRecords=(D.guardians||[]).map((g,i)=>({g,i})).filter(({g,i})=>i===0||i===visiblePendingGuardianIndex||[
-    g.name,g.signatureDate,g.ssnEin,g.phone,g.streetAddress,g.cityStateZip,g.signatureImage
+    g.name,g.signatureDate,g.ssnEin,g.phone,g.streetAddress,g.cityStateZip,g.signatureImage,g.isPreparer
   ].some(value=>String(value||'').trim()));
   const cards=partyRecords.map(({g,i},visibleIndex)=>{
     const isFirst=visibleIndex===0;
@@ -1055,6 +1058,7 @@ function pageD1(){
         ${formRow(col(4,reqLabel('Phone Number')+textInput(`guardians.${i}.phone`,'','phone')),col(8,reqLabel('Street Address')+textInput(`guardians.${i}.streetAddress`,'','address')))}
         ${formRow(col(6,reqLabel('City / State / Zip')+textInput(`guardians.${i}.cityStateZip`,'','zip')))}
         ${renderSignatureStateControl({ path: `guardians.${i}`, state: inferLegacySignatureState(g.signatureState, g.signatureDate), route: '/d1', signatureImage: g.signatureImage })}
+        ${preparerFlagCheckboxHTML({ path: `guardians.${i}.isPreparer`, checked: !!g.isPreparer, route: '/d1' })}
       </div>
     </div></div>`;
   }).join('');
@@ -1076,7 +1080,14 @@ function pageD2(){
   <div class="row g-3 card-grid-2col">
   <div class="col-12 col-lg-6">
   <h2 style="color:var(--ink);margin:.75rem 0 .4rem;font-size:.95rem;">Preparer Signature</h2>
-  <p style="font-size:.78rem;font-style:italic;color:var(--ink-3);">If you are the Guardian, Co-Guardian, or Guardian Attorney — DO NOT SIGN HERE.</p>
+  ${hasIdentifiedPreparer(D)
+    // Milestone 67A: a guardian (D-1) or the attorney (below) is identified
+    // as the preparer, so the outside-preparer block is neither required nor
+    // filed. Say who, and where the box lives, rather than show nothing.
+    // Whatever was typed into the block stays stored (section 4) and returns
+    // when the box is unticked.
+    ? preparerWaivedNoticeHTML(D,{cardLocation:'D-1 (the guardian card) or the Attorney card on this page'})
+    : `<p style="font-size:.78rem;font-style:italic;color:var(--ink-3);">If you are the Guardian, Co-Guardian, or Guardian Attorney — DO NOT SIGN HERE.</p>
   <div class="entry-card mb-0 h-100">
     <div class="entry-card-header d-flex justify-content-between align-items-center">
       <span>Preparer Attestation</span>
@@ -1089,7 +1100,7 @@ function pageD2(){
       ${formRow(col(6,reqLabel('City / State / Zip')+textInput('preparer.cityStateZip','','zip')))}
       ${renderSignatureStateControl({ path: 'preparer', state: inferLegacySignatureState(D.preparer.signatureState, D.preparer.signatureDate), route: '/d2', signatureImage: D.preparer.signatureImage })}
     </div>
-  </div>
+  </div>`}
   </div>
   <div class="col-12 col-lg-6">
   <h2 style="color:var(--ink);margin:.75rem 0 .4rem;font-size:.95rem;">Guardian Attorney Signature</h2>
@@ -1105,6 +1116,7 @@ function pageD2(){
       ${formRow(col(6,reqLabel('Primary Email (e-filing)')+textInput('attorney.email','name@lawfirm.com','email')),col(6,optLabel('Secondary Email (optional)')+textInput('attorney.secondaryEmail','assistant@lawfirm.com','email')))}
       ${formRow(col(8,reqLabel('Street Address')+textInput('attorney.streetAddress','','address')),col(6,reqLabel('City / State / Zip')+textInput('attorney.cityStateZip','','zip')))}
       ${renderSignatureStateControl({ path: 'attorney', state: inferLegacySignatureState(D.attorney.signatureState, D.attorney.signatureDate), route: '/d2', signatureImage: D.attorney.signatureImage })}
+      ${preparerFlagCheckboxHTML({ path: 'attorney.isPreparer', checked: !!D.attorney.isPreparer, route: '/d2' })}
     </div>
   </div>
   </div>
@@ -1288,8 +1300,15 @@ export function validateGuardian(){
   // mislabeling bug this filter/forEach split previously had: a co-guardian
   // with data would be mislabeled "Guardian #1" whenever guardian #1 itself
   // was still blank.
-  d.guardians.forEach((g,i)=>{if(i>0&&![g.name,g.signatureDate,g.ssnEin,g.phone,g.streetAddress,g.cityStateZip,g.signatureImage].some(value=>String(value||'').trim()))return;const p=`D-1 Guardian #${i+1}`,k=`guardians.${i}`;req(g.name,`${p} — Name`,`${k}.name`);errors.push(...checkSignatureState({state:inferLegacySignatureState(g.signatureState,g.signatureDate),date:g.signatureDate,image:g.signatureImage,sectionLabel:p,roleLabel:'',filingType:T,datePath:`${k}.signatureDate`,imagePath:`${k}.signatureImage`}));req(g.ssnEin,`${p} — SSN/EIN`,`${k}.ssnEin`);req(g.phone,`${p} — Phone`,`${k}.phone`);req(g.streetAddress,`${p} — Street Address`,`${k}.streetAddress`);req(g.cityStateZip,`${p} — City/State/Zip`,`${k}.cityStateZip`);});
+  d.guardians.forEach((g,i)=>{if(i>0&&![g.name,g.signatureDate,g.ssnEin,g.phone,g.streetAddress,g.cityStateZip,g.signatureImage,g.isPreparer].some(value=>String(value||'').trim()))return;const p=`D-1 Guardian #${i+1}`,k=`guardians.${i}`;req(g.name,`${p} — Name`,`${k}.name`);errors.push(...checkSignatureState({state:inferLegacySignatureState(g.signatureState,g.signatureDate),date:g.signatureDate,image:g.signatureImage,sectionLabel:p,roleLabel:'',filingType:T,datePath:`${k}.signatureDate`,imagePath:`${k}.signatureImage`}));req(g.ssnEin,`${p} — SSN/EIN`,`${k}.ssnEin`);req(g.phone,`${p} — Phone`,`${k}.phone`);req(g.streetAddress,`${p} — Street Address`,`${k}.streetAddress`);req(g.cityStateZip,`${p} — City/State/Zip`,`${k}.cityStateZip`);});
+  // Milestone 67A: the outside-preparer block is required only while nobody
+  // is identified as the preparer. The form itself tells a guardian,
+  // co-guardian or guardian attorney "DO NOT SIGN HERE"; the Clerk accepts
+  // the filing when one of them is named as the preparer instead
+  // (src/core/form/preparer-flag.js). The attorney block below is unchanged.
+  if(!hasIdentifiedPreparer(d)){
   req(d.preparer.name,'D-2 Preparer — Name','preparer.name');errors.push(...checkSignatureState({state:inferLegacySignatureState(d.preparer.signatureState,d.preparer.signatureDate),date:d.preparer.signatureDate,image:d.preparer.signatureImage,sectionLabel:'D-2 Preparer',roleLabel:'',filingType:T,datePath:'preparer.signatureDate',imagePath:'preparer.signatureImage'}));req(d.preparer.ssnEin,'D-2 Preparer — SSN/EIN','preparer.ssnEin');req(d.preparer.phone,'D-2 Preparer — Phone','preparer.phone');req(d.preparer.streetAddress,'D-2 Preparer — Street Address','preparer.streetAddress');req(d.preparer.cityStateZip,'D-2 Preparer — City/State/Zip','preparer.cityStateZip');
+  }
   req(d.attorney.name,'D-2 Attorney — Name','attorney.name');errors.push(...checkSignatureState({state:inferLegacySignatureState(d.attorney.signatureState,d.attorney.signatureDate),date:d.attorney.signatureDate,image:d.attorney.signatureImage,sectionLabel:'D-2 Attorney',roleLabel:'',filingType:T,datePath:'attorney.signatureDate',imagePath:'attorney.signatureImage'}));if(!d.attorney.filingDate)push('D-2 Attorney — Filing Date is required.','attorney.filingDate');req(d.attorney.barNumber,'D-2 Attorney — Bar Number','attorney.barNumber');req(d.attorney.phone,'D-2 Attorney — Phone','attorney.phone');req(d.attorney.streetAddress,'D-2 Attorney — Street Address','attorney.streetAddress');req(d.attorney.cityStateZip,'D-2 Attorney — City/State/Zip','attorney.cityStateZip');
   // "Unanswered" is anything other than Yes or No. New filings start with
   // '', and both explicit strings satisfy the parent answer; the filed

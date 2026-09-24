@@ -380,6 +380,7 @@ interface Window {
   resolveFilingDescriptor: any;
   resolvePaintTheme: any;
   resolveParty: any;
+  resolvePreparer: any;
   restoreBackupSavFile: any;
   rowStarted: any;
   runFieldWriteSideEffects: any;

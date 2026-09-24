@@ -752,9 +752,11 @@ function sanitizeForExcel(s){
 // only an office address read as "no data": skipped by validate() and
 // dropped from the exported court document.
 function guardianHasAnyData(g){
+  // isPreparer (Milestone 67A): a card the filer has ticked as the preparer
+  // is not a blank card, and a flagged row must then supply its name.
   return !!(g&&(g.name||g.ssn||g.phone||g.email||g.mailingStreet||g.mailingCityStateZip
     ||g.residenceStreet||g.residenceCityStateZip||g.officeStreet||g.officeCityStateZip
-    ||g.signatureDate));
+    ||g.signatureDate||g.isPreparer));
 }
 
 // ── SECURITY VALIDATION ──────────────────────────────
@@ -5668,12 +5670,14 @@ function emptyDataGuardian(){
     // treats every schedule as unconfirmed (matches its actual pre-existing
     // state: not yet reviewed), never as falsely confirmed empty.
     scheduleNoItems:{},
-    guardians:[{name:'',ssnEin:'',phone:'',streetAddress:'',cityStateZip:'',signatureDate:null,signatureState:'',signatureImage:''}],
+    // isPreparer on the guardian and attorney: Milestone 67A, "This person
+    // prepared this filing" -- see src/core/form/preparer-flag.js.
+    guardians:[{name:'',ssnEin:'',phone:'',streetAddress:'',cityStateZip:'',signatureDate:null,signatureState:'',signatureImage:'',isPreparer:false}],
     // Milestone 64A-2, item 2.5: asOfDate is the compilation statement's own
     // "as of" date (form PART IV H9), distinct from the signature date it
     // falls back to when blank.
     preparer:{name:'',ssnEin:'',phone:'',streetAddress:'',cityStateZip:'',signatureDate:null,asOfDate:null,signatureState:'',signatureImage:''},
-    attorney:{name:'',barNumber:'',phone:'',streetAddress:'',cityStateZip:'',signatureDate:null,filingDate:null,signatureState:'',signatureImage:''},
+    attorney:{name:'',barNumber:'',phone:'',streetAddress:'',cityStateZip:'',signatureDate:null,filingDate:null,signatureState:'',signatureImage:'',isPreparer:false},
     // bondWaived is the tri-state ('', 'Yes', 'No') behind bondWaivedDate.
     // A blank date alone could not distinguish "waived, date not entered"
     // from "not waived" -- see core/validation/dependent-question.js.
@@ -6310,7 +6314,9 @@ function excelCapacityPanel(over){
 // DATA MODEL
 // ═══════════════════════════════════════════════════════
 const mk = {
-  guardian:()=>({name:'',ssnEin:'',phone:'',streetAddress:'',cityStateZip:'',signatureDate:null,signatureState:'',signatureImage:''}),
+  // isPreparer: Milestone 67A, "This person prepared this filing" -- see
+  // src/core/form/preparer-flag.js.
+  guardian:()=>({name:'',ssnEin:'',phone:'',streetAddress:'',cityStateZip:'',signatureDate:null,signatureState:'',signatureImage:'',isPreparer:false}),
   preparer:()=>({name:'',ssnEin:'',phone:'',streetAddress:'',cityStateZip:'',signatureDate:null,signatureState:'',signatureImage:''}),
   attorney:()=>({name:'',barNumber:'',phone:'',streetAddress:'',cityStateZip:'',signatureDate:null,filingDate:null,signatureState:'',signatureImage:''}),
   recipient:()=>({name:'',address:'',cityStateZip:''}),
@@ -6840,8 +6846,14 @@ function computeNavChecks(){
       'a-p2':filled(D.startingBalance),
       'a-p3':guardianComplete(D.guardians[0]||{})&&D.guardians.every((g,i)=>i===0||!guardianHasAnyData(g)||guardianComplete(g))
         &&D.guardians.every(g=>datesOrdered(D.periodTo,g.signatureDate,true)),
-      'a-p4':filled(D.preparer.name)&&filled(D.preparer.signatureDate)&&filled(D.preparer.ssn)&&filled(D.preparer.phone)&&filled(D.preparer.street)&&filled(D.preparer.cityStateZip)
-        &&datesOrdered(D.periodTo,D.preparer.signatureDate,true),
+      // Milestone 67A: Part IV is complete without an outside preparer once
+      // a guardian or the attorney is identified as the preparer -- the same
+      // rule validateAnnual() applies, reached through the window bridge
+      // because this is a classic script. A missing bridge falls through to
+      // the full-block rule, never to a fabricated pass.
+      'a-p4':(typeof window.resolvePreparer==='function'&&!!window.resolvePreparer(D))
+        ||(filled(D.preparer.name)&&filled(D.preparer.signatureDate)&&filled(D.preparer.ssn)&&filled(D.preparer.phone)&&filled(D.preparer.street)&&filled(D.preparer.cityStateZip)
+        &&datesOrdered(D.periodTo,D.preparer.signatureDate,true)),
       'a-p5':filled(D.attorney_bar)&&filled(D.attorney_phone)&&filled(D.attorney_email)&&filled(D.attorney_street)&&filled(D.attorney_cityStateZip)&&filled(D.attorney_signatureDate)
         &&datesOrdered(D.periodTo,D.attorney_signatureDate,true),
       // Complete when the two lines agree, or the difference is explained.

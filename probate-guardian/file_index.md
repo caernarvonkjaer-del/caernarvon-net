@@ -120,6 +120,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`src\core\form\form-contract.js`](<src/core/form/form-contract.js>) | Build, tooling, or configuration source. |
 | [`src\core\form\form-fields.js`](<src/core/form/form-fields.js>) | Build, tooling, or configuration source. |
 | [`src\core\form\guardianship-options.js`](<src/core/form/guardianship-options.js>) | Build, tooling, or configuration source. |
+| [`src\core\form\preparer-flag.js`](<src/core/form/preparer-flag.js>) | Milestone 67A: "This person prepared this filing" -- who is identified as the preparer, the one-preparer rule, and the checkbox/notice/PDF-line renderers shared by Guardian Inventory and Annual Accounting. |
 | [`src\core\form\prune-cards.js`](<src/core/form/prune-cards.js>) | Build, tooling, or configuration source. |
 | [`src\core\form\schedule-definitions.js`](<src/core/form/schedule-definitions.js>) | Build, tooling, or configuration source. |
 | [`src\core\form\service-attestation-visibility.js`](<src/core/form/service-attestation-visibility.js>) | Build, tooling, or configuration source. |
@@ -319,6 +320,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`tests\e2e\plan-readiness.contract.spec.ts`](<tests/e2e/plan-readiness.contract.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\plan-simplified-mount.spec.ts`](<tests/e2e/plan-simplified-mount.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\plan-started-row.spec.ts`](<tests/e2e/plan-started-row.spec.ts>) | Automated test covering the named behavior or contract. |
+| [`tests\e2e\preparer-flag.spec.ts`](<tests/e2e/preparer-flag.spec.ts>) | Milestone 67A: identifying a guardian or attorney as the preparer drops the preparer block, unblocks export, prints the name, keeps the workbook cells empty, and survives re-import. |
 | [`tests\e2e\preparer-note-placement.spec.ts`](<tests/e2e/preparer-note-placement.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\print-preview-signature-jump.spec.ts`](<tests/e2e/print-preview-signature-jump.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\pwa-registration.spec.ts`](<tests/e2e/pwa-registration.spec.ts>) | Automated test covering the named behavior or contract. |
@@ -448,6 +450,8 @@ This index inventories repository files retained as source or project artifacts.
 | [`tests\unit\plan-simplified-parity.spec.js`](<tests/unit/plan-simplified-parity.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\plan-started-row.spec.js`](<tests/unit/plan-started-row.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\plan-tristate.spec.js`](<tests/unit/plan-tristate.spec.js>) | Automated test covering the named behavior or contract. |
+| [`tests\unit\preparer-flag-validation.spec.js`](<tests/unit/preparer-flag-validation.spec.js>) | Milestone 67A: validateGuardian() drops the preparer block's requirements while a guardian or attorney is flagged as the preparer, and nothing else. |
+| [`tests\unit\preparer-flag.spec.js`](<tests/unit/preparer-flag.spec.js>) | Milestone 67A: the preparer-flag module -- resolution, the one-preparer rule, deletion consequences, and the rendered line, checkbox and notice, on both attorney shapes. |
 | [`tests\unit\preparer-note.spec.js`](<tests/unit/preparer-note.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\print-annotation-persistence.spec.js`](<tests/unit/print-annotation-persistence.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\prune-cards.spec.js`](<tests/unit/prune-cards.spec.js>) | Automated test covering the named behavior or contract. |
