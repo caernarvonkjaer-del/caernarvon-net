@@ -659,6 +659,10 @@ on the `milestone-70` branch unless it says otherwise.
 | `portable-http` profile (T1), brought up | `02ecde4`, then the headers commit | `scripts/serve-portable-http.mjs`; `PG_TARGET=portable-http`; `npm run test:e2e:portable-http`; also part of `test:release` through the `all` profile. **Gate item: the one bring-up run (D2) 33/33, 0 skipped**, including the five ward-lock tests and the backup lock test the `file://` profile skips. The parity spec was seen failing for the stated reason with `dist/portable/fragments` removed. Production's headers then captured with the requester's go-ahead (one GET of `https://www.mypinellasclerk.gov/Portals/0/Guardian-Forms/index.html`, recorded in `tests/e2e/support/production-headers.json`), the profile moved to production's own `/Portals/0/Guardian-Forms/` path, and `Cache-Control`, `X-Frame-Options` and `X-XSS-Protection` replayed with HTML sent as plain `text/html`; rerun 33/33, and the header check seen failing with the replay removed. |
 | Load-aware audit | `b9b5381` | The audit counts a module's `window.X` as a provider only if something loads that module, and ratchets the modules nothing loads (8). Seen failing against the previous baseline, naming exactly the nine new entries. |
 | Declaration dispositions (draft) and computed lookups | `90bc235` | `scripts/ms70-declaration-dispositions.mjs`; `tests/baseline/ms70-declaration-dispositions.json`: all 474 declarations -- 459 move, 1 test-only, 14 delete-as-dead candidates -- each with a delivery, `reviewed: false`. The audit now records computed `window[...]` lookups and resolves the two known name builders; the first draft had wrongly proposed the seven `mount<Engine>Feature` functions as dead. |
+| Window-export reasons | `e603bbe` | Every `window` publication with the files that actually read it: 109 read only by the monolith, 98 only by modules, 22 by both, 32 only by tests, 65 by nothing, 4 from a module nothing loads. |
+| `GuardianForms` schema draft | `55366db` | `tests/baseline/ms70-testing-adapter-design.json`: production member `version` only (its consumer is support, given the year-long cache); 21 testing members (14 commands, 7 copy-only queries) covering all 158 names the browser suite reaches, plus 19 to the real UI, 21 to unit imports and 12 harness globals. |
+| Fixture-helper inventory | `a94649a` | `tests/baseline/ms70-fixture-inventory.json`: 12 support modules, 67 exports, 16 factories. Found: `window-api.ts`'s typed wrappers from Milestone 42C are used by no spec. |
+| Per-delivery estimate | this commit | 58-95 days; the table above. |
 | Security contract | `f4f368b` | `tests/unit/crypto-contract.spec.js` 8/8 and `tests/e2e/security-contract.spec.ts` 3/3, each seen failing with the fault injected (iterations 100,000, a 16-byte IV, an extractable key; auto-lock at 14 minutes, lockout threshold 6, a stored copy of the password). |
 
 **Parsed figures that replace this plan's estimates.** The Verified planning
@@ -812,13 +816,43 @@ to 2 and returns text -- unresolved which is right.
   15-minute inactivity lock, and a lock that clears the key and the
   in-memory case.
 
+**Per-delivery estimate (replaces the 45-70 day guess).** Sized from the
+dispositions draft: the monolith lines each delivery takes on, the module
+consumers it must migrate, and for 70T the browser suite's measured
+coupling. Units are focused engineering days, the same unit as the original
+figure; the ranges assume the slower rate for stateful code (lifecycle,
+persistence, security, startup) and include each delivery's tests, index and
+record updates, but not waiting on full-suite runs or approvals.
+
+| Delivery | What it carries | Estimate (days) |
+| --- | --- | --- |
+| 70A | Remaining items listed below | 1-2 |
+| 70T | 112 browser spec files, 158 application names, 237 in-place state writes; 21 adapter members | 8-14 |
+| 70B | 456 monolith lines (47 declarations), plus proving about 22 live duplicate pairs equal | 3-6 |
+| 70C | 344 lines (32 declarations) plus the registry, factories, normalizers and the 16 fixture factories | 3-5 |
+| 70D | 584 lines -- `computeNavChecks()` alone is 504 -- with old/new differential parity on every fixture | 3-5 |
+| 70E | 36 lines, but every module reading case state moves to the store seam (the active filing is read by 41 files) | 4-7 |
+| 70F | 997 lines (form binding, validation panels, schedule documents, preview paging) and the dispatchers' teardown | 6-9 |
+| 70G | 1,446 lines of filing lifecycle, conversion, carry-over, year rollover and shared records -- the largest | 8-12 |
+| 70H | 904 lines of shell, help, tours, activity and dialogs | 5-8 |
+| 70I | 736 lines of persistence, security and startup, with the golden archives and mixed-version tests | 6-9 |
+| 70J | The ownership flip and its fault injection | 3-5 |
+| 70K | 727 lines of router and bridges, the 18 files that capture globals at load, bootstrap and the namespace | 6-9 |
+| 70L | Deleting the monolith, the release evidence and the merge gate | 2-4 |
+| **Total** | | **58-95** |
+
+The range is higher than the first guess because 70T did not exist then and
+the browser suite's coupling turned out larger than estimated. It excludes
+the end-of-branch reconstitution of `master` fixes (D1): one ledger row so
+far, and the cost per row depends on what each fix touches, so the ledger is
+the running measure of it.
+
 **Still open in 70A.** Reviewing the dispositions draft (every entry is
 `reviewed: false`); the current reason for each `window` export; the `.sav`
 fixture corpus (current and historical, plus
 corrupt and wrong-password cases); the mixed-version characterization; the
-year-rollover characterization; the fixture-helper inventory; the baseline
-measurements (`measure:baseline`/`measure:lifecycle` with `--output`); the
-`GuardianForms` schema; and the per-delivery estimate.
+year-rollover characterization; the baseline measurements (`measure:baseline`/`measure:lifecycle` with `--output`); the
+and confirming the `GuardianForms` schema draft.
 
 ---
 
@@ -1538,8 +1572,9 @@ time for full browser/release suites. That range is intentionally broad and is
 not a calendar commitment. 70A must replace it with a delivery-by-delivery
 estimate after the parser-backed inventory identifies the actual declaration
 and consumer counts. The range also predates 70T and the end-of-branch fix
-reconstitution (D1); 70A's estimate must include both, and the ledger keeps
-the reconstitution cost visible as it accumulates.
+reconstitution (D1). 70A has since replaced it with a per-delivery estimate
+of 58-95 days, including 70T and excluding the reconstitution, whose running
+cost the ledger records (see the 70A build record).
 
 The safest approval shape is the whole target architecture plus one delivery at
 a time, beginning with 70A. Approval of the plan does not waive later decisions
