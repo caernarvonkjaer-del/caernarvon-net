@@ -263,7 +263,11 @@ body{margin:0;font-family:'Segoe UI Variable Text','Segoe UI',system-ui,-apple-s
 @keyframes bounce{0%,100%{transform:translateY(0);}50%{transform:translateY(4px);}}
 
 /* ── App Toast ────────────────────────────────────────── */
-.app-toast{display:none;align-items:flex-start;gap:.7rem;position:fixed;bottom:1.25rem;right:1.25rem;z-index:9998;max-width:340px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:0 20px 48px -12px rgba(10,16,28,.35),0 0 0 1px rgba(17,26,43,.04);padding:.9rem 1rem;animation:toastIn .22s var(--ease);}
+/* Below the guided tour (.walkthrough-overlay 9000 / tooltip 9002): a toast
+   floating above the tour covered its "Next" button on the first step and a
+   filer who had just created their first filing could not advance (2026-09-24).
+   Still above the help panel (5000) and every modal. */
+.app-toast{display:none;align-items:flex-start;gap:.7rem;position:fixed;bottom:1.25rem;right:1.25rem;z-index:8990;max-width:340px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:0 20px 48px -12px rgba(10,16,28,.35),0 0 0 1px rgba(17,26,43,.04);padding:.9rem 1rem;animation:toastIn .22s var(--ease);}
 @keyframes toastIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}
 .app-toast-icon{flex:0 0 auto;color:var(--accent-text);display:inline-flex;margin-top:.1rem;}
 .app-toast-body{flex:1;min-width:0;}
