@@ -3,6 +3,7 @@ import {
   BOND_DEPOSITORY_OPTIONS, BOND_DEPOSITORY_STATES, normalizeBondDepositoryState,
   revealsBond, revealsDepository, revealsWaiver, hasBondDetails,
   inferBondDepositoryState, migrateBondDepository, bondDepositoryAdvisories, bondDepositoryPdfLines,
+  bondAmountCellValue, bondAmountFromCell,
 } from '../../src/core/filing/bond-depository.js';
 
 // Milestone 67B. One four-state question -- restricted depository only, bond
@@ -117,6 +118,29 @@ describe('reading a filing saved under the old shape (the migration table)', () 
     const f = { bondDepositoryState: 'waived', bondWaivedDate: '2026-03-03' };
     migrateBondDepository(f);
     expect(f.bondDepositoryState).toBe('bond-waived');
+  });
+});
+
+// 2026-09-24, requester: a blank Bond Amount exports blank, not 0, and reads
+// back blank. The Annual wrote a blank field to PART IX H20 as the number 0
+// (numValue) and read it back as 0; the Inventory's reader hands a blank G26
+// back as 0 too. Neither is a bond.
+describe('the Bond Amount cell: blank stays blank in both directions', () => {
+  test('a blank field writes a blank cell; a number writes the number', () => {
+    for (const blank of ['', null, undefined]) expect(bondAmountCellValue(blank), String(blank)).toBe('');
+    expect(bondAmountCellValue('5000')).toBe(5000);
+    expect(bondAmountCellValue(5000)).toBe(5000);
+    expect(bondAmountCellValue('2500.50')).toBe(2500.5);
+    // A typed 0 is written faithfully; only an empty field is a blank cell.
+    expect(bondAmountCellValue('0')).toBe(0);
+    expect(bondAmountCellValue('TBD'), 'non-numeric text cannot go in a numeric cell, and 0 would misstate it').toBe('');
+  });
+
+  test('a blank cell, and the 0 both readers hand back for one, read as a blank field', () => {
+    for (const blank of ['', null, undefined, 0, '0']) expect(bondAmountFromCell(blank), String(blank)).toBe('');
+    expect(bondAmountFromCell(5000)).toBe(5000);
+    expect(bondAmountFromCell('5000')).toBe(5000);
+    expect(bondAmountFromCell(NaN)).toBe('');
   });
 });
 

@@ -23,6 +23,19 @@ Listed in build order.
 | 5 | 67A | Preparer block is mandatory on filings the app itself says have no preparer | **DECIDED** — name the preparer on the guardian/attorney cards; PDF prints the name | **LANDED 2026-09-23** — see the build record under 67A |
 | 6 | 67B | Bond fields block filings on Annual/Final/Trust **and Guardian Inventory** | **DECIDED** — nothing in the bond block gates export; warn only, one shared path | **LANDED 2026-09-23** — see the build record under 67B |
 
+**Full regression, 2026-09-24, on the six landed items (`npm test`, 1.2 h on a
+busy workstation — the 25.7 min baseline is from an idle one):** unit 124
+files / 1,767 green; browser **773 passed, 6 skipped, 1 failed** of 780. The
+six skips are the same environment-gated six as the 2026-09-19 baseline (the
+web-build chunk-failure case and the five hosted-offline cases). The one
+failure — `guided-tour-navigation.spec.ts`, "dashboard sequence covers all
+dashboard steps" — is **not this milestone's**: it fails identically at
+`a809ff6`, the commit before 67F, so it was introduced by the 2026-09-21/22
+work between the baseline and this milestone and never caught because no
+full run happened in between. Cause (the first-backup reminder toast stacked
+above the tour and covered its "Next" button) and fix are in the commit
+whose subject begins `fix(shell): the first-backup reminder`.
+
 67C, 67D and 67E all touch the Excel export path and share its test surface, so
 building them together is cheaper than separately — but none depends on another,
 and 67C alone resolves five of the six reported Excel symptoms.
@@ -956,7 +969,18 @@ arrangement; the filed Excel is unchanged.
   importer calls make the stored answer deterministic at save time rather
   than being the only path to it.) (3) The Annual writes a blank Bond
   Amount to `PART IX` H20 as the number 0 (`numValue`) and reads it back
-  as 0. (4) Milestone 67D's Annual importer derives `bondPeriodFrom`/`To`
+  as 0. **Follow-up, requester 2026-09-24: that 0 is itself wrong — a
+  filer with no bond filed a workbook stating a $0 bond, and saw 0 in the
+  field after a re-import.** A blank field now writes a blank H20
+  (`bondAmountCellValue`), and a blank cell — or the 0 that both forms'
+  cell readers hand back for one, and that any workbook exported before
+  this date carries — reads back as a blank field (`bondAmountFromCell`,
+  on the Annual's H20 and the Inventory's `PART V` G26, whose reader had
+  the same 0-for-blank). Unit-tested in `bond-depository.spec.js`; the
+  e2e round trip asserts H20 blank and the field blank on both forms, red
+  first (`Expected: "" Received: "0"` on H20; `Received: 0` on the
+  Inventory's field). The Inventory's export already wrote blank as
+  blank and is unchanged. (4) Milestone 67D's Annual importer derives `bondPeriodFrom`/`To`
   from the accounting period for every workbook. Under §8.2's "bond
   details entered", (3) and (4) each turned a depository-only filing into
   "bond and restricted depository" on re-import — the red run's actual

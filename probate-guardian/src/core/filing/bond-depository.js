@@ -68,15 +68,40 @@ const isYes = (v) => v === true || v === 'Yes';
  * dates alone are not a bond -- on the Annual the bond period is the
  * accounting period (Milestone 67D), which every filing has and whose
  * importer derives it for every workbook. A zero amount is not a bond either:
- * both workbooks write a blank Bond Amount as 0 (numValue) and read it back
- * as the number 0. Either would turn a filing re-imported with no bond into
- * one.
+ * a workbook exported before 2026-09-24 carries 0 for a blank Annual amount
+ * (numValue), and both importers' number readers hand a blank cell back as
+ * 0. Either would turn a filing re-imported with no bond into one.
  */
 export function hasBondDetails(filing) {
   if (!filing) return false;
   const amount = text(filing.bondAmount);
   const amountEntered = amount !== '' && parseFloat(amount) !== 0;
   return amountEntered || text(filing.bondingCompany) !== '';
+}
+
+/**
+ * What the Bond Amount cell receives -- Annual `PART IX` H20 -- for what the
+ * field holds: the number, or a blank cell for a blank field. Until
+ * 2026-09-24 a blank field was written as 0, so a filer with no bond filed a
+ * workbook stating a $0 bond and read 0 back into the field.
+ */
+export function bondAmountCellValue(value) {
+  const t = text(value);
+  if (t === '') return '';
+  const n = parseFloat(t);
+  return Number.isFinite(n) ? n : '';
+}
+
+/**
+ * What the field reads back from that cell (Annual H20, Inventory `PART V`
+ * G26): the number, or blank. Both readers hand a blank cell back as 0, and a
+ * workbook exported before 2026-09-24 carries a literal 0 for a blank
+ * amount; neither is a bond, so both read as blank.
+ */
+export function bondAmountFromCell(value) {
+  if (value == null || value === '') return '';
+  const n = typeof value === 'number' ? value : parseFloat(String(value));
+  return Number.isFinite(n) && n !== 0 ? n : '';
 }
 
 /**

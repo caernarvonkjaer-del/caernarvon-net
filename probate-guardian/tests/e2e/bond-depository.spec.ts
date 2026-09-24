@@ -270,6 +270,8 @@ for (const form of [
       } else {
         const p9 = await sheetText(bytes, 'PART IX ');
         expect(p9.get('G9'), 'the receipt date, as the serial for 2026-02-02').toBe('46055');
+        // 2026-09-24: a blank Bond Amount is a blank cell, not a $0 bond.
+        expect(p9.get('H20') ?? '', 'a blank Bond Amount exports blank, not 0').toBe('');
         for (const v of p9.values()) expect(v).not.toMatch(/bond-waived|depository-only|Bond waived by court order/);
       }
 
@@ -288,6 +290,9 @@ for (const form of [
       await page.waitForFunction((cn) => (window as any).D.caseNumber === cn, caseNumber, { timeout: 20_000 });
       expect(await page.evaluate(() => (window as any).D.bondDepositoryState), 'the imported date answers the question')
         .toBe(form.type === 'guardian' ? 'bond-waived' : 'depository-only');
+      // ...and the blank amount comes back blank, not as the 0 both readers
+      // hand back for an empty cell (2026-09-24).
+      expect(await page.evaluate(() => (window as any).D.bondAmount), 'a blank Bond Amount reads back blank, not 0').toBe('');
 
       // An answer the filing already had is not overwritten by a workbook
       // that cannot carry one.

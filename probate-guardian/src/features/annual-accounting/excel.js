@@ -16,7 +16,7 @@ import { createIssue } from '../../core/validation/issue-registry.js';
 import { resolveFilingDescriptor } from '../../core/filing/filing-descriptor.js';
 import { getExcelJS, numValue, percentValue, saveWorkbookFile, setCell, setDateCell } from '../../core/excel/excel-engine.js';
 import { hasIdentifiedPreparer } from '../../core/form/preparer-flag.js';
-import { migrateBondDepository } from '../../core/filing/bond-depository.js';
+import { migrateBondDepository, bondAmountCellValue, bondAmountFromCell } from '../../core/filing/bond-depository.js';
 import { readCellText, unwrapCellValue } from '../../core/excel/cell-reader.js';
 import { planB4PagesToKeep, isB4RegisterSheetName, b4PageNumber, SCH_B4_ACCOUNT_BLOCKS, B4_REGISTER_PREFIX } from '../../core/excel/b4-register-pages.js';
 import { pruneSheets } from '../../core/excel/sheet-pruning.js';
@@ -481,7 +481,9 @@ export async function doSaveExcel(){
     if(p9){
       setCell(p9,'G8',inv.guardianRelationship||'');
       setDateCell(p9,'G9',inv.restrictedDepositoryReceiptDate);
-      setCell(p9,'H20',nv(inv.bondAmount));
+      // A blank Bond Amount is a blank cell, not a $0 bond (2026-09-24):
+      // nv() wrote 0 for an empty field, so a filing with no bond stated one.
+      setCell(p9,'H20',bondAmountCellValue(inv.bondAmount));
       setCell(p9,'D22',inv.bondingCompany||'');
     }
 
@@ -843,7 +845,9 @@ export async function importExcel(input){
       if(p9){
         D.guardianRelationship=gcStr(p9,'G8')||D.guardianRelationship;
         D.restrictedDepositoryReceiptDate=gcDate(p9,'G9');
-        D.bondAmount=gcNum(p9,'H20');
+        // A blank H20 -- or the 0 a pre-2026-09-24 export wrote for one --
+        // reads back as a blank field, not a $0 bond.
+        D.bondAmount=bondAmountFromCell(gcNum(p9,'H20'));
         // E21/G21 are the workbook's own `=From_Date` / `=To_Date` formulas
         // (Milestone 67D). A file this app just wrote carries no computed
         // value for them -- Excel only calculates when it opens the file --

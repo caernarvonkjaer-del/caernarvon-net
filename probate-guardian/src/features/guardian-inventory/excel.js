@@ -12,7 +12,7 @@ import { authorizeFilingOutput } from '../../core/filing/output-authorization.js
 import { getExcelCapacityIssues } from '../../core/excel/excel-capacity.js';
 import { getExcelJS, saveWorkbookFile, setCell, setDateCell } from '../../core/excel/excel-engine.js';
 import { hasIdentifiedPreparer } from '../../core/form/preparer-flag.js';
-import { migrateBondDepository } from '../../core/filing/bond-depository.js';
+import { migrateBondDepository, bondAmountFromCell } from '../../core/filing/bond-depository.js';
 import { readCellText, unwrapCellValue } from '../../core/excel/cell-reader.js';
 import { pruneSheets } from '../../core/excel/sheet-pruning.js';
 import {
@@ -688,7 +688,9 @@ function parseInitialInventoryWorkbook(wb){
     // Milestone 64A-1, item 1.1: bondAmount is now stored numeric (matching
     // every other currency field's num() reader), not the display string
     // txt() previously returned.
-    bondAmount:num(ws('PART V'),'G26'),bondPeriodFrom:dt(ws('PART V'),'E27'),bondPeriodTo:dt(ws('PART V'),'G27'),bondingCompany:txt(ws('PART V'),'D28'),bondWaivedDate:dt(ws('PART V'),'G15')||'',
+    // num() hands a blank G26 back as 0; a blank cell is a blank field, not a
+    // $0 bond (2026-09-24).
+    bondAmount:bondAmountFromCell(num(ws('PART V'),'G26')),bondPeriodFrom:dt(ws('PART V'),'E27'),bondPeriodTo:dt(ws('PART V'),'G27'),bondingCompany:txt(ws('PART V'),'D28'),bondWaivedDate:dt(ws('PART V'),'G15')||'',
     serviceRecipients:(()=>{const p6=ws('PART VI');const all=[{name:txt(p6,'B13'),address:txt(p6,'B14'),cityStateZip:txt(p6,'B15')},{name:txt(p6,'H13'),address:txt(p6,'H14'),cityStateZip:txt(p6,'H15')},{name:txt(p6,'B19'),address:txt(p6,'B20'),cityStateZip:txt(p6,'B21')},{name:txt(p6,'H19'),address:txt(p6,'H20'),cityStateZip:txt(p6,'H21')}];const filtered=all.filter(r=>r.name||r.address||r.cityStateZip);return filtered.length>0?filtered:[mk.recipient()];})(),
     // Milestone 57B: imported as unanswered, never inferred. A blank PART VI
     // means the workbook carries no recipients; it does NOT mean the filer
