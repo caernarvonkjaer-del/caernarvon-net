@@ -294,6 +294,7 @@ interface Window {
   namesNearlyMatch: any;
   navigate: any;
   needsScheduleAck: any;
+  newerCaseFileFormatMessage: any;
   nextWalkthroughStep: any;
   normalizeCountyName: any;
   normalizePartyName: any;

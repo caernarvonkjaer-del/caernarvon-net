@@ -2029,9 +2029,17 @@ async function lockApp(){
       const manifestEntry=zip.file('manifest.json');
       if(manifestEntry){
         const manifest=JSON.parse(await manifestEntry.async('string'));
-        const loaded=await loadCaseFileFromZip(zip,manifest,_cryptoKey);
-        // The file on disk may have been damaged since it was opened.
-        await window.protectPartiallyReadCaseFile(loaded&&loaded.unreadable,handleFile&&handleFile.name);
+        // Another tab on a newer version may have saved this file since it was
+        // opened: do not read it, and never save over it from this tab.
+        const newerFormat=window.newerCaseFileFormatMessage(manifest);
+        if(newerFormat){
+          await window.forgetCaseFileHandle();
+          await window.alertModal(newerFormat);
+        }else{
+          const loaded=await loadCaseFileFromZip(zip,manifest,_cryptoKey);
+          // The file on disk may have been damaged since it was opened.
+          await window.protectPartiallyReadCaseFile(loaded&&loaded.unreadable,handleFile&&handleFile.name);
+        }
       }
     }catch(e){console.error('Could not reload case data after unlocking',e);}
   }else{
@@ -3106,6 +3114,9 @@ async function loadCaseFileAtLaunch(file){
     if(!manifestEntry){await window.alertModal('Not a Guardian Forms data file (no manifest.json inside).');return false;}
     const manifest=JSON.parse(await manifestEntry.async('string'));
     if(manifest.format!=='probate-guardian-case'){await window.alertModal('Not a Guardian Forms data file.');return false;}
+    // A newer case-file format than this build reads (case-file.js).
+    const newerFormat=window.newerCaseFileFormatMessage(manifest);
+    if(newerFormat){await window.alertModal(newerFormat);return false;}
     _securityMode=manifest.securityMode||(manifest.salt?'encrypted':'none');
     if(_securityMode==='encrypted'){
       await promptPasswordForFile(manifest,zip); // sets _cryptoKey; only resolves on a verified password

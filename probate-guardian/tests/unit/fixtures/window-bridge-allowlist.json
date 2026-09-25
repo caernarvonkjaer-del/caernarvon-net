@@ -519,6 +519,10 @@
     },
     {
       "file": "src/core/persistence/case-file.js",
+      "name": "newerCaseFileFormatMessage"
+    },
+    {
+      "file": "src/core/persistence/case-file.js",
       "name": "protectPartiallyReadCaseFile"
     },
     {
