@@ -69,7 +69,7 @@ a `master` commit is missing from it.
 | SHA | Date | Summary | Files touched | Disposition | Proving test(s) | Branch commit | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `945b5a8e0eb3290bac3ce345a4910c81208392e4` | 2026-09-24 | Annual import no longer stops at the first Schedule D ward percentage (a local r2 in annual-accounting/excel.js; found by this milestone's audit) | `src/features/annual-accounting/excel.js`, `src/core/types/window-bridge.d.ts`, `tests/e2e/annual-import-ward-percentage.spec.ts`, `TEST-INDEX.md`, `file_index.md` | merges-cleanly | `tests/e2e/annual-import-ward-percentage.spec.ts` | `299e17a` | carried |
-| `b28bf2516bd5100741bdfff9db759ce87f52672b` | 2026-09-24 | Restore blank-card clean-up (main.js imports prune-cards.js; legacy-app.js publishes BLANK_SCHEDULE_ENTRY); tests that assumed untouched cards survive updated | `src/main.js`, `src/legacy-app.js`, `tests/unit/fixtures/window-bridge-allowlist.json`, `tests/e2e/blank-card-pruning.spec.ts`, `tests/e2e/guardian-inventory-collection-controls.spec.ts`, `tests/e2e/plan-certificate-of-service.spec.ts`, `tests/e2e/schedule-doc-ack.spec.ts`, `TEST-INDEX.md`, `file_index.md` | re-implement | `tests/e2e/blank-card-pruning.spec.ts` | -- | open |
+| `b28bf2516bd5100741bdfff9db759ce87f52672b` | 2026-09-24 | Restore blank-card clean-up (main.js imports prune-cards.js; legacy-app.js publishes BLANK_SCHEDULE_ENTRY); tests that assumed untouched cards survive updated | `src/main.js`, `src/legacy-app.js`, `tests/unit/fixtures/window-bridge-allowlist.json`, `tests/e2e/blank-card-pruning.spec.ts`, `tests/e2e/guardian-inventory-collection-controls.spec.ts`, `tests/e2e/plan-certificate-of-service.spec.ts`, `tests/e2e/schedule-doc-ack.spec.ts`, `TEST-INDEX.md`, `file_index.md` | re-implement | `tests/e2e/blank-card-pruning.spec.ts` | `9b0fd6c` | carried |
 | `dbee60fb2ac3fc376e9f5999602c7282efb9a89a` | 2026-09-24 | Annual Ward's % always a percentage (1% no longer filed as 100%); Preview & Export notes Schedule D shares of 1% or less | `src/features/annual-accounting/totals.js`, `src/core/excel/excel-engine.js`, `src/core/filing/output-preflight.js`, `src/core/filing/ward-share-advisories.js`, `tests/e2e/annual-ward-share-export.spec.ts`, `tests/e2e/annual-import-ward-percentage.spec.ts`, `tests/unit/annual-ward-percentage.spec.js`, `tests/unit/ward-share-advisories.spec.js`, `tests/unit/excel-engine.spec.js`, `TEST-INDEX.md`, `file_index.md` | merges-cleanly | `tests/e2e/annual-ward-share-export.spec.ts`, `tests/unit/annual-ward-percentage.spec.js` | -- | open |
 | `c62f89002c30272ad4555c749b24a28ee1468d59` | 2026-09-24 | Completes dbee60f: each Schedule D line's ward amount (Annual pages; PDF D-1 and D-5 columns) follows the 1% rule; the Annual pages import pct from totals.js and legacy-app.js's stale pct() is deleted (the branch's declaration dispositions list it) | `src/features/annual-accounting/index.js`, `src/features/annual-accounting/pdf-model.js`, `src/legacy-app.js`, `src/core/types/window-bridge.d.ts`, `tests/e2e/annual-ward-share-export.spec.ts`, `tests/unit/annual-ward-percentage.spec.js`, `TEST-INDEX.md` | re-implement | `tests/e2e/annual-ward-share-export.spec.ts`, `tests/unit/annual-ward-percentage.spec.js` | -- | open |
 | `b2d97f52212f3a8735d606aa49a7069872f48656` | 2026-09-24 | A case file with a part that cannot be read now tells the filer exactly what was not read and is never saved over (startup Open, Open backup, re-read after unlock); found by this milestone's .sav corpus | `src/legacy-app.js`, `src/core/persistence/case-file.js`, `src/core/types/window-bridge.d.ts`, `tests/unit/fixtures/window-bridge-allowlist.json`, `tests/e2e/case-file-damaged-open.spec.ts`, `TEST-INDEX.md`, `file_index.md` | re-implement | `tests/e2e/case-file-damaged-open.spec.ts`; carrying it deliberately changes `tests/baseline/ms70-sav-corpus-golden.json`'s damaged-file outcomes (a-listed-filing-missing, unreadable-filing, tampered-encrypted-filing then show the warning): regenerate those with the port, recorded | -- | open |
@@ -101,11 +101,14 @@ Notes on open rows:
   `src/core/format/money.js`'s, the same formula for the numbers it passes, so
   at the merge the importer's side of this commit is superseded: keep the
   branch's import.
-- `b28bf25`: re-implement, although it would merge textually today. It edits
-  `legacy-app.js`, which the branch deletes, and it adds a `window` global
-  (`BLANK_SCHEDULE_ENTRY`) the ratchet forbids on the branch. Carried over,
-  the schedule table belongs with the clean-up in `prune-cards.js` (or the
-  70C registry), imported rather than read off `window`, and the composition
-  root keeps loading the module. The dependency baseline then loses
-  `prune-cards.js` from `unreachableModules` and `pruneBlankCards` from
-  `unownedWindowReads` -- regenerate it in the same commit.
+- `b28bf25`: carried in `9b0fd6c` (70C), re-implemented. The schedule table
+  (`BLANK_SCHEDULE_ENTRY`) lives in `prune-cards.js` with the clean-up, and
+  the router and the dashboard entry import `pruneBlankCards()` -- no
+  `window` global, and nothing for `main.js` to load. Its test changes came
+  across converted to `GuardianForms.testing`: `blank-card-pruning.spec.ts`
+  (four of master's five cases; the fifth checked that
+  `window.pruneBlankCards` exists, and the function is imported now) and the
+  three updated specs. The dependency baseline lost `prune-cards.js` from
+  `unreachableModules` and `pruneBlankCards` from `unownedWindowReads` in the
+  same commit. At the merge, keep the branch's side of `legacy-app.js`,
+  `main.js` and those four specs.
