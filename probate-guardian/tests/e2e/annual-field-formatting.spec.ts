@@ -27,7 +27,7 @@ test.describe('Annual Accounting field formatting', () => {
     // Number, not SSN/EIN -- only Part III (Guardians) and Part IV
     // (Preparer) have an SSN/EIN field to check.
     for (const route of ['/p3', '/p4']) {
-      await page.evaluate((r) => (window as any).navigate(r), route);
+      await page.evaluate((r) => (window as any).GuardianForms.testing.navigate(r), route);
       const ssnInputs = page.locator('input.ssn-masked');
       const count = await ssnInputs.count();
       expect(count, `${route} should have at least one SSN/EIN field`).toBeGreaterThan(0);
@@ -48,7 +48,7 @@ test.describe('Annual Accounting field formatting', () => {
     await createWard(page, 'Field Formatting Ward', 'annual');
     await fillMinimalValidAnnualWard(page);
 
-    await page.evaluate(() => (window as any).navigate('/sche'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/sche'));
     await page.locator('[data-annual-action="add-row"][data-collection="schE"]').click();
     await dismissScheduleDocPrompt(page); // Milestone 57C-R advisory modal
     const bankInput = page.locator('input[data-annual-path^="schE."][data-annual-path$=".bankName"]').first();
@@ -56,7 +56,7 @@ test.describe('Annual Accounting field formatting', () => {
     await bankInput.blur();
     await expect(bankInput).toHaveValue('xxxx1234 suncoast bank');
 
-    const stored = await page.evaluate(() => (window as any).D.schE[0].bankName);
+    const stored = await page.evaluate(() => (window as any).GuardianForms.testing.field('schE.0.bankName'));
     expect(stored).toBe('xxxx1234 suncoast bank');
   });
 });
@@ -69,7 +69,7 @@ test.describe('Annual Accounting on the shared write path', () => {
   test('a name field is written by exactly one path: two autosaves for input then blur, not three', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Single Writer Ward', 'annual');
-    await page.evaluate(() => (window as any).navigate('/scha'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/scha'));
     await page.locator('[data-annual-action="add-row"][data-collection="schA"]').click();
     await dismissScheduleDocPrompt(page); // Milestone 57C-R advisory modal
     const payer = page.locator('[data-annual-path="schA.0.payer"]');
@@ -79,20 +79,19 @@ test.describe('Annual Accounting on the shared write path', () => {
     // claimed this field (it carries data-field-path AND data-annual-path):
     // input ran the tail once, blur ran it twice -- three autosaves.
     await page.evaluate(() => {
-      (window as any).__autoSaves = 0;
-      (window as any).autoSave = () => { (window as any).__autoSaves += 1; };
+      (window as any).__autoSaves = (window as any).GuardianForms.testing.observe.countAutoSaves();
     });
     await payer.fill('social security administration');
     await payer.blur();
     await expect(payer).toHaveValue('Social Security Administration');
-    expect(await page.evaluate(() => (window as any).__autoSaves)).toBe(2);
-    expect(await page.evaluate(() => (window as any).D.schA[0].payer)).toBe('Social Security Administration');
+    expect(await page.evaluate(() => (window as any).__autoSaves.count)).toBe(2);
+    expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('schA.0.payer'))).toBe('Social Security Administration');
   });
 
   test('Schedule C loss keeps its minus: filtered live, a negative Number on blur, live totals following', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Signed Decimal Ward', 'annual');
-    await page.evaluate(() => (window as any).navigate('/schc'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/schc'));
     await page.locator('[data-annual-action="add-row"][data-collection="schC"]').click();
     await dismissScheduleDocPrompt(page); // Milestone 57C-R advisory modal
     const loss = page.locator('[data-annual-path="schC.0.loss"]');
@@ -103,10 +102,10 @@ test.describe('Annual Accounting on the shared write path', () => {
     await loss.fill('-1,250');
     await expect(loss).toHaveValue('-1250');
     await expect(page.locator('[data-annual-total="schC_losses"]')).toHaveText('(1,250.00)');
-    expect(await page.evaluate(() => (window as any).D.schC[0].loss)).toBe('-1250');
+    expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('schC.0.loss'))).toBe('-1250');
 
     await loss.blur();
-    expect(await page.evaluate(() => (window as any).D.schC[0].loss)).toBe(-1250);
+    expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('schC.0.loss'))).toBe(-1250);
     await expect(loss).toHaveValue('-1250');
     await expect(page.locator('[data-annual-total="schC_net"]')).toHaveText('(1,250.00)');
   });
@@ -114,7 +113,7 @@ test.describe('Annual Accounting on the shared write path', () => {
   test('an amount filters live as typed, so "1,000" never reaches the running total as 1', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Live Filter Ward', 'annual');
-    await page.evaluate(() => (window as any).navigate('/scha'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/scha'));
     await page.locator('[data-annual-action="add-row"][data-collection="schA"]').click();
     await dismissScheduleDocPrompt(page); // Milestone 57C-R advisory modal
     const amount = page.locator('[data-annual-path="schA.0.amount"]');
@@ -123,27 +122,27 @@ test.describe('Annual Accounting on the shared write path', () => {
     await amount.fill('1,000');
     await expect(amount).toHaveValue('1000');
     await expect(page.locator('[data-annual-total="schA"]')).toHaveText('1,000.00');
-    expect(await page.evaluate(() => (window as any).D.schA[0].amount)).toBe('1000');
+    expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('schA.0.amount'))).toBe('1000');
     await amount.blur();
-    expect(await page.evaluate(() => (window as any).D.schA[0].amount)).toBe(1000);
+    expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('schA.0.amount'))).toBe(1000);
   });
 
   test('phone and SSN format on blur through the shared finalizer', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Blur Format Ward', 'annual');
-    await page.evaluate(() => (window as any).navigate('/p3'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/p3'));
 
     const phone = page.locator('[data-annual-path="guardians.0.phone"]');
     await phone.fill('5555550101');
     await phone.blur();
     await expect(phone).toHaveValue('(555) 555-0101');
-    expect(await page.evaluate(() => (window as any).D.guardians[0].phone)).toBe('(555) 555-0101');
+    expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('guardians.0.phone'))).toBe('(555) 555-0101');
 
     const ssn = page.locator('[data-annual-path="guardians.0.ssn"]');
     await ssn.fill('123456789');
     await ssn.blur();
     await expect(ssn).toHaveValue('123-45-6789');
-    expect(await page.evaluate(() => (window as any).D.guardians[0].ssn)).toBe('123-45-6789');
+    expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('guardians.0.ssn'))).toBe('123-45-6789');
   });
 
   // validateSecurityInput()'s SQL-injection heuristic used to match bare
@@ -156,7 +155,7 @@ test.describe('Annual Accounting on the shared write path', () => {
   test('a free-text field is not blanked by an ordinary word that happens to be a SQL keyword', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Security Sanitize Ward', 'annual');
-    await page.evaluate(() => (window as any).navigate('/schc'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/schc'));
     await page.locator('[data-annual-action="add-row"][data-collection="schC"]').click();
     await dismissScheduleDocPrompt(page); // Milestone 57C-R advisory modal
     const description = page.locator('[data-annual-path="schC.0.description"]');
@@ -165,7 +164,7 @@ test.describe('Annual Accounting on the shared write path', () => {
     await description.fill('Update to appraisal value');
     await description.blur();
     await expect(description).toHaveValue('Update to appraisal value');
-    expect(await page.evaluate(() => (window as any).D.schC[0].description)).toBe('Update to appraisal value');
+    expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('schC.0.description'))).toBe('Update to appraisal value');
 
     await description.fill('Sale of lot -- see attached');
     await description.blur();

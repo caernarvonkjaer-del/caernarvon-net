@@ -70,9 +70,9 @@ async function setAnnualFamilyIdentity(page: Page, id: FilingType): Promise<void
   await fillMinimalValidAnnualWard(page);
   if (id !== 'annual') {
     const filingTypeValue = id === 'finalAccounting' ? 'Final' : 'Trust';
-    await page.evaluate((v) => { (window as any).D.filingType = v; }, filingTypeValue);
-    await page.evaluate(() => (window as any).autoSave());
-    await page.evaluate(() => (window as any).flushPendingSave());
+    await page.evaluate((v) => { (window as any).GuardianForms.testing.patchFiling({ 'filingType': v }); }, filingTypeValue);
+    await page.evaluate(() => (window as any).GuardianForms.testing.save.auto());
+    await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
   }
 }
 
@@ -160,11 +160,11 @@ test.describe('Filing identity contract', () => {
       await expect(identityLabelLocator(page)).toContainText(expected.displayName);
 
       // Surface 2: Summary page heading (each type's own getSummaryConfigX()).
-      await page.evaluate(() => (window as any).navigate('/summary'));
+      await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/summary'));
       await expect(page.getByRole('heading', { level: 1 })).toContainText(expected.displayName);
 
       // Surface 3: export gate agrees this valid filing is allowed to export.
-      await page.evaluate(() => (window as any).navigate('/print'));
+      await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
       await expect(page.locator(pdfActionSelector)).toBeEnabled();
 
       // Surface 4: the real generated PDF -- metadata and visible legal copy.

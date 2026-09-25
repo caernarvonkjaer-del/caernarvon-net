@@ -6,6 +6,9 @@ import { fileURLToPath } from 'node:url';
 import { extract } from '../../scripts/ms70-sav-corpus.mjs';
 // @ts-ignore -- plain .mjs tooling, no types
 import { startServer } from '../../scripts/serve-portable-http.mjs';
+import { enableTestMode } from './support/target';
+import { currentBuild, type AppDriver } from './support/app-driver';
+import { pre70Build } from './support/pre-70-build';
 
 // Milestone 70, 70A: "Characterize the mixed-version surfaces by kind ...
 // with a test that a record written by one version is read correctly by the
@@ -52,6 +55,10 @@ import { startServer } from '../../scripts/serve-portable-http.mjs';
 // The unlock-failure count travels in the .sav archive's app state and is
 // covered by tests/e2e/sav-corpus.characterization.spec.ts.
 //
+// Each tab is driven through its own build (70T): this tree through
+// GuardianForms.testing, the pre-70 build -- which has no GuardianForms --
+// through its own globals, confined to tests/e2e/support/pre-70-build.ts.
+//
 // Regenerate the golden only for a deliberate, recorded change:
 // PG_UPDATE_GOLDEN=1 npx playwright test tests/e2e/mixed-version.characterization.spec.ts
 
@@ -73,8 +80,13 @@ test.beforeAll(async () => {
 test.afterAll(async () => { await new Promise((resolve) => server.close(resolve)); });
 
 const url = (v: Version) => `http://localhost:${PORT}/${v}/index.html`;
+const pages = new WeakMap<Page, Version>();
+/** The driver for the build a tab is running. */
+const app = (page: Page): AppDriver => (pages.get(page) === 'old' ? pre70Build : currentBuild);
 
 async function openApp(page: Page, v: Version, { acceptTerms = true } = {}) {
+  pages.set(page, v);
+  if (v === 'new') await enableTestMode(page);
   await page.addInitScript((accept) => {
     delete (window as any).showSaveFilePicker;
     delete (window as any).showOpenFilePicker;
@@ -105,12 +117,12 @@ async function freshCase(page: Page) {
  * circuit would otherwise override.
  */
 async function toDashboard(page: Page) {
-  await page.evaluate(() => (window as any).showAddWardModalForType('guardian'));
+  await app(page).openAddFilingDialog(page, 'guardian');
   await page.locator('#addWardModal.show').waitFor({ state: 'visible' });
   await page.fill('#new-ward-name', 'Mixed Version Ward');
   await page.click('#addWardModal [data-modal-action="add-ward"]');
   await page.locator('#addWardModal').waitFor({ state: 'hidden' });
-  await page.evaluate(() => (window as any).navigate('/dashboard'));
+  await app(page).navigate(page, '/dashboard');
   await page.locator('#theme-toggle-btn').waitFor({ state: 'visible' });
 }
 
@@ -118,11 +130,11 @@ async function openFixture(page: Page) {
   await page.locator('#startup-choice-overlay.show').waitFor({ state: 'visible' });
   await page.setInputFiles('#startup-open-input', FIXTURE);
   await expect(page.locator('#startup-choice-overlay')).not.toHaveClass(/show/);
-  await page.waitForFunction(() => ((window as any).caseFile?.wards || []).length === 9);
+  await expect.poll(async () => (await app(page).filings(page)).length).toBe(9);
 }
 
-const firstFilingId = (page: Page) => page.evaluate((name) => (window as any).caseFile.wards.find((w: any) => w.wardName === name).wardId, FIRST_FILING);
-const openFiling = (page: Page, id: string) => page.evaluate((wardId) => (window as any).switchWard(wardId), id);
+const firstFilingId = async (page: Page) => (await app(page).filings(page)).find((w) => w.wardName === FIRST_FILING)!.wardId;
+const openFiling = (page: Page, id: string) => app(page).openFiling(page, id);
 
 for (const [writer, reader] of DIRECTIONS) {
   test.describe(`${writer} tab writes, ${reader} tab reads`, () => {
@@ -171,7 +183,7 @@ for (const [writer, reader] of DIRECTIONS) {
       await openFixture(a);
       const id = await firstFilingId(a);
       expect(await openFiling(a, id)).not.toBe(false);
-      await a.evaluate(() => (window as any).navigate('/print'));
+      await app(a).navigate(a, '/print');
       await a.close(); // releases the filing's lock -- asynchronously
       const b = await newTab(browser, context, reader);
       // What the first version left behind, as the second finds it.
@@ -181,7 +193,7 @@ for (const [writer, reader] of DIRECTIONS) {
       // the dashboard -- a real outcome, but not the one checked here.
       await expect.poll(() => b.evaluate(async () => ((await navigator.locks.query()).held || []).filter((l) => String(l.name).startsWith('pg-ward-')).length)).toBe(0);
       await openFixture(b);
-      await expect.poll(() => b.evaluate(() => [(window as any).caseFile.activeWardId, location.hash])).toEqual([id, '#/print']);
+      await expect.poll(async () => [await app(b).activeFilingId(b), await b.evaluate(() => location.hash)]).toEqual([id, '#/print']);
       await context.close();
     });
 
@@ -224,20 +236,13 @@ for (const [writer, reader] of DIRECTIONS) {
     test('the "opened a case before" flag and the recovery snapshot are read by the other version', async ({ browser }) => {
       const context = await browser.newContext();
       const b = await newTab(browser, context, reader);
-      expect(await b.evaluate(() => (window as any).hasOpenedCaseBefore()), 'control: not yet').toBe(false);
+      expect(await app(b).hasOpenedCaseBefore(b), 'control: not yet').toBe(false);
       const a = await newTab(browser, context, writer);
       await openFixture(a);
-      expect(await a.evaluate(() => (window as any).saveSessionRestoreCache())).toBe(true);
-      const names = await a.evaluate(() => (window as any).caseFile.wards.map((w: any) => w.wardName));
-      expect(await b.evaluate(() => (window as any).hasOpenedCaseBefore())).toBe(true);
-      const snapshot = await b.evaluate(async () => {
-        const w = window as any;
-        const cache = await w._sessionCacheGet();
-        const wards = [];
-        for (const x of cache.wards) wards.push((await w.decryptJSONWithKey(x.enc, null)).wardName);
-        const guardian = await w.decryptJSONWithKey(cache.guardian, null);
-        return { securityMode: cache.securityMode, wards, guardianKeys: Object.keys(guardian).sort() };
-      });
+      expect(await app(a).saveRecoverySnapshot(a)).toBe(true);
+      const names = (await app(a).filings(a)).map((w) => w.wardName);
+      expect(await app(b).hasOpenedCaseBefore(b)).toBe(true);
+      const snapshot = await app(b).readRecoverySnapshot(b);
       expect(snapshot).toEqual({ securityMode: 'none', wards: names, guardianKeys: ['guardianEmail', 'guardianName'] });
       await context.close();
     });
@@ -246,7 +251,8 @@ for (const [writer, reader] of DIRECTIONS) {
 
 /** Keys and value shapes, not values: what another version must be able to read. */
 async function sharedStorageShape(page: Page) {
-  return page.evaluate(async () => {
+  const activeId = await app(page).activeFilingId(page);
+  return page.evaluate(async (active) => {
     const shape = (v: any): any => Array.isArray(v) ? [v.length ? shape(v[0]) : null]
       : v && typeof v === 'object' ? Object.fromEntries(Object.keys(v).sort().map((k) => [k, shape(v[k])])) : typeof v;
     const LITERAL = new Set(['pg.termsAccepted', 'pg-theme-v1', 'pg-default-circuit', 'pg-tab-warning-dismissed-v1']);
@@ -270,10 +276,9 @@ async function sharedStorageShape(page: Page) {
       databases.push({ name: info.name, version: db.version, stores });
       db.close();
     }
-    const w = window as any;
-    const held = ((await navigator.locks.query()).held || []).map((l: any) => String(l.name).replace(w.caseFile.activeWardId, '<filing id>')).sort();
-    return { localStorage: store(localStorage), sessionStorage: store(sessionStorage), indexedDB: databases, webLocksHeld: held, tabMessage: w.__tabMessageShape || null };
-  });
+    const held = ((await navigator.locks.query()).held || []).map((l: any) => String(l.name).replace(String(active), '<filing id>')).sort();
+    return { localStorage: store(localStorage), sessionStorage: store(sessionStorage), indexedDB: databases, webLocksHeld: held, tabMessage: (window as any).__tabMessageShape || null };
+  }, activeId);
 }
 
 test('both versions write the same shape into everything they share', async ({ browser }) => {
@@ -301,8 +306,8 @@ test('both versions write the same shape into everything they share', async ({ b
     await page.locator('#sidebar-circuit-select').selectOption('13');
     await page.locator('#theme-toggle-btn').click();
     expect(await openFiling(page, await firstFilingId(page))).not.toBe(false);
-    await page.evaluate(() => (window as any).navigate('/print'));
-    expect(await page.evaluate(() => (window as any).saveSessionRestoreCache())).toBe(true);
+    await app(page).navigate(page, '/print');
+    expect(await app(page).saveRecoverySnapshot(page)).toBe(true);
     await expect.poll(() => observer.evaluate(() => (window as any).__seen.length), { timeout: 15_000 }).toBeGreaterThan(0);
     const tabMessage = await observer.evaluate(() => (window as any).__seen[(window as any).__seen.length - 1]);
     await page.evaluate((m) => { (window as any).__tabMessageShape = m; }, tabMessage);

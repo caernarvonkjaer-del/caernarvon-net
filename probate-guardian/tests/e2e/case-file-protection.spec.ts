@@ -18,11 +18,11 @@ test.describe('Case file protection: preWriteValidator, multi-ward isolation, an
       await createWard(page, 'Case Ward 1');
 
       await page.evaluate(async () => {
-        await (window as any).addWard('Case Ward 2', 'guardian');
+        await (window as any).GuardianForms.testing.createFiling.add('Case Ward 2', 'guardian');
       });
 
       const { ward1Id, ward2Id } = await page.evaluate(async () => {
-        const wards = (window as any).caseFile.wards;
+        const wards = (window as any).GuardianForms.testing.snapshot().caseFile.wards;
         const mockCaseHandle = {
           name: 'case-file.sav',
           queryPermission: async () => 'granted',
@@ -32,9 +32,9 @@ test.describe('Case file protection: preWriteValidator, multi-ward isolation, an
             close: async () => {}
           })
         };
-        await (window as any).rememberCaseFileHandle(mockCaseHandle);
+        await (window as any).GuardianForms.testing.launchState.rememberHandle(mockCaseHandle);
         // Trigger save while on Ward 2
-        await (window as any).saveData();
+        await (window as any).GuardianForms.testing.save.saveData();
         return { ward1Id: wards[0].wardId, ward2Id: wards[1].wardId };
       });
 
@@ -47,7 +47,7 @@ test.describe('Case file protection: preWriteValidator, multi-ward isolation, an
         return {
           ok: true,
           wardCount: wardsInManifest.length,
-          wardIds: wardsInManifest.map((w: any) => w.wardId),
+          wardIds: wardsInManifest.map((f: any) => f.wardId),
           hasWardsDir: Object.keys(zip.files).some((n: string) => n.startsWith('wards/')),
         };
       });
@@ -72,7 +72,7 @@ test.describe('Case file protection: preWriteValidator, multi-ward isolation, an
       await createWard(page, 'Case Lock Ward');
 
       await page.evaluate(async () => {
-        const { blob } = await (window as any).buildCaseFileBlob();
+        const blob = await (window as any).GuardianForms.testing.exportArchive.caseFile();
         const mockCaseHandle = {
           name: 'case-file.sav',
           queryPermission: async () => 'granted',
@@ -83,88 +83,23 @@ test.describe('Case file protection: preWriteValidator, multi-ward isolation, an
             close: async () => {}
           })
         };
-        await (window as any).rememberCaseFileHandle(mockCaseHandle);
-        await (window as any).lockApp();
+        await (window as any).GuardianForms.testing.launchState.rememberHandle(mockCaseHandle);
+        await (window as any).GuardianForms.testing.lock();
       });
 
-      const isCaseArmedAfterUnlock = await page.evaluate(async () => {
-        const h = await (window as any).loadCaseFileHandle();
-        return h && h.name === 'case-file.sav';
-      });
+      const isCaseArmedAfterUnlock = await page.evaluate(async () => (await (window as any).GuardianForms.testing.persistenceState.caseFileName()) === 'case-file.sav');
       expect(isCaseArmedAfterUnlock).toBe(true);
     } finally {
       await context.close();
     }
   });
 
-  test('saveBlobAs preWriteValidator halts createWritable, throws AbortError, and leaves case file untouched when user cancels overwrite', async ({ browser }) => {
-    const context = await browser.newContext();
-    try {
-      const page = await context.newPage();
-      await gotoApp(page);
-      await startNewCase(page);
-      await chooseNoPassword(page);
-      await createWard(page, 'Ward First');
-      await createWard(page, 'Ward Second');
-
-      await page.evaluate(async () => {
-        let writeCallCount = 0;
-        let writtenBytes = 0;
-        const { blob: multiWardBlob } = await (window as any).buildCaseFileBlob();
-
-        const caseHandle = {
-          name: 'case-file.sav',
-          queryPermission: async () => 'granted',
-          requestPermission: async () => 'granted',
-          isSameEntry: async (other: any) => other && other.name === 'case-file.sav',
-          getFile: async () => new File([multiWardBlob], 'case-file.sav', { type: 'application/octet-stream' }),
-          createWritable: async () => ({
-            write: async (chunk: any) => {
-              writeCallCount++;
-              writtenBytes = chunk.size || chunk.byteLength || 0;
-            },
-            close: async () => {}
-          })
-        };
-
-        await (window as any).rememberCaseFileHandle(caseHandle);
-        // Mock showSaveFilePicker to return the same caseHandle (as if user picked it in the file dialog)
-        (window as any).showSaveFilePicker = async () => caseHandle;
-
-        const activeWard = (window as any).caseFile.wards[0];
-        const singleWardBlob = await (window as any).buildSingleWardExportBlob(activeWard.wardId);
-
-        // Milestone 50G: validateWardBackupOverwrite() now shows a real
-        // confirmModal() DOM dialog instead of calling window.confirm()
-        // synchronously -- that promise only resolves once the dialog is
-        // dismissed from outside this evaluate() call, so fire saveBlobAs()
-        // without awaiting it here and stash the outcome on window for the
-        // test to read back after cancelling the dialog.
-        (window as any).__testPromise = (async () => {
-          let caughtErrorName = null;
-          try {
-            await (window as any).saveBlobAs(singleWardBlob, 'test.sav', (window as any).validateWardBackupOverwrite);
-          } catch (e: any) {
-            caughtErrorName = e && e.name;
-          }
-          const caseStillArmed = !!(await (window as any).loadCaseFileHandle());
-          return { caughtErrorName, writeCallCount, writtenBytes, caseStillArmed };
-        })();
-      });
-
-      // User rejects overwriting the multi-ward case file.
-      const confirmMessage = await dismissDynDialog(page);
-      const testResult = await page.evaluate(() => (window as any).__testPromise);
-
-      expect(confirmMessage).toBeTruthy();
-      expect(testResult.caughtErrorName).toBe('AbortError');
-      expect(testResult.writeCallCount).toBe(0);
-      expect(testResult.writtenBytes).toBe(0);
-      expect(testResult.caseStillArmed).toBe(true);
-    } finally {
-      await context.close();
-    }
-  });
+  // saveBlobAs()'s own contract -- a pre-write validator that refuses stops the
+  // write and throws AbortError -- is checked on the module in
+  // tests/unit/case-file.spec.js since Milestone 70's 70T (this test called
+  // window.saveBlobAs() with window.validateWardBackupOverwrite). The filer's
+  // path through that validator is the next test: the dashboard's Backup
+  // button refusing to overwrite the multi-filing case file.
 
   test('dashboard single-ward backup uses preWriteValidator and protects the case file from accidental overwrite', async ({ browser }) => {
     const context = await browser.newContext();
@@ -178,7 +113,7 @@ test.describe('Case file protection: preWriteValidator, multi-ward isolation, an
 
       await page.evaluate(async () => {
         (window as any).__writeCallCount = 0;
-        const { blob: multiWardBlob } = await (window as any).buildCaseFileBlob();
+        const multiWardBlob = await (window as any).GuardianForms.testing.exportArchive.caseFile();
 
         const caseHandle = {
           name: 'case-file.sav',
@@ -192,14 +127,14 @@ test.describe('Case file protection: preWriteValidator, multi-ward isolation, an
           })
         };
 
-        await (window as any).rememberCaseFileHandle(caseHandle);
+        await (window as any).GuardianForms.testing.launchState.rememberHandle(caseHandle);
         (window as any).showSaveFilePicker = async () => caseHandle;
       });
 
-      await page.evaluate(() => (window as any).navigate('/dashboard'));
+      await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/dashboard'));
       await page.locator('#main-content [data-dashboard-bound="true"]').waitFor();
 
-      const wardAId = await page.evaluate(() => (window as any).caseFile.wards.find((w: any) => w.wardName === 'Dash Ward A')?.wardId);
+      const wardAId = await page.evaluate(() => (window as any).GuardianForms.testing.snapshot().caseFile.wards.find((f: any) => f.wardName === 'Dash Ward A')?.wardId);
       const backupBtn = page.locator(`[data-dashboard-action="backup"][data-ward-id="${wardAId}"]`).first();
       await expect(backupBtn).toBeVisible();
 
@@ -219,7 +154,7 @@ test.describe('Case file protection: preWriteValidator, multi-ward isolation, an
       const result = await page.evaluate(async () => {
         return {
           writeCallCount: (window as any).__writeCallCount,
-          caseStillArmed: !!(await (window as any).loadCaseFileHandle()),
+          caseStillArmed: !!(await (window as any).GuardianForms.testing.persistenceState.caseFileName()),
         };
       });
 
@@ -230,7 +165,13 @@ test.describe('Case file protection: preWriteValidator, multi-ward isolation, an
     }
   });
 
-  test('triggerImportZip (the sidebar\'s "Open Data File" button) arms a writable case-file handle via showOpenFilePicker', async ({ browser }) => {
+  // The sidebar's Open Backup (.sav) button with the File System Access picker
+  // available: the file a filer opens becomes the case file later saves
+  // write to. (Until Milestone 70's 70T this called triggerImportZip()
+  // directly -- a function no button has called since Milestone 41B
+  // consolidated save and backup to two buttons, 4cd5723. The button runs
+  // triggerOpenBackupSav().)
+  test('the sidebar\'s Open Backup button arms a writable case-file handle via showOpenFilePicker', async ({ browser }) => {
     const context = await browser.newContext();
     try {
       const page = await context.newPage();
@@ -241,7 +182,7 @@ test.describe('Case file protection: preWriteValidator, multi-ward isolation, an
 
       await page.evaluate(async () => {
         const w = window as any;
-        const { blob } = await w.buildCaseFileBlob();
+        const blob = await w.GuardianForms.testing.exportArchive.caseFile();
         const openHandle = {
           name: 'opened-case.sav',
           queryPermission: async () => 'granted',
@@ -251,23 +192,15 @@ test.describe('Case file protection: preWriteValidator, multi-ward isolation, an
           createWritable: async () => ({ write: async () => {}, close: async () => {} }),
         };
         w.showOpenFilePicker = async () => [openHandle];
-
-        // Milestone 50G: importSavArchiveOrWard() shows two real DOM
-        // dialogs now (a confirmModal() "replace the existing ward(s)?"
-        // prompt, then a trailing "Import complete" alertModal()) instead of
-        // calling window.confirm() synchronously -- fire without awaiting
-        // here so the test can accept both from outside this evaluate().
-        w.__testPromise = w.triggerImportZip().then(async () => {
-          const armed = await w.loadCaseFileHandle();
-          return { armedName: armed?.name };
-        });
       });
 
+      const saveToggle = page.locator('#save-controls-toggle-btn');
+      if ((await saveToggle.textContent())?.includes('Show')) await saveToggle.click();
+      await page.locator('button[data-shell-action="open-backup-sav"]').click();
       await acceptDynDialog(page); // "replace the existing ward(s)?"
-      await acceptDynDialog(page); // trailing "Import complete" alert
-      const result = await page.evaluate(() => (window as any).__testPromise);
+      await acceptDynDialog(page); // trailing "Backup restored" alert
 
-      expect(result.armedName).toBe('opened-case.sav');
+      expect(await page.evaluate(() => (window as any).GuardianForms.testing.persistenceState.caseFileName())).toBe('opened-case.sav');
     } finally {
       await context.close();
     }

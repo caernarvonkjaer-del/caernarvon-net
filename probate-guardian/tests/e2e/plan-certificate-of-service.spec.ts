@@ -23,26 +23,27 @@ import { extractPdfText } from './support/pdf-extract';
 // buttons: the sidebar asks; the export gate never does.
 
 type Form = {
-  label: string; type: string; route: string; navKey: string; validator: string; pdfButton: string; optional: boolean;
+  label: string; type: string; route: string; navKey: string; pdfButton: string; optional: boolean;
   fill: (page: Page) => Promise<void>;
 };
 
 const FORMS: Form[] = [
-  { label: 'Annual Plan', type: 'planAnnual', route: '/p12', navKey: 'pa-p12', validator: 'validatePlanAnnual', pdfButton: '[data-form-action="save-pdf-plan-annual"]', optional: false, fill: fillMinimalValidPlanAnnualWard },
-  { label: 'Simplified Plan', type: 'planSimplified', route: '/p4', navKey: 'ps-p4', validator: 'validatePlanSimplified', pdfButton: '[data-plan-simplified-action="save-pdf"]', optional: true, fill: fillMinimalValidPlanSimplifiedWard },
-  { label: 'Minor Plan', type: 'planMinor', route: '/p8', navKey: 'pm-p8', validator: 'validatePlanMinor', pdfButton: '[data-form-action="save-pdf-plan-minor"]', optional: false, fill: fillMinimalValidPlanMinorWard },
-  { label: 'Initial Plan', type: 'planInitial', route: '/p11', navKey: 'pi-p11', validator: 'validatePlanInitial', pdfButton: '[data-form-action="save-pdf-plan-initial"]', optional: false, fill: fillMinimalValidPlanInitialWard },
+  { label: 'Annual Plan', type: 'planAnnual', route: '/p12', navKey: 'pa-p12', pdfButton: '[data-form-action="save-pdf-plan-annual"]', optional: false, fill: fillMinimalValidPlanAnnualWard },
+  { label: 'Simplified Plan', type: 'planSimplified', route: '/p4', navKey: 'ps-p4', pdfButton: '[data-plan-simplified-action="save-pdf"]', optional: true, fill: fillMinimalValidPlanSimplifiedWard },
+  { label: 'Minor Plan', type: 'planMinor', route: '/p8', navKey: 'pm-p8', pdfButton: '[data-form-action="save-pdf-plan-minor"]', optional: false, fill: fillMinimalValidPlanMinorWard },
+  { label: 'Initial Plan', type: 'planInitial', route: '/p11', navKey: 'pi-p11', pdfButton: '[data-form-action="save-pdf-plan-initial"]', optional: false, fill: fillMinimalValidPlanInitialWard },
 ];
 
-const messages = (page: Page, validator: string) =>
-  page.evaluate((v) => ((window as any)[v]() || []).map((i: any) => String(i?.message ?? i)), validator);
-const certIssues = async (page: Page, validator: string) => (await messages(page, validator)).filter((m) => /Certificate of Service/i.test(m));
-const navKey = (page: Page, key: string) => page.evaluate((k) => (window as any).computeNavChecks().checks[k], key);
-const go = (page: Page, route: string) => page.evaluate((r) => (window as any).navigate(r), route);
+/** The open filing's export-gate messages (its own validator). */
+const messages = (page: Page) =>
+  page.evaluate(async () => ((await (window as any).GuardianForms.testing.validate.open()) || []).map((i: any) => String(i?.message ?? i)));
+const certIssues = async (page: Page) => (await messages(page)).filter((m) => /Certificate of Service/i.test(m));
+const navKey = (page: Page, key: string) => page.evaluate((k) => (window as any).GuardianForms.testing.status.navChecks().checks[k], key);
+const go = (page: Page, route: string) => page.evaluate((r) => (window as any).GuardianForms.testing.navigate(r), route);
 const nameInput = (page: Page, i: number) => page.locator(`#main-content input[data-form-path="certRecipients.${i}.name"]`);
 
 async function download(page: Page, selector: string) {
-  await page.evaluate(() => (window as any).flushPendingSave());
+  await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
   await go(page, '/print');
   const button = page.locator(selector);
   await expect(button).toBeEnabled({ timeout: 20_000 });
@@ -68,10 +69,10 @@ for (const form of FORMS) {
       await expect(nameInput(page, 1)).toHaveCount(1);
       await nameInput(page, 1).fill('Second Recipient');
       await nameInput(page, 1).blur();
-      expect(await page.evaluate(() => (window as any).D.certRecipients[1].name)).toBe('Second Recipient');
+      expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('certRecipients.1.name'))).toBe('Second Recipient');
       await page.locator('#main-content [data-form-action="remove-plan-row"][data-collection="certRecipients"][data-index="1"]').click();
       await expect(nameInput(page, 1)).toHaveCount(0);
-      expect(await page.evaluate(() => (window as any).D.certRecipients.length)).toBe(1);
+      expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('certRecipients.length'))).toBe(1);
 
       // Blank, attested, named, and half-finished: never an export issue.
       for (const [label, patch] of [
@@ -80,8 +81,8 @@ for (const form of FORMS) {
         ['named', { certNoRecipients: '', certRecipients: [{ name: 'Sam Recipient', line2: '', line3: '', line4: '' }] }],
         ['half-finished', { certNoRecipients: '', certRecipients: [{ name: 'Sam Recipient', line2: '', line3: '', line4: '' }, { name: '', line2: 'PO Box 1', line3: '', line4: '' }] }],
       ] as const) {
-        await page.evaluate((p) => { Object.assign((window as any).D, p); (window as any).autoSave(); }, patch);
-        expect(await certIssues(page, form.validator), `${form.label} ${label}: the export gate says nothing`).toEqual([]);
+        await page.evaluate((p) => { (window as any).GuardianForms.testing.patchFiling(p); }, patch);
+        expect(await certIssues(page), `${form.label} ${label}: the export gate says nothing`).toEqual([]);
       }
       await go(page, '/print');
       await expect(page.locator(form.pdfButton), 'Save as PDF stays enabled with a half-finished certificate').toBeEnabled();
@@ -126,7 +127,7 @@ for (const form of FORMS) {
       await expect(page.locator('#yesno_certNoRecipients_yes'), 'Recipient 1 blank: the question is visible').toBeVisible();
       await page.locator('#yesno_certNoRecipients_yes').check();
       await expect(nameInput(page, 1), 'Yes hides the cards').toHaveCount(0);
-      expect(await page.evaluate(() => (window as any).D.certRecipients[1].name), 'hidden, not deleted').toBe('Kept Recipient');
+      expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('certRecipients.1.name')), 'hidden, not deleted').toBe('Kept Recipient');
       expect(await navKey(page, form.navKey), 'attested: the sidebar is satisfied').toBe(true);
       await page.locator('#yesno_certNoRecipients_no').check();
       await expect(nameInput(page, 1), 'No brings the cards back with what was typed').toHaveValue('Kept Recipient');
@@ -145,12 +146,11 @@ for (const form of FORMS) {
       await form.fill(page);
       await page.evaluate(() => {
         const w = window as any;
-        Object.assign(w.D, {
+        w.GuardianForms.testing.patchFiling({
           certRecipients: [{ name: 'Sam Recipient', line2: '1 Main St', line3: 'Clearwater, FL 33755', line4: '' }],
           certNoRecipients: '', certDate: '2026-03-01', certIndicator: 'mailed', certSigner: 'guardian',
           certSignatureDate: '2026-03-02', certSignatureState: 'typed',
         });
-        w.autoSave();
       });
       const text = (await extractPdfText(await download(page, form.pdfButton))).replace(/\s+/g, ' ');
       expect(text).toContain('Certificate of Service');
@@ -181,7 +181,7 @@ for (const form of FORMS) {
         await createWard(page, 'Simplified Plan Certificate Untouched', form.type);
         await form.fill(page);
         const mark = () => page.evaluate((k) => {
-          const r = (window as any).computeNavChecks();
+          const r = (window as any).GuardianForms.testing.status.navChecks();
           return { done: !!r.checks[k], incomplete: !!r.incomplete[k] };
         }, form.navKey);
         const guidance = page.locator('#page-local-guidance', { hasText: /recipient/i });
@@ -192,7 +192,7 @@ for (const form of FORMS) {
         await expect(page.locator('#main-content h1')).toContainText('Certificate of Service');
         await expect(guidance, 'untouched: the page asks for nothing').toHaveCount(0);
         await expect(page.locator('#page-next-btn'), 'untouched: the way on to Preview & Export is open').toBeEnabled();
-        await page.evaluate(() => (window as any).flushPendingSave());
+        await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
         await go(page, '/print');
         await expect(page.locator(form.pdfButton)).toBeEnabled({ timeout: 20_000 });
         await expect(advisory, 'untouched: Preview & Export says nothing about it').toHaveCount(0);
@@ -202,7 +202,7 @@ for (const form of FORMS) {
         await page.locator('#certDate').fill('2026-03-01');
         await page.locator('#certDate').blur();
         expect(await mark(), 'started: marked unfinished').toEqual({ done: false, incomplete: true });
-        await page.evaluate(() => (window as any).flushPendingSave());
+        await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
         await go(page, form.route);
         await expect(guidance, 'started: the page says what it still wants').toHaveCount(1);
         await expect(page.locator('#page-next-btn'), 'started and marked: the way on is still open').toBeEnabled();

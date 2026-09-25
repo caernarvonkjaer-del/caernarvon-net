@@ -18,17 +18,17 @@ async function createInventorySource(page: Page, wardName: string, county: strin
   await createWard(page, wardName, 'guardian');
   await page.evaluate((name) => {
     const w = window as any;
-    w.D.attorney = {
-      ...(w.D.attorney || {}),
+    w.GuardianForms.testing.patchFiling({ 'attorney': {
+      ...(w.GuardianForms.testing.field('attorney') || {}),
       name: 'Nina Nested, Esq.',
       barNumber: '00456789',
       phone: '727-555-0142',
       streetAddress: '400 Cleveland St',
       cityStateZip: 'Clearwater, FL 33755',
-    };
-    w.D.guardianName = 'Gale Guardian';
-    w.D.wardName = name;
-    w.D.caseNumber = '24-000456-GD';
+    } });
+    w.GuardianForms.testing.patchFiling({ 'guardianName': 'Gale Guardian' });
+    w.GuardianForms.testing.patchFiling({ 'wardName': name });
+    w.GuardianForms.testing.patchFiling({ 'caseNumber': '24-000456-GD' });
   }, wardName);
 
   if (county) {
@@ -40,8 +40,8 @@ async function createInventorySource(page: Page, wardName: string, county: strin
     await page.locator(`[data-form-mousedown="select-county"][data-county="${county}"]`).click();
     await expect(input).toHaveValue(county);
   }
-  await page.evaluate(() => (window as any).flushPendingSave());
-  return page.evaluate(() => (window as any).caseFile.activeWardId);
+  await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
+  return page.evaluate(() => (window as any).GuardianForms.testing.snapshot().caseFile.activeWardId);
 }
 
 /**
@@ -53,7 +53,7 @@ async function createInventorySource(page: Page, wardName: string, county: strin
  * shut.
  */
 async function confirmEligibility(page: Page, wardName: string, sourceWardId: string, qualifies: boolean) {
-  await page.evaluate(({ name, srcId }) => (window as any).showSimplifiedEligibilityModal(name, srcId),
+  await page.evaluate(({ name, srcId }) => (window as any).GuardianForms.testing.createFiling.openEligibility(name, srcId),
     { name: wardName, srcId: sourceWardId });
   await page.locator('#simplifiedEligibilityModal.show').waitFor({ state: 'visible' });
   await page.selectOption('#elig-depository', qualifies ? 'Yes' : 'No');
@@ -73,8 +73,8 @@ test.describe('Milestone 40C-F: carryover through the eligibility-modal redirect
 
     const dest = await page.evaluate(() => {
       const w = window as any;
-      const d = w.D;
-      const party = d.wardPartyId ? (w.caseFile.parties || []).find((p: any) => p.id === d.wardPartyId) : null;
+      const d = w.GuardianForms.testing.snapshot().filing;
+      const party = d.wardPartyId ? (w.GuardianForms.testing.snapshot().caseFile.parties || []).find((p: any) => p.id === d.wardPartyId) : null;
       return {
         inventoryType: d.inventoryType,
         attorneyName: d.attorney_name || d.attorney,
@@ -121,7 +121,7 @@ test.describe('Milestone 40C-F: carryover through the eligibility-modal redirect
     const sourceId = await createInventorySource(page, 'No County Ward', null);
     const dialogs = await confirmEligibility(page, 'No County Ward', sourceId, true);
 
-    expect(await page.evaluate(() => (window as any).D.county)).toBe('');
+    expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('county'))).toBe('');
     const note = dialogs.join('\n');
     expect(note).toContain('Initial Inventory');
     expect(note).toContain('still needs to be selected');
@@ -135,10 +135,10 @@ test.describe('Milestone 40C-F: carryover through the eligibility-modal redirect
     const dest = await page.evaluate(() => {
       const w = window as any;
       return {
-        inventoryType: w.D.inventoryType,
-        attorneyName: w.D.attorney || w.D.attorney_name,
-        county: w.D.county,
-        wardPartyId: w.D.wardPartyId || null,
+        inventoryType: w.GuardianForms.testing.field('inventoryType'),
+        attorneyName: w.GuardianForms.testing.field('attorney') || w.GuardianForms.testing.field('attorney_name'),
+        county: w.GuardianForms.testing.field('county'),
+        wardPartyId: w.GuardianForms.testing.field('wardPartyId') || null,
       };
     });
 
@@ -166,21 +166,21 @@ test.describe('Milestone 40C-F: carryover through the eligibility-modal redirect
 
     const before = await page.evaluate(() => {
       const w = window as any;
-      return { wardCount: w.caseFile.wards.length, sources: JSON.stringify(w.caseFile.wards) };
+      return { wardCount: w.GuardianForms.testing.snapshot().caseFile.wards.length, sources: JSON.stringify(w.GuardianForms.testing.snapshot().caseFile.wards) };
     });
 
-    await page.evaluate(({ name, srcId }) => (window as any).showSimplifiedEligibilityModal(name, srcId),
+    await page.evaluate(({ name, srcId }) => (window as any).GuardianForms.testing.createFiling.openEligibility(name, srcId),
       { name: 'Cancelled Ward', srcId: sourceId });
     await page.locator('#simplifiedEligibilityModal.show').waitFor({ state: 'visible' });
     await page.selectOption('#elig-depository', 'Yes');
     await page.selectOption('#elig-only-transactions', 'Yes');
-    // Dismiss instead of confirming.
-    await page.evaluate(() => (window as any).closeModal('simplifiedEligibilityModal'));
+    // Dismiss instead of confirming: the dialog's own Cancel button.
+    await page.locator('[data-modal-action="close"][data-modal-id="simplifiedEligibilityModal"]').click();
     await page.locator('#simplifiedEligibilityModal').waitFor({ state: 'hidden' });
 
     const after = await page.evaluate(() => {
       const w = window as any;
-      return { wardCount: w.caseFile.wards.length, sources: JSON.stringify(w.caseFile.wards) };
+      return { wardCount: w.GuardianForms.testing.snapshot().caseFile.wards.length, sources: JSON.stringify(w.GuardianForms.testing.snapshot().caseFile.wards) };
     });
 
     expect(after.wardCount, 'no partial destination filing exists').toBe(before.wardCount);
@@ -200,9 +200,9 @@ test.describe('Milestone 40C-F: carryover through the eligibility-modal redirect
 
     const state = await page.evaluate((srcId) => {
       const w = window as any;
-      const source = w.caseFile.wards.find((x: any) => x.wardId === srcId);
-      const party = w.D.wardPartyId ? (w.caseFile.parties || []).find((p: any) => p.id === w.D.wardPartyId) : null;
-      return { sourceCounty: source.county, destCounty: w.D.county, partyCounty: party ? party.county : null };
+      const source = w.GuardianForms.testing.snapshot().caseFile.wards.find((x: any) => x.wardId === srcId);
+      const party = w.GuardianForms.testing.field('wardPartyId') ? (w.GuardianForms.testing.snapshot().caseFile.parties || []).find((p: any) => p.id === w.GuardianForms.testing.field('wardPartyId')) : null;
+      return { sourceCounty: source.county, destCounty: w.GuardianForms.testing.field('county'), partyCounty: party ? party.county : null };
     }, sourceId);
 
     // The source keeps its own auditable snapshot; only the canonical

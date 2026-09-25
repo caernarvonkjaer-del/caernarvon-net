@@ -7,6 +7,7 @@
 // when this file is out of date with the source.
 
 interface Window {
+  __GUARDIAN_FORMS_TEST_MODE__: any;
   _appState: any;
   _auditLogEntries: any;
   _autoExportIntervalMinutes: any;
@@ -213,6 +214,7 @@ interface Window {
   getWardHeadlineTotal: any;
   getWardPriorYears: any;
   getWardProgress: any;
+  GuardianForms: any;
   guardianHasAnyData: any;
   handleBackupImportChange: any;
   handleRememberedFileFailure: any;

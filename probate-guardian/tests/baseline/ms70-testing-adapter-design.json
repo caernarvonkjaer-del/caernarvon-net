@@ -48,8 +48,10 @@
     "kind": "command",
     "replaces": [
      "addWard",
+     "showAddWardModalForType",
      "addEntry",
      "duplicateEntry",
+     "emptyPlanDirective",
      "initializeEmptyData"
     ],
     "reviewed": true
@@ -247,6 +249,15 @@
     ],
     "reviewed": true
    },
+   "constants": {
+    "kind": "query",
+    "replaces": [
+     "INITIAL_ADLS",
+     "PLAN_ADLS",
+     "PLAN_RIGHTS"
+    ],
+    "reviewed": true
+   },
    "importArchive": {
     "kind": "command",
     "replaces": [
@@ -281,7 +292,9 @@
    "updateNavDots and updateSidebar redraw the sidebar -- specs call them to force a re-render after setup -- so they are a command (refreshStatus), not part of the status query.",
    "auditLog appends an Activity Log entry -- specs call it to seed the log -- so it is a command (recordActivity), not part of the persistenceState query.",
    "exportGuardianDataZip, saveBlobAs and finishSingleWardExport save a file or announce a save, so they are a command (saveArchive); exportArchive keeps only the two that build a blob.",
-   "doSavePdf*/doSaveExcel* start a download, so they are a command (saveOutput); generateOutput keeps the load*Pdf functions, which only hand back the PDF builders."
+   "doSavePdf*/doSaveExcel* start a download, so they are a command (saveOutput); generateOutput keeps the load*Pdf functions, which only hand back the PDF builders.",
+   "70T: showAddWardModalForType is createFiling.openDialog -- the support helpers use it to reach the real Add Filing dialog from any page and then drive its own controls, which keeps createWard() exactly as it was; a spec testing the entry points clicks the real buttons.",
+   "70T: the reference lists a fixture builds plan answers from (INITIAL_ADLS, PLAN_ADLS, PLAN_RIGHTS and their kin) are the constants query, returned as copies: legacy-app.js constants cannot be imported by a Node-side test."
   ],
   "members": {
    "activateFiling": "command",
@@ -308,19 +321,20 @@
    "status": "query",
    "updateSharedRecords": "command",
    "validate": "query",
-   "year": "command"
+   "year": "command",
+   "constants": "query"
   }
  },
  "summary": {
   "names": 163,
   "byDestination": {
-   "command": 52,
-   "query": 57,
-   "real-ui": 19,
+   "command": 54,
+   "query": 60,
    "harness": 14,
-   "unit-import": 21
+   "real-ui": 18,
+   "unit-import": 17
   },
-  "members": 25,
+  "members": 26,
   "inPlaceWriteSites": 239
  },
  "names": [
@@ -381,7 +395,7 @@
   {
    "name": "showAddWardModalForType",
    "files": 9,
-   "destination": "real-ui",
+   "destination": "command:createFiling",
    "reviewed": false
   },
   {
@@ -939,7 +953,7 @@
   {
    "name": "emptyPlanDirective",
    "files": 1,
-   "destination": "unit-import",
+   "destination": "command:createFiling",
    "reviewed": false
   },
   {
@@ -1017,7 +1031,7 @@
   {
    "name": "INITIAL_ADLS",
    "files": 1,
-   "destination": "unit-import",
+   "destination": "query:constants",
    "reviewed": false
   },
   {
@@ -1107,13 +1121,13 @@
   {
    "name": "PLAN_ADLS",
    "files": 1,
-   "destination": "unit-import",
+   "destination": "query:constants",
    "reviewed": false
   },
   {
    "name": "PLAN_RIGHTS",
    "files": 1,
-   "destination": "unit-import",
+   "destination": "query:constants",
    "reviewed": false
   },
   {

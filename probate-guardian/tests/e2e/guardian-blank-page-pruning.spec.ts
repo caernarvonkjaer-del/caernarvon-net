@@ -168,15 +168,15 @@ async function exportGuardianXlsx(
   await createWard(page, 'Prune Inventory Ward', 'guardian');
   await fillMinimalValidGuardianWard(page);
   await page.evaluate(({ fx, keys }) => {
-    const d = (window as any).D;
+    const d = (window as any).GuardianForms.testing.snapshot().filing;
     Object.assign(d, fx);
     // fillMinimalValidGuardianWard() marks every schedule "no items"; a
     // schedule that now has entries must not still claim to be empty.
     for (const k of keys) if (d.scheduleNoItems) d.scheduleNoItems[k] = false;
-    (window as any).autoSave();
+    (window as any).GuardianForms.testing.replaceFiling(d);
   }, { fx: inventory, keys: Object.keys(inventory).map(NO_ITEMS_KEY) });
-  await page.evaluate(() => (window as any).flushPendingSave());
-  await page.evaluate(() => (window as any).navigate('/print'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
   const excel = page.locator('[data-inventory-action="save-excel"]');
   await expect(excel).toBeEnabled({ timeout: 20_000 });
   const download = page.waitForEvent('download', { timeout: 40_000 });
@@ -290,18 +290,18 @@ test.describe('blank Initial Inventory pages are pruned from the Excel export', 
     await download.saveAs(file);
 
     await createWard(page, 'Pruned Import Target', 'guardian');
-    await page.evaluate(() => (window as any).navigate('/'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
     const errors: string[] = [];
     page.on('pageerror', (e) => errors.push(e.message));
     await page.setInputFiles('input[type="file"][accept=".xlsx"]', file);
     await page.waitForFunction(
-      () => ((window as any).D?.scheduleA1 || []).length > 0,
+      () => ((window as any).GuardianForms.testing.snapshot().filing?.scheduleA1 || []).length > 0,
       undefined,
       { timeout: 20_000 },
     );
 
     const back = await page.evaluate(() => {
-      const d = (window as any).D;
+      const d = (window as any).GuardianForms.testing.snapshot().filing;
       return {
         a1: (d.scheduleA1 || []).map((r: any) => r.propertyDescription),
         b1: (d.scheduleB1 || []).map((r: any) => r.institutionName),

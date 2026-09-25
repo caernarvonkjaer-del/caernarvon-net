@@ -15,10 +15,10 @@ test.describe('Convert Ward / "New Filing from Existing"', () => {
     await createWard(page, 'Second Ward Active', 'annual');
     // createWard() leaves the newly-created ward active and on its own Cover
     // page -- confirm that before exercising the selector default.
-    const activeName = await page.evaluate(() => (window as any).getActiveWard()?.wardName);
+    const activeName = await page.evaluate(() => (window as any).GuardianForms.testing.snapshot().filing?.wardName);
     expect(activeName).toBe('Second Ward Active');
 
-    await page.evaluate(() => (window as any).showConvertWardModal());
+    await page.evaluate(() => (window as any).GuardianForms.testing.convertFiling.openDialog());
     await page.locator('#convertWardModal.show').waitFor({ state: 'visible' });
 
     await expect(page.locator('#convert-source-ward')).toHaveValue('Second Ward Active');
@@ -29,17 +29,18 @@ test.describe('Convert Ward / "New Filing from Existing"', () => {
     await createWard(page, 'Annual Source Ward', 'annual');
 
     const sourceWardId = await page.evaluate(() => {
-      const d = (window as any).D;
+      const d = (window as any).GuardianForms.testing.snapshot().filing;
       Object.assign(d, {
         periodFrom: '01/01/2026',
         periodTo: '12/31/2026',
         schD1: [{ fullAmount: '150000', wardPct: '100', restricted: 'No' }],
         certRecipients: [{ name: 'Jane Interested Party', line2: '100 Main St', line3: 'Tampa, FL 33602', line4: '' }],
       });
+      (window as any).GuardianForms.testing.replaceFiling(d); // setup (D9)
       return d.wardId;
     });
     const expectedStartingBalance = await page.evaluate(
-      () => (window as any).calcTotalsAnnual((window as any).D).netAssetsFromD,
+      () => (window as any).GuardianForms.testing.status.annualTotals().netAssetsFromD,
     );
     expect(expectedStartingBalance).toBe(150000);
 
@@ -48,8 +49,8 @@ test.describe('Convert Ward / "New Filing from Existing"', () => {
     // DOM dialog is dismissed from outside this evaluate() call -- fire it
     // without awaiting here, accept the dialog, then read the result back.
     await page.evaluate((srcId) => {
-      (window as any).__testPromise = (window as any).convertExistingWard(srcId, 'finalAccounting')
-        .then(() => (window as any).getActiveWard());
+      (window as any).__testPromise = (window as any).GuardianForms.testing.convertFiling.convert(srcId, 'finalAccounting')
+        .then(() => (window as any).GuardianForms.testing.snapshot().filing);
     }, sourceWardId);
     await acceptDynDialog(page);
     const newWard = await page.evaluate(() => (window as any).__testPromise);
@@ -80,20 +81,21 @@ test.describe('Convert Ward / "New Filing from Existing"', () => {
     await createWard(page, 'Guardian Source Ward', 'guardian');
 
     const sourceWardId = await page.evaluate(() => {
-      const d = (window as any).D;
+      const d = (window as any).GuardianForms.testing.snapshot().filing;
       Object.assign(d, {
         scheduleB1: [{ institutionName: 'Fifth Third Bank', accountType: 'Checking', fullAssetAmount: '5000', wardPercent: '100', restricted: 'Yes' }],
         scheduleA1: [{ propertyDescription: 'Homestead', fullAssetValue: '200000', wardPercent: '100', residence: 'Yes', income: 'No' }],
         scheduleB3: [{ description: 'Brokerage Account', fullAssetValue: '3000', wardPercent: '100', restricted: 'Yes' }],
       });
+      (window as any).GuardianForms.testing.replaceFiling(d); // setup (D9)
       return d.wardId;
     });
 
     // Milestone 50G: see the "Annual -> Final Accounting" test above for why
     // this can't just await convertExistingWard() inside the evaluate().
     await page.evaluate((srcId) => {
-      (window as any).__testPromise = (window as any).convertExistingWard(srcId, 'annual')
-        .then(() => (window as any).getActiveWard());
+      (window as any).__testPromise = (window as any).GuardianForms.testing.convertFiling.convert(srcId, 'annual')
+        .then(() => (window as any).GuardianForms.testing.snapshot().filing);
     }, sourceWardId);
     await acceptDynDialog(page);
     const newWard = await page.evaluate(() => (window as any).__testPromise);
@@ -120,16 +122,17 @@ test.describe('Convert Ward / "New Filing from Existing"', () => {
     await createWard(page, 'Plan Attorney Source Ward', 'planInitial');
 
     const sourceWardId = await page.evaluate(() => {
-      const d = (window as any).D;
+      const d = (window as any).GuardianForms.testing.snapshot().filing;
       d.attorneyName = 'Zensiqua Okaforsson';
+      (window as any).GuardianForms.testing.replaceFiling(d); // setup (D9)
       return d.wardId;
     });
 
     // Milestone 50G: see the "Annual -> Final Accounting" test above for why
     // this can't just await convertExistingWard() inside the evaluate().
     await page.evaluate((srcId) => {
-      (window as any).__testPromise = (window as any).convertExistingWard(srcId, 'planAnnual')
-        .then(() => (window as any).getActiveWard());
+      (window as any).__testPromise = (window as any).GuardianForms.testing.convertFiling.convert(srcId, 'planAnnual')
+        .then(() => (window as any).GuardianForms.testing.snapshot().filing);
     }, sourceWardId);
     await acceptDynDialog(page);
     const newWard = await page.evaluate(() => (window as any).__testPromise);
@@ -149,10 +152,10 @@ test.describe('Convert Ward / "New Filing from Existing"', () => {
     await freshStartNoPassword(page);
     await createWard(page, 'Guardian Source Ward', 'guardian');
 
-    await page.evaluate(() => (window as any).showConvertWardModal());
+    await page.evaluate(() => (window as any).GuardianForms.testing.convertFiling.openDialog());
     await page.locator('#convertWardModal.show').waitFor({ state: 'visible' });
 
-    const guardianTargets = await page.evaluate(() => (window as any).convertTargetsFor('guardian'));
+    const guardianTargets = await page.evaluate(() => (window as any).GuardianForms.testing.convertFiling.targetsFor('guardian'));
     expect(guardianTargets.length).toBeGreaterThan(0);
     expect(guardianTargets).not.toContain('planMinor');
     let renderedValues = await page.locator('#convert-target-type option').evaluateAll(
@@ -165,10 +168,10 @@ test.describe('Convert Ward / "New Filing from Existing"', () => {
     // the "can't be converted" note rather than leaving stale options from
     // the previous source selection on screen.
     await createWard(page, 'Minor Source Ward', 'planMinor');
-    await page.evaluate(() => (window as any).showConvertWardModal());
+    await page.evaluate(() => (window as any).GuardianForms.testing.convertFiling.openDialog());
     await page.locator('#convertWardModal.show').waitFor({ state: 'visible' });
 
-    const minorTargets = await page.evaluate(() => (window as any).convertTargetsFor('planMinor'));
+    const minorTargets = await page.evaluate(() => (window as any).GuardianForms.testing.convertFiling.targetsFor('planMinor'));
     expect(minorTargets).toEqual([]);
     renderedValues = await page.locator('#convert-target-type option').evaluateAll(
       (opts) => opts.map((o) => (o as HTMLOptionElement).value),
@@ -181,7 +184,7 @@ test.describe('Convert Ward / "New Filing from Existing"', () => {
     await freshStartNoPassword(page);
     await createWard(page, 'Trust Source Ward', 'annual');
 
-    const message = await page.evaluate(() => (window as any).describeConversion('annual', 'trustAccounting'));
+    const message = await page.evaluate(() => (window as any).GuardianForms.testing.convertFiling.describe('annual', 'trustAccounting'));
 
     expect(message).toContain('Starting Balance is set to this filing\'s ending net assets');
     expect(message).toContain('certificate-of-service recipients are carried');

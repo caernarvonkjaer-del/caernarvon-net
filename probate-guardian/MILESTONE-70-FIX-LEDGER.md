@@ -49,6 +49,7 @@ a `master` commit is missing from it.
 | Delivery | Owner | Started | Finished |
 | --- | --- | --- | --- |
 | 70A | Claude | 2026-09-24 | 2026-09-24 |
+| 70T | Claude | 2026-09-24 | 2026-09-25 |
 
 ## Branch-only settings to undo at the merge
 
@@ -71,8 +72,26 @@ a `master` commit is missing from it.
 | `c62f89002c30272ad4555c749b24a28ee1468d59` | 2026-09-24 | Completes dbee60f: each Schedule D line's ward amount (Annual pages; PDF D-1 and D-5 columns) follows the 1% rule; the Annual pages import pct from totals.js and legacy-app.js's stale pct() is deleted (the branch's declaration dispositions list it) | `src/features/annual-accounting/index.js`, `src/features/annual-accounting/pdf-model.js`, `src/legacy-app.js`, `src/core/types/window-bridge.d.ts`, `tests/e2e/annual-ward-share-export.spec.ts`, `tests/unit/annual-ward-percentage.spec.js`, `TEST-INDEX.md` | re-implement | `tests/e2e/annual-ward-share-export.spec.ts`, `tests/unit/annual-ward-percentage.spec.js` | -- | open |
 | `b2d97f52212f3a8735d606aa49a7069872f48656` | 2026-09-24 | A case file with a part that cannot be read now tells the filer exactly what was not read and is never saved over (startup Open, Open backup, re-read after unlock); found by this milestone's .sav corpus | `src/legacy-app.js`, `src/core/persistence/case-file.js`, `src/core/types/window-bridge.d.ts`, `tests/unit/fixtures/window-bridge-allowlist.json`, `tests/e2e/case-file-damaged-open.spec.ts`, `TEST-INDEX.md`, `file_index.md` | re-implement | `tests/e2e/case-file-damaged-open.spec.ts`; carrying it deliberately changes `tests/baseline/ms70-sav-corpus-golden.json`'s damaged-file outcomes (a-listed-filing-missing, unreadable-filing, tampered-encrypted-filing then show the warning): regenerate those with the port, recorded | -- | open |
 | `2ad4a63336c7568d50e06ca57d712fec4d560ccf` | 2026-09-24 | file_index.md: real descriptions for the fifteen files changed on master today | `file_index.md` | not-applicable | -- (documentation only; merges with the branch's own file_index.md rows, and rows for files the migration moves are rewritten when they move) | -- | n/a |
+| `5de3707a24819f6db055391e27d9002663a89d7e` | 2026-09-25 | A password-protected case file no longer lists ward names in its plaintext manifest; a case file of a newer format version is refused (startup Open, Open Backup, the re-read after unlock) | `src/core/persistence/case-file.js`, `src/legacy-app.js`, `src/core/types/window-bridge.d.ts`, `tests/unit/fixtures/window-bridge-allowlist.json`, `tests/e2e/case-file-manifest-privacy.spec.ts`, `tests/e2e/case-file-newer-format.spec.ts`, `TEST-INDEX.md`, `file_index.md` | re-implement | `tests/e2e/case-file-manifest-privacy.spec.ts`, `tests/e2e/case-file-newer-format.spec.ts` | -- | open |
+| `ae9ecdcbf8159048832fe6aa85756e3453a1be70` | 2026-09-25 | Inside a filing "?" is announced as opening the user guide (new tab) and claims no disclosure state; the dashboard's "?" keeps the Help panel's | `src/core/navigation/router.js`, `src/legacy-app.js`, `src/core/types/window-bridge.d.ts`, `tests/e2e/user-guide-wiring.spec.ts`, `TEST-INDEX.md`, `file_index.md` | re-implement | `tests/e2e/user-guide-wiring.spec.ts` ("announces what it does") | -- | open |
+| `6a8224d4b9baea47299eafb95a1d9bd5c8e420f3` | 2026-09-25 | vite.config.js comment: the fragments/ copy is needed in dist/portable too (served over http(s) in production) | `vite.config.js`, `file_index.md` | not-applicable | -- (a comment; merges as text) | -- | n/a |
+| `56ff26aeca419bbe47f12ed7207ab77db343bb82` | 2026-09-25 | MINIMAL_VALID_GUARDIAN answers the safe-deposit questions 'No', the stored tri-state, instead of the legacy false | `tests/e2e/support/fixtures.ts`, `file_index.md` | merges-cleanly | the specs built on the fixture (e.g. `tests/e2e/bond-depository.spec.ts`, `tests/e2e/pdf-form-specific.spec.ts`) | -- | open |
+| `8f5a163906ee758fffcc52302ebf03961a3bdd09` | 2026-09-25 | Seven sidebar "turned green" checks anchored to the class `complete` (`/complete/` also matched `incomplete`, so they could not fail) | `tests/e2e/annual-schedule-consistency.spec.ts`, `tests/e2e/bond-depository.spec.ts`, `tests/e2e/sidebar-only-wants.spec.ts`, `TEST-INDEX.md`, `file_index.md` | merges-cleanly | the same three specs | -- | open |
 
 Notes on open rows:
+
+- `5de3707`: re-implement. Its `legacy-app.js` hunks (`loadCaseFileAtLaunch()` and
+  the re-read in `lockApp()`) land in code the branch moves, and it publishes
+  `window.newerCaseFileFormatMessage`, a new global the branch's ratchet
+  forbids: carried, the check is imported by whatever owns those load paths.
+  Its two specs reach the app through `window` and are converted to
+  `GuardianForms.testing` as they are carried (70T's guard would refuse them).
+- `ae9ecdc`: re-implement. It edits the Print Preview header in
+  `legacy-app.js` and `attachFormHeaderActions()` in `router.js`; its new test
+  navigates through `window.navigate`, converted to the adapter when carried.
+- `8f5a163`: made on the branch too, word for word (found there during 70T's
+  conversion, fixed on `master` as a production-suite defect), so the merge
+  sees one change on both sides.
 
 - `945b5a8`: the branch has not touched the Annual importer, so the change merges
   as is (the two index files need an ordinary textual merge). When it lands on

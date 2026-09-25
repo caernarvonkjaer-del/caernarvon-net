@@ -26,7 +26,7 @@ import {
 const DYN_DIALOG = '.modal-overlay[id^="dyn-dialog-"].show .modal-box';
 
 async function goto(page: Page, route: string) {
-  await page.evaluate((r) => (window as any).navigate(r), route);
+  await page.evaluate((r) => (window as any).GuardianForms.testing.navigate(r), route);
   await page.waitForURL(new RegExp(`#${route.replace('/', '\\/')}$`));
 }
 
@@ -40,7 +40,7 @@ async function expectNoDialog(page: Page, why: string) {
   expect(await page.locator(DYN_DIALOG).isVisible().catch(() => false), why).toBe(false);
 }
 
-const ackState = (page: Page) => page.evaluate(() => JSON.stringify((window as any).D.scheduleDocsAck ?? null));
+const ackState = (page: Page) => page.evaluate(() => JSON.stringify((window as any).GuardianForms.testing.field('scheduleDocsAck') ?? null));
 
 test.describe('Milestone 57C-R: supplemental-documentation acknowledgement', () => {
   test('an empty schedule prompts nothing; populating one prompts once', async ({ page }) => {
@@ -91,12 +91,12 @@ test.describe('Milestone 57C-R: supplemental-documentation acknowledgement', () 
 
     await addGuardianRow(page, 'a1');
     await dismissDynDialog(page);
-    expect(await page.evaluate(() => (window as any).D.scheduleA1.length), 'Cancel must not discard the row').toBe(1);
+    expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('scheduleA1.length')), 'Cancel must not discard the row').toBe(1);
 
     await goto(page, '/summary');
     await goto(page, '/a1');
     await escapeDynDialog(page);
-    expect(await page.evaluate(() => (window as any).D.scheduleA1.length), 'Escape must not discard the row').toBe(1);
+    expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('scheduleA1.length')), 'Escape must not discard the row').toBe(1);
 
     // Still unacknowledged after two refusals, and still asking.
     await goto(page, '/summary');
@@ -112,7 +112,7 @@ test.describe('Milestone 57C-R: supplemental-documentation acknowledgement', () 
     // arrives directly, with no Add click anywhere. Detection is on the DATA,
     // which is the whole reason the hook lives in mount() rather than on the
     // Add button.
-    await page.evaluate(() => { (window as any).D.scheduleB2 = [{ description: 'Imported vehicle' }]; });
+    await page.evaluate(() => { (window as any).GuardianForms.testing.patchFiling({ 'scheduleB2': [{ description: 'Imported vehicle' }] }); });
     await goto(page, '/b2');
     expect(await acceptDynDialog(page)).toMatch(/supporting documentation/i);
   });
@@ -127,7 +127,14 @@ test.describe('Milestone 57C-R: supplemental-documentation acknowledgement', () 
 
     // normalizeWardData() runs this on every load; it must not wipe a
     // recorded acknowledgement, or every reopen would re-ask.
-    await page.evaluate(() => (window as any).normalizeScheduleDocsAck((window as any).D));
+    // A real reopen: opening a filing normalizes it (normalizeWardData() runs the
+    // acknowledgement migration). This used to call the normalizer on window.D.
+    await page.evaluate(async () => {
+      const t = (window as any).GuardianForms.testing;
+      const id = t.snapshot().activeFilingId;
+      await t.activateFiling.close();
+      await t.activateFiling.open(id);
+    });
     await goto(page, '/summary');
     await goto(page, '/a1');
     await expectNoDialog(page, 'normalization must preserve a recorded acknowledgement');
@@ -151,9 +158,9 @@ test.describe('Milestone 57C-R: supplemental-documentation acknowledgement', () 
     await createWard(page, 'Neutrality Ward', 'guardian');
     await goto(page, '/a1');
 
-    const snapshot = () => page.evaluate(() => ({
-      issues: (window as any).validateGuardian().length,
-      nav: JSON.stringify((window as any).computeNavChecks?.() ?? null),
+    const snapshot = () => page.evaluate(async () => ({
+      issues: (await (window as any).GuardianForms.testing.validate.open()).length,
+      nav: JSON.stringify((window as any).GuardianForms.testing.status.navChecks() ?? null),
     }));
 
     await addGuardianRow(page, 'a1');

@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { freshStartNoPassword, createWard } from './support/target';
+import { freshStartNoPassword, createWard, reopenFilingWithStoredShape } from './support/target';
 
 // Milestone 43A: replaces tests/unit/milestone-38e.spec.js, deleted because
 // its three assertions were guarded behind `if (window.normalizeWardData)`/
@@ -11,35 +11,39 @@ import { freshStartNoPassword, createWard } from './support/target';
 // This is that guard, covering the same two behaviors the dead file claimed
 // to (Guardian Inventory legacy-boolean normalization; restricted/
 // unrestricted totals against the resulting tri-state data).
+//
+// Milestone 70, 70T: the tests used to call normalizeWardData() on the live
+// filing by hand. They now take the path a filer's data takes: the older
+// shape is stored on the filing (setup, D9), and the filing is closed and
+// opened again -- opening a stored filing is what runs normalizeWardData()
+// (activateWard() -> setD()). The empty-sentinel test likewise leaves the
+// filing for the dashboard, the navigation that sets the sentinel.
+
 test.describe('legacy boolean -> tri-state ward data normalization (Guardian Inventory)', () => {
   test('normalizeWardData() migrates every legacy boolean field to its tri-state equivalent', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Legacy Data Ward', 'guardian');
 
-    const normalized = await page.evaluate(() => {
-      const d = (window as any).D;
-      Object.assign(d, {
-        scheduleA1: [{ propertyDescription: 'Home', fullAssetValue: '250000', wardPercent: '100', isPersonalResidence: true, isIncomeProperty: false }],
-        scheduleB1: [{ institutionName: 'Legacy Bank', fullAssetAmount: '1000', wardPercent: '100', isRestricted: true }],
-        scheduleB2: [{ description: 'Furniture', fullAssetValue: '1200', wardPercent: '100', inSafeDepositBox: true }],
-        scheduleB3: [{ description: 'Brokerage', fullAssetValue: '500', wardPercent: '100', isRestricted: false, inSafeDepositBox: false }],
-        hasSafeDepositBox: true,
-        safeDepositBoxFiled: false,
-        isAmended: true,
-      });
-      (window as any).normalizeWardData(d);
-      return {
-        residence: d.scheduleA1[0].residence,
-        income: d.scheduleA1[0].income,
-        b1Restricted: d.scheduleB1[0].restricted,
-        b2SafeDeposit: d.scheduleB2[0].inSafeDepositBox,
-        b3Restricted: d.scheduleB3[0].restricted,
-        b3SafeDeposit: d.scheduleB3[0].inSafeDepositBox,
-        hasSafeDepositBox: d.hasSafeDepositBox,
-        safeDepositBoxFiled: d.safeDepositBoxFiled,
-        amendedForm: d.amendedForm,
-      };
+    const d = await reopenFilingWithStoredShape(page, {
+      scheduleA1: [{ propertyDescription: 'Home', fullAssetValue: '250000', wardPercent: '100', isPersonalResidence: true, isIncomeProperty: false }],
+      scheduleB1: [{ institutionName: 'Legacy Bank', fullAssetAmount: '1000', wardPercent: '100', isRestricted: true }],
+      scheduleB2: [{ description: 'Furniture', fullAssetValue: '1200', wardPercent: '100', inSafeDepositBox: true }],
+      scheduleB3: [{ description: 'Brokerage', fullAssetValue: '500', wardPercent: '100', isRestricted: false, inSafeDepositBox: false }],
+      hasSafeDepositBox: true,
+      safeDepositBoxFiled: false,
+      isAmended: true,
     });
+    const normalized = {
+      residence: d.scheduleA1[0].residence,
+      income: d.scheduleA1[0].income,
+      b1Restricted: d.scheduleB1[0].restricted,
+      b2SafeDeposit: d.scheduleB2[0].inSafeDepositBox,
+      b3Restricted: d.scheduleB3[0].restricted,
+      b3SafeDeposit: d.scheduleB3[0].inSafeDepositBox,
+      hasSafeDepositBox: d.hasSafeDepositBox,
+      safeDepositBoxFiled: d.safeDepositBoxFiled,
+      amendedForm: d.amendedForm,
+    };
 
     expect(normalized).toEqual({
       residence: 'Yes',
@@ -58,24 +62,24 @@ test.describe('legacy boolean -> tri-state ward data normalization (Guardian Inv
     await freshStartNoPassword(page);
     await createWard(page, 'Restricted Asset Math Ward', 'guardian');
 
+    await reopenFilingWithStoredShape(page, {
+      scheduleB1: [
+        { institutionName: 'Bank A', fullAssetAmount: '1000', wardPercent: '100', isRestricted: true },
+        { institutionName: 'Bank B', fullAssetAmount: '4000', wardPercent: '50', isRestricted: false },
+      ],
+      scheduleB3: [
+        { description: 'Restricted Trust', fullAssetValue: '500', wardPercent: '100', isRestricted: true },
+        { description: 'Open Brokerage', fullAssetValue: '900', wardPercent: '100', isRestricted: false },
+      ],
+    });
+    // window.calc forwards to guardian-inventory/totals.js, as calcTotalsGuardian() does.
     const totals = await page.evaluate(() => {
-      const d = (window as any).D;
-      Object.assign(d, {
-        scheduleB1: [
-          { institutionName: 'Bank A', fullAssetAmount: '1000', wardPercent: '100', isRestricted: true },
-          { institutionName: 'Bank B', fullAssetAmount: '4000', wardPercent: '50', isRestricted: false },
-        ],
-        scheduleB3: [
-          { description: 'Restricted Trust', fullAssetValue: '500', wardPercent: '100', isRestricted: true },
-          { description: 'Open Brokerage', fullAssetValue: '900', wardPercent: '100', isRestricted: false },
-        ],
-      });
-      (window as any).normalizeWardData(d);
+      const all = (window as any).GuardianForms.testing.status.guardianTotals();
       return {
-        restrictedCash: (window as any).calc.restrictedCash(),
-        unrestrictedCash: (window as any).calc.unrestrictedCash(),
-        restrictedIntang: (window as any).calc.restrictedIntang(),
-        unrestrictedIntang: (window as any).calc.unrestrictedIntang(),
+        restrictedCash: all.restrictedCash,
+        unrestrictedCash: all.unrestrictedCash,
+        restrictedIntang: all.restrictedIntang,
+        unrestrictedIntang: all.unrestrictedIntang,
       };
     });
 
@@ -91,46 +95,42 @@ test.describe('legacy boolean -> tri-state ward data normalization (Guardian Inv
     await freshStartNoPassword(page);
     await createWard(page, 'Canonical Data Ward', 'guardian');
 
-    const normalized = await page.evaluate(() => {
-      const d = (window as any).D;
-      Object.assign(d, {
-        scheduleA1: [{ residence: 'No', isPersonalResidence: true, income: '', isIncomeProperty: null }],
-        scheduleB1: [{ restricted: 'No', isRestricted: true }],
-        scheduleB2: [{ inSafeDepositBox: '' }, { inSafeDepositBox: null }, {}],
-        scheduleB3: [{ restricted: '', isRestricted: null, inSafeDepositBox: 'No' }],
-        hasSafeDepositBox: 'No',
-        safeDepositBoxFiled: '',
-        amendedForm: 'No',
-        isAmended: true,
-        q7SocialSecurity: 'No',
-        q7Ssdi: '',
-        q7Hmo: true,
-        q7Ssi: false,
-        q7Medicare: null,
-        benefits: {
-          socialSecurity: { eligible: 'No', appliedFor: '' },
-          pension: { eligible: true, appliedFor: false },
-          ssi: {},
-        },
-      });
-      (window as any).normalizeWardData(d);
-      return {
-        scheduleA1: d.scheduleA1[0],
-        scheduleB1: d.scheduleB1[0],
-        scheduleB2: d.scheduleB2[0],
-        scheduleB2Null: d.scheduleB2[1].inSafeDepositBox,
-        scheduleB2Missing: d.scheduleB2[2].inSafeDepositBox,
-        scheduleB3: d.scheduleB3[0],
-        hasSafeDepositBox: d.hasSafeDepositBox,
-        safeDepositBoxFiled: d.safeDepositBoxFiled,
-        amendedForm: d.amendedForm,
-        hasLegacyAmendedFlag: Object.hasOwn(d, 'isAmended'),
-        benefits: d.benefits.socialSecurity,
-        pension: d.benefits.pension,
-        ssi: d.benefits.ssi,
-        q7: [d.q7SocialSecurity, d.q7Ssdi, d.q7Hmo, d.q7Ssi, d.q7Medicare],
-      };
+    const d = await reopenFilingWithStoredShape(page, {
+      scheduleA1: [{ residence: 'No', isPersonalResidence: true, income: '', isIncomeProperty: null }],
+      scheduleB1: [{ restricted: 'No', isRestricted: true }],
+      scheduleB2: [{ inSafeDepositBox: '' }, { inSafeDepositBox: null }, {}],
+      scheduleB3: [{ restricted: '', isRestricted: null, inSafeDepositBox: 'No' }],
+      hasSafeDepositBox: 'No',
+      safeDepositBoxFiled: '',
+      amendedForm: 'No',
+      isAmended: true,
+      q7SocialSecurity: 'No',
+      q7Ssdi: '',
+      q7Hmo: true,
+      q7Ssi: false,
+      q7Medicare: null,
+      benefits: {
+        socialSecurity: { eligible: 'No', appliedFor: '' },
+        pension: { eligible: true, appliedFor: false },
+        ssi: {},
+      },
     });
+    const normalized = {
+      scheduleA1: d.scheduleA1[0],
+      scheduleB1: d.scheduleB1[0],
+      scheduleB2: d.scheduleB2[0],
+      scheduleB2Null: d.scheduleB2[1].inSafeDepositBox,
+      scheduleB2Missing: d.scheduleB2[2].inSafeDepositBox,
+      scheduleB3: d.scheduleB3[0],
+      hasSafeDepositBox: d.hasSafeDepositBox,
+      safeDepositBoxFiled: d.safeDepositBoxFiled,
+      amendedForm: d.amendedForm,
+      hasLegacyAmendedFlag: Object.hasOwn(d, 'isAmended'),
+      benefits: d.benefits.socialSecurity,
+      pension: d.benefits.pension,
+      ssi: d.benefits.ssi,
+      q7: [d.q7SocialSecurity, d.q7Ssdi, d.q7Hmo, d.q7Ssi, d.q7Medicare],
+    };
 
     expect(normalized.scheduleA1.residence).toBe('No');
     expect(normalized.scheduleA1.income).toBe('');
@@ -174,11 +174,10 @@ test.describe('legacy boolean -> tri-state ward data normalization (Guardian Inv
     await freshStartNoPassword(page);
     await createWard(page, 'Sentinel Check Ward', 'guardian');
 
-    const keyCount = await page.evaluate(() => {
-      const empty = {};
-      (window as any).normalizeWardData(empty);
-      return Object.keys(empty).length;
-    });
+    // Leaving the filing for the dashboard is what sets the sentinel (setD({})).
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/dashboard'));
+    await expect(page).toHaveURL(/#\/dashboard/);
+    const keyCount = await page.evaluate(() => Object.keys((window as any).GuardianForms.testing.snapshot().filing || {}).length);
 
     expect(keyCount).toBe(0);
   });

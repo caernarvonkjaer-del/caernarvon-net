@@ -21,6 +21,13 @@ describe('the GuardianForms design', () => {
     expect(designed).toEqual(reached);
   });
 
+  // Found by 70T: the rules had changed twice while the recorded design kept
+  // its old destinations and members, and nothing here noticed.
+  test('the recorded design is exactly what the rules produce today', () => {
+    const { generatedBy, note, ...recorded } = design;
+    expect(recorded, 'regenerate with: node scripts/ms70-testing-adapter-design.mjs --write').toEqual(JSON.parse(JSON.stringify(buildDesign(ROOT))));
+  });
+
   test('every destination is an allowed kind, and commands and queries name their member', () => {
     for (const n of design.names) {
       const [kind, member] = n.destination.split(':');

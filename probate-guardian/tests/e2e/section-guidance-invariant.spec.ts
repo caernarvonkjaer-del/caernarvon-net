@@ -39,7 +39,7 @@ const TYPES = [
 for (const { label, type } of TYPES) {
   test(`${label}: every page the sidebar marks incomplete explains itself, in words that fit the page`, async ({ page }) => {
     await freshStartNoPassword(page);
-    await page.evaluate(([t]) => (window as any).addWard(`Guidance ${t}`, t), [type]);
+    await page.evaluate(([t]) => (window as any).GuardianForms.testing.createFiling.add(`Guidance ${t}`, t), [type]);
 
     // What the filer sees in the sidebar on a blank filing: a mark per page.
     const marks: Array<{ nav: string; route: string; incomplete: boolean }> = await page.evaluate(() =>
@@ -55,7 +55,7 @@ for (const { label, type } of TYPES) {
 
     const problems: string[] = [];
     for (const mark of incomplete) {
-      await page.evaluate((r) => (window as any).navigate(r), mark.route);
+      await page.evaluate((r) => (window as any).GuardianForms.testing.navigate(r), mark.route);
       await page.locator('#main-content h1').first().waitFor();
 
       const guidance = page.locator('#page-local-guidance .section-local-guidance');

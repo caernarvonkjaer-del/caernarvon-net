@@ -19,15 +19,19 @@ import { freshStartNoPassword, createWard, exportAndCapture, acceptDynDialog } f
 
 async function seedCoreFields(page: import('@playwright/test').Page) {
   return page.evaluate(() => {
-    const caseFile = (window as any).caseFile;
-    caseFile.parties = [
-      { id: 'party-1', name: 'Alice Guardian', role: 'guardian' },
-      { id: 'party-2', name: 'Bob Ward', role: 'ward' },
-    ];
-    caseFile.cases = [
-      { id: 'case-1', caseNumber: '2026-CP-000052' },
-    ];
-    (window as any).dismissPartyPair('party-1', 'party-2');
+    // Setup (D9): the case-level records, then a dismissal the app's own way.
+    const t = (window as any).GuardianForms.testing;
+    t.patchCase({
+      parties: [
+        { id: 'party-1', name: 'Alice Guardian', role: 'guardian' },
+        { id: 'party-2', name: 'Bob Ward', role: 'ward' },
+      ],
+      cases: [
+        { id: 'case-1', caseNumber: '2026-CP-000052' },
+      ],
+    });
+    t.updateSharedRecords.dismissPartyPair('party-1', 'party-2');
+    const caseFile = t.snapshot().caseFile;
     return {
       parties: caseFile.parties,
       cases: caseFile.cases,
@@ -45,20 +49,17 @@ test.describe('Case-file core fields (parties/cases/dismissedPartyPairs) round-t
     const savPath = await exportAndCapture(page);
 
     await page.evaluate(() => {
-      (window as any).caseFile.wards = [];
-      (window as any).caseFile.parties = [];
-      (window as any).caseFile.cases = [];
-      (window as any).caseFile.dismissedPartyPairs = [];
+      (window as any).GuardianForms.testing.patchCase({ wards: [], parties: [], cases: [], dismissedPartyPairs: [] });
     });
 
     await page.setInputFiles('#backup-import-input', savPath);
     await acceptDynDialog(page); // importSavArchiveOrWard()'s confirmModal()
 
-    await expect.poll(() => page.evaluate(() => (window as any).caseFile.wards.length)).toBeGreaterThan(0);
+    await expect.poll(() => page.evaluate(() => (window as any).GuardianForms.testing.snapshot().caseFile.wards.length)).toBeGreaterThan(0);
     const restored = await page.evaluate(() => ({
-      parties: (window as any).caseFile.parties,
-      cases: (window as any).caseFile.cases,
-      dismissedPartyPairs: (window as any).caseFile.dismissedPartyPairs,
+      parties: (window as any).GuardianForms.testing.snapshot().caseFile.parties,
+      cases: (window as any).GuardianForms.testing.snapshot().caseFile.cases,
+      dismissedPartyPairs: (window as any).GuardianForms.testing.snapshot().caseFile.dismissedPartyPairs,
     }));
     expect(restored.parties).toEqual(seeded.parties);
     expect(restored.cases).toEqual(seeded.cases);
@@ -87,13 +88,13 @@ test.describe('Case-file core fields (parties/cases/dismissedPartyPairs) round-t
     // appState), just not the one this test cares about proving is ignored.
     const savPath = await exportAndCapture(page);
 
-    await page.evaluate(() => { (window as any).caseFile.selectedCircuit = 12; });
+    await page.evaluate(() => { (window as any).GuardianForms.testing.patchCase({ selectedCircuit: 12 }); });
 
     await page.setInputFiles('#backup-import-input', savPath);
     await acceptDynDialog(page);
-    await expect.poll(() => page.evaluate(() => (window as any).caseFile.wards.length)).toBeGreaterThan(0);
+    await expect.poll(() => page.evaluate(() => (window as any).GuardianForms.testing.snapshot().caseFile.wards.length)).toBeGreaterThan(0);
 
-    const selectedCircuit = await page.evaluate(() => (window as any).caseFile.selectedCircuit);
+    const selectedCircuit = await page.evaluate(() => (window as any).GuardianForms.testing.snapshot().caseFile.selectedCircuit);
     expect(selectedCircuit, 'a merge-import must never change the current circuit selection').toBe(12);
   });
 });

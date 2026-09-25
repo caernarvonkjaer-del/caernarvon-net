@@ -11,7 +11,7 @@ import { freshStartNoPassword, createWard } from './support/target';
 
 async function wardId(page: import('@playwright/test').Page, name: string): Promise<string> {
   return page.evaluate((n) => {
-    const w = (window as any).caseFile.wards.find((x: any) => x.wardName === n);
+    const w = (window as any).GuardianForms.testing.snapshot().caseFile.wards.find((x: any) => x.wardName === n);
     return w.wardId;
   }, name);
 }
@@ -22,7 +22,7 @@ test.describe('party write-through (Milestone 4, planInitial + annual)', () => {
 
     await createWard(page, 'Sync Plan Ward', 'planInitial');
     const planWardId = await wardId(page, 'Sync Plan Ward');
-    await page.evaluate(() => (window as any).navigate('/p9'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/p9'));
 
     const planSsnInput = page.locator('[data-form-path="planGuardians.0.ssn"]');
     await planSsnInput.fill('123-45-6789');
@@ -33,11 +33,11 @@ test.describe('party write-through (Milestone 4, planInitial + annual)', () => {
     await page.click('#pickPartyModal [data-modal-action="create-party-from-slot"]');
     await page.locator('#pickPartyModal').waitFor({ state: 'hidden' });
 
-    const partyId = await page.evaluate(() => (window as any).D.guardianPartyIds[0]);
+    const partyId = await page.evaluate(() => (window as any).GuardianForms.testing.field('guardianPartyIds.0'));
     expect(partyId).toBeTruthy();
 
     await createWard(page, 'Sync Annual Ward', 'annual');
-    await page.evaluate(() => (window as any).navigate('/p3'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/p3'));
 
     await page.click('[data-annual-action="link-party"][data-role="guardian"][data-index="0"]');
     await page.locator('#pickPartyModal.show').waitFor({ state: 'visible' });
@@ -56,12 +56,12 @@ test.describe('party write-through (Milestone 4, planInitial + annual)', () => {
     await annualSsnInput.fill('987-65-4321');
     await annualSsnInput.dispatchEvent('input');
 
-    await page.evaluate((id) => (window as any).switchWard(id), planWardId);
-    await page.evaluate(() => (window as any).navigate('/p9'));
+    await page.evaluate((id) => (window as any).GuardianForms.testing.activateFiling.open(id), planWardId);
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/p9'));
     await expect(page.locator('[data-form-path="planGuardians.0.ssn"]')).toHaveValue('987-65-4321');
 
     // And the party record itself now reflects the latest edit.
-    const partyTaxId = await page.evaluate((id) => (window as any).resolveParty(id).identifiers.taxId, partyId);
+    const partyTaxId = await page.evaluate((id) => (window as any).GuardianForms.testing.sharedRecords.resolveParty(id).identifiers.taxId, partyId);
     expect(partyTaxId).toBe('987-65-4321');
   });
 });

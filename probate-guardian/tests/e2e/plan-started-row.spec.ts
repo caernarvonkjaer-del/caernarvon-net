@@ -19,30 +19,26 @@ test.describe('Milestone 61B: a secondary-only plan row is visible to every surf
     // A single residence row carrying nothing but a phone number -- exactly the
     // shape that used to disappear.
     await page.evaluate(() => {
-      const D = (window as any).D;
-      D.q1Residences = [{ name: '', street: '', cityStateZip: '', phone: '(727) 555-0100', facilityType: '', from: '', to: '' }];
+      (window as any).GuardianForms.testing.patchFiling({ q1Residences: [{ name: '', street: '', cityStateZip: '', phone: '(727) 555-0100', facilityType: '', from: '', to: '' }] });
     });
 
     // The validator now sees the row and says what it needs, rather than
     // silently discarding it. Before 61B this produced only the generic
     // "at least one residence must be listed".
-    const issues = await page.evaluate(() => {
-      const validate = (window as any).validatePlanAnnual;
-      return validate ? validate().map((i: any) => (typeof i === 'string' ? i : i.message || '')) : [];
-    });
+    const issues = await page.evaluate(async () =>
+      (await (window as any).GuardianForms.testing.validate.open()).map((i: any) => (typeof i === 'string' ? i : i.message || '')));
     expect(issues.join('\n')).toMatch(/1\. Residences — row 1 needs a facility or owner name/);
 
-    // And computeNavChecks() counts it as started, from the same rule: the
-    // page is not silently "untouched" when the filer has typed into it.
-    const startedByNav = await page.evaluate(() => {
-      const started = (window as any).startedRows((window as any).D.q1Residences);
-      return started.length;
-    });
-    expect(startedByNav, 'the bridged predicate must see the phone-only row').toBe(1);
+    // And computeNavChecks() counts the page as started: it is not silently
+    // "untouched" when the filer has typed into it. (Milestone 70, 70T: this
+    // read the bridged startedRows() helper, which tests/unit/plan-started-row.spec.js
+    // covers; the browser half now reads what the sidebar itself reports.)
+    const startedByNav = await page.evaluate(() => !!(window as any).GuardianForms.testing.status.navChecks().incomplete['pa-p2']);
+    expect(startedByNav, 'the sidebar must see the phone-only row as a started page').toBe(true);
 
     // The page is reported incomplete (it needs a name), never complete --
     // the failure this guards against is a green dot over dropped data.
-    const complete = await page.evaluate(() => !!(window as any).computeNavChecks().checks['pa-p2']);
+    const complete = await page.evaluate(() => !!(window as any).GuardianForms.testing.status.navChecks().checks['pa-p2']);
     expect(complete, 'a row missing its required name must not read as complete').toBe(false);
   });
 
@@ -51,10 +47,10 @@ test.describe('Milestone 61B: a secondary-only plan row is visible to every surf
     await createWard(page, 'Blank Row Ward', 'planAnnual');
 
     const started = await page.evaluate(() => {
-      const D = (window as any).D;
-      D.q1Residences = [{ name: '', street: '', cityStateZip: '', phone: '', facilityType: '', from: '', to: '' }];
-      return (window as any).startedRows(D.q1Residences).length;
+      const t = (window as any).GuardianForms.testing;
+      t.patchFiling({ q1Residences: [{ name: '', street: '', cityStateZip: '', phone: '', facilityType: '', from: '', to: '' }] });
+      return !!t.status.navChecks().incomplete['pa-p2'];
     });
-    expect(started, 'an untouched seeded row must not count as started').toBe(0);
+    expect(started, 'an untouched seeded row must not count as started').toBe(false);
   });
 });

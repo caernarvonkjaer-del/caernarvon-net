@@ -49,17 +49,17 @@ async function openSimplifiedPreview(page: Page, cityStateZip: string = LONG_CIT
   await createSimplifiedWard(page, 'Address Margin Ward');
   await fillMinimalValidSimplifiedWard(page);
   await page.evaluate(([street, csz]) => {
-    const d = (window as any).D;
+    const d = (window as any).GuardianForms.testing.snapshot().filing;
     for (const g of d.guardians || []) {
       g.mailingStreet = street;
       g.mailingCityStateZip = csz;
       g.residenceStreet = street;
       g.residenceCityStateZip = csz;
     }
-    (window as any).autoSave();
+    (window as any).GuardianForms.testing.replaceFiling(d); // setup (D9)
   }, [LONG_STREET, cityStateZip]);
-  await page.evaluate(() => (window as any).flushPendingSave());
-  await page.evaluate(() => (window as any).navigate('/print'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
   await page.locator('#print-doc-container .pdf-page').first().waitFor({ state: 'visible', timeout: 30000 });
   await page.evaluate(() => {
     // The pager keeps every page in the DOM but shows one at a time; each has
@@ -269,8 +269,8 @@ test.describe('signature-block addresses stay inside the margin (reported 2026-0
 
     const probe = await page.evaluate(async () => {
       const w = window as any;
-      const { buildSimplifiedAccountingModel, generateCourtFormPdf } = await w.loadSimplifiedPdf();
-      const model = buildSimplifiedAccountingModel(w.D, { printDate: '2026-09-20' });
+      const { buildSimplifiedAccountingModel, generateCourtFormPdf } = await w.GuardianForms.testing.generateOutput.simplifiedPdf();
+      const model = buildSimplifiedAccountingModel(w.GuardianForms.testing.snapshot().filing, { printDate: '2026-09-20' });
       const part4 = model.sections.find((s: any) => s.id === 'part4');
       const block = part4.blocks.find((b: any) => b.type === 'signature-block');
       // One row of three narrow columns, each holding a long structured value:

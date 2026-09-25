@@ -24,7 +24,7 @@ const titleText = (page: Page) => page.evaluate(() => {
   return (clone.textContent || '').replace(/\s+/g, ' ').trim();
 });
 const count = (s: string | null) => (s || '').split('TEST SYSTEM - Do not use for filing').length - 1;
-const go = (page: Page, route: string) => page.evaluate((r) => (window as any).navigate(r), route);
+const go = (page: Page, route: string) => page.evaluate((r) => (window as any).GuardianForms.testing.navigate(r), route);
 
 async function open(page: Page, type: string, name: string) {
   if (type === 'simplified') await createSimplifiedWard(page, name);
@@ -53,7 +53,7 @@ test('the reported example reads exactly, and re-rendering, a field change, a th
   const first = await titleText(page);
   expect(first).toBe(`${PREFIX}Verified Initial Inventory — Case Information`);
 
-  await page.evaluate(() => (window as any).renderPage('/'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
   expect(count(await titleText(page)), 'same-route re-render').toBe(1);
 
   await page.locator('#main-content input[type="text"]').first().fill('Ward Name Typed');
@@ -87,7 +87,7 @@ test('Preview & Export shows the warning in its banner; the downloaded PDF and w
   await freshStartNoPassword(page);
   await createWard(page, 'Output Stays Clean', 'annual');
   await fillMinimalValidAnnualWard(page);
-  await page.evaluate(() => (window as any).flushPendingSave());
+  await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
   await go(page, '/print');
   expect((await titleText(page))!.startsWith(`${PREFIX}Preview & Export`)).toBe(true);
 
@@ -114,7 +114,7 @@ test('with the switch off, no title carries the warning and every original title
   const on = await titleText(page);
   expect(on!.startsWith(PREFIX)).toBe(true);
 
-  await page.evaluate(() => (window as any).setTestSystemTitleWarningEnabledForTest(false));
+  await page.evaluate(() => (window as any).GuardianForms.testing.setTestSystemTitleWarning(false));
   expect(await titleText(page), 'turned off in place').toBe(on!.slice(PREFIX.length));
   await go(page, '/p2');
   expect(count(await titleText(page)), 'and stays off on the next page').toBe(0);

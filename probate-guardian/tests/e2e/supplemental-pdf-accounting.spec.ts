@@ -13,7 +13,7 @@ test.describe('Supplemental PDF inline rendering for Accounting forms (Annual, T
     });
 
     const result = await page.evaluate(async (file) => {
-      const d = (window as any).D;
+      const d = (window as any).GuardianForms.testing.snapshot().filing;
       d.wardName = 'Sarah Jenkins';
       d.caseNumber = '26-PR-009123';
       d.county = 'Pinellas';
@@ -23,7 +23,7 @@ test.describe('Supplemental PDF inline rendering for Accounting forms (Annual, T
         { payer: 'Social Security Administration', description: 'Monthly Retirement', bank: 'Chase Bank', accountNo: '1234', amount: '12000.00' },
       ];
 
-      const { buildAnnualAccountingModel, generateCourtFormPdf } = await (window as any).loadAnnualPdf();
+      const { buildAnnualAccountingModel, generateCourtFormPdf } = await (window as any).GuardianForms.testing.generateOutput.annualPdf();
       const { finalizeCourtFormPdf } = await import('/probate-guardian/src/core/pdf/pdf-finalizer.js');
 
       // 1. Calculate baseline pages without attachment
@@ -78,7 +78,7 @@ test.describe('Supplemental PDF inline rendering for Accounting forms (Annual, T
     });
 
     const result = await page.evaluate(async (file) => {
-      const d = (window as any).D;
+      const d = (window as any).GuardianForms.testing.snapshot().filing;
       d.wardName = 'Eleanor Vance';
       d.caseNumber = '26-TR-004567';
       d.periodFrom = '2026-01-01';
@@ -87,7 +87,7 @@ test.describe('Supplemental PDF inline rendering for Accounting forms (Annual, T
         { payer: 'Vance Family Trust', description: 'Annual Trust Distribution', bank: 'Northern Trust', accountNo: '9876', amount: '50000.00' },
       ];
 
-      const { buildAnnualAccountingModel, generateCourtFormPdf } = await (window as any).loadAnnualPdf();
+      const { buildAnnualAccountingModel, generateCourtFormPdf } = await (window as any).GuardianForms.testing.generateOutput.annualPdf();
       const { finalizeCourtFormPdf } = await import('/probate-guardian/src/core/pdf/pdf-finalizer.js');
 
       const baseModel = buildAnnualAccountingModel(d);
@@ -136,7 +136,7 @@ test.describe('Supplemental PDF inline rendering for Accounting forms (Annual, T
     });
 
     const result = await page.evaluate(async (file) => {
-      const d = (window as any).D;
+      const d = (window as any).GuardianForms.testing.snapshot().filing;
       d.wardName = 'Arthur Pendelton';
       d.caseNumber = '26-GD-007890';
       d.periodFrom = '2026-01-01';
@@ -145,7 +145,7 @@ test.describe('Supplemental PDF inline rendering for Accounting forms (Annual, T
         { payer: 'Pension Plan', description: 'Final Distribution', bank: 'Regions Bank', accountNo: '5544', amount: '8000.00' },
       ];
 
-      const { buildAnnualAccountingModel, generateCourtFormPdf } = await (window as any).loadAnnualPdf();
+      const { buildAnnualAccountingModel, generateCourtFormPdf } = await (window as any).GuardianForms.testing.generateOutput.annualPdf();
       const { finalizeCourtFormPdf } = await import('/probate-guardian/src/core/pdf/pdf-finalizer.js');
 
       const baseModel = buildAnnualAccountingModel(d);
@@ -194,7 +194,7 @@ test.describe('Supplemental PDF inline rendering for Accounting forms (Annual, T
     });
 
     const result = await page.evaluate(async (file) => {
-      const d = (window as any).D;
+      const d = (window as any).GuardianForms.testing.snapshot().filing;
       d.wardName = 'Robert Bruce';
       d.caseNumber = '26-GI-001122';
       d.activeYearKey = 'Year 2';
@@ -202,7 +202,7 @@ test.describe('Supplemental PDF inline rendering for Accounting forms (Annual, T
         { description: 'Checking Account', accountNumber: '1111', fullAssetAmount: 25000, isRestricted: false },
       ];
 
-      const { buildVerifiedInventoryModel, generateVerifiedInventoryPdf } = await (window as any).loadGuardianPdf();
+      const { buildVerifiedInventoryModel, generateVerifiedInventoryPdf } = await (window as any).GuardianForms.testing.generateOutput.guardianPdf();
       const { finalizeCourtFormPdf } = await import('/probate-guardian/src/core/pdf/pdf-finalizer.js');
 
       const baseModel = buildVerifiedInventoryModel(d);

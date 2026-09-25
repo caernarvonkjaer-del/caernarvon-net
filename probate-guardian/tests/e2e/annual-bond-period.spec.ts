@@ -67,12 +67,12 @@ async function annualWard(page: Page, name: string, bond: Record<string, string>
   await freshStartNoPassword(page);
   await createWard(page, name, 'annual');
   await fillMinimalValidAnnualWard(page);
-  await page.evaluate((b) => { Object.assign((window as any).D, b); (window as any).autoSave(); }, bond);
-  await page.evaluate(() => (window as any).flushPendingSave());
+  await page.evaluate((b) => { (window as any).GuardianForms.testing.patchFiling(b); }, bond);
+  await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
 }
 
 async function download(page: Page, action: 'save-excel' | 'save-pdf') {
-  await page.evaluate(() => (window as any).navigate('/print'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
   const button = page.locator(`[data-annual-action="${action}"]`);
   await expect(button).toBeEnabled({ timeout: 20_000 });
   const dl = page.waitForEvent('download', { timeout: 40_000 });
@@ -119,11 +119,11 @@ test.describe('Milestone 67D: the Bond Period is the accounting period', () => {
     const file = path.join(os.tmpdir(), `pg-bond-period-${Date.now()}.xlsx`);
     fs.writeFileSync(file, bytes);
     await createWard(page, 'Bond Period Import Target', 'annual');
-    await page.evaluate(() => (window as any).navigate('/'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
     await page.setInputFiles('input[type="file"][accept=".xlsx"]', file);
-    await page.waitForFunction(() => (window as any).D.caseNumber === '2026-CP-000789', undefined, { timeout: 20_000 });
+    await page.waitForFunction(() => (window as any).GuardianForms.testing.field('caseNumber') === '2026-CP-000789', undefined, { timeout: 20_000 });
     const back = await page.evaluate(() => {
-      const d = (window as any).D;
+      const d = (window as any).GuardianForms.testing.snapshot().filing;
       return { periodFrom: d.periodFrom, periodTo: d.periodTo, bondPeriodFrom: d.bondPeriodFrom, bondPeriodTo: d.bondPeriodTo };
     });
     expect(back.periodFrom).toBe(ACCOUNTING.periodFrom);
@@ -134,7 +134,7 @@ test.describe('Milestone 67D: the Bond Period is the accounting period', () => {
 
   test('the print page says, in the approved words, that a differing typed bond period will not reach the Excel', async ({ page }) => {
     await annualWard(page, 'Bond Period Advisory Ward', TYPED);
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
 
     const advisory = page.locator('#main-content .alert-warning li', { hasText: 'The bond period entered differs from the accounting period' });
     await expect(advisory, 'one line per differing edge').toHaveCount(2);
@@ -144,15 +144,15 @@ test.describe('Milestone 67D: the Bond Period is the accounting period', () => {
     await expect(advisory.first()).toContainText('2026-01-01');
 
     // Bond period equal to the accounting period: nothing to say.
-    await page.evaluate((b) => { Object.assign((window as any).D, b); (window as any).autoSave(); }, ACCOUNTING);
-    await page.evaluate(() => { const w = window as any; w.D.bondPeriodFrom = w.D.periodFrom; w.D.bondPeriodTo = w.D.periodTo; w.autoSave(); });
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate((b) => { (window as any).GuardianForms.testing.patchFiling(b); }, ACCOUNTING);
+    await page.evaluate(() => { const w = window as any; w.GuardianForms.testing.patchFiling({ 'bondPeriodFrom': w.GuardianForms.testing.field('periodFrom') }); w.GuardianForms.testing.patchFiling({ 'bondPeriodTo': w.GuardianForms.testing.field('periodTo') }); w.GuardianForms.testing.save.auto(); });
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
     await expect(advisory).toHaveCount(0);
 
     // Blank bond period: the form derives it, and warning would push the
     // filer to fill in what the form fills for them.
-    await page.evaluate(() => { const w = window as any; w.D.bondPeriodFrom = ''; w.D.bondPeriodTo = ''; w.autoSave(); });
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => { const w = window as any; w.GuardianForms.testing.patchFiling({ 'bondPeriodFrom': '' }); w.GuardianForms.testing.patchFiling({ 'bondPeriodTo': '' }); w.GuardianForms.testing.save.auto(); });
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
     await expect(advisory).toHaveCount(0);
   });
 
@@ -163,8 +163,8 @@ test.describe('Milestone 67D: the Bond Period is the accounting period', () => {
 
     // Left blank, the PDF must agree with the Excel, which the form fills
     // from the accounting period.
-    await page.evaluate(() => { const w = window as any; w.D.bondPeriodFrom = ''; w.D.bondPeriodTo = ''; w.autoSave(); });
-    await page.evaluate(() => (window as any).flushPendingSave());
+    await page.evaluate(() => { const w = window as any; w.GuardianForms.testing.patchFiling({ 'bondPeriodFrom': '' }); w.GuardianForms.testing.patchFiling({ 'bondPeriodTo': '' }); w.GuardianForms.testing.save.auto(); });
+    await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
     expect(await bondPeriodLine(await download(page, 'save-pdf'))).toBe('From: 01/01/2026 To: 12/31/2026');
   });
 });

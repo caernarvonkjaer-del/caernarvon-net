@@ -27,8 +27,9 @@ const target = currentTarget;
 // save/open automatable at all — real native pickers can't be driven by
 // Playwright, and this exercises a genuinely shipped path rather than a
 // synthetic shortcut.
-export async function gotoApp(page: Page, options: { acceptTerms?: boolean } = {}): Promise<void> {
+export async function gotoApp(page: Page, options: { acceptTerms?: boolean; testMode?: boolean } = {}): Promise<void> {
   const acceptTerms = options.acceptTerms !== false;
+  if (options.testMode !== false) await enableTestMode(page);
   await page.addInitScript((termsAccepted) => {
     delete window.showSaveFilePicker;
     delete window.showOpenFilePicker;
@@ -40,6 +41,17 @@ export async function gotoApp(page: Page, options: { acceptTerms?: boolean } = {
   } else {
     await page.goto('/', { waitUntil: 'networkidle' });
   }
+}
+
+/**
+ * Milestone 70, 70T (decision D3, choice T3): switch on window.GuardianForms.testing
+ * for every page this `page` loads. The runner-owned pre-boot flag is set by an
+ * init script -- which runs before any application script -- and the app's
+ * composition root reads it once and deletes it. gotoApp() does this by
+ * default; a spec that opens pages some other way calls it first.
+ */
+export async function enableTestMode(page: Page): Promise<void> {
+  await page.addInitScript(() => { (window as any).__GUARDIAN_FORMS_TEST_MODE__ = true; });
 }
 
 /** Fresh install / brand-new browser: dismiss the startup screen with "Start a New Ward". */
@@ -84,11 +96,44 @@ export const freshStartWardNoPassword = freshStartNoPassword;
  * 'simplified' has its own eligibility modal first and isn't handled here.
  */
 export async function createWard(page: Page, name: string, type = 'guardian'): Promise<void> {
-  await page.evaluate((t) => (window as any).showAddWardModalForType(t), type);
+  await page.evaluate((t) => (window as any).GuardianForms.testing.createFiling.openDialog(t), type);
   await page.locator('#addWardModal.show').waitFor({ state: 'visible' });
   await page.fill('#new-ward-name', name);
   await page.click('#addWardModal [data-modal-action="add-ward"]');
   await page.locator('#addWardModal').waitFor({ state: 'hidden' });
+}
+
+/**
+ * Stores `shape` on the open filing as an older save would have it (setup,
+ * D9), closes the filing and opens it again -- opening a stored filing is what
+ * runs the app's load-time normalization (activateWard() -> setD() ->
+ * normalizeWardData()) -- and returns the filing as it reopened, as a copy.
+ */
+export async function reopenFilingWithStoredShape(page: Page, shape: Record<string, unknown>): Promise<any> {
+  return page.evaluate(async (stored) => {
+    const t = (window as any).GuardianForms.testing;
+    const id = t.snapshot().filing.wardId;
+    t.patchFiling(stored);
+    await t.activateFiling.close();
+    await t.activateFiling.open(id);
+    return t.snapshot().filing;
+  }, shape);
+}
+
+/**
+ * Chooses `county` on the open filing's Cover the way a filer does: type into
+ * the county box, click the suggestion. Choosing one is what links the
+ * canonical ward Party and gives it the county (commitCoverCounty()), so
+ * setup that needs that link goes through here rather than a data patch --
+ * a patched county never reaches the Party. Leaves the Cover open.
+ */
+export async function chooseCoverCounty(page: Page, county: string): Promise<void> {
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
+  const input = page.locator('input[data-form-control="county"]').first();
+  await input.click();
+  await input.fill(county);
+  await page.locator(`[data-form-mousedown="select-county"][data-county="${county}"]`).click();
+  await expect(input).toHaveValue(county);
 }
 
 /**
@@ -123,7 +168,10 @@ async function applyMinimalValid(
   await installFixtureSupport(page);
   await page.evaluate(([o, withPlanDefaults]) => {
     const w = window as any;
-    const d = w.D;
+    // Milestone 70, 70T: setup (D9) -- the overlay is merged onto a copy of the
+    // open filing and written back in one patchFiling().
+    const t = w.GuardianForms.testing;
+    const d = t.snapshot().filing;
     const existingName = d.wardName;
     // The plan types' per-right and per-ADL answers are derived from the app's
     // own lists rather than copied into fixtures.ts, so that adding a right
@@ -131,9 +179,9 @@ async function applyMinimalValid(
     if (withPlanDefaults) Object.assign(d, w.__pgMergeFixture(d, w.__pgPlanDefaults()));
     Object.assign(d, w.__pgMergeFixture(d, o));
     if (existingName) d.wardName = existingName;
-    w.autoSave();
+    t.replaceFiling(d);
   }, [overlay, planDefaults] as [Record<string, unknown>, boolean]);
-  await page.evaluate(() => (window as any).flushPendingSave());
+  await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
 }
 
 /**
@@ -146,7 +194,7 @@ async function applyMinimalValid(
  * eligibility questions 'Yes' so the resulting ward is genuinely Simplified.
  */
 export async function createSimplifiedWard(page: Page, name: string): Promise<void> {
-  await page.evaluate(() => (window as any).showAddWardModalForType('simplified'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.createFiling.openDialog('simplified'));
   await page.locator('#simplifiedEligibilityModal.show').waitFor({ state: 'visible' });
   await page.fill('#elig-ward-name', name);
   await page.selectOption('#elig-depository', 'Yes');
@@ -179,7 +227,9 @@ export async function fillMinimalValidSimplifiedWard(page: Page): Promise<void> 
  */
 export async function fillMinimalValidPlanSimplifiedWard(page: Page): Promise<void> {
   await page.evaluate(() => {
-    const d = (window as any).D;
+    // Milestone 70, 70T: setup (D9) on a copy of the open filing, written back below.
+    const t = (window as any).GuardianForms.testing;
+    const d = t.snapshot().filing;
     Object.assign(d, {
       wardName: d.wardName || 'Plan Simplified Export Test Ward',
       caseNumber: '2026-CP-000789',
@@ -201,9 +251,9 @@ export async function fillMinimalValidPlanSimplifiedWard(page: Page): Promise<vo
       { name: 'Sample Guardian', signatureDate: '2026-01-05', email: 'guardian@example.com', phone: '555-555-5555', mailingAddress: '123 Main St, Clearwater, FL 33755' },
       { name: '', signatureDate: '', email: '', phone: '', mailingAddress: '' },
     ];
-    (window as any).autoSave();
+    t.replaceFiling(d);
   });
-  await page.evaluate(() => (window as any).flushPendingSave());
+  await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
 }
 
 /**
@@ -225,7 +275,9 @@ export async function fillMinimalValidPlanAnnualWard(page: Page): Promise<void> 
 
 export async function fillMinimalValidPlanMinorWard(page: Page): Promise<void> {
   await page.evaluate(() => {
-    const d = (window as any).D;
+    // Milestone 70, 70T: setup (D9) on a copy of the open filing, written back below.
+    const t = (window as any).GuardianForms.testing;
+    const d = t.snapshot().filing;
     Object.assign(d, {
       wardName: d.wardName || 'Plan Minor Export Test Ward',
       ucn: d.ucn || '2026-CP-000987',
@@ -258,16 +310,18 @@ export async function fillMinimalValidPlanMinorWard(page: Page): Promise<void> {
       { name: 'Sample Guardian', tin: '123-45-6789', phone: '555-555-5555', mailingStreet: '123 Main St', mailingCityStateZip: 'Clearwater, FL 33755', relationship: 'Parent', email: 'guardian@example.com', signatureDate: '2026-01-11' },
       { name: '', tin: '', phone: '', mailingStreet: '', mailingCityStateZip: '', relationship: '', email: '', signatureDate: '' },
     ];
-    (window as any).autoSave();
+    t.replaceFiling(d);
   });
-  await page.evaluate(() => (window as any).flushPendingSave());
+  await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
 }
 
 export async function fillMinimalValidPlanInitialWard(page: Page): Promise<void> {
   await page.evaluate(() => {
-    const d = (window as any).D;
+    // Milestone 70, 70T: setup (D9) on a copy of the open filing, written back below.
+    const t = (window as any).GuardianForms.testing;
+    const d = t.snapshot().filing;
     const adls: Record<string, string> = {};
-    for (const [k] of (window as any).INITIAL_ADLS) adls[k] = 'Ward needs no help';
+    for (const [k] of t.constants('INITIAL_ADLS')) adls[k] = 'Ward needs no help';
     Object.assign(d, {
       wardName: d.wardName || 'Plan Initial Export Test Ward',
       caseNumber: '2026-CP-000654',
@@ -308,9 +362,9 @@ export async function fillMinimalValidPlanInitialWard(page: Page): Promise<void>
       { name: '', ssn: '', street: '', phone: '', cityStateZip: '', signatureDate: '', relationship: '' },
       { name: '', ssn: '', street: '', phone: '', cityStateZip: '', signatureDate: '', relationship: '' },
     ];
-    (window as any).autoSave();
+    t.replaceFiling(d);
   });
-  await page.evaluate(() => (window as any).flushPendingSave());
+  await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
 }
 
 /**
@@ -348,7 +402,7 @@ export async function crossCheckNavAndSummaryStatus(
 ): Promise<Array<{ route: string; expectComplete: boolean; sidebarComplete: boolean | null; summaryComplete: boolean | null }>> {
   return page.evaluate((entries) => {
     const w = window as any;
-    const nav = w.computeNavChecks();
+    const nav = w.GuardianForms.testing.status.navChecks();
     return entries.map(({ route, key }) => {
       const keys = Array.isArray(key) ? key : [key];
       const expectComplete = keys.every((k) => !!nav.checks?.[k]);
@@ -381,7 +435,7 @@ export async function exportAndCapture(page: Page): Promise<string> {
   // complete" alertModal() once saving finishes -- awaited in that order,
   // same as captureDownload()'s own reasoning in backup-restore-sav.spec.ts.
   const downloadPromise = page.waitForEvent('download');
-  await page.evaluate(() => { void (window as any).exportGuardianDataZip(); });
+  await page.evaluate(() => { void (window as any).GuardianForms.testing.saveArchive.all(); });
   const download = await downloadPromise;
   await acceptDynDialog(page);
   const savePath = path.join(os.tmpdir(), `pg-test-${Date.now()}-${Math.random().toString(36).slice(2)}.sav`);

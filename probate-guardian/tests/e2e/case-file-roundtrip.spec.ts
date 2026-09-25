@@ -32,7 +32,7 @@ test.describe('Case file .sav round-trip: unencrypted, encrypted, and corrupted 
       // the sidebar is neutral and the user chooses Edit. Switching
       // explicitly is what proves the ward data round-tripped.
       await expect(reopenPage.locator('#ward-selector')).toHaveValue('');
-      await reopenPage.evaluate(() => (window as any).switchWard((window as any).caseFile.wards[0].wardId));
+      await reopenPage.evaluate(() => (() => { const tt = (window as any).GuardianForms.testing; return tt.activateFiling.open(tt.snapshot().caseFile.wards[0].wardId); })());
       await expect(reopenPage.locator('#ward-selector')).toHaveValue('Roundtrip Ward Plain');
     } finally {
       await reopenContext.close();
@@ -81,7 +81,7 @@ test.describe('Case file .sav round-trip: unencrypted, encrypted, and corrupted 
       // the sidebar is neutral and the user chooses Edit. Switching
       // explicitly is what proves the ward data round-tripped.
       await expect(reopenPage.locator('#ward-selector')).toHaveValue('');
-      await reopenPage.evaluate(() => (window as any).switchWard((window as any).caseFile.wards[0].wardId));
+      await reopenPage.evaluate(() => (() => { const tt = (window as any).GuardianForms.testing; return tt.activateFiling.open(tt.snapshot().caseFile.wards[0].wardId); })());
       await expect(reopenPage.locator('#ward-selector')).toHaveValue('Roundtrip Ward Encrypted');
     } finally {
       await reopenContext.close();

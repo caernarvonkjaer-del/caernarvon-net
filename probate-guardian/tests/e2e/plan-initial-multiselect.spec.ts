@@ -19,9 +19,9 @@ import { extractPdfText } from './support/pdf-extract';
 // filing saved under the old one-string shape reads back as one ticked box,
 // with free text kept under Other; nothing ticked is still an export issue.
 
-const messages = (page: Page) => page.evaluate(() => ((window as any).validatePlanInitial() || []).map((i: any) => String(i?.message ?? i)));
-const model = (page: Page, keys: string[]) => page.evaluate((k) => Object.fromEntries(k.map((key) => [key, (window as any).D[key]])), keys);
-const go = (page: Page, route: string) => page.evaluate((r) => (window as any).navigate(r), route);
+const messages = (page: Page) => page.evaluate(async () => ((await (window as any).GuardianForms.testing.validate.open()) || []).map((i: any) => String(i?.message ?? i)));
+const model = (page: Page, keys: string[]) => page.evaluate((k) => Object.fromEntries(k.map((key) => [key, (window as any).GuardianForms.testing.field(key)])), keys);
+const go = (page: Page, route: string) => page.evaluate((r) => (window as any).GuardianForms.testing.navigate(r), route);
 const box = (page: Page, id: string) => page.locator(`#main-content input#${id}`);
 
 test('questions 2, 4 and 5 hold several answers, and every ticked box reaches the model and the PDF', async ({ page }) => {
@@ -51,7 +51,7 @@ test('questions 2, 4 and 5 hold several answers, and every ticked box reaches th
   // The PDF prints each ticked row as ticked -- the engine's checklist rows
   // carry "Yes — "/"No — " in the tagged text (the box glyph is decorative),
   // so the text layer says which rows are ticked.
-  await page.evaluate(() => (window as any).flushPendingSave());
+  await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
   await go(page, '/print');
   const button = page.locator('[data-form-action="save-pdf-plan-initial"]');
   await expect(button).toBeEnabled({ timeout: 20_000 });
@@ -113,15 +113,15 @@ test('a filing saved under the old one-string shape reads back as one ticked box
   await createWard(page, 'Initial Plan Legacy Shape', 'planInitial');
   await fillMinimalValidPlanInitialWard(page);
   await page.evaluate(() => {
-    const d = (window as any).D;
+    const d = (window as any).GuardianForms.testing.snapshot().filing;
     for (const k of ['q2ALF', 'q2GroupHome', 'q2Intermediate', 'q2PrivateResidence', 'q2SkilledNursing', 'q2Specialized', 'q2StateHospital', 'q2Other',
       'q4Psych', 'q4Outpatient', 'q4Inpatient', 'q4None', 'q4Other', 'q5CareFacility', 'q5NursesAides', 'q5FamilyFriends', 'q5Other']) delete d[k];
     Object.assign(d, { q2Setting: 'Skilled Nursing', q4Mental: 'Ongoing Treatment Inpatient', q5Personal: 'Family provides personal care assistance', q5Explain: '' });
-    (window as any).autoSave();
+    (window as any).GuardianForms.testing.replaceFiling(d);
   });
   await go(page, '/p3');
   const after = await page.evaluate(() => {
-    const d = (window as any).D;
+    const d = (window as any).GuardianForms.testing.snapshot().filing;
     return { q2SkilledNursing: d.q2SkilledNursing, q4Inpatient: d.q4Inpatient, q5Other: d.q5Other, q5Explain: d.q5Explain, legacy: ['q2Setting', 'q4Mental', 'q5Personal'].filter((k) => k in d) };
   });
   expect(after).toEqual({ q2SkilledNursing: true, q4Inpatient: true, q5Other: true, q5Explain: 'Family provides personal care assistance', legacy: [] });
@@ -134,14 +134,14 @@ test('nothing ticked on a question is still an export issue, as it was', async (
   await createWard(page, 'Initial Plan Nothing Ticked', 'planInitial');
   await fillMinimalValidPlanInitialWard(page);
   await page.evaluate(() => {
-    const d = (window as any).D;
+    const d = (window as any).GuardianForms.testing.snapshot().filing;
     for (const k of ['q2ALF', 'q2GroupHome', 'q2Intermediate', 'q2PrivateResidence', 'q2SkilledNursing', 'q2Specialized', 'q2StateHospital', 'q2Other',
       'q4Psych', 'q4Outpatient', 'q4Inpatient', 'q4None', 'q4Other', 'q5CareFacility', 'q5NursesAides', 'q5FamilyFriends', 'q5Other']) d[k] = false;
-    (window as any).autoSave();
+    (window as any).GuardianForms.testing.replaceFiling(d);
   });
   const issues = await messages(page);
   expect(issues).toContain('2–3. Setting & Medical Care — Best-suited residential setting is required');
   expect(issues).toContain('4–5. Mental Health & Personal Care — Mental health service provision is required');
   expect(issues).toContain('4–5. Mental Health & Personal Care — Personal care provision is required');
-  expect(await page.evaluate(() => (window as any).computeNavChecks().checks['pi-p3']), 'the sidebar agrees').toBe(false);
+  expect(await page.evaluate(() => (window as any).GuardianForms.testing.status.navChecks().checks['pi-p3']), 'the sidebar agrees').toBe(false);
 });

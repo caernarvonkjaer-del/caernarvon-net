@@ -104,7 +104,7 @@ async function observe(page: Page, pageErrors: string[]) {
     startupScreen: !!document.querySelector('#startup-choice-overlay.show'),
     passwordPrompt: !!document.querySelector('#unlock-overlay.show'),
     passwordError: (() => { const e = document.querySelector('#unlock-error') as HTMLElement | null; return e && e.offsetParent !== null ? (e.textContent || '').trim() : null; })(),
-    filingsLoaded: ((window as any).caseFile?.wards || []).length,
+    filingsLoaded: ((window as any).GuardianForms.testing.snapshot().caseFile?.wards || []).length,
   }), DYN_DIALOG);
   return { ...seen, pageErrors: [...pageErrors] };
 }
@@ -126,15 +126,15 @@ for (const entry of MANIFEST.fixtures) {
       await expect(page.locator('#unlock-overlay')).not.toHaveClass(/show/);
     }
     await expect(page.locator('#startup-choice-overlay')).not.toHaveClass(/show/);
-    await page.waitForFunction((n) => ((window as any).caseFile?.wards || []).length === n, entry.wrote.filings.length);
+    await page.waitForFunction((n) => ((window as any).GuardianForms.testing.snapshot().caseFile?.wards || []).length === n, entry.wrote.filings.length);
 
     const loaded = await page.evaluate(() => {
       const w = window as any;
-      const cf = w.caseFile;
+      const cf = w.GuardianForms.testing.snapshot().caseFile;
       return JSON.parse(JSON.stringify({
         wards: cf.wards, parties: cf.parties || [], cases: cf.cases || [], dismissedPartyPairs: cf.dismissedPartyPairs || [],
         guardianName: cf.guardianName ?? null, guardianEmail: cf.guardianEmail ?? null, selectedCircuit: cf.selectedCircuit ?? null,
-        securityMode: w._securityMode ?? null,
+        securityMode: w.GuardianForms.testing.persistenceState.securityMode(),
       }));
     });
     expect(loaded.wards.map((x: any) => [x.wardName, x.inventoryType]), 'every filing, in order')
@@ -153,8 +153,8 @@ for (const entry of MANIFEST.fixtures) {
     // Each filing opens for editing.
     const opened: string[] = [];
     for (const ward of loaded.wards) {
-      const ok = await page.evaluate((id) => (window as any).switchWard(id), ward.wardId);
-      const active = await page.evaluate(() => (window as any).D?.wardId);
+      const ok = await page.evaluate((id) => (window as any).GuardianForms.testing.activateFiling.open(id), ward.wardId);
+      const active = await page.evaluate(() => (window as any).GuardianForms.testing.snapshot().filing?.wardId);
       if (ok !== false && active === ward.wardId) opened.push(ward.inventoryType);
     }
     expect(opened, 'every filing opens for editing').toEqual(loaded.wards.map((x: any) => x.inventoryType));
@@ -183,7 +183,7 @@ for (const label of ['01-ms34-2', '22-production-0922', '27-branch-point']) {
     expect(refused.filingsLoaded, 'nothing loaded').toBe(0);
     await enterPassword(page, entry.password);
     await expect(page.locator('#unlock-overlay')).not.toHaveClass(/show/);
-    await page.waitForFunction((n) => ((window as any).caseFile?.wards || []).length === n, entry.wrote.filings.length);
+    await page.waitForFunction((n) => ((window as any).GuardianForms.testing.snapshot().caseFile?.wards || []).length === n, entry.wrote.filings.length);
     expect(pageErrors).toEqual([]);
     expect(refused, 'what a filer sees').toEqual(record('wrongPassword', entry.file, refused));
   });

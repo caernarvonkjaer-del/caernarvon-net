@@ -30,7 +30,7 @@ test.describe('annual-accounting feature module', () => {
     await createWard(page, 'Annual Nav Test Ward', 'annual');
 
     for (const route of ANNUAL_PAGES) {
-      await page.evaluate((r) => (window as any).navigate(r), route);
+      await page.evaluate((r) => (window as any).GuardianForms.testing.navigate(r), route);
       await expect(page.locator('#main-content')).not.toBeEmpty();
     }
 
@@ -40,7 +40,7 @@ test.describe('annual-accounting feature module', () => {
   test('an incomplete filing is blocked from export with a clear error', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Incomplete Annual Ward', 'annual');
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
 
     await page.locator('[data-annual-action="save-pdf"]').evaluate((button: HTMLButtonElement) => {
       button.disabled = false;
@@ -55,7 +55,7 @@ test.describe('annual-accounting feature module', () => {
     await freshStartNoPassword(page);
     await createWard(page, 'Complete Annual PDF Ward', 'annual');
     await fillMinimalValidAnnualWard(page);
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
 
     const downloadPromise = page.waitForEvent('download', { timeout: 20_000 });
     await page.locator('[data-annual-action="save-pdf"]').click();
@@ -74,7 +74,7 @@ test.describe('annual-accounting feature module', () => {
     await freshStartNoPassword(page);
     await createWard(page, 'Excel Roundtrip Annual Ward', 'annual');
     await fillMinimalValidAnnualWard(page);
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
 
     const downloadPromise = page.waitForEvent('download', { timeout: 20_000 });
     await page.locator('[data-annual-action="save-excel"]').click();
@@ -85,7 +85,7 @@ test.describe('annual-accounting feature module', () => {
 
     // A second, blank Annual ward to import into.
     await createWard(page, 'Blank Annual Import Target', 'annual');
-    await page.evaluate(() => (window as any).navigate('/'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
 
     const errors: string[] = [];
     page.on('pageerror', (e) => errors.push(e.message));
@@ -93,13 +93,13 @@ test.describe('annual-accounting feature module', () => {
     // Annual's workbook has far more sheets than Simplified's, so parsing
     // can take longer than a fixed short wait -- poll for the actual
     // completion signal instead of guessing a timeout.
-    await page.waitForFunction(() => (window as any).D.caseNumber === '2026-CP-000789', { timeout: 10_000 });
+    await page.waitForFunction(() => (window as any).GuardianForms.testing.field('caseNumber') === '2026-CP-000789', { timeout: 10_000 });
 
     const imported = await page.evaluate(() => ({
-      wardName: (window as any).D.wardName,
-      caseNumber: (window as any).D.caseNumber,
-      county: (window as any).D.county,
-      guardian: (window as any).D.guardian,
+      wardName: (window as any).GuardianForms.testing.field('wardName'),
+      caseNumber: (window as any).GuardianForms.testing.field('caseNumber'),
+      county: (window as any).GuardianForms.testing.field('county'),
+      guardian: (window as any).GuardianForms.testing.field('guardian'),
     }));
     expect(imported.caseNumber).toBe('2026-CP-000789');
     expect(imported.county).toBe('Pinellas');
@@ -116,15 +116,15 @@ test.describe('annual-accounting feature module', () => {
     await createWard(page, 'Annual Cycle Ward', 'annual');
     await createWard(page, 'Other Cycle Ward', 'guardian');
 
-    // @ts-expect-error - caseFile is a page-global from legacy-app.js, not declared in this file
-    const wards = await page.evaluate(() => caseFile.wards.map((w: any) => ({ id: w.wardId, type: w.inventoryType })));
+    const wards = await page.evaluate(() => (window as any).GuardianForms.testing.snapshot().caseFile.wards
+      .map((w: any) => ({ id: w.wardId, type: w.inventoryType })));
     const annualId = wards.find((w: any) => w.type === 'annual').id;
     const guardianId = wards.find((w: any) => w.type === 'guardian').id;
 
     for (let i = 0; i < 15; i++) {
-      await page.evaluate((id) => (window as any).switchWard(id), annualId);
-      await page.evaluate((r) => (window as any).navigate(r), '/scha');
-      await page.evaluate((id) => (window as any).switchWard(id), guardianId);
+      await page.evaluate((id) => (window as any).GuardianForms.testing.activateFiling.open(id), annualId);
+      await page.evaluate((r) => (window as any).GuardianForms.testing.navigate(r), '/scha');
+      await page.evaluate((id) => (window as any).GuardianForms.testing.activateFiling.open(id), guardianId);
     }
 
     const mainContentCount = await page.locator('#main-content').count();
@@ -136,10 +136,10 @@ test.describe('annual-accounting feature module', () => {
     // click delegate should have been unbound on dispose -- a probe element
     // using that attribute must not still reach Annual's handler. Same
     // technique simplified-mount.spec.ts already uses against its own
-    // data-simplified-action delegate.
-    const staleDelegateCalls = await page.evaluate(() => {
-      let calls = 0;
-      (window as any).showPickPartyModal = () => { calls += 1; };
+    // data-simplified-action delegate. What is watched is what the handler
+    // does -- open the Link to Shared Record dialog -- not a stub of the app
+    // function behind it (Milestone 70, 70T).
+    const probeLinkParty = () => page.evaluate(() => {
       const probe = document.createElement('button');
       probe.dataset.annualAction = 'link-party';
       probe.dataset.role = 'guardian';
@@ -147,9 +147,18 @@ test.describe('annual-accounting feature module', () => {
       document.getElementById('main-content')?.append(probe);
       probe.click();
       probe.remove();
-      return calls;
     });
-    expect(staleDelegateCalls).toBe(0);
+    const linkDialog = page.locator('#pickPartyModal.show');
+    await probeLinkParty();
+    await page.waitForTimeout(1_000); // longer than the live handler takes (the control below)
+    await expect(linkDialog, 'a disposed delegate opens nothing').toHaveCount(0);
+    // Control: with the Annual filing mounted, the same probe opens it.
+    await page.evaluate((id) => (window as any).GuardianForms.testing.activateFiling.open(id), annualId);
+    await page.evaluate((r) => (window as any).GuardianForms.testing.navigate(r), '/scha');
+    await probeLinkParty();
+    await expect(linkDialog, 'the probe reaches a live delegate').toBeVisible({ timeout: 1_000 });
+    await page.locator('[data-modal-action="close"][data-modal-id="pickPartyModal"]').click();
+    await expect(linkDialog).toHaveCount(0);
 
     expect(errors, `console/page errors during repeated entry/exit: ${errors.join('\n')}`).toEqual([]);
   });
@@ -165,14 +174,14 @@ test.describe('annual-accounting feature module', () => {
     await expect(sidebarTotal).toHaveText('$0.00');
 
     // Enter starting balance on Part II
-    await page.evaluate(() => (window as any).navigate('/p2'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/p2'));
     await page.locator('#main-content [data-annual-path="startingBalance"]').fill('100000');
     await page.locator('#main-content [data-annual-path="startingBalance"]').dispatchEvent('input');
     await page.locator('#main-content [data-annual-path="startingBalance"]').dispatchEvent('change');
     await expect(sidebarTotal).toHaveText('$100,000.00');
 
     // Add Income in Schedule A
-    await page.evaluate(() => (window as any).navigate('/scha'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/scha'));
     await page.locator('#main-content [data-annual-action="add-row"][data-collection="schA"]').click();
     await dismissScheduleDocPrompt(page); // Milestone 57C-R advisory modal
     const payerInput = page.locator('#main-content [data-annual-path="schA.0.payer"]');
@@ -191,12 +200,12 @@ test.describe('annual-accounting feature module', () => {
     await expect(sidebarTotal).toHaveText('$125,000.00');
 
     // Navigate to Part VIII
-    await page.evaluate(() => (window as any).navigate('/p8'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/p8'));
     const trustYes = page.locator('#main-content input[type="radio"][data-form-path="trusts.0.hasTrust"][value="Yes"]');
     await expect(trustYes).toBeVisible();
     await trustYes.check();
 
-    const hasTrustVal = await page.evaluate(() => (window as any).D.trusts?.[0]?.hasTrust);
+    const hasTrustVal = await page.evaluate(() => (window as any).GuardianForms.testing.field('trusts')?.[0]?.hasTrust);
     expect(hasTrustVal).toBe('Yes');
 
     // Fill in trust 1 details
@@ -206,7 +215,7 @@ test.describe('annual-accounting feature module', () => {
     // Check PDF model output for Part VIII
     const pdfModel = await page.evaluate(async () => {
       const mod = await import('/probate-guardian/src/features/annual-accounting/pdf-model.js');
-      return mod.buildAnnualAccountingModel((window as any).D);
+      return mod.buildAnnualAccountingModel((window as any).GuardianForms.testing.snapshot().filing);
     });
     const part8Section = pdfModel.sections.find((s: any) => s.id === 'part8');
     expect(part8Section).toBeDefined();
@@ -220,8 +229,8 @@ test.describe('annual-accounting feature module', () => {
 
     // Remove row on Schedule A
     await page.evaluate(() => {
-      (window as any).D.schA = [];
-      (window as any).navigate('/scha');
+      (window as any).GuardianForms.testing.patchFiling({ 'schA': [] });
+      (window as any).GuardianForms.testing.navigate('/scha');
     });
 
     const emptyCheck = page.locator('#main-content input[type="checkbox"][data-annual-change="schedule-no-items"]');
@@ -229,14 +238,14 @@ test.describe('annual-accounting feature module', () => {
     await emptyCheck.check();
     await emptyCheck.dispatchEvent('change');
 
-    const state = await page.evaluate(() => (window as any).D.scheduleNoItems?.scha);
+    const state = await page.evaluate(() => (window as any).GuardianForms.testing.field('scheduleNoItems')?.scha);
     expect(state).toBe(true);
   });
 
   test('rapid Schedule B-2 date entry commits every date before navigation', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Rapid Date Entry Ward', 'annual');
-    await page.evaluate(() => (window as any).navigate('/schb2'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/schb2'));
     await page.locator('[data-annual-action="add-row"][data-collection="schB2"]').click();
     await dismissScheduleDocPrompt(page); // Milestone 57C-R advisory modal
 
@@ -255,11 +264,11 @@ test.describe('annual-accounting feature module', () => {
         input.value = value;
         input.dispatchEvent(new Event('input', { bubbles: true }));
       }
-      (window as any).navigate('/schb3');
+      (window as any).GuardianForms.testing.navigate('/schb3');
     });
 
-    await page.evaluate(() => (window as any).navigate('/schb2'));
-    const dates = await page.evaluate(() => (window as any).D.schB2[0]);
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/schb2'));
+    const dates = await page.evaluate(() => (window as any).GuardianForms.testing.field('schB2.0'));
     expect(dates).toMatchObject({
       periodFrom: '2026-02-14',
       periodTo: '2026-03-14',
@@ -277,7 +286,7 @@ test.describe('annual-accounting feature module', () => {
   test('Schedule C description preserves an apostrophe through the security-format blur handler', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Apostrophe Ward', 'annual');
-    await page.evaluate(() => (window as any).navigate('/schc'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/schc'));
     await page.locator('[data-annual-action="add-row"][data-collection="schC"]').click();
     await dismissScheduleDocPrompt(page); // Milestone 57C-R advisory modal
 
@@ -286,7 +295,7 @@ test.describe('annual-accounting feature module', () => {
     await descInput.blur();
 
     expect(await descInput.inputValue()).toBe("Sale of ward's homestead");
-    expect(await page.evaluate(() => (window as any).D.schC[0].description)).toBe("Sale of ward's homestead");
+    expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('schC.0.description'))).toBe("Sale of ward's homestead");
   });
 
   // Milestone 40H-H: Schedule E/F-1/F-2 computed their totals locally at
@@ -298,7 +307,7 @@ test.describe('annual-accounting feature module', () => {
   test('Schedule F-1 total updates live after entering a sale price, with no navigation', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'F1 Live Total Ward', 'annual');
-    await page.evaluate(() => (window as any).navigate('/schf1'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/schf1'));
     await page.locator('[data-annual-action="add-row"][data-collection="schF1"]').click();
     await dismissScheduleDocPrompt(page); // Milestone 57C-R advisory modal
 
@@ -320,15 +329,15 @@ test.describe('annual-accounting feature module', () => {
       ['trustAccounting', 'Trust Accounting', 'TRUST GUARDIANSHIP ACCOUNTING'],
     ]) {
       await createWard(page, `${label} Identity Ward`, inventoryType);
-      await page.evaluate(() => (window as any).navigate('/p4'));
+      await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/p4'));
       await expect(page.locator('#main-content')).toContainText(label);
 
       const identity = await page.evaluate(async () => {
         const mod = await import('/probate-guardian/src/features/annual-accounting/pdf-model.js');
-        const model = mod.buildAnnualAccountingModel((window as any).D);
+        const model = mod.buildAnnualAccountingModel((window as any).GuardianForms.testing.snapshot().filing);
         return {
-          filingType: (window as any).D.filingType,
-          inventoryType: (window as any).D.inventoryType,
+          filingType: (window as any).GuardianForms.testing.field('filingType'),
+          inventoryType: (window as any).GuardianForms.testing.field('inventoryType'),
           formName: model.metadata.formName,
           title: model.metadata.title,
           preparer: model.sections.find((section: any) => section.id === 'part4')?.blocks?.[0]?.text,
@@ -371,14 +380,14 @@ test.describe('annual-accounting feature module', () => {
     // reconciliation trivially balances at 0=0) -- the invariant under test
     // is that all three sources always agree, not which way any one key
     // starts out.
-    await page.evaluate(() => (window as any).navigate('/summary'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/summary'));
     for (const r of await crossCheckNavAndSummaryStatus(page, entries)) {
       expect(r.summaryComplete, `${r.route} (blank filing)`).toBe(r.expectComplete);
       if (r.sidebarComplete !== null) expect(r.summaryComplete, `${r.route} (blank filing)`).toBe(r.sidebarComplete);
     }
 
     await fillMinimalValidAnnualWard(page);
-    await page.evaluate(() => (window as any).navigate('/summary'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/summary'));
     for (const r of await crossCheckNavAndSummaryStatus(page, entries)) {
       expect(r.summaryComplete, `${r.route} (fully filled)`).toBe(r.expectComplete);
       if (r.sidebarComplete !== null) expect(r.summaryComplete, `${r.route} (fully filled)`).toBe(r.sidebarComplete);
@@ -397,7 +406,7 @@ test('Cover page renders byte-identical visible text and control values through 
   await freshStartNoPassword(page);
   await createWard(page, 'Acct Diff Ward', 'annual');
   await fillMinimalValidAnnualWard(page);
-  await page.evaluate(() => (window as any).navigate('/'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
   const snapshot = await extractFormContentSnapshot(page);
   // Milestone 63E: the Cover gained an optional UCN field -- one label and one (empty) input.
   expect(snapshot).toBe("TEST SYSTEM - Do not use for filing - Cover & Part I — Required Information\nAll Filings\n?\nGeneral Instructions\nImport Excel File (existing annual accounting template)\nREQUIRED INFORMATION\nName of Ward\n*\nCase Number\n?\n*\nGuardianship Inception Date (GID)\n*\nUse MM/DD/YYYY\nUCN\nPeriod From\n*\nUse MM/DD/YYYY\nPeriod To\n*\nUse MM/DD/YYYY\nFiling Type\n— select —\nAnnual\nFinal\nTrust\nAmended Form?\nYes\nNo\nGUARDIAN & ATTORNEY\nGuardian\n*\nAttorney for Guardian\nCounty\nType of Guardianship\n*\n— select —\nPlenary\nLimited\nGuardian Advocate\nVoluntary\nMinor - Person\nMinor - Property\nMinor - Person - Property\nRelated Case Numbers (siblings/relatives with guardianships)\nQUICK SUMMARY (AUTO-CALCULATED)\nStarting Balance\n10,000.00\nSch A — Income\n500.00\nTotal Disbursements (B-1 thru B-4)\n0.00\nSch C — Capital Adj. Net\n0.00\nNet Assets at End of Period\n10,500.00\nNet Assets from Sch D (should match above)\n0.00\nNext →\n---CONTROL VALUES---\n[input:]\n[input:Acct Diff Ward]\n[input:26-000789]\n[input:01/01/2025]\n[input:]\n[input:01/01/2026]\n[input:12/31/2026]\n[select:Annual]\n[radio:yesno_amendedForm=unchecked]\n[radio:yesno_amendedForm=checked]\n[input:Sample Guardian]\n[input:Sample Attorney]\n[input:Pinellas]\n[select:]\n[input:]");
@@ -408,7 +417,7 @@ for (const alias of ['finalAccounting', 'trustAccounting']) {
     await freshStartNoPassword(page);
     await createWard(page, 'Acct Alias Ward', alias);
     await fillMinimalValidAnnualWard(page);
-    await page.evaluate(() => (window as any).navigate('/'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
     const snapshot = await extractFormContentSnapshot(page);
     expect(snapshot).toContain('Period From');
     expect(snapshot).toContain('Period To');

@@ -22,6 +22,7 @@ import {
   getWardFileName,
   buildCaseFileBlob,
   buildSingleWardExportBlob,
+  saveBlobAs,
 } from '../../src/core/persistence/case-file.js';
 import { getCaseFile, setCaseFile } from '../../src/core/state.js';
 
@@ -362,5 +363,38 @@ describe('activity log: automatic saves are not logged', () => {
     await expect(writeCaseToHandle(failing, true)).rejects.toThrow('disk full');
     expect(logged).toEqual([]);
     expect(getLastExportAt()).toBeNull();
+  });
+});
+
+// saveBlobAs()'s pre-write validator contract, moved from
+// tests/e2e/case-file-protection.spec.ts by Milestone 70's 70T (that test
+// called window.saveBlobAs() with window.validateWardBackupOverwrite). The
+// filer's path through it -- the dashboard's Backup button refusing to
+// overwrite the multi-filing case file -- stays in that browser spec.
+describe('saveBlobAs(): a pre-write validator that refuses stops the write', () => {
+  let picked;
+  beforeEach(() => {
+    picked = { name: 'case-file.sav', writes: [], createWritableCalls: 0 };
+    picked.createWritable = async () => {
+      picked.createWritableCalls += 1;
+      return { write: async (b) => { picked.writes.push(b); }, close: async () => {} };
+    };
+    globalThis.window = { ...(globalThis.window || {}), showSaveFilePicker: async () => picked };
+  });
+  afterEach(() => { delete globalThis.window.showSaveFilePicker; });
+
+  test('a refusal throws AbortError before anything is opened for writing', async () => {
+    const seen = [];
+    await expect(saveBlobAs(new Blob(['x']), 'test.sav', async (handle) => { seen.push(handle); return false; }))
+      .rejects.toMatchObject({ name: 'AbortError' });
+    expect(seen).toEqual([picked]);
+    expect(picked.createWritableCalls).toBe(0);
+    expect(picked.writes).toEqual([]);
+  });
+
+  test('control: an approval writes the blob to the picked file', async () => {
+    const blob = new Blob(['x']);
+    await expect(saveBlobAs(blob, 'test.sav', async () => true)).resolves.toBe(picked);
+    expect(picked.writes).toEqual([blob]);
   });
 });

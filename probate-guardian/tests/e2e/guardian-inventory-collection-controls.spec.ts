@@ -22,7 +22,7 @@ const RECIPIENT_ROUTE = '/d5';
 const COVER_ROUTE = '/';
 
 async function goto(page: import('@playwright/test').Page, route: string) {
-  await page.evaluate((r) => (window as any).navigate(r), route);
+  await page.evaluate((r) => (window as any).GuardianForms.testing.navigate(r), route);
 }
 
 test.describe('Milestone 51E: Initial Inventory collection Add/Remove controls', () => {
@@ -46,7 +46,7 @@ test.describe('Milestone 51E: Initial Inventory collection Add/Remove controls',
     // must be given data before the next one is added. This is the ordinary user
     // flow (type a name, then add another), and asserting it here pins the
     // pruning rule alongside the Add/Remove handlers it interacts with.
-    await page.evaluate(() => { (window as any).D.guardians[1].name = 'Second Guardian'; });
+    await page.evaluate(() => { (window as any).GuardianForms.testing.patchFiling({ 'guardians.1.name': 'Second Guardian' }); });
     await goto(page, GUARDIAN_ROUTE);
 
     await addCo.click();
@@ -54,7 +54,7 @@ test.describe('Milestone 51E: Initial Inventory collection Add/Remove controls',
 
     // Max three guardians -- the Add button stops rendering rather than erroring.
     await expect(addCo).toHaveCount(0);
-    expect(await page.evaluate(() => (window as any).D.guardians.length)).toBe(3);
+    expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('guardians.length'))).toBe(3);
   });
 
   // Milestone 51H regression test. Written red: before the fix, clicking
@@ -88,7 +88,7 @@ test.describe('Milestone 51E: Initial Inventory collection Add/Remove controls',
     // And the store must not accumulate invisible blank rows behind the UI: what
     // is rendered and what is stored have to agree.
     const state = await page.evaluate(() => ({
-      stored: (window as any).D.guardians.length,
+      stored: (window as any).GuardianForms.testing.field('guardians.length'),
       rendered: document.querySelectorAll('[data-inventory-action="remove-guardian"]').length + 1,
     }));
     expect(state.stored, 'stored guardian rows must match the rendered cards').toBe(state.rendered);
@@ -101,13 +101,14 @@ test.describe('Milestone 51E: Initial Inventory collection Add/Remove controls',
 
     // Build three guardians that all carry data, so none is pruned.
     await page.locator('[data-inventory-action="add-guardian"]').click();
-    await page.evaluate(() => { (window as any).D.guardians[1].name = 'Second Guardian'; });
+    await page.evaluate(() => { (window as any).GuardianForms.testing.patchFiling({ 'guardians.1.name': 'Second Guardian' }); });
     await goto(page, GUARDIAN_ROUTE);
     await page.locator('[data-inventory-action="add-guardian"]').click();
     await page.evaluate(() => {
-      const d = (window as any).D;
+      const d = (window as any).GuardianForms.testing.snapshot().filing;
       d.guardians[0].name = 'First Guardian';
       d.guardians[2].name = 'Third Guardian';
+      (window as any).GuardianForms.testing.replaceFiling(d); // setup (D9)
     });
     await goto(page, GUARDIAN_ROUTE);
 
@@ -117,7 +118,7 @@ test.describe('Milestone 51E: Initial Inventory collection Add/Remove controls',
     // belongs to guardians[1].
     await page.locator('[data-inventory-action="remove-guardian"]').first().click();
 
-    const names = await page.evaluate(() => (window as any).D.guardians.map((g: any) => g.name));
+    const names = await page.evaluate(() => (window as any).GuardianForms.testing.field('guardians').map((g: any) => g.name));
     expect(names).toEqual(['First Guardian', 'Third Guardian']);
     await expect(page.locator('[data-inventory-action="remove-guardian"]')).toHaveCount(1);
   });
@@ -128,21 +129,22 @@ test.describe('Milestone 51E: Initial Inventory collection Add/Remove controls',
     await goto(page, GUARDIAN_ROUTE);
 
     await page.locator('[data-inventory-action="add-guardian"]').click();
-    await page.evaluate(() => { (window as any).D.guardians[1].name = 'Second Guardian'; });
+    await page.evaluate(() => { (window as any).GuardianForms.testing.patchFiling({ 'guardians.1.name': 'Second Guardian' }); });
     await goto(page, GUARDIAN_ROUTE);
     await page.locator('[data-inventory-action="add-guardian"]').click();
     // AGENTS.md section 6: deleting a guardian must cleanly unlink its partyId
     // rather than leave the array shifted against the rows.
     await page.evaluate(() => {
-      const d = (window as any).D;
+      const d = (window as any).GuardianForms.testing.snapshot().filing;
       d.guardians[2].name = 'Third Guardian';
       d.guardianPartyIds = ['p-zero', 'p-one', 'p-two'];
+      (window as any).GuardianForms.testing.replaceFiling(d); // setup (D9)
     });
     await goto(page, GUARDIAN_ROUTE);
 
     await page.locator('[data-inventory-action="remove-guardian"]').first().click();
 
-    expect(await page.evaluate(() => (window as any).D.guardianPartyIds)).toEqual(['p-zero', 'p-two']);
+    expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('guardianPartyIds'))).toEqual(['p-zero', 'p-two']);
   });
 
   test('service recipients: add and remove round-trip and preserve entered names', async ({ page }) => {
@@ -155,17 +157,18 @@ test.describe('Milestone 51E: Initial Inventory collection Add/Remove controls',
 
     // Service recipients default to two rows, and Remove renders on every row
     // while more than one remains.
-    expect(await page.evaluate(() => (window as any).D.serviceRecipients.length)).toBe(2);
+    expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('serviceRecipients.length'))).toBe(2);
     await expect(removeRecipient).toHaveCount(2);
 
     await addRecipient.click();
     await expect(removeRecipient).toHaveCount(3);
 
     await page.evaluate(() => {
-      const d = (window as any).D;
+      const d = (window as any).GuardianForms.testing.snapshot().filing;
       d.serviceRecipients[0].name = 'Recipient One';
       d.serviceRecipients[1].name = 'Recipient Two';
       d.serviceRecipients[2].name = 'Recipient Three';
+      (window as any).GuardianForms.testing.replaceFiling(d); // setup (D9)
     });
     await goto(page, RECIPIENT_ROUTE);
 
@@ -173,7 +176,7 @@ test.describe('Milestone 51E: Initial Inventory collection Add/Remove controls',
     // values simply survive the re-render each handler triggers.
     await removeRecipient.nth(1).click();
 
-    const names = await page.evaluate(() => (window as any).D.serviceRecipients.map((r: any) => r.name));
+    const names = await page.evaluate(() => (window as any).GuardianForms.testing.field('serviceRecipients').map((r: any) => r.name));
     expect(names).toEqual(['Recipient One', 'Recipient Three']);
     await expect(removeRecipient).toHaveCount(2);
   });
@@ -188,7 +191,7 @@ test.describe('Milestone 51E: Initial Inventory collection Add/Remove controls',
     await addRecipient.click();
 
     await expect(addRecipient).toHaveCount(0);
-    expect(await page.evaluate(() => (window as any).D.serviceRecipients.length)).toBe(4);
+    expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('serviceRecipients.length'))).toBe(4);
   });
 
   test('inventory witnesses: add, keep entered values, and remove the chosen row', async ({ page }) => {
@@ -209,43 +212,26 @@ test.describe('Milestone 51E: Initial Inventory collection Add/Remove controls',
     await expect(removeWitness).toHaveCount(2);
 
     await page.evaluate(() => {
-      const d = (window as any).D;
+      const d = (window as any).GuardianForms.testing.snapshot().filing;
       d.witnesses[0].name = 'Witness One';
       d.witnesses[1].name = 'Witness Two';
+      (window as any).GuardianForms.testing.replaceFiling(d); // setup (D9)
     });
     await goto(page, COVER_ROUTE);
 
     // Values survive the re-render every add/remove triggers.
-    const before = await page.evaluate(() => (window as any).D.witnesses.map((w: any) => w.name));
+    const before = await page.evaluate(() => (window as any).GuardianForms.testing.field('witnesses').map((w: any) => w.name));
     expect(before).toEqual(['Witness One', 'Witness Two']);
 
     await removeWitness.first().click();
 
-    const after = await page.evaluate(() => (window as any).D.witnesses.map((w: any) => w.name));
+    const after = await page.evaluate(() => (window as any).GuardianForms.testing.field('witnesses').map((w: any) => w.name));
     expect(after).toEqual(['Witness Two']);
     await expect(removeWitness).toHaveCount(1);
   });
 
-  test('none of these controls rely on a window.* bridge that Milestone 51E removed', async ({ page }) => {
-    await freshStartNoPassword(page);
-    await createWard(page, 'Collection Controls Ward', 'guardian');
-
-    // The 11 deleted bridges must genuinely be gone from the global surface,
-    // while the three deliberately-kept ones remain. This pins the decision so
-    // a later "restore the bridges" edit has to be deliberate.
-    const surface = await page.evaluate(() => {
-      const w = window as any;
-      const names = ['addGuardian', 'removeGuardian', 'addRecipient', 'removeRecipient',
-        'addWitness', 'removeWitness', 'syncB2VehicleDescription', 'toggleB2Vehicle',
-        'setScheduleNoItems', 'removeEntry', 'pageNav'];
-      const kept = ['addEntry', 'duplicateEntry', 'validateGuardian'];
-      return {
-        stillPresent: names.filter(n => typeof w[n] === 'function'),
-        keptMissing: kept.filter(n => typeof w[n] !== 'function'),
-      };
-    });
-
-    expect(surface.stillPresent, 'bridges 51E deleted must not be back').toEqual([]);
-    expect(surface.keptMissing, 'bridges 51E deliberately kept must still be there').toEqual([]);
-  });
+  // The pin that 51E's eleven deleted window.* bridges stay deleted (and its
+  // three kept ones stay published) lives in tests/unit/removed-window-bridges.spec.js
+  // since Milestone 70's 70T: a browser spec now names no app global but
+  // GuardianForms, not even to prove one absent.
 });

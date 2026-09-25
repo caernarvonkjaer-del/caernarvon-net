@@ -112,7 +112,7 @@ test.describe('hosted offline cache', { tag: '@origin-state' }, () => {
 
     await context.setOffline(true);
     try {
-      await page.evaluate(() => (window as any).addWard('Offline Unopened Feature Ward', 'planMinor'));
+      await page.evaluate(() => (window as any).GuardianForms.testing.createFiling.add('Offline Unopened Feature Ward', 'planMinor'));
       await expect(page.locator('#main-content').getByRole('heading', { name: 'Annual Plan — Minors — Cover' })).toBeVisible();
     } finally {
       await context.setOffline(false);

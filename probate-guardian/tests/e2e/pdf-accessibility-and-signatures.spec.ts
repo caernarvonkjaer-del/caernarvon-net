@@ -33,7 +33,7 @@ test.describe('Non-Raster PDF Generation, Signatures & Bookmarks', () => {
     await freshStartNoPassword(page);
 
     // Open Add Ward modal and create initial guardian inventory ward
-    await page.evaluate(() => (window as any).showAddWardModalForType('guardian'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.createFiling.openDialog('guardian'));
     await page.locator('#new-ward-name').fill('Harold Thomas Bennett');
     await page.locator('#new-ward-type').selectOption('guardian');
     await page.locator('[data-modal-action="add-ward"]').click();
@@ -51,7 +51,7 @@ test.describe('Non-Raster PDF Generation, Signatures & Bookmarks', () => {
     // document's own content.
     await fillMinimalValidGuardianWard(page);
     await page.evaluate(() => {
-      Object.assign((window as any).D, {
+      (window as any).GuardianForms.testing.patchFiling({
         wardName: 'Harold Thomas Bennett',
         caseNumber: '26-002487-GD',
         county: 'Pinellas',
@@ -143,10 +143,9 @@ test.describe('Non-Raster PDF Generation, Signatures & Bookmarks', () => {
         },
       });
 
-      if ((window as any).autoSave) (window as any).autoSave();
     });
 
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
 
     // 3. Preview renders the same shared PDF signature presentation used by
     // Save-as-PDF; there is no separate style selector.
@@ -154,9 +153,9 @@ test.describe('Non-Raster PDF Generation, Signatures & Bookmarks', () => {
 
     // 5. Generate native vector PDF in browser memory and inspect raw stream
     const pdfInspection = await page.evaluate(async () => {
-      const { buildVerifiedInventoryModel, generateVerifiedInventoryPdf } = await (window as any).loadGuardianPdf();
+      const { buildVerifiedInventoryModel, generateVerifiedInventoryPdf } = await (window as any).GuardianForms.testing.generateOutput.guardianPdf();
 
-      const model = buildVerifiedInventoryModel((window as any).D, {
+      const model = buildVerifiedInventoryModel((window as any).GuardianForms.testing.snapshot().filing, {
         printDate: '2026-09-03',
       });
 
@@ -262,7 +261,7 @@ test.describe('Non-Raster PDF Generation, Signatures & Bookmarks', () => {
     });
 
     const pdfInspection = await page.evaluate(async (file) => {
-      const { buildVerifiedInventoryModel, generateVerifiedInventoryPdf } = await (window as any).loadGuardianPdf();
+      const { buildVerifiedInventoryModel, generateVerifiedInventoryPdf } = await (window as any).GuardianForms.testing.generateOutput.guardianPdf();
       const { finalizeCourtFormPdf } = await import('/probate-guardian/src/core/pdf/pdf-finalizer.js');
 
       const model = buildVerifiedInventoryModel({
@@ -321,7 +320,7 @@ test.describe('Non-Raster PDF Generation, Signatures & Bookmarks', () => {
     });
 
     const pdfInspection = await page.evaluate(async (file) => {
-      const { buildPlanAnnualModel, generateCourtFormPdf } = await (window as any).loadPlanAnnualPdf();
+      const { buildPlanAnnualModel, generateCourtFormPdf } = await (window as any).GuardianForms.testing.generateOutput.planAnnualPdf();
       const { finalizeCourtFormPdf } = await import('/probate-guardian/src/core/pdf/pdf-finalizer.js');
       const sourceData = {
         wardName: 'Harold Thomas Bennett',
@@ -364,7 +363,7 @@ test.describe('Non-Raster PDF Generation, Signatures & Bookmarks', () => {
       context.font = '42px Arial';
       context.fillText('Statement Date August 31 2026', 48, 205);
 
-      const { buildVerifiedInventoryModel, generateVerifiedInventoryPdf } = await (window as any).loadGuardianPdf();
+      const { buildVerifiedInventoryModel, generateVerifiedInventoryPdf } = await (window as any).GuardianForms.testing.generateOutput.guardianPdf();
       const model = buildVerifiedInventoryModel({
         wardName: 'Image Attachment Ward',
         caseNumber: '26-002487-GD',

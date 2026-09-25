@@ -45,7 +45,7 @@ test.describe('Excel import: cell shapes the app never exports (Milestone 53B)',
   test('richText, formula, hyperlink, native Date, error and padded-string cells all import correctly', async ({ page }) => {
     await freshStartNoPassword(page);
     await createSimplifiedWard(page, 'Cell Shapes Import Target');
-    await page.evaluate(() => (window as any).navigate('/'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
 
     // ExcelJS is lazily loaded by the app and is not bridged onto window
     // (Milestone 51E deleted window.getExcelJS). Load the same vendored copy
@@ -89,18 +89,18 @@ test.describe('Excel import: cell shapes the app never exports (Milestone 53B)',
 
     await page.setInputFiles('input[type="file"][accept=".xlsx"]', xlsxPath);
     await page.waitForFunction(
-      (expected) => (window as any).D.wardName === expected,
+      (expected) => (window as any).GuardianForms.testing.field('wardName') === expected,
       EXPECTED.wardName,
       { timeout: 15_000 },
     );
 
     const imported = await page.evaluate(() => ({
-      wardName: (window as any).D.wardName,
-      caseNumber: (window as any).D.caseNumber,
-      attorney: (window as any).D.attorney,
-      gid: (window as any).D.gid,
-      guardian: (window as any).D.guardian,
-      county: (window as any).D.county,
+      wardName: (window as any).GuardianForms.testing.field('wardName'),
+      caseNumber: (window as any).GuardianForms.testing.field('caseNumber'),
+      attorney: (window as any).GuardianForms.testing.field('attorney'),
+      gid: (window as any).GuardianForms.testing.field('gid'),
+      guardian: (window as any).GuardianForms.testing.field('guardian'),
+      county: (window as any).GuardianForms.testing.field('county'),
     }));
 
     // richText: both runs joined, no "[object Object]".

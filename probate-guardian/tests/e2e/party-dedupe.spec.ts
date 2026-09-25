@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { freshStartNoPassword, createWard, acceptDynDialog, dismissDynDialog } from './support/target';
+import { freshStartNoPassword, createWard, chooseCoverCounty, acceptDynDialog, dismissDynDialog } from './support/target';
 
 // End-to-end proof for persistence-rewrite Milestone 7: the party
 // de-duplication screen (src/legacy-app.js's pagePartyManagement(), backed
@@ -13,27 +13,27 @@ test.describe('party de-duplication (Milestone 7)', () => {
 
     // Ward A (planInitial): guardian 0, its own party.
     await createWard(page, 'Dedupe Ward A', 'planInitial');
-    await page.evaluate(() => (window as any).navigate('/p9'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/p9'));
     await page.fill('[data-form-path="planGuardians.0.name"]', 'Jane Doe');
     await page.fill('[data-form-path="planGuardians.0.phone"]', '5550100100');
     await page.click('[data-form-action="link-party"][data-role="guardian"][data-index="0"]');
     await page.locator('#pickPartyModal.show').waitFor({ state: 'visible' });
     await page.click('#pickPartyModal [data-modal-action="create-party-from-slot"]');
     await page.locator('#pickPartyModal').waitFor({ state: 'hidden' });
-    const partyIdA = await page.evaluate(() => (window as any).D.guardianPartyIds[0]);
+    const partyIdA = await page.evaluate(() => (window as any).GuardianForms.testing.field('guardianPartyIds.0'));
 
     // Ward B (annual): guardian 0, same name, different phone, a SEPARATE
     // party -- never linked to A. This is the exact scenario the de-dup
     // screen exists to catch.
     await createWard(page, 'Dedupe Ward B', 'annual');
-    await page.evaluate(() => (window as any).navigate('/p3'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/p3'));
     await page.fill('[data-annual-path="guardians.0.name"]', 'Jane Doe');
     await page.fill('[data-annual-path="guardians.0.phone"]', '5550200200');
     await page.click('[data-annual-action="link-party"][data-role="guardian"][data-index="0"]');
     await page.locator('#pickPartyModal.show').waitFor({ state: 'visible' });
     await page.click('#pickPartyModal [data-modal-action="create-party-from-slot"]');
     await page.locator('#pickPartyModal').waitFor({ state: 'hidden' });
-    const partyIdB = await page.evaluate(() => (window as any).D.guardianPartyIds[0]);
+    const partyIdB = await page.evaluate(() => (window as any).GuardianForms.testing.field('guardianPartyIds.0'));
 
     expect(partyIdA).toBeTruthy();
     expect(partyIdB).toBeTruthy();
@@ -54,7 +54,7 @@ test.describe('party de-duplication (Milestone 7)', () => {
     // Reach the screen through the real Help-panel button, not window.navigate.
     // Since Milestone 48 the "?" inside a filing opens the user guide instead
     // of the panel; only the dashboard's "?" still opens the panel.
-    await page.evaluate(() => (window as any).navigate('/dashboard'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/dashboard'));
     await page.waitForURL(/#\/dashboard/);
     await page.click('[data-shell-action="toggle-help"]');
     await page.click('[data-shell-action="party-management"]');
@@ -72,7 +72,7 @@ test.describe('party de-duplication (Milestone 7)', () => {
     // Ward B's guardian slot now resolves to A's data, re-hydrated immediately.
     const wardBPhone = await page.evaluate(() => {
       const w = window as any;
-      const wardB = w.caseFile.wards.find((x: any) => x.inventoryType === 'annual');
+      const wardB = w.GuardianForms.testing.snapshot().caseFile.wards.find((x: any) => x.inventoryType === 'annual');
       return wardB.guardians[0].phone;
     });
     expect(wardBPhone).toBe('(555) 010-0100');
@@ -83,24 +83,18 @@ test.describe('party de-duplication (Milestone 7)', () => {
 
     // Ward A (annual): ward with county 'Orange'
     await createWard(page, 'Conflict Ward X', 'annual');
-    await page.evaluate(() => {
-      const w = window as any;
-      w.commitCoverCounty(w.D, 'Orange');
-    });
-    const partyIdA = await page.evaluate(() => (window as any).D.wardPartyId);
+    await chooseCoverCounty(page, 'Orange');
+    const partyIdA = await page.evaluate(() => (window as any).GuardianForms.testing.field('wardPartyId'));
 
     // Ward B (planInitial): same ward name, conflicting county 'Pasco', separate record (Start Blank)
-    await page.evaluate((t) => (window as any).showAddWardModalForType(t), 'planInitial');
+    await page.evaluate((t) => (window as any).GuardianForms.testing.createFiling.openDialog(t), 'planInitial');
     await page.locator('#addWardModal.show').waitFor({ state: 'visible' });
     await page.fill('#new-ward-name', 'Conflict Ward X');
     await page.selectOption('#carry-source-ward', '');
     await page.click('#addWardModal [data-modal-action="add-ward"]');
     await page.locator('#addWardModal').waitFor({ state: 'hidden' });
-    await page.evaluate(() => {
-      const w = window as any;
-      w.commitCoverCounty(w.D, 'Pasco');
-    });
-    const partyIdB = await page.evaluate(() => (window as any).D.wardPartyId);
+    await chooseCoverCounty(page, 'Pasco');
+    const partyIdB = await page.evaluate(() => (window as any).GuardianForms.testing.field('wardPartyId'));
 
     expect(partyIdA).toBeTruthy();
     expect(partyIdB).toBeTruthy();
@@ -116,7 +110,7 @@ test.describe('party de-duplication (Milestone 7)', () => {
 
     // Navigate to Party Management via the dashboard's Help panel (see the
     // Milestone 48 note in the first test).
-    await page.evaluate(() => (window as any).navigate('/dashboard'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/dashboard'));
     await page.waitForURL(/#\/dashboard/);
     await page.click('[data-shell-action="toggle-help"]');
     await page.click('[data-shell-action="party-management"]');
@@ -145,9 +139,9 @@ test.describe('party de-duplication (Milestone 7)', () => {
     // Verify kept party retained 'Orange', discarded party marked mergedInto, and Ward B now points to partyIdA
     const mergeResult = await page.evaluate(([keepId, discardId]) => {
       const w = window as any;
-      const keepParty = w.resolveParty(keepId);
-      const discardParty = (w.caseFile.parties || []).find((p: any) => p.id === discardId);
-      const wardB = w.caseFile.wards.find((x: any) => x.inventoryType === 'planInitial');
+      const keepParty = w.GuardianForms.testing.sharedRecords.resolveParty(keepId);
+      const discardParty = (w.GuardianForms.testing.snapshot().caseFile.parties || []).find((p: any) => p.id === discardId);
+      const wardB = w.GuardianForms.testing.snapshot().caseFile.wards.find((x: any) => x.inventoryType === 'planInitial');
       return {
         keepCounty: keepParty?.county,
         discardMergedInto: discardParty?.mergedInto,
@@ -165,25 +159,25 @@ test.describe('party de-duplication (Milestone 7)', () => {
 
     // A real linked guardian on a real filing, so the merge has an FK to repoint.
     await createWard(page, 'Compare Ward', 'planInitial');
-    await page.evaluate(() => (window as any).navigate('/p9'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/p9'));
     await page.fill('[data-form-path="planGuardians.0.name"]', 'Alice Smith');
     await page.click('[data-form-action="link-party"][data-role="guardian"][data-index="0"]');
     await page.locator('#pickPartyModal.show').waitFor({ state: 'visible' });
     await page.click('#pickPartyModal [data-modal-action="create-party-from-slot"]');
     await page.locator('#pickPartyModal').waitFor({ state: 'hidden' });
-    const idA = await page.evaluate(() => (window as any).D.guardianPartyIds[0]);
+    const idA = await page.evaluate(() => (window as any).GuardianForms.testing.field('guardianPartyIds.0'));
 
     // Two more records with clearly different names -- nothing auto-detects.
     const { idB, idC } = await page.evaluate(() => {
-      const w = window as any;
-      const b = w.createParty('guardian'); b.name = 'Robert Jones'; b.email = 'robert@example.com';
-      const c = w.createParty('guardian'); c.name = 'Carol White';
+      const t = (window as any).GuardianForms.testing;
+      const b = t.updateSharedRecords.createParty('guardian', { name: 'Robert Jones', email: 'robert@example.com' });
+      const c = t.updateSharedRecords.createParty('guardian', { name: 'Carol White' });
       return { idB: b.id, idC: c.id };
     });
 
     const reminderDismiss = page.locator('[data-shell-action="hide-auto-export-reminder"]');
     if (await reminderDismiss.isVisible()) await reminderDismiss.click();
-    await page.evaluate(() => (window as any).navigate('/party-management'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/party-management'));
     await expect(page).toHaveURL(/#\/party-management/);
 
     const queue = page.locator('#party-dedupe-queue');
@@ -215,7 +209,7 @@ test.describe('party de-duplication (Milestone 7)', () => {
     await expect(unmergeBox(idB)).toBeVisible();
     await expect(compareBox(idB)).toHaveCount(0); // no longer a top-level record
     await expect(compareBox(idC)).toBeEnabled(); // the selection was cleared by the merge
-    expect(await page.evaluate((id) => (window as any).resolveParty(id).email, idA)).toBe('robert@example.com');
+    expect(await page.evaluate((id) => (window as any).GuardianForms.testing.sharedRecords.resolveParty(id).email, idA)).toBe('robert@example.com');
 
     await unmergeBox(idB).check();
     const unmergeButton = page.locator('[data-form-action="party-unmerge-selected"]');
@@ -229,8 +223,8 @@ test.describe('party de-duplication (Milestone 7)', () => {
     await expect(unmergeButton).toHaveCount(0);
     const after = await page.evaluate(([a, b]) => {
       const w = window as any;
-      const sub = w.caseFile.parties.find((p: any) => p.id === b);
-      return { primaryEmail: w.resolveParty(a).email, subMergedInto: sub.mergedInto, subRecord: sub.mergeRecord };
+      const sub = w.GuardianForms.testing.snapshot().caseFile.parties.find((p: any) => p.id === b);
+      return { primaryEmail: w.GuardianForms.testing.sharedRecords.resolveParty(a).email, subMergedInto: sub.mergedInto, subRecord: sub.mergeRecord };
     }, [idA, idB]);
     expect(after.primaryEmail).toBeNull();
     expect(after.subMergedInto).toBeNull();

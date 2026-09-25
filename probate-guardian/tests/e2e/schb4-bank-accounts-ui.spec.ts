@@ -16,14 +16,14 @@ async function openSchB4(page: import('@playwright/test').Page) {
   await createWard(page, 'B4 Accounts Ward', 'annual');
   await fillMinimalValidAnnualWard(page);
   await page.evaluate(() => {
-    const d = (window as any).D;
+    const d = (window as any).GuardianForms.testing.snapshot().filing;
     d.schB4 = [
       { bankAccountId: '', checkNo: '1001', datePaid: '2026-03-04', category: 'Utilities', payee: 'Duke Energy', amount: '184.22' },
       { bankAccountId: '', checkNo: '1002', datePaid: '2026-04-11', category: 'Rent', payee: 'Bayview Apartments', amount: '1250.00' },
     ];
-    (window as any).autoSave();
+    (window as any).GuardianForms.testing.replaceFiling(d);
   });
-  await page.evaluate(() => (window as any).navigate('/schb4'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/schb4'));
   // Landing on a populated financial schedule fires Milestone 57C-R's
   // supplemental-documentation prompt, which would sit over these controls.
   await dismissScheduleDocPrompt(page);
@@ -42,7 +42,7 @@ async function clickAndSettle(page: import('@playwright/test').Page, selector: s
 }
 const accountCards = page => page.locator('.entry-card-header', { hasText: 'Bank Account' });
 const read = (page: import('@playwright/test').Page) => page.evaluate(() => {
-  const d = (window as any).D;
+  const d = (window as any).GuardianForms.testing.snapshot().filing;
   return {
     accounts: (d.schB4Accounts || []).map((a: any) => ({ id: a.id, bankName: a.bankName })),
     rows: (d.schB4 || []).map((r: any) => ({ checkNo: r.checkNo, bankAccountId: r.bankAccountId })),
@@ -76,13 +76,13 @@ test.describe('Schedule B-4 bank accounts', () => {
     for (const a of accounts) expect(a.id, `id ${a.id} looks like an index`).not.toMatch(/^\d+$/);
 
     await page.evaluate((id) => {
-      const d = (window as any).D;
+      const d = (window as any).GuardianForms.testing.snapshot().filing;
       d.schB4Accounts[0].bankName = 'Bay Bank';
       d.schB4Accounts[1].bankName = 'Gulf Credit Union';
       d.schB4[0].bankAccountId = id;
-      (window as any).autoSave();
+      (window as any).GuardianForms.testing.replaceFiling(d);
     }, accounts[0].id);
-    await page.evaluate(() => (window as any).navigate('/schb4'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/schb4'));
     await dismissScheduleDocPrompt(page);
 
     // Once accounts exist the picker appears on every row.
@@ -100,13 +100,13 @@ test.describe('Schedule B-4 bank accounts', () => {
     await expect(accountCards(page)).toHaveCount(1);
     const { accounts } = await read(page);
     await page.evaluate((id) => {
-      const d = (window as any).D;
+      const d = (window as any).GuardianForms.testing.snapshot().filing;
       d.schB4Accounts[0].bankName = 'Bay Bank';
       d.schB4[0].bankAccountId = id;
       d.schB4[1].bankAccountId = id;
-      (window as any).autoSave();
+      (window as any).GuardianForms.testing.replaceFiling(d);
     }, accounts[0].id);
-    await page.evaluate(() => (window as any).navigate('/schb4'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/schb4'));
     await dismissScheduleDocPrompt(page);
 
     // Removing an account with disbursements asks for confirmation first.

@@ -31,7 +31,7 @@ async function openPreview(page: Page) {
   await freshStartNoPassword(page);
   await createWard(page, 'Toolbar Containment Ward', 'planSimplified');
   await fillMinimalValidPlanSimplifiedWard(page);
-  await page.evaluate(() => (window as any).navigate('/print'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
   await page.locator('#print-doc-container .pdf-page').first().waitFor({ state: 'visible', timeout: 20000 });
 }
 

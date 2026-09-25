@@ -2,8 +2,8 @@
  "generatedBy": "node scripts/ms70-assertion-counts.mjs --write-baseline",
  "note": "Milestone 70 per-spec assertion counts (static expect calls). tests/unit/ms70-assertion-counts.spec.js fails when a spec falls below its count; lowering it requires --reason, recorded in dropLog. A tripwire, not proof of equivalence (decision D9).",
  "totals": {
-  "expects": 6261,
-  "tests": 1802
+  "expects": 6364,
+  "tests": 1838
  },
  "counts": {
   "tests/e2e/annotation-toolbar-containment.spec.ts": {
@@ -19,7 +19,7 @@
    "tests": 7
   },
   "tests/e2e/annual-mount.spec.ts": {
-   "expects": 46,
+   "expects": 48,
    "tests": 14
   },
   "tests/e2e/annual-schedule-consistency.spec.ts": {
@@ -43,16 +43,12 @@
    "tests": 2
   },
   "tests/e2e/case-file-protection.spec.ts": {
-   "expects": 16,
-   "tests": 5
+   "expects": 11,
+   "tests": 4
   },
   "tests/e2e/case-file-roundtrip.spec.ts": {
    "expects": 12,
    "tests": 3
-  },
-  "tests/e2e/case-resolver.spec.ts": {
-   "expects": 18,
-   "tests": 5
   },
   "tests/e2e/case-write-through.spec.ts": {
    "expects": 5,
@@ -79,11 +75,11 @@
    "tests": 6
   },
   "tests/e2e/cover-county.spec.ts": {
-   "expects": 26,
+   "expects": 28,
    "tests": 7
   },
   "tests/e2e/dashboard-backup.spec.ts": {
-   "expects": 49,
+   "expects": 51,
    "tests": 9
   },
   "tests/e2e/dashboard-visual.spec.ts": {
@@ -151,15 +147,15 @@
    "tests": 6
   },
   "tests/e2e/guardian-inventory-collection-controls.spec.ts": {
-   "expects": 29,
-   "tests": 8
+   "expects": 27,
+   "tests": 7
   },
   "tests/e2e/guardian-inventory-excel-schedule-layout.spec.ts": {
    "expects": 21,
    "tests": 3
   },
   "tests/e2e/guardian-inventory-mount.spec.ts": {
-   "expects": 59,
+   "expects": 60,
    "tests": 13
   },
   "tests/e2e/guardian-inventory-schedule-layout.spec.ts": {
@@ -183,11 +179,11 @@
    "tests": 4
   },
   "tests/e2e/legacy-ward-data-normalization.spec.ts": {
-   "expects": 15,
+   "expects": 16,
    "tests": 4
   },
   "tests/e2e/mixed-version.characterization.spec.ts": {
-   "expects": 30,
+   "expects": 31,
    "tests": 8
   },
   "tests/e2e/navigation-status.contract.spec.ts": {
@@ -211,8 +207,8 @@
    "tests": 3
   },
   "tests/e2e/party-resolver.spec.ts": {
-   "expects": 178,
-   "tests": 29
+   "expects": 13,
+   "tests": 3
   },
   "tests/e2e/party-write-through.spec.ts": {
    "expects": 4,
@@ -239,7 +235,7 @@
    "tests": 3
   },
   "tests/e2e/pdf-form-specific.spec.ts": {
-   "expects": 134,
+   "expects": 131,
    "tests": 8
   },
   "tests/e2e/pdf-notice-title.spec.ts": {
@@ -311,7 +307,7 @@
    "tests": 1
   },
   "tests/e2e/plan-readiness.contract.spec.ts": {
-   "expects": 18,
+   "expects": 17,
    "tests": 5
   },
   "tests/e2e/plan-signature-date.spec.ts": {
@@ -355,7 +351,7 @@
    "tests": 3
   },
   "tests/e2e/routes.spec.ts": {
-   "expects": 149,
+   "expects": 148,
    "tests": 17
   },
   "tests/e2e/sav-corpus.characterization.spec.ts": {
@@ -379,7 +375,7 @@
    "tests": 7
   },
   "tests/e2e/schedule-docs-period-key.spec.ts": {
-   "expects": 23,
+   "expects": 26,
    "tests": 4
   },
   "tests/e2e/section-guidance-invariant.spec.ts": {
@@ -391,8 +387,8 @@
    "tests": 3
   },
   "tests/e2e/security.spec.ts": {
-   "expects": 7,
-   "tests": 3
+   "expects": 5,
+   "tests": 2
   },
   "tests/e2e/service-attestation-visibility.spec.ts": {
    "expects": 10,
@@ -419,7 +415,7 @@
    "tests": 1
   },
   "tests/e2e/simplified-mount.spec.ts": {
-   "expects": 22,
+   "expects": 23,
    "tests": 8
   },
   "tests/e2e/simplified-part1-identity-cells.spec.ts": {
@@ -450,6 +446,10 @@
    "expects": 25,
    "tests": 6
   },
+  "tests/e2e/testing-adapter.spec.ts": {
+   "expects": 7,
+   "tests": 4
+  },
   "tests/e2e/theme-prepaint.spec.ts": {
    "expects": 15,
    "tests": 5
@@ -479,7 +479,7 @@
    "tests": 7
   },
   "tests/e2e/ward-lock.spec.ts": {
-   "expects": 40,
+   "expects": 41,
    "tests": 8
   },
   "tests/e2e/year-rollover.characterization.spec.ts": {
@@ -495,12 +495,16 @@
    "tests": 12
   },
   "tests/unit/annual-accounting-totals.spec.js": {
-   "expects": 16,
-   "tests": 9
+   "expects": 21,
+   "tests": 11
   },
   "tests/unit/annual-pdf-schb4-attribution.spec.js": {
    "expects": 32,
    "tests": 15
+  },
+  "tests/unit/attorney-block.spec.js": {
+   "expects": 3,
+   "tests": 1
   },
   "tests/unit/b4-block-map.spec.js": {
    "expects": 9,
@@ -531,8 +535,12 @@
    "tests": 6
   },
   "tests/unit/case-file.spec.js": {
-   "expects": 63,
-   "tests": 19
+   "expects": 69,
+   "tests": 21
+  },
+  "tests/unit/case-resolver.spec.js": {
+   "expects": 18,
+   "tests": 5
   },
   "tests/unit/cell-reader.spec.js": {
    "expects": 15,
@@ -666,6 +674,10 @@
    "expects": 23,
    "tests": 10
   },
+  "tests/unit/fragment-loader.spec.js": {
+   "expects": 4,
+   "tests": 1
+  },
   "tests/unit/guardian-blank-page-pruning.spec.js": {
    "expects": 24,
    "tests": 10
@@ -718,6 +730,10 @@
    "expects": 9,
    "tests": 2
   },
+  "tests/unit/ms70-70T-guard.spec.js": {
+   "expects": 9,
+   "tests": 6
+  },
   "tests/unit/ms70-assertion-counts.spec.js": {
    "expects": 6,
    "tests": 4
@@ -731,8 +747,8 @@
    "tests": 13
   },
   "tests/unit/ms70-e2e-global-inventory.spec.js": {
-   "expects": 3,
-   "tests": 1
+   "expects": 8,
+   "tests": 4
   },
   "tests/unit/ms70-fixture-inventory.spec.js": {
    "expects": 4,
@@ -743,8 +759,8 @@
    "tests": 8
   },
   "tests/unit/ms70-testing-adapter-design.spec.js": {
-   "expects": 17,
-   "tests": 5
+   "expects": 18,
+   "tests": 6
   },
   "tests/unit/native-dialog-guard.spec.js": {
    "expects": 1,
@@ -773,6 +789,10 @@
   "tests/unit/part-xi-remuneration.spec.js": {
    "expects": 23,
    "tests": 11
+  },
+  "tests/unit/party-resolver.spec.js": {
+   "expects": 165,
+   "tests": 26
   },
   "tests/unit/pdf-address-format.spec.js": {
    "expects": 4,
@@ -890,6 +910,10 @@
    "expects": 9,
    "tests": 7
   },
+  "tests/unit/removed-window-bridges.spec.js": {
+   "expects": 5,
+   "tests": 1
+  },
   "tests/unit/remuneration-declaration.spec.js": {
    "expects": 22,
    "tests": 11
@@ -978,6 +1002,10 @@
    "expects": 3,
    "tests": 2
   },
+  "tests/unit/testing-adapter.spec.js": {
+   "expects": 58,
+   "tests": 18
+  },
   "tests/unit/theme-persistence.spec.js": {
    "expects": 43,
    "tests": 20
@@ -1027,5 +1055,62 @@
    "tests": 3
   }
  },
- "dropLog": []
+ "dropLog": [
+  {
+   "file": "tests/e2e/guardian-inventory-collection-controls.spec.ts",
+   "was": 29,
+   "now": 27,
+   "reason": "70T: the two expects pinning that 51E's deleted window.* bridges stay deleted (and its kept ones stay published) moved to tests/unit/removed-window-bridges.spec.js -- a browser spec now names no app global but GuardianForms, not even to prove one absent.",
+   "date": "2026-09-25"
+  },
+  {
+   "file": "tests/e2e/plan-readiness.contract.spec.ts",
+   "was": 18,
+   "now": 17,
+   "reason": "70T: the expect that 44C's readiness dispatcher and per-type bridges are absent from window moved to tests/unit/removed-window-bridges.spec.js; the one-card assertions stay here.",
+   "date": "2026-09-25"
+  },
+  {
+   "file": "tests/e2e/case-resolver.spec.ts",
+   "was": 18,
+   "now": 0,
+   "reason": "70T: the whole spec moved to tests/unit/case-resolver.spec.js (same five tests, same 18 expects, direct imports): it tested pure case-resolver.js logic, and its identity checks cannot be observed through GuardianForms.testing copies.",
+   "date": "2026-09-25"
+  },
+  {
+   "file": "tests/e2e/case-file-protection.spec.ts",
+   "was": 16,
+   "now": 11,
+   "reason": "70T: the test of saveBlobAs()'s pre-write validator contract (a refusal throws AbortError before anything is opened for writing) moved to tests/unit/case-file.spec.js, where it is checked on the module with a control; the filer's path through that validator -- the dashboard Backup button refusing to overwrite the case file -- stays here.",
+   "date": "2026-09-25"
+  },
+  {
+   "file": "tests/e2e/party-resolver.spec.ts",
+   "was": 178,
+   "now": 13,
+   "reason": "70T: 26 of its 29 tests (165 expects) moved to tests/unit/party-resolver.spec.js unchanged apart from running on the modules directly: pure resolver logic whose identity checks GuardianForms.testing's copies cannot show. The three .sav round-trip tests (13 expects) stay here.",
+   "date": "2026-09-25"
+  },
+  {
+   "file": "tests/e2e/pdf-form-specific.spec.ts",
+   "was": 134,
+   "now": 131,
+   "reason": "70T: Slice 19E's three architecture expects (window.calcTotalsAnnual loaded before the PDF module and never swapped) moved to tests/unit/annual-accounting-totals.spec.js, which checks the module graph itself; the preview-to-PDF drift guard stays here.",
+   "date": "2026-09-25"
+  },
+  {
+   "file": "tests/e2e/routes.spec.ts",
+   "was": 149,
+   "now": 148,
+   "reason": "70T: the Rename Ward dialog steps (two expects) were dropped -- no button has opened that dialog since the Milestone 36 dashboard consolidation (e5fb9cf), so they proved nothing a filer can reach; it is recorded for 70B as dead. One expect was added (the close lands on the dashboard).",
+   "date": "2026-09-25"
+  },
+  {
+   "file": "tests/e2e/security.spec.ts",
+   "was": 7,
+   "now": 5,
+   "reason": "70T: 'unknown fragment names are rejected without a request' (two expects) moved to tests/unit/fragment-loader.spec.js, checked on the module with every request recorded and a control that the allowlisted name is fetched.",
+   "date": "2026-09-25"
+  }
+ ]
 }

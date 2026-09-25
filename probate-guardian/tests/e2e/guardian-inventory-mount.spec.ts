@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import path from 'node:path';
 import os from 'node:os';
 import JSZip from 'jszip';
-import { freshStartNoPassword, createWard, fillMinimalValidGuardianWard, crossCheckNavAndSummaryStatus, acceptDynDialog } from './support/target';
+import { freshStartNoPassword, createWard, fillMinimalValidGuardianWard, crossCheckNavAndSummaryStatus, acceptDynDialog, dismissScheduleDocPrompt } from './support/target';
 
 // Guardian Inventory is Milestone 8 of INDEX-SPLIT-PLAN.md: Phase A moved
 // page/nav/validation/row UI into src/features/guardian-inventory/index.js;
@@ -25,23 +25,20 @@ test.describe('guardian-inventory feature module', () => {
     await freshStartNoPassword(page);
 
     await createWard(page, 'Annual Before Guardian', 'annual');
-    await page.evaluate(() => (window as any).navigate('/p2'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/p2'));
     await expect(page.locator('[data-inventory-change="import-excel"]')).toHaveCount(0);
 
     await createWard(page, 'Guardian Lazy Load Ward', 'guardian');
     await page.locator('[data-inventory-change="import-excel"]').waitFor({ state: 'attached' });
-    expect(await page.evaluate(() => [
-      typeof (window as any).doSavePdfGuardian,
-      typeof (window as any).doSaveExcelGuardian,
-      typeof (window as any).importExcelGuardian,
-    ])).toEqual(['undefined', 'undefined', 'undefined']);
-    await page.evaluate(() => (window as any).navigate('/print'));
+    // "without compatibility globals": pinned in tests/unit/removed-window-bridges.spec.js
+    // since Milestone 70's 70T (a browser spec names no app global but GuardianForms).
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
     await expect(page.locator('[data-inventory-action="save-pdf"]')).toBeVisible();
   });
   test('Guardian #1\'s attestation card renders on /d1 for a brand-new filing with no guardian data typed in yet', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Fresh Guardian Ward', 'guardian');
-    await page.evaluate(() => (window as any).navigate('/d1'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/d1'));
 
     await expect(page.locator('.entry-card-header', { hasText: 'Guardian #1' })).toBeVisible();
     await expect(page.locator('[data-bind="guardians.0.name"]')).toBeVisible();
@@ -57,7 +54,7 @@ test.describe('guardian-inventory feature module', () => {
       { route: '/d5', key: 'd5' },
     ];
 
-    await page.evaluate(() => (window as any).navigate('/summary'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/summary'));
     const blankResults = await crossCheckNavAndSummaryStatus(page, entries);
     for (const r of blankResults) {
       expect(r.summaryComplete, `${r.route} (blank filing)`).toBe(r.expectComplete);
@@ -69,7 +66,7 @@ test.describe('guardian-inventory feature module', () => {
     expect(blankResults.find(r => r.route === '/d1')!.expectComplete).toBe(false);
 
     await fillMinimalValidGuardianWard(page);
-    await page.evaluate(() => (window as any).navigate('/summary'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/summary'));
     for (const r of await crossCheckNavAndSummaryStatus(page, entries)) {
       expect(r.summaryComplete, `${r.route} (fully filled)`).toBe(r.expectComplete);
       expect(r.summaryComplete, `${r.route} (fully filled)`).toBe(r.sidebarComplete);
@@ -84,7 +81,7 @@ test.describe('guardian-inventory feature module', () => {
     await createWard(page, 'Guardian Nav Test Ward', 'guardian');
 
     for (const route of GUARDIAN_PAGES) {
-      await page.evaluate((r) => (window as any).navigate(r), route);
+      await page.evaluate((r) => (window as any).GuardianForms.testing.navigate(r), route);
       await expect(page.locator('#main-content')).not.toBeEmpty();
     }
 
@@ -94,11 +91,12 @@ test.describe('guardian-inventory feature module', () => {
   test('duplicateEntry copies a Guardian schedule row through the module global bridge', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Guardian Duplicate Test Ward', 'guardian');
-    await page.evaluate(() => (window as any).navigate('/a1'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/a1'));
 
     await page.evaluate(() => {
-      const d = (window as any).D;
-      d.scheduleA1 = [{
+      const t = (window as any).GuardianForms.testing;
+      // Setup (D9): one Schedule A-1 row as an older save stored it.
+      t.patchFiling({ scheduleA1: [{
         propertyDescription: 'Homestead',
         streetAddress: '123 Main St',
         cityStateZip: 'Clearwater, FL 33755',
@@ -107,11 +105,11 @@ test.describe('guardian-inventory feature module', () => {
         isIncomeProperty: false,
         fullAssetValue: 100000,
         wardPercent: 50,
-      }];
-      (window as any).duplicateEntry('a1', 0);
+      }] });
+      t.createFiling.duplicateRow('a1', 0); // duplicateEntry(), the bridge 51E kept
     });
 
-    const rows = await page.evaluate(() => (window as any).D.scheduleA1);
+    const rows = await page.evaluate(() => (window as any).GuardianForms.testing.field('scheduleA1'));
     expect(rows).toHaveLength(2);
     expect(rows[1]).toEqual(rows[0]);
   });
@@ -119,7 +117,7 @@ test.describe('guardian-inventory feature module', () => {
   test('an incomplete filing is blocked from export with a clear error', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Incomplete Guardian Ward', 'guardian');
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
 
     await page.locator('[data-inventory-action="save-pdf"]').evaluate((button: HTMLButtonElement) => {
       button.disabled = false;
@@ -134,7 +132,7 @@ test.describe('guardian-inventory feature module', () => {
     await freshStartNoPassword(page);
     await createWard(page, 'Complete Guardian PDF Ward', 'guardian');
     await fillMinimalValidGuardianWard(page);
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
 
     const downloadPromise = page.waitForEvent('download', { timeout: 20_000 });
     await page.locator('[data-inventory-action="save-pdf"]').click();
@@ -158,14 +156,14 @@ test.describe('guardian-inventory feature module', () => {
     await createWard(page, 'Guardian Cycle Ward', 'guardian');
     await createWard(page, 'Annual Cycle Ward', 'annual');
 
-    // @ts-expect-error - caseFile is a page-global from legacy-app.js, not declared in this file
-    const wards = await page.evaluate(() => caseFile.wards.map((w: any) => ({ id: w.wardId, type: w.inventoryType })));
+    const wards = await page.evaluate(() => (window as any).GuardianForms.testing.snapshot().caseFile.wards
+      .map((w: any) => ({ id: w.wardId, type: w.inventoryType })));
     const guardianId = wards.find((w: any) => w.type === 'guardian').id;
     const annualId = wards.find((w: any) => w.type === 'annual').id;
 
-    await page.evaluate((id) => (window as any).switchWard(id), guardianId);
-    await page.evaluate(() => (window as any).navigate('/b2'));
-    await page.evaluate(() => (window as any).addEntry('b2'));
+    await page.evaluate((id) => (window as any).GuardianForms.testing.activateFiling.open(id), guardianId);
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/b2'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.createFiling.addRow('b2'));
     // A row that's still exactly what +Add left it as gets pruned by
     // pruneBlankCards() the moment navigate() actually leaves the
     // page (see legacy-app.js) -- deliberate, so an untouched +Add row
@@ -182,11 +180,11 @@ test.describe('guardian-inventory feature module', () => {
     await expect(page.locator('input[data-bind="scheduleB2.0.description"]')).toHaveValue('Seed Row');
 
     for (let i = 0; i < 15; i++) {
-      await page.evaluate((id) => (window as any).switchWard(id), guardianId);
-      await page.evaluate((r) => (window as any).navigate(r), '/b2');
+      await page.evaluate((id) => (window as any).GuardianForms.testing.activateFiling.open(id), guardianId);
+      await page.evaluate((r) => (window as any).GuardianForms.testing.navigate(r), '/b2');
       await page.fill('input[data-bind="scheduleB2.0.description"]', `Cycle ${i}`);
       await expect(page.locator('input[data-bind="scheduleB2.0.description"]')).toHaveValue(`Cycle ${i}`);
-      await page.evaluate((id) => (window as any).switchWard(id), annualId);
+      await page.evaluate((id) => (window as any).GuardianForms.testing.activateFiling.open(id), annualId);
     }
 
     const mainContentCount = await page.locator('#main-content').count();
@@ -198,10 +196,10 @@ test.describe('guardian-inventory feature module', () => {
     // data-inventory-action click delegate should have been unbound on
     // dispose -- a probe element using that attribute must not still reach
     // Guardian's handler. Same technique simplified-mount.spec.ts already
-    // uses against its own data-simplified-action delegate.
-    const staleDelegateCalls = await page.evaluate(() => {
-      let calls = 0;
-      (window as any).showPickPartyModal = () => { calls += 1; };
+    // uses against its own data-simplified-action delegate. What is watched
+    // is what the handler does -- open the Link to Shared Record dialog --
+    // not a stub of the app function behind it (70T).
+    const probeLinkParty = () => page.evaluate(() => {
       const probe = document.createElement('button');
       probe.dataset.inventoryAction = 'link-party';
       probe.dataset.role = 'guardian';
@@ -209,9 +207,21 @@ test.describe('guardian-inventory feature module', () => {
       document.getElementById('main-content')?.append(probe);
       probe.click();
       probe.remove();
-      return calls;
     });
-    expect(staleDelegateCalls).toBe(0);
+    const linkDialog = page.locator('#pickPartyModal.show');
+    await probeLinkParty();
+    await page.waitForTimeout(1_000); // longer than the live handler takes (the control below)
+    await expect(linkDialog, 'a disposed delegate opens nothing').toHaveCount(0);
+    // Control: with the Guardian filing mounted, the same probe opens it. The
+    // loop left a Schedule B-2 row, so the supporting-documentation prompt
+    // (Milestone 57C-R) may be up first and would sit over the dialog.
+    await page.evaluate((id) => (window as any).GuardianForms.testing.activateFiling.open(id), guardianId);
+    await page.evaluate((r) => (window as any).GuardianForms.testing.navigate(r), '/');
+    await dismissScheduleDocPrompt(page);
+    await probeLinkParty();
+    await expect(linkDialog, 'the probe reaches a live delegate').toBeVisible({ timeout: 1_000 });
+    await page.locator('[data-modal-action="close"][data-modal-id="pickPartyModal"]').click();
+    await expect(linkDialog).toHaveCount(0);
 
     expect(errors, `console/page errors during repeated entry/exit: ${errors.join('\n')}`).toEqual([]);
   });
@@ -220,7 +230,7 @@ test.describe('guardian-inventory feature module', () => {
     await freshStartNoPassword(page);
     await createWard(page, 'Excel Roundtrip Guardian Ward', 'guardian');
     await fillMinimalValidGuardianWard(page);
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
 
     const downloadPromise = page.waitForEvent('download', { timeout: 20_000 });
     await page.locator('[data-inventory-action="save-excel"]').click();
@@ -231,18 +241,18 @@ test.describe('guardian-inventory feature module', () => {
 
     // A second, blank Guardian ward to import into.
     await createWard(page, 'Blank Guardian Import Target', 'guardian');
-    await page.evaluate(() => (window as any).navigate('/'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
 
     const errors: string[] = [];
     page.on('pageerror', (e) => errors.push(e.message));
     await page.setInputFiles('input[type="file"][accept=".xlsx"]', xlsxPath);
-    await page.waitForFunction(() => (window as any).D.caseNumber === '2026-CP-000123', { timeout: 10_000 });
+    await page.waitForFunction(() => (window as any).GuardianForms.testing.field('caseNumber') === '2026-CP-000123', { timeout: 10_000 });
 
     const imported = await page.evaluate(() => ({
-      wardName: (window as any).D.wardName,
-      caseNumber: (window as any).D.caseNumber,
-      county: (window as any).D.county,
-      guardianName: (window as any).D.guardianName,
+      wardName: (window as any).GuardianForms.testing.field('wardName'),
+      caseNumber: (window as any).GuardianForms.testing.field('caseNumber'),
+      county: (window as any).GuardianForms.testing.field('county'),
+      guardianName: (window as any).GuardianForms.testing.field('guardianName'),
     }));
     expect(imported.caseNumber).toBe('2026-CP-000123');
     expect(imported.county).toBe('Pinellas');
@@ -257,16 +267,16 @@ test.describe('guardian-inventory feature module', () => {
     // every other yesNoRadioHTML() field -- a fresh ward's unanswered
     // question is '' (unanswered), not the pre-38E null-vs-boolean pair.
     const initialD3 = await page.evaluate(() => ({
-      hasSafeDepositBox: (window as any).D.hasSafeDepositBox,
-      safeDepositBoxFiled: (window as any).D.safeDepositBoxFiled,
-      navChecks: (window as any).computeNavChecks(),
+      hasSafeDepositBox: (window as any).GuardianForms.testing.field('hasSafeDepositBox'),
+      safeDepositBoxFiled: (window as any).GuardianForms.testing.field('safeDepositBoxFiled'),
+      navChecks: (window as any).GuardianForms.testing.status.navChecks(),
     }));
     expect(initialD3.hasSafeDepositBox).toBe('');
     expect(initialD3.safeDepositBoxFiled).toBe('');
     expect(initialD3.navChecks.checks.d3).toBe(false);
 
     // Summary page shows D-3 as incomplete / not completed
-    await page.evaluate(() => (window as any).navigate('/summary'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/summary'));
     const d3SummaryLine = page.locator('.summary-line', { hasText: 'D-3' });
     await expect(d3SummaryLine).toContainText('Incomplete');
 
@@ -275,7 +285,7 @@ test.describe('guardian-inventory feature module', () => {
     // element ids are derived from the field's data path
     // (yesno_<path>_yes/_no) -- #sdb-filed-row's own wrapper id is
     // unchanged.
-    await page.evaluate(() => (window as any).navigate('/d3'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/d3'));
     const sdbYes = page.locator('#yesno_hasSafeDepositBox_yes');
     const sdbNo = page.locator('#yesno_hasSafeDepositBox_no');
     const sdbFiledRow = page.locator('#sdb-filed-row');
@@ -289,8 +299,8 @@ test.describe('guardian-inventory feature module', () => {
     await sdbNo.check();
     await expect(sdbNo).toBeChecked();
     const noState = await page.evaluate(() => ({
-      hasSafeDepositBox: (window as any).D.hasSafeDepositBox,
-      navChecks: (window as any).computeNavChecks(),
+      hasSafeDepositBox: (window as any).GuardianForms.testing.field('hasSafeDepositBox'),
+      navChecks: (window as any).GuardianForms.testing.status.navChecks(),
     }));
     expect(noState.hasSafeDepositBox).toBe('No');
     expect(noState.navChecks.checks.d3).toBe(true);
@@ -299,8 +309,8 @@ test.describe('guardian-inventory feature module', () => {
     await sdbYes.check();
     await expect(sdbFiledRow).toBeVisible();
     const yesUnfiledState = await page.evaluate(() => ({
-      hasSafeDepositBox: (window as any).D.hasSafeDepositBox,
-      navChecks: (window as any).computeNavChecks(),
+      hasSafeDepositBox: (window as any).GuardianForms.testing.field('hasSafeDepositBox'),
+      navChecks: (window as any).GuardianForms.testing.status.navChecks(),
     }));
     expect(yesUnfiledState.hasSafeDepositBox).toBe('Yes');
     expect(yesUnfiledState.navChecks.checks.d3).toBe(false);
@@ -308,9 +318,9 @@ test.describe('guardian-inventory feature module', () => {
     // Answering Filed: Yes completes D-3
     await sdbFiledYes.check();
     const yesFiledState = await page.evaluate(() => ({
-      hasSafeDepositBox: (window as any).D.hasSafeDepositBox,
-      safeDepositBoxFiled: (window as any).D.safeDepositBoxFiled,
-      navChecks: (window as any).computeNavChecks(),
+      hasSafeDepositBox: (window as any).GuardianForms.testing.field('hasSafeDepositBox'),
+      safeDepositBoxFiled: (window as any).GuardianForms.testing.field('safeDepositBoxFiled'),
+      navChecks: (window as any).GuardianForms.testing.status.navChecks(),
     }));
     expect(yesFiledState.hasSafeDepositBox).toBe('Yes');
     expect(yesFiledState.safeDepositBoxFiled).toBe('Yes');
@@ -324,8 +334,8 @@ test.describe('guardian-inventory feature module', () => {
     // deleting the stored answer on every parent-off transition.
     await sdbNo.check();
     const parentOffState = await page.evaluate(() => ({
-      hasSafeDepositBox: (window as any).D.hasSafeDepositBox,
-      safeDepositBoxFiled: (window as any).D.safeDepositBoxFiled,
+      hasSafeDepositBox: (window as any).GuardianForms.testing.field('hasSafeDepositBox'),
+      safeDepositBoxFiled: (window as any).GuardianForms.testing.field('safeDepositBoxFiled'),
     }));
     expect(parentOffState.hasSafeDepositBox).toBe('No');
     expect(parentOffState.safeDepositBoxFiled).toBe('Yes'); // preserved, not wiped to ''
@@ -333,8 +343,8 @@ test.describe('guardian-inventory feature module', () => {
     await sdbYes.check();
     await expect(sdbFiledRow).toBeVisible();
     const restoredState = await page.evaluate(() => ({
-      hasSafeDepositBox: (window as any).D.hasSafeDepositBox,
-      safeDepositBoxFiled: (window as any).D.safeDepositBoxFiled,
+      hasSafeDepositBox: (window as any).GuardianForms.testing.field('hasSafeDepositBox'),
+      safeDepositBoxFiled: (window as any).GuardianForms.testing.field('safeDepositBoxFiled'),
     }));
     expect(restoredState.hasSafeDepositBox).toBe('Yes');
     expect(restoredState.safeDepositBoxFiled).toBe('Yes');
@@ -360,14 +370,14 @@ test.describe('Milestone 41-3: Guardian Inventory Tier 1 delegation', () => {
   test('a delegated field still writes through bindForms, repaints live totals, and is claimed by exactly one listener', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'GI Delegation Ward', 'guardian');
-    await page.evaluate(() => (window as any).navigate('/a1'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/a1'));
 
     await page.locator('[data-inventory-action="add-entry"], button:has-text("Add")').first().click();
     const desc = page.locator('[data-bind^="scheduleA1."][data-bind$=".propertyDescription"]').first();
     await desc.waitFor({ state: 'visible', timeout: 10000 });
     await desc.fill('Delegated Homestead');
     await desc.dispatchEvent('input');
-    expect(await page.evaluate(() => (window as any).D.scheduleA1?.[0]?.propertyDescription)).toBe('Delegated Homestead');
+    expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('scheduleA1')?.[0]?.propertyDescription)).toBe('Delegated Homestead');
 
     // The live total must track the amount as it is typed -- afterChange()'s
     // extra work, which the shared write tail does not perform.
@@ -399,7 +409,7 @@ test.describe('Milestone 41-3: Guardian Inventory Tier 1 delegation', () => {
   test('a numInput field stores a Number, keeps its $/% wrapping, and is claimed by exactly one listener', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Numeric Delegation Ward', 'guardian');
-    await page.evaluate(() => (window as any).navigate('/a1'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/a1'));
     await page.locator('[data-inventory-action="add-entry"], button:has-text("Add")').first().click();
 
     const amount = page.locator('[data-bind^="scheduleA1."][data-bind$=".fullAssetValue"]').first();
@@ -407,7 +417,7 @@ test.describe('Milestone 41-3: Guardian Inventory Tier 1 delegation', () => {
     await amount.fill('150000');
     await amount.dispatchEvent('input');
 
-    const stored = await page.evaluate(() => (window as any).D.scheduleA1?.[0]?.fullAssetValue);
+    const stored = await page.evaluate(() => (window as any).GuardianForms.testing.field('scheduleA1')?.[0]?.fullAssetValue);
     expect(stored).toBe(150000);
     expect(typeof stored).toBe('number');
 

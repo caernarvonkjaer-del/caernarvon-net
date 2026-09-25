@@ -19,9 +19,9 @@ const THEME_KEY = 'pg-theme-v1';
 // uses before reaching for it.
 async function openShellWithThemeToggle(page: import('@playwright/test').Page) {
   await freshStartNoPassword(page);
-  await page.evaluate(() => (window as any).addWard('Theme Shell Ward', 'guardian'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.createFiling.add('Theme Shell Ward', 'guardian'));
   await page.locator('[data-inventory-change="import-excel"]').waitFor({ state: 'attached' });
-  await page.evaluate(() => (window as any).navigate('/dashboard'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/dashboard'));
   await page.locator('[data-dashboard-bound="true"]').waitFor();
   await page.locator('#theme-toggle-btn').waitFor();
 }
@@ -117,7 +117,7 @@ test.describe('Milestone 40D: theme resolves before first paint', () => {
     const persisted = await page.evaluate(async () => {
       const w = window as any;
       return {
-        appStateTheme: (await w.loadAppState?.('theme')) ?? null,
+        appStateTheme: (await w.GuardianForms.testing.persistenceState.appState('theme')) ?? null,
         localTheme: localStorage.getItem('pg-theme-v1'),
       };
     });

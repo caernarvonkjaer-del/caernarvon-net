@@ -1,4 +1,5 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
+import { PDFDocument } from 'pdf-lib';
 import { freshStartNoPassword, createWard } from './support/target';
 
 // Milestone 40C-D, scoped to regression coverage only.
@@ -23,69 +24,71 @@ import { freshStartNoPassword, createWard } from './support/target';
 // slot, so the same conclusion was inferred but never observed. Both halves are
 // asserted here.
 
-const SCHEDULE_KEY = 'annualSchA';
+// Schedule A's own key and page. (Until Milestone 70's 70T the first two tests
+// used 'annualSchA', a key no page renders: they proved a slot no filer ever
+// sees. They now go through Schedule A's Supporting Documents section.)
+const SCHEDULE_KEY = 'schA';
+const SCHEDULE_ROUTE = '/scha';
 const PERIOD_ONE = { from: '2025-01-01', to: '2025-12-31' };
 const PERIOD_TWO = { from: '2026-01-01', to: '2026-06-30' };
+const COMMENT = `textarea[data-schedule-key="${SCHEDULE_KEY}"]`;
+const SECTION = '.schedule-docs-section';
+
+/** A real PDF with `pages` blank pages, as a filer's statement would arrive. */
+async function pdfWithPages(pages: number): Promise<Buffer> {
+  const doc = await PDFDocument.create();
+  for (let i = 0; i < pages; i++) doc.addPage([612, 792]);
+  return Buffer.from(await doc.save());
+}
+
+/** Setup (D9): the accounting period, then Schedule A redrawn for it. The real Cover inputs are the third test's subject. */
+async function showScheduleFor(page: Page, period: { from: string; to: string }) {
+  await page.evaluate(({ pd, route }) => {
+    const t = (window as any).GuardianForms.testing;
+    t.patchFiling({ periodFrom: pd.from, periodTo: pd.to });
+    return t.navigate(route);
+  }, { pd: period, route: SCHEDULE_ROUTE });
+  await expect(page.locator(SECTION).first()).toBeVisible();
+}
 
 test.describe('Milestone 40C-D: accounting-period re-keying of supporting documents', () => {
   test('changing the period presents an empty slot, and changing it back restores the comment and the uploads', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Period Rekey Ward', 'annual');
 
-    // Period one, with a comment and two "uploaded" files in the slot the real
-    // key derivation hands back.
-    const seeded = await page.evaluate(({ key, period }) => {
-      const w = window as any;
-      w.D.periodFrom = period.from;
-      w.D.periodTo = period.to;
-      const slot = w.getScheduleDocSlot(key);
-      slot.comment = 'Bank statements for the full year are attached.';
-      slot.files = [
-        { name: 'chase-jan-jun.pdf', size: 24576, pageCount: 6, technicalStatus: 'ready' },
-        { name: 'chase-jul-dec.pdf', size: 31744, pageCount: 7, technicalStatus: 'ready' },
-      ];
-      return { periodKey: w.scheduleDocPeriodKey(), comment: slot.comment, fileCount: slot.files.length };
-    }, { key: SCHEDULE_KEY, period: PERIOD_ONE });
+    // Period one: the comment typed where a filer types it ...
+    await showScheduleFor(page, PERIOD_ONE);
+    await page.locator(COMMENT).fill('Bank statements for the full year are attached.');
+    await page.locator(COMMENT).blur();
+    // ... filed under the key the app derives for the period ...
+    const bucketsAfterComment = await page.evaluate((key) => Object.keys((window as any).GuardianForms.testing.snapshot().filing.scheduleDocs?.[key] || {}), SCHEDULE_KEY);
+    expect(bucketsAfterComment).toEqual([`${PERIOD_ONE.from}__${PERIOD_ONE.to}`]);
+    // ... and two statements uploaded through the section's own control, as
+    // real PDFs the app reads and checks (6 and 7 pages).
+    await page.locator(`${SECTION} input[type="file"][data-schedule-key="${SCHEDULE_KEY}"]`).setInputFiles([
+      { name: 'chase-jan-jun.pdf', mimeType: 'application/pdf', buffer: await pdfWithPages(6) },
+      { name: 'chase-jul-dec.pdf', mimeType: 'application/pdf', buffer: await pdfWithPages(7) },
+    ]);
+    await expect(page.locator(`${SECTION} .sched-doc-row`)).toHaveCount(2);
+    await expect(page.locator(`${SECTION} .sched-doc-row`)).toContainText(['6 pages', '7 pages']);
+    await showScheduleFor(page, PERIOD_ONE);
+    await expect(page.locator(`${SECTION} .sched-doc-row`)).toHaveCount(2);
 
-    expect(seeded.periodKey).toBe(`${PERIOD_ONE.from}__${PERIOD_ONE.to}`);
-    expect(seeded.fileCount).toBe(2);
-
-    // Switch to a different period: a fresh, empty bucket is correct here.
-    const afterSwitch = await page.evaluate(({ key, period }) => {
-      const w = window as any;
-      w.D.periodFrom = period.from;
-      w.D.periodTo = period.to;
-      const slot = w.getScheduleDocSlot(key);
-      return { periodKey: w.scheduleDocPeriodKey(), comment: slot.comment, fileCount: slot.files.length };
-    }, { key: SCHEDULE_KEY, period: PERIOD_TWO });
-
-    expect(afterSwitch.periodKey).toBe(`${PERIOD_TWO.from}__${PERIOD_TWO.to}`);
-    expect(afterSwitch.comment, 'a new period starts with its own empty slot').toBe('');
-    expect(afterSwitch.fileCount).toBe(0);
+    // Switch to a different period: a fresh, empty slot is correct here.
+    await showScheduleFor(page, PERIOD_TWO);
+    await expect(page.locator(COMMENT), 'a new period starts with its own empty slot').toHaveValue('');
+    await expect(page.locator(`${SECTION} .sched-doc-row`)).toHaveCount(0);
+    await expect(page.locator(`${SECTION} .sched-doc-empty`)).toContainText('for this period');
 
     // Switch back. This is the assertion that matters: the first period's
     // content must still be there, files included.
-    const afterReturn = await page.evaluate(({ key, period }) => {
-      const w = window as any;
-      w.D.periodFrom = period.from;
-      w.D.periodTo = period.to;
-      const slot = w.getScheduleDocSlot(key);
-      return {
-        comment: slot.comment,
-        fileNames: slot.files.map((f: any) => f.name),
-        pageCounts: slot.files.map((f: any) => f.pageCount),
-      };
-    }, { key: SCHEDULE_KEY, period: PERIOD_ONE });
-
-    expect(afterReturn.comment).toBe('Bank statements for the full year are attached.');
-    expect(afterReturn.fileNames).toEqual(['chase-jan-jun.pdf', 'chase-jul-dec.pdf']);
-    expect(afterReturn.pageCounts).toEqual([6, 7]);
+    await showScheduleFor(page, PERIOD_ONE);
+    await expect(page.locator(COMMENT)).toHaveValue('Bank statements for the full year are attached.');
+    await expect(page.locator(`${SECTION} .sched-doc-name`)).toContainText(['chase-jan-jun.pdf', 'chase-jul-dec.pdf']);
+    await expect(page.locator(`${SECTION} .sched-doc-row`)).toContainText(['6 pages', '7 pages']);
 
     // Both buckets coexist rather than one having overwritten the other.
-    const buckets = await page.evaluate((key) => {
-      const w = window as any;
-      return Object.keys(w.D.scheduleDocs[key]).sort();
-    }, SCHEDULE_KEY);
+    const buckets = await page.evaluate((key) => Object.keys((window as any).GuardianForms.testing.snapshot().filing.scheduleDocs[key]).sort(), SCHEDULE_KEY);
     expect(buckets).toEqual([
       `${PERIOD_ONE.from}__${PERIOD_ONE.to}`,
       `${PERIOD_TWO.from}__${PERIOD_TWO.to}`,
@@ -95,34 +98,24 @@ test.describe('Milestone 40C-D: accounting-period re-keying of supporting docume
   test('the Supporting Documents heading follows the current accounting period', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Period Heading Ward', 'annual');
+    const heading = page.locator(`${SECTION} h2`).first();
 
-    const headings = await page.evaluate(({ key, one, two }) => {
-      const w = window as any;
-      const headingFor = (period: { from: string; to: string }) => {
-        w.D.periodFrom = period.from;
-        w.D.periodTo = period.to;
-        const html = w.renderScheduleDocsSection(key);
-        return (html.match(/<h2>([\s\S]*?)<\/h2>/) || [])[1] || '';
-      };
-      const blank = (() => {
-        w.D.periodFrom = ''; w.D.periodTo = '';
-        const html = w.renderScheduleDocsSection(key);
-        return (html.match(/<h2>([\s\S]*?)<\/h2>/) || [])[1] || '';
-      })();
-      return { blank, first: headingFor(one), second: headingFor(two) };
-    }, { key: SCHEDULE_KEY, one: PERIOD_ONE, two: PERIOD_TWO });
+    // With no period set, it says so instead of showing a half-empty range.
+    await showScheduleFor(page, { from: '', to: '' });
+    await expect(heading).toContainText('set the accounting period on the Cover page');
 
     // Displayed as MM/DD/YYYY, and it tracks the period rather than going stale.
-    expect(headings.first).toContain('accounting period 01/01/2025 to 12/31/2025');
-    expect(headings.second).toContain('accounting period 01/01/2026 to 06/30/2026');
-    expect(headings.second).not.toContain('2025');
-    // With no period set, it says so instead of showing a half-empty range.
-    expect(headings.blank).toContain('set the accounting period on the Cover page');
+    await showScheduleFor(page, PERIOD_ONE);
+    await expect(heading).toContainText('accounting period 01/01/2025 to 12/31/2025');
+    await showScheduleFor(page, PERIOD_TWO);
+    await expect(heading).toContainText('accounting period 01/01/2026 to 06/30/2026');
+    await expect(heading).not.toContainText('2025');
   });
 
-  // Milestone 43F, Decision 3: every test above drives getScheduleDocSlot()/
+  // Milestone 43F, Decision 3: the tests above used to drive getScheduleDocSlot()/
   // renderScheduleDocsSection()/scheduleDocPeriodKey() directly through
-  // page.evaluate() -- none of them touch the real rendered DOM. The
+  // page.evaluate() -- none of them touched the real rendered DOM (since 70T
+  // they read the rendered section too). The
   // render function itself has no collapse/accordion behavior at all
   // (confirmed by reading it directly: it's a plain always-visible
   // `<div class="schedule-docs-section no-print">`, matching this file's
@@ -138,19 +131,19 @@ test.describe('Milestone 40C-D: accounting-period re-keying of supporting docume
     await createWard(page, 'Real UI Period Ward', 'annual');
 
     // Blank period, before anything is filled in: real navigation, real locator.
-    await page.evaluate(() => (window as any).navigate('/scha'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/scha'));
     await expect(page.locator('.schedule-docs-section h2').first()).toContainText(
       'set the accounting period on the Cover page',
     );
 
     // Set the period through the actual Cover page inputs, not window.D.
-    await page.evaluate(() => (window as any).navigate('/'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
     await page.fill('input[data-field-path="periodFrom"]', '01/15/2025');
     await page.locator('input[data-field-path="periodTo"]').click();
     await page.fill('input[data-field-path="periodTo"]', '12/31/2025');
     await page.locator('input[data-field-path="periodFrom"]').click();
 
-    await page.evaluate(() => (window as any).navigate('/scha'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/scha'));
     await expect(page.locator('.schedule-docs-section h2').first()).toContainText(
       'accounting period 01/15/2025 to 12/31/2025',
     );
@@ -164,8 +157,8 @@ test.describe('Milestone 40C-D: accounting-period re-keying of supporting docume
     await expect(comment).toHaveValue('Bank statements are attached for the full year.');
 
     // Navigating away and back must not lose the comment.
-    await page.evaluate(() => (window as any).navigate('/schb1'));
-    await page.evaluate(() => (window as any).navigate('/scha'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/schb1'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/scha'));
     await expect(page.locator('textarea[data-schedule-key="schA"]')).toHaveValue(
       'Bank statements are attached for the full year.',
     );
@@ -173,20 +166,20 @@ test.describe('Milestone 40C-D: accounting-period re-keying of supporting docume
     // Changing the period again (still through real UI) presents a real,
     // empty textarea for the new period -- and the first period's comment
     // is still there when we navigate back to it.
-    await page.evaluate(() => (window as any).navigate('/'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
     await page.fill('input[data-field-path="periodFrom"]', '01/01/2026');
     await page.locator('input[data-field-path="periodTo"]').click();
     await page.fill('input[data-field-path="periodTo"]', '06/30/2026');
     await page.locator('input[data-field-path="periodFrom"]').click();
-    await page.evaluate(() => (window as any).navigate('/scha'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/scha'));
     await expect(page.locator('textarea[data-schedule-key="schA"]')).toHaveValue('');
 
-    await page.evaluate(() => (window as any).navigate('/'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
     await page.fill('input[data-field-path="periodFrom"]', '01/15/2025');
     await page.locator('input[data-field-path="periodTo"]').click();
     await page.fill('input[data-field-path="periodTo"]', '12/31/2025');
     await page.locator('input[data-field-path="periodFrom"]').click();
-    await page.evaluate(() => (window as any).navigate('/scha'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/scha'));
     await expect(page.locator('textarea[data-schedule-key="schA"]')).toHaveValue(
       'Bank statements are attached for the full year.',
     );
@@ -198,19 +191,22 @@ test.describe('Milestone 40C-D: accounting-period re-keying of supporting docume
 
     // Guardian has no accounting period; scheduleDocPeriodKey() falls back to
     // activeYearKey (defaulting to 'initial'), so a period change cannot move a
-    // Guardian filing's uploads at all.
-    const result = await page.evaluate((key) => {
-      const w = window as any;
-      const first = w.scheduleDocPeriodKey();
-      const slot = w.getScheduleDocSlot(key);
-      slot.comment = 'Appraisal attached.';
-      w.D.periodFrom = '2026-01-01';
-      w.D.periodTo = '2026-12-31';
-      return { first, second: w.scheduleDocPeriodKey(), comment: w.getScheduleDocSlot(key).comment };
-    }, 'guardianSchA1');
+    // Guardian filing's uploads at all. Schedule A-1's own section ('a1'; the
+    // key used to be 'guardianSchA1', which no page renders -- 70T).
+    const comment = page.locator('textarea[data-schedule-key="a1"]');
+    const buckets = () => page.evaluate(() => Object.keys((window as any).GuardianForms.testing.snapshot().filing.scheduleDocs?.a1 || {}));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/a1'));
+    await comment.fill('Appraisal attached.');
+    await comment.blur();
+    expect(await buckets()).toEqual(['initial']);
 
-    expect(result.first).toBe('initial');
-    expect(result.second).toBe('initial');
-    expect(result.comment).toBe('Appraisal attached.');
+    // Setup (D9): a period, as if one had been entered.
+    await page.evaluate(() => {
+      const t = (window as any).GuardianForms.testing;
+      t.patchFiling({ periodFrom: '2026-01-01', periodTo: '2026-12-31' });
+      return t.navigate('/a1');
+    });
+    expect(await buckets()).toEqual(['initial']);
+    await expect(comment).toHaveValue('Appraisal attached.');
   });
 });

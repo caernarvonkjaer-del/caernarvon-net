@@ -29,7 +29,7 @@ async function encryptedCaseWithWard(page: Page) {
 }
 
 const overlay = (page: Page) => page.locator('#unlock-overlay');
-const keyHeld = (page: Page) => page.evaluate(() => !!(window as any)._cryptoKey);
+const keyHeld = (page: Page) => page.evaluate(() => (window as any).GuardianForms.testing.persistenceState.keyHeld());
 
 async function attempt(page: Page, password: string) {
   await page.fill('#unlock-password', password);
@@ -55,7 +55,7 @@ test.describe('security contract (Milestone 70, 70A)', () => {
     await page.clock.fastForward('00:20');
     await expect(overlay(page), 'locked after 15 minutes idle').toHaveClass(/show/);
     expect(await keyHeld(page), 'the key is cleared on lock').toBe(false);
-    expect(await page.evaluate(() => (window as any).caseFile.wards.length), 'the case is cleared from memory while locked').toBe(0);
+    expect(await page.evaluate(() => (window as any).GuardianForms.testing.snapshot().caseFile.wards.length), 'the case is cleared from memory while locked').toBe(0);
 
     await attempt(page, PASSWORD);
     await expect(overlay(page)).not.toHaveClass(/show/);
@@ -66,7 +66,7 @@ test.describe('security contract (Milestone 70, 70A)', () => {
     test.setTimeout(180_000);
     await encryptedCaseWithWard(page);
     await page.clock.install();
-    await page.evaluate(() => { void (window as any).lockApp(); });
+    await page.evaluate(() => { void (window as any).GuardianForms.testing.lock(); });
     await expect(overlay(page)).toHaveClass(/show/);
     const error = page.locator('#unlock-error');
 
@@ -94,7 +94,7 @@ test.describe('security contract (Milestone 70, 70A)', () => {
     await page.clock.fastForward(301_000);
     await attempt(page, PASSWORD);
     await expect(overlay(page)).not.toHaveClass(/show/);
-    await page.evaluate(() => { void (window as any).lockApp(); });
+    await page.evaluate(() => { void (window as any).GuardianForms.testing.lock(); });
     await expect(overlay(page)).toHaveClass(/show/);
     await attempt(page, 'wrong-again');
     await expect(error, 'the count restarted at one').toHaveText('Incorrect password. Please try again.');
@@ -105,9 +105,9 @@ test.describe('security contract (Milestone 70, 70A)', () => {
     await encryptedCaseWithWard(page);
     await page.evaluate(() => {
       const w = window as any;
-      w.D.wardName = 'Eleanor Whitfield';
-      w.autoSave();
-      return w.flushPendingSave();
+      w.GuardianForms.testing.patchFiling({ 'wardName': 'Eleanor Whitfield' });
+      w.GuardianForms.testing.save.auto();
+      return w.GuardianForms.testing.save.flush();
     });
 
     const found = await page.evaluate(async (secret) => {
@@ -116,7 +116,7 @@ test.describe('security contract (Milestone 70, 70A)', () => {
       const hits: string[] = [];
       const check = (where: string, text: string) => { for (const n of needles) if (text.includes(n)) hits.push(where); };
 
-      const { blob } = await w.buildCaseFileBlob();
+      const blob = await w.GuardianForms.testing.exportArchive.caseFile();
       const zip = await w.JSZip.loadAsync(blob);
       const names = Object.keys(zip.files).filter((n) => !zip.files[n].dir);
       for (const name of names) check(`sav:${name}`, await zip.file(name).async('string'));

@@ -2,10 +2,11 @@
 
 ## Status
 
-**70A complete (2026-09-24); nothing else is authorized.** The requester
-approved delivery 70A on 2026-09-24 and it is complete on the
-`milestone-70` branch (see the 70A build record). Every other delivery --
-70T next -- must be explicitly approved before implementation begins. The deliveries are intentionally sequential because
+**70A complete (2026-09-24); 70T complete (2026-09-25) -- see their build
+records; nothing else is authorized.** The requester approved delivery 70A on
+2026-09-24 and it is complete on the `milestone-70` branch (see the 70A
+build record), then approved 70T. Every other delivery -- 70B next -- must be
+explicitly approved before implementation begins. The deliveries are intentionally sequential because
 most of them touch the same dependency graph and several will touch
 `src/legacy-app.js`; they are not independent work streams that can safely be
 implemented in parallel.
@@ -993,6 +994,57 @@ monolith -- a full `npm test`, so it is requested from the requester at the
 time, per AGENTS.md section 2. A later failure then points at the migration,
 not at the test rewrite. `npm run check:types` covers the adapter's types, which live in the
 checked `tests/e2e/support/` scope.
+
+### 70T build record
+
+Approved by the requester on 2026-09-24 ("Baseline run, then 70T"). On
+2026-09-25 the requester asked for the delivery to continue on the owner's
+own recommendations, with defects fixed as they are found and both indexes
+kept current; the full `npm test` this gate asks for is run under that
+instruction. Everything below is on the `milestone-70` branch unless it says
+otherwise.
+
+**Baseline, before any spec changed.** The branch at `1a8c54c`, full
+`npm test`: unit 1861/1861 (135 files); browser 916 passed, 7 skipped, 0
+failed (1.8 h, source profile, chromium).
+
+**Done, with evidence.**
+
+| Item | Evidence |
+| --- | --- |
+| `GuardianForms.testing` | `src/core/testing/testing-adapter.js`, installed first thing in `src/main.js` only when the runner sets `__GUARDIAN_FORMS_TEST_MODE__` before boot (read once, deleted; D3, T3). Queries return copies; commands call today's functions. `tests/unit/testing-adapter.spec.js` (18 tests; the copy and enablement rules each seen failing) and `tests/e2e/testing-adapter.spec.ts` (4, in a real page). |
+| Members added while converting | `patchFiling(patch, filingId)` for filings that are not open; `replaceFiling()` (setup that deletes keys); `seedFiling()` (a record added without opening it, the open filing kept the same object); `save.markClean()`; `validate.open/structured/exportGate` (the export gate judged on a copy, since `prepareFilingOutput()` commits date drafts into what it is given); `status.annualTotals/guardianTotals/annualReconcile`; `createFiling.emptyDirective()`; `convertFiling.openDialog/targetsFor/describe`; `updateSharedRecords.mergeParties`; `sharedRecords.isPartyPairDismissed`. Removed: `commitCoverCounty`, which the reviewed design classes real-UI -- setup chooses the county on the Cover (`chooseCoverCounty()` in `target.ts`). |
+| The browser suite | All 133 browser spec and support files reach the app only through `GuardianForms.testing` or the real UI. The one exemption, `tests/e2e/support/pre-70-build.ts`, drives the mixed-version characterization's pre-70 build, which has no `GuardianForms`; its reason and its single permitted importer are checked. |
+| Guard | `tests/unit/ms70-70T-guard.spec.js`: no converted file names another app global -- through `window`, an alias of it, or bare -- writes live case state in place, writes into anything the adapter returned, or looks a global up by computed name; every browser file is converted or exempt. Each rule seen failing: bare `caseFile` in three mount specs, a restored write into a copy, a new uncovered spec. The bare-name and copy-write rules were added during 70T, after both defects were found in files already counted as converted. |
+| Moved to unit specs | `case-resolver.spec.js` and `party-resolver.spec.js` (26 of 29 tests; pure logic whose identity checks copies cannot show), `fragment-loader.spec.js`, `attorney-block.spec.js`, `removed-window-bridges.spec.js` (three browser pins that deleted bridges stay deleted), `saveBlobAs()`'s contract in `case-file.spec.js`, Slice 19E's one-calculator claim in `annual-accounting-totals.spec.js`. Each seen failing under a mutation. |
+| Assertion counts | Every drop is in the drop log of `tests/baseline/ms70-assertion-counts.json` with where the assertions went. |
+| Findings | 21, each with its resolution, in `tests/baseline/ms70-70T-progress.json`: among them seven sidebar checks that could never fail (`/complete/` also matches `incomplete`), a caption check against a function nothing calls, a validator chosen by load order, two tests on schedule keys no page renders, a converted test whose setup wrote into a copy, and tests of a dialog and a function no button reaches. |
+| Design record | `tests/baseline/ms70-testing-adapter-design.json` regenerated; its spec now requires it to equal what the rules produce (it had kept two superseded rule sets unnoticed). |
+
+**Fixed on `master` during 70T** (each in the ledger): `8f5a163` the vacuous
+sidebar checks; `5de3707` ward names in a locked case file's manifest, and
+newer-format case files refused; `ae9ecdc` what "?" announces inside a
+filing; `6a8224d` the fragments comment; `56ff26a` the fixture's
+safe-deposit answers.
+
+**Handed to 70B as delete-as-dead** (no filer can reach them; the tests that
+did now go through the real UI or were dropped with a reason):
+`circuitCourtCaption()` in `legacy-app.js`; the Rename Ward dialog,
+`showRenameWardModal()` and the shell and dashboard `rename-ward` cases (no
+button since `e5fb9cf`); `triggerImportZip()` (no button since `4cd5723`).
+
+**Gate run.** The full `npm test` on this tree, 2026-09-25: unit 1942/1942 (142 files);
+browser 880 passed, 7 skipped, 6 failed (1.5 h, source profile, chromium) --
+893 tests against the baseline's 923: 34 moved to unit specs or dropped with a
+reason, 4 added. All six failures were defects in this delivery's own
+conversions, none in the app, each recorded as a finding: a control step
+clicking under the supporting-documentation prompt (guardian-inventory-mount),
+seeded file records the app rightly rejected once the section was rendered
+(schedule-docs-period-key), and a batch-2 setup that wrote into a copy it never
+wrote back (signature-block-address-margin, four tests) -- the last now a guard
+rule, seen failing on that defect. After the fixes the three spec files and the
+adapter's own spec ran in full: 26/26. The whole source suite is green on the
+adapter against the unmigrated monolith; 70T is complete.
 
 ---
 

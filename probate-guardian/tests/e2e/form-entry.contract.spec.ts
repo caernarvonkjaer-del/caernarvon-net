@@ -30,7 +30,7 @@ test.describe('Form entry contract', () => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
     await freshStartNoPassword(page);
     await createWard(page, 'Paste Entry Ward', 'guardian');
-    await page.evaluate(() => (window as any).navigate('/a2'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/a2'));
     await page.locator('[data-inventory-action="add-entry"][data-schedule="a2"]').click();
     await dismissScheduleDocPrompt(page); // Milestone 57C-R advisory modal
 
@@ -45,7 +45,7 @@ test.describe('Form entry contract', () => {
 
     // Same preserve-policy assertion form-entry-ux.spec.ts already proves
     // for typed entry of this exact string -- pasted entry must match.
-    const storedNotes = await page.evaluate(() => (window as any).D.scheduleA2[0].notes);
+    const storedNotes = await page.evaluate(() => (window as any).GuardianForms.testing.field('scheduleA2.0.notes'));
     expect(storedNotes).toBe(pasteText);
   });
 
@@ -57,7 +57,7 @@ test.describe('Form entry contract', () => {
     // actually fires and commits, not that a real IME candidate window works.
     await freshStartNoPassword(page);
     await createWard(page, 'Composition Entry Ward', 'guardian');
-    await page.evaluate(() => (window as any).navigate('/a2'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/a2'));
     await page.locator('[data-inventory-action="add-entry"][data-schedule="a2"]').click();
     await dismissScheduleDocPrompt(page); // Milestone 57C-R advisory modal
 
@@ -70,7 +70,7 @@ test.describe('Form entry contract', () => {
       el.dispatchEvent(new CompositionEvent('compositionend', { bubbles: true, data: 'Composed Value' }));
     });
 
-    const storedNotes = await page.evaluate(() => (window as any).D.scheduleA2[0].notes);
+    const storedNotes = await page.evaluate(() => (window as any).GuardianForms.testing.field('scheduleA2.0.notes'));
     expect(storedNotes).toBe('Composed Value');
   });
 
@@ -80,7 +80,7 @@ test.describe('Form entry contract', () => {
     // losing focus because the user tabbed away must finalize identically.
     await freshStartNoPassword(page);
     await createWard(page, 'Tab Commit Ward', 'planSimplified');
-    await page.evaluate(() => (window as any).navigate('/'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
 
     const wardNameInput = page.locator('[data-form-path="wardName"]');
     await wardNameInput.click();
@@ -90,7 +90,7 @@ test.describe('Form entry contract', () => {
     await expect(page.locator('[data-form-path="caseNumber"]')).toBeFocused();
     // formatSafeTitleCase capitalizes pure-lowercase words on finalize.
     await expect(wardNameInput).toHaveValue('Harold Example');
-    const storedWardName = await page.evaluate(() => (window as any).D.wardName);
+    const storedWardName = await page.evaluate(() => (window as any).GuardianForms.testing.field('wardName'));
     expect(storedWardName).toBe('Harold Example');
   });
 
@@ -101,7 +101,7 @@ test.describe('Form entry contract', () => {
     // coverage for any Plan type" gap on real Cover-page fields.
     await freshStartNoPassword(page);
     await createWard(page, 'Rapid Plan Date Ward', 'planAnnual');
-    await page.evaluate(() => (window as any).navigate('/'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
 
     await page.evaluate(() => {
       const values: Record<string, string> = {
@@ -113,13 +113,13 @@ test.describe('Form entry contract', () => {
         input.value = value;
         input.dispatchEvent(new Event('input', { bubbles: true }));
       }
-      (window as any).navigate('/p2');
+      (window as any).GuardianForms.testing.navigate('/p2');
     });
 
-    await page.evaluate(() => (window as any).navigate('/'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
     const dates = await page.evaluate(() => ({
-      periodFrom: (window as any).D.periodFrom,
-      periodTo: (window as any).D.periodTo,
+      periodFrom: (window as any).GuardianForms.testing.field('periodFrom'),
+      periodTo: (window as any).GuardianForms.testing.field('periodTo'),
     }));
     expect(dates).toEqual({ periodFrom: '2026-02-14', periodTo: '2026-03-14' });
   });
@@ -127,7 +127,7 @@ test.describe('Form entry contract', () => {
   test('identifier fields split into two real, distinct policies: normalize vs. preserve', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Identifier Policy Ward', 'annual');
-    await page.evaluate(() => (window as any).navigate('/p5'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/p5'));
 
     // Normalize policy: bar number keeps digits only. Eight-digit values are
     // preserved for forward compatibility; shorter numbers are zero-padded.
@@ -139,7 +139,7 @@ test.describe('Form entry contract', () => {
 
     // Preserve policy on the modern data-field-path pipeline (not Guardian's
     // legacy data-bind path, the only place preserve-policy is proven today).
-    await page.evaluate(() => (window as any).navigate('/p4'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/p4'));
     const preparerNameInput = page.locator('[data-form-path="preparer.name"]');
     await expect(preparerNameInput).toBeVisible();
     await preparerNameInput.fill('McLeod');
@@ -156,7 +156,7 @@ test.describe('Form entry contract', () => {
     // three have any existing test coverage on the modern pipeline.
     await freshStartNoPassword(page);
     await createWard(page, 'Name Address Format Ward', 'annual');
-    await page.evaluate(() => (window as any).navigate('/p4'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/p4'));
 
     const nameInput = page.locator('[data-form-path="preparer.name"]');
     await nameInput.fill('jane smith');
@@ -185,7 +185,7 @@ test.describe('Form entry contract', () => {
     // its mock control has no real `document`.
     await freshStartNoPassword(page);
     await createWard(page, 'City State Zip Flag Ward', 'annual');
-    await page.evaluate(() => (window as any).navigate('/p4'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/p4'));
 
     const cityStateZipInput = page.locator('[data-form-path="preparer.cityStateZip"]');
     await cityStateZipInput.fill('St.Petersburg,FL33704');
@@ -213,14 +213,14 @@ test.describe('Form entry contract', () => {
     // fundamentally a persistence action. This proves the live-session half.
     await freshStartNoPassword(page);
     await createWard(page, 'Live Block Ward', 'guardian');
-    await page.evaluate(() => (window as any).navigate('/'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
 
     const gidInput = page.locator('input[data-field-path="gid"]');
     await gidInput.fill('02/14/26'); // 2-digit year, rejected
     await gidInput.blur();
     await expect(gidInput).toHaveAttribute('aria-invalid', 'true');
 
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
     await page.locator('[data-inventory-action="save-pdf"]').evaluate((button: HTMLButtonElement) => {
       button.disabled = false;
       button.click();

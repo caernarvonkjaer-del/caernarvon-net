@@ -1,0 +1,269 @@
+{
+ "note": "Milestone 70, 70T: which browser specs reach the app only through window.GuardianForms.testing (or the real UI), checked by tests/unit/ms70-70T-guard.spec.js, and what converting them found. A write moved from a raw patch to setField() or the real UI may make a test fail that passed before: that is a finding about today's test, recorded here with its resolution, never suppressed (decision D9).",
+ "converted": [
+  "tests/e2e/annotation-toolbar-containment.spec.ts",
+  "tests/e2e/annual-bond-period.spec.ts",
+  "tests/e2e/annual-field-formatting.spec.ts",
+  "tests/e2e/annual-mount.spec.ts",
+  "tests/e2e/annual-schedule-consistency.spec.ts",
+  "tests/e2e/backup-restore-sav.spec.ts",
+  "tests/e2e/bond-depository.spec.ts",
+  "tests/e2e/carryover-workflow.spec.ts",
+  "tests/e2e/case-file-core-fields-roundtrip.spec.ts",
+  "tests/e2e/case-file-protection.spec.ts",
+  "tests/e2e/case-file-roundtrip.spec.ts",
+  "tests/e2e/case-write-through.spec.ts",
+  "tests/e2e/closed-filing-sync.spec.ts",
+  "tests/e2e/combobox-keyboard-nav.spec.ts",
+  "tests/e2e/conditional-reveal-routes.spec.ts",
+  "tests/e2e/continue-prompt-banner.spec.ts",
+  "tests/e2e/convert-ward.spec.ts",
+  "tests/e2e/cover-county.spec.ts",
+  "tests/e2e/dashboard-backup.spec.ts",
+  "tests/e2e/dashboard-visual.spec.ts",
+  "tests/e2e/date-validation.contract.spec.ts",
+  "tests/e2e/excel-b4-multi-account.spec.ts",
+  "tests/e2e/excel-blank-page-pruning.spec.ts",
+  "tests/e2e/excel-date-cells.spec.ts",
+  "tests/e2e/excel-defined-names.spec.ts",
+  "tests/e2e/excel-form-field-placement.spec.ts",
+  "tests/e2e/excel-import-cell-shapes.spec.ts",
+  "tests/e2e/excel-pruned-roundtrip.spec.ts",
+  "tests/e2e/export-button-guard.spec.ts",
+  "tests/e2e/feature-load-failure.spec.ts",
+  "tests/e2e/filing-identity.contract.spec.ts",
+  "tests/e2e/form-entry-ux.spec.ts",
+  "tests/e2e/form-entry.contract.spec.ts",
+  "tests/e2e/form-field-labels.spec.ts",
+  "tests/e2e/guardian-blank-page-pruning.spec.ts",
+  "tests/e2e/guardian-inventory-collection-controls.spec.ts",
+  "tests/e2e/guardian-inventory-excel-schedule-layout.spec.ts",
+  "tests/e2e/guardian-inventory-mount.spec.ts",
+  "tests/e2e/guardian-inventory-schedule-layout.spec.ts",
+  "tests/e2e/guardian-inventory-tri-state-radios.spec.ts",
+  "tests/e2e/guardianship-selection-controls.spec.ts",
+  "tests/e2e/guided-tour-navigation.spec.ts",
+  "tests/e2e/highlight-toolbar-style.spec.ts",
+  "tests/e2e/legacy-ward-data-normalization.spec.ts",
+  "tests/e2e/mixed-version.characterization.spec.ts",
+  "tests/e2e/navigation-status.contract.spec.ts",
+  "tests/e2e/offline.spec.ts",
+  "tests/e2e/output-semantics.artifact.spec.ts",
+  "tests/e2e/page-structure.spec.ts",
+  "tests/e2e/party-dedupe.spec.ts",
+  "tests/e2e/party-resolver.spec.ts",
+  "tests/e2e/party-write-through.spec.ts",
+  "tests/e2e/pdf-accessibility-and-signatures.spec.ts",
+  "tests/e2e/pdf-annotate.spec.ts",
+  "tests/e2e/pdf-cover-geometry.spec.ts",
+  "tests/e2e/pdf-evidence-lab.spec.ts",
+  "tests/e2e/pdf-fonts-and-xmp.spec.ts",
+  "tests/e2e/pdf-form-specific.spec.ts",
+  "tests/e2e/pdf-notice-title.spec.ts",
+  "tests/e2e/pdf-preview-viewer.spec.ts",
+  "tests/e2e/pdf-structure-tags.spec.ts",
+  "tests/e2e/pdf-table-semantics.spec.ts",
+  "tests/e2e/persistence-recovery.contract.spec.ts",
+  "tests/e2e/plan-annual-mount.spec.ts",
+  "tests/e2e/plan-annual-rights-no.spec.ts",
+  "tests/e2e/plan-benefits-tristate.spec.ts",
+  "tests/e2e/plan-certificate-of-service.spec.ts",
+  "tests/e2e/plan-directive-cards.spec.ts",
+  "tests/e2e/plan-initial-assistive-none.spec.ts",
+  "tests/e2e/plan-initial-dates-explained.spec.ts",
+  "tests/e2e/plan-initial-mount.spec.ts",
+  "tests/e2e/plan-initial-multiselect.spec.ts",
+  "tests/e2e/plan-initial-period.spec.ts",
+  "tests/e2e/plan-minor-mount.spec.ts",
+  "tests/e2e/plan-pdf-wcag-compliance.spec.ts",
+  "tests/e2e/plan-readiness.contract.spec.ts",
+  "tests/e2e/plan-signature-date.spec.ts",
+  "tests/e2e/plan-simplified-mount.spec.ts",
+  "tests/e2e/plan-started-row.spec.ts",
+  "tests/e2e/portable-http-parity.spec.ts",
+  "tests/e2e/preparer-flag.spec.ts",
+  "tests/e2e/preparer-note-placement.spec.ts",
+  "tests/e2e/print-preview-signature-jump.spec.ts",
+  "tests/e2e/pwa-registration.spec.ts",
+  "tests/e2e/readiness-card.contract.spec.ts",
+  "tests/e2e/recovery-cache.spec.ts",
+  "tests/e2e/routes.spec.ts",
+  "tests/e2e/sav-corpus.characterization.spec.ts",
+  "tests/e2e/save-pipeline-boot.spec.ts",
+  "tests/e2e/schb4-bank-accounts-ui.spec.ts",
+  "tests/e2e/schedule-card-layout.spec.ts",
+  "tests/e2e/schedule-doc-ack.spec.ts",
+  "tests/e2e/schedule-docs-period-key.spec.ts",
+  "tests/e2e/section-guidance-invariant.spec.ts",
+  "tests/e2e/security-contract.spec.ts",
+  "tests/e2e/security.spec.ts",
+  "tests/e2e/service-attestation-visibility.spec.ts",
+  "tests/e2e/sidebar-only-wants.spec.ts",
+  "tests/e2e/signature-block-address-margin.spec.ts",
+  "tests/e2e/signature-capture.contract.spec.ts",
+  "tests/e2e/signature-stamp-reuse.spec.ts",
+  "tests/e2e/signature-style-removal.spec.ts",
+  "tests/e2e/simplified-mount.spec.ts",
+  "tests/e2e/simplified-part1-identity-cells.spec.ts",
+  "tests/e2e/simplified-remuneration.spec.ts",
+  "tests/e2e/startup.spec.ts",
+  "tests/e2e/supplemental-pdf-accounting.spec.ts",
+  "tests/e2e/support/app-driver.ts",
+  "tests/e2e/support/case-file-shape.contract.ts",
+  "tests/e2e/support/filing-matrix.ts",
+  "tests/e2e/support/fixture-completeness.ts",
+  "tests/e2e/support/fixtures.ts",
+  "tests/e2e/support/pdf-extract.ts",
+  "tests/e2e/support/plan-fixture.ts",
+  "tests/e2e/support/stream.ts",
+  "tests/e2e/support/supplemental-pdf-fixture.ts",
+  "tests/e2e/support/target-profile.ts",
+  "tests/e2e/support/target.ts",
+  "tests/e2e/support/window-api.ts",
+  "tests/e2e/support/xlsx-extract.ts",
+  "tests/e2e/tab-and-update.spec.ts",
+  "tests/e2e/terms-acceptance.spec.ts",
+  "tests/e2e/test-system-title-prefix.spec.ts",
+  "tests/e2e/testing-adapter.spec.ts",
+  "tests/e2e/theme-prepaint.spec.ts",
+  "tests/e2e/ucn-cover-field.spec.ts",
+  "tests/e2e/unlock.spec.ts",
+  "tests/e2e/user-guide-wiring.spec.ts",
+  "tests/e2e/validation-structured-paths.spec.ts",
+  "tests/e2e/vendor-loader-retry.spec.ts",
+  "tests/e2e/verified-inventory-workflow.spec.ts",
+  "tests/e2e/ward-lock.spec.ts",
+  "tests/e2e/year-rollover.characterization.spec.ts"
+ ],
+ "exempt": [
+  {
+   "file": "tests/e2e/support/pre-70-build.ts",
+   "why": "Drives a Guardian Forms build from before Milestone 70, which has no GuardianForms namespace, through that build's own window globals: the mixed-version characterization runs such a build beside this tree on purpose. Used by tests/e2e/mixed-version.characterization.spec.ts alone; removed once production runs a post-70 build.",
+   "usedBy": [
+    "tests/e2e/mixed-version.characterization.spec.ts"
+   ]
+  }
+ ],
+ "findings": [
+  {
+   "file": "tests/e2e/bond-depository.spec.ts, tests/e2e/annual-schedule-consistency.spec.ts, tests/e2e/sidebar-only-wants.spec.ts",
+   "what": "Seven 'the sidebar mark turned green' checks were toHaveClass(/complete/), which also matches the class 'incomplete' -- they could not fail, so a page that never turned green passed.",
+   "resolution": "Anchored to /\\bcomplete\\b/ on the branch and on master (the defect predates Milestone 70). If a mark does not really turn green, the corrected check now says so."
+  },
+  {
+   "file": "tests/e2e/bond-depository.spec.ts",
+   "what": "After answering the depository question the test forced the sidebar to redraw (updateNavDots()) before checking the mark -- a render the app must do on its own when a filer answers (D9).",
+   "resolution": "The forced redraw is gone; the mark is checked exactly as a filer would see it after the click."
+  },
+  {
+   "file": "tests/e2e/guardian-inventory-collection-controls.spec.ts, tests/e2e/guardian-inventory-mount.spec.ts, tests/e2e/plan-readiness.contract.spec.ts",
+   "what": "Three tests proved deleted window.* bridges stay deleted by naming them in the page (typeof window.addGuardian and kin) -- a browser spec naming app globals, which the 70T guard forbids even to prove them absent.",
+   "resolution": "The pins moved to tests/unit/removed-window-bridges.spec.js, read from the source by the window-bridge audit (window.X =, legacy top-level functions, Object.defineProperty); seen failing for a re-added function, a re-added defineProperty and a renamed kept bridge. Recorded in the assertion-count drop log."
+  },
+  {
+   "file": "tests/e2e/case-resolver.spec.ts",
+   "what": "Every test called case-resolver.js's pure functions through their window bridges, and several depend on object identity (resolveCase() returning the very Case createCase() made), which copies from GuardianForms.testing cannot show.",
+   "resolution": "Moved to tests/unit/case-resolver.spec.js by direct import: same five tests, same 18 expects; seen failing with the caseId branch disabled."
+  },
+  {
+   "file": "tests/e2e/cover-county.spec.ts",
+   "what": "The two caption checks called legacy-app.js's circuitCourtCaption(), which nothing in the app calls -- the caption a filer receives, the court PDF's, went unchecked for a blank county. The carry-over checks called carryOverFields() on an Annual-to-Annual pairing the Add Filing dialog does not offer.",
+   "resolution": "Captions are read from the generated Annual PDF; carry-over goes through the real dialog (Annual to Plan Annual). circuitCourtCaption() now has no consumer at all: its disposition becomes delete-as-dead, for 70B."
+  },
+  {
+   "file": "tests/e2e/ucn-cover-field.spec.ts",
+   "what": "The 'a blank UCN is never reported as missing' check ran whichever validator happened to be loaded first (validateGuardian || validateAnnual || ...), not necessarily the open filing type's -- for some types it could have checked the wrong form.",
+   "resolution": "It runs the open filing's own validator (validate.open())."
+  },
+  {
+   "file": "tests/e2e/simplified-mount.spec.ts, tests/e2e/guardian-inventory-mount.spec.ts",
+   "what": "The stale-delegate probes replaced an app function with a counter (openFloridaCourtPortal, showPickPartyModal) and asserted zero -- a probe never shown to reach a live delegate.",
+   "resolution": "Each watches what the handler does (a window opening; the Link to Shared Record dialog) and adds a control: with the feature mounted, the same probe does trigger it."
+  },
+  {
+   "file": "tests/e2e/legacy-ward-data-normalization.spec.ts",
+   "what": "The tests normalized hand-built data by calling normalizeWardData() themselves, so they proved the function, not that stored older data is normalized when a filer opens it.",
+   "resolution": "The older shape is stored on the filing, which is closed and opened again (activateWard() -> setD() runs the normalizer); the empty sentinel is checked after leaving for the dashboard."
+  },
+  {
+   "file": "tests/e2e/mixed-version.characterization.spec.ts",
+   "what": "Its old side runs a pre-Milestone-70 build, which has no GuardianForms; a mechanical conversion drove both builds through the adapter, which the old one cannot answer.",
+   "resolution": "Each tab is driven through its own build: this tree through GuardianForms.testing (support/app-driver.ts), the old one through its own globals in support/pre-70-build.ts -- the one file exempt from the guard, with its reason and its single permitted importer checked."
+  },
+  {
+   "file": "src/core/testing/testing-adapter.js",
+   "what": "The adapter exposed commitCoverCounty() as a shared-record command, although the reviewed design classes it real-UI: a spec could give the ward Party a county no filer's click produced.",
+   "resolution": "Removed; setup that needs the ward Party's county chooses it through the real Cover combobox (target.ts chooseCoverCounty())."
+  },
+  {
+   "file": "tests/baseline/ms70-testing-adapter-design.json",
+   "what": "The recorded design still carried the rules from before two 70T schema corrections, and its spec compared only names, so the drift went unnoticed.",
+   "resolution": "Regenerated; tests/unit/ms70-testing-adapter-design.spec.js now requires the recorded design to equal what the rules produce (seen failing against the stale file)."
+  },
+  {
+   "file": "tests/e2e/annual-mount.spec.ts, tests/e2e/guardian-inventory-mount.spec.ts, tests/e2e/simplified-mount.spec.ts",
+   "what": "Each read `caseFile.wards` as a bare name inside page.evaluate() -- window.caseFile, reached without writing `window` -- and the first 70T guard saw only window member access, so two of them were already counted as converted.",
+   "resolution": "Read through GuardianForms.testing.snapshot(). The inventory now reports free identifiers that name anything src/ can put on window, and the guard fails on them (seen failing on exactly these files)."
+  },
+  {
+   "file": "tests/e2e/simplified-remuneration.spec.ts, tests/e2e/preparer-flag.spec.ts",
+   "what": "The mechanical converter turned Object.assign(window.D.x, row) into Object.assign(GuardianForms.testing.field('x'), row): a write into a copy that changes nothing. In the remuneration spec the 'a complete row satisfies Part VII' setup had silently done nothing since its conversion.",
+   "resolution": "Both now patch the filing (setup, D9). The inventory reports any write into a value GuardianForms.testing returned -- direct, Object.assign, mutator or delete, through a `t` alias or not -- and the guard fails on it (seen failing with the remuneration write restored)."
+  },
+  {
+   "file": "tests/e2e/party-resolver.spec.ts",
+   "what": "The converter replaced live objects with copies throughout (resolveParty(id) === party, caseFile.wards.push(...)), so its identity checks compared copies and its setup wrote into them.",
+   "resolution": "Rebuilt from the committed version: the 26 pure-logic tests run on the modules in tests/unit/party-resolver.spec.js (same bodies, 165 expects; seen failing with the merge tombstone ignored); the three .sav round trips stay in the browser, with the carry-over through the real Add Filing dialog."
+  },
+  {
+   "file": "tests/e2e/schedule-docs-period-key.spec.ts",
+   "what": "Two tests used schedule keys no page renders ('annualSchA', 'guardianSchA1'): they proved a supporting-documents slot no filer ever sees.",
+   "resolution": "They use Schedule A's real sections ('schA' on /scha, 'a1' on /a1) and read what the Supporting Documents section shows after each period change."
+  },
+  {
+   "file": "tests/e2e/routes.spec.ts",
+   "what": "The Rename Ward dialog was tested by calling showRenameWardModal(); no button has opened it since the Milestone 36 dashboard consolidation (e5fb9cf). The no-active-filing state was staged by setting three globals by hand.",
+   "resolution": "The rename steps are dropped and the dialog, showRenameWardModal() and the dead shell/dashboard 'rename-ward' cases are handed to 70B as delete-as-dead. The state is reached by closing the filing; deletes go through the dashboard's Delete buttons."
+  },
+  {
+   "file": "tests/e2e/case-file-protection.spec.ts",
+   "what": "The 'Open Data File' test called triggerImportZip(), which no button has called since Milestone 41B consolidated save and backup to two buttons (4cd5723); the sidebar button runs triggerOpenBackupSav().",
+   "resolution": "The test clicks the real Open Backup button; triggerImportZip() is handed to 70B as delete-as-dead. saveBlobAs()'s AbortError contract moved to tests/unit/case-file.spec.js."
+  },
+  {
+   "file": "tests/e2e/pdf-form-specific.spec.ts",
+   "what": "The Slice 19E drift guard assigned its sentinel filing to window.D with no filing open -- a state the app never reaches -- and its architecture half read window.calcTotalsAnnual.",
+   "resolution": "The sentinel becomes a real Annual filing, closed and reopened so the load path prepares it; balance comes from status.annualReconcile(). The one-calculator claim is checked on the module graph in tests/unit/annual-accounting-totals.spec.js (seen failing both ways)."
+  },
+  {
+   "file": "tests/e2e/navigation-status.contract.spec.ts",
+   "what": "Jump targets were proved by calling focusFieldByPath(); the Initial Plan attorney predicate by calling it through window; the conversion attestation reset by calling the four mappers on hand-built destinations (its 'addresses still migrate' was collected but never asserted); Part XI normalization by calling normalizeWardData() on bare objects.",
+   "resolution": "A jump link is dispatched through the app's own delegate; the predicate has tests/unit/attorney-block.spec.js; the real conversions run (Convert Filing) and the recipient is asserted to migrate; the older shapes are stored and the filing reopened."
+  },
+  {
+   "file": "tests/e2e/pdf-annotate.spec.ts, tests/e2e/annual-mount.spec.ts, tests/e2e/ward-lock.spec.ts, tests/e2e/combobox-keyboard-nav.spec.ts, tests/e2e/dashboard-backup.spec.ts",
+   "what": "Behavior was reached by calling app functions or instrumenting live objects: a setter on the live filing to order save-before-download, stubbed showPickPartyModal(), showWardLockedModal()/showAddWardModal()/showConvertWardModal() called directly, saveBackupNow()/saveBlobAs()/finishSingleWardExport() called directly.",
+   "resolution": "Each goes through what a filer does or sees: the filing's state at the moment the download starts; the Link to Shared Record dialog opening (with a control); a real Web Lock held on the filing; the dashboard's New Filing, Convert, Backup and the sidebar's Save Backup buttons."
+  },
+  {
+   "file": "tests/e2e/security.spec.ts",
+   "what": "'Unknown fragment names are rejected without a request' called window.loadFragment() in the page.",
+   "resolution": "Checked on src/fragment-loader.js directly in tests/unit/fragment-loader.spec.js, every request recorded, with a control that the allowlisted fragment is fetched (seen failing with the allowlist removed)."
+  },
+  {
+   "file": "tests/e2e/signature-block-address-margin.spec.ts",
+   "what": "Its conversion (batch 2) wrote the long guardian addresses through a loop variable into a snapshot copy and then only saved: the setup changed nothing, so four tests had no addresses to measure. The guard could not see it -- the write went through `g`, not the copy's own name. Found by 70T's gate run.",
+   "resolution": "The copy is written back (replaceFiling). The inventory now follows a copy held in a variable through what is derived from it (members, for-of items, array-callback parameters, `||` fallbacks) and reports a write unless the copy is handed on; a test that writes a copy on purpose marks the declaring line `copy-write: deliberate` (tests/e2e/testing-adapter.spec.ts). Seen failing on this exact defect restored."
+  },
+  {
+   "file": "tests/e2e/schedule-docs-period-key.spec.ts",
+   "what": "Rendering the Supporting Documents section runs the app's PDF check on each stored file; the seeded file records had no content, so the app rightly marked one 'not a readable PDF'. The old test never rendered, so its seed never had to be realistic. Found by 70T's gate run.",
+   "resolution": "Two real PDFs (6 and 7 pages, built with pdf-lib) are uploaded through the section's own file control, and the page counts the app reads are asserted."
+  },
+  {
+   "file": "tests/e2e/guardian-inventory-mount.spec.ts",
+   "what": "The new positive control for the stale-delegate probe clicked the Link to Shared Record dialog's Cancel while the supporting-documentation prompt (Milestone 57C-R) -- raised by the loop's Schedule B-2 rows -- sat on top of it. Found by 70T's gate run.",
+   "resolution": "The control dismisses that prompt first (dismissScheduleDocPrompt(), a no-op when none is showing)."
+  }
+ ]
+}

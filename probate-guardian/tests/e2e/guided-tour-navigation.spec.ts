@@ -11,13 +11,13 @@ for (const formType of ['guardian', 'simplified', 'annual', 'planSimplified', 'p
     test.setTimeout(60000);
     await freshStartNoPassword(page);
 
-    await page.evaluate((type) => (window as any).addWard(`Tour audit ${type}`, type), formType);
+    await page.evaluate((type) => (window as any).GuardianForms.testing.createFiling.add(`Tour audit ${type}`, type), formType);
     // #walkthrough-title carries static placeholder text in the base HTML
     // until showWalkthroughStep() first overwrites it -- captured before
     // starting the tour so the poll below correctly waits for a real change
     // away from that placeholder, not just any non-null text.
     let previousTitle = await page.locator('#walkthrough-title').textContent();
-    await page.evaluate(() => (window as any).startWalkthrough());
+    await page.evaluate(() => (window as any).GuardianForms.testing.tour.start());
 
     // showWalkthroughStep() (src/legacy-app.js) repositions the tooltip and
     // updates #walkthrough-title inside its own internal setTimeout(...,300)
@@ -54,8 +54,8 @@ for (const formType of ['guardian', 'simplified', 'annual', 'planSimplified', 'p
 
 test('guided-tour dashboard sequence covers all dashboard steps from help panel', async ({ page }) => {
   await freshStartNoPassword(page);
-  await page.evaluate((type) => (window as any).addWard('Tour Dashboard Ward', type), 'annual');
-  await page.evaluate(() => (window as any).navigate('/dashboard'));
+  await page.evaluate((type) => (window as any).GuardianForms.testing.createFiling.add('Tour Dashboard Ward', type), 'annual');
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/dashboard'));
 
   const main = page.locator('#main-content');
   await main.locator('[data-dashboard-bound="true"]').waitFor();

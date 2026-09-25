@@ -25,14 +25,12 @@ const REM_ROW = { guardian: 'Rachel M. Alvarez', type: 'Guardian fee', descripti
 function partSevenState(page: Page) {
   return page.evaluate(async () => {
     const w = window as any;
-    await w.loadSimplifiedFeature();
-    const { validateSimplified } = await import('/probate-guardian/src/features/simplified-accounting/index.js');
-    const issues = validateSimplified().map((i: any) => (typeof i === 'string' ? i : i.message));
+    const issues = (await w.GuardianForms.testing.validate.open()).map((i: any) => (typeof i === 'string' ? i : i.message));
     return {
-      sidebarComplete: !!w.computeNavChecks().checks['s-p7'],
+      sidebarComplete: !!w.GuardianForms.testing.status.navChecks().checks['s-p7'],
       partSevenIssues: issues.filter((m: string) => /Part VII/.test(m)),
-      declaredNone: !!(w.D.scheduleNoItems && w.D.scheduleNoItems.remuneration),
-      rows: (w.D.remuneration || []).length,
+      declaredNone: !!(w.GuardianForms.testing.field('scheduleNoItems') && w.GuardianForms.testing.field('scheduleNoItems.remuneration')),
+      rows: (w.GuardianForms.testing.field('remuneration') || []).length,
     };
   });
 }
@@ -44,12 +42,12 @@ async function openFreshSimplified(page: Page, name: string) {
   // fillMinimalValidSimplifiedWard declares "none received" so the rest of the
   // fixture is exportable; clear it to reach the genuinely unanswered state.
   await page.evaluate(() => {
-    const d = (window as any).D;
+    const d = (window as any).GuardianForms.testing.snapshot().filing;
     d.remuneration = [];
     if (d.scheduleNoItems) d.scheduleNoItems.remuneration = false;
-    (window as any).autoSave();
+    (window as any).GuardianForms.testing.replaceFiling(d);
   });
-  await page.evaluate(() => (window as any).flushPendingSave());
+  await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
 }
 
 test.describe('Milestone 60J: Part VII must be answered, and is always declared', () => {
@@ -65,11 +63,11 @@ test.describe('Milestone 60J: Part VII must be answered, and is always declared'
     expect(unanswered.partSevenIssues.join(' '), 'an unanswered Part VII must block export').toContain('declare the remuneration received, or verify there is none to report');
 
     // 2. Declared none -- through the real checkbox, not by writing state.
-    await page.evaluate(() => (window as any).navigate('/p7'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/p7'));
     const declareNone = page.locator('[data-simplified-change="schedule-no-items"][data-schedule="remuneration"]');
     await expect(declareNone, 'no "none to report" control on Part VII').toBeVisible();
     await declareNone.check();
-    await page.evaluate(() => (window as any).flushPendingSave());
+    await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
     const declared = await partSevenState(page);
     expect(declared.declaredNone).toBe(true);
     expect(declared.sidebarComplete).toBe(true);
@@ -78,27 +76,27 @@ test.describe('Milestone 60J: Part VII must be answered, and is always declared'
     // 3. Adding an entry withdraws the declaration: the two must never both
     // stand, or the filing contradicts the schedule printed beside it.
     await page.locator('[data-simplified-action="add-remuneration"]').click();
-    await page.evaluate(() => (window as any).flushPendingSave());
+    await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
     const added = await partSevenState(page);
     expect(added.rows).toBe(1);
     expect(added.declaredNone, 'adding an entry must withdraw the "none received" declaration').toBe(false);
 
     // 4. A half-filled row blocks: the row itself is now incomplete.
     await page.evaluate(() => {
-      (window as any).D.remuneration[0].amount = '500';
-      (window as any).autoSave();
+      (window as any).GuardianForms.testing.patchFiling({ 'remuneration.0.amount': '500' });
+      (window as any).GuardianForms.testing.save.auto();
     });
-    await page.evaluate(() => (window as any).flushPendingSave());
+    await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
     const halfFilled = await partSevenState(page);
     expect(halfFilled.sidebarComplete, 'a row missing its required fields must not read complete').toBe(false);
     expect(halfFilled.partSevenIssues.join(' ')).toMatch(/Guardian Name|Type/);
 
     // 5. A complete row satisfies both, with no declaration ticked.
     await page.evaluate((row) => {
-      Object.assign((window as any).D.remuneration[0], row);
-      (window as any).autoSave();
+      const t = (window as any).GuardianForms.testing;
+      t.patchFiling({ 'remuneration.0': { ...t.field('remuneration.0'), ...row } });
     }, REM_ROW);
-    await page.evaluate(() => (window as any).flushPendingSave());
+    await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
     const complete = await partSevenState(page);
     expect(complete.declaredNone).toBe(false);
     expect(complete.sidebarComplete).toBe(true);
@@ -109,15 +107,15 @@ test.describe('Milestone 60J: Part VII must be answered, and is always declared'
     test.setTimeout(150_000);
     await openFreshSimplified(page, 'Part VII None Ward');
     await page.evaluate(() => {
-      (window as any).D.scheduleNoItems.remuneration = true;
-      (window as any).autoSave();
+      (window as any).GuardianForms.testing.patchFiling({ 'scheduleNoItems.remuneration': true });
+      (window as any).GuardianForms.testing.save.auto();
     });
-    await page.evaluate(() => (window as any).flushPendingSave());
+    await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
 
     const text = await extractPdfText(await page.evaluate(async () => {
       const w = window as any;
-      const { buildSimplifiedAccountingModel, generateCourtFormPdf } = await w.loadSimplifiedPdf();
-      const doc = await generateCourtFormPdf(buildSimplifiedAccountingModel(w.D, { printDate: '2026-09-20' }));
+      const { buildSimplifiedAccountingModel, generateCourtFormPdf } = await w.GuardianForms.testing.generateOutput.simplifiedPdf();
+      const doc = await generateCourtFormPdf(buildSimplifiedAccountingModel(w.GuardianForms.testing.snapshot().filing, { printDate: '2026-09-20' }));
       return doc.output();
     }));
 
@@ -141,15 +139,15 @@ test.describe('Milestone 60J: Part VII must be answered, and is always declared'
     test.setTimeout(150_000);
     await openFreshSimplified(page, 'Part VII Entries Ward');
     await page.evaluate((row) => {
-      (window as any).D.remuneration = [row];
-      (window as any).autoSave();
+      (window as any).GuardianForms.testing.patchFiling({ 'remuneration': [row] });
+      (window as any).GuardianForms.testing.save.auto();
     }, REM_ROW);
-    await page.evaluate(() => (window as any).flushPendingSave());
+    await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
 
     const text = await extractPdfText(await page.evaluate(async () => {
       const w = window as any;
-      const { buildSimplifiedAccountingModel, generateCourtFormPdf } = await w.loadSimplifiedPdf();
-      const doc = await generateCourtFormPdf(buildSimplifiedAccountingModel(w.D, { printDate: '2026-09-20' }));
+      const { buildSimplifiedAccountingModel, generateCourtFormPdf } = await w.GuardianForms.testing.generateOutput.simplifiedPdf();
+      const doc = await generateCourtFormPdf(buildSimplifiedAccountingModel(w.GuardianForms.testing.snapshot().filing, { printDate: '2026-09-20' }));
       return doc.output();
     }));
 
@@ -163,13 +161,13 @@ test.describe('Milestone 60J: Part VII must be answered, and is always declared'
   test('the Part VII page offers an Amount input bound to the row', async ({ page }) => {
     test.setTimeout(150_000);
     await openFreshSimplified(page, 'Part VII Amount Ward');
-    await page.evaluate(() => (window as any).navigate('/p7'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/p7'));
     await page.locator('[data-simplified-action="add-remuneration"]').click();
     const amount = page.locator('[data-form-path="remuneration.0.amount"]');
     await expect(amount, 'Part VII has no Amount input').toBeVisible();
     await amount.fill('1250.50');
     await amount.blur();
-    await page.evaluate(() => (window as any).flushPendingSave());
-    expect(await page.evaluate(() => (window as any).D.remuneration[0].amount)).toBe('1250.50');
+    await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
+    expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('remuneration.0.amount'))).toBe('1250.50');
   });
 });

@@ -153,8 +153,8 @@ function expectSerial(cell: Cell | undefined, serial: number, label: string) {
 }
 
 async function exportExcel(page: Page, selector: string) {
-  await page.evaluate(() => (window as any).flushPendingSave());
-  await page.evaluate(() => (window as any).navigate('/print'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
   const button = page.locator(selector);
   await expect(button).toBeEnabled({ timeout: 20_000 });
   const dl = page.waitForEvent('download', { timeout: 40_000 });
@@ -169,13 +169,13 @@ test.describe('Milestone 67E: exported dates are dates, not text', () => {
     await createWard(page, 'Date Cells Annual Ward', 'annual');
     await fillMinimalValidAnnualWard(page);
     await page.evaluate(() => {
-      const d = (window as any).D;
+      const d = (window as any).GuardianForms.testing.snapshot().filing;
       // The inception date sits on the far side of the year boundary from the
       // period, and one Schedule B-1 row reaches the court-order-date column
       // the template left unformatted.
       d.gid = '2025-12-31';
       d.schB1 = [{ bankAcct: '1234', checkNo: '101', periodFrom: '2026-02-01', periodTo: '2026-02-28', datePaid: '2026-03-04', payee: 'Sample Attorney', courtOrderDate: '2026-02-15', amount: '100' }];
-      (window as any).autoSave();
+      (window as any).GuardianForms.testing.replaceFiling(d);
     });
     const bytes = await exportExcel(page, '[data-annual-action="save-excel"]');
     const wb = await openWorkbook(bytes);
@@ -212,11 +212,11 @@ test.describe('Milestone 67E: exported dates are dates, not text', () => {
     const file = path.join(os.tmpdir(), `pg-date-cells-${Date.now()}.xlsx`);
     fs.writeFileSync(file, bytes);
     await createWard(page, 'Date Cells Import Target', 'annual');
-    await page.evaluate(() => (window as any).navigate('/'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
     await page.setInputFiles('input[type="file"][accept=".xlsx"]', file);
-    await page.waitForFunction(() => (window as any).D.caseNumber === '2026-CP-000789', undefined, { timeout: 20_000 });
+    await page.waitForFunction(() => (window as any).GuardianForms.testing.field('caseNumber') === '2026-CP-000789', undefined, { timeout: 20_000 });
     const back = await page.evaluate(() => {
-      const d = (window as any).D;
+      const d = (window as any).GuardianForms.testing.snapshot().filing;
       return {
         gid: d.gid, periodFrom: d.periodFrom, periodTo: d.periodTo,
         certDate: d.certDate, attorneySig: d.attorney_signatureDate,

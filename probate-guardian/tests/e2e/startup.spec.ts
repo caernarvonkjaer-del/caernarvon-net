@@ -110,7 +110,7 @@ test.describe('startup', { tag: '@origin-state' }, () => {
     const result = await page.evaluate(async () => {
       const startedAt = performance.now();
       try {
-        await (window as any).readRememberedFile({ getFile: () => new Promise(() => {}) }, 25);
+        await (window as any).GuardianForms.testing.persistenceState.readRememberedFile({ getFile: () => new Promise(() => {}) }, 25);
         return { name: 'resolved', elapsed: performance.now() - startedAt };
       } catch (error) {
         return { name: error instanceof DOMException ? error.name : 'Error', elapsed: performance.now() - startedAt };
@@ -134,7 +134,7 @@ test.describe('startup', { tag: '@origin-state' }, () => {
     await startNewCase(page);
     await chooseNoPassword(page);
     await createWard(page, 'Boot Order Ward');
-    await page.evaluate(() => (window as any).navigate('/dashboard'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/dashboard'));
     await page.locator('#main-content [data-dashboard-bound="true"]').waitFor();
 
     // The dashboard is a lazily imported feature module mounted through
@@ -171,8 +171,8 @@ test.describe('startup', { tag: '@origin-state' }, () => {
     });
 
     const beforeGuard = await page.evaluate(() => {
-      const ward = (window as any).getActiveWard();
-      return (window as any).getWardProgress(ward);
+      const t = (window as any).GuardianForms.testing;
+      return t.status.progress(t.snapshot().activeFilingId);
     });
     // Today's actual (buggy) behavior: the bundle really is loaded already at
     // this point (see comment above), so this call succeeds and returns a
@@ -181,9 +181,9 @@ test.describe('startup', { tag: '@origin-state' }, () => {
     expect(beforeGuard).not.toBeNull();
 
     const degraded = await page.evaluate(() => {
-      delete (window as any).validateGuardian;
-      const ward = (window as any).getActiveWard();
-      return (window as any).getWardProgress(ward);
+      const t = (window as any).GuardianForms.testing;
+      t.simulate.validatorNotLoaded('guardian');
+      return t.status.progress(t.snapshot().activeFilingId);
     });
 
     expect(warnings.some((w) => w.includes('progress calc failed'))).toBe(false);

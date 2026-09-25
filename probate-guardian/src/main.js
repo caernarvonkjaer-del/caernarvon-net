@@ -66,6 +66,14 @@ import { navigate } from './core/navigation/router.js';
 import { markFilingRevisionChanged, isOutputAcknowledgedFor, clearOutputAcknowledgement } from './core/filing/output-authorization.js';
 import { bindReadinessCard } from './core/filing/readiness-card.js';
 import { needsScheduleAck, recordScheduleAck, normalizeScheduleDocsAck } from './core/filing/schedule-doc-ack.js';
+import { installTestingNamespace } from './core/testing/testing-adapter.js';
+
+// Milestone 70, 70T (decisions D3/T3): GuardianForms.testing, the one surface
+// the browser suite drives the app through, exists only when the test runner
+// set the __GUARDIAN_FORMS_TEST_MODE__ flag to true on the page before boot.
+// The flag is read once and deleted here, before anything else in this file
+// runs; in production nothing sets it and nothing is installed.
+installTestingNamespace();
 
 // Guarantee debug/inspection getters on window for test harness assertion compatibility
 if (typeof window !== 'undefined') {

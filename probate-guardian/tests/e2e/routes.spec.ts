@@ -32,7 +32,7 @@ test.describe('routes', () => {
       page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
 
       await freshStartNoPassword(page);
-      await page.evaluate((t) => (window as any).addWard('Route Smoke Test Ward', t), type);
+      await page.evaluate((t) => (window as any).GuardianForms.testing.createFiling.add('Route Smoke Test Ward', t), type);
 
       const main = page.locator('#main-content');
       await expect(main).not.toBeEmpty();
@@ -48,9 +48,9 @@ test.describe('routes', () => {
     page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
 
     await freshStartNoPassword(page);
-    await page.evaluate(() => (window as any).addWard('Dashboard Smoke Test Ward', 'guardian'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.createFiling.add('Dashboard Smoke Test Ward', 'guardian'));
     await page.locator('[data-inventory-change="import-excel"]').waitFor({ state: 'attached' });
-    await page.evaluate(() => (window as any).navigate('/dashboard'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/dashboard'));
 
     await expect(page).toHaveURL(/#\/dashboard/);
     await expect(page.locator('#main-content')).toContainText('Dashboard Smoke Test Ward');
@@ -64,7 +64,7 @@ test.describe('routes', () => {
   // filing case, so both silently kept showing whatever filing was open last.
   test('returning to the dashboard clears the previous filing\'s sidebar context and nav checklist', async ({ page }) => {
     await freshStartNoPassword(page);
-    await page.evaluate(() => (window as any).addWard('Stale Sidebar Ward', 'guardian'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.createFiling.add('Stale Sidebar Ward', 'guardian'));
     await page.locator('[data-inventory-change="import-excel"]').waitFor({ state: 'attached' });
 
     const ctx = page.locator('#sidebar-context');
@@ -72,7 +72,7 @@ test.describe('routes', () => {
     await expect(ctx).toBeVisible();
     await expect(nav.locator('.nav-section')).not.toHaveCount(0);
 
-    await page.evaluate(() => (window as any).navigate('/dashboard'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/dashboard'));
     await expect(page).toHaveURL(/#\/dashboard/);
 
     await expect(ctx).toBeHidden();
@@ -83,7 +83,7 @@ test.describe('routes', () => {
   // Visible on dashboard, hidden and emptied inside a filing, restored on return.
   test('helpful resources panel is visible on dashboard, hidden inside filings, and restored on return', async ({ page }) => {
     await freshStartNoPassword(page);
-    await page.evaluate(() => (window as any).addWard('Resource Sidebar Ward', 'guardian'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.createFiling.add('Resource Sidebar Ward', 'guardian'));
     await page.locator('[data-inventory-change="import-excel"]').waitFor({ state: 'attached' });
 
     const resources = page.locator('#sidebar-resources');
@@ -95,7 +95,7 @@ test.describe('routes', () => {
     await expect(nav.locator('.nav-section')).not.toHaveCount(0);
 
     // Navigate to dashboard
-    await page.evaluate(() => (window as any).navigate('/dashboard'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/dashboard'));
     await expect(page).toHaveURL(/#\/dashboard/);
 
     // On dashboard: #sidebar-resources is visible and contains Pinellas Property Appraiser link.
@@ -136,7 +136,7 @@ test.describe('routes', () => {
     // Return to dashboard again: restored. dispose() empties the panel and
     // renderSidebarResources() rebuilds it, so the group is collapsed afresh --
     // the expansion above is not expected to survive the round trip.
-    await page.evaluate(() => (window as any).navigate('/dashboard'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/dashboard'));
     await expect(page).toHaveURL(/#\/dashboard/);
     await expect(resources).toBeVisible();
     await expect(pcpaoLink).toBeHidden();
@@ -151,7 +151,7 @@ test.describe('routes', () => {
       `© Copyright ${new Date().getFullYear()} Pinellas County Clerk of the Circuit Court and Comptroller`
     );
 
-    await page.evaluate(() => (window as any).addWard('Copyright Notice Ward', 'guardian'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.createFiling.add('Copyright Notice Ward', 'guardian'));
     await page.locator('[data-inventory-change="import-excel"]').waitFor({ state: 'attached' });
     await expect(copyright).toBeVisible();
   });
@@ -163,12 +163,14 @@ test.describe('routes', () => {
   // with no stored active ward, which initApp() leaves activeInventoryType
   // unset for before its own updateSidebar() call. That exact boot sequence
   // can't be staged through a real reload in this harness (the no-password
-  // harness doesn't persist across reloads), so this drives updateSidebar()
-  // itself in that state -- the faithful, if indirect, proxy. See
-  // MILESTONE-50-PROPOSAL.md's 50I "Verified" section.
+  // harness doesn't persist across reloads). Closing the filing reaches the
+  // same state the app's own way -- no active filing, activeInventoryType
+  // unset, the sidebar redrawn, a SPECIAL_PAGES route (Milestone 70, 70T; it
+  // used to set those globals by hand). See MILESTONE-50-PROPOSAL.md's 50I
+  // "Verified" section.
   test('save controls default collapsed even with no active filing, and the toggle stays reachable to reopen it', async ({ page }) => {
     await freshStartNoPassword(page);
-    await page.evaluate(() => (window as any).addWard('Save Controls Ward', 'guardian'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.createFiling.add('Save Controls Ward', 'guardian'));
     await page.locator('[data-inventory-change="import-excel"]').waitFor({ state: 'attached' });
 
     const toggleBtn = page.locator('#save-controls-toggle-btn');
@@ -176,12 +178,8 @@ test.describe('routes', () => {
     // On a filing page it is already collapsed by the existing behavior.
     await expect(toggleBtn).toHaveText('Show save controls ▾');
 
-    await page.evaluate(() => {
-      const w = window as any;
-      w.caseFile.activeWardId = null;
-      w.activeInventoryType = null;
-      w.updateSidebar();
-    });
+    await page.evaluate(() => (window as any).GuardianForms.testing.activateFiling.close());
+    await expect(page).toHaveURL(/#\/dashboard/);
     await expect(body).toBeHidden();
     await expect(toggleBtn).toBeVisible();
     await expect(toggleBtn).toHaveText('Show save controls ▾');
@@ -190,18 +188,18 @@ test.describe('routes', () => {
     // never re-collapse over an explicit toggle.
     await toggleBtn.click();
     await expect(toggleBtn).toHaveText('Hide save controls ▴');
-    await page.evaluate(() => (window as any).updateSidebar());
+    await page.evaluate(() => (window as any).GuardianForms.testing.refreshStatus()); // the sidebar redrawn again
     await expect(toggleBtn).toHaveText('Hide save controls ▴');
   });
 
   test('dashboard controls work without inline event handlers', async ({ page }) => {
     await freshStartNoPassword(page);
-    await page.evaluate(() => (window as any).addWard('Alpha Dashboard Ward', 'guardian'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.createFiling.add('Alpha Dashboard Ward', 'guardian'));
     await page.locator('[data-inventory-change="import-excel"]').waitFor({ state: 'attached' });
-    await page.evaluate(() => (window as any).addWard('Beta Dashboard Ward', 'annual'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.createFiling.add('Beta Dashboard Ward', 'annual'));
     // Milestone 40C-B renamed this heading to say Cover as well as Part I.
     await expect(page.locator('#main-content').getByRole('heading', { name: 'Cover & Part I — Required Information' })).toBeVisible();
-    await page.evaluate(() => (window as any).navigate('/dashboard'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/dashboard'));
 
     const main = page.locator('#main-content');
     await main.locator('[data-dashboard-bound="true"]').waitFor();
@@ -228,34 +226,33 @@ test.describe('routes', () => {
     await expect(main.locator('.ward-card')).toHaveCount(0);
     await expect(main.locator('.dashboard-triage-queue-closed .dashboard-triage-row')).toContainText('Alpha Dashboard Ward');
 
-    await page.evaluate(() => (window as any).navigate('/inventory-select'));
-    await page.evaluate(() => (window as any).navigate('/dashboard'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/inventory-select'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/dashboard'));
     await main.locator('[data-dashboard-bound="true"]').waitFor();
     await assertNoInlineEventHandlers(main, ['[onchange]', '[onclick]', '[oninput]', '[onkeydown]']);
   });
 
   test('dashboard triage uses local preferences without mutating wards', async ({ page }) => {
     await freshStartNoPassword(page);
-    await page.evaluate(() => (window as any).addWard('<img src=x onerror=alert(1)> Alpha Ward', 'guardian'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.createFiling.add('<img src=x onerror=alert(1)> Alpha Ward', 'guardian'));
     await page.locator('[data-inventory-change="import-excel"]').waitFor({ state: 'attached' });
-    await page.evaluate(() => (window as any).addWard('Beta Ward', 'annual'));
-    await page.evaluate(() => (window as any).addWard('Gamma Ward', 'planSimplified'));
-    await page.evaluate(() => (window as any).addWard('Delta Ward', 'annual'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.createFiling.add('Beta Ward', 'annual'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.createFiling.add('Gamma Ward', 'planSimplified'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.createFiling.add('Delta Ward', 'annual'));
     await page.evaluate(() => {
-      const wards = (window as any).getCaseFile().wards;
+      // Setup (D9): each filing's dates and workflow status.
+      const t = (window as any).GuardianForms.testing;
+      const ids = t.snapshot().caseFile.wards.map((w: any) => w.wardId);
       const periodTo = new Date();
       periodTo.setDate(periodTo.getDate() - 90);
       const dueTodayPeriodEnd = [periodTo.getFullYear(), String(periodTo.getMonth() + 1).padStart(2, '0'), String(periodTo.getDate()).padStart(2, '0')].join('-');
-      wards[0].gid = '2026-01-01';
-      wards[0].dashboardWorkflow = { status: 'disapproved-needs-correction', assigneeName: 'Alex Attorney' };
-      wards[1].periodTo = dueTodayPeriodEnd;
-      wards[1].dashboardWorkflow = { status: 'pending-court-review' };
-      wards[2].periodTo = dueTodayPeriodEnd;
-      wards[3].periodTo = dueTodayPeriodEnd;
-      wards[3].dashboardWorkflow = { status: 'approved' };
+      t.patchFiling({ gid: '2026-01-01', dashboardWorkflow: { status: 'disapproved-needs-correction', assigneeName: 'Alex Attorney' } }, ids[0]);
+      t.patchFiling({ periodTo: dueTodayPeriodEnd, dashboardWorkflow: { status: 'pending-court-review' } }, ids[1]);
+      t.patchFiling({ periodTo: dueTodayPeriodEnd }, ids[2]);
+      t.patchFiling({ periodTo: dueTodayPeriodEnd, dashboardWorkflow: { status: 'approved' } }, ids[3]);
     });
-    await page.evaluate(() => (window as any).navigate('/dashboard'));
-    const beforePreferences = await page.evaluate(() => JSON.stringify((window as any).getCaseFile().wards));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/dashboard'));
+    const beforePreferences = await page.evaluate(() => JSON.stringify((window as any).GuardianForms.testing.snapshot().caseFile.wards));
 
     const main = page.locator('#main-content');
     await main.locator('[data-dashboard-bound="true"]').waitFor();
@@ -349,49 +346,49 @@ test.describe('routes', () => {
     await page.locator('#dashboard-search').fill('');
     await expect(main.locator('.dashboard-triage-row')).toHaveCount(4);
 
-    const afterPreferences = await page.evaluate(() => JSON.stringify((window as any).getCaseFile().wards));
+    const afterPreferences = await page.evaluate(() => JSON.stringify((window as any).GuardianForms.testing.snapshot().caseFile.wards));
     expect(afterPreferences).toBe(beforePreferences);
 
-    await page.evaluate(() => (window as any).navigate('/inventory-select'));
-    await page.evaluate(() => (window as any).navigate('/dashboard'));
-    await page.evaluate(() => (window as any).navigate('/inventory-select'));
-    await page.evaluate(() => (window as any).navigate('/dashboard'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/inventory-select'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/dashboard'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/inventory-select'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/dashboard'));
     await main.locator('[data-dashboard-bound="true"]').waitFor();
-    await main.locator('[data-dashboard-ward-id="' + await page.evaluate(() => (window as any).getCaseFile().wards[2].wardId) + '"] [data-dashboard-action="archive"]').dispatchEvent('click');
+    await main.locator('[data-dashboard-ward-id="' + await page.evaluate(() => (window as any).GuardianForms.testing.snapshot().caseFile.wards[2].wardId) + '"] [data-dashboard-action="archive"]').dispatchEvent('click');
     // Archived filings remain visible in the dashboard's all-filings review
     // queue; archive changes workflow state, not the row's visibility.
     await expect(main.locator('.dashboard-triage-row')).toHaveCount(4);
-    expect(await page.evaluate(() => (window as any).getCaseFile().wards[2].archived)).toBe(true);
+    expect(await page.evaluate(() => (window as any).GuardianForms.testing.snapshot().caseFile.wards[2].archived)).toBe(true);
   });
 
   test('explicit dashboard workflow changes persist normalized metadata', async ({ page }) => {
     await freshStartNoPassword(page);
-    await page.evaluate(() => (window as any).addWard('Workflow Ward', 'guardian'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.createFiling.add('Workflow Ward', 'guardian'));
     await page.locator('[data-inventory-change="import-excel"]').waitFor({ state: 'attached' });
-    await page.evaluate(() => (window as any).navigate('/dashboard'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/dashboard'));
     await page.locator('#main-content [data-dashboard-bound="true"]').waitFor();
 
     const row = page.locator('.dashboard-triage-row').filter({ hasText: 'Workflow Ward' });
     await row.locator('[data-dashboard-change="workflow-status"]').selectOption('approved');
-    await expect.poll(() => page.evaluate(() => (window as any).getCaseFile().wards[0].dashboardWorkflow)).toEqual({ status: 'approved' });
+    await expect.poll(() => page.evaluate(() => (window as any).GuardianForms.testing.snapshot().caseFile.wards[0].dashboardWorkflow)).toEqual({ status: 'approved' });
     await expect(page.locator('#last-saved-indicator')).toContainText('Unsaved changes');
 
     const assignee = row.locator('[data-dashboard-change="assignee"]');
     await assignee.fill('  <img src=x onerror=alert(1)> Alex   Attorney  ');
     await assignee.press('Tab');
-    await expect.poll(() => page.evaluate(() => (window as any).getCaseFile().wards[0].dashboardWorkflow)).toEqual({
+    await expect.poll(() => page.evaluate(() => (window as any).GuardianForms.testing.snapshot().caseFile.wards[0].dashboardWorkflow)).toEqual({
       status: 'approved',
       assigneeName: '<img src=x onerror=alert(1)> Alex Attorney',
     });
     await expect(page.locator('.dashboard-triage-row img[src="x"]')).toHaveCount(0);
 
     await row.locator('[data-dashboard-change="workflow-status"]').selectOption('auto');
-    await expect.poll(() => page.evaluate(() => (window as any).getCaseFile().wards[0].dashboardWorkflow)).toEqual({
+    await expect.poll(() => page.evaluate(() => (window as any).GuardianForms.testing.snapshot().caseFile.wards[0].dashboardWorkflow)).toEqual({
       assigneeName: '<img src=x onerror=alert(1)> Alex Attorney',
     });
     await row.locator('[data-dashboard-change="assignee"]').fill('   ');
     await row.locator('[data-dashboard-change="assignee"]').press('Tab');
-    await expect.poll(() => page.evaluate(() => (window as any).getCaseFile().wards[0].dashboardWorkflow)).toBeUndefined();
+    await expect.poll(() => page.evaluate(() => (window as any).GuardianForms.testing.snapshot().caseFile.wards[0].dashboardWorkflow)).toBeUndefined();
   });
 
   test('shell controls work without inline event handlers', async ({ page }) => {
@@ -400,12 +397,12 @@ test.describe('routes', () => {
     await expect(page.locator('.skip-link')).toBeFocused();
     await page.keyboard.press('Enter');
     await expect(page.locator('#main-content')).toBeFocused();
-    await page.evaluate(() => (window as any).addWard('Alpha Shell Ward', 'guardian'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.createFiling.add('Alpha Shell Ward', 'guardian'));
     await page.locator('[data-inventory-change="import-excel"]').waitFor({ state: 'attached' });
-    await page.evaluate(() => (window as any).addWard('Beta Shell Ward', 'annual'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.createFiling.add('Beta Shell Ward', 'annual'));
     // Milestone 40C-B renamed this heading to say Cover as well as Part I.
     await expect(page.locator('#main-content').getByRole('heading', { name: 'Cover & Part I — Required Information' })).toBeVisible();
-    await page.evaluate(() => (window as any).navigate('/dashboard'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/dashboard'));
     await page.locator('[data-dashboard-bound="true"]').waitFor();
 
     await assertNoInlineEventHandlers(page, [
@@ -454,7 +451,7 @@ test.describe('routes', () => {
   // window.resetNavSectionExpanded() and this pins the behaviour down.
   test('navigating forgets a hand-opened sidebar section so the current page\'s section expands', async ({ page }) => {
     await freshStartNoPassword(page);
-    await page.evaluate(() => (window as any).addWard('Nav Accordion Ward', 'guardian'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.createFiling.add('Nav Accordion Ward', 'guardian'));
     await page.locator('[data-inventory-change="import-excel"]').waitFor({ state: 'attached' });
 
     const section = (i: number) => page.locator('#nav-sections .nav-section').nth(i);
@@ -470,7 +467,7 @@ test.describe('routes', () => {
 
     // Now go to a page in Schedule A (index 1). The hand-opened section must be
     // forgotten, so the section holding the new current page expands itself.
-    await page.evaluate(() => (window as any).navigate('/a1'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/a1'));
     await expect(label(1)).toHaveAttribute('aria-expanded', 'true');
     await expect(label(2)).toHaveAttribute('aria-expanded', 'false');
     await expect(section(1)).not.toHaveClass(/collapsed/);
@@ -479,7 +476,7 @@ test.describe('routes', () => {
 
   test('ward management modals work without inline event handlers', async ({ page }) => {
     await freshStartNoPassword(page);
-    await page.evaluate(() => (window as any).showAddWardModalForType('guardian'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.createFiling.openDialog('guardian'));
     await assertNoInlineEventHandlers(page, [
       '#lazy-fragment-host [onclick]', '#lazy-fragment-host [oninput]', '#lazy-fragment-host [onchange]',
       '#lazy-fragment-host [onfocus]', '#lazy-fragment-host [onkeydown]',
@@ -494,16 +491,18 @@ test.describe('routes', () => {
     await expect(page.locator('#addWardModal')).toBeHidden();
     await expect(page.locator('#ward-selector')).toHaveValue('Alpha Modal Ward');
 
-    await page.evaluate(() => (window as any).showRenameWardModal());
-    await page.locator('#rename-ward-input').fill('renamed modal ward');
-    await page.locator('#renameWardModal [data-modal-action="rename-ward"]').click();
-    await expect(page.locator('#renameWardModal')).toBeHidden();
-    await expect(page.locator('#ward-selector')).toHaveValue('Renamed Modal Ward');
+    // (The Rename Ward dialog used to be exercised here by calling
+    // showRenameWardModal() directly. No button has opened it since the
+    // Milestone 36 dashboard consolidation (e5fb9cf) -- a filer cannot reach
+    // it -- so it is recorded as dead for 70B, not tested. Milestone 70, 70T.)
 
-    await page.evaluate(() => (window as any).confirmDeleteWard());
+    // Delete through the dashboard's own Delete button for this filing.
+    const filingId = await page.evaluate(() => (window as any).GuardianForms.testing.snapshot().caseFile.wards[0].wardId);
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/dashboard'));
+    await page.locator(`[data-dashboard-action="delete"][data-ward-id="${filingId}"]`).click();
     await page.locator('#deleteWardModal [data-modal-action="delete-ward"]').click();
     await expect(page.locator('#deleteWardModal')).toBeHidden();
-    await expect.poll(() => page.evaluate(() => (window as any).caseFile.wards.length)).toBe(0);
+    await expect.poll(() => page.evaluate(() => (window as any).GuardianForms.testing.snapshot().caseFile.wards.length)).toBe(0);
   });
 
   // Milestone 58E. The confirmation must say WHICH filing is about to be
@@ -514,20 +513,22 @@ test.describe('routes', () => {
   test('delete confirmation names the individual filing, and deletes exactly that one', async ({ page }) => {
     await freshStartNoPassword(page);
     await page.evaluate(async () => {
-      const w = window as any;
-      await w.addWard('Dorothy Jean Ashford', 'guardian');
-      await w.addWard('Dorothy Jean Ashford', 'annual');
-      const wards = w.caseFile.wards;
-      wards[0].caseNumber = '26-001203-GD';
-      wards[1].caseNumber = '26-001203-GD';
-      wards[1].periodFrom = '2025-01-01';
-      wards[1].periodTo = '2025-12-31';
+      const t = (window as any).GuardianForms.testing;
+      await t.createFiling.add('Dorothy Jean Ashford', 'guardian');
+      await t.createFiling.add('Dorothy Jean Ashford', 'annual');
+      // Setup (D9): both filings on one case, the Annual with its period.
+      const ids = t.snapshot().caseFile.wards.map((w: any) => w.wardId);
+      t.patchFiling({ caseNumber: '26-001203-GD' }, ids[0]);
+      t.patchFiling({ caseNumber: '26-001203-GD', periodFrom: '2025-01-01', periodTo: '2025-12-31' }, ids[1]);
     });
 
-    const ids = await page.evaluate(() => (window as any).caseFile.wards.map((x: any) => x.wardId));
+    const ids = await page.evaluate(() => (window as any).GuardianForms.testing.snapshot().caseFile.wards.map((x: any) => x.wardId));
 
+    // Each filing's own Delete button on the dashboard.
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/dashboard'));
+    const deleteButton = (wardId: string) => page.locator(`[data-dashboard-action="delete"][data-ward-id="${wardId}"]`);
     const messageFor = async (wardId: string) => {
-      await page.evaluate((id) => (window as any).confirmDeleteWard(id), wardId);
+      await deleteButton(wardId).click();
       const text = await page.locator('#delete-ward-msg').textContent();
       await page.locator('#deleteWardModal [data-modal-action="close"]').click();
       await expect(page.locator('#deleteWardModal')).toBeHidden();
@@ -545,41 +546,41 @@ test.describe('routes', () => {
     expect(annualMsg, 'two filings on one ward must not read identically').not.toBe(inventoryMsg);
 
     // Cancelling deleted nothing.
-    expect(await page.evaluate(() => (window as any).caseFile.wards.length)).toBe(2);
+    expect(await page.evaluate(() => (window as any).GuardianForms.testing.snapshot().caseFile.wards.length)).toBe(2);
 
     // Confirming deletes exactly the filing the prompt named.
-    await page.evaluate((id) => (window as any).confirmDeleteWard(id), ids[1]);
+    await deleteButton(ids[1]).click();
     await page.locator('#deleteWardModal [data-modal-action="delete-ward"]').click();
     await expect(page.locator('#deleteWardModal')).toBeHidden();
-    await expect.poll(() => page.evaluate(() => (window as any).caseFile.wards.map((x: any) => x.inventoryType)))
+    await expect.poll(() => page.evaluate(() => (window as any).GuardianForms.testing.snapshot().caseFile.wards.map((x: any) => x.inventoryType)))
       .toEqual(['guardian']);
   });
 
   test('shared plan controls persist through delegated form events', async ({ page }) => {
     await freshStartNoPassword(page);
-    await page.evaluate(() => (window as any).addWard('Shared Form Ward', 'planSimplified'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.createFiling.add('Shared Form Ward', 'planSimplified'));
     await page.locator('[data-shell-action="hide-auto-export-reminder"]').click();
 
     const caseNumber = page.locator('#caseNumber');
     await caseNumber.fill('2026cp123');
     await caseNumber.blur();
     await expect(caseNumber).toHaveValue('20-026123-GD');
-    await expect.poll(() => page.evaluate(() => (window as any).D.caseNumber)).toBe('20-026123-GD');
+    await expect.poll(() => page.evaluate(() => (window as any).GuardianForms.testing.field('caseNumber'))).toBe('20-026123-GD');
 
     const county = page.locator('#county');
     await county.fill('Ora');
     await page.locator('#county-dropdown [data-county="Orange"]').click();
     await expect(county).toHaveValue('Orange');
-    await expect.poll(() => page.evaluate(() => (window as any).D.county)).toBe('Orange');
+    await expect.poll(() => page.evaluate(() => (window as any).GuardianForms.testing.field('county'))).toBe('Orange');
 
     await page.locator('#sidebar [data-form-action="navigate"][data-route="/p2"]').click();
     await expect(page).toHaveURL(/#\/p2$/);
     await page.locator('#q1Residences').fill('A supported residence');
-    await expect.poll(() => page.evaluate(() => (window as any).D.q1Residences)).toBe('A supported residence');
+    await expect.poll(() => page.evaluate(() => (window as any).GuardianForms.testing.field('q1Residences'))).toBe('A supported residence');
 
     const restoreRights = page.locator('input[type="radio"][data-form-path="q7RestoreRights"][value="Yes"]');
     await restoreRights.check();
-    await expect.poll(() => page.evaluate(() => (window as any).D.q7RestoreRights)).toBe('Yes');
+    await expect.poll(() => page.evaluate(() => (window as any).GuardianForms.testing.field('q7RestoreRights'))).toBe('Yes');
     await expect(page.locator('[data-form-path][oninput], [data-form-path][onchange], [data-form-path][onfocus], [data-form-path][onblur], [data-form-control][oninput], [data-form-control][onfocus], [data-form-control][onblur]')).toHaveCount(0);
   });
 
@@ -590,8 +591,8 @@ test.describe('routes', () => {
 
     for (const type of INVENTORY_TYPES) {
       await freshStartNoPassword(page);
-      await page.evaluate((t) => (window as any).addWard(`Summary Test Ward ${t}`, t), type);
-      await page.evaluate(() => (window as any).navigate('/summary'));
+      await page.evaluate((t) => (window as any).GuardianForms.testing.createFiling.add(`Summary Test Ward ${t}`, t), type);
+      await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/summary'));
 
       const main = page.locator('#main-content');
       await expect(main).not.toBeEmpty();
@@ -607,14 +608,15 @@ test.describe('routes', () => {
       // run's unlistened dialog would have had auto-dismissed by Playwright,
       // clearing the cache as a side effect of declining, not of saving).
       await page.evaluate(async () => {
-        await (window as any).flushPendingSave();
-        await (window as any).clearSessionRestoreCache();
+        const t = (window as any).GuardianForms.testing;
+        await t.save.flush();
+        await t.recoveryCache.clear();
         // Confirmed live: without this, some later mount/render tick
         // re-marks the app dirty and re-arms the debounced autosave, which
         // can fire and re-populate the cache before the next reload's
         // navigation actually unloads this page -- clearing alone isn't
         // enough to prevent the offer from reappearing.
-        (window as any)._dirtySinceExport = false;
+        t.save.markClean();
       });
     }
 
@@ -633,19 +635,19 @@ test.describe('routes', () => {
   // Inventory's Summary pages, both built on this one shared renderer.
   test('Summary page: clicking a real Section Completion link navigates there and stays, instead of bouncing back to Cover', async ({ page }) => {
     await freshStartNoPassword(page);
-    await page.evaluate(() => (window as any).addWard('Summary Link Ward', 'planMinor'));
-    await page.evaluate(() => (window as any).navigate('/summary'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.createFiling.add('Summary Link Ward', 'planMinor'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/summary'));
 
     const main = page.locator('#main-content');
     await main.getByRole('link', { name: 'Prior Residences' }).click();
 
     await expect(page.locator('#main-content h1')).toContainText('2. Residences During the Preceding 12 Months');
-    expect(await page.evaluate(() => (window as any).currentPage)).toBe('/p2');
+    expect(await page.evaluate(() => (window as any).GuardianForms.testing.snapshot().currentPage)).toBe('/p2');
   });
 
   test('form fields in dark mode use light gray background with black font', async ({ page }) => {
     await freshStartNoPassword(page);
-    await page.evaluate(() => (window as any).addWard('Dark Theme Form Ward', 'simplified'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.createFiling.add('Dark Theme Form Ward', 'simplified'));
     await page.evaluate(() => { document.documentElement.dataset.theme = 'dark'; });
 
     const wardNameInput = page.locator('#wardName');

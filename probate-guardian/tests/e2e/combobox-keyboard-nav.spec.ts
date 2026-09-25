@@ -44,7 +44,7 @@ test.describe('Combobox keyboard navigation (Milestone 52J)', () => {
     await expect(page.locator('#ward-selector-dropdown')).toBeHidden();
     // Enter on the highlighted option switches the filing outright
     // (unqualified today per Milestone 43's own switchWard() call).
-    const active = await page.evaluate(() => (window as any).getActiveWard()?.wardName);
+    const active = await page.evaluate(() => (window as any).GuardianForms.testing.snapshot().filing?.wardName);
     expect(['Alpha Ward', 'Beta Ward']).toContain(active);
   });
 
@@ -53,7 +53,9 @@ test.describe('Combobox keyboard navigation (Milestone 52J)', () => {
     await createWard(page, 'Alpha Existing Ward', 'guardian');
     await createWard(page, 'Beta Existing Ward', 'annual');
 
-    await page.evaluate(() => (window as any).showAddWardModal());
+    // The dashboard's own New Filing button.
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/dashboard'));
+    await page.locator('[data-dashboard-action="add-ward"]').first().click();
     await page.locator('#addWardModal.show').waitFor({ state: 'visible' });
 
     const input = page.locator('#new-ward-name');
@@ -84,7 +86,9 @@ test.describe('Combobox keyboard navigation (Milestone 52J)', () => {
     await createWard(page, 'Alpha Convert Source', 'guardian');
     await createWard(page, 'Beta Convert Source', 'annual');
 
-    await page.evaluate(() => (window as any).showConvertWardModal());
+    // The dashboard's own New Filing from Existing button.
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/dashboard'));
+    await page.locator('[data-dashboard-action="select-existing"]').first().click();
     await page.locator('#convertWardModal.show').waitFor({ state: 'visible' });
 
     const input = page.locator('#convert-source-ward');

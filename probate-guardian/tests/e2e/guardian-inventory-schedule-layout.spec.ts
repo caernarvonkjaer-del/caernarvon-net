@@ -84,17 +84,17 @@ async function openGuardianPreview(page: Page) {
   await createWard(page, 'Schedule Layout Ward', 'guardian');
   await fillMinimalValidGuardianWard(page);
   await page.evaluate((long) => {
-    const d = (window as any).D;
+    const d = (window as any).GuardianForms.testing.snapshot().filing;
     d.scheduleA2 = [long.a2];
     d.scheduleB2 = [long.b2];
     d.scheduleC1 = [long.c1];
     d.scheduleC3 = [long.c3];
     d.scheduleC4 = [long.c4];
     d.scheduleNoItems = { ...(d.scheduleNoItems || {}), a2: false, b2: false, c1: false, c3: false, c4: false };
-    (window as any).autoSave();
+    (window as any).GuardianForms.testing.replaceFiling(d);
   }, LONG);
-  await page.evaluate(() => (window as any).flushPendingSave());
-  await page.evaluate(() => (window as any).navigate('/print'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
   await page.locator('#print-doc-container .pdf-page').first().waitFor({ state: 'visible', timeout: 30000 });
   await page.evaluate(() => {
     // The pager keeps every page in the DOM but shows one at a time; each has
@@ -295,7 +295,7 @@ test.describe('Milestone 60B-60E: widened Guardian Inventory schedules stay read
     await createWard(page, 'Keep With Next Ward', 'guardian');
     await fillMinimalValidGuardianWard(page);
     await page.evaluate(() => {
-      const d = (window as any).D;
+      const d = (window as any).GuardianForms.testing.snapshot().filing;
       Object.assign(d, {
         scheduleNoItems: {},
         scheduleA1: [{ propertyDescription: 'Primary Residence', streetAddress: '1420 5th Ave N', cityStateZip: 'St. Petersburg, FL 33705', fullAssetValue: 250000, wardPercent: 100 }],
@@ -310,11 +310,11 @@ test.describe('Milestone 60B-60E: widened Guardian Inventory schedules stay read
         scheduleC4: [{ trustName: 'Bennett Special Needs Trust', trusteeName: 'Chas Addams', trusteeAddress: '1 Trust Way', trusteeCityStateZip: 'Tampa, FL 33601', dateCreated: '2020-01-01', trustAmount: 49075, wardPercent: 100 }],
         scheduleC5: [{ assetDescription: 'Joint checking account', ownerName: 'Sarah Bennett', ownerAddress: '1420 5th Ave N', ownerCityStateZip: 'St. Petersburg, FL 33705', relationshipToWard: 'Daughter', totalAssetValue: 8000, jointOwnerPercent: 50 }],
       });
-      (window as any).autoSave();
+      (window as any).GuardianForms.testing.replaceFiling(d);
     });
     const { pdf, sectionTitles } = await page.evaluate(async () => {
-      const { buildVerifiedInventoryModel, generateVerifiedInventoryPdf } = await (window as any).loadGuardianPdf();
-      const model = buildVerifiedInventoryModel((window as any).D, { printDate: '2026-09-22' });
+      const { buildVerifiedInventoryModel, generateVerifiedInventoryPdf } = await (window as any).GuardianForms.testing.generateOutput.guardianPdf();
+      const model = buildVerifiedInventoryModel((window as any).GuardianForms.testing.snapshot().filing, { printDate: '2026-09-22' });
       const doc = await generateVerifiedInventoryPdf(model);
       return { pdf: doc.output(), sectionTitles: model.sections.map((s: any) => String(s.title)) };
     });
@@ -353,14 +353,14 @@ test.describe('Milestone 60B-60E: widened Guardian Inventory schedules stay read
     await createWard(page, 'Restricted Header Ward', 'guardian');
     await fillMinimalValidGuardianWard(page);
     await page.evaluate(() => {
-      const d = (window as any).D;
+      const d = (window as any).GuardianForms.testing.snapshot().filing;
       d.scheduleB1 = [{ institutionName: 'Raymond James Bank', accountType: 'Checking', accountNumber: '4821', streetAddress: '880 Carillon Pkwy', cityStateZip: 'St. Petersburg, FL 33716', fullAssetAmount: 38250, wardPercent: 100, restricted: 'No' }];
       d.scheduleB3 = [{ description: 'Vanguard Index Fund', streetAddress: '100 Vanguard Blvd', cityStateZip: 'Malvern, PA 19355', fullAssetValue: 65000, wardPercent: 100, restricted: 'No', inSafeDepositBox: 'No' }];
       d.scheduleNoItems = { ...(d.scheduleNoItems || {}), b1: false, b3: false };
-      (window as any).autoSave();
+      (window as any).GuardianForms.testing.replaceFiling(d);
     });
-    await page.evaluate(() => (window as any).flushPendingSave());
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
     await page.locator('#print-doc-container .pdf-page').first().waitFor({ state: 'visible', timeout: 30000 });
     await page.evaluate(() => {
       for (const el of document.querySelectorAll('#print-doc-container .pdf-page')) {
@@ -428,8 +428,8 @@ test.describe('Milestone 60B-60E: widened Guardian Inventory schedules stay read
     await openGuardianPreview(page);
     const raw = await page.evaluate(async () => {
       const w = window as any;
-      const { buildVerifiedInventoryModel, generateVerifiedInventoryPdf } = await w.loadGuardianPdf();
-      const model = buildVerifiedInventoryModel(w.D, { printDate: '2026-09-20' });
+      const { buildVerifiedInventoryModel, generateVerifiedInventoryPdf } = await w.GuardianForms.testing.generateOutput.guardianPdf();
+      const model = buildVerifiedInventoryModel(w.GuardianForms.testing.snapshot().filing, { printDate: '2026-09-20' });
       const c3 = model.sections.find((s: any) => s.id === 'c3').blocks[0];
       // Same header count, same row shape, one deliberately starved column.
       c3.colWidths = [20, 19, 16, 16, 5, 10, 6, 8];

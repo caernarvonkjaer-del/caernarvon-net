@@ -11,7 +11,7 @@ test.describe('PDF Accessibility: Embedded Fonts & PDF/UA-1 XMP Metadata', () =>
     await freshStartNoPassword(page);
 
     const result = await page.evaluate(async () => {
-      const { buildAnnualAccountingModel, generateCourtFormPdf } = await (window as any).loadAnnualPdf();
+      const { buildAnnualAccountingModel, generateCourtFormPdf } = await (window as any).GuardianForms.testing.generateOutput.annualPdf();
       const d = {
         wardName: 'Annual Fonts Ward',
         caseNumber: '26-004500-GD',
@@ -53,7 +53,7 @@ test.describe('PDF Accessibility: Embedded Fonts & PDF/UA-1 XMP Metadata', () =>
   test('Slice 19A: XMP metadata packet conditionally includes pdfuaid:part 1 when requested', async ({ page }) => {
     await freshStartNoPassword(page);
     const result = await page.evaluate(async () => {
-      const { buildXmpPacket } = await (window as any).loadGuardianPdf();
+      const { buildXmpPacket } = await (window as any).GuardianForms.testing.generateOutput.guardianPdf();
       const standard = buildXmpPacket({ title: 'Test Form', embedFonts: false });
       const withPdfUa = buildXmpPacket({ title: 'Test Form', claimPdfUa: true });
       const defaultPacket = buildXmpPacket({ title: 'Test Form' });
@@ -72,7 +72,7 @@ test.describe('PDF Accessibility: Embedded Fonts & PDF/UA-1 XMP Metadata', () =>
     await freshStartNoPassword(page);
 
     const result = await page.evaluate(async () => {
-      const { buildVerifiedInventoryModel, generateVerifiedInventoryPdf } = await (window as any).loadGuardianPdf();
+      const { buildVerifiedInventoryModel, generateVerifiedInventoryPdf } = await (window as any).GuardianForms.testing.generateOutput.guardianPdf();
       const model = buildVerifiedInventoryModel({
         wardName: 'Harold Thomas Bennett',
         caseNumber: '26-002487-GD',

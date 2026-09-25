@@ -23,7 +23,7 @@ test.describe('simplified-accounting feature module', () => {
     await createSimplifiedWard(page, 'Simplified Nav Test Ward');
 
     for (const route of SIMPLIFIED_PAGES) {
-      await page.evaluate((r) => (window as any).navigate(r), route);
+      await page.evaluate((r) => (window as any).GuardianForms.testing.navigate(r), route);
       await expect(page.locator('#main-content')).not.toBeEmpty();
     }
 
@@ -33,7 +33,7 @@ test.describe('simplified-accounting feature module', () => {
   test('an incomplete filing is blocked from export with a clear error', async ({ page }) => {
     await freshStartNoPassword(page);
     await createSimplifiedWard(page, 'Incomplete Simplified Ward');
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
 
     await page.locator('[data-simplified-action="save-pdf"]').evaluate((button: HTMLButtonElement) => {
       button.disabled = false;
@@ -48,7 +48,7 @@ test.describe('simplified-accounting feature module', () => {
     await freshStartNoPassword(page);
     await createSimplifiedWard(page, 'Complete Simplified PDF Ward');
     await fillMinimalValidSimplifiedWard(page);
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
 
     const downloadPromise = page.waitForEvent('download', { timeout: 20_000 });
     await page.locator('[data-simplified-action="save-pdf"]').click();
@@ -67,7 +67,7 @@ test.describe('simplified-accounting feature module', () => {
     await freshStartNoPassword(page);
     await createSimplifiedWard(page, 'Excel Roundtrip Simplified Ward');
     await fillMinimalValidSimplifiedWard(page);
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
 
     const downloadPromise = page.waitForEvent('download', { timeout: 20_000 });
     await page.locator('[data-simplified-action="save-excel"]').click();
@@ -78,20 +78,20 @@ test.describe('simplified-accounting feature module', () => {
 
     // A second, blank Simplified ward to import into.
     await createSimplifiedWard(page, 'Blank Simplified Import Target');
-    await page.evaluate(() => (window as any).navigate('/'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
 
     const errors: string[] = [];
     page.on('pageerror', (e) => errors.push(e.message));
     await page.setInputFiles('input[type="file"][accept=".xlsx"]', xlsxPath);
     // Poll the actual completion signal instead of guessing a timeout -- same
     // idiom annual-mount.spec.ts's own Excel-import test already establishes.
-    await page.waitForFunction(() => (window as any).D.caseNumber === '2026-CP-000456', { timeout: 10_000 });
+    await page.waitForFunction(() => (window as any).GuardianForms.testing.field('caseNumber') === '2026-CP-000456', { timeout: 10_000 });
 
     const imported = await page.evaluate(() => ({
-      wardName: (window as any).D.wardName,
-      caseNumber: (window as any).D.caseNumber,
-      county: (window as any).D.county,
-      guardian: (window as any).D.guardian,
+      wardName: (window as any).GuardianForms.testing.field('wardName'),
+      caseNumber: (window as any).GuardianForms.testing.field('caseNumber'),
+      county: (window as any).GuardianForms.testing.field('county'),
+      guardian: (window as any).GuardianForms.testing.field('guardian'),
     }));
     expect(imported.caseNumber).toBe('2026-CP-000456');
     expect(imported.county).toBe('Pinellas');
@@ -111,15 +111,15 @@ test.describe('simplified-accounting feature module', () => {
     // caseFile is a bare top-level `let` in legacy-app.js (a classic
     // script), not a `window` property -- but it's still reachable by bare
     // identifier from page.evaluate(), which runs in the same global realm.
-    // @ts-expect-error - caseFile is a page-global from legacy-app.js, not declared in this file
-    const wards = await page.evaluate(() => caseFile.wards.map((w: any) => ({ id: w.wardId, type: w.inventoryType })));
+    const wards = await page.evaluate(() => (window as any).GuardianForms.testing.snapshot().caseFile.wards
+      .map((w: any) => ({ id: w.wardId, type: w.inventoryType })));
     const simplifiedId = wards.find((w: any) => w.type === 'simplified').id;
     const guardianId = wards.find((w: any) => w.type === 'guardian').id;
 
     for (let i = 0; i < 15; i++) {
-      await page.evaluate((id) => (window as any).switchWard(id), simplifiedId);
-      await page.evaluate((r) => (window as any).navigate(r), '/p2');
-      await page.evaluate((id) => (window as any).switchWard(id), guardianId);
+      await page.evaluate((id) => (window as any).GuardianForms.testing.activateFiling.open(id), simplifiedId);
+      await page.evaluate((r) => (window as any).GuardianForms.testing.navigate(r), '/p2');
+      await page.evaluate((id) => (window as any).GuardianForms.testing.activateFiling.open(id), guardianId);
     }
 
     // Only one #main-content in the document, and it holds real content --
@@ -129,17 +129,30 @@ test.describe('simplified-accounting feature module', () => {
     expect(mainContentCount).toBe(1);
     await expect(page.locator('#main-content')).not.toBeEmpty();
 
-    const staleDelegateCalls = await page.evaluate(() => {
+    // A Simplified click delegate that outlived its dispose would answer this
+    // probe by opening the Florida Courts E-Filing Portal. What is counted is
+    // the window opening, not a stub of the app function behind it (70T).
+    const probeCourtPortal = () => page.evaluate(() => {
       let calls = 0;
-      (window as any).openFloridaCourtPortal = () => { calls += 1; };
-      const probe = document.createElement('button');
-      probe.dataset.simplifiedAction = 'open-court-portal';
-      document.getElementById('main-content')?.append(probe);
-      probe.click();
-      probe.remove();
+      const realOpen = window.open;
+      window.open = () => { calls += 1; return null; };
+      try {
+        const probe = document.createElement('button');
+        probe.dataset.simplifiedAction = 'open-court-portal';
+        document.getElementById('main-content')?.append(probe);
+        probe.click();
+        probe.remove();
+      } finally {
+        window.open = realOpen;
+      }
       return calls;
     });
-    expect(staleDelegateCalls).toBe(0);
+    expect(await probeCourtPortal()).toBe(0);
+    // Control: with the Simplified filing open, the same probe does open it --
+    // so the zero above is a disposed delegate, not a probe that reaches nothing.
+    await page.evaluate((id) => (window as any).GuardianForms.testing.activateFiling.open(id), simplifiedId);
+    expect(await probeCourtPortal(), 'the probe reaches a live delegate').toBe(1);
+    await page.evaluate((id) => (window as any).GuardianForms.testing.activateFiling.open(id), guardianId);
 
     const heapUsed = await page.evaluate(() => (performance as any).memory?.usedJSHeapSize ?? null);
     // Informational, not a hard gate this milestone (see the Milestone 2
@@ -164,14 +177,14 @@ test.describe('simplified-accounting feature module', () => {
       { route: '/p7', key: 's-p7' },
     ];
 
-    await page.evaluate(() => (window as any).navigate('/summary'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/summary'));
     for (const r of await crossCheckNavAndSummaryStatus(page, entries)) {
       expect(r.summaryComplete, `${r.route} (blank filing)`).toBe(r.expectComplete);
       expect(r.summaryComplete, `${r.route} (blank filing)`).toBe(r.sidebarComplete);
     }
 
     await fillMinimalValidSimplifiedWard(page);
-    await page.evaluate(() => (window as any).navigate('/summary'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/summary'));
     for (const r of await crossCheckNavAndSummaryStatus(page, entries)) {
       expect(r.summaryComplete, `${r.route} (fully filled)`).toBe(r.expectComplete);
       expect(r.summaryComplete, `${r.route} (fully filled)`).toBe(r.sidebarComplete);
@@ -191,7 +204,7 @@ test('Cover page renders byte-identical visible text and control values through 
   await freshStartNoPassword(page);
   await createSimplifiedWard(page, 'Simp Diff Ward');
   await fillMinimalValidSimplifiedWard(page);
-  await page.evaluate(() => (window as any).navigate('/'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
   const snapshot = await extractFormContentSnapshot(page);
   // Milestone 63E: the Cover gained an optional UCN field -- one label and one (empty) input.
   expect(snapshot).toBe("TEST SYSTEM - Do not use for filing - Cover & Part I — Required Information\nAll Filings\n?\nGeneral Instructions\nImport Excel File (existing simplified accounting template)\nELIGIBILITY — FLA. STAT. § 744.3679\nThe simplified form may only be used when all property of the estate is held in a designated depository under § 69.031, and the only transactions in that account are interest accrual, deposits from a settlement, or financial institution service charges. If either answer below is \"No,\" use the standard Annual Accounting instead.\nAll estate property is held in a designated depository under § 69.031\n*\nYes\nNo\nThe only account transactions are interest accrual, settlement deposits, and/or service charges\n*\nYes\nNo\nREQUIRED INFORMATION\nName of Ward\n*\nCase Number\n?\n*\nSocial Security Number\n*\nUCN\nGuardianship Inception Date (GID)\n*\nUse MM/DD/YYYY\nAmended Form?\n*\nYes\nNo\nAccounting Period From\n*\nUse MM/DD/YYYY\nAccounting Period To\n*\nUse MM/DD/YYYY\nGUARDIAN & ATTORNEY\nGuardian\n*\nAttorney for Guardian\n*\nCounty\n*\nType of Guardianship\n*\n— select —\nPlenary\nLimited\nGuardian Advocate\nVoluntary\nMinor - Person\nMinor - Property\nMinor - Person - Property\nPART II — ACCOUNTING SUMMARY\nStarting Balance (Line 1)\n$1,000.00\nInterest Income (Line 2)\n$10.00\nDeposits from Settlement (Line 3)\n$0.00\nTotal Income (Line 4)\n$10.00\nService Charges (Line 5)\n$5.00\nFederal Income Tax (Line 6)\n$0.00\nTotal Disbursements (Line 7)\n$5.00\nRemaining Assets On Hand (Line 8)\n$1,005.00\nNext →\n---CONTROL VALUES---\n[input:]\n[radio:yesno_eligDepository=checked]\n[radio:yesno_eligDepository=unchecked]\n[radio:yesno_eligOnlyTransactions=checked]\n[radio:yesno_eligOnlyTransactions=unchecked]\n[input:Simp Diff Ward]\n[input:26-000456]\n[input:123-45-6789]\n[input:]\n[input:01/01/2026]\n[radio:yesno_amendedForm=unchecked]\n[radio:yesno_amendedForm=checked]\n[input:01/01/2026]\n[input:12/31/2026]\n[input:Sample Guardian]\n[input:Sample Attorney]\n[input:Pinellas]\n[select:Plenary]");
@@ -201,7 +214,7 @@ test('Part III Declaration renders byte-identical visible text and control value
   await freshStartNoPassword(page);
   await createSimplifiedWard(page, 'Simp Diff Ward');
   await fillMinimalValidSimplifiedWard(page);
-  await page.evaluate(() => (window as any).navigate('/p3'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/p3'));
   const snapshot = await extractFormContentSnapshot(page);
   expect(snapshot).toBe("TEST SYSTEM - Do not use for filing - Part III — Guardian(s) Declaration\nAll Filings\n?\nUnder penalties of perjury, I declare that I have read and examined the foregoing return and that, to the best of my knowledge and belief, it constitutes a full and correct account of all the ward's property of which this guardian has control, and is a complete report of all cash and property transactions and of all receipts and disbursements.\nThese dates should match the accounting period on the Cover page. They will appear in the printed Part III declaration.\nPeriod From\n*\nUse MM/DD/YYYY\nPeriod To\n*\nUse MM/DD/YYYY\nSupporting Documents — accounting period 01/01/2026 to 12/31/2026\n\nUpload PDF supplemental documents only. Supplemental PDFs are inserted as uploaded; Guardian Forms does not certify or remediate uploaded documents for accessibility. Stored on this device only, encrypted with the rest of this ward's data.\n\n+ Upload PDF(s)\nNo supporting documents uploaded for this period.\nComments\n← Back\nNext →\n---CONTROL VALUES---\n[input:01/01/2026]\n[input:12/31/2026]\n[input:]\n[textarea:]");
 });

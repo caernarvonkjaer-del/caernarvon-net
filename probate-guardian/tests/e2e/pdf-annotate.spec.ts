@@ -42,12 +42,12 @@ test.describe('Print Preview annotation (Milestone 39-A mechanism, 45B rollout)'
     test(`${type.name}: Print Preview mounts the annotate toolbar (Milestone 45B rollout)`, async ({ page }) => {
       await freshStartNoPassword(page);
       await type.setup(page);
-      await page.evaluate(() => (window as any).navigate('/print'));
+      await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
       await page.locator('#print-doc-container .pdf-page').first().waitFor({ state: 'visible', timeout: 20000 });
       await expect(page.locator('[data-annotate-action="toggle"]')).toHaveCount(1);
       // Non-Goal #2 still holds for every type it rolls out to: the toolbar
       // must never write into validated form data.
-      expect(await page.evaluate(() => JSON.stringify((window as any).D).includes('freeTextEditor'))).toBe(false);
+      expect(await page.evaluate(() => JSON.stringify((window as any).GuardianForms.testing.snapshot().filing).includes('freeTextEditor'))).toBe(false);
     });
   }
 
@@ -58,7 +58,7 @@ test.describe('Print Preview annotation (Milestone 39-A mechanism, 45B rollout)'
     await freshStartNoPassword(page);
     await createWard(page, 'Annotate Note Ward', 'planSimplified');
     await fillMinimalValidPlanSimplifiedWard(page);
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
     const pdfPage = page.locator('#print-doc-container .pdf-page').first();
     await pdfPage.waitFor({ state: 'visible', timeout: 15000 });
 
@@ -87,7 +87,7 @@ test.describe('Print Preview annotation (Milestone 39-A mechanism, 45B rollout)'
     await freshStartNoPassword(page);
     await createWard(page, 'Annotate Highlight Ward', 'planSimplified');
     await fillMinimalValidPlanSimplifiedWard(page);
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
     await page.locator('#print-doc-container .pdf-page').first().waitFor({ state: 'visible', timeout: 15000 });
 
     await page.locator('[data-annotate-action="toggle"]').click();
@@ -113,7 +113,7 @@ test.describe('Print Preview annotation (Milestone 39-A mechanism, 45B rollout)'
     await freshStartNoPassword(page);
     await createWard(page, 'Annotate Position Ward', 'planSimplified');
     await fillMinimalValidPlanSimplifiedWard(page);
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
     const pdfPage = page.locator('#print-doc-container .pdf-page').first();
     await pdfPage.waitFor({ state: 'visible', timeout: 15000 });
 
@@ -155,7 +155,7 @@ test.describe('Print Preview annotation (Milestone 39-A mechanism, 45B rollout)'
     await freshStartNoPassword(page);
     await createWard(page, 'Annotate Toolbar Ward', 'planSimplified');
     await fillMinimalValidPlanSimplifiedWard(page);
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
     const pdfPage = page.locator('#print-doc-container .pdf-page').first();
     await pdfPage.waitFor({ state: 'visible', timeout: 15000 });
     // Bring the page to the top of the screen first, as a filer about to
@@ -275,7 +275,7 @@ test.describe('Print Preview annotation (Milestone 39-A mechanism, 45B rollout)'
     await freshStartNoPassword(page);
     await createWard(page, 'Annotate Forced Colors Ward', 'planSimplified');
     await fillMinimalValidPlanSimplifiedWard(page);
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
     const pdfPage = page.locator('#print-doc-container .pdf-page').first();
     await pdfPage.waitFor({ state: 'visible', timeout: 15000 });
 
@@ -344,7 +344,7 @@ test.describe('Print Preview annotation (Milestone 39-A mechanism, 45B rollout)'
     await freshStartNoPassword(page);
     await createWard(page, 'Annotate Real Highlight Ward', 'planSimplified');
     await fillMinimalValidPlanSimplifiedWard(page);
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
     const pdfPage = page.locator('#print-doc-container .pdf-page').first();
     await pdfPage.waitFor({ state: 'visible', timeout: 15000 });
 
@@ -404,7 +404,7 @@ test.describe('Print Preview annotation (Milestone 39-A mechanism, 45B rollout)'
     await freshStartNoPassword(page);
     await createWard(page, 'Annotate Clear Ward', 'planSimplified');
     await fillMinimalValidPlanSimplifiedWard(page);
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
     const pdfPage = page.locator('#print-doc-container .pdf-page').first();
     await pdfPage.waitFor({ state: 'visible', timeout: 15000 });
 
@@ -430,7 +430,7 @@ test.describe('Print Preview annotation (Milestone 39-A mechanism, 45B rollout)'
     await expect(pdfPage.locator('.freeTextEditor')).toHaveCount(0);
 
     // Non-Goal #2: annotations never merge into any validated answer.
-    const hasFieldLeak = await page.evaluate(() => JSON.stringify((window as any).D).includes('freeTextEditor'));
+    const hasFieldLeak = await page.evaluate(() => JSON.stringify((window as any).GuardianForms.testing.snapshot().filing).includes('freeTextEditor'));
     expect(hasFieldLeak).toBe(false);
   });
 
@@ -456,27 +456,26 @@ test.describe('Print Preview annotation (Milestone 39-A mechanism, 45B rollout)'
     await freshStartNoPassword(page);
     await createWard(page, 'Annotate Order Ward', 'planSimplified');
     await fillMinimalValidPlanSimplifiedWard(page);
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
     const pdfPage = page.locator('#print-doc-container .pdf-page').first();
     await pdfPage.waitFor({ state: 'visible', timeout: 15000 });
 
-    // Record the two events as they happen, in the page, with no timing
-    // assumptions: a download-bearing anchor click, and the assignment of
-    // D.printAnnotations.
+    // At the moment a download-bearing anchor is clicked -- the file being
+    // handed to the browser -- record whether the filing already holds the
+    // annotations. No timing assumptions. (Milestone 70, 70T: this used to
+    // put a setter on the live filing to see the order of the two events; a
+    // spec now sees the filing only as GuardianForms.testing's copies, and
+    // "already recorded when the download starts" is the same claim.)
+    const recorded = () => page.evaluate(() => Boolean((window as any).GuardianForms.testing.field('printAnnotations')?.pdfBytes));
+    expect(await recorded(), 'control: nothing is recorded before the save').toBe(false);
     await page.evaluate(() => {
       const w = window as any;
-      w.__saveOrder = [];
+      w.__recordedAtDownload = [];
       const originalClick = HTMLAnchorElement.prototype.click;
       HTMLAnchorElement.prototype.click = function patched(this: HTMLAnchorElement, ...args: unknown[]) {
-        if (this.download) w.__saveOrder.push('download');
+        if (this.download) w.__recordedAtDownload.push(Boolean(w.GuardianForms.testing.field('printAnnotations')?.pdfBytes));
         return originalClick.apply(this, args as []);
       };
-      let stored = w.D.printAnnotations;
-      Object.defineProperty(w.D, 'printAnnotations', {
-        configurable: true,
-        get() { return stored; },
-        set(value) { w.__saveOrder.push('persist'); stored = value; },
-      });
     });
 
     await page.locator('[data-annotate-action="toggle"]').click();
@@ -489,20 +488,16 @@ test.describe('Print Preview annotation (Milestone 39-A mechanism, 45B rollout)'
     await page.locator('[data-annotate-action="save"]').click();
     await downloadPromise;
 
-    const order = await page.evaluate(() => (window as any).__saveOrder as string[]);
-    expect(order, 'neither the persist nor the download was observed').toContain('persist');
-    expect(order).toContain('download');
-    expect(
-      order.indexOf('persist'),
-      `the file reached the filer before the filing recorded it (order: ${order.join(' -> ')})`,
-    ).toBeLessThan(order.indexOf('download'));
+    const atDownload = await page.evaluate(() => (window as any).__recordedAtDownload as boolean[]);
+    expect(atDownload, 'no download was observed').not.toEqual([]);
+    expect(atDownload[0], 'the file reached the filer before the filing recorded the annotations').toBe(true);
   });
 
   test('Save Annotated PDF downloads a PDF and persists printAnnotations on the filing; reopening the preview reapplies it', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Annotate Persist Ward', 'planSimplified');
     await fillMinimalValidPlanSimplifiedWard(page);
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
     const pdfPage = page.locator('#print-doc-container .pdf-page').first();
     await pdfPage.waitFor({ state: 'visible', timeout: 15000 });
 
@@ -520,7 +515,7 @@ test.describe('Print Preview annotation (Milestone 39-A mechanism, 45B rollout)'
     const download = await downloadPromise;
     expect(download.suggestedFilename()).toMatch(/\.pdf$/i);
 
-    const stored = await page.evaluate(() => (window as any).D.printAnnotations);
+    const stored = await page.evaluate(() => (window as any).GuardianForms.testing.field('printAnnotations'));
     expect(stored).toBeTruthy();
     expect(typeof stored.pdfBytes).toBe('string');
     // Milestone 43E: >0 is a transport-only check (satisfied by a single
@@ -535,8 +530,8 @@ test.describe('Print Preview annotation (Milestone 39-A mechanism, 45B rollout)'
 
     // Reopen the preview fresh (simulates closing and reopening Print
     // Preview in the same session) -- the "Persistence design" round trip.
-    await page.evaluate(() => (window as any).navigate('/'));
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
     await page.locator('#print-doc-container .pdf-page').first().waitFor({ state: 'visible', timeout: 15000 });
 
     // 39-A's own "Persistence design" flags an unresolved question: does a
@@ -553,7 +548,7 @@ test.describe('Print Preview annotation (Milestone 39-A mechanism, 45B rollout)'
     // saveDocument() actually baked a real, parseable FreeText annotation
     // into the file, or whether the mark was lost outright.
     const storedAnnotationCheck = await page.evaluate(async () => {
-      const D = (window as any).D;
+      const D = (window as any).GuardianForms.testing.snapshot().filing;
       const { ensurePdfjs } = await import('/probate-guardian/src/core/pdf/pdfjs-loader.js');
       const pdfjsLib = await ensurePdfjs();
       const binary = atob(D.printAnnotations.pdfBytes);
@@ -594,7 +589,7 @@ test.describe('Milestone 45A: annotation storage compression', () => {
     await freshStartNoPassword(page);
     await createWard(page, 'Annotate Compress Ward', 'planSimplified');
     await fillMinimalValidPlanSimplifiedWard(page);
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
     const pdfPage = page.locator('#print-doc-container .pdf-page').first();
     await pdfPage.waitFor({ state: 'visible', timeout: 15000 });
 
@@ -609,7 +604,7 @@ test.describe('Milestone 45A: annotation storage compression', () => {
     await downloadPromise;
 
     const sizes = await page.evaluate(async () => {
-      const stored = (window as any).D.printAnnotations;
+      const stored = (window as any).GuardianForms.testing.field('printAnnotations');
       const binary = atob(stored.pdfBytes);
       const raw = new Uint8Array(binary.length);
       for (let i = 0; i < binary.length; i++) raw[i] = binary.charCodeAt(i);
@@ -626,17 +621,17 @@ test.describe('Milestone 45A: annotation storage compression', () => {
 
     // And the round trip still renders: reopening shows the annotation
     // baked in, with no drift-discard announcement.
-    await page.evaluate(() => (window as any).navigate('/'));
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
     await page.locator('#print-doc-container .pdf-page').first().waitFor({ state: 'visible', timeout: 15000 });
-    expect(await page.evaluate(() => !!(window as any).D.printAnnotations)).toBe(true);
+    expect(await page.evaluate(() => !!(window as any).GuardianForms.testing.field('printAnnotations'))).toBe(true);
   });
 
   test('an annotation saved by the 39-A pilot (raw base64, no encoding marker) still loads', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Annotate Legacy Ward', 'planSimplified');
     await fillMinimalValidPlanSimplifiedWard(page);
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
     const pdfPage = page.locator('#print-doc-container .pdf-page').first();
     await pdfPage.waitFor({ state: 'visible', timeout: 15000 });
 
@@ -652,7 +647,7 @@ test.describe('Milestone 45A: annotation storage compression', () => {
     // Rewrite the stored entry into the exact shape the 39-A pilot wrote:
     // raw (uncompressed) base64 and no `encoding` field at all.
     await page.evaluate(async () => {
-      const D = (window as any).D;
+      const D = (window as any).GuardianForms.testing.snapshot().filing;
       const binary = atob(D.printAnnotations.pdfBytes);
       const raw = new Uint8Array(binary.length);
       for (let i = 0; i < binary.length; i++) raw[i] = binary.charCodeAt(i);
@@ -665,15 +660,15 @@ test.describe('Milestone 45A: annotation storage compression', () => {
         contentFingerprint: D.printAnnotations.contentFingerprint,
         capturedAt: D.printAnnotations.capturedAt,
       };
-      (window as any).autoSave?.();
+      (window as any).GuardianForms.testing.replaceFiling(D); // setup (D9): stored as the pilot stored it
     });
 
     // Reopening must still reapply it -- not discard it as drift, and not
     // throw trying to gunzip bytes that were never gzipped.
-    await page.evaluate(() => (window as any).navigate('/'));
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
     await page.locator('#print-doc-container .pdf-page').first().waitFor({ state: 'visible', timeout: 15000 });
-    const after = await page.evaluate(() => (window as any).D.printAnnotations);
+    const after = await page.evaluate(() => (window as any).GuardianForms.testing.field('printAnnotations'));
     expect(after).toBeTruthy();
     expect(after.encoding).toBeUndefined();
   });

@@ -20,8 +20,8 @@ test.describe('Milestone 34-1D: PDF evidence lab', () => {
     });
 
     const evidence = await page.evaluate(async (file) => {
-      const d = (window as any).D;
-      const { buildAnnualAccountingModel } = await (window as any).loadAnnualPdf();
+      const d = (window as any).GuardianForms.testing.snapshot().filing;
+      const { buildAnnualAccountingModel } = await (window as any).GuardianForms.testing.generateOutput.annualPdf();
       const { generateCourtFormPdf } = await import('/probate-guardian/src/core/pdf/pdf-engine.js');
       const { finalizeCourtFormPdf } = await import('/probate-guardian/src/core/pdf/pdf-finalizer.js');
       const { ensurePdfjs } = await import('/probate-guardian/src/core/pdf/pdfjs-loader.js');

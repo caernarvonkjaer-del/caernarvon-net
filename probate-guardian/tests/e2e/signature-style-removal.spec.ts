@@ -17,10 +17,10 @@ test('signature-style controls and legacy bindings are absent from every form ro
   ];
 
   for (const formType of formTypes) {
-    await page.evaluate((type) => (window as any).addWard(`Signature audit ${type}`, type), formType);
+    await page.evaluate((type) => (window as any).GuardianForms.testing.createFiling.add(`Signature audit ${type}`, type), formType);
     const routes = await page.locator('[data-page]').evaluateAll((elements) => [...new Set(elements.map((element: any) => element.dataset.page))]);
     for (const route of routes) {
-      await page.evaluate((nextRoute) => (window as any).navigate(nextRoute), route);
+      await page.evaluate((nextRoute) => (window as any).GuardianForms.testing.navigate(nextRoute), route);
       await page.locator('#main-content').waitFor({ state: 'visible' });
       await expect(page.locator('#main-content')).not.toContainText('Use /s/ format');
       await expect(page.locator('#main-content [data-form-path*="useSlashS"], #main-content [data-bind*="useSlashS"], #main-content [data-annual-path*="useSlashS"]')).toHaveCount(0);

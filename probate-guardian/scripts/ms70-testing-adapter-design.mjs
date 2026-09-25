@@ -36,7 +36,7 @@ export const RULES = [
   [/^__/, 'harness'],
   [/^navigate$/, 'command:navigate'],
   [/^(flushPendingSave|autoSave|saveData|saveBackupNow|markDirtySinceExport)$/, 'command:save'],
-  [/^(addWard|initializeEmptyData|addEntry|duplicateEntry)$/, 'command:createFiling'],
+  [/^(addWard|initializeEmptyData|emptyPlanDirective|addEntry|duplicateEntry)$/, 'command:createFiling'],
   [/^(switchWard|unloadWard)$/, 'command:activateFiling'],
   [/^deleteWard$/, 'command:deleteFiling'],
   [/^(lockApp)$/, 'command:lock'],
@@ -55,6 +55,11 @@ export const RULES = [
   // Schema review, 70A: these redraw, save or announce -- a query is a copy
   // with no side effect, so each is a command (see SCHEMA_REVIEW below).
   [/^(updateNavDots|updateSidebar)$/, 'command:refreshStatus'],
+  // 70T: the support helpers reach the real Add Filing dialog from any page
+  // with this, then drive the dialog's own controls; and the fixtures build
+  // plan answers from the app's own reference lists (copies).
+  [/^showAddWardModalForType$/, 'command:createFiling'],
+  [/^(INITIAL_ADLS|INITIAL_ADL_RATINGS|PLAN_ADLS|PLAN_ADL_RATINGS|PLAN_RIGHTS|PLAN_RIGHT_STATES|PLAN_BENEFITS)$/, 'query:constants'],
   [/^auditLog$/, 'command:recordActivity'],
   [/^(exportGuardianDataZip|saveBlobAs|finishSingleWardExport)$/, 'command:saveArchive'],
   [/^doSave(Pdf|Excel)\w*$/, 'command:saveOutput'],
@@ -80,6 +85,8 @@ export const SCHEMA_REVIEW = {
     'auditLog appends an Activity Log entry -- specs call it to seed the log -- so it is a command (recordActivity), not part of the persistenceState query.',
     'exportGuardianDataZip, saveBlobAs and finishSingleWardExport save a file or announce a save, so they are a command (saveArchive); exportArchive keeps only the two that build a blob.',
     'doSavePdf*/doSaveExcel* start a download, so they are a command (saveOutput); generateOutput keeps the load*Pdf functions, which only hand back the PDF builders.',
+    '70T: showAddWardModalForType is createFiling.openDialog -- the support helpers use it to reach the real Add Filing dialog from any page and then drive its own controls, which keeps createWard() exactly as it was; a spec testing the entry points clicks the real buttons.',
+    '70T: the reference lists a fixture builds plan answers from (INITIAL_ADLS, PLAN_ADLS, PLAN_RIGHTS and their kin) are the constants query, returned as copies: legacy-app.js constants cannot be imported by a Node-side test.',
   ],
   members: {
     activateFiling: 'command', convertFiling: 'command', createFiling: 'command', deleteFiling: 'command', exportArchive: 'query',
@@ -87,6 +94,7 @@ export const SCHEMA_REVIEW = {
     navigate: 'command', persistenceState: 'query', recordActivity: 'command', recoveryCache: 'command', refreshStatus: 'command',
     save: 'command', saveArchive: 'command', saveOutput: 'command', setTestSystemTitleWarning: 'command', sharedRecords: 'query',
     snapshot: 'query', status: 'query', updateSharedRecords: 'command', validate: 'query', year: 'command',
+    constants: 'query',
   },
 };
 

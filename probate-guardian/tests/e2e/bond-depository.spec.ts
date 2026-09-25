@@ -61,8 +61,8 @@ async function sheetText(bytes: Buffer, sheetName: string) {
 }
 
 async function download(page: Page, selector: string) {
-  await page.evaluate(() => (window as any).flushPendingSave());
-  await page.evaluate(() => (window as any).navigate('/print'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
   const button = page.locator(selector);
   await expect(button).toBeEnabled({ timeout: 20_000 });
   const dl = page.waitForEvent('download', { timeout: 40_000 });
@@ -73,25 +73,25 @@ async function download(page: Page, selector: string) {
 const pdfText = async (bytes: Buffer) => (await extractPdfText(bytes)).replace(/\s+/g, ' ');
 
 async function setFields(page: Page, patch: Record<string, unknown>) {
-  await page.evaluate((p) => { Object.assign((window as any).D, p); (window as any).autoSave(); }, patch);
-  await page.evaluate(() => (window as any).flushPendingSave());
+  await page.evaluate((p) => { (window as any).GuardianForms.testing.patchFiling(p); }, patch);
+  await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
 }
 
 const BLANK_BOND = { bondAmount: '', bondPeriodFrom: '', bondPeriodTo: '', bondingCompany: '', bondWaivedDate: '', restrictedDepositoryReceiptDate: '' };
 const FULL_BOND = { bondAmount: '5000', bondPeriodFrom: '2026-01-01', bondPeriodTo: '2027-01-01', bondingCompany: 'Gulf Surety', bondWaivedDate: '2026-03-03', restrictedDepositoryReceiptDate: '2026-02-02' };
 
-/** Every issue the export gate would raise for the given page prefix. */
-const sectionIssues = (page: Page, validator: string, prefix: string) => page.evaluate(([v, p]) => {
-  const issues = (window as any)[v]() || [];
+/** Every issue the open filing's export gate would raise for the given page prefix. */
+const sectionIssues = (page: Page, prefix: string) => page.evaluate(async (p) => {
+  const issues = await (window as any).GuardianForms.testing.validate.open();
   return issues.map((i: any) => String(i?.message ?? i)).filter((m: string) => m.startsWith(p));
-}, [validator, prefix] as [string, string]);
+}, prefix);
 
 const advisories = (page: Page) => page.locator('#main-content .alert-warning li');
 
 for (const form of [
-  { label: 'Guardian Inventory', type: 'guardian', route: '/d4', section: 'D-4', validator: 'validateGuardian', fill: fillMinimalValidGuardianWard,
+  { label: 'Guardian Inventory', type: 'guardian', route: '/d4', section: 'D-4', fill: fillMinimalValidGuardianWard,
     pdfButton: '[data-inventory-action="save-pdf"]', excelButton: '[data-inventory-action="save-excel"]' },
-  { label: 'Annual Accounting', type: 'annual', route: '/p9', section: 'Part IX', validator: 'validateAnnual', fill: fillMinimalValidAnnualWard,
+  { label: 'Annual Accounting', type: 'annual', route: '/p9', section: 'Part IX', fill: fillMinimalValidAnnualWard,
     pdfButton: '[data-annual-action="save-pdf"]', excelButton: '[data-annual-action="save-excel"]' },
 ]) {
   test.describe(`Milestone 67B — ${form.label}`, () => {
@@ -102,12 +102,12 @@ for (const form of [
       for (const state of ['', ...STATES]) {
         for (const fields of [BLANK_BOND, FULL_BOND]) {
           await setFields(page, { bondDepositoryState: state, ...fields });
-          expect(await sectionIssues(page, form.validator, form.section), `state=${JSON.stringify(state)} fields=${fields === BLANK_BOND ? 'blank' : 'filled'}`).toEqual([]);
+          expect(await sectionIssues(page, form.section), `state=${JSON.stringify(state)} fields=${fields === BLANK_BOND ? 'blank' : 'filled'}`).toEqual([]);
         }
       }
       // And the buttons agree with the validator.
       await setFields(page, { bondDepositoryState: '', ...BLANK_BOND });
-      await page.evaluate(() => (window as any).navigate('/print'));
+      await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
       await expect(page.locator(form.pdfButton)).toBeEnabled();
       await expect(page.locator(form.excelButton)).toBeEnabled();
     });
@@ -117,7 +117,7 @@ for (const form of [
       await createWard(page, `${form.label} Bond Reveal`, form.type);
       await form.fill(page);
       await setFields(page, { bondDepositoryState: '', ...BLANK_BOND });
-      await page.evaluate((r) => (window as any).navigate(r), form.route);
+      await page.evaluate((r) => (window as any).GuardianForms.testing.navigate(r), form.route);
 
       const option = (i: number) => page.locator(`#bondDepositoryState_${i}`);
       // Annual's inputs carry data-form-path; the Inventory's date inputs
@@ -150,7 +150,7 @@ for (const form of [
       await option(3).check(); // Bond waived by court order
       await expect(waiverDate.first()).toBeVisible();
       await expect(amount).toHaveCount(0);
-      expect(String(await page.evaluate(() => (window as any).D.bondAmount)), 'hidden, not deleted (section 4)').toMatch(/5000/);
+      expect(String(await page.evaluate(() => (window as any).GuardianForms.testing.field('bondAmount'))), 'hidden, not deleted (section 4)').toMatch(/5000/);
       await expect(option(3)).toBeChecked();
     });
 
@@ -159,16 +159,16 @@ for (const form of [
       await createWard(page, `${form.label} Bond Advisory`, form.type);
       await form.fill(page);
       await setFields(page, { bondDepositoryState: '', ...BLANK_BOND });
-      await page.evaluate(() => (window as any).navigate('/print'));
+      await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
       await expect(advisories(page).filter({ hasText: `${form.section} — The bond / restricted depository arrangement is not stated` })).toHaveCount(1);
 
       await setFields(page, { bondDepositoryState: 'bond-only' });
-      await page.evaluate(() => (window as any).navigate('/print'));
+      await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
       await expect(advisories(page).filter({ hasText: `${form.section} — Bond Amount is blank` })).toHaveCount(1);
       await expect(advisories(page).filter({ hasText: `${form.section} — Name of Bonding Company is blank` })).toHaveCount(1);
 
       await setFields(page, { bondDepositoryState: 'bond-only', bondAmount: '5000', bondingCompany: 'Gulf Surety' });
-      await page.evaluate(() => (window as any).navigate('/print'));
+      await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
       await expect(advisories(page).filter({ hasText: `${form.section} —` })).toHaveCount(0);
       await expect(page.locator(form.pdfButton)).toBeEnabled();
     });
@@ -179,16 +179,16 @@ for (const form of [
       await form.fill(page);
       // The shape a .sav from before this milestone carries.
       await page.evaluate((legacy) => {
-        const d = (window as any).D;
+        const d = (window as any).GuardianForms.testing.snapshot().filing;
         delete d.bondDepositoryState;
         Object.assign(d, legacy);
-        (window as any).autoSave();
+        (window as any).GuardianForms.testing.replaceFiling(d);
       }, form.type === 'guardian'
         ? { bondWaived: 'Yes', bondWaivedDate: '2026-03-03', bondAmount: '', bondingCompany: '' }
         : { restrictedDepository: 'Yes', restrictedDepositoryReceiptDate: '2026-02-02', bondAmount: '5000', bondingCompany: 'Gulf Surety' });
-      await page.evaluate((r) => (window as any).navigate(r), form.route);
+      await page.evaluate((r) => (window as any).GuardianForms.testing.navigate(r), form.route);
       const after = await page.evaluate(() => {
-        const d = (window as any).D;
+        const d = (window as any).GuardianForms.testing.snapshot().filing;
         return {
           state: d.bondDepositoryState, hasWaived: 'bondWaived' in d, hasDepository: 'restrictedDepository' in d,
           waiverDate: d.bondWaivedDate, receipt: d.restrictedDepositoryReceiptDate,
@@ -201,9 +201,9 @@ for (const form of [
       expect(after.hasDepository, 'the retired restrictedDepository tri-state is removed').toBe(false);
       if (form.type === 'guardian') expect(after.waiverDate).toBe('2026-03-03'); else expect(after.receipt).toBe('2026-02-02');
       // A blank legacy filing stays unanswered -- never coerced (section 4).
-      await page.evaluate(() => { const d = (window as any).D; d.bondDepositoryState = ''; d.bondWaived = ''; d.restrictedDepository = ''; Object.assign(d, { bondAmount: '', bondingCompany: '', bondPeriodFrom: '', bondPeriodTo: '', bondWaivedDate: '', restrictedDepositoryReceiptDate: '' }); (window as any).autoSave(); });
-      await page.evaluate((r) => (window as any).navigate(r), form.route);
-      expect(await page.evaluate(() => (window as any).D.bondDepositoryState)).toBe('');
+      await page.evaluate(() => { const d = (window as any).GuardianForms.testing.snapshot().filing; d.bondDepositoryState = ''; d.bondWaived = ''; d.restrictedDepository = ''; Object.assign(d, { bondAmount: '', bondingCompany: '', bondPeriodFrom: '', bondPeriodTo: '', bondWaivedDate: '', restrictedDepositoryReceiptDate: '' }); (window as any).GuardianForms.testing.replaceFiling(d); });
+      await page.evaluate((r) => (window as any).GuardianForms.testing.navigate(r), form.route);
+      expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('bondDepositoryState'))).toBe('');
     });
 
     // The sidebar asks, export does not demand (AGENTS.md section 4), and the
@@ -221,7 +221,7 @@ for (const form of [
       // present, the mount-time migration would (rightly) read "bond only"
       // from them, and the question would already be answered.
       await setFields(page, { bondDepositoryState: '', ...BLANK_BOND });
-      await page.evaluate((r) => (window as any).navigate(r), form.route);
+      await page.evaluate((r) => (window as any).GuardianForms.testing.navigate(r), form.route);
       const navKey = form.type === 'guardian' ? 'd4' : 'a-p9';
       const mark = page.locator(`[data-nav="${navKey}"] .nav-check`);
       const box = page.locator('#page-local-guidance .section-local-guidance');
@@ -238,10 +238,9 @@ for (const form of [
       // Answering clears the box and turns the mark green; the export gate
       // never cared either way.
       await page.locator('#bondDepositoryState_2').check();
-      await page.evaluate(() => (window as any).updateNavDots?.());
       await expect(box).toHaveCount(0);
-      await expect(mark).toHaveClass(/complete/);
-      expect(await sectionIssues(page, form.validator, form.section)).toEqual([]);
+      await expect(mark).toHaveClass(/\bcomplete\b/);
+      expect(await sectionIssues(page, form.section)).toEqual([]);
     });
 
     test('the PDF states the arrangement in the approved words; the Excel is unchanged, and importing it answers the question', async ({ page }) => {
@@ -282,25 +281,25 @@ for (const form of [
       // signal (see preparer-flag.spec.ts).
       const file = path.join(os.tmpdir(), `pg-bond-${form.type}-${Date.now()}.xlsx`);
       fs.writeFileSync(file, bytes);
-      const caseNumber = await page.evaluate(() => (window as any).D.caseNumber);
+      const caseNumber = await page.evaluate(() => (window as any).GuardianForms.testing.field('caseNumber'));
       expect(caseNumber, 'the fixture case number is the import signal').toBeTruthy();
       await setFields(page, { bondDepositoryState: '', ...BLANK_BOND, caseNumber: '' });
-      await page.evaluate(() => (window as any).navigate('/'));
+      await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
       await page.setInputFiles('input[type="file"][accept=".xlsx"]', file);
-      await page.waitForFunction((cn) => (window as any).D.caseNumber === cn, caseNumber, { timeout: 20_000 });
-      expect(await page.evaluate(() => (window as any).D.bondDepositoryState), 'the imported date answers the question')
+      await page.waitForFunction((cn) => (window as any).GuardianForms.testing.field('caseNumber') === cn, caseNumber, { timeout: 20_000 });
+      expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('bondDepositoryState')), 'the imported date answers the question')
         .toBe(form.type === 'guardian' ? 'bond-waived' : 'depository-only');
       // ...and the blank amount comes back blank, not as the 0 both readers
       // hand back for an empty cell (2026-09-24).
-      expect(await page.evaluate(() => (window as any).D.bondAmount), 'a blank Bond Amount reads back blank, not 0').toBe('');
+      expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('bondAmount')), 'a blank Bond Amount reads back blank, not 0').toBe('');
 
       // An answer the filing already had is not overwritten by a workbook
       // that cannot carry one.
       await setFields(page, { bondDepositoryState: 'bond-and-depository', caseNumber: '' });
-      await page.evaluate(() => (window as any).navigate('/'));
+      await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
       await page.setInputFiles('input[type="file"][accept=".xlsx"]', file);
-      await page.waitForFunction((cn) => (window as any).D.caseNumber === cn, caseNumber, { timeout: 20_000 });
-      expect(await page.evaluate(() => (window as any).D.bondDepositoryState), 'a stored answer survives the import').toBe('bond-and-depository');
+      await page.waitForFunction((cn) => (window as any).GuardianForms.testing.field('caseNumber') === cn, caseNumber, { timeout: 20_000 });
+      expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('bondDepositoryState')), 'a stored answer survives the import').toBe('bond-and-depository');
     });
   });
 }

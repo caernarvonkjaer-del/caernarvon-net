@@ -14,7 +14,7 @@ test.describe('continue-prompt banner (Milestone 52A)', () => {
     await freshStartNoPassword(page);
     await createWard(page, 'Recent Ward One', 'guardian');
 
-    const recent = await page.evaluate(() => (window as any).getRecentlyOpenedWards());
+    const recent = await page.evaluate(() => (window as any).GuardianForms.testing.persistenceState.recentFilings());
     expect(recent).toHaveLength(1);
     expect(recent[0]).toMatchObject({ wardName: 'Recent Ward One', inventoryType: 'guardian' });
   });
@@ -30,7 +30,7 @@ test.describe('continue-prompt banner (Milestone 52A)', () => {
     // clears caseFile.activeWardId -- navigate('/dashboard') alone does not
     // -- and that's what makes last.wardId !== caseFile.activeWardId true so
     // the banner shows.
-    await page.evaluate(() => (window as any).unloadWard());
+    await page.evaluate(() => (window as any).GuardianForms.testing.activateFiling.close());
 
     const banner = page.locator('#continue-prompt-banner');
     await expect(banner).toBeVisible();
@@ -46,12 +46,12 @@ test.describe('continue-prompt banner (Milestone 52A)', () => {
   test('the banner does not reappear on a later dashboard visit in the same session', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Once Only Ward', 'guardian');
-    await page.evaluate(() => (window as any).unloadWard());
+    await page.evaluate(() => (window as any).GuardianForms.testing.activateFiling.close());
     await expect(page.locator('#continue-prompt-banner')).toBeVisible();
-    expect(await page.evaluate(() => (window as any).isContinuePromptShown())).toBe(true);
+    expect(await page.evaluate(() => (window as any).GuardianForms.testing.persistenceState.continuePromptShown())).toBe(true);
 
     await createWard(page, 'Second Ward', 'guardian');
-    await page.evaluate(() => (window as any).unloadWard());
+    await page.evaluate(() => (window as any).GuardianForms.testing.activateFiling.close());
 
     await expect(page.locator('#continue-prompt-container')).toBeEmpty();
   });
@@ -65,7 +65,7 @@ test.describe('continue-prompt banner (Milestone 52A)', () => {
       await startNewCase(page);
       await chooseNoPassword(page);
       await createWard(page, 'Persisted Banner Ward', 'guardian');
-      await page.evaluate(() => (window as any).unloadWard());
+      await page.evaluate(() => (window as any).GuardianForms.testing.activateFiling.close());
       await expect(page.locator('#continue-prompt-banner')).toBeVisible();
 
       savPath = await exportAndCapture(page);
@@ -84,7 +84,7 @@ test.describe('continue-prompt banner (Milestone 52A)', () => {
       // 38C lands a reopened file on /dashboard with no active editor, which
       // is exactly where showContinuePromptIfNeeded() runs as part of mount.
       await expect(reopenPage.locator('#continue-prompt-container')).toBeEmpty();
-      expect(await reopenPage.evaluate(() => (window as any).isContinuePromptShown())).toBe(true);
+      expect(await reopenPage.evaluate(() => (window as any).GuardianForms.testing.persistenceState.continuePromptShown())).toBe(true);
     } finally {
       await reopenContext.close();
     }

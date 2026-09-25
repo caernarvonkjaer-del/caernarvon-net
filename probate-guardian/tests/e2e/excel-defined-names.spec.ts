@@ -75,8 +75,8 @@ async function exportAnnual(page: import('@playwright/test').Page) {
   await freshStartNoPassword(page);
   await createWard(page, 'Defined Names Ward', 'annual');
   await fillMinimalValidAnnualWard(page);
-  await page.evaluate(() => (window as any).flushPendingSave());
-  await page.evaluate(() => (window as any).navigate('/print'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
   const excel = page.locator('[data-annual-action="save-excel"]');
   await expect(excel).toBeEnabled({ timeout: 20_000 });
   const dl = page.waitForEvent('download', { timeout: 40_000 });
@@ -88,8 +88,8 @@ async function exportGuardian(page: import('@playwright/test').Page) {
   await freshStartNoPassword(page);
   await createWard(page, 'Defined Names Inventory', 'guardian');
   await fillMinimalValidGuardianWard(page);
-  await page.evaluate(() => (window as any).flushPendingSave());
-  await page.evaluate(() => (window as any).navigate('/print'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
   const excel = page.locator('[data-inventory-action="save-excel"]');
   await expect(excel).toBeEnabled({ timeout: 20_000 });
   const dl = page.waitForEvent('download', { timeout: 40_000 });

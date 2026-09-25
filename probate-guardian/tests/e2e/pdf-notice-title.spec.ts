@@ -23,7 +23,7 @@ test.describe('Milestone 61G: notice-block headings reach the filed PDF', () => 
     await freshStartNoPassword(page);
 
     const bytes = await page.evaluate(async () => {
-      const { buildPlanSimplifiedModel, generateCourtFormPdf } = await (window as any).loadPlanSimplifiedPdf();
+      const { buildPlanSimplifiedModel, generateCourtFormPdf } = await (window as any).GuardianForms.testing.generateOutput.planSimplifiedPdf();
       const model = buildPlanSimplifiedModel({
         wardName: 'Notice Title Ward',
         caseNumber: '26-000111-GD',
@@ -44,7 +44,7 @@ test.describe('Milestone 61G: notice-block headings reach the filed PDF', () => 
     await freshStartNoPassword(page);
 
     const bytes = await page.evaluate(async () => {
-      const { buildVerifiedInventoryModel, generateCourtFormPdf } = await (window as any).loadGuardianPdf();
+      const { buildVerifiedInventoryModel, generateCourtFormPdf } = await (window as any).GuardianForms.testing.generateOutput.guardianPdf();
       const model = buildVerifiedInventoryModel({
         wardName: 'Bond Heading Ward',
         caseNumber: '26-000222-GD',

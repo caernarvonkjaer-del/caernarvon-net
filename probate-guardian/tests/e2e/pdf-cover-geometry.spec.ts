@@ -49,8 +49,8 @@ const LONG_ATTORNEY = 'Bartholomew Fitzgerald-Cunningham, Esq.';
 const PERIOD = { periodFrom: '2026-01-01', periodTo: '2026-12-31' };
 
 async function download(page: Page, selector: string) {
-  await page.evaluate(() => (window as any).flushPendingSave());
-  await page.evaluate(() => (window as any).navigate('/print'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
   const button = page.locator(selector);
   await expect(button).toBeEnabled({ timeout: 20_000 });
   const dl = page.waitForEvent('download', { timeout: 40_000 });
@@ -114,7 +114,7 @@ for (const form of [
     await form.fill(page);
     const patch: Record<string, string> = { wardName: LONG_WARD, ...PERIOD };
     if (form.attorneyPath) patch[form.attorneyPath] = LONG_ATTORNEY;
-    await page.evaluate((p) => { Object.assign((window as any).D, p); (window as any).autoSave(); }, patch);
+    await page.evaluate((p) => { (window as any).GuardianForms.testing.patchFiling(p); }, patch);
 
     const bytes = await download(page, form.pdfButton);
     if (pdfOut) fs.writeFileSync(path.join(pdfOut, `${form.type}.pdf`), bytes);

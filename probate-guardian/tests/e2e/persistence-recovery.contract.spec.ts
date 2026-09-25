@@ -25,7 +25,7 @@ import {
 // (multi-tab lock contention) -- none of those are duplicated here.
 
 async function forceCacheWrite(page: import('@playwright/test').Page) {
-  await page.evaluate(() => (window as any).flushPendingSave());
+  await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
 }
 
 test.describe('Persistence and recovery contract', () => {
@@ -50,7 +50,7 @@ test.describe('Persistence and recovery contract', () => {
       // commitPendingFieldValues() marks it aria-invalid and re-records the
       // draft (still invalid, so commitStoredDateDrafts() leaves it in
       // place) -> saveData() persists window.D, __fieldDrafts included.
-      await page.evaluate(() => (window as any).navigate('/'));
+      await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
       const gidInput = page.locator('input[data-field-path="gid"]');
       await gidInput.fill('02/14/26');
       await forceCacheWrite(page);
@@ -68,7 +68,7 @@ test.describe('Persistence and recovery contract', () => {
       await reopenPage.setInputFiles('#startup-open-input', savPath);
       await expect(reopenPage.locator('#startup-choice-overlay')).not.toHaveClass(/show/);
       await expect(reopenPage.locator('#ward-selector')).toHaveValue('');
-      await reopenPage.evaluate(() => (window as any).switchWard((window as any).caseFile.wards[0].wardId));
+      await reopenPage.evaluate(() => (() => { const tt = (window as any).GuardianForms.testing; return tt.activateFiling.open(tt.snapshot().caseFile.wards[0].wardId); })());
       await expect(reopenPage.locator('#ward-selector')).toHaveValue('Invalid Draft Ward');
 
       // The draft data itself survived the round trip. getFieldDraftDisplay()
@@ -76,10 +76,10 @@ test.describe('Persistence and recovery contract', () => {
       // text does not re-appear in the input on remount -- a real, separate,
       // minor display-restoration gap, not something this test's scenario
       // depends on or that this change fixes.
-      const draft = await reopenPage.evaluate(() => (window as any).D.__fieldDrafts?.gid);
+      const draft = await reopenPage.evaluate(() => (window as any).GuardianForms.testing.field('__fieldDrafts')?.gid);
       expect(draft?.rawValue).toBe('02/14/26');
 
-      await reopenPage.evaluate(() => (window as any).navigate('/print'));
+      await reopenPage.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
       // Milestone 50G: the export-blocked alert is now an awaitable
       // alertModal() DOM dialog, not a blocking native one -- trigger first,
       // then wait for it, rather than pre-arming a listener.
@@ -103,15 +103,15 @@ test.describe('Persistence and recovery contract', () => {
     await startNewCase(page);
     await chooseNoPassword(page);
     await createWard(page, 'Pending Valid Draft Ward', 'guardian');
-    await page.evaluate(() => (window as any).navigate('/'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
 
     const gidInput = page.locator('input[data-field-path="gid"]');
     await gidInput.fill('Feb 14, 2026'); // valid but unparsed -- no blur
     await forceCacheWrite(page);
 
-    const gid = await page.evaluate(() => (window as any).D.gid);
+    const gid = await page.evaluate(() => (window as any).GuardianForms.testing.field('gid'));
     expect(gid).toBe('2026-02-14');
-    const draft = await page.evaluate(() => (window as any).D.__fieldDrafts?.gid);
+    const draft = await page.evaluate(() => (window as any).GuardianForms.testing.field('__fieldDrafts')?.gid);
     expect(draft).toBeFalsy();
   });
 
@@ -129,7 +129,7 @@ test.describe('Persistence and recovery contract', () => {
     await createWard(page, 'Encrypted Recovery Ward');
     await forceCacheWrite(page);
 
-    await page.evaluate(() => { void (window as any).lockApp(); });
+    await page.evaluate(() => { void (window as any).GuardianForms.testing.lock(); });
     await expect(page.locator('#unlock-overlay')).toHaveClass(/show/);
     await page.fill('#unlock-password', 'wrong-password');
     await page.click('#unlock-submit-btn');
@@ -140,7 +140,7 @@ test.describe('Persistence and recovery contract', () => {
     await page.click('#unlock-submit-btn');
     await expect(page.locator('#unlock-overlay')).not.toHaveClass(/show/);
     await expect(page.locator('#ward-selector')).toHaveValue('');
-    await page.evaluate(() => (window as any).switchWard((window as any).caseFile.wards[0].wardId));
+    await page.evaluate(() => (() => { const tt = (window as any).GuardianForms.testing; return tt.activateFiling.open(tt.snapshot().caseFile.wards[0].wardId); })());
     await expect(page.locator('#ward-selector')).toHaveValue('Encrypted Recovery Ward');
   });
 
@@ -170,7 +170,7 @@ test.describe('Persistence and recovery contract', () => {
       await reopenPage.setInputFiles('#startup-open-input', savPath);
       await expect(reopenPage.locator('#startup-choice-overlay')).not.toHaveClass(/show/);
       await expect(reopenPage.locator('#ward-selector')).toHaveValue('');
-      await reopenPage.evaluate(() => (window as any).switchWard((window as any).caseFile.wards[0].wardId));
+      await reopenPage.evaluate(() => (() => { const tt = (window as any).GuardianForms.testing; return tt.activateFiling.open(tt.snapshot().caseFile.wards[0].wardId); })());
       await expect(reopenPage.locator('#ward-selector')).toHaveValue('Roundtrip Plan Ward');
     } finally {
       await reopenContext.close();

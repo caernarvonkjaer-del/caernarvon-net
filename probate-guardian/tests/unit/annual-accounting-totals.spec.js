@@ -1,5 +1,11 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import { parse } from 'acorn';
 import { describe, expect, test } from 'vitest';
 import { calcTotalsAnnual } from '../../src/features/annual-accounting/totals.js';
+import { auditWindowBridge } from '../../scripts/audit-window-bridge.mjs';
+
+const ROOT = path.join(__dirname, '..', '..');
 
 // Milestone 40H-H: Schedule E/F-1/F-2 were the only three schedule totals in
 // annual-accounting/index.js computed locally at render time instead of
@@ -105,5 +111,36 @@ describe('Milestone 64B-1: Schedule D-2/D-3/D-4 Carrying Value is unscaled; D-4 
       schD4: [{ fullAmount: '100000', wardPct: '50', carryingValue: '80000', restricted: 'Yes' }],
     });
     expect(t.bondReq).toBe(0);
+  });
+});
+
+// Slice 19E's architecture claim -- one calculator behind the page, the
+// sidebar and the court PDF -- moved here from tests/e2e/pdf-form-specific.spec.ts
+// by Milestone 70's 70T. The browser test checked that window.calcTotalsAnnual
+// existed before the PDF module loaded and was the same function afterwards; a
+// browser spec now names no app global but GuardianForms, and the claim is
+// about the module graph, so it is read from the modules themselves (parsed).
+describe('one Annual calculator for the page and the court PDF (Slice 19E)', () => {
+  const read = (rel) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
+  const importsFrom = (rel, spec) => parse(read(rel), { ecmaVersion: 'latest', sourceType: 'module' }).body
+    .filter((n) => n.type === 'ImportDeclaration' && n.source.value === spec);
+  const TOTALS_FNS = ['calcTotalsAnnual', 'annualReconcileState'];
+
+  test('the PDF model computes with totals.js and declares no totals of its own', () => {
+    const imported = importsFrom('src/features/annual-accounting/pdf-model.js', './totals.js')
+      .flatMap((n) => n.specifiers.map((s) => s.imported?.name));
+    expect(imported).toEqual(expect.arrayContaining(TOTALS_FNS));
+    const own = parse(read('src/features/annual-accounting/pdf-model.js'), { ecmaVersion: 'latest', sourceType: 'module' }).body
+      .flatMap((n) => (n.type === 'FunctionDeclaration' ? [n.id.name]
+        : n.type === 'VariableDeclaration' ? n.declarations.map((d) => d.id.name)
+          : n.type === 'ExportNamedDeclaration' && n.declaration?.type === 'FunctionDeclaration' ? [n.declaration.id.name] : []));
+    expect(own.filter((name) => TOTALS_FNS.includes(name))).toEqual([]);
+  });
+
+  test('totals.js loads at startup (main.js -> features-loader.js), not with the PDF, and alone publishes the totals on window', () => {
+    expect(importsFrom('src/main.js', './features-loader.js')).toHaveLength(1);
+    expect(importsFrom('src/features-loader.js', './features/annual-accounting/totals.js')).toHaveLength(1);
+    const publishers = auditWindowBridge(ROOT).assignments.filter((a) => TOTALS_FNS.includes(a.name));
+    expect(publishers.map((a) => `${a.file}::${a.name}`).sort()).toEqual(TOTALS_FNS.map((n) => `src/features/annual-accounting/totals.js::${n}`).sort());
   });
 });

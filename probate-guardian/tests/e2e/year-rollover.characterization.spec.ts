@@ -89,7 +89,7 @@ function changes(before: Record<string, unknown>, after: Record<string, unknown>
 
 const activeWard = (page: Page) => page.evaluate(() => {
   const w = window as any;
-  return JSON.parse(JSON.stringify(w.caseFile.wards.find((x: any) => x.wardId === w.caseFile.activeWardId)));
+  return JSON.parse(JSON.stringify(w.GuardianForms.testing.snapshot().caseFile.wards.find((x: any) => x.wardId === w.GuardianForms.testing.snapshot().caseFile.activeWardId)));
 });
 
 async function clearOverlays(page: Page) {
@@ -105,16 +105,16 @@ for (const [type, fill, extra] of TYPES) {
     if (type === 'simplified') await createSimplifiedWard(page, `Rollover ${type}`);
     else await createWard(page, `Rollover ${type}`, type);
     await fill(page);
-    await page.evaluate((patch) => { const w = window as any; Object.assign(w.D, patch); w.autoSave(); return w.flushPendingSave(); }, extra);
+    await page.evaluate((patch) => { const w = window as any; w.GuardianForms.testing.patchFiling(patch); return w.GuardianForms.testing.save.flush(); }, extra);
     const before = await activeWard(page);
     const wardId = before.wardId;
 
-    await page.evaluate(() => (window as any).navigate('/dashboard'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/dashboard'));
     await clearOverlays(page);
     await page.locator(`[data-dashboard-action="new-year"][data-ward-id="${wardId}"]`).click();
     await page.locator('[data-modal-action="start-new-year"]').click();
-    await page.waitForFunction((id) => (window as any).caseFile.wards.find((x: any) => x.wardId === id)?.activeYearKey === 'Year 2', wardId);
-    await page.evaluate(() => (window as any).flushPendingSave());
+    await page.waitForFunction((id) => (window as any).GuardianForms.testing.snapshot().caseFile.wards.find((x: any) => x.wardId === id)?.activeYearKey === 'Year 2', wardId);
+    await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
     const after = await activeWard(page);
 
     const archived = after.years.find((y: any) => y.key === 'Year 1');
@@ -133,11 +133,11 @@ for (const [type, fill, extra] of TYPES) {
     };
 
     // Back to Year 1 through the Prior years dialog: the year comes back as it was.
-    await page.evaluate(() => (window as any).navigate('/dashboard'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/dashboard'));
     await clearOverlays(page);
     await page.locator(`[data-dashboard-action="prior-years"][data-ward-id="${wardId}"]`).click();
     await page.locator(`[data-form-action="edit-prior-year"][data-year-key="Year 1"]`).click();
-    await page.waitForFunction((id) => (window as any).caseFile.wards.find((x: any) => x.wardId === id)?.activeYearKey === 'Year 1', wardId);
+    await page.waitForFunction((id) => (window as any).GuardianForms.testing.snapshot().caseFile.wards.find((x: any) => x.wardId === id)?.activeYearKey === 'Year 1', wardId);
     const restored = await activeWard(page);
     record.priorYearRestoresTheArchive = JSON.stringify(pick(restored)) === JSON.stringify(normalize(archived.data));
 

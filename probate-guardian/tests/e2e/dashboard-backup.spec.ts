@@ -1,7 +1,8 @@
 import { test, expect } from '@playwright/test';
 import path from 'node:path';
 import os from 'node:os';
-import { gotoApp, startNewCase, chooseNoPassword, createWard, exportAndCapture, acceptDynDialog } from './support/target';
+import { type Page } from '@playwright/test';
+import { gotoApp, startNewCase, chooseNoPassword, createWard, chooseCoverCounty, exportAndCapture, acceptDynDialog } from './support/target';
 
 // The following tests cover the unified single-case-file model that
 // replaced the old per-ward-file / multi-ward-archive split. Several tests
@@ -9,6 +10,13 @@ import { gotoApp, startNewCase, chooseNoPassword, createWard, exportAndCapture, 
 // version-1/2 migration modal, ward-vs-archive handle disambiguation) have
 // no equivalent anymore -- there is exactly one handle and one file format
 // now, so those scenarios are simply impossible rather than needing a fix.
+/** The dashboard's own Backup button for one filing: the single-filing .sav a filer saves. */
+async function backUpFilingFromDashboard(page: Page, filingId: string) {
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/dashboard'));
+  await page.locator('#main-content [data-dashboard-bound="true"]').waitFor();
+  await page.locator(`[data-dashboard-action="backup"][data-ward-id="${filingId}"]`).click();
+}
+
 test.describe('Dashboard preference isolation and single-ward backup/export', () => {
   test('dashboard browser preferences are excluded from ward data and exported archives', async ({ browser }) => {
     const context = await browser.newContext();
@@ -24,14 +32,14 @@ test.describe('Dashboard preference isolation and single-ward backup/export', ()
       // that a save is *supposed* to change. What this test guards is that no
       // dashboard preference reaches ward data, which that field cannot carry.
       const wardSnapshot = () => page.evaluate(() => JSON.stringify(
-        (window as any).getCaseFile().wards.map((w: any) => {
-          const { lastModified, ...rest } = w;
+        (window as any).GuardianForms.testing.snapshot().caseFile.wards.map((f: any) => {
+          const { lastModified, ...rest } = f;
           return rest;
         })
       ));
       const wardBefore = await wardSnapshot();
 
-      await page.evaluate(() => (window as any).navigate('/dashboard'));
+      await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/dashboard'));
       await page.locator('#main-content [data-dashboard-bound="true"]').waitFor();
       // The assignment select that used to write this preference was retired
       // with the rest of the toolbar filters, so seed the stored payload
@@ -43,7 +51,7 @@ test.describe('Dashboard preference isolation and single-ward backup/export', ()
       ));
 
       const archive = await page.evaluate(async () => {
-        const { blob } = await (window as any).buildCaseFileBlob();
+        const blob = await (window as any).GuardianForms.testing.exportArchive.caseFile();
         const zip = await (window as any).JSZip.loadAsync(blob);
         const entries: Array<{ name: string; text: string }> = [];
         for (const [name, entry] of Object.entries(zip.files) as Array<[string, any]>) {
@@ -72,22 +80,24 @@ test.describe('Dashboard preference isolation and single-ward backup/export', ()
       await chooseNoPassword(page);
       await createWard(page, 'Workflow Year Ward');
       const original = await page.evaluate(() => {
-        const ward = (window as any).getCaseFile().wards[0];
-        ward.dashboardWorkflow = { status: 'pending-court-review', assigneeName: '  Alex   Attorney  ' };
+        // Setup (D9): the workflow status and assignee as saved.
+        const t = (window as any).GuardianForms.testing;
+        t.patchFiling({ dashboardWorkflow: { status: 'pending-court-review', assigneeName: '  Alex   Attorney  ' } });
+        const ward = t.snapshot().filing;
         return { wardId: ward.wardId, yearKey: ward.activeYearKey || 'Year 1' };
       });
 
-      await page.evaluate((wardId) => (window as any).startNewWardYear(wardId), original.wardId);
-      await expect.poll(() => page.evaluate(() => (window as any).getCaseFile().wards[0].dashboardWorkflow)).toEqual({
+      await page.evaluate((wardId) => (window as any).GuardianForms.testing.year.startNew(wardId), original.wardId);
+      await expect.poll(() => page.evaluate(() => (window as any).GuardianForms.testing.snapshot().caseFile.wards[0].dashboardWorkflow)).toEqual({
         assigneeName: 'Alex Attorney',
       });
-      expect(await page.evaluate(() => (window as any).getCaseFile().wards[0].years[0].data.dashboardWorkflow)).toEqual({
+      expect(await page.evaluate(() => (window as any).GuardianForms.testing.snapshot().caseFile.wards[0].years[0].data.dashboardWorkflow)).toEqual({
         status: 'pending-court-review',
         assigneeName: '  Alex   Attorney  ',
       });
 
-      await page.evaluate(({ wardId, yearKey }) => (window as any).switchWardYear(wardId, yearKey), original);
-      await expect.poll(() => page.evaluate(() => (window as any).getCaseFile().wards[0].dashboardWorkflow)).toEqual({
+      await page.evaluate(({ wardId, yearKey }) => (window as any).GuardianForms.testing.year.switchTo(wardId, yearKey), original);
+      await expect.poll(() => page.evaluate(() => (window as any).GuardianForms.testing.snapshot().caseFile.wards[0].dashboardWorkflow)).toEqual({
         status: 'pending-court-review',
         assigneeName: '  Alex   Attorney  ',
       });
@@ -105,13 +115,13 @@ test.describe('Dashboard preference isolation and single-ward backup/export', ()
       await startNewCase(page);
       await chooseNoPassword(page);
       await createWard(page, 'Workflow Roundtrip Ward');
-      await page.evaluate(() => (window as any).navigate('/dashboard'));
+      await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/dashboard'));
       await page.locator('#main-content [data-dashboard-bound="true"]').waitFor();
       const row = page.locator('.dashboard-triage-row').filter({ hasText: 'Workflow Roundtrip Ward' });
       await row.locator('[data-dashboard-change="workflow-status"]').selectOption('pending-court-review');
       await row.locator('[data-dashboard-change="assignee"]').fill('Alex Attorney');
       await row.locator('[data-dashboard-change="assignee"]').press('Tab');
-      await expect.poll(() => page.evaluate(() => (window as any).getCaseFile().wards[0].dashboardWorkflow)).toEqual({
+      await expect.poll(() => page.evaluate(() => (window as any).GuardianForms.testing.snapshot().caseFile.wards[0].dashboardWorkflow)).toEqual({
         status: 'pending-court-review',
         assigneeName: 'Alex Attorney',
       });
@@ -129,7 +139,7 @@ test.describe('Dashboard preference isolation and single-ward backup/export', ()
       await reopenPage.setInputFiles('#startup-open-input', savPath);
 
       await expect(reopenPage.locator('#startup-choice-overlay')).not.toHaveClass(/show/);
-      await expect.poll(() => reopenPage.evaluate(() => (window as any).getCaseFile()?.wards?.[0]?.dashboardWorkflow)).toEqual({
+      await expect.poll(() => reopenPage.evaluate(() => (window as any).GuardianForms.testing.snapshot().caseFile?.wards?.[0]?.dashboardWorkflow)).toEqual({
         status: 'pending-court-review',
         assigneeName: 'Alex Attorney',
       });
@@ -148,13 +158,13 @@ test.describe('Dashboard preference isolation and single-ward backup/export', ()
       await createWard(page, 'Single Export Ward');
 
       const result = await page.evaluate(async () => {
-        const w = (window as any);
-        const wardId = w.caseFile.activeWardId;
-        await w.auditLog('TEST_EVENT', 'test entry 1');
-        await w.auditLog('TEST_EVENT', 'test entry 2');
+        const t = (window as any).GuardianForms.testing;
+        const wardId = t.snapshot().caseFile.activeWardId;
+        await t.recordActivity('TEST_EVENT', 'test entry 1');
+        await t.recordActivity('TEST_EVENT', 'test entry 2');
 
-        const blob = await w.buildSingleWardExportBlob(wardId);
-        const zip = await w.JSZip.loadAsync(blob);
+        const blob = await t.exportArchive.singleFiling(wardId);
+        const zip = await (window as any).JSZip.loadAsync(blob);
         const fileNames = Object.keys(zip.files).sort();
         const manifest = JSON.parse(await zip.file('manifest.json').async('string'));
         const hasWardEnc = !!zip.file(`wards/${wardId}.enc`);
@@ -192,23 +202,16 @@ test.describe('Dashboard preference isolation and single-ward backup/export', ()
       await startNewCase(page);
       await chooseNoPassword(page);
       await createWard(page, 'Single Export Roundtrip Ward');
-      await page.evaluate(() => {
-        const w = (window as any);
-        w.commitCoverCounty(w.D, 'Orange');
-      });
+      await chooseCoverCounty(page, 'Orange');
 
-      // Milestone 50G: saveBlobAs() called directly with no preWriteValidator
-      // shows no dialog at all in the test-forced fallback-download path
-      // (the FSA showSaveFilePicker branch it would otherwise validate is
-      // disabled for every test target) -- nothing to wait on here.
+      // The dashboard's Backup button for this filing. File System Access is
+      // disabled for every test target, so it downloads, then confirms.
+      // (Milestone 70, 70T: this called saveBlobAs() directly.)
+      const filingId = await page.evaluate(() => (window as any).GuardianForms.testing.snapshot().caseFile.activeWardId);
       const downloadPromise = page.waitForEvent('download');
-      await page.evaluate(async () => {
-        const w = (window as any);
-        const wardId = w.caseFile.activeWardId;
-        const blob = await w.buildSingleWardExportBlob(wardId);
-        w.saveBlobAs(blob, 'single-ward-roundtrip.sav');
-      });
+      await backUpFilingFromDashboard(page, filingId);
       const download = await downloadPromise;
+      expect(await acceptDynDialog(page)).toContain('Backup saved for');
       savPath = path.join(os.tmpdir(), `pg-single-rt-${Date.now()}.sav`);
       await download.saveAs(savPath);
     } finally {
@@ -228,15 +231,15 @@ test.describe('Dashboard preference isolation and single-ward backup/export', ()
       // the sidebar is neutral and the user chooses Edit. Switching
       // explicitly is what proves the ward data round-tripped.
       await expect(reopenPage.locator('#ward-selector')).toHaveValue('');
-      await reopenPage.evaluate(() => (window as any).switchWard((window as any).caseFile.wards[0].wardId));
+      await reopenPage.evaluate(() => (() => { const tt = (window as any).GuardianForms.testing; return tt.activateFiling.open(tt.snapshot().caseFile.wards[0].wardId); })());
       await expect(reopenPage.locator('#ward-selector')).toHaveValue('Single Export Roundtrip Ward');
 
       // 40C-1 Item 9: single-ward export carries no Party records, but
       // on reopen the ward Party is reconstructed with its county under the unanimity rule.
       const partyData = await reopenPage.evaluate(() => {
-        const w = (window as any);
-        const ward = w.caseFile.wards[0];
-        const party = w.wardPartyForFiling(ward);
+        const t = (window as any).GuardianForms.testing;
+        const ward = t.snapshot().caseFile.wards[0];
+        const party = t.sharedRecords.wardPartyForFiling(ward.wardId);
         return {
           wardCounty: ward.county,
           hasParty: Boolean(party),
@@ -263,24 +266,24 @@ test.describe('Dashboard preference isolation and single-ward backup/export', ()
       await createWard(page, 'Audit Ward A');
 
       const result = await page.evaluate(async () => {
-        const w = (window as any);
-        const wardAId = w.caseFile.activeWardId;
+        const t = (window as any).GuardianForms.testing;
+        const wardAId = t.snapshot().caseFile.activeWardId;
 
-        await w.auditLog('WARD_A_EVENT', 'ward A entry');
+        await t.recordActivity('WARD_A_EVENT', 'ward A entry');
 
-        await w.addWard('Audit Ward B', 'guardian');
-        const wardB = w.caseFile.wards.find((wd: any) => wd.wardId !== wardAId);
+        await t.createFiling.add('Audit Ward B', 'guardian');
+        const wardB = t.snapshot().caseFile.wards.find((wd: any) => wd.wardId !== wardAId);
         const wardBId = wardB?.wardId;
         if (wardB) {
-          await w.switchWard(wardB.wardId);
-          await w.auditLog('WARD_B_EVENT', 'ward B entry');
+          await t.activateFiling.open(wardB.wardId);
+          await t.recordActivity('WARD_B_EVENT', 'ward B entry');
         }
 
-        const unfilteredEntries = await w.loadAuditLogEntries();
+        const unfilteredEntries = await t.persistenceState.auditEntries();
 
         // Single-ward export for ward A -- should NOT include ward B's entries
-        const blobA = await w.buildSingleWardExportBlob(wardAId);
-        const zipA = await w.JSZip.loadAsync(blobA);
+        const blobA = await t.exportArchive.singleFiling(wardAId);
+        const zipA = await (window as any).JSZip.loadAsync(blobA);
         const auditStr = await zipA.file('auditLog.enc').async('string');
         const exportedEntries = JSON.parse(auditStr.replace(/^PLAIN:/, ''));
         return {
@@ -316,8 +319,8 @@ test.describe('Dashboard preference isolation and single-ward backup/export', ()
       const dirtyBefore = await page.evaluate(() => {
         // Disable showSaveFilePicker to simulate Firefox / Safari
         (window as any).showSaveFilePicker = undefined;
-        (window as any).markDirtySinceExport();
-        return (window as any).pgHasUnsavedChanges();
+        (window as any).GuardianForms.testing.save.markDirty();
+        return (window as any).GuardianForms.testing.snapshot().hasUnsavedChanges;
       });
 
       // Milestone 50G: saveBackupNow() falls through to exportCaseFileZip(),
@@ -327,16 +330,20 @@ test.describe('Dashboard preference isolation and single-ward backup/export', ()
       // and awaiting it there would deadlock (nothing outside that evaluate
       // call could interact with the dialog to dismiss it). Start it, then
       // dismiss the dialog from the test side, same as elsewhere in this file.
+      // The sidebar's own Save Backup button. (Milestone 70, 70T: this called
+      // saveBackupNow() directly.)
+      const saveToggle = page.locator('#save-controls-toggle-btn');
+      if ((await saveToggle.textContent())?.includes('Show')) await saveToggle.click();
       const downloadPromise = page.waitForEvent('download');
-      await page.evaluate(() => { void (window as any).saveBackupNow(); });
+      await page.locator('button[data-shell-action="backup-all-wards"]').click();
       await downloadPromise;
       const alertMsg = await acceptDynDialog(page);
 
       const result = await page.evaluate(async () => ({
-        dirtyAfter: (window as any).pgHasUnsavedChanges(),
+        dirtyAfter: (window as any).GuardianForms.testing.snapshot().hasUnsavedChanges,
         // A plain download yields no reconnectable handle -- the fast-path
         // Open screen on next launch should NOT be offered from this alone.
-        caseOpenedBefore: await (window as any).hasOpenedCaseBefore(),
+        caseOpenedBefore: await (window as any).GuardianForms.testing.persistenceState.hasOpenedBefore(),
       }));
 
       expect(dirtyBefore).toBe(true);
@@ -355,10 +362,10 @@ test.describe('Dashboard preference isolation and single-ward backup/export', ()
     await createWard(page, 'Bulk Ward Alpha');
     await page.evaluate(async () => {
       (window as any).alert = () => { };
-      await (window as any).addWard('Bulk Ward Beta', 'simplified');
+      await (window as any).GuardianForms.testing.createFiling.add('Bulk Ward Beta', 'simplified');
     });
 
-    await page.evaluate(() => (window as any).navigate('/dashboard'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/dashboard'));
     await page.locator('#main-content [data-dashboard-bound="true"]').waitFor();
     await expect(page.locator('.dashboard-export-all')).toBeVisible();
 
@@ -381,45 +388,44 @@ test.describe('Dashboard preference isolation and single-ward backup/export', ()
       await chooseNoPassword(page);
       await createWard(page, 'Cache Guard Ward');
 
-      const testResult = await page.evaluate(async () => {
-        const w = (window as any);
-        const wardId = w.caseFile.activeWardId;
-        const ward = w.caseFile.wards.find((item: any) => item.wardId === wardId);
-
-        await w.saveSessionRestoreCache();
-        w.markDirtySinceExport();
-        const dirtyBefore = w.pgHasUnsavedChanges();
-
-        const blob = await w.buildSingleWardExportBlob(wardId);
-        const zip = await w.JSZip.loadAsync(blob);
+      // Setup (D9): a recovery snapshot and unsaved changes, as mid-session.
+      const before = await page.evaluate(async () => {
+        const t = (window as any).GuardianForms.testing;
+        await t.recoveryCache.save();
+        t.save.markDirty();
+        const wardId = t.snapshot().caseFile.activeWardId;
+        const blob = await t.exportArchive.singleFiling(wardId);
+        const zip = await (window as any).JSZip.loadAsync(blob);
         const auditStr = await zip.file('auditLog.enc').async('string');
         const entries = JSON.parse(auditStr.replace(/^PLAIN:/, ''));
-        const containsThisWardsEntries = entries.every((e: any) => e.wardId === wardId);
-
-        const mockHandle = {
+        // The file a filer would pick to share the copy to.
+        (window as any).showSaveFilePicker = async () => ({
           name: 'shared_copy.sav',
           queryPermission: async () => 'granted',
           requestPermission: async () => 'granted',
           isSameEntry: async () => false,
-          createWritable: async () => ({ write: async () => { }, close: async () => { } })
-        };
-        w.finishSingleWardExport(mockHandle, ward);
+          createWritable: async () => ({ write: async () => { }, close: async () => { } }),
+        });
+        return { wardId, dirtyBefore: t.snapshot().hasUnsavedChanges, containsThisWardsEntries: entries.every((e: any) => e.wardId === wardId) };
+      });
 
-        const cacheAfter = await w._sessionCacheGet();
-        const dirtyAfter = w.pgHasUnsavedChanges();
-        const caseHandleAfter = await w.loadCaseFileHandle();
+      // The dashboard's Backup button, saving the shared copy. (Milestone 70,
+      // 70T: this called finishSingleWardExport() directly.)
+      await backUpFilingFromDashboard(page, before.wardId);
+      expect(await acceptDynDialog(page)).toContain('Backup saved for');
 
+      const testResult = await page.evaluate(async () => {
+        const t = (window as any).GuardianForms.testing;
+        const caseFileName = await t.persistenceState.caseFileName();
         return {
-          dirtyBefore,
-          containsThisWardsEntries,
-          cacheAfter: !!cacheAfter,
-          dirtyAfter,
-          caseHandleUnaffected: caseHandleAfter === null || caseHandleAfter?.name !== 'shared_copy.sav',
+          cacheAfter: !!(await t.persistenceState.sessionCache()),
+          dirtyAfter: t.snapshot().hasUnsavedChanges,
+          caseHandleUnaffected: caseFileName === null || caseFileName !== 'shared_copy.sav',
         };
       });
 
-      expect(testResult.dirtyBefore).toBe(true);
-      expect(testResult.containsThisWardsEntries).toBe(true);
+      expect(before.dirtyBefore).toBe(true);
+      expect(before.containsThisWardsEntries).toBe(true);
       // Still dirty and the recovery cache is still there -- a shared copy
       // of one ward says nothing about whether the real case file was saved.
       expect(testResult.cacheAfter).toBe(true);

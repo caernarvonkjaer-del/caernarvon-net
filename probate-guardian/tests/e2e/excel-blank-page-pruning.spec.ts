@@ -84,17 +84,17 @@ async function exportAnnualXlsx(
   await createWard(page, 'Prune Ward', 'annual');
   await fillMinimalValidAnnualWard(page);
   await page.evaluate((seedSrc) => {
-    const d = (window as any).D;
+    const d = (window as any).GuardianForms.testing.snapshot().filing;
     d.schB4 = [
       { checkNo: '1001', datePaid: '2026-03-04', category: 'Utilities', payee: 'Duke Energy', amount: '184.22' },
       { checkNo: '1002', datePaid: '2026-04-11', category: 'Rent', payee: 'Bayview Apartments', amount: '1250.00' },
       { checkNo: '1003', datePaid: '2026-05-09', category: 'Medical / Pharmacy', payee: 'Walgreens', amount: '42.60' },
     ];
     if (seedSrc) new Function('d', seedSrc)(d);
-    (window as any).autoSave();
+    (window as any).GuardianForms.testing.replaceFiling(d);
   }, seed ? seed.toString().replace(/^[^{]*\{/, '').replace(/\}\s*$/, '') : null);
-  await page.evaluate(() => (window as any).flushPendingSave());
-  await page.evaluate(() => (window as any).navigate('/print'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
   // Annual's Print/Export page exposes the Excel action as
   // data-annual-action="save-excel" -- the same hook output-semantics uses.
   const excel = page.locator('[data-annual-action="save-excel"]');

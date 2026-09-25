@@ -16,14 +16,14 @@ const FORM_TYPES = [
 for (const formType of FORM_TYPES) {
   test(`form pages preserve landmarks and heading structure: ${formType}`, async ({ page }) => {
     await freshStartNoPassword(page);
-    await page.evaluate((type) => (window as any).addWard(`Structure ${type}`, type), formType);
+    await page.evaluate((type) => (window as any).GuardianForms.testing.createFiling.add(`Structure ${type}`, type), formType);
     const routes = await page.locator('[data-page]').evaluateAll((elements) => [
       ...new Set(elements.map((element: any) => element.dataset.page)),
     ]);
 
     for (const route of routes) {
       await test.step(`route ${route}`, async () => {
-        await page.evaluate((nextRoute) => (window as any).navigate(nextRoute), route);
+        await page.evaluate((nextRoute) => (window as any).GuardianForms.testing.navigate(nextRoute), route);
         await page.locator('#main-content').waitFor({ state: 'visible' });
         const structure = await page.evaluate(() => {
           const main = document.querySelector('main#main-content');

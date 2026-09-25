@@ -52,33 +52,50 @@ export interface ValidatorIssue {
   route: string;
 }
 
-/** The subset of the bridge the e2e suite treats as a contract. */
-export interface PgWindow extends Window {
-  navigate(route: string, updateHash?: boolean): Promise<boolean>;
-  D: FilingRecord | Record<string, never>;
-  caseFile: CaseFileShape;
-  getCaseFile(): CaseFileShape;
-  addWard(name: string, inventoryType: string): Promise<void>;
-  switchWard(wardId: string): Promise<boolean>;
-  adaptValidationErrors(errors: Array<string | object>, formType?: string): AdaptedIssue[];
-  focusFieldByPath(route: string, fieldPath: string): Promise<void>;
-  autoSave(): void;
-  flushPendingSave(options?: { requireRecovery?: boolean }): Promise<void>;
-  validateGuardian(): Array<string | object>;
-  loadGuardianPdf(): Promise<Record<string, unknown>>;
+/**
+ * Milestone 70, 70T: window.GuardianForms.testing (src/core/testing/testing-adapter.js),
+ * the one way a browser spec reaches application state. Typed here for use
+ * inside page.evaluate(), where imports are unavailable but type assertions
+ * are erased: `const t = (window as unknown as TestWindow).GuardianForms.testing;`
+ */
+export interface GuardianFormsTesting {
+  /** SETUP ONLY (D9): assign into the open filing (dotted keys allowed), then save. */
+  patchFiling(patch: Record<string, unknown>, filingId?: string): void;
+  seedFiling(record: { wardId: string } & Record<string, unknown>): void;
+  /** SETUP ONLY (D9): make the open filing exactly this edited snapshot copy (removed keys included), then save. */
+  replaceFiling(filing: FilingRecord): void;
+  /** BEHAVIOR (D9): the edit a filer makes, through the rendered control for `path`. */
+  setField(path: string, value: unknown): void;
+  navigate(route: string): Promise<boolean>;
+  save: { flush(): Promise<void>; auto(): void; markDirty(): void; markClean(): void; backupNow(): Promise<void>; saveData(): Promise<void> };
+  createFiling: { openDialog(type: string): void; add(name: string, type: string): Promise<void>; emptyData(type: string): FilingRecord; addRow(schedule: string): void; duplicateRow(schedule: string, index: number): void };
+  activateFiling: { open(filingId: string): Promise<boolean>; close(): Promise<void> };
+  deleteFiling(filingId: string): Promise<void>;
+  saveArchive: { all(): Promise<void>; blobAs(blob: Blob, name: string, validator?: unknown): Promise<unknown>; finishSingle(handle: unknown, filing: unknown): void };
+  lock(): Promise<void>;
+  refreshStatus(): void;
+  snapshot(): { caseFile: CaseFileShape; filing: FilingRecord | null; activeFilingId: string | null; currentPage: string | null; activeInventoryType: string | null; dirtySinceExport: boolean; hasUnsavedChanges: boolean | null };
+  field(path: string): unknown;
+  constants(name: string): unknown;
+  validate: {
+    open(): Promise<unknown[]>;
+    exportGate(): Promise<{ messages: string[]; canExport: boolean }>;
+    fixture(fixture: Record<string, unknown>): Promise<Array<{ code: string; message: string; bypassable: boolean }>>;
+  };
+  status: { navChecks(): { checks: Record<string, boolean>; incomplete?: Record<string, unknown> }; progress(filingId: string): unknown };
+  exportArchive: { caseFile(): Promise<Blob>; singleFiling(filingId: string): Promise<Blob> };
 }
 
-export const navigateTo = (page: Page, route: string) =>
-  page.evaluate((r) => (window as unknown as PgWindow).navigate(r), route);
+export interface TestWindow extends Window {
+  GuardianForms: { testing: GuardianFormsTesting };
+}
 
-export const addFiling = (page: Page, name: string, inventoryType: string) =>
-  page.evaluate(([n, t]) => (window as unknown as PgWindow).addWard(n, t), [name, inventoryType] as const);
-
-export const activeFiling = (page: Page) =>
-  page.evaluate(() => (window as unknown as PgWindow).D as FilingRecord);
-
-export const caseFileSnapshot = (page: Page) =>
-  page.evaluate(() => JSON.parse(JSON.stringify((window as unknown as PgWindow).getCaseFile())) as CaseFileShape);
-
-export const flushSave = (page: Page) =>
-  page.evaluate(() => (window as unknown as PgWindow).flushPendingSave());
+/** Node-side shortcuts for the commonest calls. */
+export const testing = (page: Page) => ({
+  navigate: (route: string) => page.evaluate((r) => (window as unknown as TestWindow).GuardianForms.testing.navigate(r), route),
+  flush: () => page.evaluate(() => (window as unknown as TestWindow).GuardianForms.testing.save.flush()),
+  snapshot: () => page.evaluate(() => (window as unknown as TestWindow).GuardianForms.testing.snapshot()),
+  field: (path: string) => page.evaluate((p) => (window as unknown as TestWindow).GuardianForms.testing.field(p), path),
+  patchFiling: (patch: Record<string, unknown>) => page.evaluate((pt) => (window as unknown as TestWindow).GuardianForms.testing.patchFiling(pt), patch),
+  setField: (path: string, value: unknown) => page.evaluate(([p, v]) => (window as unknown as TestWindow).GuardianForms.testing.setField(p as string, v), [path, value] as const),
+});

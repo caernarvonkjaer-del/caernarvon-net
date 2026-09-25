@@ -74,9 +74,9 @@ async function exportSimplified(page: import('@playwright/test').Page) {
   await freshStartNoPassword(page);
   await createSimplifiedWard(page, 'Placement Ward');
   await fillMinimalValidSimplifiedWard(page);
-  await page.evaluate((m) => { Object.assign((window as any).D, m); (window as any).autoSave(); }, MONEY);
-  await page.evaluate(() => (window as any).flushPendingSave());
-  await page.evaluate(() => (window as any).navigate('/print'));
+  await page.evaluate((m) => { (window as any).GuardianForms.testing.patchFiling(m); }, MONEY);
+  await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
   const excel = page.locator('[data-simplified-action="save-excel"]');
   await expect(excel).toBeEnabled({ timeout: 20_000 });
   const dl = page.waitForEvent('download', { timeout: 40_000 });
@@ -151,7 +151,7 @@ async function exportGuardian(page: import('@playwright/test').Page) {
   await createWard(page, 'Placement Inventory', 'guardian');
   await fillMinimalValidGuardianWard(page);
   await page.evaluate((v) => {
-    const d = (window as any).D;
+    const d = (window as any).GuardianForms.testing.snapshot().filing;
     Object.assign(d, v);
     d.preparer = {
       name: 'PREPARER-NAME', ssnEin: 'PREPARER-SSN', phone: 'PREPARER-PHONE',
@@ -170,10 +170,10 @@ async function exportGuardian(page: import('@playwright/test').Page) {
       streetAddress: 'SVC-STREET', cityStateZip: 'SVC-CITY', signatureDate: '2026-07-07',
     };
     d.serviceDate = '2026-08-08';
-    (window as any).autoSave();
+    (window as any).GuardianForms.testing.replaceFiling(d);
   }, INV);
-  await page.evaluate(() => (window as any).flushPendingSave());
-  await page.evaluate(() => (window as any).navigate('/print'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
   const excel = page.locator('[data-inventory-action="save-excel"]');
   await expect(excel).toBeEnabled({ timeout: 20_000 });
   const dl = page.waitForEvent('download', { timeout: 40_000 });
@@ -252,12 +252,12 @@ test.describe('Initial Inventory fills its boxes, not its captions', () => {
     fs.writeFileSync(file, bytes);
 
     await createWard(page, 'Placement Import Target', 'guardian');
-    await page.evaluate(() => (window as any).navigate('/'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
     await page.setInputFiles('input[type="file"][accept=".xlsx"]', file);
-    await page.waitForFunction(() => ((window as any).D?.bondAmount || '') !== '', undefined, { timeout: 20_000 });
+    await page.waitForFunction(() => ((window as any).GuardianForms.testing.snapshot().filing?.bondAmount || '') !== '', undefined, { timeout: 20_000 });
 
     const back = await page.evaluate(() => {
-      const d = (window as any).D;
+      const d = (window as any).GuardianForms.testing.snapshot().filing;
       return {
         bondAmount: String(d.bondAmount), bondPeriodFrom: d.bondPeriodFrom, bondPeriodTo: d.bondPeriodTo,
         preparerName: d.preparer?.name, preparerPhone: d.preparer?.phone,

@@ -2,8 +2,8 @@
  "generatedBy": "node scripts/ms70-fixture-inventory.mjs --write",
  "note": "Milestone 70, 70A: every export of the browser test support layer, which specs use it, and which are fixture factories that must change with the application factories 70C moves (AGENTS.md section 8.3). Informational.",
  "summary": {
-  "supportModules": 12,
-  "exports": 67,
+  "supportModules": 14,
+  "exports": 68,
   "factories": 16,
   "unusedExports": [
    "case-file-shape.contract.ts::validParty",
@@ -22,11 +22,7 @@
    "target.ts::freshStartWardNoPassword",
    "target.ts::readDynDialogMessage",
    "target.ts::fillDynPrompt",
-   "window-api.ts::navigateTo",
-   "window-api.ts::addFiling",
-   "window-api.ts::activeFiling",
-   "window-api.ts::caseFileSnapshot",
-   "window-api.ts::flushSave"
+   "window-api.ts::testing"
   ]
  },
  "factories": [
@@ -39,15 +35,22 @@
   "fixtures.ts::MINIMAL_VALID_PLAN_ANNUAL (1 specs)",
   "plan-fixture.ts::registerPlanMountTests (4 specs)",
   "supplemental-pdf-fixture.ts::buildSupplementalAttachmentFixture (4 specs)",
-  "target.ts::fillMinimalValidGuardianWard (21 specs)",
-  "target.ts::fillMinimalValidSimplifiedWard (14 specs)",
-  "target.ts::fillMinimalValidPlanSimplifiedWard (15 specs)",
-  "target.ts::fillMinimalValidPlanAnnualWard (13 specs)",
-  "target.ts::fillMinimalValidPlanMinorWard (13 specs)",
-  "target.ts::fillMinimalValidPlanInitialWard (15 specs)",
-  "target.ts::fillMinimalValidAnnualWard (22 specs)"
+  "target.ts::fillMinimalValidGuardianWard (22 specs)",
+  "target.ts::fillMinimalValidSimplifiedWard (15 specs)",
+  "target.ts::fillMinimalValidPlanSimplifiedWard (16 specs)",
+  "target.ts::fillMinimalValidPlanAnnualWard (14 specs)",
+  "target.ts::fillMinimalValidPlanMinorWard (14 specs)",
+  "target.ts::fillMinimalValidPlanInitialWard (16 specs)",
+  "target.ts::fillMinimalValidAnnualWard (23 specs)"
  ],
  "helpers": [
+  {
+   "module": "tests/e2e/support/app-driver.ts",
+   "name": "currentBuild",
+   "kind": "value",
+   "specFiles": 1,
+   "factory": false
+  },
   {
    "module": "tests/e2e/support/case-file-shape.contract.ts",
    "name": "validParty",
@@ -199,7 +202,7 @@
    "module": "tests/e2e/support/pdf-extract.ts",
    "name": "extractPdfText",
    "kind": "function",
-   "specFiles": 18,
+   "specFiles": 19,
    "factory": false
   },
   {
@@ -229,6 +232,13 @@
    "kind": "function",
    "specFiles": 4,
    "factory": true
+  },
+  {
+   "module": "tests/e2e/support/pre-70-build.ts",
+   "name": "pre70Build",
+   "kind": "value",
+   "specFiles": 1,
+   "factory": false
   },
   {
    "module": "tests/e2e/support/stream.ts",
@@ -290,14 +300,21 @@
    "module": "tests/e2e/support/target.ts",
    "name": "gotoApp",
    "kind": "function",
-   "specFiles": 17,
+   "specFiles": 19,
+   "factory": false
+  },
+  {
+   "module": "tests/e2e/support/target.ts",
+   "name": "enableTestMode",
+   "kind": "function",
+   "specFiles": 1,
    "factory": false
   },
   {
    "module": "tests/e2e/support/target.ts",
    "name": "startNewCase",
    "kind": "function",
-   "specFiles": 13,
+   "specFiles": 14,
    "factory": false
   },
   {
@@ -311,7 +328,7 @@
    "module": "tests/e2e/support/target.ts",
    "name": "chooseNoPassword",
    "kind": "function",
-   "specFiles": 11,
+   "specFiles": 12,
    "factory": false
   },
   {
@@ -339,63 +356,77 @@
    "module": "tests/e2e/support/target.ts",
    "name": "createWard",
    "kind": "function",
-   "specFiles": 84,
+   "specFiles": 87,
+   "factory": false
+  },
+  {
+   "module": "tests/e2e/support/target.ts",
+   "name": "reopenFilingWithStoredShape",
+   "kind": "function",
+   "specFiles": 2,
+   "factory": false
+  },
+  {
+   "module": "tests/e2e/support/target.ts",
+   "name": "chooseCoverCounty",
+   "kind": "function",
+   "specFiles": 3,
    "factory": false
   },
   {
    "module": "tests/e2e/support/target.ts",
    "name": "fillMinimalValidGuardianWard",
    "kind": "function",
-   "specFiles": 21,
+   "specFiles": 22,
    "factory": true
   },
   {
    "module": "tests/e2e/support/target.ts",
    "name": "createSimplifiedWard",
    "kind": "function",
-   "specFiles": 20,
+   "specFiles": 21,
    "factory": false
   },
   {
    "module": "tests/e2e/support/target.ts",
    "name": "fillMinimalValidSimplifiedWard",
    "kind": "function",
-   "specFiles": 14,
+   "specFiles": 15,
    "factory": true
   },
   {
    "module": "tests/e2e/support/target.ts",
    "name": "fillMinimalValidPlanSimplifiedWard",
    "kind": "function",
-   "specFiles": 15,
+   "specFiles": 16,
    "factory": true
   },
   {
    "module": "tests/e2e/support/target.ts",
    "name": "fillMinimalValidPlanAnnualWard",
    "kind": "function",
-   "specFiles": 13,
+   "specFiles": 14,
    "factory": true
   },
   {
    "module": "tests/e2e/support/target.ts",
    "name": "fillMinimalValidPlanMinorWard",
    "kind": "function",
-   "specFiles": 13,
+   "specFiles": 14,
    "factory": true
   },
   {
    "module": "tests/e2e/support/target.ts",
    "name": "fillMinimalValidPlanInitialWard",
    "kind": "function",
-   "specFiles": 15,
+   "specFiles": 16,
    "factory": true
   },
   {
    "module": "tests/e2e/support/target.ts",
    "name": "fillMinimalValidAnnualWard",
    "kind": "function",
-   "specFiles": 22,
+   "specFiles": 23,
    "factory": true
   },
   {
@@ -477,35 +508,7 @@
   },
   {
    "module": "tests/e2e/support/window-api.ts",
-   "name": "navigateTo",
-   "kind": "function",
-   "specFiles": 0,
-   "factory": false
-  },
-  {
-   "module": "tests/e2e/support/window-api.ts",
-   "name": "addFiling",
-   "kind": "function",
-   "specFiles": 0,
-   "factory": false
-  },
-  {
-   "module": "tests/e2e/support/window-api.ts",
-   "name": "activeFiling",
-   "kind": "function",
-   "specFiles": 0,
-   "factory": false
-  },
-  {
-   "module": "tests/e2e/support/window-api.ts",
-   "name": "caseFileSnapshot",
-   "kind": "function",
-   "specFiles": 0,
-   "factory": false
-  },
-  {
-   "module": "tests/e2e/support/window-api.ts",
-   "name": "flushSave",
+   "name": "testing",
    "kind": "function",
    "specFiles": 0,
    "factory": false

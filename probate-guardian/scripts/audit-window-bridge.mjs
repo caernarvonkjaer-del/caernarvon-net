@@ -185,6 +185,25 @@ export function auditWindowBridge(projectRoot = root) {
   };
 }
 
+/**
+ * Every name the source tree can put on `window`: `window.X =` assignments,
+ * legacy-app.js's top-level function declarations (a classic script's
+ * functions are window properties without any assignment), and
+ * `Object.defineProperty(window, 'X', ...)`. Milestone 70, 70T: browser specs
+ * no longer probe the live global surface by name, so a pin that a removed
+ * bridge stays removed reads this instead (tests/unit/removed-window-bridges.spec.js).
+ */
+export function windowSurfaceNames(projectRoot = root) {
+  const names = new Set(auditWindowBridge(projectRoot).assignments.map((a) => a.name));
+  const legacy = fs.readFileSync(path.join(projectRoot, 'src', 'legacy-app.js'), 'utf8');
+  for (const m of legacy.matchAll(/^(?:async\s+)?function\s+([A-Za-z_$][\w$]*)\s*\(/gm)) names.add(m[1]);
+  for (const file of walk(path.join(projectRoot, 'src'))) {
+    const source = fs.readFileSync(file, 'utf8');
+    for (const m of source.matchAll(/Object\.defineProperty\(\s*window\s*,\s*['"]([A-Za-z_$][\w$]*)['"]/g)) names.add(m[1]);
+  }
+  return names;
+}
+
 export const DECLARATION_PATH = 'src/core/types/window-bridge.d.ts';
 
 /** The `interface Window` augmentation text for the current source tree. */

@@ -28,12 +28,13 @@ const SIGNED_BEFORE_THE_PERIOD = '2025-12-15';
 const ORDER_RULE = /must be on or after (Reporting|Accounting) Period To/;
 
 const messages = (page: Page, validator: string) =>
-  page.evaluate((v) => ((window as any)[v]() || []).map((i: any) => String(i?.message ?? i)), validator);
+  // The open filing's own validator (the one `validator` names for its type).
+  page.evaluate(async () => ((await (window as any).GuardianForms.testing.validate.open()) || []).map((i: any) => String(i?.message ?? i)));
 
 async function signBeforeThePeriod(page: Page, type: string) {
   await page.evaluate(([t, date, period]) => {
     const w = window as any;
-    const d = w.D;
+    const d = w.GuardianForms.testing.snapshot().filing;
     Object.assign(d, period);
     d.planGuardians[0].signatureDate = date;
     // Every other signer the form has, started so its checks apply.
@@ -41,9 +42,9 @@ async function signBeforeThePeriod(page: Page, type: string) {
     if (t === 'planSimplified') { d.preparer_name = 'Sam Okafor'; d.preparer_signatureDate = date; d.attorney = 'Jordan Reyes, Esq.'; d.attorney_signatureDate = date; }
     if (t === 'planMinor') { d.preparer_signatureDate = date; d.attorney_signatureDate = date; }
     if (t === 'planInitial') { d.attorney_signatureDate = date; }
-    w.autoSave();
+    w.GuardianForms.testing.replaceFiling(d);
   }, [type, SIGNED_BEFORE_THE_PERIOD, PERIOD] as [string, string, typeof PERIOD]);
-  await page.evaluate(() => (window as any).flushPendingSave());
+  await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
 }
 
 for (const form of [
@@ -60,10 +61,10 @@ for (const form of [
 
     const issues = await messages(page, form.validator);
     expect(issues.filter((m) => ORDER_RULE.test(m)), `${form.label}: no signature is ordered against the period`).toEqual([]);
-    const checks = await page.evaluate(() => (window as any).computeNavChecks().checks);
+    const checks = await page.evaluate(() => (window as any).GuardianForms.testing.status.navChecks().checks);
     for (const key of form.keys) expect(checks[key], `${form.label}: sidebar ${key} stays complete`).toBe(true);
 
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
     await expect(page.locator(form.pdfButton), `${form.label}: Save as PDF is enabled`).toBeEnabled({ timeout: 20_000 });
   });
 }
@@ -72,9 +73,9 @@ test('Annual Accounting keeps the rule: a guardian signature dated before the ac
   await freshStartNoPassword(page);
   await createWard(page, 'Accounting Signed Early', 'annual');
   await fillMinimalValidAnnualWard(page);
-  await page.evaluate((date) => { const w = window as any; w.D.guardians[0].signatureDate = date; w.autoSave(); }, '2026-06-01');
-  await page.evaluate(() => (window as any).flushPendingSave());
+  await page.evaluate((date) => { const w = window as any; w.GuardianForms.testing.patchFiling({ 'guardians.0.signatureDate': date }); w.GuardianForms.testing.save.auto(); }, '2026-06-01');
+  await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
   const issues = await messages(page, 'validateAnnual');
   expect(issues.filter((m) => ORDER_RULE.test(m)), 'the accounting orders the signature against its period').not.toEqual([]);
-  expect(await page.evaluate(() => (window as any).computeNavChecks().checks['a-p3']), 'and its sidebar agrees').toBe(false);
+  expect(await page.evaluate(() => (window as any).GuardianForms.testing.status.navChecks().checks['a-p3']), 'and its sidebar agrees').toBe(false);
 });

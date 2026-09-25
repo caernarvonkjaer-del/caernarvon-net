@@ -87,16 +87,15 @@ export async function installFixtureSupport(page: Page): Promise<void> {
     // MINIMAL_VALID_* followed by whatever the individual test is actually
     // about. What the builders receive is then the same shape a real filing
     // has, not a literal that happens to carry the keys one test reads.
+    // Milestone 70, 70T: the app is reached only through GuardianForms.testing.
+    const t = w.GuardianForms.testing;
     w.__pgBuildFixture = (type: string, ...overlays: any[]) => {
-      if (typeof w.initializeEmptyData !== 'function') {
-        throw new Error('initializeEmptyData is not reachable; legacy-app.js has not loaded');
-      }
       // initializeEmptyData() stamps inventoryType only for the annual engine
       // (its three types share one factory and have to be told apart). Every
       // other type gets it from the ward record instead, which a fixture has
       // no equivalent of -- so it is stamped here, or nothing downstream can
       // tell what filing this is.
-      const empty = w.initializeEmptyData(type);
+      const empty = t.createFiling.emptyData(type);
       if (!empty.inventoryType) empty.inventoryType = type;
       return overlays.reduce((acc: any, overlay: any) => w.__pgMergeFixture(acc, overlay), empty);
     };
@@ -108,74 +107,18 @@ export async function installFixtureSupport(page: Page): Promise<void> {
     // MINIMAL_VALID_* base and a test's own values.
     w.__pgPlanDefaults = () => {
       const rights: Record<string, string> = {};
-      for (const [k] of w.PLAN_RIGHTS || []) rights[k] = 'Not removed';
+      for (const [k] of t.constants('PLAN_RIGHTS') || []) rights[k] = 'Not removed';
       const adls: Record<string, string> = {};
-      for (const [k] of w.PLAN_ADLS || []) adls[k] = 'Ward needs no help';
+      for (const [k] of t.constants('PLAN_ADLS') || []) adls[k] = 'Ward needs no help';
       return { rights, adls };
     };
 
-    const BY_TYPE: Record<string, { validator: string; feature: string }> = {
-      guardian: { validator: 'validateGuardian', feature: 'loadGuardianFeature' },
-      annual: { validator: 'validateAnnual', feature: 'loadAnnualFeature' },
-      finalAccounting: { validator: 'validateAnnual', feature: 'loadAnnualFeature' },
-      trustAccounting: { validator: 'validateAnnual', feature: 'loadAnnualFeature' },
-      simplified: { validator: 'validateSimplified', feature: 'loadSimplifiedFeature' },
-      planAnnual: { validator: 'validatePlanAnnual', feature: 'loadPlanAnnualFeature' },
-      planInitial: { validator: 'validatePlanInitial', feature: 'loadPlanInitialFeature' },
-      planMinor: { validator: 'validatePlanMinor', feature: 'loadPlanMinorFeature' },
-      planSimplified: { validator: 'validatePlanSimplified', feature: 'loadPlanSimplifiedFeature' },
-    };
-
-    w.__pgFixtureIssues = async (fixture: any) => {
-      const type = fixture?.inventoryType || '';
-      const entry = BY_TYPE[type];
-      if (!entry) {
-        throw new Error(
-          `fixture has no recognized inventoryType (got ${JSON.stringify(type)}). `
-          + 'A fixture that does not say what it is cannot be checked against the '
-          + "court's requirements for that filing.",
-        );
-      }
-      if (typeof w[entry.validator] !== 'function' && typeof w[entry.feature] === 'function') {
-        await w[entry.feature]();
-      }
-      if (typeof w[entry.validator] !== 'function') {
-        throw new Error(`${entry.validator} is not available even after ${entry.feature}()`);
-      }
-
-      // A bare literal is not a shape the app can ever hold. Every real
-      // filing starts life as initializeEmptyData(type) and has the filer's
-      // answers written over it, so the validators are entitled to assume the
-      // collections that factory guarantees -- validateAnnual() goes straight
-      // to d.guardians.forEach without a guard, and a literal that omits it
-      // crashes the validator instead of being judged by it.
-      //
-      // So the fixture is judged as the app would hold it: the app's own
-      // factory underneath, the fixture's values on top. This reads
-      // initializeEmptyData off window because legacy-app.js is a classic
-      // script, not a module -- its top-level functions are already globals,
-      // so no product change is needed to reach it.
-      //
-      // JSON round-tripping afterwards is what the app's own storage does to a
-      // filing, so it is the shape the product actually validates.
-      if (typeof w.initializeEmptyData !== 'function') {
-        throw new Error('initializeEmptyData is not reachable; legacy-app.js has not loaded');
-      }
-      const copy = JSON.parse(JSON.stringify({ ...w.initializeEmptyData(type), ...fixture }));
-      const prevD = w.D;
-      w.D = copy;
-      try {
-        const raw = w[entry.validator](copy) || [];
-        const pre = w.prepareFilingOutput(copy, raw);
-        return (pre.structuredIssues || []).map((i: any) => ({
-          code: String(i?.code || ''),
-          message: String(i?.message || ''),
-          bypassable: i?.bypassable !== false,
-        }));
-      } finally {
-        w.D = prevD;
-      }
-    };
+    // The export-gate issues for a filing that exists only as data: the
+    // app's own blank filing of the type with the fixture on top, JSON
+    // round-tripped as storage would, judged by the type's validator and
+    // prepareFilingOutput() -- all inside the adapter, which restores the open
+    // filing afterwards (it used to swap window.D here).
+    w.__pgFixtureIssues = (fixture: any) => t.validate.fixture(fixture);
   });
 }
 

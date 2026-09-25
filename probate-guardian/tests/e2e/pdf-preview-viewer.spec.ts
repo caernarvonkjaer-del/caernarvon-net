@@ -52,7 +52,7 @@ test.describe('Milestone 19-3: shared PDF preview/print viewer', () => {
       await freshStartNoPassword(page);
       await feature.create(page, `${feature.name} Preview Ward`);
       await feature.fill(page);
-      await page.evaluate(() => (window as any).navigate('/print'));
+      await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
 
       // The viewer replaces #print-doc-container's content with one
       // .pdf-page (canvas + .textLayer) per generated PDF page -- wait for
@@ -80,16 +80,16 @@ test.describe('Milestone 19-3: shared PDF preview/print viewer', () => {
     await freshStartNoPassword(page);
     await createWard(page, 'Finalized Pager Ward', 'guardian');
     await fillMinimalValidGuardianWard(page);
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
 
     await expect.poll(() => page.locator('#print-doc-container .pdf-page').count(), { timeout: 15000 }).toBeGreaterThan(1);
     const previewPageCount = await page.locator('#print-doc-container .pdf-page').count();
     const finalizedPageCount = await page.evaluate(async () => {
-      const { buildVerifiedInventoryModel } = await (window as any).loadGuardianPdf();
+      const { buildVerifiedInventoryModel } = await (window as any).GuardianForms.testing.generateOutput.guardianPdf();
       const { generateCourtFormPdf } = await import('/probate-guardian/src/core/pdf/pdf-engine.js');
       const { finalizeCourtFormPdf } = await import('/probate-guardian/src/core/pdf/pdf-finalizer.js');
       const { ensurePdfjs } = await import('/probate-guardian/src/core/pdf/pdfjs-loader.js');
-      const doc = await generateCourtFormPdf(buildVerifiedInventoryModel((window as any).D));
+      const doc = await generateCourtFormPdf(buildVerifiedInventoryModel((window as any).GuardianForms.testing.snapshot().filing));
       const finalized = await finalizeCourtFormPdf(doc);
       const pdfjs = await ensurePdfjs();
       return (await pdfjs.getDocument({ data: finalized }).promise).numPages;
@@ -105,7 +105,7 @@ test.describe('Milestone 19-3: shared PDF preview/print viewer', () => {
     await expect(shellActions.locator('[data-shell-action="toggle-theme"]')).toBeVisible();
     await expect(shellActions.locator('[data-shell-action="toggle-help"]')).toBeVisible();
 
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
     await expect.poll(() => page.locator('#print-doc-container .pdf-page').count(), { timeout: 15000 }).toBe(finalizedPageCount);
     await expect(page.locator('#pv-bar')).toHaveCount(1);
     await expect(page.locator('#pv-count')).toHaveText(`Page 1 of ${finalizedPageCount}`);
@@ -125,7 +125,7 @@ test.describe('Milestone 19-3: shared PDF preview/print viewer', () => {
     test(`${feature.name}: an incomplete filing's embedded preview is blocked, not silently rendered`, async ({ page }) => {
       await freshStartNoPassword(page);
       await feature.create(page, `${feature.name} Blocked Preview Ward`);
-      await page.evaluate(() => (window as any).navigate('/print'));
+      await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
 
       const blocked = page.locator('#print-doc-container .pdf-preview-blocked');
       await expect(blocked).toBeVisible();
@@ -161,7 +161,7 @@ test.describe('Milestone 19-3: shared PDF preview/print viewer', () => {
     await freshStartNoPassword(page);
     await createWard(page, 'Print Blob Ward', 'guardian');
     await fillMinimalValidGuardianWard(page);
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
     await page.locator('#print-doc-container .pdf-page').first().waitFor({ state: 'visible', timeout: 15000 });
 
     // Whether the new tab shows the PDF inline or downloads it depends on
@@ -196,14 +196,14 @@ test.describe('Milestone 19-3: shared PDF preview/print viewer', () => {
     await freshStartNoPassword(page);
     await createWard(page, 'Sig Style Parity Ward', 'guardian');
     await fillMinimalValidGuardianWard(page);
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
     await page.locator('#print-doc-container .pdf-page').first().waitFor({ state: 'visible', timeout: 15000 });
 
     const previewText = await page.locator('#print-doc-container').innerText();
 
     const savedDoc = await page.evaluate(async () => {
-      const { buildVerifiedInventoryModel, generateVerifiedInventoryPdf } = await (window as any).loadGuardianPdf();
-      const D = (window as any).D;
+      const { buildVerifiedInventoryModel, generateVerifiedInventoryPdf } = await (window as any).GuardianForms.testing.generateOutput.guardianPdf();
+      const D = (window as any).GuardianForms.testing.snapshot().filing;
       const model = buildVerifiedInventoryModel(D, { signatureStyle: D.signatureStyle || 'typed', printDate: new Date().toISOString().slice(0, 10) });
       const doc = await generateVerifiedInventoryPdf(model);
       return doc.output('datauristring');
@@ -227,7 +227,7 @@ test.describe('Milestone 19-3: shared PDF preview/print viewer', () => {
     await createWard(page, 'Reload Button Ward', 'guardian');
     await fillMinimalValidGuardianWard(page);
     await page.route('**/lib/pdfjs/pdf.mjs', (route) => route.abort());
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
 
     const panel = page.locator('#print-doc-container .pdf-preview-error');
     await expect(panel).toBeVisible({ timeout: 15000 });

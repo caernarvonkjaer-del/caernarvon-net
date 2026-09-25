@@ -36,7 +36,7 @@ test.describe('user guide wiring', () => {
   test('dashboard: "?" opens the Help panel; View User Guide opens the manual unanchored', async ({ page, context }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Dashboard Guide Ward', 'guardian');
-    await page.evaluate(() => (window as any).navigate('/dashboard'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/dashboard'));
     await page.waitForURL(/#\/dashboard/);
     const reminder = page.locator('[data-shell-action="hide-auto-export-reminder"]');
     if (await reminder.count()) await reminder.click();
@@ -73,7 +73,7 @@ test.describe('user guide wiring', () => {
     await freshStartNoPassword(page);
     await createWard(page, 'Inventory Guide Ward', 'guardian');
     for (const [route, anchor] of GUARDIAN_CASES) {
-      await page.evaluate((r) => (window as any).navigate(r), route);
+      await page.evaluate((r) => (window as any).GuardianForms.testing.navigate(r), route);
       await page.waitForURL(new RegExp(`#${route.replace('/', '\\/')}$`));
       const url = await clickAndCaptureGuideTab(page, context, '#help-toggle-btn');
       expect(url, `route ${route}`).toContain(`help/#${anchor}`);
@@ -90,7 +90,7 @@ test.describe('user guide wiring', () => {
     await freshStartNoPassword(page);
     await createSimplifiedWard(page, 'Simplified Guide Ward');
     for (const [route, anchor] of SIMPLIFIED_CASES) {
-      await page.evaluate((r) => (window as any).navigate(r), route);
+      await page.evaluate((r) => (window as any).GuardianForms.testing.navigate(r), route);
       await page.waitForURL(new RegExp(`#${route.replace('/', '\\/')}$`));
       const url = await clickAndCaptureGuideTab(page, context, '#help-toggle-btn');
       expect(url, `route ${route}`).toContain(`help/#${anchor}`);
@@ -107,7 +107,7 @@ test.describe('user guide wiring', () => {
     await freshStartNoPassword(page);
     await createWard(page, 'Annual Guide Ward', 'annual');
     for (const [route, anchor] of ANNUAL_CASES) {
-      await page.evaluate((r) => (window as any).navigate(r), route);
+      await page.evaluate((r) => (window as any).GuardianForms.testing.navigate(r), route);
       await page.waitForURL(new RegExp(`#${route.replace('/', '\\/')}$`));
       const url = await clickAndCaptureGuideTab(page, context, '#help-toggle-btn');
       expect(url, `route ${route}`).toContain(`help/#${anchor}`);
@@ -117,13 +117,13 @@ test.describe('user guide wiring', () => {
   test('trustAccounting and finalAccounting alias to the same Annual Accounting anchors', async ({ page, context }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Trust Guide Ward', 'trustAccounting');
-    await page.evaluate(() => (window as any).navigate('/schd2'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/schd2'));
     await page.waitForURL(/#\/schd2$/);
     let url = await clickAndCaptureGuideTab(page, context, '#help-toggle-btn');
     expect(url).toContain('help/#annual-accounting-schedules');
 
     await createWard(page, 'Final Guide Ward', 'finalAccounting');
-    await page.evaluate(() => (window as any).navigate('/p2'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/p2'));
     await page.waitForURL(/#\/p2$/);
     url = await clickAndCaptureGuideTab(page, context, '#help-toggle-btn');
     expect(url).toContain('help/#annual-accounting-p2');
@@ -139,7 +139,7 @@ test.describe('user guide wiring', () => {
     await freshStartNoPassword(page);
     for (const [type, route, anchor] of PLAN_CASES) {
       await createWard(page, `${type} Guide Ward`, type);
-      await page.evaluate((r) => (window as any).navigate(r), route);
+      await page.evaluate((r) => (window as any).GuardianForms.testing.navigate(r), route);
       await page.waitForURL(new RegExp(`#${route.replace('/', '\\/')}$`));
       const url = await clickAndCaptureGuideTab(page, context, '#help-toggle-btn');
       expect(url, `${type} ${route}`).toContain(`help/#${anchor}`);

@@ -52,7 +52,7 @@ test('warns when another tab reports unsaved changes', { tag: '@origin-state' },
   await startNewCase(first);
   await chooseNoPassword(first);
   await createWard(first, 'Dirty Tab Test Ward');
-  await first.evaluate(() => (window as any).markDirtySinceExport());
+  await first.evaluate(() => (window as any).GuardianForms.testing.save.markDirty());
 
   const second = await context.newPage();
   await gotoApp(second);
@@ -116,7 +116,8 @@ test('confirms before activating an update with unsaved work', { tag: '@origin-s
   await installServiceWorkerMock(page);
   await gotoApp(page);
   await page.evaluate(() => {
-    (window as any).pgHasUnsavedChanges = () => true;
+    // Unsaved changes, made the app's own way (it used to replace pgHasUnsavedChanges()).
+    (window as any).GuardianForms.testing.save.markDirty();
   });
 
   await page.getByRole('button', { name: 'Reload now' }).click();
