@@ -1,6 +1,6 @@
 {
  "generatedBy": "node scripts/ms70-testing-adapter-design.mjs --write",
- "note": "Milestone 70, 70A: proposed window.GuardianForms schema -- production members with their named consumer, and GuardianForms.testing designed from the names the browser suite reaches today (tests/baseline/ms70-e2e-globals.json). A draft for 70T to review; each name is reviewed:false until confirmed.",
+ "note": "Milestone 70, 70A: the window.GuardianForms schema -- production members with their named consumer, and GuardianForms.testing designed from the names the browser suite reaches today (tests/baseline/ms70-e2e-globals.json). The members and their kinds are confirmed by the owner's review (schemaReview); each name's destination stays reviewed:false until 70T proves it by converting the specs.",
  "production": {
   "version": {
    "kind": "value",
@@ -14,7 +14,8 @@
     "kind": "command",
     "replaces": [
      "navigate"
-    ]
+    ],
+    "reviewed": true
    },
    "snapshot": {
     "kind": "query",
@@ -29,7 +30,8 @@
      "wardName",
      "activeInventoryType",
      "wardId"
-    ]
+    ],
+    "reviewed": true
    },
    "save": {
     "kind": "command",
@@ -39,7 +41,8 @@
      "markDirtySinceExport",
      "saveBackupNow",
      "saveData"
-    ]
+    ],
+    "reviewed": true
    },
    "createFiling": {
     "kind": "command",
@@ -48,25 +51,26 @@
      "addEntry",
      "duplicateEntry",
      "initializeEmptyData"
-    ]
+    ],
+    "reviewed": true
    },
    "activateFiling": {
     "kind": "command",
     "replaces": [
      "switchWard",
      "unloadWard"
-    ]
+    ],
+    "reviewed": true
    },
    "status": {
     "kind": "query",
     "replaces": [
      "computeNavChecks",
-     "updateNavDots",
      "getWardProgress",
      "planReadinessChecks",
-     "planReadinessPanel",
-     "updateSidebar"
-    ]
+     "planReadinessPanel"
+    ],
+    "reviewed": true
    },
    "generateOutput": {
     "kind": "query",
@@ -74,15 +78,11 @@
      "loadGuardianPdf",
      "loadAnnualPdf",
      "loadSimplifiedPdf",
-     "doSavePdfPlanAnnual",
-     "doSavePdfPlanInitial",
-     "doSavePdfPlanMinor",
      "loadPlanAnnualPdf",
-     "doSaveExcelGuardian",
-     "doSavePdfGuardian",
      "loadPlanMinorPdf",
      "loadPlanSimplifiedPdf"
-    ]
+    ],
+    "reviewed": true
    },
    "validate": {
     "kind": "query",
@@ -96,23 +96,23 @@
      "validateSimplified",
      "adaptValidationErrors",
      "prepareFilingOutput"
-    ]
+    ],
+    "reviewed": true
    },
    "exportArchive": {
     "kind": "query",
     "replaces": [
      "buildCaseFileBlob",
-     "buildSingleWardExportBlob",
-     "exportGuardianDataZip",
-     "saveBlobAs",
-     "finishSingleWardExport"
-    ]
+     "buildSingleWardExportBlob"
+    ],
+    "reviewed": true
    },
    "lock": {
     "kind": "command",
     "replaces": [
      "lockApp"
-    ]
+    ],
+    "reviewed": true
    },
    "sharedRecords": {
     "kind": "query",
@@ -131,7 +131,8 @@
      "referenceCountForParty",
      "subPartiesOf",
      "wardCountyMergeConflict"
-    ]
+    ],
+    "reviewed": true
    },
    "persistenceState": {
     "kind": "query",
@@ -141,7 +142,6 @@
      "loadCaseFileHandle",
      "_cryptoKey",
      "_securityMode",
-     "auditLog",
      "decryptJSONWithKey",
      "getCurrentLockedWardId",
      "getRecentlyOpenedWards",
@@ -149,14 +149,16 @@
      "loadAppState",
      "loadAuditLogEntries",
      "readRememberedFile"
-    ]
+    ],
+    "reviewed": true
    },
    "recoveryCache": {
     "kind": "command",
     "replaces": [
      "clearSessionRestoreCache",
      "saveSessionRestoreCache"
-    ]
+    ],
+    "reviewed": true
    },
    "updateSharedRecords": {
     "kind": "command",
@@ -177,65 +179,148 @@
      "syncIdentityField",
      "unmergeParty",
      "writeRoleFields"
-    ]
+    ],
+    "reviewed": true
+   },
+   "saveOutput": {
+    "kind": "command",
+    "replaces": [
+     "doSavePdfPlanAnnual",
+     "doSavePdfPlanInitial",
+     "doSavePdfPlanMinor",
+     "doSaveExcelGuardian",
+     "doSavePdfGuardian"
+    ],
+    "reviewed": true
+   },
+   "saveArchive": {
+    "kind": "command",
+    "replaces": [
+     "exportGuardianDataZip",
+     "saveBlobAs",
+     "finishSingleWardExport"
+    ],
+    "reviewed": true
    },
    "launchState": {
     "kind": "command",
     "replaces": [
      "rememberCaseFileHandle"
-    ]
+    ],
+    "reviewed": true
+   },
+   "refreshStatus": {
+    "kind": "command",
+    "replaces": [
+     "updateNavDots",
+     "updateSidebar"
+    ],
+    "reviewed": true
    },
    "filingLock": {
     "kind": "command",
     "replaces": [
      "acquireWardLock",
      "releaseWardLock"
-    ]
+    ],
+    "reviewed": true
+   },
+   "recordActivity": {
+    "kind": "command",
+    "replaces": [
+     "auditLog"
+    ],
+    "reviewed": true
    },
    "convertFiling": {
     "kind": "command",
     "replaces": [
      "convertExistingWard",
      "convertToSimplified"
-    ]
+    ],
+    "reviewed": true
    },
    "deleteFiling": {
     "kind": "command",
     "replaces": [
      "deleteWard"
-    ]
+    ],
+    "reviewed": true
    },
    "importArchive": {
     "kind": "command",
     "replaces": [
      "loadCaseFileFromZip"
-    ]
+    ],
+    "reviewed": true
    },
    "setTestSystemTitleWarning": {
     "kind": "command",
     "replaces": [
      "setTestSystemTitleWarningEnabledForTest"
-    ]
+    ],
+    "reviewed": true
    },
    "year": {
     "kind": "command",
     "replaces": [
      "startNewWardYear",
      "switchWardYear"
-    ]
+    ],
+    "reviewed": true
    }
+  }
+ },
+ "schemaReview": {
+  "by": "Claude (Milestone 70 delivery owner)",
+  "on": "2026-09-24",
+  "production": {
+   "version": "Confirmed: the only production member. A read-only build identity for support, since production caches index.html for a year; everything else stays behind GuardianForms.testing."
+  },
+  "corrections": [
+   "updateNavDots and updateSidebar redraw the sidebar -- specs call them to force a re-render after setup -- so they are a command (refreshStatus), not part of the status query.",
+   "auditLog appends an Activity Log entry -- specs call it to seed the log -- so it is a command (recordActivity), not part of the persistenceState query.",
+   "exportGuardianDataZip, saveBlobAs and finishSingleWardExport save a file or announce a save, so they are a command (saveArchive); exportArchive keeps only the two that build a blob.",
+   "doSavePdf*/doSaveExcel* start a download, so they are a command (saveOutput); generateOutput keeps the load*Pdf functions, which only hand back the PDF builders."
+  ],
+  "members": {
+   "activateFiling": "command",
+   "convertFiling": "command",
+   "createFiling": "command",
+   "deleteFiling": "command",
+   "exportArchive": "query",
+   "filingLock": "command",
+   "generateOutput": "query",
+   "importArchive": "command",
+   "launchState": "command",
+   "lock": "command",
+   "navigate": "command",
+   "persistenceState": "query",
+   "recordActivity": "command",
+   "recoveryCache": "command",
+   "refreshStatus": "command",
+   "save": "command",
+   "saveArchive": "command",
+   "saveOutput": "command",
+   "setTestSystemTitleWarning": "command",
+   "sharedRecords": "query",
+   "snapshot": "query",
+   "status": "query",
+   "updateSharedRecords": "command",
+   "validate": "query",
+   "year": "command"
   }
  },
  "summary": {
   "names": 163,
   "byDestination": {
-   "command": 41,
-   "query": 68,
+   "command": 52,
+   "query": 57,
    "real-ui": 19,
    "harness": 14,
    "unit-import": 21
   },
-  "members": 21,
+  "members": 25,
   "inPlaceWriteSites": 239
  },
  "names": [
@@ -506,19 +591,19 @@
   {
    "name": "doSavePdfPlanAnnual",
    "files": 2,
-   "destination": "query:generateOutput",
+   "destination": "command:saveOutput",
    "reviewed": false
   },
   {
    "name": "doSavePdfPlanInitial",
    "files": 2,
-   "destination": "query:generateOutput",
+   "destination": "command:saveOutput",
    "reviewed": false
   },
   {
    "name": "doSavePdfPlanMinor",
    "files": 2,
-   "destination": "query:generateOutput",
+   "destination": "command:saveOutput",
    "reviewed": false
   },
   {
@@ -530,7 +615,7 @@
   {
    "name": "exportGuardianDataZip",
    "files": 2,
-   "destination": "query:exportArchive",
+   "destination": "command:saveArchive",
    "reviewed": false
   },
   {
@@ -596,7 +681,7 @@
   {
    "name": "saveBlobAs",
    "files": 2,
-   "destination": "query:exportArchive",
+   "destination": "command:saveArchive",
    "reviewed": false
   },
   {
@@ -620,7 +705,7 @@
   {
    "name": "updateNavDots",
    "files": 2,
-   "destination": "query:status",
+   "destination": "command:refreshStatus",
    "reviewed": false
   },
   {
@@ -728,7 +813,7 @@
   {
    "name": "auditLog",
    "files": 1,
-   "destination": "query:persistenceState",
+   "destination": "command:recordActivity",
    "reviewed": false
   },
   {
@@ -836,13 +921,13 @@
   {
    "name": "doSaveExcelGuardian",
    "files": 1,
-   "destination": "query:generateOutput",
+   "destination": "command:saveOutput",
    "reviewed": false
   },
   {
    "name": "doSavePdfGuardian",
    "files": 1,
-   "destination": "query:generateOutput",
+   "destination": "command:saveOutput",
    "reviewed": false
   },
   {
@@ -872,7 +957,7 @@
   {
    "name": "finishSingleWardExport",
    "files": 1,
-   "destination": "query:exportArchive",
+   "destination": "command:saveArchive",
    "reviewed": false
   },
   {
@@ -1190,7 +1275,7 @@
   {
    "name": "updateSidebar",
    "files": 1,
-   "destination": "query:status",
+   "destination": "command:refreshStatus",
    "reviewed": false
   },
   {

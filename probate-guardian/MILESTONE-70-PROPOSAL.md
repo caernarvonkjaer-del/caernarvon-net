@@ -2,10 +2,10 @@
 
 ## Status
 
-**In progress: 70A only.** The requester approved delivery 70A on 2026-09-24,
-and it is under way on the `milestone-70` branch (see the 70A build record).
-Nothing else here is authorized: every other delivery must be explicitly
-approved before implementation begins. The deliveries are intentionally sequential because
+**70A complete (2026-09-24); nothing else is authorized.** The requester
+approved delivery 70A on 2026-09-24 and it is complete on the
+`milestone-70` branch (see the 70A build record). Every other delivery --
+70T next -- must be explicitly approved before implementation begins. The deliveries are intentionally sequential because
 most of them touch the same dependency graph and several will touch
 `src/legacy-app.js`; they are not independent work streams that can safely be
 implemented in parallel.
@@ -640,7 +640,7 @@ increase in the compatibility surface. The exact final facade is a
 reviewed artifact of this delivery, not an open-ended promise to preserve all
 current debugging habits.
 
-### 70A build record (in progress)
+### 70A build record (complete)
 
 Approved by the requester on 2026-09-24 ("Approve, skip the regression":
 70A starts without a full `npm test` on `master` first). Everything below is
@@ -661,14 +661,15 @@ on the `milestone-70` branch unless it says otherwise.
 | Load-aware audit | `b9b5381` | The audit counts a module's `window.X` as a provider only if something loads that module, and ratchets the modules nothing loads (8). Seen failing against the previous baseline, naming exactly the nine new entries. |
 | Declaration dispositions (draft) and computed lookups | `90bc235` | `scripts/ms70-declaration-dispositions.mjs`; `tests/baseline/ms70-declaration-dispositions.json`: all 474 declarations -- 459 move, 1 test-only, 14 delete-as-dead candidates -- each with a delivery, `reviewed: false`. The audit now records computed `window[...]` lookups and resolves the two known name builders; the first draft had wrongly proposed the seven `mount<Engine>Feature` functions as dead. |
 | Window-export reasons | `e603bbe` | Every `window` publication with the files that actually read it: 109 read only by the monolith, 98 only by modules, 22 by both, 32 only by tests, 65 by nothing, 4 from a module nothing loads. |
-| `GuardianForms` schema draft | `55366db` | `tests/baseline/ms70-testing-adapter-design.json`: production member `version` only (its consumer is support, given the year-long cache); 21 testing members (14 commands, 7 copy-only queries) covering all 163 names the browser suite reaches (158 when drafted; later specs added `_cryptoKey`, `_securityMode` and `decryptJSONWithKey`, all to the `persistenceState` query, and two harness globals), plus 19 to the real UI, 21 to unit imports and 12 harness globals. |
+| `GuardianForms` schema draft | `55366db` | `tests/baseline/ms70-testing-adapter-design.json`: production member `version` only (its consumer is support, given the year-long cache); 21 testing members (14 commands, 7 copy-only queries; 25, 18 commands, after the schema review below) covering all 163 names the browser suite reaches (158 when drafted; later specs added `_cryptoKey`, `_securityMode` and `decryptJSONWithKey`, all to the `persistenceState` query, and two harness globals), plus 19 to the real UI, 21 to unit imports and 12 harness globals. |
 | Fixture-helper inventory | `a94649a` | `tests/baseline/ms70-fixture-inventory.json`: 12 support modules, 67 exports, 16 factories. Found: `window-api.ts`'s typed wrappers from Milestone 42C are used by no spec. |
-| Per-delivery estimate | `ebd0041`, re-sized after the dispositions review | 59-96 days; the table above. |
+| Per-delivery estimate | `ebd0041`, re-sized after the dispositions review | 58-95 days remaining after 70A; the table above. |
 | Security contract | `f4f368b` | `tests/unit/crypto-contract.spec.js` 8/8 and `tests/e2e/security-contract.spec.ts` 3/3, each seen failing with the fault injected (iterations 100,000, a 16-byte IV, an extractable key; auto-lock at 14 minutes, lockout threshold 6, a stored copy of the password). |
 | Year-rollover characterization | `42b1ae9` | `tests/e2e/year-rollover.characterization.spec.ts` 9/9 against `tests/baseline/ms70-year-rollover-golden.json`; seen failing on exactly the four accountings that carry a starting balance when it was carried plus 1. Findings below. |
 | `.sav` corpus, historical and current | `a16da1a` | `scripts/ms70-sav-corpus.mjs`; 56 fixtures in `tests/fixtures/sav/` (28 checkpoints: one per milestone that changed a stored shape from 9/10, the 9/16, 9/22 and both 9/24 builds matched to their commits by the monolith's exact bytes, and the branch point; each writes a plain five-ward, nine-filing caseload with shared records and a password-protected case, with its own writer; 611 KB) and `corpus.json`. `tests/e2e/sav-corpus.characterization.spec.ts` 66/66 in 5.1 min against `tests/baseline/ms70-sav-corpus-golden.json`: every file opens through the startup screen with every filing and every stored value; all 56 are format version 1. **Gate item: the historical and current fixtures open.** Seen failing: a reader that adds one field to each loaded filing passed every explicit check and failed the golden (digest and per-filing key counts). Found: a damaged file opens silently without the filings it cannot read, and in Chrome and Edge the first auto-save then rewrites the original without them -- fixed on `master` in `b2d97f5` with Alan's approval (a ledger row); a file marked format version 2 opens as if it were 1 (recorded; no version 2 exists). |
 | Mixed-version characterization | `db16eb3` | `tests/e2e/mixed-version.characterization.spec.ts` 15/15: the 9/24 evening build (`b28bf25`; `PG_MIXED_OLD_SHA` re-pins it at the merge gate) under `/old/` and this tree under `/new/` on one origin (`scripts/serve-portable-http.mjs` gained `mounts`). In both directions: terms, theme at load, default circuit, resuming the last filing and page, the other-tab warning naming the open filing, a dismissal surviving a reload into the other version, the filing lock, the first-run flag, and the recovery snapshot decrypted by the other version. `tests/baseline/ms70-shared-storage-golden.json` holds the shape of everything shared, which both versions must match. Seen failing: a renamed dismissal key in the new version failed both directions; an extra tab-message field failed the shape test. Excluded, with reasons in the spec: the remembered file handle (needs a user-driven picker), the web build's offline answer, update flag and service-worker caches (production runs the portable build), and process-local state. |
-| Dispositions reviewed | this commit | All 474 declarations reviewed by the owner (`tests/baseline/ms70-declaration-review.json`, applied by `scripts/ms70-declaration-dispositions.mjs`). The section rule placed 94 wrongly -- sections whose banner no longer describes what sits under them: the case-state roots (`caseFile`, `activeInventoryType` to 70J), the save pipeline and template loading (to 70I), sidebar and picker UI under the old router banner (to 70H), 26 form-field helpers left in the feature-bridge sections (to 70F), registry data and normalizers (to 70C) -- each override with its reason. `_visitedPages` is dead on both sides (a `let` is never a window property, so the three module references never run): delete-as-dead, 15 in all, each searched for by name across source, markup and tests. The per-delivery sizes above are re-derived from the reviewed placement: the same 6,230 lines, redistributed. **Gate item: every legacy declaration has a disposition** -- now reviewed, and `tests/unit/ms70-declaration-dispositions.spec.js` fails on any entry whose placement drifts from the review (seen failing on one drifted entry). |
+| Dispositions reviewed | `89b659f` | All 474 declarations reviewed by the owner (`tests/baseline/ms70-declaration-review.json`, applied by `scripts/ms70-declaration-dispositions.mjs`). The section rule placed 94 wrongly -- sections whose banner no longer describes what sits under them: the case-state roots (`caseFile`, `activeInventoryType` to 70J), the save pipeline and template loading (to 70I), sidebar and picker UI under the old router banner (to 70H), 26 form-field helpers left in the feature-bridge sections (to 70F), registry data and normalizers (to 70C) -- each override with its reason. `_visitedPages` is dead on both sides (a `let` is never a window property, so the three module references never run): delete-as-dead, 15 in all, each searched for by name across source, markup and tests. The per-delivery sizes above are re-derived from the reviewed placement: the same 6,230 lines, redistributed. **Gate item: every legacy declaration has a disposition** -- now reviewed, and `tests/unit/ms70-declaration-dispositions.spec.js` fails on any entry whose placement drifts from the review (seen failing on one drifted entry). |
+| `GuardianForms` schema confirmed | this commit | The owner's review (`SCHEMA_REVIEW` in `scripts/ms70-testing-adapter-design.mjs`) confirms the one production member, `version` (read-only build identity for support, since production caches `index.html` for a year), and every testing member with its kind. It corrected the draft where a query would have had a side effect -- the adapter's rule is that a query is a copy: `updateNavDots`/`updateSidebar` redraw (now the `refreshStatus` command), `auditLog` appends (`recordActivity`), `saveBlobAs`/`exportGuardianDataZip`/`finishSingleWardExport` save or announce (`saveArchive`), and `doSavePdf*`/`doSaveExcel*` download (`saveOutput`). 25 members: 18 commands, 7 queries. Each name's destination stays `reviewed: false` until 70T proves it by converting the specs. Seen failing: an unconfirmed member, and `updateSidebar` back in a query. |
 
 **Parsed figures that replace this plan's estimates.** The Verified planning
 baseline's "Test coupling" row said its counts were text-search lower
@@ -887,7 +888,7 @@ record updates, but not waiting on full-suite runs or approvals.
 
 | Delivery | What it carries | Estimate (days) |
 | --- | --- | --- |
-| 70A | Confirming the `GuardianForms` schema draft (below) | 1 |
+| 70A | Complete, 2026-09-24 | -- |
 | 70T | 116 browser spec files, 163 application names, 239 in-place state writes; 21 adapter members | 8-14 |
 | 70B | 337 monolith lines (44 declarations), plus proving about 22 live duplicate pairs equal | 3-5 |
 | 70C | 436 lines (35 declarations) plus the registry, factories, normalizers and the 16 fixture factories | 3-6 |
@@ -900,7 +901,7 @@ record updates, but not waiting on full-suite runs or approvals.
 | 70J | The ownership flip and its fault injection; the `caseFile` and `activeInventoryType` declarations go here | 3-5 |
 | 70K | 293 lines (48 declarations) of router state, feature bridges and bootstrap, the 18 files that capture globals at load, and the namespace | 5-8 |
 | 70L | Deleting the monolith, the release evidence and the merge gate | 2-4 |
-| **Total** | | **59-96** |
+| **Total (remaining)** | | **58-95** |
 
 The range is higher than the first guess because 70T did not exist then and
 the browser suite's coupling turned out larger than estimated. It excludes
@@ -908,9 +909,24 @@ the end-of-branch reconstitution of `master` fixes (D1): four ledger rows so
 far, two of them `re-implement`, and the cost per row depends on what each
 fix touches, so the ledger is the running measure of it.
 
-**Still open in 70A.** Confirming the `GuardianForms` schema draft (the
-production member and the 21 testing members; its per-name destinations are
-`reviewed: false` until 70T proves them against the rewritten suite).
+**70A is complete.** Its gate, item by item:
+- every legacy declaration has a disposition -- all 474, reviewed, and a
+  drifted or new entry fails (`ms70-declaration-dispositions.spec.js`);
+- the audit catches an injected implicit global and a bare cross-boundary
+  reference, and the cycle check an injected cycle -- each seen failing on
+  the real tree (`0f86677`);
+- the ledger guard fails on an unlisted `master` commit -- seen failing
+  (`add5403`); it reports 6 commits since the branch point, 0 unlisted, 3 to
+  re-implement;
+- the historical and current format-v1 fixtures open -- 56 fixtures from 28
+  versions (`a16da1a`);
+- the `portable-http` profile passed its one bring-up run with its parity
+  assertions (`02ecde4`);
+- the unit suite rejects an unapproved increase in the compatibility surface
+  (the dependency ratchet); the branch's unit suite is 1,861/1,861.
+The `GuardianForms` facade is the reviewed artifact the gate asks for: one
+production member, `version`, and 25 testing members. The full browser suite
+has not been run on the branch.
 
 ---
 
@@ -1631,7 +1647,7 @@ not a calendar commitment. 70A must replace it with a delivery-by-delivery
 estimate after the parser-backed inventory identifies the actual declaration
 and consumer counts. The range also predates 70T and the end-of-branch fix
 reconstitution (D1). 70A has since replaced it with a per-delivery estimate
-of 59-96 days, including 70T and excluding the reconstitution, whose running
+of 58-95 days after 70A, including 70T and excluding the reconstitution, whose running
 cost the ledger records (see the 70A build record).
 
 The safest approval shape is the whole target architecture plus one delivery at

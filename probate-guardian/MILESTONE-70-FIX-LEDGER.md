@@ -48,7 +48,7 @@ a `master` commit is missing from it.
 
 | Delivery | Owner | Started | Finished |
 | --- | --- | --- | --- |
-| 70A | Claude | 2026-09-24 | -- |
+| 70A | Claude | 2026-09-24 | 2026-09-24 |
 
 ## Branch-only settings to undo at the merge
 

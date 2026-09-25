@@ -52,12 +52,43 @@ export const RULES = [
   [/^(resolveParty|resolveCase|wardPartyForFiling|referenceCountForParty|subPartiesOf|isPartyPairDismissed|casesGroupingWards|caseNumberOf|findDuplicateCandidates|closedFilingDrift|filingDriftFromParties|wardCountyMergeConflict|readRoleFields|identitySlotForPath)$/, 'query:sharedRecords'],
   [/^(D|caseFile|getCaseFile|getActiveWard|wardId|wardName|currentPage|activeInventoryType|_dirtySinceExport|pgHasUnsavedChanges)$/, 'query:snapshot'],
   [/^validate(Guardian|Annual|Simplified|Plan[A-Z]\w*)$|^adaptValidationErrors$|^prepareFilingOutput$/, 'query:validate'],
-  [/^(computeNavChecks|updateNavDots|getWardProgress|updateSidebar|planReadinessChecks|planReadinessPanel)$/, 'query:status'],
-  [/^load\w*Pdf$|^doSave(Pdf|Excel)\w*$/, 'query:generateOutput'],
-  [/^(buildCaseFileBlob|buildSingleWardExportBlob|exportGuardianDataZip|finishSingleWardExport|saveBlobAs)$/, 'query:exportArchive'],
-  [/^(_sessionCacheGet|_cryptoKey|_securityMode|decryptJSONWithKey|loadCaseFileHandle|readRememberedFile|hasOpenedCaseBefore|getRecentlyOpenedWards|isContinuePromptShown|getCurrentLockedWardId|loadAppState|loadAuditLogEntries|auditLog)$/, 'query:persistenceState'],
+  // Schema review, 70A: these redraw, save or announce -- a query is a copy
+  // with no side effect, so each is a command (see SCHEMA_REVIEW below).
+  [/^(updateNavDots|updateSidebar)$/, 'command:refreshStatus'],
+  [/^auditLog$/, 'command:recordActivity'],
+  [/^(exportGuardianDataZip|saveBlobAs|finishSingleWardExport)$/, 'command:saveArchive'],
+  [/^doSave(Pdf|Excel)\w*$/, 'command:saveOutput'],
+  [/^(computeNavChecks|getWardProgress|planReadinessChecks|planReadinessPanel)$/, 'query:status'],
+  [/^load\w*Pdf$/, 'query:generateOutput'],
+  [/^(buildCaseFileBlob|buildSingleWardExportBlob)$/, 'query:exportArchive'],
+  [/^(_sessionCacheGet|_cryptoKey|_securityMode|decryptJSONWithKey|loadCaseFileHandle|readRememberedFile|hasOpenedCaseBefore|getRecentlyOpenedWards|isContinuePromptShown|getCurrentLockedWardId|loadAppState|loadAuditLogEntries)$/, 'query:persistenceState'],
   [/^show\w*Modal(ForType)?$|^closeModal$|^confirmDeleteWard$|^startWalkthrough$|^openFloridaCourtPortal$|^triggerImportZip$|^focusFieldByPath$|^importExcelGuardian$|^renderPage$|^renderScheduleDocsSection$|^loadFragment$|^loadSimplifiedFeature$|^commitCoverCounty$/, 'real-ui'],
 ];
+
+// The owner's review of the schema (70A: "the exact final facade is a
+// reviewed artifact of this delivery"). Each member is confirmed with its
+// kind; a member the rules produce that is not listed here, or listed with
+// another kind, comes out reviewed:false and fails
+// tests/unit/ms70-testing-adapter-design.spec.js. The per-name destinations
+// stay reviewed:false until 70T proves them by converting the specs.
+export const SCHEMA_REVIEW = {
+  by: 'Claude (Milestone 70 delivery owner)',
+  on: '2026-09-24',
+  production: { version: 'Confirmed: the only production member. A read-only build identity for support, since production caches index.html for a year; everything else stays behind GuardianForms.testing.' },
+  corrections: [
+    'updateNavDots and updateSidebar redraw the sidebar -- specs call them to force a re-render after setup -- so they are a command (refreshStatus), not part of the status query.',
+    'auditLog appends an Activity Log entry -- specs call it to seed the log -- so it is a command (recordActivity), not part of the persistenceState query.',
+    'exportGuardianDataZip, saveBlobAs and finishSingleWardExport save a file or announce a save, so they are a command (saveArchive); exportArchive keeps only the two that build a blob.',
+    'doSavePdf*/doSaveExcel* start a download, so they are a command (saveOutput); generateOutput keeps the load*Pdf functions, which only hand back the PDF builders.',
+  ],
+  members: {
+    activateFiling: 'command', convertFiling: 'command', createFiling: 'command', deleteFiling: 'command', exportArchive: 'query',
+    filingLock: 'command', generateOutput: 'query', importArchive: 'command', launchState: 'command', lock: 'command',
+    navigate: 'command', persistenceState: 'query', recordActivity: 'command', recoveryCache: 'command', refreshStatus: 'command',
+    save: 'command', saveArchive: 'command', saveOutput: 'command', setTestSystemTitleWarning: 'command', sharedRecords: 'query',
+    snapshot: 'query', status: 'query', updateSharedRecords: 'command', validate: 'query', year: 'command',
+  },
+};
 
 export function destinationFor(name) {
   const hit = RULES.find(([re]) => re.test(name));
@@ -71,7 +102,7 @@ export function buildDesign(root = ROOT) {
   for (const n of names) {
     const [kind, member] = n.destination.split(':');
     if (!member) continue;
-    members[member] ||= { kind, replaces: [] };
+    members[member] ||= { kind, replaces: [], reviewed: SCHEMA_REVIEW.members[member] === kind };
     members[member].replaces.push(n.name);
   }
   const byDestination = {};
@@ -84,6 +115,7 @@ export function buildDesign(root = ROOT) {
       version: { kind: 'value', consumer: 'support: which build a filer is running, given production caches index.html for a year' },
     },
     testing: { enabled: 'only when the test runner sets the pre-boot flag (D3, T3)', members },
+    schemaReview: SCHEMA_REVIEW,
     summary: { names: names.length, byDestination, members: Object.keys(members).length, inPlaceWriteSites: inv.summary.inPlaceStateWriteSites },
     names,
   };
@@ -96,7 +128,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   if (process.argv.includes('--write')) {
     fs.writeFileSync(path.join(ROOT, DESIGN_PATH), JSON.stringify({
       generatedBy: 'node scripts/ms70-testing-adapter-design.mjs --write',
-      note: 'Milestone 70, 70A: proposed window.GuardianForms schema -- production members with their named consumer, and GuardianForms.testing designed from the names the browser suite reaches today (tests/baseline/ms70-e2e-globals.json). A draft for 70T to review; each name is reviewed:false until confirmed.',
+      note: "Milestone 70, 70A: the window.GuardianForms schema -- production members with their named consumer, and GuardianForms.testing designed from the names the browser suite reaches today (tests/baseline/ms70-e2e-globals.json). The members and their kinds are confirmed by the owner's review (schemaReview); each name's destination stays reviewed:false until 70T proves it by converting the specs.",
       ...design,
     }, null, 1) + '\n');
     console.log(`wrote ${DESIGN_PATH}`);

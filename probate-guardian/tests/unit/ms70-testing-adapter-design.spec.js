@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { describe, expect, test } from 'vitest';
-import { DESIGN_PATH, DESTINATION_KINDS, destinationFor } from '../../scripts/ms70-testing-adapter-design.mjs';
+import { DESIGN_PATH, DESTINATION_KINDS, SCHEMA_REVIEW, buildDesign, destinationFor } from '../../scripts/ms70-testing-adapter-design.mjs';
 
 // Milestone 70, 70A: the proposed window.GuardianForms schema -- production
 // members, each with a named consumer, and GuardianForms.testing designed
@@ -33,6 +33,16 @@ describe('the GuardianForms design', () => {
     for (const [name, member] of Object.entries(design.production)) expect(member.consumer, name).toBeTruthy();
     expect(Object.keys(design.production)).not.toContain('testing');
     expect(design.testing.enabled).toMatch(/pre-boot flag/);
+  });
+
+  test("every member is confirmed by the owner's schema review with its kind, and no query has a side effect the review found", () => {
+    const members = buildDesign(ROOT).testing.members;
+    expect(Object.entries(members).filter(([, m]) => !m.reviewed).map(([k, m]) => `${k} (${m.kind})`),
+      'unreviewed member: confirm it in SCHEMA_REVIEW.members').toEqual([]);
+    expect(Object.keys(SCHEMA_REVIEW.members).filter((k) => !(k in members)), 'reviewed members that no longer exist').toEqual([]);
+    for (const name of ['updateNavDots', 'updateSidebar', 'auditLog', 'saveBlobAs', 'exportGuardianDataZip', 'finishSingleWardExport', 'doSavePdfGuardian']) {
+      expect(destinationFor(name), `${name} changes something, so it is not a query`).toMatch(/^command:/);
+    }
   });
 
   test('the rules place the suite\'s commonest reaches where 70T expects them', () => {
