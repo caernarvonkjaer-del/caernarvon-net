@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeAll } from 'vitest';
+import { parse } from 'acorn';
 import { sliceBalancedFunction } from './support/legacy-source-extract.js';
 
 // Provide browser globals required by legacy feature modules
@@ -207,7 +208,7 @@ describe('checklist and export validator field parity', () => {
     // the assertion never ran for it and its gaps were never recorded. It
     // enters the list with NO gaps rather than five new ones: s-p5 and s-p6
     // now evaluate signature completeness through the same rule
-    // validateSimplified() uses (window.isSignatureComplete), which reaches
+    // validateSimplified() uses (isSignatureComplete()), which reaches
     // attorney_signatureState/Image and certAttySignDate/SignatureState/
     // SignatureImage. An entry appearing here later means the two have drifted
     // apart again.
@@ -215,13 +216,16 @@ describe('checklist and export validator field parity', () => {
     annual: ['amendedForm', 'attorney', 'attorney_signatureImage', 'attorney_signatureState', 'certAttySignDate', 'certAttySignatureImage', 'certAttySignatureState'],
   };
 
-  const BRANCH_MARKERS = {
-    simplified: "activeInventoryType==='simplified'",
-    annual: "formEngine(activeInventoryType)==='annual'",
-    planSimplified: "activeInventoryType==='planSimplified'",
-    planAnnual: "activeInventoryType==='planAnnual'",
-    planInitial: "activeInventoryType==='planInitial'",
-    planMinor: "activeInventoryType==='planMinor'",
+  // Milestone 70, 70D: the section checks are one evaluator per engine in
+  // src/core/status/completion.js; until then they were the branches of
+  // legacy-app.js's computeNavChecks(), found here by their if-test.
+  const EVALUATORS = {
+    simplified: 'simplifiedCompletion',
+    annual: 'annualCompletion',
+    planSimplified: 'planSimplifiedCompletion',
+    planAnnual: 'planAnnualCompletion',
+    planInitial: 'planInitialCompletion',
+    planMinor: 'planMinorCompletion',
   };
 
   const VALIDATORS = {
@@ -248,17 +252,18 @@ describe('checklist and export validator field parity', () => {
 
   let navFieldsByType;
   beforeAll(() => {
-    const nav = sliceFunction(readSrc('legacy-app.js'), 'function computeNavChecks(');
-    expect(nav.length).toBeGreaterThan(0);
-    const markers = Object.entries(BRANCH_MARKERS)
-      .map(([type, marker]) => ({ type, index: nav.indexOf(marker) }))
-      .filter((m) => m.index > -1)
-      .sort((a, b) => a.index - b.index);
+    const completion = readSrc('core/status/completion.js');
+    // Each evaluator's own body, found by the parser (a text search for the
+    // header would stop at the `{}` default of its `deps` parameter).
+    const bodies = new Map(parse(completion, { ecmaVersion: 'latest', sourceType: 'module' }).body
+      .filter((st) => st.type === 'ExportNamedDeclaration' && st.declaration?.type === 'FunctionDeclaration')
+      .map((st) => [st.declaration.id.name, completion.slice(st.declaration.body.start, st.declaration.body.end)]));
     navFieldsByType = {};
-    markers.forEach((mk, n) => {
-      const end = n + 1 < markers.length ? markers[n + 1].index : nav.length;
-      navFieldsByType[mk.type] = modelFields(nav.slice(mk.index, end));
-    });
+    for (const [type, name] of Object.entries(EVALUATORS)) {
+      const body = bodies.get(name) || '';
+      expect(body.length, `${name}() not found in core/status/completion.js`).toBeGreaterThan(0);
+      navFieldsByType[type] = modelFields(body);
+    }
   });
 
   for (const [type, [feature, header]] of Object.entries(VALIDATORS)) {
@@ -267,7 +272,7 @@ describe('checklist and export validator field parity', () => {
       expect(body.length, `${header} not found in features/${feature}/index.js`).toBeGreaterThan(0);
 
       const checklistFields = navFieldsByType[type] || new Set();
-      expect(checklistFields.size, `no computeNavChecks branch found for ${type}`).toBeGreaterThan(0);
+      expect(checklistFields.size, `no completion evaluator found for ${type}`).toBeGreaterThan(0);
 
       const gaps = [...modelFields(body)].filter((f) => !checklistFields.has(f)).sort();
       expect(gaps).toEqual(KNOWN_GAPS[type].slice().sort());

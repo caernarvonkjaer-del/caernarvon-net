@@ -17,18 +17,12 @@ import './core/form/schedule-definitions.js';
 // it first (previously only guardian-inventory/index.js and
 // annual-accounting/index.js did).
 import './core/status/section-status.js';
-// Milestone 57, Simplified parity gap: imported for its window bridge, not
-// for anything main.js calls. computeNavChecks() needs window.isSignatureComplete
-// while rendering dashboard progress for filings that have never been opened,
-// so it cannot come from a lazily-loaded feature module -- every other
-// importer of signature-state.js is one.
-import './core/validation/signature-state.js';
-// Milestone 58C, same reasoning: computeNavChecks()'s pi-p10 rule needs
-// window.isPlanInitialAttorneyStarted while rendering dashboard progress for
-// Initial Plan filings that have never been opened, so it cannot arrive with
-// a lazily-loaded feature module.
-import './core/validation/attorney-block.js';
-import './core/validation/row-started.js';
+// Milestones 57 and 58C imported signature-state.js, attorney-block.js and
+// row-started.js here for their window bridges, which the monolith's
+// computeNavChecks() read while rendering dashboard progress for filings
+// never opened. Since Milestone 70's 70D the completion evaluators import
+// those rules (src/core/status/completion.js, through the filing registry
+// this app loads eagerly), so neither the bridges nor these imports remain.
 // Milestone 58E: Delete is available on the dashboard, the first screen a
 // returning filer sees, so the confirmation builder cannot arrive with a
 // lazily-loaded feature module.

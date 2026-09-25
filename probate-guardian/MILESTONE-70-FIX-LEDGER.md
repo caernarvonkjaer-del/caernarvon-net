@@ -52,6 +52,7 @@ a `master` commit is missing from it.
 | 70T | Claude | 2026-09-24 | 2026-09-25 |
 | 70B | Claude | 2026-09-25 | 2026-09-25 |
 | 70C | Claude | 2026-09-25 | 2026-09-25 |
+| 70D | Claude | 2026-09-25 | 2026-09-25 |
 
 ## Branch-only settings to undo at the merge
 

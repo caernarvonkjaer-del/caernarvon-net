@@ -60,16 +60,6 @@ export function startedRows(rows, options) {
   return (Array.isArray(rows) ? rows : []).filter((row) => rowStarted(row, options));
 }
 
-// Bridged for legacy-app.js, which is a classic script and cannot import.
-// src/main.js imports this module eagerly for the same reason it imports
-// attorney-block.js: computeNavChecks() runs for dashboard filings that have
-// never been opened, so a rule reached only through a lazily-loaded feature
-// module would be missing exactly when the dashboard needs it.
-if (typeof window !== 'undefined') {
-  window.rowStarted = rowStarted;
-  window.startedRows = startedRows;
-}
-
 // Moved from legacy-app.js by Milestone 70's 70B.
 // A co-guardian slot counts as "in use" if any field is filled, not just Name —
 // otherwise partially-filled co-guardian rows silently vanish from export/validation/checkmarks.

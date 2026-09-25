@@ -81,7 +81,9 @@ describe('Sub-milestone 36-5: Content Corrections', () => {
   });
 
   // Milestone 43D: this block used to hand-reimplement the Part VIII
-  // completeness rule from legacy-app.js's computeNavChecks() ('a-p8':
+  // completeness rule from legacy-app.js's computeNavChecks() -- since
+  // Milestone 70's 70D annualCompletion() in src/core/status/completion.js,
+  // importable and compared with the pre-move rule by completion-parity.spec.js ('a-p8':
   // verifiedEmpty('a-p8')||verifiedEmpty('p8')||(D.trusts||[]).some(t=>t.name))
   // as a local const, which cannot catch a regression in the actual
   // unexported rule -- confirmed there was no way to import and call the

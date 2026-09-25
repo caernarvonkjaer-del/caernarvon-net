@@ -42,6 +42,7 @@ import { formatAddress, formatName, formatPhone, formatSSN, sanitizeNonNegativeD
 import { formatDisplayDate } from '../../core/form/date-parser.js';
 import { calcTotals } from './totals.js';
 import { guardianHasAnyData } from '../../core/validation/row-started.js';
+import { simplifiedCompletion } from '../../core/status/completion.js';
 // Milestone 57B: carried verbatim from MILESTONE-57-PROPOSAL.md section 57B.
 // The wording is load bearing (section 8 #8). Do not paraphrase or re-voice it.
 const ATTESTATION_57B = 'No recipients are required for this certificate (filer attestation - app does not determine legal necessity)';
@@ -273,7 +274,9 @@ function buildNavSimplified(container){
 
 function getSummaryConfigSimplified(){
   const d=window.D;
-  const nav=window.computeNavChecks();
+  // This filing's own section marks (Milestone 70, 70D: its engine's evaluator,
+  // imported; it was window.computeNavChecks()).
+  const nav=simplifiedCompletion(d);
   const t=calcTotals();
   const f=v=>fmtS(v)||'—';
   return {

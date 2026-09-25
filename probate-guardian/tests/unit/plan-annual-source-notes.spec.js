@@ -14,7 +14,7 @@ import { describe, expect, test } from 'vitest';
 // county-gated through Help, and tests/unit/content-corrections.spec.js
 // guards it out of src/. See 61D.
 
-global.window = { ...(global.window || {}), PLAN_RIGHTS: [], PLAN_ADLS: [], PLAN_BENEFITS: [] };
+global.window = { ...(global.window || {}) };
 
 const { buildPlanAnnualModel } = await import('../../src/features/plan-annual/pdf-model.js');
 

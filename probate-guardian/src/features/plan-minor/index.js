@@ -34,6 +34,7 @@ import { esc } from '../../core/filing/escape-html.js';
 import { ic } from '../../core/ui/icons.js';
 import { formatDisplayDate } from '../../core/form/date-parser.js';
 import { normalizePlanGuardians } from '../../core/filing/models/plan-rows.js';
+import { planMinorCompletion } from '../../core/status/completion.js';
 // Annual Plan — Minors — the fifth and last feature extraction (Milestone 6,
 // Phases A and B of INDEX-SPLIT-PLAN.md's migration sequence: data/
 // validation/pages/nav, and print/PDF export). Dynamically imported by
@@ -161,7 +162,9 @@ function buildNavPlanMinor(container){
 
 function getSummaryConfigPlanMinor(){
   const d=window.D;
-  const nav=window.computeNavChecks();
+  // This filing's own section marks (Milestone 70, 70D: its engine's evaluator,
+  // imported; it was window.computeNavChecks()).
+  const nav=planMinorCompletion(d);
   return {
     formTitle:'Annual Plan — Minors — Summary',
     infoRows:[

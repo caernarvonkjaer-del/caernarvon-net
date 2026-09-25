@@ -54,6 +54,7 @@ import { ic } from '../../core/ui/icons.js';
 import { formatDisplayDate } from '../../core/form/date-parser.js';
 import { INITIAL_ADLS, INITIAL_ADL_RATINGS } from '../../core/filing/models/plan-initial.js';
 import { normalizePlanGuardians } from '../../core/filing/models/plan-rows.js';
+import { planInitialCompletion } from '../../core/status/completion.js';
 // Initial Guardianship Plan — the fourth feature extraction (Milestone 5,
 // Phases A and B of INDEX-SPLIT-PLAN.md's migration sequence: data/
 // validation/pages/nav, and print/PDF export). Dynamically imported by
@@ -252,7 +253,9 @@ function buildNavPlanInitial(container){
 
 function getSummaryConfigPlanInitial(){
   const d=window.D;
-  const nav=window.computeNavChecks();
+  // This filing's own section marks (Milestone 70, 70D: its engine's evaluator,
+  // imported; it was window.computeNavChecks()).
+  const nav=planInitialCompletion(d);
   return {
     formTitle:'Initial Guardianship Plan — Summary',
     infoRows:[

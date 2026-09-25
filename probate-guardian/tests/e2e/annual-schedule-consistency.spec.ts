@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { freshStartNoPassword, createWard, crossCheckNavAndSummaryStatus } from './support/target';
+import { freshStartNoPassword, createWard, crossCheckNavAndSummaryStatus, fillMinimalValidAnnualWard } from './support/target';
 import { dismissScheduleDocPrompt } from './support/target';
 
 // Two Annual Accounting behaviours that Guardian Inventory already had and
@@ -82,6 +82,39 @@ test.describe('annual accounting schedule consistency', () => {
       }
       expect(row.summaryComplete, `${row.route} Summary badge disagrees with computeNavChecks()`).toBe(true);
     }
+  });
+
+  // AGENTS.md section 4, pinned for Milestone 70's 70D gate. On these fourteen
+  // schedules the sidebar is deliberately stricter than the export gate: it
+  // wants a complete row or the "no items to report" box before it marks a
+  // schedule done -- a declaration the Clerk's own Annual workbook never
+  // collects, and blank schedules are accepted in Pinellas. Export must never
+  // demand it. Part XI is the one schedule both demand, because section
+  // 744.367(3)(a) says the report must include a remuneration declaration.
+  test('a blank schedule reads unfinished in the sidebar but never blocks export; Part XI blocks both', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Blank Schedules Ward', 'annual');
+    await fillMinimalValidAnnualWard(page);
+    // Every schedule blank and none declared empty; Part XI declared.
+    await page.evaluate(() => (window as any).GuardianForms.testing.patchFiling({
+      schA: [], schB1: [], schB2: [], schB3: [], schB4: [], schC: [], schD1: [], schD2: [], schD3: [], schD4: [], schD5: [],
+      schE: [], schF1: [], schF2: [], scheduleNoItems: { remuneration: true },
+    }));
+    const gate = await page.evaluate(() => (window as any).GuardianForms.testing.validate.exportGate());
+    expect(gate.canExport, `export must not demand a blank schedule: ${JSON.stringify(gate.messages)}`).toBe(true);
+    const nav = await page.evaluate(() => (window as any).GuardianForms.testing.status.navChecks());
+    for (const { key } of VERIFY_NONE_SCHEDULES) {
+      expect(nav.checks[key], `${key}: the sidebar still asks about a blank schedule`).toBe(false);
+    }
+    expect(nav.checks['a-p11'], 'Part XI is declared').toBe(true);
+
+    // Part XI unanswered: the sidebar and the export gate both stop.
+    await page.evaluate(() => (window as any).GuardianForms.testing.patchFiling({ scheduleNoItems: {} }));
+    const blocked = await page.evaluate(() => (window as any).GuardianForms.testing.validate.exportGate());
+    expect(blocked.canExport, 'an unanswered Part XI blocks export').toBe(false);
+    expect(JSON.stringify(blocked.messages)).toMatch(/Part XI/);
+    const after = await page.evaluate(() => (window as any).GuardianForms.testing.status.navChecks());
+    expect(after.checks['a-p11'], 'an unanswered Part XI is unfinished in the sidebar').toBe(false);
   });
 
   // Milestone 43D: Part VIII (Trusts) has the same verify-none checkbox

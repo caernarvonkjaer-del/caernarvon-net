@@ -2,8 +2,8 @@
  "generatedBy": "node scripts/ms70-assertion-counts.mjs --write-baseline",
  "note": "Milestone 70 per-spec assertion counts (static expect calls). tests/unit/ms70-assertion-counts.spec.js fails when a spec falls below its count; lowering it requires --reason, recorded in dropLog. A tripwire, not proof of equivalence (decision D9).",
  "totals": {
-  "expects": 6454,
-  "tests": 1859
+  "expects": 6479,
+  "tests": 1863
  },
  "counts": {
   "tests/e2e/annotation-toolbar-containment.spec.ts": {
@@ -27,8 +27,8 @@
    "tests": 14
   },
   "tests/e2e/annual-schedule-consistency.spec.ts": {
-   "expects": 19,
-   "tests": 3
+   "expects": 25,
+   "tests": 4
   },
   "tests/e2e/backup-restore-sav.spec.ts": {
    "expects": 41,
@@ -566,6 +566,10 @@
    "expects": 8,
    "tests": 5
   },
+  "tests/unit/completion-parity.spec.js": {
+   "expects": 10,
+   "tests": 3
+  },
   "tests/unit/content-corrections.spec.js": {
    "expects": 12,
    "tests": 4
@@ -655,8 +659,8 @@
    "tests": 6
   },
   "tests/unit/filing-registry.spec.js": {
-   "expects": 47,
-   "tests": 7
+   "expects": 55,
+   "tests": 8
   },
   "tests/unit/filing-type-enumeration-guard.spec.js": {
    "expects": 2,
@@ -739,7 +743,7 @@
    "tests": 15
   },
   "tests/unit/legacy-bridge.spec.js": {
-   "expects": 17,
+   "expects": 19,
    "tests": 7
   },
   "tests/unit/live-region.spec.js": {
@@ -839,8 +843,8 @@
    "tests": 3
   },
   "tests/unit/plan-certificate-of-service.spec.js": {
-   "expects": 50,
-   "tests": 12
+   "expects": 49,
+   "tests": 11
   },
   "tests/unit/plan-co-guardian-pdf.spec.js": {
    "expects": 8,
@@ -1133,6 +1137,13 @@
    "was": 63,
    "now": 58,
    "reason": "70B: excel-engine.spec.js pinned legacy-app.js's sanitizeForExcel() and the module's Node fallback as equal (reading the legacy regex out of the monolith's source, plus a delegation test). 70B deleted the legacy copy, so the two-copy comparison and delegation assertions went; the one implementation is tested directly against the same OWASP set, and a new test proves a window.sanitizeForExcel no longer changes what is written.",
+   "date": "2026-09-25"
+  },
+  {
+   "file": "tests/unit/plan-certificate-of-service.spec.js",
+   "was": 50,
+   "now": 49,
+   "reason": "70D: plan-certificate-of-service.spec.js's check that certificateStarted is published as window.planCertificateStarted went with the publication -- its only reader was legacy-app.js's computeNavChecks(), whose Plan rules now import the function",
    "date": "2026-09-25"
   }
  ]

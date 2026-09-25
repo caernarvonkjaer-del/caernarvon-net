@@ -32,6 +32,7 @@ import { ic } from '../../core/ui/icons.js';
 import { formatDisplayDate } from '../../core/form/date-parser.js';
 import { PLAN_ADLS, PLAN_ADL_RATINGS, PLAN_BENEFITS, PLAN_RIGHTS, PLAN_RIGHT_STATES } from '../../core/filing/models/plan-annual.js';
 import { normalizePlanGuardians } from '../../core/filing/models/plan-rows.js';
+import { planAnnualCompletion } from '../../core/status/completion.js';
 // Annual Guardianship Plan — the third feature extraction (Milestone 4,
 // Phases A and B of INDEX-SPLIT-PLAN.md's migration sequence). Dynamically
 // imported by legacy-app.js's mountPlanAnnualFeature()/mountPlanAnnualNav()
@@ -180,7 +181,9 @@ function buildNavPlanAnnual(container){
 
 function getSummaryConfigPlanAnnual(){
   const d=window.D;
-  const nav=window.computeNavChecks();
+  // This filing's own section marks (Milestone 70, 70D: its engine's evaluator,
+  // imported; it was window.computeNavChecks()).
+  const nav=planAnnualCompletion(d);
   return {
     formTitle:'Annual Guardianship Plan — Summary',
     infoRows:[

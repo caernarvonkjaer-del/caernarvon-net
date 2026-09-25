@@ -201,16 +201,13 @@ interface Window {
   initApp: any;
   initPrintPager: any;
   inpS: any;
-  isAffirmative: any;
   isAutoSaveArmed: any;
   isContinuePromptShown: any;
   isFilingClosed: any;
   isHelpPanelOpen: any;
   isOutputAcknowledgedFor: any;
   isPartyPairDismissed: any;
-  isPlanInitialAttorneyStarted: any;
   isScheduleIncomplete: any;
-  isSignatureComplete: any;
   issueMessage: any;
   linkAccordions: any;
   linkLabelsToInputs: any;
@@ -282,7 +279,6 @@ interface Window {
   pgHasUnsavedChanges: any;
   PGSupplementalPdf: any;
   PLAIN_MODE_PREFIX: any;
-  planCertificateStarted: any;
   planCheckGroup: any;
   planQ: any;
   prepareFilingOutput: any;
@@ -295,7 +291,6 @@ interface Window {
   readRememberedFile: any;
   readRoleFields: any;
   readStoredTheme: any;
-  recipientRowStarted: any;
   reconcileSlotWithParty: any;
   recordScheduleAck: any;
   referenceCountForParty: any;
@@ -328,9 +323,7 @@ interface Window {
   resolveFilingDescriptor: any;
   resolvePaintTheme: any;
   resolveParty: any;
-  resolvePreparer: any;
   restoreBackupSavFile: any;
-  rowStarted: any;
   runFieldWriteSideEffects: any;
   runRememberedHandleOperation: any;
   sanitizeNegativeAmounts: any;
@@ -344,13 +337,11 @@ interface Window {
   savePersistedCaseFileHandle: any;
   saveSessionRestoreCache: any;
   saveWardToState: any;
-  SCHEDULE_NAV_KEYS: any;
   SCHEDULE_SCHEMAS: any;
   sectionGuidancePolicy: any;
   seedStoredThemeFromLegacy: any;
   selectCountyOption: any;
   selectSecurityMode: any;
-  serviceRecipientIssues: any;
   setAccountingFilingType: any;
   setPartyIdForSlot: any;
   setPath: any;
@@ -375,7 +366,6 @@ interface Window {
   silentAutoExport: any;
   skipWalkthrough: any;
   slotsReferencing: any;
-  startedRows: any;
   startNewCaseAtLaunch: any;
   startNewWardAtLaunch: any;
   startWalkthrough: any;

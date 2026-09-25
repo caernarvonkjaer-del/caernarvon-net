@@ -210,12 +210,18 @@ export function buildDispositions(root = ROOT) {
   const declarations = placed.map(({ forwarder, callers, ...d }) => {
     if (!forwarder || d.disposition !== 'move') return d;
     const targets = callers.map((c) => (c === '(top level)' ? '70L' : deliveryOf.get(c)));
+    // With no classic caller left, a forwarder stays only as the delegating
+    // dispatcher a module still reads off window (70D's getWardProgress() for
+    // the dashboard); the owner's review names when that read goes (`until`).
+    const until = review.overrides[d.name]?.until;
     return {
       ...d,
       disposition: 'wrapper',
       movedIn: d.delivery,
-      delivery: targets.length ? latest(targets) : d.delivery,
-      wrapperWhile: `classic callers remain: ${callers.join(', ')}`,
+      delivery: targets.length ? latest(targets) : until || d.delivery,
+      wrapperWhile: targets.length || !d.moduleConsumers.length
+        ? `classic callers remain: ${callers.join(', ')}`
+        : `modules read it through window: ${d.moduleConsumers.join(', ')}`,
     };
   });
   // Every window publication with the consumers that actually read it. A

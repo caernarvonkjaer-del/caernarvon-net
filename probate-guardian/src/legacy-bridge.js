@@ -24,7 +24,6 @@
 import { ic } from './core/ui/icons.js';
 import { esc } from './core/filing/escape-html.js';
 import { fmt, formatDashboardCurrency } from './core/format/money.js';
-import { guardianHasAnyData } from './core/validation/row-started.js';
 import { validateImportFile, sanitizeObjectData } from './core/security/input-hardening.js';
 import {
   sanitizeNonNegativeDecimal, formatPhone, formatSSN, formatCaseNumber, finalizeCaseNumber, formatBarNumber,
@@ -36,11 +35,12 @@ import { calcTotals } from './features/simplified-accounting/totals.js';
 import { calc } from './features/guardian-inventory/totals.js';
 import {
   formEngine, formDisplayName, INVENTORY_TYPES, INVENTORY_TYPE_META, typeIcon, initializeEmptyData, FILING_PAGES,
+  computeCompletion as computeNavChecks, filingProgress as getWardProgress,
 } from './core/filing/filing-registry.js';
 import { emptyRowAnnual } from './core/filing/models/annual.js';
-import { PAGES_GUARDIAN } from './core/filing/models/guardian.js';
-import { PLAN_RIGHTS, PLAN_ADLS, PLAN_BENEFITS, emptyPlanResidence, emptyPlanProvider } from './core/filing/models/plan-annual.js';
-import { INITIAL_ADLS, emptyInitialProvider } from './core/filing/models/plan-initial.js';
+import { PAGES_GUARDIAN, SCHEDULE_NAV_KEYS } from './core/filing/models/guardian.js';
+import { emptyPlanResidence, emptyPlanProvider } from './core/filing/models/plan-annual.js';
+import { emptyInitialProvider } from './core/filing/models/plan-initial.js';
 import { emptyMinorResidence, emptyMinorProvider } from './core/filing/models/plan-minor.js';
 import {
   planGuardianBlank, planGuardianHasAnyData, planGuardianMax, normalizePlanGuardians, planEmptyRow,
@@ -48,16 +48,18 @@ import {
 
 export const LEGACY_BRIDGE = Object.freeze({
   // 70B -- pure helpers
-  ic, esc, fmt, formatDashboardCurrency, guardianHasAnyData, validateImportFile, sanitizeObjectData,
+  ic, esc, fmt, formatDashboardCurrency, validateImportFile, sanitizeObjectData,
   sanitizeNonNegativeDecimal, formatPhone, formatSSN, formatCaseNumber, finalizeCaseNumber, formatBarNumber,
   formatAccountNumber, formatCheckNumber, formatName, formatAddress, applyZipLimit, FL_COUNTIES,
   formatDisplayDate, calcTotals, calc,
   // 70C -- the filing registry and per-engine models
   formEngine, formDisplayName, INVENTORY_TYPES, INVENTORY_TYPE_META, typeIcon, initializeEmptyData, FILING_PAGES,
   emptyRowAnnual,
-  PAGES_GUARDIAN, PLAN_RIGHTS, PLAN_ADLS, PLAN_BENEFITS, emptyPlanResidence, emptyPlanProvider, INITIAL_ADLS,
+  PAGES_GUARDIAN, emptyPlanResidence, emptyPlanProvider,
   emptyInitialProvider, emptyMinorResidence, emptyMinorProvider, planGuardianBlank, planGuardianHasAnyData,
   planGuardianMax, normalizePlanGuardians, planEmptyRow,
+  // 70D -- completion (the monolith's names for them)
+  computeNavChecks, getWardProgress, SCHEDULE_NAV_KEYS,
 });
 
 if (typeof window !== 'undefined') {

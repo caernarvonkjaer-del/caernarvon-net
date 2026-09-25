@@ -12,7 +12,7 @@ import { rowStarted, startedRows } from '../../src/core/validation/row-started.j
 // The validator and sidebar halves are covered by plan-*-parity.spec.js and
 // tests/e2e/plan-started-row.spec.ts respectively.
 
-global.window = { ...(global.window || {}), PLAN_RIGHTS: [], PLAN_ADLS: [], PLAN_BENEFITS: [], INITIAL_ADLS: [] };
+global.window = { ...(global.window || {}) };
 
 const { buildPlanAnnualModel } = await import('../../src/features/plan-annual/pdf-model.js');
 const { buildPlanInitialModel } = await import('../../src/features/plan-initial/pdf-model.js');

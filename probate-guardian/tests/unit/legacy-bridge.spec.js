@@ -16,13 +16,23 @@ import { declarationsOf } from '../../scripts/ms70-declaration-dispositions.mjs'
 //   - no module reads it -- modules import;
 //   - every member is the module's own implementation, imported, and is here
 //     only while a wrapper in legacy-app.js still calls it;
-//   - a wrapper is one line that forwards and nothing else.
+//   - a wrapper is kept only while something still calls it: code in
+//     legacy-app.js, or a module that reads it off window, which the dependency
+//     ratchet lists and may only shrink (70D's getWardProgress(), which the
+//     dashboard still captures, is the delegating dispatcher the plan allows
+//     until that read goes);
+//   - a wrapper is one line that forwards and nothing else. It may hand the
+//     module what the monolith still owns (70D's computeNavChecks() passes
+//     window.D and its own activeInventoryType) -- arguments, never logic.
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const read = (rel) => fs.readFileSync(path.join(root, rel), 'utf8');
 const BRIDGE = 'GuardianFormsLegacyBridge';
 const legacySrc = read('src/legacy-app.js');
 const legacyAst = parse(legacySrc, { ecmaVersion: 'latest', sourceType: 'script' });
+// Wrappers that hand the module state the monolith still owns (the open
+// filing, its own activeInventoryType, callbacks into itself), each named.
+const STATE_PASSING = new Set(['computeNavChecks', 'getWardProgress']);
 
 const walkFiles = (dir) => fs.readdirSync(path.join(root, dir), { withFileTypes: true }).flatMap((e) => {
   const rel = `${dir}/${e.name}`;
@@ -107,9 +117,16 @@ describe('src/legacy-bridge.js: the monolith\'s one door to module code', () => 
     expect(wrappers.length).toBeGreaterThan(0);
     for (const fn of wrappers) {
       const text = legacySrc.slice(fn.start, fn.end);
+      const call = fn.body.body[0].argument;
+      expect(text.includes('\n'), `${fn.id.name} must be one line`).toBe(false);
+      expect(call && call.type === 'CallExpression' && call.callee.type === 'MemberExpression'
+        && legacySrc.slice(call.callee.start, call.callee.end) === `window.${BRIDGE}.${fn.id.name}`,
+      `${fn.id.name} must return the bridge member of its own name, called`).toBe(true);
+      // The usual wrapper passes its parameters straight through; a wrapper
+      // that hands over monolith state instead is listed here, by name.
       const params = fn.params.map((p) => p.name).join(',');
-      expect(text, `${fn.id.name} must only forward`)
-        .toBe(`function ${fn.id.name}(${params}){return window.${BRIDGE}.${fn.id.name}(${params});}`);
+      const args = legacySrc.slice(call.arguments[0]?.start ?? call.end - 1, call.end - 1);
+      if (!STATE_PASSING.has(fn.id.name)) expect(args, `${fn.id.name} passes its own parameters, nothing else`).toBe(params);
     }
     for (const fn of users.filter((f) => !isWrapper(f))) {
       const inside = bridgeReads(fn).map((r) => r.member);
@@ -131,11 +148,15 @@ describe('src/legacy-bridge.js: the monolith\'s one door to module code', () => 
     }
   });
 
-  test('every wrapper still has a caller in legacy-app.js -- one with none is deleted, not kept', () => {
+  test('every wrapper still has a caller -- one with none is deleted, not kept', () => {
     const forwarders = declarationsOf(legacySrc).filter((d) => d.lines === 1
       && legacySrc.split('\n')[d.line - 1].includes(`window.${BRIDGE}.`));
     expect(forwarders.length).toBeGreaterThan(0);
-    expect(forwarders.filter((d) => d.internalRefs === 0).map((d) => d.name)).toEqual([]);
+    // Modules that still read a name off window, as the ratchet records them.
+    const ratchet = JSON.parse(read('tests/baseline/ms70-dependency-baseline.json'));
+    const moduleReads = new Set([...ratchet.windowReads, ...ratchet.evalTimeWindowDestructures]
+      .filter((k) => !k.startsWith('src/legacy-app.js::')).map((k) => k.split('::')[1]));
+    expect(forwarders.filter((d) => d.internalRefs === 0 && !moduleReads.has(d.name)).map((d) => d.name)).toEqual([]);
   });
 
   test('no other source file reads or writes it', () => {

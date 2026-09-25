@@ -11,19 +11,17 @@
 // must exist as an object before the import resolves, so the module is
 // imported dynamically inside beforeAll(), after vi.stubGlobal('window', ...).
 //
-// index.js's own top level also does `const { ..., SCHEDULE_NAV_KEYS } =
-// window` -- a one-time destructure of legacy-app.js's classic-script
-// globals, copied at import time, not a live reference. validateGuardian()
-// itself only ever reads SCHEDULE_NAV_KEYS from that list (verified by
-// reading the whole function, index.js:1207-1310), so that's the only one
-// this stub needs a real value for; the rest can stay undefined.
+// index.js's own top level also destructures legacy-app.js's classic-script
+// globals off window at import time. validateGuardian() reads none of them:
+// the one it did, SCHEDULE_NAV_KEYS, is imported from
+// src/core/filing/models/guardian.js since Milestone 70's 70D, so they can
+// all stay undefined.
 import { afterAll, beforeAll, beforeEach, describe, test, expect, vi } from 'vitest';
 
 let validateGuardian;
 
 beforeAll(async () => {
-  // Mirrors legacy-app.js:6487's SCHEDULE_NAV_KEYS literal.
-  vi.stubGlobal('window', { SCHEDULE_NAV_KEYS: ['a1', 'a2', 'b1', 'b2', 'b3', 'b4', 'c1', 'c2', 'c3', 'c4', 'c5'] });
+  vi.stubGlobal('window', {});
   ({ validateGuardian } = await import('../../src/features/guardian-inventory/index.js'));
 });
 

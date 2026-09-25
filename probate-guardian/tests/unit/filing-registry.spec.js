@@ -5,8 +5,9 @@ import { describe, expect, test } from 'vitest';
 import { parse } from 'acorn';
 import {
   FILING_REGISTRY, FILING_PAGES, INVENTORY_TYPES, INVENTORY_TYPE_META, ANNUAL_FORM_ALIASES, formEngine, formDisplayName,
-  initializeEmptyData, normalizeWardData, typeIcon,
+  initializeEmptyData, normalizeWardData, typeIcon, computeCompletion, filingProgress,
 } from '../../src/core/filing/filing-registry.js';
+import { COMPLETION_BY_ENGINE } from '../../src/core/status/completion.js';
 import { FILING_TYPE_KEYS, resolveDescriptorForInventoryType } from '../../src/core/filing/filing-descriptor.js';
 import { mk, PAGES_GUARDIAN } from '../../src/core/filing/models/guardian.js';
 import { emptyRowAnnual } from '../../src/core/filing/models/annual.js';
@@ -70,6 +71,24 @@ describe('the nine filing identities, created and normalized through imports', (
     expect(initializeEmptyData('trustAccounting')).toMatchObject({ inventoryType: 'trustAccounting', filingType: 'Trust' });
     expect(initializeEmptyData('annual')).toMatchObject({ inventoryType: 'annual', filingType: 'Annual' });
     expect(new Set(['annual', 'finalAccounting', 'trustAccounting'].map(formDisplayName)).size).toBe(3);
+  });
+
+  // Milestone 70, 70D: section completion is part of each identity, so an
+  // unopened filing's progress needs no feature (completion-parity.spec.js
+  // proves the evaluators equal to the monolith's).
+  test("each identity carries its engine's completion evaluator, Final and Trust the Annual one", () => {
+    for (const type of FILING_TYPE_KEYS) {
+      expect(typeof FILING_REGISTRY[type].completion, type).toBe('function');
+      expect(FILING_REGISTRY[type].completion, type).toBe(COMPLETION_BY_ENGINE[formEngine(type)]);
+    }
+    expect(FILING_REGISTRY.finalAccounting.completion).toBe(COMPLETION_BY_ENGINE.annual);
+    expect(FILING_REGISTRY.trustAccounting.completion).toBe(COMPLETION_BY_ENGINE.annual);
+    expect(computeCompletion({}, 'nonsense')).toBeUndefined();
+    // An unopened Plan, with no feature loaded and nothing handed in (a filing
+    // in the case carries its type; the blank alone does not).
+    const progress = filingProgress({ ...json(initializeEmptyData('planMinor')), inventoryType: 'planMinor' });
+    expect(progress.total).toBeGreaterThan(0);
+    expect(progress.complete).toBeLessThan(progress.total);
   });
 
   test('an unknown type falls back as before: the Guardian blank, its own name as engine', () => {
@@ -140,5 +159,6 @@ describe('no feature pack loaded', () => {
     // pdf.js loader (moved to src/core/filing/doc-period.js in 70C).
     expect(graph.filter((f) => /^src\/core\/pdf\/(supplemental-pdf|pdfjs-loader|pdf-engine)\.js$/.test(f))).toEqual([]);
     expect(graph).toContain('src/core/filing/models/annual.js');
+    expect(graph).toContain('src/core/status/completion.js');
   });
 });

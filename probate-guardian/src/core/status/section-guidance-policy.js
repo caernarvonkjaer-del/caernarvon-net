@@ -76,7 +76,7 @@ export function isSectionIncomplete(checks, checkKey) {
 
 /**
  * Question 2. `guardianScheduleKeys` is the Guardian Inventory's 11 schedule keys
- * (SCHEDULE_NAV_KEYS in legacy-app.js), passed in rather than restated here so
+ * (SCHEDULE_NAV_KEYS, src/core/filing/models/guardian.js), passed in rather than restated here so
  * there is still exactly one list of them.
  */
 export function blocksNext({ type, checkKey, incomplete, guardianScheduleKeys }) {

@@ -67,6 +67,7 @@ import { ic } from '../../core/ui/icons.js';
 import { sanitizeDecimal } from '../../core/form/form-contract.js';
 import { guardianHasAnyData } from '../../core/validation/row-started.js';
 import { formDisplayName } from '../../core/filing/filing-registry.js';
+import { annualCompletion } from '../../core/status/completion.js';
 // Annual Accounting — the sixth feature extraction (Milestone 7, Phases A
 // and B of INDEX-SPLIT-PLAN.md's migration sequence: data/pages/nav/
 // validate, and print/PDF/Excel import/export). Also covers the
@@ -490,7 +491,9 @@ function pageNavAnnual(prev,next){
 function getSummaryConfigAnnual(){
   const d=window.D;
   const descriptor=annualDescriptor(d);
-  const nav=window.computeNavChecks();
+  // This filing's own section marks (Milestone 70, 70D: its engine's evaluator,
+  // imported; it was window.computeNavChecks()).
+  const nav=annualCompletion(d,{calcTotalsAnnual,annualReconcileState});
   const t=calcTotalsAnnual();
   const f=v=>fmtAnnual(v)||'—';
   return {

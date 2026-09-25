@@ -3,8 +3,9 @@
 // imported: its engine (Final and Trust are the Annual engine under their own
 // names -- distinct identities in saved data and on every page, one shared
 // implementation), its name, description and dashboard look, its blank
-// filing, the normalizer every loaded filing passes through, and the feature
-// mount it routes to. Built on src/core/filing/filing-descriptor.js (names,
+// filing, the normalizer every loaded filing passes through, the feature
+// mount it routes to, and (70D) the evaluator of its sections' completion,
+// so the dashboard shows an unopened filing's progress without its feature. Built on src/core/filing/filing-descriptor.js (names,
 // output copy, capabilities) and the per-engine models in
 // src/core/filing/models/. Moved from legacy-app.js's GLOBAL STATE & CONFIG,
 // INVENTORY TYPE MANAGEMENT and dashboard sections; nothing here renders a
@@ -19,6 +20,7 @@ import { emptyDataPlanSimplified, PAGES_PLAN_SIMPLIFIED } from './models/plan-si
 import { emptyDataPlanAnnual, PAGES_PLAN_ANNUAL } from './models/plan-annual.js';
 import { emptyDataPlanInitial, PAGES_PLAN_INITIAL } from './models/plan-initial.js';
 import { emptyDataPlanMinor, PAGES_PLAN_MINOR } from './models/plan-minor.js';
+import { COMPLETION_BY_ENGINE } from '../status/completion.js';
 
 // Each identity's name on screen, its label and one-line description (the
 // new-filing picker and dashboard use these).
@@ -199,6 +201,40 @@ export const FILING_REGISTRY = Object.freeze(Object.fromEntries(FILING_TYPE_KEYS
   pages: FILING_PAGES[type],
   blank: () => initializeEmptyData(type),
   normalize: normalizeWardData,
+  completion: COMPLETION_BY_ENGINE[formEngine(type)],
 })])));
+
+/**
+ * The section marks for a filing of a type: its identity's evaluator, handed
+ * the filing and what the evaluator cannot import (see
+ * src/core/status/completion.js), or undefined for a type with none --
+ * exactly what legacy-app.js's computeNavChecks() returned, which since
+ * Milestone 70's 70D dispatches here.
+ */
+export function computeCompletion(filing, type, deps = {}) {
+  const entry = Object.hasOwn(FILING_REGISTRY, type) ? FILING_REGISTRY[type] : null;
+  return entry ? entry.completion(filing, deps) : undefined;
+}
+
+/**
+ * Progress for any filing, open or not: how many of its sections are
+ * complete. It takes the filing; legacy-app.js's getWardProgress() used to
+ * point window.D and the monolith's active type at it to reuse the sidebar's
+ * rules, then put them back.
+ */
+export function filingProgress(filing, deps = {}) {
+  try {
+    const r = computeCompletion(filing, filing?.inventoryType, deps);
+    if (!r) return null;
+    const keys = Object.keys(r.checks);
+    const complete = keys.filter((k) => r.checks[k]).length;
+    return { complete, total: keys.length, pct: keys.length ? Math.round(complete / keys.length * 100) : 0 };
+  } catch (e) {
+    // As before: a filing that cannot be evaluated leaves its card without a
+    // percentage rather than breaking the dashboard.
+    console.warn('progress calc failed for ward', filing?.wardId, e);
+    return null;
+  }
+}
 
 export { normalizeWardData };

@@ -2,8 +2,8 @@
 
 ## Status
 
-**70A complete (2026-09-24); 70T, 70B and 70C complete (2026-09-25) -- see
-their build records. Every remaining delivery, 70D through 70L, is approved.** The
+**70A complete (2026-09-24); 70T, 70B, 70C and 70D complete (2026-09-25) --
+see their build records. Every remaining delivery, 70E through 70L, is approved.** The
 requester approved delivery 70A on 2026-09-24 and it is complete on the
 `milestone-70` branch (see the 70A build record), then approved 70T. On
 2026-09-25 the requester approved every delivery after it ("Finish ms 70. That
@@ -1211,6 +1211,37 @@ edge cases, and filing identities before the old dispatcher is removed. Tests
 explicitly pin the intentional Annual blank-schedule rule: sidebar incomplete,
 export still permitted where the court form and current accepted practice allow
 it. Readiness remains a separate export-linked surface.
+
+### 70D build record
+
+Approved with every later delivery on 2026-09-25 (see Status). Everything
+below is on the `milestone-70` branch.
+
+**What a filer sees.** Nothing, by design. Every sidebar mark and every
+dashboard percentage is computed by the same rules as before, now held in one
+module per form. The dashboard no longer points the open filing at each card's
+filing in turn to measure its progress; the rules are handed the filing they
+measure (its headline totals still do, until 70K).
+
+**Done, with evidence.**
+
+| Item | Evidence |
+| --- | --- |
+| Commit | Named in the next docs commit (the whole delivery; gate evidence in its message). |
+| The evaluators | `src/core/status/completion.js`: `computeNavChecks()`'s seven branches as one pure evaluator per engine (`guardianCompletion()` through `planMinorCompletion()`), each taking the filing and what it cannot import and returning the same `{ checks, incomplete }` map. The branch bodies moved as text; each global they read is now an import (the Plan lists, the row, signature, attorney, preparer and certificate rules) or is handed in: the Initial Inventory's validator, `errorRoute()` and the Annual totals and reconciliation. A missing validator still returns `null`, never a pass. |
+| In the registry | Each of the nine identities carries its engine's evaluator (`FILING_REGISTRY[type].completion`; Final and Trust the Annual one), and the registry dispatches: `computeCompletion(filing, type, deps)` and `filingProgress(filing, deps)`. An unopened filing's progress needs no feature pack; the registry's import graph still stays out of `src/features`. |
+| The monolith | `computeNavChecks()` and `getWardProgress()` are one-line wrappers handing the registry the open filing (or the one measured), the monolith's own `activeInventoryType`, and the dependencies above -- inline, since a helper would have been a new classic declaration. `getWardProgress()` no longer swaps `window.D` and the active type. `SCHEDULE_NAV_KEYS` moved to `src/core/filing/models/guardian.js`. `legacy-app.js` -539/+21 lines. |
+| Consumers | The Simplified, Plan and Annual features import their own engine's evaluator instead of calling `window.computeNavChecks()`; the Initial Inventory feature imports `SCHEDULE_NAV_KEYS` instead of copying it off `window`, and `validateGuardian(d = window.D)` judges the filing it is handed. The dashboard still reaches progress through `getWardProgress()`, which is how the Inventory validator (loaded with its feature) and `errorRoute()` (70F) are handed in; the review names 70K, with `getWardHeadlineTotal()`, as when that read goes (override `dispatcher`, `until: 70K`). |
+| Went with their reader | The monolith's `guardianHasAnyData()` wrapper and `validate()`, whose last caller was `computeNavChecks()`; four Plan lists on the bridge; and eight `window` publications that existed only for it -- `isSignatureComplete`, `isPlanInitialAttorneyStarted`, `rowStarted`, `startedRows`, `serviceRecipientIssues`, `recipientRowStarted`, `resolvePreparer`, `planCertificateStarted` -- with `main.js`'s imports that made three of them eager (the registry loads them now). |
+| Proven equal | `tests/unit/completion-parity.spec.js` runs the pre-70D `computeNavChecks()` and `getWardProgress()` (frozen in `tests/baseline/ms70-70D-nav-checks-before.js.txt`, the app's real implementations handed in) against the registry on all nine identities: each blank and normalized filing, the browser suite's minimal valid filings, a saturated filing and every answer in it cleared one at a time, rows emptied, started or filled, and every "no items" box ticked -- 4,803 filings. Every map and every percentage equal, and no evaluator changes its filing; progress is measured with the open filing left on another. Red first: three deliberate breaks each failed it for its own reason -- the Annual reconciliation reading the open filing's explanation (a measured filing's progress fell from 42% to 38%), Plan for Minors' pm-p7 without the preparer's name, and Plan Initial's pi-p10 inverted. |
+| The Annual rule, pinned | AGENTS.md section 4's rule is pinned in the browser (`annual-schedule-consistency.spec.ts`): with every schedule blank and none declared empty, the sidebar marks all fourteen unfinished and export is still allowed; with Part XI unanswered both stop. Red first: an export rule demanding a Schedule A row failed it ("export must not demand a blank schedule"). |
+| Stays for 70F | The functions that apply the map to the page -- `updateNavDots()`, `applyNavChecks()`, `pageCompleteness()`, `isScheduleIncomplete()`, `updateCurrentScheduleNextButton()` -- are the "nav-dot updates" the plan gives 70F, with the section collapse and progress summary they call (review override `nav-dom`). |
+| Ratchet | `classicDeclarations` 423 to 420, `windowWrites` 300 to 291, `windowReads` 524 to 511, `evalTimeWindowDestructures` 139 to 138; nothing grew. |
+| Tests converted | `checklist-export-parity.spec.js` finds the evaluators by parsing `completion.js` (a text search stopped at their `deps = {}` default); `schedule-doc-ack.spec.js` reads the evaluators whole; `content-corrections.spec.js`'s note points at them; three Inventory validator specs stop stubbing `window.SCHEDULE_NAV_KEYS`, and two Plan specs their Plan lists; `legacy-bridge.spec.js` names the two wrappers that hand over monolith state and keeps a wrapper no monolith code calls only while a module the ratchet lists still reads it; the registry spec checks each identity's evaluator. One assertion went with its subject (`plan-certificate-of-service.spec.js`'s check of the `window` publication), recorded in the assertion baseline. |
+| Findings | (1) Carrying the dashboard's progress off the `window.D` swap exposed a reader the swap had hidden: `annualReconcileState(t)` takes its explanation from `window.D`, so a filing measured while another is open was judged by the open one's explanation; the evaluator hands the measured filing in. (2) The declaration inventory computed a wrapper's deletion target from its monolith callers only, so a dispatcher kept for a module would have read as due at once; an override's `until` now names it. (3) Eight `window` publications, three eager imports in `main.js` and four bridge members outlived their one reader, found by the audit and removed. |
+| Living references | AGENTS.md section 4 names `annualCompletion()` in `src/core/status/completion.js`, reached through `legacy-app.js`'s `computeNavChecks()` dispatcher; the rule and its Clerk-practice rationale are unchanged. |
+
+**Gate run.** The full `npm test` on this tree, 2026-09-25: unit 1989/1989 (145 files); browser 896 passed, 7 skipped, 0 failed (1.7 h, source profile, chromium) -- 903 tests: 70C's 902 and the Annual blank-schedule pin. `check:types` clean.
 
 ---
 

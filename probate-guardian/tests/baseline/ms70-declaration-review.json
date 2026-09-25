@@ -14,7 +14,10 @@
   "form-runtime": "Form-field markup, field helpers or collection add/remove actions -- the shared form runtime (70F). They sit in the feature-bridge sections only because they were left behind when each feature was extracted.",
   "bridge": "A feature bridge like the other seven, which move together in 70K; the Simplified one sits in the Guardian wizard's section by accident.",
   "dead-visited": "Dead on both sides: a `let` is never a window property, so the three module references (router.js add, ward-lifecycle.js clear x2) read window._visitedPages as undefined and never run, and the monolith never reads it. Delete it and those three references together in 70E.",
-  "writes-classic-state": "Assigns the monolith's own `let activeInventoryType` (and updates the sidebar and saves), which no module can do while that binding lives in the classic script; it moves when the binding does (70J). Its pure half is already src/core/filing/filing-descriptor.js's applyAccountingFilingType()."
+  "writes-classic-state": "Assigns the monolith's own `let activeInventoryType` (and updates the sidebar and saves), which no module can do while that binding lives in the classic script; it moves when the binding does (70J). Its pure half is already src/core/filing/filing-descriptor.js's applyAccountingFilingType().",
+  "completion-data": "The Initial Inventory's eleven schedule route keys, which the completion evaluators read; a model constant, it moved to src/core/filing/models/guardian.js with them.",
+  "nav-dom": "Applies the completion map to the page -- the sidebar marks, section collapse, the Next button -- which the plan gives 70F's form runtime ('nav-dot updates, section collapse'), with applyNavSectionCollapse() and renderProgressSummary() that it calls. 70D moved the rules these read; they reach them through the monolith's computeNavChecks() dispatcher until then.",
+  "dispatcher": "A one-line dispatcher that nothing in the monolith calls any more, kept because the dashboard still captures it off window (with getWardHeadlineTotal(), 70K). The evaluator it forwards to needs the Initial Inventory's validator, which exists only once that feature has loaded, and errorRoute() (70F): the monolith hands both in until 70K's feature context can. The plan allows the old function as a delegating dispatcher meanwhile; it goes when the dashboard's read does."
  },
  "overrides": {
   "TEMPLATE_FILES": {
@@ -389,6 +392,31 @@
   "setAccountingFilingType": {
    "delivery": "70J",
    "why": "writes-classic-state"
+  },
+  "updateNavDots": {
+   "delivery": "70F",
+   "why": "nav-dom"
+  },
+  "applyNavChecks": {
+   "delivery": "70F",
+   "why": "nav-dom"
+  },
+  "pageCompleteness": {
+   "delivery": "70F",
+   "why": "nav-dom"
+  },
+  "isScheduleIncomplete": {
+   "delivery": "70F",
+   "why": "nav-dom"
+  },
+  "updateCurrentScheduleNextButton": {
+   "delivery": "70F",
+   "why": "nav-dom"
+  },
+  "getWardProgress": {
+   "delivery": "70D",
+   "until": "70K",
+   "why": "dispatcher"
   }
  },
  "notes": {
@@ -407,7 +435,7 @@
   "loadCaseFileFromZip": "Changed on master in b2d97f5 (returns every part it could not read); a re-implement row in MILESTONE-70-FIX-LEDGER.md.",
   "pct": "Deleted on master in c62f890 (its only caller now imports totals.js's copy); a re-implement row in MILESTONE-70-FIX-LEDGER.md.",
   "tdR": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24).",
-  "updateNavDots": "Stays in 70D with its evaluator: it is the sidebar's only caller of applyNavChecks()."
+  "updateNavDots": "Moves in 70F with the other nav-dot updates (review override nav-dom); it is the sidebar's only caller of applyNavChecks(), which moves with it."
  },
  "confirmed": {
   "ACCOUNTING_FORM_TYPES": "move 70G",
@@ -429,7 +457,6 @@
   "RECENT_WARDS_MAX": "move 70G",
   "REMEMBERED_FILE_TIMEOUT_MS": "delete-as-dead 70I",
   "SCHEDULE_DOC_MAX_FILE_BYTES": "move 70F",
-  "SCHEDULE_NAV_KEYS": "move 70F",
   "SESSION_CACHE_DB": "move 70I",
   "SESSION_CACHE_STORE": "move 70I",
   "SHOW_COMMENT_CARD_LINK": "move 70H",
@@ -499,7 +526,6 @@
   "addToRecentlyOpened": "move 70G",
   "afterChange": "move 70F",
   "appendAuditLogEntry": "move 70E",
-  "applyNavChecks": "move 70D",
   "applyNavSectionCollapse": "move 70F",
   "applyTheme": "move 70H",
   "applyYearData": "move 70G",
@@ -594,8 +620,6 @@
   "getSupplementalPdfTools": "move 70F",
   "getUnlockFailState": "move 70I",
   "getWardHeadlineTotal": "move 70K",
-  "getWardProgress": "move 70D",
-  "guardianHasAnyData": "move 70B",
   "handleHash": "move 70K",
   "handleScheduleDocUpload": "move 70F",
   "handleStartupOpenInputChange": "move 70I",
@@ -606,7 +630,6 @@
   "initPrintPager": "move 70F",
   "initWardNameCombobox": "move 70H",
   "initializeEmptyData": "move 70C",
-  "isScheduleIncomplete": "move 70D",
   "linkAccordions": "move 70F",
   "loadAndRenderActivityLog": "move 70H",
   "loadAuditLogEntries": "move 70E",
@@ -641,7 +664,6 @@
   "openUserGuideForCurrentPage": "move 70H",
   "openWardFileAtLaunch": "move 70I",
   "pageActivityLog": "move 70H",
-  "pageCompleteness": "move 70D",
   "pageInventorySelector": "move 70H",
   "pagePartyManagement": "move 70G",
   "partyClosedDriftHTML": "move 70G",
@@ -728,14 +750,11 @@
   "updateCalcFields": "move 70F",
   "updateCarrySourcePicker": "move 70G",
   "updateConvertNotePreview": "move 70G",
-  "updateCurrentScheduleNextButton": "move 70D",
   "updateHelpContext": "move 70H",
   "updateLockButtonVisibility": "move 70I",
   "updateNavActive": "move 70K",
-  "updateNavDots": "move 70D",
   "updateScheduleComment": "move 70F",
   "userGuideAnchorFor": "move 70H",
-  "validate": "move 70F",
   "validateImportFile": "move 70B",
   "validationPanel": "move 70F",
   "walkthroughActive": "move 70H",
@@ -906,6 +925,22 @@
     },
     "normalizeWardData": {
      "was": "move 70C (override: registry)"
+    }
+   }
+  },
+  "70D": {
+   "note": "Gone from src/legacy-app.js in 70D: computeNavChecks()'s seven branches, now one evaluator per engine in src/core/status/completion.js that the registry (src/core/filing/filing-registry.js) hangs on each filing identity and dispatches to (computeCompletion(), filingProgress()), and SCHEDULE_NAV_KEYS, now in src/core/filing/models/guardian.js. computeNavChecks() and getWardProgress() remain as one-line wrappers that hand the evaluators the open filing and what they cannot import yet; getWardProgress() no longer points window.D at the filing it measures. Two more went because their last caller did: guardianHasAnyData()'s one-line wrapper and validate().",
+   "entries": {
+    "SCHEDULE_NAV_KEYS": {
+     "was": "move 70D (override: completion-data)"
+    },
+    "guardianHasAnyData": {
+     "was": "move 70B",
+     "note": "The monolith's one-line wrapper: its last caller was computeNavChecks(); the evaluators import the rule."
+    },
+    "validate": {
+     "was": "move 70F",
+     "note": "Its only caller was computeNavChecks()'s Initial Inventory branch; the evaluator is handed the Inventory's validator instead. Deleted as dead."
     }
    }
   }

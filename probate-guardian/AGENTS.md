@@ -241,11 +241,13 @@ In practice: open with one sentence a non-engineer could act on (*what breaks, f
 deliberately stricter. Do not "fix" that by tightening export.**
 
 The invariant above governs the **readiness panel** (`readiness-config.js`).
-The **sidebar nav dots** (`computeNavChecks()` in `legacy-app.js`) are a
+The **sidebar nav dots** (the completion evaluators in
+`src/core/status/completion.js`, which the sidebar reaches through
+`legacy-app.js`'s `computeNavChecks()` dispatcher) are a
 different surface with a different job, and the two must not be conflated —
 `readiness-config.js` has no per-schedule Annual items at all.
 
-On Schedules A, B-1–B-4, C, D-1–D-5, E, F-1 and F-2, `computeNavChecks()`
+On Schedules A, B-1–B-4, C, D-1–D-5, E, F-1 and F-2, `annualCompletion()`
 marks a schedule incomplete until the filer either enters a complete row or
 ticks "I verify there are no items to report". `validateAnnual()`'s
 `checkRows()` requires neither: it skips rows with no data and validates only

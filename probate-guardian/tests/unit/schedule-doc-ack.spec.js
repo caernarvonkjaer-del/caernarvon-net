@@ -241,13 +241,15 @@ describe('57C-R never becomes an export or navigation gate', () => {
     ).toBe(false);
   });
 
-  it('computeNavChecks() never calls the acknowledgement', () => {
-    const source = readRepoSource(LEGACY_APP);
-    const body = sliceBalancedFunction(source, 'function computeNavChecks');
-    expect(body, 'computeNavChecks() not found -- this guard needs re-pointing').toBeTruthy();
+  it('the sidebar\'s completion evaluators never call the acknowledgement', () => {
+    // Milestone 70, 70D: the section marks are src/core/status/completion.js
+    // (legacy-app.js's computeNavChecks() only dispatches to it now), so the
+    // guard reads the whole module rather than one function of the monolith.
+    const body = readRepoSource('src/core/status/completion.js');
+    expect(body, 'src/core/status/completion.js not found -- this guard needs re-pointing').toBeTruthy();
     expect(
       ACK_REFERENCE.test(body),
-      'computeNavChecks() references the acknowledgement -- the sidebar must not report it',
+      'the completion evaluators reference the acknowledgement -- the sidebar must not report it',
     ).toBe(false);
   });
 });

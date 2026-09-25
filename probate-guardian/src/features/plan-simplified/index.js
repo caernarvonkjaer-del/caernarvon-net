@@ -28,6 +28,7 @@ import { esc } from '../../core/filing/escape-html.js';
 import { ic } from '../../core/ui/icons.js';
 import { formatDisplayDate } from '../../core/form/date-parser.js';
 import { normalizePlanGuardians } from '../../core/filing/models/plan-rows.js';
+import { planSimplifiedCompletion } from '../../core/status/completion.js';
 // Simplified Annual Plan — the second feature extraction (Milestone 3,
 // Phase B/C of INDEX-SPLIT-PLAN.md's migration sequence). Dynamically
 // imported by legacy-app.js's mountPlanSimplifiedFeature()/
@@ -165,7 +166,9 @@ function buildNavPlanSimplified(container){
 
 function getSummaryConfigPlanSimplified(){
   const d=window.D;
-  const nav=window.computeNavChecks();
+  // This filing's own section marks (Milestone 70, 70D: its engine's evaluator,
+  // imported; it was window.computeNavChecks()).
+  const nav=planSimplifiedCompletion(d);
   // Kept as a finer-grained progress count alongside (not instead of) the
   // standardized page-level badges below -- computeNavChecks() has no
   // equivalent partial-credit number, and this one's still accurate since

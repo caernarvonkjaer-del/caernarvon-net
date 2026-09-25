@@ -99,3 +99,9 @@ export const mk = {
   c4:()=>({trustName:'',trusteeName:'',trusteeAddress:'',trusteeCityStateZip:'',dateCreated:null,accountNumber:'',trustType:'Pooled',trustAmount:0,wardPercent:100}),
   c5:()=>({assetDescription:'',ownerName:'',ownerAddress:'',ownerCityStateZip:'',relationshipToWard:'',totalAssetValue:0,jointOwnerPercent:50}),
 };
+
+// The Inventory's eleven schedule pages, by route key: the pages whose Next
+// button a missing schedule disables, and the keys the sidebar's schedule
+// marks use. (Moved from legacy-app.js by Milestone 70's 70D, with the
+// completion evaluators that read it.)
+export const SCHEDULE_NAV_KEYS=['a1','a2','b1','b2','b3','b4','c1','c2','c3','c4','c5'];

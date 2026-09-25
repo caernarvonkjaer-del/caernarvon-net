@@ -16,7 +16,7 @@ import { afterAll, beforeAll, beforeEach, describe, test, expect, vi } from 'vit
 let validateGuardian;
 
 beforeAll(async () => {
-  vi.stubGlobal('window', { SCHEDULE_NAV_KEYS: ['a1', 'a2', 'b1', 'b2', 'b3', 'b4', 'c1', 'c2', 'c3', 'c4', 'c5'] });
+  vi.stubGlobal('window', {});
   ({ validateGuardian } = await import('../../src/features/guardian-inventory/index.js'));
 });
 

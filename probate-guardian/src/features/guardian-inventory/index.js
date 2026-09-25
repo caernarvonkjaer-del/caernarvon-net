@@ -26,6 +26,7 @@ import { fmt } from '../../core/format/money.js';
 import { applyZipLimit, finalizeCaseNumber, formatAccountNumber, formatAddress, formatBarNumber, formatCaseNumber, formatCheckNumber, formatName, formatPhone, formatSSN, sanitizeNonNegativeDecimal } from '../../core/form/form-contract.js';
 import { calc } from './totals.js';
 import { PAGES_GUARDIAN, mk } from '../../core/filing/models/guardian.js';
+import { SCHEDULE_NAV_KEYS } from '../../core/filing/models/guardian.js';
 // Milestone 57B: carried verbatim from MILESTONE-57-PROPOSAL.md section 57B.
 // The wording is load bearing (section 8 #8). Do not paraphrase or re-voice it.
 const ATTESTATION_57B = 'No recipients are required for this certificate (filer attestation - app does not determine legal necessity)';
@@ -47,7 +48,6 @@ const {
   // function, which is correct: it runs via src/form-events.js's delegated
   // 'toggle-ssn' handler, not from this module).
   browserRecommendationNotice, renderScheduleDocsSection,
-  SCHEDULE_NAV_KEYS,
 } = window;
 
 const D = new Proxy({}, {
@@ -1252,9 +1252,11 @@ const sdbAnswered = (v) => sdbIsYes(v) || sdbIsNo(v);
 // The pre-42F adapter had no Guardian Inventory Cover branch, so every Cover
 // message containing "guardian" (GID, Attorney for Guardian, Type of
 // Guardianship, Guardian Name(s)) fell through to guardians.0.name.
-export function validateGuardian(){
+// Judges the filing it is handed, or the open one. Milestone 70's 70D: the
+// dashboard's progress for a filing that is not open passes it here, where it
+// used to point window.D at it first.
+export function validateGuardian(d=window.D){
   const errors=[];
-  const d=window.D;
   const issue=issueFactory('guardian');
   const T='guardian';
   function req(v,label,path){if(!v||!String(v).trim())errors.push(issue(label,path));}
