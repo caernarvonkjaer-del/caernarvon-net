@@ -50,7 +50,7 @@ test.describe('Simplified Part III: the two period dates', () => {
 
     await page.evaluate(() => { const D = (window as any).D; D.periodFrom = '2026-01-01'; D.periodTo = '2026-12-31'; });
     await refresh(page);
-    await expect(mark(page, 's-p3')).toHaveClass(/complete/);
+    await expect(mark(page, 's-p3')).toHaveClass(/\bcomplete\b/);
     await expect(box(page)).toHaveCount(0);
   });
 
@@ -75,7 +75,7 @@ test.describe('Plan - Annual 3G Insurance & Benefits: one benefit answered, or N
     await expect(page.locator('#main-content input[data-form-path="q3BenefitsNone"]')).toBeFocused();
 
     await page.locator('#main-content input[data-form-path="q3BenefitsNone"]').check();
-    await expect(mark(page, 'pa-p4')).toHaveClass(/complete/);
+    await expect(mark(page, 'pa-p4')).toHaveClass(/\bcomplete\b/);
     await expect(box(page)).toHaveCount(0);
   });
 
@@ -87,7 +87,7 @@ test.describe('Plan - Annual 3G Insurance & Benefits: one benefit answered, or N
       D.benefits[first] = { ...(D.benefits[first] || {}), eligible: 'Yes' };
     });
     await refresh(page);
-    await expect(mark(page, 'pa-p4')).toHaveClass(/complete/);
+    await expect(mark(page, 'pa-p4')).toHaveClass(/\bcomplete\b/);
     await expect(box(page)).toHaveCount(0);
   });
 });
@@ -116,7 +116,7 @@ test.describe('Plan - Minors Preparer & Attorney: three names and a date', () =>
       D.periodTo = D.periodTo || '2026-12-31';
     });
     await refresh(page);
-    await expect(mark(page, 'pm-p7')).toHaveClass(/complete/);
+    await expect(mark(page, 'pm-p7')).toHaveClass(/\bcomplete\b/);
     await expect(box(page)).toHaveCount(0);
   });
 });

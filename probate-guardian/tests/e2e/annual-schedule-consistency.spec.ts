@@ -54,7 +54,7 @@ test.describe('annual accounting schedule consistency', () => {
 
       // The sidebar reads the same result, and the change handler refreshes it
       // on click -- so the filer sees the check without navigating away first.
-      await expect(page.locator(`[data-nav="${key}"] .nav-check`)).toHaveClass(/complete/);
+      await expect(page.locator(`[data-nav="${key}"] .nav-check`)).toHaveClass(/\bcomplete\b/);
 
       // ...and unchecking it must put the schedule back, not latch it complete.
       await box.uncheck();
@@ -105,7 +105,7 @@ test.describe('annual accounting schedule consistency', () => {
     await box.check();
     const afterVerifyNone = await page.evaluate(() => !!(window as any).computeNavChecks().checks['a-p8']);
     expect(afterVerifyNone, '/p8 should be complete once the filer verifies there are no trusts').toBe(true);
-    await expect(page.locator('[data-nav="a-p8"] .nav-check')).toHaveClass(/complete/);
+    await expect(page.locator('[data-nav="a-p8"] .nav-check')).toHaveClass(/\bcomplete\b/);
 
     await box.uncheck();
     const undone = await page.evaluate(() => !!(window as any).computeNavChecks().checks['a-p8']);

@@ -240,7 +240,7 @@ for (const form of [
       await page.locator('#bondDepositoryState_2').check();
       await page.evaluate(() => (window as any).updateNavDots?.());
       await expect(box).toHaveCount(0);
-      await expect(mark).toHaveClass(/complete/);
+      await expect(mark).toHaveClass(/\bcomplete\b/);
       expect(await sectionIssues(page, form.validator, form.section)).toEqual([]);
     });
 

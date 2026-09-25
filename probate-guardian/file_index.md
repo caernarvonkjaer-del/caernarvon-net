@@ -262,7 +262,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`tests\e2e\annual-field-formatting.spec.ts`](<tests/e2e/annual-field-formatting.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\annual-import-ward-percentage.spec.ts`](<tests/e2e/annual-import-ward-percentage.spec.ts>) | An Annual workbook with ward percentages on Schedules D-1 to D-5 re-imports completely (it used to stop at the first percentage with "r2 is not a function"). |
 | [`tests\e2e\annual-mount.spec.ts`](<tests/e2e/annual-mount.spec.ts>) | Automated test covering the named behavior or contract. |
-| [`tests\e2e\annual-schedule-consistency.spec.ts`](<tests/e2e/annual-schedule-consistency.spec.ts>) | Automated test covering the named behavior or contract. |
+| [`tests\e2e\annual-schedule-consistency.spec.ts`](<tests/e2e/annual-schedule-consistency.spec.ts>) | Annual accounting schedule consistency across pages; Milestone 43D: Part VIII (Trusts) completes via verify-none or a named trust row... |
 | [`tests\e2e\annual-ward-share-export.spec.ts`](<tests/e2e/annual-ward-share-export.spec.ts>) | Schedule D-1 ward shares of 1, 50, 0.5 and 100 percent: the app's total, each line's on-screen Ward's Amount, the Preview & Export notes, and the exported court workbook's share cells and formulas, read with ExcelJS. |
 | [`tests\e2e\backup-restore-sav.spec.ts`](<tests/e2e/backup-restore-sav.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\blank-card-pruning.spec.ts`](<tests/e2e/blank-card-pruning.spec.ts>) | Blank-card clean-up when leaving a page (src/core/form/prune-cards.js) is loaded at startup and removes untouched +Add rows while keeping entered ones. |
@@ -357,7 +357,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`tests\e2e\section-guidance-invariant.spec.ts`](<tests/e2e/section-guidance-invariant.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\security.spec.ts`](<tests/e2e/security.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\service-attestation-visibility.spec.ts`](<tests/e2e/service-attestation-visibility.spec.ts>) | Automated test covering the named behavior or contract. |
-| [`tests\e2e\sidebar-only-wants.spec.ts`](<tests/e2e/sidebar-only-wants.spec.ts>) | Automated test covering the named behavior or contract. |
+| [`tests\e2e\sidebar-only-wants.spec.ts`](<tests/e2e/sidebar-only-wants.spec.ts>) | Milestone 63F — PARITY between the box and the sidebar's own rule on the three pages the validators cannot fully list. Simplified Part III lists both period dates as links that land on Part III (not the Cover), only the one still missing... |
 | [`tests\e2e\signature-block-address-margin.spec.ts`](<tests/e2e/signature-block-address-margin.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\signature-capture.contract.spec.ts`](<tests/e2e/signature-capture.contract.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\signature-stamp-reuse.spec.ts`](<tests/e2e/signature-stamp-reuse.spec.ts>) | Automated test covering the named behavior or contract. |
