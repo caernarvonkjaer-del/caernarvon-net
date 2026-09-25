@@ -50,9 +50,13 @@ const STATIC_COPY_TARGETS = [
   // fragments/*.html: src/fragment-loader.js fetches these as plain static
   // files everywhere except file:// (see the comment there for the full
   // reasoning -- fetch() must keep working with zero Vite processing, since
-  // that's how Cloudflare Pages actually serves this repo today). Needed
-  // here for dist/web; dist/portable's own copy is unused at runtime (that
-  // build takes the `?raw` dynamic-import branch instead) but harmless.
+  // that's how Cloudflare Pages actually serves this repo today). Needed in
+  // BOTH builds: fragment-loader.js chooses by protocol at runtime, not by
+  // build, so dist/portable fetches these too whenever it is served over
+  // http(s) -- which is how production runs it, from the DNN site. Only a
+  // file:// launch takes the `?raw` dynamic-import branch. (This comment used
+  // to call dist/portable's copy "unused at runtime"; deleting it on that
+  // advice would break every fragment-backed dialog in production.)
   { src: 'fragments', dest: '.' },
 ];
 

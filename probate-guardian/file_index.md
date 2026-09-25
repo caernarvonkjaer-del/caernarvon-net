@@ -524,7 +524,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`tests\unit\xlsx-extract.spec.js`](<tests/unit/xlsx-extract.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\yes-no-radio-migration.spec.js`](<tests/unit/yes-no-radio-migration.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tsconfig.json`](<tsconfig.json>) | JSON configuration or fixture data. |
-| [`vite.config.js`](<vite.config.js>) | Build, tooling, or configuration source. |
+| [`vite.config.js`](<vite.config.js>) | Vite build configuration for the two outputs, dist/web (hosted, base /probate-guardian/) and dist/portable (relative base, for the DNN site and file://): entry points, the static files copied as-is (fragments are needed in both builds -- the portable build fetches them over http(s)), and the portable build's CSP hashes. |
 | [`vitest.config.ts`](<vitest.config.ts>) | Build, tooling, or configuration source. |
 | [`walkthrough.md`](<walkthrough.md>) | Project documentation or policy reference. |
 | [`WCAG_2.1_AA_regex-structural.md`](<WCAG_2.1_AA_regex-structural.md>) | Project documentation or policy reference. |
