@@ -233,7 +233,9 @@ const HELP_CONTENT = new Proxy({}, {
 function toggleHelpPanel(){
   helpPanelOpen=!helpPanelOpen;
   const panel=document.getElementById('help-panel');
-  const btns=document.querySelectorAll('#help-toggle-btn, .topnav-help');
+  // Only the buttons that really open this panel (the dashboard's "?"); a
+  // filing's "?" opens the manual instead and carries no disclosure state.
+  const btns=document.querySelectorAll('[aria-controls="help-panel"]');
   panel.style.display=helpPanelOpen?'flex':'none';
   btns.forEach(btn=>btn.setAttribute('aria-expanded',String(helpPanelOpen)));
   if(helpPanelOpen){
@@ -1559,10 +1561,10 @@ function initPrintPager(options={}){
     destination.appendChild(headerActions);
   }else if(destination&&!destination.querySelector('.pv-shell-actions')){
     const isDark=document.documentElement.getAttribute('data-theme')==='dark';
-    const helpOpen=typeof window.isHelpPanelOpen==='function'&&window.isHelpPanelOpen();
+    // "?" in a filing opens the manual, not the Help panel: see router.js's header.
     const shellActions=document.createElement('div');
     shellActions.className='pv-shell-actions';
-    shellActions.innerHTML=`<button type="button" class="topnav-btn" data-shell-action="dashboard">${ic('home',16)} All Filings</button><button type="button" class="topnav-btn topnav-theme" id="theme-toggle-btn" data-shell-action="toggle-theme" title="Switch theme" aria-label="Switch to ${isDark?'light':'dark'} theme" aria-pressed="${isDark}">${ic(isDark?'sun':'moon',16)}</button><button type="button" class="topnav-btn topnav-help" id="help-toggle-btn" data-shell-action="toggle-help" title="Help" aria-label="Help" aria-haspopup="true" aria-expanded="${helpOpen}" aria-controls="help-panel">?</button>`;
+    shellActions.innerHTML=`<button type="button" class="topnav-btn" data-shell-action="dashboard">${ic('home',16)} All Filings</button><button type="button" class="topnav-btn topnav-theme" id="theme-toggle-btn" data-shell-action="toggle-theme" title="Switch theme" aria-label="Switch to ${isDark?'light':'dark'} theme" aria-pressed="${isDark}">${ic(isDark?'sun':'moon',16)}</button><button type="button" class="topnav-btn topnav-help" id="help-toggle-btn" data-shell-action="toggle-help" title="Help: open the user guide for this page (new tab)" aria-label="Help: open the user guide for this page (new tab)">?</button>`;
     destination.appendChild(shellActions);
   }
   if(pages.length<2)return;                       // nothing to page through

@@ -247,7 +247,6 @@ interface Window {
   isBlankScheduleEntry: any;
   isContinuePromptShown: any;
   isFilingClosed: any;
-  isHelpPanelOpen: any;
   isOutputAcknowledgedFor: any;
   isPartyPairDismissed: any;
   isPlanInitialAttorneyStarted: any;

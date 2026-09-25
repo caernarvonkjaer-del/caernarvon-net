@@ -135,7 +135,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`src\core\images\png-dimensions.js`](<src/core/images/png-dimensions.js>) | Build, tooling, or configuration source. |
 | [`src\core\modals\convert-ward-modal.js`](<src/core/modals/convert-ward-modal.js>) | Build, tooling, or configuration source. |
 | [`src\core\modals\year-manager-modal.js`](<src/core/modals/year-manager-modal.js>) | Build, tooling, or configuration source. |
-| [`src\core\navigation\router.js`](<src/core/navigation/router.js>) | Build, tooling, or configuration source. |
+| [`src\core\navigation\router.js`](<src/core/navigation/router.js>) | The hash router and page mounting: navigate(), renderPage(), the current-page state, the mobile sidebar, and the header actions each filing page gets (All Filings, theme, and "?", which inside a filing opens the user guide for that page). |
 | [`src\core\navigation\ward-county.js`](<src/core/navigation/ward-county.js>) | Build, tooling, or configuration source. |
 | [`src\core\navigation\ward-lifecycle.js`](<src/core/navigation/ward-lifecycle.js>) | Build, tooling, or configuration source. |
 | [`src\core\offline-access-preference.js`](<src/core/offline-access-preference.js>) | Build, tooling, or configuration source. |
@@ -385,7 +385,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`tests\e2e\test-system-title-prefix.spec.ts`](<tests/e2e/test-system-title-prefix.spec.ts>) | Milestone 68¾A: every filing page, the dashboard and the Preview & Export banner begin their title with the test-system warning, once; outputs carry none. |
 | [`tests\e2e\ucn-cover-field.spec.ts`](<tests/e2e/ucn-cover-field.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\unlock.spec.ts`](<tests/e2e/unlock.spec.ts>) | Automated test covering the named behavior or contract. |
-| [`tests\e2e\user-guide-wiring.spec.ts`](<tests/e2e/user-guide-wiring.spec.ts>) | Automated test covering the named behavior or contract. |
+| [`tests\e2e\user-guide-wiring.spec.ts`](<tests/e2e/user-guide-wiring.spec.ts>) | What "?" does and announces: the Help panel's disclosure on the dashboard, and inside a filing a link to the user guide at the anchor for the current page, for every filing type. |
 | [`tests\e2e\validation-structured-paths.spec.ts`](<tests/e2e/validation-structured-paths.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\vendor-loader-retry.spec.ts`](<tests/e2e/vendor-loader-retry.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\verified-inventory-workflow.spec.ts`](<tests/e2e/verified-inventory-workflow.spec.ts>) | Automated test covering the named behavior or contract. |

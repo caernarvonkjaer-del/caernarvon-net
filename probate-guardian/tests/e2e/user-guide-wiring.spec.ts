@@ -50,6 +50,37 @@ test.describe('user guide wiring', () => {
     expect(url).toMatch(/help\/$/);
   });
 
+  // What "?" announces must match what it does. On the dashboard it is the Help
+  // panel's disclosure button, so aria-expanded follows the panel. Inside a
+  // filing it opens the manual in a new tab, so it must not claim to control
+  // the panel: it used to keep aria-haspopup, aria-controls="help-panel" and an
+  // aria-expanded that was always "false" (it read window.isHelpPanelOpen,
+  // which nothing defines) -- a screen reader said "Help, collapsed, pop-up
+  // button", and pressing it opened a new tab instead.
+  test("\"?\" announces what it does: the Help panel's disclosure on the dashboard, a link to the manual inside a filing", async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Announce Guide Ward', 'guardian');
+    const help = page.locator('#help-toggle-btn');
+    for (const route of ['/', '/print']) {
+      await page.evaluate((r) => (window as any).navigate(r), route);
+      await help.waitFor({ state: 'visible' });
+      const attrs = await help.evaluate((b) => ({
+        label: b.getAttribute('aria-label'),
+        expanded: b.getAttribute('aria-expanded'), controls: b.getAttribute('aria-controls'), popup: b.getAttribute('aria-haspopup'),
+      }));
+      expect(attrs, `in a filing, ${route}`).toEqual({ label: 'Help: open the user guide for this page (new tab)', expanded: null, controls: null, popup: null });
+    }
+    await page.evaluate(() => (window as any).navigate('/dashboard'));
+    const reminder = page.locator('[data-shell-action="hide-auto-export-reminder"]');
+    if (await reminder.isVisible().catch(() => false)) await reminder.click();
+    await help.waitFor({ state: 'visible' });
+    await expect(help).toHaveAttribute('aria-controls', 'help-panel');
+    await expect(help).toHaveAttribute('aria-expanded', 'false');
+    await help.click();
+    await expect(page.locator('#help-panel')).toBeVisible();
+    await expect(help).toHaveAttribute('aria-expanded', 'true');
+  });
+
   const GUARDIAN_CASES: Array<[string, string]> = [
     ['/', 'inventory-cover'],
     ['/summary', 'inventory-summary'],

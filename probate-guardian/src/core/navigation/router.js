@@ -220,9 +220,10 @@ export function attachFormHeaderActions(container = (typeof document !== 'undefi
   if (!h1 || h1.classList.contains('visually-hidden') || h1.querySelector('.form-header-actions')) return;
 
   const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-  const helpOpen = typeof window.isHelpPanelOpen === 'function'
-    ? window.isHelpPanelOpen()
-    : (document.getElementById('help-panel')?.style.display === 'flex');
+  // Inside a filing "?" opens the manual for this page in a new tab
+  // (shell-events.js), not the Help panel, so the button says that and claims
+  // no disclosure state -- it used to carry aria-haspopup, aria-controls and an
+  // aria-expanded read from an isHelpPanelOpen() on window that nothing defines.
 
   const actions = document.createElement('div');
   actions.className = 'form-header-actions';
@@ -231,7 +232,7 @@ export function attachFormHeaderActions(container = (typeof document !== 'undefi
     : '<svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3.2 10.6 12 3.6l8.8 7"/><path d="M5.7 9.3v11.1h12.6V9.3"/></svg>';
   const themeIcon = typeof window.ic === 'function' ? window.ic(isDark ? 'sun' : 'moon', 16) : '';
 
-  actions.innerHTML = `<button type="button" class="topnav-btn" data-shell-action="dashboard">${homeIcon} All Filings</button><button type="button" class="topnav-btn topnav-theme" id="theme-toggle-btn" data-shell-action="toggle-theme" title="Switch theme" aria-label="Switch to ${isDark ? 'light' : 'dark'} theme" aria-pressed="${isDark}">${themeIcon}</button><button type="button" class="topnav-btn topnav-help" id="help-toggle-btn" data-shell-action="toggle-help" title="Help" aria-label="Help" aria-haspopup="true" aria-expanded="${helpOpen}" aria-controls="help-panel">?</button>`;
+  actions.innerHTML = `<button type="button" class="topnav-btn" data-shell-action="dashboard">${homeIcon} All Filings</button><button type="button" class="topnav-btn topnav-theme" id="theme-toggle-btn" data-shell-action="toggle-theme" title="Switch theme" aria-label="Switch to ${isDark ? 'light' : 'dark'} theme" aria-pressed="${isDark}">${themeIcon}</button><button type="button" class="topnav-btn topnav-help" id="help-toggle-btn" data-shell-action="toggle-help" title="Help: open the user guide for this page (new tab)" aria-label="Help: open the user guide for this page (new tab)">?</button>`;
   h1.appendChild(actions);
 }
 
