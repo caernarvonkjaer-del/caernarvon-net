@@ -107,6 +107,7 @@ interface Window {
   deleteWardFromState: any;
   deriveAndVerifyKey: any;
   deriveKeyFromPassword: any;
+  describeUnreadableParts: any;
   dismissPartyPair: any;
   disposeActiveFeature: any;
   doAddWard: any;
@@ -338,6 +339,7 @@ interface Window {
   prepareFilingOutput: any;
   printCurrentFilingPdf: any;
   promptModal: any;
+  protectPartiallyReadCaseFile: any;
   pruneBlankCards: any;
   pvSelect: any;
   pvStep: any;

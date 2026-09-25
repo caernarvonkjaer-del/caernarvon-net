@@ -2029,7 +2029,9 @@ async function lockApp(){
       const manifestEntry=zip.file('manifest.json');
       if(manifestEntry){
         const manifest=JSON.parse(await manifestEntry.async('string'));
-        await loadCaseFileFromZip(zip,manifest,_cryptoKey);
+        const loaded=await loadCaseFileFromZip(zip,manifest,_cryptoKey);
+        // The file on disk may have been damaged since it was opened.
+        await window.protectPartiallyReadCaseFile(loaded&&loaded.unreadable,handleFile&&handleFile.name);
       }
     }catch(e){console.error('Could not reload case data after unlocking',e);}
   }else{
@@ -2968,7 +2970,7 @@ async function trySilentReopen(){
     const file=await readRememberedFile(handle);
     const res=await loadCaseFileAtLaunch(file);
     if(res&&res.ok){
-      await rememberCaseFileHandle(handle);
+      if(!res.partial)await rememberCaseFileHandle(handle);
       return true;
     }
     return false;
@@ -3030,7 +3032,7 @@ async function openWardFileAtLaunch(){
         const file=await readRememberedFile(remembered);
         const res=await loadCaseFileAtLaunch(file);
         if(res&&res.ok){
-          await rememberCaseFileHandle(remembered);
+          if(!res.partial)await rememberCaseFileHandle(remembered);
           _resolveStartupChoice();
           return;
         }
@@ -3053,7 +3055,7 @@ async function openWardFileAtLaunch(){
       const file=await handle.getFile();
       const res=await loadCaseFileAtLaunch(file);
       if(res&&res.ok){
-        await rememberCaseFileHandle(handle);
+        if(!res.partial)await rememberCaseFileHandle(handle);
         _resolveStartupChoice();
       }
     }catch(e){
@@ -3116,7 +3118,7 @@ async function loadCaseFileAtLaunch(file){
     _appState.securityMode=_securityMode;
     _appState.cryptoSalt=manifest.salt||null;
     _appState.cryptoVerifier=manifest.verifier||null;
-    await loadCaseFileFromZip(zip,manifest,_cryptoKey);
+    const loaded=await loadCaseFileFromZip(zip,manifest,_cryptoKey);
     // Milestone 40D: this line used to be `if(_appState.theme)applyTheme(...)`,
     // re-applying the FILE's theme once the .sav finished loading. That was the
     // flash this delivery removes, and it also meant opening someone else's file
@@ -3132,7 +3134,11 @@ async function loadCaseFileAtLaunch(file){
     _openedFileAtLaunch=true;
     markCaseOpenedBefore();
     refreshAutoSaveArmedStatus(); // covers the plain-<input> path too, where no handle was ever remembered
-    return { ok: true, wardId: (caseFile.wards[0] && caseFile.wards[0].wardId) || null };
+    // A file with parts that could not be read opened without them: tell the
+    // filer, and make sure the damaged original is never the file auto-save
+    // writes to. Callers must not remember its handle when `partial` is true.
+    const partial=await window.protectPartiallyReadCaseFile(loaded&&loaded.unreadable,file&&file.name);
+    return { ok: true, partial, wardId: (caseFile.wards[0] && caseFile.wards[0].wardId) || null };
   }catch(e){
     console.error('Failed to open case file',e);
     await window.alertModal('Could not open that file: '+(e&&e.message||e));
@@ -3148,6 +3154,15 @@ async function loadCaseFileAtLaunch(file){
 // never include one) defaults activeWardId to whichever ward the file
 // contains, rather than failing.
 async function loadCaseFileFromZip(zip,manifest,key){
+  // Every part of the file that exists (or that its manifest lists) but could
+  // not be read. These used to be skipped with only a console warning, so a
+  // damaged file opened silently without them -- and in Chrome/Edge the first
+  // auto-save then rewrote the original without them, for good. Returned to
+  // the caller, which hands it to protectPartiallyReadCaseFile() (case-file.js)
+  // to tell the filer and stop the original being saved over. A part a file
+  // simply does not have (an older file with no parties.enc) is not damage and
+  // is not listed.
+  const unreadable=[];
   caseFile.wards=[];
   caseFile.parties=[];
   caseFile.cases=[];
@@ -3157,29 +3172,31 @@ async function loadCaseFileFromZip(zip,manifest,key){
     try{
       const parties=await decryptJSONWithKey(await partiesFile.async('string'),key);
       if(Array.isArray(parties))caseFile.parties=parties;
-    }catch(e){console.warn('Could not read parties from .sav file',e);}
+    }catch(e){console.warn('Could not read parties from .sav file',e);unreadable.push({kind:'parties'});}
   }
   const casesFile=zip.file('cases.enc');
   if(casesFile){
     try{
       const cases=await decryptJSONWithKey(await casesFile.async('string'),key);
       if(Array.isArray(cases))caseFile.cases=cases;
-    }catch(e){console.warn('Could not read cases from .sav file',e);}
+    }catch(e){console.warn('Could not read cases from .sav file',e);unreadable.push({kind:'cases'});}
   }
   const partyDismissalsFile=zip.file('partyDismissals.enc');
   if(partyDismissalsFile){
     try{
       const dismissals=await decryptJSONWithKey(await partyDismissalsFile.async('string'),key);
       if(Array.isArray(dismissals))caseFile.dismissedPartyPairs=dismissals;
-    }catch(e){console.warn('Could not read party dismissals from .sav file',e);}
+    }catch(e){console.warn('Could not read party dismissals from .sav file',e);unreadable.push({kind:'partyDismissals'});}
   }
   for(const entry of (Array.isArray(manifest.wards)?manifest.wards:[])){
     const f=zip.file(entry.file);
-    if(!f){console.warn('Case file entry missing:',entry.file);continue;}
+    const filing={kind:'filing',name:(entry&&entry.wardName)||'',file:(entry&&entry.file)||''};
+    if(!f){console.warn('Case file entry missing:',entry.file);unreadable.push(filing);continue;}
     try{
       const ward=sanitizeObjectData(await decryptJSONWithKey(await f.async('string'),key));
       if(ward&&ward.wardId)caseFile.wards.push(ward);
-    }catch(e){console.warn('Skipping unreadable ward in .sav file',entry.file,e);}
+      else unreadable.push(filing);
+    }catch(e){console.warn('Skipping unreadable ward in .sav file',entry.file,e);unreadable.push(filing);}
   }
   caseFile.guardianName='';
   caseFile.guardianEmail='';
@@ -3189,7 +3206,7 @@ async function loadCaseFileFromZip(zip,manifest,key){
       const g=await decryptJSONWithKey(manifest.guardian,key);
       caseFile.guardianName=g.guardianName||'';
       caseFile.guardianEmail=g.guardianEmail||'';
-    }catch(e){console.warn('Could not read guardian info from .sav file',e);}
+    }catch(e){console.warn('Could not read guardian info from .sav file',e);unreadable.push({kind:'guardian'});}
   }
   _appState.activeWardId=null;
   _autoExportIntervalMinutes=10;
@@ -3238,7 +3255,7 @@ async function loadCaseFileFromZip(zip,manifest,key){
       // deliberately do not (case-file.js, recovery-cache.js).
       const sc=Number(a.selectedCircuit);
       caseFile.selectedCircuit=(sc>=1&&sc<=20)?sc:6;
-    }catch(e){console.warn('Could not read app preferences from .sav file',e);}
+    }catch(e){console.warn('Could not read app preferences from .sav file',e);unreadable.push({kind:'preferences'});}
   }
   // Milestone 38C, same rule as above and deliberately outside the appState
   // branch: a single-ward export carries no appState section at all, and this
@@ -3277,8 +3294,9 @@ async function loadCaseFileFromZip(zip,manifest,key){
         _auditLogEntries=entries;
         _auditLogNextId=entries.reduce((m,e)=>Math.max(m,(e&&e.id)||0),0)+1;
       }
-    }catch(e){console.warn('Could not read audit log from .sav file',e);}
+    }catch(e){console.warn('Could not read audit log from .sav file',e);unreadable.push({kind:'activity'});}
   }
+  return {unreadable};
 }
 
 

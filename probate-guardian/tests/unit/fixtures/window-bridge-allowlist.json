@@ -515,6 +515,14 @@
     },
     {
       "file": "src/core/persistence/case-file.js",
+      "name": "describeUnreadableParts"
+    },
+    {
+      "file": "src/core/persistence/case-file.js",
+      "name": "protectPartiallyReadCaseFile"
+    },
+    {
+      "file": "src/core/persistence/case-file.js",
       "name": "formatRelativeTime"
     },
     {
