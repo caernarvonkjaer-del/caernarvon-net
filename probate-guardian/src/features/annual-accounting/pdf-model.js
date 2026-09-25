@@ -672,7 +672,8 @@ export function buildAnnualAccountingModel(D, options = {}) {
   // ── Schedule D-1: Cash Assets ─────────────────────────────────────────────
   const schD1Rows = (d.schD1 || []).map((r, i) => {
     const p = parseFloat(r.wardPct);
-    const wardFraction = isNaN(p) ? 0 : p > 1 ? p / 100 : p;
+    // Ward's % is always a percentage (1 is 1%), as in totals.js's pct().
+    const wardFraction = isNaN(p) ? 0 : p / 100;
     const full = parseFloat(r.fullAmount) || 0;
     const wa = full * wardFraction;
     return [
@@ -824,7 +825,8 @@ export function buildAnnualAccountingModel(D, options = {}) {
   // ── Schedule D-5: Mortgages / Liabilities ─────────────────────────────────
   const schD5Rows = (d.schD5 || []).map((r, i) => {
     const p = parseFloat(r.wardPct);
-    const wardFraction = isNaN(p) ? 0 : p > 1 ? p / 100 : p;
+    // Ward's % is always a percentage (1 is 1%), as in totals.js's pct().
+    const wardFraction = isNaN(p) ? 0 : p / 100;
     const fullDebt = parseFloat(r.fullDebt) || 0;
     const wb = fullDebt * wardFraction;
     return [

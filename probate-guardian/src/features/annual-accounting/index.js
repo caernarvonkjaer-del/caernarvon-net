@@ -2,6 +2,7 @@ import { renderSummaryPage, navStatus, formatSummaryDate } from '../../core/summ
 import { formatDisplayDate } from '../../core/form/date-parser.js';
 import { renderLocalSectionGuidance } from '../../core/status/section-status.js';
 import { checkDateOrder } from '../../core/validation/date-rules.js';
+import { pct } from './totals.js';
 // Milestone 51F: the capacity rule has ONE implementation. This used to come
 // off `window` from a legacy-app.js twin that duplicated core's logic verbatim
 // (remuneration-filtering comment included), so the print-page capacity panel
@@ -81,8 +82,11 @@ import { renderReportingPeriodFields } from '../../core/form/cards/ward-demograp
 // loaded (getWardHeadlineTotal(), same "Problem 1" pattern as every prior
 // milestone), and `annualReconcileState` stays alongside it for simplicity
 // even though it isn't strictly forced the same way (Milestone 7 plan's
-// "Confirmed facts"). `n`/`pct` (tiny number helpers) stay bundled with
-// them since `calcTotalsAnnual` is their only legacy caller. `esc`/`ic`/the
+// "Confirmed facts"). `n` (a tiny number helper) stays bundled with them.
+// `pct` is imported from totals.js below, not read from window: the window
+// copy was legacy-app.js's own, and when the ward-share rule was corrected
+// (2026-09-24) that copy kept the old one, so each Schedule D line's Ward's
+// Amount disagreed with the schedule total. There is now one pct(). `esc`/`ic`/the
 // formatting and validation helpers/`renderScheduleDocsSection`/
 // `guardianHasAnyData` etc. stay legacy because they're shared broadly
 // across every extracted feature, not specific to Annual.
@@ -95,7 +99,7 @@ const {
   // in src/form-events.js, which uses window.toggleSsnReveal directly.
   tooltip, countyAutocompleteHTML, yesNoCheckboxD, yesNoRadioAnnualHTML,
   syncActiveWardNameDisplay, syncGuardianNameDisplay,
-  calcTotalsAnnual, annualReconcileState, n, pct,
+  calcTotalsAnnual, annualReconcileState, n,
   guardianHasAnyData,
 } = window;
 

@@ -322,7 +322,6 @@ interface Window {
   PAGES_GUARDIAN: any;
   partyForSignaturePath: any;
   PBKDF2_ITERATIONS: any;
-  pct: any;
   PG_APP_VERSION: any;
   pgHasUnsavedChanges: any;
   PGSupplementalPdf: any;

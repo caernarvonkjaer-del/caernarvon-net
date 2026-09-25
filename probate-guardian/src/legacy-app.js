@@ -6215,7 +6215,10 @@ function sanitizeNegativeAmounts(){
   }
 }
 function n(v){return parseFloat(v)||0;}
-function pct(v){if(v===''||v===null||v===undefined)return 1;const p=parseFloat(v);return isNaN(p)?1:p>1?p/100:p;}
+// pct() lives only in src/features/annual-accounting/totals.js. This copy
+// kept the old reading of Ward's % (1 or less taken as a fraction) after the
+// 2026-09-24 correction and was still what the Annual pages used for each
+// Schedule D line's ward amount; nothing else called it.
 
 // calcTotalsAnnual() and annualReconcileState() moved to src/features/annual-accounting/totals.js (Milestone 19E).
 // Eagerly loaded via src/features-loader.js to serve as the single source of truth across

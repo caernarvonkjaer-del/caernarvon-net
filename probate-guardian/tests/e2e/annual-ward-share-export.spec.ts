@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { freshStartNoPassword, createWard, fillMinimalValidAnnualWard } from './support/target';
+import { freshStartNoPassword, createWard, fillMinimalValidAnnualWard, dismissScheduleDocPrompt } from './support/target';
 
 // A Schedule D ward's share typed as 1% was counted as 100% -- on screen, in
 // the PDF and in the court workbook -- because the Annual Accounting read any
@@ -33,6 +33,22 @@ test('Schedule D-1 ward shares are written to the court workbook as percentages,
 
   expect(await page.evaluate(() => (window as any).calcTotalsAnnual((window as any).D).schD1_total), "the app's own D-1 total")
     .toBe(ROWS.reduce((sum, r) => sum + r.share, 0));
+
+  // Each line's Ward's Amount on the Schedule D-1 page follows the same rule --
+  // as the page is drawn, and when the filer types a new share (the first fix
+  // missed both: the page used a separate, unfixed copy of the calculation).
+  const amount = async (i: number) => Number((await page.locator(`[data-annual-calc="schD1.${i}.wardAmt"]`).inputValue()).replace(/[$,]/g, ''));
+  await page.evaluate(() => (window as any).navigate('/schd1'));
+  for (const [i, r] of ROWS.entries()) expect(await amount(i), `line ${i + 1}'s Ward's Amount as drawn`).toBe(r.share);
+  const line2 = page.locator('[data-form-path="schD1.1.wardPct"], [data-annual-path="schD1.1.wardPct"]');
+  await line2.fill('1');
+  await line2.blur();
+  await dismissScheduleDocPrompt(page); // editing a line raises the supporting-documentation prompt
+  await expect.poll(() => amount(1), "line 2's Ward's Amount after typing 1").toBe(100);
+  await line2.fill('50');
+  await line2.blur();
+  await dismissScheduleDocPrompt(page);
+  await expect.poll(() => amount(1), "line 2's Ward's Amount back at 50").toBe(5000);
 
   await page.evaluate(() => (window as any).navigate('/print'));
   const excel = page.locator('[data-annual-action="save-excel"]');
