@@ -92,7 +92,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`src\core\excel\b4-register-pages.js`](<src/core/excel/b4-register-pages.js>) | Build, tooling, or configuration source. |
 | [`src\core\excel\cell-reader.js`](<src/core/excel/cell-reader.js>) | Build, tooling, or configuration source. |
 | [`src\core\excel\excel-capacity.js`](<src/core/excel/excel-capacity.js>) | Build, tooling, or configuration source. |
-| [`src\core\excel\excel-engine.js`](<src/core/excel/excel-engine.js>) | Build, tooling, or configuration source. |
+| [`src\core\excel\excel-engine.js`](<src/core/excel/excel-engine.js>) | Shared Excel helpers for court-workbook export: setCell()/setDateCell() (writes sanitized against formula injection), numValue(), percentValue() (a Ward's % as the fraction the workbook's percentage cells hold: 1 means 1%), date serials, and saveWorkbookFile(); Milestone 51D cut it to the exports with production callers. |
 | [`src\core\excel\exceljs-loader.js`](<src/core/excel/exceljs-loader.js>) | Build, tooling, or configuration source. |
 | [`src\core\excel\guardian-inventory-pages.js`](<src/core/excel/guardian-inventory-pages.js>) | Build, tooling, or configuration source. |
 | [`src\core\excel\sheet-pruning.js`](<src/core/excel/sheet-pruning.js>) | Build, tooling, or configuration source. |
@@ -108,7 +108,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`src\core\filing\form-derived-fields.js`](<src/core/filing/form-derived-fields.js>) | Build, tooling, or configuration source. |
 | [`src\core\filing\output-advisories.js`](<src/core/filing/output-advisories.js>) | Build, tooling, or configuration source. |
 | [`src\core\filing\output-authorization.js`](<src/core/filing/output-authorization.js>) | Build, tooling, or configuration source. |
-| [`src\core\filing\output-preflight.js`](<src/core/filing/output-preflight.js>) | Build, tooling, or configuration source. |
+| [`src\core\filing\output-preflight.js`](<src/core/filing/output-preflight.js>) | The shared export boundary Preview, PDF and Excel all pass through (prepareFilingOutput()): whether a filing has a safe identity and no pending date input, plus the non-blocking notes (bond and restricted-depository, and the Annual family's small ward-share notes). |
 | [`src\core\filing\plan-tristate.js`](<src/core/filing/plan-tristate.js>) | Build, tooling, or configuration source. |
 | [`src\core\filing\readiness-card.js`](<src/core/filing/readiness-card.js>) | Build, tooling, or configuration source. |
 | [`src\core\filing\plan-certificate-of-service.js`](<src/core/filing/plan-certificate-of-service.js>) | Milestone 68C: the Plans' shared certificate of service -- fields, migration, the "Certified by" signer rule, the sidebar's settled rule, print-preview advisories and the PDF section; one implementation for all four Plans, no DOM imports. |
@@ -190,11 +190,11 @@ This index inventories repository files retained as source or project artifacts.
 | [`src\core\vendor-loader.js`](<src/core/vendor-loader.js>) | Build, tooling, or configuration source. |
 | [`src\core\ward-lock.js`](<src/core/ward-lock.js>) | Build, tooling, or configuration source. |
 | [`src\features-loader.js`](<src/features-loader.js>) | Build, tooling, or configuration source. |
-| [`src\features\annual-accounting\excel.js`](<src/features/annual-accounting/excel.js>) | Build, tooling, or configuration source. |
-| [`src\features\annual-accounting\index.js`](<src/features/annual-accounting/index.js>) | Build, tooling, or configuration source. |
-| [`src\features\annual-accounting\pdf-model.js`](<src/features/annual-accounting/pdf-model.js>) | Build, tooling, or configuration source. |
+| [`src\features\annual-accounting\excel.js`](<src/features/annual-accounting/excel.js>) | Excel export and import for the Annual, Final and Trust Accountings: writes the Clerk's Annual workbook (templates/annual-template.js) from a filing, continuation sheets included, and reads a workbook back into a filing; loaded lazily at first mount. |
+| [`src\features\annual-accounting\index.js`](<src/features/annual-accounting/index.js>) | The Annual Accounting feature module, also serving the Final and Trust Accountings: mounts each page (Cover, Schedules A-F, the Parts, signatures and certificate) with each line's calculated amounts, the sidebar navigation, and validateAnnual(), the export validation. |
+| [`src\features\annual-accounting\pdf-model.js`](<src/features/annual-accounting/pdf-model.js>) | Builds the accessible (WCAG 2.1 AA) PDF document model for the Annual, Final and Trust Accountings from a filing -- every schedule's table and totals and the statutory text (buildAnnualAccountingModel()). |
 | [`src\features\annual-accounting\print.js`](<src/features/annual-accounting/print.js>) | Build, tooling, or configuration source. |
-| [`src\features\annual-accounting\totals.js`](<src/features/annual-accounting/totals.js>) | Build, tooling, or configuration source. |
+| [`src\features\annual-accounting\totals.js`](<src/features/annual-accounting/totals.js>) | The Annual Accounting's canonical calculations, shared by the screen, preview, Excel export and PDF: n(), pct() (a Ward's % is always a percentage), scheduleDRow(), calcTotalsAnnual() and annualReconcileState(); the last two are published on window for the dashboard. |
 | [`src\features\dashboard\index.js`](<src/features/dashboard/index.js>) | Build, tooling, or configuration source. |
 | [`src\features\dashboard\resources.js`](<src/features/dashboard/resources.js>) | Build, tooling, or configuration source. |
 | [`src\features\dashboard\view-model.js`](<src/features/dashboard/view-model.js>) | Build, tooling, or configuration source. |
@@ -226,7 +226,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`src\form-events.js`](<src/form-events.js>) | Build, tooling, or configuration source. |
 | [`src\fragment-loader.js`](<src/fragment-loader.js>) | Build, tooling, or configuration source. |
 | [`src\legacy-app.js`](<src/legacy-app.js>) | The classic-script application monolith (about 8,300 lines, loaded before the ES modules): startup and the security/unlock flow, opening and re-reading .sav case files (loadCaseFileFromZip(), which returns every part it could not read), locking, filing lifecycle helpers, year rollover, sidebar completion (computeNavChecks()) and shared form helpers published on window. Milestone 70 is moving it into ES modules. |
-| [`src\main.js`](<src/main.js>) | Build, tooling, or configuration source. |
+| [`src\main.js`](<src/main.js>) | The ES-module application entry point: imports the core modules and feature loaders -- including those needed from the first render for their window bridges (section guidance, signature state, blank-card clean-up) -- and bootstraps the app. |
 | [`src\modal-events.js`](<src/modal-events.js>) | Build, tooling, or configuration source. |
 | [`src\prepaint.js`](<src/prepaint.js>) | Build, tooling, or configuration source. |
 | [`src\pwa-ui.js`](<src/pwa-ui.js>) | Build, tooling, or configuration source. |
@@ -260,12 +260,12 @@ This index inventories repository files retained as source or project artifacts.
 | [`tests\e2e\annotation-toolbar-containment.spec.ts`](<tests/e2e/annotation-toolbar-containment.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\annual-bond-period.spec.ts`](<tests/e2e/annual-bond-period.spec.ts>) | Milestone 67D: Annual export keeps the Part IX bond-period formulas; re-import, advisory wording and PDF fallback. |
 | [`tests\e2e\annual-field-formatting.spec.ts`](<tests/e2e/annual-field-formatting.spec.ts>) | Automated test covering the named behavior or contract. |
-| [`tests\e2e\annual-import-ward-percentage.spec.ts`](<tests/e2e/annual-import-ward-percentage.spec.ts>) | Automated test covering the named behavior or contract. |
+| [`tests\e2e\annual-import-ward-percentage.spec.ts`](<tests/e2e/annual-import-ward-percentage.spec.ts>) | An Annual workbook with ward percentages on Schedules D-1 to D-5 re-imports completely (it used to stop at the first percentage with "r2 is not a function"). |
 | [`tests\e2e\annual-mount.spec.ts`](<tests/e2e/annual-mount.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\annual-schedule-consistency.spec.ts`](<tests/e2e/annual-schedule-consistency.spec.ts>) | Automated test covering the named behavior or contract. |
-| [`tests\e2e\annual-ward-share-export.spec.ts`](<tests/e2e/annual-ward-share-export.spec.ts>) | Automated test covering the named behavior or contract. |
+| [`tests\e2e\annual-ward-share-export.spec.ts`](<tests/e2e/annual-ward-share-export.spec.ts>) | Schedule D-1 ward shares of 1, 50, 0.5 and 100 percent: the app's total, each line's on-screen Ward's Amount, the Preview & Export notes, and the exported court workbook's share cells and formulas, read with ExcelJS. |
 | [`tests\e2e\backup-restore-sav.spec.ts`](<tests/e2e/backup-restore-sav.spec.ts>) | Automated test covering the named behavior or contract. |
-| [`tests\e2e\blank-card-pruning.spec.ts`](<tests/e2e/blank-card-pruning.spec.ts>) | Automated test covering the named behavior or contract. |
+| [`tests\e2e\blank-card-pruning.spec.ts`](<tests/e2e/blank-card-pruning.spec.ts>) | Blank-card clean-up when leaving a page (src/core/form/prune-cards.js) is loaded at startup and removes untouched +Add rows while keeping entered ones. |
 | [`tests\e2e\bond-depository.spec.ts`](<tests/e2e/bond-depository.spec.ts>) | Milestone 67B: nothing in the bond block gates export; the four-state question's reveals, advisories, legacy migration, PDF lines, workbook cells and the Excel import round trip on both forms. |
 | [`tests\e2e\carryover-workflow.spec.ts`](<tests/e2e/carryover-workflow.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\case-file-core-fields-roundtrip.spec.ts`](<tests/e2e/case-file-core-fields-roundtrip.spec.ts>) | Automated test covering the named behavior or contract. |
@@ -297,7 +297,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`tests\e2e\form-entry.contract.spec.ts`](<tests/e2e/form-entry.contract.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\form-field-labels.spec.ts`](<tests/e2e/form-field-labels.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\guardian-blank-page-pruning.spec.ts`](<tests/e2e/guardian-blank-page-pruning.spec.ts>) | Automated test covering the named behavior or contract. |
-| [`tests\e2e\guardian-inventory-collection-controls.spec.ts`](<tests/e2e/guardian-inventory-collection-controls.spec.ts>) | Automated test covering the named behavior or contract. |
+| [`tests\e2e\guardian-inventory-collection-controls.spec.ts`](<tests/e2e/guardian-inventory-collection-controls.spec.ts>) | Milestone 51E: the Initial Inventory's co-guardian, service-recipient and witness Add/Remove controls -- card counts, entered values surviving re-renders, and the documented maximums. |
 | [`tests\e2e\guardian-inventory-excel-schedule-layout.spec.ts`](<tests/e2e/guardian-inventory-excel-schedule-layout.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\guardian-inventory-mount.spec.ts`](<tests/e2e/guardian-inventory-mount.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\guardian-inventory-schedule-layout.spec.ts`](<tests/e2e/guardian-inventory-schedule-layout.spec.ts>) | Automated test covering the named behavior or contract. |
@@ -350,7 +350,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`tests\e2e\save-pipeline-boot.spec.ts`](<tests/e2e/save-pipeline-boot.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\schb4-bank-accounts-ui.spec.ts`](<tests/e2e/schb4-bank-accounts-ui.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\schedule-card-layout.spec.ts`](<tests/e2e/schedule-card-layout.spec.ts>) | Automated test covering the named behavior or contract. |
-| [`tests\e2e\schedule-doc-ack.spec.ts`](<tests/e2e/schedule-doc-ack.spec.ts>) | Automated test covering the named behavior or contract. |
+| [`tests\e2e\schedule-doc-ack.spec.ts`](<tests/e2e/schedule-doc-ack.spec.ts>) | Milestone 57C-R: the supporting-documentation acknowledgement prompt in a real browser -- when a schedule prompts and when it does not. |
 | [`tests\e2e\schedule-docs-period-key.spec.ts`](<tests/e2e/schedule-docs-period-key.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\section-guidance-invariant.spec.ts`](<tests/e2e/section-guidance-invariant.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\security.spec.ts`](<tests/e2e/security.spec.ts>) | Automated test covering the named behavior or contract. |
@@ -393,7 +393,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`tests\unit\annual-accounting-pdf-model.spec.js`](<tests/unit/annual-accounting-pdf-model.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\annual-accounting-totals.spec.js`](<tests/unit/annual-accounting-totals.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\annual-pdf-schb4-attribution.spec.js`](<tests/unit/annual-pdf-schb4-attribution.spec.js>) | Automated test covering the named behavior or contract. |
-| [`tests\unit\annual-ward-percentage.spec.js`](<tests/unit/annual-ward-percentage.spec.js>) | Automated test covering the named behavior or contract. |
+| [`tests\unit\annual-ward-percentage.spec.js`](<tests/unit/annual-ward-percentage.spec.js>) | A Ward's % is always a percentage on the Annual family: pct(), the Schedule D totals, the exporter's percentValue(), and the PDF's D-1 and D-5 line amounts. |
 | [`tests\unit\b4-block-map.spec.js`](<tests/unit/b4-block-map.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\b4-export-plan.spec.js`](<tests/unit/b4-export-plan.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\b4-register-pages.spec.js`](<tests/unit/b4-register-pages.spec.js>) | Automated test covering the named behavior or contract. |
@@ -416,7 +416,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`tests\unit\date-truncation-helpers.spec.js`](<tests/unit/date-truncation-helpers.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\delete-confirmation.spec.js`](<tests/unit/delete-confirmation.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\excel-capacity-issues.spec.js`](<tests/unit/excel-capacity-issues.spec.js>) | Automated test covering the named behavior or contract. |
-| [`tests\unit\excel-engine.spec.js`](<tests/unit/excel-engine.spec.js>) | Automated test covering the named behavior or contract. |
+| [`tests\unit\excel-engine.spec.js`](<tests/unit/excel-engine.spec.js>) | Milestone 51D: the Excel engine's surviving exports -- setCell(), numValue(), and percentValue() under the 2026-09-24 rule (every share divided by 100). |
 | [`tests\unit\excel-write-targets.spec.js`](<tests/unit/excel-write-targets.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\export-guard.spec.js`](<tests/unit/export-guard.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\feature-bridge.spec.js`](<tests/unit/feature-bridge.spec.js>) | Automated test covering the named behavior or contract. |
@@ -517,7 +517,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`tests\unit\validation-issue.spec.js`](<tests/unit/validation-issue.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\ward-carryover.spec.js`](<tests/unit/ward-carryover.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\ward-lock.spec.js`](<tests/unit/ward-lock.spec.js>) | Automated test covering the named behavior or contract. |
-| [`tests\unit\ward-share-advisories.spec.js`](<tests/unit/ward-share-advisories.spec.js>) | Automated test covering the named behavior or contract. |
+| [`tests\unit\ward-share-advisories.spec.js`](<tests/unit/ward-share-advisories.spec.js>) | The Preview & Export note for Schedule D ward shares above 0 and at most 1 (src/core/filing/ward-share-advisories.js): its wording, schedule and line, advisory only. |
 | [`tests\unit\window-bridge.spec.js`](<tests/unit/window-bridge.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\xlsx-extract.spec.js`](<tests/unit/xlsx-extract.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\yes-no-radio-migration.spec.js`](<tests/unit/yes-no-radio-migration.spec.js>) | Automated test covering the named behavior or contract. |
