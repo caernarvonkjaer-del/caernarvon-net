@@ -27,6 +27,9 @@ import { renderResidenceFields } from '../../core/form/cards/residence-facility-
 // straight to Tier 1 instead. Confirmed fit: 3 of 4 Plan types for that
 // card, not 4 of 4.
 import { renderFormField } from '../../core/form/form-fields.js';
+import { esc } from '../../core/filing/escape-html.js';
+import { ic } from '../../core/ui/icons.js';
+import { formatDisplayDate } from '../../core/form/date-parser.js';
 // Annual Guardianship Plan — the third feature extraction (Milestone 4,
 // Phases A and B of INDEX-SPLIT-PLAN.md's migration sequence). Dynamically
 // imported by legacy-app.js's mountPlanAnnualFeature()/mountPlanAnnualNav()
@@ -62,9 +65,8 @@ import { renderFormField } from '../../core/form/form-fields.js';
 // directly; a feature module never needs it in scope. Plan Minor is the one
 // Plan type that does still call countyInputS (index.js:190), so it keeps it.
 const {
-  esc, ic, inpS, pageNavS,
+  inpS, pageNavS,
   renderScheduleDocsSection, txtP, chkP, planQ, planCheckGroup, yesNoCheckboxS, yesNoRadioHTML,
-  formatDisplayDate,
   PLAN_RIGHTS, PLAN_RIGHT_STATES, PLAN_ADLS, PLAN_ADL_RATINGS, PLAN_BENEFITS,
 } = window;
 

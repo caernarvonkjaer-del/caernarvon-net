@@ -1,5 +1,8 @@
 // Pure ESM application bootstrap and orchestration entry point.
 import './core/state.js';
+// Milestone 70: the classic monolith's door to module code (see the file).
+// Imported before initApp() runs below -- the first moment its functions do.
+import './legacy-bridge.js';
 import './core/ui/dialogs.js';
 import './core/party-resolver.js';
 import './core/case-resolver.js';

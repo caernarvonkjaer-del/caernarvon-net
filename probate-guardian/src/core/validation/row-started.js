@@ -69,3 +69,19 @@ if (typeof window !== 'undefined') {
   window.rowStarted = rowStarted;
   window.startedRows = startedRows;
 }
+
+// Moved from legacy-app.js by Milestone 70's 70B.
+// A co-guardian slot counts as "in use" if any field is filled, not just Name —
+// otherwise partially-filled co-guardian rows silently vanish from export/validation/checkmarks.
+// Annual Accounting binds officeStreet/officeCityStateZip where Simplified
+// binds residenceStreet/residenceCityStateZip, so both pairs have to be
+// checked here. Missing the office pair meant an Annual co-guardian with
+// only an office address read as "no data": skipped by validate() and
+// dropped from the exported court document.
+export function guardianHasAnyData(g){
+  // isPreparer (Milestone 67A): a card the filer has ticked as the preparer
+  // is not a blank card, and a flagged row must then supply its name.
+  return !!(g&&(g.name||g.ssn||g.phone||g.email||g.mailingStreet||g.mailingCityStateZip
+    ||g.residenceStreet||g.residenceCityStateZip||g.officeStreet||g.officeCityStateZip
+    ||g.signatureDate||g.isPreparer));
+}

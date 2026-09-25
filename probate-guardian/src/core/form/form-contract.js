@@ -10,6 +10,7 @@ import {
   getFieldDraftIssues,
   recordDateDraft,
 } from './commit-coordinator.js';
+import { validateSecurityInput } from '../security/input-hardening.js';
 
 if (typeof window !== 'undefined') {
   window._transientDrafts = window._transientDrafts || {};
@@ -363,12 +364,10 @@ export function writeDraftValue(control, options = {}) {
     // on every keystroke, so a typed "1,000" must not sit there as 1 until
     // blur. Phone/SSN stay blur-only: those formatters insert punctuation and
     // move the caret, which Milestone 24 ruled out here on purpose.
-    const filter = kind === 'signed-money' ? window.sanitizeDecimal : window.sanitizeNonNegativeDecimal;
-    if (filter) {
-      const filtered = filter(rawValue);
-      if (control.value !== filtered) control.value = filtered;
-      rawValue = filtered;
-    }
+    const filter = kind === 'signed-money' ? sanitizeDecimal : sanitizeNonNegativeDecimal;
+    const filtered = filter(rawValue);
+    if (control.value !== filtered) control.value = filtered;
+    rawValue = filtered;
   }
 
   if (kind === 'date') {
@@ -455,29 +454,27 @@ export function finalizeFieldValue(control, options = {}) {
       if (window.setPath) window.setPath(window.D, path, parsed);
     }
   } else if (kind === 'caseNumber' || control.dataset?.formFormat === 'case-number' || control.dataset?.annualFormat === 'case') {
-    const formatted = window.finalizeCaseNumber ? window.finalizeCaseNumber(rawValue) : sanitizeStoredText(rawValue);
+    const formatted = finalizeCaseNumber(rawValue);
     control.value = formatted;
     if (window.setPath) window.setPath(window.D, path, formatted);
   } else if (kind === 'barNumber' || control.dataset?.formFormat === 'bar-number' || control.dataset?.annualFormat === 'bar') {
-    const formatted = window.formatBarNumber ? window.formatBarNumber(rawValue) : sanitizeStoredText(rawValue);
+    const formatted = formatBarNumber(rawValue);
     control.value = formatted;
     if (window.setPath) window.setPath(window.D, path, formatted);
   } else if (kind === 'zip' || control.dataset?.formFormat === 'city-state-zip' || control.dataset?.annualFormat === 'zip') {
     // applyZipLimit() caps the field at nine digits (ZIP+4) in place before
     // formatting -- both legacy write paths did; this one had skipped it.
-    if (window.applyZipLimit) {
-      window.applyZipLimit(control);
-      rawValue = control.value;
-    }
+    applyZipLimit(control);
+    rawValue = control.value;
     const formatted = formatCityStateZip(rawValue);
     control.value = formatted;
     if (window.setPath) window.setPath(window.D, path, formatted);
     setCityStateZipFeedback(control, isMalformedCityStateZip(formatted));
-  } else if (kind === 'phone' && window.formatPhone) {
-    const formatted = window.formatPhone(rawValue);
+  } else if (kind === 'phone') {
+    const formatted = formatPhone(rawValue);
     control.value = formatted;
     if (window.setPath) window.setPath(window.D, path, formatted);
-  } else if (kind === 'ssn' && window.formatSSN) {
+  } else if (kind === 'ssn') {
     // Above the generic preserve branch on purpose: renderFormField() stamps
     // SSN/EIN fields data-field-format-policy="preserve" (identifier-like,
     // so sanitizeStoredText() semantics), which used to catch them first and
@@ -487,23 +484,23 @@ export function finalizeFieldValue(control, options = {}) {
     // render, and Annual/Final/Trust keep the dash insertion their retired
     // persistAnnualControl() gave them (there per keystroke; here on blur,
     // the two-phase contract's rule for caret-moving formatters).
-    const formatted = window.formatSSN(rawValue);
+    const formatted = formatSSN(rawValue);
     control.value = formatted;
     if (window.setPath) window.setPath(window.D, path, formatted);
   } else if (policy === 'preserve') {
     // data-field-sanitize="security" (renderFormField()'s securitySanitize
     // option -- Annual Accounting's inpD() is its only caller) runs
-    // legacy-app.js's validateSecurityInput() first: exactly what the
+    // validateSecurityInput() (src/core/security/input-hardening.js) first: exactly what the
     // accounting family's own focusout handler did before it was retired,
     // and only for those fields -- no other filing type's free text was ever
     // sanitized this way, and still isn't. It used to also blank a field
     // outright on a bare SQL-keyword match ("Update to appraisal value"
     // silently wiped on blur) -- that check was removed at the source
-    // (legacy-app.js's detectSQLInjection()) since this app has no SQL
+    // (the monolith's detectSQLInjection()) since this app has no SQL
     // backend for it to ever protect; only real XSS/path-traversal patterns
     // can still trigger a block here.
-    const secured = (control.dataset?.fieldSanitize === 'security' && window.validateSecurityInput)
-      ? window.validateSecurityInput(control.dataset.fieldLabel || control.dataset.annualLabel || path, rawValue)
+    const secured = control.dataset?.fieldSanitize === 'security'
+      ? validateSecurityInput(control.dataset.fieldLabel || control.dataset.annualLabel || path, rawValue)
       : rawValue;
     const cleaned = sanitizeStoredText(secured);
     if (window.setPath) window.setPath(window.D, path, cleaned);
@@ -512,14 +509,14 @@ export function finalizeFieldValue(control, options = {}) {
     const formatted = formatSafeTitleCase(rawValue);
     control.value = formatted;
     if (window.setPath) window.setPath(window.D, path, formatted);
-  } else if (kind === 'money' && window.sanitizeNonNegativeDecimal) {
-    const cleaned = window.sanitizeNonNegativeDecimal(rawValue);
+  } else if (kind === 'money') {
+    const cleaned = sanitizeNonNegativeDecimal(rawValue);
     control.value = cleaned;
     if (window.setPath) window.setPath(window.D, path, parseFloat(cleaned) || 0);
-  } else if (kind === 'signed-money' && window.sanitizeDecimal) {
+  } else if (kind === 'signed-money') {
     // "Enter as negative" amounts (Annual Schedule C losses, Schedule E
     // transfers out): the one money kind that keeps a leading minus.
-    const cleaned = window.sanitizeDecimal(rawValue);
+    const cleaned = sanitizeDecimal(rawValue);
     control.value = cleaned;
     if (window.setPath) window.setPath(window.D, path, parseFloat(cleaned) || 0);
   }
@@ -549,6 +546,189 @@ export function getFieldDraftIssueMessages(data = window.D) {
 }
 
 // Global exposure for legacy interop
+// ── Field formatters and filters ─────────────────────────────
+// Moved from src/legacy-app.js by Milestone 70's 70B: the typing- and
+// blur-time formatting every field kind gets, beside the stored-text rules
+// above that they build on. validateSecurityInput() lives with the other
+// injection checks in src/core/security/input-hardening.js.
+
+// Strip everything except digits and a single decimal point — used for
+// amount/percent fields instead of type="number" so we fully own character
+// filtering (native number inputs allow '-' inconsistently across WebView
+// versions, and their spinner buttons don't fire keydown so keydown-based
+// minus-blocking can't catch them).
+export function sanitizeNonNegativeDecimal(s){
+  let v=String(s||'').replace(/[^0-9.]/g,'');
+  const firstDot=v.indexOf('.');
+  if(firstDot!==-1){
+    v=v.slice(0,firstDot+1)+v.slice(firstDot+1).replace(/\./g,'');
+  }
+  return v;
+}
+
+// Same as sanitizeNonNegativeDecimal but keeps a single leading '-' -- for
+// the couple of fields (Annual Schedule C's Loss/Reduction, Schedule E's
+// Transfer Out Amt) that are explicitly entered as negative. Those used to
+// be native type="number" instead, which is exactly the pattern the
+// comment above sanitizeNonNegativeDecimal explains this app moved away
+// from app-wide (inconsistent '-' handling and no keydown events from the
+// spinner buttons across WebView versions) -- these two were simply never
+// migrated when the rest of the app was.
+export function sanitizeDecimal(s){
+  const str=String(s||'');
+  const neg=str.trim().startsWith('-');
+  const digits=sanitizeNonNegativeDecimal(str);
+  // Keep a lone '-' even before any digits are typed (a valid, if
+  // incomplete, intermediate state) -- requiring digits first would wipe
+  // the sign the instant it's typed, before the digits that are supposed
+  // to follow it exist yet.
+  return neg?'-'+digits:digits;
+}
+
+// Format phone as (123) 456-7890 — accepts only digits, pads/truncates to 10
+export function formatPhone(s){
+  const digits=String(s||'').replace(/\D/g,'').slice(0,10);
+  if(digits.length===0)return '';
+  if(digits.length<=3)return `(${digits}`;
+  if(digits.length<=6)return `(${digits.slice(0,3)}) ${digits.slice(3)}`;
+  return `(${digits.slice(0,3)}) ${digits.slice(3,6)}-${digits.slice(6)}`;
+}
+
+// Format SSN/EIN as XXX-XX-XXXX — accepts only digits, pads/truncates to 9
+export function formatSSN(s){
+  const digits=String(s||'').replace(/\D/g,'').slice(0,9);
+  if(digits.length===0)return '';
+  if(digits.length<=3)return digits;
+  if(digits.length<=5)return `${digits.slice(0,3)}-${digits.slice(3)}`;
+  return `${digits.slice(0,3)}-${digits.slice(3,5)}-${digits.slice(5)}`;
+}
+
+// Case Number format is YY-######-GD: a 2-digit year, a sequentially
+// issued 6-digit case number, and "GD" for Guardianship -- the only case
+// type this app produces, so it's never something the guardian types
+// themselves. Typing-time only inserts the dash after the year and caps
+// input at 8 digits (2 + 6); it deliberately does NOT pad the sequence or
+// append "-GD" here, so the field doesn't jump to "12-000000-GD" while
+// the guardian is still in the middle of typing the sequence. That
+// happens once in finalizeCaseNumber() below, on blur.
+export function formatCaseNumber(s){
+  if(!s)return '';
+  const raw=String(s).trim();
+  const suffixMatch=raw.match(/[-_\s]?([A-Za-z]{1,4})$/);
+  const suffix=suffixMatch?suffixMatch[1]:'';
+  const withoutSuffix=suffixMatch?raw.slice(0,suffixMatch.index):raw;
+  let digits=withoutSuffix.replace(/\D/g,'');
+  if(digits.length>=8&&digits.startsWith('20')){
+    digits=digits.slice(2);
+  }
+  digits=digits.slice(0,8);
+  if(digits.length<=2){
+    return suffix ? `${digits}-${suffix}` : digits;
+  }
+  const formattedDigits=`${digits.slice(0,2)}-${digits.slice(2)}`;
+  return suffix ? `${formattedDigits}-${suffix}` : formattedDigits;
+}
+
+// Blur-time finalization: left-pads the sequence to 6 digits and appends
+// the fixed "-GD" suffix, so "3-14-GD" from a guardian who typed "3145"
+// becomes the properly formed "03-000145-GD". Only a bare year (0-2
+// digits, nothing typed for the sequence yet) is left alone -- forcing a
+// dangling "03--GD" onto a case number with no sequence at all would be
+// worse than just leaving it incomplete for the required-field check to
+// catch.
+export function finalizeCaseNumber(s){
+  if(!s)return '';
+  const raw=String(s).trim();
+  if(!raw)return '';
+  const suffixMatch=raw.match(/[-_\s]?([A-Za-z]{2,4})$/);
+  const suffix=suffixMatch?suffixMatch[1].toUpperCase():'GD';
+  const withoutSuffix=suffixMatch?raw.slice(0,suffixMatch.index):raw;
+  let digits=withoutSuffix.replace(/\D/g,'');
+  if(!digits)return raw;
+  if(digits.length>=8&&digits.startsWith('20')){
+    digits=digits.slice(2);
+  }
+  if(digits.length<=2)return digits;
+  const year=digits.slice(0,2);
+  const seq=digits.slice(2,8).padStart(6,'0');
+  return `${year}-${seq}-${suffix}`;
+}
+
+// Format Florida Bar Number — a fixed-width, digits-only identifier. Bar numbers
+// are sequential; retain all eight significant positions and normalize shorter
+// values with leading zeroes when editing finishes.
+export function formatBarNumber(s){
+  const digits=String(s??'').replace(/\D/g,'').slice(0,8);
+  return digits?digits.padStart(8,'0'):'';
+}
+
+// Format bank account number — preserved identifier (may contain letters/dashes/slashes)
+export function formatAccountNumber(s){
+  return sanitizeStoredText(s);
+}
+
+// Format check number — preserved identifier (may contain letters/dashes, e.g. CHK-104A)
+export function formatCheckNumber(s){
+  return sanitizeStoredText(s);
+}
+
+// Format Name & Address — safe title case on blur, preserving acronyms and mixed case
+export function formatName(s){
+  return formatSafeTitleCase(s);
+}
+
+// Same as formatName for addresses/streets
+export function formatAddress(s){
+  return formatName(s);
+}
+
+// Excel imports can carry all-lowercase (or all-caps) text. Walk the parsed
+// data and apply the exact same per-field capitalization that manual typing
+// already gets (see inpD/inpS/bindForms), keyed off the field name instead
+// of a form label, so imported values match what typing them would produce.
+export function capitalizeImportedFields(obj){
+  if(Array.isArray(obj)){
+    obj.forEach(capitalizeImportedFields);
+    return obj;
+  }
+  if(obj&&typeof obj==='object'){
+    for(const k of Object.keys(obj)){
+      const v=obj[k];
+      if(typeof v!=='string'||!v){continue;}
+      const kl=k.toLowerCase();
+      if(kl.includes('email')){
+        // leave as-is
+      }else if(kl.includes('citystatezip')){
+        obj[k]=formatCityStateZip(v);
+      }else if(kl.includes('street')||(kl.includes('address'))){
+        obj[k]=formatAddress(v);
+      }else if(['name','payer','payee','lender','creditor','institution','guardian','attorney','trustee','claimant','description','bonding','company','trust'].some(w=>kl.includes(w))){
+        obj[k]=formatName(v);
+      }
+    }
+    for(const k of Object.keys(obj)){
+      if(obj[k]&&typeof obj[k]==='object')capitalizeImportedFields(obj[k]);
+    }
+  }
+  return obj;
+}
+
+// Limit digits in a City/State/Zip field to 9 (a 5-digit ZIP, or a full
+// ZIP+4) -- was capped at 5, which silently mangled any ZIP+4 entry
+// ("33756-4321" loses its last 4 digits mid-keystroke instead of just
+// rejecting the extra ones cleanly).
+export function applyZipLimit(el){
+  const digitCount=(el.value.match(/\d/g)||[]).length;
+  if(digitCount>9){
+    const arr=el.value.split('');
+    let removed=0;
+    for(let i=arr.length-1;i>=0&&removed<digitCount-9;i--){
+      if(/\d/.test(arr[i])){arr.splice(i,1);removed++;}
+    }
+    el.value=arr.join('');
+  }
+}
+
 if (typeof window !== 'undefined') {
   window.sanitizeStoredText = sanitizeStoredText;
   window.formatSafeTitleCase = formatSafeTitleCase;

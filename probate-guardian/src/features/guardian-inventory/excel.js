@@ -24,12 +24,12 @@ import {
 import { alertModal } from '../../core/ui/dialogs.js';
 import { setStatus, scheduleStatusClear } from '../../core/ui/transient-status.js';
 import { beginExport } from '../../core/ui/export-guard.js';
+import { assertWorkbookWithinLimits, getImportProgressEl, sanitizeObjectData, validateImportFile } from '../../core/security/input-hardening.js';
+import { capitalizeImportedFields } from '../../core/form/form-contract.js';
 
 const {
   renderPage, ensureTemplate, saveData, navigate,
-  getImportProgressEl, validateImportFile, assertWorkbookWithinLimits,
-  capitalizeImportedFields,
-  sanitizeObjectData, mk,
+  mk,
 } = window;
 
 // Milestone 60K: the Excel boundary conversion for percentages, both ways.
@@ -157,7 +157,7 @@ export async function doSaveExcel(){
     // Milestone 51D: setCell now comes from core/excel/excel-engine.js. The local
     // closure this replaces was byte-identical in all three feature excel.js files
     // apart from a null-sheet guard, and routed text through the same
-    // sanitizeForExcel() the shared version delegates to.
+    // formula-injection guard, sanitizeCellValue().
 
     setStatus(stat,'Loading template…');
     const bin=atob(templateB64);

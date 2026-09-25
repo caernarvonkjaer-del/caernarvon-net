@@ -19,11 +19,15 @@ first. This file is only orientation.
   validation summary, ward lifecycle glue, the Guardian Inventory form
   engine, init). It publishes functions on `window`; modules reach it the
   same way. Milestone 42's `scripts/audit-window-bridge.mjs` inventories
-  that bridge.
+  that bridge. Milestone 70 is moving what is left into modules; code that
+  has moved and is still called from here is reached through one-line
+  wrappers and `src/legacy-bridge.js`.
 - `src/core/` — ES modules: state, persistence (`case-file.js`, crypto,
   recovery cache), navigation (router, ward lifecycle, ward county), form
   contract and field primitives, validation, PDF engine and preview, Excel
-  engine, filing descriptors and readiness.
+  engine, filing descriptors and readiness, icons (`ui/icons.js`), money
+  formatting (`format/money.js`) and import hardening
+  (`security/input-hardening.js`).
 - `src/features/<filing>/` — one lazily-loaded module per filing type
   (`index.js` pages/nav/validate, `pdf-model.js`, `print.js`, `excel.js`
   where applicable), loaded through `src/features-loader.js`.

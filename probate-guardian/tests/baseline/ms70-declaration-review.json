@@ -408,9 +408,7 @@
   "_launchPrefPut": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24).",
   "_sessionCacheClear": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24).",
   "_sessionCachePut": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24).",
-  "circuitCourtCaption": "test-only confirmed: only tests/e2e/cover-county.spec.ts reads it (through window).",
   "getWardHeadlineTotal": "Stays in 70D: it swaps window.D to compute another filing's total, which is exactly 70D's risk.",
-  "hasSixthCircuitLocalGuidance": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24).",
   "loadCaseFileFromZip": "Changed on master in b2d97f5 (returns every part it could not read); a re-implement row in MILESTONE-70-FIX-LEDGER.md.",
   "pct": "Deleted on master in c62f890 (its only caller now imports totals.js's copy); a re-implement row in MILESTONE-70-FIX-LEDGER.md.",
   "tdR": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24).",
@@ -425,15 +423,8 @@
   "BLANK_CARD_COLLECTIONS": "delete-as-dead 70C",
   "BLANK_SCHEDULE_ENTRY": "move 70C",
   "CARRY_SOURCE_TYPE": "delete-as-dead 70G",
-  "CIRCUIT_ORDINALS": "move 70B",
   "CRYPTO_VERIFIER_PLAINTEXT": "move 70I",
-  "EXCEL_IMPORT_LIMITS": "move 70B",
-  "FL_COUNTIES": "move 70B",
-  "FL_COUNTY_CIRCUIT": "move 70B",
-  "GUARDIAN_CALC_METHODS": "move 70B",
   "HELP_CONTENT": "move 70H",
-  "ICONS": "move 70B",
-  "IMPORT_SIZE_LIMITS": "move 70B",
   "INITIAL_ADLS": "move 70C",
   "INITIAL_ADL_RATINGS": "move 70C",
   "INVENTORY_TYPES": "move 70C",
@@ -441,7 +432,6 @@
   "LAUNCH_PREF_KEY_HANDLE": "delete-as-dead 70I",
   "LAUNCH_PREF_KEY_OPENED": "delete-as-dead 70I",
   "LAUNCH_PREF_STORE": "move 70I",
-  "MISSING_COUNTY_CAPTION_HTML": "move 70B",
   "PAGES": "move 70K",
   "PAGES_ANNUAL": "move 70K",
   "PAGES_GUARDIAN": "move 70C",
@@ -485,7 +475,6 @@
   "WALKTHROUGH_SIMPLIFIED": "move 70H",
   "WALKTHROUGH_STEPS": "move 70H",
   "WARD_SYSTEM_KEYS": "move 70G",
-  "ZIP_MAGIC": "move 70B",
   "_activityLogEntries": "move 70H",
   "_annualFeatureBridge": "move 70K",
   "_appState": "move 70I",
@@ -539,18 +528,14 @@
   "applyTheme": "move 70H",
   "applyYearData": "move 70G",
   "applyZipLimit": "move 70B",
-  "assertWorkbookWithinLimits": "move 70B",
   "auditLog": "move 70I",
   "bindForms": "move 70F",
   "browserRecommendationNotice": "move 70F",
   "calc": "move 70B",
-  "capitalizeImportedFields": "move 70B",
   "carryOverAccountingToAccounting": "move 70G",
   "carryOverFields": "move 70G",
   "carryOverSummaryNote": "move 70H",
   "checkInActiveYear": "move 70G",
-  "circuitCourtCaption": "test-only 70B",
-  "circuitForCounty": "move 70B",
   "clearAllData": "move 70I",
   "clearPartyCompareSelection": "move 70G",
   "closeModal": "move 70H",
@@ -571,8 +556,6 @@
   "deleteWardYear": "move 70G",
   "describeConversion": "move 70G",
   "describeYearLabel": "move 70G",
-  "detectPathTraversal": "move 70B",
-  "detectXSSPayload": "move 70B",
   "doAddWard": "move 70H",
   "doConfirmSimplifiedEligibility": "move 70H",
   "doConvertWard": "move 70G",
@@ -589,7 +572,6 @@
   "doPartyUnmergeSelected": "move 70G",
   "doPickCase": "move 70G",
   "doPickParty": "move 70G",
-  "doRenameWard": "move 70H",
   "editPriorYear": "move 70G",
   "emptyDataGuardian": "move 70C",
   "emptyInitialProvider": "move 70C",
@@ -629,7 +611,6 @@
   "getCurrentPageKey": "move 70F",
   "getDashboardFeatureBridge": "move 70K",
   "getGuardianFeatureBridge": "move 70K",
-  "getImportProgressEl": "move 70B",
   "getPath": "move 70F",
   "getPlanAnnualFeatureBridge": "move 70K",
   "getPlanInitialFeatureBridge": "move 70K",
@@ -645,7 +626,6 @@
   "handleHash": "move 70K",
   "handleScheduleDocUpload": "move 70F",
   "handleStartupOpenInputChange": "move 70I",
-  "hasSixthCircuitLocalGuidance": "delete-as-dead 70B",
   "helpPanelOpen": "move 70H",
   "highlightErrors": "move 70F",
   "ic": "move 70B",
@@ -718,7 +698,6 @@
   "pvStep": "move 70F",
   "queueAllScheduleDocValidations": "move 70F",
   "queueScheduleDocValidation": "move 70F",
-  "r2": "move 70B",
   "refreshCarrySourceSelect": "move 70G",
   "refreshEligCarrySource": "move 70H",
   "removeScheduleDoc": "move 70F",
@@ -734,12 +713,8 @@
   "resetAutoLockTimer": "move 70I",
   "resetNavSectionExpanded": "move 70F",
   "resetYearlyFieldsForNewYear": "move 70G",
-  "sanitizeDecimal": "move 70B",
-  "sanitizeForExcel": "move 70B",
-  "sanitizeInput": "move 70B",
   "sanitizeNonNegativeDecimal": "move 70B",
   "sanitizeObjectData": "move 70B",
-  "sanitizeObjectDataInPlace": "move 70B",
   "saveRecentlyOpenedWards": "move 70G",
   "saveTemplate": "move 70E",
   "saveUnlockFailState": "move 70I",
@@ -757,7 +732,6 @@
   "showPickCaseModal": "move 70G",
   "showPickPartyModal": "move 70G",
   "showPriorYearsModal": "move 70G",
-  "showRenameWardModal": "move 70H",
   "showSimplifiedEligibilityModal": "move 70H",
   "showStartNewYearModal": "move 70G",
   "showUnlockError": "move 70I",
@@ -793,9 +767,92 @@
   "userGuideAnchorFor": "move 70H",
   "validate": "move 70F",
   "validateImportFile": "move 70B",
-  "validateSecurityInput": "move 70B",
   "validationPanel": "move 70F",
   "walkthroughActive": "move 70H",
   "wardNameComboItems": "move 70H"
+ },
+ "landed": {
+  "70B": {
+   "note": "Gone from src/legacy-app.js in 70B. Each keeps the placement the review confirmed (was). Moved into modules: the 70B build record in MILESTONE-70-PROPOSAL.md names each destination; circuitCourtCaption, hasSixthCircuitLocalGuidance, showRenameWardModal and doRenameWard were deleted as unreachable. Names that still appear in the draft as disposition wrapper moved too; only their one-line wrapper is left.",
+   "entries": {
+    "CIRCUIT_ORDINALS": {
+     "was": "move 70B"
+    },
+    "EXCEL_IMPORT_LIMITS": {
+     "was": "move 70B"
+    },
+    "FL_COUNTIES": {
+     "was": "move 70B"
+    },
+    "FL_COUNTY_CIRCUIT": {
+     "was": "move 70B"
+    },
+    "GUARDIAN_CALC_METHODS": {
+     "was": "move 70B"
+    },
+    "ICONS": {
+     "was": "move 70B"
+    },
+    "IMPORT_SIZE_LIMITS": {
+     "was": "move 70B"
+    },
+    "MISSING_COUNTY_CAPTION_HTML": {
+     "was": "move 70B"
+    },
+    "ZIP_MAGIC": {
+     "was": "move 70B"
+    },
+    "assertWorkbookWithinLimits": {
+     "was": "move 70B"
+    },
+    "capitalizeImportedFields": {
+     "was": "move 70B"
+    },
+    "circuitCourtCaption": {
+     "was": "test-only 70B",
+     "note": "test-only confirmed: only tests/e2e/cover-county.spec.ts reads it (through window)."
+    },
+    "circuitForCounty": {
+     "was": "move 70B"
+    },
+    "detectPathTraversal": {
+     "was": "move 70B"
+    },
+    "detectXSSPayload": {
+     "was": "move 70B"
+    },
+    "doRenameWard": {
+     "was": "move 70H"
+    },
+    "getImportProgressEl": {
+     "was": "move 70B"
+    },
+    "hasSixthCircuitLocalGuidance": {
+     "was": "delete-as-dead 70B",
+     "note": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24)."
+    },
+    "r2": {
+     "was": "move 70B"
+    },
+    "sanitizeDecimal": {
+     "was": "move 70B"
+    },
+    "sanitizeForExcel": {
+     "was": "move 70B"
+    },
+    "sanitizeInput": {
+     "was": "move 70B"
+    },
+    "sanitizeObjectDataInPlace": {
+     "was": "move 70B"
+    },
+    "showRenameWardModal": {
+     "was": "move 70H"
+    },
+    "validateSecurityInput": {
+     "was": "move 70B"
+    }
+   }
+  }
  }
 }

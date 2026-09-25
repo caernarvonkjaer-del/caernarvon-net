@@ -4,7 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   n, r2, wardShare, isRestrictedAnswer, auditFeeFor, makeGuardianCalc, calcTotalsGuardian,
-  GUARDIAN_CALC_METHODS, AUDIT_FEE_THRESHOLD, AUDIT_FEE_OVER_THRESHOLD,
+  GUARDIAN_CALC_METHODS, AUDIT_FEE_THRESHOLD, AUDIT_FEE_OVER_THRESHOLD, calc,
 } from '../../src/features/guardian-inventory/totals.js';
 
 // Milestone 60A. The Verified Initial Inventory's arithmetic, checked against
@@ -224,38 +224,35 @@ describe('schedule totals, summaries and bond lines against the workbook formula
 
 // Completion criterion 3 (MILESTONE-60-PROPOSAL.md): the live UI and the PDF
 // must agree because they share one implementation, not because two copies
-// happen to match. legacy-app.js is a classic script, so its `calc` adapter
-// is sliced out of the shipped source and evaluated here against this module
-// -- proving the code that ships forwards to it, and that the adapter's
-// figures on the rounding fixture are the workbook's, not the old per-row
-// rounding. Same convention as cell-reader.spec.js and
-// date-truncation-helpers.spec.js.
-describe('legacy-app.js\'s calc adapter forwards to this module', () => {
-  const src = fs.readFileSync(path.join(root, 'src', 'legacy-app.js'), 'utf8');
-  const start = src.indexOf('const GUARDIAN_CALC_METHODS=');
-  const end = src.indexOf('window.calc=calc;', start);
-  const body = src.slice(start, end);
-
-  const buildAdapter = (D) => {
-    const win = { makeGuardianCalc };
-    return new Function('window', 'D', `${body}\nreturn calc;`)(win, D);
+// happen to match. The UI's calc.totalA1(), calc.wardVal(entry), ... used to
+// be a forwarder defined in legacy-app.js, sliced out of its source and
+// evaluated here; Milestone 70's 70B moved it into this module as `calc`, so
+// it is imported and tested directly, and legacy-app.js keeps only a one-line
+// Proxy onto it (through src/legacy-bridge.js), checked at the end.
+describe('calc: the UI\'s call shape, bound to the open filing', () => {
+  const withWindowD = (D, fn) => {
+    const original = globalThis.window;
+    globalThis.window = { D };
+    try { return fn(); } finally {
+      if (original === undefined) delete globalThis.window;
+      else globalThis.window = original;
+    }
   };
 
-  test('the adapter block is present and self-contained', () => {
-    expect(start).toBeGreaterThan(0);
-    expect(end).toBeGreaterThan(start);
-    // The old formulas are gone from the classic script (secondary evidence;
-    // the behavioral parity below is the proof).
-    expect(body).not.toMatch(/wardPercent\|\|0\)\/100/);
-    expect(body).not.toMatch(/r2\(/);
+  test('is frozen, and holds the old formulas nowhere', () => {
+    expect(Object.isFrozen(calc)).toBe(true);
+    // The old per-row formulas are gone from the classic script (secondary
+    // evidence; the behavioral parity below is the proof).
+    const src = fs.readFileSync(path.join(root, 'src', 'legacy-app.js'), 'utf8');
+    expect(src).not.toMatch(/wardPercent\|\|0\)\/100/);
+    expect(src).not.toMatch(/GUARDIAN_CALC_METHODS/);
   });
 
-  test('every method name the UI calls exists on both the adapter and the module', () => {
-    const adapter = buildAdapter(empty());
-    expect(Object.keys(adapter).sort()).toEqual([...GUARDIAN_CALC_METHODS].sort());
+  test('every method name the UI calls exists on calc and on the module', () => {
+    expect(Object.keys(calc).sort()).toEqual([...GUARDIAN_CALC_METHODS].sort());
   });
 
-  test('parity: adapter figures equal the module\'s for a mixed-percentage filing', () => {
+  test('parity: calc figures equal the module\'s for a mixed-percentage filing', () => {
     const D = {
       ...empty(),
       scheduleA1: ROUNDING_ROWS,
@@ -266,25 +263,41 @@ describe('legacy-app.js\'s calc adapter forwards to this module', () => {
       scheduleB4: [{ fullLiabilityBalance: '321', wardPercent: '75' }],
       scheduleC5: [{ totalAssetValue: '4000', jointOwnerPercent: '33.33' }],
     };
-    const adapter = buildAdapter(D);
-    const t = calcTotalsGuardian(D);
-    for (const key of Object.keys(t)) {
-      expect(adapter[key](), key).toBe(t[key]);
-    }
-    expect(adapter.wardVal(D.scheduleA1[0])).toBe(makeGuardianCalc(D).wardVal(D.scheduleA1[0]));
+    withWindowD(D, () => {
+      const t = calcTotalsGuardian(D);
+      for (const key of Object.keys(t)) {
+        expect(calc[key](), key).toBe(t[key]);
+      }
+      expect(calc.wardVal(D.scheduleA1[0])).toBe(makeGuardianCalc(D).wardVal(D.scheduleA1[0]));
+    });
   });
 
-  test('the adapter reads window.D live: the rounding fixture gives the workbook\'s $2,042.10 through it', () => {
+  test('calc reads window.D live: the rounding fixture gives the workbook\'s $2,042.10 through it', () => {
     const D = { ...empty(), scheduleA1: ROUNDING_ROWS };
-    const adapter = buildAdapter(D);
-    expect(r2(adapter.totalA1())).toBe(2042.1);
-    // Mutating the filing is seen on the next call -- no snapshot.
-    D.scheduleA1 = [{ fullAssetValue: '100', wardPercent: '100' }];
-    expect(adapter.totalA1()).toBe(100);
+    withWindowD(D, () => {
+      expect(r2(calc.totalA1())).toBe(2042.1);
+      // Mutating the filing is seen on the next call -- no snapshot.
+      D.scheduleA1 = [{ fullAssetValue: '100', wardPercent: '100' }];
+      expect(calc.totalA1()).toBe(100);
+      // And so is a filing swapped in whole (a caller totalling another one).
+      globalThis.window.D = { ...empty(), scheduleA1: [{ fullAssetValue: '50', wardPercent: '100' }] };
+      expect(calc.totalA1()).toBe(50);
+    });
   });
 
-  test('the adapter fails loudly rather than printing $0.00 if the module never loaded', () => {
-    const adapter = new Function('window', 'D', `${body}\nreturn calc;`)({}, empty());
-    expect(() => adapter.total()).toThrow(/Guardian calculator not loaded/);
+  test('legacy-app.js\'s calc is a one-line forwarder onto this one, and fails loudly without it', () => {
+    const src = fs.readFileSync(path.join(root, 'src', 'legacy-app.js'), 'utf8');
+    const line = src.split('\n').find((l) => l.startsWith('const calc='));
+    expect(line).toBe('const calc=new Proxy({},{get:(_,k)=>window.GuardianFormsLegacyBridge.calc[k]});');
+    const forwarder = (win) => new Function('window', `${line}\nreturn calc;`)(win);
+    const D = { ...empty(), scheduleA1: ROUNDING_ROWS };
+    withWindowD(D, () => {
+      const legacy = forwarder({ GuardianFormsLegacyBridge: { calc } });
+      expect(legacy.totalA1()).toBe(calc.totalA1());
+      // A typo still throws rather than printing $0.00.
+      expect(() => legacy.totalAl()).toThrow(TypeError);
+    });
+    // No bridge (main.js never ran): a TypeError, never a silent zero.
+    expect(() => forwarder({}).total()).toThrow(TypeError);
   });
 });

@@ -24,6 +24,9 @@ import { renderPartyNameField } from '../../core/form/cards/guardian-attorney-ca
 // "shared" helper with exactly one user is not an abstraction, and its
 // general name invited the next type to contort its page to fit.
 import { renderFormField } from '../../core/form/form-fields.js';
+import { esc } from '../../core/filing/escape-html.js';
+import { ic } from '../../core/ui/icons.js';
+import { formatDisplayDate } from '../../core/form/date-parser.js';
 // Simplified Annual Plan — the second feature extraction (Milestone 3,
 // Phase B/C of INDEX-SPLIT-PLAN.md's migration sequence). Dynamically
 // imported by legacy-app.js's mountPlanSimplifiedFeature()/
@@ -48,9 +51,8 @@ import { renderFormField } from '../../core/form/form-fields.js';
 // Milestone 51C: `countyInputS` dropped for the same reason -- destructured
 // here but never called. Of the four Plan types only plan-minor still calls it.
 const {
-  esc, ic, inpS, pageNavS,
+  inpS, pageNavS,
   renderScheduleDocsSection, txtP, chkP, yesNoCheckboxS,
-  formatDisplayDate,
 } = window;
 
 // print.js is dynamically imported only when the user reaches /print or

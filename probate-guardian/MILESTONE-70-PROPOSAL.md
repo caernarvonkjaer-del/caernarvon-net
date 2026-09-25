@@ -2,11 +2,16 @@
 
 ## Status
 
-**70A complete (2026-09-24); 70T complete (2026-09-25) -- see their build
-records; nothing else is authorized.** The requester approved delivery 70A on
-2026-09-24 and it is complete on the `milestone-70` branch (see the 70A
-build record), then approved 70T. Every other delivery -- 70B next -- must be
-explicitly approved before implementation begins. The deliveries are intentionally sequential because
+**70A complete (2026-09-24); 70T and 70B complete (2026-09-25) -- see their
+build records. Every remaining delivery, 70C through 70L, is approved.** The
+requester approved delivery 70A on 2026-09-24 and it is complete on the
+`milestone-70` branch (see the 70A build record), then approved 70T. On
+2026-09-25 the requester approved every delivery after it ("Finish ms 70. That
+means ms 70B and every other after until it's done.", then "Proceed with the
+entire process."), to run in order on the plan owner's recommendations, with
+defects fixed as they are found; that approval also covers the full-regression
+runs the 70I, 70J and 70L gates ask approval for. The merge to `master` still
+waits for the requester's release sign-off (D8). The deliveries are intentionally sequential because
 most of them touch the same dependency graph and several will touch
 `src/legacy-app.js`; they are not independent work streams that can safely be
 implemented in parallel.
@@ -1079,6 +1084,39 @@ adapter against the unmigrated monolith; 70T is complete.
 Every moved helper has one implementation, direct unit coverage, no new global
 consumer, and no observable output/string-format drift. The parser audit count
 falls by the number promised for 70B.
+
+### 70B build record
+
+Approved by the requester on 2026-09-25, together with every later delivery
+("Finish ms 70. That means ms 70B and every other after until it's done."),
+to run in order on the plan owner's recommendations with defects fixed as they
+are found. Everything below is on the `milestone-70` branch.
+
+**What a filer sees.** Nothing, by design: every helper that moved produces
+the same text, number and markup it did. The deleted code was unreachable --
+the Rename Ward dialog has had no button since the Milestone 36 dashboard
+consolidation (`e5fb9cf`), the ZIP-import path none since Milestone 41B
+(`4cd5723`), and the monolith's court-caption helper and its copies of the
+county-to-circuit tables were never called.
+
+**Done, with evidence.**
+
+| Item | Evidence |
+| --- | --- |
+| Commit | Named in the ledger's delivery-owner row and the next docs commit (the whole delivery; gate evidence in its message). |
+| Moved | 44 declarations, 612 monolith lines out and 65 in (net 547). Destinations, preferring existing modules: `esc()` to `src/core/filing/escape-html.js`; `guardianHasAnyData()` to `src/core/validation/row-started.js`; the field formatters and filters (phone, SSN, case and bar numbers, account and check numbers, name, address, the decimal filters, the ZIP digit cap, `capitalizeImportedFields()`) to `src/core/form/form-contract.js`; `FL_COUNTIES` to `src/core/pdf/circuit-lookup.js`; `calc` to `src/features/guardian-inventory/totals.js`. New where nothing fitted: `src/core/ui/icons.js`, `src/core/format/money.js` (`n`, `r2`, `fmt`, `formatDashboardCurrency`), `src/core/security/input-hardening.js`, `src/features/simplified-accounting/totals.js` (`calcTotals()`, kept out of the lazy feature for the dashboard). |
+| Duplicates proven before one copy went | `formatDisplayDate()` identical to `src/core/form/date-parser.js`'s; `sanitizeForExcel()` equal to `excel-engine.js`'s `sanitizeCellValue()` for strings, the only thing its one caller passes, so the module's body is now the one guard; the monolith's `r2`, Guardian Inventory's and Annual import's local copy (master `945b5a8`) the same formula for the numbers they pass; the county-to-circuit tables and `circuitForCounty()` byte-identical to `circuit-lookup.js`'s and unreferenced. Not equal, so both kept: `esc()` prints a falsy value as empty, `escapeHtml()` does not -- the note in `escape-html.js` says so. |
+| Deleted as unreachable | `circuitCourtCaption()`, the monolith's `hasSixthCircuitLocalGuidance()` copy, the Rename Ward dialog (`showRenameWardModal()`, `doRenameWard()`, `renameWard()`, its markup in `fragments/common-modals.html` and the shell, dashboard and dialog `rename-ward` cases), `triggerImportZip()` and the shell's change handler for the `zip-import-input` element deleted in 41B; `window.makeGuardianCalc` (no reader), and the "is it on window yet?" fallbacks the modules kept for helpers an import cannot lack (`form-fields.js`'s lock icon, `router.js`'s home and theme icons, `pdf-annotate.js`'s delete icons, `case-file.js`'s import check). Two destructured-but-unused `formatCityStateZip` reads went with them. |
+| The bridge | `src/legacy-bridge.js`: a frozen `window.GuardianFormsLegacyBridge` of imported implementations, imported by `main.js` before `initApp()`. The monolith keeps a one-line wrapper per moved function it still calls (21: `function esc(s){return window.GuardianFormsLegacyBridge.esc(s);}`, a `fmt` arrow, a `calc` Proxy) and reads the one data member (`FL_COUNTIES`) inside the function that uses it. `tests/unit/legacy-bridge.spec.js` holds its rules -- members are module exports (identity-checked), read only by the monolith and only inside functions, only through one-line wrappers that are still called; red first, an injected top-level read and a mid-function call each failed it, and a wrapper given extra logic failed it. |
+| Ratchet exception | The bridge's one `windowWrites` entry (`src/legacy-bridge.js::GuardianFormsLegacyBridge`) and one `windowReads` entry (`src/legacy-app.js::GuardianFormsLegacyBridge`) are the exception this plan records for the transition; both go with the monolith in 70L. Everything else fell: `classicDeclarations` 474 to 449, `windowWrites` 330 to 325, `windowReads` 678 to 583, `evalTimeWindowDestructures` 218 to 154, `bareCrossBoundary` 50 to 49. |
+| Wrapper deletion targets | The declaration inventory gains a `wrapper` disposition: an implementation that moved, leaving its wrapper, with `movedIn` and a deletion target computed from the deliveries of the monolith code that still calls it (for example `formatPhone` and ten other field helpers go with `bindForms()` in 70F, `guardianHasAnyData` with `computeNavChecks()` in 70D). The owner's review records what left the monolith under `landed`. |
+| Module consumers | Every module that read a moved helper off `window` imports it (18 files); 64 of the `const { ... } = window` reads evaluated at load went with them. |
+| Tests converted | `bar-number.spec.js` imports instead of slicing the monolith; `excel-engine.spec.js` tests the one guard directly (5 assertions fewer: the two-copy comparison, in the drop log); `guardian-inventory-totals.spec.js` tests the imported `calc` and the monolith's one-line Proxy; `form-contract.spec.js` and `excel-capacity-issues.spec.js` no longer install window stand-ins; `window-bridge.spec.js`'s real-file examples moved to names still read off window. |
+| Findings | (1) `form-cards.spec.js` checked a Case Number the browser would render as `26-000123`: in Node the formatter was a missing window global, so the test saw raw text the app never shows; it now uses a stored value. (2) The shell kept a change handler for an element deleted in 41B, and two features destructured `formatCityStateZip` without using it. (3) `excel-engine.spec.js` compared two copies of one rule by reading the monolith's regex out of its source; with one copy left it tests the rule. |
+| Parser audit count | The promise was the 44 declarations; 21 of their names stay in the monolith as one-line wrappers until their last caller moves, so `classicDeclarations` fell by 25, not 44 (474 to 449, with the two Rename Ward functions 70T handed over). Every wrapper's deletion target is in the inventory. |
+| Living references | `README.md`'s layout, `AGENTS.md` section 6's icon line (it named an `icons.js` that did not exist until now), and every source comment naming a moved helper's old home. |
+
+**Gate run.** The full `npm test` on this tree, 2026-09-25: unit 1949/1949 (143 files); browser 887 passed, 7 skipped, 0 failed (1.4 h, source profile, chromium) -- 894 tests: 70T's 893 plus the one master carried in `299e17a`. `check:types` clean.
 
 ---
 

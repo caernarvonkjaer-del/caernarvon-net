@@ -36,6 +36,12 @@ import { renderReportingPeriodFields } from '../../core/form/cards/ward-demograp
 import { REMUNERATION_DECLARATION } from '../../core/filing/statutory-text.js';
 import { serviceRecipientIssues } from '../../core/validation/service-recipients.js';
 import { renderServiceAttestationRow } from '../../core/form/service-attestation-visibility.js';
+import { esc } from '../../core/filing/escape-html.js';
+import { ic } from '../../core/ui/icons.js';
+import { formatAddress, formatName, formatPhone, formatSSN, sanitizeNonNegativeDecimal } from '../../core/form/form-contract.js';
+import { formatDisplayDate } from '../../core/form/date-parser.js';
+import { calcTotals } from './totals.js';
+import { guardianHasAnyData } from '../../core/validation/row-started.js';
 // Milestone 57B: carried verbatim from MILESTONE-57-PROPOSAL.md section 57B.
 // The wording is load bearing (section 8 #8). Do not paraphrase or re-voice it.
 const ATTESTATION_57B = 'No recipients are required for this certificate (filer attestation - app does not determine legal necessity)';
@@ -57,19 +63,18 @@ const RECIPIENT_STARTED_FIELDS = ['name', 'line2', 'line3', 'line4'];
 // header for the full explanation. Everything below that isn't defined in
 // this file is one of those legacy globals, deliberately left in place
 // rather than moved or wrapped: some (inpS, countyInputS, pageNavS, tdSig)
-// are still shared with the four not-yet-extracted Plan types, and calcTotals
-// stays legacy because the dashboard needs it for every Simplified ward's
+// are still shared with the four not-yet-extracted Plan types. calcTotals
+// was one too, because the dashboard needs it for every Simplified ward's
 // card total *before* this module is ever loaded (see the Milestone 2 plan's
-// "Problem 1" and "Problem 3").
+// "Problem 1" and "Problem 3"); since Milestone 70's 70B it lives in
+// ./totals.js, small enough that src/legacy-bridge.js loads it eagerly for the
+// dashboard while this module stays lazy.
 const {
-  esc, ic, tooltip, autoSave, navigate,
-  formatName, formatSSN, formatPhone, formatAddress, formatCityStateZip,
-  formatDisplayDate,
-  sanitizeNonNegativeDecimal, sanitizeNegativeAmounts,
+  tooltip, autoSave, navigate,
+  sanitizeNegativeAmounts,
   renderScheduleDocsSection, browserRecommendationNotice, pageIntroRow,
   linkAccordions,
-  yesNoCheckboxS, inpS, countyInputS, pageNavS, calcTotals,
-  guardianHasAnyData,
+  yesNoCheckboxS, inpS, countyInputS, pageNavS,
 } = window;
 
 // print.js/excel.js are dynamically imported once, together, the first time

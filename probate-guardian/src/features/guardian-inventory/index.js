@@ -20,6 +20,11 @@ import { preparerNoteHTML } from '../../core/signature/preparer-note.js';
 import { hasIdentifiedPreparer, preparerFlagCheckboxHTML, preparerWaivedNoticeHTML } from '../../core/form/preparer-flag.js';
 import { serviceRecipientIssues } from '../../core/validation/service-recipients.js';
 import { renderServiceAttestationRow } from '../../core/form/service-attestation-visibility.js';
+import { esc } from '../../core/filing/escape-html.js';
+import { ic } from '../../core/ui/icons.js';
+import { fmt } from '../../core/format/money.js';
+import { applyZipLimit, finalizeCaseNumber, formatAccountNumber, formatAddress, formatBarNumber, formatCaseNumber, formatCheckNumber, formatName, formatPhone, formatSSN, sanitizeNonNegativeDecimal } from '../../core/form/form-contract.js';
+import { calc } from './totals.js';
 // Milestone 57B: carried verbatim from MILESTONE-57-PROPOSAL.md section 57B.
 // The wording is load bearing (section 8 #8). Do not paraphrase or re-voice it.
 const ATTESTATION_57B = 'No recipients are required for this certificate (filer attestation - app does not determine legal necessity)';
@@ -33,7 +38,7 @@ const RECIPIENT_STARTED_FIELDS = ['name', 'address', 'cityStateZip'];
 // the same window.createFeatureBridge() pattern as Simplified, Plan, and
 // Annual features.
 const {
-  esc, ic, fmt, autoSave, navigate, renderPage, getCurrentPage, bindForms, afterChange, yesNoRadioHTML,
+  autoSave, navigate, renderPage, getCurrentPage, bindForms, afterChange, yesNoRadioHTML,
   sanitizeNegativeAmounts, linkLabelsToInputs, setupAmountFieldValidation,
   updateNavDots, initPrintPager, computeNavChecks, linkAccordions,
   // Milestone 51C dropped `toggleSsnReveal` from this list -- destructured but
@@ -41,9 +46,7 @@ const {
   // function, which is correct: it runs via src/form-events.js's delegated
   // 'toggle-ssn' handler, not from this module).
   browserRecommendationNotice, renderScheduleDocsSection,
-  formatName, formatAddress, formatPhone, formatSSN, formatCaseNumber, formatBarNumber,
-  formatAccountNumber, formatCheckNumber, formatCityStateZip, finalizeCaseNumber, applyZipLimit,
-  sanitizeNonNegativeDecimal, calc, mk, PAGES_GUARDIAN, SCHEDULE_NAV_KEYS,
+  mk, PAGES_GUARDIAN, SCHEDULE_NAV_KEYS,
 } = window;
 
 const D = new Proxy({}, {

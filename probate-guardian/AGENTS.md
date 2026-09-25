@@ -359,7 +359,7 @@ Tier 3  Declarative Form Composition (pages assemble sequences of cards)
 - `src/styles/` (`tokens.css`, `cards.css`, `shell.css`) is authoritative. Semantic CSS variables (`--brand`, `--ink`, `--surface`, `--line`, `--field`) — no arbitrary hex in component stylesheets, except token definitions themselves, vendor styles, print/court-output styles (hardcoded for print fidelity), embedded SVGs, and high-contrast overrides.
 - Light/Dark via `tokens.css` + a synchronous pre-paint script (`src/prepaint.js`) to avoid FOUC.
 - UI-only preferences (theme, display) live in `localStorage`, never `.sav`/case state (nothing sensitive; must be synchronously readable pre-paint, which encrypted/async case state can't guarantee) — see `src/core/theme-preference.js` (`pg-theme-v1`).
-- Icons via `icons.js`/`ic(name, size)`; any icon inside `<button>`/`<a>` needs an accessible name (`aria-label`, `title`, or visible text).
+- Icons via `src/core/ui/icons.js`'s `ic(name, size)`; any icon inside `<button>`/`<a>` needs an accessible name (`aria-label`, `title`, or visible text).
 - `.entry-card`/`.summary-box` with `cards.css`'s container queries for consistent multi-column layout.
 
 ---

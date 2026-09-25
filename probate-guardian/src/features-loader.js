@@ -24,9 +24,11 @@
 // Canonical statutory math loaded eagerly so window.calcTotalsAnnual and window.annualReconcileState
 // exist as a single source of truth across all features, dashboard, preview, and PDF generation.
 import './features/annual-accounting/totals.js';
-// Same for Guardian Inventory (Milestone 60A): legacy-app.js's `calc` adapter
-// forwards to window.makeGuardianCalc, and the dashboard's headline total
-// calls calc.total() for any Initial Inventory before that feature mounts.
+// Same for Guardian Inventory (Milestone 60A): the dashboard's headline total
+// calls calc.total() for any Initial Inventory before that feature mounts
+// (since Milestone 70's 70B legacy-app.js reaches this module's `calc` through
+// src/legacy-bridge.js, which imports it too), and the test adapter reads
+// window.calcTotalsGuardian.
 import './features/guardian-inventory/totals.js';
 
 export function loadSimplifiedFeature() {

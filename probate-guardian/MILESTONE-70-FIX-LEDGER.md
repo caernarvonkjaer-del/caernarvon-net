@@ -50,6 +50,7 @@ a `master` commit is missing from it.
 | --- | --- | --- | --- |
 | 70A | Claude | 2026-09-24 | 2026-09-24 |
 | 70T | Claude | 2026-09-24 | 2026-09-25 |
+| 70B | Claude | 2026-09-25 | 2026-09-25 |
 
 ## Branch-only settings to undo at the merge
 
@@ -66,7 +67,7 @@ a `master` commit is missing from it.
 
 | SHA | Date | Summary | Files touched | Disposition | Proving test(s) | Branch commit | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `945b5a8e0eb3290bac3ce345a4910c81208392e4` | 2026-09-24 | Annual import no longer stops at the first Schedule D ward percentage (a local r2 in annual-accounting/excel.js; found by this milestone's audit) | `src/features/annual-accounting/excel.js`, `src/core/types/window-bridge.d.ts`, `tests/e2e/annual-import-ward-percentage.spec.ts`, `TEST-INDEX.md`, `file_index.md` | merges-cleanly | `tests/e2e/annual-import-ward-percentage.spec.ts` | -- | open |
+| `945b5a8e0eb3290bac3ce345a4910c81208392e4` | 2026-09-24 | Annual import no longer stops at the first Schedule D ward percentage (a local r2 in annual-accounting/excel.js; found by this milestone's audit) | `src/features/annual-accounting/excel.js`, `src/core/types/window-bridge.d.ts`, `tests/e2e/annual-import-ward-percentage.spec.ts`, `TEST-INDEX.md`, `file_index.md` | merges-cleanly | `tests/e2e/annual-import-ward-percentage.spec.ts` | `299e17a` | carried |
 | `b28bf2516bd5100741bdfff9db759ce87f52672b` | 2026-09-24 | Restore blank-card clean-up (main.js imports prune-cards.js; legacy-app.js publishes BLANK_SCHEDULE_ENTRY); tests that assumed untouched cards survive updated | `src/main.js`, `src/legacy-app.js`, `tests/unit/fixtures/window-bridge-allowlist.json`, `tests/e2e/blank-card-pruning.spec.ts`, `tests/e2e/guardian-inventory-collection-controls.spec.ts`, `tests/e2e/plan-certificate-of-service.spec.ts`, `tests/e2e/schedule-doc-ack.spec.ts`, `TEST-INDEX.md`, `file_index.md` | re-implement | `tests/e2e/blank-card-pruning.spec.ts` | -- | open |
 | `dbee60fb2ac3fc376e9f5999602c7282efb9a89a` | 2026-09-24 | Annual Ward's % always a percentage (1% no longer filed as 100%); Preview & Export notes Schedule D shares of 1% or less | `src/features/annual-accounting/totals.js`, `src/core/excel/excel-engine.js`, `src/core/filing/output-preflight.js`, `src/core/filing/ward-share-advisories.js`, `tests/e2e/annual-ward-share-export.spec.ts`, `tests/e2e/annual-import-ward-percentage.spec.ts`, `tests/unit/annual-ward-percentage.spec.js`, `tests/unit/ward-share-advisories.spec.js`, `tests/unit/excel-engine.spec.js`, `TEST-INDEX.md`, `file_index.md` | merges-cleanly | `tests/e2e/annual-ward-share-export.spec.ts`, `tests/unit/annual-ward-percentage.spec.js` | -- | open |
 | `c62f89002c30272ad4555c749b24a28ee1468d59` | 2026-09-24 | Completes dbee60f: each Schedule D line's ward amount (Annual pages; PDF D-1 and D-5 columns) follows the 1% rule; the Annual pages import pct from totals.js and legacy-app.js's stale pct() is deleted (the branch's declaration dispositions list it) | `src/features/annual-accounting/index.js`, `src/features/annual-accounting/pdf-model.js`, `src/legacy-app.js`, `src/core/types/window-bridge.d.ts`, `tests/e2e/annual-ward-share-export.spec.ts`, `tests/unit/annual-ward-percentage.spec.js`, `TEST-INDEX.md` | re-implement | `tests/e2e/annual-ward-share-export.spec.ts`, `tests/unit/annual-ward-percentage.spec.js` | -- | open |
@@ -93,13 +94,12 @@ Notes on open rows:
   conversion, fixed on `master` as a production-suite defect), so the merge
   sees one change on both sides.
 
-- `945b5a8`: the branch has not touched the Annual importer, so the change merges
-  as is (the two index files need an ordinary textual merge). When it lands on
-  the branch, the dependency ratchet's `windowReads` and
-  `lexicalOnlyWindowReads` sets lose `src/features/annual-accounting/excel.js::r2`:
-  regenerate the baseline with `node scripts/ms70-dependency-audit.mjs
-  --write-baseline` in the same commit, and the assertion counts for the new
-  spec.
+- `945b5a8`: carried in `299e17a` (cherry-picked; the new spec converted to
+  `GuardianForms.testing`, seen failing on the branch without the fix with
+  "r2 is not a function"). 70B then replaced the importer's local `r2` with
+  `src/core/format/money.js`'s, the same formula for the numbers it passes, so
+  at the merge the importer's side of this commit is superseded: keep the
+  branch's import.
 - `b28bf25`: re-implement, although it would merge textually today. It edits
   `legacy-app.js`, which the branch deletes, and it adds a `window` global
   (`BLANK_SCHEDULE_ENTRY`) the ratchet forbids on the branch. Carried over,

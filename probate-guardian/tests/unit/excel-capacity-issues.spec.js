@@ -2,7 +2,9 @@
 import { describe, it, expect } from 'vitest';
 
 globalThis.window = globalThis.window || {};
-globalThis.window.guardianHasAnyData = (g) => !!(g && (g.name || g.ssn || g.phone || g.email || g.mailingStreet || g.mailingCityStateZip || g.residenceStreet || g.residenceCityStateZip || g.officeStreet || g.officeCityStateZip || g.signatureDate));
+// guardianHasAnyData used to be stubbed onto window here: Simplified's
+// excel.js read it off window at import time. Since Milestone 70's 70B it
+// imports the real one from src/core/validation/row-started.js.
 
 const { checkExcelCapacity, getExcelCapacityIssues } = await import('../../src/core/excel/excel-capacity.js');
 const { GUARDIAN_EXCEL_CAPS } = await import('../../src/features/guardian-inventory/excel.js');

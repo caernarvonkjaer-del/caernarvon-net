@@ -30,6 +30,9 @@ import { renderReportingPeriodFields } from '../../core/form/cards/ward-demograp
 // both types.
 import { renderPartyNameField } from '../../core/form/cards/guardian-attorney-card.js';
 import { renderFormField } from '../../core/form/form-fields.js';
+import { esc } from '../../core/filing/escape-html.js';
+import { ic } from '../../core/ui/icons.js';
+import { formatDisplayDate } from '../../core/form/date-parser.js';
 // Annual Plan — Minors — the fifth and last feature extraction (Milestone 6,
 // Phases A and B of INDEX-SPLIT-PLAN.md's migration sequence: data/
 // validation/pages/nav, and print/PDF export). Dynamically imported by
@@ -56,9 +59,8 @@ import { renderFormField } from '../../core/form/form-fields.js';
 // plan-initial and plan-minor never received. `countyInputS` stays: unlike the
 // other three Plan types, this one still calls it directly (see /p1 below).
 const {
-  esc, ic, inpS, countyInputS, radioP, pageNavS,
+  inpS, countyInputS, radioP, pageNavS,
   renderScheduleDocsSection, txtP, chkP, planQ, planCheckGroup, yesNoCheckboxS,
-  formatDisplayDate,
 } = window;
 
 // print.js is dynamically imported only when the user reaches /print or

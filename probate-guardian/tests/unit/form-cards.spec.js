@@ -15,9 +15,14 @@ describe('renderCaseCaptionFields', () => {
   });
 
   it('binds Case Number to data-form-path via the Tier 1 primitive', () => {
-    const html = renderCaseCaptionFields({ caseNumber: '2026-CP-000123', county: 'Pinellas' });
+    // A stored case number in the form the app saves it. The field renders
+    // through formatCaseNumber(), as it always did in the browser; before
+    // Milestone 70's 70B that formatter was a window global this stub lacked,
+    // so a value like '2026-CP-000123' used to come back unformatted here and
+    // as '26-000123' in the app.
+    const html = renderCaseCaptionFields({ caseNumber: '26-000123-GD', county: 'Pinellas' });
     expect(html).toContain('data-form-path="caseNumber"');
-    expect(html).toContain('value="2026-CP-000123"');
+    expect(html).toContain('value="26-000123-GD"');
   });
 
   it('renders County via the reused countyInputS() widget, not a Tier 1 primitive', () => {

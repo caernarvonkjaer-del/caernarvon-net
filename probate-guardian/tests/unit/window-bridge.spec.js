@@ -58,12 +58,14 @@ describe('window.* bridge inventory', () => {
   });
 
   it('sees consumers that only ever destructure off window (Milestone 53D)', () => {
-    // capitalizeImportedFields is read by all three feature excel.js files and
-    // by nothing as `window.capitalizeImportedFields`, so before 53D taught the
-    // audit to parse destructuring it was invisible here -- and therefore
-    // missing from the generated .d.ts. This assertion was red before D1.
-    const entry = audit.consumers.find((c) => c.name === 'capitalizeImportedFields');
-    expect(entry, 'capitalizeImportedFields must appear as a consumed bridge name').toBeTruthy();
+    // ensureTemplate is read by all three feature excel.js files and by
+    // nothing as `window.ensureTemplate`, so before 53D taught the audit to
+    // parse destructuring a name like it was invisible here -- and therefore
+    // missing from the generated .d.ts. This assertion was red before D1,
+    // written against capitalizeImportedFields, which had the same shape until
+    // Milestone 70's 70B turned its three readers into imports.
+    const entry = audit.consumers.find((c) => c.name === 'ensureTemplate');
+    expect(entry, 'ensureTemplate must appear as a consumed bridge name').toBeTruthy();
     expect(entry.files).toEqual(
       expect.arrayContaining([
         'src/features/annual-accounting/excel.js',
@@ -116,7 +118,7 @@ describe('findWindowDestructureConsumers: the parser, case by case', () => {
   it('does not invent a consumer from the prose inside a real repo file', () => {
     const source = fs.readFileSync(path.join(root, 'src', 'features', 'guardian-inventory', 'index.js'), 'utf8');
     const names = findWindowDestructureConsumers(source);
-    expect(names).toContain('esc');
+    expect(names).toContain('autoSave');
     // Named only in a comment inside the braces -- Milestone 51C removed the
     // actual binding. A comma-splitting parser records it; a real one cannot.
     expect(names).not.toContain('toggleSsnReveal');

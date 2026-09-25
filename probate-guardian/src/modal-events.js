@@ -1,3 +1,4 @@
+import { formatName } from './core/form/form-contract.js';
 async function handleModalClick(event) {
   const actionElement = event.target instanceof Element ? event.target.closest('[data-modal-action]') : null;
   if (!actionElement) return;
@@ -15,7 +16,6 @@ async function handleModalClick(event) {
     case 'guardian-setup': window.doGuardianSetup(); break;
     case 'pick-case': window.doPickCase(); break;
     case 'pick-party': window.doPickParty(); break;
-    case 'rename-ward': window.doRenameWard(); break;
     case 'save-backup': window.closeModal(actionElement.dataset.modalId); window.saveBackupNow(); break;
     case 'start-new-year': window.confirmStartNewYear(); break;
     case 'switch-ward': window.closeModal('switchWardPickerModal'); await window.switchWard(actionElement.dataset.wardId); break;
@@ -57,7 +57,7 @@ function handleModalInput(event) {
 function handleModalBlur(event) {
   if (!(event.target instanceof HTMLInputElement)) return;
   if (event.target.dataset.modalInput === 'format-name') {
-    event.target.value = window.formatName(event.target.value);
+    event.target.value = formatName(event.target.value);
   }
 }
 

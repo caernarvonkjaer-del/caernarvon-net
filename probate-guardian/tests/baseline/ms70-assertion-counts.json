@@ -2,8 +2,8 @@
  "generatedBy": "node scripts/ms70-assertion-counts.mjs --write-baseline",
  "note": "Milestone 70 per-spec assertion counts (static expect calls). tests/unit/ms70-assertion-counts.spec.js fails when a spec falls below its count; lowering it requires --reason, recorded in dropLog. A tripwire, not proof of equivalence (decision D9).",
  "totals": {
-  "expects": 6368,
-  "tests": 1839
+  "expects": 6383,
+  "tests": 1845
  },
  "counts": {
   "tests/e2e/annotation-toolbar-containment.spec.ts": {
@@ -611,8 +611,8 @@
    "tests": 7
   },
   "tests/unit/excel-engine.spec.js": {
-   "expects": 63,
-   "tests": 23
+   "expects": 58,
+   "tests": 22
   },
   "tests/unit/excel-write-targets.spec.js": {
    "expects": 3,
@@ -703,7 +703,7 @@
    "tests": 48
   },
   "tests/unit/guardian-inventory-totals.spec.js": {
-   "expects": 74,
+   "expects": 77,
    "tests": 21
   },
   "tests/unit/guardian-inventory-yes-no-radio.spec.js": {
@@ -729,6 +729,10 @@
   "tests/unit/issue-registry.spec.js": {
    "expects": 35,
    "tests": 15
+  },
+  "tests/unit/legacy-bridge.spec.js": {
+   "expects": 17,
+   "tests": 7
   },
   "tests/unit/live-region.spec.js": {
    "expects": 9,
@@ -1114,6 +1118,13 @@
    "was": 7,
    "now": 5,
    "reason": "70T: 'unknown fragment names are rejected without a request' (two expects) moved to tests/unit/fragment-loader.spec.js, checked on the module with every request recorded and a control that the allowlisted name is fetched.",
+   "date": "2026-09-25"
+  },
+  {
+   "file": "tests/unit/excel-engine.spec.js",
+   "was": 63,
+   "now": 58,
+   "reason": "70B: excel-engine.spec.js pinned legacy-app.js's sanitizeForExcel() and the module's Node fallback as equal (reading the legacy regex out of the monolith's source, plus a delegation test). 70B deleted the legacy copy, so the two-copy comparison and delegation assertions went; the one implementation is tested directly against the same OWASP set, and a new test proves a window.sanitizeForExcel no longer changes what is written.",
    "date": "2026-09-25"
   }
  ]

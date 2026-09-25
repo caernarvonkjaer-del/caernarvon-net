@@ -1,21 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { extractLegacyFunction } from './support/legacy-source-extract.js';
+import { formatBarNumber } from '../../src/core/form/form-contract.js';
 
 // Florida Bar member numbers are sequential identifiers. Normalize them to the
 // current eight-digit representation so leading zeroes are retained consistently.
 //
-// formatBarNumber lives in legacy-app.js, which is a browser-bound script
-// rather than an importable module, so the function is sliced out of the
-// source and evaluated on its own.
-function loadFormatBarNumber() {
-  const body = extractLegacyFunction('formatBarNumber');
-  // eslint-disable-next-line no-new-func
-  return new Function(`${body}; return formatBarNumber;`)();
-}
-
+// formatBarNumber() moved out of legacy-app.js into
+// src/core/form/form-contract.js in Milestone 70's 70B; this spec used to
+// slice it out of the monolith's source and evaluate it on its own.
 describe('formatBarNumber', () => {
-  const formatBarNumber = loadFormatBarNumber();
-
   it('pads a shorter bar number with leading zeroes', () => {
     expect(formatBarNumber('008921')).toBe('00008921');
     expect(formatBarNumber('89214')).toBe('00089214');

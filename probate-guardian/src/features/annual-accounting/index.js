@@ -62,6 +62,10 @@ import { promptScheduleAckIfNeeded } from '../../core/filing/schedule-doc-ack.js
 // each of those paths exactly once, and the specs that target these fields
 // do so by [data-field-path], not by id.
 import { renderReportingPeriodFields } from '../../core/form/cards/ward-demographics-card.js';
+import { esc } from '../../core/filing/escape-html.js';
+import { ic } from '../../core/ui/icons.js';
+import { sanitizeDecimal } from '../../core/form/form-contract.js';
+import { guardianHasAnyData } from '../../core/validation/row-started.js';
 // Annual Accounting — the sixth feature extraction (Milestone 7, Phases A
 // and B of INDEX-SPLIT-PLAN.md's migration sequence: data/pages/nav/
 // validate, and print/PDF/Excel import/export). Also covers the
@@ -82,21 +86,21 @@ import { renderReportingPeriodFields } from '../../core/form/cards/ward-demograp
 // milestone), and `annualReconcileState` stays alongside it for simplicity
 // even though it isn't strictly forced the same way (Milestone 7 plan's
 // "Confirmed facts"). `n`/`pct` (tiny number helpers) stay bundled with
-// them since `calcTotalsAnnual` is their only legacy caller. `esc`/`ic`/the
-// formatting and validation helpers/`renderScheduleDocsSection`/
-// `guardianHasAnyData` etc. stay legacy because they're shared broadly
-// across every extracted feature, not specific to Annual.
+// them since `calcTotalsAnnual` is their only legacy caller.
+// `renderScheduleDocsSection` and the other shared page helpers stay legacy
+// because they're shared broadly across every extracted feature, not specific
+// to Annual. (`esc`, `ic`, `guardianHasAnyData` and the formatting and
+// validation helpers were in that group until Milestone 70's 70B moved them
+// into core modules; they are imported above.)
 const {
-  esc, ic, autoSave, navigate, updateNavDots, renderScheduleDocsSection,
+  autoSave, navigate, updateNavDots, renderScheduleDocsSection,
   pageIntroRow, browserRecommendationNotice, linkAccordions,
-  sanitizeDecimal,
   // Milestone 51C dropped `toggleSsnReveal` from this list -- destructured but
   // never called here. Its only call site is the delegated 'toggle-ssn' handler
   // in src/form-events.js, which uses window.toggleSsnReveal directly.
   tooltip, countyAutocompleteHTML, yesNoCheckboxD, yesNoRadioAnnualHTML,
   syncActiveWardNameDisplay, syncGuardianNameDisplay,
   calcTotalsAnnual, annualReconcileState, n, pct,
-  guardianHasAnyData,
 } = window;
 
 // print.js/excel.js are dynamically imported once, together, the first time
@@ -430,7 +434,8 @@ export function fmtAnnual(v){if(v===''||v===null||v===undefined)return '';const 
 // re-export of that one function object, not a second copy.
 export { fmtD };
 // securitySanitize: this family's plain free-text fields keep running
-// legacy-app.js's validateSecurityInput() on blur (see the option's own
+// validateSecurityInput() (src/core/security/input-hardening.js) on blur
+// (see the option's own
 // comment in form-fields.js) -- the behavior of the retired
 // persistAnnualControl() focusout handler, now declared per field rather
 // than assumed of everything inside this module's container.

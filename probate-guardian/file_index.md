@@ -10,7 +10,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`docs\m34-1d-evidence-lab.md`](<docs/m34-1d-evidence-lab.md>) | Project documentation or policy reference. |
 | [`docs\pdf-architecture-and-signatures.md`](<docs/pdf-architecture-and-signatures.md>) | Project documentation or policy reference. |
 | [`file_index.md`](<file_index.md>) | Repository-wide file inventory; maintained alongside repository changes. |
-| [`fragments\common-modals.html`](<fragments/common-modals.html>) | HTML entry point or help content. |
+| [`fragments\common-modals.html`](<fragments/common-modals.html>) | Lazily loaded dialogs shared by the shell: convert a filing, start a new year, prior years, delete a year, add a filing, simplified eligibility, delete a filing and guardian setup. Milestone 70's 70B removed the Rename Ward dialog, unreachable since e5fb9cf. |
 | [`help.md`](<help.md>) | Project documentation or policy reference. |
 | [`help\index.html`](<help/index.html>) | HTML entry point or help content. |
 | [`HOW-TO-RUN.txt`](<HOW-TO-RUN.txt>) | Text reference or run instructions. |
@@ -82,7 +82,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`scripts\measure-baseline.mjs`](<scripts/measure-baseline.mjs>) | Startup, script-size, resource and route-cycle heap measurement per target (source, web, portable, portable-http); --output writes an MS 70 record instead of the Milestone 13 file. |
 | [`scripts\measure-lifecycle.mjs`](<scripts/measure-lifecycle.mjs>) | Feature mount/dispose lifecycle measurement (heap and element growth per filing type); --output writes an MS 70 record instead of the Milestone 13 file. |
 | [`scripts\ms70-assertion-counts.mjs`](<scripts/ms70-assertion-counts.mjs>) | Milestone 70 per-spec assertion counter: static expect calls and test declarations in every unit and browser spec; --write-baseline --reason records drops. |
-| [`scripts\ms70-declaration-dispositions.mjs`](<scripts/ms70-declaration-dispositions.mjs>) | Milestone 70 (70A) builder of tests/baseline/ms70-declaration-dispositions.json: the disposition (delete-as-dead, test-only, move) and target delivery of every top-level declaration of legacy-app.js from reference evidence, with the owner's review (tests/baseline/ms70-declaration-review.json) applied, and every window export's consumers; --write regenerates it. |
+| [`scripts\ms70-declaration-dispositions.mjs`](<scripts/ms70-declaration-dispositions.mjs>) | Milestone 70 (70A) builder of tests/baseline/ms70-declaration-dispositions.json: the disposition (delete-as-dead, test-only, move, or -- since 70B -- wrapper, with its deletion target taken from its remaining callers' deliveries) and target delivery of every top-level declaration of legacy-app.js from reference evidence, with the owner's review (tests/baseline/ms70-declaration-review.json) applied, and every window export's consumers; --write regenerates it. |
 | [`scripts\ms70-dependency-audit.mjs`](<scripts/ms70-dependency-audit.mjs>) | Milestone 70 parser-based dependency audit: implicit classic globals, window writes/reads (including defineProperty), captures off window, bare cross-boundary references, unowned and lexical-only window reads, the import graph, cycles and layer violations; --write-baseline regenerates the ratchet baseline and dependency inventory. |
 | [`scripts\ms70-e2e-global-inventory.mjs`](<scripts/ms70-e2e-global-inventory.mjs>) | Milestone 70 (70A, extended in 70T): parses every browser spec and support file and lists the app globals it reaches -- through window, an alias of it, or bare -- its in-place writes to live case state, writes into anything GuardianForms.testing returned (directly or through a copy held in a variable and never handed on), and computed window lookups; the 70T guard and the 70A inventory both read it. |
 | [`scripts\ms70-fixture-inventory.mjs`](<scripts/ms70-fixture-inventory.mjs>) | Milestone 70 inventory of the browser test support layer: every export, the specs that use it, and the fixture factories 70C must update with the application factories; --write regenerates the JSON. |
@@ -102,7 +102,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`src\core\excel\b4-register-pages.js`](<src/core/excel/b4-register-pages.js>) | Build, tooling, or configuration source. |
 | [`src\core\excel\cell-reader.js`](<src/core/excel/cell-reader.js>) | Build, tooling, or configuration source. |
 | [`src\core\excel\excel-capacity.js`](<src/core/excel/excel-capacity.js>) | Build, tooling, or configuration source. |
-| [`src\core\excel\excel-engine.js`](<src/core/excel/excel-engine.js>) | Build, tooling, or configuration source. |
+| [`src\core\excel\excel-engine.js`](<src/core/excel/excel-engine.js>) | Shared Excel writing for the three court workbooks: setCell()/setDateCell(), numValue()/percentValue(), toExcelSerialDate(), saveWorkbookFile(), and sanitizeCellValue() -- since Milestone 70's 70B the single formula-injection guard (legacy-app.js's copy was deleted). |
 | [`src\core\excel\exceljs-loader.js`](<src/core/excel/exceljs-loader.js>) | Build, tooling, or configuration source. |
 | [`src\core\excel\guardian-inventory-pages.js`](<src/core/excel/guardian-inventory-pages.js>) | Build, tooling, or configuration source. |
 | [`src\core\excel\sheet-pruning.js`](<src/core/excel/sheet-pruning.js>) | Build, tooling, or configuration source. |
@@ -113,7 +113,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`src\core\filing\bond-depository.js`](<src/core/filing/bond-depository.js>) | Milestone 67B: the four-state bond / restricted-depository question shared by Guardian Inventory and Annual Accounting -- states, reveals, legacy-shape migration, print-preview advisories and PDF lines. |
 | [`src\core\filing\county-guidance.js`](<src/core/filing/county-guidance.js>) | Build, tooling, or configuration source. |
 | [`src\core\filing\delete-confirmation.js`](<src/core/filing/delete-confirmation.js>) | Build, tooling, or configuration source. |
-| [`src\core\filing\escape-html.js`](<src/core/filing/escape-html.js>) | Build, tooling, or configuration source. |
+| [`src\core\filing\escape-html.js`](<src/core/filing/escape-html.js>) | HTML escaping: escapeHtml() (the modules' escaper, apostrophe included) and esc(), the monolith's escaper moved here in Milestone 70's 70B with its own semantics kept -- a falsy value prints as empty, so the two are deliberately not merged. |
 | [`src\core\filing\filing-descriptor.js`](<src/core/filing/filing-descriptor.js>) | Build, tooling, or configuration source. |
 | [`src\core\filing\form-derived-fields.js`](<src/core/filing/form-derived-fields.js>) | Build, tooling, or configuration source. |
 | [`src\core\filing\output-advisories.js`](<src/core/filing/output-advisories.js>) | Build, tooling, or configuration source. |
@@ -133,7 +133,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`src\core\form\commit-coordinator.js`](<src/core/form/commit-coordinator.js>) | Build, tooling, or configuration source. |
 | [`src\core\form\date-parser.js`](<src/core/form/date-parser.js>) | Build, tooling, or configuration source. |
 | [`src\core\form\exclusive-none.js`](<src/core/form/exclusive-none.js>) | Milestone 68E/68F: a checkbox list's "None" clears its siblings and a sibling clears "None", from data-exclusive-group/-role attributes on the boxes; called from form-events.js after the changed box is written. |
-| [`src\core\form\form-contract.js`](<src/core/form/form-contract.js>) | Build, tooling, or configuration source. |
+| [`src\core\form\form-contract.js`](<src/core/form/form-contract.js>) | The two-phase field write contract (draft on input, finalize on blur) and every field formatter and filter: stored-text sanitization, safe title case, City/State/ZIP, and -- moved from legacy-app.js in Milestone 70's 70B -- phone, SSN, case and bar numbers, account and check numbers, name and address formatting, the decimal filters, the ZIP digit cap and capitalizeImportedFields(). |
 | [`src\core\form\form-fields.js`](<src/core/form/form-fields.js>) | Build, tooling, or configuration source. |
 | [`src\core\form\guardianship-options.js`](<src/core/form/guardianship-options.js>) | Build, tooling, or configuration source. |
 | [`src\core\form\plan-certificate-of-service-page.js`](<src/core/form/plan-certificate-of-service-page.js>) | Milestone 68C: the Plans' Certificate of Service page body -- recipient cards on the Plans' row path, the shared attestation toggle, date and method, and the "Certified by" block; markup only, the rules live in core/filing/plan-certificate-of-service.js. |
@@ -141,16 +141,17 @@ This index inventories repository files retained as source or project artifacts.
 | [`src\core\form\prune-cards.js`](<src/core/form/prune-cards.js>) | Build, tooling, or configuration source. |
 | [`src\core\form\schedule-definitions.js`](<src/core/form/schedule-definitions.js>) | Build, tooling, or configuration source. |
 | [`src\core\form\service-attestation-visibility.js`](<src/core/form/service-attestation-visibility.js>) | Build, tooling, or configuration source. |
+| [`src\core\format\money.js`](<src/core/format/money.js>) | Number and currency helpers shared across forms: n() (a value as a finite number, else 0), r2() (round to cents), fmt() (US-dollar display) and formatDashboardCurrency(). Milestone 70, 70B: the monolith's r2/fmt/formatDashboardCurrency and Guardian Inventory's own n/r2 became this one implementation. |
 | [`src\core\images\png-dimensions.js`](<src/core/images/png-dimensions.js>) | Build, tooling, or configuration source. |
 | [`src\core\modals\convert-ward-modal.js`](<src/core/modals/convert-ward-modal.js>) | Build, tooling, or configuration source. |
 | [`src\core\modals\year-manager-modal.js`](<src/core/modals/year-manager-modal.js>) | Build, tooling, or configuration source. |
 | [`src\core\navigation\router.js`](<src/core/navigation/router.js>) | Build, tooling, or configuration source. |
 | [`src\core\navigation\ward-county.js`](<src/core/navigation/ward-county.js>) | Build, tooling, or configuration source. |
-| [`src\core\navigation\ward-lifecycle.js`](<src/core/navigation/ward-lifecycle.js>) | Build, tooling, or configuration source. |
+| [`src\core\navigation\ward-lifecycle.js`](<src/core/navigation/ward-lifecycle.js>) | Filing lifecycle: create, activate, switch, unload and delete a filing (the historical "ward" names), and the carry-over sources for a new Plan or accounting. renameWard() went in Milestone 70's 70B with its dialog. |
 | [`src\core\offline-access-preference.js`](<src/core/offline-access-preference.js>) | Build, tooling, or configuration source. |
 | [`src\core\party-resolver.js`](<src/core/party-resolver.js>) | Build, tooling, or configuration source. |
 | [`src\core\pdf\address-format.js`](<src/core/pdf/address-format.js>) | Build, tooling, or configuration source. |
-| [`src\core\pdf\circuit-lookup.js`](<src/core/pdf/circuit-lookup.js>) | Build, tooling, or configuration source. |
+| [`src\core\pdf\circuit-lookup.js`](<src/core/pdf/circuit-lookup.js>) | Florida county-to-judicial-circuit data (FL_COUNTY_CIRCUIT, circuit ordinals, circuitForCounty()) and the court-caption helpers (getFloridaCircuitCourtCaption(), getCaseCaptionTitle()), and, since Milestone 70's 70B, the FL_COUNTIES list the county autocomplete offers; the monolith's duplicate tables were deleted. |
 | [`src\core\pdf\header-identity.js`](<src/core/pdf/header-identity.js>) | Build, tooling, or configuration source. |
 | [`src\core\pdf\html2pdf-loader.js`](<src/core/pdf/html2pdf-loader.js>) | Build, tooling, or configuration source. |
 | [`src\core\pdf\pdf-accessibility.js`](<src/core/pdf/pdf-accessibility.js>) | Build, tooling, or configuration source. |
@@ -167,6 +168,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`src\core\persistence\recovery-cache.js`](<src/core/persistence/recovery-cache.js>) | Build, tooling, or configuration source. |
 | [`src\core\persistence\templates.js`](<src/core/persistence/templates.js>) | Build, tooling, or configuration source. |
 | [`src\core\persistence\window-backed-ref.js`](<src/core/persistence/window-backed-ref.js>) | Build, tooling, or configuration source. |
+| [`src\core\security\input-hardening.js`](<src/core/security/input-hardening.js>) | Import and input hardening, moved from legacy-app.js in Milestone 70's 70B: XSS and path-traversal detection, validateSecurityInput(), the .sav/.xlsx size limits and ZIP magic check (validateImportFile()), the workbook row/sheet caps (assertWorkbookWithinLimits()), the import progress element, and the recursive object sanitizers used on every imported filing. |
 | [`src\core\signature\preparer-note.js`](<src/core/signature/preparer-note.js>) | Build, tooling, or configuration source. |
 | [`src\core\signature\signature-pad.js`](<src/core/signature/signature-pad.js>) | Build, tooling, or configuration source. |
 | [`src\core\signature\signature-state-control.js`](<src/core/signature/signature-state-control.js>) | Build, tooling, or configuration source. |
@@ -187,12 +189,13 @@ This index inventories repository files retained as source or project artifacts.
 | [`src\core\types\window-bridge.d.ts`](<src/core/types/window-bridge.d.ts>) | GENERATED by scripts/audit-window-bridge.mjs --declare: the Window interface augmentation naming every global the classic script and the ES modules share (Milestone 42C), kept in sync by tests/unit/window-bridge.spec.js. |
 | [`src\core\ui\dialogs.js`](<src/core/ui/dialogs.js>) | Build, tooling, or configuration source. |
 | [`src\core\ui\export-guard.js`](<src/core/ui/export-guard.js>) | Build, tooling, or configuration source. |
+| [`src\core\ui\icons.js`](<src/core/ui/icons.js>) | The app's inline SVG icon set (ICONS) and ic(name, size), which renders one as an aria-hidden svg. Moved from legacy-app.js's ICON SET in Milestone 70's 70B; modules import it, the monolith reaches it through its one-line wrapper. |
 | [`src\core\ui\test-system-title.js`](<src/core/ui/test-system-title.js>) | Milestone 68¾A: the one constant and one switch for the "TEST SYSTEM - Do not use for filing" title warning, and the idempotent decorator the router applies to every title surface. |
 | [`src\core\ui\transient-status.js`](<src/core/ui/transient-status.js>) | Build, tooling, or configuration source. |
 | [`src\core\validation\attorney-block.js`](<src/core/validation/attorney-block.js>) | Build, tooling, or configuration source. |
 | [`src\core\validation\date-rules.js`](<src/core/validation/date-rules.js>) | Build, tooling, or configuration source. |
 | [`src\core\validation\issue-registry.js`](<src/core/validation/issue-registry.js>) | Build, tooling, or configuration source. |
-| [`src\core\validation\row-started.js`](<src/core/validation/row-started.js>) | Build, tooling, or configuration source. |
+| [`src\core\validation\row-started.js`](<src/core/validation/row-started.js>) | What makes a collection row, recipient or guardian card "started" -- rowStarted() and, since Milestone 70's 70B, guardianHasAnyData() (moved from legacy-app.js), which the Excel exporters and the guardians' remove confirmation share. |
 | [`src\core\validation\service-recipients.js`](<src/core/validation/service-recipients.js>) | Build, tooling, or configuration source. |
 | [`src\core\validation\signature-state.js`](<src/core/validation/signature-state.js>) | Build, tooling, or configuration source. |
 | [`src\core\validation\validation-adapter.js`](<src/core/validation/validation-adapter.js>) | Build, tooling, or configuration source. |
@@ -214,7 +217,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`src\features\guardian-inventory\pdf-engine.js`](<src/features/guardian-inventory/pdf-engine.js>) | Build, tooling, or configuration source. |
 | [`src\features\guardian-inventory\pdf-model.js`](<src/features/guardian-inventory/pdf-model.js>) | Build, tooling, or configuration source. |
 | [`src\features\guardian-inventory\print.js`](<src/features/guardian-inventory/print.js>) | Build, tooling, or configuration source. |
-| [`src\features\guardian-inventory\totals.js`](<src/features/guardian-inventory/totals.js>) | Build, tooling, or configuration source. |
+| [`src\features\guardian-inventory\totals.js`](<src/features/guardian-inventory/totals.js>) | Guardian Inventory's calculator, checked against the court workbook's formulas: ward shares, schedule totals, summaries, bond lines and the audit fee (makeGuardianCalc(), calcTotalsGuardian()), and since Milestone 70's 70B the UI's calc.totalA1()-style object bound to the open filing (moved from legacy-app.js). |
 | [`src\features\help\help-content.js`](<src/features/help/help-content.js>) | Build, tooling, or configuration source. |
 | [`src\features\plan-annual\index.js`](<src/features/plan-annual/index.js>) | Build, tooling, or configuration source. |
 | [`src\features\plan-annual\pdf-model.js`](<src/features/plan-annual/pdf-model.js>) | Build, tooling, or configuration source. |
@@ -233,10 +236,12 @@ This index inventories repository files retained as source or project artifacts.
 | [`src\features\simplified-accounting\index.js`](<src/features/simplified-accounting/index.js>) | Build, tooling, or configuration source. |
 | [`src\features\simplified-accounting\pdf-model.js`](<src/features/simplified-accounting/pdf-model.js>) | Build, tooling, or configuration source. |
 | [`src\features\simplified-accounting\print.js`](<src/features/simplified-accounting/print.js>) | Build, tooling, or configuration source. |
+| [`src\features\simplified-accounting\totals.js`](<src/features/simplified-accounting/totals.js>) | Simplified Accounting's calcTotals() for the open filing (moved from legacy-app.js in Milestone 70's 70B). Separate from index.js so the dashboard's card total can load it eagerly -- through src/legacy-bridge.js -- while the feature itself stays lazily imported. |
 | [`src\form-events.js`](<src/form-events.js>) | Build, tooling, or configuration source. |
 | [`src\fragment-loader.js`](<src/fragment-loader.js>) | Build, tooling, or configuration source. |
-| [`src\legacy-app.js`](<src/legacy-app.js>) | Build, tooling, or configuration source. |
-| [`src\main.js`](<src/main.js>) | The ES-module application entry point (the composition root): first installs window.GuardianForms.testing when the test runner set the pre-boot flag (Milestone 70, 70T), then imports the core modules and feature loaders -- including those needed from the first render for their window bridges -- and bootstraps the app. |
+| [`src\legacy-app.js`](<src/legacy-app.js>) | The classic-script monolith Milestone 70 is dismantling: what has not yet moved into ES modules, plus one-line wrappers (through src/legacy-bridge.js) for moved code it still calls. Each declaration's destination and delivery: tests/baseline/ms70-declaration-dispositions.json. |
+| [`src\legacy-bridge.js`](<src/legacy-bridge.js>) | Milestone 70: the classic monolith's one way to reach code that moved into ES modules -- a frozen window.GuardianFormsLegacyBridge of imported implementations, read only by legacy-app.js's one-line wrappers and only inside functions (tests/unit/legacy-bridge.spec.js). The one ratchet exception MILESTONE-70-PROPOSAL.md records; deleted with the monolith in 70L. |
+| [`src\main.js`](<src/main.js>) | The ES-module application entry point (the composition root): first installs window.GuardianForms.testing when the test runner set the pre-boot flag (Milestone 70, 70T), then imports the core modules (among them src/legacy-bridge.js, the monolith's door to moved code, Milestone 70's 70B) and feature loaders -- including those needed from the first render for their window bridges -- and bootstraps the app. |
 | [`src\modal-events.js`](<src/modal-events.js>) | Build, tooling, or configuration source. |
 | [`src\prepaint.js`](<src/prepaint.js>) | Build, tooling, or configuration source. |
 | [`src\pwa-ui.js`](<src/pwa-ui.js>) | Build, tooling, or configuration source. |
@@ -272,8 +277,8 @@ This index inventories repository files retained as source or project artifacts.
 | [`tests\baseline\ms70-70A-web.json`](<tests/baseline/ms70-70A-web.json>) | Milestone 70 before-migration measurement (70A), the hosted web build; 70L records the after. |
 | [`tests\baseline\ms70-70T-progress.json`](<tests/baseline/ms70-70T-progress.json>) | Milestone 70 (70T) progress record: the browser spec and support files converted to GuardianForms.testing (checked by tests/unit/ms70-70T-guard.spec.js), and what converting them found, each with its resolution. Its exempt list names the files that must name other globals (today only the pre-70 build's driver), with the reason and the specs that may use each. |
 | [`tests\baseline\ms70-assertion-counts.json`](<tests/baseline/ms70-assertion-counts.json>) | Milestone 70 per-spec assertion counts and drop log (tests/unit/ms70-assertion-counts.spec.js). |
-| [`tests\baseline\ms70-declaration-dispositions.json`](<tests/baseline/ms70-declaration-dispositions.json>) | Milestone 70 (70A) disposition and target delivery for every top-level declaration of src/legacy-app.js, built from reference evidence and corrected by the owner's review (reviewNote says why an entry moved); every window export with the consumers that read it. |
-| [`tests\baseline\ms70-declaration-review.json`](<tests/baseline/ms70-declaration-review.json>) | Milestone 70 (70A) owner's review of the declaration dispositions: 94 delivery corrections and one disposition, each with its reason, and every other declaration confirmed with the disposition and delivery confirmed; scripts/ms70-declaration-dispositions.mjs applies it. |
+| [`tests\baseline\ms70-declaration-dispositions.json`](<tests/baseline/ms70-declaration-dispositions.json>) | Milestone 70 (70A) disposition and target delivery for every top-level declaration of src/legacy-app.js, built from reference evidence and corrected by the owner's review (reviewNote says why an entry moved); since 70B also `wrapper` entries -- a moved implementation's one-line wrapper, with movedIn and its deletion target; every window export with the consumers that read it. |
+| [`tests\baseline\ms70-declaration-review.json`](<tests/baseline/ms70-declaration-review.json>) | Milestone 70 (70A) owner's review of the declaration dispositions: 94 delivery corrections and one disposition, each with its reason, and every other declaration confirmed with the disposition and delivery confirmed; `landed` records, per delivery, the names that left the monolith with the placement they had. scripts/ms70-declaration-dispositions.mjs applies it. |
 | [`tests\baseline\ms70-dependency-baseline.json`](<tests/baseline/ms70-dependency-baseline.json>) | Milestone 70 ratchet baseline: the dependency sets that may only shrink during the migration (tests/unit/ms70-dependency-ratchet.spec.js). |
 | [`tests\baseline\ms70-dependency-inventory.json`](<tests/baseline/ms70-dependency-inventory.json>) | Milestone 70 dependency inventory: every edge between application files, with direction, plus classic declarations, cycles, layer violations and unowned reads. Informational. |
 | [`tests\baseline\ms70-e2e-globals.json`](<tests/baseline/ms70-e2e-globals.json>) | Milestone 70 inventory of the application names the browser suite reaches through window and its in-place state writes, from which GuardianForms.testing is designed. Informational. |
@@ -538,6 +543,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`tests\unit\guided-tour-content.spec.js`](<tests/unit/guided-tour-content.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\help-guide-pdf-orphan.spec.js`](<tests/unit/help-guide-pdf-orphan.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\issue-registry.spec.js`](<tests/unit/issue-registry.spec.js>) | Automated test covering the named behavior or contract. |
+| [`tests\unit\legacy-bridge.spec.js`](<tests/unit/legacy-bridge.spec.js>) | Milestone 70, 70B: holds src/legacy-bridge.js's rules -- frozen, members are module exports, imported by main.js before initApp(), read by legacy-app.js only inside functions and only through one-line wrappers that are still called, and by nothing else. |
 | [`tests\unit\live-region.spec.js`](<tests/unit/live-region.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\ms70-70T-guard.spec.js`](<tests/unit/ms70-70T-guard.spec.js>) | Milestone 70 (70T) guard: every browser spec or support file listed as converted in tests/baseline/ms70-70T-progress.json reaches the app only through GuardianForms (no other app global, no in-place case-state write, no computed window lookup), and every finding records its resolution. Also polices the exemptions: each names a real file and its reason, is never also converted, and is imported only by the specs its entry names. |
 | [`tests\unit\ms70-assertion-counts.spec.js`](<tests/unit/ms70-assertion-counts.spec.js>) | Automated test covering the named behavior or contract. |

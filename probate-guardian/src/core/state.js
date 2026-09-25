@@ -136,8 +136,9 @@ export function getActiveWard() {
 // accounting/index.js because it's needed at ward-CREATION time
 // (initializeEmptyData() in legacy-app.js, called from addWard()), which can
 // happen before the feature is ever mounted/rendered. Same reasoning as
-// calcTotals() staying a legacy global for the dashboard's sake (see the
-// Milestone 2 plan's "Problem 1").
+// calcTotals() being kept out of the lazy feature for the dashboard's sake
+// (see the Milestone 2 plan's "Problem 1"; since Milestone 70's 70B it is
+// features/simplified-accounting/totals.js, loaded eagerly).
 export function emptyDataSimplified() {
   return {
     wardName:'', ssn:'', caseNumber:'', ucn:'', periodFrom:'', periodTo:'',

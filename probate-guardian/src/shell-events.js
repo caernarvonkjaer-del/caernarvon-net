@@ -17,7 +17,6 @@ function handleShellClick(event) {
     case 'next-walkthrough': window.nextWalkthroughStep(); break;
     case 'open-backup-sav': window.collapseSaveControls?.(); window.triggerOpenBackupSav?.(); break;
     case 'party-management': window.toggleHelpPanel(); window.navigate('/party-management'); break;
-    case 'rename-ward': window.collapseWardControls?.(); window.showRenameWardModal(); break;
     case 'save-backup': window.collapseSaveControls?.(); window.saveBackupNow(); break;
     case 'skip-walkthrough': window.skipWalkthrough(); break;
     case 'start-walkthrough': window.startWalkthrough(); break;
@@ -58,8 +57,6 @@ function handleShellChange(event) {
   if (event.target instanceof HTMLSelectElement && event.target.id === 'auto-export-interval-select') {
     window.collapseSaveControls?.();
     window.saveAutoExportIntervalPref(Number.parseInt(event.target.value, 10));
-  } else if (event.target instanceof HTMLInputElement && event.target.id === 'zip-import-input' && event.target.files?.[0]) {
-    window.importGuardianDataZip(event.target.files[0]);
   } else if (event.target instanceof HTMLInputElement && event.target.id === 'backup-import-input' && event.target.files?.[0]) {
     window.handleBackupImportChange?.(event.target);
   }

@@ -88,7 +88,8 @@ describe('58D: the empty-state declaration is reachable', () => {
 describe('64B-2 / D13: the Excel-limit panel explains an unsupported schedule instead of counting rows', () => {
   const panelHtml = (over) => {
     const src = extractLegacyFunction('excelCapacityPanel');
-    // esc() and ic() are legacy globals the panel calls; stub them to the
+    // esc() and ic() are free names in the sliced function (one-line
+    // wrappers in legacy-app.js since Milestone 70's 70B); stub them to the
     // minimum this assertion needs (identity escape, empty icon markup).
     const make = new Function('esc', 'ic', `${src}; return excelCapacityPanel;`);
     return make((s) => String(s ?? ''), () => '')(over);

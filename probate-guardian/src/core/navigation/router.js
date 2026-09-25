@@ -4,6 +4,7 @@ import { FILING_ENGINE_IDS, mountFeatureFnName } from '../filing/filing-descript
 import { resetReadinessCardState } from '../filing/readiness-card.js';
 import { saveLastPosition } from '../persistence/recovery-cache.js';
 import { decorateTestSystemTitles } from '../ui/test-system-title.js';
+import { ic } from '../ui/icons.js';
 
 let _currentPage = '/dashboard';
 
@@ -226,10 +227,8 @@ export function attachFormHeaderActions(container = (typeof document !== 'undefi
 
   const actions = document.createElement('div');
   actions.className = 'form-header-actions';
-  const homeIcon = typeof window.ic === 'function'
-    ? window.ic('home', 16)
-    : '<svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3.2 10.6 12 3.6l8.8 7"/><path d="M5.7 9.3v11.1h12.6V9.3"/></svg>';
-  const themeIcon = typeof window.ic === 'function' ? window.ic(isDark ? 'sun' : 'moon', 16) : '';
+  const homeIcon = ic('home', 16);
+  const themeIcon = ic(isDark ? 'sun' : 'moon', 16);
 
   actions.innerHTML = `<button type="button" class="topnav-btn" data-shell-action="dashboard">${homeIcon} All Filings</button><button type="button" class="topnav-btn topnav-theme" id="theme-toggle-btn" data-shell-action="toggle-theme" title="Switch theme" aria-label="Switch to ${isDark ? 'light' : 'dark'} theme" aria-pressed="${isDark}">${themeIcon}</button><button type="button" class="topnav-btn topnav-help" id="help-toggle-btn" data-shell-action="toggle-help" title="Help" aria-label="Help" aria-haspopup="true" aria-expanded="${helpOpen}" aria-controls="help-panel">?</button>`;
   h1.appendChild(actions);

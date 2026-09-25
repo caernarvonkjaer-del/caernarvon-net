@@ -62,56 +62,34 @@ describe('Excel Engine unit tests', () => {
       expect(sanitizeCellValue(null)).toBe('');
     });
 
-    it('sanitizeCellValue defers to legacy-app.js sanitizeForExcel when it is present', () => {
-      // In the browser that global always exists, so this wrapper is a passthrough
-      // and adopting core setCell cannot change what the features sanitized with.
-      const spy = vi.fn(() => 'DELEGATED');
-      const original = globalThis.window;
-      globalThis.window = { sanitizeForExcel: spy };
-      try {
-        expect(sanitizeCellValue('=danger')).toBe('DELEGATED');
-        expect(spy).toHaveBeenCalledWith('=danger');
-      } finally {
-        if (original === undefined) delete globalThis.window;
-        else globalThis.window = original;
-      }
-    });
-
-    // Milestone 51 widened both rules to OWASP's complete CSV-injection set and
-    // pins them as EQUAL here. The previous version of this test hardcoded a copy
-    // of the legacy rule, which would silently go stale the moment either side
-    // changed -- so this reads the production regex out of legacy-app.js instead
-    // of restating it.
+    // Milestone 51 widened the rule to OWASP's complete CSV-injection set. Until
+    // Milestone 70's 70B there were two copies of it -- legacy-app.js's
+    // sanitizeForExcel(), which ran in the browser, and this module's Node
+    // fallback -- and this spec read the legacy regex out of that file's source
+    // to pin the two as equal. 70B deleted the copy; sanitizeCellValue() is now
+    // what runs everywhere, so it is tested directly.
     const OWASP_LEADING_CHARS = ['=', '+', '-', '@', '\t', '\r', '\n'];
 
-    it('the production sanitizer guards OWASP\'s complete leading-character set', () => {
-      const legacySource = fs.readFileSync(
-        path.resolve(process.cwd(), 'src/legacy-app.js'), 'utf8',
-      );
-      const match = legacySource.match(/function sanitizeForExcel\(s\)\{\s*return (\/\^\[[^\]]+\]\/)\.test\(s\)/);
-      expect(match, 'sanitizeForExcel() must still be findable in legacy-app.js').toBeTruthy();
-      // eslint-disable-next-line no-eval
-      const legacyRule = eval(match[1]);
+    it('guards OWASP\'s complete leading-character set, and nothing more', () => {
       for (const ch of OWASP_LEADING_CHARS) {
-        expect(legacyRule.test(ch + 'x'), `production rule must escape ${JSON.stringify(ch)}`).toBe(true);
+        expect(sanitizeCellValue(ch + 'x'), `must escape ${JSON.stringify(ch)}`).toBe("'" + ch + 'x');
       }
       // A leading space is NOT on the list and must not be escaped -- over-escaping
       // would put a stray apostrophe into a filed court document.
-      expect(legacyRule.test(' =x')).toBe(false);
-      expect(legacyRule.test('x')).toBe(false);
+      expect(sanitizeCellValue(' =x')).toBe(' =x');
+      expect(sanitizeCellValue('plain')).toBe('plain');
     });
 
-    it('the Node fallback escapes exactly the same set as the production rule', () => {
+    it('the browser runs this implementation, not a window-global copy', () => {
+      // Before 70B a window.sanitizeForExcel always won in the browser. A
+      // global of that name must no longer change what is written.
       const original = globalThis.window;
-      if (original !== undefined) delete globalThis.window;
+      globalThis.window = { sanitizeForExcel: () => 'DELEGATED' };
       try {
-        for (const ch of OWASP_LEADING_CHARS) {
-          expect(sanitizeCellValue(ch + 'x'), `fallback must escape ${JSON.stringify(ch)}`).toBe("'" + ch + 'x');
-        }
-        expect(sanitizeCellValue(' =x')).toBe(' =x');
-        expect(sanitizeCellValue('plain')).toBe('plain');
+        expect(sanitizeCellValue('=danger')).toBe("'=danger");
       } finally {
-        if (original !== undefined) globalThis.window = original;
+        if (original === undefined) delete globalThis.window;
+        else globalThis.window = original;
       }
     });
 

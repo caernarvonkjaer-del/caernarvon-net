@@ -49,6 +49,9 @@ import { renderWardIdentityFields, renderReportingPeriodFields } from '../../cor
 import { renderResidenceFields } from '../../core/form/cards/residence-facility-card.js';
 import { renderPartyNameField } from '../../core/form/cards/guardian-attorney-card.js';
 import { renderFormField } from '../../core/form/form-fields.js';
+import { esc } from '../../core/filing/escape-html.js';
+import { ic } from '../../core/ui/icons.js';
+import { formatDisplayDate } from '../../core/form/date-parser.js';
 // Initial Guardianship Plan — the fourth feature extraction (Milestone 5,
 // Phases A and B of INDEX-SPLIT-PLAN.md's migration sequence: data/
 // validation/pages/nav, and print/PDF export). Dynamically imported by
@@ -81,9 +84,8 @@ import { renderFormField } from '../../core/form/form-fields.js';
 // See plan-annual/index.js's Milestone 51C note for why toggleSsnReveal is
 // never needed in a feature module's scope.
 const {
-  esc, ic, inpS, radioP, pageNavS,
+  inpS, radioP, pageNavS,
   renderScheduleDocsSection, txtP, chkP, planQ, planCheckGroup, yesNoCheckboxS,
-  formatDisplayDate,
   INITIAL_ADLS, INITIAL_ADL_RATINGS,
 } = window;
 

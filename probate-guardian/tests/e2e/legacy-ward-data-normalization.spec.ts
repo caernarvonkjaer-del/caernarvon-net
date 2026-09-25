@@ -58,7 +58,7 @@ test.describe('legacy boolean -> tri-state ward data normalization (Guardian Inv
     });
   });
 
-  test('window.calc restricted/unrestricted totals are correct against normalized tri-state data', async ({ page }) => {
+  test('the Guardian Inventory calculator\'s restricted/unrestricted totals are correct against normalized tri-state data', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Restricted Asset Math Ward', 'guardian');
 
@@ -72,7 +72,7 @@ test.describe('legacy boolean -> tri-state ward data normalization (Guardian Inv
         { description: 'Open Brokerage', fullAssetValue: '900', wardPercent: '100', isRestricted: false },
       ],
     });
-    // window.calc forwards to guardian-inventory/totals.js, as calcTotalsGuardian() does.
+    // The UI's calc and calcTotalsGuardian() are both guardian-inventory/totals.js.
     const totals = await page.evaluate(() => {
       const all = (window as any).GuardianForms.testing.status.guardianTotals();
       return {

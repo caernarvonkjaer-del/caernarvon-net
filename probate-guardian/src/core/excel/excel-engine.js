@@ -79,26 +79,50 @@ import { getExcelJS } from './exceljs-loader.js';
 export { getExcelJS };
 
 /**
- * Sanitizes cell text to prevent formula injection in spreadsheet software.
+ * Sanitizes cell text to prevent formula injection in spreadsheet software:
+ * a cell value starting with =, +, -, or @ would otherwise be interpreted as a
+ * formula by Excel/Sheets when the exported file is opened. Only applied at
+ * export time -- never affects the live in-app values or how they render on
+ * screen.
  *
- * Delegates to legacy-app.js's sanitizeForExcel() when present, which is the
- * implementation that actually runs in the browser; the fallback below covers the
- * Node/test case.
+ * This is the one implementation. Until Milestone 70's 70B it delegated to a
+ * copy in legacy-app.js (sanitizeForExcel()) whenever that was present -- so
+ * in the browser, always -- and this body ran only under Node. The two were
+ * pinned as equal for strings, which is all setCell() ever passes, so the
+ * copy was deleted rather than carried.
  *
- * Both now guard OWASP's complete CSV-injection set -- = + - @ TAB(0x09)
- * CR(0x0D) LF(0x0A) -- and tests/unit/excel-engine.spec.js pins them as EQUAL
- * rather than merely one-directional. Before Milestone 51 they disagreed: the
- * production rule was /^[=+\-@]/ and this fallback /^[=+\-@\t\r]/, so NEITHER
- * matched OWASP (both missed LF) and the stricter of the two ran only in the one
- * place it could not matter. See legacy-app.js's sanitizeForExcel() for why
- * widening it is hardening rather than a fix.
+ * The character set is OWASP's complete CSV-injection list: = + - @ TAB(0x09)
+ * CR(0x0D) LF(0x0A).
+ *
+ * Milestone 51 widened this from /^[=+\-@]/ after researching the gap. Three
+ * findings worth recording, because the change is HARDENING rather than a fix
+ * and the distinction matters if anyone revisits it:
+ *
+ *  1. Not exploitable through this app's own output today. The app writes only
+ *     .xlsx (via ExcelJS into a court template) and never CSV, and it never
+ *     writes a {formula:...} cell -- every value goes through setCell() as a
+ *     string or a number, which ExcelJS stores as a typed string/number that
+ *     Excel does not evaluate. An unsanitized "=cmd" lands in the workbook as
+ *     inert text.
+ *  2. So the real vector is secondary: a clerk re-saving the .xlsx as CSV, or
+ *     copying cells into another sheet, where the literal text is re-parsed.
+ *     That is what this guard defends, and it is why it is worth keeping
+ *     complete rather than partial.
+ *  3. sanitizeStoredText()'s .trim() already strips leading tab/CR/LF from any
+ *     value that passes through it, so the three characters added here are very
+ *     nearly unreachable. Added anyway: a half-correct guard invites someone to
+ *     re-derive all of the above later, and the previous state had TWO
+ *     incomplete versions of this rule disagreeing with each other (the
+ *     production rule was /^[=+\-@]/ and the Node fallback /^[=+\-@\t\r]/,
+ *     so NEITHER matched OWASP -- both missed LF).
+ *
+ * Deliberately NOT included: the full-width variants OWASP also mentions for
+ * some locales. Not a plausible threat model for Florida probate filings, and
+ * adding them would risk mangling legitimate content.
  * @param {string} str
  * @returns {string}
  */
 export function sanitizeCellValue(str) {
-  if (typeof window !== 'undefined' && typeof window.sanitizeForExcel === 'function') {
-    return window.sanitizeForExcel(str);
-  }
   const s = String(str ?? '');
   if (/^[=+\-@\t\r\n]/.test(s)) {
     return "'" + s;

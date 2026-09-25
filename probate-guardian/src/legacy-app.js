@@ -1,53 +1,4 @@
 // ═══════════════════════════════════════════════════════
-// ICON SET
-// Emoji were replaced with these because they render as a different
-// picture on every OS, sit at inconsistent weights beside text, and read
-// as informal in a document a court receives. These are one stroke
-// weight, inherit currentColor, and align to the same 24px grid.
-// Inlined as literal <svg> (never <use>) so they survive html2canvas,
-// which is what rasterises the app for print preview.
-// ═══════════════════════════════════════════════════════
-const ICONS={
-  home:'<path d="M3.2 10.6 12 3.6l8.8 7"/><path d="M5.7 9.3v11.1h12.6V9.3"/>',
-  pencil:'<path d="M4 20h4.2L19.4 8.8a2 2 0 0 0 0-2.8l-1.4-1.4a2 2 0 0 0-2.8 0L4 15.8Z"/><path d="M14.5 5.9 18.1 9.5"/>',
-  trash:'<path d="M4.5 6.8h15"/><path d="M9.3 6.8V4.4h5.4v2.4"/><path d="M6.6 6.8 7.7 20h8.6l1.1-13.2"/>',
-  download:'<path d="M12 3.6v10.8"/><path d="m8.2 10.8 3.8 3.8 3.8-3.8"/><path d="M4.4 19.9h15.2"/>',
-  upload:'<path d="M12 14.4V3.6"/><path d="m8.2 7.4 3.8-3.8 3.8 3.8"/><path d="M4.4 19.9h15.2"/>',
-  lock:'<rect x="4.6" y="10.4" width="14.8" height="9.6" rx="1.8"/><path d="M8.2 10.4V7.8a3.8 3.8 0 0 1 7.6 0v2.6"/>',
-  unlock:'<rect x="4.6" y="10.4" width="14.8" height="9.6" rx="1.8"/><path d="M8.2 10.4V7.8a3.8 3.8 0 0 1 6.9-2.2"/>',
-  file:'<path d="M6.4 3.4h7l4.2 4.2v13H6.4Z"/><path d="M13.2 3.4v4.4h4.4"/><path d="M9.2 12.6h5.6M9.2 16h5.6"/>',
-  chart:'<path d="M4.2 20h15.6"/><path d="M7.4 20v-6.4M12 20V5.6M16.6 20v-9.2"/>',
-  trending:'<path d="m4.2 15.8 5-5 3 3 6.4-6.4"/><path d="M14.6 7.4h4.6V12"/>',
-  printer:'<path d="M7.2 9.2V3.6h9.6v5.6"/><rect x="4" y="9.2" width="16" height="6.6" rx="1.6"/><path d="M7.2 14.6h9.6v5.8H7.2Z"/>',
-  search:'<circle cx="10.8" cy="10.8" r="6.2"/><path d="m19.6 19.6-4.4-4.4"/>',
-  swap:'<path d="M4.4 8.6h13.2"/><path d="m14.4 5.4 3.2 3.2-3.2 3.2"/><path d="M19.6 15.4H6.4"/><path d="m9.6 12.2-3.2 3.2 3.2 3.2"/>',
-  folder:'<path d="M3.4 6.4h5.6l2 2.2h9.6V19H3.4Z"/>',
-  folderOpen:'<path d="M3.4 6.4h5.6l2 2.2h7.6v2.2"/><path d="M3.4 8.6 5.6 19h13.2l2.2-8.2H5.6Z"/>',
-  list:'<path d="M4.4 7h15.2M4.4 12h15.2M4.4 17h15.2"/>',
-  grid:'<rect x="4.2" y="4.2" width="6.4" height="6.4" rx="1.2"/><rect x="13.4" y="4.2" width="6.4" height="6.4" rx="1.2"/><rect x="4.2" y="13.4" width="6.4" height="6.4" rx="1.2"/><rect x="13.4" y="13.4" width="6.4" height="6.4" rx="1.2"/>',
-  archive:'<rect x="3.6" y="4.2" width="16.8" height="4.4" rx="1.2"/><path d="M5.4 8.6V19h13.2V8.6"/><path d="M10 12.4h4"/>',
-  undo:'<path d="M4.4 9.4h10a5.2 5.2 0 1 1 0 10.4H7.6"/><path d="m8 5.4-3.6 4 3.6 4"/>',
-  clipboard:'<path d="M9 4.6H7.2a1.6 1.6 0 0 0-1.6 1.6V19a1.6 1.6 0 0 0 1.6 1.6h9.6A1.6 1.6 0 0 0 18.4 19V6.2a1.6 1.6 0 0 0-1.6-1.6H15"/><rect x="9" y="3" width="6" height="3.4" rx="1.1"/>',
-  copy:'<rect x="8.6" y="8.6" width="11.4" height="11.4" rx="1.8"/><path d="M15.4 5.4H5.8a1.8 1.8 0 0 0-1.8 1.8v9.6"/>',
-  receipt:'<path d="M6 3.6h12v17l-3-1.8-3 1.8-3-1.8-3 1.8Z"/><path d="M9.2 8.4h5.6M9.2 12.4h5.6"/>',
-  inbox:'<path d="M4 13.6 6.2 4.6h11.6L20 13.6v5.8H4Z"/><path d="M4 13.6h4.2l1.2 2.4h5.2l1.2-2.4H20"/>',
-  alert:'<path d="M12 4.2 21 19.8H3Z"/><path d="M12 10v4.2"/><circle cx="12" cy="17.4" r=".9" fill="currentColor" stroke="none"/>',
-  external:'<path d="M14.2 4.4h5.4v5.4"/><path d="m19.6 4.4-8 8"/><path d="M17.4 13.6v6H4.6V6.8h6"/>',
-  check:'<path d="m4.8 12.4 4.8 4.8L19.2 7.6"/>',
-  plus:'<path d="M12 5v14M5 12h14"/>',
-  close:'<path d="m6 6 12 12M18 6 6 18"/>',
-  shield:'<path d="M12 3.2 20 6v6.1c0 4.6-3.3 7.5-8 8.7-4.7-1.2-8-4.1-8-8.7V6Z"/>',
-  sun:'<circle cx="12" cy="12" r="4.2"/><path d="M12 2.8v2.6M12 18.6v2.6M4.2 12H1.6M22.4 12h-2.6M5.6 5.6l1.8 1.8M16.6 16.6l1.8 1.8M18.4 5.6l-1.8 1.8M7.4 16.6l-1.8 1.8"/>',
-  moon:'<path d="M20.2 14.3A8.3 8.3 0 0 1 9.7 3.8a8.3 8.3 0 1 0 10.5 10.5Z"/>',
-  bug:'<path d="M9 9.2h6a3.8 3.8 0 0 1 3.8 3.8v2.4A3.8 3.8 0 0 1 15 19.2H9a3.8 3.8 0 0 1-3.8-3.8V13A3.8 3.8 0 0 1 9 9.2Z"/><path d="M8.2 5.8 6.6 4.2M12 5.6V3.4M15.8 5.8l1.6-1.6M5.2 12H3.4M20.6 12h-1.8M9.4 14.2h.1M14.5 14.2h.1"/>',
-  message:'<path d="M4.2 5.2h15.6v11.2H9l-4.8 4v-4H4.2Z"/><path d="M8 9.2h8M8 12.4h5.4"/>',
-};
-function ic(n,size){
-  return '<svg class="ic" width="'+(size||16)+'" height="'+(size||16)+'" viewBox="0 0 24 24" '
-    +'fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" '
-    +'stroke-linejoin="round" aria-hidden="true" focusable="false">'+(ICONS[n]||'')+'</svg>';
-}
-// ═══════════════════════════════════════════════════════
 // THEME (light / dark)
 // The synchronous head script sets the OS preference before first paint.
 // This block handles runtime changes and restores the saved .sav setting.
@@ -705,420 +656,57 @@ try {
 // ═══════════════════════════════════════════════════════
 // COMMON HELPERS
 // ═══════════════════════════════════════════════════════
-const r2=(v)=>Math.round(v*100)/100;
-const fmt=(v)=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(v||0);
-window.fmt=fmt;
-function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+// Milestone 70, 70B: the pure helpers that used to be defined here live in ES
+// modules now -- icons in src/core/ui/icons.js; esc() in
+// src/core/filing/escape-html.js; fmt() and formatDashboardCurrency() in
+// src/core/format/money.js; field formatting and filters in
+// src/core/form/form-contract.js; injection checks and import hardening in
+// src/core/security/input-hardening.js; guardianHasAnyData() in
+// src/core/validation/row-started.js; FL_COUNTIES in src/core/pdf/circuit-lookup.js;
+// formatDisplayDate() in src/core/form/date-parser.js; calcTotals() in
+// src/features/simplified-accounting/totals.js. This script still calls them,
+// so each keeps a one-line wrapper that delegates through src/legacy-bridge.js
+// (a classic script cannot import). A wrapper goes when its last caller here
+// moves out; never put logic back in one.
+const fmt=(v)=>window.GuardianFormsLegacyBridge.fmt(v);
+function ic(n,size){return window.GuardianFormsLegacyBridge.ic(n,size);}
+function esc(s){return window.GuardianFormsLegacyBridge.esc(s);}
+function guardianHasAnyData(g){return window.GuardianFormsLegacyBridge.guardianHasAnyData(g);}
+function sanitizeNonNegativeDecimal(s){return window.GuardianFormsLegacyBridge.sanitizeNonNegativeDecimal(s);}
+function validateImportFile(file,kind){return window.GuardianFormsLegacyBridge.validateImportFile(file,kind);}
+function sanitizeObjectData(obj){return window.GuardianFormsLegacyBridge.sanitizeObjectData(obj);}
+function formatPhone(s){return window.GuardianFormsLegacyBridge.formatPhone(s);}
+function formatSSN(s){return window.GuardianFormsLegacyBridge.formatSSN(s);}
+function formatCaseNumber(s){return window.GuardianFormsLegacyBridge.formatCaseNumber(s);}
+function finalizeCaseNumber(s){return window.GuardianFormsLegacyBridge.finalizeCaseNumber(s);}
+function formatBarNumber(s){return window.GuardianFormsLegacyBridge.formatBarNumber(s);}
+function formatAccountNumber(s){return window.GuardianFormsLegacyBridge.formatAccountNumber(s);}
+function formatCheckNumber(s){return window.GuardianFormsLegacyBridge.formatCheckNumber(s);}
+function formatName(s){return window.GuardianFormsLegacyBridge.formatName(s);}
+function formatAddress(s){return window.GuardianFormsLegacyBridge.formatAddress(s);}
+function applyZipLimit(el){return window.GuardianFormsLegacyBridge.applyZipLimit(el);}
+function formatDashboardCurrency(v){return window.GuardianFormsLegacyBridge.formatDashboardCurrency(v);}
+function formatDisplayDate(s){return window.GuardianFormsLegacyBridge.formatDisplayDate(s);}
+function calcTotals(){return window.GuardianFormsLegacyBridge.calcTotals();}
 
-// Neutralizes formula/CSV injection: a cell value starting with =, +, -, or @
-// would otherwise be interpreted as a formula by Excel/Sheets when the
-// exported file is opened. Only applied at export time — never affects the
-// live in-app values stored in window.D or how they render on screen.
-// Formula-injection guard for spreadsheet output. The character set is OWASP's
-// complete CSV-injection list: = + - @ TAB(0x09) CR(0x0D) LF(0x0A).
-//
-// Milestone 51 widened this from /^[=+\-@]/ after researching the gap. Three
-// findings worth recording, because the change is HARDENING rather than a fix
-// and the distinction matters if anyone revisits it:
-//
-//  1. Not exploitable through this app's own output today. The app writes only
-//     .xlsx (via ExcelJS into a court template) and never CSV, and it never
-//     writes a {formula:...} cell -- every value goes through setCell() as a
-//     string or a number, which ExcelJS stores as a typed string/number that
-//     Excel does not evaluate. An unsanitized "=cmd" lands in the workbook as
-//     inert text.
-//  2. So the real vector is secondary: a clerk re-saving the .xlsx as CSV, or
-//     copying cells into another sheet, where the literal text is re-parsed.
-//     That is what this guard defends, and it is why it is worth keeping
-//     complete rather than partial.
-//  3. sanitizeStoredText()'s .trim() already strips leading tab/CR/LF from any
-//     value that passes through it, so the three characters added here are very
-//     nearly unreachable. Added anyway: a half-correct guard invites someone to
-//     re-derive all of the above later, and the previous state had TWO
-//     incomplete versions of this rule disagreeing with each other.
-//
-// Deliberately NOT included: the full-width variants (＝ ＋ － ＠) OWASP also
-// mentions for some locales. Not a plausible threat model for Florida probate
-// filings, and adding them would risk mangling legitimate content.
-function sanitizeForExcel(s){
-  return /^[=+\-@\t\r\n]/.test(s) ? "'"+s : s;
-}
 
-// A co-guardian slot counts as "in use" if any field is filled, not just Name —
-// otherwise partially-filled co-guardian rows silently vanish from export/validation/checkmarks.
-// Annual Accounting binds officeStreet/officeCityStateZip where Simplified
-// binds residenceStreet/residenceCityStateZip, so both pairs have to be
-// checked here. Missing the office pair meant an Annual co-guardian with
-// only an office address read as "no data": skipped by validate() and
-// dropped from the exported court document.
-function guardianHasAnyData(g){
-  // isPreparer (Milestone 67A): a card the filer has ticked as the preparer
-  // is not a blank card, and a flagged row must then supply its name.
-  return !!(g&&(g.name||g.ssn||g.phone||g.email||g.mailingStreet||g.mailingCityStateZip
-    ||g.residenceStreet||g.residenceCityStateZip||g.officeStreet||g.officeCityStateZip
-    ||g.signatureDate||g.isPreparer));
-}
 
-// ── SECURITY VALIDATION ──────────────────────────────
-// A SQL-injection keyword/pattern detector used to sit here (bare
-// \bupdate\b/\bdelete\b/\binsert\b/\bdrop\b/\bexec\b/-- matches) and ran on
-// every plain free-text field in Annual/Final/Trust Accounting on blur
-// (validateSecurityInput() below). This app has no SQL backend anywhere --
-// nothing it ever produces is a database query built from user input -- so
-// the check protected against a vector that doesn't exist here, while
-// blanking real filer text on a false-positive keyword match: a Schedule C
-// description reading "Update to appraisal value" or "Sale of lot -- see
-// attached" was silently wiped to empty on blur, with only a console.warn
-// no filer would ever see. Removed rather than narrowed: there is no SQL
-// query context downstream for any narrower pattern to legitimately guard.
-// detectXSSPayload() and detectPathTraversal() stay -- both match tag/URI
-// syntax unlikely to appear in ordinary legal narrative, not bare English
-// words, so they carry a much lower false-positive cost for whatever benefit
-// they still provide.
 
-// Detect and block XSS/HTML injection
-function detectXSSPayload(s){
-  const xssPatterns=[/<script[^>]*>|javascript:|on\w+\s*=|<iframe|<object|<embed|<img[^>]+onerror|<svg[^>]+on|<body[^>]+on|eval\(|expression\(|vbscript:/i];
-  return xssPatterns.some(p=>p.test(String(s||'')));
-}
 
-// Detect and block path traversal attempts
-function detectPathTraversal(s){
-  const pathPatterns=[/\.\.\//,/\.\.\\/,/^\/etc\//,/\/etc\//i,/^[a-z]:\\/i];
-  return pathPatterns.some(p=>p.test(String(s||'')));
-}
 
-// Sanitize input: remove dangerous characters but preserve legitimate data
-// Milestone 40H-G: dropped the straight apostrophe from the stripped set --
-// it turned "ward's" into "wards" in ordinary narrative text. Only the
-// actual HTML/script-injection vectors stay stripped (<, >, ", and `);
-// detectXSSPayload() above matches on tag syntax, not quote characters, so
-// narrowing this doesn't reopen it.
-function sanitizeInput(s){
-  if(!s)return s;
-  let cleaned=String(s);
-  cleaned=cleaned.replace(/[<>"`]/g,'');
-  cleaned=cleaned.replace(/javascript:/gi,'');
-  cleaned=cleaned.replace(/on\w+=/gi,'');
-  return cleaned;
-}
 
-// Strip everything except digits and a single decimal point — used for
-// amount/percent fields instead of type="number" so we fully own character
-// filtering (native number inputs allow '-' inconsistently across WebView
-// versions, and their spinner buttons don't fire keydown so keydown-based
-// minus-blocking can't catch them).
-function sanitizeNonNegativeDecimal(s){
-  let v=String(s||'').replace(/[^0-9.]/g,'');
-  const firstDot=v.indexOf('.');
-  if(firstDot!==-1){
-    v=v.slice(0,firstDot+1)+v.slice(firstDot+1).replace(/\./g,'');
-  }
-  return v;
-}
-// Same as sanitizeNonNegativeDecimal but keeps a single leading '-' -- for
-// the couple of fields (Annual Schedule C's Loss/Reduction, Schedule E's
-// Transfer Out Amt) that are explicitly entered as negative. Those used to
-// be native type="number" instead, which is exactly the pattern the
-// comment above sanitizeNonNegativeDecimal explains this app moved away
-// from app-wide (inconsistent '-' handling and no keydown events from the
-// spinner buttons across WebView versions) -- these two were simply never
-// migrated when the rest of the app was.
-function sanitizeDecimal(s){
-  const str=String(s||'');
-  const neg=str.trim().startsWith('-');
-  const digits=sanitizeNonNegativeDecimal(str);
-  // Keep a lone '-' even before any digits are typed (a valid, if
-  // incomplete, intermediate state) -- requiring digits first would wipe
-  // the sign the instant it's typed, before the digits that are supposed
-  // to follow it exist yet.
-  return neg?'-'+digits:digits;
-}
 
-// Validate field value for security and format
-function validateSecurityInput(fieldName,value){
-  const v=String(value||'');
-  if(detectXSSPayload(v)||detectPathTraversal(v)){
-    console.warn(`Security: Blocked dangerous input in ${fieldName}`);
-    return '';
-  }
-  return sanitizeInput(v);
-}
 
-// ── IMPORTED FILE HARDENING ──────────────────────────
-// Every import entry point (the three Excel importers, their drag-and-drop
-// equivalent, and the .sav/.zip picker) hands this module a file chosen by
-// whoever is sitting at the browser — including a guardian who was emailed
-// a "fixed" template by someone else. Nothing here assumes the extension
-// matches the content, or that the content is well-formed.
-const IMPORT_SIZE_LIMITS={
-  xlsx:10*1024*1024,  // court templates run well under 1MB; 10MB is generous headroom
-  sav:50*1024*1024    // a .sav can bundle many wards plus attachments (15MB cap each, see SCHEDULE_DOC_MAX_FILE_BYTES)
-};
-const ZIP_MAGIC=[0x50,0x4B,0x03,0x04]; // local-file-header signature 'PK\x03\x04' — every .xlsx and .sav is a ZIP container
 
-// Rejects a file before it ever reaches ExcelJS/JSZip: empty, over the size
-// ceiling for its kind, or not actually a ZIP (accept=".xlsx" is only a
-// filename hint — the browser does not enforce it, and a court-issued
-// template you were emailed could be anything with that extension slapped
-// on). Checking the first 4 bytes rather than trusting file.name/file.type
-// means a renamed non-ZIP file fails fast with a clear message instead of
-// reaching the parser at all.
-async function validateImportFile(file,kind){
-  if(!file)return{ok:false,message:'No file was selected.'};
-  if(file.size===0)return{ok:false,message:'That file is empty.'};
-  const limit=IMPORT_SIZE_LIMITS[kind]||IMPORT_SIZE_LIMITS.xlsx;
-  if(file.size>limit){
-    return{ok:false,message:`That file is ${(file.size/1024/1024).toFixed(1)} MB, which is over the ${(limit/1024/1024)|0} MB limit for this kind of import.`};
-  }
-  let head;
-  try{
-    head=new Uint8Array(await file.slice(0,4).arrayBuffer());
-  }catch(e){
-    return{ok:false,message:'That file could not be read.'};
-  }
-  if(head.length<4||!ZIP_MAGIC.every((b,i)=>head[i]===b)){
-    return{ok:false,message:'That file is not a valid Excel/.sav file (its contents do not match a ZIP archive, regardless of its name).'};
-  }
-  return{ok:true};
-}
 
-// Several pages embed their own copy of an import zone, each with its own
-// #import-progress(-simplified|-annual) div sitting next to the file input
-// (see pageCover/pageSimplified/pageAnnual) — walk up from the input that
-// actually fired rather than assuming a single global id, or status text
-// meant for one copy of the zone can silently land in a different one (or
-// nowhere, if this page happens not to render the first id at all).
-function getImportProgressEl(input){
-  const scope=input&&input.closest?input.closest('.accordion-body'):null;
-  return (scope&&scope.querySelector('[id^="import-progress"]'))||document.getElementById('import-progress');
-}
 
-// Defense-in-depth after a workbook otherwise passes the size/magic-byte
-// gate above: a small ZIP can still decompress into a workbook with an
-// enormous used range (a "sheet with a huge used range" — the case this
-// guards against). This app's own readers only ever touch a fixed, known
-// set of cell addresses per template — they were never the unbounded
-// `sheet.rowCount`/`eachRow` loops that would normally need capping here —
-// so the real risk is ExcelJS itself materializing that whole range during
-// .load(). This can't stop that first pass (see the accompanying report for
-// why: it would need the parse moved into a Worker), but it does stop this
-// app from doing anything further with a workbook shaped nothing like a
-// Clerk of Court template, with a plain-language reason instead of it just
-// silently working through something enormous.
-const EXCEL_IMPORT_LIMITS={maxSheets:60,maxRowsPerSheet:5000};
-function assertWorkbookWithinLimits(workbook){
-  const sheets=workbook.worksheets||[];
-  if(sheets.length>EXCEL_IMPORT_LIMITS.maxSheets){
-    throw new Error(`This file has ${sheets.length} sheets — far more than a Clerk of Court template ever has. It was not imported.`);
-  }
-  for(const ws of sheets){
-    const n=ws.actualRowCount||ws.rowCount||0;
-    if(n>EXCEL_IMPORT_LIMITS.maxRowsPerSheet){
-      throw new Error(`Sheet "${ws.name}" has ${n} rows — far more than a Clerk of Court template ever has. It was not imported.`);
-    }
-  }
-}
 
-// Recursively sanitize all string fields in an object (for loaded data)
-function sanitizeObjectData(obj){
-  if(!obj||typeof obj!=='object')return obj;
-  if(Array.isArray(obj))return obj.map(sanitizeObjectData);
-  const sanitized={};
-  for(const key in obj){
-    const val=obj[key];
-    if(typeof val==='string'){
-      sanitized[key]=sanitizeInput(val);
-    }else if(typeof val==='object'){
-      sanitized[key]=sanitizeObjectData(val);
-    }else{
-      sanitized[key]=val;
-    }
-  }
-  return sanitized;
-}
 
-// In-place counterpart to sanitizeObjectData, for a caller holding a live
-// reference that must keep its identity — window.D during an Excel import
-// is literally the object sitting in caseFile.wards, and sanitizeObjectData
-// returning a NEW object would silently detach window.D from that array
-// entry, so the next saveData() would persist the OLD, un-sanitized ward.
-// importExcelFile builds a fresh object and can use sanitizeObjectData
-// before ever touching window.D; the extracted Simplified and Annual importers
-// write straight onto window.D field-by-field, so this mutates it afterward.
-function sanitizeObjectDataInPlace(obj){
-  if(!obj||typeof obj!=='object')return obj;
-  if(Array.isArray(obj)){
-    for(let i=0;i<obj.length;i++){
-      if(typeof obj[i]==='string')obj[i]=sanitizeInput(obj[i]);
-      else if(obj[i]&&typeof obj[i]==='object')sanitizeObjectDataInPlace(obj[i]);
-    }
-    return obj;
-  }
-  for(const key of Object.keys(obj)){
-    const val=obj[key];
-    if(typeof val==='string')obj[key]=sanitizeInput(val);
-    else if(val&&typeof val==='object')sanitizeObjectDataInPlace(val);
-  }
-  return obj;
-}
 
-// Format phone as (123) 456-7890 — accepts only digits, pads/truncates to 10
-function formatPhone(s){
-  const digits=String(s||'').replace(/\D/g,'').slice(0,10);
-  if(digits.length===0)return '';
-  if(digits.length<=3)return `(${digits}`;
-  if(digits.length<=6)return `(${digits.slice(0,3)}) ${digits.slice(3)}`;
-  return `(${digits.slice(0,3)}) ${digits.slice(3,6)}-${digits.slice(6)}`;
-}
 
-// Format SSN/EIN as XXX-XX-XXXX — accepts only digits, pads/truncates to 9
-function formatSSN(s){
-  const digits=String(s||'').replace(/\D/g,'').slice(0,9);
-  if(digits.length===0)return '';
-  if(digits.length<=3)return digits;
-  if(digits.length<=5)return `${digits.slice(0,3)}-${digits.slice(3)}`;
-  return `${digits.slice(0,3)}-${digits.slice(3,5)}-${digits.slice(5)}`;
-}
 
-// Case Number format is YY-######-GD: a 2-digit year, a sequentially
-// issued 6-digit case number, and "GD" for Guardianship -- the only case
-// type this app produces, so it's never something the guardian types
-// themselves. Typing-time only inserts the dash after the year and caps
-// input at 8 digits (2 + 6); it deliberately does NOT pad the sequence or
-// append "-GD" here, so the field doesn't jump to "12-000000-GD" while
-// the guardian is still in the middle of typing the sequence. That
-// happens once in finalizeCaseNumber() below, on blur.
-function formatCaseNumber(s){
-  if(!s)return '';
-  const raw=String(s).trim();
-  const suffixMatch=raw.match(/[-_\s]?([A-Za-z]{1,4})$/);
-  const suffix=suffixMatch?suffixMatch[1]:'';
-  const withoutSuffix=suffixMatch?raw.slice(0,suffixMatch.index):raw;
-  let digits=withoutSuffix.replace(/\D/g,'');
-  if(digits.length>=8&&digits.startsWith('20')){
-    digits=digits.slice(2);
-  }
-  digits=digits.slice(0,8);
-  if(digits.length<=2){
-    return suffix ? `${digits}-${suffix}` : digits;
-  }
-  const formattedDigits=`${digits.slice(0,2)}-${digits.slice(2)}`;
-  return suffix ? `${formattedDigits}-${suffix}` : formattedDigits;
-}
 
-// Blur-time finalization: left-pads the sequence to 6 digits and appends
-// the fixed "-GD" suffix, so "3-14-GD" from a guardian who typed "3145"
-// becomes the properly formed "03-000145-GD". Only a bare year (0-2
-// digits, nothing typed for the sequence yet) is left alone -- forcing a
-// dangling "03--GD" onto a case number with no sequence at all would be
-// worse than just leaving it incomplete for the required-field check to
-// catch.
-function finalizeCaseNumber(s){
-  if(!s)return '';
-  const raw=String(s).trim();
-  if(!raw)return '';
-  const suffixMatch=raw.match(/[-_\s]?([A-Za-z]{2,4})$/);
-  const suffix=suffixMatch?suffixMatch[1].toUpperCase():'GD';
-  const withoutSuffix=suffixMatch?raw.slice(0,suffixMatch.index):raw;
-  let digits=withoutSuffix.replace(/\D/g,'');
-  if(!digits)return raw;
-  if(digits.length>=8&&digits.startsWith('20')){
-    digits=digits.slice(2);
-  }
-  if(digits.length<=2)return digits;
-  const year=digits.slice(0,2);
-  const seq=digits.slice(2,8).padStart(6,'0');
-  return `${year}-${seq}-${suffix}`;
-}
 
-// ═══════════════════════════════════════════════════════
-// COUNTY AUTOCOMPLETE — every County field, previously a <select> hardcoded
-// to just Pinellas/Pasco, is now a free-text input with a filtered dropdown
-// of Florida's 67 counties (never more than 4 shown, narrowing as the
-// guardian types), so the app isn't limited to those two counties anymore.
-// Deliberately permissive rather than a locked-down <select>, matching the
-// sidebar's own "type or select a ward" combobox elsewhere in the app: a
-// suggestion list, not a hard constraint, since a guardian who knows their
-// county correctly (the overwhelmingly common case) shouldn't be blocked
-// by an autocomplete that doesn't yet match what they've typed so far.
-// ═══════════════════════════════════════════════════════
-const FL_COUNTIES=['Alachua','Baker','Bay','Bradford','Brevard','Broward','Calhoun','Charlotte','Citrus','Clay','Collier','Columbia','DeSoto','Dixie','Duval','Escambia','Flagler','Franklin','Gadsden','Gilchrist','Glades','Gulf','Hamilton','Hardee','Hendry','Hernando','Highlands','Hillsborough','Holmes','Indian River','Jackson','Jefferson','Lafayette','Lake','Lee','Leon','Levy','Liberty','Madison','Manatee','Marion','Martin','Miami-Dade','Monroe','Nassau','Okaloosa','Okeechobee','Orange','Osceola','Palm Beach','Pasco','Pinellas','Polk','Putnam','St. Johns','St. Lucie','Santa Rosa','Sarasota','Seminole','Sumter','Suwannee','Taylor','Union','Volusia','Wakulla','Walton','Washington'];
-
-// ═══════════════════════════════════════════════════════
-// COUNTY → CIRCUIT — every printed court caption used to hardcode "SIXTH
-// JUDICIAL CIRCUIT" (and, on several form types, omitted the county
-// entirely), which was accurate only while the app was scoped to
-// Pinellas/Pasco -- both Sixth Circuit. Once the County field above was
-// opened up to all 67 counties, that stopped being true: a case filed for,
-// say, Orange County would print a caption naming the wrong circuit court
-// altogether. This maps each county to its real Florida judicial circuit
-// (1-20, per the official circuit map) so every doc-header function below
-// can print the caption that actually matches whatever county was chosen.
-// ═══════════════════════════════════════════════════════
-const FL_COUNTY_CIRCUIT={
-  Escambia:1,Okaloosa:1,'Santa Rosa':1,Walton:1,
-  Franklin:2,Gadsden:2,Jefferson:2,Leon:2,Liberty:2,Wakulla:2,
-  Columbia:3,Dixie:3,Hamilton:3,Lafayette:3,Madison:3,Suwannee:3,Taylor:3,
-  Clay:4,Duval:4,Nassau:4,
-  Citrus:5,Hernando:5,Lake:5,Marion:5,Sumter:5,
-  Pasco:6,Pinellas:6,
-  Flagler:7,Putnam:7,'St. Johns':7,Volusia:7,
-  Alachua:8,Baker:8,Bradford:8,Gilchrist:8,Levy:8,Union:8,
-  Orange:9,Osceola:9,
-  Hardee:10,Highlands:10,Polk:10,
-  'Miami-Dade':11,
-  DeSoto:12,Manatee:12,Sarasota:12,
-  Hillsborough:13,
-  Bay:14,Calhoun:14,Gulf:14,Holmes:14,Jackson:14,Washington:14,
-  'Palm Beach':15,
-  Monroe:16,
-  Broward:17,
-  Brevard:18,Seminole:18,
-  'Indian River':19,Martin:19,Okeechobee:19,'St. Lucie':19,
-  Charlotte:20,Collier:20,Glades:20,Hendry:20,Lee:20
-};
-const CIRCUIT_ORDINALS=['','First','Second','Third','Fourth','Fifth','Sixth','Seventh','Eighth','Ninth','Tenth','Eleventh','Twelfth','Thirteenth','Fourteenth','Fifteenth','Sixteenth','Seventeenth','Eighteenth','Nineteenth','Twentieth'];
-// Milestone 40C-A item 7: returns null for a blank or unrecognized county.
-// This used to fall back to Sixth (Pinellas/Pasco), this app's original
-// two-county scope, so an unfinished Cover still printed a real circuit name --
-// which meant a filing with no county named a court confidently and wrongly.
-// Mirrors src/core/pdf/circuit-lookup.js's circuitForCounty(); this classic
-// script cannot import that ES module, which is why the duplicate exists.
-function circuitForCounty(county){
-  return FL_COUNTY_CIRCUIT[(county||'').trim()]||null;
-}
-// The shared court-caption line every doc-header function below prints,
-// e.g. "IN THE CIRCUIT COURT OF THE NINTH JUDICIAL CIRCUIT<br>IN AND FOR
-// ORANGE COUNTY, FLORIDA". `probateDivision` appends ", PROBATE DIVISION"
-// for the form types whose caption already included it. Written already
-// upper-cased (matching every other literal caption string in this file)
-// rather than relying on .court-title's CSS text-transform, since this
-// same markup is also rasterized by html2canvas for PDF export.
-// Milestone 40C-A item 7: both of this function's own Pinellas/Sixth fallbacks
-// are gone -- it defaulted the county NAME before the lookup ran, and then the
-// ORDINAL after it, so removing either alone still printed a Pinellas caption.
-// A filing with no county now renders a visible gap. Only an unfinished draft
-// reaches this, since County validation blocks export.
-const MISSING_COUNTY_CAPTION_HTML='COUNTY NOT SELECTED — COURT CAPTION INCOMPLETE';
-function circuitCourtCaption(county,probateDivision){
-  const c=(county||'').trim();
-  const ord=c?(CIRCUIT_ORDINALS[circuitForCounty(c)]||'').toUpperCase():'';
-  if(!c||!ord)return MISSING_COUNTY_CAPTION_HTML;
-  return `IN THE CIRCUIT COURT OF THE ${ord} JUDICIAL CIRCUIT<br>IN AND FOR ${esc(c.toUpperCase())} COUNTY, FLORIDA${probateDivision?', PROBATE DIVISION':''}`;
-}
-// Local duplicate of core/filing/county-guidance.js's hasSixthCircuitLocalGuidance()
-// -- this classic script can't import that ES module (same reason
-// circuitForCounty above duplicates circuit-lookup.js rather than importing
-// it). Deliberately NOT circuitForCounty()===6, and still deliberate after
-// Milestone 40C-A item 7 removed that lookup's Sixth-Circuit fallback: this is
-// an exact Pinellas/Pasco gate on the county name, not a circuit-number test,
-// so a future change to the circuit map cannot widen a two-county local
-// requirement. 40C-A explicitly retains this gating as-is.
-function hasSixthCircuitLocalGuidance(county){
-  const normalized=(county||'').trim().toLowerCase();
-  return normalized==='pinellas'||normalized==='pasco';
-}
 
 // Shared markup: a plain text input plus an initially-empty dropdown right
 // after it, both wrapped so the dropdown can be absolutely positioned
@@ -1149,7 +737,8 @@ function filterCountyDropdown(inp){
   const dd=document.getElementById(inp.id+'-dropdown');
   if(!dd)return;
   const q=inp.value.trim().toLowerCase();
-  const matches=(q?FL_COUNTIES.filter(c=>c.toLowerCase().startsWith(q)):FL_COUNTIES).slice(0,4);
+  const counties=window.GuardianFormsLegacyBridge.FL_COUNTIES;
+  const matches=(q?counties.filter(c=>c.toLowerCase().startsWith(q)):counties).slice(0,4);
   inp.dataset.comboIndex='';
   inp.removeAttribute('aria-activedescendant');
   if(!matches.length){dd.classList.remove('show');dd.innerHTML='';inp.setAttribute('aria-expanded','false');return;}
@@ -1221,81 +810,13 @@ function onCountyKeydown(inp,e){
   }
 }
 
-// Format Florida Bar Number — a fixed-width, digits-only identifier. Bar numbers
-// are sequential; retain all eight significant positions and normalize shorter
-// values with leading zeroes when editing finishes.
-function formatBarNumber(s){
-  const digits=String(s??'').replace(/\D/g,'').slice(0,8);
-  return digits?digits.padStart(8,'0'):'';
-}
-
-// Format bank account number — preserved identifier (may contain letters/dashes/slashes)
-function formatAccountNumber(s){
-  return (window.sanitizeStoredText ? window.sanitizeStoredText(s) : String(s||'').trim());
-}
-
-// Format check number — preserved identifier (may contain letters/dashes, e.g. CHK-104A)
-function formatCheckNumber(s){
-  return (window.sanitizeStoredText ? window.sanitizeStoredText(s) : String(s||'').trim());
-}
-
-// Format Name & Address — safe title case on blur, preserving acronyms and mixed case
-function formatName(s){
-  return (window.formatSafeTitleCase ? window.formatSafeTitleCase(s) : String(s||'').trim());
-}
-
-// Same as formatName for addresses/streets
-function formatAddress(s){
-  return formatName(s);
-}
 
 
-// Excel imports can carry all-lowercase (or all-caps) text. Walk the parsed
-// data and apply the exact same per-field capitalization that manual typing
-// already gets (see inpD/inpS/bindForms), keyed off the field name instead
-// of a form label, so imported values match what typing them would produce.
-function capitalizeImportedFields(obj){
-  if(Array.isArray(obj)){
-    obj.forEach(capitalizeImportedFields);
-    return obj;
-  }
-  if(obj&&typeof obj==='object'){
-    for(const k of Object.keys(obj)){
-      const v=obj[k];
-      if(typeof v!=='string'||!v){continue;}
-      const kl=k.toLowerCase();
-      if(kl.includes('email')){
-        // leave as-is
-      }else if(kl.includes('citystatezip')){
-        obj[k]=formatCityStateZip(v);
-      }else if(kl.includes('street')||(kl.includes('address'))){
-        obj[k]=formatAddress(v);
-      }else if(['name','payer','payee','lender','creditor','institution','guardian','attorney','trustee','claimant','description','bonding','company','trust'].some(w=>kl.includes(w))){
-        obj[k]=formatName(v);
-      }
-    }
-    for(const k of Object.keys(obj)){
-      if(obj[k]&&typeof obj[k]==='object')capitalizeImportedFields(obj[k]);
-    }
-  }
-  return obj;
-}
 
-// Limit digits in a City/State/Zip field to 9 (a 5-digit ZIP, or a full
-// ZIP+4) -- was capped at 5, which silently mangled any ZIP+4 entry
-// ("33756-4321" loses its last 4 digits mid-keystroke instead of just
-// rejecting the extra ones cleanly).
-function applyZipLimit(el){
-  const digitCount=(el.value.match(/\d/g)||[]).length;
-  if(digitCount>9){
-    const arr=el.value.split('');
-    let removed=0;
-    for(let i=arr.length-1;i>=0&&removed<digitCount-9;i--){
-      if(/\d/.test(arr[i])){arr.splice(i,1);removed++;}
-    }
-    el.value=arr.join('');
-  }
-}
+
+
+
+
 
 // Update an input field with formatted phone, keeping user experience smooth
 // Highlight form fields that have validation errors with red borders
@@ -4448,26 +3969,6 @@ async function doConfirmSimplifiedEligibility(){
   }
 }
 
-async function showRenameWardModal(){
-  const ward=getActiveWard();
-  if(!ward)return;
-  await ensureFragment('common-modals');
-  document.getElementById('rename-ward-input').value=ward.wardName;
-  showModal('renameWardModal');
-}
-
-async function doRenameWard(){
-  const newName=document.getElementById('rename-ward-input').value.trim();
-  if(!newName){await window.alertModal('Please enter a ward name');return;}
-  try{
-    await renameWard(caseFile.activeWardId,newName);
-    closeModal('renameWardModal');
-  }catch(e){
-    console.error('Failed to rename ward',e);
-    await window.alertModal('Failed to rename ward. Check console.');
-  }
-}
-
 let _pendingDeleteWardId=null;
 
 // wardId is optional so the existing sidebar "Delete" button (which only
@@ -4574,12 +4075,6 @@ function typeIcon(type,size){
   return ic((INVENTORY_TYPE_META[type]||{}).iconName||'folder',size||16);
 }
 
-function formatDashboardCurrency(v){
-  if(v===null||v===undefined)return '—';
-  const abs=Math.abs(v);
-  const str=abs.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
-  return v<0?`($${str})`:`$${str}`;
-}
 
 // Populates the sidebar's active-ward info card (icon, type, live headline
 // total) from the currently active ward. Shared by updateSidebar() (on load
@@ -5844,14 +5339,16 @@ async function ensureGuardianFeatureReady(){
 
 // Dashboard's own rendering (pageDashboard()..toggleWardArchived(),
 // getWardProgress()) moved to src/features/dashboard/index.js (Milestone
-// 9). Ward-management CRUD (addWard, switchWard, deleteWard, renameWard,
-// convertWard, all modals, year management) stays legacy: it's called from
-// the topnav on every page, not just the dashboard, so gating it behind
-// this feature's lazy load would break "Switch Ward"/"+ New Form" on every
-// other page. getWardHeadlineTotal(), typeIcon(), INVENTORY_TYPE_META, and
-// formatDashboardCurrency() also stay legacy for the same reason --
-// refreshWardInfoCard() and the ward-selector dropdown need them on every
-// page too.
+// 9). Ward-management CRUD (addWard, switchWard, deleteWard, convertWard,
+// all modals, year management) stays legacy: it's called from the topnav on
+// every page, not just the dashboard, so gating it behind this feature's lazy
+// load would break "Switch Ward"/"+ New Form" on every other page.
+// getWardHeadlineTotal(), typeIcon() and INVENTORY_TYPE_META also stay legacy
+// for the same reason -- refreshWardInfoCard() and the ward-selector dropdown
+// need them on every page too. (formatDashboardCurrency() was in that list
+// until Milestone 70's 70B moved it to src/core/format/money.js, which loads
+// eagerly; renameWard and its dialog went in 70B too, unreachable since the
+// Milestone 36 dashboard consolidation, e5fb9cf, removed the button.)
 let _dashboardFeatureBridge=null;
 function getDashboardFeatureBridge(){
   return _dashboardFeatureBridge??=window.createFeatureBridge(()=>window.loadDashboardFeature());
@@ -5860,15 +5357,6 @@ async function mountDashboardFeature(page){
   await getDashboardFeatureBridge().mountPage(document.getElementById('main-content'),page);
 }
 
-function formatDisplayDate(canonicalStr){
-  if(!canonicalStr)return '';
-  const match=String(canonicalStr).match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if(match){
-    return `${match[2]}/${match[3]}/${match[1]}`;
-  }
-  return canonicalStr;
-}
-window.formatDisplayDate = formatDisplayDate;
 
 function inpS(id,label,val,req=false,type='text'){
   return window.renderFormField({
@@ -5992,19 +5480,6 @@ function pageNavS(prev,next){
   </div>`;
 }
 
-function calcTotals(){
-  const d=window.D;
-  const n=v=>parseFloat(v)||0;
-  const starting=n(d.startingBalance);
-  const interest=n(d.interestIncome);
-  const deposits=n(d.depositsSettlement);
-  const totalIncome=interest+deposits;
-  const serviceCharges=n(d.serviceCharges);
-  const fedTax=n(d.federalIncomeTax);
-  const totalDisbursements=serviceCharges+fedTax;
-  const remaining=starting+totalIncome-totalDisbursements;
-  return {starting,interest,deposits,totalIncome,serviceCharges,fedTax,totalDisbursements,remaining};
-}
 
 // Used by src/features/plan-simplified/print.js (via window.tdSig) --
 // stays here rather than moving into that lazily-imported module. Despite
@@ -6433,32 +5908,10 @@ const BLANK_CARD_COLLECTIONS = {
 // ═══════════════════════════════════════════════════════
 // CALCULATIONS
 // ═══════════════════════════════════════════════════════
-// Milestone 60A: the Guardian Inventory arithmetic lives in
-// src/features/guardian-inventory/totals.js (eagerly imported by
-// features-loader.js, like Annual's calcTotalsAnnual). This object keeps the
-// classic-script call shape the live UI uses -- calc.totalA1(),
-// calc.wardVal(entry), ... -- and forwards every call to the module bound to
-// the CURRENT window.D, so the sidebar, the calculated fields, the summary
-// page and the court-filed PDF all read one implementation. The formulas
-// that used to sit here rounded every row before summing, which the court
-// workbook does not do; see totals.js's header for the rounding contract.
-//
-// Method list is fixed by name rather than proxied so a typo at a call site
-// still throws "calc.foo is not a function" instead of returning a function
-// that silently computes nothing.
-const GUARDIAN_CALC_METHODS=['wardVal','wardDebt','wardAmt','wardB2','wardB3','wardB4','wardC1','wardC2','wardC3','wardC4','wardC5','sdbB2','sdbB3',
-  'totalA1','totalA2','netA','totalB1','totalB2','totalB3','totalB4','netB','total','totalC1','totalC2','totalC3','totalC4','totalC5','totalSdbB2','totalSdbB3',
-  'restrictedCash','unrestrictedCash','restrictedIntang','unrestrictedIntang','bondRequired','auditFee'];
-const calc={};
-for(const name of GUARDIAN_CALC_METHODS){
-  calc[name]=(...args)=>{
-    // Not optional-chained on purpose: a missing bridge here would print
-    // $0.00 everywhere and should fail loudly instead.
-    if(typeof window.makeGuardianCalc!=='function')throw new Error('Guardian calculator not loaded -- features-loader.js must import guardian-inventory/totals.js');
-    return window.makeGuardianCalc(()=>D)[name](...args);
-  };
-}
-window.calc=calc;
+// Guardian Inventory's calc.totalA1(), calc.wardVal(entry), ... live in
+// src/features/guardian-inventory/totals.js since Milestone 70's 70B; this is
+// the one-line wrapper this script's callers use (see COMMON HELPERS above).
+const calc=new Proxy({},{get:(_,k)=>window.GuardianFormsLegacyBridge.calc[k]});
 
 function normalizeWardData(d){
   if(!d||typeof d!=='object'||Object.keys(d).length===0)return d;

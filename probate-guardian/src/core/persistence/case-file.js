@@ -19,6 +19,7 @@ import { getCaseFile, getTemplateCache } from '../state.js';
 import { windowBackedRef } from './window-backed-ref.js';
 import { migratePlanTriState } from '../filing/plan-tristate.js';
 import { alertModal, confirmModal, promptModal } from '../ui/dialogs.js';
+import { validateImportFile, sanitizeObjectData } from '../security/input-hardening.js';
 
 export const CASE_FILE_FORMAT_VERSION = 1;
 
@@ -640,36 +641,6 @@ export function setupFallbackSaveReminder() {
   }, 15 * 60 * 1000);
 }
 
-export async function triggerImportZip() {
-  if (typeof window !== 'undefined' && window.showOpenFilePicker) {
-    try {
-      const [handle] = await window.showOpenFilePicker({
-        types: [{ description: 'Guardian Forms case file (.sav)', accept: { 'application/octet-stream': ['.sav', '.zip'] } }],
-      });
-      const file = await handle.getFile();
-      await importSavArchiveOrWard(file, { handle, isBackupFlow: false });
-      return;
-    } catch (e) {
-      if (e && e.name === 'AbortError') return;
-      console.warn('showOpenFilePicker failed or cancelled, falling back to input', e);
-    }
-  }
-  if (typeof document !== 'undefined') {
-    const inp = /** @type {HTMLInputElement|null} */ (document.getElementById('zip-import-input'));
-    if (inp) {
-      inp.value = '';
-      inp.click();
-    }
-  }
-}
-
-function sanitizeObjectData(obj) {
-  if (typeof window !== 'undefined' && typeof window.sanitizeObjectData === 'function') {
-    return window.sanitizeObjectData(obj);
-  }
-  return obj;
-}
-
 // Milestone 52B: the decode pipeline for one encrypted ward record, used by
 // importSavArchiveOrWard() below. Deliberately has no try/catch of its own
 // -- the caller wraps it to re-throw a specific per-ward message.
@@ -746,12 +717,10 @@ export async function importSavArchiveOrWard(file, options = {}) {
   const { handle = null, isBackupFlow = false } = options;
   try {
     const JSZip = getJSZip();
-    if (typeof window !== 'undefined' && typeof window.validateImportFile === 'function') {
-      const check = await window.validateImportFile(file, 'sav');
-      if (!check.ok) {
-        await alertModal(check.message);
-        return false;
-      }
+    const check = await validateImportFile(file, 'sav');
+    if (!check.ok) {
+      await alertModal(check.message);
+      return false;
     }
     const securityMode = getSecurityMode();
     let cryptoKey = getCryptoKey();
@@ -1009,7 +978,6 @@ if (typeof window !== 'undefined') {
   window.setupAutoExportTimer = setupAutoExportTimer;
   window.setupLastSavedTicker = setupLastSavedTicker;
   window.setupFallbackSaveReminder = setupFallbackSaveReminder;
-  window.triggerImportZip = triggerImportZip;
   window.importSavArchiveOrWard = importSavArchiveOrWard;
   window.importGuardianDataZip = importGuardianDataZip;
   window.triggerOpenBackupSav = triggerOpenBackupSav;

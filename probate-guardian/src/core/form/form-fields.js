@@ -2,6 +2,8 @@
 // Consolidates inpD, inpS, dateInput, and shared input generators across all 9 Florida probate form types.
 
 import { formatDisplayDate } from './date-parser.js';
+import { ic } from '../ui/icons.js';
+import { formatAccountNumber, formatAddress, formatBarNumber, formatCaseNumber, formatCheckNumber, formatCityStateZip, formatName, formatPhone, formatSSN, sanitizeNonNegativeDecimal } from './form-contract.js';
 
 // Escapes &<>" but deliberately NOT the apostrophe, unlike
 // core/filing/escape-html.js. Milestone 52E looked at merging the two and
@@ -21,7 +23,6 @@ export function esc(s) {
     .replace(/"/g, '&quot;');
 }
 
-const DEFAULT_LOCK_ICON = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>';
 
 /**
  * Infers semantic field kind and format from label and input type.
@@ -108,8 +109,8 @@ export function renderFormField({
   claimSharedWriteListener = true,
   // Annual Accounting only (its inpD() passes it): stamps
   // data-field-sanitize="security" on a plain free-text field so
-  // finalizeFieldValue() runs legacy-app.js's validateSecurityInput() on
-  // blur -- what that family's own retired focusout handler did with the
+  // finalizeFieldValue() runs validateSecurityInput()
+  // (src/core/security/input-hardening.js) on blur -- what that family's own retired focusout handler did with the
   // data-annual-format="security" this renderer stamps on every plain text
   // field of every filing type. An opt-in rather than keyed off that format
   // attribute, so the other eight filing types keep never running it.
@@ -152,31 +153,31 @@ export function renderFormField({
   if (typeof window !== 'undefined') {
     if (isDate) {
       formatted = (window.getFieldDraftDisplay?.(path, formatDisplayDate(value)) || formatDisplayDate(value));
-    } else if (isSSN && window.formatSSN) {
-      formatted = window.formatSSN(value);
-    } else if (isCaseNumber && window.formatCaseNumber) {
-      formatted = window.formatCaseNumber(value);
-    } else if (isBarNumber && window.formatBarNumber) {
-      formatted = window.formatBarNumber(value);
-    } else if (isAccountNumber && window.formatAccountNumber) {
-      formatted = window.formatAccountNumber(value);
-    } else if (isCheckNumber && window.formatCheckNumber) {
-      formatted = window.formatCheckNumber(value);
-    } else if (isPhone && window.formatPhone) {
-      formatted = window.formatPhone(value);
-    } else if (isName && window.formatName) {
-      formatted = window.formatName(value);
-    } else if (isZip && window.formatCityStateZip) {
-      formatted = window.formatCityStateZip(value);
-    } else if (isAddress && window.formatAddress) {
-      formatted = window.formatAddress(value);
+    } else if (isSSN) {
+      formatted = formatSSN(value);
+    } else if (isCaseNumber) {
+      formatted = formatCaseNumber(value);
+    } else if (isBarNumber) {
+      formatted = formatBarNumber(value);
+    } else if (isAccountNumber) {
+      formatted = formatAccountNumber(value);
+    } else if (isCheckNumber) {
+      formatted = formatCheckNumber(value);
+    } else if (isPhone) {
+      formatted = formatPhone(value);
+    } else if (isName) {
+      formatted = formatName(value);
+    } else if (isZip) {
+      formatted = formatCityStateZip(value);
+    } else if (isAddress) {
+      formatted = formatAddress(value);
     }
   } else if (isDate) {
     formatted = formatDisplayDate(value) || value;
   }
 
-  const cleanedValue = (isAmountField && typeof window !== 'undefined' && window.sanitizeNonNegativeDecimal)
-    ? window.sanitizeNonNegativeDecimal(formatted)
+  const cleanedValue = (isAmountField && typeof window !== 'undefined')
+    ? sanitizeNonNegativeDecimal(formatted)
     : formatted;
 
   // Guardian Inventory's numInput() has no label of its own (a separate
@@ -211,10 +212,7 @@ export function renderFormField({
   const fieldPathAttr = claimSharedWriteListener ? ` data-field-path="${esc(path)}"` : '';
   const inputHtml = `<input type="${inputType}" class="${classes.join(' ')}" id="${inputId}" autocomplete="off"${inputMode}${actualPlaceholder} value="${esc(cleanedValue)}"${fieldPathAttr}${bindingAttrs} data-field-label="${esc(label)}" data-annual-label="${esc(label)}" data-field-kind="${fieldKind}" data-field-format-policy="${resolvedPolicy}"${required ? ' data-field-required="true"' : ''}${format ? ` data-annual-format="${format}" data-form-format="${format}"` : ''}${isWardField ? ' data-sync-ward-name="true"' : ''}${isGuardField ? ' data-sync-guardian-name="true"' : ''}${inputTypeAttr}${sanitizeAttr}${ariaDesc}>`;
 
-  let lockIcon = DEFAULT_LOCK_ICON;
-  if (typeof window !== 'undefined' && typeof window.ic === 'function') {
-    lockIcon = window.ic('lock', 14);
-  }
+  const lockIcon = ic('lock', 14);
 
   const wrappedInput = isDollarField
     ? `<div class="input-group"><span class="input-group-text">$</span>${inputHtml}</div>`

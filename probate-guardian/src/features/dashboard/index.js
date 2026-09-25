@@ -8,13 +8,15 @@ import { caseNumberOf, countyOf } from '../../core/case-resolver.js';
 import { normalizeCountyName } from '../../core/navigation/ward-county.js';
 import { deriveDefaultCircuit, groupsForCircuit, resourcesPanelHTML, getDefaultCircuitPreference, setDefaultCircuitPreference } from './resources.js';
 import { alertModal, confirmModal } from '../../core/ui/dialogs.js';
+import { esc } from '../../core/filing/escape-html.js';
+import { ic } from '../../core/ui/icons.js';
 
 const {
-  esc, ic, navigate, getCaseFile, isContinuePromptShown, markContinuePromptShown,
+  navigate, getCaseFile, isContinuePromptShown, markContinuePromptShown,
   getRecentlyOpenedWards, saveWardToState, flushPendingSave, markDirtySinceExport, updateLastSavedIndicator,
   saveBlobAs, auditLog, saveAppState,
   getWardHeadlineTotal, getWardProgress, typeIcon,
-  switchWard, showStartNewYearModal, confirmDeleteWard, showRenameWardModal,
+  switchWard, showStartNewYearModal, confirmDeleteWard,
   showConvertWardModal, showAddWardModal, showPriorYearsModal, formatRelativeTime,
   INVENTORY_TYPES, formEngine,
 } = window;
@@ -523,9 +525,6 @@ async function handleDashboardClick(event) {
     case 'delete':
     case 'delete-ward':
       confirmDeleteWard(wardId || getCaseFile().activeWardId);
-      break;
-    case 'rename-ward':
-      if (window.showRenameWardModal) window.showRenameWardModal();
       break;
     case 'dismiss-continue': document.getElementById('continue-prompt-container')?.replaceChildren(); break;
     case 'link-case': window.showPickCaseModal(wardId); break;

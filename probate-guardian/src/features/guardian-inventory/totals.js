@@ -9,9 +9,9 @@
 // inside guardian-inventory/pdf-model.js (which the court-filed PDF used).
 // The PDF copy ignored the Ward's % on eight of eleven schedules, ran Annual
 // Accounting's four-tier audit-fee ladder instead of this form's two-tier
-// rule, and clamped Summary I nets at zero. legacy-app.js's `calc` now
-// forwards to makeGuardianCalc() and the PDF imports calcTotalsGuardian(),
-// so there is one implementation to be right.
+// rule, and clamped Summary I nets at zero. `calc` (below; legacy-app.js's
+// until Milestone 70's 70B) forwards to makeGuardianCalc() and the PDF imports
+// calcTotalsGuardian(), so there is one implementation to be right.
 //
 // Authority: the Pinellas County Clerk's Verified Initial Inventory workbook
 // (templates/guardian-template.js), AGENTS.md section 5. Verified 2026-09-20:
@@ -37,16 +37,12 @@
 // see tests/unit/guardian-inventory-totals.spec.js). So: every function
 // here returns an UNROUNDED number. Callers round when they format.
 
-/** Numeric coercion: blank, null, and unparseable all read as 0. */
-export function n(v) {
-  const num = parseFloat(v);
-  return Number.isFinite(num) ? num : 0;
-}
+// n() and r2() live in src/core/format/money.js since Milestone 70's 70B,
+// shared with the other forms; re-exported so this module's importers are unchanged.
+import { n, r2 } from '../../core/format/money.js';
+import { getD } from '../../core/state.js';
 
-/** Round to cents. For DISPLAY of an aggregate, never for intermediate sums. */
-export function r2(v) {
-  return Math.round(n(v) * 100) / 100;
-}
+export { n, r2 };
 
 /**
  * The ward's share of a full figure at a percentage expressed 0-100, at full
@@ -161,7 +157,7 @@ export function makeGuardianCalc(source) {
   return calc;
 }
 
-/** The names on a makeGuardianCalc() object; the legacy adapter is built from this list. */
+/** The names on a makeGuardianCalc() object; `calc` below is built from this list. */
 export const GUARDIAN_CALC_METHODS = Object.freeze(Object.keys(makeGuardianCalc({})));
 
 /**
@@ -185,11 +181,22 @@ export function calcTotalsGuardian(customD) {
   };
 }
 
-// legacy-app.js is a classic script and cannot import this module, so the two
-// entry points it needs are published on window -- the same bridge
-// annual-accounting/totals.js uses for calcTotalsAnnual. features-loader.js
-// imports this module eagerly so both exist before any filing is opened.
+// calcTotalsGuardian is published on window for the test adapter
+// (src/core/testing/testing-adapter.js's status.guardianTotals), which is core
+// and so may not import a feature. window.makeGuardianCalc went in Milestone
+// 70's 70B: its one reader was legacy-app.js's calc forwarder, which now
+// reaches `calc` below through src/legacy-bridge.js instead.
 if (typeof window !== 'undefined') {
   window.calcTotalsGuardian = calcTotalsGuardian;
-  window.makeGuardianCalc = makeGuardianCalc;
 }
+
+// The classic call shape the Guardian Inventory UI uses -- calc.totalA1(),
+// calc.wardVal(entry), ... -- bound to the open filing (whatever getD()
+// returns at the moment of the call, so a caller that swaps in another
+// filing to total it is honored). Moved from legacy-app.js's CALCULATIONS
+// section by Milestone 70's 70B, where it forwarded to makeGuardianCalc()
+// through window. Method list fixed by name, so a typo still throws
+// "calc.foo is not a function".
+export const calc = Object.freeze(Object.fromEntries(
+  GUARDIAN_CALC_METHODS.map((name) => [name, (...args) => makeGuardianCalc(() => getD())[name](...args)]),
+));

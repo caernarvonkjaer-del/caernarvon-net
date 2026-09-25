@@ -400,7 +400,6 @@ describe('form-contract', () => {
     });
 
     it('retains Yes and No on yes-no checkbox finalize without SSN erasure', () => {
-      window.formatSSN = (s) => String(s || '').replace(/\D/g, '');
       const chk = createMockInput({
         type: 'checkbox',
         dataset: { formPath: 'committeeIncorporated', formValue: 'yes-no' },
@@ -419,46 +418,11 @@ describe('form-contract', () => {
   // retired in favour of this one; these are the formats only it had, now
   // keyed by attribute here so every filing type shares one implementation.
   describe('accounting-family formats absorbed from persistAnnualControl()', () => {
-    beforeEach(() => {
-      // Verbatim copies of legacy-app.js's helpers -- classic-script globals
-      // at runtime, which this Node suite has to supply itself.
-      window.sanitizeNonNegativeDecimal = (s) => {
-        let v = String(s || '').replace(/[^0-9.]/g, '');
-        const firstDot = v.indexOf('.');
-        if (firstDot !== -1) v = v.slice(0, firstDot + 1) + v.slice(firstDot + 1).replace(/\./g, '');
-        return v;
-      };
-      window.sanitizeDecimal = (s) => {
-        const str = String(s || '');
-        return (str.trim().startsWith('-') ? '-' : '') + window.sanitizeNonNegativeDecimal(str);
-      };
-      window.applyZipLimit = (el) => {
-        const digitCount = (el.value.match(/\d/g) || []).length;
-        if (digitCount > 9) {
-          const arr = el.value.split('');
-          let removed = 0;
-          for (let i = arr.length - 1; i >= 0 && removed < digitCount - 9; i--) {
-            if (/\d/.test(arr[i])) { arr.splice(i, 1); removed++; }
-          }
-          el.value = arr.join('');
-        }
-      };
-      window.validateSecurityInput = (_label, v) => String(v).replace(/[<>"`]/g, '');
-      window.formatSSN = (s) => {
-        const digits = String(s || '').replace(/\D/g, '').slice(0, 9);
-        if (digits.length === 0) return '';
-        if (digits.length <= 3) return digits;
-        if (digits.length <= 5) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
-        return `${digits.slice(0, 3)}-${digits.slice(3, 5)}-${digits.slice(5)}`;
-      };
-    });
-    afterEach(() => {
-      delete window.sanitizeNonNegativeDecimal;
-      delete window.sanitizeDecimal;
-      delete window.applyZipLimit;
-      delete window.validateSecurityInput;
-      delete window.formatSSN;
-    });
+    // Until Milestone 70's 70B this block installed verbatim copies of
+    // legacy-app.js's field helpers (sanitizeNonNegativeDecimal, sanitizeDecimal,
+    // applyZipLimit, validateSecurityInput, formatSSN) as window globals, because
+    // the module reached them through window. It now defines or imports them,
+    // so these cases run against the implementations the app ships.
 
     it('formats an SSN on blur even though renderFormField() stamps it policy="preserve"', () => {
       // The generic preserve branch used to sit above the ssn branch and

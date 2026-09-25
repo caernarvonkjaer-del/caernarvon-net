@@ -494,7 +494,8 @@ test.describe('routes', () => {
     // (The Rename Ward dialog used to be exercised here by calling
     // showRenameWardModal() directly. No button has opened it since the
     // Milestone 36 dashboard consolidation (e5fb9cf) -- a filer cannot reach
-    // it -- so it is recorded as dead for 70B, not tested. Milestone 70, 70T.)
+    // it -- so it was recorded as dead for 70B, not tested, and 70B deleted
+    // it. Milestone 70, 70T.)
 
     // Delete through the dashboard's own Delete button for this filing.
     const filingId = await page.evaluate(() => (window as any).GuardianForms.testing.snapshot().caseFile.wards[0].wardId);

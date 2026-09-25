@@ -323,10 +323,6 @@
     },
     {
       "file": "src/core/navigation/ward-lifecycle.js",
-      "name": "renameWard"
-    },
-    {
-      "file": "src/core/navigation/ward-lifecycle.js",
       "name": "switchWard"
     },
     {
@@ -611,10 +607,6 @@
     },
     {
       "file": "src/core/persistence/case-file.js",
-      "name": "triggerImportZip"
-    },
-    {
-      "file": "src/core/persistence/case-file.js",
       "name": "triggerOpenBackupSav"
     },
     {
@@ -826,6 +818,10 @@
       "name": "promptModal"
     },
     {
+      "file": "src/core/ui/test-system-title.js",
+      "name": "setTestSystemTitleWarningEnabledForTest"
+    },
+    {
       "file": "src/core/validation/attorney-block.js",
       "name": "isPlanInitialAttorneyStarted"
     },
@@ -978,10 +974,6 @@
       "name": "calcTotalsGuardian"
     },
     {
-      "file": "src/features/guardian-inventory/totals.js",
-      "name": "makeGuardianCalc"
-    },
-    {
       "file": "src/features/help/help-content.js",
       "name": "HELP_CONTENT"
     },
@@ -1107,14 +1099,6 @@
     },
     {
       "file": "src/legacy-app.js",
-      "name": "planRightLabel"
-    },
-    {
-      "file": "src/core/ui/test-system-title.js",
-      "name": "setTestSystemTitleWarningEnabledForTest"
-    },
-    {
-      "file": "src/legacy-app.js",
       "name": "SCHEDULE_NAV_KEYS"
     },
     {
@@ -1132,10 +1116,6 @@
     {
       "file": "src/legacy-app.js",
       "name": "auditLog"
-    },
-    {
-      "file": "src/legacy-app.js",
-      "name": "calc"
     },
     {
       "file": "src/legacy-app.js",
@@ -1160,14 +1140,6 @@
     {
       "file": "src/legacy-app.js",
       "name": "emptyRowAnnual"
-    },
-    {
-      "file": "src/legacy-app.js",
-      "name": "fmt"
-    },
-    {
-      "file": "src/legacy-app.js",
-      "name": "formatDisplayDate"
     },
     {
       "file": "src/legacy-app.js",
@@ -1231,6 +1203,10 @@
     },
     {
       "file": "src/legacy-app.js",
+      "name": "planRightLabel"
+    },
+    {
+      "file": "src/legacy-app.js",
       "name": "queueAllScheduleDocValidations"
     },
     {
@@ -1240,10 +1216,6 @@
     {
       "file": "src/legacy-app.js",
       "name": "setAccountingFilingType"
-    },
-    {
-      "file": "src/legacy-app.js",
-      "name": "setScheduleEvidenceOverride"
     },
     {
       "file": "src/legacy-app.js",
@@ -1258,16 +1230,16 @@
       "name": "startNewWardAtLaunch"
     },
     {
+      "file": "src/legacy-bridge.js",
+      "name": "GuardianFormsLegacyBridge"
+    },
+    {
       "file": "src/main.js",
       "name": "isOutputAcknowledgedFor"
     },
     {
       "file": "src/main.js",
       "name": "markFilingRevisionChanged"
-    },
-    {
-      "file": "src/main.js",
-      "name": "missingScheduleEvidence"
     },
     {
       "file": "src/main.js",
@@ -1279,23 +1251,11 @@
     },
     {
       "file": "src/main.js",
-      "name": "newSchB4Id"
-    },
-    {
-      "file": "src/main.js",
-      "name": "normalizeSchB4Accounts"
-    },
-    {
-      "file": "src/main.js",
       "name": "normalizeScheduleDocsAck"
     },
     {
       "file": "src/main.js",
       "name": "recordScheduleAck"
-    },
-    {
-      "file": "src/main.js",
-      "name": "scheduleEvidenceState"
     }
   ]
 }

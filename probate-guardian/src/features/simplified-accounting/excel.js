@@ -10,11 +10,14 @@ import { readCellText } from '../../core/excel/cell-reader.js';
 import { alertModal, confirmModal } from '../../core/ui/dialogs.js';
 import { setStatus, scheduleStatusClear } from '../../core/ui/transient-status.js';
 import { beginExport } from '../../core/ui/export-guard.js';
+import { calcTotals } from './totals.js';
+import { guardianHasAnyData } from '../../core/validation/row-started.js';
+import { assertWorkbookWithinLimits, getImportProgressEl, sanitizeObjectDataInPlace, validateImportFile } from '../../core/security/input-hardening.js';
+import { capitalizeImportedFields } from '../../core/form/form-contract.js';
 
 const {
-  renderPage, ensureTemplate, calcTotals, guardianHasAnyData,
-  getImportProgressEl, validateImportFile, assertWorkbookWithinLimits,
-  capitalizeImportedFields, sanitizeObjectDataInPlace, autoSave,
+  renderPage, ensureTemplate,
+  autoSave,
   getCurrentPage,
 } = window;
 
@@ -67,7 +70,7 @@ export async function doSaveExcel(){
     // Milestone 51D: setCell now comes from core/excel/excel-engine.js. The local
     // closure this replaces was byte-identical in all three feature excel.js files
     // apart from a null-sheet guard, and routed text through the same
-    // sanitizeForExcel() the shared version delegates to.
+    // formula-injection guard, sanitizeCellValue().
     const n=v=>parseFloat(v)||0;
 
     const bin=atob(templateB64);

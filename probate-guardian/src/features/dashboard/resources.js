@@ -3,6 +3,7 @@
 
 import { normalizeCountyName } from '../../core/navigation/ward-county.js';
 import { FL_COUNTY_CIRCUIT, CIRCUIT_ORDINALS, circuitForCounty } from '../../core/pdf/circuit-lookup.js';
+import { ic } from '../../core/ui/icons.js';
 
 export const RESOURCE_GROUPS = Object.freeze([
   {
@@ -2651,10 +2652,7 @@ function defaultEsc(s) {
 }
 
 function defaultIc(name, size) {
-  if (typeof window !== 'undefined' && typeof window.ic === 'function') {
-    return window.ic(name, size);
-  }
-  return '';
+  return ic(name, size);
 }
 
 /**

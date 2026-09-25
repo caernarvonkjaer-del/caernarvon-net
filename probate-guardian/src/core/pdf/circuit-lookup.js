@@ -123,3 +123,18 @@ export function getCaseCaptionTitle(wardName, wardType) {
   }
   return `IN RE: THE GUARDIANSHIP OF ${name}`;
 }
+
+// The County field's suggestion list. Moved from src/legacy-app.js by Milestone
+// 70's 70B.
+// ═══════════════════════════════════════════════════════
+// COUNTY AUTOCOMPLETE — every County field, previously a <select> hardcoded
+// to just Pinellas/Pasco, is now a free-text input with a filtered dropdown
+// of Florida's 67 counties (never more than 4 shown, narrowing as the
+// guardian types), so the app isn't limited to those two counties anymore.
+// Deliberately permissive rather than a locked-down <select>, matching the
+// sidebar's own "type or select a ward" combobox elsewhere in the app: a
+// suggestion list, not a hard constraint, since a guardian who knows their
+// county correctly (the overwhelmingly common case) shouldn't be blocked
+// by an autocomplete that doesn't yet match what they've typed so far.
+// ═══════════════════════════════════════════════════════
+export const FL_COUNTIES = ['Alachua','Baker','Bay','Bradford','Brevard','Broward','Calhoun','Charlotte','Citrus','Clay','Collier','Columbia','DeSoto','Dixie','Duval','Escambia','Flagler','Franklin','Gadsden','Gilchrist','Glades','Gulf','Hamilton','Hardee','Hendry','Hernando','Highlands','Hillsborough','Holmes','Indian River','Jackson','Jefferson','Lafayette','Lake','Lee','Leon','Levy','Liberty','Madison','Manatee','Marion','Martin','Miami-Dade','Monroe','Nassau','Okaloosa','Okeechobee','Orange','Osceola','Palm Beach','Pasco','Pinellas','Polk','Putnam','St. Johns','St. Lucie','Santa Rosa','Sarasota','Seminole','Sumter','Suwannee','Taylor','Union','Volusia','Wakulla','Walton','Washington'];

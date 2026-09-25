@@ -18,6 +18,14 @@
 //                    behind GuardianForms.testing (70T) or a direct import
 //   move             live code; moves in its section's delivery, keeping a
 //                    one-line classic wrapper while classic callers remain
+//   wrapper          already moved: what is left is that one-line wrapper
+//                    (it forwards through src/legacy-bridge.js). movedIn is
+//                    the delivery that moved it; delivery is its deletion
+//                    target -- the latest delivery among the monolith
+//                    declarations that still call it (70L if code outside any
+//                    declaration does), recomputed from evidence each run, so
+//                    it moves earlier as its callers move out. `reviewed`
+//                    follows the review of the move itself.
 // No declaration is proposed as an external facade: the plan's default for
 // window.GuardianForms is no member (70A), and each one must be argued for.
 //
@@ -44,7 +52,9 @@ import { analyze, auditApplication } from './ms70-dependency-audit.mjs';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 export const DISPOSITIONS_PATH = 'tests/baseline/ms70-declaration-dispositions.json';
 export const REVIEW_PATH = 'tests/baseline/ms70-declaration-review.json';
-export const DISPOSITION_KINDS = ['delete-as-dead', 'test-only', 'move'];
+export const DISPOSITION_KINDS = ['delete-as-dead', 'test-only', 'move', 'wrapper'];
+// What a one-line wrapper forwards through (src/legacy-bridge.js).
+const BRIDGE_READ = 'window.GuardianFormsLegacyBridge.';
 export const DELIVERIES = ['70B', '70C', '70D', '70E', '70F', '70G', '70H', '70I', '70J', '70K', '70L'];
 
 // Section title (the line after a banner rule) -> delivery.
@@ -92,17 +102,40 @@ export function declarationsOf(source) {
     }
   }
   const counts = new Map(decls.map((d) => [d.name, 0]));
+  // The top-level declaration each reference sits in ('(top level)' when it
+  // is in none), so a wrapper's deletion target can follow its callers.
+  const ownerOf = (pos) => {
+    const st = ast.body.find((x) => x.start <= pos && pos < x.end);
+    if (!st) return '(top level)';
+    if (st.type === 'FunctionDeclaration' || st.type === 'ClassDeclaration') return st.id.name;
+    if (st.type === 'VariableDeclaration' && st.declarations[0].id.type === 'Identifier') return st.declarations[0].id.name;
+    return '(top level)';
+  };
+  const callers = new Map(decls.map((d) => [d.name, new Set()]));
   analyze(ast, {
     onRef(id, scope) {
       if (!counts.has(id.name)) return;
       let root = scope;
       while (root.parent) root = root.parent;
-      if (scope.lookup(id.name) === root) counts.set(id.name, counts.get(id.name) + 1);
+      if (scope.lookup(id.name) === root) {
+        counts.set(id.name, counts.get(id.name) + 1);
+        const owner = ownerOf(id.start);
+        if (owner !== id.name) callers.get(id.name).add(owner);
+      }
     },
   });
   // A `window.X` read inside the monolith of its own function also keeps it alive.
   for (const m of source.matchAll(/\bwindow\.([A-Za-z_$][\w$]*)/g)) if (counts.has(m[1])) counts.set(m[1], counts.get(m[1]) + 1);
-  return decls.map((d) => ({ ...d, internalRefs: counts.get(d.name) }));
+  const lines = source.split(/\r?\n/);
+  return decls.map((d) => ({
+    ...d,
+    internalRefs: counts.get(d.name),
+    callers: [...callers.get(d.name)].sort(),
+    // A wrapper is one line (src/legacy-bridge.js's rule, held by
+    // tests/unit/legacy-bridge.spec.js); a longer function that reads a data
+    // member off the bridge is ordinary monolith code.
+    forwarder: d.lines === 1 && lines[d.line - 1].includes(BRIDGE_READ),
+  }));
 }
 
 export function buildDispositions(root = ROOT) {
@@ -139,7 +172,8 @@ export function buildDispositions(root = ROOT) {
   for (const r of [...audit.windowReads, ...audit.windowDestructures]) note(r.name, r.file);
   for (const b of audit.bareCrossBoundary) note(b.name, b.file);
 
-  const declarations = declarationsOf(source).map((d) => {
+  const declared = declarationsOf(source);
+  const placed = declared.map((d) => {
     const section = [...sections].reverse().find((s) => s.line <= d.line) || { title: '(before the first section)', delivery: '70B' };
     const moduleConsumers = [...(consumers.get(d.name) || [])].sort();
     const e2eFiles = e2e[d.name]?.files || 0;
@@ -152,14 +186,30 @@ export function buildDispositions(root = ROOT) {
       disposition = override.disposition || disposition;
       delivery = override.delivery || delivery;
     }
+    const reviewed = !!override || review.confirmed[d.name] === `${disposition} ${delivery}`;
     return {
       name: d.name, kind: d.kind, line: d.line, lines: d.lines, section: section.title,
       internalRefs: d.internalRefs, moduleConsumers, e2eFiles, unitSlices: slices,
       duplicateOf: exportedBy.get(d.name) || [],
       disposition, delivery,
       wrapperWhile: disposition === 'move' && moduleConsumers.length ? 'modules read it through window or by bare name' : null,
-      reviewed: !!override || review.confirmed[d.name] === `${disposition} ${delivery}`,
+      reviewed,
       reviewNote: override ? review.why[override.why] : review.notes[d.name] || null,
+      forwarder: d.forwarder, callers: d.callers,
+    };
+  });
+  // A forwarder's implementation has moved; it stays only for its callers.
+  const deliveryOf = new Map(placed.map((d) => [d.name, d.delivery]));
+  const latest = (list) => list.reduce((a, b) => (DELIVERIES.indexOf(b) > DELIVERIES.indexOf(a) ? b : a));
+  const declarations = placed.map(({ forwarder, callers, ...d }) => {
+    if (!forwarder || d.disposition !== 'move') return d;
+    const targets = callers.map((c) => (c === '(top level)' ? '70L' : deliveryOf.get(c)));
+    return {
+      ...d,
+      disposition: 'wrapper',
+      movedIn: d.delivery,
+      delivery: targets.length ? latest(targets) : d.delivery,
+      wrapperWhile: `classic callers remain: ${callers.join(', ')}`,
     };
   });
   // Every window publication with the consumers that actually read it. A

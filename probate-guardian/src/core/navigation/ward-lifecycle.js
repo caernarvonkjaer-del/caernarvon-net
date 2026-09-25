@@ -527,20 +527,6 @@ export async function deleteWard(wardId) {
   }
 }
 
-export async function renameWard(wardId, newName) {
-  const caseFile = getCaseFile();
-  const ward = (caseFile.wards || []).find((w) => w.wardId === wardId);
-  if (!ward) return;
-  ward.wardName = newName;
-  if (typeof window !== 'undefined') {
-    if (typeof window.saveWardToState === 'function') {
-      await window.saveWardToState(ward);
-    }
-    if (typeof window.notifyProbateGuardianTabStateChanged === 'function') window.notifyProbateGuardianTabStateChanged();
-    if (typeof window.updateSidebar === 'function') window.updateSidebar();
-  }
-}
-
 // Global bridge for legacy scripts and test harnesses
 if (typeof window !== 'undefined') {
   window.createWardId = createWardId;
@@ -550,7 +536,6 @@ if (typeof window !== 'undefined') {
   window.addWard = addWard;
   window.switchWard = switchWard;
   window.deleteWard = deleteWard;
-  window.renameWard = renameWard;
   window.carrySourcesFor = carrySourcesFor;
   window.carryWardsFor = carryWardsFor;
   window.carryOverFieldsForPlan = carryOverFieldsForPlan;
