@@ -6,10 +6,18 @@ export function n(v) {
   return isNaN(num) ? 0 : num;
 }
 
+// Ward's % is always a percentage: 50 means half, 1 means 1%. Until
+// 2026-09-24 any value of 1 or less was read as a fraction, so a 1% share
+// counted as 100% here and in the court workbook (percentValue() in
+// core/excel/excel-engine.js); changed with the requester's approval, per
+// AGENTS.md section 5 -- the workbook holds each share in a percentage cell
+// it multiplies into the ward's share. A blank share still counts as the
+// whole asset for the in-progress totals; validation requires Ward's % on
+// every populated line before export.
 export function pct(v) {
   if (v === '' || v === null || v === undefined) return 1;
   const p = parseFloat(v);
-  return isNaN(p) ? 1 : p > 1 ? p / 100 : p;
+  return isNaN(p) ? 1 : p / 100;
 }
 
 // Milestone 64B-1, item 9.1 / D7. Shared by calcTotalsAnnual() below and by

@@ -7,6 +7,7 @@ import { countyDriftWarnings } from '../case-county-drift.js';
 import { formDerivedOverwriteWarnings } from './form-derived-fields.js';
 import { bondDepositoryAdvisories } from './bond-depository.js';
 import { planCertificateAdvisories, certificateOptional } from './plan-certificate-of-service.js';
+import { wardShareAdvisories } from './ward-share-advisories.js';
 
 // Milestone 67B. The page each form asks the bond / restricted-depository
 // question on, by the registry's own engine id (the Annual family shares
@@ -63,6 +64,10 @@ export function prepareFilingOutput(data, baseIssues = [], options = {}) {
     ...(identity.descriptor?.family === 'plan'
       ? planCertificateAdvisories(target, { optional: certificateOptional(identity.descriptor.engineId) })
       : []),
+    // Schedule D ward shares of 1% or less, on the Annual, Final and Trust
+    // Accountings: Ward's % now reads as a percentage everywhere, so a share
+    // typed as a fraction under the old reading is pointed out, never blocked.
+    ...(identity.descriptor?.engineId === 'annual' ? wardShareAdvisories(target) : []),
   ];
 
   return {

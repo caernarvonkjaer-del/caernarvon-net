@@ -231,9 +231,13 @@ export function numValue(val) {
  * @param {any} val
  * @returns {number}
  */
+// The fraction the court workbook's percentage cells hold: always the typed
+// percentage divided by 100 (1% -> 0.01). It used to pass values of 1 or less
+// through unchanged, writing a 1% share as 100%; see pct() in
+// features/annual-accounting/totals.js.
 export function percentValue(val) {
   const p = parseFloat(val);
-  return isNaN(p) ? 0 : p > 1 ? p / 100 : p;
+  return isNaN(p) ? 0 : p / 100;
 }
 
 /**

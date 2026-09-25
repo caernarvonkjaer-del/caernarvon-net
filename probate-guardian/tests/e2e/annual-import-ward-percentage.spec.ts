@@ -18,10 +18,9 @@ const ROWS = {
   schD2: [{ description: 'Family home', residence: 'Yes', income: 'No', fullValue: 200000, wardPct: '100', carryingValue: 200000 }],
   schD3: [{ description: 'Mineral rights', fullAmount: 3000, wardPct: '33.33', carryingValue: 999.9, wardAmount: '' }],
   schD4: [{ description: 'Certificate of deposit', restricted: 'No', fullAmount: 8000, wardPct: '12.5', carryingValue: 1000, wardValue: '' }],
-  // 2.5, not 1: the exporter's percentValue() treats any value up to 1 as
-  // already a fraction, so a 1% share is written as 100% -- a separate
-  // defect, reported rather than pinned here.
-  schD5: [{ description: 'Car loan', loanNo: 'L-77', loanType: 'Auto', fullDebt: 4000, wardPct: '2.5', wardBalance: '' }],
+  // 1% round-trips now: the exporter used to write any share of 1 or less as
+  // a fraction (1% as 100%), fixed the same day (annual-ward-share-export.spec.ts).
+  schD5: [{ description: 'Car loan', loanNo: 'L-77', loanType: 'Auto', fullDebt: 4000, wardPct: '1', wardBalance: '' }],
   schE: [{ bankName: 'First Bank', transferInDate: '2026-02-01', transferInAmt: 250, transferOutDate: '', transferOutAmt: '' }],
 };
 
@@ -71,7 +70,7 @@ test('an Annual workbook with ward percentages on Schedules D-1 to D-5 re-import
     ['schD2', 'Family Home', '100'],
     ['schD3', 'Mineral Rights', '33.33'],
     ['schD4', 'Certificate of Deposit', '12.5'],
-    ['schD5', 'Car Loan', '2.5'],
+    ['schD5', 'Car Loan', '1'],
   ]);
   expect(imported.schE, 'Schedule E, read after D-5, imported too').toBe('First Bank');
 });

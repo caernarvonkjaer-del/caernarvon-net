@@ -116,6 +116,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`src\core\filing\readiness-config.js`](<src/core/filing/readiness-config.js>) | Build, tooling, or configuration source. |
 | [`src\core\filing\schedule-doc-ack.js`](<src/core/filing/schedule-doc-ack.js>) | Build, tooling, or configuration source. |
 | [`src\core\filing\statutory-text.js`](<src/core/filing/statutory-text.js>) | Build, tooling, or configuration source. |
+| [`src\core\filing\ward-share-advisories.js`](<src/core/filing/ward-share-advisories.js>) | Preview & Export notes for Schedule D ward shares of 1% or less on the Annual Accounting family, since Ward's % reads as a percentage everywhere. |
 | [`src\core\form\cards\case-caption-card.js`](<src/core/form/cards/case-caption-card.js>) | Build, tooling, or configuration source. |
 | [`src\core\form\cards\guardian-attorney-card.js`](<src/core/form/cards/guardian-attorney-card.js>) | Build, tooling, or configuration source. |
 | [`src\core\form\cards\residence-facility-card.js`](<src/core/form/cards/residence-facility-card.js>) | Build, tooling, or configuration source. |
@@ -262,6 +263,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`tests\e2e\annual-import-ward-percentage.spec.ts`](<tests/e2e/annual-import-ward-percentage.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\annual-mount.spec.ts`](<tests/e2e/annual-mount.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\annual-schedule-consistency.spec.ts`](<tests/e2e/annual-schedule-consistency.spec.ts>) | Automated test covering the named behavior or contract. |
+| [`tests\e2e\annual-ward-share-export.spec.ts`](<tests/e2e/annual-ward-share-export.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\backup-restore-sav.spec.ts`](<tests/e2e/backup-restore-sav.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\blank-card-pruning.spec.ts`](<tests/e2e/blank-card-pruning.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\bond-depository.spec.ts`](<tests/e2e/bond-depository.spec.ts>) | Milestone 67B: nothing in the bond block gates export; the four-state question's reveals, advisories, legacy migration, PDF lines, workbook cells and the Excel import round trip on both forms. |
@@ -390,6 +392,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`tests\unit\annual-accounting-pdf-model.spec.js`](<tests/unit/annual-accounting-pdf-model.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\annual-accounting-totals.spec.js`](<tests/unit/annual-accounting-totals.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\annual-pdf-schb4-attribution.spec.js`](<tests/unit/annual-pdf-schb4-attribution.spec.js>) | Automated test covering the named behavior or contract. |
+| [`tests\unit\annual-ward-percentage.spec.js`](<tests/unit/annual-ward-percentage.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\b4-block-map.spec.js`](<tests/unit/b4-block-map.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\b4-export-plan.spec.js`](<tests/unit/b4-export-plan.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\b4-register-pages.spec.js`](<tests/unit/b4-register-pages.spec.js>) | Automated test covering the named behavior or contract. |
@@ -513,6 +516,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`tests\unit\validation-issue.spec.js`](<tests/unit/validation-issue.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\ward-carryover.spec.js`](<tests/unit/ward-carryover.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\ward-lock.spec.js`](<tests/unit/ward-lock.spec.js>) | Automated test covering the named behavior or contract. |
+| [`tests\unit\ward-share-advisories.spec.js`](<tests/unit/ward-share-advisories.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\window-bridge.spec.js`](<tests/unit/window-bridge.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\xlsx-extract.spec.js`](<tests/unit/xlsx-extract.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\yes-no-radio-migration.spec.js`](<tests/unit/yes-no-radio-migration.spec.js>) | Automated test covering the named behavior or contract. |
