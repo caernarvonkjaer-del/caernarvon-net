@@ -2,15 +2,15 @@
  "generatedBy": "node scripts/ms70-e2e-global-inventory.mjs --write",
  "note": "Milestone 70, 70A: application names the browser suite reaches through window, and its in-place writes to live case state. GuardianForms.testing (70T) is designed from this. Informational.",
  "summary": {
-  "specFiles": 115,
-  "specFilesTouchingAppGlobals": 112,
+  "specFiles": 118,
+  "specFilesTouchingAppGlobals": 114,
   "supportFilesTouchingAppGlobals": 4,
-  "distinctAppNames": 158,
-  "inPlaceStateWriteSites": 237,
-  "filesWithInPlaceStateWrites": 42,
+  "distinctAppNames": 159,
+  "inPlaceStateWriteSites": 239,
+  "filesWithInPlaceStateWrites": 44,
   "writeKinds": {
-   "object-assign": 17,
-   "assign": 214,
+   "object-assign": 18,
+   "assign": 215,
    "mutator": 3,
    "replace-root": 3
   },
@@ -18,28 +18,28 @@
  },
  "byName": {
   "navigate": {
-   "files": 86,
-   "uses": 428
+   "files": 87,
+   "uses": 430
   },
   "D": {
-   "files": 78,
-   "uses": 574
+   "files": 80,
+   "uses": 576
   },
   "flushPendingSave": {
-   "files": 31,
-   "uses": 53
+   "files": 33,
+   "uses": 56
   },
   "autoSave": {
-   "files": 29,
-   "uses": 62
+   "files": 31,
+   "uses": 64
   },
   "addWard": {
    "files": 20,
    "uses": 60
   },
   "caseFile": {
-   "files": 18,
-   "uses": 116
+   "files": 20,
+   "uses": 121
   },
   "computeNavChecks": {
    "files": 12,
@@ -65,6 +65,10 @@
    "files": 6,
    "uses": 14
   },
+  "buildCaseFileBlob": {
+   "files": 5,
+   "uses": 8
+  },
   "validateAnnual": {
    "files": 5,
    "uses": 24
@@ -81,10 +85,6 @@
    "files": 4,
    "uses": 16
   },
-  "buildCaseFileBlob": {
-   "files": 4,
-   "uses": 7
-  },
   "getCaseFile": {
    "files": 4,
    "uses": 19
@@ -92,6 +92,10 @@
   "loadSimplifiedPdf": {
    "files": 4,
    "uses": 9
+  },
+  "lockApp": {
+   "files": 4,
+   "uses": 5
   },
   "renderPage": {
    "files": 4,
@@ -132,10 +136,6 @@
   "getActiveWard": {
    "files": 3,
    "uses": 7
-  },
-  "lockApp": {
-   "files": 3,
-   "uses": 3
   },
   "validatePlanMinor": {
    "files": 3,
@@ -296,6 +296,10 @@
   "__writeCallCount": {
    "files": 1,
    "uses": 4
+  },
+  "_cryptoKey": {
+   "files": 1,
+   "uses": 1
   },
   "acquireWardLock": {
    "files": 1,
@@ -2740,6 +2744,25 @@
    "writes": [],
    "computed": 0
   },
+  "tests/e2e/security-contract.spec.ts": {
+   "names": {
+    "_cryptoKey": 1,
+    "autoSave": 1,
+    "buildCaseFileBlob": 1,
+    "caseFile": 1,
+    "D": 1,
+    "flushPendingSave": 1,
+    "lockApp": 2
+   },
+   "writes": [
+    {
+     "kind": "assign",
+     "target": "D.wardName",
+     "line": 102
+    }
+   ],
+   "computed": 0
+  },
   "tests/e2e/security.spec.ts": {
    "names": {
     "loadFragment": 1
@@ -3114,6 +3137,23 @@
      "kind": "mutator",
      "target": "caseFile.wards.push",
      "line": 190
+    }
+   ],
+   "computed": 0
+  },
+  "tests/e2e/year-rollover.characterization.spec.ts": {
+   "names": {
+    "autoSave": 1,
+    "caseFile": 4,
+    "D": 1,
+    "flushPendingSave": 2,
+    "navigate": 2
+   },
+   "writes": [
+    {
+     "kind": "object-assign",
+     "target": "D",
+     "line": 176
     }
    ],
    "computed": 0

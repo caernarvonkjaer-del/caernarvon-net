@@ -108,6 +108,12 @@
      "finishSingleWardExport"
     ]
    },
+   "lock": {
+    "kind": "command",
+    "replaces": [
+     "lockApp"
+    ]
+   },
    "sharedRecords": {
     "kind": "query",
     "replaces": [
@@ -134,17 +140,12 @@
      "saveSessionRestoreCache"
     ]
    },
-   "lock": {
-    "kind": "command",
-    "replaces": [
-     "lockApp"
-    ]
-   },
    "persistenceState": {
     "kind": "query",
     "replaces": [
      "_sessionCacheGet",
      "loadCaseFileHandle",
+     "_cryptoKey",
      "auditLog",
      "getCurrentLockedWardId",
      "getRecentlyOpenedWards",
@@ -224,39 +225,39 @@
   }
  },
  "summary": {
-  "names": 158,
+  "names": 159,
   "byDestination": {
    "command": 41,
-   "query": 65,
+   "query": 66,
    "real-ui": 19,
    "harness": 12,
    "unit-import": 21
   },
   "members": 21,
-  "inPlaceWriteSites": 237
+  "inPlaceWriteSites": 239
  },
  "names": [
   {
    "name": "navigate",
-   "files": 86,
+   "files": 87,
    "destination": "command:navigate",
    "reviewed": false
   },
   {
    "name": "D",
-   "files": 78,
+   "files": 80,
    "destination": "query:snapshot",
    "reviewed": false
   },
   {
    "name": "flushPendingSave",
-   "files": 31,
+   "files": 33,
    "destination": "command:save",
    "reviewed": false
   },
   {
    "name": "autoSave",
-   "files": 29,
+   "files": 31,
    "destination": "command:save",
    "reviewed": false
   },
@@ -268,7 +269,7 @@
   },
   {
    "name": "caseFile",
-   "files": 18,
+   "files": 20,
    "destination": "query:snapshot",
    "reviewed": false
   },
@@ -309,6 +310,12 @@
    "reviewed": false
   },
   {
+   "name": "buildCaseFileBlob",
+   "files": 5,
+   "destination": "query:exportArchive",
+   "reviewed": false
+  },
+  {
    "name": "validateAnnual",
    "files": 5,
    "destination": "query:validate",
@@ -333,12 +340,6 @@
    "reviewed": false
   },
   {
-   "name": "buildCaseFileBlob",
-   "files": 4,
-   "destination": "query:exportArchive",
-   "reviewed": false
-  },
-  {
    "name": "getCaseFile",
    "files": 4,
    "destination": "query:snapshot",
@@ -348,6 +349,12 @@
    "name": "loadSimplifiedPdf",
    "files": 4,
    "destination": "query:generateOutput",
+   "reviewed": false
+  },
+  {
+   "name": "lockApp",
+   "files": 4,
+   "destination": "command:lock",
    "reviewed": false
   },
   {
@@ -408,12 +415,6 @@
    "name": "getActiveWard",
    "files": 3,
    "destination": "query:snapshot",
-   "reviewed": false
-  },
-  {
-   "name": "lockApp",
-   "files": 3,
-   "destination": "command:lock",
    "reviewed": false
   },
   {
@@ -654,6 +655,12 @@
    "name": "__writeCallCount",
    "files": 1,
    "destination": "harness",
+   "reviewed": false
+  },
+  {
+   "name": "_cryptoKey",
+   "files": 1,
+   "destination": "query:persistenceState",
    "reviewed": false
   },
   {

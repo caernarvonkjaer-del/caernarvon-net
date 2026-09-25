@@ -841,6 +841,37 @@ longer start, and the baseline script measured an app waiting on the terms
 screen), and both gained `--output` so these records never overwrite
 Milestone 13's.
 
+**Year-rollover characterization**
+(`tests/e2e/year-rollover.characterization.spec.ts`, golden
+`tests/baseline/ms70-year-rollover-golden.json`). All nine filing identities
+start a new year through the dashboard card's New year button and return
+through Prior years; the golden records every field the new year changes
+(98-352 per identity), the keys the archive leaves out, where the archive
+differs from the year before, and whether the return restores the archive.
+Red first: carrying the prior total plus 1 as the next starting balance
+failed exactly the four accountings that carry one. Findings:
+
+- Switching back restores exactly what was archived, for every identity.
+- The archive is not byte-for-byte the year before. "Start new year"
+  re-opens the filing first, and opening a Guardian Inventory or an
+  accounting runs `sanitizeNegativeAmounts()` (money text becomes a number,
+  "12.50" to 12.5 -- the same value the form stores when a filer types it)
+  and `normalizeWardData()`'s migration of pre-tri-state booleans (`false` to
+  `'No'`). Both are lossless and both are recorded, so 70G must keep them in
+  the same order relative to the snapshot. The Plans archive unchanged.
+  Traced with a setter trap on the live field.
+- Fixture note for 70T: the Guardian baseline fixture
+  (`tests/e2e/support/fixtures.ts`) still writes `hasSafeDepositBox: false`
+  and `safeDepositBoxFiled: false`, the pre-tri-state booleans the UI no
+  longer writes, so every spec built on `fillMinimalValidGuardianWard()`
+  exercises the migration rather than the stored shape. Not changed here;
+  it is a `master` fixture that many specs share.
+- It found a `master` defect: the 1% ward-share fix (dbee60f) had missed
+  each Schedule D line's ward amount on the Annual pages and in the PDF,
+  which still used copies of the old rule. Fixed on `master` in c62f890
+  (a ledger row, `re-implement`, because it deletes `legacy-app.js`'s
+  `pct()`; the branch's declaration dispositions still list it).
+
 **Per-delivery estimate (replaces the 45-70 day guess).** Sized from the
 dispositions draft: the monolith lines each delivery takes on, the module
 consumers it must migrate, and for 70T the browser suite's measured
@@ -868,16 +899,16 @@ record updates, but not waiting on full-suite runs or approvals.
 
 The range is higher than the first guess because 70T did not exist then and
 the browser suite's coupling turned out larger than estimated. It excludes
-the end-of-branch reconstitution of `master` fixes (D1): one ledger row so
-far, and the cost per row depends on what each fix touches, so the ledger is
-the running measure of it.
+the end-of-branch reconstitution of `master` fixes (D1): four ledger rows so
+far, two of them `re-implement`, and the cost per row depends on what each
+fix touches, so the ledger is the running measure of it.
 
 **Still open in 70A.** Reviewing the dispositions draft (every entry is
-`reviewed: false`); the current reason for each `window` export; the `.sav`
-fixture corpus (current and historical, plus
-corrupt and wrong-password cases); the mixed-version characterization; and the
-year-rollover characterization (`measure:baseline`/`measure:lifecycle` with `--output`); the
-and confirming the `GuardianForms` schema draft.
+`reviewed: false`) and the current reason for each `window` export; the
+`.sav` fixture corpus (current and historical, plus corrupt and
+wrong-password cases); the mixed-version characterization; and confirming
+the `GuardianForms` schema draft (`_cryptoKey`, reached by the security
+contract spec, now routes to the `persistenceState` query).
 
 ---
 

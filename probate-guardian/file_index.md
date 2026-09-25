@@ -275,6 +275,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`tests\baseline\ms70-e2e-globals.json`](<tests/baseline/ms70-e2e-globals.json>) | Milestone 70 inventory of the application names the browser suite reaches through window and its in-place state writes, from which GuardianForms.testing is designed. Informational. |
 | [`tests\baseline\ms70-fixture-inventory.json`](<tests/baseline/ms70-fixture-inventory.json>) | Milestone 70 inventory of browser test support exports, their users, and the fixture factories. Informational. |
 | [`tests\baseline\ms70-testing-adapter-design.json`](<tests/baseline/ms70-testing-adapter-design.json>) | Milestone 70 draft window.GuardianForms schema: the production version member and the 21 proposed GuardianForms.testing members, with the destination of every name the browser suite reaches (reviewed:false until confirmed in 70T). |
+| [`tests\baseline\ms70-year-rollover-golden.json`](<tests/baseline/ms70-year-rollover-golden.json>) | Milestone 70 (70A) golden record of what starting a new year does to each filing identity before migration; written by tests/e2e/year-rollover.characterization.spec.ts with PG_UPDATE_GOLDEN=1. |
 | [`tests\capture\guide-screenshots.capture.ts`](<tests/capture/guide-screenshots.capture.ts>) | Build, tooling, or configuration source. |
 | [`tests\capture\pin-web-target.ts`](<tests/capture/pin-web-target.ts>) | Build, tooling, or configuration source. |
 | [`tests\e2e\annotation-toolbar-containment.spec.ts`](<tests/e2e/annotation-toolbar-containment.spec.ts>) | Automated test covering the named behavior or contract. |
@@ -407,6 +408,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`tests\e2e\vendor-loader-retry.spec.ts`](<tests/e2e/vendor-loader-retry.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\verified-inventory-workflow.spec.ts`](<tests/e2e/verified-inventory-workflow.spec.ts>) | Automated test covering the named behavior or contract. |
 | [`tests\e2e\ward-lock.spec.ts`](<tests/e2e/ward-lock.spec.ts>) | Automated test covering the named behavior or contract. |
+| [`tests\e2e\year-rollover.characterization.spec.ts`](<tests/e2e/year-rollover.characterization.spec.ts>) | Milestone 70 (70A) characterization of starting a new year and returning to the prior one, for every filing identity, against tests/baseline/ms70-year-rollover-golden.json. |
 | [`tests\unit\amended-form-line.spec.js`](<tests/unit/amended-form-line.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\bond-depository.spec.js`](<tests/unit/bond-depository.spec.js>) | Milestone 67B: the bond-depository module -- states, reveals, migration table (incl. neither a zero bond amount nor the period dates alone counting as a bond), advisories and PDF lines. |
 | [`tests\unit\annual-accounting-pdf-model.spec.js`](<tests/unit/annual-accounting-pdf-model.spec.js>) | Automated test covering the named behavior or contract. |

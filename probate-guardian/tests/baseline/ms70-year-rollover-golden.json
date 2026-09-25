@@ -1,0 +1,6298 @@
+{
+ "note": "Milestone 70, 70A: what starting a new year does to each filing identity, recorded from the app before migration by tests/e2e/year-rollover.characterization.spec.ts. Regenerate only for a deliberate, recorded change.",
+ "types": {
+  "guardian": {
+   "activeYearKey": "Year 2",
+   "yearCounter": 2,
+   "years": [
+    {
+     "key": "Year 1",
+     "label": "2026"
+    }
+   ],
+   "keysLeftOutOfTheArchive": [
+    "createdDate",
+    "inventoryType",
+    "lastModified",
+    "wardId"
+   ],
+   "archiveDiffersFromTheYearBeforeAt": {
+    "bondAmount": {
+     "from": "\"1000\"",
+     "to": "1000"
+    },
+    "hasSafeDepositBox": {
+     "from": "false",
+     "to": "\"No\""
+    },
+    "safeDepositBoxFiled": {
+     "from": "false",
+     "to": "\"No\""
+    }
+   },
+   "changedByTheNewYear": {
+    "activeYearKey": {
+     "from": null,
+     "to": "\"Year 2\""
+    },
+    "attorney.filingDate": {
+     "from": "\"2026-01-02\"",
+     "to": "null"
+    },
+    "attorney.signatureDate": {
+     "from": "\"2026-01-02\"",
+     "to": "null"
+    },
+    "bondAmount": {
+     "from": "\"1000\"",
+     "to": "1000"
+    },
+    "guardians.0.signatureDate": {
+     "from": "\"2026-01-02\"",
+     "to": "\"\""
+    },
+    "hasSafeDepositBox": {
+     "from": "false",
+     "to": "\"No\""
+    },
+    "preparer.signatureDate": {
+     "from": "\"2026-01-02\"",
+     "to": "\"\""
+    },
+    "safeDepositBoxFiled": {
+     "from": "false",
+     "to": "\"No\""
+    },
+    "serviceDate": {
+     "from": "\"2026-01-02\"",
+     "to": "null"
+    },
+    "yearCounter": {
+     "from": null,
+     "to": "2"
+    },
+    "years.0.archivedAt": {
+     "from": null,
+     "to": "\"<time>\""
+    },
+    "years.0.data.amendedForm": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.attorney.barNumber": {
+     "from": null,
+     "to": "\"123456\""
+    },
+    "years.0.data.attorney.cityStateZip": {
+     "from": null,
+     "to": "\"Clearwater, FL 33755\""
+    },
+    "years.0.data.attorney.filingDate": {
+     "from": null,
+     "to": "\"2026-01-02\""
+    },
+    "years.0.data.attorney.isPreparer": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.attorney.name": {
+     "from": null,
+     "to": "\"Sample Attorney\""
+    },
+    "years.0.data.attorney.phone": {
+     "from": null,
+     "to": "\"555-555-5557\""
+    },
+    "years.0.data.attorney.signatureDate": {
+     "from": null,
+     "to": "\"2026-01-02\""
+    },
+    "years.0.data.attorney.signatureImage": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.attorney.signatureState": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.attorney.streetAddress": {
+     "from": null,
+     "to": "\"123 Main St\""
+    },
+    "years.0.data.attorneyForGuardian": {
+     "from": null,
+     "to": "\"Sample Attorney\""
+    },
+    "years.0.data.attorneyPartyId": {
+     "from": null,
+     "to": "null"
+    },
+    "years.0.data.bondAmount": {
+     "from": null,
+     "to": "1000"
+    },
+    "years.0.data.bondDepositoryState": {
+     "from": null,
+     "to": "\"bond-only\""
+    },
+    "years.0.data.bondingCompany": {
+     "from": null,
+     "to": "\"Sample Bonding Co\""
+    },
+    "years.0.data.bondPeriodFrom": {
+     "from": null,
+     "to": "\"2026-01-01\""
+    },
+    "years.0.data.bondPeriodTo": {
+     "from": null,
+     "to": "\"2027-01-01\""
+    },
+    "years.0.data.bondWaivedDate": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.caseId": {
+     "from": null,
+     "to": "null"
+    },
+    "years.0.data.caseNumber": {
+     "from": null,
+     "to": "\"2026-CP-000123\""
+    },
+    "years.0.data.county": {
+     "from": null,
+     "to": "\"Pinellas\""
+    },
+    "years.0.data.gid": {
+     "from": null,
+     "to": "\"2026-01-01\""
+    },
+    "years.0.data.guardianName": {
+     "from": null,
+     "to": "\"Sample Guardian\""
+    },
+    "years.0.data.guardianPartyIds": {
+     "from": null,
+     "to": "[]"
+    },
+    "years.0.data.guardians.0.cityStateZip": {
+     "from": null,
+     "to": "\"Clearwater, FL 33755\""
+    },
+    "years.0.data.guardians.0.isPreparer": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.guardians.0.name": {
+     "from": null,
+     "to": "\"Sample Guardian\""
+    },
+    "years.0.data.guardians.0.phone": {
+     "from": null,
+     "to": "\"555-555-5555\""
+    },
+    "years.0.data.guardians.0.signatureDate": {
+     "from": null,
+     "to": "\"2026-01-02\""
+    },
+    "years.0.data.guardians.0.signatureImage": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.guardians.0.signatureState": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.guardians.0.ssnEin": {
+     "from": null,
+     "to": "\"123-45-6789\""
+    },
+    "years.0.data.guardians.0.streetAddress": {
+     "from": null,
+     "to": "\"123 Main St\""
+    },
+    "years.0.data.hasSafeDepositBox": {
+     "from": null,
+     "to": "\"No\""
+    },
+    "years.0.data.preparer.asOfDate": {
+     "from": null,
+     "to": "null"
+    },
+    "years.0.data.preparer.cityStateZip": {
+     "from": null,
+     "to": "\"Clearwater, FL 33755\""
+    },
+    "years.0.data.preparer.name": {
+     "from": null,
+     "to": "\"Sample Preparer\""
+    },
+    "years.0.data.preparer.phone": {
+     "from": null,
+     "to": "\"555-555-5556\""
+    },
+    "years.0.data.preparer.signatureDate": {
+     "from": null,
+     "to": "\"2026-01-02\""
+    },
+    "years.0.data.preparer.signatureImage": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.preparer.signatureState": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.preparer.ssnEin": {
+     "from": null,
+     "to": "\"987-65-4321\""
+    },
+    "years.0.data.preparer.streetAddress": {
+     "from": null,
+     "to": "\"123 Main St\""
+    },
+    "years.0.data.preparerPartyId": {
+     "from": null,
+     "to": "null"
+    },
+    "years.0.data.q7Hmo": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7InstitutionalCare": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7Medicaid": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7Medicare": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7PendingBenefits": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7Pension": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7SocialSecurity": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7Ssdi": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7Ssi": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7StateSupplement": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7SupplementalIns": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7Trusts": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7Va": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.restrictedDepositoryReceiptDate": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.safeDepositBoxFiled": {
+     "from": null,
+     "to": "\"No\""
+    },
+    "years.0.data.scheduleA1.0.cityStateZip": {
+     "from": null,
+     "to": "\"Clearwater, FL 33755\""
+    },
+    "years.0.data.scheduleA1.0.fullAssetValue": {
+     "from": null,
+     "to": "250000"
+    },
+    "years.0.data.scheduleA1.0.income": {
+     "from": null,
+     "to": "\"No\""
+    },
+    "years.0.data.scheduleA1.0.notes": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.scheduleA1.0.propertyDescription": {
+     "from": null,
+     "to": "\"Family Home\""
+    },
+    "years.0.data.scheduleA1.0.residence": {
+     "from": null,
+     "to": "\"Yes\""
+    },
+    "years.0.data.scheduleA1.0.streetAddress": {
+     "from": null,
+     "to": "\"1 Main St\""
+    },
+    "years.0.data.scheduleA1.0.wardPercent": {
+     "from": null,
+     "to": "100"
+    },
+    "years.0.data.scheduleA2": {
+     "from": null,
+     "to": "[]"
+    },
+    "years.0.data.scheduleB1": {
+     "from": null,
+     "to": "[]"
+    },
+    "years.0.data.scheduleB2": {
+     "from": null,
+     "to": "[]"
+    },
+    "years.0.data.scheduleB3": {
+     "from": null,
+     "to": "[]"
+    },
+    "years.0.data.scheduleB4": {
+     "from": null,
+     "to": "[]"
+    },
+    "years.0.data.scheduleC1": {
+     "from": null,
+     "to": "[]"
+    },
+    "years.0.data.scheduleC2": {
+     "from": null,
+     "to": "[]"
+    },
+    "years.0.data.scheduleC3": {
+     "from": null,
+     "to": "[]"
+    },
+    "years.0.data.scheduleC4": {
+     "from": null,
+     "to": "[]"
+    },
+    "years.0.data.scheduleC5": {
+     "from": null,
+     "to": "[]"
+    },
+    "years.0.data.scheduleDocsAck": {
+     "from": null,
+     "to": "{}"
+    },
+    "years.0.data.scheduleNoItems.a1": {
+     "from": null,
+     "to": "true"
+    },
+    "years.0.data.scheduleNoItems.a2": {
+     "from": null,
+     "to": "true"
+    },
+    "years.0.data.scheduleNoItems.b1": {
+     "from": null,
+     "to": "true"
+    },
+    "years.0.data.scheduleNoItems.b2": {
+     "from": null,
+     "to": "true"
+    },
+    "years.0.data.scheduleNoItems.b3": {
+     "from": null,
+     "to": "true"
+    },
+    "years.0.data.scheduleNoItems.b4": {
+     "from": null,
+     "to": "true"
+    },
+    "years.0.data.scheduleNoItems.c1": {
+     "from": null,
+     "to": "true"
+    },
+    "years.0.data.scheduleNoItems.c2": {
+     "from": null,
+     "to": "true"
+    },
+    "years.0.data.scheduleNoItems.c3": {
+     "from": null,
+     "to": "true"
+    },
+    "years.0.data.scheduleNoItems.c4": {
+     "from": null,
+     "to": "true"
+    },
+    "years.0.data.scheduleNoItems.c5": {
+     "from": null,
+     "to": "true"
+    },
+    "years.0.data.serviceAttorney.barNumber": {
+     "from": null,
+     "to": "\"123456\""
+    },
+    "years.0.data.serviceAttorney.cityStateZip": {
+     "from": null,
+     "to": "\"Clearwater, FL 33755\""
+    },
+    "years.0.data.serviceAttorney.name": {
+     "from": null,
+     "to": "\"Sample Attorney\""
+    },
+    "years.0.data.serviceAttorney.phone": {
+     "from": null,
+     "to": "\"555-555-5557\""
+    },
+    "years.0.data.serviceAttorney.signatureDate": {
+     "from": null,
+     "to": "\"2026-01-02\""
+    },
+    "years.0.data.serviceAttorney.signatureImage": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.serviceAttorney.signatureState": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.serviceAttorney.streetAddress": {
+     "from": null,
+     "to": "\"123 Main St\""
+    },
+    "years.0.data.serviceDate": {
+     "from": null,
+     "to": "\"2026-01-02\""
+    },
+    "years.0.data.serviceIndicateIf": {
+     "from": null,
+     "to": "\"N/A\""
+    },
+    "years.0.data.serviceNoRecipients": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.serviceRecipients.0.address": {
+     "from": null,
+     "to": "\"123 Main St\""
+    },
+    "years.0.data.serviceRecipients.0.cityStateZip": {
+     "from": null,
+     "to": "\"Clearwater, FL 33755\""
+    },
+    "years.0.data.serviceRecipients.0.name": {
+     "from": null,
+     "to": "\"Sample Recipient\""
+    },
+    "years.0.data.typeOfGuardianship": {
+     "from": null,
+     "to": "\"Plenary\""
+    },
+    "years.0.data.ucn": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.wardName": {
+     "from": null,
+     "to": "\"Rollover Guardian\""
+    },
+    "years.0.data.wardPartyId": {
+     "from": null,
+     "to": "null"
+    },
+    "years.0.data.witnesses": {
+     "from": null,
+     "to": "[]"
+    },
+    "years.0.key": {
+     "from": null,
+     "to": "\"Year 1\""
+    },
+    "years.0.label": {
+     "from": null,
+     "to": "\"2026\""
+    }
+   },
+   "priorYearRestoresTheArchive": true
+  },
+  "simplified": {
+   "activeYearKey": "Year 2",
+   "yearCounter": 2,
+   "years": [
+    {
+     "key": "Year 1",
+     "label": "2026"
+    }
+   ],
+   "keysLeftOutOfTheArchive": [
+    "createdDate",
+    "inventoryType",
+    "lastModified",
+    "wardId"
+   ],
+   "archiveDiffersFromTheYearBeforeAt": {
+    "depositsSettlement": {
+     "from": "\"0\"",
+     "to": "0"
+    },
+    "federalIncomeTax": {
+     "from": "\"0\"",
+     "to": "0"
+    },
+    "interestIncome": {
+     "from": "\"12.50\"",
+     "to": "12.5"
+    },
+    "serviceCharges": {
+     "from": "\"3.00\"",
+     "to": "3"
+    },
+    "startingBalance": {
+     "from": "\"1000\"",
+     "to": "1000"
+    }
+   },
+   "changedByTheNewYear": {
+    "activeYearKey": {
+     "from": null,
+     "to": "\"Year 2\""
+    },
+    "amendedForm": {
+     "from": "\"No\"",
+     "to": "\"\""
+    },
+    "certServiceDate": {
+     "from": "\"2027-01-05\"",
+     "to": "\"\""
+    },
+    "depositsSettlement": {
+     "from": "\"0\"",
+     "to": "\"\""
+    },
+    "federalIncomeTax": {
+     "from": "\"0\"",
+     "to": "\"\""
+    },
+    "guardians.0.signatureDate": {
+     "from": "\"2027-01-05\"",
+     "to": "\"\""
+    },
+    "interestIncome": {
+     "from": "\"12.50\"",
+     "to": "\"\""
+    },
+    "periodFrom": {
+     "from": "\"2026-01-01\"",
+     "to": "\"\""
+    },
+    "periodTo": {
+     "from": "\"2026-12-31\"",
+     "to": "\"\""
+    },
+    "serviceCharges": {
+     "from": "\"3.00\"",
+     "to": "\"\""
+    },
+    "startingBalance": {
+     "from": "\"1000\"",
+     "to": "1009.5"
+    },
+    "yearCounter": {
+     "from": null,
+     "to": "2"
+    },
+    "years.0.archivedAt": {
+     "from": null,
+     "to": "\"<time>\""
+    },
+    "years.0.data.amendedForm": {
+     "from": null,
+     "to": "\"No\""
+    },
+    "years.0.data.attorney": {
+     "from": null,
+     "to": "\"Sample Attorney\""
+    },
+    "years.0.data.attorney_barNumber": {
+     "from": null,
+     "to": "\"123456\""
+    },
+    "years.0.data.attorney_cityStateZip": {
+     "from": null,
+     "to": "\"Clearwater, FL 33755\""
+    },
+    "years.0.data.attorney_email": {
+     "from": null,
+     "to": "\"attorney@example.com\""
+    },
+    "years.0.data.attorney_phone": {
+     "from": null,
+     "to": "\"555-555-5557\""
+    },
+    "years.0.data.attorney_signatureDate": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.attorney_signatureImage": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.attorney_signatureState": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.attorney_street": {
+     "from": null,
+     "to": "\"123 Main St\""
+    },
+    "years.0.data.attorneyPartyId": {
+     "from": null,
+     "to": "null"
+    },
+    "years.0.data.caseId": {
+     "from": null,
+     "to": "null"
+    },
+    "years.0.data.caseNumber": {
+     "from": null,
+     "to": "\"2026-CP-000456\""
+    },
+    "years.0.data.certAttyBarNumber": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certAttyCityStateZip": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certAttyPhone": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certAttySignatureImage": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certAttySignatureState": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certAttySignDate": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certAttyStreet": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certIndicator": {
+     "from": null,
+     "to": "\"Mailed\""
+    },
+    "years.0.data.certNoRecipients": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certRecipients.0.line2": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certRecipients.0.line3": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certRecipients.0.name": {
+     "from": null,
+     "to": "\"Recipient One\""
+    },
+    "years.0.data.certRecipients.1.line2": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certRecipients.1.line3": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certRecipients.1.name": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certRecipients.2.line2": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certRecipients.2.line3": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certRecipients.2.name": {
+     "from": null,
+     "to": "\"Recipient Three\""
+    },
+    "years.0.data.certRecipients.3.line2": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certRecipients.3.line3": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certRecipients.3.name": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certServiceDate": {
+     "from": null,
+     "to": "\"2027-01-05\""
+    },
+    "years.0.data.county": {
+     "from": null,
+     "to": "\"Pinellas\""
+    },
+    "years.0.data.depositsSettlement": {
+     "from": null,
+     "to": "0"
+    },
+    "years.0.data.eligDepository": {
+     "from": null,
+     "to": "\"Yes\""
+    },
+    "years.0.data.eligOnlyTransactions": {
+     "from": null,
+     "to": "\"Yes\""
+    },
+    "years.0.data.federalIncomeTax": {
+     "from": null,
+     "to": "0"
+    },
+    "years.0.data.gid": {
+     "from": null,
+     "to": "\"2026-01-01\""
+    },
+    "years.0.data.guardian": {
+     "from": null,
+     "to": "\"Sample Guardian\""
+    },
+    "years.0.data.guardianPartyIds": {
+     "from": null,
+     "to": "[]"
+    },
+    "years.0.data.guardians.0.email": {
+     "from": null,
+     "to": "\"guardian@example.com\""
+    },
+    "years.0.data.guardians.0.mailingCityStateZip": {
+     "from": null,
+     "to": "\"Clearwater, FL 33755\""
+    },
+    "years.0.data.guardians.0.mailingStreet": {
+     "from": null,
+     "to": "\"123 Main St\""
+    },
+    "years.0.data.guardians.0.name": {
+     "from": null,
+     "to": "\"Sample Guardian\""
+    },
+    "years.0.data.guardians.0.phone": {
+     "from": null,
+     "to": "\"555-555-5555\""
+    },
+    "years.0.data.guardians.0.residenceCityStateZip": {
+     "from": null,
+     "to": "\"Clearwater, FL 33755\""
+    },
+    "years.0.data.guardians.0.residenceStreet": {
+     "from": null,
+     "to": "\"123 Main St\""
+    },
+    "years.0.data.guardians.0.signatureDate": {
+     "from": null,
+     "to": "\"2027-01-05\""
+    },
+    "years.0.data.guardians.0.signatureImage": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.guardians.0.signatureState": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.guardians.0.ssn": {
+     "from": null,
+     "to": "\"123-45-6789\""
+    },
+    "years.0.data.hasSafeDepositBox": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.interestIncome": {
+     "from": null,
+     "to": "12.5"
+    },
+    "years.0.data.periodFrom": {
+     "from": null,
+     "to": "\"2026-01-01\""
+    },
+    "years.0.data.periodTo": {
+     "from": null,
+     "to": "\"2026-12-31\""
+    },
+    "years.0.data.preparerPartyId": {
+     "from": null,
+     "to": "null"
+    },
+    "years.0.data.q7Hmo": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7InstitutionalCare": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7Medicaid": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7Medicare": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7PendingBenefits": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7Pension": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7SocialSecurity": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7Ssdi": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7Ssi": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7StateSupplement": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7SupplementalIns": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7Trusts": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7Va": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.remuneration": {
+     "from": null,
+     "to": "[]"
+    },
+    "years.0.data.safeDepositBoxFiled": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.scheduleDocsAck": {
+     "from": null,
+     "to": "{}"
+    },
+    "years.0.data.scheduleNoItems.remuneration": {
+     "from": null,
+     "to": "true"
+    },
+    "years.0.data.serviceCharges": {
+     "from": null,
+     "to": "3"
+    },
+    "years.0.data.ssn": {
+     "from": null,
+     "to": "\"123-45-6789\""
+    },
+    "years.0.data.startingBalance": {
+     "from": null,
+     "to": "1000"
+    },
+    "years.0.data.typeOfGuardianship": {
+     "from": null,
+     "to": "\"Plenary\""
+    },
+    "years.0.data.ucn": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.wardName": {
+     "from": null,
+     "to": "\"Rollover Simplified\""
+    },
+    "years.0.data.wardPartyId": {
+     "from": null,
+     "to": "null"
+    },
+    "years.0.key": {
+     "from": null,
+     "to": "\"Year 1\""
+    },
+    "years.0.label": {
+     "from": null,
+     "to": "\"2026\""
+    }
+   },
+   "priorYearRestoresTheArchive": true
+  },
+  "annual": {
+   "activeYearKey": "Year 2",
+   "yearCounter": 2,
+   "years": [
+    {
+     "key": "Year 1",
+     "label": "2026"
+    }
+   ],
+   "keysLeftOutOfTheArchive": [
+    "createdDate",
+    "inventoryType",
+    "lastModified",
+    "wardId"
+   ],
+   "archiveDiffersFromTheYearBeforeAt": {
+    "schD1.0.wardPct": {
+     "from": "\"100\"",
+     "to": "100"
+    },
+    "startingBalance": {
+     "from": "\"10000\"",
+     "to": "10000"
+    }
+   },
+   "changedByTheNewYear": {
+    "activeYearKey": {
+     "from": null,
+     "to": "\"Year 2\""
+    },
+    "amendedForm": {
+     "from": "\"No\"",
+     "to": "\"\""
+    },
+    "attorney_signatureDate": {
+     "from": "\"2027-01-05\"",
+     "to": "\"\""
+    },
+    "certDate": {
+     "from": "\"2026-12-31\"",
+     "to": "\"\""
+    },
+    "guardians.0.signatureDate": {
+     "from": "\"2027-01-05\"",
+     "to": "\"\""
+    },
+    "periodFrom": {
+     "from": "\"2026-01-01\"",
+     "to": "\"\""
+    },
+    "periodTo": {
+     "from": "\"2026-12-31\"",
+     "to": "\"\""
+    },
+    "preparer.signatureDate": {
+     "from": "\"2027-01-05\"",
+     "to": "\"\""
+    },
+    "schA": {
+     "from": null,
+     "to": "[]"
+    },
+    "schA.0.accountNo": {
+     "from": "\"1\"",
+     "to": null
+    },
+    "schA.0.amount": {
+     "from": "1200",
+     "to": null
+    },
+    "schA.0.bank": {
+     "from": "\"First Bank\"",
+     "to": null
+    },
+    "schA.0.description": {
+     "from": "\"Benefits\"",
+     "to": null
+    },
+    "schA.0.payer": {
+     "from": "\"SSA\"",
+     "to": null
+    },
+    "schD1.0.wardPct": {
+     "from": "\"100\"",
+     "to": "100"
+    },
+    "startingBalance": {
+     "from": "\"10000\"",
+     "to": "5000"
+    },
+    "yearCounter": {
+     "from": null,
+     "to": "2"
+    },
+    "years.0.archivedAt": {
+     "from": null,
+     "to": "\"<time>\""
+    },
+    "years.0.data.amendedForm": {
+     "from": null,
+     "to": "\"No\""
+    },
+    "years.0.data.attorney": {
+     "from": null,
+     "to": "\"Sample Attorney\""
+    },
+    "years.0.data.attorney_bar": {
+     "from": null,
+     "to": "\"123456\""
+    },
+    "years.0.data.attorney_cityStateZip": {
+     "from": null,
+     "to": "\"Clearwater, FL 33755\""
+    },
+    "years.0.data.attorney_county": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.attorney_email": {
+     "from": null,
+     "to": "\"attorney@example.com\""
+    },
+    "years.0.data.attorney_isPreparer": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.attorney_phone": {
+     "from": null,
+     "to": "\"555-555-5555\""
+    },
+    "years.0.data.attorney_signatureDate": {
+     "from": null,
+     "to": "\"2027-01-05\""
+    },
+    "years.0.data.attorney_signatureImage": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.attorney_signatureState": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.attorney_street": {
+     "from": null,
+     "to": "\"123 Main St\""
+    },
+    "years.0.data.attorneyPartyId": {
+     "from": null,
+     "to": "null"
+    },
+    "years.0.data.bondAmount": {
+     "from": null,
+     "to": "\"5000\""
+    },
+    "years.0.data.bondDepositoryState": {
+     "from": null,
+     "to": "\"bond-only\""
+    },
+    "years.0.data.bondingCompany": {
+     "from": null,
+     "to": "\"Sample Bonding Co.\""
+    },
+    "years.0.data.bondPeriodFrom": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.bondPeriodTo": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.bondWaivedDate": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.caseId": {
+     "from": null,
+     "to": "null"
+    },
+    "years.0.data.caseNumber": {
+     "from": null,
+     "to": "\"2026-CP-000789\""
+    },
+    "years.0.data.certAttySignatureImage": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certAttySignatureState": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certAttySignDate": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certDate": {
+     "from": null,
+     "to": "\"2026-12-31\""
+    },
+    "years.0.data.certIndicator": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certNoRecipients": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certRecipients.0.line2": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certRecipients.0.line3": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certRecipients.0.line4": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certRecipients.0.name": {
+     "from": null,
+     "to": "\"Sample Recipient\""
+    },
+    "years.0.data.county": {
+     "from": null,
+     "to": "\"Pinellas\""
+    },
+    "years.0.data.filingType": {
+     "from": null,
+     "to": "\"Annual\""
+    },
+    "years.0.data.gid": {
+     "from": null,
+     "to": "\"2025-01-01\""
+    },
+    "years.0.data.guardian": {
+     "from": null,
+     "to": "\"Sample Guardian\""
+    },
+    "years.0.data.guardianPartyIds": {
+     "from": null,
+     "to": "[]"
+    },
+    "years.0.data.guardianRelationship": {
+     "from": null,
+     "to": "\"Professional Guardian\""
+    },
+    "years.0.data.guardians.0.email": {
+     "from": null,
+     "to": "\"guardian@example.com\""
+    },
+    "years.0.data.guardians.0.isPreparer": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.guardians.0.mailingCityStateZip": {
+     "from": null,
+     "to": "\"Clearwater, FL 33755\""
+    },
+    "years.0.data.guardians.0.mailingStreet": {
+     "from": null,
+     "to": "\"123 Main St\""
+    },
+    "years.0.data.guardians.0.name": {
+     "from": null,
+     "to": "\"Sample Guardian\""
+    },
+    "years.0.data.guardians.0.officeCityStateZip": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.guardians.0.officeStreet": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.guardians.0.phone": {
+     "from": null,
+     "to": "\"555-555-5555\""
+    },
+    "years.0.data.guardians.0.signatureDate": {
+     "from": null,
+     "to": "\"2027-01-05\""
+    },
+    "years.0.data.guardians.0.signatureDateLabel": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.guardians.0.signatureImage": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.guardians.0.signatureState": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.guardians.0.ssn": {
+     "from": null,
+     "to": "\"123-45-6789\""
+    },
+    "years.0.data.hasSafeDepositBox": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.periodFrom": {
+     "from": null,
+     "to": "\"2026-01-01\""
+    },
+    "years.0.data.periodTo": {
+     "from": null,
+     "to": "\"2026-12-31\""
+    },
+    "years.0.data.preparer.cityStateZip": {
+     "from": null,
+     "to": "\"Clearwater, FL 33755\""
+    },
+    "years.0.data.preparer.name": {
+     "from": null,
+     "to": "\"Sample Preparer\""
+    },
+    "years.0.data.preparer.phone": {
+     "from": null,
+     "to": "\"555-555-5555\""
+    },
+    "years.0.data.preparer.signatureDate": {
+     "from": null,
+     "to": "\"2027-01-05\""
+    },
+    "years.0.data.preparer.signatureImage": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.preparer.signatureState": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.preparer.ssn": {
+     "from": null,
+     "to": "\"123-45-6789\""
+    },
+    "years.0.data.preparer.street": {
+     "from": null,
+     "to": "\"123 Main St\""
+    },
+    "years.0.data.preparerPartyId": {
+     "from": null,
+     "to": "null"
+    },
+    "years.0.data.q7Hmo": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7InstitutionalCare": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7Medicaid": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7Medicare": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7PendingBenefits": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7Pension": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7SocialSecurity": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7Ssdi": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7Ssi": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7StateSupplement": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7SupplementalIns": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7Trusts": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7Va": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.reconcileExplanation": {
+     "from": null,
+     "to": "\"Test fixture: Schedule D listings intentionally left blank.\""
+    },
+    "years.0.data.relatedCaseNumbers": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.remuneration": {
+     "from": null,
+     "to": "[]"
+    },
+    "years.0.data.restrictedDepositoryReceiptDate": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.safeDepositBoxFiled": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.schA.0.accountNo": {
+     "from": null,
+     "to": "\"1\""
+    },
+    "years.0.data.schA.0.amount": {
+     "from": null,
+     "to": "1200"
+    },
+    "years.0.data.schA.0.bank": {
+     "from": null,
+     "to": "\"First Bank\""
+    },
+    "years.0.data.schA.0.description": {
+     "from": null,
+     "to": "\"Benefits\""
+    },
+    "years.0.data.schA.0.payer": {
+     "from": null,
+     "to": "\"SSA\""
+    },
+    "years.0.data.schB1": {
+     "from": null,
+     "to": "[]"
+    },
+    "years.0.data.schB2": {
+     "from": null,
+     "to": "[]"
+    },
+    "years.0.data.schB3": {
+     "from": null,
+     "to": "[]"
+    },
+    "years.0.data.schB4": {
+     "from": null,
+     "to": "[]"
+    },
+    "years.0.data.schB4Accounts": {
+     "from": null,
+     "to": "[]"
+    },
+    "years.0.data.schC": {
+     "from": null,
+     "to": "[]"
+    },
+    "years.0.data.schD1.0.accountNo": {
+     "from": null,
+     "to": "\"1\""
+    },
+    "years.0.data.schD1.0.description": {
+     "from": null,
+     "to": "\"Checking\""
+    },
+    "years.0.data.schD1.0.fullAmount": {
+     "from": null,
+     "to": "5000"
+    },
+    "years.0.data.schD1.0.restricted": {
+     "from": null,
+     "to": "\"No\""
+    },
+    "years.0.data.schD1.0.restrictedAmt": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.schD1.0.type": {
+     "from": null,
+     "to": "\"Checking\""
+    },
+    "years.0.data.schD1.0.wardPct": {
+     "from": null,
+     "to": "100"
+    },
+    "years.0.data.schD2": {
+     "from": null,
+     "to": "[]"
+    },
+    "years.0.data.schD3": {
+     "from": null,
+     "to": "[]"
+    },
+    "years.0.data.schD4": {
+     "from": null,
+     "to": "[]"
+    },
+    "years.0.data.schD5": {
+     "from": null,
+     "to": "[]"
+    },
+    "years.0.data.schE": {
+     "from": null,
+     "to": "[]"
+    },
+    "years.0.data.scheduleDocsAck": {
+     "from": null,
+     "to": "{}"
+    },
+    "years.0.data.scheduleNoItems.remuneration": {
+     "from": null,
+     "to": "true"
+    },
+    "years.0.data.schF1": {
+     "from": null,
+     "to": "[]"
+    },
+    "years.0.data.schF2": {
+     "from": null,
+     "to": "[]"
+    },
+    "years.0.data.startingBalance": {
+     "from": null,
+     "to": "10000"
+    },
+    "years.0.data.trusts.0.accountNo": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.trusts.0.createdAfterGID": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.trusts.0.dateCreated": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.trusts.0.hasTrust": {
+     "from": null,
+     "to": "\"No\""
+    },
+    "years.0.data.trusts.0.name": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.trusts.0.trustee": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.trusts.0.trustType": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.trusts.0.wardAmount": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.trusts.0.wardPct": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.typeOfGuardianship": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.ucn": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.wardName": {
+     "from": null,
+     "to": "\"Rollover Annual\""
+    },
+    "years.0.data.wardPartyId": {
+     "from": null,
+     "to": "null"
+    },
+    "years.0.key": {
+     "from": null,
+     "to": "\"Year 1\""
+    },
+    "years.0.label": {
+     "from": null,
+     "to": "\"2026\""
+    }
+   },
+   "priorYearRestoresTheArchive": true
+  },
+  "finalAccounting": {
+   "activeYearKey": "Year 2",
+   "yearCounter": 2,
+   "years": [
+    {
+     "key": "Year 1",
+     "label": "2026"
+    }
+   ],
+   "keysLeftOutOfTheArchive": [
+    "createdDate",
+    "inventoryType",
+    "lastModified",
+    "wardId"
+   ],
+   "archiveDiffersFromTheYearBeforeAt": {
+    "startingBalance": {
+     "from": "\"10000\"",
+     "to": "10000"
+    }
+   },
+   "changedByTheNewYear": {
+    "activeYearKey": {
+     "from": null,
+     "to": "\"Year 2\""
+    },
+    "amendedForm": {
+     "from": "\"No\"",
+     "to": "\"\""
+    },
+    "attorney_signatureDate": {
+     "from": "\"2027-01-05\"",
+     "to": "\"\""
+    },
+    "certDate": {
+     "from": "\"2026-12-31\"",
+     "to": "\"\""
+    },
+    "guardians.0.signatureDate": {
+     "from": "\"2027-01-05\"",
+     "to": "\"\""
+    },
+    "periodFrom": {
+     "from": "\"2026-01-01\"",
+     "to": "\"\""
+    },
+    "periodTo": {
+     "from": "\"2026-12-31\"",
+     "to": "\"\""
+    },
+    "preparer.signatureDate": {
+     "from": "\"2027-01-05\"",
+     "to": "\"\""
+    },
+    "schA": {
+     "from": null,
+     "to": "[]"
+    },
+    "schA.0.accountNo": {
+     "from": "\"1\"",
+     "to": null
+    },
+    "schA.0.amount": {
+     "from": "1200",
+     "to": null
+    },
+    "schA.0.bank": {
+     "from": "\"First Bank\"",
+     "to": null
+    },
+    "schA.0.description": {
+     "from": "\"Benefits\"",
+     "to": null
+    },
+    "schA.0.payer": {
+     "from": "\"SSA\"",
+     "to": null
+    },
+    "startingBalance": {
+     "from": "\"10000\"",
+     "to": "11200"
+    },
+    "yearCounter": {
+     "from": null,
+     "to": "2"
+    },
+    "years.0.archivedAt": {
+     "from": null,
+     "to": "\"<time>\""
+    },
+    "years.0.data.amendedForm": {
+     "from": null,
+     "to": "\"No\""
+    },
+    "years.0.data.attorney": {
+     "from": null,
+     "to": "\"Sample Attorney\""
+    },
+    "years.0.data.attorney_bar": {
+     "from": null,
+     "to": "\"123456\""
+    },
+    "years.0.data.attorney_cityStateZip": {
+     "from": null,
+     "to": "\"Clearwater, FL 33755\""
+    },
+    "years.0.data.attorney_county": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.attorney_email": {
+     "from": null,
+     "to": "\"attorney@example.com\""
+    },
+    "years.0.data.attorney_isPreparer": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.attorney_phone": {
+     "from": null,
+     "to": "\"555-555-5555\""
+    },
+    "years.0.data.attorney_signatureDate": {
+     "from": null,
+     "to": "\"2027-01-05\""
+    },
+    "years.0.data.attorney_signatureImage": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.attorney_signatureState": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.attorney_street": {
+     "from": null,
+     "to": "\"123 Main St\""
+    },
+    "years.0.data.attorneyPartyId": {
+     "from": null,
+     "to": "null"
+    },
+    "years.0.data.bondAmount": {
+     "from": null,
+     "to": "\"5000\""
+    },
+    "years.0.data.bondDepositoryState": {
+     "from": null,
+     "to": "\"bond-only\""
+    },
+    "years.0.data.bondingCompany": {
+     "from": null,
+     "to": "\"Sample Bonding Co.\""
+    },
+    "years.0.data.bondPeriodFrom": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.bondPeriodTo": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.bondWaivedDate": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.caseId": {
+     "from": null,
+     "to": "null"
+    },
+    "years.0.data.caseNumber": {
+     "from": null,
+     "to": "\"2026-CP-000789\""
+    },
+    "years.0.data.certAttySignatureImage": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certAttySignatureState": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certAttySignDate": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certDate": {
+     "from": null,
+     "to": "\"2026-12-31\""
+    },
+    "years.0.data.certIndicator": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certNoRecipients": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certRecipients.0.line2": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certRecipients.0.line3": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certRecipients.0.line4": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certRecipients.0.name": {
+     "from": null,
+     "to": "\"Sample Recipient\""
+    },
+    "years.0.data.county": {
+     "from": null,
+     "to": "\"Pinellas\""
+    },
+    "years.0.data.filingType": {
+     "from": null,
+     "to": "\"Final\""
+    },
+    "years.0.data.gid": {
+     "from": null,
+     "to": "\"2025-01-01\""
+    },
+    "years.0.data.guardian": {
+     "from": null,
+     "to": "\"Sample Guardian\""
+    },
+    "years.0.data.guardianPartyIds": {
+     "from": null,
+     "to": "[]"
+    },
+    "years.0.data.guardianRelationship": {
+     "from": null,
+     "to": "\"Professional Guardian\""
+    },
+    "years.0.data.guardians.0.email": {
+     "from": null,
+     "to": "\"guardian@example.com\""
+    },
+    "years.0.data.guardians.0.isPreparer": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.guardians.0.mailingCityStateZip": {
+     "from": null,
+     "to": "\"Clearwater, FL 33755\""
+    },
+    "years.0.data.guardians.0.mailingStreet": {
+     "from": null,
+     "to": "\"123 Main St\""
+    },
+    "years.0.data.guardians.0.name": {
+     "from": null,
+     "to": "\"Sample Guardian\""
+    },
+    "years.0.data.guardians.0.officeCityStateZip": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.guardians.0.officeStreet": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.guardians.0.phone": {
+     "from": null,
+     "to": "\"555-555-5555\""
+    },
+    "years.0.data.guardians.0.signatureDate": {
+     "from": null,
+     "to": "\"2027-01-05\""
+    },
+    "years.0.data.guardians.0.signatureDateLabel": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.guardians.0.signatureImage": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.guardians.0.signatureState": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.guardians.0.ssn": {
+     "from": null,
+     "to": "\"123-45-6789\""
+    },
+    "years.0.data.hasSafeDepositBox": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.periodFrom": {
+     "from": null,
+     "to": "\"2026-01-01\""
+    },
+    "years.0.data.periodTo": {
+     "from": null,
+     "to": "\"2026-12-31\""
+    },
+    "years.0.data.preparer.cityStateZip": {
+     "from": null,
+     "to": "\"Clearwater, FL 33755\""
+    },
+    "years.0.data.preparer.name": {
+     "from": null,
+     "to": "\"Sample Preparer\""
+    },
+    "years.0.data.preparer.phone": {
+     "from": null,
+     "to": "\"555-555-5555\""
+    },
+    "years.0.data.preparer.signatureDate": {
+     "from": null,
+     "to": "\"2027-01-05\""
+    },
+    "years.0.data.preparer.signatureImage": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.preparer.signatureState": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.preparer.ssn": {
+     "from": null,
+     "to": "\"123-45-6789\""
+    },
+    "years.0.data.preparer.street": {
+     "from": null,
+     "to": "\"123 Main St\""
+    },
+    "years.0.data.preparerPartyId": {
+     "from": null,
+     "to": "null"
+    },
+    "years.0.data.q7Hmo": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7InstitutionalCare": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7Medicaid": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7Medicare": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7PendingBenefits": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7Pension": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7SocialSecurity": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7Ssdi": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7Ssi": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7StateSupplement": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7SupplementalIns": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7Trusts": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7Va": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.reconcileExplanation": {
+     "from": null,
+     "to": "\"Test fixture: Schedule D listings intentionally left blank.\""
+    },
+    "years.0.data.relatedCaseNumbers": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.remuneration": {
+     "from": null,
+     "to": "[]"
+    },
+    "years.0.data.restrictedDepositoryReceiptDate": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.safeDepositBoxFiled": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.schA.0.accountNo": {
+     "from": null,
+     "to": "\"1\""
+    },
+    "years.0.data.schA.0.amount": {
+     "from": null,
+     "to": "1200"
+    },
+    "years.0.data.schA.0.bank": {
+     "from": null,
+     "to": "\"First Bank\""
+    },
+    "years.0.data.schA.0.description": {
+     "from": null,
+     "to": "\"Benefits\""
+    },
+    "years.0.data.schA.0.payer": {
+     "from": null,
+     "to": "\"SSA\""
+    },
+    "years.0.data.schB1": {
+     "from": null,
+     "to": "[]"
+    },
+    "years.0.data.schB2": {
+     "from": null,
+     "to": "[]"
+    },
+    "years.0.data.schB3": {
+     "from": null,
+     "to": "[]"
+    },
+    "years.0.data.schB4": {
+     "from": null,
+     "to": "[]"
+    },
+    "years.0.data.schB4Accounts": {
+     "from": null,
+     "to": "[]"
+    },
+    "years.0.data.schC": {
+     "from": null,
+     "to": "[]"
+    },
+    "years.0.data.schD1": {
+     "from": null,
+     "to": "[]"
+    },
+    "years.0.data.schD2": {
+     "from": null,
+     "to": "[]"
+    },
+    "years.0.data.schD3": {
+     "from": null,
+     "to": "[]"
+    },
+    "years.0.data.schD4": {
+     "from": null,
+     "to": "[]"
+    },
+    "years.0.data.schD5": {
+     "from": null,
+     "to": "[]"
+    },
+    "years.0.data.schE": {
+     "from": null,
+     "to": "[]"
+    },
+    "years.0.data.scheduleDocsAck": {
+     "from": null,
+     "to": "{}"
+    },
+    "years.0.data.scheduleNoItems.remuneration": {
+     "from": null,
+     "to": "true"
+    },
+    "years.0.data.schF1": {
+     "from": null,
+     "to": "[]"
+    },
+    "years.0.data.schF2": {
+     "from": null,
+     "to": "[]"
+    },
+    "years.0.data.startingBalance": {
+     "from": null,
+     "to": "10000"
+    },
+    "years.0.data.trusts.0.accountNo": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.trusts.0.createdAfterGID": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.trusts.0.dateCreated": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.trusts.0.hasTrust": {
+     "from": null,
+     "to": "\"No\""
+    },
+    "years.0.data.trusts.0.name": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.trusts.0.trustee": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.trusts.0.trustType": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.trusts.0.wardAmount": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.trusts.0.wardPct": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.typeOfGuardianship": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.ucn": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.wardName": {
+     "from": null,
+     "to": "\"Rollover finalAccounting\""
+    },
+    "years.0.data.wardPartyId": {
+     "from": null,
+     "to": "null"
+    },
+    "years.0.key": {
+     "from": null,
+     "to": "\"Year 1\""
+    },
+    "years.0.label": {
+     "from": null,
+     "to": "\"2026\""
+    }
+   },
+   "priorYearRestoresTheArchive": true
+  },
+  "trustAccounting": {
+   "activeYearKey": "Year 2",
+   "yearCounter": 2,
+   "years": [
+    {
+     "key": "Year 1",
+     "label": "2026"
+    }
+   ],
+   "keysLeftOutOfTheArchive": [
+    "createdDate",
+    "inventoryType",
+    "lastModified",
+    "wardId"
+   ],
+   "archiveDiffersFromTheYearBeforeAt": {
+    "startingBalance": {
+     "from": "\"10000\"",
+     "to": "10000"
+    }
+   },
+   "changedByTheNewYear": {
+    "activeYearKey": {
+     "from": null,
+     "to": "\"Year 2\""
+    },
+    "amendedForm": {
+     "from": "\"No\"",
+     "to": "\"\""
+    },
+    "attorney_signatureDate": {
+     "from": "\"2027-01-05\"",
+     "to": "\"\""
+    },
+    "certDate": {
+     "from": "\"2026-12-31\"",
+     "to": "\"\""
+    },
+    "guardians.0.signatureDate": {
+     "from": "\"2027-01-05\"",
+     "to": "\"\""
+    },
+    "periodFrom": {
+     "from": "\"2026-01-01\"",
+     "to": "\"\""
+    },
+    "periodTo": {
+     "from": "\"2026-12-31\"",
+     "to": "\"\""
+    },
+    "preparer.signatureDate": {
+     "from": "\"2027-01-05\"",
+     "to": "\"\""
+    },
+    "schA": {
+     "from": null,
+     "to": "[]"
+    },
+    "schA.0.accountNo": {
+     "from": "\"1\"",
+     "to": null
+    },
+    "schA.0.amount": {
+     "from": "1200",
+     "to": null
+    },
+    "schA.0.bank": {
+     "from": "\"First Bank\"",
+     "to": null
+    },
+    "schA.0.description": {
+     "from": "\"Benefits\"",
+     "to": null
+    },
+    "schA.0.payer": {
+     "from": "\"SSA\"",
+     "to": null
+    },
+    "startingBalance": {
+     "from": "\"10000\"",
+     "to": "11200"
+    },
+    "yearCounter": {
+     "from": null,
+     "to": "2"
+    },
+    "years.0.archivedAt": {
+     "from": null,
+     "to": "\"<time>\""
+    },
+    "years.0.data.amendedForm": {
+     "from": null,
+     "to": "\"No\""
+    },
+    "years.0.data.attorney": {
+     "from": null,
+     "to": "\"Sample Attorney\""
+    },
+    "years.0.data.attorney_bar": {
+     "from": null,
+     "to": "\"123456\""
+    },
+    "years.0.data.attorney_cityStateZip": {
+     "from": null,
+     "to": "\"Clearwater, FL 33755\""
+    },
+    "years.0.data.attorney_county": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.attorney_email": {
+     "from": null,
+     "to": "\"attorney@example.com\""
+    },
+    "years.0.data.attorney_isPreparer": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.attorney_phone": {
+     "from": null,
+     "to": "\"555-555-5555\""
+    },
+    "years.0.data.attorney_signatureDate": {
+     "from": null,
+     "to": "\"2027-01-05\""
+    },
+    "years.0.data.attorney_signatureImage": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.attorney_signatureState": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.attorney_street": {
+     "from": null,
+     "to": "\"123 Main St\""
+    },
+    "years.0.data.attorneyPartyId": {
+     "from": null,
+     "to": "null"
+    },
+    "years.0.data.bondAmount": {
+     "from": null,
+     "to": "\"5000\""
+    },
+    "years.0.data.bondDepositoryState": {
+     "from": null,
+     "to": "\"bond-only\""
+    },
+    "years.0.data.bondingCompany": {
+     "from": null,
+     "to": "\"Sample Bonding Co.\""
+    },
+    "years.0.data.bondPeriodFrom": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.bondPeriodTo": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.bondWaivedDate": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.caseId": {
+     "from": null,
+     "to": "null"
+    },
+    "years.0.data.caseNumber": {
+     "from": null,
+     "to": "\"2026-CP-000789\""
+    },
+    "years.0.data.certAttySignatureImage": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certAttySignatureState": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certAttySignDate": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certDate": {
+     "from": null,
+     "to": "\"2026-12-31\""
+    },
+    "years.0.data.certIndicator": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certNoRecipients": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certRecipients.0.line2": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certRecipients.0.line3": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certRecipients.0.line4": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certRecipients.0.name": {
+     "from": null,
+     "to": "\"Sample Recipient\""
+    },
+    "years.0.data.county": {
+     "from": null,
+     "to": "\"Pinellas\""
+    },
+    "years.0.data.filingType": {
+     "from": null,
+     "to": "\"Trust\""
+    },
+    "years.0.data.gid": {
+     "from": null,
+     "to": "\"2025-01-01\""
+    },
+    "years.0.data.guardian": {
+     "from": null,
+     "to": "\"Sample Guardian\""
+    },
+    "years.0.data.guardianPartyIds": {
+     "from": null,
+     "to": "[]"
+    },
+    "years.0.data.guardianRelationship": {
+     "from": null,
+     "to": "\"Professional Guardian\""
+    },
+    "years.0.data.guardians.0.email": {
+     "from": null,
+     "to": "\"guardian@example.com\""
+    },
+    "years.0.data.guardians.0.isPreparer": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.guardians.0.mailingCityStateZip": {
+     "from": null,
+     "to": "\"Clearwater, FL 33755\""
+    },
+    "years.0.data.guardians.0.mailingStreet": {
+     "from": null,
+     "to": "\"123 Main St\""
+    },
+    "years.0.data.guardians.0.name": {
+     "from": null,
+     "to": "\"Sample Guardian\""
+    },
+    "years.0.data.guardians.0.officeCityStateZip": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.guardians.0.officeStreet": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.guardians.0.phone": {
+     "from": null,
+     "to": "\"555-555-5555\""
+    },
+    "years.0.data.guardians.0.signatureDate": {
+     "from": null,
+     "to": "\"2027-01-05\""
+    },
+    "years.0.data.guardians.0.signatureDateLabel": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.guardians.0.signatureImage": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.guardians.0.signatureState": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.guardians.0.ssn": {
+     "from": null,
+     "to": "\"123-45-6789\""
+    },
+    "years.0.data.hasSafeDepositBox": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.periodFrom": {
+     "from": null,
+     "to": "\"2026-01-01\""
+    },
+    "years.0.data.periodTo": {
+     "from": null,
+     "to": "\"2026-12-31\""
+    },
+    "years.0.data.preparer.cityStateZip": {
+     "from": null,
+     "to": "\"Clearwater, FL 33755\""
+    },
+    "years.0.data.preparer.name": {
+     "from": null,
+     "to": "\"Sample Preparer\""
+    },
+    "years.0.data.preparer.phone": {
+     "from": null,
+     "to": "\"555-555-5555\""
+    },
+    "years.0.data.preparer.signatureDate": {
+     "from": null,
+     "to": "\"2027-01-05\""
+    },
+    "years.0.data.preparer.signatureImage": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.preparer.signatureState": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.preparer.ssn": {
+     "from": null,
+     "to": "\"123-45-6789\""
+    },
+    "years.0.data.preparer.street": {
+     "from": null,
+     "to": "\"123 Main St\""
+    },
+    "years.0.data.preparerPartyId": {
+     "from": null,
+     "to": "null"
+    },
+    "years.0.data.q7Hmo": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7InstitutionalCare": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7Medicaid": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7Medicare": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7PendingBenefits": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7Pension": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7SocialSecurity": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7Ssdi": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7Ssi": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7StateSupplement": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7SupplementalIns": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7Trusts": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7Va": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.reconcileExplanation": {
+     "from": null,
+     "to": "\"Test fixture: Schedule D listings intentionally left blank.\""
+    },
+    "years.0.data.relatedCaseNumbers": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.remuneration": {
+     "from": null,
+     "to": "[]"
+    },
+    "years.0.data.restrictedDepositoryReceiptDate": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.safeDepositBoxFiled": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.schA.0.accountNo": {
+     "from": null,
+     "to": "\"1\""
+    },
+    "years.0.data.schA.0.amount": {
+     "from": null,
+     "to": "1200"
+    },
+    "years.0.data.schA.0.bank": {
+     "from": null,
+     "to": "\"First Bank\""
+    },
+    "years.0.data.schA.0.description": {
+     "from": null,
+     "to": "\"Benefits\""
+    },
+    "years.0.data.schA.0.payer": {
+     "from": null,
+     "to": "\"SSA\""
+    },
+    "years.0.data.schB1": {
+     "from": null,
+     "to": "[]"
+    },
+    "years.0.data.schB2": {
+     "from": null,
+     "to": "[]"
+    },
+    "years.0.data.schB3": {
+     "from": null,
+     "to": "[]"
+    },
+    "years.0.data.schB4": {
+     "from": null,
+     "to": "[]"
+    },
+    "years.0.data.schB4Accounts": {
+     "from": null,
+     "to": "[]"
+    },
+    "years.0.data.schC": {
+     "from": null,
+     "to": "[]"
+    },
+    "years.0.data.schD1": {
+     "from": null,
+     "to": "[]"
+    },
+    "years.0.data.schD2": {
+     "from": null,
+     "to": "[]"
+    },
+    "years.0.data.schD3": {
+     "from": null,
+     "to": "[]"
+    },
+    "years.0.data.schD4": {
+     "from": null,
+     "to": "[]"
+    },
+    "years.0.data.schD5": {
+     "from": null,
+     "to": "[]"
+    },
+    "years.0.data.schE": {
+     "from": null,
+     "to": "[]"
+    },
+    "years.0.data.scheduleDocsAck": {
+     "from": null,
+     "to": "{}"
+    },
+    "years.0.data.scheduleNoItems.remuneration": {
+     "from": null,
+     "to": "true"
+    },
+    "years.0.data.schF1": {
+     "from": null,
+     "to": "[]"
+    },
+    "years.0.data.schF2": {
+     "from": null,
+     "to": "[]"
+    },
+    "years.0.data.startingBalance": {
+     "from": null,
+     "to": "10000"
+    },
+    "years.0.data.trusts.0.accountNo": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.trusts.0.createdAfterGID": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.trusts.0.dateCreated": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.trusts.0.hasTrust": {
+     "from": null,
+     "to": "\"No\""
+    },
+    "years.0.data.trusts.0.name": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.trusts.0.trustee": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.trusts.0.trustType": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.trusts.0.wardAmount": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.trusts.0.wardPct": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.typeOfGuardianship": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.ucn": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.wardName": {
+     "from": null,
+     "to": "\"Rollover trustAccounting\""
+    },
+    "years.0.data.wardPartyId": {
+     "from": null,
+     "to": "null"
+    },
+    "years.0.key": {
+     "from": null,
+     "to": "\"Year 1\""
+    },
+    "years.0.label": {
+     "from": null,
+     "to": "\"2026\""
+    }
+   },
+   "priorYearRestoresTheArchive": true
+  },
+  "planSimplified": {
+   "activeYearKey": "Year 2",
+   "yearCounter": 2,
+   "years": [
+    {
+     "key": "Year 1",
+     "label": "2026"
+    }
+   ],
+   "keysLeftOutOfTheArchive": [
+    "createdDate",
+    "inventoryType",
+    "lastModified",
+    "scheduleDocs",
+    "wardId"
+   ],
+   "archiveDiffersFromTheYearBeforeAt": {},
+   "changedByTheNewYear": {
+    "activeYearKey": {
+     "from": null,
+     "to": "\"Year 2\""
+    },
+    "periodFrom": {
+     "from": "\"2026-01-01\"",
+     "to": "\"\""
+    },
+    "periodTo": {
+     "from": "\"2026-12-31\"",
+     "to": "\"\""
+    },
+    "planGuardians.0.signatureDate": {
+     "from": "\"2026-01-05\"",
+     "to": "\"\""
+    },
+    "q1Residences": {
+     "from": "\"123 Main St, Clearwater, FL 33755 (all year)\"",
+     "to": "\"\""
+    },
+    "q2BestPlacement": {
+     "from": "\"Familiar setting close to family and medical providers.\"",
+     "to": "\"\""
+    },
+    "q3MedicalTreatment": {
+     "from": "\"Annual check-up with Dr. Alvarez in March.\"",
+     "to": "\"\""
+    },
+    "q4Diagnosis": {
+     "from": "\"Stable; continues to require assistance with daily decisions.\"",
+     "to": "\"\""
+    },
+    "q5SocialServices": {
+     "from": "\"Weekly day program and family visits.\"",
+     "to": "\"\""
+    },
+    "q6Interaction": {
+     "from": "\"Regular positive contact with guardian and family.\"",
+     "to": "\"\""
+    },
+    "q7RestoreRights": {
+     "from": "\"No\"",
+     "to": "\"\""
+    },
+    "q8None": {
+     "from": "true",
+     "to": "false"
+    },
+    "q9Remuneration": {
+     "from": "\"No\"",
+     "to": "\"\""
+    },
+    "scheduleDocs.planCover.2026-01-01__2026-12-31.comment": {
+     "from": null,
+     "to": "\"\""
+    },
+    "scheduleDocs.planCover.2026-01-01__2026-12-31.files": {
+     "from": null,
+     "to": "[]"
+    },
+    "yearCounter": {
+     "from": null,
+     "to": "2"
+    },
+    "years.0.archivedAt": {
+     "from": null,
+     "to": "\"<time>\""
+    },
+    "years.0.data.amendedForm": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.attorney_bar": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.attorney_cityStateZip": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.attorney_email": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.attorney_name": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.attorney_phone": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.attorney_secondary_email": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.attorney_signatureDate": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.attorney_street": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.attorneyPartyId": {
+     "from": null,
+     "to": "null"
+    },
+    "years.0.data.caseId": {
+     "from": null,
+     "to": "null"
+    },
+    "years.0.data.caseNumber": {
+     "from": null,
+     "to": "\"2026-CP-000789\""
+    },
+    "years.0.data.certDate": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certIndicator": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certNoRecipients": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certRecipients.0.line2": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certRecipients.0.line3": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certRecipients.0.line4": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certRecipients.0.name": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certSignatureDate": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certSignatureImage": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certSignatureState": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certSigner": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.county": {
+     "from": null,
+     "to": "\"Pinellas\""
+    },
+    "years.0.data.guardianPartyIds": {
+     "from": null,
+     "to": "[]"
+    },
+    "years.0.data.hasSafeDepositBox": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.periodFrom": {
+     "from": null,
+     "to": "\"2026-01-01\""
+    },
+    "years.0.data.periodTo": {
+     "from": null,
+     "to": "\"2026-12-31\""
+    },
+    "years.0.data.planGuardians.0.email": {
+     "from": null,
+     "to": "\"guardian@example.com\""
+    },
+    "years.0.data.planGuardians.0.mailingAddress": {
+     "from": null,
+     "to": "\"123 Main St, Clearwater, FL 33755\""
+    },
+    "years.0.data.planGuardians.0.name": {
+     "from": null,
+     "to": "\"Sample Guardian\""
+    },
+    "years.0.data.planGuardians.0.phone": {
+     "from": null,
+     "to": "\"555-555-5555\""
+    },
+    "years.0.data.planGuardians.0.signatureDate": {
+     "from": null,
+     "to": "\"2026-01-05\""
+    },
+    "years.0.data.planGuardians.1.email": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.planGuardians.1.mailingAddress": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.planGuardians.1.name": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.planGuardians.1.phone": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.planGuardians.1.signatureDate": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.planTriStateSchemaVersion": {
+     "from": null,
+     "to": "2"
+    },
+    "years.0.data.preparer_cityStateZip": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.preparer_email": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.preparer_mailingStreet": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.preparer_name": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.preparer_phone": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.preparer_signatureDate": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.preparerPartyId": {
+     "from": null,
+     "to": "null"
+    },
+    "years.0.data.q1Residences": {
+     "from": null,
+     "to": "\"123 Main St, Clearwater, FL 33755 (all year)\""
+    },
+    "years.0.data.q2BestPlacement": {
+     "from": null,
+     "to": "\"Familiar setting close to family and medical providers.\""
+    },
+    "years.0.data.q3MedicalTreatment": {
+     "from": null,
+     "to": "\"Annual check-up with Dr. Alvarez in March.\""
+    },
+    "years.0.data.q4Diagnosis": {
+     "from": null,
+     "to": "\"Stable; continues to require assistance with daily decisions.\""
+    },
+    "years.0.data.q5SocialServices": {
+     "from": null,
+     "to": "\"Weekly day program and family visits.\""
+    },
+    "years.0.data.q6Interaction": {
+     "from": null,
+     "to": "\"Regular positive contact with guardian and family.\""
+    },
+    "years.0.data.q7Hmo": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7InstitutionalCare": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7Medicaid": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7Medicare": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7PendingBenefits": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7Pension": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7RestoreExplain": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7RestoreRights": {
+     "from": null,
+     "to": "\"No\""
+    },
+    "years.0.data.q7SocialSecurity": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7Ssdi": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7Ssi": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7StateSupplement": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7SupplementalIns": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7Trusts": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7Va": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q8DNR": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q8LivingWill": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q8None": {
+     "from": null,
+     "to": "true"
+    },
+    "years.0.data.q8Other": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q8OtherText": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q8POA": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q8Surrogate": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q9Remuneration": {
+     "from": null,
+     "to": "\"No\""
+    },
+    "years.0.data.q9RemunerationExplain": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.safeDepositBoxFiled": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.scheduleDocsAck": {
+     "from": null,
+     "to": "{}"
+    },
+    "years.0.data.ucn": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.wardName": {
+     "from": null,
+     "to": "\"Rollover planSimplified\""
+    },
+    "years.0.data.wardPartyId": {
+     "from": null,
+     "to": "null"
+    },
+    "years.0.key": {
+     "from": null,
+     "to": "\"Year 1\""
+    },
+    "years.0.label": {
+     "from": null,
+     "to": "\"2026\""
+    }
+   },
+   "priorYearRestoresTheArchive": true
+  },
+  "planAnnual": {
+   "activeYearKey": "Year 2",
+   "yearCounter": 2,
+   "years": [
+    {
+     "key": "Year 1",
+     "label": "2026"
+    }
+   ],
+   "keysLeftOutOfTheArchive": [
+    "createdDate",
+    "inventoryType",
+    "lastModified",
+    "scheduleDocs",
+    "wardId"
+   ],
+   "archiveDiffersFromTheYearBeforeAt": {},
+   "changedByTheNewYear": {
+    "activeYearKey": {
+     "from": null,
+     "to": "\"Year 2\""
+    },
+    "adls.bathing": {
+     "from": "\"Ward needs no help\"",
+     "to": "\"\""
+    },
+    "adls.dressing": {
+     "from": "\"Ward needs no help\"",
+     "to": "\"\""
+    },
+    "adls.eating": {
+     "from": "\"Ward needs no help\"",
+     "to": "\"\""
+    },
+    "adls.grooming": {
+     "from": "\"Ward needs no help\"",
+     "to": "\"\""
+    },
+    "adls.heavyChores": {
+     "from": "\"Ward needs no help\"",
+     "to": "\"\""
+    },
+    "adls.laundry": {
+     "from": "\"Ward needs no help\"",
+     "to": "\"\""
+    },
+    "adls.lightHousekeeping": {
+     "from": "\"Ward needs no help\"",
+     "to": "\"\""
+    },
+    "adls.managingMoney": {
+     "from": "\"Ward needs no help\"",
+     "to": "\"\""
+    },
+    "adls.medication": {
+     "from": "\"Ward needs no help\"",
+     "to": "\"\""
+    },
+    "adls.prepareMeals": {
+     "from": "\"Ward needs no help\"",
+     "to": "\"\""
+    },
+    "adls.shopping": {
+     "from": "\"Ward needs no help\"",
+     "to": "\"\""
+    },
+    "adls.stairs": {
+     "from": "\"Ward needs no help\"",
+     "to": "\"\""
+    },
+    "adls.toileting": {
+     "from": "\"Ward needs no help\"",
+     "to": "\"\""
+    },
+    "adls.transferring": {
+     "from": "\"Ward needs no help\"",
+     "to": "\"\""
+    },
+    "adls.transportation": {
+     "from": "\"Ward needs no help\"",
+     "to": "\"\""
+    },
+    "adls.walking": {
+     "from": "\"Ward needs no help\"",
+     "to": "\"\""
+    },
+    "certPhysicianAttached": {
+     "from": "true",
+     "to": "false"
+    },
+    "periodFrom": {
+     "from": "\"2026-01-01\"",
+     "to": "\"\""
+    },
+    "periodTo": {
+     "from": "\"2026-12-31\"",
+     "to": "\"\""
+    },
+    "planGuardians.0.signatureDate": {
+     "from": "\"2026-01-05\"",
+     "to": "\"\""
+    },
+    "q10Directives": {
+     "from": null,
+     "to": "[]"
+    },
+    "q10Directives.0.agents": {
+     "from": "\"\"",
+     "to": null
+    },
+    "q10Directives.0.alternates": {
+     "from": "\"\"",
+     "to": null
+    },
+    "q10Directives.0.contact": {
+     "from": "\"\"",
+     "to": null
+    },
+    "q10Directives.0.courtRevoked": {
+     "from": "\"No\"",
+     "to": null
+    },
+    "q10Directives.0.dateSigned": {
+     "from": "\"2025-06-01\"",
+     "to": null
+    },
+    "q10Directives.0.orderCounty": {
+     "from": "\"\"",
+     "to": null
+    },
+    "q10Directives.0.orderDate": {
+     "from": "\"\"",
+     "to": null
+    },
+    "q10Directives.0.relationship": {
+     "from": "\"\"",
+     "to": null
+    },
+    "q10Directives.0.signedBy": {
+     "from": "\"Sample Guardian\"",
+     "to": null
+    },
+    "q10Directives.0.title": {
+     "from": "\"Do Not Resuscitate Order\"",
+     "to": null
+    },
+    "q11NoRemuneration": {
+     "from": "true",
+     "to": "false"
+    },
+    "q11NoRemunerationName": {
+     "from": "\"Sample Guardian\"",
+     "to": "\"\""
+    },
+    "q1Residences.0.cityStateZip": {
+     "from": "\"Clearwater, FL 33755\"",
+     "to": "\"\""
+    },
+    "q1Residences.0.facilityType": {
+     "from": "\"Assisted Living\"",
+     "to": "\"\""
+    },
+    "q1Residences.0.from": {
+     "from": "\"2026-01-01\"",
+     "to": "\"\""
+    },
+    "q1Residences.0.name": {
+     "from": "\"Sample Facility\"",
+     "to": "\"\""
+    },
+    "q1Residences.0.phone": {
+     "from": "\"555-555-5555\"",
+     "to": "\"\""
+    },
+    "q1Residences.0.street": {
+     "from": "\"123 Main St\"",
+     "to": "\"\""
+    },
+    "q2NoMove": {
+     "from": "true",
+     "to": "false"
+    },
+    "q4Providers.0.name": {
+     "from": "\"Dr. Sample Provider\"",
+     "to": "\"\""
+    },
+    "q4Providers.0.providerType": {
+     "from": "\"Primary Care Physician\"",
+     "to": "\"\""
+    },
+    "q4Providers.0.visits": {
+     "from": "\"4\"",
+     "to": "\"\""
+    },
+    "q5Activities": {
+     "from": "\"Weekly physical therapy; effective at maintaining mobility.\"",
+     "to": "\"\""
+    },
+    "q5SocialSkills": {
+     "from": "\"Communicates well and enjoys group activities.\"",
+     "to": "\"\""
+    },
+    "rights.contract": {
+     "from": "\"Not removed\"",
+     "to": "\"\""
+    },
+    "rights.driver": {
+     "from": "\"Not removed\"",
+     "to": "\"\""
+    },
+    "rights.employment": {
+     "from": "\"Not removed\"",
+     "to": "\"\""
+    },
+    "rights.govBenefits": {
+     "from": "\"Not removed\"",
+     "to": "\"\""
+    },
+    "rights.marry": {
+     "from": "\"Not removed\"",
+     "to": "\"\""
+    },
+    "rights.medical": {
+     "from": "\"Not removed\"",
+     "to": "\"\""
+    },
+    "rights.property": {
+     "from": "\"Not removed\"",
+     "to": "\"\""
+    },
+    "rights.residence": {
+     "from": "\"Not removed\"",
+     "to": "\"\""
+    },
+    "rights.social": {
+     "from": "\"Not removed\"",
+     "to": "\"\""
+    },
+    "rights.sue": {
+     "from": "\"Not removed\"",
+     "to": "\"\""
+    },
+    "rights.travel": {
+     "from": "\"Not removed\"",
+     "to": "\"\""
+    },
+    "rights.vote": {
+     "from": "\"Not removed\"",
+     "to": "\"\""
+    },
+    "scheduleDocs.planACover.2026-01-01__2026-12-31.comment": {
+     "from": null,
+     "to": "\"\""
+    },
+    "scheduleDocs.planACover.2026-01-01__2026-12-31.files": {
+     "from": null,
+     "to": "[]"
+    },
+    "yearCounter": {
+     "from": null,
+     "to": "2"
+    },
+    "years.0.archivedAt": {
+     "from": null,
+     "to": "\"<time>\""
+    },
+    "years.0.data.adls.bathing": {
+     "from": null,
+     "to": "\"Ward needs no help\""
+    },
+    "years.0.data.adls.dressing": {
+     "from": null,
+     "to": "\"Ward needs no help\""
+    },
+    "years.0.data.adls.eating": {
+     "from": null,
+     "to": "\"Ward needs no help\""
+    },
+    "years.0.data.adls.grooming": {
+     "from": null,
+     "to": "\"Ward needs no help\""
+    },
+    "years.0.data.adls.heavyChores": {
+     "from": null,
+     "to": "\"Ward needs no help\""
+    },
+    "years.0.data.adls.laundry": {
+     "from": null,
+     "to": "\"Ward needs no help\""
+    },
+    "years.0.data.adls.lightHousekeeping": {
+     "from": null,
+     "to": "\"Ward needs no help\""
+    },
+    "years.0.data.adls.managingMoney": {
+     "from": null,
+     "to": "\"Ward needs no help\""
+    },
+    "years.0.data.adls.medication": {
+     "from": null,
+     "to": "\"Ward needs no help\""
+    },
+    "years.0.data.adls.prepareMeals": {
+     "from": null,
+     "to": "\"Ward needs no help\""
+    },
+    "years.0.data.adls.shopping": {
+     "from": null,
+     "to": "\"Ward needs no help\""
+    },
+    "years.0.data.adls.stairs": {
+     "from": null,
+     "to": "\"Ward needs no help\""
+    },
+    "years.0.data.adls.toileting": {
+     "from": null,
+     "to": "\"Ward needs no help\""
+    },
+    "years.0.data.adls.transferring": {
+     "from": null,
+     "to": "\"Ward needs no help\""
+    },
+    "years.0.data.adls.transportation": {
+     "from": null,
+     "to": "\"Ward needs no help\""
+    },
+    "years.0.data.adls.walking": {
+     "from": null,
+     "to": "\"Ward needs no help\""
+    },
+    "years.0.data.amendedForm": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.attorney": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.attorney_bar": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.attorney_cityStateZip": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.attorney_email": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.attorney_phone": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.attorney_signatureDate": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.attorney_signatureImage": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.attorney_signatureState": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.attorney_street": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.attorneyPartyId": {
+     "from": null,
+     "to": "null"
+    },
+    "years.0.data.benefits.hmo.appliedFor": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.benefits.hmo.eligible": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.benefits.institutionalCare.appliedFor": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.benefits.institutionalCare.eligible": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.benefits.medicaid.appliedFor": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.benefits.medicaid.eligible": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.benefits.medicare.appliedFor": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.benefits.medicare.eligible": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.benefits.other.appliedFor": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.benefits.other.eligible": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.benefits.pension.appliedFor": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.benefits.pension.eligible": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.benefits.socialSecurity.appliedFor": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.benefits.socialSecurity.eligible": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.benefits.ssdi.appliedFor": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.benefits.ssdi.eligible": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.benefits.ssi.appliedFor": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.benefits.ssi.eligible": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.benefits.stateSupplement.appliedFor": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.benefits.stateSupplement.eligible": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.benefits.supplementalIns.appliedFor": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.benefits.supplementalIns.eligible": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.benefits.trusts.appliedFor": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.benefits.trusts.eligible": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.caseId": {
+     "from": null,
+     "to": "null"
+    },
+    "years.0.data.caseNumber": {
+     "from": null,
+     "to": "\"2026-CP-000321\""
+    },
+    "years.0.data.certConsulted": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.certDate": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certIncapacitatedNoCopy": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.certIndicator": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certMinorNoCopy": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.certNoRecipients": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certNoRestriction": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.certPhysicianAttached": {
+     "from": null,
+     "to": "true"
+    },
+    "years.0.data.certProvidesMedical": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.certRecipients.0.line2": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certRecipients.0.line3": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certRecipients.0.line4": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certRecipients.0.name": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certRecognizeRights": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.certRightsChangedExplain": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certSignatureDate": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certSignatureImage": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certSignatureState": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certSigner": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.county": {
+     "from": null,
+     "to": "\"Pinellas\""
+    },
+    "years.0.data.gid": {
+     "from": null,
+     "to": "\"2025-01-01\""
+    },
+    "years.0.data.guardian": {
+     "from": null,
+     "to": "\"Sample Guardian\""
+    },
+    "years.0.data.guardianPartyIds": {
+     "from": null,
+     "to": "[]"
+    },
+    "years.0.data.hasSafeDepositBox": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.mailingAddress": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.mailingCityStateZip": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.periodFrom": {
+     "from": null,
+     "to": "\"2026-01-01\""
+    },
+    "years.0.data.periodTo": {
+     "from": null,
+     "to": "\"2026-12-31\""
+    },
+    "years.0.data.planGuardians.0.email": {
+     "from": null,
+     "to": "\"guardian@example.com\""
+    },
+    "years.0.data.planGuardians.0.mailingCityStateZip": {
+     "from": null,
+     "to": "\"Clearwater, FL 33755\""
+    },
+    "years.0.data.planGuardians.0.mailingStreet": {
+     "from": null,
+     "to": "\"123 Main St\""
+    },
+    "years.0.data.planGuardians.0.name": {
+     "from": null,
+     "to": "\"Sample Guardian\""
+    },
+    "years.0.data.planGuardians.0.officeCityStateZip": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.planGuardians.0.officeStreet": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.planGuardians.0.phone": {
+     "from": null,
+     "to": "\"555-555-5555\""
+    },
+    "years.0.data.planGuardians.0.relationship": {
+     "from": null,
+     "to": "\"Professional Guardian\""
+    },
+    "years.0.data.planGuardians.0.signatureDate": {
+     "from": null,
+     "to": "\"2026-01-05\""
+    },
+    "years.0.data.planGuardians.0.signatureImage": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.planGuardians.0.signatureState": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.planGuardians.0.ssn": {
+     "from": null,
+     "to": "\"123-45-6789\""
+    },
+    "years.0.data.planGuardians.1.email": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.planGuardians.1.mailingCityStateZip": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.planGuardians.1.mailingStreet": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.planGuardians.1.name": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.planGuardians.1.officeCityStateZip": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.planGuardians.1.officeStreet": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.planGuardians.1.phone": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.planGuardians.1.relationship": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.planGuardians.1.signatureDate": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.planGuardians.1.ssn": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.planGuardians.2.email": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.planGuardians.2.mailingCityStateZip": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.planGuardians.2.mailingStreet": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.planGuardians.2.name": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.planGuardians.2.officeCityStateZip": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.planGuardians.2.officeStreet": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.planGuardians.2.phone": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.planGuardians.2.relationship": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.planGuardians.2.signatureDate": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.planGuardians.2.ssn": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.planTriStateSchemaVersion": {
+     "from": null,
+     "to": "2"
+    },
+    "years.0.data.preparerPartyId": {
+     "from": null,
+     "to": "null"
+    },
+    "years.0.data.q10Directives.0.agents": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q10Directives.0.alternates": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q10Directives.0.contact": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q10Directives.0.courtRevoked": {
+     "from": null,
+     "to": "\"No\""
+    },
+    "years.0.data.q10Directives.0.dateSigned": {
+     "from": null,
+     "to": "\"2025-06-01\""
+    },
+    "years.0.data.q10Directives.0.orderCounty": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q10Directives.0.orderDate": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q10Directives.0.relationship": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q10Directives.0.signedBy": {
+     "from": null,
+     "to": "\"Sample Guardian\""
+    },
+    "years.0.data.q10Directives.0.title": {
+     "from": null,
+     "to": "\"Do Not Resuscitate Order\""
+    },
+    "years.0.data.q10ExecDNR": {
+     "from": null,
+     "to": "true"
+    },
+    "years.0.data.q10ExecHealthcare": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q10ExecOther": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q10ExecOtherText": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q10ExecPOA": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q10Executed": {
+     "from": null,
+     "to": "true"
+    },
+    "years.0.data.q10NoDirectives": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q10StepAttorney": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q10StepInterviewed": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q10StepMedicalProviders": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q10StepResidence": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q10StepSafeDeposit": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q11Amount": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q11From": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q11NoRemuneration": {
+     "from": null,
+     "to": "true"
+    },
+    "years.0.data.q11NoRemunerationName": {
+     "from": null,
+     "to": "\"Sample Guardian\""
+    },
+    "years.0.data.q11ReceivedName": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q11SubmittedToCourt": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q1Residences.0.cityStateZip": {
+     "from": null,
+     "to": "\"Clearwater, FL 33755\""
+    },
+    "years.0.data.q1Residences.0.facilityType": {
+     "from": null,
+     "to": "\"Assisted Living\""
+    },
+    "years.0.data.q1Residences.0.from": {
+     "from": null,
+     "to": "\"2026-01-01\""
+    },
+    "years.0.data.q1Residences.0.name": {
+     "from": null,
+     "to": "\"Sample Facility\""
+    },
+    "years.0.data.q1Residences.0.phone": {
+     "from": null,
+     "to": "\"555-555-5555\""
+    },
+    "years.0.data.q1Residences.0.street": {
+     "from": null,
+     "to": "\"123 Main St\""
+    },
+    "years.0.data.q1Residences.0.to": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q2NoMove": {
+     "from": null,
+     "to": "true"
+    },
+    "years.0.data.q2OutsideApproved": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q2OutsideVenuePetition": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q2WithinCircuit": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q2WithinCounty": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q3BenefitsExplain": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q3BenefitsNone": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q3BenefitsOther": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q3EnsureAssessing": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q3EnsureNoChange": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q3EnsureWardDecides": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q3MedDentist": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q3MedExplain": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q3MedNone": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q3MedOccupationalTherapy": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q3MedOphthalmologist": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q3MedOther": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q3MedPhysicalTherapy": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q3MedPrimary": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q3MedSpecialist": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q3MedSpecialistArea": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q3MedSpeechTherapy": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q3MedWardDecides": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q3MentalExplain": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q3MentalInpatient": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q3MentalNone": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q3MentalOther": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q3MentalOutpatient": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q3MentalPsych": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q3MentalWardDecides": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q3PersonalExplain": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q3PersonalFacility": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q3PersonalFamily": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q3PersonalNone": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q3PersonalNurses": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q3PersonalOther": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q3PersonalWithout": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q3SettingALF": {
+     "from": null,
+     "to": "true"
+    },
+    "years.0.data.q3SettingExplain": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q3SettingGroupHome": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q3SettingIntermediate": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q3SettingOther": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q3SettingPrivate": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q3SettingSkilled": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q3SettingSpecialized": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q3SettingStateHospital": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q3SocialExplain": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q3SocialFacility": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q3SocialFamily": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q3SocialNone": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q3SocialNurses": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q3SocialOther": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q3SocialWardDecides": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q4Providers.0.cityStateZip": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q4Providers.0.name": {
+     "from": null,
+     "to": "\"Dr. Sample Provider\""
+    },
+    "years.0.data.q4Providers.0.phone": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q4Providers.0.providerType": {
+     "from": null,
+     "to": "\"Primary Care Physician\""
+    },
+    "years.0.data.q4Providers.0.street": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q4Providers.0.visits": {
+     "from": null,
+     "to": "\"4\""
+    },
+    "years.0.data.q5Activities": {
+     "from": null,
+     "to": "\"Weekly physical therapy; effective at maintaining mobility.\""
+    },
+    "years.0.data.q5SocialSkills": {
+     "from": null,
+     "to": "\"Communicates well and enjoys group activities.\""
+    },
+    "years.0.data.q7Hmo": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7InstitutionalCare": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7Medicaid": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7Medicare": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7PendingBenefits": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7Pension": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7RightsExplain": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7SocialSecurity": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7Ssdi": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7Ssi": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7StateSupplement": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7SupplementalIns": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7Trusts": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7Va": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q9MentalAlzheimers": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q9MentalAutism": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q9MentalDementia": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q9MentalDepression": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q9MentalDevelopmental": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q9MentalExplain": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q9MentalHeadInjury": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q9MentalIntellectual": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q9MentalNone": {
+     "from": null,
+     "to": "true"
+    },
+    "years.0.data.q9MentalOther": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q9MentalSchizophrenia": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q9MentalSubstance": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q9NeedsCrutches": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q9NeedsDentures": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q9NeedsExplain": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q9NeedsGlasses": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q9NeedsHearingAid": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q9NeedsNone": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q9NeedsOther": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q9NeedsProsthetics": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q9NeedsWalker": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q9NeedsWheelchair": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q9PhysArthritis": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q9PhysBlindness": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q9PhysDeafness": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q9PhysDiabetic": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q9PhysExplain": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q9PhysMobility": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q9PhysNone": {
+     "from": null,
+     "to": "true"
+    },
+    "years.0.data.q9PhysOther": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q9PhysParkinsons": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q9UsesCrutches": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q9UsesDentures": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q9UsesExplain": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q9UsesGlasses": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q9UsesHearingAid": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q9UsesNone": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q9UsesOther": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q9UsesProsthetics": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q9UsesWalker": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q9UsesWheelchair": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.residenceAddress": {
+     "from": null,
+     "to": "\"123 Main St\""
+    },
+    "years.0.data.residenceCityStateZip": {
+     "from": null,
+     "to": "\"Clearwater, FL 33755\""
+    },
+    "years.0.data.residencePhone": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.rights.contract": {
+     "from": null,
+     "to": "\"Not removed\""
+    },
+    "years.0.data.rights.driver": {
+     "from": null,
+     "to": "\"Not removed\""
+    },
+    "years.0.data.rights.employment": {
+     "from": null,
+     "to": "\"Not removed\""
+    },
+    "years.0.data.rights.govBenefits": {
+     "from": null,
+     "to": "\"Not removed\""
+    },
+    "years.0.data.rights.marry": {
+     "from": null,
+     "to": "\"Not removed\""
+    },
+    "years.0.data.rights.medical": {
+     "from": null,
+     "to": "\"Not removed\""
+    },
+    "years.0.data.rights.property": {
+     "from": null,
+     "to": "\"Not removed\""
+    },
+    "years.0.data.rights.residence": {
+     "from": null,
+     "to": "\"Not removed\""
+    },
+    "years.0.data.rights.social": {
+     "from": null,
+     "to": "\"Not removed\""
+    },
+    "years.0.data.rights.sue": {
+     "from": null,
+     "to": "\"Not removed\""
+    },
+    "years.0.data.rights.travel": {
+     "from": null,
+     "to": "\"Not removed\""
+    },
+    "years.0.data.rights.vote": {
+     "from": null,
+     "to": "\"Not removed\""
+    },
+    "years.0.data.safeDepositBoxFiled": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.scheduleDocsAck": {
+     "from": null,
+     "to": "{}"
+    },
+    "years.0.data.ssn": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.ucn": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.wardLiving": {
+     "from": null,
+     "to": "\"In a facility (skilled nursing, assisted living, etc.)\""
+    },
+    "years.0.data.wardName": {
+     "from": null,
+     "to": "\"Rollover planAnnual\""
+    },
+    "years.0.data.wardPartyId": {
+     "from": null,
+     "to": "null"
+    },
+    "years.0.key": {
+     "from": null,
+     "to": "\"Year 1\""
+    },
+    "years.0.label": {
+     "from": null,
+     "to": "\"2026\""
+    }
+   },
+   "priorYearRestoresTheArchive": true
+  },
+  "planInitial": {
+   "activeYearKey": "Year 2",
+   "yearCounter": 2,
+   "years": [
+    {
+     "key": "Year 1",
+     "label": "2026"
+    }
+   ],
+   "keysLeftOutOfTheArchive": [
+    "createdDate",
+    "inventoryType",
+    "lastModified",
+    "scheduleDocs",
+    "wardId"
+   ],
+   "archiveDiffersFromTheYearBeforeAt": {},
+   "changedByTheNewYear": {
+    "activeYearKey": {
+     "from": null,
+     "to": "\"Year 2\""
+    },
+    "adls.bathing": {
+     "from": "\"Ward needs no help\"",
+     "to": "\"\""
+    },
+    "adls.dressing": {
+     "from": "\"Ward needs no help\"",
+     "to": "\"\""
+    },
+    "adls.eating": {
+     "from": "\"Ward needs no help\"",
+     "to": "\"\""
+    },
+    "adls.grooming": {
+     "from": "\"Ward needs no help\"",
+     "to": "\"\""
+    },
+    "adls.heavyChores": {
+     "from": "\"Ward needs no help\"",
+     "to": "\"\""
+    },
+    "adls.laundry": {
+     "from": "\"Ward needs no help\"",
+     "to": "\"\""
+    },
+    "adls.lightHousekeeping": {
+     "from": "\"Ward needs no help\"",
+     "to": "\"\""
+    },
+    "adls.managingMoney": {
+     "from": "\"Ward needs no help\"",
+     "to": "\"\""
+    },
+    "adls.medication": {
+     "from": "\"Ward needs no help\"",
+     "to": "\"\""
+    },
+    "adls.prepareMeals": {
+     "from": "\"Ward needs no help\"",
+     "to": "\"\""
+    },
+    "adls.shopping": {
+     "from": "\"Ward needs no help\"",
+     "to": "\"\""
+    },
+    "adls.stairs": {
+     "from": "\"Ward needs no help\"",
+     "to": "\"\""
+    },
+    "adls.toileting": {
+     "from": "\"Ward needs no help\"",
+     "to": "\"\""
+    },
+    "adls.transferring": {
+     "from": "\"Ward needs no help\"",
+     "to": "\"\""
+    },
+    "adls.walking": {
+     "from": "\"Ward needs no help\"",
+     "to": "\"\""
+    },
+    "attorney_signatureDate": {
+     "from": "\"2026-01-12\"",
+     "to": "\"\""
+    },
+    "certConsulted": {
+     "from": "true",
+     "to": "false"
+    },
+    "committeeIncorporated": {
+     "from": "\"Yes\"",
+     "to": "\"\""
+    },
+    "inceptionDate": {
+     "from": "\"2026-01-05\"",
+     "to": "\"\""
+    },
+    "lettersSignedDate": {
+     "from": "\"2026-01-06\"",
+     "to": "\"\""
+    },
+    "mentalDementia": {
+     "from": "true",
+     "to": "false"
+    },
+    "needsNone": {
+     "from": "true",
+     "to": "false"
+    },
+    "periodFrom": {
+     "from": "\"2026-01-01\"",
+     "to": "\"\""
+    },
+    "periodTo": {
+     "from": "\"2026-12-31\"",
+     "to": "\"\""
+    },
+    "physMobility": {
+     "from": "true",
+     "to": "false"
+    },
+    "planGuardians.0.signatureDate": {
+     "from": "\"2026-01-11\"",
+     "to": "\"\""
+    },
+    "q11Directives": {
+     "from": null,
+     "to": "[]"
+    },
+    "q11Directives.0.agents": {
+     "from": "\"\"",
+     "to": null
+    },
+    "q11Directives.0.alternates": {
+     "from": "\"\"",
+     "to": null
+    },
+    "q11Directives.0.contact": {
+     "from": "\"\"",
+     "to": null
+    },
+    "q11Directives.0.courtRevoked": {
+     "from": "\"No\"",
+     "to": null
+    },
+    "q11Directives.0.dateSigned": {
+     "from": "\"2025-06-01\"",
+     "to": null
+    },
+    "q11Directives.0.orderCounty": {
+     "from": "\"\"",
+     "to": null
+    },
+    "q11Directives.0.orderDate": {
+     "from": "\"\"",
+     "to": null
+    },
+    "q11Directives.0.relationship": {
+     "from": "\"\"",
+     "to": null
+    },
+    "q11Directives.0.signedBy": {
+     "from": "\"Sample Guardian\"",
+     "to": null
+    },
+    "q11Directives.0.title": {
+     "from": "\"Do Not Resuscitate Order\"",
+     "to": null
+    },
+    "q11ExecDNR": {
+     "from": "true",
+     "to": "false"
+    },
+    "q11Executed": {
+     "from": "true",
+     "to": "false"
+    },
+    "q2ALF": {
+     "from": "true",
+     "to": "false"
+    },
+    "q3MedPrimary": {
+     "from": "true",
+     "to": "false"
+    },
+    "q4Psych": {
+     "from": "true",
+     "to": "false"
+    },
+    "q5CareFacility": {
+     "from": "true",
+     "to": "false"
+    },
+    "q6CareFacility": {
+     "from": "true",
+     "to": "false"
+    },
+    "q9Providers.0.examDate": {
+     "from": "\"2026-01-10\"",
+     "to": "\"\""
+    },
+    "q9Providers.0.name": {
+     "from": "\"Dr. Sample Provider\"",
+     "to": "\"\""
+    },
+    "q9Providers.0.providerType": {
+     "from": "\"Primary Care Physician\"",
+     "to": "\"\""
+    },
+    "residenceAddress": {
+     "from": "\"123 Main St\"",
+     "to": "\"\""
+    },
+    "residenceCityStateZip": {
+     "from": "\"Clearwater, FL 33755\"",
+     "to": "\"\""
+    },
+    "scheduleDocs.planICover.2026-01-01__2026-12-31.comment": {
+     "from": null,
+     "to": "\"\""
+    },
+    "scheduleDocs.planICover.2026-01-01__2026-12-31.files": {
+     "from": null,
+     "to": "[]"
+    },
+    "usesNone": {
+     "from": "true",
+     "to": "false"
+    },
+    "wardLiving": {
+     "from": "\"In a facility (Skilled Nursing, Assisted Living, etc.)\"",
+     "to": "\"\""
+    },
+    "yearCounter": {
+     "from": null,
+     "to": "2"
+    },
+    "years.0.archivedAt": {
+     "from": null,
+     "to": "\"<time>\""
+    },
+    "years.0.data.adls.bathing": {
+     "from": null,
+     "to": "\"Ward needs no help\""
+    },
+    "years.0.data.adls.dressing": {
+     "from": null,
+     "to": "\"Ward needs no help\""
+    },
+    "years.0.data.adls.eating": {
+     "from": null,
+     "to": "\"Ward needs no help\""
+    },
+    "years.0.data.adls.grooming": {
+     "from": null,
+     "to": "\"Ward needs no help\""
+    },
+    "years.0.data.adls.heavyChores": {
+     "from": null,
+     "to": "\"Ward needs no help\""
+    },
+    "years.0.data.adls.laundry": {
+     "from": null,
+     "to": "\"Ward needs no help\""
+    },
+    "years.0.data.adls.lightHousekeeping": {
+     "from": null,
+     "to": "\"Ward needs no help\""
+    },
+    "years.0.data.adls.managingMoney": {
+     "from": null,
+     "to": "\"Ward needs no help\""
+    },
+    "years.0.data.adls.medication": {
+     "from": null,
+     "to": "\"Ward needs no help\""
+    },
+    "years.0.data.adls.prepareMeals": {
+     "from": null,
+     "to": "\"Ward needs no help\""
+    },
+    "years.0.data.adls.shopping": {
+     "from": null,
+     "to": "\"Ward needs no help\""
+    },
+    "years.0.data.adls.stairs": {
+     "from": null,
+     "to": "\"Ward needs no help\""
+    },
+    "years.0.data.adls.toileting": {
+     "from": null,
+     "to": "\"Ward needs no help\""
+    },
+    "years.0.data.adls.transferring": {
+     "from": null,
+     "to": "\"Ward needs no help\""
+    },
+    "years.0.data.adls.walking": {
+     "from": null,
+     "to": "\"Ward needs no help\""
+    },
+    "years.0.data.amendedForm": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.attorney_bar": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.attorney_cityStateZip": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.attorney_email": {
+     "from": null,
+     "to": "\"attorney@example.com\""
+    },
+    "years.0.data.attorney_name": {
+     "from": null,
+     "to": "\"Sample Attorney\""
+    },
+    "years.0.data.attorney_phone": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.attorney_signatureDate": {
+     "from": null,
+     "to": "\"2026-01-12\""
+    },
+    "years.0.data.attorney_signatureImage": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.attorney_signatureState": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.attorney_street": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.attorneyName": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.attorneyPartyId": {
+     "from": null,
+     "to": "null"
+    },
+    "years.0.data.caseId": {
+     "from": null,
+     "to": "null"
+    },
+    "years.0.data.caseNumber": {
+     "from": null,
+     "to": "\"2026-CP-000654\""
+    },
+    "years.0.data.certConsulted": {
+     "from": null,
+     "to": "true"
+    },
+    "years.0.data.certDate": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certIncapacitatedNoCopy": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.certIndicator": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certMinorNoCopy": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.certNoRecipients": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certNoRestriction": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.certProvidesCare": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.certRecipients.0.line2": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certRecipients.0.line3": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certRecipients.0.line4": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certRecipients.0.name": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certRecognizeRights": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.certSignatureDate": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certSignatureImage": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certSignatureState": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certSigner": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.committeeExplain": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.committeeIncorporated": {
+     "from": null,
+     "to": "\"Yes\""
+    },
+    "years.0.data.county": {
+     "from": null,
+     "to": "\"Pinellas\""
+    },
+    "years.0.data.guardianNames": {
+     "from": null,
+     "to": "\"Sample Guardian\""
+    },
+    "years.0.data.guardianPartyIds": {
+     "from": null,
+     "to": "[]"
+    },
+    "years.0.data.hasSafeDepositBox": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.inceptionDate": {
+     "from": null,
+     "to": "\"2026-01-05\""
+    },
+    "years.0.data.lettersSignedDate": {
+     "from": null,
+     "to": "\"2026-01-06\""
+    },
+    "years.0.data.mailingAddress": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.mailingCityStateZip": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.mentalAlzheimers": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.mentalAutism": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.mentalClosedHeadInjury": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.mentalDementia": {
+     "from": null,
+     "to": "true"
+    },
+    "years.0.data.mentalDepression": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.mentalDevelopmental": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.mentalExplain": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.mentalOther": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.mentalSchizophrenia": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.mentalSubstance": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.needsCrutches": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.needsDentures": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.needsExplain": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.needsGlasses": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.needsHearingAid": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.needsNone": {
+     "from": null,
+     "to": "true"
+    },
+    "years.0.data.needsOther": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.needsProsthetics": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.needsWalker": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.needsWheelchair": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.periodFrom": {
+     "from": null,
+     "to": "\"2026-01-01\""
+    },
+    "years.0.data.periodTo": {
+     "from": null,
+     "to": "\"2026-12-31\""
+    },
+    "years.0.data.physArthritis": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.physBlindness": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.physDeafness": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.physDiabetic": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.physExplain": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.physMobility": {
+     "from": null,
+     "to": "true"
+    },
+    "years.0.data.physOther": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.physParkinsons": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.planGuardians.0.cityStateZip": {
+     "from": null,
+     "to": "\"Clearwater, FL 33755\""
+    },
+    "years.0.data.planGuardians.0.name": {
+     "from": null,
+     "to": "\"Sample Guardian\""
+    },
+    "years.0.data.planGuardians.0.phone": {
+     "from": null,
+     "to": "\"555-555-5555\""
+    },
+    "years.0.data.planGuardians.0.relationship": {
+     "from": null,
+     "to": "\"Parent\""
+    },
+    "years.0.data.planGuardians.0.signatureDate": {
+     "from": null,
+     "to": "\"2026-01-11\""
+    },
+    "years.0.data.planGuardians.0.ssn": {
+     "from": null,
+     "to": "\"123-45-6789\""
+    },
+    "years.0.data.planGuardians.0.street": {
+     "from": null,
+     "to": "\"123 Main St\""
+    },
+    "years.0.data.planGuardians.1.cityStateZip": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.planGuardians.1.name": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.planGuardians.1.phone": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.planGuardians.1.relationship": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.planGuardians.1.signatureDate": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.planGuardians.1.ssn": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.planGuardians.1.street": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.planGuardians.2.cityStateZip": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.planGuardians.2.name": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.planGuardians.2.phone": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.planGuardians.2.relationship": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.planGuardians.2.signatureDate": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.planGuardians.2.ssn": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.planGuardians.2.street": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.planGuardians.3.cityStateZip": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.planGuardians.3.name": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.planGuardians.3.phone": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.planGuardians.3.relationship": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.planGuardians.3.signatureDate": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.planGuardians.3.ssn": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.planGuardians.3.street": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.planTriStateSchemaVersion": {
+     "from": null,
+     "to": "2"
+    },
+    "years.0.data.preparerPartyId": {
+     "from": null,
+     "to": "null"
+    },
+    "years.0.data.q11Directives.0.agents": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q11Directives.0.alternates": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q11Directives.0.contact": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q11Directives.0.courtRevoked": {
+     "from": null,
+     "to": "\"No\""
+    },
+    "years.0.data.q11Directives.0.dateSigned": {
+     "from": null,
+     "to": "\"2025-06-01\""
+    },
+    "years.0.data.q11Directives.0.orderCounty": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q11Directives.0.orderDate": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q11Directives.0.relationship": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q11Directives.0.signedBy": {
+     "from": null,
+     "to": "\"Sample Guardian\""
+    },
+    "years.0.data.q11Directives.0.title": {
+     "from": null,
+     "to": "\"Do Not Resuscitate Order\""
+    },
+    "years.0.data.q11ExecDNR": {
+     "from": null,
+     "to": "true"
+    },
+    "years.0.data.q11ExecHealthcare": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q11ExecOther": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q11ExecOtherText": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q11ExecPOA": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q11Executed": {
+     "from": null,
+     "to": "true"
+    },
+    "years.0.data.q11NoDirectives": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q11StepAttorney": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q11StepInterviewed": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q11StepMedicalProviders": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q11StepResidence": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q11StepSafeDeposit": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q1PreexistingDirectives": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q2ALF": {
+     "from": null,
+     "to": "true"
+    },
+    "years.0.data.q2Explain": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q2GroupHome": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q2Intermediate": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q2Other": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q2PrivateResidence": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q2SkilledNursing": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q2Specialized": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q2StateHospital": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q3MedDentist": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q3MedExplain": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q3MedOphthalmologist": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q3MedOT": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q3MedOther": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q3MedPrimary": {
+     "from": null,
+     "to": "true"
+    },
+    "years.0.data.q3MedPT": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q3MedSpecialist": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q3MedSpecialistArea": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q3MedST": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q3MedWardDecides": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q4Explain": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q4Inpatient": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q4None": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q4Other": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q4Outpatient": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q4Psych": {
+     "from": null,
+     "to": "true"
+    },
+    "years.0.data.q5CareFacility": {
+     "from": null,
+     "to": "true"
+    },
+    "years.0.data.q5Explain": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q5FamilyFriends": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q5NursesAides": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q5Other": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q6CareFacility": {
+     "from": null,
+     "to": "true"
+    },
+    "years.0.data.q6DayProgram": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q6Explain": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q6FamilyFriends": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q6NursesAides": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q6Other": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q6WardDecides": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q7Explain": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7Hmo": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7InstitutionalCare": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7Medicaid": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7Medicare": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7Other": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q7PendingBenefits": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7Pension": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7SocialSecurity": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7Ssdi": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7Ssi": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7StateSupplement": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7SupplementalIns": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7Trusts": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7Va": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q9Providers.0.cityStateZip": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q9Providers.0.examDate": {
+     "from": null,
+     "to": "\"2026-01-10\""
+    },
+    "years.0.data.q9Providers.0.name": {
+     "from": null,
+     "to": "\"Dr. Sample Provider\""
+    },
+    "years.0.data.q9Providers.0.phone": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q9Providers.0.providerType": {
+     "from": null,
+     "to": "\"Primary Care Physician\""
+    },
+    "years.0.data.q9Providers.0.street": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.residenceAddress": {
+     "from": null,
+     "to": "\"123 Main St\""
+    },
+    "years.0.data.residenceCityStateZip": {
+     "from": null,
+     "to": "\"Clearwater, FL 33755\""
+    },
+    "years.0.data.residencePhone": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.safeDepositBoxFiled": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.scheduleDocsAck": {
+     "from": null,
+     "to": "{}"
+    },
+    "years.0.data.successorGuardianship": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.ucn": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.usesCrutches": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.usesDentures": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.usesExplain": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.usesGlasses": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.usesHearingAid": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.usesNone": {
+     "from": null,
+     "to": "true"
+    },
+    "years.0.data.usesOther": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.usesProsthetics": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.usesWalker": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.usesWheelchair": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.wardLiving": {
+     "from": null,
+     "to": "\"In a facility (Skilled Nursing, Assisted Living, etc.)\""
+    },
+    "years.0.data.wardName": {
+     "from": null,
+     "to": "\"Rollover planInitial\""
+    },
+    "years.0.data.wardPartyId": {
+     "from": null,
+     "to": "null"
+    },
+    "years.0.key": {
+     "from": null,
+     "to": "\"Year 1\""
+    },
+    "years.0.label": {
+     "from": null,
+     "to": "\"2026\""
+    }
+   },
+   "priorYearRestoresTheArchive": true
+  },
+  "planMinor": {
+   "activeYearKey": "Year 2",
+   "yearCounter": 2,
+   "years": [
+    {
+     "key": "Year 1",
+     "label": "2026"
+    }
+   ],
+   "keysLeftOutOfTheArchive": [
+    "createdDate",
+    "inventoryType",
+    "lastModified",
+    "scheduleDocs",
+    "wardId"
+   ],
+   "archiveDiffersFromTheYearBeforeAt": {},
+   "changedByTheNewYear": {
+    "activeYearKey": {
+     "from": null,
+     "to": "\"Year 2\""
+    },
+    "amendedForm": {
+     "from": "\"No\"",
+     "to": "\"\""
+    },
+    "attorney_signatureDate": {
+     "from": "\"2026-01-12\"",
+     "to": "\"\""
+    },
+    "certConsulted": {
+     "from": "true",
+     "to": "false"
+    },
+    "periodFrom": {
+     "from": "\"2026-01-01\"",
+     "to": "\"\""
+    },
+    "periodTo": {
+     "from": "\"2026-12-31\"",
+     "to": "\"\""
+    },
+    "planGuardians.0.signatureDate": {
+     "from": "\"2026-01-11\"",
+     "to": "\"\""
+    },
+    "preparer_signatureDate": {
+     "from": "\"2026-01-12\"",
+     "to": "\"\""
+    },
+    "q1City": {
+     "from": "\"Clearwater\"",
+     "to": "\"\""
+    },
+    "q1ResidenceName": {
+     "from": "\"Sample Residence\"",
+     "to": "\"\""
+    },
+    "q1State": {
+     "from": "\"FL\"",
+     "to": "\"\""
+    },
+    "q1Street": {
+     "from": "\"123 Main St\"",
+     "to": "\"\""
+    },
+    "q1Zip": {
+     "from": "\"33755\"",
+     "to": "\"\""
+    },
+    "q3Providers.0.first": {
+     "from": "\"Sample\"",
+     "to": "\"\""
+    },
+    "q3Providers.0.last": {
+     "from": "\"Provider\"",
+     "to": "\"\""
+    },
+    "q3Providers.0.providerType": {
+     "from": "\"Primary Care Physician\"",
+     "to": "\"\""
+    },
+    "q3Providers.0.visits": {
+     "from": "\"4\"",
+     "to": "\"\""
+    },
+    "q4Primary": {
+     "from": "true",
+     "to": "false"
+    },
+    "q5Communicates": {
+     "from": "\"Communicates clearly with peers and adults.\"",
+     "to": "\"\""
+    },
+    "q5Interpersonal": {
+     "from": "\"Maintains healthy relationships with family and friends.\"",
+     "to": "\"\""
+    },
+    "q5NoUnmetNeeds": {
+     "from": "true",
+     "to": "false"
+    },
+    "q5SchoolProgress": {
+     "from": "\"Progressing well in all subjects.\"",
+     "to": "\"\""
+    },
+    "q5SocialDevelopment": {
+     "from": "\"Age-appropriate social development.\"",
+     "to": "\"\""
+    },
+    "scheduleDocs.planMCover.2026-01-01__2026-12-31.comment": {
+     "from": null,
+     "to": "\"\""
+    },
+    "scheduleDocs.planMCover.2026-01-01__2026-12-31.files": {
+     "from": null,
+     "to": "[]"
+    },
+    "yearCounter": {
+     "from": null,
+     "to": "2"
+    },
+    "years.0.archivedAt": {
+     "from": null,
+     "to": "\"<time>\""
+    },
+    "years.0.data.amendedForm": {
+     "from": null,
+     "to": "\"No\""
+    },
+    "years.0.data.amendedVersion": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.attorney_bar": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.attorney_cityStateZip": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.attorney_email": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.attorney_name": {
+     "from": null,
+     "to": "\"Sample Attorney\""
+    },
+    "years.0.data.attorney_phone": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.attorney_signatureDate": {
+     "from": null,
+     "to": "\"2026-01-12\""
+    },
+    "years.0.data.attorney_signatureImage": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.attorney_signatureState": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.attorney_street": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.attorneyPartyId": {
+     "from": null,
+     "to": "null"
+    },
+    "years.0.data.caseId": {
+     "from": null,
+     "to": "null"
+    },
+    "years.0.data.caseNumber": {
+     "from": null,
+     "to": "\"2026-CP-000987\""
+    },
+    "years.0.data.certConsulted": {
+     "from": null,
+     "to": "true"
+    },
+    "years.0.data.certDate": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certIncapacitated": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.certIndicator": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certMinor": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.certNoRecipients": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certNoRestriction": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.certPhysicianAttached": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.certProvidesCare": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.certRecipients.0.line2": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certRecipients.0.line3": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certRecipients.0.line4": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certRecipients.0.name": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certSignatureDate": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certSignatureImage": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certSignatureState": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certSigner": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.county": {
+     "from": null,
+     "to": "\"Pinellas\""
+    },
+    "years.0.data.guardianName": {
+     "from": null,
+     "to": "\"Sample Guardian\""
+    },
+    "years.0.data.guardianPartyIds": {
+     "from": null,
+     "to": "[]"
+    },
+    "years.0.data.hasSafeDepositBox": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.periodFrom": {
+     "from": null,
+     "to": "\"2026-01-01\""
+    },
+    "years.0.data.periodTo": {
+     "from": null,
+     "to": "\"2026-12-31\""
+    },
+    "years.0.data.planGuardians.0.email": {
+     "from": null,
+     "to": "\"guardian@example.com\""
+    },
+    "years.0.data.planGuardians.0.mailingCityStateZip": {
+     "from": null,
+     "to": "\"Clearwater, FL 33755\""
+    },
+    "years.0.data.planGuardians.0.mailingStreet": {
+     "from": null,
+     "to": "\"123 Main St\""
+    },
+    "years.0.data.planGuardians.0.name": {
+     "from": null,
+     "to": "\"Sample Guardian\""
+    },
+    "years.0.data.planGuardians.0.phone": {
+     "from": null,
+     "to": "\"555-555-5555\""
+    },
+    "years.0.data.planGuardians.0.relationship": {
+     "from": null,
+     "to": "\"Parent\""
+    },
+    "years.0.data.planGuardians.0.signatureDate": {
+     "from": null,
+     "to": "\"2026-01-11\""
+    },
+    "years.0.data.planGuardians.0.tin": {
+     "from": null,
+     "to": "\"123-45-6789\""
+    },
+    "years.0.data.planGuardians.1.email": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.planGuardians.1.mailingCityStateZip": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.planGuardians.1.mailingStreet": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.planGuardians.1.name": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.planGuardians.1.phone": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.planGuardians.1.relationship": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.planGuardians.1.signatureDate": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.planGuardians.1.tin": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.planTriStateSchemaVersion": {
+     "from": null,
+     "to": "2"
+    },
+    "years.0.data.preparer_cityStateZip": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.preparer_email": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.preparer_mailingStreet": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.preparer_name": {
+     "from": null,
+     "to": "\"Sample Preparer\""
+    },
+    "years.0.data.preparer_phone": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.preparer_signatureDate": {
+     "from": null,
+     "to": "\"2026-01-12\""
+    },
+    "years.0.data.preparer_signatureImage": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.preparer_signatureState": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.preparer_tin": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.preparerPartyId": {
+     "from": null,
+     "to": "null"
+    },
+    "years.0.data.professionalGuardian": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.publicGuardian": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q1City": {
+     "from": null,
+     "to": "\"Clearwater\""
+    },
+    "years.0.data.q1Phone": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q1ResidenceName": {
+     "from": null,
+     "to": "\"Sample Residence\""
+    },
+    "years.0.data.q1State": {
+     "from": null,
+     "to": "\"FL\""
+    },
+    "years.0.data.q1Street": {
+     "from": null,
+     "to": "\"123 Main St\""
+    },
+    "years.0.data.q1Zip": {
+     "from": null,
+     "to": "\"33755\""
+    },
+    "years.0.data.q2Residences.0.city": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q2Residences.0.name": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q2Residences.0.phone": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q2Residences.0.state": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q2Residences.0.street": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q2Residences.0.zip": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q3Providers.0.city": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q3Providers.0.first": {
+     "from": null,
+     "to": "\"Sample\""
+    },
+    "years.0.data.q3Providers.0.last": {
+     "from": null,
+     "to": "\"Provider\""
+    },
+    "years.0.data.q3Providers.0.mi": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q3Providers.0.phone": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q3Providers.0.providerType": {
+     "from": null,
+     "to": "\"Primary Care Physician\""
+    },
+    "years.0.data.q3Providers.0.state": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q3Providers.0.street": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q3Providers.0.visits": {
+     "from": null,
+     "to": "\"4\""
+    },
+    "years.0.data.q3Providers.0.zip": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q4Dentist": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q4DentistFreq": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q4Explain": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q4MinorDecides": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q4OT": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q4Other": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q4Primary": {
+     "from": null,
+     "to": "true"
+    },
+    "years.0.data.q4PrimaryFreq": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q4PT": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q4Specialist": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q4SpecialistFreq": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q4ST": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q5Communicates": {
+     "from": null,
+     "to": "\"Communicates clearly with peers and adults.\""
+    },
+    "years.0.data.q5DoesNotCareToSocialize": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q5Explain": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q5Interpersonal": {
+     "from": null,
+     "to": "\"Maintains healthy relationships with family and friends.\""
+    },
+    "years.0.data.q5NoUnmetNeeds": {
+     "from": null,
+     "to": "true"
+    },
+    "years.0.data.q5Other": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q5SchoolProgress": {
+     "from": null,
+     "to": "\"Progressing well in all subjects.\""
+    },
+    "years.0.data.q5SocialDevelopment": {
+     "from": null,
+     "to": "\"Age-appropriate social development.\""
+    },
+    "years.0.data.q5UnmetNeeds": {
+     "from": null,
+     "to": "false"
+    },
+    "years.0.data.q7Hmo": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7InstitutionalCare": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7Medicaid": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7Medicare": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7PendingBenefits": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7Pension": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7SocialSecurity": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7Ssdi": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7Ssi": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7StateSupplement": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7SupplementalIns": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7Trusts": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.q7Va": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.ref": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.safeDepositBoxFiled": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.scheduleDocsAck": {
+     "from": null,
+     "to": "{}"
+    },
+    "years.0.data.ucn": {
+     "from": null,
+     "to": "\"2026-CP-000987\""
+    },
+    "years.0.data.wardName": {
+     "from": null,
+     "to": "\"Rollover planMinor\""
+    },
+    "years.0.data.wardPartyId": {
+     "from": null,
+     "to": "null"
+    },
+    "years.0.key": {
+     "from": null,
+     "to": "\"Year 1\""
+    },
+    "years.0.label": {
+     "from": null,
+     "to": "\"2026\""
+    }
+   },
+   "priorYearRestoresTheArchive": true
+  }
+ }
+}

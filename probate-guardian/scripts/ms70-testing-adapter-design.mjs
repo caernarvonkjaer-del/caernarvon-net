@@ -55,7 +55,7 @@ export const RULES = [
   [/^(computeNavChecks|updateNavDots|getWardProgress|updateSidebar|planReadinessChecks|planReadinessPanel)$/, 'query:status'],
   [/^load\w*Pdf$|^doSave(Pdf|Excel)\w*$/, 'query:generateOutput'],
   [/^(buildCaseFileBlob|buildSingleWardExportBlob|exportGuardianDataZip|finishSingleWardExport|saveBlobAs)$/, 'query:exportArchive'],
-  [/^(_sessionCacheGet|loadCaseFileHandle|readRememberedFile|hasOpenedCaseBefore|getRecentlyOpenedWards|isContinuePromptShown|getCurrentLockedWardId|loadAppState|loadAuditLogEntries|auditLog)$/, 'query:persistenceState'],
+  [/^(_sessionCacheGet|_cryptoKey|loadCaseFileHandle|readRememberedFile|hasOpenedCaseBefore|getRecentlyOpenedWards|isContinuePromptShown|getCurrentLockedWardId|loadAppState|loadAuditLogEntries|auditLog)$/, 'query:persistenceState'],
   [/^show\w*Modal(ForType)?$|^closeModal$|^confirmDeleteWard$|^startWalkthrough$|^openFloridaCourtPortal$|^triggerImportZip$|^focusFieldByPath$|^importExcelGuardian$|^renderPage$|^renderScheduleDocsSection$|^loadFragment$|^loadSimplifiedFeature$|^commitCoverCounty$/, 'real-ui'],
 ];
 
