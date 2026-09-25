@@ -1,27 +1,28 @@
 {
  "generatedBy": "node scripts/ms70-declaration-dispositions.mjs --write",
- "note": "Milestone 70, 70A: a proposed disposition and target delivery for every top-level declaration of src/legacy-app.js, built from reference evidence. A draft for review: every entry is reviewed:false until someone confirms it. delete-as-dead means nothing references it anywhere; confirm before deleting.",
+ "note": "Milestone 70, 70A: a disposition and target delivery for every top-level declaration of src/legacy-app.js, built from reference evidence and corrected by the owner's review (tests/baseline/ms70-declaration-review.json; reviewNote says why an entry was moved). reviewed:true means the entry still matches what the review confirmed. delete-as-dead means nothing references it anywhere.",
  "summary": {
   "total": 474,
   "byDisposition": {
-   "move": 459,
-   "test-only": 1,
-   "delete-as-dead": 14
+   "move": 458,
+   "delete-as-dead": 15,
+   "test-only": 1
   },
   "byDelivery": {
-   "70B": 47,
-   "70H": 73,
-   "70C": 32,
-   "70I": 65,
-   "70F": 46,
-   "70E": 6,
-   "70G": 107,
-   "70K": 91,
+   "70B": 44,
+   "70H": 93,
+   "70C": 35,
+   "70J": 2,
+   "70I": 83,
+   "70K": 48,
+   "70E": 9,
+   "70F": 71,
+   "70G": 82,
    "70D": 7
   },
   "windowExportsByReason": {
-   "no-consumer": 65,
-   "tests-only": 32,
+   "no-consumer": 63,
+   "tests-only": 34,
    "monolith-only": 109,
    "modules-only": 98,
    "monolith-and-modules": 22,
@@ -69,7 +70,8 @@
    "disposition": "move",
    "delivery": "70B",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "ic",
@@ -98,7 +100,8 @@
    "disposition": "move",
    "delivery": "70B",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "currentTheme",
@@ -114,7 +117,8 @@
    "disposition": "move",
    "delivery": "70H",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "applyTheme",
@@ -130,7 +134,8 @@
    "disposition": "move",
    "delivery": "70H",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "toggleTheme",
@@ -148,7 +153,8 @@
    "disposition": "move",
    "delivery": "70H",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "INVENTORY_TYPES",
@@ -167,7 +173,8 @@
    "disposition": "move",
    "delivery": "70C",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "ANNUAL_FORM_ALIASES",
@@ -183,7 +190,8 @@
    "disposition": "move",
    "delivery": "70C",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "formEngine",
@@ -205,7 +213,8 @@
    "disposition": "move",
    "delivery": "70C",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "formDisplayName",
@@ -225,7 +234,8 @@
    "disposition": "move",
    "delivery": "70C",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "setAccountingFilingType",
@@ -244,7 +254,8 @@
    "disposition": "move",
    "delivery": "70C",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "caseFile",
@@ -259,13 +270,14 @@
     "src/core/state.js",
     "src/shell-events.js"
    ],
-   "e2eFiles": 18,
+   "e2eFiles": 22,
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70C",
+   "delivery": "70J",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "The case-state root. 70E adopts a store seam while this stays the owner; the declaration goes when the module store becomes the sole owner (70J), not with the section it happens to sit in."
   },
   {
    "name": "helpPanelOpen",
@@ -281,7 +293,8 @@
    "disposition": "move",
    "delivery": "70H",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "currentHelpContext",
@@ -297,7 +310,8 @@
    "disposition": "move",
    "delivery": "70H",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "HELP_CONTENT",
@@ -315,7 +329,8 @@
    "disposition": "move",
    "delivery": "70H",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "toggleHelpPanel",
@@ -333,7 +348,8 @@
    "disposition": "move",
    "delivery": "70H",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "showContextualHelp",
@@ -349,7 +365,8 @@
    "disposition": "move",
    "delivery": "70H",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "updateHelpContext",
@@ -368,7 +385,8 @@
    "disposition": "move",
    "delivery": "70H",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "USER_GUIDE_URL",
@@ -384,7 +402,8 @@
    "disposition": "move",
    "delivery": "70H",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "USER_GUIDE_ANCHORS",
@@ -400,7 +419,8 @@
    "disposition": "move",
    "delivery": "70H",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "userGuideAnchorFor",
@@ -416,7 +436,8 @@
    "disposition": "move",
    "delivery": "70H",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "openUserGuide",
@@ -434,7 +455,8 @@
    "disposition": "move",
    "delivery": "70H",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "openUserGuideForCurrentPage",
@@ -452,7 +474,8 @@
    "disposition": "move",
    "delivery": "70H",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "TOOLTIPS",
@@ -468,7 +491,8 @@
    "disposition": "move",
    "delivery": "70H",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "tooltip",
@@ -488,7 +512,8 @@
    "disposition": "move",
    "delivery": "70H",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "WALKTHROUGH_GUARDIAN",
@@ -504,7 +529,8 @@
    "disposition": "move",
    "delivery": "70H",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "WALKTHROUGH_SIMPLIFIED",
@@ -520,7 +546,8 @@
    "disposition": "move",
    "delivery": "70H",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "WALKTHROUGH_ANNUAL",
@@ -536,7 +563,8 @@
    "disposition": "move",
    "delivery": "70H",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "WALKTHROUGH_PLAN_SIMPLIFIED",
@@ -552,7 +580,8 @@
    "disposition": "move",
    "delivery": "70H",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "WALKTHROUGH_PLAN_ANNUAL",
@@ -568,7 +597,8 @@
    "disposition": "move",
    "delivery": "70H",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "WALKTHROUGH_PLAN_INITIAL",
@@ -584,7 +614,8 @@
    "disposition": "move",
    "delivery": "70H",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "WALKTHROUGH_PLAN_MINOR",
@@ -600,7 +631,8 @@
    "disposition": "move",
    "delivery": "70H",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "WALKTHROUGH_DASHBOARD",
@@ -616,7 +648,8 @@
    "disposition": "move",
    "delivery": "70H",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "WALKTHROUGH_STEPS",
@@ -632,7 +665,8 @@
    "disposition": "move",
    "delivery": "70H",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "currentWalkthroughStep",
@@ -648,7 +682,8 @@
    "disposition": "move",
    "delivery": "70H",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "walkthroughActive",
@@ -664,7 +699,8 @@
    "disposition": "move",
    "delivery": "70H",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "_walkthroughAutoTriggered",
@@ -680,7 +716,8 @@
    "disposition": "move",
    "delivery": "70H",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "startWalkthrough",
@@ -698,7 +735,8 @@
    "disposition": "move",
    "delivery": "70H",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "showWalkthroughStep",
@@ -714,7 +752,8 @@
    "disposition": "move",
    "delivery": "70H",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "nextWalkthroughStep",
@@ -732,7 +771,8 @@
    "disposition": "move",
    "delivery": "70H",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "skipWalkthrough",
@@ -750,7 +790,8 @@
    "disposition": "move",
    "delivery": "70H",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "endWalkthrough",
@@ -766,7 +807,8 @@
    "disposition": "move",
    "delivery": "70H",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "activeInventoryType",
@@ -784,9 +826,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70H",
+   "delivery": "70J",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "The case-state root. 70E adopts a store seam while this stays the owner; the declaration goes when the module store becomes the sole owner (70J), not with the section it happens to sit in."
   },
   {
    "name": "_saveTimer",
@@ -802,9 +845,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70H",
+   "delivery": "70I",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Save, auto-save, export-dirty tracking, template loading or the continue prompt -- persistence and startup (70I), not the section it sits in."
   },
   {
    "name": "currentPage",
@@ -820,9 +864,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70H",
+   "delivery": "70K",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Navigation state the router owns (src/core/navigation/router.js reads and writes it); moves with the router in 70K."
   },
   {
    "name": "getCurrentPage",
@@ -844,9 +889,10 @@
     "src/core/navigation/router.js"
    ],
    "disposition": "move",
-   "delivery": "70H",
+   "delivery": "70K",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Navigation state the router owns (src/core/navigation/router.js reads and writes it); moves with the router in 70K."
   },
   {
    "name": "_visitedPages",
@@ -862,10 +908,11 @@
    "e2eFiles": 0,
    "unitSlices": 0,
    "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70H",
-   "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "disposition": "delete-as-dead",
+   "delivery": "70E",
+   "wrapperWhile": null,
+   "reviewed": true,
+   "reviewNote": "Dead on both sides: a `let` is never a window property, so the three module references (router.js add, ward-lifecycle.js clear x2) read window._visitedPages as undefined and never run, and the monolith never reads it. Delete it and those three references together in 70E."
   },
   {
    "name": "_dirtySinceExport",
@@ -881,9 +928,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70H",
+   "delivery": "70I",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Save, auto-save, export-dirty tracking, template loading or the continue prompt -- persistence and startup (70I), not the section it sits in."
   },
   {
    "name": "_autoExportIntervalMinutes",
@@ -899,9 +947,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70H",
+   "delivery": "70I",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Save, auto-save, export-dirty tracking, template loading or the continue prompt -- persistence and startup (70I), not the section it sits in."
   },
   {
    "name": "_lastExportAt",
@@ -918,9 +967,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70H",
+   "delivery": "70I",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Save, auto-save, export-dirty tracking, template loading or the continue prompt -- persistence and startup (70I), not the section it sits in."
   },
   {
    "name": "_appState",
@@ -939,7 +989,8 @@
    "disposition": "move",
    "delivery": "70I",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "_templateCache",
@@ -957,7 +1008,8 @@
    "disposition": "move",
    "delivery": "70I",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "_auditLogEntries",
@@ -975,7 +1027,8 @@
    "disposition": "move",
    "delivery": "70I",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "_auditLogNextId",
@@ -991,7 +1044,8 @@
    "disposition": "move",
    "delivery": "70I",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "r2",
@@ -1011,7 +1065,8 @@
    "disposition": "move",
    "delivery": "70B",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "fmt",
@@ -1029,7 +1084,8 @@
    "disposition": "move",
    "delivery": "70B",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "esc",
@@ -1056,7 +1112,8 @@
    "disposition": "move",
    "delivery": "70B",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "sanitizeForExcel",
@@ -1074,7 +1131,8 @@
    "disposition": "move",
    "delivery": "70B",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "guardianHasAnyData",
@@ -1095,7 +1153,8 @@
    "disposition": "move",
    "delivery": "70B",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "detectXSSPayload",
@@ -1111,7 +1170,8 @@
    "disposition": "move",
    "delivery": "70B",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "detectPathTraversal",
@@ -1127,7 +1187,8 @@
    "disposition": "move",
    "delivery": "70B",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "sanitizeInput",
@@ -1143,7 +1204,8 @@
    "disposition": "move",
    "delivery": "70B",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "sanitizeNonNegativeDecimal",
@@ -1164,7 +1226,8 @@
    "disposition": "move",
    "delivery": "70B",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "sanitizeDecimal",
@@ -1183,7 +1246,8 @@
    "disposition": "move",
    "delivery": "70B",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "validateSecurityInput",
@@ -1201,7 +1265,8 @@
    "disposition": "move",
    "delivery": "70B",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "IMPORT_SIZE_LIMITS",
@@ -1217,7 +1282,8 @@
    "disposition": "move",
    "delivery": "70B",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "ZIP_MAGIC",
@@ -1233,7 +1299,8 @@
    "disposition": "move",
    "delivery": "70B",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "validateImportFile",
@@ -1254,7 +1321,8 @@
    "disposition": "move",
    "delivery": "70B",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "getImportProgressEl",
@@ -1274,7 +1342,8 @@
    "disposition": "move",
    "delivery": "70B",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "EXCEL_IMPORT_LIMITS",
@@ -1290,7 +1359,8 @@
    "disposition": "move",
    "delivery": "70B",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "assertWorkbookWithinLimits",
@@ -1310,7 +1380,8 @@
    "disposition": "move",
    "delivery": "70B",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "sanitizeObjectData",
@@ -1329,7 +1400,8 @@
    "disposition": "move",
    "delivery": "70B",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "sanitizeObjectDataInPlace",
@@ -1348,7 +1420,8 @@
    "disposition": "move",
    "delivery": "70B",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "formatPhone",
@@ -1369,7 +1442,8 @@
    "disposition": "move",
    "delivery": "70B",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "formatSSN",
@@ -1390,7 +1464,8 @@
    "disposition": "move",
    "delivery": "70B",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "formatCaseNumber",
@@ -1409,7 +1484,8 @@
    "disposition": "move",
    "delivery": "70B",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "finalizeCaseNumber",
@@ -1428,7 +1504,8 @@
    "disposition": "move",
    "delivery": "70B",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "FL_COUNTIES",
@@ -1444,7 +1521,8 @@
    "disposition": "move",
    "delivery": "70B",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "FL_COUNTY_CIRCUIT",
@@ -1462,7 +1540,8 @@
    "disposition": "move",
    "delivery": "70B",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "CIRCUIT_ORDINALS",
@@ -1480,7 +1559,8 @@
    "disposition": "move",
    "delivery": "70B",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "circuitForCounty",
@@ -1498,7 +1578,8 @@
    "disposition": "move",
    "delivery": "70B",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "MISSING_COUNTY_CAPTION_HTML",
@@ -1514,7 +1595,8 @@
    "disposition": "move",
    "delivery": "70B",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "circuitCourtCaption",
@@ -1530,7 +1612,8 @@
    "disposition": "test-only",
    "delivery": "70B",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "test-only confirmed: only tests/e2e/cover-county.spec.ts reads it (through window)."
   },
   {
    "name": "hasSixthCircuitLocalGuidance",
@@ -1548,7 +1631,8 @@
    "disposition": "delete-as-dead",
    "delivery": "70B",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24)."
   },
   {
    "name": "countyAutocompleteHTML",
@@ -1564,9 +1648,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70B",
+   "delivery": "70F",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Form-field markup, field helpers or collection add/remove actions -- the shared form runtime (70F). They sit in the feature-bridge sections only because they were left behind when each feature was extracted."
   },
   {
    "name": "filterCountyDropdown",
@@ -1582,9 +1667,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70B",
+   "delivery": "70F",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Form-field markup, field helpers or collection add/remove actions -- the shared form runtime (70F). They sit in the feature-bridge sections only because they were left behind when each feature was extracted."
   },
   {
    "name": "hideCountyDropdown",
@@ -1600,9 +1686,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70B",
+   "delivery": "70F",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Form-field markup, field helpers or collection add/remove actions -- the shared form runtime (70F). They sit in the feature-bridge sections only because they were left behind when each feature was extracted."
   },
   {
    "name": "selectCountyOption",
@@ -1618,9 +1705,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70B",
+   "delivery": "70F",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Form-field markup, field helpers or collection add/remove actions -- the shared form runtime (70F). They sit in the feature-bridge sections only because they were left behind when each feature was extracted."
   },
   {
    "name": "onCountyKeydown",
@@ -1636,9 +1724,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70B",
+   "delivery": "70F",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Form-field markup, field helpers or collection add/remove actions -- the shared form runtime (70F). They sit in the feature-bridge sections only because they were left behind when each feature was extracted."
   },
   {
    "name": "formatBarNumber",
@@ -1658,7 +1747,8 @@
    "disposition": "move",
    "delivery": "70B",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "formatAccountNumber",
@@ -1677,7 +1767,8 @@
    "disposition": "move",
    "delivery": "70B",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "formatCheckNumber",
@@ -1696,7 +1787,8 @@
    "disposition": "move",
    "delivery": "70B",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "formatName",
@@ -1717,7 +1809,8 @@
    "disposition": "move",
    "delivery": "70B",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "formatAddress",
@@ -1737,7 +1830,8 @@
    "disposition": "move",
    "delivery": "70B",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "capitalizeImportedFields",
@@ -1757,7 +1851,8 @@
    "disposition": "move",
    "delivery": "70B",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "applyZipLimit",
@@ -1776,7 +1871,8 @@
    "disposition": "move",
    "delivery": "70B",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "PLAN_SECTION_ROUTES",
@@ -1792,7 +1888,8 @@
    "disposition": "move",
    "delivery": "70F",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "errorRoute",
@@ -1810,7 +1907,8 @@
    "disposition": "move",
    "delivery": "70F",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "validationPanel",
@@ -1834,7 +1932,8 @@
    "disposition": "move",
    "delivery": "70F",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "_pvSelection",
@@ -1850,7 +1949,8 @@
    "disposition": "move",
    "delivery": "70F",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "pvPages",
@@ -1866,7 +1966,8 @@
    "disposition": "move",
    "delivery": "70F",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "pvLabelFor",
@@ -1882,7 +1983,8 @@
    "disposition": "move",
    "delivery": "70F",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "pvShowAll",
@@ -1898,7 +2000,8 @@
    "disposition": "move",
    "delivery": "70F",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "pvApply",
@@ -1914,7 +2017,8 @@
    "disposition": "move",
    "delivery": "70F",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "pvSelect",
@@ -1932,7 +2036,8 @@
    "disposition": "move",
    "delivery": "70F",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "pvStep",
@@ -1950,7 +2055,8 @@
    "disposition": "move",
    "delivery": "70F",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "initPrintPager",
@@ -1970,7 +2076,8 @@
    "disposition": "move",
    "delivery": "70F",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "highlightErrors",
@@ -1994,7 +2101,8 @@
    "disposition": "move",
    "delivery": "70F",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "enforceNonNegative",
@@ -2010,7 +2118,8 @@
    "disposition": "move",
    "delivery": "70F",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "setupAmountFieldValidation",
@@ -2029,7 +2138,8 @@
    "disposition": "move",
    "delivery": "70F",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "auditLog",
@@ -2048,7 +2158,8 @@
    "disposition": "move",
    "delivery": "70I",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "PBKDF2_ITERATIONS",
@@ -2066,7 +2177,8 @@
    "disposition": "delete-as-dead",
    "delivery": "70I",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24)."
   },
   {
    "name": "CRYPTO_VERIFIER_PLAINTEXT",
@@ -2084,7 +2196,8 @@
    "disposition": "move",
    "delivery": "70I",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "_cryptoKey",
@@ -2096,13 +2209,14 @@
    "moduleConsumers": [
     "src/core/persistence/crypto.js"
    ],
-   "e2eFiles": 0,
+   "e2eFiles": 1,
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
    "delivery": "70I",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "_securityMode",
@@ -2114,13 +2228,14 @@
    "moduleConsumers": [
     "src/core/persistence/crypto.js"
    ],
-   "e2eFiles": 0,
+   "e2eFiles": 1,
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
    "delivery": "70I",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "PLAIN_MODE_PREFIX",
@@ -2138,7 +2253,8 @@
    "disposition": "delete-as-dead",
    "delivery": "70I",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24)."
   },
   {
    "name": "ensureUnlocked",
@@ -2154,7 +2270,8 @@
    "disposition": "move",
    "delivery": "70I",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "_securityChoiceResolve",
@@ -2170,7 +2287,8 @@
    "disposition": "move",
    "delivery": "70I",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "promptChooseSecurityMode",
@@ -2186,7 +2304,8 @@
    "disposition": "move",
    "delivery": "70I",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "selectSecurityMode",
@@ -2204,7 +2323,8 @@
    "disposition": "move",
    "delivery": "70I",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "updateLockButtonVisibility",
@@ -2220,7 +2340,8 @@
    "disposition": "move",
    "delivery": "70I",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "_unlockResolve",
@@ -2236,7 +2357,8 @@
    "disposition": "move",
    "delivery": "70I",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "_unlockMode",
@@ -2252,7 +2374,8 @@
    "disposition": "move",
    "delivery": "70I",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "promptUnlock",
@@ -2268,7 +2391,8 @@
    "disposition": "move",
    "delivery": "70I",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "_pendingOpenManifest",
@@ -2284,7 +2408,8 @@
    "disposition": "move",
    "delivery": "70I",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "_pendingOpenZip",
@@ -2300,7 +2425,8 @@
    "disposition": "move",
    "delivery": "70I",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "promptPasswordForFile",
@@ -2316,7 +2442,8 @@
    "disposition": "move",
    "delivery": "70I",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "promptCreatePassword",
@@ -2332,7 +2459,8 @@
    "disposition": "move",
    "delivery": "70I",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "showUnlockError",
@@ -2348,7 +2476,8 @@
    "disposition": "move",
    "delivery": "70I",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "UNLOCK_FAIL_THRESHOLD",
@@ -2364,7 +2493,8 @@
    "disposition": "move",
    "delivery": "70I",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "UNLOCK_LOCKOUT_BASE_MS",
@@ -2380,7 +2510,8 @@
    "disposition": "move",
    "delivery": "70I",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "UNLOCK_LOCKOUT_MAX_MS",
@@ -2396,7 +2527,8 @@
    "disposition": "move",
    "delivery": "70I",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "getUnlockFailState",
@@ -2412,7 +2544,8 @@
    "disposition": "move",
    "delivery": "70I",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "saveUnlockFailState",
@@ -2428,7 +2561,8 @@
    "disposition": "move",
    "delivery": "70I",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "formatLockoutRemaining",
@@ -2444,7 +2578,8 @@
    "disposition": "move",
    "delivery": "70I",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "submitUnlockForm",
@@ -2462,7 +2597,8 @@
    "disposition": "move",
    "delivery": "70I",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "lockApp",
@@ -2474,13 +2610,14 @@
    "moduleConsumers": [
     "src/shell-events.js"
    ],
-   "e2eFiles": 3,
+   "e2eFiles": 4,
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
    "delivery": "70I",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "AUTO_LOCK_MS",
@@ -2496,7 +2633,8 @@
    "disposition": "move",
    "delivery": "70I",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "_autoLockTimer",
@@ -2512,7 +2650,8 @@
    "disposition": "move",
    "delivery": "70I",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "resetAutoLockTimer",
@@ -2528,7 +2667,8 @@
    "disposition": "move",
    "delivery": "70I",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "saveWardToState",
@@ -2548,7 +2688,8 @@
    "disposition": "move",
    "delivery": "70E",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "deleteWardFromState",
@@ -2566,7 +2707,8 @@
    "disposition": "move",
    "delivery": "70E",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "saveTemplate",
@@ -2582,7 +2724,8 @@
    "disposition": "move",
    "delivery": "70E",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "loadTemplate",
@@ -2598,7 +2741,8 @@
    "disposition": "move",
    "delivery": "70E",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "appendAuditLogEntry",
@@ -2614,7 +2758,8 @@
    "disposition": "move",
    "delivery": "70E",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "loadAuditLogEntries",
@@ -2630,7 +2775,8 @@
    "disposition": "move",
    "delivery": "70E",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "ACTIVITY_EVENT_META",
@@ -2646,7 +2792,8 @@
    "disposition": "move",
    "delivery": "70H",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "_activityLogEntries",
@@ -2662,7 +2809,8 @@
    "disposition": "move",
    "delivery": "70H",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "ACTIVITY_LOG_RENDER_CAP",
@@ -2678,7 +2826,8 @@
    "disposition": "move",
    "delivery": "70H",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "loadAndRenderActivityLog",
@@ -2696,7 +2845,8 @@
    "disposition": "move",
    "delivery": "70H",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "renderStorageReadout",
@@ -2712,7 +2862,8 @@
    "disposition": "move",
    "delivery": "70H",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "activityLogFiltered",
@@ -2728,7 +2879,8 @@
    "disposition": "move",
    "delivery": "70H",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "renderActivityLogList",
@@ -2746,7 +2898,8 @@
    "disposition": "move",
    "delivery": "70H",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "formatActivityTimestamp",
@@ -2762,7 +2915,8 @@
    "disposition": "move",
    "delivery": "70H",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "exportActivityLog",
@@ -2780,7 +2934,8 @@
    "disposition": "move",
    "delivery": "70H",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "pageActivityLog",
@@ -2798,7 +2953,8 @@
    "disposition": "move",
    "delivery": "70H",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "PARTY_FIELD_ROWS",
@@ -2814,7 +2970,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "SLOT_FIELD_LABELS",
@@ -2830,7 +2987,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "partyFieldValue",
@@ -2846,7 +3004,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "partyRoleBadgesHTML",
@@ -2862,7 +3021,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "filingLabel",
@@ -2878,7 +3038,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "slotLabel",
@@ -2894,7 +3055,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "partyReferenceLinesHTML",
@@ -2910,7 +3072,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "_partyCompareIds",
@@ -2926,7 +3089,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "_partyUnmergeIds",
@@ -2942,7 +3106,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "pagePartyManagement",
@@ -2960,7 +3125,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "renderPartyManagementBody",
@@ -2978,7 +3144,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "renderPartyDedupeQueue",
@@ -2994,7 +3161,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "manualCompareCandidate",
@@ -3010,7 +3178,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "partyMatchBadge",
@@ -3026,7 +3195,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "partyDedupeCardHTML",
@@ -3042,7 +3212,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "renderPartyDirectoryRows",
@@ -3060,7 +3231,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "partyClosedDriftHTML",
@@ -3076,7 +3248,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "doPartySyncClosed",
@@ -3094,7 +3267,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "doPartySyncClosedAll",
@@ -3112,7 +3286,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "renderClosedFilingSyncNotice",
@@ -3130,7 +3305,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "doFilingSyncClosed",
@@ -3148,7 +3324,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "partySubRowHTML",
@@ -3164,7 +3341,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "togglePartyCompareSelection",
@@ -3182,7 +3360,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "clearPartyCompareSelection",
@@ -3200,7 +3379,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "togglePartyUnmergeSelection",
@@ -3218,7 +3398,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "doPartyMergeKeep",
@@ -3236,7 +3417,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "doPartyDismissPair",
@@ -3254,7 +3436,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "doPartyUnmergeSelected",
@@ -3272,7 +3455,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "autoSave",
@@ -3297,13 +3481,14 @@
     "src/features/simplified-accounting/excel.js",
     "src/features/simplified-accounting/index.js"
    ],
-   "e2eFiles": 29,
+   "e2eFiles": 31,
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70G",
+   "delivery": "70I",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Save, auto-save, export-dirty tracking, template loading or the continue prompt -- persistence and startup (70I), not the section it sits in."
   },
   {
    "name": "flushPendingSave",
@@ -3317,13 +3502,14 @@
     "src/core/persistence/case-file.js",
     "src/features/dashboard/index.js"
    ],
-   "e2eFiles": 31,
+   "e2eFiles": 33,
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70G",
+   "delivery": "70I",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Save, auto-save, export-dirty tracking, template loading or the continue prompt -- persistence and startup (70I), not the section it sits in."
   },
   {
    "name": "showSaveError",
@@ -3340,9 +3526,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70G",
+   "delivery": "70I",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Save, auto-save, export-dirty tracking, template loading or the continue prompt -- persistence and startup (70I), not the section it sits in."
   },
   {
    "name": "hideSaveError",
@@ -3358,9 +3545,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70G",
+   "delivery": "70I",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Save, auto-save, export-dirty tracking, template loading or the continue prompt -- persistence and startup (70I), not the section it sits in."
   },
   {
    "name": "saveData",
@@ -3378,9 +3566,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70G",
+   "delivery": "70I",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Save, auto-save, export-dirty tracking, template loading or the continue prompt -- persistence and startup (70I), not the section it sits in."
   },
   {
    "name": "loadGuardianData",
@@ -3394,9 +3583,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70G",
+   "delivery": "70I",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Save, auto-save, export-dirty tracking, template loading or the continue prompt -- persistence and startup (70I), not the section it sits in."
   },
   {
    "name": "getActiveWard",
@@ -3416,9 +3606,10 @@
     "src/core/state.js"
    ],
    "disposition": "move",
-   "delivery": "70G",
+   "delivery": "70E",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "An accessor modules call to read case state: exactly what 70E's store seam replaces."
   },
   {
    "name": "getProbateGuardianTabState",
@@ -3435,9 +3626,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70G",
+   "delivery": "70H",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Sidebar, header, picker or tab-coordination UI -- a shell controller (70H). The router banner above it is historical: the router itself moved to src/core/navigation/router.js."
   },
   {
    "name": "notifyProbateGuardianTabStateChanged",
@@ -3454,9 +3646,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70G",
+   "delivery": "70H",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Sidebar, header, picker or tab-coordination UI -- a shell controller (70H). The router banner above it is historical: the router itself moved to src/core/navigation/router.js."
   },
   {
    "name": "getCaseFile",
@@ -3475,9 +3668,10 @@
     "src/core/state.js"
    ],
    "disposition": "move",
-   "delivery": "70G",
+   "delivery": "70E",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "An accessor modules call to read case state: exactly what 70E's store seam replaces."
   },
   {
    "name": "isContinuePromptShown",
@@ -3493,9 +3687,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70G",
+   "delivery": "70I",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Save, auto-save, export-dirty tracking, template loading or the continue prompt -- persistence and startup (70I), not the section it sits in."
   },
   {
    "name": "markContinuePromptShown",
@@ -3511,9 +3706,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70G",
+   "delivery": "70I",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Save, auto-save, export-dirty tracking, template loading or the continue prompt -- persistence and startup (70I), not the section it sits in."
   },
   {
    "name": "SESSION_CACHE_DB",
@@ -3531,7 +3727,8 @@
    "disposition": "move",
    "delivery": "70I",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "SESSION_CACHE_STORE",
@@ -3549,7 +3746,8 @@
    "disposition": "move",
    "delivery": "70I",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "_sessionCacheDb",
@@ -3567,7 +3765,8 @@
    "disposition": "move",
    "delivery": "70I",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "_sessionCacheGet",
@@ -3577,7 +3776,7 @@
    "section": "SESSION-RESTORE CACHE (crash recovery)",
    "internalRefs": 1,
    "moduleConsumers": [],
-   "e2eFiles": 2,
+   "e2eFiles": 3,
    "unitSlices": 0,
    "duplicateOf": [
     "src/core/persistence/recovery-cache.js"
@@ -3585,7 +3784,8 @@
    "disposition": "move",
    "delivery": "70I",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "_sessionCachePut",
@@ -3603,7 +3803,8 @@
    "disposition": "delete-as-dead",
    "delivery": "70I",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24)."
   },
   {
    "name": "_sessionCacheClear",
@@ -3621,7 +3822,8 @@
    "disposition": "delete-as-dead",
    "delivery": "70I",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24)."
   },
   {
    "name": "LAUNCH_PREF_DB",
@@ -3639,7 +3841,8 @@
    "disposition": "move",
    "delivery": "70I",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "LAUNCH_PREF_STORE",
@@ -3657,7 +3860,8 @@
    "disposition": "move",
    "delivery": "70I",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "LAUNCH_PREF_KEY_OPENED",
@@ -3675,7 +3879,8 @@
    "disposition": "delete-as-dead",
    "delivery": "70I",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24)."
   },
   {
    "name": "LAUNCH_PREF_KEY_HANDLE",
@@ -3693,7 +3898,8 @@
    "disposition": "delete-as-dead",
    "delivery": "70I",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24)."
   },
   {
    "name": "REMEMBERED_FILE_TIMEOUT_MS",
@@ -3711,7 +3917,8 @@
    "disposition": "delete-as-dead",
    "delivery": "70I",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24)."
   },
   {
    "name": "_rememberedFileUnavailable",
@@ -3727,7 +3934,8 @@
    "disposition": "move",
    "delivery": "70I",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "_launchPrefDb",
@@ -3745,7 +3953,8 @@
    "disposition": "move",
    "delivery": "70I",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "_launchPrefGet",
@@ -3763,7 +3972,8 @@
    "disposition": "delete-as-dead",
    "delivery": "70I",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24)."
   },
   {
    "name": "_launchPrefPut",
@@ -3781,7 +3991,8 @@
    "disposition": "delete-as-dead",
    "delivery": "70I",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24)."
   },
   {
    "name": "_launchPrefDelete",
@@ -3799,7 +4010,8 @@
    "disposition": "delete-as-dead",
    "delivery": "70I",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24)."
   },
   {
    "name": "trySilentReopen",
@@ -3815,7 +4027,8 @@
    "disposition": "move",
    "delivery": "70I",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "_launchStateResolved",
@@ -3831,7 +4044,8 @@
    "disposition": "move",
    "delivery": "70I",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "_openedFileAtLaunch",
@@ -3847,7 +4061,8 @@
    "disposition": "move",
    "delivery": "70I",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "_startupChoiceResolve",
@@ -3863,7 +4078,8 @@
    "disposition": "move",
    "delivery": "70I",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "promptOpenOrStartAtLaunch",
@@ -3879,7 +4095,8 @@
    "disposition": "move",
    "delivery": "70I",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "_resolveStartupChoice",
@@ -3895,7 +4112,8 @@
    "disposition": "move",
    "delivery": "70I",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "startNewWardAtLaunch",
@@ -3913,7 +4131,8 @@
    "disposition": "move",
    "delivery": "70I",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "startNewCaseAtLaunch",
@@ -3931,7 +4150,8 @@
    "disposition": "move",
    "delivery": "70I",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "openWardFileAtLaunch",
@@ -3949,7 +4169,8 @@
    "disposition": "move",
    "delivery": "70I",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "openCaseFileAtLaunch",
@@ -3967,7 +4188,8 @@
    "disposition": "move",
    "delivery": "70I",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "handleStartupOpenInputChange",
@@ -3985,7 +4207,8 @@
    "disposition": "move",
    "delivery": "70I",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "loadCaseFileAtLaunch",
@@ -4001,7 +4224,8 @@
    "disposition": "move",
    "delivery": "70I",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "loadCaseFileFromZip",
@@ -4017,7 +4241,8 @@
    "disposition": "move",
    "delivery": "70I",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Changed on master in b2d97f5 (returns every part it could not read); a re-implement row in MILESTONE-70-FIX-LEDGER.md."
   },
   {
    "name": "setupDragAndDropImport",
@@ -4033,7 +4258,8 @@
    "disposition": "move",
    "delivery": "70I",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "clearAllData",
@@ -4051,7 +4277,8 @@
    "disposition": "move",
    "delivery": "70I",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "ACCOUNTING_FORM_TYPES",
@@ -4069,7 +4296,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "PRIOR_ACCOUNTING_SOURCES",
@@ -4087,7 +4315,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "CARRY_SOURCE_TYPE",
@@ -4105,7 +4334,8 @@
    "disposition": "delete-as-dead",
    "delivery": "70G",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24)."
   },
   {
    "name": "carryOverAccountingToAccounting",
@@ -4121,7 +4351,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "carryOverFields",
@@ -4137,7 +4368,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "refreshCarrySourceSelect",
@@ -4153,7 +4385,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "updateCarrySourcePicker",
@@ -4171,7 +4404,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "onCarrySourceChange",
@@ -4189,7 +4423,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "_pickPartySlot",
@@ -4205,7 +4440,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "partyRoleLabel",
@@ -4221,7 +4457,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "showPickPartyModal",
@@ -4241,7 +4478,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "doPickParty",
@@ -4259,7 +4497,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "doCreatePartyFromSlot",
@@ -4277,7 +4516,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "_pickCaseWardId",
@@ -4293,7 +4533,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "showPickCaseModal",
@@ -4311,7 +4552,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "doPickCase",
@@ -4329,7 +4571,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "doCreateCaseFromWard",
@@ -4347,7 +4590,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "pageIntroRow",
@@ -4364,9 +4608,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70G",
+   "delivery": "70F",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Form-field markup, field helpers or collection add/remove actions -- the shared form runtime (70F). They sit in the feature-bridge sections only because they were left behind when each feature was extracted."
   },
   {
    "name": "RECENT_WARDS_MAX",
@@ -4382,7 +4627,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "loadRecentlyOpenedWards",
@@ -4398,7 +4644,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "saveRecentlyOpenedWards",
@@ -4414,7 +4661,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "addToRecentlyOpened",
@@ -4432,7 +4680,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "getRecentlyOpenedWards",
@@ -4450,7 +4699,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "comboboxFilterItems",
@@ -4464,9 +4714,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70G",
+   "delivery": "70H",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Sidebar, header, picker or tab-coordination UI -- a shell controller (70H). The router banner above it is historical: the router itself moved to src/core/navigation/router.js."
   },
   {
    "name": "comboboxRenderDropdown",
@@ -4480,9 +4731,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70G",
+   "delivery": "70H",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Sidebar, header, picker or tab-coordination UI -- a shell controller (70H). The router banner above it is historical: the router itself moved to src/core/navigation/router.js."
   },
   {
    "name": "comboboxHide",
@@ -4496,9 +4748,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70G",
+   "delivery": "70H",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Sidebar, header, picker or tab-coordination UI -- a shell controller (70H). The router banner above it is historical: the router itself moved to src/core/navigation/router.js."
   },
   {
    "name": "comboboxAssignOptionIds",
@@ -4512,9 +4765,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70G",
+   "delivery": "70H",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Sidebar, header, picker or tab-coordination UI -- a shell controller (70H). The router banner above it is historical: the router itself moved to src/core/navigation/router.js."
   },
   {
    "name": "bindComboboxKeyboardNav",
@@ -4528,9 +4782,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70G",
+   "delivery": "70H",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Sidebar, header, picker or tab-coordination UI -- a shell controller (70H). The router banner above it is historical: the router itself moved to src/core/navigation/router.js."
   },
   {
    "name": "wardSelectorItems",
@@ -4544,9 +4799,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70G",
+   "delivery": "70H",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Sidebar, header, picker or tab-coordination UI -- a shell controller (70H). The router banner above it is historical: the router itself moved to src/core/navigation/router.js."
   },
   {
    "name": "wardSelectorShowDropdown",
@@ -4560,9 +4816,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70G",
+   "delivery": "70H",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Sidebar, header, picker or tab-coordination UI -- a shell controller (70H). The router banner above it is historical: the router itself moved to src/core/navigation/router.js."
   },
   {
    "name": "onWardSelectorInput",
@@ -4578,9 +4835,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70G",
+   "delivery": "70H",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Sidebar, header, picker or tab-coordination UI -- a shell controller (70H). The router banner above it is historical: the router itself moved to src/core/navigation/router.js."
   },
   {
    "name": "onWardSelectorFocus",
@@ -4596,9 +4854,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70G",
+   "delivery": "70H",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Sidebar, header, picker or tab-coordination UI -- a shell controller (70H). The router banner above it is historical: the router itself moved to src/core/navigation/router.js."
   },
   {
    "name": "onWardSelectorKeydown",
@@ -4614,9 +4873,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70G",
+   "delivery": "70H",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Sidebar, header, picker or tab-coordination UI -- a shell controller (70H). The router banner above it is historical: the router itself moved to src/core/navigation/router.js."
   },
   {
    "name": "handleSwitchWardClick",
@@ -4632,9 +4892,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70G",
+   "delivery": "70H",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Sidebar, header, picker or tab-coordination UI -- a shell controller (70H). The router banner above it is historical: the router itself moved to src/core/navigation/router.js."
   },
   {
    "name": "showSwitchWardPickerModal",
@@ -4648,9 +4909,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70G",
+   "delivery": "70H",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Sidebar, header, picker or tab-coordination UI -- a shell controller (70H). The router banner above it is historical: the router itself moved to src/core/navigation/router.js."
   },
   {
    "name": "emptyRowAnnual",
@@ -4668,7 +4930,8 @@
    "disposition": "move",
    "delivery": "70C",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "PLAN_RIGHTS",
@@ -4689,7 +4952,8 @@
    "disposition": "move",
    "delivery": "70C",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "PLAN_RIGHT_STATES",
@@ -4707,7 +4971,8 @@
    "disposition": "move",
    "delivery": "70C",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "planRightLabel",
@@ -4725,7 +4990,8 @@
    "disposition": "move",
    "delivery": "70C",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "PLAN_ADLS",
@@ -4746,7 +5012,8 @@
    "disposition": "move",
    "delivery": "70C",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "PLAN_ADL_RATINGS",
@@ -4764,7 +5031,8 @@
    "disposition": "move",
    "delivery": "70C",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "PLAN_BENEFITS",
@@ -4784,7 +5052,8 @@
    "disposition": "move",
    "delivery": "70C",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "emptyPlanResidence",
@@ -4802,7 +5071,8 @@
    "disposition": "move",
    "delivery": "70C",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "emptyPlanProvider",
@@ -4820,7 +5090,8 @@
    "disposition": "move",
    "delivery": "70C",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "emptyPlanDirective",
@@ -4838,7 +5109,8 @@
    "disposition": "move",
    "delivery": "70C",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "INITIAL_ADLS",
@@ -4859,7 +5131,8 @@
    "disposition": "move",
    "delivery": "70C",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "INITIAL_ADL_RATINGS",
@@ -4877,7 +5150,8 @@
    "disposition": "move",
    "delivery": "70C",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "emptyInitialProvider",
@@ -4895,7 +5169,8 @@
    "disposition": "move",
    "delivery": "70C",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "emptyMinorResidence",
@@ -4913,7 +5188,8 @@
    "disposition": "move",
    "delivery": "70C",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "emptyMinorProvider",
@@ -4931,7 +5207,8 @@
    "disposition": "move",
    "delivery": "70C",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "emptyMinorGuardianSig",
@@ -4949,7 +5226,8 @@
    "disposition": "move",
    "delivery": "70C",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "initializeEmptyData",
@@ -4967,7 +5245,8 @@
    "disposition": "move",
    "delivery": "70C",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "closeModal",
@@ -4985,7 +5264,8 @@
    "disposition": "move",
    "delivery": "70H",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "_fragmentAppended",
@@ -5001,7 +5281,8 @@
    "disposition": "move",
    "delivery": "70H",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "ensureFragment",
@@ -5021,7 +5302,8 @@
    "disposition": "move",
    "delivery": "70H",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "showModal",
@@ -5042,7 +5324,8 @@
    "disposition": "move",
    "delivery": "70H",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "populateWardNameSuggestions",
@@ -5058,7 +5341,8 @@
    "disposition": "move",
    "delivery": "70H",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "wardNameComboItems",
@@ -5074,7 +5358,8 @@
    "disposition": "move",
    "delivery": "70H",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "initWardNameCombobox",
@@ -5090,7 +5375,8 @@
    "disposition": "move",
    "delivery": "70H",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "showAddWardModal",
@@ -5108,7 +5394,8 @@
    "disposition": "move",
    "delivery": "70H",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "doAddWard",
@@ -5126,7 +5413,8 @@
    "disposition": "move",
    "delivery": "70H",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "refreshEligCarrySource",
@@ -5142,7 +5430,8 @@
    "disposition": "move",
    "delivery": "70H",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "showSimplifiedEligibilityModal",
@@ -5158,7 +5447,8 @@
    "disposition": "move",
    "delivery": "70H",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "carryOverSummaryNote",
@@ -5174,7 +5464,8 @@
    "disposition": "move",
    "delivery": "70H",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "doConfirmSimplifiedEligibility",
@@ -5192,7 +5483,8 @@
    "disposition": "move",
    "delivery": "70H",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "showRenameWardModal",
@@ -5211,7 +5503,8 @@
    "disposition": "move",
    "delivery": "70H",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "doRenameWard",
@@ -5229,7 +5522,8 @@
    "disposition": "move",
    "delivery": "70H",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "_pendingDeleteWardId",
@@ -5245,7 +5539,8 @@
    "disposition": "move",
    "delivery": "70H",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "confirmDeleteWard",
@@ -5264,7 +5559,8 @@
    "disposition": "move",
    "delivery": "70H",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "doDeleteWard",
@@ -5282,7 +5578,8 @@
    "disposition": "move",
    "delivery": "70H",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "doGuardianSetup",
@@ -5300,7 +5597,8 @@
    "disposition": "move",
    "delivery": "70H",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "getWardHeadlineTotal",
@@ -5318,7 +5616,8 @@
    "disposition": "move",
    "delivery": "70K",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Stays in 70D: it swaps window.D to compute another filing's total, which is exactly 70D's risk."
   },
   {
    "name": "INVENTORY_TYPE_META",
@@ -5332,9 +5631,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70K",
+   "delivery": "70C",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Filing-type registry data, a blank factory or a normalizer: 70C's scope (normalizeWardData is the .sav-load normalizer)."
   },
   {
    "name": "typeIcon",
@@ -5350,9 +5650,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70K",
+   "delivery": "70C",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Filing-type registry data, a blank factory or a normalizer: 70C's scope (normalizeWardData is the .sav-load normalizer)."
   },
   {
    "name": "formatDashboardCurrency",
@@ -5366,9 +5667,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70K",
+   "delivery": "70B",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "A pure calculation or formatter with no DOM or state: 70B."
   },
   {
    "name": "syncActiveWardNameDisplay",
@@ -5385,9 +5687,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70K",
+   "delivery": "70H",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Sidebar, header, picker or tab-coordination UI -- a shell controller (70H). The router banner above it is historical: the router itself moved to src/core/navigation/router.js."
   },
   {
    "name": "getPrimaryGuardianDisplayName",
@@ -5401,9 +5704,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70K",
+   "delivery": "70H",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Sidebar, header, picker or tab-coordination UI -- a shell controller (70H). The router banner above it is historical: the router itself moved to src/core/navigation/router.js."
   },
   {
    "name": "syncGuardianNameDisplay",
@@ -5420,9 +5724,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70K",
+   "delivery": "70H",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Sidebar, header, picker or tab-coordination UI -- a shell controller (70H). The router banner above it is historical: the router itself moved to src/core/navigation/router.js."
   },
   {
    "name": "refreshWardInfoCard",
@@ -5438,9 +5743,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70K",
+   "delivery": "70H",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Sidebar, header, picker or tab-coordination UI -- a shell controller (70H). The router banner above it is historical: the router itself moved to src/core/navigation/router.js."
   },
   {
    "name": "collapseWardControls",
@@ -5456,9 +5762,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70K",
+   "delivery": "70H",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Sidebar, header, picker or tab-coordination UI -- a shell controller (70H). The router banner above it is historical: the router itself moved to src/core/navigation/router.js."
   },
   {
    "name": "_saveControlsCollapsed",
@@ -5472,9 +5779,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70K",
+   "delivery": "70H",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Sidebar, header, picker or tab-coordination UI -- a shell controller (70H). The router banner above it is historical: the router itself moved to src/core/navigation/router.js."
   },
   {
    "name": "_saveControlsUserToggled",
@@ -5488,9 +5796,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70K",
+   "delivery": "70H",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Sidebar, header, picker or tab-coordination UI -- a shell controller (70H). The router banner above it is historical: the router itself moved to src/core/navigation/router.js."
   },
   {
    "name": "applySaveControlsCollapsedState",
@@ -5504,9 +5813,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70K",
+   "delivery": "70H",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Sidebar, header, picker or tab-coordination UI -- a shell controller (70H). The router banner above it is historical: the router itself moved to src/core/navigation/router.js."
   },
   {
    "name": "collapseSaveControls",
@@ -5522,9 +5832,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70K",
+   "delivery": "70H",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Sidebar, header, picker or tab-coordination UI -- a shell controller (70H). The router banner above it is historical: the router itself moved to src/core/navigation/router.js."
   },
   {
    "name": "toggleSaveControls",
@@ -5540,9 +5851,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70K",
+   "delivery": "70H",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Sidebar, header, picker or tab-coordination UI -- a shell controller (70H). The router banner above it is historical: the router itself moved to src/core/navigation/router.js."
   },
   {
    "name": "updateSidebar",
@@ -5559,9 +5871,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70K",
+   "delivery": "70H",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Sidebar, header, picker or tab-coordination UI -- a shell controller (70H). The router banner above it is historical: the router itself moved to src/core/navigation/router.js."
   },
   {
    "name": "convertSourceShowDropdown",
@@ -5577,7 +5890,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "onConvertSourceInput",
@@ -5595,7 +5909,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "onConvertSourceFocus",
@@ -5613,7 +5928,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "onConvertSourceKeydown",
@@ -5631,7 +5947,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "updateConvertNotePreview",
@@ -5649,7 +5966,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "describeConversion",
@@ -5665,7 +5983,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "mapConvertedHeaderFields",
@@ -5681,7 +6000,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "convertGuardianSchedulesToAnnual",
@@ -5697,7 +6017,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "convertGuardianExtrasToAnnual",
@@ -5713,7 +6034,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "convertToSimplified",
@@ -5729,7 +6051,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "convertSimplifiedToAnnual",
@@ -5745,7 +6068,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "convertExistingWard",
@@ -5761,7 +6085,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "doConvertWard",
@@ -5779,7 +6104,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "WARD_SYSTEM_KEYS",
@@ -5795,7 +6121,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "snapshotCurrentYearData",
@@ -5811,7 +6138,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "applyYearData",
@@ -5827,7 +6155,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "resetYearlyFieldsForNewYear",
@@ -5843,7 +6172,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "describeYearLabel",
@@ -5859,7 +6189,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "checkInActiveYear",
@@ -5875,7 +6206,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "switchWardYear",
@@ -5891,7 +6223,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "startNewWardYear",
@@ -5907,7 +6240,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "_yearModalWardId",
@@ -5923,7 +6257,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "showStartNewYearModal",
@@ -5941,7 +6276,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "confirmStartNewYear",
@@ -5959,7 +6295,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "renderPriorYearsList",
@@ -5975,7 +6312,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "showPriorYearsModal",
@@ -5993,7 +6331,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "editPriorYear",
@@ -6011,7 +6350,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "periodKeyForYearData",
@@ -6027,7 +6367,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "deleteWardYear",
@@ -6043,7 +6384,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "_pendingDeleteYear",
@@ -6059,7 +6401,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "confirmDeleteWardYear",
@@ -6077,7 +6420,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "doDeleteWardYear",
@@ -6095,7 +6439,8 @@
    "disposition": "move",
    "delivery": "70G",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "SHOW_COMMENT_CARD_LINK",
@@ -6113,7 +6458,8 @@
    "disposition": "move",
    "delivery": "70H",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "pageInventorySelector",
@@ -6131,7 +6477,8 @@
    "disposition": "move",
    "delivery": "70H",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "showAddWardModalForType",
@@ -6143,13 +6490,14 @@
    "moduleConsumers": [
     "src/form-events.js"
    ],
-   "e2eFiles": 8,
+   "e2eFiles": 9,
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
    "delivery": "70H",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "emptyDataGuardian",
@@ -6165,7 +6513,8 @@
    "disposition": "move",
    "delivery": "70C",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "PAGES_GUARDIAN",
@@ -6183,7 +6532,8 @@
    "disposition": "move",
    "delivery": "70C",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "_simplifiedFeatureBridge",
@@ -6197,9 +6547,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70C",
+   "delivery": "70K",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "A feature bridge like the other seven, which move together in 70K; the Simplified one sits in the Guardian wizard's section by accident."
   },
   {
    "name": "getSimplifiedFeatureBridge",
@@ -6213,9 +6564,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70C",
+   "delivery": "70K",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "A feature bridge like the other seven, which move together in 70K; the Simplified one sits in the Guardian wizard's section by accident."
   },
   {
    "name": "mountSimplifiedFeature",
@@ -6232,9 +6584,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70C",
+   "delivery": "70K",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "A feature bridge like the other seven, which move together in 70K; the Simplified one sits in the Guardian wizard's section by accident."
   },
   {
    "name": "mountSimplifiedNav",
@@ -6248,9 +6601,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70C",
+   "delivery": "70K",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "A feature bridge like the other seven, which move together in 70K; the Simplified one sits in the Guardian wizard's section by accident."
   },
   {
    "name": "_annualFeatureBridge",
@@ -6266,7 +6620,8 @@
    "disposition": "move",
    "delivery": "70K",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "getAnnualFeatureBridge",
@@ -6282,7 +6637,8 @@
    "disposition": "move",
    "delivery": "70K",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "mountAnnualFeature",
@@ -6301,7 +6657,8 @@
    "disposition": "move",
    "delivery": "70K",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "mountAnnualNav",
@@ -6317,7 +6674,8 @@
    "disposition": "move",
    "delivery": "70K",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "_guardianFeatureBridge",
@@ -6333,7 +6691,8 @@
    "disposition": "move",
    "delivery": "70K",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "getGuardianFeatureBridge",
@@ -6349,7 +6708,8 @@
    "disposition": "move",
    "delivery": "70K",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "mountGuardianFeature",
@@ -6368,7 +6728,8 @@
    "disposition": "move",
    "delivery": "70K",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "mountGuardianNav",
@@ -6384,7 +6745,8 @@
    "disposition": "move",
    "delivery": "70K",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "ensureGuardianFeatureReady",
@@ -6402,7 +6764,8 @@
    "disposition": "move",
    "delivery": "70K",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "_dashboardFeatureBridge",
@@ -6418,7 +6781,8 @@
    "disposition": "move",
    "delivery": "70K",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "getDashboardFeatureBridge",
@@ -6434,7 +6798,8 @@
    "disposition": "move",
    "delivery": "70K",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "mountDashboardFeature",
@@ -6452,7 +6817,8 @@
    "disposition": "move",
    "delivery": "70K",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "formatDisplayDate",
@@ -6474,9 +6840,10 @@
     "src/core/form/date-parser.js"
    ],
    "disposition": "move",
-   "delivery": "70K",
+   "delivery": "70B",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "A pure calculation or formatter with no DOM or state: 70B."
   },
   {
    "name": "inpS",
@@ -6496,9 +6863,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70K",
+   "delivery": "70F",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Form-field markup, field helpers or collection add/remove actions -- the shared form runtime (70F). They sit in the feature-bridge sections only because they were left behind when each feature was extracted."
   },
   {
    "name": "countyInputS",
@@ -6516,9 +6884,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70K",
+   "delivery": "70F",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Form-field markup, field helpers or collection add/remove actions -- the shared form runtime (70F). They sit in the feature-bridge sections only because they were left behind when each feature was extracted."
   },
   {
    "name": "txtP",
@@ -6537,9 +6906,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70K",
+   "delivery": "70F",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Form-field markup, field helpers or collection add/remove actions -- the shared form runtime (70F). They sit in the feature-bridge sections only because they were left behind when each feature was extracted."
   },
   {
    "name": "chkP",
@@ -6558,9 +6928,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70K",
+   "delivery": "70F",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Form-field markup, field helpers or collection add/remove actions -- the shared form runtime (70F). They sit in the feature-bridge sections only because they were left behind when each feature was extracted."
   },
   {
    "name": "yesNoRadioHTML",
@@ -6577,9 +6948,10 @@
    "unitSlices": 1,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70K",
+   "delivery": "70F",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Form-field markup, field helpers or collection add/remove actions -- the shared form runtime (70F). They sit in the feature-bridge sections only because they were left behind when each feature was extracted."
   },
   {
    "name": "planGuardianBlank",
@@ -6593,9 +6965,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70K",
+   "delivery": "70C",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Filing-type registry data, a blank factory or a normalizer: 70C's scope (normalizeWardData is the .sav-load normalizer)."
   },
   {
    "name": "planGuardianHasAnyData",
@@ -6609,9 +6982,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70K",
+   "delivery": "70C",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Filing-type registry data, a blank factory or a normalizer: 70C's scope (normalizeWardData is the .sav-load normalizer)."
   },
   {
    "name": "planGuardianMax",
@@ -6625,9 +6999,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70K",
+   "delivery": "70C",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Filing-type registry data, a blank factory or a normalizer: 70C's scope (normalizeWardData is the .sav-load normalizer)."
   },
   {
    "name": "normalizePlanGuardians",
@@ -6646,9 +7021,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70K",
+   "delivery": "70C",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Filing-type registry data, a blank factory or a normalizer: 70C's scope (normalizeWardData is the .sav-load normalizer)."
   },
   {
    "name": "addPlanGuardian",
@@ -6664,9 +7040,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70K",
+   "delivery": "70F",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Form-field markup, field helpers or collection add/remove actions -- the shared form runtime (70F). They sit in the feature-bridge sections only because they were left behind when each feature was extracted."
   },
   {
    "name": "removePlanGuardian",
@@ -6682,9 +7059,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70K",
+   "delivery": "70F",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Form-field markup, field helpers or collection add/remove actions -- the shared form runtime (70F). They sit in the feature-bridge sections only because they were left behind when each feature was extracted."
   },
   {
    "name": "yesNoCheckboxS",
@@ -6705,9 +7083,10 @@
    "unitSlices": 2,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70K",
+   "delivery": "70F",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Form-field markup, field helpers or collection add/remove actions -- the shared form runtime (70F). They sit in the feature-bridge sections only because they were left behind when each feature was extracted."
   },
   {
    "name": "yesNoCheckboxD",
@@ -6723,9 +7102,10 @@
    "unitSlices": 2,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70K",
+   "delivery": "70F",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Form-field markup, field helpers or collection add/remove actions -- the shared form runtime (70F). They sit in the feature-bridge sections only because they were left behind when each feature was extracted."
   },
   {
    "name": "yesNoRadioAnnualHTML",
@@ -6741,9 +7121,10 @@
    "unitSlices": 2,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70K",
+   "delivery": "70F",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Form-field markup, field helpers or collection add/remove actions -- the shared form runtime (70F). They sit in the feature-bridge sections only because they were left behind when each feature was extracted."
   },
   {
    "name": "radioP",
@@ -6760,9 +7141,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70K",
+   "delivery": "70F",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Form-field markup, field helpers or collection add/remove actions -- the shared form runtime (70F). They sit in the feature-bridge sections only because they were left behind when each feature was extracted."
   },
   {
    "name": "pageNavS",
@@ -6782,9 +7164,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70K",
+   "delivery": "70F",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Form-field markup, field helpers or collection add/remove actions -- the shared form runtime (70F). They sit in the feature-bridge sections only because they were left behind when each feature was extracted."
   },
   {
    "name": "calcTotals",
@@ -6801,9 +7184,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70K",
+   "delivery": "70B",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "A pure calculation or formatter with no DOM or state: 70B."
   },
   {
    "name": "tdSig",
@@ -6817,9 +7201,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70K",
+   "delivery": "70F",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Form-field markup, field helpers or collection add/remove actions -- the shared form runtime (70F). They sit in the feature-bridge sections only because they were left behind when each feature was extracted."
   },
   {
    "name": "_planSimplifiedFeatureBridge",
@@ -6835,7 +7220,8 @@
    "disposition": "move",
    "delivery": "70K",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "getPlanSimplifiedFeatureBridge",
@@ -6851,7 +7237,8 @@
    "disposition": "move",
    "delivery": "70K",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "mountPlanSimplifiedFeature",
@@ -6870,7 +7257,8 @@
    "disposition": "move",
    "delivery": "70K",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "mountPlanSimplifiedNav",
@@ -6886,7 +7274,8 @@
    "disposition": "move",
    "delivery": "70K",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "_planAnnualFeatureBridge",
@@ -6902,7 +7291,8 @@
    "disposition": "move",
    "delivery": "70K",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "getPlanAnnualFeatureBridge",
@@ -6918,7 +7308,8 @@
    "disposition": "move",
    "delivery": "70K",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "mountPlanAnnualFeature",
@@ -6937,7 +7328,8 @@
    "disposition": "move",
    "delivery": "70K",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "mountPlanAnnualNav",
@@ -6953,7 +7345,8 @@
    "disposition": "move",
    "delivery": "70K",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "planQ",
@@ -6971,9 +7364,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70K",
+   "delivery": "70F",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Form-field markup, field helpers or collection add/remove actions -- the shared form runtime (70F). They sit in the feature-bridge sections only because they were left behind when each feature was extracted."
   },
   {
    "name": "planCheckGroup",
@@ -6991,9 +7385,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70K",
+   "delivery": "70F",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Form-field markup, field helpers or collection add/remove actions -- the shared form runtime (70F). They sit in the feature-bridge sections only because they were left behind when each feature was extracted."
   },
   {
    "name": "planEmptyRow",
@@ -7007,9 +7402,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70K",
+   "delivery": "70C",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Filing-type registry data, a blank factory or a normalizer: 70C's scope (normalizeWardData is the .sav-load normalizer)."
   },
   {
    "name": "addPlanRow",
@@ -7025,9 +7421,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70K",
+   "delivery": "70F",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Form-field markup, field helpers or collection add/remove actions -- the shared form runtime (70F). They sit in the feature-bridge sections only because they were left behind when each feature was extracted."
   },
   {
    "name": "removePlanRow",
@@ -7043,9 +7440,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70K",
+   "delivery": "70F",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Form-field markup, field helpers or collection add/remove actions -- the shared form runtime (70F). They sit in the feature-bridge sections only because they were left behind when each feature was extracted."
   },
   {
    "name": "duplicatePlanRow",
@@ -7061,9 +7459,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70K",
+   "delivery": "70F",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Form-field markup, field helpers or collection add/remove actions -- the shared form runtime (70F). They sit in the feature-bridge sections only because they were left behind when each feature was extracted."
   },
   {
    "name": "_planInitialFeatureBridge",
@@ -7079,7 +7478,8 @@
    "disposition": "move",
    "delivery": "70K",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "getPlanInitialFeatureBridge",
@@ -7095,7 +7495,8 @@
    "disposition": "move",
    "delivery": "70K",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "mountPlanInitialFeature",
@@ -7114,7 +7515,8 @@
    "disposition": "move",
    "delivery": "70K",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "mountPlanInitialNav",
@@ -7130,7 +7532,8 @@
    "disposition": "move",
    "delivery": "70K",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "_planMinorFeatureBridge",
@@ -7146,7 +7549,8 @@
    "disposition": "move",
    "delivery": "70K",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "getPlanMinorFeatureBridge",
@@ -7162,7 +7566,8 @@
    "disposition": "move",
    "delivery": "70K",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "mountPlanMinorFeature",
@@ -7181,7 +7586,8 @@
    "disposition": "move",
    "delivery": "70K",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "mountPlanMinorNav",
@@ -7197,7 +7603,8 @@
    "disposition": "move",
    "delivery": "70K",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "sanitizeNegativeAmounts",
@@ -7215,9 +7622,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70K",
+   "delivery": "70F",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Form-field markup, field helpers or collection add/remove actions -- the shared form runtime (70F). They sit in the feature-bridge sections only because they were left behind when each feature was extracted."
   },
   {
    "name": "n",
@@ -7238,7 +7646,8 @@
    "disposition": "move",
    "delivery": "70K",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "pct",
@@ -7258,7 +7667,8 @@
    "disposition": "move",
    "delivery": "70K",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Deleted on master in c62f890 (its only caller now imports totals.js's copy); a re-implement row in MILESTONE-70-FIX-LEDGER.md."
   },
   {
    "name": "excelCapacityPanel",
@@ -7278,7 +7688,8 @@
    "disposition": "move",
    "delivery": "70F",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "mk",
@@ -7297,7 +7708,8 @@
    "disposition": "move",
    "delivery": "70C",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "BLANK_SCHEDULE_ENTRY",
@@ -7315,7 +7727,8 @@
    "disposition": "move",
    "delivery": "70C",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Published on window on master in b28bf25; a re-implement row in MILESTONE-70-FIX-LEDGER.md."
   },
   {
    "name": "BLANK_CARD_COLLECTIONS",
@@ -7333,7 +7746,8 @@
    "disposition": "delete-as-dead",
    "delivery": "70C",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24)."
   },
   {
    "name": "GUARDIAN_CALC_METHODS",
@@ -7351,7 +7765,8 @@
    "disposition": "move",
    "delivery": "70B",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "calc",
@@ -7369,7 +7784,8 @@
    "disposition": "move",
    "delivery": "70B",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "normalizeWardData",
@@ -7385,9 +7801,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70B",
+   "delivery": "70C",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Filing-type registry data, a blank factory or a normalizer: 70C's scope (normalizeWardData is the .sav-load normalizer)."
   },
   {
    "name": "SCHEDULE_NAV_KEYS",
@@ -7405,7 +7822,8 @@
    "disposition": "move",
    "delivery": "70F",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "toggleSsnReveal",
@@ -7423,7 +7841,8 @@
    "disposition": "move",
    "delivery": "70F",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "getPath",
@@ -7441,7 +7860,8 @@
    "disposition": "move",
    "delivery": "70F",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "setPath",
@@ -7469,7 +7889,8 @@
    "disposition": "move",
    "delivery": "70F",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "bindForms",
@@ -7487,7 +7908,8 @@
    "disposition": "move",
    "delivery": "70F",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "computeNavChecks",
@@ -7511,7 +7933,8 @@
    "disposition": "move",
    "delivery": "70D",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "updateNavDots",
@@ -7534,7 +7957,8 @@
    "disposition": "move",
    "delivery": "70D",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Stays in 70D with its evaluator: it is the sidebar's only caller of applyNavChecks()."
   },
   {
    "name": "pageCompleteness",
@@ -7550,7 +7974,8 @@
    "disposition": "move",
    "delivery": "70D",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "isScheduleIncomplete",
@@ -7566,7 +7991,8 @@
    "disposition": "move",
    "delivery": "70D",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "updateCurrentScheduleNextButton",
@@ -7582,7 +8008,8 @@
    "disposition": "move",
    "delivery": "70D",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "getWardProgress",
@@ -7600,7 +8027,8 @@
    "disposition": "move",
    "delivery": "70D",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "applyNavChecks",
@@ -7616,7 +8044,8 @@
    "disposition": "move",
    "delivery": "70D",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "_navSectionExpandedKey",
@@ -7632,7 +8061,8 @@
    "disposition": "move",
    "delivery": "70F",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "toggleNavSection",
@@ -7648,7 +8078,8 @@
    "disposition": "move",
    "delivery": "70F",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "resetNavSectionExpanded",
@@ -7666,7 +8097,8 @@
    "disposition": "move",
    "delivery": "70F",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "applyNavSectionCollapse",
@@ -7682,7 +8114,8 @@
    "disposition": "move",
    "delivery": "70F",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "renderProgressSummary",
@@ -7698,7 +8131,8 @@
    "disposition": "move",
    "delivery": "70F",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "getCurrentPageKey",
@@ -7716,7 +8150,8 @@
    "disposition": "move",
    "delivery": "70F",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "afterChange",
@@ -7734,7 +8169,8 @@
    "disposition": "move",
    "delivery": "70F",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "updateCalcFields",
@@ -7750,7 +8186,8 @@
    "disposition": "move",
    "delivery": "70F",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "linkAccordions",
@@ -7770,7 +8207,8 @@
    "disposition": "move",
    "delivery": "70F",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "browserRecommendationNotice",
@@ -7790,7 +8228,8 @@
    "disposition": "move",
    "delivery": "70F",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "SCHEDULE_DOC_MAX_FILE_BYTES",
@@ -7806,7 +8245,8 @@
    "disposition": "move",
    "delivery": "70F",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "getSupplementalPdfTools",
@@ -7822,7 +8262,8 @@
    "disposition": "move",
    "delivery": "70F",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "scheduleDocPeriodKey",
@@ -7838,7 +8279,8 @@
    "disposition": "move",
    "delivery": "70F",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "getScheduleDocSlot",
@@ -7854,7 +8296,8 @@
    "disposition": "move",
    "delivery": "70F",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "fmtFileSize",
@@ -7870,7 +8313,8 @@
    "disposition": "move",
    "delivery": "70F",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "handleScheduleDocUpload",
@@ -7888,7 +8332,8 @@
    "disposition": "move",
    "delivery": "70F",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "removeScheduleDoc",
@@ -7906,7 +8351,8 @@
    "disposition": "move",
    "delivery": "70F",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "prepareScheduleDocForValidation",
@@ -7922,7 +8368,8 @@
    "disposition": "move",
    "delivery": "70F",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "queueScheduleDocValidation",
@@ -7938,7 +8385,8 @@
    "disposition": "move",
    "delivery": "70F",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "queueAllScheduleDocValidations",
@@ -7962,7 +8410,8 @@
    "disposition": "move",
    "delivery": "70F",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "updateScheduleComment",
@@ -7980,7 +8429,8 @@
    "disposition": "move",
    "delivery": "70F",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "renderScheduleDocsSection",
@@ -8004,7 +8454,8 @@
    "disposition": "move",
    "delivery": "70F",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "td",
@@ -8020,7 +8471,8 @@
    "disposition": "move",
    "delivery": "70F",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "tdR",
@@ -8036,7 +8488,8 @@
    "disposition": "delete-as-dead",
    "delivery": "70F",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24)."
   },
   {
    "name": "validate",
@@ -8052,7 +8505,8 @@
    "disposition": "move",
    "delivery": "70F",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "openFloridaCourtPortal",
@@ -8070,9 +8524,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70F",
+   "delivery": "70H",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Sidebar, header, picker or tab-coordination UI -- a shell controller (70H). The router banner above it is historical: the router itself moved to src/core/navigation/router.js."
   },
   {
    "name": "PAGES_SIMPLIFIED",
@@ -8088,7 +8543,8 @@
    "disposition": "move",
    "delivery": "70K",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "PAGES_ANNUAL",
@@ -8104,7 +8560,8 @@
    "disposition": "move",
    "delivery": "70K",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "PAGES_PLAN_SIMPLIFIED",
@@ -8120,7 +8577,8 @@
    "disposition": "move",
    "delivery": "70K",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "PAGES_PLAN_ANNUAL",
@@ -8136,7 +8594,8 @@
    "disposition": "move",
    "delivery": "70K",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "PAGES_PLAN_INITIAL",
@@ -8152,7 +8611,8 @@
    "disposition": "move",
    "delivery": "70K",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "PAGES_PLAN_MINOR",
@@ -8168,7 +8628,8 @@
    "disposition": "move",
    "delivery": "70K",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "PAGES",
@@ -8184,7 +8645,8 @@
    "disposition": "move",
    "delivery": "70K",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "updateNavActive",
@@ -8200,7 +8662,8 @@
    "disposition": "move",
    "delivery": "70K",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "SPECIAL_PAGES",
@@ -8216,7 +8679,8 @@
    "disposition": "move",
    "delivery": "70K",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "handleHash",
@@ -8232,7 +8696,8 @@
    "disposition": "move",
    "delivery": "70K",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "warnBeforeUnloadIfDirty",
@@ -8246,9 +8711,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70K",
+   "delivery": "70I",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Save, auto-save, export-dirty tracking, template loading or the continue prompt -- persistence and startup (70I), not the section it sits in."
   },
   {
    "name": "TEMPLATE_FILES",
@@ -8262,9 +8728,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70K",
+   "delivery": "70I",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Save, auto-save, export-dirty tracking, template loading or the continue prompt -- persistence and startup (70I), not the section it sits in."
   },
   {
    "name": "isValidXlsxB64",
@@ -8278,9 +8745,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70K",
+   "delivery": "70I",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Save, auto-save, export-dirty tracking, template loading or the continue prompt -- persistence and startup (70I), not the section it sits in."
   },
   {
    "name": "fetchAndCacheTemplate",
@@ -8294,9 +8762,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70K",
+   "delivery": "70I",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Save, auto-save, export-dirty tracking, template loading or the continue prompt -- persistence and startup (70I), not the section it sits in."
   },
   {
    "name": "ensureTemplate",
@@ -8314,9 +8783,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70K",
+   "delivery": "70I",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Save, auto-save, export-dirty tracking, template loading or the continue prompt -- persistence and startup (70I), not the section it sits in."
   },
   {
    "name": "autoLoadTemplates",
@@ -8330,9 +8800,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70K",
+   "delivery": "70I",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Save, auto-save, export-dirty tracking, template loading or the continue prompt -- persistence and startup (70I), not the section it sits in."
   },
   {
    "name": "renderCopyrightNotice",
@@ -8346,9 +8817,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70K",
+   "delivery": "70H",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Sidebar, header, picker or tab-coordination UI -- a shell controller (70H). The router banner above it is historical: the router itself moved to src/core/navigation/router.js."
   },
   {
    "name": "initApp",
@@ -8366,7 +8838,8 @@
    "disposition": "move",
    "delivery": "70K",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": null
   },
   {
    "name": "linkLabelsToInputs",
@@ -8384,9 +8857,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70K",
+   "delivery": "70F",
    "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Form-field markup, field helpers or collection add/remove actions -- the shared form runtime (70F). They sit in the feature-bridge sections only because they were left behind when each feature was extracted."
   },
   {
    "name": "_wardLockedPreviousFocus",
@@ -8400,9 +8874,10 @@
    "unitSlices": 0,
    "duplicateOf": [],
    "disposition": "move",
-   "delivery": "70K",
+   "delivery": "70H",
    "wrapperWhile": null,
-   "reviewed": false
+   "reviewed": true,
+   "reviewNote": "Sidebar, header, picker or tab-coordination UI -- a shell controller (70H). The router banner above it is historical: the router itself moved to src/core/navigation/router.js."
   }
  ],
  "windowExports": [
@@ -8920,7 +9395,7 @@
     "src/legacy-app.js",
     "src/shell-events.js"
    ],
-   "e2eFiles": 86,
+   "e2eFiles": 88,
    "reason": "monolith-and-modules"
   },
   {
@@ -9198,7 +9673,7 @@
     "src/legacy-app.js",
     "src/modal-events.js"
    ],
-   "e2eFiles": 12,
+   "e2eFiles": 14,
    "reason": "monolith-and-modules"
   },
   {
@@ -9563,7 +10038,7 @@
    "name": "buildCaseFileBlob",
    "via": "assignment",
    "readers": [],
-   "e2eFiles": 4,
+   "e2eFiles": 5,
    "reason": "tests-only"
   },
   {
@@ -9929,16 +10404,16 @@
    "name": "_cryptoKey",
    "via": "assignment",
    "readers": [],
-   "e2eFiles": 0,
-   "reason": "no-consumer"
+   "e2eFiles": 1,
+   "reason": "tests-only"
   },
   {
    "file": "src/core/persistence/crypto.js",
    "name": "_securityMode",
    "via": "assignment",
    "readers": [],
-   "e2eFiles": 0,
-   "reason": "no-consumer"
+   "e2eFiles": 1,
+   "reason": "tests-only"
   },
   {
    "file": "src/core/persistence/crypto.js",
@@ -9965,7 +10440,7 @@
    "readers": [
     "src/legacy-app.js"
    ],
-   "e2eFiles": 0,
+   "e2eFiles": 1,
    "reason": "monolith-only"
   },
   {
@@ -10049,7 +10524,7 @@
    "name": "hasOpenedCaseBefore",
    "via": "assignment",
    "readers": [],
-   "e2eFiles": 1,
+   "e2eFiles": 2,
    "reason": "tests-only"
   },
   {
@@ -10156,7 +10631,7 @@
    "readers": [
     "src/legacy-app.js"
    ],
-   "e2eFiles": 1,
+   "e2eFiles": 2,
    "reason": "monolith-only"
   },
   {
@@ -10204,7 +10679,7 @@
     "src/core/party-resolver.js",
     "src/shell-events.js"
    ],
-   "e2eFiles": 18,
+   "e2eFiles": 22,
    "reason": "modules-only"
   },
   {
@@ -10245,7 +10720,7 @@
     "src/form-events.js",
     "src/legacy-app.js"
    ],
-   "e2eFiles": 78,
+   "e2eFiles": 81,
    "reason": "monolith-and-modules"
   },
   {
@@ -10988,7 +11463,7 @@
    "readers": [
     "src/core/persistence/crypto.js"
    ],
-   "e2eFiles": 0,
+   "e2eFiles": 1,
    "reason": "modules-only"
   },
   {
@@ -11029,7 +11504,7 @@
    "readers": [
     "src/core/persistence/crypto.js"
    ],
-   "e2eFiles": 0,
+   "e2eFiles": 1,
    "reason": "modules-only"
   },
   {
@@ -11105,7 +11580,7 @@
     "src/core/state.js",
     "src/shell-events.js"
    ],
-   "e2eFiles": 18,
+   "e2eFiles": 22,
    "reason": "modules-only"
   },
   {
@@ -11186,7 +11661,7 @@
     "src/features/simplified-accounting/print.js",
     "src/form-events.js"
    ],
-   "e2eFiles": 78,
+   "e2eFiles": 81,
    "reason": "modules-only"
   },
   {
@@ -11604,7 +12079,7 @@
     "src/core/state.js",
     "src/shell-events.js"
    ],
-   "e2eFiles": 18,
+   "e2eFiles": 22,
    "reason": "modules-only"
   },
   {
@@ -11646,7 +12121,7 @@
     "src/form-events.js",
     "src/legacy-app.js"
    ],
-   "e2eFiles": 78,
+   "e2eFiles": 81,
    "reason": "monolith-and-modules"
   },
   {
@@ -11694,7 +12169,7 @@
     "src/legacy-app.js",
     "src/shell-events.js"
    ],
-   "e2eFiles": 86,
+   "e2eFiles": 88,
    "reason": "monolith-and-modules"
   },
   {

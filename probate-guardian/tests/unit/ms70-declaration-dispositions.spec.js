@@ -2,15 +2,16 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { describe, expect, test } from 'vitest';
 import {
-  DISPOSITIONS_PATH, DISPOSITION_KINDS, DELIVERIES, sectionsOf, declarationsOf,
+  DISPOSITIONS_PATH, REVIEW_PATH, DISPOSITION_KINDS, DELIVERIES, sectionsOf, declarationsOf,
 } from '../../scripts/ms70-declaration-dispositions.mjs';
 
 // Milestone 70, 70A gate: "every legacy declaration has a disposition".
-// tests/baseline/ms70-declaration-dispositions.json is a reviewable draft --
-// each entry reviewed:false until confirmed -- built from reference evidence
-// by scripts/ms70-declaration-dispositions.mjs. This keeps it complete as the
-// monolith changes: a new declaration without an entry, or an entry for one
-// that no longer exists, fails.
+// tests/baseline/ms70-declaration-dispositions.json is built from reference
+// evidence by scripts/ms70-declaration-dispositions.mjs and corrected by the
+// owner's review (tests/baseline/ms70-declaration-review.json). This keeps it
+// complete and reviewed as the monolith changes: a new declaration without an
+// entry, an entry for one that no longer exists, or an entry whose placement
+// no longer matches what the review confirmed, fails.
 
 const ROOT = path.join(__dirname, '..', '..');
 
@@ -52,5 +53,13 @@ describe('the draft against src/legacy-app.js', () => {
   test('every entry carries an allowed disposition and a delivery', () => {
     const bad = draft.declarations.filter((d) => !DISPOSITION_KINDS.includes(d.disposition) || !DELIVERIES.includes(d.delivery));
     expect(bad.map((d) => d.name)).toEqual([]);
+  });
+
+  test("every entry is reviewed: its placement still matches the owner's review, and every correction says why", () => {
+    const review = JSON.parse(fs.readFileSync(path.join(ROOT, REVIEW_PATH), 'utf8'));
+    expect(draft.declarations.filter((d) => !d.reviewed).map((d) => `${d.name} (${d.disposition} ${d.delivery})`),
+      'unreviewed: review it and record it in tests/baseline/ms70-declaration-review.json').toEqual([]);
+    expect(Object.entries(review.overrides).filter(([, o]) => !review.why[o.why]).map(([n]) => n), 'an override without a reason').toEqual([]);
+    expect(Object.keys(review.overrides).filter((n) => n in review.confirmed), 'both overridden and confirmed').toEqual([]);
   });
 });

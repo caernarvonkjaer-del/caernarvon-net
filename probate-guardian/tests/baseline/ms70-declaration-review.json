@@ -1,0 +1,801 @@
+{
+ "note": "Milestone 70, 70A: the delivery owner's review of tests/baseline/ms70-declaration-dispositions.json. The draft places each declaration by the monolith section it sits in; the review found that rule wrong for 94 declarations (sections whose banner no longer describes what is under them) and one disposition (_visitedPages, dead). scripts/ms70-declaration-dispositions.mjs applies these overrides and marks a declaration reviewed only while its disposition and delivery still match what is recorded here, so a declaration that appears later starts unreviewed and fails tests/unit/ms70-declaration-dispositions.spec.js.",
+ "reviewedBy": "Claude (Milestone 70 delivery owner)",
+ "reviewedOn": "2026-09-24",
+ "method": "Every section's declarations were read against the plan's delivery scopes (MILESTONE-70-PROPOSAL.md, 'Delivery map'); every delete-as-dead and test-only candidate was searched for by name across src, index.html, fragments, help and tests, markup and window reads included; each duplicate keeps its duplicateOf module as the canonical home.",
+ "why": {
+  "state-owner": "The case-state root. 70E adopts a store seam while this stays the owner; the declaration goes when the module store becomes the sole owner (70J), not with the section it happens to sit in.",
+  "router-state": "Navigation state the router owns (src/core/navigation/router.js reads and writes it); moves with the router in 70K.",
+  "persistence": "Save, auto-save, export-dirty tracking, template loading or the continue prompt -- persistence and startup (70I), not the section it sits in.",
+  "store-seam": "An accessor modules call to read case state: exactly what 70E's store seam replaces.",
+  "shell": "Sidebar, header, picker or tab-coordination UI -- a shell controller (70H). The router banner above it is historical: the router itself moved to src/core/navigation/router.js.",
+  "registry": "Filing-type registry data, a blank factory or a normalizer: 70C's scope (normalizeWardData is the .sav-load normalizer).",
+  "pure": "A pure calculation or formatter with no DOM or state: 70B.",
+  "form-runtime": "Form-field markup, field helpers or collection add/remove actions -- the shared form runtime (70F). They sit in the feature-bridge sections only because they were left behind when each feature was extracted.",
+  "bridge": "A feature bridge like the other seven, which move together in 70K; the Simplified one sits in the Guardian wizard's section by accident.",
+  "dead-visited": "Dead on both sides: a `let` is never a window property, so the three module references (router.js add, ward-lifecycle.js clear x2) read window._visitedPages as undefined and never run, and the monolith never reads it. Delete it and those three references together in 70E."
+ },
+ "overrides": {
+  "INVENTORY_TYPE_META": {
+   "delivery": "70C",
+   "why": "registry"
+  },
+  "TEMPLATE_FILES": {
+   "delivery": "70I",
+   "why": "persistence"
+  },
+  "_autoExportIntervalMinutes": {
+   "delivery": "70I",
+   "why": "persistence"
+  },
+  "_dirtySinceExport": {
+   "delivery": "70I",
+   "why": "persistence"
+  },
+  "_lastExportAt": {
+   "delivery": "70I",
+   "why": "persistence"
+  },
+  "_saveControlsCollapsed": {
+   "delivery": "70H",
+   "why": "shell"
+  },
+  "_saveControlsUserToggled": {
+   "delivery": "70H",
+   "why": "shell"
+  },
+  "_saveTimer": {
+   "delivery": "70I",
+   "why": "persistence"
+  },
+  "_simplifiedFeatureBridge": {
+   "delivery": "70K",
+   "why": "bridge"
+  },
+  "_visitedPages": {
+   "delivery": "70E",
+   "why": "dead-visited",
+   "disposition": "delete-as-dead"
+  },
+  "_wardLockedPreviousFocus": {
+   "delivery": "70H",
+   "why": "shell"
+  },
+  "activeInventoryType": {
+   "delivery": "70J",
+   "why": "state-owner"
+  },
+  "addPlanGuardian": {
+   "delivery": "70F",
+   "why": "form-runtime"
+  },
+  "addPlanRow": {
+   "delivery": "70F",
+   "why": "form-runtime"
+  },
+  "applySaveControlsCollapsedState": {
+   "delivery": "70H",
+   "why": "shell"
+  },
+  "autoLoadTemplates": {
+   "delivery": "70I",
+   "why": "persistence"
+  },
+  "autoSave": {
+   "delivery": "70I",
+   "why": "persistence"
+  },
+  "bindComboboxKeyboardNav": {
+   "delivery": "70H",
+   "why": "shell"
+  },
+  "calcTotals": {
+   "delivery": "70B",
+   "why": "pure"
+  },
+  "caseFile": {
+   "delivery": "70J",
+   "why": "state-owner"
+  },
+  "chkP": {
+   "delivery": "70F",
+   "why": "form-runtime"
+  },
+  "collapseSaveControls": {
+   "delivery": "70H",
+   "why": "shell"
+  },
+  "collapseWardControls": {
+   "delivery": "70H",
+   "why": "shell"
+  },
+  "comboboxAssignOptionIds": {
+   "delivery": "70H",
+   "why": "shell"
+  },
+  "comboboxFilterItems": {
+   "delivery": "70H",
+   "why": "shell"
+  },
+  "comboboxHide": {
+   "delivery": "70H",
+   "why": "shell"
+  },
+  "comboboxRenderDropdown": {
+   "delivery": "70H",
+   "why": "shell"
+  },
+  "countyAutocompleteHTML": {
+   "delivery": "70F",
+   "why": "form-runtime"
+  },
+  "countyInputS": {
+   "delivery": "70F",
+   "why": "form-runtime"
+  },
+  "currentPage": {
+   "delivery": "70K",
+   "why": "router-state"
+  },
+  "duplicatePlanRow": {
+   "delivery": "70F",
+   "why": "form-runtime"
+  },
+  "ensureTemplate": {
+   "delivery": "70I",
+   "why": "persistence"
+  },
+  "fetchAndCacheTemplate": {
+   "delivery": "70I",
+   "why": "persistence"
+  },
+  "filterCountyDropdown": {
+   "delivery": "70F",
+   "why": "form-runtime"
+  },
+  "flushPendingSave": {
+   "delivery": "70I",
+   "why": "persistence"
+  },
+  "formatDashboardCurrency": {
+   "delivery": "70B",
+   "why": "pure"
+  },
+  "formatDisplayDate": {
+   "delivery": "70B",
+   "why": "pure"
+  },
+  "getActiveWard": {
+   "delivery": "70E",
+   "why": "store-seam"
+  },
+  "getCaseFile": {
+   "delivery": "70E",
+   "why": "store-seam"
+  },
+  "getCurrentPage": {
+   "delivery": "70K",
+   "why": "router-state"
+  },
+  "getPrimaryGuardianDisplayName": {
+   "delivery": "70H",
+   "why": "shell"
+  },
+  "getProbateGuardianTabState": {
+   "delivery": "70H",
+   "why": "shell"
+  },
+  "getSimplifiedFeatureBridge": {
+   "delivery": "70K",
+   "why": "bridge"
+  },
+  "handleSwitchWardClick": {
+   "delivery": "70H",
+   "why": "shell"
+  },
+  "hideCountyDropdown": {
+   "delivery": "70F",
+   "why": "form-runtime"
+  },
+  "hideSaveError": {
+   "delivery": "70I",
+   "why": "persistence"
+  },
+  "inpS": {
+   "delivery": "70F",
+   "why": "form-runtime"
+  },
+  "isContinuePromptShown": {
+   "delivery": "70I",
+   "why": "persistence"
+  },
+  "isValidXlsxB64": {
+   "delivery": "70I",
+   "why": "persistence"
+  },
+  "linkLabelsToInputs": {
+   "delivery": "70F",
+   "why": "form-runtime"
+  },
+  "loadGuardianData": {
+   "delivery": "70I",
+   "why": "persistence"
+  },
+  "markContinuePromptShown": {
+   "delivery": "70I",
+   "why": "persistence"
+  },
+  "mountSimplifiedFeature": {
+   "delivery": "70K",
+   "why": "bridge"
+  },
+  "mountSimplifiedNav": {
+   "delivery": "70K",
+   "why": "bridge"
+  },
+  "normalizePlanGuardians": {
+   "delivery": "70C",
+   "why": "registry"
+  },
+  "normalizeWardData": {
+   "delivery": "70C",
+   "why": "registry"
+  },
+  "notifyProbateGuardianTabStateChanged": {
+   "delivery": "70H",
+   "why": "shell"
+  },
+  "onCountyKeydown": {
+   "delivery": "70F",
+   "why": "form-runtime"
+  },
+  "onWardSelectorFocus": {
+   "delivery": "70H",
+   "why": "shell"
+  },
+  "onWardSelectorInput": {
+   "delivery": "70H",
+   "why": "shell"
+  },
+  "onWardSelectorKeydown": {
+   "delivery": "70H",
+   "why": "shell"
+  },
+  "openFloridaCourtPortal": {
+   "delivery": "70H",
+   "why": "shell"
+  },
+  "pageIntroRow": {
+   "delivery": "70F",
+   "why": "form-runtime"
+  },
+  "pageNavS": {
+   "delivery": "70F",
+   "why": "form-runtime"
+  },
+  "planCheckGroup": {
+   "delivery": "70F",
+   "why": "form-runtime"
+  },
+  "planEmptyRow": {
+   "delivery": "70C",
+   "why": "registry"
+  },
+  "planGuardianBlank": {
+   "delivery": "70C",
+   "why": "registry"
+  },
+  "planGuardianHasAnyData": {
+   "delivery": "70C",
+   "why": "registry"
+  },
+  "planGuardianMax": {
+   "delivery": "70C",
+   "why": "registry"
+  },
+  "planQ": {
+   "delivery": "70F",
+   "why": "form-runtime"
+  },
+  "radioP": {
+   "delivery": "70F",
+   "why": "form-runtime"
+  },
+  "refreshWardInfoCard": {
+   "delivery": "70H",
+   "why": "shell"
+  },
+  "removePlanGuardian": {
+   "delivery": "70F",
+   "why": "form-runtime"
+  },
+  "removePlanRow": {
+   "delivery": "70F",
+   "why": "form-runtime"
+  },
+  "renderCopyrightNotice": {
+   "delivery": "70H",
+   "why": "shell"
+  },
+  "sanitizeNegativeAmounts": {
+   "delivery": "70F",
+   "why": "form-runtime"
+  },
+  "saveData": {
+   "delivery": "70I",
+   "why": "persistence"
+  },
+  "selectCountyOption": {
+   "delivery": "70F",
+   "why": "form-runtime"
+  },
+  "showSaveError": {
+   "delivery": "70I",
+   "why": "persistence"
+  },
+  "showSwitchWardPickerModal": {
+   "delivery": "70H",
+   "why": "shell"
+  },
+  "syncActiveWardNameDisplay": {
+   "delivery": "70H",
+   "why": "shell"
+  },
+  "syncGuardianNameDisplay": {
+   "delivery": "70H",
+   "why": "shell"
+  },
+  "tdSig": {
+   "delivery": "70F",
+   "why": "form-runtime"
+  },
+  "toggleSaveControls": {
+   "delivery": "70H",
+   "why": "shell"
+  },
+  "txtP": {
+   "delivery": "70F",
+   "why": "form-runtime"
+  },
+  "typeIcon": {
+   "delivery": "70C",
+   "why": "registry"
+  },
+  "updateSidebar": {
+   "delivery": "70H",
+   "why": "shell"
+  },
+  "wardSelectorItems": {
+   "delivery": "70H",
+   "why": "shell"
+  },
+  "wardSelectorShowDropdown": {
+   "delivery": "70H",
+   "why": "shell"
+  },
+  "warnBeforeUnloadIfDirty": {
+   "delivery": "70I",
+   "why": "persistence"
+  },
+  "yesNoCheckboxD": {
+   "delivery": "70F",
+   "why": "form-runtime"
+  },
+  "yesNoCheckboxS": {
+   "delivery": "70F",
+   "why": "form-runtime"
+  },
+  "yesNoRadioAnnualHTML": {
+   "delivery": "70F",
+   "why": "form-runtime"
+  },
+  "yesNoRadioHTML": {
+   "delivery": "70F",
+   "why": "form-runtime"
+  }
+ },
+ "notes": {
+  "BLANK_CARD_COLLECTIONS": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24).",
+  "BLANK_SCHEDULE_ENTRY": "Published on window on master in b28bf25; a re-implement row in MILESTONE-70-FIX-LEDGER.md.",
+  "CARRY_SOURCE_TYPE": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24).",
+  "LAUNCH_PREF_KEY_HANDLE": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24).",
+  "LAUNCH_PREF_KEY_OPENED": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24).",
+  "PBKDF2_ITERATIONS": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24).",
+  "PLAIN_MODE_PREFIX": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24).",
+  "REMEMBERED_FILE_TIMEOUT_MS": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24).",
+  "_launchPrefDelete": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24).",
+  "_launchPrefGet": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24).",
+  "_launchPrefPut": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24).",
+  "_sessionCacheClear": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24).",
+  "_sessionCachePut": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24).",
+  "circuitCourtCaption": "test-only confirmed: only tests/e2e/cover-county.spec.ts reads it (through window).",
+  "getWardHeadlineTotal": "Stays in 70D: it swaps window.D to compute another filing's total, which is exactly 70D's risk.",
+  "hasSixthCircuitLocalGuidance": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24).",
+  "loadCaseFileFromZip": "Changed on master in b2d97f5 (returns every part it could not read); a re-implement row in MILESTONE-70-FIX-LEDGER.md.",
+  "pct": "Deleted on master in c62f890 (its only caller now imports totals.js's copy); a re-implement row in MILESTONE-70-FIX-LEDGER.md.",
+  "tdR": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24).",
+  "updateNavDots": "Stays in 70D with its evaluator: it is the sidebar's only caller of applyNavChecks()."
+ },
+ "confirmed": {
+  "ACCOUNTING_FORM_TYPES": "move 70G",
+  "ACTIVITY_EVENT_META": "move 70H",
+  "ACTIVITY_LOG_RENDER_CAP": "move 70H",
+  "ANNUAL_FORM_ALIASES": "move 70C",
+  "AUTO_LOCK_MS": "move 70I",
+  "BLANK_CARD_COLLECTIONS": "delete-as-dead 70C",
+  "BLANK_SCHEDULE_ENTRY": "move 70C",
+  "CARRY_SOURCE_TYPE": "delete-as-dead 70G",
+  "CIRCUIT_ORDINALS": "move 70B",
+  "CRYPTO_VERIFIER_PLAINTEXT": "move 70I",
+  "EXCEL_IMPORT_LIMITS": "move 70B",
+  "FL_COUNTIES": "move 70B",
+  "FL_COUNTY_CIRCUIT": "move 70B",
+  "GUARDIAN_CALC_METHODS": "move 70B",
+  "HELP_CONTENT": "move 70H",
+  "ICONS": "move 70B",
+  "IMPORT_SIZE_LIMITS": "move 70B",
+  "INITIAL_ADLS": "move 70C",
+  "INITIAL_ADL_RATINGS": "move 70C",
+  "INVENTORY_TYPES": "move 70C",
+  "LAUNCH_PREF_DB": "move 70I",
+  "LAUNCH_PREF_KEY_HANDLE": "delete-as-dead 70I",
+  "LAUNCH_PREF_KEY_OPENED": "delete-as-dead 70I",
+  "LAUNCH_PREF_STORE": "move 70I",
+  "MISSING_COUNTY_CAPTION_HTML": "move 70B",
+  "PAGES": "move 70K",
+  "PAGES_ANNUAL": "move 70K",
+  "PAGES_GUARDIAN": "move 70C",
+  "PAGES_PLAN_ANNUAL": "move 70K",
+  "PAGES_PLAN_INITIAL": "move 70K",
+  "PAGES_PLAN_MINOR": "move 70K",
+  "PAGES_PLAN_SIMPLIFIED": "move 70K",
+  "PAGES_SIMPLIFIED": "move 70K",
+  "PARTY_FIELD_ROWS": "move 70G",
+  "PBKDF2_ITERATIONS": "delete-as-dead 70I",
+  "PLAIN_MODE_PREFIX": "delete-as-dead 70I",
+  "PLAN_ADLS": "move 70C",
+  "PLAN_ADL_RATINGS": "move 70C",
+  "PLAN_BENEFITS": "move 70C",
+  "PLAN_RIGHTS": "move 70C",
+  "PLAN_RIGHT_STATES": "move 70C",
+  "PLAN_SECTION_ROUTES": "move 70F",
+  "PRIOR_ACCOUNTING_SOURCES": "move 70G",
+  "RECENT_WARDS_MAX": "move 70G",
+  "REMEMBERED_FILE_TIMEOUT_MS": "delete-as-dead 70I",
+  "SCHEDULE_DOC_MAX_FILE_BYTES": "move 70F",
+  "SCHEDULE_NAV_KEYS": "move 70F",
+  "SESSION_CACHE_DB": "move 70I",
+  "SESSION_CACHE_STORE": "move 70I",
+  "SHOW_COMMENT_CARD_LINK": "move 70H",
+  "SLOT_FIELD_LABELS": "move 70G",
+  "SPECIAL_PAGES": "move 70K",
+  "TOOLTIPS": "move 70H",
+  "UNLOCK_FAIL_THRESHOLD": "move 70I",
+  "UNLOCK_LOCKOUT_BASE_MS": "move 70I",
+  "UNLOCK_LOCKOUT_MAX_MS": "move 70I",
+  "USER_GUIDE_ANCHORS": "move 70H",
+  "USER_GUIDE_URL": "move 70H",
+  "WALKTHROUGH_ANNUAL": "move 70H",
+  "WALKTHROUGH_DASHBOARD": "move 70H",
+  "WALKTHROUGH_GUARDIAN": "move 70H",
+  "WALKTHROUGH_PLAN_ANNUAL": "move 70H",
+  "WALKTHROUGH_PLAN_INITIAL": "move 70H",
+  "WALKTHROUGH_PLAN_MINOR": "move 70H",
+  "WALKTHROUGH_PLAN_SIMPLIFIED": "move 70H",
+  "WALKTHROUGH_SIMPLIFIED": "move 70H",
+  "WALKTHROUGH_STEPS": "move 70H",
+  "WARD_SYSTEM_KEYS": "move 70G",
+  "ZIP_MAGIC": "move 70B",
+  "_activityLogEntries": "move 70H",
+  "_annualFeatureBridge": "move 70K",
+  "_appState": "move 70I",
+  "_auditLogEntries": "move 70I",
+  "_auditLogNextId": "move 70I",
+  "_autoLockTimer": "move 70I",
+  "_cryptoKey": "move 70I",
+  "_dashboardFeatureBridge": "move 70K",
+  "_fragmentAppended": "move 70H",
+  "_guardianFeatureBridge": "move 70K",
+  "_launchPrefDb": "move 70I",
+  "_launchPrefDelete": "delete-as-dead 70I",
+  "_launchPrefGet": "delete-as-dead 70I",
+  "_launchPrefPut": "delete-as-dead 70I",
+  "_launchStateResolved": "move 70I",
+  "_navSectionExpandedKey": "move 70F",
+  "_openedFileAtLaunch": "move 70I",
+  "_partyCompareIds": "move 70G",
+  "_partyUnmergeIds": "move 70G",
+  "_pendingDeleteWardId": "move 70H",
+  "_pendingDeleteYear": "move 70G",
+  "_pendingOpenManifest": "move 70I",
+  "_pendingOpenZip": "move 70I",
+  "_pickCaseWardId": "move 70G",
+  "_pickPartySlot": "move 70G",
+  "_planAnnualFeatureBridge": "move 70K",
+  "_planInitialFeatureBridge": "move 70K",
+  "_planMinorFeatureBridge": "move 70K",
+  "_planSimplifiedFeatureBridge": "move 70K",
+  "_pvSelection": "move 70F",
+  "_rememberedFileUnavailable": "move 70I",
+  "_resolveStartupChoice": "move 70I",
+  "_securityChoiceResolve": "move 70I",
+  "_securityMode": "move 70I",
+  "_sessionCacheClear": "delete-as-dead 70I",
+  "_sessionCacheDb": "move 70I",
+  "_sessionCacheGet": "move 70I",
+  "_sessionCachePut": "delete-as-dead 70I",
+  "_startupChoiceResolve": "move 70I",
+  "_templateCache": "move 70I",
+  "_unlockMode": "move 70I",
+  "_unlockResolve": "move 70I",
+  "_walkthroughAutoTriggered": "move 70H",
+  "_yearModalWardId": "move 70G",
+  "activityLogFiltered": "move 70H",
+  "addToRecentlyOpened": "move 70G",
+  "afterChange": "move 70F",
+  "appendAuditLogEntry": "move 70E",
+  "applyNavChecks": "move 70D",
+  "applyNavSectionCollapse": "move 70F",
+  "applyTheme": "move 70H",
+  "applyYearData": "move 70G",
+  "applyZipLimit": "move 70B",
+  "assertWorkbookWithinLimits": "move 70B",
+  "auditLog": "move 70I",
+  "bindForms": "move 70F",
+  "browserRecommendationNotice": "move 70F",
+  "calc": "move 70B",
+  "capitalizeImportedFields": "move 70B",
+  "carryOverAccountingToAccounting": "move 70G",
+  "carryOverFields": "move 70G",
+  "carryOverSummaryNote": "move 70H",
+  "checkInActiveYear": "move 70G",
+  "circuitCourtCaption": "test-only 70B",
+  "circuitForCounty": "move 70B",
+  "clearAllData": "move 70I",
+  "clearPartyCompareSelection": "move 70G",
+  "closeModal": "move 70H",
+  "computeNavChecks": "move 70D",
+  "confirmDeleteWard": "move 70H",
+  "confirmDeleteWardYear": "move 70G",
+  "confirmStartNewYear": "move 70G",
+  "convertExistingWard": "move 70G",
+  "convertGuardianExtrasToAnnual": "move 70G",
+  "convertGuardianSchedulesToAnnual": "move 70G",
+  "convertSimplifiedToAnnual": "move 70G",
+  "convertSourceShowDropdown": "move 70G",
+  "convertToSimplified": "move 70G",
+  "currentHelpContext": "move 70H",
+  "currentTheme": "move 70H",
+  "currentWalkthroughStep": "move 70H",
+  "deleteWardFromState": "move 70E",
+  "deleteWardYear": "move 70G",
+  "describeConversion": "move 70G",
+  "describeYearLabel": "move 70G",
+  "detectPathTraversal": "move 70B",
+  "detectXSSPayload": "move 70B",
+  "doAddWard": "move 70H",
+  "doConfirmSimplifiedEligibility": "move 70H",
+  "doConvertWard": "move 70G",
+  "doCreateCaseFromWard": "move 70G",
+  "doCreatePartyFromSlot": "move 70G",
+  "doDeleteWard": "move 70H",
+  "doDeleteWardYear": "move 70G",
+  "doFilingSyncClosed": "move 70G",
+  "doGuardianSetup": "move 70H",
+  "doPartyDismissPair": "move 70G",
+  "doPartyMergeKeep": "move 70G",
+  "doPartySyncClosed": "move 70G",
+  "doPartySyncClosedAll": "move 70G",
+  "doPartyUnmergeSelected": "move 70G",
+  "doPickCase": "move 70G",
+  "doPickParty": "move 70G",
+  "doRenameWard": "move 70H",
+  "editPriorYear": "move 70G",
+  "emptyDataGuardian": "move 70C",
+  "emptyInitialProvider": "move 70C",
+  "emptyMinorGuardianSig": "move 70C",
+  "emptyMinorProvider": "move 70C",
+  "emptyMinorResidence": "move 70C",
+  "emptyPlanDirective": "move 70C",
+  "emptyPlanProvider": "move 70C",
+  "emptyPlanResidence": "move 70C",
+  "emptyRowAnnual": "move 70C",
+  "endWalkthrough": "move 70H",
+  "enforceNonNegative": "move 70F",
+  "ensureFragment": "move 70H",
+  "ensureGuardianFeatureReady": "move 70K",
+  "ensureUnlocked": "move 70I",
+  "errorRoute": "move 70F",
+  "esc": "move 70B",
+  "excelCapacityPanel": "move 70F",
+  "exportActivityLog": "move 70H",
+  "filingLabel": "move 70G",
+  "finalizeCaseNumber": "move 70B",
+  "fmt": "move 70B",
+  "fmtFileSize": "move 70F",
+  "formDisplayName": "move 70C",
+  "formEngine": "move 70C",
+  "formatAccountNumber": "move 70B",
+  "formatActivityTimestamp": "move 70H",
+  "formatAddress": "move 70B",
+  "formatBarNumber": "move 70B",
+  "formatCaseNumber": "move 70B",
+  "formatCheckNumber": "move 70B",
+  "formatLockoutRemaining": "move 70I",
+  "formatName": "move 70B",
+  "formatPhone": "move 70B",
+  "formatSSN": "move 70B",
+  "getAnnualFeatureBridge": "move 70K",
+  "getCurrentPageKey": "move 70F",
+  "getDashboardFeatureBridge": "move 70K",
+  "getGuardianFeatureBridge": "move 70K",
+  "getImportProgressEl": "move 70B",
+  "getPath": "move 70F",
+  "getPlanAnnualFeatureBridge": "move 70K",
+  "getPlanInitialFeatureBridge": "move 70K",
+  "getPlanMinorFeatureBridge": "move 70K",
+  "getPlanSimplifiedFeatureBridge": "move 70K",
+  "getRecentlyOpenedWards": "move 70G",
+  "getScheduleDocSlot": "move 70F",
+  "getSupplementalPdfTools": "move 70F",
+  "getUnlockFailState": "move 70I",
+  "getWardHeadlineTotal": "move 70K",
+  "getWardProgress": "move 70D",
+  "guardianHasAnyData": "move 70B",
+  "handleHash": "move 70K",
+  "handleScheduleDocUpload": "move 70F",
+  "handleStartupOpenInputChange": "move 70I",
+  "hasSixthCircuitLocalGuidance": "delete-as-dead 70B",
+  "helpPanelOpen": "move 70H",
+  "highlightErrors": "move 70F",
+  "ic": "move 70B",
+  "initApp": "move 70K",
+  "initPrintPager": "move 70F",
+  "initWardNameCombobox": "move 70H",
+  "initializeEmptyData": "move 70C",
+  "isScheduleIncomplete": "move 70D",
+  "linkAccordions": "move 70F",
+  "loadAndRenderActivityLog": "move 70H",
+  "loadAuditLogEntries": "move 70E",
+  "loadCaseFileAtLaunch": "move 70I",
+  "loadCaseFileFromZip": "move 70I",
+  "loadRecentlyOpenedWards": "move 70G",
+  "loadTemplate": "move 70E",
+  "lockApp": "move 70I",
+  "manualCompareCandidate": "move 70G",
+  "mapConvertedHeaderFields": "move 70G",
+  "mk": "move 70C",
+  "mountAnnualFeature": "move 70K",
+  "mountAnnualNav": "move 70K",
+  "mountDashboardFeature": "move 70K",
+  "mountGuardianFeature": "move 70K",
+  "mountGuardianNav": "move 70K",
+  "mountPlanAnnualFeature": "move 70K",
+  "mountPlanAnnualNav": "move 70K",
+  "mountPlanInitialFeature": "move 70K",
+  "mountPlanInitialNav": "move 70K",
+  "mountPlanMinorFeature": "move 70K",
+  "mountPlanMinorNav": "move 70K",
+  "mountPlanSimplifiedFeature": "move 70K",
+  "mountPlanSimplifiedNav": "move 70K",
+  "n": "move 70K",
+  "nextWalkthroughStep": "move 70H",
+  "onCarrySourceChange": "move 70G",
+  "onConvertSourceFocus": "move 70G",
+  "onConvertSourceInput": "move 70G",
+  "onConvertSourceKeydown": "move 70G",
+  "openCaseFileAtLaunch": "move 70I",
+  "openUserGuide": "move 70H",
+  "openUserGuideForCurrentPage": "move 70H",
+  "openWardFileAtLaunch": "move 70I",
+  "pageActivityLog": "move 70H",
+  "pageCompleteness": "move 70D",
+  "pageInventorySelector": "move 70H",
+  "pagePartyManagement": "move 70G",
+  "partyClosedDriftHTML": "move 70G",
+  "partyDedupeCardHTML": "move 70G",
+  "partyFieldValue": "move 70G",
+  "partyMatchBadge": "move 70G",
+  "partyReferenceLinesHTML": "move 70G",
+  "partyRoleBadgesHTML": "move 70G",
+  "partyRoleLabel": "move 70G",
+  "partySubRowHTML": "move 70G",
+  "pct": "move 70K",
+  "periodKeyForYearData": "move 70G",
+  "planRightLabel": "move 70C",
+  "populateWardNameSuggestions": "move 70H",
+  "prepareScheduleDocForValidation": "move 70F",
+  "promptChooseSecurityMode": "move 70I",
+  "promptCreatePassword": "move 70I",
+  "promptOpenOrStartAtLaunch": "move 70I",
+  "promptPasswordForFile": "move 70I",
+  "promptUnlock": "move 70I",
+  "pvApply": "move 70F",
+  "pvLabelFor": "move 70F",
+  "pvPages": "move 70F",
+  "pvSelect": "move 70F",
+  "pvShowAll": "move 70F",
+  "pvStep": "move 70F",
+  "queueAllScheduleDocValidations": "move 70F",
+  "queueScheduleDocValidation": "move 70F",
+  "r2": "move 70B",
+  "refreshCarrySourceSelect": "move 70G",
+  "refreshEligCarrySource": "move 70H",
+  "removeScheduleDoc": "move 70F",
+  "renderActivityLogList": "move 70H",
+  "renderClosedFilingSyncNotice": "move 70G",
+  "renderPartyDedupeQueue": "move 70G",
+  "renderPartyDirectoryRows": "move 70G",
+  "renderPartyManagementBody": "move 70G",
+  "renderPriorYearsList": "move 70G",
+  "renderProgressSummary": "move 70F",
+  "renderScheduleDocsSection": "move 70F",
+  "renderStorageReadout": "move 70H",
+  "resetAutoLockTimer": "move 70I",
+  "resetNavSectionExpanded": "move 70F",
+  "resetYearlyFieldsForNewYear": "move 70G",
+  "sanitizeDecimal": "move 70B",
+  "sanitizeForExcel": "move 70B",
+  "sanitizeInput": "move 70B",
+  "sanitizeNonNegativeDecimal": "move 70B",
+  "sanitizeObjectData": "move 70B",
+  "sanitizeObjectDataInPlace": "move 70B",
+  "saveRecentlyOpenedWards": "move 70G",
+  "saveTemplate": "move 70E",
+  "saveUnlockFailState": "move 70I",
+  "saveWardToState": "move 70E",
+  "scheduleDocPeriodKey": "move 70F",
+  "selectSecurityMode": "move 70I",
+  "setAccountingFilingType": "move 70C",
+  "setPath": "move 70F",
+  "setupAmountFieldValidation": "move 70F",
+  "setupDragAndDropImport": "move 70I",
+  "showAddWardModal": "move 70H",
+  "showAddWardModalForType": "move 70H",
+  "showContextualHelp": "move 70H",
+  "showModal": "move 70H",
+  "showPickCaseModal": "move 70G",
+  "showPickPartyModal": "move 70G",
+  "showPriorYearsModal": "move 70G",
+  "showRenameWardModal": "move 70H",
+  "showSimplifiedEligibilityModal": "move 70H",
+  "showStartNewYearModal": "move 70G",
+  "showUnlockError": "move 70I",
+  "showWalkthroughStep": "move 70H",
+  "skipWalkthrough": "move 70H",
+  "slotLabel": "move 70G",
+  "snapshotCurrentYearData": "move 70G",
+  "startNewCaseAtLaunch": "move 70I",
+  "startNewWardAtLaunch": "move 70I",
+  "startNewWardYear": "move 70G",
+  "startWalkthrough": "move 70H",
+  "submitUnlockForm": "move 70I",
+  "switchWardYear": "move 70G",
+  "td": "move 70F",
+  "tdR": "delete-as-dead 70F",
+  "toggleHelpPanel": "move 70H",
+  "toggleNavSection": "move 70F",
+  "togglePartyCompareSelection": "move 70G",
+  "togglePartyUnmergeSelection": "move 70G",
+  "toggleSsnReveal": "move 70F",
+  "toggleTheme": "move 70H",
+  "tooltip": "move 70H",
+  "trySilentReopen": "move 70I",
+  "updateCalcFields": "move 70F",
+  "updateCarrySourcePicker": "move 70G",
+  "updateConvertNotePreview": "move 70G",
+  "updateCurrentScheduleNextButton": "move 70D",
+  "updateHelpContext": "move 70H",
+  "updateLockButtonVisibility": "move 70I",
+  "updateNavActive": "move 70K",
+  "updateNavDots": "move 70D",
+  "updateScheduleComment": "move 70F",
+  "userGuideAnchorFor": "move 70H",
+  "validate": "move 70F",
+  "validateImportFile": "move 70B",
+  "validateSecurityInput": "move 70B",
+  "validationPanel": "move 70F",
+  "walkthroughActive": "move 70H",
+  "wardNameComboItems": "move 70H"
+ }
+}

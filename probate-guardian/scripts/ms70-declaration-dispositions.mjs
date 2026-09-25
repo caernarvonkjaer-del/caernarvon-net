@@ -23,7 +23,14 @@
 //
 // The delivery comes from the section; a few names are placed by hand where
 // the section is not the right home (computeNavChecks and its callers belong
-// to 70D, for instance). Every entry starts `reviewed: false`.
+// to 70D, for instance).
+//
+// The owner's review (tests/baseline/ms70-declaration-review.json) is then
+// applied: its overrides correct the delivery (and once, the disposition)
+// where the section rule is wrong, each with its reason, and an entry is
+// `reviewed: true` only while its disposition and delivery still match what
+// the review recorded -- a new declaration, or one whose placement drifts,
+// is unreviewed again and fails tests/unit/ms70-declaration-dispositions.spec.js.
 //
 // Usage (from probate-guardian/):
 //   node scripts/ms70-declaration-dispositions.mjs            summary
@@ -36,6 +43,7 @@ import { analyze, auditApplication } from './ms70-dependency-audit.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 export const DISPOSITIONS_PATH = 'tests/baseline/ms70-declaration-dispositions.json';
+export const REVIEW_PATH = 'tests/baseline/ms70-declaration-review.json';
 export const DISPOSITION_KINDS = ['delete-as-dead', 'test-only', 'move'];
 export const DELIVERIES = ['70B', '70C', '70D', '70E', '70F', '70G', '70H', '70I', '70J', '70K', '70L'];
 
@@ -103,6 +111,8 @@ export function buildDispositions(root = ROOT) {
   const sections = sectionsOf(source);
   const audit = auditApplication(root);
   const e2e = JSON.parse(fs.readFileSync(path.join(root, 'tests/baseline/ms70-e2e-globals.json'), 'utf8')).byName || {};
+  const reviewFile = path.join(root, REVIEW_PATH);
+  const review = fs.existsSync(reviewFile) ? JSON.parse(fs.readFileSync(reviewFile, 'utf8')) : { overrides: {}, notes: {}, why: {}, confirmed: {} };
   const unitSlices = new Map();
   for (const f of fs.readdirSync(path.join(root, 'tests/unit')).filter((x) => x.endsWith('.js'))) {
     const text = fs.readFileSync(path.join(root, 'tests/unit', f), 'utf8');
@@ -136,13 +146,20 @@ export function buildDispositions(root = ROOT) {
     const slices = unitSlices.get(d.name) || 0;
     let disposition = 'move';
     if (d.internalRefs === 0 && moduleConsumers.length === 0) disposition = e2eFiles || slices ? 'test-only' : 'delete-as-dead';
+    let delivery = NAME_DELIVERY[d.name] || section.delivery;
+    const override = review.overrides[d.name];
+    if (override) {
+      disposition = override.disposition || disposition;
+      delivery = override.delivery || delivery;
+    }
     return {
       name: d.name, kind: d.kind, line: d.line, lines: d.lines, section: section.title,
       internalRefs: d.internalRefs, moduleConsumers, e2eFiles, unitSlices: slices,
       duplicateOf: exportedBy.get(d.name) || [],
-      disposition, delivery: NAME_DELIVERY[d.name] || section.delivery,
+      disposition, delivery,
       wrapperWhile: disposition === 'move' && moduleConsumers.length ? 'modules read it through window or by bare name' : null,
-      reviewed: false,
+      reviewed: !!override || review.confirmed[d.name] === `${disposition} ${delivery}`,
+      reviewNote: override ? review.why[override.why] : review.notes[d.name] || null,
     };
   });
   // Every window publication with the consumers that actually read it. A
@@ -195,7 +212,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   if (process.argv.includes('--write')) {
     fs.writeFileSync(path.join(ROOT, DISPOSITIONS_PATH), JSON.stringify({
       generatedBy: 'node scripts/ms70-declaration-dispositions.mjs --write',
-      note: 'Milestone 70, 70A: a proposed disposition and target delivery for every top-level declaration of src/legacy-app.js, built from reference evidence. A draft for review: every entry is reviewed:false until someone confirms it. delete-as-dead means nothing references it anywhere; confirm before deleting.',
+      note: "Milestone 70, 70A: a disposition and target delivery for every top-level declaration of src/legacy-app.js, built from reference evidence and corrected by the owner's review (tests/baseline/ms70-declaration-review.json; reviewNote says why an entry was moved). reviewed:true means the entry still matches what the review confirmed. delete-as-dead means nothing references it anywhere.",
       ...result,
     }, null, 1) + '\n');
     console.log(`wrote ${DISPOSITIONS_PATH}`);
