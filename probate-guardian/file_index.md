@@ -370,7 +370,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`tests\e2e\support\case-file-shape.contract.ts`](<tests/e2e/support/case-file-shape.contract.ts>) | Build, tooling, or configuration source. |
 | [`tests\e2e\support\filing-matrix.ts`](<tests/e2e/support/filing-matrix.ts>) | Build, tooling, or configuration source. |
 | [`tests\e2e\support\fixture-completeness.ts`](<tests/e2e/support/fixture-completeness.ts>) | Build, tooling, or configuration source. |
-| [`tests\e2e\support\fixtures.ts`](<tests/e2e/support/fixtures.ts>) | Build, tooling, or configuration source. |
+| [`tests\e2e\support\fixtures.ts`](<tests/e2e/support/fixtures.ts>) | What a complete filing of each type contains, as data (MINIMAL_VALID_* overlays over initializeEmptyData()), shared by the fillMinimalValid*Ward() helpers and the PDF specs so the two cannot drift; values are the shapes the form stores (tri-state 'Yes'/'No', not booleans). |
 | [`tests\e2e\support\pdf-extract.ts`](<tests/e2e/support/pdf-extract.ts>) | Build, tooling, or configuration source. |
 | [`tests\e2e\support\plan-fixture.ts`](<tests/e2e/support/plan-fixture.ts>) | Build, tooling, or configuration source. |
 | [`tests\e2e\support\stream.ts`](<tests/e2e/support/stream.ts>) | Build, tooling, or configuration source. |
