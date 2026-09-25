@@ -1227,7 +1227,7 @@ measure (its headline totals still do, until 70K).
 
 | Item | Evidence |
 | --- | --- |
-| Commit | Named in the next docs commit (the whole delivery; gate evidence in its message). |
+| Commit | `4c14cc7` (the whole delivery, gate evidence in its message). |
 | The evaluators | `src/core/status/completion.js`: `computeNavChecks()`'s seven branches as one pure evaluator per engine (`guardianCompletion()` through `planMinorCompletion()`), each taking the filing and what it cannot import and returning the same `{ checks, incomplete }` map. The branch bodies moved as text; each global they read is now an import (the Plan lists, the row, signature, attorney, preparer and certificate rules) or is handed in: the Initial Inventory's validator, `errorRoute()` and the Annual totals and reconciliation. A missing validator still returns `null`, never a pass. |
 | In the registry | Each of the nine identities carries its engine's evaluator (`FILING_REGISTRY[type].completion`; Final and Trust the Annual one), and the registry dispatches: `computeCompletion(filing, type, deps)` and `filingProgress(filing, deps)`. An unopened filing's progress needs no feature pack; the registry's import graph still stays out of `src/features`. |
 | The monolith | `computeNavChecks()` and `getWardProgress()` are one-line wrappers handing the registry the open filing (or the one measured), the monolith's own `activeInventoryType`, and the dependencies above -- inline, since a helper would have been a new classic declaration. `getWardProgress()` no longer swaps `window.D` and the active type. `SCHEDULE_NAV_KEYS` moved to `src/core/filing/models/guardian.js`. `legacy-app.js` -539/+21 lines. |
