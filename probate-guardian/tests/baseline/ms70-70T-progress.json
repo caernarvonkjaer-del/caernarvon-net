@@ -4,6 +4,7 @@
   "tests/e2e/annotation-toolbar-containment.spec.ts",
   "tests/e2e/annual-bond-period.spec.ts",
   "tests/e2e/annual-field-formatting.spec.ts",
+  "tests/e2e/annual-import-ward-percentage.spec.ts",
   "tests/e2e/annual-mount.spec.ts",
   "tests/e2e/annual-schedule-consistency.spec.ts",
   "tests/e2e/backup-restore-sav.spec.ts",

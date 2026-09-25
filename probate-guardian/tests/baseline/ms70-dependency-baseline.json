@@ -1016,7 +1016,6 @@
     "src/features/annual-accounting/excel.js::getImportProgressEl",
     "src/features/annual-accounting/excel.js::guardianHasAnyData",
     "src/features/annual-accounting/excel.js::markFilingRevisionChanged",
-    "src/features/annual-accounting/excel.js::r2",
     "src/features/annual-accounting/excel.js::renderPage",
     "src/features/annual-accounting/excel.js::sanitizeObjectDataInPlace",
     "src/features/annual-accounting/excel.js::setAccountingFilingType",
@@ -1501,7 +1500,6 @@
     "src/features/annual-accounting/excel.js::getCurrentPage",
     "src/features/annual-accounting/excel.js::getImportProgressEl",
     "src/features/annual-accounting/excel.js::guardianHasAnyData",
-    "src/features/annual-accounting/excel.js::r2",
     "src/features/annual-accounting/excel.js::renderPage",
     "src/features/annual-accounting/excel.js::sanitizeObjectDataInPlace",
     "src/features/annual-accounting/excel.js::validateImportFile",
@@ -1771,8 +1769,7 @@
   "lexicalOnlyWindowReads": [
     "src/core/form/prune-cards.js::BLANK_SCHEDULE_ENTRY",
     "src/core/navigation/router.js::_visitedPages",
-    "src/core/navigation/ward-lifecycle.js::_visitedPages",
-    "src/features/annual-accounting/excel.js::r2"
+    "src/core/navigation/ward-lifecycle.js::_visitedPages"
   ],
   "cycles": [],
   "layerViolations": [],

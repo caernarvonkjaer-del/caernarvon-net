@@ -22768,6 +22768,13 @@
    "evalTime": null
   },
   {
+   "from": "src/main.js",
+   "to": "src/core/testing/testing-adapter.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
    "from": "src/pwa-ui.js",
    "to": "src/core/ui/dialogs.js",
    "kind": "import-static",
@@ -22993,11 +23000,6 @@
    "file": "src/core/navigation/ward-lifecycle.js",
    "name": "_visitedPages",
    "line": 419
-  },
-  {
-   "file": "src/features/annual-accounting/excel.js",
-   "name": "r2",
-   "line": 29
   }
  ]
 }
