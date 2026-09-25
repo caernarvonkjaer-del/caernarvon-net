@@ -4,6 +4,7 @@ import { buildPlanSimplifiedModel } from '../../src/features/plan-simplified/pdf
 import { buildPlanMinorModel } from '../../src/features/plan-minor/pdf-model.js';
 import { buildPlanInitialModel } from '../../src/features/plan-initial/pdf-model.js';
 import { buildPlanAnnualModel } from '../../src/features/plan-annual/pdf-model.js';
+import { PLAN_BENEFITS } from '../../src/core/filing/models/plan-annual.js';
 
 function gridValues(model) {
   return model.sections.flatMap((section) => section.blocks || [])
@@ -98,28 +99,23 @@ describe('Plan tri-state PDF output', () => {
   });
 
   test('prints Annual Plan eligibility and application answers from the tri-state model', () => {
-    const previousWindow = globalThis.window;
-    globalThis.window = {
-      PLAN_BENEFITS: [['socialSecurity', 'Social Security'], ['other', 'Other']],
-    };
-    try {
-      const model = buildPlanAnnualModel({
-        benefits: {
-          socialSecurity: { eligible: 'Yes', appliedFor: 'No' },
-          other: { eligible: '', appliedFor: 'Yes' },
-        },
-      });
-      const benefits = model.sections.find(section => section.id === 'q3g')
-        .blocks.find(block => block.type === 'table');
+    // The benefit list is the Plan model's own since Milestone 70's 70C (the
+    // PDF model read a window global this test stubbed with two entries), so
+    // the table has a row for every benefit the court form lists, in order,
+    // and an unanswered one prints the dash.
+    const model = buildPlanAnnualModel({
+      benefits: {
+        socialSecurity: { eligible: 'Yes', appliedFor: 'No' },
+        other: { eligible: '', appliedFor: 'Yes' },
+      },
+    });
+    const benefits = model.sections.find(section => section.id === 'q3g')
+      .blocks.find(block => block.type === 'table');
 
-      expect(benefits.rows).toEqual([
-        ['Social Security', 'Yes', 'No'],
-        ['Other', '—', 'Yes'],
-      ]);
-    } finally {
-      if (previousWindow === undefined) delete globalThis.window;
-      else globalThis.window = previousWindow;
-    }
+    expect(benefits.rows.map((r) => r[0])).toEqual(PLAN_BENEFITS.map(([, label]) => label));
+    expect(benefits.rows).toContainEqual(['Social Security', 'Yes', 'No']);
+    expect(benefits.rows).toContainEqual(['Other', '—', 'Yes']);
+    expect(benefits.rows).toContainEqual(['Medicaid', '—', '—']);
   });
 });
 

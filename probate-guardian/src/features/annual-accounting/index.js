@@ -66,6 +66,7 @@ import { esc } from '../../core/filing/escape-html.js';
 import { ic } from '../../core/ui/icons.js';
 import { sanitizeDecimal } from '../../core/form/form-contract.js';
 import { guardianHasAnyData } from '../../core/validation/row-started.js';
+import { formDisplayName } from '../../core/filing/filing-registry.js';
 // Annual Accounting — the sixth feature extraction (Milestone 7, Phases A
 // and B of INDEX-SPLIT-PLAN.md's migration sequence: data/pages/nav/
 // validate, and print/PDF/Excel import/export). Also covers the

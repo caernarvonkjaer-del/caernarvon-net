@@ -5,20 +5,25 @@ import {
   isBlankScheduleEntry,
   pruneBlankCards,
   BLANK_CARD_COLLECTIONS,
+  BLANK_SCHEDULE_ENTRY,
 } from '../../src/core/form/prune-cards.js';
+import { mk } from '../../src/core/filing/models/guardian.js';
+import { initializeEmptyData } from '../../src/core/filing/filing-registry.js';
+
+// A registry passed in explicitly, for the function's own semantics (a
+// non-empty default such as restricted:'No' still reads as untouched). Until
+// Milestone 70's 70C this suite installed it -- and a formEngine stand-in -- on
+// window, because the module read both from there; it now imports the real
+// ones, and the tests at the end check the real table.
+const REGISTRY = {
+  schA: () => ({ payer: '', description: '', bank: '', accountNo: '', amount: '' }),
+  schD1: () => ({ description: '', accountNo: '', restricted: 'No', type: '', fullAmount: '', wardPct: '', restrictedAmt: '' }),
+  scheduleA1: () => ({ description: '', streetAddress: '', cityStateZip: '', estimatedValue: 0, wardPercent: 100 }),
+};
 
 describe('prune-cards', () => {
   beforeEach(() => {
     window.autoSave = () => {};
-    window.formEngine = (type) => {
-      const aliases = ['annual', 'finalAccounting', 'trustAccounting'];
-      return aliases.includes(type) ? 'annual' : type;
-    };
-    window.BLANK_SCHEDULE_ENTRY = {
-      schA: () => ({ payer: '', description: '', bank: '', accountNo: '', amount: '' }),
-      schD1: () => ({ description: '', accountNo: '', restricted: 'No', type: '', fullAmount: '', wardPct: '', restrictedAmt: '' }),
-      scheduleA1: () => ({ description: '', streetAddress: '', cityStateZip: '', estimatedValue: 0, wardPercent: 100 }),
-    };
   });
 
   describe('isBlankCard', () => {
@@ -51,13 +56,13 @@ describe('prune-cards', () => {
   describe('isBlankScheduleEntry', () => {
     it('matches untouched schedule templates including non-empty defaults', () => {
       const emptySchD1 = { description: '', accountNo: '', restricted: 'No', type: '', fullAmount: '', wardPct: '', restrictedAmt: '' };
-      expect(isBlankScheduleEntry('schD1', emptySchD1, window.BLANK_SCHEDULE_ENTRY)).toBe(true);
+      expect(isBlankScheduleEntry('schD1', emptySchD1, REGISTRY)).toBe(true);
 
       const modifiedSchD1 = { description: 'Bank Account', accountNo: '', restricted: 'No', type: '', fullAmount: '', wardPct: '', restrictedAmt: '' };
-      expect(isBlankScheduleEntry('schD1', modifiedSchD1, window.BLANK_SCHEDULE_ENTRY)).toBe(false);
+      expect(isBlankScheduleEntry('schD1', modifiedSchD1, REGISTRY)).toBe(false);
 
       const emptySchA1 = { description: '', streetAddress: '', cityStateZip: '', estimatedValue: 0, wardPercent: 100 };
-      expect(isBlankScheduleEntry('scheduleA1', emptySchA1, window.BLANK_SCHEDULE_ENTRY)).toBe(true);
+      expect(isBlankScheduleEntry('scheduleA1', emptySchA1, REGISTRY)).toBe(true);
     });
   });
 
@@ -169,6 +174,29 @@ describe('prune-cards', () => {
       const removed = pruneBlankCards(data, 'planInitial');
       expect(removed).toBe(0);
       expect(data.q11Directives.length).toBe(1);
+    });
+  });
+  // Milestone 70, 70C: the table the clean-up now uses by default -- the
+  // Inventory's own +Add rows (mk) and the Annual Accounting's -- and the
+  // clean-up itself on real rows, with no window stand-ins.
+  describe('the real schedule table (70C, master b28bf25)', () => {
+    it('an untouched Inventory row reads as blank, one typed into does not', () => {
+      expect(isBlankScheduleEntry('scheduleA1', mk.a1())).toBe(true);
+      expect(isBlankScheduleEntry('scheduleA1', { ...mk.a1(), propertyDescription: 'House' })).toBe(false);
+      expect(BLANK_SCHEDULE_ENTRY.scheduleB2).toBe(mk.b2);
+    });
+
+    it('leaving a page drops an untouched +Add row on the Inventory and the Annual, and keeps a typed one', () => {
+      const inv = initializeEmptyData('guardian');
+      inv.scheduleA1 = [mk.a1(), { ...mk.a1(), propertyDescription: 'House' }];
+      expect(pruneBlankCards(inv)).toBe(2); // the A-1 row, plus one of the two seeded blank recipients
+      expect(inv.scheduleA1.map((r) => r.propertyDescription)).toEqual(['House']);
+      expect(inv.serviceRecipients).toHaveLength(1);
+
+      const annual = initializeEmptyData('finalAccounting');
+      annual.schA = [BLANK_SCHEDULE_ENTRY.schA(), { ...BLANK_SCHEDULE_ENTRY.schA(), payer: 'SSA' }];
+      pruneBlankCards(annual);
+      expect(annual.schA.map((r) => r.payer)).toEqual(['SSA']);
     });
   });
 });

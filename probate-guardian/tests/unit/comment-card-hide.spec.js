@@ -11,14 +11,16 @@ import { extractLegacyFunction, LEGACY_APP, readRepoSource } from './support/leg
 // in legacy-app.js, so a future reinstate is one flip instead of two.
 
 const ICON_STUB = () => '';
-// pageInventorySelector() reads INVENTORY_TYPES.<type>.description for eight
-// filing types; a Proxy answers all of them without naming each one.
+// pageInventorySelector() reads INVENTORY_TYPES.<type>.description for each
+// filing type -- off the bridge since Milestone 70's 70C moved the list to the
+// filing registry; a Proxy answers all of them without naming each one.
 const INVENTORY_TYPES_STUB = new Proxy({}, { get: () => ({ description: 'x' }) });
+const WINDOW_STUB = { GuardianFormsLegacyBridge: { INVENTORY_TYPES: INVENTORY_TYPES_STUB } };
 
 function loadPageInventorySelector() {
   const body = extractLegacyFunction('pageInventorySelector');
   // eslint-disable-next-line no-new-func
-  return new Function('INVENTORY_TYPES', 'ic', 'SHOW_COMMENT_CARD_LINK', `${body}; return pageInventorySelector;`);
+  return new Function('window', 'ic', 'SHOW_COMMENT_CARD_LINK', `${body}; return pageInventorySelector;`);
 }
 
 describe('Milestone 65D: legacy-app.js sets the shared flag on window', () => {
@@ -32,7 +34,7 @@ describe('Milestone 65D: Start New Form page (pageInventorySelector) Comment Car
   const factory = loadPageInventorySelector();
 
   test('hidden when the flag is false', () => {
-    const html = factory(INVENTORY_TYPES_STUB, ICON_STUB, false)();
+    const html = factory(WINDOW_STUB, ICON_STUB, false)();
     expect(html).not.toContain('Comment Card');
     expect(html).not.toContain('pinellascountyfl.govqa.us');
     // The other control in the same block is untouched by the gate.
@@ -40,7 +42,7 @@ describe('Milestone 65D: Start New Form page (pageInventorySelector) Comment Car
   });
 
   test('shown when the flag is true -- proves the markup itself, not just the gate, still renders correctly', () => {
-    const html = factory(INVENTORY_TYPES_STUB, ICON_STUB, true)();
+    const html = factory(WINDOW_STUB, ICON_STUB, true)();
     expect(html).toContain('Comment Card');
     expect(html).toContain('https://pinellascountyfl.govqa.us/WEBAPP/_rs/(S(ymqkyi4ihgwnngmluraqqkeh))/RequestOpen.aspx?sSessionID=&rqst=23');
   });

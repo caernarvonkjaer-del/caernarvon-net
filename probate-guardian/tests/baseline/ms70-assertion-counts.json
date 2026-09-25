@@ -2,8 +2,8 @@
  "generatedBy": "node scripts/ms70-assertion-counts.mjs --write-baseline",
  "note": "Milestone 70 per-spec assertion counts (static expect calls). tests/unit/ms70-assertion-counts.spec.js fails when a spec falls below its count; lowering it requires --reason, recorded in dropLog. A tripwire, not proof of equivalence (decision D9).",
  "totals": {
-  "expects": 6383,
-  "tests": 1845
+  "expects": 6454,
+  "tests": 1859
  },
  "counts": {
   "tests/e2e/annotation-toolbar-containment.spec.ts": {
@@ -33,6 +33,10 @@
   "tests/e2e/backup-restore-sav.spec.ts": {
    "expects": 41,
    "tests": 8
+  },
+  "tests/e2e/blank-card-pruning.spec.ts": {
+   "expects": 12,
+   "tests": 4
   },
   "tests/e2e/bond-depository.spec.ts": {
    "expects": 50,
@@ -275,8 +279,8 @@
    "tests": 2
   },
   "tests/e2e/plan-certificate-of-service.spec.ts": {
-   "expects": 42,
-   "tests": 5
+   "expects": 43,
+   "tests": 6
   },
   "tests/e2e/plan-directive-cards.spec.ts": {
    "expects": 19,
@@ -650,6 +654,10 @@
    "expects": 17,
    "tests": 6
   },
+  "tests/unit/filing-registry.spec.js": {
+   "expects": 47,
+   "tests": 7
+  },
   "tests/unit/filing-type-enumeration-guard.spec.js": {
    "expects": 2,
    "tests": 2
@@ -879,7 +887,7 @@
    "tests": 15
   },
   "tests/unit/plan-tristate.spec.js": {
-   "expects": 27,
+   "expects": 30,
    "tests": 13
   },
   "tests/unit/preparer-flag-validation.spec.js": {
@@ -899,8 +907,8 @@
    "tests": 8
   },
   "tests/unit/prune-cards.spec.js": {
-   "expects": 29,
-   "tests": 11
+   "expects": 36,
+   "tests": 13
   },
   "tests/unit/readiness-card.spec.js": {
    "expects": 52,
@@ -1011,7 +1019,7 @@
    "tests": 2
   },
   "tests/unit/testing-adapter.spec.js": {
-   "expects": 58,
+   "expects": 59,
    "tests": 18
   },
   "tests/unit/theme-persistence.spec.js": {

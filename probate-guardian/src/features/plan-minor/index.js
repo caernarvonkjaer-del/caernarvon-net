@@ -33,6 +33,7 @@ import { renderFormField } from '../../core/form/form-fields.js';
 import { esc } from '../../core/filing/escape-html.js';
 import { ic } from '../../core/ui/icons.js';
 import { formatDisplayDate } from '../../core/form/date-parser.js';
+import { normalizePlanGuardians } from '../../core/filing/models/plan-rows.js';
 // Annual Plan — Minors — the fifth and last feature extraction (Milestone 6,
 // Phases A and B of INDEX-SPLIT-PLAN.md's migration sequence: data/
 // validation/pages/nav, and print/PDF export). Dynamically imported by
@@ -387,7 +388,7 @@ function pagePlanMSignatures(){
       null,null,false)}
     <p class="mt-2 mb-3" style="font-size:.85rem;color:var(--ink-3);">Under penalties of perjury, each signing guardian declares they have read and examined the foregoing plan, and the facts alleged are true, to the best of their knowledge and belief.</p>
     <div class="row g-3 card-grid-2col mb-4">
-      ${window.normalizePlanGuardians(d).map((_,i)=>g(i,i?'Co-Guardian':'Guardian')).join('')}
+      ${normalizePlanGuardians(d).map((_,i)=>g(i,i?'Co-Guardian':'Guardian')).join('')}
     </div>
     ${(d.planGuardians||[]).length<2?'<button type="button" class="btn btn-outline-secondary btn-sm mb-3 no-print" data-form-action="add-plan-guardian" data-route="/p6">+ Add Co-Guardian</button>':''}
     ${renderScheduleDocsSection('planMSignatures')}

@@ -27,6 +27,7 @@ import { renderFormField } from '../../core/form/form-fields.js';
 import { esc } from '../../core/filing/escape-html.js';
 import { ic } from '../../core/ui/icons.js';
 import { formatDisplayDate } from '../../core/form/date-parser.js';
+import { normalizePlanGuardians } from '../../core/filing/models/plan-rows.js';
 // Simplified Annual Plan — the second feature extraction (Milestone 3,
 // Phase B/C of INDEX-SPLIT-PLAN.md's migration sequence). Dynamically
 // imported by legacy-app.js's mountPlanSimplifiedFeature()/
@@ -278,7 +279,7 @@ function pagePlanSQuestions(){
 
 function pagePlanSSignatures(){
   const d=window.D;
-  const g=window.normalizePlanGuardians(d);
+  const g=normalizePlanGuardians(d);
   const block=(i,label)=>{
     const p=g[i]||{};
     return `<div class="col-12 col-lg-6"><div class="entry-card mb-0 h-100">

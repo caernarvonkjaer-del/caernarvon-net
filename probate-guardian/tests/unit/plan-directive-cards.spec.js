@@ -7,22 +7,12 @@ import { describe, expect, test, vi } from 'vitest';
 // -- and PDF/Word output must omit detail cards whenever execution is
 // unchecked, even if the collection still carries legacy/imported data.
 
-global.window = {
-  PLAN_RIGHTS: [['marry', 'Right to marry']],
-  PLAN_ADLS: [['eating', 'Eating']],
-  PLAN_BENEFITS: [['socialSecurity', 'Social Security']],
-  INITIAL_ADLS: [['bathing', 'Bathing']],
-  emptyPlanResidence: () => ({ name: '', street: '', cityStateZip: '', phone: '', facilityType: '', from: '', to: '' }),
-  emptyPlanProvider: () => ({ name: '', street: '', cityStateZip: '', phone: '', providerType: '', visits: '' }),
-  emptyInitialProvider: () => ({ name: '', providerType: '', examDate: '', street: '', cityStateZip: '', phone: '' }),
-  emptyPlanDirective: () => ({
-    title: '', dateSigned: '', signedBy: '', agents: '', alternates: '',
-    relationship: '', contact: '', courtRevoked: '', orderDate: '', orderCounty: '',
-  }),
-  ...(global.window || {}),
-};
+// The factories are imports since Milestone 70's 70C and build their rows
+// from their own models; this suite used to stub the window globals they read.
+global.window = global.window || {};
 
-const { emptyDataPlanAnnual, emptyDataPlanInitial } = await import('../../src/core/state.js');
+const { emptyDataPlanAnnual } = await import('../../src/core/filing/models/plan-annual.js');
+const { emptyDataPlanInitial } = await import('../../src/core/filing/models/plan-initial.js');
 
 describe('Plan directive-card collections start empty (Milestone 37-4)', () => {
   test('emptyDataPlanAnnual() does not pre-seed q10Directives', () => {

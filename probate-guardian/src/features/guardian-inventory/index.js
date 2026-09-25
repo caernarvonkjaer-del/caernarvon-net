@@ -25,6 +25,7 @@ import { ic } from '../../core/ui/icons.js';
 import { fmt } from '../../core/format/money.js';
 import { applyZipLimit, finalizeCaseNumber, formatAccountNumber, formatAddress, formatBarNumber, formatCaseNumber, formatCheckNumber, formatName, formatPhone, formatSSN, sanitizeNonNegativeDecimal } from '../../core/form/form-contract.js';
 import { calc } from './totals.js';
+import { PAGES_GUARDIAN, mk } from '../../core/filing/models/guardian.js';
 // Milestone 57B: carried verbatim from MILESTONE-57-PROPOSAL.md section 57B.
 // The wording is load bearing (section 8 #8). Do not paraphrase or re-voice it.
 const ATTESTATION_57B = 'No recipients are required for this certificate (filer attestation - app does not determine legal necessity)';
@@ -46,7 +47,7 @@ const {
   // function, which is correct: it runs via src/form-events.js's delegated
   // 'toggle-ssn' handler, not from this module).
   browserRecommendationNotice, renderScheduleDocsSection,
-  mk, PAGES_GUARDIAN, SCHEDULE_NAV_KEYS,
+  SCHEDULE_NAV_KEYS,
 } = window;
 
 const D = new Proxy({}, {

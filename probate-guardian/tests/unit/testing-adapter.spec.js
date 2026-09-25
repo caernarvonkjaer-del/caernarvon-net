@@ -1,5 +1,6 @@
 import { describe, expect, test, vi } from 'vitest';
 import { TEST_MODE_FLAG, createTestingAdapter, installTestingNamespace } from '../../src/core/testing/testing-adapter.js';
+import { PLAN_RIGHTS } from '../../src/core/filing/models/plan-annual.js';
 
 // Milestone 70, 70T: GuardianForms.testing's contract, against a stand-in
 // window (setField, which needs a rendered form, is covered by
@@ -126,11 +127,14 @@ describe('patchFiling (setup only, D9)', () => {
 
 describe('reference lists and fixture validation', () => {
   test('constants(name) returns a copy of a published list and refuses anything else', () => {
+    // The lists are the Plan models' own since Milestone 70's 70C (they were
+    // read off window), so a stand-in on window no longer counts.
     const w = fakeWindow({ PLAN_RIGHTS: [['vote', 'Right to vote']], caseFile: { activeWardId: null, wards: [] } });
     const t = createTestingAdapter(w);
     const rights = t.constants('PLAN_RIGHTS');
+    expect(rights).toEqual(PLAN_RIGHTS);
     rights.push(['x', 'y']);
-    expect(w.PLAN_RIGHTS).toHaveLength(1);
+    expect(PLAN_RIGHTS).toHaveLength(12);
     expect(() => t.constants('caseFile')).toThrow('not a published list');
   });
 
@@ -195,7 +199,6 @@ describe('reference lists and fixture validation', () => {
     const open = { wardId: 'w1', wardName: 'Open' };
     const w = fakeWindow({
       D: open,
-      initializeEmptyData: (type) => ({ inventoryType: type, guardians: [{ name: '' }] }),
       validateGuardian: (d) => { seen.push(d); return d.guardians[0].name ? [] : [{ message: 'name' }]; },
       prepareFilingOutput: (d, raw) => ({ structuredIssues: raw.map(() => ({ code: 'guardian.name', message: 'Name is required' })) }),
     });

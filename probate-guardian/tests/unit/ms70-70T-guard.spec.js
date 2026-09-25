@@ -53,7 +53,9 @@ describe('converted browser specs reach the app only through GuardianForms.testi
       if (names.length || bare.length || r.writes.length || r.computed) offenders.push({ file, names, bare, writes: r.writes.length, computed: r.computed });
     }
     expect(offenders).toEqual([]);
-  });
+    // Parses every converted browser spec (135 files): a few seconds alone,
+    // more than vitest's 5 s default while the whole unit suite runs beside it.
+  }, 60_000);
 
   // 70T's gate: "Converted files join the guard as they land until it covers
   // the whole suite." Every browser spec and support file is now one or the

@@ -60,7 +60,7 @@ describe('58D: the empty-state declaration is reachable', () => {
   let emptyDataAnnual;
   beforeAll(async () => {
     globalThis.window = globalThis.window || {};
-    ({ emptyDataAnnual } = await import('../../src/core/state.js'));
+    ({ emptyDataAnnual } = await import('../../src/core/filing/models/annual.js'));
   });
 
   // The "I verify there are no remuneration entries to report" checkbox only

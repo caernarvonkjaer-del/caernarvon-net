@@ -1,0 +1,4579 @@
+{
+ "generatedFrom": "Milestone 70, 70C: captured from src/legacy-app.js and src/core/state.js at the 70B tree, BEFORE 70C moved anything (the declarations sliced out and evaluated with state.js and schedule-doc-ack.js loaded as the app loads them). tests/unit/filing-registry.spec.js requires the moved modules to reproduce every value here. Regenerate only for a deliberate, recorded change to a blank filing.",
+ "types": [
+  "guardian",
+  "simplified",
+  "annual",
+  "finalAccounting",
+  "trustAccounting",
+  "planSimplified",
+  "planAnnual",
+  "planInitial",
+  "planMinor"
+ ],
+ "blank": {
+  "guardian": {
+   "wardName": "",
+   "caseNumber": "",
+   "ucn": "",
+   "gid": null,
+   "county": "",
+   "guardianName": "",
+   "attorneyForGuardian": "",
+   "typeOfGuardianship": "",
+   "hasSafeDepositBox": "",
+   "safeDepositBoxFiled": "",
+   "amendedForm": "",
+   "scheduleA1": [],
+   "scheduleA2": [],
+   "scheduleB1": [],
+   "scheduleB2": [],
+   "scheduleB3": [],
+   "scheduleB4": [],
+   "scheduleC1": [],
+   "scheduleC2": [],
+   "scheduleC3": [],
+   "scheduleC4": [],
+   "scheduleC5": [],
+   "scheduleNoItems": {},
+   "guardians": [
+    {
+     "name": "",
+     "ssnEin": "",
+     "phone": "",
+     "streetAddress": "",
+     "cityStateZip": "",
+     "signatureDate": null,
+     "signatureState": "",
+     "signatureImage": "",
+     "isPreparer": false
+    }
+   ],
+   "preparer": {
+    "name": "",
+    "ssnEin": "",
+    "phone": "",
+    "streetAddress": "",
+    "cityStateZip": "",
+    "signatureDate": null,
+    "asOfDate": null,
+    "signatureState": "",
+    "signatureImage": ""
+   },
+   "attorney": {
+    "name": "",
+    "barNumber": "",
+    "phone": "",
+    "streetAddress": "",
+    "cityStateZip": "",
+    "signatureDate": null,
+    "filingDate": null,
+    "signatureState": "",
+    "signatureImage": "",
+    "isPreparer": false
+   },
+   "bondAmount": "",
+   "bondPeriodFrom": null,
+   "bondPeriodTo": null,
+   "bondingCompany": "",
+   "bondDepositoryState": "",
+   "bondWaivedDate": "",
+   "restrictedDepositoryReceiptDate": "",
+   "serviceNoRecipients": "",
+   "serviceRecipients": [
+    {
+     "name": "",
+     "address": "",
+     "cityStateZip": ""
+    },
+    {
+     "name": "",
+     "address": "",
+     "cityStateZip": ""
+    }
+   ],
+   "serviceDate": null,
+   "serviceAttorney": {
+    "name": "",
+    "barNumber": "",
+    "phone": "",
+    "streetAddress": "",
+    "cityStateZip": "",
+    "signatureState": "",
+    "signatureImage": ""
+   },
+   "serviceIndicateIf": "",
+   "witnesses": [],
+   "wardPartyId": null,
+   "guardianPartyIds": [],
+   "attorneyPartyId": null,
+   "preparerPartyId": null,
+   "caseId": null
+  },
+  "simplified": {
+   "wardName": "",
+   "ssn": "",
+   "caseNumber": "",
+   "ucn": "",
+   "periodFrom": "",
+   "periodTo": "",
+   "attorney": "",
+   "guardian": "",
+   "typeOfGuardianship": "",
+   "county": "",
+   "amendedForm": "",
+   "gid": "",
+   "eligDepository": "",
+   "eligOnlyTransactions": "",
+   "startingBalance": "",
+   "interestIncome": "",
+   "depositsSettlement": "",
+   "serviceCharges": "",
+   "federalIncomeTax": "",
+   "guardians": [
+    {
+     "name": "",
+     "ssn": "",
+     "phone": "",
+     "email": "",
+     "mailingStreet": "",
+     "mailingCityStateZip": "",
+     "residenceStreet": "",
+     "residenceCityStateZip": "",
+     "signatureDate": "",
+     "signatureState": "",
+     "signatureImage": ""
+    }
+   ],
+   "attorney_barNumber": "",
+   "attorney_phone": "",
+   "attorney_email": "",
+   "attorney_street": "",
+   "attorney_cityStateZip": "",
+   "attorney_signatureDate": "",
+   "attorney_signatureState": "",
+   "attorney_signatureImage": "",
+   "certServiceDate": "",
+   "certAttySignDate": "",
+   "certAttySignatureState": "",
+   "certAttySignatureImage": "",
+   "certAttyBarNumber": "",
+   "certAttyPhone": "",
+   "certAttyStreet": "",
+   "certAttyCityStateZip": "",
+   "certNoRecipients": "",
+   "certRecipients": [
+    {
+     "name": "",
+     "line2": "",
+     "line3": ""
+    },
+    {
+     "name": "",
+     "line2": "",
+     "line3": ""
+    },
+    {
+     "name": "",
+     "line2": "",
+     "line3": ""
+    },
+    {
+     "name": "",
+     "line2": "",
+     "line3": ""
+    }
+   ],
+   "certIndicator": "",
+   "remuneration": [],
+   "wardPartyId": null,
+   "guardianPartyIds": [],
+   "attorneyPartyId": null,
+   "preparerPartyId": null,
+   "caseId": null
+  },
+  "annual": {
+   "wardName": "",
+   "caseNumber": "",
+   "ucn": "",
+   "gid": "",
+   "periodFrom": "",
+   "periodTo": "",
+   "guardian": "",
+   "attorney": "",
+   "typeOfGuardianship": "",
+   "county": "",
+   "amendedForm": "",
+   "filingType": "Annual",
+   "relatedCaseNumbers": "",
+   "startingBalance": "",
+   "guardians": [
+    {
+     "name": "",
+     "ssn": "",
+     "phone": "",
+     "email": "",
+     "mailingStreet": "",
+     "mailingCityStateZip": "",
+     "officeStreet": "",
+     "officeCityStateZip": "",
+     "signatureDate": "",
+     "signatureDateLabel": "",
+     "signatureState": "",
+     "signatureImage": "",
+     "isPreparer": false
+    }
+   ],
+   "preparer": {
+    "name": "",
+    "ssn": "",
+    "phone": "",
+    "street": "",
+    "cityStateZip": "",
+    "signatureDate": "",
+    "signatureState": "",
+    "signatureImage": ""
+   },
+   "attorney_bar": "",
+   "attorney_phone": "",
+   "attorney_email": "",
+   "attorney_street": "",
+   "attorney_cityStateZip": "",
+   "attorney_county": "",
+   "attorney_signatureDate": "",
+   "attorney_signatureState": "",
+   "attorney_signatureImage": "",
+   "attorney_isPreparer": false,
+   "schA": [],
+   "schB1": [],
+   "schB2": [],
+   "schB3": [],
+   "schB4": [],
+   "schB4Accounts": [],
+   "schC": [],
+   "schD1": [],
+   "schD2": [],
+   "schD3": [],
+   "schD4": [],
+   "schD5": [],
+   "schE": [],
+   "schF1": [],
+   "schF2": [],
+   "reconcileExplanation": "",
+   "trusts": [
+    {
+     "hasTrust": "",
+     "createdAfterGID": "",
+     "name": "",
+     "trustee": "",
+     "accountNo": "",
+     "dateCreated": "",
+     "trustType": "",
+     "wardPct": "",
+     "wardAmount": ""
+    },
+    {
+     "hasTrust": "",
+     "createdAfterGID": "",
+     "name": "",
+     "trustee": "",
+     "accountNo": "",
+     "dateCreated": "",
+     "trustType": "",
+     "wardPct": "",
+     "wardAmount": ""
+    },
+    {
+     "hasTrust": "",
+     "createdAfterGID": "",
+     "name": "",
+     "trustee": "",
+     "accountNo": "",
+     "dateCreated": "",
+     "trustType": "",
+     "wardPct": "",
+     "wardAmount": ""
+    }
+   ],
+   "guardianRelationship": "Professional Guardian",
+   "bondDepositoryState": "",
+   "restrictedDepositoryReceiptDate": "",
+   "bondWaivedDate": "",
+   "bondAmount": "",
+   "bondPeriodFrom": "",
+   "bondPeriodTo": "",
+   "bondingCompany": "",
+   "certDate": "",
+   "certIndicator": "",
+   "certAttySignDate": "",
+   "certAttySignatureState": "",
+   "certAttySignatureImage": "",
+   "certNoRecipients": "",
+   "certRecipients": [
+    {
+     "name": "",
+     "line2": "",
+     "line3": "",
+     "line4": ""
+    },
+    {
+     "name": "",
+     "line2": "",
+     "line3": "",
+     "line4": ""
+    },
+    {
+     "name": "",
+     "line2": "",
+     "line3": "",
+     "line4": ""
+    },
+    {
+     "name": "",
+     "line2": "",
+     "line3": "",
+     "line4": ""
+    }
+   ],
+   "remuneration": [],
+   "wardPartyId": null,
+   "guardianPartyIds": [],
+   "attorneyPartyId": null,
+   "preparerPartyId": null,
+   "caseId": null,
+   "inventoryType": "annual"
+  },
+  "finalAccounting": {
+   "wardName": "",
+   "caseNumber": "",
+   "ucn": "",
+   "gid": "",
+   "periodFrom": "",
+   "periodTo": "",
+   "guardian": "",
+   "attorney": "",
+   "typeOfGuardianship": "",
+   "county": "",
+   "amendedForm": "",
+   "filingType": "Final",
+   "relatedCaseNumbers": "",
+   "startingBalance": "",
+   "guardians": [
+    {
+     "name": "",
+     "ssn": "",
+     "phone": "",
+     "email": "",
+     "mailingStreet": "",
+     "mailingCityStateZip": "",
+     "officeStreet": "",
+     "officeCityStateZip": "",
+     "signatureDate": "",
+     "signatureDateLabel": "",
+     "signatureState": "",
+     "signatureImage": "",
+     "isPreparer": false
+    }
+   ],
+   "preparer": {
+    "name": "",
+    "ssn": "",
+    "phone": "",
+    "street": "",
+    "cityStateZip": "",
+    "signatureDate": "",
+    "signatureState": "",
+    "signatureImage": ""
+   },
+   "attorney_bar": "",
+   "attorney_phone": "",
+   "attorney_email": "",
+   "attorney_street": "",
+   "attorney_cityStateZip": "",
+   "attorney_county": "",
+   "attorney_signatureDate": "",
+   "attorney_signatureState": "",
+   "attorney_signatureImage": "",
+   "attorney_isPreparer": false,
+   "schA": [],
+   "schB1": [],
+   "schB2": [],
+   "schB3": [],
+   "schB4": [],
+   "schB4Accounts": [],
+   "schC": [],
+   "schD1": [],
+   "schD2": [],
+   "schD3": [],
+   "schD4": [],
+   "schD5": [],
+   "schE": [],
+   "schF1": [],
+   "schF2": [],
+   "reconcileExplanation": "",
+   "trusts": [
+    {
+     "hasTrust": "",
+     "createdAfterGID": "",
+     "name": "",
+     "trustee": "",
+     "accountNo": "",
+     "dateCreated": "",
+     "trustType": "",
+     "wardPct": "",
+     "wardAmount": ""
+    },
+    {
+     "hasTrust": "",
+     "createdAfterGID": "",
+     "name": "",
+     "trustee": "",
+     "accountNo": "",
+     "dateCreated": "",
+     "trustType": "",
+     "wardPct": "",
+     "wardAmount": ""
+    },
+    {
+     "hasTrust": "",
+     "createdAfterGID": "",
+     "name": "",
+     "trustee": "",
+     "accountNo": "",
+     "dateCreated": "",
+     "trustType": "",
+     "wardPct": "",
+     "wardAmount": ""
+    }
+   ],
+   "guardianRelationship": "Professional Guardian",
+   "bondDepositoryState": "",
+   "restrictedDepositoryReceiptDate": "",
+   "bondWaivedDate": "",
+   "bondAmount": "",
+   "bondPeriodFrom": "",
+   "bondPeriodTo": "",
+   "bondingCompany": "",
+   "certDate": "",
+   "certIndicator": "",
+   "certAttySignDate": "",
+   "certAttySignatureState": "",
+   "certAttySignatureImage": "",
+   "certNoRecipients": "",
+   "certRecipients": [
+    {
+     "name": "",
+     "line2": "",
+     "line3": "",
+     "line4": ""
+    },
+    {
+     "name": "",
+     "line2": "",
+     "line3": "",
+     "line4": ""
+    },
+    {
+     "name": "",
+     "line2": "",
+     "line3": "",
+     "line4": ""
+    },
+    {
+     "name": "",
+     "line2": "",
+     "line3": "",
+     "line4": ""
+    }
+   ],
+   "remuneration": [],
+   "wardPartyId": null,
+   "guardianPartyIds": [],
+   "attorneyPartyId": null,
+   "preparerPartyId": null,
+   "caseId": null,
+   "inventoryType": "finalAccounting"
+  },
+  "trustAccounting": {
+   "wardName": "",
+   "caseNumber": "",
+   "ucn": "",
+   "gid": "",
+   "periodFrom": "",
+   "periodTo": "",
+   "guardian": "",
+   "attorney": "",
+   "typeOfGuardianship": "",
+   "county": "",
+   "amendedForm": "",
+   "filingType": "Trust",
+   "relatedCaseNumbers": "",
+   "startingBalance": "",
+   "guardians": [
+    {
+     "name": "",
+     "ssn": "",
+     "phone": "",
+     "email": "",
+     "mailingStreet": "",
+     "mailingCityStateZip": "",
+     "officeStreet": "",
+     "officeCityStateZip": "",
+     "signatureDate": "",
+     "signatureDateLabel": "",
+     "signatureState": "",
+     "signatureImage": "",
+     "isPreparer": false
+    }
+   ],
+   "preparer": {
+    "name": "",
+    "ssn": "",
+    "phone": "",
+    "street": "",
+    "cityStateZip": "",
+    "signatureDate": "",
+    "signatureState": "",
+    "signatureImage": ""
+   },
+   "attorney_bar": "",
+   "attorney_phone": "",
+   "attorney_email": "",
+   "attorney_street": "",
+   "attorney_cityStateZip": "",
+   "attorney_county": "",
+   "attorney_signatureDate": "",
+   "attorney_signatureState": "",
+   "attorney_signatureImage": "",
+   "attorney_isPreparer": false,
+   "schA": [],
+   "schB1": [],
+   "schB2": [],
+   "schB3": [],
+   "schB4": [],
+   "schB4Accounts": [],
+   "schC": [],
+   "schD1": [],
+   "schD2": [],
+   "schD3": [],
+   "schD4": [],
+   "schD5": [],
+   "schE": [],
+   "schF1": [],
+   "schF2": [],
+   "reconcileExplanation": "",
+   "trusts": [
+    {
+     "hasTrust": "",
+     "createdAfterGID": "",
+     "name": "",
+     "trustee": "",
+     "accountNo": "",
+     "dateCreated": "",
+     "trustType": "",
+     "wardPct": "",
+     "wardAmount": ""
+    },
+    {
+     "hasTrust": "",
+     "createdAfterGID": "",
+     "name": "",
+     "trustee": "",
+     "accountNo": "",
+     "dateCreated": "",
+     "trustType": "",
+     "wardPct": "",
+     "wardAmount": ""
+    },
+    {
+     "hasTrust": "",
+     "createdAfterGID": "",
+     "name": "",
+     "trustee": "",
+     "accountNo": "",
+     "dateCreated": "",
+     "trustType": "",
+     "wardPct": "",
+     "wardAmount": ""
+    }
+   ],
+   "guardianRelationship": "Professional Guardian",
+   "bondDepositoryState": "",
+   "restrictedDepositoryReceiptDate": "",
+   "bondWaivedDate": "",
+   "bondAmount": "",
+   "bondPeriodFrom": "",
+   "bondPeriodTo": "",
+   "bondingCompany": "",
+   "certDate": "",
+   "certIndicator": "",
+   "certAttySignDate": "",
+   "certAttySignatureState": "",
+   "certAttySignatureImage": "",
+   "certNoRecipients": "",
+   "certRecipients": [
+    {
+     "name": "",
+     "line2": "",
+     "line3": "",
+     "line4": ""
+    },
+    {
+     "name": "",
+     "line2": "",
+     "line3": "",
+     "line4": ""
+    },
+    {
+     "name": "",
+     "line2": "",
+     "line3": "",
+     "line4": ""
+    },
+    {
+     "name": "",
+     "line2": "",
+     "line3": "",
+     "line4": ""
+    }
+   ],
+   "remuneration": [],
+   "wardPartyId": null,
+   "guardianPartyIds": [],
+   "attorneyPartyId": null,
+   "preparerPartyId": null,
+   "caseId": null,
+   "inventoryType": "trustAccounting"
+  },
+  "planSimplified": {
+   "planTriStateSchemaVersion": 2,
+   "certRecipients": [
+    {
+     "name": "",
+     "line2": "",
+     "line3": "",
+     "line4": ""
+    }
+   ],
+   "certNoRecipients": "",
+   "certDate": "",
+   "certIndicator": "",
+   "certSigner": "",
+   "certSignatureDate": "",
+   "certSignatureState": "",
+   "certSignatureImage": "",
+   "wardName": "",
+   "caseNumber": "",
+   "ucn": "",
+   "periodFrom": "",
+   "periodTo": "",
+   "county": "",
+   "q1Residences": "",
+   "q2BestPlacement": "",
+   "q3MedicalTreatment": "",
+   "q4Diagnosis": "",
+   "q5SocialServices": "",
+   "q6Interaction": "",
+   "q7RestoreRights": "",
+   "q7RestoreExplain": "",
+   "q8DNR": false,
+   "q8LivingWill": false,
+   "q8Surrogate": false,
+   "q8POA": false,
+   "q8Other": false,
+   "q8OtherText": "",
+   "q8None": false,
+   "q9Remuneration": "",
+   "q9RemunerationExplain": "",
+   "planGuardians": [
+    {
+     "name": "",
+     "signatureDate": "",
+     "email": "",
+     "phone": "",
+     "mailingAddress": ""
+    }
+   ],
+   "preparer_name": "",
+   "preparer_phone": "",
+   "preparer_email": "",
+   "preparer_mailingStreet": "",
+   "preparer_cityStateZip": "",
+   "preparer_signatureDate": "",
+   "attorney_name": "",
+   "attorney_bar": "",
+   "attorney_phone": "",
+   "attorney_signatureDate": "",
+   "attorney_email": "",
+   "attorney_secondary_email": "",
+   "attorney_street": "",
+   "attorney_cityStateZip": "",
+   "wardPartyId": null,
+   "guardianPartyIds": [],
+   "attorneyPartyId": null,
+   "preparerPartyId": null,
+   "caseId": null
+  },
+  "planAnnual": {
+   "planTriStateSchemaVersion": 2,
+   "certRecipients": [
+    {
+     "name": "",
+     "line2": "",
+     "line3": "",
+     "line4": ""
+    }
+   ],
+   "certNoRecipients": "",
+   "certDate": "",
+   "certIndicator": "",
+   "certSigner": "",
+   "certSignatureDate": "",
+   "certSignatureState": "",
+   "certSignatureImage": "",
+   "wardName": "",
+   "caseNumber": "",
+   "ucn": "",
+   "ssn": "",
+   "county": "",
+   "periodFrom": "",
+   "periodTo": "",
+   "gid": "",
+   "guardian": "",
+   "attorney": "",
+   "wardLiving": "",
+   "residenceAddress": "",
+   "residenceCityStateZip": "",
+   "residencePhone": "",
+   "mailingAddress": "",
+   "mailingCityStateZip": "",
+   "q1Residences": [
+    {
+     "name": "",
+     "street": "",
+     "cityStateZip": "",
+     "phone": "",
+     "facilityType": "",
+     "from": "",
+     "to": ""
+    }
+   ],
+   "q2NoMove": false,
+   "q2WithinCounty": false,
+   "q2WithinCircuit": false,
+   "q2OutsideApproved": false,
+   "q2OutsideVenuePetition": false,
+   "q3SettingALF": false,
+   "q3SettingGroupHome": false,
+   "q3SettingIntermediate": false,
+   "q3SettingPrivate": false,
+   "q3SettingSkilled": false,
+   "q3SettingSpecialized": false,
+   "q3SettingStateHospital": false,
+   "q3SettingOther": false,
+   "q3SettingExplain": "",
+   "q3EnsureAssessing": false,
+   "q3EnsureWardDecides": false,
+   "q3EnsureNoChange": false,
+   "q3MedPrimary": false,
+   "q3MedDentist": false,
+   "q3MedOphthalmologist": false,
+   "q3MedSpecialist": false,
+   "q3MedSpecialistArea": "",
+   "q3MedPhysicalTherapy": false,
+   "q3MedSpeechTherapy": false,
+   "q3MedOccupationalTherapy": false,
+   "q3MedWardDecides": false,
+   "q3MedNone": false,
+   "q3MedOther": false,
+   "q3MedExplain": "",
+   "q3MentalPsych": false,
+   "q3MentalWardDecides": false,
+   "q3MentalOutpatient": false,
+   "q3MentalInpatient": false,
+   "q3MentalNone": false,
+   "q3MentalOther": false,
+   "q3MentalExplain": "",
+   "q3PersonalFacility": false,
+   "q3PersonalNurses": false,
+   "q3PersonalFamily": false,
+   "q3PersonalWithout": false,
+   "q3PersonalNone": false,
+   "q3PersonalOther": false,
+   "q3PersonalExplain": "",
+   "q3SocialFacility": false,
+   "q3SocialNurses": false,
+   "q3SocialFamily": false,
+   "q3SocialWardDecides": false,
+   "q3SocialNone": false,
+   "q3SocialOther": false,
+   "q3SocialExplain": "",
+   "benefits": {
+    "socialSecurity": {
+     "eligible": "",
+     "appliedFor": ""
+    },
+    "ssdi": {
+     "eligible": "",
+     "appliedFor": ""
+    },
+    "hmo": {
+     "eligible": "",
+     "appliedFor": ""
+    },
+    "ssi": {
+     "eligible": "",
+     "appliedFor": ""
+    },
+    "stateSupplement": {
+     "eligible": "",
+     "appliedFor": ""
+    },
+    "institutionalCare": {
+     "eligible": "",
+     "appliedFor": ""
+    },
+    "supplementalIns": {
+     "eligible": "",
+     "appliedFor": ""
+    },
+    "pension": {
+     "eligible": "",
+     "appliedFor": ""
+    },
+    "medicare": {
+     "eligible": "",
+     "appliedFor": ""
+    },
+    "medicaid": {
+     "eligible": "",
+     "appliedFor": ""
+    },
+    "trusts": {
+     "eligible": "",
+     "appliedFor": ""
+    },
+    "other": {
+     "eligible": "",
+     "appliedFor": ""
+    }
+   },
+   "q3BenefitsNone": false,
+   "q3BenefitsOther": false,
+   "q3BenefitsExplain": "",
+   "q4Providers": [
+    {
+     "name": "",
+     "street": "",
+     "cityStateZip": "",
+     "phone": "",
+     "providerType": "",
+     "visits": ""
+    }
+   ],
+   "q5SocialSkills": "",
+   "q5Activities": "",
+   "rights": {
+    "marry": "",
+    "vote": "",
+    "govBenefits": "",
+    "driver": "",
+    "travel": "",
+    "employment": "",
+    "contract": "",
+    "sue": "",
+    "property": "",
+    "residence": "",
+    "medical": "",
+    "social": ""
+   },
+   "q7RightsExplain": "",
+   "adls": {
+    "eating": "",
+    "prepareMeals": "",
+    "heavyChores": "",
+    "lightHousekeeping": "",
+    "managingMoney": "",
+    "dressing": "",
+    "transportation": "",
+    "walking": "",
+    "toileting": "",
+    "stairs": "",
+    "transferring": "",
+    "laundry": "",
+    "shopping": "",
+    "bathing": "",
+    "grooming": "",
+    "medication": ""
+   },
+   "q9MentalDementia": false,
+   "q9MentalAutism": false,
+   "q9MentalHeadInjury": false,
+   "q9MentalDevelopmental": false,
+   "q9MentalSchizophrenia": false,
+   "q9MentalDepression": false,
+   "q9MentalIntellectual": false,
+   "q9MentalSubstance": false,
+   "q9MentalAlzheimers": false,
+   "q9MentalNone": false,
+   "q9MentalOther": false,
+   "q9MentalExplain": "",
+   "q9PhysMobility": false,
+   "q9PhysBlindness": false,
+   "q9PhysDeafness": false,
+   "q9PhysDiabetic": false,
+   "q9PhysParkinsons": false,
+   "q9PhysArthritis": false,
+   "q9PhysNone": false,
+   "q9PhysOther": false,
+   "q9PhysExplain": "",
+   "q9UsesDentures": false,
+   "q9UsesHearingAid": false,
+   "q9UsesWheelchair": false,
+   "q9UsesWalker": false,
+   "q9UsesCrutches": false,
+   "q9UsesProsthetics": false,
+   "q9UsesGlasses": false,
+   "q9UsesNone": false,
+   "q9UsesOther": false,
+   "q9UsesExplain": "",
+   "q9NeedsDentures": false,
+   "q9NeedsHearingAid": false,
+   "q9NeedsWheelchair": false,
+   "q9NeedsWalker": false,
+   "q9NeedsCrutches": false,
+   "q9NeedsProsthetics": false,
+   "q9NeedsGlasses": false,
+   "q9NeedsNone": false,
+   "q9NeedsOther": false,
+   "q9NeedsExplain": "",
+   "q10NoDirectives": false,
+   "q10StepResidence": false,
+   "q10StepSafeDeposit": false,
+   "q10StepInterviewed": false,
+   "q10StepMedicalProviders": false,
+   "q10StepAttorney": false,
+   "q10Executed": false,
+   "q10ExecDNR": false,
+   "q10ExecHealthcare": false,
+   "q10ExecPOA": false,
+   "q10ExecOther": false,
+   "q10ExecOtherText": "",
+   "q10Directives": [],
+   "q11NoRemuneration": false,
+   "q11NoRemunerationName": "",
+   "q11ReceivedName": "",
+   "q11Amount": "",
+   "q11From": "",
+   "q11SubmittedToCourt": false,
+   "certIncapacitatedNoCopy": false,
+   "certMinorNoCopy": false,
+   "certConsulted": false,
+   "certNoRestriction": false,
+   "certProvidesMedical": false,
+   "certPhysicianAttached": false,
+   "certRecognizeRights": false,
+   "certRightsChangedExplain": "",
+   "planGuardians": [
+    {
+     "name": "",
+     "ssn": "",
+     "phone": "",
+     "email": "",
+     "signatureDate": "",
+     "mailingStreet": "",
+     "mailingCityStateZip": "",
+     "officeStreet": "",
+     "officeCityStateZip": "",
+     "relationship": "",
+     "signatureState": "",
+     "signatureImage": ""
+    }
+   ],
+   "attorney_signatureDate": "",
+   "attorney_bar": "",
+   "attorney_phone": "",
+   "attorney_email": "",
+   "attorney_street": "",
+   "attorney_cityStateZip": "",
+   "attorney_signatureState": "",
+   "attorney_signatureImage": "",
+   "wardPartyId": null,
+   "guardianPartyIds": [],
+   "attorneyPartyId": null,
+   "preparerPartyId": null,
+   "caseId": null
+  },
+  "planInitial": {
+   "planTriStateSchemaVersion": 2,
+   "certRecipients": [
+    {
+     "name": "",
+     "line2": "",
+     "line3": "",
+     "line4": ""
+    }
+   ],
+   "certNoRecipients": "",
+   "certDate": "",
+   "certIndicator": "",
+   "certSigner": "",
+   "certSignatureDate": "",
+   "certSignatureState": "",
+   "certSignatureImage": "",
+   "wardName": "",
+   "caseNumber": "",
+   "ucn": "",
+   "county": "",
+   "periodFrom": "",
+   "periodTo": "",
+   "inceptionDate": "",
+   "lettersSignedDate": "",
+   "successorGuardianship": "",
+   "guardianNames": "",
+   "attorneyName": "",
+   "wardLiving": "",
+   "residenceAddress": "",
+   "residenceCityStateZip": "",
+   "residencePhone": "",
+   "mailingAddress": "",
+   "mailingCityStateZip": "",
+   "q1PreexistingDirectives": "",
+   "q2Explain": "",
+   "q3MedPrimary": false,
+   "q3MedDentist": false,
+   "q3MedOphthalmologist": false,
+   "q3MedSpecialist": false,
+   "q3MedSpecialistArea": "",
+   "q3MedPT": false,
+   "q3MedST": false,
+   "q3MedOT": false,
+   "q3MedWardDecides": false,
+   "q3MedOther": false,
+   "q3MedExplain": "",
+   "q2ALF": false,
+   "q2GroupHome": false,
+   "q2Intermediate": false,
+   "q2PrivateResidence": false,
+   "q2SkilledNursing": false,
+   "q2Specialized": false,
+   "q2StateHospital": false,
+   "q2Other": false,
+   "q4Psych": false,
+   "q4Outpatient": false,
+   "q4Inpatient": false,
+   "q4None": false,
+   "q4Other": false,
+   "q5CareFacility": false,
+   "q5NursesAides": false,
+   "q5FamilyFriends": false,
+   "q5Other": false,
+   "q4Explain": "",
+   "q5Explain": "",
+   "q6CareFacility": false,
+   "q6NursesAides": false,
+   "q6FamilyFriends": false,
+   "q6DayProgram": false,
+   "q6WardDecides": false,
+   "q6Other": false,
+   "q6Explain": "",
+   "q7SocialSecurity": "",
+   "q7Ssdi": "",
+   "q7Hmo": "",
+   "q7Ssi": "",
+   "q7StateSupplement": "",
+   "q7InstitutionalCare": "",
+   "q7SupplementalIns": "",
+   "q7Pension": "",
+   "q7Medicare": "",
+   "q7Medicaid": "",
+   "q7Va": "",
+   "q7Trusts": "",
+   "q7PendingBenefits": "",
+   "q7Other": false,
+   "q7Explain": "",
+   "q9Providers": [
+    {
+     "name": "",
+     "providerType": "",
+     "examDate": "",
+     "street": "",
+     "cityStateZip": "",
+     "phone": ""
+    }
+   ],
+   "adls": {
+    "lightHousekeeping": "",
+    "medication": "",
+    "managingMoney": "",
+    "bathing": "",
+    "prepareMeals": "",
+    "stairs": "",
+    "shopping": "",
+    "laundry": "",
+    "toileting": "",
+    "dressing": "",
+    "transferring": "",
+    "eating": "",
+    "walking": "",
+    "grooming": "",
+    "heavyChores": ""
+   },
+   "mentalAlzheimers": false,
+   "mentalAutism": false,
+   "mentalClosedHeadInjury": false,
+   "mentalDementia": false,
+   "mentalDepression": false,
+   "mentalDevelopmental": false,
+   "mentalSubstance": false,
+   "mentalSchizophrenia": false,
+   "mentalOther": false,
+   "mentalExplain": "",
+   "physMobility": false,
+   "physBlindness": false,
+   "physDeafness": false,
+   "physDiabetic": false,
+   "physParkinsons": false,
+   "physArthritis": false,
+   "physOther": false,
+   "physExplain": "",
+   "usesDentures": false,
+   "usesHearingAid": false,
+   "usesWheelchair": false,
+   "usesWalker": false,
+   "usesCrutches": false,
+   "usesProsthetics": false,
+   "usesGlasses": false,
+   "usesNone": false,
+   "usesOther": false,
+   "usesExplain": "",
+   "needsDentures": false,
+   "needsHearingAid": false,
+   "needsWheelchair": false,
+   "needsWalker": false,
+   "needsCrutches": false,
+   "needsProsthetics": false,
+   "needsGlasses": false,
+   "needsNone": false,
+   "needsOther": false,
+   "needsExplain": "",
+   "committeeIncorporated": "",
+   "committeeExplain": "",
+   "q11NoDirectives": false,
+   "q11StepResidence": false,
+   "q11StepSafeDeposit": false,
+   "q11StepInterviewed": false,
+   "q11StepMedicalProviders": false,
+   "q11StepAttorney": false,
+   "q11Executed": false,
+   "q11ExecDNR": false,
+   "q11ExecHealthcare": false,
+   "q11ExecPOA": false,
+   "q11ExecOther": false,
+   "q11ExecOtherText": "",
+   "q11Directives": [],
+   "certIncapacitatedNoCopy": false,
+   "certMinorNoCopy": false,
+   "certConsulted": false,
+   "certRecognizeRights": false,
+   "certNoRestriction": false,
+   "certProvidesCare": false,
+   "planGuardians": [
+    {
+     "name": "",
+     "ssn": "",
+     "street": "",
+     "phone": "",
+     "cityStateZip": "",
+     "signatureDate": "",
+     "relationship": "",
+     "signatureState": "",
+     "signatureImage": ""
+    }
+   ],
+   "attorney_name": "",
+   "attorney_bar": "",
+   "attorney_phone": "",
+   "attorney_email": "",
+   "attorney_street": "",
+   "attorney_cityStateZip": "",
+   "attorney_signatureDate": "",
+   "attorney_signatureState": "",
+   "attorney_signatureImage": "",
+   "wardPartyId": null,
+   "guardianPartyIds": [],
+   "attorneyPartyId": null,
+   "preparerPartyId": null,
+   "caseId": null
+  },
+  "planMinor": {
+   "planTriStateSchemaVersion": 2,
+   "certRecipients": [
+    {
+     "name": "",
+     "line2": "",
+     "line3": "",
+     "line4": ""
+    }
+   ],
+   "certNoRecipients": "",
+   "certDate": "",
+   "certIndicator": "",
+   "certSigner": "",
+   "certSignatureDate": "",
+   "certSignatureState": "",
+   "certSignatureImage": "",
+   "wardName": "",
+   "county": "",
+   "ucn": "",
+   "ref": "",
+   "periodFrom": "",
+   "periodTo": "",
+   "amendedForm": "",
+   "amendedVersion": "",
+   "professionalGuardian": "",
+   "publicGuardian": "",
+   "guardianName": "",
+   "q1ResidenceName": "",
+   "q1Street": "",
+   "q1City": "",
+   "q1State": "",
+   "q1Zip": "",
+   "q1Phone": "",
+   "q2Residences": [
+    {
+     "name": "",
+     "street": "",
+     "city": "",
+     "state": "",
+     "zip": "",
+     "phone": ""
+    }
+   ],
+   "q3Providers": [
+    {
+     "first": "",
+     "mi": "",
+     "last": "",
+     "street": "",
+     "city": "",
+     "state": "",
+     "zip": "",
+     "phone": "",
+     "providerType": "",
+     "visits": ""
+    }
+   ],
+   "q4Primary": false,
+   "q4PrimaryFreq": "",
+   "q4Dentist": false,
+   "q4DentistFreq": "",
+   "q4Specialist": false,
+   "q4SpecialistFreq": "",
+   "q4PT": false,
+   "q4ST": false,
+   "q4OT": false,
+   "q4MinorDecides": false,
+   "q4Other": false,
+   "q4Explain": "",
+   "q5SchoolProgress": "",
+   "q5SocialDevelopment": "",
+   "q5Communicates": "",
+   "q5Interpersonal": "",
+   "q5NoUnmetNeeds": false,
+   "q5DoesNotCareToSocialize": false,
+   "q5UnmetNeeds": false,
+   "q5Other": false,
+   "q5Explain": "",
+   "certIncapacitated": false,
+   "certMinor": false,
+   "certConsulted": false,
+   "certNoRestriction": false,
+   "certProvidesCare": false,
+   "certPhysicianAttached": false,
+   "planGuardians": [
+    {
+     "name": "",
+     "tin": "",
+     "phone": "",
+     "mailingStreet": "",
+     "mailingCityStateZip": "",
+     "relationship": "",
+     "email": "",
+     "signatureDate": "",
+     "signatureState": "",
+     "signatureImage": ""
+    }
+   ],
+   "preparer_name": "",
+   "preparer_tin": "",
+   "preparer_phone": "",
+   "preparer_mailingStreet": "",
+   "preparer_cityStateZip": "",
+   "preparer_email": "",
+   "preparer_signatureDate": "",
+   "preparer_signatureState": "",
+   "preparer_signatureImage": "",
+   "attorney_name": "",
+   "attorney_bar": "",
+   "attorney_phone": "",
+   "attorney_street": "",
+   "attorney_cityStateZip": "",
+   "attorney_email": "",
+   "attorney_signatureDate": "",
+   "attorney_signatureState": "",
+   "attorney_signatureImage": "",
+   "wardPartyId": null,
+   "guardianPartyIds": [],
+   "attorneyPartyId": null,
+   "preparerPartyId": null,
+   "caseId": null
+  }
+ },
+ "normalizedTwice": {
+  "guardian": {
+   "wardName": "",
+   "caseNumber": "",
+   "ucn": "",
+   "gid": null,
+   "county": "",
+   "guardianName": "",
+   "attorneyForGuardian": "",
+   "typeOfGuardianship": "",
+   "hasSafeDepositBox": "",
+   "safeDepositBoxFiled": "",
+   "amendedForm": "",
+   "scheduleA1": [],
+   "scheduleA2": [],
+   "scheduleB1": [],
+   "scheduleB2": [],
+   "scheduleB3": [],
+   "scheduleB4": [],
+   "scheduleC1": [],
+   "scheduleC2": [],
+   "scheduleC3": [],
+   "scheduleC4": [],
+   "scheduleC5": [],
+   "scheduleNoItems": {},
+   "guardians": [
+    {
+     "name": "",
+     "ssnEin": "",
+     "phone": "",
+     "streetAddress": "",
+     "cityStateZip": "",
+     "signatureDate": null,
+     "signatureState": "",
+     "signatureImage": "",
+     "isPreparer": false
+    }
+   ],
+   "preparer": {
+    "name": "",
+    "ssnEin": "",
+    "phone": "",
+    "streetAddress": "",
+    "cityStateZip": "",
+    "signatureDate": null,
+    "asOfDate": null,
+    "signatureState": "",
+    "signatureImage": ""
+   },
+   "attorney": {
+    "name": "",
+    "barNumber": "",
+    "phone": "",
+    "streetAddress": "",
+    "cityStateZip": "",
+    "signatureDate": null,
+    "filingDate": null,
+    "signatureState": "",
+    "signatureImage": "",
+    "isPreparer": false
+   },
+   "bondAmount": "",
+   "bondPeriodFrom": null,
+   "bondPeriodTo": null,
+   "bondingCompany": "",
+   "bondDepositoryState": "",
+   "bondWaivedDate": "",
+   "restrictedDepositoryReceiptDate": "",
+   "serviceNoRecipients": "",
+   "serviceRecipients": [
+    {
+     "name": "",
+     "address": "",
+     "cityStateZip": ""
+    },
+    {
+     "name": "",
+     "address": "",
+     "cityStateZip": ""
+    }
+   ],
+   "serviceDate": null,
+   "serviceAttorney": {
+    "name": "",
+    "barNumber": "",
+    "phone": "",
+    "streetAddress": "",
+    "cityStateZip": "",
+    "signatureState": "",
+    "signatureImage": ""
+   },
+   "serviceIndicateIf": "",
+   "witnesses": [],
+   "wardPartyId": null,
+   "guardianPartyIds": [],
+   "attorneyPartyId": null,
+   "preparerPartyId": null,
+   "caseId": null,
+   "scheduleDocsAck": {},
+   "q7SocialSecurity": "",
+   "q7Ssdi": "",
+   "q7Hmo": "",
+   "q7Ssi": "",
+   "q7StateSupplement": "",
+   "q7InstitutionalCare": "",
+   "q7SupplementalIns": "",
+   "q7Pension": "",
+   "q7Medicare": "",
+   "q7Medicaid": "",
+   "q7Va": "",
+   "q7Trusts": "",
+   "q7PendingBenefits": ""
+  },
+  "simplified": {
+   "wardName": "",
+   "ssn": "",
+   "caseNumber": "",
+   "ucn": "",
+   "periodFrom": "",
+   "periodTo": "",
+   "attorney": "",
+   "guardian": "",
+   "typeOfGuardianship": "",
+   "county": "",
+   "amendedForm": "",
+   "gid": "",
+   "eligDepository": "",
+   "eligOnlyTransactions": "",
+   "startingBalance": "",
+   "interestIncome": "",
+   "depositsSettlement": "",
+   "serviceCharges": "",
+   "federalIncomeTax": "",
+   "guardians": [
+    {
+     "name": "",
+     "ssn": "",
+     "phone": "",
+     "email": "",
+     "mailingStreet": "",
+     "mailingCityStateZip": "",
+     "residenceStreet": "",
+     "residenceCityStateZip": "",
+     "signatureDate": "",
+     "signatureState": "",
+     "signatureImage": ""
+    }
+   ],
+   "attorney_barNumber": "",
+   "attorney_phone": "",
+   "attorney_email": "",
+   "attorney_street": "",
+   "attorney_cityStateZip": "",
+   "attorney_signatureDate": "",
+   "attorney_signatureState": "",
+   "attorney_signatureImage": "",
+   "certServiceDate": "",
+   "certAttySignDate": "",
+   "certAttySignatureState": "",
+   "certAttySignatureImage": "",
+   "certAttyBarNumber": "",
+   "certAttyPhone": "",
+   "certAttyStreet": "",
+   "certAttyCityStateZip": "",
+   "certNoRecipients": "",
+   "certRecipients": [
+    {
+     "name": "",
+     "line2": "",
+     "line3": ""
+    },
+    {
+     "name": "",
+     "line2": "",
+     "line3": ""
+    },
+    {
+     "name": "",
+     "line2": "",
+     "line3": ""
+    },
+    {
+     "name": "",
+     "line2": "",
+     "line3": ""
+    }
+   ],
+   "certIndicator": "",
+   "remuneration": [],
+   "wardPartyId": null,
+   "guardianPartyIds": [],
+   "attorneyPartyId": null,
+   "preparerPartyId": null,
+   "caseId": null,
+   "scheduleDocsAck": {},
+   "hasSafeDepositBox": "",
+   "safeDepositBoxFiled": "",
+   "q7SocialSecurity": "",
+   "q7Ssdi": "",
+   "q7Hmo": "",
+   "q7Ssi": "",
+   "q7StateSupplement": "",
+   "q7InstitutionalCare": "",
+   "q7SupplementalIns": "",
+   "q7Pension": "",
+   "q7Medicare": "",
+   "q7Medicaid": "",
+   "q7Va": "",
+   "q7Trusts": "",
+   "q7PendingBenefits": ""
+  },
+  "annual": {
+   "wardName": "",
+   "caseNumber": "",
+   "ucn": "",
+   "gid": "",
+   "periodFrom": "",
+   "periodTo": "",
+   "guardian": "",
+   "attorney": "",
+   "typeOfGuardianship": "",
+   "county": "",
+   "amendedForm": "",
+   "filingType": "Annual",
+   "relatedCaseNumbers": "",
+   "startingBalance": "",
+   "guardians": [
+    {
+     "name": "",
+     "ssn": "",
+     "phone": "",
+     "email": "",
+     "mailingStreet": "",
+     "mailingCityStateZip": "",
+     "officeStreet": "",
+     "officeCityStateZip": "",
+     "signatureDate": "",
+     "signatureDateLabel": "",
+     "signatureState": "",
+     "signatureImage": "",
+     "isPreparer": false
+    }
+   ],
+   "preparer": {
+    "name": "",
+    "ssn": "",
+    "phone": "",
+    "street": "",
+    "cityStateZip": "",
+    "signatureDate": "",
+    "signatureState": "",
+    "signatureImage": ""
+   },
+   "attorney_bar": "",
+   "attorney_phone": "",
+   "attorney_email": "",
+   "attorney_street": "",
+   "attorney_cityStateZip": "",
+   "attorney_county": "",
+   "attorney_signatureDate": "",
+   "attorney_signatureState": "",
+   "attorney_signatureImage": "",
+   "attorney_isPreparer": false,
+   "schA": [],
+   "schB1": [],
+   "schB2": [],
+   "schB3": [],
+   "schB4": [],
+   "schB4Accounts": [],
+   "schC": [],
+   "schD1": [],
+   "schD2": [],
+   "schD3": [],
+   "schD4": [],
+   "schD5": [],
+   "schE": [],
+   "schF1": [],
+   "schF2": [],
+   "reconcileExplanation": "",
+   "trusts": [
+    {
+     "hasTrust": "",
+     "createdAfterGID": "",
+     "name": "",
+     "trustee": "",
+     "accountNo": "",
+     "dateCreated": "",
+     "trustType": "",
+     "wardPct": "",
+     "wardAmount": ""
+    },
+    {
+     "hasTrust": "",
+     "createdAfterGID": "",
+     "name": "",
+     "trustee": "",
+     "accountNo": "",
+     "dateCreated": "",
+     "trustType": "",
+     "wardPct": "",
+     "wardAmount": ""
+    },
+    {
+     "hasTrust": "",
+     "createdAfterGID": "",
+     "name": "",
+     "trustee": "",
+     "accountNo": "",
+     "dateCreated": "",
+     "trustType": "",
+     "wardPct": "",
+     "wardAmount": ""
+    }
+   ],
+   "guardianRelationship": "Professional Guardian",
+   "bondDepositoryState": "",
+   "restrictedDepositoryReceiptDate": "",
+   "bondWaivedDate": "",
+   "bondAmount": "",
+   "bondPeriodFrom": "",
+   "bondPeriodTo": "",
+   "bondingCompany": "",
+   "certDate": "",
+   "certIndicator": "",
+   "certAttySignDate": "",
+   "certAttySignatureState": "",
+   "certAttySignatureImage": "",
+   "certNoRecipients": "",
+   "certRecipients": [
+    {
+     "name": "",
+     "line2": "",
+     "line3": "",
+     "line4": ""
+    },
+    {
+     "name": "",
+     "line2": "",
+     "line3": "",
+     "line4": ""
+    },
+    {
+     "name": "",
+     "line2": "",
+     "line3": "",
+     "line4": ""
+    },
+    {
+     "name": "",
+     "line2": "",
+     "line3": "",
+     "line4": ""
+    }
+   ],
+   "remuneration": [],
+   "wardPartyId": null,
+   "guardianPartyIds": [],
+   "attorneyPartyId": null,
+   "preparerPartyId": null,
+   "caseId": null,
+   "inventoryType": "annual",
+   "scheduleDocsAck": {},
+   "hasSafeDepositBox": "",
+   "safeDepositBoxFiled": "",
+   "q7SocialSecurity": "",
+   "q7Ssdi": "",
+   "q7Hmo": "",
+   "q7Ssi": "",
+   "q7StateSupplement": "",
+   "q7InstitutionalCare": "",
+   "q7SupplementalIns": "",
+   "q7Pension": "",
+   "q7Medicare": "",
+   "q7Medicaid": "",
+   "q7Va": "",
+   "q7Trusts": "",
+   "q7PendingBenefits": ""
+  },
+  "finalAccounting": {
+   "wardName": "",
+   "caseNumber": "",
+   "ucn": "",
+   "gid": "",
+   "periodFrom": "",
+   "periodTo": "",
+   "guardian": "",
+   "attorney": "",
+   "typeOfGuardianship": "",
+   "county": "",
+   "amendedForm": "",
+   "filingType": "Final",
+   "relatedCaseNumbers": "",
+   "startingBalance": "",
+   "guardians": [
+    {
+     "name": "",
+     "ssn": "",
+     "phone": "",
+     "email": "",
+     "mailingStreet": "",
+     "mailingCityStateZip": "",
+     "officeStreet": "",
+     "officeCityStateZip": "",
+     "signatureDate": "",
+     "signatureDateLabel": "",
+     "signatureState": "",
+     "signatureImage": "",
+     "isPreparer": false
+    }
+   ],
+   "preparer": {
+    "name": "",
+    "ssn": "",
+    "phone": "",
+    "street": "",
+    "cityStateZip": "",
+    "signatureDate": "",
+    "signatureState": "",
+    "signatureImage": ""
+   },
+   "attorney_bar": "",
+   "attorney_phone": "",
+   "attorney_email": "",
+   "attorney_street": "",
+   "attorney_cityStateZip": "",
+   "attorney_county": "",
+   "attorney_signatureDate": "",
+   "attorney_signatureState": "",
+   "attorney_signatureImage": "",
+   "attorney_isPreparer": false,
+   "schA": [],
+   "schB1": [],
+   "schB2": [],
+   "schB3": [],
+   "schB4": [],
+   "schB4Accounts": [],
+   "schC": [],
+   "schD1": [],
+   "schD2": [],
+   "schD3": [],
+   "schD4": [],
+   "schD5": [],
+   "schE": [],
+   "schF1": [],
+   "schF2": [],
+   "reconcileExplanation": "",
+   "trusts": [
+    {
+     "hasTrust": "",
+     "createdAfterGID": "",
+     "name": "",
+     "trustee": "",
+     "accountNo": "",
+     "dateCreated": "",
+     "trustType": "",
+     "wardPct": "",
+     "wardAmount": ""
+    },
+    {
+     "hasTrust": "",
+     "createdAfterGID": "",
+     "name": "",
+     "trustee": "",
+     "accountNo": "",
+     "dateCreated": "",
+     "trustType": "",
+     "wardPct": "",
+     "wardAmount": ""
+    },
+    {
+     "hasTrust": "",
+     "createdAfterGID": "",
+     "name": "",
+     "trustee": "",
+     "accountNo": "",
+     "dateCreated": "",
+     "trustType": "",
+     "wardPct": "",
+     "wardAmount": ""
+    }
+   ],
+   "guardianRelationship": "Professional Guardian",
+   "bondDepositoryState": "",
+   "restrictedDepositoryReceiptDate": "",
+   "bondWaivedDate": "",
+   "bondAmount": "",
+   "bondPeriodFrom": "",
+   "bondPeriodTo": "",
+   "bondingCompany": "",
+   "certDate": "",
+   "certIndicator": "",
+   "certAttySignDate": "",
+   "certAttySignatureState": "",
+   "certAttySignatureImage": "",
+   "certNoRecipients": "",
+   "certRecipients": [
+    {
+     "name": "",
+     "line2": "",
+     "line3": "",
+     "line4": ""
+    },
+    {
+     "name": "",
+     "line2": "",
+     "line3": "",
+     "line4": ""
+    },
+    {
+     "name": "",
+     "line2": "",
+     "line3": "",
+     "line4": ""
+    },
+    {
+     "name": "",
+     "line2": "",
+     "line3": "",
+     "line4": ""
+    }
+   ],
+   "remuneration": [],
+   "wardPartyId": null,
+   "guardianPartyIds": [],
+   "attorneyPartyId": null,
+   "preparerPartyId": null,
+   "caseId": null,
+   "inventoryType": "finalAccounting",
+   "scheduleDocsAck": {},
+   "hasSafeDepositBox": "",
+   "safeDepositBoxFiled": "",
+   "q7SocialSecurity": "",
+   "q7Ssdi": "",
+   "q7Hmo": "",
+   "q7Ssi": "",
+   "q7StateSupplement": "",
+   "q7InstitutionalCare": "",
+   "q7SupplementalIns": "",
+   "q7Pension": "",
+   "q7Medicare": "",
+   "q7Medicaid": "",
+   "q7Va": "",
+   "q7Trusts": "",
+   "q7PendingBenefits": ""
+  },
+  "trustAccounting": {
+   "wardName": "",
+   "caseNumber": "",
+   "ucn": "",
+   "gid": "",
+   "periodFrom": "",
+   "periodTo": "",
+   "guardian": "",
+   "attorney": "",
+   "typeOfGuardianship": "",
+   "county": "",
+   "amendedForm": "",
+   "filingType": "Trust",
+   "relatedCaseNumbers": "",
+   "startingBalance": "",
+   "guardians": [
+    {
+     "name": "",
+     "ssn": "",
+     "phone": "",
+     "email": "",
+     "mailingStreet": "",
+     "mailingCityStateZip": "",
+     "officeStreet": "",
+     "officeCityStateZip": "",
+     "signatureDate": "",
+     "signatureDateLabel": "",
+     "signatureState": "",
+     "signatureImage": "",
+     "isPreparer": false
+    }
+   ],
+   "preparer": {
+    "name": "",
+    "ssn": "",
+    "phone": "",
+    "street": "",
+    "cityStateZip": "",
+    "signatureDate": "",
+    "signatureState": "",
+    "signatureImage": ""
+   },
+   "attorney_bar": "",
+   "attorney_phone": "",
+   "attorney_email": "",
+   "attorney_street": "",
+   "attorney_cityStateZip": "",
+   "attorney_county": "",
+   "attorney_signatureDate": "",
+   "attorney_signatureState": "",
+   "attorney_signatureImage": "",
+   "attorney_isPreparer": false,
+   "schA": [],
+   "schB1": [],
+   "schB2": [],
+   "schB3": [],
+   "schB4": [],
+   "schB4Accounts": [],
+   "schC": [],
+   "schD1": [],
+   "schD2": [],
+   "schD3": [],
+   "schD4": [],
+   "schD5": [],
+   "schE": [],
+   "schF1": [],
+   "schF2": [],
+   "reconcileExplanation": "",
+   "trusts": [
+    {
+     "hasTrust": "",
+     "createdAfterGID": "",
+     "name": "",
+     "trustee": "",
+     "accountNo": "",
+     "dateCreated": "",
+     "trustType": "",
+     "wardPct": "",
+     "wardAmount": ""
+    },
+    {
+     "hasTrust": "",
+     "createdAfterGID": "",
+     "name": "",
+     "trustee": "",
+     "accountNo": "",
+     "dateCreated": "",
+     "trustType": "",
+     "wardPct": "",
+     "wardAmount": ""
+    },
+    {
+     "hasTrust": "",
+     "createdAfterGID": "",
+     "name": "",
+     "trustee": "",
+     "accountNo": "",
+     "dateCreated": "",
+     "trustType": "",
+     "wardPct": "",
+     "wardAmount": ""
+    }
+   ],
+   "guardianRelationship": "Professional Guardian",
+   "bondDepositoryState": "",
+   "restrictedDepositoryReceiptDate": "",
+   "bondWaivedDate": "",
+   "bondAmount": "",
+   "bondPeriodFrom": "",
+   "bondPeriodTo": "",
+   "bondingCompany": "",
+   "certDate": "",
+   "certIndicator": "",
+   "certAttySignDate": "",
+   "certAttySignatureState": "",
+   "certAttySignatureImage": "",
+   "certNoRecipients": "",
+   "certRecipients": [
+    {
+     "name": "",
+     "line2": "",
+     "line3": "",
+     "line4": ""
+    },
+    {
+     "name": "",
+     "line2": "",
+     "line3": "",
+     "line4": ""
+    },
+    {
+     "name": "",
+     "line2": "",
+     "line3": "",
+     "line4": ""
+    },
+    {
+     "name": "",
+     "line2": "",
+     "line3": "",
+     "line4": ""
+    }
+   ],
+   "remuneration": [],
+   "wardPartyId": null,
+   "guardianPartyIds": [],
+   "attorneyPartyId": null,
+   "preparerPartyId": null,
+   "caseId": null,
+   "inventoryType": "trustAccounting",
+   "scheduleDocsAck": {},
+   "hasSafeDepositBox": "",
+   "safeDepositBoxFiled": "",
+   "q7SocialSecurity": "",
+   "q7Ssdi": "",
+   "q7Hmo": "",
+   "q7Ssi": "",
+   "q7StateSupplement": "",
+   "q7InstitutionalCare": "",
+   "q7SupplementalIns": "",
+   "q7Pension": "",
+   "q7Medicare": "",
+   "q7Medicaid": "",
+   "q7Va": "",
+   "q7Trusts": "",
+   "q7PendingBenefits": ""
+  },
+  "planSimplified": {
+   "planTriStateSchemaVersion": 2,
+   "certRecipients": [
+    {
+     "name": "",
+     "line2": "",
+     "line3": "",
+     "line4": ""
+    }
+   ],
+   "certNoRecipients": "",
+   "certDate": "",
+   "certIndicator": "",
+   "certSigner": "",
+   "certSignatureDate": "",
+   "certSignatureState": "",
+   "certSignatureImage": "",
+   "wardName": "",
+   "caseNumber": "",
+   "ucn": "",
+   "periodFrom": "",
+   "periodTo": "",
+   "county": "",
+   "q1Residences": "",
+   "q2BestPlacement": "",
+   "q3MedicalTreatment": "",
+   "q4Diagnosis": "",
+   "q5SocialServices": "",
+   "q6Interaction": "",
+   "q7RestoreRights": "",
+   "q7RestoreExplain": "",
+   "q8DNR": false,
+   "q8LivingWill": false,
+   "q8Surrogate": false,
+   "q8POA": false,
+   "q8Other": false,
+   "q8OtherText": "",
+   "q8None": false,
+   "q9Remuneration": "",
+   "q9RemunerationExplain": "",
+   "planGuardians": [
+    {
+     "name": "",
+     "signatureDate": "",
+     "email": "",
+     "phone": "",
+     "mailingAddress": ""
+    }
+   ],
+   "preparer_name": "",
+   "preparer_phone": "",
+   "preparer_email": "",
+   "preparer_mailingStreet": "",
+   "preparer_cityStateZip": "",
+   "preparer_signatureDate": "",
+   "attorney_name": "",
+   "attorney_bar": "",
+   "attorney_phone": "",
+   "attorney_signatureDate": "",
+   "attorney_email": "",
+   "attorney_secondary_email": "",
+   "attorney_street": "",
+   "attorney_cityStateZip": "",
+   "wardPartyId": null,
+   "guardianPartyIds": [],
+   "attorneyPartyId": null,
+   "preparerPartyId": null,
+   "caseId": null,
+   "scheduleDocsAck": {},
+   "hasSafeDepositBox": "",
+   "safeDepositBoxFiled": "",
+   "amendedForm": "",
+   "q7SocialSecurity": "",
+   "q7Ssdi": "",
+   "q7Hmo": "",
+   "q7Ssi": "",
+   "q7StateSupplement": "",
+   "q7InstitutionalCare": "",
+   "q7SupplementalIns": "",
+   "q7Pension": "",
+   "q7Medicare": "",
+   "q7Medicaid": "",
+   "q7Va": "",
+   "q7Trusts": "",
+   "q7PendingBenefits": ""
+  },
+  "planAnnual": {
+   "planTriStateSchemaVersion": 2,
+   "certRecipients": [
+    {
+     "name": "",
+     "line2": "",
+     "line3": "",
+     "line4": ""
+    }
+   ],
+   "certNoRecipients": "",
+   "certDate": "",
+   "certIndicator": "",
+   "certSigner": "",
+   "certSignatureDate": "",
+   "certSignatureState": "",
+   "certSignatureImage": "",
+   "wardName": "",
+   "caseNumber": "",
+   "ucn": "",
+   "ssn": "",
+   "county": "",
+   "periodFrom": "",
+   "periodTo": "",
+   "gid": "",
+   "guardian": "",
+   "attorney": "",
+   "wardLiving": "",
+   "residenceAddress": "",
+   "residenceCityStateZip": "",
+   "residencePhone": "",
+   "mailingAddress": "",
+   "mailingCityStateZip": "",
+   "q1Residences": [
+    {
+     "name": "",
+     "street": "",
+     "cityStateZip": "",
+     "phone": "",
+     "facilityType": "",
+     "from": "",
+     "to": ""
+    }
+   ],
+   "q2NoMove": false,
+   "q2WithinCounty": false,
+   "q2WithinCircuit": false,
+   "q2OutsideApproved": false,
+   "q2OutsideVenuePetition": false,
+   "q3SettingALF": false,
+   "q3SettingGroupHome": false,
+   "q3SettingIntermediate": false,
+   "q3SettingPrivate": false,
+   "q3SettingSkilled": false,
+   "q3SettingSpecialized": false,
+   "q3SettingStateHospital": false,
+   "q3SettingOther": false,
+   "q3SettingExplain": "",
+   "q3EnsureAssessing": false,
+   "q3EnsureWardDecides": false,
+   "q3EnsureNoChange": false,
+   "q3MedPrimary": false,
+   "q3MedDentist": false,
+   "q3MedOphthalmologist": false,
+   "q3MedSpecialist": false,
+   "q3MedSpecialistArea": "",
+   "q3MedPhysicalTherapy": false,
+   "q3MedSpeechTherapy": false,
+   "q3MedOccupationalTherapy": false,
+   "q3MedWardDecides": false,
+   "q3MedNone": false,
+   "q3MedOther": false,
+   "q3MedExplain": "",
+   "q3MentalPsych": false,
+   "q3MentalWardDecides": false,
+   "q3MentalOutpatient": false,
+   "q3MentalInpatient": false,
+   "q3MentalNone": false,
+   "q3MentalOther": false,
+   "q3MentalExplain": "",
+   "q3PersonalFacility": false,
+   "q3PersonalNurses": false,
+   "q3PersonalFamily": false,
+   "q3PersonalWithout": false,
+   "q3PersonalNone": false,
+   "q3PersonalOther": false,
+   "q3PersonalExplain": "",
+   "q3SocialFacility": false,
+   "q3SocialNurses": false,
+   "q3SocialFamily": false,
+   "q3SocialWardDecides": false,
+   "q3SocialNone": false,
+   "q3SocialOther": false,
+   "q3SocialExplain": "",
+   "benefits": {
+    "socialSecurity": {
+     "eligible": "",
+     "appliedFor": ""
+    },
+    "ssdi": {
+     "eligible": "",
+     "appliedFor": ""
+    },
+    "hmo": {
+     "eligible": "",
+     "appliedFor": ""
+    },
+    "ssi": {
+     "eligible": "",
+     "appliedFor": ""
+    },
+    "stateSupplement": {
+     "eligible": "",
+     "appliedFor": ""
+    },
+    "institutionalCare": {
+     "eligible": "",
+     "appliedFor": ""
+    },
+    "supplementalIns": {
+     "eligible": "",
+     "appliedFor": ""
+    },
+    "pension": {
+     "eligible": "",
+     "appliedFor": ""
+    },
+    "medicare": {
+     "eligible": "",
+     "appliedFor": ""
+    },
+    "medicaid": {
+     "eligible": "",
+     "appliedFor": ""
+    },
+    "trusts": {
+     "eligible": "",
+     "appliedFor": ""
+    },
+    "other": {
+     "eligible": "",
+     "appliedFor": ""
+    }
+   },
+   "q3BenefitsNone": false,
+   "q3BenefitsOther": false,
+   "q3BenefitsExplain": "",
+   "q4Providers": [
+    {
+     "name": "",
+     "street": "",
+     "cityStateZip": "",
+     "phone": "",
+     "providerType": "",
+     "visits": ""
+    }
+   ],
+   "q5SocialSkills": "",
+   "q5Activities": "",
+   "rights": {
+    "marry": "",
+    "vote": "",
+    "govBenefits": "",
+    "driver": "",
+    "travel": "",
+    "employment": "",
+    "contract": "",
+    "sue": "",
+    "property": "",
+    "residence": "",
+    "medical": "",
+    "social": ""
+   },
+   "q7RightsExplain": "",
+   "adls": {
+    "eating": "",
+    "prepareMeals": "",
+    "heavyChores": "",
+    "lightHousekeeping": "",
+    "managingMoney": "",
+    "dressing": "",
+    "transportation": "",
+    "walking": "",
+    "toileting": "",
+    "stairs": "",
+    "transferring": "",
+    "laundry": "",
+    "shopping": "",
+    "bathing": "",
+    "grooming": "",
+    "medication": ""
+   },
+   "q9MentalDementia": false,
+   "q9MentalAutism": false,
+   "q9MentalHeadInjury": false,
+   "q9MentalDevelopmental": false,
+   "q9MentalSchizophrenia": false,
+   "q9MentalDepression": false,
+   "q9MentalIntellectual": false,
+   "q9MentalSubstance": false,
+   "q9MentalAlzheimers": false,
+   "q9MentalNone": false,
+   "q9MentalOther": false,
+   "q9MentalExplain": "",
+   "q9PhysMobility": false,
+   "q9PhysBlindness": false,
+   "q9PhysDeafness": false,
+   "q9PhysDiabetic": false,
+   "q9PhysParkinsons": false,
+   "q9PhysArthritis": false,
+   "q9PhysNone": false,
+   "q9PhysOther": false,
+   "q9PhysExplain": "",
+   "q9UsesDentures": false,
+   "q9UsesHearingAid": false,
+   "q9UsesWheelchair": false,
+   "q9UsesWalker": false,
+   "q9UsesCrutches": false,
+   "q9UsesProsthetics": false,
+   "q9UsesGlasses": false,
+   "q9UsesNone": false,
+   "q9UsesOther": false,
+   "q9UsesExplain": "",
+   "q9NeedsDentures": false,
+   "q9NeedsHearingAid": false,
+   "q9NeedsWheelchair": false,
+   "q9NeedsWalker": false,
+   "q9NeedsCrutches": false,
+   "q9NeedsProsthetics": false,
+   "q9NeedsGlasses": false,
+   "q9NeedsNone": false,
+   "q9NeedsOther": false,
+   "q9NeedsExplain": "",
+   "q10NoDirectives": false,
+   "q10StepResidence": false,
+   "q10StepSafeDeposit": false,
+   "q10StepInterviewed": false,
+   "q10StepMedicalProviders": false,
+   "q10StepAttorney": false,
+   "q10Executed": false,
+   "q10ExecDNR": false,
+   "q10ExecHealthcare": false,
+   "q10ExecPOA": false,
+   "q10ExecOther": false,
+   "q10ExecOtherText": "",
+   "q10Directives": [],
+   "q11NoRemuneration": false,
+   "q11NoRemunerationName": "",
+   "q11ReceivedName": "",
+   "q11Amount": "",
+   "q11From": "",
+   "q11SubmittedToCourt": false,
+   "certIncapacitatedNoCopy": false,
+   "certMinorNoCopy": false,
+   "certConsulted": false,
+   "certNoRestriction": false,
+   "certProvidesMedical": false,
+   "certPhysicianAttached": false,
+   "certRecognizeRights": false,
+   "certRightsChangedExplain": "",
+   "planGuardians": [
+    {
+     "name": "",
+     "ssn": "",
+     "phone": "",
+     "email": "",
+     "signatureDate": "",
+     "mailingStreet": "",
+     "mailingCityStateZip": "",
+     "officeStreet": "",
+     "officeCityStateZip": "",
+     "relationship": "",
+     "signatureState": "",
+     "signatureImage": ""
+    }
+   ],
+   "attorney_signatureDate": "",
+   "attorney_bar": "",
+   "attorney_phone": "",
+   "attorney_email": "",
+   "attorney_street": "",
+   "attorney_cityStateZip": "",
+   "attorney_signatureState": "",
+   "attorney_signatureImage": "",
+   "wardPartyId": null,
+   "guardianPartyIds": [],
+   "attorneyPartyId": null,
+   "preparerPartyId": null,
+   "caseId": null,
+   "scheduleDocsAck": {},
+   "hasSafeDepositBox": "",
+   "safeDepositBoxFiled": "",
+   "amendedForm": "",
+   "q7SocialSecurity": "",
+   "q7Ssdi": "",
+   "q7Hmo": "",
+   "q7Ssi": "",
+   "q7StateSupplement": "",
+   "q7InstitutionalCare": "",
+   "q7SupplementalIns": "",
+   "q7Pension": "",
+   "q7Medicare": "",
+   "q7Medicaid": "",
+   "q7Va": "",
+   "q7Trusts": "",
+   "q7PendingBenefits": ""
+  },
+  "planInitial": {
+   "planTriStateSchemaVersion": 2,
+   "certRecipients": [
+    {
+     "name": "",
+     "line2": "",
+     "line3": "",
+     "line4": ""
+    }
+   ],
+   "certNoRecipients": "",
+   "certDate": "",
+   "certIndicator": "",
+   "certSigner": "",
+   "certSignatureDate": "",
+   "certSignatureState": "",
+   "certSignatureImage": "",
+   "wardName": "",
+   "caseNumber": "",
+   "ucn": "",
+   "county": "",
+   "periodFrom": "",
+   "periodTo": "",
+   "inceptionDate": "",
+   "lettersSignedDate": "",
+   "successorGuardianship": "",
+   "guardianNames": "",
+   "attorneyName": "",
+   "wardLiving": "",
+   "residenceAddress": "",
+   "residenceCityStateZip": "",
+   "residencePhone": "",
+   "mailingAddress": "",
+   "mailingCityStateZip": "",
+   "q1PreexistingDirectives": "",
+   "q2Explain": "",
+   "q3MedPrimary": false,
+   "q3MedDentist": false,
+   "q3MedOphthalmologist": false,
+   "q3MedSpecialist": false,
+   "q3MedSpecialistArea": "",
+   "q3MedPT": false,
+   "q3MedST": false,
+   "q3MedOT": false,
+   "q3MedWardDecides": false,
+   "q3MedOther": false,
+   "q3MedExplain": "",
+   "q2ALF": false,
+   "q2GroupHome": false,
+   "q2Intermediate": false,
+   "q2PrivateResidence": false,
+   "q2SkilledNursing": false,
+   "q2Specialized": false,
+   "q2StateHospital": false,
+   "q2Other": false,
+   "q4Psych": false,
+   "q4Outpatient": false,
+   "q4Inpatient": false,
+   "q4None": false,
+   "q4Other": false,
+   "q5CareFacility": false,
+   "q5NursesAides": false,
+   "q5FamilyFriends": false,
+   "q5Other": false,
+   "q4Explain": "",
+   "q5Explain": "",
+   "q6CareFacility": false,
+   "q6NursesAides": false,
+   "q6FamilyFriends": false,
+   "q6DayProgram": false,
+   "q6WardDecides": false,
+   "q6Other": false,
+   "q6Explain": "",
+   "q7SocialSecurity": "",
+   "q7Ssdi": "",
+   "q7Hmo": "",
+   "q7Ssi": "",
+   "q7StateSupplement": "",
+   "q7InstitutionalCare": "",
+   "q7SupplementalIns": "",
+   "q7Pension": "",
+   "q7Medicare": "",
+   "q7Medicaid": "",
+   "q7Va": "",
+   "q7Trusts": "",
+   "q7PendingBenefits": "",
+   "q7Other": false,
+   "q7Explain": "",
+   "q9Providers": [
+    {
+     "name": "",
+     "providerType": "",
+     "examDate": "",
+     "street": "",
+     "cityStateZip": "",
+     "phone": ""
+    }
+   ],
+   "adls": {
+    "lightHousekeeping": "",
+    "medication": "",
+    "managingMoney": "",
+    "bathing": "",
+    "prepareMeals": "",
+    "stairs": "",
+    "shopping": "",
+    "laundry": "",
+    "toileting": "",
+    "dressing": "",
+    "transferring": "",
+    "eating": "",
+    "walking": "",
+    "grooming": "",
+    "heavyChores": ""
+   },
+   "mentalAlzheimers": false,
+   "mentalAutism": false,
+   "mentalClosedHeadInjury": false,
+   "mentalDementia": false,
+   "mentalDepression": false,
+   "mentalDevelopmental": false,
+   "mentalSubstance": false,
+   "mentalSchizophrenia": false,
+   "mentalOther": false,
+   "mentalExplain": "",
+   "physMobility": false,
+   "physBlindness": false,
+   "physDeafness": false,
+   "physDiabetic": false,
+   "physParkinsons": false,
+   "physArthritis": false,
+   "physOther": false,
+   "physExplain": "",
+   "usesDentures": false,
+   "usesHearingAid": false,
+   "usesWheelchair": false,
+   "usesWalker": false,
+   "usesCrutches": false,
+   "usesProsthetics": false,
+   "usesGlasses": false,
+   "usesNone": false,
+   "usesOther": false,
+   "usesExplain": "",
+   "needsDentures": false,
+   "needsHearingAid": false,
+   "needsWheelchair": false,
+   "needsWalker": false,
+   "needsCrutches": false,
+   "needsProsthetics": false,
+   "needsGlasses": false,
+   "needsNone": false,
+   "needsOther": false,
+   "needsExplain": "",
+   "committeeIncorporated": "",
+   "committeeExplain": "",
+   "q11NoDirectives": false,
+   "q11StepResidence": false,
+   "q11StepSafeDeposit": false,
+   "q11StepInterviewed": false,
+   "q11StepMedicalProviders": false,
+   "q11StepAttorney": false,
+   "q11Executed": false,
+   "q11ExecDNR": false,
+   "q11ExecHealthcare": false,
+   "q11ExecPOA": false,
+   "q11ExecOther": false,
+   "q11ExecOtherText": "",
+   "q11Directives": [],
+   "certIncapacitatedNoCopy": false,
+   "certMinorNoCopy": false,
+   "certConsulted": false,
+   "certRecognizeRights": false,
+   "certNoRestriction": false,
+   "certProvidesCare": false,
+   "planGuardians": [
+    {
+     "name": "",
+     "ssn": "",
+     "street": "",
+     "phone": "",
+     "cityStateZip": "",
+     "signatureDate": "",
+     "relationship": "",
+     "signatureState": "",
+     "signatureImage": ""
+    }
+   ],
+   "attorney_name": "",
+   "attorney_bar": "",
+   "attorney_phone": "",
+   "attorney_email": "",
+   "attorney_street": "",
+   "attorney_cityStateZip": "",
+   "attorney_signatureDate": "",
+   "attorney_signatureState": "",
+   "attorney_signatureImage": "",
+   "wardPartyId": null,
+   "guardianPartyIds": [],
+   "attorneyPartyId": null,
+   "preparerPartyId": null,
+   "caseId": null,
+   "scheduleDocsAck": {},
+   "hasSafeDepositBox": "",
+   "safeDepositBoxFiled": "",
+   "amendedForm": ""
+  },
+  "planMinor": {
+   "planTriStateSchemaVersion": 2,
+   "certRecipients": [
+    {
+     "name": "",
+     "line2": "",
+     "line3": "",
+     "line4": ""
+    }
+   ],
+   "certNoRecipients": "",
+   "certDate": "",
+   "certIndicator": "",
+   "certSigner": "",
+   "certSignatureDate": "",
+   "certSignatureState": "",
+   "certSignatureImage": "",
+   "wardName": "",
+   "county": "",
+   "ucn": "",
+   "ref": "",
+   "periodFrom": "",
+   "periodTo": "",
+   "amendedForm": "",
+   "amendedVersion": "",
+   "professionalGuardian": "",
+   "publicGuardian": "",
+   "guardianName": "",
+   "q1ResidenceName": "",
+   "q1Street": "",
+   "q1City": "",
+   "q1State": "",
+   "q1Zip": "",
+   "q1Phone": "",
+   "q2Residences": [
+    {
+     "name": "",
+     "street": "",
+     "city": "",
+     "state": "",
+     "zip": "",
+     "phone": ""
+    }
+   ],
+   "q3Providers": [
+    {
+     "first": "",
+     "mi": "",
+     "last": "",
+     "street": "",
+     "city": "",
+     "state": "",
+     "zip": "",
+     "phone": "",
+     "providerType": "",
+     "visits": ""
+    }
+   ],
+   "q4Primary": false,
+   "q4PrimaryFreq": "",
+   "q4Dentist": false,
+   "q4DentistFreq": "",
+   "q4Specialist": false,
+   "q4SpecialistFreq": "",
+   "q4PT": false,
+   "q4ST": false,
+   "q4OT": false,
+   "q4MinorDecides": false,
+   "q4Other": false,
+   "q4Explain": "",
+   "q5SchoolProgress": "",
+   "q5SocialDevelopment": "",
+   "q5Communicates": "",
+   "q5Interpersonal": "",
+   "q5NoUnmetNeeds": false,
+   "q5DoesNotCareToSocialize": false,
+   "q5UnmetNeeds": false,
+   "q5Other": false,
+   "q5Explain": "",
+   "certIncapacitated": false,
+   "certMinor": false,
+   "certConsulted": false,
+   "certNoRestriction": false,
+   "certProvidesCare": false,
+   "certPhysicianAttached": false,
+   "planGuardians": [
+    {
+     "name": "",
+     "tin": "",
+     "phone": "",
+     "mailingStreet": "",
+     "mailingCityStateZip": "",
+     "relationship": "",
+     "email": "",
+     "signatureDate": "",
+     "signatureState": "",
+     "signatureImage": ""
+    }
+   ],
+   "preparer_name": "",
+   "preparer_tin": "",
+   "preparer_phone": "",
+   "preparer_mailingStreet": "",
+   "preparer_cityStateZip": "",
+   "preparer_email": "",
+   "preparer_signatureDate": "",
+   "preparer_signatureState": "",
+   "preparer_signatureImage": "",
+   "attorney_name": "",
+   "attorney_bar": "",
+   "attorney_phone": "",
+   "attorney_street": "",
+   "attorney_cityStateZip": "",
+   "attorney_email": "",
+   "attorney_signatureDate": "",
+   "attorney_signatureState": "",
+   "attorney_signatureImage": "",
+   "wardPartyId": null,
+   "guardianPartyIds": [],
+   "attorneyPartyId": null,
+   "preparerPartyId": null,
+   "caseId": null,
+   "scheduleDocsAck": {},
+   "hasSafeDepositBox": "",
+   "safeDepositBoxFiled": "",
+   "q7SocialSecurity": "",
+   "q7Ssdi": "",
+   "q7Hmo": "",
+   "q7Ssi": "",
+   "q7StateSupplement": "",
+   "q7InstitutionalCare": "",
+   "q7SupplementalIns": "",
+   "q7Pension": "",
+   "q7Medicare": "",
+   "q7Medicaid": "",
+   "q7Va": "",
+   "q7Trusts": "",
+   "q7PendingBenefits": ""
+  }
+ },
+ "idempotent": {
+  "guardian": true,
+  "simplified": true,
+  "annual": true,
+  "finalAccounting": true,
+  "trustAccounting": true,
+  "planSimplified": true,
+  "planAnnual": true,
+  "planInitial": true,
+  "planMinor": true
+ },
+ "engine": {
+  "guardian": "guardian",
+  "simplified": "simplified",
+  "annual": "annual",
+  "finalAccounting": "annual",
+  "trustAccounting": "annual",
+  "planSimplified": "planSimplified",
+  "planAnnual": "planAnnual",
+  "planInitial": "planInitial",
+  "planMinor": "planMinor"
+ },
+ "rows": {
+  "annual:schA": {
+   "payer": "",
+   "description": "",
+   "bank": "",
+   "accountNo": "",
+   "amount": ""
+  },
+  "annual:schB1": {
+   "bankAcct": "",
+   "checkNo": "",
+   "periodFrom": "",
+   "periodTo": "",
+   "datePaid": "",
+   "payee": "",
+   "courtOrderDate": "",
+   "amount": ""
+  },
+  "annual:schB2": {
+   "bankAcct": "",
+   "checkNo": "",
+   "periodFrom": "",
+   "periodTo": "",
+   "datePaid": "",
+   "payee": "",
+   "courtOrderDate": "",
+   "amount": ""
+  },
+  "annual:schB3": {
+   "bankAcct": "",
+   "checkNo": "",
+   "datePaid": "",
+   "payee": "",
+   "courtOrderDate": "",
+   "amount": ""
+  },
+  "annual:schB4": {
+   "bankAccountId": "",
+   "checkNo": "",
+   "datePaid": "",
+   "category": "",
+   "payee": "",
+   "amount": ""
+  },
+  "annual:schC": {
+   "description": "",
+   "date": "",
+   "gain": "",
+   "loss": ""
+  },
+  "annual:schD1": {
+   "description": "",
+   "accountNo": "",
+   "restricted": "",
+   "type": "",
+   "fullAmount": "",
+   "wardPct": "",
+   "restrictedAmt": ""
+  },
+  "annual:schD2": {
+   "description": "",
+   "residence": "",
+   "income": "",
+   "fullValue": "",
+   "wardPct": "",
+   "carryingValue": "",
+   "wardValue": ""
+  },
+  "annual:schD3": {
+   "description": "",
+   "fullAmount": "",
+   "wardPct": "",
+   "carryingValue": "",
+   "wardAmount": ""
+  },
+  "annual:schD4": {
+   "description": "",
+   "restricted": "",
+   "fullAmount": "",
+   "wardPct": "",
+   "carryingValue": "",
+   "wardValue": "",
+   "restrictedAmt": ""
+  },
+  "annual:schD5": {
+   "description": "",
+   "loanNo": "",
+   "loanType": "",
+   "fullDebt": "",
+   "wardPct": "",
+   "wardBalance": ""
+  },
+  "annual:schE": {
+   "bankName": "",
+   "transferInDate": "",
+   "transferInAmt": "",
+   "transferOutDate": "",
+   "transferOutAmt": ""
+  },
+  "annual:schF1": {
+   "description": "",
+   "bank": "",
+   "accountNo": "",
+   "courtOrderDate": "",
+   "salePrice": ""
+  },
+  "annual:schF2": {
+   "description": "",
+   "bank": "",
+   "accountNo": "",
+   "courtOrderDate": "",
+   "salePrice": ""
+  },
+  "annual:trust": {
+   "hasTrust": "",
+   "createdAfterGID": "",
+   "name": "",
+   "trustee": "",
+   "accountNo": "",
+   "dateCreated": "",
+   "trustType": "",
+   "wardPct": "",
+   "wardAmount": ""
+  },
+  "annual:remun": {
+   "guardian": "",
+   "type": "",
+   "amount": "",
+   "description": ""
+  },
+  "annual:unknown": {},
+  "guardian:guardian": {
+   "name": "",
+   "ssnEin": "",
+   "phone": "",
+   "streetAddress": "",
+   "cityStateZip": "",
+   "signatureDate": null,
+   "signatureState": "",
+   "signatureImage": "",
+   "isPreparer": false
+  },
+  "guardian:preparer": {
+   "name": "",
+   "ssnEin": "",
+   "phone": "",
+   "streetAddress": "",
+   "cityStateZip": "",
+   "signatureDate": null,
+   "signatureState": "",
+   "signatureImage": ""
+  },
+  "guardian:attorney": {
+   "name": "",
+   "barNumber": "",
+   "phone": "",
+   "streetAddress": "",
+   "cityStateZip": "",
+   "signatureDate": null,
+   "filingDate": null,
+   "signatureState": "",
+   "signatureImage": ""
+  },
+  "guardian:recipient": {
+   "name": "",
+   "address": "",
+   "cityStateZip": ""
+  },
+  "guardian:a1": {
+   "propertyDescription": "",
+   "streetAddress": "",
+   "cityStateZip": "",
+   "notes": "",
+   "residence": "",
+   "income": "",
+   "fullAssetValue": 0,
+   "wardPercent": 100
+  },
+  "guardian:a2": {
+   "lenderName": "",
+   "lenderAddress": "",
+   "lenderCityStateZip": "",
+   "accountNumber": "",
+   "notes": "",
+   "liabilityType": "Mortgage",
+   "fullDebtBalance": 0,
+   "wardPercent": 100
+  },
+  "guardian:b1": {
+   "institutionName": "",
+   "restricted": "",
+   "accountType": "",
+   "accountNumber": "",
+   "streetAddress": "",
+   "cityStateZip": "",
+   "fullAssetAmount": 0,
+   "wardPercent": 100
+  },
+  "guardian:b2": {
+   "description": "",
+   "streetAddress": "",
+   "cityStateZip": "",
+   "valuationMethod": "",
+   "fullAssetValue": 0,
+   "wardPercent": 100,
+   "inSafeDepositBox": "",
+   "isVehicle": false,
+   "vehicleYear": "",
+   "vehicleMake": "",
+   "vehicleModel": "",
+   "vehicleVin": "",
+   "odometerMileage": ""
+  },
+  "guardian:b3": {
+   "description": "",
+   "streetAddress": "",
+   "cityStateZip": "",
+   "restricted": "",
+   "fullAssetValue": 0,
+   "wardPercent": 100,
+   "inSafeDepositBox": ""
+  },
+  "guardian:b4": {
+   "lenderName": "",
+   "relatedProperty": "",
+   "accountNumber": "",
+   "lenderAddress": "",
+   "liabilityType": "Loan",
+   "fullLiabilityBalance": 0,
+   "wardPercent": 100
+  },
+  "guardian:c1": {
+   "payerName": "",
+   "payerAddress": "",
+   "payerCityStateZip": "",
+   "typeOfIncome": "",
+   "frequencyOfPayment": "Monthly",
+   "paymentBasis": "",
+   "annualIncomeAmount": 0,
+   "wardPercent": 100
+  },
+  "guardian:c2": {
+   "claimantName": "",
+   "claimantAttorney": "",
+   "lawsuitDescription": "",
+   "courtJurisdiction": "",
+   "caseNumber": "",
+   "claimantAddress": "",
+   "claimantCityStateZip": "",
+   "dateFiled": null,
+   "amountOfClaim": 0,
+   "wardPercent": 100
+  },
+  "guardian:c3": {
+   "defendantName": "",
+   "actionDescription": "",
+   "status": "",
+   "courtJurisdiction": "",
+   "caseNumber": "",
+   "actionDate": null,
+   "estimatedSettlement": 0,
+   "wardPercent": 100
+  },
+  "guardian:c4": {
+   "trustName": "",
+   "trusteeName": "",
+   "trusteeAddress": "",
+   "trusteeCityStateZip": "",
+   "dateCreated": null,
+   "accountNumber": "",
+   "trustType": "Pooled",
+   "trustAmount": 0,
+   "wardPercent": 100
+  },
+  "guardian:c5": {
+   "assetDescription": "",
+   "ownerName": "",
+   "ownerAddress": "",
+   "ownerCityStateZip": "",
+   "relationshipToWard": "",
+   "totalAssetValue": 0,
+   "jointOwnerPercent": 50
+  },
+  "blank:scheduleA1": {
+   "propertyDescription": "",
+   "streetAddress": "",
+   "cityStateZip": "",
+   "notes": "",
+   "residence": "",
+   "income": "",
+   "fullAssetValue": 0,
+   "wardPercent": 100
+  },
+  "blank:scheduleA2": {
+   "lenderName": "",
+   "lenderAddress": "",
+   "lenderCityStateZip": "",
+   "accountNumber": "",
+   "notes": "",
+   "liabilityType": "Mortgage",
+   "fullDebtBalance": 0,
+   "wardPercent": 100
+  },
+  "blank:scheduleB1": {
+   "institutionName": "",
+   "restricted": "",
+   "accountType": "",
+   "accountNumber": "",
+   "streetAddress": "",
+   "cityStateZip": "",
+   "fullAssetAmount": 0,
+   "wardPercent": 100
+  },
+  "blank:scheduleB2": {
+   "description": "",
+   "streetAddress": "",
+   "cityStateZip": "",
+   "valuationMethod": "",
+   "fullAssetValue": 0,
+   "wardPercent": 100,
+   "inSafeDepositBox": "",
+   "isVehicle": false,
+   "vehicleYear": "",
+   "vehicleMake": "",
+   "vehicleModel": "",
+   "vehicleVin": "",
+   "odometerMileage": ""
+  },
+  "blank:scheduleB3": {
+   "description": "",
+   "streetAddress": "",
+   "cityStateZip": "",
+   "restricted": "",
+   "fullAssetValue": 0,
+   "wardPercent": 100,
+   "inSafeDepositBox": ""
+  },
+  "blank:scheduleB4": {
+   "lenderName": "",
+   "relatedProperty": "",
+   "accountNumber": "",
+   "lenderAddress": "",
+   "liabilityType": "Loan",
+   "fullLiabilityBalance": 0,
+   "wardPercent": 100
+  },
+  "blank:scheduleC1": {
+   "payerName": "",
+   "payerAddress": "",
+   "payerCityStateZip": "",
+   "typeOfIncome": "",
+   "frequencyOfPayment": "Monthly",
+   "paymentBasis": "",
+   "annualIncomeAmount": 0,
+   "wardPercent": 100
+  },
+  "blank:scheduleC2": {
+   "claimantName": "",
+   "claimantAttorney": "",
+   "lawsuitDescription": "",
+   "courtJurisdiction": "",
+   "caseNumber": "",
+   "claimantAddress": "",
+   "claimantCityStateZip": "",
+   "dateFiled": null,
+   "amountOfClaim": 0,
+   "wardPercent": 100
+  },
+  "blank:scheduleC3": {
+   "defendantName": "",
+   "actionDescription": "",
+   "status": "",
+   "courtJurisdiction": "",
+   "caseNumber": "",
+   "actionDate": null,
+   "estimatedSettlement": 0,
+   "wardPercent": 100
+  },
+  "blank:scheduleC4": {
+   "trustName": "",
+   "trusteeName": "",
+   "trusteeAddress": "",
+   "trusteeCityStateZip": "",
+   "dateCreated": null,
+   "accountNumber": "",
+   "trustType": "Pooled",
+   "trustAmount": 0,
+   "wardPercent": 100
+  },
+  "blank:scheduleC5": {
+   "assetDescription": "",
+   "ownerName": "",
+   "ownerAddress": "",
+   "ownerCityStateZip": "",
+   "relationshipToWard": "",
+   "totalAssetValue": 0,
+   "jointOwnerPercent": 50
+  },
+  "blank:schA": {
+   "payer": "",
+   "description": "",
+   "bank": "",
+   "accountNo": "",
+   "amount": ""
+  },
+  "blank:schB1": {
+   "bankAcct": "",
+   "checkNo": "",
+   "periodFrom": "",
+   "periodTo": "",
+   "datePaid": "",
+   "payee": "",
+   "courtOrderDate": "",
+   "amount": ""
+  },
+  "blank:schB2": {
+   "bankAcct": "",
+   "checkNo": "",
+   "periodFrom": "",
+   "periodTo": "",
+   "datePaid": "",
+   "payee": "",
+   "courtOrderDate": "",
+   "amount": ""
+  },
+  "blank:schB3": {
+   "bankAcct": "",
+   "checkNo": "",
+   "datePaid": "",
+   "payee": "",
+   "courtOrderDate": "",
+   "amount": ""
+  },
+  "blank:schB4": {
+   "bankAccountId": "",
+   "checkNo": "",
+   "datePaid": "",
+   "category": "",
+   "payee": "",
+   "amount": ""
+  },
+  "blank:schC": {
+   "description": "",
+   "date": "",
+   "gain": "",
+   "loss": ""
+  },
+  "blank:schD1": {
+   "description": "",
+   "accountNo": "",
+   "restricted": "",
+   "type": "",
+   "fullAmount": "",
+   "wardPct": "",
+   "restrictedAmt": ""
+  },
+  "blank:schD2": {
+   "description": "",
+   "residence": "",
+   "income": "",
+   "fullValue": "",
+   "wardPct": "",
+   "carryingValue": "",
+   "wardValue": ""
+  },
+  "blank:schD3": {
+   "description": "",
+   "fullAmount": "",
+   "wardPct": "",
+   "carryingValue": "",
+   "wardAmount": ""
+  },
+  "blank:schD4": {
+   "description": "",
+   "restricted": "",
+   "fullAmount": "",
+   "wardPct": "",
+   "carryingValue": "",
+   "wardValue": "",
+   "restrictedAmt": ""
+  },
+  "blank:schD5": {
+   "description": "",
+   "loanNo": "",
+   "loanType": "",
+   "fullDebt": "",
+   "wardPct": "",
+   "wardBalance": ""
+  },
+  "blank:schE": {
+   "bankName": "",
+   "transferInDate": "",
+   "transferInAmt": "",
+   "transferOutDate": "",
+   "transferOutAmt": ""
+  },
+  "blank:schF1": {
+   "description": "",
+   "bank": "",
+   "accountNo": "",
+   "courtOrderDate": "",
+   "salePrice": ""
+  },
+  "blank:schF2": {
+   "description": "",
+   "bank": "",
+   "accountNo": "",
+   "courtOrderDate": "",
+   "salePrice": ""
+  },
+  "plan:residence": {
+   "name": "",
+   "street": "",
+   "cityStateZip": "",
+   "phone": "",
+   "facilityType": "",
+   "from": "",
+   "to": ""
+  },
+  "plan:provider": {
+   "name": "",
+   "street": "",
+   "cityStateZip": "",
+   "phone": "",
+   "providerType": "",
+   "visits": ""
+  },
+  "plan:directive": {
+   "title": "",
+   "dateSigned": "",
+   "signedBy": "",
+   "agents": "",
+   "alternates": "",
+   "relationship": "",
+   "contact": "",
+   "courtRevoked": "",
+   "orderDate": "",
+   "orderCounty": ""
+  },
+  "plan:initialProvider": {
+   "name": "",
+   "providerType": "",
+   "examDate": "",
+   "street": "",
+   "cityStateZip": "",
+   "phone": ""
+  },
+  "plan:minorResidence": {
+   "name": "",
+   "street": "",
+   "city": "",
+   "state": "",
+   "zip": "",
+   "phone": ""
+  },
+  "plan:minorProvider": {
+   "first": "",
+   "mi": "",
+   "last": "",
+   "street": "",
+   "city": "",
+   "state": "",
+   "zip": "",
+   "phone": "",
+   "providerType": "",
+   "visits": ""
+  },
+  "plan:certRecipient": {
+   "name": "",
+   "line2": "",
+   "line3": "",
+   "line4": ""
+  },
+  "plan:unknown": {}
+ },
+ "plan": {
+  "guardian": {
+   "guardianBlank": {
+    "name": "",
+    "signatureDate": "",
+    "email": "",
+    "phone": "",
+    "mailingAddress": "",
+    "signatureState": "",
+    "signatureImage": ""
+   },
+   "guardianMax": 2
+  },
+  "simplified": {
+   "guardianBlank": {
+    "name": "",
+    "signatureDate": "",
+    "email": "",
+    "phone": "",
+    "mailingAddress": "",
+    "signatureState": "",
+    "signatureImage": ""
+   },
+   "guardianMax": 2
+  },
+  "annual": {
+   "guardianBlank": {
+    "name": "",
+    "signatureDate": "",
+    "email": "",
+    "phone": "",
+    "mailingAddress": "",
+    "signatureState": "",
+    "signatureImage": ""
+   },
+   "guardianMax": 2
+  },
+  "finalAccounting": {
+   "guardianBlank": {
+    "name": "",
+    "signatureDate": "",
+    "email": "",
+    "phone": "",
+    "mailingAddress": "",
+    "signatureState": "",
+    "signatureImage": ""
+   },
+   "guardianMax": 2
+  },
+  "trustAccounting": {
+   "guardianBlank": {
+    "name": "",
+    "signatureDate": "",
+    "email": "",
+    "phone": "",
+    "mailingAddress": "",
+    "signatureState": "",
+    "signatureImage": ""
+   },
+   "guardianMax": 2
+  },
+  "planSimplified": {
+   "guardianBlank": {
+    "name": "",
+    "signatureDate": "",
+    "email": "",
+    "phone": "",
+    "mailingAddress": "",
+    "signatureState": "",
+    "signatureImage": ""
+   },
+   "guardianMax": 2
+  },
+  "planAnnual": {
+   "guardianBlank": {
+    "name": "",
+    "ssn": "",
+    "phone": "",
+    "email": "",
+    "signatureDate": "",
+    "mailingStreet": "",
+    "mailingCityStateZip": "",
+    "officeStreet": "",
+    "officeCityStateZip": "",
+    "relationship": "",
+    "signatureState": "",
+    "signatureImage": ""
+   },
+   "guardianMax": 3
+  },
+  "planInitial": {
+   "guardianBlank": {
+    "name": "",
+    "ssn": "",
+    "street": "",
+    "phone": "",
+    "cityStateZip": "",
+    "signatureDate": "",
+    "relationship": "",
+    "signatureState": "",
+    "signatureImage": ""
+   },
+   "guardianMax": 4
+  },
+  "planMinor": {
+   "guardianBlank": {
+    "name": "",
+    "tin": "",
+    "phone": "",
+    "mailingStreet": "",
+    "mailingCityStateZip": "",
+    "relationship": "",
+    "email": "",
+    "signatureDate": "",
+    "signatureState": "",
+    "signatureImage": ""
+   },
+   "guardianMax": 2
+  }
+ },
+ "pagesGuardian": [
+  {
+   "id": "/",
+   "label": "Cover"
+  },
+  {
+   "id": "/summary",
+   "label": "Summary"
+  },
+  {
+   "id": "/a1",
+   "label": "Schedule A-1: Real Estate"
+  },
+  {
+   "id": "/a2",
+   "label": "Schedule A-2: RE Liabilities"
+  },
+  {
+   "id": "/b1",
+   "label": "Schedule B-1: Cash"
+  },
+  {
+   "id": "/b2",
+   "label": "Schedule B-2: Personal Property"
+  },
+  {
+   "id": "/b3",
+   "label": "Schedule B-3: Intangibles"
+  },
+  {
+   "id": "/b4",
+   "label": "Schedule B-4: PP Liabilities"
+  },
+  {
+   "id": "/c1",
+   "label": "Schedule C-1: Income"
+  },
+  {
+   "id": "/c2",
+   "label": "Schedule C-2: Lawsuits Against"
+  },
+  {
+   "id": "/c3",
+   "label": "Schedule C-3: Lawsuits By Ward"
+  },
+  {
+   "id": "/c4",
+   "label": "Schedule C-4: Trusts"
+  },
+  {
+   "id": "/c5",
+   "label": "Schedule C-5: Joint Owners"
+  },
+  {
+   "id": "/d1",
+   "label": "D-1: Guardian Attestation"
+  },
+  {
+   "id": "/d2",
+   "label": "D-2: Preparer & Attorney"
+  },
+  {
+   "id": "/d3",
+   "label": "D-3: Audit Fee & Safe Deposit"
+  },
+  {
+   "id": "/d4",
+   "label": "D-4: Bond & Surety Info"
+  },
+  {
+   "id": "/d5",
+   "label": "D-5: Certificate of Service"
+  },
+  {
+   "id": "/print",
+   "label": "Print Preview"
+  }
+ ],
+ "pages": {
+  "guardian": [
+   {
+    "id": "/",
+    "label": "Cover"
+   },
+   {
+    "id": "/summary",
+    "label": "Summary"
+   },
+   {
+    "id": "/a1",
+    "label": "Schedule A-1: Real Estate"
+   },
+   {
+    "id": "/a2",
+    "label": "Schedule A-2: RE Liabilities"
+   },
+   {
+    "id": "/b1",
+    "label": "Schedule B-1: Cash"
+   },
+   {
+    "id": "/b2",
+    "label": "Schedule B-2: Personal Property"
+   },
+   {
+    "id": "/b3",
+    "label": "Schedule B-3: Intangibles"
+   },
+   {
+    "id": "/b4",
+    "label": "Schedule B-4: PP Liabilities"
+   },
+   {
+    "id": "/c1",
+    "label": "Schedule C-1: Income"
+   },
+   {
+    "id": "/c2",
+    "label": "Schedule C-2: Lawsuits Against"
+   },
+   {
+    "id": "/c3",
+    "label": "Schedule C-3: Lawsuits By Ward"
+   },
+   {
+    "id": "/c4",
+    "label": "Schedule C-4: Trusts"
+   },
+   {
+    "id": "/c5",
+    "label": "Schedule C-5: Joint Owners"
+   },
+   {
+    "id": "/d1",
+    "label": "D-1: Guardian Attestation"
+   },
+   {
+    "id": "/d2",
+    "label": "D-2: Preparer & Attorney"
+   },
+   {
+    "id": "/d3",
+    "label": "D-3: Audit Fee & Safe Deposit"
+   },
+   {
+    "id": "/d4",
+    "label": "D-4: Bond & Surety Info"
+   },
+   {
+    "id": "/d5",
+    "label": "D-5: Certificate of Service"
+   },
+   {
+    "id": "/print",
+    "label": "Print Preview"
+   }
+  ],
+  "finalAccounting": [
+   {
+    "id": "/",
+    "label": "Part I"
+   },
+   {
+    "id": "/summary",
+    "label": "Summary"
+   },
+   {
+    "id": "/p2",
+    "label": "Part II"
+   },
+   {
+    "id": "/p3",
+    "label": "Part III"
+   },
+   {
+    "id": "/p4",
+    "label": "Part IV"
+   },
+   {
+    "id": "/p5",
+    "label": "Part V"
+   },
+   {
+    "id": "/scha",
+    "label": "Sch A"
+   },
+   {
+    "id": "/schb1",
+    "label": "Sch B1"
+   },
+   {
+    "id": "/schb2",
+    "label": "Sch B2"
+   },
+   {
+    "id": "/schb3",
+    "label": "Sch B3"
+   },
+   {
+    "id": "/schb4",
+    "label": "Sch B4"
+   },
+   {
+    "id": "/schc",
+    "label": "Sch C"
+   },
+   {
+    "id": "/schd1",
+    "label": "Sch D1"
+   },
+   {
+    "id": "/schd2",
+    "label": "Sch D2"
+   },
+   {
+    "id": "/schd3",
+    "label": "Sch D3"
+   },
+   {
+    "id": "/schd4",
+    "label": "Sch D4"
+   },
+   {
+    "id": "/schd5",
+    "label": "Sch D5"
+   },
+   {
+    "id": "/sche",
+    "label": "Sch E"
+   },
+   {
+    "id": "/schf1",
+    "label": "Sch F1"
+   },
+   {
+    "id": "/schf2",
+    "label": "Sch F2"
+   },
+   {
+    "id": "/p67",
+    "label": "Parts VI & VII"
+   },
+   {
+    "id": "/p8",
+    "label": "Part VIII"
+   },
+   {
+    "id": "/p9",
+    "label": "Part IX"
+   },
+   {
+    "id": "/p10",
+    "label": "Part X"
+   },
+   {
+    "id": "/p11",
+    "label": "Part XI"
+   },
+   {
+    "id": "/print",
+    "label": "Print Preview"
+   }
+  ],
+  "trustAccounting": [
+   {
+    "id": "/",
+    "label": "Part I"
+   },
+   {
+    "id": "/summary",
+    "label": "Summary"
+   },
+   {
+    "id": "/p2",
+    "label": "Part II"
+   },
+   {
+    "id": "/p3",
+    "label": "Part III"
+   },
+   {
+    "id": "/p4",
+    "label": "Part IV"
+   },
+   {
+    "id": "/p5",
+    "label": "Part V"
+   },
+   {
+    "id": "/scha",
+    "label": "Sch A"
+   },
+   {
+    "id": "/schb1",
+    "label": "Sch B1"
+   },
+   {
+    "id": "/schb2",
+    "label": "Sch B2"
+   },
+   {
+    "id": "/schb3",
+    "label": "Sch B3"
+   },
+   {
+    "id": "/schb4",
+    "label": "Sch B4"
+   },
+   {
+    "id": "/schc",
+    "label": "Sch C"
+   },
+   {
+    "id": "/schd1",
+    "label": "Sch D1"
+   },
+   {
+    "id": "/schd2",
+    "label": "Sch D2"
+   },
+   {
+    "id": "/schd3",
+    "label": "Sch D3"
+   },
+   {
+    "id": "/schd4",
+    "label": "Sch D4"
+   },
+   {
+    "id": "/schd5",
+    "label": "Sch D5"
+   },
+   {
+    "id": "/sche",
+    "label": "Sch E"
+   },
+   {
+    "id": "/schf1",
+    "label": "Sch F1"
+   },
+   {
+    "id": "/schf2",
+    "label": "Sch F2"
+   },
+   {
+    "id": "/p67",
+    "label": "Parts VI & VII"
+   },
+   {
+    "id": "/p8",
+    "label": "Part VIII"
+   },
+   {
+    "id": "/p9",
+    "label": "Part IX"
+   },
+   {
+    "id": "/p10",
+    "label": "Part X"
+   },
+   {
+    "id": "/p11",
+    "label": "Part XI"
+   },
+   {
+    "id": "/print",
+    "label": "Print Preview"
+   }
+  ],
+  "simplified": [
+   {
+    "id": "/",
+    "label": "Cover & Part I"
+   },
+   {
+    "id": "/summary",
+    "label": "Summary"
+   },
+   {
+    "id": "/p2",
+    "label": "Part II"
+   },
+   {
+    "id": "/p3",
+    "label": "Part III"
+   },
+   {
+    "id": "/p4",
+    "label": "Part IV"
+   },
+   {
+    "id": "/p5",
+    "label": "Part V"
+   },
+   {
+    "id": "/p6",
+    "label": "Part VI"
+   },
+   {
+    "id": "/p7",
+    "label": "Part VII"
+   },
+   {
+    "id": "/print",
+    "label": "Print Preview"
+   }
+  ],
+  "annual": [
+   {
+    "id": "/",
+    "label": "Part I"
+   },
+   {
+    "id": "/summary",
+    "label": "Summary"
+   },
+   {
+    "id": "/p2",
+    "label": "Part II"
+   },
+   {
+    "id": "/p3",
+    "label": "Part III"
+   },
+   {
+    "id": "/p4",
+    "label": "Part IV"
+   },
+   {
+    "id": "/p5",
+    "label": "Part V"
+   },
+   {
+    "id": "/scha",
+    "label": "Sch A"
+   },
+   {
+    "id": "/schb1",
+    "label": "Sch B1"
+   },
+   {
+    "id": "/schb2",
+    "label": "Sch B2"
+   },
+   {
+    "id": "/schb3",
+    "label": "Sch B3"
+   },
+   {
+    "id": "/schb4",
+    "label": "Sch B4"
+   },
+   {
+    "id": "/schc",
+    "label": "Sch C"
+   },
+   {
+    "id": "/schd1",
+    "label": "Sch D1"
+   },
+   {
+    "id": "/schd2",
+    "label": "Sch D2"
+   },
+   {
+    "id": "/schd3",
+    "label": "Sch D3"
+   },
+   {
+    "id": "/schd4",
+    "label": "Sch D4"
+   },
+   {
+    "id": "/schd5",
+    "label": "Sch D5"
+   },
+   {
+    "id": "/sche",
+    "label": "Sch E"
+   },
+   {
+    "id": "/schf1",
+    "label": "Sch F1"
+   },
+   {
+    "id": "/schf2",
+    "label": "Sch F2"
+   },
+   {
+    "id": "/p67",
+    "label": "Parts VI & VII"
+   },
+   {
+    "id": "/p8",
+    "label": "Part VIII"
+   },
+   {
+    "id": "/p9",
+    "label": "Part IX"
+   },
+   {
+    "id": "/p10",
+    "label": "Part X"
+   },
+   {
+    "id": "/p11",
+    "label": "Part XI"
+   },
+   {
+    "id": "/print",
+    "label": "Print Preview"
+   }
+  ],
+  "planSimplified": [
+   {
+    "id": "/",
+    "label": "Cover"
+   },
+   {
+    "id": "/summary",
+    "label": "Summary"
+   },
+   {
+    "id": "/p2",
+    "label": "The Plan"
+   },
+   {
+    "id": "/p3",
+    "label": "Signatures"
+   },
+   {
+    "id": "/p4",
+    "label": "Certificate of Service"
+   },
+   {
+    "id": "/print",
+    "label": "Print Preview"
+   }
+  ],
+  "planAnnual": [
+   {
+    "id": "/",
+    "label": "Cover"
+   },
+   {
+    "id": "/summary",
+    "label": "Summary"
+   },
+   {
+    "id": "/p2",
+    "label": "1. Residences"
+   },
+   {
+    "id": "/p3",
+    "label": "2–3. Residence & Care"
+   },
+   {
+    "id": "/p4",
+    "label": "3G. Insurance & Benefits"
+   },
+   {
+    "id": "/p5",
+    "label": "4. Medical Treatment"
+   },
+   {
+    "id": "/p6",
+    "label": "5–7. Skills & Rights"
+   },
+   {
+    "id": "/p7",
+    "label": "8. Daily Living"
+   },
+   {
+    "id": "/p8",
+    "label": "9. Disabilities & Devices"
+   },
+   {
+    "id": "/p9",
+    "label": "10. Advance Directives"
+   },
+   {
+    "id": "/p10",
+    "label": "11. Remuneration"
+   },
+   {
+    "id": "/p11",
+    "label": "Signatures"
+   },
+   {
+    "id": "/p12",
+    "label": "Certificate of Service"
+   },
+   {
+    "id": "/print",
+    "label": "Print Preview"
+   }
+  ],
+  "planInitial": [
+   {
+    "id": "/",
+    "label": "Cover"
+   },
+   {
+    "id": "/summary",
+    "label": "Summary"
+   },
+   {
+    "id": "/p2",
+    "label": "2–3. Setting & Medical Care"
+   },
+   {
+    "id": "/p3",
+    "label": "4–5. Mental Health & Personal Care"
+   },
+   {
+    "id": "/p4",
+    "label": "6–7. Socialization & Benefits"
+   },
+   {
+    "id": "/p5",
+    "label": "9. Examining Providers"
+   },
+   {
+    "id": "/p6",
+    "label": "10A. Daily Living"
+   },
+   {
+    "id": "/p7",
+    "label": "10B–D. Disabilities & Devices"
+   },
+   {
+    "id": "/p8",
+    "label": "11. Advance Directives"
+   },
+   {
+    "id": "/p9",
+    "label": "Signatures"
+   },
+   {
+    "id": "/p10",
+    "label": "Attorney Certification"
+   },
+   {
+    "id": "/p11",
+    "label": "Certificate of Service"
+   },
+   {
+    "id": "/print",
+    "label": "Print Preview"
+   }
+  ],
+  "planMinor": [
+   {
+    "id": "/",
+    "label": "Cover"
+   },
+   {
+    "id": "/summary",
+    "label": "Summary"
+   },
+   {
+    "id": "/p2",
+    "label": "2. Prior Residences"
+   },
+   {
+    "id": "/p3",
+    "label": "3. Treatment Providers"
+   },
+   {
+    "id": "/p4",
+    "label": "4. Medical Services"
+   },
+   {
+    "id": "/p5",
+    "label": "5. Education & Social Development"
+   },
+   {
+    "id": "/p6",
+    "label": "Guardian Signatures"
+   },
+   {
+    "id": "/p7",
+    "label": "Preparer & Attorney"
+   },
+   {
+    "id": "/p8",
+    "label": "Certificate of Service"
+   },
+   {
+    "id": "/print",
+    "label": "Print Preview"
+   }
+  ]
+ },
+ "meta": {
+  "guardian": {
+   "iconName": "clipboard",
+   "accent": "#1e5799",
+   "accentText": "var(--accent-text)",
+   "totalLabel": "Total Value",
+   "financial": true
+  },
+  "simplified": {
+   "iconName": "receipt",
+   "accent": "#1f7a3d",
+   "accentText": "var(--ok-text)",
+   "totalLabel": "Ending Balance",
+   "financial": true
+  },
+  "annual": {
+   "iconName": "chart",
+   "accent": "#820024",
+   "accentText": "var(--brand-text)",
+   "totalLabel": "Net Assets",
+   "financial": true
+  },
+  "finalAccounting": {
+   "iconName": "chart",
+   "accent": "#820024",
+   "accentText": "var(--brand-text)",
+   "totalLabel": "Net Assets",
+   "financial": true
+  },
+  "trustAccounting": {
+   "iconName": "chart",
+   "accent": "#820024",
+   "accentText": "var(--brand-text)",
+   "totalLabel": "Net Assets",
+   "financial": true
+  },
+  "planSimplified": {
+   "iconName": "shield",
+   "accent": "#6b3fa0",
+   "accentText": "var(--accent-text)",
+   "totalLabel": "Filing Progress",
+   "financial": false
+  },
+  "planAnnual": {
+   "iconName": "shield",
+   "accent": "#4a3f9e",
+   "accentText": "var(--accent-text)",
+   "totalLabel": "Filing Progress",
+   "financial": false
+  },
+  "planInitial": {
+   "iconName": "shield",
+   "accent": "#2f6e8c",
+   "accentText": "var(--accent-text)",
+   "totalLabel": "Filing Progress",
+   "financial": false
+  },
+  "planMinor": {
+   "iconName": "shield",
+   "accent": "#8a5a1e",
+   "accentText": "var(--accent-text)",
+   "totalLabel": "Filing Progress",
+   "financial": false
+  }
+ },
+ "inventoryTypes": {
+  "guardian": {
+   "name": "Initial Inventory",
+   "label": "Verified Initial Inventory",
+   "description": "Initial inventory of assets as of Guardianship Inception Date"
+  },
+  "simplified": {
+   "name": "Simplified Annual Accounting",
+   "label": "Simplified Annual Accounting",
+   "description": "Simplified annual accounting for guardianship"
+  },
+  "annual": {
+   "name": "Annual Accounting",
+   "label": "Annual Accounting",
+   "description": "Full annual accounting with detailed schedules"
+  },
+  "finalAccounting": {
+   "name": "Final Accounting",
+   "label": "Final Accounting",
+   "description": "Closing accounting filed when the guardianship ends, using the full annual schedules"
+  },
+  "trustAccounting": {
+   "name": "Trust Accounting",
+   "label": "Trust Accounting",
+   "description": "Accounting for a trust, using the full annual schedules"
+  },
+  "planSimplified": {
+   "name": "Simplified Annual Plan",
+   "label": "Simplified Annual Plan",
+   "description": "Short annual report on the ward's residence, care, and wellbeing"
+  },
+  "planAnnual": {
+   "name": "Annual Guardianship Plan",
+   "label": "Annual Guardianship Plan",
+   "description": "Full annual report on the ward's residence, care, rights, and abilities"
+  },
+  "planInitial": {
+   "name": "Initial Guardianship Plan",
+   "label": "Initial Guardianship Plan",
+   "description": "The first plan filed after Letters of Guardianship are signed, due within 60 days"
+  },
+  "planMinor": {
+   "name": "Annual Plan — Minors",
+   "label": "Annual Plan — Minors",
+   "description": "Annual report for a minor ward, covering residence, care, education, and social development"
+  }
+ },
+ "constants": {
+  "PLAN_RIGHTS": [
+   [
+    "marry",
+    "Right to marry"
+   ],
+   [
+    "vote",
+    "Right to vote"
+   ],
+   [
+    "govBenefits",
+    "Right to personally apply for government benefits"
+   ],
+   [
+    "driver",
+    "Right to have a driver's license"
+   ],
+   [
+    "travel",
+    "Right to travel"
+   ],
+   [
+    "employment",
+    "Right to seek or retain employment"
+   ],
+   [
+    "contract",
+    "Right to contract"
+   ],
+   [
+    "sue",
+    "Right to sue and be sued"
+   ],
+   [
+    "property",
+    "Right to manage property or to make any gift or disposition"
+   ],
+   [
+    "residence",
+    "Right to determine residence"
+   ],
+   [
+    "medical",
+    "Right to consent to medical treatment"
+   ],
+   [
+    "social",
+    "Right to make decisions about social environment or other aspects of social life"
+   ]
+  ],
+  "PLAN_RIGHT_STATES": [
+   {
+    "value": "Capable of restoration",
+    "label": "Yes"
+   },
+   {
+    "value": "No",
+    "label": "No"
+   },
+   {
+    "value": "Not removed",
+    "label": "Not Removed"
+   },
+   {
+    "value": "Needs to be restored",
+    "label": "Needs to be Restored"
+   }
+  ],
+  "PLAN_ADLS": [
+   [
+    "eating",
+    "Eating"
+   ],
+   [
+    "prepareMeals",
+    "Prepare meals"
+   ],
+   [
+    "heavyChores",
+    "Heavy chores (e.g. vacuuming)"
+   ],
+   [
+    "lightHousekeeping",
+    "Light housekeeping"
+   ],
+   [
+    "managingMoney",
+    "Managing money"
+   ],
+   [
+    "dressing",
+    "Dressing"
+   ],
+   [
+    "transportation",
+    "Transportation ability"
+   ],
+   [
+    "walking",
+    "Walking / mobility"
+   ],
+   [
+    "toileting",
+    "Toileting"
+   ],
+   [
+    "stairs",
+    "Climbing stairs"
+   ],
+   [
+    "transferring",
+    "Transferring (wheelchair to chair/bed)"
+   ],
+   [
+    "laundry",
+    "Doing laundry"
+   ],
+   [
+    "shopping",
+    "Shopping"
+   ],
+   [
+    "bathing",
+    "Bathing"
+   ],
+   [
+    "grooming",
+    "Grooming"
+   ],
+   [
+    "medication",
+    "Administration of medication"
+   ]
+  ],
+  "PLAN_ADL_RATINGS": [
+   "",
+   "Ward needs no help",
+   "Ward needs assistance",
+   "Ward cannot do at all"
+  ],
+  "PLAN_BENEFITS": [
+   [
+    "socialSecurity",
+    "Social Security"
+   ],
+   [
+    "ssdi",
+    "Social Security Disability Income (SSDI)"
+   ],
+   [
+    "hmo",
+    "Health Maintenance Organization (HMO)"
+   ],
+   [
+    "ssi",
+    "Supplemental Security Income (SSI)"
+   ],
+   [
+    "stateSupplement",
+    "Optional State Supplement"
+   ],
+   [
+    "institutionalCare",
+    "Institutional Care Program"
+   ],
+   [
+    "supplementalIns",
+    "Supplemental Insurance"
+   ],
+   [
+    "pension",
+    "Pension"
+   ],
+   [
+    "medicare",
+    "Medicare"
+   ],
+   [
+    "medicaid",
+    "Medicaid"
+   ],
+   [
+    "trusts",
+    "Trusts"
+   ],
+   [
+    "other",
+    "Other"
+   ]
+  ],
+  "INITIAL_ADLS": [
+   [
+    "lightHousekeeping",
+    "Light Housekeeping"
+   ],
+   [
+    "medication",
+    "Administration of Medication"
+   ],
+   [
+    "managingMoney",
+    "Managing Money"
+   ],
+   [
+    "bathing",
+    "Bathing"
+   ],
+   [
+    "prepareMeals",
+    "Prepare Meals"
+   ],
+   [
+    "stairs",
+    "Climbing Stairs"
+   ],
+   [
+    "shopping",
+    "Shopping"
+   ],
+   [
+    "laundry",
+    "Doing Laundry"
+   ],
+   [
+    "toileting",
+    "Toileting"
+   ],
+   [
+    "dressing",
+    "Dressing"
+   ],
+   [
+    "transferring",
+    "Transferring (from wheelchair to chair/bed)"
+   ],
+   [
+    "eating",
+    "Eating"
+   ],
+   [
+    "walking",
+    "Walking / Mobility"
+   ],
+   [
+    "grooming",
+    "Grooming"
+   ],
+   [
+    "heavyChores",
+    "Heavy Chores"
+   ]
+  ],
+  "INITIAL_ADL_RATINGS": [
+   "",
+   "Ward needs no help",
+   "Ward needs some assistance",
+   "Ward cannot do at all"
+  ],
+  "ANNUAL_FORM_ALIASES": [
+   "finalAccounting",
+   "trustAccounting"
+  ]
+ },
+ "planRightLabels": {
+  "Capable of restoration": "Yes",
+  "No": "No",
+  "Not removed": "Not Removed",
+  "Needs to be restored": "Needs to be Restored",
+  "": "",
+  "odd": "odd"
+ }
+}

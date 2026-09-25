@@ -25,13 +25,21 @@
 //     active filing, bypassing the normalization, side effects and
 //     validation a real edit triggers. Any test whose result depends on what
 //     an edit triggers uses setField() or drives the real control.
+import { initializeEmptyData } from '../filing/filing-registry.js';
+import {
+  PLAN_RIGHTS, PLAN_RIGHT_STATES, PLAN_ADLS, PLAN_ADL_RATINGS, PLAN_BENEFITS, emptyPlanDirective,
+} from '../filing/models/plan-annual.js';
+import { INITIAL_ADLS, INITIAL_ADL_RATINGS } from '../filing/models/plan-initial.js';
+
 export const TEST_MODE_FLAG = '__GUARDIAN_FORMS_TEST_MODE__';
 
 const copy = (value) => (value === undefined ? undefined : JSON.parse(JSON.stringify(value)));
 
 // The app's fixed reference lists a fixture may build its answers from (the
-// plan rights and daily-living lists): read-only, returned as copies.
-export const CONSTANTS = ['PLAN_RIGHTS', 'PLAN_RIGHT_STATES', 'PLAN_ADLS', 'PLAN_ADL_RATINGS', 'PLAN_BENEFITS', 'INITIAL_ADLS', 'INITIAL_ADL_RATINGS'];
+// plan rights and daily-living lists): read-only, returned as copies. Imported
+// from the Plan models since Milestone 70's 70C (they were window globals).
+const CONSTANT_LISTS = { PLAN_RIGHTS, PLAN_RIGHT_STATES, PLAN_ADLS, PLAN_ADL_RATINGS, PLAN_BENEFITS, INITIAL_ADLS, INITIAL_ADL_RATINGS };
+export const CONSTANTS = Object.keys(CONSTANT_LISTS);
 
 // Each filing type's validator, and the feature loader that defines it.
 const VALIDATORS = {
@@ -206,9 +214,9 @@ export function createTestingAdapter(w) {
       // carrying over from an existing filing (the carry-over flow's entry).
       openEligibility: (name, sourceFilingId) => call('showSimplifiedEligibilityModal', name, sourceFilingId),
       add: (name, type) => call('addWard', name, type),              // addWard(name, type)
-      emptyData: (type) => copy(call('initializeEmptyData', type)), // a copy of a blank filing
+      emptyData: (type) => copy(initializeEmptyData(type)), // a copy of a blank filing
       /** A blank advance-directive card, the one a Plan's "executed directives" box adds (a copy). */
-      emptyDirective: () => copy(call('emptyPlanDirective')),
+      emptyDirective: () => copy(emptyPlanDirective()),
       addRow: (schedule) => call('addEntry', schedule),
       duplicateRow: (schedule, index) => call('duplicateEntry', schedule, index),
     }),
@@ -292,7 +300,7 @@ export function createTestingAdapter(w) {
     /** A copy of one of the app's fixed reference lists (CONSTANTS). */
     constants(name) {
       if (!CONSTANTS.includes(name)) throw new Error(`GuardianForms.testing.constants: ${name} is not a published list`);
-      return copy(w[name]);
+      return copy(CONSTANT_LISTS[name]);
     },
     generateOutput: Object.freeze({
       // Each hands back that filing type's PDF builders (a module, not state).
@@ -416,7 +424,7 @@ export function createTestingAdapter(w) {
         if (!entry) throw new Error(`GuardianForms.testing.validate.fixture: unrecognized inventoryType ${JSON.stringify(type)}`);
         const [validator, loader] = entry;
         if (typeof w[validator] !== 'function' && typeof w[loader] === 'function') await w[loader]();
-        const filing = copy({ ...call('initializeEmptyData', type), ...fixture });
+        const filing = copy({ ...initializeEmptyData(type), ...fixture });
         const previous = w.D;
         w.D = filing;
         try {

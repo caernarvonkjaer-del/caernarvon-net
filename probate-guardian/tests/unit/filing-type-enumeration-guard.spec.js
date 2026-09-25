@@ -31,6 +31,11 @@ const ALLOWED = {
   // right -- Milestone 42G deliberately did not attempt it in one pass
   // against the single most load-bearing file in the app.
   'src/legacy-app.js': 'core dispatch, out of scope for 42G -- see MILESTONE-42-PROPOSAL.md 42G',
+  // Milestone 70, 70C: the eager filing registry -- the per-identity names,
+  // dashboard look and page lists legacy-app.js used to hold (the exception
+  // above, moving here piece by piece). Built on DESCRIPTORS, not a second
+  // identity list: FILING_REGISTRY itself is derived from FILING_TYPE_KEYS.
+  'src/core/filing/filing-registry.js': "the eager filing registry's per-identity data, moved out of legacy-app.js (MS 70 70C)",
   // CARRY_SOURCE_TYPE / PRIOR_ACCOUNTING_SOURCES / ACCOUNTING_FORM_TYPES:
   // creation-time eligibility, confirmed the correct home already (other
   // consumers, e.g. filing-descriptor.js's own CONVERT_SOURCE_TYPE

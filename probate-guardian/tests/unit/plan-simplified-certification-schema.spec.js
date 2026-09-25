@@ -1,17 +1,10 @@
 import { describe, expect, test } from 'vitest';
 
-// emptyDataPlanMinor() seeds its Q2/Q3 collections from window row factories
-// (state.js:399-401), so it needs these before the module's functions run.
-// Only the sibling-comparison test touches plan-minor; the stub stays minimal
-// rather than pulling in the full plan test window.
-global.window = {
-  ...(global.window || {}),
-  emptyMinorResidence: () => ({ name: '', street: '', city: '', state: '', zip: '', phone: '' }),
-  emptyMinorProvider: () => ({ first: '', mi: '', last: '', providerType: '', visits: '' }),
-  emptyMinorGuardianSig: () => ({ name: '', signatureDate: '', tin: '', phone: '' }),
-};
-
-const { emptyDataPlanSimplified, emptyDataPlanMinor } = await import('../../src/core/state.js');
+// emptyDataPlanMinor() seeded its Q2/Q3 collections from window row factories
+// until Milestone 70's 70C, so this suite stubbed them; it builds them from its
+// own model now.
+const { emptyDataPlanSimplified } = await import('../../src/core/filing/models/plan-simplified.js');
+const { emptyDataPlanMinor } = await import('../../src/core/filing/models/plan-minor.js');
 
 // Milestone 61, delivery 61A. The Simplified Plan's UI captures preparer and
 // attorney certification details (plan-simplified/index.js:298-326), but the

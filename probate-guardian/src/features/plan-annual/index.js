@@ -30,6 +30,8 @@ import { renderFormField } from '../../core/form/form-fields.js';
 import { esc } from '../../core/filing/escape-html.js';
 import { ic } from '../../core/ui/icons.js';
 import { formatDisplayDate } from '../../core/form/date-parser.js';
+import { PLAN_ADLS, PLAN_ADL_RATINGS, PLAN_BENEFITS, PLAN_RIGHTS, PLAN_RIGHT_STATES } from '../../core/filing/models/plan-annual.js';
+import { normalizePlanGuardians } from '../../core/filing/models/plan-rows.js';
 // Annual Guardianship Plan — the third feature extraction (Milestone 4,
 // Phases A and B of INDEX-SPLIT-PLAN.md's migration sequence). Dynamically
 // imported by legacy-app.js's mountPlanAnnualFeature()/mountPlanAnnualNav()
@@ -67,7 +69,7 @@ import { formatDisplayDate } from '../../core/form/date-parser.js';
 const {
   inpS, pageNavS,
   renderScheduleDocsSection, txtP, chkP, planQ, planCheckGroup, yesNoCheckboxS, yesNoRadioHTML,
-  PLAN_RIGHTS, PLAN_RIGHT_STATES, PLAN_ADLS, PLAN_ADL_RATINGS, PLAN_BENEFITS,
+  
 } = window;
 
 // print.js is dynamically imported only when the user reaches /print or
@@ -595,7 +597,7 @@ function pagePlanARemuneration(){
 
 function pagePlanASignatures(){
   const d=window.D;
-  const g=window.normalizePlanGuardians(d);
+  const g=normalizePlanGuardians(d);
   const cb=(id,label,route='')=>chkP(id,label,d[id],route);
   const block=(i,label)=>{
     const p=g[i]||{};

@@ -11,6 +11,7 @@
 // src/core/ already uses.
 
 /** Follows a merge tombstone (see the de-dup screen, a later phase) to the surviving party. */
+import { formEngine } from './filing/filing-registry.js';
 export function resolveParty(partyId) {
   const caseFile = window.caseFile;
   if (!partyId || !caseFile || !Array.isArray(caseFile.parties)) return null;
@@ -210,7 +211,7 @@ const ROLE_FIELD_MAPS = {
 
 function engineTypeFor(filing) {
   const type = filing && filing.inventoryType;
-  return window.formEngine ? window.formEngine(type) : type;
+  return formEngine(type);
 }
 
 function roleConfigFor(filing, role) {

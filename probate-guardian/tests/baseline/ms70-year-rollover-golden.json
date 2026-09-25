@@ -1,5 +1,5 @@
 {
- "note": "Milestone 70, 70A: what starting a new year does to each filing identity, recorded from the app before migration by tests/e2e/year-rollover.characterization.spec.ts. Regenerate only for a deliberate, recorded change.",
+ "note": "Milestone 70, 70A: what starting a new year does to each filing identity, recorded from the app before migration by tests/e2e/year-rollover.characterization.spec.ts. Regenerated in 70C for simplified and planMinor only: master's b28bf25, carried in 70C, removes rows the filer added and never touched when they leave a page, so the Simplified fixture's two blank certificate recipients and the Plan for Minors' blank residence row are gone before the new year starts. Regenerate only for a deliberate, recorded change.",
  "types": {
   "guardian": {
    "activeYearKey": "Year 2",
@@ -538,6 +538,34 @@
     "wardId"
    ],
    "archiveDiffersFromTheYearBeforeAt": {
+    "certRecipients.1.name": {
+     "from": "\"\"",
+     "to": "\"Recipient Three\""
+    },
+    "certRecipients.2.line2": {
+     "from": "\"\"",
+     "to": null
+    },
+    "certRecipients.2.line3": {
+     "from": "\"\"",
+     "to": null
+    },
+    "certRecipients.2.name": {
+     "from": "\"Recipient Three\"",
+     "to": null
+    },
+    "certRecipients.3.line2": {
+     "from": "\"\"",
+     "to": null
+    },
+    "certRecipients.3.line3": {
+     "from": "\"\"",
+     "to": null
+    },
+    "certRecipients.3.name": {
+     "from": "\"\"",
+     "to": null
+    },
     "depositsSettlement": {
      "from": "\"0\"",
      "to": "0"
@@ -567,6 +595,34 @@
     "amendedForm": {
      "from": "\"No\"",
      "to": "\"\""
+    },
+    "certRecipients.1.name": {
+     "from": "\"\"",
+     "to": "\"Recipient Three\""
+    },
+    "certRecipients.2.line2": {
+     "from": "\"\"",
+     "to": null
+    },
+    "certRecipients.2.line3": {
+     "from": "\"\"",
+     "to": null
+    },
+    "certRecipients.2.name": {
+     "from": "\"Recipient Three\"",
+     "to": null
+    },
+    "certRecipients.3.line2": {
+     "from": "\"\"",
+     "to": null
+    },
+    "certRecipients.3.line3": {
+     "from": "\"\"",
+     "to": null
+    },
+    "certRecipients.3.name": {
+     "from": "\"\"",
+     "to": null
     },
     "certServiceDate": {
      "from": "\"2027-01-05\"",
@@ -722,31 +778,7 @@
     },
     "years.0.data.certRecipients.1.name": {
      "from": null,
-     "to": "\"\""
-    },
-    "years.0.data.certRecipients.2.line2": {
-     "from": null,
-     "to": "\"\""
-    },
-    "years.0.data.certRecipients.2.line3": {
-     "from": null,
-     "to": "\"\""
-    },
-    "years.0.data.certRecipients.2.name": {
-     "from": null,
      "to": "\"Recipient Three\""
-    },
-    "years.0.data.certRecipients.3.line2": {
-     "from": null,
-     "to": "\"\""
-    },
-    "years.0.data.certRecipients.3.line3": {
-     "from": null,
-     "to": "\"\""
-    },
-    "years.0.data.certRecipients.3.name": {
-     "from": null,
-     "to": "\"\""
     },
     "years.0.data.certServiceDate": {
      "from": null,
@@ -5715,6 +5747,34 @@
      "from": "\"33755\"",
      "to": "\"\""
     },
+    "q2Residences": {
+     "from": "[]",
+     "to": null
+    },
+    "q2Residences.0.city": {
+     "from": null,
+     "to": "\"\""
+    },
+    "q2Residences.0.name": {
+     "from": null,
+     "to": "\"\""
+    },
+    "q2Residences.0.phone": {
+     "from": null,
+     "to": "\"\""
+    },
+    "q2Residences.0.state": {
+     "from": null,
+     "to": "\"\""
+    },
+    "q2Residences.0.street": {
+     "from": null,
+     "to": "\"\""
+    },
+    "q2Residences.0.zip": {
+     "from": null,
+     "to": "\"\""
+    },
     "q3Providers.0.first": {
      "from": "\"Sample\"",
      "to": "\"\""
@@ -6059,29 +6119,9 @@
      "from": null,
      "to": "\"33755\""
     },
-    "years.0.data.q2Residences.0.city": {
+    "years.0.data.q2Residences": {
      "from": null,
-     "to": "\"\""
-    },
-    "years.0.data.q2Residences.0.name": {
-     "from": null,
-     "to": "\"\""
-    },
-    "years.0.data.q2Residences.0.phone": {
-     "from": null,
-     "to": "\"\""
-    },
-    "years.0.data.q2Residences.0.state": {
-     "from": null,
-     "to": "\"\""
-    },
-    "years.0.data.q2Residences.0.street": {
-     "from": null,
-     "to": "\"\""
-    },
-    "years.0.data.q2Residences.0.zip": {
-     "from": null,
-     "to": "\"\""
+     "to": "[]"
     },
     "years.0.data.q3Providers.0.city": {
      "from": null,

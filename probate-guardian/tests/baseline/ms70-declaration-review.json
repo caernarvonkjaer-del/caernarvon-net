@@ -13,13 +13,10 @@
   "pure": "A pure calculation or formatter with no DOM or state: 70B.",
   "form-runtime": "Form-field markup, field helpers or collection add/remove actions -- the shared form runtime (70F). They sit in the feature-bridge sections only because they were left behind when each feature was extracted.",
   "bridge": "A feature bridge like the other seven, which move together in 70K; the Simplified one sits in the Guardian wizard's section by accident.",
-  "dead-visited": "Dead on both sides: a `let` is never a window property, so the three module references (router.js add, ward-lifecycle.js clear x2) read window._visitedPages as undefined and never run, and the monolith never reads it. Delete it and those three references together in 70E."
+  "dead-visited": "Dead on both sides: a `let` is never a window property, so the three module references (router.js add, ward-lifecycle.js clear x2) read window._visitedPages as undefined and never run, and the monolith never reads it. Delete it and those three references together in 70E.",
+  "writes-classic-state": "Assigns the monolith's own `let activeInventoryType` (and updates the sidebar and saves), which no module can do while that binding lives in the classic script; it moves when the binding does (70J). Its pure half is already src/core/filing/filing-descriptor.js's applyAccountingFilingType()."
  },
  "overrides": {
-  "INVENTORY_TYPE_META": {
-   "delivery": "70C",
-   "why": "registry"
-  },
   "TEMPLATE_FILES": {
    "delivery": "70I",
    "why": "persistence"
@@ -237,10 +234,6 @@
    "delivery": "70C",
    "why": "registry"
   },
-  "normalizeWardData": {
-   "delivery": "70C",
-   "why": "registry"
-  },
   "notifyProbateGuardianTabStateChanged": {
    "delivery": "70H",
    "why": "shell"
@@ -392,11 +385,13 @@
   "yesNoRadioHTML": {
    "delivery": "70F",
    "why": "form-runtime"
+  },
+  "setAccountingFilingType": {
+   "delivery": "70J",
+   "why": "writes-classic-state"
   }
  },
  "notes": {
-  "BLANK_CARD_COLLECTIONS": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24).",
-  "BLANK_SCHEDULE_ENTRY": "Published on window on master in b28bf25; a re-implement row in MILESTONE-70-FIX-LEDGER.md.",
   "CARRY_SOURCE_TYPE": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24).",
   "LAUNCH_PREF_KEY_HANDLE": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24).",
   "LAUNCH_PREF_KEY_OPENED": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24).",
@@ -418,36 +413,17 @@
   "ACCOUNTING_FORM_TYPES": "move 70G",
   "ACTIVITY_EVENT_META": "move 70H",
   "ACTIVITY_LOG_RENDER_CAP": "move 70H",
-  "ANNUAL_FORM_ALIASES": "move 70C",
   "AUTO_LOCK_MS": "move 70I",
-  "BLANK_CARD_COLLECTIONS": "delete-as-dead 70C",
-  "BLANK_SCHEDULE_ENTRY": "move 70C",
   "CARRY_SOURCE_TYPE": "delete-as-dead 70G",
   "CRYPTO_VERIFIER_PLAINTEXT": "move 70I",
   "HELP_CONTENT": "move 70H",
-  "INITIAL_ADLS": "move 70C",
-  "INITIAL_ADL_RATINGS": "move 70C",
-  "INVENTORY_TYPES": "move 70C",
   "LAUNCH_PREF_DB": "move 70I",
   "LAUNCH_PREF_KEY_HANDLE": "delete-as-dead 70I",
   "LAUNCH_PREF_KEY_OPENED": "delete-as-dead 70I",
   "LAUNCH_PREF_STORE": "move 70I",
-  "PAGES": "move 70K",
-  "PAGES_ANNUAL": "move 70K",
-  "PAGES_GUARDIAN": "move 70C",
-  "PAGES_PLAN_ANNUAL": "move 70K",
-  "PAGES_PLAN_INITIAL": "move 70K",
-  "PAGES_PLAN_MINOR": "move 70K",
-  "PAGES_PLAN_SIMPLIFIED": "move 70K",
-  "PAGES_SIMPLIFIED": "move 70K",
   "PARTY_FIELD_ROWS": "move 70G",
   "PBKDF2_ITERATIONS": "delete-as-dead 70I",
   "PLAIN_MODE_PREFIX": "delete-as-dead 70I",
-  "PLAN_ADLS": "move 70C",
-  "PLAN_ADL_RATINGS": "move 70C",
-  "PLAN_BENEFITS": "move 70C",
-  "PLAN_RIGHTS": "move 70C",
-  "PLAN_RIGHT_STATES": "move 70C",
   "PLAN_SECTION_ROUTES": "move 70F",
   "PRIOR_ACCOUNTING_SOURCES": "move 70G",
   "RECENT_WARDS_MAX": "move 70G",
@@ -573,12 +549,9 @@
   "doPickCase": "move 70G",
   "doPickParty": "move 70G",
   "editPriorYear": "move 70G",
-  "emptyDataGuardian": "move 70C",
   "emptyInitialProvider": "move 70C",
-  "emptyMinorGuardianSig": "move 70C",
   "emptyMinorProvider": "move 70C",
   "emptyMinorResidence": "move 70C",
-  "emptyPlanDirective": "move 70C",
   "emptyPlanProvider": "move 70C",
   "emptyPlanResidence": "move 70C",
   "emptyRowAnnual": "move 70C",
@@ -644,7 +617,6 @@
   "lockApp": "move 70I",
   "manualCompareCandidate": "move 70G",
   "mapConvertedHeaderFields": "move 70G",
-  "mk": "move 70C",
   "mountAnnualFeature": "move 70K",
   "mountAnnualNav": "move 70K",
   "mountDashboardFeature": "move 70K",
@@ -682,7 +654,6 @@
   "partySubRowHTML": "move 70G",
   "pct": "move 70K",
   "periodKeyForYearData": "move 70G",
-  "planRightLabel": "move 70C",
   "populateWardNameSuggestions": "move 70H",
   "prepareScheduleDocForValidation": "move 70F",
   "promptChooseSecurityMode": "move 70I",
@@ -721,7 +692,6 @@
   "saveWardToState": "move 70E",
   "scheduleDocPeriodKey": "move 70F",
   "selectSecurityMode": "move 70I",
-  "setAccountingFilingType": "move 70C",
   "setPath": "move 70F",
   "setupAmountFieldValidation": "move 70F",
   "setupDragAndDropImport": "move 70I",
@@ -851,6 +821,91 @@
     },
     "validateSecurityInput": {
      "was": "move 70B"
+    }
+   }
+  },
+  "70C": {
+   "note": "Gone from src/legacy-app.js in 70C: the filing registry (src/core/filing/filing-registry.js), the per-engine models (src/core/filing/models/), the normalizer (src/core/filing/normalize-filing.js) and the blank-card table (src/core/form/prune-cards.js). The page lists (PAGES and PAGES_*) were placed in 70K by their section (INIT), but they are the registry's route metadata, so 70C took them. BLANK_CARD_COLLECTIONS was dead (prune-cards.js keeps its own, diverged, table). Names that still appear in the draft as disposition wrapper moved too; only their one-line wrapper is left.",
+   "entries": {
+    "ANNUAL_FORM_ALIASES": {
+     "was": "move 70C"
+    },
+    "BLANK_CARD_COLLECTIONS": {
+     "was": "delete-as-dead 70C",
+     "note": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24)."
+    },
+    "BLANK_SCHEDULE_ENTRY": {
+     "was": "move 70C",
+     "note": "Published on window on master in b28bf25; a re-implement row in MILESTONE-70-FIX-LEDGER.md."
+    },
+    "INITIAL_ADLS": {
+     "was": "move 70C"
+    },
+    "INITIAL_ADL_RATINGS": {
+     "was": "move 70C"
+    },
+    "INVENTORY_TYPES": {
+     "was": "move 70C"
+    },
+    "PAGES": {
+     "was": "move 70K"
+    },
+    "PAGES_ANNUAL": {
+     "was": "move 70K"
+    },
+    "PAGES_GUARDIAN": {
+     "was": "move 70C"
+    },
+    "PAGES_PLAN_ANNUAL": {
+     "was": "move 70K"
+    },
+    "PAGES_PLAN_INITIAL": {
+     "was": "move 70K"
+    },
+    "PAGES_PLAN_MINOR": {
+     "was": "move 70K"
+    },
+    "PAGES_PLAN_SIMPLIFIED": {
+     "was": "move 70K"
+    },
+    "PAGES_SIMPLIFIED": {
+     "was": "move 70K"
+    },
+    "PLAN_ADLS": {
+     "was": "move 70C"
+    },
+    "PLAN_ADL_RATINGS": {
+     "was": "move 70C"
+    },
+    "PLAN_BENEFITS": {
+     "was": "move 70C"
+    },
+    "PLAN_RIGHTS": {
+     "was": "move 70C"
+    },
+    "PLAN_RIGHT_STATES": {
+     "was": "move 70C"
+    },
+    "emptyDataGuardian": {
+     "was": "move 70C"
+    },
+    "emptyMinorGuardianSig": {
+     "was": "move 70C"
+    },
+    "emptyPlanDirective": {
+     "was": "move 70C"
+    },
+    "mk": {
+     "was": "move 70C"
+    },
+    "planRightLabel": {
+     "was": "move 70C"
+    },
+    "INVENTORY_TYPE_META": {
+     "was": "move 70C (override: registry)"
+    },
+    "normalizeWardData": {
+     "was": "move 70C (override: registry)"
     }
    }
   }

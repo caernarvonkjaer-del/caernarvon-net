@@ -1,12 +1,11 @@
 import { beforeEach, describe, expect, test } from 'vitest';
-import {
-  emptyDataSimplified,
-  emptyDataPlanSimplified,
-  emptyDataPlanAnnual,
-  emptyDataPlanInitial,
-  emptyDataPlanMinor,
-  emptyDataAnnual,
-} from '../../src/core/state.js';
+import { emptyDataSimplified } from '../../src/core/filing/models/simplified.js';
+import { emptyDataPlanSimplified } from '../../src/core/filing/models/plan-simplified.js';
+import { emptyDataPlanAnnual } from '../../src/core/filing/models/plan-annual.js';
+import { emptyDataPlanInitial } from '../../src/core/filing/models/plan-initial.js';
+import { emptyDataPlanMinor } from '../../src/core/filing/models/plan-minor.js';
+import { emptyDataAnnual } from '../../src/core/filing/models/annual.js';
+import { emptyDataGuardian } from '../../src/core/filing/models/guardian.js';
 // Milestone 40C-A. The governing decision: a ward has NO default county until
 // the user selects County on that ward's first filing Cover. That first explicit
 // choice is stored on the canonical ward Party; later filings for the same ward
@@ -25,33 +24,18 @@ function freshCaseFile() {
   return { wards: [], parties: [], cases: [] };
 }
 
-// The Plan factories build their rights/ADLs/benefits maps from window-global
-// constants and their initial collection rows from window row factories, all of
-// which live in legacy-app.js -- so they throw outright in a node test without
-// these. Constants match plan-directive-cards.spec.js's minimal stubs; the row
-// factories return a blank object each, which is all these assertions need
-// (nothing here inspects a row's shape, only the county field).
-const blankRow = () => ({});
-global.window = {
-  PLAN_RIGHTS: [['marry', 'Right to marry']],
-  PLAN_ADLS: [['eating', 'Eating']],
-  PLAN_BENEFITS: [['socialSecurity', 'Social Security']],
-  INITIAL_ADLS: [['bathing', 'Bathing']],
-  emptyPlanResidence: blankRow,
-  emptyPlanProvider: blankRow,
-  emptyInitialProvider: blankRow,
-  emptyMinorResidence: blankRow,
-  emptyMinorProvider: blankRow,
-  emptyMinorGuardianSig: blankRow,
-  emptyRowAnnual: blankRow,
-  ...(global.window || {}),
-};
+// The factories used to build their Plan maps and first rows from window
+// globals legacy-app.js published, so this suite stubbed them. Since
+// Milestone 70's 70C every factory is an import (src/core/filing/models/)
+// and runs with its real lists and rows; window here only carries caseFile.
+global.window = global.window || {};
 
 describe('Milestone 40C-A: no filing starts with a county', () => {
-  // The Annual factory also serves Final and Trust Accounting, so six factories
-  // here plus emptyDataGuardian() (a legacy-app.js classic-script global,
-  // asserted at the source level below) are the seven the milestone names.
+  // The Annual factory also serves Final and Trust Accounting, so these seven
+  // are the seven the milestone names. (emptyDataGuardian() was a legacy-app.js
+  // classic-script global until Milestone 70's 70C, and was left out here.)
   const FACTORIES = {
+    emptyDataGuardian,
     emptyDataSimplified,
     emptyDataPlanSimplified,
     emptyDataPlanAnnual,

@@ -7,6 +7,7 @@ import './core/filing/filing-descriptor.js';
 import './core/filing/output-preflight.js';
 import './core/form/form-fields.js';
 import './core/form/schedule-definitions.js';
+import { emptyPlanDirective } from './core/filing/models/plan-annual.js';
 
 window.PGSupplementalPdf = SupplementalPdf;
 
@@ -113,7 +114,7 @@ document.addEventListener('change', (event) => {
     if (control.dataset.formChange === 'ensure-directive-row' && control.checked) {
       const collection = control.dataset.collection;
       if (collection && window.D && !(window.D[collection] || []).length) {
-        window.D[collection] = [window.emptyPlanDirective()];
+        window.D[collection] = [emptyPlanDirective()];
       }
     }
     // Milestone 67A: only one party may be the preparer. The ticked box has

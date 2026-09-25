@@ -1,4 +1,42 @@
 // Centralized prune engine for empty schedule entries, party cards, and plan repeatable rows.
+//
+// A card the filer added and never touched disappears when they leave the page
+// (the router and the dashboard entry run pruneBlankCards()). Milestone 70's
+// 70C gave this module the schedule table it used to read off window
+// (BLANK_SCHEDULE_ENTRY, moved from legacy-app.js) and made its callers import
+// it: before that, on this branch nothing loaded the module, so the clean-up
+// never ran -- the defect master fixed in b28bf25, carried here.
+import { mk } from '../filing/models/guardian.js';
+import { formEngine } from '../filing/filing-registry.js';
+
+// Financial line-item schedules covered by pruneBlankCards() (the router runs
+// it on leaving a page), keyed by their property on D, each mapped to the exact blank
+// object its own +Add button pushes. These need a deep compare against that
+// template rather than a generic emptiness test, because several of their
+// fields default to something other than '' -- Guardian's wardPercent
+// starts at 100, Annual's Yes/No fields start at 'No' -- and a generic test
+// would never recognize those as untouched. Party and plan cards, whose
+// fields are all seeded empty, use BLANK_CARD_COLLECTIONS below instead.
+export const BLANK_SCHEDULE_ENTRY = {
+  // Guardian form (Initial Inventory) -- same factory addEntry() already uses.
+  scheduleA1:mk.a1, scheduleA2:mk.a2, scheduleB1:mk.b1, scheduleB2:mk.b2, scheduleB3:mk.b3,
+  scheduleB4:mk.b4, scheduleC1:mk.c1, scheduleC2:mk.c2, scheduleC3:mk.c3, scheduleC4:mk.c4, scheduleC5:mk.c5,
+  // Annual Accounting -- copied verbatim from each schedule's own +Add button.
+  schA:()=>({payer:'',description:'',bank:'',accountNo:'',amount:''}),
+  schB1:()=>({bankAcct:'',checkNo:'',periodFrom:'',periodTo:'',datePaid:'',payee:'',courtOrderDate:'',amount:''}),
+  schB2:()=>({bankAcct:'',checkNo:'',periodFrom:'',periodTo:'',datePaid:'',payee:'',courtOrderDate:'',amount:''}),
+  schB3:()=>({bankAcct:'',checkNo:'',datePaid:'',payee:'',courtOrderDate:'',amount:''}),
+  schB4:()=>({bankAccountId:'',checkNo:'',datePaid:'',category:'',payee:'',amount:''}),
+  schC:()=>({description:'',date:'',gain:'',loss:''}),
+  schD1:()=>({description:'',accountNo:'',restricted:'',type:'',fullAmount:'',wardPct:'',restrictedAmt:''}),
+  schD2:()=>({description:'',residence:'',income:'',fullValue:'',wardPct:'',carryingValue:'',wardValue:''}),
+  schD3:()=>({description:'',fullAmount:'',wardPct:'',carryingValue:'',wardAmount:''}),
+  schD4:()=>({description:'',restricted:'',fullAmount:'',wardPct:'',carryingValue:'',wardValue:'',restrictedAmt:''}),
+  schD5:()=>({description:'',loanNo:'',loanType:'',fullDebt:'',wardPct:'',wardBalance:''}),
+  schE:()=>({bankName:'',transferInDate:'',transferInAmt:'',transferOutDate:'',transferOutAmt:''}),
+  schF1:()=>({description:'',bank:'',accountNo:'',courtOrderDate:'',salePrice:''}),
+  schF2:()=>({description:'',bank:'',accountNo:'',courtOrderDate:'',salePrice:''}),
+};
 
 export const BLANK_CARD_COLLECTIONS = {
   guardians: { min: 1, types: ['guardian', 'annual', 'simplified'] },
@@ -34,7 +72,7 @@ export function isBlankCard(card) {
 /**
  * Deep-equals a schedule's own template from BLANK_SCHEDULE_ENTRY.
  */
-export function isBlankScheduleEntry(key, entry, registry = (typeof window !== 'undefined' ? window.BLANK_SCHEDULE_ENTRY : null)) {
+export function isBlankScheduleEntry(key, entry, registry = BLANK_SCHEDULE_ENTRY) {
   if (!registry) return false;
   const template = registry[key];
   if (!template || !entry || typeof entry !== 'object') return false;
@@ -52,20 +90,20 @@ export function isBlankScheduleEntry(key, entry, registry = (typeof window !== '
 export function pruneBlankCards(targetData, targetType) {
   const data = targetData || (typeof window !== 'undefined' ? window.D : null);
   if (!data) return 0;
-  const activeType = targetType || (typeof window !== 'undefined' ? window.activeInventoryType : null);
-  const engine = (typeof window !== 'undefined' && window.formEngine) ? window.formEngine(activeType) : activeType;
+  // The filing's own type. (This read window.activeInventoryType until
+  // Milestone 70's 70C -- the same value for the open filing, which is the one
+  // the callers prune.)
+  const activeType = targetType || data.inventoryType;
+  const engine = formEngine(activeType);
   let removed = 0;
 
-  const scheduleRegistry = typeof window !== 'undefined' ? window.BLANK_SCHEDULE_ENTRY : null;
-  if (scheduleRegistry) {
-    for (const key of Object.keys(scheduleRegistry)) {
-      const arr = data[key];
-      if (!Array.isArray(arr) || !arr.length) continue;
-      const kept = arr.filter(e => !isBlankScheduleEntry(key, e, scheduleRegistry));
-      if (kept.length !== arr.length) {
-        removed += arr.length - kept.length;
-        data[key] = kept;
-      }
+  for (const key of Object.keys(BLANK_SCHEDULE_ENTRY)) {
+    const arr = data[key];
+    if (!Array.isArray(arr) || !arr.length) continue;
+    const kept = arr.filter(e => !isBlankScheduleEntry(key, e, BLANK_SCHEDULE_ENTRY));
+    if (kept.length !== arr.length) {
+      removed += arr.length - kept.length;
+      data[key] = kept;
     }
   }
 
@@ -93,12 +131,4 @@ export function pruneBlankCards(targetData, targetType) {
     window.autoSave();
   }
   return removed;
-}
-
-// Global exposure
-if (typeof window !== 'undefined') {
-  window.BLANK_CARD_COLLECTIONS = BLANK_CARD_COLLECTIONS;
-  window.isBlankCard = isBlankCard;
-  window.isBlankScheduleEntry = isBlankScheduleEntry;
-  window.pruneBlankCards = pruneBlankCards;
 }

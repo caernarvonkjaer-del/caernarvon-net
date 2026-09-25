@@ -45,9 +45,12 @@ describe('the draft against src/legacy-app.js', () => {
     const reasons = ['no-consumer', 'tests-only', 'monolith-only', 'modules-only', 'monolith-and-modules', 'publisher-never-loaded'];
     expect(draft.windowExports.length).toBeGreaterThan(0);
     expect(draft.windowExports.filter((x) => !reasons.includes(x.reason)).map((x) => `${x.file}::${x.name}`)).toEqual([]);
-    // The publisher nothing loads is the Milestone 42E failure: its exports reach no one.
-    expect(draft.windowExports.filter((x) => x.file === 'src/core/form/prune-cards.js').map((x) => x.reason))
-      .toEqual(expect.arrayContaining(['publisher-never-loaded']));
+    // A publisher nothing loads was the Milestone 42E failure: its exports
+    // reached no one. prune-cards.js was that publisher until Milestone 70's
+    // 70C carried master's b28bf25 -- the router imports it now, and it
+    // publishes nothing -- so no export may come from a module nothing loads.
+    expect(draft.windowExports.filter((x) => x.reason === 'publisher-never-loaded').map((x) => `${x.file}::${x.name}`))
+      .toEqual([]);
   });
 
   test('every entry carries an allowed disposition and a delivery', () => {

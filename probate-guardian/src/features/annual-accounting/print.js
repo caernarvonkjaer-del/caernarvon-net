@@ -22,13 +22,14 @@ import { renderReadinessCard } from '../../core/filing/readiness-card.js';
 import { renderOutputAdvisories } from '../../core/filing/output-advisories.js';
 import { alertModal } from '../../core/ui/dialogs.js';
 import { beginExport } from '../../core/ui/export-guard.js';
+import { formDisplayName } from '../../core/filing/filing-registry.js';
 
 function buildModelForPreview(D){
   return buildAnnualAccountingModel(D, { printDate: new Date().toISOString().slice(0, 10) });
 }
 
 const {
-  formDisplayName,
+  
   excelCapacityPanel, highlightErrors, validationPanel,
   renderPage,
 } = window;

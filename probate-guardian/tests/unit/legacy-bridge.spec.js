@@ -100,7 +100,9 @@ describe('src/legacy-bridge.js: the monolith\'s one door to module code', () => 
     // list), never call through to logic from the middle of its own.
     const users = legacyAst.body.filter((st) => st.type === 'FunctionDeclaration'
       && legacySrc.slice(st.start, st.end).includes(BRIDGE));
-    const isWrapper = (fn) => fn.body.body.length === 1 && fn.body.body[0].type === 'ReturnStatement';
+    const isWrapper = (fn) => fn.body.body.length === 1 && fn.body.body[0].type === 'ReturnStatement'
+      && fn.body.body[0].argument?.type === 'CallExpression'
+      && legacySrc.slice(fn.body.body[0].argument.callee.start, fn.body.body[0].argument.callee.end).startsWith(`window.${BRIDGE}.`);
     const wrappers = users.filter(isWrapper);
     expect(wrappers.length).toBeGreaterThan(0);
     for (const fn of wrappers) {

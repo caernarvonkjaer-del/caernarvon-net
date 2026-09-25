@@ -42,88 +42,11 @@ applyTheme(currentTheme(),false);
 // ═══════════════════════════════════════════════════════
 // GLOBAL STATE & CONFIG
 // ═══════════════════════════════════════════════════════
-const INVENTORY_TYPES = {
-  guardian: {
-    name: 'Initial Inventory',
-    label: 'Verified Initial Inventory',
-    description: 'Initial inventory of assets as of Guardianship Inception Date'
-  },
-  simplified: {
-    name: 'Simplified Annual Accounting',
-    label: 'Simplified Annual Accounting',
-    description: 'Simplified annual accounting for guardianship'
-  },
-  annual: {
-    name: 'Annual Accounting',
-    label: 'Annual Accounting',
-    description: 'Full annual accounting with detailed schedules'
-  },
-  // Final and Trust accountings use the SAME form, schedules, totals and
-  // validation as the Annual Accounting — they differ only in what the
-  // filing is called on screen and on the finished document. See
-  // ANNUAL_FORM_ALIASES / formEngine() below: every behavioural lookup
-  // resolves these back to 'annual', so there is one implementation to
-  // maintain rather than three copies that could drift apart.
-  finalAccounting: {
-    name: 'Final Accounting',
-    label: 'Final Accounting',
-    description: 'Closing accounting filed when the guardianship ends, using the full annual schedules'
-  },
-  trustAccounting: {
-    name: 'Trust Accounting',
-    label: 'Trust Accounting',
-    description: 'Accounting for a trust, using the full annual schedules'
-  },
-  // Plans report on the ward's PERSON (where they live, their care, their
-  // rights) — a separate court filing from the Inventory/Accountings above,
-  // which report on their PROPERTY. A guardian of both person and property
-  // files one of each.
-  planSimplified: {
-    name: 'Simplified Annual Plan',
-    label: 'Simplified Annual Plan',
-    description: "Short annual report on the ward's residence, care, and wellbeing"
-  },
-  planAnnual: {
-    name: 'Annual Guardianship Plan',
-    label: 'Annual Guardianship Plan',
-    description: "Full annual report on the ward's residence, care, rights, and abilities"
-  },
-  planInitial: {
-    name: 'Initial Guardianship Plan',
-    label: 'Initial Guardianship Plan',
-    description: "The first plan filed after Letters of Guardianship are signed, due within 60 days"
-  },
-  planMinor: {
-    name: 'Annual Plan — Minors',
-    label: 'Annual Plan — Minors',
-    description: "Annual report for a minor ward, covering residence, care, education, and social development"
-  }
-};
-window.INVENTORY_TYPES=INVENTORY_TYPES;
 
-// Ward types that are the Annual Accounting form under a different filing
-// name. Kept as their own inventoryType so the dashboard, the ward picker
-// and the finished document all say the right thing, but resolved through
-// formEngine() wherever behaviour is chosen — pages, nav, empty data,
-// totals, validation, export — so they cannot drift from Annual.
-const ANNUAL_FORM_ALIASES = ['finalAccounting','trustAccounting'];
 
 // ANNUAL_P67_CELLS moved to src/features/annual-accounting/excel.js
 // (Milestone 7, Phase B) -- Annual Excel export is its only consumer.
 
-// Maps a ward's inventoryType to the form engine that drives it. Use this
-// for behaviour; use the raw inventoryType for naming/identity.
-function formEngine(type){
-  return ANNUAL_FORM_ALIASES.includes(type) ? 'annual' : type;
-}
-
-// The filing's display name, e.g. "Final Accounting" — used in headings and
-// on the exported document so an alias never shows as "Annual Accounting".
-function formDisplayName(type){
-  return window.resolveDescriptorForInventoryType?.(type)?.displayName
-    || (INVENTORY_TYPES[type] && INVENTORY_TYPES[type].name)
-    || 'Accounting';
-}
 
 // Final and Trust accountings use the Annual engine, but they are distinct
 // legal filings. Keep their stored type and Part I selection atomic so every
@@ -688,24 +611,25 @@ function applyZipLimit(el){return window.GuardianFormsLegacyBridge.applyZipLimit
 function formatDashboardCurrency(v){return window.GuardianFormsLegacyBridge.formatDashboardCurrency(v);}
 function formatDisplayDate(s){return window.GuardianFormsLegacyBridge.formatDisplayDate(s);}
 function calcTotals(){return window.GuardianFormsLegacyBridge.calcTotals();}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// Milestone 70, 70C: the filing registry and per-engine models -- names,
+// engines, blank filings and rows, the page lists and the normalizer -- live in
+// src/core/filing/filing-registry.js and src/core/filing/models/ now; the lists
+// this script still reads are bridge reads where it reads them.
+function formEngine(type){return window.GuardianFormsLegacyBridge.formEngine(type);}
+function formDisplayName(type){return window.GuardianFormsLegacyBridge.formDisplayName(type);}
+function emptyRowAnnual(type){return window.GuardianFormsLegacyBridge.emptyRowAnnual(type);}
+function emptyPlanResidence(){return window.GuardianFormsLegacyBridge.emptyPlanResidence();}
+function emptyPlanProvider(){return window.GuardianFormsLegacyBridge.emptyPlanProvider();}
+function emptyInitialProvider(){return window.GuardianFormsLegacyBridge.emptyInitialProvider();}
+function emptyMinorResidence(){return window.GuardianFormsLegacyBridge.emptyMinorResidence();}
+function emptyMinorProvider(){return window.GuardianFormsLegacyBridge.emptyMinorProvider();}
+function initializeEmptyData(type){return window.GuardianFormsLegacyBridge.initializeEmptyData(type);}
+function typeIcon(type,size){return window.GuardianFormsLegacyBridge.typeIcon(type,size);}
+function planGuardianBlank(type){return window.GuardianFormsLegacyBridge.planGuardianBlank(type);}
+function planGuardianHasAnyData(g){return window.GuardianFormsLegacyBridge.planGuardianHasAnyData(g);}
+function planGuardianMax(type){return window.GuardianFormsLegacyBridge.planGuardianMax(type);}
+function normalizePlanGuardians(data){return window.GuardianFormsLegacyBridge.normalizePlanGuardians(data);}
+function planEmptyRow(kind){return window.GuardianFormsLegacyBridge.planEmptyRow(kind);}
 
 
 // Shared markup: a plain text input plus an initially-empty dropdown right
@@ -809,13 +733,6 @@ function onCountyKeydown(inp,e){
     // than guessing a selection -- matches the WAI-ARIA combobox contract.
   }
 }
-
-
-
-
-
-
-
 
 
 // Update an input field with formatted phone, keeping user experience smooth
@@ -952,7 +869,7 @@ function validationPanel(errors,opts){
     groups.get(section).push(field);
   });
   // Only offer a jump link when the route is a real page in this wizard.
-  const valid=new Set((PAGES[activeInventoryType]||PAGES_GUARDIAN||[]).map(p=>p.id));
+  const valid=new Set((window.GuardianFormsLegacyBridge.FILING_PAGES[activeInventoryType]||window.GuardianFormsLegacyBridge.PAGES_GUARDIAN||[]).map(p=>p.id));
   const rows=[...groups.entries()].map(([section,fields])=>{
     const route=errorRoute(section, activeInventoryType);
     const go=(route&&valid.has(route))
@@ -1231,9 +1148,6 @@ try {
 } catch (_) {}
 
 
-
-
-
 // Whether this install encrypts data at all — chosen once, at first setup,
 // via promptChooseSecurityMode(). 'encrypted' (default/recommended) uses
 // AES-256-GCM as below; 'none' stores plain JSON with no password gate.
@@ -1249,7 +1163,6 @@ try {
 const PLAIN_MODE_PREFIX='PLAIN:'; // self-describing tag, never produced by the
 // iv:ciphertext base64 format below, so decrypt can tell the two apart
 // unambiguously even if an archive mixes entries from both modes.
-
 
 
 // Decides whether the user needs to create a master password (fresh install,
@@ -1626,7 +1539,6 @@ async function deleteWardFromState(wardId){
 }
 
 
-
 async function saveTemplate(type,b64){
   _templateCache[type]=b64;
   autoSave();
@@ -1873,7 +1785,7 @@ function partyRoleBadgesHTML(party){
   return (party.roles||[]).map(r=>`<span class="badge bg-secondary">${esc(r)}</span>`).join(' ');
 }
 function filingLabel(filing){
-  return `${filing.wardName||'(unnamed)'} — ${INVENTORY_TYPES[filing.inventoryType]?.name||filing.inventoryType}${filing.archived?' (closed)':''}`;
+  return `${filing.wardName||'(unnamed)'} — ${window.GuardianFormsLegacyBridge.INVENTORY_TYPES[filing.inventoryType]?.name||filing.inventoryType}${filing.archived?' (closed)':''}`;
 }
 function slotLabel(role,index){
   return role==='guardian'?`Guardian ${index+1}`:role.charAt(0).toUpperCase()+role.slice(1);
@@ -2247,7 +2159,6 @@ function markContinuePromptShown(){
 window.markContinuePromptShown=markContinuePromptShown;
 
 
-
 // ═══════════════════════════════════════════════════════
 // EXPORT / IMPORT — guardianshipwarddata.sav
 // One portable archive holding the guardian info plus every ward. The file
@@ -2272,7 +2183,6 @@ window.markContinuePromptShown=markContinuePromptShown;
 // moved to src/core/persistence/case-file.js with the functions that owned
 // them. case-file.js keeps window._caseFileHandle in sync itself, so nothing
 // here needs a local copy.
-
 
 
 // Builds a small standalone case-file-shaped ZIP containing just one ward --
@@ -2328,7 +2238,6 @@ window.markContinuePromptShown=markContinuePromptShown;
 // still benefits from a name derived from that ward rather than a generic one.
 
 
-
 // Guards a single-ward "share a copy" export from accidentally overwriting
 // the real multi-ward case file -- a single-ward export is shaped exactly
 // like a (one-ward) case file now, so picking the same location as the
@@ -2348,34 +2257,11 @@ window.markContinuePromptShown=markContinuePromptShown;
 // prompt, or falls back to a full Save As.
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 // Tries showOpenFilePicker() first so opening a case file this way arms a
 // writable save handle (same as triggerOpenBackupSav()) -- without this,
 // autoSave() has nothing to write to, and the first edit after opening
 // forces an unexpected manual "Save As" with a freshly-generated filename
 // instead of the file that was actually opened.
-
-
-
-
-
-
-
-
-
-
 
 
 // ═══════════════════════════════════════════════════════
@@ -2424,7 +2310,6 @@ async function _sessionCacheClear(){
     });
   }catch(e){/* non-critical */}
 }
-
 
 
 // ═══════════════════════════════════════════════════════
@@ -2904,9 +2789,6 @@ const CARRY_SOURCE_TYPE={
 };
 
 
-
-
-
 // Accounting -> Accounting carry (e.g. Initial Inventory into a new Annual
 // Accounting, or last period's Annual into this one). Only identity and
 // contact details move; schedules, period dates, signatures and balances are
@@ -3088,11 +2970,11 @@ function refreshCarrySourceSelect(sel,wrap,type,name,autonoteEl){
   const list=namedMatches.length?namedMatches:allMatches;
   sel.disabled=false;
   sel.innerHTML='<option value="">— Start Blank —</option>'
-    +list.map(w=>`<option value="${w.wardId}">${esc(w.wardName)}${w.caseNumber?' — '+esc(w.caseNumber):''} (${esc(INVENTORY_TYPES[w.inventoryType]?.name||w.inventoryType)})</option>`).join('');
+    +list.map(w=>`<option value="${w.wardId}">${esc(w.wardName)}${w.caseNumber?' — '+esc(w.caseNumber):''} (${esc(window.GuardianFormsLegacyBridge.INVENTORY_TYPES[w.inventoryType]?.name||w.inventoryType)})</option>`).join('');
   if(namedMatches.length===1){
     sel.value=namedMatches[0].wardId;
     if(autonoteEl){
-      autonoteEl.textContent=`Auto-filling from ${namedMatches[0].wardName}'s ${INVENTORY_TYPES[namedMatches[0].inventoryType]?.name||namedMatches[0].inventoryType} — change the picker above to use a different form instead.`;
+      autonoteEl.textContent=`Auto-filling from ${namedMatches[0].wardName}'s ${window.GuardianFormsLegacyBridge.INVENTORY_TYPES[namedMatches[0].inventoryType]?.name||namedMatches[0].inventoryType} — change the picker above to use a different form instead.`;
       autonoteEl.style.display='block';
     }
   }else{
@@ -3276,8 +3158,6 @@ window.getRecentlyOpenedWards=getRecentlyOpenedWards;
 // ═══════════════════════════════════════════════════════
 
 
-
-
 // The sidebar's "Switch Ward" button acts on whatever the dropdown is
 // currently set to. If that's already the active ward, switchWard() would
 // be a no-op with zero visible feedback — clicking the button would just
@@ -3391,7 +3271,7 @@ function wardSelectorItems(){
   return caseFile.wards.map(w=>({
     wardId:w.wardId,
     label:w.wardName||'(unnamed)',
-    sub:INVENTORY_TYPES[w.inventoryType]?.name||w.inventoryType
+    sub:window.GuardianFormsLegacyBridge.INVENTORY_TYPES[w.inventoryType]?.name||w.inventoryType
   }));
 }
 function wardSelectorShowDropdown(query){
@@ -3481,7 +3361,7 @@ async function showSwitchWardPickerModal(){
     listEl.innerHTML='<div class="dashboard-empty-inline">You only have one ward — nothing to switch to yet.</div>';
   }else{
     listEl.innerHTML=others.map(w=>{
-      const typeLabel=INVENTORY_TYPES[w.inventoryType]?.name||w.inventoryType;
+      const typeLabel=window.GuardianFormsLegacyBridge.INVENTORY_TYPES[w.inventoryType]?.name||w.inventoryType;
       return `<button type="button" class="recent-ward-item" data-modal-action="switch-ward" data-ward-id="${esc(w.wardId)}">
         <span class="recent-ward-icon">${typeIcon(w.inventoryType,16)}</span>
         <span class="recent-ward-info">
@@ -3494,212 +3374,6 @@ async function showSwitchWardPickerModal(){
   showModal('switchWardPickerModal');
 }
 
-
-
-
-// ═══════════════════════════════════════════════════════
-// INVENTORY TYPE MANAGEMENT
-// ═══════════════════════════════════════════════════════
-
-function emptyRowAnnual(type){
-  switch(type){
-    case 'schA': return {payer:'',description:'',bank:'',accountNo:'',amount:''};
-    case 'schB1': return {bankAcct:'',checkNo:'',periodFrom:'',periodTo:'',datePaid:'',payee:'',courtOrderDate:'',amount:''};
-    case 'schB2': return {bankAcct:'',checkNo:'',periodFrom:'',periodTo:'',datePaid:'',payee:'',courtOrderDate:'',amount:''};
-    case 'schB3': return {bankAcct:'',checkNo:'',datePaid:'',payee:'',courtOrderDate:'',amount:''};
-    case 'schB4': return {bankAccountId:'',checkNo:'',datePaid:'',category:'',payee:'',amount:''};
-    case 'schC':  return {description:'',date:'',gain:'',loss:''};
-    case 'schD1': return {description:'',accountNo:'',restricted:'',type:'',fullAmount:'',wardPct:'',restrictedAmt:''};
-    case 'schD2': return {description:'',residence:'',income:'',fullValue:'',wardPct:'',carryingValue:'',wardValue:''};
-    case 'schD3': return {description:'',fullAmount:'',wardPct:'',carryingValue:'',wardAmount:''};
-    case 'schD4': return {description:'',restricted:'',fullAmount:'',wardPct:'',carryingValue:'',wardValue:'',restrictedAmt:''};
-    case 'schD5': return {description:'',loanNo:'',loanType:'',fullDebt:'',wardPct:'',wardBalance:''};
-    case 'schE':  return {bankName:'',transferInDate:'',transferInAmt:'',transferOutDate:'',transferOutAmt:''};
-    case 'schF1': return {description:'',bank:'',accountNo:'',courtOrderDate:'',salePrice:''};
-    case 'schF2': return {description:'',bank:'',accountNo:'',courtOrderDate:'',salePrice:''};
-    case 'trust': return {hasTrust:'',createdAfterGID:'',name:'',trustee:'',accountNo:'',dateCreated:'',trustType:'',wardPct:'',wardAmount:''};
-    case 'remun': return {guardian:'',type:'',amount:'',description:''};
-    default: return {};
-  }
-}
-window.emptyRowAnnual = emptyRowAnnual;
-
-
-// Simplified Annual Plan — the person-side counterpart to the accountings.
-// emptyDataPlanSimplified() moved to src/core/state.js (Milestone 3, Phase
-// B), reached via window.emptyDataPlanSimplified() from
-// initializeEmptyData() below -- pure data, needed synchronously at
-// ward-creation time, before the lazily-imported feature module loads.
-
-// ── Annual Guardianship Plan ─────────────────────────────
-// The court form's 11 numbered questions, in its own order. Two of them
-// are repeating tables (residences, medical providers) and are modelled as
-// arrays exactly like the Annual Accounting schedules; the rest are
-// checkbox groups, narrative text, or fixed-length rating grids.
-//
-// The rights and ADL lists are declared once as constants and reused by
-// the page renderer, the validator, and the print builder, so the three
-// can't drift out of order — the printed court document has to list them
-// in exactly the sequence the form does.
-const PLAN_RIGHTS=[
-  ['marry','Right to marry'],
-  ['vote','Right to vote'],
-  ['govBenefits','Right to personally apply for government benefits'],
-  ['driver',"Right to have a driver's license"],
-  ['travel','Right to travel'],
-  ['employment','Right to seek or retain employment'],
-  ['contract','Right to contract'],
-  ['sue','Right to sue and be sued'],
-  ['property','Right to manage property or to make any gift or disposition'],
-  ['residence','Right to determine residence'],
-  ['medical','Right to consent to medical treatment'],
-  ['social','Right to make decisions about social environment or other aspects of social life'],
-];
-// Milestone 68G: the court's Annual Plan question 6 has FOUR columns -- Yes /
-// No / Not Removed / Needs to be Restored (plan-annual-original.pdf, page 6)
-// -- and the app had dropped "No", so a right that was removed and is not
-// capable of restoration had no honest answer (744.3675(3)(b) requires a
-// statement of whether rights can be restored). Each entry is the STORED value
-// and the LABEL the form uses; the three existing values are unchanged so no
-// saved answer changes meaning, and "Capable of restoration" is shown as the
-// form's "Yes". Order is the form's column order.
-const PLAN_RIGHT_STATES=[
-  {value:'Capable of restoration',label:'Yes'},
-  {value:'No',label:'No'},
-  {value:'Not removed',label:'Not Removed'},
-  {value:'Needs to be restored',label:'Needs to be Restored'},
-];
-const planRightLabel=(value)=>{const s=PLAN_RIGHT_STATES.find(x=>x.value===value);return s?s.label:(value||'');};
-const PLAN_ADLS=[
-  ['eating','Eating'],['prepareMeals','Prepare meals'],
-  ['heavyChores','Heavy chores (e.g. vacuuming)'],['lightHousekeeping','Light housekeeping'],
-  ['managingMoney','Managing money'],['dressing','Dressing'],
-  ['transportation','Transportation ability'],['walking','Walking / mobility'],
-  ['toileting','Toileting'],['stairs','Climbing stairs'],
-  ['transferring','Transferring (wheelchair to chair/bed)'],['laundry','Doing laundry'],
-  ['shopping','Shopping'],['bathing','Bathing'],
-  ['grooming','Grooming'],['medication','Administration of medication'],
-];
-const PLAN_ADL_RATINGS=['','Ward needs no help','Ward needs assistance','Ward cannot do at all'];
-const PLAN_BENEFITS=[
-  ['socialSecurity','Social Security'],['ssdi','Social Security Disability Income (SSDI)'],
-  ['hmo','Health Maintenance Organization (HMO)'],['ssi','Supplemental Security Income (SSI)'],
-  ['stateSupplement','Optional State Supplement'],['institutionalCare','Institutional Care Program'],
-  ['supplementalIns','Supplemental Insurance'],['pension','Pension'],
-  ['medicare','Medicare'],['medicaid','Medicaid'],['trusts','Trusts'],['other','Other'],
-];
-
-// Explicit window assignments: these are bare top-level `const`s, which
-// (unlike function declarations) do NOT become `window` properties on their
-// own -- see src/core/state.js's file header for the full explanation. Both
-// src/core/state.js's emptyDataPlanAnnual() and
-// src/features/plan-annual/index.js read these via window, so they need to
-// be real window properties (Milestone 4, Phase A).
-window.PLAN_RIGHTS=PLAN_RIGHTS;
-window.PLAN_RIGHT_STATES=PLAN_RIGHT_STATES;
-window.planRightLabel=planRightLabel;
-window.PLAN_ADLS=PLAN_ADLS;
-window.PLAN_ADL_RATINGS=PLAN_ADL_RATINGS;
-window.PLAN_BENEFITS=PLAN_BENEFITS;
-
-function emptyPlanResidence(){return {name:'',street:'',cityStateZip:'',phone:'',facilityType:'',from:'',to:''};}
-function emptyPlanProvider(){return {name:'',street:'',cityStateZip:'',phone:'',providerType:'',visits:''};}
-function emptyPlanDirective(){return {title:'',dateSigned:'',signedBy:'',agents:'',alternates:'',relationship:'',contact:'',courtRevoked:'',orderDate:'',orderCounty:''};}
-
-// emptyDataPlanAnnual() and emptyDataPlanInitial() moved to
-// src/core/state.js (Milestones 4 and 5, both Phase A), reached via
-// window.emptyDataPlanAnnual()/window.emptyDataPlanInitial() from
-// initializeEmptyData() below -- needed synchronously at ward-creation time,
-// before the lazily-imported feature module loads. Both reach back into
-// legacy globals here (PLAN_RIGHTS/PLAN_ADLS/PLAN_BENEFITS/
-// emptyPlanResidence/emptyPlanProvider/emptyPlanDirective for the former,
-// INITIAL_ADLS/emptyInitialProvider/emptyPlanDirective for the latter) that
-// stay in this file because computeNavChecks()/resetYearlyFieldsForNewYear()
-// need them directly.
-
-const INITIAL_ADLS=[
-  ['lightHousekeeping','Light Housekeeping'],['medication','Administration of Medication'],
-  ['managingMoney','Managing Money'],['bathing','Bathing'],
-  ['prepareMeals','Prepare Meals'],['stairs','Climbing Stairs'],
-  ['shopping','Shopping'],['laundry','Doing Laundry'],
-  ['toileting','Toileting'],['dressing','Dressing'],
-  ['transferring','Transferring (from wheelchair to chair/bed)'],['eating','Eating'],
-  ['walking','Walking / Mobility'],['grooming','Grooming'],
-  ['heavyChores','Heavy Chores'],
-];
-const INITIAL_ADL_RATINGS=['','Ward needs no help','Ward needs some assistance','Ward cannot do at all'];
-// Bare top-level consts are not real `window` properties on their own (see
-// core/state.js's file header) -- computeNavChecks()'s planInitial branch
-// reads these via the plain identifier since it's the same classic script,
-// but the lazily-imported features/plan-initial/ module can only reach them
-// through window, so both need an explicit assignment here.
-window.INITIAL_ADLS=INITIAL_ADLS;
-window.INITIAL_ADL_RATINGS=INITIAL_ADL_RATINGS;
-
-function emptyInitialProvider(){return {name:'',providerType:'',examDate:'',street:'',cityStateZip:'',phone:''};}
-
-function emptyMinorResidence(){return {name:'',street:'',city:'',state:'',zip:'',phone:''};}
-function emptyMinorProvider(){return {first:'',mi:'',last:'',street:'',city:'',state:'',zip:'',phone:'',providerType:'',visits:''};}
-function emptyMinorGuardianSig(){return {name:'',tin:'',phone:'',mailingStreet:'',mailingCityStateZip:'',relationship:'',email:'',signatureDate:'',signatureState:'',signatureImage:''};}
-
-// emptyDataPlanMinor() moved to src/core/state.js (Milestone 6, Phase A),
-// reached via window.emptyDataPlanMinor() from initializeEmptyData() below
-// -- needed synchronously at ward-creation time, before the lazily-imported
-// feature module loads. Unlike emptyDataPlanAnnual()/emptyDataPlanInitial(),
-// this one is genuinely pure data: it only calls the three factory
-// functions above (window.emptyMinorResidence/emptyMinorProvider/
-// emptyMinorGuardianSig), not any bare top-level const -- computeNavChecks()'s
-// planMinor branch never reads a rights/ADLs-style array directly, so there's
-// nothing here that has to stay an eager legacy global purely for that
-// reason (Milestone 6 plan's "Confirmed facts").
-
-// emptyDataAnnual() moved to src/core/state.js (Milestone 7, Phase A),
-// reached via window.emptyDataAnnual() from initializeEmptyData() below --
-// needed synchronously at ward-creation time, before the lazily-imported
-// feature module loads. Not pure data: reaches back into
-// window.emptyRowAnnual('trust'/'remun'), which stays a legacy global here
-// because convertGuardianSchedulesToAnnual() and
-// resetYearlyFieldsForNewYear()'s annual branch call it directly.
-
-function initializeEmptyData(type){
-  const data=(()=>{
-    switch(formEngine(type)){
-      case 'guardian': return emptyDataGuardian();
-      // emptyDataSimplified() moved to src/core/state.js (an ES module) --
-      // pure data, needed at ward-creation time, before this ward's feature
-      // module is ever mounted. window.emptyDataSimplified is assigned there
-      // (loaded via a <script type="module"> tag in index.html) the same way
-      // fragment-loader.js exposes loadFragment; see that file's own comment
-      // for why this bridge is temporary/necessary.
-      case 'simplified': return window.emptyDataSimplified();
-      case 'annual': return window.emptyDataAnnual();
-      case 'planSimplified': return window.emptyDataPlanSimplified();
-      case 'planAnnual': return window.emptyDataPlanAnnual();
-      case 'planInitial': return window.emptyDataPlanInitial();
-      case 'planMinor': return window.emptyDataPlanMinor();
-      default: return emptyDataGuardian();
-    }
-  })();
-  // Party-record references -- unwired so far (see the persistence-rewrite
-  // plan's later phases: hydration/dehydration, write-through, the party
-  // picker). Added here, once, rather than in each emptyData*() factory
-  // above, so every filing type gets the exact same shape regardless of
-  // which factory built it, and so the phases that actually consume these
-  // have one consistent place to look. guardianPartyIds starts empty and
-  // grows to match however many guardian rows a given type carries (1 for
-  // guardian/D-5, up to 4 for planInitial, etc.) once something populates it.
-  data.wardPartyId=null;
-  data.guardianPartyIds=[];
-  data.attorneyPartyId=null;
-  data.preparerPartyId=null;
-  // Case FK (Milestone 6) -- null until explicitly linked, same convention.
-  data.caseId=null;
-  if(formEngine(type)==='annual'){
-    data.inventoryType=type;
-    data.filingType=type==='finalAccounting'?'Final':type==='trustAccounting'?'Trust':'Annual';
-  }
-  return data;
-}
 
 // ═══════════════════════════════════════════════════════
 // MODAL FUNCTIONS
@@ -4047,34 +3721,6 @@ function getWardHeadlineTotal(ward){
   return total;
 }
 
-// accent is a fixed hex — used for the ward-card stripe / left-border,
-// where it's a decorative fill and doesn't need to react to theme.
-// accentText is the SAME colour family but as a var() reference, used
-// everywhere this accent sits on top of a surface as plain text — those
-// three raw hex values read fine on white (light mode) but fail badly as
-// text on a dark surface (as low as 1.9:1), same problem --brand/--accent/
-// --ok had, same fix: route through the *-text token instead.
-// financial:false marks a document that reports on the ward's PERSON (care,
-// residence, medical treatment) rather than their property. Those have no
-// money total at all, so anywhere a dollar headline would normally render,
-// the filing-progress percentage is shown instead — a "$0.00" or a bare "—"
-// under a "Total" label reads as a real figure and is actively misleading.
-const INVENTORY_TYPE_META={
-  guardian:   {iconName:'clipboard', accent:'#1e5799', accentText:'var(--accent-text)', totalLabel:'Total Value',  financial:true},
-  simplified: {iconName:'receipt',   accent:'#1f7a3d', accentText:'var(--ok-text)',     totalLabel:'Ending Balance', financial:true},
-  annual:     {iconName:'chart',     accent:'#820024', accentText:'var(--brand-text)',  totalLabel:'Net Assets',     financial:true},
-  finalAccounting: {iconName:'chart', accent:'#820024', accentText:'var(--brand-text)', totalLabel:'Net Assets',     financial:true},
-  trustAccounting: {iconName:'chart', accent:'#820024', accentText:'var(--brand-text)', totalLabel:'Net Assets',     financial:true},
-  planSimplified:{iconName:'shield', accent:'#6b3fa0', accentText:'var(--accent-text)', totalLabel:'Filing Progress', financial:false},
-  planAnnual:{iconName:'shield',     accent:'#4a3f9e', accentText:'var(--accent-text)', totalLabel:'Filing Progress', financial:false},
-  planInitial:{iconName:'shield',    accent:'#2f6e8c', accentText:'var(--accent-text)', totalLabel:'Filing Progress', financial:false},
-  planMinor:  {iconName:'shield',    accent:'#8a5a1e', accentText:'var(--accent-text)', totalLabel:'Filing Progress', financial:false},
-};
-window.INVENTORY_TYPE_META=INVENTORY_TYPE_META;
-function typeIcon(type,size){
-  return ic((INVENTORY_TYPE_META[type]||{}).iconName||'folder',size||16);
-}
-
 
 // Populates the sidebar's active-ward info card (icon, type, live headline
 // total) from the currently active ward. Shared by updateSidebar() (on load
@@ -4128,12 +3774,12 @@ function refreshWardInfoCard(){
     wardInfo.innerHTML='';
     return;
   }
-  const meta=INVENTORY_TYPE_META[ward.inventoryType]||{iconName:'folder',accent:'#525d6e',accentText:'var(--ink-3)',totalLabel:'Total'};
+  const meta=window.GuardianFormsLegacyBridge.INVENTORY_TYPE_META[ward.inventoryType]||{iconName:'folder',accent:'#525d6e',accentText:'var(--ink-3)',totalLabel:'Total'};
   const headline=getWardHeadlineTotal(ward);
   wardInfo.style.display='block';
   wardInfo.style.borderLeftColor=meta.accent;
   // ?. guard: an unregistered type here would throw and blank the sidebar.
-  const typeName=INVENTORY_TYPES[ward.inventoryType]?.name||ward.inventoryType;
+  const typeName=window.GuardianFormsLegacyBridge.INVENTORY_TYPES[ward.inventoryType]?.name||ward.inventoryType;
   // Non-financial types (Plans) have no total worth showing — the progress
   // bar rendered just below already is the meaningful headline, so the
   // dollar lines are dropped rather than shown as an empty "—".
@@ -4248,7 +3894,7 @@ function updateSidebar(){
     if(staleNav)staleNav.innerHTML='';
     return;
   }
-  const typeConfig=INVENTORY_TYPES[activeInventoryType];
+  const typeConfig=window.GuardianFormsLegacyBridge.INVENTORY_TYPES[activeInventoryType];
   // The header keeps the product name; the active form type gets its own
   // strip beneath it so the app is always identifiable.
   const ctx=document.getElementById('sidebar-context');
@@ -4325,9 +3971,6 @@ document.addEventListener('click',e=>{
 });
 
 
-
-
-
 function updateConvertNotePreview(srcType,destType){
   const noteEl=document.getElementById('convert-note');
   noteEl.textContent=describeConversion(srcType,destType);
@@ -4362,7 +4005,7 @@ function describeConversion(srcType,destType){
     return `The ward's name, case number, guardian, and attorney details are carried over. Starting Balance is set to this filing's ending net assets, and certificate-of-service recipients are carried too. County is restored from this ward's case record rather than copied from this filing. The accounting period and every schedule start blank for you to complete.`;
   }
   if(carrySourcesFor(destType).includes(srcType)){
-    return `This creates a new ${INVENTORY_TYPES[destType].name} for the same ward. The ward's name, case number, county, and guardian contact details are carried over exactly as entered — nothing is renamed. Everything specific to this new filing (residence and care details, schedules, signatures, etc.) starts blank for you to complete.`;
+    return `This creates a new ${window.GuardianFormsLegacyBridge.INVENTORY_TYPES[destType].name} for the same ward. The ward's name, case number, county, and guardian contact details are carried over exactly as entered — nothing is renamed. Everything specific to this new filing (residence and care details, schedules, signatures, etc.) starts blank for you to complete.`;
   }
   return 'Only case, guardian, and attorney information will be carried over. An Initial Inventory is a point-in-time snapshot of assets as of the Guardianship Inception Date, which can\'t be derived from an accounting period record — asset schedules will need to be completed manually.';
 }
@@ -4643,7 +4286,7 @@ async function convertExistingWard(sourceWardId,targetType){
   _dirtySinceExport=true;
   updateLastSavedIndicator();
   navigate('/');
-  await window.alertModal(`Converted "${sourceWard.wardName}" into a new ${INVENTORY_TYPES[targetType].name} form.\n\n${describeConversion(srcType,targetType)}`);
+  await window.alertModal(`Converted "${sourceWard.wardName}" into a new ${window.GuardianFormsLegacyBridge.INVENTORY_TYPES[targetType].name} form.\n\n${describeConversion(srcType,targetType)}`);
 }
 
 async function doConvertWard(){
@@ -5076,47 +4719,47 @@ function pageInventorySelector(){
   <div class="inventory-selector">
     <div class="inventory-card" data-form-action="add-ward-type" data-inventory-type="guardian" role="button" tabindex="0" aria-label="Create Initial Inventory ward">
       <h2><svg class="ic" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 4.6H7.2a1.6 1.6 0 0 0-1.6 1.6V19a1.6 1.6 0 0 0 1.6 1.6h9.6A1.6 1.6 0 0 0 18.4 19V6.2a1.6 1.6 0 0 0-1.6-1.6H15"/><rect x="9" y="3" width="6" height="3.4" rx="1.1"/></svg> Initial Inventory</h2>
-      <p>${INVENTORY_TYPES.guardian.description}</p>
+      <p>${window.GuardianFormsLegacyBridge.INVENTORY_TYPES.guardian.description}</p>
       <span class="btn btn-primary btn-sm" aria-hidden="true">Create Form for a Ward</span>
     </div>
     <div class="inventory-card" data-form-action="add-ward-type" data-inventory-type="simplified" role="button" tabindex="0" aria-label="Create Simplified Accounting ward">
       <h2><svg class="ic" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 3.6h12v17l-3-1.8-3 1.8-3-1.8-3 1.8Z"/><path d="M9.2 8.4h5.6M9.2 12.4h5.6"/></svg> Simplified Accounting</h2>
-      <p>${INVENTORY_TYPES.simplified.description}</p>
+      <p>${window.GuardianFormsLegacyBridge.INVENTORY_TYPES.simplified.description}</p>
       <span class="btn btn-primary btn-sm" aria-hidden="true">Create Form for a Ward</span>
     </div>
     <div class="inventory-card" data-form-action="add-ward-type" data-inventory-type="annual" role="button" tabindex="0" aria-label="Create Annual Accounting ward">
       <h2><svg class="ic" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4.2 20h15.6"/><path d="M7.4 20v-6.4M12 20V5.6M16.6 20v-9.2"/></svg> Annual Accounting</h2>
-      <p>${INVENTORY_TYPES.annual.description}</p>
+      <p>${window.GuardianFormsLegacyBridge.INVENTORY_TYPES.annual.description}</p>
       <span class="btn btn-primary btn-sm" aria-hidden="true">Create Form for a Ward</span>
     </div>
     <div class="inventory-card" data-form-action="add-ward-type" data-inventory-type="finalAccounting" role="button" tabindex="0" aria-label="Create Final Accounting ward">
       <h2><svg class="ic" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4.2 20h15.6"/><path d="M7.4 20v-6.4M12 20V5.6M16.6 20v-9.2"/><path d="m15.8 4.4 1.7 1.7 3.1-3.2"/></svg> Final Accounting</h2>
-      <p>${INVENTORY_TYPES.finalAccounting.description}</p>
+      <p>${window.GuardianFormsLegacyBridge.INVENTORY_TYPES.finalAccounting.description}</p>
       <span class="btn btn-primary btn-sm" aria-hidden="true">Create Form for a Ward</span>
     </div>
     <div class="inventory-card" data-form-action="add-ward-type" data-inventory-type="trustAccounting" role="button" tabindex="0" aria-label="Create Trust Accounting ward">
       <h2><svg class="ic" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4.6 9.4 12 4.2l7.4 5.2"/><path d="M6.6 10.8v7.4M11 10.8v7.4M15.4 10.8v7.4M19.8 10.8v7.4"/><path d="M4.2 20.2h15.6"/></svg> Trust Accounting</h2>
-      <p>${INVENTORY_TYPES.trustAccounting.description}</p>
+      <p>${window.GuardianFormsLegacyBridge.INVENTORY_TYPES.trustAccounting.description}</p>
       <span class="btn btn-primary btn-sm" aria-hidden="true">Create Form for a Ward</span>
     </div>
     <div class="inventory-card" data-form-action="add-ward-type" data-inventory-type="planInitial" role="button" tabindex="0" aria-label="Create Initial Guardianship Plan ward">
       <h2><svg class="ic" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3.4 5.2 6.1v5.3c0 4.2 2.9 8.1 6.8 9.2 3.9-1.1 6.8-5 6.8-9.2V6.1Z"/><path d="M12 8v5.4M12 16.4v.1"/></svg> Initial Guardianship Plan</h2>
-      <p>${INVENTORY_TYPES.planInitial.description}</p>
+      <p>${window.GuardianFormsLegacyBridge.INVENTORY_TYPES.planInitial.description}</p>
       <span class="btn btn-primary btn-sm" aria-hidden="true">Create Form for a Ward</span>
     </div>
     <div class="inventory-card" data-form-action="add-ward-type" data-inventory-type="planSimplified" role="button" tabindex="0" aria-label="Create Simplified Annual Plan ward">
       <h2><svg class="ic" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3.4 5.2 6.1v5.3c0 4.2 2.9 8.1 6.8 9.2 3.9-1.1 6.8-5 6.8-9.2V6.1Z"/><path d="m9.4 12.1 1.9 1.9 3.4-3.6"/></svg> Simplified Annual Plan</h2>
-      <p>${INVENTORY_TYPES.planSimplified.description}</p>
+      <p>${window.GuardianFormsLegacyBridge.INVENTORY_TYPES.planSimplified.description}</p>
       <span class="btn btn-primary btn-sm" aria-hidden="true">Create Form for a Ward</span>
     </div>
     <div class="inventory-card" data-form-action="add-ward-type" data-inventory-type="planAnnual" role="button" tabindex="0" aria-label="Create Annual Guardianship Plan ward">
       <h2><svg class="ic" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3.4 5.2 6.1v5.3c0 4.2 2.9 8.1 6.8 9.2 3.9-1.1 6.8-5 6.8-9.2V6.1Z"/><path d="M9.2 10.6h5.6M9.2 13.6h5.6"/></svg> Annual Guardianship Plan</h2>
-      <p>${INVENTORY_TYPES.planAnnual.description}</p>
+      <p>${window.GuardianFormsLegacyBridge.INVENTORY_TYPES.planAnnual.description}</p>
       <span class="btn btn-primary btn-sm" aria-hidden="true">Create Form for a Ward</span>
     </div>
     <div class="inventory-card" data-form-action="add-ward-type" data-inventory-type="planMinor" role="button" tabindex="0" aria-label="Create Annual Plan — Minors ward">
       <h2><svg class="ic" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3.4 5.2 6.1v5.3c0 4.2 2.9 8.1 6.8 9.2 3.9-1.1 6.8-5 6.8-9.2V6.1Z"/><circle cx="12" cy="9.8" r="1.6"/><path d="M9.4 15.2c0-1.6 1.2-2.6 2.6-2.6s2.6 1 2.6 2.6"/></svg> Annual Plan — Minors</h2>
-      <p>${INVENTORY_TYPES.planMinor.description}</p>
+      <p>${window.GuardianFormsLegacyBridge.INVENTORY_TYPES.planMinor.description}</p>
       <span class="btn btn-primary btn-sm" aria-hidden="true">Create Form for a Ward</span>
     </div>
   </div>
@@ -5168,74 +4811,6 @@ async function showAddWardModalForType(type){
 // WIZARD: GUARDIAN INVENTORY
 // ═══════════════════════════════════════════════════════
 
-function emptyDataGuardian(){
-  return {
-    wardName:'',caseNumber:'',ucn:'',gid:null,county:'',guardianName:'',
-    attorneyForGuardian:'',typeOfGuardianship:'',hasSafeDepositBox:'',
-    safeDepositBoxFiled:'',amendedForm:'',
-    scheduleA1:[],scheduleA2:[],scheduleB1:[],scheduleB2:[],scheduleB3:[],
-    scheduleB4:[],scheduleC1:[],scheduleC2:[],scheduleC3:[],scheduleC4:[],scheduleC5:[],
-    // Per-schedule "I verify there are no items of this type" checkbox --
-    // missing keys read as false, so a .sav saved before this existed just
-    // treats every schedule as unconfirmed (matches its actual pre-existing
-    // state: not yet reviewed), never as falsely confirmed empty.
-    scheduleNoItems:{},
-    // isPreparer on the guardian and attorney: Milestone 67A, "This person
-    // prepared this filing" -- see src/core/form/preparer-flag.js.
-    guardians:[{name:'',ssnEin:'',phone:'',streetAddress:'',cityStateZip:'',signatureDate:null,signatureState:'',signatureImage:'',isPreparer:false}],
-    // Milestone 64A-2, item 2.5: asOfDate is the compilation statement's own
-    // "as of" date (form PART IV H9), distinct from the signature date it
-    // falls back to when blank.
-    preparer:{name:'',ssnEin:'',phone:'',streetAddress:'',cityStateZip:'',signatureDate:null,asOfDate:null,signatureState:'',signatureImage:''},
-    attorney:{name:'',barNumber:'',phone:'',streetAddress:'',cityStateZip:'',signatureDate:null,filingDate:null,signatureState:'',signatureImage:'',isPreparer:false},
-    // bondDepositoryState (Milestone 67B): which arrangement applies --
-    // restricted depository only, bond and depository, bond only, or bond
-    // waived by court order; '' is unanswered and is never coerced. It
-    // replaced the 57A bondWaived tri-state (inferred on load, see
-    // core/filing/bond-depository.js). None of the bond fields is required.
-    bondAmount:'',bondPeriodFrom:null,bondPeriodTo:null,bondingCompany:'',bondDepositoryState:'',bondWaivedDate:'',restrictedDepositoryReceiptDate:'',
-    // Milestone 57B: filer attestation that no one requires service.
-    // Tri-state, never coerced (section 4): '' is unanswered, and an
-    // empty recipient list must never infer 'Yes'. Asked only when no
-    // recipient is listed (D16), and reset to '' by every filing
-    // conversion (D7) -- it is this filer's assertion about this filing.
-    serviceNoRecipients:'',
-    serviceRecipients:[{name:'',address:'',cityStateZip:''},{name:'',address:'',cityStateZip:''}],
-    serviceDate:null,serviceAttorney:{name:'',barNumber:'',phone:'',streetAddress:'',cityStateZip:'',signatureState:'',signatureImage:''},
-    // Milestone 64A-2, item 2.4. Form PART VI J24/J25: 'Indicate if:' -- Ward
-    // is totally incapacitated / Ward is under 14 years old / N/A. Required;
-    // '' is unanswered and 'N/A' is a real, complete answer, not coerced.
-    serviceIndicateIf:'',
-    // Witnesses present during the physical inventory of the ward's personal
-    // effects. Optional (not export-blocking) -- the Cover page reminder
-    // states the requirement, but not every inventory necessarily has a
-    // witness present, and the app shouldn't second-guess that on its own.
-    witnesses:[]
-  };
-}
-
-const PAGES_GUARDIAN=[
-  {id:'/',    label:'Cover'},
-  {id:'/summary', label:'Summary'},
-  {id:'/a1',  label:'Schedule A-1: Real Estate'},
-  {id:'/a2',  label:'Schedule A-2: RE Liabilities'},
-  {id:'/b1',  label:'Schedule B-1: Cash'},
-  {id:'/b2',  label:'Schedule B-2: Personal Property'},
-  {id:'/b3',  label:'Schedule B-3: Intangibles'},
-  {id:'/b4',  label:'Schedule B-4: PP Liabilities'},
-  {id:'/c1',  label:'Schedule C-1: Income'},
-  {id:'/c2',  label:'Schedule C-2: Lawsuits Against'},
-  {id:'/c3',  label:'Schedule C-3: Lawsuits By Ward'},
-  {id:'/c4',  label:'Schedule C-4: Trusts'},
-  {id:'/c5',  label:'Schedule C-5: Joint Owners'},
-  {id:'/d1',  label:'D-1: Guardian Attestation'},
-  {id:'/d2',  label:'D-2: Preparer & Attorney'},
-  {id:'/d3',  label:'D-3: Audit Fee & Safe Deposit'},
-  {id:'/d4',  label:'D-4: Bond & Surety Info'},
-  {id:'/d5',  label:'D-5: Certificate of Service'},
-  {id:'/print',label:'Print Preview'},
-];
-window.PAGES_GUARDIAN=PAGES_GUARDIAN;
 
 // Simplified Accounting is extracted into src/features/simplified-accounting/
 // (Milestone 2, Phase D) -- these two bridges dynamically import it, cache
@@ -5404,23 +4979,6 @@ function yesNoRadioHTML(id,label,val,path,req=false,route='',binding='form',tool
   return window.renderYesNoField({ path, label, value: val, id, required: req, route, binding, tooltipKey });
 }
 
-function planGuardianBlank(type){
-  // Milestone 39-C: every Plan type's guardian row now carries signatureState/
-  // signatureImage (39-B piloted planSimplified's only).
-  if(type==='planInitial')return {name:'',ssn:'',street:'',phone:'',cityStateZip:'',signatureDate:'',relationship:'',signatureState:'',signatureImage:''};
-  if(type==='planAnnual')return {name:'',ssn:'',phone:'',email:'',signatureDate:'',mailingStreet:'',mailingCityStateZip:'',officeStreet:'',officeCityStateZip:'',relationship:'',signatureState:'',signatureImage:''};
-  if(type==='planMinor')return window.emptyMinorGuardianSig();
-  return {name:'',signatureDate:'',email:'',phone:'',mailingAddress:'',signatureState:'',signatureImage:''};
-}
-function planGuardianHasAnyData(g){return !!(g&&Object.values(g).some(v=>v!==''&&v!==null&&v!==undefined&&v!==false));}
-function planGuardianMax(type){return type==='planInitial'?4:type==='planAnnual'?3:2;}
-function normalizePlanGuardians(data=window.D){
-  const rows=Array.isArray(data?.planGuardians)?data.planGuardians:[];
-  const primary=rows[0]||planGuardianBlank(data?.inventoryType);
-  const kept=[primary,...rows.slice(1).filter(planGuardianHasAnyData)].slice(0,planGuardianMax(data?.inventoryType));
-  if(data) data.planGuardians=kept;
-  return kept;
-}
 function addPlanGuardian(route){
   const d=window.D; const rows=normalizePlanGuardians(d);
   if(rows.length>=planGuardianMax(d.inventoryType))return false;
@@ -5435,7 +4993,6 @@ async function removePlanGuardian(index,route){
   if(Array.isArray(d.guardianPartyIds))d.guardianPartyIds.splice(index,1);
   autoSave(); navigate(route); return true;
 }
-window.normalizePlanGuardians=normalizePlanGuardians;
 window.addPlanGuardian=addPlanGuardian;
 window.removePlanGuardian=removePlanGuardian;
 function yesNoCheckboxS(id,label,val,req=false,route=''){
@@ -5565,17 +5122,6 @@ function planCheckGroup(label,boxes,explainId,explainVal,explainWhen,hint){
 
 // Row add/remove/duplicate for the Plan's repeating tables. Generic over the
 // array name so residences, providers and directives all share it.
-function planEmptyRow(kind){
-  if(kind==='residence')return emptyPlanResidence();
-  if(kind==='provider')return emptyPlanProvider();
-  if(kind==='directive')return emptyPlanDirective();
-  if(kind==='initialProvider')return emptyInitialProvider();
-  if(kind==='minorResidence')return emptyMinorResidence();
-  if(kind==='minorProvider')return emptyMinorProvider();
-  // Milestone 68C: the Plans' Certificate of Service recipient card.
-  if(kind==='certRecipient')return {name:'',line2:'',line3:'',line4:''};
-  return {};
-}
 function addPlanRow(arrName,kind,route){
   window.D[arrName]=window.D[arrName]||[];
   window.D[arrName].push(planEmptyRow(kind));
@@ -5795,114 +5341,8 @@ function excelCapacityPanel(over){
 // src/features/annual-accounting/print.js (Milestone 7, Phase B).
 
 
-
 // doSaveExcelAnnual()/importExcelAnnual() moved to
 // src/features/annual-accounting/excel.js (Milestone 7, Phase B).
-
-
-// ═══════════════════════════════════════════════════════
-// WIZARD: GUARDIAN INVENTORY - FULL IMPLEMENTATION
-// ═══════════════════════════════════════════════════════
-
-// ═══════════════════════════════════════════════════════
-// DATA MODEL
-// ═══════════════════════════════════════════════════════
-const mk = {
-  // isPreparer: Milestone 67A, "This person prepared this filing" -- see
-  // src/core/form/preparer-flag.js.
-  guardian:()=>({name:'',ssnEin:'',phone:'',streetAddress:'',cityStateZip:'',signatureDate:null,signatureState:'',signatureImage:'',isPreparer:false}),
-  preparer:()=>({name:'',ssnEin:'',phone:'',streetAddress:'',cityStateZip:'',signatureDate:null,signatureState:'',signatureImage:''}),
-  attorney:()=>({name:'',barNumber:'',phone:'',streetAddress:'',cityStateZip:'',signatureDate:null,filingDate:null,signatureState:'',signatureImage:''}),
-  recipient:()=>({name:'',address:'',cityStateZip:''}),
-  a1:()=>({propertyDescription:'',streetAddress:'',cityStateZip:'',notes:'',residence:'',income:'',fullAssetValue:0,wardPercent:100}),
-  a2:()=>({lenderName:'',lenderAddress:'',lenderCityStateZip:'',accountNumber:'',notes:'',liabilityType:'Mortgage',fullDebtBalance:0,wardPercent:100}),
-  b1:()=>({institutionName:'',restricted:'',accountType:'',accountNumber:'',streetAddress:'',cityStateZip:'',fullAssetAmount:0,wardPercent:100}),
-  // Milestone 60K: no stored amountInSDB -- the workbook derives it from the
-  // Yes/No answer and the ward share, and so does guardian-inventory/totals.js.
-  b2:()=>({description:'',streetAddress:'',cityStateZip:'',valuationMethod:'',fullAssetValue:0,wardPercent:100,inSafeDepositBox:'',isVehicle:false,vehicleYear:'',vehicleMake:'',vehicleModel:'',vehicleVin:'',odometerMileage:''}),
-  b3:()=>({description:'',streetAddress:'',cityStateZip:'',restricted:'',fullAssetValue:0,wardPercent:100,inSafeDepositBox:''}),
-  b4:()=>({lenderName:'',relatedProperty:'',accountNumber:'',lenderAddress:'',liabilityType:'Loan',fullLiabilityBalance:0,wardPercent:100}),
-  c1:()=>({payerName:'',payerAddress:'',payerCityStateZip:'',typeOfIncome:'',frequencyOfPayment:'Monthly',paymentBasis:'',annualIncomeAmount:0,wardPercent:100}),
-  // Milestone 64A-2, item 3.4: claimantAttorney -- form C-2 C7 asks for the
-  // claimant AND their attorney; optional, since not every claim has counsel
-  // of record.
-  c2:()=>({claimantName:'',claimantAttorney:'',lawsuitDescription:'',courtJurisdiction:'',caseNumber:'',claimantAddress:'',claimantCityStateZip:'',dateFiled:null,amountOfClaim:0,wardPercent:100}),
-  c3:()=>({defendantName:'',actionDescription:'',status:'',courtJurisdiction:'',caseNumber:'',actionDate:null,estimatedSettlement:0,wardPercent:100}),
-  c4:()=>({trustName:'',trusteeName:'',trusteeAddress:'',trusteeCityStateZip:'',dateCreated:null,accountNumber:'',trustType:'Pooled',trustAmount:0,wardPercent:100}),
-  c5:()=>({assetDescription:'',ownerName:'',ownerAddress:'',ownerCityStateZip:'',relationshipToWard:'',totalAssetValue:0,jointOwnerPercent:50}),
-};
-window.mk=mk;
-
-// Financial line-item schedules covered by pruneBlankCards() (see
-// navigate()), keyed by their property on D, each mapped to the exact blank
-// object its own +Add button pushes. These need a deep compare against that
-// template rather than a generic emptiness test, because several of their
-// fields default to something other than '' -- Guardian's wardPercent
-// starts at 100, Annual's Yes/No fields start at 'No' -- and a generic test
-// would never recognize those as untouched. Party and plan cards, whose
-// fields are all seeded empty, use BLANK_CARD_COLLECTIONS below instead.
-const BLANK_SCHEDULE_ENTRY = {
-  // Guardian form (Initial Inventory) -- same factory addEntry() already uses.
-  scheduleA1:mk.a1, scheduleA2:mk.a2, scheduleB1:mk.b1, scheduleB2:mk.b2, scheduleB3:mk.b3,
-  scheduleB4:mk.b4, scheduleC1:mk.c1, scheduleC2:mk.c2, scheduleC3:mk.c3, scheduleC4:mk.c4, scheduleC5:mk.c5,
-  // Annual Accounting -- copied verbatim from each schedule's own +Add button.
-  schA:()=>({payer:'',description:'',bank:'',accountNo:'',amount:''}),
-  schB1:()=>({bankAcct:'',checkNo:'',periodFrom:'',periodTo:'',datePaid:'',payee:'',courtOrderDate:'',amount:''}),
-  schB2:()=>({bankAcct:'',checkNo:'',periodFrom:'',periodTo:'',datePaid:'',payee:'',courtOrderDate:'',amount:''}),
-  schB3:()=>({bankAcct:'',checkNo:'',datePaid:'',payee:'',courtOrderDate:'',amount:''}),
-  schB4:()=>({bankAccountId:'',checkNo:'',datePaid:'',category:'',payee:'',amount:''}),
-  schC:()=>({description:'',date:'',gain:'',loss:''}),
-  schD1:()=>({description:'',accountNo:'',restricted:'',type:'',fullAmount:'',wardPct:'',restrictedAmt:''}),
-  schD2:()=>({description:'',residence:'',income:'',fullValue:'',wardPct:'',carryingValue:'',wardValue:''}),
-  schD3:()=>({description:'',fullAmount:'',wardPct:'',carryingValue:'',wardAmount:''}),
-  schD4:()=>({description:'',restricted:'',fullAmount:'',wardPct:'',carryingValue:'',wardValue:'',restrictedAmt:''}),
-  schD5:()=>({description:'',loanNo:'',loanType:'',fullDebt:'',wardPct:'',wardBalance:''}),
-  schE:()=>({bankName:'',transferInDate:'',transferInAmt:'',transferOutDate:'',transferOutAmt:''}),
-  schF1:()=>({description:'',bank:'',accountNo:'',courtOrderDate:'',salePrice:''}),
-  schF2:()=>({description:'',bank:'',accountNo:'',courtOrderDate:'',salePrice:''}),
-};
-
-// The other card family: party cards (guardians, certificate-of-service
-// recipients, witnesses) and the Plan forms' repeatable rows. Unlike the
-// schedules above these seed every field to '' or null, so blankness is a
-// generic emptiness test -- listing their fields here would just create one
-// more registry to drift out of sync with the form, which is the failure
-// mode this whole area keeps hitting.
-//
-// Many of these are seeded in bulk at filing creation rather than by an
-// +Add button: an Annual Accounting starts life with three blank guardian
-// cards and four blank cert-of-service recipients, which is why a filing
-// nobody has touched shows a wall of empty "Co-Guardian" cards.
-//
-// `min` is the floor a group may not prune below, so the user always has a
-// card to type into. `types` lists the form engines the group is pruned on
-// -- a group is listed for a type ONLY once that form has a real +Add
-// affordance for it, because pruning cards the user has no way to recreate
-// would lock them out of the form entirely.
-//
-// Milestone 37-4 note: this const and pruneBlankCards() below are shadowed
-// at runtime by src/core/form/prune-cards.js, which does `window.
-// BLANK_CARD_COLLECTIONS = ...` / `window.pruneBlankCards = ...` on module
-// load -- a classic-script function declaration IS a window property (see
-// this file's other such comments), so the later module-script assignment
-// wins and every bare `pruneBlankCards()` call in this file actually runs
-// that module's version. Edit core/form/prune-cards.js's copy, not this one.
-const BLANK_CARD_COLLECTIONS = {
-  guardians:{min:1,types:['guardian','annual','simplified']},
-  serviceRecipients:{min:1,types:['guardian']},
-  witnesses:{min:0,types:['guardian']},
-  certRecipients:{min:1,types:['annual','simplified']},
-  remuneration:{min:0,types:['annual','simplified']},
-  // Plan-family repeatable rows, each already served by +Add/Remove.
-  q1Residences:{min:0,types:['planAnnual']},
-  q4Providers:{min:0,types:['planAnnual']},
-  q10Directives:{min:0,types:['planAnnual']},
-  q9Providers:{min:0,types:['planInitial']},
-  q2Residences:{min:0,types:['planMinor']},
-  q3Providers:{min:0,types:['planMinor']},
-};
-
-
 
 
 // ═══════════════════════════════════════════════════════
@@ -5913,76 +5353,6 @@ const BLANK_CARD_COLLECTIONS = {
 // the one-line wrapper this script's callers use (see COMMON HELPERS above).
 const calc=new Proxy({},{get:(_,k)=>window.GuardianFormsLegacyBridge.calc[k]});
 
-function normalizeWardData(d){
-  if(!d||typeof d!=='object'||Object.keys(d).length===0)return d;
-  // Milestone 57C-R: give every loaded ward a well-formed scheduleDocsAck.
-  // A .sav written before 57C-R has none at all; an unexpected shape must not
-  // read as "already acknowledged", since that would silently retire a prompt
-  // the filer never saw.
-  try{ window.normalizeScheduleDocsAck?.(d); }catch(e){}
-  // Milestone 58D: reconcile Part XI's two ways of saying "nothing to report".
-  //
-  // A .sav written before 58D carries the seeded blank placeholder row, which
-  // hides the no-items declaration behind deleting it. Normalising an array
-  // whose rows are ALL blank to [] exposes that control without touching a
-  // filing that has real entries. Nothing is ever deleted here: a row with any
-  // content survives untouched.
-  //
-  // And if a stale `no items` flag sits beside real rows -- ticked, then rows
-  // added later by another path -- the rows win and the flag is cleared. The
-  // entered data is the stronger statement of intent, and leaving both set
-  // would file a declaration contradicting the schedule printed beside it.
-  try{
-    if(Array.isArray(d.remuneration)){
-      const populated=d.remuneration.filter(r=>r&&(r.guardian||r.type||r.amount||r.description));
-      if(populated.length===0&&d.remuneration.length>0)d.remuneration=[];
-      if(populated.length>0&&d.scheduleNoItems&&d.scheduleNoItems.remuneration)d.scheduleNoItems.remuneration=false;
-    }
-  }catch(e){}
-  const migrateBoolean=(obj,field,legacyField=null)=>{
-    if(!obj||typeof obj!=='object')return;
-    const current=obj[field];
-    if(current===true)obj[field]='Yes';
-    else if(current===false)obj[field]='No';
-    else if(current==null||current===''){
-      if(legacyField&&obj[legacyField]===true)obj[field]='Yes';
-      else if(legacyField&&obj[legacyField]===false)obj[field]='No';
-      else obj[field]='';
-    }
-    if(legacyField)delete obj[legacyField];
-  };
-  (d.scheduleA1||[]).forEach(r=>{
-    migrateBoolean(r,'residence','isPersonalResidence');
-    migrateBoolean(r,'income','isIncomeProperty');
-  });
-  (d.scheduleB1||[]).forEach(r=>migrateBoolean(r,'restricted','isRestricted'));
-  // Milestone 60K: a .sav written before 60K carries amountInSDB on B-2/B-3
-  // rows -- a stored copy of a figure the workbook derives, always 0 from the
-  // importer and never maintained by the UI. Drop it so nothing can ever read
-  // a stale value; the PDF and totals derive it from inSafeDepositBox.
-  (d.scheduleB2||[]).forEach(r=>{migrateBoolean(r,'inSafeDepositBox');if(r&&typeof r==='object')delete r.amountInSDB;});
-  (d.scheduleB3||[]).forEach(r=>{
-    migrateBoolean(r,'restricted','isRestricted');
-    migrateBoolean(r,'inSafeDepositBox');
-    if(r&&typeof r==='object')delete r.amountInSDB;
-  });
-  migrateBoolean(d,'hasSafeDepositBox');
-  migrateBoolean(d,'safeDepositBoxFiled');
-  migrateBoolean(d,'amendedForm','isAmended');
-  if(d.benefits&&typeof d.benefits==='object'){
-    Object.keys(d.benefits).forEach(k=>{
-      const b=d.benefits[k];
-      if(b&&typeof b==='object'){
-        migrateBoolean(b,'eligible');
-        migrateBoolean(b,'appliedFor');
-      }
-    });
-  }
-  const q7Keys=['q7SocialSecurity','q7Ssdi','q7Hmo','q7Ssi','q7StateSupplement','q7InstitutionalCare','q7SupplementalIns','q7Pension','q7Medicare','q7Medicaid','q7Va','q7Trusts','q7PendingBenefits'];
-  q7Keys.forEach(k=>migrateBoolean(d,k));
-  return d;
-}
-window.normalizeWardData=normalizeWardData;
 
 // ═══════════════════════════════════════════════════════
 // Page navigation helper moved to src/features/guardian-inventory/index.js
@@ -6451,7 +5821,7 @@ function computeNavChecks(){
     const provs=window.startedRows(D.q4Providers);
     const rights=D.rights||{}, adls=D.adls||{};
     const b=D.benefits||{};
-    const anyBenefit=PLAN_BENEFITS.some(([k])=>(b[k]||{}).eligible||(b[k]||{}).appliedFor);
+    const anyBenefit=window.GuardianFormsLegacyBridge.PLAN_BENEFITS.some(([k])=>(b[k]||{}).eligible||(b[k]||{}).appliedFor);
     const checks={
       'pa-cover':filled(D.wardName)&&filled(D.caseNumber)&&filled(D.county)&&filled(D.gid)
         &&filled(D.periodFrom)&&filled(D.periodTo)&&filled(D.guardian)&&filled(D.wardLiving)
@@ -6475,8 +5845,8 @@ function computeNavChecks(){
       // require at least one row, matching pi-p5's Initial Plan rule.
       'pa-p5':provs.length>0&&provs.every(r=>filled(r.name)),
       'pa-p6':filled(D.q5SocialSkills)&&filled(D.q5Activities)
-        &&PLAN_RIGHTS.every(([k])=>filled(rights[k])),
-      'pa-p7':PLAN_ADLS.every(([k])=>filled(adls[k])),
+        &&window.GuardianFormsLegacyBridge.PLAN_RIGHTS.every(([k])=>filled(rights[k])),
+      'pa-p7':window.GuardianFormsLegacyBridge.PLAN_ADLS.every(([k])=>filled(adls[k])),
       'pa-p8':anyOf(D.q9MentalNone,D.q9MentalDementia,D.q9MentalAlzheimers,D.q9MentalAutism,D.q9MentalHeadInjury,
                     D.q9MentalDevelopmental,D.q9MentalIntellectual,D.q9MentalSchizophrenia,D.q9MentalDepression,
                     D.q9MentalSubstance,D.q9MentalOther)
@@ -6510,8 +5880,8 @@ function computeNavChecks(){
               D.q3SettingSpecialized,D.q3SettingStateHospital,D.q3SettingOther,D.q3MedPrimary,D.q3MentalPsych,D.q3PersonalFacility,D.q3SocialFacility),
       'pa-p4':!checks['pa-p4']&&false,
       'pa-p5':!checks['pa-p5']&&(D.q4Providers||[]).some(r=>r&&hasAny(r.name,r.providerType,r.visits,r.street,r.cityStateZip,r.phone)),
-      'pa-p6':!checks['pa-p6']&&(hasAny(D.q5SocialSkills,D.q5Activities)||PLAN_RIGHTS.some(([k])=>filled(rights[k]))),
-      'pa-p7':!checks['pa-p7']&&PLAN_ADLS.some(([k])=>filled(adls[k])),
+      'pa-p6':!checks['pa-p6']&&(hasAny(D.q5SocialSkills,D.q5Activities)||window.GuardianFormsLegacyBridge.PLAN_RIGHTS.some(([k])=>filled(rights[k]))),
+      'pa-p7':!checks['pa-p7']&&window.GuardianFormsLegacyBridge.PLAN_ADLS.some(([k])=>filled(adls[k])),
       'pa-p8':!checks['pa-p8']&&anyOf(D.q9MentalDementia,D.q9MentalAlzheimers,D.q9PhysMobility,D.q9UsesGlasses,D.q9NeedsGlasses,D.q9MentalNone,D.q9PhysNone),
       'pa-p9':!checks['pa-p9']&&anyOf(D.q10NoDirectives,D.q10Executed),
       'pa-p10':!checks['pa-p10']&&anyOf(D.q11NoRemuneration,D.q11ReceivedName,D.q11Amount,D.q11From),
@@ -6568,7 +5938,7 @@ function computeNavChecks(){
       // (see emptyInitialProvider()), which .every() on its own would call
       // complete before anything is filled in.
       'pi-p5':provs.length>0&&provs.every(r=>filled(r.name)),
-      'pi-p6':INITIAL_ADLS.every(([k])=>filled(adls[k])),
+      'pi-p6':window.GuardianFormsLegacyBridge.INITIAL_ADLS.every(([k])=>filled(adls[k])),
       'pi-p7':anyOf(D.mentalAlzheimers,D.mentalAutism,D.mentalClosedHeadInjury,D.mentalDementia,
                     D.mentalDepression,D.mentalDevelopmental,D.mentalSubstance,D.mentalSchizophrenia,D.mentalOther)
         &&anyOf(D.physMobility,D.physBlindness,D.physDeafness,D.physDiabetic,D.physParkinsons,D.physArthritis,D.physOther)
@@ -6615,7 +5985,7 @@ function computeNavChecks(){
       'pi-p4':!checks['pi-p4']&&anyOf(D.q6CareFacility,D.q6NursesAides,D.q6FamilyFriends,D.q6DayProgram,D.q6WardDecides,D.q6Other,
               D.q7SocialSecurity,D.q7Ssdi,D.q7Hmo,D.q7Ssi,D.q7Medicare,D.q7Medicaid,D.q7Va,D.q7Trusts),
       'pi-p5':!checks['pi-p5']&&(D.q9Providers||[]).some(r=>r&&hasAny(r.name,r.providerType,r.examDate,r.street,r.cityStateZip,r.phone)),
-      'pi-p6':!checks['pi-p6']&&INITIAL_ADLS.some(([k])=>filled(adls[k])),
+      'pi-p6':!checks['pi-p6']&&window.GuardianFormsLegacyBridge.INITIAL_ADLS.some(([k])=>filled(adls[k])),
       'pi-p7':!checks['pi-p7']&&anyOf(D.mentalAlzheimers,D.physMobility,D.usesGlasses,D.mentalNone,D.physNone),
       'pi-p8':!checks['pi-p8']&&anyOf(D.q11NoDirectives,D.q11Executed,D.committeeIncorporated,D.needsGlasses,D.needsNone),
       'pi-p9':!checks['pi-p9']&&hasAny(g0.name,g0.signatureDate,g0.phone,g0.ssn),
@@ -7319,109 +6689,8 @@ document.querySelectorAll('.nav-link-item[data-page]').forEach(btn=>{
   btn.addEventListener('click',()=>navigate(btn.dataset.page));
 });
 
-// Hash-based routing
-// Page routes for current wizard (dynamically set based on activeInventoryType)
-const PAGES_SIMPLIFIED=[
-  {id:'/',        label:'Cover & Part I'},
-  {id:'/summary', label:'Summary'},
-  {id:'/p2',      label:'Part II'},
-  {id:'/p3',   label:'Part III'},
-  {id:'/p4',   label:'Part IV'},
-  {id:'/p5',   label:'Part V'},
-  {id:'/p6',   label:'Part VI'},
-  {id:'/p7',   label:'Part VII'},
-  {id:'/print',label:'Print Preview'},
-];
-const PAGES_ANNUAL=[
-  {id:'/',        label:'Part I'},
-  {id:'/summary', label:'Summary'},
-  {id:'/p2',      label:'Part II'},
-  {id:'/p3',   label:'Part III'},
-  {id:'/p4',   label:'Part IV'},
-  {id:'/p5',   label:'Part V'},
-  {id:'/scha', label:'Sch A'},
-  {id:'/schb1',label:'Sch B1'},
-  {id:'/schb2',label:'Sch B2'},
-  {id:'/schb3',label:'Sch B3'},
-  {id:'/schb4',label:'Sch B4'},
-  {id:'/schc', label:'Sch C'},
-  {id:'/schd1',label:'Sch D1'},
-  {id:'/schd2',label:'Sch D2'},
-  {id:'/schd3',label:'Sch D3'},
-  {id:'/schd4',label:'Sch D4'},
-  {id:'/schd5',label:'Sch D5'},
-  {id:'/sche', label:'Sch E'},
-  {id:'/schf1',label:'Sch F1'},
-  {id:'/schf2',label:'Sch F2'},
-  {id:'/p67',  label:'Parts VI & VII'},
-  {id:'/p8',   label:'Part VIII'},
-  {id:'/p9',   label:'Part IX'},
-  {id:'/p10',  label:'Part X'},
-  {id:'/p11',  label:'Part XI'},
-  {id:'/print',label:'Print Preview'},
-];
-const PAGES_PLAN_SIMPLIFIED=[
-  {id:'/',        label:'Cover'},
-  {id:'/summary', label:'Summary'},
-  {id:'/p2',      label:'The Plan'},
-  {id:'/p3',   label:'Signatures'},
-  {id:'/p4',   label:'Certificate of Service'},
-  {id:'/print',label:'Print Preview'},
-];
-const PAGES_PLAN_ANNUAL=[
-  {id:'/',        label:'Cover'},
-  {id:'/summary', label:'Summary'},
-  {id:'/p2',      label:'1. Residences'},
-  {id:'/p3',   label:'2–3. Residence & Care'},
-  {id:'/p4',   label:'3G. Insurance & Benefits'},
-  {id:'/p5',   label:'4. Medical Treatment'},
-  {id:'/p6',   label:'5–7. Skills & Rights'},
-  {id:'/p7',   label:'8. Daily Living'},
-  {id:'/p8',   label:'9. Disabilities & Devices'},
-  {id:'/p9',   label:'10. Advance Directives'},
-  {id:'/p10',  label:'11. Remuneration'},
-  {id:'/p11',  label:'Signatures'},
-  {id:'/p12',  label:'Certificate of Service'},
-  {id:'/print',label:'Print Preview'},
-];
-const PAGES_PLAN_INITIAL=[
-  {id:'/',        label:'Cover'},
-  {id:'/summary', label:'Summary'},
-  {id:'/p2',      label:'2–3. Setting & Medical Care'},
-  {id:'/p3',   label:'4–5. Mental Health & Personal Care'},
-  {id:'/p4',   label:'6–7. Socialization & Benefits'},
-  {id:'/p5',   label:'9. Examining Providers'},
-  {id:'/p6',   label:'10A. Daily Living'},
-  {id:'/p7',   label:'10B–D. Disabilities & Devices'},
-  {id:'/p8',   label:'11. Advance Directives'},
-  {id:'/p9',   label:'Signatures'},
-  {id:'/p10',  label:'Attorney Certification'},
-  {id:'/p11',  label:'Certificate of Service'},
-  {id:'/print',label:'Print Preview'},
-];
-const PAGES_PLAN_MINOR=[
-  {id:'/',        label:'Cover'},
-  {id:'/summary', label:'Summary'},
-  {id:'/p2',      label:'2. Prior Residences'},
-  {id:'/p3',   label:'3. Treatment Providers'},
-  {id:'/p4',   label:'4. Medical Services'},
-  {id:'/p5',   label:'5. Education & Social Development'},
-  {id:'/p6',   label:'Guardian Signatures'},
-  {id:'/p7',   label:'Preparer & Attorney'},
-  {id:'/p8',   label:'Certificate of Service'},
-  {id:'/print',label:'Print Preview'},
-];
-const PAGES={
-  guardian: PAGES_GUARDIAN,
-  finalAccounting: PAGES_ANNUAL,
-  trustAccounting: PAGES_ANNUAL,
-  simplified: PAGES_SIMPLIFIED,
-  annual: PAGES_ANNUAL,
-  planSimplified: PAGES_PLAN_SIMPLIFIED,
-  planAnnual: PAGES_PLAN_ANNUAL,
-  planInitial: PAGES_PLAN_INITIAL,
-  planMinor: PAGES_PLAN_MINOR,
-};
+// Hash-based routing. Each filing type's page list is FILING_PAGES in
+// src/core/filing/filing-registry.js (moved there by Milestone 70's 70C).
 
 function updateNavActive(page){
   document.querySelectorAll('.nav-link-item[data-page]').forEach(btn=>{
@@ -7457,7 +6726,7 @@ async function handleHash(){
     updateNavActive(currentPage);
     return;
   }
-  const wizardPages=PAGES[activeInventoryType]||PAGES_GUARDIAN;
+  const wizardPages=window.GuardianFormsLegacyBridge.FILING_PAGES[activeInventoryType]||window.GuardianFormsLegacyBridge.PAGES_GUARDIAN;
   const valid=wizardPages.map(p=>p.id);
   const page=valid.includes(h)?h:'/';
   currentPage=page;

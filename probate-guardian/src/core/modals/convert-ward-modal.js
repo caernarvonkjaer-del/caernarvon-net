@@ -2,12 +2,13 @@
 import { getCaseFile } from '../state.js';
 import { convertTargetsFor } from '../filing/filing-descriptor.js';
 import { alertModal } from '../ui/dialogs.js';
+import { INVENTORY_TYPES } from '../filing/filing-registry.js';
 
 export { convertTargetsFor };
 
 export function convertSourceItems() {
   const caseFile = getCaseFile();
-  const inventoryTypes = (typeof window !== 'undefined' && window.INVENTORY_TYPES) || {};
+  const inventoryTypes = INVENTORY_TYPES;
   return (caseFile.wards || []).map((w) => ({
     wardId: w.wardId,
     label: w.wardName || '(unnamed)',
@@ -59,7 +60,7 @@ export function updateConvertTargetOptions() {
     return;
   }
   const targets = convertTargetsFor(ward.inventoryType);
-  const inventoryTypes = (typeof window !== 'undefined' && window.INVENTORY_TYPES) || {};
+  const inventoryTypes = INVENTORY_TYPES;
   if (!targets.length) {
     targetSel.innerHTML = '';
     noteEl.textContent = `${inventoryTypes[ward.inventoryType]?.name || ward.inventoryType} wards can't be converted to another type.`;

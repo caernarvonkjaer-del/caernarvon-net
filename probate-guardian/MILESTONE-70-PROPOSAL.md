@@ -2,8 +2,8 @@
 
 ## Status
 
-**70A complete (2026-09-24); 70T and 70B complete (2026-09-25) -- see their
-build records. Every remaining delivery, 70C through 70L, is approved.** The
+**70A complete (2026-09-24); 70T, 70B and 70C complete (2026-09-25) -- see
+their build records. Every remaining delivery, 70D through 70L, is approved.** The
 requester approved delivery 70A on 2026-09-24 and it is complete on the
 `milestone-70` branch (see the 70A build record), then approved 70T. On
 2026-09-25 the requester approved every delivery after it ("Finish ms 70. That
@@ -1147,6 +1147,38 @@ change, routed, and summarized through imports with no feature pack loaded.
 With IDs and clocks fixed by the test harness, serialized shapes are deeply
 equal to the pre-delivery shapes; comparisons normalize irrelevant object-key
 ordering rather than hiding a value/default change.
+
+### 70C build record
+
+Approved with every later delivery on 2026-09-25 (see Status). Everything
+below is on the `milestone-70` branch.
+
+**What a filer sees.** One thing changes, and it is a fix carried from
+`master`: a card or row the filer added with +Add and never touched is removed
+again when they leave the page (master `b28bf25`). On the branch that clean-up
+had never run -- nothing loaded the module -- so an untouched Initial Inventory
+schedule row stayed, marked its schedule unfinished and blocked export with
+four "row 1" errors. Everything else is identical: every filing type starts
+with the same blank filing, normalizes an older saved filing the same way, and
+routes to the same pages.
+
+**Done, with evidence.**
+
+| Item | Evidence |
+| --- | --- |
+| Commit | Named in the next docs commit (the whole delivery; gate evidence in its message). |
+| The registry | `src/core/filing/filing-registry.js`: each of the nine identities with its engine (Final and Trust are the Annual engine under their own names), name and description (`INVENTORY_TYPES`), dashboard look (`INVENTORY_TYPE_META`, `typeIcon()`), page list (`FILING_PAGES`), blank filing (`initializeEmptyData()`), normalizer and feature mount, as `FILING_REGISTRY`, built on `filing-descriptor.js`'s `FILING_TYPE_KEYS`. Its whole static import graph stays out of `src/features`, the output libraries and the PDF-building code (checked by the spec). |
+| Per-engine models | `src/core/filing/models/`: `guardian.js`, `simplified.js`, `annual.js` (one model for Annual, Final and Trust), `plan-simplified.js`, `plan-annual.js`, `plan-initial.js`, `plan-minor.js`, and `plan-rows.js` for the rows the four Plans share. Form-specific row factories stay separate; nothing generic was invented. The blank-filing factories left `src/core/state.js`, which no longer reaches back into window for the Plan lists and rows. |
+| Normalizer | `src/core/filing/normalize-filing.js` (`normalizeWardData()`); `setD()` imports it instead of calling a window global. |
+| Moved | 26 declarations and the page lists (`PAGES`, `PAGES_*`), which the review had placed in 70K by their section; they are the registry's route metadata, so 70C took them and the review records why. `BLANK_CARD_COLLECTIONS` was dead (prune-cards.js keeps its own, diverged table) and went. legacy-app.js -780/+49 lines, state.js -438/+9. 15 functions the monolith still calls keep a one-line wrapper, each with its deletion target. |
+| Proven equal | `tests/baseline/ms70-70C-filing-shapes.json`, captured from the 70B tree before anything moved (the declarations sliced out and run with state.js loaded as the app loads it): all nine blank filings, the normalizer twice equal to once, engines, names, looks, page lists, every row factory and list. `tests/unit/filing-registry.spec.js` (34 tests) requires the moved modules to reproduce every value, key order ignored; red first, a changed Schedule C row failed it. |
+| Stays | `setAccountingFilingType()` assigns the monolith's own `let activeInventoryType`, which no module can; its pure half is already `applyAccountingFilingType()`. Review override to 70J with that reason. |
+| Carried from master | `b28bf25`, re-implemented rather than merged: the router and the dashboard entry import `pruneBlankCards()`, and `prune-cards.js` owns the schedule table it compares against (it read `window.BLANK_SCHEDULE_ENTRY`, which on the branch no one published). Its test changes came across converted to `GuardianForms.testing`: the new `blank-card-pruning.spec.ts` (four of master's five cases; the fifth checked that `window.pruneBlankCards` exists, and the function is imported now) and the three updated specs. The clean-up now judges a filing by its own `inventoryType` instead of `window.activeInventoryType`, the same value for the open filing it is given. |
+| Module consumers | 20 modules import the registry and models instead of reading window (among them `readiness-config.js`'s Plan lists, which it read by computed name, and the test adapter's reference lists and blank filings). Ratchet: `classicDeclarations` 449 to 423, `windowWrites` 325 to 300, `windowReads` 583 to 524, `evalTimeWindowDestructures` 154 to 139, `bareCrossBoundary` 49 to 48, `unownedWindowReads` 3 to 2, `lexicalOnlyWindowReads` 3 to 2, `computedWindowReads` 1 to 0, `unreachableModules` 8 to 7 (prune-cards.js is loaded). |
+| Fixtures and factories | The browser suite's fixture overlays are merged over `initializeEmptyData()`, whose output is unchanged value for value, so none needed a change. The unit specs that stubbed the Plan lists and rows on window now run the real factories (`filing-county-defaults.spec.js` gains `emptyDataGuardian()`, which it could not reach before), and `guardian-inventory-yes-no-radio.spec.js` calls the Inventory factories instead of grepping the monolith's source. Two specs (`guardian-inventory-64a1-validation`, `preparer-flag-validation`) keep hand-written Inventory shapes holding only what their validator reads; they are not blank filings and were left as they are. |
+| Findings | (1) The blank-card clean-up never ran on the branch (above). (2) The normalizer's acknowledgement step imported one pure helper from `supplemental-pdf.js`, so the registry pulled in the PDF-appending code and the pdf.js loader; `resolveActiveDocPeriod()` moved to `src/core/filing/doc-period.js`, re-exported where it was. `check:types` found it: the navigation modules now reach the registry. (3) In Node the Plan PDF models printed empty rights, daily-living and benefit tables, because the lists were window globals; `plan-tristate.spec.js` had stubbed a two-entry list, and now checks the real one. (4) The rewire left `typeof window !== 'undefined' && X` guards around imported lists in six files; each is now the plain import. (5) `year-rollover.characterization.spec.ts` (70A) had recorded the branch without the clean-up: the gate failed its Simplified and Plan for Minors records, which differed only by blank rows -- the Simplified fixture's two blank certificate recipients and the Plan's blank residence row, now removed when the test leaves the page. Master calls the same clean-up at the same two points with the same card rules, so those two records were regenerated with the reason in the golden's note; the other seven were unchanged. |
+
+**Gate run.** The full `npm test` on this tree, 2026-09-25: unit 1986/1986 (144 files); browser 893 passed, 7 skipped, 2 failed (1.6 h, source profile, chromium) -- 902 tests: 70B's 894, `blank-card-pruning.spec.ts`'s four and the four `plan-certificate-of-service.spec.ts` cases master's `b28bf25` added. The two failures were `year-rollover.characterization.spec.ts`'s Simplified and Plan for Minors records (finding 5); with those two regenerated the spec passed 9/9. `check:types` clean.
 
 ---
 

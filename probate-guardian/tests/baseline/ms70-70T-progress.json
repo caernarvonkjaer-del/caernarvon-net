@@ -8,6 +8,7 @@
   "tests/e2e/annual-mount.spec.ts",
   "tests/e2e/annual-schedule-consistency.spec.ts",
   "tests/e2e/backup-restore-sav.spec.ts",
+  "tests/e2e/blank-card-pruning.spec.ts",
   "tests/e2e/bond-depository.spec.ts",
   "tests/e2e/carryover-workflow.spec.ts",
   "tests/e2e/case-file-core-fields-roundtrip.spec.ts",

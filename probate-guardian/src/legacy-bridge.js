@@ -34,6 +34,17 @@ import { FL_COUNTIES } from './core/pdf/circuit-lookup.js';
 import { formatDisplayDate } from './core/form/date-parser.js';
 import { calcTotals } from './features/simplified-accounting/totals.js';
 import { calc } from './features/guardian-inventory/totals.js';
+import {
+  formEngine, formDisplayName, INVENTORY_TYPES, INVENTORY_TYPE_META, typeIcon, initializeEmptyData, FILING_PAGES,
+} from './core/filing/filing-registry.js';
+import { emptyRowAnnual } from './core/filing/models/annual.js';
+import { PAGES_GUARDIAN } from './core/filing/models/guardian.js';
+import { PLAN_RIGHTS, PLAN_ADLS, PLAN_BENEFITS, emptyPlanResidence, emptyPlanProvider } from './core/filing/models/plan-annual.js';
+import { INITIAL_ADLS, emptyInitialProvider } from './core/filing/models/plan-initial.js';
+import { emptyMinorResidence, emptyMinorProvider } from './core/filing/models/plan-minor.js';
+import {
+  planGuardianBlank, planGuardianHasAnyData, planGuardianMax, normalizePlanGuardians, planEmptyRow,
+} from './core/filing/models/plan-rows.js';
 
 export const LEGACY_BRIDGE = Object.freeze({
   // 70B -- pure helpers
@@ -41,6 +52,12 @@ export const LEGACY_BRIDGE = Object.freeze({
   sanitizeNonNegativeDecimal, formatPhone, formatSSN, formatCaseNumber, finalizeCaseNumber, formatBarNumber,
   formatAccountNumber, formatCheckNumber, formatName, formatAddress, applyZipLimit, FL_COUNTIES,
   formatDisplayDate, calcTotals, calc,
+  // 70C -- the filing registry and per-engine models
+  formEngine, formDisplayName, INVENTORY_TYPES, INVENTORY_TYPE_META, typeIcon, initializeEmptyData, FILING_PAGES,
+  emptyRowAnnual,
+  PAGES_GUARDIAN, PLAN_RIGHTS, PLAN_ADLS, PLAN_BENEFITS, emptyPlanResidence, emptyPlanProvider, INITIAL_ADLS,
+  emptyInitialProvider, emptyMinorResidence, emptyMinorProvider, planGuardianBlank, planGuardianHasAnyData,
+  planGuardianMax, normalizePlanGuardians, planEmptyRow,
 });
 
 if (typeof window !== 'undefined') {

@@ -5,6 +5,8 @@ import { resetReadinessCardState } from '../filing/readiness-card.js';
 import { saveLastPosition } from '../persistence/recovery-cache.js';
 import { decorateTestSystemTitles } from '../ui/test-system-title.js';
 import { ic } from '../ui/icons.js';
+import { pruneBlankCards } from '../form/prune-cards.js';
+import { formEngine } from '../filing/filing-registry.js';
 
 let _currentPage = '/dashboard';
 
@@ -69,9 +71,7 @@ export async function navigate(page, { updateHash = true } = {}) {
       // toggle, so the next entry recomputes its default; a same-route
       // rerender (renderPage('/print') after a blocked export) keeps it.
       if (page !== '/print') resetReadinessCardState();
-      if (typeof window.pruneBlankCards === 'function') {
-        window.pruneBlankCards();
-      }
+      pruneBlankCards();
     }
   }
 
@@ -190,7 +190,7 @@ export async function renderPage(page) {
     const pageKey = typeof window.getCurrentPageKey === 'function' ? window.getCurrentPageKey() : null;
     if (pageKey && window._visitedPages) window._visitedPages.add(pageKey);
 
-    const engine = typeof window.formEngine === 'function' ? window.formEngine(activeType) : activeType;
+    const engine = formEngine(activeType);
     if (FILING_ENGINE_IDS.includes(engine)) {
       const mount = window[mountFeatureFnName(engine)];
       if (typeof mount === 'function') await mount(page);

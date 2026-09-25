@@ -186,6 +186,12 @@ export function buildDispositions(root = ROOT) {
       disposition = override.disposition || disposition;
       delivery = override.delivery || delivery;
     }
+    // A wrapper sits in the monolith's wrapper block, whatever section its
+    // implementation came from, so its section says nothing: where it moved
+    // is what the review recorded for it.
+    if (d.forwarder && !override && /^move 70[A-L]$/.test(review.confirmed[d.name] || '')) {
+      delivery = review.confirmed[d.name].split(' ')[1];
+    }
     const reviewed = !!override || review.confirmed[d.name] === `${disposition} ${delivery}`;
     return {
       name: d.name, kind: d.kind, line: d.line, lines: d.lines, section: section.title,

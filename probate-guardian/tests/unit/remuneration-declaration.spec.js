@@ -41,7 +41,7 @@ describe('60G: Simplified\'s remuneration rows carry an amount', () => {
   let emptyDataSimplified;
   beforeAll(async () => {
     globalThis.window = globalThis.window || {};
-    ({ emptyDataSimplified } = await import('../../src/core/state.js'));
+    ({ emptyDataSimplified } = await import('../../src/core/filing/models/simplified.js'));
   });
 
   // The field was already in probate-guardian-data-model.csv and in the shared

@@ -1,5 +1,5 @@
 import { resolveDescriptorForInventoryType } from './filing-descriptor.js';
-import { resolveActiveDocPeriod } from '../pdf/supplemental-pdf.js';
+import { resolveActiveDocPeriod } from './doc-period.js';
 
 // Milestone 57C-R: the supplemental-documentation acknowledgement.
 //

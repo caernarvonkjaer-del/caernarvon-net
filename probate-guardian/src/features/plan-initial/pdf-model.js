@@ -9,6 +9,7 @@ import { planCertificateOfServiceSection } from '../../core/filing/plan-certific
 import { triStateText } from '../../core/form/form-contract.js';
 import { maskSSN } from '../../core/pdf/ssn-format.js';
 import { rowStarted, startedRows } from '../../core/validation/row-started.js';
+import { INITIAL_ADLS } from '../../core/filing/models/plan-initial.js';
 
 export function buildPlanInitialModel(D, options) {
   const d = D || {};
@@ -257,7 +258,7 @@ export function buildPlanInitialModel(D, options) {
 
   // Page 5: Q10A ADLs
   const adls = d.adls || {};
-  const initialAdls = typeof window !== 'undefined' && window.INITIAL_ADLS ? window.INITIAL_ADLS : [];
+  const initialAdls = INITIAL_ADLS;
   sections.push({
     id: 'q10a',
     title: 'Question 10A',

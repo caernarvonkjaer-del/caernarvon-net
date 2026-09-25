@@ -21,6 +21,8 @@
 // Info, and new-year creation -- routes through it.
 import { getCaseFile, getD, setD } from '../state.js';
 import { FILING_ENGINE_IDS, mountFeatureFnName } from '../filing/filing-descriptor.js';
+import { formEngine, initializeEmptyData } from '../filing/filing-registry.js';
+import { pruneBlankCards } from '../form/prune-cards.js';
 
 export function createWardId() {
   return 'w_' + Date.now() + '_' + Math.random().toString(36).slice(2, 9);
@@ -38,7 +40,7 @@ export async function enterDashboardEditingFocus() {
     if (!caseFile.activeWardId) return true;
     try {
       window.commitPendingFieldValues?.();
-      window.pruneBlankCards?.();
+      pruneBlankCards();
       if (typeof window.flushPendingSave === 'function') await window.flushPendingSave({ requireRecovery: true });
       if (typeof window.releaseWardLock === 'function') await window.releaseWardLock();
     } catch (error) {
@@ -421,7 +423,7 @@ export async function activateWard(ward, opts = {}) {
     if (typeof window.addToRecentlyOpened === 'function') {
       window.addToRecentlyOpened(ward);
     }
-    if (typeof window.formEngine === 'function' && window.formEngine(ward.inventoryType) === 'guardian') {
+    if (true && formEngine(ward.inventoryType) === 'guardian') {
       if (typeof window.ensureGuardianFeatureReady === 'function') {
         await window.ensureGuardianFeatureReady();
       }
@@ -445,8 +447,8 @@ export async function addWard(wardName, inventoryType) {
   const caseFile = getCaseFile();
   const isFirstWardEver = !caseFile.wards || caseFile.wards.length === 0;
 
-  const emptyData = typeof window !== 'undefined' && typeof window.initializeEmptyData === 'function'
-    ? window.initializeEmptyData(inventoryType)
+  const emptyData = typeof window !== 'undefined' && true
+    ? initializeEmptyData(inventoryType)
     : {};
 
   const newWard = {
@@ -493,7 +495,7 @@ export async function switchWard(wardId) {
   if (typeof window !== 'undefined') {
     window.currentPage = '/';
     window.location.hash = '';
-    const engine = typeof window.formEngine === 'function' ? window.formEngine(ward.inventoryType) : null;
+    const engine = formEngine(ward.inventoryType);
     if (FILING_ENGINE_IDS.includes(engine)) {
       const mount = window[mountFeatureFnName(engine)];
       if (typeof mount === 'function') await mount('/');

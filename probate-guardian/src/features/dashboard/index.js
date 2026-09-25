@@ -10,15 +10,16 @@ import { deriveDefaultCircuit, groupsForCircuit, resourcesPanelHTML, getDefaultC
 import { alertModal, confirmModal } from '../../core/ui/dialogs.js';
 import { esc } from '../../core/filing/escape-html.js';
 import { ic } from '../../core/ui/icons.js';
+import { INVENTORY_TYPES, formEngine, typeIcon } from '../../core/filing/filing-registry.js';
 
 const {
   navigate, getCaseFile, isContinuePromptShown, markContinuePromptShown,
   getRecentlyOpenedWards, saveWardToState, flushPendingSave, markDirtySinceExport, updateLastSavedIndicator,
   saveBlobAs, auditLog, saveAppState,
-  getWardHeadlineTotal, getWardProgress, typeIcon,
+  getWardHeadlineTotal, getWardProgress, 
   switchWard, showStartNewYearModal, confirmDeleteWard,
   showConvertWardModal, showAddWardModal, showPriorYearsModal, formatRelativeTime,
-  INVENTORY_TYPES, formEngine,
+  
 } = window;
 
 // Dashboard's own module state -- all session-only, not persisted, reset on reload.
