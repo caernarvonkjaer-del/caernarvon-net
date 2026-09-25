@@ -2,8 +2,8 @@
  "generatedBy": "node scripts/ms70-assertion-counts.mjs --write-baseline",
  "note": "Milestone 70 per-spec assertion counts (static expect calls). tests/unit/ms70-assertion-counts.spec.js fails when a spec falls below its count; lowering it requires --reason, recorded in dropLog. A tripwire, not proof of equivalence (decision D9).",
  "totals": {
-  "expects": 6219,
-  "tests": 1791
+  "expects": 6255,
+  "tests": 1800
  },
  "counts": {
   "tests/e2e/annotation-toolbar-containment.spec.ts": {
@@ -185,6 +185,10 @@
   "tests/e2e/legacy-ward-data-normalization.spec.ts": {
    "expects": 15,
    "tests": 4
+  },
+  "tests/e2e/mixed-version.characterization.spec.ts": {
+   "expects": 30,
+   "tests": 8
   },
   "tests/e2e/navigation-status.contract.spec.ts": {
    "expects": 141,
@@ -915,8 +919,8 @@
    "tests": 3
   },
   "tests/unit/serve-portable-http.spec.js": {
-   "expects": 8,
-   "tests": 3
+   "expects": 14,
+   "tests": 4
   },
   "tests/unit/service-attestation-visibility.spec.js": {
    "expects": 13,

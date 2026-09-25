@@ -2,10 +2,10 @@
  "generatedBy": "node scripts/ms70-e2e-global-inventory.mjs --write",
  "note": "Milestone 70, 70A: application names the browser suite reaches through window, and its in-place writes to live case state. GuardianForms.testing (70T) is designed from this. Informational.",
  "summary": {
-  "specFiles": 119,
-  "specFilesTouchingAppGlobals": 115,
+  "specFiles": 120,
+  "specFilesTouchingAppGlobals": 116,
   "supportFilesTouchingAppGlobals": 4,
-  "distinctAppNames": 160,
+  "distinctAppNames": 163,
   "inPlaceStateWriteSites": 239,
   "filesWithInPlaceStateWrites": 44,
   "writeKinds": {
@@ -18,8 +18,8 @@
  },
  "byName": {
   "navigate": {
-   "files": 87,
-   "uses": 430
+   "files": 88,
+   "uses": 433
   },
   "D": {
    "files": 81,
@@ -34,16 +34,16 @@
    "uses": 64
   },
   "caseFile": {
-   "files": 21,
-   "uses": 125
+   "files": 22,
+   "uses": 130
   },
   "addWard": {
    "files": 20,
    "uses": 60
   },
   "switchWard": {
-   "files": 13,
-   "uses": 30
+   "files": 14,
+   "uses": 31
   },
   "computeNavChecks": {
    "files": 12,
@@ -54,8 +54,8 @@
    "uses": 18
   },
   "showAddWardModalForType": {
-   "files": 8,
-   "uses": 10
+   "files": 9,
+   "uses": 11
   },
   "loadAnnualPdf": {
    "files": 6,
@@ -117,6 +117,10 @@
    "files": 3,
    "uses": 5
   },
+  "_sessionCacheGet": {
+   "files": 3,
+   "uses": 4
+  },
   "buildSingleWardExportBlob": {
    "files": 3,
    "uses": 7
@@ -156,10 +160,6 @@
   "__testPromise": {
    "files": 2,
    "uses": 10
-  },
-  "_sessionCacheGet": {
-   "files": 2,
-   "uses": 3
   },
   "adaptValidationErrors": {
    "files": 2,
@@ -217,6 +217,10 @@
    "files": 2,
    "uses": 3
   },
+  "hasOpenedCaseBefore": {
+   "files": 2,
+   "uses": 3
+  },
   "loadCaseFileHandle": {
    "files": 2,
    "uses": 5
@@ -253,6 +257,10 @@
    "files": 2,
    "uses": 2
   },
+  "saveSessionRestoreCache": {
+   "files": 2,
+   "uses": 3
+  },
   "showConvertWardModal": {
    "files": 2,
    "uses": 4
@@ -264,6 +272,10 @@
   "updateNavDots": {
    "files": 2,
    "uses": 2
+  },
+  "wardName": {
+   "files": 2,
+   "uses": 3
   },
   "wardPartyForFiling": {
    "files": 2,
@@ -289,9 +301,17 @@
    "files": 1,
    "uses": 4
   },
+  "__seen": {
+   "files": 1,
+   "uses": 5
+  },
   "__swMessages": {
    "files": 1,
    "uses": 4
+  },
+  "__tabMessageShape": {
+   "files": 1,
+   "uses": 2
   },
   "__writeCallCount": {
    "files": 1,
@@ -377,6 +397,10 @@
    "files": 1,
    "uses": 1
   },
+  "decryptJSONWithKey": {
+   "files": 1,
+   "uses": 2
+  },
   "dehydrateIntoParty": {
    "files": 1,
    "uses": 2
@@ -440,10 +464,6 @@
   "getWardProgress": {
    "files": 1,
    "uses": 2
-  },
-  "hasOpenedCaseBefore": {
-   "files": 1,
-   "uses": 1
   },
   "hydrateFromParty": {
    "files": 1,
@@ -561,10 +581,6 @@
    "files": 1,
    "uses": 1
   },
-  "saveSessionRestoreCache": {
-   "files": 1,
-   "uses": 1
-  },
   "scheduleDocPeriodKey": {
    "files": 1,
    "uses": 4
@@ -646,10 +662,6 @@
    "uses": 2
   },
   "wardId": {
-   "files": 1,
-   "uses": 1
-  },
-  "wardName": {
    "files": 1,
    "uses": 1
   },
@@ -1490,6 +1502,23 @@
     "calc": 4,
     "D": 3,
     "normalizeWardData": 4
+   },
+   "writes": [],
+   "computed": 0
+  },
+  "tests/e2e/mixed-version.characterization.spec.ts": {
+   "names": {
+    "__seen": 5,
+    "__tabMessageShape": 2,
+    "_sessionCacheGet": 1,
+    "caseFile": 5,
+    "decryptJSONWithKey": 2,
+    "hasOpenedCaseBefore": 2,
+    "navigate": 3,
+    "saveSessionRestoreCache": 2,
+    "showAddWardModalForType": 1,
+    "switchWard": 1,
+    "wardName": 2
    },
    "writes": [],
    "computed": 0

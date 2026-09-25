@@ -26,9 +26,9 @@
      "currentPage",
      "getActiveWard",
      "pgHasUnsavedChanges",
+     "wardName",
      "activeInventoryType",
-     "wardId",
-     "wardName"
+     "wardId"
     ]
    },
    "save": {
@@ -133,28 +133,29 @@
      "wardCountyMergeConflict"
     ]
    },
+   "persistenceState": {
+    "kind": "query",
+    "replaces": [
+     "_sessionCacheGet",
+     "hasOpenedCaseBefore",
+     "loadCaseFileHandle",
+     "_cryptoKey",
+     "_securityMode",
+     "auditLog",
+     "decryptJSONWithKey",
+     "getCurrentLockedWardId",
+     "getRecentlyOpenedWards",
+     "isContinuePromptShown",
+     "loadAppState",
+     "loadAuditLogEntries",
+     "readRememberedFile"
+    ]
+   },
    "recoveryCache": {
     "kind": "command",
     "replaces": [
      "clearSessionRestoreCache",
      "saveSessionRestoreCache"
-    ]
-   },
-   "persistenceState": {
-    "kind": "query",
-    "replaces": [
-     "_sessionCacheGet",
-     "loadCaseFileHandle",
-     "_cryptoKey",
-     "_securityMode",
-     "auditLog",
-     "getCurrentLockedWardId",
-     "getRecentlyOpenedWards",
-     "hasOpenedCaseBefore",
-     "isContinuePromptShown",
-     "loadAppState",
-     "loadAuditLogEntries",
-     "readRememberedFile"
     ]
    },
    "updateSharedRecords": {
@@ -226,12 +227,12 @@
   }
  },
  "summary": {
-  "names": 160,
+  "names": 163,
   "byDestination": {
    "command": 41,
-   "query": 67,
+   "query": 68,
    "real-ui": 19,
-   "harness": 12,
+   "harness": 14,
    "unit-import": 21
   },
   "members": 21,
@@ -240,7 +241,7 @@
  "names": [
   {
    "name": "navigate",
-   "files": 87,
+   "files": 88,
    "destination": "command:navigate",
    "reviewed": false
   },
@@ -264,7 +265,7 @@
   },
   {
    "name": "caseFile",
-   "files": 21,
+   "files": 22,
    "destination": "query:snapshot",
    "reviewed": false
   },
@@ -276,7 +277,7 @@
   },
   {
    "name": "switchWard",
-   "files": 13,
+   "files": 14,
    "destination": "command:activateFiling",
    "reviewed": false
   },
@@ -294,7 +295,7 @@
   },
   {
    "name": "showAddWardModalForType",
-   "files": 8,
+   "files": 9,
    "destination": "real-ui",
    "reviewed": false
   },
@@ -389,6 +390,12 @@
    "reviewed": false
   },
   {
+   "name": "_sessionCacheGet",
+   "files": 3,
+   "destination": "query:persistenceState",
+   "reviewed": false
+  },
+  {
    "name": "buildSingleWardExportBlob",
    "files": 3,
    "destination": "query:exportArchive",
@@ -446,12 +453,6 @@
    "name": "__testPromise",
    "files": 2,
    "destination": "harness",
-   "reviewed": false
-  },
-  {
-   "name": "_sessionCacheGet",
-   "files": 2,
-   "destination": "query:persistenceState",
    "reviewed": false
   },
   {
@@ -539,6 +540,12 @@
    "reviewed": false
   },
   {
+   "name": "hasOpenedCaseBefore",
+   "files": 2,
+   "destination": "query:persistenceState",
+   "reviewed": false
+  },
+  {
    "name": "loadCaseFileHandle",
    "files": 2,
    "destination": "query:persistenceState",
@@ -593,6 +600,12 @@
    "reviewed": false
   },
   {
+   "name": "saveSessionRestoreCache",
+   "files": 2,
+   "destination": "command:recoveryCache",
+   "reviewed": false
+  },
+  {
    "name": "showConvertWardModal",
    "files": 2,
    "destination": "real-ui",
@@ -608,6 +621,12 @@
    "name": "updateNavDots",
    "files": 2,
    "destination": "query:status",
+   "reviewed": false
+  },
+  {
+   "name": "wardName",
+   "files": 2,
+   "destination": "query:snapshot",
    "reviewed": false
   },
   {
@@ -647,7 +666,19 @@
    "reviewed": false
   },
   {
+   "name": "__seen",
+   "files": 1,
+   "destination": "harness",
+   "reviewed": false
+  },
+  {
    "name": "__swMessages",
+   "files": 1,
+   "destination": "harness",
+   "reviewed": false
+  },
+  {
+   "name": "__tabMessageShape",
    "files": 1,
    "destination": "harness",
    "reviewed": false
@@ -779,6 +810,12 @@
    "reviewed": false
   },
   {
+   "name": "decryptJSONWithKey",
+   "files": 1,
+   "destination": "query:persistenceState",
+   "reviewed": false
+  },
+  {
    "name": "dehydrateIntoParty",
    "files": 1,
    "destination": "command:updateSharedRecords",
@@ -872,12 +909,6 @@
    "name": "getWardProgress",
    "files": 1,
    "destination": "query:status",
-   "reviewed": false
-  },
-  {
-   "name": "hasOpenedCaseBefore",
-   "files": 1,
-   "destination": "query:persistenceState",
    "reviewed": false
   },
   {
@@ -1055,12 +1086,6 @@
    "reviewed": false
   },
   {
-   "name": "saveSessionRestoreCache",
-   "files": 1,
-   "destination": "command:recoveryCache",
-   "reviewed": false
-  },
-  {
    "name": "scheduleDocPeriodKey",
    "files": 1,
    "destination": "unit-import",
@@ -1182,12 +1207,6 @@
   },
   {
    "name": "wardId",
-   "files": 1,
-   "destination": "query:snapshot",
-   "reviewed": false
-  },
-  {
-   "name": "wardName",
    "files": 1,
    "destination": "query:snapshot",
    "reviewed": false

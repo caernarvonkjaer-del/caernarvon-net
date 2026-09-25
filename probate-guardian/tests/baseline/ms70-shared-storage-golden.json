@@ -1,0 +1,84 @@
+{
+ "note": "Milestone 70, 70A: the shape of everything two versions of Guardian Forms share in one browser (localStorage, sessionStorage, IndexedDB, the tab message, the filing lock name), written by tests/e2e/mixed-version.characterization.spec.ts; both versions must match it. Regenerate only for a deliberate, recorded change.",
+ "oldVersion": "b28bf25",
+ "shape": {
+  "localStorage": {
+   "pg-default-circuit": "13",
+   "pg-last-position": {
+    "route": "string",
+    "savedAt": "number",
+    "wardId": "string"
+   },
+   "pg-tab-heartbeats-v1": [
+    {
+     "activeCase": {
+      "caseNumber": "string",
+      "inventoryType": "string",
+      "wardId": "string",
+      "wardName": "string"
+     },
+     "appVersion": "string",
+     "dirty": "boolean",
+     "hasActiveCase": "boolean",
+     "openedAt": "number",
+     "status": "string",
+     "tabId": "string",
+     "type": "string",
+     "updatedAt": "number"
+    }
+   ],
+   "pg-theme-v1": "dark",
+   "pg.termsAccepted": "2026-09-15"
+  },
+  "sessionStorage": {},
+  "indexedDB": [
+   {
+    "name": "pg-launch-pref",
+    "version": 1,
+    "stores": {
+     "flags": {
+      "hasOpenedBefore": "boolean"
+     }
+    }
+   },
+   {
+    "name": "pg-session-cache",
+    "version": 1,
+    "stores": {
+     "snapshot": {
+      "current": {
+       "guardian": "string",
+       "savedAt": "number",
+       "securityMode": "string",
+       "wards": [
+        {
+         "enc": "string",
+         "wardId": "string"
+        }
+       ]
+      }
+     }
+    }
+   }
+  ],
+  "webLocksHeld": [
+   "pg-ward-<filing id>"
+  ],
+  "tabMessage": {
+   "activeCase": {
+    "caseNumber": "string",
+    "inventoryType": "string",
+    "wardId": "string",
+    "wardName": "string"
+   },
+   "appVersion": "string",
+   "dirty": "boolean",
+   "hasActiveCase": "boolean",
+   "openedAt": "number",
+   "status": "string",
+   "tabId": "string",
+   "type": "string",
+   "updatedAt": "number"
+  }
+ }
+}

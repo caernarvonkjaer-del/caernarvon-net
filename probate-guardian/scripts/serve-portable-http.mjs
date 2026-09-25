@@ -54,10 +54,19 @@ export function resolveRequest(urlPath, { base = DEFAULT_BASE, dir } = {}) {
   return { file: rel.endsWith('/') ? path.join(file, 'index.html') : file };
 }
 
-export function startServer({ port = DEFAULT_PORT, base = DEFAULT_BASE, dir = path.join(ROOT, 'dist', 'portable') } = {}) {
+/**
+ * `mounts` serves several folders from one origin, each under its own
+ * subfolder -- how the mixed-version spec puts two versions of the app side
+ * by side, since browsers share storage, BroadcastChannel and Web Locks per
+ * origin. The site root redirects into the first mount.
+ */
+export function startServer({ port = DEFAULT_PORT, base = DEFAULT_BASE, dir = path.join(ROOT, 'dist', 'portable'), mounts = [{ base, dir }] } = {}) {
   const server = http.createServer((req, res) => {
     if (req.method !== 'GET' && req.method !== 'HEAD') { res.writeHead(405); res.end(); return; }
-    const target = resolveRequest(req.url, { base, dir });
+    let pathname = '';
+    try { pathname = decodeURIComponent(new URL(req.url, 'http://localhost').pathname); } catch { /* resolveRequest refuses it */ }
+    const mount = mounts.find((m) => pathname.startsWith(m.base) || pathname === m.base.replace(/\/$/, '')) || mounts[0];
+    const target = resolveRequest(req.url, mount);
     if (target?.redirect) { res.writeHead(302, { Location: target.redirect }); res.end(); return; }
     if (!target || !fs.existsSync(target.file) || !fs.statSync(target.file).isFile()) { res.writeHead(404); res.end('Not found'); return; }
     res.writeHead(200, { ...PRODUCTION.replayed, 'Content-Type': MIME[path.extname(target.file).toLowerCase()] || 'application/octet-stream' });

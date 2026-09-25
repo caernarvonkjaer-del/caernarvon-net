@@ -58,6 +58,8 @@ a `master` commit is missing from it.
 | Test-server ports 4331 / 4183 / 5183 | `playwright.config.ts` | Master's worktree serves tests on 4321 / 4173 / 5173 and reuses a server already listening there; distinct ports stop either worktree from silently testing the other's files | Restore 4321 / 4173 / 5173 |
 | Measurement-server ports 4332 / 4333 / 4334 / 4335 | `scripts/measure-baseline.mjs`, `scripts/measure-lifecycle.mjs` | Both scripts accept any server answering on their port; master's use 4322 / 4323 | Restore 4322 / 4323 (4334 serves the new `portable-http` target and can stay) |
 | Corpus-generator port 4336 | `scripts/ms70-sav-corpus.mjs` | Serves each checkpoint's extracted tree; kept off every port either worktree's tests or measurements use | None: the script is new on this branch, and 4336 can stay |
+| Mixed-version server port 4337 | `tests/e2e/mixed-version.characterization.spec.ts` | Serves the old build and this tree on one origin; kept off every port either worktree's tests or measurements use | None: new on this branch, and 4337 can stay |
+| Unit-test server port 4338 | `tests/unit/serve-portable-http.spec.js` | Starts a real two-mount server for a moment | None: 4338 can stay |
 
 ## Master commits since the branch point
 

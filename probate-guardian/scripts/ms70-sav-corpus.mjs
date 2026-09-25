@@ -138,7 +138,8 @@ export const CASES = {
   encrypted: { password: TEST_PASSWORD, filings: CASELOAD.slice(0, 2), dismiss: null },
 };
 
-function extract(sha) {
+/** That commit's probate-guardian/, extracted once into the temp folder; returns its path. */
+export function extract(sha) {
   const dir = path.join(os.tmpdir(), 'ms70-sav-corpus', sha);
   const app = path.join(dir, 'probate-guardian');
   if (fs.existsSync(path.join(app, 'index.html'))) return app;
