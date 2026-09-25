@@ -79,8 +79,8 @@ This index inventories repository files retained as source or project artifacts.
 | [`scripts\fix-annual-print-area.py`](<scripts/fix-annual-print-area.py>) | Repository file. |
 | [`scripts\generate-embedded-font.mjs`](<scripts/generate-embedded-font.mjs>) | Repository file. |
 | [`scripts\generate-service-worker.mjs`](<scripts/generate-service-worker.mjs>) | Repository file. |
-| [`scripts\measure-baseline.mjs`](<scripts/measure-baseline.mjs>) | Repository file. |
-| [`scripts\measure-lifecycle.mjs`](<scripts/measure-lifecycle.mjs>) | Repository file. |
+| [`scripts\measure-baseline.mjs`](<scripts/measure-baseline.mjs>) | Startup, script-size, resource and route-cycle heap measurement per target (source, web, portable, portable-http); --output writes an MS 70 record instead of the Milestone 13 file. |
+| [`scripts\measure-lifecycle.mjs`](<scripts/measure-lifecycle.mjs>) | Feature mount/dispose lifecycle measurement (heap and element growth per filing type); --output writes an MS 70 record instead of the Milestone 13 file. |
 | [`scripts\ms70-assertion-counts.mjs`](<scripts/ms70-assertion-counts.mjs>) | Milestone 70 per-spec assertion counter: static expect calls and test declarations in every unit and browser spec; --write-baseline --reason records drops. |
 | [`scripts\ms70-declaration-dispositions.mjs`](<scripts/ms70-declaration-dispositions.mjs>) | Milestone 70 draft disposition (delete-as-dead, test-only, move) and target delivery for every top-level declaration of legacy-app.js, from reference evidence, plus the duplicates modules also define; --write regenerates the baseline JSON. |
 | [`scripts\ms70-dependency-audit.mjs`](<scripts/ms70-dependency-audit.mjs>) | Milestone 70 parser-based dependency audit: implicit classic globals, window writes/reads (including defineProperty), captures off window, bare cross-boundary references, unowned and lexical-only window reads, the import graph, cycles and layer violations; --write-baseline regenerates the ratchet baseline and dependency inventory. |
@@ -263,6 +263,11 @@ This index inventories repository files retained as source or project artifacts.
 | [`tests\baseline\milestone-13-source.json`](<tests/baseline/milestone-13-source.json>) | JSON configuration or fixture data. |
 | [`tests\baseline\milestone-13-web.json`](<tests/baseline/milestone-13-web.json>) | JSON configuration or fixture data. |
 | [`tests\baseline\milestone-59-runtime.json`](<tests/baseline/milestone-59-runtime.json>) | JSON configuration or fixture data. |
+| [`tests\baseline\ms70-70A-lifecycle.json`](<tests/baseline/ms70-70A-lifecycle.json>) | Milestone 70 before-migration measurement (70A), feature mount/dispose heap and element growth over 20 cycles per filing type; 70L records the after. |
+| [`tests\baseline\ms70-70A-portable-http.json`](<tests/baseline/ms70-70A-portable-http.json>) | Milestone 70 before-migration measurement (70A), the portable build served from production's subfolder; 70L records the after. |
+| [`tests\baseline\ms70-70A-portable.json`](<tests/baseline/ms70-70A-portable.json>) | Milestone 70 before-migration measurement (70A), the portable build over file://; 70L records the after. |
+| [`tests\baseline\ms70-70A-source.json`](<tests/baseline/ms70-70A-source.json>) | Milestone 70 before-migration measurement (70A), the unbundled source; 70L records the after. |
+| [`tests\baseline\ms70-70A-web.json`](<tests/baseline/ms70-70A-web.json>) | Milestone 70 before-migration measurement (70A), the hosted web build; 70L records the after. |
 | [`tests\baseline\ms70-assertion-counts.json`](<tests/baseline/ms70-assertion-counts.json>) | Milestone 70 per-spec assertion counts and drop log (tests/unit/ms70-assertion-counts.spec.js). |
 | [`tests\baseline\ms70-declaration-dispositions.json`](<tests/baseline/ms70-declaration-dispositions.json>) | Milestone 70 reviewable draft: each legacy-app.js declaration with its section, references, consumers, module duplicates, proposed disposition and delivery (reviewed:false until confirmed). |
 | [`tests\baseline\ms70-dependency-baseline.json`](<tests/baseline/ms70-dependency-baseline.json>) | Milestone 70 ratchet baseline: the dependency sets that may only shrink during the migration (tests/unit/ms70-dependency-ratchet.spec.js). |

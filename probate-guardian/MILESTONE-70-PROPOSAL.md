@@ -821,6 +821,26 @@ to 2 and returns text -- unresolved which is right.
   15-minute inactivity lock, and a lock that clears the key and the
   in-memory case.
 
+**Before-migration measurements** (`tests/baseline/ms70-70A-*.json`, taken
+at `daafcc1` with Chromium 151.0.7922.34 and Node v24.16.0; 70L repeats the same commands):
+
+| Target | Application script bytes at start | Resources | Script time | Navigation | Heap after 5 route cycles |
+| --- | --- | --- | --- | --- | --- |
+| source | 1,060,618 | 91 | 20 ms | 994 ms | 6.0-6.2 MB |
+| web | 4,206,132 | 36 | 53 ms | 874 ms | 6.0-6.2 MB |
+| portable (`file://`) | 7,245,476 | 1 | 91 ms | 366 ms | 10.6-10.7 MB |
+| portable-http | 7,245,476 | 5 | 80 ms | 703 ms | 10.6-10.7 MB |
+
+No page or console error on any target. Lifecycle (20 mount/dispose cycles
+per filing type): heap growth simplified-accounting 50, plan-simplified 24, plan-annual 49, plan-initial 44, plan-minor 29, annual-accounting 45, guardian-inventory 29, dashboard 80 KB; Milestone 13 measured 10-33 KB on the same
+cycle, so growth is two to three times what it was -- small in absolute terms,
+recorded as a fact to compare at 70L, not as a threshold. Two fixes to the
+tools themselves: both scripts had to accept the terms screen before the page
+loads (added after Milestone 13 wrote them; the lifecycle script could no
+longer start, and the baseline script measured an app waiting on the terms
+screen), and both gained `--output` so these records never overwrite
+Milestone 13's.
+
 **Per-delivery estimate (replaces the 45-70 day guess).** Sized from the
 dispositions draft: the monolith lines each delivery takes on, the module
 consumers it must migrate, and for 70T the browser suite's measured
@@ -855,8 +875,8 @@ the running measure of it.
 **Still open in 70A.** Reviewing the dispositions draft (every entry is
 `reviewed: false`); the current reason for each `window` export; the `.sav`
 fixture corpus (current and historical, plus
-corrupt and wrong-password cases); the mixed-version characterization; the
-year-rollover characterization; the baseline measurements (`measure:baseline`/`measure:lifecycle` with `--output`); the
+corrupt and wrong-password cases); the mixed-version characterization; and the
+year-rollover characterization (`measure:baseline`/`measure:lifecycle` with `--output`); the
 and confirming the `GuardianForms` schema draft.
 
 ---

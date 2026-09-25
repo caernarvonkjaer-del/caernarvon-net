@@ -56,6 +56,7 @@ a `master` commit is missing from it.
 | --- | --- | --- | --- |
 | Scoped exception note in section 2 | `AGENTS.md` (committed on `master`, `a9c9930`) | Tells agents that MS 70 work goes to this branch and everything else stays direct-to-master | Remove the note |
 | Test-server ports 4331 / 4183 / 5183 | `playwright.config.ts` | Master's worktree serves tests on 4321 / 4173 / 5173 and reuses a server already listening there; distinct ports stop either worktree from silently testing the other's files | Restore 4321 / 4173 / 5173 |
+| Measurement-server ports 4332 / 4333 / 4334 / 4335 | `scripts/measure-baseline.mjs`, `scripts/measure-lifecycle.mjs` | Both scripts accept any server answering on their port; master's use 4322 / 4323 | Restore 4322 / 4323 (4334 serves the new `portable-http` target and can stay) |
 
 ## Master commits since the branch point
 
