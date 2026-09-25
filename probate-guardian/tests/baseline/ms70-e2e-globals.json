@@ -2,10 +2,10 @@
  "generatedBy": "node scripts/ms70-e2e-global-inventory.mjs --write",
  "note": "Milestone 70, 70A: application names the browser suite reaches through window, and its in-place writes to live case state. GuardianForms.testing (70T) is designed from this. Informational.",
  "summary": {
-  "specFiles": 118,
-  "specFilesTouchingAppGlobals": 114,
+  "specFiles": 119,
+  "specFilesTouchingAppGlobals": 115,
   "supportFilesTouchingAppGlobals": 4,
-  "distinctAppNames": 159,
+  "distinctAppNames": 160,
   "inPlaceStateWriteSites": 239,
   "filesWithInPlaceStateWrites": 44,
   "writeKinds": {
@@ -22,8 +22,8 @@
    "uses": 430
   },
   "D": {
-   "files": 80,
-   "uses": 576
+   "files": 81,
+   "uses": 577
   },
   "flushPendingSave": {
    "files": 33,
@@ -33,21 +33,21 @@
    "files": 31,
    "uses": 64
   },
+  "caseFile": {
+   "files": 21,
+   "uses": 125
+  },
   "addWard": {
    "files": 20,
    "uses": 60
   },
-  "caseFile": {
-   "files": 20,
-   "uses": 121
+  "switchWard": {
+   "files": 13,
+   "uses": 30
   },
   "computeNavChecks": {
    "files": 12,
    "uses": 60
-  },
-  "switchWard": {
-   "files": 12,
-   "uses": 29
   },
   "loadGuardianPdf": {
    "files": 9,
@@ -298,6 +298,10 @@
    "uses": 4
   },
   "_cryptoKey": {
+   "files": 1,
+   "uses": 1
+  },
+  "_securityMode": {
    "files": 1,
    "uses": 1
   },
@@ -2591,6 +2595,16 @@
      "line": 157
     }
    ],
+   "computed": 0
+  },
+  "tests/e2e/sav-corpus.characterization.spec.ts": {
+   "names": {
+    "_securityMode": 1,
+    "caseFile": 4,
+    "D": 1,
+    "switchWard": 1
+   },
+   "writes": [],
    "computed": 0
   },
   "tests/e2e/schb4-bank-accounts-ui.spec.ts": {

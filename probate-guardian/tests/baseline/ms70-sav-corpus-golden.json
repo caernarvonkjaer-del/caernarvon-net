@@ -1,0 +1,845 @@
+{
+ "note": "Milestone 70, 70A: what today's reader makes of each tests/fixtures/sav/ case file (a digest of everything loaded), and what a filer sees for a wrong password or a damaged file; written by tests/e2e/sav-corpus.characterization.spec.ts. Regenerate only for a deliberate, recorded change.",
+ "fixtures": {
+  "01-ms34-2-encrypted.sav": {
+   "parties": 3,
+   "cases": 1,
+   "dismissedPartyPairs": 0,
+   "filingKeys": [
+    43,
+    57
+   ],
+   "digest": "18a32d544a1b24dc22be9464488726624c2a43bad66968d8cb6e0d3a59083c43"
+  },
+  "01-ms34-2-plain.sav": {
+   "parties": 10,
+   "cases": 5,
+   "dismissedPartyPairs": 0,
+   "filingKeys": [
+    43,
+    57,
+    161,
+    135,
+    42,
+    34,
+    57,
+    57,
+    72
+   ],
+   "digest": "88f1d61a095b74be7ce5641e0dacdc402ca89e052539e7629fecddbc73b3993e"
+  },
+  "02-guardianship-type-encrypted.sav": {
+   "parties": 3,
+   "cases": 1,
+   "dismissedPartyPairs": 0,
+   "filingKeys": [
+    43,
+    57
+   ],
+   "digest": "18a32d544a1b24dc22be9464488726624c2a43bad66968d8cb6e0d3a59083c43"
+  },
+  "02-guardianship-type-plain.sav": {
+   "parties": 10,
+   "cases": 5,
+   "dismissedPartyPairs": 0,
+   "filingKeys": [
+    43,
+    57,
+    161,
+    135,
+    42,
+    34,
+    57,
+    57,
+    72
+   ],
+   "digest": "88f1d61a095b74be7ce5641e0dacdc402ca89e052539e7629fecddbc73b3993e"
+  },
+  "03-ms36-encrypted.sav": {
+   "parties": 3,
+   "cases": 1,
+   "dismissedPartyPairs": 0,
+   "filingKeys": [
+    43,
+    57
+   ],
+   "digest": "18a32d544a1b24dc22be9464488726624c2a43bad66968d8cb6e0d3a59083c43"
+  },
+  "03-ms36-plain.sav": {
+   "parties": 10,
+   "cases": 7,
+   "dismissedPartyPairs": 0,
+   "filingKeys": [
+    43,
+    57,
+    161,
+    135,
+    42,
+    34,
+    57,
+    57,
+    72
+   ],
+   "digest": "b64e2b0c91ca9b2fb39820f6e0a7ed85cca3538e1659fa73aa6d435abcf4ced9"
+  },
+  "04-ms37-encrypted.sav": {
+   "parties": 3,
+   "cases": 1,
+   "dismissedPartyPairs": 0,
+   "filingKeys": [
+    43,
+    57
+   ],
+   "digest": "0ea4d0dc8835f25eceaa83bc19ae3461f2bfc7d647b3f2e3d133f111e4331a08"
+  },
+  "04-ms37-plain.sav": {
+   "parties": 10,
+   "cases": 7,
+   "dismissedPartyPairs": 0,
+   "filingKeys": [
+    43,
+    57,
+    161,
+    135,
+    42,
+    34,
+    57,
+    57,
+    72
+   ],
+   "digest": "7c688bbefd2b3b9ac646d6a102fcd8705da1b7e4ebf87039bae214c4dd50efe3"
+  },
+  "05-ms39-encrypted.sav": {
+   "parties": 3,
+   "cases": 1,
+   "dismissedPartyPairs": 0,
+   "filingKeys": [
+    43,
+    61
+   ],
+   "digest": "180f8dda28c796a3b7dbbcc14f4e0e5c0d5ff7c4bf8aeae89d0648a6560b27ac"
+  },
+  "05-ms39-plain.sav": {
+   "parties": 10,
+   "cases": 7,
+   "dismissedPartyPairs": 0,
+   "filingKeys": [
+    43,
+    61,
+    163,
+    137,
+    46,
+    34,
+    61,
+    61,
+    76
+   ],
+   "digest": "344a9cbfe040b1398ac8db3da911ada40daa23dd43d8ff5661af5a10b88fc285"
+  },
+  "06-ms40c-1-encrypted.sav": {
+   "parties": 2,
+   "cases": 1,
+   "dismissedPartyPairs": 0,
+   "filingKeys": [
+    43,
+    61
+   ],
+   "digest": "ae6c9049854c46cf3e98eb1060a7dfcc6e1fbb9514723d88b785bedc88c52a89"
+  },
+  "06-ms40c-1-plain.sav": {
+   "parties": 6,
+   "cases": 7,
+   "dismissedPartyPairs": 1,
+   "filingKeys": [
+    43,
+    61,
+    163,
+    137,
+    46,
+    34,
+    61,
+    61,
+    76
+   ],
+   "digest": "3133ccf57773bb52f8ba8e3f8c1665ac36a31f3bc098f01e979bb3ed5cb269e4"
+  },
+  "07-ms38e-encrypted.sav": {
+   "parties": 2,
+   "cases": 1,
+   "dismissedPartyPairs": 0,
+   "filingKeys": [
+    56,
+    76
+   ],
+   "digest": "a1529645787173e87c4eb968558f581cb92ae62cc8a8779a2bd15c4310748d15"
+  },
+  "07-ms38e-plain.sav": {
+   "parties": 6,
+   "cases": 7,
+   "dismissedPartyPairs": 1,
+   "filingKeys": [
+    56,
+    76,
+    179,
+    140,
+    61,
+    50,
+    76,
+    76,
+    91
+   ],
+   "digest": "265d408a4977d9c56abb87b3df3c0f6402f3f0b62608b1917a8ff3dce229597f"
+  },
+  "08-ms46a-encrypted.sav": {
+   "parties": 2,
+   "cases": 1,
+   "dismissedPartyPairs": 0,
+   "filingKeys": [
+    56,
+    76
+   ],
+   "digest": "f3dd56cf99230fe12f8c2674fcf2ad3f5795793e332bebb72f4d7f2d9cbe1379"
+  },
+  "08-ms46a-plain.sav": {
+   "parties": 6,
+   "cases": 7,
+   "dismissedPartyPairs": 1,
+   "filingKeys": [
+    56,
+    76,
+    179,
+    140,
+    61,
+    50,
+    76,
+    76,
+    91
+   ],
+   "digest": "e1fcf3a309314091001b8b9fb8c611af7ed75e31c434b24042d9567d4da9417e"
+  },
+  "09-ms49-encrypted.sav": {
+   "parties": 2,
+   "cases": 1,
+   "dismissedPartyPairs": 0,
+   "filingKeys": [
+    56,
+    76
+   ],
+   "digest": "cf9b287964621dac93fe3203d4093616d94bc13c49dc9265facdd66ee7992b3c"
+  },
+  "09-ms49-plain.sav": {
+   "parties": 6,
+   "cases": 7,
+   "dismissedPartyPairs": 1,
+   "filingKeys": [
+    56,
+    76,
+    179,
+    140,
+    61,
+    50,
+    76,
+    76,
+    91
+   ],
+   "digest": "70dc30de28144a735170631dc3fe4c14957a82ced91861d2560545c4825f9f63"
+  },
+  "10-ms49b-encrypted.sav": {
+   "parties": 2,
+   "cases": 1,
+   "dismissedPartyPairs": 0,
+   "filingKeys": [
+    56,
+    76
+   ],
+   "digest": "4531af168aa4acda04f95fb51fd46aa9a425a7e9496ee2f23f0e95b4f3d421e0"
+  },
+  "10-ms49b-plain.sav": {
+   "parties": 6,
+   "cases": 7,
+   "dismissedPartyPairs": 1,
+   "filingKeys": [
+    56,
+    76,
+    179,
+    140,
+    61,
+    50,
+    76,
+    76,
+    91
+   ],
+   "digest": "4b4e5a323c59e2c456c04aadba910d2f99d172f572b4410ae65708d9cced78c6"
+  },
+  "11-test-server-0916-encrypted.sav": {
+   "parties": 2,
+   "cases": 1,
+   "dismissedPartyPairs": 0,
+   "filingKeys": [
+    56,
+    76
+   ],
+   "digest": "4531af168aa4acda04f95fb51fd46aa9a425a7e9496ee2f23f0e95b4f3d421e0"
+  },
+  "11-test-server-0916-plain.sav": {
+   "parties": 6,
+   "cases": 7,
+   "dismissedPartyPairs": 1,
+   "filingKeys": [
+    56,
+    76,
+    179,
+    140,
+    61,
+    50,
+    76,
+    76,
+    91
+   ],
+   "digest": "4b4e5a323c59e2c456c04aadba910d2f99d172f572b4410ae65708d9cced78c6"
+  },
+  "12-ms57-encrypted.sav": {
+   "parties": 2,
+   "cases": 1,
+   "dismissedPartyPairs": 0,
+   "filingKeys": [
+    57,
+    78
+   ],
+   "digest": "7af51d4dbccaf3ce9424bd1f1c87afa77fe7055a7ff1fb34efc5c15eb4c25ea3"
+  },
+  "12-ms57-plain.sav": {
+   "parties": 6,
+   "cases": 7,
+   "dismissedPartyPairs": 1,
+   "filingKeys": [
+    57,
+    78,
+    181,
+    142,
+    63,
+    51,
+    78,
+    78,
+    92
+   ],
+   "digest": "7a81463fef34931f42a242475c4f46c4f9a0ffe42df3eefae94e673c80d29ee3"
+  },
+  "13-ms57-b4-encrypted.sav": {
+   "parties": 2,
+   "cases": 1,
+   "dismissedPartyPairs": 0,
+   "filingKeys": [
+    57,
+    79
+   ],
+   "digest": "3d0bac513e1f8edc51ec377a5a01740cfc306fd7e3637e010a7bb29c5ed66ad0"
+  },
+  "13-ms57-b4-plain.sav": {
+   "parties": 6,
+   "cases": 7,
+   "dismissedPartyPairs": 1,
+   "filingKeys": [
+    57,
+    79,
+    181,
+    142,
+    63,
+    51,
+    79,
+    79,
+    92
+   ],
+   "digest": "0ba51148302ddb44fb1cd7f4abed1cbde6271f4c52873906af9f68735a941d18"
+  },
+  "14-ms58b-encrypted.sav": {
+   "parties": 2,
+   "cases": 1,
+   "dismissedPartyPairs": 0,
+   "filingKeys": [
+    58,
+    80
+   ],
+   "digest": "b49eca40d24843bc811c2e62f8ff7eadc035e9ff33a537303289fe270e41500e"
+  },
+  "14-ms58b-plain.sav": {
+   "parties": 6,
+   "cases": 7,
+   "dismissedPartyPairs": 1,
+   "filingKeys": [
+    58,
+    80,
+    181,
+    142,
+    63,
+    51,
+    80,
+    80,
+    92
+   ],
+   "digest": "622ecb89b13857269b16bfdc7bf7442eea8db392b4809b0e474b833f31d11827"
+  },
+  "15-ms58d-encrypted.sav": {
+   "parties": 2,
+   "cases": 1,
+   "dismissedPartyPairs": 0,
+   "filingKeys": [
+    58,
+    80
+   ],
+   "digest": "0cd653b9cce4521cc60967aee7c1f712f25634057629311019b60321a8927578"
+  },
+  "15-ms58d-plain.sav": {
+   "parties": 6,
+   "cases": 7,
+   "dismissedPartyPairs": 1,
+   "filingKeys": [
+    58,
+    80,
+    181,
+    142,
+    63,
+    51,
+    80,
+    80,
+    92
+   ],
+   "digest": "06084f3f0e995f6629c3f353effd0b0d8b1c001e4e734e99078259dc700a3b8a"
+  },
+  "16-ms57b-encrypted.sav": {
+   "parties": 2,
+   "cases": 1,
+   "dismissedPartyPairs": 0,
+   "filingKeys": [
+    59,
+    81
+   ],
+   "digest": "70c2d8261a9665ad5bd3e559f67efb441ea50fc93210fb84f9717b49bedb42b2"
+  },
+  "16-ms57b-plain.sav": {
+   "parties": 6,
+   "cases": 7,
+   "dismissedPartyPairs": 1,
+   "filingKeys": [
+    59,
+    81,
+    181,
+    142,
+    64,
+    51,
+    81,
+    81,
+    92
+   ],
+   "digest": "1dd4f6add4892665824ea5c798d5a0c58035aa12a76388bcd81cd768d6b8ef69"
+  },
+  "17-ms60k-encrypted.sav": {
+   "parties": 2,
+   "cases": 1,
+   "dismissedPartyPairs": 0,
+   "filingKeys": [
+    59,
+    81
+   ],
+   "digest": "70c2d8261a9665ad5bd3e559f67efb441ea50fc93210fb84f9717b49bedb42b2"
+  },
+  "17-ms60k-plain.sav": {
+   "parties": 6,
+   "cases": 7,
+   "dismissedPartyPairs": 1,
+   "filingKeys": [
+    59,
+    81,
+    181,
+    142,
+    64,
+    51,
+    81,
+    81,
+    92
+   ],
+   "digest": "33bec82026bc00076a57e0eb45aa38fb8a37fd5d83dcf233d7245e0e116eadd5"
+  },
+  "18-ms60g-j-encrypted.sav": {
+   "parties": 2,
+   "cases": 1,
+   "dismissedPartyPairs": 0,
+   "filingKeys": [
+    59,
+    81
+   ],
+   "digest": "70c2d8261a9665ad5bd3e559f67efb441ea50fc93210fb84f9717b49bedb42b2"
+  },
+  "18-ms60g-j-plain.sav": {
+   "parties": 6,
+   "cases": 7,
+   "dismissedPartyPairs": 1,
+   "filingKeys": [
+    59,
+    81,
+    181,
+    142,
+    64,
+    51,
+    81,
+    81,
+    92
+   ],
+   "digest": "1dd4f6add4892665824ea5c798d5a0c58035aa12a76388bcd81cd768d6b8ef69"
+  },
+  "19-ms61a-encrypted.sav": {
+   "parties": 2,
+   "cases": 1,
+   "dismissedPartyPairs": 0,
+   "filingKeys": [
+    59,
+    81
+   ],
+   "digest": "70c2d8261a9665ad5bd3e559f67efb441ea50fc93210fb84f9717b49bedb42b2"
+  },
+  "19-ms61a-plain.sav": {
+   "parties": 6,
+   "cases": 7,
+   "dismissedPartyPairs": 1,
+   "filingKeys": [
+    59,
+    81,
+    181,
+    142,
+    64,
+    65,
+    81,
+    81,
+    92
+   ],
+   "digest": "e13d3adb16f19e6699fba3251482f3976c13eb6a7db7f1eb1f3a19d2a6e283e6"
+  },
+  "20-ms63e-encrypted.sav": {
+   "parties": 2,
+   "cases": 1,
+   "dismissedPartyPairs": 0,
+   "filingKeys": [
+    60,
+    82
+   ],
+   "digest": "6c7f854b552c3b3d9fb907029081aef76e7d1fd85e18124f8021202d355f9f49"
+  },
+  "20-ms63e-plain.sav": {
+   "parties": 6,
+   "cases": 7,
+   "dismissedPartyPairs": 1,
+   "filingKeys": [
+    60,
+    82,
+    182,
+    143,
+    65,
+    66,
+    82,
+    82,
+    92
+   ],
+   "digest": "9db3cc3edeb55fa5c2679eb75ae04f5b416bc0258fc655c6edbaa936f1566468"
+  },
+  "21-ms64a-2-encrypted.sav": {
+   "parties": 2,
+   "cases": 1,
+   "dismissedPartyPairs": 0,
+   "filingKeys": [
+    61,
+    82
+   ],
+   "digest": "55efc74b05042c19dbbeb66fae0e69743d401f54de6f15bffa982e2ecb65d574"
+  },
+  "21-ms64a-2-plain.sav": {
+   "parties": 6,
+   "cases": 7,
+   "dismissedPartyPairs": 1,
+   "filingKeys": [
+    61,
+    82,
+    182,
+    143,
+    65,
+    66,
+    82,
+    82,
+    92
+   ],
+   "digest": "b15c6cca31187ab436b82707bd258290541d2f110ea225bc393c991d6712cec9"
+  },
+  "22-production-0922-encrypted.sav": {
+   "parties": 2,
+   "cases": 1,
+   "dismissedPartyPairs": 0,
+   "filingKeys": [
+    61,
+    82
+   ],
+   "digest": "55efc74b05042c19dbbeb66fae0e69743d401f54de6f15bffa982e2ecb65d574"
+  },
+  "22-production-0922-plain.sav": {
+   "parties": 6,
+   "cases": 7,
+   "dismissedPartyPairs": 1,
+   "filingKeys": [
+    61,
+    82,
+    182,
+    143,
+    65,
+    66,
+    82,
+    82,
+    92
+   ],
+   "digest": "b15c6cca31187ab436b82707bd258290541d2f110ea225bc393c991d6712cec9"
+  },
+  "23-ms67a-encrypted.sav": {
+   "parties": 2,
+   "cases": 1,
+   "dismissedPartyPairs": 0,
+   "filingKeys": [
+    61,
+    83
+   ],
+   "digest": "77be75551f7c7c31e9fd148000938f92fdcfe2983e852bca57d4e35427147839"
+  },
+  "23-ms67a-plain.sav": {
+   "parties": 6,
+   "cases": 7,
+   "dismissedPartyPairs": 1,
+   "filingKeys": [
+    61,
+    83,
+    182,
+    143,
+    65,
+    66,
+    83,
+    83,
+    92
+   ],
+   "digest": "1fc4555bfa9c79d102b373bd1ecf6d4b7998aa3e7c08a2a0e8c28d4eb2070503"
+  },
+  "24-ms67b-encrypted.sav": {
+   "parties": 2,
+   "cases": 1,
+   "dismissedPartyPairs": 0,
+   "filingKeys": [
+    62,
+    84
+   ],
+   "digest": "84a1b254f238b8a246e47b275c84703cdf5794dd486089a6e96f101c0a97b491"
+  },
+  "24-ms67b-plain.sav": {
+   "parties": 6,
+   "cases": 7,
+   "dismissedPartyPairs": 1,
+   "filingKeys": [
+    62,
+    84,
+    182,
+    143,
+    65,
+    66,
+    84,
+    84,
+    92
+   ],
+   "digest": "551b9d066551ccfc06005609118c39579d9df3fb48c3547de88fae2e795401d7"
+  },
+  "25-ms68-encrypted.sav": {
+   "parties": 2,
+   "cases": 1,
+   "dismissedPartyPairs": 0,
+   "filingKeys": [
+    62,
+    84
+   ],
+   "digest": "84a1b254f238b8a246e47b275c84703cdf5794dd486089a6e96f101c0a97b491"
+  },
+  "25-ms68-plain.sav": {
+   "parties": 6,
+   "cases": 7,
+   "dismissedPartyPairs": 1,
+   "filingKeys": [
+    62,
+    84,
+    190,
+    165,
+    65,
+    74,
+    84,
+    84,
+    100
+   ],
+   "digest": "51b369d8d516f711e81c671bf873e41bd1dee55bf0ab43e14e59c9f1086ea15b"
+  },
+  "26-zip-0924-encrypted.sav": {
+   "parties": 2,
+   "cases": 1,
+   "dismissedPartyPairs": 0,
+   "filingKeys": [
+    62,
+    84
+   ],
+   "digest": "84a1b254f238b8a246e47b275c84703cdf5794dd486089a6e96f101c0a97b491"
+  },
+  "26-zip-0924-plain.sav": {
+   "parties": 6,
+   "cases": 7,
+   "dismissedPartyPairs": 1,
+   "filingKeys": [
+    62,
+    84,
+    190,
+    165,
+    65,
+    74,
+    84,
+    84,
+    100
+   ],
+   "digest": "51b369d8d516f711e81c671bf873e41bd1dee55bf0ab43e14e59c9f1086ea15b"
+  },
+  "27-branch-point-encrypted.sav": {
+   "parties": 2,
+   "cases": 1,
+   "dismissedPartyPairs": 0,
+   "filingKeys": [
+    62,
+    84
+   ],
+   "digest": "84a1b254f238b8a246e47b275c84703cdf5794dd486089a6e96f101c0a97b491"
+  },
+  "27-branch-point-plain.sav": {
+   "parties": 6,
+   "cases": 7,
+   "dismissedPartyPairs": 1,
+   "filingKeys": [
+    62,
+    84,
+    190,
+    165,
+    65,
+    74,
+    84,
+    84,
+    100
+   ],
+   "digest": "17b89347779bd832f8eacfe7d9b826a3baaa47b9203f827fca60e2e967653fdb"
+  },
+  "28-zip-0924b-encrypted.sav": {
+   "parties": 2,
+   "cases": 1,
+   "dismissedPartyPairs": 0,
+   "filingKeys": [
+    62,
+    84
+   ],
+   "digest": "681059c4bec958af002ba2793dba6203d9df42d3f918623d3aadf8bdb9ea30f5"
+  },
+  "28-zip-0924b-plain.sav": {
+   "parties": 6,
+   "cases": 7,
+   "dismissedPartyPairs": 1,
+   "filingKeys": [
+    62,
+    84,
+    190,
+    165,
+    65,
+    74,
+    84,
+    84,
+    100
+   ],
+   "digest": "2b49232a37e19834c81ff8a8a0c452c621c11e68758a6401a873451e03ba2d67"
+  }
+ },
+ "wrongPassword": {
+  "01-ms34-2-encrypted.sav": {
+   "dialog": null,
+   "startupScreen": false,
+   "passwordPrompt": true,
+   "passwordError": "Incorrect password for this file.",
+   "filingsLoaded": 0,
+   "pageErrors": []
+  },
+  "22-production-0922-encrypted.sav": {
+   "dialog": null,
+   "startupScreen": false,
+   "passwordPrompt": true,
+   "passwordError": "Incorrect password for this file.",
+   "filingsLoaded": 0,
+   "pageErrors": []
+  },
+  "27-branch-point-encrypted.sav": {
+   "dialog": null,
+   "startupScreen": false,
+   "passwordPrompt": true,
+   "passwordError": "Incorrect password for this file.",
+   "filingsLoaded": 0,
+   "pageErrors": []
+  }
+ },
+ "damaged": {
+  "truncated": {
+   "dialog": "Could not open that file: Corrupted zip: can't find end of central directory",
+   "startupScreen": true,
+   "passwordPrompt": false,
+   "passwordError": null,
+   "filingsLoaded": 0,
+   "pageErrors": []
+  },
+  "no-manifest": {
+   "dialog": "Not a Guardian Forms data file (no manifest.json inside).",
+   "startupScreen": true,
+   "passwordPrompt": false,
+   "passwordError": null,
+   "filingsLoaded": 0,
+   "pageErrors": []
+  },
+  "a-listed-filing-missing": {
+   "dialog": null,
+   "startupScreen": false,
+   "passwordPrompt": false,
+   "passwordError": null,
+   "filingsLoaded": 8,
+   "pageErrors": []
+  },
+  "unsupported-version": {
+   "dialog": null,
+   "startupScreen": false,
+   "passwordPrompt": false,
+   "passwordError": null,
+   "filingsLoaded": 9,
+   "pageErrors": []
+  },
+  "not-a-case-file": {
+   "dialog": "Not a Guardian Forms data file.",
+   "startupScreen": true,
+   "passwordPrompt": false,
+   "passwordError": null,
+   "filingsLoaded": 0,
+   "pageErrors": []
+  },
+  "unreadable-filing": {
+   "dialog": null,
+   "startupScreen": false,
+   "passwordPrompt": false,
+   "passwordError": null,
+   "filingsLoaded": 8,
+   "pageErrors": []
+  },
+  "tampered-encrypted-filing": {
+   "dialog": null,
+   "startupScreen": false,
+   "passwordPrompt": false,
+   "passwordError": null,
+   "filingsLoaded": 1,
+   "pageErrors": []
+  }
+ }
+}

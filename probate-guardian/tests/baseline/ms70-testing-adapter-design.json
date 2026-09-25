@@ -50,6 +50,13 @@
      "initializeEmptyData"
     ]
    },
+   "activateFiling": {
+    "kind": "command",
+    "replaces": [
+     "switchWard",
+     "unloadWard"
+    ]
+   },
    "status": {
     "kind": "query",
     "replaces": [
@@ -59,13 +66,6 @@
      "planReadinessChecks",
      "planReadinessPanel",
      "updateSidebar"
-    ]
-   },
-   "activateFiling": {
-    "kind": "command",
-    "replaces": [
-     "switchWard",
-     "unloadWard"
     ]
    },
    "generateOutput": {
@@ -146,6 +146,7 @@
      "_sessionCacheGet",
      "loadCaseFileHandle",
      "_cryptoKey",
+     "_securityMode",
      "auditLog",
      "getCurrentLockedWardId",
      "getRecentlyOpenedWards",
@@ -225,10 +226,10 @@
   }
  },
  "summary": {
-  "names": 159,
+  "names": 160,
   "byDestination": {
    "command": 41,
-   "query": 66,
+   "query": 67,
    "real-ui": 19,
    "harness": 12,
    "unit-import": 21
@@ -245,7 +246,7 @@
   },
   {
    "name": "D",
-   "files": 80,
+   "files": 81,
    "destination": "query:snapshot",
    "reviewed": false
   },
@@ -262,27 +263,27 @@
    "reviewed": false
   },
   {
+   "name": "caseFile",
+   "files": 21,
+   "destination": "query:snapshot",
+   "reviewed": false
+  },
+  {
    "name": "addWard",
    "files": 20,
    "destination": "command:createFiling",
    "reviewed": false
   },
   {
-   "name": "caseFile",
-   "files": 20,
-   "destination": "query:snapshot",
+   "name": "switchWard",
+   "files": 13,
+   "destination": "command:activateFiling",
    "reviewed": false
   },
   {
    "name": "computeNavChecks",
    "files": 12,
    "destination": "query:status",
-   "reviewed": false
-  },
-  {
-   "name": "switchWard",
-   "files": 12,
-   "destination": "command:activateFiling",
    "reviewed": false
   },
   {
@@ -659,6 +660,12 @@
   },
   {
    "name": "_cryptoKey",
+   "files": 1,
+   "destination": "query:persistenceState",
+   "reviewed": false
+  },
+  {
+   "name": "_securityMode",
    "files": 1,
    "destination": "query:persistenceState",
    "reviewed": false

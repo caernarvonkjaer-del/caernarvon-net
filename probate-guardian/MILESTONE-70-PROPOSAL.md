@@ -2,9 +2,10 @@
 
 ## Status
 
-**DRAFT — planning only.** This proposal authorizes no code change. Milestone
-70, or an individual delivery within it, must be explicitly approved before
-implementation begins. The deliveries are intentionally sequential because
+**In progress: 70A only.** The requester approved delivery 70A on 2026-09-24,
+and it is under way on the `milestone-70` branch (see the 70A build record).
+Nothing else here is authorized: every other delivery must be explicitly
+approved before implementation begins. The deliveries are intentionally sequential because
 most of them touch the same dependency graph and several will touch
 `src/legacy-app.js`; they are not independent work streams that can safely be
 implemented in parallel.
@@ -660,10 +661,12 @@ on the `milestone-70` branch unless it says otherwise.
 | Load-aware audit | `b9b5381` | The audit counts a module's `window.X` as a provider only if something loads that module, and ratchets the modules nothing loads (8). Seen failing against the previous baseline, naming exactly the nine new entries. |
 | Declaration dispositions (draft) and computed lookups | `90bc235` | `scripts/ms70-declaration-dispositions.mjs`; `tests/baseline/ms70-declaration-dispositions.json`: all 474 declarations -- 459 move, 1 test-only, 14 delete-as-dead candidates -- each with a delivery, `reviewed: false`. The audit now records computed `window[...]` lookups and resolves the two known name builders; the first draft had wrongly proposed the seven `mount<Engine>Feature` functions as dead. |
 | Window-export reasons | `e603bbe` | Every `window` publication with the files that actually read it: 109 read only by the monolith, 98 only by modules, 22 by both, 32 only by tests, 65 by nothing, 4 from a module nothing loads. |
-| `GuardianForms` schema draft | `55366db` | `tests/baseline/ms70-testing-adapter-design.json`: production member `version` only (its consumer is support, given the year-long cache); 21 testing members (14 commands, 7 copy-only queries) covering all 158 names the browser suite reaches, plus 19 to the real UI, 21 to unit imports and 12 harness globals. |
+| `GuardianForms` schema draft | `55366db` | `tests/baseline/ms70-testing-adapter-design.json`: production member `version` only (its consumer is support, given the year-long cache); 21 testing members (14 commands, 7 copy-only queries) covering all 160 names the browser suite reaches (158 when drafted; the security contract spec's `_cryptoKey` read and the corpus spec's `_securityMode` read were added later, both to the `persistenceState` query), plus 19 to the real UI, 21 to unit imports and 12 harness globals. |
 | Fixture-helper inventory | `a94649a` | `tests/baseline/ms70-fixture-inventory.json`: 12 support modules, 67 exports, 16 factories. Found: `window-api.ts`'s typed wrappers from Milestone 42C are used by no spec. |
 | Per-delivery estimate | this commit | 58-95 days; the table above. |
 | Security contract | `f4f368b` | `tests/unit/crypto-contract.spec.js` 8/8 and `tests/e2e/security-contract.spec.ts` 3/3, each seen failing with the fault injected (iterations 100,000, a 16-byte IV, an extractable key; auto-lock at 14 minutes, lockout threshold 6, a stored copy of the password). |
+| Year-rollover characterization | `42b1ae9` | `tests/e2e/year-rollover.characterization.spec.ts` 9/9 against `tests/baseline/ms70-year-rollover-golden.json`; seen failing on exactly the four accountings that carry a starting balance when it was carried plus 1. Findings below. |
+| `.sav` corpus, historical and current | this commit | `scripts/ms70-sav-corpus.mjs`; 56 fixtures in `tests/fixtures/sav/` (28 checkpoints: one per milestone that changed a stored shape from 9/10, the 9/16, 9/22 and both 9/24 builds matched to their commits by the monolith's exact bytes, and the branch point; each writes a plain five-ward, nine-filing caseload with shared records and a password-protected case, with its own writer; 611 KB) and `corpus.json`. `tests/e2e/sav-corpus.characterization.spec.ts` 66/66 in 5.1 min against `tests/baseline/ms70-sav-corpus-golden.json`: every file opens through the startup screen with every filing and every stored value; all 56 are format version 1. **Gate item: the historical and current fixtures open.** Seen failing: a reader that adds one field to each loaded filing passed every explicit check and failed the golden (digest and per-filing key counts). Found: a damaged file opens silently without the filings it cannot read, and in Chrome and Edge the first auto-save then rewrites the original without them -- fixed on `master` in `b2d97f5` with Alan's approval (a ledger row); a file marked format version 2 opens as if it were 1 (recorded; no version 2 exists). |
 
 **Parsed figures that replace this plan's estimates.** The Verified planning
 baseline's "Test coupling" row said its counts were text-search lower
@@ -905,10 +908,8 @@ fix touches, so the ledger is the running measure of it.
 
 **Still open in 70A.** Reviewing the dispositions draft (every entry is
 `reviewed: false`) and the current reason for each `window` export; the
-`.sav` fixture corpus (current and historical, plus corrupt and
-wrong-password cases); the mixed-version characterization; and confirming
-the `GuardianForms` schema draft (`_cryptoKey`, reached by the security
-contract spec, now routes to the `persistenceState` query).
+mixed-version characterization; and confirming the `GuardianForms` schema
+draft.
 
 ---
 
