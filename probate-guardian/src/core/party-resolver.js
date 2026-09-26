@@ -12,8 +12,9 @@
 
 /** Follows a merge tombstone (see the de-dup screen, a later phase) to the surviving party. */
 import { formEngine } from './filing/filing-registry.js';
+import { getCaseFile } from './state.js';
 export function resolveParty(partyId) {
-  const caseFile = window.caseFile;
+  const caseFile = getCaseFile();
   if (!partyId || !caseFile || !Array.isArray(caseFile.parties)) return null;
   const party = caseFile.parties.find(p => p.id === partyId) || null;
   if (party && party.mergedInto) return resolveParty(party.mergedInto);
@@ -27,7 +28,7 @@ function newPartyId() {
 
 /** Creates a blank party with the given role already set, appends it to caseFile.parties, and returns it. */
 export function createParty(role) {
-  const caseFile = window.caseFile;
+  const caseFile = getCaseFile();
   const now = new Date().toISOString();
   const party = {
     id: newPartyId(),
@@ -437,7 +438,7 @@ function slotDrift(filing, role, index) {
 
 /** Every slot on closed filings whose copy of this party's fields no longer matches the party. */
 export function closedFilingDrift(partyId) {
-  const caseFile = window.caseFile;
+  const caseFile = getCaseFile();
   if (!partyId || !caseFile) return [];
   const out = [];
   for (const filing of caseFile.wards || []) {
@@ -491,7 +492,7 @@ export function reconcileSlotWithParty(filing, role, index = 0) {
  * never written -- they stay exactly as filed. Returns how many records changed.
  */
 export function backfillWardPartyIdentity() {
-  const caseFile = window.caseFile;
+  const caseFile = getCaseFile();
   if (!caseFile) return 0;
   const filings = (caseFile.wards || []).filter(f => f && getPartyIdForSlot(f, 'ward', 0));
   const ordered = [...filings.filter(f => !isFilingClosed(f)), ...filings.filter(isFilingClosed)];
@@ -662,7 +663,7 @@ export function syncIdentityField(filing, role, index = 0, fieldKeys = null) {
   if (!party) return;
   dehydrateIntoParty(filing, role, index, party, fieldKeys);
 
-  const caseFile = window.caseFile;
+  const caseFile = getCaseFile();
   if (caseFile && Array.isArray(caseFile.wards)) {
     for (const other of caseFile.wards) {
       if (isFilingClosed(other)) continue;
@@ -692,7 +693,7 @@ function partyPairKey(idA, idB) {
 
 /** True if this exact pair (either order) has been dismissed as "not the same person." */
 export function isPartyPairDismissed(idA, idB) {
-  const caseFile = window.caseFile;
+  const caseFile = getCaseFile();
   const pairs = (caseFile && caseFile.dismissedPartyPairs) || [];
   const key = partyPairKey(idA, idB);
   return pairs.some(pair => Array.isArray(pair) && partyPairKey(pair[0], pair[1]) === key);
@@ -700,7 +701,7 @@ export function isPartyPairDismissed(idA, idB) {
 
 /** Remembers a pair as "not the same person" so it stops surfacing in the review queue. */
 export function dismissPartyPair(idA, idB) {
-  const caseFile = window.caseFile;
+  const caseFile = getCaseFile();
   if (!caseFile) return;
   if (!Array.isArray(caseFile.dismissedPartyPairs)) caseFile.dismissedPartyPairs = [];
   if (!isPartyPairDismissed(idA, idB)) {
@@ -777,7 +778,7 @@ function sharesContactDetail(a, b) {
  * detection path -- see this file's persistence-rewrite plan §6.
  */
 export function findDuplicateCandidates() {
-  const caseFile = window.caseFile;
+  const caseFile = getCaseFile();
   const entries = ((caseFile && caseFile.parties) || [])
     .filter(p => !p.mergedInto && String(p.name || '').trim())
     .map(party => ({ party, exactKey: party.name.trim().toLowerCase(), norm: normalizePartyName(party.name) }));
@@ -796,7 +797,7 @@ export function findDuplicateCandidates() {
 
 /** How many filing/case slots currently reference this party -- powers the directory's reference count. */
 export function referenceCountForParty(partyId) {
-  const caseFile = window.caseFile;
+  const caseFile = getCaseFile();
   if (!caseFile || !partyId) return 0;
   let count = 0;
   for (const ward of caseFile.wards || []) count += slotsReferencing(ward, partyId).length;
@@ -859,7 +860,7 @@ export function mergeParties(keepId, discardId, { adoptBlankFields = false } = {
   // A closed filing's link moves to the primary (so the record stays
   // reachable) but its copy of the fields is left alone; it then shows as
   // out of date with the primary until the user syncs it.
-  const caseFile = window.caseFile;
+  const caseFile = getCaseFile();
   for (const ward of (caseFile && caseFile.wards) || []) {
     for (const slot of slotsReferencing(ward, discardId)) {
       record.repointedSlots.push({ wardId: ward.wardId, role: slot.role, index: slot.index });
@@ -886,7 +887,7 @@ export function mergeParties(keepId, discardId, { adoptBlankFields = false } = {
  * exactly what it was before tracking existed.
  */
 export function subPartiesOf(primaryId) {
-  const caseFile = window.caseFile;
+  const caseFile = getCaseFile();
   if (!primaryId || !caseFile || !Array.isArray(caseFile.parties)) return [];
   return caseFile.parties.filter(p => p.mergedInto === primaryId && p.mergeRecord);
 }
@@ -913,7 +914,7 @@ function partyPathValue(party, path) {
  * tombstone. Does not call autoSave() -- the caller does.
  */
 export function unmergeParty(subId) {
-  const caseFile = window.caseFile;
+  const caseFile = getCaseFile();
   if (!subId || !caseFile || !Array.isArray(caseFile.parties)) return false;
   const sub = caseFile.parties.find(p => p.id === subId);
   if (!sub || !sub.mergedInto || !sub.mergeRecord) return false;

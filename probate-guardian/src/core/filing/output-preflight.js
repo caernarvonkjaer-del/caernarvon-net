@@ -20,6 +20,7 @@ import {
   getFieldDraftIssues,
 } from '../form/commit-coordinator.js';
 import { createIssue } from '../validation/issue-registry.js';
+import { getD } from '../state.js';
 
 function normalizeIssue(issue) {
   if (typeof issue === 'string') return createIssue('validation.legacy-unmapped', { message: issue });
@@ -28,7 +29,7 @@ function normalizeIssue(issue) {
 }
 
 export function prepareFilingOutput(data, baseIssues = [], options = {}) {
-  const target = data || window.D || {};
+  const target = data || getD() || {};
   commitStoredDateDrafts(target, options.setPath || window.setPath);
   const resolvedBaseIssues = typeof baseIssues === 'function'
     ? baseIssues()

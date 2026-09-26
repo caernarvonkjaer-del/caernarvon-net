@@ -1,8 +1,9 @@
 // Milestone 38D / 44B: Shared Excel Capacity Calculations and Typed Issues
 import { createIssue } from '../validation/issue-registry.js';
+import { getD } from '../state.js';
 
 export function checkExcelCapacity(caps, sourceData) {
-  const d = sourceData || (typeof window !== 'undefined' ? window.D : null);
+  const d = sourceData || (typeof window !== 'undefined' ? getD() : null);
   const over = [];
   if (!d || !caps || typeof caps !== 'object') return over;
   for (const key of Object.keys(caps)) {

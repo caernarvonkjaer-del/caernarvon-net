@@ -8,6 +8,7 @@ import './core/filing/output-preflight.js';
 import './core/form/form-fields.js';
 import './core/form/schedule-definitions.js';
 import { emptyPlanDirective } from './core/filing/models/plan-annual.js';
+import { getD } from './core/state.js';
 
 window.PGSupplementalPdf = SupplementalPdf;
 
@@ -113,21 +114,21 @@ document.addEventListener('change', (event) => {
     // before the route re-render below so the fresh render sees the new row.
     if (control.dataset.formChange === 'ensure-directive-row' && control.checked) {
       const collection = control.dataset.collection;
-      if (collection && window.D && !(window.D[collection] || []).length) {
-        window.D[collection] = [emptyPlanDirective()];
+      if (collection && getD() && !(getD()[collection] || []).length) {
+        getD()[collection] = [emptyPlanDirective()];
       }
     }
     // Milestone 67A: only one party may be the preparer. The ticked box has
     // just been written above; clear every other guardian/attorney flag
     // before the route re-render below, so the other cards' boxes visibly
     // clear on the click.
-    if (control.dataset.formChange === PREPARER_FLAG_CHANGE && control.checked && window.D) {
-      claimPreparer(window.D, control.dataset.formPath);
+    if (control.dataset.formChange === PREPARER_FLAG_CHANGE && control.checked && getD()) {
+      claimPreparer(getD(), control.dataset.formPath);
     }
     // Milestone 68E: a "None" box clears its siblings and a sibling clears
     // "None", in the model and the DOM, before any route re-render.
-    if (control instanceof HTMLInputElement && control.type === 'checkbox' && control.dataset.exclusiveGroup && window.D) {
-      applyExclusiveChoice(window.D, control);
+    if (control instanceof HTMLInputElement && control.type === 'checkbox' && control.dataset.exclusiveGroup && getD()) {
+      applyExclusiveChoice(getD(), control);
     }
     if (control.dataset.formRoute && window.renderPage) {
       window.renderPage(control.dataset.formRoute);

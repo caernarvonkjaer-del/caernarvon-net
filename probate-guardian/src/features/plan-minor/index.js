@@ -35,6 +35,7 @@ import { ic } from '../../core/ui/icons.js';
 import { formatDisplayDate } from '../../core/form/date-parser.js';
 import { normalizePlanGuardians } from '../../core/filing/models/plan-rows.js';
 import { planMinorCompletion } from '../../core/status/completion.js';
+import { getD } from '../../core/state.js';
 // Annual Plan — Minors — the fifth and last feature extraction (Milestone 6,
 // Phases A and B of INDEX-SPLIT-PLAN.md's migration sequence: data/
 // validation/pages/nav, and print/PDF export). Dynamically imported by
@@ -94,7 +95,7 @@ function ensurePrintModule() {
 export async function mount(container, page) {
   // Milestone 68C: a plan saved before the Certificate of Service existed
   // gains its fields on load. Idempotent, so every mount may call it.
-  if (migratePlanCertificateOfService(window.D)) window.autoSave?.();
+  if (migratePlanCertificateOfService(getD())) window.autoSave?.();
   let html;
   let isPrint = false;
   if (page === '/print') {
@@ -121,7 +122,7 @@ export async function mount(container, page) {
   signatureHandles.delete(container);
   if (page === '/p6' || page === '/p7' || page === '/p8') {
     signatureHandles.set(container, mountSignatureStateControls(container, {
-      setImage: (imagePath, dataUrl) => window.setPath(window.D, imagePath, dataUrl),
+      setImage: (imagePath, dataUrl) => window.setPath(getD(), imagePath, dataUrl),
       route: page,
     }));
   }
@@ -161,7 +162,7 @@ function buildNavPlanMinor(container){
 }
 
 function getSummaryConfigPlanMinor(){
-  const d=window.D;
+  const d=getD();
   // This filing's own section marks (Milestone 70, 70D: its engine's evaluator,
   // imported; it was window.computeNavChecks()).
   const nav=planMinorCompletion(d);
@@ -197,7 +198,7 @@ function getSummaryConfigPlanMinor(){
 }
 
 function pagePlanMCover(){
-  const d=window.D;
+  const d=getD();
   return `<div class="schedule-page">
     <h1>Annual Plan — Minors — Cover</h1>
     <div class="schedule-instructions">This is the Annual Guardianship Plan used when the ward is a <strong>minor</strong>. It has no rights-restoration table or ADL ratings — instead it covers residence, medical care, and the minor's education and social development.</div>
@@ -239,7 +240,7 @@ function pagePlanMCover(){
 }
 
 function pagePlanMResidences(){
-  const d=window.D;
+  const d=getD();
   const rows=(d.q2Residences||[]).map((r,i)=>{
     return `<div class="col-12 col-lg-6"><div class="entry-card mb-2">
       <div class="entry-card-header">
@@ -270,7 +271,7 @@ function pagePlanMResidences(){
 }
 
 function pagePlanMProviders(){
-  const d=window.D;
+  const d=getD();
   const rows=(d.q3Providers||[]).map((r,i)=>{
     return `<div class="col-12 col-lg-6"><div class="entry-card mb-2">
       <div class="entry-card-header">
@@ -305,7 +306,7 @@ function pagePlanMProviders(){
 }
 
 function pagePlanMMedical(){
-  const d=window.D;
+  const d=getD();
   const freq=(id,val)=>radioP(id,'Frequency',val,['Weekly','Monthly','Annually']);
   return `<div class="schedule-page">
     <h1>4. Provision of Medical Services</h1>
@@ -336,7 +337,7 @@ function pagePlanMMedical(){
 }
 
 function pagePlanMEducation(){
-  const d=window.D;
+  const d=getD();
   const cb=(id,label,route='')=>chkP(id,label,d[id],route);
   return `<div class="schedule-page">
     <h1>5. Education &amp; Social Development</h1>
@@ -357,7 +358,7 @@ function pagePlanMEducation(){
 }
 
 function pagePlanMSignatures(){
-  const d=window.D;
+  const d=getD();
   const cb=(id,label,route='')=>chkP(id,label,d[id],route);
   const g=(i,title)=>{
     const gd=(d.planGuardians||[])[i]||{};
@@ -400,7 +401,7 @@ function pagePlanMSignatures(){
 }
 
 function pagePlanMPreparerAttorney(){
-  const d=window.D;
+  const d=getD();
   return `<div class="schedule-page">
     <h1>Certification of Preparer &amp; Attorney</h1>
   ${preparerNoteHTML()}
@@ -450,7 +451,7 @@ function pagePlanMPreparerAttorney(){
 
 // Milestone 42F: every issue states its own field path (validation-issue.js).
 export function validatePlanMinor(){
-  const d=window.D;
+  const d=getD();
   const errs=[];
   const T='planMinor';
   const issue=issueFactory(T);
@@ -553,7 +554,7 @@ window.validatePlanMinor = validatePlanMinor;
 const CERT_CFG = { attorneyName: (d) => d.attorney_name || '', planNoun: 'plan' };
 function pagePlanMCertificate(){
   return `<div class="schedule-page">
-    ${renderPlanCertificateOfServicePage({ filing: window.D, route: '/p8', cfg: CERT_CFG })}
+    ${renderPlanCertificateOfServicePage({ filing: getD(), route: '/p8', cfg: CERT_CFG })}
     ${pageNavS('/p7',null)}
   </div>`;
 }

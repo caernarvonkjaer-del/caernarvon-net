@@ -19,7 +19,7 @@
 // filing-shaped probe against the Party, then sets county from the resolved
 // Party). Every carry-over surface -- Add Ward, Convert Ward, in-place Load Ward
 // Info, and new-year creation -- routes through it.
-import { getCaseFile, getD, setD } from '../state.js';
+import { getCaseFile, getD, setD, setActiveInventoryType, setAppState } from '../state.js';
 import { FILING_ENGINE_IDS, mountFeatureFnName } from '../filing/filing-descriptor.js';
 import { formEngine, initializeEmptyData } from '../filing/filing-registry.js';
 import { pruneBlankCards } from '../form/prune-cards.js';
@@ -50,8 +50,7 @@ export async function enterDashboardEditingFocus() {
     }
     caseFile.activeWardId = null;
     setD({});
-    window.activeInventoryType = null;
-    window._visitedPages?.clear?.();
+    setActiveInventoryType(null);
     window.updateSidebar?.();
     await window.refreshAutoSaveArmedStatus?.();
     window.notifyProbateGuardianTabStateChanged?.();
@@ -416,10 +415,7 @@ export async function activateWard(ward, opts = {}) {
   caseFile.activeWardId = ward.wardId;
   setD(ward);
   if (typeof window !== 'undefined') {
-    window.activeInventoryType = ward.inventoryType;
-    if (window._visitedPages && typeof window._visitedPages.clear === 'function') {
-      window._visitedPages.clear();
-    }
+    setActiveInventoryType(ward.inventoryType);
     if (typeof window.addToRecentlyOpened === 'function') {
       window.addToRecentlyOpened(ward);
     }
@@ -471,9 +467,7 @@ export async function addWard(wardName, inventoryType) {
   if (typeof window !== 'undefined') {
     window._dirtySinceExport = true;
     if (typeof window.updateLastSavedIndicator === 'function') window.updateLastSavedIndicator();
-    if (isFirstWardEver && window._appState) {
-      window._appState.firstLaunchSeen = false;
-    }
+    if (isFirstWardEver) setAppState('firstLaunchSeen', false);
     if (typeof window.navigate === 'function') {
       await window.navigate('/');
     }

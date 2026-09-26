@@ -58,7 +58,8 @@ import './startup-events.js';
 import './tab-coordination.js';
 import './pwa-ui.js';
 
-import { getCaseFile, setCaseFile, getD, setD } from './core/state.js';
+import { configureCaseStore } from './core/state.js';
+import { monolith } from './core/runtime/monolith.js';
 import { navigate } from './core/navigation/router.js';
 import { markFilingRevisionChanged, isOutputAcknowledgedFor, clearOutputAcknowledgement } from './core/filing/output-authorization.js';
 import { bindReadinessCard } from './core/filing/readiness-card.js';
@@ -72,25 +73,16 @@ import { installTestingNamespace } from './core/testing/testing-adapter.js';
 // runs; in production nothing sets it and nothing is installed.
 installTestingNamespace();
 
-// Guarantee debug/inspection getters on window for test harness assertion compatibility
-if (typeof window !== 'undefined') {
-  if (!Object.getOwnPropertyDescriptor(window, 'D')) {
-    Object.defineProperty(window, 'D', {
-      get: () => getD(),
-      set: (val) => setD(val),
-      configurable: true,
-      enumerable: true,
-    });
-  }
-  if (!Object.getOwnPropertyDescriptor(window, 'caseFile')) {
-    Object.defineProperty(window, 'caseFile', {
-      get: () => getCaseFile(),
-      set: (val) => setCaseFile(val),
-      configurable: true,
-      enumerable: true,
-    });
-  }
+// Milestone 70, 70E: a store transaction's side effects -- the filing's
+// revision marked changed, then the save scheduled (the monolith's autoSave(),
+// which legacy-app.js hands in when initApp() starts). This file used to put
+// window.D and window.caseFile accessors here "for the test harness"; they
+// were never installed (legacy-app.js defines both first) and a writable
+// window accessor over the monolith's state is the second authority the plan
+// forbids, so they went.
+configureCaseStore({ markRevision: markFilingRevisionChanged, save: () => monolith.autoSave() });
 
+if (typeof window !== 'undefined') {
   window.navigate = navigate;
   // activateWard/switchWard are published by ward-lifecycle.js itself; the
   // third copy this file used to add was removed in Milestone 42E.

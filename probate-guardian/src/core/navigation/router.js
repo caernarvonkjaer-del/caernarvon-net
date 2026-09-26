@@ -1,5 +1,5 @@
 // Application navigation, URL hash router, and feature mounting.
-import { getCaseFile } from '../state.js';
+import { getCaseFile, getActiveWard, getActiveInventoryType } from '../state.js';
 import { FILING_ENGINE_IDS, mountFeatureFnName } from '../filing/filing-descriptor.js';
 import { resetReadinessCardState } from '../filing/readiness-card.js';
 import { saveLastPosition } from '../persistence/recovery-cache.js';
@@ -166,10 +166,8 @@ export async function renderPage(page) {
     return;
   }
 
-  const activeWard = typeof window !== 'undefined' && typeof window.getActiveWard === 'function'
-    ? window.getActiveWard()
-    : (caseFile.wards || []).find((w) => w.wardId === caseFile.activeWardId);
-  const activeType = (typeof window !== 'undefined' && window.activeInventoryType) || (activeWard && activeWard.inventoryType);
+  const activeWard = getActiveWard();
+  const activeType = getActiveInventoryType() || (activeWard && activeWard.inventoryType);
 
   if (!activeType) {
     setCurrentPage('/inventory-select');
@@ -186,9 +184,6 @@ export async function renderPage(page) {
 
   if (typeof window !== 'undefined') {
     if (typeof window.updateHelpContext === 'function') window.updateHelpContext();
-
-    const pageKey = typeof window.getCurrentPageKey === 'function' ? window.getCurrentPageKey() : null;
-    if (pageKey && window._visitedPages) window._visitedPages.add(pageKey);
 
     const engine = formEngine(activeType);
     if (FILING_ENGINE_IDS.includes(engine)) {

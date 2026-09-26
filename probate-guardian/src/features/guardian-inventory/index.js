@@ -27,6 +27,7 @@ import { applyZipLimit, finalizeCaseNumber, formatAccountNumber, formatAddress, 
 import { calc } from './totals.js';
 import { PAGES_GUARDIAN, mk } from '../../core/filing/models/guardian.js';
 import { SCHEDULE_NAV_KEYS } from '../../core/filing/models/guardian.js';
+import { getD } from '../../core/state.js';
 // Milestone 57B: carried verbatim from MILESTONE-57-PROPOSAL.md section 57B.
 // The wording is load bearing (section 8 #8). Do not paraphrase or re-voice it.
 const ATTESTATION_57B = 'No recipients are required for this certificate (filer attestation - app does not determine legal necessity)';
@@ -51,8 +52,8 @@ const {
 } = window;
 
 const D = new Proxy({}, {
-  get: (_target, prop) => window.D && window.D[prop],
-  set: (_target, prop, value) => { if (window.D) window.D[prop] = value; return true; },
+  get: (_target, prop) => getD() && getD()[prop],
+  set: (_target, prop, value) => { if (getD()) getD()[prop] = value; return true; },
 });
 
 // print.js/excel.js are dynamically imported once, together, the first time
@@ -136,7 +137,7 @@ export async function mount(container, page) {
   // tri-state is dropped. Idempotent, so every mount may call it. window.D
   // itself, not this module's D proxy: the migration deletes a key, and the
   // proxy forwards reads and writes but not `in` or `delete`.
-  if (migrateBondDepository(window.D)) saveData();
+  if (migrateBondDepository(getD())) saveData();
   sanitizeNegativeAmounts();
   D.bondAmount = normalizeBondAmountValue(D.bondAmount);
   let html;
@@ -160,7 +161,7 @@ export async function mount(container, page) {
     case '/d4':   html=pageD4();break;
     case '/d5':   html=pageD5();break;
     case '/print': {
-      const capOver = checkExcelCapacity(_excelModule.GUARDIAN_EXCEL_CAPS, window.D);
+      const capOver = checkExcelCapacity(_excelModule.GUARDIAN_EXCEL_CAPS, getD());
       html = _printModule.pagePrint(capOver);
       break;
     }
@@ -177,7 +178,7 @@ export async function mount(container, page) {
   signatureHandles.delete(container);
   if (page === '/d1' || page === '/d2' || page === '/d5') {
     signatureHandles.set(container, mountSignatureStateControls(container, {
-      setImage: (imagePath, dataUrl) => window.setPath(window.D, imagePath, dataUrl),
+      setImage: (imagePath, dataUrl) => window.setPath(getD(), imagePath, dataUrl),
       route: page,
     }));
   }
@@ -197,7 +198,7 @@ export async function mount(container, page) {
   // schedule-doc-ack.spec.ts, where three cases timed out inside navigate()
   // before this was a floating call. Detection is on the DATA, not on the Add
   // button, so rows from an Excel import or New Filing from Existing count.
-  void promptScheduleAckIfNeeded(window.D, 'guardian', page, confirmModal).catch(() => {});
+  void promptScheduleAckIfNeeded(getD(), 'guardian', page, confirmModal).catch(() => {});
 }
 
 export function dispose(container) {
@@ -334,7 +335,7 @@ export function pageNav(current){
   const incomplete=isSectionIncomplete(checks&&checks.checks,checkKey);
   const nextDisabled=blocksNext({type:'guardian',checkKey,incomplete,guardianScheduleKeys:SCHEDULE_NAV_KEYS});
   const advice=guidanceAdvice({hasVerifyNoneBox:SCHEDULE_NAV_KEYS.includes(checkKey)});
-  const rawErrors=incomplete&&typeof validateGuardian==='function'?validateGuardian(window.D):[];
+  const rawErrors=incomplete&&typeof validateGuardian==='function'?validateGuardian(getD()):[];
   const guidanceHtml=incomplete?renderLocalSectionGuidance(current,rawErrors,Infinity,{message:advice}):'';
   return `<div class="page-nav-wrap no-print">
     <div class="page-nav d-flex justify-content-between align-items-center">
@@ -546,7 +547,7 @@ function addEntry(schedule){
     b4:'scheduleB4',c1:'scheduleC1',c2:'scheduleC2',c3:'scheduleC3',c4:'scheduleC4',c5:'scheduleC5'
   };
   const key=map[schedule];
-  window.D[key].push(mk[schedule]());
+  getD()[key].push(mk[schedule]());
   renderPage(getCurrentPage());
 }
 function removeEntry(schedule,idx){
@@ -555,7 +556,7 @@ function removeEntry(schedule,idx){
     b4:'scheduleB4',c1:'scheduleC1',c2:'scheduleC2',c3:'scheduleC3',c4:'scheduleC4',c5:'scheduleC5'
   };
   const key=map[schedule];
-  window.D[key].splice(idx,1);
+  getD()[key].splice(idx,1);
   autoSave();
   renderPage(getCurrentPage());
 }
@@ -596,7 +597,7 @@ function duplicateEntry(schedule,idx){
     b4:'scheduleB4',c1:'scheduleC1',c2:'scheduleC2',c3:'scheduleC3',c4:'scheduleC4',c5:'scheduleC5'
   };
   const key=map[schedule];
-  const list=window.D[key];
+  const list=getD()[key];
   if(!list||!list[idx])return;
   list.splice(idx+1,0,JSON.parse(JSON.stringify(list[idx])));
   autoSave();
@@ -1255,7 +1256,7 @@ const sdbAnswered = (v) => sdbIsYes(v) || sdbIsNo(v);
 // Judges the filing it is handed, or the open one. Milestone 70's 70D: the
 // dashboard's progress for a filing that is not open passes it here, where it
 // used to point window.D at it first.
-export function validateGuardian(d=window.D){
+export function validateGuardian(d=getD()){
   const errors=[];
   const issue=issueFactory('guardian');
   const T='guardian';

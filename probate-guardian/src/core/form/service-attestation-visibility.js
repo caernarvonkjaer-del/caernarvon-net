@@ -14,6 +14,7 @@
 // page has to bind anything and nothing outlives a page: one document-level
 // subscription, added once, that does nothing when the row is absent.
 import { attestationRelevant } from '../validation/service-recipients.js';
+import { getD } from '../state.js';
 
 const ROW_SELECTOR = '[data-service-attestation]';
 
@@ -43,7 +44,7 @@ export function syncServiceAttestationVisibility() {
   if (typeof document === 'undefined') return;
   const row = document.querySelector(ROW_SELECTOR);
   if (!row) return;
-  const data = (typeof window !== 'undefined' && window.D) || {};
+  const data = (typeof window !== 'undefined' && getD()) || {};
   const { recipientsPath, attestationPath, startedFields } = row.dataset;
   const shown = attestationRelevant({
     rows: data[recipientsPath],

@@ -11,6 +11,7 @@ import {
   recordDateDraft,
 } from './commit-coordinator.js';
 import { validateSecurityInput } from '../security/input-hardening.js';
+import { getD } from '../state.js';
 
 if (typeof window !== 'undefined') {
   window._transientDrafts = window._transientDrafts || {};
@@ -328,10 +329,10 @@ export function runFieldWriteSideEffects(path, control = null) {
   if (!path) return;
   window.markFilingRevisionChanged?.('field-write');
   window.maybeCommitCoverCounty?.(path);
-  const identitySlot = window.identitySlotForPath?.(window.D, path);
+  const identitySlot = window.identitySlotForPath?.(getD(), path);
   // Milestone 58A: the fourth argument is what stops one edit from promoting
   // its stale neighbours into the shared Party record.
-  if (identitySlot && window.syncIdentityField) window.syncIdentityField(window.D, identitySlot.role, identitySlot.index, identitySlot.fieldKeys);
+  if (identitySlot && window.syncIdentityField) window.syncIdentityField(getD(), identitySlot.role, identitySlot.index, identitySlot.fieldKeys);
   window.autoSave?.();
   window.updateNavDots?.();
   window.refreshWardInfoCard?.();
@@ -384,7 +385,7 @@ export function writeDraftValue(control, options = {}) {
     // debounced save, navigation, and assistive-technology event timing
     // without allowing invalid text into generated artifacts.
     recordDateDraft({
-      data: window.D,
+      data: getD(),
       path,
       rawValue: control.value,
       label: control.dataset?.fieldLabel || '',
@@ -395,9 +396,9 @@ export function writeDraftValue(control, options = {}) {
     return;
   }
 
-  const currentVal = window.getPath ? window.getPath(window.D, path) : undefined;
+  const currentVal = window.getPath ? window.getPath(getD(), path) : undefined;
   if (currentVal !== rawValue) {
-    if (window.setPath) window.setPath(window.D, path, rawValue);
+    if (window.setPath) window.setPath(getD(), path, rawValue);
     runFieldWriteSideEffects(path, control);
   }
 }
@@ -417,20 +418,20 @@ export function finalizeFieldValue(control, options = {}) {
   const isRadio = control?.type === 'radio';
   let rawValue = isCheckbox
     ? (control.dataset?.formValue === 'yes-no' ? (control.checked ? 'Yes' : 'No') : control.checked)
-    : (isRadio ? (control.checked ? control.value : (window.getPath ? window.getPath(window.D, path) : '')) : control.value);
+    : (isRadio ? (control.checked ? control.value : (window.getPath ? window.getPath(getD(), path) : '')) : control.value);
 
   // A state control is written through untouched. No text formatter may run
   // against a checkbox or radio whatever kind the path happened to infer.
   if (isCheckbox || isRadio || kind === 'boolean') {
-    if (window.setPath) window.setPath(window.D, path, rawValue);
+    if (window.setPath) window.setPath(getD(), path, rawValue);
   } else if (kind === 'date') {
     const parsed = parseFlexibleDate(rawValue);
     if (parsed === '') {
       // Empty date
       control.removeAttribute('aria-invalid');
       control.classList.remove('is-invalid');
-      clearFieldDraft(path, window.D);
-      if (window.setPath) window.setPath(window.D, path, '');
+      clearFieldDraft(path, getD());
+      if (window.setPath) window.setPath(getD(), path, '');
     } else if (parsed === null) {
       // Invalid date text: retain both the visible draft and the previously
       // committed canonical value. Clearing the model here caused a blurred
@@ -438,7 +439,7 @@ export function finalizeFieldValue(control, options = {}) {
       control.setAttribute('aria-invalid', 'true');
       control.classList.add('is-invalid');
       recordDateDraft({
-        data: window.D,
+        data: getD(),
         path,
         rawValue,
         label: control.dataset?.fieldLabel || '',
@@ -450,17 +451,17 @@ export function finalizeFieldValue(control, options = {}) {
       control.removeAttribute('aria-invalid');
       control.classList.remove('is-invalid');
       control.value = formatDisplayDate(parsed);
-      clearFieldDraft(path, window.D);
-      if (window.setPath) window.setPath(window.D, path, parsed);
+      clearFieldDraft(path, getD());
+      if (window.setPath) window.setPath(getD(), path, parsed);
     }
   } else if (kind === 'caseNumber' || control.dataset?.formFormat === 'case-number' || control.dataset?.annualFormat === 'case') {
     const formatted = finalizeCaseNumber(rawValue);
     control.value = formatted;
-    if (window.setPath) window.setPath(window.D, path, formatted);
+    if (window.setPath) window.setPath(getD(), path, formatted);
   } else if (kind === 'barNumber' || control.dataset?.formFormat === 'bar-number' || control.dataset?.annualFormat === 'bar') {
     const formatted = formatBarNumber(rawValue);
     control.value = formatted;
-    if (window.setPath) window.setPath(window.D, path, formatted);
+    if (window.setPath) window.setPath(getD(), path, formatted);
   } else if (kind === 'zip' || control.dataset?.formFormat === 'city-state-zip' || control.dataset?.annualFormat === 'zip') {
     // applyZipLimit() caps the field at nine digits (ZIP+4) in place before
     // formatting -- both legacy write paths did; this one had skipped it.
@@ -468,12 +469,12 @@ export function finalizeFieldValue(control, options = {}) {
     rawValue = control.value;
     const formatted = formatCityStateZip(rawValue);
     control.value = formatted;
-    if (window.setPath) window.setPath(window.D, path, formatted);
+    if (window.setPath) window.setPath(getD(), path, formatted);
     setCityStateZipFeedback(control, isMalformedCityStateZip(formatted));
   } else if (kind === 'phone') {
     const formatted = formatPhone(rawValue);
     control.value = formatted;
-    if (window.setPath) window.setPath(window.D, path, formatted);
+    if (window.setPath) window.setPath(getD(), path, formatted);
   } else if (kind === 'ssn') {
     // Above the generic preserve branch on purpose: renderFormField() stamps
     // SSN/EIN fields data-field-format-policy="preserve" (identifier-like,
@@ -486,7 +487,7 @@ export function finalizeFieldValue(control, options = {}) {
     // the two-phase contract's rule for caret-moving formatters).
     const formatted = formatSSN(rawValue);
     control.value = formatted;
-    if (window.setPath) window.setPath(window.D, path, formatted);
+    if (window.setPath) window.setPath(getD(), path, formatted);
   } else if (policy === 'preserve') {
     // data-field-sanitize="security" (renderFormField()'s securitySanitize
     // option -- Annual Accounting's inpD() is its only caller) runs
@@ -503,22 +504,22 @@ export function finalizeFieldValue(control, options = {}) {
       ? validateSecurityInput(control.dataset.fieldLabel || control.dataset.annualLabel || path, rawValue)
       : rawValue;
     const cleaned = sanitizeStoredText(secured);
-    if (window.setPath) window.setPath(window.D, path, cleaned);
+    if (window.setPath) window.setPath(getD(), path, cleaned);
     control.value = cleaned;
   } else if (kind === 'name' || kind === 'address' || policy === 'display-only') {
     const formatted = formatSafeTitleCase(rawValue);
     control.value = formatted;
-    if (window.setPath) window.setPath(window.D, path, formatted);
+    if (window.setPath) window.setPath(getD(), path, formatted);
   } else if (kind === 'money') {
     const cleaned = sanitizeNonNegativeDecimal(rawValue);
     control.value = cleaned;
-    if (window.setPath) window.setPath(window.D, path, parseFloat(cleaned) || 0);
+    if (window.setPath) window.setPath(getD(), path, parseFloat(cleaned) || 0);
   } else if (kind === 'signed-money') {
     // "Enter as negative" amounts (Annual Schedule C losses, Schedule E
     // transfers out): the one money kind that keeps a leading minus.
     const cleaned = sanitizeDecimal(rawValue);
     control.value = cleaned;
-    if (window.setPath) window.setPath(window.D, path, parseFloat(cleaned) || 0);
+    if (window.setPath) window.setPath(getD(), path, parseFloat(cleaned) || 0);
   }
 
   runFieldWriteSideEffects(path, control);
@@ -535,13 +536,13 @@ export function commitPendingFieldValues(root = document) {
     // still connected (imports and recovery do this). Only finalize controls
     // that actually received a user draft; otherwise a stale blank DOM value
     // could overwrite the newer canonical model value at navigation time.
-    if (getFieldDraft(getControlPath(control), window.D)) finalizeFieldValue(control);
+    if (getFieldDraft(getControlPath(control), getD())) finalizeFieldValue(control);
   });
-  const committed = commitStoredDateDrafts(window.D, window.setPath);
-  return { committed, issues: getFieldDraftIssues(window.D) };
+  const committed = commitStoredDateDrafts(getD(), window.setPath);
+  return { committed, issues: getFieldDraftIssues(getD()) };
 }
 
-export function getFieldDraftIssueMessages(data = window.D) {
+export function getFieldDraftIssueMessages(data = getD()) {
   return formatDraftIssues(getFieldDraftIssues(data));
 }
 

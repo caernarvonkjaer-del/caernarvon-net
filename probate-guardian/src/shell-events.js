@@ -1,3 +1,4 @@
+import { getCaseFile } from './core/state.js';
 function handleShellClick(event) {
   const actionElement = event.target instanceof Element ? event.target.closest('[data-shell-action]') : null;
   if (!actionElement) return;
@@ -26,7 +27,7 @@ function handleShellClick(event) {
     // there and aren't needed mid-filing. Inside a filing, "?" skips the
     // panel and jumps straight to the manual page for the current one.
     case 'toggle-help':
-      if (window.caseFile?.activeWardId) window.openUserGuideForCurrentPage?.();
+      if (getCaseFile()?.activeWardId) window.openUserGuideForCurrentPage?.();
       else window.toggleHelpPanel();
       break;
     case 'toggle-mobile-sidebar': window.toggleMobileSidebar(); break;

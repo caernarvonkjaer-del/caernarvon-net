@@ -1,4 +1,5 @@
 import { parseFlexibleDate } from './date-parser.js';
+import { getD } from '../state.js';
 
 function draftStore(data) {
   if (!data) return {};
@@ -7,7 +8,7 @@ function draftStore(data) {
 }
 
 function activeData(data) {
-  return data || window.D || {};
+  return data || getD() || {};
 }
 
 export function recordDateDraft({ data, path, rawValue, label = '', section = '', route = '' }) {

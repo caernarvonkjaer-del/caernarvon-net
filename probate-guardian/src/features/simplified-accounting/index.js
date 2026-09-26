@@ -43,6 +43,7 @@ import { formatDisplayDate } from '../../core/form/date-parser.js';
 import { calcTotals } from './totals.js';
 import { guardianHasAnyData } from '../../core/validation/row-started.js';
 import { simplifiedCompletion } from '../../core/status/completion.js';
+import { getD } from '../../core/state.js';
 // Milestone 57B: carried verbatim from MILESTONE-57-PROPOSAL.md section 57B.
 // The wording is load bearing (section 8 #8). Do not paraphrase or re-voice it.
 const ATTESTATION_57B = 'No recipients are required for this certificate (filer attestation - app does not determine legal necessity)';
@@ -104,29 +105,29 @@ function bindEvents(container) {
     const index = Number.parseInt(actionElement.dataset.index, 10);
     switch (actionElement.dataset.simplifiedAction) {
       case 'add-guardian': {
-        if (addCollectionRow('guardians', window.D, createSimplifiedGuardian)) {
+        if (addCollectionRow('guardians', getD(), createSimplifiedGuardian)) {
           autoSave();
           navigate('/p4');
         }
         break;
       }
       case 'remove-guardian': {
-        if (index > 0 && guardianHasAnyData(window.D.guardians?.[index]) && !(await confirmModal(`Remove co-guardian ${window.D.guardians[index].name || `#${index + 1}`}? This will delete the entered signature information.`))) break;
-        if (removeCollectionRow('guardians', index, window.D)) {
+        if (index > 0 && guardianHasAnyData(getD().guardians?.[index]) && !(await confirmModal(`Remove co-guardian ${getD().guardians[index].name || `#${index + 1}`}? This will delete the entered signature information.`))) break;
+        if (removeCollectionRow('guardians', index, getD())) {
           autoSave();
           navigate('/p4');
         }
         break;
       }
       case 'add-recipient': {
-        if (addCollectionRow('certRecipients', window.D)) {
+        if (addCollectionRow('certRecipients', getD())) {
           autoSave();
           navigate('/p6');
         }
         break;
       }
       case 'remove-recipient': {
-        if (removeCollectionRow('certRecipients', index, window.D)) {
+        if (removeCollectionRow('certRecipients', index, getD())) {
           autoSave();
           navigate('/p6');
         }
@@ -136,8 +137,8 @@ function bindEvents(container) {
         // Milestone 60J (Annual's 58D rule): adding an entry answers Part VII
         // by itself, so a previously ticked "none to report" declaration is
         // withdrawn rather than left to contradict the row being added.
-        if (window.D?.scheduleNoItems?.remuneration) window.D.scheduleNoItems.remuneration = false;
-        if (addCollectionRow('remuneration', window.D)) {
+        if (getD()?.scheduleNoItems?.remuneration) getD().scheduleNoItems.remuneration = false;
+        if (addCollectionRow('remuneration', getD())) {
           autoSave();
           navigate('/p7');
         }
@@ -146,7 +147,7 @@ function bindEvents(container) {
       case 'choose-excel': actionElement.parentElement.querySelector('input[type="file"]')?.click(); break;
       case 'open-court-portal': window.openFloridaCourtPortal(); break;
       case 'remove-remuneration': {
-        if (removeCollectionRow('remuneration', index, window.D)) {
+        if (removeCollectionRow('remuneration', index, getD())) {
           autoSave();
           navigate('/p7');
         }
@@ -155,7 +156,7 @@ function bindEvents(container) {
       case 'save-excel': _excelModule.doSaveExcel(); break;
       case 'save-pdf': _printModule.doSavePdf(); break;
       case 'resolve-guardian-address-conflict': {
-        if (resolveSimplifiedGuardianAddressConflict(window.D, index, actionElement.dataset.field, actionElement.dataset.choice)) {
+        if (resolveSimplifiedGuardianAddressConflict(getD(), index, actionElement.dataset.field, actionElement.dataset.choice)) {
           autoSave();
           navigate('/p4');
         }
@@ -166,8 +167,8 @@ function bindEvents(container) {
   container.addEventListener('change', (event) => {
     const input = event.target;
     if (input instanceof HTMLInputElement && input.dataset.simplifiedChange === 'schedule-no-items') {
-      if (!window.D.scheduleNoItems) window.D.scheduleNoItems = {};
-      window.D.scheduleNoItems[input.dataset.schedule] = input.checked;
+      if (!getD().scheduleNoItems) getD().scheduleNoItems = {};
+      getD().scheduleNoItems[input.dataset.schedule] = input.checked;
       autoSave();
       updateNavDots();
       return;
@@ -192,7 +193,7 @@ function ensureLazyModules() {
 
 export async function mount(container, page) {
   await ensureLazyModules();
-  normalizeSimplifiedGuardianCompatibility(window.D, { persistedSource: true });
+  normalizeSimplifiedGuardianCompatibility(getD(), { persistedSource: true });
   sanitizeNegativeAmounts();
   let html;
   switch (page) {
@@ -205,7 +206,7 @@ export async function mount(container, page) {
     case '/p6':    html = pagePart6(); break;
     case '/p7':    html = pagePart7(); break;
     case '/print': {
-      const capOver = checkExcelCapacity(_excelModule.SIMPLIFIED_EXCEL_CAPS, window.D);
+      const capOver = checkExcelCapacity(_excelModule.SIMPLIFIED_EXCEL_CAPS, getD());
       html = _printModule.pagePrintSimplified(capOver);
       break;
     }
@@ -219,7 +220,7 @@ export async function mount(container, page) {
   signatureHandles.delete(container);
   if (page === '/p4' || page === '/p5' || page === '/p6') {
     signatureHandles.set(container, mountSignatureStateControls(container, {
-      setImage: (imagePath, dataUrl) => window.setPath(window.D, imagePath, dataUrl),
+      setImage: (imagePath, dataUrl) => window.setPath(getD(), imagePath, dataUrl),
       route: page,
     }));
   }
@@ -273,7 +274,7 @@ function buildNavSimplified(container){
 }
 
 function getSummaryConfigSimplified(){
-  const d=window.D;
+  const d=getD();
   // This filing's own section marks (Milestone 70, 70D: its engine's evaluator,
   // imported; it was window.computeNavChecks()).
   const nav=simplifiedCompletion(d);
@@ -322,7 +323,7 @@ function getSummaryConfigSimplified(){
 
 // ── Cover / Part I ──────────────────────────────────────
 function pageCover(){
-  const d=window.D;
+  const d=getD();
   const t=calcTotals();
   return `<div class="schedule-page">
     <h1>Cover &amp; Part I — Required Information</h1>
@@ -429,7 +430,7 @@ function pageCover(){
 
 // ── Part II – Accounting ────────────────────────────────
 function pagePart2(){
-  const d=window.D;
+  const d=getD();
   const t=calcTotals();
   return `<div class="schedule-page">
     <h1>Part II — Accounting Summary &amp; Remaining Assets On Hand</h1>
@@ -504,7 +505,7 @@ function refreshPart2(){
 
 // ── Part III – Declaration ──────────────────────────────
 function pagePart3(){
-  const d=window.D;
+  const d=getD();
   return `<div class="schedule-page">
     <h1>Part III — Guardian(s) Declaration</h1>
     <div class="attestation-text">Under penalties of perjury, I declare that I have read and examined the foregoing return and that, to the best of my knowledge and belief, it constitutes a full and correct account of all the ward's property of which this guardian has control, and is a complete report of all cash and property transactions and of all receipts and disbursements.</div>
@@ -519,7 +520,7 @@ function pagePart3(){
 
 // ── Part IV – Guardians ─────────────────────────────────
 function pagePart4(){
-  const d=window.D;
+  const d=getD();
   const conflicts=getSimplifiedGuardianAddressConflicts(d);
   const labels=['Guardian #1','Co-Guardian #2','Co-Guardian #3'];
   const cards=(d.guardians||[]).map((g,i)=>{
@@ -555,7 +556,7 @@ function pagePart4(){
 
 // ── Part V – Attorney Signature ─────────────────────────
 function pagePart5(){
-  const d=window.D;
+  const d=getD();
   return `<div class="schedule-page">
     <h1>Part V — Guardian Attorney Signature</h1>
   ${preparerNoteHTML()}
@@ -586,7 +587,7 @@ function pagePart5(){
 }
 
 function pagePart6(){
-  const d=window.D;
+  const d=getD();
   const cards=(d.certRecipients||[]).map((r,i)=>{
     const req=(i===0||i===2)?'<span class="req">*</span>':'';
     const removeBtn=i===0?'':`<button type="button" class="btn btn-outline-danger btn-sm" data-simplified-action="remove-recipient" data-index="${i}">✕ Remove</button>`;
@@ -642,7 +643,7 @@ function pagePart6(){
 
 // ── Part VII – Remuneration ─────────────────────────────
 function pagePart7(){
-  const d=window.D;
+  const d=getD();
   let rows='';
   if (d.remuneration && d.remuneration.length > 0) {
     rows='<div class="row g-3 schedule-entry-grid">'+d.remuneration.map((r,i)=>`<div class="col-12 col-lg-6"><div class="entry-card mb-0 h-100">
@@ -686,7 +687,7 @@ function pagePart7(){
 
 // Milestone 42F: every issue states its own field path (validation-issue.js).
 export function validateSimplified(){
-  const d=window.D;
+  const d=getD();
   const errs=[];
   const T='simplified';
   const issue=issueFactory(T);

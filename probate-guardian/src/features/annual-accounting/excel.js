@@ -30,6 +30,7 @@ import { assertWorkbookWithinLimits, getImportProgressEl, sanitizeObjectDataInPl
 import { capitalizeImportedFields } from '../../core/form/form-contract.js';
 import { r2 } from '../../core/format/money.js';
 import { formDisplayName } from '../../core/filing/filing-registry.js';
+import { getD } from '../../core/state.js';
 
 const {
   renderPage, ensureTemplate, calcTotalsAnnual,
@@ -116,7 +117,7 @@ export const ANNUAL_EXCEL_CAPS={
     unsupported:"the court's Excel workbook has no entry area for Part XI, so remuneration cannot be written to it. File this accounting as PDF, where Part XI prints in full."},
 };
 export async function doSaveExcel(){
-  const filingDescriptor = resolveFilingDescriptor(window.D).descriptor;
+  const filingDescriptor = resolveFilingDescriptor(getD()).descriptor;
   const type = filingDescriptor?.inventoryType || 'annual';
   // Schedule B-4's own limits are not a simple row cap: they depend on how
   // many bank accounts a filing has and how its disbursements divide between
@@ -131,7 +132,7 @@ export async function doSaveExcel(){
   // validation.legacy-unmapped, which IS bypassable -- so a mis-shaped code
   // here would quietly offer the filer a "continue anyway" button that
   // produces a workbook attributing money to the wrong bank account.
-  const b4Issues = planSchB4Export(window.D?.schB4, window.D?.schB4Accounts, SCH_B4_ACCOUNT_BLOCKS)
+  const b4Issues = planSchB4Export(getD()?.schB4, getD()?.schB4Accounts, SCH_B4_ACCOUNT_BLOCKS)
     .problems.map(p => createIssue(`excel.capacity.${type}.schB4-${p.code}`, {
       message: p.message,
       label: 'Schedule B-4 — All Other Disbursements',
@@ -139,10 +140,10 @@ export async function doSaveExcel(){
       route: '/schb4',
     }));
   const capacityIssues = [
-    ...getExcelCapacityIssues(type, window.D, ANNUAL_EXCEL_CAPS),
+    ...getExcelCapacityIssues(type, getD(), ANNUAL_EXCEL_CAPS),
     ...b4Issues,
   ];
-  const authorization = authorizeFilingOutput(window.D, () => validateAnnual(), {
+  const authorization = authorizeFilingOutput(getD(), () => validateAnnual(), {
     capability: 'excel',
     additionalIssues: capacityIssues,
   });
@@ -166,7 +167,7 @@ export async function doSaveExcel(){
   const btn = beginExport('[data-annual-action="save-excel"]');
   if (!btn) return;
   try{
-    const inv=window.D;
+    const inv=getD();
     const templateB64=await ensureTemplate('annual');
     if(!templateB64){await alertModal('Template not loaded. Please import the Excel template first.');return;}
 
@@ -611,7 +612,7 @@ export async function importExcel(input){
       const gcPct=(ws,addr)=>{const v=gcv(ws,addr);if(v==null||v==='')return '';const n=typeof v==='number'?v:parseFloat(v);if(isNaN(n))return '';return n<=1?String(r2(n*100)):String(n);};
       const rowHasData=(...vals)=>vals.some(v=>v!=null&&String(v).trim()!=='');
 
-      const D=window.D;
+      const D=getD();
 
       // PART I — cover
       const p1=workbook.getWorksheet('PART I');

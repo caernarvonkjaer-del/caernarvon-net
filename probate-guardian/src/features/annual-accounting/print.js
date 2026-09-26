@@ -23,6 +23,7 @@ import { renderOutputAdvisories } from '../../core/filing/output-advisories.js';
 import { alertModal } from '../../core/ui/dialogs.js';
 import { beginExport } from '../../core/ui/export-guard.js';
 import { formDisplayName } from '../../core/filing/filing-registry.js';
+import { getD } from '../../core/state.js';
 
 function buildModelForPreview(D){
   return buildAnnualAccountingModel(D, { printDate: new Date().toISOString().slice(0, 10) });
@@ -36,15 +37,15 @@ const {
 
 export function pagePrintAnnual(capOver){
   window.queueAllScheduleDocValidations?.();
-  const baseIssues=()=>[...validateAnnual(), ...getSupplementalFilingIssues(window.D)];
-  const preflight=prepareFilingOutput(window.D,baseIssues);
+  const baseIssues=()=>[...validateAnnual(), ...getSupplementalFilingIssues(getD())];
+  const preflight=prepareFilingOutput(getD(),baseIssues);
   const errors=preflight.messages;
   // Milestone 38D/44B: Save as PDF's disabled state reflects only what
   // actually blocks the pdf capability, via authorizeFilingOutput() -- the
   // banner/panel below stays driven by the full, capability-agnostic
   // preflight so every outstanding requirement is still visible.
-  const pdfBlocked=authorizeFilingOutput(window.D,baseIssues,{capability:'pdf'}).status!=='allowed';
-  const supplementalWarning=getSupplementalAccessibilityWarning(window.D);
+  const pdfBlocked=authorizeFilingOutput(getD(),baseIssues,{capability:'pdf'}).status!=='allowed';
+  const supplementalWarning=getSupplementalAccessibilityWarning(getD());
   highlightErrors(errors);
   return `<div>
     <h1 class="visually-hidden">Print Preview</h1>
@@ -77,7 +78,7 @@ export function pagePrintAnnual(capOver){
       </div>
     </div>
     ${errors.length?validationPanel(errors):''}
-    ${renderReadinessCard({ filingType: preflight.descriptor?.inventoryType, data: window.D, validationIssues: preflight.structuredIssues })}
+    ${renderReadinessCard({ filingType: preflight.descriptor?.inventoryType, data: getD(), validationIssues: preflight.structuredIssues })}
     ${renderOutputAdvisories(preflight.advisories)}
     ${supplementalWarning?`<div class="alert alert-warning no-print" role="status">${supplementalWarning}</div>`:''}
     ${capOver.length?excelCapacityPanel(capOver):''}
@@ -86,14 +87,14 @@ export function pagePrintAnnual(capOver){
 }
 
 export async function mountPreview(){
-  const baseIssues = () => [...validateAnnual(), ...getSupplementalFilingIssues(window.D)];
-  window.printCurrentFilingPdf = () => printGeneratedPdf(buildModelForPreview, window.D, baseIssues);
-  await mountPdfPreview(buildModelForPreview, window.D, baseIssues, undefined, { annotate: true });
+  const baseIssues = () => [...validateAnnual(), ...getSupplementalFilingIssues(getD())];
+  window.printCurrentFilingPdf = () => printGeneratedPdf(buildModelForPreview, getD(), baseIssues);
+  await mountPdfPreview(buildModelForPreview, getD(), baseIssues, undefined, { annotate: true });
 }
 
 export async function doSavePdf(){
-  const baseIssues = () => [...validateAnnual(), ...getSupplementalFilingIssues(window.D)];
-  const authorization = authorizeFilingOutput(window.D, baseIssues, { capability: 'pdf' });
+  const baseIssues = () => [...validateAnnual(), ...getSupplementalFilingIssues(getD())];
+  const authorization = authorizeFilingOutput(getD(), baseIssues, { capability: 'pdf' });
   if (authorization.status !== 'allowed') {
     renderPage('/print');
     await alertModal(`Cannot export — ${authorization.issues.length} required field${authorization.issues.length === 1 ? '' : 's'} missing. See the list on this page.`);
@@ -104,13 +105,13 @@ export async function doSavePdf(){
   // both blocked by the browser as "multiple files."
   const btn = beginExport('[data-annual-action="save-pdf"]');
   if (!btn) return;
-  const preflight=prepareFilingOutput(window.D, baseIssues);
-  const ward=(window.D.wardName||'AnnualAccounting').trim().replace(/[^a-z0-9]/gi,'_');
-  const formSlug=(preflight.descriptor?.displayName||formDisplayName(window.D.inventoryType)).replace(/[^a-z0-9]/gi,'');
+  const preflight=prepareFilingOutput(getD(), baseIssues);
+  const ward=(getD().wardName||'AnnualAccounting').trim().replace(/[^a-z0-9]/gi,'_');
+  const formSlug=(preflight.descriptor?.displayName||formDisplayName(getD().inventoryType)).replace(/[^a-z0-9]/gi,'');
   const filename=`${ward}_${formSlug}.pdf`;
 
   try{
-    const model = buildAnnualAccountingModel(window.D, {
+    const model = buildAnnualAccountingModel(getD(), {
       printDate: new Date().toISOString().slice(0, 10),
     });
     const doc = await generateCourtFormPdf(model);

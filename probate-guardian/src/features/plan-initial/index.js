@@ -55,6 +55,7 @@ import { formatDisplayDate } from '../../core/form/date-parser.js';
 import { INITIAL_ADLS, INITIAL_ADL_RATINGS } from '../../core/filing/models/plan-initial.js';
 import { normalizePlanGuardians } from '../../core/filing/models/plan-rows.js';
 import { planInitialCompletion } from '../../core/status/completion.js';
+import { getD } from '../../core/state.js';
 // Initial Guardianship Plan — the fourth feature extraction (Milestone 5,
 // Phases A and B of INDEX-SPLIT-PLAN.md's migration sequence: data/
 // validation/pages/nav, and print/PDF export). Dynamically imported by
@@ -109,7 +110,7 @@ const attorneyMarkerAborts = new WeakMap();
  * them would move the caret and drop focus mid-word.
  */
 function syncAttorneyEmailRequired(container) {
-  const d = window.D;
+  const d = getD();
   if (!container || !d) return;
   const required = isPlanInitialAttorneyStarted(d);
   // `input[...]`, not a bare attribute match: once this section reports
@@ -160,10 +161,10 @@ function ensurePrintModule() {
 export async function mount(container, page) {
   // Milestone 68C: a plan saved before the Certificate of Service existed
   // gains its fields on load. Idempotent, so every mount may call it.
-  if (migratePlanCertificateOfService(window.D)) window.autoSave?.();
+  if (migratePlanCertificateOfService(getD())) window.autoSave?.();
   // Milestone 68E: questions 2, 4 and 5 saved as one string read back as
   // their boxes. Idempotent, so every mount may call it.
-  if (migratePlanInitialMultiselect(window.D)) window.autoSave?.();
+  if (migratePlanInitialMultiselect(getD())) window.autoSave?.();
   let html;
   let isPrint = false;
   if (page === '/print') {
@@ -193,7 +194,7 @@ export async function mount(container, page) {
   signatureHandles.delete(container);
   if (page === '/p9' || page === '/p10' || page === '/p11') {
     signatureHandles.set(container, mountSignatureStateControls(container, {
-      setImage: (imagePath, dataUrl) => window.setPath(window.D, imagePath, dataUrl),
+      setImage: (imagePath, dataUrl) => window.setPath(getD(), imagePath, dataUrl),
       route: page,
     }));
   }
@@ -252,7 +253,7 @@ function buildNavPlanInitial(container){
 }
 
 function getSummaryConfigPlanInitial(){
-  const d=window.D;
+  const d=getD();
   // This filing's own section marks (Milestone 70, 70D: its engine's evaluator,
   // imported; it was window.computeNavChecks()).
   const nav=planInitialCompletion(d);
@@ -297,7 +298,7 @@ function getSummaryConfigPlanInitial(){
 }
 
 function pagePlanICover(){
-  const d=window.D;
+  const d=getD();
   return `<div class="schedule-page">
     <h1>Initial Guardianship Plan — Cover</h1>
     <div class="schedule-instructions">This report, with original signatures, is due within <strong>60 days</strong> after the Letters of Guardianship are signed, and remains in effect until amended or replaced by the approval of an Annual Guardianship Plan.</div>
@@ -348,7 +349,7 @@ function pagePlanICover(){
 }
 
 function pagePlanISettingMedical(){
-  const d=window.D;
+  const d=getD();
   const cb=(id,label,route='')=>chkP(id,label,d[id],route);
   return `<div class="schedule-page">
     <h1>2–3. Residential Setting &amp; Medical Services</h1>
@@ -377,7 +378,7 @@ function pagePlanISettingMedical(){
 }
 
 function pagePlanIMentalPersonal(){
-  const d=window.D;
+  const d=getD();
   return `<div class="schedule-page">
     <h1>4–5. Mental Health &amp; Personal Care</h1>
     ${planQ('4','For the plan period, the guardian proposes the following as to the provision of mental health services for the Ward:',
@@ -396,7 +397,7 @@ function pagePlanIMentalPersonal(){
 }
 
 function pagePlanISocialBenefits(){
-  const d=window.D;
+  const d=getD();
   const cb=(id,label,route='')=>chkP(id,label,d[id],route);
   return `<div class="schedule-page">
     <h1>6–7. Socialization &amp; Benefits</h1>
@@ -436,7 +437,7 @@ function pagePlanISocialBenefits(){
 }
 
 function pagePlanIProviders(){
-  const d=window.D;
+  const d=getD();
   const rows=(d.q9Providers||[]).map((r,i)=>{
     return `<div class="col-12 col-lg-6"><div class="entry-card mb-2">
       <div class="entry-card-header">
@@ -467,7 +468,7 @@ function pagePlanIProviders(){
 }
 
 function pagePlanIADLs(){
-  const d=window.D;
+  const d=getD();
   const adls=d.adls||{};
   const ratings=INITIAL_ADL_RATINGS.slice(1);
   const rows=INITIAL_ADLS.map(([k,label])=>{
@@ -488,7 +489,7 @@ function pagePlanIADLs(){
 }
 
 function pagePlanIDisabilities(){
-  const d=window.D;
+  const d=getD();
   const cb=(id,label,route='')=>chkP(id,label,d[id],route);
   return `<div class="schedule-page">
     <h1>10B–D. Disabilities &amp; Assistive Devices</h1>
@@ -533,7 +534,7 @@ function pagePlanIDisabilities(){
 }
 
 function pagePlanIDirectives(){
-  const d=window.D;
+  const d=getD();
   const cb=(id,label,route='')=>chkP(id,label,d[id],route);
   const dirs=(d.q11Directives||[]).map((r,i)=>{
     return `<div class="col-12"><div class="entry-card mb-2">
@@ -612,7 +613,7 @@ function pagePlanIDirectives(){
 }
 
 function pagePlanISignatures(){
-  const d=window.D;
+  const d=getD();
   const cb=(id,label,route='')=>chkP(id,label,d[id],route);
   const g=(i,title)=>{
     const gd=(d.planGuardians||[])[i]||{};
@@ -659,7 +660,7 @@ function pagePlanISignatures(){
 }
 
 function pagePlanIAttorney(){
-  const d=window.D;
+  const d=getD();
   return `<div class="schedule-page">
     <h1>Certification and Signature of Guardian's Attorney</h1>
   ${preparerNoteHTML()}
@@ -691,7 +692,7 @@ function pagePlanIAttorney(){
 
 // Milestone 42F: every issue states its own field path (validation-issue.js).
 export function validatePlanInitial(){
-  const d=window.D;
+  const d=getD();
   const errs=[];
   const T='planInitial';
   const issue=issueFactory(T);
@@ -838,7 +839,7 @@ window.validatePlanInitial = validatePlanInitial;
 const CERT_CFG = { attorneyName: (d) => d.attorney_name || '', planNoun: 'plan' };
 function pagePlanICertificate(){
   return `<div class="schedule-page">
-    ${renderPlanCertificateOfServicePage({ filing: window.D, route: '/p11', cfg: CERT_CFG })}
+    ${renderPlanCertificateOfServicePage({ filing: getD(), route: '/p11', cfg: CERT_CFG })}
     ${pageNavS('/p10',null)}
   </div>`;
 }

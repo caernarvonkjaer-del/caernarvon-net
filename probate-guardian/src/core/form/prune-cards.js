@@ -8,6 +8,7 @@
 // never ran -- the defect master fixed in b28bf25, carried here.
 import { mk } from '../filing/models/guardian.js';
 import { formEngine } from '../filing/filing-registry.js';
+import { getD } from '../state.js';
 
 // Financial line-item schedules covered by pruneBlankCards() (the router runs
 // it on leaving a page), keyed by their property on D, each mapped to the exact blank
@@ -88,7 +89,7 @@ export function isBlankScheduleEntry(key, entry, registry = BLANK_SCHEDULE_ENTRY
  * Returns the count of removed cards.
  */
 export function pruneBlankCards(targetData, targetType) {
-  const data = targetData || (typeof window !== 'undefined' ? window.D : null);
+  const data = targetData || (typeof window !== 'undefined' ? getD() : null);
   if (!data) return 0;
   // The filing's own type. (This read window.activeInventoryType until
   // Milestone 70's 70C -- the same value for the open filing, which is the one

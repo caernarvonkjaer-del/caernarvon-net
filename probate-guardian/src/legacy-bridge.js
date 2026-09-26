@@ -37,6 +37,8 @@ import {
   formEngine, formDisplayName, INVENTORY_TYPES, INVENTORY_TYPE_META, typeIcon, initializeEmptyData, FILING_PAGES,
   computeCompletion as computeNavChecks, filingProgress as getWardProgress,
 } from './core/filing/filing-registry.js';
+import { getActiveWard } from './core/state.js';
+import { provideMonolithServices } from './core/runtime/monolith.js';
 import { emptyRowAnnual } from './core/filing/models/annual.js';
 import { PAGES_GUARDIAN, SCHEDULE_NAV_KEYS } from './core/filing/models/guardian.js';
 import { emptyPlanResidence, emptyPlanProvider } from './core/filing/models/plan-annual.js';
@@ -60,6 +62,8 @@ export const LEGACY_BRIDGE = Object.freeze({
   planGuardianMax, normalizePlanGuardians, planEmptyRow,
   // 70D -- completion (the monolith's names for them)
   computeNavChecks, getWardProgress, SCHEDULE_NAV_KEYS,
+  // 70E -- the case-state seam, and the door the other way (src/core/runtime/monolith.js)
+  getActiveWard, provideMonolithServices,
 });
 
 if (typeof window !== 'undefined') {

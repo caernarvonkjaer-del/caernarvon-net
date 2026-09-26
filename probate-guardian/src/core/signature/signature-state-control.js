@@ -9,6 +9,7 @@ import { mountSignaturePad } from './signature-pad.js';
 // below for why applying one copies bytes rather than storing a reference.
 import { partyForSignaturePath, getActiveSignatureImage, addSignatureImage } from '../party-resolver.js';
 import { confirmModal } from '../ui/dialogs.js';
+import { getD } from '../state.js';
 
 function esc(s) {
   return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -103,7 +104,7 @@ export function mountSignatureStateControls(container, { setImage, route }) {
         // and never blocks signing: a filing whose slot isn't linked to a
         // party yet still signs normally, it just has nothing to reuse later.
         try {
-          const party = partyForSignaturePath(window.D, path);
+          const party = partyForSignaturePath(getD(), path);
           if (party) addSignatureImage(party, dataUrl);
         } catch (e) {
           console.warn('Could not record reusable signature stamp', e);
@@ -142,7 +143,7 @@ export function mountSignatureStateControls(container, { setImage, route }) {
 function mountSavedStampAffordance(mountEl, path, commitImage) {
   let party = null;
   try {
-    party = partyForSignaturePath(window.D, path);
+    party = partyForSignaturePath(getD(), path);
   } catch { /* an unlinked slot simply has nothing to offer */ }
   const active = party ? getActiveSignatureImage(party) : null;
   if (!active || !active.imageData) return;

@@ -22,7 +22,6 @@ interface Window {
   _securityMode: any;
   _templateCache: any;
   _transientDrafts: any;
-  _visitedPages: any;
   acquireWardLock: any;
   activateWard: any;
   activeInventoryType: any;
@@ -157,11 +156,9 @@ interface Window {
   formatSafeTitleCase: any;
   generateSaltB64: any;
   getActiveSignatureImage: any;
-  getActiveWard: any;
   getCaseFile: any;
   getCurrentLockedWardId: any;
   getCurrentPage: any;
-  getCurrentPageKey: any;
   getFieldDraftDisplay: any;
   getFieldDraftIssueMessages: any;
   getFieldDraftIssues: any;

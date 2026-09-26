@@ -2,8 +2,8 @@
 
 ## Status
 
-**70A complete (2026-09-24); 70T, 70B, 70C and 70D complete (2026-09-25) --
-see their build records. Every remaining delivery, 70E through 70L, is approved.** The
+**70A complete (2026-09-24); 70T, 70B, 70C and 70D complete (2026-09-25); 70E
+complete (2026-09-26) -- see their build records. Every remaining delivery, 70F through 70L, is approved.** The
 requester approved delivery 70A on 2026-09-24 and it is complete on the
 `milestone-70` branch (see the 70A build record), then approved 70T. On
 2026-09-25 the requester approved every delivery after it ("Finish ms 70. That
@@ -1273,6 +1273,34 @@ existing object identity and live update behavior remain intact. A transaction
 causes each required side effect once, and direct mutation outside an approved
 transition path is rejected by the audit/test guard where mechanically
 detectable.
+
+### 70E build record
+
+Approved with every later delivery on 2026-09-25 (see Status). Everything
+below is on the `milestone-70` branch.
+
+**What a filer sees.** Nothing, by design. Every module now reads and writes
+the open filing and the case through one place, `src/core/state.js`, instead
+of reaching for them on `window`; the objects are the same ones the monolith
+holds, so every edit, save and screen behaves as before.
+
+**Done, with evidence.**
+
+| Item | Evidence |
+| --- | --- |
+| Commit | Named in the next docs commit (the whole delivery; gate evidence in its message). |
+| The seam | `src/core/state.js` reads the monolith's live references -- the case (`window.caseFile`, which the monolith keeps on the same object as its `caseFile` and republishes in the one place it replaces it, `lockApp()`), the open filing (`window.D`), and its lexical `activeInventoryType`, `_appState` and `_templateCache` through the accessors it defines -- and keeps no copy. With a page its Node stand-ins are never written; before, `setD()`, `setCaseFile()` and `setAppState()` wrote a module copy alongside `window`, and `getActiveWard()` went back to `window.getActiveWard()`. New: `getActiveFiling()`, `getActiveInventoryType()`/`setActiveInventoryType()`, and `getActiveWard()` computed here, exactly as the monolith's (null with none open, `find()` otherwise), which is now a one-line wrapper onto it. Every access is written as `window.X`, so the audit sees it. |
+| The store API | `select(selector)`, `transaction(reason, mutator)` and `subscribe(listener, { signal })`: zero-copy (live objects in, the filing changed in place), one writer. A transaction runs its side effects once each, in order -- the filing's revision marked changed, the save scheduled, subscribers told -- and none when the mutator throws. `main.js` wires them at startup: the revision counter it imports, and the monolith's own `autoSave()`. `replaceCaseFile()` waits for 70J: the monolith is still the only code that replaces the case, and a module that did would leave its `caseFile` behind. |
+| Modules | 359 reads through `window` became `state.js` calls (`window.D` to `getD()`, `window.caseFile` and `window.getCaseFile()` to `getCaseFile()`, `window.getActiveWard()` to `getActiveWard()`) across 36 modules, by an AST rewrite that also dropped the `typeof window.X === 'function'` guards; by hand, the router's and validation routing's reads of the filing type, the filing lifecycle's writes of it and of `firstLaunchSeen`, and the dashboard's load-time copy of `getCaseFile`. |
+| Went | `main.js`'s `window.D`/`window.caseFile` accessors, installed "for the test harness" only if the monolith had not defined both first -- which it always had, so they never ran; a writable accessor over the monolith's state is the second authority the plan forbids. The monolith's `getCaseFile()` and its `window` publication (no caller left). `_visitedPages`, dead on both sides: a `let` is never a window property, so the three module references could never run. `state.js`'s unused `setTemplateCache()` and `_auditLogEntries`. |
+| The door the other way | `src/core/runtime/monolith.js`: the monolith hands moved code the functions it calls back -- `autoSave()` so far -- once, from the start of `initApp()`, through one one-line bridge wrapper (`provideMonolithServices()`); a module calls `monolith.autoSave()` only inside a function, and a name never handed in throws. `tests/unit/monolith-services.spec.js` holds its rules; red first, providing `updateNavDots`, which no module calls, failed it. |
+| The list 70J empties | `scripts/ms70-classic-state.mjs` counts the monolith's own reads and writes of the case state it still owns -- bare `D`, its lexical `caseFile` and `activeInventoryType`, `window.D` and `window.caseFile` -- by enclosing declaration: 229 accesses in 90 entries (`tests/baseline/ms70-classic-state.json`). It may only shrink; 70J needs it empty before the module store becomes the owner. |
+| The gate's guard | `tests/unit/ms70-state-seam.spec.js`: no module but `state.js` reads or writes the monolith's state on `window` (member reads and load-time destructures), the list above may only shrink, and the seam's behaviour -- live objects, the owner's reassignment seen at once, `getActiveWard()` as the monolith answered it, the filing type and app state written where the monolith reads them, a transaction's side effects once each and in order, subscribers leaving by function or `AbortSignal`, `main.js`'s wiring and no `window` accessor. Red first: a module reading `window.D` and a new bare `caseFile` read in the monolith each failed it. |
+| Stays, with reasons | The test adapter (`src/core/testing/testing-adapter.js`) reads its injected host object, not the global -- its unit spec drives it with a stand-in page, and it is installed only when a test sets the pre-boot flag -- so it keeps its own swap of the open filing for judging a fixture. The six in-memory state operations the review had placed here (`saveWardToState()`, `deleteWardFromState()`, `saveTemplate()`, `loadTemplate()`, `appendAuditLogEntry()`, `loadAuditLogEntries()`) schedule `autoSave()` and write the monolith's template cache and audit buffer: 70I's persistence service owns those, so they move there (review override `persistence`). |
+| Ratchet exceptions | Two, recorded here with their removal delivery. (1) `src/core/state.js::activeInventoryType` in `windowReads` and `windowWrites`: the seam is the one module that reaches the monolith's filing type, in place of the router's and validation routing's reads and the filing lifecycle's writes (all three gone); it goes in 70J. (2) `src/legacy-app.js::provideMonolithServices` in `classicDeclarations`: the door the other way; it goes with the monolith (70L at the latest). Everything else fell: `classicDeclarations` 420 to 419 (with `getCaseFile` and `_visitedPages` gone), `windowWrites` 291 to 287, `windowReads` 511 to 467, `evalTimeWindowDestructures` 138 to 137, `lexicalOnlyWindowReads` 2 to 0. |
+| Findings | (1) `state.js` kept a second copy: `setD()`, `setCaseFile()` and `setAppState()` wrote a module-level copy as well as `window`, a shadow store read only when `window` lacked the value -- never in the app, but the structure the plan forbids. (2) `main.js`'s `window.D`/`window.caseFile` accessors had never been installed in the app, since the monolith defines both first; had they been, writing through them would have left the monolith's lexical `caseFile` on the old case. (3) Two implementations of one accessor: `state.js`'s fallback `getActiveWard()` answered null for a filing id missing from the case, the monolith's `undefined`; modules in the app always got the monolith's, which is now the only one. (4) `_visitedPages` confirmed dead: nothing in the monolith reads it, and the three module references could never run. |
+
+**Gate run.** The full `npm test` on this tree, 2026-09-26: unit 2001/2001 (147 files); browser 896 passed, 7 skipped, 0 failed (1.5 h, source profile, chromium) -- 903 tests, as 70D. `check:types` clean. A first run stopped in the unit phase: `ms70-state-seam.spec.js`'s walk of every module took 7.9 s on a cold start, past vitest's 5-second default; the source-parsing tests in 70E's two new specs got the repo's 60-second allowance (as `b4-block-map.spec.js`, `ms70-70T-guard.spec.js` and `ms70-assertion-counts.spec.js` have), and the gate was run again from the start.
 
 ---
 

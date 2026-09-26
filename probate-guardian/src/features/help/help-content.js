@@ -1,4 +1,5 @@
 import { hasSixthCircuitLocalGuidance } from '../../core/filing/county-guidance.js';
+import { getD } from '../../core/state.js';
 
 export const HELP_CONTENT = Object.freeze({
   'default': {
@@ -94,7 +95,7 @@ export const HELP_CONTENT = Object.freeze({
     <div class="help-section-title">Before You File</div>
     <p>Print Preview includes a <strong>readiness check</strong> that mirrors what the Clerk of Court looks for when reviewing a plan — plus reminders for the steps the app can't verify, like serving copies on interested persons.</p>
     <p>Export as PDF when you're done. This form has no Excel version.</p>
-    ${hasSixthCircuitLocalGuidance(typeof window !== 'undefined' ? window.D?.county : undefined) ? `<div class="help-section-title">Where to File</div>
+    ${hasSixthCircuitLocalGuidance(typeof window !== 'undefined' ? getD()?.county : undefined) ? `<div class="help-section-title">Where to File</div>
     <p>This form is signed by hand, so the <strong>original</strong> — with original signatures — goes to the Clerk of the Circuit Court for the county your guardianship is in: Pinellas and Pasco each take their own filings, at their own office. The clerk's website lists the current address, phone number and email for probate filings; check there rather than relying on a figure printed inside an app, which can go out of date without anyone noticing.</p>
     <p>General instructions for e-filing Florida court documents are at <strong>myflcourtaccess.com</strong>. For questions about <em>procedure</em> rather than filing mechanics — what the court expects, how a hearing is set — the circuit's guardianship division is the right place to ask, and the clerk's office will point you to it.</p>` : ''}`
   },
@@ -126,7 +127,7 @@ export const HELP_CONTENT = Object.freeze({
     <p>If you are guardian of both the person and the property, you file one of each. Create a separate form for each and give both the same case number — the dashboard will group them together.</p>
     <div class="help-section-title">When It's Due</div>
     <p>Within <strong>60 days</strong> after the Letters of Guardianship are signed (F.S. 744.362(1)) — this is a shorter deadline than the Annual Plan's 90 days. This is the very first person-side filing after a guardianship of the person is established, and it remains in effect until it's amended or replaced by an Annual Guardianship Plan.</p>
-    ${hasSixthCircuitLocalGuidance(typeof window !== 'undefined' ? window.D?.county : undefined) ? `<div class="help-section-title">Don't Forget the Disaster Plan</div>
+    ${hasSixthCircuitLocalGuidance(typeof window !== 'undefined' ? getD()?.county : undefined) ? `<div class="help-section-title">Don't Forget the Disaster Plan</div>
     <p>Local Sixth Judicial Circuit requirement (Administrative Order): a separate <strong>Disaster Plan</strong> must be filed alongside every initial guardianship plan, covering how the ward's needs will be met if the guardian or ward must relocate in an emergency. <strong>The app does not produce that document</strong> — you file it separately. If the ward is a minor child residing with their parent or another relative who is serving as guardian, that guardian is exempt from this requirement.</p>` : ''}
     <div class="help-section-title">Activities of Daily Living</div>
     <p>Rate all fifteen honestly. These become the baseline the court compares future Annual Plans against.</p>

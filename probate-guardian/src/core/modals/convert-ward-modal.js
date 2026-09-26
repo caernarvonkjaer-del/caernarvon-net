@@ -1,5 +1,5 @@
 // Modal orchestration for converting an existing ward filing to another form type.
-import { getCaseFile } from '../state.js';
+import { getCaseFile, getActiveWard } from '../state.js';
 import { convertTargetsFor } from '../filing/filing-descriptor.js';
 import { alertModal } from '../ui/dialogs.js';
 import { INVENTORY_TYPES } from '../filing/filing-registry.js';
@@ -32,7 +32,7 @@ export async function showConvertWardModal() {
   // without noticing. Default to the active ward; fall back to the first
   // ward only when nothing is active (e.g. opened straight from the
   // dashboard with no filing selected).
-  const activeWard = (typeof window !== 'undefined' && typeof window.getActiveWard === 'function') ? window.getActiveWard() : null;
+  const activeWard = getActiveWard();
   const defaultWard = activeWard || caseFile.wards[0];
   const input = document.getElementById('convert-source-ward');
   if (input) {

@@ -3,6 +3,7 @@
 // included file). This file itself was never written with JSDoc types and
 // isn't part of the deliberate check:types surface (AGENTS.md §1) -- opting
 // out documents that honestly instead of inventing types nobody asked for.
+import { getActiveInventoryType } from '../state.js';
 
 // Milestone 24: Structured Validation Error Adapter & Resilient Jump Link Handler
 
@@ -133,7 +134,7 @@ const PLAN_SECTION_ROUTE_MAPS = {
 export function resolveRouteFromSection(sectionStr, filingType) {
   if (!sectionStr) return '/';
   const clean = String(sectionStr).trim();
-  const type = filingType || (typeof window !== 'undefined' && window.activeInventoryType);
+  const type = filingType || getActiveInventoryType();
   if (typeof window !== 'undefined' && typeof window.errorRoute === 'function') {
     const viaLegacy = window.errorRoute(clean, type);
     if (viaLegacy) return viaLegacy;

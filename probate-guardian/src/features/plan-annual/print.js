@@ -21,6 +21,7 @@ import { renderOutputAdvisories } from '../../core/filing/output-advisories.js';
 import { renderReadinessCard } from '../../core/filing/readiness-card.js';
 import { alertModal } from '../../core/ui/dialogs.js';
 import { beginExport } from '../../core/ui/export-guard.js';
+import { getD } from '../../core/state.js';
 
 const {
   highlightErrors, validationPanel,
@@ -32,15 +33,15 @@ const {
 // rendered by the shared readiness card below.
 export function pagePrintPlanAnnual(){
   window.queueAllScheduleDocValidations?.();
-  const baseIssues=()=>[...validatePlanAnnual(), ...getSupplementalFilingIssues(window.D)];
-  const preflight=prepareFilingOutput(window.D,baseIssues);
+  const baseIssues=()=>[...validatePlanAnnual(), ...getSupplementalFilingIssues(getD())];
+  const preflight=prepareFilingOutput(getD(),baseIssues);
   const errors=preflight.messages;
   // Milestone 38D/44B: Save as PDF's disabled state reflects only what
   // actually blocks the pdf capability, via authorizeFilingOutput() -- the
   // banner/panel below stays driven by the full, capability-agnostic
   // preflight so every outstanding requirement is still visible.
-  const pdfBlocked=authorizeFilingOutput(window.D,baseIssues,{capability:'pdf'}).status!=='allowed';
-  const supplementalWarning=getSupplementalAccessibilityWarning(window.D);
+  const pdfBlocked=authorizeFilingOutput(getD(),baseIssues,{capability:'pdf'}).status!=='allowed';
+  const supplementalWarning=getSupplementalAccessibilityWarning(getD());
   highlightErrors(errors);
   return `<div>
     <h1 class="visually-hidden">Print Preview</h1>
@@ -56,20 +57,20 @@ export function pagePrintPlanAnnual(){
     ${errors.length?validationPanel(errors):''}
     ${renderOutputAdvisories(preflight.advisories)}
     ${supplementalWarning?`<div class="alert alert-warning no-print" role="status">${supplementalWarning}</div>`:''}
-    ${renderReadinessCard({ filingType: preflight.descriptor?.inventoryType, data: window.D, validationIssues: preflight.structuredIssues })}
+    ${renderReadinessCard({ filingType: preflight.descriptor?.inventoryType, data: getD(), validationIssues: preflight.structuredIssues })}
     <div id="print-doc-container"></div>
   </div>`;
 }
 
 export async function mountPreview(){
-  const baseIssues = () => [...validatePlanAnnual(), ...getSupplementalFilingIssues(window.D)];
-  window.printCurrentFilingPdf = () => printGeneratedPdf(buildPlanAnnualModel, window.D, baseIssues);
-  await mountPdfPreview(buildPlanAnnualModel, window.D, baseIssues, undefined, { annotate: true });
+  const baseIssues = () => [...validatePlanAnnual(), ...getSupplementalFilingIssues(getD())];
+  window.printCurrentFilingPdf = () => printGeneratedPdf(buildPlanAnnualModel, getD(), baseIssues);
+  await mountPdfPreview(buildPlanAnnualModel, getD(), baseIssues, undefined, { annotate: true });
 }
 
 export async function doSavePdf(){
-  const baseIssues = () => [...validatePlanAnnual(), ...getSupplementalFilingIssues(window.D)];
-  const authorization = authorizeFilingOutput(window.D, baseIssues, { capability: 'pdf' });
+  const baseIssues = () => [...validatePlanAnnual(), ...getSupplementalFilingIssues(getD())];
+  const authorization = authorizeFilingOutput(getD(), baseIssues, { capability: 'pdf' });
   if (authorization.status !== 'allowed') {
     renderPage('/print');
     await alertModal(`Cannot export — ${authorization.issues.length} required field${authorization.issues.length === 1 ? '' : 's'} missing. See the list on this page.`);
@@ -80,9 +81,9 @@ export async function doSavePdf(){
   // both blocked by the browser as "multiple files."
   const btn = beginExport('[data-form-action="save-pdf-plan-annual"]');
   if (!btn) return;
-  const ward=(window.D.wardName||'AnnualGuardianshipPlan').replace(/[^a-z0-9]/gi,'_');
+  const ward=(getD().wardName||'AnnualGuardianshipPlan').replace(/[^a-z0-9]/gi,'_');
   try{
-    const model = buildPlanAnnualModel(window.D);
+    const model = buildPlanAnnualModel(getD());
     const doc = await generateCourtFormPdf(model);
     await saveFinalizedPdf(await finalizeCourtFormPdf(doc), `${ward}_AnnualGuardianshipPlan.pdf`);
   }catch(e){

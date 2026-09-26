@@ -1,4 +1,5 @@
 import { prepareFilingOutput } from './output-preflight.js';
+import { getCaseFile } from '../state.js';
 
 let revision = 0;
 let acknowledgement = null;
@@ -9,7 +10,7 @@ export function markFilingRevisionChanged() { revision += 1; clearOutputAcknowle
 export function beginFreshPreview() { clearOutputAcknowledgement(); }
 
 function identityFor(data, descriptor) {
-  return { wardId: data?.wardId || window.getCaseFile?.().activeWardId || '', inventoryType: descriptor?.inventoryType || data?.inventoryType || '' };
+  return { wardId: data?.wardId || getCaseFile().activeWardId || '', inventoryType: descriptor?.inventoryType || data?.inventoryType || '' };
 }
 
 export function isOutputAcknowledgedFor(data, descriptor) {

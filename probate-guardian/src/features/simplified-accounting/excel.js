@@ -14,6 +14,7 @@ import { calcTotals } from './totals.js';
 import { guardianHasAnyData } from '../../core/validation/row-started.js';
 import { assertWorkbookWithinLimits, getImportProgressEl, sanitizeObjectDataInPlace, validateImportFile } from '../../core/security/input-hardening.js';
 import { capitalizeImportedFields } from '../../core/form/form-contract.js';
+import { getD } from '../../core/state.js';
 
 const {
   renderPage, ensureTemplate,
@@ -36,8 +37,8 @@ function guardianSlotsFromWorkbook(sheet) {
 }
 
 export async function doSaveExcel(){
-  const capacityIssues = getExcelCapacityIssues('simplified', window.D, SIMPLIFIED_EXCEL_CAPS);
-  const authorization = authorizeFilingOutput(window.D, () => validateSimplified(), {
+  const capacityIssues = getExcelCapacityIssues('simplified', getD(), SIMPLIFIED_EXCEL_CAPS);
+  const authorization = authorizeFilingOutput(getD(), () => validateSimplified(), {
     capability: 'excel',
     additionalIssues: capacityIssues,
   });
@@ -61,7 +62,7 @@ export async function doSaveExcel(){
   const btn = beginExport('[data-simplified-action="save-excel"]');
   if (!btn) return;
   try{
-    const inv=window.D;
+    const inv=getD();
     const templateB64=await ensureTemplate('simplified');
     if(!templateB64){await alertModal('Template not loaded. Please import the Excel template first.');return;}
 
@@ -295,45 +296,45 @@ export async function importExcel(input){
         // The same addresses doSaveExcel() writes -- see the note there. Both
         // sides used to be one row low together, which is exactly why the
         // round trip looked clean.
-        window.D.wardName=gc('C4');
-        window.D.caseNumber=gc('H4');
-        window.D.periodFrom=gc('E13').substring(0,10);
-        window.D.periodTo=gc('H13').substring(0,10);
-        window.D.attorney=gc('D15');
-        window.D.guardian=gc('D16');
-        window.D.typeOfGuardianship=gc('D17');
+        getD().wardName=gc('C4');
+        getD().caseNumber=gc('H4');
+        getD().periodFrom=gc('E13').substring(0,10);
+        getD().periodTo=gc('H13').substring(0,10);
+        getD().attorney=gc('D15');
+        getD().guardian=gc('D16');
+        getD().typeOfGuardianship=gc('D17');
         // No ward SSN: the workbook has no field for it, so an import leaves
         // whatever the filing already holds rather than blanking a required
         // field the file simply has nothing to say about. Reading E14/H14 for
         // the period used to return the same value twice -- both sit inside
         // the D14:I14 merge, so both resolved to that one master cell.
-        window.D.gid=gc('F4').substring(0,10);
+        getD().gid=gc('F4').substring(0,10);
         // Milestone 40C-A item 5: see annual-accounting/excel.js -- an imported
         // workbook with no county leaves the filing blank.
-        window.D.county=gc('G2')||'';
-        window.D.amendedForm=gc('I5');
+        getD().county=gc('G2')||'';
+        getD().amendedForm=gc('I5');
         // Part II's five inputs, at the addresses the workbook's own SUM
         // ranges define -- see the note beside the writer. Both sides read one
         // row low together, which is why the round trip looked clean while
         // every figure on the filed accounting was wrong.
-        window.D.startingBalance=gc('H19');
-        window.D.interestIncome=gc('G22');
-        window.D.depositsSettlement=gc('G23');
-        window.D.serviceCharges=gc('G27');
-        window.D.federalIncomeTax=gc('G28');
+        getD().startingBalance=gc('H19');
+        getD().interestIncome=gc('G22');
+        getD().depositsSettlement=gc('G23');
+        getD().serviceCharges=gc('G27');
+        getD().federalIncomeTax=gc('G28');
       }
 
       // PARTS III, IV — Guardians
       const p34=workbook.getWorksheet('PARTS III, IV');
       if(p34){
         const gc34=(addr)=>readCellText(p34.getCell(addr));
-        const g1=window.D.guardians[0]||{};
+        const g1=getD().guardians[0]||{};
         g1.signatureDate=gc34('D15').substring(0,10);
         // F15 is the workbook's own formula pulling Guardian #1's name from
         // PARTS I, II D16 -- the court's form treats the two as one name and
         // the exporter no longer writes over it, so this takes the value from
         // the cell that actually backs it rather than from a cached result.
-        g1.name=window.D.guardian||'';
+        g1.name=getD().guardian||'';
         g1.ssn=gc34('B17');
         g1.phone=gc34('B19');
         g1.email=gc34('B21');
@@ -341,11 +342,11 @@ export async function importExcel(input){
         g1.mailingCityStateZip=gc34('F19');
         g1.residenceStreet=gc34('F21');
         g1.residenceCityStateZip=gc34('F23');
-        if(!window.D.guardians[0])window.D.guardians[0]=g1;
+        if(!getD().guardians[0])getD().guardians[0]=g1;
 
         const g2Data=gc34('F25');
         if(g2Data){
-          const g2=window.D.guardians[1]||{};
+          const g2=getD().guardians[1]||{};
           g2.signatureDate=gc34('D25').substring(0,10);
           g2.name=g2Data;
           g2.ssn=gc34('B27');
@@ -355,12 +356,12 @@ export async function importExcel(input){
           g2.mailingCityStateZip=gc34('F29');
           g2.residenceStreet=gc34('F31');
           g2.residenceCityStateZip=gc34('F33');
-          if(!window.D.guardians[1])window.D.guardians[1]=g2;
+          if(!getD().guardians[1])getD().guardians[1]=g2;
         }
 
         const g3Data=gc34('F35');
         if(g3Data){
-          const g3=window.D.guardians[2]||{};
+          const g3=getD().guardians[2]||{};
           g3.signatureDate=gc34('D35').substring(0,10);
           g3.name=g3Data;
           g3.ssn=gc34('B37');
@@ -370,17 +371,17 @@ export async function importExcel(input){
           g3.mailingCityStateZip=gc34('F39');
           g3.residenceStreet=gc34('F41');
           g3.residenceCityStateZip=gc34('F43');
-          if(!window.D.guardians[2])window.D.guardians[2]=g3;
+          if(!getD().guardians[2])getD().guardians[2]=g3;
         }
       }
 
       // PARTS V, VI — Attorney and Certificate of Service
       if(p34){
         if(!(await confirmModal('Replace the first three guardian slots with the values from this workbook? Any additional saved guardians will be kept.'))) return;
-        const overflowRows=(window.D.guardians||[]).slice(3);
-        const overflowPartyIds=(window.D.guardianPartyIds||[]).slice(3);
-        window.D.guardians=[...guardianSlotsFromWorkbook(p34),...overflowRows];
-        window.D.guardianPartyIds=[null,null,null,...overflowPartyIds];
+        const overflowRows=(getD().guardians||[]).slice(3);
+        const overflowPartyIds=(getD().guardianPartyIds||[]).slice(3);
+        getD().guardians=[...guardianSlotsFromWorkbook(p34),...overflowRows];
+        getD().guardianPartyIds=[null,null,null,...overflowPartyIds];
       }
 
       const p56=workbook.getWorksheet('PARTS V, VI ');
@@ -392,26 +393,26 @@ export async function importExcel(input){
         // differ, so each is read from its own cells — falling back to the
         // Part VI copy only when Part V is blank, which is how hand-filled
         // forms and pre-fix exports tend to arrive.
-        window.D.attorney_barNumber=gc56('B19')||gc56('B43');
-        window.D.attorney_phone=gc56('B21')||gc56('B45');
-        window.D.attorney_street=gc56('J19')||gc56('J43');
-        window.D.attorney_cityStateZip=gc56('J21')||gc56('J45');
-        window.D.certServiceDate=gc56('H39').substring(0,10);
-        window.D.certIndicator=gc56('J39');
+        getD().attorney_barNumber=gc56('B19')||gc56('B43');
+        getD().attorney_phone=gc56('B21')||gc56('B45');
+        getD().attorney_street=gc56('J19')||gc56('J43');
+        getD().attorney_cityStateZip=gc56('J21')||gc56('J45');
+        getD().certServiceDate=gc56('H39').substring(0,10);
+        getD().certIndicator=gc56('J39');
         const attySignDate=gc56('H41').substring(0,10);
-        window.D.certAttySignDate=attySignDate;
+        getD().certAttySignDate=attySignDate;
         // The template exposes only one attorney signature-date cell (H41),
         // which the export fills from certAttySignDate falling back to
         // attorney_signatureDate. Mirroring it back into both keeps the value
         // from being dropped entirely on a round-trip.
-        window.D.attorney_signatureDate=attySignDate;
-        window.D.certAttyBarNumber=gc56('B43');
-        window.D.certAttyPhone=gc56('B45');
-        window.D.certAttyStreet=gc56('J43');
-        window.D.certAttyCityStateZip=gc56('J45');
+        getD().attorney_signatureDate=attySignDate;
+        getD().certAttyBarNumber=gc56('B43');
+        getD().certAttyPhone=gc56('B45');
+        getD().certAttyStreet=gc56('J43');
+        getD().certAttyCityStateZip=gc56('J45');
 
         // Certificate recipients
-        const r=window.D.certRecipients||[];
+        const r=getD().certRecipients||[];
         r[0]=r[0]||{};
         r[0].name=gc56('B27');
         r[0].line2=gc56('B28');
@@ -428,14 +429,14 @@ export async function importExcel(input){
         r[3].name=gc56('J33');
         r[3].line2=gc56('J34');
         r[3].line3=gc56('J35');
-        window.D.certRecipients=r;
+        getD().certRecipients=r;
       }
 
       // PART VII — Remuneration
       const p7=workbook.getWorksheet('PART VII');
       if(p7){
         const gc7=(addr)=>readCellText(p7.getCell(addr));
-        window.D.remuneration=[];
+        getD().remuneration=[];
         for(let row=6;row<=32;row++){
           const val=gc7(`A${row}`);
           if(val){
@@ -457,7 +458,7 @@ export async function importExcel(input){
               if(looksLikeAmount(parts[2]))amount=money(parts[2]);
               else description=parts[2];
             }
-            window.D.remuneration.push({
+            getD().remuneration.push({
               guardian:parts[0]||'',
               type:parts[1]||'',
               amount,
@@ -467,7 +468,7 @@ export async function importExcel(input){
         }
       }
 
-      capitalizeImportedFields(window.D);
+      capitalizeImportedFields(getD());
       // capitalizeImportedFields only reformats fields whose name looks like
       // a name/address (see its own keyword list) — it happens to strip
       // <>"'` from those via formatName/formatAddress, but fields outside
@@ -475,7 +476,7 @@ export async function importExcel(input){
       // never went through any of that. This is the same stripping
       // importExcelFile already applies to every field via sanitizeObjectData;
       // in-place because window.D is the live object saveData() persists.
-      sanitizeObjectDataInPlace(window.D);
+      sanitizeObjectDataInPlace(getD());
       autoSave();
       window.markFilingRevisionChanged?.('excel-import');
       setStatus(prog,'✓ Template loaded and data imported successfully.');

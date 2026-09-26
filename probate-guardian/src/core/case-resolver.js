@@ -12,6 +12,7 @@
 // two filings happening to share typed text, the same design rule party
 // linking follows and for the same reason (silent, fragile, invisible
 // grouping was the whole problem this rewrite exists to fix).
+import { getCaseFile } from './state.js';
 
 function newCaseId() {
   if (globalThis.crypto && typeof globalThis.crypto.randomUUID === 'function') return globalThis.crypto.randomUUID();
@@ -20,7 +21,7 @@ function newCaseId() {
 
 /** Follows nothing (Cases have no merge/tombstone concept, unlike parties) -- just a null-safe lookup by id. */
 export function resolveCase(caseId) {
-  const caseFile = window.caseFile;
+  const caseFile = getCaseFile();
   if (!caseId || !caseFile || !Array.isArray(caseFile.cases)) return null;
   return caseFile.cases.find(c => c.id === caseId) || null;
 }
@@ -40,7 +41,7 @@ export function countyOf(ward) {
 
 /** Creates a new Case, appends it to caseFile.cases, and returns it. */
 export function createCase({ caseNumber = '', county = '' } = {}) {
-  const caseFile = window.caseFile;
+  const caseFile = getCaseFile();
   const now = new Date().toISOString();
   const kase = {
     id: newCaseId(),

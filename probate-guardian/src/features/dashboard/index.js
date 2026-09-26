@@ -11,9 +11,10 @@ import { alertModal, confirmModal } from '../../core/ui/dialogs.js';
 import { esc } from '../../core/filing/escape-html.js';
 import { ic } from '../../core/ui/icons.js';
 import { INVENTORY_TYPES, formEngine, typeIcon } from '../../core/filing/filing-registry.js';
+import { getCaseFile } from '../../core/state.js';
 
 const {
-  navigate, getCaseFile, isContinuePromptShown, markContinuePromptShown,
+  navigate, isContinuePromptShown, markContinuePromptShown,
   getRecentlyOpenedWards, saveWardToState, flushPendingSave, markDirtySinceExport, updateLastSavedIndicator,
   saveBlobAs, auditLog, saveAppState,
   getWardHeadlineTotal, getWardProgress, 

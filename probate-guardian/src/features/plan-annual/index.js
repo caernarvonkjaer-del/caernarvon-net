@@ -33,6 +33,7 @@ import { formatDisplayDate } from '../../core/form/date-parser.js';
 import { PLAN_ADLS, PLAN_ADL_RATINGS, PLAN_BENEFITS, PLAN_RIGHTS, PLAN_RIGHT_STATES } from '../../core/filing/models/plan-annual.js';
 import { normalizePlanGuardians } from '../../core/filing/models/plan-rows.js';
 import { planAnnualCompletion } from '../../core/status/completion.js';
+import { getD } from '../../core/state.js';
 // Annual Guardianship Plan — the third feature extraction (Milestone 4,
 // Phases A and B of INDEX-SPLIT-PLAN.md's migration sequence). Dynamically
 // imported by legacy-app.js's mountPlanAnnualFeature()/mountPlanAnnualNav()
@@ -105,7 +106,7 @@ function ensurePrintModule() {
 export async function mount(container, page) {
   // Milestone 68C: a plan saved before the Certificate of Service existed
   // gains its fields on load. Idempotent, so every mount may call it.
-  if (migratePlanCertificateOfService(window.D)) window.autoSave?.();
+  if (migratePlanCertificateOfService(getD())) window.autoSave?.();
   let html;
   let isPrint = false;
   if (page === '/print') {
@@ -136,7 +137,7 @@ export async function mount(container, page) {
   signatureHandles.delete(container);
   if (page === '/p11' || page === '/p12') {
     signatureHandles.set(container, mountSignatureStateControls(container, {
-      setImage: (imagePath, dataUrl) => window.setPath(window.D, imagePath, dataUrl),
+      setImage: (imagePath, dataUrl) => window.setPath(getD(), imagePath, dataUrl),
       route: page,
     }));
   }
@@ -180,7 +181,7 @@ function buildNavPlanAnnual(container){
 }
 
 function getSummaryConfigPlanAnnual(){
-  const d=window.D;
+  const d=getD();
   // This filing's own section marks (Milestone 70, 70D: its engine's evaluator,
   // imported; it was window.computeNavChecks()).
   const nav=planAnnualCompletion(d);
@@ -225,7 +226,7 @@ function getSummaryConfigPlanAnnual(){
 }
 
 function pagePlanACover(){
-  const d=window.D;
+  const d=getD();
   return `<div class="schedule-page">
     <h1>Annual Guardianship Plan — Cover</h1>
     <div class="schedule-instructions">This plan reports on the ward as a person: where they live, the care they receive, their abilities and their rights. It is a separate filing from any accounting, which reports on their money and property. <strong>A physician's report must be filed separately at the same time</strong> — the app does not produce it.</div>
@@ -270,7 +271,7 @@ function pagePlanACover(){
 }
 
 function pagePlanAResidences(){
-  const d=window.D;
+  const d=getD();
   const rows=(d.q1Residences||[]).map((r,i)=>{
     return `<div class="col-12 col-lg-6"><div class="entry-card mb-2">
       <div class="entry-card-header">
@@ -302,7 +303,7 @@ function pagePlanAResidences(){
 }
 
 function pagePlanACarePlan(){
-  const d=window.D;
+  const d=getD();
   const cb=(id,label,route='')=>chkP(id,label,d[id],route);
   return `<div class="schedule-page">
     <h1>2–3. Residence Change &amp; Care Plan</h1>
@@ -360,7 +361,7 @@ function pagePlanACarePlan(){
 }
 
 function pagePlanABenefits(){
-  const d=window.D;
+  const d=getD();
   const b=d.benefits||{};
   const rows=PLAN_BENEFITS.map(([k,label])=>{
     const v=b[k]||{};
@@ -388,7 +389,7 @@ function pagePlanABenefits(){
 }
 
 function pagePlanAProviders(){
-  const d=window.D;
+  const d=getD();
   const rows=(d.q4Providers||[]).map((r,i)=>{
     return `<div class="col-12 col-lg-6"><div class="entry-card mb-2">
       <div class="entry-card-header">
@@ -419,7 +420,7 @@ function pagePlanAProviders(){
 }
 
 function pagePlanARights(){
-  const d=window.D;
+  const d=getD();
   const r=d.rights||{};
   const rows=PLAN_RIGHTS.map(([k,label])=>{
     // Milestone 68G: four columns, the court form's -- the stored value is
@@ -453,7 +454,7 @@ function pagePlanARights(){
 }
 
 function pagePlanAADLs(){
-  const d=window.D;
+  const d=getD();
   const a=d.adls||{};
   const rows=PLAN_ADLS.map(([k,label])=>
     `<tr><td>${label}</td><td style="width:16rem">
@@ -473,7 +474,7 @@ function pagePlanAADLs(){
 }
 
 function pagePlanADisabilities(){
-  const d=window.D;
+  const d=getD();
   const cb=(id,label,route='')=>chkP(id,label,d[id],route);
   const devices=(prefix)=>[
     cb(prefix+'Dentures','Dentures'),cb(prefix+'HearingAid','Hearing aid'),
@@ -507,7 +508,7 @@ function pagePlanADisabilities(){
 }
 
 function pagePlanADirectives(){
-  const d=window.D;
+  const d=getD();
   const cb=(id,label,route='')=>chkP(id,label,d[id],route);
   // Milestone 37-4: a plain chkP() checkbox doesn't re-render this page on
   // change (no data-form-route), which is fine for most checkboxes here but
@@ -577,7 +578,7 @@ function pagePlanADirectives(){
 }
 
 function pagePlanARemuneration(){
-  const d=window.D;
+  const d=getD();
   return `<div class="schedule-page">
     <h1>11. Remuneration</h1>
     ${planQ(11,'Declaration of remuneration',
@@ -599,7 +600,7 @@ function pagePlanARemuneration(){
 }
 
 function pagePlanASignatures(){
-  const d=window.D;
+  const d=getD();
   const g=normalizePlanGuardians(d);
   const cb=(id,label,route='')=>chkP(id,label,d[id],route);
   const block=(i,label)=>{
@@ -673,7 +674,7 @@ function pagePlanASignatures(){
 
 // Milestone 42F: every issue states its own field path (validation-issue.js).
 export function validatePlanAnnual(){
-  const d=window.D;
+  const d=getD();
   const errs=[];
   const T='planAnnual';
   const issue=issueFactory(T);
@@ -817,7 +818,7 @@ window.validatePlanAnnual = validatePlanAnnual;
 const CERT_CFG = { attorneyName: (d) => d.attorney || '', planNoun: 'plan' };
 function pagePlanACertificate(){
   return `<div class="schedule-page">
-    ${renderPlanCertificateOfServicePage({ filing: window.D, route: '/p12', cfg: CERT_CFG })}
+    ${renderPlanCertificateOfServicePage({ filing: getD(), route: '/p12', cfg: CERT_CFG })}
     ${pageNavS('/p11',null)}
   </div>`;
 }

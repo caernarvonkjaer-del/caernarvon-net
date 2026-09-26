@@ -166,7 +166,7 @@ export const GUARDIAN_CALC_METHODS = Object.freeze(Object.keys(makeGuardianCalc(
  * Annual, and what the PDF model consumes. Unrounded; format before printing.
  */
 export function calcTotalsGuardian(customD) {
-  const d = customD || (typeof window !== 'undefined' ? window.D : null) || {};
+  const d = customD || (typeof window !== 'undefined' ? getD() : null) || {};
   const c = makeGuardianCalc(d);
   return {
     totalA1: c.totalA1(), totalA2: c.totalA2(), netA: c.netA(),

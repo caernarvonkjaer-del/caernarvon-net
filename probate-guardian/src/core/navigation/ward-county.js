@@ -19,7 +19,7 @@
 // 'ward' role) is the person. Several filings link to one ward Party via
 // `filing.wardPartyId`; that is what makes a canonical county possible.
 
-import { getCaseFile } from '../state.js';
+import { getCaseFile, getD } from '../state.js';
 import { FL_COUNTY_CIRCUIT } from '../pdf/circuit-lookup.js';
 import { createParty, resolveParty, setPartyIdForSlot, getPartyIdForSlot, reconcileSlotWithParty, backfillWardPartyIdentity } from '../party-resolver.js';
 
@@ -143,7 +143,7 @@ export function commitCoverCounty(filing, rawCounty) {
  */
 export function maybeCommitCoverCounty(path, filing) {
   if (path !== 'county') return null;
-  const target = filing || (typeof window !== 'undefined' ? window.D : null);
+  const target = filing || (typeof window !== 'undefined' ? getD() : null);
   if (!target) return null;
   return commitCoverCounty(target, target.county);
 }

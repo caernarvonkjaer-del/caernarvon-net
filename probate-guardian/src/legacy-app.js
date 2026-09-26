@@ -508,7 +508,6 @@ try {
 // what the Simplified Accounting feature module reaches for after an Excel
 // import, to re-render whichever page was already open.
 function getCurrentPage(){return currentPage;}
-let _visitedPages = new Set(); // Track which pages user has visited
 let _dirtySinceExport = false; // true once data changes after the last .sav export
 // These two are NOT leftover duplicates of case-file.js's module state: they
 // are the window-backed shared store that case-file.js reads and writes
@@ -2113,10 +2112,8 @@ async function loadGuardianData(){
   return caseFile.wards.length>0||!!caseFile.guardianName;
 }
 
-function getActiveWard(){
-  if(!caseFile.activeWardId)return null;
-  return caseFile.wards.find(w=>w.wardId===caseFile.activeWardId);
-}
+// The open filing's record: src/core/state.js's, since Milestone 70's 70E.
+function getActiveWard(){return window.GuardianFormsLegacyBridge.getActiveWard();}
 
 function getProbateGuardianTabState(){
   const activeWard=getActiveWard();
@@ -2138,13 +2135,10 @@ function notifyProbateGuardianTabStateChanged(){
 }
 window.pgHasUnsavedChanges=function(){return _dirtySinceExport;};
 
-// caseFile is a top-level `let`, reassigned wholesale in several places
-// (lock/reset/load-from-.sav) -- a one-time `window.caseFile=caseFile`
-// bridge would go stale after any of those. This accessor always returns the
-// current object; src/features/dashboard/index.js reads through it live via
-// a Proxy rather than caching a reference (see that file's own comment).
-function getCaseFile(){ return caseFile; }
-window.getCaseFile=getCaseFile;
+// getCaseFile() and its window.getCaseFile publication went in Milestone
+// 70's 70E: modules read the case through src/core/state.js, which reads
+// window.caseFile -- kept on the same object as this script's `caseFile`,
+// which it reassigns in one place (lockApp()) and republishes there.
 
 // _appState has the same reassign-wholesale problem as caseFile above.
 // Dashboard only ever needs this one flag, so a pair of small accessors is
@@ -6312,7 +6306,15 @@ function renderCopyrightNotice(){
   el.textContent=`© Copyright ${new Date().getFullYear()} Pinellas County Clerk of the Circuit Court and Comptroller`;
 }
 
+// The door from this script into src/core/runtime/monolith.js (Milestone 70,
+// 70E): it hands the moved code the functions here that it calls back. The
+// second transition exception MILESTONE-70-PROPOSAL.md records; goes in 70L.
+function provideMonolithServices(fns){return window.GuardianFormsLegacyBridge.provideMonolithServices(fns);}
+
 async function initApp(){
+  // Milestone 70's 70E: hand the moved code the functions of this script it
+  // calls (src/core/runtime/monolith.js), before anything can call back.
+  provideMonolithServices({autoSave});
   renderCopyrightNotice();
   // Resolve file selection before the unlock flow.
   await promptOpenOrStartAtLaunch();

@@ -29,6 +29,7 @@ import { ic } from '../../core/ui/icons.js';
 import { formatDisplayDate } from '../../core/form/date-parser.js';
 import { normalizePlanGuardians } from '../../core/filing/models/plan-rows.js';
 import { planSimplifiedCompletion } from '../../core/status/completion.js';
+import { getD } from '../../core/state.js';
 // Simplified Annual Plan — the second feature extraction (Milestone 3,
 // Phase B/C of INDEX-SPLIT-PLAN.md's migration sequence). Dynamically
 // imported by legacy-app.js's mountPlanSimplifiedFeature()/
@@ -100,7 +101,7 @@ function ensurePrintModule() {
 export async function mount(container, page) {
   // Milestone 68C: a plan saved before the Certificate of Service existed
   // gains its fields on load. Idempotent, so every mount may call it.
-  if (migratePlanCertificateOfService(window.D)) window.autoSave?.();
+  if (migratePlanCertificateOfService(getD())) window.autoSave?.();
   let html;
   let isPrint = false;
   if (page === '/print') {
@@ -128,7 +129,7 @@ export async function mount(container, page) {
       // already-fully-resolved image path (it may be a flat scalar path
       // like `attorney_signatureImage` for other roles, not always
       // `${cardId}.signatureImage`) -- write it directly, no concatenation.
-      setImage: (imagePath, dataUrl) => window.setPath(window.D, imagePath, dataUrl),
+      setImage: (imagePath, dataUrl) => window.setPath(getD(), imagePath, dataUrl),
       route: page,
     }));
   }
@@ -165,7 +166,7 @@ function buildNavPlanSimplified(container){
 }
 
 function getSummaryConfigPlanSimplified(){
-  const d=window.D;
+  const d=getD();
   // This filing's own section marks (Milestone 70, 70D: its engine's evaluator,
   // imported; it was window.computeNavChecks()).
   const nav=planSimplifiedCompletion(d);
@@ -203,7 +204,7 @@ function getSummaryConfigPlanSimplified(){
 }
 
 function pagePlanSCover(){
-  const d=window.D;
+  const d=getD();
   return `<div class="schedule-page">
     <h1>Simplified Annual Plan — Cover</h1>
     <div class="schedule-instructions">This plan reports on the ward as a person: where they have lived, the care they received, and how they are doing. It is a separate filing from any accounting, which reports on their money and property.</div>
@@ -232,7 +233,7 @@ function pagePlanSCover(){
 }
 
 function pagePlanSQuestions(){
-  const d=window.D;
+  const d=getD();
   const q=(n,title,body)=>`<div class="plan-question"><div class="plan-question-num">Question ${n}</div><h2 style="font-size:.95rem;font-weight:650;color:var(--ink);margin-bottom:.7rem;line-height:1.45;">${title}</h2>${body}</div>`;
   return `<div class="schedule-page">
     <h1>The Plan — Questions 1–9</h1>
@@ -281,7 +282,7 @@ function pagePlanSQuestions(){
 }
 
 function pagePlanSSignatures(){
-  const d=window.D;
+  const d=getD();
   const g=normalizePlanGuardians(d);
   const block=(i,label)=>{
     const p=g[i]||{};
@@ -352,7 +353,7 @@ function pagePlanSSignatures(){
 // Milestone 42F: every issue states its own field path (validation-issue.js)
 // -- the adapter no longer has to recover it from the message text.
 export function validatePlanSimplified(){
-  const d=window.D;
+  const d=getD();
   const errs=[];
   const T='planSimplified';
   const issue=issueFactory(T);
@@ -424,7 +425,7 @@ window.validatePlanSimplified = validatePlanSimplified;
 const CERT_CFG = { attorneyName: (d) => d.attorney || '', planNoun: 'plan', optional: true };
 function pagePlanSCertificate(){
   return `<div class="schedule-page">
-    ${renderPlanCertificateOfServicePage({ filing: window.D, route: '/p4', cfg: CERT_CFG })}
+    ${renderPlanCertificateOfServicePage({ filing: getD(), route: '/p4', cfg: CERT_CFG })}
     ${pageNavS('/p3',null)}
   </div>`;
 }

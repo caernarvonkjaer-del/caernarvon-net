@@ -22,6 +22,7 @@ import { renderOutputAdvisories } from '../../core/filing/output-advisories.js';
 import { alertModal } from '../../core/ui/dialogs.js';
 import { setStatus, clearStatusNow } from '../../core/ui/transient-status.js';
 import { beginExport } from '../../core/ui/export-guard.js';
+import { getD } from '../../core/state.js';
 
 function buildModelForPreview(D){
   return buildVerifiedInventoryModel(D, {
@@ -36,19 +37,19 @@ const {
 
 export function pagePrint(capOver){
   window.queueAllScheduleDocValidations?.();
-  const baseIssues=()=>[...validateGuardian(), ...getSupplementalFilingIssues(window.D)];
-  const preflight=prepareFilingOutput(window.D,baseIssues);
+  const baseIssues=()=>[...validateGuardian(), ...getSupplementalFilingIssues(getD())];
+  const preflight=prepareFilingOutput(getD(),baseIssues);
   const errors=preflight.messages;
-  const supplementalWarning=getSupplementalAccessibilityWarning(window.D);
+  const supplementalWarning=getSupplementalAccessibilityWarning(getD());
   highlightErrors(errors);
-  const errPanel=(errors.length?validationPanel(errors):'') + renderReadinessCard({ filingType: preflight.descriptor?.inventoryType, data: window.D, validationIssues: preflight.structuredIssues });
+  const errPanel=(errors.length?validationPanel(errors):'') + renderReadinessCard({ filingType: preflight.descriptor?.inventoryType, data: getD(), validationIssues: preflight.structuredIssues });
   const warnPanel=supplementalWarning?`<div class="alert alert-warning no-print" role="status">${supplementalWarning}</div>`:'';
   const advisoryPanel=renderOutputAdvisories(preflight.advisories);
   // Milestone 38D/44B: Save as PDF's disabled state reflects only what
   // actually blocks the pdf capability, via authorizeFilingOutput() --
   // the banner/panel above stays driven by the full, capability-agnostic
   // preflight so every outstanding requirement is still visible.
-  const canExport=authorizeFilingOutput(window.D,baseIssues,{capability:'pdf'}).status==='allowed';
+  const canExport=authorizeFilingOutput(getD(),baseIssues,{capability:'pdf'}).status==='allowed';
   const canExportExcel=canExport&&capOver.length===0;
   return `<div>
   <h1 class="visually-hidden">Print Preview</h1>
@@ -76,14 +77,14 @@ export function pagePrint(capOver){
 // renders the actual generated PDF (canvas + selectable text layer) into
 // #print-doc-container, replacing the old buildPrintHTML() reconstruction.
 export async function mountPreview(){
-  const baseIssues = () => [...validateGuardian(), ...getSupplementalFilingIssues(window.D)];
-  window.printCurrentFilingPdf = () => printGeneratedPdf(buildModelForPreview, window.D, baseIssues);
-  await mountPdfPreview(buildModelForPreview, window.D, baseIssues, undefined, { annotate: true });
+  const baseIssues = () => [...validateGuardian(), ...getSupplementalFilingIssues(getD())];
+  window.printCurrentFilingPdf = () => printGeneratedPdf(buildModelForPreview, getD(), baseIssues);
+  await mountPdfPreview(buildModelForPreview, getD(), baseIssues, undefined, { annotate: true });
 }
 
 export async function doSavePdf(){
-  const baseIssues = () => [...validateGuardian(), ...getSupplementalFilingIssues(window.D)];
-  const authorization = authorizeFilingOutput(window.D, baseIssues, { capability: 'pdf' });
+  const baseIssues = () => [...validateGuardian(), ...getSupplementalFilingIssues(getD())];
+  const authorization = authorizeFilingOutput(getD(), baseIssues, { capability: 'pdf' });
   if (authorization.status !== 'allowed') {
     renderPage('/print');
     await alertModal(`Cannot export — ${authorization.issues.length} required field${authorization.issues.length === 1 ? '' : 's'} missing. See the list on this page.`);
@@ -96,11 +97,11 @@ export async function doSavePdf(){
   if (!btn) return;
   const stat=document.getElementById('export-status');
   setStatus(stat,'Generating PDF…');
-  const stem=(window.D.wardName||'GuardianInventory').trim().replace(/\s+/g,'_');
+  const stem=(getD().wardName||'GuardianInventory').trim().replace(/\s+/g,'_');
   const filename=`${stem}_InitialInventory.pdf`;
 
   try{
-    const model = buildVerifiedInventoryModel(window.D, {
+    const model = buildVerifiedInventoryModel(getD(), {
       printDate: new Date().toISOString().slice(0, 10),
     });
     const doc = await generateVerifiedInventoryPdf(model);

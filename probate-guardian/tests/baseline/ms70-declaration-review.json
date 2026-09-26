@@ -52,11 +52,6 @@
    "delivery": "70K",
    "why": "bridge"
   },
-  "_visitedPages": {
-   "delivery": "70E",
-   "why": "dead-visited",
-   "disposition": "delete-as-dead"
-  },
   "_wardLockedPreviousFocus": {
    "delivery": "70H",
    "why": "shell"
@@ -166,10 +161,6 @@
    "why": "pure"
   },
   "getActiveWard": {
-   "delivery": "70E",
-   "why": "store-seam"
-  },
-  "getCaseFile": {
    "delivery": "70E",
    "why": "store-seam"
   },
@@ -417,6 +408,30 @@
    "delivery": "70D",
    "until": "70K",
    "why": "dispatcher"
+  },
+  "saveWardToState": {
+   "delivery": "70I",
+   "why": "persistence"
+  },
+  "deleteWardFromState": {
+   "delivery": "70I",
+   "why": "persistence"
+  },
+  "saveTemplate": {
+   "delivery": "70I",
+   "why": "persistence"
+  },
+  "loadTemplate": {
+   "delivery": "70I",
+   "why": "persistence"
+  },
+  "appendAuditLogEntry": {
+   "delivery": "70I",
+   "why": "persistence"
+  },
+  "loadAuditLogEntries": {
+   "delivery": "70I",
+   "why": "persistence"
   }
  },
  "notes": {
@@ -435,7 +450,14 @@
   "loadCaseFileFromZip": "Changed on master in b2d97f5 (returns every part it could not read); a re-implement row in MILESTONE-70-FIX-LEDGER.md.",
   "pct": "Deleted on master in c62f890 (its only caller now imports totals.js's copy); a re-implement row in MILESTONE-70-FIX-LEDGER.md.",
   "tdR": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24).",
-  "updateNavDots": "Moves in 70F with the other nav-dot updates (review override nav-dom); it is the sidebar's only caller of applyNavChecks(), which moves with it."
+  "updateNavDots": "Moves in 70F with the other nav-dot updates (review override nav-dom); it is the sidebar's only caller of applyNavChecks(), which moves with it.",
+  "saveWardToState": "Placed in 70E by its section (IN-MEMORY STATE OPERATIONS); on review it schedules autoSave() and writes the monolith's template cache or audit buffer, which 70I's persistence service owns, so it moves there.",
+  "deleteWardFromState": "Placed in 70E by its section (IN-MEMORY STATE OPERATIONS); on review it schedules autoSave() and writes the monolith's template cache or audit buffer, which 70I's persistence service owns, so it moves there.",
+  "saveTemplate": "Placed in 70E by its section (IN-MEMORY STATE OPERATIONS); on review it schedules autoSave() and writes the monolith's template cache or audit buffer, which 70I's persistence service owns, so it moves there.",
+  "loadTemplate": "Placed in 70E by its section (IN-MEMORY STATE OPERATIONS); on review it schedules autoSave() and writes the monolith's template cache or audit buffer, which 70I's persistence service owns, so it moves there.",
+  "appendAuditLogEntry": "Placed in 70E by its section (IN-MEMORY STATE OPERATIONS); on review it schedules autoSave() and writes the monolith's template cache or audit buffer, which 70I's persistence service owns, so it moves there.",
+  "loadAuditLogEntries": "Placed in 70E by its section (IN-MEMORY STATE OPERATIONS); on review it schedules autoSave() and writes the monolith's template cache or audit buffer, which 70I's persistence service owns, so it moves there.",
+  "provideMonolithServices": "Added in 70E: legacy-app.js's one-line door into src/core/runtime/monolith.js, called from initApp(), the second transition exception MILESTONE-70-PROPOSAL.md records; it goes with the monolith (70L at the latest)."
  },
  "confirmed": {
   "ACCOUNTING_FORM_TYPES": "move 70G",
@@ -525,7 +547,6 @@
   "activityLogFiltered": "move 70H",
   "addToRecentlyOpened": "move 70G",
   "afterChange": "move 70F",
-  "appendAuditLogEntry": "move 70E",
   "applyNavSectionCollapse": "move 70F",
   "applyTheme": "move 70H",
   "applyYearData": "move 70G",
@@ -554,7 +575,6 @@
   "currentHelpContext": "move 70H",
   "currentTheme": "move 70H",
   "currentWalkthroughStep": "move 70H",
-  "deleteWardFromState": "move 70E",
   "deleteWardYear": "move 70G",
   "describeConversion": "move 70G",
   "describeYearLabel": "move 70G",
@@ -632,11 +652,9 @@
   "initializeEmptyData": "move 70C",
   "linkAccordions": "move 70F",
   "loadAndRenderActivityLog": "move 70H",
-  "loadAuditLogEntries": "move 70E",
   "loadCaseFileAtLaunch": "move 70I",
   "loadCaseFileFromZip": "move 70I",
   "loadRecentlyOpenedWards": "move 70G",
-  "loadTemplate": "move 70E",
   "lockApp": "move 70I",
   "manualCompareCandidate": "move 70G",
   "mapConvertedHeaderFields": "move 70G",
@@ -709,9 +727,7 @@
   "sanitizeNonNegativeDecimal": "move 70B",
   "sanitizeObjectData": "move 70B",
   "saveRecentlyOpenedWards": "move 70G",
-  "saveTemplate": "move 70E",
   "saveUnlockFailState": "move 70I",
-  "saveWardToState": "move 70E",
   "scheduleDocPeriodKey": "move 70F",
   "selectSecurityMode": "move 70I",
   "setPath": "move 70F",
@@ -758,7 +774,8 @@
   "validateImportFile": "move 70B",
   "validationPanel": "move 70F",
   "walkthroughActive": "move 70H",
-  "wardNameComboItems": "move 70H"
+  "wardNameComboItems": "move 70H",
+  "provideMonolithServices": "move 70E"
  },
  "landed": {
   "70B": {
@@ -941,6 +958,17 @@
     "validate": {
      "was": "move 70F",
      "note": "Its only caller was computeNavChecks()'s Initial Inventory branch; the evaluator is handed the Inventory's validator instead. Deleted as dead."
+    }
+   }
+  },
+  "70E": {
+   "note": "Gone from src/legacy-app.js in 70E: getCaseFile() and its window publication (modules read the case through src/core/state.js, which reads the same window.caseFile), and the dead _visitedPages with the three module references that could never run. getActiveWard() remains as a one-line wrapper onto state.js's.",
+   "entries": {
+    "_visitedPages": {
+     "was": "delete-as-dead 70E (override: dead-visited)"
+    },
+    "getCaseFile": {
+     "was": "move 70E (override: store-seam)"
     }
    }
   }
