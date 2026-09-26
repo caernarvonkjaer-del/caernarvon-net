@@ -10,6 +10,7 @@ import { formEngine } from '../filing/filing-registry.js';
 import { linkLabelsToInputs, setupAmountFieldValidation } from '../form/form-runtime.js';
 import { resetNavSectionExpanded, updateNavDots } from '../status/nav-marks.js';
 import { initPrintPager } from '../ui/print-pager.js';
+import { pagePartyManagement, renderClosedFilingSyncNotice, renderPartyManagementBody } from '../parties/party-management.js';
 
 let _currentPage = '/dashboard';
 
@@ -163,8 +164,8 @@ export async function renderPage(page) {
   if (page === '/party-management') {
     if (typeof window !== 'undefined') {
       if (typeof window.updateHelpContext === 'function') window.updateHelpContext('default');
-      if (typeof window.pagePartyManagement === 'function') el.innerHTML = window.pagePartyManagement();
-      if (typeof window.renderPartyManagementBody === 'function') window.renderPartyManagementBody();
+      el.innerHTML = pagePartyManagement();
+      renderPartyManagementBody();
     }
     return;
   }
@@ -193,8 +194,8 @@ export async function renderPage(page) {
       const mount = window[mountFeatureFnName(engine)];
       if (typeof mount === 'function') await mount(page);
     }
-    if (page === '/' && activeWard && activeWard.archived && typeof window.renderClosedFilingSyncNotice === 'function') {
-      window.renderClosedFilingSyncNotice(el, activeWard);
+    if (page === '/' && activeWard && activeWard.archived) {
+      renderClosedFilingSyncNotice(el, activeWard);
     }
     linkLabelsToInputs();
     // Milestone 40C-C removed the `enforceDateRanges()` window-global; date-range

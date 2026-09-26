@@ -1,7 +1,8 @@
 import { getCaseFile } from './core/state.js';
 import { closeMobileSidebar, navigate, toggleMobileSidebar } from './core/navigation/router.js';
 import { handleBackupImportChange, hideAutoExportReminder, saveAutoExportIntervalPref, saveBackupNow, triggerOpenBackupSav } from './core/persistence/case-file.js';
-import { unloadWard } from './core/navigation/ward-lifecycle.js';
+import { filingLifecycle } from './core/navigation/filing-lifecycle.js';
+import { confirmDeleteWard } from './core/modals/filing-dialogs.js';
 function handleShellClick(event) {
   const actionElement = event.target instanceof Element ? event.target.closest('[data-shell-action]') : null;
   if (!actionElement) return;
@@ -11,9 +12,9 @@ function handleShellClick(event) {
     case 'backup-all-wards': window.collapseSaveControls?.(); saveBackupNow(); break;
     case 'clear-data': window.collapseSaveControls?.(); window.clearAllData(); break;
     case 'close-mobile-sidebar': closeMobileSidebar(); break;
-    case 'close-ward': window.collapseWardControls?.(); if (unloadWard) unloadWard(); break;
+    case 'close-ward': window.collapseWardControls?.(); filingLifecycle.unload(); break;
     case 'dashboard': navigate('/dashboard'); break;
-    case 'delete-ward': window.collapseWardControls?.(); window.confirmDeleteWard(); break;
+    case 'delete-ward': window.collapseWardControls?.(); confirmDeleteWard(); break;
     case 'export-help': window.openUserGuide(); break;
     case 'hide-auto-export-reminder': hideAutoExportReminder(); break;
     case 'lock': window.collapseSaveControls?.(); window.lockApp(); break;

@@ -956,35 +956,27 @@ export function unmergeParty(subId) {
 
 // Bridged onto window for legacy-app.js (classic script) and for e2e tests
 // to call directly -- see this file's header comment.
-window.resolveParty = resolveParty;
-window.createParty = createParty;
-window.identitySlotForPath = identitySlotForPath;
-window.readRoleFields = readRoleFields;
-window.writeRoleFields = writeRoleFields;
-window.hydrateFromParty = hydrateFromParty;
-window.dehydrateIntoParty = dehydrateIntoParty;
-window.getPartyIdForSlot = getPartyIdForSlot;
-window.setPartyIdForSlot = setPartyIdForSlot;
-// Milestone 46A/46B: reusable per-party signature stamps.
-window.addSignatureImage = addSignatureImage;
-window.getActiveSignatureImage = getActiveSignatureImage;
-window.getSignatureImageById = getSignatureImageById;
-window.listSignatureImages = listSignatureImages;
-window.partyForSignaturePath = partyForSignaturePath;
-window.slotsReferencing = slotsReferencing;
-window.syncIdentityField = syncIdentityField;
-window.isFilingClosed = isFilingClosed;
-window.reconcileSlotWithParty = reconcileSlotWithParty;
-window.backfillWardPartyIdentity = backfillWardPartyIdentity;
-window.closedFilingDrift = closedFilingDrift;
-window.filingDriftFromParties = filingDriftFromParties;
-window.syncFilingSlotWithParty = syncFilingSlotWithParty;
-window.isPartyPairDismissed = isPartyPairDismissed;
-window.dismissPartyPair = dismissPartyPair;
-window.findDuplicateCandidates = findDuplicateCandidates;
-window.namesNearlyMatch = namesNearlyMatch;
-window.normalizePartyName = normalizePartyName;
-window.referenceCountForParty = referenceCountForParty;
-window.mergeParties = mergeParties;
-window.subPartiesOf = subPartiesOf;
-window.unmergeParty = unmergeParty;
+if (typeof window !== 'undefined') {
+  window.resolveParty = resolveParty;
+  window.createParty = createParty;
+  window.identitySlotForPath = identitySlotForPath;
+  window.readRoleFields = readRoleFields;
+  window.writeRoleFields = writeRoleFields;
+  window.hydrateFromParty = hydrateFromParty;
+  window.dehydrateIntoParty = dehydrateIntoParty;
+  window.setPartyIdForSlot = setPartyIdForSlot;
+  // Milestone 46A/46B: reusable per-party signature stamps.
+  window.addSignatureImage = addSignatureImage;
+  window.syncIdentityField = syncIdentityField;
+  window.backfillWardPartyIdentity = backfillWardPartyIdentity;
+  window.closedFilingDrift = closedFilingDrift;
+  window.filingDriftFromParties = filingDriftFromParties;
+  window.syncFilingSlotWithParty = syncFilingSlotWithParty;
+  window.isPartyPairDismissed = isPartyPairDismissed;
+  window.dismissPartyPair = dismissPartyPair;
+  window.findDuplicateCandidates = findDuplicateCandidates;
+  window.referenceCountForParty = referenceCountForParty;
+  window.mergeParties = mergeParties;
+  window.subPartiesOf = subPartiesOf;
+  window.unmergeParty = unmergeParty;
+}

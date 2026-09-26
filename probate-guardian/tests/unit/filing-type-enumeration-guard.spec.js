@@ -40,8 +40,20 @@ const ALLOWED = {
   // CARRY_SOURCE_TYPE / PRIOR_ACCOUNTING_SOURCES / ACCOUNTING_FORM_TYPES:
   // creation-time eligibility, confirmed the correct home already (other
   // consumers, e.g. filing-descriptor.js's own CONVERT_SOURCE_TYPE
-  // reasoning, already treat this file as the carry-table's owner).
-  'src/core/navigation/ward-lifecycle.js': 'creation-time carry-source eligibility, its correct home',
+  // reasoning, already treat this table as the carry-over rules' own). It
+  // lived in ward-lifecycle.js until Milestone 70's 70G brought it here, to
+  // the carry-over builders that read it.
+  'src/core/filing/carry-over.js': 'creation-time carry-source eligibility, its correct home',
+  // Milestone 70, 70G: what a new year resets, form by form
+  // (resetYearlyFieldsForNewYear()) -- each form's own period and balance
+  // fields, which differ by schema; moved from legacy-app.js (the exception
+  // above). tests/baseline/ms70-year-rollover-golden.json pins all nine.
+  'src/core/filing/filing-years.js': "each form's own year-end reset, moved from legacy-app.js (MS 70 70G)",
+  // Milestone 70, 70G: the Add Form dialog's four decisions about particular
+  // types -- the type it opens on (guardian), the adult-records check before a
+  // Minor plan, the hand-off to the Simplified eligibility questions and the
+  // Annual it creates when they fail. Branches, not a list of the types.
+  'src/core/modals/filing-dialogs.js': "the Add Form dialog's branches on particular types, moved from legacy-app.js (MS 70 70G)",
   // Per-schema collection membership (which schedules/collections exist on
   // which filing types, and their min counts) -- AGENTS.md section 3: never
   // share generic factories across forms with differing schemas. This is

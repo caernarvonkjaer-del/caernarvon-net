@@ -33,6 +33,7 @@
   "tests/e2e/excel-pruned-roundtrip.spec.ts",
   "tests/e2e/export-button-guard.spec.ts",
   "tests/e2e/feature-load-failure.spec.ts",
+  "tests/e2e/filing-conversion.characterization.spec.ts",
   "tests/e2e/filing-identity.contract.spec.ts",
   "tests/e2e/form-entry-ux.spec.ts",
   "tests/e2e/form-entry.contract.spec.ts",

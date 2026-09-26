@@ -35,6 +35,7 @@ import { updateNavDots } from '../../core/status/nav-marks.js';
 import { initPrintPager } from '../../core/ui/print-pager.js';
 import { renderScheduleDocsSection } from '../../core/filing/schedule-docs.js';
 import { setPath } from '../../core/form/paths.js';
+import { showPickPartyModal } from '../../core/modals/pick-record-dialogs.js';
 // Milestone 57B: carried verbatim from MILESTONE-57-PROPOSAL.md section 57B.
 // The wording is load bearing (section 8 #8). Do not paraphrase or re-voice it.
 const ATTESTATION_57B = 'No recipients are required for this certificate (filer attestation - app does not determine legal necessity)';
@@ -233,7 +234,7 @@ function bindEvents(container) {
       case 'add-recipient': addRecipient(); break;
       case 'add-witness': addWitness(); break;
       case 'duplicate-entry': duplicateEntry(control.dataset.schedule, index); break;
-      case 'link-party': window.showPickPartyModal(control.dataset.role, control.dataset.index); break;
+      case 'link-party': showPickPartyModal(control.dataset.role, control.dataset.index); break;
       case 'navigate': navigate(control.dataset.route); break;
       case 'remove-entry': removeEntry(control.dataset.schedule, index); break;
       case 'remove-guardian': removeGuardian(index); break;

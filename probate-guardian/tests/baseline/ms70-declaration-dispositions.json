@@ -2,27 +2,26 @@
  "generatedBy": "node scripts/ms70-declaration-dispositions.mjs --write",
  "note": "Milestone 70, 70A: a disposition and target delivery for every top-level declaration of src/legacy-app.js, built from reference evidence and corrected by the owner's review (tests/baseline/ms70-declaration-review.json; reviewNote says why an entry was moved). reviewed:true means the entry still matches what the review confirmed. delete-as-dead means nothing references it anywhere.",
  "summary": {
-  "total": 329,
+  "total": 235,
   "byDisposition": {
-   "move": 295,
-   "wrapper": 23,
-   "delete-as-dead": 11
+   "move": 205,
+   "wrapper": 20,
+   "delete-as-dead": 10
   },
   "byDelivery": {
-   "70H": 97,
+   "70H": 89,
    "70J": 3,
-   "70I": 93,
-   "70K": 48,
-   "70G": 88
+   "70I": 95,
+   "70K": 48
   },
   "windowExportsByReason": {
-   "no-consumer": 62,
-   "tests-only": 37,
-   "monolith-only": 79,
-   "modules-only": 73,
-   "monolith-and-modules": 17
+   "no-consumer": 49,
+   "tests-only": 53,
+   "monolith-only": 48,
+   "modules-only": 70,
+   "monolith-and-modules": 16
   },
-  "duplicates": 46,
+  "duplicates": 40,
   "liveDuplicates": [
    "HELP_CONTENT (src/features/help/help-content.js)",
    "getCurrentPage (src/core/navigation/router.js)",
@@ -34,8 +33,6 @@
    "LAUNCH_PREF_DB (src/core/persistence/launch-preferences.js)",
    "LAUNCH_PREF_STORE (src/core/persistence/launch-preferences.js)",
    "_launchPrefDb (src/core/persistence/launch-preferences.js)",
-   "ACCOUNTING_FORM_TYPES (src/core/navigation/ward-lifecycle.js)",
-   "PRIOR_ACCOUNTING_SOURCES (src/core/navigation/ward-lifecycle.js)",
    "n (src/core/format/money.js, src/features/annual-accounting/totals.js, src/features/guardian-inventory/totals.js)",
    "pct (src/features/annual-accounting/totals.js)"
   ]
@@ -120,7 +117,7 @@
    "line": 79,
    "lines": 9,
    "section": "GLOBAL STATE & CONFIG",
-   "internalRefs": 84,
+   "internalRefs": 54,
    "moduleConsumers": [
     "src/core/state.js"
    ],
@@ -708,7 +705,7 @@
    "line": 487,
    "lines": 1,
    "section": "WALKTHROUGH SYSTEM (Phase 4) - Type-Specific Tours",
-   "internalRefs": 16,
+   "internalRefs": 9,
    "moduleConsumers": [
     "src/core/navigation/router.js"
    ],
@@ -752,7 +749,7 @@
    "line": 511,
    "lines": 1,
    "section": "WALKTHROUGH SYSTEM (Phase 4) - Type-Specific Tours",
-   "internalRefs": 11,
+   "internalRefs": 7,
    "moduleConsumers": [
     "src/core/persistence/case-file.js"
    ],
@@ -810,7 +807,7 @@
    "line": 556,
    "lines": 1,
    "section": "STORAGE STRATEGY — canonical .sav file plus temporary recovery",
-   "internalRefs": 16,
+   "internalRefs": 14,
    "moduleConsumers": [
     "src/core/state.js"
    ],
@@ -884,7 +881,7 @@
    "line": 593,
    "lines": 1,
    "section": "COMMON HELPERS",
-   "internalRefs": 8,
+   "internalRefs": 7,
    "moduleConsumers": [],
    "e2eFiles": 0,
    "unitSlices": 0,
@@ -893,7 +890,7 @@
    ],
    "disposition": "wrapper",
    "delivery": "70H",
-   "wrapperWhile": "classic callers remain: applyTheme, pageActivityLog, pageInventorySelector, renderActivityLogList, renderPriorYearsList, renderStorageReadout",
+   "wrapperWhile": "classic callers remain: applyTheme, pageActivityLog, pageInventorySelector, renderActivityLogList, renderStorageReadout",
    "reviewed": true,
    "reviewNote": null,
    "movedIn": "70B"
@@ -904,7 +901,7 @@
    "line": 594,
    "lines": 1,
    "section": "COMMON HELPERS",
-   "internalRefs": 58,
+   "internalRefs": 16,
    "moduleConsumers": [],
    "e2eFiles": 0,
    "unitSlices": 0,
@@ -914,7 +911,7 @@
    ],
    "disposition": "wrapper",
    "delivery": "70H",
-   "wrapperWhile": "classic callers remain: comboboxRenderDropdown, pageActivityLog, partyClosedDriftHTML, partyDedupeCardHTML, partyReferenceLinesHTML, partyRoleBadgesHTML, partySubRowHTML, populateWardNameSuggestions, refreshCarrySourceSelect, refreshWardInfoCard, renderActivityLogList, renderClosedFilingSyncNotice, renderPartyDirectoryRows, renderPriorYearsList, renderStorageReadout, showPickCaseModal, showPickPartyModal, showSwitchWardPickerModal, tooltip",
+   "wrapperWhile": "classic callers remain: comboboxRenderDropdown, pageActivityLog, populateWardNameSuggestions, refreshWardInfoCard, renderActivityLogList, renderStorageReadout, showSwitchWardPickerModal, tooltip",
    "reviewed": true,
    "reviewNote": null,
    "movedIn": "70B"
@@ -1005,7 +1002,7 @@
    "line": 603,
    "lines": 1,
    "section": "COMMON HELPERS",
-   "internalRefs": 18,
+   "internalRefs": 4,
    "moduleConsumers": [],
    "e2eFiles": 0,
    "unitSlices": 0,
@@ -1014,147 +1011,7 @@
    ],
    "disposition": "wrapper",
    "delivery": "70K",
-   "wrapperWhile": "classic callers remain: carryOverAccountingToAccounting, carryOverFields, convertExistingWard, describeConversion, getWardHeadlineTotal, mapConvertedHeaderFields, resetYearlyFieldsForNewYear, startNewWardYear, startWalkthrough, updateHelpContext, updateSidebar",
-   "reviewed": true,
-   "reviewNote": null,
-   "movedIn": "70C"
-  },
-  {
-   "name": "formDisplayName",
-   "kind": "function",
-   "line": 604,
-   "lines": 1,
-   "section": "COMMON HELPERS",
-   "internalRefs": 1,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [
-    "src/core/filing/filing-registry.js"
-   ],
-   "disposition": "wrapper",
-   "delivery": "70H",
-   "wrapperWhile": "classic callers remain: carryOverSummaryNote",
-   "reviewed": true,
-   "reviewNote": null,
-   "movedIn": "70C"
-  },
-  {
-   "name": "emptyRowAnnual",
-   "kind": "function",
-   "line": 605,
-   "lines": 1,
-   "section": "COMMON HELPERS",
-   "internalRefs": 2,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [
-    "src/core/filing/models/annual.js"
-   ],
-   "disposition": "wrapper",
-   "delivery": "70G",
-   "wrapperWhile": "classic callers remain: convertGuardianSchedulesToAnnual, resetYearlyFieldsForNewYear",
-   "reviewed": true,
-   "reviewNote": null,
-   "movedIn": "70C"
-  },
-  {
-   "name": "emptyPlanResidence",
-   "kind": "function",
-   "line": 606,
-   "lines": 1,
-   "section": "COMMON HELPERS",
-   "internalRefs": 1,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [
-    "src/core/filing/models/plan-annual.js"
-   ],
-   "disposition": "wrapper",
-   "delivery": "70G",
-   "wrapperWhile": "classic callers remain: resetYearlyFieldsForNewYear",
-   "reviewed": true,
-   "reviewNote": null,
-   "movedIn": "70C"
-  },
-  {
-   "name": "emptyPlanProvider",
-   "kind": "function",
-   "line": 607,
-   "lines": 1,
-   "section": "COMMON HELPERS",
-   "internalRefs": 1,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [
-    "src/core/filing/models/plan-annual.js"
-   ],
-   "disposition": "wrapper",
-   "delivery": "70G",
-   "wrapperWhile": "classic callers remain: resetYearlyFieldsForNewYear",
-   "reviewed": true,
-   "reviewNote": null,
-   "movedIn": "70C"
-  },
-  {
-   "name": "emptyInitialProvider",
-   "kind": "function",
-   "line": 608,
-   "lines": 1,
-   "section": "COMMON HELPERS",
-   "internalRefs": 1,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [
-    "src/core/filing/models/plan-initial.js"
-   ],
-   "disposition": "wrapper",
-   "delivery": "70G",
-   "wrapperWhile": "classic callers remain: resetYearlyFieldsForNewYear",
-   "reviewed": true,
-   "reviewNote": null,
-   "movedIn": "70C"
-  },
-  {
-   "name": "emptyMinorResidence",
-   "kind": "function",
-   "line": 609,
-   "lines": 1,
-   "section": "COMMON HELPERS",
-   "internalRefs": 1,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [
-    "src/core/filing/models/plan-minor.js"
-   ],
-   "disposition": "wrapper",
-   "delivery": "70G",
-   "wrapperWhile": "classic callers remain: resetYearlyFieldsForNewYear",
-   "reviewed": true,
-   "reviewNote": null,
-   "movedIn": "70C"
-  },
-  {
-   "name": "emptyMinorProvider",
-   "kind": "function",
-   "line": 610,
-   "lines": 1,
-   "section": "COMMON HELPERS",
-   "internalRefs": 1,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [
-    "src/core/filing/models/plan-minor.js"
-   ],
-   "disposition": "wrapper",
-   "delivery": "70G",
-   "wrapperWhile": "classic callers remain: resetYearlyFieldsForNewYear",
+   "wrapperWhile": "classic callers remain: getWardHeadlineTotal, startWalkthrough, updateHelpContext, updateSidebar",
    "reviewed": true,
    "reviewNote": null,
    "movedIn": "70C"
@@ -1162,10 +1019,10 @@
   {
    "name": "initializeEmptyData",
    "kind": "function",
-   "line": 611,
+   "line": 604,
    "lines": 1,
    "section": "COMMON HELPERS",
-   "internalRefs": 2,
+   "internalRefs": 1,
    "moduleConsumers": [],
    "e2eFiles": 1,
    "unitSlices": 0,
@@ -1174,7 +1031,7 @@
    ],
    "disposition": "wrapper",
    "delivery": "70I",
-   "wrapperWhile": "classic callers remain: clearAllData, convertExistingWard",
+   "wrapperWhile": "classic callers remain: clearAllData",
    "reviewed": true,
    "reviewNote": null,
    "movedIn": "70C"
@@ -1182,7 +1039,7 @@
   {
    "name": "typeIcon",
    "kind": "function",
-   "line": 612,
+   "line": 605,
    "lines": 1,
    "section": "COMMON HELPERS",
    "internalRefs": 3,
@@ -1202,10 +1059,10 @@
   {
    "name": "auditLog",
    "kind": "function",
-   "line": 647,
+   "line": 640,
    "lines": 12,
    "section": "SECURITY: VALIDATION AND AUDIT LOGGING",
-   "internalRefs": 12,
+   "internalRefs": 8,
    "moduleConsumers": [
     "src/core/persistence/case-file.js",
     "src/features/dashboard/index.js"
@@ -1222,7 +1079,7 @@
   {
    "name": "PBKDF2_ITERATIONS",
    "kind": "const",
-   "line": 675,
+   "line": 668,
    "lines": 1,
    "section": "ENCRYPTION AT REST (AES-256-GCM via the Web Crypto API)",
    "internalRefs": 0,
@@ -1241,7 +1098,7 @@
   {
    "name": "CRYPTO_VERIFIER_PLAINTEXT",
    "kind": "const",
-   "line": 676,
+   "line": 669,
    "lines": 1,
    "section": "ENCRYPTION AT REST (AES-256-GCM via the Web Crypto API)",
    "internalRefs": 2,
@@ -1260,7 +1117,7 @@
   {
    "name": "_cryptoKey",
    "kind": "let",
-   "line": 677,
+   "line": 670,
    "lines": 1,
    "section": "ENCRYPTION AT REST (AES-256-GCM via the Web Crypto API)",
    "internalRefs": 16,
@@ -1279,7 +1136,7 @@
   {
    "name": "_securityMode",
    "kind": "let",
-   "line": 691,
+   "line": 684,
    "lines": 1,
    "section": "ENCRYPTION AT REST (AES-256-GCM via the Web Crypto API)",
    "internalRefs": 12,
@@ -1298,7 +1155,7 @@
   {
    "name": "PLAIN_MODE_PREFIX",
    "kind": "const",
-   "line": 699,
+   "line": 692,
    "lines": 1,
    "section": "ENCRYPTION AT REST (AES-256-GCM via the Web Crypto API)",
    "internalRefs": 0,
@@ -1317,7 +1174,7 @@
   {
    "name": "ensureUnlocked",
    "kind": "function",
-   "line": 707,
+   "line": 700,
    "lines": 60,
    "section": "ENCRYPTION AT REST (AES-256-GCM via the Web Crypto API)",
    "internalRefs": 2,
@@ -1334,7 +1191,7 @@
   {
    "name": "_securityChoiceResolve",
    "kind": "let",
-   "line": 768,
+   "line": 761,
    "lines": 1,
    "section": "ENCRYPTION AT REST (AES-256-GCM via the Web Crypto API)",
    "internalRefs": 3,
@@ -1351,7 +1208,7 @@
   {
    "name": "promptChooseSecurityMode",
    "kind": "function",
-   "line": 769,
+   "line": 762,
    "lines": 6,
    "section": "ENCRYPTION AT REST (AES-256-GCM via the Web Crypto API)",
    "internalRefs": 1,
@@ -1368,7 +1225,7 @@
   {
    "name": "selectSecurityMode",
    "kind": "function",
-   "line": 775,
+   "line": 768,
    "lines": 5,
    "section": "ENCRYPTION AT REST (AES-256-GCM via the Web Crypto API)",
    "internalRefs": 0,
@@ -1387,7 +1244,7 @@
   {
    "name": "updateLockButtonVisibility",
    "kind": "function",
-   "line": 783,
+   "line": 776,
    "lines": 4,
    "section": "ENCRYPTION AT REST (AES-256-GCM via the Web Crypto API)",
    "internalRefs": 4,
@@ -1404,7 +1261,7 @@
   {
    "name": "_unlockResolve",
    "kind": "let",
-   "line": 788,
+   "line": 781,
    "lines": 1,
    "section": "ENCRYPTION AT REST (AES-256-GCM via the Web Crypto API)",
    "internalRefs": 9,
@@ -1421,7 +1278,7 @@
   {
    "name": "_unlockMode",
    "kind": "let",
-   "line": 789,
+   "line": 782,
    "lines": 1,
    "section": "ENCRYPTION AT REST (AES-256-GCM via the Web Crypto API)",
    "internalRefs": 6,
@@ -1438,7 +1295,7 @@
   {
    "name": "promptUnlock",
    "kind": "function",
-   "line": 791,
+   "line": 784,
    "lines": 16,
    "section": "ENCRYPTION AT REST (AES-256-GCM via the Web Crypto API)",
    "internalRefs": 1,
@@ -1455,7 +1312,7 @@
   {
    "name": "_pendingOpenManifest",
    "kind": "let",
-   "line": 815,
+   "line": 808,
    "lines": 1,
    "section": "ENCRYPTION AT REST (AES-256-GCM via the Web Crypto API)",
    "internalRefs": 3,
@@ -1472,7 +1329,7 @@
   {
    "name": "_pendingOpenZip",
    "kind": "let",
-   "line": 815,
+   "line": 808,
    "lines": 1,
    "section": "ENCRYPTION AT REST (AES-256-GCM via the Web Crypto API)",
    "internalRefs": 3,
@@ -1489,7 +1346,7 @@
   {
    "name": "promptPasswordForFile",
    "kind": "function",
-   "line": 816,
+   "line": 809,
    "lines": 26,
    "section": "ENCRYPTION AT REST (AES-256-GCM via the Web Crypto API)",
    "internalRefs": 1,
@@ -1506,7 +1363,7 @@
   {
    "name": "promptCreatePassword",
    "kind": "function",
-   "line": 843,
+   "line": 836,
    "lines": 17,
    "section": "ENCRYPTION AT REST (AES-256-GCM via the Web Crypto API)",
    "internalRefs": 2,
@@ -1523,7 +1380,7 @@
   {
    "name": "showUnlockError",
    "kind": "function",
-   "line": 861,
+   "line": 854,
    "lines": 5,
    "section": "ENCRYPTION AT REST (AES-256-GCM via the Web Crypto API)",
    "internalRefs": 8,
@@ -1540,7 +1397,7 @@
   {
    "name": "UNLOCK_FAIL_THRESHOLD",
    "kind": "const",
-   "line": 874,
+   "line": 867,
    "lines": 1,
    "section": "ENCRYPTION AT REST (AES-256-GCM via the Web Crypto API)",
    "internalRefs": 2,
@@ -1557,7 +1414,7 @@
   {
    "name": "UNLOCK_LOCKOUT_BASE_MS",
    "kind": "const",
-   "line": 875,
+   "line": 868,
    "lines": 1,
    "section": "ENCRYPTION AT REST (AES-256-GCM via the Web Crypto API)",
    "internalRefs": 1,
@@ -1574,7 +1431,7 @@
   {
    "name": "UNLOCK_LOCKOUT_MAX_MS",
    "kind": "const",
-   "line": 876,
+   "line": 869,
    "lines": 1,
    "section": "ENCRYPTION AT REST (AES-256-GCM via the Web Crypto API)",
    "internalRefs": 1,
@@ -1591,7 +1448,7 @@
   {
    "name": "getUnlockFailState",
    "kind": "function",
-   "line": 878,
+   "line": 871,
    "lines": 4,
    "section": "ENCRYPTION AT REST (AES-256-GCM via the Web Crypto API)",
    "internalRefs": 1,
@@ -1608,7 +1465,7 @@
   {
    "name": "saveUnlockFailState",
    "kind": "function",
-   "line": 882,
+   "line": 875,
    "lines": 3,
    "section": "ENCRYPTION AT REST (AES-256-GCM via the Web Crypto API)",
    "internalRefs": 3,
@@ -1625,7 +1482,7 @@
   {
    "name": "formatLockoutRemaining",
    "kind": "function",
-   "line": 885,
+   "line": 878,
    "lines": 4,
    "section": "ENCRYPTION AT REST (AES-256-GCM via the Web Crypto API)",
    "internalRefs": 2,
@@ -1642,7 +1499,7 @@
   {
    "name": "submitUnlockForm",
    "kind": "function",
-   "line": 890,
+   "line": 883,
    "lines": 78,
    "section": "ENCRYPTION AT REST (AES-256-GCM via the Web Crypto API)",
    "internalRefs": 1,
@@ -1661,7 +1518,7 @@
   {
    "name": "lockApp",
    "kind": "function",
-   "line": 981,
+   "line": 974,
    "lines": 56,
    "section": "ENCRYPTION AT REST (AES-256-GCM via the Web Crypto API)",
    "internalRefs": 1,
@@ -1680,7 +1537,7 @@
   {
    "name": "AUTO_LOCK_MS",
    "kind": "const",
-   "line": 1043,
+   "line": 1036,
    "lines": 1,
    "section": "ENCRYPTION AT REST (AES-256-GCM via the Web Crypto API)",
    "internalRefs": 1,
@@ -1697,7 +1554,7 @@
   {
    "name": "_autoLockTimer",
    "kind": "let",
-   "line": 1044,
+   "line": 1037,
    "lines": 1,
    "section": "ENCRYPTION AT REST (AES-256-GCM via the Web Crypto API)",
    "internalRefs": 6,
@@ -1714,7 +1571,7 @@
   {
    "name": "resetAutoLockTimer",
    "kind": "function",
-   "line": 1045,
+   "line": 1038,
    "lines": 5,
    "section": "ENCRYPTION AT REST (AES-256-GCM via the Web Crypto API)",
    "internalRefs": 4,
@@ -1731,10 +1588,10 @@
   {
    "name": "saveWardToState",
    "kind": "function",
-   "line": 1061,
+   "line": 1054,
    "lines": 9,
    "section": "IN-MEMORY STATE OPERATIONS",
-   "internalRefs": 9,
+   "internalRefs": 1,
    "moduleConsumers": [
     "src/core/navigation/ward-lifecycle.js",
     "src/core/persistence/case-file.js",
@@ -1752,7 +1609,7 @@
   {
    "name": "deleteWardFromState",
    "kind": "function",
-   "line": 1071,
+   "line": 1064,
    "lines": 5,
    "section": "IN-MEMORY STATE OPERATIONS",
    "internalRefs": 0,
@@ -1771,7 +1628,7 @@
   {
    "name": "saveTemplate",
    "kind": "function",
-   "line": 1078,
+   "line": 1071,
    "lines": 5,
    "section": "IN-MEMORY STATE OPERATIONS",
    "internalRefs": 1,
@@ -1788,7 +1645,7 @@
   {
    "name": "loadTemplate",
    "kind": "function",
-   "line": 1084,
+   "line": 1077,
    "lines": 3,
    "section": "IN-MEMORY STATE OPERATIONS",
    "internalRefs": 2,
@@ -1805,7 +1662,7 @@
   {
    "name": "appendAuditLogEntry",
    "kind": "function",
-   "line": 1104,
+   "line": 1097,
    "lines": 11,
    "section": "IN-MEMORY STATE OPERATIONS",
    "internalRefs": 1,
@@ -1822,7 +1679,7 @@
   {
    "name": "loadAuditLogEntries",
    "kind": "function",
-   "line": 1116,
+   "line": 1109,
    "lines": 3,
    "section": "IN-MEMORY STATE OPERATIONS",
    "internalRefs": 1,
@@ -1839,7 +1696,7 @@
   {
    "name": "ACTIVITY_EVENT_META",
    "kind": "const",
-   "line": 1128,
+   "line": 1121,
    "lines": 11,
    "section": "ACTIVITY LOG — VIEWER",
    "internalRefs": 4,
@@ -1856,7 +1713,7 @@
   {
    "name": "_activityLogEntries",
    "kind": "let",
-   "line": 1139,
+   "line": 1132,
    "lines": 1,
    "section": "ACTIVITY LOG — VIEWER",
    "internalRefs": 7,
@@ -1873,7 +1730,7 @@
   {
    "name": "ACTIVITY_LOG_RENDER_CAP",
    "kind": "const",
-   "line": 1140,
+   "line": 1133,
    "lines": 1,
    "section": "ACTIVITY LOG — VIEWER",
    "internalRefs": 3,
@@ -1890,7 +1747,7 @@
   {
    "name": "loadAndRenderActivityLog",
    "kind": "function",
-   "line": 1142,
+   "line": 1135,
    "lines": 8,
    "section": "ACTIVITY LOG — VIEWER",
    "internalRefs": 0,
@@ -1909,7 +1766,7 @@
   {
    "name": "renderStorageReadout",
    "kind": "function",
-   "line": 1153,
+   "line": 1146,
    "lines": 22,
    "section": "ACTIVITY LOG — VIEWER",
    "internalRefs": 1,
@@ -1926,7 +1783,7 @@
   {
    "name": "activityLogFiltered",
    "kind": "function",
-   "line": 1176,
+   "line": 1169,
    "lines": 12,
    "section": "ACTIVITY LOG — VIEWER",
    "internalRefs": 2,
@@ -1943,7 +1800,7 @@
   {
    "name": "renderActivityLogList",
    "kind": "function",
-   "line": 1189,
+   "line": 1182,
    "lines": 33,
    "section": "ACTIVITY LOG — VIEWER",
    "internalRefs": 1,
@@ -1962,7 +1819,7 @@
   {
    "name": "formatActivityTimestamp",
    "kind": "function",
-   "line": 1223,
+   "line": 1216,
    "lines": 5,
    "section": "ACTIVITY LOG — VIEWER",
    "internalRefs": 2,
@@ -1979,7 +1836,7 @@
   {
    "name": "exportActivityLog",
    "kind": "function",
-   "line": 1232,
+   "line": 1225,
    "lines": 29,
    "section": "ACTIVITY LOG — VIEWER",
    "internalRefs": 0,
@@ -1998,7 +1855,7 @@
   {
    "name": "pageActivityLog",
    "kind": "function",
-   "line": 1262,
+   "line": 1255,
    "lines": 26,
    "section": "ACTIVITY LOG — VIEWER",
    "internalRefs": 0,
@@ -2015,514 +1872,12 @@
    "reviewNote": null
   },
   {
-   "name": "PARTY_FIELD_ROWS",
-   "kind": "const",
-   "line": 1299,
-   "lines": 16,
-   "section": "PARTY MANAGEMENT / DE-DUPLICATION (persistence rewrite Milestone 7)",
-   "internalRefs": 2,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "SLOT_FIELD_LABELS",
-   "kind": "const",
-   "line": 1316,
-   "lines": 1,
-   "section": "PARTY MANAGEMENT / DE-DUPLICATION (persistence rewrite Milestone 7)",
-   "internalRefs": 2,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "partyFieldValue",
-   "kind": "function",
-   "line": 1317,
-   "lines": 3,
-   "section": "PARTY MANAGEMENT / DE-DUPLICATION (persistence rewrite Milestone 7)",
-   "internalRefs": 5,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "partyRoleBadgesHTML",
-   "kind": "function",
-   "line": 1320,
-   "lines": 3,
-   "section": "PARTY MANAGEMENT / DE-DUPLICATION (persistence rewrite Milestone 7)",
-   "internalRefs": 3,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "filingLabel",
-   "kind": "function",
-   "line": 1323,
-   "lines": 3,
-   "section": "PARTY MANAGEMENT / DE-DUPLICATION (persistence rewrite Milestone 7)",
-   "internalRefs": 2,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "slotLabel",
-   "kind": "function",
-   "line": 1326,
-   "lines": 3,
-   "section": "PARTY MANAGEMENT / DE-DUPLICATION (persistence rewrite Milestone 7)",
-   "internalRefs": 6,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "partyReferenceLinesHTML",
-   "kind": "function",
-   "line": 1331,
-   "lines": 8,
-   "section": "PARTY MANAGEMENT / DE-DUPLICATION (persistence rewrite Milestone 7)",
-   "internalRefs": 1,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "_partyCompareIds",
-   "kind": "let",
-   "line": 1342,
-   "lines": 1,
-   "section": "PARTY MANAGEMENT / DE-DUPLICATION (persistence rewrite Milestone 7)",
-   "internalRefs": 11,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "_partyUnmergeIds",
-   "kind": "let",
-   "line": 1343,
-   "lines": 1,
-   "section": "PARTY MANAGEMENT / DE-DUPLICATION (persistence rewrite Milestone 7)",
-   "internalRefs": 9,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "pagePartyManagement",
-   "kind": "function",
-   "line": 1344,
-   "lines": 13,
-   "section": "PARTY MANAGEMENT / DE-DUPLICATION (persistence rewrite Milestone 7)",
-   "internalRefs": 0,
-   "moduleConsumers": [
-    "src/core/navigation/router.js"
-   ],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "renderPartyManagementBody",
-   "kind": "function",
-   "line": 1357,
-   "lines": 4,
-   "section": "PARTY MANAGEMENT / DE-DUPLICATION (persistence rewrite Milestone 7)",
-   "internalRefs": 8,
-   "moduleConsumers": [
-    "src/core/navigation/router.js"
-   ],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "renderPartyDedupeQueue",
-   "kind": "function",
-   "line": 1364,
-   "lines": 8,
-   "section": "PARTY MANAGEMENT / DE-DUPLICATION (persistence rewrite Milestone 7)",
-   "internalRefs": 1,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "manualCompareCandidate",
-   "kind": "function",
-   "line": 1372,
-   "lines": 6,
-   "section": "PARTY MANAGEMENT / DE-DUPLICATION (persistence rewrite Milestone 7)",
-   "internalRefs": 1,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "partyMatchBadge",
-   "kind": "function",
-   "line": 1378,
-   "lines": 5,
-   "section": "PARTY MANAGEMENT / DE-DUPLICATION (persistence rewrite Milestone 7)",
-   "internalRefs": 1,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "partyDedupeCardHTML",
-   "kind": "function",
-   "line": 1383,
-   "lines": 28,
-   "section": "PARTY MANAGEMENT / DE-DUPLICATION (persistence rewrite Milestone 7)",
-   "internalRefs": 1,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "renderPartyDirectoryRows",
-   "kind": "function",
-   "line": 1411,
-   "lines": 24,
-   "section": "PARTY MANAGEMENT / DE-DUPLICATION (persistence rewrite Milestone 7)",
-   "internalRefs": 1,
-   "moduleConsumers": [
-    "src/form-events.js"
-   ],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "partyClosedDriftHTML",
-   "kind": "function",
-   "line": 1438,
-   "lines": 10,
-   "section": "PARTY MANAGEMENT / DE-DUPLICATION (persistence rewrite Milestone 7)",
-   "internalRefs": 1,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "doPartySyncClosed",
-   "kind": "function",
-   "line": 1448,
-   "lines": 9,
-   "section": "PARTY MANAGEMENT / DE-DUPLICATION (persistence rewrite Milestone 7)",
-   "internalRefs": 0,
-   "moduleConsumers": [
-    "src/form-events.js"
-   ],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "doPartySyncClosedAll",
-   "kind": "function",
-   "line": 1457,
-   "lines": 7,
-   "section": "PARTY MANAGEMENT / DE-DUPLICATION (persistence rewrite Milestone 7)",
-   "internalRefs": 0,
-   "moduleConsumers": [
-    "src/form-events.js"
-   ],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "renderClosedFilingSyncNotice",
-   "kind": "function",
-   "line": 1467,
-   "lines": 18,
-   "section": "PARTY MANAGEMENT / DE-DUPLICATION (persistence rewrite Milestone 7)",
-   "internalRefs": 0,
-   "moduleConsumers": [
-    "src/core/navigation/router.js"
-   ],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "doFilingSyncClosed",
-   "kind": "function",
-   "line": 1485,
-   "lines": 10,
-   "section": "PARTY MANAGEMENT / DE-DUPLICATION (persistence rewrite Milestone 7)",
-   "internalRefs": 0,
-   "moduleConsumers": [
-    "src/form-events.js"
-   ],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "partySubRowHTML",
-   "kind": "function",
-   "line": 1495,
-   "lines": 8,
-   "section": "PARTY MANAGEMENT / DE-DUPLICATION (persistence rewrite Milestone 7)",
-   "internalRefs": 1,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "togglePartyCompareSelection",
-   "kind": "function",
-   "line": 1503,
-   "lines": 5,
-   "section": "PARTY MANAGEMENT / DE-DUPLICATION (persistence rewrite Milestone 7)",
-   "internalRefs": 0,
-   "moduleConsumers": [
-    "src/form-events.js"
-   ],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "clearPartyCompareSelection",
-   "kind": "function",
-   "line": 1508,
-   "lines": 4,
-   "section": "PARTY MANAGEMENT / DE-DUPLICATION (persistence rewrite Milestone 7)",
-   "internalRefs": 0,
-   "moduleConsumers": [
-    "src/form-events.js"
-   ],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "togglePartyUnmergeSelection",
-   "kind": "function",
-   "line": 1512,
-   "lines": 5,
-   "section": "PARTY MANAGEMENT / DE-DUPLICATION (persistence rewrite Milestone 7)",
-   "internalRefs": 0,
-   "moduleConsumers": [
-    "src/form-events.js"
-   ],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "doPartyMergeKeep",
-   "kind": "function",
-   "line": 1522,
-   "lines": 19,
-   "section": "PARTY MANAGEMENT / DE-DUPLICATION (persistence rewrite Milestone 7)",
-   "internalRefs": 0,
-   "moduleConsumers": [
-    "src/form-events.js"
-   ],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "doPartyDismissPair",
-   "kind": "function",
-   "line": 1541,
-   "lines": 5,
-   "section": "PARTY MANAGEMENT / DE-DUPLICATION (persistence rewrite Milestone 7)",
-   "internalRefs": 0,
-   "moduleConsumers": [
-    "src/form-events.js"
-   ],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "doPartyUnmergeSelected",
-   "kind": "function",
-   "line": 1546,
-   "lines": 14,
-   "section": "PARTY MANAGEMENT / DE-DUPLICATION (persistence rewrite Milestone 7)",
-   "internalRefs": 0,
-   "moduleConsumers": [
-    "src/form-events.js"
-   ],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
    "name": "autoSave",
    "kind": "function",
-   "line": 1561,
+   "line": 1293,
    "lines": 7,
    "section": "PARTY MANAGEMENT / DE-DUPLICATION (persistence rewrite Milestone 7)",
-   "internalRefs": 13,
+   "internalRefs": 5,
    "moduleConsumers": [
     "src/core/form/form-contract.js",
     "src/core/form/prune-cards.js",
@@ -2551,10 +1906,10 @@
   {
    "name": "flushPendingSave",
    "kind": "function",
-   "line": 1573,
+   "line": 1305,
    "lines": 8,
    "section": "PARTY MANAGEMENT / DE-DUPLICATION (persistence rewrite Milestone 7)",
-   "internalRefs": 5,
+   "internalRefs": 4,
    "moduleConsumers": [
     "src/core/navigation/ward-lifecycle.js",
     "src/core/persistence/case-file.js",
@@ -2572,7 +1927,7 @@
   {
    "name": "showSaveError",
    "kind": "function",
-   "line": 1582,
+   "line": 1314,
    "lines": 4,
    "section": "PARTY MANAGEMENT / DE-DUPLICATION (persistence rewrite Milestone 7)",
    "internalRefs": 0,
@@ -2592,7 +1947,7 @@
   {
    "name": "hideSaveError",
    "kind": "function",
-   "line": 1586,
+   "line": 1318,
    "lines": 4,
    "section": "PARTY MANAGEMENT / DE-DUPLICATION (persistence rewrite Milestone 7)",
    "internalRefs": 0,
@@ -2611,7 +1966,7 @@
   {
    "name": "saveData",
    "kind": "function",
-   "line": 1606,
+   "line": 1338,
    "lines": 40,
    "section": "PARTY MANAGEMENT / DE-DUPLICATION (persistence rewrite Milestone 7)",
    "internalRefs": 4,
@@ -2632,7 +1987,7 @@
   {
    "name": "loadGuardianData",
    "kind": "function",
-   "line": 1649,
+   "line": 1381,
    "lines": 3,
    "section": "PARTY MANAGEMENT / DE-DUPLICATION (persistence rewrite Milestone 7)",
    "internalRefs": 2,
@@ -2649,10 +2004,10 @@
   {
    "name": "getActiveWard",
    "kind": "function",
-   "line": 1654,
+   "line": 1386,
    "lines": 1,
    "section": "PARTY MANAGEMENT / DE-DUPLICATION (persistence rewrite Milestone 7)",
-   "internalRefs": 7,
+   "internalRefs": 6,
    "moduleConsumers": [],
    "e2eFiles": 3,
    "unitSlices": 0,
@@ -2661,7 +2016,7 @@
    ],
    "disposition": "wrapper",
    "delivery": "70K",
-   "wrapperWhile": "classic callers remain: clearAllData, confirmDeleteWard, getProbateGuardianTabState, initApp, lockApp, refreshWardInfoCard, saveData",
+   "wrapperWhile": "classic callers remain: clearAllData, getProbateGuardianTabState, initApp, lockApp, refreshWardInfoCard, saveData",
    "reviewed": true,
    "reviewNote": "An accessor modules call to read case state: exactly what 70E's store seam replaces.",
    "movedIn": "70E"
@@ -2669,7 +2024,7 @@
   {
    "name": "getProbateGuardianTabState",
    "kind": "function",
-   "line": 1656,
+   "line": 1388,
    "lines": 14,
    "section": "PARTY MANAGEMENT / DE-DUPLICATION (persistence rewrite Milestone 7)",
    "internalRefs": 3,
@@ -2689,10 +2044,10 @@
   {
    "name": "notifyProbateGuardianTabStateChanged",
    "kind": "function",
-   "line": 1671,
+   "line": 1403,
    "lines": 3,
    "section": "PARTY MANAGEMENT / DE-DUPLICATION (persistence rewrite Milestone 7)",
-   "internalRefs": 5,
+   "internalRefs": 3,
    "moduleConsumers": [
     "src/core/navigation/ward-lifecycle.js",
     "src/core/persistence/case-file.js"
@@ -2709,7 +2064,7 @@
   {
    "name": "isContinuePromptShown",
    "kind": "function",
-   "line": 1684,
+   "line": 1416,
    "lines": 1,
    "section": "PARTY MANAGEMENT / DE-DUPLICATION (persistence rewrite Milestone 7)",
    "internalRefs": 2,
@@ -2728,7 +2083,7 @@
   {
    "name": "markContinuePromptShown",
    "kind": "function",
-   "line": 1686,
+   "line": 1418,
    "lines": 4,
    "section": "PARTY MANAGEMENT / DE-DUPLICATION (persistence rewrite Milestone 7)",
    "internalRefs": 2,
@@ -2747,7 +2102,7 @@
   {
    "name": "SESSION_CACHE_DB",
    "kind": "const",
-   "line": 1805,
+   "line": 1537,
    "lines": 1,
    "section": "SESSION-RESTORE CACHE (crash recovery)",
    "internalRefs": 1,
@@ -2766,7 +2121,7 @@
   {
    "name": "SESSION_CACHE_STORE",
    "kind": "const",
-   "line": 1805,
+   "line": 1537,
    "lines": 1,
    "section": "SESSION-RESTORE CACHE (crash recovery)",
    "internalRefs": 7,
@@ -2785,7 +2140,7 @@
   {
    "name": "_sessionCacheDb",
    "kind": "function",
-   "line": 1806,
+   "line": 1538,
    "lines": 8,
    "section": "SESSION-RESTORE CACHE (crash recovery)",
    "internalRefs": 3,
@@ -2804,7 +2159,7 @@
   {
    "name": "_sessionCacheGet",
    "kind": "function",
-   "line": 1814,
+   "line": 1546,
    "lines": 10,
    "section": "SESSION-RESTORE CACHE (crash recovery)",
    "internalRefs": 1,
@@ -2823,7 +2178,7 @@
   {
    "name": "_sessionCachePut",
    "kind": "function",
-   "line": 1824,
+   "line": 1556,
    "lines": 10,
    "section": "SESSION-RESTORE CACHE (crash recovery)",
    "internalRefs": 0,
@@ -2842,7 +2197,7 @@
   {
    "name": "_sessionCacheClear",
    "kind": "function",
-   "line": 1834,
+   "line": 1566,
    "lines": 10,
    "section": "SESSION-RESTORE CACHE (crash recovery)",
    "internalRefs": 0,
@@ -2861,7 +2216,7 @@
   {
    "name": "LAUNCH_PREF_DB",
    "kind": "const",
-   "line": 1856,
+   "line": 1588,
    "lines": 1,
    "section": "OPEN / START AT LAUNCH",
    "internalRefs": 1,
@@ -2880,7 +2235,7 @@
   {
    "name": "LAUNCH_PREF_STORE",
    "kind": "const",
-   "line": 1856,
+   "line": 1588,
    "lines": 1,
    "section": "OPEN / START AT LAUNCH",
    "internalRefs": 7,
@@ -2899,7 +2254,7 @@
   {
    "name": "LAUNCH_PREF_KEY_OPENED",
    "kind": "const",
-   "line": 1857,
+   "line": 1589,
    "lines": 1,
    "section": "OPEN / START AT LAUNCH",
    "internalRefs": 0,
@@ -2918,7 +2273,7 @@
   {
    "name": "LAUNCH_PREF_KEY_HANDLE",
    "kind": "const",
-   "line": 1857,
+   "line": 1589,
    "lines": 1,
    "section": "OPEN / START AT LAUNCH",
    "internalRefs": 0,
@@ -2937,7 +2292,7 @@
   {
    "name": "REMEMBERED_FILE_TIMEOUT_MS",
    "kind": "const",
-   "line": 1858,
+   "line": 1590,
    "lines": 1,
    "section": "OPEN / START AT LAUNCH",
    "internalRefs": 0,
@@ -2956,7 +2311,7 @@
   {
    "name": "_rememberedFileUnavailable",
    "kind": "let",
-   "line": 1859,
+   "line": 1591,
    "lines": 1,
    "section": "OPEN / START AT LAUNCH",
    "internalRefs": 1,
@@ -2973,7 +2328,7 @@
   {
    "name": "_launchPrefDb",
    "kind": "function",
-   "line": 1860,
+   "line": 1592,
    "lines": 8,
    "section": "OPEN / START AT LAUNCH",
    "internalRefs": 3,
@@ -2992,7 +2347,7 @@
   {
    "name": "_launchPrefGet",
    "kind": "function",
-   "line": 1868,
+   "line": 1600,
    "lines": 8,
    "section": "OPEN / START AT LAUNCH",
    "internalRefs": 0,
@@ -3011,7 +2366,7 @@
   {
    "name": "_launchPrefPut",
    "kind": "function",
-   "line": 1876,
+   "line": 1608,
    "lines": 9,
    "section": "OPEN / START AT LAUNCH",
    "internalRefs": 0,
@@ -3030,7 +2385,7 @@
   {
    "name": "_launchPrefDelete",
    "kind": "function",
-   "line": 1885,
+   "line": 1617,
    "lines": 9,
    "section": "OPEN / START AT LAUNCH",
    "internalRefs": 0,
@@ -3049,7 +2404,7 @@
   {
    "name": "trySilentReopen",
    "kind": "function",
-   "line": 1899,
+   "line": 1631,
    "lines": 18,
    "section": "OPEN / START AT LAUNCH",
    "internalRefs": 1,
@@ -3066,7 +2421,7 @@
   {
    "name": "_launchStateResolved",
    "kind": "let",
-   "line": 1918,
+   "line": 1650,
    "lines": 1,
    "section": "OPEN / START AT LAUNCH",
    "internalRefs": 3,
@@ -3083,7 +2438,7 @@
   {
    "name": "_openedFileAtLaunch",
    "kind": "let",
-   "line": 1919,
+   "line": 1651,
    "lines": 1,
    "section": "OPEN / START AT LAUNCH",
    "internalRefs": 3,
@@ -3100,7 +2455,7 @@
   {
    "name": "_startupChoiceResolve",
    "kind": "let",
-   "line": 1920,
+   "line": 1652,
    "lines": 1,
    "section": "OPEN / START AT LAUNCH",
    "internalRefs": 3,
@@ -3117,7 +2472,7 @@
   {
    "name": "promptOpenOrStartAtLaunch",
    "kind": "function",
-   "line": 1921,
+   "line": 1653,
    "lines": 12,
    "section": "OPEN / START AT LAUNCH",
    "internalRefs": 1,
@@ -3134,7 +2489,7 @@
   {
    "name": "_resolveStartupChoice",
    "kind": "function",
-   "line": 1933,
+   "line": 1665,
    "lines": 5,
    "section": "OPEN / START AT LAUNCH",
    "internalRefs": 4,
@@ -3151,7 +2506,7 @@
   {
    "name": "startNewWardAtLaunch",
    "kind": "function",
-   "line": 1938,
+   "line": 1670,
    "lines": 5,
    "section": "OPEN / START AT LAUNCH",
    "internalRefs": 3,
@@ -3170,7 +2525,7 @@
   {
    "name": "startNewCaseAtLaunch",
    "kind": "const",
-   "line": 1943,
+   "line": 1675,
    "lines": 1,
    "section": "OPEN / START AT LAUNCH",
    "internalRefs": 2,
@@ -3189,7 +2544,7 @@
   {
    "name": "openWardFileAtLaunch",
    "kind": "function",
-   "line": 1962,
+   "line": 1694,
    "lines": 51,
    "section": "OPEN / START AT LAUNCH",
    "internalRefs": 3,
@@ -3208,7 +2563,7 @@
   {
    "name": "openCaseFileAtLaunch",
    "kind": "const",
-   "line": 2013,
+   "line": 1745,
    "lines": 1,
    "section": "OPEN / START AT LAUNCH",
    "internalRefs": 2,
@@ -3227,7 +2582,7 @@
   {
    "name": "handleStartupOpenInputChange",
    "kind": "function",
-   "line": 2017,
+   "line": 1749,
    "lines": 10,
    "section": "OPEN / START AT LAUNCH",
    "internalRefs": 2,
@@ -3246,7 +2601,7 @@
   {
    "name": "loadCaseFileAtLaunch",
    "kind": "function",
-   "line": 2034,
+   "line": 1766,
    "lines": 45,
    "section": "OPEN / START AT LAUNCH",
    "internalRefs": 4,
@@ -3263,7 +2618,7 @@
   {
    "name": "loadCaseFileFromZip",
    "kind": "function",
-   "line": 2087,
+   "line": 1819,
    "lines": 133,
    "section": "OPEN / START AT LAUNCH",
    "internalRefs": 2,
@@ -3280,7 +2635,7 @@
   {
    "name": "setupDragAndDropImport",
    "kind": "function",
-   "line": 2226,
+   "line": 1958,
    "lines": 41,
    "section": "OPEN / START AT LAUNCH",
    "internalRefs": 1,
@@ -3297,7 +2652,7 @@
   {
    "name": "clearAllData",
    "kind": "function",
-   "line": 2268,
+   "line": 2000,
    "lines": 11,
    "section": "OPEN / START AT LAUNCH",
    "internalRefs": 0,
@@ -3314,411 +2669,69 @@
    "reviewNote": null
   },
   {
-   "name": "ACCOUNTING_FORM_TYPES",
-   "kind": "const",
-   "line": 2304,
-   "lines": 1,
-   "section": "WARD MANAGEMENT",
-   "internalRefs": 2,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [
-    "src/core/navigation/ward-lifecycle.js"
-   ],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "PRIOR_ACCOUNTING_SOURCES",
-   "kind": "const",
-   "line": 2305,
-   "lines": 1,
-   "section": "WARD MANAGEMENT",
-   "internalRefs": 4,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [
-    "src/core/navigation/ward-lifecycle.js"
-   ],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "CARRY_SOURCE_TYPE",
-   "kind": "const",
-   "line": 2310,
-   "lines": 11,
-   "section": "WARD MANAGEMENT",
-   "internalRefs": 0,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [
-    "src/core/navigation/ward-lifecycle.js"
-   ],
-   "disposition": "delete-as-dead",
-   "delivery": "70G",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24)."
-  },
-  {
-   "name": "carryOverAccountingToAccounting",
-   "kind": "function",
-   "line": 2329,
-   "lines": 101,
-   "section": "WARD MANAGEMENT",
-   "internalRefs": 1,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "carryOverFields",
-   "kind": "function",
-   "line": 2435,
-   "lines": 39,
-   "section": "WARD MANAGEMENT",
-   "internalRefs": 4,
-   "moduleConsumers": [],
-   "e2eFiles": 2,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "refreshCarrySourceSelect",
-   "kind": "function",
-   "line": 2487,
-   "lines": 29,
-   "section": "WARD MANAGEMENT",
-   "internalRefs": 2,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
    "name": "updateCarrySourcePicker",
    "kind": "function",
-   "line": 2517,
-   "lines": 5,
-   "section": "WARD MANAGEMENT",
-   "internalRefs": 4,
-   "moduleConsumers": [
-    "src/modal-events.js"
-   ],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "onCarrySourceChange",
-   "kind": "function",
-   "line": 2525,
-   "lines": 8,
-   "section": "WARD MANAGEMENT",
-   "internalRefs": 0,
-   "moduleConsumers": [
-    "src/modal-events.js"
-   ],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "_pickPartySlot",
-   "kind": "let",
-   "line": 2537,
+   "line": 2026,
    "lines": 1,
    "section": "WARD MANAGEMENT",
-   "internalRefs": 6,
+   "internalRefs": 2,
    "moduleConsumers": [],
    "e2eFiles": 0,
    "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "partyRoleLabel",
-   "kind": "function",
-   "line": 2539,
-   "lines": 3,
-   "section": "WARD MANAGEMENT",
-   "internalRefs": 1,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "showPickPartyModal",
-   "kind": "function",
-   "line": 2546,
-   "lines": 11,
-   "section": "WARD MANAGEMENT",
-   "internalRefs": 0,
-   "moduleConsumers": [
-    "src/features/annual-accounting/index.js",
-    "src/features/guardian-inventory/index.js",
-    "src/form-events.js"
+   "duplicateOf": [
+    "src/core/filing/carry-over.js"
    ],
-   "e2eFiles": 2,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": "modules read it through window or by bare name",
+   "disposition": "wrapper",
+   "delivery": "70H",
+   "wrapperWhile": "classic callers remain: showAddWardModalForType",
    "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "doPickParty",
-   "kind": "function",
-   "line": 2561,
-   "lines": 13,
-   "section": "WARD MANAGEMENT",
-   "internalRefs": 0,
-   "moduleConsumers": [
-    "src/modal-events.js"
-   ],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "doCreatePartyFromSlot",
-   "kind": "function",
-   "line": 2578,
-   "lines": 13,
-   "section": "WARD MANAGEMENT",
-   "internalRefs": 0,
-   "moduleConsumers": [
-    "src/modal-events.js"
-   ],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "_pickCaseWardId",
-   "kind": "let",
-   "line": 2595,
-   "lines": 1,
-   "section": "WARD MANAGEMENT",
-   "internalRefs": 5,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "showPickCaseModal",
-   "kind": "function",
-   "line": 2600,
-   "lines": 16,
-   "section": "WARD MANAGEMENT",
-   "internalRefs": 0,
-   "moduleConsumers": [
-    "src/features/dashboard/index.js"
-   ],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "doPickCase",
-   "kind": "function",
-   "line": 2618,
-   "lines": 10,
-   "section": "WARD MANAGEMENT",
-   "internalRefs": 0,
-   "moduleConsumers": [
-    "src/modal-events.js"
-   ],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "doCreateCaseFromWard",
-   "kind": "function",
-   "line": 2631,
-   "lines": 10,
-   "section": "WARD MANAGEMENT",
-   "internalRefs": 0,
-   "moduleConsumers": [
-    "src/modal-events.js"
-   ],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "RECENT_WARDS_MAX",
-   "kind": "const",
-   "line": 2644,
-   "lines": 1,
-   "section": "WARD MANAGEMENT",
-   "internalRefs": 1,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
+   "reviewNote": null,
+   "movedIn": "70G"
   },
   {
    "name": "loadRecentlyOpenedWards",
    "kind": "function",
-   "line": 2646,
-   "lines": 4,
-   "section": "WARD MANAGEMENT",
-   "internalRefs": 3,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "saveRecentlyOpenedWards",
-   "kind": "function",
-   "line": 2651,
-   "lines": 4,
+   "line": 2041,
+   "lines": 1,
    "section": "WARD MANAGEMENT",
    "internalRefs": 1,
    "moduleConsumers": [],
    "e2eFiles": 0,
    "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": null,
+   "duplicateOf": [
+    "src/core/filing/recent-filings.js"
+   ],
+   "disposition": "wrapper",
+   "delivery": "70I",
+   "wrapperWhile": "classic callers remain: loadCaseFileFromZip",
    "reviewed": true,
-   "reviewNote": null
+   "reviewNote": null,
+   "movedIn": "70G"
   },
   {
    "name": "addToRecentlyOpened",
    "kind": "function",
-   "line": 2656,
-   "lines": 6,
+   "line": 2045,
+   "lines": 1,
    "section": "WARD MANAGEMENT",
-   "internalRefs": 3,
-   "moduleConsumers": [
-    "src/core/navigation/ward-lifecycle.js"
-   ],
+   "internalRefs": 1,
+   "moduleConsumers": [],
    "e2eFiles": 0,
    "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "getRecentlyOpenedWards",
-   "kind": "function",
-   "line": 2667,
-   "lines": 8,
-   "section": "WARD MANAGEMENT",
-   "internalRefs": 2,
-   "moduleConsumers": [
-    "src/features/dashboard/index.js"
+   "duplicateOf": [
+    "src/core/filing/recent-filings.js"
    ],
-   "e2eFiles": 1,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": "modules read it through window or by bare name",
+   "disposition": "wrapper",
+   "delivery": "70I",
+   "wrapperWhile": "classic callers remain: loadCaseFileFromZip",
    "reviewed": true,
-   "reviewNote": null
+   "reviewNote": null,
+   "movedIn": "70G"
   },
   {
    "name": "comboboxFilterItems",
    "kind": "function",
-   "line": 2689,
+   "line": 2060,
    "lines": 5,
    "section": "WARD ACTIVATION / UNLOAD (Single Chokepoint)",
    "internalRefs": 3,
@@ -3735,7 +2748,7 @@
   {
    "name": "comboboxRenderDropdown",
    "kind": "function",
-   "line": 2694,
+   "line": 2065,
    "lines": 15,
    "section": "WARD ACTIVATION / UNLOAD (Single Chokepoint)",
    "internalRefs": 3,
@@ -3752,7 +2765,7 @@
   {
    "name": "comboboxHide",
    "kind": "function",
-   "line": 2709,
+   "line": 2080,
    "lines": 3,
    "section": "WARD ACTIVATION / UNLOAD (Single Chokepoint)",
    "internalRefs": 7,
@@ -3769,7 +2782,7 @@
   {
    "name": "comboboxAssignOptionIds",
    "kind": "function",
-   "line": 2717,
+   "line": 2088,
    "lines": 5,
    "section": "WARD ACTIVATION / UNLOAD (Single Chokepoint)",
    "internalRefs": 2,
@@ -3786,7 +2799,7 @@
   {
    "name": "bindComboboxKeyboardNav",
    "kind": "function",
-   "line": 2746,
+   "line": 2117,
    "lines": 41,
    "section": "WARD ACTIVATION / UNLOAD (Single Chokepoint)",
    "internalRefs": 3,
@@ -3803,7 +2816,7 @@
   {
    "name": "wardSelectorItems",
    "kind": "function",
-   "line": 2791,
+   "line": 2162,
    "lines": 7,
    "section": "WARD ACTIVATION / UNLOAD (Single Chokepoint)",
    "internalRefs": 1,
@@ -3820,7 +2833,7 @@
   {
    "name": "wardSelectorShowDropdown",
    "kind": "function",
-   "line": 2798,
+   "line": 2169,
    "lines": 22,
    "section": "WARD ACTIVATION / UNLOAD (Single Chokepoint)",
    "internalRefs": 3,
@@ -3837,7 +2850,7 @@
   {
    "name": "onWardSelectorInput",
    "kind": "function",
-   "line": 2820,
+   "line": 2191,
    "lines": 6,
    "section": "WARD ACTIVATION / UNLOAD (Single Chokepoint)",
    "internalRefs": 0,
@@ -3856,7 +2869,7 @@
   {
    "name": "onWardSelectorFocus",
    "kind": "function",
-   "line": 2826,
+   "line": 2197,
    "lines": 6,
    "section": "WARD ACTIVATION / UNLOAD (Single Chokepoint)",
    "internalRefs": 0,
@@ -3875,7 +2888,7 @@
   {
    "name": "onWardSelectorKeydown",
    "kind": "function",
-   "line": 2837,
+   "line": 2208,
    "lines": 5,
    "section": "WARD ACTIVATION / UNLOAD (Single Chokepoint)",
    "internalRefs": 1,
@@ -3894,7 +2907,7 @@
   {
    "name": "handleSwitchWardClick",
    "kind": "function",
-   "line": 2850,
+   "line": 2221,
    "lines": 23,
    "section": "WARD ACTIVATION / UNLOAD (Single Chokepoint)",
    "internalRefs": 1,
@@ -3913,7 +2926,7 @@
   {
    "name": "showSwitchWardPickerModal",
    "kind": "function",
-   "line": 2874,
+   "line": 2245,
    "lines": 23,
    "section": "WARD ACTIVATION / UNLOAD (Single Chokepoint)",
    "internalRefs": 1,
@@ -3930,10 +2943,10 @@
   {
    "name": "closeModal",
    "kind": "function",
-   "line": 2902,
+   "line": 2273,
    "lines": 4,
    "section": "MODAL FUNCTIONS",
-   "internalRefs": 13,
+   "internalRefs": 2,
    "moduleConsumers": [
     "src/modal-events.js"
    ],
@@ -3949,7 +2962,7 @@
   {
    "name": "_fragmentAppended",
    "kind": "const",
-   "line": 2913,
+   "line": 2284,
    "lines": 1,
    "section": "MODAL FUNCTIONS",
    "internalRefs": 2,
@@ -3966,14 +2979,12 @@
   {
    "name": "ensureFragment",
    "kind": "function",
-   "line": 2914,
+   "line": 2285,
    "lines": 6,
    "section": "MODAL FUNCTIONS",
-   "internalRefs": 12,
+   "internalRefs": 5,
    "moduleConsumers": [
-    "src/core/feedback/feedback-modal.js",
-    "src/core/modals/convert-ward-modal.js",
-    "src/core/modals/year-manager-modal.js"
+    "src/core/feedback/feedback-modal.js"
    ],
    "e2eFiles": 0,
    "unitSlices": 0,
@@ -3987,14 +2998,12 @@
   {
    "name": "showModal",
    "kind": "function",
-   "line": 2921,
+   "line": 2292,
    "lines": 6,
    "section": "MODAL FUNCTIONS",
-   "internalRefs": 10,
+   "internalRefs": 3,
    "moduleConsumers": [
     "src/core/feedback/feedback-modal.js",
-    "src/core/modals/convert-ward-modal.js",
-    "src/core/modals/year-manager-modal.js",
     "src/core/persistence/case-file.js"
    ],
    "e2eFiles": 0,
@@ -4009,10 +3018,10 @@
   {
    "name": "populateWardNameSuggestions",
    "kind": "function",
-   "line": 2933,
+   "line": 2304,
    "lines": 7,
    "section": "MODAL FUNCTIONS",
-   "internalRefs": 3,
+   "internalRefs": 2,
    "moduleConsumers": [],
    "e2eFiles": 0,
    "unitSlices": 0,
@@ -4026,7 +3035,7 @@
   {
    "name": "wardNameComboItems",
    "kind": "function",
-   "line": 2945,
+   "line": 2316,
    "lines": 5,
    "section": "MODAL FUNCTIONS",
    "internalRefs": 1,
@@ -4043,63 +3052,8 @@
   {
    "name": "initWardNameCombobox",
    "kind": "function",
-   "line": 2953,
+   "line": 2324,
    "lines": 36,
-   "section": "MODAL FUNCTIONS",
-   "internalRefs": 3,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70H",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "showAddWardModal",
-   "kind": "function",
-   "line": 2990,
-   "lines": 9,
-   "section": "MODAL FUNCTIONS",
-   "internalRefs": 0,
-   "moduleConsumers": [
-    "src/features/dashboard/index.js"
-   ],
-   "e2eFiles": 1,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70H",
-   "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "doAddWard",
-   "kind": "function",
-   "line": 3000,
-   "lines": 48,
-   "section": "MODAL FUNCTIONS",
-   "internalRefs": 0,
-   "moduleConsumers": [
-    "src/modal-events.js"
-   ],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70H",
-   "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "refreshEligCarrySource",
-   "kind": "function",
-   "line": 3053,
-   "lines": 4,
    "section": "MODAL FUNCTIONS",
    "internalRefs": 2,
    "moduleConsumers": [],
@@ -4115,116 +3069,27 @@
   {
    "name": "showSimplifiedEligibilityModal",
    "kind": "function",
-   "line": 3058,
-   "lines": 19,
-   "section": "MODAL FUNCTIONS",
-   "internalRefs": 2,
-   "moduleConsumers": [],
-   "e2eFiles": 1,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70H",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "carryOverSummaryNote",
-   "kind": "function",
-   "line": 3086,
-   "lines": 11,
-   "section": "MODAL FUNCTIONS",
-   "internalRefs": 2,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70H",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "doConfirmSimplifiedEligibility",
-   "kind": "function",
-   "line": 3098,
-   "lines": 68,
-   "section": "MODAL FUNCTIONS",
-   "internalRefs": 0,
-   "moduleConsumers": [
-    "src/modal-events.js"
-   ],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70H",
-   "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "_pendingDeleteWardId",
-   "kind": "let",
-   "line": 3167,
+   "line": 2365,
    "lines": 1,
    "section": "MODAL FUNCTIONS",
-   "internalRefs": 2,
+   "internalRefs": 1,
    "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70H",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "confirmDeleteWard",
-   "kind": "function",
-   "line": 3173,
-   "lines": 16,
-   "section": "MODAL FUNCTIONS",
-   "internalRefs": 0,
-   "moduleConsumers": [
-    "src/features/dashboard/index.js",
-    "src/shell-events.js"
-   ],
    "e2eFiles": 1,
    "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70H",
-   "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "doDeleteWard",
-   "kind": "function",
-   "line": 3190,
-   "lines": 12,
-   "section": "MODAL FUNCTIONS",
-   "internalRefs": 0,
-   "moduleConsumers": [
-    "src/modal-events.js"
+   "duplicateOf": [
+    "src/core/modals/filing-dialogs.js"
    ],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
+   "disposition": "wrapper",
    "delivery": "70H",
-   "wrapperWhile": "modules read it through window or by bare name",
+   "wrapperWhile": "classic callers remain: showAddWardModalForType",
    "reviewed": true,
-   "reviewNote": null
+   "reviewNote": "The Add Form, Simplified Accounting eligibility and Delete Form dialogs and their handlers: creating a filing (what it carries over, the case it joins), the eligibility questions that choose Simplified or Annual, and deleting one -- the workflow 70G moves (the plan names eligibility, and its gate needs creation and deletion to go through the filing lifecycle service), not the modal plumbing their section is named for. That (showModal(), closeModal(), ensureFragment(), the ward-name combobox) stays for 70H.",
+   "movedIn": "70G"
   },
   {
    "name": "doGuardianSetup",
    "kind": "function",
-   "line": 3203,
+   "line": 2372,
    "lines": 9,
    "section": "MODAL FUNCTIONS",
    "internalRefs": 0,
@@ -4243,10 +3108,10 @@
   {
    "name": "getWardHeadlineTotal",
    "kind": "function",
-   "line": 3228,
+   "line": 2397,
    "lines": 16,
    "section": "ROUTER — see src/core/navigation/router.js",
-   "internalRefs": 4,
+   "internalRefs": 2,
    "moduleConsumers": [
     "src/features/dashboard/index.js"
    ],
@@ -4262,7 +3127,7 @@
   {
    "name": "syncActiveWardNameDisplay",
    "kind": "function",
-   "line": 3258,
+   "line": 2427,
    "lines": 4,
    "section": "ROUTER — see src/core/navigation/router.js",
    "internalRefs": 0,
@@ -4282,7 +3147,7 @@
   {
    "name": "getPrimaryGuardianDisplayName",
    "kind": "function",
-   "line": 3273,
+   "line": 2442,
    "lines": 7,
    "section": "ROUTER — see src/core/navigation/router.js",
    "internalRefs": 1,
@@ -4299,7 +3164,7 @@
   {
    "name": "syncGuardianNameDisplay",
    "kind": "function",
-   "line": 3284,
+   "line": 2453,
    "lines": 4,
    "section": "ROUTER — see src/core/navigation/router.js",
    "internalRefs": 1,
@@ -4319,7 +3184,7 @@
   {
    "name": "refreshWardInfoCard",
    "kind": "function",
-   "line": 3289,
+   "line": 2458,
    "lines": 29,
    "section": "ROUTER — see src/core/navigation/router.js",
    "internalRefs": 1,
@@ -4338,7 +3203,7 @@
   {
    "name": "collapseWardControls",
    "kind": "function",
-   "line": 3333,
+   "line": 2502,
    "lines": 1,
    "section": "ROUTER — see src/core/navigation/router.js",
    "internalRefs": 2,
@@ -4357,7 +3222,7 @@
   {
    "name": "_saveControlsCollapsed",
    "kind": "let",
-   "line": 3342,
+   "line": 2511,
    "lines": 1,
    "section": "ROUTER — see src/core/navigation/router.js",
    "internalRefs": 7,
@@ -4374,7 +3239,7 @@
   {
    "name": "_saveControlsUserToggled",
    "kind": "let",
-   "line": 3343,
+   "line": 2512,
    "lines": 1,
    "section": "ROUTER — see src/core/navigation/router.js",
    "internalRefs": 3,
@@ -4391,7 +3256,7 @@
   {
    "name": "applySaveControlsCollapsedState",
    "kind": "function",
-   "line": 3344,
+   "line": 2513,
    "lines": 8,
    "section": "ROUTER — see src/core/navigation/router.js",
    "internalRefs": 3,
@@ -4408,7 +3273,7 @@
   {
    "name": "collapseSaveControls",
    "kind": "function",
-   "line": 3352,
+   "line": 2521,
    "lines": 5,
    "section": "ROUTER — see src/core/navigation/router.js",
    "internalRefs": 2,
@@ -4427,7 +3292,7 @@
   {
    "name": "toggleSaveControls",
    "kind": "function",
-   "line": 3357,
+   "line": 2526,
    "lines": 5,
    "section": "ROUTER — see src/core/navigation/router.js",
    "internalRefs": 0,
@@ -4446,10 +3311,10 @@
   {
    "name": "updateSidebar",
    "kind": "function",
-   "line": 3364,
+   "line": 2533,
    "lines": 76,
    "section": "ROUTER — see src/core/navigation/router.js",
-   "internalRefs": 8,
+   "internalRefs": 6,
    "moduleConsumers": [
     "src/core/navigation/ward-lifecycle.js",
     "src/core/persistence/case-file.js"
@@ -4464,575 +3329,9 @@
    "reviewNote": "Sidebar, header, picker or tab-coordination UI -- a shell controller (70H). The router banner above it is historical: the router itself moved to src/core/navigation/router.js."
   },
   {
-   "name": "convertSourceShowDropdown",
-   "kind": "function",
-   "line": 3448,
-   "lines": 16,
-   "section": "CONVERT EXISTING WARD — creates a new ward of a different inventory type,",
-   "internalRefs": 2,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "onConvertSourceInput",
-   "kind": "function",
-   "line": 3464,
-   "lines": 4,
-   "section": "CONVERT EXISTING WARD — creates a new ward of a different inventory type,",
-   "internalRefs": 0,
-   "moduleConsumers": [
-    "src/modal-events.js"
-   ],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "onConvertSourceFocus",
-   "kind": "function",
-   "line": 3468,
-   "lines": 5,
-   "section": "CONVERT EXISTING WARD — creates a new ward of a different inventory type,",
-   "internalRefs": 0,
-   "moduleConsumers": [
-    "src/modal-events.js"
-   ],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "onConvertSourceKeydown",
-   "kind": "function",
-   "line": 3481,
-   "lines": 5,
-   "section": "CONVERT EXISTING WARD — creates a new ward of a different inventory type,",
-   "internalRefs": 0,
-   "moduleConsumers": [
-    "src/modal-events.js"
-   ],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "updateConvertNotePreview",
-   "kind": "function",
-   "line": 3495,
-   "lines": 4,
-   "section": "CONVERT EXISTING WARD — creates a new ward of a different inventory type,",
-   "internalRefs": 0,
-   "moduleConsumers": [
-    "src/core/modals/convert-ward-modal.js"
-   ],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "describeConversion",
-   "kind": "function",
-   "line": 3504,
-   "lines": 29,
-   "section": "CONVERT EXISTING WARD — creates a new ward of a different inventory type,",
-   "internalRefs": 2,
-   "moduleConsumers": [],
-   "e2eFiles": 1,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "mapConvertedHeaderFields",
-   "kind": "function",
-   "line": 3537,
-   "lines": 19,
-   "section": "CONVERT EXISTING WARD — creates a new ward of a different inventory type,",
-   "internalRefs": 1,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "convertGuardianSchedulesToAnnual",
-   "kind": "function",
-   "line": 3562,
-   "lines": 46,
-   "section": "CONVERT EXISTING WARD — creates a new ward of a different inventory type,",
-   "internalRefs": 1,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "convertGuardianExtrasToAnnual",
-   "kind": "function",
-   "line": 3613,
-   "lines": 33,
-   "section": "CONVERT EXISTING WARD — creates a new ward of a different inventory type,",
-   "internalRefs": 1,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "convertToSimplified",
-   "kind": "function",
-   "line": 3652,
-   "lines": 64,
-   "section": "CONVERT EXISTING WARD — creates a new ward of a different inventory type,",
-   "internalRefs": 1,
-   "moduleConsumers": [],
-   "e2eFiles": 1,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "convertSimplifiedToAnnual",
-   "kind": "function",
-   "line": 3720,
-   "lines": 41,
-   "section": "CONVERT EXISTING WARD — creates a new ward of a different inventory type,",
-   "internalRefs": 1,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "convertExistingWard",
-   "kind": "function",
-   "line": 3762,
-   "lines": 50,
-   "section": "CONVERT EXISTING WARD — creates a new ward of a different inventory type,",
-   "internalRefs": 1,
-   "moduleConsumers": [],
-   "e2eFiles": 1,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "doConvertWard",
-   "kind": "function",
-   "line": 3813,
-   "lines": 7,
-   "section": "CONVERT EXISTING WARD — creates a new ward of a different inventory type,",
-   "internalRefs": 0,
-   "moduleConsumers": [
-    "src/modal-events.js"
-   ],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "WARD_SYSTEM_KEYS",
-   "kind": "const",
-   "line": 3831,
-   "lines": 1,
-   "section": "MULTI-YEAR ACCOUNTING (save / switch / edit by year)",
-   "internalRefs": 2,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "snapshotCurrentYearData",
-   "kind": "function",
-   "line": 3833,
-   "lines": 7,
-   "section": "MULTI-YEAR ACCOUNTING (save / switch / edit by year)",
-   "internalRefs": 2,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "applyYearData",
-   "kind": "function",
-   "line": 3841,
-   "lines": 6,
-   "section": "MULTI-YEAR ACCOUNTING (save / switch / edit by year)",
-   "internalRefs": 2,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "resetYearlyFieldsForNewYear",
-   "kind": "function",
-   "line": 3865,
-   "lines": 154,
-   "section": "MULTI-YEAR ACCOUNTING (save / switch / edit by year)",
-   "internalRefs": 1,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "describeYearLabel",
-   "kind": "function",
-   "line": 4026,
-   "lines": 14,
-   "section": "MULTI-YEAR ACCOUNTING (save / switch / edit by year)",
-   "internalRefs": 2,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "checkInActiveYear",
-   "kind": "function",
-   "line": 4045,
-   "lines": 11,
-   "section": "MULTI-YEAR ACCOUNTING (save / switch / edit by year)",
-   "internalRefs": 2,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "switchWardYear",
-   "kind": "function",
-   "line": 4057,
-   "lines": 16,
-   "section": "MULTI-YEAR ACCOUNTING (save / switch / edit by year)",
-   "internalRefs": 1,
-   "moduleConsumers": [],
-   "e2eFiles": 1,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "startNewWardYear",
-   "kind": "function",
-   "line": 4079,
-   "lines": 25,
-   "section": "MULTI-YEAR ACCOUNTING (save / switch / edit by year)",
-   "internalRefs": 1,
-   "moduleConsumers": [],
-   "e2eFiles": 1,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "_yearModalWardId",
-   "kind": "let",
-   "line": 4105,
-   "lines": 1,
-   "section": "MULTI-YEAR ACCOUNTING (save / switch / edit by year)",
-   "internalRefs": 3,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "showStartNewYearModal",
-   "kind": "function",
-   "line": 4107,
-   "lines": 12,
-   "section": "MULTI-YEAR ACCOUNTING (save / switch / edit by year)",
-   "internalRefs": 0,
-   "moduleConsumers": [
-    "src/features/dashboard/index.js"
-   ],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "confirmStartNewYear",
-   "kind": "function",
-   "line": 4120,
-   "lines": 8,
-   "section": "MULTI-YEAR ACCOUNTING (save / switch / edit by year)",
-   "internalRefs": 0,
-   "moduleConsumers": [
-    "src/modal-events.js"
-   ],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "renderPriorYearsList",
-   "kind": "function",
-   "line": 4129,
-   "lines": 13,
-   "section": "MULTI-YEAR ACCOUNTING (save / switch / edit by year)",
-   "internalRefs": 2,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "showPriorYearsModal",
-   "kind": "function",
-   "line": 4143,
-   "lines": 9,
-   "section": "MULTI-YEAR ACCOUNTING (save / switch / edit by year)",
-   "internalRefs": 0,
-   "moduleConsumers": [
-    "src/features/dashboard/index.js"
-   ],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "editPriorYear",
-   "kind": "function",
-   "line": 4153,
-   "lines": 6,
-   "section": "MULTI-YEAR ACCOUNTING (save / switch / edit by year)",
-   "internalRefs": 0,
-   "moduleConsumers": [
-    "src/form-events.js"
-   ],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "periodKeyForYearData",
-   "kind": "function",
-   "line": 4164,
-   "lines": 5,
-   "section": "MULTI-YEAR ACCOUNTING (save / switch / edit by year)",
-   "internalRefs": 1,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "deleteWardYear",
-   "kind": "function",
-   "line": 4170,
-   "lines": 17,
-   "section": "MULTI-YEAR ACCOUNTING (save / switch / edit by year)",
-   "internalRefs": 1,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "_pendingDeleteYear",
-   "kind": "let",
-   "line": 4188,
-   "lines": 1,
-   "section": "MULTI-YEAR ACCOUNTING (save / switch / edit by year)",
-   "internalRefs": 3,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "confirmDeleteWardYear",
-   "kind": "function",
-   "line": 4190,
-   "lines": 9,
-   "section": "MULTI-YEAR ACCOUNTING (save / switch / edit by year)",
-   "internalRefs": 0,
-   "moduleConsumers": [
-    "src/form-events.js"
-   ],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "doDeleteWardYear",
-   "kind": "function",
-   "line": 4200,
-   "lines": 14,
-   "section": "MULTI-YEAR ACCOUNTING (save / switch / edit by year)",
-   "internalRefs": 0,
-   "moduleConsumers": [
-    "src/modal-events.js"
-   ],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70G",
-   "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
    "name": "SHOW_COMMENT_CARD_LINK",
    "kind": "const",
-   "line": 4226,
+   "line": 2668,
    "lines": 1,
    "section": "INVENTORY TYPE SELECTOR PAGE",
    "internalRefs": 3,
@@ -5051,7 +3350,7 @@
   {
    "name": "pageInventorySelector",
    "kind": "function",
-   "line": 4229,
+   "line": 2671,
    "lines": 86,
    "section": "INVENTORY TYPE SELECTOR PAGE",
    "internalRefs": 0,
@@ -5070,7 +3369,7 @@
   {
    "name": "showAddWardModalForType",
    "kind": "function",
-   "line": 4316,
+   "line": 2758,
    "lines": 14,
    "section": "INVENTORY TYPE SELECTOR PAGE",
    "internalRefs": 0,
@@ -5089,7 +3388,7 @@
   {
    "name": "_simplifiedFeatureBridge",
    "kind": "let",
-   "line": 4377,
+   "line": 2819,
    "lines": 1,
    "section": "WIZARD: GUARDIAN INVENTORY",
    "internalRefs": 1,
@@ -5106,7 +3405,7 @@
   {
    "name": "getSimplifiedFeatureBridge",
    "kind": "function",
-   "line": 4378,
+   "line": 2820,
    "lines": 3,
    "section": "WIZARD: GUARDIAN INVENTORY",
    "internalRefs": 2,
@@ -5123,7 +3422,7 @@
   {
    "name": "mountSimplifiedFeature",
    "kind": "function",
-   "line": 4381,
+   "line": 2823,
    "lines": 3,
    "section": "WIZARD: GUARDIAN INVENTORY",
    "internalRefs": 0,
@@ -5143,7 +3442,7 @@
   {
    "name": "mountSimplifiedNav",
    "kind": "function",
-   "line": 4384,
+   "line": 2826,
    "lines": 3,
    "section": "WIZARD: GUARDIAN INVENTORY",
    "internalRefs": 1,
@@ -5160,7 +3459,7 @@
   {
    "name": "_annualFeatureBridge",
    "kind": "let",
-   "line": 4398,
+   "line": 2840,
    "lines": 1,
    "section": "Annual Accounting is extracted into src/features/annual-accounting/",
    "internalRefs": 1,
@@ -5177,7 +3476,7 @@
   {
    "name": "getAnnualFeatureBridge",
    "kind": "function",
-   "line": 4399,
+   "line": 2841,
    "lines": 3,
    "section": "Annual Accounting is extracted into src/features/annual-accounting/",
    "internalRefs": 2,
@@ -5194,7 +3493,7 @@
   {
    "name": "mountAnnualFeature",
    "kind": "function",
-   "line": 4402,
+   "line": 2844,
    "lines": 3,
    "section": "Annual Accounting is extracted into src/features/annual-accounting/",
    "internalRefs": 0,
@@ -5214,7 +3513,7 @@
   {
    "name": "mountAnnualNav",
    "kind": "function",
-   "line": 4405,
+   "line": 2847,
    "lines": 3,
    "section": "Annual Accounting is extracted into src/features/annual-accounting/",
    "internalRefs": 1,
@@ -5231,7 +3530,7 @@
   {
    "name": "_guardianFeatureBridge",
    "kind": "let",
-   "line": 4419,
+   "line": 2861,
    "lines": 1,
    "section": "Annual Accounting is extracted into src/features/annual-accounting/",
    "internalRefs": 1,
@@ -5248,7 +3547,7 @@
   {
    "name": "getGuardianFeatureBridge",
    "kind": "function",
-   "line": 4420,
+   "line": 2862,
    "lines": 3,
    "section": "Annual Accounting is extracted into src/features/annual-accounting/",
    "internalRefs": 2,
@@ -5265,7 +3564,7 @@
   {
    "name": "mountGuardianFeature",
    "kind": "function",
-   "line": 4423,
+   "line": 2865,
    "lines": 3,
    "section": "Annual Accounting is extracted into src/features/annual-accounting/",
    "internalRefs": 0,
@@ -5285,7 +3584,7 @@
   {
    "name": "mountGuardianNav",
    "kind": "function",
-   "line": 4426,
+   "line": 2868,
    "lines": 3,
    "section": "Annual Accounting is extracted into src/features/annual-accounting/",
    "internalRefs": 1,
@@ -5302,7 +3601,7 @@
   {
    "name": "ensureGuardianFeatureReady",
    "kind": "function",
-   "line": 4429,
+   "line": 2871,
    "lines": 6,
    "section": "Annual Accounting is extracted into src/features/annual-accounting/",
    "internalRefs": 0,
@@ -5321,7 +3620,7 @@
   {
    "name": "_dashboardFeatureBridge",
    "kind": "let",
-   "line": 4448,
+   "line": 2890,
    "lines": 1,
    "section": "Annual Accounting is extracted into src/features/annual-accounting/",
    "internalRefs": 1,
@@ -5338,7 +3637,7 @@
   {
    "name": "getDashboardFeatureBridge",
    "kind": "function",
-   "line": 4449,
+   "line": 2891,
    "lines": 3,
    "section": "Annual Accounting is extracted into src/features/annual-accounting/",
    "internalRefs": 1,
@@ -5355,7 +3654,7 @@
   {
    "name": "mountDashboardFeature",
    "kind": "function",
-   "line": 4452,
+   "line": 2894,
    "lines": 3,
    "section": "Annual Accounting is extracted into src/features/annual-accounting/",
    "internalRefs": 0,
@@ -5374,7 +3673,7 @@
   {
    "name": "_planSimplifiedFeatureBridge",
    "kind": "let",
-   "line": 4481,
+   "line": 2923,
    "lines": 1,
    "section": "window.createFeatureBridge() is constructed lazily, not at this file's",
    "internalRefs": 1,
@@ -5391,7 +3690,7 @@
   {
    "name": "getPlanSimplifiedFeatureBridge",
    "kind": "function",
-   "line": 4482,
+   "line": 2924,
    "lines": 3,
    "section": "window.createFeatureBridge() is constructed lazily, not at this file's",
    "internalRefs": 2,
@@ -5408,7 +3707,7 @@
   {
    "name": "mountPlanSimplifiedFeature",
    "kind": "function",
-   "line": 4485,
+   "line": 2927,
    "lines": 3,
    "section": "window.createFeatureBridge() is constructed lazily, not at this file's",
    "internalRefs": 0,
@@ -5428,7 +3727,7 @@
   {
    "name": "mountPlanSimplifiedNav",
    "kind": "function",
-   "line": 4488,
+   "line": 2930,
    "lines": 3,
    "section": "window.createFeatureBridge() is constructed lazily, not at this file's",
    "internalRefs": 1,
@@ -5445,7 +3744,7 @@
   {
    "name": "_planAnnualFeatureBridge",
    "kind": "let",
-   "line": 4506,
+   "line": 2948,
    "lines": 1,
    "section": "Annual Guardianship Plan is extracted into src/features/plan-annual/",
    "internalRefs": 1,
@@ -5462,7 +3761,7 @@
   {
    "name": "getPlanAnnualFeatureBridge",
    "kind": "function",
-   "line": 4507,
+   "line": 2949,
    "lines": 3,
    "section": "Annual Guardianship Plan is extracted into src/features/plan-annual/",
    "internalRefs": 2,
@@ -5479,7 +3778,7 @@
   {
    "name": "mountPlanAnnualFeature",
    "kind": "function",
-   "line": 4510,
+   "line": 2952,
    "lines": 3,
    "section": "Annual Guardianship Plan is extracted into src/features/plan-annual/",
    "internalRefs": 0,
@@ -5499,7 +3798,7 @@
   {
    "name": "mountPlanAnnualNav",
    "kind": "function",
-   "line": 4513,
+   "line": 2955,
    "lines": 3,
    "section": "Annual Guardianship Plan is extracted into src/features/plan-annual/",
    "internalRefs": 1,
@@ -5516,7 +3815,7 @@
   {
    "name": "_planInitialFeatureBridge",
    "kind": "let",
-   "line": 4559,
+   "line": 3001,
    "lines": 1,
    "section": "Initial Guardianship Plan is extracted into src/features/plan-initial/",
    "internalRefs": 1,
@@ -5533,7 +3832,7 @@
   {
    "name": "getPlanInitialFeatureBridge",
    "kind": "function",
-   "line": 4560,
+   "line": 3002,
    "lines": 3,
    "section": "Initial Guardianship Plan is extracted into src/features/plan-initial/",
    "internalRefs": 2,
@@ -5550,7 +3849,7 @@
   {
    "name": "mountPlanInitialFeature",
    "kind": "function",
-   "line": 4563,
+   "line": 3005,
    "lines": 3,
    "section": "Initial Guardianship Plan is extracted into src/features/plan-initial/",
    "internalRefs": 0,
@@ -5570,7 +3869,7 @@
   {
    "name": "mountPlanInitialNav",
    "kind": "function",
-   "line": 4566,
+   "line": 3008,
    "lines": 3,
    "section": "Initial Guardianship Plan is extracted into src/features/plan-initial/",
    "internalRefs": 1,
@@ -5587,7 +3886,7 @@
   {
    "name": "_planMinorFeatureBridge",
    "kind": "let",
-   "line": 4590,
+   "line": 3032,
    "lines": 1,
    "section": "Annual Plan -- Minors is extracted into src/features/plan-minor/",
    "internalRefs": 1,
@@ -5604,7 +3903,7 @@
   {
    "name": "getPlanMinorFeatureBridge",
    "kind": "function",
-   "line": 4591,
+   "line": 3033,
    "lines": 3,
    "section": "Annual Plan -- Minors is extracted into src/features/plan-minor/",
    "internalRefs": 2,
@@ -5621,7 +3920,7 @@
   {
    "name": "mountPlanMinorFeature",
    "kind": "function",
-   "line": 4594,
+   "line": 3036,
    "lines": 3,
    "section": "Annual Plan -- Minors is extracted into src/features/plan-minor/",
    "internalRefs": 0,
@@ -5641,7 +3940,7 @@
   {
    "name": "mountPlanMinorNav",
    "kind": "function",
-   "line": 4597,
+   "line": 3039,
    "lines": 3,
    "section": "Annual Plan -- Minors is extracted into src/features/plan-minor/",
    "internalRefs": 1,
@@ -5658,7 +3957,7 @@
   {
    "name": "n",
    "kind": "function",
-   "line": 4604,
+   "line": 3046,
    "lines": 1,
    "section": "Annual Plan -- Minors is extracted into src/features/plan-minor/",
    "internalRefs": 0,
@@ -5681,7 +3980,7 @@
   {
    "name": "pct",
    "kind": "function",
-   "line": 4605,
+   "line": 3047,
    "lines": 1,
    "section": "Annual Plan -- Minors is extracted into src/features/plan-minor/",
    "internalRefs": 0,
@@ -5702,7 +4001,7 @@
   {
    "name": "calc",
    "kind": "const",
-   "line": 4675,
+   "line": 3117,
    "lines": 1,
    "section": "CALCULATIONS",
    "internalRefs": 1,
@@ -5722,7 +4021,7 @@
   {
    "name": "setPath",
    "kind": "function",
-   "line": 4689,
+   "line": 3131,
    "lines": 1,
    "section": "FORM BINDING ENGINE",
    "internalRefs": 1,
@@ -5742,7 +4041,7 @@
   {
    "name": "computeNavChecks",
    "kind": "function",
-   "line": 4700,
+   "line": 3142,
    "lines": 1,
    "section": "FORM BINDING ENGINE",
    "internalRefs": 1,
@@ -5762,10 +4061,10 @@
   {
    "name": "updateNavDots",
    "kind": "function",
-   "line": 4703,
+   "line": 3145,
    "lines": 1,
    "section": "FORM BINDING ENGINE",
-   "internalRefs": 3,
+   "internalRefs": 1,
    "moduleConsumers": [
     "src/features/simplified-accounting/index.js"
    ],
@@ -5776,7 +4075,7 @@
    ],
    "disposition": "wrapper",
    "delivery": "70H",
-   "wrapperWhile": "classic callers remain: doCreatePartyFromSlot, doPickParty, refreshWardInfoCard",
+   "wrapperWhile": "classic callers remain: refreshWardInfoCard",
    "reviewed": true,
    "reviewNote": "Applies the completion map to the page -- the sidebar marks, section collapse, the Next button -- which the plan gives 70F's form runtime ('nav-dot updates, section collapse'), with applyNavSectionCollapse() and renderProgressSummary() that it calls. 70D moved the rules these read; they reach them through the monolith's computeNavChecks() dispatcher until then.",
    "movedIn": "70F"
@@ -5784,7 +4083,7 @@
   {
    "name": "getWardProgress",
    "kind": "function",
-   "line": 4710,
+   "line": 3152,
    "lines": 1,
    "section": "FORM BINDING ENGINE",
    "internalRefs": 0,
@@ -5804,7 +4103,7 @@
   {
    "name": "openFloridaCourtPortal",
    "kind": "function",
-   "line": 4754,
+   "line": 3196,
    "lines": 20,
    "section": "SCHEDULE SUPPORTING DOCUMENTS & COMMENTS",
    "internalRefs": 0,
@@ -5825,7 +4124,7 @@
   {
    "name": "updateNavActive",
    "kind": "function",
-   "line": 4789,
+   "line": 3231,
    "lines": 10,
    "section": "INIT",
    "internalRefs": 2,
@@ -5842,7 +4141,7 @@
   {
    "name": "SPECIAL_PAGES",
    "kind": "const",
-   "line": 4800,
+   "line": 3242,
    "lines": 1,
    "section": "INIT",
    "internalRefs": 1,
@@ -5859,7 +4158,7 @@
   {
    "name": "handleHash",
    "kind": "function",
-   "line": 4801,
+   "line": 3243,
    "lines": 29,
    "section": "INIT",
    "internalRefs": 3,
@@ -5876,7 +4175,7 @@
   {
    "name": "warnBeforeUnloadIfDirty",
    "kind": "function",
-   "line": 4841,
+   "line": 3283,
    "lines": 5,
    "section": "INIT",
    "internalRefs": 1,
@@ -5893,7 +4192,7 @@
   {
    "name": "TEMPLATE_FILES",
    "kind": "const",
-   "line": 4847,
+   "line": 3289,
    "lines": 5,
    "section": "INIT",
    "internalRefs": 3,
@@ -5910,7 +4209,7 @@
   {
    "name": "isValidXlsxB64",
    "kind": "function",
-   "line": 4853,
+   "line": 3295,
    "lines": 3,
    "section": "INIT",
    "internalRefs": 4,
@@ -5927,7 +4226,7 @@
   {
    "name": "fetchAndCacheTemplate",
    "kind": "function",
-   "line": 4857,
+   "line": 3299,
    "lines": 29,
    "section": "INIT",
    "internalRefs": 2,
@@ -5944,7 +4243,7 @@
   {
    "name": "ensureTemplate",
    "kind": "function",
-   "line": 4890,
+   "line": 3332,
    "lines": 12,
    "section": "INIT",
    "internalRefs": 0,
@@ -5965,7 +4264,7 @@
   {
    "name": "autoLoadTemplates",
    "kind": "function",
-   "line": 4903,
+   "line": 3345,
    "lines": 15,
    "section": "INIT",
    "internalRefs": 1,
@@ -5982,7 +4281,7 @@
   {
    "name": "renderCopyrightNotice",
    "kind": "function",
-   "line": 4921,
+   "line": 3363,
    "lines": 5,
    "section": "INIT",
    "internalRefs": 1,
@@ -5999,7 +4298,7 @@
   {
    "name": "provideMonolithServices",
    "kind": "function",
-   "line": 4930,
+   "line": 3372,
    "lines": 1,
    "section": "INIT",
    "internalRefs": 1,
@@ -6019,7 +4318,7 @@
   {
    "name": "initApp",
    "kind": "function",
-   "line": 4932,
+   "line": 3374,
    "lines": 52,
    "section": "INIT",
    "internalRefs": 1,
@@ -6038,7 +4337,7 @@
   {
    "name": "_wardLockedPreviousFocus",
    "kind": "let",
-   "line": 5048,
+   "line": 3490,
    "lines": 1,
    "section": "INIT",
    "internalRefs": 5,
@@ -6098,11 +4397,9 @@
    "file": "src/core/case-resolver.js",
    "name": "getOrCreateCaseForWard",
    "via": "assignment",
-   "readers": [
-    "src/legacy-app.js"
-   ],
+   "readers": [],
    "e2eFiles": 2,
-   "reason": "monolith-only"
+   "reason": "tests-only"
   },
   {
    "file": "src/core/case-resolver.js",
@@ -6131,16 +4428,6 @@
    ],
    "e2eFiles": 0,
    "reason": "modules-only"
-  },
-  {
-   "file": "src/core/filing/delete-confirmation.js",
-   "name": "deleteFilingConfirmation",
-   "via": "assignment",
-   "readers": [
-    "src/legacy-app.js"
-   ],
-   "e2eFiles": 0,
-   "reason": "monolith-only"
   },
   {
    "file": "src/core/filing/filing-descriptor.js",
@@ -6277,68 +4564,6 @@
    "reason": "no-consumer"
   },
   {
-   "file": "src/core/modals/convert-ward-modal.js",
-   "name": "convertSourceItems",
-   "via": "assignment",
-   "readers": [
-    "src/legacy-app.js"
-   ],
-   "e2eFiles": 0,
-   "reason": "monolith-only"
-  },
-  {
-   "file": "src/core/modals/convert-ward-modal.js",
-   "name": "convertTargetsFor",
-   "via": "assignment",
-   "readers": [],
-   "e2eFiles": 1,
-   "reason": "tests-only"
-  },
-  {
-   "file": "src/core/modals/convert-ward-modal.js",
-   "name": "showConvertWardModal",
-   "via": "assignment",
-   "readers": [
-    "src/features/dashboard/index.js"
-   ],
-   "e2eFiles": 2,
-   "reason": "modules-only"
-  },
-  {
-   "file": "src/core/modals/convert-ward-modal.js",
-   "name": "updateConvertTargetOptions",
-   "via": "assignment",
-   "readers": [
-    "src/legacy-app.js"
-   ],
-   "e2eFiles": 0,
-   "reason": "monolith-only"
-  },
-  {
-   "file": "src/core/modals/year-manager-modal.js",
-   "name": "getWardPriorYears",
-   "via": "assignment",
-   "readers": [],
-   "e2eFiles": 0,
-   "reason": "no-consumer"
-  },
-  {
-   "file": "src/core/modals/year-manager-modal.js",
-   "name": "saveCurrentYearToHistory",
-   "via": "assignment",
-   "readers": [],
-   "e2eFiles": 0,
-   "reason": "no-consumer"
-  },
-  {
-   "file": "src/core/modals/year-manager-modal.js",
-   "name": "showYearManagerModal",
-   "via": "assignment",
-   "readers": [],
-   "e2eFiles": 0,
-   "reason": "no-consumer"
-  },
-  {
    "file": "src/core/navigation/router.js",
    "name": "attachFormHeaderActions",
    "via": "assignment",
@@ -6389,6 +4614,7 @@
    "name": "renderPage",
    "via": "assignment",
    "readers": [
+    "src/core/parties/party-management.js",
     "src/core/signature/signature-state-control.js",
     "src/features/annual-accounting/excel.js",
     "src/features/annual-accounting/print.js",
@@ -6443,24 +4669,6 @@
   },
   {
    "file": "src/core/navigation/ward-county.js",
-   "name": "hydrateCountyFromWardParty",
-   "via": "assignment",
-   "readers": [
-    "src/legacy-app.js"
-   ],
-   "e2eFiles": 0,
-   "reason": "monolith-only"
-  },
-  {
-   "file": "src/core/navigation/ward-county.js",
-   "name": "inferWardPartyCounty",
-   "via": "assignment",
-   "readers": [],
-   "e2eFiles": 0,
-   "reason": "no-consumer"
-  },
-  {
-   "file": "src/core/navigation/ward-county.js",
    "name": "maybeCommitCoverCounty",
    "via": "assignment",
    "readers": [
@@ -6471,31 +4679,11 @@
   },
   {
    "file": "src/core/navigation/ward-county.js",
-   "name": "normalizeCountyName",
-   "via": "assignment",
-   "readers": [
-    "src/legacy-app.js"
-   ],
-   "e2eFiles": 0,
-   "reason": "monolith-only"
-  },
-  {
-   "file": "src/core/navigation/ward-county.js",
    "name": "wardCountyMergeConflict",
    "via": "assignment",
-   "readers": [
-    "src/legacy-app.js"
-   ],
-   "e2eFiles": 1,
-   "reason": "monolith-only"
-  },
-  {
-   "file": "src/core/navigation/ward-county.js",
-   "name": "wardPartyCounty",
-   "via": "assignment",
    "readers": [],
-   "e2eFiles": 0,
-   "reason": "no-consumer"
+   "e2eFiles": 1,
+   "reason": "tests-only"
   },
   {
    "file": "src/core/navigation/ward-county.js",
@@ -6527,66 +4715,6 @@
   },
   {
    "file": "src/core/navigation/ward-lifecycle.js",
-   "name": "addWard",
-   "via": "assignment",
-   "readers": [
-    "src/legacy-app.js"
-   ],
-   "e2eFiles": 20,
-   "reason": "monolith-only"
-  },
-  {
-   "file": "src/core/navigation/ward-lifecycle.js",
-   "name": "carryOverFieldsForAccounting",
-   "via": "assignment",
-   "readers": [
-    "src/legacy-app.js"
-   ],
-   "e2eFiles": 0,
-   "reason": "monolith-only"
-  },
-  {
-   "file": "src/core/navigation/ward-lifecycle.js",
-   "name": "carryOverFieldsForPlan",
-   "via": "assignment",
-   "readers": [
-    "src/legacy-app.js"
-   ],
-   "e2eFiles": 0,
-   "reason": "monolith-only"
-  },
-  {
-   "file": "src/core/navigation/ward-lifecycle.js",
-   "name": "carrySourcesFor",
-   "via": "assignment",
-   "readers": [
-    "src/legacy-app.js"
-   ],
-   "e2eFiles": 0,
-   "reason": "monolith-only"
-  },
-  {
-   "file": "src/core/navigation/ward-lifecycle.js",
-   "name": "carryWardsFor",
-   "via": "assignment",
-   "readers": [
-    "src/legacy-app.js"
-   ],
-   "e2eFiles": 0,
-   "reason": "monolith-only"
-  },
-  {
-   "file": "src/core/navigation/ward-lifecycle.js",
-   "name": "createWardId",
-   "via": "assignment",
-   "readers": [
-    "src/legacy-app.js"
-   ],
-   "e2eFiles": 0,
-   "reason": "monolith-only"
-  },
-  {
-   "file": "src/core/navigation/ward-lifecycle.js",
    "name": "currentPage",
    "via": "assignment",
    "readers": [
@@ -6594,16 +4722,6 @@
    ],
    "e2eFiles": 3,
    "reason": "modules-only"
-  },
-  {
-   "file": "src/core/navigation/ward-lifecycle.js",
-   "name": "deleteWard",
-   "via": "assignment",
-   "readers": [
-    "src/legacy-app.js"
-   ],
-   "e2eFiles": 1,
-   "reason": "monolith-only"
   },
   {
    "file": "src/core/navigation/ward-lifecycle.js",
@@ -6617,32 +4735,20 @@
   },
   {
    "file": "src/core/navigation/ward-lifecycle.js",
-   "name": "extractCarryIdentity",
-   "via": "assignment",
-   "readers": [
-    "src/legacy-app.js"
-   ],
-   "e2eFiles": 0,
-   "reason": "monolith-only"
-  },
-  {
-   "file": "src/core/navigation/ward-lifecycle.js",
    "name": "switchWard",
    "via": "assignment",
    "readers": [
-    "src/features/dashboard/index.js",
     "src/legacy-app.js"
    ],
    "e2eFiles": 14,
-   "reason": "monolith-and-modules"
+   "reason": "monolith-only"
   },
   {
    "file": "src/core/navigation/ward-lifecycle.js",
    "name": "unloadWard",
    "via": "assignment",
    "readers": [
-    "src/core/persistence/case-file.js",
-    "src/features/dashboard/index.js"
+    "src/core/persistence/case-file.js"
    ],
    "e2eFiles": 1,
    "reason": "modules-only"
@@ -6667,95 +4773,57 @@
    "file": "src/core/party-resolver.js",
    "name": "closedFilingDrift",
    "via": "assignment",
-   "readers": [
-    "src/legacy-app.js"
-   ],
+   "readers": [],
    "e2eFiles": 1,
-   "reason": "monolith-only"
+   "reason": "tests-only"
   },
   {
    "file": "src/core/party-resolver.js",
    "name": "createParty",
    "via": "assignment",
-   "readers": [
-    "src/legacy-app.js"
-   ],
+   "readers": [],
    "e2eFiles": 2,
-   "reason": "monolith-only"
+   "reason": "tests-only"
   },
   {
    "file": "src/core/party-resolver.js",
    "name": "dehydrateIntoParty",
    "via": "assignment",
-   "readers": [
-    "src/legacy-app.js"
-   ],
+   "readers": [],
    "e2eFiles": 1,
-   "reason": "monolith-only"
+   "reason": "tests-only"
   },
   {
    "file": "src/core/party-resolver.js",
    "name": "dismissPartyPair",
    "via": "assignment",
-   "readers": [
-    "src/legacy-app.js"
-   ],
+   "readers": [],
    "e2eFiles": 2,
-   "reason": "monolith-only"
+   "reason": "tests-only"
   },
   {
    "file": "src/core/party-resolver.js",
    "name": "filingDriftFromParties",
    "via": "assignment",
-   "readers": [
-    "src/legacy-app.js"
-   ],
+   "readers": [],
    "e2eFiles": 1,
-   "reason": "monolith-only"
+   "reason": "tests-only"
   },
   {
    "file": "src/core/party-resolver.js",
    "name": "findDuplicateCandidates",
    "via": "assignment",
-   "readers": [
-    "src/legacy-app.js"
-   ],
+   "readers": [],
    "e2eFiles": 1,
-   "reason": "monolith-only"
-  },
-  {
-   "file": "src/core/party-resolver.js",
-   "name": "getActiveSignatureImage",
-   "via": "assignment",
-   "readers": [],
-   "e2eFiles": 0,
-   "reason": "no-consumer"
-  },
-  {
-   "file": "src/core/party-resolver.js",
-   "name": "getPartyIdForSlot",
-   "via": "assignment",
-   "readers": [],
-   "e2eFiles": 0,
-   "reason": "no-consumer"
-  },
-  {
-   "file": "src/core/party-resolver.js",
-   "name": "getSignatureImageById",
-   "via": "assignment",
-   "readers": [],
-   "e2eFiles": 0,
-   "reason": "no-consumer"
+   "reason": "tests-only"
   },
   {
    "file": "src/core/party-resolver.js",
    "name": "hydrateFromParty",
    "via": "assignment",
-   "readers": [
-    "src/legacy-app.js"
-   ],
+   "readers": [],
    "e2eFiles": 1,
-   "reason": "monolith-only"
+   "reason": "tests-only"
   },
   {
    "file": "src/core/party-resolver.js",
@@ -6769,14 +4837,6 @@
   },
   {
    "file": "src/core/party-resolver.js",
-   "name": "isFilingClosed",
-   "via": "assignment",
-   "readers": [],
-   "e2eFiles": 0,
-   "reason": "no-consumer"
-  },
-  {
-   "file": "src/core/party-resolver.js",
    "name": "isPartyPairDismissed",
    "via": "assignment",
    "readers": [],
@@ -6785,125 +4845,59 @@
   },
   {
    "file": "src/core/party-resolver.js",
-   "name": "listSignatureImages",
-   "via": "assignment",
-   "readers": [],
-   "e2eFiles": 0,
-   "reason": "no-consumer"
-  },
-  {
-   "file": "src/core/party-resolver.js",
    "name": "mergeParties",
    "via": "assignment",
-   "readers": [
-    "src/legacy-app.js"
-   ],
+   "readers": [],
    "e2eFiles": 1,
-   "reason": "monolith-only"
-  },
-  {
-   "file": "src/core/party-resolver.js",
-   "name": "namesNearlyMatch",
-   "via": "assignment",
-   "readers": [],
-   "e2eFiles": 0,
-   "reason": "no-consumer"
-  },
-  {
-   "file": "src/core/party-resolver.js",
-   "name": "normalizePartyName",
-   "via": "assignment",
-   "readers": [],
-   "e2eFiles": 0,
-   "reason": "no-consumer"
-  },
-  {
-   "file": "src/core/party-resolver.js",
-   "name": "partyForSignaturePath",
-   "via": "assignment",
-   "readers": [],
-   "e2eFiles": 0,
-   "reason": "no-consumer"
+   "reason": "tests-only"
   },
   {
    "file": "src/core/party-resolver.js",
    "name": "readRoleFields",
    "via": "assignment",
-   "readers": [
-    "src/legacy-app.js"
-   ],
+   "readers": [],
    "e2eFiles": 1,
-   "reason": "monolith-only"
-  },
-  {
-   "file": "src/core/party-resolver.js",
-   "name": "reconcileSlotWithParty",
-   "via": "assignment",
-   "readers": [
-    "src/legacy-app.js"
-   ],
-   "e2eFiles": 0,
-   "reason": "monolith-only"
+   "reason": "tests-only"
   },
   {
    "file": "src/core/party-resolver.js",
    "name": "referenceCountForParty",
    "via": "assignment",
-   "readers": [
-    "src/legacy-app.js"
-   ],
+   "readers": [],
    "e2eFiles": 1,
-   "reason": "monolith-only"
+   "reason": "tests-only"
   },
   {
    "file": "src/core/party-resolver.js",
    "name": "resolveParty",
    "via": "assignment",
-   "readers": [
-    "src/legacy-app.js"
-   ],
+   "readers": [],
    "e2eFiles": 4,
-   "reason": "monolith-only"
+   "reason": "tests-only"
   },
   {
    "file": "src/core/party-resolver.js",
    "name": "setPartyIdForSlot",
    "via": "assignment",
-   "readers": [
-    "src/legacy-app.js"
-   ],
+   "readers": [],
    "e2eFiles": 1,
-   "reason": "monolith-only"
-  },
-  {
-   "file": "src/core/party-resolver.js",
-   "name": "slotsReferencing",
-   "via": "assignment",
-   "readers": [
-    "src/legacy-app.js"
-   ],
-   "e2eFiles": 0,
-   "reason": "monolith-only"
+   "reason": "tests-only"
   },
   {
    "file": "src/core/party-resolver.js",
    "name": "subPartiesOf",
    "via": "assignment",
-   "readers": [
-    "src/legacy-app.js"
-   ],
+   "readers": [],
    "e2eFiles": 1,
-   "reason": "monolith-only"
+   "reason": "tests-only"
   },
   {
    "file": "src/core/party-resolver.js",
    "name": "syncFilingSlotWithParty",
    "via": "assignment",
-   "readers": [
-    "src/legacy-app.js"
-   ],
+   "readers": [],
    "e2eFiles": 1,
-   "reason": "monolith-only"
+   "reason": "tests-only"
   },
   {
    "file": "src/core/party-resolver.js",
@@ -6919,11 +4913,9 @@
    "file": "src/core/party-resolver.js",
    "name": "unmergeParty",
    "via": "assignment",
-   "readers": [
-    "src/legacy-app.js"
-   ],
+   "readers": [],
    "e2eFiles": 1,
-   "reason": "monolith-only"
+   "reason": "tests-only"
   },
   {
    "file": "src/core/party-resolver.js",
@@ -7972,6 +5964,7 @@
    "name": "calcTotalsAnnual",
    "via": "assignment",
    "readers": [
+    "src/core/filing/carry-over.js",
     "src/features/annual-accounting/excel.js",
     "src/features/annual-accounting/index.js",
     "src/legacy-app.js"
@@ -8283,16 +6276,6 @@
   },
   {
    "file": "src/legacy-app.js",
-   "name": "addToRecentlyOpened",
-   "via": "assignment",
-   "readers": [
-    "src/core/navigation/ward-lifecycle.js"
-   ],
-   "e2eFiles": 0,
-   "reason": "modules-only"
-  },
-  {
-   "file": "src/legacy-app.js",
    "name": "auditLog",
    "via": "assignment",
    "readers": [
@@ -8371,16 +6354,6 @@
     "src/tab-coordination.js"
    ],
    "e2eFiles": 0,
-   "reason": "modules-only"
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "getRecentlyOpenedWards",
-   "via": "assignment",
-   "readers": [
-    "src/features/dashboard/index.js"
-   ],
-   "e2eFiles": 1,
    "reason": "modules-only"
   },
   {

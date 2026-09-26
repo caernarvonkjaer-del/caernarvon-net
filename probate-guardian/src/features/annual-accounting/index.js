@@ -75,6 +75,7 @@ import { pageIntroRow, yesNoCheckboxD, yesNoRadioAnnualHTML } from '../../core/f
 import { browserRecommendationNotice, linkAccordions, sanitizeNegativeAmounts } from '../../core/form/form-runtime.js';
 import { countyAutocompleteHTML } from '../../core/form/county-autocomplete.js';
 import { setPath } from '../../core/form/paths.js';
+import { showPickPartyModal } from '../../core/modals/pick-record-dialogs.js';
 // Annual Accounting — the sixth feature extraction (Milestone 7, Phases A
 // and B of INDEX-SPLIT-PLAN.md's migration sequence: data/pages/nav/
 // validate, and print/PDF/Excel import/export). Also covers the
@@ -308,7 +309,7 @@ function bindEvents(container) {
     switch (control.dataset.annualAction) {
       case 'add-row': addAnnualRow(collection, control.dataset.route); break;
       case 'duplicate-row': duplicateAnnualRow(collection, index, control.dataset.route); break;
-      case 'link-party': window.showPickPartyModal(control.dataset.role, control.dataset.index); break;
+      case 'link-party': showPickPartyModal(control.dataset.role, control.dataset.index); break;
       case 'navigate': navigate(control.dataset.route); break;
       case 'remove-row': await removeAnnualRow(collection, index, control.dataset.route); break;
       case 'add-b4-account': addB4Account(control.dataset.route); break;

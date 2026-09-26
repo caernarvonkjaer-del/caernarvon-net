@@ -63,10 +63,3 @@ export function deleteFilingConfirmation(ward) {
   return `Delete ${filingName}${subject}${detail}?${yearNote} This action cannot be undone.`;
 }
 
-// Bridged for legacy-app.js's confirmDeleteWard(), a classic script that
-// cannot import. src/main.js imports this eagerly: Delete is available on the
-// dashboard, which is the first screen a returning filer sees, so this must
-// not depend on a feature module having been loaded first.
-if (typeof window !== 'undefined') {
-  window.deleteFilingConfirmation = deleteFilingConfirmation;
-}

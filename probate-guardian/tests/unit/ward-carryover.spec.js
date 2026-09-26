@@ -4,7 +4,7 @@ import {
   carryOverFieldsForPlan,
   carryOverFieldsForAccounting,
   CARRY_SOURCE_TYPE,
-} from '../../src/core/navigation/ward-lifecycle.js';
+} from '../../src/core/filing/carry-over.js';
 
 describe('ward-carryover', () => {
   describe('carrySourcesFor', () => {

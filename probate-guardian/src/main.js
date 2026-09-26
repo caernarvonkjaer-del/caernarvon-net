@@ -22,10 +22,6 @@ import './core/status/section-status.js';
 // never opened. Since Milestone 70's 70D the completion evaluators import
 // those rules (src/core/status/completion.js, through the filing registry
 // this app loads eagerly), so neither the bridges nor these imports remain.
-// Milestone 58E: Delete is available on the dashboard, the first screen a
-// returning filer sees, so the confirmation builder cannot arrive with a
-// lazily-loaded feature module.
-import './core/filing/delete-confirmation.js';
 // Milestone 57B, same reason again: computeNavChecks()'s a-p10 and s-p6 rules
 // reach the shared recipient rule through the bridge, and they run for
 // dashboard filings that have never been opened.
@@ -41,8 +37,6 @@ import './core/navigation/ward-county.js';
 import './core/theme-preference.js';
 import './core/navigation/router.js';
 import './core/filing/output-authorization.js';
-import './core/modals/convert-ward-modal.js';
-import './core/modals/year-manager-modal.js';
 import './core/excel/exceljs-loader.js';
 import './core/pdf/html2pdf-loader.js';
 import './fragment-loader.js';

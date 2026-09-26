@@ -87,10 +87,32 @@ export function setActiveInventoryType(type) {
   else standIn.activeInventoryType = type;
 }
 
+/**
+ * Make a filing the open one, or none (null): the case's activeWardId, the
+ * open filing (normalized, through setD()) and its type, together. The one
+ * place a module changes which filing is open (Milestone 70, 70G: the filing
+ * lifecycle's open and close; tests/unit/filing-lifecycle.spec.js holds it).
+ */
+export function setActiveFiling(ward) {
+  getCaseFile().activeWardId = ward ? ward.wardId : null;
+  setD(ward || {});
+  setActiveInventoryType(ward ? ward.inventoryType : null);
+}
+
 /** One app-state value (the monolith's `_appState`), or null. */
 export function getAppState(key) {
   const state = onPage() ? window._appState : standIn._appState;
   return state && key in state ? state[key] : null;
+}
+
+/**
+ * The monolith's _appState object itself, live, for code that reads and sets
+ * several of its keys (Milestone 70, 70G: the recent-filings list).
+ */
+export function appStateObject() {
+  if (!onPage()) return standIn._appState;
+  if (!window._appState) window._appState = {};
+  return window._appState;
 }
 
 /**

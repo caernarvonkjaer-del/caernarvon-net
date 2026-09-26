@@ -12,14 +12,19 @@ import { esc } from '../../core/filing/escape-html.js';
 import { ic } from '../../core/ui/icons.js';
 import { INVENTORY_TYPES, formEngine, typeIcon } from '../../core/filing/filing-registry.js';
 import { getCaseFile } from '../../core/state.js';
+import { getRecentlyOpenedWards } from '../../core/filing/recent-filings.js';
+import { showPriorYearsModal, showStartNewYearModal } from '../../core/modals/year-dialogs.js';
+import { confirmDeleteWard, showAddWardModal } from '../../core/modals/filing-dialogs.js';
+import { showPickCaseModal } from '../../core/modals/pick-record-dialogs.js';
+import { filingLifecycle } from '../../core/navigation/filing-lifecycle.js';
+import { showConvertWardModal } from '../../core/modals/convert-ward-modal.js';
 
 const {
   navigate, isContinuePromptShown, markContinuePromptShown,
-  getRecentlyOpenedWards, saveWardToState, flushPendingSave, markDirtySinceExport, updateLastSavedIndicator,
+  saveWardToState, flushPendingSave, markDirtySinceExport, updateLastSavedIndicator,
   saveBlobAs, auditLog, saveAppState,
   getWardHeadlineTotal, getWardProgress, 
-  switchWard, showStartNewYearModal, confirmDeleteWard,
-  showConvertWardModal, showAddWardModal, showPriorYearsModal, formatRelativeTime,
+  formatRelativeTime,
   
 } = window;
 
@@ -373,7 +378,7 @@ function renderDashboardGrid() {
 }
 
 async function quickExportPdf(wardId) {
-  await switchWard(wardId);
+  await filingLifecycle.switchTo(wardId);
   navigate('/print');
 }
 
@@ -520,18 +525,16 @@ async function handleDashboardClick(event) {
       if (window.exportGuardianDataZip) window.exportGuardianDataZip();
       break;
     case 'close-ward':
-      if (window.unloadWard) {
-        window.unloadWard().then(() => renderDashboardPage());
-      }
+      filingLifecycle.unload().then(() => renderDashboardPage());
       break;
     case 'delete':
     case 'delete-ward':
       confirmDeleteWard(wardId || getCaseFile().activeWardId);
       break;
     case 'dismiss-continue': document.getElementById('continue-prompt-container')?.replaceChildren(); break;
-    case 'link-case': window.showPickCaseModal(wardId); break;
+    case 'link-case': showPickCaseModal(wardId); break;
     case 'new-year': showStartNewYearModal(wardId); break;
-    case 'open-ward': await switchWard(wardId); break;
+    case 'open-ward': await filingLifecycle.switchTo(wardId); break;
     case 'pdf': quickExportPdf(wardId); break;
     case 'prior-years': showPriorYearsModal(wardId); break;
     case 'select-existing': showConvertWardModal(); break;

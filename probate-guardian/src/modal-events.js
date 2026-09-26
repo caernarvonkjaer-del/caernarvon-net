@@ -1,26 +1,31 @@
 import { formatName } from './core/form/form-contract.js';
 import { saveBackupNow } from './core/persistence/case-file.js';
-import { switchWard } from './core/navigation/ward-lifecycle.js';
+import { filingLifecycle } from './core/navigation/filing-lifecycle.js';
+import { doAddWard, doConfirmSimplifiedEligibility, doDeleteWard } from './core/modals/filing-dialogs.js';
+import { doCreateCaseFromWard, doCreatePartyFromSlot, doPickCase, doPickParty } from './core/modals/pick-record-dialogs.js';
+import { confirmStartNewYear, doDeleteWardYear } from './core/modals/year-dialogs.js';
+import { doConvertWard, onConvertSourceFocus, onConvertSourceInput, onConvertSourceKeydown } from './core/modals/convert-ward-modal.js';
+import { onCarrySourceChange, updateCarrySourcePicker } from './core/filing/carry-over.js';
 async function handleModalClick(event) {
   const actionElement = event.target instanceof Element ? event.target.closest('[data-modal-action]') : null;
   if (!actionElement) return;
 
   switch (actionElement.dataset.modalAction) {
-    case 'add-ward': window.doAddWard(); break;
+    case 'add-ward': doAddWard(); break;
     case 'close': window.closeModal(actionElement.dataset.modalId); break;
     case 'close-ward-locked': window.closeWardLockedModal(); break;
-    case 'confirm-simplified-eligibility': window.doConfirmSimplifiedEligibility(); break;
-    case 'convert-ward': window.doConvertWard(); break;
-    case 'create-case-from-ward': window.doCreateCaseFromWard(); break;
-    case 'create-party-from-slot': window.doCreatePartyFromSlot(); break;
-    case 'delete-ward': window.doDeleteWard(); break;
-    case 'delete-ward-year': window.doDeleteWardYear(); break;
+    case 'confirm-simplified-eligibility': doConfirmSimplifiedEligibility(); break;
+    case 'convert-ward': doConvertWard(); break;
+    case 'create-case-from-ward': doCreateCaseFromWard(); break;
+    case 'create-party-from-slot': doCreatePartyFromSlot(); break;
+    case 'delete-ward': doDeleteWard(); break;
+    case 'delete-ward-year': doDeleteWardYear(); break;
     case 'guardian-setup': window.doGuardianSetup(); break;
-    case 'pick-case': window.doPickCase(); break;
-    case 'pick-party': window.doPickParty(); break;
+    case 'pick-case': doPickCase(); break;
+    case 'pick-party': doPickParty(); break;
     case 'save-backup': window.closeModal(actionElement.dataset.modalId); saveBackupNow(); break;
-    case 'start-new-year': window.confirmStartNewYear(); break;
-    case 'switch-ward': window.closeModal('switchWardPickerModal'); await switchWard(actionElement.dataset.wardId); break;
+    case 'start-new-year': confirmStartNewYear(); break;
+    case 'switch-ward': window.closeModal('switchWardPickerModal'); await filingLifecycle.switchTo(actionElement.dataset.wardId); break;
   }
 }
 
@@ -52,7 +57,7 @@ function handleModalInput(event) {
   // gets trimmed the instant it's typed, making the space key look broken.
   // See handleModalBlur for the one-time formatting on blur instead.
   if (event.target.dataset.modalInput === 'convert-source') {
-    window.onConvertSourceInput();
+    onConvertSourceInput();
   }
 }
 
@@ -65,7 +70,7 @@ function handleModalBlur(event) {
 
 function handleModalFocus(event) {
   if (event.target instanceof HTMLInputElement && event.target.dataset.modalInput === 'convert-source') {
-    window.onConvertSourceFocus();
+    onConvertSourceFocus();
   }
 }
 
@@ -99,16 +104,16 @@ function handleModalKeydown(event) {
     }
   }
   if (event.target instanceof HTMLInputElement && event.target.dataset.modalInput === 'convert-source') {
-    window.onConvertSourceKeydown(event);
+    onConvertSourceKeydown(event);
   }
 }
 
 function handleModalChange(event) {
   if (!(event.target instanceof HTMLSelectElement)) return;
   if (event.target.dataset.modalChange === 'ward-type') {
-    window.updateCarrySourcePicker();
+    updateCarrySourcePicker();
   } else if (event.target.dataset.modalChange === 'carry-source') {
-    window.onCarrySourceChange();
+    onCarrySourceChange();
   }
 }
 

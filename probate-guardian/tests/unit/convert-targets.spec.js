@@ -8,7 +8,7 @@
 // registry -- convert-ward-modal.js now just re-exports convertTargetsFor.
 import { describe, it, expect } from 'vitest';
 import { convertTargetsFor, convertSourcesFor, FILING_TYPE_KEYS } from '../../src/core/filing/filing-descriptor.js';
-import { CARRY_SOURCE_TYPE } from '../../src/core/navigation/ward-lifecycle.js';
+import { CARRY_SOURCE_TYPE } from '../../src/core/filing/carry-over.js';
 import { convertTargetsFor as reExported } from '../../src/core/modals/convert-ward-modal.js';
 
 describe('convertTargetsFor()', () => {

@@ -102,7 +102,7 @@ export function validatorFnName(engineId) {
 // Which existing filings may be a CONVERSION target for `srcType` -- e.g.
 // annual <-> planAnnual, but never planMinor (no Accounting counterpart) or
 // a cross-family pair (guardian -> planAnnual). Deliberately narrower than
-// ward-lifecycle.js's CARRY_SOURCE_TYPE, which Milestone 36-7 widened to let
+// carry-over.js's CARRY_SOURCE_TYPE, which Milestone 36-7 widened to let
 // ANY filing seed a new one's identity/contact block at creation time --
 // that widening must not also widen what CONVERTS an existing filing in
 // place. Lived in core/modals/convert-ward-modal.js from Milestone 42E

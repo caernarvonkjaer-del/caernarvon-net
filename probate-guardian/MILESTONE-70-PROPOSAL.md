@@ -2,8 +2,8 @@
 
 ## Status
 
-**70A complete (2026-09-24); 70T, 70B, 70C and 70D complete (2026-09-25); 70E
-and 70F complete (2026-09-26) -- see their build records. Every remaining delivery, 70G through 70L, is approved.** The
+**70A complete (2026-09-24); 70T, 70B, 70C and 70D complete (2026-09-25); 70E,
+70F and 70G complete (2026-09-26) -- see their build records. Every remaining delivery, 70H through 70L, is approved.** The
 requester approved delivery 70A on 2026-09-24 and it is complete on the
 `milestone-70` branch (see the 70A build record), then approved 70T. On
 2026-09-25 the requester approved every delivery after it ("Finish ms 70. That
@@ -1404,6 +1404,39 @@ Creation, switching, deletion, rename, carryover, conversion, year operations,
 party/case write-through, and cross-tab locks pass through the service in both
 UI and tests. No lifecycle path reassigns active/case state outside the store
 seam. Every supported conversion produces exactly the same data it did before.
+
+### 70G build record
+
+Approved with every later delivery on 2026-09-25 (see Status). Everything
+below is on the `milestone-70` branch.
+
+**What a filer sees.** Nothing, by design. Creating a filing (with or without
+carrying over from another, and the Simplified eligibility questions that can
+send it to an Annual instead), converting one, starting, switching and
+deleting its years, deleting it, linking it to a shared person or case, the
+People page and the recently opened list all behave as before; every
+conversion the app offers produces exactly the data it did (24 conversions
+across the nine filing types, recorded before the move).
+
+**Done, with evidence.**
+
+| Item | Evidence |
+| --- | --- |
+| Commit | Named in the next docs commit (the whole delivery; gate evidence in its message). |
+| The workflows | Out of `legacy-app.js` into modules: conversion (`src/core/filing/conversion.js`; its dialog's source picker, note preview and `doConvertWard()` joined `src/core/modals/convert-ward-modal.js`), multi-year accounting (`src/core/filing/filing-years.js`, `src/core/modals/year-dialogs.js`), carry-over and its source picker (`src/core/filing/carry-over.js`), the Add Form, Simplified eligibility and Delete Form dialogs (`src/core/modals/filing-dialogs.js`), the pick-a-shared-record dialogs (`src/core/modals/pick-record-dialogs.js`), the People page (`src/core/parties/party-management.js`) and the recent-filings list (`src/core/filing/recent-filings.js`). 94 names left the monolith (the review's `landed["70G"]`), among them the six row-factory wrappers and `formDisplayName()` whose last callers these were. |
+| Consolidated, not copied | `carry-over.js` also took `ward-lifecycle.js`'s carry tables and builders (`CARRY_SOURCE_TYPE`, `carrySourcesFor()`, `carryWardsFor()`, `extractCarryIdentity()`, `carryOverFieldsForPlan()`, `carryOverFieldsForAccounting()`), so every carry-over rule is one module's; the monolith's own copies of the tables, identical and `CARRY_SOURCE_TYPE` unused, went. The Convert dialog's existing module took its moved half. The Year Manager module (`src/core/modals/year-manager-modal.js`), dead since before Milestone 70 (70A's finding: nothing opened it and its dialog had no markup), went with its import. |
+| The service | `src/core/navigation/filing-lifecycle.js`: `filingLifecycle`, one frozen object whose members are the implementations themselves -- `create`, `open`, `switchTo`, `unload`, `remove`, `convert`, `carry`, `newYear`, `switchYear`, `removeYear`. The dispatchers (`shell-events.js`, `modal-events.js`), the moved dialogs, the dashboard and the test adapter call it; the adapter imports the dialogs and `describeConversion()`, `getRecentlyOpenedWards()` and `convertTargetsFor()` it had reached by name on `window`. Its own module, not a member of `ward-lifecycle.js`: conversion and the year operations import that file, so the facade there would close an import cycle. There is no rename: a filing's name is an ordinary field (the unreachable Rename Ward dialog went in 70B). |
+| The store seam | `setActiveFiling(ward \| null)` in `src/core/state.js` sets the case's `activeWardId`, the open filing and its type together; the lifecycle's open and close use it, and no module assigns `activeWardId` or calls `setD()`, `setActiveInventoryType()` or `setCaseFile()`. The cross-tab lock is still taken inside `activateWard()` before anything changes, and case and party write-through happen inside creation and conversion, so every caller of the service goes through them. |
+| The gate's guard | `tests/unit/filing-lifecycle.spec.js`: the service is the implementations; no module outside them imports a lifecycle operation, reads or destructures one off `window`, or names one to the adapter's `call()`; the monolith declares none, and what it still reaches through `window` (the switcher's `switchWard()`, 70H; loading a case's `activateWard()`, 70I) is the implementation's own publication, as is `case-file.js`'s `window.unloadWard` (recorded exception: importing the service there would close an import cycle; the persistence service, 70I); which filing is open changes only through `setActiveFiling()`; the carry rules are declared once. Red first: a copy in place of a member, a direct `switchWard` import in `modal-events.js`, a direct `activeWardId` write in `activateWard()`, a `switchWard` declaration and a second `CARRY_SOURCE_TYPE` in the monolith each failed it. |
+| Conversions proven equal | `tests/e2e/filing-conversion.characterization.spec.ts` converts a minimal valid filing of each type into every type `convertTargetsFor()` lists and records each new filing field by field (ids and times normalized), with what converting did to the source (its case link, `caseId`), against `tests/baseline/ms70-conversion-golden.json`, recorded from the 70F code before this move: 24 conversions; a Minor plan offers none. It passes on 70G's. Red first: a +1 in the Initial Inventory to Simplified starting balance failed it (`startingBalance` 0 to 1). |
+| Placed here, not in 70H | The Add Form, eligibility and Delete Form dialogs sat in the monolith's MODAL FUNCTIONS section, which the review placed in 70H. They are the creation, eligibility and deletion workflow the plan gives 70G, and its gate needs them through the service, so they moved here (review override `filing-workflow`); the modal plumbing they open through -- `showModal()`, `closeModal()`, `ensureFragment()`, the ward-name combobox -- stays for 70H and is reached as monolith services. |
+| Went with their readers | `window` publications whose last readers moved: ten of `party-resolver.js`'s, four of `ward-county.js`'s, `ward-lifecycle.js`'s `createWardId`, `addWard` and `deleteWard` and its five carry names, `delete-confirmation.js`'s one and the Convert dialog's four -- with `main.js`'s imports that existed only to publish them. `party-resolver.js`'s remaining publications are guarded so it imports under Node. |
+| Types | `conversion.js` and `party-management.js` carry `@ts-nocheck` with the reason (in the checked program only transitively, moved as text). `carry-over.js` stays checked -- it holds the builders `ward-lifecycle.js` had, which were -- with casts on its moved DOM and merge code. |
+| Tests converted | `convert-targets.spec.js` and `ward-carryover.spec.js` import from `carry-over.js`; `filing-type-enumeration-guard.spec.js`'s carry-table exception follows the tables, and `filing-years.js` (each form's year-end reset, which the year-rollover characterization pins) and `filing-dialogs.js` (the Add Form dialog's branches on particular types) join its exceptions. |
+| Ratchet | `classicDeclarations` 329 to 235, `windowWrites` 268 to 236, `windowReads` 317 to 247, `evalTimeWindowDestructures` 58 to 51, `bareCrossBoundary` 46 to 36, `unownedWindowReads` 2 to 1 (the Year Manager's call to a function nothing defines); the monolith's bare case-state accesses 151 to 99. Grown, carried with the moved code and recorded here with their removal: `src/core/filing/carry-over.js::calcTotalsAnnual` (the Annual totals are that feature's; core code cannot import a feature; the feature context, 70K) and `src/core/parties/party-management.js::renderPage` (the router renders the People page, so importing it would close a cycle; the router's page table, 70K). |
+| Findings | (1) The monolith kept its own copies of the carry tables beside `ward-lifecycle.js`'s, identical, one unused. (2) Workflow code filed under modal plumbing (above). (3) Opening a filing always saves twice -- the flush, then the recent-filings list it joins, which is saved with the case: not a defect, pinned by 70F's contract spec as the cost of a switch. |
+
+**Gate run.** The full `npm test`, 2026-09-26, on the trial copy this commit was ported from (identical file for file apart from its test port): unit 2008/2008 (150 files); browser 917 passed, 7 skipped, 0 failed (1.2 h, source profile, chromium) -- 924 tests: 70F's 915 and the nine of `filing-conversion.characterization.spec.ts`. `check:types` clean.
 
 ---
 

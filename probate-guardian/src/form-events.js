@@ -14,6 +14,9 @@ import { handleScheduleDocUpload, removeScheduleDoc, updateScheduleComment } fro
 import { toggleSsnReveal } from './core/form/form-runtime.js';
 import { filterCountyDropdown, hideCountyDropdown, onCountyKeydown, selectCountyOption } from './core/form/county-autocomplete.js';
 import { navigate, renderPage } from './core/navigation/router.js';
+import { confirmDeleteWardYear, editPriorYear } from './core/modals/year-dialogs.js';
+import { clearPartyCompareSelection, doFilingSyncClosed, doPartyDismissPair, doPartyMergeKeep, doPartySyncClosed, doPartySyncClosedAll, doPartyUnmergeSelected, renderPartyDirectoryRows, togglePartyCompareSelection, togglePartyUnmergeSelection } from './core/parties/party-management.js';
+import { showPickPartyModal } from './core/modals/pick-record-dialogs.js';
 
 // The data-form-path and data-annual-path write path is writeDraftValue() on
 // input/compositionend and finalizeFieldValue() on blur/change, wired by the
@@ -46,12 +49,12 @@ document.addEventListener('click', (event) => {
     case 'duplicate-plan-row': duplicatePlanRow(actionElement.dataset.collection, Number.parseInt(actionElement.dataset.index, 10), actionElement.dataset.route); break;
     case 'add-ward-type': window.showAddWardModalForType(actionElement.dataset.inventoryType); break;
     case 'choose-schedule-docs': document.getElementById(actionElement.dataset.inputId)?.click(); break;
-    case 'confirm-delete-ward-year': window.confirmDeleteWardYear(actionElement.dataset.wardId, actionElement.dataset.yearKey); break;
-    case 'edit-prior-year': window.editPriorYear(actionElement.dataset.wardId, actionElement.dataset.yearKey); break;
+    case 'confirm-delete-ward-year': confirmDeleteWardYear(actionElement.dataset.wardId, actionElement.dataset.yearKey); break;
+    case 'edit-prior-year': editPriorYear(actionElement.dataset.wardId, actionElement.dataset.yearKey); break;
     case 'export-activity-log': window.exportActivityLog(); break;
-    case 'filing-sync-closed': window.doFilingSyncClosed(actionElement.dataset.role, actionElement.dataset.index); break;
-    case 'filing-sync-closed-all': window.doFilingSyncClosed(); break;
-    case 'link-party': window.showPickPartyModal(actionElement.dataset.role, actionElement.dataset.index); break;
+    case 'filing-sync-closed': doFilingSyncClosed(actionElement.dataset.role, actionElement.dataset.index); break;
+    case 'filing-sync-closed-all': doFilingSyncClosed(); break;
+    case 'link-party': showPickPartyModal(actionElement.dataset.role, actionElement.dataset.index); break;
     // summary-renderer.js's Section Completion / footer links are <a href="#">
     // (not <button>, so they read as links, not controls). Without this, the
     // anchor's own default action also fires right after window.navigate()
@@ -63,16 +66,16 @@ document.addEventListener('click', (event) => {
     // has no default action to prevent.
     case 'navigate': event.preventDefault(); navigate(actionElement.dataset.route); break;
     case 'open-court-portal': window.openFloridaCourtPortal(); break;
-    case 'party-clear-compare': window.clearPartyCompareSelection(); break;
+    case 'party-clear-compare': clearPartyCompareSelection(); break;
     // The two checkbox actions read the box's own state: a click on a checkbox
     // toggles it before listeners run, so `checked` is already the new value.
-    case 'party-compare-toggle': window.togglePartyCompareSelection(actionElement.dataset.partyId, actionElement.checked); break;
-    case 'party-dismiss-pair': window.doPartyDismissPair(actionElement.dataset.partyA, actionElement.dataset.partyB); break;
-    case 'party-merge-keep': window.doPartyMergeKeep(actionElement.dataset.keepId, actionElement.dataset.discardId); break;
-    case 'party-sync-closed': window.doPartySyncClosed(actionElement.dataset.wardId, actionElement.dataset.role, actionElement.dataset.index); break;
-    case 'party-sync-closed-all': window.doPartySyncClosedAll(actionElement.dataset.partyId); break;
-    case 'party-unmerge-selected': window.doPartyUnmergeSelected(); break;
-    case 'party-unmerge-toggle': window.togglePartyUnmergeSelection(actionElement.dataset.partyId, actionElement.checked); break;
+    case 'party-compare-toggle': togglePartyCompareSelection(actionElement.dataset.partyId, actionElement.checked); break;
+    case 'party-dismiss-pair': doPartyDismissPair(actionElement.dataset.partyA, actionElement.dataset.partyB); break;
+    case 'party-merge-keep': doPartyMergeKeep(actionElement.dataset.keepId, actionElement.dataset.discardId); break;
+    case 'party-sync-closed': doPartySyncClosed(actionElement.dataset.wardId, actionElement.dataset.role, actionElement.dataset.index); break;
+    case 'party-sync-closed-all': doPartySyncClosedAll(actionElement.dataset.partyId); break;
+    case 'party-unmerge-selected': doPartyUnmergeSelected(); break;
+    case 'party-unmerge-toggle': togglePartyUnmergeSelection(actionElement.dataset.partyId, actionElement.checked); break;
     case 'print': window.printCurrentFilingPdf(); break;
     case 'remove-plan-row': removePlanRow(actionElement.dataset.collection, Number.parseInt(actionElement.dataset.index, 10), actionElement.dataset.route); break;
     case 'save-pdf-plan-annual': window.doSavePdfPlanAnnual(); break;
@@ -92,7 +95,7 @@ document.addEventListener('input', (event) => {
   }
   if (control.dataset.formControl === 'county') filterCountyDropdown(control);
   if (control.dataset.formInput === 'activity-log') window.renderActivityLogList();
-  if (control.dataset.formInput === 'party-directory') window.renderPartyDirectoryRows();
+  if (control.dataset.formInput === 'party-directory') renderPartyDirectoryRows();
   if (control.dataset.formInput === 'schedule-comment') updateScheduleComment(control.dataset.scheduleKey, control.value);
 });
 

@@ -31,6 +31,12 @@ import {
 } from '../filing/models/plan-annual.js';
 import { INITIAL_ADLS, INITIAL_ADL_RATINGS } from '../filing/models/plan-initial.js';
 import { updateNavDots } from '../status/nav-marks.js';
+import { filingLifecycle } from '../navigation/filing-lifecycle.js';
+import { describeConversion } from '../filing/conversion.js';
+import { getRecentlyOpenedWards } from '../filing/recent-filings.js';
+import { showSimplifiedEligibilityModal } from '../modals/filing-dialogs.js';
+import { showConvertWardModal } from '../modals/convert-ward-modal.js';
+import { convertTargetsFor } from '../filing/filing-descriptor.js';
 
 export const TEST_MODE_FLAG = '__GUARDIAN_FORMS_TEST_MODE__';
 
@@ -213,8 +219,8 @@ export function createTestingAdapter(w) {
       openDialog: (type) => call('showAddWardModalForType', type),
       // The Simplified Accounting eligibility dialog, opened for a named ward
       // carrying over from an existing filing (the carry-over flow's entry).
-      openEligibility: (name, sourceFilingId) => call('showSimplifiedEligibilityModal', name, sourceFilingId),
-      add: (name, type) => call('addWard', name, type),              // addWard(name, type)
+      openEligibility: (name, sourceFilingId) => showSimplifiedEligibilityModal(name, sourceFilingId),
+      add: (name, type) => filingLifecycle.create(name, type),
       emptyData: (type) => copy(initializeEmptyData(type)), // a copy of a blank filing
       /** A blank advance-directive card, the one a Plan's "executed directives" box adds (a copy). */
       emptyDirective: () => copy(emptyPlanDirective()),
@@ -222,10 +228,10 @@ export function createTestingAdapter(w) {
       duplicateRow: (schedule, index) => call('duplicateEntry', schedule, index),
     }),
     activateFiling: Object.freeze({
-      open: (filingId) => call('switchWard', filingId),   // switchWard(id)
-      close: () => call('unloadWard'),                    // unloadWard()
+      open: (filingId) => filingLifecycle.switchTo(filingId),
+      close: () => filingLifecycle.unload(),
     }),
-    deleteFiling: (filingId) => call('deleteWard', filingId),
+    deleteFiling: (filingId) => filingLifecycle.remove(filingId),
     saveArchive: Object.freeze({
       all: () => call('exportGuardianDataZip'),                       // the Save Backup (.sav) export
       blobAs: (blob, name, validator) => call('saveBlobAs', blob, name, validator),
@@ -263,20 +269,20 @@ export function createTestingAdapter(w) {
       release: () => call('releaseWardLock'),
     }),
     convertFiling: Object.freeze({
-      convert: (sourceFilingId, targetType) => call('convertExistingWard', sourceFilingId, targetType),
+      convert: (sourceFilingId, targetType) => filingLifecycle.convert(sourceFilingId, targetType),
       /** The Convert dialog (its entry points are the dashboard's; the dialog is what specs test). */
-      openDialog: () => call('showConvertWardModal'),
+      openDialog: () => showConvertWardModal(),
       /** The target types a filing type may convert to, as the app lists them (a copy). */
-      targetsFor: (type) => copy(call('convertTargetsFor', type)),
+      targetsFor: (type) => copy(convertTargetsFor(type)),
       /** The app's own description of a conversion. */
-      describe: (fromType, toType) => copy(call('describeConversion', fromType, toType)),
+      describe: (fromType, toType) => copy(describeConversion(fromType, toType)),
     }),
     /** Opens an already-parsed case-file zip as the whole case (loadCaseFileFromZip()). */
     importArchive: (zip, manifest, key = null) => call('loadCaseFileFromZip', zip, manifest, key),
     setTestSystemTitleWarning: (enabled) => call('setTestSystemTitleWarningEnabledForTest', enabled),
     year: Object.freeze({
-      startNew: (filingId) => call('startNewWardYear', filingId),
-      switchTo: (filingId, yearKey) => call('switchWardYear', filingId, yearKey),
+      startNew: (filingId) => filingLifecycle.newYear(filingId),
+      switchTo: (filingId, yearKey) => filingLifecycle.switchYear(filingId, yearKey),
     }),
     /** Appends an Activity Log entry (auditLog()). */
     recordActivity: (type, details, success = true, filingId = null) => call('auditLog', type, details, success, filingId),
@@ -327,7 +333,7 @@ export function createTestingAdapter(w) {
       keyHeld: () => !!w._cryptoKey,
       securityMode: () => w._securityMode ?? null,
       lockedFilingId: () => call('getCurrentLockedWardId'),
-      recentFilings: () => copy(call('getRecentlyOpenedWards')),
+      recentFilings: () => copy(getRecentlyOpenedWards()),
       continuePromptShown: () => !!call('isContinuePromptShown'),
       auditEntries: async () => copy(await call('loadAuditLogEntries')),
       /** Reads a remembered file handle with the app's own timeout (readRememberedFile()). */

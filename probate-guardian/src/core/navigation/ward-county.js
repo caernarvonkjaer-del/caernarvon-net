@@ -290,14 +290,10 @@ export function wardCountyMergeConflict(keepId, discardId) {
 // Global bridge for legacy-app.js, which is a classic script and cannot import
 // an ES module (same pattern as the other core/navigation modules).
 if (typeof window !== 'undefined') {
-  window.normalizeCountyName = normalizeCountyName;
   window.wardPartyForFiling = wardPartyForFiling;
   window.ensureWardPartyForFiling = ensureWardPartyForFiling;
-  window.wardPartyCounty = wardPartyCounty;
   window.commitCoverCounty = commitCoverCounty;
   window.maybeCommitCoverCounty = maybeCommitCoverCounty;
-  window.hydrateCountyFromWardParty = hydrateCountyFromWardParty;
-  window.inferWardPartyCounty = inferWardPartyCounty;
   window.backfillWardPartyCounties = backfillWardPartyCounties;
   window.wardCountyMergeConflict = wardCountyMergeConflict;
 }
