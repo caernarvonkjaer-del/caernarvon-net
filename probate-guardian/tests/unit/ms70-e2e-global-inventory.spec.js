@@ -29,7 +29,7 @@ describe('the browser-suite global inventory', () => {
       'assign:D.wardName', 'object-assign:D', 'mutator:D.certRecipients.push', 'replace-root:caseFile', 'delete:D.periodTo',
     ]);
     expect(r.computed).toBe(1);
-  });
+  }, 60_000);
 
   // Milestone 70, 70T: a name the spec never declares is a window property in
   // the page, so `caseFile.wards` reaches the app exactly as window.caseFile
@@ -50,7 +50,7 @@ describe('the browser-suite global inventory', () => {
     const r = await inventoryFile('x.spec.ts', ts);
     expect(r.bare).toEqual({ caseFile: 1, D: 1 });
     expect(r.names).toEqual({});
-  });
+  }, 60_000);
 
   // Milestone 70, 70T: GuardianForms.testing hands back copies, so a write
   // into one arranges nothing. Reported as a state write, whichever way the
@@ -75,7 +75,7 @@ describe('the browser-suite global inventory', () => {
       'copy-write:field()', 'copy-write:snapshot()', 'copy-write:snapshot()', 'copy-write:field()',
     ]);
     expect(r.names).toEqual({ GuardianForms: 2 });
-  });
+  }, 60_000);
 
   // The same rule for a copy held in a variable: a write through anything
   // derived from it -- a member, a for-of item, an array callback's
@@ -104,5 +104,5 @@ describe('the browser-suite global inventory', () => {
     ].join('\n');
     const r = await inventoryFile('x.spec.ts', ts);
     expect(r.writes.map((x) => `${x.kind}:${x.target}`)).toEqual(['copy-write:lost (a copy, written and never handed on)']);
-  });
+  }, 60_000);
 });

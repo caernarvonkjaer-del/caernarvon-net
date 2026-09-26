@@ -23,6 +23,9 @@ import { getCaseFile, getD, setD, setActiveInventoryType, setAppState } from '..
 import { FILING_ENGINE_IDS, mountFeatureFnName } from '../filing/filing-descriptor.js';
 import { formEngine, initializeEmptyData } from '../filing/filing-registry.js';
 import { pruneBlankCards } from '../form/prune-cards.js';
+import { linkLabelsToInputs } from '../form/form-runtime.js';
+import { commitFocusedField } from '../form/form-contract.js';
+import { updateNavDots } from '../status/nav-marks.js';
 
 export function createWardId() {
   return 'w_' + Date.now() + '_' + Math.random().toString(36).slice(2, 9);
@@ -39,6 +42,9 @@ export async function enterDashboardEditingFocus() {
     const caseFile = getCaseFile();
     if (!caseFile.activeWardId) return true;
     try {
+      // A field still focused is finalized into this filing before it closes
+      // (its late blur would find the filing gone).
+      commitFocusedField();
       window.commitPendingFieldValues?.();
       pruneBlankCards();
       if (typeof window.flushPendingSave === 'function') await window.flushPendingSave({ requireRecovery: true });
@@ -392,7 +398,10 @@ export async function activateWard(ward, opts = {}) {
     }
   }
 
-  // 2. Flush while outgoing ward's lock is still held
+  // 2. Flush while outgoing ward's lock is still held -- after finalizing a
+  // field still focused into it, so the edit is saved with it, once, and its
+  // late blur cannot land in the filing opened next.
+  commitFocusedField();
   if (typeof window !== 'undefined' && typeof window.flushPendingSave === 'function') {
     await window.flushPendingSave();
   }
@@ -419,7 +428,7 @@ export async function activateWard(ward, opts = {}) {
     if (typeof window.addToRecentlyOpened === 'function') {
       window.addToRecentlyOpened(ward);
     }
-    if (true && formEngine(ward.inventoryType) === 'guardian') {
+    if (formEngine(ward.inventoryType) === 'guardian') {
       if (typeof window.ensureGuardianFeatureReady === 'function') {
         await window.ensureGuardianFeatureReady();
       }
@@ -443,9 +452,7 @@ export async function addWard(wardName, inventoryType) {
   const caseFile = getCaseFile();
   const isFirstWardEver = !caseFile.wards || caseFile.wards.length === 0;
 
-  const emptyData = typeof window !== 'undefined' && true
-    ? initializeEmptyData(inventoryType)
-    : {};
+  const emptyData = initializeEmptyData(inventoryType);
 
   const newWard = {
     wardId,
@@ -494,8 +501,8 @@ export async function switchWard(wardId) {
       const mount = window[mountFeatureFnName(engine)];
       if (typeof mount === 'function') await mount('/');
     }
-    if (typeof window.linkLabelsToInputs === 'function') window.linkLabelsToInputs();
-    if (typeof window.updateNavDots === 'function') window.updateNavDots();
+    linkLabelsToInputs();
+    updateNavDots();
     if (typeof window.updateHelpContext === 'function') window.updateHelpContext();
     if (typeof window.closeMobileSidebar === 'function') window.closeMobileSidebar();
   }

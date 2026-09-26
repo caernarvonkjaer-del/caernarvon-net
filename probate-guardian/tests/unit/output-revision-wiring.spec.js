@@ -5,7 +5,12 @@
 // here reproduces the exact failure mode a missing hook would cause: a filer
 // acknowledges an incomplete-but-bypassable filing, then performs one real
 // mutation, and the acknowledgement must no longer be valid.
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+
+// The sidebar marks are src/core/status/nav-marks.js's since Milestone 70's 70F
+// (the tail called window.updateNavDots?.(), which Node did not have); they
+// need a page, so this suite stands them in.
+vi.mock('../../src/core/status/nav-marks.js', () => ({ updateNavDots: () => {} }));
 
 globalThis.window = globalThis.window || {};
 const {

@@ -590,24 +590,11 @@ try {
 // keep a one-line wrapper that delegates through src/legacy-bridge.js
 // (a classic script cannot import). A wrapper goes when its last caller here
 // moves out; never put logic back in one.
-const fmt=(v)=>window.GuardianFormsLegacyBridge.fmt(v);
 function ic(n,size){return window.GuardianFormsLegacyBridge.ic(n,size);}
 function esc(s){return window.GuardianFormsLegacyBridge.esc(s);}
-function sanitizeNonNegativeDecimal(s){return window.GuardianFormsLegacyBridge.sanitizeNonNegativeDecimal(s);}
 function validateImportFile(file,kind){return window.GuardianFormsLegacyBridge.validateImportFile(file,kind);}
 function sanitizeObjectData(obj){return window.GuardianFormsLegacyBridge.sanitizeObjectData(obj);}
-function formatPhone(s){return window.GuardianFormsLegacyBridge.formatPhone(s);}
-function formatSSN(s){return window.GuardianFormsLegacyBridge.formatSSN(s);}
-function formatCaseNumber(s){return window.GuardianFormsLegacyBridge.formatCaseNumber(s);}
-function finalizeCaseNumber(s){return window.GuardianFormsLegacyBridge.finalizeCaseNumber(s);}
-function formatBarNumber(s){return window.GuardianFormsLegacyBridge.formatBarNumber(s);}
-function formatAccountNumber(s){return window.GuardianFormsLegacyBridge.formatAccountNumber(s);}
-function formatCheckNumber(s){return window.GuardianFormsLegacyBridge.formatCheckNumber(s);}
-function formatName(s){return window.GuardianFormsLegacyBridge.formatName(s);}
-function formatAddress(s){return window.GuardianFormsLegacyBridge.formatAddress(s);}
-function applyZipLimit(el){return window.GuardianFormsLegacyBridge.applyZipLimit(el);}
 function formatDashboardCurrency(v){return window.GuardianFormsLegacyBridge.formatDashboardCurrency(v);}
-function formatDisplayDate(s){return window.GuardianFormsLegacyBridge.formatDisplayDate(s);}
 function calcTotals(){return window.GuardianFormsLegacyBridge.calcTotals();}
 // Milestone 70, 70C: the filing registry and per-engine models -- names,
 // engines, blank filings and rows, the page lists and the normalizer -- live in
@@ -623,114 +610,8 @@ function emptyMinorResidence(){return window.GuardianFormsLegacyBridge.emptyMino
 function emptyMinorProvider(){return window.GuardianFormsLegacyBridge.emptyMinorProvider();}
 function initializeEmptyData(type){return window.GuardianFormsLegacyBridge.initializeEmptyData(type);}
 function typeIcon(type,size){return window.GuardianFormsLegacyBridge.typeIcon(type,size);}
-function planGuardianBlank(type){return window.GuardianFormsLegacyBridge.planGuardianBlank(type);}
-function planGuardianHasAnyData(g){return window.GuardianFormsLegacyBridge.planGuardianHasAnyData(g);}
-function planGuardianMax(type){return window.GuardianFormsLegacyBridge.planGuardianMax(type);}
-function normalizePlanGuardians(data){return window.GuardianFormsLegacyBridge.normalizePlanGuardians(data);}
-function planEmptyRow(kind){return window.GuardianFormsLegacyBridge.planEmptyRow(kind);}
 
 
-// Shared markup: a plain text input plus an initially-empty dropdown right
-// after it, both wrapped so the dropdown can be absolutely positioned
-// against the input (see .ward-combobox-wrap, reused as-is here — the
-// positioning rule was never ward-specific). `writeExpr` is whatever this
-// particular field's own data-write convention is (D['field']=this.value,
-// a custom setter string, or nothing at all for data-bind fields, which
-// wire their own listener in bindForms() instead) — this function only
-// ever concerns itself with the dropdown, never how the value gets saved.
-function countyAutocompleteHTML(id,val,path){
-  const binding=path?` data-form-path="${esc(path)}" data-annual-path="${esc(path)}"`:'';
-  // Milestone 50H: a real WAI-ARIA combobox contract -- aria-controls names
-  // the listbox, aria-expanded/aria-activedescendant are kept in sync by
-  // filterCountyDropdown()/hideCountyDropdown()/onCountyKeydown() below,
-  // and the listbox+options below carry the matching roles. Previously the
-  // dropdown was mousedown-only with no keyboard route to it at all.
-  return `<div class="ward-combobox-wrap county-combobox-wrap">
-    <input type="text" class="form-control" id="${id}" autocomplete="off" value="${esc(val||'')}"
-      role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="${id}-dropdown"
-      data-form-control="county"${binding}>
-    <div class="county-combobox-dropdown" id="${id}-dropdown" role="listbox"></div>
-  </div>`;
-}
-// Up to 4 counties whose name starts with what's typed so far (case-
-// insensitive); with nothing typed yet, the first 4 alphabetically, so
-// focusing an empty field isn't just a dead dropdown.
-function filterCountyDropdown(inp){
-  const dd=document.getElementById(inp.id+'-dropdown');
-  if(!dd)return;
-  const q=inp.value.trim().toLowerCase();
-  const counties=window.GuardianFormsLegacyBridge.FL_COUNTIES;
-  const matches=(q?counties.filter(c=>c.toLowerCase().startsWith(q)):counties).slice(0,4);
-  inp.dataset.comboIndex='';
-  inp.removeAttribute('aria-activedescendant');
-  if(!matches.length){dd.classList.remove('show');dd.innerHTML='';inp.setAttribute('aria-expanded','false');return;}
-  dd.innerHTML=matches.map((c,i)=>`<button type="button" class="county-combobox-item" id="${esc(inp.id)}-option-${i}" role="option" data-form-mousedown="select-county" data-input-id="${esc(inp.id)}" data-county="${esc(c)}">${esc(c)}</button>`).join('');
-  dd.classList.add('show');
-  inp.setAttribute('aria-expanded','true');
-}
-function hideCountyDropdown(id){
-  const dd=document.getElementById(id+'-dropdown');
-  if(dd)dd.classList.remove('show');
-  const inp=document.getElementById(id);
-  if(inp){inp.setAttribute('aria-expanded','false');inp.removeAttribute('aria-activedescendant');inp.dataset.comboIndex='';}
-}
-// onmousedown/onclick (below) on each item stops the input's blur from
-// firing before the selection registers, the standard combobox trick —
-// dispatching a real 'input' event here re-runs whatever write-expr this
-// field was wired with in countyAutocompleteHTML() rather than duplicating
-// that logic, and also re-triggers filterCountyDropdown(), which
-// hideCountyDropdown() right after this correctly closes back up.
-function selectCountyOption(id,county){
-  const inp=document.getElementById(id);
-  if(!inp)return;
-  inp.value=county;
-  inp.dispatchEvent(new Event('input',{bubbles:true}));
-  hideCountyDropdown(id);
-}
-// Milestone 50H. Modelled on onWardSelectorKeydown() (this file, the sidebar
-// Active Filing picker's own combobox): ArrowDown/ArrowUp move a highlighted
-// option, Home/End jump, Escape closes, Enter commits. `inp` is whichever
-// county field the keydown fired on -- unlike the ward selector this isn't
-// a singleton, countyAutocompleteHTML() is reused for the ward's own county
-// and (elsewhere) an attorney's, each with its own id/dropdown.
-function onCountyKeydown(inp,e){
-  const dd=document.getElementById(inp.id+'-dropdown');
-  if(!dd)return;
-  const options=[...dd.querySelectorAll('[role="option"]')];
-  if(e.key==='Escape'){
-    hideCountyDropdown(inp.id);
-  }else if(e.key==='ArrowDown'||e.key==='ArrowUp'){
-    e.preventDefault();
-    if(!options.length)return;
-    const current=Number.parseInt(inp.dataset.comboIndex,10);
-    const next=Number.isInteger(current)
-      ? (e.key==='ArrowDown' ? Math.min(current+1,options.length-1) : Math.max(current-1,0))
-      : (e.key==='ArrowDown' ? 0 : options.length-1);
-    inp.dataset.comboIndex=String(next);
-    inp.setAttribute('aria-activedescendant',options[next].id);
-  }else if(e.key==='Home'||e.key==='End'){
-    e.preventDefault();
-    if(!options.length)return;
-    const next=e.key==='Home'?0:options.length-1;
-    inp.dataset.comboIndex=String(next);
-    inp.setAttribute('aria-activedescendant',options[next].id);
-  }else if(e.key==='Enter'){
-    const current=Number.parseInt(inp.dataset.comboIndex,10);
-    if(Number.isInteger(current)&&options[current]){
-      e.preventDefault();
-      // Commits through the exact same path a real click does -- see the
-      // "trap to avoid" note above selectCountyOption(): a real click's
-      // mousedown listener is what actually calls it, so dispatching one
-      // here (rather than calling selectCountyOption() directly) guarantees
-      // the keyboard path can never diverge from the mouse path, including
-      // the maybeCommitCoverCounty()/commitCoverCounty() chain that
-      // establishes the canonical ward-Party county.
-      options[current].dispatchEvent(new MouseEvent('mousedown',{bubbles:true}));
-    }
-    // No highlighted option: leave Enter's default behavior alone rather
-    // than guessing a selection -- matches the WAI-ARIA combobox contract.
-  }
-}
 
 
 // Update an input field with formatted phone, keeping user experience smooth
@@ -742,158 +623,7 @@ function onCountyKeydown(inp,e){
 // ("Cover"→/, "B-1 row 3"→/b1, "Part IV"→/p4, "Sch D2"→/schd2), which is
 // what lets each group offer a jump link.
 // ═══════════════════════════════════════════════════════
-const PLAN_SECTION_ROUTES = {
-  planInitial: {
-    'cover': '/',
-    '2-3. setting & medical care': '/p2',
-    'setting & medical care': '/p2',
-    '4-5. mental health & personal care': '/p3',
-    'mental health & personal care': '/p3',
-    '6-7. socialization & benefits': '/p4',
-    'socialization & benefits': '/p4',
-    '9. examining providers': '/p5',
-    'examining providers': '/p5',
-    '10a. daily living': '/p6',
-    '10a': '/p6',
-    'daily living': '/p6',
-    '10b-d. disabilities & devices': '/p7',
-    '10b-d': '/p7',
-    'disabilities & devices': '/p7',
-    '11. advance directives': '/p8',
-    'advance directives': '/p8',
-    'signatures': '/p9',
-    'attorney certification': '/p10',
-  },
-  planAnnual: {
-    'cover': '/',
-    '1. residences': '/p2',
-    'residences': '/p2',
-    '2-3. residence & care': '/p3',
-    'residence & care': '/p3',
-    '3g. insurance & benefits': '/p4',
-    'insurance & benefits': '/p4',
-    '4. medical treatment': '/p5',
-    'medical treatment': '/p5',
-    '5-7. skills & rights': '/p6',
-    'skills & rights': '/p6',
-    '8. daily living': '/p7',
-    'daily living': '/p7',
-    '9. disabilities & devices': '/p8',
-    'disabilities & devices': '/p8',
-    '10. advance directives': '/p9',
-    'advance directives': '/p9',
-    '11. remuneration': '/p10',
-    'remuneration': '/p10',
-    'signatures': '/p11',
-  },
-  planMinor: {
-    'cover': '/',
-    '2. prior residences': '/p2',
-    'prior residences': '/p2',
-    '3. treatment providers': '/p3',
-    'treatment providers': '/p3',
-    '4. medical services': '/p4',
-    'medical services': '/p4',
-    '5. education & social development': '/p5',
-    'education & social development': '/p5',
-    'guardian signatures': '/p6',
-    'preparer & attorney': '/p7',
-  },
-  planSimplified: {
-    'cover': '/',
-    'the plan': '/p2',
-    'plan': '/p2',
-    'signatures': '/p3',
-  },
-};
 
-function errorRoute(section, filingType){
-  const s=(section||'').trim();
-  if(!s)return '/';
-  if(/^Cover/i.test(s))return '/';
-  const type = filingType || (typeof activeInventoryType !== 'undefined' ? activeInventoryType : null);
-  const norm = str => String(str||'').toLowerCase().replace(/[\u2013\u2014]/g, '-').replace(/\s+/g, ' ').trim();
-  const sNorm = norm(s);
-
-  if(type && PLAN_SECTION_ROUTES[type]){
-    const hit = PLAN_SECTION_ROUTES[type][sNorm];
-    if(hit) return hit;
-    for(const [prefix, route] of Object.entries(PLAN_SECTION_ROUTES[type])){
-      if(sNorm === prefix || sNorm.startsWith(prefix) || prefix.startsWith(sNorm)) return route;
-    }
-  }
-
-  let m=s.match(/^Sch(?:edule)?\s*([A-Za-z])[-\s]?(\d*)/i);
-  if(m)return '/sch'+m[1].toLowerCase()+(m[2]||'');
-  m=s.match(/^([A-Za-z])-(\d+)/);
-  if(m)return '/'+m[1].toLowerCase()+m[2];
-  const R={I:1,II:2,III:3,IV:4,V:5,VI:6,VII:7,VIII:8,IX:9,X:10,XI:11};
-  // Combined-part pages, e.g. Annual's "Parts VI & VII" -> /p67. Must be
-  // tried before the single-part pattern, which would otherwise not match
-  // at all ("Parts" breaks /^Part\s/).
-  m=s.match(/^Parts?\s+([IVXLC]+)\s*(?:&|and)\s*([IVXLC]+)/i);
-  if(m){
-    const a=R[m[1].toUpperCase()],b=R[m[2].toUpperCase()];
-    if(a&&b)return '/p'+a+b;
-  }
-  m=s.match(/^Part\s+([IVXLC]+)/i);
-  if(m){
-    const n=R[m[1].toUpperCase()];
-    if(n)return n===1?'/':'/p'+n;
-  }
-
-  for(const planType of Object.keys(PLAN_SECTION_ROUTES)){
-    const map = PLAN_SECTION_ROUTES[planType];
-    const hit = map[sNorm];
-    if(hit) return hit;
-    for(const [prefix, route] of Object.entries(map)){
-      if(sNorm === prefix || sNorm.startsWith(prefix) || prefix.startsWith(sNorm)) return route;
-    }
-  }
-
-  return null;
-}
-function validationPanel(errors,opts){
-  opts=opts||{};
-  const groups=new Map();
-  errors.forEach(e=>{
-    // Milestone 42F: issues may be objects with .message; see validation-issue.js.
-    const str=e&&typeof e==='object'?String(e.message??e):String(e);
-    const i=str.indexOf(' — ');
-    const section=i>-1?str.slice(0,i).trim():'Other';
-    let field=i>-1?str.slice(i+3).trim():str;
-    field=field.replace(/\s+is required\.?$/i,'').replace(/\.$/,'');
-    if(!groups.has(section))groups.set(section,[]);
-    groups.get(section).push(field);
-  });
-  // Only offer a jump link when the route is a real page in this wizard.
-  const valid=new Set((window.GuardianFormsLegacyBridge.FILING_PAGES[activeInventoryType]||window.GuardianFormsLegacyBridge.PAGES_GUARDIAN||[]).map(p=>p.id));
-  const rows=[...groups.entries()].map(([section,fields])=>{
-    const route=errorRoute(section, activeInventoryType);
-    const go=(route&&valid.has(route))
-      ? `<button type="button" class="validation-go" data-form-action="navigate" data-route="${esc(route)}">Go to section ${ic('external',13)}</button>`
-      : '';
-    return `<div class="validation-group">
-      <div class="validation-group-head">
-        <span class="validation-group-name">${esc(section)}</span>
-        <span class="validation-count">${fields.length}</span>
-        ${go}
-      </div>
-      <div class="validation-fields">${fields.map(f=>`<span class="validation-field">${esc(f)}</span>`).join('')}</div>
-    </div>`;
-  }).join('');
-  const n=errors.length;
-  return `<div class="validation-panel no-print">
-    <summary class="validation-head">
-      ${ic('alert',17)}
-      <div>
-        <div class="validation-title">${n} required field${n===1?'':'s'} still missing</div>
-        <div class="validation-sub">${opts.subtitle||`Across ${groups.size} section${groups.size===1?'':'s'}, listed below. These must be completed before this ward can be exported.`}</div>
-      </div>
-    </div>
-    <div class="validation-groups">${rows}</div>
-  </div>`;
-}
 
 // ═══════════════════════════════════════════════════════
 // PRINT-PREVIEW PAGER
@@ -904,203 +634,11 @@ function validationPanel(errors,opts){
 // Labels are read back out of each page's own court header, so this works
 // for all three inventory types without touching the three builders.
 // ═══════════════════════════════════════════════════════
-let _pvSelection='1'; // '1'-based page number, or 'all'
+ // '1'-based page number, or 'all'
 
-function pvPages(){
-  const cont=document.getElementById('print-doc-container');
-  if(!cont)return [];
-  return [...cont.children].filter(el=>el.classList&&el.classList.contains('pdf-page'));
-}
-function pvLabelFor(page,i){
-  // docHeader() puts "<Schedule> — Page <n>" in the middle cell of .doc-meta.
-  const meta=page.querySelector('.doc-meta');
-  if(meta){
-    const spans=meta.querySelectorAll('span');
-    if(spans.length>=2){
-      const t=spans[1].textContent.replace(/\s+/g,' ').trim();
-      if(t)return t;
-    }
-  }
-  const title=page.querySelector('.doc-schedule-title');
-  if(title){
-    const t=title.textContent.replace(/\s+/g,' ').trim();
-    if(t)return t;
-  }
-  return 'Page '+(i+1);
-}
-// Drop the viewing filter so every page is in the layout. Called before any
-// export or print, and by the "All pages" option.
-function pvShowAll(){
-  const cont=document.getElementById('print-doc-container');
-  if(!cont)return;
-  cont.classList.remove('pv-single');
-  pvPages().forEach(p=>p.classList.remove('pv-show'));
-}
-function pvApply(){
-  const cont=document.getElementById('print-doc-container');
-  if(!cont)return;
-  const pages=pvPages();
-  if(_pvSelection==='all'||pages.length<2){pvShowAll();}
-  else{
-    let idx=parseInt(_pvSelection,10)-1;
-    if(!(idx>=0&&idx<pages.length))idx=0;
-    cont.classList.add('pv-single');
-    pages.forEach((p,i)=>p.classList.toggle('pv-show',i===idx));
-  }
-  const sel=document.getElementById('pv-select');
-  if(sel&&sel.value!==_pvSelection)sel.value=_pvSelection;
-  const count=document.getElementById('pv-count');
-  if(count){
-    count.textContent=_pvSelection==='all'
-      ? `All ${pages.length} pages`
-      : `Page ${parseInt(_pvSelection,10)} of ${pages.length}`;
-  }
-  const prev=document.getElementById('pv-prev'),next=document.getElementById('pv-next');
-  const n=parseInt(_pvSelection,10);
-  if(prev)prev.disabled=(_pvSelection==='all'||n<=1);
-  if(next)next.disabled=(_pvSelection==='all'||n>=pages.length);
-}
-function pvSelect(v){
-  _pvSelection=v;
-  pvApply();
-  // .pv-bar is sticky (position:sticky;top), so it never has to be scrolled
-  // into view — it's pinned at a fixed screen position no matter how tall
-  // the page below it is, which is what makes Next/Prev clickable repeatedly
-  // without moving the mouse. This just scrolls the new page's own content
-  // to the top; #print-doc-container's scroll-margin-top keeps that top
-  // edge from landing underneath the sticky bar.
-  const cont=document.getElementById('print-doc-container');
-  if(cont&&cont.scrollIntoView)cont.scrollIntoView({block:'start',behavior:'smooth'});
-}
-function pvStep(delta){
-  const pages=pvPages();
-  if(_pvSelection==='all')return;
-  let n=parseInt(_pvSelection,10)+delta;
-  n=Math.max(1,Math.min(pages.length,n));
-  pvSelect(String(n));
-}
-function initPrintPager(options={}){
-  const cont=document.getElementById('print-doc-container');
-  if(!cont)return;
-  const pages=pvPages();
-  // The filing-level shell actions belong to the Preview & Export banner,
-  // regardless of whether the generated filing needs a multi-page pager.
-  // This must run before the single-page early return below; otherwise those
-  // previews lose All Filings, theme, and Help entirely.
-  const destination=document.querySelector('[data-preview-shell-actions]');
-  const headerActions=document.querySelector('.schedule-page > h1 .form-header-actions, .schedule-page h1 .form-header-actions');
-  if(headerActions&&destination&&!destination.querySelector('.pv-shell-actions')){
-    headerActions.classList.remove('form-header-actions');
-    headerActions.classList.add('pv-shell-actions');
-    destination.appendChild(headerActions);
-  }else if(destination&&!destination.querySelector('.pv-shell-actions')){
-    const isDark=document.documentElement.getAttribute('data-theme')==='dark';
-    const helpOpen=typeof window.isHelpPanelOpen==='function'&&window.isHelpPanelOpen();
-    const shellActions=document.createElement('div');
-    shellActions.className='pv-shell-actions';
-    shellActions.innerHTML=`<button type="button" class="topnav-btn" data-shell-action="dashboard">${ic('home',16)} All Filings</button><button type="button" class="topnav-btn topnav-theme" id="theme-toggle-btn" data-shell-action="toggle-theme" title="Switch theme" aria-label="Switch to ${isDark?'light':'dark'} theme" aria-pressed="${isDark}">${ic(isDark?'sun':'moon',16)}</button><button type="button" class="topnav-btn topnav-help" id="help-toggle-btn" data-shell-action="toggle-help" title="Help" aria-label="Help" aria-haspopup="true" aria-expanded="${helpOpen}" aria-controls="help-panel">?</button>`;
-    destination.appendChild(shellActions);
-  }
-  if(pages.length<2)return;                       // nothing to page through
-  const existing=document.getElementById('pv-bar');
-  if(existing){
-    if(!options.refresh)return;
-    const existingActions=existing.querySelector('.pv-shell-actions');
-    const destination=document.querySelector('[data-preview-shell-actions]');
-    if(existingActions&&destination)destination.replaceChildren(existingActions);
-    existing.remove();
-  }
-  if(!(_pvSelection==='all'||(parseInt(_pvSelection,10)>=1&&parseInt(_pvSelection,10)<=pages.length))){
-    _pvSelection='1';
-  }
-  const opts=pages.map((p,i)=>
-    `<option value="${i+1}">${i+1}. ${esc(pvLabelFor(p,i))}</option>`).join('');
-  const bar=document.createElement('div');
-  bar.id='pv-bar';
-  bar.className='pv-bar no-print';
-  bar.innerHTML=`
-    <span class="pv-viewing"><span class="pv-label">Viewing</span>
-      <select id="pv-select" class="form-select form-select-sm pv-select"
-              aria-label="Choose which page of the filing to preview"
-              data-form-change="preview-page">
-        ${opts}
-        <option value="all">All pages (continuous)</option>
-      </select>
-    </span>
-    <span class="pv-navigation"><span class="pv-count" id="pv-count"></span>
-      <span class="pv-nav">
-        <button type="button" class="btn btn-sm btn-outline-secondary" id="pv-prev" data-form-action="preview-step" data-step="-1">← Prev</button>
-        <button type="button" class="btn btn-sm btn-outline-secondary" id="pv-next" data-form-action="preview-step" data-step="1">Next →</button>
-      </span>
-    </span>`;
-  cont.parentNode.insertBefore(bar,cont);
-  pvApply();
-}
 
-function highlightErrors(errorMessages){
-  // First, clear all previous error highlights
-  document.querySelectorAll('.validation-error-field').forEach(el=>{
-    el.classList.remove('validation-error-field');
-  });
 
-  // Then highlight fields matching each error message
-  errorMessages.forEach(err=>{
-    // Extract field name from error message (e.g., "Ward Name" from "Ward Name is required")
-    const match=err.match(/^([^(]+?)\s+(?:is required|must be|cannot)/i);
-    if(!match)return;
-    const fieldName=match[1].toLowerCase().trim();
 
-    // Find all labels and inputs that mention this field
-    document.querySelectorAll('label, input, select, textarea').forEach(el=>{
-      const text=el.textContent||el.placeholder||el.id||'';
-      if(text.toLowerCase().includes(fieldName)){
-        let target=el;
-        if(el.tagName==='LABEL'){
-          // Find the input associated with this label
-          const labelFor=el.getAttribute('for');
-          if(labelFor){
-            target=document.getElementById(labelFor);
-          }else{
-            target=el.querySelector('input, select, textarea')||el.parentElement.querySelector('input, select, textarea');
-          }
-        }
-        if(target&&['INPUT','SELECT','TEXTAREA'].includes(target.tagName)){
-          target.classList.add('validation-error-field');
-        }
-      }
-    });
-  });
-}
-
-// Prevent negative values in number inputs (amount fields)
-function enforceNonNegative(input) {
-  if (input.type === 'number') {
-    let val = input.value;
-    // Remove any minus signs
-    val = val.replace(/^-/, '');
-    input.value = val;
-  }
-}
-
-// Apply no-negative enforcement to all amount inputs
-function setupAmountFieldValidation() {
-  document.querySelectorAll('input[type="number"]').forEach(input => {
-    const id = input.id || '';
-    const name = input.name || '';
-    const isAmountField = id.includes('amount') || id.includes('balance') || id.includes('price') ||
-                          id.includes('starting') || id.includes('income') || id.includes('charge') ||
-                          id.includes('tax') || id.includes('settlement') ||
-                          name.includes('amount') || name.includes('balance') || name.includes('price');
-
-    if (isAmountField) {
-      input.min = '0';
-      // Real-time validation as user types
-      input.addEventListener('input', function() { enforceNonNegative(this); });
-      input.addEventListener('change', function() { enforceNonNegative(this); });
-      input.addEventListener('blur', function() { enforceNonNegative(this); });
-    }
-  });
-}
 
 // ═══════════════════════════════════════════════════════
 // SECURITY: VALIDATION AND AUDIT LOGGING
@@ -2073,7 +1611,7 @@ async function saveData(){
   if(_securityMode==='encrypted'&&!_cryptoKey)return;
   const activeWard=getActiveWard();
   if(activeWard){
-    window.commitStoredDateDrafts?.(activeWard,window.setPath);
+    window.commitStoredDateDrafts?.(activeWard,setPath);
     activeWard.lastModified=new Date().toISOString();
   }
   // Best-effort local resume snapshot, used only by lockApp() when the app
@@ -3101,16 +2639,6 @@ async function doCreateCaseFromWard(){
   renderPage(currentPage);
 }
 
-// Small banner shown at the top of a Cover page (Plan or Accounting), only
-// when a matching ward of the other type exists to load from — kept out of
-// Wraps a Cover page's "Import Excel" accordion. Used to also pair it with
-// the "Load Ward Info" banner in a two-column layout; that banner (and the
-// one-time carry-over UI generally) was retired in the persistence-rewrite's
-// Case-entity milestone -- every filing type now has its own Party/Case
-// picker instead, kept continuously in sync rather than copied once.
-function pageIntroRow(accordionHTML){
-  return `<div class="dashboard-top-row single-col" style="margin-bottom:1.25rem;">${accordionHTML}</div>`;
-}
 
 // Most-recently-used ward list stored in the .sav file's appState section.
 const RECENT_WARDS_MAX=5;
@@ -4926,117 +4454,13 @@ async function mountDashboardFeature(page){
 }
 
 
-function inpS(id,label,val,req=false,type='text'){
-  return window.renderFormField({
-    path: id,
-    label,
-    value: val,
-    type,
-    required: req,
-    id,
-  });
-}
-// Filtered-autocomplete text input for county fields, using the same
-// D['id']=this.value write convention as the other Simplified/Plan field helpers.
-function countyInputS(id,label,val,req=false){
-  return `<div class="mb-2"><label class="form-label" for="${id}">${label}${req?'<span class="req">*</span>':''}</label>${countyAutocompleteHTML(id,val,id)}</div>`;
-}
 // ── Plan form controls ───────────────────────────────────
-// The Guardianship Plans are narrative documents — long free-text answers,
-// checkbox lists, and Yes/No questions — where the accountings are grids of
-// numbers. Nothing in the app covered those controls (the only textarea was
-// the schedule-comments box; the only checkbox was the unlock dialog), so
-// these three are the shared foundation for all four Plan types.
-//
-// They follow the same convention as inpS above: write straight to
-// D['id'] inline, then autoSave() and refresh the completion checkmarks.
-// Values are escaped on the way out; free text is deliberately NOT run
-// through formatName/formatAddress the way inpS guesses by label, because
-// these are sentences and paragraphs, not names or addresses.
-function txtP(id,label,val,rows=4,req=false,hint=''){
-  return window.renderTextareaField({ path: id, label, value: val, rows, required: req, hint, id });
-}
-
-// Milestone 67F: `route` is passed only by call sites whose checkbox reveals
-// another field -- it makes the page re-render on change (form-events.js),
-// which is what shows the revealed field without leaving the page.
-function chkP(id,label,checked,route=''){
-  return window.renderCheckboxField({ path: id, label, checked, id, route });
-}
-// Explicit binary answers retain the literal 'Yes'/'No' string contract used
-// by validators and every output format. Unlike the former checkbox, a radio
-// pair has a real unanswered state: neither option is selected and the model
-// remains ''. `binding` permits Annual Accounting's isolated event contract
-// without teaching its schedule controls to use the general form listener.
-function yesNoRadioHTML(id,label,val,path,req=false,route='',binding='form',tooltipKey=''){
-  return window.renderYesNoField({ path, label, value: val, id, required: req, route, binding, tooltipKey });
-}
-
-function addPlanGuardian(route){
-  const d=window.D; const rows=normalizePlanGuardians(d);
-  if(rows.length>=planGuardianMax(d.inventoryType))return false;
-  rows.push(planGuardianBlank(d.inventoryType)); d.planGuardians=rows; autoSave(); navigate(route); return true;
-}
-async function removePlanGuardian(index,route){
-  const d=window.D; const rows=normalizePlanGuardians(d);
-  if(index<=0||index>=rows.length)return false;
-  const row=rows[index];
-  if(planGuardianHasAnyData(row)&&!(await window.confirmModal(`Remove co-guardian ${row.name||`#${index+1}`}? This will delete the entered signature information.`)))return false;
-  rows.splice(index,1); d.planGuardians=rows;
-  if(Array.isArray(d.guardianPartyIds))d.guardianPartyIds.splice(index,1);
-  autoSave(); navigate(route); return true;
-}
-window.addPlanGuardian=addPlanGuardian;
-window.removePlanGuardian=removePlanGuardian;
-function yesNoCheckboxS(id,label,val,req=false,route=''){
-  return yesNoRadioHTML(id,label,val,id,req,route);
-}
-// Milestone 51C: `setter` used to accept a second shape -- an inline assignment
-// string like "D.trusts[0].hasTrust=this.value;navigate('/p8')" -- which this
-// function reverse-engineered a path and a route out of with two regexes. Every
-// call site passes a plain dot path and the route as the 4th argument, so both
-// regexes (and the 5th `explicitRoute` parameter, which nothing ever passed)
-// were unreachable and are gone. tests/unit/form-fields.spec.js fails if a new
-// call site reintroduces the inline shape, which would otherwise yield an empty
-// path and silently stop recording the filer's answer.
-function yesNoCheckboxD(label,val,setter,reqOrRoute=false){
-  const path=setter||'';
-  const route=typeof reqOrRoute==='string'&&reqOrRoute.startsWith('/')?reqOrRoute:'';
-  const req=typeof reqOrRoute==='boolean'?reqOrRoute:false;
-  return yesNoRadioHTML(path||label,label,val,path,req,route);
-}
-// Milestone 67F: `route` was hardcoded '' here, so Annual's "Restricted
-// depository?" could never reveal its receipt-date field on the click.
-function yesNoRadioAnnualHTML(id,label,val,path,req=false,tooltipKey='',route=''){
-  return yesNoRadioHTML(id,label,val,path,req,route,'annual',tooltipKey);
-}
-
-// Inline radio group. Also used later for the Annual/Initial plans' 3-way
-// ADL ratings ("no help" / "some assistance" / "cannot do at all"), which is
-// why the options are a parameter rather than hardcoded Yes/No.
-function radioP(id,label,val,options=['Yes','No'],req=false,hint='',route=''){
-  return window.renderRadioGroupField({ path: id, label, value: val, options, required: req, hint, id, route });
-}
-
-function pageNavS(prev,next){
-  const targetRoute=next||'/print';
-  const label=next?'Next →':'Preview & Export →';
-  return `<div class="page-nav-wrap no-print">
-    <div class="page-nav d-flex justify-content-between align-items-center">
-      ${prev?`<button class="btn btn-outline-primary btn-sm" data-form-action="navigate" data-route="${esc(prev)}">← Back</button>`:'<span></span>'}
-      <button id="page-next-btn" class="btn btn-primary btn-sm" data-form-action="navigate" data-route="${esc(targetRoute)}">${label}</button>
-    </div>
-    <div id="page-local-guidance"></div>
-  </div>`;
-}
 
 
-// Used by src/features/plan-simplified/print.js (via window.tdSig) --
-// stays here rather than moving into that lazily-imported module. Despite
-// an earlier comment's claim, Plan Annual's print builder never actually
-// called this: it uses its own local y()/line()/fld()/boxes() helpers
-// instead (confirmed by a fresh read while extracting it, Milestone 4).
-function tdSig(label,val){return td(label,val);}
+
+
+
+
 
 
 // ═══════════════════════════════════════════════════════
@@ -5090,48 +4514,10 @@ async function mountPlanAnnualNav(container){
   await getPlanAnnualFeatureBridge().mountNav(container);
 }
 
-// Shared section wrapper, mirroring the Simplified Plan's q() helper.
-function planQ(num,title,body,intro){
-  return `<div class="plan-question">
-    <div class="plan-question-num">Question ${num}</div>
-    <h2 style="font-size:.95rem;font-weight:650;color:var(--ink);margin-bottom:.7rem;line-height:1.45;">${title}</h2>
-    ${intro?`<div class="plan-field-hint" style="margin-bottom:.7rem;">${intro}</div>`:''}
-    ${body}
-  </div>`;
-}
-// "Check all that apply" group with an optional free-text explanation that
-// only appears once a box requiring one is ticked.
-function planCheckGroup(label,boxes,explainId,explainVal,explainWhen,hint){
-  return `<div class="mb-3">
-    <label class="form-label">${label}</label>
-    ${hint?`<div class="plan-field-hint">${hint}</div>`:''}
-    <div class="plan-check-grid">${boxes}</div>
-    ${explainWhen?`<div class="plan-conditional mt-2">${txtP(explainId,'Explanation',explainVal,3)}</div>`:''}
-  </div>`;
-}
 
 // pagePlanACover()..pagePlanASignatures() moved to
 // src/features/plan-annual/index.js (Milestone 4, Phase A).
 
-// Row add/remove/duplicate for the Plan's repeating tables. Generic over the
-// array name so residences, providers and directives all share it.
-function addPlanRow(arrName,kind,route){
-  window.D[arrName]=window.D[arrName]||[];
-  window.D[arrName].push(planEmptyRow(kind));
-  autoSave();navigate(route);
-}
-function removePlanRow(arrName,idx,route){
-  const list=window.D[arrName];
-  if(!list||!list[idx])return;
-  list.splice(idx,1);
-  autoSave();navigate(route);
-}
-function duplicatePlanRow(arrName,idx,route){
-  const list=window.D[arrName];
-  if(!list||!list[idx])return;
-  list.splice(idx+1,0,JSON.parse(JSON.stringify(list[idx])));
-  autoSave();navigate(route);
-}
 
 // validatePlanAnnual() moved to src/features/plan-annual/index.js
 // (Milestone 4, Phase A).
@@ -5215,19 +4601,6 @@ async function mountPlanMinorNav(container){
 // buildNavPlanMinor()..pagePlanMPreparerAttorney()/validatePlanMinor() moved
 // to src/features/plan-minor/index.js (Milestone 6, Phase A).
 
-function sanitizeNegativeAmounts(){
-  const amountFields=['fullAmount','wardPct','restrictedAmt','fullValue','carryingValue','wardPercent','wardB2','wardB3','fullAssetValue','fullDebtBalance','fullAssetAmount','wardValue','wardAmt','income','charge','tax','balance','price'];
-  const cleanValue=v=>{const n=parseFloat(v);return isNaN(n)?v:Math.max(0,n)};
-  if(window.D){
-    if(Array.isArray(window.D.schD1)){window.D.schD1.forEach(r=>{amountFields.forEach(f=>{if(f in r)r[f]=cleanValue(r[f])});})}
-    if(Array.isArray(window.D.schD2)){window.D.schD2.forEach(r=>{amountFields.forEach(f=>{if(f in r)r[f]=cleanValue(r[f])});})}
-    if(Array.isArray(window.D.schD3)){window.D.schD3.forEach(r=>{amountFields.forEach(f=>{if(f in r)r[f]=cleanValue(r[f])});})}
-    if(Array.isArray(window.D.schD4)){window.D.schD4.forEach(r=>{amountFields.forEach(f=>{if(f in r)r[f]=cleanValue(r[f])});})}
-    ['startingBalance','interestIncome','depositsSettlement','serviceCharges','federalIncomeTax'].forEach(f=>{if(f in window.D)window.D[f]=cleanValue(window.D[f])});
-    // Simplified's remuneration rows no longer have an amount field, but Annual's still do.
-    if(Array.isArray(window.D.remuneration)){window.D.remuneration.forEach(r=>{if('amount' in r)r.amount=cleanValue(r.amount);})}
-  }
-}
 function n(v){return parseFloat(v)||0;}
 function pct(v){if(v===''||v===null||v===undefined)return 1;const p=parseFloat(v);return isNaN(p)?1:p>1?p/100:p;}
 
@@ -5283,51 +4656,6 @@ function pct(v){if(v===''||v===null||v===undefined)return 1;const p=parseFloat(v
 // entry in all three CAPS tables defines a label, so core's `info.label || key`
 // fallback can never differ from this version's plain info.label.
 
-function excelCapacityPanel(over){
-  // Milestone 64B-2, item 11 / D13. A cap entry may carry an `unsupported`
-  // sentence instead of a row limit: Part XI is the case -- the court's
-  // workbook has no entry area for it at all, so `cap` is 0 and the
-  // count-of-cap shape rendered "2 of 0" with "2 entries would be left out",
-  // which is both nonsense and an understatement (all of them are left out,
-  // and not because a schedule filled up). Those entries show the same
-  // sentence the blocking issue uses and no count badge; a genuine row
-  // overflow is unchanged.
-  const rows=over.map(o=>{
-    const badge=o.unsupported?'':`<span class="validation-count">${o.count} of ${o.cap}</span>`;
-    const detail=o.unsupported
-      ?esc(o.unsupported)
-      :`${o.count-o.cap} entr${o.count-o.cap===1?'y':'ies'} would be left out of the Excel file`;
-    return `<div class="validation-group">
-      <div class="validation-group-head">
-        <span class="validation-group-name">${esc(o.label)}</span>
-        ${badge}
-        <button type="button" class="validation-go" data-form-action="navigate" data-route="${esc(o.route)}">Go to section ${ic('external',13)}</button>
-      </div>
-      <div class="validation-fields"><span class="validation-field">${detail}</span></div>
-    </div>`;
-  }).join('');
-  // The heading is panel wording too (D13): "Too many entries" contradicts an
-  // item reporting that the workbook has no entry area at all. When a real
-  // row overflow is also present the heading is accurate for that part, so it
-  // only changes when every entry is an unsupported schedule.
-  const allUnsupported=over.length>0&&over.every(o=>o.unsupported);
-  const title=allUnsupported
-    ?"The Excel template cannot carry part of this filing"
-    :'Too many entries for the Excel template';
-  const sub=allUnsupported
-    ?`<strong>Save as PDF instead</strong> — the PDF includes every entry, in full.`
-    :`The court's Excel form has a fixed number of rows per schedule, and these have more entries than will fit. <strong>Save as PDF instead</strong> — the PDF includes every entry. To use Excel, reduce these schedules or file the extras on a continuation sheet.`;
-  return `<div class="validation-panel excel-cap-panel no-print">
-    <div class="validation-head">
-      ${ic('alert',17)}
-      <div>
-        <div class="validation-title">${title}</div>
-        <div class="validation-sub">${sub}</div>
-      </div>
-    </div>
-    ${rows}
-  </div>`;
-}
 
 
 // pagePrintAnnual()/doSavePdfAnnual() moved to
@@ -5357,188 +4685,9 @@ const calc=new Proxy({},{get:(_,k)=>window.GuardianFormsLegacyBridge.calc[k]});
 // ═══════════════════════════════════════════════════════
 // FORM BINDING ENGINE
 // ═══════════════════════════════════════════════════════
-function toggleSsnReveal(btn){
-  const input=btn.previousElementSibling;
-  const revealing=input.dataset.revealed!=='true';
-  input.dataset.revealed=String(revealing);
-  input.classList.toggle('ssn-revealed',revealing);
-  btn.setAttribute('aria-label',revealing?'Hide SSN/EIN':'Show SSN/EIN');
-  btn.innerHTML=ic(revealing?'unlock':'lock',14);
-}
-function getPath(obj,path){
-  return path.split('.').reduce((o,k)=>o==null?undefined:o[k],obj);
-}
-function setPath(obj,path,val){
-  const keys=path.split('.');
-  let cur=obj;
-  for(let i=0;i<keys.length-1;i++){
-    if(cur[keys[i]]==null)cur[keys[i]]={};
-    cur=cur[keys[i]];
-  }
-  cur[keys[keys.length-1]]=val;
-}
+// setPath: src/core/form/paths.js (Milestone 70, 70F).
+function setPath(obj,path,val){return window.GuardianFormsLegacyBridge.setPath(obj,path,val);}
 
-function bindForms(){
-  document.querySelectorAll('[data-bind]:not([data-bound])').forEach(el=>{
-    el.setAttribute('data-bound','1');
-    const path=el.dataset.bind;
-    const cur=getPath(window.D,path);
-    // Captured so a blur firing after a ward switch (see the caseNumber and
-    // name/address blur listeners below) can tell its window.D has moved on
-    // to a different ward entirely, not just been edited in place.
-    const boundD=window.D;
-
-    if(el.type==='checkbox'){
-      el.checked=!!cur;
-      el.addEventListener('change',e=>{setPath(window.D,path,e.target.checked);afterChange(path);});
-    } else if(el.type==='date'){
-      if(cur){
-        const s=typeof cur==='string'?cur:new Date(cur).toISOString();
-        el.value=s.substring(0,10);
-      }
-      el.addEventListener('change',e=>{setPath(window.D,path,e.target.value||null);afterChange(path);});
-    } else if(el.type==='number'){
-      el.value=Math.max(0,parseFloat(cur)||0);
-      el.addEventListener('keydown',e=>{if(e.key==='-'||e.key==='Subtract'){e.preventDefault();}});
-      el.addEventListener('input',e=>{
-        e.target.value=e.target.value.replace(/-/g,'');
-        const v=Math.max(0,parseFloat(e.target.value)||0);
-        setPath(window.D,path,v);afterChange(path);
-      });
-    } else if(el.tagName==='SELECT'){
-      el.value=cur!=null?String(cur):'';
-      el.addEventListener('change',e=>{
-        let v=e.target.value;
-        if(v==='true')v=true; else if(v==='false')v=false;
-        setPath(window.D,path,v);afterChange(path);
-      });
-    } else {
-      const inputType=el.dataset.inputType||'text';
-      if(inputType==='date'||el.dataset.fieldKind==='date'){
-        el.value=window.getFieldDraftDisplay?.(path,formatDisplayDate(cur||''))||formatDisplayDate(cur||'');
-      }else if(inputType==='phone'){
-        el.value=formatPhone(cur||'');
-      }else if(inputType==='name'){
-        el.value=formatName(cur||'');
-      }else if(inputType==='address'){
-        el.value=formatAddress(cur||'');
-      }else if(inputType==='ssn'){
-        el.value=formatSSN(cur||'');
-      }else if(inputType==='caseNumber'){
-        el.value=formatCaseNumber(cur||'');
-      }else if(inputType==='barNumber'){
-        el.value=formatBarNumber(cur||'');
-      }else if(inputType==='accountNumber'){
-        el.value=formatAccountNumber(cur||'');
-      }else if(inputType==='checkNumber'){
-        el.value=formatCheckNumber(cur||'');
-      }else if(inputType==='zip'){
-        el.value=formatCityStateZip(cur||'');
-      }else if(inputType==='decimal'){
-        el.value=sanitizeNonNegativeDecimal(cur||'');
-      }else{
-        el.value=cur||'';
-      }
-      el.addEventListener('input',e=>{
-        if(el.dataset.fieldKind==='date'||inputType==='date'){
-          // Date formatting is handled by form-events.js (writeDraftValue on input / finalizeFieldValue on blur).
-          // Do not write raw unparsed text here to avoid non-canonical values in window.D.
-          return;
-        }
-        let val=e.target.value;
-        if(inputType==='decimal'){
-          val=sanitizeNonNegativeDecimal(val);
-          e.target.value=val;
-          setPath(window.D,path,parseFloat(val)||0);
-          afterChange(path);
-          return;
-        }else if(inputType==='phone'){
-          val=formatPhone(val);
-          e.target.value=val;
-        }else if(inputType==='ssn'){
-          val=formatSSN(val);
-          e.target.value=val;
-        }else if(inputType==='caseNumber'){
-          val=formatCaseNumber(val);
-          e.target.value=val;
-        }else if(inputType==='barNumber'){
-          // Padding while a person is still typing would turn the first digit
-          // into 0000000N and make the next digit land in the wrong place.
-          // Keep only digits live; apply the fixed-width representation on blur.
-          val=String(val??'').replace(/\D/g,'').slice(0,8);
-          e.target.value=val;
-        }else if(inputType==='accountNumber'){
-          val=formatAccountNumber(val);
-          e.target.value=val;
-        }else if(inputType==='checkNumber'){
-          val=formatCheckNumber(val);
-          e.target.value=val;
-        }else if(inputType==='zip'){
-          // Digit-count limiting stays live (same as maxlength), but title
-          // casing is finalize-only -- see the name/address blur listener
-          // below for why: formatCityStateZip() has the same bare-2-letter-
-          // word-reads-as-a-state-abbreviation defect as formatSafeTitleCase,
-          // so typing "ph" toward "Philadelphia" would get force-uppercased
-          // to "PH" before the city name is even finished.
-          applyZipLimit(e.target);
-          val=e.target.value;
-        }else if(inputType==='county'){
-          filterCountyDropdown(e.target);
-        }
-        // Prevent negative values in number inputs
-        if(el.type==='number'){
-          val=val.replace(/^-/,'');
-          e.target.value=val;
-        }
-        setPath(window.D,path,val);afterChange(path);
-      });
-      // Case Number only fully resolves to YY-######-GD (padded sequence,
-      // fixed GD suffix) on blur -- see finalizeCaseNumber()'s own comment
-      // for why that can't happen on every keystroke like the other
-      // inputType formatters above do.
-      if(inputType==='caseNumber'){
-        el.addEventListener('blur',()=>{
-          // A ward switch (see switchWard()) reassigns window.D to a
-          // different ward's object -- synchronously, well before that
-          // ward's page actually finishes mounting -- so a blur that fires
-          // late (mount is async; nothing here awaits it) can land after
-          // window.D has already moved on. isConnected can't catch this: the
-          // old page can still be sitting in the DOM at that moment. Compare
-          // against the exact object this listener was bound to instead. The
-          // raw value was already saved to the correct ward by the 'input'
-          // listener above; skipping the format-only step below when the
-          // ward has moved on costs nothing since re-mounting it re-binds
-          // this field fresh from its own (already-correct) stored value.
-          if(window.D!==boundD)return;
-          el.value=finalizeCaseNumber(el.value);
-          setPath(window.D,path,el.value);afterChange(path);
-        });
-      }
-      if(inputType==='barNumber'){
-        el.addEventListener('blur',()=>{
-          if(window.D!==boundD)return;
-          el.value=formatBarNumber(el.value);
-          setPath(window.D,path,el.value);afterChange(path);
-        });
-      }
-      // Name/address formatting is finalize-only, same reasoning as modal-events.js's
-      // handleModalBlur: formatName()/formatAddress() title-case a complete value and
-      // trim it, which reads a live "ga" mid-word as the state abbreviation "GA" and
-      // eats a just-typed trailing space. Fields that also carry data-field-path
-      // already get this once on blur from form-events.js's finalizeFieldValue; this
-      // covers the few remaining data-bind-only fields (schedule description cells).
-      if((inputType==='name'||inputType==='address')&&!el.dataset.fieldPath){
-        el.addEventListener('blur',()=>{
-          // See the caseNumber blur listener just above for why this checks
-          // object identity rather than el.isConnected.
-          if(window.D!==boundD)return;
-          el.value=inputType==='name'?formatName(el.value):formatAddress(el.value);
-          setPath(window.D,path,el.value);afterChange(path);
-        });
-      }
-    }
-  });
-}
 
 // The sidebar's section marks for the open filing. Milestone 70's 70D moved
 // the rules to src/core/status/completion.js -- one pure evaluator per engine,
@@ -5546,581 +4695,50 @@ function bindForms(){
 // hands them the open filing, this script's own activeInventoryType, and what
 // they cannot import: the Initial Inventory's validator (its marks are
 // bucketed from the export validator's own issues; it exists once that
-// feature has loaded), errorRoute() (still this script's, until 70F), and the
-// Annual totals. getWardProgress() below hands the same. updateNavDots()
+// feature has loaded) and the Annual totals. getWardProgress() below hands the same. updateNavDots()
 // applies the map to the page.
-function computeNavChecks(){return window.GuardianFormsLegacyBridge.computeNavChecks(window.D,activeInventoryType,{validateGuardian:window.validateGuardian,errorRoute,calcTotalsAnnual,annualReconcileState});}
+function computeNavChecks(){return window.GuardianFormsLegacyBridge.computeNavChecks(window.D,activeInventoryType,{validateGuardian:window.validateGuardian,calcTotalsAnnual,annualReconcileState});}
 
-function updateNavDots(){
-  const r=computeNavChecks();
-  if(r)applyNavChecks(r.checks,r.incomplete);
-  updateCurrentScheduleNextButton();
-}
-// Live-patches the current page's own "Next" button (see pageNav())
-// without a full re-render -- needed because checking a schedule's "no
-// items" checkbox (setScheduleNoItems()) and editing a row's fields both
-// go through afterChange()->updateNavDots() rather than renderPage(), so
-// the button rendered at page-load time would otherwise go stale until
-// the next full navigation.
-// Milestone 63A. Three separate questions -- see src/core/status/section-guidance-policy.js --
-// that this function used to answer as one, and that the Guardian module answered again
-// with a copy of its own (so a fix to one would have shown the explanation on page load
-// and wiped it on the first keystroke). All three now come from the shared policy, bridged
-// on window.sectionGuidancePolicy:
-//   isSectionIncomplete  whether to EXPLAIN what is missing: the sidebar's own map, every type
-//   blocksNext           whether to disable Next: a per-type policy (Guardian: schedule pages only)
-//   guidanceAdvice       what to say: "tick the none box" only where the page has that box
-function pageCompleteness(route){
-  const policy=window.sectionGuidancePolicy;
-  if(!policy||!route)return {key:null,incomplete:false,blocked:false};
-  const type=activeInventoryType;
-  const r=computeNavChecks();
-  const key=policy.sectionCheckKey(type,route);
-  const incomplete=policy.isSectionIncomplete(r&&r.checks,key);
-  const blocked=policy.blocksNext({type,checkKey:key,incomplete,guardianScheduleKeys:window.GuardianFormsLegacyBridge.SCHEDULE_NAV_KEYS});
-  return {key,incomplete,blocked};
-}
-// Keeps its name and its meaning -- "does incompleteness block Next on this route" --
-// because it is published on window.
-function isScheduleIncomplete(route){
-  return pageCompleteness(route).blocked;
-}
-window.isScheduleIncomplete=isScheduleIncomplete;
+// updateNavDots: src/core/status/nav-marks.js (Milestone 70, 70F).
+function updateNavDots(){return window.GuardianFormsLegacyBridge.updateNavDots();}
 
-function updateCurrentScheduleNextButton(){
-  const btn=document.getElementById('page-next-btn');
-  if(!btn)return;
-  const route=(typeof currentPage==='string'?currentPage:'').split('?')[0];
-  const {incomplete,blocked}=pageCompleteness(route);
-  const policy=window.sectionGuidancePolicy;
-  // The advice must fit the page: "add an item, or check the box verifying there are none"
-  // is right only where such a checkbox exists.
-  const advice=policy?policy.guidanceAdvice({hasVerifyNoneBox:!!document.querySelector('#main-content .schedule-empty-check')}):'';
-  btn.disabled=blocked;
-  btn.title=blocked?advice:'';
-  const guidanceContainer=document.getElementById('page-local-guidance');
-  if(guidanceContainer&&typeof window.renderLocalSectionGuidance==='function'){
-    let rawErrors=[];
-    const type=activeInventoryType||window.D?.inventoryType;
-    try {
-      if(type==='guardian'&&typeof window.validateGuardian==='function')rawErrors=window.validateGuardian(window.D);
-      else if((type==='annual'||type==='finalAccounting'||type==='trustAccounting')&&typeof window.validateAnnual==='function')rawErrors=window.validateAnnual(window.D);
-      else if(type==='simplified'&&typeof window.validateSimplified==='function')rawErrors=window.validateSimplified(window.D);
-      else if(type==='planAnnual'&&typeof window.validatePlanAnnual==='function')rawErrors=window.validatePlanAnnual(window.D);
-      else if(type==='planInitial'&&typeof window.validatePlanInitial==='function')rawErrors=window.validatePlanInitial(window.D);
-      else if(type==='planMinor'&&typeof window.validatePlanMinor==='function')rawErrors=window.validatePlanMinor(window.D);
-      else if(type==='planSimplified'&&typeof window.validatePlanSimplified==='function')rawErrors=window.validatePlanSimplified(window.D);
-    } catch(e) {}
-    // Explain whenever the section is incomplete -- not only when Next is blocked. On the
-    // Guardian Cover and D-1..D-5 the page explains but Next stays enabled (D1); clearing the
-    // box here whenever Next was not blocked is what would have wiped the explanation on the
-    // first edit.
-    // Milestone 63F: a sidebar-only rule has no validator message to list, so it names what it still wants.
-    const wants=policy?policy.sidebarOnlyWants(type,route,window.D):[];
-    guidanceContainer.innerHTML=incomplete?window.renderLocalSectionGuidance(route,rawErrors,Infinity,{message:advice,wants},type):'';
-  }
-}
 
 // Filing progress for any filing, open or not (the dashboard's cards). Since
 // Milestone 70's 70D the evaluator takes the filing explicitly; this used to
 // point window.D and activeInventoryType at the filing, reuse the sidebar's
 // logic, and put them back.
-function getWardProgress(ward){return window.GuardianFormsLegacyBridge.getWardProgress(ward,{validateGuardian:window.validateGuardian,errorRoute,calcTotalsAnnual,annualReconcileState});}
+function getWardProgress(ward){return window.GuardianFormsLegacyBridge.getWardProgress(ward,{validateGuardian:window.validateGuardian,calcTotalsAnnual,annualReconcileState});}
 
-function applyNavChecks(checks,incomplete={}){
-  // Every tracked item shows a mark by default now -- red − until its own
-  // schedule/section is complete, then green ✓ -- rather than staying
-  // blank until visited-and-started. `incomplete` is kept as a parameter
-  // for callers/back-compat but no longer changes what renders here.
-  for(const[k,v] of Object.entries(checks)){
-    const el=document.querySelector(`[data-nav="${k}"]`);
-    if(!el)continue;
-    el.innerHTML=el.innerHTML.replace(/\s*<span class="nav-check.*?<\/span>/,'');
-    el.innerHTML+=v?` <span class="nav-check complete">✓</span>`:` <span class="nav-check incomplete">−</span>`;
-  }
-  applyNavSectionCollapse(checks);
-  renderProgressSummary(checks);
-}
 
-// Session-only memory of the single sidebar nav section the user explicitly
-// opened. If null, the section containing the current page is expanded. The
-// key includes the ward id so one ward's sidebar state never leaks onto
-// another ward with identically-labeled sections.
-let _navSectionExpandedKey=null;
-function toggleNavSection(key){
-  _navSectionExpandedKey=_navSectionExpandedKey===key?null:key;
-  updateNavDots();
-}
-// Leaving a page must forget a manually-opened section, so the section
-// containing the new page expands itself again (see the comment above).
-// This has to be a function declaration rather than the bare `let` above,
-// because only a real window property is reachable from the module that owns
-// navigate() now -- src/core/navigation/router.js. The reset used to sit
-// inline in this file's own navigate(), but router.js publishing
-// window.navigate overwrote that function's global binding, so the reset
-// silently stopped running and a manually-opened section stayed stuck open
-// across navigations.
-function resetNavSectionExpanded(){_navSectionExpandedKey=null;}
-// Turns sidebar nav sections into a single global accordion: opening one
-// section collapses every other section. Reads DOM structure only (no
-// hardcoded per-form-type section map) -- works for every buildNav*()
-// sidebar that follows the existing .nav-section > .nav-section-label +
-// .nav-link-item shape. Collapsed completed sections show ✓; collapsed
-// incomplete sections show − so hidden child status is not lost.
-function applyNavSectionCollapse(checks){
-  const container=document.getElementById('nav-sections');
-  if(!container)return;
-  const currentKey=getCurrentPageKey();
-  const currentPagePath=(currentPage||'').split('?')[0];
-  container.querySelectorAll('.nav-section').forEach(section=>{
-    const label=section.querySelector(':scope > .nav-section-label');
-    if(!label)return;
-    if(label.dataset.origHtml===undefined)label.dataset.origHtml=label.innerHTML;
-    const links=[...section.querySelectorAll(':scope > .nav-link-item')];
-    const navKeys=[...section.querySelectorAll('[data-nav]')].map(el=>el.dataset.nav).filter(k=>k in checks);
-    const hasCurrentLink=links.some(link=>link.dataset.page===currentPagePath||link.dataset.route===currentPagePath);
-    const plain=()=>{
-      section.classList.remove('collapsed');
-      label.classList.remove('nav-section-toggle');
-      label.removeAttribute('role');label.removeAttribute('tabindex');label.removeAttribute('aria-expanded');
-      label.onclick=null;label.onkeydown=null;
-      label.innerHTML=`<span class="nav-section-label-text">${label.dataset.origHtml}</span>`;
-    };
-    if(!links.length){plain();return;}
-    const allComplete=navKeys.length?navKeys.every(k=>checks[k]):null;
-    const sectionKey=`${caseFile.activeWardId||''}:${label.dataset.origHtml}`;
-    const expanded=_navSectionExpandedKey?_navSectionExpandedKey===sectionKey:(navKeys.includes(currentKey)||hasCurrentLink);
-    section.classList.toggle('collapsed',!expanded);
-    label.classList.add('nav-section-toggle');
-    label.setAttribute('role','button');
-    label.setAttribute('tabindex','0');
-    label.setAttribute('aria-expanded',String(expanded));
-    const collapsedMark=allComplete===null?'':`<span class="nav-section-check ${allComplete?'complete':'incomplete'}">${allComplete?'✓':'−'}</span>`;
-    label.innerHTML=`<span class="nav-section-chevron">${expanded?'▾':'▸'}</span>`
-      +`<span class="nav-section-label-text">${label.dataset.origHtml}</span>`
-      +(expanded?'':collapsedMark);
-    label.onclick=()=>toggleNavSection(sectionKey);
-    label.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();toggleNavSection(sectionKey);}};
-  });
-}
 
-// Filing-progress summary in the ward-info card. Reuses `checks` — the same
-// per-section completion map that just drove the nav ✓ marks above — as the
-// single source of truth, so this can't disagree with the sidebar or drift
-// out of sync the way a separately-stored "progress" value could.
-function renderProgressSummary(checks){
-  const host=document.getElementById('ward-progress');
-  if(!host)return;
-  const keys=Object.keys(checks);
-  const total=keys.length;
-  if(!total){host.innerHTML='';return;}
-  const complete=keys.filter(k=>checks[k]).length;
-  const pct=Math.round(complete/total*100);
-  const done=complete===total;
-  const nextKey=keys.find(k=>!checks[k]);
-  const nextEl=nextKey&&document.querySelector(`[data-nav="${nextKey}"]`);
-  const nextRoute=nextEl&&nextEl.dataset.page;
-  const jumpLabel=nextEl?nextEl.textContent.replace(/[✓⚠]/g,'').trim():'';
-  host.innerHTML=`
-    <div class="ward-progress-head">
-      <span class="ward-progress-label">Filing Progress</span>
-      <span class="ward-progress-pct">${pct}%</span>
-    </div>
-    <div class="ward-progress-bar" role="progressbar" aria-label="Filing progress: ${complete} of ${total} sections complete"
-         aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100">
-      <div class="ward-progress-fill${done?' ward-progress-done':''}" style="width:${pct}%"></div>
-    </div>
-    <div class="ward-progress-count">${complete} of ${total} sections complete</div>
-    ${nextRoute?`<button type="button" class="ward-progress-jump" data-form-action="navigate" data-route="${esc(nextRoute)}">${ic('external',13)} Jump to ${esc(jumpLabel)}</button>`:''}`;
-}
 
-function getCurrentPageKey(){
-  const page=currentPage.split('?')[0];
-  if(activeInventoryType==='guardian'){
-    // Guardian nav keys are unprefixed and match the page path directly (e.g. '/a1' -> 'a1').
-    // '/' and '/summary' both map to 'cover' -- Summary has no required fields
-    // of its own (it's a read-only rollup of the other pages), so it isn't
-    // separately tracked in computeNavChecks(), but should still count as
-    // "inside" the Case Info section for the sidebar's active-page auto-expand.
-    if(page==='/'||page==='/summary')return 'cover';
-    const guardianPages=['/a1','/a2','/b1','/b2','/b3','/b4','/c1','/c2','/c3','/c4','/c5','/d1','/d2','/d3','/d4','/d5'];
-    return guardianPages.includes(page)?page.slice(1):'';
-  }
-  // Each type needs its OWN prefix. An unrecognised type falling back to ''
-  // would produce bare keys like 'cover'/'p2' that collide with the Guardian
-  // type's unprefixed nav keys above, silently corrupting its checkmarks.
-  const prefix=activeInventoryType==='simplified'?'s-'
-    :formEngine(activeInventoryType)==='annual'?'a-'
-    :activeInventoryType==='planSimplified'?'ps-'
-    :activeInventoryType==='planAnnual'?'pa-'
-    :activeInventoryType==='planInitial'?'pi-'
-    :activeInventoryType==='planMinor'?'pm-'
-    :'';
-  if(!prefix)return '';
-  const pageMap={
-    '/':'cover', '/p2':'p2', '/p3':'p3', '/p4':'p4', '/p5':'p5', '/p6':'p6', '/p7':'p7',
-    '/p8':'p8', '/p9':'p9', '/p10':'p10', '/p11':'p11',
-    '/scha':'scha', '/schb1':'schb1', '/schb2':'schb2', '/schb3':'schb3', '/schb4':'schb4',
-    '/schc':'schc', '/schd1':'schd1', '/schd2':'schd2', '/schd3':'schd3', '/schd4':'schd4', '/schd5':'schd5',
-    '/sche':'sche', '/schf1':'schf1', '/schf2':'schf2', '/schf3':'schf3', '/schf4':'schf4', '/schf5':'schf5'
-  };
-  const pageKey=pageMap[page];
-  if(!pageKey)return '';
-  return prefix+pageKey;
-}
 
-function afterChange(path){
-  // Guardian Inventory binds via bindForms()/data-bind rather than
-  // data-form-path, so it never reaches form-contract.js's own write
-  // functions; this is its single choke point and it calls the same shared
-  // post-write tail the other eight filing types use (Milestone 42D:
-  // county commit, Party write-through, autosave, nav dots, ward card, name
-  // sync). Not optional-chained on purpose -- a missing bridge here would
-  // silently stop autosaving, and should fail loudly instead.
-  updateCalcFields();
-  window.runFieldWriteSideEffects(path);
-  // Update live summary displays
-  const els={
-    'totalA1':calc.totalA1(),'totalA2':calc.totalA2(),'netA':calc.netA(),
-    'totalB1':calc.totalB1(),'totalB2':calc.totalB2(),'totalB3':calc.totalB3(),
-    'totalB4':calc.totalB4(),'netB':calc.netB(),'totalInventory':calc.total(),
-    'totalC1':calc.totalC1(),'totalC2':calc.totalC2(),'totalC3':calc.totalC3(),
-    'totalC4':calc.totalC4(),'totalC5':calc.totalC5(),
-    'restrictedCash':calc.restrictedCash(),'unrestrictedCash':calc.unrestrictedCash(),
-    'restrictedIntang':calc.restrictedIntang(),'unrestrictedIntang':calc.unrestrictedIntang(),
-    'bondRequired':calc.bondRequired(),'auditFee':calc.auditFee(),
-  };
-  for(const[id,val] of Object.entries(els)){
-    const el=document.getElementById(id);
-    if(el)el.textContent=fmt(val);
-  }
-  // Conditional SDB field
-  const sdbContainer=document.getElementById('sdb-filed-row');
-  if(sdbContainer)sdbContainer.style.display=(D.hasSafeDepositBox==='Yes'||D.hasSafeDepositBox===true)?'':'none';
-  // The D-4 bond arrangement's reveals are re-rendered by their routed radio
-  // (Milestone 67B, on 67F's mechanism); no live patch is needed here.
-}
 
-function updateCalcFields(){
-  // Update all readonly calculated fields in visible entry cards
-  document.querySelectorAll('[data-calcbind]').forEach(el=>{
-    const path=el.dataset.calcbind; // e.g. "scheduleA1.0.wardValue"
-    const parts=path.split('.');
-    const schedule=parts[0], idx=parseInt(parts[1]), field=parts[2];
-    const entry=window.D[schedule]?.[idx];
-    if(!entry)return;
-    let val=0;
-    if(field==='wardValue')val=calc.wardVal(entry);
-    else if(field==='wardDebt')val=calc.wardDebt(entry);
-    else if(field==='wardAmt')val=calc.wardAmt(entry);
-    else if(field==='wardB2')val=calc.wardB2(entry);
-    else if(field==='wardB3')val=calc.wardB3(entry);
-    else if(field==='wardB4')val=calc.wardB4(entry);
-    else if(field==='wardC1')val=calc.wardC1(entry);
-    else if(field==='wardC2')val=calc.wardC2(entry);
-    else if(field==='wardC3')val=calc.wardC3(entry);
-    else if(field==='wardC4')val=calc.wardC4(entry);
-    else if(field==='wardC5')val=calc.wardC5(entry);
-    el.value=fmt(val);
-  });
-}
 
-// Guardian page renderers moved to src/features/guardian-inventory/index.js
-// (Milestone 8, Phase A). linkAccordions() stays shared because the
-// extracted Cover page still calls it after mounting.
-function linkAccordions(idA,idB){
-  const elA=document.getElementById(idA),elB=document.getElementById(idB);
-  if(!elA||!elB||elA.dataset.linked)return;
-  elA.dataset.linked='1';elB.dataset.linked='1';
-  let syncing=false;
-  const mirror=(target,open)=>{
-    if(syncing)return;
-    syncing=true;
-    try{
-      const inst=bootstrap.Collapse.getOrCreateInstance(target,{toggle:false});
-      if(open)inst.show();else inst.hide();
-    }finally{syncing=false;}
-  };
-  elA.addEventListener('show.bs.collapse',()=>mirror(elB,true));
-  elA.addEventListener('hide.bs.collapse',()=>mirror(elB,false));
-  elB.addEventListener('show.bs.collapse',()=>mirror(elA,true));
-  elB.addEventListener('hide.bs.collapse',()=>mirror(elA,false));
-}
 
 // ── helpers ────────────────────────────────────────────
-// Chrome and Edge support writable file handles for background .sav updates.
-// Other browsers require deliberate exports, so show this notice on every
-// form's Case Info or Cover page.
-function browserRecommendationNotice(style = 'margin-bottom:1rem;'){
-  return `<div class="schedule-instructions" style="${style}">${ic('alert',15)} <strong>Chrome or Microsoft Edge is recommended</strong> for the best experience — only those browsers support automatically saving your work in the background as you go. Firefox and Safari work fine too, but you'll need to save a backup file (.sav) manually and more often.</div>`;
-}
 // ═══════════════════════════════════════════════════════
 // SCHEDULE SUPPORTING DOCUMENTS & COMMENTS
 // ═══════════════════════════════════════════════════════
-// Every schedule (across all three inventory types) can carry uploaded
-// supporting documents and a free-text comment. Guardianships are re-filed
-// annually, so uploads/comments are kept in a dict keyed by the ward's
-// current accounting period (periodFrom/periodTo) rather than flattened
-// onto the schedule itself — starting next year's accounting (by changing
-// those dates on the Cover page) leaves last year's uploads/comments
-// archived under the old period key and opens a fresh, empty slot for the
-// new one. The one-time Initial Inventory has no period, so it uses a
-// single constant key instead.
-const SCHEDULE_DOC_MAX_FILE_BYTES=15*1024*1024; // 15MB/file — base64 inflates ~33% in storage and the .sav backup
+ // 15MB/file — base64 inflates ~33% in storage and the .sav backup
 
-async function getSupplementalPdfTools(){
-  if(window.PGSupplementalPdf)return window.PGSupplementalPdf;
-  return import('./src/core/pdf/supplemental-pdf.js');
-}
 
-function scheduleDocPeriodKey(){
-  // Guardian wards have no periodFrom/periodTo, so each year is
-  // distinguished by activeYearKey instead (falls back to 'initial' for
-  // wards saved before multi-year support existed, preserving their
-  // existing uploads under the same bucket they were already using).
-  if(activeInventoryType==='guardian')return (window.D&&window.D.activeYearKey)||'initial';
-  const from=(window.D&&window.D.periodFrom)||'';
-  const to=(window.D&&window.D.periodTo)||'';
-  return `${from}__${to}`;
-}
 
-function getScheduleDocSlot(scheduleKey){
-  const d=window.D;
-  if(!d)return {comment:'',files:[]};
-  d.scheduleDocs=d.scheduleDocs||{};
-  d.scheduleDocs[scheduleKey]=d.scheduleDocs[scheduleKey]||{};
-  const period=scheduleDocPeriodKey();
-  d.scheduleDocs[scheduleKey][period]=d.scheduleDocs[scheduleKey][period]||{comment:'',files:[]};
-  return d.scheduleDocs[scheduleKey][period];
-}
 
-function fmtFileSize(bytes){
-  if(bytes==null)return '';
-  if(bytes<1024)return bytes+' B';
-  if(bytes<1024*1024)return (bytes/1024).toFixed(1)+' KB';
-  return (bytes/(1024*1024)).toFixed(1)+' MB';
-}
 
-async function handleScheduleDocUpload(scheduleKey,fileList){
-  const slot=getScheduleDocSlot(scheduleKey);
-  const files=Array.from(fileList||[]);
-  const rejected=[];
-  const added=[];
-  const tools=await getSupplementalPdfTools();
-  const readers=files.map(f=>new Promise(resolve=>{
-    if(!tools.isPdfLikeFile(f)){rejected.push(`${f.name} (PDF files only)`);resolve(null);return;}
-    if(f.size>SCHEDULE_DOC_MAX_FILE_BYTES){rejected.push(`${f.name} (${tools.formatSupplementalPdfLimit()} limit)`);resolve(null);return;}
-    const reader=new FileReader();
-    reader.onload=async()=>{
-      try{
-        const dataUrl=String(reader.result||'');
-        const bytes=tools.dataUrlToBytes(dataUrl);
-        if(!tools.isPdfBytes(bytes)){rejected.push(`${f.name} (not a readable PDF)`);resolve(null);return;}
-        const digest=await tools.digestBytes(bytes);
-        resolve({
-          id:tools.createSupplementalFileId(),
-          name:f.name,
-          type:'application/pdf',
-          size:bytes.length||f.size,
-          dataUrl:dataUrl.startsWith('data:application/pdf')?dataUrl:dataUrl.replace(/^data:[^;]+;/,'data:application/pdf;'),
-          contentDigest:digest,
-          uploadedAt:new Date().toISOString(),
-          pageCount:0,
-          validationAttempt:1,
-          technicalStatus:'checking',
-          technicalWarnings:[]
-        });
-      }catch(e){
-        rejected.push(`${f.name} (${e.message||'could not read file'})`);
-        resolve(null);
-      }
-    };
-    reader.onerror=()=>{rejected.push(f.name);resolve(null);};
-    reader.readAsDataURL(f);
-  }));
-  const results=await Promise.all(readers);
-  results.filter(Boolean).forEach(r=>{slot.files.push(r);added.push(r);});
-  if(rejected.length)await window.alertModal(`Some supporting documents were not attached: ${rejected.join(', ')}`);
-  if(!added.length){renderPage(currentPage);return;}
-  autoSave();
-  renderPage(currentPage);
 
-  for(const record of added){
-    const currentSlot=getScheduleDocSlot(scheduleKey);
-    const current=currentSlot.files.find(f=>f&&f.id===record.id);
-    if(!current||current.contentDigest!==record.contentDigest||current.validationAttempt!==record.validationAttempt)continue;
-    try{
-      const validation=await tools.validateSupplementalPdfRecord(current);
-      const latest=currentSlot.files.find(f=>f&&f.id===record.id);
-      if(!latest||latest.contentDigest!==record.contentDigest||latest.validationAttempt!==record.validationAttempt)continue;
-      Object.assign(latest,validation);
-    }catch(e){
-      const latest=currentSlot.files.find(f=>f&&f.id===record.id);
-      if(latest&&latest.contentDigest===record.contentDigest&&latest.validationAttempt===record.validationAttempt){
-        Object.assign(latest,{
-          technicalStatus:'blocked',
-          technicalWarnings:[e.message||'The PDF could not be checked.'],
-          pageCount:0,
-          corrupt:true
-        });
-      }
-    }
-    autoSave();
-    renderPage(currentPage);
-  }
-}
 
-function removeScheduleDoc(scheduleKey,idx){
-  const slot=getScheduleDocSlot(scheduleKey);
-  slot.files.splice(idx,1);
-  autoSave();
-  renderPage(currentPage);
-}
 
-async function prepareScheduleDocForValidation(file,tools){
-  if(!file||!file.dataUrl)return false;
-  const bytes=tools.dataUrlToBytes(file.dataUrl);
-  if(!tools.isPdfBytes(bytes)){
-    Object.assign(file,{
-      technicalStatus:'blocked',
-      technicalWarnings:['The selected file is not a readable PDF.'],
-      pageCount:0,
-      corrupt:true
-    });
-    return false;
-  }
-  const digest=await tools.digestBytes(bytes);
-  let changed=false;
-  if(!file.id){file.id=tools.createSupplementalFileId();changed=true;}
-  if(file.type!=='application/pdf'){file.type='application/pdf';changed=true;}
-  if(file.size!==bytes.length){file.size=bytes.length;changed=true;}
-  if(!String(file.dataUrl).startsWith('data:application/pdf')){
-    file.dataUrl=String(file.dataUrl).replace(/^data:[^;]+;/,'data:application/pdf;');
-    changed=true;
-  }
-  if(file.contentDigest!==digest){
-    file.contentDigest=digest;
-    changed=true;
-  }
-  if(!file.validationAttempt)file.validationAttempt=0;
-  if(!['checking','ready','warning','blocked'].includes(file.technicalStatus)){
-    file.technicalStatus='checking';
-    changed=true;
-  }
-  if(file.technicalStatus==='checking'){
-    file.validationAttempt+=1;
-    file.technicalWarnings=[];
-    changed=true;
-  }
-  return changed;
-}
 
-function queueScheduleDocValidation(scheduleKey,slot){
-  (slot.files||[]).forEach(file=>{
-    if(!file||file.__validationQueued)return;
-    const needsValidation=file.technicalStatus==='checking'||!file.technicalStatus||!file.contentDigest||!file.id||!file.pageCount;
-    if(!needsValidation)return;
-    file.__validationQueued=true;
-    setTimeout(async()=>{
-      try{
-        const tools=await getSupplementalPdfTools();
-        const prepared=await prepareScheduleDocForValidation(file,tools);
-        if(prepared){autoSave();renderPage(currentPage);}
-        if(file.technicalStatus==='blocked'){file.__validationQueued=false;return;}
-        const attempt=file.validationAttempt||1;
-        const digest=file.contentDigest;
-        const validation=await tools.validateSupplementalPdfRecord(file);
-        const currentSlot=getScheduleDocSlot(scheduleKey);
-        const latest=currentSlot.files.find(f=>f&&f.id===file.id);
-        if(!latest||latest.contentDigest!==digest||(latest.validationAttempt||1)!==attempt)return;
-        Object.assign(latest,validation);
-        latest.__validationQueued=false;
-        autoSave();
-        renderPage(currentPage);
-      }catch(e){
-        file.__validationQueued=false;
-      }
-    },0);
-  });
-}
 
-function queueAllScheduleDocValidations(){
-  const docs=window.D&&window.D.scheduleDocs;
-  if(!docs||typeof docs!=='object')return;
-  const period=scheduleDocPeriodKey();
-  Object.entries(docs).forEach(([scheduleKey,value])=>{
-    if(!value||typeof value!=='object')return;
-    const slot=Array.isArray(value.files)||value.comment
-      ? value
-      : value[period]||value.initial;
-    if(slot&&Array.isArray(slot.files))queueScheduleDocValidation(scheduleKey,slot);
-  });
-}
 
-window.queueAllScheduleDocValidations=queueAllScheduleDocValidations;
 
-function updateScheduleComment(scheduleKey,value){
-  getScheduleDocSlot(scheduleKey).comment=value;
-  autoSave();
-}
 
-function renderScheduleDocsSection(scheduleKey){
-  const slot=getScheduleDocSlot(scheduleKey);
-  queueScheduleDocValidation(scheduleKey,slot);
-  const period=scheduleDocPeriodKey();
-  const [pf,pt]=period.split('__');
-  const fmtPf=pf?formatDisplayDate(pf)||pf:'';
-  const fmtPt=pt?formatDisplayDate(pt)||pt:'';
-  // Milestone 68H: a plan looks forward over a reporting period (744.367(1),
-  // 744.3675); only the accountings report on an accounting period. The
-  // dashboard already says "reporting period" for the Plans.
-  const periodWord=String(activeInventoryType||'').startsWith('plan')?'reporting period':'accounting period';
-  const periodNote=activeInventoryType==='guardian'?''
-    :(fmtPf||fmtPt?` — ${periodWord} ${fmtPf||'?'} to ${fmtPt||'?'}`:` — set the ${periodWord} on the Cover page to file these by year`);
-  const filesHtml=slot.files.length?slot.files.map((f,i)=>{
-    const status=f.technicalStatus||'pending';
-    const warnings=Array.isArray(f.technicalWarnings)?f.technicalWarnings:[];
-    const statusLabel=status==='checking'?'Checking'
-      :status==='ready'?'Ready'
-      :status==='warning'?'Warning - review recommended'
-      :status==='blocked'?'Blocked':'Pending review';
-    const statusColor=status==='blocked'?'var(--danger-text)':status==='warning'?'var(--warn-text)':status==='ready'?'var(--ok-text)':'var(--ink-3)';
-    return `
-    <div class="sched-doc-row">
-      <span class="sched-doc-name">${ic('file',14)} ${esc(f.name)}</span>
-      <span class="sched-doc-meta">${fmtFileSize(f.size)}${f.pageCount?` - ${f.pageCount} page${f.pageCount===1?'':'s'}`:''}</span>
-      <span class="sched-doc-meta" style="color:${statusColor};">${esc(statusLabel)}</span>
-      ${warnings.length?`<span class="sched-doc-meta" style="color:var(--warn-text);">${esc(warnings.join(' '))}</span>`:''}
-      <a href="${f.dataUrl}" download="${esc(f.name)}" class="btn btn-sm btn-outline-secondary">Download</a>
-      <button type="button" class="btn btn-sm btn-outline-danger" aria-label="Remove supporting document ${esc(f.name)}" data-form-action="remove-schedule-doc" data-schedule-key="${esc(scheduleKey)}" data-document-index="${i}">×</button>
-    </div>`;}).join(''):`<div class="sched-doc-empty">No supporting documents uploaded${activeInventoryType==='guardian'?'':' for this period'}.</div>`;
-  const inputId=`sched-doc-input-${scheduleKey}`;
-  return `<div class="schedule-docs-section no-print">
-    <h2>Supporting Documents${periodNote}</h2>
-    <p class="schedule-docs-hint">Upload PDF supplemental documents only. Supplemental PDFs are inserted as uploaded; Guardian Forms does not certify or remediate uploaded documents for accessibility. Stored on this device only, encrypted with the rest of this ward's data.</p>
-    <input type="file" id="${inputId}" multiple accept="application/pdf,.pdf" aria-label="Upload PDF supporting documents for ${esc(scheduleKey)}" class="d-none" data-form-change="schedule-doc-upload" data-schedule-key="${esc(scheduleKey)}">
-    <button type="button" class="btn btn-outline-primary btn-sm mb-2" data-form-action="choose-schedule-docs" data-input-id="${esc(inputId)}">+ Upload PDF(s)</button>
-    <div class="sched-doc-list">${filesHtml}</div>
-    <h2 class="mt">Comments</h2>
-    <textarea class="form-control" rows="3" aria-label="Comments about ${esc(scheduleKey)}" placeholder="Notes about this schedule…" data-form-input="schedule-comment" data-schedule-key="${esc(scheduleKey)}">${esc(slot.comment)}</textarea>
-  </div>`;
-}
-
-// ═══════════════════════════════════════════════════════
-// ═══════════════════════════════════════════════════════
-// td()/tdR() emit display:table-row divs (not real <table> markup) — used only
-// for the key-value "layout" blocks (Required Info, schedule totals, audit
-// fee, etc). display:table-row/table-cell renders pixel-identical to a real
-// table, but isn't flagged by accessibility tools as a misused layout table.
-function td(...cols){return `<div class="tr">${cols.map(c=>`<div class="td">${c||''}</div>`).join('')}</div>`;}
-function tdR(...cols){// last col right-aligned
-  const all=cols.map((c,i)=>i===cols.length-1?`<div class="td right">${c||''}</div>`:`<div class="td">${c||''}</div>`);
-  return `<div class="tr">${all.join('')}</div>`;
-}
 // th()/totRow()/printEmptyRow()/docHeader() moved to
-// src/features/guardian-inventory/print.js (Milestone 8, Phase B) --
-// Guardian-only, unlike td()/tdR() above which stay legacy/shared with
-// Annual's print.js.
+// src/features/guardian-inventory/print.js (Milestone 8, Phase B), being
+// Guardian-only; td(), which Annual's print.js shares, is
+// src/core/form/field-html.js's since Milestone 70's 70F, and the unused
+// tdR() went then.
 
 // pagePrint()/buildPrintHTML() moved to
 // src/features/guardian-inventory/print.js (Milestone 8, Phase B).
@@ -6314,7 +4932,7 @@ function provideMonolithServices(fns){return window.GuardianFormsLegacyBridge.pr
 async function initApp(){
   // Milestone 70's 70E: hand the moved code the functions of this script it
   // calls (src/core/runtime/monolith.js), before anything can call back.
-  provideMonolithServices({autoSave});
+  provideMonolithServices({autoSave,computeNavChecks,getCurrentPage});
   renderCopyrightNotice();
   // Resolve file selection before the unlock flow.
   await promptOpenOrStartAtLaunch();
@@ -6364,59 +4982,6 @@ async function initApp(){
   window.addEventListener('beforeunload',warnBeforeUnloadIfDirty);
 }
 
-// Accessibility: Link labels to inputs that have IDs but no for attribute
-function linkLabelsToInputs(){
-  // First: ensure every input/select/textarea has an id BEFORE trying to
-  // link labels to them — otherwise the linking pass below finds a blank
-  // .id on fields like dateInput() and silently gives up on that label.
-  document.querySelectorAll('input:not([id]), select:not([id]), textarea:not([id])').forEach(inp=>{
-    inp.id='auto_'+Math.random().toString(36).slice(2,9);
-  });
-
-  // Then: link adjacent labels/inputs in the same parent
-  document.querySelectorAll('label:not([for])').forEach(label=>{
-    if(label.querySelector('input, select, textarea'))return;
-    // Try next sibling
-    let next=label.nextElementSibling;
-    if(next&&(next.tagName==='INPUT'||next.tagName==='SELECT'||next.tagName==='TEXTAREA')&&next.id){
-      label.setAttribute('for',next.id);
-      return;
-    }
-    // Try next element after a div wrapper
-    if(next&&next.tagName==='DIV'){
-      const input=next.querySelector('input, select, textarea');
-      if(input&&input.id){
-        label.setAttribute('for',input.id);
-        return;
-      }
-    }
-    // Try parent div's siblings
-    const parent=label.parentElement;
-    if(parent){
-      const input=parent.querySelector('input, select, textarea');
-      if(input&&input.id){
-        label.setAttribute('for',input.id);
-        return;
-      }
-    }
-  });
-
-  // Give any remaining visible form control a usable accessible name. This
-  // covers dynamic fields whose visible label cannot be linked structurally.
-  document.querySelectorAll('input, select, textarea').forEach(control=>{
-    if(control.type==='hidden' || control.type==='file' || control.hasAttribute('aria-label') || control.hasAttribute('aria-labelledby'))return;
-    const hasAssociatedLabel=control.id&&[...document.querySelectorAll('label[for]')].some(label=>label.htmlFor===control.id);
-    if(hasAssociatedLabel || control.closest('label'))return;
-    const labelText=control.closest('.mb-2, .col-12, .col-md-2, .col-md-3, .col-md-4, .col-md-5, .col-md-6, .col-md-8, .col-md-12')?.querySelector('label')?.textContent
-      || control.getAttribute('placeholder')
-      || control.getAttribute('title')
-      || control.dataset.annualLabel
-      || control.dataset.formPath
-      || control.dataset.bind
-      || control.id;
-    if(labelText)control.setAttribute('aria-label',labelText.replace(/\s+/g,' ').trim());
-  });
-}
 
 // Keep paired "From"/"To" date fields consistent: never let From be after To
 // or To be before From. Pairs are detected by finding two date inputs that
@@ -6502,10 +5067,10 @@ window.closeWardLockedModal = function() {
   }
 };
 
-// Start
-setTimeout(()=>{
-  linkLabelsToInputs();
-},0);
+// The startup label linking that used to be queued here (setTimeout(..., 0))
+// is main.js's since Milestone 70's 70F: linkLabelsToInputs() is a module's
+// now, and a timer queued by this classic script can fire before main.js --
+// a deferred module -- has put the bridge on window.
 // initApp() is NOT called here. This file is a classic, parser-blocking
 // script, so it runs before any `<script type="module">` has evaluated --
 // which meant startup reached code depending on module-provided globals

@@ -23,6 +23,9 @@ import { alertModal } from '../../core/ui/dialogs.js';
 import { setStatus, clearStatusNow } from '../../core/ui/transient-status.js';
 import { beginExport } from '../../core/ui/export-guard.js';
 import { getD } from '../../core/state.js';
+import { highlightErrors, validationPanel } from '../../core/validation/validation-panel.js';
+import { excelCapacityPanel } from '../../core/excel/excel-capacity.js';
+import { queueAllScheduleDocValidations } from '../../core/filing/schedule-docs.js';
 
 function buildModelForPreview(D){
   return buildVerifiedInventoryModel(D, {
@@ -31,12 +34,12 @@ function buildModelForPreview(D){
 }
 
 const {
-  highlightErrors, validationPanel, excelCapacityPanel,
+  
   renderPage,
 } = window;
 
 export function pagePrint(capOver){
-  window.queueAllScheduleDocValidations?.();
+  queueAllScheduleDocValidations?.();
   const baseIssues=()=>[...validateGuardian(), ...getSupplementalFilingIssues(getD())];
   const preflight=prepareFilingOutput(getD(),baseIssues);
   const errors=preflight.messages;

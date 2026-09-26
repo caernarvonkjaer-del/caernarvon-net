@@ -148,6 +148,29 @@ describe('src/legacy-bridge.js: the monolith\'s one door to module code', () => 
     }
   });
 
+  // Milestone 70, 70F: a wrapper called from top-level code -- a timer or
+  // listener the classic script sets up while it loads -- can run before
+  // main.js, a deferred module, has put the bridge on window. The monolith's
+  // startup setTimeout(() => linkLabelsToInputs(), 0) did exactly that.
+  test('no top-level statement names a wrapper: wrappers run only from functions called later', () => {
+    const wrappers = new Set(declarationsOf(legacySrc).filter((d) => d.lines === 1
+      && legacySrc.split('\n')[d.line - 1].includes(`window.${BRIDGE}.`)).map((d) => d.name));
+    const names = (node, out = new Set()) => {
+      if (!node || typeof node.type !== 'string') return out;
+      if (node.type === 'Identifier') out.add(node.name);
+      for (const k of Object.keys(node)) {
+        const c = node[k];
+        if (Array.isArray(c)) c.forEach((x) => names(x, out)); else if (c && typeof c.type === 'string') names(c, out);
+      }
+      return out;
+    };
+    const early = legacyAst.body
+      .filter((st) => st.type !== 'FunctionDeclaration' && st.type !== 'ClassDeclaration'
+        && !(st.type === 'VariableDeclaration' && wrappers.has(st.declarations[0].id.name)))
+      .flatMap((st) => [...names(st)].filter((n) => wrappers.has(n)).map((n) => `${n} (line ${legacySrc.slice(0, st.start).split('\n').length})`));
+    expect(early).toEqual([]);
+  });
+
   test('every wrapper still has a caller -- one with none is deleted, not kept', () => {
     const forwarders = declarationsOf(legacySrc).filter((d) => d.lines === 1
       && legacySrc.split('\n')[d.line - 1].includes(`window.${BRIDGE}.`));

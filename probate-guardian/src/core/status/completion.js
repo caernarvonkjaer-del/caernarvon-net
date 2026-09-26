@@ -10,10 +10,10 @@
 // so an unopened filing's progress needs no feature pack.
 //
 // What each evaluator is handed rather than importing, because it lives in a
-// feature or in the monolith: the Initial Inventory's validator and
-// errorRoute() (its marks are bucketed from the export validator's own
-// issues, so the two cannot disagree), and the Annual engine's totals and
-// reconciliation (src/features/annual-accounting/totals.js). A missing
+// feature: the Initial Inventory's validator (its marks are bucketed from the
+// export validator's own issues through errorRoute(), so the two cannot
+// disagree), and the Annual engine's totals and reconciliation
+// (src/features/annual-accounting/totals.js). A missing
 // validator returns null, never a fabricated pass -- see guardianCompletion.
 //
 // AGENTS.md section 4: the marks here are deliberately stricter than the
@@ -29,6 +29,7 @@ import { isSignatureComplete } from '../validation/signature-state.js';
 import { isPlanInitialAttorneyStarted } from '../validation/attorney-block.js';
 import { resolvePreparer } from '../form/preparer-flag.js';
 import { certificateStarted as planCertificateStarted } from '../filing/plan-certificate-of-service.js';
+import { errorRoute } from '../validation/error-route.js';
 
 // Milestone 57B: the same rule the validators use, imported rather than
 // restated here. A second reading of the same data is
@@ -90,7 +91,7 @@ export function guardianCompletion(D, deps = {}) {
     const str=e&&typeof e==='object'?String(e.message??e):String(e);
     const i=str.indexOf(' — ');
     const section=i>-1?str.slice(0,i).trim():'';
-    const route=deps.errorRoute(section,'guardian');
+    const route=errorRoute(section,'guardian');
     const key=route==='/'?'cover':route?route.slice(1):null;
     if(key&&key in checks)checks[key]=false;
   });

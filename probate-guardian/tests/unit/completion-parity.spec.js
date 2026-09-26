@@ -2,7 +2,6 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
-import { parse } from 'acorn';
 
 // Milestone 70, 70D gate: "Old and new completion maps and percentages match
 // across all fixture factories, edge cases, and filing identities before the
@@ -26,23 +25,17 @@ import { parse } from 'acorn';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const FROZEN = fs.readFileSync(path.join(root, 'tests/baseline/ms70-70D-nav-checks-before.js.txt'), 'utf8');
-const legacySrc = fs.readFileSync(path.join(root, 'src/legacy-app.js'), 'utf8');
 
-// errorRoute() and its table are still the monolith's (70F moves them).
-function sliceDecl(name) {
-  const ast = parse(legacySrc, { ecmaVersion: 'latest', sourceType: 'script' });
-  const st = ast.body.find((s) => (s.type === 'FunctionDeclaration' && s.id.name === name)
-    || (s.type === 'VariableDeclaration' && s.declarations[0].id.name === name));
-  if (!st) throw new Error(`${name} not in legacy-app.js`);
-  return legacySrc.slice(st.start, st.end);
-}
-const ERROR_ROUTE_SRC = `${sliceDecl('PLAN_SECTION_ROUTES')}\n${sliceDecl('errorRoute')}\nreturn errorRoute;`;
+// errorRoute() is src/core/validation/error-route.js's since 70F. The frozen
+// function called it with a section alone, and it fell back to the monolith's
+// active type -- the filing's own, since the old code pointed it there.
+const errorRouteFor = (type) => (section, filingType) => m.errorRouteModule.errorRoute(section, filingType || type);
 
 let m; // modules, loaded once window exists
 beforeAll(async () => {
   vi.stubGlobal('window', globalThis);
   const [completion, registry, guardianModel, planAnnual, planInitial, rowStarted, recipients, signature, attorney, preparer,
-    certificate, totals, guardianFeature, fixtures] = await Promise.all([
+    certificate, totals, guardianFeature, fixtures, errorRouteModule] = await Promise.all([
     import('../../src/core/status/completion.js'),
     import('../../src/core/filing/filing-registry.js'),
     import('../../src/core/filing/models/guardian.js'),
@@ -57,9 +50,10 @@ beforeAll(async () => {
     import('../../src/features/annual-accounting/totals.js'),
     import('../../src/features/guardian-inventory/index.js'),
     import('../e2e/support/fixtures.ts'),
+    import('../../src/core/validation/error-route.js'),
   ]);
   m = { completion, registry, guardianModel, planAnnual, planInitial, rowStarted, recipients, signature, attorney, preparer,
-    certificate, totals, guardianFeature, fixtures };
+    certificate, totals, guardianFeature, fixtures, errorRouteModule };
 });
 afterAll(() => vi.unstubAllGlobals());
 
@@ -82,7 +76,7 @@ function oldRun(D, type, call) {
     planCertificateStarted: m.certificate.certificateStarted,
     isPlanInitialAttorneyStarted: m.attorney.isPlanInitialAttorneyStarted,
   };
-  const errorRoute = new Function('activeInventoryType', ERROR_ROUTE_SRC)(type);
+  const errorRoute = errorRouteFor(type);
   // eslint-disable-next-line no-new-func
   const run = new Function('D', 'activeInventoryType', 'window', 'validate', 'errorRoute', 'SCHEDULE_NAV_KEYS', 'guardianHasAnyData',
     'formEngine', 'calcTotalsAnnual', 'annualReconcileState', 'PLAN_BENEFITS', 'PLAN_RIGHTS', 'PLAN_ADLS', 'INITIAL_ADLS',
@@ -100,7 +94,6 @@ const oldProgress = (D) => oldRun(D, D.inventoryType, 'getWardProgress(D)');
 // NEW: the module, handed the filing and what it cannot import.
 const newDeps = (type) => ({
   validateGuardian: m.guardianFeature.validateGuardian,
-  errorRoute: new Function('activeInventoryType', ERROR_ROUTE_SRC)(type),
   calcTotalsAnnual: m.totals.calcTotalsAnnual, annualReconcileState: m.totals.annualReconcileState,
 });
 function newChecks(D, type) {

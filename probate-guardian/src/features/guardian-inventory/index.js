@@ -14,7 +14,7 @@ import { checkExcelCapacity } from '../../core/excel/excel-capacity.js';
 import { issueFactory } from '../../core/validation/validation-issue.js';
 import { createIssue } from '../../core/validation/issue-registry.js';
 import { migrateBondDepository, inferBondDepositoryState, BOND_DEPOSITORY_OPTIONS, BOND_DEPOSITORY_QUESTION, revealsBond, revealsDepository, revealsWaiver } from '../../core/filing/bond-depository.js';
-import { renderRadioGroupField } from '../../core/form/form-fields.js';
+import { renderFormField, renderRadioGroupField } from '../../core/form/form-fields.js';
 import { renderSignatureStateControl, mountSignatureStateControls } from '../../core/signature/signature-state-control.js';
 import { preparerNoteHTML } from '../../core/signature/preparer-note.js';
 import { hasIdentifiedPreparer, preparerFlagCheckboxHTML, preparerWaivedNoticeHTML } from '../../core/form/preparer-flag.js';
@@ -28,6 +28,13 @@ import { calc } from './totals.js';
 import { PAGES_GUARDIAN, mk } from '../../core/filing/models/guardian.js';
 import { SCHEDULE_NAV_KEYS } from '../../core/filing/models/guardian.js';
 import { getD } from '../../core/state.js';
+import { afterChange, bindForms } from './form-binding.js';
+import { yesNoCheckboxS, yesNoRadioHTML } from '../../core/form/field-html.js';
+import { browserRecommendationNotice, linkAccordions, linkLabelsToInputs, sanitizeNegativeAmounts, setupAmountFieldValidation } from '../../core/form/form-runtime.js';
+import { updateNavDots } from '../../core/status/nav-marks.js';
+import { initPrintPager } from '../../core/ui/print-pager.js';
+import { renderScheduleDocsSection } from '../../core/filing/schedule-docs.js';
+import { setPath } from '../../core/form/paths.js';
 // Milestone 57B: carried verbatim from MILESTONE-57-PROPOSAL.md section 57B.
 // The wording is load bearing (section 8 #8). Do not paraphrase or re-voice it.
 const ATTESTATION_57B = 'No recipients are required for this certificate (filer attestation - app does not determine legal necessity)';
@@ -41,14 +48,14 @@ const RECIPIENT_STARTED_FIELDS = ['name', 'address', 'cityStateZip'];
 // the same window.createFeatureBridge() pattern as Simplified, Plan, and
 // Annual features.
 const {
-  autoSave, navigate, renderPage, getCurrentPage, bindForms, afterChange, yesNoRadioHTML,
-  sanitizeNegativeAmounts, linkLabelsToInputs, setupAmountFieldValidation,
-  updateNavDots, initPrintPager, computeNavChecks, linkAccordions,
+  autoSave, navigate, renderPage, getCurrentPage, 
+  
+  computeNavChecks, 
   // Milestone 51C dropped `toggleSsnReveal` from this list -- destructured but
   // never called here (the comment near the SSN field below still points at the
   // function, which is correct: it runs via src/form-events.js's delegated
   // 'toggle-ssn' handler, not from this module).
-  browserRecommendationNotice, renderScheduleDocsSection,
+  
 } = window;
 
 const D = new Proxy({}, {
@@ -178,7 +185,7 @@ export async function mount(container, page) {
   signatureHandles.delete(container);
   if (page === '/d1' || page === '/d2' || page === '/d5') {
     signatureHandles.set(container, mountSignatureStateControls(container, {
-      setImage: (imagePath, dataUrl) => window.setPath(getD(), imagePath, dataUrl),
+      setImage: (imagePath, dataUrl) => setPath(getD(), imagePath, dataUrl),
       route: page,
     }));
   }
@@ -385,26 +392,23 @@ function textInput(bind,placeholder='',type=''){
   // explicitly because this file computes them from the type argument, not
   // from a label -- which renderFormField() would otherwise infer, wrongly,
   // from the empty label these fields deliberately pass.
-  if (typeof window !== 'undefined' && typeof window.renderFormField === 'function') {
-    return window.renderFormField({
-      path: bind,
-      label: '',
-      // Deliberately blank: bindForms() assigns .value immediately after
-      // render using its own data-input-type formatter, so populating it
-      // here would be overwritten anyway -- and leaving it blank keeps this
-      // exactly as the pre-delegation markup behaved (textInput() never
-      // emitted a value attribute either).
-      value: '',
-      kind: fieldKind,
-      policy,
-      placeholder,
-      id: inputId,
-      wrapperClass: '',
-      binding: 'bind',
-      inputType: type || 'text',
-    });
-  }
-  return `<input class="form-control" id="${inputId}" data-bind="${bind}" data-field-path="${bind}" data-field-kind="${fieldKind}" data-field-format-policy="${policy}" placeholder="${placeholder}"${dataType}>`;
+  return renderFormField({
+    path: bind,
+    label: '',
+    // Deliberately blank: bindForms() assigns .value immediately after
+    // render using its own data-input-type formatter, so populating it
+    // here would be overwritten anyway -- and leaving it blank keeps this
+    // exactly as the pre-delegation markup behaved (textInput() never
+    // emitted a value attribute either).
+    value: '',
+    kind: fieldKind,
+    policy,
+    placeholder,
+    id: inputId,
+    wrapperClass: '',
+    binding: 'bind',
+    inputType: type || 'text',
+  });
 }
 
 
@@ -424,22 +428,17 @@ function textInput(bind,placeholder='',type=''){
 // optLabel() call renders the caller's own label), which renderFormField()
 // now also checks for exactly this caller.
 function numInput(bind){
-  if (typeof window !== 'undefined' && typeof window.renderFormField === 'function') {
-    return window.renderFormField({
-      path: bind,
-      label: '',
-      value: '',
-      kind: 'money',
-      policy: 'normalize',
-      wrapperClass: '',
-      binding: 'bind',
-      inputType: 'decimal',
-      claimSharedWriteListener: false,
-    });
-  }
-  const isPercent=/Percent$/i.test(bind);
-  const inputHtml=`<input type="text" inputmode="decimal" class="form-control" data-bind="${bind}" data-input-type="decimal">`;
-  return isPercent?`<div class="input-group">${inputHtml}<span class="input-group-text">%</span></div>`:`<div class="input-group"><span class="input-group-text">$</span>${inputHtml}</div>`;
+  return renderFormField({
+    path: bind,
+    label: '',
+    value: '',
+    kind: 'money',
+    policy: 'normalize',
+    wrapperClass: '',
+    binding: 'bind',
+    inputType: 'decimal',
+    claimSharedWriteListener: false,
+  });
 }
 // Milestone 41-3 (Guardian Inventory step): delegates to Tier 1, same
 // pattern as textInput() above -- zero call-site changes across 13 sites.
@@ -453,23 +452,16 @@ function numInput(bind){
 // already, safely, claimed by both attributes at once.
 function dateInput(bind){
   const inputId='date_'+Math.random().toString(36).slice(2,9);
-  if (typeof window !== 'undefined' && typeof window.renderFormField === 'function') {
-    return window.renderFormField({
-      path: bind,
-      label: '',
-      value: '',
-      kind: 'date',
-      policy: 'normalize',
-      id: inputId,
-      wrapperClass: 'date-field-wrap',
-      binding: 'bind',
-    });
-  }
-  const hintId=`${inputId}_hint`;
-  return `<div class="date-field-wrap">
-    <input type="text" inputmode="text" class="form-control" id="${inputId}" placeholder="MM/DD/YYYY" data-bind="${bind}" data-field-path="${bind}" data-field-kind="date" data-field-format-policy="normalize" aria-describedby="${hintId}">
-    <div id="${hintId}" class="form-text text-muted" style="font-size:0.75rem;margin-top:0.2rem;">Use MM/DD/YYYY</div>
-  </div>`;
+  return renderFormField({
+    path: bind,
+    label: '',
+    value: '',
+    kind: 'date',
+    policy: 'normalize',
+    id: inputId,
+    wrapperClass: 'date-field-wrap',
+    binding: 'bind',
+  });
 }
 function calcInput(calcbind){
   return `<input class="form-control" readonly data-calcbind="${calcbind}">`;
@@ -1223,7 +1215,7 @@ function pageD5(){
   <h1>Part VI: Certificate of Service</h1>
   ${preparerNoteHTML()}
   <h2 style="color:var(--ink);margin:.75rem 0 .4rem;font-size:.95rem;">Recipients</h2>
-  ${renderServiceAttestationRow({html:window.yesNoCheckboxS('serviceNoRecipients',ATTESTATION_57B,D.serviceNoRecipients,false,'/d5'),rows:D.serviceRecipients,attestation:D.serviceNoRecipients,startedFields:RECIPIENT_STARTED_FIELDS,recipientsPath:'serviceRecipients',attestationPath:'serviceNoRecipients'})}
+  ${renderServiceAttestationRow({html:yesNoCheckboxS('serviceNoRecipients',ATTESTATION_57B,D.serviceNoRecipients,false,'/d5'),rows:D.serviceRecipients,attestation:D.serviceNoRecipients,startedFields:RECIPIENT_STARTED_FIELDS,recipientsPath:'serviceRecipients',attestationPath:'serviceNoRecipients'})}
   ${D.serviceNoRecipients==='Yes'?'':`<div class="row g-3 card-grid-2col">${cards}</div>${addBtn2}`}
   <h2 style="color:var(--ink);margin:.75rem 0 .4rem;font-size:.95rem;">Attorney Certification</h2>
   <div class="attorney-certification-card entry-card">

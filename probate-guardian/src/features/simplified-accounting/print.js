@@ -19,18 +19,21 @@ import { renderOutputAdvisories } from '../../core/filing/output-advisories.js';
 import { alertModal } from '../../core/ui/dialogs.js';
 import { beginExport } from '../../core/ui/export-guard.js';
 import { getD } from '../../core/state.js';
+import { highlightErrors, validationPanel } from '../../core/validation/validation-panel.js';
+import { excelCapacityPanel } from '../../core/excel/excel-capacity.js';
+import { queueAllScheduleDocValidations } from '../../core/filing/schedule-docs.js';
 
 function buildModelForPreview(D){
   return buildSimplifiedAccountingModel(D, { printDate: new Date().toISOString().slice(0, 10) });
 }
 
 const {
-  highlightErrors, validationPanel, excelCapacityPanel,
+  
   renderPage,
 } = window;
 
 export function pagePrintSimplified(capOver){
-  window.queueAllScheduleDocValidations?.();
+  queueAllScheduleDocValidations?.();
   const baseIssues=()=>[...validateSimplified(), ...getSupplementalFilingIssues(getD())];
   const preflight=prepareFilingOutput(getD(),baseIssues);
   const errors=preflight.messages;

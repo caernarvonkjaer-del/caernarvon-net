@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, test, vi } from 'vitest';
+import { describe, expect, test } from 'vitest';
 import {
   REQUIRED_ITEMS_ADVICE,
   VERIFY_NONE_ADVICE,
@@ -135,18 +135,6 @@ describe('guidanceAdvice() — question 3 (D2): advice must fit the page', () =>
     expect(guidanceAdvice({ hasVerifyNoneBox: false })).toBe(REQUIRED_ITEMS_ADVICE);
     expect(REQUIRED_ITEMS_ADVICE).toBe('Complete the required items on this page before continuing.');
     expect(REQUIRED_ITEMS_ADVICE).not.toMatch(/check the box/i);
-  });
-});
-
-describe('the bridge', () => {
-  afterEach(() => vi.unstubAllGlobals());
-
-  test('publishes the policy on window for the classic legacy-app.js script', async () => {
-    vi.stubGlobal('window', {});
-    vi.resetModules();
-    await import('../../src/core/status/section-guidance-policy.js');
-    expect(Object.keys(window.sectionGuidancePolicy).sort())
-      .toEqual(['blocksNext', 'guidanceAdvice', 'isSectionIncomplete', 'pageAlsoOwns', 'sectionCheckKey', 'sidebarOnlyWants']);
   });
 });
 

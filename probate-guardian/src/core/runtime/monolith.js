@@ -36,13 +36,13 @@ export function provideMonolithServices(fns) {
  * that was never handed in throws rather than silently doing nothing -- a
  * missed save or a stale sidebar is worse than a loud error.
  */
-export const monolith = new Proxy(Object.freeze({}), {
+export const monolith = /** @type {Record<string, (...args: any[]) => any>} */ (new Proxy(Object.freeze({}), {
   get(_target, name) {
     const fn = provided.get(name);
     if (!fn) throw new Error(`monolith.${String(name)}() was not provided -- legacy-app.js hands its services in at the start of initApp()`);
     return fn;
   },
-});
+}));
 
 /** For the spec only: which names were handed in. */
 export function providedMonolithServiceNames() {

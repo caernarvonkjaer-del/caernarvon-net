@@ -23,14 +23,8 @@
 // goes with legacy-app.js in 70L.
 import { ic } from './core/ui/icons.js';
 import { esc } from './core/filing/escape-html.js';
-import { fmt, formatDashboardCurrency } from './core/format/money.js';
+import { formatDashboardCurrency } from './core/format/money.js';
 import { validateImportFile, sanitizeObjectData } from './core/security/input-hardening.js';
-import {
-  sanitizeNonNegativeDecimal, formatPhone, formatSSN, formatCaseNumber, finalizeCaseNumber, formatBarNumber,
-  formatAccountNumber, formatCheckNumber, formatName, formatAddress, applyZipLimit,
-} from './core/form/form-contract.js';
-import { FL_COUNTIES } from './core/pdf/circuit-lookup.js';
-import { formatDisplayDate } from './core/form/date-parser.js';
 import { calcTotals } from './features/simplified-accounting/totals.js';
 import { calc } from './features/guardian-inventory/totals.js';
 import {
@@ -40,30 +34,28 @@ import {
 import { getActiveWard } from './core/state.js';
 import { provideMonolithServices } from './core/runtime/monolith.js';
 import { emptyRowAnnual } from './core/filing/models/annual.js';
-import { PAGES_GUARDIAN, SCHEDULE_NAV_KEYS } from './core/filing/models/guardian.js';
+import { PAGES_GUARDIAN, } from './core/filing/models/guardian.js';
 import { emptyPlanResidence, emptyPlanProvider } from './core/filing/models/plan-annual.js';
 import { emptyInitialProvider } from './core/filing/models/plan-initial.js';
 import { emptyMinorResidence, emptyMinorProvider } from './core/filing/models/plan-minor.js';
-import {
-  planGuardianBlank, planGuardianHasAnyData, planGuardianMax, normalizePlanGuardians, planEmptyRow,
-} from './core/filing/models/plan-rows.js';
+import { updateNavDots } from './core/status/nav-marks.js';
+import { setPath } from './core/form/paths.js';
 
 export const LEGACY_BRIDGE = Object.freeze({
   // 70B -- pure helpers
-  ic, esc, fmt, formatDashboardCurrency, validateImportFile, sanitizeObjectData,
-  sanitizeNonNegativeDecimal, formatPhone, formatSSN, formatCaseNumber, finalizeCaseNumber, formatBarNumber,
-  formatAccountNumber, formatCheckNumber, formatName, formatAddress, applyZipLimit, FL_COUNTIES,
-  formatDisplayDate, calcTotals, calc,
+  ic, esc, formatDashboardCurrency, validateImportFile, sanitizeObjectData,
+  
+  calcTotals, calc,
   // 70C -- the filing registry and per-engine models
   formEngine, formDisplayName, INVENTORY_TYPES, INVENTORY_TYPE_META, typeIcon, initializeEmptyData, FILING_PAGES,
   emptyRowAnnual,
   PAGES_GUARDIAN, emptyPlanResidence, emptyPlanProvider,
-  emptyInitialProvider, emptyMinorResidence, emptyMinorProvider, planGuardianBlank, planGuardianHasAnyData,
-  planGuardianMax, normalizePlanGuardians, planEmptyRow,
-  // 70D -- completion (the monolith's names for them)
-  computeNavChecks, getWardProgress, SCHEDULE_NAV_KEYS,
+  emptyInitialProvider, emptyMinorResidence, emptyMinorProvider, // 70D -- completion (the monolith's names for them)
+  computeNavChecks, getWardProgress, 
   // 70E -- the case-state seam, and the door the other way (src/core/runtime/monolith.js)
   getActiveWard, provideMonolithServices,
+  // 70F
+  setPath, updateNavDots,
 });
 
 if (typeof window !== 'undefined') {

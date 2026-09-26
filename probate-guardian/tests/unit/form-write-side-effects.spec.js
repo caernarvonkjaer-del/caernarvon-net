@@ -13,6 +13,11 @@ import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 
+// The sidebar marks are src/core/status/nav-marks.js's since Milestone 70's 70F;
+// the tail imports updateNavDots(), so the recorder stands in for the module.
+const navDots = vi.hoisted(() => ({ fn: null }));
+vi.mock('../../src/core/status/nav-marks.js', () => ({ updateNavDots: (...a) => navDots.fn?.(...a) }));
+
 function freshWindow() {
   const calls = [];
   const rec = (name, impl) => vi.fn((...args) => { calls.push(name); return impl ? impl(...args) : undefined; });
@@ -25,7 +30,7 @@ function freshWindow() {
     identitySlotForPath: rec('slot', (_d, p) => (p === 'guardians.0.name' ? { role: 'guardian', index: 0, fieldKeys: ['name'] } : null)),
     syncIdentityField: rec('identity'),
     autoSave: rec('autoSave'),
-    updateNavDots: rec('navDots'),
+    updateNavDots: (navDots.fn = rec('navDots')),
     refreshWardInfoCard: rec('wardCard'),
     syncActiveWardNameDisplay: rec('wardName'),
     syncGuardianNameDisplay: rec('guardianName'),
@@ -143,23 +148,22 @@ describe('all three binding paths call the shared tail', () => {
     expect(w.calls).toContain('autoSave');
 
     expect(read('src/features/annual-accounting/index.js')).not.toMatch(/function persistAnnualControl/);
-    // The document-level listeners are what route the events here: all four
-    // binding checks go through one helper that names all three attributes.
+    // The document-level listeners are what route the events here: all five
+    // binding checks go through one helper that names all three attributes
+    // (input, compositionend, a select's change, focusout, and -- Milestone
+    // 70's 70F -- focusin, which binds the field to the open filing).
     const events = read('src/form-events.js');
     expect(events).toMatch(/const boundPath = \(control\) => control\.dataset\.fieldPath \|\| control\.dataset\.formPath \|\| control\.dataset\.annualPath;/);
-    expect((events.match(/boundPath\(control\)/g) || []).length).toBe(4);
+    expect((events.match(/boundPath\(control\)/g) || []).length).toBe(5);
     expect(events).not.toMatch(/dataset\.fieldPath \|\| control\.dataset\.formPath\)/);
   });
 
-  // afterChange (legacy-app.js) is module-private -- not exported, so there
-  // is no way to import and invoke it directly the way writeDraftValue/
-  // finalizeFieldValue are above. Source-text confirmation of the call site
-  // is the best available check in this Node-only suite; a real invocation
-  // would need e2e (a real browser/window), same reachability gap Milestone
-  // 43A found for normalizeWardData()/window.calc.
+  // afterChange() is the Initial Inventory's (src/features/guardian-inventory/
+  // form-binding.js since Milestone 70's 70F) and needs a page to run, so its
+  // call site is confirmed from the source here; e2e drives it for real.
   it('afterChange (legacy data-bind)', () => {
-    const body = bodyOf(read('src/legacy-app.js'), 'afterChange');
-    expect(body).toContain('window.runFieldWriteSideEffects(path)');
+    const body = bodyOf(read('src/features/guardian-inventory/form-binding.js'), 'afterChange');
+    expect(body).toContain('runFieldWriteSideEffects(path)');
     expect(body).not.toContain('identitySlotForPath');
     expect(body).not.toContain('maybeCommitCoverCounty');
   });

@@ -36,6 +36,9 @@ import { formatDisplayDate } from '../../core/form/date-parser.js';
 import { normalizePlanGuardians } from '../../core/filing/models/plan-rows.js';
 import { planMinorCompletion } from '../../core/status/completion.js';
 import { getD } from '../../core/state.js';
+import { chkP, countyInputS, inpS, pageNavS, planCheckGroup, planQ, radioP, txtP, yesNoCheckboxS } from '../../core/form/field-html.js';
+import { renderScheduleDocsSection } from '../../core/filing/schedule-docs.js';
+import { setPath } from '../../core/form/paths.js';
 // Annual Plan — Minors — the fifth and last feature extraction (Milestone 6,
 // Phases A and B of INDEX-SPLIT-PLAN.md's migration sequence: data/
 // validation/pages/nav, and print/PDF export). Dynamically imported by
@@ -61,10 +64,6 @@ import { getD } from '../../core/state.js';
 // plan-annual got in Milestone 41-3 and plan-simplified in 41-2, which
 // plan-initial and plan-minor never received. `countyInputS` stays: unlike the
 // other three Plan types, this one still calls it directly (see /p1 below).
-const {
-  inpS, countyInputS, radioP, pageNavS,
-  renderScheduleDocsSection, txtP, chkP, planQ, planCheckGroup, yesNoCheckboxS,
-} = window;
 
 // print.js is dynamically imported only when the user reaches /print or
 // triggers PDF export (Phase B) -- same lazy boundary as the other three
@@ -122,7 +121,7 @@ export async function mount(container, page) {
   signatureHandles.delete(container);
   if (page === '/p6' || page === '/p7' || page === '/p8') {
     signatureHandles.set(container, mountSignatureStateControls(container, {
-      setImage: (imagePath, dataUrl) => window.setPath(getD(), imagePath, dataUrl),
+      setImage: (imagePath, dataUrl) => setPath(getD(), imagePath, dataUrl),
       route: page,
     }));
   }

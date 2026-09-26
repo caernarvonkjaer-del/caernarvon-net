@@ -31,6 +31,7 @@ const ALLOWED = {
   // right -- Milestone 42G deliberately did not attempt it in one pass
   // against the single most load-bearing file in the app.
   'src/legacy-app.js': 'core dispatch, out of scope for 42G -- see MILESTONE-42-PROPOSAL.md 42G',
+  'src/core/validation/error-route.js': "PLAN_SECTION_ROUTES, moved from legacy-app.js in Milestone 70's 70F: each Plan's narrative section headings mapped to its pages, keyed by the Plan's type",
   // Milestone 70, 70C: the eager filing registry -- the per-identity names,
   // dashboard look and page lists legacy-app.js used to hold (the exception
   // above, moving here piece by piece). Built on DESCRIPTORS, not a second

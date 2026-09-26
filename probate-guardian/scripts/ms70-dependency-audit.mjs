@@ -510,11 +510,15 @@ export function auditSources(files, classic, moduleEntries = null) {
     visitProps(dast);
   }
   const mountName = (id) => `mount${id.charAt(0).toUpperCase()}${id.slice(1)}Feature`;
+  // Milestone 70, 70F: window[validatorFnName(engine)], the same convention.
+  const validatorName = (id) => `validate${id.charAt(0).toUpperCase()}${id.slice(1)}`;
+  const builders = { mountFeatureFnName: mountName, validatorFnName: validatorName };
   for (const r of results) {
     for (const c of r.computedWindowReads) {
-      if (c.builder === 'mountFeatureFnName') {
-        for (const id of engineIds) r.windowReads.push({ name: mountName(id), line: c.line, evalTime: false, via: 'mountFeatureFnName' });
-        c.resolved = [...engineIds].map(mountName);
+      const build = builders[c.builder];
+      if (build) {
+        for (const id of engineIds) r.windowReads.push({ name: build(id), line: c.line, evalTime: false, via: c.builder });
+        c.resolved = [...engineIds].map(build);
       }
     }
   }

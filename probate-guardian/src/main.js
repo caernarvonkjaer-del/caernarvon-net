@@ -8,7 +8,6 @@ import './core/party-resolver.js';
 import './core/case-resolver.js';
 import './core/feature-bridge.js';
 import './core/ward-lock.js';
-import './core/form/form-fields.js';
 import './core/form/schedule-definitions.js';
 // Milestone 33, Phase 2.3: eager, load-order-independent import so
 // window.renderLocalSectionGuidance (used by legacy-app.js's shared
@@ -60,6 +59,7 @@ import './pwa-ui.js';
 
 import { configureCaseStore } from './core/state.js';
 import { monolith } from './core/runtime/monolith.js';
+import { linkLabelsToInputs } from './core/form/form-runtime.js';
 import { navigate } from './core/navigation/router.js';
 import { markFilingRevisionChanged, isOutputAcknowledgedFor, clearOutputAcknowledgement } from './core/filing/output-authorization.js';
 import { bindReadinessCard } from './core/filing/readiness-card.js';
@@ -127,6 +127,9 @@ if (typeof window !== 'undefined') {
     // leave a blank page with no explanation.
     throw new Error('window.initApp is not available — legacy-app.js must load before main.js');
   }
+  // The page's own labels tied to their inputs, as legacy-app.js's startup
+  // timer used to do (Milestone 70, 70F; see the note there).
+  linkLabelsToInputs();
   // Do not begin recovery, file-open, or new-case startup until the first-use
   // acknowledgement has been accepted. This makes the terms dialog the first
   // application interaction instead of merely a layer above an active flow.

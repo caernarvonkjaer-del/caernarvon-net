@@ -1,24 +1,27 @@
 import { getCaseFile } from './core/state.js';
+import { closeMobileSidebar, navigate, toggleMobileSidebar } from './core/navigation/router.js';
+import { handleBackupImportChange, hideAutoExportReminder, saveAutoExportIntervalPref, saveBackupNow, triggerOpenBackupSav } from './core/persistence/case-file.js';
+import { unloadWard } from './core/navigation/ward-lifecycle.js';
 function handleShellClick(event) {
   const actionElement = event.target instanceof Element ? event.target.closest('[data-shell-action]') : null;
   if (!actionElement) return;
 
   switch (actionElement.dataset.shellAction) {
-    case 'activity-log': window.toggleHelpPanel(); window.navigate('/activity-log'); break;
-    case 'backup-all-wards': window.collapseSaveControls?.(); window.saveBackupNow(); break;
+    case 'activity-log': window.toggleHelpPanel(); navigate('/activity-log'); break;
+    case 'backup-all-wards': window.collapseSaveControls?.(); saveBackupNow(); break;
     case 'clear-data': window.collapseSaveControls?.(); window.clearAllData(); break;
-    case 'close-mobile-sidebar': window.closeMobileSidebar(); break;
-    case 'close-ward': window.collapseWardControls?.(); if (window.unloadWard) window.unloadWard(); break;
-    case 'dashboard': window.navigate('/dashboard'); break;
+    case 'close-mobile-sidebar': closeMobileSidebar(); break;
+    case 'close-ward': window.collapseWardControls?.(); if (unloadWard) unloadWard(); break;
+    case 'dashboard': navigate('/dashboard'); break;
     case 'delete-ward': window.collapseWardControls?.(); window.confirmDeleteWard(); break;
     case 'export-help': window.openUserGuide(); break;
-    case 'hide-auto-export-reminder': window.hideAutoExportReminder(); break;
+    case 'hide-auto-export-reminder': hideAutoExportReminder(); break;
     case 'lock': window.collapseSaveControls?.(); window.lockApp(); break;
-    case 'new-form': window.collapseWardControls?.(); window.navigate('/inventory-select'); break;
+    case 'new-form': window.collapseWardControls?.(); navigate('/inventory-select'); break;
     case 'next-walkthrough': window.nextWalkthroughStep(); break;
-    case 'open-backup-sav': window.collapseSaveControls?.(); window.triggerOpenBackupSav?.(); break;
-    case 'party-management': window.toggleHelpPanel(); window.navigate('/party-management'); break;
-    case 'save-backup': window.collapseSaveControls?.(); window.saveBackupNow(); break;
+    case 'open-backup-sav': window.collapseSaveControls?.(); triggerOpenBackupSav?.(); break;
+    case 'party-management': window.toggleHelpPanel(); navigate('/party-management'); break;
+    case 'save-backup': window.collapseSaveControls?.(); saveBackupNow(); break;
     case 'skip-walkthrough': window.skipWalkthrough(); break;
     case 'start-walkthrough': window.startWalkthrough(); break;
     case 'switch-ward': window.handleSwitchWardClick(); break;
@@ -30,7 +33,7 @@ function handleShellClick(event) {
       if (getCaseFile()?.activeWardId) window.openUserGuideForCurrentPage?.();
       else window.toggleHelpPanel();
       break;
-    case 'toggle-mobile-sidebar': window.toggleMobileSidebar(); break;
+    case 'toggle-mobile-sidebar': toggleMobileSidebar(); break;
     case 'toggle-save-controls': window.toggleSaveControls(); break;
     case 'toggle-theme': window.toggleTheme(); break;
   }
@@ -57,9 +60,9 @@ function handleShellKeydown(event) {
 function handleShellChange(event) {
   if (event.target instanceof HTMLSelectElement && event.target.id === 'auto-export-interval-select') {
     window.collapseSaveControls?.();
-    window.saveAutoExportIntervalPref(Number.parseInt(event.target.value, 10));
+    saveAutoExportIntervalPref(Number.parseInt(event.target.value, 10));
   } else if (event.target instanceof HTMLInputElement && event.target.id === 'backup-import-input' && event.target.files?.[0]) {
-    window.handleBackupImportChange?.(event.target);
+    handleBackupImportChange?.(event.target);
   }
 }
 

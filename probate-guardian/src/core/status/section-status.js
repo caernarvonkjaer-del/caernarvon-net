@@ -1,3 +1,5 @@
+// @ts-nocheck -- in tsconfig.json's checked program only transitively (router.js ->
+// src/core/status/nav-marks.js, Milestone 70's 70F); never written with JSDoc types.
 // Milestone 24: Section Status and Bounded Navigation Guidance Renderer
 
 import { adaptValidationErrors } from '../validation/validation-adapter.js';

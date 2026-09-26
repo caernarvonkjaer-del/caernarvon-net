@@ -12,9 +12,43 @@ import {
 } from './commit-coordinator.js';
 import { validateSecurityInput } from '../security/input-hardening.js';
 import { getD } from '../state.js';
+import { updateNavDots } from '../status/nav-marks.js';
+import { getPath, setPath } from './paths.js';
 
 if (typeof window !== 'undefined') {
   window._transientDrafts = window._transientDrafts || {};
+}
+
+// The filing each field is being edited in: bound when the field takes focus
+// (form-events.js) or on its first write. Switching the open filing while a
+// field still has focus replaces the page under it, and the field's blur then
+// fires after the switch -- its value must never be written into the filing
+// that replaced it (Milestone 70's 70F gate; it did: the new filing took the
+// old one's value). commitFocusedField() below is how the edit reaches its
+// own filing first.
+const fieldFiling = new WeakMap();
+
+/** Bind a field to the open filing, the one its edits belong to. */
+export function bindFieldToFiling(control) {
+  if (control && getControlPath(control)) fieldFiling.set(control, getD());
+}
+
+/** True for a field bound to a filing that is no longer the open one. */
+function isStaleField(control) {
+  const filing = control ? fieldFiling.get(control) : undefined;
+  return filing !== undefined && filing !== getD();
+}
+
+/**
+ * Finalize the focused field, if it is a filing field, into its own filing --
+ * what its blur would do. The filing lifecycle calls this before the flush
+ * that ends a filing, so the edit is saved with it, once.
+ */
+export function commitFocusedField(doc = typeof document !== 'undefined' ? document : null) {
+  const control = doc?.activeElement;
+  if (!control || !getControlPath(control) || isStaleField(control)) return false;
+  finalizeFieldValue(control);
+  return true;
 }
 
 /**
@@ -334,7 +368,7 @@ export function runFieldWriteSideEffects(path, control = null) {
   // its stale neighbours into the shared Party record.
   if (identitySlot && window.syncIdentityField) window.syncIdentityField(getD(), identitySlot.role, identitySlot.index, identitySlot.fieldKeys);
   window.autoSave?.();
-  window.updateNavDots?.();
+  updateNavDots?.();
   window.refreshWardInfoCard?.();
   const dataset = control?.dataset || {};
   if (dataset.syncWardName || path === 'wardName') window.syncActiveWardNameDisplay?.();
@@ -350,6 +384,8 @@ export function runFieldWriteSideEffects(path, control = null) {
 export function writeDraftValue(control, options = {}) {
   const path = getControlPath(control);
   if (!path) return;
+  if (isStaleField(control)) return;
+  if (!fieldFiling.has(control)) fieldFiling.set(control, getD());
   if (options.event) options.event._pgHandled = true;
 
   const kind = getControlKind(control);
@@ -396,9 +432,9 @@ export function writeDraftValue(control, options = {}) {
     return;
   }
 
-  const currentVal = window.getPath ? window.getPath(getD(), path) : undefined;
+  const currentVal = getPath ? getPath(getD(), path) : undefined;
   if (currentVal !== rawValue) {
-    if (window.setPath) window.setPath(getD(), path, rawValue);
+    if (setPath) setPath(getD(), path, rawValue);
     runFieldWriteSideEffects(path, control);
   }
 }
@@ -410,6 +446,7 @@ export function writeDraftValue(control, options = {}) {
 export function finalizeFieldValue(control, options = {}) {
   const path = getControlPath(control);
   if (!path) return;
+  if (isStaleField(control)) return;
   if (options.event) options.event._pgHandled = true;
 
   const kind = getControlKind(control);
@@ -418,12 +455,12 @@ export function finalizeFieldValue(control, options = {}) {
   const isRadio = control?.type === 'radio';
   let rawValue = isCheckbox
     ? (control.dataset?.formValue === 'yes-no' ? (control.checked ? 'Yes' : 'No') : control.checked)
-    : (isRadio ? (control.checked ? control.value : (window.getPath ? window.getPath(getD(), path) : '')) : control.value);
+    : (isRadio ? (control.checked ? control.value : (getPath ? getPath(getD(), path) : '')) : control.value);
 
   // A state control is written through untouched. No text formatter may run
   // against a checkbox or radio whatever kind the path happened to infer.
   if (isCheckbox || isRadio || kind === 'boolean') {
-    if (window.setPath) window.setPath(getD(), path, rawValue);
+    if (setPath) setPath(getD(), path, rawValue);
   } else if (kind === 'date') {
     const parsed = parseFlexibleDate(rawValue);
     if (parsed === '') {
@@ -431,7 +468,7 @@ export function finalizeFieldValue(control, options = {}) {
       control.removeAttribute('aria-invalid');
       control.classList.remove('is-invalid');
       clearFieldDraft(path, getD());
-      if (window.setPath) window.setPath(getD(), path, '');
+      if (setPath) setPath(getD(), path, '');
     } else if (parsed === null) {
       // Invalid date text: retain both the visible draft and the previously
       // committed canonical value. Clearing the model here caused a blurred
@@ -452,16 +489,16 @@ export function finalizeFieldValue(control, options = {}) {
       control.classList.remove('is-invalid');
       control.value = formatDisplayDate(parsed);
       clearFieldDraft(path, getD());
-      if (window.setPath) window.setPath(getD(), path, parsed);
+      if (setPath) setPath(getD(), path, parsed);
     }
   } else if (kind === 'caseNumber' || control.dataset?.formFormat === 'case-number' || control.dataset?.annualFormat === 'case') {
     const formatted = finalizeCaseNumber(rawValue);
     control.value = formatted;
-    if (window.setPath) window.setPath(getD(), path, formatted);
+    if (setPath) setPath(getD(), path, formatted);
   } else if (kind === 'barNumber' || control.dataset?.formFormat === 'bar-number' || control.dataset?.annualFormat === 'bar') {
     const formatted = formatBarNumber(rawValue);
     control.value = formatted;
-    if (window.setPath) window.setPath(getD(), path, formatted);
+    if (setPath) setPath(getD(), path, formatted);
   } else if (kind === 'zip' || control.dataset?.formFormat === 'city-state-zip' || control.dataset?.annualFormat === 'zip') {
     // applyZipLimit() caps the field at nine digits (ZIP+4) in place before
     // formatting -- both legacy write paths did; this one had skipped it.
@@ -469,12 +506,12 @@ export function finalizeFieldValue(control, options = {}) {
     rawValue = control.value;
     const formatted = formatCityStateZip(rawValue);
     control.value = formatted;
-    if (window.setPath) window.setPath(getD(), path, formatted);
+    if (setPath) setPath(getD(), path, formatted);
     setCityStateZipFeedback(control, isMalformedCityStateZip(formatted));
   } else if (kind === 'phone') {
     const formatted = formatPhone(rawValue);
     control.value = formatted;
-    if (window.setPath) window.setPath(getD(), path, formatted);
+    if (setPath) setPath(getD(), path, formatted);
   } else if (kind === 'ssn') {
     // Above the generic preserve branch on purpose: renderFormField() stamps
     // SSN/EIN fields data-field-format-policy="preserve" (identifier-like,
@@ -487,7 +524,7 @@ export function finalizeFieldValue(control, options = {}) {
     // the two-phase contract's rule for caret-moving formatters).
     const formatted = formatSSN(rawValue);
     control.value = formatted;
-    if (window.setPath) window.setPath(getD(), path, formatted);
+    if (setPath) setPath(getD(), path, formatted);
   } else if (policy === 'preserve') {
     // data-field-sanitize="security" (renderFormField()'s securitySanitize
     // option -- Annual Accounting's inpD() is its only caller) runs
@@ -504,22 +541,22 @@ export function finalizeFieldValue(control, options = {}) {
       ? validateSecurityInput(control.dataset.fieldLabel || control.dataset.annualLabel || path, rawValue)
       : rawValue;
     const cleaned = sanitizeStoredText(secured);
-    if (window.setPath) window.setPath(getD(), path, cleaned);
+    if (setPath) setPath(getD(), path, cleaned);
     control.value = cleaned;
   } else if (kind === 'name' || kind === 'address' || policy === 'display-only') {
     const formatted = formatSafeTitleCase(rawValue);
     control.value = formatted;
-    if (window.setPath) window.setPath(getD(), path, formatted);
+    if (setPath) setPath(getD(), path, formatted);
   } else if (kind === 'money') {
     const cleaned = sanitizeNonNegativeDecimal(rawValue);
     control.value = cleaned;
-    if (window.setPath) window.setPath(getD(), path, parseFloat(cleaned) || 0);
+    if (setPath) setPath(getD(), path, parseFloat(cleaned) || 0);
   } else if (kind === 'signed-money') {
     // "Enter as negative" amounts (Annual Schedule C losses, Schedule E
     // transfers out): the one money kind that keeps a leading minus.
     const cleaned = sanitizeDecimal(rawValue);
     control.value = cleaned;
-    if (window.setPath) window.setPath(getD(), path, parseFloat(cleaned) || 0);
+    if (setPath) setPath(getD(), path, parseFloat(cleaned) || 0);
   }
 
   runFieldWriteSideEffects(path, control);
@@ -538,7 +575,7 @@ export function commitPendingFieldValues(root = document) {
     // could overwrite the newer canonical model value at navigation time.
     if (getFieldDraft(getControlPath(control), getD())) finalizeFieldValue(control);
   });
-  const committed = commitStoredDateDrafts(getD(), window.setPath);
+  const committed = commitStoredDateDrafts(getD(), setPath);
   return { committed, issues: getFieldDraftIssues(getD()) };
 }
 
@@ -731,12 +768,5 @@ export function applyZipLimit(el){
 }
 
 if (typeof window !== 'undefined') {
-  window.sanitizeStoredText = sanitizeStoredText;
-  window.formatSafeTitleCase = formatSafeTitleCase;
-  window.formatCityStateZip = formatCityStateZip;
-  window.writeDraftValue = writeDraftValue;
-  window.finalizeFieldValue = finalizeFieldValue;
-  window.runFieldWriteSideEffects = runFieldWriteSideEffects;
   window.commitPendingFieldValues = commitPendingFieldValues;
-  window.getFieldDraftIssueMessages = getFieldDraftIssueMessages;
 }

@@ -1,4 +1,6 @@
 import { formatName } from './core/form/form-contract.js';
+import { saveBackupNow } from './core/persistence/case-file.js';
+import { switchWard } from './core/navigation/ward-lifecycle.js';
 async function handleModalClick(event) {
   const actionElement = event.target instanceof Element ? event.target.closest('[data-modal-action]') : null;
   if (!actionElement) return;
@@ -16,9 +18,9 @@ async function handleModalClick(event) {
     case 'guardian-setup': window.doGuardianSetup(); break;
     case 'pick-case': window.doPickCase(); break;
     case 'pick-party': window.doPickParty(); break;
-    case 'save-backup': window.closeModal(actionElement.dataset.modalId); window.saveBackupNow(); break;
+    case 'save-backup': window.closeModal(actionElement.dataset.modalId); saveBackupNow(); break;
     case 'start-new-year': window.confirmStartNewYear(); break;
-    case 'switch-ward': window.closeModal('switchWardPickerModal'); await window.switchWard(actionElement.dataset.wardId); break;
+    case 'switch-ward': window.closeModal('switchWardPickerModal'); await switchWard(actionElement.dataset.wardId); break;
   }
 }
 

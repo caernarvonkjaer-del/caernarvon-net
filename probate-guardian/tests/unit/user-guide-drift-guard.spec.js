@@ -143,7 +143,7 @@ const GUIDE_CONTROLS = {
     // IS All Filings.
     evidence: [
       { file: 'src/core/navigation/router.js', pattern: /data-shell-action="dashboard"/ },
-      { file: 'src/legacy-app.js', pattern: /data-shell-action="dashboard"/ },
+      { file: 'src/core/ui/print-pager.js', pattern: /data-shell-action="dashboard"/ },
     ],
   },
   'shell-theme-toggle': {
@@ -153,7 +153,7 @@ const GUIDE_CONTROLS = {
     evidence: [
       { file: 'src/core/navigation/router.js', pattern: /id="theme-toggle-btn"/ },
       { file: 'src/features/dashboard/index.js', pattern: /id="theme-toggle-btn"/ },
-      { file: 'src/legacy-app.js', pattern: /id="theme-toggle-btn"/ },
+      { file: 'src/core/ui/print-pager.js', pattern: /id="theme-toggle-btn"/ },
     ],
   },
   'shell-help': {
@@ -165,7 +165,7 @@ const GUIDE_CONTROLS = {
     evidence: [
       { file: 'src/core/navigation/router.js', pattern: /id="help-toggle-btn"/ },
       { file: 'src/features/dashboard/index.js', pattern: /id="help-toggle-btn"/ },
-      { file: 'src/legacy-app.js', pattern: /id="help-toggle-btn"/ },
+      { file: 'src/core/ui/print-pager.js', pattern: /id="help-toggle-btn"/ },
     ],
   },
   'dashboard-report-bug': {

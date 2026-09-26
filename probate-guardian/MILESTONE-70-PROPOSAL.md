@@ -3,7 +3,7 @@
 ## Status
 
 **70A complete (2026-09-24); 70T, 70B, 70C and 70D complete (2026-09-25); 70E
-complete (2026-09-26) -- see their build records. Every remaining delivery, 70F through 70L, is approved.** The
+and 70F complete (2026-09-26) -- see their build records. Every remaining delivery, 70G through 70L, is approved.** The
 requester approved delivery 70A on 2026-09-24 and it is complete on the
 `milestone-70` branch (see the 70A build record), then approved 70T. On
 2026-09-25 the requester approved every delivery after it ("Finish ms 70. That
@@ -1335,6 +1335,49 @@ with no feature importing form services from `window`. Repeated mount/unmount
 does not duplicate a listener, observer, autosave call, or validation update.
 An edit followed by rapid route navigation or filing switching saves the old
 filing exactly once and cannot write its data into the newly active filing.
+
+### 70F build record
+
+Approved with every later delivery on 2026-09-25 (see Status). Everything
+below is on the `milestone-70` branch.
+
+**What a filer sees.** Two corrections; otherwise nothing, by design.
+(1) **An edit could land in the wrong filing.** A field that still had focus
+when another filing was opened had its value written into the filing that
+replaced it: the new filing took the old one's ward name. The field's blur
+arrived after the switch and wrote into whatever filing was then open. Every
+control that switches filings takes focus from the field first, which
+commits the edit where it belongs, so no filer is known to have reached this;
+opening a filing from code did (the test adapter's `activateFiling.open()`),
+and any future path that switches while a field keeps focus would. Now the
+field is committed into its own filing before the switch, and a late write
+from the old page is refused. **The same code is on `master`** (probed there:
+the second filing took "Probe ARapid Edit"); reported to the requester, not
+changed on `master`. (2) Attaching a supporting-document PDF to a schedule
+reached its PDF tools through a fallback path that a module resolves
+wrongly; the fallback was never taken, because the tools were handed over on
+`window` first. They are imported now.
+
+**Done, with evidence.**
+
+| Item | Evidence |
+| --- | --- |
+| Commit | Named in the next docs commit (the whole delivery; gate evidence in its message). |
+| The form runtime | `src/core/form/paths.js` (`getPath()`/`setPath()`), `form-runtime.js` (labels linked to inputs, accordions, non-negative amounts, the SSN reveal, the browser notice), `field-html.js` (the field markup the Simplified, Annual and Plan pages share), `county-autocomplete.js`, `plan-row-actions.js`; `src/core/status/nav-marks.js` (the sidebar marks, section collapse, progress summary, the Next button and the page explanation); `src/core/validation/error-route.js` and `validation-panel.js`; `src/core/filing/schedule-docs.js`; `src/core/ui/print-pager.js`; `excelCapacityPanel()` joins `src/core/excel/excel-capacity.js`; the Initial Inventory's binding engine (`bindForms()`, `afterChange()`, `updateCalcFields()`) is its feature's own, `src/features/guardian-inventory/form-binding.js`, since the totals it repaints are. 90 names left the monolith (the review's `landed["70F"]`). |
+| Dispatch | `form-events.js`, `shell-events.js` and `modal-events.js` import the moved handlers -- and the router's, the case file's and the filing lifecycle's -- instead of calling `window.X`; 20 one-line wrappers and 22 bridge members went with their last callers. `setPath()` and `updateNavDots()` remain as wrappers the monolith still calls. |
+| Mounts and saves (the gate) | `tests/e2e/form-runtime-lifecycle.contract.spec.ts`, observed from outside the app by an init script in the page's own world (the recovery snapshot's writes, one per save; listeners on the window, the document and connected elements; live observers and intervals): for each of the seven form engines, four rounds of visiting pages, closing the filing and reopening it leave the page as the first did, and an edit afterwards saves once; an edit followed at once by opening another filing saves the old filing with the edit, makes no more saves than a switch without one (the flush, and the recent-filings list the opened filing joins, which is saved with the case), and leaves the new filing's value alone in the model and every save; a field only focused writes nothing into the new filing; an edit followed at once by navigation saves once. Red first: before the fix the new filing took "Filing A Edited" (focused only, "Filing A"); a listener planted in Plan Annual's mount failed the mount test. |
+| The fix | `src/core/form/form-contract.js` binds each field to the filing it is edited in -- on focus (`form-events.js`) or its first write -- and `writeDraftValue()`/`finalizeFieldValue()` refuse a field whose filing is no longer open; `commitFocusedField()` finalizes a focused field into its own filing, and `ward-lifecycle.js` calls it before the flush that ends a filing (opening another, going to the dashboard). Not in `flushPendingSave()` itself: that also runs when the tab is hidden, and finalizing a name there would trim a space the filer just typed. |
+| No feature takes a form service from `window` | `tests/unit/form-services-import.spec.js` parses every feature for a name exported by a form-service module read off `window`. Red first: the Initial Inventory's `textInput()`, `numInput()` and `dateInput()` read `window.renderFormField` (with a hand-written fallback no filer could reach); they import it. The form services' `window` publications nothing read went -- `form-fields.js`'s six and seven of `form-contract.js`'s eight (`commitPendingFieldValues` stays: the monolith's `flushPendingSave()` and the router call it) -- with `main.js`'s import that existed only to publish them. |
+| Teardown | The contract the plan asks for is the one the features already keep -- each ends its listeners and observers through its own `AbortController` and `dispose()` -- and the spec above now holds it. A route-level signal handed to features is the feature context's (70K); the autosave debounce stays the monolith's until 70I, and its flush before a switch is what the spec holds. |
+| A race left for 70K | The first gate run failed three of the contract spec's mount rounds (Initial Inventory, Simplified, Plan Annual; 1 in 4 alone): closing a filing and opening one at once can leave the dashboard -- whose code loads on first use -- drawn over the filing, or a filing's slow first mount drawn over the dashboard. The feature bridge records the limitation (Milestone 12: it does not arbitrate two mounts racing for one container). A fix in the bridge alone was tried and taken out: the router renders each navigation twice (navigate() and the hash change), and a bridge that lets the latest mount win then hid a failed chunk's reload panel (feature-load-failure.spec.ts) and moved when a new filing's page normalizes its amounts (the year-rollover characterization). Arbitration belongs with 70K's router and feature context, with that double render. The mount rounds now reopen the filing once the dashboard is on the page, as a filer does; they measure listener duplication, not the race. |
+| The startup timer | The monolith's load-time `setTimeout(()=>{linkLabelsToInputs()},0)` would run a wrapper before the bridge answers; `main.js` calls `linkLabelsToInputs()` before `termsAcceptanceReady`, and `legacy-bridge.spec.js` fails on any top-level statement naming a wrapper. Red first: a top-level timer calling `updateNavDots()` failed it. |
+| Names | `validatorFnName(engine)` in `filing-descriptor.js` (the audit resolves `window[validatorFnName(e)]`); `sectionKeyPrefix()` in `section-guidance-policy.js`, whose `window` publication went (its reader, the sidebar marks, imports it); `completion.js` imports `errorRoute()`. |
+| Types | `form-runtime.js`, `nav-marks.js`, `print-pager.js` and `section-status.js` carry `@ts-nocheck` with the reason (in the checked program only transitively, moved as text); `monolith.js`'s Proxy is typed. |
+| Tests converted | `form-fields-legacy-delegation` (imports `field-html.js`), `part-xi-remuneration`, `yes-no-radio-migration`, `user-guide-drift-guard`, `validation-adapter`, `form-write-side-effects` (`nav-marks.js` mocked with a recorder; five `boundPath()` checks now), `form-contract`, `output-revision-wiring`, `completion-parity`, `filing-type-enumeration-guard` (`error-route.js`'s `PLAN_SECTION_ROUTES` exception), `section-guidance-policy` (its check of the dropped publication went, recorded in the assertion counts). `ms70-e2e-global-inventory.spec.js`'s four tests take the repo's 60 s allowance (one timed out under load), and the browser inventory's platform list gains `setInterval`/`clearInterval` beside `setTimeout`/`clearTimeout`. |
+| Ratchet | `classicDeclarations` 419 to 329, `windowWrites` 287 to 268, `windowReads` 467 to 317, `evalTimeWindowDestructures` 137 to 58, `bareCrossBoundary` 48 to 46; the monolith's bare case-state accesses 229 to 151. Grown, carried with the moved code and recorded here with their removal: `src/core/status/nav-marks.js`'s seven validator reads (`window[validatorFnName(engine)]`, exactly as the monolith's `pageCompleteness()` read them; the feature context hands each form's validator in, 70K) and `src/core/ui/print-pager.js::isHelpPanelOpen` (70A's finding: nothing defines it, so Preview & Export's help button can say "closed" while the panel is open; the help panel's shell controller, 70H). |
+| Findings | (1) The late blur into a newly opened filing, above; on `master` too. (2) `getSupplementalPdfTools()` moved with `import('./src/core/pdf/supplemental-pdf.js')`, a path the monolith resolved against the page and a module resolves against itself (`src/core/filing/src/core/pdf/...`); `tests/unit/schedule-docs.spec.js`, red first on that path. (3) `validation-adapter.spec.js`'s fallback test pinned a route the app never used -- a bare "Signatures", which the fallback sent to `/d1` and `errorRoute()` sends to a Plan's signature page; every real caller passes a filing type, so the test uses a label `errorRoute()` cannot place. (4) The startup timer, above. (5) The mount race, above: found by this delivery's own gate, a recorded limitation (Milestone 12) a filer could meet -- left for 70K. |
+
+**Gate run.** The full `npm test` on this tree, 2026-09-26: unit 2003/2003 (149 files); browser 908 passed, 7 skipped, 0 failed (1.3 h, source profile, chromium) -- 915 tests: 70E's 903 and the twelve of `form-runtime-lifecycle.contract.spec.ts`. `check:types` clean. Two earlier runs did not pass: the first failed three of the contract spec's mount rounds on the mount race (left for 70K, above); the second, with a bridge-only fix for that race, failed the load-failure panel and two dashboard specs and was stopped -- the fix was taken out and the rounds wait for the dashboard.
 
 ---
 

@@ -7,6 +7,9 @@ import { decorateTestSystemTitles } from '../ui/test-system-title.js';
 import { ic } from '../ui/icons.js';
 import { pruneBlankCards } from '../form/prune-cards.js';
 import { formEngine } from '../filing/filing-registry.js';
+import { linkLabelsToInputs, setupAmountFieldValidation } from '../form/form-runtime.js';
+import { resetNavSectionExpanded, updateNavDots } from '../status/nav-marks.js';
+import { initPrintPager } from '../ui/print-pager.js';
 
 let _currentPage = '/dashboard';
 
@@ -65,7 +68,7 @@ export async function navigate(page, { updateHash = true } = {}) {
       // legacy-app.js because it owns the `let` behind it; it used to run from
       // that file's own navigate(), which this function's window.navigate
       // assignment silently replaced.
-      window.resetNavSectionExpanded?.();
+      resetNavSectionExpanded?.();
       window.commitPendingFieldValues?.();
       // Milestone 44C: leaving Preview forgets the readiness card's hand
       // toggle, so the next entry recomputes its default; a same-route
@@ -125,7 +128,7 @@ export async function renderPage(page) {
         if (typeof window.pageInventorySelector === 'function') {
           el.innerHTML = window.pageInventorySelector();
         }
-        if (typeof window.linkLabelsToInputs === 'function') window.linkLabelsToInputs();
+        linkLabelsToInputs();
       }
       return;
     }
@@ -143,7 +146,7 @@ export async function renderPage(page) {
       if (typeof window.pageInventorySelector === 'function') {
         el.innerHTML = window.pageInventorySelector();
       }
-      if (typeof window.linkLabelsToInputs === 'function') window.linkLabelsToInputs();
+      linkLabelsToInputs();
     }
     return;
   }
@@ -177,7 +180,7 @@ export async function renderPage(page) {
       if (typeof window.pageInventorySelector === 'function') {
         el.innerHTML = window.pageInventorySelector();
       }
-      if (typeof window.linkLabelsToInputs === 'function') window.linkLabelsToInputs();
+      linkLabelsToInputs();
     }
     return;
   }
@@ -193,12 +196,12 @@ export async function renderPage(page) {
     if (page === '/' && activeWard && activeWard.archived && typeof window.renderClosedFilingSyncNotice === 'function') {
       window.renderClosedFilingSyncNotice(el, activeWard);
     }
-    if (typeof window.linkLabelsToInputs === 'function') window.linkLabelsToInputs();
+    linkLabelsToInputs();
     // Milestone 40C-C removed the `enforceDateRanges()` window-global; date-range
     // order is reported by checkDateOrder() in each validator, not wired onto the inputs.
-    if (typeof window.setupAmountFieldValidation === 'function') window.setupAmountFieldValidation();
-    if (typeof window.updateNavDots === 'function') window.updateNavDots();
-    if (typeof window.initPrintPager === 'function') window.initPrintPager();
+    setupAmountFieldValidation();
+    updateNavDots();
+    initPrintPager();
     attachFormHeaderActions(el);
   }
 }

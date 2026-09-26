@@ -44,6 +44,10 @@ import { calcTotals } from './totals.js';
 import { guardianHasAnyData } from '../../core/validation/row-started.js';
 import { simplifiedCompletion } from '../../core/status/completion.js';
 import { getD } from '../../core/state.js';
+import { browserRecommendationNotice, linkAccordions, sanitizeNegativeAmounts } from '../../core/form/form-runtime.js';
+import { renderScheduleDocsSection } from '../../core/filing/schedule-docs.js';
+import { countyInputS, inpS, pageIntroRow, pageNavS, yesNoCheckboxS } from '../../core/form/field-html.js';
+import { setPath } from '../../core/form/paths.js';
 // Milestone 57B: carried verbatim from MILESTONE-57-PROPOSAL.md section 57B.
 // The wording is load bearing (section 8 #8). Do not paraphrase or re-voice it.
 const ATTESTATION_57B = 'No recipients are required for this certificate (filer attestation - app does not determine legal necessity)';
@@ -73,10 +77,10 @@ const RECIPIENT_STARTED_FIELDS = ['name', 'line2', 'line3', 'line4'];
 // dashboard while this module stays lazy.
 const {
   tooltip, autoSave, navigate,
-  sanitizeNegativeAmounts,
-  renderScheduleDocsSection, browserRecommendationNotice, pageIntroRow,
-  linkAccordions,
-  yesNoCheckboxS, inpS, countyInputS, pageNavS,
+  
+  
+  
+  
 } = window;
 
 // print.js/excel.js are dynamically imported once, together, the first time
@@ -220,7 +224,7 @@ export async function mount(container, page) {
   signatureHandles.delete(container);
   if (page === '/p4' || page === '/p5' || page === '/p6') {
     signatureHandles.set(container, mountSignatureStateControls(container, {
-      setImage: (imagePath, dataUrl) => window.setPath(getD(), imagePath, dataUrl),
+      setImage: (imagePath, dataUrl) => setPath(getD(), imagePath, dataUrl),
       route: page,
     }));
   }

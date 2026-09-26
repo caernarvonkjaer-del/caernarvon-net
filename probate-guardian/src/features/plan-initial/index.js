@@ -56,6 +56,9 @@ import { INITIAL_ADLS, INITIAL_ADL_RATINGS } from '../../core/filing/models/plan
 import { normalizePlanGuardians } from '../../core/filing/models/plan-rows.js';
 import { planInitialCompletion } from '../../core/status/completion.js';
 import { getD } from '../../core/state.js';
+import { chkP, inpS, pageNavS, planCheckGroup, planQ, radioP, txtP, yesNoCheckboxS } from '../../core/form/field-html.js';
+import { renderScheduleDocsSection } from '../../core/filing/schedule-docs.js';
+import { setPath } from '../../core/form/paths.js';
 // Initial Guardianship Plan — the fourth feature extraction (Milestone 5,
 // Phases A and B of INDEX-SPLIT-PLAN.md's migration sequence: data/
 // validation/pages/nav, and print/PDF export). Dynamically imported by
@@ -87,11 +90,6 @@ import { getD } from '../../core/state.js';
 // and plan-minor never got that pass, which is why they still carried them.
 // See plan-annual/index.js's Milestone 51C note for why toggleSsnReveal is
 // never needed in a feature module's scope.
-const {
-  inpS, radioP, pageNavS,
-  renderScheduleDocsSection, txtP, chkP, planQ, planCheckGroup, yesNoCheckboxS,
-  
-} = window;
 
 // Milestone 39-C: see plan-annual/index.js's identical comment.
 const signatureHandles = new WeakMap();
@@ -194,7 +192,7 @@ export async function mount(container, page) {
   signatureHandles.delete(container);
   if (page === '/p9' || page === '/p10' || page === '/p11') {
     signatureHandles.set(container, mountSignatureStateControls(container, {
-      setImage: (imagePath, dataUrl) => window.setPath(getD(), imagePath, dataUrl),
+      setImage: (imagePath, dataUrl) => setPath(getD(), imagePath, dataUrl),
       route: page,
     }));
   }

@@ -91,6 +91,14 @@ export function mountFeatureFnName(engineId) {
   return `mount${engineId.charAt(0).toUpperCase()}${engineId.slice(1)}Feature`;
 }
 
+// Each engine's export validator, by the same convention: its feature
+// publishes validate<Engine>() once it loads (validateGuardian(),
+// validatePlanMinor(), ...). Milestone 70's 70F: the sidebar's per-page
+// explanation dispatches through this instead of listing the filing types.
+export function validatorFnName(engineId) {
+  return `validate${engineId.charAt(0).toUpperCase()}${engineId.slice(1)}`;
+}
+
 // Which existing filings may be a CONVERSION target for `srcType` -- e.g.
 // annual <-> planAnnual, but never planMinor (no Accounting counterpart) or
 // a cross-family pair (guardian -> planAnnual). Deliberately narrower than

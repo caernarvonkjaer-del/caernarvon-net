@@ -29,6 +29,7 @@ import { prepareFilingOutput } from '../filing/output-preflight.js';
 import { acknowledgeOutstandingRequirements, authorizeFilingOutput, beginFreshPreview } from '../filing/output-authorization.js';
 import { adaptValidationErrors } from '../validation/validation-adapter.js';
 import { alertModal, confirmModal } from '../ui/dialogs.js';
+import { initPrintPager } from '../ui/print-pager.js';
 
 // Milestone 39-A: base64 round-trip for a persisted annotated PDF
 // (D.printAnnotations.pdfBytes). Chunked to avoid a call-stack overflow from
@@ -262,7 +263,7 @@ function refreshPreviewPager() {
   // The router attempts pager initialization before the asynchronous PDF is
   // available. Refresh only after pdf.js has rendered the finalized bytes so
   // its page count is the same count the user will save or print.
-  if (typeof window.initPrintPager === 'function') window.initPrintPager({ refresh: true });
+  initPrintPager({ refresh: true });
 }
 
 // buildModel(D) must be the exact same model builder doSavePdf() for that

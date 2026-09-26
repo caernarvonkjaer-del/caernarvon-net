@@ -21,9 +21,11 @@ import { renderReadinessCard } from '../../core/filing/readiness-card.js';
 import { alertModal } from '../../core/ui/dialogs.js';
 import { beginExport } from '../../core/ui/export-guard.js';
 import { getD } from '../../core/state.js';
+import { highlightErrors, validationPanel } from '../../core/validation/validation-panel.js';
+import { queueAllScheduleDocValidations } from '../../core/filing/schedule-docs.js';
 
 const {
-  highlightErrors, validationPanel,
+  
   renderPage,
 } = window;
 
@@ -31,7 +33,7 @@ const {
 // src/core/filing/readiness-config.js (getFilingReadiness('planMinor')),
 // rendered by the shared readiness card below.
 export function pagePrintPlanMinor(){
-  window.queueAllScheduleDocValidations?.();
+  queueAllScheduleDocValidations?.();
   const baseIssues=()=>[...validatePlanMinor(), ...getSupplementalFilingIssues(getD())];
   const preflight=prepareFilingOutput(getD(),baseIssues);
   const errors=preflight.messages;

@@ -10,6 +10,7 @@
 // form-events.js calls applyExclusiveChoice() after the changed box has been
 // written, before any route re-render: ticking "None" clears every member
 // (DOM and model); ticking a member clears "None". Unticking clears nothing.
+import { setPath } from './paths.js';
 export function applyExclusiveChoice(filing, control, root) {
   const group = control?.dataset?.exclusiveGroup;
   if (!group || !control.checked) return [];
@@ -22,8 +23,8 @@ export function applyExclusiveChoice(filing, control, root) {
     if ((el.dataset.exclusiveRole || 'member') === role) return;
     el.checked = false;
     const path = el.dataset.formPath;
-    if (path && filing && typeof window !== 'undefined' && typeof window.setPath === 'function') {
-      window.setPath(filing, path, false);
+    if (path && filing && typeof window !== 'undefined') {
+      setPath(filing, path, false);
       cleared.push(path);
     }
   });

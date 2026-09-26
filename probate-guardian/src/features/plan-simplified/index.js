@@ -30,6 +30,9 @@ import { formatDisplayDate } from '../../core/form/date-parser.js';
 import { normalizePlanGuardians } from '../../core/filing/models/plan-rows.js';
 import { planSimplifiedCompletion } from '../../core/status/completion.js';
 import { getD } from '../../core/state.js';
+import { chkP, inpS, pageNavS, txtP, yesNoCheckboxS } from '../../core/form/field-html.js';
+import { renderScheduleDocsSection } from '../../core/filing/schedule-docs.js';
+import { setPath } from '../../core/form/paths.js';
 // Simplified Annual Plan — the second feature extraction (Milestone 3,
 // Phase B/C of INDEX-SPLIT-PLAN.md's migration sequence). Dynamically
 // imported by legacy-app.js's mountPlanSimplifiedFeature()/
@@ -53,10 +56,6 @@ import { getD } from '../../core/state.js';
 // formatters automatically from each field's inferred kind.
 // Milestone 51C: `countyInputS` dropped for the same reason -- destructured
 // here but never called. Of the four Plan types only plan-minor still calls it.
-const {
-  inpS, pageNavS,
-  renderScheduleDocsSection, txtP, chkP, yesNoCheckboxS,
-} = window;
 
 // print.js is dynamically imported only when the user reaches /print or
 // triggers PDF export (Milestone 3, Phase C) -- same lazy boundary as
@@ -129,7 +128,7 @@ export async function mount(container, page) {
       // already-fully-resolved image path (it may be a flat scalar path
       // like `attorney_signatureImage` for other roles, not always
       // `${cardId}.signatureImage`) -- write it directly, no concatenation.
-      setImage: (imagePath, dataUrl) => window.setPath(getD(), imagePath, dataUrl),
+      setImage: (imagePath, dataUrl) => setPath(getD(), imagePath, dataUrl),
       route: page,
     }));
   }

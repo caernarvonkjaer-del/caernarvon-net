@@ -414,12 +414,3 @@ export function renderCheckboxField({
     <label class="form-check-label" for="${checkboxId}">${label}</label>
   </div>`;
 }
-
-if (typeof window !== 'undefined') {
-  window.renderFormField = renderFormField;
-  window.renderSelectField = renderSelectField;
-  window.renderTextareaField = renderTextareaField;
-  window.renderYesNoField = renderYesNoField;
-  window.renderRadioGroupField = renderRadioGroupField;
-  window.renderCheckboxField = renderCheckboxField;
-}

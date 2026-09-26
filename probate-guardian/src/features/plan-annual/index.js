@@ -34,6 +34,9 @@ import { PLAN_ADLS, PLAN_ADL_RATINGS, PLAN_BENEFITS, PLAN_RIGHTS, PLAN_RIGHT_STA
 import { normalizePlanGuardians } from '../../core/filing/models/plan-rows.js';
 import { planAnnualCompletion } from '../../core/status/completion.js';
 import { getD } from '../../core/state.js';
+import { chkP, inpS, pageNavS, planCheckGroup, planQ, txtP, yesNoCheckboxS, yesNoRadioHTML } from '../../core/form/field-html.js';
+import { renderScheduleDocsSection } from '../../core/filing/schedule-docs.js';
+import { setPath } from '../../core/form/paths.js';
 // Annual Guardianship Plan — the third feature extraction (Milestone 4,
 // Phases A and B of INDEX-SPLIT-PLAN.md's migration sequence). Dynamically
 // imported by legacy-app.js's mountPlanAnnualFeature()/mountPlanAnnualNav()
@@ -65,14 +68,9 @@ import { getD } from '../../core/state.js';
 //
 // `toggleSsnReveal` in particular was destructured but never called in FIVE
 // feature modules. Its only real call site is the delegated handler in
-// src/form-events.js ('toggle-ssn'), which reaches window.toggleSsnReveal
-// directly; a feature module never needs it in scope. Plan Minor is the one
+// src/form-events.js ('toggle-ssn'), which imports it from
+// src/core/form/form-runtime.js; a feature module never needs it in scope. Plan Minor is the one
 // Plan type that does still call countyInputS (index.js:190), so it keeps it.
-const {
-  inpS, pageNavS,
-  renderScheduleDocsSection, txtP, chkP, planQ, planCheckGroup, yesNoCheckboxS, yesNoRadioHTML,
-  
-} = window;
 
 // print.js is dynamically imported only when the user reaches /print or
 // triggers PDF export (Milestone 4, Phase B) -- same lazy boundary as the
@@ -137,7 +135,7 @@ export async function mount(container, page) {
   signatureHandles.delete(container);
   if (page === '/p11' || page === '/p12') {
     signatureHandles.set(container, mountSignatureStateControls(container, {
-      setImage: (imagePath, dataUrl) => window.setPath(getD(), imagePath, dataUrl),
+      setImage: (imagePath, dataUrl) => setPath(getD(), imagePath, dataUrl),
       route: page,
     }));
   }

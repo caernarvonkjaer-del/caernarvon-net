@@ -12,9 +12,10 @@
 //
 // County has no Tier 1 primitive (it's a specialized autocomplete widget,
 // out of Milestone 41-1's stated scope) -- reused here via the existing
-// window.countyInputS() global, same as every other filing type already
+// countyInputS() (src/core/form/field-html.js), as every other filing type
 // does, rather than inventing a new Tier 1 shape for it.
 import { renderFormField } from '../form-fields.js';
+import { countyInputS } from '../field-html.js';
 
 export function renderCaseCaptionFields({
   caseNumber = '',
@@ -25,7 +26,6 @@ export function renderCaseCaptionFields({
   caseNumberRequired = true,
   countyRequired = true,
 } = {}) {
-  const countyInputS = typeof window !== 'undefined' ? window.countyInputS : null;
   return `<div class="col-md-6">${renderFormField({ path: 'caseNumber', label: 'Case Number', value: caseNumber, required: caseNumberRequired, id: 'caseNumber' })}</div>
     <div class="col-md-6">${countyInputS('county', 'County', county, countyRequired)}</div>${ucn === undefined ? '' : `
     <div class="col-md-6">${renderFormField({ path: 'ucn', label: 'UCN', value: ucn, required: false, id: 'ucn' })}</div>`}`;

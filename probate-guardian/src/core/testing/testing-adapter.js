@@ -30,6 +30,7 @@ import {
   PLAN_RIGHTS, PLAN_RIGHT_STATES, PLAN_ADLS, PLAN_ADL_RATINGS, PLAN_BENEFITS, emptyPlanDirective,
 } from '../filing/models/plan-annual.js';
 import { INITIAL_ADLS, INITIAL_ADL_RATINGS } from '../filing/models/plan-initial.js';
+import { updateNavDots } from '../status/nav-marks.js';
 
 export const TEST_MODE_FLAG = '__GUARDIAN_FORMS_TEST_MODE__';
 
@@ -279,7 +280,7 @@ export function createTestingAdapter(w) {
     }),
     /** Appends an Activity Log entry (auditLog()). */
     recordActivity: (type, details, success = true, filingId = null) => call('auditLog', type, details, success, filingId),
-    refreshStatus() { call('updateNavDots'); call('updateSidebar'); },
+    refreshStatus() { updateNavDots(); call('updateSidebar'); },
 
     // ── Queries (copies) ────────────────────────────────────────────────────
     /** The case and the open filing, as copies. */

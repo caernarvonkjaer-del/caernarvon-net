@@ -46,6 +46,11 @@ const PREFIX = {
   planSimplified: 'ps-',
 };
 
+/** A type's sidebar key prefix ('' for the Initial Inventory, whose keys are bare, and for an unknown type). */
+export function sectionKeyPrefix(type) {
+  return PREFIX[type] || '';
+}
+
 // Annual's Cover page is labelled "Part I", not "Cover", so computeNavChecks()
 // stores it as 'a-p1'. Without this override the lookup for these three types'
 // Cover route always misses and reports the Cover complete however many required
@@ -190,8 +195,4 @@ export function sidebarOnlyWants(type, route, data) {
     ].filter(([key]) => blank(d[key])).map(([path, label]) => ({ label, path }));
   }
   return [];
-}
-
-if (typeof window !== 'undefined') {
-  window.sectionGuidancePolicy = { sectionCheckKey, isSectionIncomplete, blocksNext, guidanceAdvice, pageAlsoOwns, sidebarOnlyWants };
 }

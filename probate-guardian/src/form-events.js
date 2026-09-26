@@ -1,5 +1,4 @@
-import * as SupplementalPdf from './core/pdf/supplemental-pdf.js';
-import { writeDraftValue, finalizeFieldValue } from './core/form/form-contract.js';
+import { bindFieldToFiling, finalizeFieldValue, writeDraftValue } from './core/form/form-contract.js';
 import { focusFieldByPath } from './core/validation/validation-adapter.js';
 import { claimPreparer, PREPARER_FLAG_CHANGE } from './core/form/preparer-flag.js';
 import { applyExclusiveChoice } from './core/form/exclusive-none.js';
@@ -9,8 +8,12 @@ import './core/form/form-fields.js';
 import './core/form/schedule-definitions.js';
 import { emptyPlanDirective } from './core/filing/models/plan-annual.js';
 import { getD } from './core/state.js';
-
-window.PGSupplementalPdf = SupplementalPdf;
+import { addPlanGuardian, addPlanRow, duplicatePlanRow, removePlanGuardian, removePlanRow } from './core/form/plan-row-actions.js';
+import { pvSelect, pvStep } from './core/ui/print-pager.js';
+import { handleScheduleDocUpload, removeScheduleDoc, updateScheduleComment } from './core/filing/schedule-docs.js';
+import { toggleSsnReveal } from './core/form/form-runtime.js';
+import { filterCountyDropdown, hideCountyDropdown, onCountyKeydown, selectCountyOption } from './core/form/county-autocomplete.js';
+import { navigate, renderPage } from './core/navigation/router.js';
 
 // The data-form-path and data-annual-path write path is writeDraftValue() on
 // input/compositionend and finalizeFieldValue() on blur/change, wired by the
@@ -37,10 +40,10 @@ document.addEventListener('click', (event) => {
     // match and gets mistaken for the target -- confirmed live before this
     // fix (the button received focus instead of navigating anywhere).
     case 'jump-to-field': focusFieldByPath(actionElement.dataset.route, actionElement.dataset.jumpPath || actionElement.dataset.fieldPath); break;
-    case 'add-plan-row': window.addPlanRow(actionElement.dataset.collection, actionElement.dataset.rowType, actionElement.dataset.route); break;
-    case 'add-plan-guardian': window.addPlanGuardian(actionElement.dataset.route); break;
-    case 'remove-plan-guardian': window.removePlanGuardian(Number.parseInt(actionElement.dataset.index, 10), actionElement.dataset.route); break;
-    case 'duplicate-plan-row': window.duplicatePlanRow(actionElement.dataset.collection, Number.parseInt(actionElement.dataset.index, 10), actionElement.dataset.route); break;
+    case 'add-plan-row': addPlanRow(actionElement.dataset.collection, actionElement.dataset.rowType, actionElement.dataset.route); break;
+    case 'add-plan-guardian': addPlanGuardian(actionElement.dataset.route); break;
+    case 'remove-plan-guardian': removePlanGuardian(Number.parseInt(actionElement.dataset.index, 10), actionElement.dataset.route); break;
+    case 'duplicate-plan-row': duplicatePlanRow(actionElement.dataset.collection, Number.parseInt(actionElement.dataset.index, 10), actionElement.dataset.route); break;
     case 'add-ward-type': window.showAddWardModalForType(actionElement.dataset.inventoryType); break;
     case 'choose-schedule-docs': document.getElementById(actionElement.dataset.inputId)?.click(); break;
     case 'confirm-delete-ward-year': window.confirmDeleteWardYear(actionElement.dataset.wardId, actionElement.dataset.yearKey); break;
@@ -58,7 +61,7 @@ document.addEventListener('click', (event) => {
     // appeared to navigate, then silently bounced back to the cover a beat
     // later. Every other data-form-action target is a real <button>, which
     // has no default action to prevent.
-    case 'navigate': event.preventDefault(); window.navigate(actionElement.dataset.route); break;
+    case 'navigate': event.preventDefault(); navigate(actionElement.dataset.route); break;
     case 'open-court-portal': window.openFloridaCourtPortal(); break;
     case 'party-clear-compare': window.clearPartyCompareSelection(); break;
     // The two checkbox actions read the box's own state: a click on a checkbox
@@ -71,13 +74,13 @@ document.addEventListener('click', (event) => {
     case 'party-unmerge-selected': window.doPartyUnmergeSelected(); break;
     case 'party-unmerge-toggle': window.togglePartyUnmergeSelection(actionElement.dataset.partyId, actionElement.checked); break;
     case 'print': window.printCurrentFilingPdf(); break;
-    case 'remove-plan-row': window.removePlanRow(actionElement.dataset.collection, Number.parseInt(actionElement.dataset.index, 10), actionElement.dataset.route); break;
+    case 'remove-plan-row': removePlanRow(actionElement.dataset.collection, Number.parseInt(actionElement.dataset.index, 10), actionElement.dataset.route); break;
     case 'save-pdf-plan-annual': window.doSavePdfPlanAnnual(); break;
     case 'save-pdf-plan-initial': window.doSavePdfPlanInitial(); break;
     case 'save-pdf-plan-minor': window.doSavePdfPlanMinor(); break;
-    case 'preview-step': window.pvStep(Number.parseInt(actionElement.dataset.step, 10)); break;
-    case 'remove-schedule-doc': window.removeScheduleDoc(actionElement.dataset.scheduleKey, Number.parseInt(actionElement.dataset.documentIndex, 10)); break;
-    case 'toggle-ssn': window.toggleSsnReveal(actionElement); break;
+    case 'preview-step': pvStep(Number.parseInt(actionElement.dataset.step, 10)); break;
+    case 'remove-schedule-doc': removeScheduleDoc(actionElement.dataset.scheduleKey, Number.parseInt(actionElement.dataset.documentIndex, 10)); break;
+    case 'toggle-ssn': toggleSsnReveal(actionElement); break;
   }
 });
 
@@ -87,10 +90,10 @@ document.addEventListener('input', (event) => {
   if (boundPath(control)) {
     writeDraftValue(control, { event });
   }
-  if (control.dataset.formControl === 'county') window.filterCountyDropdown(control);
+  if (control.dataset.formControl === 'county') filterCountyDropdown(control);
   if (control.dataset.formInput === 'activity-log') window.renderActivityLogList();
   if (control.dataset.formInput === 'party-directory') window.renderPartyDirectoryRows();
-  if (control.dataset.formInput === 'schedule-comment') window.updateScheduleComment(control.dataset.scheduleKey, control.value);
+  if (control.dataset.formInput === 'schedule-comment') updateScheduleComment(control.dataset.scheduleKey, control.value);
 });
 
 document.addEventListener('compositionend', (event) => {
@@ -130,14 +133,14 @@ document.addEventListener('change', (event) => {
     if (control instanceof HTMLInputElement && control.type === 'checkbox' && control.dataset.exclusiveGroup && getD()) {
       applyExclusiveChoice(getD(), control);
     }
-    if (control.dataset.formRoute && window.renderPage) {
-      window.renderPage(control.dataset.formRoute);
+    if (control.dataset.formRoute && renderPage) {
+      renderPage(control.dataset.formRoute);
     }
   }
-  if (control instanceof HTMLSelectElement && control.dataset.formChange === 'preview-page') window.pvSelect(control.value);
+  if (control instanceof HTMLSelectElement && control.dataset.formChange === 'preview-page') pvSelect(control.value);
   if (control instanceof HTMLSelectElement && control.dataset.formChange === 'activity-log') window.renderActivityLogList();
   if (control instanceof HTMLInputElement && control.dataset.formChange === 'schedule-doc-upload' && control.files) {
-    window.handleScheduleDocUpload(control.dataset.scheduleKey, control.files);
+    handleScheduleDocUpload(control.dataset.scheduleKey, control.files);
     control.value = '';
   }
   if (control instanceof HTMLSelectElement && boundPath(control)) {
@@ -147,15 +150,19 @@ document.addEventListener('change', (event) => {
 });
 
 document.addEventListener('focusin', (event) => {
-  if (event.target instanceof HTMLInputElement && event.target.dataset.formControl === 'county') {
-    window.filterCountyDropdown(event.target);
+  const control = event.target;
+  if ((control instanceof HTMLInputElement || control instanceof HTMLTextAreaElement || control instanceof HTMLSelectElement) && boundPath(control)) {
+    bindFieldToFiling(control);
+  }
+  if (control instanceof HTMLInputElement && control.dataset.formControl === 'county') {
+    filterCountyDropdown(control);
   }
 });
 
 document.addEventListener('focusout', (event) => {
   const control = event.target;
   if (!(control instanceof HTMLInputElement || control instanceof HTMLTextAreaElement)) return;
-  if (control.dataset.formControl === 'county') setTimeout(() => window.hideCountyDropdown(control.id), 150);
+  if (control.dataset.formControl === 'county') setTimeout(() => hideCountyDropdown(control.id), 150);
   if (boundPath(control)) {
     finalizeFieldValue(control, { event });
   }
@@ -167,7 +174,7 @@ document.addEventListener('focusout', (event) => {
 // way to set a county without a mouse at all.
 document.addEventListener('keydown', (event) => {
   if (event.target instanceof HTMLInputElement && event.target.dataset.formControl === 'county') {
-    window.onCountyKeydown(event.target, event);
+    onCountyKeydown(event.target, event);
   }
 });
 
@@ -175,7 +182,7 @@ document.addEventListener('mousedown', (event) => {
   const option = event.target instanceof Element ? event.target.closest('[data-form-mousedown="select-county"]') : null;
   if (!option) return;
   event.preventDefault();
-  window.selectCountyOption(option.dataset.inputId, option.dataset.county);
+  selectCountyOption(option.dataset.inputId, option.dataset.county);
 });
 
 // Milestone 50H: a plain click alongside the mousedown handler above.
@@ -190,7 +197,7 @@ document.addEventListener('mousedown', (event) => {
 document.addEventListener('click', (event) => {
   const option = event.target instanceof Element ? event.target.closest('[data-form-mousedown="select-county"]') : null;
   if (!option) return;
-  window.selectCountyOption(option.dataset.inputId, option.dataset.county);
+  selectCountyOption(option.dataset.inputId, option.dataset.county);
 });
 
 document.addEventListener('keydown', (event) => {

@@ -69,6 +69,12 @@ import { guardianHasAnyData } from '../../core/validation/row-started.js';
 import { formDisplayName } from '../../core/filing/filing-registry.js';
 import { annualCompletion } from '../../core/status/completion.js';
 import { getD } from '../../core/state.js';
+import { updateNavDots } from '../../core/status/nav-marks.js';
+import { renderScheduleDocsSection } from '../../core/filing/schedule-docs.js';
+import { pageIntroRow, yesNoCheckboxD, yesNoRadioAnnualHTML } from '../../core/form/field-html.js';
+import { browserRecommendationNotice, linkAccordions, sanitizeNegativeAmounts } from '../../core/form/form-runtime.js';
+import { countyAutocompleteHTML } from '../../core/form/county-autocomplete.js';
+import { setPath } from '../../core/form/paths.js';
 // Annual Accounting — the sixth feature extraction (Milestone 7, Phases A
 // and B of INDEX-SPLIT-PLAN.md's migration sequence: data/pages/nav/
 // validate, and print/PDF/Excel import/export). Also covers the
@@ -96,12 +102,12 @@ import { getD } from '../../core/state.js';
 // validation helpers were in that group until Milestone 70's 70B moved them
 // into core modules; they are imported above.)
 const {
-  autoSave, navigate, updateNavDots, renderScheduleDocsSection,
-  pageIntroRow, browserRecommendationNotice, linkAccordions,
+  autoSave, navigate, 
+  
   // Milestone 51C dropped `toggleSsnReveal` from this list -- destructured but
   // never called here. Its only call site is the delegated 'toggle-ssn' handler
-  // in src/form-events.js, which uses window.toggleSsnReveal directly.
-  tooltip, countyAutocompleteHTML, yesNoCheckboxD, yesNoRadioAnnualHTML,
+  // in src/form-events.js, which imports it (src/core/form/form-runtime.js).
+  tooltip, 
   syncActiveWardNameDisplay, syncGuardianNameDisplay,
   calcTotalsAnnual, annualReconcileState, n, pct,
 } = window;
@@ -130,7 +136,7 @@ function ensureLazyModules() {
 
 export async function mount(container, page) {
   await ensureLazyModules();
-  window.sanitizeNegativeAmounts();
+  sanitizeNegativeAmounts();
   // Milestone 67B: a filing saved before the four-state bond question reads
   // back with the state its old fields implied, and the retired
   // restrictedDepository tri-state is dropped. Idempotent.
@@ -177,7 +183,7 @@ export async function mount(container, page) {
   signatureHandles.delete(container);
   if (page === '/p3' || page === '/p4' || page === '/p5' || page === '/p10') {
     signatureHandles.set(container, mountSignatureStateControls(container, {
-      setImage: (imagePath, dataUrl) => window.setPath(getD(), imagePath, dataUrl),
+      setImage: (imagePath, dataUrl) => setPath(getD(), imagePath, dataUrl),
       route: page,
     }));
   }

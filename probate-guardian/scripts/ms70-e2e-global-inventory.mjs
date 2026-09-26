@@ -30,7 +30,7 @@ const MUTATORS = new Set(['push', 'pop', 'shift', 'unshift', 'splice', 'sort', '
 const PLATFORM = new Set(['location', 'document', 'navigator', 'localStorage', 'sessionStorage', 'indexedDB',
   'getComputedStyle', 'matchMedia', 'scrollY', 'scrollX', 'scrollTo', 'innerWidth', 'innerHeight', 'print',
   'open', 'close', 'addEventListener', 'removeEventListener', 'dispatchEvent', 'history', 'crypto', 'performance',
-  'setTimeout', 'clearTimeout', 'requestAnimationFrame', 'getSelection', 'isSecureContext', 'showSaveFilePicker',
+  'setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'requestAnimationFrame', 'getSelection', 'isSecureContext', 'showSaveFilePicker',
   'showOpenFilePicker', 'caches', 'devicePixelRatio', 'screen', 'visualViewport', 'origin', 'name', 'focus', 'blur',
   'JSZip', 'ExcelJS', 'pdfjsLib', 'PDFLib', 'bootstrap', 'confirm', 'alert', 'prompt', 'fetch', 'URL', 'Blob']);
 

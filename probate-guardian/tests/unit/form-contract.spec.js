@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 global.window = global;
 import {
   sanitizeStoredText,
@@ -16,6 +16,11 @@ import {
   getControlPolicy,
 } from '../../src/core/form/form-contract.js';
 import { attributeBag, classListBag } from './support/dom-mocks.js';
+
+// The sidebar marks are src/core/status/nav-marks.js's since Milestone 70's 70F
+// (the tail called window.updateNavDots?.(), which Node did not have); they
+// need a page, so this suite stands them in.
+vi.mock('../../src/core/status/nav-marks.js', () => ({ updateNavDots: () => {} }));
 
 function createMockInput(initial = {}) {
   return {

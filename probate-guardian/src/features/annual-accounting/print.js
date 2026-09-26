@@ -24,6 +24,9 @@ import { alertModal } from '../../core/ui/dialogs.js';
 import { beginExport } from '../../core/ui/export-guard.js';
 import { formDisplayName } from '../../core/filing/filing-registry.js';
 import { getD } from '../../core/state.js';
+import { excelCapacityPanel } from '../../core/excel/excel-capacity.js';
+import { highlightErrors, validationPanel } from '../../core/validation/validation-panel.js';
+import { queueAllScheduleDocValidations } from '../../core/filing/schedule-docs.js';
 
 function buildModelForPreview(D){
   return buildAnnualAccountingModel(D, { printDate: new Date().toISOString().slice(0, 10) });
@@ -31,12 +34,12 @@ function buildModelForPreview(D){
 
 const {
   
-  excelCapacityPanel, highlightErrors, validationPanel,
+  
   renderPage,
 } = window;
 
 export function pagePrintAnnual(capOver){
-  window.queueAllScheduleDocValidations?.();
+  queueAllScheduleDocValidations?.();
   const baseIssues=()=>[...validateAnnual(), ...getSupplementalFilingIssues(getD())];
   const preflight=prepareFilingOutput(getD(),baseIssues);
   const errors=preflight.messages;

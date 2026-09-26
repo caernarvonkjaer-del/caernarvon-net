@@ -1,5 +1,6 @@
 import { parseFlexibleDate } from './date-parser.js';
 import { getD } from '../state.js';
+import { setPath as writePath } from './paths.js';
 
 function draftStore(data) {
   if (!data) return {};
@@ -54,7 +55,7 @@ export function getFieldDraftIssues(data) {
 
 export function commitStoredDateDrafts(data, setPath) {
   const target = activeData(data);
-  const setter = setPath || window.setPath;
+  const setter = setPath || writePath;
   const committed = [];
   for (const [path, record] of Object.entries(target.__fieldDrafts || {})) {
     if (record?.kind !== 'date') continue;
