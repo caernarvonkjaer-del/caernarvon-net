@@ -11,6 +11,9 @@ import { linkLabelsToInputs, setupAmountFieldValidation } from '../form/form-run
 import { resetNavSectionExpanded, updateNavDots } from '../status/nav-marks.js';
 import { initPrintPager } from '../ui/print-pager.js';
 import { pagePartyManagement, renderClosedFilingSyncNotice, renderPartyManagementBody } from '../parties/party-management.js';
+import { isHelpPanelOpen, updateHelpContext } from '../help/help-panel.js';
+import { pageInventorySelector } from '../shell/start-new-form.js';
+import { loadAndRenderActivityLog, pageActivityLog } from '../activity/activity-log-view.js';
 
 let _currentPage = '/dashboard';
 
@@ -118,17 +121,15 @@ export async function renderPage(page) {
   const caseFile = getCaseFile();
 
   if (page === '/dashboard') {
-    if (typeof window !== 'undefined' && typeof window.updateHelpContext === 'function') {
-      window.updateHelpContext('default');
+    if (typeof window !== 'undefined') {
+      updateHelpContext('default');
     }
     if (!caseFile.wards || caseFile.wards.length === 0) {
       setCurrentPage('/inventory-select');
       if (typeof window !== 'undefined') {
         window.location.hash = '/inventory-select';
-        if (typeof window.updateHelpContext === 'function') window.updateHelpContext('inventory-select');
-        if (typeof window.pageInventorySelector === 'function') {
-          el.innerHTML = window.pageInventorySelector();
-        }
+        updateHelpContext('inventory-select');
+        el.innerHTML = pageInventorySelector();
         linkLabelsToInputs();
       }
       return;
@@ -143,10 +144,8 @@ export async function renderPage(page) {
 
   if (page === '/inventory-select') {
     if (typeof window !== 'undefined') {
-      if (typeof window.updateHelpContext === 'function') window.updateHelpContext('inventory-select');
-      if (typeof window.pageInventorySelector === 'function') {
-        el.innerHTML = window.pageInventorySelector();
-      }
+      updateHelpContext('inventory-select');
+      el.innerHTML = pageInventorySelector();
       linkLabelsToInputs();
     }
     return;
@@ -154,16 +153,16 @@ export async function renderPage(page) {
 
   if (page === '/activity-log') {
     if (typeof window !== 'undefined') {
-      if (typeof window.updateHelpContext === 'function') window.updateHelpContext('default');
-      if (typeof window.pageActivityLog === 'function') el.innerHTML = window.pageActivityLog();
-      if (typeof window.loadAndRenderActivityLog === 'function') window.loadAndRenderActivityLog();
+      updateHelpContext('default');
+      el.innerHTML = pageActivityLog();
+      loadAndRenderActivityLog();
     }
     return;
   }
 
   if (page === '/party-management') {
     if (typeof window !== 'undefined') {
-      if (typeof window.updateHelpContext === 'function') window.updateHelpContext('default');
+      updateHelpContext('default');
       el.innerHTML = pagePartyManagement();
       renderPartyManagementBody();
     }
@@ -177,17 +176,15 @@ export async function renderPage(page) {
     setCurrentPage('/inventory-select');
     if (typeof window !== 'undefined') {
       window.location.hash = '/inventory-select';
-      if (typeof window.updateHelpContext === 'function') window.updateHelpContext('inventory-select');
-      if (typeof window.pageInventorySelector === 'function') {
-        el.innerHTML = window.pageInventorySelector();
-      }
+      updateHelpContext('inventory-select');
+      el.innerHTML = pageInventorySelector();
       linkLabelsToInputs();
     }
     return;
   }
 
   if (typeof window !== 'undefined') {
-    if (typeof window.updateHelpContext === 'function') window.updateHelpContext();
+    updateHelpContext();
 
     const engine = formEngine(activeType);
     if (FILING_ENGINE_IDS.includes(engine)) {
@@ -220,9 +217,7 @@ export function attachFormHeaderActions(container = (typeof document !== 'undefi
   if (!h1 || h1.classList.contains('visually-hidden') || h1.querySelector('.form-header-actions')) return;
 
   const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-  const helpOpen = typeof window.isHelpPanelOpen === 'function'
-    ? window.isHelpPanelOpen()
-    : (document.getElementById('help-panel')?.style.display === 'flex');
+  const helpOpen = isHelpPanelOpen();
 
   const actions = document.createElement('div');
   actions.className = 'form-header-actions';

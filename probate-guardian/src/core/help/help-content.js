@@ -1,5 +1,5 @@
-import { hasSixthCircuitLocalGuidance } from '../../core/filing/county-guidance.js';
-import { getD } from '../../core/state.js';
+import { hasSixthCircuitLocalGuidance } from '../filing/county-guidance.js';
+import { getD } from '../state.js';
 
 export const HELP_CONTENT = Object.freeze({
   'default': {
@@ -190,7 +190,3 @@ export const HELP_CONTENT = Object.freeze({
     <p>Every unlock and manual backup made on this device is recorded in the Activity Log, linked at the bottom of this help panel — useful for confirming a backup actually ran. Automatic saves are not logged.</p>`
   }
 });
-
-if (typeof window !== 'undefined') {
-  window.HELP_CONTENT = HELP_CONTENT;
-}

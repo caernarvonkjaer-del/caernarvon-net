@@ -1,3 +1,5 @@
+// @ts-nocheck -- in tsconfig.json's checked program only transitively (the Start New Form picker imports it); 
+// moved as text from legacy-app.js in Milestone 70's 70G and 70H.
 // Milestone 70, 70G: the Add Form, Simplified Accounting eligibility and
 // Delete Form dialogs -- creating a filing (with what it carries over and the
 // case it joins), the eligibility questions that decide between Simplified and
@@ -13,16 +15,19 @@ import { normalizeCountyName } from '../navigation/ward-county.js';
 import { filingLifecycle } from '../navigation/filing-lifecycle.js';
 import { monolith } from '../runtime/monolith.js';
 import { getActiveWard, getCaseFile, getD } from '../state.js';
-import { alertModal, confirmModal } from '../ui/dialogs.js';
+import { alertModal, closeModal, confirmModal, ensureFragment, showModal } from '../ui/dialogs.js';
+import { esc } from '../filing/escape-html.js';
+import { bindComboboxKeyboardNav, comboboxAssignOptionIds, comboboxFilterItems, comboboxHide, comboboxRenderDropdown } from '../ui/combobox.js';
+import { updateSidebar } from '../shell/sidebar.js';
 
 export async function showAddWardModal(){
-  await monolith.ensureFragment('common-modals');
+  await ensureFragment('common-modals');
   document.getElementById('new-ward-name').value='';
-  monolith.populateWardNameSuggestions('ward-name-suggestions');
-  monolith.initWardNameCombobox('new-ward-name','new-ward-name-dropdown',()=>updateCarrySourcePicker());
+  populateWardNameSuggestions('ward-name-suggestions');
+  initWardNameCombobox('new-ward-name','new-ward-name-dropdown',()=>updateCarrySourcePicker());
   document.getElementById('new-ward-type').value='guardian';
   updateCarrySourcePicker();
-  monolith.showModal('addWardModal');
+  showModal('addWardModal');
 }
 
 export async function doAddWard(){
@@ -43,7 +48,7 @@ export async function doAddWard(){
     }
   }
   if(type==='simplified'){
-    monolith.closeModal('addWardModal');
+    closeModal('addWardModal');
     showSimplifiedEligibilityModal(name,carrySourceId);
     return;
   }
@@ -64,10 +69,10 @@ export async function doAddWard(){
         ward.caseId=kase.id;
         await monolith.saveWardToState(ward);
         renderPage('/');
-        monolith.updateSidebar();
+        updateSidebar();
       }
     }
-    monolith.closeModal('addWardModal');
+    closeModal('addWardModal');
   }catch(e){
     console.error('Failed to add ward',e);
     await alertModal('Failed to add form. Check console.');
@@ -84,10 +89,10 @@ export function refreshEligCarrySource(){
 }
 
 export async function showSimplifiedEligibilityModal(name,carrySourceId){
-  await monolith.ensureFragment('common-modals');
+  await ensureFragment('common-modals');
   document.getElementById('elig-ward-name').value=name||'';
-  monolith.populateWardNameSuggestions('elig-ward-name-suggestions');
-  monolith.initWardNameCombobox('elig-ward-name','elig-ward-name-dropdown',()=>refreshEligCarrySource());
+  populateWardNameSuggestions('elig-ward-name-suggestions');
+  initWardNameCombobox('elig-ward-name','elig-ward-name-dropdown',()=>refreshEligCarrySource());
   document.getElementById('elig-depository').value='';
   document.getElementById('elig-only-transactions').value='';
   // Same source list the Add Ward picker uses — the matching Plan plus any
@@ -99,7 +104,7 @@ export async function showSimplifiedEligibilityModal(name,carrySourceId){
   // Accounting" card skips that modal and lands here directly) wins over
   // whatever refreshEligCarrySource() auto-selected from the name alone.
   if(carrySourceId)document.getElementById('elig-carry-source-ward').value=carrySourceId;
-  monolith.showModal('simplifiedEligibilityModal');
+  showModal('simplifiedEligibilityModal');
   document.getElementById('elig-ward-name').focus();
 }
 
@@ -155,7 +160,7 @@ export async function doConfirmSimplifiedEligibility(){
       // while carryNote (below) claims details were carried over. Mirrors
       // doAddWard()'s own render tail after its carry-over Object.assign().
       renderPage('/');
-      monolith.updateSidebar();
+      updateSidebar();
       if(carryNote)await alertModal(carryNote);
     }else{
       await filingLifecycle.create(name,'annual');
@@ -176,14 +181,14 @@ export async function doConfirmSimplifiedEligibility(){
       // Milestone 50B: same re-render this branch's own carry-over mutation
       // needs -- see the comment on the qualifying branch above.
       renderPage('/');
-      monolith.updateSidebar();
+      updateSidebar();
       // Milestone 40C-F item 4: one message, and it names what actually
       // happened to the carryover and the county rather than leaving the filer
       // to guess after the redirect.
       await alertModal('This guardianship does not qualify for the simplified form under § 744.3679, so a standard Annual Accounting was created instead.'
         +(carryNote?`\n\n${carryNote}`:''));
     }
-    monolith.closeModal('simplifiedEligibilityModal');
+    closeModal('simplifiedEligibilityModal');
   }catch(e){
     console.error('Failed to add ward',e);
     await alertModal('Failed to add form. Check console.');
@@ -199,7 +204,7 @@ export let _pendingDeleteWardId=null;
 export async function confirmDeleteWard(wardId){
   const ward=wardId?getCaseFile().wards.find(w=>w.wardId===wardId):getActiveWard();
   if(!ward)return;
-  await monolith.ensureFragment('common-modals');
+  await ensureFragment('common-modals');
   _pendingDeleteWardId=ward.wardId;
   // Milestone 58E: the message names the FILING, not just the ward. A ward
   // commonly has several open at once, and every Delete button used to raise
@@ -208,7 +213,7 @@ export async function confirmDeleteWard(wardId){
   // and this must never change WHICH filing _pendingDeleteWardId points at.
   const msg=deleteFilingConfirmation(ward);
   document.getElementById('delete-ward-msg').textContent=msg;
-  monolith.showModal('deleteWardModal');
+  showModal('deleteWardModal');
 }
 
 export async function doDeleteWard(){
@@ -216,10 +221,103 @@ export async function doDeleteWard(){
   const wasOnDashboard=monolith.getCurrentPage()==='/dashboard';
   try{
     await filingLifecycle.remove(wardId);
-    monolith.closeModal('deleteWardModal');
+    closeModal('deleteWardModal');
     if(wasOnDashboard)navigate('/dashboard');
   }catch(e){
     console.error('Failed to delete ward',e);
     await alertModal('Failed to delete form. Check console.');
   }
+}
+
+// Milestone 70, 70H: the Add Form and eligibility dialogs' ward-name field.
+// Moved from legacy-app.js's MODAL FUNCTIONS.
+// Fills a ward-name <datalist> with the distinct names already on file, so
+// typing offers them as autocomplete. A ward routinely has several forms
+// (Inventory, Annual, Plan...) under one name, hence the de-duplication —
+// and matching an existing name exactly is what groups the filings together
+// on the dashboard, so suggesting them guards against near-miss typos.
+export function populateWardNameSuggestions(datalistId){
+  const dl=document.getElementById(datalistId);
+  if(!dl)return;
+  const names=[...new Set(getCaseFile().wards.map(w=>(w.wardName||'').trim()).filter(Boolean))]
+    .sort((a,b)=>a.localeCompare(b));
+  dl.innerHTML=names.map(n=>`<option value="${esc(n)}"></option>`).join('');
+}
+
+// Ward-name combobox for "Add Ward" / eligibility name fields: typing filters
+// the existing ward names, and focusing the (still-empty) field shows all of
+// them as a dropdown — picking one, rather than retyping, is what makes a new
+// form group with an existing ward on the dashboard.
+export function wardNameComboItems(){
+  const names=[...new Set(getCaseFile().wards.map(w=>(w.wardName||'').trim()).filter(Boolean))]
+    .sort((a,b)=>a.localeCompare(b));
+  return names.map(n=>({label:n}));
+}
+
+// onPick(name) fires after every change to the field's value — a click on a
+// dropdown item, or a keystroke — so a caller can keep something else (e.g.
+// the "Load Ward Info From" picker) in sync with whatever name is now typed.
+export function initWardNameCombobox(inputId,dropdownId,onPick){
+  const input=document.getElementById(inputId);
+  const dropdown=document.getElementById(dropdownId);
+  if(!input||!dropdown||input.dataset.comboInit)return;
+  input.dataset.comboInit='1';
+  const show=()=>{
+    comboboxRenderDropdown(dropdown,comboboxFilterItems(wardNameComboItems(),input.value),item=>{
+      input.value=item.label;
+      input.dataset.comboIndex='';
+      input.removeAttribute('aria-activedescendant');
+      input.setAttribute('aria-expanded','false');
+      comboboxHide(dropdown);
+      if(onPick)onPick(input.value);
+    });
+    // Milestone 52J: option ids scoped by this combobox's own dropdown id,
+    // so aria-activedescendant has something real to point at -- ward-
+    // selector keeps its own historical ward-selector-option-N scheme
+    // (routes.spec.ts asserts that literal pattern); this one and
+    // convert-source's use the shared helper since nothing depends on
+    // their exact id strings.
+    comboboxAssignOptionIds(dropdown);
+    input.dataset.comboIndex='';
+    input.setAttribute('aria-expanded','true');
+  };
+  input.addEventListener('focus',show);
+  input.addEventListener('input',()=>{show();if(onPick)onPick(input.value);});
+  // Milestone 52J Decision 4: was Escape-only. Now gains full Up/Down/
+  // Home/End/Enter via the shared handler, matching the ward selector.
+  input.addEventListener('keydown',bindComboboxKeyboardNav(input,dropdown));
+  wardNameCombos.add({input,dropdown});
+}
+
+// The ward-name fields set up so far; a click outside one closes its list.
+const wardNameCombos=new Set();
+
+/** Close each ward-name field's list on a click outside it. Installed once by main.js; the signal removes it. */
+export function installWardNameComboboxDismiss({ signal } = {}){
+  document.addEventListener('click',e=>{
+    for(const {input,dropdown} of wardNameCombos){
+      if(!input.contains(e.target)&&!dropdown.contains(e.target)){
+        comboboxHide(dropdown);
+        input.setAttribute('aria-expanded','false');
+      }
+    }
+  },{ signal });
+}
+
+// The Add Form dialog opened for one type (the Start New Form picker's cards):
+// Simplified goes to its eligibility questions first. Moved from
+// legacy-app.js's INVENTORY TYPE SELECTOR PAGE (Milestone 70, 70H).
+export async function showAddWardModalForType(type){
+  if(type==='simplified'){
+    showSimplifiedEligibilityModal('');
+    return;
+  }
+  await ensureFragment('common-modals');
+  document.getElementById('new-ward-name').value='';
+  populateWardNameSuggestions('ward-name-suggestions');
+  initWardNameCombobox('new-ward-name','new-ward-name-dropdown',()=>updateCarrySourcePicker());
+  document.getElementById('new-ward-type').value=type;
+  updateCarrySourcePicker();
+  document.getElementById('new-ward-name').focus();
+  showModal('addWardModal');
 }

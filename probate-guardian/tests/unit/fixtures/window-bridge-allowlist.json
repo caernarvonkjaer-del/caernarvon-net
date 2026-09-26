@@ -451,14 +451,6 @@
     },
     {
       "file": "src/core/persistence/case-file.js",
-      "name": "_dirtySinceExport"
-    },
-    {
-      "file": "src/core/persistence/case-file.js",
-      "name": "_lastExportAt"
-    },
-    {
-      "file": "src/core/persistence/case-file.js",
       "name": "_saveTimer"
     },
     {
@@ -656,6 +648,14 @@
     {
       "file": "src/core/persistence/crypto.js",
       "name": "generateSaltB64"
+    },
+    {
+      "file": "src/core/persistence/export-state.js",
+      "name": "_dirtySinceExport"
+    },
+    {
+      "file": "src/core/persistence/export-state.js",
+      "name": "_lastExportAt"
     },
     {
       "file": "src/core/persistence/launch-preferences.js",

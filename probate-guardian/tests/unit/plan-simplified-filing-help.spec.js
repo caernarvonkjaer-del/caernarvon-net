@@ -14,7 +14,7 @@ import { describe, expect, test, beforeEach } from 'vitest';
 // named on that form serve the Sixth Circuit, and AGENTS.md's authority
 // hierarchy forbids presenting circuit-specific procedure as statewide.
 
-const { HELP_CONTENT } = await import('../../src/features/help/help-content.js');
+const { HELP_CONTENT } = await import('../../src/core/help/help-content.js');
 
 const render = (key) => {
   const entry = HELP_CONTENT[key];

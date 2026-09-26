@@ -4,41 +4,10 @@
 // This block handles runtime changes and restores the saved .sav setting.
 // Court-document and PDF styles remain hardcoded for light output.
 // ═══════════════════════════════════════════════════════
-function currentTheme(){
-  return document.documentElement.getAttribute('data-theme')==='dark' ? 'dark' : 'light';
-}
-function applyTheme(theme,persist){
-  document.documentElement.setAttribute('data-theme',theme);
-  // Milestone 40D: prepaint.js sets BOTH attributes before first paint, but this
-  // function only ever set data-theme -- so toggling left data-bs-theme on
-  // whatever was painted at load and Bootstrap's own components stayed on the
-  // old palette. Setting both here is part of making the two agree.
-  document.documentElement.setAttribute('data-bs-theme',theme);
-  if(persist){
-    // Milestone 40D: theme is a per-device display preference in localStorage,
-    // not case data in the .sav. This used to call saveAppState('theme',theme),
-    // which landed in the file's appState section -- readable only after the
-    // .sav loaded (and after the password, for an encrypted file), which is what
-    // made the theme flash on every reload.
-    if(typeof window.writeStoredTheme==='function')window.writeStoredTheme(theme);
-  }
-  const btns=document.querySelectorAll('#theme-toggle-btn, .topnav-theme');
-  btns.forEach(btn=>{
-    const isDark=theme==='dark';
-    btn.innerHTML=ic(isDark?'sun':'moon',16);
-    btn.setAttribute('aria-pressed',String(isDark));
-    btn.setAttribute('aria-label','Switch to '+(isDark?'light':'dark')+' theme');
-  });
-}
-function toggleTheme(){
-  applyTheme(currentTheme()==='dark' ? 'light' : 'dark', true);
-}
-// The pre-paint script in <head> already set data-theme on <html> before
-// first render (so there's no flash of the wrong theme) — this just brings
-// the toggle button's icon/aria state into agreement with that decision.
-// The button is static markup, already in the DOM by the time this
-// (inline, non-deferred) script runs.
-applyTheme(currentTheme(),false);
+// currentTheme: src/core/theme-preference.js (Milestone 70, 70H).
+function currentTheme(){return window.GuardianFormsLegacyBridge.currentTheme();}
+// applyTheme: src/core/theme-preference.js (Milestone 70, 70H).
+function applyTheme(theme,persist){return window.GuardianFormsLegacyBridge.applyTheme(theme,persist);}
 // ═══════════════════════════════════════════════════════
 // GLOBAL STATE & CONFIG
 // ═══════════════════════════════════════════════════════
@@ -90,396 +59,37 @@ window.caseFile = caseFile;
 // ═══════════════════════════════════════════════════════
 // HELP SYSTEM
 // ═══════════════════════════════════════════════════════
-let helpPanelOpen = false;
-let currentHelpContext = 'dashboard';
 
-// Milestone 48: HELP_CONTENT extracted to src/features/help/help-content.js
-// for clean separation of help HTML from application logic.
-const HELP_CONTENT = new Proxy({}, {
-  get(target, prop) {
-    return (typeof window !== 'undefined' && window.HELP_CONTENT) ? window.HELP_CONTENT[prop] : target[prop];
-  },
-  has(target, prop) {
-    return (typeof window !== 'undefined' && window.HELP_CONTENT) ? (prop in window.HELP_CONTENT) : (prop in target);
-  }
-});
 
-function toggleHelpPanel(){
-  helpPanelOpen=!helpPanelOpen;
-  const panel=document.getElementById('help-panel');
-  const btns=document.querySelectorAll('#help-toggle-btn, .topnav-help');
-  panel.style.display=helpPanelOpen?'flex':'none';
-  btns.forEach(btn=>btn.setAttribute('aria-expanded',String(helpPanelOpen)));
-  if(helpPanelOpen){
-    updateHelpContext();
-    showContextualHelp();
-    // Move focus into the panel so a keyboard/screen-reader user lands
-    // somewhere meaningful, not stranded on a now off-screen-adjacent button.
-    const closeBtn=document.querySelector('.help-panel-close');
-    if(closeBtn)closeBtn.focus();
-  }else if(btns.length){
-    // Closing (via the close button, Escape, or toggling the "?" again)
-    // returns focus to the control that opened it, so keyboard users don't
-    // lose their place in the page.
-    btns[0].focus();
-  }
-}
-// Escape closes the help panel from anywhere inside it, and returns focus
-// to the toggle button — the standard behavior for a disclosure panel.
-document.addEventListener('keydown',(e)=>{
-  if(e.key==='Escape'&&helpPanelOpen&&document.getElementById('help-panel')?.contains(document.activeElement)){
-    toggleHelpPanel();
-  }
-});
 
-function showContextualHelp(){
-  const content=HELP_CONTENT[currentHelpContext]||HELP_CONTENT['default'];
-  if(!content)return;
-  const body=typeof content.content==='function'?content.content():content.content;
-  const panel=document.getElementById('help-panel-content');
-  panel.innerHTML=`<h3>${content.title}</h3>${body}`;
-  panel.scrollTop=0;
-}
 
-function updateHelpContext(){
-  // Auto-detect the correct help context based on current state
-  if(!caseFile.activeWardId){
-    // At dashboard or no ward yet
-    currentHelpContext='default';
-  }else if(activeInventoryType==='guardian'){
-    currentHelpContext='guardian-inventory';
-  }else if(activeInventoryType==='simplified'){
-    currentHelpContext='simplified-accounting';
-  }else if(formEngine(activeInventoryType)==='annual'){
-    currentHelpContext='annual-accounting';
-  }else if(activeInventoryType==='planSimplified'){
-    currentHelpContext='plan-simplified';
-  }else if(activeInventoryType==='planAnnual'){
-    currentHelpContext='plan-annual';
-  }else if(activeInventoryType==='planInitial'){
-    currentHelpContext='plan-initial';
-  }else if(activeInventoryType==='planMinor'){
-    currentHelpContext='plan-minor';
-  }else{
-    currentHelpContext='default';
-  }
-  if(helpPanelOpen)showContextualHelp();
-}
 
-// The standalone help page, deep-linked
-// from the "?" button (in a filing) and the Help panel's "View User Guide"
-// button (on the dashboard). Anchors below match the id attributes actually
-// present in that file -- see its own h2/h3 headings. Guardian Inventory,
-// Simplified Accounting and Annual/Final/Trust Accounting have per-schedule-
-// group h3 anchors (the finest granularity the manual's own prose supports,
-// since it's written per schedule group, not per exact page); the four Plan
-// types have no h3 breakdown at all, so every one of their pages maps to the
-// same h2 section -- there simply isn't finer content to jump to yet.
-const USER_GUIDE_URL='help/';
-const USER_GUIDE_ANCHORS={
-  guardian:{
-    '/':'inventory-cover', '/summary':'inventory-summary',
-    '/a1':'inventory-a', '/a2':'inventory-a',
-    '/b1':'inventory-b', '/b2':'inventory-b', '/b3':'inventory-b', '/b4':'inventory-b',
-    '/c1':'inventory-c', '/c2':'inventory-c', '/c3':'inventory-c', '/c4':'inventory-c', '/c5':'inventory-c',
-    '/d1':'inventory-d', '/d2':'inventory-d', '/d3':'inventory-d', '/d4':'inventory-d', '/d5':'inventory-d',
-    '/print':'preview',
-  },
-  simplified:{
-    '/':'simplified-accounting-p1', '/summary':'simplified-accounting-p2', '/p2':'simplified-accounting-p2',
-    '/p3':'simplified-accounting-p3-7', '/p4':'simplified-accounting-p3-7', '/p5':'simplified-accounting-p3-7',
-    '/p6':'simplified-accounting-p3-7', '/p7':'simplified-accounting-p3-7',
-    '/print':'preview',
-  },
-  annual:{
-    '/':'annual-accounting-p1', '/summary':'annual-accounting-p67', '/p2':'annual-accounting-p2',
-    '/p3':'annual-accounting-p345', '/p4':'annual-accounting-p345', '/p5':'annual-accounting-p345',
-    '/scha':'annual-accounting-schedules', '/schb1':'annual-accounting-schedules', '/schb2':'annual-accounting-schedules',
-    '/schb3':'annual-accounting-schedules', '/schb4':'annual-accounting-schedules', '/schc':'annual-accounting-schedules',
-    '/schd1':'annual-accounting-schedules', '/schd2':'annual-accounting-schedules', '/schd3':'annual-accounting-schedules',
-    '/schd4':'annual-accounting-schedules', '/schd5':'annual-accounting-schedules', '/sche':'annual-accounting-schedules',
-    '/schf1':'annual-accounting-schedules', '/schf2':'annual-accounting-schedules',
-    '/p67':'annual-accounting-p67',
-    '/p8':'annual-accounting-p8-11', '/p9':'annual-accounting-p8-11', '/p10':'annual-accounting-p8-11', '/p11':'annual-accounting-p8-11',
-    '/print':'preview',
-  },
-  planSimplified:{default:'simplified-plan', '/print':'preview'},
-  planAnnual:{default:'annual-plan', '/print':'preview'},
-  planInitial:{default:'initial-plan', '/print':'preview'},
-  planMinor:{default:'minor-plan', '/print':'preview'},
-};
 
-function userGuideAnchorFor(inventoryType,route){
-  let key=inventoryType;
-  if(key==='finalAccounting'||key==='trustAccounting')key='annual';
-  const map=USER_GUIDE_ANCHORS[key];
-  if(!map)return null;
-  return map[route]||map.default||null;
-}
 
 /** Opens the standalone user manual in a new tab, optionally to one anchor. */
-function openUserGuide(anchor){
-  const url=anchor?`${USER_GUIDE_URL}#${anchor}`:USER_GUIDE_URL;
-  window.open(url,'_blank','noopener');
-}
-window.openUserGuide=openUserGuide;
 
 /** "?" while a filing is open: skip the Help panel, jump straight to the
  * manual page for wherever the filer actually is. */
-function openUserGuideForCurrentPage(){
-  const route=window.location.hash.replace('#','')||currentPage||'/';
-  openUserGuide(userGuideAnchorFor(activeInventoryType,route));
-}
-window.openUserGuideForCurrentPage=openUserGuideForCurrentPage;
 
 // ═══════════════════════════════════════════════════════
 // TOOLTIP SYSTEM
 // ═══════════════════════════════════════════════════════
-const TOOLTIPS = {
-  // Milestone 51C removed a 'ward_percent' key here. It was never read -- all six
-  // call sites pass 'ward_pct' (see below) -- and it carried slightly different
-  // wording, including a worked example the live key lacks. Deleted as-is on
-  // purpose: improving 'ward_pct's wording is a user-facing content change, not
-  // a cleanup, and belongs in its own commit with the text reviewed.
-  'restricted': "Assets that cannot be used without court permission, such as real estate that must be sold through a court approval process.",
-  'carrying_value': "The depreciated value of an asset for accounting purposes. This may differ from current market value.",
-  'personal_residence': "The primary home where the ward currently lives. This is reported separately from investment properties.",
-  'income_property': "A property that generates rental income or other returns. Mark this if the property is held for income purposes.",
-  'depository': "A bank or financial institution where the ward's money is held. For simplified accounting, ALL estate property must be in a designated depository.",
-  'ssn_ein': "SSN: Social Security Number (for individuals). EIN: Employer Identification Number (for businesses, trusts, or entities).",
-  'signature_date': "The date this document was signed. Must be within the accounting period or filing timeframe.",
-  'inception_date': "The date when the guardianship was officially established by court order.",
-  // Milestone 51C deleted an unused 'ward_percent' key whose wording carried a
-  // worked example this one lacked. Per Alan, that fuller wording is adopted here
-  // -- the example shows the expected format to a pro se filer who has never
-  // entered a percentage on a court form. This is the key all six call sites
-  // actually pass (annual-accounting/index.js, Schedules D-1..D-5 and Part VIII).
-  'ward_pct': "The percentage of this asset that belongs to the ward. For example, if the ward owns 50% of a property, enter 50.",
-  'case_number': "The case number from the court order appointing you as guardian. Found on the letters of guardianship.",
-  'full_amount': "The total value of this asset before accounting for the ward's percentage.",
-  'full_debt': "The total amount owed on this liability.",
-  'full_value': "The current market value of this property.",
-  'annualized_income': "If income is not for the full year, annualize it. For example, 6 months of $100/month = $200 annualized."
-};
 
-function tooltip(key){
-  const text=TOOLTIPS[key]||'';
-  if(!text)return '';
-  return `<span class="tooltip-icon" title="${esc(text)}">?<div class="tooltip-popup">${esc(text)}</div></span>`;
-}
 
 // ═══════════════════════════════════════════════════════
 // WALKTHROUGH SYSTEM (Phase 4) - Type-Specific Tours
 // ═══════════════════════════════════════════════════════
-const WALKTHROUGH_GUARDIAN=[
-  {element:'#help-toggle-btn',title:'1. Help',text:'Open Help for field guidance, the User Guide, backup controls, shared records, the Activity Log, and the guided tour.',position:'left'},
-  {element:'.ward-picker-select',title:'2. Active Filing',text:'Switch between filings here. Each filing is stored in the case file and keeps its own progress.',position:'right'},
-  {element:'#theme-toggle-btn',title:'3. Appearance',text:'Use the sun/moon button to switch light or dark mode. This display preference is remembered on this device.',position:'left'},
-  {element:'.ward-progress',title:'4. Filing Progress',text:'The progress indicator updates as you work. Use “Jump to…” to open an incomplete section; review the readiness panel before exporting.',position:'right'},
-  {element:'[data-page="/"]',title:'5. Cover',text:'Enter the case and guardian information shown on the filing. The sidebar then takes you through the inventory schedules, preparer and attorney sections, bond information, and Certificate of Service.',position:'bottom'},
-  {element:'[data-nav="b1"]',title:'6. Inventory schedules',text:'Complete the schedules that apply to this filing. Add rows when needed, and review the calculated totals after entering values.',position:'right'},
-  {element:'[data-nav="d5"]',title:'7. Certificate of Service',text:'Review the recipients and attestation in the Certificate of Service section. The app can check entered fields, but it cannot determine whom you must serve.',position:'bottom'},
-  {element:'[data-page="/print"]',title:'8. Print Preview',text:'Print Preview lists missing items and readiness reminders. Review the filing, then export the available PDF or Excel output; save a .sav backup separately.',position:'left'},
-];
 
-const WALKTHROUGH_SIMPLIFIED=[
-  {element:'#help-toggle-btn',title:'1. Help',text:'Open Help for Simplified Annual Accounting guidance, backups, the Activity Log, and the User Guide.',position:'left'},
-  {element:'.ward-picker-select',title:'2. Active Filing',text:'Switch between filings here. Your case file keeps each filing separate.',position:'right'},
-  {element:'#theme-toggle-btn',title:'3. Appearance',text:'Switch light or dark mode with the sun/moon button; the preference stays on this device.',position:'left'},
-  {element:'.ward-progress',title:'4. Filing Progress',text:'Use the progress indicator and “Jump to…” to find incomplete sections, then check Print Preview readiness.',position:'right'},
-  {element:'[data-page="/"]',title:'5. Cover',text:'Enter the case information for this accounting period.',position:'bottom'},
-  {element:'[data-page="/p2"]',title:'6. Accounting Summary',text:'Enter the balances, income, expenses, and other fields shown on this page. Review the calculated result before signing.',position:'bottom'},
-  {element:'[data-page="/p3"]',title:'7. Signatures',text:'Complete the signature section for the people shown in the filing. Do not treat the tour as legal advice.',position:'bottom'},
-  {element:'[data-page="/print"]',title:'8. Print Preview',text:'Review missing items and readiness reminders, then export the PDF. Simplified Annual Accounting does not offer Excel output.',position:'left'},
-];
 
-// Annual, Final, and Trust Accounting share the same schedule workspace.
-const WALKTHROUGH_ANNUAL=[
-  {element:'#help-toggle-btn',title:'1. Help',text:'Open Help for Annual, Final, or Trust Accounting guidance, backups, the Activity Log, and the User Guide.',position:'left'},
-  {element:'.ward-picker-select',title:'2. Active Filing',text:'Switch between filings here. Annual, Final, and Trust Accounting use the same accounting workspace with their own filing record.',position:'right'},
-  {element:'#theme-toggle-btn',title:'3. Appearance',text:'Switch light or dark mode with the sun/moon button; the preference stays on this device.',position:'left'},
-  {element:'.ward-progress',title:'4. Filing Progress',text:'Use the progress indicator and “Jump to…” to find incomplete sections. A schedule prompt is a navigation aid; Print Preview is where export readiness is checked.',position:'right'},
-  {element:'[data-page="/"]',title:'5. Cover',text:'Enter the case and accounting-period information shown on this filing.',position:'bottom'},
-  {element:'[data-page="/p2"]',title:'6. Certification',text:'Review the certification information shown on this page before continuing.',position:'bottom'},
-  {element:'[data-nav="a-scha"]',title:'7. Accounting schedules',text:'Work through the schedules in the sidebar: income, disbursements, capital adjustments, assets and liabilities, transfers, and sales. The exact fields depend on the filing.',position:'right'},
-  {element:'[data-page="/p3"]',title:'8. Signatures',text:'Complete the signature section and review the Certificate of Service fields in the filing. The app records entered information; it does not determine service obligations.',position:'bottom'},
-  {element:'[data-page="/print"]',title:'9. Print Preview',text:'Review missing items, readiness reminders, totals, and the rendered filing, then export the available PDF or Excel output.',position:'left'},
-];
 
-const WALKTHROUGH_PLAN_SIMPLIFIED=[
-  {element:'#help-toggle-btn',title:'1. Help',text:'Open Help for this plan, backups, the Activity Log, and the User Guide.',position:'left'},
-  {element:'.ward-picker-select',title:'2. Active Filing',text:'Switch between filings here. A Plan records information about the ward as a person; an Accounting records money and property.',position:'right'},
-  {element:'#theme-toggle-btn',title:'3. Appearance',text:'Switch light or dark mode with the sun/moon button; the preference stays on this device.',position:'left'},
-  {element:'.ward-progress',title:'4. Filing Progress',text:'Use the progress indicator and “Jump to…” to find unanswered sections.',position:'right'},
-  {element:'[data-page="/"]',title:'5. Cover',text:'Enter the case and reporting-period information shown on this plan.',position:'bottom'},
-  {element:'[data-page="/p2"]',title:'6. Plan pages',text:'Complete the questions and records presented by this plan. Add rows where the page provides an Add control.',position:'bottom'},
-  {element:'[data-page="/p3"]',title:'7. Signatures',text:'Review the signature and contact fields shown on the filing.',position:'bottom'},
-  {element:'[data-page="/print"]',title:'8. Print Preview',text:'Review missing items and readiness reminders, then export the PDF. This plan has no Excel output.',position:'left'},
-];
 
-const WALKTHROUGH_PLAN_ANNUAL=[
-  {element:'#help-toggle-btn',title:'1. Help',text:'Open Help for this plan, backups, the Activity Log, and the User Guide.',position:'left'},
-  {element:'.ward-picker-select',title:'2. Active Filing',text:'Switch between filings here. A Plan records the ward\'s residence, care, and wellbeing.',position:'right'},
-  {element:'#theme-toggle-btn',title:'3. Appearance',text:'Switch light or dark mode with the sun/moon button; the preference stays on this device.',position:'left'},
-  {element:'.ward-progress',title:'4. Filing Progress',text:'Use the progress indicator and “Jump to…” to find unfinished sections.',position:'right'},
-  {element:'[data-page="/"]',title:'5. Cover',text:'Enter the case, reporting-period, and current-residence information shown on this plan.',position:'bottom'},
-  {element:'[data-page="/p2"]',title:'6. Residence and care',text:'Complete the residence, care, treatment, skills, rights, and daily-living pages presented by the plan.',position:'right'},
-  {element:'[data-page="/p11"]',title:'7. Signatures',text:'Review the guardian and attorney fields shown on the filing.',position:'right'},
-  {element:'[data-page="/print"]',title:'8. Print Preview',text:'Review missing items and readiness reminders, then export the PDF. This plan has no Excel output.',position:'left'},
-];
 
-const WALKTHROUGH_PLAN_INITIAL=[
-  {element:'#help-toggle-btn',title:'1. Help',text:'Open Help for this plan, backups, the Activity Log, and the User Guide.',position:'left'},
-  {element:'.ward-picker-select',title:'2. Active Filing',text:'Switch between filings here. Each filing remains separate in the case file.',position:'right'},
-  {element:'#theme-toggle-btn',title:'3. Appearance',text:'Switch light or dark mode with the sun/moon button; the preference stays on this device.',position:'left'},
-  {element:'.ward-progress',title:'4. Filing Progress',text:'Use the progress indicator and “Jump to…” to find unfinished sections.',position:'right'},
-  {element:'[data-page="/"]',title:'5. Cover',text:'Enter the case and guardianship information shown on this initial plan.',position:'bottom'},
-  {element:'[data-page="/p2"]',title:'6. Plan pages',text:'Complete the residential setting, care, provider, daily-living, and advance-directive pages presented by the plan.',position:'right'},
-  {element:'[data-page="/p9"]',title:'7. Signatures',text:'Review the guardian signature and contact fields shown on the filing.',position:'right'},
-  {element:'[data-page="/print"]',title:'8. Print Preview',text:'Review missing items and readiness reminders, then export the PDF. This plan has no Excel output.',position:'left'},
-];
 
-const WALKTHROUGH_PLAN_MINOR=[
-  {element:'#help-toggle-btn',title:'1. Help',text:'Open Help for this plan, backups, the Activity Log, and the User Guide.',position:'left'},
-  {element:'.ward-picker-select',title:'2. Active Filing',text:'Switch between filings here. Each filing remains separate in the case file.',position:'right'},
-  {element:'#theme-toggle-btn',title:'3. Appearance',text:'Switch light or dark mode with the sun/moon button; the preference stays on this device.',position:'left'},
-  {element:'.ward-progress',title:'4. Filing Progress',text:'Use the progress indicator and “Jump to…” to find unfinished sections.',position:'right'},
-  {element:'[data-page="/"]',title:'5. Cover',text:'Enter the UCN, case number, reporting period, and other fields shown on this minor filing.',position:'bottom'},
-  {element:'[data-page="/p3"]',title:'6. Treatment providers',text:'Complete the provider records presented by the plan, adding rows where needed.',position:'right'},
-  {element:'[data-page="/p6"]',title:'7. Signatures',text:'Review the guardian signature fields shown on the filing.',position:'right'},
-  {element:'[data-page="/p7"]',title:'8. Preparer and attorney',text:'Complete the preparer and attorney fields shown on this filing.',position:'right'},
-  {element:'[data-page="/print"]',title:'9. Print Preview',text:'Review missing items and readiness reminders, then export the PDF. This plan has no Excel output.',position:'left'},
-];
 
-const WALKTHROUGH_DASHBOARD=[
-  {element:'#help-toggle-btn',title:'1. Help & Guidance',text:'Click "?" for in-app help, the User Guide, Activity Log, shared party records, backup controls, and the guided tour.',position:'left'},
-  {element:'#new-ward-btn, [data-dashboard-action="add-ward"]',title:'2. Create New Filing',text:'Choose a current filing type: Initial Inventory, Simplified Annual Accounting, Annual Accounting, Final Accounting, Trust Accounting, Simplified Annual Plan, Annual Guardianship Plan, Initial Guardianship Plan, or Annual Plan — Minors. Starting a new case also asks how to protect the case data.',position:'bottom'},
-  {element:'.dashboard-summary-strip',title:'3. Status Overview',text:'Tracks urgent action items and approaching deadlines across all active wards.',position:'bottom'},
-  {element:'#dashboard-search',title:'4. Search & Filter',text:'Quickly locate any filing by ward name, case number, or contact details.',position:'bottom'},
-  {element:'#theme-toggle-btn',title:'5. Light & Dark Appearance',text:'Switch between light and dark mode here. Your preference is remembered across sessions on this device.',position:'left'},
-  {element:'.dashboard-triage-queue, .dashboard-empty',title:'6. All Filings Queue',text:'Resume, edit, close, or find filings from one place. The case file is a local .sav file: use Save Backup (.sav) and Open Backup (.sav) to move or restore it. Automatic saving depends on the browser and an authorized file; keep manual backups.',position:'top'},
-];
 
-let WALKTHROUGH_STEPS=[];
-let currentWalkthroughStep=0;
-let walkthroughActive=false;
-let _walkthroughAutoTriggered=false;
 
-function startWalkthrough(){
-  if(helpPanelOpen)toggleHelpPanel();
-  walkthroughActive=true;
-  currentWalkthroughStep=0;
-  if(activeInventoryType==='guardian')WALKTHROUGH_STEPS=WALKTHROUGH_GUARDIAN;
-  else if(activeInventoryType==='simplified')WALKTHROUGH_STEPS=WALKTHROUGH_SIMPLIFIED;
-  else if(formEngine(activeInventoryType)==='annual')WALKTHROUGH_STEPS=WALKTHROUGH_ANNUAL;
-  else if(activeInventoryType==='planSimplified')WALKTHROUGH_STEPS=WALKTHROUGH_PLAN_SIMPLIFIED;
-  else if(activeInventoryType==='planAnnual')WALKTHROUGH_STEPS=WALKTHROUGH_PLAN_ANNUAL;
-  else if(activeInventoryType==='planInitial')WALKTHROUGH_STEPS=WALKTHROUGH_PLAN_INITIAL;
-  else if(activeInventoryType==='planMinor')WALKTHROUGH_STEPS=WALKTHROUGH_PLAN_MINOR;
-  else WALKTHROUGH_STEPS=WALKTHROUGH_DASHBOARD;
-  document.getElementById('walkthrough-overlay').classList.add('active');
-  showWalkthroughStep();
-}
 
-function showWalkthroughStep(){
-  if(currentWalkthroughStep>=WALKTHROUGH_STEPS.length){
-    endWalkthrough();
-    return;
-  }
-  const step=WALKTHROUGH_STEPS[currentWalkthroughStep];
-  const sidebarTarget=step.element.startsWith('[data-page')||step.element.startsWith('[data-nav');
-  const el=document.querySelector(sidebarTarget?`#sidebar ${step.element}`:step.element);
-  if(!el){currentWalkthroughStep++;showWalkthroughStep();return;}
 
-  // Scroll element into view, centered
-  el.scrollIntoView({behavior:'smooth',block:'center'});
-
-  // Re-get rect after scroll
-  setTimeout(()=>{
-    const rect=el.getBoundingClientRect();
-    const tooltip=document.getElementById('walkthrough-tooltip');
-    const overlay=document.getElementById('walkthrough-overlay');
-    if(!overlay.querySelector('.walkthrough-highlight')){
-      const highlight=document.createElement('div');
-      highlight.className='walkthrough-highlight';
-      overlay.appendChild(highlight);
-    }
-    const highlight=overlay.querySelector('.walkthrough-highlight');
-    highlight.style.left=(rect.left-6)+'px';
-    highlight.style.top=(rect.top-6)+'px';
-    highlight.style.width=(rect.width+12)+'px';
-    highlight.style.height=(rect.height+12)+'px';
-
-    // Update progress
-    const progress=currentWalkthroughStep+1;
-    const total=WALKTHROUGH_STEPS.length;
-    const progressPct=(progress/total)*100;
-    document.getElementById('walkthrough-title').textContent=step.title;
-    document.getElementById('walkthrough-text').textContent=step.text;
-    document.getElementById('walkthrough-progress').textContent=`${progress}/${total}`;
-    const progressBar=document.querySelector('#walkthrough-progress-bar div');
-    if(progressBar)progressBar.style.width=progressPct+'%';
-
-    tooltip.style.display='block';
-    // Shrinks on narrow screens so the tooltip never exceeds the viewport —
-    // matches the CSS max-width:calc(100vw - 32px) on .walkthrough-tooltip.
-    const tooltipW=Math.min(360,window.innerWidth-2*20), tooltipH=200, pad=20, gap=25;
-    // Only reserve room for the sidebar where it's actually taking up
-    // screen space. Below the mobile breakpoint the sidebar is an
-    // off-canvas drawer (closed by default) reporting itself off-screen, so
-    // this naturally collapses to 0 there instead of forcing the tooltip
-    // past the right edge of a narrow viewport.
-    const sidebarRectNow=document.getElementById('sidebar').getBoundingClientRect();
-    const sidebarW=Math.max(0,Math.min(sidebarRectNow.right,window.innerWidth-tooltipW-pad));
-
-    // Prefer right positioning (away from sidebar), then bottom, top, left
-    const positions=[
-      {name:'right',top:rect.top-tooltipH/2+rect.height/2,left:rect.right+gap},
-      {name:'bottom',top:rect.bottom+gap,left:rect.left-tooltipW/2+rect.width/2},
-      {name:'top',top:rect.top-tooltipH-gap,left:rect.left-tooltipW/2+rect.width/2},
-      {name:'left',top:rect.top-tooltipH/2+rect.height/2,left:rect.left-tooltipW-gap}
-    ];
-
-    let best=positions[0];
-    for(const pos of positions){
-      const clampedLeft=Math.max(pad, Math.min(pos.left, window.innerWidth-tooltipW-pad));
-      const clampedTop=Math.max(pad, Math.min(pos.top, window.innerHeight-tooltipH-pad));
-
-      // Check if tooltip would overlap with sidebar or highlighted element
-      const tooltipRect={left:clampedLeft,top:clampedTop,right:clampedLeft+tooltipW,bottom:clampedTop+tooltipH};
-      const elemRect={left:rect.left,top:rect.top,right:rect.right,bottom:rect.bottom};
-      const sidebarRect={left:0,top:0,right:sidebarW,bottom:window.innerHeight};
-
-      // Check collision with element and sidebar
-      const overlapElement=!(tooltipRect.right<elemRect.left||tooltipRect.left>elemRect.right||tooltipRect.bottom<elemRect.top||tooltipRect.top>elemRect.bottom);
-      const overlapSidebar=!(tooltipRect.right<sidebarRect.left||tooltipRect.left>sidebarRect.right||tooltipRect.bottom<sidebarRect.top||tooltipRect.top>sidebarRect.bottom);
-
-      if(!overlapElement && !overlapSidebar){
-        best=pos;
-        break;
-      }
-    }
-
-    let top=Math.max(pad, Math.min(best.top, window.innerHeight-tooltipH-pad));
-    // minLeft is capped at the same maxLeft used below so the two can never
-    // cross — on a screen too narrow to both clear the sidebar AND fit the
-    // tooltip, fitting inside the viewport wins over clearing the sidebar.
-    const maxLeft=window.innerWidth-tooltipW-pad;
-    const minLeft=Math.min(sidebarW+pad,maxLeft);
-    let left=Math.max(minLeft, Math.min(best.left, maxLeft));
-    tooltip.style.top=top+'px';
-    tooltip.style.left=left+'px';
-  },300);
-}
-
-function nextWalkthroughStep(){currentWalkthroughStep++;showWalkthroughStep();}
-function skipWalkthrough(){endWalkthrough();}
-function endWalkthrough(){
-  walkthroughActive=false;
-  document.getElementById('walkthrough-overlay').classList.remove('active');
-  document.getElementById('walkthrough-tooltip').style.display='none';
-  if(_walkthroughAutoTriggered)saveAppState('walkthroughCompleted','true');
-}
 
 let activeInventoryType = null;
 window.D = {}; // Current active ward's data
@@ -590,11 +200,8 @@ try {
 // keep a one-line wrapper that delegates through src/legacy-bridge.js
 // (a classic script cannot import). A wrapper goes when its last caller here
 // moves out; never put logic back in one.
-function ic(n,size){return window.GuardianFormsLegacyBridge.ic(n,size);}
-function esc(s){return window.GuardianFormsLegacyBridge.esc(s);}
 function validateImportFile(file,kind){return window.GuardianFormsLegacyBridge.validateImportFile(file,kind);}
 function sanitizeObjectData(obj){return window.GuardianFormsLegacyBridge.sanitizeObjectData(obj);}
-function formatDashboardCurrency(v){return window.GuardianFormsLegacyBridge.formatDashboardCurrency(v);}
 function calcTotals(){return window.GuardianFormsLegacyBridge.calcTotals();}
 // Milestone 70, 70C: the filing registry and per-engine models -- names,
 // engines, blank filings and rows, the page lists and the normalizer -- live in
@@ -602,7 +209,6 @@ function calcTotals(){return window.GuardianFormsLegacyBridge.calcTotals();}
 // this script still reads are bridge reads where it reads them.
 function formEngine(type){return window.GuardianFormsLegacyBridge.formEngine(type);}
 function initializeEmptyData(type){return window.GuardianFormsLegacyBridge.initializeEmptyData(type);}
-function typeIcon(type,size){return window.GuardianFormsLegacyBridge.typeIcon(type,size);}
 
 
 
@@ -1118,166 +724,15 @@ async function loadAuditLogEntries(){
 // open to answer "did my backup actually save?" or to show a record of
 // diligence if their recordkeeping is ever questioned.
 // ═══════════════════════════════════════════════════════
-const ACTIVITY_EVENT_META={
-  PASSWORD_CREATED: {label:'Master password created', iconName:'shield'},
-  UNLOCK_SUCCESS:   {label:'Unlocked',                 iconName:'unlock'},
-  UNLOCK_FAILED:    {label:'Failed unlock attempt',    iconName:'lock'},
-  UNLOCK_LOCKOUT:   {label:'Locked out after repeated failures', iconName:'lock'},
-  DATA_EXPORT:      {label:'Backup saved',             iconName:'download'},
-  DATA_IMPORT:      {label:'Backup restored',          iconName:'upload'},
-  PARTY_MERGE:      {label:'Shared record merged',     iconName:'swap'},
-  PARTY_UNMERGE:    {label:'Shared record unmerged',   iconName:'swap'},
-  PARTY_SYNC:       {label:'Closed filing synced with shared record', iconName:'swap'},
-};
-let _activityLogEntries=[]; // newest-first, loaded once per page visit
-const ACTIVITY_LOG_RENDER_CAP=300; // safety cap on DOM rows, not on what's exported
+ // newest-first, loaded once per page visit
+ // safety cap on DOM rows, not on what's exported
 
-async function loadAndRenderActivityLog(){
-  const raw=await loadAuditLogEntries();
-  // Sort by the in-memory monotonic id; timestamps can collide within one
-  // millisecond and are therefore not a reliable ordering key.
-  _activityLogEntries=raw.slice().sort((a,b)=>(b.id||0)-(a.id||0));
-  renderActivityLogList();
-  renderStorageReadout();
-}
 
-// Reports the authoritative .sav file and last-save status. Temporary
-// recovery storage is intentionally not presented as a durable backup.
-async function renderStorageReadout(){
-  const host=document.getElementById('storage-usage-readout');
-  if(!host)return;
-  const handle=await loadCaseFileHandle();
-  if(!handle){
-    host.textContent='No case file is open for auto-save this session. Use "Open Case File (.sav)" to resume auto-save, or "Save Backup" to start one.';
-    return;
-  }
-  const fileName=handle.name||'your case file';
-  // Read the live values, not this file's own private copies. Those are only
-  // written by this file's shadowed duplicates of beginRecordingExport()/
-  // refreshAutoSaveArmedStatus(), which the module versions replace at
-  // runtime -- so they stayed frozen at their initial null/false and this
-  // readout claimed "not saved yet this session" and "needs one manual save
-  // to re-arm" indefinitely, even while auto-save was working.
-  const lastExportAt=typeof window.getLastExportAt==='function'?window.getLastExportAt():window._lastExportAt;
-  const armed=typeof window.isAutoSaveArmed==='function'?window.isAutoSaveArmed():false;
-  const savedNote=lastExportAt
-    ? `last saved ${formatRelativeTime(lastExportAt)}`
-    : 'not saved yet this session';
-  host.innerHTML=`${ic('chart',14)} <strong>${esc(fileName)}</strong> (case file) — ${armed?'auto-save is on':'auto-save needs one manual save to re-arm'}, ${esc(savedNote)}.`;
-}
 
-function activityLogFiltered(){
-  const q=(document.getElementById('activity-log-search')?.value||'').trim().toLowerCase();
-  const status=document.getElementById('activity-log-status')?.value||'all';
-  const type=document.getElementById('activity-log-type')?.value||'all';
-  return _activityLogEntries.filter(e=>{
-    if(status==='success'&&!e.success)return false;
-    if(status==='failed'&&e.success)return false;
-    if(type!=='all'&&e.eventType!==type)return false;
-    if(q&&!(String(e.details||'').toLowerCase().includes(q)||String(e.eventType||'').toLowerCase().includes(q)))return false;
-    return true;
-  });
-}
 
-function renderActivityLogList(){
-  const host=document.getElementById('activity-log-rows');
-  const countEl=document.getElementById('activity-log-count');
-  if(!host)return;
-  const filtered=activityLogFiltered();
-  if(countEl){
-    countEl.textContent=filtered.length===_activityLogEntries.length
-      ? `${_activityLogEntries.length} event${_activityLogEntries.length===1?'':'s'}`
-      : `${filtered.length} of ${_activityLogEntries.length} events`;
-  }
-  if(!filtered.length){
-    host.innerHTML=`<div class="dashboard-empty-inline">${_activityLogEntries.length?'No events match this filter.':'No activity recorded yet.'}</div>`;
-    return;
-  }
-  const shown=filtered.slice(0,ACTIVITY_LOG_RENDER_CAP);
-  host.innerHTML=shown.map(e=>{
-    const meta=ACTIVITY_EVENT_META[e.eventType]||{label:e.eventType||'Event',iconName:'file'};
-    const when=formatActivityTimestamp(e.timestamp);
-    return `<div class="activity-row${e.success?'':' activity-row-failed'}">
-      <span class="activity-row-icon">${ic(meta.iconName,16)}</span>
-      <div class="activity-row-body">
-        <div class="activity-row-head">
-          <span class="activity-row-label">${esc(meta.label)}</span>
-          <span class="activity-row-time">${esc(when)}</span>
-        </div>
-        <div class="activity-row-details">${esc(e.details||'')}</div>
-      </div>
-    </div>`;
-  }).join('');
-  if(filtered.length>ACTIVITY_LOG_RENDER_CAP){
-    host.innerHTML+=`<div class="activity-log-truncated">Showing the most recent ${ACTIVITY_LOG_RENDER_CAP} of ${filtered.length} matching events. Narrow the filter above, or use "Save as text file" to export all of them.</div>`;
-  }
-}
 
-function formatActivityTimestamp(iso){
-  const d=new Date(iso);
-  if(isNaN(d))return iso||'';
-  return d.toLocaleString('en-US',{dateStyle:'medium',timeStyle:'short'});
-}
 
-// Exports whatever the current filter shows, not always the full log — the
-// file's own header states the filter that was applied, so a partial export
-// can't be mistaken for the complete record.
-async function exportActivityLog(){
-  const filtered=activityLogFiltered();
-  const status=document.getElementById('activity-log-status')?.value||'all';
-  const type=document.getElementById('activity-log-type')?.value||'all';
-  const q=(document.getElementById('activity-log-search')?.value||'').trim();
-  const filterParts=[];
-  if(status!=='all')filterParts.push('status='+status);
-  if(type!=='all')filterParts.push('event='+type);
-  if(q)filterParts.push('search="'+q+'"');
-  const lines=[
-    'Guardian Forms — Activity Log',
-    'Exported: '+new Date().toLocaleString('en-US',{dateStyle:'medium',timeStyle:'short'}),
-    'Filter: '+(filterParts.length?filterParts.join(', '):'none (all events)'),
-    'Events: '+filtered.length,
-    '',
-  ];
-  filtered.forEach(e=>{
-    const meta=ACTIVITY_EVENT_META[e.eventType]||{label:e.eventType||'Event'};
-    lines.push(`[${formatActivityTimestamp(e.timestamp)}] ${e.success?'OK':'FAILED'} — ${meta.label} — ${e.details||''}`);
-  });
-  const blob=new Blob([lines.join('\n')],{type:'text/plain'});
-  try{
-    await saveBlobAs(blob,'ProbateGuardian_ActivityLog_'+new Date().toISOString().slice(0,10)+'.txt');
-  }catch(e){
-    if(e&&e.name==='AbortError')return;
-    console.error('Activity log export failed',e);
-    await window.alertModal('Export failed: '+(e&&e.message||e));
-  }
-}
 
-function pageActivityLog(){
-  const typeOptions=Object.keys(ACTIVITY_EVENT_META).map(k=>
-    `<option value="${k}">${esc(ACTIVITY_EVENT_META[k].label)}</option>`).join('');
-  return `<div class="schedule-page">
-    <h1>Activity Log</h1>
-    <div class="schedule-instructions">A record of security-relevant events on this device — unlocks, failed password attempts, and every backup you save manually or restore. Automatic saves are not logged. Nothing here is transmitted anywhere; it's stored the same way your case data is, on this device only.</div>
-    <div id="storage-usage-readout" class="storage-readout">Checking storage…</div>
-    <div class="activity-log-toolbar">
-      <span class="dashboard-search-wrap activity-log-search-wrap">${ic('search',15)}<label class="visually-hidden" for="activity-log-search">Search activity log details</label><input type="text" id="activity-log-search" class="form-control form-control-sm dashboard-search-input" placeholder="Search details…" data-form-input="activity-log"></span>
-      <label class="visually-hidden" for="activity-log-status">Filter activity log by result</label>
-      <select id="activity-log-status" class="form-select form-select-sm activity-log-select" data-form-change="activity-log">
-        <option value="all">All results</option>
-        <option value="success">Successful only</option>
-        <option value="failed">Failed only</option>
-      </select>
-      <label class="visually-hidden" for="activity-log-type">Filter activity log by event type</label>
-      <select id="activity-log-type" class="form-select form-select-sm activity-log-select" data-form-change="activity-log">
-        <option value="all">All event types</option>
-        ${typeOptions}
-      </select>
-      <button class="btn btn-sm btn-outline-primary" data-form-action="export-activity-log">${ic('download',14)} Save as text file</button>
-    </div>
-    <div class="activity-log-count" id="activity-log-count"></div>
-    <div id="activity-log-rows" class="activity-log-rows"><div class="dashboard-empty-inline">Loading…</div></div>
-  </div>`;
-}
 
 // ═══════════════════════════════════════════════════════
 // PARTY MANAGEMENT / DE-DUPLICATION (persistence rewrite Milestone 7)
@@ -1385,24 +840,8 @@ async function loadGuardianData(){
 // The open filing's record: src/core/state.js's, since Milestone 70's 70E.
 function getActiveWard(){return window.GuardianFormsLegacyBridge.getActiveWard();}
 
-function getProbateGuardianTabState(){
-  const activeWard=getActiveWard();
-  return {
-    hasActiveCase: !!activeWard,
-    activeCase: activeWard?{
-      wardId: activeWard.wardId||'',
-      wardName: activeWard.wardName||'',
-      caseNumber: activeWard.caseNumber||'',
-      inventoryType: activeWard.inventoryType||''
-    }:null,
-    dirty: _dirtySinceExport,
-    appVersion: window.PG_APP_VERSION||''
-  };
-}
-window.getProbateGuardianTabState=getProbateGuardianTabState;
-function notifyProbateGuardianTabStateChanged(){
-  document.dispatchEvent(new CustomEvent('probate-guardian-state-change',{detail:getProbateGuardianTabState()}));
-}
+// notifyProbateGuardianTabStateChanged: src/core/navigation/tab-state.js (Milestone 70, 70H).
+function notifyProbateGuardianTabStateChanged(){return window.GuardianFormsLegacyBridge.notifyProbateGuardianTabStateChanged();}
 window.pgHasUnsavedChanges=function(){return _dirtySinceExport;};
 
 // getCaseFile() and its window.getCaseFile publication went in Milestone
@@ -2022,8 +1461,6 @@ async function clearAllData(){
 
 
 
-// updateCarrySourcePicker: src/core/filing/carry-over.js (Milestone 70, 70G).
-function updateCarrySourcePicker(){return window.GuardianFormsLegacyBridge.updateCarrySourcePicker();}
 
 
 
@@ -2050,334 +1487,30 @@ function addToRecentlyOpened(ward){return window.GuardianFormsLegacyBridge.addTo
 // ═══════════════════════════════════════════════════════
 
 
-// The sidebar's "Switch Ward" button acts on whatever the dropdown is
-// currently set to. If that's already the active ward, switchWard() would
-// be a no-op with zero visible feedback — clicking the button would just
-// silently do nothing, which reads as broken. Offer a picker instead.
-// Generic searchable combobox: renders `items` ({label, sub?, ...}) into
-// `dropdownEl`, filtered against `query` by case-insensitive substring match
-// on label, calling `onPick(item)` when one is clicked.
-function comboboxFilterItems(items,query){
-  const q=(query||'').trim().toLowerCase();
-  if(!q)return items;
-  return items.filter(it=>it.label.toLowerCase().includes(q));
-}
-function comboboxRenderDropdown(dropdownEl,items,onPick){
-  if(!dropdownEl)return;
-  if(!items.length){
-    dropdownEl.innerHTML='<div class="ward-combobox-empty">No matches</div>';
-  }else{
-    dropdownEl.innerHTML=items.map((it,i)=>`<div class="ward-combobox-item" data-idx="${i}" role="option">
-        <span class="ward-combobox-item-name">${esc(it.label)}</span>
-        ${it.sub?`<span class="ward-combobox-item-type">${esc(it.sub)}</span>`:''}
-      </div>`).join('');
-    [...dropdownEl.children].forEach((el,i)=>{
-      if(el.classList.contains('ward-combobox-item'))el.addEventListener('mousedown',ev=>{ev.preventDefault();onPick(items[i]);});
-    });
-  }
-  dropdownEl.style.display='block';
-}
-function comboboxHide(dropdownEl){
-  if(dropdownEl)dropdownEl.style.display='none';
-}
-// Gives each rendered option a stable id, scoped by the dropdown's own id so
-// multiple comboboxes on the page never collide -- aria-activedescendant
-// needs a real id to point at, and comboboxRenderDropdown() itself doesn't
-// assign one (Milestone 52J: previously only the ward selector did this,
-// inline, for itself alone).
-function comboboxAssignOptionIds(dropdownEl){
-  [...dropdownEl.querySelectorAll('[role="option"]')].forEach((option,index)=>{
-    option.id=`${dropdownEl.id}-option-${index}`;
-  });
-}
-// Milestone 52J Decision 4: shared keyboard handler for the ward-selector /
-// ward-name / convert-source combobox family (comboboxRenderDropdown()'s
-// <div role="option"> items, each with a direct per-option mousedown
-// listener). Extracted from onWardSelectorKeydown()'s complete
-// implementation -- the only one of the four comboboxes with full
-// Up/Down/Home/End/Enter support before this delivery; ward-name and
-// convert-source had Escape only (plus a bare preventDefault on Enter for
-// convert-source), a real capability gap for a keyboard-only or
-// screen-reader user, which this closes.
-//
-// The county combobox (:1502 onCountyKeydown, near :1448
-// countyAutocompleteHTML) is deliberately NOT switched to this, despite
-// very similar logic (same comboIndex/aria-activedescendant bookkeeping,
-// same Enter-dispatches-a-mousedown commit trick): it renders <button>
-// options through its own filterCountyDropdown()/data-form-mousedown
-// delegation, not comboboxRenderDropdown(), and hides via a CSS class
-// toggle (hideCountyDropdown()), not this function's inline
-// style.display. Wiring county to a hide callback hardcoded to
-// comboboxHide() would set an inline style that filterCountyDropdown()
-// never clears on reopen, permanently hiding the dropdown after the first
-// Escape -- confirmed by reading both hide paths, not assumed. County
-// already has full keyboard nav (Milestone 50H), so there is no
-// capability gap to close there, only a code-shape win not worth that
-// risk. See MILESTONE-52-PROPOSAL.md's 52J section.
-function bindComboboxKeyboardNav(input,dropdown,{onEnterWithNoSelection,hide=comboboxHide}={}){
-  return function comboboxKeydownHandler(e){
-    const options=[...dropdown.querySelectorAll('[role="option"]')];
-    if(e.key==='Escape'){
-      hide(dropdown);
-      input.dataset.comboIndex='';
-      input.removeAttribute('aria-activedescendant');
-      input.setAttribute('aria-expanded','false');
-    }
-    else if(e.key==='ArrowDown'||e.key==='ArrowUp'){
-      e.preventDefault();
-      if(!options.length)return;
-      const current=Number.parseInt(input.dataset.comboIndex,10);
-      const next=Number.isInteger(current)
-        ? (e.key==='ArrowDown' ? Math.min(current+1,options.length-1) : Math.max(current-1,0))
-        : (e.key==='ArrowDown' ? 0 : options.length-1);
-      input.dataset.comboIndex=String(next);
-      input.setAttribute('aria-activedescendant',options[next].id);
-      options.forEach((option,index)=>option.setAttribute('aria-selected',String(index===next)));
-    }
-    else if(e.key==='Home'||e.key==='End'){
-      e.preventDefault();
-      if(!options.length)return;
-      const next=e.key==='Home'?0:options.length-1;
-      input.dataset.comboIndex=String(next);
-      input.setAttribute('aria-activedescendant',options[next].id);
-      options.forEach((option,index)=>option.setAttribute('aria-selected',String(index===next)));
-    }
-    else if(e.key==='Enter'){
-      e.preventDefault();
-      const current=Number.parseInt(input.dataset.comboIndex,10);
-      if(Number.isInteger(current)&&options[current]){
-        options[current].dispatchEvent(new MouseEvent('mousedown',{bubbles:true}));
-      }else{
-        hide(dropdown);
-        input.setAttribute('aria-expanded','false');
-        if(onEnterWithNoSelection)onEnterWithNoSelection();
-      }
-    }
-  };
-}
 
-// Active Ward combobox: lets you type a ward's name to filter/select it, or
-// click into the field to see every ward as a dropdown — same as the plain
-// picker before it, just also typeable.
-function wardSelectorItems(){
-  return caseFile.wards.map(w=>({
-    wardId:w.wardId,
-    label:w.wardName||'(unnamed)',
-    sub:window.GuardianFormsLegacyBridge.INVENTORY_TYPES[w.inventoryType]?.name||w.inventoryType
-  }));
-}
-function wardSelectorShowDropdown(query){
-  const input=document.getElementById('ward-selector');
-  const dropdown=document.getElementById('ward-selector-dropdown');
-  const items=comboboxFilterItems(wardSelectorItems(),query);
-  comboboxRenderDropdown(dropdown,items,item=>{
-    input.value=item.label;
-    input.dataset.wardId=item.wardId;
-    input.dataset.comboIndex='';
-    input.removeAttribute('aria-activedescendant');
-    input.setAttribute('aria-expanded','false');
-    comboboxHide(dropdown);
-    // Picking an option switches the filing outright. It used to only stage a
-    // choice that the separate Switch Filing button consumed, so selecting an
-    // entry by mouse or by ArrowDown+Enter left the active filing unchanged.
-    if(item.wardId)switchWard(item.wardId);
-  });
-  [...dropdown.querySelectorAll('[role="option"]')].forEach((option,index)=>{
-    option.id=`ward-selector-option-${index}`;
-  });
-  input.dataset.comboIndex='';
-  input.setAttribute('aria-expanded','true');
-}
-function onWardSelectorInput(){
-  const input=document.getElementById('ward-selector');
-  input.dataset.wardId='';
-  input.removeAttribute('aria-activedescendant');
-  wardSelectorShowDropdown(document.getElementById('ward-selector').value);
-}
-function onWardSelectorFocus(){
-  // Focusing (rather than typing) shows every ward, even though the field
-  // is pre-filled with the current ward's name — that text isn't a filter
-  // yet, it's just what's active.
-  wardSelectorShowDropdown('');
-}
-// Milestone 52J: thin wrapper kept under this exact name -- shell-events.js
-// calls window.onWardSelectorKeydown(event) by name via its own delegated
-// listener, so the id lookups stay here (fresh each call, matching every
-// other handler in this file) rather than baking input/dropdown into a
-// closure created once at script-parse time.
-function onWardSelectorKeydown(e){
-  const input=document.getElementById('ward-selector');
-  const dropdown=document.getElementById('ward-selector-dropdown');
-  bindComboboxKeyboardNav(input,dropdown,{onEnterWithNoSelection:handleSwitchWardClick})(e);
-}
-document.addEventListener('click',e=>{
-  const wrap=document.getElementById('ward-selector-wrap');
-  if(wrap&&!wrap.contains(e.target)){
-    comboboxHide(document.getElementById('ward-selector-dropdown'));
-    document.getElementById('ward-selector')?.setAttribute('aria-expanded','false');
-  }
-});
 
-async function handleSwitchWardClick(){
-  const input=document.getElementById('ward-selector');
-  if(!input)return;
-  let wardId=input.dataset.wardId||'';
-  if(!wardId&&input.value.trim()){
-    // Typed a name without picking from the dropdown — resolve it directly
-    // if exactly one ward matches; otherwise show the dropdown to disambiguate.
-    const q=input.value.trim().toLowerCase();
-    const matches=caseFile.wards.filter(w=>(w.wardName||'').trim().toLowerCase()===q);
-    if(matches.length===1){
-      wardId=matches[0].wardId;
-    }else{
-      wardSelectorShowDropdown(input.value);
-      return;
-    }
-  }
-  if(!wardId)return;
-  if(wardId===caseFile.activeWardId){
-    showSwitchWardPickerModal();
-    return;
-  }
-  await switchWard(wardId);
-}
 
-async function showSwitchWardPickerModal(){
-  await ensureFragment('common-modals');
-  const current=caseFile.wards.find(w=>w.wardId===caseFile.activeWardId);
-  const nameEl=document.getElementById('switch-ward-picker-current-name');
-  if(nameEl)nameEl.textContent=current&&current.wardName?`"${current.wardName}"`:'This ward';
-  const listEl=document.getElementById('switch-ward-picker-list');
-  const others=caseFile.wards.filter(w=>w.wardId!==caseFile.activeWardId);
-  if(!others.length){
-    listEl.innerHTML='<div class="dashboard-empty-inline">You only have one ward — nothing to switch to yet.</div>';
-  }else{
-    listEl.innerHTML=others.map(w=>{
-      const typeLabel=window.GuardianFormsLegacyBridge.INVENTORY_TYPES[w.inventoryType]?.name||w.inventoryType;
-      return `<button type="button" class="recent-ward-item" data-modal-action="switch-ward" data-ward-id="${esc(w.wardId)}">
-        <span class="recent-ward-icon">${typeIcon(w.inventoryType,16)}</span>
-        <span class="recent-ward-info">
-          <span class="recent-ward-name">${esc(w.wardName||'(unnamed)')}${w.archived?' <span class="badge bg-secondary ward-card-badge">Closed</span>':''}</span>
-          <span class="recent-ward-type">${esc(typeLabel)}</span>
-        </span>
-      </button>`;
-    }).join('');
-  }
-  showModal('switchWardPickerModal');
-}
 
 
 // ═══════════════════════════════════════════════════════
 // MODAL FUNCTIONS
 // ═══════════════════════════════════════════════════════
-function closeModal(modalId){
-  const el=document.getElementById(modalId);
-  if(el)el.classList.remove('show');
-}
 
-// Every modal showModal() is ever called with lives in the lazy
-// 'common-modals' fragment (src/fragment-loader.js) -- the three overlays
-// needed on every session (startup-choice, security-choice, unlock) are
-// shown via direct classList manipulation elsewhere, never through this
-// function. Fetched and appended into #lazy-fragment-host on first use only;
-// _fragmentAppended memoizes so a repeat open doesn't re-fetch or re-append.
-const _fragmentAppended={};
-async function ensureFragment(name){
-  if(_fragmentAppended[name])return;
-  const content=await window.loadFragment(name);
-  document.getElementById('lazy-fragment-host').appendChild(content);
-  _fragmentAppended[name]=true;
-}
-
-async function showModal(modalId){
-  await ensureFragment('common-modals');
-  const el=document.getElementById(modalId);
-  if(!el)throw new Error(`Modal element "${modalId}" not found`);
-  el.classList.add('show');
-}
-
-// Fills a ward-name <datalist> with the distinct names already on file, so
-// typing offers them as autocomplete. A ward routinely has several forms
-// (Inventory, Annual, Plan...) under one name, hence the de-duplication —
-// and matching an existing name exactly is what groups the filings together
-// on the dashboard, so suggesting them guards against near-miss typos.
-function populateWardNameSuggestions(datalistId){
-  const dl=document.getElementById(datalistId);
-  if(!dl)return;
-  const names=[...new Set(caseFile.wards.map(w=>(w.wardName||'').trim()).filter(Boolean))]
-    .sort((a,b)=>a.localeCompare(b));
-  dl.innerHTML=names.map(n=>`<option value="${esc(n)}"></option>`).join('');
-}
-
-// Ward-name combobox for "Add Ward" / eligibility name fields: typing filters
-// the existing ward names, and focusing the (still-empty) field shows all of
-// them as a dropdown — picking one, rather than retyping, is what makes a new
-// form group with an existing ward on the dashboard.
-function wardNameComboItems(){
-  const names=[...new Set(caseFile.wards.map(w=>(w.wardName||'').trim()).filter(Boolean))]
-    .sort((a,b)=>a.localeCompare(b));
-  return names.map(n=>({label:n}));
-}
-// onPick(name) fires after every change to the field's value — a click on a
-// dropdown item, or a keystroke — so a caller can keep something else (e.g.
-// the "Load Ward Info From" picker) in sync with whatever name is now typed.
-function initWardNameCombobox(inputId,dropdownId,onPick){
-  const input=document.getElementById(inputId);
-  const dropdown=document.getElementById(dropdownId);
-  if(!input||!dropdown||input.dataset.comboInit)return;
-  input.dataset.comboInit='1';
-  const show=()=>{
-    comboboxRenderDropdown(dropdown,comboboxFilterItems(wardNameComboItems(),input.value),item=>{
-      input.value=item.label;
-      input.dataset.comboIndex='';
-      input.removeAttribute('aria-activedescendant');
-      input.setAttribute('aria-expanded','false');
-      comboboxHide(dropdown);
-      if(onPick)onPick(input.value);
-    });
-    // Milestone 52J: option ids scoped by this combobox's own dropdown id,
-    // so aria-activedescendant has something real to point at -- ward-
-    // selector keeps its own historical ward-selector-option-N scheme
-    // (routes.spec.ts asserts that literal pattern); this one and
-    // convert-source's use the shared helper since nothing depends on
-    // their exact id strings.
-    comboboxAssignOptionIds(dropdown);
-    input.dataset.comboIndex='';
-    input.setAttribute('aria-expanded','true');
-  };
-  input.addEventListener('focus',show);
-  input.addEventListener('input',()=>{show();if(onPick)onPick(input.value);});
-  // Milestone 52J Decision 4: was Escape-only. Now gains full Up/Down/
-  // Home/End/Enter via the shared handler, matching the ward selector.
-  input.addEventListener('keydown',bindComboboxKeyboardNav(input,dropdown));
-  document.addEventListener('click',e=>{
-    if(!input.contains(e.target)&&!dropdown.contains(e.target)){
-      comboboxHide(dropdown);
-      input.setAttribute('aria-expanded','false');
-    }
-  });
-}
-
-
-
-
-// showSimplifiedEligibilityModal: src/core/modals/filing-dialogs.js (Milestone 70, 70G).
-function showSimplifiedEligibilityModal(name,carrySourceId){return window.GuardianFormsLegacyBridge.showSimplifiedEligibilityModal(name,carrySourceId);}
+// ensureFragment: src/core/ui/dialogs.js (Milestone 70, 70H).
+function ensureFragment(name){return window.GuardianFormsLegacyBridge.ensureFragment(name);}
 
 
 
 
 
 
-async function doGuardianSetup(){
-  const name=document.getElementById('setup-guardian-name').value.trim();
-  if(!name){await window.alertModal('Please enter your name');return;}
-  caseFile.guardianName=name;
-  caseFile.guardianEmail=document.getElementById('setup-guardian-email').value.trim();
-  await saveData();
-  updateSidebar();
-  closeModal('guardianSetupModal');
-}
+
+
+
+
+
+
+
 
 // ═══════════════════════════════════════════════════════
 // ROUTER — see src/core/navigation/router.js
@@ -2412,200 +1545,13 @@ function getWardHeadlineTotal(ward){
 }
 
 
-// Populates the sidebar's active-ward info card (icon, type, live headline
-// total) from the currently active ward. Shared by updateSidebar() (on load
-// / ward switch) and afterChange() (on every Initial Inventory field edit,
-// so the headline total there updates live as the user types) — a single
-// function so both call sites can't drift into showing different content.
-// The "Name of Ward" field on Cover & Summary writes D.wardName directly --
-// the same object reference caseFile.wards holds, so the underlying
-// data is always correct -- but the sidebar's Active Ward selector only
-// gets its displayed text from the last full updateSidebar() render, which
-// typing in that field never triggers. A full re-render on every keystroke
-// would be a lot of needless DOM work (rebuilds the whole nav list) just to
-// keep one text input in sync, so this only touches that one input.
-function syncActiveWardNameDisplay(){
-  const inp=document.getElementById('ward-selector');
-  if(inp&&window.D)inp.value=window.D.wardName||'';
-}
 
-// The header's "Guardian: —" line used to show only caseFile.guardianName
-// -- the app-level "your name" entered once at setup, never anything about
-// the CURRENT form. Every form type's Cover page has its own field for the
-// guardian actually identified on THIS filing (named differently per type:
-// guardian, guardianName, or guardianNames -- see each emptyDataXxx()), so
-// that's tried first, in the order it's most likely to already be filled
-// in (the simple Cover-page field, before the more detailed guardians[]
-// signature-page array some types also have); the app-level name is still
-// the fallback for a form with nothing entered yet, or the rare type
-// (Simplified Plan) that never asks for a guardian name at all.
-function getPrimaryGuardianDisplayName(){
-  const d=window.D;
-  if(!d)return caseFile.guardianName||'';
-  return d.guardian||d.guardianName||d.guardianNames
-    ||(Array.isArray(d.guardians)&&d.guardians[0]&&d.guardians[0].name)
-    ||caseFile.guardianName||'';
-}
-// Same "sync just this one element" reasoning as syncActiveWardNameDisplay()
-// above -- typing in a guardian-name field never triggers a full
-// updateSidebar() rebuild, so this is wired into every place one of those
-// fields can actually be edited instead.
-function syncGuardianNameDisplay(){
-  const el=document.getElementById('guardian-name-display');
-  if(el)el.textContent=`Guardian: ${getPrimaryGuardianDisplayName()||'—'}`;
-}
 
-function refreshWardInfoCard(){
-  const wardInfo=document.getElementById('ward-info-display');
-  if(!wardInfo)return;
-  const ward=getActiveWard();
-  if(!ward){
-    wardInfo.style.display='none';
-    wardInfo.innerHTML='';
-    return;
-  }
-  const meta=window.GuardianFormsLegacyBridge.INVENTORY_TYPE_META[ward.inventoryType]||{iconName:'folder',accent:'#525d6e',accentText:'var(--ink-3)',totalLabel:'Total'};
-  const headline=getWardHeadlineTotal(ward);
-  wardInfo.style.display='block';
-  wardInfo.style.borderLeftColor=meta.accent;
-  // ?. guard: an unregistered type here would throw and blank the sidebar.
-  const typeName=window.GuardianFormsLegacyBridge.INVENTORY_TYPES[ward.inventoryType]?.name||ward.inventoryType;
-  // Non-financial types (Plans) have no total worth showing — the progress
-  // bar rendered just below already is the meaningful headline, so the
-  // dollar lines are dropped rather than shown as an empty "—".
-  const totalHTML=meta.financial===false?''
-    :`<div class="ward-info-total-label">${esc(meta.totalLabel)}</div>
-      <div class="ward-info-total">${formatDashboardCurrency(headline)}</div>`;
-  wardInfo.innerHTML=`<div class="ward-info-head">
-      <span class="ward-info-icon" style="color:${meta.accentText}">${typeIcon(ward.inventoryType,16)}</span>
-      <span class="ward-info-type" style="color:${meta.accentText}">${esc(typeName)}</span>
-    </div>
-    ${totalHTML}
-    <div class="ward-progress" id="ward-progress"></div>`;
-  updateNavDots(); // populates #ward-progress from the same completion check as the nav ✓/⚠ marks
-}
 
-// Ward-management controls (the whole topnav row -- All Wards, theme,
-// help -- plus Switch Ward / +New Form / Rename+Delete -- everything tagged
-// .ward-collapsible) collapse automatically the first time a form becomes
-// active, to give the
-// schedule/certification/output list below more room while it's actually
-// being filled out. _wardControlsUserToggled latches once the user clicks
-// the toggle so their choice sticks for the rest of the session, including
-// across switching to a different ward, instead of silently re-collapsing
-// under them every time updateSidebar() runs.
-// The sidebar's collapsible filing controls (Switch Filing, + New Form,
-// Close/Rename/Delete) moved to the dashboard header in Milestone 36-1, and
-// the toggle that reclaimed sidebar space for the schedule list went with
-// them. collapseWardControls() is kept as a no-op because shell-events.js
-// still calls it defensively on close/delete/rename/new-form.
-function collapseWardControls(){}
-window.collapseWardControls=collapseWardControls;
 
-// Same pattern as the ward controls above, for the backup/auto-save block
-// at the bottom of the sidebar: collapses automatically once a form is
-// active, leaving just the two status lines (last-saved / auto-save-armed)
-// visible, so the schedule list gets the room back at both ends of the
-// sidebar rather than just the top. #save-controls-body is one plain div
-// toggled as a unit -- see the HTML comment above it for why not per-child.
-let _saveControlsCollapsed=false;
-let _saveControlsUserToggled=false;
-function applySaveControlsCollapsedState(){
-  const body=document.getElementById('save-controls-body');
-  if(body)body.style.display=_saveControlsCollapsed?'none':'';
-  const btn=document.getElementById('save-controls-toggle-btn');
-  if(!btn)return;
-  btn.textContent=_saveControlsCollapsed?'Show save controls ▾':'Hide save controls ▴';
-  btn.setAttribute('aria-expanded',String(!_saveControlsCollapsed));
-}
-function collapseSaveControls(){
-  _saveControlsCollapsed=true;
-  _saveControlsUserToggled=true;
-  applySaveControlsCollapsedState();
-}
-function toggleSaveControls(){
-  _saveControlsCollapsed=!_saveControlsCollapsed;
-  _saveControlsUserToggled=true;
-  applySaveControlsCollapsedState();
-}
-window.collapseSaveControls=collapseSaveControls;
 
-function updateSidebar(){
-  const sidebar=document.getElementById('sidebar');
-  if(caseFile.wards.length===0){
-    sidebar.style.display='none';
-    return;
-  }
-  sidebar.style.display='';
-
-  // Update guardian name
-  syncGuardianNameDisplay();
-
-  // Update ward selector
-  const selector=document.getElementById('ward-selector');
-  const activeWardId=caseFile.activeWardId;
-  const activeWard=caseFile.wards.find(w=>w.wardId===activeWardId);
-  selector.value=activeWard?activeWard.wardName:'';
-  selector.dataset.wardId=activeWardId||'';
-
-  // Show ward info if active
-  refreshWardInfoCard();
-  // Close / Rename / Delete now render in the dashboard header, which owns
-  // their visibility. The sidebar must not reach for them by id: on a form
-  // page they are not in the document at all.
-
-  // Milestone 50I: this line only runs once caseFile.wards.length>0 (the
-  // early return at the top of updateSidebar() catches the empty case), so
-  // the save controls always apply to some case file -- gating visibility on
-  // activeWardId hid the toggle button whenever no filing was active (e.g. a
-  // restored case landing on /dashboard), leaving no way to reach it.
-  const saveToggleBtn=document.getElementById('save-controls-toggle-btn');
-  if(saveToggleBtn)saveToggleBtn.style.display='block';
-  // Collapses by default on every page, matching every other page's
-  // behavior, unless the user has explicitly toggled it this session.
-  // Previously gated on activeInventoryType (a filing page being open),
-  // which left it expanded on /dashboard, /party-management, /activity-log
-  // and /inventory-select for any session that hadn't yet opened a filing --
-  // confirmed live: a restored case with no active filing shows it expanded.
-  if(!_saveControlsUserToggled)_saveControlsCollapsed=true;
-  applySaveControlsCollapsedState();
-
-  if(!activeInventoryType){
-    // No filing is open (e.g. back on the dashboard) -- the context strip and
-    // nav checklist below belong to whichever filing was last open and must
-    // not linger. Milestone 38C cleared activeWardId/window.D on dashboard
-    // entry and called updateSidebar() to reflect that, but this function
-    // never actually blanked these two elements for the no-active-filing
-    // case -- it only ever populated them, so they silently kept showing the
-    // previous filing's context and checklist.
-    const staleCtx=document.getElementById('sidebar-context');
-    if(staleCtx)staleCtx.style.display='none';
-    const staleNav=document.getElementById('nav-sections');
-    if(staleNav)staleNav.innerHTML='';
-    return;
-  }
-  const typeConfig=window.GuardianFormsLegacyBridge.INVENTORY_TYPES[activeInventoryType];
-  // The header keeps the product name; the active form type gets its own
-  // strip beneath it so the app is always identifiable.
-  const ctx=document.getElementById('sidebar-context');
-  if(ctx){
-    ctx.style.display='flex';
-    document.getElementById('sidebar-context-icon').innerHTML=
-      typeIcon(activeInventoryType,13);
-    document.getElementById('sidebar-context-label').textContent=typeConfig.name;
-  }
-  const navContainer=document.getElementById('nav-sections');
-
-  switch(formEngine(activeInventoryType)){
-    case 'guardian': mountGuardianNav(navContainer);break;
-    case 'simplified': mountSimplifiedNav(navContainer);break;
-    case 'annual': mountAnnualNav(navContainer);break;
-    case 'planSimplified': mountPlanSimplifiedNav(navContainer);break;
-    case 'planAnnual': mountPlanAnnualNav(navContainer);break;
-    case 'planInitial': mountPlanInitialNav(navContainer);break;
-    case 'planMinor': mountPlanMinorNav(navContainer);break;
-  }
-}
+// updateSidebar: src/core/shell/sidebar.js (Milestone 70, 70H).
+function updateSidebar(){return window.GuardianFormsLegacyBridge.updateSidebar();}
 
 // ═══════════════════════════════════════════════════════
 // CONVERT EXISTING WARD — creates a new ward of a different inventory type,
@@ -2614,13 +1560,6 @@ function updateSidebar(){
 // per-pair functions below for exactly what maps where and why.
 // ═══════════════════════════════════════════════════════
 
-document.addEventListener('click',e=>{
-  const wrap=document.getElementById('convert-source-ward-wrap');
-  if(wrap&&!wrap.contains(e.target)){
-    comboboxHide(document.getElementById('convert-source-ward-dropdown'));
-    document.getElementById('convert-source-ward')?.setAttribute('aria-expanded','false');
-  }
-});
 
 
 
@@ -2657,118 +1596,8 @@ document.addEventListener('click',e=>{
 // ═══════════════════════════════════════════════════════
 // INVENTORY TYPE SELECTOR PAGE
 // ═══════════════════════════════════════════════════════
-// Milestone 62 hid the Comment Card link on the dashboard toolbar for the
-// initial test rollout (#820024), intending to reinstate it later. This page
-// carries the identical link (same URL, same label) and was left rendering
-// unconditionally -- a gap Milestone 65D closes by putting both surfaces
-// behind one shared flag, set once here, so a future reinstate is one flip
-// instead of two. The markup (and the GovQA URL user-guide-drift-guard.spec.js
-// once scanned for, before help/index.html stopped mentioning the hidden
-// control) stays in source either way.
-const SHOW_COMMENT_CARD_LINK = false;
-window.SHOW_COMMENT_CARD_LINK = SHOW_COMMENT_CARD_LINK;
 
-function pageInventorySelector(){
-  const commentCardLink = SHOW_COMMENT_CARD_LINK
-    ? `<a class="topnav-btn" href="https://pinellascountyfl.govqa.us/WEBAPP/_rs/(S(ymqkyi4ihgwnngmluraqqkeh))/RequestOpen.aspx?sSessionID=&rqst=23" target="_blank" rel="noopener noreferrer">${ic('message',16)} Comment Card<span class="visually-hidden"> (opens in a new tab)</span></a>`
-    : '';
-  return `<div style="max-width:900px;margin:0 auto;">
-  <h1 style="font-size:1.8rem;color:var(--ink);margin-bottom:2rem;text-align:center;">Start New Form</h1>
-  <p style="text-align:center;color:var(--ink-3);margin-bottom:2rem;font-size:.95rem;">Select the form type for a ward. You can manage multiple wards of different types.</p>
-  <div class="feedback-entry-actions" aria-label="Beta feedback">
-    <button type="button" class="topnav-btn" data-feedback-open="bug">${ic('bug',16)} Report a Bug</button>
-    ${commentCardLink}
-  </div>
-  <div class="inventory-selector">
-    <div class="inventory-card" data-form-action="add-ward-type" data-inventory-type="guardian" role="button" tabindex="0" aria-label="Create Initial Inventory ward">
-      <h2><svg class="ic" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 4.6H7.2a1.6 1.6 0 0 0-1.6 1.6V19a1.6 1.6 0 0 0 1.6 1.6h9.6A1.6 1.6 0 0 0 18.4 19V6.2a1.6 1.6 0 0 0-1.6-1.6H15"/><rect x="9" y="3" width="6" height="3.4" rx="1.1"/></svg> Initial Inventory</h2>
-      <p>${window.GuardianFormsLegacyBridge.INVENTORY_TYPES.guardian.description}</p>
-      <span class="btn btn-primary btn-sm" aria-hidden="true">Create Form for a Ward</span>
-    </div>
-    <div class="inventory-card" data-form-action="add-ward-type" data-inventory-type="simplified" role="button" tabindex="0" aria-label="Create Simplified Accounting ward">
-      <h2><svg class="ic" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 3.6h12v17l-3-1.8-3 1.8-3-1.8-3 1.8Z"/><path d="M9.2 8.4h5.6M9.2 12.4h5.6"/></svg> Simplified Accounting</h2>
-      <p>${window.GuardianFormsLegacyBridge.INVENTORY_TYPES.simplified.description}</p>
-      <span class="btn btn-primary btn-sm" aria-hidden="true">Create Form for a Ward</span>
-    </div>
-    <div class="inventory-card" data-form-action="add-ward-type" data-inventory-type="annual" role="button" tabindex="0" aria-label="Create Annual Accounting ward">
-      <h2><svg class="ic" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4.2 20h15.6"/><path d="M7.4 20v-6.4M12 20V5.6M16.6 20v-9.2"/></svg> Annual Accounting</h2>
-      <p>${window.GuardianFormsLegacyBridge.INVENTORY_TYPES.annual.description}</p>
-      <span class="btn btn-primary btn-sm" aria-hidden="true">Create Form for a Ward</span>
-    </div>
-    <div class="inventory-card" data-form-action="add-ward-type" data-inventory-type="finalAccounting" role="button" tabindex="0" aria-label="Create Final Accounting ward">
-      <h2><svg class="ic" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4.2 20h15.6"/><path d="M7.4 20v-6.4M12 20V5.6M16.6 20v-9.2"/><path d="m15.8 4.4 1.7 1.7 3.1-3.2"/></svg> Final Accounting</h2>
-      <p>${window.GuardianFormsLegacyBridge.INVENTORY_TYPES.finalAccounting.description}</p>
-      <span class="btn btn-primary btn-sm" aria-hidden="true">Create Form for a Ward</span>
-    </div>
-    <div class="inventory-card" data-form-action="add-ward-type" data-inventory-type="trustAccounting" role="button" tabindex="0" aria-label="Create Trust Accounting ward">
-      <h2><svg class="ic" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4.6 9.4 12 4.2l7.4 5.2"/><path d="M6.6 10.8v7.4M11 10.8v7.4M15.4 10.8v7.4M19.8 10.8v7.4"/><path d="M4.2 20.2h15.6"/></svg> Trust Accounting</h2>
-      <p>${window.GuardianFormsLegacyBridge.INVENTORY_TYPES.trustAccounting.description}</p>
-      <span class="btn btn-primary btn-sm" aria-hidden="true">Create Form for a Ward</span>
-    </div>
-    <div class="inventory-card" data-form-action="add-ward-type" data-inventory-type="planInitial" role="button" tabindex="0" aria-label="Create Initial Guardianship Plan ward">
-      <h2><svg class="ic" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3.4 5.2 6.1v5.3c0 4.2 2.9 8.1 6.8 9.2 3.9-1.1 6.8-5 6.8-9.2V6.1Z"/><path d="M12 8v5.4M12 16.4v.1"/></svg> Initial Guardianship Plan</h2>
-      <p>${window.GuardianFormsLegacyBridge.INVENTORY_TYPES.planInitial.description}</p>
-      <span class="btn btn-primary btn-sm" aria-hidden="true">Create Form for a Ward</span>
-    </div>
-    <div class="inventory-card" data-form-action="add-ward-type" data-inventory-type="planSimplified" role="button" tabindex="0" aria-label="Create Simplified Annual Plan ward">
-      <h2><svg class="ic" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3.4 5.2 6.1v5.3c0 4.2 2.9 8.1 6.8 9.2 3.9-1.1 6.8-5 6.8-9.2V6.1Z"/><path d="m9.4 12.1 1.9 1.9 3.4-3.6"/></svg> Simplified Annual Plan</h2>
-      <p>${window.GuardianFormsLegacyBridge.INVENTORY_TYPES.planSimplified.description}</p>
-      <span class="btn btn-primary btn-sm" aria-hidden="true">Create Form for a Ward</span>
-    </div>
-    <div class="inventory-card" data-form-action="add-ward-type" data-inventory-type="planAnnual" role="button" tabindex="0" aria-label="Create Annual Guardianship Plan ward">
-      <h2><svg class="ic" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3.4 5.2 6.1v5.3c0 4.2 2.9 8.1 6.8 9.2 3.9-1.1 6.8-5 6.8-9.2V6.1Z"/><path d="M9.2 10.6h5.6M9.2 13.6h5.6"/></svg> Annual Guardianship Plan</h2>
-      <p>${window.GuardianFormsLegacyBridge.INVENTORY_TYPES.planAnnual.description}</p>
-      <span class="btn btn-primary btn-sm" aria-hidden="true">Create Form for a Ward</span>
-    </div>
-    <div class="inventory-card" data-form-action="add-ward-type" data-inventory-type="planMinor" role="button" tabindex="0" aria-label="Create Annual Plan — Minors ward">
-      <h2><svg class="ic" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3.4 5.2 6.1v5.3c0 4.2 2.9 8.1 6.8 9.2 3.9-1.1 6.8-5 6.8-9.2V6.1Z"/><circle cx="12" cy="9.8" r="1.6"/><path d="M9.4 15.2c0-1.6 1.2-2.6 2.6-2.6s2.6 1 2.6 2.6"/></svg> Annual Plan — Minors</h2>
-      <p>${window.GuardianFormsLegacyBridge.INVENTORY_TYPES.planMinor.description}</p>
-      <span class="btn btn-primary btn-sm" aria-hidden="true">Create Form for a Ward</span>
-    </div>
-  </div>
 
-  <div class="summary-box mt-4">
-    <h2 class="subsection-heading">About Guardian Forms</h2>
-    <p style="font-size:.88rem;color:var(--ink-2);line-height:1.5;">Guardian Forms helps guardians — and the attorneys who assist them — prepare the court-required filings for Florida guardianship cases. It walks you through each required field, calculates totals automatically, and produces a filing-ready PDF or the official Clerk of Court Excel template.</p>
-
-    <h2 class="subsection-heading mt-3">Who Should Use This</h2>
-    <p style="font-size:.88rem;color:var(--ink-2);line-height:1.5;">Guardians of the <strong>property</strong>, who file an <strong>Initial Inventory</strong>, a <strong>Simplified Annual Accounting</strong>, or a full <strong>Annual Accounting</strong> — and guardians of the <strong>person</strong>, who file a <strong>Plan</strong> reporting on the ward's residence, care, and wellbeing. If you are guardian of both, you file one of each; create a separate form for each filing and give them the same case number, and the dashboard will keep them together.</p>
-
-    <h2 class="subsection-heading mt-3">Which Type Do I Need?</h2>
-    <ul style="font-size:.88rem;color:var(--ink-2);line-height:1.6;padding-left:1.2rem;">
-      <li><strong>Initial Inventory</strong> — the initial inventory of the ward's assets, filed as of the Guardianship Inception Date. Every new guardianship of property starts here.</li>
-      <li><strong>Simplified Annual Accounting</strong> — a short-form yearly accounting, but only when <strong>all</strong> estate property is held in a designated depository under Fla. Stat. § 69.031 and the <strong>only</strong> account activity is interest accrual, settlement deposits, or service charges. The app asks two qualifying questions when you create this type of form and will route you to a standard Annual Accounting automatically if the guardianship doesn't qualify.</li>
-      <li><strong>Annual Accounting</strong> — the full yearly accounting with detailed schedules, required whenever the simplified form doesn't apply.</li>
-      <li><strong>Simplified Annual Plan</strong> — the short yearly report on the ward as a person: where they have lived, the medical care they received, their diagnosis, social activities, and whether any rights should be restored. This is a <em>separate filing</em> from the accountings above and reports on care rather than money.</li>
-    </ul>
-
-    <h2 class="subsection-heading mt-3">Getting Started</h2>
-    <ol style="font-size:.88rem;color:var(--ink-2);line-height:1.6;padding-left:1.2rem;">
-      <li>Click <strong>Create Form for a Ward</strong> above and choose the correct type for what you're filing.</li>
-      <li>Work through each section using the sidebar — required fields are marked with a red <span class="req">*</span> and a checkmark appears next to each section once it's complete.</li>
-      <li>Use <strong>Preview &amp; Export</strong> to review the filing-ready document, then save it as a PDF or Excel file.</li>
-      <li>You can manage multiple wards at once and switch between them from the sidebar at any time.</li>
-    </ol>
-
-    <p style="font-size:.8rem;color:var(--ink-3);margin-top:1rem;margin-bottom:0;">Your work is saved automatically on this device as you go. Nothing is uploaded to a server.</p>
-  </div>
-  </div>`;
-}
-
-async function showAddWardModalForType(type){
-  if(type==='simplified'){
-    showSimplifiedEligibilityModal('');
-    return;
-  }
-  await ensureFragment('common-modals');
-  document.getElementById('new-ward-name').value='';
-  populateWardNameSuggestions('ward-name-suggestions');
-  initWardNameCombobox('new-ward-name','new-ward-name-dropdown',()=>updateCarrySourcePicker());
-  document.getElementById('new-ward-type').value=type;
-  updateCarrySourcePicker();
-  document.getElementById('new-ward-name').focus();
-  showModal('addWardModal');
-}
 
 // ═══════════════════════════════════════════════════════
 // WIZARD: GUARDIAN INVENTORY
@@ -3141,8 +1970,6 @@ function setPath(obj,path,val){return window.GuardianFormsLegacyBridge.setPath(o
 // applies the map to the page.
 function computeNavChecks(){return window.GuardianFormsLegacyBridge.computeNavChecks(window.D,activeInventoryType,{validateGuardian:window.validateGuardian,calcTotalsAnnual,annualReconcileState});}
 
-// updateNavDots: src/core/status/nav-marks.js (Milestone 70, 70F).
-function updateNavDots(){return window.GuardianFormsLegacyBridge.updateNavDots();}
 
 
 // Filing progress for any filing, open or not (the dashboard's cards). Since
@@ -3185,34 +2012,6 @@ function getWardProgress(ward){return window.GuardianFormsLegacyBridge.getWardPr
 // pagePrint()/buildPrintHTML() moved to
 // src/features/guardian-inventory/print.js (Milestone 8, Phase B).
 
-// Opens the Florida e-filing portal as a separate window sized and
-// positioned to the right half of the screen, and best-effort snaps this
-// app's own window to the left half — giving a side-by-side layout without
-// embedding the portal in an iframe (their site's own security headers,
-// X-Frame-Options: SAMEORIGIN and CSP frame-ancestors 'self', block that
-// outright — verified directly against their server, not a guess).
-// noopener/noreferrer: the portal window can't reach back into this one via
-// window.opener (standard hardening for any window.open to an outside site).
-function openFloridaCourtPortal(){
-  const availW=screen.availWidth||window.innerWidth||1920;
-  const availH=screen.availHeight||window.innerHeight||1080;
-  const halfW=Math.floor(availW/2);
-
-  window.open(
-    'https://www.myflcourtaccess.com/default.aspx',
-    '_blank',
-    `left=${availW-halfW},top=0,width=${halfW},height=${availH},noopener,noreferrer`
-  );
-
-  // Repositioning THIS window only works in browsers that allow moveTo/
-  // resizeTo on a window not opened via script — many block it as a
-  // security measure. Wrapped so an unsupported browser just leaves this
-  // window where it was, rather than erroring.
-  try{
-    window.moveTo(0,0);
-    window.resizeTo(halfW,availH);
-  }catch(e){/* not supported here — user can snap manually (Win+Left) */}
-}
 
 // pagePrint()/buildPrintHTML()/doSavePdf()/doSaveExcel()/importExcelFile()/
 // parseInitialInventoryWorkbook()/GUARDIAN_EXCEL_CAPS moved to
@@ -3358,13 +2157,8 @@ async function autoLoadTemplates(){
   }
 }
 
-// Sidebar copyright line -- year computed from the visitor's own clock so it
-// keeps incrementing on every Jan 1 with no code change required.
-function renderCopyrightNotice(){
-  const el=document.getElementById('sidebar-copyright');
-  if(!el)return;
-  el.textContent=`© Copyright ${new Date().getFullYear()} Pinellas County Clerk of the Circuit Court and Comptroller`;
-}
+// renderCopyrightNotice: src/core/shell/sidebar.js (Milestone 70, 70H).
+function renderCopyrightNotice(){return window.GuardianFormsLegacyBridge.renderCopyrightNotice();}
 
 // The door from this script into src/core/runtime/monolith.js (Milestone 70,
 // 70E): it hands the moved code the functions here that it calls back. The
@@ -3374,7 +2168,7 @@ function provideMonolithServices(fns){return window.GuardianFormsLegacyBridge.pr
 async function initApp(){
   // Milestone 70's 70E: hand the moved code the functions of this script it
   // calls (src/core/runtime/monolith.js), before anything can call back.
-  provideMonolithServices({auditLog,autoSave,bindComboboxKeyboardNav,closeModal,comboboxAssignOptionIds,comboboxFilterItems,comboboxHide,comboboxRenderDropdown,computeNavChecks,ensureFragment,flushPendingSave,getCurrentPage,getWardHeadlineTotal,initWardNameCombobox,notifyProbateGuardianTabStateChanged,populateWardNameSuggestions,saveWardToState,showModal,updateSidebar});
+  provideMonolithServices({auditLog,autoSave,clearAllData,computeNavChecks,flushPendingSave,getCurrentPage,getWardHeadlineTotal,getWardProgress,isContinuePromptShown,loadAuditLogEntries,lockApp,markContinuePromptShown,mountAnnualNav,mountGuardianNav,mountPlanAnnualNav,mountPlanInitialNav,mountPlanMinorNav,mountPlanSimplifiedNav,mountSimplifiedNav,saveData,saveWardToState});
   renderCopyrightNotice();
   // Resolve file selection before the unlock flow.
   await promptOpenOrStartAtLaunch();
@@ -3486,28 +2280,8 @@ document.addEventListener('focusout',e=>{
   }
 });
 
-// Milestone 16: Modal helpers
-let _wardLockedPreviousFocus = null;
-
-window.showWardLockedModal = function() {
-  const el = document.getElementById('ward-locked-overlay');
-  if (el) {
-    _wardLockedPreviousFocus = document.activeElement;
-    el.classList.add('show');
-    const btn = document.getElementById('close-ward-locked');
-    if (btn) btn.focus();
-  }
-};
-window.closeWardLockedModal = function() {
-  const el = document.getElementById('ward-locked-overlay');
-  if (el) {
-    el.classList.remove('show');
-    if (_wardLockedPreviousFocus && typeof _wardLockedPreviousFocus.focus === 'function') {
-      try { _wardLockedPreviousFocus.focus(); } catch (e) {}
-      _wardLockedPreviousFocus = null;
-    }
-  }
-};
+// The "filing is open in another tab" dialog is src/core/ward-lock.js's
+// (Milestone 70, 70H).
 
 // The startup label linking that used to be queued here (setTimeout(..., 0))
 // is main.js's since Milestone 70's 70F: linkLabelsToInputs() is a module's

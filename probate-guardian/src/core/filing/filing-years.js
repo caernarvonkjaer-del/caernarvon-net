@@ -10,6 +10,7 @@ import { hydrateCountyFromWardParty } from '../navigation/ward-county.js';
 import { setDirtySinceExport, updateLastSavedIndicator } from '../persistence/case-file.js';
 import { monolith } from '../runtime/monolith.js';
 import { getCaseFile } from '../state.js';
+import { notifyProbateGuardianTabStateChanged } from '../navigation/tab-state.js';
 
 // A ward's flat top-level fields (schedules, balances, signatures, etc.)
 // always represent whichever year is currently "active" — every existing
@@ -258,7 +259,7 @@ export async function switchWardYear(wardId,targetKey){
   await monolith.saveWardToState(ward);
   setDirtySinceExport(true);
   updateLastSavedIndicator();
-  monolith.notifyProbateGuardianTabStateChanged();
+  notifyProbateGuardianTabStateChanged();
 }
 
 // Archives the current year (carrying forward everything by default) and
@@ -289,7 +290,7 @@ export async function startNewWardYear(wardId){
   await monolith.saveWardToState(ward);
   setDirtySinceExport(true);
   updateLastSavedIndicator();
-  monolith.notifyProbateGuardianTabStateChanged();
+  notifyProbateGuardianTabStateChanged();
 }
 
 // The period key a given archived year's supporting-document uploads and
@@ -317,5 +318,5 @@ export async function deleteWardYear(wardId,yearKey){
   await monolith.saveWardToState(ward);
   setDirtySinceExport(true);
   updateLastSavedIndicator();
-  monolith.notifyProbateGuardianTabStateChanged();
+  notifyProbateGuardianTabStateChanged();
 }

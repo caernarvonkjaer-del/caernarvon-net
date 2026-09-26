@@ -17,6 +17,14 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '.
 // the tail imports updateNavDots(), so the recorder stands in for the module.
 const navDots = vi.hoisted(() => ({ fn: null }));
 vi.mock('../../src/core/status/nav-marks.js', () => ({ updateNavDots: (...a) => navDots.fn?.(...a) }));
+// The sidebar's refreshes are src/core/shell/sidebar.js's since Milestone 70's
+// 70H; the tail imports them, so the recorders stand in for the module.
+const sidebar = vi.hoisted(() => ({}));
+vi.mock('../../src/core/shell/sidebar.js', () => ({
+  refreshWardInfoCard: (...a) => sidebar.refreshWardInfoCard?.(...a),
+  syncActiveWardNameDisplay: (...a) => sidebar.syncActiveWardNameDisplay?.(...a),
+  syncGuardianNameDisplay: (...a) => sidebar.syncGuardianNameDisplay?.(...a),
+}));
 
 function freshWindow() {
   const calls = [];
@@ -31,9 +39,9 @@ function freshWindow() {
     syncIdentityField: rec('identity'),
     autoSave: rec('autoSave'),
     updateNavDots: (navDots.fn = rec('navDots')),
-    refreshWardInfoCard: rec('wardCard'),
-    syncActiveWardNameDisplay: rec('wardName'),
-    syncGuardianNameDisplay: rec('guardianName'),
+    refreshWardInfoCard: (sidebar.refreshWardInfoCard = rec('wardCard')),
+    syncActiveWardNameDisplay: (sidebar.syncActiveWardNameDisplay = rec('wardName')),
+    syncGuardianNameDisplay: (sidebar.syncGuardianNameDisplay = rec('guardianName')),
     // The tail closes by dispatching `pg:field-written` on window -- the hook
     // Annual Accounting's refreshAnnualTotals() subscribes to now that its
     // own persistAnnualControl() (which called it directly) is gone.

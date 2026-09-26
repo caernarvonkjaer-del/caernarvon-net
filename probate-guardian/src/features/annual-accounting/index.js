@@ -76,6 +76,8 @@ import { browserRecommendationNotice, linkAccordions, sanitizeNegativeAmounts } 
 import { countyAutocompleteHTML } from '../../core/form/county-autocomplete.js';
 import { setPath } from '../../core/form/paths.js';
 import { showPickPartyModal } from '../../core/modals/pick-record-dialogs.js';
+import { tooltip } from '../../core/help/tooltips.js';
+import { syncActiveWardNameDisplay, syncGuardianNameDisplay } from '../../core/shell/sidebar.js';
 // Annual Accounting — the sixth feature extraction (Milestone 7, Phases A
 // and B of INDEX-SPLIT-PLAN.md's migration sequence: data/pages/nav/
 // validate, and print/PDF/Excel import/export). Also covers the
@@ -108,8 +110,8 @@ const {
   // Milestone 51C dropped `toggleSsnReveal` from this list -- destructured but
   // never called here. Its only call site is the delegated 'toggle-ssn' handler
   // in src/form-events.js, which imports it (src/core/form/form-runtime.js).
-  tooltip, 
-  syncActiveWardNameDisplay, syncGuardianNameDisplay,
+  
+  
   calcTotalsAnnual, annualReconcileState, n, pct,
 } = window;
 

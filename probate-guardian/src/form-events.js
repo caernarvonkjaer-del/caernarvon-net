@@ -13,10 +13,18 @@ import { pvSelect, pvStep } from './core/ui/print-pager.js';
 import { handleScheduleDocUpload, removeScheduleDoc, updateScheduleComment } from './core/filing/schedule-docs.js';
 import { toggleSsnReveal } from './core/form/form-runtime.js';
 import { filterCountyDropdown, hideCountyDropdown, onCountyKeydown, selectCountyOption } from './core/form/county-autocomplete.js';
-import { navigate, renderPage } from './core/navigation/router.js';
+import { getCurrentPage, navigate, renderPage } from './core/navigation/router.js';
 import { confirmDeleteWardYear, editPriorYear } from './core/modals/year-dialogs.js';
 import { clearPartyCompareSelection, doFilingSyncClosed, doPartyDismissPair, doPartyMergeKeep, doPartySyncClosed, doPartySyncClosedAll, doPartyUnmergeSelected, renderPartyDirectoryRows, togglePartyCompareSelection, togglePartyUnmergeSelection } from './core/parties/party-management.js';
 import { showPickPartyModal } from './core/modals/pick-record-dialogs.js';
+import { showAddWardModalForType } from './core/modals/filing-dialogs.js';
+import { exportActivityLog, renderActivityLogList } from './core/activity/activity-log-view.js';
+import { openFloridaCourtPortal } from './core/shell/court-portal.js';
+// Milestone 70, 70H: this module's document listeners are collected here and
+// added by installFormEvents(), once, from main.js -- not as a side effect of
+// importing it; its signal removes them.
+const listeners = [];
+const on = (type, handler, options) => listeners.push([type, handler, options]);
 
 // The data-form-path and data-annual-path write path is writeDraftValue() on
 // input/compositionend and finalizeFieldValue() on blur/change, wired by the
@@ -27,7 +35,7 @@ import { showPickPartyModal } from './core/modals/pick-record-dialogs.js';
 // table used to sit here with no callers; removed in Milestone 42D.)
 const boundPath = (control) => control.dataset.fieldPath || control.dataset.formPath || control.dataset.annualPath;
 
-document.addEventListener('click', (event) => {
+on('click', (event) => {
   const actionElement = event.target instanceof Element ? event.target.closest('[data-form-action]') : null;
   if (!actionElement) return;
   switch (actionElement.dataset.formAction) {
@@ -47,13 +55,13 @@ document.addEventListener('click', (event) => {
     case 'add-plan-guardian': addPlanGuardian(actionElement.dataset.route); break;
     case 'remove-plan-guardian': removePlanGuardian(Number.parseInt(actionElement.dataset.index, 10), actionElement.dataset.route); break;
     case 'duplicate-plan-row': duplicatePlanRow(actionElement.dataset.collection, Number.parseInt(actionElement.dataset.index, 10), actionElement.dataset.route); break;
-    case 'add-ward-type': window.showAddWardModalForType(actionElement.dataset.inventoryType); break;
+    case 'add-ward-type': showAddWardModalForType(actionElement.dataset.inventoryType); break;
     case 'choose-schedule-docs': document.getElementById(actionElement.dataset.inputId)?.click(); break;
     case 'confirm-delete-ward-year': confirmDeleteWardYear(actionElement.dataset.wardId, actionElement.dataset.yearKey); break;
     case 'edit-prior-year': editPriorYear(actionElement.dataset.wardId, actionElement.dataset.yearKey); break;
-    case 'export-activity-log': window.exportActivityLog(); break;
-    case 'filing-sync-closed': doFilingSyncClosed(actionElement.dataset.role, actionElement.dataset.index); break;
-    case 'filing-sync-closed-all': doFilingSyncClosed(); break;
+    case 'export-activity-log': exportActivityLog(); break;
+    case 'filing-sync-closed': void doFilingSyncClosed(actionElement.dataset.role, actionElement.dataset.index).then(() => renderPage(getCurrentPage())); break;
+    case 'filing-sync-closed-all': void doFilingSyncClosed().then(() => renderPage(getCurrentPage())); break;
     case 'link-party': showPickPartyModal(actionElement.dataset.role, actionElement.dataset.index); break;
     // summary-renderer.js's Section Completion / footer links are <a href="#">
     // (not <button>, so they read as links, not controls). Without this, the
@@ -65,7 +73,7 @@ document.addEventListener('click', (event) => {
     // later. Every other data-form-action target is a real <button>, which
     // has no default action to prevent.
     case 'navigate': event.preventDefault(); navigate(actionElement.dataset.route); break;
-    case 'open-court-portal': window.openFloridaCourtPortal(); break;
+    case 'open-court-portal': openFloridaCourtPortal(); break;
     case 'party-clear-compare': clearPartyCompareSelection(); break;
     // The two checkbox actions read the box's own state: a click on a checkbox
     // toggles it before listeners run, so `checked` is already the new value.
@@ -87,19 +95,19 @@ document.addEventListener('click', (event) => {
   }
 });
 
-document.addEventListener('input', (event) => {
+on('input', (event) => {
   const control = event.target;
   if (!(control instanceof HTMLInputElement || control instanceof HTMLTextAreaElement)) return;
   if (boundPath(control)) {
     writeDraftValue(control, { event });
   }
   if (control.dataset.formControl === 'county') filterCountyDropdown(control);
-  if (control.dataset.formInput === 'activity-log') window.renderActivityLogList();
+  if (control.dataset.formInput === 'activity-log') renderActivityLogList();
   if (control.dataset.formInput === 'party-directory') renderPartyDirectoryRows();
   if (control.dataset.formInput === 'schedule-comment') updateScheduleComment(control.dataset.scheduleKey, control.value);
 });
 
-document.addEventListener('compositionend', (event) => {
+on('compositionend', (event) => {
   const control = event.target;
   if (!(control instanceof HTMLInputElement || control instanceof HTMLTextAreaElement)) return;
   if (boundPath(control)) {
@@ -107,7 +115,7 @@ document.addEventListener('compositionend', (event) => {
   }
 });
 
-document.addEventListener('change', (event) => {
+on('change', (event) => {
   const control = event.target;
   if (control instanceof HTMLInputElement && (control.type === 'checkbox' || control.type === 'radio')) {
     writeDraftValue(control, { event });
@@ -141,7 +149,7 @@ document.addEventListener('change', (event) => {
     }
   }
   if (control instanceof HTMLSelectElement && control.dataset.formChange === 'preview-page') pvSelect(control.value);
-  if (control instanceof HTMLSelectElement && control.dataset.formChange === 'activity-log') window.renderActivityLogList();
+  if (control instanceof HTMLSelectElement && control.dataset.formChange === 'activity-log') renderActivityLogList();
   if (control instanceof HTMLInputElement && control.dataset.formChange === 'schedule-doc-upload' && control.files) {
     handleScheduleDocUpload(control.dataset.scheduleKey, control.files);
     control.value = '';
@@ -152,7 +160,7 @@ document.addEventListener('change', (event) => {
   }
 });
 
-document.addEventListener('focusin', (event) => {
+on('focusin', (event) => {
   const control = event.target;
   if ((control instanceof HTMLInputElement || control instanceof HTMLTextAreaElement || control instanceof HTMLSelectElement) && boundPath(control)) {
     bindFieldToFiling(control);
@@ -162,7 +170,7 @@ document.addEventListener('focusin', (event) => {
   }
 });
 
-document.addEventListener('focusout', (event) => {
+on('focusout', (event) => {
   const control = event.target;
   if (!(control instanceof HTMLInputElement || control instanceof HTMLTextAreaElement)) return;
   if (control.dataset.formControl === 'county') setTimeout(() => hideCountyDropdown(control.id), 150);
@@ -175,13 +183,13 @@ document.addEventListener('focusout', (event) => {
 // mousedown could select an option, and Tab-blur closed the dropdown
 // (focusout above) without committing whatever was highlighted, leaving no
 // way to set a county without a mouse at all.
-document.addEventListener('keydown', (event) => {
+on('keydown', (event) => {
   if (event.target instanceof HTMLInputElement && event.target.dataset.formControl === 'county') {
     onCountyKeydown(event.target, event);
   }
 });
 
-document.addEventListener('mousedown', (event) => {
+on('mousedown', (event) => {
   const option = event.target instanceof Element ? event.target.closest('[data-form-mousedown="select-county"]') : null;
   if (!option) return;
   event.preventDefault();
@@ -197,13 +205,13 @@ document.addEventListener('mousedown', (event) => {
 // real pointer produces) also works, rather than silently doing nothing.
 // selectCountyOption() is idempotent, so the harmless double-call a real
 // click still triggers (mousedown, then click) costs nothing observable.
-document.addEventListener('click', (event) => {
+on('click', (event) => {
   const option = event.target instanceof Element ? event.target.closest('[data-form-mousedown="select-county"]') : null;
   if (!option) return;
   selectCountyOption(option.dataset.inputId, option.dataset.county);
 });
 
-document.addEventListener('keydown', (event) => {
+on('keydown', (event) => {
   const actionElement = event.target instanceof Element ? event.target.closest('[data-form-action]') : null;
   if (!actionElement || !['Enter', ' '].includes(event.key)) return;
   if (actionElement.dataset.formAction === 'add-ward-type') {
@@ -211,3 +219,11 @@ document.addEventListener('keydown', (event) => {
     actionElement.click();
   }
 });
+
+/** Add this module's listeners; the signal removes them. Called once, by main.js. */
+export function installFormEvents({ signal } = {}) {
+  for (const [type, handler, options] of listeners) {
+    const opts = typeof options === 'object' && options ? options : { capture: !!options };
+    document.addEventListener(type, handler, { ...opts, signal });
+  }
+}

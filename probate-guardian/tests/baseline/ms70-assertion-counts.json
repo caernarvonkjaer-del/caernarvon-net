@@ -2,8 +2,8 @@
  "generatedBy": "node scripts/ms70-assertion-counts.mjs --write-baseline",
  "note": "Milestone 70 per-spec assertion counts (static expect calls). tests/unit/ms70-assertion-counts.spec.js fails when a spec falls below its count; lowering it requires --reason, recorded in dropLog. A tripwire, not proof of equivalence (decision D9).",
  "totals": {
-  "expects": 6558,
-  "tests": 1887
+  "expects": 6573,
+  "tests": 1895
  },
  "counts": {
   "tests/e2e/annotation-toolbar-containment.spec.ts": {
@@ -189,6 +189,10 @@
   "tests/e2e/guided-tour-navigation.spec.ts": {
    "expects": 9,
    "tests": 2
+  },
+  "tests/e2e/help-panel-state.spec.ts": {
+   "expects": 4,
+   "tests": 1
   },
   "tests/e2e/highlight-toolbar-style.spec.ts": {
    "expects": 37,
@@ -571,7 +575,7 @@
    "tests": 9
   },
   "tests/unit/comment-card-hide.spec.js": {
-   "expects": 8,
+   "expects": 9,
    "tests": 5
   },
   "tests/unit/completion-parity.spec.js": {
@@ -753,6 +757,10 @@
   "tests/unit/help-guide-pdf-orphan.spec.js": {
    "expects": 2,
    "tests": 2
+  },
+  "tests/unit/help-panel.spec.js": {
+   "expects": 4,
+   "tests": 4
   },
   "tests/unit/issue-registry.spec.js": {
    "expects": 35,
@@ -1005,6 +1013,10 @@
   "tests/unit/sheet-pruning.spec.js": {
    "expects": 30,
    "tests": 15
+  },
+  "tests/unit/shell-surfaces.spec.js": {
+   "expects": 6,
+   "tests": 3
   },
   "tests/unit/signature-block-fields.spec.js": {
    "expects": 12,

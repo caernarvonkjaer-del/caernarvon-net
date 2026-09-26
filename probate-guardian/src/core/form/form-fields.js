@@ -4,6 +4,7 @@
 import { formatDisplayDate } from './date-parser.js';
 import { ic } from '../ui/icons.js';
 import { formatAccountNumber, formatAddress, formatBarNumber, formatCaseNumber, formatCheckNumber, formatCityStateZip, formatName, formatPhone, formatSSN, sanitizeNonNegativeDecimal } from './form-contract.js';
+import { tooltip } from '../help/tooltips.js';
 
 // Escapes &<>" but deliberately NOT the apostrophe, unlike
 // core/filing/escape-html.js. Milestone 52E looked at merging the two and
@@ -227,8 +228,8 @@ export function renderFormField({
     ? `<div id="${hintId}" class="form-text text-muted" style="font-size:0.75rem;margin-top:0.2rem;">${esc(hintText)}</div>`
     : '';
 
-  const tooltipHtml = (tooltipKey && typeof window !== 'undefined' && typeof window.tooltip === 'function')
-    ? window.tooltip(tooltipKey)
+  const tooltipHtml = (tooltipKey && typeof window !== 'undefined')
+    ? tooltip(tooltipKey)
     : '';
 
   const reqMark = required ? '<span class="req">*</span>' : '';
@@ -318,8 +319,8 @@ export function renderYesNoField({
   const groupId = `yesno_${safeId}`;
   const pathAttr = binding === 'annual' ? 'data-annual-path' : 'data-form-path';
   const routeAttr = route ? ` data-form-route="${esc(route)}"` : '';
-  const tooltipHtml = (tooltipKey && typeof window !== 'undefined' && typeof window.tooltip === 'function')
-    ? window.tooltip(tooltipKey)
+  const tooltipHtml = (tooltipKey && typeof window !== 'undefined')
+    ? tooltip(tooltipKey)
     : '';
   const reqMark = required ? '<span class="req">*</span>' : '';
   return `<fieldset class="plan-yes-no mb-2" data-yes-no-group="${esc(path)}">

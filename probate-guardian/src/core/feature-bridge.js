@@ -102,9 +102,8 @@ export function createFeatureBridge(loader) {
 }
 
 // legacy-app.js stays a classic (non-module) script per Milestone 1's
-// recorded decision, so it can't `import` this module directly -- see
-// src/fragment-loader.js's window.loadFragment comment for the same
-// pattern. src/main.js has been the bootstrap since Milestone 40G; these
+// recorded decision, so it can't `import` this module directly.
+// src/main.js has been the bootstrap since Milestone 40G; these
 // window bindings stay until legacy-app.js itself becomes a module.
 window.createFeatureBridge = createFeatureBridge;
 window.disposeActiveFeature = disposeActiveFeature;

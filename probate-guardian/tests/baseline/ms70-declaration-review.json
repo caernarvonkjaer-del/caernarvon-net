@@ -37,14 +37,6 @@
    "delivery": "70I",
    "why": "persistence"
   },
-  "_saveControlsCollapsed": {
-   "delivery": "70H",
-   "why": "shell"
-  },
-  "_saveControlsUserToggled": {
-   "delivery": "70H",
-   "why": "shell"
-  },
   "_saveTimer": {
    "delivery": "70I",
    "why": "persistence"
@@ -53,17 +45,9 @@
    "delivery": "70K",
    "why": "bridge"
   },
-  "_wardLockedPreviousFocus": {
-   "delivery": "70H",
-   "why": "shell"
-  },
   "activeInventoryType": {
    "delivery": "70J",
    "why": "state-owner"
-  },
-  "applySaveControlsCollapsedState": {
-   "delivery": "70H",
-   "why": "shell"
   },
   "autoLoadTemplates": {
    "delivery": "70I",
@@ -73,10 +57,6 @@
    "delivery": "70I",
    "why": "persistence"
   },
-  "bindComboboxKeyboardNav": {
-   "delivery": "70H",
-   "why": "shell"
-  },
   "calcTotals": {
    "delivery": "70B",
    "why": "pure"
@@ -84,30 +64,6 @@
   "caseFile": {
    "delivery": "70J",
    "why": "state-owner"
-  },
-  "collapseSaveControls": {
-   "delivery": "70H",
-   "why": "shell"
-  },
-  "collapseWardControls": {
-   "delivery": "70H",
-   "why": "shell"
-  },
-  "comboboxAssignOptionIds": {
-   "delivery": "70H",
-   "why": "shell"
-  },
-  "comboboxFilterItems": {
-   "delivery": "70H",
-   "why": "shell"
-  },
-  "comboboxHide": {
-   "delivery": "70H",
-   "why": "shell"
-  },
-  "comboboxRenderDropdown": {
-   "delivery": "70H",
-   "why": "shell"
   },
   "currentPage": {
    "delivery": "70K",
@@ -125,10 +81,6 @@
    "delivery": "70I",
    "why": "persistence"
   },
-  "formatDashboardCurrency": {
-   "delivery": "70B",
-   "why": "pure"
-  },
   "getActiveWard": {
    "delivery": "70E",
    "why": "store-seam"
@@ -137,21 +89,9 @@
    "delivery": "70K",
    "why": "router-state"
   },
-  "getPrimaryGuardianDisplayName": {
-   "delivery": "70H",
-   "why": "shell"
-  },
-  "getProbateGuardianTabState": {
-   "delivery": "70H",
-   "why": "shell"
-  },
   "getSimplifiedFeatureBridge": {
    "delivery": "70K",
    "why": "bridge"
-  },
-  "handleSwitchWardClick": {
-   "delivery": "70H",
-   "why": "shell"
   },
   "hideSaveError": {
    "delivery": "70I",
@@ -185,26 +125,6 @@
    "delivery": "70H",
    "why": "shell"
   },
-  "onWardSelectorFocus": {
-   "delivery": "70H",
-   "why": "shell"
-  },
-  "onWardSelectorInput": {
-   "delivery": "70H",
-   "why": "shell"
-  },
-  "onWardSelectorKeydown": {
-   "delivery": "70H",
-   "why": "shell"
-  },
-  "openFloridaCourtPortal": {
-   "delivery": "70H",
-   "why": "shell"
-  },
-  "refreshWardInfoCard": {
-   "delivery": "70H",
-   "why": "shell"
-  },
   "renderCopyrightNotice": {
    "delivery": "70H",
    "why": "shell"
@@ -217,35 +137,7 @@
    "delivery": "70I",
    "why": "persistence"
   },
-  "showSwitchWardPickerModal": {
-   "delivery": "70H",
-   "why": "shell"
-  },
-  "syncActiveWardNameDisplay": {
-   "delivery": "70H",
-   "why": "shell"
-  },
-  "syncGuardianNameDisplay": {
-   "delivery": "70H",
-   "why": "shell"
-  },
-  "toggleSaveControls": {
-   "delivery": "70H",
-   "why": "shell"
-  },
-  "typeIcon": {
-   "delivery": "70C",
-   "why": "registry"
-  },
   "updateSidebar": {
-   "delivery": "70H",
-   "why": "shell"
-  },
-  "wardSelectorItems": {
-   "delivery": "70H",
-   "why": "shell"
-  },
-  "wardSelectorShowDropdown": {
    "delivery": "70H",
    "why": "shell"
   },
@@ -256,10 +148,6 @@
   "setAccountingFilingType": {
    "delivery": "70J",
    "why": "writes-classic-state"
-  },
-  "updateNavDots": {
-   "delivery": "70F",
-   "why": "nav-dom"
   },
   "getWardProgress": {
    "delivery": "70D",
@@ -289,10 +177,6 @@
   "loadAuditLogEntries": {
    "delivery": "70I",
    "why": "persistence"
-  },
-  "showSimplifiedEligibilityModal": {
-   "delivery": "70G",
-   "why": "filing-workflow"
   }
  },
  "notes": {
@@ -309,7 +193,6 @@
   "getWardHeadlineTotal": "Stays in 70D: it swaps window.D to compute another filing's total, which is exactly 70D's risk.",
   "loadCaseFileFromZip": "Changed on master in b2d97f5 (returns every part it could not read); a re-implement row in MILESTONE-70-FIX-LEDGER.md.",
   "pct": "Deleted on master in c62f890 (its only caller now imports totals.js's copy); a re-implement row in MILESTONE-70-FIX-LEDGER.md.",
-  "updateNavDots": "Moves in 70F with the other nav-dot updates (review override nav-dom); it is the sidebar's only caller of applyNavChecks(), which moves with it.",
   "saveWardToState": "Placed in 70E by its section (IN-MEMORY STATE OPERATIONS); on review it schedules autoSave() and writes the monolith's template cache or audit buffer, which 70I's persistence service owns, so it moves there.",
   "deleteWardFromState": "Placed in 70E by its section (IN-MEMORY STATE OPERATIONS); on review it schedules autoSave() and writes the monolith's template cache or audit buffer, which 70I's persistence service owns, so it moves there.",
   "saveTemplate": "Placed in 70E by its section (IN-MEMORY STATE OPERATIONS); on review it schedules autoSave() and writes the monolith's template cache or audit buffer, which 70I's persistence service owns, so it moves there.",
@@ -319,11 +202,8 @@
   "provideMonolithServices": "Added in 70E: legacy-app.js's one-line door into src/core/runtime/monolith.js, called from initApp(), the second transition exception MILESTONE-70-PROPOSAL.md records; it goes with the monolith (70L at the latest)."
  },
  "confirmed": {
-  "ACTIVITY_EVENT_META": "move 70H",
-  "ACTIVITY_LOG_RENDER_CAP": "move 70H",
   "AUTO_LOCK_MS": "move 70I",
   "CRYPTO_VERIFIER_PLAINTEXT": "move 70I",
-  "HELP_CONTENT": "move 70H",
   "LAUNCH_PREF_DB": "move 70I",
   "LAUNCH_PREF_KEY_HANDLE": "delete-as-dead 70I",
   "LAUNCH_PREF_KEY_OPENED": "delete-as-dead 70I",
@@ -333,24 +213,10 @@
   "REMEMBERED_FILE_TIMEOUT_MS": "delete-as-dead 70I",
   "SESSION_CACHE_DB": "move 70I",
   "SESSION_CACHE_STORE": "move 70I",
-  "SHOW_COMMENT_CARD_LINK": "move 70H",
   "SPECIAL_PAGES": "move 70K",
-  "TOOLTIPS": "move 70H",
   "UNLOCK_FAIL_THRESHOLD": "move 70I",
   "UNLOCK_LOCKOUT_BASE_MS": "move 70I",
   "UNLOCK_LOCKOUT_MAX_MS": "move 70I",
-  "USER_GUIDE_ANCHORS": "move 70H",
-  "USER_GUIDE_URL": "move 70H",
-  "WALKTHROUGH_ANNUAL": "move 70H",
-  "WALKTHROUGH_DASHBOARD": "move 70H",
-  "WALKTHROUGH_GUARDIAN": "move 70H",
-  "WALKTHROUGH_PLAN_ANNUAL": "move 70H",
-  "WALKTHROUGH_PLAN_INITIAL": "move 70H",
-  "WALKTHROUGH_PLAN_MINOR": "move 70H",
-  "WALKTHROUGH_PLAN_SIMPLIFIED": "move 70H",
-  "WALKTHROUGH_SIMPLIFIED": "move 70H",
-  "WALKTHROUGH_STEPS": "move 70H",
-  "_activityLogEntries": "move 70H",
   "_annualFeatureBridge": "move 70K",
   "_appState": "move 70I",
   "_auditLogEntries": "move 70I",
@@ -358,7 +224,6 @@
   "_autoLockTimer": "move 70I",
   "_cryptoKey": "move 70I",
   "_dashboardFeatureBridge": "move 70K",
-  "_fragmentAppended": "move 70H",
   "_guardianFeatureBridge": "move 70K",
   "_launchPrefDb": "move 70I",
   "_launchPrefDelete": "delete-as-dead 70I",
@@ -384,27 +249,17 @@
   "_templateCache": "move 70I",
   "_unlockMode": "move 70I",
   "_unlockResolve": "move 70I",
-  "_walkthroughAutoTriggered": "move 70H",
-  "activityLogFiltered": "move 70H",
   "addToRecentlyOpened": "move 70G",
   "applyTheme": "move 70H",
   "auditLog": "move 70I",
   "calc": "move 70B",
   "clearAllData": "move 70I",
-  "closeModal": "move 70H",
   "computeNavChecks": "move 70D",
-  "currentHelpContext": "move 70H",
   "currentTheme": "move 70H",
-  "currentWalkthroughStep": "move 70H",
-  "doGuardianSetup": "move 70H",
-  "endWalkthrough": "move 70H",
   "ensureFragment": "move 70H",
   "ensureGuardianFeatureReady": "move 70K",
   "ensureUnlocked": "move 70I",
-  "esc": "move 70B",
-  "exportActivityLog": "move 70H",
   "formEngine": "move 70C",
-  "formatActivityTimestamp": "move 70H",
   "formatLockoutRemaining": "move 70I",
   "getAnnualFeatureBridge": "move 70K",
   "getDashboardFeatureBridge": "move 70K",
@@ -417,12 +272,8 @@
   "getWardHeadlineTotal": "move 70K",
   "handleHash": "move 70K",
   "handleStartupOpenInputChange": "move 70I",
-  "helpPanelOpen": "move 70H",
-  "ic": "move 70B",
   "initApp": "move 70K",
-  "initWardNameCombobox": "move 70H",
   "initializeEmptyData": "move 70C",
-  "loadAndRenderActivityLog": "move 70H",
   "loadCaseFileAtLaunch": "move 70I",
   "loadCaseFileFromZip": "move 70I",
   "loadRecentlyOpenedWards": "move 70G",
@@ -441,50 +292,28 @@
   "mountPlanSimplifiedFeature": "move 70K",
   "mountPlanSimplifiedNav": "move 70K",
   "n": "move 70K",
-  "nextWalkthroughStep": "move 70H",
   "openCaseFileAtLaunch": "move 70I",
-  "openUserGuide": "move 70H",
-  "openUserGuideForCurrentPage": "move 70H",
   "openWardFileAtLaunch": "move 70I",
-  "pageActivityLog": "move 70H",
-  "pageInventorySelector": "move 70H",
   "pct": "move 70K",
-  "populateWardNameSuggestions": "move 70H",
   "promptChooseSecurityMode": "move 70I",
   "promptCreatePassword": "move 70I",
   "promptOpenOrStartAtLaunch": "move 70I",
   "promptPasswordForFile": "move 70I",
   "promptUnlock": "move 70I",
-  "renderActivityLogList": "move 70H",
-  "renderStorageReadout": "move 70H",
   "resetAutoLockTimer": "move 70I",
   "sanitizeObjectData": "move 70B",
   "saveUnlockFailState": "move 70I",
   "selectSecurityMode": "move 70I",
   "setPath": "move 70F",
   "setupDragAndDropImport": "move 70I",
-  "showAddWardModalForType": "move 70H",
-  "showContextualHelp": "move 70H",
-  "showModal": "move 70H",
   "showUnlockError": "move 70I",
-  "showWalkthroughStep": "move 70H",
-  "skipWalkthrough": "move 70H",
   "startNewCaseAtLaunch": "move 70I",
   "startNewWardAtLaunch": "move 70I",
-  "startWalkthrough": "move 70H",
   "submitUnlockForm": "move 70I",
-  "toggleHelpPanel": "move 70H",
-  "toggleTheme": "move 70H",
-  "tooltip": "move 70H",
   "trySilentReopen": "move 70I",
-  "updateCarrySourcePicker": "move 70G",
-  "updateHelpContext": "move 70H",
   "updateLockButtonVisibility": "move 70I",
   "updateNavActive": "move 70K",
-  "userGuideAnchorFor": "move 70H",
   "validateImportFile": "move 70B",
-  "walkthroughActive": "move 70H",
-  "wardNameComboItems": "move 70H",
   "provideMonolithServices": "move 70E"
  },
  "landed": {
@@ -1243,6 +1072,261 @@
     },
     "WARD_SYSTEM_KEYS": {
      "was": "move 70G"
+    }
+   }
+  },
+  "70H": {
+   "note": "Gone from src/legacy-app.js in 70H: the shell and its support surfaces -- the theme button (into src/core/theme-preference.js), the Help panel, the user guide, tooltips and guided tours (src/core/help/, with the Help text moved beside them from src/features/help/), the Activity Log page (src/core/activity/activity-log-view.js), this tab's state for other tabs (src/core/navigation/tab-state.js), the shared combobox (src/core/ui/combobox.js), the filing switcher, the sidebar, the Start New Form picker and the court portal (src/core/shell/), the static dialogs' show/close and fragment loading (into src/core/ui/dialogs.js), the Add Form dialogs' ward-name field (into src/core/modals/filing-dialogs.js), the guardian setup question (src/core/modals/guardian-setup.js) and the \"open in another tab\" dialog (into src/core/ward-lock.js); and the wrappers whose last callers these were (ic(), esc(), formatDashboardCurrency(), typeIcon(), updateCarrySourcePicker(), showSimplifiedEligibilityModal(), updateNavDots()). applyTheme(), currentTheme(), ensureFragment(), notifyProbateGuardianTabStateChanged(), renderCopyrightNotice() and updateSidebar() remain as one-line wrappers the monolith still calls.",
+   "entries": {
+    "_activityLogEntries": {
+     "was": "move 70H"
+    },
+    "_fragmentAppended": {
+     "was": "move 70H"
+    },
+    "_saveControlsCollapsed": {
+     "was": "move 70H (override: shell)"
+    },
+    "_saveControlsUserToggled": {
+     "was": "move 70H (override: shell)"
+    },
+    "_walkthroughAutoTriggered": {
+     "was": "move 70H"
+    },
+    "_wardLockedPreviousFocus": {
+     "was": "move 70H (override: shell)"
+    },
+    "ACTIVITY_EVENT_META": {
+     "was": "move 70H"
+    },
+    "ACTIVITY_LOG_RENDER_CAP": {
+     "was": "move 70H"
+    },
+    "activityLogFiltered": {
+     "was": "move 70H"
+    },
+    "applySaveControlsCollapsedState": {
+     "was": "move 70H (override: shell)"
+    },
+    "bindComboboxKeyboardNav": {
+     "was": "move 70H (override: shell)"
+    },
+    "closeModal": {
+     "was": "move 70H"
+    },
+    "collapseSaveControls": {
+     "was": "move 70H (override: shell)"
+    },
+    "collapseWardControls": {
+     "was": "move 70H (override: shell)"
+    },
+    "comboboxAssignOptionIds": {
+     "was": "move 70H (override: shell)"
+    },
+    "comboboxFilterItems": {
+     "was": "move 70H (override: shell)"
+    },
+    "comboboxHide": {
+     "was": "move 70H (override: shell)"
+    },
+    "comboboxRenderDropdown": {
+     "was": "move 70H (override: shell)"
+    },
+    "currentHelpContext": {
+     "was": "move 70H"
+    },
+    "currentWalkthroughStep": {
+     "was": "move 70H"
+    },
+    "doGuardianSetup": {
+     "was": "move 70H"
+    },
+    "endWalkthrough": {
+     "was": "move 70H"
+    },
+    "esc": {
+     "was": "move 70B"
+    },
+    "exportActivityLog": {
+     "was": "move 70H"
+    },
+    "formatActivityTimestamp": {
+     "was": "move 70H"
+    },
+    "formatDashboardCurrency": {
+     "was": "move 70B (override: pure)"
+    },
+    "getPrimaryGuardianDisplayName": {
+     "was": "move 70H (override: shell)"
+    },
+    "getProbateGuardianTabState": {
+     "was": "move 70H (override: shell)"
+    },
+    "handleSwitchWardClick": {
+     "was": "move 70H (override: shell)"
+    },
+    "HELP_CONTENT": {
+     "was": "move 70H"
+    },
+    "helpPanelOpen": {
+     "was": "move 70H"
+    },
+    "ic": {
+     "was": "move 70B"
+    },
+    "initWardNameCombobox": {
+     "was": "move 70H"
+    },
+    "loadAndRenderActivityLog": {
+     "was": "move 70H"
+    },
+    "nextWalkthroughStep": {
+     "was": "move 70H"
+    },
+    "onWardSelectorFocus": {
+     "was": "move 70H (override: shell)"
+    },
+    "onWardSelectorInput": {
+     "was": "move 70H (override: shell)"
+    },
+    "onWardSelectorKeydown": {
+     "was": "move 70H (override: shell)"
+    },
+    "openFloridaCourtPortal": {
+     "was": "move 70H (override: shell)"
+    },
+    "openUserGuide": {
+     "was": "move 70H"
+    },
+    "openUserGuideForCurrentPage": {
+     "was": "move 70H"
+    },
+    "pageActivityLog": {
+     "was": "move 70H"
+    },
+    "pageInventorySelector": {
+     "was": "move 70H"
+    },
+    "populateWardNameSuggestions": {
+     "was": "move 70H"
+    },
+    "refreshWardInfoCard": {
+     "was": "move 70H (override: shell)"
+    },
+    "renderActivityLogList": {
+     "was": "move 70H"
+    },
+    "renderStorageReadout": {
+     "was": "move 70H"
+    },
+    "SHOW_COMMENT_CARD_LINK": {
+     "was": "move 70H"
+    },
+    "showAddWardModalForType": {
+     "was": "move 70H"
+    },
+    "showContextualHelp": {
+     "was": "move 70H"
+    },
+    "showModal": {
+     "was": "move 70H"
+    },
+    "showSimplifiedEligibilityModal": {
+     "was": "move 70G (override: filing-workflow)"
+    },
+    "showSwitchWardPickerModal": {
+     "was": "move 70H (override: shell)"
+    },
+    "showWalkthroughStep": {
+     "was": "move 70H"
+    },
+    "skipWalkthrough": {
+     "was": "move 70H"
+    },
+    "startWalkthrough": {
+     "was": "move 70H"
+    },
+    "syncActiveWardNameDisplay": {
+     "was": "move 70H (override: shell)"
+    },
+    "syncGuardianNameDisplay": {
+     "was": "move 70H (override: shell)"
+    },
+    "toggleHelpPanel": {
+     "was": "move 70H"
+    },
+    "toggleSaveControls": {
+     "was": "move 70H (override: shell)"
+    },
+    "toggleTheme": {
+     "was": "move 70H"
+    },
+    "tooltip": {
+     "was": "move 70H"
+    },
+    "TOOLTIPS": {
+     "was": "move 70H"
+    },
+    "typeIcon": {
+     "was": "move 70C (override: registry)"
+    },
+    "updateCarrySourcePicker": {
+     "was": "move 70G"
+    },
+    "updateHelpContext": {
+     "was": "move 70H"
+    },
+    "updateNavDots": {
+     "was": "move 70F (override: nav-dom)",
+     "note": "Moves in 70F with the other nav-dot updates (review override nav-dom); it is the sidebar's only caller of applyNavChecks(), which moves with it."
+    },
+    "USER_GUIDE_ANCHORS": {
+     "was": "move 70H"
+    },
+    "USER_GUIDE_URL": {
+     "was": "move 70H"
+    },
+    "userGuideAnchorFor": {
+     "was": "move 70H"
+    },
+    "WALKTHROUGH_ANNUAL": {
+     "was": "move 70H"
+    },
+    "WALKTHROUGH_DASHBOARD": {
+     "was": "move 70H"
+    },
+    "WALKTHROUGH_GUARDIAN": {
+     "was": "move 70H"
+    },
+    "WALKTHROUGH_PLAN_ANNUAL": {
+     "was": "move 70H"
+    },
+    "WALKTHROUGH_PLAN_INITIAL": {
+     "was": "move 70H"
+    },
+    "WALKTHROUGH_PLAN_MINOR": {
+     "was": "move 70H"
+    },
+    "WALKTHROUGH_PLAN_SIMPLIFIED": {
+     "was": "move 70H"
+    },
+    "WALKTHROUGH_SIMPLIFIED": {
+     "was": "move 70H"
+    },
+    "WALKTHROUGH_STEPS": {
+     "was": "move 70H"
+    },
+    "walkthroughActive": {
+     "was": "move 70H"
+    },
+    "wardNameComboItems": {
+     "was": "move 70H"
+    },
+    "wardSelectorItems": {
+     "was": "move 70H (override: shell)"
+    },
+    "wardSelectorShowDropdown": {
+     "was": "move 70H (override: shell)"
     }
    }
   }

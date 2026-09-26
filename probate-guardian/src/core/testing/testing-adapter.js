@@ -31,6 +31,9 @@ import {
 } from '../filing/models/plan-annual.js';
 import { INITIAL_ADLS, INITIAL_ADL_RATINGS } from '../filing/models/plan-initial.js';
 import { updateNavDots } from '../status/nav-marks.js';
+import { showAddWardModalForType } from '../modals/filing-dialogs.js';
+import { startWalkthrough } from '../help/walkthrough.js';
+import { updateSidebar } from '../shell/sidebar.js';
 import { filingLifecycle } from '../navigation/filing-lifecycle.js';
 import { describeConversion } from '../filing/conversion.js';
 import { getRecentlyOpenedWards } from '../filing/recent-filings.js';
@@ -216,7 +219,7 @@ export function createTestingAdapter(w) {
       // Opens the real Add Filing dialog for a type from any page; the caller
       // then fills and clicks the dialog's own controls. (A spec testing the
       // app's entry points to that dialog clicks those buttons instead.)
-      openDialog: (type) => call('showAddWardModalForType', type),
+      openDialog: (type) => showAddWardModalForType(type),
       // The Simplified Accounting eligibility dialog, opened for a named ward
       // carrying over from an existing filing (the carry-over flow's entry).
       openEligibility: (name, sourceFilingId) => showSimplifiedEligibilityModal(name, sourceFilingId),
@@ -250,7 +253,7 @@ export function createTestingAdapter(w) {
     }),
     // The guided tour itself (its steps and where they attach); how a filer
     // reaches the Help panel's "Start guided tour" is not what this starts.
-    tour: Object.freeze({ start: () => call('startWalkthrough') }),
+    tour: Object.freeze({ start: () => startWalkthrough() }),
     saveOutput: Object.freeze({
       // Each starts that filing type's real Save as PDF / Save as Excel.
       pdfGuardian: () => call('doSavePdfGuardian'),
@@ -286,7 +289,7 @@ export function createTestingAdapter(w) {
     }),
     /** Appends an Activity Log entry (auditLog()). */
     recordActivity: (type, details, success = true, filingId = null) => call('auditLog', type, details, success, filingId),
-    refreshStatus() { updateNavDots(); call('updateSidebar'); },
+    refreshStatus() { updateNavDots(); updateSidebar(); },
 
     // ── Queries (copies) ────────────────────────────────────────────────────
     /** The case and the open filing, as copies. */

@@ -7,6 +7,7 @@ import { createParty, dehydrateIntoParty, hydrateFromParty, readRoleFields, reso
 import { monolith } from '../runtime/monolith.js';
 import { getCaseFile, getD } from '../state.js';
 import { updateNavDots } from '../status/nav-marks.js';
+import { closeModal, ensureFragment, showModal } from '../ui/dialogs.js';
 
 // Tracks which identity slot ({role,index}) the Pick Party modal is
 // currently open for, set by showPickPartyModal() and read by doPickParty()/
@@ -21,7 +22,7 @@ export function partyRoleLabel(role){
 // (persistence rewrite Milestone 4). `role`/`index` identify the slot the
 // same way syncIdentityField() does -- see src/core/party-resolver.js.
 export async function showPickPartyModal(role,index){
-  await monolith.ensureFragment('common-modals');
+  await ensureFragment('common-modals');
   _pickPartySlot={role,index:Number(index)||0};
   const currentName=(readRoleFields(getD(),role,_pickPartySlot.index)||{}).name;
   document.getElementById('pick-party-slot-label').textContent=currentName?`"${esc(currentName)}"`:`this ${partyRoleLabel(role)}`;
@@ -29,7 +30,7 @@ export async function showPickPartyModal(role,index){
   const matches=(getCaseFile().parties||[]).filter(p=>!p.mergedInto&&p.roles.includes(role));
   sel.innerHTML='<option value="">— Select —</option>'
     +matches.map(p=>`<option value="${p.id}">${esc(p.name||'(unnamed)')}</option>`).join('');
-  monolith.showModal('pickPartyModal');
+  showModal('pickPartyModal');
 }
 
 // "Link" — attaches the chosen existing party to the open slot, then
@@ -41,7 +42,7 @@ export async function doPickParty(){
   const party=resolveParty(partyId);
   if(!party)return;
   const {role,index}=_pickPartySlot;
-  monolith.closeModal('pickPartyModal');
+  closeModal('pickPartyModal');
   setPartyIdForSlot(getD(),role,index,partyId);
   hydrateFromParty(party,getD(),role,index);
   monolith.autoSave();
@@ -55,7 +56,7 @@ export async function doPickParty(){
 export async function doCreatePartyFromSlot(){
   if(!_pickPartySlot)return;
   const {role,index}=_pickPartySlot;
-  monolith.closeModal('pickPartyModal');
+  closeModal('pickPartyModal');
   const party=createParty(role);
   setPartyIdForSlot(getD(),role,index,party.id);
   // A brand-new party has no other slot to fan out to, and a closed filing's
@@ -75,7 +76,7 @@ export let _pickCaseWardId=null;
 // 6). Lists every existing Case by number/county plus which ward(s) already
 // reference it, so the user can tell them apart.
 export async function showPickCaseModal(wardId){
-  await monolith.ensureFragment('common-modals');
+  await ensureFragment('common-modals');
   const ward=getCaseFile().wards.find(w=>w.wardId===wardId);
   if(!ward)return;
   _pickCaseWardId=wardId;
@@ -88,7 +89,7 @@ export async function showPickCaseModal(wardId){
       const label=[c.caseNumber||'(no case number)',c.county,refs.length?`— ${refs.join(', ')}`:''].filter(Boolean).join(' ');
       return `<option value="${c.id}">${esc(label)}</option>`;
     }).join('');
-  monolith.showModal('pickCaseModal');
+  showModal('pickCaseModal');
 }
 
 // "Link" — attaches the chosen existing Case to this filing.
@@ -97,7 +98,7 @@ export async function doPickCase(){
   if(!caseId||!_pickCaseWardId)return;
   const ward=getCaseFile().wards.find(w=>w.wardId===_pickCaseWardId);
   if(!ward)return;
-  monolith.closeModal('pickCaseModal');
+  closeModal('pickCaseModal');
   ward.caseId=caseId;
   await monolith.saveWardToState(ward);
   renderPage(monolith.getCurrentPage());
@@ -109,7 +110,7 @@ export async function doCreateCaseFromWard(){
   if(!_pickCaseWardId)return;
   const ward=getCaseFile().wards.find(w=>w.wardId===_pickCaseWardId);
   if(!ward)return;
-  monolith.closeModal('pickCaseModal');
+  closeModal('pickCaseModal');
   const kase=getOrCreateCaseForWard(ward);
   ward.caseId=kase.id;
   await monolith.saveWardToState(ward);

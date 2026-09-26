@@ -3,72 +3,92 @@ import { closeMobileSidebar, navigate, toggleMobileSidebar } from './core/naviga
 import { handleBackupImportChange, hideAutoExportReminder, saveAutoExportIntervalPref, saveBackupNow, triggerOpenBackupSav } from './core/persistence/case-file.js';
 import { filingLifecycle } from './core/navigation/filing-lifecycle.js';
 import { confirmDeleteWard } from './core/modals/filing-dialogs.js';
+import { toggleHelpPanel } from './core/help/help-panel.js';
+import { collapseSaveControls, collapseWardControls, toggleSaveControls } from './core/shell/sidebar.js';
+import { openUserGuide, openUserGuideForCurrentPage } from './core/help/user-guide.js';
+import { nextWalkthroughStep, skipWalkthrough, startWalkthrough } from './core/help/walkthrough.js';
+import { handleSwitchWardClick, onWardSelectorFocus, onWardSelectorInput, onWardSelectorKeydown } from './core/shell/filing-switcher.js';
+import { toggleTheme } from './core/theme-preference.js';
+import { monolith } from './core/runtime/monolith.js';
+// Milestone 70, 70H: this module's document listeners are collected here and
+// added by installShellEvents(), once, from main.js -- not as a side effect of
+// importing it; its signal removes them.
+const listeners = [];
+const on = (type, handler, options) => listeners.push([type, handler, options]);
 function handleShellClick(event) {
   const actionElement = event.target instanceof Element ? event.target.closest('[data-shell-action]') : null;
   if (!actionElement) return;
 
   switch (actionElement.dataset.shellAction) {
-    case 'activity-log': window.toggleHelpPanel(); navigate('/activity-log'); break;
-    case 'backup-all-wards': window.collapseSaveControls?.(); saveBackupNow(); break;
-    case 'clear-data': window.collapseSaveControls?.(); window.clearAllData(); break;
+    case 'activity-log': toggleHelpPanel(); navigate('/activity-log'); break;
+    case 'backup-all-wards': collapseSaveControls?.(); saveBackupNow(); break;
+    case 'clear-data': collapseSaveControls?.(); monolith.clearAllData(); break;
     case 'close-mobile-sidebar': closeMobileSidebar(); break;
-    case 'close-ward': window.collapseWardControls?.(); filingLifecycle.unload(); break;
+    case 'close-ward': collapseWardControls?.(); filingLifecycle.unload(); break;
     case 'dashboard': navigate('/dashboard'); break;
-    case 'delete-ward': window.collapseWardControls?.(); confirmDeleteWard(); break;
-    case 'export-help': window.openUserGuide(); break;
+    case 'delete-ward': collapseWardControls?.(); confirmDeleteWard(); break;
+    case 'export-help': openUserGuide(); break;
     case 'hide-auto-export-reminder': hideAutoExportReminder(); break;
-    case 'lock': window.collapseSaveControls?.(); window.lockApp(); break;
-    case 'new-form': window.collapseWardControls?.(); navigate('/inventory-select'); break;
-    case 'next-walkthrough': window.nextWalkthroughStep(); break;
-    case 'open-backup-sav': window.collapseSaveControls?.(); triggerOpenBackupSav?.(); break;
-    case 'party-management': window.toggleHelpPanel(); navigate('/party-management'); break;
-    case 'save-backup': window.collapseSaveControls?.(); saveBackupNow(); break;
-    case 'skip-walkthrough': window.skipWalkthrough(); break;
-    case 'start-walkthrough': window.startWalkthrough(); break;
-    case 'switch-ward': window.handleSwitchWardClick(); break;
+    case 'lock': collapseSaveControls?.(); monolith.lockApp(); break;
+    case 'new-form': collapseWardControls?.(); navigate('/inventory-select'); break;
+    case 'next-walkthrough': nextWalkthroughStep(); break;
+    case 'open-backup-sav': collapseSaveControls?.(); triggerOpenBackupSav?.(); break;
+    case 'party-management': toggleHelpPanel(); navigate('/party-management'); break;
+    case 'save-backup': collapseSaveControls?.(); saveBackupNow(); break;
+    case 'skip-walkthrough': skipWalkthrough(); break;
+    case 'start-walkthrough': startWalkthrough(); break;
+    case 'switch-ward': handleSwitchWardClick(); break;
     // Milestone 48: on the dashboard (no filing open), "?" still opens the
     // Help panel -- guided tour, activity log, and shared records live only
     // there and aren't needed mid-filing. Inside a filing, "?" skips the
     // panel and jumps straight to the manual page for the current one.
     case 'toggle-help':
-      if (getCaseFile()?.activeWardId) window.openUserGuideForCurrentPage?.();
-      else window.toggleHelpPanel();
+      if (getCaseFile()?.activeWardId) openUserGuideForCurrentPage?.();
+      else toggleHelpPanel();
       break;
     case 'toggle-mobile-sidebar': toggleMobileSidebar(); break;
-    case 'toggle-save-controls': window.toggleSaveControls(); break;
-    case 'toggle-theme': window.toggleTheme(); break;
+    case 'toggle-save-controls': toggleSaveControls(); break;
+    case 'toggle-theme': toggleTheme(); break;
   }
 }
 
 function handleShellInput(event) {
   if (event.target instanceof HTMLInputElement && event.target.id === 'ward-selector') {
-    window.onWardSelectorInput();
+    onWardSelectorInput();
   }
 }
 
 function handleShellFocus(event) {
   if (event.target instanceof HTMLInputElement && event.target.id === 'ward-selector') {
-    window.onWardSelectorFocus();
+    onWardSelectorFocus();
   }
 }
 
 function handleShellKeydown(event) {
   if (event.target instanceof HTMLInputElement && event.target.id === 'ward-selector') {
-    window.onWardSelectorKeydown(event);
+    onWardSelectorKeydown(event);
   }
 }
 
 function handleShellChange(event) {
   if (event.target instanceof HTMLSelectElement && event.target.id === 'auto-export-interval-select') {
-    window.collapseSaveControls?.();
+    collapseSaveControls?.();
     saveAutoExportIntervalPref(Number.parseInt(event.target.value, 10));
   } else if (event.target instanceof HTMLInputElement && event.target.id === 'backup-import-input' && event.target.files?.[0]) {
     handleBackupImportChange?.(event.target);
   }
 }
 
-document.addEventListener('click', handleShellClick);
-document.addEventListener('input', handleShellInput);
-document.addEventListener('focusin', handleShellFocus);
-document.addEventListener('keydown', handleShellKeydown);
-document.addEventListener('change', handleShellChange);
+on('click', handleShellClick);
+on('input', handleShellInput);
+on('focusin', handleShellFocus);
+on('keydown', handleShellKeydown);
+on('change', handleShellChange);
+
+/** Add this module's listeners; the signal removes them. Called once, by main.js. */
+export function installShellEvents({ signal } = {}) {
+  for (const [type, handler, options] of listeners) {
+    const opts = typeof options === 'object' && options ? options : { capture: !!options };
+    document.addEventListener(type, handler, { ...opts, signal });
+  }
+}

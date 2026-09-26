@@ -33,6 +33,7 @@ import { getD } from '../../core/state.js';
 import { chkP, inpS, pageNavS, txtP, yesNoCheckboxS } from '../../core/form/field-html.js';
 import { renderScheduleDocsSection } from '../../core/filing/schedule-docs.js';
 import { setPath } from '../../core/form/paths.js';
+import { openFloridaCourtPortal } from '../../core/shell/court-portal.js';
 // Simplified Annual Plan — the second feature extraction (Milestone 3,
 // Phase B/C of INDEX-SPLIT-PLAN.md's migration sequence). Dynamically
 // imported by legacy-app.js's mountPlanSimplifiedFeature()/
@@ -81,7 +82,7 @@ function bindEvents(container) {
     const actionElement = event.target instanceof Element ? event.target.closest('[data-plan-simplified-action]') : null;
     if (!actionElement) return;
     switch (actionElement.dataset.planSimplifiedAction) {
-      case 'open-court-portal': window.openFloridaCourtPortal(); break;
+      case 'open-court-portal': openFloridaCourtPortal(); break;
       case 'print': window.printCurrentFilingPdf(); break;
       case 'save-pdf': _printModule.doSavePdf(); break;
     }

@@ -48,6 +48,8 @@ import { browserRecommendationNotice, linkAccordions, sanitizeNegativeAmounts } 
 import { renderScheduleDocsSection } from '../../core/filing/schedule-docs.js';
 import { countyInputS, inpS, pageIntroRow, pageNavS, yesNoCheckboxS } from '../../core/form/field-html.js';
 import { setPath } from '../../core/form/paths.js';
+import { tooltip } from '../../core/help/tooltips.js';
+import { openFloridaCourtPortal } from '../../core/shell/court-portal.js';
 // Milestone 57B: carried verbatim from MILESTONE-57-PROPOSAL.md section 57B.
 // The wording is load bearing (section 8 #8). Do not paraphrase or re-voice it.
 const ATTESTATION_57B = 'No recipients are required for this certificate (filer attestation - app does not determine legal necessity)';
@@ -76,7 +78,7 @@ const RECIPIENT_STARTED_FIELDS = ['name', 'line2', 'line3', 'line4'];
 // ./totals.js, small enough that src/legacy-bridge.js loads it eagerly for the
 // dashboard while this module stays lazy.
 const {
-  tooltip, autoSave, navigate,
+  autoSave, navigate,
   
   
   
@@ -149,7 +151,7 @@ function bindEvents(container) {
         break;
       }
       case 'choose-excel': actionElement.parentElement.querySelector('input[type="file"]')?.click(); break;
-      case 'open-court-portal': window.openFloridaCourtPortal(); break;
+      case 'open-court-portal': openFloridaCourtPortal(); break;
       case 'remove-remuneration': {
         if (removeCollectionRow('remuneration', index, getD())) {
           autoSave();

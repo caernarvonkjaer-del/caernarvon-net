@@ -21,6 +21,8 @@ import { attributeBag, classListBag } from './support/dom-mocks.js';
 // (the tail called window.updateNavDots?.(), which Node did not have); they
 // need a page, so this suite stands them in.
 vi.mock('../../src/core/status/nav-marks.js', () => ({ updateNavDots: () => {} }));
+// The sidebar's refreshes (src/core/shell/sidebar.js since Milestone 70's 70H) touch the page.
+vi.mock('../../src/core/shell/sidebar.js', () => ({ refreshWardInfoCard: () => {}, syncActiveWardNameDisplay: () => {}, syncGuardianNameDisplay: () => {}, updateSidebar: () => {} }));
 
 function createMockInput(initial = {}) {
   return {

@@ -1,3 +1,5 @@
+// @ts-nocheck -- in tsconfig.json's checked program only transitively (the Delete Form dialog imports it); 
+// never written with JSDoc types.
 // Milestone 58E: name the filing that is about to be permanently deleted.
 //
 // What a filer saw before: every Delete button on the dashboard produced the

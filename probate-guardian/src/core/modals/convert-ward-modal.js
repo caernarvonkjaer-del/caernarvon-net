@@ -1,11 +1,11 @@
 // Modal orchestration for converting an existing ward filing to another form type.
 import { getCaseFile, getActiveWard } from '../state.js';
 import { convertTargetsFor } from '../filing/filing-descriptor.js';
-import { alertModal } from '../ui/dialogs.js';
+import { alertModal, closeModal, ensureFragment, showModal } from '../ui/dialogs.js';
 import { INVENTORY_TYPES } from '../filing/filing-registry.js';
 import { describeConversion } from '../filing/conversion.js';
 import { filingLifecycle } from '../navigation/filing-lifecycle.js';
-import { monolith } from '../runtime/monolith.js';
+import { bindComboboxKeyboardNav, comboboxAssignOptionIds, comboboxFilterItems, comboboxHide, comboboxRenderDropdown } from '../ui/combobox.js';
 
 export { convertTargetsFor };
 
@@ -27,7 +27,7 @@ export async function showConvertWardModal() {
     );
     return;
   }
-  await monolith.ensureFragment('common-modals');
+  await ensureFragment('common-modals');
   // Milestone 40H-I: defaulted to the first ward ever created in the case
   // file, never the one actually open -- easy to convert the wrong ward
   // without noticing. Default to the active ward; fall back to the first
@@ -41,7 +41,7 @@ export async function showConvertWardModal() {
     input.dataset.wardId = defaultWard.wardId;
   }
   updateConvertTargetOptions();
-  monolith.showModal('convertWardModal');
+  showModal('convertWardModal');
 }
 
 export function updateConvertTargetOptions() {
@@ -83,16 +83,16 @@ export function updateConvertTargetOptions() {
 export function convertSourceShowDropdown(query){
   const input=document.getElementById('convert-source-ward');
   const dropdown=document.getElementById('convert-source-ward-dropdown');
-  monolith.comboboxRenderDropdown(dropdown,monolith.comboboxFilterItems(convertSourceItems(),query),item=>{
+  comboboxRenderDropdown(dropdown,comboboxFilterItems(convertSourceItems(),query),item=>{
     input.value=item.label;
     input.dataset.wardId=item.wardId;
     input.dataset.comboIndex='';
     input.removeAttribute('aria-activedescendant');
     input.setAttribute('aria-expanded','false');
-    monolith.comboboxHide(dropdown);
+    comboboxHide(dropdown);
     updateConvertTargetOptions();
   });
-  monolith.comboboxAssignOptionIds(dropdown);
+  comboboxAssignOptionIds(dropdown);
   input.dataset.comboIndex='';
   input.setAttribute('aria-expanded','true');
 }
@@ -119,7 +119,7 @@ export function onConvertSourceFocus(){
 export function onConvertSourceKeydown(e){
   const input=document.getElementById('convert-source-ward');
   const dropdown=document.getElementById('convert-source-ward-dropdown');
-  monolith.bindComboboxKeyboardNav(input,dropdown)(e);
+  bindComboboxKeyboardNav(input,dropdown)(e);
 }
 
 export function updateConvertNotePreview(srcType,destType){
@@ -131,6 +131,17 @@ export async function doConvertWard(){
   const sourceWardId=document.getElementById('convert-source-ward').dataset.wardId||'';
   const targetType=document.getElementById('convert-target-type').value;
   if(!sourceWardId||!targetType)return;
-  monolith.closeModal('convertWardModal');
+  closeModal('convertWardModal');
   await filingLifecycle.convert(sourceWardId,targetType);
+}
+
+/** A click outside the source picker closes its list. Installed once by main.js; the signal removes it. */
+export function installConvertSourceDismiss({ signal } = {}){
+  document.addEventListener('click',e=>{
+    const wrap=document.getElementById('convert-source-ward-wrap');
+    if(wrap&&!wrap.contains(e.target)){
+      comboboxHide(document.getElementById('convert-source-ward-dropdown'));
+      document.getElementById('convert-source-ward')?.setAttribute('aria-expanded','false');
+    }
+  },{ signal });
 }

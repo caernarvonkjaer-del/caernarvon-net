@@ -1,3 +1,5 @@
+// @ts-nocheck -- in tsconfig.json's checked program only transitively (the filing lifecycle imports it); 
+// never written with JSDoc types.
 // Ward-Level Tab Lock Module (Milestone 16)
 // Provides exclusive, cooperative locking per ward across browser tabs using the Web Locks API.
 
@@ -124,4 +126,30 @@ if (typeof window !== 'undefined') {
   window.acquireWardLock = acquireWardLock;
   window.releaseWardLock = releaseWardLock;
   window.getCurrentLockedWardId = getCurrentLockedWardId;
+}
+
+// Milestone 70, 70H: the dialog shown when another tab holds the filing's
+// lock -- focus moves to its button, and back where it was when it closes.
+// Moved from legacy-app.js.
+let _wardLockedPreviousFocus = null;
+
+export function showWardLockedModal() {
+  const el = document.getElementById('ward-locked-overlay');
+  if (el) {
+    _wardLockedPreviousFocus = document.activeElement;
+    el.classList.add('show');
+    const btn = document.getElementById('close-ward-locked');
+    if (btn) btn.focus();
+  }
+}
+
+export function closeWardLockedModal() {
+  const el = document.getElementById('ward-locked-overlay');
+  if (el) {
+    el.classList.remove('show');
+    if (_wardLockedPreviousFocus && typeof _wardLockedPreviousFocus.focus === 'function') {
+      try { _wardLockedPreviousFocus.focus(); } catch (e) {}
+      _wardLockedPreviousFocus = null;
+    }
+  }
 }

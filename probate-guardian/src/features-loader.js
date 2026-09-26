@@ -138,9 +138,8 @@ export async function loadPlanSimplifiedPdf() {
 }
 
 // legacy-app.js is a classic (non-module) script and cannot import this
-// module, so the loaders are published on window for it (see
-// src/fragment-loader.js's window.loadFragment comment for the same
-// pattern). src/main.js has been the real bootstrap since Milestone 40G;
+// module, so the loaders are published on window for it. src/main.js has
+// been the real bootstrap since Milestone 40G;
 // that does not change this -- these stay on window until legacy-app.js
 // itself becomes a module.
 window.loadSimplifiedFeature = loadSimplifiedFeature;

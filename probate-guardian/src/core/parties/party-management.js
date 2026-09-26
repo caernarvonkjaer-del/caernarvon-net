@@ -225,7 +225,9 @@ export async function doFilingSyncClosed(role,index){
     if(syncFilingSlotWithParty(filing,s.role,s.index))await monolith.auditLog('PARTY_SYNC',`Synced ${slotLabel(s.role,s.index)} on closed filing "${filing.wardName}" with its shared record`,true,filing.wardId);
   }
   monolith.autoSave();
-  window.renderPage(monolith.getCurrentPage());
+  // The page is re-rendered by the dispatcher that handled the click
+  // (form-events.js): the router renders this module's page, so this
+  // module cannot import it (Milestone 70, 70H).
 }
 
 export function partySubRowHTML(sub){

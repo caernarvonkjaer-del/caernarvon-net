@@ -1,11 +1,12 @@
 import { describe, expect, test } from 'vitest';
 import { readFile } from 'node:fs/promises';
 
-const source = await readFile(new URL('../../src/legacy-app.js', import.meta.url), 'utf8');
+// The tours are src/core/help/walkthrough.js's since Milestone 70's 70H.
+const source = await readFile(new URL('../../src/core/help/walkthrough.js', import.meta.url), 'utf8');
 
 describe('guided tour content', () => {
   test('covers the current dashboard capabilities without promising unsupported behavior', () => {
-    const dashboard = source.match(/const WALKTHROUGH_DASHBOARD=\[(.*?)];/s)?.[1] || '';
+    const dashboard = source.match(/(?:export )?const WALKTHROUGH_DASHBOARD=\[(.*?)];/s)?.[1] || '';
     expect(dashboard).toContain('Starting a new case also asks how to protect the case data');
     expect(dashboard).toContain('local .sav file');
     expect(dashboard).toContain('Save Backup (.sav)');

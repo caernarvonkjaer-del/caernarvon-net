@@ -10,7 +10,7 @@
    "file": "src/legacy-app.js",
    "name": "currentTheme",
    "kind": "function",
-   "line": 7
+   "line": 8
   },
   {
    "file": "src/legacy-app.js",
@@ -20,1401 +20,903 @@
   },
   {
    "file": "src/legacy-app.js",
-   "name": "toggleTheme",
-   "kind": "function",
-   "line": 33
-  },
-  {
-   "file": "src/legacy-app.js",
    "name": "setAccountingFilingType",
    "kind": "function",
-   "line": 54
+   "line": 23
   },
   {
    "file": "src/legacy-app.js",
    "name": "caseFile",
    "kind": "let",
-   "line": 79
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "helpPanelOpen",
-   "kind": "let",
-   "line": 93
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "currentHelpContext",
-   "kind": "let",
-   "line": 94
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "HELP_CONTENT",
-   "kind": "const",
-   "line": 98
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "toggleHelpPanel",
-   "kind": "function",
-   "line": 107
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "showContextualHelp",
-   "kind": "function",
-   "line": 135
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "updateHelpContext",
-   "kind": "function",
-   "line": 144
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "USER_GUIDE_URL",
-   "kind": "const",
-   "line": 178
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "USER_GUIDE_ANCHORS",
-   "kind": "const",
-   "line": 179
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "userGuideAnchorFor",
-   "kind": "function",
-   "line": 212
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "openUserGuide",
-   "kind": "function",
-   "line": 221
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "openUserGuideForCurrentPage",
-   "kind": "function",
-   "line": 229
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "TOOLTIPS",
-   "kind": "const",
-   "line": 238
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "tooltip",
-   "kind": "function",
-   "line": 265
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "WALKTHROUGH_GUARDIAN",
-   "kind": "const",
-   "line": 274
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "WALKTHROUGH_SIMPLIFIED",
-   "kind": "const",
-   "line": 285
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "WALKTHROUGH_ANNUAL",
-   "kind": "const",
-   "line": 297
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "WALKTHROUGH_PLAN_SIMPLIFIED",
-   "kind": "const",
-   "line": 309
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "WALKTHROUGH_PLAN_ANNUAL",
-   "kind": "const",
-   "line": 320
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "WALKTHROUGH_PLAN_INITIAL",
-   "kind": "const",
-   "line": 331
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "WALKTHROUGH_PLAN_MINOR",
-   "kind": "const",
-   "line": 342
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "WALKTHROUGH_DASHBOARD",
-   "kind": "const",
-   "line": 354
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "WALKTHROUGH_STEPS",
-   "kind": "let",
-   "line": 363
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "currentWalkthroughStep",
-   "kind": "let",
-   "line": 364
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "walkthroughActive",
-   "kind": "let",
-   "line": 365
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "_walkthroughAutoTriggered",
-   "kind": "let",
-   "line": 366
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "startWalkthrough",
-   "kind": "function",
-   "line": 368
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "showWalkthroughStep",
-   "kind": "function",
-   "line": 384
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "nextWalkthroughStep",
-   "kind": "function",
-   "line": 475
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "skipWalkthrough",
-   "kind": "function",
-   "line": 476
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "endWalkthrough",
-   "kind": "function",
-   "line": 477
+   "line": 48
   },
   {
    "file": "src/legacy-app.js",
    "name": "activeInventoryType",
    "kind": "let",
-   "line": 484
+   "line": 94
   },
   {
    "file": "src/legacy-app.js",
    "name": "_saveTimer",
    "kind": "let",
-   "line": 486
+   "line": 96
   },
   {
    "file": "src/legacy-app.js",
    "name": "currentPage",
    "kind": "let",
-   "line": 487
+   "line": 97
   },
   {
    "file": "src/legacy-app.js",
    "name": "getCurrentPage",
    "kind": "function",
-   "line": 510
+   "line": 120
   },
   {
    "file": "src/legacy-app.js",
    "name": "_dirtySinceExport",
    "kind": "let",
-   "line": 511
+   "line": 121
   },
   {
    "file": "src/legacy-app.js",
    "name": "_autoExportIntervalMinutes",
    "kind": "let",
-   "line": 518
+   "line": 128
   },
   {
    "file": "src/legacy-app.js",
    "name": "_lastExportAt",
    "kind": "let",
-   "line": 519
+   "line": 129
   },
   {
    "file": "src/legacy-app.js",
    "name": "_appState",
    "kind": "let",
-   "line": 556
+   "line": 166
   },
   {
    "file": "src/legacy-app.js",
    "name": "_templateCache",
    "kind": "let",
-   "line": 557
+   "line": 167
   },
   {
    "file": "src/legacy-app.js",
    "name": "_auditLogEntries",
    "kind": "let",
-   "line": 558
+   "line": 168
   },
   {
    "file": "src/legacy-app.js",
    "name": "_auditLogNextId",
    "kind": "let",
-   "line": 559
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "ic",
-   "kind": "function",
-   "line": 593
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "esc",
-   "kind": "function",
-   "line": 594
+   "line": 169
   },
   {
    "file": "src/legacy-app.js",
    "name": "validateImportFile",
    "kind": "function",
-   "line": 595
+   "line": 203
   },
   {
    "file": "src/legacy-app.js",
    "name": "sanitizeObjectData",
    "kind": "function",
-   "line": 596
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "formatDashboardCurrency",
-   "kind": "function",
-   "line": 597
+   "line": 204
   },
   {
    "file": "src/legacy-app.js",
    "name": "calcTotals",
    "kind": "function",
-   "line": 598
+   "line": 205
   },
   {
    "file": "src/legacy-app.js",
    "name": "formEngine",
    "kind": "function",
-   "line": 603
+   "line": 210
   },
   {
    "file": "src/legacy-app.js",
    "name": "initializeEmptyData",
    "kind": "function",
-   "line": 604
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "typeIcon",
-   "kind": "function",
-   "line": 605
+   "line": 211
   },
   {
    "file": "src/legacy-app.js",
    "name": "auditLog",
    "kind": "function",
-   "line": 640
+   "line": 246
   },
   {
    "file": "src/legacy-app.js",
    "name": "PBKDF2_ITERATIONS",
    "kind": "const",
-   "line": 668
+   "line": 274
   },
   {
    "file": "src/legacy-app.js",
    "name": "CRYPTO_VERIFIER_PLAINTEXT",
    "kind": "const",
-   "line": 669
+   "line": 275
   },
   {
    "file": "src/legacy-app.js",
    "name": "_cryptoKey",
    "kind": "let",
-   "line": 670
+   "line": 276
   },
   {
    "file": "src/legacy-app.js",
    "name": "_securityMode",
    "kind": "let",
-   "line": 684
+   "line": 290
   },
   {
    "file": "src/legacy-app.js",
    "name": "PLAIN_MODE_PREFIX",
    "kind": "const",
-   "line": 692
+   "line": 298
   },
   {
    "file": "src/legacy-app.js",
    "name": "ensureUnlocked",
    "kind": "function",
-   "line": 700
+   "line": 306
   },
   {
    "file": "src/legacy-app.js",
    "name": "_securityChoiceResolve",
    "kind": "let",
-   "line": 761
+   "line": 367
   },
   {
    "file": "src/legacy-app.js",
    "name": "promptChooseSecurityMode",
    "kind": "function",
-   "line": 762
+   "line": 368
   },
   {
    "file": "src/legacy-app.js",
    "name": "selectSecurityMode",
    "kind": "function",
-   "line": 768
+   "line": 374
   },
   {
    "file": "src/legacy-app.js",
    "name": "updateLockButtonVisibility",
    "kind": "function",
-   "line": 776
+   "line": 382
   },
   {
    "file": "src/legacy-app.js",
    "name": "_unlockResolve",
    "kind": "let",
-   "line": 781
+   "line": 387
   },
   {
    "file": "src/legacy-app.js",
    "name": "_unlockMode",
    "kind": "let",
-   "line": 782
+   "line": 388
   },
   {
    "file": "src/legacy-app.js",
    "name": "promptUnlock",
    "kind": "function",
-   "line": 784
+   "line": 390
   },
   {
    "file": "src/legacy-app.js",
    "name": "_pendingOpenManifest",
    "kind": "let",
-   "line": 808
+   "line": 414
   },
   {
    "file": "src/legacy-app.js",
    "name": "_pendingOpenZip",
    "kind": "let",
-   "line": 808
+   "line": 414
   },
   {
    "file": "src/legacy-app.js",
    "name": "promptPasswordForFile",
    "kind": "function",
-   "line": 809
+   "line": 415
   },
   {
    "file": "src/legacy-app.js",
    "name": "promptCreatePassword",
    "kind": "function",
-   "line": 836
+   "line": 442
   },
   {
    "file": "src/legacy-app.js",
    "name": "showUnlockError",
    "kind": "function",
-   "line": 854
+   "line": 460
   },
   {
    "file": "src/legacy-app.js",
    "name": "UNLOCK_FAIL_THRESHOLD",
    "kind": "const",
-   "line": 867
+   "line": 473
   },
   {
    "file": "src/legacy-app.js",
    "name": "UNLOCK_LOCKOUT_BASE_MS",
    "kind": "const",
-   "line": 868
+   "line": 474
   },
   {
    "file": "src/legacy-app.js",
    "name": "UNLOCK_LOCKOUT_MAX_MS",
    "kind": "const",
-   "line": 869
+   "line": 475
   },
   {
    "file": "src/legacy-app.js",
    "name": "getUnlockFailState",
    "kind": "function",
-   "line": 871
+   "line": 477
   },
   {
    "file": "src/legacy-app.js",
    "name": "saveUnlockFailState",
    "kind": "function",
-   "line": 875
+   "line": 481
   },
   {
    "file": "src/legacy-app.js",
    "name": "formatLockoutRemaining",
    "kind": "function",
-   "line": 878
+   "line": 484
   },
   {
    "file": "src/legacy-app.js",
    "name": "submitUnlockForm",
    "kind": "function",
-   "line": 883
+   "line": 489
   },
   {
    "file": "src/legacy-app.js",
    "name": "lockApp",
    "kind": "function",
-   "line": 974
+   "line": 580
   },
   {
    "file": "src/legacy-app.js",
    "name": "AUTO_LOCK_MS",
    "kind": "const",
-   "line": 1036
+   "line": 642
   },
   {
    "file": "src/legacy-app.js",
    "name": "_autoLockTimer",
    "kind": "let",
-   "line": 1037
+   "line": 643
   },
   {
    "file": "src/legacy-app.js",
    "name": "resetAutoLockTimer",
    "kind": "function",
-   "line": 1038
+   "line": 644
   },
   {
    "file": "src/legacy-app.js",
    "name": "saveWardToState",
    "kind": "function",
-   "line": 1054
+   "line": 660
   },
   {
    "file": "src/legacy-app.js",
    "name": "deleteWardFromState",
    "kind": "function",
-   "line": 1064
+   "line": 670
   },
   {
    "file": "src/legacy-app.js",
    "name": "saveTemplate",
    "kind": "function",
-   "line": 1071
+   "line": 677
   },
   {
    "file": "src/legacy-app.js",
    "name": "loadTemplate",
    "kind": "function",
-   "line": 1077
+   "line": 683
   },
   {
    "file": "src/legacy-app.js",
    "name": "appendAuditLogEntry",
    "kind": "function",
-   "line": 1097
+   "line": 703
   },
   {
    "file": "src/legacy-app.js",
    "name": "loadAuditLogEntries",
    "kind": "function",
-   "line": 1109
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "ACTIVITY_EVENT_META",
-   "kind": "const",
-   "line": 1121
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "_activityLogEntries",
-   "kind": "let",
-   "line": 1132
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "ACTIVITY_LOG_RENDER_CAP",
-   "kind": "const",
-   "line": 1133
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "loadAndRenderActivityLog",
-   "kind": "function",
-   "line": 1135
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "renderStorageReadout",
-   "kind": "function",
-   "line": 1146
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "activityLogFiltered",
-   "kind": "function",
-   "line": 1169
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "renderActivityLogList",
-   "kind": "function",
-   "line": 1182
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "formatActivityTimestamp",
-   "kind": "function",
-   "line": 1216
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "exportActivityLog",
-   "kind": "function",
-   "line": 1225
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "pageActivityLog",
-   "kind": "function",
-   "line": 1255
+   "line": 715
   },
   {
    "file": "src/legacy-app.js",
    "name": "autoSave",
    "kind": "function",
-   "line": 1293
+   "line": 748
   },
   {
    "file": "src/legacy-app.js",
    "name": "flushPendingSave",
    "kind": "function",
-   "line": 1305
+   "line": 760
   },
   {
    "file": "src/legacy-app.js",
    "name": "showSaveError",
    "kind": "function",
-   "line": 1314
+   "line": 769
   },
   {
    "file": "src/legacy-app.js",
    "name": "hideSaveError",
    "kind": "function",
-   "line": 1318
+   "line": 773
   },
   {
    "file": "src/legacy-app.js",
    "name": "saveData",
    "kind": "function",
-   "line": 1338
+   "line": 793
   },
   {
    "file": "src/legacy-app.js",
    "name": "loadGuardianData",
    "kind": "function",
-   "line": 1381
+   "line": 836
   },
   {
    "file": "src/legacy-app.js",
    "name": "getActiveWard",
    "kind": "function",
-   "line": 1386
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "getProbateGuardianTabState",
-   "kind": "function",
-   "line": 1388
+   "line": 841
   },
   {
    "file": "src/legacy-app.js",
    "name": "notifyProbateGuardianTabStateChanged",
    "kind": "function",
-   "line": 1403
+   "line": 844
   },
   {
    "file": "src/legacy-app.js",
    "name": "isContinuePromptShown",
    "kind": "function",
-   "line": 1416
+   "line": 855
   },
   {
    "file": "src/legacy-app.js",
    "name": "markContinuePromptShown",
    "kind": "function",
-   "line": 1418
+   "line": 857
   },
   {
    "file": "src/legacy-app.js",
    "name": "SESSION_CACHE_DB",
    "kind": "const",
-   "line": 1537
+   "line": 976
   },
   {
    "file": "src/legacy-app.js",
    "name": "SESSION_CACHE_STORE",
    "kind": "const",
-   "line": 1537
+   "line": 976
   },
   {
    "file": "src/legacy-app.js",
    "name": "_sessionCacheDb",
    "kind": "function",
-   "line": 1538
+   "line": 977
   },
   {
    "file": "src/legacy-app.js",
    "name": "_sessionCacheGet",
    "kind": "function",
-   "line": 1546
+   "line": 985
   },
   {
    "file": "src/legacy-app.js",
    "name": "_sessionCachePut",
    "kind": "function",
-   "line": 1556
+   "line": 995
   },
   {
    "file": "src/legacy-app.js",
    "name": "_sessionCacheClear",
    "kind": "function",
-   "line": 1566
+   "line": 1005
   },
   {
    "file": "src/legacy-app.js",
    "name": "LAUNCH_PREF_DB",
    "kind": "const",
-   "line": 1588
+   "line": 1027
   },
   {
    "file": "src/legacy-app.js",
    "name": "LAUNCH_PREF_STORE",
    "kind": "const",
-   "line": 1588
+   "line": 1027
   },
   {
    "file": "src/legacy-app.js",
    "name": "LAUNCH_PREF_KEY_OPENED",
    "kind": "const",
-   "line": 1589
+   "line": 1028
   },
   {
    "file": "src/legacy-app.js",
    "name": "LAUNCH_PREF_KEY_HANDLE",
    "kind": "const",
-   "line": 1589
+   "line": 1028
   },
   {
    "file": "src/legacy-app.js",
    "name": "REMEMBERED_FILE_TIMEOUT_MS",
    "kind": "const",
-   "line": 1590
+   "line": 1029
   },
   {
    "file": "src/legacy-app.js",
    "name": "_rememberedFileUnavailable",
    "kind": "let",
-   "line": 1591
+   "line": 1030
   },
   {
    "file": "src/legacy-app.js",
    "name": "_launchPrefDb",
    "kind": "function",
-   "line": 1592
+   "line": 1031
   },
   {
    "file": "src/legacy-app.js",
    "name": "_launchPrefGet",
    "kind": "function",
-   "line": 1600
+   "line": 1039
   },
   {
    "file": "src/legacy-app.js",
    "name": "_launchPrefPut",
    "kind": "function",
-   "line": 1608
+   "line": 1047
   },
   {
    "file": "src/legacy-app.js",
    "name": "_launchPrefDelete",
    "kind": "function",
-   "line": 1617
+   "line": 1056
   },
   {
    "file": "src/legacy-app.js",
    "name": "trySilentReopen",
    "kind": "function",
-   "line": 1631
+   "line": 1070
   },
   {
    "file": "src/legacy-app.js",
    "name": "_launchStateResolved",
    "kind": "let",
-   "line": 1650
+   "line": 1089
   },
   {
    "file": "src/legacy-app.js",
    "name": "_openedFileAtLaunch",
    "kind": "let",
-   "line": 1651
+   "line": 1090
   },
   {
    "file": "src/legacy-app.js",
    "name": "_startupChoiceResolve",
    "kind": "let",
-   "line": 1652
+   "line": 1091
   },
   {
    "file": "src/legacy-app.js",
    "name": "promptOpenOrStartAtLaunch",
    "kind": "function",
-   "line": 1653
+   "line": 1092
   },
   {
    "file": "src/legacy-app.js",
    "name": "_resolveStartupChoice",
    "kind": "function",
-   "line": 1665
+   "line": 1104
   },
   {
    "file": "src/legacy-app.js",
    "name": "startNewWardAtLaunch",
    "kind": "function",
-   "line": 1670
+   "line": 1109
   },
   {
    "file": "src/legacy-app.js",
    "name": "startNewCaseAtLaunch",
    "kind": "const",
-   "line": 1675
+   "line": 1114
   },
   {
    "file": "src/legacy-app.js",
    "name": "openWardFileAtLaunch",
    "kind": "function",
-   "line": 1694
+   "line": 1133
   },
   {
    "file": "src/legacy-app.js",
    "name": "openCaseFileAtLaunch",
    "kind": "const",
-   "line": 1745
+   "line": 1184
   },
   {
    "file": "src/legacy-app.js",
    "name": "handleStartupOpenInputChange",
    "kind": "function",
-   "line": 1749
+   "line": 1188
   },
   {
    "file": "src/legacy-app.js",
    "name": "loadCaseFileAtLaunch",
    "kind": "function",
-   "line": 1766
+   "line": 1205
   },
   {
    "file": "src/legacy-app.js",
    "name": "loadCaseFileFromZip",
    "kind": "function",
-   "line": 1819
+   "line": 1258
   },
   {
    "file": "src/legacy-app.js",
    "name": "setupDragAndDropImport",
    "kind": "function",
-   "line": 1958
+   "line": 1397
   },
   {
    "file": "src/legacy-app.js",
    "name": "clearAllData",
    "kind": "function",
-   "line": 2000
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "updateCarrySourcePicker",
-   "kind": "function",
-   "line": 2026
+   "line": 1439
   },
   {
    "file": "src/legacy-app.js",
    "name": "loadRecentlyOpenedWards",
    "kind": "function",
-   "line": 2041
+   "line": 1478
   },
   {
    "file": "src/legacy-app.js",
    "name": "addToRecentlyOpened",
    "kind": "function",
-   "line": 2045
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "comboboxFilterItems",
-   "kind": "function",
-   "line": 2060
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "comboboxRenderDropdown",
-   "kind": "function",
-   "line": 2065
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "comboboxHide",
-   "kind": "function",
-   "line": 2080
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "comboboxAssignOptionIds",
-   "kind": "function",
-   "line": 2088
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "bindComboboxKeyboardNav",
-   "kind": "function",
-   "line": 2117
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "wardSelectorItems",
-   "kind": "function",
-   "line": 2162
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "wardSelectorShowDropdown",
-   "kind": "function",
-   "line": 2169
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "onWardSelectorInput",
-   "kind": "function",
-   "line": 2191
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "onWardSelectorFocus",
-   "kind": "function",
-   "line": 2197
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "onWardSelectorKeydown",
-   "kind": "function",
-   "line": 2208
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "handleSwitchWardClick",
-   "kind": "function",
-   "line": 2221
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "showSwitchWardPickerModal",
-   "kind": "function",
-   "line": 2245
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "closeModal",
-   "kind": "function",
-   "line": 2273
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "_fragmentAppended",
-   "kind": "const",
-   "line": 2284
+   "line": 1482
   },
   {
    "file": "src/legacy-app.js",
    "name": "ensureFragment",
    "kind": "function",
-   "line": 2285
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "showModal",
-   "kind": "function",
-   "line": 2292
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "populateWardNameSuggestions",
-   "kind": "function",
-   "line": 2304
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "wardNameComboItems",
-   "kind": "function",
-   "line": 2316
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "initWardNameCombobox",
-   "kind": "function",
-   "line": 2324
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "showSimplifiedEligibilityModal",
-   "kind": "function",
-   "line": 2365
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "doGuardianSetup",
-   "kind": "function",
-   "line": 2372
+   "line": 1500
   },
   {
    "file": "src/legacy-app.js",
    "name": "getWardHeadlineTotal",
    "kind": "function",
-   "line": 2397
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "syncActiveWardNameDisplay",
-   "kind": "function",
-   "line": 2427
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "getPrimaryGuardianDisplayName",
-   "kind": "function",
-   "line": 2442
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "syncGuardianNameDisplay",
-   "kind": "function",
-   "line": 2453
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "refreshWardInfoCard",
-   "kind": "function",
-   "line": 2458
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "collapseWardControls",
-   "kind": "function",
-   "line": 2502
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "_saveControlsCollapsed",
-   "kind": "let",
-   "line": 2511
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "_saveControlsUserToggled",
-   "kind": "let",
-   "line": 2512
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "applySaveControlsCollapsedState",
-   "kind": "function",
-   "line": 2513
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "collapseSaveControls",
-   "kind": "function",
-   "line": 2521
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "toggleSaveControls",
-   "kind": "function",
-   "line": 2526
+   "line": 1530
   },
   {
    "file": "src/legacy-app.js",
    "name": "updateSidebar",
    "kind": "function",
-   "line": 2533
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "SHOW_COMMENT_CARD_LINK",
-   "kind": "const",
-   "line": 2668
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "pageInventorySelector",
-   "kind": "function",
-   "line": 2671
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "showAddWardModalForType",
-   "kind": "function",
-   "line": 2758
+   "line": 1554
   },
   {
    "file": "src/legacy-app.js",
    "name": "_simplifiedFeatureBridge",
    "kind": "let",
-   "line": 2819
+   "line": 1648
   },
   {
    "file": "src/legacy-app.js",
    "name": "getSimplifiedFeatureBridge",
    "kind": "function",
-   "line": 2820
+   "line": 1649
   },
   {
    "file": "src/legacy-app.js",
    "name": "mountSimplifiedFeature",
    "kind": "function",
-   "line": 2823
+   "line": 1652
   },
   {
    "file": "src/legacy-app.js",
    "name": "mountSimplifiedNav",
    "kind": "function",
-   "line": 2826
+   "line": 1655
   },
   {
    "file": "src/legacy-app.js",
    "name": "_annualFeatureBridge",
    "kind": "let",
-   "line": 2840
+   "line": 1669
   },
   {
    "file": "src/legacy-app.js",
    "name": "getAnnualFeatureBridge",
    "kind": "function",
-   "line": 2841
+   "line": 1670
   },
   {
    "file": "src/legacy-app.js",
    "name": "mountAnnualFeature",
    "kind": "function",
-   "line": 2844
+   "line": 1673
   },
   {
    "file": "src/legacy-app.js",
    "name": "mountAnnualNav",
    "kind": "function",
-   "line": 2847
+   "line": 1676
   },
   {
    "file": "src/legacy-app.js",
    "name": "_guardianFeatureBridge",
    "kind": "let",
-   "line": 2861
+   "line": 1690
   },
   {
    "file": "src/legacy-app.js",
    "name": "getGuardianFeatureBridge",
    "kind": "function",
-   "line": 2862
+   "line": 1691
   },
   {
    "file": "src/legacy-app.js",
    "name": "mountGuardianFeature",
    "kind": "function",
-   "line": 2865
+   "line": 1694
   },
   {
    "file": "src/legacy-app.js",
    "name": "mountGuardianNav",
    "kind": "function",
-   "line": 2868
+   "line": 1697
   },
   {
    "file": "src/legacy-app.js",
    "name": "ensureGuardianFeatureReady",
    "kind": "function",
-   "line": 2871
+   "line": 1700
   },
   {
    "file": "src/legacy-app.js",
    "name": "_dashboardFeatureBridge",
    "kind": "let",
-   "line": 2890
+   "line": 1719
   },
   {
    "file": "src/legacy-app.js",
    "name": "getDashboardFeatureBridge",
    "kind": "function",
-   "line": 2891
+   "line": 1720
   },
   {
    "file": "src/legacy-app.js",
    "name": "mountDashboardFeature",
    "kind": "function",
-   "line": 2894
+   "line": 1723
   },
   {
    "file": "src/legacy-app.js",
    "name": "_planSimplifiedFeatureBridge",
    "kind": "let",
-   "line": 2923
+   "line": 1752
   },
   {
    "file": "src/legacy-app.js",
    "name": "getPlanSimplifiedFeatureBridge",
    "kind": "function",
-   "line": 2924
+   "line": 1753
   },
   {
    "file": "src/legacy-app.js",
    "name": "mountPlanSimplifiedFeature",
    "kind": "function",
-   "line": 2927
+   "line": 1756
   },
   {
    "file": "src/legacy-app.js",
    "name": "mountPlanSimplifiedNav",
    "kind": "function",
-   "line": 2930
+   "line": 1759
   },
   {
    "file": "src/legacy-app.js",
    "name": "_planAnnualFeatureBridge",
    "kind": "let",
-   "line": 2948
+   "line": 1777
   },
   {
    "file": "src/legacy-app.js",
    "name": "getPlanAnnualFeatureBridge",
    "kind": "function",
-   "line": 2949
+   "line": 1778
   },
   {
    "file": "src/legacy-app.js",
    "name": "mountPlanAnnualFeature",
    "kind": "function",
-   "line": 2952
+   "line": 1781
   },
   {
    "file": "src/legacy-app.js",
    "name": "mountPlanAnnualNav",
    "kind": "function",
-   "line": 2955
+   "line": 1784
   },
   {
    "file": "src/legacy-app.js",
    "name": "_planInitialFeatureBridge",
    "kind": "let",
-   "line": 3001
+   "line": 1830
   },
   {
    "file": "src/legacy-app.js",
    "name": "getPlanInitialFeatureBridge",
    "kind": "function",
-   "line": 3002
+   "line": 1831
   },
   {
    "file": "src/legacy-app.js",
    "name": "mountPlanInitialFeature",
    "kind": "function",
-   "line": 3005
+   "line": 1834
   },
   {
    "file": "src/legacy-app.js",
    "name": "mountPlanInitialNav",
    "kind": "function",
-   "line": 3008
+   "line": 1837
   },
   {
    "file": "src/legacy-app.js",
    "name": "_planMinorFeatureBridge",
    "kind": "let",
-   "line": 3032
+   "line": 1861
   },
   {
    "file": "src/legacy-app.js",
    "name": "getPlanMinorFeatureBridge",
    "kind": "function",
-   "line": 3033
+   "line": 1862
   },
   {
    "file": "src/legacy-app.js",
    "name": "mountPlanMinorFeature",
    "kind": "function",
-   "line": 3036
+   "line": 1865
   },
   {
    "file": "src/legacy-app.js",
    "name": "mountPlanMinorNav",
    "kind": "function",
-   "line": 3039
+   "line": 1868
   },
   {
    "file": "src/legacy-app.js",
    "name": "n",
    "kind": "function",
-   "line": 3046
+   "line": 1875
   },
   {
    "file": "src/legacy-app.js",
    "name": "pct",
    "kind": "function",
-   "line": 3047
+   "line": 1876
   },
   {
    "file": "src/legacy-app.js",
    "name": "calc",
    "kind": "const",
-   "line": 3117
+   "line": 1946
   },
   {
    "file": "src/legacy-app.js",
    "name": "setPath",
    "kind": "function",
-   "line": 3131
+   "line": 1960
   },
   {
    "file": "src/legacy-app.js",
    "name": "computeNavChecks",
    "kind": "function",
-   "line": 3142
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "updateNavDots",
-   "kind": "function",
-   "line": 3145
+   "line": 1971
   },
   {
    "file": "src/legacy-app.js",
    "name": "getWardProgress",
    "kind": "function",
-   "line": 3152
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "openFloridaCourtPortal",
-   "kind": "function",
-   "line": 3196
+   "line": 1979
   },
   {
    "file": "src/legacy-app.js",
    "name": "updateNavActive",
    "kind": "function",
-   "line": 3231
+   "line": 2030
   },
   {
    "file": "src/legacy-app.js",
    "name": "SPECIAL_PAGES",
    "kind": "const",
-   "line": 3242
+   "line": 2041
   },
   {
    "file": "src/legacy-app.js",
    "name": "handleHash",
    "kind": "function",
-   "line": 3243
+   "line": 2042
   },
   {
    "file": "src/legacy-app.js",
    "name": "warnBeforeUnloadIfDirty",
    "kind": "function",
-   "line": 3283
+   "line": 2082
   },
   {
    "file": "src/legacy-app.js",
    "name": "TEMPLATE_FILES",
    "kind": "const",
-   "line": 3289
+   "line": 2088
   },
   {
    "file": "src/legacy-app.js",
    "name": "isValidXlsxB64",
    "kind": "function",
-   "line": 3295
+   "line": 2094
   },
   {
    "file": "src/legacy-app.js",
    "name": "fetchAndCacheTemplate",
    "kind": "function",
-   "line": 3299
+   "line": 2098
   },
   {
    "file": "src/legacy-app.js",
    "name": "ensureTemplate",
    "kind": "function",
-   "line": 3332
+   "line": 2131
   },
   {
    "file": "src/legacy-app.js",
    "name": "autoLoadTemplates",
    "kind": "function",
-   "line": 3345
+   "line": 2144
   },
   {
    "file": "src/legacy-app.js",
    "name": "renderCopyrightNotice",
    "kind": "function",
-   "line": 3363
+   "line": 2161
   },
   {
    "file": "src/legacy-app.js",
    "name": "provideMonolithServices",
    "kind": "function",
-   "line": 3372
+   "line": 2166
   },
   {
    "file": "src/legacy-app.js",
    "name": "initApp",
    "kind": "function",
-   "line": 3374
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "_wardLockedPreviousFocus",
-   "kind": "let",
-   "line": 3490
+   "line": 2168
   }
  ],
  "edges": [
@@ -1430,20 +932,6 @@
    "to": "src/core/navigation/router.js",
    "kind": "window",
    "name": "attachFormHeaderActions",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/feedback/feedback-modal.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "ensureFragment",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/feedback/feedback-modal.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "showModal",
    "evalTime": false
   },
   {
@@ -1562,27 +1050,6 @@
    "from": "src/core/form/form-contract.js",
    "to": "src/legacy-app.js",
    "kind": "window",
-   "name": "refreshWardInfoCard",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/form/form-contract.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "syncActiveWardNameDisplay",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/form/form-contract.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "syncGuardianNameDisplay",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/form/form-contract.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
    "name": "getCurrentPage",
    "evalTime": false
   },
@@ -1612,34 +1079,6 @@
    "to": "src/core/form/commit-coordinator.js",
    "kind": "window",
    "name": "getFieldDraftDisplay",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/form/form-fields.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "tooltip",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/form/form-fields.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "tooltip",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/form/form-fields.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "tooltip",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/form/form-fields.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "tooltip",
    "evalTime": false
   },
   {
@@ -1751,48 +1190,6 @@
    "from": "src/core/navigation/router.js",
    "to": "src/legacy-app.js",
    "kind": "window",
-   "name": "updateHelpContext",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/router.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "updateHelpContext",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/router.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "updateHelpContext",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/router.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "updateHelpContext",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/router.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "pageInventorySelector",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/router.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "pageInventorySelector",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/router.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
    "name": "mountDashboardFeature",
    "evalTime": false
   },
@@ -1801,132 +1198,6 @@
    "to": "src/legacy-app.js",
    "kind": "window",
    "name": "mountDashboardFeature",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/router.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "updateHelpContext",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/router.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "updateHelpContext",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/router.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "pageInventorySelector",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/router.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "pageInventorySelector",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/router.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "updateHelpContext",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/router.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "updateHelpContext",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/router.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "pageActivityLog",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/router.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "pageActivityLog",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/router.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "loadAndRenderActivityLog",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/router.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "loadAndRenderActivityLog",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/router.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "updateHelpContext",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/router.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "updateHelpContext",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/router.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "updateHelpContext",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/router.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "updateHelpContext",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/router.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "pageInventorySelector",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/router.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "pageInventorySelector",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/router.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "updateHelpContext",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/router.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "updateHelpContext",
    "evalTime": false
   },
   {
@@ -2022,23 +1293,9 @@
   },
   {
    "from": "src/core/navigation/ward-lifecycle.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "updateSidebar",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/ward-lifecycle.js",
    "to": "src/core/persistence/case-file.js",
    "kind": "window",
    "name": "refreshAutoSaveArmedStatus",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/ward-lifecycle.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "notifyProbateGuardianTabStateChanged",
    "evalTime": false
   },
   {
@@ -2057,20 +1314,6 @@
   },
   {
    "from": "src/core/navigation/ward-lifecycle.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "updateSidebar",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/ward-lifecycle.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "updateSidebar",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/ward-lifecycle.js",
    "to": "src/core/persistence/case-file.js",
    "kind": "window",
    "name": "refreshAutoSaveArmedStatus",
@@ -2081,20 +1324,6 @@
    "to": "src/core/persistence/case-file.js",
    "kind": "window",
    "name": "refreshAutoSaveArmedStatus",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/ward-lifecycle.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "updateSidebar",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/ward-lifecycle.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "updateSidebar",
    "evalTime": false
   },
   {
@@ -2143,20 +1372,6 @@
    "from": "src/core/navigation/ward-lifecycle.js",
    "to": "src/legacy-app.js",
    "kind": "window",
-   "name": "showWardLockedModal",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/ward-lifecycle.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "showWardLockedModal",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/ward-lifecycle.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
    "name": "ensureGuardianFeatureReady",
    "evalTime": false
   },
@@ -2165,20 +1380,6 @@
    "to": "src/legacy-app.js",
    "kind": "window",
    "name": "ensureGuardianFeatureReady",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/ward-lifecycle.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "updateSidebar",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/ward-lifecycle.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "updateSidebar",
    "evalTime": false
   },
   {
@@ -2193,20 +1394,6 @@
    "to": "src/core/persistence/case-file.js",
    "kind": "window",
    "name": "refreshAutoSaveArmedStatus",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/ward-lifecycle.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "notifyProbateGuardianTabStateChanged",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/ward-lifecycle.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "notifyProbateGuardianTabStateChanged",
    "evalTime": false
   },
   {
@@ -2295,7 +1482,7 @@
   },
   {
    "from": "src/core/navigation/ward-lifecycle.js",
-   "to": "src/core/persistence/case-file.js",
+   "to": "src/core/persistence/export-state.js",
    "kind": "window",
    "name": "_lastExportAt",
    "evalTime": false
@@ -2319,20 +1506,6 @@
    "to": "src/core/persistence/case-file.js",
    "kind": "window",
    "name": "showAutoExportReminder",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/ward-lifecycle.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "updateHelpContext",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/ward-lifecycle.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "updateHelpContext",
    "evalTime": false
   },
   {
@@ -2361,34 +1534,6 @@
    "to": "src/legacy-app.js",
    "kind": "window",
    "name": "deleteWardFromState",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/ward-lifecycle.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "updateSidebar",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/ward-lifecycle.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "updateSidebar",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/ward-lifecycle.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "notifyProbateGuardianTabStateChanged",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/ward-lifecycle.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "notifyProbateGuardianTabStateChanged",
    "evalTime": false
   },
   {
@@ -2469,13 +1614,6 @@
    "evalTime": false
   },
   {
-   "from": "src/core/parties/party-management.js",
-   "to": "src/core/navigation/router.js",
-   "kind": "window",
-   "name": "renderPage",
-   "evalTime": false
-  },
-  {
    "from": "src/core/party-resolver.js",
    "to": "src/main.js",
    "kind": "window",
@@ -2568,27 +1706,6 @@
   },
   {
    "from": "src/core/persistence/case-file.js",
-   "to": "src/core/navigation/ward-lifecycle.js",
-   "kind": "window",
-   "name": "_dirtySinceExport",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/persistence/case-file.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "_dirtySinceExport",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/persistence/case-file.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "_lastExportAt",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/persistence/case-file.js",
    "to": "src/legacy-app.js",
    "kind": "window",
    "name": "_saveTimer",
@@ -2633,20 +1750,6 @@
    "from": "src/core/persistence/case-file.js",
    "to": "src/legacy-app.js",
    "kind": "window",
-   "name": "notifyProbateGuardianTabStateChanged",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/persistence/case-file.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "notifyProbateGuardianTabStateChanged",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/persistence/case-file.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
    "name": "_auditLogEntries",
    "evalTime": false
   },
@@ -2676,20 +1779,6 @@
    "to": "src/legacy-app.js",
    "kind": "window",
    "name": "_auditLogEntries",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/persistence/case-file.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "notifyProbateGuardianTabStateChanged",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/persistence/case-file.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "notifyProbateGuardianTabStateChanged",
    "evalTime": false
   },
   {
@@ -2732,34 +1821,6 @@
    "to": "src/legacy-app.js",
    "kind": "window",
    "name": "hideSaveError",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/persistence/case-file.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "notifyProbateGuardianTabStateChanged",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/persistence/case-file.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "notifyProbateGuardianTabStateChanged",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/persistence/case-file.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "showModal",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/persistence/case-file.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "showModal",
    "evalTime": false
   },
   {
@@ -2836,20 +1897,6 @@
    "from": "src/core/persistence/case-file.js",
    "to": "src/legacy-app.js",
    "kind": "window",
-   "name": "updateSidebar",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/persistence/case-file.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "updateSidebar",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/persistence/case-file.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
    "name": "auditLog",
    "evalTime": false
   },
@@ -2858,20 +1905,6 @@
    "to": "src/legacy-app.js",
    "kind": "window",
    "name": "auditLog",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/persistence/case-file.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "notifyProbateGuardianTabStateChanged",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/persistence/case-file.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "notifyProbateGuardianTabStateChanged",
    "evalTime": false
   },
   {
@@ -2928,6 +1961,27 @@
    "to": "src/legacy-app.js",
    "kind": "window",
    "name": "_securityMode",
+   "evalTime": false
+  },
+  {
+   "from": "src/core/persistence/export-state.js",
+   "to": "src/core/navigation/ward-lifecycle.js",
+   "kind": "window",
+   "name": "_dirtySinceExport",
+   "evalTime": false
+  },
+  {
+   "from": "src/core/persistence/export-state.js",
+   "to": "src/legacy-app.js",
+   "kind": "window",
+   "name": "_dirtySinceExport",
+   "evalTime": false
+  },
+  {
+   "from": "src/core/persistence/export-state.js",
+   "to": "src/legacy-app.js",
+   "kind": "window",
+   "name": "_lastExportAt",
    "evalTime": false
   },
   {
@@ -3205,27 +2259,6 @@
   },
   {
    "from": "src/features/annual-accounting/index.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "tooltip",
-   "evalTime": true
-  },
-  {
-   "from": "src/features/annual-accounting/index.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "syncActiveWardNameDisplay",
-   "evalTime": true
-  },
-  {
-   "from": "src/features/annual-accounting/index.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "syncGuardianNameDisplay",
-   "evalTime": true
-  },
-  {
-   "from": "src/features/annual-accounting/index.js",
    "to": "src/features/annual-accounting/totals.js",
    "kind": "window",
    "name": "calcTotalsAnnual",
@@ -3257,181 +2290,6 @@
    "to": "src/core/navigation/router.js",
    "kind": "window",
    "name": "renderPage",
-   "evalTime": true
-  },
-  {
-   "from": "src/features/dashboard/index.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "SHOW_COMMENT_CARD_LINK",
-   "evalTime": false
-  },
-  {
-   "from": "src/features/dashboard/index.js",
-   "to": "src/core/persistence/case-file.js",
-   "kind": "window",
-   "name": "buildSingleWardExportBlob",
-   "evalTime": false
-  },
-  {
-   "from": "src/features/dashboard/index.js",
-   "to": "src/core/persistence/case-file.js",
-   "kind": "window",
-   "name": "getWardFileName",
-   "evalTime": false
-  },
-  {
-   "from": "src/features/dashboard/index.js",
-   "to": "src/core/persistence/case-file.js",
-   "kind": "window",
-   "name": "getWardFileName",
-   "evalTime": false
-  },
-  {
-   "from": "src/features/dashboard/index.js",
-   "to": "src/core/persistence/case-file.js",
-   "kind": "window",
-   "name": "validateWardBackupOverwrite",
-   "evalTime": false
-  },
-  {
-   "from": "src/features/dashboard/index.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "auditLog",
-   "evalTime": false
-  },
-  {
-   "from": "src/features/dashboard/index.js",
-   "to": "src/core/persistence/case-file.js",
-   "kind": "window",
-   "name": "finishSingleWardExport",
-   "evalTime": false
-  },
-  {
-   "from": "src/features/dashboard/index.js",
-   "to": "src/core/persistence/case-file.js",
-   "kind": "window",
-   "name": "finishSingleWardExport",
-   "evalTime": false
-  },
-  {
-   "from": "src/features/dashboard/index.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "auditLog",
-   "evalTime": false
-  },
-  {
-   "from": "src/features/dashboard/index.js",
-   "to": "src/core/persistence/case-file.js",
-   "kind": "window",
-   "name": "exportGuardianDataZip",
-   "evalTime": false
-  },
-  {
-   "from": "src/features/dashboard/index.js",
-   "to": "src/core/persistence/case-file.js",
-   "kind": "window",
-   "name": "exportGuardianDataZip",
-   "evalTime": false
-  },
-  {
-   "from": "src/features/dashboard/index.js",
-   "to": "src/core/navigation/router.js",
-   "kind": "window",
-   "name": "navigate",
-   "evalTime": true
-  },
-  {
-   "from": "src/features/dashboard/index.js",
-   "to": "src/main.js",
-   "kind": "window",
-   "name": "navigate",
-   "evalTime": true
-  },
-  {
-   "from": "src/features/dashboard/index.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "isContinuePromptShown",
-   "evalTime": true
-  },
-  {
-   "from": "src/features/dashboard/index.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "markContinuePromptShown",
-   "evalTime": true
-  },
-  {
-   "from": "src/features/dashboard/index.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "saveWardToState",
-   "evalTime": true
-  },
-  {
-   "from": "src/features/dashboard/index.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "flushPendingSave",
-   "evalTime": true
-  },
-  {
-   "from": "src/features/dashboard/index.js",
-   "to": "src/core/persistence/case-file.js",
-   "kind": "window",
-   "name": "markDirtySinceExport",
-   "evalTime": true
-  },
-  {
-   "from": "src/features/dashboard/index.js",
-   "to": "src/core/persistence/case-file.js",
-   "kind": "window",
-   "name": "updateLastSavedIndicator",
-   "evalTime": true
-  },
-  {
-   "from": "src/features/dashboard/index.js",
-   "to": "src/core/persistence/case-file.js",
-   "kind": "window",
-   "name": "saveBlobAs",
-   "evalTime": true
-  },
-  {
-   "from": "src/features/dashboard/index.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "auditLog",
-   "evalTime": true
-  },
-  {
-   "from": "src/features/dashboard/index.js",
-   "to": "src/core/persistence/launch-preferences.js",
-   "kind": "window",
-   "name": "saveAppState",
-   "evalTime": true
-  },
-  {
-   "from": "src/features/dashboard/index.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "getWardHeadlineTotal",
-   "evalTime": true
-  },
-  {
-   "from": "src/features/dashboard/index.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "getWardProgress",
-   "evalTime": true
-  },
-  {
-   "from": "src/features/dashboard/index.js",
-   "to": "src/core/persistence/case-file.js",
-   "kind": "window",
-   "name": "formatRelativeTime",
    "evalTime": true
   },
   {
@@ -3590,13 +2448,6 @@
   },
   {
    "from": "src/features/plan-simplified/index.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "openFloridaCourtPortal",
-   "evalTime": false
-  },
-  {
-   "from": "src/features/plan-simplified/index.js",
    "to": "src/features/annual-accounting/print.js",
    "kind": "window",
    "name": "printCurrentFilingPdf",
@@ -3704,20 +2555,6 @@
    "from": "src/features/simplified-accounting/index.js",
    "to": "src/legacy-app.js",
    "kind": "window",
-   "name": "openFloridaCourtPortal",
-   "evalTime": false
-  },
-  {
-   "from": "src/features/simplified-accounting/index.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "tooltip",
-   "evalTime": true
-  },
-  {
-   "from": "src/features/simplified-accounting/index.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
    "name": "autoSave",
    "evalTime": true
   },
@@ -3736,39 +2573,11 @@
    "evalTime": true
   },
   {
-   "from": "src/features/simplified-accounting/index.js",
-   "to": "src/legacy-app.js",
-   "kind": "bare",
-   "name": "updateNavDots",
-   "evalTime": false
-  },
-  {
    "from": "src/features/simplified-accounting/print.js",
    "to": "src/core/navigation/router.js",
    "kind": "window",
    "name": "renderPage",
    "evalTime": true
-  },
-  {
-   "from": "src/form-events.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "showAddWardModalForType",
-   "evalTime": false
-  },
-  {
-   "from": "src/form-events.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "exportActivityLog",
-   "evalTime": false
-  },
-  {
-   "from": "src/form-events.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "openFloridaCourtPortal",
-   "evalTime": false
   },
   {
    "from": "src/form-events.js",
@@ -3841,31 +2650,17 @@
    "evalTime": false
   },
   {
-   "from": "src/form-events.js",
-   "to": "src/legacy-app.js",
+   "from": "src/legacy-app.js",
+   "to": "src/legacy-bridge.js",
    "kind": "window",
-   "name": "renderActivityLogList",
-   "evalTime": false
-  },
-  {
-   "from": "src/form-events.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "renderActivityLogList",
+   "name": "GuardianFormsLegacyBridge",
    "evalTime": false
   },
   {
    "from": "src/legacy-app.js",
-   "to": "src/core/theme-preference.js",
+   "to": "src/legacy-bridge.js",
    "kind": "window",
-   "name": "writeStoredTheme",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/core/theme-preference.js",
-   "kind": "window",
-   "name": "writeStoredTheme",
+   "name": "GuardianFormsLegacyBridge",
    "evalTime": false
   },
   {
@@ -3912,62 +2707,6 @@
   },
   {
    "from": "src/legacy-app.js",
-   "to": "src/features/help/help-content.js",
-   "kind": "window",
-   "name": "HELP_CONTENT",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/features/help/help-content.js",
-   "kind": "window",
-   "name": "HELP_CONTENT",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/features/help/help-content.js",
-   "kind": "window",
-   "name": "HELP_CONTENT",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/features/help/help-content.js",
-   "kind": "window",
-   "name": "HELP_CONTENT",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/legacy-bridge.js",
-   "kind": "window",
-   "name": "GuardianFormsLegacyBridge",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/legacy-bridge.js",
-   "kind": "window",
-   "name": "GuardianFormsLegacyBridge",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/legacy-bridge.js",
-   "kind": "window",
-   "name": "GuardianFormsLegacyBridge",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/legacy-bridge.js",
-   "kind": "window",
-   "name": "GuardianFormsLegacyBridge",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
    "to": "src/legacy-bridge.js",
    "kind": "window",
    "name": "GuardianFormsLegacyBridge",
@@ -4013,48 +2752,6 @@
    "to": "src/core/ward-lock.js",
    "kind": "window",
    "name": "releaseWardLock",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/core/persistence/case-file.js",
-   "kind": "window",
-   "name": "getLastExportAt",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/core/persistence/case-file.js",
-   "kind": "window",
-   "name": "getLastExportAt",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/core/persistence/case-file.js",
-   "kind": "window",
-   "name": "_lastExportAt",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/core/persistence/case-file.js",
-   "kind": "window",
-   "name": "isAutoSaveArmed",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/core/persistence/case-file.js",
-   "kind": "window",
-   "name": "isAutoSaveArmed",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/core/ui/dialogs.js",
-   "kind": "window",
-   "name": "alertModal",
    "evalTime": false
   },
   {
@@ -4069,6 +2766,13 @@
    "to": "src/core/form/commit-coordinator.js",
    "kind": "window",
    "name": "commitStoredDateDrafts",
+   "evalTime": false
+  },
+  {
+   "from": "src/legacy-app.js",
+   "to": "src/legacy-bridge.js",
+   "kind": "window",
+   "name": "GuardianFormsLegacyBridge",
    "evalTime": false
   },
   {
@@ -4192,142 +2896,9 @@
   },
   {
    "from": "src/legacy-app.js",
-   "to": "src/legacy-bridge.js",
-   "kind": "window",
-   "name": "GuardianFormsLegacyBridge",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/legacy-bridge.js",
-   "kind": "window",
-   "name": "GuardianFormsLegacyBridge",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/fragment-loader.js",
-   "kind": "window",
-   "name": "loadFragment",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/legacy-bridge.js",
-   "kind": "window",
-   "name": "GuardianFormsLegacyBridge",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/core/ui/dialogs.js",
-   "kind": "window",
-   "name": "alertModal",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
    "to": "src/core/state.js",
    "kind": "window",
    "name": "D",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/core/state.js",
-   "kind": "window",
-   "name": "D",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/core/state.js",
-   "kind": "window",
-   "name": "D",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/core/state.js",
-   "kind": "window",
-   "name": "D",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/legacy-bridge.js",
-   "kind": "window",
-   "name": "GuardianFormsLegacyBridge",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/legacy-bridge.js",
-   "kind": "window",
-   "name": "GuardianFormsLegacyBridge",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/legacy-bridge.js",
-   "kind": "window",
-   "name": "GuardianFormsLegacyBridge",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/legacy-bridge.js",
-   "kind": "window",
-   "name": "GuardianFormsLegacyBridge",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/legacy-bridge.js",
-   "kind": "window",
-   "name": "GuardianFormsLegacyBridge",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/legacy-bridge.js",
-   "kind": "window",
-   "name": "GuardianFormsLegacyBridge",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/legacy-bridge.js",
-   "kind": "window",
-   "name": "GuardianFormsLegacyBridge",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/legacy-bridge.js",
-   "kind": "window",
-   "name": "GuardianFormsLegacyBridge",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/legacy-bridge.js",
-   "kind": "window",
-   "name": "GuardianFormsLegacyBridge",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/legacy-bridge.js",
-   "kind": "window",
-   "name": "GuardianFormsLegacyBridge",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/legacy-bridge.js",
-   "kind": "window",
-   "name": "GuardianFormsLegacyBridge",
    "evalTime": false
   },
   {
@@ -4507,16 +3078,16 @@
   },
   {
    "from": "src/legacy-app.js",
-   "to": "src/legacy-bridge.js",
+   "to": "src/features/guardian-inventory/index.js",
    "kind": "window",
-   "name": "GuardianFormsLegacyBridge",
+   "name": "validateGuardian",
    "evalTime": false
   },
   {
    "from": "src/legacy-app.js",
-   "to": "src/features/guardian-inventory/index.js",
+   "to": "src/legacy-bridge.js",
    "kind": "window",
-   "name": "validateGuardian",
+   "name": "GuardianFormsLegacyBridge",
    "evalTime": false
   },
   {
@@ -4551,14 +3122,14 @@
    "from": "src/legacy-app.js",
    "to": "src/core/persistence/launch-preferences.js",
    "kind": "bare",
-   "name": "saveAppState",
+   "name": "loadAppState",
    "evalTime": false
   },
   {
    "from": "src/legacy-app.js",
    "to": "src/core/persistence/launch-preferences.js",
    "kind": "bare",
-   "name": "loadAppState",
+   "name": "saveAppState",
    "evalTime": false
   },
   {
@@ -4615,20 +3186,6 @@
    "to": "src/core/navigation/ward-lifecycle.js",
    "kind": "bare",
    "name": "activateWard",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/core/persistence/case-file.js",
-   "kind": "bare",
-   "name": "formatRelativeTime",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/core/persistence/case-file.js",
-   "kind": "bare",
-   "name": "saveBlobAs",
    "evalTime": false
   },
   {
@@ -4731,13 +3288,6 @@
   },
   {
    "from": "src/legacy-app.js",
-   "to": "src/core/navigation/ward-lifecycle.js",
-   "kind": "bare",
-   "name": "switchWard",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
    "to": "src/features/annual-accounting/totals.js",
    "kind": "bare",
    "name": "calcTotalsAnnual",
@@ -4807,62 +3357,6 @@
    "evalTime": true
   },
   {
-   "from": "src/modal-events.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "closeModal",
-   "evalTime": false
-  },
-  {
-   "from": "src/modal-events.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "closeWardLockedModal",
-   "evalTime": false
-  },
-  {
-   "from": "src/modal-events.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "doGuardianSetup",
-   "evalTime": false
-  },
-  {
-   "from": "src/modal-events.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "closeModal",
-   "evalTime": false
-  },
-  {
-   "from": "src/modal-events.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "closeModal",
-   "evalTime": false
-  },
-  {
-   "from": "src/modal-events.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "closeWardLockedModal",
-   "evalTime": false
-  },
-  {
-   "from": "src/modal-events.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "closeWardLockedModal",
-   "evalTime": false
-  },
-  {
-   "from": "src/modal-events.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "closeModal",
-   "evalTime": false
-  },
-  {
    "from": "src/pwa-ui.js",
    "to": "src/legacy-app.js",
    "kind": "window",
@@ -4874,195 +3368,6 @@
    "to": "src/legacy-app.js",
    "kind": "window",
    "name": "pgHasUnsavedChanges",
-   "evalTime": false
-  },
-  {
-   "from": "src/pwa-ui.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "getProbateGuardianTabState",
-   "evalTime": false
-  },
-  {
-   "from": "src/pwa-ui.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "getProbateGuardianTabState",
-   "evalTime": false
-  },
-  {
-   "from": "src/shell-events.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "toggleHelpPanel",
-   "evalTime": false
-  },
-  {
-   "from": "src/shell-events.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "collapseSaveControls",
-   "evalTime": false
-  },
-  {
-   "from": "src/shell-events.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "collapseSaveControls",
-   "evalTime": false
-  },
-  {
-   "from": "src/shell-events.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "clearAllData",
-   "evalTime": false
-  },
-  {
-   "from": "src/shell-events.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "collapseWardControls",
-   "evalTime": false
-  },
-  {
-   "from": "src/shell-events.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "collapseWardControls",
-   "evalTime": false
-  },
-  {
-   "from": "src/shell-events.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "openUserGuide",
-   "evalTime": false
-  },
-  {
-   "from": "src/shell-events.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "collapseSaveControls",
-   "evalTime": false
-  },
-  {
-   "from": "src/shell-events.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "lockApp",
-   "evalTime": false
-  },
-  {
-   "from": "src/shell-events.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "collapseWardControls",
-   "evalTime": false
-  },
-  {
-   "from": "src/shell-events.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "nextWalkthroughStep",
-   "evalTime": false
-  },
-  {
-   "from": "src/shell-events.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "collapseSaveControls",
-   "evalTime": false
-  },
-  {
-   "from": "src/shell-events.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "toggleHelpPanel",
-   "evalTime": false
-  },
-  {
-   "from": "src/shell-events.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "collapseSaveControls",
-   "evalTime": false
-  },
-  {
-   "from": "src/shell-events.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "skipWalkthrough",
-   "evalTime": false
-  },
-  {
-   "from": "src/shell-events.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "startWalkthrough",
-   "evalTime": false
-  },
-  {
-   "from": "src/shell-events.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "handleSwitchWardClick",
-   "evalTime": false
-  },
-  {
-   "from": "src/shell-events.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "openUserGuideForCurrentPage",
-   "evalTime": false
-  },
-  {
-   "from": "src/shell-events.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "toggleHelpPanel",
-   "evalTime": false
-  },
-  {
-   "from": "src/shell-events.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "toggleSaveControls",
-   "evalTime": false
-  },
-  {
-   "from": "src/shell-events.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "toggleTheme",
-   "evalTime": false
-  },
-  {
-   "from": "src/shell-events.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "onWardSelectorInput",
-   "evalTime": false
-  },
-  {
-   "from": "src/shell-events.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "onWardSelectorFocus",
-   "evalTime": false
-  },
-  {
-   "from": "src/shell-events.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "onWardSelectorKeydown",
-   "evalTime": false
-  },
-  {
-   "from": "src/shell-events.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "collapseSaveControls",
    "evalTime": false
   },
   {
@@ -5129,18 +3434,39 @@
    "evalTime": false
   },
   {
-   "from": "src/tab-coordination.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "getProbateGuardianTabState",
-   "evalTime": false
+   "from": "src/core/activity/activity-log-view.js",
+   "to": "src/core/filing/escape-html.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
   },
   {
-   "from": "src/tab-coordination.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "getProbateGuardianTabState",
-   "evalTime": false
+   "from": "src/core/activity/activity-log-view.js",
+   "to": "src/core/persistence/case-file.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/activity/activity-log-view.js",
+   "to": "src/core/runtime/monolith.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/activity/activity-log-view.js",
+   "to": "src/core/ui/dialogs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/activity/activity-log-view.js",
+   "to": "src/core/ui/icons.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
   },
   {
    "from": "src/core/case-county-drift.js",
@@ -5222,6 +3548,13 @@
   {
    "from": "src/core/feedback/feedback-modal.js",
    "to": "src/core/feedback/feedback-message.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/feedback/feedback-modal.js",
+   "to": "src/core/ui/dialogs.js",
    "kind": "import-static",
    "name": null,
    "evalTime": null
@@ -5488,6 +3821,13 @@
   {
    "from": "src/core/filing/filing-years.js",
    "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/filing-years.js",
+   "to": "src/core/navigation/tab-state.js",
    "kind": "import-static",
    "name": null,
    "evalTime": null
@@ -5962,6 +4302,13 @@
    "evalTime": null
   },
   {
+   "from": "src/core/form/form-contract.js",
+   "to": "src/core/shell/sidebar.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
    "from": "src/core/form/form-fields.js",
    "to": "src/core/form/date-parser.js",
    "kind": "import-static",
@@ -5978,6 +4325,13 @@
   {
    "from": "src/core/form/form-fields.js",
    "to": "src/core/form/form-contract.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/form/form-fields.js",
+   "to": "src/core/help/tooltips.js",
    "kind": "import-static",
    "name": null,
    "evalTime": null
@@ -6123,6 +4477,90 @@
    "evalTime": null
   },
   {
+   "from": "src/core/help/help-content.js",
+   "to": "src/core/filing/county-guidance.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/help/help-content.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/help/help-panel.js",
+   "to": "src/core/filing/filing-registry.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/help/help-panel.js",
+   "to": "src/core/help/help-content.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/help/help-panel.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/help/tooltips.js",
+   "to": "src/core/filing/escape-html.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/help/user-guide.js",
+   "to": "src/core/runtime/monolith.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/help/user-guide.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/help/walkthrough.js",
+   "to": "src/core/filing/filing-registry.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/help/walkthrough.js",
+   "to": "src/core/help/help-panel.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/help/walkthrough.js",
+   "to": "src/core/persistence/launch-preferences.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/help/walkthrough.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
    "from": "src/core/modals/convert-ward-modal.js",
    "to": "src/core/state.js",
    "kind": "import-static",
@@ -6166,7 +4604,7 @@
   },
   {
    "from": "src/core/modals/convert-ward-modal.js",
-   "to": "src/core/runtime/monolith.js",
+   "to": "src/core/ui/combobox.js",
    "kind": "import-static",
    "name": null,
    "evalTime": null
@@ -6242,6 +4680,55 @@
    "evalTime": null
   },
   {
+   "from": "src/core/modals/filing-dialogs.js",
+   "to": "src/core/filing/escape-html.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/modals/filing-dialogs.js",
+   "to": "src/core/ui/combobox.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/modals/filing-dialogs.js",
+   "to": "src/core/shell/sidebar.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/modals/guardian-setup.js",
+   "to": "src/core/runtime/monolith.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/modals/guardian-setup.js",
+   "to": "src/core/shell/sidebar.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/modals/guardian-setup.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/modals/guardian-setup.js",
+   "to": "src/core/ui/dialogs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
    "from": "src/core/modals/pick-record-dialogs.js",
    "to": "src/core/case-resolver.js",
    "kind": "import-static",
@@ -6286,6 +4773,13 @@
   {
    "from": "src/core/modals/pick-record-dialogs.js",
    "to": "src/core/status/nav-marks.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/modals/pick-record-dialogs.js",
+   "to": "src/core/ui/dialogs.js",
    "kind": "import-static",
    "name": null,
    "evalTime": null
@@ -6459,6 +4953,48 @@
    "evalTime": null
   },
   {
+   "from": "src/core/navigation/router.js",
+   "to": "src/core/help/help-panel.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/router.js",
+   "to": "src/core/shell/start-new-form.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/router.js",
+   "to": "src/core/activity/activity-log-view.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/tab-state.js",
+   "to": "src/core/feedback/feedback-config.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/tab-state.js",
+   "to": "src/core/persistence/export-state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/tab-state.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
    "from": "src/core/navigation/ward-county.js",
    "to": "src/core/state.js",
    "kind": "import-static",
@@ -6523,6 +5059,13 @@
   },
   {
    "from": "src/core/navigation/ward-lifecycle.js",
+   "to": "src/core/ward-lock.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/ward-lifecycle.js",
    "to": "src/core/status/nav-marks.js",
    "kind": "import-static",
    "name": null,
@@ -6531,6 +5074,27 @@
   {
    "from": "src/core/navigation/ward-lifecycle.js",
    "to": "src/core/filing/recent-filings.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/ward-lifecycle.js",
+   "to": "src/core/shell/sidebar.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/ward-lifecycle.js",
+   "to": "src/core/navigation/tab-state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/ward-lifecycle.js",
+   "to": "src/core/help/help-panel.js",
    "kind": "import-static",
    "name": null,
    "evalTime": null
@@ -6852,6 +5416,13 @@
   },
   {
    "from": "src/core/persistence/case-file.js",
+   "to": "src/core/persistence/export-state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/persistence/case-file.js",
    "to": "src/core/filing/plan-tristate.js",
    "kind": "import-static",
    "name": null,
@@ -6872,7 +5443,28 @@
    "evalTime": null
   },
   {
+   "from": "src/core/persistence/case-file.js",
+   "to": "src/core/navigation/tab-state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/persistence/case-file.js",
+   "to": "src/core/shell/sidebar.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
    "from": "src/core/persistence/crypto.js",
+   "to": "src/core/persistence/window-backed-ref.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/persistence/export-state.js",
    "to": "src/core/persistence/window-backed-ref.js",
    "kind": "import-static",
    "name": null,
@@ -6923,6 +5515,104 @@
   {
    "from": "src/core/persistence/templates.js",
    "to": "templates/guardian-template.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/shell/filing-switcher.js",
+   "to": "src/core/filing/escape-html.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/shell/filing-switcher.js",
+   "to": "src/core/filing/filing-registry.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/shell/filing-switcher.js",
+   "to": "src/core/navigation/filing-lifecycle.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/shell/filing-switcher.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/shell/filing-switcher.js",
+   "to": "src/core/ui/combobox.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/shell/filing-switcher.js",
+   "to": "src/core/ui/dialogs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/shell/sidebar.js",
+   "to": "src/core/filing/escape-html.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/shell/sidebar.js",
+   "to": "src/core/filing/filing-registry.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/shell/sidebar.js",
+   "to": "src/core/format/money.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/shell/sidebar.js",
+   "to": "src/core/runtime/monolith.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/shell/sidebar.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/shell/sidebar.js",
+   "to": "src/core/status/nav-marks.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/shell/start-new-form.js",
+   "to": "src/core/filing/filing-registry.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/shell/start-new-form.js",
+   "to": "src/core/ui/icons.js",
    "kind": "import-static",
    "name": null,
    "evalTime": null
@@ -7167,6 +5857,27 @@
   },
   {
    "from": "src/core/testing/testing-adapter.js",
+   "to": "src/core/modals/filing-dialogs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/testing/testing-adapter.js",
+   "to": "src/core/help/walkthrough.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/testing/testing-adapter.js",
+   "to": "src/core/shell/sidebar.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/testing/testing-adapter.js",
    "to": "src/core/navigation/filing-lifecycle.js",
    "kind": "import-static",
    "name": null,
@@ -7208,6 +5919,13 @@
    "evalTime": null
   },
   {
+   "from": "src/core/theme-preference.js",
+   "to": "src/core/ui/icons.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
    "from": "src/core/types/index.js",
    "to": "src/core/types/case-file.js",
    "kind": "import-static",
@@ -7243,6 +5961,20 @@
    "evalTime": null
   },
   {
+   "from": "src/core/ui/combobox.js",
+   "to": "src/core/filing/escape-html.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/ui/dialogs.js",
+   "to": "src/fragment-loader.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
    "from": "src/core/ui/print-pager.js",
    "to": "src/core/filing/escape-html.js",
    "kind": "import-static",
@@ -7252,6 +5984,13 @@
   {
    "from": "src/core/ui/print-pager.js",
    "to": "src/core/ui/icons.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/ui/print-pager.js",
+   "to": "src/core/help/help-panel.js",
    "kind": "import-static",
    "name": null,
    "evalTime": null
@@ -7951,6 +6690,20 @@
   },
   {
    "from": "src/features/annual-accounting/index.js",
+   "to": "src/core/help/tooltips.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/index.js",
+   "to": "src/core/shell/sidebar.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/index.js",
    "to": "src/features/annual-accounting/print.js",
    "kind": "import-dynamic",
    "name": null,
@@ -8253,6 +7006,41 @@
   {
    "from": "src/features/dashboard/index.js",
    "to": "src/core/modals/convert-ward-modal.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/dashboard/index.js",
+   "to": "src/core/shell/start-new-form.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/dashboard/index.js",
+   "to": "src/core/navigation/router.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/dashboard/index.js",
+   "to": "src/core/persistence/case-file.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/dashboard/index.js",
+   "to": "src/core/persistence/launch-preferences.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/dashboard/index.js",
+   "to": "src/core/runtime/monolith.js",
    "kind": "import-static",
    "name": null,
    "evalTime": null
@@ -8896,20 +7684,6 @@
   },
   {
    "from": "src/features/guardian-inventory/totals.js",
-   "to": "src/core/state.js",
-   "kind": "import-static",
-   "name": null,
-   "evalTime": null
-  },
-  {
-   "from": "src/features/help/help-content.js",
-   "to": "src/core/filing/county-guidance.js",
-   "kind": "import-static",
-   "name": null,
-   "evalTime": null
-  },
-  {
-   "from": "src/features/help/help-content.js",
    "to": "src/core/state.js",
    "kind": "import-static",
    "name": null,
@@ -10044,6 +8818,13 @@
   },
   {
    "from": "src/features/plan-simplified/index.js",
+   "to": "src/core/shell/court-portal.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-simplified/index.js",
    "to": "src/features/plan-simplified/print.js",
    "kind": "import-dynamic",
    "name": null,
@@ -10471,6 +9252,20 @@
   },
   {
    "from": "src/features/simplified-accounting/index.js",
+   "to": "src/core/help/tooltips.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/index.js",
+   "to": "src/core/shell/court-portal.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/index.js",
    "to": "src/features/simplified-accounting/print.js",
    "kind": "import-dynamic",
    "name": null,
@@ -10771,6 +9566,27 @@
    "evalTime": null
   },
   {
+   "from": "src/form-events.js",
+   "to": "src/core/modals/filing-dialogs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/form-events.js",
+   "to": "src/core/activity/activity-log-view.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/form-events.js",
+   "to": "src/core/shell/court-portal.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
    "from": "src/fragment-loader.js",
    "to": "fragments/common-modals.html",
    "kind": "import-dynamic",
@@ -10779,21 +9595,7 @@
   },
   {
    "from": "src/legacy-bridge.js",
-   "to": "src/core/ui/icons.js",
-   "kind": "import-static",
-   "name": null,
-   "evalTime": null
-  },
-  {
-   "from": "src/legacy-bridge.js",
    "to": "src/core/filing/escape-html.js",
-   "kind": "import-static",
-   "name": null,
-   "evalTime": null
-  },
-  {
-   "from": "src/legacy-bridge.js",
-   "to": "src/core/format/money.js",
    "kind": "import-static",
    "name": null,
    "evalTime": null
@@ -10849,13 +9651,6 @@
   },
   {
    "from": "src/legacy-bridge.js",
-   "to": "src/core/status/nav-marks.js",
-   "kind": "import-static",
-   "name": null,
-   "evalTime": null
-  },
-  {
-   "from": "src/legacy-bridge.js",
    "to": "src/core/form/paths.js",
    "kind": "import-static",
    "name": null,
@@ -10870,14 +9665,28 @@
   },
   {
    "from": "src/legacy-bridge.js",
-   "to": "src/core/modals/filing-dialogs.js",
+   "to": "src/core/shell/sidebar.js",
    "kind": "import-static",
    "name": null,
    "evalTime": null
   },
   {
    "from": "src/legacy-bridge.js",
-   "to": "src/core/filing/carry-over.js",
+   "to": "src/core/navigation/tab-state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/legacy-bridge.js",
+   "to": "src/core/theme-preference.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/legacy-bridge.js",
+   "to": "src/core/ui/dialogs.js",
    "kind": "import-static",
    "name": null,
    "evalTime": null
@@ -11059,13 +9868,6 @@
   },
   {
    "from": "src/main.js",
-   "to": "src/features/help/help-content.js",
-   "kind": "import-static",
-   "name": null,
-   "evalTime": null
-  },
-  {
-   "from": "src/main.js",
    "to": "src/core/feedback/feedback-modal.js",
    "kind": "import-static",
    "name": null,
@@ -11137,6 +9939,41 @@
   {
    "from": "src/main.js",
    "to": "src/core/form/form-runtime.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/main.js",
+   "to": "src/core/theme-preference.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/main.js",
+   "to": "src/core/help/help-panel.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/main.js",
+   "to": "src/core/shell/filing-switcher.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/main.js",
+   "to": "src/core/modals/convert-ward-modal.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/main.js",
+   "to": "src/core/modals/filing-dialogs.js",
    "kind": "import-static",
    "name": null,
    "evalTime": null
@@ -11233,6 +10070,27 @@
    "evalTime": null
   },
   {
+   "from": "src/modal-events.js",
+   "to": "src/core/ui/dialogs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/modal-events.js",
+   "to": "src/core/modals/guardian-setup.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/modal-events.js",
+   "to": "src/core/ward-lock.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
    "from": "src/pwa-ui.js",
    "to": "src/core/ui/dialogs.js",
    "kind": "import-static",
@@ -11242,6 +10100,13 @@
   {
    "from": "src/pwa-ui.js",
    "to": "src/core/offline-access-preference.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/pwa-ui.js",
+   "to": "src/core/navigation/tab-state.js",
    "kind": "import-static",
    "name": null,
    "evalTime": null
@@ -11282,8 +10147,64 @@
    "evalTime": null
   },
   {
+   "from": "src/shell-events.js",
+   "to": "src/core/help/help-panel.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/shell-events.js",
+   "to": "src/core/shell/sidebar.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/shell-events.js",
+   "to": "src/core/help/user-guide.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/shell-events.js",
+   "to": "src/core/help/walkthrough.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/shell-events.js",
+   "to": "src/core/shell/filing-switcher.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/shell-events.js",
+   "to": "src/core/theme-preference.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/shell-events.js",
+   "to": "src/core/runtime/monolith.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
    "from": "src/tab-coordination.js",
    "to": "src/tab-state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/tab-coordination.js",
+   "to": "src/core/navigation/tab-state.js",
    "kind": "import-static",
    "name": null,
    "evalTime": null
@@ -11349,21 +10270,16 @@
    "name": "innerHeight",
    "files": [
     "src/core/feedback/feedback-modal.js",
-    "src/legacy-app.js"
+    "src/core/help/walkthrough.js",
+    "src/core/shell/court-portal.js"
    ]
   },
   {
    "name": "innerWidth",
    "files": [
     "src/core/feedback/feedback-modal.js",
-    "src/legacy-app.js"
-   ]
-  },
-  {
-   "name": "isHelpPanelOpen",
-   "files": [
-    "src/core/navigation/router.js",
-    "src/core/ui/print-pager.js"
+    "src/core/help/walkthrough.js",
+    "src/core/shell/court-portal.js"
    ]
   },
   {
@@ -11391,6 +10307,7 @@
    "files": [
     "src/core/feature-bridge.js",
     "src/core/form/form-contract.js",
+    "src/core/help/user-guide.js",
     "src/core/navigation/router.js",
     "src/core/navigation/ward-lifecycle.js",
     "src/core/pdf/pdf-preview.js",
@@ -11409,20 +10326,21 @@
   {
    "name": "moveTo",
    "files": [
-    "src/legacy-app.js"
+    "src/core/shell/court-portal.js"
    ]
   },
   {
    "name": "open",
    "files": [
+    "src/core/help/user-guide.js",
     "src/core/pdf/pdf-preview.js",
-    "src/legacy-app.js"
+    "src/core/shell/court-portal.js"
    ]
   },
   {
    "name": "resizeTo",
    "files": [
-    "src/legacy-app.js"
+    "src/core/shell/court-portal.js"
    ]
   },
   {

@@ -54,6 +54,15 @@ const ALLOWED = {
   // Minor plan, the hand-off to the Simplified eligibility questions and the
   // Annual it creates when they fail. Branches, not a list of the types.
   'src/core/modals/filing-dialogs.js': "the Add Form dialog's branches on particular types, moved from legacy-app.js (MS 70 70G)",
+  // Milestone 70, 70H: the shell's choices by form, moved from legacy-app.js
+  // (the exception above) -- the Help text and the guided tour are written
+  // for each form; the Start New Form picker draws one card per filing type;
+  // the sidebar mounts each form's own navigation, one monolith service per
+  // form until 70K's feature context mounts it from the registry.
+  'src/core/help/help-panel.js': "the Help text chosen for each form, moved from legacy-app.js (MS 70 70H)",
+  'src/core/help/walkthrough.js': "the guided tour written for each form, moved from legacy-app.js (MS 70 70H)",
+  'src/core/shell/start-new-form.js': "the Start New Form picker's card for each filing type, moved from legacy-app.js (MS 70 70H)",
+  'src/core/shell/sidebar.js': "each form's sidebar navigation, a monolith service per form until 70K, moved from legacy-app.js (MS 70 70H)",
   // Per-schema collection membership (which schedules/collections exist on
   // which filing types, and their min counts) -- AGENTS.md section 3: never
   // share generic factories across forms with differing schemas. This is

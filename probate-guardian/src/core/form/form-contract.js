@@ -14,6 +14,7 @@ import { validateSecurityInput } from '../security/input-hardening.js';
 import { getD } from '../state.js';
 import { updateNavDots } from '../status/nav-marks.js';
 import { getPath, setPath } from './paths.js';
+import { refreshWardInfoCard, syncActiveWardNameDisplay, syncGuardianNameDisplay } from '../shell/sidebar.js';
 
 if (typeof window !== 'undefined') {
   window._transientDrafts = window._transientDrafts || {};
@@ -369,10 +370,10 @@ export function runFieldWriteSideEffects(path, control = null) {
   if (identitySlot && window.syncIdentityField) window.syncIdentityField(getD(), identitySlot.role, identitySlot.index, identitySlot.fieldKeys);
   window.autoSave?.();
   updateNavDots?.();
-  window.refreshWardInfoCard?.();
+  refreshWardInfoCard?.();
   const dataset = control?.dataset || {};
-  if (dataset.syncWardName || path === 'wardName') window.syncActiveWardNameDisplay?.();
-  if (dataset.syncGuardianName || path === 'guardianName' || path === 'guardians.0.name') window.syncGuardianNameDisplay?.();
+  if (dataset.syncWardName || path === 'wardName') syncActiveWardNameDisplay?.();
+  if (dataset.syncGuardianName || path === 'guardianName' || path === 'guardians.0.name') syncGuardianNameDisplay?.();
   if (typeof CustomEvent === 'function') window.dispatchEvent?.(new CustomEvent('pg:field-written', { detail: { path } }));
 }
 

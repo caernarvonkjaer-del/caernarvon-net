@@ -6,7 +6,7 @@ import { navigate } from '../navigation/router.js';
 import { filingLifecycle } from '../navigation/filing-lifecycle.js';
 import { monolith } from '../runtime/monolith.js';
 import { getCaseFile } from '../state.js';
-import { alertModal } from '../ui/dialogs.js';
+import { alertModal, closeModal, ensureFragment, showModal } from '../ui/dialogs.js';
 import { ic } from '../ui/icons.js';
 
 export let _yearModalWardId=null;
@@ -14,20 +14,20 @@ export let _yearModalWardId=null;
 export async function showStartNewYearModal(wardId){
   const ward=getCaseFile().wards.find(w=>w.wardId===wardId);
   if(!ward)return;
-  await monolith.ensureFragment('common-modals');
+  await ensureFragment('common-modals');
   _yearModalWardId=wardId;
   const note=ward.inventoryType==='guardian'
     ?"The new year opens with a copy of this year's schedules (A-1 through C-5) so you can edit down what's changed, instead of re-entering everything. Signatures and dates are cleared for the new filing."
     :"The new year opens with Starting Balance pre-filled from this year's ending total. Schedule entries, signatures, and the accounting period are cleared for the new filing.";
   document.getElementById('new-year-ward-name').textContent=ward.wardName||'(unnamed ward)';
   document.getElementById('new-year-note').textContent=note;
-  monolith.showModal('startNewYearModal');
+  showModal('startNewYearModal');
 }
 
 export async function confirmStartNewYear(){
   const wardId=_yearModalWardId;
   if(!wardId)return;
-  monolith.closeModal('startNewYearModal');
+  closeModal('startNewYearModal');
   await filingLifecycle.switchTo(wardId);
   await filingLifecycle.newYear(wardId);
   navigate('/');
@@ -50,15 +50,15 @@ export function renderPriorYearsList(ward){
 export async function showPriorYearsModal(wardId){
   const ward=getCaseFile().wards.find(w=>w.wardId===wardId);
   if(!ward)return;
-  await monolith.ensureFragment('common-modals');
+  await ensureFragment('common-modals');
   _yearModalWardId=wardId;
   document.getElementById('prior-years-ward-name').textContent=ward.wardName||'(unnamed ward)';
   renderPriorYearsList(ward);
-  monolith.showModal('priorYearsModal');
+  showModal('priorYearsModal');
 }
 
 export async function editPriorYear(wardId,key){
-  monolith.closeModal('priorYearsModal');
+  closeModal('priorYearsModal');
   await filingLifecycle.switchTo(wardId);
   await filingLifecycle.switchYear(wardId,key);
   navigate('/');
@@ -70,10 +70,10 @@ export async function confirmDeleteWardYear(wardId,yearKey){
   const ward=getCaseFile().wards.find(w=>w.wardId===wardId);
   const entry=ward&&ward.years&&ward.years.find(y=>y.key===yearKey);
   if(!ward||!entry)return;
-  await monolith.ensureFragment('common-modals');
+  await ensureFragment('common-modals');
   _pendingDeleteYear={wardId,yearKey};
   document.getElementById('delete-year-msg').textContent=`Are you sure you want to delete the ${entry.label} accounting for "${ward.wardName}"? Any supporting documents or comments uploaded for that year will be deleted too. This action cannot be undone.`;
-  monolith.showModal('deleteYearModal');
+  showModal('deleteYearModal');
 }
 
 export async function doDeleteWardYear(){
@@ -81,7 +81,7 @@ export async function doDeleteWardYear(){
   const {wardId,yearKey}=_pendingDeleteYear;
   try{
     await filingLifecycle.removeYear(wardId,yearKey);
-    monolith.closeModal('deleteYearModal');
+    closeModal('deleteYearModal');
     const ward=getCaseFile().wards.find(w=>w.wardId===wardId);
     if(ward)renderPriorYearsList(ward);
     if(monolith.getCurrentPage()==='/dashboard')renderDashboardGrid();

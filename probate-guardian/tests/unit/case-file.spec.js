@@ -5,7 +5,7 @@
 // the same describe). None has a Decision-1-style correctness defect, so
 // this is pure organization, left as one file with its scope named here
 // rather than split into case-file.spec.js/crypto/*.spec.js siblings.
-import { describe, expect, test, beforeAll, beforeEach, afterEach } from 'vitest';
+import { describe, expect, test, beforeAll, beforeEach, afterEach, vi } from 'vitest';
 import JSZip from 'jszip';
 import {
   deriveKeyFromPassword,
@@ -25,6 +25,11 @@ import {
   saveBlobAs,
 } from '../../src/core/persistence/case-file.js';
 import { getCaseFile, setCaseFile } from '../../src/core/state.js';
+// Telling other tabs what this one has open (src/core/navigation/tab-state.js since
+// Milestone 70's 70H) and the sidebar's refresh touch the page.
+vi.mock('../../src/core/navigation/tab-state.js', () => ({ notifyProbateGuardianTabStateChanged: () => {}, getProbateGuardianTabState: () => ({}) }));
+vi.mock('../../src/core/shell/sidebar.js', () => ({ refreshWardInfoCard: () => {}, syncActiveWardNameDisplay: () => {}, syncGuardianNameDisplay: () => {}, updateSidebar: () => {} }));
+
 
 describe('persistence crypto services', () => {
   test('constants are properly defined', () => {

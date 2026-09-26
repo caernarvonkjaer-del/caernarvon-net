@@ -5,7 +5,7 @@
 // delivery moves an implementation out of it into an ES module, the calls the
 // monolith still makes go through one-line wrappers that delegate here:
 //
-//     function esc(s){return window.GuardianFormsLegacyBridge.esc(s);}
+//     function esc(s){return window.GuardianFormsLegacyBridge.(s);}
 //
 // Rules, each checked by tests/unit/legacy-bridge.spec.js:
 //   - Only legacy-app.js reads this object, and only inside functions: it
@@ -21,32 +21,31 @@
 // It is the one ratchet exception MILESTONE-70-PROPOSAL.md records for the
 // transition (one window write here, one window read in legacy-app.js), and it
 // goes with legacy-app.js in 70L.
-import { ic } from './core/ui/icons.js';
 import { esc } from './core/filing/escape-html.js';
-import { formatDashboardCurrency } from './core/format/money.js';
 import { validateImportFile, sanitizeObjectData } from './core/security/input-hardening.js';
 import { calcTotals } from './features/simplified-accounting/totals.js';
 import { calc } from './features/guardian-inventory/totals.js';
 import {
-  formEngine, INVENTORY_TYPES, INVENTORY_TYPE_META, typeIcon, initializeEmptyData, FILING_PAGES,
+  formEngine, initializeEmptyData, FILING_PAGES,
   computeCompletion as computeNavChecks, filingProgress as getWardProgress,
 } from './core/filing/filing-registry.js';
 import { getActiveWard } from './core/state.js';
 import { provideMonolithServices } from './core/runtime/monolith.js';
 import { PAGES_GUARDIAN, } from './core/filing/models/guardian.js';
-import { updateNavDots } from './core/status/nav-marks.js';
 import { setPath } from './core/form/paths.js';
 import { addToRecentlyOpened, loadRecentlyOpenedWards } from './core/filing/recent-filings.js';
-import { showSimplifiedEligibilityModal } from './core/modals/filing-dialogs.js';
-import { updateCarrySourcePicker } from './core/filing/carry-over.js';
+import { renderCopyrightNotice, updateSidebar } from './core/shell/sidebar.js';
+import { notifyProbateGuardianTabStateChanged } from './core/navigation/tab-state.js';
+import { applyTheme, currentTheme } from './core/theme-preference.js';
+import { ensureFragment } from './core/ui/dialogs.js';
 
 export const LEGACY_BRIDGE = Object.freeze({
   // 70B -- pure helpers
-  ic, esc, formatDashboardCurrency, validateImportFile, sanitizeObjectData,
+  validateImportFile, sanitizeObjectData,
   
   calcTotals, calc,
   // 70C -- the filing registry and per-engine models
-  formEngine, INVENTORY_TYPES, INVENTORY_TYPE_META, typeIcon, initializeEmptyData, FILING_PAGES,
+  formEngine, initializeEmptyData, FILING_PAGES,
   
   PAGES_GUARDIAN, 
   // 70D -- completion (the monolith's names for them)
@@ -54,9 +53,11 @@ export const LEGACY_BRIDGE = Object.freeze({
   // 70E -- the case-state seam, and the door the other way (src/core/runtime/monolith.js)
   getActiveWard, provideMonolithServices,
   // 70F
-  setPath, updateNavDots,
+  setPath, 
   // 70G
-  addToRecentlyOpened, loadRecentlyOpenedWards, showSimplifiedEligibilityModal, updateCarrySourcePicker,
+  addToRecentlyOpened, loadRecentlyOpenedWards, 
+  // 70H
+  applyTheme, currentTheme, ensureFragment, notifyProbateGuardianTabStateChanged, renderCopyrightNotice, updateSidebar,
 });
 
 if (typeof window !== 'undefined') {

@@ -9,8 +9,12 @@ import { formEngine, initializeEmptyData } from '../filing/filing-registry.js';
 import { pruneBlankCards } from '../form/prune-cards.js';
 import { linkLabelsToInputs } from '../form/form-runtime.js';
 import { commitFocusedField } from '../form/form-contract.js';
+import { showWardLockedModal } from '../ward-lock.js';
 import { updateNavDots } from '../status/nav-marks.js';
 import { addToRecentlyOpened } from '../filing/recent-filings.js';
+import { updateSidebar } from '../shell/sidebar.js';
+import { notifyProbateGuardianTabStateChanged } from './tab-state.js';
+import { updateHelpContext } from '../help/help-panel.js';
 
 export function createWardId() {
   return 'w_' + Date.now() + '_' + Math.random().toString(36).slice(2, 9);
@@ -38,9 +42,9 @@ export async function enterDashboardEditingFocus() {
       return false;
     }
     setActiveFiling(null);
-    window.updateSidebar?.();
+    updateSidebar?.();
     await window.refreshAutoSaveArmedStatus?.();
-    window.notifyProbateGuardianTabStateChanged?.();
+    notifyProbateGuardianTabStateChanged?.();
     return true;
   })();
   try { return await dashboardEntryPromise; }
@@ -56,12 +60,12 @@ export async function activateWard(ward, opts = {}) {
     if (typeof window !== 'undefined' && window.acquireWardLock) {
       const alreadyHeld = await window.acquireWardLock(ward.wardId);
       if (alreadyHeld) {
-        if (typeof window.updateSidebar === 'function') window.updateSidebar();
+        updateSidebar();
         if (typeof window.refreshAutoSaveArmedStatus === 'function') await window.refreshAutoSaveArmedStatus();
         return true;
       }
     } else {
-      if (typeof window !== 'undefined' && typeof window.updateSidebar === 'function') window.updateSidebar();
+      if (typeof window !== 'undefined') updateSidebar();
       if (typeof window !== 'undefined' && typeof window.refreshAutoSaveArmedStatus === 'function') await window.refreshAutoSaveArmedStatus();
       return true;
     }
@@ -83,9 +87,7 @@ export async function activateWard(ward, opts = {}) {
 
   // 4. On contention: previous lock is still held untouched
   if (!acquired) {
-    if (typeof window !== 'undefined' && typeof window.showWardLockedModal === 'function') {
-      window.showWardLockedModal();
-    }
+    showWardLockedModal();
     return false;
   }
 
@@ -101,9 +103,9 @@ export async function activateWard(ward, opts = {}) {
   }
 
   if (typeof window !== 'undefined') {
-    if (typeof window.updateSidebar === 'function') window.updateSidebar();
+    updateSidebar();
     if (typeof window.refreshAutoSaveArmedStatus === 'function') await window.refreshAutoSaveArmedStatus();
-    if (typeof window.notifyProbateGuardianTabStateChanged === 'function') window.notifyProbateGuardianTabStateChanged();
+    notifyProbateGuardianTabStateChanged();
   }
   return true;
 }
@@ -168,7 +170,7 @@ export async function switchWard(wardId) {
     }
     linkLabelsToInputs();
     updateNavDots();
-    if (typeof window.updateHelpContext === 'function') window.updateHelpContext();
+    updateHelpContext();
     if (typeof window.closeMobileSidebar === 'function') window.closeMobileSidebar();
   }
   return true;
@@ -189,8 +191,8 @@ export async function deleteWard(wardId) {
     if (typeof window.deleteWardFromState === 'function') {
       await window.deleteWardFromState(wardId);
     }
-    if (typeof window.updateSidebar === 'function') window.updateSidebar();
-    if (typeof window.notifyProbateGuardianTabStateChanged === 'function') window.notifyProbateGuardianTabStateChanged();
+    updateSidebar();
+    notifyProbateGuardianTabStateChanged();
     if (typeof window.navigate === 'function') window.navigate('/dashboard');
   }
 }

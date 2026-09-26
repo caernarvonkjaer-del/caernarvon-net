@@ -41,12 +41,11 @@ import './core/excel/exceljs-loader.js';
 import './core/pdf/html2pdf-loader.js';
 import './fragment-loader.js';
 import './features-loader.js';
-import './features/help/help-content.js';
-import './core/feedback/feedback-modal.js';
+import { installFeedbackModal } from './core/feedback/feedback-modal.js';
 import { termsAcceptanceReady } from './terms-acceptance.js';
-import './shell-events.js';
-import './modal-events.js';
-import './form-events.js';
+import { installShellEvents } from './shell-events.js';
+import { installModalEvents } from './modal-events.js';
+import { installFormEvents } from './form-events.js';
 import './startup-events.js';
 import './tab-coordination.js';
 import './pwa-ui.js';
@@ -54,6 +53,11 @@ import './pwa-ui.js';
 import { configureCaseStore } from './core/state.js';
 import { monolith } from './core/runtime/monolith.js';
 import { linkLabelsToInputs } from './core/form/form-runtime.js';
+import { applyTheme, currentTheme } from './core/theme-preference.js';
+import { installHelpPanelKeys } from './core/help/help-panel.js';
+import { installFilingSwitcherDismiss } from './core/shell/filing-switcher.js';
+import { installConvertSourceDismiss } from './core/modals/convert-ward-modal.js';
+import { installWardNameComboboxDismiss } from './core/modals/filing-dialogs.js';
 import { navigate } from './core/navigation/router.js';
 import { markFilingRevisionChanged, isOutputAcknowledgedFor, clearOutputAcknowledgement } from './core/filing/output-authorization.js';
 import { bindReadinessCard } from './core/filing/readiness-card.js';
@@ -66,6 +70,16 @@ import { installTestingNamespace } from './core/testing/testing-adapter.js';
 // The flag is read once and deleted here, before anything else in this file
 // runs; in production nothing sets it and nothing is installed.
 installTestingNamespace();
+
+// Milestone 70, 70H: the delegated dispatchers' listeners -- the feedback
+// form, the shell's controls, the dialogs (with the observer that labels each
+// one), the forms -- installed once, in the order their imports used to add
+// them. The terms acknowledgement's Escape guard, added when it is imported,
+// stays ahead of the dialogs' Escape handler.
+installFeedbackModal();
+installShellEvents();
+installModalEvents();
+installFormEvents();
 
 // Milestone 70, 70E: a store transaction's side effects -- the filing's
 // revision marked changed, then the save scheduled (the monolith's autoSave(),
@@ -124,6 +138,16 @@ if (typeof window !== 'undefined') {
   // The page's own labels tied to their inputs, as legacy-app.js's startup
   // timer used to do (Milestone 70, 70F; see the note there).
   linkLabelsToInputs();
+  // What legacy-app.js did at load for the shell (Milestone 70, 70H): the
+  // theme button agrees with the theme the pre-paint script set, and the
+  // controllers' document-level listeners -- Escape in the Help panel, a
+  // click outside the filing switcher, the Convert dialog's source picker or
+  // a ward-name field -- are installed once each.
+  applyTheme(currentTheme(), false);
+  installHelpPanelKeys();
+  installFilingSwitcherDismiss();
+  installConvertSourceDismiss();
+  installWardNameComboboxDismiss();
   // Do not begin recovery, file-open, or new-case startup until the first-use
   // acknowledgement has been accepted. This makes the terms dialog the first
   // application interaction instead of merely a layer above an active flow.

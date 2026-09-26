@@ -1,4 +1,5 @@
 import { TAB_HEARTBEAT_TTL_MS, TAB_WARNING_TEXT, normalizeTabState, summarizePeerTabs } from './tab-state.js';
+import { getProbateGuardianTabState } from './core/navigation/tab-state.js';
 
 const CHANNEL_NAME = 'probate-guardian-tabs';
 const STORAGE_KEY = 'pg-tab-heartbeats-v1';
@@ -24,9 +25,7 @@ function readAppVersion() {
 }
 
 function readLocalCaseState() {
-  const fromLegacy = typeof window.getProbateGuardianTabState === 'function'
-    ? window.getProbateGuardianTabState()
-    : {};
+  const fromLegacy = getProbateGuardianTabState();
   return normalizeTabState({
     ...fromLegacy,
     tabId: selfTabId,

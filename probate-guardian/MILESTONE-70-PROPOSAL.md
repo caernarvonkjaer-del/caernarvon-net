@@ -3,7 +3,7 @@
 ## Status
 
 **70A complete (2026-09-24); 70T, 70B, 70C and 70D complete (2026-09-25); 70E,
-70F and 70G complete (2026-09-26) -- see their build records. Every remaining delivery, 70H through 70L, is approved.** The
+70F, 70G and 70H complete (2026-09-26) -- see their build records. Every remaining delivery, 70I through 70L, is approved.** The
 requester approved delivery 70A on 2026-09-24 and it is complete on the
 `milestone-70` branch (see the 70A build record), then approved 70T. On
 2026-09-25 the requester approved every delivery after it ("Finish ms 70. That
@@ -1460,6 +1460,40 @@ across the nine filing types, recorded before the move).
 The dashboard, picker, activity log, Manage Shared Records, Help, tours,
 feedback, theme, and dialogs work without a production call through a legacy
 global. Accessibility behavior and help/control drift guards remain green.
+
+### 70H build record
+
+Approved with every later delivery on 2026-09-25 (see Status). Everything
+below is on the `milestone-70` branch.
+
+**What a filer sees.** Two corrections; otherwise nothing, by design.
+(1) **Help on the Start New Form page shows the help written for it.** The
+Help text has a section for choosing a form, but the function that picks the
+page's help ignored the page the router named, so that page showed the
+dashboard's welcome. (2) **Preview & Export says the Help panel is open when
+it is.** Its Help button asked the page for a function nothing defined and
+announced the panel closed -- a screen reader told the filer the opposite of
+what the screen showed (70A's finding, now reproduced and fixed).
+
+**Done, with evidence.**
+
+| Item | Evidence |
+| --- | --- |
+| Commit | Named in the next docs commit (the whole delivery; gate evidence in its message). |
+| The controllers | Out of `legacy-app.js`: the Help panel, the user guide, tooltips and guided tours (`src/core/help/`), the Activity Log page (`src/core/activity/activity-log-view.js`), this tab's state for the other tabs (`src/core/navigation/tab-state.js`), the shared combobox (`src/core/ui/combobox.js`), the filing switcher, the sidebar, the Start New Form picker and the court portal (`src/core/shell/`), and the guardian's one-time setup (`src/core/modals/guardian-setup.js`). Into existing modules rather than beside them: the theme button (`theme-preference.js`), the static dialogs' show, close and fragment loading (`src/core/ui/dialogs.js`), the Add Form dialogs' ward-name field and the picker's way into them (`filing-dialogs.js`), the "open in another tab" dialog (`src/core/ward-lock.js`), and the Help text beside the panel (`src/core/help/help-content.js`, from `src/features/help/`). 83 names left the monolith (the review's `landed["70H"]`), with seven wrappers whose last callers these were. No markup or styling changed. |
+| No legacy global on the surfaces (the gate) | The dashboard's load-time `const { ... } = window` of thirteen names is gone: it imports the router's `navigate()`, eight persistence functions, `saveAppState()` and `exportCaseFileZip()` (which `window.exportGuardianDataZip` was), and calls the seven the monolith still owns as services. The shell's Clear Data and Lock call the monolith's functions as services; a closed filing's Sync leaves its re-render to the dispatcher, so the People page no longer reaches `window.renderPage` (70G's carried read, gone). `tests/unit/shell-surfaces.spec.js` holds it for the dashboard, `src/core/shell/`, `activity/`, `parties/`, `help/`, `feedback/`, `modals/`, the theme, the dialogs, combobox, the ward lock and the shell and dialog dispatchers: nothing but the browser off `window`. Red first: a `window.navigate` read in the picker failed it. |
+| Listeners explicit and disposable | The dispatchers -- feedback, shell, dialogs (with the observer that labels each dialog), forms -- and the Help panel's Escape key and the three outside-click closers (switcher, Convert source picker, ward-name fields) each install from an `install...({ signal })` function; `main.js` calls each once, the dispatchers in the order their imports used to add them, and the terms acknowledgement's Escape guard still runs ahead of the dialogs' Escape handler. The alert, confirm and prompt dialogs end their own Escape listener however they close (it lived until the next Escape). The same spec requires a signal on every document or window listener and no listener added by importing a module. Red first: a load-time listener in the Help panel, a missing `installShellEvents()` call, and the dialogs' listeners without a signal each failed it. |
+| Accessibility | `tests/e2e/help-panel-state.spec.ts`: with the Help panel open, Preview & Export's Help button says `aria-expanded="true"`; red first on the code before 70H ("false"). Focus return, dialog labeling, Escape and keyboard behaviour moved intact; the accessibility, drift-guard and dialog specs are in the gate run below. |
+| The Help panel's page | `updateHelpContext(context)`: a page that names its help gets it, otherwise the open filing's form decides. `tests/unit/help-panel.spec.js`, red first (the picker got the welcome). The router's six calls were always passing that argument; its type check now sees it used. |
+| Services | The monolith hands in `clearAllData`, `lockApp`, `getWardProgress`, `isContinuePromptShown` and `markContinuePromptShown` besides 70G's; the combobox, dialog, sidebar and tab-state functions left the list with the code. |
+| No new cycle, no new global | The picker's page imported the Add Form dialog only to open it, which closed a cycle through the router: that function joined the dialog. The case file and this tab's state imported each other: the export state (changed since the last save, and when) is its own module, `src/core/persistence/export-state.js`, which `case-file.js` re-exports. The tab state reads the app version from `feedback-config.js` rather than `window.PG_APP_VERSION`. |
+| Went | `window.loadFragment` (its own note said "temporary", until module code owned the wiring -- its one reader moved and imports it; its unguarded assignment also broke every Node import through the dialogs); the Help text's Proxy over `window.HELP_CONTENT`, which the move would have turned into a Proxy over itself (it recursed on first use in the trial); the wrappers `ic()`, `esc()`, `formatDashboardCurrency()`, `typeIcon()`, `updateCarrySourcePicker()`, `showSimplifiedEligibilityModal()`, `updateNavDots()`; the bridge's `INVENTORY_TYPES` and `INVENTORY_TYPE_META`. |
+| Types | `activity-log-view.js`, `help-panel.js`, `sidebar.js`, `start-new-form.js`, `combobox.js`, `filing-dialogs.js`, `delete-confirmation.js`, `ward-lock.js` and `fragment-loader.js` carry `@ts-nocheck` with the reason (in the checked program only transitively; moved as text or never typed); `router.js` stays checked. |
+| Tests converted | `comment-card-hide` (both renderers imported; each takes the flag as an optional argument), `guided-tour-content`, `theme-persistence`, `user-guide-drift-guard`, `plan-simplified-filing-help` (new homes), `form-write-side-effects`, `form-contract`, `output-revision-wiring`, `case-file` (the sidebar and tab-state modules mocked where they touch the page), `filing-type-enumeration-guard` (the shell's per-form choices: the Help text, the tour, the picker's cards, each form's sidebar navigation until 70K). |
+| Ratchet | `classicDeclarations` 235 to 152, `windowWrites` 236 to 226, `windowReads` 247 to 170, `evalTimeWindowDestructures` 51 to 34, `bareCrossBoundary` 36 to 32, `unownedWindowReads` 1 to 0 (the dead Year Manager's call went in 70G; the last one, the Help panel's own state, now has an owner); import cycles stay at 0; the monolith's bare case-state accesses 99 to 59. Grown, carried with moved code and recorded here with their removal: `src/core/persistence/export-state.js::_dirtySinceExport` and `::_lastExportAt` in `windowReads` and `windowWrites` -- the same window-backed export state `case-file.js` held, moved to break an import cycle; the persistence service owns it in 70I. 70G's carried `party-management.js::renderPage` read is gone. |
+| Findings | (1) The Help panel's page argument, ignored (above). (2) `window.isHelpPanelOpen`, never defined (above; 70A's). (3) The Help text's Proxy would have recursed after the move -- caught in the trial by the first unit run. (4) The alert dialogs' Escape listener outlived the dialog. (5) `window.exportGuardianDataZip` was an alias of `exportCaseFileZip()`. |
+
+**Gate run.** The full `npm test`, 2026-09-26, on the trial copy this commit was ported from (identical file for file apart from its test port): unit 2015/2015 (152 files); browser 918 passed, 7 skipped, 0 failed (1.2 h, source profile, chromium) -- 925 tests: 70G's 924 and `help-panel-state.spec.ts`. `check:types` clean on the ported worktree.
 
 ---
 

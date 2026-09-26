@@ -17,9 +17,15 @@ import {
 import { clearSessionRestoreCache } from './recovery-cache.js';
 import { getCaseFile, getTemplateCache } from '../state.js';
 import { windowBackedRef } from './window-backed-ref.js';
+import { getLastExportAt, isDirtySinceExport, setDirtySinceExport, setLastExportAt } from './export-state.js';
+// Milestone 70, 70H: the export state is ./export-state.js's; re-exported for
+// the modules that import it from here.
+export { getLastExportAt, isDirtySinceExport, setDirtySinceExport, setLastExportAt };
 import { migratePlanTriState } from '../filing/plan-tristate.js';
-import { alertModal, confirmModal, promptModal } from '../ui/dialogs.js';
+import { alertModal, confirmModal, promptModal, showModal } from '../ui/dialogs.js';
 import { validateImportFile, sanitizeObjectData } from '../security/input-hardening.js';
+import { notifyProbateGuardianTabStateChanged } from '../navigation/tab-state.js';
+import { updateSidebar } from '../shell/sidebar.js';
 
 export const CASE_FILE_FORMAT_VERSION = 1;
 
@@ -45,36 +51,7 @@ export function isAutoSaveArmed() {
   return _autoSaveArmed;
 }
 
-const _dirtySinceExportRef = windowBackedRef(
-  () => (typeof window !== 'undefined' ? window._dirtySinceExport : undefined),
-  (v) => {
-    if (typeof window !== 'undefined') {
-      window._dirtySinceExport = v;
-    }
-  },
-  false,
-);
-export const isDirtySinceExport = _dirtySinceExportRef.get;
-export const setDirtySinceExport = _dirtySinceExportRef.set;
 
-// The single "last successful save" clock. Every read and write goes through
-// this pair, mirroring getCaseFileHandle/setCaseFileHandle above -- the
-// previous code read window._lastExportAt in two places but wrote only the
-// module-private variable, so the window value never advanced once set and
-// every consumer of it (the Activity Log readout, the first-backup reminder
-// in ward-lifecycle.js, which reads it as a bare property) saw a frozen
-// value no matter how many real saves had succeeded.
-const _lastExportAtRef = windowBackedRef(
-  () => (typeof window !== 'undefined' ? window._lastExportAt : undefined),
-  (v) => {
-    if (typeof window !== 'undefined') {
-      window._lastExportAt = v;
-    }
-  },
-  null,
-);
-export const getLastExportAt = _lastExportAtRef.get;
-export const setLastExportAt = _lastExportAtRef.set;
 
 export async function saveBlobAs(blob, suggestedName, preWriteValidator) {
   if (typeof window !== 'undefined' && window.showSaveFilePicker) {
@@ -323,8 +300,8 @@ export function formatRelativeTime(ts) {
 
 export function markDirtySinceExport() {
   setDirtySinceExport(true);
-  if (typeof window !== 'undefined' && typeof window.notifyProbateGuardianTabStateChanged === 'function') {
-    window.notifyProbateGuardianTabStateChanged();
+  if (typeof window !== 'undefined') {
+    notifyProbateGuardianTabStateChanged();
   }
 }
 
@@ -397,8 +374,8 @@ export async function exportCaseFileZip() {
     await clearSessionRestoreCache();
     hideAutoExportReminder();
     updateLastSavedIndicator();
-    if (typeof window !== 'undefined' && typeof window.notifyProbateGuardianTabStateChanged === 'function') {
-      window.notifyProbateGuardianTabStateChanged();
+    if (typeof window !== 'undefined') {
+      notifyProbateGuardianTabStateChanged();
     }
     const savedName = handle ? handle.name : suggestedName;
     if (typeof window !== 'undefined') {
@@ -458,9 +435,7 @@ export async function writeCaseToHandle(handle, viaTimer) {
   await refreshAutoSaveArmedStatus();
   updateLastSavedIndicator();
   if (typeof window !== 'undefined') {
-    if (typeof window.notifyProbateGuardianTabStateChanged === 'function') {
-      window.notifyProbateGuardianTabStateChanged();
-    }
+    notifyProbateGuardianTabStateChanged();
     window.dispatchEvent(
       new CustomEvent('pg:backup-saved', {
         detail: { fileName: handle.name, count, viaTimer: !!viaTimer },
@@ -635,8 +610,8 @@ export function setupFallbackSaveReminder() {
     // Same fix as the sweep above: the private copy is never updated by
     // legacy-app.js, so this modal never appeared for the browsers that need
     // it most (no File System Access API means no background save at all).
-    if (isDirtySinceExport() && typeof window.showModal === 'function') {
-      window.showModal('fallbackSaveModal');
+    if (isDirtySinceExport()) {
+      showModal('fallbackSaveModal');
     }
   }, 15 * 60 * 1000);
 }
@@ -858,8 +833,8 @@ export async function importSavArchiveOrWard(file, options = {}) {
     // and failing that to wards[0] "solely because data was imported" -- both
     // of which 38C's storage table explicitly prohibits. Focus was already
     // released by the unload above; just refresh the neutral sidebar.
-    if (typeof window !== 'undefined' && typeof window.updateSidebar === 'function') {
-      window.updateSidebar();
+    if (typeof window !== 'undefined') {
+      updateSidebar();
     }
 
     if (handle) {
@@ -877,8 +852,8 @@ export async function importSavArchiveOrWard(file, options = {}) {
     await clearSessionRestoreCache();
     hideAutoExportReminder();
     updateLastSavedIndicator();
-    if (typeof window !== 'undefined' && typeof window.notifyProbateGuardianTabStateChanged === 'function') {
-      window.notifyProbateGuardianTabStateChanged();
+    if (typeof window !== 'undefined') {
+      notifyProbateGuardianTabStateChanged();
     }
 
     // Both flows land on the dashboard. Only the backup flow did before,

@@ -172,13 +172,14 @@ const GUIDE_CONTROLS = {
     label: 'Report a Bug',
     // TWO surfaces, and the proposal's table listed one. The Start New Form
     // page (legacy-app.js's pageInventorySelector()) carries the same feedback
-    // pair as the dashboard toolbar. Found by re-deriving this table at
+    // pair as the dashboard toolbar (src/core/shell/start-new-form.js since
+    // Milestone 70's 70H). Found by re-deriving this table at
     // execution time instead of trusting the written rows -- which is exactly
     // the "a surface was added" case the limit note above says nothing
     // detects.
     evidence: [
       { file: 'src/features/dashboard/index.js', pattern: /data-feedback-open="bug"/ },
-      { file: 'src/legacy-app.js', pattern: /data-feedback-open="bug"/ },
+      { file: 'src/core/shell/start-new-form.js', pattern: /data-feedback-open="bug"/ },
     ],
   },
   'annotation-note-color': {

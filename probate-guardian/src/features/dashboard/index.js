@@ -18,15 +18,11 @@ import { confirmDeleteWard, showAddWardModal } from '../../core/modals/filing-di
 import { showPickCaseModal } from '../../core/modals/pick-record-dialogs.js';
 import { filingLifecycle } from '../../core/navigation/filing-lifecycle.js';
 import { showConvertWardModal } from '../../core/modals/convert-ward-modal.js';
-
-const {
-  navigate, isContinuePromptShown, markContinuePromptShown,
-  saveWardToState, flushPendingSave, markDirtySinceExport, updateLastSavedIndicator,
-  saveBlobAs, auditLog, saveAppState,
-  getWardHeadlineTotal, getWardProgress, 
-  formatRelativeTime,
-  
-} = window;
+import { SHOW_COMMENT_CARD_LINK } from '../../core/shell/start-new-form.js';
+import { navigate } from '../../core/navigation/router.js';
+import { buildSingleWardExportBlob, exportCaseFileZip, finishSingleWardExport, formatRelativeTime, getWardFileName, markDirtySinceExport, saveBlobAs, updateLastSavedIndicator, validateWardBackupOverwrite } from '../../core/persistence/case-file.js';
+import { saveAppState } from '../../core/persistence/launch-preferences.js';
+import { monolith } from '../../core/runtime/monolith.js';
 
 // Dashboard's own module state -- all session-only, not persisted, reset on reload.
 // These would be window properties if the dashboard stayed monolithic, but now that
@@ -51,8 +47,8 @@ const WORKFLOW_LABELS = {
 function projectWard(ward, today = new Date()) {
   return projectDashboardWard(ward, {
     displayType: INVENTORY_TYPES[ward.inventoryType]?.label || ward.inventoryType,
-    total: getWardHeadlineTotal(ward),
-    progress: getWardProgress(ward),
+    total: monolith.getWardHeadlineTotal(ward),
+    progress: monolith.getWardProgress(ward),
     today,
   });
 }
@@ -67,15 +63,16 @@ function option(value, label, selectedValue) {
 }
 
 // Milestone 62 hid this for the initial test rollout (#820024), intending to
-// reinstate it later. Milestone 65D moved the flag to legacy-app.js (as
-// window.SHOW_COMMENT_CARD_LINK) and put the Start New Form page's identical
-// link behind the same one, so both surfaces flip together instead of
-// needing two edits. The markup (and the GovQA URL) stays in source either
+// reinstate it later. Milestone 65D put the Start New Form page's identical
+// link behind the same one flag, so both surfaces flip together instead of
+// needing two edits; it is src/core/shell/start-new-form.js's
+// SHOW_COMMENT_CARD_LINK since Milestone 70's 70H (it was window's).
+// A spec passes either state as the argument. The markup (and the GovQA URL) stays in source either
 // way -- only its inclusion in the rendered string is gated.
-export function dashboardToolbarActionsHTML() {
+export function dashboardToolbarActionsHTML({ showCommentCardLink = SHOW_COMMENT_CARD_LINK } = {}) {
   const isDark = typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme') === 'dark';
   const helpOpen = typeof document !== 'undefined' && document.getElementById('help-panel')?.style.display === 'flex';
-  const commentCardLink = window.SHOW_COMMENT_CARD_LINK
+  const commentCardLink = showCommentCardLink
     ? `<a class="topnav-btn" href="https://pinellascountyfl.govqa.us/WEBAPP/_rs/(S(ymqkyi4ihgwnngmluraqqkeh))/RequestOpen.aspx?sSessionID=&rqst=23" target="_blank" rel="noopener noreferrer">${ic('message', 16)} Comment Card<span class="visually-hidden"> (opens in a new tab)</span></a>`
     : '';
   return `<div class="dashboard-toolbar-actions">
@@ -180,12 +177,12 @@ function showContinuePromptIfNeeded() {
   const container = document.getElementById('continue-prompt-container');
   if (!container) return;
   container.innerHTML = '';
-  if (isContinuePromptShown()) return;
+  if (monolith.isContinuePromptShown()) return;
   const recent = getRecentlyOpenedWards().filter(r => !r.archived);
   const last = recent[0];
   const caseFile = getCaseFile();
   if (!last || last.wardId === caseFile.activeWardId) return;
-  markContinuePromptShown();
+  monolith.markContinuePromptShown();
   const typeLabel = INVENTORY_TYPES[last.inventoryType]?.name || last.inventoryType;
   container.innerHTML = `<div class="continue-prompt-banner" id="continue-prompt-banner">
     <div class="continue-prompt-content">
@@ -392,24 +389,24 @@ async function exportSingleWardZip(wardId) {
   const ward = caseFile.wards.find(w => w.wardId === wardId);
   if (!ward) return;
   try {
-    if (ward.wardId === caseFile.activeWardId) await flushPendingSave();
+    if (ward.wardId === caseFile.activeWardId) await monolith.flushPendingSave();
     const wardName = ward.wardName || 'ward';
-    const blob = await window.buildSingleWardExportBlob(wardId);
-    const fileName = typeof window.getWardFileName === 'function' ? window.getWardFileName(ward)
+    const blob = await buildSingleWardExportBlob(wardId);
+    const fileName = true ? getWardFileName(ward)
       : `${((ward.wardName || 'Ward').trim().replace(/[\s_]+/g, '-') || 'Ward')}-guardianshipwarddata.sav`;
-    const validator = window.validateWardBackupOverwrite;
+    const validator = validateWardBackupOverwrite;
     if (typeof validator !== 'function') {
       throw new Error('validateWardBackupOverwrite is required but not available');
     }
     const handle = await saveBlobAs(blob, fileName, validator);
-    const logFn = window.auditLog || auditLog;
+    const logFn = monolith.auditLog || monolith.auditLog;
     if (typeof logFn === 'function') logFn('DATA_EXPORT', `Exported single ward "${wardName}" to ward file`, true, wardId);
-    if (window.finishSingleWardExport) window.finishSingleWardExport(handle, ward);
+    if (finishSingleWardExport) finishSingleWardExport(handle, ward);
     await alertModal(`Backup saved for ${ward.wardName || 'this ward'}.`);
   } catch (e) {
     if (e && e.name === 'AbortError') return;
     console.error('single ward export failed', e);
-    const logFn = window.auditLog || auditLog;
+    const logFn = monolith.auditLog || monolith.auditLog;
     if (typeof logFn === 'function') logFn('DATA_EXPORT', String(e && e.message || e), false, wardId);
     await alertModal('Export failed: ' + (e && e.message || e));
   }
@@ -420,7 +417,7 @@ async function toggleDashboardWardArchived(wardId) {
   const ward = caseFile.wards.find(w => w.wardId === wardId);
   if (!ward) return;
   ward.archived = !ward.archived;
-  await saveWardToState(ward);
+  await monolith.saveWardToState(ward);
   markDirtySinceExport();
   updateLastSavedIndicator();
   renderDashboardSummary();
@@ -445,7 +442,7 @@ async function updateDashboardWorkflow(wardId, field, value) {
 
   if (Object.keys(workflow).length) ward.dashboardWorkflow = workflow;
   else delete ward.dashboardWorkflow;
-  await saveWardToState(ward);
+  await monolith.saveWardToState(ward);
 
   // Judge propagation across case siblings on assignee commit
   if (field === 'assignee') {
@@ -461,7 +458,7 @@ async function updateDashboardWorkflow(wardId, field, value) {
       else delete sibWf.assigneeName;
       if (Object.keys(sibWf).length) sibling.dashboardWorkflow = sibWf;
       else delete sibling.dashboardWorkflow;
-      await saveWardToState(sibling);
+      await monolith.saveWardToState(sibling);
     }
 
     // 2. Unlinked siblings sharing case number string require confirmation
@@ -481,7 +478,7 @@ async function updateDashboardWorkflow(wardId, field, value) {
             else delete sibWf.assigneeName;
             if (Object.keys(sibWf).length) sibling.dashboardWorkflow = sibWf;
             else delete sibling.dashboardWorkflow;
-            await saveWardToState(sibling);
+            await monolith.saveWardToState(sibling);
           }
         }
       }
@@ -522,7 +519,7 @@ async function handleDashboardClick(event) {
     case 'archive': toggleDashboardWardArchived(wardId); break;
     case 'backup': exportSingleWardZip(wardId); break;
     case 'export-all':
-      if (window.exportGuardianDataZip) window.exportGuardianDataZip();
+      exportCaseFileZip();
       break;
     case 'close-ward':
       filingLifecycle.unload().then(() => renderDashboardPage());
