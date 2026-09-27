@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import {
   FINANCIAL_SCHEDULE_COLLECTIONS,
   scheduleAckFamily,
@@ -10,7 +10,10 @@ import {
   needsScheduleAck,
   normalizeScheduleDocsAck,
   scheduleAckPeriod,
+  promptScheduleAckIfNeeded,
+  __resetScheduleAckPrompt,
 } from '../../src/core/filing/schedule-doc-ack.js';
+import { setCurrentPage, getPageVisit } from '../../src/core/navigation/route-state.js';
 import { FILING_ENGINE_IDS } from '../../src/core/filing/filing-descriptor.js';
 import { readRepoSource, sliceBalancedFunction } from './support/source-slice.js';
 
@@ -182,6 +185,58 @@ describe('needsScheduleAck() -- the single question the mount hook asks', () => 
   it('is true for rows that arrived without passing through an Add button', () => {
     const imported = annualData({ schB1: [{ payee: 'from a workbook' }] });
     expect(needsScheduleAck(imported, 'annual', '/schb1')).toBe(true);
+  });
+});
+
+// A "Not now" (or Escape) holds until the filer next arrives at the page: the
+// page redraws itself after every Add and some choices, and each redraw used to
+// ask again. The e2e cases (schedule-doc-ack.spec.ts) drive it in a browser;
+// these pin the rule's edges.
+describe('promptScheduleAckIfNeeded(): a declined question returns on the next visit, not the next redraw', () => {
+  beforeEach(() => { __resetScheduleAckPrompt(); setCurrentPage('/summary'); });
+  const asker = (answer) => { const fn = async () => { fn.asked += 1; return answer; }; fn.asked = 0; return fn; };
+
+  it('the visit count moves when the page changes, never when the same page is set again', () => {
+    setCurrentPage('/a1');
+    const visit = getPageVisit();
+    setCurrentPage('/a1');
+    expect(getPageVisit()).toBe(visit);
+    setCurrentPage('/summary');
+    setCurrentPage('/a1');
+    expect(getPageVisit()).toBe(visit + 2);
+  });
+
+  it('declined: silent for the rest of the visit, asked again on the next', async () => {
+    const d = guardianData({ wardId: 'w1', scheduleA1: [{ desc: 'x' }] });
+    const no = asker(false);
+    setCurrentPage('/a1');
+    expect(await promptScheduleAckIfNeeded(d, 'guardian', '/a1', no)).toBe(false);
+    await promptScheduleAckIfNeeded(d, 'guardian', '/a1', no); // the page redrawn
+    expect(no.asked).toBe(1);
+    setCurrentPage('/summary');
+    setCurrentPage('/a1');
+    await promptScheduleAckIfNeeded(d, 'guardian', '/a1', no);
+    expect(no.asked).toBe(2);
+    expect(isScheduleAcknowledged(d, 'guardian', 'a1')).toBe(false);
+  });
+
+  it('a decline in one filing does not silence the same schedule in another', async () => {
+    const no = asker(false);
+    setCurrentPage('/a1');
+    await promptScheduleAckIfNeeded(guardianData({ wardId: 'w1', scheduleA1: [{ desc: 'x' }] }), 'guardian', '/a1', no);
+    await promptScheduleAckIfNeeded(guardianData({ wardId: 'w2', scheduleA1: [{ desc: 'y' }] }), 'guardian', '/a1', no);
+    expect(no.asked).toBe(2);
+  });
+
+  it('a yes is recorded and never asked again, on this visit or the next', async () => {
+    const d = guardianData({ wardId: 'w1', scheduleA1: [{ desc: 'x' }] });
+    const yes = asker(true);
+    setCurrentPage('/a1');
+    expect(await promptScheduleAckIfNeeded(d, 'guardian', '/a1', yes)).toBe(true);
+    setCurrentPage('/summary');
+    setCurrentPage('/a1');
+    await promptScheduleAckIfNeeded(d, 'guardian', '/a1', yes);
+    expect(yes.asked).toBe(1);
   });
 });
 

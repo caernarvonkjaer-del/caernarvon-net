@@ -367,10 +367,6 @@ test.describe('Guardian Inventory navigation/status contract', () => {
     // with no data-bind at all once a row is marked a vehicle -- their only
     // focusable selector is the input's own literal id.
     await page.locator('[data-inventory-change="toggle-vehicle"][data-index="0"]').check();
-    // Marking the row a vehicle redraws the page, and a question answered
-    // "Not now" asks again. Left open, it keeps the cursor from the jump below
-    // until it is answered, as it should.
-    await dismissScheduleDocPrompt(page);
 
     const yearPath = await page.evaluate(async () => {
       const structured = await (window as any).GuardianForms.testing.validate.structured();

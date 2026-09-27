@@ -120,6 +120,31 @@ test.describe('Milestone 57C-R: supplemental-documentation acknowledgement', () 
     expect(await ackState(page)).toContain('a1');
   });
 
+  // "The question returns on the next visit": a "Not now" or Escape holds
+  // while the filer stays on the page. The page draws itself again after
+  // every Add and after some choices, such as marking a B-2 row a vehicle,
+  // and each redraw used to ask again.
+  for (const [how, answer] of [['Not now', dismissDynDialog], ['Escape', escapeDynDialog]] as const) {
+    test(`after "${how}", the same page drawn again does not ask; the next visit does`, async ({ page }) => {
+      await freshStartNoPassword(page);
+      await createWard(page, 'Stay Ward', 'guardian');
+      await goto(page, '/b2');
+
+      await addGuardianRow(page, 'b2');
+      await answer(page);
+      await page.locator('[data-inventory-change="toggle-vehicle"][data-index="0"]').check();
+      await expectNoDialog(page, 'marking the row a vehicle redraws the page, and must not ask again');
+      await addGuardianRow(page, 'b2');
+      await expectNoDialog(page, 'a second row on the same visit must not ask again');
+      expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('scheduleB2.length'))).toBe(2);
+
+      await goto(page, '/summary');
+      await goto(page, '/b2');
+      expect(await acceptDynDialog(page), 'the next visit asks again').toMatch(/supporting documentation/i);
+      expect(await ackState(page)).toContain('b2');
+    });
+  }
+
   test('rows that never passed through an Add button are still caught', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Import Ward', 'guardian');

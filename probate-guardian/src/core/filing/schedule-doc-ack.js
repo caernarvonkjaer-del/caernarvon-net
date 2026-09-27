@@ -1,5 +1,6 @@
 import { resolveDescriptorForInventoryType } from './filing-descriptor.js';
 import { resolveActiveDocPeriod } from './doc-period.js';
+import { getPageVisit } from '../navigation/route-state.js';
 
 // Milestone 57C-R: the supplemental-documentation acknowledgement.
 //
@@ -145,8 +146,9 @@ export function needsScheduleAck(data, inventoryType, route) {
  *
  * Fires at most one modal per navigation, only for a populated schedule the
  * filer has not yet acknowledged for this period. A non-yes records nothing
- * and blocks nothing -- the page has already rendered and stays usable, and
- * the question returns on the next visit. `confirmModal` resolves false on
+ * in the filing and blocks nothing -- the page has already rendered and stays
+ * usable, and the question returns on the next visit (declinedOnVisit,
+ * below). `confirmModal` resolves false on
  * Escape as well as Cancel, which is exactly why a refusal must not discard
  * anything: a stray keypress would otherwise silently undo a deliberate act
  * with nothing on screen to explain it.
@@ -158,6 +160,15 @@ export function needsScheduleAck(data, inventoryType, route) {
  * @returns {Promise<boolean>} whether an acknowledgement was recorded
  */
 let promptInFlight = false;
+
+// A "Not now" or Escape holds until the filer next arrives at the page (the
+// route's visit count, src/core/navigation/route-state.js). The page draws
+// itself again after every Add and after some choices -- marking a B-2 row a
+// vehicle -- and each redraw used to ask again, so a filer who had said "Not
+// now" was asked with every entry. Kept per filing, period and schedule, in
+// memory only: a declined question returns after a reload as well.
+const declinedOnVisit = new Map();
+const declineKey = (data, key) => `${data?.wardId ?? ''}|${scheduleAckPeriod(data)}|${key}`;
 
 export async function promptScheduleAckIfNeeded(data, inventoryType, route, confirmFn) {
   // Re-entrancy guard. The caller does not await this (see the feature
@@ -172,6 +183,8 @@ export async function promptScheduleAckIfNeeded(data, inventoryType, route, conf
   if (promptInFlight) return false;
   if (!needsScheduleAck(data, inventoryType, route)) return false;
   const key = scheduleKeyForRoute(inventoryType, route);
+  const visit = getPageVisit();
+  if (declinedOnVisit.get(declineKey(data, key)) === visit) return false;
   const label = String(key).replace(/^sch/i, '').toUpperCase();
   promptInFlight = true;
   let confirmed = false;
@@ -189,13 +202,16 @@ export async function promptScheduleAckIfNeeded(data, inventoryType, route, conf
   } finally {
     promptInFlight = false;
   }
-  if (!confirmed) return false;
+  if (!confirmed) {
+    declinedOnVisit.set(declineKey(data, key), visit);
+    return false;
+  }
   recordScheduleAck(data, inventoryType, key);
   return true;
 }
 
-/** Test seam: clears the in-flight guard between cases. */
-export function __resetScheduleAckPrompt() { promptInFlight = false; }
+/** Test seam: clears the in-flight guard and the declined questions between cases. */
+export function __resetScheduleAckPrompt() { promptInFlight = false; declinedOnVisit.clear(); }
 
 /**
  * Legacy `.sav` migration. A case file written before 57C-R has no

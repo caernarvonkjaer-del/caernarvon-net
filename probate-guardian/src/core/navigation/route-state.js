@@ -9,6 +9,7 @@
 // accessor, and these modules read window.currentPage, window.getCurrentPage
 // and window.navigate.
 let currentPage = '/';
+let pageVisit = 0;
 let navigateImpl = null;
 
 /** The page the filer is on (a route such as '/p3', '/print' or '/dashboard'). */
@@ -18,7 +19,18 @@ export function getCurrentPage() {
 
 /** The router's alone: the page it is showing. */
 export function setCurrentPage(page) {
+  if (page !== currentPage) pageVisit += 1;
   currentPage = page;
+}
+
+/**
+ * Counts arrivals at a page: it moves each time the page the filer is on
+ * changes -- navigate(), the Back button, opening a filing -- and never when
+ * the same page is drawn again (after an Add, say). Tells "the filer came
+ * back" from "the page redrew itself".
+ */
+export function getPageVisit() {
+  return pageVisit;
 }
 
 /** The router hands its navigate() in once, as it loads. */
