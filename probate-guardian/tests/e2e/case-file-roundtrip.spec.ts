@@ -32,6 +32,10 @@ test.describe('Case file .sav round-trip: unencrypted, encrypted, and corrupted 
       // the sidebar is neutral and the user chooses Edit. Switching
       // explicitly is what proves the ward data round-tripped.
       await expect(reopenPage.locator('#ward-selector')).toHaveValue('');
+      // The picker is empty before the case has loaded as well as after, so
+      // wait for the filing itself: an encrypted case is still decrypting
+      // when the password dialog closes (about half a second in WebKit).
+      await expect.poll(() => reopenPage.evaluate(() => (window as any).GuardianForms.testing.snapshot().caseFile.wards.length)).toBe(1);
       await reopenPage.evaluate(() => (() => { const tt = (window as any).GuardianForms.testing; return tt.activateFiling.open(tt.snapshot().caseFile.wards[0].wardId); })());
       await expect(reopenPage.locator('#ward-selector')).toHaveValue('Roundtrip Ward Plain');
     } finally {
@@ -81,6 +85,10 @@ test.describe('Case file .sav round-trip: unencrypted, encrypted, and corrupted 
       // the sidebar is neutral and the user chooses Edit. Switching
       // explicitly is what proves the ward data round-tripped.
       await expect(reopenPage.locator('#ward-selector')).toHaveValue('');
+      // The picker is empty before the case has loaded as well as after, so
+      // wait for the filing itself: an encrypted case is still decrypting
+      // when the password dialog closes (about half a second in WebKit).
+      await expect.poll(() => reopenPage.evaluate(() => (window as any).GuardianForms.testing.snapshot().caseFile.wards.length)).toBe(1);
       await reopenPage.evaluate(() => (() => { const tt = (window as any).GuardianForms.testing; return tt.activateFiling.open(tt.snapshot().caseFile.wards[0].wardId); })());
       await expect(reopenPage.locator('#ward-selector')).toHaveValue('Roundtrip Ward Encrypted');
     } finally {

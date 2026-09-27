@@ -584,6 +584,12 @@ test.describe('Annual/Final/Trust field-path accuracy (Milestone 33, Item 3, sub
       (window as any).GuardianForms.testing.patchFiling({ 'schB1': [{ bankAcct: '111222333', checkNo: '1001', datePaid: '01/01/2024', payee: '', amount: '500' }] });
     });
     await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/schb1'));
+    // Milestone 57C-R advisory modal: a populated schedule the filer has not
+    // acknowledged raises it as the page draws, and nothing here waits for it.
+    // Left open, it takes focus whenever it lands after the jump below (4 of
+    // 10 WebKit runs), and when it lands first the jump moves focus out of an
+    // open dialog -- neither is what this test is about.
+    await dismissScheduleDocPrompt(page);
 
     const targetPath = await page.evaluate(async () => {
       const structured = await (window as any).GuardianForms.testing.validate.structured();

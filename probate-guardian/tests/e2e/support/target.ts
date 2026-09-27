@@ -439,11 +439,14 @@ export async function exportAndCapture(page: Page): Promise<string> {
   const download = await downloadPromise;
   await acceptDynDialog(page);
   const savePath = path.join(os.tmpdir(), `pg-test-${Date.now()}-${Math.random().toString(36).slice(2)}.sav`);
-  await download.saveAs(savePath);
-  for (let i = 0; i < 50; i++) {
-    if (fs.existsSync(savePath) && fs.statSync(savePath).size > 0) break;
-    await new Promise((r) => setTimeout(r, 50));
-  }
+  // Written as a new file, not download.saveAs(): saveAs copies Playwright's
+  // download with its timestamp, and Playwright keeps downloads under
+  // test-results/. On a FAT32 drive that timestamp is rounded to an even
+  // second, and Playwright's WebKit on Windows misreads such a time on some
+  // reads, then refuses the file as changed since it was chosen ("The object
+  // can not be found here."). Found at Milestone 70's release gate, run from
+  // a worktree on a FAT32 drive; a new file takes the temp drive's own time.
+  fs.writeFileSync(savePath, fs.readFileSync(await download.path()));
   return savePath;
 }
 
