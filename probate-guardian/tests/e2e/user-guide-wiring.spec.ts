@@ -12,7 +12,7 @@ import { freshStartNoPassword, createWard, createSimplifiedWard } from './suppor
 // mid-filing -- and the panel's "View User Guide" button opens the manual
 // unanchored. Inside a filing, "?" skips the panel entirely and opens the
 // manual straight to the anchor matching the current page, per
-// legacy-app.js's USER_GUIDE_ANCHORS map.
+// USER_GUIDE_ANCHORS (src/core/help/user-guide.js).
 
 async function clickAndCaptureGuideTab(page: Page, context: BrowserContext, selector: string) {
   // The "Save Your First Backup" / "Unsaved Changes" reminder (same
@@ -36,7 +36,7 @@ test.describe('user guide wiring', () => {
   test('dashboard: "?" opens the Help panel; View User Guide opens the manual unanchored', async ({ page, context }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Dashboard Guide Ward', 'guardian');
-    await page.evaluate(() => (window as any).navigate('/dashboard'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/dashboard'));
     await page.waitForURL(/#\/dashboard/);
     const reminder = page.locator('[data-shell-action="hide-auto-export-reminder"]');
     if (await reminder.count()) await reminder.click();
@@ -54,15 +54,15 @@ test.describe('user guide wiring', () => {
   // panel's disclosure button, so aria-expanded follows the panel. Inside a
   // filing it opens the manual in a new tab, so it must not claim to control
   // the panel: it used to keep aria-haspopup, aria-controls="help-panel" and an
-  // aria-expanded that was always "false" (it read window.isHelpPanelOpen,
-  // which nothing defines) -- a screen reader said "Help, collapsed, pop-up
-  // button", and pressing it opened a new tab instead.
+  // aria-expanded -- a screen reader said "Help, collapsed, pop-up button", and
+  // pressing it opened a new tab instead. (master ae9ecdc, carried onto
+  // milestone-70 with its navigation through GuardianForms.testing.)
   test("\"?\" announces what it does: the Help panel's disclosure on the dashboard, a link to the manual inside a filing", async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Announce Guide Ward', 'guardian');
     const help = page.locator('#help-toggle-btn');
     for (const route of ['/', '/print']) {
-      await page.evaluate((r) => (window as any).navigate(r), route);
+      await page.evaluate((r) => (window as any).GuardianForms.testing.navigate(r), route);
       await help.waitFor({ state: 'visible' });
       const attrs = await help.evaluate((b) => ({
         label: b.getAttribute('aria-label'),
@@ -70,7 +70,7 @@ test.describe('user guide wiring', () => {
       }));
       expect(attrs, `in a filing, ${route}`).toEqual({ label: 'Help: open the user guide for this page (new tab)', expanded: null, controls: null, popup: null });
     }
-    await page.evaluate(() => (window as any).navigate('/dashboard'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/dashboard'));
     const reminder = page.locator('[data-shell-action="hide-auto-export-reminder"]');
     if (await reminder.isVisible().catch(() => false)) await reminder.click();
     await help.waitFor({ state: 'visible' });
@@ -94,7 +94,8 @@ test.describe('user guide wiring', () => {
     // Save as Excel / Print / E-Filing Portal) rather than the standard
     // topnav-actions bar, which is why there was once no "?" button there and
     // why 'preview' sat in USER_GUIDE_ANCHORS as unreachable data. The
-    // Preview-banner work changed that: legacy-app.js now moves the filing's
+    // Preview-banner work changed that: the print-preview pager
+    // (src/core/ui/print-pager.js) now moves the filing's
     // shell actions into the Preview & Export banner -- All Filings, theme and
     // help-toggle-btn -- for every filing type, single-page previews included.
     // So the anchor is reachable, and was untested until this row existed.
@@ -104,7 +105,7 @@ test.describe('user guide wiring', () => {
     await freshStartNoPassword(page);
     await createWard(page, 'Inventory Guide Ward', 'guardian');
     for (const [route, anchor] of GUARDIAN_CASES) {
-      await page.evaluate((r) => (window as any).navigate(r), route);
+      await page.evaluate((r) => (window as any).GuardianForms.testing.navigate(r), route);
       await page.waitForURL(new RegExp(`#${route.replace('/', '\\/')}$`));
       const url = await clickAndCaptureGuideTab(page, context, '#help-toggle-btn');
       expect(url, `route ${route}`).toContain(`help/#${anchor}`);
@@ -121,7 +122,7 @@ test.describe('user guide wiring', () => {
     await freshStartNoPassword(page);
     await createSimplifiedWard(page, 'Simplified Guide Ward');
     for (const [route, anchor] of SIMPLIFIED_CASES) {
-      await page.evaluate((r) => (window as any).navigate(r), route);
+      await page.evaluate((r) => (window as any).GuardianForms.testing.navigate(r), route);
       await page.waitForURL(new RegExp(`#${route.replace('/', '\\/')}$`));
       const url = await clickAndCaptureGuideTab(page, context, '#help-toggle-btn');
       expect(url, `route ${route}`).toContain(`help/#${anchor}`);
@@ -138,7 +139,7 @@ test.describe('user guide wiring', () => {
     await freshStartNoPassword(page);
     await createWard(page, 'Annual Guide Ward', 'annual');
     for (const [route, anchor] of ANNUAL_CASES) {
-      await page.evaluate((r) => (window as any).navigate(r), route);
+      await page.evaluate((r) => (window as any).GuardianForms.testing.navigate(r), route);
       await page.waitForURL(new RegExp(`#${route.replace('/', '\\/')}$`));
       const url = await clickAndCaptureGuideTab(page, context, '#help-toggle-btn');
       expect(url, `route ${route}`).toContain(`help/#${anchor}`);
@@ -148,13 +149,13 @@ test.describe('user guide wiring', () => {
   test('trustAccounting and finalAccounting alias to the same Annual Accounting anchors', async ({ page, context }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Trust Guide Ward', 'trustAccounting');
-    await page.evaluate(() => (window as any).navigate('/schd2'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/schd2'));
     await page.waitForURL(/#\/schd2$/);
     let url = await clickAndCaptureGuideTab(page, context, '#help-toggle-btn');
     expect(url).toContain('help/#annual-accounting-schedules');
 
     await createWard(page, 'Final Guide Ward', 'finalAccounting');
-    await page.evaluate(() => (window as any).navigate('/p2'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/p2'));
     await page.waitForURL(/#\/p2$/);
     url = await clickAndCaptureGuideTab(page, context, '#help-toggle-btn');
     expect(url).toContain('help/#annual-accounting-p2');
@@ -170,7 +171,7 @@ test.describe('user guide wiring', () => {
     await freshStartNoPassword(page);
     for (const [type, route, anchor] of PLAN_CASES) {
       await createWard(page, `${type} Guide Ward`, type);
-      await page.evaluate((r) => (window as any).navigate(r), route);
+      await page.evaluate((r) => (window as any).GuardianForms.testing.navigate(r), route);
       await page.waitForURL(new RegExp(`#${route.replace('/', '\\/')}$`));
       const url = await clickAndCaptureGuideTab(page, context, '#help-toggle-btn');
       expect(url, `${type} ${route}`).toContain(`help/#${anchor}`);

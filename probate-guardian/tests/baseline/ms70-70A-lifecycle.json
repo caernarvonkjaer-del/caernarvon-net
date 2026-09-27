@@ -1,0 +1,123 @@
+{
+  "target": "source",
+  "browser": "chromium",
+  "browserVersion": "151.0.7922.34",
+  "nodeVersion": "v24.16.0",
+  "gitSha": "daafcc1",
+  "measuredAt": "2026-09-25T00:46:32.997Z",
+  "cyclesPerFeature": 20,
+  "results": [
+    {
+      "feature": "simplified-accounting",
+      "cycles": 20,
+      "warmed": {
+        "heapBytes": 8922716,
+        "nodes": 1054
+      },
+      "afterCycles": {
+        "heapBytes": 8974104,
+        "nodes": 1054
+      },
+      "heapGrowthBytes": 51388,
+      "nodeGrowth": 0
+    },
+    {
+      "feature": "plan-simplified",
+      "cycles": 20,
+      "warmed": {
+        "heapBytes": 9018064,
+        "nodes": 1118
+      },
+      "afterCycles": {
+        "heapBytes": 9042220,
+        "nodes": 1118
+      },
+      "heapGrowthBytes": 24156,
+      "nodeGrowth": 0
+    },
+    {
+      "feature": "plan-annual",
+      "cycles": 20,
+      "warmed": {
+        "heapBytes": 9060632,
+        "nodes": 811
+      },
+      "afterCycles": {
+        "heapBytes": 9110344,
+        "nodes": 1050
+      },
+      "heapGrowthBytes": 49712,
+      "nodeGrowth": 239
+    },
+    {
+      "feature": "plan-initial",
+      "cycles": 20,
+      "warmed": {
+        "heapBytes": 9130328,
+        "nodes": 1046
+      },
+      "afterCycles": {
+        "heapBytes": 9175748,
+        "nodes": 805
+      },
+      "heapGrowthBytes": 45420,
+      "nodeGrowth": -241
+    },
+    {
+      "feature": "plan-minor",
+      "cycles": 20,
+      "warmed": {
+        "heapBytes": 9198356,
+        "nodes": 928
+      },
+      "afterCycles": {
+        "heapBytes": 9227640,
+        "nodes": 976
+      },
+      "heapGrowthBytes": 29284,
+      "nodeGrowth": 48
+    },
+    {
+      "feature": "annual-accounting",
+      "cycles": 20,
+      "warmed": {
+        "heapBytes": 9264660,
+        "nodes": 902
+      },
+      "afterCycles": {
+        "heapBytes": 9311176,
+        "nodes": 1006
+      },
+      "heapGrowthBytes": 46516,
+      "nodeGrowth": 104
+    },
+    {
+      "feature": "guardian-inventory",
+      "cycles": 20,
+      "warmed": {
+        "heapBytes": 9343872,
+        "nodes": 992
+      },
+      "afterCycles": {
+        "heapBytes": 9373484,
+        "nodes": 879
+      },
+      "heapGrowthBytes": 29612,
+      "nodeGrowth": -113
+    },
+    {
+      "feature": "dashboard",
+      "cycles": 20,
+      "warmed": {
+        "heapBytes": 9558636,
+        "nodes": 1680
+      },
+      "afterCycles": {
+        "heapBytes": 9640452,
+        "nodes": 673
+      },
+      "heapGrowthBytes": 81816,
+      "nodeGrowth": -1007
+    }
+  ]
+}

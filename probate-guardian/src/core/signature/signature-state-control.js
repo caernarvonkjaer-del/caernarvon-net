@@ -9,6 +9,9 @@ import { mountSignaturePad } from './signature-pad.js';
 // below for why applying one copies bytes rather than storing a reference.
 import { partyForSignaturePath, getActiveSignatureImage, addSignatureImage } from '../party-resolver.js';
 import { confirmModal } from '../ui/dialogs.js';
+import { getD, requestSave } from '../state.js';
+import { markDirtySinceExport } from '../persistence/case-file.js';
+import { renderPage } from '../navigation/router.js';
 
 function esc(s) {
   return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -31,8 +34,8 @@ function esc(s) {
  *
  * `route` re-renders the current page on change so the capture widget
  * mounts/unmounts with the new state, the same pattern this app already
- * uses for other conditionally-rendered sections (e.g. legacy-app.js's
- * directive-execution checkboxes).
+ * uses for other conditionally-rendered sections (e.g. the Plans'
+ * directive-execution checkboxes, legacy-app.js's when this was written).
  */
 export function renderSignatureStateControl({ path, state, route, signatureImage, statePath, imagePath }) {
   const resolvedStatePath = statePath || `${path}.signatureState`;
@@ -88,9 +91,9 @@ export function mountSignatureStateControls(container, { setImage, route }) {
 
     const commitImage = (dataUrl) => {
       setImage(imagePath, dataUrl);
-      window.markDirtySinceExport?.();
-      window.autoSave?.();
-      if (route && window.renderPage) window.renderPage(route);
+      markDirtySinceExport();
+      requestSave();
+      if (route) renderPage(route);
     };
 
     mountSavedStampAffordance(mountEl, path, commitImage);
@@ -103,7 +106,7 @@ export function mountSignatureStateControls(container, { setImage, route }) {
         // and never blocks signing: a filing whose slot isn't linked to a
         // party yet still signs normally, it just has nothing to reuse later.
         try {
-          const party = partyForSignaturePath(window.D, path);
+          const party = partyForSignaturePath(getD(), path);
           if (party) addSignatureImage(party, dataUrl);
         } catch (e) {
           console.warn('Could not record reusable signature stamp', e);
@@ -142,7 +145,7 @@ export function mountSignatureStateControls(container, { setImage, route }) {
 function mountSavedStampAffordance(mountEl, path, commitImage) {
   let party = null;
   try {
-    party = partyForSignaturePath(window.D, path);
+    party = partyForSignaturePath(getD(), path);
   } catch { /* an unlinked slot simply has nothing to offer */ }
   const active = party ? getActiveSignatureImage(party) : null;
   if (!active || !active.imageData) return;

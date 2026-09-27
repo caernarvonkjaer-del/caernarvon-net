@@ -1,26 +1,17 @@
 import { prepareFilingOutput } from './output-preflight.js';
+import { isOutputAcknowledgedFor, recordOutputAcknowledgement } from './output-revision.js';
 
-let revision = 0;
-let acknowledgement = null;
-
-export function getOutputRevision() { return revision; }
-export function clearOutputAcknowledgement() { acknowledgement = null; }
-export function markFilingRevisionChanged() { revision += 1; clearOutputAcknowledgement(); return revision; }
-export function beginFreshPreview() { clearOutputAcknowledgement(); }
-
-function identityFor(data, descriptor) {
-  return { wardId: data?.wardId || window.getCaseFile?.().activeWardId || '', inventoryType: descriptor?.inventoryType || data?.inventoryType || '' };
-}
-
-export function isOutputAcknowledgedFor(data, descriptor) {
-  const identity = identityFor(data, descriptor);
-  return Boolean(acknowledgement && acknowledgement.revision === revision && acknowledgement.wardId === identity.wardId && acknowledgement.inventoryType === identity.inventoryType);
-}
+// The filing's revision and the acknowledgement it invalidates are
+// output-revision.js's (Milestone 70, 70K), so the preflight and the draft
+// store can reach them without an import cycle through this module.
+export {
+  getOutputRevision, clearOutputAcknowledgement, markFilingRevisionChanged, beginFreshPreview, isOutputAcknowledgedFor,
+} from './output-revision.js';
 
 export function acknowledgeOutstandingRequirements(data, baseIssues) {
   const preflight = prepareFilingOutput(data, baseIssues);
   if (!preflight.structuredIssues.length || preflight.structuredIssues.some(issue => issue.bypassable === false)) return false;
-  acknowledgement = { ...identityFor(data, preflight.descriptor), revision };
+  recordOutputAcknowledgement(data, preflight.descriptor);
   return true;
 }
 
@@ -28,7 +19,6 @@ export function authorizeFilingOutput(data, baseIssues, { capability, additional
   const preflight = prepareFilingOutput(data, baseIssues);
   const issues = [...preflight.structuredIssues, ...additionalIssues]
     .filter(issue => !issue.capabilities || issue.capabilities.includes(capability));
-  const identity = identityFor(data, preflight.descriptor);
   if (!issues.length) return { status: 'allowed', issues, advisories: preflight.advisories };
   if (issues.some(issue => issue.bypassable === false)) return { status: 'blocked', issues, advisories: preflight.advisories };
   const acknowledged = isOutputAcknowledgedFor(data, preflight.descriptor);

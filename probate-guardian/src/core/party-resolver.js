@@ -5,14 +5,16 @@
 // that mechanism can be proven independently first, against hand-built
 // parties and filings, before any UI depends on it.
 //
-// legacy-app.js is a classic (non-module) script (see src/core/state.js's
-// file header for why), so this reaches into `window.*` directly rather than
-// importing from another module -- the same convention every other file in
-// src/core/ already uses.
+// It imports what it uses (Milestone 70, 70K); until then it reached the
+// monolith and its neighbours through `window.*`, and published itself there.
 
 /** Follows a merge tombstone (see the de-dup screen, a later phase) to the surviving party. */
+import { formEngine } from './filing/filing-registry.js';
+import { getCaseFile } from './state.js';
+import { markFilingRevisionChanged } from './filing/output-revision.js';
+import { markDirtySinceExport } from './persistence/case-file.js';
 export function resolveParty(partyId) {
-  const caseFile = window.caseFile;
+  const caseFile = getCaseFile();
   if (!partyId || !caseFile || !Array.isArray(caseFile.parties)) return null;
   const party = caseFile.parties.find(p => p.id === partyId) || null;
   if (party && party.mergedInto) return resolveParty(party.mergedInto);
@@ -26,7 +28,7 @@ function newPartyId() {
 
 /** Creates a blank party with the given role already set, appends it to caseFile.parties, and returns it. */
 export function createParty(role) {
-  const caseFile = window.caseFile;
+  const caseFile = getCaseFile();
   const now = new Date().toISOString();
   const party = {
     id: newPartyId(),
@@ -210,7 +212,7 @@ const ROLE_FIELD_MAPS = {
 
 function engineTypeFor(filing) {
   const type = filing && filing.inventoryType;
-  return window.formEngine ? window.formEngine(type) : type;
+  return formEngine(type);
 }
 
 function roleConfigFor(filing, role) {
@@ -436,7 +438,7 @@ function slotDrift(filing, role, index) {
 
 /** Every slot on closed filings whose copy of this party's fields no longer matches the party. */
 export function closedFilingDrift(partyId) {
-  const caseFile = window.caseFile;
+  const caseFile = getCaseFile();
   if (!partyId || !caseFile) return [];
   const out = [];
   for (const filing of caseFile.wards || []) {
@@ -490,7 +492,7 @@ export function reconcileSlotWithParty(filing, role, index = 0) {
  * never written -- they stay exactly as filed. Returns how many records changed.
  */
 export function backfillWardPartyIdentity() {
-  const caseFile = window.caseFile;
+  const caseFile = getCaseFile();
   if (!caseFile) return 0;
   const filings = (caseFile.wards || []).filter(f => f && getPartyIdForSlot(f, 'ward', 0));
   const ordered = [...filings.filter(f => !isFilingClosed(f)), ...filings.filter(isFilingClosed)];
@@ -522,9 +524,9 @@ export function syncFilingSlotWithParty(filing, role, index = 0) {
   const partyId = getPartyIdForSlot(filing, role, index);
   const party = partyId ? resolveParty(partyId) : null;
   if (!party) return false;
-  if (typeof window !== 'undefined') window.markFilingRevisionChanged?.('party-sync');
+  markFilingRevisionChanged('party-sync');
   hydrateFromParty(party, filing, role, index);
-  if (window.markDirtySinceExport) window.markDirtySinceExport();
+  markDirtySinceExport();
   return true;
 }
 
@@ -545,10 +547,10 @@ export function hydrateFromParty(party, filing, role, index = 0, { except = null
 
 /**
  * One flat key, a list of them, or null for "the whole block". Accepting a
- * bare string matters because these functions are published on `window` for
- * legacy-app.js, where a single-key call reads naturally and an accidental
- * string would otherwise silently fall back to whole-block behaviour -- the
- * exact defect 58A exists to remove.
+ * bare string matters because a single-key call reads naturally (these were
+ * called from legacy-app.js through `window`, until Milestone 70) and an
+ * accidental string would otherwise silently fall back to whole-block
+ * behaviour -- the exact defect 58A exists to remove.
  */
 function normalizeFieldKeys(fieldKeys) {
   if (fieldKeys == null) return null;
@@ -615,7 +617,7 @@ export function partyForSignaturePath(filing, path) {
 /** Points a filing's role/index slot at a party id (or clears it with null). */
 export function setPartyIdForSlot(filing, role, index, partyId) {
   if (!filing) return;
-  if (typeof window !== 'undefined') window.markFilingRevisionChanged?.('party-slot');
+  markFilingRevisionChanged('party-slot');
   if (role === 'ward') { filing.wardPartyId = partyId; return; }
   if (role === 'attorney') { filing.attorneyPartyId = partyId; return; }
   if (role === 'preparer') { filing.preparerPartyId = partyId; return; }
@@ -661,7 +663,7 @@ export function syncIdentityField(filing, role, index = 0, fieldKeys = null) {
   if (!party) return;
   dehydrateIntoParty(filing, role, index, party, fieldKeys);
 
-  const caseFile = window.caseFile;
+  const caseFile = getCaseFile();
   if (caseFile && Array.isArray(caseFile.wards)) {
     for (const other of caseFile.wards) {
       if (isFilingClosed(other)) continue;
@@ -676,7 +678,7 @@ export function syncIdentityField(filing, role, index = 0, fieldKeys = null) {
       }
     }
   }
-  if (window.markDirtySinceExport) window.markDirtySinceExport();
+  markDirtySinceExport();
 }
 
 // ── Party de-duplication (Milestone 7) ─────────────────────────────────────
@@ -691,7 +693,7 @@ function partyPairKey(idA, idB) {
 
 /** True if this exact pair (either order) has been dismissed as "not the same person." */
 export function isPartyPairDismissed(idA, idB) {
-  const caseFile = window.caseFile;
+  const caseFile = getCaseFile();
   const pairs = (caseFile && caseFile.dismissedPartyPairs) || [];
   const key = partyPairKey(idA, idB);
   return pairs.some(pair => Array.isArray(pair) && partyPairKey(pair[0], pair[1]) === key);
@@ -699,12 +701,12 @@ export function isPartyPairDismissed(idA, idB) {
 
 /** Remembers a pair as "not the same person" so it stops surfacing in the review queue. */
 export function dismissPartyPair(idA, idB) {
-  const caseFile = window.caseFile;
+  const caseFile = getCaseFile();
   if (!caseFile) return;
   if (!Array.isArray(caseFile.dismissedPartyPairs)) caseFile.dismissedPartyPairs = [];
   if (!isPartyPairDismissed(idA, idB)) {
     caseFile.dismissedPartyPairs.push([idA, idB].sort());
-    window.markFilingRevisionChanged?.('party-dismiss');
+    markFilingRevisionChanged('party-dismiss');
   }
 }
 
@@ -776,7 +778,7 @@ function sharesContactDetail(a, b) {
  * detection path -- see this file's persistence-rewrite plan §6.
  */
 export function findDuplicateCandidates() {
-  const caseFile = window.caseFile;
+  const caseFile = getCaseFile();
   const entries = ((caseFile && caseFile.parties) || [])
     .filter(p => !p.mergedInto && String(p.name || '').trim())
     .map(party => ({ party, exactKey: party.name.trim().toLowerCase(), norm: normalizePartyName(party.name) }));
@@ -795,7 +797,7 @@ export function findDuplicateCandidates() {
 
 /** How many filing/case slots currently reference this party -- powers the directory's reference count. */
 export function referenceCountForParty(partyId) {
-  const caseFile = window.caseFile;
+  const caseFile = getCaseFile();
   if (!caseFile || !partyId) return 0;
   let count = 0;
   for (const ward of caseFile.wards || []) count += slotsReferencing(ward, partyId).length;
@@ -814,13 +816,13 @@ export function referenceCountForParty(partyId) {
  * unmergeParty() can put it back. A sub that has subs of its own keeps them
  * (they still point at it, not at the new primary) -- the one-level rule.
  * Does not call autoSave() -- same convention as syncIdentityField(), the
- * caller (doPartyMergeKeep() in legacy-app.js) already does.
+ * caller (doPartyMergeKeep(), src/core/parties/party-management.js) already does.
  */
 export function mergeParties(keepId, discardId, { adoptBlankFields = false } = {}) {
   const keep = resolveParty(keepId);
   const discard = resolveParty(discardId);
   if (!keep || !discard || keep === discard) return false;
-  if (typeof window !== 'undefined') window.markFilingRevisionChanged?.('party-merge');
+  markFilingRevisionChanged('party-merge');
 
   const now = new Date().toISOString();
   const record = { mergedAt: now, adoptedFields: [], adoptedRoles: [], repointedSlots: [], repointedCases: [] };
@@ -858,7 +860,7 @@ export function mergeParties(keepId, discardId, { adoptBlankFields = false } = {
   // A closed filing's link moves to the primary (so the record stays
   // reachable) but its copy of the fields is left alone; it then shows as
   // out of date with the primary until the user syncs it.
-  const caseFile = window.caseFile;
+  const caseFile = getCaseFile();
   for (const ward of (caseFile && caseFile.wards) || []) {
     for (const slot of slotsReferencing(ward, discardId)) {
       record.repointedSlots.push({ wardId: ward.wardId, role: slot.role, index: slot.index });
@@ -885,7 +887,7 @@ export function mergeParties(keepId, discardId, { adoptBlankFields = false } = {
  * exactly what it was before tracking existed.
  */
 export function subPartiesOf(primaryId) {
-  const caseFile = window.caseFile;
+  const caseFile = getCaseFile();
   if (!primaryId || !caseFile || !Array.isArray(caseFile.parties)) return [];
   return caseFile.parties.filter(p => p.mergedInto === primaryId && p.mergeRecord);
 }
@@ -912,13 +914,13 @@ function partyPathValue(party, path) {
  * tombstone. Does not call autoSave() -- the caller does.
  */
 export function unmergeParty(subId) {
-  const caseFile = window.caseFile;
+  const caseFile = getCaseFile();
   if (!subId || !caseFile || !Array.isArray(caseFile.parties)) return false;
   const sub = caseFile.parties.find(p => p.id === subId);
   if (!sub || !sub.mergedInto || !sub.mergeRecord) return false;
   const primary = caseFile.parties.find(p => p.id === sub.mergedInto);
   if (!primary || primary.mergedInto) return false;
-  if (typeof window !== 'undefined') window.markFilingRevisionChanged?.('party-unmerge');
+  markFilingRevisionChanged('party-unmerge');
   const record = sub.mergeRecord;
 
   for (const { wardId, role, index } of record.repointedSlots || []) {
@@ -951,38 +953,3 @@ export function unmergeParty(subId) {
   primary.updatedAt = now;
   return true;
 }
-
-// Bridged onto window for legacy-app.js (classic script) and for e2e tests
-// to call directly -- see this file's header comment.
-window.resolveParty = resolveParty;
-window.createParty = createParty;
-window.identitySlotForPath = identitySlotForPath;
-window.readRoleFields = readRoleFields;
-window.writeRoleFields = writeRoleFields;
-window.hydrateFromParty = hydrateFromParty;
-window.dehydrateIntoParty = dehydrateIntoParty;
-window.getPartyIdForSlot = getPartyIdForSlot;
-window.setPartyIdForSlot = setPartyIdForSlot;
-// Milestone 46A/46B: reusable per-party signature stamps.
-window.addSignatureImage = addSignatureImage;
-window.getActiveSignatureImage = getActiveSignatureImage;
-window.getSignatureImageById = getSignatureImageById;
-window.listSignatureImages = listSignatureImages;
-window.partyForSignaturePath = partyForSignaturePath;
-window.slotsReferencing = slotsReferencing;
-window.syncIdentityField = syncIdentityField;
-window.isFilingClosed = isFilingClosed;
-window.reconcileSlotWithParty = reconcileSlotWithParty;
-window.backfillWardPartyIdentity = backfillWardPartyIdentity;
-window.closedFilingDrift = closedFilingDrift;
-window.filingDriftFromParties = filingDriftFromParties;
-window.syncFilingSlotWithParty = syncFilingSlotWithParty;
-window.isPartyPairDismissed = isPartyPairDismissed;
-window.dismissPartyPair = dismissPartyPair;
-window.findDuplicateCandidates = findDuplicateCandidates;
-window.namesNearlyMatch = namesNearlyMatch;
-window.normalizePartyName = normalizePartyName;
-window.referenceCountForParty = referenceCountForParty;
-window.mergeParties = mergeParties;
-window.subPartiesOf = subPartiesOf;
-window.unmergeParty = unmergeParty;

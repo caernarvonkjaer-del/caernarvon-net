@@ -30,36 +30,26 @@ import { renderReportingPeriodFields } from '../../core/form/cards/ward-demograp
 // both types.
 import { renderPartyNameField } from '../../core/form/cards/guardian-attorney-card.js';
 import { renderFormField } from '../../core/form/form-fields.js';
+import { esc } from '../../core/filing/escape-html.js';
+import { ic } from '../../core/ui/icons.js';
+import { formatDisplayDate } from '../../core/form/date-parser.js';
+import { normalizePlanGuardians } from '../../core/filing/models/plan-rows.js';
+import { planMinorCompletion } from '../../core/status/completion.js';
+import { getD, requestSave } from '../../core/state.js';
+import { chkP, countyInputS, inpS, pageNavS, planCheckGroup, planQ, radioP, txtP, yesNoCheckboxS } from '../../core/form/field-html.js';
+import { renderScheduleDocsSection } from '../../core/filing/schedule-docs.js';
+import { setPath } from '../../core/form/paths.js';
 // Annual Plan — Minors — the fifth and last feature extraction (Milestone 6,
 // Phases A and B of INDEX-SPLIT-PLAN.md's migration sequence: data/
-// validation/pages/nav, and print/PDF export). Dynamically imported by
-// legacy-app.js's mountPlanMinorFeature()/mountPlanMinorNav() bridge (built
-// on src/core/feature-bridge.js), never statically imported.
+// validation/pages/nav, and print/PDF export). Loaded only when one of its pages
+// is shown, through src/features-loader.js's feature services
+// (src/core/feature-bridge.js mounts it), never statically imported.
 //
-// legacy-app.js stays a classic (non-module) script (Milestone 1's recorded
-// decision), so its top-level function declarations are real `window`
-// properties this module can destructure -- but a bare top-level `let`
-// (activeInventoryType, currentPage) is not; see src/core/state.js's file
-// header for the full explanation. Everything below that isn't defined in
-// this file is one of those legacy globals, deliberately left in place
-// rather than moved: `planQ`/`planCheckGroup`/`planEmptyRow`/`addPlanRow`/
-// `removePlanRow`/`duplicatePlanRow`/`txtP`/`chkP`/`radioP`/`pageNavS`/
-// `yesNoCheckboxS` -- this was the last of the four Plan types, so there is
-// no remaining not-yet-extracted type to justify keeping them legacy on
-// sharing grounds alone; they stay because every already-extracted Plan
-// module already reaches them the same way, and moving them into a shared
-// core module is a separate restructuring, not required by this milestone
-// (see the Milestone 6 plan's "Confirmed facts" and "Design decisions").
-// Milestone 51C: `formatName`, `formatPhone` and `toggleSsnReveal` were
-// destructured here without ever being called, and are dropped -- the same pass
-// plan-annual got in Milestone 41-3 and plan-simplified in 41-2, which
-// plan-initial and plan-minor never received. `countyInputS` stays: unlike the
-// other three Plan types, this one still calls it directly (see /p1 below).
-const {
-  esc, ic, inpS, countyInputS, radioP, pageNavS,
-  renderScheduleDocsSection, txtP, chkP, planQ, planCheckGroup, yesNoCheckboxS,
-  formatDisplayDate,
-} = window;
+// Until Milestone 70 this module destructured the classic monolith's globals
+// off window -- the shared Plan field helpers and lists -- and this comment
+// recorded which, and why each stayed in the monolith (Milestones 3-6, 41 and
+// 51C). Milestone 70 moved every one into a module this file imports; 70K
+// removed the last window read, and 70L deleted the monolith.
 
 // print.js is dynamically imported only when the user reaches /print or
 // triggers PDF export (Phase B) -- same lazy boundary as the other three
@@ -71,30 +61,36 @@ const signatureHandles = new WeakMap();
 
 let _printModule = null;
 let _printModulePromise = null;
+// The Preview page's Save as PDF (data-form-action="save-pdf-plan-minor"),
+// and GuardianForms.testing's saveOutput, through the feature services
+// (Milestone 70, 70K: a window global this module set once print.js loaded).
+export function doSavePdfPlanMinor() {
+  // At once when the print module is loaded (it is, once Preview shows): the
+  // save disables its button before its first await (Milestone 67).
+  if (_printModule) return _printModule.doSavePdf();
+  return ensurePrintModule().then(() => _printModule.doSavePdf());
+}
+
 function ensurePrintModule() {
   if (_printModule) return Promise.resolve();
   if (!_printModulePromise) {
     _printModulePromise = import('./print.js').then((mod) => {
       _printModule = mod;
-      // Referenced by name from rendered onclick="..." HTML attributes
-      // (doSavePdfPlanMinor), which only ever resolve against the global
-      // scope, never a module's own scope, so it must be a real `window`
-      // property. (The planReadinessChecksMinor bridge went with Milestone
-      // 44C's shared readiness card.)
-      window.doSavePdfPlanMinor = () => _printModule.doSavePdf();
     });
   }
   return _printModulePromise;
 }
 
-export async function mount(container, page) {
+export async function mount(container, page, { signal } = {}) {
   // Milestone 68C: a plan saved before the Certificate of Service existed
   // gains its fields on load. Idempotent, so every mount may call it.
-  if (migratePlanCertificateOfService(window.D)) window.autoSave?.();
+  if (migratePlanCertificateOfService(getD())) requestSave();
   let html;
   let isPrint = false;
   if (page === '/print') {
     await ensurePrintModule();
+    // Superseded while its print module loaded (Milestone 70, 70K).
+    if (signal?.aborted) return;
     html = _printModule.pagePrintPlanMinor();
     isPrint = true;
   } else {
@@ -117,7 +113,7 @@ export async function mount(container, page) {
   signatureHandles.delete(container);
   if (page === '/p6' || page === '/p7' || page === '/p8') {
     signatureHandles.set(container, mountSignatureStateControls(container, {
-      setImage: (imagePath, dataUrl) => window.setPath(window.D, imagePath, dataUrl),
+      setImage: (imagePath, dataUrl) => setPath(getD(), imagePath, dataUrl),
       route: page,
     }));
   }
@@ -157,8 +153,10 @@ function buildNavPlanMinor(container){
 }
 
 function getSummaryConfigPlanMinor(){
-  const d=window.D;
-  const nav=window.computeNavChecks();
+  const d=getD();
+  // This filing's own section marks (Milestone 70, 70D: its engine's evaluator,
+  // imported; it was window.computeNavChecks()).
+  const nav=planMinorCompletion(d);
   return {
     formTitle:'Annual Plan — Minors — Summary',
     infoRows:[
@@ -191,7 +189,7 @@ function getSummaryConfigPlanMinor(){
 }
 
 function pagePlanMCover(){
-  const d=window.D;
+  const d=getD();
   return `<div class="schedule-page">
     <h1>Annual Plan — Minors — Cover</h1>
     <div class="schedule-instructions">This is the Annual Guardianship Plan used when the ward is a <strong>minor</strong>. It has no rights-restoration table or ADL ratings — instead it covers residence, medical care, and the minor's education and social development.</div>
@@ -233,7 +231,7 @@ function pagePlanMCover(){
 }
 
 function pagePlanMResidences(){
-  const d=window.D;
+  const d=getD();
   const rows=(d.q2Residences||[]).map((r,i)=>{
     return `<div class="col-12 col-lg-6"><div class="entry-card mb-2">
       <div class="entry-card-header">
@@ -264,7 +262,7 @@ function pagePlanMResidences(){
 }
 
 function pagePlanMProviders(){
-  const d=window.D;
+  const d=getD();
   const rows=(d.q3Providers||[]).map((r,i)=>{
     return `<div class="col-12 col-lg-6"><div class="entry-card mb-2">
       <div class="entry-card-header">
@@ -299,7 +297,7 @@ function pagePlanMProviders(){
 }
 
 function pagePlanMMedical(){
-  const d=window.D;
+  const d=getD();
   const freq=(id,val)=>radioP(id,'Frequency',val,['Weekly','Monthly','Annually']);
   return `<div class="schedule-page">
     <h1>4. Provision of Medical Services</h1>
@@ -330,7 +328,7 @@ function pagePlanMMedical(){
 }
 
 function pagePlanMEducation(){
-  const d=window.D;
+  const d=getD();
   const cb=(id,label,route='')=>chkP(id,label,d[id],route);
   return `<div class="schedule-page">
     <h1>5. Education &amp; Social Development</h1>
@@ -351,7 +349,7 @@ function pagePlanMEducation(){
 }
 
 function pagePlanMSignatures(){
-  const d=window.D;
+  const d=getD();
   const cb=(id,label,route='')=>chkP(id,label,d[id],route);
   const g=(i,title)=>{
     const gd=(d.planGuardians||[])[i]||{};
@@ -385,7 +383,7 @@ function pagePlanMSignatures(){
       null,null,false)}
     <p class="mt-2 mb-3" style="font-size:.85rem;color:var(--ink-3);">Under penalties of perjury, each signing guardian declares they have read and examined the foregoing plan, and the facts alleged are true, to the best of their knowledge and belief.</p>
     <div class="row g-3 card-grid-2col mb-4">
-      ${window.normalizePlanGuardians(d).map((_,i)=>g(i,i?'Co-Guardian':'Guardian')).join('')}
+      ${normalizePlanGuardians(d).map((_,i)=>g(i,i?'Co-Guardian':'Guardian')).join('')}
     </div>
     ${(d.planGuardians||[]).length<2?'<button type="button" class="btn btn-outline-secondary btn-sm mb-3 no-print" data-form-action="add-plan-guardian" data-route="/p6">+ Add Co-Guardian</button>':''}
     ${renderScheduleDocsSection('planMSignatures')}
@@ -394,7 +392,7 @@ function pagePlanMSignatures(){
 }
 
 function pagePlanMPreparerAttorney(){
-  const d=window.D;
+  const d=getD();
   return `<div class="schedule-page">
     <h1>Certification of Preparer &amp; Attorney</h1>
   ${preparerNoteHTML()}
@@ -444,7 +442,7 @@ function pagePlanMPreparerAttorney(){
 
 // Milestone 42F: every issue states its own field path (validation-issue.js).
 export function validatePlanMinor(){
-  const d=window.D;
+  const d=getD();
   const errs=[];
   const T='planMinor';
   const issue=issueFactory(T);
@@ -540,14 +538,13 @@ export function validatePlanMinor(){
 // Milestone 33, Phase 2.3: see annual-accounting/index.js's identical comment --
 // exposing this lets the shared guidance panel itemize Plan Minor's own
 // missing fields instead of only showing a generic message.
-window.validatePlanMinor = validatePlanMinor;
 
 // ── Certificate of Service (Milestone 68C) ───────────────────────────────
 // Shared with the other three Plans; see core/filing/plan-certificate-of-service.js.
 const CERT_CFG = { attorneyName: (d) => d.attorney_name || '', planNoun: 'plan' };
 function pagePlanMCertificate(){
   return `<div class="schedule-page">
-    ${renderPlanCertificateOfServicePage({ filing: window.D, route: '/p8', cfg: CERT_CFG })}
+    ${renderPlanCertificateOfServicePage({ filing: getD(), route: '/p8', cfg: CERT_CFG })}
     ${pageNavS('/p7',null)}
   </div>`;
 }

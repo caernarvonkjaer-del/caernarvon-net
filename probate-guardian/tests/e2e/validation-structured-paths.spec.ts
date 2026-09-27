@@ -32,9 +32,12 @@ const VALIDATOR: Record<string, string> = {
 type Row = { message: string; isObject: boolean; section: string; path: string; code: string };
 
 async function collect(page: import('@playwright/test').Page, validator: string, worst: boolean): Promise<Row[]> {
-  return page.evaluate(([fn, makeWorst]) => {
-    const w = window as any;
-    const D = w.D;
+  // The open filing's own validator runs (the one `validator` names for its type).
+  void validator;
+  return page.evaluate(async ([makeWorst]) => {
+    const t = (window as any).GuardianForms.testing;
+    // Setup (D9): the worst case is built on a copy and written back in one patchFiling().
+    const D = t.snapshot().filing;
     if (makeWorst) {
       for (const key of Object.keys(D)) {
         const v = D[key];
@@ -47,8 +50,9 @@ async function collect(page: import('@playwright/test').Page, validator: string,
       D.inceptionDate = '2027-01-01';
       D.wardName = '';
       D.county = '';
+      t.replaceFiling(D);
     }
-    return w[fn]().map((issue: any) => {
+    return (await t.validate.open()).map((issue: any) => {
       const isObject = issue !== null && typeof issue === 'object';
       return {
         message: isObject ? String(issue.message) : String(issue),
@@ -58,15 +62,15 @@ async function collect(page: import('@playwright/test').Page, validator: string,
         code: isObject ? String(issue.code || '') : '',
       };
     });
-  }, [validator, worst] as const);
+  }, [worst] as const);
 }
 
 test.describe('Milestone 42F: validators state their own field paths', () => {
   for (const type of TYPES) {
     test(`${type}: every issue is a structured object; field issues carry a path`, async ({ page }) => {
       await freshStartNoPassword(page);
-      await page.evaluate((t) => (window as any).addWard(`Structured ${t}`, t), type);
-      await page.waitForFunction((fn) => typeof (window as any)[fn] === 'function', VALIDATOR[type]);
+      await page.evaluate((t) => (window as any).GuardianForms.testing.createFiling.add(`Structured ${t}`, t), type);
+      // validate.open() loads the filing type's validator if it is not loaded yet.
 
       const rows = [...await collect(page, VALIDATOR[type], false), ...await collect(page, VALIDATOR[type], true)];
       expect(rows.length, 'a blank/worst filing must produce issues').toBeGreaterThan(0);

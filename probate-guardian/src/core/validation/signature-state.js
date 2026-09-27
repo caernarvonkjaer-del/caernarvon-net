@@ -113,14 +113,3 @@ export function isSignatureComplete({ state, name, date, image } = {}) {
     filingType: undefined,
   }).length === 0;
 }
-
-// Bridged for legacy-app.js, which is a classic script and cannot import.
-// The assignment lives here (the pattern core/filing/output-preflight.js
-// already uses for window.prepareFilingOutput) and src/main.js imports this
-// module eagerly, so the global exists before any feature bundle loads --
-// computeNavChecks() runs for dashboard filings that have never been opened,
-// and a rule reached through a lazily-loaded feature module would be absent
-// exactly when the dashboard needs it.
-if (typeof window !== 'undefined') {
-  window.isSignatureComplete = isSignatureComplete;
-}

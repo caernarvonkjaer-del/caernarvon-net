@@ -1,0 +1,346 @@
+import { test, expect, type Browser, type Page } from '@playwright/test';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+// @ts-ignore -- plain .mjs tooling, no types
+import { extract } from '../../scripts/ms70-sav-corpus.mjs';
+// @ts-ignore -- plain .mjs tooling, no types
+import { startServer } from '../../scripts/serve-portable-http.mjs';
+import { enableTestMode } from './support/target';
+import { currentBuild, type AppDriver } from './support/app-driver';
+import { pre70Build } from './support/pre-70-build';
+
+// Milestone 70, 70A: "Characterize the mixed-version surfaces by kind ...
+// with a test that a record written by one version is read correctly by the
+// other." Production has no service worker, so nothing makes open tabs
+// update: after the merge deploys, one filer can have a tab on the old code
+// and a tab on the new code, on the same case, at once -- and a tab reloaded
+// into the new version keeps its own sessionStorage.
+//
+// Two versions are served from one origin here, the way production swaps
+// versions under one URL: /old/ is a pre-Milestone-70 build (default the 9/24
+// evening zip's commit, b28bf25; PG_MIXED_OLD_SHA re-pins it -- at the merge
+// gate, to the build production then runs) and /new/ is this tree. Browsers
+// share storage, BroadcastChannel and Web Locks per origin, so the two see
+// each other exactly as two production tabs would. Every check runs in both
+// directions and goes through each version's own code:
+//   localStorage    pg.termsAccepted (the terms screen), pg-theme-v1 (the
+//                   theme at load), pg-default-circuit (the Helpful Resources
+//                   circuit), pg-last-position (resuming the last filing and
+//                   page after opening a case), pg-tab-heartbeats-v1 (below);
+//   BroadcastChannel probate-guardian-tabs and the heartbeats: a tab with a
+//                   filing open makes the other version's tab warn, naming it;
+//   sessionStorage  pg-tab-warning-dismissed-v1: dismissed in one version,
+//                   still dismissed after the same tab reloads into the other;
+//   Web Locks       pg-ward-<id>: a filing open in one version is locked in
+//                   the other;
+//   IndexedDB       pg-launch-pref (the "opened a case before" flag) and
+//                   pg-session-cache (the recovery snapshot, decrypted by the
+//                   other version).
+// A last test records the exact shape of everything shared -- keys, value
+// shapes, database versions and stores, the tab message, the lock name --
+// for both versions in tests/baseline/ms70-shared-storage-golden.json, and
+// requires the two to be identical.
+//
+// Excluded, and why:
+//   - pg-launch-pref's remembered file handle (zipFileHandle): a real
+//     FileSystemFileHandle comes only from a user-driven picker, which a test
+//     cannot produce; the key itself is in the recorded shape of the store.
+//   - pg-offline-access-answered, pg-update-reload-pending-v1 and the
+//     service-worker caches (pg-shell-<version>, pg-offline-<version>): used
+//     only by the web build's src/pwa-ui.js and sw.js; production runs the
+//     portable build, which loads neither.
+//   - Process-local state, which versions never share: the court-template
+//     cache (_templateCache), the encryption key, module state.
+// The unlock-failure count travels in the .sav archive's app state and is
+// covered by tests/e2e/sav-corpus.characterization.spec.ts.
+//
+// Each tab is driven through its own build (70T): this tree through
+// GuardianForms.testing, the pre-70 build -- which has no GuardianForms --
+// through its own globals, confined to tests/e2e/support/pre-70-build.ts.
+//
+// Regenerate the golden only for a deliberate, recorded change:
+// PG_UPDATE_GOLDEN=1 npx playwright test tests/e2e/mixed-version.characterization.spec.ts
+
+const HERE = path.dirname(fileURLToPath(import.meta.url));
+const ROOT = path.join(HERE, '..', '..');
+const OLD_SHA = process.env.PG_MIXED_OLD_SHA || 'b28bf25';
+const PORT = 4337; // the milestone-70 branch's own (MILESTONE-70-FIX-LEDGER.md)
+const FIXTURE = path.join(ROOT, 'tests', 'fixtures', 'sav', '28-zip-0924b-plain.sav');
+const FIRST_FILING = 'Corpus Ward One';
+const GOLDEN = path.join(ROOT, 'tests', 'baseline', 'ms70-shared-storage-golden.json');
+const UPDATE = process.env.PG_UPDATE_GOLDEN === '1';
+type Version = 'old' | 'new';
+const DIRECTIONS: [Version, Version][] = [['old', 'new'], ['new', 'old']];
+
+let server: any;
+test.beforeAll(async () => {
+  server = await startServer({ port: PORT, mounts: [{ base: '/old/', dir: extract(OLD_SHA) }, { base: '/new/', dir: ROOT }] });
+});
+test.afterAll(async () => { await new Promise((resolve) => server.close(resolve)); });
+
+const url = (v: Version) => `http://localhost:${PORT}/${v}/index.html`;
+const pages = new WeakMap<Page, Version>();
+/** The driver for the build a tab is running. */
+const app = (page: Page): AppDriver => (pages.get(page) === 'old' ? pre70Build : currentBuild);
+
+async function openApp(page: Page, v: Version, { acceptTerms = true } = {}) {
+  pages.set(page, v);
+  if (v === 'new') await enableTestMode(page);
+  await page.addInitScript((accept) => {
+    delete (window as any).showSaveFilePicker;
+    delete (window as any).showOpenFilePicker;
+    if (accept) localStorage.setItem('pg.termsAccepted', '2026-09-15');
+  }, acceptTerms);
+  await page.goto(url(v), { waitUntil: 'networkidle' });
+}
+
+async function newTab(browser: Browser | null, context: any, v: Version, options = {}) {
+  const page: Page = await context.newPage();
+  await openApp(page, v, options);
+  return page;
+}
+
+async function freshCase(page: Page) {
+  await page.locator('#startup-choice-overlay.show').waitFor({ state: 'visible' });
+  await page.click('#startup-newcase-btn, #startup-newcase-link');
+  await page.locator('#security-choice-overlay.show').waitFor({ state: 'visible' });
+  await page.click('#security-choice-overlay [data-startup-action="select-security"][data-security-mode="none"]');
+  await page.locator('#security-choice-overlay').waitFor({ state: 'hidden' });
+}
+
+/**
+ * A brand-new case shows only the form picker; the theme button and the
+ * circuit picker are on the dashboard, which needs a filing. One Guardian
+ * Inventory with no county: the Helpful Resources circuit then falls back to
+ * the device default (pg-default-circuit), which a case file's own saved
+ * circuit would otherwise override.
+ */
+async function toDashboard(page: Page) {
+  await app(page).openAddFilingDialog(page, 'guardian');
+  await page.locator('#addWardModal.show').waitFor({ state: 'visible' });
+  await page.fill('#new-ward-name', 'Mixed Version Ward');
+  await page.click('#addWardModal [data-modal-action="add-ward"]');
+  await page.locator('#addWardModal').waitFor({ state: 'hidden' });
+  await app(page).navigate(page, '/dashboard');
+  await page.locator('#theme-toggle-btn').waitFor({ state: 'visible' });
+}
+
+async function openFixture(page: Page) {
+  await page.locator('#startup-choice-overlay.show').waitFor({ state: 'visible' });
+  await page.setInputFiles('#startup-open-input', FIXTURE);
+  await expect(page.locator('#startup-choice-overlay')).not.toHaveClass(/show/);
+  await expect.poll(async () => (await app(page).filings(page)).length).toBe(9);
+}
+
+const firstFilingId = async (page: Page) => (await app(page).filings(page)).find((w) => w.wardName === FIRST_FILING)!.wardId;
+const openFiling = (page: Page, id: string) => app(page).openFiling(page, id);
+
+for (const [writer, reader] of DIRECTIONS) {
+  test.describe(`${writer} tab writes, ${reader} tab reads`, () => {
+    test('terms accepted in one version are honored by the other', async ({ browser }) => {
+      const context = await browser.newContext();
+      const a = await newTab(browser, context, writer, { acceptTerms: false });
+      await a.locator('#pg-terms-overlay.show').waitFor({ state: 'visible' });
+      await a.check('#pg-terms-agree');
+      await a.click('#pg-terms-continue');
+      await expect(a.locator('#pg-terms-overlay')).not.toHaveClass(/show/);
+      const b = await newTab(browser, context, reader, { acceptTerms: false });
+      await b.locator('#startup-choice-overlay.show').waitFor({ state: 'visible' });
+      expect(await b.locator('#pg-terms-overlay.show').count(), 'no terms screen').toBe(0);
+      await context.close();
+    });
+
+    test('a theme picked in one version paints the other at load', async ({ browser }) => {
+      const context = await browser.newContext();
+      const a = await newTab(browser, context, writer);
+      await freshCase(a);
+      await toDashboard(a);
+      expect(await a.evaluate(() => document.documentElement.dataset.theme)).toBe('light');
+      await a.locator('#theme-toggle-btn').click();
+      await expect.poll(() => a.evaluate(() => document.documentElement.dataset.theme)).toBe('dark');
+      const b = await newTab(browser, context, reader);
+      expect(await b.evaluate(() => document.documentElement.dataset.theme), 'painted dark before anything ran').toBe('dark');
+      await context.close();
+    });
+
+    test('a circuit picked in one version is the other\'s default', async ({ browser }) => {
+      const context = await browser.newContext();
+      const a = await newTab(browser, context, writer);
+      await freshCase(a);
+      await toDashboard(a);
+      await a.locator('#sidebar-circuit-select').selectOption('13');
+      const b = await newTab(browser, context, reader);
+      await freshCase(b);
+      await toDashboard(b);
+      await expect(b.locator('#sidebar-circuit-select')).toHaveValue('13');
+      await context.close();
+    });
+
+    test('the other version resumes the filing and page the first was on', async ({ browser }) => {
+      const context = await browser.newContext();
+      const a = await newTab(browser, context, writer);
+      await openFixture(a);
+      const id = await firstFilingId(a);
+      expect(await openFiling(a, id)).not.toBe(false);
+      await app(a).navigate(a, '/print');
+      await a.close(); // releases the filing's lock -- asynchronously
+      const b = await newTab(browser, context, reader);
+      // What the first version left behind, as the second finds it.
+      expect(await b.evaluate(() => JSON.parse(localStorage.getItem('pg-last-position') || 'null')))
+        .toMatchObject({ route: '/print', wardId: id });
+      // Otherwise the resume can race the closed tab's lock release and land on
+      // the dashboard -- a real outcome, but not the one checked here.
+      await expect.poll(() => b.evaluate(async () => ((await navigator.locks.query()).held || []).filter((l) => String(l.name).startsWith('pg-ward-')).length)).toBe(0);
+      await openFixture(b);
+      await expect.poll(async () => [await app(b).activeFilingId(b), await b.evaluate(() => location.hash)]).toEqual([id, '#/print']);
+      await context.close();
+    });
+
+    test('a filing open in one version makes the other warn, and a dismissal survives a reload into the other version', async ({ browser }) => {
+      test.setTimeout(90_000);
+      const context = await browser.newContext();
+      const a = await newTab(browser, context, writer);
+      await openFixture(a);
+      expect(await openFiling(a, await firstFilingId(a))).not.toBe(false);
+      const b = await newTab(browser, context, reader);
+      const notice = b.locator('#tab-safety-notice');
+      await expect(notice).toBeVisible({ timeout: 15_000 });
+      await expect(notice.locator('.app-toast-title')).toHaveText('Another tab is active');
+      await expect(notice.locator('.app-toast-desc')).toContainText(`Other tab: ${FIRST_FILING}.`);
+      await notice.getByRole('button', { name: 'Continue here anyway' }).click();
+      await expect(notice).toBeHidden();
+      // The same tab, reloaded into the first tab's version: still dismissed.
+      await b.goto(url(writer), { waitUntil: 'networkidle' });
+      expect(await b.evaluate(() => sessionStorage.getItem('pg-tab-warning-dismissed-v1'))).toBe('1');
+      await b.waitForTimeout(9_000); // two heartbeats
+      await expect(b.locator('#tab-safety-notice')).toBeHidden();
+      await context.close();
+    });
+
+    test('a filing open in one version is locked in the other', async ({ browser }) => {
+      const context = await browser.newContext();
+      const a = await newTab(browser, context, writer);
+      await openFixture(a);
+      const id = await firstFilingId(a);
+      expect(await openFiling(a, id)).not.toBe(false);
+      const b = await newTab(browser, context, reader);
+      // Not resuming the first tab's position: the lock is what is checked here.
+      await b.evaluate(() => localStorage.removeItem('pg-last-position'));
+      await openFixture(b);
+      expect(await openFiling(b, id), 'refused').toBe(false);
+      await expect(b.locator('#ward-locked-overlay')).toHaveClass(/show/);
+      await context.close();
+    });
+
+    test('the "opened a case before" flag and the recovery snapshot are read by the other version', async ({ browser }) => {
+      const context = await browser.newContext();
+      const b = await newTab(browser, context, reader);
+      expect(await app(b).hasOpenedCaseBefore(b), 'control: not yet').toBe(false);
+      const a = await newTab(browser, context, writer);
+      await openFixture(a);
+      expect(await app(a).saveRecoverySnapshot(a)).toBe(true);
+      const names = (await app(a).filings(a)).map((w) => w.wardName);
+      expect(await app(b).hasOpenedCaseBefore(b)).toBe(true);
+      const snapshot = await app(b).readRecoverySnapshot(b);
+      // Milestone 70, 70I: the new version's snapshot also carries the case's
+      // circuit with the guardian (and the shared records beside it, which the
+      // old version's lock does not read); either version reads the other's.
+      const guardianKeys = writer === 'new' ? ['guardianEmail', 'guardianName', 'selectedCircuit'] : ['guardianEmail', 'guardianName'];
+      expect(snapshot).toEqual({ securityMode: 'none', wards: names, guardianKeys });
+      await context.close();
+    });
+  });
+}
+
+/**
+ * What the new version writes beyond the old one, each a deliberate, recorded
+ * change the old version reads past. Milestone 70, 70I: the recovery snapshot
+ * keeps the case's shared records -- people, cases, "not the same person"
+ * pairs, each an encrypted string -- so locking a case never saved to a file
+ * no longer loses them (its build record's findings).
+ */
+function withRecordedAdditions(shape: any) {
+  const out = JSON.parse(JSON.stringify(shape));
+  const cache = (out.indexedDB || []).find((db: any) => db.name === 'pg-session-cache');
+  const current = cache && cache.stores && cache.stores.snapshot && cache.stores.snapshot.current;
+  if (current) Object.assign(current, { cases: 'string', parties: 'string', partyDismissals: 'string' });
+  return out;
+}
+
+/** Keys and value shapes, not values: what another version must be able to read. */
+async function sharedStorageShape(page: Page) {
+  const activeId = await app(page).activeFilingId(page);
+  return page.evaluate(async (active) => {
+    const shape = (v: any): any => Array.isArray(v) ? [v.length ? shape(v[0]) : null]
+      : v && typeof v === 'object' ? Object.fromEntries(Object.keys(v).sort().map((k) => [k, shape(v[k])])) : typeof v;
+    const LITERAL = new Set(['pg.termsAccepted', 'pg-theme-v1', 'pg-default-circuit', 'pg-tab-warning-dismissed-v1']);
+    const store = (s: Storage) => Object.fromEntries(Object.keys(s).filter((k) => k.startsWith('pg')).sort().map((k) => {
+      const raw = s.getItem(k) as string;
+      if (LITERAL.has(k)) return [k, raw];
+      try { return [k, shape(JSON.parse(raw))]; } catch { return [k, 'string']; }
+    }));
+    const databases = [];
+    for (const info of (await indexedDB.databases()).filter((d) => d.name && d.name.startsWith('pg-')).sort((x, y) => String(x.name).localeCompare(String(y.name)))) {
+      const db: IDBDatabase = await new Promise((resolve, reject) => { const r = indexedDB.open(info.name as string); r.onsuccess = () => resolve(r.result); r.onerror = () => reject(r.error); });
+      const stores: Record<string, unknown> = {};
+      for (const name of [...db.objectStoreNames].sort()) {
+        const entries: [IDBValidKey[], unknown[]] = await new Promise((resolve) => {
+          const os = db.transaction(name, 'readonly').objectStore(name);
+          const keys = os.getAllKeys();
+          keys.onsuccess = () => { const vals = os.getAll(); vals.onsuccess = () => resolve([keys.result, vals.result]); };
+        });
+        stores[name] = Object.fromEntries(entries[0].map((k, i) => [String(k), shape(entries[1][i])]).sort(([p], [q]) => p.localeCompare(q)));
+      }
+      databases.push({ name: info.name, version: db.version, stores });
+      db.close();
+    }
+    const held = ((await navigator.locks.query()).held || []).map((l: any) => String(l.name).replace(String(active), '<filing id>')).sort();
+    return { localStorage: store(localStorage), sessionStorage: store(sessionStorage), indexedDB: databases, webLocksHeld: held, tabMessage: (window as any).__tabMessageShape || null };
+  }, activeId);
+}
+
+test('both versions write the same shape into everything they share', async ({ browser }) => {
+  test.setTimeout(120_000);
+  const shapes: Record<string, unknown> = {};
+  for (const v of ['old', 'new'] as Version[]) {
+    const context = await browser.newContext();
+    // An observer on the same origin -- a blank not-found page, so it does not
+    // join in as a tab itself -- records the shape of the tab message the
+    // session tab broadcasts.
+    const observer = await context.newPage();
+    await observer.goto(`http://localhost:${PORT}/${v}/__observer__`);
+    await observer.evaluate(() => {
+      const shape = (x: any): any => Array.isArray(x) ? [x.length ? shape(x[0]) : null]
+        : x && typeof x === 'object' ? Object.fromEntries(Object.keys(x).sort().map((k) => [k, shape(x[k])])) : typeof x;
+      const channel = new BroadcastChannel('probate-guardian-tabs');
+      (window as any).__seen = [];
+      channel.onmessage = (e) => { if (e.data && e.data.hasActiveCase) (window as any).__seen.push(shape(e.data)); };
+    });
+    const page = await newTab(browser, context, v, { acceptTerms: false });
+    await page.locator('#pg-terms-overlay.show').waitFor({ state: 'visible' });
+    await page.check('#pg-terms-agree');
+    await page.click('#pg-terms-continue');
+    await openFixture(page);
+    await page.locator('#sidebar-circuit-select').selectOption('13');
+    await page.locator('#theme-toggle-btn').click();
+    expect(await openFiling(page, await firstFilingId(page))).not.toBe(false);
+    await app(page).navigate(page, '/print');
+    expect(await app(page).saveRecoverySnapshot(page)).toBe(true);
+    await expect.poll(() => observer.evaluate(() => (window as any).__seen.length), { timeout: 15_000 }).toBeGreaterThan(0);
+    const tabMessage = await observer.evaluate(() => (window as any).__seen[(window as any).__seen.length - 1]);
+    await page.evaluate((m) => { (window as any).__tabMessageShape = m; }, tabMessage);
+    shapes[v] = await sharedStorageShape(page);
+    await context.close();
+  }
+  expect(shapes.new, 'the new version writes what the old one does, plus the additions recorded below').toEqual(withRecordedAdditions(shapes.old));
+
+  const record = { note: '', oldVersion: OLD_SHA, shape: shapes.old };
+  const golden = fs.existsSync(GOLDEN) ? JSON.parse(fs.readFileSync(GOLDEN, 'utf8')) : null;
+  if (UPDATE) {
+    record.note = 'Milestone 70, 70A: the shape of everything two versions of Guardian Forms share in one browser (localStorage, sessionStorage, IndexedDB, the tab message, the filing lock name), written by tests/e2e/mixed-version.characterization.spec.ts; both versions must match it. Regenerate only for a deliberate, recorded change.';
+    fs.writeFileSync(GOLDEN, JSON.stringify(record, null, 1) + '\n');
+  }
+  expect(shapes.old, 'the old version against the golden').toEqual((golden || record).shape);
+  expect(shapes.new, 'the new version against the golden, plus the additions recorded below').toEqual(withRecordedAdditions((golden || record).shape));
+});

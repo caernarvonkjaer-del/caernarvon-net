@@ -1,4 +1,5 @@
-import { describe, expect, test, beforeEach } from 'vitest';
+import { describe, expect, test } from 'vitest';
+import { openFiling } from './support/open-filing.js';
 
 // Milestone 61D. The Simplified Annual Plan's court original ends with two
 // blocks the app never reproduced anywhere: where to file the original (a
@@ -14,7 +15,10 @@ import { describe, expect, test, beforeEach } from 'vitest';
 // named on that form serve the Sixth Circuit, and AGENTS.md's authority
 // hierarchy forbids presenting circuit-specific procedure as statewide.
 
-const { HELP_CONTENT } = await import('../../src/features/help/help-content.js');
+// The Help text reads the open filing's county only in a browser (it checks
+// that `window` exists); an empty one serves -- the filing is the store's.
+globalThis.window = globalThis.window || {};
+const { HELP_CONTENT } = await import('../../src/core/help/help-content.js');
 
 const render = (key) => {
   const entry = HELP_CONTENT[key];
@@ -22,12 +26,9 @@ const render = (key) => {
 };
 
 describe('Milestone 61D: Simplified Plan filing guidance lives in Help', () => {
-  beforeEach(() => {
-    global.window = { ...(global.window || {}), D: {} };
-  });
 
   test('a Pinellas filing is told where the original goes and who to ask', () => {
-    global.window.D = { county: 'Pinellas' };
+    openFiling({ county: 'Pinellas' });
     const html = render('plan-simplified');
     expect(html).toMatch(/Where to File/i);
     expect(html).toMatch(/Clerk of the Circuit Court/i);
@@ -35,12 +36,12 @@ describe('Milestone 61D: Simplified Plan filing guidance lives in Help', () => {
   });
 
   test('a Pasco filing gets the same section', () => {
-    global.window.D = { county: 'Pasco' };
+    openFiling({ county: 'Pasco' });
     expect(render('plan-simplified')).toMatch(/Where to File/i);
   });
 
   test('a filing outside the Sixth Circuit is not given its local procedure', () => {
-    global.window.D = { county: 'Hillsborough' };
+    openFiling({ county: 'Hillsborough' });
     const html = render('plan-simplified');
     expect(html).not.toMatch(/Where to File/i);
     // The rest of the guide still renders -- only the circuit-specific block
@@ -52,7 +53,7 @@ describe('Milestone 61D: Simplified Plan filing guidance lives in Help', () => {
   // transcribed phone number or street address in this file is the failure
   // mode this guards: it looks authoritative and silently goes stale.
   test('no clerk phone numbers or street addresses are transcribed', () => {
-    global.window.D = { county: 'Pinellas' };
+    openFiling({ county: 'Pinellas' });
     const html = render('plan-simplified');
     expect(html).not.toMatch(/\(727\)\s?\d{3}-\d{4}/);
     expect(html).not.toMatch(/315 Court Street/i);

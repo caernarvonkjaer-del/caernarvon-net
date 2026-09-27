@@ -12,7 +12,7 @@ import { createWard, freshStartNoPassword } from './support/target';
 test('Plan Initial: directive cards are created on check, hidden (not deleted) on uncheck, and Add/Remove work', async ({ page }) => {
   await freshStartNoPassword(page);
   await createWard(page, 'Initial Directive Ward', 'planInitial');
-  await page.evaluate(() => (window as any).navigate('/p8'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/p8'));
 
   const executedCheckbox = page.locator('#q11Executed');
   const cards = page.locator('.schedule-entry-grid > .col-12 > .entry-card');
@@ -37,7 +37,7 @@ test('Plan Initial: directive cards are created on check, hidden (not deleted) o
   await executedCheckbox.uncheck();
   await expect(cards).toHaveCount(0);
   await expect(typeCheckbox).toHaveCount(0);
-  await expect(await page.evaluate(() => (window as any).D.q11Directives[0].title)).toBe('Healthcare Surrogate');
+  await expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('q11Directives.0.title'))).toBe('Healthcare Surrogate');
 
   // Recheck: the same populated record reappears rather than a fresh blank
   // one, and checking again does not add a second blank card on top of it.
@@ -59,7 +59,7 @@ test('Plan Initial: directive cards are created on check, hidden (not deleted) o
 test('Plan Annual: directive collection starts empty and checking the box creates one card', async ({ page }) => {
   await freshStartNoPassword(page);
   await createWard(page, 'Annual Directive Ward', 'planAnnual');
-  await page.evaluate(() => (window as any).navigate('/p9'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/p9'));
 
   const executedCheckbox = page.locator('#q10Executed');
   const cards = page.locator('.schedule-entry-grid > .col-12 > .entry-card');

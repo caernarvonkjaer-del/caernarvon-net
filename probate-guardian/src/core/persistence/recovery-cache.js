@@ -4,8 +4,8 @@
 //    autosave. Its only remaining job is same-tab auto-lock recovery: when
 //    lockApp() wipes decrypted state from memory and the case has never
 //    been saved to a .sav file yet (so there is no file to reload from),
-//    legacy-app.js's own lockApp() reads this cache back after the
-//    password is re-entered. A successful .sav write makes it redundant --
+//    lockApp() (src/core/security/app-lock.js) reads this cache back after
+//    the password is re-entered. A successful .sav write makes it redundant --
 //    the file is now the source of truth -- so callers clear it once one
 //    lands. It must never be offered as a cross-session restore: that was
 //    Milestone 57H's "durable encrypted session restore", which kept a full
@@ -19,7 +19,7 @@
 //    unlike the cache above, it is fine for it to survive indefinitely and
 //    across sessions. Reopening a case (silent handle reconnect or a plain
 //    "Open Case File") already reloads real data from the actual .sav file;
-//    this marker only decides where initApp() lands the filer afterward,
+//    this marker only decides where startup lands the filer afterward,
 //    instead of always dropping them on the dashboard.
 import { encryptJSON, getSecurityMode, getCryptoKey } from './crypto.js';
 import { openIndexedDbStore } from './launch-preferences.js';
@@ -70,10 +70,21 @@ export async function _sessionCacheClear() {
   }
 }
 
-// Stores only what lockApp() actually reads back (see the file header):
-// each ward and the guardian name/email. Nothing else lockApp() doesn't
-// consume -- parties/cases/dismissedPartyPairs/salt/verifier were only ever
-// read by the cross-session restore flow this module no longer has.
+// Stores what lockApp() reads back (see the file header): each filing; the
+// guardian's name and email, with the circuit chosen for the case; and the
+// shared records -- people, cases and "not the same person" decisions. Until
+// Milestone 70's 70I the snapshot held only the filings and the guardian, so
+// locking a case never saved to a file lost its shared records and circuit
+// (the filings came back; the People page came back empty). A snapshot
+// written before then restores as it always did. Salt and verifier are not
+// stored: the same password derives the same key.
+// When this page last wrote the snapshot (its savedAt), or null. The store has
+// one slot, shared by every tab of this origin and left behind by a session
+// that closed unsaved; a lock restores only the snapshot this page wrote
+// (Milestone 70, 70I). Before, a lock could restore a snapshot another tab,
+// or an earlier session, had written -- another case's filings.
+let ownSnapshotSavedAt = null;
+
 export async function saveSessionRestoreCache() {
   const securityMode = getSecurityMode();
   const cryptoKey = getCryptoKey();
@@ -86,8 +97,17 @@ export async function saveSessionRestoreCache() {
     for (const ward of caseFile.wards) {
       wards.push({ wardId: ward.wardId, enc: await encryptJSON(ward) });
     }
-    const guardian = await encryptJSON({ guardianName: caseFile.guardianName, guardianEmail: caseFile.guardianEmail });
-    await _sessionCachePut({ savedAt: Date.now(), securityMode, guardian, wards });
+    const guardian = await encryptJSON({
+      guardianName: caseFile.guardianName,
+      guardianEmail: caseFile.guardianEmail,
+      selectedCircuit: caseFile.selectedCircuit ?? null,
+    });
+    const parties = await encryptJSON(caseFile.parties || []);
+    const cases = await encryptJSON(caseFile.cases || []);
+    const partyDismissals = await encryptJSON(caseFile.dismissedPartyPairs || []);
+    const savedAt = Date.now();
+    await _sessionCachePut({ savedAt, securityMode, guardian, wards, parties, cases, partyDismissals });
+    ownSnapshotSavedAt = savedAt;
     return true;
   } catch (e) {
     console.warn('session-restore cache write failed', e);
@@ -96,7 +116,15 @@ export async function saveSessionRestoreCache() {
 }
 
 export async function clearSessionRestoreCache() {
+  ownSnapshotSavedAt = null;
   await _sessionCacheClear();
+}
+
+/** The snapshot this page wrote last, or null: what a lock restores (app-lock.js). */
+export async function readOwnSessionRestoreCache() {
+  if (ownSnapshotSavedAt === null) return null;
+  const cache = await _sessionCacheGet();
+  return cache && cache.savedAt === ownSnapshotSavedAt ? cache : null;
 }
 
 export const LAST_POSITION_KEY = 'pg-last-position';
@@ -128,12 +156,4 @@ export function clearLastPosition() {
   } catch (e) {
     /* non-critical */
   }
-}
-
-// Global bridge for legacy scripts and test harnesses
-if (typeof window !== 'undefined') {
-  window.saveSessionRestoreCache = saveSessionRestoreCache;
-  window.clearSessionRestoreCache = clearSessionRestoreCache;
-  window.loadLastPosition = loadLastPosition;
-  window.clearLastPosition = clearLastPosition;
 }

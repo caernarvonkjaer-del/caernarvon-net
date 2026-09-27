@@ -32,11 +32,11 @@ test.describe('Guardian Inventory tri-state radios are correctly wired to their 
     let currentRoute = '';
     for (const f of fields) {
       if (f.route !== currentRoute) {
-        await page.evaluate((route) => (window as any).navigate(route), f.route);
+        await page.evaluate((route) => (window as any).GuardianForms.testing.navigate(route), f.route);
         currentRoute = f.route;
       }
       if (f.schedule) {
-        await page.evaluate((schedule) => (window as any).addEntry(schedule), f.schedule);
+        await page.evaluate((schedule) => (window as any).GuardianForms.testing.createFiling.addRow(schedule), f.schedule);
         await dismissScheduleDocPrompt(page); // Milestone 57C-R advisory modal
       }
 
@@ -47,7 +47,7 @@ test.describe('Guardian Inventory tri-state radios are correctly wired to their 
 
       await fieldset.locator('input[type="radio"][value="Yes"]').check();
       const written = await page.evaluate((path) => {
-        return path.split('.').reduce((obj: any, key: string) => obj?.[key], (window as any).D);
+        return (window as any).GuardianForms.testing.field(path);
       }, f.path);
       expect(written, `${f.path} did not write "Yes" after checking its Yes radio`).toBe('Yes');
     }
@@ -56,7 +56,7 @@ test.describe('Guardian Inventory tri-state radios are correctly wired to their 
   test('D-3 keeps the filed answer while hidden by an explicit No and restores it on Yes', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Safe Deposit Ward', 'guardian');
-    await page.evaluate(() => (window as any).navigate('/d3'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/d3'));
 
     const parent = page.locator('fieldset[data-yes-no-group="hasSafeDepositBox"]');
     await parent.locator('input[value="Yes"]').check();
@@ -66,7 +66,7 @@ test.describe('Guardian Inventory tri-state radios are correctly wired to their 
 
     await parent.locator('input[value="No"]').check();
     await expect(child).toBeHidden();
-    expect(await page.evaluate(() => (window as any).D.safeDepositBoxFiled)).toBe('Yes');
+    expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('safeDepositBoxFiled'))).toBe('Yes');
 
     await parent.locator('input[value="Yes"]').check();
     await expect(child).toBeVisible();

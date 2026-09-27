@@ -1,5 +1,6 @@
 import { describe, expect, test, vi } from 'vitest';
-import { withOverrides, autoById, createPlanTestWindowStub } from './support/plan-readiness-parity.js';
+import { withOverrides, autoById } from './support/plan-readiness-parity.js';
+import { openFiling } from './support/open-filing.js';
 
 // Milestone 37-3 (see MILESTONE-37-PROPOSAL.md): fixture-based proof that
 // Plan Simplified's readiness checklist (planReadinessChecksSimplified()'s
@@ -12,7 +13,9 @@ import { withOverrides, autoById, createPlanTestWindowStub } from './support/pla
 // never invoked by planReadinessChecksSimplified() or the validation path
 // under test. validatePlanSimplified(), prepareFilingOutput(),
 // getSupplementalFilingIssues(), and county-guidance.js all run for real.
-global.window = { ...createPlanTestWindowStub(), ...(global.window || {}) };
+// Some modules these import touch `window` at import time; none reads an
+// application global from it (Milestone 70, 70K), so an empty one serves.
+globalThis.window = globalThis.window || {};
 
 vi.mock('../../src/features/plan-simplified/pdf-model.js', () => ({ buildPlanSimplifiedModel: vi.fn() }));
 vi.mock('../../src/core/pdf/pdf-engine.js', () => ({ generateCourtFormPdf: vi.fn() }));
@@ -31,12 +34,12 @@ const { getSupplementalFilingIssues } = await import('../../src/core/pdf/supplem
 // Mirrors pagePrintPlanSimplified()'s own preflight call exactly (print.js),
 // so this suite proves the real export-blocking path, not a stand-in for it.
 function runPreflight(d) {
-  window.D = d;
+  openFiling(d);
   return prepareFilingOutput(d, () => [...validatePlanSimplified(), ...getSupplementalFilingIssues(d)]);
 }
 
 function readiness(d) {
-  window.D = d;
+  openFiling(d);
   return { auto: getFilingReadiness('planSimplified', d).automatic };
 }
 

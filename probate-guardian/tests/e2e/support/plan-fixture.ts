@@ -41,7 +41,7 @@ export function registerPlanMountTests(config: PlanMountConfig) {
       await makeFiling(page, `${featureName} Nav Test Ward`);
 
       for (const route of routes) {
-        await page.evaluate((r) => (window as any).navigate(r), route);
+        await page.evaluate((r) => (window as any).GuardianForms.testing.navigate(r), route);
         await expect(page.locator('#main-content')).not.toBeEmpty();
       }
 
@@ -51,7 +51,7 @@ export function registerPlanMountTests(config: PlanMountConfig) {
     test('an incomplete filing is blocked from export with a clear error', async ({ page }) => {
       await freshStartNoPassword(page);
       await makeFiling(page, `Incomplete ${featureName} Ward`);
-      await page.evaluate(() => (window as any).navigate('/print'));
+      await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
 
       // Milestone 50G: the export-blocked alert is now an awaitable
       // alertModal() DOM dialog -- but some triggerBlockedExport configs
@@ -72,7 +72,7 @@ export function registerPlanMountTests(config: PlanMountConfig) {
       await freshStartNoPassword(page);
       await makeFiling(page, `Complete ${featureName} PDF Ward`);
       await fillValidWard(page);
-      await page.evaluate(() => (window as any).navigate('/print'));
+      await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
 
       const downloadPromise = page.waitForEvent('download', { timeout: 20_000 });
       await triggerExport(page);
@@ -97,15 +97,14 @@ export function registerPlanMountTests(config: PlanMountConfig) {
       await createWard(page, 'Other Cycle Ward', 'guardian');
       if (waitForReady) await waitForReady(page);
 
-      // @ts-expect-error - caseFile is a page-global from legacy-app.js, not declared in this file
-      const wards = await page.evaluate(() => caseFile.wards.map((w: any) => ({ id: w.wardId, type: w.inventoryType })));
+      const wards = await page.evaluate(() => (window as any).GuardianForms.testing.snapshot().caseFile.wards.map((w: any) => ({ id: w.wardId, type: w.inventoryType })));
       const filingId = wards.find((w: any) => w.type === filingType).id;
       const guardianId = wards.find((w: any) => w.type === 'guardian').id;
 
       for (let i = 0; i < 15; i++) {
-        await page.evaluate((id) => (window as any).switchWard(id), filingId);
-        await page.evaluate((r) => (window as any).navigate(r), '/p2');
-        await page.evaluate((id) => (window as any).switchWard(id), guardianId);
+        await page.evaluate((id) => (window as any).GuardianForms.testing.activateFiling.open(id), filingId);
+        await page.evaluate((r) => (window as any).GuardianForms.testing.navigate(r), '/p2');
+        await page.evaluate((id) => (window as any).GuardianForms.testing.activateFiling.open(id), guardianId);
       }
 
       const mainContentCount = await page.locator('#main-content').count();
@@ -119,14 +118,14 @@ export function registerPlanMountTests(config: PlanMountConfig) {
       await freshStartNoPassword(page);
       await makeFiling(page, `Nav Parity ${featureName} Ward`);
 
-      await page.evaluate(() => (window as any).navigate('/summary'));
+      await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/summary'));
       for (const r of await crossCheckNavAndSummaryStatus(page, navChecks)) {
         expect(r.summaryComplete, `${r.route} (blank filing)`).toBe(r.expectComplete);
         expect(r.summaryComplete, `${r.route} (blank filing)`).toBe(r.sidebarComplete);
       }
 
       await fillValidWard(page);
-      await page.evaluate(() => (window as any).navigate('/summary'));
+      await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/summary'));
       for (const r of await crossCheckNavAndSummaryStatus(page, navChecks)) {
         expect(r.summaryComplete, `${r.route} (fully filled)`).toBe(r.expectComplete);
         expect(r.summaryComplete, `${r.route} (fully filled)`).toBe(r.sidebarComplete);

@@ -1,5 +1,6 @@
 import { describe, expect, test, vi } from 'vitest';
-import { withOverrides, autoById, createPlanTestWindowStub } from './support/plan-readiness-parity.js';
+import { withOverrides, autoById } from './support/plan-readiness-parity.js';
+import { openFiling } from './support/open-filing.js';
 
 // Milestone 37-3 (see MILESTONE-37-PROPOSAL.md): fixture-based proof that
 // Plan Initial's readiness checklist agrees with the actual export-blocking
@@ -11,7 +12,9 @@ import { withOverrides, autoById, createPlanTestWindowStub } from './support/pla
 // Simplified pilot demonstrated a sample of -- 19 conditions here already
 // means 30 primary fixtures; adding every conditional sub-case would roughly
 // double that for marginal proof value beyond what the pilot established.
-global.window = { ...createPlanTestWindowStub(), ...(global.window || {}) };
+// Some modules these import touch `window` at import time; none reads an
+// application global from it (Milestone 70, 70K), so an empty one serves.
+globalThis.window = globalThis.window || {};
 
 vi.mock('../../src/features/plan-initial/pdf-model.js', () => ({ buildPlanInitialModel: vi.fn() }));
 vi.mock('../../src/core/pdf/pdf-engine.js', () => ({ generateCourtFormPdf: vi.fn() }));
@@ -28,12 +31,12 @@ const { prepareFilingOutput } = await import('../../src/core/filing/output-prefl
 const { getSupplementalFilingIssues } = await import('../../src/core/pdf/supplemental-pdf.js');
 
 function runPreflight(d) {
-  window.D = d;
+  openFiling(d);
   return prepareFilingOutput(d, () => [...validatePlanInitial(), ...getSupplementalFilingIssues(d)]);
 }
 
 function readiness(d) {
-  window.D = d;
+  openFiling(d);
   return { auto: getFilingReadiness('planInitial', d).automatic };
 }
 

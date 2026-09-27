@@ -32,7 +32,7 @@ function expectedBlocks() {
 
 async function actualBlocksFromTemplate() {
   const js = readFileSync(TEMPLATE_JS, 'utf8');
-  const b64 = /annual="([A-Za-z0-9+/=]+)"/.exec(js)[1];
+  const b64 = /export default "([A-Za-z0-9+/=]+)"/.exec(js)[1];
   const zip = await JSZip.loadAsync(Buffer.from(b64, 'base64'));
   const wb = await zip.file('xl/workbook.xml').async('string');
   const rels = await zip.file('xl/_rels/workbook.xml.rels').async('string');

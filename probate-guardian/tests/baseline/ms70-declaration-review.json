@@ -1,0 +1,1553 @@
+{
+ "note": "Milestone 70, 70A: the delivery owner's review of tests/baseline/ms70-declaration-dispositions.json. The draft places each declaration by the monolith section it sits in; the review found that rule wrong for 94 declarations (sections whose banner no longer describes what is under them) and one disposition (_visitedPages, dead). scripts/ms70-declaration-dispositions.mjs applies these overrides and marks a declaration reviewed only while its disposition and delivery still match what is recorded here, so a declaration that appears later starts unreviewed and fails tests/unit/ms70-declaration-dispositions.spec.js.",
+ "reviewedBy": "Claude (Milestone 70 delivery owner)",
+ "reviewedOn": "2026-09-24",
+ "method": "Every section's declarations were read against the plan's delivery scopes (MILESTONE-70-PROPOSAL.md, 'Delivery map'); every delete-as-dead and test-only candidate was searched for by name across src, index.html, fragments, help and tests, markup and window reads included; each duplicate keeps its duplicateOf module as the canonical home.",
+ "why": {
+  "state-owner": "The case-state root. 70E adopts a store seam while this stays the owner; the declaration goes when the module store becomes the sole owner (70J), not with the section it happens to sit in.",
+  "router-state": "Navigation state the router owns (src/core/navigation/router.js reads and writes it); moves with the router in 70K.",
+  "persistence": "Save, auto-save, export-dirty tracking, template loading or the continue prompt -- persistence and startup (70I), not the section it sits in.",
+  "store-seam": "An accessor modules call to read case state: exactly what 70E's store seam replaces.",
+  "shell": "Sidebar, header, picker or tab-coordination UI -- a shell controller (70H). The router banner above it is historical: the router itself moved to src/core/navigation/router.js.",
+  "registry": "Filing-type registry data, a blank factory or a normalizer: 70C's scope (normalizeWardData is the .sav-load normalizer).",
+  "pure": "A pure calculation or formatter with no DOM or state: 70B.",
+  "form-runtime": "Form-field markup, field helpers or collection add/remove actions -- the shared form runtime (70F). They sit in the feature-bridge sections only because they were left behind when each feature was extracted.",
+  "bridge": "A feature bridge like the other seven, which move together in 70K; the Simplified one sits in the Guardian wizard's section by accident.",
+  "dead-visited": "Dead on both sides: a `let` is never a window property, so the three module references (router.js add, ward-lifecycle.js clear x2) read window._visitedPages as undefined and never run, and the monolith never reads it. Delete it and those three references together in 70E.",
+  "writes-classic-state": "Assigns the monolith's own `let activeInventoryType` (and updates the sidebar and saves), which no module can do while that binding lives in the classic script; it moves when the binding does (70J). Its pure half is already src/core/filing/filing-descriptor.js's applyAccountingFilingType().",
+  "completion-data": "The Initial Inventory's eleven schedule route keys, which the completion evaluators read; a model constant, it moved to src/core/filing/models/guardian.js with them.",
+  "nav-dom": "Applies the completion map to the page -- the sidebar marks, section collapse, the Next button -- which the plan gives 70F's form runtime ('nav-dot updates, section collapse'), with applyNavSectionCollapse() and renderProgressSummary() that it calls. 70D moved the rules these read; they reach them through the monolith's computeNavChecks() dispatcher until then.",
+  "dispatcher": "A one-line dispatcher that nothing in the monolith calls any more, kept because the dashboard still captures it off window (with getWardHeadlineTotal(), 70K). The evaluator it forwards to needs the Initial Inventory's validator, which exists only once that feature has loaded, and errorRoute() (70F): the monolith hands both in until 70K's feature context can. The plan allows the old function as a delegating dispatcher meanwhile; it goes when the dashboard's read does.",
+  "filing-workflow": "The Add Form, Simplified Accounting eligibility and Delete Form dialogs and their handlers: creating a filing (what it carries over, the case it joins), the eligibility questions that choose Simplified or Annual, and deleting one -- the workflow 70G moves (the plan names eligibility, and its gate needs creation and deletion to go through the filing lifecycle service), not the modal plumbing their section is named for. That (showModal(), closeModal(), ensureFragment(), the ward-name combobox) stays for 70H.",
+  "store-forwarder": "A one-line forwarder onto the case store or a module's totals, through src/legacy-bridge.js: since 70J the module store owns the case, so the monolith's remaining readers of the open filing, its type or a filing's Inventory totals reach them this way. It goes with those readers."
+ },
+ "overrides": {},
+ "notes": {},
+ "confirmed": {},
+ "landed": {
+  "70B": {
+   "note": "Gone from src/legacy-app.js in 70B. Each keeps the placement the review confirmed (was). Moved into modules: the 70B build record in MILESTONE-70-PROPOSAL.md names each destination; circuitCourtCaption, hasSixthCircuitLocalGuidance, showRenameWardModal and doRenameWard were deleted as unreachable. Names that still appear in the draft as disposition wrapper moved too; only their one-line wrapper is left.",
+   "entries": {
+    "CIRCUIT_ORDINALS": {
+     "was": "move 70B"
+    },
+    "EXCEL_IMPORT_LIMITS": {
+     "was": "move 70B"
+    },
+    "FL_COUNTIES": {
+     "was": "move 70B"
+    },
+    "FL_COUNTY_CIRCUIT": {
+     "was": "move 70B"
+    },
+    "GUARDIAN_CALC_METHODS": {
+     "was": "move 70B"
+    },
+    "ICONS": {
+     "was": "move 70B"
+    },
+    "IMPORT_SIZE_LIMITS": {
+     "was": "move 70B"
+    },
+    "MISSING_COUNTY_CAPTION_HTML": {
+     "was": "move 70B"
+    },
+    "ZIP_MAGIC": {
+     "was": "move 70B"
+    },
+    "assertWorkbookWithinLimits": {
+     "was": "move 70B"
+    },
+    "capitalizeImportedFields": {
+     "was": "move 70B"
+    },
+    "circuitCourtCaption": {
+     "was": "test-only 70B",
+     "note": "test-only confirmed: only tests/e2e/cover-county.spec.ts reads it (through window)."
+    },
+    "circuitForCounty": {
+     "was": "move 70B"
+    },
+    "detectPathTraversal": {
+     "was": "move 70B"
+    },
+    "detectXSSPayload": {
+     "was": "move 70B"
+    },
+    "doRenameWard": {
+     "was": "move 70H"
+    },
+    "getImportProgressEl": {
+     "was": "move 70B"
+    },
+    "hasSixthCircuitLocalGuidance": {
+     "was": "delete-as-dead 70B",
+     "note": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24)."
+    },
+    "r2": {
+     "was": "move 70B"
+    },
+    "sanitizeDecimal": {
+     "was": "move 70B"
+    },
+    "sanitizeForExcel": {
+     "was": "move 70B"
+    },
+    "sanitizeInput": {
+     "was": "move 70B"
+    },
+    "sanitizeObjectDataInPlace": {
+     "was": "move 70B"
+    },
+    "showRenameWardModal": {
+     "was": "move 70H"
+    },
+    "validateSecurityInput": {
+     "was": "move 70B"
+    }
+   }
+  },
+  "70C": {
+   "note": "Gone from src/legacy-app.js in 70C: the filing registry (src/core/filing/filing-registry.js), the per-engine models (src/core/filing/models/), the normalizer (src/core/filing/normalize-filing.js) and the blank-card table (src/core/form/prune-cards.js). The page lists (PAGES and PAGES_*) were placed in 70K by their section (INIT), but they are the registry's route metadata, so 70C took them. BLANK_CARD_COLLECTIONS was dead (prune-cards.js keeps its own, diverged, table). Names that still appear in the draft as disposition wrapper moved too; only their one-line wrapper is left.",
+   "entries": {
+    "ANNUAL_FORM_ALIASES": {
+     "was": "move 70C"
+    },
+    "BLANK_CARD_COLLECTIONS": {
+     "was": "delete-as-dead 70C",
+     "note": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24)."
+    },
+    "BLANK_SCHEDULE_ENTRY": {
+     "was": "move 70C",
+     "note": "Published on window on master in b28bf25; a re-implement row in MILESTONE-70-FIX-LEDGER.md."
+    },
+    "INITIAL_ADLS": {
+     "was": "move 70C"
+    },
+    "INITIAL_ADL_RATINGS": {
+     "was": "move 70C"
+    },
+    "INVENTORY_TYPES": {
+     "was": "move 70C"
+    },
+    "PAGES": {
+     "was": "move 70K"
+    },
+    "PAGES_ANNUAL": {
+     "was": "move 70K"
+    },
+    "PAGES_GUARDIAN": {
+     "was": "move 70C"
+    },
+    "PAGES_PLAN_ANNUAL": {
+     "was": "move 70K"
+    },
+    "PAGES_PLAN_INITIAL": {
+     "was": "move 70K"
+    },
+    "PAGES_PLAN_MINOR": {
+     "was": "move 70K"
+    },
+    "PAGES_PLAN_SIMPLIFIED": {
+     "was": "move 70K"
+    },
+    "PAGES_SIMPLIFIED": {
+     "was": "move 70K"
+    },
+    "PLAN_ADLS": {
+     "was": "move 70C"
+    },
+    "PLAN_ADL_RATINGS": {
+     "was": "move 70C"
+    },
+    "PLAN_BENEFITS": {
+     "was": "move 70C"
+    },
+    "PLAN_RIGHTS": {
+     "was": "move 70C"
+    },
+    "PLAN_RIGHT_STATES": {
+     "was": "move 70C"
+    },
+    "emptyDataGuardian": {
+     "was": "move 70C"
+    },
+    "emptyMinorGuardianSig": {
+     "was": "move 70C"
+    },
+    "emptyPlanDirective": {
+     "was": "move 70C"
+    },
+    "mk": {
+     "was": "move 70C"
+    },
+    "planRightLabel": {
+     "was": "move 70C"
+    },
+    "INVENTORY_TYPE_META": {
+     "was": "move 70C (override: registry)"
+    },
+    "normalizeWardData": {
+     "was": "move 70C (override: registry)"
+    }
+   }
+  },
+  "70D": {
+   "note": "Gone from src/legacy-app.js in 70D: computeNavChecks()'s seven branches, now one evaluator per engine in src/core/status/completion.js that the registry (src/core/filing/filing-registry.js) hangs on each filing identity and dispatches to (computeCompletion(), filingProgress()), and SCHEDULE_NAV_KEYS, now in src/core/filing/models/guardian.js. computeNavChecks() and getWardProgress() remain as one-line wrappers that hand the evaluators the open filing and what they cannot import yet; getWardProgress() no longer points window.D at the filing it measures. Two more went because their last caller did: guardianHasAnyData()'s one-line wrapper and validate().",
+   "entries": {
+    "SCHEDULE_NAV_KEYS": {
+     "was": "move 70D (override: completion-data)"
+    },
+    "guardianHasAnyData": {
+     "was": "move 70B",
+     "note": "The monolith's one-line wrapper: its last caller was computeNavChecks(); the evaluators import the rule."
+    },
+    "validate": {
+     "was": "move 70F",
+     "note": "Its only caller was computeNavChecks()'s Initial Inventory branch; the evaluator is handed the Inventory's validator instead. Deleted as dead."
+    }
+   }
+  },
+  "70E": {
+   "note": "Gone from src/legacy-app.js in 70E: getCaseFile() and its window publication (modules read the case through src/core/state.js, which reads the same window.caseFile), and the dead _visitedPages with the three module references that could never run. getActiveWard() remains as a one-line wrapper onto state.js's.",
+   "entries": {
+    "_visitedPages": {
+     "was": "delete-as-dead 70E (override: dead-visited)"
+    },
+    "getCaseFile": {
+     "was": "move 70E (override: store-seam)"
+    }
+   }
+  },
+  "70F": {
+   "note": "Gone from src/legacy-app.js in 70F: the shared form runtime and its page helpers (src/core/form/form-runtime.js, field-html.js, county-autocomplete.js, paths.js, plan-row-actions.js), the Initial Inventory's binding engine (src/features/guardian-inventory/form-binding.js), the sidebar's marks on the page (src/core/status/nav-marks.js), the Print Preview pager (src/core/ui/print-pager.js), the validation panel and error routing (src/core/validation/), schedule supporting documents (src/core/filing/schedule-docs.js) and the Excel capacity panel (src/core/excel/excel-capacity.js); the one-line wrappers whose last caller those were (errorRoute() and linkLabelsToInputs() among them); and tdR(), dead. setPath() and updateNavDots() remain as one-line wrappers.",
+   "entries": {
+    "_navSectionExpandedKey": {
+     "was": "move 70F"
+    },
+    "_pvSelection": {
+     "was": "move 70F"
+    },
+    "addPlanGuardian": {
+     "was": "move 70F (override: form-runtime)"
+    },
+    "addPlanRow": {
+     "was": "move 70F (override: form-runtime)"
+    },
+    "afterChange": {
+     "was": "move 70F"
+    },
+    "applyNavChecks": {
+     "was": "move 70F (override: nav-dom)"
+    },
+    "applyNavSectionCollapse": {
+     "was": "move 70F"
+    },
+    "applyZipLimit": {
+     "was": "move 70B"
+    },
+    "bindForms": {
+     "was": "move 70F"
+    },
+    "browserRecommendationNotice": {
+     "was": "move 70F"
+    },
+    "chkP": {
+     "was": "move 70F (override: form-runtime)"
+    },
+    "countyAutocompleteHTML": {
+     "was": "move 70F (override: form-runtime)"
+    },
+    "countyInputS": {
+     "was": "move 70F (override: form-runtime)"
+    },
+    "duplicatePlanRow": {
+     "was": "move 70F (override: form-runtime)"
+    },
+    "enforceNonNegative": {
+     "was": "move 70F"
+    },
+    "errorRoute": {
+     "was": "move 70F"
+    },
+    "excelCapacityPanel": {
+     "was": "move 70F"
+    },
+    "filterCountyDropdown": {
+     "was": "move 70F (override: form-runtime)"
+    },
+    "finalizeCaseNumber": {
+     "was": "move 70B"
+    },
+    "fmt": {
+     "was": "move 70B"
+    },
+    "fmtFileSize": {
+     "was": "move 70F"
+    },
+    "formatAccountNumber": {
+     "was": "move 70B"
+    },
+    "formatAddress": {
+     "was": "move 70B"
+    },
+    "formatBarNumber": {
+     "was": "move 70B"
+    },
+    "formatCaseNumber": {
+     "was": "move 70B"
+    },
+    "formatCheckNumber": {
+     "was": "move 70B"
+    },
+    "formatDisplayDate": {
+     "was": "move 70B (override: pure)"
+    },
+    "formatName": {
+     "was": "move 70B"
+    },
+    "formatPhone": {
+     "was": "move 70B"
+    },
+    "formatSSN": {
+     "was": "move 70B"
+    },
+    "getCurrentPageKey": {
+     "was": "move 70F"
+    },
+    "getPath": {
+     "was": "move 70F"
+    },
+    "getScheduleDocSlot": {
+     "was": "move 70F"
+    },
+    "getSupplementalPdfTools": {
+     "was": "move 70F"
+    },
+    "handleScheduleDocUpload": {
+     "was": "move 70F"
+    },
+    "hideCountyDropdown": {
+     "was": "move 70F (override: form-runtime)"
+    },
+    "highlightErrors": {
+     "was": "move 70F"
+    },
+    "initPrintPager": {
+     "was": "move 70F"
+    },
+    "inpS": {
+     "was": "move 70F (override: form-runtime)"
+    },
+    "isScheduleIncomplete": {
+     "was": "move 70F (override: nav-dom)"
+    },
+    "linkAccordions": {
+     "was": "move 70F"
+    },
+    "linkLabelsToInputs": {
+     "was": "move 70F (override: form-runtime)"
+    },
+    "normalizePlanGuardians": {
+     "was": "move 70C (override: registry)"
+    },
+    "onCountyKeydown": {
+     "was": "move 70F (override: form-runtime)"
+    },
+    "pageCompleteness": {
+     "was": "move 70F (override: nav-dom)"
+    },
+    "pageIntroRow": {
+     "was": "move 70F (override: form-runtime)"
+    },
+    "pageNavS": {
+     "was": "move 70F (override: form-runtime)"
+    },
+    "PLAN_SECTION_ROUTES": {
+     "was": "move 70F"
+    },
+    "planCheckGroup": {
+     "was": "move 70F (override: form-runtime)"
+    },
+    "planEmptyRow": {
+     "was": "move 70C (override: registry)"
+    },
+    "planGuardianBlank": {
+     "was": "move 70C (override: registry)"
+    },
+    "planGuardianHasAnyData": {
+     "was": "move 70C (override: registry)"
+    },
+    "planGuardianMax": {
+     "was": "move 70C (override: registry)"
+    },
+    "planQ": {
+     "was": "move 70F (override: form-runtime)"
+    },
+    "prepareScheduleDocForValidation": {
+     "was": "move 70F"
+    },
+    "pvApply": {
+     "was": "move 70F"
+    },
+    "pvLabelFor": {
+     "was": "move 70F"
+    },
+    "pvPages": {
+     "was": "move 70F"
+    },
+    "pvSelect": {
+     "was": "move 70F"
+    },
+    "pvShowAll": {
+     "was": "move 70F"
+    },
+    "pvStep": {
+     "was": "move 70F"
+    },
+    "queueAllScheduleDocValidations": {
+     "was": "move 70F"
+    },
+    "queueScheduleDocValidation": {
+     "was": "move 70F"
+    },
+    "radioP": {
+     "was": "move 70F (override: form-runtime)"
+    },
+    "removePlanGuardian": {
+     "was": "move 70F (override: form-runtime)"
+    },
+    "removePlanRow": {
+     "was": "move 70F (override: form-runtime)"
+    },
+    "removeScheduleDoc": {
+     "was": "move 70F"
+    },
+    "renderProgressSummary": {
+     "was": "move 70F"
+    },
+    "renderScheduleDocsSection": {
+     "was": "move 70F"
+    },
+    "resetNavSectionExpanded": {
+     "was": "move 70F"
+    },
+    "sanitizeNegativeAmounts": {
+     "was": "move 70F (override: form-runtime)"
+    },
+    "sanitizeNonNegativeDecimal": {
+     "was": "move 70B"
+    },
+    "SCHEDULE_DOC_MAX_FILE_BYTES": {
+     "was": "move 70F"
+    },
+    "scheduleDocPeriodKey": {
+     "was": "move 70F"
+    },
+    "selectCountyOption": {
+     "was": "move 70F (override: form-runtime)"
+    },
+    "setupAmountFieldValidation": {
+     "was": "move 70F"
+    },
+    "td": {
+     "was": "move 70F"
+    },
+    "tdR": {
+     "was": "delete-as-dead 70F",
+     "note": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24)."
+    },
+    "tdSig": {
+     "was": "move 70F (override: form-runtime)"
+    },
+    "toggleNavSection": {
+     "was": "move 70F"
+    },
+    "toggleSsnReveal": {
+     "was": "move 70F"
+    },
+    "txtP": {
+     "was": "move 70F (override: form-runtime)"
+    },
+    "updateCalcFields": {
+     "was": "move 70F"
+    },
+    "updateCurrentScheduleNextButton": {
+     "was": "move 70F (override: nav-dom)"
+    },
+    "updateScheduleComment": {
+     "was": "move 70F"
+    },
+    "validationPanel": {
+     "was": "move 70F"
+    },
+    "yesNoCheckboxD": {
+     "was": "move 70F (override: form-runtime)"
+    },
+    "yesNoCheckboxS": {
+     "was": "move 70F (override: form-runtime)"
+    },
+    "yesNoRadioAnnualHTML": {
+     "was": "move 70F (override: form-runtime)"
+    },
+    "yesNoRadioHTML": {
+     "was": "move 70F (override: form-runtime)"
+    }
+   }
+  },
+  "70G": {
+   "note": "Gone from src/legacy-app.js in 70G: the filing workflows -- conversion (src/core/filing/conversion.js, its dialog in src/core/modals/convert-ward-modal.js), multi-year accounting (src/core/filing/filing-years.js, src/core/modals/year-dialogs.js), carry-over and its source picker (src/core/filing/carry-over.js, which also took ward-lifecycle.js's carry tables and builders), the Add Form, Simplified eligibility and Delete Form dialogs (src/core/modals/filing-dialogs.js), the pick-a-shared-record dialogs (src/core/modals/pick-record-dialogs.js), the People page (src/core/parties/party-management.js) and the recent-filings list (src/core/filing/recent-filings.js); the monolith's duplicate carry tables (CARRY_SOURCE_TYPE unused besides); and the six row-factory wrappers and formDisplayName() whose last callers those were. The UI and the test adapter reach every lifecycle operation through src/core/navigation/filing-lifecycle.js. updateCarrySourcePicker(), loadRecentlyOpenedWards(), addToRecentlyOpened() and showSimplifiedEligibilityModal() remain as one-line wrappers.",
+   "entries": {
+    "_partyCompareIds": {
+     "was": "move 70G"
+    },
+    "_partyUnmergeIds": {
+     "was": "move 70G"
+    },
+    "_pendingDeleteWardId": {
+     "was": "move 70G (override: filing-workflow)"
+    },
+    "_pendingDeleteYear": {
+     "was": "move 70G"
+    },
+    "_pickCaseWardId": {
+     "was": "move 70G"
+    },
+    "_pickPartySlot": {
+     "was": "move 70G"
+    },
+    "_yearModalWardId": {
+     "was": "move 70G"
+    },
+    "ACCOUNTING_FORM_TYPES": {
+     "was": "move 70G"
+    },
+    "applyYearData": {
+     "was": "move 70G"
+    },
+    "CARRY_SOURCE_TYPE": {
+     "was": "delete-as-dead 70G",
+     "note": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24)."
+    },
+    "carryOverAccountingToAccounting": {
+     "was": "move 70G"
+    },
+    "carryOverFields": {
+     "was": "move 70G"
+    },
+    "carryOverSummaryNote": {
+     "was": "move 70G (override: filing-workflow)"
+    },
+    "checkInActiveYear": {
+     "was": "move 70G"
+    },
+    "clearPartyCompareSelection": {
+     "was": "move 70G"
+    },
+    "confirmDeleteWard": {
+     "was": "move 70G (override: filing-workflow)"
+    },
+    "confirmDeleteWardYear": {
+     "was": "move 70G"
+    },
+    "confirmStartNewYear": {
+     "was": "move 70G"
+    },
+    "convertExistingWard": {
+     "was": "move 70G"
+    },
+    "convertGuardianExtrasToAnnual": {
+     "was": "move 70G"
+    },
+    "convertGuardianSchedulesToAnnual": {
+     "was": "move 70G"
+    },
+    "convertSimplifiedToAnnual": {
+     "was": "move 70G"
+    },
+    "convertSourceShowDropdown": {
+     "was": "move 70G"
+    },
+    "convertToSimplified": {
+     "was": "move 70G"
+    },
+    "deleteWardYear": {
+     "was": "move 70G"
+    },
+    "describeConversion": {
+     "was": "move 70G"
+    },
+    "describeYearLabel": {
+     "was": "move 70G"
+    },
+    "doAddWard": {
+     "was": "move 70G (override: filing-workflow)"
+    },
+    "doConfirmSimplifiedEligibility": {
+     "was": "move 70G (override: filing-workflow)"
+    },
+    "doConvertWard": {
+     "was": "move 70G"
+    },
+    "doCreateCaseFromWard": {
+     "was": "move 70G"
+    },
+    "doCreatePartyFromSlot": {
+     "was": "move 70G"
+    },
+    "doDeleteWard": {
+     "was": "move 70G (override: filing-workflow)"
+    },
+    "doDeleteWardYear": {
+     "was": "move 70G"
+    },
+    "doFilingSyncClosed": {
+     "was": "move 70G"
+    },
+    "doPartyDismissPair": {
+     "was": "move 70G"
+    },
+    "doPartyMergeKeep": {
+     "was": "move 70G"
+    },
+    "doPartySyncClosed": {
+     "was": "move 70G"
+    },
+    "doPartySyncClosedAll": {
+     "was": "move 70G"
+    },
+    "doPartyUnmergeSelected": {
+     "was": "move 70G"
+    },
+    "doPickCase": {
+     "was": "move 70G"
+    },
+    "doPickParty": {
+     "was": "move 70G"
+    },
+    "editPriorYear": {
+     "was": "move 70G"
+    },
+    "emptyInitialProvider": {
+     "was": "move 70C"
+    },
+    "emptyMinorProvider": {
+     "was": "move 70C"
+    },
+    "emptyMinorResidence": {
+     "was": "move 70C"
+    },
+    "emptyPlanProvider": {
+     "was": "move 70C"
+    },
+    "emptyPlanResidence": {
+     "was": "move 70C"
+    },
+    "emptyRowAnnual": {
+     "was": "move 70C"
+    },
+    "filingLabel": {
+     "was": "move 70G"
+    },
+    "formDisplayName": {
+     "was": "move 70C"
+    },
+    "getRecentlyOpenedWards": {
+     "was": "move 70G"
+    },
+    "manualCompareCandidate": {
+     "was": "move 70G"
+    },
+    "mapConvertedHeaderFields": {
+     "was": "move 70G"
+    },
+    "onCarrySourceChange": {
+     "was": "move 70G"
+    },
+    "onConvertSourceFocus": {
+     "was": "move 70G"
+    },
+    "onConvertSourceInput": {
+     "was": "move 70G"
+    },
+    "onConvertSourceKeydown": {
+     "was": "move 70G"
+    },
+    "pagePartyManagement": {
+     "was": "move 70G"
+    },
+    "PARTY_FIELD_ROWS": {
+     "was": "move 70G"
+    },
+    "partyClosedDriftHTML": {
+     "was": "move 70G"
+    },
+    "partyDedupeCardHTML": {
+     "was": "move 70G"
+    },
+    "partyFieldValue": {
+     "was": "move 70G"
+    },
+    "partyMatchBadge": {
+     "was": "move 70G"
+    },
+    "partyReferenceLinesHTML": {
+     "was": "move 70G"
+    },
+    "partyRoleBadgesHTML": {
+     "was": "move 70G"
+    },
+    "partyRoleLabel": {
+     "was": "move 70G"
+    },
+    "partySubRowHTML": {
+     "was": "move 70G"
+    },
+    "periodKeyForYearData": {
+     "was": "move 70G"
+    },
+    "PRIOR_ACCOUNTING_SOURCES": {
+     "was": "move 70G"
+    },
+    "RECENT_WARDS_MAX": {
+     "was": "move 70G"
+    },
+    "refreshCarrySourceSelect": {
+     "was": "move 70G"
+    },
+    "refreshEligCarrySource": {
+     "was": "move 70G (override: filing-workflow)"
+    },
+    "renderClosedFilingSyncNotice": {
+     "was": "move 70G"
+    },
+    "renderPartyDedupeQueue": {
+     "was": "move 70G"
+    },
+    "renderPartyDirectoryRows": {
+     "was": "move 70G"
+    },
+    "renderPartyManagementBody": {
+     "was": "move 70G"
+    },
+    "renderPriorYearsList": {
+     "was": "move 70G"
+    },
+    "resetYearlyFieldsForNewYear": {
+     "was": "move 70G"
+    },
+    "saveRecentlyOpenedWards": {
+     "was": "move 70G"
+    },
+    "showAddWardModal": {
+     "was": "move 70G (override: filing-workflow)"
+    },
+    "showPickCaseModal": {
+     "was": "move 70G"
+    },
+    "showPickPartyModal": {
+     "was": "move 70G"
+    },
+    "showPriorYearsModal": {
+     "was": "move 70G"
+    },
+    "showStartNewYearModal": {
+     "was": "move 70G"
+    },
+    "SLOT_FIELD_LABELS": {
+     "was": "move 70G"
+    },
+    "slotLabel": {
+     "was": "move 70G"
+    },
+    "snapshotCurrentYearData": {
+     "was": "move 70G"
+    },
+    "startNewWardYear": {
+     "was": "move 70G"
+    },
+    "switchWardYear": {
+     "was": "move 70G"
+    },
+    "togglePartyCompareSelection": {
+     "was": "move 70G"
+    },
+    "togglePartyUnmergeSelection": {
+     "was": "move 70G"
+    },
+    "updateConvertNotePreview": {
+     "was": "move 70G"
+    },
+    "WARD_SYSTEM_KEYS": {
+     "was": "move 70G"
+    }
+   }
+  },
+  "70H": {
+   "note": "Gone from src/legacy-app.js in 70H: the shell and its support surfaces -- the theme button (into src/core/theme-preference.js), the Help panel, the user guide, tooltips and guided tours (src/core/help/, with the Help text moved beside them from src/features/help/), the Activity Log page (src/core/activity/activity-log-view.js), this tab's state for other tabs (src/core/navigation/tab-state.js), the shared combobox (src/core/ui/combobox.js), the filing switcher, the sidebar, the Start New Form picker and the court portal (src/core/shell/), the static dialogs' show/close and fragment loading (into src/core/ui/dialogs.js), the Add Form dialogs' ward-name field (into src/core/modals/filing-dialogs.js), the guardian setup question (src/core/modals/guardian-setup.js) and the \"open in another tab\" dialog (into src/core/ward-lock.js); and the wrappers whose last callers these were (ic(), esc(), formatDashboardCurrency(), typeIcon(), updateCarrySourcePicker(), showSimplifiedEligibilityModal(), updateNavDots()). applyTheme(), currentTheme(), ensureFragment(), notifyProbateGuardianTabStateChanged(), renderCopyrightNotice() and updateSidebar() remain as one-line wrappers the monolith still calls.",
+   "entries": {
+    "_activityLogEntries": {
+     "was": "move 70H"
+    },
+    "_fragmentAppended": {
+     "was": "move 70H"
+    },
+    "_saveControlsCollapsed": {
+     "was": "move 70H (override: shell)"
+    },
+    "_saveControlsUserToggled": {
+     "was": "move 70H (override: shell)"
+    },
+    "_walkthroughAutoTriggered": {
+     "was": "move 70H"
+    },
+    "_wardLockedPreviousFocus": {
+     "was": "move 70H (override: shell)"
+    },
+    "ACTIVITY_EVENT_META": {
+     "was": "move 70H"
+    },
+    "ACTIVITY_LOG_RENDER_CAP": {
+     "was": "move 70H"
+    },
+    "activityLogFiltered": {
+     "was": "move 70H"
+    },
+    "applySaveControlsCollapsedState": {
+     "was": "move 70H (override: shell)"
+    },
+    "bindComboboxKeyboardNav": {
+     "was": "move 70H (override: shell)"
+    },
+    "closeModal": {
+     "was": "move 70H"
+    },
+    "collapseSaveControls": {
+     "was": "move 70H (override: shell)"
+    },
+    "collapseWardControls": {
+     "was": "move 70H (override: shell)"
+    },
+    "comboboxAssignOptionIds": {
+     "was": "move 70H (override: shell)"
+    },
+    "comboboxFilterItems": {
+     "was": "move 70H (override: shell)"
+    },
+    "comboboxHide": {
+     "was": "move 70H (override: shell)"
+    },
+    "comboboxRenderDropdown": {
+     "was": "move 70H (override: shell)"
+    },
+    "currentHelpContext": {
+     "was": "move 70H"
+    },
+    "currentWalkthroughStep": {
+     "was": "move 70H"
+    },
+    "doGuardianSetup": {
+     "was": "move 70H"
+    },
+    "endWalkthrough": {
+     "was": "move 70H"
+    },
+    "esc": {
+     "was": "move 70B"
+    },
+    "exportActivityLog": {
+     "was": "move 70H"
+    },
+    "formatActivityTimestamp": {
+     "was": "move 70H"
+    },
+    "formatDashboardCurrency": {
+     "was": "move 70B (override: pure)"
+    },
+    "getPrimaryGuardianDisplayName": {
+     "was": "move 70H (override: shell)"
+    },
+    "getProbateGuardianTabState": {
+     "was": "move 70H (override: shell)"
+    },
+    "handleSwitchWardClick": {
+     "was": "move 70H (override: shell)"
+    },
+    "HELP_CONTENT": {
+     "was": "move 70H"
+    },
+    "helpPanelOpen": {
+     "was": "move 70H"
+    },
+    "ic": {
+     "was": "move 70B"
+    },
+    "initWardNameCombobox": {
+     "was": "move 70H"
+    },
+    "loadAndRenderActivityLog": {
+     "was": "move 70H"
+    },
+    "nextWalkthroughStep": {
+     "was": "move 70H"
+    },
+    "onWardSelectorFocus": {
+     "was": "move 70H (override: shell)"
+    },
+    "onWardSelectorInput": {
+     "was": "move 70H (override: shell)"
+    },
+    "onWardSelectorKeydown": {
+     "was": "move 70H (override: shell)"
+    },
+    "openFloridaCourtPortal": {
+     "was": "move 70H (override: shell)"
+    },
+    "openUserGuide": {
+     "was": "move 70H"
+    },
+    "openUserGuideForCurrentPage": {
+     "was": "move 70H"
+    },
+    "pageActivityLog": {
+     "was": "move 70H"
+    },
+    "pageInventorySelector": {
+     "was": "move 70H"
+    },
+    "populateWardNameSuggestions": {
+     "was": "move 70H"
+    },
+    "refreshWardInfoCard": {
+     "was": "move 70H (override: shell)"
+    },
+    "renderActivityLogList": {
+     "was": "move 70H"
+    },
+    "renderStorageReadout": {
+     "was": "move 70H"
+    },
+    "SHOW_COMMENT_CARD_LINK": {
+     "was": "move 70H"
+    },
+    "showAddWardModalForType": {
+     "was": "move 70H"
+    },
+    "showContextualHelp": {
+     "was": "move 70H"
+    },
+    "showModal": {
+     "was": "move 70H"
+    },
+    "showSimplifiedEligibilityModal": {
+     "was": "move 70G (override: filing-workflow)"
+    },
+    "showSwitchWardPickerModal": {
+     "was": "move 70H (override: shell)"
+    },
+    "showWalkthroughStep": {
+     "was": "move 70H"
+    },
+    "skipWalkthrough": {
+     "was": "move 70H"
+    },
+    "startWalkthrough": {
+     "was": "move 70H"
+    },
+    "syncActiveWardNameDisplay": {
+     "was": "move 70H (override: shell)"
+    },
+    "syncGuardianNameDisplay": {
+     "was": "move 70H (override: shell)"
+    },
+    "toggleHelpPanel": {
+     "was": "move 70H"
+    },
+    "toggleSaveControls": {
+     "was": "move 70H (override: shell)"
+    },
+    "toggleTheme": {
+     "was": "move 70H"
+    },
+    "tooltip": {
+     "was": "move 70H"
+    },
+    "TOOLTIPS": {
+     "was": "move 70H"
+    },
+    "typeIcon": {
+     "was": "move 70C (override: registry)"
+    },
+    "updateCarrySourcePicker": {
+     "was": "move 70G"
+    },
+    "updateHelpContext": {
+     "was": "move 70H"
+    },
+    "updateNavDots": {
+     "was": "move 70F (override: nav-dom)",
+     "note": "Moves in 70F with the other nav-dot updates (review override nav-dom); it is the sidebar's only caller of applyNavChecks(), which moves with it."
+    },
+    "USER_GUIDE_ANCHORS": {
+     "was": "move 70H"
+    },
+    "USER_GUIDE_URL": {
+     "was": "move 70H"
+    },
+    "userGuideAnchorFor": {
+     "was": "move 70H"
+    },
+    "WALKTHROUGH_ANNUAL": {
+     "was": "move 70H"
+    },
+    "WALKTHROUGH_DASHBOARD": {
+     "was": "move 70H"
+    },
+    "WALKTHROUGH_GUARDIAN": {
+     "was": "move 70H"
+    },
+    "WALKTHROUGH_PLAN_ANNUAL": {
+     "was": "move 70H"
+    },
+    "WALKTHROUGH_PLAN_INITIAL": {
+     "was": "move 70H"
+    },
+    "WALKTHROUGH_PLAN_MINOR": {
+     "was": "move 70H"
+    },
+    "WALKTHROUGH_PLAN_SIMPLIFIED": {
+     "was": "move 70H"
+    },
+    "WALKTHROUGH_SIMPLIFIED": {
+     "was": "move 70H"
+    },
+    "WALKTHROUGH_STEPS": {
+     "was": "move 70H"
+    },
+    "walkthroughActive": {
+     "was": "move 70H"
+    },
+    "wardNameComboItems": {
+     "was": "move 70H"
+    },
+    "wardSelectorItems": {
+     "was": "move 70H (override: shell)"
+    },
+    "wardSelectorShowDropdown": {
+     "was": "move 70H (override: shell)"
+    }
+   }
+  },
+  "70I": {
+   "note": "Gone from src/legacy-app.js in 70I: saving and the recovery snapshot's use (autoSave(), flushPendingSave(), saveData(), saveWardToState(), deleteWardFromState(), the save-error banner and the save listeners, into src/core/persistence/case-file.js), opening a case file (loadCaseFileFromZip(), src/core/persistence/case-reader.js), the Activity Log's entries (src/core/activity/audit-log.js), unlocking and locking (src/core/security/app-lock.js), the launch (src/core/startup/launch.js) and the startup after it (runStartup(), src/core/startup/startup.js), the template cache (src/core/persistence/templates.js), the continue prompt (src/core/persistence/launch-preferences.js) and Clear Data (src/shell-events.js); the state they held -- the key, the security mode, the export state, app state, the template cache, the log -- is its module's own, with no window accessor; the duplicates of recovery-cache.js's and launch-preferences.js's code and crypto.js's constants were deleted; loadGuardianData() did nothing and went. Twelve wrappers whose last callers these were went with them. clearCaseForLock() and focusFilingAtLaunch() are new: the monolith owns the case until 70J, so the lock and startup ask it to change the case.",
+   "entries": {
+    "_appState": {
+     "was": "move 70I"
+    },
+    "_auditLogEntries": {
+     "was": "move 70I"
+    },
+    "_auditLogNextId": {
+     "was": "move 70I"
+    },
+    "_autoExportIntervalMinutes": {
+     "was": "move 70I (override: persistence)"
+    },
+    "_autoLockTimer": {
+     "was": "move 70I"
+    },
+    "_cryptoKey": {
+     "was": "move 70I"
+    },
+    "_dirtySinceExport": {
+     "was": "move 70I (override: persistence)"
+    },
+    "_lastExportAt": {
+     "was": "move 70I (override: persistence)"
+    },
+    "_launchPrefDb": {
+     "was": "move 70I"
+    },
+    "_launchPrefDelete": {
+     "was": "delete-as-dead 70I",
+     "note": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24)."
+    },
+    "_launchPrefGet": {
+     "was": "delete-as-dead 70I",
+     "note": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24)."
+    },
+    "_launchPrefPut": {
+     "was": "delete-as-dead 70I",
+     "note": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24)."
+    },
+    "_launchStateResolved": {
+     "was": "move 70I"
+    },
+    "_openedFileAtLaunch": {
+     "was": "move 70I"
+    },
+    "_pendingOpenManifest": {
+     "was": "move 70I"
+    },
+    "_pendingOpenZip": {
+     "was": "move 70I"
+    },
+    "_rememberedFileUnavailable": {
+     "was": "move 70I"
+    },
+    "_resolveStartupChoice": {
+     "was": "move 70I"
+    },
+    "_saveTimer": {
+     "was": "move 70I (override: persistence)"
+    },
+    "_securityChoiceResolve": {
+     "was": "move 70I"
+    },
+    "_securityMode": {
+     "was": "move 70I"
+    },
+    "_sessionCacheClear": {
+     "was": "delete-as-dead 70I",
+     "note": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24)."
+    },
+    "_sessionCacheDb": {
+     "was": "move 70I"
+    },
+    "_sessionCacheGet": {
+     "was": "move 70I"
+    },
+    "_sessionCachePut": {
+     "was": "delete-as-dead 70I",
+     "note": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24)."
+    },
+    "_startupChoiceResolve": {
+     "was": "move 70I"
+    },
+    "_templateCache": {
+     "was": "move 70I"
+    },
+    "_unlockMode": {
+     "was": "move 70I"
+    },
+    "_unlockResolve": {
+     "was": "move 70I"
+    },
+    "addToRecentlyOpened": {
+     "was": "move 70G"
+    },
+    "appendAuditLogEntry": {
+     "was": "move 70I (override: persistence)",
+     "note": "Placed in 70E by its section (IN-MEMORY STATE OPERATIONS); on review it schedules autoSave() and writes the monolith's template cache or audit buffer, which 70I's persistence service owns, so it moves there."
+    },
+    "applyTheme": {
+     "was": "move 70H"
+    },
+    "auditLog": {
+     "was": "move 70I"
+    },
+    "AUTO_LOCK_MS": {
+     "was": "move 70I"
+    },
+    "autoLoadTemplates": {
+     "was": "move 70I (override: persistence)"
+    },
+    "clearAllData": {
+     "was": "move 70I"
+    },
+    "CRYPTO_VERIFIER_PLAINTEXT": {
+     "was": "move 70I"
+    },
+    "currentTheme": {
+     "was": "move 70H"
+    },
+    "deleteWardFromState": {
+     "was": "move 70I (override: persistence)",
+     "note": "Placed in 70E by its section (IN-MEMORY STATE OPERATIONS); on review it schedules autoSave() and writes the monolith's template cache or audit buffer, which 70I's persistence service owns, so it moves there."
+    },
+    "ensureFragment": {
+     "was": "move 70H"
+    },
+    "ensureTemplate": {
+     "was": "move 70I (override: persistence)"
+    },
+    "ensureUnlocked": {
+     "was": "move 70I"
+    },
+    "fetchAndCacheTemplate": {
+     "was": "move 70I (override: persistence)"
+    },
+    "flushPendingSave": {
+     "was": "move 70I (override: persistence)"
+    },
+    "formatLockoutRemaining": {
+     "was": "move 70I"
+    },
+    "getActiveWard": {
+     "was": "move 70E (override: store-seam)"
+    },
+    "getUnlockFailState": {
+     "was": "move 70I"
+    },
+    "handleStartupOpenInputChange": {
+     "was": "move 70I"
+    },
+    "hideSaveError": {
+     "was": "move 70I (override: persistence)"
+    },
+    "initializeEmptyData": {
+     "was": "move 70C"
+    },
+    "isContinuePromptShown": {
+     "was": "move 70I (override: persistence)"
+    },
+    "isValidXlsxB64": {
+     "was": "move 70I (override: persistence)"
+    },
+    "LAUNCH_PREF_DB": {
+     "was": "move 70I"
+    },
+    "LAUNCH_PREF_KEY_HANDLE": {
+     "was": "delete-as-dead 70I",
+     "note": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24)."
+    },
+    "LAUNCH_PREF_KEY_OPENED": {
+     "was": "delete-as-dead 70I",
+     "note": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24)."
+    },
+    "LAUNCH_PREF_STORE": {
+     "was": "move 70I"
+    },
+    "loadAuditLogEntries": {
+     "was": "move 70I (override: persistence)",
+     "note": "Placed in 70E by its section (IN-MEMORY STATE OPERATIONS); on review it schedules autoSave() and writes the monolith's template cache or audit buffer, which 70I's persistence service owns, so it moves there."
+    },
+    "loadCaseFileAtLaunch": {
+     "was": "move 70I"
+    },
+    "loadCaseFileFromZip": {
+     "was": "move 70I",
+     "note": "Changed on master in b2d97f5 (returns every part it could not read); a re-implement row in MILESTONE-70-FIX-LEDGER.md."
+    },
+    "loadGuardianData": {
+     "was": "move 70I (override: persistence)"
+    },
+    "loadRecentlyOpenedWards": {
+     "was": "move 70G"
+    },
+    "loadTemplate": {
+     "was": "move 70I (override: persistence)",
+     "note": "Placed in 70E by its section (IN-MEMORY STATE OPERATIONS); on review it schedules autoSave() and writes the monolith's template cache or audit buffer, which 70I's persistence service owns, so it moves there."
+    },
+    "lockApp": {
+     "was": "move 70I"
+    },
+    "markContinuePromptShown": {
+     "was": "move 70I (override: persistence)"
+    },
+    "notifyProbateGuardianTabStateChanged": {
+     "was": "move 70H (override: shell)"
+    },
+    "openCaseFileAtLaunch": {
+     "was": "move 70I"
+    },
+    "openWardFileAtLaunch": {
+     "was": "move 70I"
+    },
+    "PBKDF2_ITERATIONS": {
+     "was": "delete-as-dead 70I",
+     "note": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24)."
+    },
+    "PLAIN_MODE_PREFIX": {
+     "was": "delete-as-dead 70I",
+     "note": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24)."
+    },
+    "promptChooseSecurityMode": {
+     "was": "move 70I"
+    },
+    "promptCreatePassword": {
+     "was": "move 70I"
+    },
+    "promptOpenOrStartAtLaunch": {
+     "was": "move 70I"
+    },
+    "promptPasswordForFile": {
+     "was": "move 70I"
+    },
+    "promptUnlock": {
+     "was": "move 70I"
+    },
+    "REMEMBERED_FILE_TIMEOUT_MS": {
+     "was": "delete-as-dead 70I",
+     "note": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24)."
+    },
+    "renderCopyrightNotice": {
+     "was": "move 70H (override: shell)"
+    },
+    "resetAutoLockTimer": {
+     "was": "move 70I"
+    },
+    "sanitizeObjectData": {
+     "was": "move 70B"
+    },
+    "saveData": {
+     "was": "move 70I (override: persistence)"
+    },
+    "saveTemplate": {
+     "was": "move 70I (override: persistence)",
+     "note": "Placed in 70E by its section (IN-MEMORY STATE OPERATIONS); on review it schedules autoSave() and writes the monolith's template cache or audit buffer, which 70I's persistence service owns, so it moves there."
+    },
+    "saveUnlockFailState": {
+     "was": "move 70I"
+    },
+    "saveWardToState": {
+     "was": "move 70I (override: persistence)",
+     "note": "Placed in 70E by its section (IN-MEMORY STATE OPERATIONS); on review it schedules autoSave() and writes the monolith's template cache or audit buffer, which 70I's persistence service owns, so it moves there."
+    },
+    "selectSecurityMode": {
+     "was": "move 70I"
+    },
+    "SESSION_CACHE_DB": {
+     "was": "move 70I"
+    },
+    "SESSION_CACHE_STORE": {
+     "was": "move 70I"
+    },
+    "setPath": {
+     "was": "move 70F"
+    },
+    "setupDragAndDropImport": {
+     "was": "move 70I"
+    },
+    "showSaveError": {
+     "was": "move 70I (override: persistence)"
+    },
+    "showUnlockError": {
+     "was": "move 70I"
+    },
+    "startNewCaseAtLaunch": {
+     "was": "move 70I"
+    },
+    "startNewWardAtLaunch": {
+     "was": "move 70I"
+    },
+    "submitUnlockForm": {
+     "was": "move 70I"
+    },
+    "TEMPLATE_FILES": {
+     "was": "move 70I (override: persistence)"
+    },
+    "trySilentReopen": {
+     "was": "move 70I"
+    },
+    "UNLOCK_FAIL_THRESHOLD": {
+     "was": "move 70I"
+    },
+    "UNLOCK_LOCKOUT_BASE_MS": {
+     "was": "move 70I"
+    },
+    "UNLOCK_LOCKOUT_MAX_MS": {
+     "was": "move 70I"
+    },
+    "updateLockButtonVisibility": {
+     "was": "move 70I"
+    },
+    "validateImportFile": {
+     "was": "move 70B"
+    },
+    "warnBeforeUnloadIfDirty": {
+     "was": "move 70I (override: persistence)"
+    }
+   }
+  },
+  "70J": {
+   "note": "Gone from src/legacy-app.js in 70J: the case itself -- caseFile and window.caseFile, the open filing's window.D, the filing type's activeInventoryType and its window accessor -- now src/core/state.js's alone, the open filing and its type derived from the case's activeWardId; clearCaseForLock() and focusFilingAtLaunch(), which 70I added so the lock and startup could change the case the monolith owned (the lock now replaces the case through replaceCaseFile(); startup opens the remembered filing through the lifecycle); setAccountingFilingType(), which assigned the monolith's filing type (to src/features/annual-accounting/filing-type.js); calc, the Initial Inventory totals Proxy whose one use, the dashboard's headline total, pointed window.D at each filing in turn (it is handed the filing now); and the autoSave() and updateSidebar() wrappers, whose last callers went. getD(), getActiveInventoryType() and calcTotalsGuardian() are new one-line forwarders for computeNavChecks(), handleHash() and getWardHeadlineTotal(), placed with them in 70K.",
+   "entries": {
+    "activeInventoryType": {
+     "was": "move 70J (override: state-owner)"
+    },
+    "autoSave": {
+     "was": "move 70I (override: persistence)"
+    },
+    "calc": {
+     "was": "move 70B"
+    },
+    "caseFile": {
+     "was": "move 70J (override: state-owner)"
+    },
+    "clearCaseForLock": {
+     "was": "move 70J (override: state-owner)",
+     "note": "Added in 70I: the monolith owns the case until 70J, so the moved lock (clearCaseForLock(): a new, empty case) and startup (focusFilingAtLaunch(): the remembered filing, before it opens) ask it to change the case, through src/core/runtime/monolith.js. They go when the module store owns the case (70J)."
+    },
+    "focusFilingAtLaunch": {
+     "was": "move 70J (override: state-owner)",
+     "note": "Added in 70I: the monolith owns the case until 70J, so the moved lock (clearCaseForLock(): a new, empty case) and startup (focusFilingAtLaunch(): the remembered filing, before it opens) ask it to change the case, through src/core/runtime/monolith.js. They go when the module store owns the case (70J)."
+    },
+    "setAccountingFilingType": {
+     "was": "move 70J (override: writes-classic-state)"
+    },
+    "updateSidebar": {
+     "was": "move 70H (override: shell)"
+    }
+   }
+  },
+  "70K": {
+   "note": "Gone from src/legacy-app.js in 70K, the last of it: the route (currentPage and its window accessor, getCurrentPage()) and the hash handler (handleHash(), updateNavActive(), SPECIAL_PAGES and the hashchange listener) to src/core/navigation/router.js; the eight feature bridges and their mounts (_<feature>FeatureBridge, get<Feature>FeatureBridge(), mount<Feature>Feature(), mount<Feature>Nav(), ensureGuardianFeatureReady()) to src/features-loader.js's feature services, with the dashboard's headline total (getWardHeadlineTotal()); computeNavChecks() to src/core/status/nav-marks.js; the forwarders getD(), getActiveInventoryType(), calcTotalsGuardian(), calcTotals(), formEngine() and getWardProgress() to their callers' imports; n() and pct() (the Annual pages import totals.js's); initApp() and provideMonolithServices() (startGuardianForms(), src/core/startup/bootstrap.js; the monolith's services went); the date-year guard (src/core/form/date-year-guard.js); window.PG_APP_VERSION (window.GuardianForms.version); and a click listener on .nav-link-item[data-page] elements, which no page has had at load since the features draw the sidebar's sections. The file declares and runs nothing; 70L deletes it.",
+   "entries": {
+    "_annualFeatureBridge": {
+     "was": "move 70K"
+    },
+    "_dashboardFeatureBridge": {
+     "was": "move 70K"
+    },
+    "_guardianFeatureBridge": {
+     "was": "move 70K"
+    },
+    "_planAnnualFeatureBridge": {
+     "was": "move 70K"
+    },
+    "_planInitialFeatureBridge": {
+     "was": "move 70K"
+    },
+    "_planMinorFeatureBridge": {
+     "was": "move 70K"
+    },
+    "_planSimplifiedFeatureBridge": {
+     "was": "move 70K"
+    },
+    "_simplifiedFeatureBridge": {
+     "was": "move 70K (override: bridge)"
+    },
+    "calcTotals": {
+     "was": "move 70B (override: pure)"
+    },
+    "calcTotalsGuardian": {
+     "was": "wrapper 70K (override: store-forwarder)",
+     "note": "Added in 70J: the monolith's own caseFile, window.D and activeInventoryType went, so computeNavChecks() and handleHash() read the open filing and its type through getD() and getActiveInventoryType(), and getWardHeadlineTotal() totals the filing it is handed through calcTotalsGuardian() (it used to point window.D at each filing and ask calc). All three callers move in 70K."
+    },
+    "computeNavChecks": {
+     "was": "move 70D"
+    },
+    "currentPage": {
+     "was": "move 70K (override: router-state)"
+    },
+    "ensureGuardianFeatureReady": {
+     "was": "move 70K"
+    },
+    "formEngine": {
+     "was": "move 70C"
+    },
+    "getActiveInventoryType": {
+     "was": "wrapper 70K (override: store-forwarder)",
+     "note": "Added in 70J: the monolith's own caseFile, window.D and activeInventoryType went, so computeNavChecks() and handleHash() read the open filing and its type through getD() and getActiveInventoryType(), and getWardHeadlineTotal() totals the filing it is handed through calcTotalsGuardian() (it used to point window.D at each filing and ask calc). All three callers move in 70K."
+    },
+    "getAnnualFeatureBridge": {
+     "was": "move 70K"
+    },
+    "getCurrentPage": {
+     "was": "move 70K (override: router-state)"
+    },
+    "getD": {
+     "was": "wrapper 70K (override: store-forwarder)",
+     "note": "Added in 70J: the monolith's own caseFile, window.D and activeInventoryType went, so computeNavChecks() and handleHash() read the open filing and its type through getD() and getActiveInventoryType(), and getWardHeadlineTotal() totals the filing it is handed through calcTotalsGuardian() (it used to point window.D at each filing and ask calc). All three callers move in 70K."
+    },
+    "getDashboardFeatureBridge": {
+     "was": "move 70K"
+    },
+    "getGuardianFeatureBridge": {
+     "was": "move 70K"
+    },
+    "getPlanAnnualFeatureBridge": {
+     "was": "move 70K"
+    },
+    "getPlanInitialFeatureBridge": {
+     "was": "move 70K"
+    },
+    "getPlanMinorFeatureBridge": {
+     "was": "move 70K"
+    },
+    "getPlanSimplifiedFeatureBridge": {
+     "was": "move 70K"
+    },
+    "getSimplifiedFeatureBridge": {
+     "was": "move 70K (override: bridge)"
+    },
+    "getWardHeadlineTotal": {
+     "was": "move 70K",
+     "note": "Stays in 70D: it swaps window.D to compute another filing's total, which is exactly 70D's risk."
+    },
+    "getWardProgress": {
+     "was": "move 70D (override: dispatcher)"
+    },
+    "handleHash": {
+     "was": "move 70K"
+    },
+    "initApp": {
+     "was": "move 70K"
+    },
+    "mountAnnualFeature": {
+     "was": "move 70K"
+    },
+    "mountAnnualNav": {
+     "was": "move 70K"
+    },
+    "mountDashboardFeature": {
+     "was": "move 70K"
+    },
+    "mountGuardianFeature": {
+     "was": "move 70K"
+    },
+    "mountGuardianNav": {
+     "was": "move 70K"
+    },
+    "mountPlanAnnualFeature": {
+     "was": "move 70K"
+    },
+    "mountPlanAnnualNav": {
+     "was": "move 70K"
+    },
+    "mountPlanInitialFeature": {
+     "was": "move 70K"
+    },
+    "mountPlanInitialNav": {
+     "was": "move 70K"
+    },
+    "mountPlanMinorFeature": {
+     "was": "move 70K"
+    },
+    "mountPlanMinorNav": {
+     "was": "move 70K"
+    },
+    "mountPlanSimplifiedFeature": {
+     "was": "move 70K"
+    },
+    "mountPlanSimplifiedNav": {
+     "was": "move 70K"
+    },
+    "mountSimplifiedFeature": {
+     "was": "move 70K (override: bridge)"
+    },
+    "mountSimplifiedNav": {
+     "was": "move 70K (override: bridge)"
+    },
+    "n": {
+     "was": "move 70K"
+    },
+    "pct": {
+     "was": "move 70K",
+     "note": "Deleted on master in c62f890 (its only caller now imports totals.js's copy); a re-implement row in MILESTONE-70-FIX-LEDGER.md."
+    },
+    "provideMonolithServices": {
+     "was": "move 70E",
+     "note": "Added in 70E: legacy-app.js's one-line door into src/core/runtime/monolith.js, called from initApp(), the second transition exception MILESTONE-70-PROPOSAL.md records; it goes with the monolith (70L at the latest)."
+    },
+    "SPECIAL_PAGES": {
+     "was": "move 70K"
+    },
+    "updateNavActive": {
+     "was": "move 70K"
+    }
+   }
+  }
+ }
+}

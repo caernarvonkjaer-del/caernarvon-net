@@ -9,24 +9,24 @@ test.describe('GD-derived guardianship selection controls', () => {
     const inventoryType = page.locator('[data-bind="typeOfGuardianship"]');
     await expect(inventoryType).toBeVisible();
     await inventoryType.selectOption('Guardian Advocate');
-    expect(await page.evaluate(() => (window as any).D.typeOfGuardianship)).toBe('Guardian Advocate');
+    expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('typeOfGuardianship'))).toBe('Guardian Advocate');
 
     await createWard(page, 'Annual Type Options Ward', 'annual');
     const annualType = page.locator('[data-annual-path="typeOfGuardianship"]');
     await expect(annualType).toBeVisible();
     await annualType.selectOption('Limited');
-    expect(await page.evaluate(() => (window as any).D.typeOfGuardianship)).toBe('Limited');
+    expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('typeOfGuardianship'))).toBe('Limited');
 
     await createSimplifiedWard(page, 'Simplified Type Options Ward');
     const simplifiedType = page.locator('[data-form-path="typeOfGuardianship"]');
     await expect(simplifiedType).toBeVisible();
     await simplifiedType.selectOption('Minor - Person - Property');
-    expect(await page.evaluate(() => (window as any).D.typeOfGuardianship)).toBe('Minor - Person - Property');
+    expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('typeOfGuardianship'))).toBe('Minor - Person - Property');
 
     await createWard(page, 'Initial Lifecycle Options Ward', 'planInitial');
     const initialLifecycle = page.locator('[data-form-path="successorGuardianship"]');
     await expect(initialLifecycle).toBeVisible();
     await initialLifecycle.selectOption('Successor');
-    expect(await page.evaluate(() => (window as any).D.successorGuardianship)).toBe('Successor');
+    expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('successorGuardianship'))).toBe('Successor');
   });
 });

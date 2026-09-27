@@ -1,0 +1,28 @@
+{
+  "generatedBy": "node scripts/ms70-dependency-audit.mjs --write-baseline",
+  "note": "Milestone 70 ratchet baseline. Every set may only shrink; tests/unit/ms70-dependency-ratchet.spec.js fails on growth and on stale entries. Regenerate only when a delivery removed entries or MILESTONE-70-PROPOSAL.md records an exception.",
+  "classicDeclarations": [],
+  "windowWrites": [],
+  "windowReads": [],
+  "boundary": [
+    "src/core/runtime/browser-api.js::GuardianForms",
+    "src/core/runtime/browser-api.js::__GUARDIAN_FORMS_TEST_MODE__"
+  ],
+  "evalTimeWindowDestructures": [],
+  "bareCrossBoundary": [],
+  "unresolvedBareReferences": [],
+  "unownedWindowReads": [],
+  "lexicalOnlyWindowReads": [],
+  "cycles": [],
+  "layerViolations": [],
+  "unreachableModules": [
+    "src/core/types/case-file.js",
+    "src/core/types/filing.js",
+    "src/core/types/form-contract.js",
+    "src/core/types/index.js",
+    "src/core/types/parties.js",
+    "src/core/types/schedules.js",
+    "src/features/guardian-inventory/pdf-accessibility.js"
+  ],
+  "computedWindowReads": []
+}

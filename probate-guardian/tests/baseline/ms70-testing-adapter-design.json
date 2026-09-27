@@ -1,0 +1,1320 @@
+{
+ "generatedBy": "node scripts/ms70-testing-adapter-design.mjs --write",
+ "note": "Milestone 70, 70A: the window.GuardianForms schema -- production members with their named consumer, and GuardianForms.testing designed from the names the browser suite reaches today (tests/baseline/ms70-e2e-globals.json). The members and their kinds are confirmed by the owner's review (schemaReview); each name's destination stays reviewed:false until 70T proves it by converting the specs.",
+ "production": {
+  "version": {
+   "kind": "value",
+   "consumer": "support: which build a filer is running, given production caches index.html for a year"
+  }
+ },
+ "testing": {
+  "enabled": "only when the test runner sets the pre-boot flag (D3, T3)",
+  "members": {
+   "navigate": {
+    "kind": "command",
+    "replaces": [
+     "navigate"
+    ],
+    "reviewed": true
+   },
+   "snapshot": {
+    "kind": "query",
+    "replaces": [
+     "D",
+     "caseFile",
+     "getCaseFile",
+     "_dirtySinceExport",
+     "currentPage",
+     "getActiveWard",
+     "pgHasUnsavedChanges",
+     "wardName",
+     "activeInventoryType",
+     "wardId"
+    ],
+    "reviewed": true
+   },
+   "save": {
+    "kind": "command",
+    "replaces": [
+     "flushPendingSave",
+     "autoSave",
+     "markDirtySinceExport",
+     "saveBackupNow",
+     "saveData"
+    ],
+    "reviewed": true
+   },
+   "createFiling": {
+    "kind": "command",
+    "replaces": [
+     "addWard",
+     "showAddWardModalForType",
+     "addEntry",
+     "duplicateEntry",
+     "emptyPlanDirective",
+     "initializeEmptyData"
+    ],
+    "reviewed": true
+   },
+   "activateFiling": {
+    "kind": "command",
+    "replaces": [
+     "switchWard",
+     "unloadWard"
+    ],
+    "reviewed": true
+   },
+   "status": {
+    "kind": "query",
+    "replaces": [
+     "computeNavChecks",
+     "getWardProgress",
+     "planReadinessChecks",
+     "planReadinessPanel"
+    ],
+    "reviewed": true
+   },
+   "generateOutput": {
+    "kind": "query",
+    "replaces": [
+     "loadGuardianPdf",
+     "loadAnnualPdf",
+     "loadSimplifiedPdf",
+     "loadPlanAnnualPdf",
+     "loadPlanMinorPdf",
+     "loadPlanSimplifiedPdf"
+    ],
+    "reviewed": true
+   },
+   "validate": {
+    "kind": "query",
+    "replaces": [
+     "validateGuardian",
+     "validateAnnual",
+     "validatePlanAnnual",
+     "validatePlanInitial",
+     "validatePlanMinor",
+     "validatePlanSimplified",
+     "validateSimplified",
+     "adaptValidationErrors",
+     "prepareFilingOutput"
+    ],
+    "reviewed": true
+   },
+   "exportArchive": {
+    "kind": "query",
+    "replaces": [
+     "buildCaseFileBlob",
+     "buildSingleWardExportBlob"
+    ],
+    "reviewed": true
+   },
+   "lock": {
+    "kind": "command",
+    "replaces": [
+     "lockApp"
+    ],
+    "reviewed": true
+   },
+   "sharedRecords": {
+    "kind": "query",
+    "replaces": [
+     "resolveParty",
+     "casesGroupingWards",
+     "resolveCase",
+     "wardPartyForFiling",
+     "caseNumberOf",
+     "closedFilingDrift",
+     "filingDriftFromParties",
+     "findDuplicateCandidates",
+     "identitySlotForPath",
+     "isPartyPairDismissed",
+     "readRoleFields",
+     "referenceCountForParty",
+     "subPartiesOf",
+     "wardCountyMergeConflict"
+    ],
+    "reviewed": true
+   },
+   "persistenceState": {
+    "kind": "query",
+    "replaces": [
+     "_sessionCacheGet",
+     "hasOpenedCaseBefore",
+     "loadCaseFileHandle",
+     "_cryptoKey",
+     "_securityMode",
+     "decryptJSONWithKey",
+     "getCurrentLockedWardId",
+     "getRecentlyOpenedWards",
+     "isContinuePromptShown",
+     "loadAppState",
+     "loadAuditLogEntries",
+     "readRememberedFile"
+    ],
+    "reviewed": true
+   },
+   "recoveryCache": {
+    "kind": "command",
+    "replaces": [
+     "clearSessionRestoreCache",
+     "saveSessionRestoreCache"
+    ],
+    "reviewed": true
+   },
+   "updateSharedRecords": {
+    "kind": "command",
+    "replaces": [
+     "createCase",
+     "createParty",
+     "dismissPartyPair",
+     "ensureWardPartyForFiling",
+     "getOrCreateCaseForWard",
+     "addSignatureImage",
+     "backfillWardPartyCounties",
+     "backfillWardPartyIdentity",
+     "dehydrateIntoParty",
+     "hydrateFromParty",
+     "mergeParties",
+     "setPartyIdForSlot",
+     "syncFilingSlotWithParty",
+     "syncIdentityField",
+     "unmergeParty",
+     "writeRoleFields"
+    ],
+    "reviewed": true
+   },
+   "saveOutput": {
+    "kind": "command",
+    "replaces": [
+     "doSavePdfPlanAnnual",
+     "doSavePdfPlanInitial",
+     "doSavePdfPlanMinor",
+     "doSaveExcelGuardian",
+     "doSavePdfGuardian"
+    ],
+    "reviewed": true
+   },
+   "saveArchive": {
+    "kind": "command",
+    "replaces": [
+     "exportGuardianDataZip",
+     "saveBlobAs",
+     "finishSingleWardExport"
+    ],
+    "reviewed": true
+   },
+   "launchState": {
+    "kind": "command",
+    "replaces": [
+     "rememberCaseFileHandle"
+    ],
+    "reviewed": true
+   },
+   "refreshStatus": {
+    "kind": "command",
+    "replaces": [
+     "updateNavDots",
+     "updateSidebar"
+    ],
+    "reviewed": true
+   },
+   "filingLock": {
+    "kind": "command",
+    "replaces": [
+     "acquireWardLock",
+     "releaseWardLock"
+    ],
+    "reviewed": true
+   },
+   "recordActivity": {
+    "kind": "command",
+    "replaces": [
+     "auditLog"
+    ],
+    "reviewed": true
+   },
+   "convertFiling": {
+    "kind": "command",
+    "replaces": [
+     "convertExistingWard",
+     "convertToSimplified"
+    ],
+    "reviewed": true
+   },
+   "deleteFiling": {
+    "kind": "command",
+    "replaces": [
+     "deleteWard"
+    ],
+    "reviewed": true
+   },
+   "constants": {
+    "kind": "query",
+    "replaces": [
+     "INITIAL_ADLS",
+     "PLAN_ADLS",
+     "PLAN_RIGHTS"
+    ],
+    "reviewed": true
+   },
+   "importArchive": {
+    "kind": "command",
+    "replaces": [
+     "loadCaseFileFromZip"
+    ],
+    "reviewed": true
+   },
+   "setTestSystemTitleWarning": {
+    "kind": "command",
+    "replaces": [
+     "setTestSystemTitleWarningEnabledForTest"
+    ],
+    "reviewed": true
+   },
+   "year": {
+    "kind": "command",
+    "replaces": [
+     "startNewWardYear",
+     "switchWardYear"
+    ],
+    "reviewed": true
+   }
+  }
+ },
+ "schemaReview": {
+  "by": "Claude (Milestone 70 delivery owner)",
+  "on": "2026-09-24",
+  "production": {
+   "version": "Confirmed: the only production member. A read-only build identity for support, since production caches index.html for a year; everything else stays behind GuardianForms.testing."
+  },
+  "corrections": [
+   "updateNavDots and updateSidebar redraw the sidebar -- specs call them to force a re-render after setup -- so they are a command (refreshStatus), not part of the status query.",
+   "auditLog appends an Activity Log entry -- specs call it to seed the log -- so it is a command (recordActivity), not part of the persistenceState query.",
+   "exportGuardianDataZip, saveBlobAs and finishSingleWardExport save a file or announce a save, so they are a command (saveArchive); exportArchive keeps only the two that build a blob.",
+   "doSavePdf*/doSaveExcel* start a download, so they are a command (saveOutput); generateOutput keeps the load*Pdf functions, which only hand back the PDF builders.",
+   "70T: showAddWardModalForType is createFiling.openDialog -- the support helpers use it to reach the real Add Filing dialog from any page and then drive its own controls, which keeps createWard() exactly as it was; a spec testing the entry points clicks the real buttons.",
+   "70T: the reference lists a fixture builds plan answers from (INITIAL_ADLS, PLAN_ADLS, PLAN_RIGHTS and their kin) are the constants query, returned as copies: legacy-app.js constants cannot be imported by a Node-side test."
+  ],
+  "members": {
+   "activateFiling": "command",
+   "convertFiling": "command",
+   "createFiling": "command",
+   "deleteFiling": "command",
+   "exportArchive": "query",
+   "filingLock": "command",
+   "generateOutput": "query",
+   "importArchive": "command",
+   "launchState": "command",
+   "lock": "command",
+   "navigate": "command",
+   "persistenceState": "query",
+   "recordActivity": "command",
+   "recoveryCache": "command",
+   "refreshStatus": "command",
+   "save": "command",
+   "saveArchive": "command",
+   "saveOutput": "command",
+   "setTestSystemTitleWarning": "command",
+   "sharedRecords": "query",
+   "snapshot": "query",
+   "status": "query",
+   "updateSharedRecords": "command",
+   "validate": "query",
+   "year": "command",
+   "constants": "query"
+  }
+ },
+ "summary": {
+  "names": 163,
+  "byDestination": {
+   "command": 54,
+   "query": 60,
+   "harness": 14,
+   "real-ui": 18,
+   "unit-import": 17
+  },
+  "members": 26,
+  "inPlaceWriteSites": 239
+ },
+ "names": [
+  {
+   "name": "navigate",
+   "files": 88,
+   "destination": "command:navigate",
+   "reviewed": false
+  },
+  {
+   "name": "D",
+   "files": 81,
+   "destination": "query:snapshot",
+   "reviewed": false
+  },
+  {
+   "name": "flushPendingSave",
+   "files": 33,
+   "destination": "command:save",
+   "reviewed": false
+  },
+  {
+   "name": "autoSave",
+   "files": 31,
+   "destination": "command:save",
+   "reviewed": false
+  },
+  {
+   "name": "caseFile",
+   "files": 22,
+   "destination": "query:snapshot",
+   "reviewed": false
+  },
+  {
+   "name": "addWard",
+   "files": 20,
+   "destination": "command:createFiling",
+   "reviewed": false
+  },
+  {
+   "name": "switchWard",
+   "files": 14,
+   "destination": "command:activateFiling",
+   "reviewed": false
+  },
+  {
+   "name": "computeNavChecks",
+   "files": 12,
+   "destination": "query:status",
+   "reviewed": false
+  },
+  {
+   "name": "loadGuardianPdf",
+   "files": 9,
+   "destination": "query:generateOutput",
+   "reviewed": false
+  },
+  {
+   "name": "showAddWardModalForType",
+   "files": 9,
+   "destination": "command:createFiling",
+   "reviewed": false
+  },
+  {
+   "name": "loadAnnualPdf",
+   "files": 6,
+   "destination": "query:generateOutput",
+   "reviewed": false
+  },
+  {
+   "name": "validateGuardian",
+   "files": 6,
+   "destination": "query:validate",
+   "reviewed": false
+  },
+  {
+   "name": "buildCaseFileBlob",
+   "files": 5,
+   "destination": "query:exportArchive",
+   "reviewed": false
+  },
+  {
+   "name": "validateAnnual",
+   "files": 5,
+   "destination": "query:validate",
+   "reviewed": false
+  },
+  {
+   "name": "validatePlanAnnual",
+   "files": 5,
+   "destination": "query:validate",
+   "reviewed": false
+  },
+  {
+   "name": "__pgBuildFixture",
+   "files": 4,
+   "destination": "harness",
+   "reviewed": false
+  },
+  {
+   "name": "__pgFixtureIssues",
+   "files": 4,
+   "destination": "harness",
+   "reviewed": false
+  },
+  {
+   "name": "getCaseFile",
+   "files": 4,
+   "destination": "query:snapshot",
+   "reviewed": false
+  },
+  {
+   "name": "loadSimplifiedPdf",
+   "files": 4,
+   "destination": "query:generateOutput",
+   "reviewed": false
+  },
+  {
+   "name": "lockApp",
+   "files": 4,
+   "destination": "command:lock",
+   "reviewed": false
+  },
+  {
+   "name": "renderPage",
+   "files": 4,
+   "destination": "real-ui",
+   "reviewed": false
+  },
+  {
+   "name": "resolveParty",
+   "files": 4,
+   "destination": "query:sharedRecords",
+   "reviewed": false
+  },
+  {
+   "name": "validatePlanInitial",
+   "files": 4,
+   "destination": "query:validate",
+   "reviewed": false
+  },
+  {
+   "name": "__pgPlanDefaults",
+   "files": 3,
+   "destination": "harness",
+   "reviewed": false
+  },
+  {
+   "name": "_dirtySinceExport",
+   "files": 3,
+   "destination": "query:snapshot",
+   "reviewed": false
+  },
+  {
+   "name": "_sessionCacheGet",
+   "files": 3,
+   "destination": "query:persistenceState",
+   "reviewed": false
+  },
+  {
+   "name": "buildSingleWardExportBlob",
+   "files": 3,
+   "destination": "query:exportArchive",
+   "reviewed": false
+  },
+  {
+   "name": "clearSessionRestoreCache",
+   "files": 3,
+   "destination": "command:recoveryCache",
+   "reviewed": false
+  },
+  {
+   "name": "commitCoverCounty",
+   "files": 3,
+   "destination": "real-ui",
+   "reviewed": false
+  },
+  {
+   "name": "currentPage",
+   "files": 3,
+   "destination": "query:snapshot",
+   "reviewed": false
+  },
+  {
+   "name": "getActiveWard",
+   "files": 3,
+   "destination": "query:snapshot",
+   "reviewed": false
+  },
+  {
+   "name": "validatePlanMinor",
+   "files": 3,
+   "destination": "query:validate",
+   "reviewed": false
+  },
+  {
+   "name": "validatePlanSimplified",
+   "files": 3,
+   "destination": "query:validate",
+   "reviewed": false
+  },
+  {
+   "name": "validateSimplified",
+   "files": 3,
+   "destination": "query:validate",
+   "reviewed": false
+  },
+  {
+   "name": "__pgMergeFixture",
+   "files": 2,
+   "destination": "harness",
+   "reviewed": false
+  },
+  {
+   "name": "__testPromise",
+   "files": 2,
+   "destination": "harness",
+   "reviewed": false
+  },
+  {
+   "name": "adaptValidationErrors",
+   "files": 2,
+   "destination": "query:validate",
+   "reviewed": false
+  },
+  {
+   "name": "addEntry",
+   "files": 2,
+   "destination": "command:createFiling",
+   "reviewed": false
+  },
+  {
+   "name": "calcTotalsAnnual",
+   "files": 2,
+   "destination": "unit-import",
+   "reviewed": false
+  },
+  {
+   "name": "carryOverFields",
+   "files": 2,
+   "destination": "unit-import",
+   "reviewed": false
+  },
+  {
+   "name": "casesGroupingWards",
+   "files": 2,
+   "destination": "query:sharedRecords",
+   "reviewed": false
+  },
+  {
+   "name": "createCase",
+   "files": 2,
+   "destination": "command:updateSharedRecords",
+   "reviewed": false
+  },
+  {
+   "name": "createParty",
+   "files": 2,
+   "destination": "command:updateSharedRecords",
+   "reviewed": false
+  },
+  {
+   "name": "dismissPartyPair",
+   "files": 2,
+   "destination": "command:updateSharedRecords",
+   "reviewed": false
+  },
+  {
+   "name": "doSavePdfPlanAnnual",
+   "files": 2,
+   "destination": "command:saveOutput",
+   "reviewed": false
+  },
+  {
+   "name": "doSavePdfPlanInitial",
+   "files": 2,
+   "destination": "command:saveOutput",
+   "reviewed": false
+  },
+  {
+   "name": "doSavePdfPlanMinor",
+   "files": 2,
+   "destination": "command:saveOutput",
+   "reviewed": false
+  },
+  {
+   "name": "ensureWardPartyForFiling",
+   "files": 2,
+   "destination": "command:updateSharedRecords",
+   "reviewed": false
+  },
+  {
+   "name": "exportGuardianDataZip",
+   "files": 2,
+   "destination": "command:saveArchive",
+   "reviewed": false
+  },
+  {
+   "name": "getOrCreateCaseForWard",
+   "files": 2,
+   "destination": "command:updateSharedRecords",
+   "reviewed": false
+  },
+  {
+   "name": "hasOpenedCaseBefore",
+   "files": 2,
+   "destination": "query:persistenceState",
+   "reviewed": false
+  },
+  {
+   "name": "loadCaseFileHandle",
+   "files": 2,
+   "destination": "query:persistenceState",
+   "reviewed": false
+  },
+  {
+   "name": "loadPlanAnnualPdf",
+   "files": 2,
+   "destination": "query:generateOutput",
+   "reviewed": false
+  },
+  {
+   "name": "markDirtySinceExport",
+   "files": 2,
+   "destination": "command:save",
+   "reviewed": false
+  },
+  {
+   "name": "normalizeWardData",
+   "files": 2,
+   "destination": "unit-import",
+   "reviewed": false
+  },
+  {
+   "name": "pgHasUnsavedChanges",
+   "files": 2,
+   "destination": "query:snapshot",
+   "reviewed": false
+  },
+  {
+   "name": "prepareFilingOutput",
+   "files": 2,
+   "destination": "query:validate",
+   "reviewed": false
+  },
+  {
+   "name": "rememberCaseFileHandle",
+   "files": 2,
+   "destination": "command:launchState",
+   "reviewed": false
+  },
+  {
+   "name": "resolveCase",
+   "files": 2,
+   "destination": "query:sharedRecords",
+   "reviewed": false
+  },
+  {
+   "name": "saveBlobAs",
+   "files": 2,
+   "destination": "command:saveArchive",
+   "reviewed": false
+  },
+  {
+   "name": "saveSessionRestoreCache",
+   "files": 2,
+   "destination": "command:recoveryCache",
+   "reviewed": false
+  },
+  {
+   "name": "showConvertWardModal",
+   "files": 2,
+   "destination": "real-ui",
+   "reviewed": false
+  },
+  {
+   "name": "showPickPartyModal",
+   "files": 2,
+   "destination": "real-ui",
+   "reviewed": false
+  },
+  {
+   "name": "updateNavDots",
+   "files": 2,
+   "destination": "command:refreshStatus",
+   "reviewed": false
+  },
+  {
+   "name": "wardName",
+   "files": 2,
+   "destination": "query:snapshot",
+   "reviewed": false
+  },
+  {
+   "name": "wardPartyForFiling",
+   "files": 2,
+   "destination": "query:sharedRecords",
+   "reviewed": false
+  },
+  {
+   "name": "__autoSaves",
+   "files": 1,
+   "destination": "harness",
+   "reviewed": false
+  },
+  {
+   "name": "__lastCaseWriteBlob",
+   "files": 1,
+   "destination": "harness",
+   "reviewed": false
+  },
+  {
+   "name": "__mockHandleWriteCount",
+   "files": 1,
+   "destination": "harness",
+   "reviewed": false
+  },
+  {
+   "name": "__readinessToggled",
+   "files": 1,
+   "destination": "harness",
+   "reviewed": false
+  },
+  {
+   "name": "__saveOrder",
+   "files": 1,
+   "destination": "harness",
+   "reviewed": false
+  },
+  {
+   "name": "__seen",
+   "files": 1,
+   "destination": "harness",
+   "reviewed": false
+  },
+  {
+   "name": "__swMessages",
+   "files": 1,
+   "destination": "harness",
+   "reviewed": false
+  },
+  {
+   "name": "__tabMessageShape",
+   "files": 1,
+   "destination": "harness",
+   "reviewed": false
+  },
+  {
+   "name": "__writeCallCount",
+   "files": 1,
+   "destination": "harness",
+   "reviewed": false
+  },
+  {
+   "name": "_cryptoKey",
+   "files": 1,
+   "destination": "query:persistenceState",
+   "reviewed": false
+  },
+  {
+   "name": "_securityMode",
+   "files": 1,
+   "destination": "query:persistenceState",
+   "reviewed": false
+  },
+  {
+   "name": "acquireWardLock",
+   "files": 1,
+   "destination": "command:filingLock",
+   "reviewed": false
+  },
+  {
+   "name": "activeInventoryType",
+   "files": 1,
+   "destination": "query:snapshot",
+   "reviewed": false
+  },
+  {
+   "name": "addSignatureImage",
+   "files": 1,
+   "destination": "command:updateSharedRecords",
+   "reviewed": false
+  },
+  {
+   "name": "annualReconcileState",
+   "files": 1,
+   "destination": "unit-import",
+   "reviewed": false
+  },
+  {
+   "name": "auditLog",
+   "files": 1,
+   "destination": "command:recordActivity",
+   "reviewed": false
+  },
+  {
+   "name": "backfillWardPartyCounties",
+   "files": 1,
+   "destination": "command:updateSharedRecords",
+   "reviewed": false
+  },
+  {
+   "name": "backfillWardPartyIdentity",
+   "files": 1,
+   "destination": "command:updateSharedRecords",
+   "reviewed": false
+  },
+  {
+   "name": "calc",
+   "files": 1,
+   "destination": "unit-import",
+   "reviewed": false
+  },
+  {
+   "name": "calcTotalsGuardian",
+   "files": 1,
+   "destination": "unit-import",
+   "reviewed": false
+  },
+  {
+   "name": "caseNumberOf",
+   "files": 1,
+   "destination": "query:sharedRecords",
+   "reviewed": false
+  },
+  {
+   "name": "circuitCourtCaption",
+   "files": 1,
+   "destination": "unit-import",
+   "reviewed": false
+  },
+  {
+   "name": "circuitForCounty",
+   "files": 1,
+   "destination": "unit-import",
+   "reviewed": false
+  },
+  {
+   "name": "closedFilingDrift",
+   "files": 1,
+   "destination": "query:sharedRecords",
+   "reviewed": false
+  },
+  {
+   "name": "closeModal",
+   "files": 1,
+   "destination": "real-ui",
+   "reviewed": false
+  },
+  {
+   "name": "confirmDeleteWard",
+   "files": 1,
+   "destination": "real-ui",
+   "reviewed": false
+  },
+  {
+   "name": "convertExistingWard",
+   "files": 1,
+   "destination": "command:convertFiling",
+   "reviewed": false
+  },
+  {
+   "name": "convertTargetsFor",
+   "files": 1,
+   "destination": "unit-import",
+   "reviewed": false
+  },
+  {
+   "name": "convertToSimplified",
+   "files": 1,
+   "destination": "command:convertFiling",
+   "reviewed": false
+  },
+  {
+   "name": "decryptJSONWithKey",
+   "files": 1,
+   "destination": "query:persistenceState",
+   "reviewed": false
+  },
+  {
+   "name": "dehydrateIntoParty",
+   "files": 1,
+   "destination": "command:updateSharedRecords",
+   "reviewed": false
+  },
+  {
+   "name": "deleteWard",
+   "files": 1,
+   "destination": "command:deleteFiling",
+   "reviewed": false
+  },
+  {
+   "name": "describeConversion",
+   "files": 1,
+   "destination": "unit-import",
+   "reviewed": false
+  },
+  {
+   "name": "doSaveExcelGuardian",
+   "files": 1,
+   "destination": "command:saveOutput",
+   "reviewed": false
+  },
+  {
+   "name": "doSavePdfGuardian",
+   "files": 1,
+   "destination": "command:saveOutput",
+   "reviewed": false
+  },
+  {
+   "name": "duplicateEntry",
+   "files": 1,
+   "destination": "command:createFiling",
+   "reviewed": false
+  },
+  {
+   "name": "emptyPlanDirective",
+   "files": 1,
+   "destination": "command:createFiling",
+   "reviewed": false
+  },
+  {
+   "name": "filingDriftFromParties",
+   "files": 1,
+   "destination": "query:sharedRecords",
+   "reviewed": false
+  },
+  {
+   "name": "findDuplicateCandidates",
+   "files": 1,
+   "destination": "query:sharedRecords",
+   "reviewed": false
+  },
+  {
+   "name": "finishSingleWardExport",
+   "files": 1,
+   "destination": "command:saveArchive",
+   "reviewed": false
+  },
+  {
+   "name": "focusFieldByPath",
+   "files": 1,
+   "destination": "real-ui",
+   "reviewed": false
+  },
+  {
+   "name": "getCurrentLockedWardId",
+   "files": 1,
+   "destination": "query:persistenceState",
+   "reviewed": false
+  },
+  {
+   "name": "getIssueDefinition",
+   "files": 1,
+   "destination": "unit-import",
+   "reviewed": false
+  },
+  {
+   "name": "getRecentlyOpenedWards",
+   "files": 1,
+   "destination": "query:persistenceState",
+   "reviewed": false
+  },
+  {
+   "name": "getScheduleDocSlot",
+   "files": 1,
+   "destination": "unit-import",
+   "reviewed": false
+  },
+  {
+   "name": "getWardProgress",
+   "files": 1,
+   "destination": "query:status",
+   "reviewed": false
+  },
+  {
+   "name": "hydrateFromParty",
+   "files": 1,
+   "destination": "command:updateSharedRecords",
+   "reviewed": false
+  },
+  {
+   "name": "identitySlotForPath",
+   "files": 1,
+   "destination": "query:sharedRecords",
+   "reviewed": false
+  },
+  {
+   "name": "importExcelGuardian",
+   "files": 1,
+   "destination": "real-ui",
+   "reviewed": false
+  },
+  {
+   "name": "INITIAL_ADLS",
+   "files": 1,
+   "destination": "query:constants",
+   "reviewed": false
+  },
+  {
+   "name": "initializeEmptyData",
+   "files": 1,
+   "destination": "command:createFiling",
+   "reviewed": false
+  },
+  {
+   "name": "isContinuePromptShown",
+   "files": 1,
+   "destination": "query:persistenceState",
+   "reviewed": false
+  },
+  {
+   "name": "isPartyPairDismissed",
+   "files": 1,
+   "destination": "query:sharedRecords",
+   "reviewed": false
+  },
+  {
+   "name": "isPlanInitialAttorneyStarted",
+   "files": 1,
+   "destination": "unit-import",
+   "reviewed": false
+  },
+  {
+   "name": "loadAppState",
+   "files": 1,
+   "destination": "query:persistenceState",
+   "reviewed": false
+  },
+  {
+   "name": "loadAuditLogEntries",
+   "files": 1,
+   "destination": "query:persistenceState",
+   "reviewed": false
+  },
+  {
+   "name": "loadCaseFileFromZip",
+   "files": 1,
+   "destination": "command:importArchive",
+   "reviewed": false
+  },
+  {
+   "name": "loadFragment",
+   "files": 1,
+   "destination": "real-ui",
+   "reviewed": false
+  },
+  {
+   "name": "loadPlanMinorPdf",
+   "files": 1,
+   "destination": "query:generateOutput",
+   "reviewed": false
+  },
+  {
+   "name": "loadPlanSimplifiedPdf",
+   "files": 1,
+   "destination": "query:generateOutput",
+   "reviewed": false
+  },
+  {
+   "name": "loadSimplifiedFeature",
+   "files": 1,
+   "destination": "real-ui",
+   "reviewed": false
+  },
+  {
+   "name": "mergeParties",
+   "files": 1,
+   "destination": "command:updateSharedRecords",
+   "reviewed": false
+  },
+  {
+   "name": "normalizeScheduleDocsAck",
+   "files": 1,
+   "destination": "unit-import",
+   "reviewed": false
+  },
+  {
+   "name": "openFloridaCourtPortal",
+   "files": 1,
+   "destination": "real-ui",
+   "reviewed": false
+  },
+  {
+   "name": "PLAN_ADLS",
+   "files": 1,
+   "destination": "query:constants",
+   "reviewed": false
+  },
+  {
+   "name": "PLAN_RIGHTS",
+   "files": 1,
+   "destination": "query:constants",
+   "reviewed": false
+  },
+  {
+   "name": "planReadinessChecks",
+   "files": 1,
+   "destination": "query:status",
+   "reviewed": false
+  },
+  {
+   "name": "planReadinessPanel",
+   "files": 1,
+   "destination": "query:status",
+   "reviewed": false
+  },
+  {
+   "name": "readRememberedFile",
+   "files": 1,
+   "destination": "query:persistenceState",
+   "reviewed": false
+  },
+  {
+   "name": "readRoleFields",
+   "files": 1,
+   "destination": "query:sharedRecords",
+   "reviewed": false
+  },
+  {
+   "name": "referenceCountForParty",
+   "files": 1,
+   "destination": "query:sharedRecords",
+   "reviewed": false
+  },
+  {
+   "name": "releaseWardLock",
+   "files": 1,
+   "destination": "command:filingLock",
+   "reviewed": false
+  },
+  {
+   "name": "renderScheduleDocsSection",
+   "files": 1,
+   "destination": "real-ui",
+   "reviewed": false
+  },
+  {
+   "name": "saveBackupNow",
+   "files": 1,
+   "destination": "command:save",
+   "reviewed": false
+  },
+  {
+   "name": "saveData",
+   "files": 1,
+   "destination": "command:save",
+   "reviewed": false
+  },
+  {
+   "name": "scheduleDocPeriodKey",
+   "files": 1,
+   "destination": "unit-import",
+   "reviewed": false
+  },
+  {
+   "name": "setPartyIdForSlot",
+   "files": 1,
+   "destination": "command:updateSharedRecords",
+   "reviewed": false
+  },
+  {
+   "name": "setTestSystemTitleWarningEnabledForTest",
+   "files": 1,
+   "destination": "command:setTestSystemTitleWarning",
+   "reviewed": false
+  },
+  {
+   "name": "showAddWardModal",
+   "files": 1,
+   "destination": "real-ui",
+   "reviewed": false
+  },
+  {
+   "name": "showRenameWardModal",
+   "files": 1,
+   "destination": "real-ui",
+   "reviewed": false
+  },
+  {
+   "name": "showSimplifiedEligibilityModal",
+   "files": 1,
+   "destination": "real-ui",
+   "reviewed": false
+  },
+  {
+   "name": "showWardLockedModal",
+   "files": 1,
+   "destination": "real-ui",
+   "reviewed": false
+  },
+  {
+   "name": "startedRows",
+   "files": 1,
+   "destination": "unit-import",
+   "reviewed": false
+  },
+  {
+   "name": "startNewWardYear",
+   "files": 1,
+   "destination": "command:year",
+   "reviewed": false
+  },
+  {
+   "name": "startWalkthrough",
+   "files": 1,
+   "destination": "real-ui",
+   "reviewed": false
+  },
+  {
+   "name": "subPartiesOf",
+   "files": 1,
+   "destination": "query:sharedRecords",
+   "reviewed": false
+  },
+  {
+   "name": "switchWardYear",
+   "files": 1,
+   "destination": "command:year",
+   "reviewed": false
+  },
+  {
+   "name": "syncFilingSlotWithParty",
+   "files": 1,
+   "destination": "command:updateSharedRecords",
+   "reviewed": false
+  },
+  {
+   "name": "syncIdentityField",
+   "files": 1,
+   "destination": "command:updateSharedRecords",
+   "reviewed": false
+  },
+  {
+   "name": "triggerImportZip",
+   "files": 1,
+   "destination": "real-ui",
+   "reviewed": false
+  },
+  {
+   "name": "unloadWard",
+   "files": 1,
+   "destination": "command:activateFiling",
+   "reviewed": false
+  },
+  {
+   "name": "unmergeParty",
+   "files": 1,
+   "destination": "command:updateSharedRecords",
+   "reviewed": false
+  },
+  {
+   "name": "updateSidebar",
+   "files": 1,
+   "destination": "command:refreshStatus",
+   "reviewed": false
+  },
+  {
+   "name": "validateWardBackupOverwrite",
+   "files": 1,
+   "destination": "unit-import",
+   "reviewed": false
+  },
+  {
+   "name": "wardCountyMergeConflict",
+   "files": 1,
+   "destination": "query:sharedRecords",
+   "reviewed": false
+  },
+  {
+   "name": "wardId",
+   "files": 1,
+   "destination": "query:snapshot",
+   "reviewed": false
+  },
+  {
+   "name": "writeRoleFields",
+   "files": 1,
+   "destination": "command:updateSharedRecords",
+   "reviewed": false
+  }
+ ]
+}

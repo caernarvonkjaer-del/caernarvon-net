@@ -341,7 +341,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
   //
   // Read the canonical tri-state field written by the current radio control,
   // falling back to the legacy boolean only for direct callers that bypass
-  // setD() normalization -- isRestrictedAnswer() is that rule, shared with
+  // the normalization opening a filing runs -- isRestrictedAnswer() is that rule, shared with
   // the calculator so the row, the subtotal and Part V's bond table agree.
   // The restricted amount is the WARD'S share (Milestone 60A); it used to be
   // the full account balance even when the subtotal beside it was adjusted.

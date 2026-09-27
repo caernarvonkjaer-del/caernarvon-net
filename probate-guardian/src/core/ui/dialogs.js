@@ -32,6 +32,7 @@
 // what almost every call site actually needs, so a mechanical
 // `alert('X')` -> `await alertModal('X')` conversion covers nearly all of
 // them.
+import { loadFragment } from '../../fragment-loader.js';
 
 function esc(s) {
   return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -70,24 +71,28 @@ function buildShell() {
  */
 function makeFinisher(overlay, resolve) {
   const previouslyFocused = document.activeElement;
+  // Ends the dialog's own listeners (its Escape key) however it closes.
+  const controller = new AbortController();
   let done = false;
-  return function finish(value) {
+  function finish(value) {
     if (done) return;
     done = true;
+    controller.abort();
     overlay.classList.remove('show');
     overlay.remove();
     if (previouslyFocused instanceof HTMLElement && document.contains(previouslyFocused)) previouslyFocused.focus();
     resolve(value);
-  };
+  }
+  finish.signal = controller.signal;
+  return finish;
 }
 
-/** Binds a one-shot, capture-phase Escape listener that calls `finish(value)`. */
+/** Binds a capture-phase Escape listener that calls `finish(value)`; it ends when the dialog does, however it closes. */
 function onEscape(finish, value) {
-  document.addEventListener('keydown', function handler(event) {
+  document.addEventListener('keydown', (event) => {
     if (event.key !== 'Escape') return;
-    document.removeEventListener('keydown', handler, true);
     finish(value);
-  }, true);
+  }, { capture: true, signal: finish.signal });
 }
 
 function showAndFocus(overlay, focusTarget) {
@@ -175,8 +180,33 @@ export function promptModal(messageOrOptions) {
   });
 }
 
-if (typeof window !== 'undefined') {
-  window.confirmModal = confirmModal;
-  window.alertModal = alertModal;
-  window.promptModal = promptModal;
+
+// Milestone 70, 70H: the static dialogs -- showing and closing one, and
+// loading the fragment that holds it. Moved from legacy-app.js's MODAL
+// FUNCTIONS.
+export function closeModal(modalId){
+  const el=document.getElementById(modalId);
+  if(el)el.classList.remove('show');
+}
+
+// Every modal showModal() is ever called with lives in the lazy
+// 'common-modals' fragment (src/fragment-loader.js) -- the three overlays
+// needed on every session (startup-choice, security-choice, unlock) are
+// shown via direct classList manipulation elsewhere, never through this
+// function. Fetched and appended into #lazy-fragment-host on first use only;
+// _fragmentAppended memoizes so a repeat open doesn't re-fetch or re-append.
+export const _fragmentAppended={};
+
+export async function ensureFragment(name){
+  if(_fragmentAppended[name])return;
+  const content=await loadFragment(name);
+  document.getElementById('lazy-fragment-host').appendChild(content);
+  _fragmentAppended[name]=true;
+}
+
+export async function showModal(modalId){
+  await ensureFragment('common-modals');
+  const el=document.getElementById(modalId);
+  if(!el)throw new Error(`Modal element "${modalId}" not found`);
+  el.classList.add('show');
 }

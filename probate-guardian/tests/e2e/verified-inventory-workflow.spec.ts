@@ -10,7 +10,7 @@ import { dismissScheduleDocPrompt } from './support/target';
 // needs (fresh start, Add Ward modal, land on the form).
 async function openGuardianWard(page: Page, name: string) {
   await freshStartNoPassword(page);
-  await page.evaluate(() => (window as any).showAddWardModalForType('guardian'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.createFiling.openDialog('guardian'));
   const addWardModal = page.locator('#addWardModal');
   await expect(addWardModal).toBeVisible();
   await page.locator('#new-ward-name').fill(name);
@@ -22,7 +22,7 @@ async function openGuardianWard(page: Page, name: string) {
 test.describe('Verified Initial Inventory Workflow & Usability Improvements', () => {
   test('label associations: clicking the Add Ward modal label focuses its input, and the landed form has no duplicate or empty visible labels', async ({ page }) => {
     await freshStartNoPassword(page);
-    await page.evaluate(() => (window as any).showAddWardModalForType('guardian'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.createFiling.openDialog('guardian'));
     const addWardModal = page.locator('#addWardModal');
     await expect(addWardModal).toBeVisible();
 
@@ -122,7 +122,7 @@ test.describe('Verified Initial Inventory Workflow & Usability Improvements', ()
 
   test('Schedule B-2 vehicle fields appear in-place without a page crash', async ({ page }) => {
     await openGuardianWard(page, 'Harold Thomas Bennett');
-    await page.evaluate(() => (window as any).navigate('/b2'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/b2'));
 
     await page.locator('[data-inventory-action="add-entry"][data-schedule="b2"]').click();
     await dismissScheduleDocPrompt(page); // Milestone 57C-R advisory modal
@@ -156,7 +156,7 @@ test.describe('Verified Initial Inventory Workflow & Usability Improvements', ()
 
   test('Schedule D-3 Safe Deposit Box tri-state flow, reflected on the Summary page', async ({ page }) => {
     await openGuardianWard(page, 'Harold Thomas Bennett');
-    await page.evaluate(() => (window as any).navigate('/d3'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/d3'));
 
     const sdbGroup = page.locator('fieldset[data-yes-no-group="hasSafeDepositBox"]');
     const sdbYes = sdbGroup.locator('input[type="radio"][value="Yes"]');
@@ -179,7 +179,7 @@ test.describe('Verified Initial Inventory Workflow & Usability Improvements', ()
     await sdbFiledYes.check();
 
     // Summary page reflects completion.
-    await page.evaluate(() => (window as any).navigate('/summary'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/summary'));
     const d3Status = page.locator('text=D-3 — Audit Fee & Safe Deposit');
     await expect(d3Status).toBeVisible();
   });
@@ -198,14 +198,14 @@ test.describe('Verified Initial Inventory Workflow & Usability Improvements', ()
   // than hand-coding the expected string.
   test('Summary page Part V box shows the Personal Property (B-2) total, not a blank line', async ({ page }) => {
     await openGuardianWard(page, 'Harold Thomas Bennett');
-    await page.evaluate(() => (window as any).navigate('/b2'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/b2'));
     await page.locator('[data-inventory-action="add-entry"][data-schedule="b2"]').click();
     await dismissScheduleDocPrompt(page);
     await page.locator('#b2-description-0').fill('Household furnishings');
     await page.locator('input[data-bind="scheduleB2.0.fullAssetValue"]').fill('22500');
     await page.locator('input[data-bind="scheduleB2.0.wardPercent"]').fill('100');
 
-    await page.evaluate(() => (window as any).navigate('/summary'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/summary'));
     const provenTotal = await page.locator('#totalB2').innerText();
     expect(provenTotal).not.toBe('');
 

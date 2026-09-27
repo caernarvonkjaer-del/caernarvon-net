@@ -27,46 +27,26 @@ import { renderResidenceFields } from '../../core/form/cards/residence-facility-
 // straight to Tier 1 instead. Confirmed fit: 3 of 4 Plan types for that
 // card, not 4 of 4.
 import { renderFormField } from '../../core/form/form-fields.js';
+import { esc } from '../../core/filing/escape-html.js';
+import { ic } from '../../core/ui/icons.js';
+import { formatDisplayDate } from '../../core/form/date-parser.js';
+import { PLAN_ADLS, PLAN_ADL_RATINGS, PLAN_BENEFITS, PLAN_RIGHTS, PLAN_RIGHT_STATES } from '../../core/filing/models/plan-annual.js';
+import { normalizePlanGuardians } from '../../core/filing/models/plan-rows.js';
+import { planAnnualCompletion } from '../../core/status/completion.js';
+import { getD, requestSave } from '../../core/state.js';
+import { chkP, inpS, pageNavS, planCheckGroup, planQ, txtP, yesNoCheckboxS, yesNoRadioHTML } from '../../core/form/field-html.js';
+import { renderScheduleDocsSection } from '../../core/filing/schedule-docs.js';
+import { setPath } from '../../core/form/paths.js';
 // Annual Guardianship Plan — the third feature extraction (Milestone 4,
-// Phases A and B of INDEX-SPLIT-PLAN.md's migration sequence). Dynamically
-// imported by legacy-app.js's mountPlanAnnualFeature()/mountPlanAnnualNav()
-// bridge (built on src/core/feature-bridge.js), never statically imported.
+// Phases A and B of INDEX-SPLIT-PLAN.md's migration sequence). Loaded only when one of its pages
+// is shown, through src/features-loader.js's feature services
+// (src/core/feature-bridge.js mounts it), never statically imported.
 //
-// legacy-app.js stays a classic (non-module) script (Milestone 1's recorded
-// decision), so its top-level function declarations are real `window`
-// properties this module can destructure -- but a bare top-level `let`
-// (activeInventoryType, currentPage) is not; see src/core/state.js's file
-// header for the full explanation. Everything below that isn't defined in
-// this file is one of those legacy globals, deliberately left in place
-// rather than moved: `planQ`/`planCheckGroup`/`planEmptyRow`/`addPlanRow`/
-// `removePlanRow`/`duplicatePlanRow`/`txtP`/`chkP`/`radioP`/`pageNavS` are
-// still shared with the two not-yet-extracted Plan types (planInitial,
-// planMinor); `PLAN_RIGHTS`/`PLAN_RIGHT_STATES`/`PLAN_ADLS`/
-// `PLAN_ADL_RATINGS`/`PLAN_BENEFITS` stay legacy because
-// computeNavChecks()'s planAnnual branch reads them directly (see the
-// Milestone 4 plan's "Confirmed facts" and "Design decisions").
-// Milestone 41-3: radioP and formatName/formatPhone/formatSSN/formatAddress
-// dropped from this destructure -- all now dead here. wardLiving's radio
-// group moved into residence-facility-card.js (which calls Tier 1's
-// renderRadioGroupField directly), and the guardian block's formatters are
-// applied automatically by renderFormField() from each field's inferred
-// kind, confirmed field-by-field against the previous manual calls.
-// Milestone 51C continues that pass: `countyInputS` and `toggleSsnReveal` were
-// also dead here and are dropped. County goes through renderCaseCaptionFields()
-// (case-caption-card.js, see /p1 below), and the ward SSN field through inpS()
-// per this file's own note above -- so neither global was ever called here.
-//
-// `toggleSsnReveal` in particular was destructured but never called in FIVE
-// feature modules. Its only real call site is the delegated handler in
-// src/form-events.js ('toggle-ssn'), which reaches window.toggleSsnReveal
-// directly; a feature module never needs it in scope. Plan Minor is the one
-// Plan type that does still call countyInputS (index.js:190), so it keeps it.
-const {
-  esc, ic, inpS, pageNavS,
-  renderScheduleDocsSection, txtP, chkP, planQ, planCheckGroup, yesNoCheckboxS, yesNoRadioHTML,
-  formatDisplayDate,
-  PLAN_RIGHTS, PLAN_RIGHT_STATES, PLAN_ADLS, PLAN_ADL_RATINGS, PLAN_BENEFITS,
-} = window;
+// Until Milestone 70 this module destructured the classic monolith's globals
+// off window -- the shared Plan field helpers and lists -- and this comment
+// recorded which, and why each stayed in the monolith (Milestones 3-6, 41 and
+// 51C). Milestone 70 moved every one into a module this file imports; 70K
+// removed the last window read, and 70L deleted the monolith.
 
 // print.js is dynamically imported only when the user reaches /print or
 // triggers PDF export (Milestone 4, Phase B) -- same lazy boundary as the
@@ -81,30 +61,36 @@ const signatureHandles = new WeakMap();
 
 let _printModule = null;
 let _printModulePromise = null;
+// The Preview page's Save as PDF (data-form-action="save-pdf-plan-annual"),
+// and GuardianForms.testing's saveOutput, through the feature services
+// (Milestone 70, 70K: a window global this module set once print.js loaded).
+export function doSavePdfPlanAnnual() {
+  // At once when the print module is loaded (it is, once Preview shows): the
+  // save disables its button before its first await (Milestone 67).
+  if (_printModule) return _printModule.doSavePdf();
+  return ensurePrintModule().then(() => _printModule.doSavePdf());
+}
+
 function ensurePrintModule() {
   if (_printModule) return Promise.resolve();
   if (!_printModulePromise) {
     _printModulePromise = import('./print.js').then((mod) => {
       _printModule = mod;
-      // Referenced by name from rendered onclick="..." HTML attributes
-      // (doSavePdfPlanAnnual), which only ever resolve against the global
-      // scope, never a module's own scope, so it must be a real `window`
-      // property. (The planReadinessChecksAnnual bridge went with Milestone
-      // 44C's shared readiness card.)
-      window.doSavePdfPlanAnnual = () => _printModule.doSavePdf();
     });
   }
   return _printModulePromise;
 }
 
-export async function mount(container, page) {
+export async function mount(container, page, { signal } = {}) {
   // Milestone 68C: a plan saved before the Certificate of Service existed
   // gains its fields on load. Idempotent, so every mount may call it.
-  if (migratePlanCertificateOfService(window.D)) window.autoSave?.();
+  if (migratePlanCertificateOfService(getD())) requestSave();
   let html;
   let isPrint = false;
   if (page === '/print') {
     await ensurePrintModule();
+    // Superseded while its print module loaded (Milestone 70, 70K).
+    if (signal?.aborted) return;
     html = _printModule.pagePrintPlanAnnual();
     isPrint = true;
   } else {
@@ -131,7 +117,7 @@ export async function mount(container, page) {
   signatureHandles.delete(container);
   if (page === '/p11' || page === '/p12') {
     signatureHandles.set(container, mountSignatureStateControls(container, {
-      setImage: (imagePath, dataUrl) => window.setPath(window.D, imagePath, dataUrl),
+      setImage: (imagePath, dataUrl) => setPath(getD(), imagePath, dataUrl),
       route: page,
     }));
   }
@@ -175,8 +161,10 @@ function buildNavPlanAnnual(container){
 }
 
 function getSummaryConfigPlanAnnual(){
-  const d=window.D;
-  const nav=window.computeNavChecks();
+  const d=getD();
+  // This filing's own section marks (Milestone 70, 70D: its engine's evaluator,
+  // imported; it was window.computeNavChecks()).
+  const nav=planAnnualCompletion(d);
   return {
     formTitle:'Annual Guardianship Plan — Summary',
     infoRows:[
@@ -218,7 +206,7 @@ function getSummaryConfigPlanAnnual(){
 }
 
 function pagePlanACover(){
-  const d=window.D;
+  const d=getD();
   return `<div class="schedule-page">
     <h1>Annual Guardianship Plan — Cover</h1>
     <div class="schedule-instructions">This plan reports on the ward as a person: where they live, the care they receive, their abilities and their rights. It is a separate filing from any accounting, which reports on their money and property. <strong>A physician's report must be filed separately at the same time</strong> — the app does not produce it.</div>
@@ -263,7 +251,7 @@ function pagePlanACover(){
 }
 
 function pagePlanAResidences(){
-  const d=window.D;
+  const d=getD();
   const rows=(d.q1Residences||[]).map((r,i)=>{
     return `<div class="col-12 col-lg-6"><div class="entry-card mb-2">
       <div class="entry-card-header">
@@ -295,7 +283,7 @@ function pagePlanAResidences(){
 }
 
 function pagePlanACarePlan(){
-  const d=window.D;
+  const d=getD();
   const cb=(id,label,route='')=>chkP(id,label,d[id],route);
   return `<div class="schedule-page">
     <h1>2–3. Residence Change &amp; Care Plan</h1>
@@ -353,7 +341,7 @@ function pagePlanACarePlan(){
 }
 
 function pagePlanABenefits(){
-  const d=window.D;
+  const d=getD();
   const b=d.benefits||{};
   const rows=PLAN_BENEFITS.map(([k,label])=>{
     const v=b[k]||{};
@@ -381,7 +369,7 @@ function pagePlanABenefits(){
 }
 
 function pagePlanAProviders(){
-  const d=window.D;
+  const d=getD();
   const rows=(d.q4Providers||[]).map((r,i)=>{
     return `<div class="col-12 col-lg-6"><div class="entry-card mb-2">
       <div class="entry-card-header">
@@ -412,7 +400,7 @@ function pagePlanAProviders(){
 }
 
 function pagePlanARights(){
-  const d=window.D;
+  const d=getD();
   const r=d.rights||{};
   const rows=PLAN_RIGHTS.map(([k,label])=>{
     // Milestone 68G: four columns, the court form's -- the stored value is
@@ -446,7 +434,7 @@ function pagePlanARights(){
 }
 
 function pagePlanAADLs(){
-  const d=window.D;
+  const d=getD();
   const a=d.adls||{};
   const rows=PLAN_ADLS.map(([k,label])=>
     `<tr><td>${label}</td><td style="width:16rem">
@@ -466,7 +454,7 @@ function pagePlanAADLs(){
 }
 
 function pagePlanADisabilities(){
-  const d=window.D;
+  const d=getD();
   const cb=(id,label,route='')=>chkP(id,label,d[id],route);
   const devices=(prefix)=>[
     cb(prefix+'Dentures','Dentures'),cb(prefix+'HearingAid','Hearing aid'),
@@ -500,7 +488,7 @@ function pagePlanADisabilities(){
 }
 
 function pagePlanADirectives(){
-  const d=window.D;
+  const d=getD();
   const cb=(id,label,route='')=>chkP(id,label,d[id],route);
   // Milestone 37-4: a plain chkP() checkbox doesn't re-render this page on
   // change (no data-form-route), which is fine for most checkboxes here but
@@ -570,7 +558,7 @@ function pagePlanADirectives(){
 }
 
 function pagePlanARemuneration(){
-  const d=window.D;
+  const d=getD();
   return `<div class="schedule-page">
     <h1>11. Remuneration</h1>
     ${planQ(11,'Declaration of remuneration',
@@ -592,8 +580,8 @@ function pagePlanARemuneration(){
 }
 
 function pagePlanASignatures(){
-  const d=window.D;
-  const g=window.normalizePlanGuardians(d);
+  const d=getD();
+  const g=normalizePlanGuardians(d);
   const cb=(id,label,route='')=>chkP(id,label,d[id],route);
   const block=(i,label)=>{
     const p=g[i]||{};
@@ -666,7 +654,7 @@ function pagePlanASignatures(){
 
 // Milestone 42F: every issue states its own field path (validation-issue.js).
 export function validatePlanAnnual(){
-  const d=window.D;
+  const d=getD();
   const errs=[];
   const T='planAnnual';
   const issue=issueFactory(T);
@@ -803,14 +791,13 @@ export function validatePlanAnnual(){
 // Milestone 33, Phase 2.3: see annual-accounting/index.js's identical comment --
 // exposing this lets the shared guidance panel itemize Plan Annual's own
 // missing fields instead of only showing a generic message.
-window.validatePlanAnnual = validatePlanAnnual;
 
 // ── Certificate of Service (Milestone 68C) ───────────────────────────────
 // Shared with the other three Plans; see core/filing/plan-certificate-of-service.js.
 const CERT_CFG = { attorneyName: (d) => d.attorney || '', planNoun: 'plan' };
 function pagePlanACertificate(){
   return `<div class="schedule-page">
-    ${renderPlanCertificateOfServicePage({ filing: window.D, route: '/p12', cfg: CERT_CFG })}
+    ${renderPlanCertificateOfServicePage({ filing: getD(), route: '/p12', cfg: CERT_CFG })}
     ${pageNavS('/p11',null)}
   </div>`;
 }

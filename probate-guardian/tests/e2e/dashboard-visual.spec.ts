@@ -25,24 +25,22 @@ async function setUpDashboard(page: Page) {
     ['Approved Filing', 'planSimplified'],
     ['Standard Draft', 'planAnnual'],
   ]) {
-    await page.evaluate(([wardName, inventoryType]) => (window as any).addWard(wardName, inventoryType), [name, type]);
+    await page.evaluate(([wardName, inventoryType]) => (window as any).GuardianForms.testing.createFiling.add(wardName, inventoryType), [name, type]);
   }
 
   await page.evaluate(() => {
-    const wards = (window as any).getCaseFile().wards;
+    // Setup (D9): each filing's dates and workflow status, as a saved case would have them.
+    const t = (window as any).GuardianForms.testing;
+    const ids = t.snapshot().caseFile.wards.map((w: any) => w.wardId);
     const dateString = (date: Date) => [date.getFullYear(), String(date.getMonth() + 1).padStart(2, '0'), String(date.getDate()).padStart(2, '0')].join('-');
     const dueSoonPeriodEnd = new Date();
     dueSoonPeriodEnd.setDate(dueSoonPeriodEnd.getDate() - 82);
-    wards[0].gid = dateString(dueSoonPeriodEnd);
-    wards[0].dashboardWorkflow = { status: 'disapproved-needs-correction', assigneeName: 'Morgan Lee' };
-    wards[1].periodTo = dateString(dueSoonPeriodEnd);
-    wards[1].dashboardWorkflow = { status: 'draft', assigneeName: 'Morgan Lee' };
-    wards[2].periodTo = dateString(dueSoonPeriodEnd);
-    wards[2].dashboardWorkflow = { status: 'pending-court-review', assigneeName: 'Jordan Patel' };
-    wards[3].periodTo = dateString(dueSoonPeriodEnd);
-    wards[3].dashboardWorkflow = { status: 'approved', assigneeName: 'Jordan Patel' };
-    wards[4].dashboardWorkflow = { status: 'draft' };
-    (window as any).navigate('/dashboard');
+    t.patchFiling({ gid: dateString(dueSoonPeriodEnd), dashboardWorkflow: { status: 'disapproved-needs-correction', assigneeName: 'Morgan Lee' } }, ids[0]);
+    t.patchFiling({ periodTo: dateString(dueSoonPeriodEnd), dashboardWorkflow: { status: 'draft', assigneeName: 'Morgan Lee' } }, ids[1]);
+    t.patchFiling({ periodTo: dateString(dueSoonPeriodEnd), dashboardWorkflow: { status: 'pending-court-review', assigneeName: 'Jordan Patel' } }, ids[2]);
+    t.patchFiling({ periodTo: dateString(dueSoonPeriodEnd), dashboardWorkflow: { status: 'approved', assigneeName: 'Jordan Patel' } }, ids[3]);
+    t.patchFiling({ dashboardWorkflow: { status: 'draft' } }, ids[4]);
+    t.navigate('/dashboard');
   });
 
   const main = page.locator('#main-content');
@@ -160,14 +158,15 @@ test('mobile viewport collapses the sidebar and maintains triage control contain
 test('dashboard action buttons share identical horizontal positions on rows with and without prior years', async ({ page }) => {
   await freshStartNoPassword(page);
 
-  await page.evaluate((type) => (window as any).addWard('Ward With Prior Years', type), 'annual');
-  await page.evaluate((type) => (window as any).addWard('Ward Without Prior Years', type), 'annual');
+  await page.evaluate((type) => (window as any).GuardianForms.testing.createFiling.add('Ward With Prior Years', type), 'annual');
+  await page.evaluate((type) => (window as any).GuardianForms.testing.createFiling.add('Ward Without Prior Years', type), 'annual');
 
   await page.evaluate(() => {
-    const caseFile = (window as any).getCaseFile();
-    const ward1 = caseFile.wards.find((w: any) => w.wardName === 'Ward With Prior Years');
-    ward1.years = [{ key: '2023', label: '2023 Accounting', archivedAt: new Date().toISOString(), data: {} }];
-    (window as any).navigate('/dashboard');
+    // Setup (D9): one archived year on the first filing.
+    const t = (window as any).GuardianForms.testing;
+    const ward1 = t.snapshot().caseFile.wards.find((w: any) => w.wardName === 'Ward With Prior Years');
+    t.patchFiling({ years: [{ key: '2023', label: '2023 Accounting', archivedAt: new Date().toISOString(), data: {} }] }, ward1.wardId);
+    t.navigate('/dashboard');
   });
 
   const main = page.locator('#main-content');
@@ -234,10 +233,10 @@ test('dashboard action buttons share identical horizontal positions on rows with
 test('dashboard triage header and rows stay column-aligned regardless of content length', async ({ page }) => {
   await freshStartNoPassword(page);
 
-  await page.evaluate(() => (window as any).addWard('Short', 'guardian'));
-  await page.evaluate(() => (window as any).addWard('A Very Long Ward Name Meant To Stress The Ward Column Width', 'annual'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.createFiling.add('Short', 'guardian'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.createFiling.add('A Very Long Ward Name Meant To Stress The Ward Column Width', 'annual'));
 
-  await page.evaluate(() => (window as any).navigate('/dashboard'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/dashboard'));
   const main = page.locator('#main-content');
   await main.locator('[data-dashboard-bound="true"]').waitFor();
   await page.setViewportSize({ width: 1920, height: 1080 });
@@ -266,9 +265,9 @@ test('dashboard triage header and rows stay column-aligned regardless of content
 
 test('dashboard column sorting toggles only between ascending and descending', async ({ page }) => {
   await freshStartNoPassword(page);
-  await page.evaluate((type) => (window as any).addWard('Zulu Filing', type), 'annual');
-  await page.evaluate((type) => (window as any).addWard('Alpha Filing', type), 'guardian');
-  await page.evaluate(() => (window as any).navigate('/dashboard'));
+  await page.evaluate((type) => (window as any).GuardianForms.testing.createFiling.add('Zulu Filing', type), 'annual');
+  await page.evaluate((type) => (window as any).GuardianForms.testing.createFiling.add('Alpha Filing', type), 'guardian');
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/dashboard'));
   await page.locator('#main-content [data-dashboard-bound="true"]').waitFor();
   await page.setViewportSize({ width: 1440, height: 900 });
 

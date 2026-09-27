@@ -23,7 +23,7 @@ test.describe('Save as PDF/Excel: a second click while one is already running do
     await freshStartNoPassword(page);
     await createWard(page, 'Export Guard Plan Minor Ward', 'planMinor');
     await fillMinimalValidPlanMinorWard(page);
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
 
     const selector = '[data-form-action="save-pdf-plan-minor"]';
     const btn = page.locator(selector);
@@ -58,7 +58,7 @@ test.describe('Save as PDF/Excel: a second click while one is already running do
     await freshStartNoPassword(page);
     await createWard(page, 'Export Guard Guardian Ward', 'guardian');
     await fillMinimalValidGuardianWard(page);
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
 
     const pdfSelector = '[data-inventory-action="save-pdf"]';
     const excelSelector = '[data-inventory-action="save-excel"]';

@@ -41,7 +41,3 @@ export function issueMessage(issue) {
   return typeof issue === 'string' ? issue : (issue?.message ?? String(issue));
 }
 
-if (typeof window !== 'undefined') {
-  window.validationIssue = validationIssue;
-  window.issueMessage = issueMessage;
-}

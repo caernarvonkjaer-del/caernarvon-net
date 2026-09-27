@@ -34,7 +34,7 @@ test.describe('Milestone 46B: reusable per-party signature stamps', () => {
     await freshStartNoPassword(page);
     await createWard(page, 'Stamp Source Ward', 'planSimplified');
     await fillMinimalValidPlanSimplifiedWard(page);
-    await page.evaluate(() => (window as any).navigate('/p3'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/p3'));
 
     // Link guardian slot 0 to a real party, so there is somewhere for the
     // reusable stamp to live.
@@ -42,7 +42,7 @@ test.describe('Milestone 46B: reusable per-party signature stamps', () => {
     await page.locator('#pickPartyModal.show').waitFor({ state: 'visible' });
     await page.click('#pickPartyModal [data-modal-action="create-party-from-slot"]');
     await page.locator('#pickPartyModal').waitFor({ state: 'hidden' });
-    const partyId = await page.evaluate(() => (window as any).D.guardianPartyIds[0]);
+    const partyId = await page.evaluate(() => (window as any).GuardianForms.testing.field('guardianPartyIds.0'));
     expect(partyId).toBeTruthy();
 
     await drawAndApplyStamp(page);
@@ -50,9 +50,9 @@ test.describe('Milestone 46B: reusable per-party signature stamps', () => {
     // The filing holds its own image, and the party now has a reusable one.
     const afterCapture = await page.evaluate((id) => {
       const w = window as any;
-      const party = w.caseFile.parties.find((p: any) => p.id === id);
+      const party = w.GuardianForms.testing.snapshot().caseFile.parties.find((p: any) => p.id === id);
       return {
-        filingImage: (w.D.planGuardians[0].signatureImage || '').slice(0, 24),
+        filingImage: (w.GuardianForms.testing.field('planGuardians.0.signatureImage') || '').slice(0, 24),
         stampCount: (party.signatureImages || []).length,
         activeImage: (party.signatureImages || []).find((e: any) => e.active)?.imageData.slice(0, 24),
       };
@@ -65,7 +65,7 @@ test.describe('Milestone 46B: reusable per-party signature stamps', () => {
     // once the card is in Stamp state.
     await createWard(page, 'Stamp Reuse Ward', 'planSimplified');
     await fillMinimalValidPlanSimplifiedWard(page);
-    await page.evaluate(() => (window as any).navigate('/p3'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/p3'));
     await page.click('[data-form-action="link-party"][data-role="guardian"][data-index="0"]');
     await page.locator('#pickPartyModal.show').waitFor({ state: 'visible' });
     await page.selectOption('#pick-party-existing', partyId);
@@ -82,7 +82,7 @@ test.describe('Milestone 46B: reusable per-party signature stamps', () => {
     const confirmMessage = await acceptDynDialog(page);
     expect(confirmMessage).toContain('Apply your saved signature');
 
-    const reused = await page.evaluate(() => ((window as any).D.planGuardians[0].signatureImage || '').slice(0, 24));
+    const reused = await page.evaluate(() => ((window as any).GuardianForms.testing.field('planGuardians.0.signatureImage') || '').slice(0, 24));
     expect(reused).toBe(afterCapture.filingImage);
   });
 
@@ -90,7 +90,7 @@ test.describe('Milestone 46B: reusable per-party signature stamps', () => {
     await freshStartNoPassword(page);
     await createWard(page, 'Stamp Decline Ward', 'planSimplified');
     await fillMinimalValidPlanSimplifiedWard(page);
-    await page.evaluate(() => (window as any).navigate('/p3'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/p3'));
     await page.click('[data-form-action="link-party"][data-role="guardian"][data-index="0"]');
     await page.locator('#pickPartyModal.show').waitFor({ state: 'visible' });
     await page.click('#pickPartyModal [data-modal-action="create-party-from-slot"]');
@@ -98,29 +98,30 @@ test.describe('Milestone 46B: reusable per-party signature stamps', () => {
     await drawAndApplyStamp(page);
 
     // Clear the filing's own image, leaving the party's saved stamp intact.
-    await page.evaluate(() => {
-      (window as any).D.planGuardians[0].signatureImage = '';
-      (window as any).renderPage('/p3');
+    await page.evaluate(async () => {
+      const t = (window as any).GuardianForms.testing;
+      t.patchFiling({ 'planGuardians.0.signatureImage': '' });
+      await t.navigate('/p3'); // the page redrawn from the cleared filing
     });
     await page.locator('input[value="stamp"]').first().check();
 
     await page.locator('[data-signature-action="use-saved-stamp"]').first().click();
     await dismissDynDialog(page);
-    expect(await page.evaluate(() => (window as any).D.planGuardians[0].signatureImage)).toBe('');
+    expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('planGuardians.0.signatureImage'))).toBe('');
   });
 
   test('a slot with no linked party shows no saved-stamp offer and still signs normally', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Stamp Unlinked Ward', 'planSimplified');
     await fillMinimalValidPlanSimplifiedWard(page);
-    await page.evaluate(() => (window as any).navigate('/p3'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/p3'));
 
     await page.locator('input[value="stamp"]').first().check();
     await expect(page.locator('[data-signature-action="use-saved-stamp"]')).toHaveCount(0);
 
     // Capturing still works -- an unlinked slot just has nothing to reuse.
     await drawAndApplyStamp(page);
-    const img = await page.evaluate(() => (window as any).D.planGuardians[0].signatureImage || '');
+    const img = await page.evaluate(() => (window as any).GuardianForms.testing.field('planGuardians.0.signatureImage') || '');
     expect(img).toContain('data:image/png');
   });
 
@@ -128,32 +129,30 @@ test.describe('Milestone 46B: reusable per-party signature stamps', () => {
     await freshStartNoPassword(page);
     await createWard(page, 'Stamp History Ward', 'planSimplified');
     await fillMinimalValidPlanSimplifiedWard(page);
-    await page.evaluate(() => (window as any).navigate('/p3'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/p3'));
     await page.click('[data-form-action="link-party"][data-role="guardian"][data-index="0"]');
     await page.locator('#pickPartyModal.show').waitFor({ state: 'visible' });
     await page.click('#pickPartyModal [data-modal-action="create-party-from-slot"]');
     await page.locator('#pickPartyModal').waitFor({ state: 'hidden' });
     await drawAndApplyStamp(page);
 
-    const firstMark = await page.evaluate(() => (window as any).D.planGuardians[0].signatureImage);
-    const partyId = await page.evaluate(() => (window as any).D.guardianPartyIds[0]);
+    const firstMark = await page.evaluate(() => (window as any).GuardianForms.testing.field('planGuardians.0.signatureImage'));
+    const partyId = await page.evaluate(() => (window as any).GuardianForms.testing.field('guardianPartyIds.0'));
 
     // The party captures a different stamp later (simulating a new signature
     // on some other filing) -- appended, with the old entry retained.
     await page.evaluate((id) => {
-      const w = window as any;
-      const party = w.caseFile.parties.find((p: any) => p.id === id);
-      w.addSignatureImage(party, 'data:image/png;base64,NEWERMARK');
+      (window as any).GuardianForms.testing.updateSharedRecords.addSignatureImage(id, 'data:image/png;base64,NEWERMARK');
     }, partyId);
 
     const state = await page.evaluate((id) => {
       const w = window as any;
-      const party = w.caseFile.parties.find((p: any) => p.id === id);
+      const party = w.GuardianForms.testing.snapshot().caseFile.parties.find((p: any) => p.id === id);
       return {
         entries: party.signatureImages.length,
         activeIsNewer: party.signatureImages.find((e: any) => e.active)?.imageData === 'data:image/png;base64,NEWERMARK',
         oldestRetained: party.signatureImages[0].imageData,
-        filingImage: w.D.planGuardians[0].signatureImage,
+        filingImage: w.GuardianForms.testing.field('planGuardians.0.signatureImage'),
       };
     }, partyId);
 

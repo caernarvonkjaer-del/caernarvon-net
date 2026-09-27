@@ -14,6 +14,7 @@
 // distinction requires a private symbol only pdf.js's own bundle can
 // produce, so it's a listener-ordering nicety this port doesn't attempt --
 // not something AnnotationEditorUIManager's own correctness depends on.
+import { ic } from '../ui/icons.js';
 export class MiniEventBus {
   #listeners = new Map();
   on(eventName, listener, options = null) {
@@ -87,13 +88,9 @@ export async function computeContentFingerprint(pdfDocument) {
 // decorated here once, the moment pdf.js creates them, rather than assumed
 // to already have real accessible names.
 //
-// `ic()` is a bare top-level function in legacy-app.js (a classic script),
-// not an importable module -- reachable only via `window.ic`, guarded
-// exactly like the three other ES modules that already do this
-// (form-fields.js, router.js, dashboard/resources.js). The fallback must
-// never be an empty string: an unavailable window.ic would otherwise
-// reproduce the exact iconless-button defect this decoration exists to fix,
-// just from a different cause.
+// The icon comes from src/core/ui/icons.js (Milestone 70, 70B -- it used to
+// be reachable only through window.ic, with a text fallback in case it was
+// not there yet; an import cannot be missing, so the fallback went too).
 function decorateFreeTextToolbar(toolbarEl) {
   const colorPicker = toolbarEl.querySelector('.basicColorPicker');
   if (colorPicker && !colorPicker.hasAttribute('aria-label')) {
@@ -104,7 +101,7 @@ function decorateFreeTextToolbar(toolbarEl) {
   if (deleteButton && !deleteButton.hasAttribute('aria-label')) {
     deleteButton.setAttribute('aria-label', 'Delete note');
     deleteButton.setAttribute('title', 'Delete note');
-    deleteButton.innerHTML = typeof window.ic === 'function' ? window.ic('trash', 14) : 'Delete';
+    deleteButton.innerHTML = ic('trash', 14);
   }
 }
 
@@ -147,7 +144,7 @@ function decorateHighlightToolbar(toolbarEl) {
   if (deleteButton && !deleteButton.hasAttribute('aria-label')) {
     deleteButton.setAttribute('aria-label', 'Delete highlight');
     deleteButton.setAttribute('title', 'Delete highlight');
-    deleteButton.innerHTML = typeof window.ic === 'function' ? window.ic('trash', 14) : 'Delete';
+    deleteButton.innerHTML = ic('trash', 14);
   }
 }
 

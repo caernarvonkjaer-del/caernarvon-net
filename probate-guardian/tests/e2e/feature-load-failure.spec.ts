@@ -29,7 +29,7 @@ test('failed feature chunk shows a reload action instead of a blank view', async
   skipEnvironmentLimitation(!sourceTarget, 'The source target exposes a stable unbundled chunk URL for failure injection');
 
   await freshStartNoPassword(page);
-  await page.evaluate(() => (window as any).addWard('Chunk Retry Ward', 'guardian'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.createFiling.add('Chunk Retry Ward', 'guardian'));
 
   let failedOnce = false;
   await page.route('**/src/features/dashboard/index.js', async route => {
@@ -37,7 +37,7 @@ test('failed feature chunk shows a reload action instead of a blank view', async
     await route.abort('failed');
   });
   const loads = countLoads(page);
-  await page.evaluate(() => (window as any).navigate('/dashboard'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/dashboard'));
 
   const main = page.locator('#main-content');
   await expect(main).toContainText('This section could not be loaded.');
@@ -78,7 +78,7 @@ test('a chunk that fails while a feature mounts shows the panel instead of reloa
   const loads = countLoads(page);
   // The Guardian feature's own module loads; its print module, imported at the
   // start of mount(), does not.
-  await page.evaluate(() => (window as any).addWard('Mount Chunk Ward', 'guardian'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.createFiling.add('Mount Chunk Ward', 'guardian'));
 
   const main = page.locator('#main-content');
   await expect(main).toContainText('This section could not be loaded.');
@@ -144,7 +144,7 @@ test('failed feature chunk shows a reload action instead of a blank view (web, h
   const controlled = await page.evaluate(() => Boolean(navigator.serviceWorker?.controller));
   expect(controlled, 'a fresh session must not already be controlled by a service worker, or route interception below would not see the request').toBe(false);
 
-  await page.evaluate(() => (window as any).addWard('Chunk Retry Ward', 'guardian'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.createFiling.add('Chunk Retry Ward', 'guardian'));
 
   let failedOnce = false;
   await page.route(`**/${chunkPath}`, async route => {
@@ -152,7 +152,7 @@ test('failed feature chunk shows a reload action instead of a blank view (web, h
     await route.abort('failed');
   });
   const loads = countLoads(page);
-  await page.evaluate(() => (window as any).navigate('/dashboard'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/dashboard'));
 
   const main = page.locator('#main-content');
   await expect(main).toContainText('This section could not be loaded.');

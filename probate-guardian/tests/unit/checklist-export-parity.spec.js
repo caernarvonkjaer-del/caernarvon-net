@@ -1,34 +1,11 @@
 import { describe, it, expect, beforeAll } from 'vitest';
-import { sliceBalancedFunction } from './support/legacy-source-extract.js';
+import { parse } from 'acorn';
+import { sliceBalancedFunction } from './support/source-slice.js';
+import { openFiling } from './support/open-filing.js';
 
-// Provide browser globals required by legacy feature modules
-global.window = {
-  esc: (s) => s || '',
-  ic: () => '',
-  autoSave: () => {},
-  navigate: () => {},
-  updateNavDots: () => {},
-  renderScheduleDocsSection: () => '',
-  txtP: () => '',
-  chkP: () => '',
-  planQ: () => '',
-  planCheckGroup: () => '',
-  yesNoCheckboxS: () => '',
-  radioP: () => '',
-  pageNavS: () => '',
-  formatName: (s) => s,
-  formatPhone: (s) => s,
-  formatDisplayDate: (s) => s,
-  toggleSsnReveal: () => '',
-  INITIAL_ADLS: [],
-  INITIAL_ADL_RATINGS: [],
-  ANNUAL_ADLS: [],
-  ANNUAL_ADL_RATINGS: [],
-  calcTotals: () => ({}),
-  countyInputS: () => '',
-  inpS: () => '',
-  ...(global.window || {}),
-};
+// Some modules these import touch `window` at import time; none reads an
+// application global from it (Milestone 70, 70K), so an empty one serves.
+globalThis.window = globalThis.window || {};
 
 const { validatePlanInitial } = await import('../../src/features/plan-initial/index.js');
 const { validatePlanAnnual } = await import('../../src/features/plan-annual/index.js');
@@ -38,20 +15,20 @@ const { validatePlanMinor } = await import('../../src/features/plan-minor/index.
 describe('checklist vs export validator parity', () => {
   describe('Initial Plan Question 10F / pi-p8', () => {
     it('requires committeeIncorporated in validatePlanInitial', () => {
-      window.D = {
+      openFiling({
         wardName: 'Test Ward',
         caseNumber: '25-001234-GD',
         county: 'Pinellas',
         q11NoDirectives: true,
         needsNone: true,
         committeeIncorporated: '',
-      };
+      });
       const errors = validatePlanInitial();
       expect(errors.some(e => String(e).includes('Whether examining-committee recommendations are incorporated is required'))).toBe(true);
     });
 
     it('requires committeeExplain in validatePlanInitial when committeeIncorporated is No', () => {
-      window.D = {
+      openFiling({
         wardName: 'Test Ward',
         caseNumber: '25-001234-GD',
         county: 'Pinellas',
@@ -59,27 +36,27 @@ describe('checklist vs export validator parity', () => {
         needsNone: true,
         committeeIncorporated: 'No',
         committeeExplain: '',
-      };
+      });
       const errors = validatePlanInitial();
       expect(errors.some(e => String(e).includes('Explanation is required when recommendations are not incorporated'))).toBe(true);
     });
 
     it('passes Question 10F in validatePlanInitial when committeeIncorporated is Yes', () => {
-      window.D = {
+      openFiling({
         wardName: 'Test Ward',
         caseNumber: '25-001234-GD',
         county: 'Pinellas',
         q11NoDirectives: true,
         needsNone: true,
         committeeIncorporated: 'Yes',
-      };
+      });
       const errors = validatePlanInitial();
       expect(errors.some(e => String(e).includes('recommendations are incorporated'))).toBe(false);
       expect(errors.some(e => String(e).includes('Explanation is required'))).toBe(false);
     });
 
     it('passes Question 10F in validatePlanInitial when committeeIncorporated is No with explanation', () => {
-      window.D = {
+      openFiling({
         wardName: 'Test Ward',
         caseNumber: '25-001234-GD',
         county: 'Pinellas',
@@ -87,7 +64,7 @@ describe('checklist vs export validator parity', () => {
         needsNone: true,
         committeeIncorporated: 'No',
         committeeExplain: 'Recommendations reviewed and deferred pending specialist report',
-      };
+      });
       const errors = validatePlanInitial();
       expect(errors.some(e => String(e).includes('recommendations are incorporated'))).toBe(false);
       expect(errors.some(e => String(e).includes('Explanation is required'))).toBe(false);
@@ -106,8 +83,9 @@ describe('checklist vs export validator parity', () => {
 
 // ── Cross-cutting guard (Milestone 36-6 item 13) ─────────────────────────
 //
-// computeNavChecks() in legacy-app.js and each feature's export validator are
-// two hand-maintained rule sets over the same data, with nothing keeping them
+// computeNavChecks() (legacy-app.js's then; src/core/status/completion.js's
+// evaluators now) and each feature's export validator are two hand-maintained
+// rule sets over the same data, with nothing keeping them
 // in agreement. When the validator requires a field the section check never
 // consults, a filer can turn every sidebar marker green and still be refused
 // at Print Preview, with nothing on the page saying what is missing.
@@ -207,7 +185,7 @@ describe('checklist and export validator field parity', () => {
     // the assertion never ran for it and its gaps were never recorded. It
     // enters the list with NO gaps rather than five new ones: s-p5 and s-p6
     // now evaluate signature completeness through the same rule
-    // validateSimplified() uses (window.isSignatureComplete), which reaches
+    // validateSimplified() uses (isSignatureComplete()), which reaches
     // attorney_signatureState/Image and certAttySignDate/SignatureState/
     // SignatureImage. An entry appearing here later means the two have drifted
     // apart again.
@@ -215,13 +193,16 @@ describe('checklist and export validator field parity', () => {
     annual: ['amendedForm', 'attorney', 'attorney_signatureImage', 'attorney_signatureState', 'certAttySignDate', 'certAttySignatureImage', 'certAttySignatureState'],
   };
 
-  const BRANCH_MARKERS = {
-    simplified: "activeInventoryType==='simplified'",
-    annual: "formEngine(activeInventoryType)==='annual'",
-    planSimplified: "activeInventoryType==='planSimplified'",
-    planAnnual: "activeInventoryType==='planAnnual'",
-    planInitial: "activeInventoryType==='planInitial'",
-    planMinor: "activeInventoryType==='planMinor'",
+  // Milestone 70, 70D: the section checks are one evaluator per engine in
+  // src/core/status/completion.js; until then they were the branches of
+  // legacy-app.js's computeNavChecks(), found here by their if-test.
+  const EVALUATORS = {
+    simplified: 'simplifiedCompletion',
+    annual: 'annualCompletion',
+    planSimplified: 'planSimplifiedCompletion',
+    planAnnual: 'planAnnualCompletion',
+    planInitial: 'planInitialCompletion',
+    planMinor: 'planMinorCompletion',
   };
 
   const VALIDATORS = {
@@ -240,25 +221,27 @@ describe('checklist and export validator field parity', () => {
   const readSrc = (rel) => fs.readFileSync(path.resolve(__dirname, '../../src', rel), 'utf8');
 
   // Returns the brace-balanced body that follows `header`. Milestone 52L
-  // moved the brace matching into support/legacy-source-extract.js; this
-  // spec wants the body only (it searches inside it), not the header.
+  // moved the brace matching into a support module (support/source-slice.js
+  // since Milestone 70's 70L); this spec wants the body only (it searches
+  // inside it), not the header.
   const sliceFunction = (src, header) => sliceBalancedFunction(src, header, { includeHeader: false });
 
   const modelFields = (text) => new Set([...text.matchAll(/\b[dD]\.([A-Za-z_][A-Za-z0-9_]*)/g)].map((m) => m[1]));
 
   let navFieldsByType;
   beforeAll(() => {
-    const nav = sliceFunction(readSrc('legacy-app.js'), 'function computeNavChecks(');
-    expect(nav.length).toBeGreaterThan(0);
-    const markers = Object.entries(BRANCH_MARKERS)
-      .map(([type, marker]) => ({ type, index: nav.indexOf(marker) }))
-      .filter((m) => m.index > -1)
-      .sort((a, b) => a.index - b.index);
+    const completion = readSrc('core/status/completion.js');
+    // Each evaluator's own body, found by the parser (a text search for the
+    // header would stop at the `{}` default of its `deps` parameter).
+    const bodies = new Map(parse(completion, { ecmaVersion: 'latest', sourceType: 'module' }).body
+      .filter((st) => st.type === 'ExportNamedDeclaration' && st.declaration?.type === 'FunctionDeclaration')
+      .map((st) => [st.declaration.id.name, completion.slice(st.declaration.body.start, st.declaration.body.end)]));
     navFieldsByType = {};
-    markers.forEach((mk, n) => {
-      const end = n + 1 < markers.length ? markers[n + 1].index : nav.length;
-      navFieldsByType[mk.type] = modelFields(nav.slice(mk.index, end));
-    });
+    for (const [type, name] of Object.entries(EVALUATORS)) {
+      const body = bodies.get(name) || '';
+      expect(body.length, `${name}() not found in core/status/completion.js`).toBeGreaterThan(0);
+      navFieldsByType[type] = modelFields(body);
+    }
   });
 
   for (const [type, [feature, header]] of Object.entries(VALIDATORS)) {
@@ -267,7 +250,7 @@ describe('checklist and export validator field parity', () => {
       expect(body.length, `${header} not found in features/${feature}/index.js`).toBeGreaterThan(0);
 
       const checklistFields = navFieldsByType[type] || new Set();
-      expect(checklistFields.size, `no computeNavChecks branch found for ${type}`).toBeGreaterThan(0);
+      expect(checklistFields.size, `no completion evaluator found for ${type}`).toBeGreaterThan(0);
 
       const gaps = [...modelFields(body)].filter((f) => !checklistFields.has(f)).sort();
       expect(gaps).toEqual(KNOWN_GAPS[type].slice().sort());

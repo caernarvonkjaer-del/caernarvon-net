@@ -17,7 +17,7 @@ test.describe('PDF Accessibility: Table Semantics, ColSpan & Multi-Page Continua
     await installFixtureSupport(page);
 
     const inspection = await page.evaluate(async (base) => {
-      const { buildAnnualAccountingModel, generateCourtFormPdf } = await (window as any).loadAnnualPdf();
+      const { buildAnnualAccountingModel, generateCourtFormPdf } = await (window as any).GuardianForms.testing.generateOutput.annualPdf();
 
       const schD1 = [];
       for (let i = 1; i <= 25; i++) {
@@ -105,7 +105,7 @@ test.describe('PDF Accessibility: Table Semantics, ColSpan & Multi-Page Continua
     await installFixtureSupport(page);
 
     const inspection = await page.evaluate(async (base) => {
-      const { buildVerifiedInventoryModel, generateVerifiedInventoryPdf } = await (window as any).loadGuardianPdf();
+      const { buildVerifiedInventoryModel, generateVerifiedInventoryPdf } = await (window as any).GuardianForms.testing.generateOutput.guardianPdf();
 
       // Create model with:
       // 1. Asymmetric key-value grid (odd items)

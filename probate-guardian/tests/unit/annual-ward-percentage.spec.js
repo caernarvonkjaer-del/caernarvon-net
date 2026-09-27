@@ -41,14 +41,29 @@ describe('pct(): the Annual Accounting\'s ward-share calculation', () => {
   });
 });
 
+describe('percentValue(): what the exporter writes into the workbook\'s percentage cells', () => {
+  test('always the percentage divided by 100: 1% is written as 0.01, not 1 (100%)', () => {
+    expect(percentValue('50')).toBe(0.5);
+    expect(percentValue(100)).toBe(1);
+    expect(percentValue('1')).toBe(0.01);
+    expect(percentValue(0.5)).toBe(0.005);
+    expect(percentValue('12.5')).toBe(0.125);
+  });
+
+  test('an empty or unreadable value writes 0, as before', () => {
+    expect(percentValue('')).toBe(0);
+    expect(percentValue('invalid')).toBe(0);
+  });
+});
+
 // The first fix changed pct() and percentValue() but missed two inline copies
 // of the old rule in the Annual PDF (D-1's "Ward's Amount" and D-5's "Ward's
 // Balance" columns) -- a 1% line printed its full $10,000 above a D-1 total of
-// $100. D-2..D-4 already go through scheduleDRow(), and so pct().
+// $100. D-2..D-4 already go through scheduleDRow(), and so pct(). (master's
+// c62f890, carried onto milestone-70.)
 describe("the Annual PDF: each Schedule D line's ward amount uses the same rule", () => {
   let buildAnnualAccountingModel;
   beforeAll(async () => {
-    global.window = { esc: (s) => s || '', ic: () => '', ...(global.window || {}) };
     ({ buildAnnualAccountingModel } = await import('../../src/features/annual-accounting/pdf-model.js'));
   });
   const lastCells = (model, id) => model.sections.find((s) => s.id === id).blocks[0].rows.map((r) => r[r.length - 1]);
@@ -63,20 +78,5 @@ describe("the Annual PDF: each Schedule D line's ward amount uses the same rule"
     const row = (wardPct) => ({ description: 'x', loanNo: '1', loanType: 'Mortgage', fullDebt: 10000, wardPct });
     const model = buildAnnualAccountingModel({ schD5: [row('1'), row('50'), row('0.5'), row('100')] });
     expect(lastCells(model, 'schD5')).toEqual(['$100.00', '$5,000.00', '$50.00', '$10,000.00']);
-  });
-});
-
-describe('percentValue(): what the exporter writes into the workbook\'s percentage cells', () => {
-  test('always the percentage divided by 100: 1% is written as 0.01, not 1 (100%)', () => {
-    expect(percentValue('50')).toBe(0.5);
-    expect(percentValue(100)).toBe(1);
-    expect(percentValue('1')).toBe(0.01);
-    expect(percentValue(0.5)).toBe(0.005);
-    expect(percentValue('12.5')).toBe(0.125);
-  });
-
-  test('an empty or unreadable value writes 0, as before', () => {
-    expect(percentValue('')).toBe(0);
-    expect(percentValue('invalid')).toBe(0);
   });
 });

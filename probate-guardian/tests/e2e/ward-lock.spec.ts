@@ -23,7 +23,7 @@ test.describe('Ward-level Tab Locks', { tag: '@origin-state' }, () => {
       await page.waitForFunction(() => window.location.hash === '' || window.location.hash === '#/');
 
       // Check lock for Ward A is held
-      const wardAId = await page.evaluate(() => (window as any).caseFile.activeWardId);
+      const wardAId = await page.evaluate(() => (window as any).GuardianForms.testing.snapshot().caseFile.activeWardId);
       let heldLocks = await page.evaluate(async () => (await navigator.locks.query()).held?.map(l => l.name) || []);
       expect(heldLocks).toContain(`pg-ward-${wardAId}`);
 
@@ -33,11 +33,11 @@ test.describe('Ward-level Tab Locks', { tag: '@origin-state' }, () => {
       await createWard(page, 'Ward B');
       await page.waitForFunction(() => window.location.hash === '' || window.location.hash === '#/');
 
-      const wardBId = await page.evaluate(() => (window as any).caseFile.activeWardId);
+      const wardBId = await page.evaluate(() => (window as any).GuardianForms.testing.snapshot().caseFile.activeWardId);
 
       // 2. Switch to Ward A from Ward B
-      await page.evaluate((id) => (window as any).switchWard(id), wardAId);
-      await page.waitForFunction((id) => (window as any).caseFile.activeWardId === id, wardAId);
+      await page.evaluate((id) => (window as any).GuardianForms.testing.activateFiling.open(id), wardAId);
+      await page.waitForFunction((id) => (window as any).GuardianForms.testing.snapshot().caseFile.activeWardId === id, wardAId);
 
       // Check Ward A lock is held and Ward B lock is released
       heldLocks = await page.evaluate(async () => (await navigator.locks.query()).held?.map(l => l.name) || []);
@@ -45,8 +45,8 @@ test.describe('Ward-level Tab Locks', { tag: '@origin-state' }, () => {
       expect(heldLocks).not.toContain(`pg-ward-${wardBId}`);
 
       // 3. Switch back to Ward B
-      await page.evaluate((id) => (window as any).switchWard(id), wardBId);
-      await page.waitForFunction((id) => (window as any).caseFile.activeWardId === id, wardBId);
+      await page.evaluate((id) => (window as any).GuardianForms.testing.activateFiling.open(id), wardBId);
+      await page.waitForFunction((id) => (window as any).GuardianForms.testing.snapshot().caseFile.activeWardId === id, wardBId);
 
       // Check Ward B lock is held and Ward A lock is released
       heldLocks = await page.evaluate(async () => (await navigator.locks.query()).held?.map(l => l.name) || []);
@@ -66,7 +66,7 @@ test.describe('Ward-level Tab Locks', { tag: '@origin-state' }, () => {
       await chooseNoPassword(tab1);
       await createWard(tab1, 'Ward A');
       await tab1.waitForFunction(() => window.location.hash === '' || window.location.hash === '#/');
-      const wardAId = await tab1.evaluate(() => (window as any).caseFile.activeWardId);
+      const wardAId = await tab1.evaluate(() => (window as any).GuardianForms.testing.snapshot().caseFile.activeWardId);
 
       // Milestone 50G: Tab 1's debounced autosave writes to the shared
       // pg-session-cache IndexedDB store as soon as a ward exists to be
@@ -81,9 +81,9 @@ test.describe('Ward-level Tab Locks', { tag: '@origin-state' }, () => {
       // first so the clear isn't immediately undone by a still-pending
       // debounced write, matching what a real Save-As already does.
       await tab1.evaluate(async () => {
-        await (window as any).flushPendingSave();
-        await (window as any).clearSessionRestoreCache();
-        (window as any)._dirtySinceExport = false;
+        await (window as any).GuardianForms.testing.save.flush();
+        await (window as any).GuardianForms.testing.recoveryCache.clear();
+        (window as any).GuardianForms.testing.save.markClean();
       });
 
       // Tab 2 opens
@@ -93,15 +93,15 @@ test.describe('Ward-level Tab Locks', { tag: '@origin-state' }, () => {
       await chooseNoPassword(tab2);
       await createWard(tab2, 'Ward B');
       await tab2.waitForFunction(() => window.location.hash === '' || window.location.hash === '#/');
-      const wardBId = await tab2.evaluate(() => (window as any).caseFile.activeWardId);
+      const wardBId = await tab2.evaluate(() => (window as any).GuardianForms.testing.snapshot().caseFile.activeWardId);
 
       // Both tabs hold their respective locks
       const tab1Locks = await tab1.evaluate(async () => (await navigator.locks.query()).held?.map(l => l.name) || []);
       expect(tab1Locks).toContain(`pg-ward-${wardAId}`);
       expect(tab1Locks).toContain(`pg-ward-${wardBId}`);
 
-      expect(await tab1.evaluate(() => (window as any).caseFile.activeWardId)).toBe(wardAId);
-      expect(await tab2.evaluate(() => (window as any).caseFile.activeWardId)).toBe(wardBId);
+      expect(await tab1.evaluate(() => (window as any).GuardianForms.testing.snapshot().caseFile.activeWardId)).toBe(wardAId);
+      expect(await tab2.evaluate(() => (window as any).GuardianForms.testing.snapshot().caseFile.activeWardId)).toBe(wardBId);
     } finally {
       await context.close();
     }
@@ -122,16 +122,16 @@ test.describe('Ward-level Tab Locks', { tag: '@origin-state' }, () => {
       await chooseNoPassword(tab1);
       await createWard(tab1, 'Ward A');
       await tab1.waitForFunction(() => window.location.hash === '' || window.location.hash === '#/');
-      const wardAId = await tab1.evaluate(() => (window as any).caseFile.activeWardId);
+      const wardAId = await tab1.evaluate(() => (window as any).GuardianForms.testing.snapshot().caseFile.activeWardId);
 
       // Milestone 50G: see the "different wards" test above for why this is
       // needed -- Tab 1's debounced autosave leaves a stale session-restore
       // cache entry that would otherwise show Tab 2 an unhandled DOM confirm
       // dialog before it ever reaches the startup screen.
       await tab1.evaluate(async () => {
-        await (window as any).flushPendingSave();
-        await (window as any).clearSessionRestoreCache();
-        (window as any)._dirtySinceExport = false;
+        await (window as any).GuardianForms.testing.save.flush();
+        await (window as any).GuardianForms.testing.recoveryCache.clear();
+        (window as any).GuardianForms.testing.save.markClean();
       });
 
       // Tab 2 opens while Tab 1 is still in Ward A's editor.
@@ -141,21 +141,21 @@ test.describe('Ward-level Tab Locks', { tag: '@origin-state' }, () => {
       await chooseNoPassword(tab2);
 
       // Tab 2 attempts to acquire Ward A while Tab 1 is editing it -> MUST FAIL.
-      const tab2Acquired = await tab2.evaluate((id) => (window as any).acquireWardLock(id), wardAId);
+      const tab2Acquired = await tab2.evaluate((id) => (window as any).GuardianForms.testing.filingLock.acquire(id), wardAId);
       expect(tab2Acquired).toBe(false);
 
       // Tab 1 enters the dashboard, which ends editing focus and releases the
       // lock -- no separate close action exists any more.
       await tab1.evaluate(() => window.location.hash = '#/dashboard');
       await expect(tab1).toHaveURL(/#\/dashboard$/);
-      await tab1.waitForFunction(() => (window as any).caseFile.activeWardId === null);
+      await tab1.waitForFunction(() => (window as any).GuardianForms.testing.snapshot().caseFile.activeWardId === null);
 
       // Tab 2 can now acquire Ward A successfully
-      const tab2AcquiredAfter = await tab2.evaluate((id) => (window as any).acquireWardLock(id), wardAId);
+      const tab2AcquiredAfter = await tab2.evaluate((id) => (window as any).GuardianForms.testing.filingLock.acquire(id), wardAId);
       expect(tab2AcquiredAfter).toBe(true);
 
       // Release Tab 2 lock
-      await tab2.evaluate(() => (window as any).releaseWardLock());
+      await tab2.evaluate(() => (window as any).GuardianForms.testing.filingLock.release());
     } finally {
       await context.close();
     }
@@ -170,11 +170,11 @@ test.describe('Ward-level Tab Locks', { tag: '@origin-state' }, () => {
       await chooseNoPassword(tab1);
       await createWard(tab1, 'Ward A');
       await tab1.waitForFunction(() => window.location.hash === '' || window.location.hash === '#/');
-      const wardAId = await tab1.evaluate(() => (window as any).caseFile.activeWardId);
+      const wardAId = await tab1.evaluate(() => (window as any).GuardianForms.testing.snapshot().caseFile.activeWardId);
 
       // Tab 1 deletes Ward A
-      await tab1.evaluate((id) => (window as any).deleteWard(id), wardAId);
-      expect(await tab1.evaluate(() => (window as any).caseFile.activeWardId)).toBe(null);
+      await tab1.evaluate((id) => (window as any).GuardianForms.testing.deleteFiling(id), wardAId);
+      expect(await tab1.evaluate(() => (window as any).GuardianForms.testing.snapshot().caseFile.activeWardId)).toBe(null);
 
       // Check lock is released
       const heldLocks = await tab1.evaluate(async () => (await navigator.locks.query()).held?.map(l => l.name) || []);
@@ -193,16 +193,16 @@ test.describe('Ward-level Tab Locks', { tag: '@origin-state' }, () => {
       await chooseNoPassword(tab1);
       await createWard(tab1, 'Ward A');
       await tab1.waitForFunction(() => window.location.hash === '' || window.location.hash === '#/');
-      const wardAId = await tab1.evaluate(() => (window as any).caseFile.activeWardId);
+      const wardAId = await tab1.evaluate(() => (window as any).GuardianForms.testing.snapshot().caseFile.activeWardId);
 
       // Milestone 50G: see the "different wards" test above for why this is
       // needed -- Tab 1's debounced autosave leaves a stale session-restore
       // cache entry that would otherwise show Tab 2 an unhandled DOM confirm
       // dialog before it ever reaches the startup screen.
       await tab1.evaluate(async () => {
-        await (window as any).flushPendingSave();
-        await (window as any).clearSessionRestoreCache();
-        (window as any)._dirtySinceExport = false;
+        await (window as any).GuardianForms.testing.save.flush();
+        await (window as any).GuardianForms.testing.recoveryCache.clear();
+        (window as any).GuardianForms.testing.save.markClean();
       });
 
       // Tab 2 opens and creates Ward B
@@ -212,18 +212,18 @@ test.describe('Ward-level Tab Locks', { tag: '@origin-state' }, () => {
       await chooseNoPassword(tab2);
       await createWard(tab2, 'Ward B');
       await tab2.waitForFunction(() => window.location.hash === '' || window.location.hash === '#/');
-      const wardBId = await tab2.evaluate(() => (window as any).caseFile.activeWardId);
+      const wardBId = await tab2.evaluate(() => (window as any).GuardianForms.testing.snapshot().caseFile.activeWardId);
 
       // Tab 1 adds Ward B to its known wards list and attempts to switch to it
       await tab1.evaluate((bId) => {
-        (window as any).caseFile.wards.push({
+        (window as any).GuardianForms.testing.seedFiling({
           wardId: bId,
           inventoryType: 'guardian',
           wardName: 'Ward B'
         });
       }, wardBId);
 
-      const switchRes = await tab1.evaluate((id) => (window as any).switchWard(id), wardBId);
+      const switchRes = await tab1.evaluate((id) => (window as any).GuardianForms.testing.activateFiling.open(id), wardBId);
       expect(switchRes).toBe(false);
 
       // Blocked modal appears on Tab 1
@@ -232,7 +232,7 @@ test.describe('Ward-level Tab Locks', { tag: '@origin-state' }, () => {
       await expect(tab1.locator('#ward-locked-overlay')).toBeHidden();
 
       // Tab 1 stays on Ward A and still holds Ward A lock
-      expect(await tab1.evaluate(() => (window as any).caseFile.activeWardId)).toBe(wardAId);
+      expect(await tab1.evaluate(() => (window as any).GuardianForms.testing.snapshot().caseFile.activeWardId)).toBe(wardAId);
       const tab1Locks = await tab1.evaluate(async () => (await navigator.locks.query()).held?.map(l => l.name) || []);
       expect(tab1Locks).toContain(`pg-ward-${wardAId}`);
     } finally {
@@ -248,9 +248,17 @@ test.describe('Ward-level Tab Locks', { tag: '@origin-state' }, () => {
       await startNewCase(page);
       await chooseNoPassword(page);
       await createWard(page, 'Ward A');
-
-      // Trigger modal manually
-      await page.evaluate(() => (window as any).showWardLockedModal());
+      await createWard(page, 'Ward B');
+      // The modal a filer sees when a filing is open in another tab: hold
+      // Ward A's lock (the name the app uses, pg-ward-<id>) the way another
+      // tab would, then try to open Ward A. (It used to be opened by calling
+      // showWardLockedModal() directly -- Milestone 70, 70T.)
+      const wardAId = await page.evaluate(() => (window as any).GuardianForms.testing.snapshot().caseFile.wards.find((w: any) => w.wardName === 'Ward A').wardId);
+      await page.evaluate((id) => {
+        navigator.locks.request(`pg-ward-${id}`, () => new Promise(() => {})); // held until the page closes
+      }, wardAId);
+      const tryToOpenWardA = () => page.evaluate((id) => (window as any).GuardianForms.testing.activateFiling.open(id), wardAId);
+      expect(await tryToOpenWardA(), 'Ward A is locked elsewhere').toBe(false);
       const modal = page.locator('#ward-locked-overlay');
       await expect(modal).toBeVisible();
       await expect(modal).toHaveAttribute('role', 'dialog');
@@ -262,7 +270,7 @@ test.describe('Ward-level Tab Locks', { tag: '@origin-state' }, () => {
       await expect(modal).toBeHidden();
 
       // Trigger modal again and verify Tab key focus containment
-      await page.evaluate(() => (window as any).showWardLockedModal());
+      await tryToOpenWardA();
       await expect(modal).toBeVisible();
       await page.keyboard.press('Tab');
       expect(await page.evaluate(() => document.activeElement?.id)).toBe('close-ward-locked');
@@ -290,7 +298,7 @@ test.describe('Ward-level Tab Locks', { tag: '@origin-state' }, () => {
       await chooseNoPassword(page);
       await createWard(page, 'Ward A');
       await page.waitForFunction(() => window.location.hash === '' || window.location.hash === '#/');
-      const wardAId = await page.evaluate(() => (window as any).caseFile.activeWardId);
+      const wardAId = await page.evaluate(() => (window as any).GuardianForms.testing.snapshot().caseFile.activeWardId);
 
       // Neither affordance exists any more: not in the sidebar (36-1) and not
       // in the dashboard header (38C).
@@ -304,12 +312,12 @@ test.describe('Ward-level Tab Locks', { tag: '@origin-state' }, () => {
       // Entering the dashboard is the close action.
       await page.evaluate(() => window.location.hash = '#/dashboard');
       await expect(page).toHaveURL(/#\/dashboard$/);
-      await page.waitForFunction(() => (window as any).caseFile.activeWardId === null);
+      await page.waitForFunction(() => (window as any).GuardianForms.testing.snapshot().caseFile.activeWardId === null);
 
       // Lock released, and no editor state left behind.
       const heldLocks = await page.evaluate(async () => (await navigator.locks.query()).held?.map(l => l.name) || []);
       expect(heldLocks).not.toContain(`pg-ward-${wardAId}`);
-      expect(await page.evaluate(() => Object.keys((window as any).D || {}).length)).toBe(0);
+      expect(await page.evaluate(() => Object.keys((window as any).GuardianForms.testing.snapshot().filing || {}).length)).toBe(0);
     } finally {
       await context.close();
     }

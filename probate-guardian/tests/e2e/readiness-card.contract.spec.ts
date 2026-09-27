@@ -30,7 +30,7 @@ async function annualFamily(page: Page, name: string, key: FilingKey) {
   await createWard(page, name, key);
   await fillMinimalValidAnnualWard(page);
   if (key !== 'annual') {
-    await page.evaluate((v) => { (window as any).D.filingType = v; }, key === 'finalAccounting' ? 'Final' : 'Trust');
+    await page.evaluate((v) => { (window as any).GuardianForms.testing.patchFiling({ 'filingType': v }); }, key === 'finalAccounting' ? 'Final' : 'Trust');
   }
 }
 
@@ -49,9 +49,10 @@ const CONFIGS: Config[] = [
 const card = (page: Page) => page.locator('#filing-readiness-card');
 const isOpen = (page: Page) => card(page).evaluate((el: HTMLDetailsElement) => el.open);
 const pendingIds = (page: Page) => card(page).locator('.readiness-row:has(.readiness-mark.pending)').evaluateAll((els) => els.map((el) => (el as HTMLElement).dataset.readinessId));
-const setCounty = (page: Page, county: string) => page.evaluate((c) => { (window as any).D.county = c; }, county);
-const rerenderPreview = (page: Page) => page.evaluate(() => (window as any).renderPage('/print'));
-const goPreview = (page: Page) => page.evaluate(() => (window as any).navigate('/print'));
+const setCounty = (page: Page, county: string) => page.evaluate((c) => { (window as any).GuardianForms.testing.patchFiling({ 'county': c }); }, county);
+// A same-route re-render, the way a filer gets one: navigating to the page again.
+const rerenderPreview = (page: Page) => page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
+const goPreview = (page: Page) => page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
 
 for (const { key, createFiling } of CONFIGS) {
   test.describe(`${key}: shared readiness card contract`, () => {
@@ -113,7 +114,7 @@ for (const { key, createFiling } of CONFIGS) {
       await expect(card(page)).toHaveCount(1);
       await expect.poll(() => isOpen(page)).toBe(true);
 
-      await page.evaluate(() => (window as any).navigate('/'));
+      await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
       await goPreview(page);
       await expect(card(page)).toHaveCount(1);
       expect(await isOpen(page)).toBe(false);
@@ -126,7 +127,7 @@ test.describe('automatic failures and routing', () => {
     await freshStartNoPassword(page);
     await createWard(page, 'Readiness Routing Ward', 'guardian');
     await fillMinimalValidGuardianWard(page);
-    await page.evaluate(() => { (window as any).D.wardName = ''; });
+    await page.evaluate(() => { (window as any).GuardianForms.testing.patchFiling({ 'wardName': '' }); });
     await goPreview(page);
 
     expect(await isOpen(page)).toBe(true);
@@ -157,7 +158,7 @@ test.describe('automatic failures and routing', () => {
     await freshStartNoPassword(page);
     await createWard(page, 'Readiness Predicate Ward', 'planAnnual');
     await fillMinimalValidPlanAnnualWard(page);
-    await page.evaluate(() => { (window as any).D.planGuardians[0].mailingStreet = ''; });
+    await page.evaluate(() => { (window as any).GuardianForms.testing.patchFiling({ 'planGuardians.0.mailingStreet': '' }); });
     await goPreview(page);
 
     expect(await isOpen(page)).toBe(true);

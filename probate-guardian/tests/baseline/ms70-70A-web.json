@@ -1,0 +1,237 @@
+{
+  "target": "web",
+  "measuredAt": "2026-09-25T00:46:19.392Z",
+  "gitSha": "daafcc1",
+  "staticInlineScriptBytes": 0,
+  "staticExternalScripts": [],
+  "nodeVersion": "v24.16.0",
+  "initialEvaluatedScriptBytes": 4383349,
+  "initialApplicationScriptBytes": 4206132,
+  "browserVersion": "151.0.7922.34",
+  "pageErrors": [],
+  "consoleErrors": [],
+  "JSHeapUsedSize": 5536000,
+  "Nodes": 736,
+  "ScriptDuration": 0.053435,
+  "navigation": {
+    "transferSize": 7488,
+    "encodedBodySize": 7188,
+    "duration": 873.5999999642372
+  },
+  "resourceCount": 36,
+  "scriptResources": [
+    {
+      "name": "http://localhost:4333/probate-guardian/src/prepaint.js",
+      "transferSize": 1369,
+      "encodedBodySize": 1069,
+      "decodedBodySize": 2166
+    },
+    {
+      "name": "http://localhost:4333/probate-guardian/lib/jszip.min.js",
+      "transferSize": 28335,
+      "encodedBodySize": 28035,
+      "decodedBodySize": 96934
+    },
+    {
+      "name": "http://localhost:4333/probate-guardian/assets/index-XJjgFJe2-v2.js",
+      "transferSize": 1802328,
+      "encodedBodySize": 1802028,
+      "decodedBodySize": 3591760
+    },
+    {
+      "name": "http://localhost:4333/probate-guardian/assets/issue-registry-DjFAlqyV.js",
+      "transferSize": 1161,
+      "encodedBodySize": 861,
+      "decodedBodySize": 3160
+    },
+    {
+      "name": "http://localhost:4333/probate-guardian/assets/preload-helper-DbGUP9y-.js",
+      "transferSize": 987,
+      "encodedBodySize": 687,
+      "decodedBodySize": 1213
+    },
+    {
+      "name": "http://localhost:4333/probate-guardian/assets/supplemental-pdf-CQhuHkky.js",
+      "transferSize": 3193,
+      "encodedBodySize": 2893,
+      "decodedBodySize": 7258
+    },
+    {
+      "name": "http://localhost:4333/probate-guardian/assets/signature-state-CUCOtdyh.js",
+      "transferSize": 1341,
+      "encodedBodySize": 1041,
+      "decodedBodySize": 2229
+    },
+    {
+      "name": "http://localhost:4333/probate-guardian/assets/plan-certificate-of-service-DPgSyH4G.js",
+      "transferSize": 2056,
+      "encodedBodySize": 1756,
+      "decodedBodySize": 4148
+    },
+    {
+      "name": "http://localhost:4333/probate-guardian/assets/plan-initial-multiselect-4TW2O8h7.js",
+      "transferSize": 966,
+      "encodedBodySize": 666,
+      "decodedBodySize": 1563
+    },
+    {
+      "name": "http://localhost:4333/probate-guardian/assets/party-resolver-DiF8IN7G.js",
+      "transferSize": 6852,
+      "encodedBodySize": 6552,
+      "decodedBodySize": 23735
+    },
+    {
+      "name": "http://localhost:4333/probate-guardian/assets/circuit-lookup-B_XbRvY7.js",
+      "transferSize": 1276,
+      "encodedBodySize": 976,
+      "decodedBodySize": 1683
+    },
+    {
+      "name": "http://localhost:4333/probate-guardian/assets/ward-county-77EDKhEy.js",
+      "transferSize": 4424,
+      "encodedBodySize": 4124,
+      "decodedBodySize": 14511
+    },
+    {
+      "name": "http://localhost:4333/probate-guardian/assets/case-resolver-BYgaXLHr.js",
+      "transferSize": 960,
+      "encodedBodySize": 660,
+      "decodedBodySize": 1327
+    },
+    {
+      "name": "http://localhost:4333/probate-guardian/assets/date-parser-noJzsutt.js",
+      "transferSize": 992,
+      "encodedBodySize": 692,
+      "decodedBodySize": 1816
+    },
+    {
+      "name": "http://localhost:4333/probate-guardian/assets/form-fields-CHnylYiH.js",
+      "transferSize": 3404,
+      "encodedBodySize": 3104,
+      "decodedBodySize": 9011
+    },
+    {
+      "name": "http://localhost:4333/probate-guardian/assets/schedule-definitions-BXyR5JPc.js",
+      "transferSize": 1743,
+      "encodedBodySize": 1443,
+      "decodedBodySize": 4800
+    },
+    {
+      "name": "http://localhost:4333/probate-guardian/assets/validation-adapter-KwxoP3HC.js",
+      "transferSize": 1743,
+      "encodedBodySize": 1443,
+      "decodedBodySize": 3314
+    },
+    {
+      "name": "http://localhost:4333/probate-guardian/assets/filing-descriptor-D5FPPi72.js",
+      "transferSize": 2229,
+      "encodedBodySize": 1929,
+      "decodedBodySize": 6038
+    },
+    {
+      "name": "http://localhost:4333/probate-guardian/assets/schedule-doc-ack-Csbhd4JX.js",
+      "transferSize": 3566,
+      "encodedBodySize": 3266,
+      "decodedBodySize": 7423
+    },
+    {
+      "name": "http://localhost:4333/probate-guardian/assets/attorney-block-CflX4_2z.js",
+      "transferSize": 739,
+      "encodedBodySize": 439,
+      "decodedBodySize": 439
+    },
+    {
+      "name": "http://localhost:4333/probate-guardian/assets/row-started-lljIqxIX.js",
+      "transferSize": 654,
+      "encodedBodySize": 354,
+      "decodedBodySize": 354
+    },
+    {
+      "name": "http://localhost:4333/probate-guardian/assets/commit-coordinator-DIMMIoDn.js",
+      "transferSize": 1066,
+      "encodedBodySize": 766,
+      "decodedBodySize": 1649
+    },
+    {
+      "name": "http://localhost:4333/probate-guardian/assets/escape-html-DXxvGSfF.js",
+      "transferSize": 439,
+      "encodedBodySize": 139,
+      "decodedBodySize": 139
+    },
+    {
+      "name": "http://localhost:4333/probate-guardian/assets/form-contract-lNWrzHlr.js",
+      "transferSize": 3151,
+      "encodedBodySize": 2851,
+      "decodedBodySize": 8001
+    },
+    {
+      "name": "http://localhost:4333/probate-guardian/assets/readiness-card-BDw3MbK3.js",
+      "transferSize": 9732,
+      "encodedBodySize": 9432,
+      "decodedBodySize": 36092
+    },
+    {
+      "name": "http://localhost:4333/probate-guardian/assets/bond-depository-Ct5vlVx-.js",
+      "transferSize": 1365,
+      "encodedBodySize": 1065,
+      "decodedBodySize": 2801
+    },
+    {
+      "name": "http://localhost:4333/probate-guardian/assets/output-authorization-CkyU4QM-.js",
+      "transferSize": 2154,
+      "encodedBodySize": 1854,
+      "decodedBodySize": 4134
+    },
+    {
+      "name": "http://localhost:4333/probate-guardian/assets/vendor-loader-zSZVzWfa.js",
+      "transferSize": 879,
+      "encodedBodySize": 579,
+      "decodedBodySize": 579
+    },
+    {
+      "name": "http://localhost:4333/probate-guardian/assets/html2pdf-loader-D-Cop4Ca.js",
+      "transferSize": 631,
+      "encodedBodySize": 331,
+      "decodedBodySize": 331
+    },
+    {
+      "name": "http://localhost:4333/probate-guardian/assets/totals-DncJdLYD.js",
+      "transferSize": 1203,
+      "encodedBodySize": 903,
+      "decodedBodySize": 2289
+    },
+    {
+      "name": "http://localhost:4333/probate-guardian/assets/totals-CFf36eHv.js",
+      "transferSize": 1277,
+      "encodedBodySize": 977,
+      "decodedBodySize": 2879
+    },
+    {
+      "name": "http://localhost:4333/probate-guardian/assets/preparer-flag-DLDtdJsT.js",
+      "transferSize": 1269,
+      "encodedBodySize": 969,
+      "decodedBodySize": 2100
+    },
+    {
+      "name": "http://localhost:4333/probate-guardian/src/legacy-app.js",
+      "transferSize": 134830,
+      "encodedBodySize": 134530,
+      "decodedBodySize": 457190
+    },
+    {
+      "name": "http://localhost:4333/probate-guardian/lib/bootstrap.bundle.min.js",
+      "transferSize": 24061,
+      "encodedBodySize": 23761,
+      "decodedBodySize": 80283
+    }
+  ],
+  "initialScriptResourceEncodedBytes": 2042175,
+  "initialScriptResourceDecodedBytes": 4383349,
+  "heapAfterRouteCycles": [
+    5950996,
+    5969232,
+    5983276,
+    6089004,
+    6153912
+  ]
+}

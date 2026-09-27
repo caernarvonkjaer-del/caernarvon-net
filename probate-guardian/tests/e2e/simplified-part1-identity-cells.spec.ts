@@ -90,14 +90,14 @@ async function exportSimplified(page: import('@playwright/test').Page) {
   await createSimplifiedWard(page, WARD);
   await fillMinimalValidSimplifiedWard(page);
   await page.evaluate((v) => {
-    const d = (window as any).D;
+    const d = (window as any).GuardianForms.testing.snapshot().filing;
     d.wardName = v.WARD; d.caseNumber = v.CASE; d.attorney = v.ATTORNEY;
     d.guardian = v.GUARDIAN; d.typeOfGuardianship = v.TYPE; d.ssn = v.SSN;
     d.periodFrom = v.FROM; d.periodTo = v.TO;
-    (window as any).autoSave();
+    (window as any).GuardianForms.testing.replaceFiling(d);
   }, { WARD, CASE, ATTORNEY, GUARDIAN, TYPE, SSN, FROM, TO });
-  await page.evaluate(() => (window as any).flushPendingSave());
-  await page.evaluate(() => (window as any).navigate('/print'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
   const excel = page.locator('[data-simplified-action="save-excel"]');
   await expect(excel).toBeEnabled({ timeout: 20_000 });
   const dl = page.waitForEvent('download', { timeout: 40_000 });
@@ -194,18 +194,18 @@ test.describe('Simplified Part I writes each value beside its own label', () => 
     await download.saveAs(file);
 
     await createSimplifiedWard(page, 'Part I Import Target');
-    await page.evaluate(() => (window as any).navigate('/'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
     const errors: string[] = [];
     page.on('pageerror', (e) => errors.push(e.message));
     await page.setInputFiles('input[type="file"][accept=".xlsx"]', file);
     await page.waitForFunction(
-      (w) => (window as any).D.wardName === w,
+      (w) => (window as any).GuardianForms.testing.field('wardName') === w,
       WARD,
       { timeout: 20_000 },
     );
 
     const back = await page.evaluate(() => {
-      const d = (window as any).D;
+      const d = (window as any).GuardianForms.testing.snapshot().filing;
       return {
         caseNumber: d.caseNumber, attorney: d.attorney, guardian: d.guardian,
         typeOfGuardianship: d.typeOfGuardianship,

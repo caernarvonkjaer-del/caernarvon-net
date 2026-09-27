@@ -1,11 +1,11 @@
 // Milestone 43D (Decision 4, option b): this file bundles three genuinely
 // separate concerns under one name -- persistence crypto services (key
 // derivation, salt), .sav packaging/filename helpers, and the single
-// save-clock invariant (plus a legacy-app.js parse guard riding along in
-// the same describe). None has a Decision-1-style correctness defect, so
+// save-clock invariant (plus a guard that every classic script parses,
+// riding along in the same describe; it was legacy-app.js's until 70L). None has a Decision-1-style correctness defect, so
 // this is pure organization, left as one file with its scope named here
 // rather than split into case-file.spec.js/crypto/*.spec.js siblings.
-import { describe, expect, test, beforeAll, beforeEach, afterEach } from 'vitest';
+import { describe, expect, test, beforeAll, beforeEach, afterEach, vi } from 'vitest';
 import JSZip from 'jszip';
 import {
   deriveKeyFromPassword,
@@ -22,8 +22,14 @@ import {
   getWardFileName,
   buildCaseFileBlob,
   buildSingleWardExportBlob,
+  saveBlobAs,
 } from '../../src/core/persistence/case-file.js';
-import { getCaseFile, setCaseFile } from '../../src/core/state.js';
+import { getCaseFile, replaceCaseFile } from '../../src/core/state.js';
+// Telling other tabs what this one has open (src/core/navigation/tab-state.js since
+// Milestone 70's 70H) and the sidebar's refresh touch the page.
+vi.mock('../../src/core/navigation/tab-state.js', () => ({ notifyProbateGuardianTabStateChanged: () => {}, getProbateGuardianTabState: () => ({}) }));
+vi.mock('../../src/core/shell/sidebar.js', () => ({ refreshWardInfoCard: () => {}, syncActiveWardNameDisplay: () => {}, syncGuardianNameDisplay: () => {}, updateSidebar: () => {} }));
+
 
 describe('persistence crypto services', () => {
   test('constants are properly defined', () => {
@@ -122,7 +128,7 @@ describe('case file packaging and filename helpers', () => {
       lastSavedFileName: 'test.sav',
     };
 
-    setCaseFile(testCaseFile);
+    replaceCaseFile(testCaseFile);
 
     // Full case archive test
     const { blob, count } = await buildCaseFileBlob();
@@ -187,14 +193,15 @@ describe('save timestamp indicator: one clock, only advanced by a real save', ()
     expect(typeof mod.setLastExportAt).toBe('function');
   });
 
-  test('setLastExportAt writes through to window so bare-property readers see it', async () => {
+  // Milestone 70, 70I: the clock is export-state.js's own. Its one bare-property
+  // reader (ward-lifecycle.js's first-backup reminder, which read
+  // window._lastExportAt) imports it, so nothing is written to window.
+  test('the save clock is one module value, with no window copy', async () => {
     const { setLastExportAt, getLastExportAt } = await import('../../src/core/persistence/case-file.js');
     const now = Date.now();
     setLastExportAt(now);
-    // ward-lifecycle.js reads window._lastExportAt as a plain property, not
-    // via the getter, so the write must land there too.
-    expect(window._lastExportAt).toBe(now);
     expect(getLastExportAt()).toBe(now);
+    expect(window._lastExportAt).toBeUndefined();
   });
 
   test('a recorded save renders as a backup; dirty-with-no-save does not', async () => {
@@ -213,16 +220,18 @@ describe('save timestamp indicator: one clock, only advanced by a real save', ()
   });
 
   // Source-level guard, because this one cannot be reached by name from e2e:
-  // legacy-app.js keeps its own copy of updateLastSavedIndicator(), and that
-  // copy is what runs during initApp() -- before main.js's modules evaluate
-  // and replace window.updateLastSavedIndicator. Its undeclared
+  // legacy-app.js kept its own copy of updateLastSavedIndicator(), and that
+  // copy was what ran during initApp() -- before main.js's modules evaluated
+  // and replaced window.updateLastSavedIndicator. Its undeclared
   // _lastAutoSavedAt reference threw a ReferenceError on every load once a
   // case existed, aborting the rest of initApp(). The existing clean-console
   // e2e test never caught it because a fresh install blocks at the
-  // startup-choice overlay and never reaches that line.
-  test('no executable reference to the removed second clock survives in either implementation', async () => {
+  // startup-choice overlay and never reaches that line. (Milestone 70's 70L
+  // deleted legacy-app.js; the classic scripts index.html loads are read.)
+  test('no executable reference to the removed second clock survives in the implementation or a classic script', async () => {
     const { readFile } = await import('node:fs/promises');
-    for (const file of ['src/legacy-app.js', 'src/core/persistence/case-file.js']) {
+    const { classicScripts } = await import('./support/classic-scripts.js');
+    for (const file of ['src/core/persistence/case-file.js', ...classicScripts()]) {
       const source = await readFile(new URL(`../../${file}`, import.meta.url), 'utf8');
       const offending = source
         .split('\n')
@@ -232,22 +241,25 @@ describe('save timestamp indicator: one clock, only advanced by a real save', ()
     }
   });
 
-  // legacy-app.js is a classic script: no unit spec imports it and tsc does
-  // not type-check it, so a syntax error in it passes both `npm run test:unit`
-  // and `npm run check:types` and only surfaces when a browser loads the app.
-  // A stray brace left by a block deletion during this milestone did exactly
-  // that. Parsing it here keeps the fast checks honest.
-  test('legacy-app.js parses as a script', async () => {
-    const { readFile } = await import('node:fs/promises');
+  // A classic script: no unit spec imports it and tsc does not type-check it,
+  // so a syntax error in it passes both `npm run test:unit` and `npm run
+  // check:types` and only surfaces when a browser loads the app. A stray brace
+  // left by a block deletion in legacy-app.js did exactly that. Parsing each
+  // one here keeps the fast checks honest -- every classic script index.html
+  // loads, since Milestone 70's 70L deleted legacy-app.js.
+  test('every classic script parses as a script', async () => {
     const { default: vm } = await import('node:vm');
-    const source = await readFile(new URL('../../src/legacy-app.js', import.meta.url), 'utf8');
-    expect(() => new vm.Script(source, { filename: 'legacy-app.js' })).not.toThrow();
+    const { classicScriptSources } = await import('./support/classic-scripts.js');
+    const scripts = classicScriptSources();
+    expect(scripts.length, 'index.html loads a classic script (src/prepaint.js)').toBeGreaterThan(0);
+    for (const { file, source } of scripts) expect(() => new vm.Script(source, { filename: file }), file).not.toThrow();
   });
 
+  // saveData() is case-file.js's since Milestone 70's 70I.
   test('recovery-cache failures do not invoke the durable save-error banner', async () => {
     const { readFile } = await import('node:fs/promises');
-    const source = await readFile(new URL('../../src/legacy-app.js', import.meta.url), 'utf8');
-    const recoveryBlock = source.match(/if\(_dirtySinceExport\)\{([\s\S]*?)\n  \}\n  \/\/ No "last saved" stamp/);
+    const source = await readFile(new URL('../../src/core/persistence/case-file.js', import.meta.url), 'utf8');
+    const recoveryBlock = source.match(/if\(isDirtySinceExport\(\)\)\{([\s\S]*?)\n  \}\n  \/\/ No "last saved" stamp/);
     expect(recoveryBlock, 'saveData recovery-cache block should remain explicit').not.toBeNull();
     expect(recoveryBlock[1]).not.toMatch(/showSaveError\(\)/);
     expect(recoveryBlock[1]).not.toMatch(/hideSaveError\(\)/);
@@ -264,7 +276,7 @@ describe('save timestamp indicator: one clock, only advanced by a real save', ()
     // A failed write must not leave a save recorded that never happened.
     rollback();
     expect(getLastExportAt()).toBeNull();
-    expect(window._lastExportAt).toBeNull();
+    expect(window._lastExportAt, 'no window copy (Milestone 70, 70I)').toBeUndefined();
   });
 });
 
@@ -272,27 +284,23 @@ describe('save timestamp indicator: one clock, only advanced by a real save', ()
 // `viaTimer` is true for the interval sweep AND the debounced save after each
 // edit, so both stay out of the log while still advancing the save clock.
 describe('activity log: automatic saves are not logged', () => {
-  let logged;
-  let priorAuditLog;
-  let priorEntries;
   let priorMode;
   let priorDispatch;
+  // The Activity Log is src/core/activity/audit-log.js's since Milestone 70's
+  // 70I (it was the monolith's, which these tests stood in for on window).
+  let auditLogModule;
+  const logged = async () => (await auditLogModule.loadAuditLogEntries())
+    .map((e) => ({ type: e.eventType, message: e.details, ok: e.success }));
 
   beforeEach(async () => {
     const { getSecurityMode, setSecurityMode } = await import('../../src/core/persistence/crypto.js');
     priorMode = getSecurityMode();
     setSecurityMode('none');
-    logged = [];
-    priorAuditLog = window.auditLog;
-    priorEntries = window._auditLogEntries;
-    window._auditLogEntries = [];
+    auditLogModule = await import('../../src/core/activity/audit-log.js');
+    auditLogModule.replaceAuditLog([]);
     priorDispatch = window.dispatchEvent;
     window.dispatchEvent = () => true;
-    window.auditLog = async (type, message, ok) => {
-      logged.push({ type, message, ok });
-      window._auditLogEntries.push({ type, message, ok });
-    };
-    setCaseFile({
+    replaceCaseFile({
       activeWardId: null, guardianName: 'G', guardianEmail: '',
       parties: [], cases: [], dismissedPartyPairs: [],
       wards: [{ wardId: 'w-1', wardName: 'One', caseNumber: '1' }, { wardId: 'w-2', wardName: 'Two', caseNumber: '2' }],
@@ -302,10 +310,7 @@ describe('activity log: automatic saves are not logged', () => {
   afterEach(async () => {
     const { setSecurityMode } = await import('../../src/core/persistence/crypto.js');
     setSecurityMode(priorMode);
-    if (priorAuditLog === undefined) delete window.auditLog;
-    else window.auditLog = priorAuditLog;
-    if (priorEntries === undefined) delete window._auditLogEntries;
-    else window._auditLogEntries = priorEntries;
+    auditLogModule.replaceAuditLog([]);
     if (priorDispatch === undefined) delete window.dispatchEvent;
     else window.dispatchEvent = priorDispatch;
     delete window._lastExportAt;
@@ -323,19 +328,19 @@ describe('activity log: automatic saves are not logged', () => {
     setLastExportAt(null);
     const rollback = await beginRecordingExport('quiet', null, { log: false });
     expect(getLastExportAt()).toBeGreaterThan(0);
-    expect(logged).toEqual([]);
+    expect(await logged()).toEqual([]);
 
     // Its rollback must not truncate entries someone else logged meanwhile.
-    window._auditLogEntries.push({ type: 'UNLOCK_SUCCESS' });
+    await auditLogModule.auditLog('UNLOCK_SUCCESS', 'unlocked', true);
     rollback();
     expect(getLastExportAt()).toBeNull();
-    expect(window._auditLogEntries).toEqual([{ type: 'UNLOCK_SUCCESS' }]);
+    expect(await logged()).toEqual([{ type: 'UNLOCK_SUCCESS', message: 'unlocked', ok: true }]);
   });
 
   test('beginRecordingExport still logs by default', async () => {
     const { beginRecordingExport } = await import('../../src/core/persistence/case-file.js');
     await beginRecordingExport('manual write');
-    expect(logged).toEqual([{ type: 'DATA_EXPORT', message: 'manual write', ok: true }]);
+    expect(await logged()).toEqual([{ type: 'DATA_EXPORT', message: 'manual write', ok: true }]);
   });
 
   test('an automatic write (viaTimer=true) is not logged but still counts as the last backup', async () => {
@@ -344,14 +349,28 @@ describe('activity log: automatic saves are not logged', () => {
     setLastExportAt(null);
     const count = await writeCaseToHandle(fakeHandle(), true);
     expect(count).toBe(2);
-    expect(logged).toEqual([]);
+    expect(await logged()).toEqual([]);
     expect(getLastExportAt()).toBeGreaterThan(0);
   });
 
   test('a manual write (viaTimer=false) is logged as a backup save', async () => {
     const { writeCaseToHandle } = await import('../../src/core/persistence/case-file.js');
     await writeCaseToHandle(fakeHandle(), false);
-    expect(logged).toEqual([{ type: 'DATA_EXPORT', message: 'Saved 2 form(s) to existing backup file', ok: true }]);
+    expect(await logged()).toEqual([{ type: 'DATA_EXPORT', message: 'Saved 2 form(s) to existing backup file', ok: true }]);
+  });
+
+  // Milestone 70, 70J gate: "a save ... updates that authority once". A save
+  // reads the live case and writes none of it: the case store's object is the
+  // one saved, unchanged, with no copy made on the way.
+  test('a save to the case file reads the live case and writes no member of it', async () => {
+    const { writeCaseToHandle } = await import('../../src/core/persistence/case-file.js');
+    const writes = [];
+    const watched = new Proxy(getCaseFile(), { set(t, k, v) { writes.push(String(k)); t[k] = v; return true; } });
+    replaceCaseFile(watched);
+    expect(await writeCaseToHandle(fakeHandle(), true)).toBe(2);
+    expect(await writeCaseToHandle(fakeHandle(), false)).toBe(2);
+    expect(writes).toEqual([]);
+    expect(getCaseFile()).toBe(watched);
   });
 
   test('a failed automatic write leaves the log and the save clock untouched', async () => {
@@ -360,7 +379,40 @@ describe('activity log: automatic saves are not logged', () => {
     setLastExportAt(null);
     const failing = { name: 'case.sav', createWritable: async () => { throw new Error('disk full'); } };
     await expect(writeCaseToHandle(failing, true)).rejects.toThrow('disk full');
-    expect(logged).toEqual([]);
+    expect(await logged()).toEqual([]);
     expect(getLastExportAt()).toBeNull();
+  });
+});
+
+// saveBlobAs()'s pre-write validator contract, moved from
+// tests/e2e/case-file-protection.spec.ts by Milestone 70's 70T (that test
+// called window.saveBlobAs() with window.validateWardBackupOverwrite). The
+// filer's path through it -- the dashboard's Backup button refusing to
+// overwrite the multi-filing case file -- stays in that browser spec.
+describe('saveBlobAs(): a pre-write validator that refuses stops the write', () => {
+  let picked;
+  beforeEach(() => {
+    picked = { name: 'case-file.sav', writes: [], createWritableCalls: 0 };
+    picked.createWritable = async () => {
+      picked.createWritableCalls += 1;
+      return { write: async (b) => { picked.writes.push(b); }, close: async () => {} };
+    };
+    globalThis.window = { ...(globalThis.window || {}), showSaveFilePicker: async () => picked };
+  });
+  afterEach(() => { delete globalThis.window.showSaveFilePicker; });
+
+  test('a refusal throws AbortError before anything is opened for writing', async () => {
+    const seen = [];
+    await expect(saveBlobAs(new Blob(['x']), 'test.sav', async (handle) => { seen.push(handle); return false; }))
+      .rejects.toMatchObject({ name: 'AbortError' });
+    expect(seen).toEqual([picked]);
+    expect(picked.createWritableCalls).toBe(0);
+    expect(picked.writes).toEqual([]);
+  });
+
+  test('control: an approval writes the blob to the picked file', async () => {
+    const blob = new Blob(['x']);
+    await expect(saveBlobAs(blob, 'test.sav', async () => true)).resolves.toBe(picked);
+    expect(picked.writes).toEqual([blob]);
   });
 });

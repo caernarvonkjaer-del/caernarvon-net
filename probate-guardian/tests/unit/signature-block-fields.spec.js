@@ -19,14 +19,9 @@ import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 
-global.window = {
-  esc: (s) => s || '', ic: () => '', autoSave: () => {}, navigate: () => {}, updateNavDots: () => {},
-  renderScheduleDocsSection: () => '', txtP: () => '', chkP: () => '', planQ: () => '', planCheckGroup: () => '',
-  yesNoCheckboxS: () => '', radioP: () => '', pageNavS: () => '', formatName: (s) => s, formatPhone: (s) => s,
-  formatDisplayDate: (s) => s, toggleSsnReveal: () => '', INITIAL_ADLS: [], INITIAL_ADL_RATINGS: [],
-  ANNUAL_ADLS: [], ANNUAL_ADL_RATINGS: [], calcTotals: () => ({}), countyInputS: () => '', inpS: () => '',
-  ...(global.window || {}),
-};
+// Some modules these import touch `window` at import time; none reads an
+// application global from it (Milestone 70, 70K), so an empty one serves.
+globalThis.window = globalThis.window || {};
 
 const PERSON = {
   name: 'Rachel M. Alvarez', signatureDate: '2026-02-28', phone: '727-555-0144', ssn: '123-45-6789',

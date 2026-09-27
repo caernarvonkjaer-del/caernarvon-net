@@ -41,7 +41,7 @@ if (!indexHtml.includes(buildMarker)) {
 }
 if (indexHtml.split(buildMarker).length !== 2) throw new Error('Hosted-build marker must appear exactly once');
 
-const criticalReferences = new Set(['src/legacy-app.js', 'lib/bootstrap.bundle.min.js']);
+const criticalReferences = new Set(['lib/bootstrap.bundle.min.js']);
 for (const match of indexHtml.matchAll(/(?:src|href)="([^"]+)"/g)) {
   const file = normalizeBuildUrl(match[1]);
   if (/^assets\/.*\.(?:js|css)$/.test(file)) criticalReferences.add(file);

@@ -2,7 +2,6 @@ import { renderSummaryPage, navStatus, formatSummaryDate } from '../../core/summ
 import { formatDisplayDate } from '../../core/form/date-parser.js';
 import { renderLocalSectionGuidance } from '../../core/status/section-status.js';
 import { checkDateOrder } from '../../core/validation/date-rules.js';
-import { pct } from './totals.js';
 // Milestone 51F: the capacity rule has ONE implementation. This used to come
 // off `window` from a legacy-app.js twin that duplicated core's logic verbatim
 // (remuneration-filtering comment included), so the print-page capacity panel
@@ -63,45 +62,41 @@ import { promptScheduleAckIfNeeded } from '../../core/filing/schedule-doc-ack.js
 // each of those paths exactly once, and the specs that target these fields
 // do so by [data-field-path], not by id.
 import { renderReportingPeriodFields } from '../../core/form/cards/ward-demographics-card.js';
+import { esc } from '../../core/filing/escape-html.js';
+import { ic } from '../../core/ui/icons.js';
+import { sanitizeDecimal } from '../../core/form/form-contract.js';
+import { guardianHasAnyData } from '../../core/validation/row-started.js';
+import { formDisplayName } from '../../core/filing/filing-registry.js';
+import { annualCompletion } from '../../core/status/completion.js';
+import { getD, requestSave } from '../../core/state.js';
+import { updateNavDots } from '../../core/status/nav-marks.js';
+import { renderScheduleDocsSection } from '../../core/filing/schedule-docs.js';
+import { pageIntroRow, yesNoCheckboxD, yesNoRadioAnnualHTML } from '../../core/form/field-html.js';
+import { browserRecommendationNotice, linkAccordions, sanitizeNegativeAmounts } from '../../core/form/form-runtime.js';
+import { countyAutocompleteHTML } from '../../core/form/county-autocomplete.js';
+import { setPath } from '../../core/form/paths.js';
+import { showPickPartyModal } from '../../core/modals/pick-record-dialogs.js';
+import { tooltip } from '../../core/help/tooltips.js';
+import { syncActiveWardNameDisplay, syncGuardianNameDisplay } from '../../core/shell/sidebar.js';
+import { setAccountingFilingType } from './filing-type.js';
+import { navigate } from '../../core/navigation/router.js';
+import { calcTotalsAnnual, annualReconcileState, n, pct } from './totals.js';
 // Annual Accounting — the sixth feature extraction (Milestone 7, Phases A
 // and B of INDEX-SPLIT-PLAN.md's migration sequence: data/pages/nav/
 // validate, and print/PDF/Excel import/export). Also covers the
 // finalAccounting/trustAccounting aliases -- formEngine(type) maps all
 // three to 'annual' everywhere the app dispatches on type, so there is no
-// separate code path for them anywhere in this module. Dynamically
-// imported by legacy-app.js's mountAnnualFeature()/mountAnnualNav() bridge
-// (built on src/core/feature-bridge.js), never statically imported.
+// separate code path for them anywhere in this module. Loaded on first use
+// through src/features-loader.js (built on src/core/feature-bridge.js), never
+// statically imported.
 //
-// legacy-app.js stays a classic (non-module) script (Milestone 1's recorded
-// decision), so its top-level function declarations are real `window`
-// properties this module can destructure -- but a bare top-level `let`
-// (activeInventoryType, currentPage) is not; see src/core/state.js's file
-// header for the full explanation. `calcTotalsAnnual`/`annualReconcileState`
-// stay legacy globals because the dashboard needs `calcTotalsAnnual` for
-// every annual-family ward's card total *before* this module is ever
-// loaded (getWardHeadlineTotal(), same "Problem 1" pattern as every prior
-// milestone), and `annualReconcileState` stays alongside it for simplicity
-// even though it isn't strictly forced the same way (Milestone 7 plan's
-// "Confirmed facts"). `n` (a tiny number helper) stays bundled with them.
-// `pct` is imported from totals.js below, not read from window: the window
-// copy was legacy-app.js's own, and when the ward-share rule was corrected
-// (2026-09-24) that copy kept the old one, so each Schedule D line's Ward's
-// Amount disagreed with the schedule total. There is now one pct(). `esc`/`ic`/the
-// formatting and validation helpers/`renderScheduleDocsSection`/
-// `guardianHasAnyData` etc. stay legacy because they're shared broadly
-// across every extracted feature, not specific to Annual.
-const {
-  esc, ic, autoSave, navigate, updateNavDots, renderScheduleDocsSection,
-  pageIntroRow, browserRecommendationNotice, linkAccordions,
-  sanitizeDecimal,
-  // Milestone 51C dropped `toggleSsnReveal` from this list -- destructured but
-  // never called here. Its only call site is the delegated 'toggle-ssn' handler
-  // in src/form-events.js, which uses window.toggleSsnReveal directly.
-  tooltip, countyAutocompleteHTML, yesNoCheckboxD, yesNoRadioAnnualHTML,
-  syncActiveWardNameDisplay, syncGuardianNameDisplay,
-  calcTotalsAnnual, annualReconcileState, n,
-  guardianHasAnyData,
-} = window;
+// Until Milestone 70's 70K this module took navigate(), the Annual totals and
+// the n()/pct() helpers off window as it loaded -- the monolith's globals.
+// They are imported below: the router's navigate(), and this feature's own
+// ./totals.js, which src/features-loader.js loads eagerly because the
+// dashboard's card total needs calcTotalsAnnual() for a filing whose feature
+// has never loaded. One pct() now serves the pages and the totals: the
+// monolith's copy was the pages' until then.
 
 // print.js/excel.js are dynamically imported once, together, the first time
 // this feature mounts -- same reasoning as Simplified Accounting's
@@ -125,13 +120,16 @@ function ensureLazyModules() {
   return _lazyModulesPromise;
 }
 
-export async function mount(container, page) {
+export async function mount(container, page, { signal } = {}) {
   await ensureLazyModules();
-  window.sanitizeNegativeAmounts();
+  // Superseded while its modules loaded (Milestone 70, 70K): a newer
+  // navigation owns the page, so draw nothing.
+  if (signal?.aborted) return;
+  sanitizeNegativeAmounts();
   // Milestone 67B: a filing saved before the four-state bond question reads
   // back with the state its old fields implied, and the retired
   // restrictedDepository tri-state is dropped. Idempotent.
-  if (migrateBondDepository(window.D)) autoSave();
+  if (migrateBondDepository(getD())) requestSave();
   let html;
   switch (page) {
     case '/':      html = pagePart1Annual(); break;
@@ -160,7 +158,7 @@ export async function mount(container, page) {
     case '/p10':   html = pagePart10Annual(); break;
     case '/p11':   html = pagePart11Annual(); break;
     case '/print': {
-      const capOver = checkExcelCapacity(_excelModule.ANNUAL_EXCEL_CAPS, window.D);
+      const capOver = checkExcelCapacity(_excelModule.ANNUAL_EXCEL_CAPS, getD());
       html = _printModule.pagePrintAnnual(capOver);
       break;
     }
@@ -174,7 +172,7 @@ export async function mount(container, page) {
   signatureHandles.delete(container);
   if (page === '/p3' || page === '/p4' || page === '/p5' || page === '/p10') {
     signatureHandles.set(container, mountSignatureStateControls(container, {
-      setImage: (imagePath, dataUrl) => window.setPath(window.D, imagePath, dataUrl),
+      setImage: (imagePath, dataUrl) => setPath(getD(), imagePath, dataUrl),
       route: page,
     }));
   }
@@ -183,7 +181,7 @@ export async function mount(container, page) {
   // floating call and must not be awaited. window.D.inventoryType rather than
   // a literal, because this one module serves annual, finalAccounting and
   // trustAccounting.
-  void promptScheduleAckIfNeeded(window.D, window.D?.inventoryType || 'annual', page, confirmModal).catch(() => {});
+  void promptScheduleAckIfNeeded(getD(), getD()?.inventoryType || 'annual', page, confirmModal).catch(() => {});
 }
 
 export function dispose(container) {
@@ -229,7 +227,7 @@ function refreshAnnualTotals() {
     if (key in t) cell.textContent = fmtAnnual(t[key]);
   });
 
-  const d = window.D || {};
+  const d = getD() || {};
   document.querySelectorAll('[data-annual-calc]').forEach((input) => {
     const path = input.dataset.annualCalc;
     if (!path) return;
@@ -249,7 +247,7 @@ function refreshAnnualTotals() {
   });
 }
 
-function annualDescriptor(data = window.D) {
+function annualDescriptor(data = getD()) {
   return resolveFilingDescriptor(data).descriptor;
 }
 
@@ -278,13 +276,13 @@ function bindEvents(container) {
   container.addEventListener('change', (event) => {
     const control = event.target;
     if (control instanceof HTMLSelectElement && control.dataset.annualPath === 'filingType') {
-      window.setAccountingFilingType?.(control.value);
+      setAccountingFilingType(control.value);
       return;
     }
     if (control instanceof HTMLInputElement && control.dataset.annualChange === 'schedule-no-items') {
-      if (!window.D.scheduleNoItems) window.D.scheduleNoItems = {};
-      window.D.scheduleNoItems[control.dataset.schedule] = control.checked;
-      autoSave();
+      if (!getD().scheduleNoItems) getD().scheduleNoItems = {};
+      getD().scheduleNoItems[control.dataset.schedule] = control.checked;
+      requestSave();
       updateNavDots();
       return;
     }
@@ -299,7 +297,7 @@ function bindEvents(container) {
     switch (control.dataset.annualAction) {
       case 'add-row': addAnnualRow(collection, control.dataset.route); break;
       case 'duplicate-row': duplicateAnnualRow(collection, index, control.dataset.route); break;
-      case 'link-party': window.showPickPartyModal(control.dataset.role, control.dataset.index); break;
+      case 'link-party': showPickPartyModal(control.dataset.role, control.dataset.index); break;
       case 'navigate': navigate(control.dataset.route); break;
       case 'remove-row': await removeAnnualRow(collection, index, control.dataset.route); break;
       case 'add-b4-account': addB4Account(control.dataset.route); break;
@@ -316,25 +314,24 @@ export function mountNav(container) {
 
 // Same idea as the Plan-family's planEmptyRow-family row CRUD, but for the
 function duplicateAnnualRow(arrName, idx, route) {
-  if (duplicateCollectionRow(arrName, idx, window.D)) {
-    autoSave();
+  if (duplicateCollectionRow(arrName, idx, getD())) {
+    requestSave();
     navigate(route);
   }
 }
-window.duplicateAnnualRow = duplicateAnnualRow;
 
 // Schedule B-4's bank accounts. The court's workbook prints each account's
 // disbursements in that account's own block of register pages, so an account
 // is a real thing a filer creates, not a free-text label on a row.
 async function addB4Account(route) {
-  const d = window.D;
+  const d = getD();
   if (!Array.isArray(d.schB4Accounts)) d.schB4Accounts = [];
   if (d.schB4Accounts.length >= SCH_B4_MAX_ACCOUNTS) {
     await alertModal(`The court's Excel workbook has ${SCH_B4_MAX_ACCOUNTS} Schedule B-4 account sections, so ${SCH_B4_MAX_ACCOUNTS} is the most this filing can hold. The PDF is not limited.`);
     return;
   }
   d.schB4Accounts.push({ id: createBankAccountId(), bankName: '', accountNumber: '' });
-  autoSave();
+  requestSave();
   navigate(route);
 }
 
@@ -343,7 +340,7 @@ async function addB4Account(route) {
 // financial rows because a label was removed would be the worse failure, and
 // an unassigned row is caught at export rather than filed under a wrong bank.
 async function removeB4Account(index, route) {
-  const d = window.D;
+  const d = getD();
   const account = (d.schB4Accounts || [])[index];
   if (!account) return;
   const orphans = (d.schB4 || []).filter(r => r && r.bankAccountId === account.id);
@@ -353,7 +350,7 @@ async function removeB4Account(index, route) {
   ))) return;
   for (const row of orphans) row.bankAccountId = '';
   d.schB4Accounts.splice(index, 1);
-  autoSave();
+  requestSave();
   navigate(route);
 }
 
@@ -364,16 +361,16 @@ function addAnnualRow(collection, route) {
   // scheduleNoItems key for remuneration; the schedules whose flag is keyed
   // differently (`scha` against collection `schA`) are outside 58D's scope and
   // are unaffected either way.
-  if (window.D?.scheduleNoItems?.[collection]) window.D.scheduleNoItems[collection] = false;
-  if (addCollectionRow(collection, window.D)) {
-    autoSave();
+  if (getD()?.scheduleNoItems?.[collection]) getD().scheduleNoItems[collection] = false;
+  if (addCollectionRow(collection, getD())) {
+    requestSave();
     navigate(route);
   }
 }
 async function removeAnnualRow(collection, index, route) {
-  if (collection === 'guardians' && index > 0 && guardianHasAnyData(window.D.guardians?.[index]) && !(await confirmModal(`Remove co-guardian ${window.D.guardians[index].name || `#${index + 1}`}? This will delete the entered signature information.`))) return;
-  if (removeCollectionRow(collection, index, window.D)) {
-    autoSave();
+  if (collection === 'guardians' && index > 0 && guardianHasAnyData(getD().guardians?.[index]) && !(await confirmModal(`Remove co-guardian ${getD().guardians[index].name || `#${index + 1}`}? This will delete the entered signature information.`))) return;
+  if (removeCollectionRow(collection, index, getD())) {
+    requestSave();
     navigate(route);
   }
 }
@@ -381,7 +378,7 @@ async function removeAnnualRow(collection, index, route) {
 function buildNavAnnual(container){
   container.innerHTML=`
     <div class="nav-section">
-      <div class="nav-section-label">${esc(formDisplayName(window.D.inventoryType))}</div>
+      <div class="nav-section-label">${esc(formDisplayName(getD().inventoryType))}</div>
       <button class="nav-link-item" data-page="/" data-nav="a-p1" data-form-action="navigate" data-route="/">Cover &amp; Part I — Case Info</button>
       <button class="nav-link-item" data-page="/summary" data-nav="a-summary" data-form-action="navigate" data-route="/summary">Summary</button>
       <button class="nav-link-item" data-page="/p2" data-nav="a-p2" data-form-action="navigate" data-route="/p2">Part II — Accounting</button>
@@ -434,7 +431,8 @@ export function fmtAnnual(v){if(v===''||v===null||v===undefined)return '';const 
 // re-export of that one function object, not a second copy.
 export { fmtD };
 // securitySanitize: this family's plain free-text fields keep running
-// legacy-app.js's validateSecurityInput() on blur (see the option's own
+// validateSecurityInput() (src/core/security/input-hardening.js) on blur
+// (see the option's own
 // comment in form-fields.js) -- the behavior of the retired
 // persistAnnualControl() focusout handler, now declared per field rather
 // than assumed of everything inside this module's container.
@@ -486,9 +484,11 @@ function pageNavAnnual(prev,next){
   </div>`;
 }
 function getSummaryConfigAnnual(){
-  const d=window.D;
+  const d=getD();
   const descriptor=annualDescriptor(d);
-  const nav=window.computeNavChecks();
+  // This filing's own section marks (Milestone 70, 70D: its engine's evaluator,
+  // imported; it was window.computeNavChecks()).
+  const nav=annualCompletion(d,{calcTotalsAnnual,annualReconcileState});
   const t=calcTotalsAnnual();
   const f=v=>fmtAnnual(v)||'—';
   return {
@@ -556,7 +556,7 @@ const LIAB_TYPES=['Mortgage','Note','Loan','Other'];
 const GUARDIAN_REL=['Professional Guardian','Family/Non-Professional Guardian','Other/Non-Professional Guardian'];
 
 function pagePart1Annual(){
-  const d=window.D; const t=calcTotalsAnnual();
+  const d=getD(); const t=calcTotalsAnnual();
   return `<div class="schedule-page">
   <!-- Milestone 40C-B: the root route is the filing's cover as well as Part I,
        and it carries the filing-level County control, so its name has to say
@@ -654,7 +654,7 @@ function pagePart1Annual(){
 
 // ── Part II ──────────────────────────────────────────────
 function pagePart2Annual(){
-  const d=window.D; const t=calcTotalsAnnual();
+  const d=getD(); const t=calcTotalsAnnual();
   const fee=t.auditFee;
   return `<div class="schedule-page">
   <h1>Part II — Guardian Certification &amp; Audit Fee</h1>
@@ -676,7 +676,7 @@ function pagePart2Annual(){
 
 // ── Part III ─────────────────────────────────────────────
 function pagePart3Annual(){
-  const d=window.D;
+  const d=getD();
   const labels=['Guardian #1','Co-Guardian #2','Co-Guardian #3'];
   let cards='';
   d.guardians.forEach((g,i)=>{
@@ -715,7 +715,7 @@ function pagePart3Annual(){
 
 // ── Part IV ──────────────────────────────────────────────
 function pagePart4Annual(){
-  const d=window.D; const p=d.preparer;
+  const d=getD(); const p=d.preparer;
   const copy=filingCopy(annualDescriptor(d));
   // Milestone 67A: while a guardian (Part III) or the attorney (Part V) is
   // identified as the preparer, the outside-preparer block is neither
@@ -762,7 +762,7 @@ function pagePart4Annual(){
 
 // ── Part V ───────────────────────────────────────────────
 function pagePart5Annual(){
-  const d=window.D;
+  const d=getD();
   const copy=filingCopy(annualDescriptor(d));
   return `<div class="schedule-page">
   <h1>Part V — Guardian Attorney Signature</h1>
@@ -807,7 +807,7 @@ function entryCardHeaderAnnual(title, collection, idx, route) {
 }
 
 function scheduleEmptyHTMLAnnual(key, noun, collectionKey, customLabel = null) {
-  const checked = !!(window.D && window.D.scheduleNoItems && window.D.scheduleNoItems[key]);
+  const checked = !!(getD() && getD().scheduleNoItems && getD().scheduleNoItems[key]);
   return `<div class="schedule-empty">
     <label class="schedule-empty-check">
       <input type="checkbox" ${checked ? 'checked' : ''} data-annual-change="schedule-no-items" data-schedule="${key}" ${collectionKey ? `data-collection="${collectionKey}"` : ''}>
@@ -818,7 +818,7 @@ function scheduleEmptyHTMLAnnual(key, noun, collectionKey, customLabel = null) {
 
 // ── Schedule A — Income ──────────────────────────────────
 function pageSchAAnnual(){
-  const d=window.D; const t=calcTotalsAnnual();
+  const d=getD(); const t=calcTotalsAnnual();
   let rows='';
   if(d.schA && d.schA.length>0){
     rows='<div class="row g-3 schedule-entry-grid">'+d.schA.map((r,i)=>`<div class="col-12 col-lg-6"><div class="entry-card mb-2">
@@ -847,7 +847,7 @@ function pageSchAAnnual(){
 
 // ── Schedule B-1 — Attorney Fees ─────────────────────────
 function pageSchB1Annual(){
-  const d=window.D; const t=calcTotalsAnnual();
+  const d=getD(); const t=calcTotalsAnnual();
   let rows='';
   if(d.schB1 && d.schB1.length>0){
     rows='<div class="row g-3 schedule-entry-grid">'+d.schB1.map((r,i)=>`<div class="col-12 col-lg-6"><div class="entry-card mb-2">
@@ -879,7 +879,7 @@ function pageSchB1Annual(){
 
 // ── Schedule B-2 — Guardian Fees ─────────────────────────
 function pageSchB2Annual(){
-  const d=window.D; const t=calcTotalsAnnual();
+  const d=getD(); const t=calcTotalsAnnual();
   let rows='';
   if(d.schB2 && d.schB2.length>0){
     rows='<div class="row g-3 schedule-entry-grid">'+d.schB2.map((r,i)=>`<div class="col-12 col-lg-6"><div class="entry-card mb-2">
@@ -911,7 +911,7 @@ function pageSchB2Annual(){
 
 // ── Schedule B-3 — Other Court-Ordered Disbursements ─────
 function pageSchB3Annual(){
-  const d=window.D; const t=calcTotalsAnnual();
+  const d=getD(); const t=calcTotalsAnnual();
   let rows='';
   if(d.schB3 && d.schB3.length>0){
     rows='<div class="row g-3 schedule-entry-grid">'+d.schB3.map((r,i)=>`<div class="col-12 col-lg-6"><div class="entry-card mb-2">
@@ -941,7 +941,7 @@ function pageSchB3Annual(){
 
 // ── Schedule B-4 — Other Disbursements ───────────────────
 function pageSchB4Annual(){
-  const d=window.D; const t=calcTotalsAnnual();
+  const d=getD(); const t=calcTotalsAnnual();
   const accounts=Array.isArray(d.schB4Accounts)?d.schB4Accounts:[];
   // The account picker only appears once accounts exist: a single-account
   // filing has nothing to choose between, and showing an empty dropdown on
@@ -1011,7 +1011,7 @@ function pageSchB4Annual(){
 
 // ── Schedule C — Capital Adjustments ─────────────────────
 function pageSchCAnnual(){
-  const d=window.D; const t=calcTotalsAnnual();
+  const d=getD(); const t=calcTotalsAnnual();
   let rows='';
   if(d.schC && d.schC.length>0){
     rows='<div class="row g-3 schedule-entry-grid">'+d.schC.map((r,i)=>`<div class="col-12 col-lg-6"><div class="entry-card mb-2">
@@ -1043,7 +1043,7 @@ function pageSchCAnnual(){
 
 // ── Schedule D-1 — Cash Assets ───────────────────────────
 function pageSchD1Annual(){
-  const d=window.D; const t=calcTotalsAnnual();
+  const d=getD(); const t=calcTotalsAnnual();
   let rows='';
   if(d.schD1 && d.schD1.length>0){
     rows='<div class="row g-3 schedule-entry-grid">'+d.schD1.map((r,i)=>{
@@ -1080,7 +1080,7 @@ function pageSchD1Annual(){
 
 // ── Schedule D-2 — Real Estate ───────────────────────────
 function pageSchD2Annual(){
-  const d=window.D; const t=calcTotalsAnnual();
+  const d=getD(); const t=calcTotalsAnnual();
   let rows='';
   if(d.schD2 && d.schD2.length>0){
     rows='<div class="row g-3 schedule-entry-grid">'+d.schD2.map((r,i)=>{
@@ -1117,7 +1117,7 @@ function pageSchD2Annual(){
 
 // ── Schedule D-3 — Personal Property ─────────────────────
 function pageSchD3Annual(){
-  const d=window.D; const t=calcTotalsAnnual();
+  const d=getD(); const t=calcTotalsAnnual();
   let rows='';
   if(d.schD3 && d.schD3.length>0){
     rows='<div class="row g-3 schedule-entry-grid">'+d.schD3.map((r,i)=>{
@@ -1152,7 +1152,7 @@ function pageSchD3Annual(){
 
 // ── Schedule D-4 — Intangible Assets ─────────────────────
 function pageSchD4Annual(){
-  const d=window.D; const t=calcTotalsAnnual();
+  const d=getD(); const t=calcTotalsAnnual();
   let rows='';
   if(d.schD4 && d.schD4.length>0){
     rows='<div class="row g-3 schedule-entry-grid">'+d.schD4.map((r,i)=>{
@@ -1189,7 +1189,7 @@ function pageSchD4Annual(){
 
 // ── Schedule D-5 — Liabilities ───────────────────────────
 function pageSchD5Annual(){
-  const d=window.D; const t=calcTotalsAnnual();
+  const d=getD(); const t=calcTotalsAnnual();
   let rows='';
   if(d.schD5 && d.schD5.length>0){
     rows='<div class="row g-3 schedule-entry-grid">'+d.schD5.map((r,i)=>{
@@ -1222,7 +1222,7 @@ function pageSchD5Annual(){
 
 // ── Schedule E — Bank Transfers ──────────────────────────
 function pageSchEAnnual(){
-  const d=window.D; const t=calcTotalsAnnual();
+  const d=getD(); const t=calcTotalsAnnual();
   let rows='';
   if(d.schE && d.schE.length>0){
     rows='<div class="row g-3 schedule-entry-grid">'+d.schE.map((r,i)=>`<div class="col-12 col-lg-6"><div class="entry-card mb-2">
@@ -1254,7 +1254,7 @@ function pageSchEAnnual(){
 
 // ── Schedule F-1 — Sales of Real Property ────────────────
 function pageSchF1Annual(){
-  const d=window.D; const t=calcTotalsAnnual();
+  const d=getD(); const t=calcTotalsAnnual();
   let rows='';
   if(d.schF1 && d.schF1.length>0){
     rows='<div class="row g-3 schedule-entry-grid">'+d.schF1.map((r,i)=>`<div class="col-12 col-lg-6"><div class="entry-card mb-2">
@@ -1283,7 +1283,7 @@ function pageSchF1Annual(){
 
 // ── Schedule F-2 — Sales of Personal Property ────────────
 function pageSchF2Annual(){
-  const d=window.D; const t=calcTotalsAnnual();
+  const d=getD(); const t=calcTotalsAnnual();
   let rows='';
   if(d.schF2 && d.schF2.length>0){
     rows='<div class="row g-3 schedule-entry-grid">'+d.schF2.map((r,i)=>`<div class="col-12 col-lg-6"><div class="entry-card mb-2">
@@ -1312,7 +1312,7 @@ function pageSchF2Annual(){
 
 // ── Parts VI & VII — Summary ──────────────────────────────
 function pagePart67Annual(){
-  const d=window.D; const t=calcTotalsAnnual();
+  const d=getD(); const t=calcTotalsAnnual();
   return `<div class="schedule-page">
   <h1>Parts VI &amp; VII — Summary</h1>
   <div class="schedule-instructions">This page is auto-calculated from all schedules. Net Assets from Changes (Part VI, below) should equal Net Assets from Balances (Part VII, below). If they differ, verify individual schedules.</div>
@@ -1370,7 +1370,7 @@ function reconcileBlockAnnual(t){
 
 // ── Part VIII — Trusts ────────────────────────────────────
 function pagePart8Annual(){
-  const d=window.D;
+  const d=getD();
   const hasTrusts=d.trusts && d.trusts[0] && d.trusts[0].hasTrust==='Yes';
   let cards='';
   if(hasTrusts){
@@ -1406,7 +1406,7 @@ function pagePart8Annual(){
 
 // ── Part IX — Other Info / Bond ───────────────────────────
 function pagePart9Annual(){
-  const d=window.D; const t=calcTotalsAnnual();
+  const d=getD(); const t=calcTotalsAnnual();
   return `<div class="schedule-page">
   <h1>Part IX — Other Information &amp; Bond Calculation</h1>
   <div class="row g-3">
@@ -1455,7 +1455,7 @@ function pagePart9Annual(){
 
 // ── Part X — Certificate of Service ──────────────────────
 function pagePart10Annual(){
-  const d=window.D;
+  const d=getD();
   const cards=(d.certRecipients||[]).map((r,i)=>{
     const removeBtn=i===0?'':`<button type="button" class="btn btn-outline-danger btn-sm" data-annual-action="remove-row" data-collection="certRecipients" data-index="${i}" data-route="/p10">\u2715 Remove</button>`;
     return `<div class="col-12 col-lg-6"><div class="entry-card mb-0 h-100">
@@ -1507,7 +1507,7 @@ function pagePart10Annual(){
 
 // ── Part XI — Remuneration ────────────────────────────────
 function pagePart11Annual(){
-  const d=window.D;
+  const d=getD();
   let rows='';
   if(d.remuneration && d.remuneration.length>0){
     rows='<div class="row g-3 schedule-entry-grid">'+d.remuneration.map((r,i)=>`<div class="col-12 col-lg-6"><div class="entry-card mb-0 h-100">
@@ -1539,7 +1539,7 @@ function pagePart11Annual(){
 // The filing type is the ward's own (annual/finalAccounting/trustAccounting
 // share this validator), so the issue codes name the actual filing.
 export function validateAnnual(){
-  const d=window.D; const errs=[];
+  const d=getD(); const errs=[];
   const T=annualDescriptor(d).inventoryType||'annual';
   const issue=issueFactory(T);
   const req=(v,label,path)=>{if(!v||!String(v).trim())errs.push(issue(label,path));};
@@ -1781,10 +1781,10 @@ export function validateAnnual(){
 
   return errs;
 }
-// Milestone 33, Phase 2.3: legacy-app.js's shared updateCurrentScheduleNextButton()
-// only itemizes the disabled-Next guidance panel when window.validate<Type> is a
-// function (see its dispatch table) -- guardian-inventory/index.js already does
+// Milestone 33, Phase 2.3: the shared updateCurrentScheduleNextButton() (then
+// legacy-app.js's, reading window.validate<Type>; src/core/status/nav-marks.js's,
+// through the feature services' validator, since Milestone 70) only itemizes the
+// disabled-Next guidance panel when the form's validator is there -- guardian-inventory/index.js already does
 // this for validateGuardian; this file's own errors were computed but never
 // exposed, so finalAccounting/trustAccounting (formEngine()==='annual') fell back
 // to a single generic message with no per-field jump links.
-window.validateAnnual = validateAnnual;

@@ -6,9 +6,10 @@ import { gotoApp, startNewCase, chooseNoPassword, createWard } from './support/t
 // used to open without that part and say nothing (only a console warning).
 // In Chrome and Edge, opening a file also makes it the file auto-save writes
 // to, so the first automatic save then rewrote the original without the lost
-// part: permanently, with no notice. Found by Milestone 70's .sav corpus
-// (tests/e2e on the milestone-70 branch); fixed with Alan's approval on
-// 2026-09-24 ("warn and protect the original").
+// part: permanently, with no notice. Found by Milestone 70's .sav corpus;
+// fixed on master in b2d97f5 with Alan's approval on 2026-09-24 ("warn and
+// protect the original"), and carried onto the milestone-70 branch after 70I,
+// where the code it changed had moved into modules.
 //
 // Now, on every door a case file comes in through -- the startup screen's
 // Open, the sidebar's Open backup, and the reload after an unlock -- the filer
@@ -16,9 +17,11 @@ import { gotoApp, startNewCase, chooseNoPassword, createWard } from './support/t
 // the damaged original is never the file auto-save writes to.
 //
 // A stand-in file handle (the File System Access API is Chrome/Edge's; tests
-// remove the real pickers) counts every write, and silentAutoExport() -- the
-// automatic save -- is run to prove nothing reaches the original. The control
-// test proves the same harness sees a write for an undamaged file.
+// remove the real pickers) counts every write, and the automatic save's write
+// (GuardianForms.testing.save.saveData(); master ran silentAutoExport(), whose
+// window global the branch no longer has) is run to prove nothing reaches the
+// original. The control test proves the same harness sees a write for an
+// undamaged file.
 
 const DYN = '.modal-overlay[id^="dyn-dialog-"].show .modal-box';
 
@@ -30,7 +33,7 @@ async function writeCaseFile(page: Page): Promise<string> {
   await createWard(page, 'Damage Ward One');
   await createWard(page, 'Damage Ward Two');
   return page.evaluate(async () => {
-    const { blob } = await (window as any).buildCaseFileBlob();
+    const blob = await (window as any).GuardianForms.testing.exportArchive.caseFile();
     const bytes = new Uint8Array(await blob.arrayBuffer());
     let bin = '';
     for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
@@ -38,7 +41,7 @@ async function writeCaseFile(page: Page): Promise<string> {
   });
 }
 
-/** Damage it inside the page with the app's own JSZip: the second filing's entry removed, the case records unreadable. */
+/** Damage it inside the page with the vendored JSZip: the second filing's entry removed, the case records unreadable. */
 async function damage(page: Page, b64: string): Promise<string> {
   return page.evaluate(async (data) => {
     const zip = await (window as any).JSZip.loadAsync(data, { base64: true });
@@ -81,15 +84,16 @@ async function accept(page: Page) {
   await page.locator(`${DYN} [data-dyn-action="confirm"], ${DYN} [data-dyn-action="ok"]`).click();
 }
 
-/** What auto-save would do now, and to which file. */
+/** Which file auto-save writes to now, and what the automatic save writes to the original. */
 const saveTarget = (page: Page) => page.evaluate(async () => {
   const w = window as any;
-  const handle = await w.loadCaseFileHandle();
-  const wrote = await w.silentAutoExport();
-  return { target: handle ? handle.name : null, autoSaveWrote: wrote, writesToOriginal: w.__writes };
+  const t = w.GuardianForms.testing;
+  const target = await t.persistenceState.caseFileName();
+  await t.save.saveData();
+  return { target, writesToOriginal: w.__writes };
 });
 
-const filings = (page: Page) => page.evaluate(() => (window as any).caseFile.wards.map((x: any) => x.wardName));
+const filings = (page: Page) => page.evaluate(() => (window as any).GuardianForms.testing.snapshot().caseFile.wards.map((f: any) => f.wardName));
 
 test.describe('a case file with a part that cannot be read', () => {
   test('control: an undamaged file opened at startup becomes the auto-save file', async ({ browser }) => {
@@ -106,7 +110,7 @@ test.describe('a case file with a part that cannot be read', () => {
     await expect(page.locator('#startup-choice-overlay')).not.toHaveClass(/show/);
     expect(await filings(page)).toEqual(['Damage Ward One', 'Damage Ward Two']);
     expect(await page.locator(DYN).count(), 'no warning for a sound file').toBe(0);
-    expect(await saveTarget(page)).toEqual({ target: 'case.sav', autoSaveWrote: true, writesToOriginal: 1 });
+    expect(await saveTarget(page)).toEqual({ target: 'case.sav', writesToOriginal: 1 });
     await context.close();
   });
 
@@ -133,7 +137,8 @@ test.describe('a case file with a part that cannot be read', () => {
 
     await expect(page.locator('#startup-choice-overlay')).not.toHaveClass(/show/);
     expect(await filings(page), 'everything else opened').toEqual(['Damage Ward One']);
-    expect(await saveTarget(page), 'auto-save never writes to the damaged original').toEqual({ target: null, autoSaveWrote: false, writesToOriginal: 0 });
+    expect(await saveTarget(page), 'auto-save never writes to the damaged original').toEqual({ target: null, writesToOriginal: 0 });
+    await context.close();
   });
 
   test('restored through Open backup: the prompt says what will not be imported, and the file never becomes the save file', async ({ browser }) => {
@@ -147,9 +152,14 @@ test.describe('a case file with a part that cannot be read', () => {
     await gotoApp(page);
     await startNewCase(page);
     await chooseNoPassword(page);
+    // A case with one filing of its own, so the sidebar and its Open backup
+    // button are on screen (Milestone 70: the real control; master called
+    // window.triggerOpenBackupSav() on an empty case).
+    await createWard(page, 'Existing Filing');
     await installPicker(page, b64, 'damaged-backup.sav');
-    // The sidebar's Open backup action; not awaited, since it waits on the dialogs below.
-    await page.evaluate(() => { const w = window as any; w.__restored = false; w.triggerOpenBackupSav().finally(() => { w.__restored = true; }); });
+    const toggle = page.locator('#save-controls-toggle-btn');
+    if (await toggle.isVisible() && ((await toggle.textContent()) || '').includes('Show')) await toggle.click();
+    await page.click('[data-shell-action="open-backup-sav"]');
 
     const { message } = await dialogText(page);
     expect(message).toContain('Part of this file could not be read and will not be imported:');
@@ -157,14 +167,13 @@ test.describe('a case file with a part that cannot be read', () => {
     expect(message).toContain('• The case records (case numbers and counties)');
     expect(message).toContain('The file itself will not be changed or saved over.');
     await accept(page);
-    // Then the closing "Backup restored" notice, which arrives a moment later.
-    await expect.poll(async () => {
-      if (await page.locator(DYN).count()) await accept(page);
-      return page.evaluate(() => (window as any).__restored);
-    }, { timeout: 20_000 }).toBe(true);
-
-    expect(await filings(page)).toEqual(['Damage Ward One']);
-    expect(await saveTarget(page), 'the damaged backup is not the file auto-save writes to').toEqual({ target: null, autoSaveWrote: false, writesToOriginal: 0 });
+    // Then the closing notice, once the restore is done.
+    await expect(page.locator(DYN)).toHaveCount(0);
+    expect((await dialogText(page)).message).toContain('Backup restored');
+    await accept(page);
+    expect(await filings(page)).toEqual(['Existing Filing', 'Damage Ward One']);
+    expect(await saveTarget(page), 'the damaged backup is not the file auto-save writes to').toEqual({ target: null, writesToOriginal: 0 });
+    await context.close();
   });
 
   test('re-read after an unlock: a file damaged on disk is reported and detached', async ({ browser }) => {
@@ -176,8 +185,8 @@ test.describe('a case file with a part that cannot be read', () => {
     await installPicker(page, damaged, 'case-on-disk.sav');
     await page.evaluate(async () => {
       const w = window as any;
-      await w.rememberCaseFileHandle(w.__handle);
-      w.__lock = w.lockApp();
+      await w.GuardianForms.testing.launchState.rememberHandle(w.__handle);
+      w.__lock = w.GuardianForms.testing.lock();
     });
 
     const { title, message } = await dialogText(page);
@@ -186,11 +195,11 @@ test.describe('a case file with a part that cannot be read', () => {
     await accept(page);
     await page.evaluate(() => (window as any).__lock);
     expect(await filings(page)).toEqual(['Damage Ward One']);
-    // lockApp() saved the complete case to the file before locking -- that
+    // The lock saved the complete case to the file before locking -- that
     // write is correct, and in real life is what the re-read then reads. What
     // matters is that nothing is written to it after the damaged re-read.
     await page.evaluate(() => { (window as any).__writes = 0; });
-    expect(await saveTarget(page)).toEqual({ target: null, autoSaveWrote: false, writesToOriginal: 0 });
+    expect(await saveTarget(page)).toEqual({ target: null, writesToOriginal: 0 });
     await context.close();
   });
 });

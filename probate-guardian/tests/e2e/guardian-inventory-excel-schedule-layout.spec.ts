@@ -113,11 +113,10 @@ test.describe('Guardian Inventory Excel schedule layout (Milestone 52K)', () => 
     }
 
     await page.evaluate((fx) => {
-      Object.assign((window as any).D, fx);
-      (window as any).autoSave();
+      (window as any).GuardianForms.testing.patchFiling(fx);
     }, fixture);
-    await page.evaluate(() => (window as any).flushPendingSave());
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
 
     const downloadPromise = page.waitForEvent('download', { timeout: 30_000 });
     await page.locator('[data-inventory-action="save-excel"]').click();
@@ -127,19 +126,19 @@ test.describe('Guardian Inventory Excel schedule layout (Milestone 52K)', () => 
     await download.saveAs(xlsxPath);
 
     await createWard(page, 'Blank Schedule Import Target', 'guardian');
-    await page.evaluate(() => (window as any).navigate('/'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
 
     const errors: string[] = [];
     page.on('pageerror', (e) => errors.push(e.message));
     await page.setInputFiles('input[type="file"][accept=".xlsx"]', xlsxPath);
     await page.waitForFunction(
-      (k) => Array.isArray((window as any).D[k]) && (window as any).D[k].length > 0,
+      (k) => { const rows = (window as any).GuardianForms.testing.field(k); return Array.isArray(rows) && rows.length > 0; },
       'scheduleA1',
       { timeout: 15_000 },
     );
 
     for (const [key, { cap, row }] of Object.entries(SCHEDULES)) {
-      const imported = await page.evaluate((k) => (window as any).D[k], key);
+      const imported = await page.evaluate((k) => (window as any).GuardianForms.testing.field(k), key);
       expect(imported, `${key} row count`).toHaveLength(cap);
 
       // Every row, not just the last -- a page-advance off-by-one would
@@ -202,17 +201,17 @@ async function readExportedCells(page: Page, xlsxPath: string, wants: Array<[str
 
 async function exportGuardianWorkbook(page: Page, overlay: Record<string, unknown>, stem: string): Promise<string> {
   await page.evaluate((fx) => {
-    const d = (window as any).D;
+    const d = (window as any).GuardianForms.testing.snapshot().filing;
     // Keep the minimal fixture's "no items" answers for schedules this overlay
     // does not populate; only the populated ones flip to false.
     for (const [k, v] of Object.entries(fx)) {
       if (k === 'scheduleNoItems') Object.assign(d.scheduleNoItems = d.scheduleNoItems || {}, v as object);
       else d[k] = v;
     }
-    (window as any).autoSave();
+    (window as any).GuardianForms.testing.replaceFiling(d);
   }, overlay);
-  await page.evaluate(() => (window as any).flushPendingSave());
-  await page.evaluate(() => (window as any).navigate('/print'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
   const saveExcel = page.locator('[data-inventory-action="save-excel"]');
   await saveExcel.waitFor({ state: 'visible', timeout: 15_000 });
   if (await saveExcel.isDisabled()) {
@@ -270,7 +269,7 @@ test.describe('Guardian Inventory Excel export writes what the court form comput
     // ExcelJS does not calculate, so the product the form WILL show on open is
     // verified separately: full value x the fraction actually in the cell,
     // compared with the app's own calculator for the same rows.
-    const appTotals = await page.evaluate(() => (window as any).calcTotalsGuardian((window as any).D));
+    const appTotals = await page.evaluate(() => (window as any).GuardianForms.testing.status.guardianTotals());
     const expectedTotals: Record<string, number> = { totalA1: 0, totalB2: 0, totalB3: 0, totalB4: 0, totalC2: 0 };
     const WANT: Record<string, number> = { totalA1: 1750, totalB2: 1500, totalB3: 1500, totalB4: 1500, totalC2: 1500 };
     ([[a1, 'H', 'I', 'totalA1'], [b2, 'F', 'G', 'totalB2'], [b3, 'G', 'H', 'totalB3'], [b4, 'G', 'H', 'totalB4'], [c2, 'G', 'H', 'totalC2']] as const).forEach(([pg, pctCol, valCol, totalKey]) => {
@@ -337,12 +336,12 @@ test.describe('Guardian Inventory Excel export writes what the court form comput
     fs.writeFileSync(legacyPath, Buffer.from(legacyBytes));
 
     await createWard(page, 'Legacy Import Target', 'guardian');
-    await page.evaluate(() => (window as any).navigate('/'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
     await page.setInputFiles('input[type="file"][accept=".xlsx"]', legacyPath);
-    await page.waitForFunction(() => Array.isArray((window as any).D.scheduleA1) && (window as any).D.scheduleA1.length > 0, undefined, { timeout: 15_000 });
+    await page.waitForFunction(() => Array.isArray((window as any).GuardianForms.testing.field('scheduleA1')) && (window as any).GuardianForms.testing.field('scheduleA1.length') > 0, undefined, { timeout: 15_000 });
 
     const imported = await page.evaluate(() => {
-      const d = (window as any).D;
+      const d = (window as any).GuardianForms.testing.snapshot().filing;
       return {
         a1Pct: d.scheduleA1.map((r: any) => r.wardPercent),
         b4Acct: d.scheduleB4.map((r: any) => r.accountNumber),

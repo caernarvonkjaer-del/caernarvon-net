@@ -10,7 +10,7 @@ import { freshStartNoPassword, createWard, fillMinimalValidAnnualWard } from './
 // it reads, so the Cover had already imported while D-1 came back empty and
 // nothing after it was read -- a half-imported filing. Found by Milestone
 // 70's dependency audit: annual-accounting/excel.js took r2 off window, but
-// legacy-app.js declares it with const, which is not a window property.
+// legacy-app.js declared it with const, which is not a window property.
 // No test imported a ward percentage before this one.
 
 const ROWS = {
@@ -19,7 +19,8 @@ const ROWS = {
   schD3: [{ description: 'Mineral rights', fullAmount: 3000, wardPct: '33.33', carryingValue: 999.9, wardAmount: '' }],
   schD4: [{ description: 'Certificate of deposit', restricted: 'No', fullAmount: 8000, wardPct: '12.5', carryingValue: 1000, wardValue: '' }],
   // 1% round-trips now: the exporter used to write any share of 1 or less as
-  // a fraction (1% as 100%), fixed the same day (annual-ward-share-export.spec.ts).
+  // a fraction (1% as 100%), fixed the same day (annual-ward-share-export.spec.ts;
+  // master's dbee60f, carried).
   schD5: [{ description: 'Car loan', loanNo: 'L-77', loanType: 'Auto', fullDebt: 4000, wardPct: '1', wardBalance: '' }],
   schE: [{ bankName: 'First Bank', transferInDate: '2026-02-01', transferInAmt: 250, transferOutDate: '', transferOutAmt: '' }],
 };
@@ -31,27 +32,26 @@ test('an Annual workbook with ward percentages on Schedules D-1 to D-5 re-import
   await fillMinimalValidAnnualWard(page);
   await page.evaluate((rows) => {
     const w = window as any;
-    Object.assign(w.D, rows);
-    w.autoSave();
+    w.GuardianForms.testing.patchFiling(rows);
   }, ROWS);
 
-  await page.evaluate(() => (window as any).navigate('/print'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
   const download = page.waitForEvent('download', { timeout: 30_000 });
   await page.locator('[data-annual-action="save-excel"]').click();
   const xlsxPath = path.join(os.tmpdir(), `pg-annual-ward-pct-${Date.now()}.xlsx`);
   await (await download).saveAs(xlsxPath);
 
   await createWard(page, 'Ward Percentage Import', 'annual');
-  await page.evaluate(() => (window as any).navigate('/'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
   page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
   await page.setInputFiles('input[type="file"][accept=".xlsx"]', xlsxPath);
   // Schedule E is read after D-5: its row arriving means the import ran past the percentages.
-  await page.waitForFunction(() => ((window as any).D.schE || []).length > 0 || ((window as any).D.caseNumber && ((window as any).D.schD1 || []).length === 0 && document.body.innerText.includes('Import failed')), undefined, { timeout: 15_000 }).catch(() => {});
+  await page.waitForFunction(() => ((window as any).GuardianForms.testing.field('schE') || []).length > 0 || ((window as any).GuardianForms.testing.field('caseNumber') && ((window as any).GuardianForms.testing.field('schD1') || []).length === 0 && document.body.innerText.includes('Import failed')), undefined, { timeout: 15_000 }).catch(() => {});
 
   const imported = await page.evaluate(() => {
-    const d = (window as any).D;
+    const d = (window as any).GuardianForms.testing.snapshot().filing;
     const first = (key: string) => (d[key] || [])[0] || {};
     return {
       caseNumber: d.caseNumber,

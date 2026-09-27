@@ -1,5 +1,5 @@
 // Launch preferences and persistent file handles stored in IndexedDB (pg-launch-pref).
-import { getAppState, setAppState } from '../state.js';
+import { appStateObject, getAppState, requestSave, setAppState } from '../state.js';
 
 export const LAUNCH_PREF_DB = 'pg-launch-pref';
 export const LAUNCH_PREF_STORE = 'flags';
@@ -143,9 +143,7 @@ export async function handleRememberedFileFailure(handle, error) {
 
 export async function saveAppState(key, value) {
   setAppState(key, value);
-  if (typeof window !== 'undefined' && typeof window.autoSave === 'function') {
-    window.autoSave();
-  }
+  requestSave();
   return true;
 }
 
@@ -153,16 +151,11 @@ export async function loadAppState(key) {
   return getAppState(key);
 }
 
-// Global bridge for legacy scripts and test harnesses
-if (typeof window !== 'undefined') {
-  window.hasOpenedCaseBefore = hasOpenedCaseBefore;
-  window.markCaseOpenedBefore = markCaseOpenedBefore;
-  window.savePersistedCaseFileHandle = savePersistedCaseFileHandle;
-  window.loadPersistedCaseFileHandle = loadPersistedCaseFileHandle;
-  window.forgetPersistedCaseFileHandle = forgetPersistedCaseFileHandle;
-  window.runRememberedHandleOperation = runRememberedHandleOperation;
-  window.readRememberedFile = readRememberedFile;
-  window.handleRememberedFileFailure = handleRememberedFileFailure;
-  window.saveAppState = saveAppState;
-  window.loadAppState = loadAppState;
+// The dashboard's one-time Continue Editing prompt: shown once per case (the
+// flag is saved with it). Moved from legacy-app.js (Milestone 70, 70I).
+export function isContinuePromptShown(){ return !!appStateObject().continuePromptShown; }
+
+export function markContinuePromptShown(){
+  appStateObject().continuePromptShown=true;
+  saveAppState('continuePromptShown',true);
 }

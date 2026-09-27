@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, it, expect } from 'vitest';
+import { classicScripts } from './support/classic-scripts.js';
 import {
   inferFieldKind,
   renderFormField,
@@ -392,7 +393,9 @@ describe('yesNoCheckboxD call sites pass a plain path, never an inline setter (M
   const sourceFiles = fs.readdirSync(featuresDir, { recursive: true })
     .filter(name => String(name).endsWith('.js'))
     .map(name => path.join(featuresDir, String(name)))
-    .concat([path.join(srcDir, 'legacy-app.js')]);
+    // The classic scripts too (legacy-app.js had call sites until Milestone
+    // 70; 70L deleted it).
+    .concat(classicScripts().map((rel) => path.join(srcDir, '..', rel)));
 
   const callSites = sourceFiles.flatMap(file => {
     const source = fs.readFileSync(file, 'utf8');

@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { freshStartNoPassword, createWard, crossCheckNavAndSummaryStatus } from './support/target';
+import { freshStartNoPassword, createWard, crossCheckNavAndSummaryStatus, fillMinimalValidAnnualWard } from './support/target';
 import { dismissScheduleDocPrompt } from './support/target';
 
 // Two Annual Accounting behaviours that Guardian Inventory already had and
@@ -40,16 +40,16 @@ test.describe('annual accounting schedule consistency', () => {
     await createWard(page, 'Verify None Ward', 'annual');
 
     for (const { route, schedule, key } of VERIFY_NONE_SCHEDULES) {
-      await page.evaluate((r) => (window as any).navigate(r), route);
+      await page.evaluate((r) => (window as any).GuardianForms.testing.navigate(r), route);
 
-      const before = await page.evaluate((k) => !!(window as any).computeNavChecks().checks[k], key);
+      const before = await page.evaluate((k) => !!(window as any).GuardianForms.testing.status.navChecks().checks[k], key);
       expect(before, `${route} should start incomplete on a blank filing`).toBe(false);
 
       const box = page.locator(`input[data-annual-change="schedule-no-items"][data-schedule="${schedule}"]`);
       await expect(box, `${route} should offer a verify-none checkbox`).toBeVisible();
       await box.check();
 
-      const after = await page.evaluate((k) => !!(window as any).computeNavChecks().checks[k], key);
+      const after = await page.evaluate((k) => !!(window as any).GuardianForms.testing.status.navChecks().checks[k], key);
       expect(after, `${route} should be complete once the filer verifies there is nothing to report`).toBe(true);
 
       // The sidebar reads the same result, and the change handler refreshes it
@@ -58,14 +58,14 @@ test.describe('annual accounting schedule consistency', () => {
 
       // ...and unchecking it must put the schedule back, not latch it complete.
       await box.uncheck();
-      const undone = await page.evaluate((k) => !!(window as any).computeNavChecks().checks[k], key);
+      const undone = await page.evaluate((k) => !!(window as any).GuardianForms.testing.status.navChecks().checks[k], key);
       expect(undone, `${route} should return to incomplete when the filer unchecks the box`).toBe(false);
       await box.check();
     }
 
     // With every schedule verified empty, the Summary page's schedule badges
     // agree with the sidebar and with computeNavChecks() itself.
-    await page.evaluate(() => (window as any).navigate('/summary'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/summary'));
     const rows = await crossCheckNavAndSummaryStatus(page, [
       { route: '/scha', key: 'a-scha' },
       { route: '/schb1', key: 'a-schb1' },
@@ -84,9 +84,42 @@ test.describe('annual accounting schedule consistency', () => {
     }
   });
 
+  // AGENTS.md section 4, pinned for Milestone 70's 70D gate. On these fourteen
+  // schedules the sidebar is deliberately stricter than the export gate: it
+  // wants a complete row or the "no items to report" box before it marks a
+  // schedule done -- a declaration the Clerk's own Annual workbook never
+  // collects, and blank schedules are accepted in Pinellas. Export must never
+  // demand it. Part XI is the one schedule both demand, because section
+  // 744.367(3)(a) says the report must include a remuneration declaration.
+  test('a blank schedule reads unfinished in the sidebar but never blocks export; Part XI blocks both', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Blank Schedules Ward', 'annual');
+    await fillMinimalValidAnnualWard(page);
+    // Every schedule blank and none declared empty; Part XI declared.
+    await page.evaluate(() => (window as any).GuardianForms.testing.patchFiling({
+      schA: [], schB1: [], schB2: [], schB3: [], schB4: [], schC: [], schD1: [], schD2: [], schD3: [], schD4: [], schD5: [],
+      schE: [], schF1: [], schF2: [], scheduleNoItems: { remuneration: true },
+    }));
+    const gate = await page.evaluate(() => (window as any).GuardianForms.testing.validate.exportGate());
+    expect(gate.canExport, `export must not demand a blank schedule: ${JSON.stringify(gate.messages)}`).toBe(true);
+    const nav = await page.evaluate(() => (window as any).GuardianForms.testing.status.navChecks());
+    for (const { key } of VERIFY_NONE_SCHEDULES) {
+      expect(nav.checks[key], `${key}: the sidebar still asks about a blank schedule`).toBe(false);
+    }
+    expect(nav.checks['a-p11'], 'Part XI is declared').toBe(true);
+
+    // Part XI unanswered: the sidebar and the export gate both stop.
+    await page.evaluate(() => (window as any).GuardianForms.testing.patchFiling({ scheduleNoItems: {} }));
+    const blocked = await page.evaluate(() => (window as any).GuardianForms.testing.validate.exportGate());
+    expect(blocked.canExport, 'an unanswered Part XI blocks export').toBe(false);
+    expect(JSON.stringify(blocked.messages)).toMatch(/Part XI/);
+    const after = await page.evaluate(() => (window as any).GuardianForms.testing.status.navChecks());
+    expect(after.checks['a-p11'], 'an unanswered Part XI is unfinished in the sidebar').toBe(false);
+  });
+
   // Milestone 43D: Part VIII (Trusts) has the same verify-none checkbox
   // shape as the fourteen schedules above, but computeNavChecks()'s own
-  // 'a-p8' rule (legacy-app.js) also has a second, independent completion
+  // 'a-p8' rule (src/core/status/completion.js) also has a second, independent completion
   // path -- a named trust row -- that none of those schedules has. Both
   // paths were previously only proven by a hand-reimplementation of the
   // rule in a Node-only unit test (content-corrections.spec.js), which
@@ -95,29 +128,29 @@ test.describe('annual accounting schedule consistency', () => {
   test('Part VIII (Trusts) completes via verify-none OR a named trust row, matching computeNavChecks()', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Part VIII Trusts Ward', 'annual');
-    await page.evaluate(() => (window as any).navigate('/p8'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/p8'));
 
-    const before = await page.evaluate(() => !!(window as any).computeNavChecks().checks['a-p8']);
+    const before = await page.evaluate(() => !!(window as any).GuardianForms.testing.status.navChecks().checks['a-p8']);
     expect(before, '/p8 should start incomplete on a blank filing').toBe(false);
 
     const box = page.locator('input[data-annual-change="schedule-no-items"][data-schedule="a-p8"]');
     await expect(box, '/p8 should offer a verify-none checkbox').toBeVisible();
     await box.check();
-    const afterVerifyNone = await page.evaluate(() => !!(window as any).computeNavChecks().checks['a-p8']);
+    const afterVerifyNone = await page.evaluate(() => !!(window as any).GuardianForms.testing.status.navChecks().checks['a-p8']);
     expect(afterVerifyNone, '/p8 should be complete once the filer verifies there are no trusts').toBe(true);
     await expect(page.locator('[data-nav="a-p8"] .nav-check')).toHaveClass(/\bcomplete\b/);
 
     await box.uncheck();
-    const undone = await page.evaluate(() => !!(window as any).computeNavChecks().checks['a-p8']);
+    const undone = await page.evaluate(() => !!(window as any).GuardianForms.testing.status.navChecks().checks['a-p8']);
     expect(undone, '/p8 should return to incomplete when the filer unchecks the box').toBe(false);
 
     // The second, independent completion path: a named trust row completes
     // Part VIII even with the verify-none box unchecked.
     await page.evaluate(() => {
-      (window as any).D.trusts = [{ name: 'Family Trust', trustee: 'Jane Doe' }];
-      (window as any).navigate('/p8');
+      (window as any).GuardianForms.testing.patchFiling({ 'trusts': [{ name: 'Family Trust', trustee: 'Jane Doe' }] });
+      (window as any).GuardianForms.testing.navigate('/p8');
     });
-    const afterNamedTrust = await page.evaluate(() => !!(window as any).computeNavChecks().checks['a-p8']);
+    const afterNamedTrust = await page.evaluate(() => !!(window as any).GuardianForms.testing.status.navChecks().checks['a-p8']);
     expect(afterNamedTrust, '/p8 should be complete once a trust row has a name, regardless of the checkbox').toBe(true);
   });
 
@@ -127,7 +160,7 @@ test.describe('annual accounting schedule consistency', () => {
 
     // Schedule B-1 (attorney fees) -- the first schedule that had no refresh
     // hook of its own at all before this pass.
-    await page.evaluate(() => (window as any).navigate('/schb1'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/schb1'));
     const total = page.locator('[data-annual-total="schB1"]');
     await expect(total).toHaveText('0.00');
 
@@ -143,7 +176,7 @@ test.describe('annual accounting schedule consistency', () => {
 
     // Schedule A still works -- it used to be the only one that did, via a
     // one-off hook this pass replaced with the shared mechanism.
-    await page.evaluate(() => (window as any).navigate('/scha'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/scha'));
     const schATotal = page.locator('[data-annual-total="schA"]');
     await expect(schATotal).toHaveText('0.00');
     await page.locator('[data-annual-action="add-row"][data-collection="schA"]').click();

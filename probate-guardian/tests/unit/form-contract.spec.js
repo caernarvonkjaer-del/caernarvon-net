@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 global.window = global;
 import {
   sanitizeStoredText,
@@ -16,6 +16,16 @@ import {
   getControlPolicy,
 } from '../../src/core/form/form-contract.js';
 import { attributeBag, classListBag } from './support/dom-mocks.js';
+import { openFiling } from './support/open-filing.js';
+import { getD } from '../../src/core/state.js';
+import { getFieldDraft } from '../../src/core/form/commit-coordinator.js';
+
+// The sidebar marks are src/core/status/nav-marks.js's since Milestone 70's 70F
+// (the tail called window.updateNavDots?.(), which Node did not have); they
+// need a page, so this suite stands them in.
+vi.mock('../../src/core/status/nav-marks.js', () => ({ updateNavDots: () => {} }));
+// The sidebar's refreshes (src/core/shell/sidebar.js since Milestone 70's 70H) touch the page.
+vi.mock('../../src/core/shell/sidebar.js', () => ({ refreshWardInfoCard: () => {}, syncActiveWardNameDisplay: () => {}, syncGuardianNameDisplay: () => {}, updateSidebar: () => {} }));
 
 function createMockInput(initial = {}) {
   return {
@@ -30,23 +40,10 @@ function createMockInput(initial = {}) {
 
 describe('form-contract', () => {
   beforeEach(() => {
-    window.D = {};
-    window._transientDrafts = {};
-    window.setPath = (obj, path, val) => {
-      const parts = path.split('.');
-      let cur = obj;
-      for (let i = 0; i < parts.length - 1; i++) {
-        if (!cur[parts[i]]) cur[parts[i]] = {};
-        cur = cur[parts[i]];
-      }
-      cur[parts[parts.length - 1]] = val;
-    };
-    window.getPath = (obj, path) => {
-      return path.split('.').reduce((acc, k) => acc?.[k], obj);
-    };
-    window.autoSave = () => {};
-    window.updateNavDots = () => {};
-    window.refreshWardInfoCard = () => {};
+    // (Until Milestone 70's 70K this also stood in window.setPath, getPath,
+    // autoSave, updateNavDots and refreshWardInfoCard, and a window mirror of
+    // the drafts; the module imports what it uses, and the mirror went.)
+    openFiling({});
   });
 
   describe('sanitizeStoredText', () => {
@@ -184,15 +181,15 @@ describe('form-contract', () => {
       // 1. writeDraftValue (input event)
       writeDraftValue(input);
       // Model remains empty during typing
-      expect(window.D.periodFrom).toBeUndefined();
-      expect(window._transientDrafts.periodFrom).toBe('Feb 14, 2026');
+      expect(getD().periodFrom).toBeUndefined();
+      expect(getFieldDraft('periodFrom')?.rawValue).toBe('Feb 14, 2026');
 
       // 2. finalizeFieldValue (blur event)
       finalizeFieldValue(input);
-      expect(window.D.periodFrom).toBe('2026-02-14');
+      expect(getD().periodFrom).toBe('2026-02-14');
       expect(input.value).toBe('02/14/2026');
       expect(input.hasAttribute('aria-invalid')).toBe(false);
-      expect(window._transientDrafts.periodFrom).toBeUndefined();
+      expect(getFieldDraft('periodFrom')).toBeNull();
     });
 
     it('auto-masks unpunctuated 8-digit dates live during input and commits on blur', () => {
@@ -205,16 +202,16 @@ describe('form-contract', () => {
       writeDraftValue(input);
       // Automatically formatted to display format live
       expect(input.value).toBe('07/10/2027');
-      expect(window._transientDrafts.periodTo).toBe('07/10/2027');
-      expect(window.D.periodTo).toBeUndefined();
+      expect(getFieldDraft('periodTo')?.rawValue).toBe('07/10/2027');
+      expect(getD().periodTo).toBeUndefined();
 
       // 2. finalizeFieldValue (blur event)
       finalizeFieldValue(input);
-      expect(window.D.periodTo).toBe('2027-07-10');
+      expect(getD().periodTo).toBe('2027-07-10');
       expect(input.value).toBe('07/10/2027');
       expect(input.hasAttribute('aria-invalid')).toBe(false);
       expect(input.classList.contains('is-invalid')).toBe(false);
-      expect(window._transientDrafts.periodTo).toBeUndefined();
+      expect(getFieldDraft('periodTo')).toBeNull();
     });
 
     it('canonicalizes unpunctuated 8-digit dates on blur even if unmasked', () => {
@@ -224,7 +221,7 @@ describe('form-contract', () => {
       });
 
       finalizeFieldValue(input);
-      expect(window.D.gid).toBe('2026-07-10');
+      expect(getD().gid).toBe('2026-07-10');
       expect(input.value).toBe('07/10/2026');
       expect(input.hasAttribute('aria-invalid')).toBe(false);
       expect(input.classList.contains('is-invalid')).toBe(false);
@@ -237,7 +234,7 @@ describe('form-contract', () => {
       });
 
       finalizeFieldValue(input);
-      expect(window.D.periodFrom).toBeUndefined();
+      expect(getD().periodFrom).toBeUndefined();
       expect(input.value).toBe('02/30/2026'); // stays visible
       expect(input.getAttribute('aria-invalid')).toBe('true');
       expect(input.classList.contains('is-invalid')).toBe(true);
@@ -251,14 +248,14 @@ describe('form-contract', () => {
       });
 
       finalizeFieldValue(input);
-      expect(window.D.periodFrom).toBeUndefined();
+      expect(getD().periodFrom).toBeUndefined();
       expect(input.value).toBe('13012026');
       expect(input.getAttribute('aria-invalid')).toBe('true');
       expect(input.classList.contains('is-invalid')).toBe(true);
     });
 
     it('keeps a prior committed date when a later draft is invalid', () => {
-      window.D.periodFrom = '2026-02-14';
+      getD().periodFrom = '2026-02-14';
       const input = createMockInput({
         dataset: { fieldPath: 'periodFrom', fieldKind: 'date', fieldLabel: 'Period From' },
         value: '02/30/2026',
@@ -267,13 +264,13 @@ describe('form-contract', () => {
       writeDraftValue(input);
       finalizeFieldValue(input);
 
-      expect(window.D.periodFrom).toBe('2026-02-14');
-      expect(window.D.__fieldDrafts.periodFrom.rawValue).toBe('02/30/2026');
+      expect(getD().periodFrom).toBe('2026-02-14');
+      expect(getD().__fieldDrafts.periodFrom.rawValue).toBe('02/30/2026');
       expect(input.getAttribute('aria-invalid')).toBe('true');
     });
 
     it('does not let a stale rendered date control overwrite programmatic state', () => {
-      window.D.periodFrom = '2026-02-14';
+      getD().periodFrom = '2026-02-14';
       const staleControl = createMockInput({
         dataset: { fieldPath: 'periodFrom', fieldKind: 'date' },
         value: '',
@@ -281,7 +278,7 @@ describe('form-contract', () => {
 
       commitPendingFieldValues({ querySelectorAll: () => [staleControl] });
 
-      expect(window.D.periodFrom).toBe('2026-02-14');
+      expect(getD().periodFrom).toBe('2026-02-14');
     });
 
     it('writes non-date fields directly on input and cleans on blur', () => {
@@ -291,11 +288,11 @@ describe('form-contract', () => {
       });
 
       writeDraftValue(input);
-      expect(window.D.caseNumber).toBe('25-002487-GD');
+      expect(getD().caseNumber).toBe('25-002487-GD');
 
       input.value = '  25-002487-GD\u0000  ';
       finalizeFieldValue(input);
-      expect(window.D.caseNumber).toBe('25-002487-GD');
+      expect(getD().caseNumber).toBe('25-002487-GD');
       expect(input.value).toBe('25-002487-GD');
     });
   });
@@ -400,18 +397,17 @@ describe('form-contract', () => {
     });
 
     it('retains Yes and No on yes-no checkbox finalize without SSN erasure', () => {
-      window.formatSSN = (s) => String(s || '').replace(/\D/g, '');
       const chk = createMockInput({
         type: 'checkbox',
         dataset: { formPath: 'committeeIncorporated', formValue: 'yes-no' },
         checked: true,
       });
       finalizeFieldValue(chk);
-      expect(window.D.committeeIncorporated).toBe('Yes');
+      expect(getD().committeeIncorporated).toBe('Yes');
 
       chk.checked = false;
       finalizeFieldValue(chk);
-      expect(window.D.committeeIncorporated).toBe('No');
+      expect(getD().committeeIncorporated).toBe('No');
     });
   });
 
@@ -419,46 +415,11 @@ describe('form-contract', () => {
   // retired in favour of this one; these are the formats only it had, now
   // keyed by attribute here so every filing type shares one implementation.
   describe('accounting-family formats absorbed from persistAnnualControl()', () => {
-    beforeEach(() => {
-      // Verbatim copies of legacy-app.js's helpers -- classic-script globals
-      // at runtime, which this Node suite has to supply itself.
-      window.sanitizeNonNegativeDecimal = (s) => {
-        let v = String(s || '').replace(/[^0-9.]/g, '');
-        const firstDot = v.indexOf('.');
-        if (firstDot !== -1) v = v.slice(0, firstDot + 1) + v.slice(firstDot + 1).replace(/\./g, '');
-        return v;
-      };
-      window.sanitizeDecimal = (s) => {
-        const str = String(s || '');
-        return (str.trim().startsWith('-') ? '-' : '') + window.sanitizeNonNegativeDecimal(str);
-      };
-      window.applyZipLimit = (el) => {
-        const digitCount = (el.value.match(/\d/g) || []).length;
-        if (digitCount > 9) {
-          const arr = el.value.split('');
-          let removed = 0;
-          for (let i = arr.length - 1; i >= 0 && removed < digitCount - 9; i--) {
-            if (/\d/.test(arr[i])) { arr.splice(i, 1); removed++; }
-          }
-          el.value = arr.join('');
-        }
-      };
-      window.validateSecurityInput = (_label, v) => String(v).replace(/[<>"`]/g, '');
-      window.formatSSN = (s) => {
-        const digits = String(s || '').replace(/\D/g, '').slice(0, 9);
-        if (digits.length === 0) return '';
-        if (digits.length <= 3) return digits;
-        if (digits.length <= 5) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
-        return `${digits.slice(0, 3)}-${digits.slice(3, 5)}-${digits.slice(5)}`;
-      };
-    });
-    afterEach(() => {
-      delete window.sanitizeNonNegativeDecimal;
-      delete window.sanitizeDecimal;
-      delete window.applyZipLimit;
-      delete window.validateSecurityInput;
-      delete window.formatSSN;
-    });
+    // Until Milestone 70's 70B this block installed verbatim copies of
+    // legacy-app.js's field helpers (sanitizeNonNegativeDecimal, sanitizeDecimal,
+    // applyZipLimit, validateSecurityInput, formatSSN) as window globals, because
+    // the module reached them through window. It now defines or imports them,
+    // so these cases run against the implementations the app ships.
 
     it('formats an SSN on blur even though renderFormField() stamps it policy="preserve"', () => {
       // The generic preserve branch used to sit above the ssn branch and
@@ -468,7 +429,7 @@ describe('form-contract', () => {
       const ssn = createMockInput({ dataset: { fieldPath: 'guardians.0.ssn', fieldKind: 'ssn', fieldFormatPolicy: 'preserve' }, value: '123456789' });
       finalizeFieldValue(ssn);
       expect(ssn.value).toBe('123-45-6789');
-      expect(window.D.guardians[0].ssn).toBe('123-45-6789');
+      expect(getD().guardians[0].ssn).toBe('123-45-6789');
     });
 
     it('classifies data-annual-format="signed-decimal" as signed-money with the normalize policy', () => {
@@ -481,9 +442,9 @@ describe('form-contract', () => {
       const loss = createMockInput({ dataset: { annualPath: 'schC.0.loss', annualFormat: 'signed-decimal' }, value: '-1,250.5' });
       writeDraftValue(loss);
       expect(loss.value).toBe('-1250.5');
-      expect(window.D.schC[0].loss).toBe('-1250.5');
+      expect(getD().schC[0].loss).toBe('-1250.5');
       finalizeFieldValue(loss);
-      expect(window.D.schC[0].loss).toBe(-1250.5);
+      expect(getD().schC[0].loss).toBe(-1250.5);
       expect(loss.value).toBe('-1250.5');
     });
 
@@ -491,23 +452,23 @@ describe('form-contract', () => {
       const loss = createMockInput({ dataset: { annualPath: 'schC.0.loss', annualFormat: 'signed-decimal' }, value: '-' });
       writeDraftValue(loss);
       expect(loss.value).toBe('-');
-      expect(window.D.schC[0].loss).toBe('-');
+      expect(getD().schC[0].loss).toBe('-');
     });
 
     it('filters a money field live on input (caret-safe character rejection, minus included) and stores a Number on blur', () => {
       const amount = createMockInput({ dataset: { fieldPath: 'schA.0.amount', fieldKind: 'money' }, value: '-1,000' });
       writeDraftValue(amount);
       expect(amount.value).toBe('1000');
-      expect(window.D.schA[0].amount).toBe('1000');
+      expect(getD().schA[0].amount).toBe('1000');
       finalizeFieldValue(amount);
-      expect(window.D.schA[0].amount).toBe(1000);
+      expect(getD().schA[0].amount).toBe(1000);
     });
 
     it('applies the nine-digit ZIP+4 cap before formatting City / State / Zip', () => {
       const zip = createMockInput({ dataset: { fieldPath: 'preparer.cityStateZip', fieldKind: 'zip' }, value: 'clearwater, fl 33755-43219' });
       finalizeFieldValue(zip);
       expect(zip.value).toBe('Clearwater, FL 33755-4321');
-      expect(window.D.preparer.cityStateZip).toBe('Clearwater, FL 33755-4321');
+      expect(getD().preparer.cityStateZip).toBe('Clearwater, FL 33755-4321');
     });
 
     // Milestone 50C: flag, don't silently repair or stay silent. The mock
@@ -532,11 +493,11 @@ describe('form-contract', () => {
     it('runs the security sanitizer only on fields stamped data-field-sanitize="security"', () => {
       const optedIn = createMockInput({ dataset: { fieldPath: 'schC.0.description', fieldKind: 'text', fieldSanitize: 'security', fieldLabel: 'Description' }, value: '<b>Sale</b> of homestead' });
       finalizeFieldValue(optedIn);
-      expect(window.D.schC[0].description).toBe('bSale/b of homestead');
+      expect(getD().schC[0].description).toBe('bSale/b of homestead');
 
       const plain = createMockInput({ dataset: { fieldPath: 'notes', fieldKind: 'text' }, value: '<b>Sale</b> of homestead' });
       finalizeFieldValue(plain);
-      expect(window.D.notes).toBe('<b>Sale</b> of homestead');
+      expect(getD().notes).toBe('<b>Sale</b> of homestead');
     });
   });
 });

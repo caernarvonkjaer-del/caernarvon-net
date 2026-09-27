@@ -1,5 +1,6 @@
 // Canonical statutory calculations and reconciliation state for Annual Guardianship Accounting.
 // Single source of truth shared between UI forms, preview, Excel export, and accessible PDF generation.
+import { getD } from '../../core/state.js';
 
 export function n(v) {
   const num = parseFloat(v);
@@ -39,7 +40,7 @@ export function scheduleDRow(r, fullField = 'fullAmount') {
 }
 
 export function calcTotalsAnnual(customD) {
-  const d = customD || (typeof window !== 'undefined' ? window.D : null) || {};
+  const d = customD || getD();
   const schA = (d.schA || []).reduce((s, r) => s + n(r.amount), 0);
   const schB1 = (d.schB1 || []).reduce((s, r) => s + n(r.amount), 0);
   const schB2 = (d.schB2 || []).reduce((s, r) => s + n(r.amount), 0);
@@ -105,13 +106,9 @@ export function annualReconcileState(t, customD) {
   const diff = totals.netAssets - totals.netAssetsFromD;
   const hasFigures = [totals.netAssets, totals.netAssetsFromD].some(v => Math.abs(v) > 0.005);
   const outOfBalance = hasFigures && Math.abs(diff) > 0.01;
-  const d = customD || (typeof window !== 'undefined' ? window.D : null) || {};
+  const d = customD || getD();
   const explanation = String(d.reconcileExplanation || '').trim();
   return { diff, outOfBalance, explanation, explained: outOfBalance && explanation.length > 0 };
 }
 
-if (typeof window !== 'undefined') {
-  window.calcTotalsAnnual = calcTotalsAnnual;
-  window.annualReconcileState = annualReconcileState;
-}
 

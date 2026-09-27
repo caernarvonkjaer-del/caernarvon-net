@@ -24,13 +24,15 @@ import {
 import { alertModal } from '../../core/ui/dialogs.js';
 import { setStatus, scheduleStatusClear } from '../../core/ui/transient-status.js';
 import { beginExport } from '../../core/ui/export-guard.js';
+import { assertWorkbookWithinLimits, getImportProgressEl, sanitizeObjectData, validateImportFile } from '../../core/security/input-hardening.js';
+import { capitalizeImportedFields } from '../../core/form/form-contract.js';
+import { mk } from '../../core/filing/models/guardian.js';
+import { getD } from '../../core/state.js';
+import { saveData } from '../../core/persistence/case-file.js';
+import { ensureTemplate } from '../../core/persistence/templates.js';
+import { markFilingRevisionChanged } from '../../core/filing/output-revision.js';
+import { navigate, renderPage } from '../../core/navigation/router.js';
 
-const {
-  renderPage, ensureTemplate, saveData, navigate,
-  getImportProgressEl, validateImportFile, assertWorkbookWithinLimits,
-  capitalizeImportedFields,
-  sanitizeObjectData, mk,
-} = window;
 
 // Milestone 60K: the Excel boundary conversion for percentages, both ways.
 //
@@ -111,8 +113,8 @@ export const GUARDIAN_EXCEL_CAPS={
 // cannot be imported under Node.
 
 export async function doSaveExcel(){
-  const capacityIssues = getExcelCapacityIssues('guardian', window.D, GUARDIAN_EXCEL_CAPS);
-  const authorization = authorizeFilingOutput(window.D, () => validateGuardian(), {
+  const capacityIssues = getExcelCapacityIssues('guardian', getD(), GUARDIAN_EXCEL_CAPS);
+  const authorization = authorizeFilingOutput(getD(), () => validateGuardian(), {
     capability: 'excel',
     additionalIssues: capacityIssues,
   });
@@ -138,7 +140,7 @@ export async function doSaveExcel(){
   const stat=document.getElementById('export-status');
   setStatus(stat,'Preparing Excel export…');
   try{
-    const inv=window.D;
+    const inv=getD();
     const templateB64=await ensureTemplate('guardian');
     if(!templateB64){await alertModal('Template not loaded. Please import the Excel template first.');return;}
 
@@ -157,7 +159,7 @@ export async function doSaveExcel(){
     // Milestone 51D: setCell now comes from core/excel/excel-engine.js. The local
     // closure this replaces was byte-identical in all three feature excel.js files
     // apart from a null-sheet guard, and routed text through the same
-    // sanitizeForExcel() the shared version delegates to.
+    // formula-injection guard, sanitizeCellValue().
 
     setStatus(stat,'Loading template…');
     const bin=atob(templateB64);
@@ -603,19 +605,19 @@ export async function importExcel(input){
     // keeps whatever this filing already had, matched to the guardian rows
     // by position -- a silent absence must not un-name the preparer.
     const namesOutsidePreparer=!!String(importedData.preparer?.name||'').trim();
-    const prior=window.D||{};
+    const prior=getD()||{};
     (importedData.guardians||[]).forEach((g,i)=>{g.isPreparer=!namesOutsidePreparer&&!!prior.guardians?.[i]?.isPreparer;});
     if(importedData.attorney)importedData.attorney.isPreparer=!namesOutsidePreparer&&!!prior.attorney?.isPreparer;
-    Object.assign(window.D,importedData);
+    Object.assign(getD(),importedData);
     // Milestone 67B: the workbook has no cell for the bond / restricted
     // depository arrangement, and importedData carries no key for it, so an
     // answer this filing already had survives the assign. A blank one is read
     // from what the workbook did carry (the G15 waiver date, the bond
     // details) -- otherwise the page would show the answer those imply while
     // the sidebar kept asking for it.
-    migrateBondDepository(window.D);
+    migrateBondDepository(getD());
     saveData();
-    window.markFilingRevisionChanged?.('excel-import');
+    markFilingRevisionChanged('excel-import');
     setStatus(prog,'✓ Import complete!');
     scheduleStatusClear(prog);
     navigate('/');

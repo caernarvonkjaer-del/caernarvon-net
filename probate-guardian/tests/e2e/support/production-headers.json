@@ -1,0 +1,29 @@
+{
+  "note": "Milestone 70, 70A (T1): response headers of the production page, captured once with the requester's go-ahead, replayed by scripts/serve-portable-http.mjs for the portable-http profile. Only index.html was requested; the same headers are assumed for the package's other files, which is unverified.",
+  "capturedFrom": "https://www.mypinellasclerk.gov/Portals/0/Guardian-Forms/index.html",
+  "capturedAt": "2026-09-24T22:29:39Z",
+  "method": "one GET, headers kept, body discarded",
+  "basePath": "/Portals/0/Guardian-Forms/",
+  "observed": {
+    "status": "200 OK",
+    "Content-Type": "text/html",
+    "Content-Length": "7131292",
+    "Cache-Control": "public,max-age=31536000",
+    "Last-Modified": "Thu, 24 Sep 2026 17:17:18 GMT",
+    "Accept-Ranges": "bytes",
+    "ETag": "\"0a31f8d484cdd1:0\"",
+    "Server": "Microsoft-IIS/10.0",
+    "X-XSS-Protection": "1; mode=block",
+    "X-Frame-Options": "SAMEORIGIN"
+  },
+  "replayed": {
+    "Cache-Control": "public,max-age=31536000",
+    "X-XSS-Protection": "1; mode=block",
+    "X-Frame-Options": "SAMEORIGIN"
+  },
+  "htmlContentType": "text/html",
+  "notReplayed": {
+    "Date, Last-Modified, ETag, Content-Length, Accept-Ranges": "per-response values the test server computes or omits",
+    "Server": "identifies IIS; no effect on the page"
+  }
+}

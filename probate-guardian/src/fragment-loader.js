@@ -1,3 +1,5 @@
+// @ts-nocheck -- in tsconfig.json's checked program only transitively (the dialogs import it); 
+// its Vite ?raw import has no type declaration.
 // Lazy-loads trusted static HTML fragments, per INDEX-SPLIT-PLAN.md's
 // module contract. Startup, unlock, recovery, and fatal-error markup stay
 // inline in index.html (needed on every session — see step 3); this is for
@@ -5,7 +7,7 @@
 //
 // A `help.html` fragment was considered (INDEX-SPLIT-PLAN.md's target
 // structure lists one) but isn't created yet: the help panel's actual
-// content is data-driven from legacy-app.js's HELP_CONTENT registry and
+// content is data-driven from src/core/help/help-content.js's HELP_CONTENT registry and
 // injected at runtime, not static HTML sitting inline in index.html — there
 // was nothing substantial to extract. Revisit if that changes.
 //
@@ -66,10 +68,5 @@ export async function loadFragment(name) {
   return template.content.cloneNode(true);
 }
 
-// Temporary: legacy-app.js stays a classic (non-module) script per
-// Milestone 1's recorded decision, so it can't `import` this module
-// directly -- its ensureFragment() helper reaches this via window instead.
-// Remove this assignment once a real src/main.js bootstrap exists to own
-// this wiring explicitly (a later milestone, once more of the app is
-// module-based and main.js's actual job -- the startup sequence -- exists).
-window.loadFragment = loadFragment;
+// No window publication: its one caller, ensureFragment()
+// (src/core/ui/dialogs.js), imports it since Milestone 70's 70H.

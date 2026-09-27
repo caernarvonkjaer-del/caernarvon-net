@@ -35,7 +35,7 @@ const CONFIGS: ReadinessConfig[] = [
     filingType: 'planAnnual',
     fill: fillMinimalValidPlanAnnualWard,
     blankPromotedField: (page) => page.evaluate(() => {
-      (window as any).D.planGuardians[0].mailingStreet = '';
+      (window as any).GuardianForms.testing.patchFiling({ 'planGuardians.0.mailingStreet': '' });
     }),
     readinessRowLabel: 'Guardian address, phone and SSN/EIN provided',
     saveButtonSelector: '[data-form-action="save-pdf-plan-annual"]',
@@ -45,7 +45,7 @@ const CONFIGS: ReadinessConfig[] = [
     filingType: 'planInitial',
     fill: fillMinimalValidPlanInitialWard,
     blankPromotedField: (page) => page.evaluate(() => {
-      (window as any).D.planGuardians[0].street = '';
+      (window as any).GuardianForms.testing.patchFiling({ 'planGuardians.0.street': '' });
     }),
     readinessRowLabel: 'Guardian address, phone and SSN/EIN provided',
     saveButtonSelector: '[data-form-action="save-pdf-plan-initial"]',
@@ -55,7 +55,7 @@ const CONFIGS: ReadinessConfig[] = [
     filingType: 'planMinor',
     fill: fillMinimalValidPlanMinorWard,
     blankPromotedField: (page) => page.evaluate(() => {
-      (window as any).D.planGuardians[0].mailingStreet = '';
+      (window as any).GuardianForms.testing.patchFiling({ 'planGuardians.0.mailingStreet': '' });
     }),
     readinessRowLabel: 'Guardian address, phone and SSN/EIN provided',
     saveButtonSelector: '[data-form-action="save-pdf-plan-minor"]',
@@ -65,7 +65,7 @@ const CONFIGS: ReadinessConfig[] = [
     filingType: 'planSimplified',
     fill: fillMinimalValidPlanSimplifiedWard,
     blankPromotedField: (page) => page.evaluate(() => {
-      (window as any).D.planGuardians[0].phone = '';
+      (window as any).GuardianForms.testing.patchFiling({ 'planGuardians.0.phone': '' });
     }),
     readinessRowLabel: 'Guardian contact details provided (email, phone, mailing address)',
     saveButtonSelector: '[data-plan-simplified-action="save-pdf"]',
@@ -78,7 +78,7 @@ for (const { featureName, filingType, fill, blankPromotedField, readinessRowLabe
       await freshStartNoPassword(page);
       await createWard(page, `${featureName} Readiness Ready Ward`, filingType);
       await fill(page);
-      await page.evaluate(() => (window as any).navigate('/print'));
+      await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
 
       await expect(page.locator('.print-preview-banner')).toContainText('Ready to export');
       await expect(page.locator('.readiness-panel .validation-title')).toContainText('Automated checks passed; manual review remains');
@@ -91,7 +91,7 @@ for (const { featureName, filingType, fill, blankPromotedField, readinessRowLabe
       await createWard(page, `${featureName} Readiness Drift Ward`, filingType);
       await fill(page);
       await blankPromotedField(page);
-      await page.evaluate(() => (window as any).navigate('/print'));
+      await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
 
       // The banner is the real export gate (validatePlanX() + supplemental
       // issues) -- it must report at least one issue now.
@@ -118,7 +118,7 @@ for (const { featureName, filingType, fill, blankPromotedField, readinessRowLabe
       await freshStartNoPassword(page);
       await createWard(page, `${featureName} Readiness Summary Ward`, filingType);
       await fill(page);
-      await page.evaluate(() => (window as any).navigate('/print'));
+      await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
 
       const tags = await page.locator('.readiness-panel').evaluate((el) => ({
         self: el.tagName,
@@ -132,20 +132,15 @@ for (const { featureName, filingType, fill, blankPromotedField, readinessRowLabe
     // against its per-type window bridge not having loaded yet. Milestone 44C
     // deleted both the dispatcher and the four bridges (the card reads
     // readiness-config.js directly), so the dangling-global shape can no
-    // longer exist -- proven here by their absence, plus exactly one card.
+    // longer exist. Their absence is pinned in tests/unit/removed-window-bridges.spec.js
+    // (Milestone 70, 70T: a browser spec names no app global but GuardianForms);
+    // what a filer sees -- exactly one card -- is pinned here.
     test('the legacy readiness dispatcher and its window bridge are gone; exactly one shared card renders', async ({ page }) => {
       await freshStartNoPassword(page);
       await createWard(page, `${featureName} Readiness Guard Ward`, filingType);
       await fill(page);
-      await page.evaluate(() => (window as any).navigate('/print'));
+      await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
 
-      const globalName = filingType.replace('plan', 'planReadinessChecks');
-      const globals = await page.evaluate((name) => ({
-        dispatcher: typeof (window as any).planReadinessChecks,
-        panel: typeof (window as any).planReadinessPanel,
-        bridge: typeof (window as any)[name],
-      }), globalName);
-      expect(globals).toEqual({ dispatcher: 'undefined', panel: 'undefined', bridge: 'undefined' });
       await expect(page.locator('#filing-readiness-card')).toHaveCount(1);
       await expect(page.locator('#filing-readiness-card')).toHaveAttribute('data-readiness-filing', filingType);
     });
@@ -158,9 +153,9 @@ test.describe('Plan Annual physician-statement reminder (DECISION: manual, not b
     await createWard(page, 'Plan Annual Physician Reminder Ward', 'planAnnual');
     await fillMinimalValidPlanAnnualWard(page);
     await page.evaluate(() => {
-      (window as any).D.certPhysicianAttached = false;
+      (window as any).GuardianForms.testing.patchFiling({ 'certPhysicianAttached': false });
     });
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
 
     // Every other required field is present (the fixture's own baseline) --
     // certPhysicianAttached alone must not block export or show as an

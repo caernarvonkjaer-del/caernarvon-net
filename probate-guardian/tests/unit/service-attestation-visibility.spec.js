@@ -3,6 +3,8 @@ import {
   renderServiceAttestationRow,
   syncServiceAttestationVisibility,
 } from '../../src/core/form/service-attestation-visibility.js';
+import { openFiling } from './support/open-filing.js';
+import { getD } from '../../src/core/state.js';
 
 // Milestone 63B. The Certificate of Service asks "No recipients are required for
 // this certificate" only when it applies (D16): when Recipient 1 is blank, or
@@ -61,23 +63,24 @@ describe('syncServiceAttestationVisibility()', () => {
       classList: { toggle: (name, force) => { if (force) classes.add(name); else classes.delete(name); } },
     };
     vi.stubGlobal('document', { querySelector: (sel) => (sel === '[data-service-attestation]' ? row : null) });
-    vi.stubGlobal('window', { D: { certRecipients: [{ name: '', line2: '' }], certNoRecipients: '' } });
+    vi.stubGlobal('window', {});
+    openFiling({ certRecipients: [{ name: '', line2: '' }], certNoRecipients: '' });
   });
   afterEach(() => vi.unstubAllGlobals());
 
   test('hides the row once Recipient 1 has content, and shows it again when cleared', () => {
-    window.D.certRecipients[0].name = 'A Person';
+    getD().certRecipients[0].name = 'A Person';
     syncServiceAttestationVisibility();
     expect(classes.has('d-none')).toBe(true);
 
-    window.D.certRecipients[0].name = '';
+    getD().certRecipients[0].name = '';
     syncServiceAttestationVisibility();
     expect(classes.has('d-none')).toBe(false);
   });
 
   test("keeps it showing when the answer is 'Yes'", () => {
-    window.D.certRecipients[0].name = 'A Person';
-    window.D.certNoRecipients = 'Yes';
+    getD().certRecipients[0].name = 'A Person';
+    getD().certNoRecipients = 'Yes';
     syncServiceAttestationVisibility();
     expect(classes.has('d-none')).toBe(false);
   });

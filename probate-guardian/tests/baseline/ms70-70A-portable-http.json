@@ -1,0 +1,74 @@
+{
+  "target": "portable-http",
+  "measuredAt": "2026-09-25T00:46:26.266Z",
+  "gitSha": "daafcc1",
+  "staticInlineScriptBytes": 6786120,
+  "staticExternalScripts": [
+    {
+      "src": "./src/prepaint.js",
+      "bytes": 2166
+    },
+    {
+      "src": "lib/jszip.min.js",
+      "bytes": 96934
+    },
+    {
+      "src": "./src/legacy-app.js",
+      "bytes": 457190
+    },
+    {
+      "src": "lib/bootstrap.bundle.min.js",
+      "bytes": 80283
+    }
+  ],
+  "nodeVersion": "v24.16.0",
+  "initialEvaluatedScriptBytes": 7422693,
+  "initialApplicationScriptBytes": 7245476,
+  "browserVersion": "151.0.7922.34",
+  "pageErrors": [],
+  "consoleErrors": [],
+  "JSHeapUsedSize": 9420428,
+  "Nodes": 670,
+  "ScriptDuration": 0.079717,
+  "navigation": {
+    "transferSize": 7131566,
+    "encodedBodySize": 7131266,
+    "duration": 703
+  },
+  "resourceCount": 5,
+  "scriptResources": [
+    {
+      "name": "http://localhost:4334/Portals/0/Guardian-Forms/src/prepaint.js",
+      "transferSize": 2466,
+      "encodedBodySize": 2166,
+      "decodedBodySize": 2166
+    },
+    {
+      "name": "http://localhost:4334/Portals/0/Guardian-Forms/lib/jszip.min.js",
+      "transferSize": 97234,
+      "encodedBodySize": 96934,
+      "decodedBodySize": 96934
+    },
+    {
+      "name": "http://localhost:4334/Portals/0/Guardian-Forms/src/legacy-app.js",
+      "transferSize": 457490,
+      "encodedBodySize": 457190,
+      "decodedBodySize": 457190
+    },
+    {
+      "name": "http://localhost:4334/Portals/0/Guardian-Forms/lib/bootstrap.bundle.min.js",
+      "transferSize": 80583,
+      "encodedBodySize": 80283,
+      "decodedBodySize": 80283
+    }
+  ],
+  "initialScriptResourceEncodedBytes": 636573,
+  "initialScriptResourceDecodedBytes": 636573,
+  "heapAfterRouteCycles": [
+    10649812,
+    10660024,
+    10669632,
+    10675332,
+    10703952
+  ]
+}

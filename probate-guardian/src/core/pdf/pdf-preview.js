@@ -29,6 +29,9 @@ import { prepareFilingOutput } from '../filing/output-preflight.js';
 import { acknowledgeOutstandingRequirements, authorizeFilingOutput, beginFreshPreview } from '../filing/output-authorization.js';
 import { adaptValidationErrors } from '../validation/validation-adapter.js';
 import { alertModal, confirmModal } from '../ui/dialogs.js';
+import { initPrintPager } from '../ui/print-pager.js';
+import { requestSave } from '../state.js';
+import { markDirtySinceExport } from '../persistence/case-file.js';
 
 // Milestone 39-A: base64 round-trip for a persisted annotated PDF
 // (D.printAnnotations.pdfBytes). Chunked to avoid a call-stack overflow from
@@ -178,8 +181,8 @@ function mountAnnotateToolbar(container, session, pdfjsLib, D, fingerprint) {
       try {
         const { pdfBytes, encoding } = await encodeAnnotationBytes(bytes);
         D.printAnnotations = { pdfBytes, encoding, contentFingerprint: fingerprint, capturedAt: new Date().toISOString() };
-        window.markDirtySinceExport?.();
-        window.autoSave?.();
+        markDirtySinceExport();
+        requestSave();
       } catch (persistError) {
         // Storing failed. The filer still gets the file they asked for --
         // withholding it would turn a storage problem into a lost document --
@@ -216,8 +219,9 @@ function escapeHtml(s) {
 // reconstruction) clipped and mis-padded the canvas when both classes were
 // briefly applied together during development (canvas stayed at its true
 // pixel width while its container was capped to 8.5in by the stray class,
-// so the canvas visibly overflowed the padded box). legacy-app.js's
-// pv-pager (pvPages()/pvShowAll()/pvApply()) was generalized to recognize
+// so the canvas visibly overflowed the padded box). The pv-pager
+// (pvPages()/pvShowAll()/pvApply(), src/core/ui/print-pager.js; then
+// legacy-app.js's) was generalized to recognize
 // `pdf-page` in its own right, so no compatibility class is needed here.
 // Returns the live pdfjsLib/PDFDocumentProxy/per-page render info alongside
 // the DOM side effect -- Milestone 39-A needs all three kept alive for the
@@ -262,7 +266,7 @@ function refreshPreviewPager() {
   // The router attempts pager initialization before the asynchronous PDF is
   // available. Refresh only after pdf.js has rendered the finalized bytes so
   // its page count is the same count the user will save or print.
-  if (typeof window.initPrintPager === 'function') window.initPrintPager({ refresh: true });
+  initPrintPager({ refresh: true });
 }
 
 // buildModel(D) must be the exact same model builder doSavePdf() for that
@@ -387,8 +391,8 @@ async function renderPreviewInto(container, buildModel, D, options = {}) {
         bytesToRender = await decodeAnnotationBytes(stored);
       } else if (stored) {
         delete D.printAnnotations;
-        window.markDirtySinceExport?.();
-        window.autoSave?.();
+        markDirtySinceExport();
+        requestSave();
         announceStatus('This filing changed since your saved annotations were made, so they were discarded.', { priority: 'assertive', containerId: 'print-preview-status' });
       }
     }
@@ -441,6 +445,11 @@ async function renderPreviewInto(container, buildModel, D, options = {}) {
 // options.annotate: Milestone 39-A's per-filing-type gate -- opt-in only,
 // so the shared preview stays a fork-free single module while only the
 // pilot (Simplified Annual Plan) mounts the annotation editor.
+// What the Preview page's Print button prints is held by ./print-current.js,
+// apart from this module so the startup path can reach it without loading the
+// PDF engine; re-exported for the feature print modules that register it.
+export { setPrintCurrentFiling, printCurrentFilingPdf } from './print-current.js';
+
 export async function mountPdfPreview(buildModel, D, baseIssues = [], containerId = 'print-doc-container', options = {}) {
   const container = document.getElementById(containerId);
   if (!container) return;

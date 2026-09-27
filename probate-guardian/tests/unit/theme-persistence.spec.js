@@ -204,7 +204,8 @@ describe('Milestone 40D: a new .sav serializes no theme', () => {
   });
 
   test('applyTheme persists through the localStorage helper, not saveAppState', async () => {
-    const source = await readFile(new URL('../../src/legacy-app.js', import.meta.url), 'utf8');
+    // applyTheme() is src/core/theme-preference.js's since Milestone 70's 70H.
+    const source = await readFile(new URL('../../src/core/theme-preference.js', import.meta.url), 'utf8');
     const fn = source.slice(source.indexOf('function applyTheme('));
     const body = fn.slice(0, fn.indexOf('\n}'));
     // Comment lines are stripped first: the body deliberately explains what the

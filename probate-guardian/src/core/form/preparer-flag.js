@@ -145,10 +145,3 @@ export function preparerWaivedNoticeHTML(filing, { cardLocation }) {
     <strong>No outside preparer.</strong> ${esc(who)} is identified as the preparer of this filing, so the Preparer block is not required and is not filed. To use an outside preparer instead, untick "${esc(PREPARER_FLAG_LABEL)}" on their card in ${esc(cardLocation)}.
   </div>`;
 }
-
-// legacy-app.js's Annual sidebar check ('a-p4') is a classic-script function
-// and can only reach this through window, the same way it reaches
-// countyDriftWarnings.
-if (typeof window !== 'undefined') {
-  window.resolvePreparer = resolvePreparer;
-}

@@ -28,14 +28,13 @@ test.describe('Annual/Final/Trust date-order validation', () => {
     await createWard(page, 'Annual Period Order Ward', 'annual');
     await page.evaluate(() => {
       const w = window as any;
-      w.D.periodFrom = '2026-06-01';
-      w.D.periodTo = '2026-01-01';
+      w.GuardianForms.testing.patchFiling({ 'periodFrom': '2026-06-01' });
+      w.GuardianForms.testing.patchFiling({ 'periodTo': '2026-01-01' });
     });
 
-    const found = await page.evaluate(() => {
+    const found = await page.evaluate(async () => {
       const w = window as any;
-      const raw = w.validateAnnual();
-      const structured = w.adaptValidationErrors(raw, 'annual');
+      const structured = await w.GuardianForms.testing.validate.structured();
       return structured.find((e: any) => e.message.includes('must be on or after'));
     });
     expect(found?.message).toBe('Part I — Accounting Period To must be on or after Accounting Period From');
@@ -47,14 +46,13 @@ test.describe('Annual/Final/Trust date-order validation', () => {
     await createWard(page, 'Annual Same Day Ward', 'annual');
     await page.evaluate(() => {
       const w = window as any;
-      w.D.periodFrom = '2026-06-01';
-      w.D.periodTo = '2026-06-01';
+      w.GuardianForms.testing.patchFiling({ 'periodFrom': '2026-06-01' });
+      w.GuardianForms.testing.patchFiling({ 'periodTo': '2026-06-01' });
     });
 
-    const found = await page.evaluate(() => {
+    const found = await page.evaluate(async () => {
       const w = window as any;
-      const raw = w.validateAnnual();
-      const structured = w.adaptValidationErrors(raw, 'annual');
+      const structured = await w.GuardianForms.testing.validate.structured();
       return structured.find((e: any) => e.message.includes('cannot be the same day'));
     });
     expect(found?.message).toBe('Part I — Accounting Period From and Accounting Period To cannot be the same day');
@@ -65,15 +63,14 @@ test.describe('Annual/Final/Trust date-order validation', () => {
     await createWard(page, 'Annual GID Order Ward', 'annual');
     await page.evaluate(() => {
       const w = window as any;
-      w.D.gid = '2026-06-01';
-      w.D.periodFrom = '2026-01-01';
-      w.D.periodTo = '2026-12-31';
+      w.GuardianForms.testing.patchFiling({ 'gid': '2026-06-01' });
+      w.GuardianForms.testing.patchFiling({ 'periodFrom': '2026-01-01' });
+      w.GuardianForms.testing.patchFiling({ 'periodTo': '2026-12-31' });
     });
 
-    const found = await page.evaluate(() => {
+    const found = await page.evaluate(async () => {
       const w = window as any;
-      const raw = w.validateAnnual();
-      const structured = w.adaptValidationErrors(raw, 'annual');
+      const structured = await w.GuardianForms.testing.validate.structured();
       return structured.find((e: any) => e.message.includes('Guardianship Inception Date'));
     });
     expect(found?.message).toBe('Part I — Accounting Period From must be on or after Guardianship Inception Date (GID)');
@@ -85,15 +82,14 @@ test.describe('Annual/Final/Trust date-order validation', () => {
     await createWard(page, 'Annual Signature Order Ward', 'annual');
     await page.evaluate(() => {
       const w = window as any;
-      w.D.periodFrom = '2026-01-01';
-      w.D.periodTo = '2026-12-31';
-      w.D.guardians[0] = { ...w.D.guardians[0], signatureDate: '2026-06-01' };
+      w.GuardianForms.testing.patchFiling({ 'periodFrom': '2026-01-01' });
+      w.GuardianForms.testing.patchFiling({ 'periodTo': '2026-12-31' });
+      w.GuardianForms.testing.patchFiling({ 'guardians.0': { ...w.GuardianForms.testing.field('guardians.0'), signatureDate: '2026-06-01' } });
     });
 
-    const found = await page.evaluate(() => {
+    const found = await page.evaluate(async () => {
       const w = window as any;
-      const raw = w.validateAnnual();
-      const structured = w.adaptValidationErrors(raw, 'annual');
+      const structured = await w.GuardianForms.testing.validate.structured();
       return structured.find((e: any) => e.section === 'Part III' && e.message.includes('Signature Date'));
     });
     expect(found?.path).toBe('guardians.0.signatureDate');
@@ -106,14 +102,13 @@ test.describe('Simplified date-order validation', () => {
     await createSimplifiedWard(page, 'Simplified Period Order Ward');
     await page.evaluate(() => {
       const w = window as any;
-      w.D.periodFrom = '2026-06-01';
-      w.D.periodTo = '2026-01-01';
+      w.GuardianForms.testing.patchFiling({ 'periodFrom': '2026-06-01' });
+      w.GuardianForms.testing.patchFiling({ 'periodTo': '2026-01-01' });
     });
 
-    const found = await page.evaluate(() => {
+    const found = await page.evaluate(async () => {
       const w = window as any;
-      const raw = w.validateSimplified();
-      const structured = w.adaptValidationErrors(raw, 'simplified');
+      const structured = await w.GuardianForms.testing.validate.structured();
       return structured.find((e: any) => e.message.includes('must be on or after'));
     });
     expect(found?.message).toBe('Cover — Accounting Period To must be on or after Accounting Period From');
@@ -125,15 +120,14 @@ test.describe('Simplified date-order validation', () => {
     await createSimplifiedWard(page, 'Simplified Attorney Order Ward');
     await page.evaluate(() => {
       const w = window as any;
-      w.D.periodFrom = '2026-01-01';
-      w.D.periodTo = '2026-12-31';
-      w.D.attorney_signatureDate = '2026-06-01';
+      w.GuardianForms.testing.patchFiling({ 'periodFrom': '2026-01-01' });
+      w.GuardianForms.testing.patchFiling({ 'periodTo': '2026-12-31' });
+      w.GuardianForms.testing.patchFiling({ 'attorney_signatureDate': '2026-06-01' });
     });
 
-    const found = await page.evaluate(() => {
+    const found = await page.evaluate(async () => {
       const w = window as any;
-      const raw = w.validateSimplified();
-      const structured = w.adaptValidationErrors(raw, 'simplified');
+      const structured = await w.GuardianForms.testing.validate.structured();
       return structured.find((e: any) => e.section === 'Part V' && e.message.includes('Signature Date'));
     });
     expect(found?.path).toBe('attorney_signatureDate');
@@ -146,14 +140,13 @@ test.describe('Plan Annual date-order validation', () => {
     await createWard(page, 'Plan Annual Period Order Ward', 'planAnnual');
     await page.evaluate(() => {
       const w = window as any;
-      w.D.periodFrom = '2026-06-01';
-      w.D.periodTo = '2026-01-01';
+      w.GuardianForms.testing.patchFiling({ 'periodFrom': '2026-06-01' });
+      w.GuardianForms.testing.patchFiling({ 'periodTo': '2026-01-01' });
     });
 
-    const found = await page.evaluate(() => {
+    const found = await page.evaluate(async () => {
       const w = window as any;
-      const raw = w.validatePlanAnnual();
-      const structured = w.adaptValidationErrors(raw, 'planAnnual');
+      const structured = await w.GuardianForms.testing.validate.structured();
       return structured.find((e: any) => e.message.includes('must be on or after'));
     });
     expect(found?.message).toBe('Cover — Reporting Period To must be on or after Reporting Period From');
@@ -165,15 +158,14 @@ test.describe('Plan Annual date-order validation', () => {
     await createWard(page, 'Plan Annual GID Order Ward', 'planAnnual');
     await page.evaluate(() => {
       const w = window as any;
-      w.D.gid = '2026-06-01';
-      w.D.periodFrom = '2026-01-01';
-      w.D.periodTo = '2026-12-31';
+      w.GuardianForms.testing.patchFiling({ 'gid': '2026-06-01' });
+      w.GuardianForms.testing.patchFiling({ 'periodFrom': '2026-01-01' });
+      w.GuardianForms.testing.patchFiling({ 'periodTo': '2026-12-31' });
     });
 
-    const found = await page.evaluate(() => {
+    const found = await page.evaluate(async () => {
       const w = window as any;
-      const raw = w.validatePlanAnnual();
-      const structured = w.adaptValidationErrors(raw, 'planAnnual');
+      const structured = await w.GuardianForms.testing.validate.structured();
       return structured.find((e: any) => e.message.includes('Guardianship Inception Date'));
     });
     expect(found?.message).toBe('Cover — Reporting Period From must be on or after Guardianship Inception Date');
@@ -189,15 +181,14 @@ test.describe('Plan Annual date-order validation', () => {
     await createWard(page, 'Plan Annual Attorney Order Ward', 'planAnnual');
     await page.evaluate(() => {
       const w = window as any;
-      w.D.periodFrom = '2026-01-01';
-      w.D.periodTo = '2026-12-31';
-      w.D.attorney_signatureDate = '2026-06-01';
+      w.GuardianForms.testing.patchFiling({ 'periodFrom': '2026-01-01' });
+      w.GuardianForms.testing.patchFiling({ 'periodTo': '2026-12-31' });
+      w.GuardianForms.testing.patchFiling({ 'attorney_signatureDate': '2026-06-01' });
     });
 
-    const ordered = await page.evaluate(() => {
+    const ordered = await page.evaluate(async () => {
       const w = window as any;
-      const raw = w.validatePlanAnnual();
-      const structured = w.adaptValidationErrors(raw, 'planAnnual');
+      const structured = await w.GuardianForms.testing.validate.structured();
       return structured.filter((e: any) => /date signed must be on or after/.test(e.message)).map((e: any) => e.path);
     });
     expect(ordered, 'no signer date is ordered against the period').toEqual([]);
@@ -210,14 +201,13 @@ test.describe('Plan Minor date-order validation', () => {
     await createWard(page, 'Plan Minor Period Order Ward', 'planMinor');
     await page.evaluate(() => {
       const w = window as any;
-      w.D.periodFrom = '2026-06-01';
-      w.D.periodTo = '2026-01-01';
+      w.GuardianForms.testing.patchFiling({ 'periodFrom': '2026-06-01' });
+      w.GuardianForms.testing.patchFiling({ 'periodTo': '2026-01-01' });
     });
 
-    const found = await page.evaluate(() => {
+    const found = await page.evaluate(async () => {
       const w = window as any;
-      const raw = w.validatePlanMinor();
-      const structured = w.adaptValidationErrors(raw, 'planMinor');
+      const structured = await w.GuardianForms.testing.validate.structured();
       return structured.find((e: any) => e.message.includes('must be on or after'));
     });
     expect(found?.message).toBe('Cover — Reporting Period To must be on or after Reporting Period From');
@@ -231,15 +221,14 @@ test.describe('Plan Minor date-order validation', () => {
     await createWard(page, 'Plan Minor Preparer Order Ward', 'planMinor');
     await page.evaluate(() => {
       const w = window as any;
-      w.D.periodFrom = '2026-01-01';
-      w.D.periodTo = '2026-12-31';
-      w.D.preparer_signatureDate = '2026-06-01';
+      w.GuardianForms.testing.patchFiling({ 'periodFrom': '2026-01-01' });
+      w.GuardianForms.testing.patchFiling({ 'periodTo': '2026-12-31' });
+      w.GuardianForms.testing.patchFiling({ 'preparer_signatureDate': '2026-06-01' });
     });
 
-    const ordered = await page.evaluate(() => {
+    const ordered = await page.evaluate(async () => {
       const w = window as any;
-      const raw = w.validatePlanMinor();
-      const structured = w.adaptValidationErrors(raw, 'planMinor');
+      const structured = await w.GuardianForms.testing.validate.structured();
       return structured.filter((e: any) => /signature date must be on or after/.test(e.message)).map((e: any) => e.path);
     });
     expect(ordered, 'no signer date is ordered against the period').toEqual([]);
@@ -252,14 +241,13 @@ test.describe('Plan Simplified date-order validation', () => {
     await createWard(page, 'Plan Simplified Period Order Ward', 'planSimplified');
     await page.evaluate(() => {
       const w = window as any;
-      w.D.periodFrom = '2026-06-01';
-      w.D.periodTo = '2026-01-01';
+      w.GuardianForms.testing.patchFiling({ 'periodFrom': '2026-06-01' });
+      w.GuardianForms.testing.patchFiling({ 'periodTo': '2026-01-01' });
     });
 
-    const found = await page.evaluate(() => {
+    const found = await page.evaluate(async () => {
       const w = window as any;
-      const raw = w.validatePlanSimplified();
-      const structured = w.adaptValidationErrors(raw, 'planSimplified');
+      const structured = await w.GuardianForms.testing.validate.structured();
       return structured.find((e: any) => e.message.includes('must be on or after'));
     });
     expect(found?.message).toBe('Cover — Reporting Period To must be on or after Reporting Period From');
@@ -273,16 +261,15 @@ test.describe('Plan Simplified date-order validation', () => {
     await createWard(page, 'Plan Simplified Preparer Attorney Order Ward', 'planSimplified');
     await page.evaluate(() => {
       const w = window as any;
-      w.D.periodFrom = '2026-01-01';
-      w.D.periodTo = '2026-12-31';
-      w.D.preparer_signatureDate = '2026-06-01';
-      w.D.attorney_signatureDate = '2026-06-02';
+      w.GuardianForms.testing.patchFiling({ 'periodFrom': '2026-01-01' });
+      w.GuardianForms.testing.patchFiling({ 'periodTo': '2026-12-31' });
+      w.GuardianForms.testing.patchFiling({ 'preparer_signatureDate': '2026-06-01' });
+      w.GuardianForms.testing.patchFiling({ 'attorney_signatureDate': '2026-06-02' });
     });
 
-    const ordered = await page.evaluate(() => {
+    const ordered = await page.evaluate(async () => {
       const w = window as any;
-      const raw = w.validatePlanSimplified();
-      const structured = w.adaptValidationErrors(raw, 'planSimplified');
+      const structured = await w.GuardianForms.testing.validate.structured();
       return structured.filter((e: any) => /date signed must be on or after/.test(e.message)).map((e: any) => e.path);
     });
     expect(ordered, 'no signer date is ordered against the period').toEqual([]);
@@ -311,8 +298,8 @@ test.describe('Milestone 40C-C: entering a date range never rewrites the other e
     await page.locator('input[data-field-path="periodFrom"]').click();
 
     expect(await page.evaluate(() => ({
-      from: (window as any).D.periodFrom,
-      to: (window as any).D.periodTo,
+      from: (window as any).GuardianForms.testing.field('periodFrom'),
+      to: (window as any).GuardianForms.testing.field('periodTo'),
     }))).toEqual({ from: CROSS_YEAR.from, to: CROSS_YEAR.to });
     await expect(page.locator('input[data-field-path="periodTo"]')).toHaveValue(CROSS_YEAR.toDisplay);
     await expect(page.locator('input[data-field-path="periodFrom"]')).toHaveValue(CROSS_YEAR.fromDisplay);
@@ -328,8 +315,8 @@ test.describe('Milestone 40C-C: entering a date range never rewrites the other e
     await page.locator('input[data-field-path="periodTo"]').click();
 
     expect(await page.evaluate(() => ({
-      from: (window as any).D.periodFrom,
-      to: (window as any).D.periodTo,
+      from: (window as any).GuardianForms.testing.field('periodFrom'),
+      to: (window as any).GuardianForms.testing.field('periodTo'),
     }))).toEqual({ from: CROSS_YEAR.from, to: CROSS_YEAR.to });
     // The displayed values matter as much as the stored ones: the old swap
     // rewrote the input in place, and it showed up in the DOM before (and
@@ -350,17 +337,17 @@ test.describe('Milestone 40C-C: entering a date range never rewrites the other e
     await page.locator('input[data-field-path="periodFrom"]').click();
 
     expect(await page.evaluate(() => ({
-      from: (window as any).D.periodFrom,
-      to: (window as any).D.periodTo,
+      from: (window as any).GuardianForms.testing.field('periodFrom'),
+      to: (window as any).GuardianForms.testing.field('periodTo'),
     }))).toEqual({ from: '2026-06-01', to: '2026-01-01' });
     // Left exactly as typed, in the fields too -- the old swap would have
     // rewritten From to match To so this state could not be reached at all.
     await expect(page.locator('input[data-field-path="periodFrom"]')).toHaveValue('06/01/2026');
     await expect(page.locator('input[data-field-path="periodTo"]')).toHaveValue('01/01/2026');
 
-    const found = await page.evaluate(() => {
+    const found = await page.evaluate(async () => {
       const w = window as any;
-      return w.adaptValidationErrors(w.validateAnnual(), 'annual')
+      return (await w.GuardianForms.testing.validate.structured())
         .find((e: any) => e.message.includes('must be on or after'));
     });
     expect(found?.path).toBe('periodTo');
@@ -378,13 +365,13 @@ test.describe('Guardian Inventory bond-period date-order validation', () => {
     await createWard(page, 'Bond Period Order Ward', 'guardian');
     await page.evaluate(() => {
       const w = window as any;
-      w.D.bondPeriodFrom = '2026-12-31';
-      w.D.bondPeriodTo = '2026-01-01';
+      w.GuardianForms.testing.patchFiling({ 'bondPeriodFrom': '2026-12-31' });
+      w.GuardianForms.testing.patchFiling({ 'bondPeriodTo': '2026-01-01' });
     });
 
-    const found = await page.evaluate(() => {
+    const found = await page.evaluate(async () => {
       const w = window as any;
-      return w.adaptValidationErrors(w.validateGuardian(), 'guardian')
+      return (await w.GuardianForms.testing.validate.structured())
         .find((e: any) => e.message.includes('Bond Period To must be on or after'));
     });
     expect(found?.message).toBe('D-4 — Bond Period To must be on or after Bond Period From');
@@ -398,13 +385,13 @@ test.describe('Guardian Inventory bond-period date-order validation', () => {
     await createWard(page, 'Bond Period Valid Ward', 'guardian');
     await page.evaluate(() => {
       const w = window as any;
-      w.D.bondPeriodFrom = '2026-05-10';
-      w.D.bondPeriodTo = '2027-05-09';
+      w.GuardianForms.testing.patchFiling({ 'bondPeriodFrom': '2026-05-10' });
+      w.GuardianForms.testing.patchFiling({ 'bondPeriodTo': '2027-05-09' });
     });
 
-    const found = await page.evaluate(() => {
+    const found = await page.evaluate(async () => {
       const w = window as any;
-      return w.validateGuardian().find((m: ValidatorIssue) => m.message.includes('Bond Period To must be on or after'));
+      return (await w.GuardianForms.testing.validate.open()).find((m: ValidatorIssue) => m.message.includes('Bond Period To must be on or after'));
     });
     expect(found).toBeUndefined();
   });

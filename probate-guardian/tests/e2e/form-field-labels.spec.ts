@@ -17,11 +17,11 @@ test('all visible form controls have accessible names across form types', async 
   ];
 
   for (const formType of formTypes) {
-    await page.evaluate((type) => (window as any).addWard(`Accessibility ${type}`, type), formType);
+    await page.evaluate((type) => (window as any).GuardianForms.testing.createFiling.add(`Accessibility ${type}`, type), formType);
     await page.locator('#main-content').waitFor({ state: 'visible' });
     const routes = await page.locator('[data-page]').evaluateAll((elements) => [...new Set(elements.map((element: any) => element.dataset.page))]);
     for (const route of routes) {
-      await page.evaluate((nextRoute) => (window as any).navigate(nextRoute), route);
+      await page.evaluate((nextRoute) => (window as any).GuardianForms.testing.navigate(nextRoute), route);
       await page.locator('#main-content').waitFor({ state: 'visible' });
       const unlabeled = await page.locator('#main-content input, #main-content select, #main-content textarea').evaluateAll((controls) => controls
         .filter((control: any) => control.type !== 'hidden' && control.type !== 'file' && !control.disabled && control.getClientRects().length > 0)
@@ -46,8 +46,8 @@ test('all visible form controls have accessible names across form types', async 
 
 test('Activity Log toolbar controls have explicit labels', async ({ page }) => {
   await freshStartNoPassword(page);
-  await page.evaluate(() => (window as any).addWard('Activity Log Labels', 'guardian'));
-  await page.evaluate(() => (window as any).navigate('/activity-log'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.createFiling.add('Activity Log Labels', 'guardian'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/activity-log'));
 
   await expect(page.locator('label[for="activity-log-search"]')).toHaveText('Search activity log details');
   await expect(page.locator('label[for="activity-log-status"]')).toHaveText('Filter activity log by result');

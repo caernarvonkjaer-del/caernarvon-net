@@ -13,20 +13,12 @@ describe('validation-adapter', () => {
     expect(resolveRouteFromSection('Part 8 Trusts')).toBe('/p8');
   });
 
-  it('delegates to window.errorRoute() first when available, before the legacy table/substring fallback', () => {
-    // window === global here (see top of file), so this stub simulates what
-    // legacy-app.js's real errorRoute() provides in the browser. vitest does
-    // not reset `global` between it() blocks in this file, so the stub must
-    // be removed in `finally` or it would leak into every later test.
-    global.errorRoute = (section) => (section === 'Part IV' ? '/p4' : null);
-    try {
-      expect(resolveRouteFromSection('Part IV')).toBe('/p4');
-      // errorRoute() returning null (no match) must still fall through to
-      // the existing fallback, not short-circuit to some other wrong value.
-      expect(resolveRouteFromSection('Cover')).toBe('/');
-    } finally {
-      delete global.errorRoute;
-    }
+  it('asks errorRoute() first, before the legacy table/substring fallback', () => {
+    // Milestone 70's 70F: errorRoute() is imported (src/core/validation/
+    // error-route.js). In the app it always answered first -- it was defined
+    // before this ran -- so these are the routes filers have always got.
+    expect(resolveRouteFromSection('Part IV')).toBe('/p4');
+    expect(resolveRouteFromSection('Cover')).toBe('/');
   });
 
   it('scopes the four Plan types\' narrative section labels by filingType, since some labels collide across types', () => {
@@ -41,13 +33,13 @@ describe('validation-adapter', () => {
     expect(resolveRouteFromSection('Attorney Certification', 'planInitial')).toBe('/p10');
   });
 
-  it('without a filingType, falls back to the legacy table/substring behavior unchanged', () => {
-    // Same "Signatures" label as above, but with no filingType passed --
-    // must NOT accidentally hit a Plan-type route; it should behave exactly
-    // as it did before this change (the guardian-oriented substring
-    // fallback), proving every existing caller that omits the new
-    // parameter keeps its current behavior.
-    expect(resolveRouteFromSection('Signatures')).toBe('/d1');
+  it('without a filingType, a label errorRoute() cannot place falls back to the legacy table/substring behavior unchanged', () => {
+    // The guardian-oriented substring fallback runs only when errorRoute()
+    // places nothing. (Until Milestone 70's 70F this test asked about bare
+    // "Signatures", which the fallback sends to /d1 -- but in the app
+    // errorRoute() answered first and sent it to a Plan's signature page;
+    // every real caller passes a filing type, so no filer met either.)
+    expect(resolveRouteFromSection('Signature block')).toBe('/d1');
   });
 
   it('adapts a bare string into a structured object with a section and route but no field path', () => {

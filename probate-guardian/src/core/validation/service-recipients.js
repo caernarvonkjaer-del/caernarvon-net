@@ -108,16 +108,3 @@ export function attestationRelevant({ rows, attestation, startedFields }) {
   const list = Array.isArray(rows) ? rows : [];
   return !recipientRowStarted(list[0], startedFields);
 }
-
-// Bridged for legacy-app.js's hand-written nav checks (a-p10, s-p6), which are
-// a classic script and cannot import. The Initial Inventory needs no bridge:
-// it derives its nav state from validate() through errorRoute(), so an issue
-// whose section starts "D-5" buckets onto /d5 with no nav edit at all.
-//
-// Bridged rather than reimplemented deliberately. Milestone 57's Simplified
-// signature gap and 58C's attorney predicate were both caused by a second
-// reading of the same data drifting from the first.
-if (typeof window !== 'undefined') {
-  window.serviceRecipientIssues = serviceRecipientIssues;
-  window.recipientRowStarted = recipientRowStarted;
-}

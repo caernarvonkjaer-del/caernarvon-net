@@ -53,6 +53,3 @@ export function announceStatus(message, options = {}) {
   return region;
 }
 
-if (typeof window !== 'undefined') {
-  window.announceStatus = announceStatus;
-}

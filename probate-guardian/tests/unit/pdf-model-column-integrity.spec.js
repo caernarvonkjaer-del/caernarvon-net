@@ -29,22 +29,9 @@ import { describe, expect, test, beforeAll } from 'vitest';
 // is exactly the kind of hand-written row that drifts out of sync with its
 // headers.
 
-// Browser globals the feature modules touch at import time.
-global.window = {
-  esc: (s) => s || '',
-  ic: () => '',
-  autoSave: () => {},
-  navigate: () => {},
-  updateNavDots: () => {},
-  renderScheduleDocsSection: () => '',
-  txtP: () => '', chkP: () => '', planQ: () => '', planCheckGroup: () => '',
-  yesNoCheckboxS: () => '', radioP: () => '', pageNavS: () => '',
-  formatName: (s) => s, formatPhone: (s) => s, formatDisplayDate: (s) => s,
-  toggleSsnReveal: () => '',
-  INITIAL_ADLS: [], INITIAL_ADL_RATINGS: [], ANNUAL_ADLS: [], ANNUAL_ADL_RATINGS: [],
-  calcTotals: () => ({}), countyInputS: () => '', inpS: () => '',
-  ...(global.window || {}),
-};
+// Some modules these import touch `window` at import time; none reads an
+// application global from it (Milestone 70, 70K), so an empty one serves.
+globalThis.window = globalThis.window || {};
 
 /** One populated row for every collection any model might read. */
 const ROW = {

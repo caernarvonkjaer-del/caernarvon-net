@@ -9,7 +9,9 @@ import { gotoApp, startNewCase, chooseEncrypted, chooseNoPassword, createWard } 
 // one part a zip tool shows without any password, listed every filing with
 // its ward's name in plain text. Anyone holding the file could read the
 // names of the people in the case (wards are incapacitated adults or
-// minors) without the password. Found by Milestone 70's .sav corpus.
+// minors) without the password. Found by Milestone 70's .sav corpus; fixed on
+// master in 5de3707 and carried onto the milestone-70 branch after 70I
+// (converted to GuardianForms.testing).
 //
 // Now a password-protected file carries no ward name outside its encrypted
 // parts: this reads every entry of the file as text and looks for the name.
@@ -31,10 +33,11 @@ async function entriesAsText(page: Page, b64: string): Promise<Record<string, st
   }, b64);
 }
 
-const toBase64 = (page: Page, which: 'case' | 'single') => page.evaluate(async (w) => {
-  const g = window as any;
-  // buildCaseFileBlob() returns { blob, count }; buildSingleWardExportBlob() the blob itself.
-  const blob = w === 'case' ? (await g.buildCaseFileBlob()).blob : await g.buildSingleWardExportBlob(g.caseFile.wards[0].wardId);
+const toBase64 = (page: Page, which: 'case' | 'single') => page.evaluate(async (kind) => {
+  const t = (window as any).GuardianForms.testing;
+  const blob = kind === 'case'
+    ? await t.exportArchive.caseFile()
+    : await t.exportArchive.singleFiling(t.snapshot().caseFile.wards[0].wardId);
   const bytes = new Uint8Array(await blob.arrayBuffer());
   let bin = '';
   for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
@@ -50,13 +53,14 @@ test.describe('ward names in a saved case file', () => {
     await chooseEncrypted(page, PASSWORD);
     await createWard(page, NAME);
 
+    const file = path.join(os.tmpdir(), `pg-manifest-privacy-${process.pid}.sav`);
     for (const which of ['case', 'single'] as const) {
       const b64 = await toBase64(page, which);
       const entries = await entriesAsText(page, b64);
       expect(Object.keys(entries), `${which}: the file has its manifest`).toContain('manifest.json');
       const revealing = Object.entries(entries).filter(([, text]) => text.includes(NAME)).map(([name]) => name);
       expect(revealing, `${which} file: entries that show the ward's name without the password`).toEqual([]);
-      if (which === 'case') fs.writeFileSync(path.join(os.tmpdir(), 'pg-manifest-privacy.sav'), Buffer.from(b64, 'base64'));
+      if (which === 'case') fs.writeFileSync(file, Buffer.from(b64, 'base64'));
     }
     await context.close();
 
@@ -65,12 +69,12 @@ test.describe('ward names in a saved case file', () => {
     const p2 = await reopen.newPage();
     await gotoApp(p2);
     await p2.locator('#startup-choice-overlay.show').waitFor({ state: 'visible' });
-    await p2.setInputFiles('#startup-open-input', path.join(os.tmpdir(), 'pg-manifest-privacy.sav'));
+    await p2.setInputFiles('#startup-open-input', file);
     await p2.locator('#unlock-overlay.show').waitFor({ state: 'visible' });
     await p2.fill('#unlock-password', PASSWORD);
     await p2.click('#unlock-submit-btn');
     await expect(p2.locator('#startup-choice-overlay')).not.toHaveClass(/show/);
-    await expect.poll(() => p2.evaluate(() => (window as any).caseFile.wards.map((w: any) => w.wardName))).toEqual([NAME]);
+    await expect.poll(() => p2.evaluate(() => (window as any).GuardianForms.testing.snapshot().caseFile.wards.map((f: any) => f.wardName))).toEqual([NAME]);
     await reopen.close();
   });
 
@@ -80,6 +84,6 @@ test.describe('ward names in a saved case file', () => {
     await chooseNoPassword(page);
     await createWard(page, NAME);
     const manifest = JSON.parse((await entriesAsText(page, await toBase64(page, 'case')))['manifest.json']);
-    expect(manifest.wards.map((w: any) => w.wardName)).toEqual([NAME]);
+    expect(manifest.wards.map((f: any) => f.wardName)).toEqual([NAME]);
   });
 });

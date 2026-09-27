@@ -1,0 +1,7879 @@
+{
+ "generatedBy": "node scripts/ms70-dependency-audit.mjs --write-baseline",
+ "note": "Milestone 70 dependency inventory: every edge between application files (import, window property, bare global), with direction. Informational; regenerated with the baseline.",
+ "classic": [
+  "src/prepaint.js"
+ ],
+ "classicDeclarations": [],
+ "edges": [
+  {
+   "from": "src/core/activity/activity-log-view.js",
+   "to": "src/core/filing/escape-html.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/activity/activity-log-view.js",
+   "to": "src/core/persistence/case-file.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/activity/activity-log-view.js",
+   "to": "src/core/ui/dialogs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/activity/activity-log-view.js",
+   "to": "src/core/ui/icons.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/activity/activity-log-view.js",
+   "to": "src/core/activity/audit-log.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/activity/audit-log.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/case-county-drift.js",
+   "to": "src/core/case-resolver.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/case-resolver.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/excel/b4-export-plan.js",
+   "to": "src/core/accounting/bank-accounts.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/excel/excel-capacity.js",
+   "to": "src/core/validation/issue-registry.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/excel/excel-capacity.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/excel/excel-capacity.js",
+   "to": "src/core/filing/escape-html.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/excel/excel-capacity.js",
+   "to": "src/core/ui/icons.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/excel/excel-engine.js",
+   "to": "src/core/excel/exceljs-loader.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/excel/exceljs-loader.js",
+   "to": "src/core/vendor-loader.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/feedback/feedback-message.js",
+   "to": "src/core/feedback/feedback-config.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/feedback/feedback-modal.js",
+   "to": "src/core/feedback/feedback-config.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/feedback/feedback-modal.js",
+   "to": "src/core/feedback/feedback-message.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/feedback/feedback-modal.js",
+   "to": "src/core/ui/dialogs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/carry-over.js",
+   "to": "src/core/filing/escape-html.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/carry-over.js",
+   "to": "src/core/filing/filing-registry.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/carry-over.js",
+   "to": "src/core/navigation/ward-county.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/carry-over.js",
+   "to": "src/core/party-resolver.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/carry-over.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/carry-over.js",
+   "to": "src/core/runtime/features.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/conversion.js",
+   "to": "src/core/case-resolver.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/conversion.js",
+   "to": "src/core/filing/carry-over.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/conversion.js",
+   "to": "src/core/filing/filing-registry.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/conversion.js",
+   "to": "src/core/filing/models/annual.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/conversion.js",
+   "to": "src/core/navigation/router.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/conversion.js",
+   "to": "src/core/navigation/ward-lifecycle.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/conversion.js",
+   "to": "src/core/persistence/case-file.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/conversion.js",
+   "to": "src/core/runtime/features.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/conversion.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/conversion.js",
+   "to": "src/core/ui/dialogs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/delete-confirmation.js",
+   "to": "src/core/filing/filing-descriptor.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/delete-confirmation.js",
+   "to": "src/core/case-resolver.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/delete-confirmation.js",
+   "to": "src/core/form/date-parser.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/filing-registry.js",
+   "to": "src/core/ui/icons.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/filing-registry.js",
+   "to": "src/core/filing/filing-descriptor.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/filing-registry.js",
+   "to": "src/core/filing/normalize-filing.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/filing-registry.js",
+   "to": "src/core/filing/models/guardian.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/filing-registry.js",
+   "to": "src/core/filing/models/simplified.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/filing-registry.js",
+   "to": "src/core/filing/models/annual.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/filing-registry.js",
+   "to": "src/core/filing/models/plan-simplified.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/filing-registry.js",
+   "to": "src/core/filing/models/plan-annual.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/filing-registry.js",
+   "to": "src/core/filing/models/plan-initial.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/filing-registry.js",
+   "to": "src/core/filing/models/plan-minor.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/filing-registry.js",
+   "to": "src/core/status/completion.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/filing-years.js",
+   "to": "src/core/filing/filing-registry.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/filing-years.js",
+   "to": "src/core/filing/models/annual.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/filing-years.js",
+   "to": "src/core/filing/models/plan-annual.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/filing-years.js",
+   "to": "src/core/filing/models/plan-initial.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/filing-years.js",
+   "to": "src/core/filing/models/plan-minor.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/filing-years.js",
+   "to": "src/core/navigation/ward-county.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/filing-years.js",
+   "to": "src/core/persistence/case-file.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/filing-years.js",
+   "to": "src/core/runtime/features.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/filing-years.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/filing-years.js",
+   "to": "src/core/navigation/tab-state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/models/plan-annual.js",
+   "to": "src/core/filing/plan-certificate-of-service.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/models/plan-initial.js",
+   "to": "src/core/filing/plan-certificate-of-service.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/models/plan-initial.js",
+   "to": "src/core/filing/plan-initial-multiselect.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/models/plan-minor.js",
+   "to": "src/core/filing/plan-certificate-of-service.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/models/plan-rows.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/models/plan-rows.js",
+   "to": "src/core/filing/models/plan-annual.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/models/plan-rows.js",
+   "to": "src/core/filing/models/plan-initial.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/models/plan-rows.js",
+   "to": "src/core/filing/models/plan-minor.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/models/plan-simplified.js",
+   "to": "src/core/filing/plan-certificate-of-service.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/normalize-filing.js",
+   "to": "src/core/filing/schedule-doc-ack.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/output-advisories.js",
+   "to": "src/core/filing/escape-html.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/output-authorization.js",
+   "to": "src/core/filing/output-preflight.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/output-authorization.js",
+   "to": "src/core/filing/output-revision.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/output-authorization.js",
+   "to": "src/core/filing/output-revision.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/output-preflight.js",
+   "to": "src/core/filing/filing-descriptor.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/output-preflight.js",
+   "to": "src/core/case-county-drift.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/output-preflight.js",
+   "to": "src/core/filing/form-derived-fields.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/output-preflight.js",
+   "to": "src/core/filing/bond-depository.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/output-preflight.js",
+   "to": "src/core/filing/plan-certificate-of-service.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/output-preflight.js",
+   "to": "src/core/filing/ward-share-advisories.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/output-preflight.js",
+   "to": "src/core/form/commit-coordinator.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/output-preflight.js",
+   "to": "src/core/validation/issue-registry.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/output-preflight.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/output-preflight.js",
+   "to": "src/core/form/paths.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/output-preflight.js",
+   "to": "src/core/filing/output-revision.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/output-revision.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/plan-certificate-of-service.js",
+   "to": "src/core/validation/service-recipients.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/plan-certificate-of-service.js",
+   "to": "src/core/validation/signature-state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/readiness-card.js",
+   "to": "src/core/filing/readiness-config.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/readiness-card.js",
+   "to": "src/core/filing/county-guidance.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/readiness-card.js",
+   "to": "src/core/filing/escape-html.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/readiness-config.js",
+   "to": "src/core/filing/plan-initial-multiselect.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/readiness-config.js",
+   "to": "src/core/filing/filing-descriptor.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/readiness-config.js",
+   "to": "src/core/filing/county-guidance.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/readiness-config.js",
+   "to": "src/core/validation/validation-adapter.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/readiness-config.js",
+   "to": "src/core/validation/signature-state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/readiness-config.js",
+   "to": "src/core/form/form-contract.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/readiness-config.js",
+   "to": "src/core/filing/models/plan-annual.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/readiness-config.js",
+   "to": "src/core/filing/models/plan-initial.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/recent-filings.js",
+   "to": "src/core/persistence/launch-preferences.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/recent-filings.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/schedule-doc-ack.js",
+   "to": "src/core/filing/filing-descriptor.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/schedule-doc-ack.js",
+   "to": "src/core/filing/doc-period.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/schedule-docs.js",
+   "to": "src/core/filing/escape-html.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/schedule-docs.js",
+   "to": "src/core/form/date-parser.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/schedule-docs.js",
+   "to": "src/core/pdf/supplemental-pdf.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/schedule-docs.js",
+   "to": "src/core/navigation/router.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/schedule-docs.js",
+   "to": "src/core/navigation/route-state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/schedule-docs.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/schedule-docs.js",
+   "to": "src/core/ui/dialogs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/schedule-docs.js",
+   "to": "src/core/ui/icons.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/form/cards/case-caption-card.js",
+   "to": "src/core/form/form-fields.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/form/cards/case-caption-card.js",
+   "to": "src/core/form/field-html.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/form/cards/guardian-attorney-card.js",
+   "to": "src/core/form/form-fields.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/form/cards/residence-facility-card.js",
+   "to": "src/core/form/form-fields.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/form/cards/ward-demographics-card.js",
+   "to": "src/core/form/form-fields.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/form/commit-coordinator.js",
+   "to": "src/core/form/date-parser.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/form/commit-coordinator.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/form/commit-coordinator.js",
+   "to": "src/core/form/paths.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/form/commit-coordinator.js",
+   "to": "src/core/filing/output-revision.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/form/county-autocomplete.js",
+   "to": "src/core/filing/escape-html.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/form/county-autocomplete.js",
+   "to": "src/core/pdf/circuit-lookup.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/form/exclusive-none.js",
+   "to": "src/core/form/paths.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/form/field-html.js",
+   "to": "src/core/filing/escape-html.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/form/field-html.js",
+   "to": "src/core/form/county-autocomplete.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/form/field-html.js",
+   "to": "src/core/form/form-fields.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/form/form-contract.js",
+   "to": "src/core/form/date-parser.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/form/form-contract.js",
+   "to": "src/core/form/commit-coordinator.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/form/form-contract.js",
+   "to": "src/core/security/input-hardening.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/form/form-contract.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/form/form-contract.js",
+   "to": "src/core/status/nav-marks.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/form/form-contract.js",
+   "to": "src/core/form/paths.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/form/form-contract.js",
+   "to": "src/core/shell/sidebar.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/form/form-contract.js",
+   "to": "src/core/filing/output-revision.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/form/form-contract.js",
+   "to": "src/core/party-resolver.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/form/form-contract.js",
+   "to": "src/core/navigation/ward-county.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/form/form-contract.js",
+   "to": "src/core/navigation/route-state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/form/form-fields.js",
+   "to": "src/core/form/date-parser.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/form/form-fields.js",
+   "to": "src/core/ui/icons.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/form/form-fields.js",
+   "to": "src/core/form/form-contract.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/form/form-fields.js",
+   "to": "src/core/help/tooltips.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/form/form-fields.js",
+   "to": "src/core/form/commit-coordinator.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/form/form-runtime.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/form/form-runtime.js",
+   "to": "src/core/ui/icons.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/form/plan-certificate-of-service-page.js",
+   "to": "src/core/filing/plan-certificate-of-service.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/form/plan-certificate-of-service-page.js",
+   "to": "src/core/form/service-attestation-visibility.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/form/plan-certificate-of-service-page.js",
+   "to": "src/core/form/form-fields.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/form/plan-certificate-of-service-page.js",
+   "to": "src/core/signature/signature-state-control.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/form/plan-certificate-of-service-page.js",
+   "to": "src/core/validation/signature-state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/form/plan-certificate-of-service-page.js",
+   "to": "src/core/signature/preparer-note.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/form/plan-row-actions.js",
+   "to": "src/core/filing/models/plan-rows.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/form/plan-row-actions.js",
+   "to": "src/core/navigation/router.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/form/plan-row-actions.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/form/plan-row-actions.js",
+   "to": "src/core/ui/dialogs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/form/preparer-flag.js",
+   "to": "src/core/filing/escape-html.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/form/prune-cards.js",
+   "to": "src/core/filing/models/guardian.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/form/prune-cards.js",
+   "to": "src/core/filing/filing-registry.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/form/prune-cards.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/form/schedule-definitions.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/form/schedule-definitions.js",
+   "to": "src/core/filing/output-revision.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/form/service-attestation-visibility.js",
+   "to": "src/core/validation/service-recipients.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/form/service-attestation-visibility.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/help/help-content.js",
+   "to": "src/core/filing/county-guidance.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/help/help-content.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/help/help-panel.js",
+   "to": "src/core/filing/filing-registry.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/help/help-panel.js",
+   "to": "src/core/help/help-content.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/help/help-panel.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/help/tooltips.js",
+   "to": "src/core/filing/escape-html.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/help/user-guide.js",
+   "to": "src/core/navigation/route-state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/help/user-guide.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/help/walkthrough.js",
+   "to": "src/core/filing/filing-registry.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/help/walkthrough.js",
+   "to": "src/core/help/help-panel.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/help/walkthrough.js",
+   "to": "src/core/persistence/launch-preferences.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/help/walkthrough.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/modals/convert-ward-modal.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/modals/convert-ward-modal.js",
+   "to": "src/core/filing/filing-descriptor.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/modals/convert-ward-modal.js",
+   "to": "src/core/ui/dialogs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/modals/convert-ward-modal.js",
+   "to": "src/core/filing/filing-registry.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/modals/convert-ward-modal.js",
+   "to": "src/core/filing/conversion.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/modals/convert-ward-modal.js",
+   "to": "src/core/navigation/filing-lifecycle.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/modals/convert-ward-modal.js",
+   "to": "src/core/ui/combobox.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/modals/filing-dialogs.js",
+   "to": "src/core/case-resolver.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/modals/filing-dialogs.js",
+   "to": "src/core/filing/carry-over.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/modals/filing-dialogs.js",
+   "to": "src/core/filing/delete-confirmation.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/modals/filing-dialogs.js",
+   "to": "src/core/filing/filing-registry.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/modals/filing-dialogs.js",
+   "to": "src/core/navigation/router.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/modals/filing-dialogs.js",
+   "to": "src/core/navigation/ward-county.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/modals/filing-dialogs.js",
+   "to": "src/core/navigation/filing-lifecycle.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/modals/filing-dialogs.js",
+   "to": "src/core/navigation/route-state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/modals/filing-dialogs.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/modals/filing-dialogs.js",
+   "to": "src/core/ui/dialogs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/modals/filing-dialogs.js",
+   "to": "src/core/filing/escape-html.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/modals/filing-dialogs.js",
+   "to": "src/core/ui/combobox.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/modals/filing-dialogs.js",
+   "to": "src/core/shell/sidebar.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/modals/filing-dialogs.js",
+   "to": "src/core/persistence/case-file.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/modals/guardian-setup.js",
+   "to": "src/core/shell/sidebar.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/modals/guardian-setup.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/modals/guardian-setup.js",
+   "to": "src/core/ui/dialogs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/modals/guardian-setup.js",
+   "to": "src/core/persistence/case-file.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/modals/pick-record-dialogs.js",
+   "to": "src/core/case-resolver.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/modals/pick-record-dialogs.js",
+   "to": "src/core/filing/escape-html.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/modals/pick-record-dialogs.js",
+   "to": "src/core/navigation/router.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/modals/pick-record-dialogs.js",
+   "to": "src/core/party-resolver.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/modals/pick-record-dialogs.js",
+   "to": "src/core/navigation/route-state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/modals/pick-record-dialogs.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/modals/pick-record-dialogs.js",
+   "to": "src/core/status/nav-marks.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/modals/pick-record-dialogs.js",
+   "to": "src/core/ui/dialogs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/modals/pick-record-dialogs.js",
+   "to": "src/core/persistence/case-file.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/modals/year-dialogs.js",
+   "to": "src/core/filing/escape-html.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/modals/year-dialogs.js",
+   "to": "src/core/filing/filing-years.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/modals/year-dialogs.js",
+   "to": "src/core/navigation/router.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/modals/year-dialogs.js",
+   "to": "src/core/navigation/filing-lifecycle.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/modals/year-dialogs.js",
+   "to": "src/core/navigation/route-state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/modals/year-dialogs.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/modals/year-dialogs.js",
+   "to": "src/core/ui/dialogs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/modals/year-dialogs.js",
+   "to": "src/core/ui/icons.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/filing-lifecycle.js",
+   "to": "src/core/navigation/ward-lifecycle.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/filing-lifecycle.js",
+   "to": "src/core/filing/carry-over.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/filing-lifecycle.js",
+   "to": "src/core/filing/conversion.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/filing-lifecycle.js",
+   "to": "src/core/filing/filing-years.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/leave-filing.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/leave-filing.js",
+   "to": "src/core/form/form-contract.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/leave-filing.js",
+   "to": "src/core/form/prune-cards.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/leave-filing.js",
+   "to": "src/core/persistence/case-file.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/leave-filing.js",
+   "to": "src/core/ward-lock.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/leave-filing.js",
+   "to": "src/core/shell/sidebar.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/leave-filing.js",
+   "to": "src/core/navigation/tab-state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/router.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/router.js",
+   "to": "src/core/filing/filing-descriptor.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/router.js",
+   "to": "src/core/filing/readiness-card.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/router.js",
+   "to": "src/core/persistence/recovery-cache.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/router.js",
+   "to": "src/core/ui/test-system-title.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/router.js",
+   "to": "src/core/ui/icons.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/router.js",
+   "to": "src/core/form/prune-cards.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/router.js",
+   "to": "src/core/filing/filing-registry.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/router.js",
+   "to": "src/core/filing/models/guardian.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/router.js",
+   "to": "src/core/form/form-runtime.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/router.js",
+   "to": "src/core/form/form-contract.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/router.js",
+   "to": "src/core/status/nav-marks.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/router.js",
+   "to": "src/core/ui/print-pager.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/router.js",
+   "to": "src/core/parties/party-management.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/router.js",
+   "to": "src/core/help/help-panel.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/router.js",
+   "to": "src/core/shell/start-new-form.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/router.js",
+   "to": "src/core/activity/activity-log-view.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/router.js",
+   "to": "src/core/feature-bridge.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/router.js",
+   "to": "src/core/runtime/features.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/router.js",
+   "to": "src/core/navigation/leave-filing.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/router.js",
+   "to": "src/core/navigation/route-state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/router.js",
+   "to": "src/core/navigation/route-state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/router.js",
+   "to": "src/core/navigation/leave-filing.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/tab-state.js",
+   "to": "src/core/feedback/feedback-config.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/tab-state.js",
+   "to": "src/core/persistence/export-state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/tab-state.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/ward-county.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/ward-county.js",
+   "to": "src/core/pdf/circuit-lookup.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/ward-county.js",
+   "to": "src/core/party-resolver.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/ward-lifecycle.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/ward-lifecycle.js",
+   "to": "src/core/filing/filing-registry.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/ward-lifecycle.js",
+   "to": "src/core/form/form-contract.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/ward-lifecycle.js",
+   "to": "src/core/ward-lock.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/ward-lifecycle.js",
+   "to": "src/core/filing/recent-filings.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/ward-lifecycle.js",
+   "to": "src/core/shell/sidebar.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/ward-lifecycle.js",
+   "to": "src/core/navigation/tab-state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/ward-lifecycle.js",
+   "to": "src/core/persistence/export-state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/ward-lifecycle.js",
+   "to": "src/core/persistence/case-file.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/ward-lifecycle.js",
+   "to": "src/core/runtime/features.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/ward-lifecycle.js",
+   "to": "src/core/navigation/leave-filing.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/ward-lifecycle.js",
+   "to": "src/core/navigation/router.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/ward-lifecycle.js",
+   "to": "src/core/navigation/leave-filing.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/parties/party-management.js",
+   "to": "src/core/filing/escape-html.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/parties/party-management.js",
+   "to": "src/core/filing/filing-registry.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/parties/party-management.js",
+   "to": "src/core/navigation/ward-county.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/parties/party-management.js",
+   "to": "src/core/party-resolver.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/parties/party-management.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/parties/party-management.js",
+   "to": "src/core/ui/dialogs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/parties/party-management.js",
+   "to": "src/core/activity/audit-log.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/party-resolver.js",
+   "to": "src/core/filing/filing-registry.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/party-resolver.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/party-resolver.js",
+   "to": "src/core/filing/output-revision.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/party-resolver.js",
+   "to": "src/core/persistence/case-file.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/pdf/html2pdf-loader.js",
+   "to": "src/core/vendor-loader.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/pdf/pdf-annotate.js",
+   "to": "src/core/ui/icons.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/pdf/pdf-engine.js",
+   "to": "src/core/pdf/pdf-accessibility.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/pdf/pdf-engine.js",
+   "to": "src/assets/embedded-fonts.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/pdf/pdf-engine.js",
+   "to": "src/core/pdf/circuit-lookup.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/pdf/pdf-engine.js",
+   "to": "src/core/pdf/pdfjs-loader.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/pdf/pdf-engine.js",
+   "to": "src/core/pdf/header-identity.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/pdf/pdf-engine.js",
+   "to": "src/core/pdf/supplemental-pdf.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/pdf/pdf-engine.js",
+   "to": "src/core/pdf/ssn-format.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/pdf/pdf-engine.js",
+   "to": "src/core/images/png-dimensions.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/pdf/pdf-engine.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/pdf/pdf-engine.js",
+   "to": "src/core/pdf/html2pdf-loader.js",
+   "kind": "import-dynamic",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/pdf/pdf-finalizer.js",
+   "to": "lib/pdf-lib.esm.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/pdf/pdf-finalizer.js",
+   "to": "src/core/pdf/supplemental-pdf.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/pdf/pdf-finalizer.js",
+   "to": "src/core/ui/dialogs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/pdf/pdf-preview.js",
+   "to": "src/core/pdf/pdf-engine.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/pdf/pdf-preview.js",
+   "to": "src/core/pdf/pdf-finalizer.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/pdf/pdf-preview.js",
+   "to": "src/core/pdf/pdfjs-loader.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/pdf/pdf-preview.js",
+   "to": "src/core/pdf/pdf-annotate.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/pdf/pdf-preview.js",
+   "to": "src/core/images/png-dimensions.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/pdf/pdf-preview.js",
+   "to": "src/core/status/live-region.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/pdf/pdf-preview.js",
+   "to": "src/core/filing/output-preflight.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/pdf/pdf-preview.js",
+   "to": "src/core/filing/output-authorization.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/pdf/pdf-preview.js",
+   "to": "src/core/validation/validation-adapter.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/pdf/pdf-preview.js",
+   "to": "src/core/ui/dialogs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/pdf/pdf-preview.js",
+   "to": "src/core/ui/print-pager.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/pdf/pdf-preview.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/pdf/pdf-preview.js",
+   "to": "src/core/persistence/case-file.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/pdf/pdf-preview.js",
+   "to": "src/core/pdf/print-current.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/pdf/pdfjs-loader.js",
+   "to": "lib/pdfjs/pdf.worker.min.mjs",
+   "kind": "import-dynamic",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/pdf/pdfjs-loader.js",
+   "to": "lib/pdfjs/pdf.mjs",
+   "kind": "import-dynamic",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/pdf/supplemental-pdf.js",
+   "to": "src/core/pdf/pdfjs-loader.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/pdf/supplemental-pdf.js",
+   "to": "src/core/validation/issue-registry.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/pdf/supplemental-pdf.js",
+   "to": "src/core/filing/doc-period.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/persistence/case-file.js",
+   "to": "src/core/persistence/crypto.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/persistence/case-file.js",
+   "to": "src/core/persistence/launch-preferences.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/persistence/case-file.js",
+   "to": "src/core/persistence/recovery-cache.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/persistence/case-file.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/persistence/case-file.js",
+   "to": "src/core/persistence/export-state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/persistence/case-file.js",
+   "to": "src/core/activity/audit-log.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/persistence/case-file.js",
+   "to": "src/core/filing/plan-tristate.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/persistence/case-file.js",
+   "to": "src/core/ui/dialogs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/persistence/case-file.js",
+   "to": "src/core/security/input-hardening.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/persistence/case-file.js",
+   "to": "src/core/navigation/tab-state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/persistence/case-file.js",
+   "to": "src/core/form/commit-coordinator.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/persistence/case-file.js",
+   "to": "src/core/form/paths.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/persistence/case-import.js",
+   "to": "src/core/activity/audit-log.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/persistence/case-import.js",
+   "to": "src/core/navigation/router.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/persistence/case-import.js",
+   "to": "src/core/navigation/ward-county.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/persistence/case-import.js",
+   "to": "src/core/navigation/filing-lifecycle.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/persistence/case-import.js",
+   "to": "src/core/navigation/tab-state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/persistence/case-import.js",
+   "to": "src/core/security/input-hardening.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/persistence/case-import.js",
+   "to": "src/core/shell/sidebar.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/persistence/case-import.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/persistence/case-import.js",
+   "to": "src/core/ui/dialogs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/persistence/case-import.js",
+   "to": "src/core/persistence/case-file.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/persistence/case-import.js",
+   "to": "src/core/persistence/crypto.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/persistence/case-import.js",
+   "to": "src/core/persistence/launch-preferences.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/persistence/case-import.js",
+   "to": "src/core/persistence/recovery-cache.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/persistence/case-reader.js",
+   "to": "src/core/activity/audit-log.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/persistence/case-reader.js",
+   "to": "src/core/filing/recent-filings.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/persistence/case-reader.js",
+   "to": "src/core/navigation/ward-county.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/persistence/case-reader.js",
+   "to": "src/core/persistence/crypto.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/persistence/case-reader.js",
+   "to": "src/core/persistence/export-state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/persistence/case-reader.js",
+   "to": "src/core/security/input-hardening.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/persistence/case-reader.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/persistence/case-reader.js",
+   "to": "src/core/theme-preference.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/persistence/launch-preferences.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/persistence/recovery-cache.js",
+   "to": "src/core/persistence/crypto.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/persistence/recovery-cache.js",
+   "to": "src/core/persistence/launch-preferences.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/persistence/recovery-cache.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/persistence/templates.js",
+   "to": "templates/annual-template.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/persistence/templates.js",
+   "to": "templates/simplified-template.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/persistence/templates.js",
+   "to": "templates/guardian-template.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/persistence/templates.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/runtime/browser-api.js",
+   "to": "src/core/feedback/feedback-config.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/runtime/browser-api.js",
+   "to": "src/core/testing/testing-adapter.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/security/app-lock.js",
+   "to": "src/core/activity/audit-log.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/security/app-lock.js",
+   "to": "src/core/navigation/filing-lifecycle.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/security/app-lock.js",
+   "to": "src/core/persistence/case-file.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/security/app-lock.js",
+   "to": "src/core/persistence/export-state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/security/app-lock.js",
+   "to": "src/core/persistence/case-reader.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/security/app-lock.js",
+   "to": "src/core/persistence/crypto.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/security/app-lock.js",
+   "to": "src/core/persistence/launch-preferences.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/security/app-lock.js",
+   "to": "src/core/persistence/recovery-cache.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/security/app-lock.js",
+   "to": "src/core/navigation/router.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/security/app-lock.js",
+   "to": "src/core/security/input-hardening.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/security/app-lock.js",
+   "to": "src/core/shell/sidebar.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/security/app-lock.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/security/app-lock.js",
+   "to": "src/core/ui/dialogs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/security/app-lock.js",
+   "to": "src/core/ward-lock.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/shell/filing-switcher.js",
+   "to": "src/core/filing/escape-html.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/shell/filing-switcher.js",
+   "to": "src/core/filing/filing-registry.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/shell/filing-switcher.js",
+   "to": "src/core/navigation/filing-lifecycle.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/shell/filing-switcher.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/shell/filing-switcher.js",
+   "to": "src/core/ui/combobox.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/shell/filing-switcher.js",
+   "to": "src/core/ui/dialogs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/shell/sidebar.js",
+   "to": "src/core/filing/escape-html.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/shell/sidebar.js",
+   "to": "src/core/filing/filing-registry.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/shell/sidebar.js",
+   "to": "src/core/format/money.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/shell/sidebar.js",
+   "to": "src/core/runtime/features.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/shell/sidebar.js",
+   "to": "src/core/filing/filing-descriptor.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/shell/sidebar.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/shell/sidebar.js",
+   "to": "src/core/status/nav-marks.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/shell/start-new-form.js",
+   "to": "src/core/filing/filing-registry.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/shell/start-new-form.js",
+   "to": "src/core/ui/icons.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/signature/signature-pad.js",
+   "to": "src/core/images/png-dimensions.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/signature/signature-state-control.js",
+   "to": "src/core/validation/signature-state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/signature/signature-state-control.js",
+   "to": "src/core/signature/signature-pad.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/signature/signature-state-control.js",
+   "to": "src/core/party-resolver.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/signature/signature-state-control.js",
+   "to": "src/core/ui/dialogs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/signature/signature-state-control.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/signature/signature-state-control.js",
+   "to": "src/core/persistence/case-file.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/signature/signature-state-control.js",
+   "to": "src/core/navigation/router.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/startup/bootstrap.js",
+   "to": "src/core/runtime/features.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/startup/bootstrap.js",
+   "to": "src/core/navigation/router.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/startup/bootstrap.js",
+   "to": "src/core/form/date-year-guard.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/startup/bootstrap.js",
+   "to": "src/core/startup/startup.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/startup/launch.js",
+   "to": "src/core/persistence/case-file.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/startup/launch.js",
+   "to": "src/core/persistence/case-reader.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/startup/launch.js",
+   "to": "src/core/persistence/crypto.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/startup/launch.js",
+   "to": "src/core/persistence/export-state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/startup/launch.js",
+   "to": "src/core/persistence/launch-preferences.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/startup/launch.js",
+   "to": "src/core/persistence/recovery-cache.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/startup/launch.js",
+   "to": "src/core/security/app-lock.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/startup/launch.js",
+   "to": "src/core/security/input-hardening.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/startup/launch.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/startup/launch.js",
+   "to": "src/core/theme-preference.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/startup/launch.js",
+   "to": "src/core/ui/dialogs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/startup/launch.js",
+   "to": "src/core/persistence/case-import.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/startup/startup.js",
+   "to": "src/core/navigation/tab-state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/startup/startup.js",
+   "to": "src/core/navigation/filing-lifecycle.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/startup/startup.js",
+   "to": "src/core/persistence/case-file.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/startup/startup.js",
+   "to": "src/core/persistence/recovery-cache.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/startup/startup.js",
+   "to": "src/core/persistence/templates.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/startup/startup.js",
+   "to": "src/core/navigation/router.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/startup/startup.js",
+   "to": "src/core/security/app-lock.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/startup/startup.js",
+   "to": "src/core/shell/sidebar.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/startup/startup.js",
+   "to": "src/core/startup/launch.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/startup/startup.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/state.js",
+   "to": "src/core/filing/normalize-filing.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/status/completion.js",
+   "to": "src/core/filing/models/guardian.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/status/completion.js",
+   "to": "src/core/filing/models/plan-annual.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/status/completion.js",
+   "to": "src/core/filing/models/plan-initial.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/status/completion.js",
+   "to": "src/core/validation/row-started.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/status/completion.js",
+   "to": "src/core/validation/service-recipients.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/status/completion.js",
+   "to": "src/core/validation/signature-state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/status/completion.js",
+   "to": "src/core/validation/attorney-block.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/status/completion.js",
+   "to": "src/core/form/preparer-flag.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/status/completion.js",
+   "to": "src/core/filing/plan-certificate-of-service.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/status/completion.js",
+   "to": "src/core/validation/error-route.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/status/nav-marks.js",
+   "to": "src/core/filing/escape-html.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/status/nav-marks.js",
+   "to": "src/core/filing/filing-registry.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/status/nav-marks.js",
+   "to": "src/core/status/section-guidance-policy.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/status/nav-marks.js",
+   "to": "src/core/filing/models/guardian.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/status/nav-marks.js",
+   "to": "src/core/runtime/features.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/status/nav-marks.js",
+   "to": "src/core/navigation/route-state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/status/nav-marks.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/status/nav-marks.js",
+   "to": "src/core/status/section-status.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/status/nav-marks.js",
+   "to": "src/core/ui/icons.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/status/section-guidance-policy.js",
+   "to": "src/core/validation/service-recipients.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/status/section-guidance-policy.js",
+   "to": "src/core/filing/plan-certificate-of-service.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/status/section-status.js",
+   "to": "src/core/validation/validation-adapter.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/status/section-status.js",
+   "to": "src/core/status/section-guidance-policy.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/testing/testing-adapter.js",
+   "to": "src/core/filing/filing-registry.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/testing/testing-adapter.js",
+   "to": "src/core/filing/models/plan-annual.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/testing/testing-adapter.js",
+   "to": "src/core/filing/models/plan-initial.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/testing/testing-adapter.js",
+   "to": "src/core/status/nav-marks.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/testing/testing-adapter.js",
+   "to": "src/core/modals/filing-dialogs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/testing/testing-adapter.js",
+   "to": "src/core/help/walkthrough.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/testing/testing-adapter.js",
+   "to": "src/core/shell/sidebar.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/testing/testing-adapter.js",
+   "to": "src/core/navigation/filing-lifecycle.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/testing/testing-adapter.js",
+   "to": "src/core/filing/conversion.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/testing/testing-adapter.js",
+   "to": "src/core/filing/recent-filings.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/testing/testing-adapter.js",
+   "to": "src/core/modals/filing-dialogs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/testing/testing-adapter.js",
+   "to": "src/core/modals/convert-ward-modal.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/testing/testing-adapter.js",
+   "to": "src/core/filing/filing-descriptor.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/testing/testing-adapter.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/testing/testing-adapter.js",
+   "to": "src/core/persistence/case-file.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/testing/testing-adapter.js",
+   "to": "src/core/persistence/case-reader.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/testing/testing-adapter.js",
+   "to": "src/core/persistence/crypto.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/testing/testing-adapter.js",
+   "to": "src/core/persistence/export-state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/testing/testing-adapter.js",
+   "to": "src/core/persistence/launch-preferences.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/testing/testing-adapter.js",
+   "to": "src/core/persistence/recovery-cache.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/testing/testing-adapter.js",
+   "to": "src/core/activity/audit-log.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/testing/testing-adapter.js",
+   "to": "src/core/security/app-lock.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/testing/testing-adapter.js",
+   "to": "src/core/runtime/features.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/testing/testing-adapter.js",
+   "to": "src/core/navigation/router.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/testing/testing-adapter.js",
+   "to": "src/core/persistence/case-file.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/testing/testing-adapter.js",
+   "to": "src/core/persistence/recovery-cache.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/testing/testing-adapter.js",
+   "to": "src/core/persistence/launch-preferences.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/testing/testing-adapter.js",
+   "to": "src/core/persistence/crypto.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/testing/testing-adapter.js",
+   "to": "src/core/ward-lock.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/testing/testing-adapter.js",
+   "to": "src/core/ui/test-system-title.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/testing/testing-adapter.js",
+   "to": "src/core/party-resolver.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/testing/testing-adapter.js",
+   "to": "src/core/case-resolver.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/testing/testing-adapter.js",
+   "to": "src/core/navigation/ward-county.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/testing/testing-adapter.js",
+   "to": "src/core/validation/validation-adapter.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/testing/testing-adapter.js",
+   "to": "src/core/filing/output-preflight.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/theme-preference.js",
+   "to": "src/core/ui/icons.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/types/index.js",
+   "to": "src/core/types/case-file.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/types/index.js",
+   "to": "src/core/types/filing.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/types/index.js",
+   "to": "src/core/types/parties.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/types/index.js",
+   "to": "src/core/types/schedules.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/types/index.js",
+   "to": "src/core/types/form-contract.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/ui/combobox.js",
+   "to": "src/core/filing/escape-html.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/ui/dialogs.js",
+   "to": "src/fragment-loader.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/ui/print-pager.js",
+   "to": "src/core/filing/escape-html.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/ui/print-pager.js",
+   "to": "src/core/ui/icons.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/validation/attorney-block.js",
+   "to": "src/core/validation/signature-state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/validation/date-rules.js",
+   "to": "src/core/validation/validation-issue.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/validation/error-route.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/validation/signature-state.js",
+   "to": "src/core/validation/validation-issue.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/validation/validation-adapter.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/validation/validation-adapter.js",
+   "to": "src/core/validation/error-route.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/validation/validation-adapter.js",
+   "to": "src/core/navigation/route-state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/validation/validation-issue.js",
+   "to": "src/core/validation/issue-registry.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/validation/validation-panel.js",
+   "to": "src/core/filing/escape-html.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/validation/validation-panel.js",
+   "to": "src/core/filing/filing-registry.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/validation/validation-panel.js",
+   "to": "src/core/filing/models/guardian.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/validation/validation-panel.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/validation/validation-panel.js",
+   "to": "src/core/ui/icons.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/validation/validation-panel.js",
+   "to": "src/core/validation/error-route.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features-loader.js",
+   "to": "src/features/annual-accounting/totals.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features-loader.js",
+   "to": "src/features/guardian-inventory/totals.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features-loader.js",
+   "to": "src/features/simplified-accounting/totals.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features-loader.js",
+   "to": "src/core/feature-bridge.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features-loader.js",
+   "to": "src/core/filing/filing-registry.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features-loader.js",
+   "to": "src/core/filing/filing-descriptor.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features-loader.js",
+   "to": "src/features/simplified-accounting/index.js",
+   "kind": "import-dynamic",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features-loader.js",
+   "to": "src/features/plan-simplified/index.js",
+   "kind": "import-dynamic",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features-loader.js",
+   "to": "src/features/plan-annual/index.js",
+   "kind": "import-dynamic",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features-loader.js",
+   "to": "src/features/plan-initial/index.js",
+   "kind": "import-dynamic",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features-loader.js",
+   "to": "src/features/plan-minor/index.js",
+   "kind": "import-dynamic",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features-loader.js",
+   "to": "src/features/annual-accounting/index.js",
+   "kind": "import-dynamic",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features-loader.js",
+   "to": "src/features/guardian-inventory/index.js",
+   "kind": "import-dynamic",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features-loader.js",
+   "to": "src/features/dashboard/index.js",
+   "kind": "import-dynamic",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features-loader.js",
+   "to": "src/features/guardian-inventory/pdf-model.js",
+   "kind": "import-dynamic",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features-loader.js",
+   "to": "src/features/guardian-inventory/pdf-engine.js",
+   "kind": "import-dynamic",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features-loader.js",
+   "to": "src/core/pdf/pdf-accessibility.js",
+   "kind": "import-dynamic",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features-loader.js",
+   "to": "src/features/simplified-accounting/pdf-model.js",
+   "kind": "import-dynamic",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features-loader.js",
+   "to": "src/core/pdf/pdf-engine.js",
+   "kind": "import-dynamic",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features-loader.js",
+   "to": "src/features/annual-accounting/pdf-model.js",
+   "kind": "import-dynamic",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features-loader.js",
+   "to": "src/core/pdf/pdf-engine.js",
+   "kind": "import-dynamic",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features-loader.js",
+   "to": "src/features/plan-initial/pdf-model.js",
+   "kind": "import-dynamic",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features-loader.js",
+   "to": "src/core/pdf/pdf-engine.js",
+   "kind": "import-dynamic",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features-loader.js",
+   "to": "src/features/plan-annual/pdf-model.js",
+   "kind": "import-dynamic",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features-loader.js",
+   "to": "src/core/pdf/pdf-engine.js",
+   "kind": "import-dynamic",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features-loader.js",
+   "to": "src/features/plan-minor/pdf-model.js",
+   "kind": "import-dynamic",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features-loader.js",
+   "to": "src/core/pdf/pdf-engine.js",
+   "kind": "import-dynamic",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features-loader.js",
+   "to": "src/features/plan-simplified/pdf-model.js",
+   "kind": "import-dynamic",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features-loader.js",
+   "to": "src/core/pdf/pdf-engine.js",
+   "kind": "import-dynamic",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/excel.js",
+   "to": "src/features/annual-accounting/index.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/excel.js",
+   "to": "src/core/filing/output-authorization.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/excel.js",
+   "to": "src/core/excel/excel-capacity.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/excel.js",
+   "to": "src/core/validation/issue-registry.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/excel.js",
+   "to": "src/core/filing/filing-descriptor.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/excel.js",
+   "to": "src/core/excel/excel-engine.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/excel.js",
+   "to": "src/core/form/preparer-flag.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/excel.js",
+   "to": "src/core/filing/bond-depository.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/excel.js",
+   "to": "src/core/excel/cell-reader.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/excel.js",
+   "to": "src/core/excel/b4-register-pages.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/excel.js",
+   "to": "src/core/excel/sheet-pruning.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/excel.js",
+   "to": "src/core/excel/b4-export-plan.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/excel.js",
+   "to": "src/core/accounting/bank-accounts.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/excel.js",
+   "to": "src/core/ui/dialogs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/excel.js",
+   "to": "src/core/ui/transient-status.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/excel.js",
+   "to": "src/core/ui/export-guard.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/excel.js",
+   "to": "src/core/validation/row-started.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/excel.js",
+   "to": "src/core/security/input-hardening.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/excel.js",
+   "to": "src/core/form/form-contract.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/excel.js",
+   "to": "src/core/format/money.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/excel.js",
+   "to": "src/core/filing/filing-registry.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/excel.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/excel.js",
+   "to": "src/core/persistence/templates.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/excel.js",
+   "to": "src/features/annual-accounting/filing-type.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/excel.js",
+   "to": "src/core/filing/output-revision.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/excel.js",
+   "to": "src/core/navigation/router.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/excel.js",
+   "to": "src/features/annual-accounting/totals.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/filing-type.js",
+   "to": "src/core/filing/filing-descriptor.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/filing-type.js",
+   "to": "src/core/filing/output-authorization.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/filing-type.js",
+   "to": "src/core/shell/sidebar.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/filing-type.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/index.js",
+   "to": "src/core/summary-renderer.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/index.js",
+   "to": "src/core/form/date-parser.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/index.js",
+   "to": "src/core/status/section-status.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/index.js",
+   "to": "src/core/validation/date-rules.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/index.js",
+   "to": "src/core/excel/excel-capacity.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/index.js",
+   "to": "src/core/excel/cell-reader.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/index.js",
+   "to": "src/core/filing/filing-descriptor.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/index.js",
+   "to": "src/core/form/form-fields.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/index.js",
+   "to": "src/core/validation/validation-issue.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/index.js",
+   "to": "src/core/validation/service-recipients.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/index.js",
+   "to": "src/core/form/service-attestation-visibility.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/index.js",
+   "to": "src/core/form/guardianship-options.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/index.js",
+   "to": "src/core/form/schedule-definitions.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/index.js",
+   "to": "src/core/validation/signature-state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/index.js",
+   "to": "src/core/signature/signature-state-control.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/index.js",
+   "to": "src/core/signature/preparer-note.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/index.js",
+   "to": "src/core/form/preparer-flag.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/index.js",
+   "to": "src/core/ui/dialogs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/index.js",
+   "to": "src/core/excel/b4-register-pages.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/index.js",
+   "to": "src/core/accounting/bank-accounts.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/index.js",
+   "to": "src/core/validation/issue-registry.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/index.js",
+   "to": "src/core/filing/bond-depository.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/index.js",
+   "to": "src/core/form/form-fields.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/index.js",
+   "to": "src/core/filing/schedule-doc-ack.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/index.js",
+   "to": "src/core/form/cards/ward-demographics-card.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/index.js",
+   "to": "src/core/filing/escape-html.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/index.js",
+   "to": "src/core/ui/icons.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/index.js",
+   "to": "src/core/form/form-contract.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/index.js",
+   "to": "src/core/validation/row-started.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/index.js",
+   "to": "src/core/filing/filing-registry.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/index.js",
+   "to": "src/core/status/completion.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/index.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/index.js",
+   "to": "src/core/status/nav-marks.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/index.js",
+   "to": "src/core/filing/schedule-docs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/index.js",
+   "to": "src/core/form/field-html.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/index.js",
+   "to": "src/core/form/form-runtime.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/index.js",
+   "to": "src/core/form/county-autocomplete.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/index.js",
+   "to": "src/core/form/paths.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/index.js",
+   "to": "src/core/modals/pick-record-dialogs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/index.js",
+   "to": "src/core/help/tooltips.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/index.js",
+   "to": "src/core/shell/sidebar.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/index.js",
+   "to": "src/features/annual-accounting/filing-type.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/index.js",
+   "to": "src/core/navigation/router.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/index.js",
+   "to": "src/features/annual-accounting/totals.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/index.js",
+   "to": "src/features/annual-accounting/print.js",
+   "kind": "import-dynamic",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/index.js",
+   "to": "src/features/annual-accounting/excel.js",
+   "kind": "import-dynamic",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/pdf-model.js",
+   "to": "src/features/annual-accounting/totals.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/pdf-model.js",
+   "to": "src/core/filing/statutory-text.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/pdf-model.js",
+   "to": "src/core/form/form-contract.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/pdf-model.js",
+   "to": "src/core/filing/filing-descriptor.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/pdf-model.js",
+   "to": "src/core/pdf/address-format.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/pdf-model.js",
+   "to": "src/core/pdf/ssn-format.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/pdf-model.js",
+   "to": "src/core/accounting/bank-accounts.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/pdf-model.js",
+   "to": "src/core/form/preparer-flag.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/pdf-model.js",
+   "to": "src/core/filing/bond-depository.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/print.js",
+   "to": "src/features/annual-accounting/index.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/print.js",
+   "to": "src/features/annual-accounting/pdf-model.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/print.js",
+   "to": "src/core/pdf/pdf-engine.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/print.js",
+   "to": "src/core/pdf/pdf-finalizer.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/print.js",
+   "to": "src/core/pdf/pdf-preview.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/print.js",
+   "to": "src/core/pdf/supplemental-pdf.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/print.js",
+   "to": "src/core/filing/output-preflight.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/print.js",
+   "to": "src/core/filing/output-authorization.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/print.js",
+   "to": "src/core/filing/readiness-card.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/print.js",
+   "to": "src/core/filing/output-advisories.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/print.js",
+   "to": "src/core/ui/dialogs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/print.js",
+   "to": "src/core/ui/export-guard.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/print.js",
+   "to": "src/core/filing/filing-registry.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/print.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/print.js",
+   "to": "src/core/excel/excel-capacity.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/print.js",
+   "to": "src/core/validation/validation-panel.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/print.js",
+   "to": "src/core/filing/schedule-docs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/print.js",
+   "to": "src/core/navigation/router.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/totals.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/dashboard/index.js",
+   "to": "src/features/dashboard/view-model.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/dashboard/index.js",
+   "to": "src/core/case-resolver.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/dashboard/index.js",
+   "to": "src/core/navigation/ward-county.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/dashboard/index.js",
+   "to": "src/features/dashboard/resources.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/dashboard/index.js",
+   "to": "src/core/ui/dialogs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/dashboard/index.js",
+   "to": "src/core/filing/escape-html.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/dashboard/index.js",
+   "to": "src/core/ui/icons.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/dashboard/index.js",
+   "to": "src/core/filing/filing-registry.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/dashboard/index.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/dashboard/index.js",
+   "to": "src/core/filing/recent-filings.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/dashboard/index.js",
+   "to": "src/core/modals/year-dialogs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/dashboard/index.js",
+   "to": "src/core/modals/filing-dialogs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/dashboard/index.js",
+   "to": "src/core/modals/pick-record-dialogs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/dashboard/index.js",
+   "to": "src/core/navigation/filing-lifecycle.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/dashboard/index.js",
+   "to": "src/core/modals/convert-ward-modal.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/dashboard/index.js",
+   "to": "src/core/shell/start-new-form.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/dashboard/index.js",
+   "to": "src/core/navigation/router.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/dashboard/index.js",
+   "to": "src/core/persistence/case-file.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/dashboard/index.js",
+   "to": "src/core/persistence/launch-preferences.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/dashboard/index.js",
+   "to": "src/core/runtime/features.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/dashboard/index.js",
+   "to": "src/core/filing/filing-registry.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/dashboard/index.js",
+   "to": "src/core/activity/audit-log.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/dashboard/resources.js",
+   "to": "src/core/navigation/ward-county.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/dashboard/resources.js",
+   "to": "src/core/pdf/circuit-lookup.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/dashboard/resources.js",
+   "to": "src/core/ui/icons.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/excel.js",
+   "to": "src/features/guardian-inventory/index.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/excel.js",
+   "to": "src/core/filing/output-authorization.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/excel.js",
+   "to": "src/core/excel/excel-capacity.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/excel.js",
+   "to": "src/core/excel/excel-engine.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/excel.js",
+   "to": "src/core/form/preparer-flag.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/excel.js",
+   "to": "src/core/filing/bond-depository.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/excel.js",
+   "to": "src/core/excel/cell-reader.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/excel.js",
+   "to": "src/core/excel/sheet-pruning.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/excel.js",
+   "to": "src/core/excel/guardian-inventory-pages.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/excel.js",
+   "to": "src/core/ui/dialogs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/excel.js",
+   "to": "src/core/ui/transient-status.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/excel.js",
+   "to": "src/core/ui/export-guard.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/excel.js",
+   "to": "src/core/security/input-hardening.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/excel.js",
+   "to": "src/core/form/form-contract.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/excel.js",
+   "to": "src/core/filing/models/guardian.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/excel.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/excel.js",
+   "to": "src/core/persistence/case-file.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/excel.js",
+   "to": "src/core/persistence/templates.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/excel.js",
+   "to": "src/core/filing/output-revision.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/excel.js",
+   "to": "src/core/navigation/router.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/form-binding.js",
+   "to": "src/core/form/commit-coordinator.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/form-binding.js",
+   "to": "src/core/form/county-autocomplete.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/form-binding.js",
+   "to": "src/core/form/date-parser.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/form-binding.js",
+   "to": "src/core/form/form-contract.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/form-binding.js",
+   "to": "src/core/form/paths.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/form-binding.js",
+   "to": "src/core/format/money.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/form-binding.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/form-binding.js",
+   "to": "src/features/guardian-inventory/totals.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/index.js",
+   "to": "src/core/ui/dialogs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/index.js",
+   "to": "src/core/filing/schedule-doc-ack.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/index.js",
+   "to": "src/core/summary-renderer.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/index.js",
+   "to": "src/core/status/section-status.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/index.js",
+   "to": "src/core/status/section-guidance-policy.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/index.js",
+   "to": "src/core/form/guardianship-options.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/index.js",
+   "to": "src/core/validation/signature-state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/index.js",
+   "to": "src/core/validation/date-rules.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/index.js",
+   "to": "src/core/excel/excel-capacity.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/index.js",
+   "to": "src/core/validation/validation-issue.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/index.js",
+   "to": "src/core/validation/issue-registry.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/index.js",
+   "to": "src/core/filing/bond-depository.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/index.js",
+   "to": "src/core/form/form-fields.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/index.js",
+   "to": "src/core/signature/signature-state-control.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/index.js",
+   "to": "src/core/signature/preparer-note.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/index.js",
+   "to": "src/core/form/preparer-flag.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/index.js",
+   "to": "src/core/validation/service-recipients.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/index.js",
+   "to": "src/core/form/service-attestation-visibility.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/index.js",
+   "to": "src/core/filing/escape-html.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/index.js",
+   "to": "src/core/ui/icons.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/index.js",
+   "to": "src/core/format/money.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/index.js",
+   "to": "src/core/form/form-contract.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/index.js",
+   "to": "src/features/guardian-inventory/totals.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/index.js",
+   "to": "src/core/filing/models/guardian.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/index.js",
+   "to": "src/core/filing/models/guardian.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/index.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/index.js",
+   "to": "src/core/persistence/case-file.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/index.js",
+   "to": "src/features/guardian-inventory/form-binding.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/index.js",
+   "to": "src/core/form/field-html.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/index.js",
+   "to": "src/core/form/form-runtime.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/index.js",
+   "to": "src/core/ui/print-pager.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/index.js",
+   "to": "src/core/filing/schedule-docs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/index.js",
+   "to": "src/core/form/paths.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/index.js",
+   "to": "src/core/modals/pick-record-dialogs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/index.js",
+   "to": "src/core/navigation/router.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/index.js",
+   "to": "src/core/status/nav-marks.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/index.js",
+   "to": "src/features/guardian-inventory/print.js",
+   "kind": "import-dynamic",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/index.js",
+   "to": "src/features/guardian-inventory/excel.js",
+   "kind": "import-dynamic",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/pdf-accessibility.js",
+   "to": "src/core/pdf/pdf-accessibility.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/pdf-engine.js",
+   "to": "src/core/pdf/pdf-engine.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/pdf-model.js",
+   "to": "src/core/form/form-contract.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/pdf-model.js",
+   "to": "src/core/pdf/supplemental-pdf.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/pdf-model.js",
+   "to": "src/core/filing/filing-descriptor.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/pdf-model.js",
+   "to": "src/core/pdf/address-format.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/pdf-model.js",
+   "to": "src/core/pdf/ssn-format.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/pdf-model.js",
+   "to": "src/features/guardian-inventory/totals.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/pdf-model.js",
+   "to": "src/core/form/preparer-flag.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/pdf-model.js",
+   "to": "src/core/filing/bond-depository.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/print.js",
+   "to": "src/features/guardian-inventory/index.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/print.js",
+   "to": "src/features/guardian-inventory/pdf-model.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/print.js",
+   "to": "src/features/guardian-inventory/pdf-engine.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/print.js",
+   "to": "src/core/pdf/pdf-finalizer.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/print.js",
+   "to": "src/core/pdf/pdf-preview.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/print.js",
+   "to": "src/core/pdf/supplemental-pdf.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/print.js",
+   "to": "src/core/filing/output-preflight.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/print.js",
+   "to": "src/core/filing/output-authorization.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/print.js",
+   "to": "src/core/filing/readiness-card.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/print.js",
+   "to": "src/core/filing/output-advisories.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/print.js",
+   "to": "src/core/ui/dialogs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/print.js",
+   "to": "src/core/ui/transient-status.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/print.js",
+   "to": "src/core/ui/export-guard.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/print.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/print.js",
+   "to": "src/core/validation/validation-panel.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/print.js",
+   "to": "src/core/excel/excel-capacity.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/print.js",
+   "to": "src/core/filing/schedule-docs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/print.js",
+   "to": "src/core/navigation/router.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/totals.js",
+   "to": "src/core/format/money.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/totals.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-annual/index.js",
+   "to": "src/core/summary-renderer.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-annual/index.js",
+   "to": "src/core/validation/date-rules.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-annual/index.js",
+   "to": "src/core/validation/signature-state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-annual/index.js",
+   "to": "src/core/validation/validation-issue.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-annual/index.js",
+   "to": "src/core/validation/row-started.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-annual/index.js",
+   "to": "src/core/signature/signature-state-control.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-annual/index.js",
+   "to": "src/core/filing/plan-certificate-of-service.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-annual/index.js",
+   "to": "src/core/form/plan-certificate-of-service-page.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-annual/index.js",
+   "to": "src/core/signature/preparer-note.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-annual/index.js",
+   "to": "src/core/form/cards/case-caption-card.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-annual/index.js",
+   "to": "src/core/form/cards/ward-demographics-card.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-annual/index.js",
+   "to": "src/core/form/cards/residence-facility-card.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-annual/index.js",
+   "to": "src/core/form/form-fields.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-annual/index.js",
+   "to": "src/core/filing/escape-html.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-annual/index.js",
+   "to": "src/core/ui/icons.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-annual/index.js",
+   "to": "src/core/form/date-parser.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-annual/index.js",
+   "to": "src/core/filing/models/plan-annual.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-annual/index.js",
+   "to": "src/core/filing/models/plan-rows.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-annual/index.js",
+   "to": "src/core/status/completion.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-annual/index.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-annual/index.js",
+   "to": "src/core/form/field-html.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-annual/index.js",
+   "to": "src/core/filing/schedule-docs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-annual/index.js",
+   "to": "src/core/form/paths.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-annual/index.js",
+   "to": "src/features/plan-annual/print.js",
+   "kind": "import-dynamic",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-annual/pdf-model.js",
+   "to": "src/core/filing/filing-descriptor.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-annual/pdf-model.js",
+   "to": "src/core/filing/plan-certificate-of-service.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-annual/pdf-model.js",
+   "to": "src/core/pdf/ssn-format.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-annual/pdf-model.js",
+   "to": "src/core/validation/row-started.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-annual/pdf-model.js",
+   "to": "src/core/filing/models/plan-annual.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-annual/print.js",
+   "to": "src/features/plan-annual/index.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-annual/print.js",
+   "to": "src/features/plan-annual/pdf-model.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-annual/print.js",
+   "to": "src/core/pdf/pdf-engine.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-annual/print.js",
+   "to": "src/core/pdf/pdf-finalizer.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-annual/print.js",
+   "to": "src/core/pdf/pdf-preview.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-annual/print.js",
+   "to": "src/core/pdf/supplemental-pdf.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-annual/print.js",
+   "to": "src/core/filing/output-preflight.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-annual/print.js",
+   "to": "src/core/filing/output-authorization.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-annual/print.js",
+   "to": "src/core/filing/output-advisories.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-annual/print.js",
+   "to": "src/core/filing/readiness-card.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-annual/print.js",
+   "to": "src/core/ui/dialogs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-annual/print.js",
+   "to": "src/core/ui/export-guard.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-annual/print.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-annual/print.js",
+   "to": "src/core/validation/validation-panel.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-annual/print.js",
+   "to": "src/core/filing/schedule-docs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-annual/print.js",
+   "to": "src/core/navigation/router.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-initial/index.js",
+   "to": "src/core/summary-renderer.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-initial/index.js",
+   "to": "src/core/form/form-fields.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-initial/index.js",
+   "to": "src/core/form/guardianship-options.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-initial/index.js",
+   "to": "src/core/validation/signature-state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-initial/index.js",
+   "to": "src/core/validation/date-rules.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-initial/index.js",
+   "to": "src/core/validation/attorney-block.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-initial/index.js",
+   "to": "src/core/validation/validation-issue.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-initial/index.js",
+   "to": "src/core/validation/row-started.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-initial/index.js",
+   "to": "src/core/form/form-contract.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-initial/index.js",
+   "to": "src/core/signature/signature-state-control.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-initial/index.js",
+   "to": "src/core/filing/plan-certificate-of-service.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-initial/index.js",
+   "to": "src/core/form/plan-certificate-of-service-page.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-initial/index.js",
+   "to": "src/core/filing/plan-initial-multiselect.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-initial/index.js",
+   "to": "src/core/form/form-fields.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-initial/index.js",
+   "to": "src/core/signature/preparer-note.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-initial/index.js",
+   "to": "src/core/form/cards/case-caption-card.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-initial/index.js",
+   "to": "src/core/form/cards/ward-demographics-card.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-initial/index.js",
+   "to": "src/core/form/cards/residence-facility-card.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-initial/index.js",
+   "to": "src/core/form/cards/guardian-attorney-card.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-initial/index.js",
+   "to": "src/core/form/form-fields.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-initial/index.js",
+   "to": "src/core/filing/escape-html.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-initial/index.js",
+   "to": "src/core/ui/icons.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-initial/index.js",
+   "to": "src/core/form/date-parser.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-initial/index.js",
+   "to": "src/core/filing/models/plan-initial.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-initial/index.js",
+   "to": "src/core/filing/models/plan-rows.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-initial/index.js",
+   "to": "src/core/status/completion.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-initial/index.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-initial/index.js",
+   "to": "src/core/form/field-html.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-initial/index.js",
+   "to": "src/core/filing/schedule-docs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-initial/index.js",
+   "to": "src/core/form/paths.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-initial/index.js",
+   "to": "src/features/plan-initial/print.js",
+   "kind": "import-dynamic",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-initial/pdf-model.js",
+   "to": "src/core/filing/filing-descriptor.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-initial/pdf-model.js",
+   "to": "src/core/filing/plan-certificate-of-service.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-initial/pdf-model.js",
+   "to": "src/core/form/form-contract.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-initial/pdf-model.js",
+   "to": "src/core/pdf/ssn-format.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-initial/pdf-model.js",
+   "to": "src/core/validation/row-started.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-initial/pdf-model.js",
+   "to": "src/core/filing/models/plan-initial.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-initial/print.js",
+   "to": "src/features/plan-initial/index.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-initial/print.js",
+   "to": "src/features/plan-initial/pdf-model.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-initial/print.js",
+   "to": "src/core/pdf/pdf-engine.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-initial/print.js",
+   "to": "src/core/pdf/pdf-finalizer.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-initial/print.js",
+   "to": "src/core/pdf/pdf-preview.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-initial/print.js",
+   "to": "src/core/pdf/supplemental-pdf.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-initial/print.js",
+   "to": "src/core/filing/output-preflight.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-initial/print.js",
+   "to": "src/core/filing/output-authorization.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-initial/print.js",
+   "to": "src/core/filing/output-advisories.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-initial/print.js",
+   "to": "src/core/filing/readiness-card.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-initial/print.js",
+   "to": "src/core/ui/dialogs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-initial/print.js",
+   "to": "src/core/ui/export-guard.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-initial/print.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-initial/print.js",
+   "to": "src/core/validation/validation-panel.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-initial/print.js",
+   "to": "src/core/filing/schedule-docs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-initial/print.js",
+   "to": "src/core/navigation/router.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-minor/index.js",
+   "to": "src/core/summary-renderer.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-minor/index.js",
+   "to": "src/core/validation/date-rules.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-minor/index.js",
+   "to": "src/core/form/form-contract.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-minor/index.js",
+   "to": "src/core/validation/signature-state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-minor/index.js",
+   "to": "src/core/validation/validation-issue.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-minor/index.js",
+   "to": "src/core/validation/row-started.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-minor/index.js",
+   "to": "src/core/signature/signature-state-control.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-minor/index.js",
+   "to": "src/core/filing/plan-certificate-of-service.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-minor/index.js",
+   "to": "src/core/form/plan-certificate-of-service-page.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-minor/index.js",
+   "to": "src/core/signature/preparer-note.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-minor/index.js",
+   "to": "src/core/form/cards/ward-demographics-card.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-minor/index.js",
+   "to": "src/core/form/cards/guardian-attorney-card.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-minor/index.js",
+   "to": "src/core/form/form-fields.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-minor/index.js",
+   "to": "src/core/filing/escape-html.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-minor/index.js",
+   "to": "src/core/ui/icons.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-minor/index.js",
+   "to": "src/core/form/date-parser.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-minor/index.js",
+   "to": "src/core/filing/models/plan-rows.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-minor/index.js",
+   "to": "src/core/status/completion.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-minor/index.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-minor/index.js",
+   "to": "src/core/form/field-html.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-minor/index.js",
+   "to": "src/core/filing/schedule-docs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-minor/index.js",
+   "to": "src/core/form/paths.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-minor/index.js",
+   "to": "src/features/plan-minor/print.js",
+   "kind": "import-dynamic",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-minor/pdf-model.js",
+   "to": "src/core/filing/filing-descriptor.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-minor/pdf-model.js",
+   "to": "src/core/filing/plan-certificate-of-service.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-minor/pdf-model.js",
+   "to": "src/core/case-resolver.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-minor/pdf-model.js",
+   "to": "src/core/form/form-contract.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-minor/pdf-model.js",
+   "to": "src/core/pdf/ssn-format.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-minor/pdf-model.js",
+   "to": "src/core/validation/row-started.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-minor/print.js",
+   "to": "src/features/plan-minor/index.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-minor/print.js",
+   "to": "src/features/plan-minor/pdf-model.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-minor/print.js",
+   "to": "src/core/pdf/pdf-engine.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-minor/print.js",
+   "to": "src/core/pdf/pdf-finalizer.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-minor/print.js",
+   "to": "src/core/pdf/pdf-preview.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-minor/print.js",
+   "to": "src/core/pdf/supplemental-pdf.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-minor/print.js",
+   "to": "src/core/filing/output-preflight.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-minor/print.js",
+   "to": "src/core/filing/output-authorization.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-minor/print.js",
+   "to": "src/core/filing/output-advisories.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-minor/print.js",
+   "to": "src/core/filing/readiness-card.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-minor/print.js",
+   "to": "src/core/ui/dialogs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-minor/print.js",
+   "to": "src/core/ui/export-guard.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-minor/print.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-minor/print.js",
+   "to": "src/core/validation/validation-panel.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-minor/print.js",
+   "to": "src/core/filing/schedule-docs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-minor/print.js",
+   "to": "src/core/navigation/router.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-simplified/index.js",
+   "to": "src/core/summary-renderer.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-simplified/index.js",
+   "to": "src/core/validation/date-rules.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-simplified/index.js",
+   "to": "src/core/validation/signature-state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-simplified/index.js",
+   "to": "src/core/validation/validation-issue.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-simplified/index.js",
+   "to": "src/core/signature/signature-state-control.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-simplified/index.js",
+   "to": "src/core/filing/plan-certificate-of-service.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-simplified/index.js",
+   "to": "src/core/form/plan-certificate-of-service-page.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-simplified/index.js",
+   "to": "src/core/signature/preparer-note.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-simplified/index.js",
+   "to": "src/core/form/cards/case-caption-card.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-simplified/index.js",
+   "to": "src/core/form/cards/ward-demographics-card.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-simplified/index.js",
+   "to": "src/core/form/cards/guardian-attorney-card.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-simplified/index.js",
+   "to": "src/core/form/form-fields.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-simplified/index.js",
+   "to": "src/core/filing/escape-html.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-simplified/index.js",
+   "to": "src/core/ui/icons.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-simplified/index.js",
+   "to": "src/core/form/date-parser.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-simplified/index.js",
+   "to": "src/core/filing/models/plan-rows.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-simplified/index.js",
+   "to": "src/core/status/completion.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-simplified/index.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-simplified/index.js",
+   "to": "src/core/form/field-html.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-simplified/index.js",
+   "to": "src/core/filing/schedule-docs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-simplified/index.js",
+   "to": "src/core/form/paths.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-simplified/index.js",
+   "to": "src/core/shell/court-portal.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-simplified/index.js",
+   "to": "src/core/pdf/print-current.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-simplified/index.js",
+   "to": "src/features/plan-simplified/print.js",
+   "kind": "import-dynamic",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-simplified/pdf-model.js",
+   "to": "src/core/filing/filing-descriptor.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-simplified/pdf-model.js",
+   "to": "src/core/filing/plan-certificate-of-service.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-simplified/pdf-model.js",
+   "to": "src/core/form/form-contract.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-simplified/print.js",
+   "to": "src/features/plan-simplified/index.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-simplified/print.js",
+   "to": "src/features/plan-simplified/pdf-model.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-simplified/print.js",
+   "to": "src/core/pdf/pdf-engine.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-simplified/print.js",
+   "to": "src/core/pdf/pdf-finalizer.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-simplified/print.js",
+   "to": "src/core/pdf/pdf-preview.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-simplified/print.js",
+   "to": "src/core/pdf/supplemental-pdf.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-simplified/print.js",
+   "to": "src/core/filing/output-preflight.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-simplified/print.js",
+   "to": "src/core/filing/output-authorization.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-simplified/print.js",
+   "to": "src/core/filing/output-advisories.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-simplified/print.js",
+   "to": "src/core/filing/readiness-card.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-simplified/print.js",
+   "to": "src/core/ui/dialogs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-simplified/print.js",
+   "to": "src/core/ui/export-guard.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-simplified/print.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-simplified/print.js",
+   "to": "src/core/validation/validation-panel.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-simplified/print.js",
+   "to": "src/core/filing/schedule-docs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-simplified/print.js",
+   "to": "src/core/navigation/router.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/excel.js",
+   "to": "src/features/simplified-accounting/index.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/excel.js",
+   "to": "src/core/filing/output-authorization.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/excel.js",
+   "to": "src/core/excel/excel-capacity.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/excel.js",
+   "to": "src/core/excel/excel-engine.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/excel.js",
+   "to": "src/core/excel/cell-reader.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/excel.js",
+   "to": "src/core/ui/dialogs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/excel.js",
+   "to": "src/core/ui/transient-status.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/excel.js",
+   "to": "src/core/ui/export-guard.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/excel.js",
+   "to": "src/features/simplified-accounting/totals.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/excel.js",
+   "to": "src/core/validation/row-started.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/excel.js",
+   "to": "src/core/security/input-hardening.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/excel.js",
+   "to": "src/core/form/form-contract.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/excel.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/excel.js",
+   "to": "src/core/persistence/templates.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/excel.js",
+   "to": "src/core/filing/output-revision.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/excel.js",
+   "to": "src/core/navigation/router.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/guardian-compatibility.js",
+   "to": "src/core/filing/output-revision.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/index.js",
+   "to": "src/core/summary-renderer.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/index.js",
+   "to": "src/core/form/form-fields.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/index.js",
+   "to": "src/core/form/guardianship-options.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/index.js",
+   "to": "src/core/validation/date-rules.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/index.js",
+   "to": "src/core/excel/excel-capacity.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/index.js",
+   "to": "src/core/form/schedule-definitions.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/index.js",
+   "to": "src/features/simplified-accounting/guardian-compatibility.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/index.js",
+   "to": "src/core/validation/signature-state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/index.js",
+   "to": "src/core/validation/validation-issue.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/index.js",
+   "to": "src/core/validation/issue-registry.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/index.js",
+   "to": "src/core/signature/signature-state-control.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/index.js",
+   "to": "src/core/signature/preparer-note.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/index.js",
+   "to": "src/core/ui/dialogs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/index.js",
+   "to": "src/core/form/cards/ward-demographics-card.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/index.js",
+   "to": "src/core/filing/statutory-text.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/index.js",
+   "to": "src/core/validation/service-recipients.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/index.js",
+   "to": "src/core/form/service-attestation-visibility.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/index.js",
+   "to": "src/core/filing/escape-html.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/index.js",
+   "to": "src/core/ui/icons.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/index.js",
+   "to": "src/core/form/form-contract.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/index.js",
+   "to": "src/core/form/date-parser.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/index.js",
+   "to": "src/features/simplified-accounting/totals.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/index.js",
+   "to": "src/core/validation/row-started.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/index.js",
+   "to": "src/core/status/completion.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/index.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/index.js",
+   "to": "src/core/status/nav-marks.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/index.js",
+   "to": "src/core/form/form-runtime.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/index.js",
+   "to": "src/core/filing/schedule-docs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/index.js",
+   "to": "src/core/form/field-html.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/index.js",
+   "to": "src/core/form/paths.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/index.js",
+   "to": "src/core/help/tooltips.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/index.js",
+   "to": "src/core/shell/court-portal.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/index.js",
+   "to": "src/core/navigation/router.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/index.js",
+   "to": "src/features/simplified-accounting/print.js",
+   "kind": "import-dynamic",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/index.js",
+   "to": "src/features/simplified-accounting/excel.js",
+   "kind": "import-dynamic",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/pdf-model.js",
+   "to": "src/core/form/form-contract.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/pdf-model.js",
+   "to": "src/core/filing/filing-descriptor.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/pdf-model.js",
+   "to": "src/core/pdf/address-format.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/pdf-model.js",
+   "to": "src/core/pdf/ssn-format.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/pdf-model.js",
+   "to": "src/core/filing/statutory-text.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/print.js",
+   "to": "src/features/simplified-accounting/index.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/print.js",
+   "to": "src/features/simplified-accounting/pdf-model.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/print.js",
+   "to": "src/core/pdf/pdf-engine.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/print.js",
+   "to": "src/core/pdf/pdf-finalizer.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/print.js",
+   "to": "src/core/pdf/pdf-preview.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/print.js",
+   "to": "src/core/pdf/supplemental-pdf.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/print.js",
+   "to": "src/core/filing/output-preflight.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/print.js",
+   "to": "src/core/filing/output-authorization.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/print.js",
+   "to": "src/core/filing/readiness-card.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/print.js",
+   "to": "src/core/filing/output-advisories.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/print.js",
+   "to": "src/core/ui/dialogs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/print.js",
+   "to": "src/core/ui/export-guard.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/print.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/print.js",
+   "to": "src/core/validation/validation-panel.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/print.js",
+   "to": "src/core/excel/excel-capacity.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/print.js",
+   "to": "src/core/filing/schedule-docs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/print.js",
+   "to": "src/core/navigation/router.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/totals.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/form-events.js",
+   "to": "src/core/form/form-contract.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/form-events.js",
+   "to": "src/core/validation/validation-adapter.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/form-events.js",
+   "to": "src/core/form/preparer-flag.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/form-events.js",
+   "to": "src/core/form/exclusive-none.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/form-events.js",
+   "to": "src/core/filing/filing-descriptor.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/form-events.js",
+   "to": "src/core/filing/output-preflight.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/form-events.js",
+   "to": "src/core/form/form-fields.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/form-events.js",
+   "to": "src/core/form/schedule-definitions.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/form-events.js",
+   "to": "src/core/filing/models/plan-annual.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/form-events.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/form-events.js",
+   "to": "src/core/form/plan-row-actions.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/form-events.js",
+   "to": "src/core/ui/print-pager.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/form-events.js",
+   "to": "src/core/filing/schedule-docs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/form-events.js",
+   "to": "src/core/form/form-runtime.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/form-events.js",
+   "to": "src/core/form/county-autocomplete.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/form-events.js",
+   "to": "src/core/navigation/router.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/form-events.js",
+   "to": "src/core/modals/year-dialogs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/form-events.js",
+   "to": "src/core/parties/party-management.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/form-events.js",
+   "to": "src/core/modals/pick-record-dialogs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/form-events.js",
+   "to": "src/core/modals/filing-dialogs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/form-events.js",
+   "to": "src/core/activity/activity-log-view.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/form-events.js",
+   "to": "src/core/shell/court-portal.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/form-events.js",
+   "to": "src/core/pdf/print-current.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/form-events.js",
+   "to": "src/core/runtime/features.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/fragment-loader.js",
+   "to": "fragments/common-modals.html",
+   "kind": "import-dynamic",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/main.js",
+   "to": "src/core/runtime/browser-api.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/main.js",
+   "to": "src/core/navigation/router.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/main.js",
+   "to": "src/core/feedback/feedback-modal.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/main.js",
+   "to": "src/terms-acceptance.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/main.js",
+   "to": "src/shell-events.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/main.js",
+   "to": "src/modal-events.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/main.js",
+   "to": "src/form-events.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/main.js",
+   "to": "src/startup-events.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/main.js",
+   "to": "src/tab-coordination.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/main.js",
+   "to": "src/pwa-ui.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/main.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/main.js",
+   "to": "src/core/persistence/case-file.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/main.js",
+   "to": "src/core/form/form-contract.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/main.js",
+   "to": "src/core/security/app-lock.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/main.js",
+   "to": "src/core/form/form-runtime.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/main.js",
+   "to": "src/core/theme-preference.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/main.js",
+   "to": "src/core/help/help-panel.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/main.js",
+   "to": "src/core/shell/filing-switcher.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/main.js",
+   "to": "src/core/modals/convert-ward-modal.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/main.js",
+   "to": "src/core/modals/filing-dialogs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/main.js",
+   "to": "src/core/filing/output-authorization.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/main.js",
+   "to": "src/core/filing/readiness-card.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/main.js",
+   "to": "src/core/startup/bootstrap.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/main.js",
+   "to": "src/features-loader.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/modal-events.js",
+   "to": "src/core/form/form-contract.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/modal-events.js",
+   "to": "src/core/persistence/case-file.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/modal-events.js",
+   "to": "src/core/navigation/filing-lifecycle.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/modal-events.js",
+   "to": "src/core/modals/filing-dialogs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/modal-events.js",
+   "to": "src/core/modals/pick-record-dialogs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/modal-events.js",
+   "to": "src/core/modals/year-dialogs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/modal-events.js",
+   "to": "src/core/modals/convert-ward-modal.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/modal-events.js",
+   "to": "src/core/filing/carry-over.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/modal-events.js",
+   "to": "src/core/ui/dialogs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/modal-events.js",
+   "to": "src/core/modals/guardian-setup.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/modal-events.js",
+   "to": "src/core/ward-lock.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/pwa-ui.js",
+   "to": "src/core/ui/dialogs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/pwa-ui.js",
+   "to": "src/core/offline-access-preference.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/pwa-ui.js",
+   "to": "src/core/persistence/export-state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/shell-events.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/shell-events.js",
+   "to": "src/core/navigation/router.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/shell-events.js",
+   "to": "src/core/persistence/case-file.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/shell-events.js",
+   "to": "src/core/navigation/filing-lifecycle.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/shell-events.js",
+   "to": "src/core/modals/filing-dialogs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/shell-events.js",
+   "to": "src/core/help/help-panel.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/shell-events.js",
+   "to": "src/core/shell/sidebar.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/shell-events.js",
+   "to": "src/core/help/user-guide.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/shell-events.js",
+   "to": "src/core/help/walkthrough.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/shell-events.js",
+   "to": "src/core/shell/filing-switcher.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/shell-events.js",
+   "to": "src/core/theme-preference.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/shell-events.js",
+   "to": "src/core/filing/filing-registry.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/shell-events.js",
+   "to": "src/core/ui/dialogs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/shell-events.js",
+   "to": "src/core/persistence/case-import.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/shell-events.js",
+   "to": "src/core/security/app-lock.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/startup-events.js",
+   "to": "src/core/startup/launch.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/startup-events.js",
+   "to": "src/core/security/app-lock.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/tab-coordination.js",
+   "to": "src/tab-state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/tab-coordination.js",
+   "to": "src/core/navigation/tab-state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/tab-coordination.js",
+   "to": "src/core/feedback/feedback-config.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  }
+ ],
+ "cycles": [],
+ "layerViolations": [],
+ "unreachableModules": [
+  "src/core/types/case-file.js",
+  "src/core/types/filing.js",
+  "src/core/types/form-contract.js",
+  "src/core/types/index.js",
+  "src/core/types/parties.js",
+  "src/core/types/schedules.js",
+  "src/features/guardian-inventory/pdf-accessibility.js"
+ ],
+ "unownedWindowReads": [
+  {
+   "name": "__GUARDIAN_FORMS_TEST_MODE__",
+   "files": [
+    "src/core/runtime/browser-api.js"
+   ]
+  },
+  {
+   "name": "addEventListener",
+   "files": [
+    "src/core/form/service-attestation-visibility.js",
+    "src/core/navigation/router.js",
+    "src/core/persistence/case-file.js",
+    "src/core/startup/launch.js",
+    "src/core/startup/startup.js",
+    "src/features/annual-accounting/index.js",
+    "src/features/plan-initial/index.js",
+    "src/main.js",
+    "src/pwa-ui.js",
+    "src/tab-coordination.js"
+   ]
+  },
+  {
+   "name": "crypto",
+   "files": [
+    "src/core/accounting/bank-accounts.js",
+    "src/core/case-resolver.js",
+    "src/core/party-resolver.js",
+    "src/core/pdf/supplemental-pdf.js",
+    "src/core/persistence/crypto.js",
+    "src/core/security/app-lock.js",
+    "src/tab-coordination.js"
+   ]
+  },
+  {
+   "name": "dispatchEvent",
+   "files": [
+    "src/core/form/form-contract.js",
+    "src/core/persistence/case-file.js",
+    "src/core/persistence/case-import.js"
+   ]
+  },
+  {
+   "name": "ExcelJS",
+   "files": [
+    "src/core/excel/exceljs-loader.js"
+   ]
+  },
+  {
+   "name": "html2pdf",
+   "files": [
+    "src/core/pdf/html2pdf-loader.js",
+    "src/core/pdf/pdf-engine.js"
+   ]
+  },
+  {
+   "name": "innerHeight",
+   "files": [
+    "src/core/feedback/feedback-modal.js",
+    "src/core/help/walkthrough.js",
+    "src/core/shell/court-portal.js"
+   ]
+  },
+  {
+   "name": "innerWidth",
+   "files": [
+    "src/core/feedback/feedback-modal.js",
+    "src/core/help/walkthrough.js",
+    "src/core/shell/court-portal.js"
+   ]
+  },
+  {
+   "name": "jspdf",
+   "files": [
+    "src/core/pdf/html2pdf-loader.js",
+    "src/core/pdf/pdf-engine.js"
+   ]
+  },
+  {
+   "name": "jsPDF",
+   "files": [
+    "src/core/pdf/html2pdf-loader.js",
+    "src/core/pdf/pdf-engine.js"
+   ]
+  },
+  {
+   "name": "JSZip",
+   "files": [
+    "src/core/persistence/case-file.js"
+   ]
+  },
+  {
+   "name": "location",
+   "files": [
+    "src/core/feature-bridge.js",
+    "src/core/form/form-contract.js",
+    "src/core/help/user-guide.js",
+    "src/core/navigation/router.js",
+    "src/core/pdf/pdf-preview.js",
+    "src/core/ward-lock.js",
+    "src/pwa-ui.js"
+   ]
+  },
+  {
+   "name": "matchMedia",
+   "files": [
+    "src/core/theme-preference.js",
+    "src/prepaint.js"
+   ]
+  },
+  {
+   "name": "moveTo",
+   "files": [
+    "src/core/shell/court-portal.js"
+   ]
+  },
+  {
+   "name": "open",
+   "files": [
+    "src/core/help/user-guide.js",
+    "src/core/pdf/pdf-preview.js",
+    "src/core/shell/court-portal.js"
+   ]
+  },
+  {
+   "name": "resizeTo",
+   "files": [
+    "src/core/shell/court-portal.js"
+   ]
+  },
+  {
+   "name": "showOpenFilePicker",
+   "files": [
+    "src/core/persistence/case-import.js",
+    "src/core/startup/launch.js"
+   ]
+  },
+  {
+   "name": "showSaveFilePicker",
+   "files": [
+    "src/core/persistence/case-file.js"
+   ]
+  },
+  {
+   "name": "window",
+   "files": [
+    "src/core/runtime/browser-api.js"
+   ]
+  }
+ ],
+ "lexicalOnlyWindowReads": []
+}

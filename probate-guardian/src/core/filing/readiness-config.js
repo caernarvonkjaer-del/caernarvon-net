@@ -27,6 +27,8 @@ import { hasSixthCircuitLocalGuidance } from './county-guidance.js';
 import { resolveRouteFromSection } from '../validation/validation-adapter.js';
 import { checkSignatureState, inferLegacySignatureState } from '../validation/signature-state.js';
 import { isAffirmative, isTriStateAnswer } from '../form/form-contract.js';
+import { PLAN_RIGHTS, PLAN_ADLS } from './models/plan-annual.js';
+import { INITIAL_ADLS } from './models/plan-initial.js';
 
 // The registry owns the key list (Milestone 42G); READINESS_CONFIG below
 // must cover every one of them -- tests/unit/readiness-source-map.spec.js
@@ -41,7 +43,6 @@ export const OUT_OF_CARD_CATEGORIES = Object.freeze(['supplemental', 'capacity',
 const IN_CARD_CATEGORIES = new Set(['validation', 'data-integrity']);
 
 const has = v => !!(v !== '' && v !== null && v !== undefined);
-const legacyGlobal = (name) => (typeof window !== 'undefined' && Array.isArray(window[name])) ? window[name] : [];
 
 // Milestone 52G: the shape all eight Plan signature checks below repeat --
 // derive the legacy tri-state from the stored state/date pair, run the shared
@@ -133,8 +134,6 @@ function planAnnualAutomatic(d) {
   const res = (d.q1Residences || []).filter(r => r && r.name);
   const provs = (d.q4Providers || []).filter(r => r && r.name);
   const rights = d.rights || {}, adls = d.adls || {};
-  const PLAN_RIGHTS = legacyGlobal('PLAN_RIGHTS');
-  const PLAN_ADLS = legacyGlobal('PLAN_ADLS');
   return [
     { id: 'cover.period', label: 'Reporting period is stated', ok: has(d.periodFrom) && has(d.periodTo) },
     { id: 'cover.wardCaseGid', label: 'Ward name, case number and inception date are on the plan', ok: has(d.wardName) && has(d.caseNumber) && has(d.gid) },
@@ -197,7 +196,6 @@ function planInitialAutomatic(d) {
   const g0 = (d.planGuardians || [])[0] || {};
   const provs = (d.q9Providers || []).filter(r => r && r.name);
   const adls = d.adls || {};
-  const INITIAL_ADLS = legacyGlobal('INITIAL_ADLS');
   return [
     { id: 'cover.wardCaseCounty', label: 'Ward name, case number and county are on the plan', ok: has(d.wardName) && has(d.caseNumber) && has(d.county) },
     { id: 'cover.dates', label: 'Guardianship Inception Date and date Letters were signed are stated', ok: has(d.inceptionDate) && has(d.lettersSignedDate) },

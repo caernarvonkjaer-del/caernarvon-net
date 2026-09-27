@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, test, vi } from 'vitest';
+import { describe, expect, test } from 'vitest';
 import {
   ATTESTATION_57B, CERT_SIGNER_OPTIONS, emptyCertificateOfService, migratePlanCertificateOfService,
   resolveCertSigner, certificateRecipientsSettled, certificateStarted, certificateOptional, planCertificateAdvisories,
@@ -142,16 +142,5 @@ describe('which certificate is optional', () => {
     for (const type of ['planAnnual', 'planInitial', 'planMinor', 'annual', 'simplified', 'guardian', '', undefined]) {
       expect(certificateOptional(type), String(type)).toBe(false);
     }
-  });
-});
-
-describe('the bridge', () => {
-  afterEach(() => vi.unstubAllGlobals());
-
-  test('publishes certificateStarted on window for the classic legacy-app.js sidebar, the same function, not a copy', async () => {
-    vi.stubGlobal('window', {});
-    vi.resetModules();
-    const mod = await import('../../src/core/filing/plan-certificate-of-service.js');
-    expect(window.planCertificateStarted).toBe(mod.certificateStarted);
   });
 });

@@ -49,43 +49,33 @@ import { renderWardIdentityFields, renderReportingPeriodFields } from '../../cor
 import { renderResidenceFields } from '../../core/form/cards/residence-facility-card.js';
 import { renderPartyNameField } from '../../core/form/cards/guardian-attorney-card.js';
 import { renderFormField } from '../../core/form/form-fields.js';
+import { esc } from '../../core/filing/escape-html.js';
+import { ic } from '../../core/ui/icons.js';
+import { formatDisplayDate } from '../../core/form/date-parser.js';
+import { INITIAL_ADLS, INITIAL_ADL_RATINGS } from '../../core/filing/models/plan-initial.js';
+import { normalizePlanGuardians } from '../../core/filing/models/plan-rows.js';
+import { planInitialCompletion } from '../../core/status/completion.js';
+import { getD, requestSave } from '../../core/state.js';
+import { chkP, inpS, pageNavS, planCheckGroup, planQ, radioP, txtP, yesNoCheckboxS } from '../../core/form/field-html.js';
+import { renderScheduleDocsSection } from '../../core/filing/schedule-docs.js';
+import { setPath } from '../../core/form/paths.js';
 // Initial Guardianship Plan — the fourth feature extraction (Milestone 5,
 // Phases A and B of INDEX-SPLIT-PLAN.md's migration sequence: data/
-// validation/pages/nav, and print/PDF export). Dynamically imported by
-// legacy-app.js's mountPlanInitialFeature()/mountPlanInitialNav() bridge
-// (built on src/core/feature-bridge.js), never statically imported.
+// validation/pages/nav, and print/PDF export). Loaded only when one of its pages
+// is shown, through src/features-loader.js's feature services
+// (src/core/feature-bridge.js mounts it), never statically imported.
 //
-// legacy-app.js stays a classic (non-module) script (Milestone 1's recorded
-// decision), so its top-level function declarations are real `window`
-// properties this module can destructure -- but a bare top-level `let`
-// (activeInventoryType, currentPage) is not; see src/core/state.js's file
-// header for the full explanation. Everything below that isn't defined in
-// this file is one of those legacy globals, deliberately left in place
-// rather than moved: `planQ`/`planCheckGroup`/`planEmptyRow`/`addPlanRow`/
-// `removePlanRow`/`duplicatePlanRow`/`txtP`/`chkP`/`radioP`/`pageNavS`/
-// `yesNoCheckboxS` are still shared with the one remaining not-yet-extracted
-// Plan type (planMinor); `INITIAL_ADLS`/`INITIAL_ADL_RATINGS` stay legacy
-// because computeNavChecks()'s planInitial branch reads them directly (see
-// the Milestone 5 plan's "Confirmed facts" and "Design decisions").
-//
+// Until Milestone 70 this module destructured the classic monolith's globals
+// off window -- the shared Plan field helpers and lists -- and this comment
+// recorded which, and why each stayed in the monolith (Milestones 3-6, 41 and
+// 51C). Milestone 70 moved every one into a module this file imports; 70K
+// removed the last window read, and 70L deleted the monolith.
+
 // print.js is dynamically imported only when the user reaches /print or
 // triggers PDF export (Phase B) -- same lazy boundary as the other two
 // extracted Plan features. No excel.js: no Plan filing type has Excel
 // support (confirmed by grep -- see the Milestone 5 plan's "Confirmed
 // facts").
-// Milestone 51C: `countyInputS`, `formatName`, `formatPhone` and
-// `toggleSsnReveal` were all destructured here without ever being called, and
-// are dropped. plan-annual got the formatter half of this cleanup in Milestone
-// 41-3 and plan-simplified in 41-2 (each left a note saying so); plan-initial
-// and plan-minor never got that pass, which is why they still carried them.
-// See plan-annual/index.js's Milestone 51C note for why toggleSsnReveal is
-// never needed in a feature module's scope.
-const {
-  esc, ic, inpS, radioP, pageNavS,
-  renderScheduleDocsSection, txtP, chkP, planQ, planCheckGroup, yesNoCheckboxS,
-  formatDisplayDate,
-  INITIAL_ADLS, INITIAL_ADL_RATINGS,
-} = window;
 
 // Milestone 39-C: see plan-annual/index.js's identical comment.
 const signatureHandles = new WeakMap();
@@ -104,7 +94,7 @@ const attorneyMarkerAborts = new WeakMap();
  * them would move the caret and drop focus mid-word.
  */
 function syncAttorneyEmailRequired(container) {
-  const d = window.D;
+  const d = getD();
   if (!container || !d) return;
   const required = isPlanInitialAttorneyStarted(d);
   // `input[...]`, not a bare attribute match: once this section reports
@@ -136,33 +126,39 @@ function syncAttorneyEmailRequired(container) {
 
 let _printModule = null;
 let _printModulePromise = null;
+// The Preview page's Save as PDF (data-form-action="save-pdf-plan-initial"),
+// and GuardianForms.testing's saveOutput, through the feature services
+// (Milestone 70, 70K: a window global this module set once print.js loaded).
+export function doSavePdfPlanInitial() {
+  // At once when the print module is loaded (it is, once Preview shows): the
+  // save disables its button before its first await (Milestone 67).
+  if (_printModule) return _printModule.doSavePdf();
+  return ensurePrintModule().then(() => _printModule.doSavePdf());
+}
+
 function ensurePrintModule() {
   if (_printModule) return Promise.resolve();
   if (!_printModulePromise) {
     _printModulePromise = import('./print.js').then((mod) => {
       _printModule = mod;
-      // Referenced by name from rendered onclick="..." HTML attributes
-      // (doSavePdfPlanInitial), which only ever resolve against the global
-      // scope, never a module's own scope, so it must be a real `window`
-      // property. (The planReadinessChecksInitial bridge went with Milestone
-      // 44C's shared readiness card.)
-      window.doSavePdfPlanInitial = () => _printModule.doSavePdf();
     });
   }
   return _printModulePromise;
 }
 
-export async function mount(container, page) {
+export async function mount(container, page, { signal } = {}) {
   // Milestone 68C: a plan saved before the Certificate of Service existed
   // gains its fields on load. Idempotent, so every mount may call it.
-  if (migratePlanCertificateOfService(window.D)) window.autoSave?.();
+  if (migratePlanCertificateOfService(getD())) requestSave();
   // Milestone 68E: questions 2, 4 and 5 saved as one string read back as
   // their boxes. Idempotent, so every mount may call it.
-  if (migratePlanInitialMultiselect(window.D)) window.autoSave?.();
+  if (migratePlanInitialMultiselect(getD())) requestSave();
   let html;
   let isPrint = false;
   if (page === '/print') {
     await ensurePrintModule();
+    // Superseded while its print module loaded (Milestone 70, 70K).
+    if (signal?.aborted) return;
     html = _printModule.pagePrintPlanInitial();
     isPrint = true;
   } else {
@@ -188,7 +184,7 @@ export async function mount(container, page) {
   signatureHandles.delete(container);
   if (page === '/p9' || page === '/p10' || page === '/p11') {
     signatureHandles.set(container, mountSignatureStateControls(container, {
-      setImage: (imagePath, dataUrl) => window.setPath(window.D, imagePath, dataUrl),
+      setImage: (imagePath, dataUrl) => setPath(getD(), imagePath, dataUrl),
       route: page,
     }));
   }
@@ -247,8 +243,10 @@ function buildNavPlanInitial(container){
 }
 
 function getSummaryConfigPlanInitial(){
-  const d=window.D;
-  const nav=window.computeNavChecks();
+  const d=getD();
+  // This filing's own section marks (Milestone 70, 70D: its engine's evaluator,
+  // imported; it was window.computeNavChecks()).
+  const nav=planInitialCompletion(d);
   return {
     formTitle:'Initial Guardianship Plan — Summary',
     infoRows:[
@@ -290,7 +288,7 @@ function getSummaryConfigPlanInitial(){
 }
 
 function pagePlanICover(){
-  const d=window.D;
+  const d=getD();
   return `<div class="schedule-page">
     <h1>Initial Guardianship Plan — Cover</h1>
     <div class="schedule-instructions">This report, with original signatures, is due within <strong>60 days</strong> after the Letters of Guardianship are signed, and remains in effect until amended or replaced by the approval of an Annual Guardianship Plan.</div>
@@ -341,7 +339,7 @@ function pagePlanICover(){
 }
 
 function pagePlanISettingMedical(){
-  const d=window.D;
+  const d=getD();
   const cb=(id,label,route='')=>chkP(id,label,d[id],route);
   return `<div class="schedule-page">
     <h1>2–3. Residential Setting &amp; Medical Services</h1>
@@ -370,7 +368,7 @@ function pagePlanISettingMedical(){
 }
 
 function pagePlanIMentalPersonal(){
-  const d=window.D;
+  const d=getD();
   return `<div class="schedule-page">
     <h1>4–5. Mental Health &amp; Personal Care</h1>
     ${planQ('4','For the plan period, the guardian proposes the following as to the provision of mental health services for the Ward:',
@@ -389,7 +387,7 @@ function pagePlanIMentalPersonal(){
 }
 
 function pagePlanISocialBenefits(){
-  const d=window.D;
+  const d=getD();
   const cb=(id,label,route='')=>chkP(id,label,d[id],route);
   return `<div class="schedule-page">
     <h1>6–7. Socialization &amp; Benefits</h1>
@@ -429,7 +427,7 @@ function pagePlanISocialBenefits(){
 }
 
 function pagePlanIProviders(){
-  const d=window.D;
+  const d=getD();
   const rows=(d.q9Providers||[]).map((r,i)=>{
     return `<div class="col-12 col-lg-6"><div class="entry-card mb-2">
       <div class="entry-card-header">
@@ -460,7 +458,7 @@ function pagePlanIProviders(){
 }
 
 function pagePlanIADLs(){
-  const d=window.D;
+  const d=getD();
   const adls=d.adls||{};
   const ratings=INITIAL_ADL_RATINGS.slice(1);
   const rows=INITIAL_ADLS.map(([k,label])=>{
@@ -481,7 +479,7 @@ function pagePlanIADLs(){
 }
 
 function pagePlanIDisabilities(){
-  const d=window.D;
+  const d=getD();
   const cb=(id,label,route='')=>chkP(id,label,d[id],route);
   return `<div class="schedule-page">
     <h1>10B–D. Disabilities &amp; Assistive Devices</h1>
@@ -526,7 +524,7 @@ function pagePlanIDisabilities(){
 }
 
 function pagePlanIDirectives(){
-  const d=window.D;
+  const d=getD();
   const cb=(id,label,route='')=>chkP(id,label,d[id],route);
   const dirs=(d.q11Directives||[]).map((r,i)=>{
     return `<div class="col-12"><div class="entry-card mb-2">
@@ -605,7 +603,7 @@ function pagePlanIDirectives(){
 }
 
 function pagePlanISignatures(){
-  const d=window.D;
+  const d=getD();
   const cb=(id,label,route='')=>chkP(id,label,d[id],route);
   const g=(i,title)=>{
     const gd=(d.planGuardians||[])[i]||{};
@@ -642,7 +640,7 @@ function pagePlanISignatures(){
       null,null,false)}
     <p class="mt-2 mb-3" style="font-size:.85rem;color:var(--ink-3);">Under penalties of perjury, each signing guardian declares they have read and examined the foregoing plan, and the facts alleged are true, to the best of their knowledge and belief.</p>
     <div class="row g-3 card-grid-2col mb-4">
-      ${window.normalizePlanGuardians(d).map((_,i)=>g(i,i?'Co-Guardian':'Guardian')).join('')}
+      ${normalizePlanGuardians(d).map((_,i)=>g(i,i?'Co-Guardian':'Guardian')).join('')}
     </div>
     ${(d.planGuardians||[]).length<4?'<button type="button" class="btn btn-outline-secondary btn-sm mb-3 no-print" data-form-action="add-plan-guardian" data-route="/p9">+ Add Co-Guardian</button>':''}
     <div class="schedule-instructions mt-2">All guardians of the person must sign and provide their most current address, telephone number, and SSN. Only reports with original signatures will be audited by the Clerk of the Court.</div>
@@ -652,7 +650,7 @@ function pagePlanISignatures(){
 }
 
 function pagePlanIAttorney(){
-  const d=window.D;
+  const d=getD();
   return `<div class="schedule-page">
     <h1>Certification and Signature of Guardian's Attorney</h1>
   ${preparerNoteHTML()}
@@ -684,7 +682,7 @@ function pagePlanIAttorney(){
 
 // Milestone 42F: every issue states its own field path (validation-issue.js).
 export function validatePlanInitial(){
-  const d=window.D;
+  const d=getD();
   const errs=[];
   const T='planInitial';
   const issue=issueFactory(T);
@@ -824,14 +822,13 @@ export function validatePlanInitial(){
 // Milestone 33, Phase 2.3: see annual-accounting/index.js's identical comment --
 // exposing this lets the shared guidance panel itemize Plan Initial's own
 // missing fields instead of only showing a generic message.
-window.validatePlanInitial = validatePlanInitial;
 
 // ── Certificate of Service (Milestone 68C) ───────────────────────────────
 // Shared with the other three Plans; see core/filing/plan-certificate-of-service.js.
 const CERT_CFG = { attorneyName: (d) => d.attorney_name || '', planNoun: 'plan' };
 function pagePlanICertificate(){
   return `<div class="schedule-page">
-    ${renderPlanCertificateOfServicePage({ filing: window.D, route: '/p11', cfg: CERT_CFG })}
+    ${renderPlanCertificateOfServicePage({ filing: getD(), route: '/p11', cfg: CERT_CFG })}
     ${pageNavS('/p10',null)}
   </div>`;
 }

@@ -3,10 +3,11 @@
 // the load-once-cache-the-promise / mount-mountNav shape was genuinely
 // duplicated, not just superficially similar. See the Milestone 3 plan's
 // "Problem 2" for why this stays a small factory rather than
-// INDEX-SPLIT-PLAN.md's full staging-host router. This factory deliberately
-// assumes sequential navigation; it does not arbitrate two async mounts racing
-// for the same container. The limitation and the decision not to widen this
-// milestone into a router rewrite are recorded under Milestone 12.
+// INDEX-SPLIT-PLAN.md's full staging-host router. Two mounts racing for the
+// same container are arbitrated by the router (Milestone 70, 70K): each
+// navigation hands its AbortSignal in, and a mount that has been superseded
+// -- while its feature loaded, or while it drew -- commits nothing more. (The
+// limitation was recorded under Milestone 12, and the race by 70G.)
 //
 // Track the mounted module per shared host so changing features tears down
 // container-local delegates before the next renderer takes ownership.
@@ -56,16 +57,23 @@ export function createFeatureBridge(loader) {
     panel.append(title, detail, button);
     container.append(panel);
   }
-  async function mountPage(container, page) {
+  // `options`: the navigation's AbortSignal, and the filing it is for (the
+  // feature's mount context). Resolves true once the page is drawn, false when
+  // the navigation was superseded or the feature could not be loaded.
+  async function mountPage(container, page, options = {}) {
+    const { signal } = options;
     let mod;
     try {
       mod = await load();
     } catch (error) {
       modulePromise = null;
+      if (signal?.aborted) return false;
       console.warn('Feature load failed', error);
       showLoadFailure(container);
-      return;
+      return false;
     }
+    // A newer navigation owns the page now: draw nothing.
+    if (signal?.aborted) return false;
     disposeActiveFeature(container, mod);
     // Every feature also imports its print and Excel modules while it mounts,
     // so a chunk can fail here as well as in load() above. Milestone 63C removed
@@ -73,17 +81,18 @@ export function createFeatureBridge(loader) {
     // the page as it was, saying nothing. Only a chunk-load failure is shown as
     // the panel -- any other error is a real bug and must still surface.
     try {
-      await mod.mount(container, page);
+      await mod.mount(container, page, options);
     } catch (error) {
       if (!isChunkLoadError(error)) throw error;
+      if (signal?.aborted) return false;
       console.warn('Feature chunk failed while mounting', error);
       showLoadFailure(container);
-      return;
+      return false;
     }
+    // Mounted: it is the feature to dispose when the page next changes, even
+    // if a newer navigation has already begun (the router then returns).
     activeFeatureByContainer.set(container, mod);
-    if (typeof window !== 'undefined' && typeof window.attachFormHeaderActions === 'function') {
-      window.attachFormHeaderActions(container);
-    }
+    return !signal?.aborted;
   }
   return {
     mountPage,
@@ -100,11 +109,3 @@ export function createFeatureBridge(loader) {
     },
   };
 }
-
-// legacy-app.js stays a classic (non-module) script per Milestone 1's
-// recorded decision, so it can't `import` this module directly -- see
-// src/fragment-loader.js's window.loadFragment comment for the same
-// pattern. src/main.js has been the bootstrap since Milestone 40G; these
-// window bindings stay until legacy-app.js itself becomes a module.
-window.createFeatureBridge = createFeatureBridge;
-window.disposeActiveFeature = disposeActiveFeature;

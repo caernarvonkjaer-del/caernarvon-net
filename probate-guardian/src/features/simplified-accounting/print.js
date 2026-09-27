@@ -10,7 +10,7 @@ import { validateSimplified } from './index.js';
 import { buildSimplifiedAccountingModel } from './pdf-model.js';
 import { generateCourtFormPdf } from '../../core/pdf/pdf-engine.js';
 import { finalizeCourtFormPdf, saveFinalizedPdf } from '../../core/pdf/pdf-finalizer.js';
-import { mountPdfPreview, printGeneratedPdf } from '../../core/pdf/pdf-preview.js';
+import { mountPdfPreview, printGeneratedPdf, setPrintCurrentFiling } from '../../core/pdf/pdf-preview.js';
 import { getSupplementalAccessibilityWarning, getSupplementalFilingIssues } from '../../core/pdf/supplemental-pdf.js';
 import { prepareFilingOutput } from '../../core/filing/output-preflight.js';
 import { authorizeFilingOutput } from '../../core/filing/output-authorization.js';
@@ -18,20 +18,21 @@ import { renderReadinessCard } from '../../core/filing/readiness-card.js';
 import { renderOutputAdvisories } from '../../core/filing/output-advisories.js';
 import { alertModal } from '../../core/ui/dialogs.js';
 import { beginExport } from '../../core/ui/export-guard.js';
+import { getD } from '../../core/state.js';
+import { highlightErrors, validationPanel } from '../../core/validation/validation-panel.js';
+import { excelCapacityPanel } from '../../core/excel/excel-capacity.js';
+import { queueAllScheduleDocValidations } from '../../core/filing/schedule-docs.js';
+import { renderPage } from '../../core/navigation/router.js';
 
 function buildModelForPreview(D){
   return buildSimplifiedAccountingModel(D, { printDate: new Date().toISOString().slice(0, 10) });
 }
 
-const {
-  highlightErrors, validationPanel, excelCapacityPanel,
-  renderPage,
-} = window;
 
 export function pagePrintSimplified(capOver){
-  window.queueAllScheduleDocValidations?.();
-  const baseIssues=()=>[...validateSimplified(), ...getSupplementalFilingIssues(window.D)];
-  const preflight=prepareFilingOutput(window.D,baseIssues);
+  queueAllScheduleDocValidations?.();
+  const baseIssues=()=>[...validateSimplified(), ...getSupplementalFilingIssues(getD())];
+  const preflight=prepareFilingOutput(getD(),baseIssues);
   const errors=preflight.messages;
   // Milestone 38D/44B: the banner's issue count and validationPanel() list
   // deliberately stay driven by the full, capability-agnostic preflight --
@@ -40,9 +41,9 @@ export function pagePrintSimplified(capOver){
   // actually blocks PDF specifically, per authorizeFilingOutput()'s
   // capability filter -- see the spec's "buttons derive enabled state from
   // authorization per capability."
-  const pdfAuthorization=authorizeFilingOutput(window.D,baseIssues,{capability:'pdf'});
+  const pdfAuthorization=authorizeFilingOutput(getD(),baseIssues,{capability:'pdf'});
   const pdfBlocked=pdfAuthorization.status!=='allowed';
-  const supplementalWarning=getSupplementalAccessibilityWarning(window.D);
+  const supplementalWarning=getSupplementalAccessibilityWarning(getD());
   highlightErrors(errors);
   return `<div>
     <h1 class="visually-hidden">Print Preview</h1>
@@ -75,7 +76,7 @@ export function pagePrintSimplified(capOver){
       </div>
     </div>
     ${errors.length?validationPanel(errors):''}
-    ${renderReadinessCard({ filingType: preflight.descriptor?.inventoryType, data: window.D, validationIssues: preflight.structuredIssues })}
+    ${renderReadinessCard({ filingType: preflight.descriptor?.inventoryType, data: getD(), validationIssues: preflight.structuredIssues })}
     ${renderOutputAdvisories(preflight.advisories)}
     ${supplementalWarning?`<div class="alert alert-warning no-print" role="status">${supplementalWarning}</div>`:''}
     ${capOver.length?excelCapacityPanel(capOver):''}
@@ -84,14 +85,14 @@ export function pagePrintSimplified(capOver){
 }
 
 export async function mountPreview(){
-  const baseIssues = () => [...validateSimplified(), ...getSupplementalFilingIssues(window.D)];
-  window.printCurrentFilingPdf = () => printGeneratedPdf(buildModelForPreview, window.D, baseIssues);
-  await mountPdfPreview(buildModelForPreview, window.D, baseIssues, undefined, { annotate: true });
+  const baseIssues = () => [...validateSimplified(), ...getSupplementalFilingIssues(getD())];
+  setPrintCurrentFiling(() => printGeneratedPdf(buildModelForPreview, getD(), baseIssues));
+  await mountPdfPreview(buildModelForPreview, getD(), baseIssues, undefined, { annotate: true });
 }
 
 export async function doSavePdf(){
-  const baseIssues = () => [...validateSimplified(), ...getSupplementalFilingIssues(window.D)];
-  const authorization = authorizeFilingOutput(window.D, baseIssues, { capability: 'pdf' });
+  const baseIssues = () => [...validateSimplified(), ...getSupplementalFilingIssues(getD())];
+  const authorization = authorizeFilingOutput(getD(), baseIssues, { capability: 'pdf' });
   if (authorization.status !== 'allowed') {
     renderPage('/print');
     await alertModal(`Cannot export — ${authorization.issues.length} required field${authorization.issues.length === 1 ? '' : 's'} missing. See the list on this page.`);
@@ -102,11 +103,11 @@ export async function doSavePdf(){
   // both blocked by the browser as "multiple files."
   const btn = beginExport('[data-simplified-action="save-pdf"]');
   if (!btn) return;
-  const ward=(window.D.wardName||'SimplifiedAccounting').trim().replace(/[^a-z0-9]/gi,'_');
+  const ward=(getD().wardName||'SimplifiedAccounting').trim().replace(/[^a-z0-9]/gi,'_');
   const filename=`${ward}_SimplifiedAccounting.pdf`;
 
   try{
-    const model = buildSimplifiedAccountingModel(window.D, {
+    const model = buildSimplifiedAccountingModel(getD(), {
       printDate: new Date().toISOString().slice(0, 10),
     });
     const doc = await generateCourtFormPdf(model);

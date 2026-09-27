@@ -4,7 +4,7 @@
 // DATA-MODEL-REMEDIATION-PLAN.md. Documentation-quality tooling only -- it
 // reads the CSV and reports problems; it never writes to it and has no
 // effect on application behavior.
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -117,6 +117,15 @@ function main() {
     }
     if (persistenceStatus === 'persisted' && requiredness === 'n/a') {
       errors.push(`Line ${lineNo}: persistence_status="persisted" rows must not use requiredness="n/a".`);
+    }
+
+    // Milestone 70, 70L: every file source_file names exists ("a; b (note)"
+    // lists several, each with an optional parenthetical). The column went
+    // unchecked, so 688 rows came to name files that no longer held the
+    // field's factory, one of them deleted.
+    for (const part of r[col.source_file].split(';').map((p) => p.trim()).filter(Boolean)) {
+      const file = part.replace(/\s*\(.*\)$/, '');
+      if (!existsSync(path.join(root, file))) errors.push(`Line ${lineNo}: source_file names ${file}, which does not exist.`);
     }
 
     const key = `${r[col.scope]}${r[col.storage_root]}${fieldPath}${persistenceStatus}`;

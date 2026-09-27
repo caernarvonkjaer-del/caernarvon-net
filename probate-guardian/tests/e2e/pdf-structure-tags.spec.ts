@@ -11,7 +11,7 @@ test.describe('PDF Accessibility: Tagged Structure, StructTreeRoot & Marked Cont
     await freshStartNoPassword(page);
 
     // Create initial guardian inventory ward
-    await page.evaluate(() => (window as any).showAddWardModalForType('guardian'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.createFiling.openDialog('guardian'));
     await page.locator('#new-ward-name').fill('Harold Thomas Bennett');
     await page.locator('#new-ward-type').selectOption('guardian');
     await page.locator('[data-modal-action="add-ward"]').click();
@@ -20,7 +20,7 @@ test.describe('PDF Accessibility: Tagged Structure, StructTreeRoot & Marked Cont
     // 2. Set up full Verified Initial Inventory mock state.
     //
     // The base layer is the shared helper, not this file's literal. This test
-    // builds its PDF from window.D, and its own fixture answers only the
+    // builds its PDF from the open filing, and its own fixture answers only the
     // fields it asserts on -- so as the court's required fields grow, the
     // "full" state drifts into a document no filer could actually submit
     // while every structural assertion here keeps passing. Milestone 57A was
@@ -31,7 +31,7 @@ test.describe('PDF Accessibility: Tagged Structure, StructTreeRoot & Marked Cont
     // this test names still wins; it only fills what the test is silent on.
     await fillMinimalValidGuardianWard(page);
     await page.evaluate(() => {
-      Object.assign((window as any).D, {
+      (window as any).GuardianForms.testing.patchFiling({
         wardName: 'Harold Thomas Bennett',
         caseNumber: '26-002487-GD',
         county: 'Pinellas',
@@ -119,17 +119,16 @@ test.describe('PDF Accessibility: Tagged Structure, StructTreeRoot & Marked Cont
           c5: true,
         },
       });
-
-      if ((window as any).autoSave) (window as any).autoSave();
     });
 
     // 3. Generate native vector PDF in browser memory and inspect raw stream
     const pdfInspection = await page.evaluate(async () => {
-      const { buildVerifiedInventoryModel, generateVerifiedInventoryPdf } = await (window as any).loadGuardianPdf();
+      const { buildVerifiedInventoryModel, generateVerifiedInventoryPdf } = await (window as any).GuardianForms.testing.generateOutput.guardianPdf();
 
-      const fixtureIssues = await (window as any).__pgFixtureIssues((window as any).D);
+      const filing = (window as any).GuardianForms.testing.snapshot().filing;
+      const fixtureIssues = await (window as any).__pgFixtureIssues(filing);
 
-      const model = buildVerifiedInventoryModel((window as any).D, {
+      const model = buildVerifiedInventoryModel(filing, {
         signatureStyle: 'script',
         printDate: '2026-09-03',
       });
@@ -340,8 +339,8 @@ test.describe('PDF Accessibility: Tagged Structure, StructTreeRoot & Marked Cont
     await installFixtureSupport(page);
 
     const auditResults = await page.evaluate(async ([invBase, simpBase]) => {
-      const { buildVerifiedInventoryModel, generateVerifiedInventoryPdf } = await (window as any).loadGuardianPdf();
-      const { buildSimplifiedAccountingModel, generateCourtFormPdf } = await (window as any).loadSimplifiedPdf();
+      const { buildVerifiedInventoryModel, generateVerifiedInventoryPdf } = await (window as any).GuardianForms.testing.generateOutput.guardianPdf();
+      const { buildSimplifiedAccountingModel, generateCourtFormPdf } = await (window as any).GuardianForms.testing.generateOutput.simplifiedPdf();
 
       // Both filings are complete ones with this test's own details written
       // over them. Before, each was a bare literal carrying only the fields
@@ -515,7 +514,7 @@ test.describe('PDF Accessibility: Tagged Structure, StructTreeRoot & Marked Cont
     await freshStartNoPassword(page);
 
     const result = await page.evaluate(async () => {
-      const { generateVerifiedInventoryPdf } = await (window as any).loadGuardianPdf();
+      const { generateVerifiedInventoryPdf } = await (window as any).GuardianForms.testing.generateOutput.guardianPdf();
 
       // Enough rows to force the checklist across a page boundary on its own.
       const checklistItems = Array.from({ length: 70 }, (_, i) => ({

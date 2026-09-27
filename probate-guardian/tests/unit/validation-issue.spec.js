@@ -1,5 +1,7 @@
 // Milestone 42F: the structured issue every validator now emits.
 import { describe, it, expect } from 'vitest';
+import { openFiling } from './support/open-filing.js';
+import { getD } from '../../src/core/state.js';
 
 // Some of the modules below reach for window at import time (the same
 // reason the parity specs import dynamically) -- give them one first.
@@ -10,6 +12,7 @@ const { checkDateOrder } = await import('../../src/core/validation/date-rules.js
 const { checkSignatureState } = await import('../../src/core/validation/signature-state.js');
 const { adaptValidationErrors } = await import('../../src/core/validation/validation-adapter.js');
 const { prepareFilingOutput } = await import('../../src/core/filing/output-preflight.js');
+const { recordOutputAcknowledgement, isOutputAcknowledgedFor, clearOutputAcknowledgement } = await import('../../src/core/filing/output-revision.js');
 const { validateSimplified } = await import('../../src/features/simplified-accounting/index.js');
 
 describe('validationIssue()', () => {
@@ -74,7 +77,7 @@ describe('shared helpers emit structured issues only when asked', () => {
 
   it('validateSimplified(): emits non-bypassable simplified.guardian.address-conflict code on conflict', () => {
     globalThis.window = globalThis.window || {};
-    globalThis.window.D = {
+    openFiling({
       guardians: [
         {
           name: 'Jane Doe',
@@ -83,7 +86,7 @@ describe('shared helpers emit structured issues only when asked', () => {
           residenceCityStateZip: 'Tampa, FL 33601'
         }
       ]
-    };
+    });
     const errs = validateSimplified();
     const conflictIssue = errs.find(e => e.code === 'simplified.guardian.address-conflict');
     expect(conflictIssue).toBeDefined();
@@ -101,7 +104,7 @@ describe('shared helpers emit structured issues only when asked', () => {
 
   it('prepareFilingOutput(): acknowledgement clears bypassable issues but never the address-conflict', () => {
     globalThis.window = globalThis.window || {};
-    window.D = {
+    openFiling({
       inventoryType: 'simplified',
       guardians: [
         {
@@ -111,7 +114,7 @@ describe('shared helpers emit structured issues only when asked', () => {
           residenceCityStateZip: 'Tampa, FL 33601'
         }
       ]
-    };
+    });
     const errs = validateSimplified();
     // The 44A fix's whole point: an affirmative "Continue despite outstanding
     // requirements" acknowledgement (mocked here exactly as pdf-preview.js's
@@ -119,15 +122,21 @@ describe('shared helpers emit structured issues only when asked', () => {
     // the guardian address conflict is unresolved -- unlike the many ordinary
     // bypassable .required issues validateSimplified() also returns for this
     // near-empty fixture, which acknowledgement is allowed to clear.
-    window.isOutputAcknowledgedFor = () => true;
+    // The acknowledgement is recorded through the real module and checked to
+    // be in force: the preflight imports it (Milestone 70, 70K), so the
+    // window.isOutputAcknowledgedFor this used to set was no longer read, and
+    // the test ran with nothing acknowledged at all.
+    const { descriptor } = prepareFilingOutput(getD(), errs);
+    recordOutputAcknowledgement(getD(), descriptor);
     try {
-      const preflight = prepareFilingOutput(window.D, errs);
+      expect(isOutputAcknowledgedFor(getD(), descriptor), 'the acknowledgement stands').toBe(true);
+      const preflight = prepareFilingOutput(getD(), errs);
       const conflictIssue = preflight.structuredIssues.find((i) => i.code === 'simplified.guardian.address-conflict');
       expect(conflictIssue?.bypassable).toBe(false);
       expect(preflight.messages.length).toBeGreaterThan(0);
       expect(preflight.canExport).toBe(false);
     } finally {
-      delete window.isOutputAcknowledgedFor;
+      clearOutputAcknowledgement();
     }
   });
 });

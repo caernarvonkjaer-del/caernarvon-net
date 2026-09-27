@@ -32,10 +32,10 @@ type Offender = { route: string; id: string; path: string; value: string };
  * exactly as a pointer does.
  */
 async function sweepUnroutedControls(page: Page, route: string): Promise<Offender[]> {
-  await page.evaluate((r) => (window as any).navigate(r), route);
+  await page.evaluate((r) => (window as any).GuardianForms.testing.navigate(r), route);
   await expect(page.locator('#main-content')).not.toBeEmpty();
   return page.evaluate(async (r) => {
-    const w = window as any;
+    const t = (window as any).GuardianForms.testing;
     const main = document.getElementById('main-content') as HTMLElement;
     const boundPath = (el: HTMLElement) => el.dataset.fieldPath || el.dataset.formPath || el.dataset.annualPath || '';
 
@@ -48,15 +48,6 @@ async function sweepUnroutedControls(page: Page, route: string): Promise<Offende
       .map((el) => `${el.tagName}|${el.type}|${boundPath(el)}|${el.type === 'radio' ? el.value : ''}`)
       .sort()
       .join('\n');
-
-    const getPath = (obj: any, path: string) => path.split('.').reduce((o, k) => (o == null ? o : o[k]), obj);
-    const setPath = (obj: any, path: string, value: unknown) => {
-      const keys = path.split('.');
-      const last = keys.pop() as string;
-      const parent = keys.reduce((o, k) => (o[k] ??= {}), obj);
-      if (value === undefined) delete parent[last];
-      else parent[last] = value;
-    };
 
     const offenders: Offender[] = [];
     const seen = new Set<string>();
@@ -75,13 +66,13 @@ async function sweepUnroutedControls(page: Page, route: string): Promise<Offende
           : main.querySelector<HTMLInputElement>(`input[type="${c.type}"][data-form-path="${c.path}"][value="${c.value}"]`);
         if (!el) continue;
         const before = signature();
-        const prev = getPath(w.D, c.path);
+        const prev = t.snapshot().filing;
         el.click();
-        await w.renderPage(r);
+        await t.navigate(r); // the same route, redrawn from the model
         const after = signature();
         if (after !== before) offenders.push({ route: r, id: c.id, path: c.path, value: c.value });
-        setPath(w.D, c.path, prev);
-        await w.renderPage(r);
+        t.replaceFiling(prev); // setup (D9): the filing exactly as it was before the click
+        await t.navigate(r);
       }
     };
 
@@ -93,28 +84,28 @@ async function sweepUnroutedControls(page: Page, route: string): Promise<Offende
     // directives" is ticked -- and a fresh filing never shows it. Open every
     // routed checkbox gate (those re-render correctly and are not under
     // test), sweep what they exposed, then put the model back. The model is
-    // set directly rather than clicked so the test's own render is the only
-    // one running; a click on a routed control would start a second,
-    // un-awaited render through form-events.js.
+    // set directly (setup, D9) rather than clicked so the test's own render
+    // is the only one running; a click on a routed control would start a
+    // second, un-awaited render through form-events.js. The blank card an
+    // "executed directives" box adds comes from the app's own factory.
     const gates = Array.from(main.querySelectorAll<HTMLInputElement>('input[type="checkbox"][data-form-route]'))
       .filter((el) => boundPath(el) && !el.checked)
       .map((el) => ({
         path: boundPath(el),
         collection: el.dataset.formChange === 'ensure-directive-row' ? el.dataset.collection || '' : '',
-      }))
-      .map((g) => ({ ...g, prev: getPath(w.D, g.path), prevCollection: g.collection ? w.D[g.collection] : undefined }));
+      }));
     if (gates.length) {
+      const prev = t.snapshot().filing;
+      const open: Record<string, unknown> = {};
       for (const g of gates) {
-        setPath(w.D, g.path, true);
-        if (g.collection && !(w.D[g.collection] || []).length) w.D[g.collection] = [w.emptyPlanDirective()];
+        open[g.path] = true;
+        if (g.collection && !(t.field(g.collection) || []).length) open[g.collection] = [t.createFiling.emptyDirective()];
       }
-      await w.renderPage(r);
+      t.patchFiling(open);
+      await t.navigate(r);
       await sweep();
-      for (const g of gates) {
-        setPath(w.D, g.path, g.prev);
-        if (g.collection) setPath(w.D, g.collection, g.prevCollection);
-      }
-      await w.renderPage(r);
+      t.replaceFiling(prev);
+      await t.navigate(r);
     }
     return offenders;
   }, route);
@@ -137,7 +128,7 @@ test.describe('Milestone 67F: answering a question reveals its field on the clic
   test('Annual Plan Q11: "NO remuneration" swaps in the declaring-name field, and the typed name lands in it', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Q11 Reveal Ward', 'planAnnual');
-    await page.evaluate(() => (window as any).navigate('/p10'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/p10'));
 
     const receivedName = page.locator('#main-content [data-form-path="q11ReceivedName"]');
     const declaringName = page.locator('#main-content [data-form-path="q11NoRemunerationName"]');
@@ -153,8 +144,8 @@ test.describe('Milestone 67F: answering a question reveals its field on the clic
     await declaringName.fill('Jane Guardian');
     await declaringName.dispatchEvent('change');
     const saved = await page.evaluate(() => ({
-      declaring: (window as any).D.q11NoRemunerationName,
-      received: (window as any).D.q11ReceivedName,
+      declaring: (window as any).GuardianForms.testing.field('q11NoRemunerationName'),
+      received: (window as any).GuardianForms.testing.field('q11ReceivedName'),
     }));
     expect(saved.declaring).toBe('Jane Guardian');
     expect(saved.received || '').toBe('');
@@ -165,7 +156,7 @@ test.describe('Milestone 67F: answering a question reveals its field on the clic
   test('Annual Accounting Part IX: "Restricted depository only" reveals the receipt-date field', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Depository Reveal Ward', 'annual');
-    await page.evaluate(() => (window as any).navigate('/p9'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/p9'));
 
     const receiptDate = page.locator('#main-content [data-form-path="restrictedDepositoryReceiptDate"]');
     await expect(receiptDate).toHaveCount(0);
@@ -180,12 +171,12 @@ test.describe('Milestone 67F: answering a question reveals its field on the clic
     await freshStartNoPassword(page);
     await createWard(page, 'Initial Reveal Ward', 'planInitial');
 
-    await page.evaluate(() => (window as any).navigate('/p2'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/p2'));
     await expect(page.locator('#main-content [data-form-path="q2Explain"]')).toHaveCount(0);
     await page.locator('#q2Other').check(); // Other
     await expect(page.locator('#main-content [data-form-path="q2Explain"]')).toBeVisible();
 
-    await page.evaluate(() => (window as any).navigate('/p3'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/p3'));
     await expect(page.locator('#main-content [data-form-path="q4Explain"]')).toHaveCount(0);
     await page.locator('#q4Other').check(); // Other
     await expect(page.locator('#main-content [data-form-path="q4Explain"]')).toBeVisible();
@@ -201,7 +192,7 @@ test.describe('Milestone 67F: answering a question reveals its field on the clic
   test('Plan Minor Q4: ticking an examination reveals its frequency', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Minor Reveal Ward', 'planMinor');
-    await page.evaluate(() => (window as any).navigate('/p4'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/p4'));
 
     const frequency = page.locator('#main-content input[name="radio_q4PrimaryFreq"]');
     await expect(frequency).toHaveCount(0);
@@ -212,7 +203,7 @@ test.describe('Milestone 67F: answering a question reveals its field on the clic
   test('Plan Simplified Q8: "Other Advance Directive" reveals its description field', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Simplified Reveal Ward', 'planSimplified');
-    await page.evaluate(() => (window as any).navigate('/p2'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/p2'));
 
     const other = page.locator('#main-content [data-form-path="q8OtherText"]');
     await expect(other).toHaveCount(0);

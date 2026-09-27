@@ -38,9 +38,9 @@ async function setAnnualFamilyIdentity(page: Page, id: FilingType): Promise<void
   await fillMinimalValidAnnualWard(page);
   if (id !== 'annual') {
     const filingTypeValue = id === 'finalAccounting' ? 'Final' : 'Trust';
-    await page.evaluate((v) => { (window as any).D.filingType = v; }, filingTypeValue);
-    await page.evaluate(() => (window as any).autoSave());
-    await page.evaluate(() => (window as any).flushPendingSave());
+    await page.evaluate((v) => { (window as any).GuardianForms.testing.patchFiling({ 'filingType': v }); }, filingTypeValue);
+    await page.evaluate(() => (window as any).GuardianForms.testing.save.auto());
+    await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
   }
 }
 
@@ -119,7 +119,7 @@ test.describe('Output semantics artifact contract (Milestone 33, Phase 3)', () =
       await freshStartNoPassword(page);
       const wardName = `${expected.displayName} Artifact Ward`;
       await createFiling(page, wardName);
-      await page.evaluate(() => (window as any).navigate('/print'));
+      await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
 
       // ─────────────────────────────────────────────────────────────────────────
       // 1. PDF Semantic Assertions
@@ -223,7 +223,7 @@ test.describe('Output semantics artifact contract (Milestone 33, Phase 3)', () =
     });
 
     const result = await page.evaluate(async (file) => {
-      const d = (window as any).D;
+      const d = (window as any).GuardianForms.testing.snapshot().filing;
       d.wardName = 'Sarah Jenkins';
       d.caseNumber = '26-PR-009123';
       d.county = 'Pinellas';
@@ -233,7 +233,7 @@ test.describe('Output semantics artifact contract (Milestone 33, Phase 3)', () =
         { payer: 'Social Security Administration', description: 'Monthly Retirement', bank: 'Chase Bank', accountNo: '1234', amount: '12000.00' },
       ];
 
-      const { buildAnnualAccountingModel, generateCourtFormPdf } = await (window as any).loadAnnualPdf();
+      const { buildAnnualAccountingModel, generateCourtFormPdf } = await (window as any).GuardianForms.testing.generateOutput.annualPdf();
       const { finalizeCourtFormPdf } = await import('/probate-guardian/src/core/pdf/pdf-finalizer.js');
 
       const periodKey = `${d.periodFrom}__${d.periodTo}`;

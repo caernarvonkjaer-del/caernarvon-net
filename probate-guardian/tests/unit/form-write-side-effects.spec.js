@@ -10,8 +10,35 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { classicScripts } from './support/classic-scripts.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+
+// The sidebar marks are src/core/status/nav-marks.js's since Milestone 70's 70F;
+// the tail imports updateNavDots(), so the recorder stands in for the module.
+const navDots = vi.hoisted(() => ({ fn: null }));
+vi.mock('../../src/core/status/nav-marks.js', () => ({ updateNavDots: (...a) => navDots.fn?.(...a) }));
+// The sidebar's refreshes are src/core/shell/sidebar.js's since Milestone 70's
+// 70H; the tail imports them, so the recorders stand in for the module.
+const sidebar = vi.hoisted(() => ({}));
+vi.mock('../../src/core/shell/sidebar.js', () => ({
+  refreshWardInfoCard: (...a) => sidebar.refreshWardInfoCard?.(...a),
+  syncActiveWardNameDisplay: (...a) => sidebar.syncActiveWardNameDisplay?.(...a),
+  syncGuardianNameDisplay: (...a) => sidebar.syncGuardianNameDisplay?.(...a),
+}));
+
+// The county commit (src/core/navigation/ward-county.js) and the Party
+// write-through (src/core/party-resolver.js) are imported by the tail since
+// Milestone 70's 70K -- it read them off window -- so the recorders stand in
+// for those modules too.
+const hooks = vi.hoisted(() => ({}));
+vi.mock('../../src/core/navigation/ward-county.js', () => ({
+  maybeCommitCoverCounty: (...a) => hooks.maybeCommitCoverCounty?.(...a),
+}));
+vi.mock('../../src/core/party-resolver.js', () => ({
+  identitySlotForPath: (...a) => hooks.identitySlotForPath?.(...a),
+  syncIdentityField: (...a) => hooks.syncIdentityField?.(...a),
+}));
 
 function freshWindow() {
   const calls = [];
@@ -19,22 +46,35 @@ function freshWindow() {
   const w = {
     D: { wardName: 'W', county: 'Orange' },
     calls,
-    maybeCommitCoverCounty: rec('county'),
+    maybeCommitCoverCounty: (hooks.maybeCommitCoverCounty = rec('county')),
     // Milestone 58A: the slot now carries fieldKeys -- the canonical Party
     // key(s) this path feeds -- and the tail must hand them on.
-    identitySlotForPath: rec('slot', (_d, p) => (p === 'guardians.0.name' ? { role: 'guardian', index: 0, fieldKeys: ['name'] } : null)),
-    syncIdentityField: rec('identity'),
+    identitySlotForPath: (hooks.identitySlotForPath = rec('slot', (_d, p) => (p === 'guardians.0.name' ? { role: 'guardian', index: 0, fieldKeys: ['name'] } : null))),
+    syncIdentityField: (hooks.syncIdentityField = rec('identity')),
+    // The tail asks the case store for the save (requestSave(), Milestone 70's
+    // 70I); each test points the store's save hook at this recorder.
     autoSave: rec('autoSave'),
-    updateNavDots: rec('navDots'),
-    refreshWardInfoCard: rec('wardCard'),
-    syncActiveWardNameDisplay: rec('wardName'),
-    syncGuardianNameDisplay: rec('guardianName'),
+    updateNavDots: (navDots.fn = rec('navDots')),
+    refreshWardInfoCard: (sidebar.refreshWardInfoCard = rec('wardCard')),
+    syncActiveWardNameDisplay: (sidebar.syncActiveWardNameDisplay = rec('wardName')),
+    syncGuardianNameDisplay: (sidebar.syncGuardianNameDisplay = rec('guardianName')),
     // The tail closes by dispatching `pg:field-written` on window -- the hook
     // Annual Accounting's refreshAnnualTotals() subscribes to now that its
     // own persistAnnualControl() (which called it directly) is gone.
     dispatchEvent: rec('fieldWritten'),
   };
   return w;
+}
+
+// The tail reads the open filing, and asks for the save, through the case
+// store. After each module reset the fresh store gets the fake window's filing
+// as the open one and its recorder as the save hook (Milestone 70: 70I for the
+// save, 70J for the filing -- they were window.autoSave and window.D).
+async function useStore(w) {
+  const state = await import('../../src/core/state.js');
+  state.configureCaseStore({ save: w.autoSave });
+  if (!w.D.wardId) w.D.wardId = 'w-unit';
+  state.replaceCaseFile({ ...state.blankCaseFile(), wards: [w.D], activeWardId: w.D.wardId });
 }
 
 describe('runFieldWriteSideEffects()', () => {
@@ -46,6 +86,7 @@ describe('runFieldWriteSideEffects()', () => {
     globalThis.document = globalThis.document || { querySelectorAll: () => [] };
     vi.resetModules();
     ({ runFieldWriteSideEffects: run } = await import('../../src/core/form/form-contract.js'));
+    await useStore(w);
   });
 
   it('runs county commit and Party write-through before autosave, then the display refreshes', () => {
@@ -112,6 +153,7 @@ describe('all three binding paths call the shared tail', () => {
     globalThis.document = globalThis.document || { querySelectorAll: () => [] };
     vi.resetModules();
     const { writeDraftValue, finalizeFieldValue } = await import('../../src/core/form/form-contract.js');
+    await useStore(w);
 
     // window.getPath is undefined in this mock, so writeDraftValue's
     // `currentVal !== rawValue` guard (comparing against undefined) is
@@ -135,6 +177,7 @@ describe('all three binding paths call the shared tail', () => {
     globalThis.document = globalThis.document || { querySelectorAll: () => [] };
     vi.resetModules();
     const { writeDraftValue, finalizeFieldValue } = await import('../../src/core/form/form-contract.js');
+    await useStore(w);
 
     writeDraftValue({ dataset: { annualPath: 'schC.0.description' }, type: 'text', value: 'Sale of homestead' });
     expect(w.calls).toContain('autoSave');
@@ -143,23 +186,22 @@ describe('all three binding paths call the shared tail', () => {
     expect(w.calls).toContain('autoSave');
 
     expect(read('src/features/annual-accounting/index.js')).not.toMatch(/function persistAnnualControl/);
-    // The document-level listeners are what route the events here: all four
-    // binding checks go through one helper that names all three attributes.
+    // The document-level listeners are what route the events here: all five
+    // binding checks go through one helper that names all three attributes
+    // (input, compositionend, a select's change, focusout, and -- Milestone
+    // 70's 70F -- focusin, which binds the field to the open filing).
     const events = read('src/form-events.js');
     expect(events).toMatch(/const boundPath = \(control\) => control\.dataset\.fieldPath \|\| control\.dataset\.formPath \|\| control\.dataset\.annualPath;/);
-    expect((events.match(/boundPath\(control\)/g) || []).length).toBe(4);
+    expect((events.match(/boundPath\(control\)/g) || []).length).toBe(5);
     expect(events).not.toMatch(/dataset\.fieldPath \|\| control\.dataset\.formPath\)/);
   });
 
-  // afterChange (legacy-app.js) is module-private -- not exported, so there
-  // is no way to import and invoke it directly the way writeDraftValue/
-  // finalizeFieldValue are above. Source-text confirmation of the call site
-  // is the best available check in this Node-only suite; a real invocation
-  // would need e2e (a real browser/window), same reachability gap Milestone
-  // 43A found for normalizeWardData()/window.calc.
+  // afterChange() is the Initial Inventory's (src/features/guardian-inventory/
+  // form-binding.js since Milestone 70's 70F) and needs a page to run, so its
+  // call site is confirmed from the source here; e2e drives it for real.
   it('afterChange (legacy data-bind)', () => {
-    const body = bodyOf(read('src/legacy-app.js'), 'afterChange');
-    expect(body).toContain('window.runFieldWriteSideEffects(path)');
+    const body = bodyOf(read('src/features/guardian-inventory/form-binding.js'), 'afterChange');
+    expect(body).toContain('runFieldWriteSideEffects(path)');
     expect(body).not.toContain('identitySlotForPath');
     expect(body).not.toContain('maybeCommitCoverCounty');
   });
@@ -168,7 +210,8 @@ describe('all three binding paths call the shared tail', () => {
   // legitimately best done via source scan, not a proxy for behavior --
   // there is no function to invoke to prove an absence.
   it('persistFormControl no longer exists anywhere', () => {
-    for (const rel of ['src/form-events.js', 'src/core/form/form-contract.js', 'src/legacy-app.js']) {
+    // With the classic scripts, where legacy-app.js had it (70L deleted that).
+    for (const rel of ['src/form-events.js', 'src/core/form/form-contract.js', ...classicScripts()]) {
       expect(read(rel)).not.toMatch(/function persistFormControl/);
     }
   });

@@ -14,12 +14,30 @@ import { checkExcelCapacity } from '../../core/excel/excel-capacity.js';
 import { issueFactory } from '../../core/validation/validation-issue.js';
 import { createIssue } from '../../core/validation/issue-registry.js';
 import { migrateBondDepository, inferBondDepositoryState, BOND_DEPOSITORY_OPTIONS, BOND_DEPOSITORY_QUESTION, revealsBond, revealsDepository, revealsWaiver } from '../../core/filing/bond-depository.js';
-import { renderRadioGroupField } from '../../core/form/form-fields.js';
+import { renderFormField, renderRadioGroupField } from '../../core/form/form-fields.js';
 import { renderSignatureStateControl, mountSignatureStateControls } from '../../core/signature/signature-state-control.js';
 import { preparerNoteHTML } from '../../core/signature/preparer-note.js';
 import { hasIdentifiedPreparer, preparerFlagCheckboxHTML, preparerWaivedNoticeHTML } from '../../core/form/preparer-flag.js';
 import { serviceRecipientIssues } from '../../core/validation/service-recipients.js';
 import { renderServiceAttestationRow } from '../../core/form/service-attestation-visibility.js';
+import { esc } from '../../core/filing/escape-html.js';
+import { ic } from '../../core/ui/icons.js';
+import { fmt } from '../../core/format/money.js';
+import { applyZipLimit, finalizeCaseNumber, formatAccountNumber, formatAddress, formatBarNumber, formatCaseNumber, formatCheckNumber, formatName, formatPhone, formatSSN, sanitizeNonNegativeDecimal } from '../../core/form/form-contract.js';
+import { calc } from './totals.js';
+import { PAGES_GUARDIAN, mk } from '../../core/filing/models/guardian.js';
+import { SCHEDULE_NAV_KEYS } from '../../core/filing/models/guardian.js';
+import { getD, requestSave } from '../../core/state.js';
+import { saveData } from '../../core/persistence/case-file.js';
+import { afterChange, bindForms } from './form-binding.js';
+import { yesNoCheckboxS, yesNoRadioHTML } from '../../core/form/field-html.js';
+import { browserRecommendationNotice, linkAccordions, linkLabelsToInputs, sanitizeNegativeAmounts, setupAmountFieldValidation } from '../../core/form/form-runtime.js';
+import { initPrintPager } from '../../core/ui/print-pager.js';
+import { renderScheduleDocsSection } from '../../core/filing/schedule-docs.js';
+import { setPath } from '../../core/form/paths.js';
+import { showPickPartyModal } from '../../core/modals/pick-record-dialogs.js';
+import { getCurrentPage, navigate, renderPage } from '../../core/navigation/router.js';
+import { computeNavChecks, updateNavDots } from '../../core/status/nav-marks.js';
 // Milestone 57B: carried verbatim from MILESTONE-57-PROPOSAL.md section 57B.
 // The wording is load bearing (section 8 #8). Do not paraphrase or re-voice it.
 const ATTESTATION_57B = 'No recipients are required for this certificate (filer attestation - app does not determine legal necessity)';
@@ -28,27 +46,13 @@ const ATTESTATION_57B = 'No recipients are required for this certificate (filer 
 // is not started, so the two read the same data the same way.
 const RECIPIENT_STARTED_FIELDS = ['name', 'address', 'cityStateZip'];
 // Guardian Inventory -- Milestone 8A page/nav/validation extraction, plus
-// Milestone 8B (print/PDF/Excel import/export). Dynamically imported by
-// legacy-app.js's mountGuardianFeature()/mountGuardianNav() bridge, using
-// the same window.createFeatureBridge() pattern as Simplified, Plan, and
-// Annual features.
-const {
-  esc, ic, fmt, autoSave, navigate, renderPage, getCurrentPage, bindForms, afterChange, yesNoRadioHTML,
-  sanitizeNegativeAmounts, linkLabelsToInputs, setupAmountFieldValidation,
-  updateNavDots, initPrintPager, computeNavChecks, linkAccordions,
-  // Milestone 51C dropped `toggleSsnReveal` from this list -- destructured but
-  // never called here (the comment near the SSN field below still points at the
-  // function, which is correct: it runs via src/form-events.js's delegated
-  // 'toggle-ssn' handler, not from this module).
-  browserRecommendationNotice, renderScheduleDocsSection,
-  formatName, formatAddress, formatPhone, formatSSN, formatCaseNumber, formatBarNumber,
-  formatAccountNumber, formatCheckNumber, formatCityStateZip, finalizeCaseNumber, applyZipLimit,
-  sanitizeNonNegativeDecimal, calc, mk, PAGES_GUARDIAN, SCHEDULE_NAV_KEYS,
-} = window;
+// Milestone 8B (print/PDF/Excel import/export). Loaded on first use through
+// src/features-loader.js, like every filing feature (Milestone 70's 70K; it
+// was legacy-app.js's mountGuardianFeature() bridge).
 
 const D = new Proxy({}, {
-  get: (_target, prop) => window.D && window.D[prop],
-  set: (_target, prop, value) => { if (window.D) window.D[prop] = value; return true; },
+  get: (_target, prop) => getD() && getD()[prop],
+  set: (_target, prop, value) => { if (getD()) getD()[prop] = value; return true; },
 });
 
 // print.js/excel.js are dynamically imported once, together, the first time
@@ -97,7 +101,7 @@ function normalizeGuardians() {
   if (!normalized.length) normalized.push(mk.guardian());
   if (normalized.length !== guardians.length || !Array.isArray(D.guardians)) {
     D.guardians = normalized;
-    autoSave();
+    requestSave();
   }
 }
 // Milestone 64A-1, item 1.1. D-4's Bond Amount used to be free text (e.g.
@@ -113,6 +117,20 @@ export function normalizeBondAmountValue(v) {
   const parsed = parseFloat(v.replace(/[^0-9.]/g, ''));
   return Number.isFinite(parsed) ? parsed : v;
 }
+// Save as PDF and Save as Excel, for GuardianForms.testing's saveOutput through
+// the feature services (Milestone 70, 70K). The adapter named
+// doSavePdfGuardian() and doSaveExcelGuardian(), which nothing defined, so
+// saveOutput.pdfGuardian() and excelGuardian() could only throw; the page's own
+// buttons reach print.js and excel.js through data-inventory-action.
+export function doSavePdfGuardian() {
+  if (_printModule) return _printModule.doSavePdf();
+  return ensureLazyModules().then(() => _printModule.doSavePdf());
+}
+export function doSaveExcelGuardian() {
+  if (_excelModule) return _excelModule.doSaveExcel();
+  return ensureLazyModules().then(() => _excelModule.doSaveExcel());
+}
+
 function ensureLazyModules() {
   if (_printModule && _excelModule) return Promise.resolve();
   if (!_lazyModulesPromise) {
@@ -124,15 +142,18 @@ function ensureLazyModules() {
   return _lazyModulesPromise;
 }
 
-export async function mount(container, page) {
+export async function mount(container, page, { signal } = {}) {
   await ensureLazyModules();
+  // Superseded while its modules loaded (Milestone 70, 70K): a newer
+  // navigation owns the page, so draw nothing.
+  if (signal?.aborted) return;
   normalizeGuardians();
   // Milestone 67B: a filing saved before the four-state bond question reads
   // back with the state its old fields implied, and the retired bondWaived
   // tri-state is dropped. Idempotent, so every mount may call it. window.D
   // itself, not this module's D proxy: the migration deletes a key, and the
   // proxy forwards reads and writes but not `in` or `delete`.
-  if (migrateBondDepository(window.D)) saveData();
+  if (migrateBondDepository(getD())) saveData();
   sanitizeNegativeAmounts();
   D.bondAmount = normalizeBondAmountValue(D.bondAmount);
   let html;
@@ -156,7 +177,7 @@ export async function mount(container, page) {
     case '/d4':   html=pageD4();break;
     case '/d5':   html=pageD5();break;
     case '/print': {
-      const capOver = checkExcelCapacity(_excelModule.GUARDIAN_EXCEL_CAPS, window.D);
+      const capOver = checkExcelCapacity(_excelModule.GUARDIAN_EXCEL_CAPS, getD());
       html = _printModule.pagePrint(capOver);
       break;
     }
@@ -173,12 +194,12 @@ export async function mount(container, page) {
   signatureHandles.delete(container);
   if (page === '/d1' || page === '/d2' || page === '/d5') {
     signatureHandles.set(container, mountSignatureStateControls(container, {
-      setImage: (imagePath, dataUrl) => window.setPath(window.D, imagePath, dataUrl),
+      setImage: (imagePath, dataUrl) => setPath(getD(), imagePath, dataUrl),
       route: page,
     }));
   }
   linkLabelsToInputs();
-  // Milestone 40C-C removed enforceDateRanges(); see legacy-app.js's note.
+  // Milestone 40C-C removed enforceDateRanges() (see the router's note).
   setupAmountFieldValidation();
   updateNavDots();
   // The pv-pager needs the real .pdf-page elements in the DOM before it can
@@ -193,7 +214,7 @@ export async function mount(container, page) {
   // schedule-doc-ack.spec.ts, where three cases timed out inside navigate()
   // before this was a floating call. Detection is on the DATA, not on the Add
   // button, so rows from an Excel import or New Filing from Existing count.
-  void promptScheduleAckIfNeeded(window.D, 'guardian', page, confirmModal).catch(() => {});
+  void promptScheduleAckIfNeeded(getD(), 'guardian', page, confirmModal).catch(() => {});
 }
 
 export function dispose(container) {
@@ -221,7 +242,7 @@ function bindEvents(container) {
       case 'add-recipient': addRecipient(); break;
       case 'add-witness': addWitness(); break;
       case 'duplicate-entry': duplicateEntry(control.dataset.schedule, index); break;
-      case 'link-party': window.showPickPartyModal(control.dataset.role, control.dataset.index); break;
+      case 'link-party': showPickPartyModal(control.dataset.role, control.dataset.index); break;
       case 'navigate': navigate(control.dataset.route); break;
       case 'remove-entry': removeEntry(control.dataset.schedule, index); break;
       case 'remove-guardian': removeGuardian(index); break;
@@ -248,7 +269,7 @@ function bindEvents(container) {
           D.scheduleB2[index][field] = formatted;
           syncB2VehicleDescription(index);
         }
-        autoSave();
+        requestSave();
       }
     }
   }, options);
@@ -262,7 +283,7 @@ function bindEvents(container) {
     const index = Number.parseInt(control.dataset.index, 10);
     D.scheduleB2[index][control.dataset.field] = control.value;
     syncB2VehicleDescription(index);
-    autoSave();
+    requestSave();
   }, options);
 }
 
@@ -313,7 +334,8 @@ function buildNavGuardian(container){
 }
 
 // Milestone 63A. This module used to keep its own copy of the "is this page gating Next"
-// rule, beside the one in legacy-app.js that live-patches the button after every edit. Two
+// rule, beside the one that live-patches the button after every edit (legacy-app.js's then,
+// src/core/status/nav-marks.js's now). Two
 // copies meant a fix to one would show the explanation on page load and wipe it on the first
 // keystroke. Both now read src/core/status/section-guidance-policy.js:
 //   - the Guardian pages that GATE Next are the 11 schedules only (SCHEDULE_NAV_KEYS);
@@ -330,7 +352,7 @@ export function pageNav(current){
   const incomplete=isSectionIncomplete(checks&&checks.checks,checkKey);
   const nextDisabled=blocksNext({type:'guardian',checkKey,incomplete,guardianScheduleKeys:SCHEDULE_NAV_KEYS});
   const advice=guidanceAdvice({hasVerifyNoneBox:SCHEDULE_NAV_KEYS.includes(checkKey)});
-  const rawErrors=incomplete&&typeof validateGuardian==='function'?validateGuardian(window.D):[];
+  const rawErrors=incomplete&&typeof validateGuardian==='function'?validateGuardian(getD()):[];
   const guidanceHtml=incomplete?renderLocalSectionGuidance(current,rawErrors,Infinity,{message:advice}):'';
   return `<div class="page-nav-wrap no-print">
     <div class="page-nav d-flex justify-content-between align-items-center">
@@ -380,26 +402,23 @@ function textInput(bind,placeholder='',type=''){
   // explicitly because this file computes them from the type argument, not
   // from a label -- which renderFormField() would otherwise infer, wrongly,
   // from the empty label these fields deliberately pass.
-  if (typeof window !== 'undefined' && typeof window.renderFormField === 'function') {
-    return window.renderFormField({
-      path: bind,
-      label: '',
-      // Deliberately blank: bindForms() assigns .value immediately after
-      // render using its own data-input-type formatter, so populating it
-      // here would be overwritten anyway -- and leaving it blank keeps this
-      // exactly as the pre-delegation markup behaved (textInput() never
-      // emitted a value attribute either).
-      value: '',
-      kind: fieldKind,
-      policy,
-      placeholder,
-      id: inputId,
-      wrapperClass: '',
-      binding: 'bind',
-      inputType: type || 'text',
-    });
-  }
-  return `<input class="form-control" id="${inputId}" data-bind="${bind}" data-field-path="${bind}" data-field-kind="${fieldKind}" data-field-format-policy="${policy}" placeholder="${placeholder}"${dataType}>`;
+  return renderFormField({
+    path: bind,
+    label: '',
+    // Deliberately blank: bindForms() assigns .value immediately after
+    // render using its own data-input-type formatter, so populating it
+    // here would be overwritten anyway -- and leaving it blank keeps this
+    // exactly as the pre-delegation markup behaved (textInput() never
+    // emitted a value attribute either).
+    value: '',
+    kind: fieldKind,
+    policy,
+    placeholder,
+    id: inputId,
+    wrapperClass: '',
+    binding: 'bind',
+    inputType: type || 'text',
+  });
 }
 
 
@@ -419,22 +438,17 @@ function textInput(bind,placeholder='',type=''){
 // optLabel() call renders the caller's own label), which renderFormField()
 // now also checks for exactly this caller.
 function numInput(bind){
-  if (typeof window !== 'undefined' && typeof window.renderFormField === 'function') {
-    return window.renderFormField({
-      path: bind,
-      label: '',
-      value: '',
-      kind: 'money',
-      policy: 'normalize',
-      wrapperClass: '',
-      binding: 'bind',
-      inputType: 'decimal',
-      claimSharedWriteListener: false,
-    });
-  }
-  const isPercent=/Percent$/i.test(bind);
-  const inputHtml=`<input type="text" inputmode="decimal" class="form-control" data-bind="${bind}" data-input-type="decimal">`;
-  return isPercent?`<div class="input-group">${inputHtml}<span class="input-group-text">%</span></div>`:`<div class="input-group"><span class="input-group-text">$</span>${inputHtml}</div>`;
+  return renderFormField({
+    path: bind,
+    label: '',
+    value: '',
+    kind: 'money',
+    policy: 'normalize',
+    wrapperClass: '',
+    binding: 'bind',
+    inputType: 'decimal',
+    claimSharedWriteListener: false,
+  });
 }
 // Milestone 41-3 (Guardian Inventory step): delegates to Tier 1, same
 // pattern as textInput() above -- zero call-site changes across 13 sites.
@@ -448,23 +462,16 @@ function numInput(bind){
 // already, safely, claimed by both attributes at once.
 function dateInput(bind){
   const inputId='date_'+Math.random().toString(36).slice(2,9);
-  if (typeof window !== 'undefined' && typeof window.renderFormField === 'function') {
-    return window.renderFormField({
-      path: bind,
-      label: '',
-      value: '',
-      kind: 'date',
-      policy: 'normalize',
-      id: inputId,
-      wrapperClass: 'date-field-wrap',
-      binding: 'bind',
-    });
-  }
-  const hintId=`${inputId}_hint`;
-  return `<div class="date-field-wrap">
-    <input type="text" inputmode="text" class="form-control" id="${inputId}" placeholder="MM/DD/YYYY" data-bind="${bind}" data-field-path="${bind}" data-field-kind="date" data-field-format-policy="normalize" aria-describedby="${hintId}">
-    <div id="${hintId}" class="form-text text-muted" style="font-size:0.75rem;margin-top:0.2rem;">Use MM/DD/YYYY</div>
-  </div>`;
+  return renderFormField({
+    path: bind,
+    label: '',
+    value: '',
+    kind: 'date',
+    policy: 'normalize',
+    id: inputId,
+    wrapperClass: 'date-field-wrap',
+    binding: 'bind',
+  });
 }
 function calcInput(calcbind){
   return `<input class="form-control" readonly data-calcbind="${calcbind}">`;
@@ -536,13 +543,13 @@ function totalsBox(rows){
 }
 
 // ── Entry add/remove ───────────────────────────────────
-function addEntry(schedule){
+export function addEntry(schedule){
   const map={
     a1:'scheduleA1',a2:'scheduleA2',b1:'scheduleB1',b2:'scheduleB2',b3:'scheduleB3',
     b4:'scheduleB4',c1:'scheduleC1',c2:'scheduleC2',c3:'scheduleC3',c4:'scheduleC4',c5:'scheduleC5'
   };
   const key=map[schedule];
-  window.D[key].push(mk[schedule]());
+  getD()[key].push(mk[schedule]());
   renderPage(getCurrentPage());
 }
 function removeEntry(schedule,idx){
@@ -551,8 +558,8 @@ function removeEntry(schedule,idx){
     b4:'scheduleB4',c1:'scheduleC1',c2:'scheduleC2',c3:'scheduleC3',c4:'scheduleC4',c5:'scheduleC5'
   };
   const key=map[schedule];
-  window.D[key].splice(idx,1);
-  autoSave();
+  getD()[key].splice(idx,1);
+  requestSave();
   renderPage(getCurrentPage());
 }
 // Empty-state for a schedule with zero rows: a checkbox the filer checks
@@ -574,7 +581,7 @@ function scheduleEmptyHTML(key,noun){
 function setScheduleNoItems(key,val){
   if(!D.scheduleNoItems)D.scheduleNoItems={};
   D.scheduleNoItems[key]=val;
-  autoSave();
+  requestSave();
   afterChange(`scheduleNoItems.${key}`);
 }
 // Copies an entry and inserts the copy directly beneath the original.
@@ -586,16 +593,16 @@ function setScheduleNoItems(key,val){
 // differs, which is less work than re-typing what doesn't. Values are plain
 // strings/numbers, so a JSON round-trip is a safe deep copy and can't leave
 // the copy sharing a reference with the original.
-function duplicateEntry(schedule,idx){
+export function duplicateEntry(schedule,idx){
   const map={
     a1:'scheduleA1',a2:'scheduleA2',b1:'scheduleB1',b2:'scheduleB2',b3:'scheduleB3',
     b4:'scheduleB4',c1:'scheduleC1',c2:'scheduleC2',c3:'scheduleC3',c4:'scheduleC4',c5:'scheduleC5'
   };
   const key=map[schedule];
-  const list=window.D[key];
+  const list=getD()[key];
   if(!list||!list[idx])return;
   list.splice(idx+1,0,JSON.parse(JSON.stringify(list[idx])));
-  autoSave();
+  requestSave();
   renderPage(getCurrentPage());
 }
 // Same idea for the Annual Accounting schedules, which store their rows in
@@ -605,11 +612,11 @@ function addGuardian(){pendingGuardianIndex=D.guardians.length;D.guardians.push(
 function removeGuardian(i){
   D.guardians.splice(i,1);
   if (Array.isArray(D.guardianPartyIds)) D.guardianPartyIds.splice(i, 1);
-  autoSave();
+  requestSave();
   renderPage('/d1');
 }
 function addRecipient(){D.serviceRecipients.push(mk.recipient());renderPage('/d5');}
-function removeRecipient(i){D.serviceRecipients.splice(i,1);autoSave();renderPage('/d5');}
+function removeRecipient(i){D.serviceRecipients.splice(i,1);requestSave();renderPage('/d5');}
 
 // Witnesses present during the physical inventory of the ward's personal
 // effects (Cover page reminder). Kept separate from the entryCard()/
@@ -617,8 +624,8 @@ function removeRecipient(i){D.serviceRecipients.splice(i,1);autoSave();renderPag
 // witnesses aren't a "schedule" in that sense (no dollar total, not part
 // of the schedule/route map those helpers key off of).
 function mkWitness(){return {name:'',address:'',occupation:''};}
-function addWitness(){D.witnesses=D.witnesses||[];D.witnesses.push(mkWitness());autoSave();renderPage('/');}
-function removeWitness(i){if(!D.witnesses)return;D.witnesses.splice(i,1);autoSave();renderPage('/');}
+function addWitness(){D.witnesses=D.witnesses||[];D.witnesses.push(mkWitness());requestSave();renderPage('/');}
+function removeWitness(i){if(!D.witnesses)return;D.witnesses.splice(i,1);requestSave();renderPage('/');}
 function witnessCardsHTML(){
   const list=D.witnesses||[];
   return list.map((w,i)=>`<div class="col-12 col-lg-6"><div class="entry-card mb-0 h-100">
@@ -720,7 +727,7 @@ function pageHome(){
 // PAGE: SUMMARY
 // ═══════════════════════════════════════════════════════
 function getSummaryConfigGuardian(){
-  const nav=window.computeNavChecks();
+  const nav=computeNavChecks();
   return {
     formTitle:'Verified Initial Inventory — Summary',
     infoRows:[
@@ -895,7 +902,7 @@ function toggleB2Vehicle(i,checked){
     e.inSafeDepositBox = '';
     syncB2VehicleDescription(i);
   }
-  autoSave();
+  requestSave();
   renderPage(getCurrentPage());
 }
 function pageScheduleB2(){
@@ -1218,7 +1225,7 @@ function pageD5(){
   <h1>Part VI: Certificate of Service</h1>
   ${preparerNoteHTML()}
   <h2 style="color:var(--ink);margin:.75rem 0 .4rem;font-size:.95rem;">Recipients</h2>
-  ${renderServiceAttestationRow({html:window.yesNoCheckboxS('serviceNoRecipients',ATTESTATION_57B,D.serviceNoRecipients,false,'/d5'),rows:D.serviceRecipients,attestation:D.serviceNoRecipients,startedFields:RECIPIENT_STARTED_FIELDS,recipientsPath:'serviceRecipients',attestationPath:'serviceNoRecipients'})}
+  ${renderServiceAttestationRow({html:yesNoCheckboxS('serviceNoRecipients',ATTESTATION_57B,D.serviceNoRecipients,false,'/d5'),rows:D.serviceRecipients,attestation:D.serviceNoRecipients,startedFields:RECIPIENT_STARTED_FIELDS,recipientsPath:'serviceRecipients',attestationPath:'serviceNoRecipients'})}
   ${D.serviceNoRecipients==='Yes'?'':`<div class="row g-3 card-grid-2col">${cards}</div>${addBtn2}`}
   <h2 style="color:var(--ink);margin:.75rem 0 .4rem;font-size:.95rem;">Attorney Certification</h2>
   <div class="attorney-certification-card entry-card">
@@ -1237,8 +1244,8 @@ function pageD5(){
 // VALIDATION
 // ═══════════════════════════════════════════════════════
 // D-3 uses the same string tri-state as the schedule radios. Accept booleans
-// only as a defensive read-side fallback for a legacy object before setD()
-// normalizes it.
+// only as a defensive read-side fallback for a legacy object before opening
+// it (setActiveFiling()) normalizes it.
 const sdbValue = (v) => v === true ? 'Yes' : (v === false ? 'No' : (v || ''));
 const sdbIsYes = (v) => v === true || v === 'Yes';
 const sdbIsNo = (v) => v === false || v === 'No';
@@ -1248,9 +1255,11 @@ const sdbAnswered = (v) => sdbIsYes(v) || sdbIsNo(v);
 // The pre-42F adapter had no Guardian Inventory Cover branch, so every Cover
 // message containing "guardian" (GID, Attorney for Guardian, Type of
 // Guardianship, Guardian Name(s)) fell through to guardians.0.name.
-export function validateGuardian(){
+// Judges the filing it is handed, or the open one. Milestone 70's 70D: the
+// dashboard's progress for a filing that is not open passes it here, where it
+// used to point window.D at it first.
+export function validateGuardian(d=getD()){
   const errors=[];
-  const d=window.D;
   const issue=issueFactory('guardian');
   const T='guardian';
   function req(v,label,path){if(!v||!String(v).trim())errors.push(issue(label,path));}
@@ -1404,13 +1413,12 @@ export function validateGuardian(){
 //     print.js:12, never through window. The function is alive; the bridge was
 //     dead.
 //
-// The three that remain, and why:
-//   - addEntry / duplicateEntry: two e2e specs drive them through the bridge on
-//     purpose (guardian-inventory-mount, guardian-inventory-tri-state-radios).
-//   - validateGuardian: legacy-app.js's production validate() flow calls the
-//     global directly (:6675, :7068, :7589). Note the Milestone 40H-A comment at
-//     :6661-6665 recording a real bug caused by calling it before assignment --
-//     that history is a reason to leave this bridge, and that comment, alone.
-window.addEntry = addEntry;
-window.duplicateEntry = duplicateEntry;
-window.validateGuardian = validateGuardian;
+// The three that remained went in Milestone 70's 70K, which put nothing of
+// the application on window:
+//   - addEntry / duplicateEntry: two e2e specs drove them through the bridge on
+//     purpose (guardian-inventory-mount, guardian-inventory-tri-state-radios);
+//     they are exported, and reached through GuardianForms.testing.
+//   - validateGuardian: legacy-app.js's validate() flow called the global
+//     directly (a Milestone 40H-A comment there recorded a real bug caused by
+//     calling it before assignment); the feature services' validator hands it
+//     to core now.

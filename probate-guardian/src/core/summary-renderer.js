@@ -23,8 +23,8 @@
  * SummaryBanner: { title, value, subtitle? }
  *
  * All navigation links use data-form-action="navigate" which is handled by the
- * global event listener in legacy-app.js and works across all form types,
- * including guardian-inventory (the global handler wraps window.navigate()).
+ * global event listener in src/form-events.js and works across all form types,
+ * including guardian-inventory (the handler calls the router's navigate()).
  */
 
 /**
@@ -32,7 +32,8 @@
  * renderStatusBadge()/SummaryCardLine.status expects, so a Summary page's
  * badges can never drift from what the sidebar (applyNavChecks()) and
  * Print Preview's export gate already show for the same section -- see
- * computeNavChecks()'s own "single source of truth" comment (legacy-app.js).
+ * computeNavChecks()'s own "single source of truth" comment (then in
+ * legacy-app.js; src/core/status/nav-marks.js and completion.js now).
  *
  * Multiple keys (e.g. Annual's single "Sch D1-D5" summary line covering
  * five separate sidebar schedule checks) are ANDed for 'complete' and
@@ -55,7 +56,8 @@ export function navStatus(nav, keys) {
  * formatter, and the em-dash is the whole point of it.
  *
  * DO NOT merge this with the Excel-export date helpers (`fD`/`fmtD` in the three
- * feature excel.js files) or with legacy-app.js's `fmtDate`. Those return '' for
+ * feature excel.js files) or with cell-reader.js's `fmtDate` (legacy-app.js's
+ * until Milestone 53B). Those return '' for
  * an empty value because they write into spreadsheet cells and a court document
  * must show a blank, never a literal "—". They also diverge from each other in a
  * way that looks mergeable and is not: the excel.js variants' `length >= 10`

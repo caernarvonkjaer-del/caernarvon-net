@@ -1,6 +1,5 @@
 import { describe, expect, test, beforeAll } from 'vitest';
-import { checkExcelCapacity, getExcelCapacityIssues } from '../../src/core/excel/excel-capacity.js';
-import { extractLegacyFunction } from './support/legacy-source-extract.js';
+import { checkExcelCapacity, excelCapacityPanel, getExcelCapacityIssues } from '../../src/core/excel/excel-capacity.js';
 
 // Milestone 58D — Part XI, Guardian(s) Declaration of Remuneration.
 //
@@ -60,7 +59,7 @@ describe('58D: the empty-state declaration is reachable', () => {
   let emptyDataAnnual;
   beforeAll(async () => {
     globalThis.window = globalThis.window || {};
-    ({ emptyDataAnnual } = await import('../../src/core/state.js'));
+    ({ emptyDataAnnual } = await import('../../src/core/filing/models/annual.js'));
   });
 
   // The "I verify there are no remuneration entries to report" checkbox only
@@ -86,13 +85,9 @@ describe('58D: the empty-state declaration is reachable', () => {
 // `unsupported` sentence the blocking issue uses, and drops the count-of-cap
 // badge for those entries.
 describe('64B-2 / D13: the Excel-limit panel explains an unsupported schedule instead of counting rows', () => {
-  const panelHtml = (over) => {
-    const src = extractLegacyFunction('excelCapacityPanel');
-    // esc() and ic() are legacy globals the panel calls; stub them to the
-    // minimum this assertion needs (identity escape, empty icon markup).
-    const make = new Function('esc', 'ic', `${src}; return excelCapacityPanel;`);
-    return make((s) => String(s ?? ''), () => '')(over);
-  };
+  // src/core/excel/excel-capacity.js's since Milestone 70's 70F (it was sliced
+  // out of legacy-app.js, with esc() and ic() stubbed).
+  const panelHtml = (over) => excelCapacityPanel(over);
 
   const UNSUPPORTED = "the court's Excel workbook has no entry area for Part XI, so remuneration cannot be written to it. File this accounting as PDF, where Part XI prints in full.";
 

@@ -11,19 +11,20 @@
 // must exist as an object before the import resolves, so the module is
 // imported dynamically inside beforeAll(), after vi.stubGlobal('window', ...).
 //
-// index.js's own top level also does `const { ..., SCHEDULE_NAV_KEYS } =
-// window` -- a one-time destructure of legacy-app.js's classic-script
-// globals, copied at import time, not a live reference. validateGuardian()
-// itself only ever reads SCHEDULE_NAV_KEYS from that list (verified by
-// reading the whole function, index.js:1207-1310), so that's the only one
-// this stub needs a real value for; the rest can stay undefined.
+// index.js's own top level also destructured legacy-app.js's classic-script
+// globals off window at import time (until Milestone 70's 70K). validateGuardian() reads none of them:
+// the one it did, SCHEDULE_NAV_KEYS, is imported from
+// src/core/filing/models/guardian.js since Milestone 70's 70D, so they can
+// all stay undefined.
 import { afterAll, beforeAll, beforeEach, describe, test, expect, vi } from 'vitest';
+import { openFiling } from './support/open-filing.js';
+import { emptyDataGuardian } from '../../src/core/filing/models/guardian.js';
+import { getD } from '../../src/core/state.js';
 
 let validateGuardian;
 
 beforeAll(async () => {
-  // Mirrors legacy-app.js:6487's SCHEDULE_NAV_KEYS literal.
-  vi.stubGlobal('window', { SCHEDULE_NAV_KEYS: ['a1', 'a2', 'b1', 'b2', 'b3', 'b4', 'c1', 'c2', 'c3', 'c4', 'c5'] });
+  vi.stubGlobal('window', {});
   ({ validateGuardian } = await import('../../src/features/guardian-inventory/index.js'));
 });
 
@@ -31,32 +32,17 @@ afterAll(() => {
   vi.unstubAllGlobals();
 });
 
-// Mirrors legacy-app.js's emptyDataGuardian() shape (read 2026-09-22), not a
-// copy that can drift silently on its own -- only the fields
-// validateGuardian() actually reads are populated per test, since this file
-// asserts the presence/absence of specific issues, not a zero-error filing.
+// The real blank Initial Inventory (src/core/filing/models/guardian.js), with
+// each test's own values over it. Until Milestone 70's 70L this was a literal
+// copy of legacy-app.js's emptyDataGuardian(), which could drift from it; the
+// tests assert the presence or absence of specific issues, not a zero-error
+// filing.
 function baseGuardianData(overrides = {}) {
-  return {
-    wardName: '', caseNumber: '', ucn: '', gid: null, county: '', guardianName: '',
-    attorneyForGuardian: '', typeOfGuardianship: '', hasSafeDepositBox: '',
-    safeDepositBoxFiled: '', amendedForm: '',
-    scheduleA1: [], scheduleA2: [], scheduleB1: [], scheduleB2: [], scheduleB3: [],
-    scheduleB4: [], scheduleC1: [], scheduleC2: [], scheduleC3: [], scheduleC4: [], scheduleC5: [],
-    scheduleNoItems: {},
-    guardians: [{ name: '', ssnEin: '', phone: '', streetAddress: '', cityStateZip: '', signatureDate: null, signatureState: '', signatureImage: '' }],
-    preparer: { name: '', ssnEin: '', phone: '', streetAddress: '', cityStateZip: '', signatureDate: null, signatureState: '', signatureImage: '' },
-    attorney: { name: '', barNumber: '', phone: '', streetAddress: '', cityStateZip: '', signatureDate: null, filingDate: null, signatureState: '', signatureImage: '' },
-    bondAmount: '', bondPeriodFrom: null, bondPeriodTo: null, bondingCompany: '', bondWaived: '', bondWaivedDate: '',
-    serviceNoRecipients: '', serviceIndicateIf: '',
-    serviceRecipients: [{ name: '', address: '', cityStateZip: '' }, { name: '', address: '', cityStateZip: '' }],
-    serviceDate: null, serviceAttorney: { name: '', barNumber: '', phone: '', streetAddress: '', cityStateZip: '', signatureState: '', signatureImage: '' },
-    witnesses: [],
-    ...overrides,
-  };
+  return { ...emptyDataGuardian(), ...overrides };
 }
 
 beforeEach(() => {
-  window.D = baseGuardianData();
+  openFiling(baseGuardianData());
 });
 
 describe('Milestone 64A-1, item 3.2: Schedule B-4 "Related Personal Property Asset (if secured)"', () => {
@@ -66,7 +52,7 @@ describe('Milestone 64A-1, item 3.2: Schedule B-4 "Related Personal Property Ass
   // asset. Requiring it here blocked a filer with a genuinely unsecured
   // debt from ever completing B-4.
   test('a B-4 row with no related property no longer raises a Related Property error', () => {
-    window.D.scheduleB4 = [{
+    getD().scheduleB4 = [{
       lenderName: 'Capital One', lenderAddress: '123 Main St, Largo FL 33770',
       liabilityType: 'Credit Card', fullLiabilityBalance: 1000, wardPercent: 100,
       // relatedProperty intentionally omitted -- this is the unsecured case.
@@ -77,7 +63,7 @@ describe('Milestone 64A-1, item 3.2: Schedule B-4 "Related Personal Property Ass
   });
 
   test('a B-4 row still requires Lender Name, Lender Address, and a positive balance', () => {
-    window.D.scheduleB4 = [{ fullLiabilityBalance: 0, wardPercent: 100 }];
+    getD().scheduleB4 = [{ fullLiabilityBalance: 0, wardPercent: 100 }];
     const errors = validateGuardian();
     expect(errors.some(e => e.path === 'scheduleB4.0.lenderName')).toBe(true);
     expect(errors.some(e => e.path === 'scheduleB4.0.lenderAddress')).toBe(true);
@@ -93,7 +79,7 @@ describe('Milestone 64A-1, item 3.1: Schedule C-3 Action Date and Case Number', 
   // number by definition -- requiring them blocked the exact case the form
   // itself describes.
   test('a C-3 row with no Action Date no longer raises an Action Date error', () => {
-    window.D.scheduleC3 = [{
+    getD().scheduleC3 = [{
       defendantName: 'John Smith', actionDescription: 'Negligence',
       status: 'Pre-suit investigation', courtJurisdiction: 'Pinellas County Circuit Court',
       estimatedSettlement: 5000, wardPercent: 100,
@@ -104,7 +90,7 @@ describe('Milestone 64A-1, item 3.1: Schedule C-3 Action Date and Case Number', 
   });
 
   test('a C-3 row still requires Defendant, Action Description, Status, Court/Jurisdiction, and a positive Estimated Settlement', () => {
-    window.D.scheduleC3 = [{ estimatedSettlement: 0, wardPercent: 100 }];
+    getD().scheduleC3 = [{ estimatedSettlement: 0, wardPercent: 100 }];
     const errors = validateGuardian();
     expect(errors.some(e => e.path === 'scheduleC3.0.defendantName')).toBe(true);
     expect(errors.some(e => e.path === 'scheduleC3.0.actionDescription')).toBe(true);
@@ -131,7 +117,7 @@ describe('Milestone 67B: nothing in the D-4 bond block gates export', () => {
     ['bond only', 'bond-only'],
     ['bond waived by court order', 'bond-waived'],
   ])('%s with every bond field blank raises no D-4 issue', (_label, state) => {
-    Object.assign(window.D, {
+    Object.assign(getD(), {
       bondDepositoryState: state,
       bondAmount: '', bondPeriodFrom: null, bondPeriodTo: null, bondingCompany: '', bondWaivedDate: '', restrictedDepositoryReceiptDate: '',
     });
@@ -139,12 +125,12 @@ describe('Milestone 67B: nothing in the D-4 bond block gates export', () => {
   });
 
   test('a bond period entered backwards is still reported -- that is an ordering check, not a requirement', () => {
-    Object.assign(window.D, { bondDepositoryState: 'bond-only', bondPeriodFrom: '2026-12-31', bondPeriodTo: '2026-01-01' });
+    Object.assign(getD(), { bondDepositoryState: 'bond-only', bondPeriodFrom: '2026-12-31', bondPeriodTo: '2026-01-01' });
     expect(validateGuardian().some(e => e.path === 'bondPeriodTo')).toBe(true);
   });
 
   test('the retired bondWaived tri-state is not consulted -- a legacy Yes with no date blocks nothing', () => {
-    Object.assign(window.D, { bondWaived: 'Yes', bondWaivedDate: '', bondDepositoryState: '' });
+    Object.assign(getD(), { bondWaived: 'Yes', bondWaivedDate: '', bondDepositoryState: '' });
     expect(bondIssues()).toEqual([]);
     expect(validateGuardian().some(e => e.code === 'filing.bond-waiver.incomplete')).toBe(false);
   });
@@ -155,21 +141,21 @@ describe('Milestone 64A-2, item 2.4: D-5 "Indicate if:" is required', () => {
   // incapacitated / Ward is under 14 years old / N/A. No such field existed
   // before; D-5 never asked, and never validated on it.
   test('unanswered serviceIndicateIf blocks D-5', () => {
-    window.D.serviceIndicateIf = '';
+    getD().serviceIndicateIf = '';
     const errors = validateGuardian();
     expect(errors.some(e => e.path === 'serviceIndicateIf')).toBe(true);
   });
 
   test('"N/A" is a real, complete answer -- not treated as unanswered', () => {
-    window.D.serviceIndicateIf = 'N/A';
+    getD().serviceIndicateIf = 'N/A';
     const errors = validateGuardian();
     expect(errors.some(e => e.path === 'serviceIndicateIf')).toBe(false);
   });
 
   test('either of the two substantive answers satisfies it', () => {
-    window.D.serviceIndicateIf = 'Ward is totally incapacitated';
+    getD().serviceIndicateIf = 'Ward is totally incapacitated';
     expect(validateGuardian().some(e => e.path === 'serviceIndicateIf')).toBe(false);
-    window.D.serviceIndicateIf = 'Ward is under 14 years old';
+    getD().serviceIndicateIf = 'Ward is under 14 years old';
     expect(validateGuardian().some(e => e.path === 'serviceIndicateIf')).toBe(false);
   });
 });

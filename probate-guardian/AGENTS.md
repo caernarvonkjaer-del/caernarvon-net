@@ -49,8 +49,10 @@ non-zero, so a later stage never runs against a broken prerequisite.
   2026-09-19 on one workstation; re-measure rather than trusting them.
 
 **Stack (Archetype 1 — Client-Side Static PWA, pinned for this repo):**
-Vanilla ES Modules + classic script hybrid (`legacy-app.js` + `src/main.js`
-and feature modules) · Bootstrap 5 CSS, no framework (**no React/Vue/Svelte/
+Vanilla ES Modules (`src/main.js`, the composition root, with core and
+lazily-loaded feature modules; the one classic script, `src/prepaint.js`, sets
+the theme before first paint; the only app global is `window.GuardianForms`)
+· Bootstrap 5 CSS, no framework (**no React/Vue/Svelte/
 JSX**) · Vite (dev/build) · Vitest (unit) + Playwright (e2e) · TypeScript
 (`tsc --noEmit`, checked scope only — §2) · Web Crypto (`SubtleCrypto`
 AES-GCM/PBKDF2), zero unencrypted cloud transmission · `pdf-lib`/`pdfjs` and
@@ -166,15 +168,6 @@ on its location—update the dependent path and the index together.
 ## 2. Git, Concurrency & Execution Discipline
 
 - **Direct to master.** Commit and push directly; never create feature branches.
-  - **Exception: Milestone 70 only** (decision D1 in `MILESTONE-70-PROPOSAL.md`,
-    recorded 2026-09-24). Milestone 70 work, and only Milestone 70 work, is
-    committed to the `milestone-70` branch, never to `master`. Everything else,
-    including production bug fixes made while Milestone 70 is under way, stays
-    direct-to-master exactly as above. Agents working on `master` need do
-    nothing extra: the Milestone 70 delivery owner records every `master`
-    commit made after the branch point in the branch's
-    `MILESTONE-70-FIX-LEDGER.md`, so each fix is carried into the migrated
-    code before the branch merges. The merge removes this note.
 - **Concurrent tree.** Multiple agents/collaborators may edit or push at the same time.
   - Sync with `master` before starting; `git status`/`git log` before editing — a change you didn't make is not stale by default.
   - Commit **only your own task's files**; never sweep in unrelated concurrent work.
@@ -241,11 +234,13 @@ In practice: open with one sentence a non-engineer could act on (*what breaks, f
 deliberately stricter. Do not "fix" that by tightening export.**
 
 The invariant above governs the **readiness panel** (`readiness-config.js`).
-The **sidebar nav dots** (`computeNavChecks()` in `legacy-app.js`) are a
+The **sidebar nav dots** (the completion evaluators in
+`src/core/status/completion.js`, which the sidebar reaches through
+`computeNavChecks()` in `src/core/status/nav-marks.js`) are a
 different surface with a different job, and the two must not be conflated —
 `readiness-config.js` has no per-schedule Annual items at all.
 
-On Schedules A, B-1–B-4, C, D-1–D-5, E, F-1 and F-2, `computeNavChecks()`
+On Schedules A, B-1–B-4, C, D-1–D-5, E, F-1 and F-2, `annualCompletion()`
 marks a schedule incomplete until the filer either enters a complete row or
 ticks "I verify there are no items to report". `validateAnnual()`'s
 `checkRows()` requires neither: it skips rows with no data and validates only
@@ -359,7 +354,7 @@ Tier 3  Declarative Form Composition (pages assemble sequences of cards)
 - `src/styles/` (`tokens.css`, `cards.css`, `shell.css`) is authoritative. Semantic CSS variables (`--brand`, `--ink`, `--surface`, `--line`, `--field`) — no arbitrary hex in component stylesheets, except token definitions themselves, vendor styles, print/court-output styles (hardcoded for print fidelity), embedded SVGs, and high-contrast overrides.
 - Light/Dark via `tokens.css` + a synchronous pre-paint script (`src/prepaint.js`) to avoid FOUC.
 - UI-only preferences (theme, display) live in `localStorage`, never `.sav`/case state (nothing sensitive; must be synchronously readable pre-paint, which encrypted/async case state can't guarantee) — see `src/core/theme-preference.js` (`pg-theme-v1`).
-- Icons via `icons.js`/`ic(name, size)`; any icon inside `<button>`/`<a>` needs an accessible name (`aria-label`, `title`, or visible text).
+- Icons via `src/core/ui/icons.js`'s `ic(name, size)`; any icon inside `<button>`/`<a>` needs an accessible name (`aria-label`, `title`, or visible text).
 - `.entry-card`/`.summary-box` with `cards.css`'s container queries for consistent multi-column layout.
 
 ---
@@ -385,7 +380,7 @@ review discovering the gap costs more than asking would have:
 6. **Security & sensitivity** — explicit classification and threat model for new stored data — what it protects against, and what it doesn't, never implying more than the mechanism guarantees.
 7. **UI/UX consistency** — reuse this app's existing patterns (card layout, labels, a11y structure); name the pattern being reused.
 8. **Legal/compliance framing** — never assert or resolve a legal-sufficiency question in a planning doc; flag it for a qualified person, and be precise about what this app's validation does and doesn't guarantee.
-9. **Cross-form method consistency** — Guardian Inventory, Annual/Final/Trust Accounting, and Simplified Accounting each implement the same recurring concepts (ward-percentage apportionment, signature blocks, schedule totals, statutory declarations, address rendering) independently, across their own UI, schema, Excel, and PDF surfaces. Before changing how any one of them computes, renders, or captures one of these, **read — not just grep —** the other two forms' equivalent UI, `probate-guardian-data-model.csv` rows, `excel.js`, `pdf-model.js`, embedded template, and tests for the same pattern, and check this app's own other implementations of the same concept (a classic-script global like `legacy-app.js`'s `calc` counts) before assuming none exists. Classify what you find: authority-backed (the court's own templates genuinely differ — §5), defective, or unresolved — a divergence is not automatically a bug; some are required. **Report it and get scope authorization before fixing it (§3)** — this is a discovery obligation, not a license to silently expand a task into fixing every sibling-form gap it turns up. (Precedent: Milestone 60's first pass found Guardian Inventory's PDF dropping ward-percentage math in 8 of 11 schedules; a second pass, checking the sibling forms and this app's own pre-existing `legacy-app.js` calculator that had already solved the same problem correctly, found the PDF was also using the wrong audit-fee tiers, omitting an entire bond-requirement table the UI already computes, and that Simplified Accounting independently omits the same statutory remuneration declaration Milestone 58D specifically fixed for Annual.)
+9. **Cross-form method consistency** — Guardian Inventory, Annual/Final/Trust Accounting, and Simplified Accounting each implement the same recurring concepts (ward-percentage apportionment, signature blocks, schedule totals, statutory declarations, address rendering) independently, across their own UI, schema, Excel, and PDF surfaces. Before changing how any one of them computes, renders, or captures one of these, **read — not just grep —** the other two forms' equivalent UI, `probate-guardian-data-model.csv` rows, `excel.js`, `pdf-model.js`, embedded template, and tests for the same pattern, and check this app's own other implementations of the same concept (a shared helper like the Initial Inventory's `calc` in `guardian-inventory/totals.js` counts) before assuming none exists. Classify what you find: authority-backed (the court's own templates genuinely differ — §5), defective, or unresolved — a divergence is not automatically a bug; some are required. **Report it and get scope authorization before fixing it (§3)** — this is a discovery obligation, not a license to silently expand a task into fixing every sibling-form gap it turns up. (Precedent: Milestone 60's first pass found Guardian Inventory's PDF dropping ward-percentage math in 8 of 11 schedules; a second pass, checking the sibling forms and this app's own pre-existing `legacy-app.js` calculator that had already solved the same problem correctly, found the PDF was also using the wrong audit-fee tiers, omitting an entire bond-requirement table the UI already computes, and that Simplified Accounting independently omits the same statutory remuneration declaration Milestone 58D specifically fixed for Annual.)
 
 ---
 

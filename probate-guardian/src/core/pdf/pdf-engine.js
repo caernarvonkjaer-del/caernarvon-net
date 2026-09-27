@@ -29,6 +29,7 @@ import {
 } from './supplemental-pdf.js';
 import { maskSSN } from './ssn-format.js';
 import { readPngDimensions, base64ToBytes } from '../images/png-dimensions.js';
+import { getD } from '../state.js';
 
 // Milestone 40C-A item 7: drawn in place of the court caption when the filing
 // has no county. Deliberately not a fill-in-the-blank caption ("IN AND FOR
@@ -176,7 +177,7 @@ export async function generateCourtFormPdf(model, options = {}) {
   doc.setFont('PGSans', 'normal');
 
   const { metadata, sections } = model;
-  const sourceData = options.sourceData || (typeof window !== 'undefined' ? window.D : null);
+  const sourceData = options.sourceData || (typeof window !== 'undefined' ? getD() : null);
   const wardName = metadata.wardName || 'Ward';
   // Milestone 63E: what the two header draw sites say about the case -- the Case #
   // that has always been there, plus the UCN when the filing has one. Decided once,

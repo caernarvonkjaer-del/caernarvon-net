@@ -25,21 +25,23 @@ import { createBankAccountId } from '../../core/accounting/bank-accounts.js';
 import { alertModal } from '../../core/ui/dialogs.js';
 import { setStatus, scheduleStatusClear } from '../../core/ui/transient-status.js';
 import { beginExport } from '../../core/ui/export-guard.js';
+import { guardianHasAnyData } from '../../core/validation/row-started.js';
+import { assertWorkbookWithinLimits, getImportProgressEl, sanitizeObjectDataInPlace, validateImportFile } from '../../core/security/input-hardening.js';
+import { capitalizeImportedFields } from '../../core/form/form-contract.js';
+import { r2 } from '../../core/format/money.js';
+import { formDisplayName } from '../../core/filing/filing-registry.js';
+import { getD, requestSave } from '../../core/state.js';
+import { ensureTemplate } from '../../core/persistence/templates.js';
+import { setAccountingFilingType } from './filing-type.js';
+import { markFilingRevisionChanged } from '../../core/filing/output-revision.js';
+import { getCurrentPage, renderPage } from '../../core/navigation/router.js';
+import { calcTotalsAnnual, annualReconcileState } from './totals.js';
 
-const {
-  renderPage, ensureTemplate, calcTotalsAnnual,
-  annualReconcileState, guardianHasAnyData, formDisplayName,
-  getImportProgressEl, validateImportFile, assertWorkbookWithinLimits,
-  capitalizeImportedFields,
-  sanitizeObjectDataInPlace, autoSave, getCurrentPage,
-} = window;
 
-// Rounds to cents, the same formula as legacy-app.js's top-level r2. That
-// one is declared with const, which never makes a window property, so the
-// r2 this file used to take off window above was always undefined: the
-// first Schedule D ward percentage stopped every Annual import with
-// "r2 is not a function" (tests/e2e/annual-import-ward-percentage.spec.ts).
-const r2 = (v) => Math.round(v * 100) / 100;
+// r2 is imported (src/core/format/money.js, Milestone 70's 70B). It used to be
+// taken off window, where legacy-app.js's const r2 never was: the first
+// Schedule D ward percentage stopped every Annual import with "r2 is not a
+// function" (tests/e2e/annual-import-ward-percentage.spec.ts).
 
 // Line 20 (net assets computed from the accounting) and Line 30 (net assets
 // from the Schedule D listings) -- moved here from legacy-app.js's top
@@ -115,7 +117,7 @@ export const ANNUAL_EXCEL_CAPS={
     unsupported:"the court's Excel workbook has no entry area for Part XI, so remuneration cannot be written to it. File this accounting as PDF, where Part XI prints in full."},
 };
 export async function doSaveExcel(){
-  const filingDescriptor = resolveFilingDescriptor(window.D).descriptor;
+  const filingDescriptor = resolveFilingDescriptor(getD()).descriptor;
   const type = filingDescriptor?.inventoryType || 'annual';
   // Schedule B-4's own limits are not a simple row cap: they depend on how
   // many bank accounts a filing has and how its disbursements divide between
@@ -130,7 +132,7 @@ export async function doSaveExcel(){
   // validation.legacy-unmapped, which IS bypassable -- so a mis-shaped code
   // here would quietly offer the filer a "continue anyway" button that
   // produces a workbook attributing money to the wrong bank account.
-  const b4Issues = planSchB4Export(window.D?.schB4, window.D?.schB4Accounts, SCH_B4_ACCOUNT_BLOCKS)
+  const b4Issues = planSchB4Export(getD()?.schB4, getD()?.schB4Accounts, SCH_B4_ACCOUNT_BLOCKS)
     .problems.map(p => createIssue(`excel.capacity.${type}.schB4-${p.code}`, {
       message: p.message,
       label: 'Schedule B-4 — All Other Disbursements',
@@ -138,10 +140,10 @@ export async function doSaveExcel(){
       route: '/schb4',
     }));
   const capacityIssues = [
-    ...getExcelCapacityIssues(type, window.D, ANNUAL_EXCEL_CAPS),
+    ...getExcelCapacityIssues(type, getD(), ANNUAL_EXCEL_CAPS),
     ...b4Issues,
   ];
-  const authorization = authorizeFilingOutput(window.D, () => validateAnnual(), {
+  const authorization = authorizeFilingOutput(getD(), () => validateAnnual(), {
     capability: 'excel',
     additionalIssues: capacityIssues,
   });
@@ -165,14 +167,14 @@ export async function doSaveExcel(){
   const btn = beginExport('[data-annual-action="save-excel"]');
   if (!btn) return;
   try{
-    const inv=window.D;
+    const inv=getD();
     const templateB64=await ensureTemplate('annual');
     if(!templateB64){await alertModal('Template not loaded. Please import the Excel template first.');return;}
 
     // Milestone 51D: setCell now comes from core/excel/excel-engine.js. The local
     // closure this replaces was byte-identical in all three feature excel.js files
     // apart from a null-sheet guard, and routed text through the same
-    // sanitizeForExcel() the shared version delegates to.
+    // formula-injection guard, sanitizeCellValue().
     // nv/pv were local closures character-identical to core numValue/percentValue.
     const nv=numValue, pv=percentValue;
     // Dates are written through setDateCell() (Milestone 67E): a real Excel
@@ -610,7 +612,7 @@ export async function importExcel(input){
       const gcPct=(ws,addr)=>{const v=gcv(ws,addr);if(v==null||v==='')return '';const n=typeof v==='number'?v:parseFloat(v);if(isNaN(n))return '';return n<=1?String(r2(n*100)):String(n);};
       const rowHasData=(...vals)=>vals.some(v=>v!=null&&String(v).trim()!=='');
 
-      const D=window.D;
+      const D=getD();
 
       // PART I — cover
       const p1=workbook.getWorksheet('PART I');
@@ -625,7 +627,7 @@ export async function importExcel(input){
         D.typeOfGuardianship=gcStr(p1,'D22');
         D.amendedForm=gcStr(p1,'J6');
         D.filingType=gcStr(p1,'H4')||'Annual';
-        window.setAccountingFilingType?.(D.filingType);
+        setAccountingFilingType(D.filingType);
         // Milestone 40C-A item 5: an imported workbook with no county leaves the
         // filing blank rather than acquiring Pinellas. An explicit workbook
         // county is preserved exactly.
@@ -899,8 +901,8 @@ export async function importExcel(input){
       // otherwise the page would show the answer those imply while the
       // sidebar kept asking for it.
       migrateBondDepository(D);
-      autoSave();
-      window.markFilingRevisionChanged?.('excel-import');
+      requestSave();
+      markFilingRevisionChanged('excel-import');
       setStatus(prog,'✓ Template loaded and data imported successfully.');
       scheduleStatusClear(prog);
       renderPage(getCurrentPage());

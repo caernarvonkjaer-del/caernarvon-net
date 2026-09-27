@@ -6,10 +6,17 @@
 // meaningful baseline: it's what ships today, before any tooling or
 // extraction touches it.
 //
-// Usage: node scripts/measure-baseline.mjs [--target=source|web|portable]
+// Usage: node scripts/measure-baseline.mjs [--target=source|web|portable|portable-http] [--output=<path>]
+//
+// Milestone 70, 70A: --output writes the record to a path of your choosing
+// (repo-relative), so MS 70's before/after records never overwrite
+// Milestone 13's; without it the Milestone 13 file is written as before.
+// Every record carries the Node and browser versions, the git SHA, and any
+// page or console errors seen while measuring. `portable-http` measures the
+// portable build as production serves it (scripts/serve-portable-http.mjs).
 
 import { chromium } from '@playwright/test';
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import path from 'node:path';
 import fs from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
@@ -20,10 +27,12 @@ const root = path.resolve(__dirname, '..');
 
 const targetArg = process.argv.find((a) => a.startsWith('--target='));
 const target = targetArg ? targetArg.split('=')[1] : 'source';
+const outputArg = process.argv.find((a) => a.startsWith('--output='));
 
 const SERVERS = {
-  source: { args: ['vite', 'preview', '--outDir', '.', '--port', '4322', '--strictPort'], url: 'http://localhost:4322/index.html' },
-  web: { args: ['vite', 'preview', '--outDir', 'dist/web', '--port', '4323', '--strictPort'], url: 'http://localhost:4323/probate-guardian/' },
+  source: { command: 'npx', args: ['vite', 'preview', '--outDir', '.', '--port', '4322', '--strictPort'], url: 'http://localhost:4322/index.html' },
+  web: { command: 'npx', args: ['vite', 'preview', '--outDir', 'dist/web', '--port', '4323', '--strictPort'], url: 'http://localhost:4323/probate-guardian/' },
+  'portable-http': { command: 'node', args: ['scripts/serve-portable-http.mjs', '--port=4334'], url: 'http://localhost:4334/Portals/0/Guardian-Forms/index.html' },
 };
 
 async function waitForServer(url, timeoutMs = 15000) {
@@ -38,6 +47,27 @@ async function waitForServer(url, timeoutMs = 15000) {
   throw new Error(`Server at ${url} did not become ready within ${timeoutMs}ms`);
 }
 
+// Milestone 70, 70L: a server left running by an earlier run would answer on
+// this port and be measured in place of this run's -- refuse it -- and
+// proc.kill() on a shell: true child ends only the shell on Windows, which is
+// how one gets left running, so the whole process tree is stopped.
+async function refuseBusyPort(url) {
+  try {
+    await fetch(url);
+  } catch {
+    return;
+  }
+  throw new Error(`Something is already answering at ${url} -- stop it (a server left by an earlier run?) before measuring`);
+}
+
+function stopServer(proc) {
+  if (process.platform === 'win32' && proc.pid) {
+    spawnSync('taskkill', ['/pid', String(proc.pid), '/T', '/F'], { stdio: 'ignore' });
+  } else {
+    proc.kill();
+  }
+}
+
 async function withServer(target, fn) {
   if (target === 'portable') {
     const filePath = path.join(root, 'dist/portable/index.html');
@@ -45,12 +75,13 @@ async function withServer(target, fn) {
   }
   const cfg = SERVERS[target];
   if (!cfg) throw new Error(`Unknown target: ${target}`);
-  const proc = spawn('npx', cfg.args, { cwd: root, stdio: 'ignore', shell: true });
+  await refuseBusyPort(cfg.url);
+  const proc = spawn(cfg.command, cfg.args, { cwd: root, stdio: 'ignore', shell: true });
   try {
     await waitForServer(cfg.url);
     return await fn(cfg.url);
   } finally {
-    proc.kill();
+    stopServer(proc);
   }
 }
 
@@ -59,9 +90,10 @@ async function staticScriptBytes(target) {
   // comparable once code moves into hashed chunk files (sum of chunks
   // actually loaded on the initial path), and doesn't require any
   // instrumentation added to index.html itself.
+  const distDir = target === 'portable-http' ? 'portable' : target;
   const htmlPath = target === 'source'
     ? path.join(root, 'index.html')
-    : path.join(root, 'dist', target, 'index.html');
+    : path.join(root, 'dist', distDir, 'index.html');
   const html = await fs.readFile(htmlPath, 'utf8');
   const inlinePattern = /<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g;
   let match;
@@ -69,7 +101,7 @@ async function staticScriptBytes(target) {
   while ((match = inlinePattern.exec(html))) inline += Buffer.byteLength(match[1], 'utf8');
 
   const external = [];
-  if (target === 'portable') {
+  if (target === 'portable' || target === 'portable-http') {
     for (const script of html.matchAll(/<script[^>]*\bsrc="([^"]+)"[^>]*><\/script>/g)) {
       const src = script[1];
       if (/^(?:https?:|data:|\/\/)/i.test(src)) continue;
@@ -90,12 +122,20 @@ const ROUTE_CYCLE = ['/dashboard', '/a1', '/a2', '/b1', '/b2', '/b3', '/b4', '/c
 async function measure(url) {
   const browser = await chromium.launch();
   const page = await browser.newPage();
+  const pageErrors = [];
+  const consoleErrors = [];
+  page.on('pageerror', (e) => pageErrors.push(e.message));
+  page.on('console', (m) => { if (m.type() === 'error') consoleErrors.push(m.text()); });
   const cdp = await page.context().newCDPSession(page);
   await cdp.send('Performance.enable');
 
   await page.addInitScript(() => {
     delete window.showSaveFilePicker;
     delete window.showOpenFilePicker;
+    // The terms screen now comes before anything else (added after
+    // Milestone 13 wrote this script); accept it the way the e2e harness's
+    // gotoApp() does, so the app actually starts and is measured running.
+    localStorage.setItem('pg.termsAccepted', '2026-09-15');
   });
 
   await page.goto(url, { waitUntil: 'networkidle' });
@@ -125,21 +165,26 @@ async function measure(url) {
   // schedule page 5x, forcing GC before each heap read. Informational only
   // in Milestone 1 -- there's no dispose()/cleanup logic yet for a bound to
   // mean anything against (that's step 8, once mount()/dispose() exist).
-  await page.evaluate(() => {
-    document.getElementById('startup-newcase-btn')?.click();
-  });
-  await page.waitForTimeout(200);
-  await page.evaluate(() => {
-    document.querySelector('#security-choice-overlay [data-startup-action="select-security"][data-security-mode="none"]')?.click();
-  });
-  await page.waitForTimeout(200);
-  await page.evaluate(() => { (window).addWard?.('Baseline Measurement Ward', 'guardian'); });
-  await page.waitForFunction(() => window.D?.wardName === 'Baseline Measurement Ward');
+  //
+  // Milestone 70, 70L: the app has no window globals to drive it with any
+  // more (window.addWard, window.D and window.navigate went in 70J-70K), and
+  // this script measures bundled builds too, where the app's modules cannot be
+  // imported by URL. So, with the first-page figures above taken on a plain
+  // load as before, the page is reloaded with the test runner's pre-boot flag
+  // and the cycle goes through GuardianForms.testing, which calls the same
+  // functions and waits for each page. The heap samples are of that reloaded
+  // page; the adapter it adds is a few kilobytes.
+  await page.addInitScript(() => { window.__GUARDIAN_FORMS_TEST_MODE__ = true; });
+  await page.reload({ waitUntil: 'networkidle' });
+  await page.locator('#startup-newcase-btn').click();
+  await page.locator('#security-choice-overlay [data-startup-action="select-security"][data-security-mode="none"]').click();
+  await page.evaluate(() => window.GuardianForms.testing.createFiling.add('Baseline Measurement Ward', 'guardian'));
+  await page.waitForFunction(() => window.GuardianForms.testing.snapshot().filing?.wardName === 'Baseline Measurement Ward');
 
   const heapSamples = [];
   for (let cycle = 0; cycle < 5; cycle++) {
     for (const route of ROUTE_CYCLE) {
-      await page.evaluate((r) => (window).navigate?.(r), route);
+      await page.evaluate((r) => window.GuardianForms.testing.navigate(r), route);
     }
     await cdp.send('HeapProfiler.enable');
     await cdp.send('HeapProfiler.collectGarbage');
@@ -147,8 +192,12 @@ async function measure(url) {
     heapSamples.push(m.JSHeapUsedSize);
   }
 
+  const browserVersion = browser.version();
   await browser.close();
   return {
+    browserVersion,
+    pageErrors,
+    consoleErrors,
     JSHeapUsedSize: cdpMetrics.JSHeapUsedSize,
     Nodes: cdpMetrics.Nodes,
     ScriptDuration: cdpMetrics.ScriptDuration,
@@ -163,6 +212,7 @@ async function measure(url) {
 
 const staticScripts = await staticScriptBytes(target);
 const result = await withServer(target, measure);
+const isPortable = target === 'portable' || target === 'portable-http';
 const portableExternalBytes = staticScripts.external.reduce((total, script) => total + script.bytes, 0);
 const portableApplicationExternalBytes = staticScripts.external
   .filter(script => isApplicationScript(script.src))
@@ -179,15 +229,15 @@ const record = {
   }))),
   staticInlineScriptBytes: staticScripts.inline,
   staticExternalScripts: staticScripts.external,
-  initialEvaluatedScriptBytes: staticScripts.inline + (target === 'portable' ? portableExternalBytes : result.initialScriptResourceDecodedBytes),
-  initialApplicationScriptBytes: staticScripts.inline + (target === 'portable' ? portableApplicationExternalBytes : runtimeApplicationBytes),
+  nodeVersion: process.version,
+  initialEvaluatedScriptBytes: staticScripts.inline + (isPortable ? portableExternalBytes : result.initialScriptResourceDecodedBytes),
+  initialApplicationScriptBytes: staticScripts.inline + (isPortable ? portableApplicationExternalBytes : runtimeApplicationBytes),
   ...result,
 };
 
 console.log(JSON.stringify(record, null, 2));
 
-const outDir = path.join(root, 'tests/baseline');
-await fs.mkdir(outDir, { recursive: true });
-const outputName = `milestone-13-${target}.json`;
-await fs.writeFile(path.join(outDir, outputName), JSON.stringify(record, null, 2));
-console.log(`\nSaved to tests/baseline/${outputName}`);
+const outputRel = outputArg ? outputArg.slice('--output='.length) : `tests/baseline/milestone-13-${target}.json`;
+await fs.mkdir(path.dirname(path.join(root, outputRel)), { recursive: true });
+await fs.writeFile(path.join(root, outputRel), JSON.stringify(record, null, 2) + '\n');
+console.log(`\nSaved to ${outputRel}`);

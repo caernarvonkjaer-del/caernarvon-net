@@ -26,8 +26,8 @@ const recipient1Name = (page: Page) => recipientCards(page).first().locator('inp
 
 async function openCertificate(page: Page, type: string, route: string) {
   await freshStartNoPassword(page);
-  await page.evaluate(([t]) => (window as any).addWard(`Attestation ${t}`, t), [type]);
-  await page.evaluate((r) => (window as any).navigate(r), route);
+  await page.evaluate(([t]) => (window as any).GuardianForms.testing.createFiling.add(`Attestation ${t}`, t), [type]);
+  await page.evaluate((r) => (window as any).GuardianForms.testing.navigate(r), route);
 }
 
 for (const family of FAMILIES) {
@@ -72,10 +72,11 @@ for (const family of FAMILIES) {
       await openCertificate(page, family.type, family.route);
       await page.evaluate(([rows]) => {
         const w = window as any;
-        w.D[rows][0] = { ...(w.D[rows][0] || {}), name: 'Already Listed' };
-        return w.navigate(location.hash.replace(/^#/, '') || '/');
+        const t = w.GuardianForms.testing;
+        t.patchFiling({ [`${rows}.0`]: { ...((t.field(rows) || [])[0] || {}), name: 'Already Listed' } });
+        return w.GuardianForms.testing.navigate(location.hash.replace(/^#/, '') || '/');
       }, [family.rows]);
-      await page.evaluate((r) => (window as any).navigate(r), family.route);
+      await page.evaluate((r) => (window as any).GuardianForms.testing.navigate(r), family.route);
 
       await expect(question(page, family.attestation)).toBeHidden();
       await expect(recipient1Name(page)).toHaveValue('Already Listed');

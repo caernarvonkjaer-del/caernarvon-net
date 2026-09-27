@@ -10,9 +10,9 @@ import { freshStartNoPassword, createWard, fillMinimalValidPlanInitialWard } fro
 // exclusive-none.js) now covers 10D and 10E: "None" clears the devices and a
 // device clears "None", on the click, in the model and on screen.
 
-const go = (page: Page, route: string) => page.evaluate((r) => (window as any).navigate(r), route);
+const go = (page: Page, route: string) => page.evaluate((r) => (window as any).GuardianForms.testing.navigate(r), route);
 const box = (page: Page, id: string) => page.locator(`#main-content input#${id}`);
-const model = (page: Page, keys: string[]) => page.evaluate((k) => Object.fromEntries(k.map((key) => [key, (window as any).D[key]])), keys);
+const model = (page: Page, keys: string[]) => page.evaluate((k) => Object.fromEntries(k.map((key) => [key, (window as any).GuardianForms.testing.field(key)])), keys);
 
 for (const group of [
   { label: '10D — assistive devices used', route: '/p7', none: 'usesNone', a: 'usesWheelchair', b: 'usesGlasses' },

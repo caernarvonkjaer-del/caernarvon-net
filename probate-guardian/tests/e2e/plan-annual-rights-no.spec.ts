@@ -17,10 +17,10 @@ import { extractPdfText } from './support/pdf-extract';
 // blank right stays blank.
 
 const RIGHTS_ROUTE = '/p6';
-const go = (page: Page, route: string) => page.evaluate((r) => (window as any).navigate(r), route);
+const go = (page: Page, route: string) => page.evaluate((r) => (window as any).GuardianForms.testing.navigate(r), route);
 const radio = (page: Page, right: string, value: string) => page.locator(`#main-content input[name="right_${right}"][value="${value}"]`);
-const rights = (page: Page) => page.evaluate(() => ({ ...(window as any).D.rights }));
-const issues = (page: Page) => page.evaluate(() => ((window as any).validatePlanAnnual() || []).map((i: any) => String(i?.message ?? i)));
+const rights = (page: Page) => page.evaluate(() => ({ ...(window as any).GuardianForms.testing.field('rights') }));
+const issues = (page: Page) => page.evaluate(async () => ((await (window as any).GuardianForms.testing.validate.open()) || []).map((i: any) => String(i?.message ?? i)));
 
 test('question 6 shows the court form\'s four columns, "No" is a stored answer, and "Yes" keeps its stored value', async ({ page }) => {
   test.setTimeout(120_000);
@@ -49,7 +49,7 @@ test('question 6 shows the court form\'s four columns, "No" is a stored answer, 
   expect((await issues(page)).filter((m) => /still unanswered in question 6/.test(m))).toEqual([]);
 
   // The PDF prints the form's words.
-  await page.evaluate(() => (window as any).flushPendingSave());
+  await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
   await go(page, '/print');
   const button = page.locator('[data-form-action="save-pdf-plan-annual"]');
   await expect(button).toBeEnabled({ timeout: 20_000 });
@@ -65,7 +65,7 @@ test('a plan saved with "Capable of restoration" shows that answer as Yes, and a
   await freshStartNoPassword(page);
   await createWard(page, 'Annual Plan Rights Legacy', 'planAnnual');
   await fillMinimalValidPlanAnnualWard(page);
-  await page.evaluate(() => { const w = window as any; w.D.rights.travel = 'Capable of restoration'; w.D.rights.marry = ''; w.autoSave(); });
+  await page.evaluate(() => { const w = window as any; w.GuardianForms.testing.patchFiling({ 'rights.travel': 'Capable of restoration' }); w.GuardianForms.testing.patchFiling({ 'rights.marry': '' }); w.GuardianForms.testing.save.auto(); });
   await go(page, RIGHTS_ROUTE);
   await expect(radio(page, 'travel', 'Capable of restoration')).toBeChecked();
   await expect(page.locator('#main-content input[name="right_marry"]:checked')).toHaveCount(0);

@@ -24,34 +24,27 @@ import { renderPartyNameField } from '../../core/form/cards/guardian-attorney-ca
 // "shared" helper with exactly one user is not an abstraction, and its
 // general name invited the next type to contort its page to fit.
 import { renderFormField } from '../../core/form/form-fields.js';
+import { esc } from '../../core/filing/escape-html.js';
+import { ic } from '../../core/ui/icons.js';
+import { formatDisplayDate } from '../../core/form/date-parser.js';
+import { normalizePlanGuardians } from '../../core/filing/models/plan-rows.js';
+import { planSimplifiedCompletion } from '../../core/status/completion.js';
+import { getD, requestSave } from '../../core/state.js';
+import { chkP, inpS, pageNavS, txtP, yesNoCheckboxS } from '../../core/form/field-html.js';
+import { renderScheduleDocsSection } from '../../core/filing/schedule-docs.js';
+import { setPath } from '../../core/form/paths.js';
+import { openFloridaCourtPortal } from '../../core/shell/court-portal.js';
+import { printCurrentFilingPdf } from '../../core/pdf/print-current.js';
 // Simplified Annual Plan — the second feature extraction (Milestone 3,
-// Phase B/C of INDEX-SPLIT-PLAN.md's migration sequence). Dynamically
-// imported by legacy-app.js's mountPlanSimplifiedFeature()/
-// mountPlanSimplifiedNav() bridges (built on src/core/feature-bridge.js),
-// never statically imported.
+// Phase B/C of INDEX-SPLIT-PLAN.md's migration sequence). Loaded only when one of its pages
+// is shown, through src/features-loader.js's feature services
+// (src/core/feature-bridge.js mounts it), never statically imported.
 //
-// legacy-app.js stays a classic (non-module) script (Milestone 1's recorded
-// decision), so its top-level function declarations are real `window`
-// properties this module can destructure -- but a bare top-level `let`
-// (activeInventoryType, currentPage) is not; see src/core/state.js's file
-// header for the full explanation. Everything below that isn't defined in
-// this file is one of those legacy globals, deliberately left in place
-// rather than moved or wrapped: txtP/chkP/yesNoCheckboxS are still shared
-// with the three not-yet-extracted Plan types, and the rest (inpS,
-// pageNavS, renderScheduleDocsSection, esc, formatDisplayDate)
-// are shared across all 9 ward types (see the Milestone 3 plan's
-// "Problem 3"). Milestone 41-2: formatName/formatPhone/formatAddress
-// dropped from this destructure -- their only call sites (the Guardian
-// block's name/phone/mailingAddress fields) now go through
-// renderFormField() via guardian-attorney-card.js, which applies the same
-// formatters automatically from each field's inferred kind.
-// Milestone 51C: `countyInputS` dropped for the same reason -- destructured
-// here but never called. Of the four Plan types only plan-minor still calls it.
-const {
-  esc, ic, inpS, pageNavS,
-  renderScheduleDocsSection, txtP, chkP, yesNoCheckboxS,
-  formatDisplayDate,
-} = window;
+// Until Milestone 70 this module destructured the classic monolith's globals
+// off window -- the shared Plan field helpers and lists -- and this comment
+// recorded which, and why each stayed in the monolith (Milestones 3-6, 41 and
+// 51C). Milestone 70 moved every one into a module this file imports; 70K
+// removed the last window read, and 70L deleted the monolith.
 
 // print.js is dynamically imported only when the user reaches /print or
 // triggers PDF export (Milestone 3, Phase C) -- same lazy boundary as
@@ -77,8 +70,8 @@ function bindEvents(container) {
     const actionElement = event.target instanceof Element ? event.target.closest('[data-plan-simplified-action]') : null;
     if (!actionElement) return;
     switch (actionElement.dataset.planSimplifiedAction) {
-      case 'open-court-portal': window.openFloridaCourtPortal(); break;
-      case 'print': window.printCurrentFilingPdf(); break;
+      case 'open-court-portal': openFloridaCourtPortal(); break;
+      case 'print': printCurrentFilingPdf(); break;
       case 'save-pdf': _printModule.doSavePdf(); break;
     }
   }, { signal: controller.signal });
@@ -93,14 +86,16 @@ function ensurePrintModule() {
   return _printModulePromise;
 }
 
-export async function mount(container, page) {
+export async function mount(container, page, { signal } = {}) {
   // Milestone 68C: a plan saved before the Certificate of Service existed
   // gains its fields on load. Idempotent, so every mount may call it.
-  if (migratePlanCertificateOfService(window.D)) window.autoSave?.();
+  if (migratePlanCertificateOfService(getD())) requestSave();
   let html;
   let isPrint = false;
   if (page === '/print') {
     await ensurePrintModule();
+    // Superseded while its print module loaded (Milestone 70, 70K).
+    if (signal?.aborted) return;
     html = _printModule.pagePrintPlanSimplified();
     isPrint = true;
   } else {
@@ -124,7 +119,7 @@ export async function mount(container, page) {
       // already-fully-resolved image path (it may be a flat scalar path
       // like `attorney_signatureImage` for other roles, not always
       // `${cardId}.signatureImage`) -- write it directly, no concatenation.
-      setImage: (imagePath, dataUrl) => window.setPath(window.D, imagePath, dataUrl),
+      setImage: (imagePath, dataUrl) => setPath(getD(), imagePath, dataUrl),
       route: page,
     }));
   }
@@ -161,8 +156,10 @@ function buildNavPlanSimplified(container){
 }
 
 function getSummaryConfigPlanSimplified(){
-  const d=window.D;
-  const nav=window.computeNavChecks();
+  const d=getD();
+  // This filing's own section marks (Milestone 70, 70D: its engine's evaluator,
+  // imported; it was window.computeNavChecks()).
+  const nav=planSimplifiedCompletion(d);
   // Kept as a finer-grained progress count alongside (not instead of) the
   // standardized page-level badges below -- computeNavChecks() has no
   // equivalent partial-credit number, and this one's still accurate since
@@ -197,7 +194,7 @@ function getSummaryConfigPlanSimplified(){
 }
 
 function pagePlanSCover(){
-  const d=window.D;
+  const d=getD();
   return `<div class="schedule-page">
     <h1>Simplified Annual Plan — Cover</h1>
     <div class="schedule-instructions">This plan reports on the ward as a person: where they have lived, the care they received, and how they are doing. It is a separate filing from any accounting, which reports on their money and property.</div>
@@ -226,7 +223,7 @@ function pagePlanSCover(){
 }
 
 function pagePlanSQuestions(){
-  const d=window.D;
+  const d=getD();
   const q=(n,title,body)=>`<div class="plan-question"><div class="plan-question-num">Question ${n}</div><h2 style="font-size:.95rem;font-weight:650;color:var(--ink);margin-bottom:.7rem;line-height:1.45;">${title}</h2>${body}</div>`;
   return `<div class="schedule-page">
     <h1>The Plan — Questions 1–9</h1>
@@ -275,8 +272,8 @@ function pagePlanSQuestions(){
 }
 
 function pagePlanSSignatures(){
-  const d=window.D;
-  const g=window.normalizePlanGuardians(d);
+  const d=getD();
+  const g=normalizePlanGuardians(d);
   const block=(i,label)=>{
     const p=g[i]||{};
     return `<div class="col-12 col-lg-6"><div class="entry-card mb-0 h-100">
@@ -346,7 +343,7 @@ function pagePlanSSignatures(){
 // Milestone 42F: every issue states its own field path (validation-issue.js)
 // -- the adapter no longer has to recover it from the message text.
 export function validatePlanSimplified(){
-  const d=window.D;
+  const d=getD();
   const errs=[];
   const T='planSimplified';
   const issue=issueFactory(T);
@@ -409,7 +406,6 @@ export function validatePlanSimplified(){
 // Milestone 33, Phase 2.3: see annual-accounting/index.js's identical comment --
 // exposing this lets the shared guidance panel itemize Plan Simplified's own
 // missing fields instead of only showing a generic message.
-window.validatePlanSimplified = validatePlanSimplified;
 
 // ── Certificate of Service (Milestone 68C) ───────────────────────────────
 // Shared with the other three Plans; see core/filing/plan-certificate-of-service.js.
@@ -418,7 +414,7 @@ window.validatePlanSimplified = validatePlanSimplified;
 const CERT_CFG = { attorneyName: (d) => d.attorney || '', planNoun: 'plan', optional: true };
 function pagePlanSCertificate(){
   return `<div class="schedule-page">
-    ${renderPlanCertificateOfServicePage({ filing: window.D, route: '/p4', cfg: CERT_CFG })}
+    ${renderPlanCertificateOfServicePage({ filing: getD(), route: '/p4', cfg: CERT_CFG })}
     ${pageNavS('/p3',null)}
   </div>`;
 }

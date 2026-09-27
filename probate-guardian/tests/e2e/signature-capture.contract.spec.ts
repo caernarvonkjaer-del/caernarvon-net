@@ -15,7 +15,7 @@ import {
 // path agrees with the UI, not just the validator in isolation.
 
 async function gotoSignaturesPage(page: import('@playwright/test').Page) {
-  await page.evaluate(() => (window as any).navigate('/p3'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/p3'));
   await page.locator('[data-signature-state-group^="planGuardians.0"]').waitFor({ state: 'visible' });
 }
 
@@ -31,7 +31,7 @@ test.describe('Milestone 39-B: signature state control (pilot: Plan Simplified G
 
     // And the real export path already treats this filing as complete --
     // the inference is read-time only, never written back into window.D.
-    const storedState = await page.evaluate(() => (window as any).D.planGuardians[0].signatureState);
+    const storedState = await page.evaluate(() => (window as any).GuardianForms.testing.field('planGuardians.0.signatureState'));
     expect(storedState).toBeFalsy();
   });
 
@@ -48,10 +48,10 @@ test.describe('Milestone 39-B: signature state control (pilot: Plan Simplified G
     // export gate reading window.D was a sleep long enough to cover the
     // re-render. Polling the model asserts the handler actually ran.
     await expect
-      .poll(() => page.evaluate(() => (window as any).D.planGuardians[0].signatureState))
+      .poll(() => page.evaluate(() => (window as any).GuardianForms.testing.field('planGuardians.0.signatureState')))
       .toBe('none');
 
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
     await expect(page.locator('#print-doc-container .pdf-page').first()).toBeVisible({ timeout: 15000 });
     await expect(page.locator('.print-preview-banner')).toContainText('Ready to export');
   });
@@ -60,11 +60,11 @@ test.describe('Milestone 39-B: signature state control (pilot: Plan Simplified G
     await freshStartNoPassword(page);
     await createWard(page, 'Sig Typed Incomplete Ward', 'planSimplified');
     await fillMinimalValidPlanSimplifiedWard(page);
-    await page.evaluate(() => { (window as any).D.planGuardians[0].signatureDate = ''; });
+    await page.evaluate(() => { (window as any).GuardianForms.testing.patchFiling({ 'planGuardians.0.signatureDate': '' }); });
     await gotoSignaturesPage(page);
 
     await page.locator('[data-signature-state-group="planGuardians.0"] input[value="typed"]').check();
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
 
     await expect(page.locator('body')).toContainText('date signed is required to apply "/s/" Signed', { timeout: 10000 });
     await expect(page.locator('#print-doc-container .pdf-page')).toHaveCount(0);
@@ -84,7 +84,7 @@ test.describe('Milestone 39-B: signature state control (pilot: Plan Simplified G
     await expect(pad).toBeVisible();
 
     // Before applying anything, the filing is blocked on the stamp image.
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
     await expect(page.locator('body')).toContainText('signature stamp image is required', { timeout: 10000 });
     await gotoSignaturesPage(page);
 
@@ -98,10 +98,10 @@ test.describe('Milestone 39-B: signature state control (pilot: Plan Simplified G
     await page.mouse.up();
     await page.locator('[data-sig-action="apply"]').click();
 
-    await expect.poll(() => page.evaluate(() => !!(window as any).D.planGuardians[0].signatureImage)).toBe(true);
+    await expect.poll(() => page.evaluate(() => !!(window as any).GuardianForms.testing.field('planGuardians.0.signatureImage'))).toBe(true);
     await expect(page.locator('.signature-stamp-preview img')).toBeVisible();
 
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
     await expect(page.locator('#print-doc-container .pdf-page').first()).toBeVisible({ timeout: 15000 });
     await expect(page.locator('.print-preview-banner')).toContainText('Ready to export');
 
@@ -114,7 +114,7 @@ test.describe('Milestone 39-B: signature state control (pilot: Plan Simplified G
       const { generateCourtFormPdf } = await import('/probate-guardian/src/core/pdf/pdf-engine.js');
       const { finalizeCourtFormPdf } = await import('/probate-guardian/src/core/pdf/pdf-finalizer.js');
       const { ensurePdfjs } = await import('/probate-guardian/src/core/pdf/pdfjs-loader.js');
-      const model = buildPlanSimplifiedModel((window as any).D);
+      const model = buildPlanSimplifiedModel((window as any).GuardianForms.testing.snapshot().filing);
       const doc = await generateCourtFormPdf(model);
       const finalized = await finalizeCourtFormPdf(doc);
       const pdfjsLib = await ensurePdfjs();
@@ -165,14 +165,14 @@ test.describe('Milestone 39-B: signature state control (pilot: Plan Simplified G
     await page.mouse.move(box.x + 150, box.y + 60, { steps: 10 });
     await page.mouse.up();
     await pad.locator('[data-sig-action="apply"]').click();
-    await expect.poll(() => page.evaluate(() => !!(window as any).D.planGuardians[0].signatureImage)).toBe(true);
+    await expect.poll(() => page.evaluate(() => !!(window as any).GuardianForms.testing.field('planGuardians.0.signatureImage'))).toBe(true);
   });
 
   test('Signature Stamp: Upload still applies after the Type tab removal (Simplified Accounting)', async ({ page }) => {
     await freshStartNoPassword(page);
     await createSimplifiedWard(page, 'Sig Trimmed Upload Ward');
     await fillMinimalValidSimplifiedWard(page);
-    await page.evaluate(() => (window as any).navigate('/p4'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/p4'));
     await page.locator('[data-signature-state-group="guardians.0"]').waitFor({ state: 'visible' });
 
     await page.locator('[data-signature-state-group="guardians.0"] input[value="stamp"]').check();
@@ -198,7 +198,7 @@ test.describe('Milestone 39-B: signature state control (pilot: Plan Simplified G
       name: 'upload.png', mimeType: 'image/png', buffer: Buffer.from(buffer),
     });
     await pad.locator('[data-sig-action="apply"]').click();
-    await expect.poll(() => page.evaluate(() => !!(window as any).D.guardians[0].signatureImage)).toBe(true);
+    await expect.poll(() => page.evaluate(() => !!(window as any).GuardianForms.testing.field('guardians.0.signatureImage'))).toBe(true);
   });
 });
 
@@ -250,10 +250,10 @@ test.describe('Milestone 39-C: Upload background-transparency (luminance-thresho
     })).toBe(true);
 
     await page.locator('[data-sig-action="apply"]').click();
-    await expect.poll(() => page.evaluate(() => !!(window as any).D.planGuardians[0].signatureImage)).toBe(true);
+    await expect.poll(() => page.evaluate(() => !!(window as any).GuardianForms.testing.field('planGuardians.0.signatureImage'))).toBe(true);
 
     const { bgAlpha, inkAlpha } = await page.evaluate(async () => {
-      const dataUrl = (window as any).D.planGuardians[0].signatureImage;
+      const dataUrl = (window as any).GuardianForms.testing.field('planGuardians.0.signatureImage');
       return new Promise<{ bgAlpha: number; inkAlpha: number }>((resolve) => {
         const img = new Image();
         img.onload = () => {
@@ -315,7 +315,7 @@ async function paintedImageFor(page: import('@playwright/test').Page, featurePat
     const { generateCourtFormPdf } = await import('/probate-guardian/src/core/pdf/pdf-engine.js');
     const { finalizeCourtFormPdf } = await import('/probate-guardian/src/core/pdf/pdf-finalizer.js');
     const { ensurePdfjs } = await import('/probate-guardian/src/core/pdf/pdfjs-loader.js');
-    const doc = await generateCourtFormPdf((model as any)[buildFnName]((window as any).D));
+    const doc = await generateCourtFormPdf((model as any)[buildFnName]((window as any).GuardianForms.testing.snapshot().filing));
     const finalized = await finalizeCourtFormPdf(doc);
     const pdfjsLib = await ensurePdfjs();
     const pdfDoc = await pdfjsLib.getDocument({ data: finalized }).promise;
@@ -332,7 +332,7 @@ const SAMPLE_PNG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAA
 
 test.describe('Milestone 39-C: signature state control rollout -- Plan Annual', () => {
   async function gotoSignaturesPage(page: import('@playwright/test').Page) {
-    await page.evaluate(() => (window as any).navigate('/p11'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/p11'));
     await page.locator('[data-signature-state-group="planGuardians.0"]').waitFor({ state: 'visible' });
   }
 
@@ -346,16 +346,16 @@ test.describe('Milestone 39-C: signature state control rollout -- Plan Annual', 
 
     await page.locator('[data-signature-state-group="planGuardians.0"] input[value="none"]').check();
     await expect
-      .poll(() => page.evaluate(() => (window as any).D.planGuardians[0].signatureState))
+      .poll(() => page.evaluate(() => (window as any).GuardianForms.testing.field('planGuardians.0.signatureState')))
       .toBe('none');
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
     await expect(page.locator('#print-doc-container .pdf-page').first()).toBeVisible({ timeout: 15000 });
     await expect(page.locator('.print-preview-banner')).toContainText('Ready to export');
 
     await gotoSignaturesPage(page);
-    await page.evaluate(() => { (window as any).D.planGuardians[0].signatureDate = ''; });
+    await page.evaluate(() => { (window as any).GuardianForms.testing.patchFiling({ 'planGuardians.0.signatureDate': '' }); });
     await page.locator('[data-signature-state-group="planGuardians.0"] input[value="typed"]').check();
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
     await expect(page.locator('body')).toContainText('date signed is required to apply "/s/" Signed', { timeout: 10000 });
     await expect(page.locator('#print-doc-container .pdf-page')).toHaveCount(0);
   });
@@ -385,9 +385,9 @@ test.describe('Milestone 39-C: signature state control rollout -- Plan Annual', 
     });
     await page.locator('[data-signature-state-group="planGuardians.0"] [data-sig-action="apply"]').click();
     await expect(page.locator('[data-signature-state-group="planGuardians.0"] .signature-pad-error')).toBeHidden();
-    await expect.poll(() => page.evaluate(() => !!(window as any).D.planGuardians[0].signatureImage)).toBe(true);
+    await expect.poll(() => page.evaluate(() => !!(window as any).GuardianForms.testing.field('planGuardians.0.signatureImage'))).toBe(true);
 
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
     await expect(page.locator('.print-preview-banner')).toContainText('Ready to export');
     expect(await paintedImageFor(page, 'plan-annual', 'buildPlanAnnualModel')).toBe(true);
   });
@@ -396,7 +396,7 @@ test.describe('Milestone 39-C: signature state control rollout -- Plan Annual', 
     await freshStartNoPassword(page);
     await createWard(page, 'PA Sig Attorney Blank Ward', 'planAnnual');
     await fillMinimalValidPlanAnnualWard(page); // never sets any attorney_* field
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
     await expect(page.locator('#print-doc-container .pdf-page').first()).toBeVisible({ timeout: 15000 });
     await expect(page.locator('.print-preview-banner')).toContainText('Ready to export');
   });
@@ -406,13 +406,14 @@ test.describe('Milestone 39-C: signature state control rollout -- Plan Annual', 
     await createWard(page, 'PA Sig Attorney Stamp Ward', 'planAnnual');
     await fillMinimalValidPlanAnnualWard(page);
     await page.evaluate((img) => {
-      const d = (window as any).D;
+      const d = (window as any).GuardianForms.testing.snapshot().filing;
       d.attorney = 'Sample Attorney';
       d.attorney_email = 'attorney@example.com'; // Milestone 55D: now required once an attorney is named
       d.attorney_signatureState = 'stamp';
       d.attorney_signatureImage = img;
+      (window as any).GuardianForms.testing.replaceFiling(d); // setup (D9)
     }, SAMPLE_PNG);
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
     await expect(page.locator('.print-preview-banner')).toContainText('Ready to export');
     expect(await paintedImageFor(page, 'plan-annual', 'buildPlanAnnualModel')).toBe(true);
   });
@@ -420,11 +421,11 @@ test.describe('Milestone 39-C: signature state control rollout -- Plan Annual', 
 
 test.describe('Milestone 39-C: signature state control rollout -- Plan Initial', () => {
   async function gotoGuardianPage(page: import('@playwright/test').Page) {
-    await page.evaluate(() => (window as any).navigate('/p9'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/p9'));
     await page.locator('[data-signature-state-group="planGuardians.0"]').waitFor({ state: 'visible' });
   }
   async function gotoAttorneyPage(page: import('@playwright/test').Page) {
-    await page.evaluate(() => (window as any).navigate('/p10'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/p10'));
     await page.locator('[data-signature-state-group="attorney"]').waitFor({ state: 'visible' });
   }
   // Milestone 40C-H fixed the Question 7 explicit-No bug this suite used to
@@ -446,16 +447,16 @@ test.describe('Milestone 39-C: signature state control rollout -- Plan Initial',
 
     await page.locator('[data-signature-state-group="planGuardians.0"] input[value="none"]').check();
     await expect
-      .poll(() => page.evaluate(() => (window as any).D.planGuardians[0].signatureState))
+      .poll(() => page.evaluate(() => (window as any).GuardianForms.testing.field('planGuardians.0.signatureState')))
       .toBe('none');
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
     await expect(page.locator('#print-doc-container .pdf-page').first()).toBeVisible({ timeout: 15000 });
     await expect(page.locator('.print-preview-banner')).toContainText('Ready to export');
 
     await gotoGuardianPage(page);
-    await page.evaluate(() => { (window as any).D.planGuardians[0].signatureDate = ''; });
+    await page.evaluate(() => { (window as any).GuardianForms.testing.patchFiling({ 'planGuardians.0.signatureDate': '' }); });
     await page.locator('[data-signature-state-group="planGuardians.0"] input[value="typed"]').check();
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
     await expect(page.locator('body')).toContainText('date signed is required to apply "/s/" Signed', { timeout: 10000 });
     await expect(page.locator('#print-doc-container .pdf-page')).toHaveCount(0);
   });
@@ -485,9 +486,9 @@ test.describe('Milestone 39-C: signature state control rollout -- Plan Initial',
     });
     await page.locator('[data-signature-state-group="planGuardians.0"] [data-sig-action="apply"]').click();
     await expect(page.locator('[data-signature-state-group="planGuardians.0"] .signature-pad-error')).toBeHidden();
-    await expect.poll(() => page.evaluate(() => !!(window as any).D.planGuardians[0].signatureImage)).toBe(true);
+    await expect.poll(() => page.evaluate(() => !!(window as any).GuardianForms.testing.field('planGuardians.0.signatureImage'))).toBe(true);
 
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
     await expect(page.locator('.print-preview-banner')).toContainText('Ready to export');
     expect(await paintedImageFor(page, 'plan-initial', 'buildPlanInitialModel')).toBe(true);
   });
@@ -497,7 +498,7 @@ test.describe('Milestone 39-C: signature state control rollout -- Plan Initial',
     await createWard(page, 'PI Sig Attorney Blank Ward', 'planInitial');
     await fillMinimalValidPlanInitialWard(page);
     await page.evaluate(() => {
-      const d = (window as any).D;
+      const d = (window as any).GuardianForms.testing.snapshot().filing;
       // Milestone 58C: clear the WHOLE block, which is what this test's title
       // has always claimed. It used to clear only attorney_name and
       // attorney_signatureDate, leaving the fixture's
@@ -513,8 +514,9 @@ test.describe('Milestone 39-C: signature state control rollout -- Plan Initial',
       for (const key of ['attorney_name', 'attorney_bar', 'attorney_email', 'attorney_secondaryEmail',
         'attorney_street', 'attorney_cityStateZip', 'attorney_phone',
         'attorney_signatureDate', 'attorney_signatureState']) d[key] = '';
+      (window as any).GuardianForms.testing.replaceFiling(d); // setup (D9)
     });
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
     await expect(page.locator('#print-doc-container .pdf-page').first()).toBeVisible({ timeout: 15000 });
     await expect(page.locator('.print-preview-banner')).toContainText('Ready to export');
   });
@@ -524,11 +526,12 @@ test.describe('Milestone 39-C: signature state control rollout -- Plan Initial',
     await createWard(page, 'PI Sig Attorney Stamp Ward', 'planInitial');
     await fillMinimalValidPlanInitialWard(page);
     await page.evaluate((img) => {
-      const d = (window as any).D;
+      const d = (window as any).GuardianForms.testing.snapshot().filing;
       d.attorney_signatureState = 'stamp';
       d.attorney_signatureImage = img;
+      (window as any).GuardianForms.testing.replaceFiling(d); // setup (D9)
     }, SAMPLE_PNG);
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
     await expect(page.locator('.print-preview-banner')).toContainText('Ready to export');
     expect(await paintedImageFor(page, 'plan-initial', 'buildPlanInitialModel')).toBe(true);
   });
@@ -536,11 +539,11 @@ test.describe('Milestone 39-C: signature state control rollout -- Plan Initial',
 
 test.describe('Milestone 39-C: signature state control rollout -- Plan Minor', () => {
   async function gotoGuardianPage(page: import('@playwright/test').Page) {
-    await page.evaluate(() => (window as any).navigate('/p6'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/p6'));
     await page.locator('[data-signature-state-group="planGuardians.0"]').waitFor({ state: 'visible' });
   }
   async function gotoPreparerAttorneyPage(page: import('@playwright/test').Page) {
-    await page.evaluate(() => (window as any).navigate('/p7'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/p7'));
     await page.locator('[data-signature-state-group="preparer"]').waitFor({ state: 'visible' });
   }
 
@@ -554,16 +557,16 @@ test.describe('Milestone 39-C: signature state control rollout -- Plan Minor', (
 
     await page.locator('[data-signature-state-group="planGuardians.0"] input[value="none"]').check();
     await expect
-      .poll(() => page.evaluate(() => (window as any).D.planGuardians[0].signatureState))
+      .poll(() => page.evaluate(() => (window as any).GuardianForms.testing.field('planGuardians.0.signatureState')))
       .toBe('none');
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
     await expect(page.locator('#print-doc-container .pdf-page').first()).toBeVisible({ timeout: 15000 });
     await expect(page.locator('.print-preview-banner')).toContainText('Ready to export');
 
     await gotoGuardianPage(page);
-    await page.evaluate(() => { (window as any).D.planGuardians[0].signatureDate = ''; });
+    await page.evaluate(() => { (window as any).GuardianForms.testing.patchFiling({ 'planGuardians.0.signatureDate': '' }); });
     await page.locator('[data-signature-state-group="planGuardians.0"] input[value="typed"]').check();
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
     await expect(page.locator('body')).toContainText('date signed is required to apply "/s/" Signed', { timeout: 10000 });
     await expect(page.locator('#print-doc-container .pdf-page')).toHaveCount(0);
   });
@@ -593,9 +596,9 @@ test.describe('Milestone 39-C: signature state control rollout -- Plan Minor', (
     });
     await page.locator('[data-signature-state-group="planGuardians.0"] [data-sig-action="apply"]').click();
     await expect(page.locator('[data-signature-state-group="planGuardians.0"] .signature-pad-error')).toBeHidden();
-    await expect.poll(() => page.evaluate(() => !!(window as any).D.planGuardians[0].signatureImage)).toBe(true);
+    await expect.poll(() => page.evaluate(() => !!(window as any).GuardianForms.testing.field('planGuardians.0.signatureImage'))).toBe(true);
 
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
     await expect(page.locator('.print-preview-banner')).toContainText('Ready to export');
     expect(await paintedImageFor(page, 'plan-minor', 'buildPlanMinorModel')).toBe(true);
   });
@@ -605,11 +608,12 @@ test.describe('Milestone 39-C: signature state control rollout -- Plan Minor', (
     await createWard(page, 'PM Sig Blank Ward', 'planMinor');
     await fillMinimalValidPlanMinorWard(page); // sets preparer_*/attorney_* by default
     await page.evaluate(() => {
-      const d = (window as any).D;
+      const d = (window as any).GuardianForms.testing.snapshot().filing;
       d.preparer_name = ''; d.preparer_signatureDate = '';
       d.attorney_name = ''; d.attorney_signatureDate = '';
+      (window as any).GuardianForms.testing.replaceFiling(d); // setup (D9)
     });
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
     await expect(page.locator('#print-doc-container .pdf-page').first()).toBeVisible({ timeout: 15000 });
     await expect(page.locator('.print-preview-banner')).toContainText('Ready to export');
   });
@@ -619,11 +623,12 @@ test.describe('Milestone 39-C: signature state control rollout -- Plan Minor', (
     await createWard(page, 'PM Sig Preparer Stamp Ward', 'planMinor');
     await fillMinimalValidPlanMinorWard(page);
     await page.evaluate((img) => {
-      const d = (window as any).D;
+      const d = (window as any).GuardianForms.testing.snapshot().filing;
       d.preparer_signatureState = 'stamp';
       d.preparer_signatureImage = img;
+      (window as any).GuardianForms.testing.replaceFiling(d); // setup (D9)
     }, SAMPLE_PNG);
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
     await expect(page.locator('.print-preview-banner')).toContainText('Ready to export');
     expect(await paintedImageFor(page, 'plan-minor', 'buildPlanMinorModel')).toBe(true);
   });
@@ -633,11 +638,12 @@ test.describe('Milestone 39-C: signature state control rollout -- Plan Minor', (
     await createWard(page, 'PM Sig Attorney Stamp Ward', 'planMinor');
     await fillMinimalValidPlanMinorWard(page);
     await page.evaluate((img) => {
-      const d = (window as any).D;
+      const d = (window as any).GuardianForms.testing.snapshot().filing;
       d.attorney_signatureState = 'stamp';
       d.attorney_signatureImage = img;
+      (window as any).GuardianForms.testing.replaceFiling(d); // setup (D9)
     }, SAMPLE_PNG);
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
     await expect(page.locator('.print-preview-banner')).toContainText('Ready to export');
     expect(await paintedImageFor(page, 'plan-minor', 'buildPlanMinorModel')).toBe(true);
   });
@@ -652,7 +658,7 @@ test.describe('Milestone 39-C: signature state control rollout -- Plan Minor', (
 // Attorney cards are the scalar shape.
 test.describe('Milestone 39-C: signature state control rollout -- Simplified Accounting', () => {
   async function gotoPage(page: import('@playwright/test').Page, route: string, groupPath: string) {
-    await page.evaluate((r) => (window as any).navigate(r), route);
+    await page.evaluate((r) => (window as any).GuardianForms.testing.navigate(r), route);
     await page.locator(`[data-signature-state-group="${groupPath}"]`).waitFor({ state: 'visible' });
   }
 
@@ -666,16 +672,16 @@ test.describe('Milestone 39-C: signature state control rollout -- Simplified Acc
 
     await page.locator('[data-signature-state-group="guardians.0"] input[value="none"]').check();
     await expect
-      .poll(() => page.evaluate(() => (window as any).D.guardians[0].signatureState))
+      .poll(() => page.evaluate(() => (window as any).GuardianForms.testing.field('guardians.0.signatureState')))
       .toBe('none');
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
     await expect(page.locator('#print-doc-container .pdf-page').first()).toBeVisible({ timeout: 15000 });
     await expect(page.locator('.print-preview-banner')).toContainText('Ready to export');
 
     await gotoPage(page, '/p4', 'guardians.0');
-    await page.evaluate(() => { (window as any).D.guardians[0].signatureDate = ''; });
+    await page.evaluate(() => { (window as any).GuardianForms.testing.patchFiling({ 'guardians.0.signatureDate': '' }); });
     await page.locator('[data-signature-state-group="guardians.0"] input[value="typed"]').check();
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
     await expect(page.locator('body')).toContainText('date signed is required to apply "/s/" Signed', { timeout: 10000 });
     await expect(page.locator('#print-doc-container .pdf-page')).toHaveCount(0);
   });
@@ -695,9 +701,9 @@ test.describe('Milestone 39-C: signature state control rollout -- Simplified Acc
     await page.mouse.move(box.x + 150, box.y + 60, { steps: 10 });
     await page.mouse.up();
     await page.locator('[data-signature-state-group="guardians.0"] [data-sig-action="apply"]').click();
-    await expect.poll(() => page.evaluate(() => !!(window as any).D.guardians[0].signatureImage)).toBe(true);
+    await expect.poll(() => page.evaluate(() => !!(window as any).GuardianForms.testing.field('guardians.0.signatureImage'))).toBe(true);
 
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
     await expect(page.locator('.print-preview-banner')).toContainText('Ready to export');
     expect(await paintedImageFor(page, 'simplified-accounting', 'buildSimplifiedAccountingModel')).toBe(true);
   });
@@ -707,11 +713,12 @@ test.describe('Milestone 39-C: signature state control rollout -- Simplified Acc
     await createSimplifiedWard(page, 'SA Sig Attorney Stamp Ward');
     await fillMinimalValidSimplifiedWard(page); // sets attorney name, never attorney_signatureState/certAttySignatureState
     await page.evaluate((img) => {
-      const d = (window as any).D;
+      const d = (window as any).GuardianForms.testing.snapshot().filing;
       d.attorney_signatureState = 'stamp';
       d.attorney_signatureImage = img;
+      (window as any).GuardianForms.testing.replaceFiling(d); // setup (D9)
     }, SAMPLE_PNG);
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
     await expect(page.locator('.print-preview-banner')).toContainText('Ready to export');
     expect(await paintedImageFor(page, 'simplified-accounting', 'buildSimplifiedAccountingModel')).toBe(true);
 
@@ -719,12 +726,13 @@ test.describe('Milestone 39-C: signature state control rollout -- Simplified Acc
     // field (certAttySignatureState/Image, not attorney_*) -- confirmed by
     // also exercising it, not assuming the same result as Part V above.
     await page.evaluate((img) => {
-      const d = (window as any).D;
+      const d = (window as any).GuardianForms.testing.snapshot().filing;
       d.attorney_signatureState = ''; d.attorney_signatureImage = '';
       d.certAttySignatureState = 'stamp';
       d.certAttySignatureImage = img;
+      (window as any).GuardianForms.testing.replaceFiling(d); // setup (D9)
     }, SAMPLE_PNG);
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
     await expect(page.locator('.print-preview-banner')).toContainText('Ready to export');
     expect(await paintedImageFor(page, 'simplified-accounting', 'buildSimplifiedAccountingModel')).toBe(true);
   });
@@ -733,7 +741,7 @@ test.describe('Milestone 39-C: signature state control rollout -- Simplified Acc
     await freshStartNoPassword(page);
     await createSimplifiedWard(page, 'SA Sig CoS Blank Ward');
     await fillMinimalValidSimplifiedWard(page); // never sets certAttySignDate/certAttySignatureState
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
     await expect(page.locator('#print-doc-container .pdf-page').first()).toBeVisible({ timeout: 15000 });
     await expect(page.locator('.print-preview-banner')).toContainText('Ready to export');
   });
@@ -741,7 +749,7 @@ test.describe('Milestone 39-C: signature state control rollout -- Simplified Acc
 
 test.describe('Milestone 39-C: signature state control rollout -- Annual Accounting (also Final/Trust)', () => {
   async function gotoPage(page: import('@playwright/test').Page, route: string, groupPath: string) {
-    await page.evaluate((r) => (window as any).navigate(r), route);
+    await page.evaluate((r) => (window as any).GuardianForms.testing.navigate(r), route);
     await page.locator(`[data-signature-state-group="${groupPath}"]`).waitFor({ state: 'visible' });
   }
 
@@ -755,16 +763,16 @@ test.describe('Milestone 39-C: signature state control rollout -- Annual Account
 
     await page.locator('[data-signature-state-group="guardians.0"] input[value="none"]').check();
     await expect
-      .poll(() => page.evaluate(() => (window as any).D.guardians[0].signatureState))
+      .poll(() => page.evaluate(() => (window as any).GuardianForms.testing.field('guardians.0.signatureState')))
       .toBe('none');
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
     await expect(page.locator('#print-doc-container .pdf-page').first()).toBeVisible({ timeout: 15000 });
     await expect(page.locator('.print-preview-banner')).toContainText('Ready to export');
 
     await gotoPage(page, '/p3', 'guardians.0');
-    await page.evaluate(() => { (window as any).D.guardians[0].signatureDate = ''; });
+    await page.evaluate(() => { (window as any).GuardianForms.testing.patchFiling({ 'guardians.0.signatureDate': '' }); });
     await page.locator('[data-signature-state-group="guardians.0"] input[value="typed"]').check();
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
     await expect(page.locator('body')).toContainText('date signed is required to apply "/s/" Signed', { timeout: 10000 });
     await expect(page.locator('#print-doc-container .pdf-page')).toHaveCount(0);
   });
@@ -784,9 +792,9 @@ test.describe('Milestone 39-C: signature state control rollout -- Annual Account
     await page.mouse.move(box.x + 150, box.y + 60, { steps: 10 });
     await page.mouse.up();
     await page.locator('[data-signature-state-group="guardians.0"] [data-sig-action="apply"]').click();
-    await expect.poll(() => page.evaluate(() => !!(window as any).D.guardians[0].signatureImage)).toBe(true);
+    await expect.poll(() => page.evaluate(() => !!(window as any).GuardianForms.testing.field('guardians.0.signatureImage'))).toBe(true);
 
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
     await expect(page.locator('.print-preview-banner')).toContainText('Ready to export');
     expect(await paintedImageFor(page, 'annual-accounting', 'buildAnnualAccountingModel')).toBe(true);
   });
@@ -796,11 +804,12 @@ test.describe('Milestone 39-C: signature state control rollout -- Annual Account
     await createWard(page, 'AA Sig Preparer Stamp Ward', 'annual');
     await fillMinimalValidAnnualWard(page); // sets preparer.name, never preparer.signatureState
     await page.evaluate((img) => {
-      const d = (window as any).D;
+      const d = (window as any).GuardianForms.testing.snapshot().filing;
       d.preparer.signatureState = 'stamp';
       d.preparer.signatureImage = img;
+      (window as any).GuardianForms.testing.replaceFiling(d); // setup (D9)
     }, SAMPLE_PNG);
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
     await expect(page.locator('.print-preview-banner')).toContainText('Ready to export');
     expect(await paintedImageFor(page, 'annual-accounting', 'buildAnnualAccountingModel')).toBe(true);
   });
@@ -809,17 +818,18 @@ test.describe('Milestone 39-C: signature state control rollout -- Annual Account
     await freshStartNoPassword(page);
     await createWard(page, 'AA Sig Attorney Stamp Ward', 'annual');
     await fillMinimalValidAnnualWard(page); // sets d.attorney (name) but never attorney_signatureState
-    await page.evaluate(() => { (window as any).D.attorney_signatureState = 'stamp'; });
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => { (window as any).GuardianForms.testing.patchFiling({ 'attorney_signatureState': 'stamp' }); });
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
     await expect(page.locator('body')).toContainText('Part V — Attorney signature stamp image is required', { timeout: 10000 });
     await expect(page.locator('#print-doc-container .pdf-page')).toHaveCount(0);
 
     await page.evaluate((img) => {
-      const d = (window as any).D;
+      const d = (window as any).GuardianForms.testing.snapshot().filing;
       d.attorney = 'Sample Attorney';
       d.attorney_signatureImage = img;
+      (window as any).GuardianForms.testing.replaceFiling(d); // setup (D9)
     }, SAMPLE_PNG);
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
     await expect(page.locator('.print-preview-banner')).toContainText('Ready to export');
     expect(await paintedImageFor(page, 'annual-accounting', 'buildAnnualAccountingModel')).toBe(true);
   });
@@ -829,11 +839,12 @@ test.describe('Milestone 39-C: signature state control rollout -- Annual Account
     await createWard(page, 'AA Sig CoS Stamp Ward', 'annual');
     await fillMinimalValidAnnualWard(page);
     await page.evaluate((img) => {
-      const d = (window as any).D;
+      const d = (window as any).GuardianForms.testing.snapshot().filing;
       d.certAttySignatureState = 'stamp';
       d.certAttySignatureImage = img;
+      (window as any).GuardianForms.testing.replaceFiling(d); // setup (D9)
     }, SAMPLE_PNG);
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
     await expect(page.locator('.print-preview-banner')).toContainText('Ready to export');
     expect(await paintedImageFor(page, 'annual-accounting', 'buildAnnualAccountingModel')).toBe(true);
   });
@@ -853,7 +864,7 @@ test.describe('Milestone 39-C: signature state control rollout -- Annual Account
 // gets, not a new requirement.
 test.describe('Milestone 39-C: signature state control rollout -- Guardian Inventory', () => {
   async function gotoPage(page: import('@playwright/test').Page, route: string, groupPath: string) {
-    await page.evaluate((r) => (window as any).navigate(r), route);
+    await page.evaluate((r) => (window as any).GuardianForms.testing.navigate(r), route);
     await page.locator(`[data-signature-state-group="${groupPath}"]`).waitFor({ state: 'visible' });
   }
 
@@ -867,15 +878,15 @@ test.describe('Milestone 39-C: signature state control rollout -- Guardian Inven
 
     await page.locator('[data-signature-state-group="guardians.0"] input[value="none"]').check();
     await expect
-      .poll(() => page.evaluate(() => (window as any).D.guardians[0].signatureState))
+      .poll(() => page.evaluate(() => (window as any).GuardianForms.testing.field('guardians.0.signatureState')))
       .toBe('none');
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
     await expect(page.locator('#print-doc-container .pdf-page').first()).toBeVisible({ timeout: 15000 });
 
     await gotoPage(page, '/d1', 'guardians.0');
-    await page.evaluate(() => { (window as any).D.guardians[0].signatureDate = ''; });
+    await page.evaluate(() => { (window as any).GuardianForms.testing.patchFiling({ 'guardians.0.signatureDate': '' }); });
     await page.locator('[data-signature-state-group="guardians.0"] input[value="typed"]').check();
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
     await expect(page.locator('body')).toContainText('date signed is required to apply "/s/" Signed', { timeout: 10000 });
     await expect(page.locator('#print-doc-container .pdf-page')).toHaveCount(0);
   });
@@ -912,10 +923,10 @@ test.describe('Milestone 39-C: signature state control rollout -- Guardian Inven
     });
     await page.locator('[data-signature-state-group="guardians.0"] [data-sig-action="apply"]').click();
     await expect(page.locator('[data-signature-state-group="guardians.0"] .signature-pad-error')).toBeHidden();
-    await expect.poll(() => page.evaluate(() => !!(window as any).D.guardians[0].signatureImage)).toBe(true);
+    await expect.poll(() => page.evaluate(() => !!(window as any).GuardianForms.testing.field('guardians.0.signatureImage'))).toBe(true);
     await expect(page.locator('[data-signature-state-group="guardians.0"] .signature-stamp-preview img')).toBeVisible();
 
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
     await expect(page.locator('#print-doc-container .pdf-page').first()).toBeVisible({ timeout: 15000 });
     expect(await paintedImageFor(page, 'guardian-inventory', 'buildVerifiedInventoryModel')).toBe(true);
   });
@@ -935,10 +946,10 @@ test.describe('Milestone 39-C: signature state control rollout -- Guardian Inven
     await page.locator('[data-signature-state-group="guardians.0"] [data-sig-action="apply"]').click();
     await expect(page.locator('[data-signature-state-group="guardians.0"] .signature-pad-error')).toBeVisible();
     await expect(page.locator('[data-signature-state-group="guardians.0"] .signature-pad-error')).toContainText(/blank/i);
-    expect(await page.evaluate(() => (window as any).D.guardians[0].signatureImage)).toBeFalsy();
+    expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('guardians.0.signatureImage'))).toBeFalsy();
     await expect(page.locator('[data-signature-state-group="guardians.0"] .signature-stamp-preview')).toHaveCount(0);
 
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
     await expect(page.locator('body')).toContainText('signature stamp image is required', { timeout: 10000 });
     await expect(page.locator('#print-doc-container .pdf-page')).toHaveCount(0);
   });
@@ -947,13 +958,13 @@ test.describe('Milestone 39-C: signature state control rollout -- Guardian Inven
     await freshStartNoPassword(page);
     await createWard(page, 'GI Sig Preparer Stamp Ward', 'guardian');
     await fillMinimalValidGuardianWard(page); // sets preparer.name, never preparer.signatureState
-    await page.evaluate(() => { (window as any).D.preparer.signatureState = 'stamp'; });
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => { (window as any).GuardianForms.testing.patchFiling({ 'preparer.signatureState': 'stamp' }); });
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
     await expect(page.locator('body')).toContainText('D-2 Preparer — signature stamp image is required', { timeout: 10000 });
     await expect(page.locator('#print-doc-container .pdf-page')).toHaveCount(0);
 
-    await page.evaluate((img) => { (window as any).D.preparer.signatureImage = img; }, SAMPLE_PNG);
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate((img) => { (window as any).GuardianForms.testing.patchFiling({ 'preparer.signatureImage': img }); }, SAMPLE_PNG);
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
     await expect(page.locator('#print-doc-container .pdf-page').first()).toBeVisible({ timeout: 15000 });
     expect(await paintedImageFor(page, 'guardian-inventory', 'buildVerifiedInventoryModel')).toBe(true);
   });
@@ -963,11 +974,12 @@ test.describe('Milestone 39-C: signature state control rollout -- Guardian Inven
     await createWard(page, 'GI Sig Attorney Stamp Ward', 'guardian');
     await fillMinimalValidGuardianWard(page); // sets attorney.name, never attorney.signatureState
     await page.evaluate((img) => {
-      const d = (window as any).D;
+      const d = (window as any).GuardianForms.testing.snapshot().filing;
       d.attorney.signatureState = 'stamp';
       d.attorney.signatureImage = img;
+      (window as any).GuardianForms.testing.replaceFiling(d); // setup (D9)
     }, SAMPLE_PNG);
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
     await expect(page.locator('#print-doc-container .pdf-page').first()).toBeVisible({ timeout: 15000 });
     expect(await paintedImageFor(page, 'guardian-inventory', 'buildVerifiedInventoryModel')).toBe(true);
   });
@@ -977,11 +989,12 @@ test.describe('Milestone 39-C: signature state control rollout -- Guardian Inven
     await createWard(page, 'GI Sig CoS Stamp Ward', 'guardian');
     await fillMinimalValidGuardianWard(page); // sets serviceAttorney.name, never serviceAttorney.signatureState
     await page.evaluate((img) => {
-      const d = (window as any).D;
+      const d = (window as any).GuardianForms.testing.snapshot().filing;
       d.serviceAttorney.signatureState = 'stamp';
       d.serviceAttorney.signatureImage = img;
+      (window as any).GuardianForms.testing.replaceFiling(d); // setup (D9)
     }, SAMPLE_PNG);
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
     await expect(page.locator('#print-doc-container .pdf-page').first()).toBeVisible({ timeout: 15000 });
     expect(await paintedImageFor(page, 'guardian-inventory', 'buildVerifiedInventoryModel')).toBe(true);
   });

@@ -26,7 +26,7 @@ test.describe('unlock', () => {
     // lockApp() doesn't resolve until the unlock form is submitted, so this
     // must not await its returned promise -- just kick it off and let the
     // page keep running while we drive the resulting UI.
-    await page.evaluate(() => { void (window as any).lockApp(); });
+    await page.evaluate(() => { void (window as any).GuardianForms.testing.lock(); });
     await expect(page.locator('#unlock-overlay')).toHaveClass(/show/);
     await expect(page.locator('#unlock-password-confirm')).toBeHidden(); // unlock mode, not create mode
 
@@ -43,7 +43,7 @@ test.describe('unlock', () => {
     // reopen an editor, so focus stays null. Switching explicitly is what
     // proves the case data survived the lock cycle.
     await expect(page.locator('#ward-selector')).toHaveValue('');
-    await page.evaluate(() => (window as any).switchWard((window as any).caseFile.wards[0].wardId));
+    await page.evaluate(() => (() => { const t = (window as any).GuardianForms.testing; return t.activateFiling.open(t.snapshot().caseFile.wards[0].wardId); })());
     await expect(page.locator('#ward-selector')).toHaveValue('Test Ward');
   });
 });

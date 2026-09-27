@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { readRepoSource, sliceBalancedFunction } from './support/legacy-source-extract.js';
+import { readRepoSource, sliceBalancedFunction } from './support/source-slice.js';
 import { setDateCell, toExcelSerialDate } from '../../src/core/excel/excel-engine.js';
 
 // Milestone 57 review: Guardian Inventory's importer dt() only handled a Date
@@ -28,8 +28,8 @@ import { setDateCell, toExcelSerialDate } from '../../src/core/excel/excel-engin
 //
 // dt() is not exported (it is local to parseInitialInventoryWorkbook() in
 // guardian-inventory/excel.js), so it is sliced out of the real source and
-// evaluated, the same technique bar-number.spec.js established for
-// legacy-app.js closures.
+// evaluated, the same technique bar-number.spec.js established for the
+// classic monolith's closures (support/source-slice.js lists this use).
 const EXCEL_FILE = 'src/features/guardian-inventory/excel.js';
 
 function loadDt() {

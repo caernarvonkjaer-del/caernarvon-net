@@ -49,13 +49,13 @@ async function exportWithAccounts(page: import('@playwright/test').Page, account
   await createWard(page, 'Multi Account Ward', 'annual');
   await fillMinimalValidAnnualWard(page);
   await page.evaluate(({ accts, disb }) => {
-    const d = (window as any).D;
+    const d = (window as any).GuardianForms.testing.snapshot().filing;
     d.schB4Accounts = accts;
     d.schB4 = disb;
-    (window as any).autoSave();
+    (window as any).GuardianForms.testing.replaceFiling(d);
   }, { accts: accounts, disb: rows });
-  await page.evaluate(() => (window as any).flushPendingSave());
-  await page.evaluate(() => (window as any).navigate('/print'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
   const excel = page.locator('[data-annual-action="save-excel"]');
   await expect(excel).toBeEnabled({ timeout: 20_000 });
   const download = page.waitForEvent('download', { timeout: 40_000 });
@@ -107,13 +107,13 @@ test.describe('Schedule B-4 with five bank accounts', () => {
     page.on('pageerror', (e) => errors.push(e.message));
     await page.setInputFiles('input[type="file"][accept=".xlsx"]', file);
     await page.waitForFunction(
-      () => ((window as any).D?.schB4 || []).length > 0,
+      () => ((window as any).GuardianForms.testing.snapshot().filing?.schB4 || []).length > 0,
       undefined,
       { timeout: 20_000 },
     );
 
     const back = await page.evaluate(() => {
-      const d = (window as any).D;
+      const d = (window as any).GuardianForms.testing.snapshot().filing;
       const byId = new Map((d.schB4Accounts || []).map((a: any) => [a.id, a]));
       return {
         accounts: (d.schB4Accounts || []).map((a: any) => ({ bankName: a.bankName, accountNumber: a.accountNumber })),
@@ -158,13 +158,13 @@ test.describe('Schedule B-4 with five bank accounts', () => {
     await createWard(page, 'Too Many Accounts Ward', 'annual');
     await fillMinimalValidAnnualWard(page);
     await page.evaluate(({ accts, disb }) => {
-      const d = (window as any).D;
+      const d = (window as any).GuardianForms.testing.snapshot().filing;
       d.schB4Accounts = accts;
       d.schB4 = disb;
-      (window as any).autoSave();
+      (window as any).GuardianForms.testing.replaceFiling(d);
     }, { accts: thirteen, disb: rows });
-    await page.evaluate(() => (window as any).flushPendingSave());
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
 
     // No download, and the filer is told which accounts will not fit rather
     // than handed a workbook that silently omits them.

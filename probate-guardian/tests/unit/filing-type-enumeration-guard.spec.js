@@ -24,18 +24,46 @@ const REGISTRY_FILE = 'src/core/filing/filing-descriptor.js';
 // Files with a real, independent reason to enumerate several/all nine keys
 // that is NOT the "same concept duplicated" problem this guard targets --
 // each is a deliberate, documented exception, not an oversight:
+// (src/legacy-app.js, the core dispatch file, was the first exception, from
+// Milestone 42G; its dispatch moved out piece by piece and 70K emptied it.)
 const ALLOWED = {
-  // The core dispatch file (PAGES_*, INVENTORY_TYPES, formEngine(), the
-  // per-type wizard/mount/nav functions). Consolidating this into the
-  // registry is a large, separate, carefully-scoped effort in its own
-  // right -- Milestone 42G deliberately did not attempt it in one pass
-  // against the single most load-bearing file in the app.
-  'src/legacy-app.js': 'core dispatch, out of scope for 42G -- see MILESTONE-42-PROPOSAL.md 42G',
+  // (src/core/validation/error-route.js had one from 70F for PLAN_SECTION_ROUTES,
+  // which is keyed by bare property names this guard never counts: it was
+  // never needed, and the check below found it in 70K.)
+  // Milestone 70, 70C: the eager filing registry -- the per-identity names,
+  // dashboard look and page lists legacy-app.js used to hold (the exception
+  // above, moving here piece by piece). Built on DESCRIPTORS, not a second
+  // identity list: FILING_REGISTRY itself is derived from FILING_TYPE_KEYS.
+  'src/core/filing/filing-registry.js': "the eager filing registry's per-identity data, moved out of legacy-app.js (MS 70 70C)",
   // CARRY_SOURCE_TYPE / PRIOR_ACCOUNTING_SOURCES / ACCOUNTING_FORM_TYPES:
   // creation-time eligibility, confirmed the correct home already (other
   // consumers, e.g. filing-descriptor.js's own CONVERT_SOURCE_TYPE
-  // reasoning, already treat this file as the carry-table's owner).
-  'src/core/navigation/ward-lifecycle.js': 'creation-time carry-source eligibility, its correct home',
+  // reasoning, already treat this table as the carry-over rules' own). It
+  // lived in ward-lifecycle.js until Milestone 70's 70G brought it here, to
+  // the carry-over builders that read it.
+  'src/core/filing/carry-over.js': 'creation-time carry-source eligibility, its correct home',
+  // Milestone 70, 70G: what a new year resets, form by form
+  // (resetYearlyFieldsForNewYear()) -- each form's own period and balance
+  // fields, which differ by schema; moved from legacy-app.js (the exception
+  // above). tests/baseline/ms70-year-rollover-golden.json pins all nine.
+  'src/core/filing/filing-years.js': "each form's own year-end reset, moved from legacy-app.js (MS 70 70G)",
+  // Milestone 70, 70G: the Add Form dialog's four decisions about particular
+  // types -- the type it opens on (guardian), the adult-records check before a
+  // Minor plan, the hand-off to the Simplified eligibility questions and the
+  // Annual it creates when they fail. Branches, not a list of the types.
+  'src/core/modals/filing-dialogs.js': "the Add Form dialog's branches on particular types, moved from legacy-app.js (MS 70 70G)",
+  // Milestone 70, 70H: the shell's choices by form, moved from legacy-app.js
+  // -- the Help text and the guided tour are written for each form; the Start
+  // New Form picker draws one card per filing type. (The sidebar mounted each
+  // form's own navigation by name until 70K; it asks the feature services
+  // for the open filing's engine now.)
+  'src/core/help/help-panel.js': "the Help text chosen for each form, moved from legacy-app.js (MS 70 70H)",
+  'src/core/help/walkthrough.js': "the guided tour written for each form, moved from legacy-app.js (MS 70 70H)",
+  'src/core/shell/start-new-form.js': "the Start New Form picker's card for each filing type, moved from legacy-app.js (MS 70 70H)",
+  // Milestone 70, 70K: GuardianForms.testing's saveOutput members each start
+  // one form's own Save as PDF / Excel, by that form's feature -- four names,
+  // one per member, not a listing of the types.
+  'src/core/testing/testing-adapter.js': "saveOutput's per-form save commands, by feature (MS 70 70K)",
   // Per-schema collection membership (which schedules/collections exist on
   // which filing types, and their min counts) -- AGENTS.md section 3: never
   // share generic factories across forms with differing schemas. This is
@@ -69,9 +97,12 @@ describe('filing-type key enumeration stays in filing-descriptor.js', () => {
     expect(offenders, 'new filing-type enumeration outside filing-descriptor.js -- derive from FILING_TYPE_KEYS/DESCRIPTORS instead, or add a documented exception to ALLOWED above with a real reason').toEqual([]);
   });
 
-  it('every documented exception still exists and still has a reason worth re-checking', () => {
+  it('every documented exception still exists and still enumerates the types', () => {
     for (const rel of Object.keys(ALLOWED)) {
       expect(fs.existsSync(path.join(root, rel)), `${rel} no longer exists -- remove its exception`).toBe(true);
+      const code = stripComments(fs.readFileSync(path.join(root, rel), 'utf8'));
+      const present = FILING_TYPE_KEYS.filter((k) => new RegExp(`['"\`]${k}['"\`]`).test(code));
+      expect(present.length, `${rel} no longer lists 4+ filing types -- remove its exception`).toBeGreaterThanOrEqual(4);
     }
   });
 });

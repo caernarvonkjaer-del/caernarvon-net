@@ -8,6 +8,7 @@ import { resolveDescriptorForInventoryType } from '../../core/filing/filing-desc
 import { planCertificateOfServiceSection } from '../../core/filing/plan-certificate-of-service.js';
 import { maskSSN } from '../../core/pdf/ssn-format.js';
 import { startedRows } from '../../core/validation/row-started.js';
+import { PLAN_ADLS, PLAN_BENEFITS, PLAN_RIGHTS, planRightLabel } from '../../core/filing/models/plan-annual.js';
 
 export function buildPlanAnnualModel(D) {
   const d = D || {};
@@ -244,7 +245,7 @@ export function buildPlanAnnualModel(D) {
 
   // Page 5: Q3G benefits
   const b = d.benefits || {};
-  const planBenefits = typeof window !== 'undefined' && window.PLAN_BENEFITS ? window.PLAN_BENEFITS : [];
+  const planBenefits = PLAN_BENEFITS;
   sections.push({
     id: 'q3g',
     title: 'Question 3G',
@@ -308,7 +309,7 @@ export function buildPlanAnnualModel(D) {
 
   // Page 7: Q5-Q7
   const rights = d.rights || {};
-  const planRights = typeof window !== 'undefined' && window.PLAN_RIGHTS ? window.PLAN_RIGHTS : [];
+  const planRights = PLAN_RIGHTS;
   sections.push({
     id: 'q5-q7',
     title: 'Questions 5–7',
@@ -332,8 +333,8 @@ export function buildPlanAnnualModel(D) {
         colWidths: [65, 35],
         colAlign: ['left', 'left'],
         // Milestone 68G: the form's word for the stored value ("Yes" for
-        // 'Capable of restoration'); the bridge is legacy-app.js's planRightLabel.
-        rows: planRights.map(([k, label]) => [label, (typeof window !== 'undefined' && typeof window.planRightLabel === 'function') ? window.planRightLabel(rights[k]) : (rights[k] || '')]),
+        // 'Capable of restoration'): planRightLabel() from the Plan model.
+        rows: planRights.map(([k, label]) => [label, planRightLabel(rights[k])]),
       },
       {
         type: 'key-value-grid',
@@ -347,7 +348,7 @@ export function buildPlanAnnualModel(D) {
 
   // Page 8: Q8 ADLs
   const adls = d.adls || {};
-  const planAdls = typeof window !== 'undefined' && window.PLAN_ADLS ? window.PLAN_ADLS : [];
+  const planAdls = PLAN_ADLS;
   sections.push({
     id: 'q8',
     title: 'Question 8',

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { renderCaseCaptionFields } from '../../src/core/form/cards/case-caption-card.js';
 import { renderWardIdentityFields, renderReportingPeriodFields } from '../../src/core/form/cards/ward-demographics-card.js';
 import { renderPartyNameField } from '../../src/core/form/cards/guardian-attorney-card.js';
@@ -10,14 +10,16 @@ import { renderResidenceFields } from '../../src/core/form/cards/residence-facil
 // card inside a single visual box unchanged -- see case-caption-card.js's
 // header comment for why Plan Simplified's Cover page needs exactly that.
 describe('renderCaseCaptionFields', () => {
-  beforeEach(() => {
-    global.window = { countyInputS: (id, label, val, req) => `<div class="mb-2"><label class="form-label" for="${id}">${label}${req ? '<span class="req">*</span>' : ''}</label><input id="${id}" value="${val}"></div>` };
-  });
 
   it('binds Case Number to data-form-path via the Tier 1 primitive', () => {
-    const html = renderCaseCaptionFields({ caseNumber: '2026-CP-000123', county: 'Pinellas' });
+    // A stored case number in the form the app saves it. The field renders
+    // through formatCaseNumber(), as it always did in the browser; before
+    // Milestone 70's 70B that formatter was a window global this stub lacked,
+    // so a value like '2026-CP-000123' used to come back unformatted here and
+    // as '26-000123' in the app.
+    const html = renderCaseCaptionFields({ caseNumber: '26-000123-GD', county: 'Pinellas' });
     expect(html).toContain('data-form-path="caseNumber"');
-    expect(html).toContain('value="2026-CP-000123"');
+    expect(html).toContain('value="26-000123-GD"');
   });
 
   it('renders County via the reused countyInputS() widget, not a Tier 1 primitive', () => {

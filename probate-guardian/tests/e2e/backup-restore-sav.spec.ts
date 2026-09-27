@@ -93,7 +93,7 @@ test.describe('Milestone 18: Multi-Ward Backup & Save Controls Restore', { tag: 
       // Add a second ward
       await page.evaluate(async () => {
         (window as any).alert = () => {};
-        await (window as any).addWard('Backup Ward Beta', 'simplified');
+        await (window as any).GuardianForms.testing.createFiling.add('Backup Ward Beta', 'simplified');
       });
 
       await ensureSaveControlsOpen(page);
@@ -141,7 +141,7 @@ test.describe('Milestone 18: Multi-Ward Backup & Save Controls Restore', { tag: 
 
       await page.evaluate(async () => {
         (window as any).alert = () => {};
-        await (window as any).addWard('Restored Beta', 'annual');
+        await (window as any).GuardianForms.testing.createFiling.add('Restored Beta', 'annual');
       });
 
       await ensureSaveControlsOpen(page);
@@ -178,8 +178,8 @@ test.describe('Milestone 18: Multi-Ward Backup & Save Controls Restore', { tag: 
       dialogs.stop();
 
       // Verify wards are restored
-      const wardCount = await page.evaluate(() => (window as any).caseFile.wards.length);
-      const wardNames = await page.evaluate(() => (window as any).caseFile.wards.map((w: any) => w.wardName));
+      const wardCount = await page.evaluate(() => (window as any).GuardianForms.testing.snapshot().caseFile.wards.length);
+      const wardNames = await page.evaluate(() => (window as any).GuardianForms.testing.snapshot().caseFile.wards.map((w: any) => w.wardName));
 
       expect(wardNames).toContain('Restored Alpha');
       expect(wardNames).toContain('Restored Beta');
@@ -203,7 +203,7 @@ test.describe('Milestone 18: Multi-Ward Backup & Save Controls Restore', { tag: 
 
       await page.evaluate(async () => {
         (window as any).alert = () => {};
-        await (window as any).addWard('Secret Ward 2', 'guardian');
+        await (window as any).GuardianForms.testing.createFiling.add('Secret Ward 2', 'guardian');
       });
 
       await ensureSaveControlsOpen(page);
@@ -235,7 +235,7 @@ test.describe('Milestone 18: Multi-Ward Backup & Save Controls Restore', { tag: 
       await expect.poll(() => dialogs.messages.length).toBe(3);
       dialogs.stop();
 
-      const wardNames = await page.evaluate(() => (window as any).caseFile.wards.map((w: any) => w.wardName));
+      const wardNames = await page.evaluate(() => (window as any).GuardianForms.testing.snapshot().caseFile.wards.map((w: any) => w.wardName));
       expect(wardNames).toContain('Secret Ward 1');
       expect(wardNames).toContain('Secret Ward 2');
     } finally {
@@ -290,7 +290,7 @@ test.describe('Milestone 18: Multi-Ward Backup & Save Controls Restore', { tag: 
       expect(dialogs.messages[1]).toContain('Backup restored');
 
       // Both the pre-existing host ward and the merged one are present.
-      const wardNames = await page.evaluate(() => (window as any).caseFile.wards.map((w: any) => w.wardName));
+      const wardNames = await page.evaluate(() => (window as any).GuardianForms.testing.snapshot().caseFile.wards.map((w: any) => w.wardName));
       expect(wardNames).toContain('Host Ward');
       expect(wardNames).toContain('Single Ward Solo');
     } finally {
@@ -316,7 +316,7 @@ test.describe('Milestone 18: Multi-Ward Backup & Save Controls Restore', { tag: 
 
       // Set a recognizable case number
       await page.evaluate(() => {
-        (window as any).D.caseNumber = 'CASE-SAVED-IN-BACKUP';
+        (window as any).GuardianForms.testing.patchFiling({ 'caseNumber': 'CASE-SAVED-IN-BACKUP' });
       });
 
       await ensureSaveControlsOpen(page);
@@ -350,19 +350,19 @@ test.describe('Milestone 18: Multi-Ward Backup & Save Controls Restore', { tag: 
       // First restore the backup to load the ward. Restore does not open it,
       // so reaching the data requires an explicit switch.
       await page.setInputFiles('#backup-import-input', backupPath);
-      await page.waitForFunction(() => ((window as any).caseFile?.wards || []).length === 1, { timeout: 10_000 });
+      await page.waitForFunction(() => ((window as any).GuardianForms.testing.snapshot().caseFile?.wards || []).length === 1, { timeout: 10_000 });
       await expect.poll(() => dialogs.messages.length).toBe(2);
-      expect(await page.evaluate(() => (window as any).caseFile.activeWardId)).toBe(null);
+      expect(await page.evaluate(() => (window as any).GuardianForms.testing.snapshot().caseFile.activeWardId)).toBe(null);
 
-      await page.evaluate(() => (window as any).switchWard((window as any).caseFile.wards[0].wardId));
-      const caseNum1 = await page.evaluate(() => (window as any).D?.caseNumber);
+      await page.evaluate(() => (() => { const tt = (window as any).GuardianForms.testing; return tt.activateFiling.open(tt.snapshot().caseFile.wards[0].wardId); })());
+      const caseNum1 = await page.evaluate(() => (window as any).GuardianForms.testing.snapshot().filing?.caseNumber);
       expect(caseNum1).toBe('CASE-SAVED-IN-BACKUP');
 
       // Now simulate active in-memory modifications on window.D
       await page.evaluate(() => {
-        (window as any).D.caseNumber = 'CASE-BEFORE-RESTORE';
+        (window as any).GuardianForms.testing.patchFiling({ 'caseNumber': 'CASE-BEFORE-RESTORE' });
       });
-      const modifiedCaseNum = await page.evaluate(() => (window as any).D?.caseNumber);
+      const modifiedCaseNum = await page.evaluate(() => (window as any).GuardianForms.testing.snapshot().filing?.caseNumber);
       expect(modifiedCaseNum).toBe('CASE-BEFORE-RESTORE');
 
       // Re-restore the backup. Focus is released and window.D cleared, so the
@@ -373,15 +373,15 @@ test.describe('Milestone 18: Multi-Ward Backup & Save Controls Restore', { tag: 
       // nulls focus synchronously but window.D is cleared by the dashboard
       // entry it navigates to, so waiting on the flag races that navigation.
       await page.waitForFunction(
-        () => Object.keys((window as any).D || {}).length === 0,
+        () => Object.keys((window as any).GuardianForms.testing.snapshot().filing || {}).length === 0,
         { timeout: 10_000 }
       );
       await expect.poll(() => dialogs.messages.length).toBe(4);
-      expect(await page.evaluate(() => (window as any).D?.caseNumber)).toBeUndefined();
+      expect(await page.evaluate(() => (window as any).GuardianForms.testing.snapshot().filing?.caseNumber)).toBeUndefined();
 
       // Opening it again yields the backup's data, not the discarded edit.
-      await page.evaluate(() => (window as any).switchWard((window as any).caseFile.wards[0].wardId));
-      const reboundCaseNum = await page.evaluate(() => (window as any).D?.caseNumber);
+      await page.evaluate(() => (() => { const tt = (window as any).GuardianForms.testing; return tt.activateFiling.open(tt.snapshot().caseFile.wards[0].wardId); })());
+      const reboundCaseNum = await page.evaluate(() => (window as any).GuardianForms.testing.snapshot().filing?.caseNumber);
       expect(reboundCaseNum).toBe('CASE-SAVED-IN-BACKUP');
       dialogs.stop();
     } finally {
@@ -406,7 +406,7 @@ test.describe('Milestone 18: Multi-Ward Backup & Save Controls Restore', { tag: 
       await chooseNoPassword(tab1);
       await createWard(tab1, 'Lock Contention Ward');
 
-      const targetWardId = await tab1.evaluate(() => (window as any).caseFile.activeWardId);
+      const targetWardId = await tab1.evaluate(() => (window as any).GuardianForms.testing.snapshot().caseFile.activeWardId);
       expect(targetWardId).toBeTruthy();
 
       await ensureSaveControlsOpen(tab1);
@@ -433,8 +433,8 @@ test.describe('Milestone 18: Multi-Ward Backup & Save Controls Restore', { tag: 
       // so this is exactly that cleanup, done explicitly since the fallback
       // download path this suite exercises doesn't get to do it itself.
       await tab1.evaluate(async () => {
-        await (window as any).clearSessionRestoreCache();
-        (window as any)._dirtySinceExport = false;
+        await (window as any).GuardianForms.testing.recoveryCache.clear();
+        (window as any).GuardianForms.testing.save.markClean();
       });
 
       // Now open Tab 2 in the same browser context (shares that same
@@ -450,8 +450,8 @@ test.describe('Milestone 18: Multi-Ward Backup & Save Controls Restore', { tag: 
 
       // Restore the backup in Tab 2. This loads the ward but opens nothing.
       await tab2.setInputFiles('#backup-import-input', backupPath);
-      await tab2.waitForFunction(() => ((window as any).caseFile?.wards || []).length >= 1, { timeout: 10_000 });
-      expect(await tab2.evaluate(() => (window as any).caseFile.activeWardId)).toBe(null);
+      await tab2.waitForFunction(() => ((window as any).GuardianForms.testing.snapshot().caseFile?.wards || []).length >= 1, { timeout: 10_000 });
+      expect(await tab2.evaluate(() => (window as any).GuardianForms.testing.snapshot().caseFile.activeWardId)).toBe(null);
       // Two dialogs (restore confirm, then the trailing completion alert)
       // -- wait for both before proceeding, same reasoning as the other
       // restore flows above.
@@ -459,7 +459,7 @@ test.describe('Milestone 18: Multi-Ward Backup & Save Controls Restore', { tag: 
       tab2Dialogs.stop();
 
       // The user then chooses Edit, which is where contention now surfaces.
-      await tab2.evaluate((id) => (window as any).switchWard(id), targetWardId);
+      await tab2.evaluate((id) => (window as any).GuardianForms.testing.activateFiling.open(id), targetWardId);
 
       // switchWard -> activateWard hit contention and triggered ward locked modal on Tab 2.
       // expect(...).toBeVisible() already auto-retries precisely on this element;
@@ -468,11 +468,11 @@ test.describe('Milestone 18: Multi-Ward Backup & Save Controls Restore', { tag: 
       await expect(lockedModal).toBeVisible();
 
       // Tab 2 must not hold the lock on targetWardId
-      const tab2HeldId = await tab2.evaluate(() => (window as any).getCurrentLockedWardId());
+      const tab2HeldId = await tab2.evaluate(() => (window as any).GuardianForms.testing.persistenceState.lockedFilingId());
       expect(tab2HeldId).toBe(null);
 
       // Tab 1 must still hold the lock on targetWardId
-      const tab1HeldId = await tab1.evaluate(() => (window as any).getCurrentLockedWardId());
+      const tab1HeldId = await tab1.evaluate(() => (window as any).GuardianForms.testing.persistenceState.lockedFilingId());
       expect(tab1HeldId).toBe(targetWardId);
     } finally {
       await context.close();
@@ -509,7 +509,7 @@ test.describe('Milestone 18: Multi-Ward Backup & Save Controls Restore', { tag: 
 
       // Arm a mock handle, as if the picker above had just granted one.
       await page.evaluate(async () => {
-        const { blob } = await (window as any).buildCaseFileBlob();
+        const blob = await (window as any).GuardianForms.testing.exportArchive.caseFile();
         const mockHandle = {
           name: 'case-file.sav',
           writeCallCount: 0,
@@ -521,7 +521,7 @@ test.describe('Milestone 18: Multi-Ward Backup & Save Controls Restore', { tag: 
             close: async () => {},
           }),
         };
-        await (window as any).rememberCaseFileHandle(mockHandle);
+        await (window as any).GuardianForms.testing.launchState.rememberHandle(mockHandle);
       });
 
       // Second click: expect a silent rewrite -- no second download event --

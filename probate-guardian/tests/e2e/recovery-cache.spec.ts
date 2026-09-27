@@ -21,17 +21,17 @@ test.describe('recovery-cache (position memory + save clears the lock-recovery c
     await startNewCase(page);
     await chooseNoPassword(page);
     await createWard(page, 'Saved Ward');
-    await page.evaluate(() => (window as any).flushPendingSave());
+    await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
 
-    const cacheBefore = await page.evaluate(() => (window as any)._sessionCacheGet());
+    const cacheBefore = await page.evaluate(() => (window as any).GuardianForms.testing.persistenceState.sessionCache());
     expect(cacheBefore?.wards?.length).toBeGreaterThan(0);
 
     const downloadPromise = page.waitForEvent('download');
-    await page.evaluate(() => { void (window as any).exportGuardianDataZip(); });
+    await page.evaluate(() => { void (window as any).GuardianForms.testing.saveArchive.all(); });
     await downloadPromise;
     await acceptDynDialog(page); // "Backup complete" alertModal()
 
-    const cacheAfter = await page.evaluate(() => (window as any)._sessionCacheGet());
+    const cacheAfter = await page.evaluate(() => (window as any).GuardianForms.testing.persistenceState.sessionCache());
     expect(cacheAfter).toBeNull();
   });
 
@@ -40,8 +40,8 @@ test.describe('recovery-cache (position memory + save clears the lock-recovery c
     await startNewCase(page);
     await chooseNoPassword(page);
     await createWard(page, 'Position Ward', 'guardian');
-    await page.evaluate(() => (window as any).navigate('/b1'));
-    await expect.poll(() => page.evaluate(() => (window as any).currentPage)).toBe('/b1');
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/b1'));
+    await expect.poll(() => page.evaluate(() => (window as any).GuardianForms.testing.snapshot().currentPage)).toBe('/b1');
 
     const savPath = await exportAndCapture(page);
 
@@ -59,8 +59,8 @@ test.describe('recovery-cache (position memory + save clears the lock-recovery c
     await startNewCase(page);
     await chooseNoPassword(page);
     await createWard(page, 'Old Ward', 'guardian');
-    await page.evaluate(() => (window as any).navigate('/b1'));
-    await expect.poll(() => page.evaluate(() => (window as any).currentPage)).toBe('/b1');
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/b1'));
+    await expect.poll(() => page.evaluate(() => (window as any).GuardianForms.testing.snapshot().currentPage)).toBe('/b1');
     await expect.poll(() => page.evaluate(() => localStorage.getItem('pg-last-position'))).toBeTruthy();
 
     await gotoApp(page);

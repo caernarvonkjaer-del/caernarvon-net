@@ -1,0 +1,25 @@
+{
+ "generatedBy": "node scripts/ms70-declaration-dispositions.mjs --write",
+ "note": "Milestone 70, 70A: a disposition and target delivery for every top-level declaration of src/legacy-app.js, built from reference evidence and corrected by the owner's review (tests/baseline/ms70-declaration-review.json; reviewNote says why an entry was moved). reviewed:true means the entry still matches what the review confirmed. delete-as-dead means nothing references it anywhere.",
+ "summary": {
+  "total": 0,
+  "byDisposition": {},
+  "byDelivery": {},
+  "windowExportsByReason": {
+   "no-consumer": 1
+  },
+  "duplicates": 0,
+  "liveDuplicates": []
+ },
+ "declarations": [],
+ "windowExports": [
+  {
+   "file": "src/core/runtime/browser-api.js",
+   "name": "GuardianForms",
+   "via": "defineProperty",
+   "readers": [],
+   "e2eFiles": 0,
+   "reason": "no-consumer"
+  }
+ ]
+}

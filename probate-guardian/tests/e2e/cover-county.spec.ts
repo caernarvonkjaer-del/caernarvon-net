@@ -1,5 +1,6 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 import { freshStartNoPassword, createWard } from './support/target';
+import { extractPdfText } from './support/pdf-extract';
 
 // Milestone 40C-A. The governing decision: a ward has NO default county until the
 // user selects County on that ward's first filing Cover. That first explicit
@@ -15,15 +16,60 @@ import { freshStartNoPassword, createWard } from './support/target';
 
 const COUNTY_INPUT = 'input[data-form-control="county"]';
 
+/**
+ * Adds a Plan Annual through the real Add Filing dialog, carrying over from
+ * the filing named `sourceName` (Annual -> Plan Annual is a pairing the
+ * dialog offers), and returns the new filing's ward Party link and county.
+ */
+async function addCarriedPlanAnnual(page: Page, sourceName: string) {
+  const sourceId = await page.evaluate((n) => (window as any).GuardianForms.testing.snapshot().caseFile.wards
+    .find((x: any) => x.wardName === n).wardId, sourceName);
+  await page.evaluate(() => (window as any).GuardianForms.testing.createFiling.openDialog('planAnnual'));
+  await page.locator('#addWardModal.show').waitFor({ state: 'visible' });
+  await page.fill('#new-ward-name', sourceName);
+  await page.selectOption('#carry-source-ward', sourceId);
+  await page.click('#addWardModal [data-modal-action="add-ward"]');
+  await page.locator('#addWardModal').waitFor({ state: 'hidden' });
+  return page.evaluate((src) => {
+    const snap = (window as any).GuardianForms.testing.snapshot();
+    return {
+      wardPartyId: snap.filing.wardPartyId || null,
+      county: snap.filing.county,
+      sourceCounty: snap.caseFile.wards.find((x: any) => x.wardId === src).county,
+      inventoryType: snap.filing.inventoryType,
+    };
+  }, sourceId);
+}
+
+/**
+ * The open Annual filing's court PDF as text -- the caption a filer would
+ * print -- and whether its export gate blocks on County.
+ */
+async function annualPdfCaption(page: Page) {
+  const out = await page.evaluate(async () => {
+    const t = (window as any).GuardianForms.testing;
+    const { buildAnnualAccountingModel, generateCourtFormPdf } = await t.generateOutput.annualPdf();
+    const doc = await generateCourtFormPdf(buildAnnualAccountingModel(t.snapshot().filing));
+    const issues = await t.validate.open();
+    return {
+      county: t.field('county'),
+      rawPdf: doc.output(),
+      blocked: issues.some((m: any) => /County/i.test(String(m?.message ?? m))),
+    };
+  });
+  return { county: out.county, blocked: out.blocked, text: await extractPdfText(out.rawPdf) };
+}
+
 test.describe('Milestone 40C-A: the Cover county selector establishes the ward county', () => {
   test('a brand-new filing starts with no county at all', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Blank County Ward', 'annual');
 
     await expect(page.locator(COUNTY_INPUT).first()).toHaveValue('');
-    expect(await page.evaluate(() => (window as any).D.county)).toBe('');
-    // And nothing downstream invents one.
-    expect(await page.evaluate(() => (window as any).circuitForCounty((window as any).D.county))).toBeNull();
+    expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('county'))).toBe('');
+    // And nothing downstream invents one: the court PDF names no circuit.
+    const { text } = await annualPdfCaption(page);
+    expect(text).not.toMatch(/JUDICIAL CIRCUIT/);
   });
 
   test('selecting a county through the real dropdown stores it on the filing and the ward Party', async ({ page }) => {
@@ -39,9 +85,9 @@ test.describe('Milestone 40C-A: the Cover county selector establishes the ward c
 
     const stored = await page.evaluate(() => {
       const w = window as any;
-      const filing = w.D;
+      const filing = w.GuardianForms.testing.snapshot().filing;
       const party = filing.wardPartyId
-        ? (w.caseFile.parties || []).find((p: any) => p.id === filing.wardPartyId)
+        ? (w.GuardianForms.testing.snapshot().caseFile.parties || []).find((p: any) => p.id === filing.wardPartyId)
         : null;
       return { filingCounty: filing.county, wardPartyId: filing.wardPartyId || null, partyCounty: party ? party.county : null };
     });
@@ -75,8 +121,8 @@ test.describe('Milestone 40C-A: the Cover county selector establishes the ward c
 
     const stored = await page.evaluate(() => {
       const w = window as any;
-      const filing = w.D;
-      const party = filing.wardPartyId ? (w.caseFile.parties || []).find((p: any) => p.id === filing.wardPartyId) : null;
+      const filing = w.GuardianForms.testing.snapshot().filing;
+      const party = filing.wardPartyId ? (w.GuardianForms.testing.snapshot().caseFile.parties || []).find((p: any) => p.id === filing.wardPartyId) : null;
       return { filingCounty: filing.county, wardPartyId: filing.wardPartyId || null, partyCounty: party ? party.county : null };
     });
     expect(stored.filingCounty).toBe('Pasco');
@@ -96,13 +142,9 @@ test.describe('Milestone 40C-A: the Cover county selector establishes the ward c
 
     // Create a second filing carrying over from the first, which is the path
     // that links the same ward Party.
-    const second = await page.evaluate(() => {
-      const w = window as any;
-      const source = w.caseFile.wards.find((x: any) => x.wardName === 'Hydrating Ward');
-      const fields = w.carryOverFields(source, 'annual');
-      return { wardPartyId: fields.wardPartyId || null, county: fields.county };
-    });
+    const second = await addCarriedPlanAnnual(page, 'Hydrating Ward');
 
+    expect(second.inventoryType).toBe('planAnnual');
     expect(second.wardPartyId, 'the destination links to the same ward Party').toBeTruthy();
     expect(second.county, 'and hydrates the canonical county').toBe('Orange');
   });
@@ -112,17 +154,17 @@ test.describe('Milestone 40C-A: the Cover county selector establishes the ward c
     await createWard(page, 'Unlinked Source Ward', 'annual');
 
     // A filing that carries a county but whose ward Party has none -- the case
-    // the decision forbids drawing from. Set the snapshot directly (not through
-    // the Cover) precisely so no Party county is established.
-    const result = await page.evaluate(() => {
-      const w = window as any;
-      const source = w.caseFile.wards.find((x: any) => x.wardName === 'Unlinked Source Ward');
-      source.county = 'Pasco';
-      w.ensureWardPartyForFiling(source);
-      const fields = w.carryOverFields(source, 'annual');
-      return { county: fields.county, sourceCounty: source.county };
+    // the decision forbids drawing from. Setup (D9): the county is patched onto
+    // the filing, not chosen on the Cover, precisely so no Party county is
+    // established; the Party itself is then linked with no county.
+    await page.evaluate(() => {
+      const t = (window as any).GuardianForms.testing;
+      t.patchFiling({ county: 'Pasco' });
+      t.updateSharedRecords.ensureWardPartyForFiling(t.snapshot().filing.wardId);
     });
+    const result = await addCarriedPlanAnnual(page, 'Unlinked Source Ward');
 
+    expect(result.inventoryType).toBe('planAnnual');
     expect(result.sourceCounty, 'the source snapshot is left alone').toBe('Pasco');
     expect(result.county, 'but it does not supply the destination county').toBe('');
   });
@@ -131,20 +173,16 @@ test.describe('Milestone 40C-A: the Cover county selector establishes the ward c
     await freshStartNoPassword(page);
     await createWard(page, 'No Caption Ward', 'annual');
 
-    const state = await page.evaluate(() => {
-      const w = window as any;
-      return {
-        county: w.D.county,
-        caption: w.circuitCourtCaption ? w.circuitCourtCaption(w.D.county, true) : null,
-        blocked: w.validateAnnual().some((m: string) => /County/i.test(m)),
-      };
-    });
+    // The caption is read from the court PDF itself. Until Milestone 70's 70T
+    // this test read legacy-app.js's circuitCourtCaption(), which nothing in
+    // the app calls -- so the caption a filer actually gets went unchecked.
+    const state = await annualPdfCaption(page);
 
     expect(state.county).toBe('');
     expect(state.blocked, 'County validation still blocks export').toBe(true);
-    expect(state.caption).not.toMatch(/SIXTH/i);
-    expect(state.caption).not.toMatch(/PINELLAS/i);
-    expect(state.caption).toContain('COUNTY NOT SELECTED');
+    expect(state.text).not.toMatch(/SIXTH/i);
+    expect(state.text).not.toMatch(/PINELLAS/i);
+    expect(state.text).toContain('COUNTY NOT SELECTED');
   });
 
   test('the real Pinellas selection still produces the correct Sixth Circuit caption', async ({ page }) => {
@@ -157,7 +195,7 @@ test.describe('Milestone 40C-A: the Cover county selector establishes the ward c
     await page.locator('[data-form-mousedown="select-county"][data-county="Pinellas"]').click();
     await expect(county).toHaveValue('Pinellas');
 
-    const caption = await page.evaluate(() => (window as any).circuitCourtCaption((window as any).D.county, true));
+    const { text: caption } = await annualPdfCaption(page);
     expect(caption).toContain('SIXTH JUDICIAL CIRCUIT');
     expect(caption).toContain('PINELLAS COUNTY, FLORIDA');
   });

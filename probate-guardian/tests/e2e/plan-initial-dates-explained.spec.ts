@@ -16,7 +16,7 @@ const LETTERS = /when this guardian's letters were signed.*successor guardian.*6
 test('the Cover explains how the inception date and the letters date differ, beside each field', async ({ page }) => {
   await freshStartNoPassword(page);
   await createWard(page, 'Initial Plan Dates Explained', 'planInitial');
-  await page.evaluate(() => (window as any).navigate('/'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
 
   for (const [id, pattern] of [['inceptionDate', INCEPTION], ['lettersSignedDate', LETTERS]] as const) {
     const input = page.locator(`#main-content input#${id}`);

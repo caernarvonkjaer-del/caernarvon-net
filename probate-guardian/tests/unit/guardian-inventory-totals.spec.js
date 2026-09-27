@@ -4,8 +4,10 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   n, r2, wardShare, isRestrictedAnswer, auditFeeFor, makeGuardianCalc, calcTotalsGuardian,
-  GUARDIAN_CALC_METHODS, AUDIT_FEE_THRESHOLD, AUDIT_FEE_OVER_THRESHOLD,
+  GUARDIAN_CALC_METHODS, AUDIT_FEE_THRESHOLD, AUDIT_FEE_OVER_THRESHOLD, calc,
 } from '../../src/features/guardian-inventory/totals.js';
+import { withFilingInView } from '../../src/core/state.js';
+import { classicScriptSources } from './support/classic-scripts.js';
 
 // Milestone 60A. The Verified Initial Inventory's arithmetic, checked against
 // the court workbook's own formulas (templates/guardian-template.js, read
@@ -224,38 +226,31 @@ describe('schedule totals, summaries and bond lines against the workbook formula
 
 // Completion criterion 3 (MILESTONE-60-PROPOSAL.md): the live UI and the PDF
 // must agree because they share one implementation, not because two copies
-// happen to match. legacy-app.js is a classic script, so its `calc` adapter
-// is sliced out of the shipped source and evaluated here against this module
-// -- proving the code that ships forwards to it, and that the adapter's
-// figures on the rounding fixture are the workbook's, not the old per-row
-// rounding. Same convention as cell-reader.spec.js and
-// date-truncation-helpers.spec.js.
-describe('legacy-app.js\'s calc adapter forwards to this module', () => {
-  const src = fs.readFileSync(path.join(root, 'src', 'legacy-app.js'), 'utf8');
-  const start = src.indexOf('const GUARDIAN_CALC_METHODS=');
-  const end = src.indexOf('window.calc=calc;', start);
-  const body = src.slice(start, end);
+// happen to match. The UI's calc.totalA1(), calc.wardVal(entry), ... used to
+// be a forwarder defined in legacy-app.js, sliced out of its source and
+// evaluated here; Milestone 70's 70B moved it into this module as `calc`, so
+// it is imported and tested directly. legacy-app.js kept a one-line Proxy
+// onto it until 70J, checked at the end, and 70L deleted legacy-app.js.
+describe('calc: the UI\'s call shape, bound to the open filing', () => {
+  // The filing calc reads is the case store's; one is put in view for the call
+  // (Milestone 70, 70J -- the test pointed window.D at it).
+  const withWindowD = (D, fn) => withFilingInView(D, fn);
 
-  const buildAdapter = (D) => {
-    const win = { makeGuardianCalc };
-    return new Function('window', 'D', `${body}\nreturn calc;`)(win, D);
-  };
-
-  test('the adapter block is present and self-contained', () => {
-    expect(start).toBeGreaterThan(0);
-    expect(end).toBeGreaterThan(start);
-    // The old formulas are gone from the classic script (secondary evidence;
-    // the behavioral parity below is the proof).
-    expect(body).not.toMatch(/wardPercent\|\|0\)\/100/);
-    expect(body).not.toMatch(/r2\(/);
+  test('is frozen, and holds the old formulas nowhere', () => {
+    expect(Object.isFrozen(calc)).toBe(true);
+    // The old per-row formulas are in no classic script (secondary evidence;
+    // the behavioral parity below is the proof). They were legacy-app.js's.
+    for (const { file, source } of classicScriptSources()) {
+      expect(source, file).not.toMatch(/wardPercent\|\|0\)\/100/);
+      expect(source, file).not.toMatch(/GUARDIAN_CALC_METHODS/);
+    }
   });
 
-  test('every method name the UI calls exists on both the adapter and the module', () => {
-    const adapter = buildAdapter(empty());
-    expect(Object.keys(adapter).sort()).toEqual([...GUARDIAN_CALC_METHODS].sort());
+  test('every method name the UI calls exists on calc and on the module', () => {
+    expect(Object.keys(calc).sort()).toEqual([...GUARDIAN_CALC_METHODS].sort());
   });
 
-  test('parity: adapter figures equal the module\'s for a mixed-percentage filing', () => {
+  test('parity: calc figures equal the module\'s for a mixed-percentage filing', () => {
     const D = {
       ...empty(),
       scheduleA1: ROUNDING_ROWS,
@@ -266,25 +261,38 @@ describe('legacy-app.js\'s calc adapter forwards to this module', () => {
       scheduleB4: [{ fullLiabilityBalance: '321', wardPercent: '75' }],
       scheduleC5: [{ totalAssetValue: '4000', jointOwnerPercent: '33.33' }],
     };
-    const adapter = buildAdapter(D);
-    const t = calcTotalsGuardian(D);
-    for (const key of Object.keys(t)) {
-      expect(adapter[key](), key).toBe(t[key]);
-    }
-    expect(adapter.wardVal(D.scheduleA1[0])).toBe(makeGuardianCalc(D).wardVal(D.scheduleA1[0]));
+    withWindowD(D, () => {
+      const t = calcTotalsGuardian(D);
+      for (const key of Object.keys(t)) {
+        expect(calc[key](), key).toBe(t[key]);
+      }
+      expect(calc.wardVal(D.scheduleA1[0])).toBe(makeGuardianCalc(D).wardVal(D.scheduleA1[0]));
+    });
   });
 
-  test('the adapter reads window.D live: the rounding fixture gives the workbook\'s $2,042.10 through it', () => {
+  test('calc reads the open filing live: the rounding fixture gives the workbook\'s $2,042.10 through it', () => {
     const D = { ...empty(), scheduleA1: ROUNDING_ROWS };
-    const adapter = buildAdapter(D);
-    expect(r2(adapter.totalA1())).toBe(2042.1);
-    // Mutating the filing is seen on the next call -- no snapshot.
-    D.scheduleA1 = [{ fullAssetValue: '100', wardPercent: '100' }];
-    expect(adapter.totalA1()).toBe(100);
+    withWindowD(D, () => {
+      expect(r2(calc.totalA1())).toBe(2042.1);
+      // Mutating the filing is seen on the next call -- no snapshot.
+      D.scheduleA1 = [{ fullAssetValue: '100', wardPercent: '100' }];
+      expect(calc.totalA1()).toBe(100);
+      // And so is another filing put in view (a caller totalling another one).
+      withWindowD({ ...empty(), scheduleA1: [{ fullAssetValue: '50', wardPercent: '100' }] }, () => {
+        expect(calc.totalA1()).toBe(50);
+      });
+    });
   });
 
-  test('the adapter fails loudly rather than printing $0.00 if the module never loaded', () => {
-    const adapter = new Function('window', 'D', `${body}\nreturn calc;`)({}, empty());
-    expect(() => adapter.total()).toThrow(/Guardian calculator not loaded/);
+  // Milestone 70, 70J: the monolith's one use of that Proxy was the
+  // dashboard's headline total, which pointed window.D at each filing in turn;
+  // it totals the filing it is handed, and the Proxy went. Since 70K the
+  // headline total is the feature services' (src/features-loader.js), and
+  // 70L deleted the monolith.
+  test("the dashboard's headline total for an Inventory is this module's total of the filing it is handed", async () => {
+    const { featureServices } = await import('../../src/features-loader.js');
+    const D = { ...empty(), inventoryType: 'guardian', scheduleA1: ROUNDING_ROWS };
+    expect(featureServices.headlineTotal(D)).toBe(calcTotalsGuardian(D).total);
+    expect(calcTotalsGuardian(D).total).toBe(withWindowD(D, () => calc.total()));
   });
 });

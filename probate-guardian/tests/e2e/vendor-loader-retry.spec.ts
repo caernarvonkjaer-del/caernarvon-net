@@ -24,7 +24,7 @@ test('a blocked ExcelJS script load fails cleanly, and a later export retries su
   await freshStartNoPassword(page);
   await createWard(page, 'Vendor Loader Retry Ward', 'guardian');
   await fillMinimalValidGuardianWard(page);
-  await page.evaluate(() => (window as any).navigate('/print'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
 
   // First attempt: the script request is aborted, loadGlobalScript()'s
   // promise rejects, and doSaveExcel()'s own catch surfaces it as status

@@ -16,6 +16,7 @@
 // deliberately themed one case differently loses that. Acceptable — theme is a
 // display preference, not case data — but stated rather than left to be
 // discovered.
+import { ic } from './ui/icons.js';
 
 export const THEME_STORAGE_KEY = 'pg-theme-v1';
 export const THEMES = ['light', 'dark'];
@@ -82,11 +83,36 @@ export function resolvePaintTheme() {
   return 'light';
 }
 
-// Global bridge for legacy-app.js, a classic script that cannot import modules.
-if (typeof window !== 'undefined') {
-  window.THEME_STORAGE_KEY = THEME_STORAGE_KEY;
-  window.readStoredTheme = readStoredTheme;
-  window.writeStoredTheme = writeStoredTheme;
-  window.seedStoredThemeFromLegacy = seedStoredThemeFromLegacy;
-  window.resolvePaintTheme = resolvePaintTheme;
+// Milestone 70, 70H: the theme button -- the theme in use, applying one and
+// toggling it -- moved from legacy-app.js's THEME (light / dark).
+export function currentTheme(){
+  return document.documentElement.getAttribute('data-theme')==='dark' ? 'dark' : 'light';
+}
+
+export function applyTheme(theme,persist){
+  document.documentElement.setAttribute('data-theme',theme);
+  // Milestone 40D: prepaint.js sets BOTH attributes before first paint, but this
+  // function only ever set data-theme -- so toggling left data-bs-theme on
+  // whatever was painted at load and Bootstrap's own components stayed on the
+  // old palette. Setting both here is part of making the two agree.
+  document.documentElement.setAttribute('data-bs-theme',theme);
+  if(persist){
+    // Milestone 40D: theme is a per-device display preference in localStorage,
+    // not case data in the .sav. This used to call saveAppState('theme',theme),
+    // which landed in the file's appState section -- readable only after the
+    // .sav loaded (and after the password, for an encrypted file), which is what
+    // made the theme flash on every reload.
+    writeStoredTheme(theme);
+  }
+  const btns=document.querySelectorAll('#theme-toggle-btn, .topnav-theme');
+  btns.forEach(btn=>{
+    const isDark=theme==='dark';
+    btn.innerHTML=ic(isDark?'sun':'moon',16);
+    btn.setAttribute('aria-pressed',String(isDark));
+    btn.setAttribute('aria-label','Switch to '+(isDark?'light':'dark')+' theme');
+  });
+}
+
+export function toggleTheme(){
+  applyTheme(currentTheme()==='dark' ? 'light' : 'dark', true);
 }

@@ -29,18 +29,18 @@ const UCN = '50-2026-ga-000123-xxxx-xx';   // deliberately lower-case: kept as t
 for (const { label, type } of TYPES) {
   test(`${label}: the Cover's UCN is kept as typed, persists across navigation, and is optional`, async ({ page }) => {
     await freshStartNoPassword(page);
-    await page.evaluate(([t]) => (window as any).addWard(`Ucn ${t}`, t), [type]);
-    await page.evaluate(() => (window as any).navigate('/'));
+    await page.evaluate(([t]) => (window as any).GuardianForms.testing.createFiling.add(`Ucn ${t}`, t), [type]);
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
 
     const input = ucnInput(page);
     await expect(input, `the ${label} Cover should have a UCN field`).toBeVisible();
 
     // Optional: blank by default, and it is not one of the things the filer is told is missing.
     await expect(input).toHaveValue('');
-    const missingBefore: string[] = await page.evaluate(() => {
-      const w = window as any;
-      const raw = (w.validateGuardian || w.validateAnnual || w.validateSimplified || w.validatePlanAnnual
-        || w.validatePlanInitial || w.validatePlanMinor || w.validatePlanSimplified)?.(w.D) || [];
+    // The open filing's own validator (70T: the first validator that happened
+    // to be loaded is not necessarily this filing type's).
+    const missingBefore: string[] = await page.evaluate(async () => {
+      const raw = await (window as any).GuardianForms.testing.validate.open();
       return raw.map((e: any) => String(e?.message ?? e));
     });
     expect(missingBefore.filter((m) => /\bUCN\b/i.test(m)), 'a blank UCN is never reported as missing').toEqual([]);
@@ -49,11 +49,11 @@ for (const { label, type } of TYPES) {
     await input.fill(UCN);
     await input.blur();
     await expect(input).toHaveValue(UCN);
-    expect(await page.evaluate(() => (window as any).D.ucn), 'stored exactly as typed').toBe(UCN);
+    expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('ucn')), 'stored exactly as typed').toBe(UCN);
 
     // Survives leaving the page and coming back.
-    await page.evaluate(() => (window as any).navigate('/summary'));
-    await page.evaluate(() => (window as any).navigate('/'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/summary'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
     await expect(ucnInput(page)).toHaveValue(UCN);
   });
 }

@@ -21,15 +21,9 @@ test.describe('Milestone 11 security boundaries', () => {
     expect(directives.get('script-src-elem') || []).not.toContain("'unsafe-inline'");
   });
 
-  test('unknown fragment names are rejected without a request', async ({ page }) => {
-    const fragmentRequests: string[] = [];
-    page.on('request', (request) => {
-      if (request.url().includes('/fragments/')) fragmentRequests.push(request.url());
-    });
-    await gotoApp(page);
-    await expect(page.evaluate(() => (window as any).loadFragment('../index'))).rejects.toThrow('Unknown fragment');
-    expect(fragmentRequests).toEqual([]);
-  });
+  // "Unknown fragment names are rejected without a request" is checked on the
+  // module itself, with every request recorded: tests/unit/fragment-loader.spec.js
+  // (Milestone 70, 70T -- a browser spec names no app global but GuardianForms).
 
   test('hosted script and module responses use JavaScript MIME types', async ({ page }) => {
     const wrongMime: string[] = [];

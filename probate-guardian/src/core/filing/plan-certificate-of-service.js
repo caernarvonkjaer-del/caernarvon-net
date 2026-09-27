@@ -191,10 +191,3 @@ export function planCertificateOfServiceSection(filing, cfg = {}, fmtDate = (v) 
     blocks,
   };
 }
-
-// The classic legacy-app.js sidebar reaches the "started" rule through window,
-// as it reaches serviceRecipientIssues (Milestone 57B): a second reading of the
-// same data in that file is how the sidebar and its sources drift apart.
-if (typeof window !== 'undefined') {
-  window.planCertificateStarted = certificateStarted;
-}

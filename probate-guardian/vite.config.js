@@ -7,13 +7,14 @@ import { createHash } from 'node:crypto';
 //   - dist/web      chunked build served over HTTPS/localhost (Cloudflare Pages)
 //   - dist/portable  self-contained folder for the file:// double-click workflow
 //
-// Most application code now lives in ES modules under src/core/ and
-// src/features/ (Milestones 2-40), which Vite bundles normally through
-// src/main.js. What remains classic is index.html's <script src> tags for
-// lib/* and src/legacy-app.js (Milestone 1's recorded decision, still in
-// force). Vite's HTML pipeline refuses to bundle those at all -- "can't be
-// bundled without type='module' attribute" -- it neither inlines nor copies
-// them, which silently produced a build missing JSZip/Bootstrap/legacy-app.js
+// The application is ES modules under src/, which Vite bundles through
+// src/main.js. (Milestones 2-40 moved most of it out of the classic script
+// src/legacy-app.js, Milestone 70 the rest, and 70L deleted that script.)
+// What remains classic is index.html's <script src> tags for lib/* and
+// src/prepaint.js, which sets the theme before the first paint. Vite's HTML
+// pipeline refuses to bundle those at all -- "can't be bundled without
+// type='module' attribute" -- it neither inlines nor copies them, which
+// silently produced a build missing JSZip, Bootstrap and the classic script
 // until this was caught. They're copied here as static passthrough assets
 // instead. (templates/*.js -- the embedded court Excel templates -- are
 // real ES-module imports of src/core/persistence/templates.js and need no
@@ -28,10 +29,9 @@ import { createHash } from 'node:crypto';
 // step 6 of INDEX-SPLIT-PLAN.md's migration sequence (later milestone), not
 // something to force here by changing untouched application code.
 //
-// Only src/legacy-app.js is copied this way, not all of src/ -- Milestone 2
-// phases B/D add real ES modules under src/core/ and src/features/ that
-// Vite's own import() analysis must actually process (bundle, hash,
-// code-split), not bypass as an opaque static file.
+// Only src/prepaint.js is copied this way, not all of src/ -- the ES modules
+// under src/ are what Vite's own import() analysis must actually process
+// (bundle, hash, code-split), not bypass as an opaque static file.
 const STATIC_COPY_TARGETS = [
   { src: 'lib', dest: '.' },
   { src: 'icons', dest: '.' },
@@ -45,7 +45,6 @@ const STATIC_COPY_TARGETS = [
   // bundler ever sees a reference to, so without this it builds fine and
   // 404s the moment either button is clicked.
   { src: 'help/index.html', dest: '.' },
-  { src: 'src/legacy-app.js', dest: '.' },
   { src: 'src/prepaint.js', dest: 'src', rename: { stripBase: true, name: 'prepaint.js' } },
   // fragments/*.html: src/fragment-loader.js fetches these as plain static
   // files everywhere except file:// (see the comment there for the full

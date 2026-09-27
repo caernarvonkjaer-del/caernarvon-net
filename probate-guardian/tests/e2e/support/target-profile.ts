@@ -10,7 +10,11 @@ import { test } from '@playwright/test';
 // not one of the three shipped distribution targets and is intentionally out
 // of scope for this vocabulary -- a test must not rely on PG_TARGET=dev being
 // classified here.
-export type DistributionTarget = 'source' | 'web' | 'portable';
+// `portable-http` (Milestone 70, 70A; T1 in MILESTONE-70-PROPOSAL.md) is the
+// portable build served from a subfolder over http://localhost, the way the
+// DNN site serves it in production -- as opposed to `portable`, which opens
+// the same build as a literal file:// page.
+export type DistributionTarget = 'source' | 'web' | 'portable' | 'portable-http';
 
 export type TargetProfile = {
   id: DistributionTarget;
@@ -31,12 +35,16 @@ const PROFILES: Record<DistributionTarget, TargetProfile> = {
   source: { id: 'source', isHosted: false, supportsServiceWorker: false, supportsFileSystemAccessAutomation: true },
   web: { id: 'web', isHosted: true, supportsServiceWorker: true, supportsFileSystemAccessAutomation: true },
   portable: { id: 'portable', isHosted: false, supportsServiceWorker: false, supportsFileSystemAccessAutomation: false },
+  // Served, like production; no service worker (the portable build carries no
+  // pg-build=web marker); a secure context, so the File System Access API
+  // exists, although the harness disables it either way.
+  'portable-http': { id: 'portable-http', isHosted: true, supportsServiceWorker: false, supportsFileSystemAccessAutomation: true },
 };
 
 const RAW_TARGET = process.env.PG_TARGET || 'source';
 
 function isDistributionTarget(value: string): value is DistributionTarget {
-  return value === 'source' || value === 'web' || value === 'portable';
+  return value === 'source' || value === 'web' || value === 'portable' || value === 'portable-http';
 }
 
 // The resolved current target, or null if PG_TARGET is 'dev' or an

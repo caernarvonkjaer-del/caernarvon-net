@@ -1,5 +1,7 @@
 // Milestone 26: Declarative Schedule & Repeatable Group Definitions
 // Centralizes row factories, constraints, party ID lockstep sync, and calculation hooks.
+import { getD } from '../state.js';
+import { markFilingRevisionChanged } from '../filing/output-revision.js';
 
 export const SCHEDULE_SCHEMAS = {
   // Parties & Service
@@ -157,7 +159,7 @@ export const SCHEDULE_SCHEMAS = {
 /**
  * Adds a new clean row to a collection, respecting max constraint and party synchronization.
  */
-export function addCollectionRow(collectionKey, data = (typeof window !== 'undefined' ? window.D : null), factoryOverride = null) {
+export function addCollectionRow(collectionKey, data = (typeof window !== 'undefined' ? getD() : null), factoryOverride = null) {
   if (!data) return false;
   const schema = SCHEDULE_SCHEMAS[collectionKey];
   if (!schema) return false;
@@ -181,7 +183,7 @@ export function addCollectionRow(collectionKey, data = (typeof window !== 'undef
     }
     data[partyKey].push(null);
   }
-  if (typeof window !== 'undefined') window.markFilingRevisionChanged?.('collection-add');
+  markFilingRevisionChanged('collection-add');
 
   return true;
 }
@@ -190,7 +192,7 @@ export function addCollectionRow(collectionKey, data = (typeof window !== 'undef
  * Duplicates a row at index, respecting max constraint and party synchronization.
  * Duplicated rows start with a unlinked (null) party ID to prevent accidental alias collisions.
  */
-export function duplicateCollectionRow(collectionKey, index, data = (typeof window !== 'undefined' ? window.D : null)) {
+export function duplicateCollectionRow(collectionKey, index, data = (typeof window !== 'undefined' ? getD() : null)) {
   if (!data) return false;
   const schema = SCHEDULE_SCHEMAS[collectionKey];
   if (!schema) return false;
@@ -212,7 +214,7 @@ export function duplicateCollectionRow(collectionKey, index, data = (typeof wind
     }
     data[partyKey].splice(index + 1, 0, null);
   }
-  if (typeof window !== 'undefined') window.markFilingRevisionChanged?.('collection-duplicate');
+  markFilingRevisionChanged('collection-duplicate');
 
   return true;
 }
@@ -220,7 +222,7 @@ export function duplicateCollectionRow(collectionKey, index, data = (typeof wind
 /**
  * Removes a row at index, respecting floor constraint and party synchronization.
  */
-export function removeCollectionRow(collectionKey, index, data = (typeof window !== 'undefined' ? window.D : null)) {
+export function removeCollectionRow(collectionKey, index, data = (typeof window !== 'undefined' ? getD() : null)) {
   if (!data) return false;
   const schema = SCHEDULE_SCHEMAS[collectionKey];
   if (!schema) return false;
@@ -241,14 +243,8 @@ export function removeCollectionRow(collectionKey, index, data = (typeof window 
       data[partyKey].splice(index, 1);
     }
   }
-  if (typeof window !== 'undefined') window.markFilingRevisionChanged?.('collection-remove');
+  markFilingRevisionChanged('collection-remove');
 
   return true;
 }
 
-if (typeof window !== 'undefined') {
-  window.SCHEDULE_SCHEMAS = SCHEDULE_SCHEMAS;
-  window.addCollectionRow = addCollectionRow;
-  window.duplicateCollectionRow = duplicateCollectionRow;
-  window.removeCollectionRow = removeCollectionRow;
-}

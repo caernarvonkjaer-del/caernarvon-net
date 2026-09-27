@@ -1,23 +1,31 @@
 // Dashboard -- Milestone 9 dashboard rendering extraction (ward card grid,
 // summary strip, deadline/recent worklist, grouping by type/case/flat,
-// search/sort/archive toggles). Dynamically imported by legacy-app.js's
-// mountDashboardFeature() bridge, using the same window.createFeatureBridge()
-// pattern as Guardian, Simplified, Plan, and Annual features.
+// search/sort/archive toggles). Loaded through src/features-loader.js's
+// feature services and mounted by src/core/feature-bridge.js's bridge, like
+// every filing feature (legacy-app.js's mountDashboardFeature() and
+// window.createFeatureBridge() until Milestone 70's 70K).
 import { compareDashboardColumn, compareDashboardPriority, getDashboardMetrics, normalizeDashboardWorkflow, projectDashboardWard } from './view-model.js';
 import { caseNumberOf, countyOf } from '../../core/case-resolver.js';
 import { normalizeCountyName } from '../../core/navigation/ward-county.js';
 import { deriveDefaultCircuit, groupsForCircuit, resourcesPanelHTML, getDefaultCircuitPreference, setDefaultCircuitPreference } from './resources.js';
 import { alertModal, confirmModal } from '../../core/ui/dialogs.js';
-
-const {
-  esc, ic, navigate, getCaseFile, isContinuePromptShown, markContinuePromptShown,
-  getRecentlyOpenedWards, saveWardToState, flushPendingSave, markDirtySinceExport, updateLastSavedIndicator,
-  saveBlobAs, auditLog, saveAppState,
-  getWardHeadlineTotal, getWardProgress, typeIcon,
-  switchWard, showStartNewYearModal, confirmDeleteWard, showRenameWardModal,
-  showConvertWardModal, showAddWardModal, showPriorYearsModal, formatRelativeTime,
-  INVENTORY_TYPES, formEngine,
-} = window;
+import { esc } from '../../core/filing/escape-html.js';
+import { ic } from '../../core/ui/icons.js';
+import { INVENTORY_TYPES, formEngine, typeIcon } from '../../core/filing/filing-registry.js';
+import { getCaseFile } from '../../core/state.js';
+import { getRecentlyOpenedWards } from '../../core/filing/recent-filings.js';
+import { showPriorYearsModal, showStartNewYearModal } from '../../core/modals/year-dialogs.js';
+import { confirmDeleteWard, showAddWardModal } from '../../core/modals/filing-dialogs.js';
+import { showPickCaseModal } from '../../core/modals/pick-record-dialogs.js';
+import { filingLifecycle } from '../../core/navigation/filing-lifecycle.js';
+import { showConvertWardModal } from '../../core/modals/convert-ward-modal.js';
+import { SHOW_COMMENT_CARD_LINK } from '../../core/shell/start-new-form.js';
+import { navigate } from '../../core/navigation/router.js';
+import { buildSingleWardExportBlob, exportCaseFileZip, finishSingleWardExport, flushPendingSave, formatRelativeTime, getWardFileName, markDirtySinceExport, saveBlobAs, saveWardToState, updateLastSavedIndicator, validateWardBackupOverwrite } from '../../core/persistence/case-file.js';
+import { isContinuePromptShown, markContinuePromptShown, saveAppState } from '../../core/persistence/launch-preferences.js';
+import { features } from '../../core/runtime/features.js';
+import { filingProgress } from '../../core/filing/filing-registry.js';
+import { auditLog } from '../../core/activity/audit-log.js';
 
 // Dashboard's own module state -- all session-only, not persisted, reset on reload.
 // These would be window properties if the dashboard stayed monolithic, but now that
@@ -42,8 +50,8 @@ const WORKFLOW_LABELS = {
 function projectWard(ward, today = new Date()) {
   return projectDashboardWard(ward, {
     displayType: INVENTORY_TYPES[ward.inventoryType]?.label || ward.inventoryType,
-    total: getWardHeadlineTotal(ward),
-    progress: getWardProgress(ward),
+    total: features().headlineTotal(ward),
+    progress: filingProgress(ward, features().completionDeps()),
     today,
   });
 }
@@ -58,15 +66,16 @@ function option(value, label, selectedValue) {
 }
 
 // Milestone 62 hid this for the initial test rollout (#820024), intending to
-// reinstate it later. Milestone 65D moved the flag to legacy-app.js (as
-// window.SHOW_COMMENT_CARD_LINK) and put the Start New Form page's identical
-// link behind the same one, so both surfaces flip together instead of
-// needing two edits. The markup (and the GovQA URL) stays in source either
+// reinstate it later. Milestone 65D put the Start New Form page's identical
+// link behind the same one flag, so both surfaces flip together instead of
+// needing two edits; it is src/core/shell/start-new-form.js's
+// SHOW_COMMENT_CARD_LINK since Milestone 70's 70H (it was window's).
+// A spec passes either state as the argument. The markup (and the GovQA URL) stays in source either
 // way -- only its inclusion in the rendered string is gated.
-export function dashboardToolbarActionsHTML() {
+export function dashboardToolbarActionsHTML({ showCommentCardLink = SHOW_COMMENT_CARD_LINK } = {}) {
   const isDark = typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme') === 'dark';
   const helpOpen = typeof document !== 'undefined' && document.getElementById('help-panel')?.style.display === 'flex';
-  const commentCardLink = window.SHOW_COMMENT_CARD_LINK
+  const commentCardLink = showCommentCardLink
     ? `<a class="topnav-btn" href="https://pinellascountyfl.govqa.us/WEBAPP/_rs/(S(ymqkyi4ihgwnngmluraqqkeh))/RequestOpen.aspx?sSessionID=&rqst=23" target="_blank" rel="noopener noreferrer">${ic('message', 16)} Comment Card<span class="visually-hidden"> (opens in a new tab)</span></a>`
     : '';
   return `<div class="dashboard-toolbar-actions">
@@ -369,13 +378,13 @@ function renderDashboardGrid() {
 }
 
 async function quickExportPdf(wardId) {
-  await switchWard(wardId);
+  await filingLifecycle.switchTo(wardId);
   navigate('/print');
 }
 
 // Shares a standalone copy of just this one ward -- deliberately decoupled
 // from the case's own save state (see finishSingleWardExport()'s comment in
-// legacy-app.js): it does NOT touch _lastExportAt/the "last backup" readout,
+// src/core/persistence/case-file.js): it does NOT touch _lastExportAt/the "last backup" readout,
 // since this action says nothing about whether the real case file itself
 // has been saved.
 async function exportSingleWardZip(wardId) {
@@ -385,22 +394,22 @@ async function exportSingleWardZip(wardId) {
   try {
     if (ward.wardId === caseFile.activeWardId) await flushPendingSave();
     const wardName = ward.wardName || 'ward';
-    const blob = await window.buildSingleWardExportBlob(wardId);
-    const fileName = typeof window.getWardFileName === 'function' ? window.getWardFileName(ward)
+    const blob = await buildSingleWardExportBlob(wardId);
+    const fileName = true ? getWardFileName(ward)
       : `${((ward.wardName || 'Ward').trim().replace(/[\s_]+/g, '-') || 'Ward')}-guardianshipwarddata.sav`;
-    const validator = window.validateWardBackupOverwrite;
+    const validator = validateWardBackupOverwrite;
     if (typeof validator !== 'function') {
       throw new Error('validateWardBackupOverwrite is required but not available');
     }
     const handle = await saveBlobAs(blob, fileName, validator);
-    const logFn = window.auditLog || auditLog;
+    const logFn = auditLog || auditLog;
     if (typeof logFn === 'function') logFn('DATA_EXPORT', `Exported single ward "${wardName}" to ward file`, true, wardId);
-    if (window.finishSingleWardExport) window.finishSingleWardExport(handle, ward);
+    if (finishSingleWardExport) finishSingleWardExport(handle, ward);
     await alertModal(`Backup saved for ${ward.wardName || 'this ward'}.`);
   } catch (e) {
     if (e && e.name === 'AbortError') return;
     console.error('single ward export failed', e);
-    const logFn = window.auditLog || auditLog;
+    const logFn = auditLog || auditLog;
     if (typeof logFn === 'function') logFn('DATA_EXPORT', String(e && e.message || e), false, wardId);
     await alertModal('Export failed: ' + (e && e.message || e));
   }
@@ -513,24 +522,19 @@ async function handleDashboardClick(event) {
     case 'archive': toggleDashboardWardArchived(wardId); break;
     case 'backup': exportSingleWardZip(wardId); break;
     case 'export-all':
-      if (window.exportGuardianDataZip) window.exportGuardianDataZip();
+      exportCaseFileZip();
       break;
     case 'close-ward':
-      if (window.unloadWard) {
-        window.unloadWard().then(() => renderDashboardPage());
-      }
+      filingLifecycle.unload().then(() => renderDashboardPage());
       break;
     case 'delete':
     case 'delete-ward':
       confirmDeleteWard(wardId || getCaseFile().activeWardId);
       break;
-    case 'rename-ward':
-      if (window.showRenameWardModal) window.showRenameWardModal();
-      break;
     case 'dismiss-continue': document.getElementById('continue-prompt-container')?.replaceChildren(); break;
-    case 'link-case': window.showPickCaseModal(wardId); break;
+    case 'link-case': showPickCaseModal(wardId); break;
     case 'new-year': showStartNewYearModal(wardId); break;
-    case 'open-ward': await switchWard(wardId); break;
+    case 'open-ward': await filingLifecycle.switchTo(wardId); break;
     case 'pdf': quickExportPdf(wardId); break;
     case 'prior-years': showPriorYearsModal(wardId); break;
     case 'select-existing': showConvertWardModal(); break;
@@ -590,8 +594,9 @@ function unbindDashboardEvents(container) {
 // (src/styles/dashboard.css:23) is live spacing between the summary strip and
 // the filing grid; removing the div removes that gap and shifts the whole page
 // up. Delete it only together with a decision about that spacing -- see
-// MILESTONE-51-PROPOSAL.md's 51G/G4, which also notes that
-// legacy-app.js:3895 emits the same class for a different surface.
+// MILESTONE-51-PROPOSAL.md's 51G/G4, which also notes that legacy-app.js
+// emitted the same class for a different surface (the shell pages that moved
+// to src/core/ in Milestone 70 still do).
 function pageDashboard() {
   return `<div class="schedule-page" data-dashboard-root>
     <div id="continue-prompt-container"></div>
@@ -659,9 +664,9 @@ function renderSidebarResources() {
   }
 }
 
-// Feature bridge contract: mount(container, page) and dispose(container)
-// Expected by window.createFeatureBridge() and called via
-// legacy-app.js's mountDashboardFeature().
+// Feature bridge contract: mount(container, page) and dispose(container),
+// called by src/core/feature-bridge.js's bridge for the dashboard
+// (legacy-app.js's mountDashboardFeature() until Milestone 70's 70K).
 export async function mount(container, page) {
   _dashboardHost = container;
   _dashboardTriageSort = { key: 'priority', direction: 'asc' };
@@ -687,7 +692,7 @@ export function dispose(container) {
 }
 
 // Optional nav rendering — this feature doesn't have custom nav per the
-// ward-switch architecture (nav is always the shared topnav from legacy-app.js)
+// ward-switch architecture (nav is always the shared topnav, the shell's)
 export async function mountNav(container) {
   // No-op: dashboard has no feature-specific nav
 }

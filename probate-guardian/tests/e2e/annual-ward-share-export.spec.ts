@@ -12,6 +12,10 @@ import { freshStartNoPassword, createWard, fillMinimalValidAnnualWard, dismissSc
 // The exported workbook itself is read here -- with ExcelJS, the library the
 // app uses -- never a re-import, which would agree with a broken exporter
 // (AGENTS.md section 5, P1/P2).
+//
+// master's dbee60f, carried onto milestone-70 after 70K, its setup and
+// queries through GuardianForms.testing (it reached window.D, window.autoSave,
+// window.calcTotalsAnnual and window.navigate).
 
 const ROWS = [
   { description: 'One Percent', wardPct: '1', expectCell: 0.01, share: 100 },
@@ -26,19 +30,20 @@ test('Schedule D-1 ward shares are written to the court workbook as percentages,
   await createWard(page, 'Ward Share Export', 'annual');
   await fillMinimalValidAnnualWard(page);
   await page.evaluate((rows) => {
-    const w = window as any;
-    w.D.schD1 = rows.map((r: any) => ({ description: r.description, accountNo: '1', restricted: 'No', type: 'Stock', fullAmount: 10000, wardPct: r.wardPct, restrictedAmt: '' }));
-    w.autoSave();
+    (window as any).GuardianForms.testing.patchFiling({
+      schD1: rows.map((r: any) => ({ description: r.description, accountNo: '1', restricted: 'No', type: 'Stock', fullAmount: 10000, wardPct: r.wardPct, restrictedAmt: '' })),
+    });
   }, ROWS);
 
-  expect(await page.evaluate(() => (window as any).calcTotalsAnnual((window as any).D).schD1_total), "the app's own D-1 total")
+  expect(await page.evaluate(() => (window as any).GuardianForms.testing.status.annualTotals().schD1_total), "the app's own D-1 total")
     .toBe(ROWS.reduce((sum, r) => sum + r.share, 0));
 
   // Each line's Ward's Amount on the Schedule D-1 page follows the same rule --
   // as the page is drawn, and when the filer types a new share (the first fix
   // missed both: the page used a separate, unfixed copy of the calculation).
+  // (master's c62f890, carried.)
   const amount = async (i: number) => Number((await page.locator(`[data-annual-calc="schD1.${i}.wardAmt"]`).inputValue()).replace(/[$,]/g, ''));
-  await page.evaluate(() => (window as any).navigate('/schd1'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/schd1'));
   for (const [i, r] of ROWS.entries()) expect(await amount(i), `line ${i + 1}'s Ward's Amount as drawn`).toBe(r.share);
   const line2 = page.locator('[data-form-path="schD1.1.wardPct"], [data-annual-path="schD1.1.wardPct"]');
   await line2.fill('1');
@@ -50,7 +55,7 @@ test('Schedule D-1 ward shares are written to the court workbook as percentages,
   await dismissScheduleDocPrompt(page);
   await expect.poll(() => amount(1), "line 2's Ward's Amount back at 50").toBe(5000);
 
-  await page.evaluate(() => (window as any).navigate('/print'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
   const excel = page.locator('[data-annual-action="save-excel"]');
   await expect(excel, 'the notes never block export').toBeEnabled({ timeout: 20_000 });
   const notes = await page.locator('.alert-warning li', { hasText: "Ward's % reads as" }).allInnerTexts();

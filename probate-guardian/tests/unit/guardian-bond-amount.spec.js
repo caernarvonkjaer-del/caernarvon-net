@@ -8,9 +8,9 @@
 // filing saved before this fix reads the same after it.
 //
 // guardian-inventory/index.js transitively imports src/core/party-resolver.js,
-// which does `window.resolveParty = resolveParty` etc. at module scope, and
-// its own top level does `const { ..., SCHEDULE_NAV_KEYS } = window` -- both
-// executed at import time, before any ordinary statement in this file (ES
+// which did `window.resolveParty = resolveParty` etc. at module scope, and
+// its own top level destructured legacy-app.js globals off `window` (until
+// Milestone 70's 70K) -- both executed at import time, before any ordinary statement in this file (ES
 // import specifiers are hoisted ahead of a plain `global.window = global`).
 // See guardian-inventory-64a1-validation.spec.js for the same recipe.
 import { afterAll, beforeAll, describe, test, expect, vi } from 'vitest';
@@ -18,7 +18,7 @@ import { afterAll, beforeAll, describe, test, expect, vi } from 'vitest';
 let normalizeBondAmountValue;
 
 beforeAll(async () => {
-  vi.stubGlobal('window', { SCHEDULE_NAV_KEYS: ['a1', 'a2', 'b1', 'b2', 'b3', 'b4', 'c1', 'c2', 'c3', 'c4', 'c5'] });
+  vi.stubGlobal('window', {});
   ({ normalizeBondAmountValue } = await import('../../src/features/guardian-inventory/index.js'));
 });
 

@@ -42,13 +42,13 @@ async function exportWith(page: import('@playwright/test').Page, incomeRows: num
   await createWard(page, 'Round Trip Ward', 'annual');
   await fillMinimalValidAnnualWard(page);
   await page.evaluate(({ income, disb }) => {
-    const d = (window as any).D;
+    const d = (window as any).GuardianForms.testing.snapshot().filing;
     d.schA = income;
     d.schB4 = disb;
-    (window as any).autoSave();
+    (window as any).GuardianForms.testing.replaceFiling(d);
   }, { income: INCOME(incomeRows), disb: DISBURSEMENTS });
-  await page.evaluate(() => (window as any).flushPendingSave());
-  await page.evaluate(() => (window as any).navigate('/print'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
   const excel = page.locator('[data-annual-action="save-excel"]');
   await expect(excel).toBeEnabled({ timeout: 20_000 });
   const download = page.waitForEvent('download', { timeout: 40_000 });
@@ -67,12 +67,12 @@ async function importInto(page: import('@playwright/test').Page, file: string) {
   page.on('pageerror', (e) => errors.push(e.message));
   await page.setInputFiles('input[type="file"][accept=".xlsx"]', file);
   await page.waitForFunction(
-    () => ((window as any).D?.schB4 || []).length > 0,
+    () => ((window as any).GuardianForms.testing.snapshot().filing?.schB4 || []).length > 0,
     undefined,
     { timeout: 20_000 },
   );
   const data = await page.evaluate(() => {
-    const d = (window as any).D;
+    const d = (window as any).GuardianForms.testing.snapshot().filing;
     return {
       schA: (d.schA || []).map((r: any) => ({ payer: r.payer, amount: String(r.amount ?? '') })),
       schB4: (d.schB4 || []).map((r: any) => ({ checkNo: r.checkNo, payee: r.payee, amount: String(r.amount ?? '') })),

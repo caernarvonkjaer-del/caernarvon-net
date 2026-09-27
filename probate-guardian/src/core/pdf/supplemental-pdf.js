@@ -1,5 +1,6 @@
 import { ensurePdfjs } from './pdfjs-loader.js';
 import { createIssue } from '../validation/issue-registry.js';
+import { resolveActiveDocPeriod } from '../filing/doc-period.js';
 
 export const SUPPLEMENTAL_PDF_LIMITS = Object.freeze({
   maxFileBytes: 15 * 1024 * 1024,
@@ -110,14 +111,9 @@ export function summarizeSupplementTotals(files, limits = SUPPLEMENTAL_PDF_LIMIT
   };
 }
 
-export function resolveActiveDocPeriod(sourceData) {
-  if (!sourceData || typeof sourceData !== 'object') return 'initial';
-  if (sourceData.activeYearKey) return sourceData.activeYearKey;
-  if (sourceData.periodFrom || sourceData.periodTo) {
-    return `${sourceData.periodFrom || ''}__${sourceData.periodTo || ''}`;
-  }
-  return 'initial';
-}
+// resolveActiveDocPeriod() lives in src/core/filing/doc-period.js since
+// Milestone 70's 70C (re-exported here for this module's importers).
+export { resolveActiveDocPeriod };
 
 export function collectActiveSupplementalFiles(sourceData) {
   const scheduleDocs = sourceData?.scheduleDocs;

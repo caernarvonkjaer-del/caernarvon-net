@@ -1,4 +1,7 @@
 import { parseFlexibleDate } from './date-parser.js';
+import { getD } from '../state.js';
+import { setPath as writePath } from './paths.js';
+import { markFilingRevisionChanged } from '../filing/output-revision.js';
 
 function draftStore(data) {
   if (!data) return {};
@@ -7,7 +10,7 @@ function draftStore(data) {
 }
 
 function activeData(data) {
-  return data || window.D || {};
+  return data || getD() || {};
 }
 
 export function recordDateDraft({ data, path, rawValue, label = '', section = '', route = '' }) {
@@ -16,9 +19,7 @@ export function recordDateDraft({ data, path, rawValue, label = '', section = ''
   const store = draftStore(target);
   const record = { kind: 'date', rawValue: String(rawValue ?? ''), label, section, route };
   store[path] = record;
-  window._transientDrafts = window._transientDrafts || {};
-  window._transientDrafts[path] = record.rawValue;
-  window.markFilingRevisionChanged?.('date-draft-recorded');
+  markFilingRevisionChanged('date-draft-recorded');
   return record;
 }
 
@@ -34,8 +35,7 @@ export function getFieldDraftDisplay(path, fallback = '', data) {
 export function clearFieldDraft(path, data) {
   const target = activeData(data);
   if (target.__fieldDrafts) delete target.__fieldDrafts[path];
-  if (window._transientDrafts) delete window._transientDrafts[path];
-  window.markFilingRevisionChanged?.('date-draft-cleared');
+  markFilingRevisionChanged('date-draft-cleared');
 }
 
 export function getFieldDraftIssues(data) {
@@ -53,7 +53,7 @@ export function getFieldDraftIssues(data) {
 
 export function commitStoredDateDrafts(data, setPath) {
   const target = activeData(data);
-  const setter = setPath || window.setPath;
+  const setter = setPath || writePath;
   const committed = [];
   for (const [path, record] of Object.entries(target.__fieldDrafts || {})) {
     if (record?.kind !== 'date') continue;
@@ -70,9 +70,3 @@ export function formatDraftIssues(issues) {
   return issues.map((entry) => entry.message);
 }
 
-if (typeof window !== 'undefined') {
-  window.getFieldDraftDisplay = getFieldDraftDisplay;
-  window.getFieldDraftIssues = getFieldDraftIssues;
-  window.commitStoredDateDrafts = commitStoredDateDrafts;
-  window.formatDraftIssues = formatDraftIssues;
-}

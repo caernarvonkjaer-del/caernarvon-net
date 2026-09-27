@@ -21,11 +21,12 @@ test.describe('Milestone 39-E: Print Preview missing-signature navigation', () =
     // checkSignatureState() error -- a blank date with no signatureState at
     // all would legitimately infer Unsigned and produce no error.
     await page.evaluate(() => {
-      const d = (window as any).D;
+      const d = (window as any).GuardianForms.testing.snapshot().filing;
       d.planGuardians[0].signatureState = 'typed';
       d.planGuardians[0].signatureDate = '';
+      (window as any).GuardianForms.testing.replaceFiling(d);
     });
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
 
     const blockedPanel = page.locator('.pdf-preview-blocked');
     await expect(blockedPanel).toBeVisible();
@@ -47,8 +48,8 @@ test.describe('Milestone 39-E: Print Preview missing-signature navigation', () =
     await createWard(page, 'GI Jump Ward', 'guardian');
     // A brand-new filing already has plenty of other blocking errors --
     // this only needs the Preparer's tri-state choice to also produce one.
-    await page.evaluate(() => { (window as any).D.preparer.signatureState = 'typed'; });
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => { (window as any).GuardianForms.testing.patchFiling({ 'preparer.signatureState': 'typed' }); });
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
 
     const blockedPanel = page.locator('.pdf-preview-blocked');
     await expect(blockedPanel).toBeVisible();

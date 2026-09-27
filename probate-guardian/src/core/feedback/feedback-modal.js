@@ -1,5 +1,11 @@
 ﻿import { FEEDBACK_EMAILS, MAILTO_MAX_LENGTH } from './feedback-config.js';
 import { buildFeedbackMessage, buildMailtoHref } from './feedback-message.js';
+import { ensureFragment, showModal } from '../ui/dialogs.js';
+// Milestone 70, 70H: this module's document listeners are collected here and
+// added by installFeedbackModal(), once, from main.js -- not as a side effect of
+// importing it; its signal removes them.
+const listeners = [];
+const on = (type, handler, options) => listeners.push([type, handler, options]);
 
 let activeKind = 'bug';
 const modal = () => document.getElementById('feedbackModal');
@@ -45,9 +51,9 @@ function reset(kind) {
   updateMessage();
 }
 async function open(kind) {
-  await window.ensureFragment('common-modals');
+  await ensureFragment('common-modals');
   reset(kind);
-  window.showModal('feedbackModal');
+  showModal('feedbackModal');
   document.getElementById(kind === 'bug' ? 'feedback-description' : 'feedback-rating-1')?.focus();
 }
 async function copyMessage() {
@@ -59,11 +65,19 @@ async function copyMessage() {
   }
   document.getElementById('feedback-status').textContent = 'Message copied. Paste it into an email and send it to the listed recipients.';
 }
-document.addEventListener('click', (event) => {
+on('click', (event) => {
   const opener = event.target instanceof Element ? event.target.closest('[data-feedback-open]') : null;
   if (opener) { open(opener.dataset.feedbackOpen); return; }
   const action = event.target instanceof Element ? event.target.closest('[data-feedback-action]') : null;
   if (action?.dataset.feedbackAction === 'copy') copyMessage();
 });
-document.addEventListener('input', (event) => { if (event.target instanceof Element && event.target.closest('#feedbackModal')) updateMessage(); });
-document.addEventListener('change', (event) => { if (event.target instanceof Element && event.target.closest('#feedbackModal')) updateMessage(); });
+on('input', (event) => { if (event.target instanceof Element && event.target.closest('#feedbackModal')) updateMessage(); });
+on('change', (event) => { if (event.target instanceof Element && event.target.closest('#feedbackModal')) updateMessage(); });
+
+/** Add this module's listeners; the signal removes them. Called once, by main.js. */
+export function installFeedbackModal({ signal } = {}) {
+  for (const [type, handler, options] of listeners) {
+    const opts = typeof options === 'object' && options ? options : { capture: !!options };
+    document.addEventListener(type, handler, { ...opts, signal });
+  }
+}

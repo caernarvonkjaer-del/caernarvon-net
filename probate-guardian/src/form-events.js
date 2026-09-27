@@ -1,5 +1,4 @@
-import * as SupplementalPdf from './core/pdf/supplemental-pdf.js';
-import { writeDraftValue, finalizeFieldValue } from './core/form/form-contract.js';
+import { bindFieldToFiling, finalizeFieldValue, writeDraftValue } from './core/form/form-contract.js';
 import { focusFieldByPath } from './core/validation/validation-adapter.js';
 import { claimPreparer, PREPARER_FLAG_CHANGE } from './core/form/preparer-flag.js';
 import { applyExclusiveChoice } from './core/form/exclusive-none.js';
@@ -7,8 +6,27 @@ import './core/filing/filing-descriptor.js';
 import './core/filing/output-preflight.js';
 import './core/form/form-fields.js';
 import './core/form/schedule-definitions.js';
-
-window.PGSupplementalPdf = SupplementalPdf;
+import { emptyPlanDirective } from './core/filing/models/plan-annual.js';
+import { getD } from './core/state.js';
+import { addPlanGuardian, addPlanRow, duplicatePlanRow, removePlanGuardian, removePlanRow } from './core/form/plan-row-actions.js';
+import { pvSelect, pvStep } from './core/ui/print-pager.js';
+import { handleScheduleDocUpload, removeScheduleDoc, updateScheduleComment } from './core/filing/schedule-docs.js';
+import { toggleSsnReveal } from './core/form/form-runtime.js';
+import { filterCountyDropdown, hideCountyDropdown, onCountyKeydown, selectCountyOption } from './core/form/county-autocomplete.js';
+import { getCurrentPage, navigate, renderPage } from './core/navigation/router.js';
+import { confirmDeleteWardYear, editPriorYear } from './core/modals/year-dialogs.js';
+import { clearPartyCompareSelection, doFilingSyncClosed, doPartyDismissPair, doPartyMergeKeep, doPartySyncClosed, doPartySyncClosedAll, doPartyUnmergeSelected, renderPartyDirectoryRows, togglePartyCompareSelection, togglePartyUnmergeSelection } from './core/parties/party-management.js';
+import { showPickPartyModal } from './core/modals/pick-record-dialogs.js';
+import { showAddWardModalForType } from './core/modals/filing-dialogs.js';
+import { exportActivityLog, renderActivityLogList } from './core/activity/activity-log-view.js';
+import { openFloridaCourtPortal } from './core/shell/court-portal.js';
+import { printCurrentFilingPdf } from './core/pdf/print-current.js';
+import { features } from './core/runtime/features.js';
+// Milestone 70, 70H: this module's document listeners are collected here and
+// added by installFormEvents(), once, from main.js -- not as a side effect of
+// importing it; its signal removes them.
+const listeners = [];
+const on = (type, handler, options) => listeners.push([type, handler, options]);
 
 // The data-form-path and data-annual-path write path is writeDraftValue() on
 // input/compositionend and finalizeFieldValue() on blur/change, wired by the
@@ -19,7 +37,7 @@ window.PGSupplementalPdf = SupplementalPdf;
 // table used to sit here with no callers; removed in Milestone 42D.)
 const boundPath = (control) => control.dataset.fieldPath || control.dataset.formPath || control.dataset.annualPath;
 
-document.addEventListener('click', (event) => {
+on('click', (event) => {
   const actionElement = event.target instanceof Element ? event.target.closest('[data-form-action]') : null;
   if (!actionElement) return;
   switch (actionElement.dataset.formAction) {
@@ -35,18 +53,18 @@ document.addEventListener('click', (event) => {
     // match and gets mistaken for the target -- confirmed live before this
     // fix (the button received focus instead of navigating anywhere).
     case 'jump-to-field': focusFieldByPath(actionElement.dataset.route, actionElement.dataset.jumpPath || actionElement.dataset.fieldPath); break;
-    case 'add-plan-row': window.addPlanRow(actionElement.dataset.collection, actionElement.dataset.rowType, actionElement.dataset.route); break;
-    case 'add-plan-guardian': window.addPlanGuardian(actionElement.dataset.route); break;
-    case 'remove-plan-guardian': window.removePlanGuardian(Number.parseInt(actionElement.dataset.index, 10), actionElement.dataset.route); break;
-    case 'duplicate-plan-row': window.duplicatePlanRow(actionElement.dataset.collection, Number.parseInt(actionElement.dataset.index, 10), actionElement.dataset.route); break;
-    case 'add-ward-type': window.showAddWardModalForType(actionElement.dataset.inventoryType); break;
+    case 'add-plan-row': addPlanRow(actionElement.dataset.collection, actionElement.dataset.rowType, actionElement.dataset.route); break;
+    case 'add-plan-guardian': addPlanGuardian(actionElement.dataset.route); break;
+    case 'remove-plan-guardian': removePlanGuardian(Number.parseInt(actionElement.dataset.index, 10), actionElement.dataset.route); break;
+    case 'duplicate-plan-row': duplicatePlanRow(actionElement.dataset.collection, Number.parseInt(actionElement.dataset.index, 10), actionElement.dataset.route); break;
+    case 'add-ward-type': showAddWardModalForType(actionElement.dataset.inventoryType); break;
     case 'choose-schedule-docs': document.getElementById(actionElement.dataset.inputId)?.click(); break;
-    case 'confirm-delete-ward-year': window.confirmDeleteWardYear(actionElement.dataset.wardId, actionElement.dataset.yearKey); break;
-    case 'edit-prior-year': window.editPriorYear(actionElement.dataset.wardId, actionElement.dataset.yearKey); break;
-    case 'export-activity-log': window.exportActivityLog(); break;
-    case 'filing-sync-closed': window.doFilingSyncClosed(actionElement.dataset.role, actionElement.dataset.index); break;
-    case 'filing-sync-closed-all': window.doFilingSyncClosed(); break;
-    case 'link-party': window.showPickPartyModal(actionElement.dataset.role, actionElement.dataset.index); break;
+    case 'confirm-delete-ward-year': confirmDeleteWardYear(actionElement.dataset.wardId, actionElement.dataset.yearKey); break;
+    case 'edit-prior-year': editPriorYear(actionElement.dataset.wardId, actionElement.dataset.yearKey); break;
+    case 'export-activity-log': exportActivityLog(); break;
+    case 'filing-sync-closed': void doFilingSyncClosed(actionElement.dataset.role, actionElement.dataset.index).then(() => renderPage(getCurrentPage())); break;
+    case 'filing-sync-closed-all': void doFilingSyncClosed().then(() => renderPage(getCurrentPage())); break;
+    case 'link-party': showPickPartyModal(actionElement.dataset.role, actionElement.dataset.index); break;
     // summary-renderer.js's Section Completion / footer links are <a href="#">
     // (not <button>, so they read as links, not controls). Without this, the
     // anchor's own default action also fires right after window.navigate()
@@ -56,42 +74,42 @@ document.addEventListener('click', (event) => {
     // appeared to navigate, then silently bounced back to the cover a beat
     // later. Every other data-form-action target is a real <button>, which
     // has no default action to prevent.
-    case 'navigate': event.preventDefault(); window.navigate(actionElement.dataset.route); break;
-    case 'open-court-portal': window.openFloridaCourtPortal(); break;
-    case 'party-clear-compare': window.clearPartyCompareSelection(); break;
+    case 'navigate': event.preventDefault(); navigate(actionElement.dataset.route); break;
+    case 'open-court-portal': openFloridaCourtPortal(); break;
+    case 'party-clear-compare': clearPartyCompareSelection(); break;
     // The two checkbox actions read the box's own state: a click on a checkbox
     // toggles it before listeners run, so `checked` is already the new value.
-    case 'party-compare-toggle': window.togglePartyCompareSelection(actionElement.dataset.partyId, actionElement.checked); break;
-    case 'party-dismiss-pair': window.doPartyDismissPair(actionElement.dataset.partyA, actionElement.dataset.partyB); break;
-    case 'party-merge-keep': window.doPartyMergeKeep(actionElement.dataset.keepId, actionElement.dataset.discardId); break;
-    case 'party-sync-closed': window.doPartySyncClosed(actionElement.dataset.wardId, actionElement.dataset.role, actionElement.dataset.index); break;
-    case 'party-sync-closed-all': window.doPartySyncClosedAll(actionElement.dataset.partyId); break;
-    case 'party-unmerge-selected': window.doPartyUnmergeSelected(); break;
-    case 'party-unmerge-toggle': window.togglePartyUnmergeSelection(actionElement.dataset.partyId, actionElement.checked); break;
-    case 'print': window.printCurrentFilingPdf(); break;
-    case 'remove-plan-row': window.removePlanRow(actionElement.dataset.collection, Number.parseInt(actionElement.dataset.index, 10), actionElement.dataset.route); break;
-    case 'save-pdf-plan-annual': window.doSavePdfPlanAnnual(); break;
-    case 'save-pdf-plan-initial': window.doSavePdfPlanInitial(); break;
-    case 'save-pdf-plan-minor': window.doSavePdfPlanMinor(); break;
-    case 'preview-step': window.pvStep(Number.parseInt(actionElement.dataset.step, 10)); break;
-    case 'remove-schedule-doc': window.removeScheduleDoc(actionElement.dataset.scheduleKey, Number.parseInt(actionElement.dataset.documentIndex, 10)); break;
-    case 'toggle-ssn': window.toggleSsnReveal(actionElement); break;
+    case 'party-compare-toggle': togglePartyCompareSelection(actionElement.dataset.partyId, actionElement.checked); break;
+    case 'party-dismiss-pair': doPartyDismissPair(actionElement.dataset.partyA, actionElement.dataset.partyB); break;
+    case 'party-merge-keep': doPartyMergeKeep(actionElement.dataset.keepId, actionElement.dataset.discardId); break;
+    case 'party-sync-closed': doPartySyncClosed(actionElement.dataset.wardId, actionElement.dataset.role, actionElement.dataset.index); break;
+    case 'party-sync-closed-all': doPartySyncClosedAll(actionElement.dataset.partyId); break;
+    case 'party-unmerge-selected': doPartyUnmergeSelected(); break;
+    case 'party-unmerge-toggle': togglePartyUnmergeSelection(actionElement.dataset.partyId, actionElement.checked); break;
+    case 'print': printCurrentFilingPdf(); break;
+    case 'remove-plan-row': removePlanRow(actionElement.dataset.collection, Number.parseInt(actionElement.dataset.index, 10), actionElement.dataset.route); break;
+    case 'save-pdf-plan-annual': features().run('planAnnual', 'doSavePdfPlanAnnual'); break;
+    case 'save-pdf-plan-initial': features().run('planInitial', 'doSavePdfPlanInitial'); break;
+    case 'save-pdf-plan-minor': features().run('planMinor', 'doSavePdfPlanMinor'); break;
+    case 'preview-step': pvStep(Number.parseInt(actionElement.dataset.step, 10)); break;
+    case 'remove-schedule-doc': removeScheduleDoc(actionElement.dataset.scheduleKey, Number.parseInt(actionElement.dataset.documentIndex, 10)); break;
+    case 'toggle-ssn': toggleSsnReveal(actionElement); break;
   }
 });
 
-document.addEventListener('input', (event) => {
+on('input', (event) => {
   const control = event.target;
   if (!(control instanceof HTMLInputElement || control instanceof HTMLTextAreaElement)) return;
   if (boundPath(control)) {
     writeDraftValue(control, { event });
   }
-  if (control.dataset.formControl === 'county') window.filterCountyDropdown(control);
-  if (control.dataset.formInput === 'activity-log') window.renderActivityLogList();
-  if (control.dataset.formInput === 'party-directory') window.renderPartyDirectoryRows();
-  if (control.dataset.formInput === 'schedule-comment') window.updateScheduleComment(control.dataset.scheduleKey, control.value);
+  if (control.dataset.formControl === 'county') filterCountyDropdown(control);
+  if (control.dataset.formInput === 'activity-log') renderActivityLogList();
+  if (control.dataset.formInput === 'party-directory') renderPartyDirectoryRows();
+  if (control.dataset.formInput === 'schedule-comment') updateScheduleComment(control.dataset.scheduleKey, control.value);
 });
 
-document.addEventListener('compositionend', (event) => {
+on('compositionend', (event) => {
   const control = event.target;
   if (!(control instanceof HTMLInputElement || control instanceof HTMLTextAreaElement)) return;
   if (boundPath(control)) {
@@ -99,7 +117,7 @@ document.addEventListener('compositionend', (event) => {
   }
 });
 
-document.addEventListener('change', (event) => {
+on('change', (event) => {
   const control = event.target;
   if (control instanceof HTMLInputElement && (control.type === 'checkbox' || control.type === 'radio')) {
     writeDraftValue(control, { event });
@@ -112,30 +130,30 @@ document.addEventListener('change', (event) => {
     // before the route re-render below so the fresh render sees the new row.
     if (control.dataset.formChange === 'ensure-directive-row' && control.checked) {
       const collection = control.dataset.collection;
-      if (collection && window.D && !(window.D[collection] || []).length) {
-        window.D[collection] = [window.emptyPlanDirective()];
+      if (collection && getD() && !(getD()[collection] || []).length) {
+        getD()[collection] = [emptyPlanDirective()];
       }
     }
     // Milestone 67A: only one party may be the preparer. The ticked box has
     // just been written above; clear every other guardian/attorney flag
     // before the route re-render below, so the other cards' boxes visibly
     // clear on the click.
-    if (control.dataset.formChange === PREPARER_FLAG_CHANGE && control.checked && window.D) {
-      claimPreparer(window.D, control.dataset.formPath);
+    if (control.dataset.formChange === PREPARER_FLAG_CHANGE && control.checked && getD()) {
+      claimPreparer(getD(), control.dataset.formPath);
     }
     // Milestone 68E: a "None" box clears its siblings and a sibling clears
     // "None", in the model and the DOM, before any route re-render.
-    if (control instanceof HTMLInputElement && control.type === 'checkbox' && control.dataset.exclusiveGroup && window.D) {
-      applyExclusiveChoice(window.D, control);
+    if (control instanceof HTMLInputElement && control.type === 'checkbox' && control.dataset.exclusiveGroup && getD()) {
+      applyExclusiveChoice(getD(), control);
     }
-    if (control.dataset.formRoute && window.renderPage) {
-      window.renderPage(control.dataset.formRoute);
+    if (control.dataset.formRoute && renderPage) {
+      renderPage(control.dataset.formRoute);
     }
   }
-  if (control instanceof HTMLSelectElement && control.dataset.formChange === 'preview-page') window.pvSelect(control.value);
-  if (control instanceof HTMLSelectElement && control.dataset.formChange === 'activity-log') window.renderActivityLogList();
+  if (control instanceof HTMLSelectElement && control.dataset.formChange === 'preview-page') pvSelect(control.value);
+  if (control instanceof HTMLSelectElement && control.dataset.formChange === 'activity-log') renderActivityLogList();
   if (control instanceof HTMLInputElement && control.dataset.formChange === 'schedule-doc-upload' && control.files) {
-    window.handleScheduleDocUpload(control.dataset.scheduleKey, control.files);
+    handleScheduleDocUpload(control.dataset.scheduleKey, control.files);
     control.value = '';
   }
   if (control instanceof HTMLSelectElement && boundPath(control)) {
@@ -144,16 +162,20 @@ document.addEventListener('change', (event) => {
   }
 });
 
-document.addEventListener('focusin', (event) => {
-  if (event.target instanceof HTMLInputElement && event.target.dataset.formControl === 'county') {
-    window.filterCountyDropdown(event.target);
+on('focusin', (event) => {
+  const control = event.target;
+  if ((control instanceof HTMLInputElement || control instanceof HTMLTextAreaElement || control instanceof HTMLSelectElement) && boundPath(control)) {
+    bindFieldToFiling(control);
+  }
+  if (control instanceof HTMLInputElement && control.dataset.formControl === 'county') {
+    filterCountyDropdown(control);
   }
 });
 
-document.addEventListener('focusout', (event) => {
+on('focusout', (event) => {
   const control = event.target;
   if (!(control instanceof HTMLInputElement || control instanceof HTMLTextAreaElement)) return;
-  if (control.dataset.formControl === 'county') setTimeout(() => window.hideCountyDropdown(control.id), 150);
+  if (control.dataset.formControl === 'county') setTimeout(() => hideCountyDropdown(control.id), 150);
   if (boundPath(control)) {
     finalizeFieldValue(control, { event });
   }
@@ -163,17 +185,17 @@ document.addEventListener('focusout', (event) => {
 // mousedown could select an option, and Tab-blur closed the dropdown
 // (focusout above) without committing whatever was highlighted, leaving no
 // way to set a county without a mouse at all.
-document.addEventListener('keydown', (event) => {
+on('keydown', (event) => {
   if (event.target instanceof HTMLInputElement && event.target.dataset.formControl === 'county') {
-    window.onCountyKeydown(event.target, event);
+    onCountyKeydown(event.target, event);
   }
 });
 
-document.addEventListener('mousedown', (event) => {
+on('mousedown', (event) => {
   const option = event.target instanceof Element ? event.target.closest('[data-form-mousedown="select-county"]') : null;
   if (!option) return;
   event.preventDefault();
-  window.selectCountyOption(option.dataset.inputId, option.dataset.county);
+  selectCountyOption(option.dataset.inputId, option.dataset.county);
 });
 
 // Milestone 50H: a plain click alongside the mousedown handler above.
@@ -185,13 +207,13 @@ document.addEventListener('mousedown', (event) => {
 // real pointer produces) also works, rather than silently doing nothing.
 // selectCountyOption() is idempotent, so the harmless double-call a real
 // click still triggers (mousedown, then click) costs nothing observable.
-document.addEventListener('click', (event) => {
+on('click', (event) => {
   const option = event.target instanceof Element ? event.target.closest('[data-form-mousedown="select-county"]') : null;
   if (!option) return;
-  window.selectCountyOption(option.dataset.inputId, option.dataset.county);
+  selectCountyOption(option.dataset.inputId, option.dataset.county);
 });
 
-document.addEventListener('keydown', (event) => {
+on('keydown', (event) => {
   const actionElement = event.target instanceof Element ? event.target.closest('[data-form-action]') : null;
   if (!actionElement || !['Enter', ' '].includes(event.key)) return;
   if (actionElement.dataset.formAction === 'add-ward-type') {
@@ -199,3 +221,11 @@ document.addEventListener('keydown', (event) => {
     actionElement.click();
   }
 });
+
+/** Add this module's listeners; the signal removes them. Called once, by main.js. */
+export function installFormEvents({ signal } = {}) {
+  for (const [type, handler, options] of listeners) {
+    const opts = typeof options === 'object' && options ? options : { capture: !!options };
+    document.addEventListener(type, handler, { ...opts, signal });
+  }
+}

@@ -97,6 +97,3 @@ export function setTestSystemTitleWarningEnabledForTest(value) {
   return decorateTestSystemTitles();
 }
 
-if (typeof window !== 'undefined') {
-  window.setTestSystemTitleWarningEnabledForTest = setTestSystemTitleWarningEnabledForTest;
-}

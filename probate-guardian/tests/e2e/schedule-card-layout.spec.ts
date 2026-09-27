@@ -4,10 +4,10 @@ import { dismissScheduleDocPrompt } from './support/target';
 
 test('schedule entry cards use responsive two-column flow', async ({ page }) => {
   await freshStartNoPassword(page);
-  await page.evaluate(() => (window as any).addWard('Schedule Layout Ward', 'guardian'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.createFiling.add('Schedule Layout Ward', 'guardian'));
   await page.locator('[data-inventory-change="import-excel"]').waitFor({ state: 'attached' });
   await page.evaluate(() => {
-    const data = (window as any).D;
+    const data = (window as any).GuardianForms.testing.snapshot().filing;
     data.scheduleA2 = [{ lenderName: 'Lender', lenderAddress: '1 Main Street', lenderCityStateZip: 'Tampa, FL 33602', liabilityType: 'Mortgage', accountNumber: '1', notes: '', fullDebtBalance: 1000, wardPercent: 100 }];
     data.scheduleB1 = [
       { institutionName: 'Bank One', accountType: 'Checking', accountNumber: '1', streetAddress: '1 Main Street', cityStateZip: 'Tampa, FL 33602', fullAssetAmount: 1000, wardPercent: 100 },
@@ -21,12 +21,13 @@ test('schedule entry cards use responsive two-column flow', async ({ page }) => 
       { description: 'IRA', streetAddress: '1 Main Street', cityStateZip: 'Tampa, FL 33602', fullAssetValue: 1000, wardPercent: 100 },
       { description: 'Bond', streetAddress: '1 Main Street', cityStateZip: 'Tampa, FL 33602', fullAssetValue: 500, wardPercent: 100 },
     ];
+    (window as any).GuardianForms.testing.replaceFiling(data); // setup (D9)
   });
-  await page.evaluate(() => (window as any).navigate('/'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
 
   await page.setViewportSize({ width: 1280, height: 900 });
   for (const route of ['/a2', '/b1', '/b2', '/b3']) {
-    await page.evaluate((nextRoute) => (window as any).navigate(nextRoute), route);
+    await page.evaluate((nextRoute) => (window as any).GuardianForms.testing.navigate(nextRoute), route);
     const cards = page.locator('.schedule-entry-grid > .col-12 > .entry-card');
     await expect(cards.first()).toBeVisible();
     const columns = await cards.evaluateAll(elements => new Set(elements.map(element => (element as HTMLElement).getBoundingClientRect().x)).size);
@@ -40,7 +41,7 @@ test('schedule entry cards use responsive two-column flow', async ({ page }) => 
   }
 
   await page.setViewportSize({ width: 700, height: 900 });
-  await page.evaluate(() => (window as any).navigate('/b1'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/b1'));
   const mobileCards = page.locator('.schedule-entry-grid > .col-12 > .entry-card');
   const mobileColumns = await mobileCards.evaluateAll(elements => new Set(elements.map(element => (element as HTMLElement).getBoundingClientRect().x)).size);
   expect(mobileColumns).toBe(1);
@@ -48,12 +49,12 @@ test('schedule entry cards use responsive two-column flow', async ({ page }) => 
 
 test('Guardian D-3 and D-4 summary panels use responsive two-column rows', async ({ page }) => {
   await freshStartNoPassword(page);
-  await page.evaluate(() => (window as any).addWard('Guardian Summary Layout Ward', 'guardian'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.createFiling.add('Guardian Summary Layout Ward', 'guardian'));
   await page.locator('[data-inventory-change="import-excel"]').waitFor({ state: 'attached' });
 
   await page.setViewportSize({ width: 1280, height: 900 });
   for (const route of ['/d3', '/d4']) {
-    await page.evaluate((nextRoute) => (window as any).navigate(nextRoute), route);
+    await page.evaluate((nextRoute) => (window as any).GuardianForms.testing.navigate(nextRoute), route);
     const panels = page.locator('.schedule-page > .row.g-3 > .col-12.col-lg-6 > .summary-box');
     await expect(panels).toHaveCount(2);
     const desktopColumns = await panels.evaluateAll(elements => new Set(elements.map(element => (element as HTMLElement).getBoundingClientRect().x)).size);
@@ -61,7 +62,7 @@ test('Guardian D-3 and D-4 summary panels use responsive two-column rows', async
   }
 
   await page.setViewportSize({ width: 700, height: 900 });
-  await page.evaluate(() => (window as any).navigate('/d4'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/d4'));
   const mobilePanels = page.locator('.schedule-page > .row.g-3 > .col-12.col-lg-6 > .summary-box');
   const mobileColumns = await mobilePanels.evaluateAll(elements => new Set(elements.map(element => (element as HTMLElement).getBoundingClientRect().x)).size);
   expect(mobileColumns).toBe(1);
@@ -69,9 +70,9 @@ test('Guardian D-3 and D-4 summary panels use responsive two-column rows', async
 
 test('Annual Accounting schedule entries use responsive Bootstrap grid columns', async ({ page }) => {
   await freshStartNoPassword(page);
-  await page.evaluate(() => (window as any).addWard('Annual Schedule Layout Ward', 'annual'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.createFiling.add('Annual Schedule Layout Ward', 'annual'));
   await page.evaluate(() => {
-    const data = (window as any).D;
+    const data = (window as any).GuardianForms.testing.snapshot().filing;
     data.schA = [
       { payer: 'Social Security', description: 'Monthly benefit', bank: 'Bank One', accountNo: '1', amount: 1000 },
       { payer: 'Pension', description: 'Monthly benefit', bank: 'Bank Two', accountNo: '2', amount: 500 },
@@ -80,6 +81,7 @@ test('Annual Accounting schedule entries use responsive Bootstrap grid columns',
       { bankAcct: '1', checkNo: '100', periodFrom: '2026-01-01', periodTo: '2026-01-31', datePaid: '2026-02-01', payee: 'Attorney One', courtOrderDate: '2026-01-15', amount: 100 },
       { bankAcct: '2', checkNo: '101', periodFrom: '2026-02-01', periodTo: '2026-02-28', datePaid: '2026-03-01', payee: 'Attorney Two', courtOrderDate: '2026-02-15', amount: 200 },
     ];
+    (window as any).GuardianForms.testing.replaceFiling(data); // setup (D9)
   });
 
   // Schedule A used to be pinned to a single column (a bare .col-12 with no
@@ -87,7 +89,7 @@ test('Annual Accounting schedule entries use responsive Bootstrap grid columns',
   // -- an inconsistency, not a deliberate design choice, fixed to match its
   // siblings (and Guardian Inventory's own two-per-row schedules).
   await page.setViewportSize({ width: 1600, height: 900 });
-  await page.evaluate(() => (window as any).navigate('/scha'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/scha'));
   const incomeColumns = page.locator('.schedule-entry-grid > .col-12.col-lg-6 > .entry-card');
   await expect(incomeColumns).toHaveCount(2);
   const incomeXPositions = await incomeColumns.evaluateAll(elements => new Set(elements.map(element => (element as HTMLElement).getBoundingClientRect().x)).size);
@@ -98,7 +100,7 @@ test('Annual Accounting schedule entries use responsive Bootstrap grid columns',
   // width) -- effectively never on a laptop with the sidebar taking its
   // share of the window. Lowered to col-lg-6, the same breakpoint Guardian
   // Inventory already uses for its own schedule cards.
-  await page.evaluate(() => (window as any).navigate('/schb1'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/schb1'));
   const feeColumns = page.locator('.schedule-entry-grid > .col-12.col-lg-6 > .entry-card');
   await expect(feeColumns).toHaveCount(2);
   const feeXPositions = await feeColumns.evaluateAll(elements => new Set(elements.map(element => (element as HTMLElement).getBoundingClientRect().x)).size);
@@ -111,7 +113,7 @@ test('Annual Accounting schedule entries use responsive Bootstrap grid columns',
 
 test('plan record cards use their responsive Bootstrap grid classifications', async ({ page }) => {
   const assertCardColumns = async (route: string, columnClass: string, expectedDesktopColumns: number, containerSelector = '.schedule-entry-grid') => {
-    await page.evaluate((nextRoute) => (window as any).navigate(nextRoute), route);
+    await page.evaluate((nextRoute) => (window as any).GuardianForms.testing.navigate(nextRoute), route);
     const cards = page.locator(`${containerSelector} > ${columnClass} > .entry-card`);
     await expect(cards).toHaveCount(2);
     const xPositions = await cards.evaluateAll(elements => new Set(elements.map(element => (element as HTMLElement).getBoundingClientRect().x)).size);
@@ -122,11 +124,12 @@ test('plan record cards use their responsive Bootstrap grid classifications', as
   await freshStartNoPassword(page);
   await createWard(page, 'Annual Plan Layout Ward', 'planAnnual');
   await page.evaluate(() => {
-    const data = (window as any).D;
+    const data = (window as any).GuardianForms.testing.snapshot().filing;
     data.q1Residences = [{}, {}];
     data.q4Providers = [{}, {}];
     data.q10Executed = true;
     data.q10Directives = [{}, {}];
+    (window as any).GuardianForms.testing.replaceFiling(data); // setup (D9)
   });
   await page.setViewportSize({ width: 1440, height: 900 });
   await assertCardColumns('/p2', '.col-12.col-lg-6', 2);
@@ -135,7 +138,7 @@ test('plan record cards use their responsive Bootstrap grid classifications', as
 
   await createWard(page, 'Initial Plan Layout Ward', 'planInitial');
   await page.evaluate(() => {
-    const data = (window as any).D;
+    const data = (window as any).GuardianForms.testing.snapshot().filing;
     data.q9Providers = [{}, {}];
     // Milestone 37-4: q11Directives cards only render once q11Executed is
     // checked (previously rendered unconditionally -- the bug that item
@@ -143,15 +146,17 @@ test('plan record cards use their responsive Bootstrap grid classifications', as
     // q10Executed above.
     data.q11Executed = true;
     data.q11Directives = [{}, {}];
+    (window as any).GuardianForms.testing.replaceFiling(data); // setup (D9)
   });
   await assertCardColumns('/p5', '.col-12.col-lg-6', 2);
   await assertCardColumns('/p8', '.col-12', 1);
 
   await createWard(page, 'Minor Plan Layout Ward', 'planMinor');
   await page.evaluate(() => {
-    const data = (window as any).D;
+    const data = (window as any).GuardianForms.testing.snapshot().filing;
     data.q2Residences = [{}, {}];
     data.q3Providers = [{}, {}];
+    (window as any).GuardianForms.testing.replaceFiling(data); // setup (D9)
   });
   await assertCardColumns('/p2', '.col-12.col-lg-6', 2);
   const minorProviderCards = await assertCardColumns('/p3', '.col-12.col-lg-6', 2);
@@ -162,16 +167,17 @@ test('plan record cards use their responsive Bootstrap grid classifications', as
 
   await createSimplifiedWard(page, 'Simplified Accounting Layout Ward');
   await page.evaluate(() => {
-    const data = (window as any).D;
+    const data = (window as any).GuardianForms.testing.snapshot().filing;
     data.guardians = [{ name: 'Guardian 1' }, { name: 'Guardian 2' }];
     data.remuneration = [{ guardian: 'Guardian 1', type: 'Services' }, { guardian: 'Guardian 2', type: 'Care' }];
+    (window as any).GuardianForms.testing.replaceFiling(data); // setup (D9)
   });
   await page.setViewportSize({ width: 1440, height: 900 });
   await assertCardColumns('/p4', '.col-12.col-lg-6', 2, '.card-grid-2col');
   await assertCardColumns('/p7', '.col-12.col-lg-6', 2);
 
   await createWard(page, 'Simplified Plan Layout Ward', 'planSimplified');
-  await page.evaluate(() => (window as any).navigate('/p2'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/p2'));
   await expect(page.locator('.entry-card')).toHaveCount(0);
 });
 
@@ -179,8 +185,8 @@ test('multi-column labels retain their required marker and natural height', asyn
   await freshStartNoPassword(page);
   await createWard(page, 'Plan Label Layout Ward', 'planAnnual');
   await page.evaluate(() => {
-    (window as any).D.q1Residences = [{}];
-    (window as any).navigate('/p2');
+    (window as any).GuardianForms.testing.patchFiling({ 'q1Residences': [{}] });
+    (window as any).GuardianForms.testing.navigate('/p2');
   });
   await page.setViewportSize({ width: 800, height: 900 });
 
@@ -219,8 +225,8 @@ test('Schedule B-4 Category aligns with its primitive-built row-mates (reported 
   await freshStartNoPassword(page);
   await createWard(page, 'B4 Alignment Ward', 'annual');
   await page.evaluate(() => {
-    (window as any).D.schB4 = [{}];
-    (window as any).navigate('/schb4');
+    (window as any).GuardianForms.testing.patchFiling({ 'schB4': [{}] });
+    (window as any).GuardianForms.testing.navigate('/schb4');
   });
   await dismissScheduleDocPrompt(page); // Milestone 57C-R advisory modal
   await page.setViewportSize({ width: 1280, height: 900 });
@@ -235,8 +241,8 @@ test('Schedule B-4 Category aligns with its primitive-built row-mates (reported 
 
   await createWard(page, 'Inventory Affix Ward', 'guardian');
   await page.evaluate(() => {
-    (window as any).D.scheduleB1 = [{ institutionName: 'Bank One', fullAssetAmount: 1000 }];
-    (window as any).navigate('/b1');
+    (window as any).GuardianForms.testing.patchFiling({ 'scheduleB1': [{ institutionName: 'Bank One', fullAssetAmount: 1000 }] });
+    (window as any).GuardianForms.testing.navigate('/b1');
   });
   const affix = page.locator('.input-group-text').first();
   await expect(affix).toBeVisible();
@@ -262,7 +268,7 @@ test('Plan Initial Q11 Name/Relationship labels align across sibling columns whe
   await freshStartNoPassword(page);
   await createWard(page, 'Q11 Directive Alignment Ward', 'planInitial');
   await page.evaluate(() => {
-    const data = (window as any).D;
+    const data = (window as any).GuardianForms.testing.snapshot().filing;
     data.q11Executed = true;
     data.q11Directives = [{
       title: 'DNR Order',
@@ -270,7 +276,8 @@ test('Plan Initial Q11 Name/Relationship labels align across sibling columns whe
       signedBy: 'Jane Guardian',
       relationship: 'Daughter and Healthcare Surrogate',
     }];
-    (window as any).navigate('/p8');
+    (window as any).GuardianForms.testing.navigate('/p8');
+    (window as any).GuardianForms.testing.replaceFiling(data); // setup (D9)
   });
   await page.setViewportSize({ width: 576, height: 1100 });
 
@@ -294,15 +301,16 @@ test('Plan Initial Q11 Name/Relationship labels align across sibling columns whe
 
 test('tablet-band schedule field rows do not overflow horizontally or render narrower than 118px', async ({ page }) => {
   await freshStartNoPassword(page);
-  await page.evaluate(() => (window as any).addWard('Tablet Layout Ward', 'annual'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.createFiling.add('Tablet Layout Ward', 'annual'));
   await page.evaluate(() => {
-    const data = (window as any).D;
+    const data = (window as any).GuardianForms.testing.snapshot().filing;
     data.schB1 = [
       { bankAcct: '1', checkNo: '100', periodFrom: '2026-01-01', periodTo: '2026-01-31', datePaid: '2026-02-01', payee: 'Attorney One', courtOrderDate: '2026-01-15', amount: 100 },
     ];
     data.schD1 = [
       { description: 'Bank Checking Account', accountNo: '1234', restricted: 'No', type: 'Checking', fullAmount: 100, wardPct: 1 },
     ];
+    (window as any).GuardianForms.testing.replaceFiling(data); // setup (D9)
   });
 
   const tabletViewports = [
@@ -313,7 +321,7 @@ test('tablet-band schedule field rows do not overflow horizontally or render nar
   for (const viewport of tabletViewports) {
     await page.setViewportSize(viewport);
     for (const route of ['/schb1', '/schd1']) {
-      await page.evaluate((r) => (window as any).navigate(r), route);
+      await page.evaluate((r) => (window as any).GuardianForms.testing.navigate(r), route);
       await expect(page.locator('.schedule-page')).toBeVisible();
 
       const rowMetrics = await page.locator('.schedule-page .row:has(>[class*="col-"])').evaluateAll((rows) =>
@@ -344,9 +352,9 @@ test('tablet-band schedule field rows do not overflow horizontally or render nar
 // under pdf-export.
 test('attestation cards use two columns on desktop and stack on narrow screens', async ({ page }) => {
   await freshStartNoPassword(page);
-  await page.evaluate(() => (window as any).addWard('Layout Ward', 'guardian'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.createFiling.add('Layout Ward', 'guardian'));
   await page.evaluate(() => {
-    const data = (window as any).D;
+    const data = (window as any).GuardianForms.testing.snapshot().filing;
     data.guardians = [
       { name: 'First Guardian', signatureDate: '', phone: '', ssnEin: '', streetAddress: '', cityStateZip: '', useSlashS: true },
     ];
@@ -358,21 +366,23 @@ test('attestation cards use two columns on desktop and stack on narrow screens',
       { name: 'Recipient One', address: '1 Main Street', cityStateZip: 'Tampa, FL' },
       { name: 'Recipient Two', address: '2 Main Street', cityStateZip: 'Tampa, FL' },
     ];
+    (window as any).GuardianForms.testing.replaceFiling(data); // setup (D9)
   });
-  await page.evaluate(() => (window as any).navigate('/d1'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/d1'));
   const oneCardGrid = page.locator('.card-grid-2col').first();
   await expect(oneCardGrid.locator(':scope > .col-lg-6 > .entry-card')).toHaveCount(1);
   const oneCardWidth = await oneCardGrid.locator(':scope > .col-lg-6 > .entry-card').evaluate((card) => (card as HTMLElement).getBoundingClientRect().width);
   expect(oneCardWidth).toBeLessThan(600);
 
   await page.evaluate(() => {
-    const data = (window as any).D;
+    const data = (window as any).GuardianForms.testing.snapshot().filing;
     data.guardians = [
       { name: 'First Guardian', signatureDate: '', phone: '', ssnEin: '', streetAddress: '', cityStateZip: '', useSlashS: true },
       { name: 'Second Guardian', signatureDate: '', phone: '', ssnEin: '', streetAddress: '', cityStateZip: '', useSlashS: true },
     ];
+    (window as any).GuardianForms.testing.replaceFiling(data); // setup (D9)
   });
-  await page.evaluate(() => (window as any).navigate('/d1'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/d1'));
   const grid = page.locator('.card-grid-2col').first();
   await expect(grid).toBeVisible();
 
@@ -392,13 +402,13 @@ test('attestation cards use two columns on desktop and stack on narrow screens',
   expect(mobile).toBe(1);
 
   await page.setViewportSize({ width: 1280, height: 900 });
-  await page.evaluate(() => (window as any).navigate('/d2'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/d2'));
   const d2Grid = page.locator('.card-grid-2col').first();
   await expect(d2Grid.locator(':scope > .col-lg-6')).toHaveCount(2);
   const d2Columns = await d2Grid.locator(':scope > .col-lg-6').evaluateAll(elements => new Set(elements.map(element => (element as HTMLElement).getBoundingClientRect().x)).size);
   expect(d2Columns).toBe(2);
 
-  await page.evaluate(() => (window as any).navigate('/d5'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/d5'));
   const recipientGrid = page.locator('.card-grid-2col');
   await expect(recipientGrid).toBeVisible();
   const recipientColumns = await recipientGrid.locator(':scope > .col-lg-6 > .entry-card').evaluateAll(elements => new Set(elements.map(element => (element as HTMLElement).getBoundingClientRect().x)).size);
@@ -408,7 +418,7 @@ test('attestation cards use two columns on desktop and stack on narrow screens',
   const certificationWidth = await certification.evaluate(element => (element as HTMLElement).getBoundingClientRect().width);
   expect(certificationWidth).toBeLessThan(700);
 
-  await page.evaluate(() => (window as any).navigate('/'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
   const witnessGrid = page.locator('.card-grid-2col');
   await expect(witnessGrid).toBeVisible();
   const witnessColumns = await witnessGrid.locator(':scope > .col-lg-6 > .entry-card').evaluateAll(elements => new Set(elements.map(element => (element as HTMLElement).getBoundingClientRect().x)).size);
@@ -420,23 +430,23 @@ test('attestation cards use two columns on desktop and stack on narrow screens',
 
 test('Guardian Inventory removes empty co-guardian placeholders from active state', async ({ page }) => {
   await freshStartNoPassword(page);
-  await page.evaluate(() => (window as any).addWard('Guardian cleanup', 'guardian'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.createFiling.add('Guardian cleanup', 'guardian'));
   await page.evaluate(() => {
-    (window as any).D.guardians = [
+    (window as any).GuardianForms.testing.patchFiling({ 'guardians': [
       { name: 'Primary Guardian', signatureDate: '', phone: '', ssnEin: '', streetAddress: '', cityStateZip: '' },
       { name: '', signatureDate: '', phone: '', ssnEin: '', streetAddress: '', cityStateZip: '' },
-    ];
+    ] });
   });
-  await page.evaluate(() => (window as any).navigate('/d1'));
-  expect(await page.evaluate(() => (window as any).D.guardians.length)).toBe(1);
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/d1'));
+  expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('guardians.length'))).toBe(1);
   await expect(page.locator('.card-grid-2col > .col-lg-6 > .entry-card')).toHaveCount(1);
 });
 
 test('Add Co-Guardian preserves one temporary blank editor', async ({ page }) => {
   await freshStartNoPassword(page);
-  await page.evaluate(() => (window as any).addWard('Guardian add', 'guardian'));
-  await page.evaluate(() => { (window as any).D.guardians[0].name = 'Primary Guardian'; });
-  await page.evaluate(() => (window as any).navigate('/d1'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.createFiling.add('Guardian add', 'guardian'));
+  await page.evaluate(() => { (window as any).GuardianForms.testing.patchFiling({ 'guardians.0.name': 'Primary Guardian' }); });
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/d1'));
   await page.locator('[data-inventory-action="add-guardian"]').click();
   await expect(page.locator('.card-grid-2col > .col-lg-6 > .entry-card')).toHaveCount(2);
 });
@@ -447,7 +457,7 @@ test('Annual Accounting cards and cover layout use responsive 2-column grid', as
   await page.setViewportSize({ width: 1280, height: 900 });
 
   // Cover
-  await page.evaluate(() => (window as any).navigate('/'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
   const coverBoxes = page.locator('.cover-info-row > .col-md-6 > .summary-box');
   await expect(coverBoxes).toHaveCount(2);
   const coverCols = await coverBoxes.evaluateAll(elements => new Set(elements.map(el => (el as HTMLElement).getBoundingClientRect().x)).size);
@@ -455,33 +465,33 @@ test('Annual Accounting cards and cover layout use responsive 2-column grid', as
 
   // Signatures (/p3)
   await page.evaluate(() => {
-    (window as any).D.guardians = [
+    (window as any).GuardianForms.testing.patchFiling({ 'guardians': [
       { name: 'Guardian One' },
       { name: 'Co-Guardian Two' },
-    ];
+    ] });
   });
-  await page.evaluate(() => (window as any).navigate('/p3'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/p3'));
   const p3Grid = page.locator('.card-grid-2col').first();
   await expect(p3Grid.locator(':scope > .col-12.col-lg-6 > .entry-card')).toHaveCount(2);
   const p3Cols = await p3Grid.locator(':scope > .col-12.col-lg-6 > .entry-card').evaluateAll(elements => new Set(elements.map(el => (el as HTMLElement).getBoundingClientRect().x)).size);
   expect(p3Cols).toBe(2);
 
   // Preparer (/p4)
-  await page.evaluate(() => (window as any).navigate('/p4'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/p4'));
   const p4Card = page.locator('.card-grid-2col > .col-12.col-lg-6 > .entry-card').first();
   await expect(p4Card).toBeVisible();
   const p4Width = await p4Card.evaluate(el => (el as HTMLElement).getBoundingClientRect().width);
   expect(p4Width).toBeLessThan(700);
 
   // Attorney (/p5)
-  await page.evaluate(() => (window as any).navigate('/p5'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/p5'));
   const p5Card = page.locator('.card-grid-2col > .col-12.col-lg-6 > .entry-card').first();
   await expect(p5Card).toBeVisible();
   const p5Width = await p5Card.evaluate(el => (el as HTMLElement).getBoundingClientRect().width);
   expect(p5Width).toBeLessThan(700);
 
   // Service / Cert (/p10)
-  await page.evaluate(() => (window as any).navigate('/p10'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/p10'));
   const p10CertCard = page.locator('.card-grid-2col > .col-12.col-lg-6 > .entry-card').first();
   await expect(p10CertCard).toBeVisible();
   const p10CertWidth = await p10CertCard.evaluate(el => (el as HTMLElement).getBoundingClientRect().width);
@@ -494,7 +504,7 @@ test('Simplified Accounting cards and cover layout use responsive 2-column grid'
   await page.setViewportSize({ width: 1280, height: 900 });
 
   // Cover
-  await page.evaluate(() => (window as any).navigate('/'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
   const coverBoxes = page.locator('.cover-info-row > .col-md-6 > .summary-box');
   await expect(coverBoxes).toHaveCount(2);
   const coverCols = await coverBoxes.evaluateAll(elements => new Set(elements.map(el => (el as HTMLElement).getBoundingClientRect().x)).size);
@@ -502,26 +512,26 @@ test('Simplified Accounting cards and cover layout use responsive 2-column grid'
 
   // Signatures (/p4)
   await page.evaluate(() => {
-    (window as any).D.guardians = [
+    (window as any).GuardianForms.testing.patchFiling({ 'guardians': [
       { name: 'Guardian One' },
       { name: 'Co-Guardian Two' },
-    ];
+    ] });
   });
-  await page.evaluate(() => (window as any).navigate('/p4'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/p4'));
   const p4Grid = page.locator('.card-grid-2col').first();
   await expect(p4Grid.locator(':scope > .col-12.col-lg-6 > .entry-card')).toHaveCount(2);
   const p4Cols = await p4Grid.locator(':scope > .col-12.col-lg-6 > .entry-card').evaluateAll(elements => new Set(elements.map(el => (el as HTMLElement).getBoundingClientRect().x)).size);
   expect(p4Cols).toBe(2);
 
   // Attorney (/p5)
-  await page.evaluate(() => (window as any).navigate('/p5'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/p5'));
   const p5Card = page.locator('.card-grid-2col > .col-12.col-lg-6 > .entry-card').first();
   await expect(p5Card).toBeVisible();
   const p5Width = await p5Card.evaluate(el => (el as HTMLElement).getBoundingClientRect().width);
   expect(p5Width).toBeLessThan(700);
 
   // Recipients & Cert (/p6)
-  await page.evaluate(() => (window as any).navigate('/p6'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/p6'));
   const p6Card = page.locator('.card-grid-2col > .col-12.col-lg-6 > .entry-card').first();
   await expect(p6Card).toBeVisible();
 });
@@ -532,34 +542,34 @@ test('Plan forms cards and cover layout use responsive 2-column grid', async ({ 
 
   // Plan Annual
   await createWard(page, 'Plan Annual Layout Ward', 'planAnnual');
-  await page.evaluate(() => (window as any).navigate('/'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
   const paCoverBoxes = page.locator('.cover-info-row > .col-md-6 > .summary-box');
   await expect(paCoverBoxes).toHaveCount(2);
-  await page.evaluate(() => (window as any).navigate('/p11'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/p11'));
   const paSigCards = page.locator('.card-grid-2col > .col-12.col-lg-6 > .entry-card');
   await expect(paSigCards.first()).toBeVisible();
 
   // Plan Initial
   await createWard(page, 'Plan Initial Layout Ward', 'planInitial');
-  await page.evaluate(() => (window as any).navigate('/'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
   const piCoverBoxes = page.locator('.cover-info-row > .col-md-6 > .summary-box');
   await expect(piCoverBoxes).toHaveCount(2);
-  await page.evaluate(() => (window as any).navigate('/p9'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/p9'));
   const piSigCards = page.locator('.card-grid-2col > .col-12.col-lg-6 > .entry-card');
   await expect(piSigCards.first()).toBeVisible();
-  await page.evaluate(() => (window as any).navigate('/p10'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/p10'));
   const piAttyCard = page.locator('.card-grid-2col > .col-12.col-lg-6 > .entry-card').first();
   await expect(piAttyCard).toBeVisible();
 
   // Plan Minor
   await createWard(page, 'Plan Minor Layout Ward', 'planMinor');
-  await page.evaluate(() => (window as any).navigate('/'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
   const pmCoverBoxes = page.locator('.cover-info-row > .col-md-6 > .summary-box');
   await expect(pmCoverBoxes).toHaveCount(2);
-  await page.evaluate(() => (window as any).navigate('/p6'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/p6'));
   const pmSigCards = page.locator('.card-grid-2col > .col-12.col-lg-6 > .entry-card');
   await expect(pmSigCards.first()).toBeVisible();
-  await page.evaluate(() => (window as any).navigate('/p7'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/p7'));
   const pmPrepAttyCards = page.locator('.card-grid-2col > .col-12.col-lg-6 > .entry-card');
   await expect(pmPrepAttyCards).toHaveCount(2);
   const pmPrepAttyCols = await pmPrepAttyCards.evaluateAll(elements => new Set(elements.map(el => (el as HTMLElement).getBoundingClientRect().x)).size);
@@ -567,10 +577,10 @@ test('Plan forms cards and cover layout use responsive 2-column grid', async ({ 
 
   // Plan Simplified
   await createWard(page, 'Plan Simplified Layout Ward', 'planSimplified');
-  await page.evaluate(() => (window as any).navigate('/'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
   const psCoverBoxes = page.locator('.cover-info-row > .col-md-6 > .summary-box');
   await expect(psCoverBoxes).toHaveCount(2);
-  await page.evaluate(() => (window as any).navigate('/p3'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/p3'));
   const psSigCards = page.locator('.card-grid-2col > .col-12.col-lg-6 > .entry-card');
   await expect(psSigCards.first()).toBeVisible();
 });
@@ -587,7 +597,7 @@ test('Plan forms cards and cover layout use responsive 2-column grid', async ({ 
 test('Annual Guardianship Plan benefits table lays Yes/No pairs out horizontally, without shrinking the 44px tap target', async ({ page }) => {
   await freshStartNoPassword(page);
   await createWard(page, 'Benefits Layout Ward', 'planAnnual');
-  await page.evaluate(() => (window as any).navigate('/p4'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/p4'));
   const table = page.locator('.plan-benefits-table');
   await table.locator('tbody tr').first().waitFor();
 

@@ -1,553 +1,243 @@
-import { emptyCertificateOfService } from './filing/plan-certificate-of-service.js';
-import { emptyPlanInitialMultiselect } from './filing/plan-initial-multiselect.js';
-// Thin adapters around legacy-app.js's global state, for ES modules that
-// can't reach a classic script's lexical scope directly. legacy-app.js is a
-// classic (non-module) script, so its top-level function declarations and
-// explicit `window.X =` assignments become real `window` properties -- but
-// a bare top-level `let`/`const` (e.g. `activeInventoryType`) does NOT,
-// since module code runs in its own scope and never sees another script's
-// lexical bindings. Only `window.D` and `getActiveWard()` (a function
-// declaration, real `window` property) are reachable this way; there is no
-// separate `window.activeInventoryType` to read.
+import { normalizeWardData } from './filing/normalize-filing.js';
+// The case store (Milestone 70: the seam since 70E, the owner since 70J).
+// Every module reads and writes case state through here, never through window.
 //
-// This file wraps the legacy globals, it does not move or duplicate their
-// logic -- see INDEX-SPLIT-PLAN.md step 2 ("adapters wrap the legacy code
-// in place; they do not yet move it") and the Milestone 2 plan's Phase B.
-// Deliberately minimal: only what the Simplified Accounting extraction
-// (Phase D) actually needs, not a speculative full state API.
+// One case object, held here and nowhere else: getCaseFile() is the live
+// object, and replaceCaseFile() is the one way to replace it whole (a lock
+// forgets the case; a unit test starts one). The open filing is not held at
+// all -- it is derived from the case's activeWardId, each time it is asked
+// for, so it can never disagree with it: getD() and getActiveWard() are that
+// filing, getActiveInventoryType() its type. setActiveFiling() is the one way
+// to change which filing is open (the filing lifecycle's open and close,
+// tests/unit/filing-lifecycle.spec.js).
+//
+// Until 70J the case belonged to the classic monolith, legacy-app.js, which
+// kept it on window.caseFile, the open filing on window.D and its type behind
+// a window accessor; this module read those. None of the three is on window
+// now.
 
-let _caseFile = {
-  activeWardId: null,
-  guardianName: '',
-  guardianEmail: '',
-  // Milestone 54: null, not a default of 6, so the dashboard can tell "never
-  // explicitly chosen" (derive a default from the user's filings, per
-  // Decision D4's intent) from "the user picked 6" (an override, kept as-is
-  // even if their filings later suggest a different circuit). See
-  // dashboard/resources.js's deriveDefaultCircuit().
-  selectedCircuit: null,
-  parties: [],
-  cases: [],
-  dismissedPartyPairs: [],
-  wards: [],
-  lastSavedFileName: '',
-};
-let _D = {};
-let _appState = {};
-let _templateCache = {};
-let _auditLogEntries = [];
+/** A case with nothing in it: what the app starts with, and what a lock leaves. */
+export function blankCaseFile() {
+  return {
+    guardianName: '',
+    guardianEmail: '',
+    wards: [],
+    parties: [],
+    cases: [],
+    dismissedPartyPairs: [],
+    activeWardId: null,
+  };
+}
 
-/** The canonical caseFile object. */
+let caseFile = blankCaseFile();
+// What getD() gives while no filing is open: a scratch object nothing keeps,
+// fresh each time a filing closes or the case is replaced (as window.D = {}
+// was).
+let noFiling = {};
+// A filing a query judges without opening it -- GuardianForms.testing's
+// validate queries only (withFilingInView(), below).
+let filingInView = null;
+
+// The case's app preferences (saved in the .sav's appState section) and the
+// embedded workbook templates cached with it: this module's own since
+// Milestone 70's 70I, not the monolith's window accessors.
+let appState = {};
+let templateCache = {};
+
+/** The case file: the live object, never a copy. */
 export function getCaseFile() {
-  if (typeof window !== 'undefined' && window.caseFile) {
-    return window.caseFile;
-  }
-  return _caseFile;
+  return caseFile;
 }
 
-export function setCaseFile(cf) {
-  _caseFile = cf;
-  if (typeof window !== 'undefined') {
-    window.caseFile = cf;
-  }
+/**
+ * Replace the whole case: the one way to (a lock's new, empty case; a unit
+ * test's). No filing is open afterwards unless the new case names one.
+ */
+export function replaceCaseFile(next) {
+  caseFile = next || blankCaseFile();
+  noFiling = {};
 }
 
-/** The full data object for whichever ward is currently active, or {} if none. */
+/**
+ * The open filing's record in the case: undefined when the case names one it
+ * does not hold, null when none is open (as the monolith's getActiveWard()
+ * always answered).
+ */
+export function getActiveWard() {
+  if (!caseFile.activeWardId) return null;
+  return caseFile.wards.find((ward) => ward.wardId === caseFile.activeWardId);
+}
+
+/** The open filing's data, or a scratch {} when no filing is open: the live object. */
 export function getD() {
-  if (typeof window !== 'undefined' && window.D) {
-    return window.D;
-  }
-  return _D;
+  return filingInView || getActiveWard() || noFiling;
 }
 
-export function setD(d) {
-  if (d && typeof window !== 'undefined' && typeof window.normalizeWardData === 'function') {
-    window.normalizeWardData(d);
-  }
-  _D = d;
-  if (typeof window !== 'undefined') {
-    window.D = d;
+/** The same, by the name new code uses (the plan's getActiveFiling()). */
+export const getActiveFiling = getD;
+
+/**
+ * The open filing's type, or null. Its raw value: Final and Trust are their
+ * own types here, resolved to the Annual engine only where behaviour is
+ * chosen (filing-registry.js's formEngine()).
+ */
+export function getActiveInventoryType() {
+  const ward = getActiveWard();
+  return ward ? (ward.inventoryType ?? null) : null;
+}
+
+/**
+ * Make a filing the open one, or none (null). The filing is normalized first
+ * (older stored shapes migrated; idempotent), then the case's activeWardId
+ * names it -- and the open filing and its type follow from that. The one place
+ * a module changes which filing is open (Milestone 70, 70G: the filing
+ * lifecycle's open and close; tests/unit/filing-lifecycle.spec.js holds it).
+ */
+export function setActiveFiling(ward) {
+  if (ward) normalizeWardData(ward);
+  caseFile.activeWardId = ward ? ward.wardId : null;
+  if (!ward) noFiling = {};
+}
+
+/**
+ * For GuardianForms.testing's validate queries only: run `fn` with `filing` as
+ * the filing the validators read, without opening it -- no lock, no save, no
+ * change to the case -- and put things back however `fn` ends. Synchronous, so
+ * nothing else can run in between. (The validators read the open filing
+ * rather than take one; the adapter used to point window.D at its copy.)
+ */
+export function withFilingInView(filing, fn) {
+  const previous = filingInView;
+  filingInView = filing;
+  try {
+    return fn();
+  } finally {
+    filingInView = previous;
   }
 }
 
+/** One app-state value, or null. */
 export function getAppState(key) {
-  if (typeof window !== 'undefined' && window._appState) {
-    return key in window._appState ? window._appState[key] : null;
-  }
-  return key in _appState ? _appState[key] : null;
+  return key in appState ? appState[key] : null;
 }
 
+/**
+ * The app-state object itself, live, for code that reads and sets several of
+ * its keys (the recent-filings list, a case file as it opens).
+ */
+export function appStateObject() {
+  return appState;
+}
+
+/**
+ * Set one app-state value in memory. Persisting it is launch-preferences.js's
+ * saveAppState(); this only assigns.
+ */
 export function setAppState(key, val) {
-  _appState[key] = val;
-  if (typeof window !== 'undefined') {
-    if (!window._appState) window._appState = {};
-    window._appState[key] = val;
-  }
+  appState[key] = val;
 }
 
 // Milestone 51B removed getAllAppState() from here -- zero references,
 // including in this module's own spec. Callers that need a single key use
 // getAppState(key) above; nothing ever wanted the whole bag.
+
+/** The embedded-template cache: type -> base64 workbook. */
 export function getTemplateCache() {
-  if (typeof window !== 'undefined' && window._templateCache) {
-    return window._templateCache;
-  }
-  return _templateCache;
+  return templateCache;
 }
 
-export function setTemplateCache(type, b64) {
-  _templateCache[type] = b64;
-  if (typeof window !== 'undefined') {
-    if (!window._templateCache) window._templateCache = {};
-    window._templateCache[type] = b64;
-  }
+/** A case file's own templates, as it opens (case-reader.js). */
+export function replaceTemplateCache(next) {
+  templateCache = next || {};
 }
 
-/** The full ward record from caseFile.wards for the active ward, or null. */
-export function getActiveWard() {
-  if (typeof window !== 'undefined' && typeof window.getActiveWard === 'function') {
-    return window.getActiveWard();
-  }
-  const cf = getCaseFile();
-  if (cf && cf.activeWardId && Array.isArray(cf.wards)) {
-    return cf.wards.find((w) => w.wardId === cf.activeWardId) || null;
-  }
-  return null;
-}
+// The blank-filing factories that lived here (emptyDataSimplified(),
+// emptyDataAnnual() and the four Plans') moved to src/core/filing/models/ in
+// Milestone 70's 70C, with the registry that dispatches to them
+// (src/core/filing/filing-registry.js's initializeEmptyData()).
 
-// Milestone 51B removed getActiveInventoryType() from here -- zero references,
-// spec included. Callers read getD().inventoryType directly, which is the same
-// one-line lookup this wrapped.
-
-// Milestone 40C-A item 1 — applies to EVERY blank-data factory in this file, and
-// to emptyDataGuardian() in legacy-app.js: `county` starts blank, never
-// 'Pinellas'. A ward has no default county until the user selects one on that
-// ward's first filing Cover; that first explicit choice is then stored on the
-// canonical ward Party and hydrates later filings (see
-// core/navigation/ward-county.js). `attorney_county` starts blank for the same
-// reason and is a separate field -- it is never populated from the ward county.
-// Do not reintroduce a default here: a filing that silently claims Pinellas
-// names the wrong court on a real filed document, and County validation already
-// blocks export until the filer chooses.
+// ---------------------------------------------------------------------------
+// The store API (Milestone 70, 70E): how new writes are made, and how a
+// module hears about them. Zero-copy and single-writer: select() and the
+// getters hand back the live objects, transaction() changes them in place,
+// and nothing here keeps a shadow or synchronizes one.
 //
-// Blank-ward data factory for the Simplified Accounting feature (Milestone 2,
-// Phase D). This is pure data -- no DOM, no calls to any other function --
-// moved here rather than into the lazily-imported features/simplified-
-// accounting/index.js because it's needed at ward-CREATION time
-// (initializeEmptyData() in legacy-app.js, called from addWard()), which can
-// happen before the feature is ever mounted/rendered. Same reasoning as
-// calcTotals() staying a legacy global for the dashboard's sake (see the
-// Milestone 2 plan's "Problem 1").
-export function emptyDataSimplified() {
-  return {
-    wardName:'', ssn:'', caseNumber:'', ucn:'', periodFrom:'', periodTo:'',
-    attorney:'', guardian:'', typeOfGuardianship:'', county:'',
-    amendedForm:'', gid:'',
-    eligDepository:'', eligOnlyTransactions:'',
-    startingBalance:'',
-    interestIncome:'',
-    depositsSettlement:'',
-    serviceCharges:'',
-    federalIncomeTax:'',
-    guardians:[{name:'',ssn:'',phone:'',email:'',mailingStreet:'',mailingCityStateZip:'',residenceStreet:'',residenceCityStateZip:'',signatureDate:'',signatureState:'',signatureImage:''}],
-    attorney_barNumber:'', attorney_phone:'', attorney_email:'', attorney_street:'', attorney_cityStateZip:'',
-    attorney_signatureDate:'',
-    // Milestone 39-C
-    attorney_signatureState:'', attorney_signatureImage:'',
-    certServiceDate:'',
-    certAttySignDate:'',
-    // Milestone 39-C
-    certAttySignatureState:'', certAttySignatureImage:'',
-    certAttyBarNumber:'', certAttyPhone:'', certAttyStreet:'', certAttyCityStateZip:'',
-    // Milestone 57B: filer attestation that no one requires service.
-    // Tri-state, never coerced (section 4): '' is unanswered, and an
-    // empty recipient list must never infer 'Yes'. Asked only when no
-    // recipient is listed (D16), and reset to '' by every filing
-    // conversion (D7) -- it is this filer's assertion about this filing.
-    certNoRecipients:'',
-    certRecipients:[
-      {name:'',line2:'',line3:''},
-      {name:'',line2:'',line3:''},
-      {name:'',line2:'',line3:''},
-      {name:'',line2:'',line3:''}
-    ],
-    certIndicator:'',
-    // Part VII — Remuneration.
-    //
-    // Milestone 60J: starts EMPTY, not with two blank placeholder rows, for
-    // the reason emptyDataAnnual() starts empty (Milestone 58D) -- the "I
-    // verify there is no remuneration to report" declaration only renders
-    // while this array is empty, so seeding placeholders hid the one control
-    // that answers Part VII behind deleting two meaningless rows.
-    //
-    // Milestone 60G: rows carry `amount`, which the data model, the shared
-    // SCHEDULE_SCHEMAS.remuneration factory and this form's own Excel
-    // export/import always had -- only this factory and the UI never adopted
-    // it, so nothing upstream ever set it. Written out rather than imported
-    // from schedule-definitions.js: pulling that module into core state for
-    // one row literal is an initialization coupling nobody needs, and
-    // tests/unit/remuneration-declaration.spec.js guards the two against
-    // drifting apart again.
-    remuneration:[]
-  };
+// A write's side effects run once each, in this order: the filing's revision
+// is marked changed (so an export can no longer claim the old revision), the
+// save is scheduled, and subscribers hear about it. main.js hands them in at
+// startup (configureCaseStore()): the revision counter, and case-file.js's
+// autoSave() (Milestone 70, 70I; it was the monolith's) -- with the form
+// layer's commit of a field still being typed in, which a flush runs first.
+// The store sits below both, so neither needs to import the other.
+const hooks = { markRevision: null, save: null, commitPending: null };
+const subscribers = new Set();
+
+export function configureCaseStore({ markRevision = null, save = null, commitPending = null } = {}) {
+  hooks.markRevision = markRevision;
+  hooks.save = save;
+  hooks.commitPending = commitPending;
 }
 
-// Blank-ward data factory for the Plan Simplified feature (Milestone 3,
-// Phase B). Same reasoning as emptyDataSimplified above -- pure data, needed
-// synchronously at ward-creation time, before the lazily-imported
-// features/plan-simplified/index.js is ever loaded (Milestone 3 plan's
-// "Confirmed facts" / recurring Problem 1).
-export function emptyDataPlanSimplified() {
-  return {
-    planTriStateSchemaVersion:2,
-    // Milestone 68C: the Certificate of Service, on every Plan.
-    ...emptyCertificateOfService(),
-    wardName:'', caseNumber:'', ucn:'', periodFrom:'', periodTo:'', county:'',
-    q1Residences:'', q2BestPlacement:'', q3MedicalTreatment:'', q4Diagnosis:'',
-    q5SocialServices:'', q6Interaction:'',
-    q7RestoreRights:'', q7RestoreExplain:'',
-    q8DNR:false, q8LivingWill:false, q8Surrogate:false, q8POA:false,
-    q8Other:false, q8OtherText:'', q8None:false,
-    q9Remuneration:'', q9RemunerationExplain:'',
-    planGuardians:[{name:'',signatureDate:'',email:'',phone:'',mailingAddress:''}],
-    // Milestone 61A. Captured by this form's UI (features/plan-simplified/
-    // index.js) but deliberately absent from its filed PDF -- the Simplified
-    // Annual Plan's court original ends at the guardian signatures, with no
-    // preparer or attorney certification page (61E). Without these keys a
-    // value typed into a new filing was dropped on reload. Deliberately NOT
-    // mirroring emptyDataPlanMinor()'s preparer_tin or per-role
-    // signature-stamp state: nothing in this form reads them.
-    preparer_name:'', preparer_phone:'', preparer_email:'',
-    preparer_mailingStreet:'', preparer_cityStateZip:'', preparer_signatureDate:'',
-    attorney_name:'', attorney_bar:'', attorney_phone:'', attorney_signatureDate:'',
-    attorney_email:'', attorney_secondary_email:'', attorney_street:'',
-    attorney_cityStateZip:''
-  };
+/**
+ * Schedule a save of the case: what a write through transaction() does,
+ * without marking a filing revision. How every module asks for one (Milestone
+ * 70, 70I) -- a module the save itself depends on could not import it. Does
+ * nothing until main.js configures the store (unit tests under Node).
+ */
+export function requestSave() {
+  return hooks.save?.();
 }
 
-// Blank-ward data factory for the Plan Annual feature (Milestone 4, Phase A).
-// Needed synchronously at ward-creation time, same reasoning as the two
-// factories above -- but unlike those, this one is NOT pure data: it reaches
-// back into window.PLAN_RIGHTS/PLAN_ADLS/PLAN_BENEFITS and
-// window.emptyPlanResidence/emptyPlanProvider/emptyPlanDirective, all of
-// which stay legacy globals in legacy-app.js rather than moving here. Two
-// independent reasons force that: computeNavChecks()'s planAnnual branch and
-// resetYearlyFieldsForNewYear()'s planAnnual branch (both dashboard/ward-
-// management code that must stay eagerly available, same as calcTotals() in
-// Milestone 2) read PLAN_RIGHTS/PLAN_ADLS/PLAN_BENEFITS and the three
-// factories directly; and emptyPlanDirective() is separately reused by
-// emptyDataPlanInitial() below (Milestone 4 plan's "Design decisions").
-export function emptyDataPlanAnnual() {
-  const rights = {}; window.PLAN_RIGHTS.forEach(([k]) => rights[k] = '');
-  const adls = {}; window.PLAN_ADLS.forEach(([k]) => adls[k] = '');
-  const benefits = {}; window.PLAN_BENEFITS.forEach(([k]) => benefits[k] = { eligible: '', appliedFor: '' });
-  return {
-    planTriStateSchemaVersion:2,
-    // Milestone 68C: the Certificate of Service, on every Plan.
-    ...emptyCertificateOfService(),
-    // Cover
-    wardName:'', caseNumber:'', ucn:'', ssn:'', county:'',
-    periodFrom:'', periodTo:'', gid:'', guardian:'', attorney:'',
-    wardLiving:'', residenceAddress:'', residenceCityStateZip:'', residencePhone:'',
-    mailingAddress:'', mailingCityStateZip:'',
-    // Q1 — places resided in the prior 12 months
-    q1Residences:[window.emptyPlanResidence()],
-    // Q2 — address change since last plan
-    q2NoMove:false, q2WithinCounty:false, q2WithinCircuit:false,
-    q2OutsideApproved:false, q2OutsideVenuePetition:false,
-    // Q3 — residential setting + care provisions
-    q3SettingALF:false, q3SettingGroupHome:false, q3SettingIntermediate:false,
-    q3SettingPrivate:false, q3SettingSkilled:false, q3SettingSpecialized:false,
-    q3SettingStateHospital:false, q3SettingOther:false, q3SettingExplain:'',
-    q3EnsureAssessing:false, q3EnsureWardDecides:false, q3EnsureNoChange:false,
-    q3MedPrimary:false, q3MedDentist:false, q3MedOphthalmologist:false,
-    q3MedSpecialist:false, q3MedSpecialistArea:'', q3MedPhysicalTherapy:false,
-    q3MedSpeechTherapy:false, q3MedOccupationalTherapy:false,
-    q3MedWardDecides:false, q3MedNone:false, q3MedOther:false, q3MedExplain:'',
-    q3MentalPsych:false, q3MentalWardDecides:false, q3MentalOutpatient:false,
-    q3MentalInpatient:false, q3MentalNone:false, q3MentalOther:false, q3MentalExplain:'',
-    q3PersonalFacility:false, q3PersonalNurses:false, q3PersonalFamily:false,
-    q3PersonalWithout:false, q3PersonalNone:false, q3PersonalOther:false, q3PersonalExplain:'',
-    q3SocialFacility:false, q3SocialNurses:false, q3SocialFamily:false,
-    q3SocialWardDecides:false, q3SocialNone:false, q3SocialOther:false, q3SocialExplain:'',
-    // Q3G — insurance and benefits
-    benefits, q3BenefitsNone:false, q3BenefitsOther:false, q3BenefitsExplain:'',
-    // Q4 — professional medical treatment during the period
-    q4Providers:[window.emptyPlanProvider()],
-    // Q5 — social skills and capacity-building activities
-    q5SocialSkills:'', q5Activities:'',
-    // Q6/Q7 — rights
-    rights, q7RightsExplain:'',
-    // Q8 — activities of daily living
-    adls,
-    // Q9 — disabilities and assistive devices
-    q9MentalDementia:false, q9MentalAutism:false, q9MentalHeadInjury:false,
-    q9MentalDevelopmental:false, q9MentalSchizophrenia:false, q9MentalDepression:false,
-    q9MentalIntellectual:false, q9MentalSubstance:false, q9MentalAlzheimers:false,
-    q9MentalNone:false, q9MentalOther:false, q9MentalExplain:'',
-    q9PhysMobility:false, q9PhysBlindness:false, q9PhysDeafness:false,
-    q9PhysDiabetic:false, q9PhysParkinsons:false, q9PhysArthritis:false,
-    q9PhysNone:false, q9PhysOther:false, q9PhysExplain:'',
-    q9UsesDentures:false, q9UsesHearingAid:false, q9UsesWheelchair:false,
-    q9UsesWalker:false, q9UsesCrutches:false, q9UsesProsthetics:false,
-    q9UsesGlasses:false, q9UsesNone:false, q9UsesOther:false, q9UsesExplain:'',
-    q9NeedsDentures:false, q9NeedsHearingAid:false, q9NeedsWheelchair:false,
-    q9NeedsWalker:false, q9NeedsCrutches:false, q9NeedsProsthetics:false,
-    q9NeedsGlasses:false, q9NeedsNone:false, q9NeedsOther:false, q9NeedsExplain:'',
-    // Q10 — advance directives
-    q10NoDirectives:false, q10StepResidence:false, q10StepSafeDeposit:false,
-    q10StepInterviewed:false, q10StepMedicalProviders:false, q10StepAttorney:false,
-    q10Executed:false, q10ExecDNR:false, q10ExecHealthcare:false,
-    q10ExecPOA:false, q10ExecOther:false, q10ExecOtherText:'',
-    // Milestone 37-4: empty by default -- a directive card is created only
-    // once q10Executed is checked (see pagePlanADirectives()'s "ensure-
-    // directive-row" handler) or the user presses Add Directive, not seeded
-    // up front regardless of whether the ward executed anything.
-    q10Directives:[],
-    // Q11 — remuneration
-    q11NoRemuneration:false, q11NoRemunerationName:'',
-    q11ReceivedName:'', q11Amount:'', q11From:'', q11SubmittedToCourt:false,
-    // Certification — the seven "check all that apply" statements
-    certIncapacitatedNoCopy:false, certMinorNoCopy:false, certConsulted:false,
-    certNoRestriction:false, certProvidesMedical:false, certPhysicianAttached:false,
-    certRecognizeRights:false, certRightsChangedExplain:'',
-    // Guardians (form provides three signature blocks) + attorney
-    planGuardians:[{name:'',ssn:'',phone:'',email:'',signatureDate:'',mailingStreet:'',mailingCityStateZip:'',officeStreet:'',officeCityStateZip:'',relationship:'',signatureState:'',signatureImage:''}],
-    attorney_signatureDate:'', attorney_bar:'', attorney_phone:'', attorney_email:'',
-    attorney_street:'', attorney_cityStateZip:'',
-    // Milestone 39-C
-    attorney_signatureState:'', attorney_signatureImage:''
-  };
+/**
+ * For GuardianForms.testing's countAutoSaves() only: send every save request
+ * to `fn` until the returned restore() puts the configured hook back.
+ */
+export function replaceSaveHook(fn) {
+  const previous = hooks.save;
+  hooks.save = fn;
+  return () => { hooks.save = previous; };
 }
 
-// Blank-ward data factory for the Plan Initial feature (Milestone 5, Phase A).
-// Same non-pure-data shape as emptyDataPlanAnnual above: reaches back into
-// window.INITIAL_ADLS and window.emptyInitialProvider/emptyPlanDirective,
-// which stay legacy globals in legacy-app.js because
-// computeNavChecks()'s planInitial branch reads INITIAL_ADLS directly, and
-// emptyPlanDirective() is also used by emptyDataPlanAnnual() above (Milestone
-// 5 plan's "Confirmed facts" / "Design decisions").
-export function emptyDataPlanInitial() {
-  const adls = {}; window.INITIAL_ADLS.forEach(([k]) => adls[k] = '');
-  return {
-    planTriStateSchemaVersion:2,
-    // Milestone 68C: the Certificate of Service, on every Plan.
-    ...emptyCertificateOfService(),
-    // Cover
-    wardName:'', caseNumber:'', ucn:'', county:'', periodFrom:'', periodTo:'',
-    inceptionDate:'', lettersSignedDate:'', successorGuardianship:'',
-    guardianNames:'', attorneyName:'',
-    wardLiving:'', residenceAddress:'', residenceCityStateZip:'', residencePhone:'',
-    mailingAddress:'', mailingCityStateZip:'',
-    q1PreexistingDirectives:'',
-    // Q2 — residential setting best suited to the ward
-    q2Explain:'',
-    // Q3 — medical services
-    q3MedPrimary:false, q3MedDentist:false, q3MedOphthalmologist:false,
-    q3MedSpecialist:false, q3MedSpecialistArea:'', q3MedPT:false,
-    q3MedST:false, q3MedOT:false, q3MedWardDecides:false, q3MedOther:false, q3MedExplain:'',
-    // Q4 — mental health services
-    // Milestone 68E: questions 2, 4 and 5 as checkbox lists, one boolean per option.
-    ...emptyPlanInitialMultiselect(),
-    q4Explain:'',
-    // Q5 — personal care
-    q5Explain:'',
-    // Q6 — socialization / recreation
-    q6CareFacility:false, q6NursesAides:false, q6FamilyFriends:false, q6DayProgram:false,
-    q6WardDecides:false, q6Other:false, q6Explain:'',
-    // Q7 — insurance / benefits
-    q7SocialSecurity:'', q7Ssdi:'', q7Hmo:'', q7Ssi:'',
-    q7StateSupplement:'', q7InstitutionalCare:'', q7SupplementalIns:'',
-    q7Pension:'', q7Medicare:'', q7Medicaid:'', q7Va:'',
-    q7Trusts:'', q7PendingBenefits:'', q7Other:false, q7Explain:'',
-    // Q9 — examining physicians/providers
-    q9Providers:[window.emptyInitialProvider()],
-    // Q10A — activities of daily living
-    adls,
-    // Q10B/C — disabilities
-    mentalAlzheimers:false, mentalAutism:false, mentalClosedHeadInjury:false,
-    mentalDementia:false, mentalDepression:false, mentalDevelopmental:false,
-    mentalSubstance:false, mentalSchizophrenia:false, mentalOther:false, mentalExplain:'',
-    physMobility:false, physBlindness:false, physDeafness:false, physDiabetic:false,
-    physParkinsons:false, physArthritis:false, physOther:false, physExplain:'',
-    // Q10D — assistive devices currently used
-    usesDentures:false, usesHearingAid:false, usesWheelchair:false, usesWalker:false,
-    usesCrutches:false, usesProsthetics:false, usesGlasses:false, usesNone:false,
-    usesOther:false, usesExplain:'',
-    // Q10E — assistive devices needed
-    needsDentures:false, needsHearingAid:false, needsWheelchair:false, needsWalker:false,
-    needsCrutches:false, needsProsthetics:false, needsGlasses:false, needsNone:false,
-    needsOther:false, needsExplain:'',
-    // Q10F — examining committee recommendations
-    committeeIncorporated:'', committeeExplain:'',
-    // Q11 — pre-existing DNR / advance directives verification
-    q11NoDirectives:false, q11StepResidence:false, q11StepSafeDeposit:false,
-    q11StepInterviewed:false, q11StepMedicalProviders:false, q11StepAttorney:false,
-    q11Executed:false, q11ExecDNR:false, q11ExecHealthcare:false,
-    q11ExecPOA:false, q11ExecOther:false, q11ExecOtherText:'',
-    // Milestone 37-4: empty by default -- see q10Directives's identical note
-    // above (pagePlanIDirectives() is Initial Plan's equivalent handler).
-    q11Directives:[],
-    // Certification — six "check all that apply" statements
-    certIncapacitatedNoCopy:false, certMinorNoCopy:false, certConsulted:false,
-    certRecognizeRights:false, certNoRestriction:false, certProvidesCare:false,
-    // Guardians (form provides up to four signature blocks) + attorney
-    planGuardians:[{name:'',ssn:'',street:'',phone:'',cityStateZip:'',signatureDate:'',relationship:'',signatureState:'',signatureImage:''}],
-    attorney_name:'', attorney_bar:'', attorney_phone:'', attorney_email:'',
-    attorney_street:'', attorney_cityStateZip:'', attorney_signatureDate:'',
-    // Milestone 39-C
-    attorney_signatureState:'', attorney_signatureImage:''
-  };
+/** Commit the form's pending edit -- a field still being typed in -- into the case, before it is saved. */
+export function commitPendingEdits() {
+  return hooks.commitPending?.();
 }
 
-// Blank-ward data factory for the Plan Minor feature (Milestone 6, Phase A).
-// Needed synchronously at ward-creation time, same reasoning as the three
-// factories above -- but this one is genuinely pure data, unlike
-// emptyDataPlanAnnual()/emptyDataPlanInitial(): it only calls
-// window.emptyMinorResidence()/emptyMinorProvider()/emptyMinorGuardianSig()
-// (plain factory functions), never a bare top-level const, because Plan
-// Minor's computeNavChecks() branch has no rights/ADLs-style rating array to
-// read directly (Milestone 6 plan's "Confirmed facts").
-export function emptyDataPlanMinor() {
-  return {
-    planTriStateSchemaVersion:2,
-    // Milestone 68C: the Certificate of Service, on every Plan.
-    ...emptyCertificateOfService(),
-    // Cover
-    wardName:'', county:'', ucn:'', ref:'', periodFrom:'', periodTo:'',
-    amendedForm:'', amendedVersion:'', professionalGuardian:'', publicGuardian:'',
-    guardianName:'',
-    // Q1 — current residence
-    q1ResidenceName:'', q1Street:'', q1City:'', q1State:'', q1Zip:'', q1Phone:'',
-    // Q2 — residences during the preceding 12 months
-    q2Residences:[window.emptyMinorResidence()],
-    // Q3 — medical/mental health treatment providers
-    q3Providers:[window.emptyMinorProvider()],
-    // Q4 — provision of medical services for the plan period
-    q4Primary:false, q4PrimaryFreq:'', q4Dentist:false, q4DentistFreq:'',
-    q4Specialist:false, q4SpecialistFreq:'',
-    q4PT:false, q4ST:false, q4OT:false, q4MinorDecides:false, q4Other:false, q4Explain:'',
-    // Q5 — education and social development
-    q5SchoolProgress:'', q5SocialDevelopment:'', q5Communicates:'', q5Interpersonal:'',
-    q5NoUnmetNeeds:false, q5DoesNotCareToSocialize:false, q5UnmetNeeds:false, q5Other:false, q5Explain:'',
-    // Certification — six "check all that apply" statements
-    certIncapacitated:false, certMinor:false, certConsulted:false,
-    certNoRestriction:false, certProvidesCare:false, certPhysicianAttached:false,
-    // Guardian + Co-Guardian signature blocks
-    planGuardians:[window.emptyMinorGuardianSig()],
-    // Preparer certification
-    preparer_name:'', preparer_tin:'', preparer_phone:'',
-    preparer_mailingStreet:'', preparer_cityStateZip:'', preparer_email:'', preparer_signatureDate:'',
-    // Milestone 39-C
-    preparer_signatureState:'', preparer_signatureImage:'',
-    // Attorney certification
-    attorney_name:'', attorney_bar:'', attorney_phone:'',
-    attorney_street:'', attorney_cityStateZip:'', attorney_email:'', attorney_signatureDate:'',
-    // Milestone 39-C
-    attorney_signatureState:'', attorney_signatureImage:''
-  };
+/** Read through a selector: select(({ caseFile, filing }) => filing.wardName). Live values, not copies. */
+export function select(selector) {
+  return selector({ caseFile: getCaseFile(), filing: getD() });
 }
 
-// Blank-ward data factory for the Annual Accounting feature (Milestone 7,
-// Phase A) -- also used unchanged for the finalAccounting/trustAccounting
-// aliases (formEngine() maps all three to 'annual' everywhere the app
-// dispatches on type; there is no separate data shape for the aliases).
-// Not pure data: reaches back into window.emptyRowAnnual('trust'/'remun'),
-// which stays a legacy global in legacy-app.js because
-// convertGuardianSchedulesToAnnual() and resetYearlyFieldsForNewYear()'s
-// annual branch call it directly (Milestone 7 plan's "Confirmed facts").
-export function emptyDataAnnual() {
-  return {
-    // Part I
-    wardName:'', caseNumber:'', ucn:'', gid:'', periodFrom:'', periodTo:'',
-    guardian:'', attorney:'', typeOfGuardianship:'', county:'',
-    amendedForm:'', filingType:'Annual', relatedCaseNumbers:'',
-    // Part II
-    startingBalance:'',
-    // Part III – guardians (up to 3)
-    // isPreparer: Milestone 67A -- "This person prepared this filing"; at
-    // most one guardian/attorney flag is true (src/core/form/preparer-flag.js).
-    guardians:[{name:'',ssn:'',phone:'',email:'',mailingStreet:'',mailingCityStateZip:'',officeStreet:'',officeCityStateZip:'',signatureDate:'',signatureDateLabel:'',signatureState:'',signatureImage:'',isPreparer:false}],
-    // Part IV – preparer
-    preparer:{name:'',ssn:'',phone:'',street:'',cityStateZip:'',signatureDate:'',signatureState:'',signatureImage:''},
-    // Part V – attorney
-    attorney_bar:'', attorney_phone:'', attorney_email:'', attorney_street:'', attorney_cityStateZip:'',
-    attorney_county:'', attorney_signatureDate:'',
-    // Milestone 39-C
-    attorney_signatureState:'', attorney_signatureImage:'',
-    // Milestone 67A: the attorney's "This person prepared this filing" flag.
-    attorney_isPreparer:false,
-    // Schedules
-    schA:[], schB1:[], schB2:[], schB3:[], schB4:[],
-    // Schedule B-4's bank accounts. The court's workbook gives each one its
-    // own block of check-register pages with the bank name and account
-    // number printed on the block's first page, so a disbursement has to be
-    // attributable to an account before it can be written. Each entry is
-    // { id, bankName, accountNumber }; schB4[].bankAccountId points at one.
-    // Ids are opaque and permanent -- never the array index, the bank name
-    // or the account number, so renaming an account cannot orphan its
-    // disbursements.
-    schB4Accounts:[],
-    schC:[], schD1:[], schD2:[], schD3:[], schD4:[], schD5:[],
-    schE:[], schF1:[], schF2:[],
-    // Parts VI & VII – reconciliation. Line 20 (net assets computed from the
-    // accounting) and Line 30 (net assets from the Schedule D listings) are
-    // both derived, so there is nothing to store for them. What IS stored is
-    // the guardian's written explanation when the two do not agree — the
-    // court needs the discrepancy documented, and export requires it.
-    reconcileExplanation:'',
-    // Part VIII – Trusts (up to 3)
-    trusts:[
-      window.emptyRowAnnual ? window.emptyRowAnnual('trust') : {hasTrust:'',createdAfterGID:'',name:'',trustee:'',accountNo:'',dateCreated:'',trustType:'',wardPct:'',wardAmount:''},
-      window.emptyRowAnnual ? window.emptyRowAnnual('trust') : {hasTrust:'',createdAfterGID:'',name:'',trustee:'',accountNo:'',dateCreated:'',trustType:'',wardPct:'',wardAmount:''},
-      window.emptyRowAnnual ? window.emptyRowAnnual('trust') : {hasTrust:'',createdAfterGID:'',name:'',trustee:'',accountNo:'',dateCreated:'',trustType:'',wardPct:'',wardAmount:''}
-    ],
-    // Part IX – Bond
-    guardianRelationship:'Professional Guardian',
-    // bondDepositoryState (Milestone 67B): which arrangement applies --
-    // restricted depository only, bond and depository, bond only, or bond
-    // waived by court order; '' is unanswered and is never coerced. It
-    // replaced the 57A restrictedDepository tri-state (inferred on load, see
-    // core/filing/bond-depository.js). None of the bond fields is required.
-    bondDepositoryState:'',
-    restrictedDepositoryReceiptDate:'', bondWaivedDate:'',
-    bondAmount:'', bondPeriodFrom:'', bondPeriodTo:'', bondingCompany:'',
-    // Part X – Cert of Service
-    certDate:'', certIndicator:'',
-    certAttySignDate:'',
-    // Milestone 39-C
-    certAttySignatureState:'', certAttySignatureImage:'',
-    // Milestone 57B: filer attestation that no one requires service.
-    // Tri-state, never coerced (section 4): '' is unanswered, and an
-    // empty recipient list must never infer 'Yes'. Asked only when no
-    // recipient is listed (D16), and reset to '' by every filing
-    // conversion (D7) -- it is this filer's assertion about this filing.
-    certNoRecipients:'',
-    certRecipients:[{name:'',line2:'',line3:'',line4:''},{name:'',line2:'',line3:'',line4:''},{name:'',line2:'',line3:'',line4:''},{name:'',line2:'',line3:'',line4:''}],
-    // Part XI – Remuneration.
-    //
-    // Milestone 58D: starts EMPTY, not with one blank placeholder row. The
-    // "I verify there are no remuneration entries to report" declaration only
-    // renders while this array is empty, so seeding a placeholder hid the one
-    // control that answers Part XI -- the filer had to delete a meaningless
-    // empty row to reach it. Per 744.367(3)(a) the declaration is required, so
-    // it cannot be the hardest thing on the page to find.
-    remuneration:[]
-  };
+/**
+ * Change the open filing (and, if need be, the case) in place, then run the
+ * write's side effects once each. Returns what the mutator returned. A
+ * mutator that throws keeps what it had changed before throwing, runs no side
+ * effect, and the caller sees the error.
+ */
+export function transaction(reason, mutator) {
+  if (typeof reason !== 'string' || !reason) throw new Error('transaction(reason, mutator): a reason is required');
+  const result = mutator(getD(), getCaseFile());
+  hooks.markRevision?.(reason);
+  hooks.save?.();
+  notify({ type: 'transaction', reason });
+  return result;
 }
 
-// Temporary: legacy-app.js stays a classic (non-module) script per
-// Milestone 1's recorded decision, so it can't `import` this module
-// directly -- initializeEmptyData()'s 'simplified'/'planSimplified'/
-// 'planAnnual'/'planInitial'/'planMinor'/'annual' cases reach these via
-// window instead, the same pattern src/fragment-loader.js uses for
-// loadFragment(). Remove once a real src/main.js bootstrap exists to own
-// this wiring explicitly.
-if (typeof window !== 'undefined') {
-  window.emptyDataSimplified = emptyDataSimplified;
-  window.emptyDataPlanSimplified = emptyDataPlanSimplified;
-  window.emptyDataPlanAnnual = emptyDataPlanAnnual;
-  window.emptyDataPlanInitial = emptyDataPlanInitial;
-  window.emptyDataPlanMinor = emptyDataPlanMinor;
-  window.emptyDataAnnual = emptyDataAnnual;
+/**
+ * Hear about every transaction; an AbortSignal unsubscribes. Returns an unsubscribe function.
+ * @param {(event: { type: string, reason: string }) => void} listener
+ * @param {{ signal?: AbortSignal }} [options]
+ */
+export function subscribe(listener, { signal } = {}) {
+  if (signal?.aborted) return () => {};
+  subscribers.add(listener);
+  const off = () => { subscribers.delete(listener); };
+  signal?.addEventListener('abort', off, { once: true });
+  return off;
+}
+
+function notify(event) {
+  for (const listener of [...subscribers]) {
+    try { listener(event); } catch (e) { console.error('case-store subscriber failed', e); }
+  }
 }

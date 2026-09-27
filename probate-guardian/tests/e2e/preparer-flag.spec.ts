@@ -63,8 +63,8 @@ async function sheetText(bytes: Buffer, sheetName: string) {
 }
 
 async function download(page: Page, selector: string) {
-  await page.evaluate(() => (window as any).flushPendingSave());
-  await page.evaluate(() => (window as any).navigate('/print'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
   // The banner names what would disable a button ("— N issue(s)"), so a
   // blocked export fails here with the reason rather than on a bare
   // "disabled". (The two forms word the ready state differently, so only
@@ -89,16 +89,16 @@ test.describe('Milestone 67A: a guardian or attorney can be the preparer', () =>
     // guardian who followed "DO NOT SIGN HERE".
     await page.evaluate(() => {
       const w = window as any;
-      Object.assign(w.D.preparer, { name: '', ssnEin: '', phone: '', streetAddress: '', cityStateZip: '', signatureDate: '', signatureState: '', signatureImage: '' });
-      w.autoSave();
+      w.GuardianForms.testing.patchFiling({ preparer: { ...w.GuardianForms.testing.field('preparer'), ...{ name: '', ssnEin: '', phone: '', streetAddress: '', cityStateZip: '', signatureDate: '', signatureState: '', signatureImage: '' } } });
+      w.GuardianForms.testing.save.auto();
     });
-    const issues = () => page.evaluate(() => (window as any).validateGuardian().map((e: any) => String(e.message ?? e)));
+    const issues = () => page.evaluate(async () => (await (window as any).GuardianForms.testing.validate.open()).map((e: any) => String(e.message ?? e)));
     expect((await issues()).filter((m) => m.startsWith('D-2 Preparer')).length, 'before: the preparer block blocks').toBeGreaterThan(0);
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
     await expect(page.locator('[data-inventory-action="save-pdf"]'), 'before: export is disabled').toBeDisabled();
 
     // Tick the box on Guardian #1's card.
-    await page.evaluate(() => (window as any).navigate('/d1'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/d1'));
     await page.locator('#preparer_flag_guardians_0_isPreparer').check();
     await expect(page.locator('#preparer_flag_guardians_0_isPreparer')).toBeChecked();
     expect((await issues()).filter((m) => m.startsWith('D-2 Preparer')), 'after: nothing in the preparer block blocks').toEqual([]);
@@ -106,7 +106,7 @@ test.describe('Milestone 67A: a guardian or attorney can be the preparer', () =>
 
     // The Preparer page says who is named and where the box lives; the card
     // itself is gone, the attorney card is not.
-    await page.evaluate(() => (window as any).navigate('/d2'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/d2'));
     await expect(page.locator('#main-content [data-preparer-waived]')).toContainText('Sample Guardian (Guardian #1)');
     await expect(page.locator('#main-content [data-preparer-waived]')).toContainText('D-1');
     // Guardian Inventory's inputs carry data-field-path (its textInput() keeps
@@ -120,8 +120,8 @@ test.describe('Milestone 67A: a guardian or attorney can be the preparer', () =>
     // reach the filed workbook: hidden is not filed.
     await page.evaluate(() => {
       const w = window as any;
-      Object.assign(w.D.preparer, { name: 'RETAINED-NAME', ssnEin: '111-11-1111', phone: '555-000-0000', streetAddress: 'RETAINED-STREET', cityStateZip: 'RETAINED-CITY' });
-      w.autoSave();
+      w.GuardianForms.testing.patchFiling({ preparer: { ...w.GuardianForms.testing.field('preparer'), ...{ name: 'RETAINED-NAME', ssnEin: '111-11-1111', phone: '555-000-0000', streetAddress: 'RETAINED-STREET', cityStateZip: 'RETAINED-CITY' } } });
+      w.GuardianForms.testing.save.auto();
     });
     const pdf = await pdfText(await download(page, '[data-inventory-action="save-pdf"]'));
     expect(pdf).toContain(PREPARED_BY_GUARDIAN);
@@ -136,7 +136,7 @@ test.describe('Milestone 67A: a guardian or attorney can be the preparer', () =>
 
     // Only one preparer: ticking a co-guardian's box clears Guardian #1's,
     // visibly, on the click.
-    await page.evaluate(() => (window as any).navigate('/d1'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/d1'));
     await page.locator('[data-inventory-action="add-guardian"]').click();
     const coName = page.locator('#main-content [data-field-path="guardians.1.name"]');
     await coName.fill('Second Guardian');
@@ -144,21 +144,21 @@ test.describe('Milestone 67A: a guardian or attorney can be the preparer', () =>
     await page.locator('#preparer_flag_guardians_1_isPreparer').check();
     await expect(page.locator('#preparer_flag_guardians_1_isPreparer')).toBeChecked();
     await expect(page.locator('#preparer_flag_guardians_0_isPreparer'), 'Guardian #1\'s box clears').not.toBeChecked();
-    expect(await page.evaluate(() => (window as any).D.guardians.map((g: any) => !!g.isPreparer))).toEqual([false, true]);
+    expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('guardians').map((g: any) => !!g.isPreparer))).toEqual([false, true]);
 
     // Deleting the preparer returns the filing to "no preparer identified".
     // The block was filled with the RETAINED-* values above, which would
     // satisfy it; empty it again so the requirement's return is observable.
     await page.evaluate(() => {
       const w = window as any;
-      Object.assign(w.D.preparer, { name: '', ssnEin: '', phone: '', streetAddress: '', cityStateZip: '' });
-      w.autoSave();
+      w.GuardianForms.testing.patchFiling({ preparer: { ...w.GuardianForms.testing.field('preparer'), ...{ name: '', ssnEin: '', phone: '', streetAddress: '', cityStateZip: '' } } });
+      w.GuardianForms.testing.save.auto();
     });
     await page.locator('[data-inventory-action="remove-guardian"][data-index="1"]').click();
-    expect(await page.evaluate(() => (window as any).D.guardians.length)).toBe(1);
-    expect(await page.evaluate(() => (window as any).D.guardians.map((g: any) => !!g.isPreparer)), 'no flag survives').toEqual([false]);
+    expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('guardians.length'))).toBe(1);
+    expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('guardians').map((g: any) => !!g.isPreparer)), 'no flag survives').toEqual([false]);
     expect((await issues()).filter((m) => m.startsWith('D-2 Preparer')).length, 'the block is required again').toBeGreaterThan(0);
-    await page.evaluate(() => (window as any).navigate('/d2'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/d2'));
     // input[...] specifically: the page-local guidance box renders a
     // jump-to-field button with the same data-field-path once the section
     // reports incomplete (same as the Milestone 58C test notes).
@@ -178,20 +178,20 @@ test.describe('Milestone 67A: a guardian or attorney can be the preparer', () =>
     await fillMinimalValidAnnualWard(page);
     await page.evaluate(() => {
       const w = window as any;
-      Object.assign(w.D.preparer, { name: '', ssn: '', phone: '', street: '', cityStateZip: '', signatureDate: '', signatureState: '', signatureImage: '' });
-      w.autoSave();
+      w.GuardianForms.testing.patchFiling({ preparer: { ...w.GuardianForms.testing.field('preparer'), ...{ name: '', ssn: '', phone: '', street: '', cityStateZip: '', signatureDate: '', signatureState: '', signatureImage: '' } } });
+      w.GuardianForms.testing.save.auto();
     });
-    const issues = () => page.evaluate(() => (window as any).validateAnnual().map((e: any) => String(e.message ?? e)));
-    const sidebar = () => page.evaluate(() => !!(window as any).computeNavChecks().checks['a-p4']);
+    const issues = () => page.evaluate(async () => (await (window as any).GuardianForms.testing.validate.open()).map((e: any) => String(e.message ?? e)));
+    const sidebar = () => page.evaluate(() => !!(window as any).GuardianForms.testing.status.navChecks().checks['a-p4']);
     expect((await issues()).filter((m) => m.startsWith('Part IV')).length).toBeGreaterThan(0);
     expect(await sidebar(), 'before: Part IV reads incomplete').toBe(false);
 
-    await page.evaluate(() => (window as any).navigate('/p3'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/p3'));
     await page.locator('#preparer_flag_guardians_0_isPreparer').check();
     expect((await issues()).filter((m) => m.startsWith('Part IV'))).toEqual([]);
     expect(await sidebar(), 'after: the sidebar and the export gate agree').toBe(true);
 
-    await page.evaluate(() => (window as any).navigate('/p4'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/p4'));
     await expect(page.locator('#main-content [data-preparer-waived]')).toContainText('Sample Guardian (Guardian #1)');
     await expect(page.locator('#main-content [data-preparer-waived]')).toContainText('Part III');
     await expect(page.locator('#main-content [data-form-path="preparer.name"]')).toHaveCount(0);
@@ -205,10 +205,10 @@ test.describe('Milestone 67A: a guardian or attorney can be the preparer', () =>
     expect(p45.get('B33'), 'the attorney block is still written').toBe('123456');
 
     // Attorney as preparer, from Part V.
-    await page.evaluate(() => (window as any).navigate('/p5'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/p5'));
     await page.locator('#preparer_flag_attorney_isPreparer').check();
-    expect(await page.evaluate(() => (window as any).D.guardians[0].isPreparer)).toBe(false);
-    expect(await page.evaluate(() => (window as any).D.attorney_isPreparer)).toBe(true);
+    expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('guardians.0.isPreparer'))).toBe(false);
+    expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('attorney_isPreparer'))).toBe(true);
     expect(await pdfText(await download(page, '[data-annual-action="save-pdf"]'))).toContain(PREPARED_BY_ATTORNEY);
   });
 
@@ -222,19 +222,16 @@ test.describe('Milestone 67A: a guardian or attorney can be the preparer', () =>
     await fillMinimalValidAnnualWard(page);
     await page.evaluate(() => {
       const w = window as any;
-      Object.assign(w.D.preparer, { name: '', ssn: '', phone: '', street: '', cityStateZip: '', signatureDate: '' });
-      w.D.guardians[0].isPreparer = true;
-      w.autoSave();
+      w.GuardianForms.testing.patchFiling({ preparer: { ...w.GuardianForms.testing.field('preparer'), ...{ name: '', ssn: '', phone: '', street: '', cityStateZip: '', signatureDate: '' } } });
+      w.GuardianForms.testing.patchFiling({ 'guardians.0.isPreparer': true });
+      w.GuardianForms.testing.save.auto();
     });
     // The flag alone must clear the gate; anything left here names itself.
     // The export boundary is prepareFilingOutput(), not the validator alone
     // (draft, identity and supplemental issues ride along), so that is what
     // is asserted clear.
-    expect(await page.evaluate(() => {
-      const w = window as any;
-      const pre = w.prepareFilingOutput(w.D, () => w.validateAnnual());
-      return { messages: pre.messages, canExport: pre.canExport };
-    })).toEqual({ messages: [], canExport: true });
+    expect(await page.evaluate(() => (window as any).GuardianForms.testing.validate.exportGate()))
+      .toEqual({ messages: [], canExport: true });
     const noPreparer = await download(page, '[data-annual-action="save-excel"]');
     const noPreparerFile = path.join(os.tmpdir(), `pg-preparer-flag-none-${Date.now()}.xlsx`);
     fs.writeFileSync(noPreparerFile, noPreparer);
@@ -244,23 +241,23 @@ test.describe('Milestone 67A: a guardian or attorney can be the preparer', () =>
     // blanked first so its return is the completion signal -- a field that
     // is already right cannot tell "imported" from "not yet".
     const importInto = async (file: string) => {
-      await page.evaluate(() => { const w = window as any; w.D.caseNumber = ''; w.autoSave(); });
-      await page.evaluate(() => (window as any).navigate('/'));
+      await page.evaluate(() => { const w = window as any; w.GuardianForms.testing.patchFiling({ 'caseNumber': '' }); w.GuardianForms.testing.save.auto(); });
+      await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
       await page.setInputFiles('input[type="file"][accept=".xlsx"]', file);
-      await page.waitForFunction(() => (window as any).D.caseNumber === '2026-CP-000789', undefined, { timeout: 20_000 });
+      await page.waitForFunction(() => (window as any).GuardianForms.testing.field('caseNumber') === '2026-CP-000789', undefined, { timeout: 20_000 });
     };
 
     await importInto(noPreparerFile);
-    expect(await page.evaluate(() => ({ flagged: !!(window as any).D.guardians[0].isPreparer, preparer: (window as any).D.preparer?.name })),
+    expect(await page.evaluate(() => ({ flagged: !!(window as any).GuardianForms.testing.field('guardians.0.isPreparer'), preparer: (window as any).GuardianForms.testing.field('preparer')?.name })),
       'a workbook with empty preparer cells does not un-name the guardian').toEqual({ flagged: true, preparer: '' });
 
     // A workbook that names an outside preparer wins. Produce it from the
     // same ward with the outside preparer named and nobody flagged.
     await page.evaluate(() => {
       const w = window as any;
-      Object.assign(w.D.preparer, { name: 'Sample Preparer', ssn: '123-45-6789', phone: '555-555-5555', street: '123 Main St', cityStateZip: 'Clearwater, FL 33755', signatureDate: '2027-01-05' });
-      w.D.guardians[0].isPreparer = false;
-      w.autoSave();
+      w.GuardianForms.testing.patchFiling({ preparer: { ...w.GuardianForms.testing.field('preparer'), ...{ name: 'Sample Preparer', ssn: '123-45-6789', phone: '555-555-5555', street: '123 Main St', cityStateZip: 'Clearwater, FL 33755', signatureDate: '2027-01-05' } } });
+      w.GuardianForms.testing.patchFiling({ 'guardians.0.isPreparer': false });
+      w.GuardianForms.testing.save.auto();
     });
     const withPreparer = await download(page, '[data-annual-action="save-excel"]');
     const withPreparerFile = path.join(os.tmpdir(), `pg-preparer-flag-named-${Date.now()}.xlsx`);
@@ -268,9 +265,9 @@ test.describe('Milestone 67A: a guardian or attorney can be the preparer', () =>
 
     // Flag the guardian again, then import the workbook that names an
     // outside preparer: the workbook's statement is the stronger one.
-    await page.evaluate(() => { const w = window as any; w.D.guardians[0].isPreparer = true; w.autoSave(); });
+    await page.evaluate(() => { const w = window as any; w.GuardianForms.testing.patchFiling({ 'guardians.0.isPreparer': true }); w.GuardianForms.testing.save.auto(); });
     await importInto(withPreparerFile);
-    expect(await page.evaluate(() => ({ flagged: !!(window as any).D.guardians[0].isPreparer, preparer: (window as any).D.preparer?.name })),
+    expect(await page.evaluate(() => ({ flagged: !!(window as any).GuardianForms.testing.field('guardians.0.isPreparer'), preparer: (window as any).GuardianForms.testing.field('preparer')?.name })),
       'the named outside preparer clears the flag').toEqual({ flagged: false, preparer: 'Sample Preparer' });
   });
 });

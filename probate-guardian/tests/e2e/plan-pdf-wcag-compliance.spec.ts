@@ -43,7 +43,8 @@ import { extractPdfText } from './support/pdf-extract';
 
 type WcagConfig = {
   name: string;
-  loaderGlobal: string;
+  // The GuardianForms.testing.generateOutput member that hands back this Plan's PDF builders.
+  outputMember: string;
   buildFnName: string;
   model: Record<string, unknown>;
   minPages: number;
@@ -53,7 +54,7 @@ type WcagConfig = {
 const CONFIGS: WcagConfig[] = [
   {
     name: 'Plan Initial',
-    loaderGlobal: 'loadPlanInitialPdf',
+    outputMember: 'planInitialPdf',
     buildFnName: 'buildPlanInitialModel',
     minPages: 1,
     model: {
@@ -100,7 +101,7 @@ const CONFIGS: WcagConfig[] = [
   },
   {
     name: 'Plan Annual',
-    loaderGlobal: 'loadPlanAnnualPdf',
+    outputMember: 'planAnnualPdf',
     buildFnName: 'buildPlanAnnualModel',
     minPages: 1,
     model: {
@@ -150,7 +151,7 @@ const CONFIGS: WcagConfig[] = [
   },
   {
     name: 'Plan Minor',
-    loaderGlobal: 'loadPlanMinorPdf',
+    outputMember: 'planMinorPdf',
     buildFnName: 'buildPlanMinorModel',
     minPages: 1,
     model: {
@@ -191,7 +192,7 @@ const CONFIGS: WcagConfig[] = [
   },
   {
     name: 'Plan Simplified',
-    loaderGlobal: 'loadPlanSimplifiedPdf',
+    outputMember: 'planSimplifiedPdf',
     buildFnName: 'buildPlanSimplifiedModel',
     minPages: 0,
     model: {
@@ -222,8 +223,8 @@ test.describe('Milestone 19-2: Plan-* features on the shared vector PDF engine',
     test(`${config.name}: generates a tagged, non-raster PDF with electronic signature content`, async ({ page }) => {
       await freshStartNoPassword(page);
 
-      const result = await page.evaluate(async ({ loaderGlobal, buildFnName, model }) => {
-        const mod = await (window as any)[loaderGlobal]();
+      const result = await page.evaluate(async ({ outputMember, buildFnName, model }) => {
+        const mod = await (window as any).GuardianForms.testing.generateOutput[outputMember]();
         const doc = await mod.generateCourtFormPdf(mod[buildFnName](model));
         const rawPdfString = doc.output();
         const headingLevels = [...rawPdfString.matchAll(/\/S \/(H[1-6])/g)].map((m) => parseInt(m[1].slice(1), 10));
@@ -235,7 +236,7 @@ test.describe('Milestone 19-2: Plan-* features on the shared vector PDF engine',
           headingLevels,
           rawPdfString,
         };
-      }, { loaderGlobal: config.loaderGlobal, buildFnName: config.buildFnName, model: config.model });
+      }, { outputMember: config.outputMember, buildFnName: config.buildFnName, model: config.model });
 
       const extractedText = await extractPdfText(result.rawPdfString);
 

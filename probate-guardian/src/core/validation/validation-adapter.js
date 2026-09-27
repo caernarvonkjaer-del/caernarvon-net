@@ -3,6 +3,9 @@
 // included file). This file itself was never written with JSDoc types and
 // isn't part of the deliberate check:types surface (AGENTS.md §1) -- opting
 // out documents that honestly instead of inventing types nobody asked for.
+import { getActiveInventoryType } from '../state.js';
+import { errorRoute } from './error-route.js';
+import { getCurrentPage, navigateTo } from '../navigation/route-state.js';
 
 // Milestone 24: Structured Validation Error Adapter & Resilient Jump Link Handler
 
@@ -50,7 +53,8 @@ const LEGACY_ROUTE_MAP = {
 // per-type-numbered headings ("1. Residences", "5–7. Skills & Rights", ...)
 // with no shared convention a regex can generalize (unlike Guardian/Annual/
 // Simplified's letter-dash-number and Roman-numeral "Part N" sections,
-// already handled correctly by legacy-app.js's errorRoute() -- see
+// already handled correctly by errorRoute() (src/core/validation/error-route.js;
+// legacy-app.js's until Milestone 70) -- see
 // resolveRouteFromSection() below). Some labels are also reused verbatim
 // across types for different pages -- bare "Signatures" alone resolves to
 // /p11 for Plan Annual, /p9 for Plan Initial, and /p3 for Plan Simplified --
@@ -114,17 +118,14 @@ const PLAN_SECTION_ROUTE_MAPS = {
 /**
  * Resolves a route from a section prefix or legacy string error message.
  *
- * Resolution order: (1) legacy-app.js's own errorRoute() -- a regex-based
- * resolver, not a hardcoded table, that already correctly drives Print
- * Preview's "Go to section" links and computeNavChecks()'s guardian branch
- * for every Guardian/Annual/Simplified section label (Cover, Schedule X[-N],
- * guardian's letter-dash-number sections, Roman-numeral "Part N" / combined
- * "Parts VI & VII"). legacy-app.js loads as a classic script before the
- * ES-module bootstrap (index.html's script order), so window.errorRoute is
- * always defined by the time this runs -- reusing it here is the same
- * single-source-of-truth approach this suite already uses elsewhere (e.g.
- * crossCheckNavAndSummaryStatus compares against the real
- * window.computeNavChecks() rather than a second, parallel implementation).
+ * Resolution order: (1) errorRoute() (src/core/validation/error-route.js,
+ * legacy-app.js's until Milestone 70's 70F) -- a regex-based resolver, not a
+ * hardcoded table, that already correctly drives Print Preview's "Go to
+ * section" links and the Initial Inventory's completion marks for every
+ * Guardian/Annual/Simplified section label (Cover, Schedule X[-N], guardian's
+ * letter-dash-number sections, Roman-numeral "Part N" / combined "Parts VI &
+ * VII"). It answers first, as it always did in the app, where it was defined
+ * before this ran -- the same single source of truth, not a parallel table.
  * (2) the Plan-type map above, for the four Plan types' narrative headings
  * errorRoute() can't generalize. (3) today's original table + substring
  * fallback, unchanged, for backward compatibility when filingType is
@@ -133,11 +134,9 @@ const PLAN_SECTION_ROUTE_MAPS = {
 export function resolveRouteFromSection(sectionStr, filingType) {
   if (!sectionStr) return '/';
   const clean = String(sectionStr).trim();
-  const type = filingType || (typeof window !== 'undefined' && window.activeInventoryType);
-  if (typeof window !== 'undefined' && typeof window.errorRoute === 'function') {
-    const viaLegacy = window.errorRoute(clean, type);
-    if (viaLegacy) return viaLegacy;
-  }
+  const type = filingType || getActiveInventoryType();
+  const viaErrorRoute = errorRoute(clean, type);
+  if (viaErrorRoute) return viaErrorRoute;
   const planMap = type ? PLAN_SECTION_ROUTE_MAPS[type] : null;
   if (planMap) {
     const hit = planMap[clean.toLowerCase()] || planMap[clean.toLowerCase().replace(/[\u2013\u2014]/g, '-')];
@@ -218,8 +217,8 @@ export async function focusFieldByPath(route, fieldPath) {
 
   let target = findTarget(fieldPath);
 
-  if (!target && route && window.navigate && window.getCurrentPage?.() !== route) {
-    window.navigate(route);
+  if (!target && route && getCurrentPage() !== route) {
+    navigateTo(route);
     await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
     target = findTarget(fieldPath);
   }
@@ -230,8 +229,4 @@ export async function focusFieldByPath(route, fieldPath) {
   }
 }
 
-if (typeof window !== 'undefined') {
-  window.adaptValidationErrors = adaptValidationErrors;
-  window.focusFieldByPath = focusFieldByPath;
-}
 

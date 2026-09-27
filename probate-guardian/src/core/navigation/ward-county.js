@@ -19,7 +19,7 @@
 // 'ward' role) is the person. Several filings link to one ward Party via
 // `filing.wardPartyId`; that is what makes a canonical county possible.
 
-import { getCaseFile } from '../state.js';
+import { getCaseFile, getD } from '../state.js';
 import { FL_COUNTY_CIRCUIT } from '../pdf/circuit-lookup.js';
 import { createParty, resolveParty, setPartyIdForSlot, getPartyIdForSlot, reconcileSlotWithParty, backfillWardPartyIdentity } from '../party-resolver.js';
 
@@ -134,8 +134,8 @@ export function commitCoverCounty(filing, rawCounty) {
  * Called from form-contract.js's runFieldWriteSideEffects() (Milestone 42D),
  * the one post-write tail every binding convention shares -- data-form-path
  * and data-annual-path via writeDraftValue()/finalizeFieldValue(), and
- * legacy-app.js's bindForms()/afterChange() for Guardian Inventory's
- * data-bind. Before 42D each write path called this separately, and hooking
+ * the Initial Inventory's bindForms()/afterChange() (its form-binding.js;
+ * legacy-app.js's until Milestone 70) for its data-bind. Before 42D each write path called this separately, and hooking
  * only one had silently covered six filing types and missed three.
  *
  * `attorney_county` deliberately does not match: it is a separate field and must
@@ -143,7 +143,7 @@ export function commitCoverCounty(filing, rawCounty) {
  */
 export function maybeCommitCoverCounty(path, filing) {
   if (path !== 'county') return null;
-  const target = filing || (typeof window !== 'undefined' ? window.D : null);
+  const target = filing || (typeof window !== 'undefined' ? getD() : null);
   if (!target) return null;
   return commitCoverCounty(target, target.county);
 }
@@ -190,7 +190,8 @@ export function hydrateCountyFromWardParty(filing) {
 // legacy-app.js's carryOverFields() was its single entry point, legacy-app.js
 // never referenced it at all.
 //
-// carryOverFields() (legacy-app.js) reimplements the same intent inline and
+// carryOverFields() (src/core/filing/carry-over.js; legacy-app.js's until
+// Milestone 70's 70G) reimplements the same intent inline and
 // reaches the same end state by a different route, because it builds a field bag
 // for a destination that does not exist yet rather than mutating one that does:
 // it blanks county, carries wardPartyId on the returned bag, runs
@@ -285,19 +286,4 @@ export function wardCountyMergeConflict(keepId, discardId) {
   const discardCounty = normalizeCountyName(discard?.county);
   if (!keepCounty || !discardCounty || keepCounty === discardCounty) return null;
   return { keepCounty, discardCounty };
-}
-
-// Global bridge for legacy-app.js, which is a classic script and cannot import
-// an ES module (same pattern as the other core/navigation modules).
-if (typeof window !== 'undefined') {
-  window.normalizeCountyName = normalizeCountyName;
-  window.wardPartyForFiling = wardPartyForFiling;
-  window.ensureWardPartyForFiling = ensureWardPartyForFiling;
-  window.wardPartyCounty = wardPartyCounty;
-  window.commitCoverCounty = commitCoverCounty;
-  window.maybeCommitCoverCounty = maybeCommitCoverCounty;
-  window.hydrateCountyFromWardParty = hydrateCountyFromWardParty;
-  window.inferWardPartyCounty = inferWardPartyCounty;
-  window.backfillWardPartyCounties = backfillWardPartyCounties;
-  window.wardCountyMergeConflict = wardCountyMergeConflict;
 }

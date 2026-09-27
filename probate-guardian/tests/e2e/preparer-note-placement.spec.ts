@@ -29,7 +29,7 @@ const TYPES = [
 for (const { label, type } of TYPES) {
   test(`${label}: the preparer note is first under the heading on every signing page, and nowhere else`, async ({ page }) => {
     await freshStartNoPassword(page);
-    await page.evaluate(([t]) => (window as any).addWard(`Note ${t}`, t), [type]);
+    await page.evaluate(([t]) => (window as any).GuardianForms.testing.createFiling.add(`Note ${t}`, t), [type]);
 
     const routes: string[] = await page.evaluate(() => [
       ...new Set([...document.querySelectorAll('nav [data-page], nav [data-route]')]
@@ -42,7 +42,7 @@ for (const { label, type } of TYPES) {
 
     const signing: string[] = [];
     for (const route of pagesToWalk) {
-      await page.evaluate((r) => (window as any).navigate(r), route);
+      await page.evaluate((r) => (window as any).GuardianForms.testing.navigate(r), route);
       await page.locator('#main-content h1').first().waitFor();
       const facts = await page.evaluate(() => {
         const main = document.querySelector('#main-content') as HTMLElement;

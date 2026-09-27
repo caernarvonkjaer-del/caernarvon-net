@@ -23,7 +23,7 @@ test.describe('Milestone 24: Form Entry UX, Dates, Preservation, and Guidance', 
 
     // On blur: display formatted as 02/14/2026, model stored as 2026-02-14
     await expect(gidInput).toHaveValue('02/14/2026');
-    const storedGid = await page.evaluate(() => (window as any).D.gid);
+    const storedGid = await page.evaluate(() => (window as any).GuardianForms.testing.field('gid'));
     expect(storedGid).toBe('2026-02-14');
     expect(await gidInput.getAttribute('aria-invalid')).toBeNull();
 
@@ -36,7 +36,7 @@ test.describe('Milestone 24: Form Entry UX, Dates, Preservation, and Guidance', 
     // data before the blocking export check is resolved.
     await expect(gidInput).toHaveValue('02/14/26');
     await expect(gidInput).toHaveAttribute('aria-invalid', 'true');
-    const invalidStoredGid = await page.evaluate(() => (window as any).D.gid);
+    const invalidStoredGid = await page.evaluate(() => (window as any).GuardianForms.testing.field('gid'));
     expect(invalidStoredGid).toBe('2026-02-14');
   });
 
@@ -45,11 +45,11 @@ test.describe('Milestone 24: Form Entry UX, Dates, Preservation, and Guidance', 
     await createWard(page, "Harold O'Connor-Smith", 'guardian');
 
     // Name with apostrophe and hyphen preserved
-    const storedWardName = await page.evaluate(() => (window as any).D.wardName);
+    const storedWardName = await page.evaluate(() => (window as any).GuardianForms.testing.field('wardName'));
     expect(storedWardName).toBe("Harold O'Connor-Smith");
 
     // Navigate to A-2 schedule
-    await page.evaluate(() => (window as any).navigate('/a2'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/a2'));
     const addBtn = page.locator('[data-inventory-action="add-entry"][data-schedule="a2"]');
     await expect(addBtn).toBeVisible();
     await addBtn.click();
@@ -62,7 +62,7 @@ test.describe('Milestone 24: Form Entry UX, Dates, Preservation, and Guidance', 
     await acctInput.blur();
 
     // Value must preserve dashes, slashes, and uppercase acronyms
-    const storedAcct = await page.evaluate(() => (window as any).D.scheduleA2[0].accountNumber);
+    const storedAcct = await page.evaluate(() => (window as any).GuardianForms.testing.field('scheduleA2.0.accountNumber'));
     expect(storedAcct).toBe('CHK-104A/2026-USAA');
 
     // Fill notes: "Trustee's note (SNT-2024-778) c/o USAA LLC"
@@ -71,7 +71,7 @@ test.describe('Milestone 24: Form Entry UX, Dates, Preservation, and Guidance', 
     await notesInput.fill("Trustee's note (SNT-2024-778) c/o USAA LLC");
     await notesInput.blur();
 
-    const storedNotes = await page.evaluate(() => (window as any).D.scheduleA2[0].notes);
+    const storedNotes = await page.evaluate(() => (window as any).GuardianForms.testing.field('scheduleA2.0.notes'));
     expect(storedNotes).toBe("Trustee's note (SNT-2024-778) c/o USAA LLC");
   });
 
@@ -80,7 +80,7 @@ test.describe('Milestone 24: Form Entry UX, Dates, Preservation, and Guidance', 
     await createWard(page, 'Test Section Guidance Ward', 'guardian');
 
     // Navigate to A-1 schedule without items or checkbox
-    await page.evaluate(() => (window as any).navigate('/a1'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/a1'));
     const addBtn = page.locator('[data-inventory-action="add-entry"][data-schedule="a1"]');
     await expect(addBtn).toBeVisible();
 
@@ -111,7 +111,7 @@ test.describe('Milestone 24: Form Entry UX, Dates, Preservation, and Guidance', 
     await createWard(page, 'Preview Live Region Ward', 'guardian');
 
     // Navigate to /print
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
     await expect(page.locator('[data-inventory-action="save-pdf"]')).toBeVisible();
 
     // A blank filing is now correctly blocked by the shared export gate, so
@@ -157,8 +157,8 @@ test.describe('Milestone 24: Form Entry UX, Dates, Preservation, and Guidance', 
 
     // Verify stored canonical state in window.D
     const storedState = await page.evaluate(() => ({
-      from: (window as any).D.periodFrom,
-      to: (window as any).D.periodTo,
+      from: (window as any).GuardianForms.testing.field('periodFrom'),
+      to: (window as any).GuardianForms.testing.field('periodTo'),
     }));
     expect(storedState.from).toBe('2026-07-10');
     expect(storedState.to).toBe('2027-07-10');

@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { freshStartNoPassword } from './support/target';
+import { freshStartNoPassword, createWard } from './support/target';
 import { extractPdfText, extractPdfTextItems, extractPdfTextRuns } from './support/pdf-extract';
 import { installFixtureSupport, expectFileableFixture } from './support/fixture-completeness';
 import {
@@ -12,7 +12,7 @@ test.describe('PDF Accessibility: Accounting & Inventory Filing-Specific Coverag
     await installFixtureSupport(page);
 
     const inspection = await page.evaluate(async (base) => {
-      const { buildSimplifiedAccountingModel, generateCourtFormPdf } = await (window as any).loadSimplifiedPdf();
+      const { buildSimplifiedAccountingModel, generateCourtFormPdf } = await (window as any).GuardianForms.testing.generateOutput.simplifiedPdf();
 
       const sampleData = (window as any).__pgBuildFixture('simplified', base, {
         wardName: 'Harold Thomas Bennett',
@@ -175,7 +175,7 @@ test.describe('PDF Accessibility: Accounting & Inventory Filing-Specific Coverag
     await installFixtureSupport(page);
 
     const inspection = await page.evaluate(async (base) => {
-      const { buildAnnualAccountingModel, generateCourtFormPdf } = await (window as any).loadAnnualPdf();
+      const { buildAnnualAccountingModel, generateCourtFormPdf } = await (window as any).GuardianForms.testing.generateOutput.annualPdf();
 
       const sampleAnnualData = (window as any).__pgBuildFixture('annual', base, {
         wardName: 'Harold Thomas Bennett',
@@ -445,25 +445,23 @@ test.describe('PDF Accessibility: Accounting & Inventory Filing-Specific Coverag
     expect(extractedText19E).toContain('Statutory care compensation');
   });
 
-  test('Slice 19E: Architectural single source of truth for statutory math and preview-to-PDF drift guard', async ({ page }) => {
+  // Slice 19E's other half -- one calculator behind the page and the PDF,
+  // loaded at startup and never swapped -- is a fact about the module graph,
+  // checked in tests/unit/annual-accounting-totals.spec.js since Milestone 70's
+  // 70T (it read window.calcTotalsAnnual here).
+  test('Slice 19E: preview-to-PDF drift guard', async ({ page }) => {
     await freshStartNoPassword(page);
     await installFixtureSupport(page);
+    await createWard(page, 'Drift Guard Ward', 'annual');
 
-    const driftGuardResults = await page.evaluate(async (base) => {
-      // 1. Verify single source of truth: window.calcTotalsAnnual must exist BEFORE loadAnnualPdf
-      const fnBefore = (window as any).calcTotalsAnnual;
-      const fnBeforeStr = typeof fnBefore === 'function' ? fnBefore.toString() : '';
-
-      // 2. Load PDF module
-      const { buildAnnualAccountingModel, generateCourtFormPdf } = await (window as any).loadAnnualPdf();
-
-      const fnAfter = (window as any).calcTotalsAnnual;
-      const fnAfterStr = typeof fnAfter === 'function' ? fnAfter.toString() : '';
-
-      // Check whether global was swapped or remained identical
-      const globalSwapped = fnBeforeStr !== fnAfterStr;
-
-      // 3. Distinct Sentinel Data for Preview/PDF Drift Guard.
+    // The sentinel filing is made the open filing (setup, D9), then closed and
+    // opened again: the app's own load path prepares it, as it prepares a
+    // filer's saved filing. (It used to be assigned to window.D with no filing
+    // open at all.)
+    await page.evaluate(async (base) => {
+      const t = (window as any).GuardianForms.testing;
+      const id = t.snapshot().filing.wardId;
+      // Distinct sentinel data for the preview/PDF drift guard.
       //
       // Sentinel here means distinctive, not incomplete: every DRIFT_GUARD_*
       // value is content chosen so it cannot be confused with anything the
@@ -522,37 +520,28 @@ test.describe('PDF Accessibility: Accounting & Inventory Filing-Specific Coverag
         trusts: [{ hasTrust: 'No' }],
       });
 
-      // Set global D for preview module
-      (window as any).D = sentinelData;
+      t.replaceFiling({ ...sentinelData, wardId: id });
+      await t.activateFiling.close();
+      await t.activateFiling.open(id);
+    }, MINIMAL_VALID_ANNUAL);
 
-      // Compute math via canonical calcTotalsAnnual
-      const computedTotals = (window as any).calcTotalsAnnual(sentinelData);
-      const computedReconcile = (window as any).annualReconcileState(computedTotals, sentinelData);
-
-      // Generate accessible PDF model & document
-      const model = buildAnnualAccountingModel(sentinelData, {
+    const driftGuardResults = await page.evaluate(async () => {
+      const t = (window as any).GuardianForms.testing;
+      const { buildAnnualAccountingModel, generateCourtFormPdf } = await t.generateOutput.annualPdf();
+      const filing = t.snapshot().filing;
+      const model = buildAnnualAccountingModel(filing, {
         signatureStyle: 'typed',
         printDate: '2026-09-03',
       });
       const doc = await generateCourtFormPdf(model);
-      const rawPdfString = doc.output();
-
       return {
-        rawPdfString,
-        hasCalcTotalsBefore: typeof fnBefore === 'function',
-        hasCalcTotalsAfter: typeof fnAfter === 'function',
-        globalSwapped,
-        isOutOfBalance: computedReconcile.outOfBalance,
-        fixtureIssues: await (window as any).__pgFixtureIssues(sentinelData),
+        rawPdfString: doc.output(),
+        isOutOfBalance: t.status.annualReconcile().outOfBalance,
+        fixtureIssues: await (window as any).__pgFixtureIssues(filing),
       };
-    }, MINIMAL_VALID_ANNUAL);
+    });
 
     expectFileableFixture(driftGuardResults.fixtureIssues, "the drift guard's sentinel filing");
-
-    // Architecture: Single source of truth was eager, never swapped
-    expect(driftGuardResults.hasCalcTotalsBefore).toBe(true);
-    expect(driftGuardResults.hasCalcTotalsAfter).toBe(true);
-    expect(driftGuardResults.globalSwapped).toBe(false);
 
     // Form logic: Out of balance difference triggered explanation
     expect(driftGuardResults.isOutOfBalance).toBe(true);
@@ -576,7 +565,7 @@ test.describe('PDF Accessibility: Accounting & Inventory Filing-Specific Coverag
     await installFixtureSupport(page);
 
     const inspection = await page.evaluate(async (base) => {
-      const { buildVerifiedInventoryModel, generateVerifiedInventoryPdf } = await (window as any).loadGuardianPdf();
+      const { buildVerifiedInventoryModel, generateVerifiedInventoryPdf } = await (window as any).GuardianForms.testing.generateOutput.guardianPdf();
 
       const d = (window as any).__pgBuildFixture('guardian', base, {
         wardName: 'Harold Thomas Bennett',
@@ -754,9 +743,9 @@ test.describe('PDF Accessibility: Accounting & Inventory Filing-Specific Coverag
     await installFixtureSupport(page);
 
     const result = await page.evaluate(async ([guardianBase, planBase]) => {
-      const { buildVerifiedInventoryModel, generateVerifiedInventoryPdf } = await (window as any).loadGuardianPdf();
-      const { generateCourtFormPdf } = await (window as any).loadSimplifiedPdf();
-      const { buildPlanAnnualModel } = await (window as any).loadPlanAnnualPdf();
+      const { buildVerifiedInventoryModel, generateVerifiedInventoryPdf } = await (window as any).GuardianForms.testing.generateOutput.guardianPdf();
+      const { generateCourtFormPdf } = await (window as any).GuardianForms.testing.generateOutput.simplifiedPdf();
+      const { buildPlanAnnualModel } = await (window as any).GuardianForms.testing.generateOutput.planAnnualPdf();
       const build = (window as any).__pgBuildFixture;
 
       // Test 1: Verified Initial Inventory with Electronic /s/ signature (default) in Miami-Dade County (11th Circuit)
@@ -915,8 +904,8 @@ test.describe('PDF Accessibility: Accounting & Inventory Filing-Specific Coverag
 
     await installFixtureSupport(page);
     const output = await page.evaluate(async ([recipient, annualBase, simplifiedBase]) => {
-      const annual = await (window as any).loadAnnualPdf();
-      const simplified = await (window as any).loadSimplifiedPdf();
+      const annual = await (window as any).GuardianForms.testing.generateOutput.annualPdf();
+      const simplified = await (window as any).GuardianForms.testing.generateOutput.simplifiedPdf();
       const build = (window as any).__pgBuildFixture;
 
       const period = {
@@ -993,7 +982,7 @@ test.describe('PDF Accessibility: Accounting & Inventory Filing-Specific Coverag
 
     await installFixtureSupport(page);
     const output = await page.evaluate(async (base) => {
-      const { buildSimplifiedAccountingModel, generateCourtFormPdf } = await (window as any).loadSimplifiedPdf();
+      const { buildSimplifiedAccountingModel, generateCourtFormPdf } = await (window as any).GuardianForms.testing.generateOutput.simplifiedPdf();
       const d = (window as any).__pgBuildFixture('simplified', base, {
         wardName: 'Harold Thomas Bennett',
         caseNumber: '26-002487-GD',
@@ -1043,9 +1032,9 @@ test.describe('PDF Accessibility: Accounting & Inventory Filing-Specific Coverag
     const UCN = '50-2026-GA-000123-XXXX-XX';
 
     const raw = await page.evaluate(async ([guardianBase, ucn]) => {
-      const { buildVerifiedInventoryModel, generateVerifiedInventoryPdf } = await (window as any).loadGuardianPdf();
-      const { buildPlanMinorModel } = await (window as any).loadPlanMinorPdf();
-      const { generateCourtFormPdf } = await (window as any).loadSimplifiedPdf();
+      const { buildVerifiedInventoryModel, generateVerifiedInventoryPdf } = await (window as any).GuardianForms.testing.generateOutput.guardianPdf();
+      const { buildPlanMinorModel } = await (window as any).GuardianForms.testing.generateOutput.planMinorPdf();
+      const { generateCourtFormPdf } = await (window as any).GuardianForms.testing.generateOutput.simplifiedPdf();
       const build = (window as any).__pgBuildFixture;
       const inventory = async (extra: Record<string, unknown>) => {
         const d = build('guardian', guardianBase, { wardName: 'Harold Thomas Bennett', caseNumber: '26-002487-GD', county: 'Pinellas', ...extra });

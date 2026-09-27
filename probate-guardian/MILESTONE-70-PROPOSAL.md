@@ -2,9 +2,16 @@
 
 ## Status
 
-**DRAFT — planning only.** This proposal authorizes no code change. Milestone
-70, or an individual delivery within it, must be explicitly approved before
-implementation begins. The deliveries are intentionally sequential because
+**70A complete (2026-09-24); 70T, 70B, 70C and 70D complete (2026-09-25); 70E,
+70F, 70G, 70H, 70I and 70J complete (2026-09-26); 70K and 70L built (2026-09-27) -- see their build records. What remains is the merge (Reconstitution and merge): the merge gate, whose release tier needs the requester's approval when it runs, and the requester's release sign-off (D8).** The
+requester approved delivery 70A on 2026-09-24 and it is complete on the
+`milestone-70` branch (see the 70A build record), then approved 70T. On
+2026-09-25 the requester approved every delivery after it ("Finish ms 70. That
+means ms 70B and every other after until it's done.", then "Proceed with the
+entire process."), to run in order on the plan owner's recommendations, with
+defects fixed as they are found; that approval also covers the full-regression
+runs the 70I, 70J and 70L gates ask approval for. The merge to `master` still
+waits for the requester's release sign-off (D8). The deliveries are intentionally sequential because
 most of them touch the same dependency graph and several will touch
 `src/legacy-app.js`; they are not independent work streams that can safely be
 implemented in parallel.
@@ -114,12 +121,12 @@ will regenerate it after any work already in flight has landed.
 | --- | --- |
 | Legacy core | `src/legacy-app.js` is 457,190 bytes and about 8,300 physical lines, with 345 top-level function declarations and 129 top-level bindings. Classic top-level function declarations become implicit globals even when there is no `window.X =` line. |
 | Hybrid boot | `index.html` loads `src/legacy-app.js` as a parser-blocking classic script and then `src/main.js` as a module. `main.js` waits for module evaluation and calls `window.initApp()`. |
-| Explicit global bridge | The current audit finds 319 `window.X =` assignment sites across 60 JavaScript files and 358 distinct application-defined names consumed from `window`. It does not yet see every implicit classic global or bare identifier dependency. |
+| Explicit global bridge | The parser-based 70A audit finds 337 `window`/`globalThis` write sites, including 13 `Object.defineProperty` publications the regex audit misses (see the 70A build record). The current regex audit finds 319 `window.X =` assignment sites across 60 JavaScript files and 358 distinct application-defined names consumed from `window`. It does not yet see every implicit classic global or bare identifier dependency. |
 | Highest fan-out globals | `D` is consumed by 41 files; `autoSave` by 14; `renderPage` and `setPath` by 13 each; `ic` and `navigate` by 12 each; and `computeNavChecks` by 8. |
 | Feature coupling | Eighteen feature files destructure application services from `window` at module evaluation time. Those captured references create both ordering constraints and difficult test setup. |
 | State ownership | `src/core/state.js` describes itself as a thin adapter around legacy globals. It reads and writes `window.caseFile` and `window.D`; the monolith still owns the underlying lexical state and many save/activity flags. |
 | Build special case | `vite.config.js` copies `src/legacy-app.js` as a static file, and `scripts/generate-service-worker.mjs` treats it as a critical asset, instead of Vite compiling it as part of the module graph. |
-| Test coupling | About 83 of the 115 browser spec files read or write `window.D`, `window.caseFile`, or `currentPage` inside `page.evaluate()`, and at least 31 of them write into the live filing in place -- at least 177 sites such as `Object.assign(w.D, patch)` followed by `autoSave()` -- which a copy-only adapter cannot serve without new commands. Milestone 42C counted 83 distinct app-defined names the browser suite reaches through `window` (`tests/e2e/support/window-api.ts`). On the unit side, specs evaluate monolith source through `tests/unit/support/legacy-source-extract.js` or source slicing, read `legacy-app.js` to pin its content, carry hand-copied mirrors of monolith code, or stub `window` (see **Known legacy-coupled test migrations**). These counts come from text searches and are lower bounds; 70A replaces them with parser counts. |
+| Test coupling | Parsed in 70A (`tests/baseline/ms70-e2e-globals.json`; see the 70A build record): 112 of the 115 browser spec files reach application globals inside `page.evaluate()`, 158 distinct application names in all (Milestone 42C had listed 83), and 42 files write into live case state in place -- 237 sites such as `Object.assign(w.D, patch)` followed by `autoSave()` -- which a copy-only adapter cannot serve without new commands. The text-search estimates first written here (about 83 files; at least 31 files and 177 sites) were low. On the unit side, specs evaluate monolith source through `tests/unit/support/legacy-source-extract.js` or source slicing, read `legacy-app.js` to pin its content, carry hand-copied mirrors of monolith code, or stub `window` (see **Known legacy-coupled test migrations**). These counts come from text searches and are lower bounds; 70A replaces them with parser counts. |
 | Production configuration | Production is the **portable** build served over HTTPS from a subfolder of the DNN site. It registers no service worker: only the web build carries the `pg-build=web` marker that `src/pwa-ui.js` requires. The `portable` e2e profile opens that same build as a literal `file://` page and runs six parity specs. Four code paths branch on `file:` versus HTTP(S) -- the cross-tab filing lock (`src/core/ward-lock.js`, bypassed entirely under `file:`), fragment loading (`src/fragment-loader.js`), and two template-fetch startup steps in `legacy-app.js` (effectively dead today, since all three court templates are bundled) -- so no current profile runs the shipped portable bundle through the branches production takes. The source profile does take those branches, but against unbundled source. |
 | Continuous integration | `.github/workflows/probate-guardian-tests.yml` runs only on manual dispatch (`workflow_dispatch`); nothing runs automatically on a push. Every ratchet in this plan is therefore enforced by the unit suite that agents run, and CI is available on demand for any branch, including `milestone-70`. |
 | Existing duplicates | The single-implementation rule is already broken in places. `PBKDF2_ITERATIONS` and `CRYPTO_VERIFIER_PLAINTEXT` are defined in both `legacy-app.js` (lines 1701-1702) and `src/core/persistence/crypto.js`; the `pg-launch-pref` and `pg-session-cache` database names and the `hasOpenedBefore` key also exist in both the monolith and their modules. |
@@ -639,6 +646,294 @@ increase in the compatibility surface. The exact final facade is a
 reviewed artifact of this delivery, not an open-ended promise to preserve all
 current debugging habits.
 
+### 70A build record (complete)
+
+Approved by the requester on 2026-09-24 ("Approve, skip the regression":
+70A starts without a full `npm test` on `master` first). Everything below is
+on the `milestone-70` branch unless it says otherwise.
+
+**Done, with evidence.**
+
+| Item | Commit | Evidence |
+| --- | --- | --- |
+| Scoped AGENTS.md exception (D1), on `master` | `a9c9930` | The branch point. |
+| Branch `milestone-70`, as a separate worktree | -- | Checked out at `D:\caernarvon-net-ms70` so the main folder stays on `master`: Codex commits in that folder, and a folder holds one branch. The drive is not NTFS, so the worktree has its own `npm ci` install. |
+| Branch-only test ports | `add5403` | `playwright.config.ts` serves on 4331/4183/5183: `master` uses 4321/4173/5173 and reuses a server already listening, so with both worktrees in use a run could silently test the other's files. Restored at the merge (ledger, "Branch-only settings"). `startup.spec.ts` 7/7 on the new ports. |
+| Master-fix ledger and guard | `add5403` | `MILESTONE-70-FIX-LEDGER.md`; `scripts/ms70-ledger-guard.mjs`. **Gate item: seen failing** against real history (branch point moved back to `9c61cbb`: all five later `master` commits reported unlisted); `ms70-ledger-guard.spec.js` 8/8. |
+| Parser-based dependency audit and ratchet | `0f86677` | `scripts/ms70-dependency-audit.mjs`; `tests/baseline/ms70-dependency-{baseline,inventory}.json`. **Gate items: seen failing on the real tree** for an injected implicit global in `legacy-app.js`, a bare `esc()` call in `src/core/case-resolver.js`, and a two-way import between `state.js` and `case-resolver.js`, each restored; `ms70-dependency-ratchet.spec.js` 19/19. |
+| Assertion-count baseline | `122d0e9` | `scripts/ms70-assertion-counts.mjs`; `tests/baseline/ms70-assertion-counts.json`. Seen failing on a real spec with one `expect` removed (15 to 14). |
+| Browser-suite global inventory | `122d0e9` | `scripts/ms70-e2e-global-inventory.mjs`; `tests/baseline/ms70-e2e-globals.json` -- what `GuardianForms.testing` is designed from. |
+| `portable-http` profile (T1), brought up | `02ecde4`, then the headers commit | `scripts/serve-portable-http.mjs`; `PG_TARGET=portable-http`; `npm run test:e2e:portable-http`; also part of `test:release` through the `all` profile. **Gate item: the one bring-up run (D2) 33/33, 0 skipped**, including the five ward-lock tests and the backup lock test the `file://` profile skips. The parity spec was seen failing for the stated reason with `dist/portable/fragments` removed. Production's headers then captured with the requester's go-ahead (one GET of `https://www.mypinellasclerk.gov/Portals/0/Guardian-Forms/index.html`, recorded in `tests/e2e/support/production-headers.json`), the profile moved to production's own `/Portals/0/Guardian-Forms/` path, and `Cache-Control`, `X-Frame-Options` and `X-XSS-Protection` replayed with HTML sent as plain `text/html`; rerun 33/33, and the header check seen failing with the replay removed. |
+| Load-aware audit | `b9b5381` | The audit counts a module's `window.X` as a provider only if something loads that module, and ratchets the modules nothing loads (8). Seen failing against the previous baseline, naming exactly the nine new entries. |
+| Declaration dispositions (draft) and computed lookups | `90bc235` | `scripts/ms70-declaration-dispositions.mjs`; `tests/baseline/ms70-declaration-dispositions.json`: all 474 declarations -- 459 move, 1 test-only, 14 delete-as-dead candidates -- each with a delivery, `reviewed: false`. The audit now records computed `window[...]` lookups and resolves the two known name builders; the first draft had wrongly proposed the seven `mount<Engine>Feature` functions as dead. |
+| Window-export reasons | `e603bbe` | Every `window` publication with the files that actually read it: 109 read only by the monolith, 98 only by modules, 22 by both, 32 only by tests, 65 by nothing, 4 from a module nothing loads. |
+| `GuardianForms` schema draft | `55366db` | `tests/baseline/ms70-testing-adapter-design.json`: production member `version` only (its consumer is support, given the year-long cache); 21 testing members (14 commands, 7 copy-only queries; 25, 18 commands, after the schema review below) covering all 163 names the browser suite reaches (158 when drafted; later specs added `_cryptoKey`, `_securityMode` and `decryptJSONWithKey`, all to the `persistenceState` query, and two harness globals), plus 19 to the real UI, 21 to unit imports and 12 harness globals. |
+| Fixture-helper inventory | `a94649a` | `tests/baseline/ms70-fixture-inventory.json`: 12 support modules, 67 exports, 16 factories. Found: `window-api.ts`'s typed wrappers from Milestone 42C are used by no spec. |
+| Per-delivery estimate | `ebd0041`, re-sized after the dispositions review | 58-95 days remaining after 70A; the table above. |
+| Security contract | `f4f368b` | `tests/unit/crypto-contract.spec.js` 8/8 and `tests/e2e/security-contract.spec.ts` 3/3, each seen failing with the fault injected (iterations 100,000, a 16-byte IV, an extractable key; auto-lock at 14 minutes, lockout threshold 6, a stored copy of the password). |
+| Year-rollover characterization | `42b1ae9` | `tests/e2e/year-rollover.characterization.spec.ts` 9/9 against `tests/baseline/ms70-year-rollover-golden.json`; seen failing on exactly the four accountings that carry a starting balance when it was carried plus 1. Findings below. |
+| `.sav` corpus, historical and current | `a16da1a` | `scripts/ms70-sav-corpus.mjs`; 56 fixtures in `tests/fixtures/sav/` (28 checkpoints: one per milestone that changed a stored shape from 9/10, the 9/16, 9/22 and both 9/24 builds matched to their commits by the monolith's exact bytes, and the branch point; each writes a plain five-ward, nine-filing caseload with shared records and a password-protected case, with its own writer; 611 KB) and `corpus.json`. `tests/e2e/sav-corpus.characterization.spec.ts` 66/66 in 5.1 min against `tests/baseline/ms70-sav-corpus-golden.json`: every file opens through the startup screen with every filing and every stored value; all 56 are format version 1. **Gate item: the historical and current fixtures open.** Seen failing: a reader that adds one field to each loaded filing passed every explicit check and failed the golden (digest and per-filing key counts). Found: a damaged file opens silently without the filings it cannot read, and in Chrome and Edge the first auto-save then rewrites the original without them -- fixed on `master` in `b2d97f5` with Alan's approval (a ledger row); a file marked format version 2 opens as if it were 1 (recorded; no version 2 exists). |
+| Mixed-version characterization | `db16eb3` | `tests/e2e/mixed-version.characterization.spec.ts` 15/15: the 9/24 evening build (`b28bf25`; `PG_MIXED_OLD_SHA` re-pins it at the merge gate) under `/old/` and this tree under `/new/` on one origin (`scripts/serve-portable-http.mjs` gained `mounts`). In both directions: terms, theme at load, default circuit, resuming the last filing and page, the other-tab warning naming the open filing, a dismissal surviving a reload into the other version, the filing lock, the first-run flag, and the recovery snapshot decrypted by the other version. `tests/baseline/ms70-shared-storage-golden.json` holds the shape of everything shared, which both versions must match. Seen failing: a renamed dismissal key in the new version failed both directions; an extra tab-message field failed the shape test. Excluded, with reasons in the spec: the remembered file handle (needs a user-driven picker), the web build's offline answer, update flag and service-worker caches (production runs the portable build), and process-local state. |
+| Dispositions reviewed | `89b659f` | All 474 declarations reviewed by the owner (`tests/baseline/ms70-declaration-review.json`, applied by `scripts/ms70-declaration-dispositions.mjs`). The section rule placed 94 wrongly -- sections whose banner no longer describes what sits under them: the case-state roots (`caseFile`, `activeInventoryType` to 70J), the save pipeline and template loading (to 70I), sidebar and picker UI under the old router banner (to 70H), 26 form-field helpers left in the feature-bridge sections (to 70F), registry data and normalizers (to 70C) -- each override with its reason. `_visitedPages` is dead on both sides (a `let` is never a window property, so the three module references never run): delete-as-dead, 15 in all, each searched for by name across source, markup and tests. The per-delivery sizes above are re-derived from the reviewed placement: the same 6,230 lines, redistributed. **Gate item: every legacy declaration has a disposition** -- now reviewed, and `tests/unit/ms70-declaration-dispositions.spec.js` fails on any entry whose placement drifts from the review (seen failing on one drifted entry). |
+| `GuardianForms` schema confirmed | this commit | The owner's review (`SCHEMA_REVIEW` in `scripts/ms70-testing-adapter-design.mjs`) confirms the one production member, `version` (read-only build identity for support, since production caches `index.html` for a year), and every testing member with its kind. It corrected the draft where a query would have had a side effect -- the adapter's rule is that a query is a copy: `updateNavDots`/`updateSidebar` redraw (now the `refreshStatus` command), `auditLog` appends (`recordActivity`), `saveBlobAs`/`exportGuardianDataZip`/`finishSingleWardExport` save or announce (`saveArchive`), and `doSavePdf*`/`doSaveExcel*` download (`saveOutput`). 25 members: 18 commands, 7 queries. Each name's destination stays `reviewed: false` until 70T proves it by converting the specs. Seen failing: an unconfirmed member, and `updateSidebar` back in a query. |
+
+**Parsed figures that replace this plan's estimates.** The Verified planning
+baseline's "Test coupling" row said its counts were text-search lower
+bounds; the parsers put the real numbers higher, so 70T is larger than first
+written:
+
+- 112 of the 115 browser spec files reach application globals (not "about
+  83"); `navigate` alone is used by 86 and `D` by 78.
+- The browser suite reaches 158 distinct application names (Milestone 42C
+  had listed 83).
+- 237 in-place writes to live case state, in 42 files (not "at least 177 in
+  at least 31"): 214 assignments, 17 `Object.assign`, 3 array mutators, 3
+  root replacements; 16 computed `window[...]` accesses.
+- 337 `window`/`globalThis` write sites (the regex audit's 319 missed the 13
+  `Object.defineProperty` publications, among them `currentPage`, `D`,
+  `caseFile` and `_cryptoKey`); 219 captures off `window` at load time, in 18
+  files; 474 implicit globals, all in `legacy-app.js`.
+- 50 bare cross-boundary references the old audit could not see: the
+  monolith calls 47 module-published functions by bare name, and three
+  modules call monolith functions by bare name with no `window.` anywhere
+  (`formDisplayName` in annual-accounting, `saveData` in guardian-inventory,
+  `updateNavDots` in simplified-accounting).
+- 0 static import cycles and 0 layer violations today.
+- The assertion baseline: 245 spec files, 6,098 static `expect` calls, 1,759
+  test declarations at the time of `122d0e9` (that commit's message says
+  "246" and "6,100+"; the recorded baseline is the authority).
+
+**Findings -- production defects on `master`, reported, not fixed here.**
+Each is present in the build deployed on 2026-09-24. Fixing one is `master`
+work that needs the requester's go-ahead, and then joins the ledger.
+
+1. **Annual Accounting import stops at the first ward percentage.** Importing
+   an Annual workbook with a ward percentage on any of Schedules D-1 to D-5
+   fails with "Import failed: r2 is not a function". The exporter writes a
+   percentage as a fraction (50% as 0.5), so a plain export then re-import
+   triggers it. `annual-accounting/excel.js` takes `r2` off `window`, but
+   `legacy-app.js` declares it with `const`, which is not a window property.
+   The importer writes into the open filing as it reads: in the reproduction
+   the Cover's case number imported and D-1 came back empty, so the filing
+   can be left half-imported. No existing test imports a ward percentage.
+2. **Blank-card clean-up does not run at all** (characterized with the
+   requester's go-ahead). The first reading -- the schedule table undefined
+   -- was the smaller half. `src/core/form/prune-cards.js` is imported by
+   nothing, so `window.pruneBlankCards` never exists and the router's and
+   filing lifecycle's guarded calls are skipped for every card: schedule
+   rows, party cards, plan rows. Milestone 42E (`a5b5b52`, 2026-09-13)
+   deleted `legacy-app.js`'s copy as a "runtime-dead twin" of the module's;
+   nothing imported the module then either, so the deleted copy was the only
+   live one. Observed effects:
+   - **Guardian Inventory -- blocks export.** A row added with **+ Add** on a
+     schedule and left untouched (A-1 probed) survives leaving the page,
+     marks A-1 unfinished, disables that schedule page's Next button, and
+     fails export validation four times ("A-1 row 1 -- Property Description",
+     "Street Address", "City/State/Zip", "Full Asset Value must be > 0"). A
+     Guardian blank row is not empty -- the ward's share starts at 100 and the
+     value at 0 -- so validation treats it as a started row. A filer who
+     clicks **+ Add** by mistake cannot export until they find and remove a
+     card they never touched.
+   - **Annual Accounting -- a false "unfinished" mark.** An untouched
+     Schedule A row survives and marks Schedule A unfinished; an untouched
+     co-guardian card survives. Export is not blocked: Annual's blank rows
+     are genuinely empty, so validation skips them.
+   - The Plans' and other party cards (certificate recipients, witnesses,
+     plan rows) lose the same clean-up; not probed one by one.
+   **Fixed on `master`** with the requester's go-ahead (`b28bf25`, red
+   first): `main.js` loads the module and `legacy-app.js` publishes the
+   schedule table. Five tests -- eight failing runs -- written while the
+   clean-up was not running (two from 51E, two from 57C-R, and this session's
+   own 68C follow-up, which runs once per Plan) had assumed
+   untouched cards survive a page change; each was updated to the restored
+   design with its reason. Ledger row: re-implement.
+3. **Two guarded calls to functions nothing defines** (characterized).
+   - `window.isHelpPanelOpen`: the router falls back to reading the help
+     panel's visibility and behaves correctly; `legacy-app.js`'s Preview &
+     Export header has no fallback, so its help button is drawn with
+     `aria-expanded="false"` while the help panel is open, until the next
+     toggle. Lower impact than it first looked: since Milestone 48, "?"
+     inside a filing opens the user guide for the current page rather than
+     the panel (`shell-events.js`), so the panel can be open on Preview &
+     Export only if it was left open from the dashboard. That is also why the
+     probe's click opened no panel. Confirmed in the code; not reproduced.
+   - `window.renderYearManagerBody`: the Year Manager dialog is dead code.
+     Nothing calls `showYearManagerModal()`, and no `#yearManagerModal`
+     element exists in the page or its fragment; filers see nothing. Year
+     rollover runs through other code. A "delete as dead" disposition.
+4. **Dead state.** `_visitedPages` is declared in `legacy-app.js` and written
+   by the router and ward lifecycle through `window`, where it does not
+   exist; nothing reads it. Harmless; a "delete as dead" disposition.
+
+Item 1 is fixed on `master` (`945b5a8`, with the requester's go-ahead,
+red first) and recorded in the ledger. Its test found a further defect,
+reported, not fixed: the shared exporter's `percentValue()`
+(`src/core/excel/excel-engine.js`) treats any value up to 1 as already a
+fraction, so a ward share entered as 1% is written to the court workbook as
+100% (0.5% as 50%). Cross-form, Guardian Inventory's importer rounds an
+imported percentage to 6 decimals and returns a number where Annual's rounds
+to 2 and returns text -- unresolved which is right.
+
+5. **Production caches the application for a year.** The production server
+   sends `index.html` -- 7.1 MB, holding nearly all of the application's code
+   in the portable build -- with `Cache-Control: public,max-age=31536000`.
+   With no service worker, a browser that has the page may run that copy
+   without checking for a newer one for up to a year; a normal reload usually
+   revalidates, but a filer returning through a bookmark may not see a deploy
+   at all. This is hosting configuration on the county's IIS server, not code
+   in this repository.
+
+**Findings -- for this plan.**
+
+- `vite.config.js` calls `dist/portable`'s copy of `fragments/` "unused at
+  runtime". That is true only over `file://`. Over HTTP -- production -- the
+  portable build fetches it; removing it would stop every fragment-backed
+  dialog on the live site while the `file://` profile stayed green. The
+  `portable-http` parity spec now guards it.
+- **The audit now follows what is actually loaded.** A module's
+  `window.X = ...` publishes X only if something loads that module; the regex
+  audit behind Milestone 42E's twin deletions never checked, and neither did
+  this milestone's first parser pass. The audit now walks the page's entry
+  points through static and dynamic imports, counts providers only from
+  loaded files, and ratchets the list of modules nothing loads: eight today
+  -- `prune-cards.js` (finding 2), six `src/core/types/*.js` modules that hold
+  type definitions for the type checker and are not meant to run, and
+  `src/features/guardian-inventory/pdf-accessibility.js`, a one-line
+  re-export nothing imports (the real module under `src/core/pdf/` loads
+  normally; a "delete as dead" disposition).
+- **Names built at runtime.** `router.js` and `ward-lifecycle.js` mount a
+  filing through `window[mountFeatureFnName(engine)]`, and
+  `readiness-config.js` reads tables through `legacyGlobal('NAME')`. A static
+  scan that ignores computed lookups calls the seven mount functions dead --
+  the dispositions draft's first pass did exactly that. The audit resolves
+  both builders now and ratchets every other computed lookup (one remains,
+  inside `legacyGlobal` itself). The lesson generalizes: a "delete as dead"
+  disposition needs a reference search that covers names built at runtime,
+  and each one is confirmed before anything is deleted.
+- **The existing-duplicates list.** 36 monolith declarations share a name
+  with something a module exports. About 22 are live duplicates -- both
+  copies in use -- among them `esc`, `r2`, `getActiveWard`, `getCaseFile`,
+  the county-to-circuit tables, `CRYPTO_VERIFIER_PLAINTEXT`, and the
+  session-cache and launch-preference helpers; the list is in
+  `summary.liveDuplicates` of the dispositions draft. The rest are dead
+  monolith copies of module-owned names (the 14 delete-as-dead candidates
+  are mostly these). 70B proves each live pair behaves the same before one
+  copy goes; they are not assumed equal because they share a name.
+- `window.navigate` has two publishers, `main.js` and `router.js`, which
+  publish the same imported function: a duplicate publication, not a
+  conflict. Recorded for the duplicate list.
+- The mixed-version window is not "the minutes after a deploy". Because of
+  finding 5, a filer can keep running a pre-merge copy of the application for
+  as long as the cached page lasts, so the mixed-version contract has to hold
+  for that long -- and a rollback may never reach a filer whose browser still
+  holds the migrated copy. Unless production's caching changes, it belongs
+  in the release packet (D8).
+- The lock and unlock behavior pinned by the security contract is exactly
+  what 70I moves: 5 failures, 30 seconds doubling to a 5-minute cap, a
+  15-minute inactivity lock, and a lock that clears the key and the
+  in-memory case.
+
+**Before-migration measurements** (`tests/baseline/ms70-70A-*.json`, taken
+at `daafcc1` with Chromium 151.0.7922.34 and Node v24.16.0; 70L repeats the same commands):
+
+| Target | Application script bytes at start | Resources | Script time | Navigation | Heap after 5 route cycles |
+| --- | --- | --- | --- | --- | --- |
+| source | 1,060,618 | 91 | 20 ms | 994 ms | 6.0-6.2 MB |
+| web | 4,206,132 | 36 | 53 ms | 874 ms | 6.0-6.2 MB |
+| portable (`file://`) | 7,245,476 | 1 | 91 ms | 366 ms | 10.6-10.7 MB |
+| portable-http | 7,245,476 | 5 | 80 ms | 703 ms | 10.6-10.7 MB |
+
+No page or console error on any target. Lifecycle (20 mount/dispose cycles
+per filing type): heap growth simplified-accounting 50, plan-simplified 24, plan-annual 49, plan-initial 44, plan-minor 29, annual-accounting 45, guardian-inventory 29, dashboard 80 KB; Milestone 13 measured 10-33 KB on the same
+cycle, so growth is two to three times what it was -- small in absolute terms,
+recorded as a fact to compare at 70L, not as a threshold. Two fixes to the
+tools themselves: both scripts had to accept the terms screen before the page
+loads (added after Milestone 13 wrote them; the lifecycle script could no
+longer start, and the baseline script measured an app waiting on the terms
+screen), and both gained `--output` so these records never overwrite
+Milestone 13's.
+
+**Year-rollover characterization**
+(`tests/e2e/year-rollover.characterization.spec.ts`, golden
+`tests/baseline/ms70-year-rollover-golden.json`). All nine filing identities
+start a new year through the dashboard card's New year button and return
+through Prior years; the golden records every field the new year changes
+(98-352 per identity), the keys the archive leaves out, where the archive
+differs from the year before, and whether the return restores the archive.
+Red first: carrying the prior total plus 1 as the next starting balance
+failed exactly the four accountings that carry one. Findings:
+
+- Switching back restores exactly what was archived, for every identity.
+- The archive is not byte-for-byte the year before. "Start new year"
+  re-opens the filing first, and opening a Guardian Inventory or an
+  accounting runs `sanitizeNegativeAmounts()` (money text becomes a number,
+  "12.50" to 12.5 -- the same value the form stores when a filer types it)
+  and `normalizeWardData()`'s migration of pre-tri-state booleans (`false` to
+  `'No'`). Both are lossless and both are recorded, so 70G must keep them in
+  the same order relative to the snapshot. The Plans archive unchanged.
+  Traced with a setter trap on the live field.
+- Fixture note for 70T: the Guardian baseline fixture
+  (`tests/e2e/support/fixtures.ts`) still writes `hasSafeDepositBox: false`
+  and `safeDepositBoxFiled: false`, the pre-tri-state booleans the UI no
+  longer writes, so every spec built on `fillMinimalValidGuardianWard()`
+  exercises the migration rather than the stored shape. Not changed here;
+  it is a `master` fixture that many specs share.
+- It found a `master` defect: the 1% ward-share fix (dbee60f) had missed
+  each Schedule D line's ward amount on the Annual pages and in the PDF,
+  which still used copies of the old rule. Fixed on `master` in c62f890
+  (a ledger row, `re-implement`, because it deletes `legacy-app.js`'s
+  `pct()`; the branch's declaration dispositions still list it).
+
+**Per-delivery estimate (replaces the 45-70 day guess).** Sized from the
+dispositions draft: the monolith lines each delivery takes on, the module
+consumers it must migrate, and for 70T the browser suite's measured
+coupling. Units are focused engineering days, the same unit as the original
+figure; the ranges assume the slower rate for stateful code (lifecycle,
+persistence, security, startup) and include each delivery's tests, index and
+record updates, but not waiting on full-suite runs or approvals.
+
+| Delivery | What it carries | Estimate (days) |
+| --- | --- | --- |
+| 70A | Complete, 2026-09-24 | -- |
+| 70T | 116 browser spec files, 163 application names, 239 in-place state writes; 21 adapter members | 8-14 |
+| 70B | 337 monolith lines (44 declarations), plus proving about 22 live duplicate pairs equal | 3-5 |
+| 70C | 436 lines (35 declarations) plus the registry, factories, normalizers and the 16 fixture factories | 3-6 |
+| 70D | 584 lines -- `computeNavChecks()` alone is 504 -- with old/new differential parity on every fixture | 3-5 |
+| 70E | 42 lines (9 declarations), but every module reading case state moves to the store seam (the active filing is read by 41 files) | 4-7 |
+| 70F | 1,218 lines (71 declarations: form binding, the form-field markup helpers left in the feature-bridge sections, validation panels, schedule documents, preview paging) and the dispatchers' teardown | 7-10 |
+| 70G | 1,189 lines (82 declarations) of filing lifecycle, conversion, carry-over, year rollover and shared records | 7-11 |
+| 70H | 1,241 lines (93 declarations) of shell, sidebar, pickers, help, tours, activity and dialogs -- now the largest | 6-10 |
+| 70I | 880 lines (83 declarations) of persistence, saving, templates, security and startup, with the golden archives and mixed-version tests | 7-10 |
+| 70J | The ownership flip and its fault injection; the `caseFile` and `activeInventoryType` declarations go here | 3-5 |
+| 70K | 293 lines (48 declarations) of router state, feature bridges and bootstrap, the 18 files that capture globals at load, and the namespace | 5-8 |
+| 70L | Deleting the monolith, the release evidence and the merge gate | 2-4 |
+| **Total (remaining)** | | **58-95** |
+
+The range is higher than the first guess because 70T did not exist then and
+the browser suite's coupling turned out larger than estimated. It excludes
+the end-of-branch reconstitution of `master` fixes (D1): four ledger rows so
+far, two of them `re-implement`, and the cost per row depends on what each
+fix touches, so the ledger is the running measure of it.
+
+**70A is complete.** Its gate, item by item:
+- every legacy declaration has a disposition -- all 474, reviewed, and a
+  drifted or new entry fails (`ms70-declaration-dispositions.spec.js`);
+- the audit catches an injected implicit global and a bare cross-boundary
+  reference, and the cycle check an injected cycle -- each seen failing on
+  the real tree (`0f86677`);
+- the ledger guard fails on an unlisted `master` commit -- seen failing
+  (`add5403`); it reports 6 commits since the branch point, 0 unlisted, 3 to
+  re-implement;
+- the historical and current format-v1 fixtures open -- 56 fixtures from 28
+  versions (`a16da1a`);
+- the `portable-http` profile passed its one bring-up run with its parity
+  assertions (`02ecde4`);
+- the unit suite rejects an unapproved increase in the compatibility surface
+  (the dependency ratchet); the branch's unit suite is 1,861/1,861.
+The `GuardianForms` facade is the reviewed artifact the gate asks for: one
+production member, `version`, and 25 testing members. The full browser suite
+has not been run on the branch.
+
 ---
 
 ## 70T — Test adapter and browser-suite migration
@@ -705,6 +1000,58 @@ time, per AGENTS.md section 2. A later failure then points at the migration,
 not at the test rewrite. `npm run check:types` covers the adapter's types, which live in the
 checked `tests/e2e/support/` scope.
 
+### 70T build record
+
+Approved by the requester on 2026-09-24 ("Baseline run, then 70T"). On
+2026-09-25 the requester asked for the delivery to continue on the owner's
+own recommendations, with defects fixed as they are found and both indexes
+kept current; the full `npm test` this gate asks for is run under that
+instruction. Everything below is on the `milestone-70` branch unless it says
+otherwise.
+
+**Baseline, before any spec changed.** The branch at `1a8c54c`, full
+`npm test`: unit 1861/1861 (135 files); browser 916 passed, 7 skipped, 0
+failed (1.8 h, source profile, chromium).
+
+**Done, with evidence.**
+
+| Item | Evidence |
+| --- | --- |
+| Commit | `e9b8251` (the whole delivery, gate evidence in its message). |
+| `GuardianForms.testing` | `src/core/testing/testing-adapter.js`, installed first thing in `src/main.js` only when the runner sets `__GUARDIAN_FORMS_TEST_MODE__` before boot (read once, deleted; D3, T3). Queries return copies; commands call today's functions. `tests/unit/testing-adapter.spec.js` (18 tests; the copy and enablement rules each seen failing) and `tests/e2e/testing-adapter.spec.ts` (4, in a real page). |
+| Members added while converting | `patchFiling(patch, filingId)` for filings that are not open; `replaceFiling()` (setup that deletes keys); `seedFiling()` (a record added without opening it, the open filing kept the same object); `save.markClean()`; `validate.open/structured/exportGate` (the export gate judged on a copy, since `prepareFilingOutput()` commits date drafts into what it is given); `status.annualTotals/guardianTotals/annualReconcile`; `createFiling.emptyDirective()`; `convertFiling.openDialog/targetsFor/describe`; `updateSharedRecords.mergeParties`; `sharedRecords.isPartyPairDismissed`. Removed: `commitCoverCounty`, which the reviewed design classes real-UI -- setup chooses the county on the Cover (`chooseCoverCounty()` in `target.ts`). |
+| The browser suite | All 133 browser spec and support files reach the app only through `GuardianForms.testing` or the real UI. The one exemption, `tests/e2e/support/pre-70-build.ts`, drives the mixed-version characterization's pre-70 build, which has no `GuardianForms`; its reason and its single permitted importer are checked. |
+| Guard | `tests/unit/ms70-70T-guard.spec.js`: no converted file names another app global -- through `window`, an alias of it, or bare -- writes live case state in place, writes into anything the adapter returned, or looks a global up by computed name; every browser file is converted or exempt. Each rule seen failing: bare `caseFile` in three mount specs, a restored write into a copy, a new uncovered spec. The bare-name and copy-write rules were added during 70T, after both defects were found in files already counted as converted. |
+| Moved to unit specs | `case-resolver.spec.js` and `party-resolver.spec.js` (26 of 29 tests; pure logic whose identity checks copies cannot show), `fragment-loader.spec.js`, `attorney-block.spec.js`, `removed-window-bridges.spec.js` (three browser pins that deleted bridges stay deleted), `saveBlobAs()`'s contract in `case-file.spec.js`, Slice 19E's one-calculator claim in `annual-accounting-totals.spec.js`. Each seen failing under a mutation. |
+| Assertion counts | Every drop is in the drop log of `tests/baseline/ms70-assertion-counts.json` with where the assertions went. |
+| Findings | 24 (three from the gate run below), each with its resolution, in `tests/baseline/ms70-70T-progress.json`: among them seven sidebar checks that could never fail (`/complete/` also matches `incomplete`), a caption check against a function nothing calls, a validator chosen by load order, two tests on schedule keys no page renders, a converted test whose setup wrote into a copy, and tests of a dialog and a function no button reaches. |
+| Design record | `tests/baseline/ms70-testing-adapter-design.json` regenerated; its spec now requires it to equal what the rules produce (it had kept two superseded rule sets unnoticed). |
+
+**Fixed on `master` during 70T** (each in the ledger): `8f5a163` the vacuous
+sidebar checks; `5de3707` ward names in a locked case file's manifest, and
+newer-format case files refused; `ae9ecdc` what "?" announces inside a
+filing; `6a8224d` the fragments comment; `56ff26a` the fixture's
+safe-deposit answers.
+
+**Handed to 70B as delete-as-dead** (no filer can reach them; the tests that
+did now go through the real UI or were dropped with a reason):
+`circuitCourtCaption()` in `legacy-app.js`; the Rename Ward dialog,
+`showRenameWardModal()` and the shell and dashboard `rename-ward` cases (no
+button since `e5fb9cf`); `triggerImportZip()` (no button since `4cd5723`).
+
+**Gate run.** The full `npm test` on this tree, 2026-09-25: unit 1942/1942 (142 files);
+browser 880 passed, 7 skipped, 6 failed (1.5 h, source profile, chromium) --
+893 tests against the baseline's 923: 34 moved to unit specs or dropped with a
+reason, 4 added. All six failures were defects in this delivery's own
+conversions, none in the app, each recorded as a finding: a control step
+clicking under the supporting-documentation prompt (guardian-inventory-mount),
+seeded file records the app rightly rejected once the section was rendered
+(schedule-docs-period-key), and a batch-2 setup that wrote into a copy it never
+wrote back (signature-block-address-margin, four tests) -- the last now a guard
+rule, seen failing on that defect. After the fixes the three spec files and the
+adapter's own spec ran in full: 26/26. The whole source suite is green on the
+adapter against the unmigrated monolith; 70T is complete.
+
 ---
 
 ## 70B — Pure helpers and direct-import tests
@@ -738,6 +1085,39 @@ Every moved helper has one implementation, direct unit coverage, no new global
 consumer, and no observable output/string-format drift. The parser audit count
 falls by the number promised for 70B.
 
+### 70B build record
+
+Approved by the requester on 2026-09-25, together with every later delivery
+("Finish ms 70. That means ms 70B and every other after until it's done."),
+to run in order on the plan owner's recommendations with defects fixed as they
+are found. Everything below is on the `milestone-70` branch.
+
+**What a filer sees.** Nothing, by design: every helper that moved produces
+the same text, number and markup it did. The deleted code was unreachable --
+the Rename Ward dialog has had no button since the Milestone 36 dashboard
+consolidation (`e5fb9cf`), the ZIP-import path none since Milestone 41B
+(`4cd5723`), and the monolith's court-caption helper and its copies of the
+county-to-circuit tables were never called.
+
+**Done, with evidence.**
+
+| Item | Evidence |
+| --- | --- |
+| Commit | `4d0a603` (the whole delivery, gate evidence in its message). |
+| Moved | 44 declarations, 612 monolith lines out and 65 in (net 547). Destinations, preferring existing modules: `esc()` to `src/core/filing/escape-html.js`; `guardianHasAnyData()` to `src/core/validation/row-started.js`; the field formatters and filters (phone, SSN, case and bar numbers, account and check numbers, name, address, the decimal filters, the ZIP digit cap, `capitalizeImportedFields()`) to `src/core/form/form-contract.js`; `FL_COUNTIES` to `src/core/pdf/circuit-lookup.js`; `calc` to `src/features/guardian-inventory/totals.js`. New where nothing fitted: `src/core/ui/icons.js`, `src/core/format/money.js` (`n`, `r2`, `fmt`, `formatDashboardCurrency`), `src/core/security/input-hardening.js`, `src/features/simplified-accounting/totals.js` (`calcTotals()`, kept out of the lazy feature for the dashboard). |
+| Duplicates proven before one copy went | `formatDisplayDate()` identical to `src/core/form/date-parser.js`'s; `sanitizeForExcel()` equal to `excel-engine.js`'s `sanitizeCellValue()` for strings, the only thing its one caller passes, so the module's body is now the one guard; the monolith's `r2`, Guardian Inventory's and Annual import's local copy (master `945b5a8`) the same formula for the numbers they pass; the county-to-circuit tables and `circuitForCounty()` byte-identical to `circuit-lookup.js`'s and unreferenced. Not equal, so both kept: `esc()` prints a falsy value as empty, `escapeHtml()` does not -- the note in `escape-html.js` says so. |
+| Deleted as unreachable | `circuitCourtCaption()`, the monolith's `hasSixthCircuitLocalGuidance()` copy, the Rename Ward dialog (`showRenameWardModal()`, `doRenameWard()`, `renameWard()`, its markup in `fragments/common-modals.html` and the shell, dashboard and dialog `rename-ward` cases), `triggerImportZip()` and the shell's change handler for the `zip-import-input` element deleted in 41B; `window.makeGuardianCalc` (no reader), and the "is it on window yet?" fallbacks the modules kept for helpers an import cannot lack (`form-fields.js`'s lock icon, `router.js`'s home and theme icons, `pdf-annotate.js`'s delete icons, `case-file.js`'s import check). Two destructured-but-unused `formatCityStateZip` reads went with them. |
+| The bridge | `src/legacy-bridge.js`: a frozen `window.GuardianFormsLegacyBridge` of imported implementations, imported by `main.js` before `initApp()`. The monolith keeps a one-line wrapper per moved function it still calls (21: `function esc(s){return window.GuardianFormsLegacyBridge.esc(s);}`, a `fmt` arrow, a `calc` Proxy) and reads the one data member (`FL_COUNTIES`) inside the function that uses it. `tests/unit/legacy-bridge.spec.js` holds its rules -- members are module exports (identity-checked), read only by the monolith and only inside functions, only through one-line wrappers that are still called; red first, an injected top-level read and a mid-function call each failed it, and a wrapper given extra logic failed it. |
+| Ratchet exception | The bridge's one `windowWrites` entry (`src/legacy-bridge.js::GuardianFormsLegacyBridge`) and one `windowReads` entry (`src/legacy-app.js::GuardianFormsLegacyBridge`) are the exception this plan records for the transition; both go with the monolith in 70L. Everything else fell: `classicDeclarations` 474 to 449, `windowWrites` 330 to 325, `windowReads` 678 to 583, `evalTimeWindowDestructures` 218 to 154, `bareCrossBoundary` 50 to 49. |
+| Wrapper deletion targets | The declaration inventory gains a `wrapper` disposition: an implementation that moved, leaving its wrapper, with `movedIn` and a deletion target computed from the deliveries of the monolith code that still calls it (for example `formatPhone` and ten other field helpers go with `bindForms()` in 70F, `guardianHasAnyData` with `computeNavChecks()` in 70D). The owner's review records what left the monolith under `landed`. |
+| Module consumers | Every module that read a moved helper off `window` imports it (18 files); 64 of the `const { ... } = window` reads evaluated at load went with them. |
+| Tests converted | `bar-number.spec.js` imports instead of slicing the monolith; `excel-engine.spec.js` tests the one guard directly (5 assertions fewer: the two-copy comparison, in the drop log); `guardian-inventory-totals.spec.js` tests the imported `calc` and the monolith's one-line Proxy; `form-contract.spec.js` and `excel-capacity-issues.spec.js` no longer install window stand-ins; `window-bridge.spec.js`'s real-file examples moved to names still read off window. |
+| Findings | (1) `form-cards.spec.js` checked a Case Number the browser would render as `26-000123`: in Node the formatter was a missing window global, so the test saw raw text the app never shows; it now uses a stored value. (2) The shell kept a change handler for an element deleted in 41B, and two features destructured `formatCityStateZip` without using it. (3) `excel-engine.spec.js` compared two copies of one rule by reading the monolith's regex out of its source; with one copy left it tests the rule. |
+| Parser audit count | The promise was the 44 declarations; 21 of their names stay in the monolith as one-line wrappers until their last caller moves, so `classicDeclarations` fell by 25, not 44 (474 to 449, with the two Rename Ward functions 70T handed over). Every wrapper's deletion target is in the inventory. |
+| Living references | `README.md`'s layout, `AGENTS.md` section 6's icon line (it named an `icons.js` that did not exist until now), and every source comment naming a moved helper's old home. |
+
+**Gate run.** The full `npm test` on this tree, 2026-09-25: unit 1949/1949 (143 files); browser 887 passed, 7 skipped, 0 failed (1.4 h, source profile, chromium) -- 894 tests: 70T's 893 plus the one master carried in `299e17a`. `check:types` clean.
+
 ---
 
 ## 70C — Eager filing definitions, factories, and normalization
@@ -767,6 +1147,38 @@ change, routed, and summarized through imports with no feature pack loaded.
 With IDs and clocks fixed by the test harness, serialized shapes are deeply
 equal to the pre-delivery shapes; comparisons normalize irrelevant object-key
 ordering rather than hiding a value/default change.
+
+### 70C build record
+
+Approved with every later delivery on 2026-09-25 (see Status). Everything
+below is on the `milestone-70` branch.
+
+**What a filer sees.** One thing changes, and it is a fix carried from
+`master`: a card or row the filer added with +Add and never touched is removed
+again when they leave the page (master `b28bf25`). On the branch that clean-up
+had never run -- nothing loaded the module -- so an untouched Initial Inventory
+schedule row stayed, marked its schedule unfinished and blocked export with
+four "row 1" errors. Everything else is identical: every filing type starts
+with the same blank filing, normalizes an older saved filing the same way, and
+routes to the same pages.
+
+**Done, with evidence.**
+
+| Item | Evidence |
+| --- | --- |
+| Commit | `9b0fd6c` (the whole delivery, gate evidence in its message). |
+| The registry | `src/core/filing/filing-registry.js`: each of the nine identities with its engine (Final and Trust are the Annual engine under their own names), name and description (`INVENTORY_TYPES`), dashboard look (`INVENTORY_TYPE_META`, `typeIcon()`), page list (`FILING_PAGES`), blank filing (`initializeEmptyData()`), normalizer and feature mount, as `FILING_REGISTRY`, built on `filing-descriptor.js`'s `FILING_TYPE_KEYS`. Its whole static import graph stays out of `src/features`, the output libraries and the PDF-building code (checked by the spec). |
+| Per-engine models | `src/core/filing/models/`: `guardian.js`, `simplified.js`, `annual.js` (one model for Annual, Final and Trust), `plan-simplified.js`, `plan-annual.js`, `plan-initial.js`, `plan-minor.js`, and `plan-rows.js` for the rows the four Plans share. Form-specific row factories stay separate; nothing generic was invented. The blank-filing factories left `src/core/state.js`, which no longer reaches back into window for the Plan lists and rows. |
+| Normalizer | `src/core/filing/normalize-filing.js` (`normalizeWardData()`); `setD()` imports it instead of calling a window global. |
+| Moved | 26 declarations and the page lists (`PAGES`, `PAGES_*`), which the review had placed in 70K by their section; they are the registry's route metadata, so 70C took them and the review records why. `BLANK_CARD_COLLECTIONS` was dead (prune-cards.js keeps its own, diverged table) and went. legacy-app.js -780/+49 lines, state.js -438/+9. 15 functions the monolith still calls keep a one-line wrapper, each with its deletion target. |
+| Proven equal | `tests/baseline/ms70-70C-filing-shapes.json`, captured from the 70B tree before anything moved (the declarations sliced out and run with state.js loaded as the app loads it): all nine blank filings, the normalizer twice equal to once, engines, names, looks, page lists, every row factory and list. `tests/unit/filing-registry.spec.js` (34 tests) requires the moved modules to reproduce every value, key order ignored; red first, a changed Schedule C row failed it. |
+| Stays | `setAccountingFilingType()` assigns the monolith's own `let activeInventoryType`, which no module can; its pure half is already `applyAccountingFilingType()`. Review override to 70J with that reason. |
+| Carried from master | `b28bf25`, re-implemented rather than merged: the router and the dashboard entry import `pruneBlankCards()`, and `prune-cards.js` owns the schedule table it compares against (it read `window.BLANK_SCHEDULE_ENTRY`, which on the branch no one published). Its test changes came across converted to `GuardianForms.testing`: the new `blank-card-pruning.spec.ts` (four of master's five cases; the fifth checked that `window.pruneBlankCards` exists, and the function is imported now) and the three updated specs. The clean-up now judges a filing by its own `inventoryType` instead of `window.activeInventoryType`, the same value for the open filing it is given. |
+| Module consumers | 20 modules import the registry and models instead of reading window (among them `readiness-config.js`'s Plan lists, which it read by computed name, and the test adapter's reference lists and blank filings). Ratchet: `classicDeclarations` 449 to 423, `windowWrites` 325 to 300, `windowReads` 583 to 524, `evalTimeWindowDestructures` 154 to 139, `bareCrossBoundary` 49 to 48, `unownedWindowReads` 3 to 2, `lexicalOnlyWindowReads` 3 to 2, `computedWindowReads` 1 to 0, `unreachableModules` 8 to 7 (prune-cards.js is loaded). |
+| Fixtures and factories | The browser suite's fixture overlays are merged over `initializeEmptyData()`, whose output is unchanged value for value, so none needed a change. The unit specs that stubbed the Plan lists and rows on window now run the real factories (`filing-county-defaults.spec.js` gains `emptyDataGuardian()`, which it could not reach before), and `guardian-inventory-yes-no-radio.spec.js` calls the Inventory factories instead of grepping the monolith's source. Two specs (`guardian-inventory-64a1-validation`, `preparer-flag-validation`) keep hand-written Inventory shapes holding only what their validator reads; they are not blank filings and were left as they are. |
+| Findings | (1) The blank-card clean-up never ran on the branch (above). (2) The normalizer's acknowledgement step imported one pure helper from `supplemental-pdf.js`, so the registry pulled in the PDF-appending code and the pdf.js loader; `resolveActiveDocPeriod()` moved to `src/core/filing/doc-period.js`, re-exported where it was. `check:types` found it: the navigation modules now reach the registry. (3) In Node the Plan PDF models printed empty rights, daily-living and benefit tables, because the lists were window globals; `plan-tristate.spec.js` had stubbed a two-entry list, and now checks the real one. (4) The rewire left `typeof window !== 'undefined' && X` guards around imported lists in six files; each is now the plain import. (5) `year-rollover.characterization.spec.ts` (70A) had recorded the branch without the clean-up: the gate failed its Simplified and Plan for Minors records, which differed only by blank rows -- the Simplified fixture's two blank certificate recipients and the Plan's blank residence row, now removed when the test leaves the page. Master calls the same clean-up at the same two points with the same card rules, so those two records were regenerated with the reason in the golden's note; the other seven were unchanged. |
+
+**Gate run.** The full `npm test` on this tree, 2026-09-25: unit 1986/1986 (144 files); browser 893 passed, 7 skipped, 2 failed (1.6 h, source profile, chromium) -- 902 tests: 70B's 894, `blank-card-pruning.spec.ts`'s four and the four `plan-certificate-of-service.spec.ts` cases master's `b28bf25` added. The two failures were `year-rollover.characterization.spec.ts`'s Simplified and Plan for Minors records (finding 5); with those two regenerated the spec passed 9/9. `check:types` clean.
 
 ---
 
@@ -800,6 +1212,37 @@ explicitly pin the intentional Annual blank-schedule rule: sidebar incomplete,
 export still permitted where the court form and current accepted practice allow
 it. Readiness remains a separate export-linked surface.
 
+### 70D build record
+
+Approved with every later delivery on 2026-09-25 (see Status). Everything
+below is on the `milestone-70` branch.
+
+**What a filer sees.** Nothing, by design. Every sidebar mark and every
+dashboard percentage is computed by the same rules as before, now held in one
+module per form. The dashboard no longer points the open filing at each card's
+filing in turn to measure its progress; the rules are handed the filing they
+measure (its headline totals still do, until 70K).
+
+**Done, with evidence.**
+
+| Item | Evidence |
+| --- | --- |
+| Commit | `4c14cc7` (the whole delivery, gate evidence in its message). |
+| The evaluators | `src/core/status/completion.js`: `computeNavChecks()`'s seven branches as one pure evaluator per engine (`guardianCompletion()` through `planMinorCompletion()`), each taking the filing and what it cannot import and returning the same `{ checks, incomplete }` map. The branch bodies moved as text; each global they read is now an import (the Plan lists, the row, signature, attorney, preparer and certificate rules) or is handed in: the Initial Inventory's validator, `errorRoute()` and the Annual totals and reconciliation. A missing validator still returns `null`, never a pass. |
+| In the registry | Each of the nine identities carries its engine's evaluator (`FILING_REGISTRY[type].completion`; Final and Trust the Annual one), and the registry dispatches: `computeCompletion(filing, type, deps)` and `filingProgress(filing, deps)`. An unopened filing's progress needs no feature pack; the registry's import graph still stays out of `src/features`. |
+| The monolith | `computeNavChecks()` and `getWardProgress()` are one-line wrappers handing the registry the open filing (or the one measured), the monolith's own `activeInventoryType`, and the dependencies above -- inline, since a helper would have been a new classic declaration. `getWardProgress()` no longer swaps `window.D` and the active type. `SCHEDULE_NAV_KEYS` moved to `src/core/filing/models/guardian.js`. `legacy-app.js` -539/+21 lines. |
+| Consumers | The Simplified, Plan and Annual features import their own engine's evaluator instead of calling `window.computeNavChecks()`; the Initial Inventory feature imports `SCHEDULE_NAV_KEYS` instead of copying it off `window`, and `validateGuardian(d = window.D)` judges the filing it is handed. The dashboard still reaches progress through `getWardProgress()`, which is how the Inventory validator (loaded with its feature) and `errorRoute()` (70F) are handed in; the review names 70K, with `getWardHeadlineTotal()`, as when that read goes (override `dispatcher`, `until: 70K`). |
+| Went with their reader | The monolith's `guardianHasAnyData()` wrapper and `validate()`, whose last caller was `computeNavChecks()`; four Plan lists on the bridge; and eight `window` publications that existed only for it -- `isSignatureComplete`, `isPlanInitialAttorneyStarted`, `rowStarted`, `startedRows`, `serviceRecipientIssues`, `recipientRowStarted`, `resolvePreparer`, `planCertificateStarted` -- with `main.js`'s imports that made three of them eager (the registry loads them now). |
+| Proven equal | `tests/unit/completion-parity.spec.js` runs the pre-70D `computeNavChecks()` and `getWardProgress()` (frozen in `tests/baseline/ms70-70D-nav-checks-before.js.txt`, the app's real implementations handed in) against the registry on all nine identities: each blank and normalized filing, the browser suite's minimal valid filings, a saturated filing and every answer in it cleared one at a time, rows emptied, started or filled, and every "no items" box ticked -- 4,803 filings. Every map and every percentage equal, and no evaluator changes its filing; progress is measured with the open filing left on another. Red first: three deliberate breaks each failed it for its own reason -- the Annual reconciliation reading the open filing's explanation (a measured filing's progress fell from 42% to 38%), Plan for Minors' pm-p7 without the preparer's name, and Plan Initial's pi-p10 inverted. |
+| The Annual rule, pinned | AGENTS.md section 4's rule is pinned in the browser (`annual-schedule-consistency.spec.ts`): with every schedule blank and none declared empty, the sidebar marks all fourteen unfinished and export is still allowed; with Part XI unanswered both stop. Red first: an export rule demanding a Schedule A row failed it ("export must not demand a blank schedule"). |
+| Stays for 70F | The functions that apply the map to the page -- `updateNavDots()`, `applyNavChecks()`, `pageCompleteness()`, `isScheduleIncomplete()`, `updateCurrentScheduleNextButton()` -- are the "nav-dot updates" the plan gives 70F, with the section collapse and progress summary they call (review override `nav-dom`). |
+| Ratchet | `classicDeclarations` 423 to 420, `windowWrites` 300 to 291, `windowReads` 524 to 511, `evalTimeWindowDestructures` 139 to 138; nothing grew. |
+| Tests converted | `checklist-export-parity.spec.js` finds the evaluators by parsing `completion.js` (a text search stopped at their `deps = {}` default); `schedule-doc-ack.spec.js` reads the evaluators whole; `content-corrections.spec.js`'s note points at them; three Inventory validator specs stop stubbing `window.SCHEDULE_NAV_KEYS`, and two Plan specs their Plan lists; `legacy-bridge.spec.js` names the two wrappers that hand over monolith state and keeps a wrapper no monolith code calls only while a module the ratchet lists still reads it; the registry spec checks each identity's evaluator. One assertion went with its subject (`plan-certificate-of-service.spec.js`'s check of the `window` publication), recorded in the assertion baseline. |
+| Findings | (1) Carrying the dashboard's progress off the `window.D` swap exposed a reader the swap had hidden: `annualReconcileState(t)` takes its explanation from `window.D`, so a filing measured while another is open was judged by the open one's explanation; the evaluator hands the measured filing in. (2) The declaration inventory computed a wrapper's deletion target from its monolith callers only, so a dispatcher kept for a module would have read as due at once; an override's `until` now names it. (3) Eight `window` publications, three eager imports in `main.js` and four bridge members outlived their one reader, found by the audit and removed. |
+| Living references | AGENTS.md section 4 names `annualCompletion()` in `src/core/status/completion.js`, reached through `legacy-app.js`'s `computeNavChecks()` dispatcher; the rule and its Clerk-practice rationale are unchanged. |
+
+**Gate run.** The full `npm test` on this tree, 2026-09-25: unit 1989/1989 (145 files); browser 896 passed, 7 skipped, 0 failed (1.7 h, source profile, chromium) -- 903 tests: 70C's 902 and the Annual blank-schedule pin. `check:types` clean.
+
 ---
 
 ## 70E — Explicit store seam for existing ESM consumers
@@ -830,6 +1273,34 @@ existing object identity and live update behavior remain intact. A transaction
 causes each required side effect once, and direct mutation outside an approved
 transition path is rejected by the audit/test guard where mechanically
 detectable.
+
+### 70E build record
+
+Approved with every later delivery on 2026-09-25 (see Status). Everything
+below is on the `milestone-70` branch.
+
+**What a filer sees.** Nothing, by design. Every module now reads and writes
+the open filing and the case through one place, `src/core/state.js`, instead
+of reaching for them on `window`; the objects are the same ones the monolith
+holds, so every edit, save and screen behaves as before.
+
+**Done, with evidence.**
+
+| Item | Evidence |
+| --- | --- |
+| Commit | `088574a` (the whole delivery; gate evidence in its message). |
+| The seam | `src/core/state.js` reads the monolith's live references -- the case (`window.caseFile`, which the monolith keeps on the same object as its `caseFile` and republishes in the one place it replaces it, `lockApp()`), the open filing (`window.D`), and its lexical `activeInventoryType`, `_appState` and `_templateCache` through the accessors it defines -- and keeps no copy. With a page its Node stand-ins are never written; before, `setD()`, `setCaseFile()` and `setAppState()` wrote a module copy alongside `window`, and `getActiveWard()` went back to `window.getActiveWard()`. New: `getActiveFiling()`, `getActiveInventoryType()`/`setActiveInventoryType()`, and `getActiveWard()` computed here, exactly as the monolith's (null with none open, `find()` otherwise), which is now a one-line wrapper onto it. Every access is written as `window.X`, so the audit sees it. |
+| The store API | `select(selector)`, `transaction(reason, mutator)` and `subscribe(listener, { signal })`: zero-copy (live objects in, the filing changed in place), one writer. A transaction runs its side effects once each, in order -- the filing's revision marked changed, the save scheduled, subscribers told -- and none when the mutator throws. `main.js` wires them at startup: the revision counter it imports, and the monolith's own `autoSave()`. `replaceCaseFile()` waits for 70J: the monolith is still the only code that replaces the case, and a module that did would leave its `caseFile` behind. |
+| Modules | 359 reads through `window` became `state.js` calls (`window.D` to `getD()`, `window.caseFile` and `window.getCaseFile()` to `getCaseFile()`, `window.getActiveWard()` to `getActiveWard()`) across 36 modules, by an AST rewrite that also dropped the `typeof window.X === 'function'` guards; by hand, the router's and validation routing's reads of the filing type, the filing lifecycle's writes of it and of `firstLaunchSeen`, and the dashboard's load-time copy of `getCaseFile`. |
+| Went | `main.js`'s `window.D`/`window.caseFile` accessors, installed "for the test harness" only if the monolith had not defined both first -- which it always had, so they never ran; a writable accessor over the monolith's state is the second authority the plan forbids. The monolith's `getCaseFile()` and its `window` publication (no caller left). `_visitedPages`, dead on both sides: a `let` is never a window property, so the three module references could never run. `state.js`'s unused `setTemplateCache()` and `_auditLogEntries`. |
+| The door the other way | `src/core/runtime/monolith.js`: the monolith hands moved code the functions it calls back -- `autoSave()` so far -- once, from the start of `initApp()`, through one one-line bridge wrapper (`provideMonolithServices()`); a module calls `monolith.autoSave()` only inside a function, and a name never handed in throws. `tests/unit/monolith-services.spec.js` holds its rules; red first, providing `updateNavDots`, which no module calls, failed it. |
+| The list 70J empties | `scripts/ms70-classic-state.mjs` counts the monolith's own reads and writes of the case state it still owns -- bare `D`, its lexical `caseFile` and `activeInventoryType`, `window.D` and `window.caseFile` -- by enclosing declaration: 229 accesses in 90 entries (`tests/baseline/ms70-classic-state.json`). It may only shrink; 70J needs it empty before the module store becomes the owner. |
+| The gate's guard | `tests/unit/ms70-state-seam.spec.js`: no module but `state.js` reads or writes the monolith's state on `window` (member reads and load-time destructures), the list above may only shrink, and the seam's behaviour -- live objects, the owner's reassignment seen at once, `getActiveWard()` as the monolith answered it, the filing type and app state written where the monolith reads them, a transaction's side effects once each and in order, subscribers leaving by function or `AbortSignal`, `main.js`'s wiring and no `window` accessor. Red first: a module reading `window.D` and a new bare `caseFile` read in the monolith each failed it. |
+| Stays, with reasons | The test adapter (`src/core/testing/testing-adapter.js`) reads its injected host object, not the global -- its unit spec drives it with a stand-in page, and it is installed only when a test sets the pre-boot flag -- so it keeps its own swap of the open filing for judging a fixture. The six in-memory state operations the review had placed here (`saveWardToState()`, `deleteWardFromState()`, `saveTemplate()`, `loadTemplate()`, `appendAuditLogEntry()`, `loadAuditLogEntries()`) schedule `autoSave()` and write the monolith's template cache and audit buffer: 70I's persistence service owns those, so they move there (review override `persistence`). |
+| Ratchet exceptions | Two, recorded here with their removal delivery. (1) `src/core/state.js::activeInventoryType` in `windowReads` and `windowWrites`: the seam is the one module that reaches the monolith's filing type, in place of the router's and validation routing's reads and the filing lifecycle's writes (all three gone); it goes in 70J. (2) `src/legacy-app.js::provideMonolithServices` in `classicDeclarations`: the door the other way; it goes with the monolith (70L at the latest). Everything else fell: `classicDeclarations` 420 to 419 (with `getCaseFile` and `_visitedPages` gone), `windowWrites` 291 to 287, `windowReads` 511 to 467, `evalTimeWindowDestructures` 138 to 137, `lexicalOnlyWindowReads` 2 to 0. |
+| Findings | (1) `state.js` kept a second copy: `setD()`, `setCaseFile()` and `setAppState()` wrote a module-level copy as well as `window`, a shadow store read only when `window` lacked the value -- never in the app, but the structure the plan forbids. (2) `main.js`'s `window.D`/`window.caseFile` accessors had never been installed in the app, since the monolith defines both first; had they been, writing through them would have left the monolith's lexical `caseFile` on the old case. (3) Two implementations of one accessor: `state.js`'s fallback `getActiveWard()` answered null for a filing id missing from the case, the monolith's `undefined`; modules in the app always got the monolith's, which is now the only one. (4) `_visitedPages` confirmed dead: nothing in the monolith reads it, and the three module references could never run. |
+
+**Gate run.** The full `npm test` on this tree, 2026-09-26: unit 2001/2001 (147 files); browser 896 passed, 7 skipped, 0 failed (1.5 h, source profile, chromium) -- 903 tests, as 70D. `check:types` clean. A first run stopped in the unit phase: `ms70-state-seam.spec.js`'s walk of every module took 7.9 s on a cold start, past vitest's 5-second default; the source-parsing tests in 70E's two new specs got the repo's 60-second allowance (as `b4-block-map.spec.js`, `ms70-70T-guard.spec.js` and `ms70-assertion-counts.spec.js` have), and the gate was run again from the start.
 
 ---
 
@@ -865,6 +1336,49 @@ does not duplicate a listener, observer, autosave call, or validation update.
 An edit followed by rapid route navigation or filing switching saves the old
 filing exactly once and cannot write its data into the newly active filing.
 
+### 70F build record
+
+Approved with every later delivery on 2026-09-25 (see Status). Everything
+below is on the `milestone-70` branch.
+
+**What a filer sees.** Two corrections; otherwise nothing, by design.
+(1) **An edit could land in the wrong filing.** A field that still had focus
+when another filing was opened had its value written into the filing that
+replaced it: the new filing took the old one's ward name. The field's blur
+arrived after the switch and wrote into whatever filing was then open. Every
+control that switches filings takes focus from the field first, which
+commits the edit where it belongs, so no filer is known to have reached this;
+opening a filing from code did (the test adapter's `activateFiling.open()`),
+and any future path that switches while a field keeps focus would. Now the
+field is committed into its own filing before the switch, and a late write
+from the old page is refused. **The same code is on `master`** (probed there:
+the second filing took "Probe ARapid Edit"); reported to the requester, not
+changed on `master`. (2) Attaching a supporting-document PDF to a schedule
+reached its PDF tools through a fallback path that a module resolves
+wrongly; the fallback was never taken, because the tools were handed over on
+`window` first. They are imported now.
+
+**Done, with evidence.**
+
+| Item | Evidence |
+| --- | --- |
+| Commit | `6b58c38` (the whole delivery; gate evidence in its message). |
+| The form runtime | `src/core/form/paths.js` (`getPath()`/`setPath()`), `form-runtime.js` (labels linked to inputs, accordions, non-negative amounts, the SSN reveal, the browser notice), `field-html.js` (the field markup the Simplified, Annual and Plan pages share), `county-autocomplete.js`, `plan-row-actions.js`; `src/core/status/nav-marks.js` (the sidebar marks, section collapse, progress summary, the Next button and the page explanation); `src/core/validation/error-route.js` and `validation-panel.js`; `src/core/filing/schedule-docs.js`; `src/core/ui/print-pager.js`; `excelCapacityPanel()` joins `src/core/excel/excel-capacity.js`; the Initial Inventory's binding engine (`bindForms()`, `afterChange()`, `updateCalcFields()`) is its feature's own, `src/features/guardian-inventory/form-binding.js`, since the totals it repaints are. 90 names left the monolith (the review's `landed["70F"]`). |
+| Dispatch | `form-events.js`, `shell-events.js` and `modal-events.js` import the moved handlers -- and the router's, the case file's and the filing lifecycle's -- instead of calling `window.X`; 20 one-line wrappers and 22 bridge members went with their last callers. `setPath()` and `updateNavDots()` remain as wrappers the monolith still calls. |
+| Mounts and saves (the gate) | `tests/e2e/form-runtime-lifecycle.contract.spec.ts`, observed from outside the app by an init script in the page's own world (the recovery snapshot's writes, one per save; listeners on the window, the document and connected elements; live observers and intervals): for each of the seven form engines, four rounds of visiting pages, closing the filing and reopening it leave the page as the first did, and an edit afterwards saves once; an edit followed at once by opening another filing saves the old filing with the edit, makes no more saves than a switch without one (the flush, and the recent-filings list the opened filing joins, which is saved with the case), and leaves the new filing's value alone in the model and every save; a field only focused writes nothing into the new filing; an edit followed at once by navigation saves once. Red first: before the fix the new filing took "Filing A Edited" (focused only, "Filing A"); a listener planted in Plan Annual's mount failed the mount test. |
+| The fix | `src/core/form/form-contract.js` binds each field to the filing it is edited in -- on focus (`form-events.js`) or its first write -- and `writeDraftValue()`/`finalizeFieldValue()` refuse a field whose filing is no longer open; `commitFocusedField()` finalizes a focused field into its own filing, and `ward-lifecycle.js` calls it before the flush that ends a filing (opening another, going to the dashboard). Not in `flushPendingSave()` itself: that also runs when the tab is hidden, and finalizing a name there would trim a space the filer just typed. |
+| No feature takes a form service from `window` | `tests/unit/form-services-import.spec.js` parses every feature for a name exported by a form-service module read off `window`. Red first: the Initial Inventory's `textInput()`, `numInput()` and `dateInput()` read `window.renderFormField` (with a hand-written fallback no filer could reach); they import it. The form services' `window` publications nothing read went -- `form-fields.js`'s six and seven of `form-contract.js`'s eight (`commitPendingFieldValues` stays: the monolith's `flushPendingSave()` and the router call it) -- with `main.js`'s import that existed only to publish them. |
+| Teardown | The contract the plan asks for is the one the features already keep -- each ends its listeners and observers through its own `AbortController` and `dispose()` -- and the spec above now holds it. A route-level signal handed to features is the feature context's (70K); the autosave debounce stays the monolith's until 70I, and its flush before a switch is what the spec holds. |
+| A race left for 70K | The first gate run failed three of the contract spec's mount rounds (Initial Inventory, Simplified, Plan Annual; 1 in 4 alone): closing a filing and opening one at once can leave the dashboard -- whose code loads on first use -- drawn over the filing, or a filing's slow first mount drawn over the dashboard. The feature bridge records the limitation (Milestone 12: it does not arbitrate two mounts racing for one container). A fix in the bridge alone was tried and taken out: the router renders each navigation twice (navigate() and the hash change), and a bridge that lets the latest mount win then hid a failed chunk's reload panel (feature-load-failure.spec.ts) and moved when a new filing's page normalizes its amounts (the year-rollover characterization). Arbitration belongs with 70K's router and feature context, with that double render. The mount rounds now reopen the filing once the dashboard is on the page, as a filer does; they measure listener duplication, not the race. |
+| The startup timer | The monolith's load-time `setTimeout(()=>{linkLabelsToInputs()},0)` would run a wrapper before the bridge answers; `main.js` calls `linkLabelsToInputs()` before `termsAcceptanceReady`, and `legacy-bridge.spec.js` fails on any top-level statement naming a wrapper. Red first: a top-level timer calling `updateNavDots()` failed it. |
+| Names | `validatorFnName(engine)` in `filing-descriptor.js` (the audit resolves `window[validatorFnName(e)]`); `sectionKeyPrefix()` in `section-guidance-policy.js`, whose `window` publication went (its reader, the sidebar marks, imports it); `completion.js` imports `errorRoute()`. |
+| Types | `form-runtime.js`, `nav-marks.js`, `print-pager.js` and `section-status.js` carry `@ts-nocheck` with the reason (in the checked program only transitively, moved as text); `monolith.js`'s Proxy is typed. |
+| Tests converted | `form-fields-legacy-delegation` (imports `field-html.js`), `part-xi-remuneration`, `yes-no-radio-migration`, `user-guide-drift-guard`, `validation-adapter`, `form-write-side-effects` (`nav-marks.js` mocked with a recorder; five `boundPath()` checks now), `form-contract`, `output-revision-wiring`, `completion-parity`, `filing-type-enumeration-guard` (`error-route.js`'s `PLAN_SECTION_ROUTES` exception), `section-guidance-policy` (its check of the dropped publication went, recorded in the assertion counts). `ms70-e2e-global-inventory.spec.js`'s four tests take the repo's 60 s allowance (one timed out under load), and the browser inventory's platform list gains `setInterval`/`clearInterval` beside `setTimeout`/`clearTimeout`. |
+| Ratchet | `classicDeclarations` 419 to 329, `windowWrites` 287 to 268, `windowReads` 467 to 317, `evalTimeWindowDestructures` 137 to 58, `bareCrossBoundary` 48 to 46; the monolith's bare case-state accesses 229 to 151. Grown, carried with the moved code and recorded here with their removal: `src/core/status/nav-marks.js`'s seven validator reads (`window[validatorFnName(engine)]`, exactly as the monolith's `pageCompleteness()` read them; the feature context hands each form's validator in, 70K) and `src/core/ui/print-pager.js::isHelpPanelOpen` (70A's finding: nothing defines it, so Preview & Export's help button can say "closed" while the panel is open; the help panel's shell controller, 70H). |
+| Findings | (1) The late blur into a newly opened filing, above; on `master` too. (2) `getSupplementalPdfTools()` moved with `import('./src/core/pdf/supplemental-pdf.js')`, a path the monolith resolved against the page and a module resolves against itself (`src/core/filing/src/core/pdf/...`); `tests/unit/schedule-docs.spec.js`, red first on that path. (3) `validation-adapter.spec.js`'s fallback test pinned a route the app never used -- a bare "Signatures", which the fallback sent to `/d1` and `errorRoute()` sends to a Plan's signature page; every real caller passes a filing type, so the test uses a label `errorRoute()` cannot place. (4) The startup timer, above. (5) The mount race, above: found by this delivery's own gate, a recorded limitation (Milestone 12) a filer could meet -- left for 70K. |
+
+**Gate run.** The full `npm test` on this tree, 2026-09-26: unit 2003/2003 (149 files); browser 908 passed, 7 skipped, 0 failed (1.3 h, source profile, chromium) -- 915 tests: 70E's 903 and the twelve of `form-runtime-lifecycle.contract.spec.ts`. `check:types` clean. Two earlier runs did not pass: the first failed three of the contract spec's mount rounds on the mount race (left for 70K, above); the second, with a bridge-only fix for that race, failed the load-failure panel and two dashboard specs and was stopped -- the fix was taken out and the rounds wait for the dashboard.
+
 ---
 
 ## 70G — Filing lifecycle and shared-record workflows
@@ -891,6 +1405,39 @@ party/case write-through, and cross-tab locks pass through the service in both
 UI and tests. No lifecycle path reassigns active/case state outside the store
 seam. Every supported conversion produces exactly the same data it did before.
 
+### 70G build record
+
+Approved with every later delivery on 2026-09-25 (see Status). Everything
+below is on the `milestone-70` branch.
+
+**What a filer sees.** Nothing, by design. Creating a filing (with or without
+carrying over from another, and the Simplified eligibility questions that can
+send it to an Annual instead), converting one, starting, switching and
+deleting its years, deleting it, linking it to a shared person or case, the
+People page and the recently opened list all behave as before; every
+conversion the app offers produces exactly the data it did (24 conversions
+across the nine filing types, recorded before the move).
+
+**Done, with evidence.**
+
+| Item | Evidence |
+| --- | --- |
+| Commit | `6b0ff37` (the whole delivery; gate evidence in its message). |
+| The workflows | Out of `legacy-app.js` into modules: conversion (`src/core/filing/conversion.js`; its dialog's source picker, note preview and `doConvertWard()` joined `src/core/modals/convert-ward-modal.js`), multi-year accounting (`src/core/filing/filing-years.js`, `src/core/modals/year-dialogs.js`), carry-over and its source picker (`src/core/filing/carry-over.js`), the Add Form, Simplified eligibility and Delete Form dialogs (`src/core/modals/filing-dialogs.js`), the pick-a-shared-record dialogs (`src/core/modals/pick-record-dialogs.js`), the People page (`src/core/parties/party-management.js`) and the recent-filings list (`src/core/filing/recent-filings.js`). 94 names left the monolith (the review's `landed["70G"]`), among them the six row-factory wrappers and `formDisplayName()` whose last callers these were. |
+| Consolidated, not copied | `carry-over.js` also took `ward-lifecycle.js`'s carry tables and builders (`CARRY_SOURCE_TYPE`, `carrySourcesFor()`, `carryWardsFor()`, `extractCarryIdentity()`, `carryOverFieldsForPlan()`, `carryOverFieldsForAccounting()`), so every carry-over rule is one module's; the monolith's own copies of the tables, identical and `CARRY_SOURCE_TYPE` unused, went. The Convert dialog's existing module took its moved half. The Year Manager module (`src/core/modals/year-manager-modal.js`), dead since before Milestone 70 (70A's finding: nothing opened it and its dialog had no markup), went with its import. |
+| The service | `src/core/navigation/filing-lifecycle.js`: `filingLifecycle`, one frozen object whose members are the implementations themselves -- `create`, `open`, `switchTo`, `unload`, `remove`, `convert`, `carry`, `newYear`, `switchYear`, `removeYear`. The dispatchers (`shell-events.js`, `modal-events.js`), the moved dialogs, the dashboard and the test adapter call it; the adapter imports the dialogs and `describeConversion()`, `getRecentlyOpenedWards()` and `convertTargetsFor()` it had reached by name on `window`. Its own module, not a member of `ward-lifecycle.js`: conversion and the year operations import that file, so the facade there would close an import cycle. There is no rename: a filing's name is an ordinary field (the unreachable Rename Ward dialog went in 70B). |
+| The store seam | `setActiveFiling(ward \| null)` in `src/core/state.js` sets the case's `activeWardId`, the open filing and its type together; the lifecycle's open and close use it, and no module assigns `activeWardId` or calls `setD()`, `setActiveInventoryType()` or `setCaseFile()`. The cross-tab lock is still taken inside `activateWard()` before anything changes, and case and party write-through happen inside creation and conversion, so every caller of the service goes through them. |
+| The gate's guard | `tests/unit/filing-lifecycle.spec.js`: the service is the implementations; no module outside them imports a lifecycle operation, reads or destructures one off `window`, or names one to the adapter's `call()`; the monolith declares none, and what it still reaches through `window` (the switcher's `switchWard()`, 70H; loading a case's `activateWard()`, 70I) is the implementation's own publication, as is `case-file.js`'s `window.unloadWard` (recorded exception: importing the service there would close an import cycle; the persistence service, 70I); which filing is open changes only through `setActiveFiling()`; the carry rules are declared once. Red first: a copy in place of a member, a direct `switchWard` import in `modal-events.js`, a direct `activeWardId` write in `activateWard()`, a `switchWard` declaration and a second `CARRY_SOURCE_TYPE` in the monolith each failed it. |
+| Conversions proven equal | `tests/e2e/filing-conversion.characterization.spec.ts` converts a minimal valid filing of each type into every type `convertTargetsFor()` lists and records each new filing field by field (ids and times normalized), with what converting did to the source (its case link, `caseId`), against `tests/baseline/ms70-conversion-golden.json`, recorded from the 70F code before this move: 24 conversions; a Minor plan offers none. It passes on 70G's. Red first: a +1 in the Initial Inventory to Simplified starting balance failed it (`startingBalance` 0 to 1). |
+| Placed here, not in 70H | The Add Form, eligibility and Delete Form dialogs sat in the monolith's MODAL FUNCTIONS section, which the review placed in 70H. They are the creation, eligibility and deletion workflow the plan gives 70G, and its gate needs them through the service, so they moved here (review override `filing-workflow`); the modal plumbing they open through -- `showModal()`, `closeModal()`, `ensureFragment()`, the ward-name combobox -- stays for 70H and is reached as monolith services. |
+| Went with their readers | `window` publications whose last readers moved: ten of `party-resolver.js`'s, four of `ward-county.js`'s, `ward-lifecycle.js`'s `createWardId`, `addWard` and `deleteWard` and its five carry names, `delete-confirmation.js`'s one and the Convert dialog's four -- with `main.js`'s imports that existed only to publish them. `party-resolver.js`'s remaining publications are guarded so it imports under Node. |
+| Types | `conversion.js` and `party-management.js` carry `@ts-nocheck` with the reason (in the checked program only transitively, moved as text). `carry-over.js` stays checked -- it holds the builders `ward-lifecycle.js` had, which were -- with casts on its moved DOM and merge code. |
+| Tests converted | `convert-targets.spec.js` and `ward-carryover.spec.js` import from `carry-over.js`; `filing-type-enumeration-guard.spec.js`'s carry-table exception follows the tables, and `filing-years.js` (each form's year-end reset, which the year-rollover characterization pins) and `filing-dialogs.js` (the Add Form dialog's branches on particular types) join its exceptions. |
+| Ratchet | `classicDeclarations` 329 to 235, `windowWrites` 268 to 236, `windowReads` 317 to 247, `evalTimeWindowDestructures` 58 to 51, `bareCrossBoundary` 46 to 36, `unownedWindowReads` 2 to 1 (the Year Manager's call to a function nothing defines); the monolith's bare case-state accesses 151 to 99. Grown, carried with the moved code and recorded here with their removal: `src/core/filing/carry-over.js::calcTotalsAnnual` (the Annual totals are that feature's; core code cannot import a feature; the feature context, 70K) and `src/core/parties/party-management.js::renderPage` (the router renders the People page, so importing it would close a cycle; the router's page table, 70K). |
+| Findings | (1) The monolith kept its own copies of the carry tables beside `ward-lifecycle.js`'s, identical, one unused. (2) Workflow code filed under modal plumbing (above). (3) Opening a filing always saves twice -- the flush, then the recent-filings list it joins, which is saved with the case: not a defect, pinned by 70F's contract spec as the cost of a switch. |
+
+**Gate run.** The full `npm test`, 2026-09-26, on the trial copy this commit was ported from (identical file for file apart from its test port): unit 2008/2008 (150 files); browser 917 passed, 7 skipped, 0 failed (1.2 h, source profile, chromium) -- 924 tests: 70F's 915 and the nine of `filing-conversion.characterization.spec.ts`. `check:types` clean.
+
 ---
 
 ## 70H — Shell and support surfaces
@@ -913,6 +1460,40 @@ seam. Every supported conversion produces exactly the same data it did before.
 The dashboard, picker, activity log, Manage Shared Records, Help, tours,
 feedback, theme, and dialogs work without a production call through a legacy
 global. Accessibility behavior and help/control drift guards remain green.
+
+### 70H build record
+
+Approved with every later delivery on 2026-09-25 (see Status). Everything
+below is on the `milestone-70` branch.
+
+**What a filer sees.** Two corrections; otherwise nothing, by design.
+(1) **Help on the Start New Form page shows the help written for it.** The
+Help text has a section for choosing a form, but the function that picks the
+page's help ignored the page the router named, so that page showed the
+dashboard's welcome. (2) **Preview & Export says the Help panel is open when
+it is.** Its Help button asked the page for a function nothing defined and
+announced the panel closed -- a screen reader told the filer the opposite of
+what the screen showed (70A's finding, now reproduced and fixed).
+
+**Done, with evidence.**
+
+| Item | Evidence |
+| --- | --- |
+| Commit | `1921ce6` (the whole delivery; gate evidence in its message). |
+| The controllers | Out of `legacy-app.js`: the Help panel, the user guide, tooltips and guided tours (`src/core/help/`), the Activity Log page (`src/core/activity/activity-log-view.js`), this tab's state for the other tabs (`src/core/navigation/tab-state.js`), the shared combobox (`src/core/ui/combobox.js`), the filing switcher, the sidebar, the Start New Form picker and the court portal (`src/core/shell/`), and the guardian's one-time setup (`src/core/modals/guardian-setup.js`). Into existing modules rather than beside them: the theme button (`theme-preference.js`), the static dialogs' show, close and fragment loading (`src/core/ui/dialogs.js`), the Add Form dialogs' ward-name field and the picker's way into them (`filing-dialogs.js`), the "open in another tab" dialog (`src/core/ward-lock.js`), and the Help text beside the panel (`src/core/help/help-content.js`, from `src/features/help/`). 83 names left the monolith (the review's `landed["70H"]`), with seven wrappers whose last callers these were. No markup or styling changed. |
+| No legacy global on the surfaces (the gate) | The dashboard's load-time `const { ... } = window` of thirteen names is gone: it imports the router's `navigate()`, eight persistence functions, `saveAppState()` and `exportCaseFileZip()` (which `window.exportGuardianDataZip` was), and calls the seven the monolith still owns as services. The shell's Clear Data and Lock call the monolith's functions as services; a closed filing's Sync leaves its re-render to the dispatcher, so the People page no longer reaches `window.renderPage` (70G's carried read, gone). `tests/unit/shell-surfaces.spec.js` holds it for the dashboard, `src/core/shell/`, `activity/`, `parties/`, `help/`, `feedback/`, `modals/`, the theme, the dialogs, combobox, the ward lock and the shell and dialog dispatchers: nothing but the browser off `window`. Red first: a `window.navigate` read in the picker failed it. |
+| Listeners explicit and disposable | The dispatchers -- feedback, shell, dialogs (with the observer that labels each dialog), forms -- and the Help panel's Escape key and the three outside-click closers (switcher, Convert source picker, ward-name fields) each install from an `install...({ signal })` function; `main.js` calls each once, the dispatchers in the order their imports used to add them, and the terms acknowledgement's Escape guard still runs ahead of the dialogs' Escape handler. The alert, confirm and prompt dialogs end their own Escape listener however they close (it lived until the next Escape). The same spec requires a signal on every document or window listener and no listener added by importing a module. Red first: a load-time listener in the Help panel, a missing `installShellEvents()` call, and the dialogs' listeners without a signal each failed it. |
+| Accessibility | `tests/e2e/help-panel-state.spec.ts`: with the Help panel open, Preview & Export's Help button says `aria-expanded="true"`; red first on the code before 70H ("false"). Focus return, dialog labeling, Escape and keyboard behaviour moved intact; the accessibility, drift-guard and dialog specs are in the gate run below. |
+| The Help panel's page | `updateHelpContext(context)`: a page that names its help gets it, otherwise the open filing's form decides. `tests/unit/help-panel.spec.js`, red first (the picker got the welcome). The router's six calls were always passing that argument; its type check now sees it used. |
+| Services | The monolith hands in `clearAllData`, `lockApp`, `getWardProgress`, `isContinuePromptShown` and `markContinuePromptShown` besides 70G's; the combobox, dialog, sidebar and tab-state functions left the list with the code. |
+| No new cycle, no new global | The picker's page imported the Add Form dialog only to open it, which closed a cycle through the router: that function joined the dialog. The case file and this tab's state imported each other: the export state (changed since the last save, and when) is its own module, `src/core/persistence/export-state.js`, which `case-file.js` re-exports. The tab state reads the app version from `feedback-config.js` rather than `window.PG_APP_VERSION`. |
+| Went | `window.loadFragment` (its own note said "temporary", until module code owned the wiring -- its one reader moved and imports it; its unguarded assignment also broke every Node import through the dialogs); the Help text's Proxy over `window.HELP_CONTENT`, which the move would have turned into a Proxy over itself (it recursed on first use in the trial); the wrappers `ic()`, `esc()`, `formatDashboardCurrency()`, `typeIcon()`, `updateCarrySourcePicker()`, `showSimplifiedEligibilityModal()`, `updateNavDots()`; the bridge's `INVENTORY_TYPES` and `INVENTORY_TYPE_META`. |
+| Types | `activity-log-view.js`, `help-panel.js`, `sidebar.js`, `start-new-form.js`, `combobox.js`, `filing-dialogs.js`, `delete-confirmation.js`, `ward-lock.js` and `fragment-loader.js` carry `@ts-nocheck` with the reason (in the checked program only transitively; moved as text or never typed); `router.js` stays checked. |
+| Tests converted | `comment-card-hide` (both renderers imported; each takes the flag as an optional argument), `guided-tour-content`, `theme-persistence`, `user-guide-drift-guard`, `plan-simplified-filing-help` (new homes), `form-write-side-effects`, `form-contract`, `output-revision-wiring`, `case-file` (the sidebar and tab-state modules mocked where they touch the page), `filing-type-enumeration-guard` (the shell's per-form choices: the Help text, the tour, the picker's cards, each form's sidebar navigation until 70K). |
+| Ratchet | `classicDeclarations` 235 to 152, `windowWrites` 236 to 226, `windowReads` 247 to 170, `evalTimeWindowDestructures` 51 to 34, `bareCrossBoundary` 36 to 32, `unownedWindowReads` 1 to 0 (the dead Year Manager's call went in 70G; the last one, the Help panel's own state, now has an owner); import cycles stay at 0; the monolith's bare case-state accesses 99 to 59. Grown, carried with moved code and recorded here with their removal: `src/core/persistence/export-state.js::_dirtySinceExport` and `::_lastExportAt` in `windowReads` and `windowWrites` -- the same window-backed export state `case-file.js` held, moved to break an import cycle; the persistence service owns it in 70I. 70G's carried `party-management.js::renderPage` read is gone. |
+| Findings | (1) The Help panel's page argument, ignored (above). (2) `window.isHelpPanelOpen`, never defined (above; 70A's). (3) The Help text's Proxy would have recursed after the move -- caught in the trial by the first unit run. (4) The alert dialogs' Escape listener outlived the dialog. (5) `window.exportGuardianDataZip` was an alias of `exportCaseFileZip()`. |
+
+**Gate run.** The full `npm test`, 2026-09-26, on the trial copy this commit was ported from (identical file for file apart from its test port): unit 2015/2015 (152 files); browser 918 passed, 7 skipped, 0 failed (1.2 h, source profile, chromium) -- 925 tests: 70G's 924 and `help-panel-state.spec.ts`. `check:types` clean on the ported worktree.
 
 ---
 
@@ -950,6 +1531,66 @@ shared recovery cache and launch preferences. The master-fix ledger is
 reviewed here too (D7): if it holds 10 or more rows marked "re-implement",
 `master` is merged into the branch at this checkpoint.
 
+### 70I build record
+
+Approved with every later delivery on 2026-09-25 (see Status). Everything
+below is on the `milestone-70` branch.
+
+**What a filer sees.** Six corrections, each a defect found while moving this
+code and fixed with a test that failed first; otherwise nothing, by design.
+All six are on `master` too.
+(1) **A lock no longer throws away work the case file does not have yet.**
+After a browser restart the browser lets the app read the remembered case
+file but not write it until the filer clicks Save Backup. Edits made in that
+state, followed by the automatic lock after 15 idle minutes, came back as the
+file's older contents: the edits were gone, and the next save would have
+written the older data over the file. The lock now restores from the recovery
+snapshot whenever the file lacks changes.
+(2) **Locking a case never saved to a file keeps its shared records.** Its
+people and case records, its "not the same person" decisions and the circuit
+chosen for it were lost at every lock (the filings came back).
+(3) **The auto-save setting is kept.** The interval a filer picks (5, 10 or 30
+minutes, or Off) was never written to the case file, so every reopen went
+back to 10 minutes.
+(4) **An opened case shows when it was last saved.** Opening a case file showed
+"Unsaved changes" or "No backup saved yet", not the file's own last save.
+(5) **Deleting a prior year from the dashboard no longer reports a failure.**
+The year was deleted, and then the filer was told "Failed to delete year.
+Check console."
+(6) **The start dialog says when the remembered case file is gone.** Its
+notice ("The previously opened case file could not be found...") never
+appeared.
+One regression 70H introduced is fixed here as well: ticking "none to report"
+on a Simplified Accounting schedule saved, but the sidebar mark stayed red
+until the next page. Two hardenings a filer would not notice: a lock never
+restores a recovery snapshot an earlier session left in the browser (it could
+put that session's filings into a new case), and the password is cleared from
+the dialog once used.
+
+**Done, with evidence.**
+
+| Item | Evidence |
+| --- | --- |
+| Commit | `a89d65d` (the whole delivery; gate evidence in its message). |
+| The services | Out of `legacy-app.js`: saving -- `autoSave()`, `flushPendingSave()`, `saveData()`, `saveWardToState()`, the save-error banner, the unload and hidden-tab saves -- into `src/core/persistence/case-file.js`; opening a case file into `src/core/persistence/case-reader.js`; the Activity Log's entries into `src/core/activity/audit-log.js`; unlocking and locking into `src/core/security/app-lock.js`; the launch into `src/core/startup/launch.js`; the template cache into `src/core/persistence/templates.js`; the continue prompt into `launch-preferences.js`; Clear Data into `src/shell-events.js`. The import and restore flow left `case-file.js` for `src/core/persistence/case-import.js`: it closes the open filing and navigates, which the case file's own module cannot import. 100 names left the monolith (the review's `landed["70I"]`), with twelve wrappers whose last callers these were; the monolith is 902 lines (2,297 at 70H). |
+| One owner each, no window copy | The key and the security mode are `crypto.js`'s, in closure memory; the changed-since-save flag, the last-save time and the auto-save interval are `export-state.js`'s; app state and the template cache are `state.js`'s; the open file's handle is `case-file.js`'s (it was mirrored onto `window`, which nothing read; `window-backed-ref.js` went with its last user). `tests/unit/persistence-owners.spec.js`, red first on the code before 70I (the key and the save state were window accessors). |
+| The key's lifetime | An unlock derives the key, checks it against the verifier, and only then holds it; a new password's key is held only once its verifier is saved; a failed attempt, a file that does not open, and every lock clear it. Nothing puts it or the password on `window` or in the case file, and the dialog's fields are emptied once used. `lock-and-save-state.contract.spec.ts`, red first (`_cryptoKey` and `_securityMode` on `window`, the password left in both fields). |
+| One way to ask for a save | Every module calls the case store's `requestSave()`; `main.js` points the store at `case-file.js`'s `autoSave()`, and a flush commits the field still being typed in through the store's `commitPendingEdits()`, which `main.js` wires to the form layer -- so neither the save nor the form layer imports the other. Twenty `monolith.autoSave()` calls, the `window.autoSave` reads of ten modules and five feature modules' load-time `autoSave` destructures (Annual, Initial Inventory, Simplified) went; the test adapter's `countAutoSaves()` swaps the store's hook. |
+| Startup as a state machine | `src/core/startup/startup.js`: terms, launch, choice, unlock, templates, position, route, services, each naming the next. `main.js` runs it after `window.initApp()` hands in the monolith's services, passing the terms promise its first state waits on; the recovery snapshot is not a startup state (it is only ever read back by a lock in the same page). `tests/unit/startup-flow.spec.js` holds each path; fault-injected, an unlock state that always asks for the password and a route state that ignores the remembered page each failed it. |
+| The monolith still owns the case | Locking empties the case and startup points it at the remembered filing through two new monolith services, `clearCaseForLock()` and `focusFilingAtLaunch()` (placed in 70J by the review, with a note); the moved code opens and closes filings through the filing lifecycle service (`filing-lifecycle.spec.js`: the monolith now opens no filing itself). |
+| Listeners explicit | The unlock dialog's Enter key and the inactivity lock's activity listeners (`installAppLockListeners()`), the unload and hidden-tab saves (`installSaveListeners()`) and the start dialog's controls (`installStartupEvents()`) are installed once by `main.js`, the first two ahead of every other listener as they were; the drop target takes a signal. |
+| The proof against old archives | `tests/e2e/sav-corpus.characterization.spec.ts`: every archive written by the 28 earlier versions -- plain and encrypted -- opens to the same digest as the golden recorded at 70A, and a wrong password and each damaged file fail as they did (all 66 of its tests passed in the checkpoint's source run -- 56 archives to the golden digest, three wrong-password refusals, seven damaged files -- with the golden unchanged since 70A). A damaged template entry is skipped like a damaged filing (it failed the open after the password, leaving a blank page); the characterized damaged cases do not include one, and none changed. |
+| Findings (fixed, red first) | (1) F5, the lock after edits a read-only remembered file lacks; (2) F4, the lock of a never-saved case; (3) F2, the auto-save interval; (4) F1, an opened file's last save -- all four in `lock-and-save-state.contract.spec.ts`, with the snapshot-ownership hardening; (5) F6, deleting a prior year (`prior-year-delete.spec.ts`: `renderDashboardGrid()` was the dashboard's private function, never a global); (6) F3, the start dialog's notice (`startup.spec.ts`: it read the monolith's own copy of a flag the failure set in `launch-preferences.js`; the old text-only check passed with the notice hidden). All confirmed on `master` by probes or its code. |
+| A 70H regression | Simplified Accounting's "none to report" called `updateNavDots()` by its bare global name, which 70H's wrapper pruning removed; the value saved, then the handler threw. `simplified-remuneration.spec.ts`, red first on the 70H build. Found by the audit's new check (next row), with F6 and the Initial Inventory's bare `saveData()` (which this delivery's move would have broken on opening any Inventory filing). |
+| A guard gap closed | The dependency audit counted bare references to names the monolith still declared, so a bare call to a moved or never-global function was invisible to it. It now reports `unresolvedBareReferences` -- a name no script declares, no module publishes, and no language, browser or vendored library provides -- held at zero by the ratchet (fault-injected in `ms70-dependency-ratchet.spec.js`). |
+| Went | The monolith's duplicates of `recovery-cache.js`'s and `launch-preferences.js`'s code and of `crypto.js`'s constants; `loadGuardianData()` (an async no-op whose answer nobody read); `window.pgHasUnsavedChanges` (its reader imports the export state); 39 `window` publications of the persistence modules whose last readers moved or import now. |
+| Types | `check:types` clean: two arguments nothing read (`flushPendingSave()` and `showSaveError()` take none) went, and two JSDoc types were added. |
+| Tests converted | `case-file.spec.js`, `filing-lifecycle.spec.js`, `form-write-side-effects.spec.js`, `ms70-state-seam.spec.js`, `testing-adapter.spec.js` and `window-bridge.spec.js` read the moved owners from their modules; `mixed-version.characterization.spec.ts` records one deliberate addition to what the versions share (the snapshot's shared records, and the circuit with the guardian; the old version reads past them). No assertion was dropped. |
+| Ratchet | `classicDeclarations` 152 to 54, `windowWrites` 226 to 156, `windowReads` 170 to 111, `evalTimeWindowDestructures` 34 to 25, `bareCrossBoundary` 32 to 4, `unresolvedBareReferences` new at 0, `unownedWindowReads` 0, import cycles 0; the monolith's bare case-state accesses 59 to 27. 70H's carried `export-state.js::_dirtySinceExport` and `::_lastExportAt` are gone. Grown, recorded here with their removal: `src/legacy-app.js::clearCaseForLock` and `::focusFilingAtLaunch` in `classicDeclarations` -- the case's owner's two new services, removed in 70J. |
+| Master-fix ledger (D7) | 5 rows marked re-implement (fewer than 10): no merge at this checkpoint. Two of them, `b2d97f5` (a case file with a part that cannot be read says what was not read and is never saved over) and `5de3707` (an encrypted file's manifest lists no ward names; a newer format is refused), change the code 70I moved; they are carried in their own commit after this one, so this delivery's proof against the pre-MS-70 archives stays a comparison with the old reader, and the carry's deliberate change to the damaged-file golden is its own. |
+
+**Gate run.** The checkpoint's full gate (D2), 2026-09-26, on the trial copy this commit was ported from (identical file for file apart from its test port), 1 h 19 min in all: `npm run test:verify` -- `check:types` clean, `verify:data-model` OK (1009 rows), unit 2028/2028 (154 files), browser 925 passed, 7 skipped, 0 failed (1.1 h, source profile, chromium; 932 tests: 70H's 925, the five lock and save-state contracts, the prior-year delete and the Simplified remuneration regression); `npm run test:e2e:web` 34 passed, 2 skipped (2.4 min); `npm run test:e2e:portable` 20 passed, 12 skipped (1.4 min); `npm run test:e2e:portable-http` 33 passed (2.6 min). `check:types` clean on the ported worktree.
+
 ---
 
 ## 70J — Canonical module-owned state
@@ -981,6 +1622,39 @@ and runs the shipped-build profiles (D2), including `portable-http`.
 Decided (D4): no tester pause follows. 70J is a one-way door: once 70K builds
 on it, it cannot be reverted on its own, so this gate is the last point at
 which to stop.
+
+### 70J build record
+
+Approved with every later delivery on 2026-09-25 (see Status). Everything
+below is on the `milestone-70` branch. 70J is the one-way door (D4): once 70K
+builds on it, it cannot be reverted on its own.
+
+**What a filer sees.** Nothing, by design: 70J changes which code holds the
+case, not what the app does with it. One hardening a filer would not notice:
+opening a case file used to fill the open case in piece by piece -- emptying
+it first, then adding each part as it was read -- so a read that failed
+part-way left the app holding half of the new file. The file is now read into
+a case of its own, which replaces the open one only once it is whole; a read
+that fails part-way leaves the case as it was.
+
+**Done, with evidence.**
+
+| Item | Evidence |
+| --- | --- |
+| Commit | `6ee4ac3` (the whole delivery; gate evidence in its message). |
+| One case, one derivation of the open filing | `src/core/state.js` holds the one case object: `getCaseFile()` is the live object, `replaceCaseFile()` the one way to replace it whole, `blankCaseFile()` an empty one. The open filing and its type are not held at all -- `getD()`, `getActiveWard()` and `getActiveInventoryType()` derive them from the case's `activeWardId` each time they are asked, so they cannot disagree with it; with none open, `getD()` is a scratch `{}` replaced at each close. `setD()`, `setActiveInventoryType()` and `setCaseFile()` went; `setActiveFiling()` (70G) names the open filing. `ms70-state-seam.spec.js`. |
+| No competing mirror | `legacy-app.js`'s `caseFile`, `window.caseFile`, `window.D`, its `activeInventoryType` and the `window` accessor over it went, and nothing of the case is on `window`: the store is no longer excepted from the check that no module reads or writes case state there. The monolith's bare case-state accesses (`scripts/ms70-classic-state.mjs`) are 0, from 27 at 70I, and the recorded list is empty; the audit read `window.D` in comments as accesses and now reads the parse. Fault-injected, each failed the guards: a `let caseFile` in the monolith, a `window.caseFile` write in the store. |
+| Mechanically: every replacement and activation | `filing-lifecycle.spec.js`: which filing is open changes only through `setActiveFiling()` (`ward-lifecycle.js`'s open and close); `replaceCaseFile()` is called only by the lock (it forgets the case, and restores the recovery snapshot) and the case reader; `withFilingInView()` only by `GuardianForms.testing`'s validate queries -- fault-injected with a `replaceCaseFile()` call in `recovery-cache.js`. `ms70-state-seam.spec.js`: no module but the import, a merge that keeps the filings already in the case, writes a case's filings wholesale; it caught the recovery restore's first rewrite, which still assigned them on its new case. |
+| Each operation updates the case once | `tests/unit/ms70-case-authority.spec.js` runs the store, the lifecycle and the reader for real: a switch writes the case's `activeWardId` once, in the same case; deleting the open filing closes it once and removes it once; opening a case file leaves the open case untouched while it is read, then replaces it once with every part and nothing open. A save reads the live case and writes no member of it (`case-file.spec.js`; seen failing with a save that stamped the case). The recovery restore builds its case and replaces the lock's empty one once (the guards above; `lock-and-save-state.contract.spec.ts` holds what it restores). The import merges into the case once, after closing the open filing through the lifecycle, as before (`backup-restore-sav.spec.ts`). |
+| Fault injection (70J's work) | Same spec, a fault at each await: the outgoing filing's save failing, another tab holding the target, and the lock request throwing each leave the filing that was open, whole -- its id, data and type agreeing; a fault after the move (the Inventory feature failing to load) leaves the new one open, whole; leaving for the dashboard with the save failing keeps the filing open and locked, tells the filer, and leaves the page where it is; a second route change during the pending save joins the first, and the filing closes once. A transaction that throws runs no side effect (70E's test). Red first, three mutations, each failing for its stated reason: the old reader (the open case emptied mid-read, and holding half the new file after a part-way failure), `activateWard()` opening the target before the outgoing save, and the dashboard exit closing the filing before its save. |
+| The monolith's state and services | Gone: `caseFile`, `activeInventoryType`, 70I's `clearCaseForLock()` and `focusFilingAtLaunch()`, `setAccountingFilingType()` (to `src/features/annual-accounting/filing-type.js`; it writes the open filing's own type, from which the open type now follows), `calc` (the Proxy the dashboard's headline total used by pointing `window.D` at each card's filing; the total is handed the filing now), and the `autoSave()` and `updateSidebar()` wrappers. The lock forgets the case through `replaceCaseFile(blankCaseFile())`; startup opens the remembered filing directly through the lifecycle -- naming it first, as 70I did, would now make it count as already open and skip its normalization, Recently Opened and the Inventory feature's load. |
+| The test adapter | Reads the case, the open filing and its type from the store; its validate queries (`exportGate`, `fixture`) put their copy in view with `withFilingInView()` -- synchronous, and put back however the call ends -- instead of pointing `window.D` at it and back. No compatibility getter on `window` was needed (the plan allowed one inside the adapter until 70K). |
+| Separate services | The key, the file handle, app state and the template cache stay with their 70I owners; route state (`currentPage`) is 70K's; `main.js`, the composition root, wires the store's hooks. |
+| Tests converted | 26 unit specs changed: 13 by a codemod (`window.D = x` to `openFiling(x)`, from the new `tests/unit/support/open-filing.js`; `window.caseFile = x` to `replaceCaseFile(x)`; their reads to `getD()` and `getCaseFile()`), the rest by hand -- the guards among them rewritten for the store's ownership. No browser spec needed converting: 70T had moved every one off `window.D` and `window.caseFile` (the pre-70 build's driver for the mixed-version characterization is the deliberate exception). One assertion fewer: `guardian-inventory-totals.spec.js`'s four checks on the monolith's `calc` Proxy became three on its absence and the headline total (recorded in `tests/baseline/ms70-assertion-counts.json`). Comments naming `setD()` as what runs today now name `setActiveFiling()`. |
+| Ratchet | `classicDeclarations` 54 to 49, `windowWrites` 156 to 149, `windowReads` 111 to 103; `evalTimeWindowDestructures` 25, `bareCrossBoundary` 4, `unresolvedBareReferences` 0 and import cycles 0 unchanged; the monolith 902 to 843 lines, its bare case-state accesses 27 to 0. 70I's `clearCaseForLock` and `focusFilingAtLaunch` are gone. Grown, recorded here with their removal: `src/legacy-app.js::getD`, `::getActiveInventoryType` and `::calcTotalsGuardian` in `classicDeclarations` -- one-line forwarders for `computeNavChecks()`, `handleHash()` and `getWardHeadlineTotal()`, placed with them in 70K by the review, with a note. |
+| Master-fix ledger | `b2d97f5` and `5de3707` were carried after 70I (`f6ea716`, `296000f`); this checkpoint is the first full run with both. No unlisted `master` commit; the re-implement rows still open, `c62f890` and `ae9ecdc`, change code 70K moves. |
+
+**Gate run.** The checkpoint's full gate (D2), 2026-09-26, on the trial copy this commit was ported from (identical file for file apart from its test port), 1 h 18 min in all: `npm run test:verify` -- `check:types` clean, `verify:data-model` OK (1009 rows), unit 2042/2042 (155 files), browser 934 passed, 7 skipped, 0 failed (1.1 h, source profile, chromium; 941 tests: 70I's 932 and the nine of the two carries' specs); `npm run test:e2e:web` 34 passed, 2 skipped (2.5 min); `npm run test:e2e:portable` 20 passed, 12 skipped (1.4 min); `npm run test:e2e:portable-http` 33 passed (2.5 min). The first full run with both carries: the `.sav` corpus's 66 tests all passed, the golden as the carries left it. `check:types` clean on the ported worktree.
 
 ---
 
@@ -1028,6 +1702,48 @@ destructures of the application API from `window`; startup is a direct import;
 and the bridge audit permits only the reviewed `GuardianForms` namespace plus
 explicit platform/vendor globals.
 
+### 70K build record
+
+Approved with every later delivery on 2026-09-25 (see Status). Everything
+below is on the `milestone-70` branch.
+
+**What a filer sees.** Two corrections, both on `master` too.
+(1) **A page the filer has moved on from can no longer be drawn over the one
+they moved to.** A filing's code loads the first time one of its pages is
+shown. Opening a new filing and going back to All Filings before that code had
+arrived -- on a slow connection, or an old computer -- used to end with the
+filing's page drawn over the dashboard, its fields empty because no filing was
+open any more. The newer page now stays.
+(2) **Each page is drawn once.** Every move to another page drew it twice:
+once by the move, and again when the change it made to the address bar came
+back as if the filer had made it. Opening a filing drew its Cover twice the
+same way.
+Otherwise nothing, by design: 70K changes how the parts reach each other, not
+what the app does.
+
+**Done, with evidence.**
+
+| Item | Evidence |
+| --- | --- |
+| Commit | `cc532e8` (the whole delivery; gate evidence in its message). |
+| One navigation owns the page | `src/core/navigation/router.js`: each render takes an `AbortSignal` and aborts the one before it; after leaving a filing, after loading a feature and after the feature's own mount, a superseded navigation commits nothing more, and the bridge (`src/core/feature-bridge.js`) hands the signal and the filing to the feature's `mount()`, which checks it after loading its own print and Excel modules. No serialized queue: a render that navigates would wait on itself. `tests/e2e/navigation-race.spec.ts` (a new filing's page, its code held back, stays under the dashboard; two navigations in a row draw only the second) and `feature-bridge.spec.js`'s three superseded-mount cases, red first on the 70J build (the Plan drawn over the dashboard; four draws). |
+| Drawn once | A hash change that names the page already shown is ignored -- the router's own `navigate()`, startup's and opening a filing's writes of the hash come back that way -- so only the filer's (Back, a link) draws. `navigation-race.spec.ts`: one draw per navigation, and Back still draws; red first (two draws). |
+| The router owns the route | The current route and the hash handler (`handleHash()`, `updateNavActive()`, `SPECIAL_PAGES`, the `hashchange` listener) moved from `legacy-app.js`; the route is read through `src/core/navigation/route-state.js`, a leaf, by the modules the router imports (an import cycle otherwise), which also hands them `navigateTo()`. Leaving a filing for the dashboard -- commit, flush, release the lock, close -- is the router's `src/core/navigation/leave-filing.js`; opening a filing draws its Cover through the router instead of mounting the feature beside it. |
+| Feature services, not globals | `src/features-loader.js` keeps every feature's literal `import()` (Vite still bundles and inlines them) and builds `featureServices` -- each feature's bridge by id, `load()`/`loaded()`, a loaded feature's validator, completion's inputs, the dashboard's headline total, `run()` for a feature's own commands, the PDF builders -- which `main.js` hands to `startGuardianForms()` and core reaches through `src/core/runtime/features.js` (asking before it is provided throws). They replaced the monolith's services (`src/core/runtime/monolith.js`) and the `window.mount*`, `window.load*` and `window.validate*` globals. `tests/unit/feature-services.spec.js`. |
+| The lazy boundary kept | A filing's code still runs only once one of its pages is shown, in every build: `tests/e2e/feature-lazy-boundary.spec.ts` opens the `.sav` corpus's newest plain archive -- one filing of each of the nine types -- to its dashboard with only the dashboard's code loaded, computes every type's progress but the Initial Inventory's (its rules are its validator, in its pack) and a blank filing of each with no pack, and loads only the Plan's pack when a Plan opens (completion criterion 7). Seen failing with a Plan's pack loaded at startup. It reads the new `GuardianForms.testing.status.loadedFeatures()`; until 70K a loaded pack showed as its `window.validate<Type>`. |
+| Bootstrap is a direct call | `startGuardianForms(services)` (`src/core/startup/bootstrap.js`) provides the feature services, installs the router's hash handling and the date-year guard (`src/core/form/date-year-guard.js`, from `legacy-app.js`) once each, and runs the startup; `main.js` calls it after the terms, with no `window.initApp` lookup. The twenty-two bare imports `main.js` kept only for the globals those modules published went (each module is imported by what uses it; nothing became unreachable). `boot-ordering.spec.js`. |
+| The frozen namespace | `window.GuardianForms` is installed once and frozen by `src/core/runtime/browser-api.js`: `version` always -- the one production member the owner's schema review confirmed (it replaced `window.PG_APP_VERSION`) -- and `testing` only with the runner's pre-boot flag, read once and deleted. `testing-adapter.spec.js` and `testing-adapter.spec.ts` (an ordinary launch holds the version only). |
+| No application global | Every `window.X =` publication went -- 149 file-and-name pairs at 70J -- with every read (103) and load-time destructure (25): modules import what they used, and core reaches a feature through the feature services. `_transientDrafts`, a window mirror of the drafts nothing read, went; the output revision moved to its own leaf (`src/core/filing/output-revision.js`) so the preflight and the draft store reach it without a cycle. `tests/unit/removed-window-bridges.spec.js` pins the whole surface to `GuardianForms`; the allow-list is empty and the declaration names two globals, the namespace and the runner's flag. |
+| The adapter follows | `GuardianForms.testing`'s members run an explicit table of application functions (`applicationImplementations()`) instead of looking each up on `window`; validate queries load the type's feature first; `simulate.validatorNotLoaded()` now holds for the adapter's own completion queries. `saveOutput.pdfGuardian()` and `excelGuardian()` called names nothing defined, so they could only throw; the Initial Inventory exports those saves now, as the Plans export theirs. The specs did not change (70T's promise), but for the namespace test above. |
+| The monolith is empty | `legacy-app.js`'s last 49 declarations moved or went (the review's `landed.70K`), with its three top-level statements; it declares and runs nothing, and 70L deletes it. A click listener on `.nav-link-item[data-page]` elements had nothing to attach to -- the features draw those links later, with their own dispatch -- and went. `src/legacy-bridge.js` and `src/core/runtime/monolith.js` went with their last readers, and `legacy-bridge.spec.js` and `monolith-services.spec.js` with them. |
+| Findings | (1) The three embedded workbook modules (`templates/*-template.js`) put the Clerk's workbook on `window.EMBEDDED_TEMPLATES` and exported it back from there -- an application global outside `src/`, which no audit scanned, found by `check:types`. Each exports its workbook directly now; the base64 string is byte for byte what it was (checked by hash), `scripts/extend-annual-b4-blocks.py --check` verifies the Annual workbook, and the script and `b4-block-map.spec.js` find it by the export. (2) The bridge audit (`scripts/audit-window-bridge.mjs`) matched `window.X` in the text, comments included, so the generated declaration kept names nothing uses; it reads the parse now (`window-bridge.spec.js`, on synthetic trees). (3) The filing-type enumeration guard's exception for `error-route.js` was never needed; an exception that no longer enumerates now fails. |
+| Caught by the gate, fixed | Routing the Plans' Save as PDF through the feature services put an `await` -- the module's already-resolved load -- in front of the save, so its button was still enabled when the click returned: Milestone 67's guard against a second click starting a second download (which the browser blocks) was undone. `export-button-guard.spec.ts` failed on it in the first gate run, which was stopped there. `run()` now calls a loaded feature's command in the same turn, and each save export calls its print module directly once loaded, as the globals they replaced did; `feature-services.spec.js` holds `run()` to that, red first with it asynchronous. |
+| Guards | The dependency audit names the approved boundary (`BOUNDARY`: `GuardianForms` and the runner's flag), reports it as its own ratcheted set, and keeps it out of the application-global ones. Ratchet: `classicDeclarations` 49 to 0, `windowWrites` 149 to 0, `windowReads` 103 to 0, `evalTimeWindowDestructures` 25 to 0, `bareCrossBoundary` 4 to 0, unowned reads, cycles and layer violations 0, `boundary` 2 (both in `browser-api.js`). 70J's growth -- the forwarders `getD`, `getActiveInventoryType`, `calcTotalsGuardian` -- is gone. |
+| Tests converted | 17 unit specs changed for imports in place of `window` stand-ins (mocks of the lock, the router, the feature services; the drafts read on the filing), none losing an assertion; two new browser specs, one new unit spec, two unit specs retired with the doors they held. |
+| Master-fix ledger | Four rows remain to carry, after this commit: `dbee60f` (merges cleanly; carried now because `c62f890` builds on it) with `c62f890` (the Annual pages' Ward's Amount follows the 1% rule), `ae9ecdc` ("?" in a filing announces what it does), and `56ff26a` (the minimal Initial Inventory fixture answers the safe-deposit questions as the form stores them). No unlisted `master` commit. |
+
+**Gate run.** The checkpoint's full gate (D2), 2026-09-27, on the trial copy this commit was ported from (identical file for file apart from its test ports), 1 h 11 min in all: `npm run test:verify` -- `check:types` clean, `verify:data-model` OK (1009 rows), unit 2051/2051 (154 files), browser 938 passed, 7 skipped, 0 failed (1.0 h, source profile, chromium; 945 tests: 70J's 941 and the four of `navigation-race.spec.ts` and `feature-lazy-boundary.spec.ts`); `npm run test:e2e:web` 34 passed, 2 skipped (2.3 min); `npm run test:e2e:portable` 20 passed, 12 skipped (1.3 min); `npm run test:e2e:portable-http` 33 passed (2.4 min). The `.sav` corpus's 66 tests all passed. This was the gate's second run: the first was stopped at its first failure (the Plans' Save as PDF, above) and restarted after the fix. `check:types` clean on the ported worktree.
+
 ---
 
 ## 70L — Delete the monolith and prove the release
@@ -1069,6 +1785,33 @@ The completion criteria below are mechanically true on the exact release
 commit. The final `npm run test:release` is the appropriate release gate, but
 it and any other full regression require the requester's explicit approval at
 execution time.
+
+### 70L build record
+
+Approved with every later delivery on 2026-09-25 (see Status). Everything
+below is on the `milestone-70` branch; the merge waits for the requester's
+release sign-off (D8) and the release gate's approval.
+
+**What a filer sees.** Nothing, by design: 70L deletes the classic script that
+70K had already emptied, and what only it still used. Court output is compared
+file against file with the pre-merge build at the merge gate (below).
+
+**Done, with evidence.**
+
+| Item | Evidence |
+| --- | --- |
+| Commit | `2c171d5` (the whole delivery; gate evidence in its message); `161e4ff`, the PDF engine off the startup path again (a regression 70K made, found by the measurements below). |
+| The monolith deleted | `src/legacy-app.js` (a comment since 70K), its `<script>` tag in `index.html`, its static-copy rule in `vite.config.js` -- with the header comment that explained it, and master's `6a8224d` comment on the `fragments/` copy carried as master has it, since this edit sits beside it (its ledger row is carried here) -- and its entry in `scripts/generate-service-worker.mjs`'s critical list. The one classic script `index.html` loads of its own is `src/prepaint.js`. `tests/unit/ms70-monolith-deleted.spec.js` holds completion criterion 1 mechanically: the file absent; nothing loads, copies or caches it; no data-model row names it; no test or script reads it by path (two name it, each to find it gone). Seen failing with the script tag put back. |
+| The audits without it | The classic scripts come from `index.html` (the dependency audit's `classicScriptsFromHtml()`), so nothing hard-codes the monolith: `scripts/audit-window-bridge.mjs` counts a classic script's top-level functions *and vars* as window properties (its regex read only `legacy-app.js`'s functions), and its "shadowed legacy twin" pass and `--declare` went; `scripts/ms70-classic-state.mjs` reads every classic script (still empty); `scripts/ms70-declaration-dispositions.mjs` finds the monolith gone and nothing to classify (the review keeps where each declaration went); the dependency audit reports one classic script, `src/prepaint.js`, with no implicit globals. Ratchet unchanged; the inventory records the one classic script. |
+| The declaration | `src/core/types/guardian-forms.d.ts`, written by hand, types `window.GuardianForms` (`version`; `testing` when the runner asks) and the runner's pre-boot flag. It replaced `window-bridge.d.ts` (generated, every name `any`); the window-bridge allow-list, empty since 70K, went. `tests/unit/window-bridge.spec.js` holds the declaration to the audit in both directions -- seen failing with an undeclared `window` read in a module and with a declared name nothing reads -- and the browser suite's `TestWindow` type gained `version`. |
+| Guards that read the monolith | Each kept its purpose and reads what carries it now (`tests/unit/support/classic-scripts.js`: the classic scripts `index.html` loads): the boot-order rule, the parse guard (which now covers `src/prepaint.js`, a classic script `tsc` never checked), the cell-reader and PDF-guide "no classic-script copy" scans, the lifecycle, case-state, carry-over, yes/no and side-effect scans, the calculator's old formulas; the date-range pairing scan reads all of `src/`. 16 unit specs; one assertion dropped (the headline-total test's "no `const calc=` in the monolith", recorded in the assertion-count baseline with its reason). |
+| Criterion 9 | `tests/unit/support/legacy-source-extract.js` became `source-slice.js`, its three remaining uses -- each over an ES module -- documented in its header. Eleven unit specs stopped putting application names on `window` (the monolith's field helpers, `autoSave`, `navigate`, and a hand-copied mirror of the Plans' rights and ADL lists, `createPlanTestWindowStub()`, now gone): nothing had read them since 70K. Two validator specs start from the real `emptyDataGuardian()` instead of a literal copy of it. `completion-parity.spec.js` no longer evaluates a frozen copy of the monolith's `computeNavChecks()`: it holds the evaluators to `tests/baseline/ms70-completion-golden.json`, recorded from that copy for the same 4,803 filings (the two had been equal on every one); a re-recording reproduces it byte for byte, and Part VIII's named-trust rule removed fails it. `ms70-monolith-deleted.spec.js` reads every unit spec's parse for a name put on `window` -- the eleventh stub, in `readiness-predicate-coverage.spec.js`, was the one it found that a text survey had missed. |
+| Findings | (1) `validation-issue.spec.js`'s "an acknowledgement never clears the address conflict" had tested nothing since 70K: it set `window.isOutputAcknowledgedFor`, which the preflight stopped reading, so the filing was never acknowledged. It records a standing acknowledgement through the real module and asserts it holds; with the preflight faulted to clear the conflict on acknowledgement, the new test fails and the old one passed. (2) `output-revision-wiring.spec.js` installed the `window` bridge the call sites used before 70K; without it, a call site still going through `window` fails the suite. (3) `probate-guardian-data-model.csv` named, for 688 fields, a source file that did not hold the field's factory -- `src/legacy-app.js` (244), `src/core/state.js` (408, moved in 70C) and `src/core/form/plan-certificate-of-service.js` (36, stale before Milestone 70) -- each is pointed at its file now, and `npm run verify:data-model` checks that every named file exists (the old file fails it on 280 rows). |
+| Comments and documents | About 30 source comments and 40 test comments that described the monolith as live -- it imports, holds, calls -- say where the code is now or speak in the past tense; the four Plan features' headers, which described the monolith importing them and the globals they destructured, say how they load now. `README.md`'s layout, `AGENTS.md`'s stack line, its sidebar note (section 4) and its cross-form hint (section 8). |
+| Measurements | Taken on `161e4ff` with 70A's commands (`tests/baseline/ms70-70L-*.json`; 70A's, `ms70-70A-*.json`, at `daafcc1`; Chromium 151.0.7922.34, Node v24.16.0 both times). Application script bytes at start, 70A -> 70L: source 1,060,618 -> 1,056,728; web 4,206,132 -> 3,924,825 (-6.7%); portable and portable-http 7,245,476 -> 6,963,462 (-3.9%). Resources: source 91 -> 148 (the monolith's code is spread across modules the unbundled source loads one file each), web 36 -> 27, portable 1 -> 1, portable-http 5 -> 4. Script time: source 20 -> 18 ms, web 53 -> 19 ms, portable 91 -> 116 ms and portable-http 80 -> 130 ms in the recorded run (90-91 and 83-101 ms in two repeats). Navigation: source 994 -> 749 ms, web 874 -> 690 ms, portable 366 -> 883 ms and portable-http 703 -> 853 ms in the recorded run (361-367 and 714-719 ms in two repeats: the recorded run's are outliers). Heap after 5 route cycles: source 6.0-6.2 -> 8.6-8.7 MB, web 6.0-6.2 -> 8.2-8.3 MB, portable and portable-http 10.6-10.7 -> 11.2-11.3 MB. Lifecycle (20 mount/dispose cycles per filing type), heap growth 70A -> 70L: simplified-accounting 51 -> 53, plan-simplified 24 -> 42, plan-annual 50 -> 41, plan-initial 45 -> 44, plan-minor 29 -> 22, annual-accounting 47 -> 74, guardian-inventory 30 -> 44, dashboard 82 -> 73 KB -- small in absolute terms, as at 70A, and recorded rather than judged. No page or console error on any target. Findings: (1) **A regression, fixed.** The first 70L run, on `2c171d5`, found the PDF engine -- pdf-lib and the embedded fonts, about 1.8 MB -- loading at every start since 70K (the Print button's target had been imported from `pdf-preview.js`); the hosted build's first page used 7.72 MB against 70A's 5.54. `161e4ff` gave the target its own module and holds the startup import graph in `tests/unit/startup-import-graph.spec.js` (red first, naming the chain); the first page is 5.55 MB again. (2) **The heap after the route cycle is the measurement's, not the app's.** Driven the same way through its own entry points (a scratch probe, on the unbundled source), 70A's commit gives 8.50-8.56 MB and `161e4ff` 8.52-8.63 MB; 70A's record of 6.0-6.2 MB comes from how its script ran, not from a lighter app. (3) **The tools could not run.** Both drove the app through window globals 70J-70K removed; `measure-baseline.mjs` now takes its first-page figures on a plain load and drives the route cycle through `GuardianForms.testing` after a reload with the runner's flag (it measures bundled builds, where modules cannot be imported), and `measure-lifecycle.mjs` imports the same four functions from their modules. And a server either one started outlived it on Windows, so a second run measured the first run's servers: each now refuses a port already answering and stops the whole process tree. |
+| Master-fix ledger | `6a8224d` carried here. No row open; the guard reports 12 `master` commits since the branch point, none unlisted. |
+
+**Gate run.** The checkpoint's full gate (D2; the plan's "before deletion in 70L: a green full source regression on the exact candidate, then web/portable builds and every distribution-sensitive profile"), 2026-09-27, on the trial copy this commit was ported from (identical file for file apart from its test ports), 1 h 12 min in all: `npm run test:verify` -- `check:types` clean, `verify:data-model` OK (1009 rows, every named source file present), unit 2067/2067 (157 files), browser 940 passed, 7 skipped, 0 failed (1.1 h, source profile, chromium; 947 tests: 70K's 945 and the two the carries after it added); `npm run test:e2e:web` 34 passed, 2 skipped (2.3 min); `npm run test:e2e:portable` 20 passed, 12 skipped (1.3 min); `npm run test:e2e:portable-http` 33 passed (2.3 min). The `.sav` corpus's 66 tests all passed. `check:types` clean on the ported worktree.
 
 ---
 
@@ -1357,8 +2100,9 @@ time for full browser/release suites. That range is intentionally broad and is
 not a calendar commitment. 70A must replace it with a delivery-by-delivery
 estimate after the parser-backed inventory identifies the actual declaration
 and consumer counts. The range also predates 70T and the end-of-branch fix
-reconstitution (D1); 70A's estimate must include both, and the ledger keeps
-the reconstitution cost visible as it accumulates.
+reconstitution (D1). 70A has since replaced it with a per-delivery estimate
+of 58-95 days after 70A, including 70T and excluding the reconstitution, whose running
+cost the ledger records (see the 70A build record).
 
 The safest approval shape is the whole target architecture plus one delivery at
 a time, beginning with 70A. Approval of the plan does not waive later decisions

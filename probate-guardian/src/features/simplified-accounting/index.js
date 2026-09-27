@@ -36,6 +36,22 @@ import { renderReportingPeriodFields } from '../../core/form/cards/ward-demograp
 import { REMUNERATION_DECLARATION } from '../../core/filing/statutory-text.js';
 import { serviceRecipientIssues } from '../../core/validation/service-recipients.js';
 import { renderServiceAttestationRow } from '../../core/form/service-attestation-visibility.js';
+import { esc } from '../../core/filing/escape-html.js';
+import { ic } from '../../core/ui/icons.js';
+import { formatAddress, formatName, formatPhone, formatSSN, sanitizeNonNegativeDecimal } from '../../core/form/form-contract.js';
+import { formatDisplayDate } from '../../core/form/date-parser.js';
+import { calcTotals } from './totals.js';
+import { guardianHasAnyData } from '../../core/validation/row-started.js';
+import { simplifiedCompletion } from '../../core/status/completion.js';
+import { getD, requestSave } from '../../core/state.js';
+import { updateNavDots } from '../../core/status/nav-marks.js';
+import { browserRecommendationNotice, linkAccordions, sanitizeNegativeAmounts } from '../../core/form/form-runtime.js';
+import { renderScheduleDocsSection } from '../../core/filing/schedule-docs.js';
+import { countyInputS, inpS, pageIntroRow, pageNavS, yesNoCheckboxS } from '../../core/form/field-html.js';
+import { setPath } from '../../core/form/paths.js';
+import { tooltip } from '../../core/help/tooltips.js';
+import { openFloridaCourtPortal } from '../../core/shell/court-portal.js';
+import { navigate } from '../../core/navigation/router.js';
 // Milestone 57B: carried verbatim from MILESTONE-57-PROPOSAL.md section 57B.
 // The wording is load bearing (section 8 #8). Do not paraphrase or re-voice it.
 const ATTESTATION_57B = 'No recipients are required for this certificate (filer attestation - app does not determine legal necessity)';
@@ -45,32 +61,15 @@ const ATTESTATION_57B = 'No recipients are required for this certificate (filer 
 const RECIPIENT_STARTED_FIELDS = ['name', 'line2', 'line3', 'line4'];
 // Simplified Accounting — the pilot feature extraction (Milestone 2, Phase
 // D of INDEX-SPLIT-PLAN.md's migration sequence). Dynamically imported by
-// legacy-app.js's mountSimplifiedFeature()/mountSimplifiedNav() bridges,
-// never statically imported, so this module's ~700 lines and its own
+// src/features-loader.js (it was legacy-app.js's mountSimplifiedFeature() and
+// mountSimplifiedNav() bridges), never statically imported, so this module's ~700 lines and its own
 // print.js/excel.js children genuinely aren't fetched/evaluated until a
 // user actually opens or creates a Simplified Accounting ward.
 //
-// legacy-app.js stays a classic (non-module) script (Milestone 1's recorded
-// decision), so its top-level function declarations are real `window`
-// properties this module can destructure -- but a bare top-level `let`
-// (activeInventoryType, currentPage) is not; see src/core/state.js's file
-// header for the full explanation. Everything below that isn't defined in
-// this file is one of those legacy globals, deliberately left in place
-// rather than moved or wrapped: some (inpS, countyInputS, pageNavS, tdSig)
-// are still shared with the four not-yet-extracted Plan types, and calcTotals
-// stays legacy because the dashboard needs it for every Simplified ward's
-// card total *before* this module is ever loaded (see the Milestone 2 plan's
-// "Problem 1" and "Problem 3").
-const {
-  esc, ic, tooltip, autoSave, navigate,
-  formatName, formatSSN, formatPhone, formatAddress, formatCityStateZip,
-  formatDisplayDate,
-  sanitizeNonNegativeDecimal, sanitizeNegativeAmounts,
-  renderScheduleDocsSection, browserRecommendationNotice, pageIntroRow,
-  linkAccordions,
-  yesNoCheckboxS, inpS, countyInputS, pageNavS, calcTotals,
-  guardianHasAnyData,
-} = window;
+// Until Milestone 70's 70K it took navigate() off window as it loaded (the
+// monolith's); it imports the router's. calcTotals lives in ./totals.js,
+// small enough that src/features-loader.js loads it eagerly for the
+// dashboard's card total while this module stays lazy.
 
 // print.js/excel.js are dynamically imported once, together, the first time
 // this feature mounts (not deferred further to an actual /print visit or
@@ -98,30 +97,30 @@ function bindEvents(container) {
     const index = Number.parseInt(actionElement.dataset.index, 10);
     switch (actionElement.dataset.simplifiedAction) {
       case 'add-guardian': {
-        if (addCollectionRow('guardians', window.D, createSimplifiedGuardian)) {
-          autoSave();
+        if (addCollectionRow('guardians', getD(), createSimplifiedGuardian)) {
+          requestSave();
           navigate('/p4');
         }
         break;
       }
       case 'remove-guardian': {
-        if (index > 0 && guardianHasAnyData(window.D.guardians?.[index]) && !(await confirmModal(`Remove co-guardian ${window.D.guardians[index].name || `#${index + 1}`}? This will delete the entered signature information.`))) break;
-        if (removeCollectionRow('guardians', index, window.D)) {
-          autoSave();
+        if (index > 0 && guardianHasAnyData(getD().guardians?.[index]) && !(await confirmModal(`Remove co-guardian ${getD().guardians[index].name || `#${index + 1}`}? This will delete the entered signature information.`))) break;
+        if (removeCollectionRow('guardians', index, getD())) {
+          requestSave();
           navigate('/p4');
         }
         break;
       }
       case 'add-recipient': {
-        if (addCollectionRow('certRecipients', window.D)) {
-          autoSave();
+        if (addCollectionRow('certRecipients', getD())) {
+          requestSave();
           navigate('/p6');
         }
         break;
       }
       case 'remove-recipient': {
-        if (removeCollectionRow('certRecipients', index, window.D)) {
-          autoSave();
+        if (removeCollectionRow('certRecipients', index, getD())) {
+          requestSave();
           navigate('/p6');
         }
         break;
@@ -130,18 +129,18 @@ function bindEvents(container) {
         // Milestone 60J (Annual's 58D rule): adding an entry answers Part VII
         // by itself, so a previously ticked "none to report" declaration is
         // withdrawn rather than left to contradict the row being added.
-        if (window.D?.scheduleNoItems?.remuneration) window.D.scheduleNoItems.remuneration = false;
-        if (addCollectionRow('remuneration', window.D)) {
-          autoSave();
+        if (getD()?.scheduleNoItems?.remuneration) getD().scheduleNoItems.remuneration = false;
+        if (addCollectionRow('remuneration', getD())) {
+          requestSave();
           navigate('/p7');
         }
         break;
       }
       case 'choose-excel': actionElement.parentElement.querySelector('input[type="file"]')?.click(); break;
-      case 'open-court-portal': window.openFloridaCourtPortal(); break;
+      case 'open-court-portal': openFloridaCourtPortal(); break;
       case 'remove-remuneration': {
-        if (removeCollectionRow('remuneration', index, window.D)) {
-          autoSave();
+        if (removeCollectionRow('remuneration', index, getD())) {
+          requestSave();
           navigate('/p7');
         }
         break;
@@ -149,8 +148,8 @@ function bindEvents(container) {
       case 'save-excel': _excelModule.doSaveExcel(); break;
       case 'save-pdf': _printModule.doSavePdf(); break;
       case 'resolve-guardian-address-conflict': {
-        if (resolveSimplifiedGuardianAddressConflict(window.D, index, actionElement.dataset.field, actionElement.dataset.choice)) {
-          autoSave();
+        if (resolveSimplifiedGuardianAddressConflict(getD(), index, actionElement.dataset.field, actionElement.dataset.choice)) {
+          requestSave();
           navigate('/p4');
         }
         break;
@@ -160,9 +159,9 @@ function bindEvents(container) {
   container.addEventListener('change', (event) => {
     const input = event.target;
     if (input instanceof HTMLInputElement && input.dataset.simplifiedChange === 'schedule-no-items') {
-      if (!window.D.scheduleNoItems) window.D.scheduleNoItems = {};
-      window.D.scheduleNoItems[input.dataset.schedule] = input.checked;
-      autoSave();
+      if (!getD().scheduleNoItems) getD().scheduleNoItems = {};
+      getD().scheduleNoItems[input.dataset.schedule] = input.checked;
+      requestSave();
       updateNavDots();
       return;
     }
@@ -184,9 +183,12 @@ function ensureLazyModules() {
   return _lazyModulesPromise;
 }
 
-export async function mount(container, page) {
+export async function mount(container, page, { signal } = {}) {
   await ensureLazyModules();
-  normalizeSimplifiedGuardianCompatibility(window.D, { persistedSource: true });
+  // Superseded while its modules loaded (Milestone 70, 70K): a newer
+  // navigation owns the page, so draw nothing.
+  if (signal?.aborted) return;
+  normalizeSimplifiedGuardianCompatibility(getD(), { persistedSource: true });
   sanitizeNegativeAmounts();
   let html;
   switch (page) {
@@ -199,7 +201,7 @@ export async function mount(container, page) {
     case '/p6':    html = pagePart6(); break;
     case '/p7':    html = pagePart7(); break;
     case '/print': {
-      const capOver = checkExcelCapacity(_excelModule.SIMPLIFIED_EXCEL_CAPS, window.D);
+      const capOver = checkExcelCapacity(_excelModule.SIMPLIFIED_EXCEL_CAPS, getD());
       html = _printModule.pagePrintSimplified(capOver);
       break;
     }
@@ -213,7 +215,7 @@ export async function mount(container, page) {
   signatureHandles.delete(container);
   if (page === '/p4' || page === '/p5' || page === '/p6') {
     signatureHandles.set(container, mountSignatureStateControls(container, {
-      setImage: (imagePath, dataUrl) => window.setPath(window.D, imagePath, dataUrl),
+      setImage: (imagePath, dataUrl) => setPath(getD(), imagePath, dataUrl),
       route: page,
     }));
   }
@@ -267,8 +269,10 @@ function buildNavSimplified(container){
 }
 
 function getSummaryConfigSimplified(){
-  const d=window.D;
-  const nav=window.computeNavChecks();
+  const d=getD();
+  // This filing's own section marks (Milestone 70, 70D: its engine's evaluator,
+  // imported; it was window.computeNavChecks()).
+  const nav=simplifiedCompletion(d);
   const t=calcTotals();
   const f=v=>fmtS(v)||'—';
   return {
@@ -314,7 +318,7 @@ function getSummaryConfigSimplified(){
 
 // ── Cover / Part I ──────────────────────────────────────
 function pageCover(){
-  const d=window.D;
+  const d=getD();
   const t=calcTotals();
   return `<div class="schedule-page">
     <h1>Cover &amp; Part I — Required Information</h1>
@@ -421,7 +425,7 @@ function pageCover(){
 
 // ── Part II – Accounting ────────────────────────────────
 function pagePart2(){
-  const d=window.D;
+  const d=getD();
   const t=calcTotals();
   return `<div class="schedule-page">
     <h1>Part II — Accounting Summary &amp; Remaining Assets On Hand</h1>
@@ -496,7 +500,7 @@ function refreshPart2(){
 
 // ── Part III – Declaration ──────────────────────────────
 function pagePart3(){
-  const d=window.D;
+  const d=getD();
   return `<div class="schedule-page">
     <h1>Part III — Guardian(s) Declaration</h1>
     <div class="attestation-text">Under penalties of perjury, I declare that I have read and examined the foregoing return and that, to the best of my knowledge and belief, it constitutes a full and correct account of all the ward's property of which this guardian has control, and is a complete report of all cash and property transactions and of all receipts and disbursements.</div>
@@ -511,7 +515,7 @@ function pagePart3(){
 
 // ── Part IV – Guardians ─────────────────────────────────
 function pagePart4(){
-  const d=window.D;
+  const d=getD();
   const conflicts=getSimplifiedGuardianAddressConflicts(d);
   const labels=['Guardian #1','Co-Guardian #2','Co-Guardian #3'];
   const cards=(d.guardians||[]).map((g,i)=>{
@@ -547,7 +551,7 @@ function pagePart4(){
 
 // ── Part V – Attorney Signature ─────────────────────────
 function pagePart5(){
-  const d=window.D;
+  const d=getD();
   return `<div class="schedule-page">
     <h1>Part V — Guardian Attorney Signature</h1>
   ${preparerNoteHTML()}
@@ -578,7 +582,7 @@ function pagePart5(){
 }
 
 function pagePart6(){
-  const d=window.D;
+  const d=getD();
   const cards=(d.certRecipients||[]).map((r,i)=>{
     const req=(i===0||i===2)?'<span class="req">*</span>':'';
     const removeBtn=i===0?'':`<button type="button" class="btn btn-outline-danger btn-sm" data-simplified-action="remove-recipient" data-index="${i}">✕ Remove</button>`;
@@ -634,7 +638,7 @@ function pagePart6(){
 
 // ── Part VII – Remuneration ─────────────────────────────
 function pagePart7(){
-  const d=window.D;
+  const d=getD();
   let rows='';
   if (d.remuneration && d.remuneration.length > 0) {
     rows='<div class="row g-3 schedule-entry-grid">'+d.remuneration.map((r,i)=>`<div class="col-12 col-lg-6"><div class="entry-card mb-0 h-100">
@@ -678,7 +682,7 @@ function pagePart7(){
 
 // Milestone 42F: every issue states its own field path (validation-issue.js).
 export function validateSimplified(){
-  const d=window.D;
+  const d=getD();
   const errs=[];
   const T='simplified';
   const issue=issueFactory(T);
@@ -828,4 +832,3 @@ export function validateSimplified(){
 // Milestone 33, Phase 2.3: see annual-accounting/index.js's identical comment --
 // exposing this lets the shared guidance panel itemize Simplified's own missing
 // fields instead of only showing a generic message.
-window.validateSimplified = validateSimplified;

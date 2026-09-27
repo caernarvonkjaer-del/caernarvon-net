@@ -1,3 +1,5 @@
+// @ts-nocheck -- in tsconfig.json's checked program only transitively (the Delete Form dialog imports it); 
+// never written with JSDoc types.
 // Milestone 58E: name the filing that is about to be permanently deleted.
 //
 // What a filer saw before: every Delete button on the dashboard produced the
@@ -63,10 +65,3 @@ export function deleteFilingConfirmation(ward) {
   return `Delete ${filingName}${subject}${detail}?${yearNote} This action cannot be undone.`;
 }
 
-// Bridged for legacy-app.js's confirmDeleteWard(), a classic script that
-// cannot import. src/main.js imports this eagerly: Delete is available on the
-// dashboard, which is the first screen a returning filer sees, so this must
-// not depend on a feature module having been loaded first.
-if (typeof window !== 'undefined') {
-  window.deleteFilingConfirmation = deleteFilingConfirmation;
-}

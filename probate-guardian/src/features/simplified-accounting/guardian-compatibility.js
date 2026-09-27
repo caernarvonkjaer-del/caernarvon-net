@@ -1,3 +1,4 @@
+import { markFilingRevisionChanged } from '../../core/filing/output-revision.js';
 export function createSimplifiedGuardian() {
   // Milestone 39-C
   return { name: '', ssn: '', phone: '', email: '', mailingStreet: '', mailingCityStateZip: '', residenceStreet: '', residenceCityStateZip: '', signatureDate: '', signatureState: '', signatureImage: '' };
@@ -33,6 +34,6 @@ export function resolveSimplifiedGuardianAddressConflict(data, rowIndex, field, 
   if (!guardian || !guardian[field] || !guardian[legacyField] || guardian[field] === guardian[legacyField]) return false;
   if (choice === 'legacy') guardian[field] = guardian[legacyField];
   delete guardian[legacyField];
-  if (typeof window !== 'undefined') window.markFilingRevisionChanged?.('address-conflict-resolved');
+  markFilingRevisionChanged('address-conflict-resolved');
   return true;
 }
