@@ -2,8 +2,8 @@
  "generatedBy": "node scripts/ms70-assertion-counts.mjs --write-baseline",
  "note": "Milestone 70 per-spec assertion counts (static expect calls). tests/unit/ms70-assertion-counts.spec.js fails when a spec falls below its count; lowering it requires --reason, recorded in dropLog. A tripwire, not proof of equivalence (decision D9).",
  "totals": {
-  "expects": 6793,
-  "tests": 1943
+  "expects": 6824,
+  "tests": 1952
  },
  "counts": {
   "tests/e2e/annotation-toolbar-containment.spec.ts": {
@@ -29,6 +29,10 @@
   "tests/e2e/annual-schedule-consistency.spec.ts": {
    "expects": 25,
    "tests": 4
+  },
+  "tests/e2e/annual-ward-share-export.spec.ts": {
+   "expects": 4,
+   "tests": 1
   },
   "tests/e2e/backup-restore-sav.spec.ts": {
    "expects": 41,
@@ -550,6 +554,10 @@
    "expects": 32,
    "tests": 15
   },
+  "tests/unit/annual-ward-percentage.spec.js": {
+   "expects": 18,
+   "tests": 5
+  },
   "tests/unit/attorney-block.spec.js": {
    "expects": 3,
    "tests": 1
@@ -679,8 +687,8 @@
    "tests": 1
   },
   "tests/unit/feature-services.spec.js": {
-   "expects": 29,
-   "tests": 7
+   "expects": 30,
+   "tests": 8
   },
   "tests/unit/feedback-message.spec.js": {
    "expects": 9,
@@ -1137,6 +1145,10 @@
   "tests/unit/ward-lock.spec.js": {
    "expects": 27,
    "tests": 10
+  },
+  "tests/unit/ward-share-advisories.spec.js": {
+   "expects": 8,
+   "tests": 2
   },
   "tests/unit/window-bridge.spec.js": {
    "expects": 11,
