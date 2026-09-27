@@ -14,7 +14,7 @@ import { freshStartNoPassword, createWard } from './support/target';
 //
 // The behaviour that matters most is the one that looks like data loss and
 // isn't: scheduleDocs[scheduleKey][periodKey] buckets per accounting period
-// (legacy-app.js's scheduleDocPeriodKey() builds `${periodFrom}__${periodTo}`),
+// (src/core/filing/schedule-docs.js's scheduleDocPeriodKey() builds `${periodFrom}__${periodTo}`),
 // so changing the period correctly presents an empty slot, and changing it back
 // must bring the original content back intact. A future change to the key
 // scheme could quietly turn that round trip into real, permanent loss of a
@@ -149,7 +149,7 @@ test.describe('Milestone 40C-D: accounting-period re-keying of supporting docume
     );
 
     // Type into the real Comments textarea -- must never lose focus mid-type,
-    // since updateScheduleComment() (legacy-app.js) does not call renderPage().
+    // since updateScheduleComment() (src/core/filing/schedule-docs.js) does not call renderPage().
     const comment = page.locator('textarea[data-schedule-key="schA"]');
     await comment.click();
     await comment.pressSequentially('Bank statements are attached for the full year.');

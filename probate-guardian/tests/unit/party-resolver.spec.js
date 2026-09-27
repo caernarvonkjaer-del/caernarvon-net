@@ -32,7 +32,7 @@ const modules = { ...partyResolver, ...caseResolver, ...wardCounty };
 const api = new Proxy({}, { get: (_, name) => (name === 'caseFile' ? getCaseFile() : name in modules ? modules[name] : globalThis.window[name]) });
 
 beforeEach(() => {
-  // The case lockApp() and a fresh start leave behind (legacy-app.js).
+  // The case lockApp() (src/core/security/app-lock.js) and a fresh start leave behind.
   replaceCaseFile({ guardianName: '', guardianEmail: '', wards: [], parties: [], cases: [], dismissedPartyPairs: [], activeWardId: null });
 });
 

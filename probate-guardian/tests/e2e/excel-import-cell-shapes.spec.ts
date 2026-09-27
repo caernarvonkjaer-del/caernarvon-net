@@ -129,7 +129,7 @@ test.describe('Excel import: cell shapes the app never exports (Milestone 53B)',
 
   test('the cell-reader cluster is gone from window at runtime', async ({ page }) => {
     await freshStartNoPassword(page);
-    // Static removal from legacy-app.js is checked by cell-reader.spec.js's
+    // That no classic script declares them is checked by cell-reader.spec.js's
     // source scan; this is the only check that would catch a copy living in an
     // inline <script> in index.html or a fragment. None exists today -- this
     // pins that.

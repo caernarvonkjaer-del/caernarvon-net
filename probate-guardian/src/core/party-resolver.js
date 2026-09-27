@@ -816,7 +816,7 @@ export function referenceCountForParty(partyId) {
  * unmergeParty() can put it back. A sub that has subs of its own keeps them
  * (they still point at it, not at the new primary) -- the one-level rule.
  * Does not call autoSave() -- same convention as syncIdentityField(), the
- * caller (doPartyMergeKeep() in legacy-app.js) already does.
+ * caller (doPartyMergeKeep(), src/core/parties/party-management.js) already does.
  */
 export function mergeParties(keepId, discardId, { adoptBlankFields = false } = {}) {
   const keep = resolveParty(keepId);

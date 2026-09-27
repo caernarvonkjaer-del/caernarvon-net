@@ -303,7 +303,7 @@ test.describe('Guardian Inventory navigation/status contract', () => {
     await expect(jumpLinks).toHaveCount(expectedCount);
 
     // Guardian's own field markup never emits data-form-path (only the
-    // shared Plan-type field builder in legacy-app.js does) -- the jump
+    // shared Plan-type field builder, src/core/form/field-html.js, does) -- the jump
     // link's target must be located via data-field-path instead. The jump
     // link button itself also carries data-field-path (to know what to
     // focus), so the post-click assertion targets data-bind instead, which

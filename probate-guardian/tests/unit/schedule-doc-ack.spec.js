@@ -12,7 +12,7 @@ import {
   scheduleAckPeriod,
 } from '../../src/core/filing/schedule-doc-ack.js';
 import { FILING_ENGINE_IDS } from '../../src/core/filing/filing-descriptor.js';
-import { readRepoSource, sliceBalancedFunction, LEGACY_APP } from './support/legacy-source-extract.js';
+import { readRepoSource, sliceBalancedFunction } from './support/source-slice.js';
 
 // Milestone 57C-R. The state model behind the supplemental-documentation
 // acknowledgement: which schedules carry the obligation, whether one is
@@ -243,8 +243,9 @@ describe('57C-R never becomes an export or navigation gate', () => {
 
   it('the sidebar\'s completion evaluators never call the acknowledgement', () => {
     // Milestone 70, 70D: the section marks are src/core/status/completion.js
-    // (legacy-app.js's computeNavChecks() only dispatches to it now), so the
-    // guard reads the whole module rather than one function of the monolith.
+    // (the monolith's computeNavChecks() became a dispatch to it, and 70L
+    // deleted the monolith), so the guard reads the whole module rather than
+    // one function of the monolith.
     const body = readRepoSource('src/core/status/completion.js');
     expect(body, 'src/core/status/completion.js not found -- this guard needs re-pointing').toBeTruthy();
     expect(

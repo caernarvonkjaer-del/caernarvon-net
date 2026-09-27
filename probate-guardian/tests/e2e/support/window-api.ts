@@ -86,8 +86,10 @@ export interface GuardianFormsTesting {
   exportArchive: { caseFile(): Promise<Blob>; singleFiling(filingId: string): Promise<Blob> };
 }
 
+// window.GuardianForms as the runner sees it: the namespace (declared in
+// src/core/types/guardian-forms.d.ts) with its testing member present.
 export interface TestWindow extends Window {
-  GuardianForms: { testing: GuardianFormsTesting };
+  GuardianForms: { version: string; testing: GuardianFormsTesting };
 }
 
 /** Node-side shortcuts for the commonest calls. */

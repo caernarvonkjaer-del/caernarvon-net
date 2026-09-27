@@ -339,8 +339,9 @@ export function getControlPolicy(control) {
  * persistAnnualControl() was retired, the accounting family too (that
  * retirement is why getControlKind()/finalizeFieldValue() below know the
  * signed-decimal, security-sanitize and ZIP-limit formats that path had
- * kept to itself). data-bind still writes via legacy-app.js's
- * bindForms()/afterChange() (Guardian Inventory). What every path had in
+ * kept to itself). data-bind still writes via the Initial Inventory's own
+ * bindForms()/afterChange() (src/features/guardian-inventory/form-binding.js;
+ * legacy-app.js's until Milestone 70). What every path had in
  * common was this exact list of side effects, once copied three times and
  * drifting (40C-A had to add maybeCommitCoverCounty() to each one
  * separately). Every path calls this instead, so a new post-write hook is

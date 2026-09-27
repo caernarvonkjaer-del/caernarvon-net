@@ -1,5 +1,5 @@
 {
  "generatedBy": "node scripts/ms70-classic-state.mjs --write-baseline",
- "note": "Milestone 70: every read and write of case state by the classic monolith (bare D, a lexical caseFile or activeInventoryType, window.D and window.caseFile), by enclosing top-level declaration. Only shrank from 70E; empty since 70J, when src/core/state.js became the case's owner, and it stays empty.",
+ "note": "Milestone 70: every read and write of case state by a classic script index.html loads (bare D, a lexical caseFile or activeInventoryType, window.D and window.caseFile), by file and enclosing top-level declaration. The classic monolith, src/legacy-app.js, held it all: only shrank from 70E; empty since 70J, when src/core/state.js became the case's owner; the monolith deleted in 70L. It stays empty.",
  "counts": {}
 }

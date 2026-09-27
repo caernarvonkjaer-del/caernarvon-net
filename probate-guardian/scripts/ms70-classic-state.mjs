@@ -1,13 +1,14 @@
-// Milestone 70, 70E: the machine-checked list of the classic monolith's own
-// reads and writes of the case state it still owns -- the bare `D` (the open
-// filing, window.D), its lexical `let caseFile` and `let activeInventoryType`,
-// and window.D / window.caseFile written as members. It only shrank from 70E,
-// and 70J emptied it when the module store became the case's owner; it stays
-// empty (tests/unit/ms70-state-seam.spec.js).
+// Milestone 70, 70E: the machine-checked list of the classic scripts' own
+// reads and writes of case state -- a bare `D` (the open filing, window.D), a
+// lexical `caseFile` or `activeInventoryType`, and window.D / window.caseFile
+// as members. The classic monolith, src/legacy-app.js, held all of it: the
+// list only shrank from 70E, 70J emptied it when the module store became the
+// case's owner, and 70L deleted the monolith. It reads every classic script
+// index.html loads (src/prepaint.js since 70L) and stays empty
+// (tests/unit/ms70-state-seam.spec.js).
 //
-// Each entry is `<enclosing top-level declaration>::<name>::<read|write>`
-// with a count, so a delivery that moves a function out removes its entries
-// and a new bare access anywhere fails.
+// Each entry is `<file>::<enclosing top-level declaration>::<name>::<read|write>`
+// with a count, so a new bare access in any classic script fails.
 //
 // Usage (from probate-guardian/):
 //   node scripts/ms70-classic-state.mjs                  summary
@@ -16,7 +17,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse } from 'acorn';
-import { analyze } from './ms70-dependency-audit.mjs';
+import { analyze, classicScriptsFromHtml } from './ms70-dependency-audit.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 export const CLASSIC_STATE_PATH = 'tests/baseline/ms70-classic-state.json';
@@ -74,16 +75,25 @@ export function classicStateAccesses(source) {
   return Object.fromEntries(Object.entries(counts).sort(([a], [b]) => a.localeCompare(b)));
 }
 
+/** The accesses of every classic script index.html loads, keyed by file. */
+export function classicStateInApp(root = ROOT) {
+  const out = {};
+  for (const file of classicScriptsFromHtml(fs.readFileSync(path.join(root, 'index.html'), 'utf8'))) {
+    for (const [key, n] of Object.entries(classicStateAccesses(fs.readFileSync(path.join(root, file), 'utf8')))) out[`${file}::${key}`] = n;
+  }
+  return out;
+}
+
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const counts = classicStateAccesses(fs.readFileSync(path.join(ROOT, 'src/legacy-app.js'), 'utf8'));
+  const counts = classicStateInApp();
   const total = Object.values(counts).reduce((a, b) => a + b, 0);
   const byName = {};
-  for (const [k, n] of Object.entries(counts)) { const [, name, kind] = k.split('::'); byName[`${name} ${kind}`] = (byName[`${name} ${kind}`] || 0) + n; }
+  for (const [k, n] of Object.entries(counts)) { const [, , name, kind] = k.split('::'); byName[`${name} ${kind}`] = (byName[`${name} ${kind}`] || 0) + n; }
   console.log(`${Object.keys(counts).length} (declaration, name, access) entries, ${total} accesses:`, JSON.stringify(byName));
   if (process.argv.includes('--write-baseline')) {
     fs.writeFileSync(path.join(ROOT, CLASSIC_STATE_PATH), JSON.stringify({
       generatedBy: 'node scripts/ms70-classic-state.mjs --write-baseline',
-      note: "Milestone 70: every read and write of case state by the classic monolith (bare D, a lexical caseFile or activeInventoryType, window.D and window.caseFile), by enclosing top-level declaration. Only shrank from 70E; empty since 70J, when src/core/state.js became the case's owner, and it stays empty.",
+      note: "Milestone 70: every read and write of case state by a classic script index.html loads (bare D, a lexical caseFile or activeInventoryType, window.D and window.caseFile), by file and enclosing top-level declaration. The classic monolith, src/legacy-app.js, held it all: only shrank from 70E; empty since 70J, when src/core/state.js became the case's owner; the monolith deleted in 70L. It stays empty.",
       counts,
     }, null, 1) + '\n');
     console.log(`wrote ${CLASSIC_STATE_PATH}`);

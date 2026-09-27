@@ -179,7 +179,7 @@ describe('Milestone 40C-A: the ward-county lifecycle', () => {
   // ward-county.js's linkDestinationToSourceWardParty(), which had no production
   // caller. They were not unique coverage -- tests/e2e/cover-county.spec.ts
   // already asserts both of the same semantic cases (with the same 'Orange' and
-  // 'Pasco' values) against legacy-app.js's carryOverFields(), which is the
+  // 'Pasco' values) against carryOverFields() (src/core/filing/carry-over.js), which is the
   // carry-over path the app actually takes:
   //
   //   'a second filing for the same ward hydrates the county without re-asking'

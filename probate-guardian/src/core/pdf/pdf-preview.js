@@ -219,8 +219,9 @@ function escapeHtml(s) {
 // reconstruction) clipped and mis-padded the canvas when both classes were
 // briefly applied together during development (canvas stayed at its true
 // pixel width while its container was capped to 8.5in by the stray class,
-// so the canvas visibly overflowed the padded box). legacy-app.js's
-// pv-pager (pvPages()/pvShowAll()/pvApply()) was generalized to recognize
+// so the canvas visibly overflowed the padded box). The pv-pager
+// (pvPages()/pvShowAll()/pvApply(), src/core/ui/print-pager.js; then
+// legacy-app.js's) was generalized to recognize
 // `pdf-page` in its own right, so no compatibility class is needed here.
 // Returns the live pdfjsLib/PDFDocumentProxy/per-page render info alongside
 // the DOM side effect -- Milestone 39-A needs all three kept alive for the

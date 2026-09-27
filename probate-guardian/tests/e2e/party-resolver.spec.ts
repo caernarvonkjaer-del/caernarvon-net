@@ -6,7 +6,7 @@ import { freshStartNoPassword } from './support/target';
 // hydration/dehydration, de-duplication, merge/unmerge and ward-identity
 // logic -- is plain module logic, moved to tests/unit/party-resolver.spec.js
 // by Milestone 70's 70T. These three stay here because packaging and opening
-// a case file runs in the page (loadCaseFileFromZip() is legacy-app.js's).
+// a case file runs in the page (loadCaseFileFromZip(), src/core/persistence/case-reader.js).
 // State is arranged through GuardianForms.testing (setup, D9), and each
 // filing record is seeded as an older save or another tab would leave it.
 

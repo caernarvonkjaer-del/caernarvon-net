@@ -65,7 +65,7 @@ installStartupEvents();
 // Milestone 70, 70E: a store transaction's side effects -- the filing's
 // revision marked changed, then the save scheduled. This file used to put
 // window.D and window.caseFile accessors here "for the test harness"; they
-// were never installed (legacy-app.js defines both first) and a writable
+// were never installed (legacy-app.js defined both first) and a writable
 // window accessor over the monolith's state is the second authority the plan
 // forbids, so they went.
 // The case store's hooks (Milestone 70, 70I): a write marks the filing's

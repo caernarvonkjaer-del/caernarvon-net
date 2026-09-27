@@ -199,7 +199,7 @@ export async function mount(container, page, { signal } = {}) {
     }));
   }
   linkLabelsToInputs();
-  // Milestone 40C-C removed enforceDateRanges(); see legacy-app.js's note.
+  // Milestone 40C-C removed enforceDateRanges() (see the router's note).
   setupAmountFieldValidation();
   updateNavDots();
   // The pv-pager needs the real .pdf-page elements in the DOM before it can
@@ -334,7 +334,8 @@ function buildNavGuardian(container){
 }
 
 // Milestone 63A. This module used to keep its own copy of the "is this page gating Next"
-// rule, beside the one in legacy-app.js that live-patches the button after every edit. Two
+// rule, beside the one that live-patches the button after every edit (legacy-app.js's then,
+// src/core/status/nav-marks.js's now). Two
 // copies meant a fix to one would show the explanation on page load and wipe it on the first
 // keystroke. Both now read src/core/status/section-guidance-policy.js:
 //   - the Guardian pages that GATE Next are the 11 schedules only (SCHEDULE_NAV_KEYS);
@@ -1412,10 +1413,12 @@ export function validateGuardian(d=getD()){
 //     print.js:12, never through window. The function is alive; the bridge was
 //     dead.
 //
-// The three that remain, and why:
-//   - addEntry / duplicateEntry: two e2e specs drive them through the bridge on
-//     purpose (guardian-inventory-mount, guardian-inventory-tri-state-radios).
-//   - validateGuardian: legacy-app.js's production validate() flow calls the
-//     global directly (:6675, :7068, :7589). Note the Milestone 40H-A comment at
-//     :6661-6665 recording a real bug caused by calling it before assignment --
-//     that history is a reason to leave this bridge, and that comment, alone.
+// The three that remained went in Milestone 70's 70K, which put nothing of
+// the application on window:
+//   - addEntry / duplicateEntry: two e2e specs drove them through the bridge on
+//     purpose (guardian-inventory-mount, guardian-inventory-tri-state-radios);
+//     they are exported, and reached through GuardianForms.testing.
+//   - validateGuardian: legacy-app.js's validate() flow called the global
+//     directly (a Milestone 40H-A comment there recorded a real bug caused by
+//     calling it before assignment); the feature services' validator hands it
+//     to core now.

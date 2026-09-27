@@ -11,13 +11,14 @@
 // must exist as an object before the import resolves, so the module is
 // imported dynamically inside beforeAll(), after vi.stubGlobal('window', ...).
 //
-// index.js's own top level also destructures legacy-app.js's classic-script
-// globals off window at import time. validateGuardian() reads none of them:
+// index.js's own top level also destructured legacy-app.js's classic-script
+// globals off window at import time (until Milestone 70's 70K). validateGuardian() reads none of them:
 // the one it did, SCHEDULE_NAV_KEYS, is imported from
 // src/core/filing/models/guardian.js since Milestone 70's 70D, so they can
 // all stay undefined.
 import { afterAll, beforeAll, beforeEach, describe, test, expect, vi } from 'vitest';
 import { openFiling } from './support/open-filing.js';
+import { emptyDataGuardian } from '../../src/core/filing/models/guardian.js';
 import { getD } from '../../src/core/state.js';
 
 let validateGuardian;
@@ -31,28 +32,13 @@ afterAll(() => {
   vi.unstubAllGlobals();
 });
 
-// Mirrors legacy-app.js's emptyDataGuardian() shape (read 2026-09-22), not a
-// copy that can drift silently on its own -- only the fields
-// validateGuardian() actually reads are populated per test, since this file
-// asserts the presence/absence of specific issues, not a zero-error filing.
+// The real blank Initial Inventory (src/core/filing/models/guardian.js), with
+// each test's own values over it. Until Milestone 70's 70L this was a literal
+// copy of legacy-app.js's emptyDataGuardian(), which could drift from it; the
+// tests assert the presence or absence of specific issues, not a zero-error
+// filing.
 function baseGuardianData(overrides = {}) {
-  return {
-    wardName: '', caseNumber: '', ucn: '', gid: null, county: '', guardianName: '',
-    attorneyForGuardian: '', typeOfGuardianship: '', hasSafeDepositBox: '',
-    safeDepositBoxFiled: '', amendedForm: '',
-    scheduleA1: [], scheduleA2: [], scheduleB1: [], scheduleB2: [], scheduleB3: [],
-    scheduleB4: [], scheduleC1: [], scheduleC2: [], scheduleC3: [], scheduleC4: [], scheduleC5: [],
-    scheduleNoItems: {},
-    guardians: [{ name: '', ssnEin: '', phone: '', streetAddress: '', cityStateZip: '', signatureDate: null, signatureState: '', signatureImage: '' }],
-    preparer: { name: '', ssnEin: '', phone: '', streetAddress: '', cityStateZip: '', signatureDate: null, signatureState: '', signatureImage: '' },
-    attorney: { name: '', barNumber: '', phone: '', streetAddress: '', cityStateZip: '', signatureDate: null, filingDate: null, signatureState: '', signatureImage: '' },
-    bondAmount: '', bondPeriodFrom: null, bondPeriodTo: null, bondingCompany: '', bondWaived: '', bondWaivedDate: '',
-    serviceNoRecipients: '', serviceIndicateIf: '',
-    serviceRecipients: [{ name: '', address: '', cityStateZip: '' }, { name: '', address: '', cityStateZip: '' }],
-    serviceDate: null, serviceAttorney: { name: '', barNumber: '', phone: '', streetAddress: '', cityStateZip: '', signatureState: '', signatureImage: '' },
-    witnesses: [],
-    ...overrides,
-  };
+  return { ...emptyDataGuardian(), ...overrides };
 }
 
 beforeEach(() => {

@@ -108,9 +108,9 @@ test.describe('simplified-accounting feature module', () => {
     await createSimplifiedWard(page, 'Simplified Cycle Ward');
     await createWard(page, 'Other Cycle Ward', 'guardian');
 
-    // caseFile is a bare top-level `let` in legacy-app.js (a classic
-    // script), not a `window` property -- but it's still reachable by bare
-    // identifier from page.evaluate(), which runs in the same global realm.
+    // The case is src/core/state.js's (Milestone 70, 70J); it was a bare
+    // top-level `let` in legacy-app.js. GuardianForms.testing.snapshot()
+    // reads it.
     const wards = await page.evaluate(() => (window as any).GuardianForms.testing.snapshot().caseFile.wards
       .map((w: any) => ({ id: w.wardId, type: w.inventoryType })));
     const simplifiedId = wards.find((w: any) => w.type === 'simplified').id;

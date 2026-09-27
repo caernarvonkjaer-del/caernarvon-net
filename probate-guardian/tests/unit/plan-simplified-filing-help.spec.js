@@ -1,4 +1,4 @@
-import { describe, expect, test, beforeEach } from 'vitest';
+import { describe, expect, test } from 'vitest';
 import { openFiling } from './support/open-filing.js';
 
 // Milestone 61D. The Simplified Annual Plan's court original ends with two
@@ -15,6 +15,9 @@ import { openFiling } from './support/open-filing.js';
 // named on that form serve the Sixth Circuit, and AGENTS.md's authority
 // hierarchy forbids presenting circuit-specific procedure as statewide.
 
+// The Help text reads the open filing's county only in a browser (it checks
+// that `window` exists); an empty one serves -- the filing is the store's.
+globalThis.window = globalThis.window || {};
 const { HELP_CONTENT } = await import('../../src/core/help/help-content.js');
 
 const render = (key) => {
@@ -23,9 +26,6 @@ const render = (key) => {
 };
 
 describe('Milestone 61D: Simplified Plan filing guidance lives in Help', () => {
-  beforeEach(() => {
-    global.window = { ...(global.window || {}), D: {} };
-  });
 
   test('a Pinellas filing is told where the original goes and who to ask', () => {
     openFiling({ county: 'Pinellas' });

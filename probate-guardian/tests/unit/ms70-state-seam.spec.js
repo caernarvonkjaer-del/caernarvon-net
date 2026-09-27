@@ -3,7 +3,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { parse } from 'acorn';
-import { CLASSIC_STATE_PATH, classicStateAccesses } from '../../scripts/ms70-classic-state.mjs';
+import { CLASSIC_STATE_PATH, classicStateInApp } from '../../scripts/ms70-classic-state.mjs';
+import { classicScripts, classicScriptSources } from './support/classic-scripts.js';
 
 // Milestone 70, 70J gate: "There is one case object and one derivation of the
 // active filing ... No production module or classic wrapper can mutate a
@@ -26,9 +27,10 @@ const walk = (dir) => fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) =
 // The monolith's case state, as window members: the open filing, the case and
 // its accessors, the filing type, app state and the template cache.
 const STATE_GLOBALS = new Set(['D', 'caseFile', 'getCaseFile', 'getActiveWard', 'activeInventoryType', '_appState', '_templateCache']);
-// The classic scripts (the monolith is held below, by its empty list). The
-// store is no exception since 70J: it owns the case, and reads no window.
-const OWNERS = new Set(['src/legacy-app.js', 'src/prepaint.js']);
+// The classic scripts index.html loads, held below by their empty list (the
+// monolith was one until 70L deleted it). The store is no exception since
+// 70J: it owns the case, and reads no window.
+const OWNERS = new Set(classicScripts());
 
 describe('modules reach case state only through src/core/state.js', () => {
   test('no other module reads or writes the monolith\'s state on window', () => {
@@ -59,14 +61,16 @@ describe('modules reach case state only through src/core/state.js', () => {
     expect(offenders).toEqual([]);
   }, 60_000);
 
-  // The list only shrank from 70E; 70J emptied it and it stays empty.
-  test('the monolith holds no case state: no caseFile, D or filing type of its own, and none on window', () => {
+  // The list only shrank from 70E; 70J emptied it and it stays empty. It was
+  // the monolith's; since 70L deleted that, it is every classic script's.
+  test('no classic script holds case state: no caseFile, D or filing type of its own, and none on window', () => {
     const baseline = JSON.parse(fs.readFileSync(path.join(root, CLASSIC_STATE_PATH), 'utf8')).counts;
-    const src = fs.readFileSync(path.join(root, 'src/legacy-app.js'), 'utf8');
     expect(baseline, 'the recorded list').toEqual({});
-    expect(classicStateAccesses(src), 'a bare access to case state in the monolith').toEqual({});
-    expect(src).not.toMatch(/^(let|const|var) (caseFile|activeInventoryType|D)\b/m);
-    expect(src).not.toMatch(/defineProperty\(window,\s*'(D|caseFile|activeInventoryType)'/);
+    expect(classicStateInApp(root), 'a bare access to case state in a classic script').toEqual({});
+    for (const { file, source } of classicScriptSources()) {
+      expect(source, file).not.toMatch(/^(let|const|var) (caseFile|activeInventoryType|D)\b/m);
+      expect(source, file).not.toMatch(/defineProperty\(window,\s*'(D|caseFile|activeInventoryType)'/);
+    }
   }, 60_000);
 
   // "Confirm, mechanically, that all whole-case replacements use

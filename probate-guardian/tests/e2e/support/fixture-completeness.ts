@@ -44,8 +44,8 @@ export type FixtureIssue = {
  * builds a PDF has loaded the type's *pdf* module, not its feature module.
  *
  * The validators read window.D rather than taking an argument, so the probe
- * swaps it -- the same trick getWardProgress() uses in legacy-app.js, and
- * under the same rule it documents: the swap and the restore have no await
+ * swaps it -- the same trick legacy-app.js's getWardProgress() used, and
+ * under the same rule it documented: the swap and the restore have no await
  * between them, so nothing can observe D pointing at the wrong filing. The
  * feature module is loaded before the swap opens, for exactly that reason.
  *

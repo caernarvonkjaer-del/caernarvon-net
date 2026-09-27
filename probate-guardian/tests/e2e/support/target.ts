@@ -484,7 +484,7 @@ export async function extractFormContentSnapshot(page: Page, containerSelector =
           // caught while proving the Milestone 41-3 delegation, and fixed
           // here so the pins measure content rather than render nonce.
           // `id` is last and is rejected when auto-generated:
-          // linkLabelsToInputs() (legacy-app.js) stamps `auto_<random>` onto
+          // linkLabelsToInputs() (src/core/form/form-runtime.js) stamps `auto_<random>` onto
           // any input lacking an id, so keying on it made this snapshot
           // differ between two runs of identical code.
           const stableId = /^auto_/.test(control.id) ? '' : control.id;

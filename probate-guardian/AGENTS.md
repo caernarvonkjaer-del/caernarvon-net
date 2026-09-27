@@ -49,8 +49,10 @@ non-zero, so a later stage never runs against a broken prerequisite.
   2026-09-19 on one workstation; re-measure rather than trusting them.
 
 **Stack (Archetype 1 — Client-Side Static PWA, pinned for this repo):**
-Vanilla ES Modules + classic script hybrid (`legacy-app.js` + `src/main.js`
-and feature modules) · Bootstrap 5 CSS, no framework (**no React/Vue/Svelte/
+Vanilla ES Modules (`src/main.js`, the composition root, with core and
+lazily-loaded feature modules; the one classic script, `src/prepaint.js`, sets
+the theme before first paint; the only app global is `window.GuardianForms`)
+· Bootstrap 5 CSS, no framework (**no React/Vue/Svelte/
 JSX**) · Vite (dev/build) · Vitest (unit) + Playwright (e2e) · TypeScript
 (`tsc --noEmit`, checked scope only — §2) · Web Crypto (`SubtleCrypto`
 AES-GCM/PBKDF2), zero unencrypted cloud transmission · `pdf-lib`/`pdfjs` and
@@ -243,7 +245,7 @@ deliberately stricter. Do not "fix" that by tightening export.**
 The invariant above governs the **readiness panel** (`readiness-config.js`).
 The **sidebar nav dots** (the completion evaluators in
 `src/core/status/completion.js`, which the sidebar reaches through
-`legacy-app.js`'s `computeNavChecks()` dispatcher) are a
+`computeNavChecks()` in `src/core/status/nav-marks.js`) are a
 different surface with a different job, and the two must not be conflated —
 `readiness-config.js` has no per-schedule Annual items at all.
 
@@ -387,7 +389,7 @@ review discovering the gap costs more than asking would have:
 6. **Security & sensitivity** — explicit classification and threat model for new stored data — what it protects against, and what it doesn't, never implying more than the mechanism guarantees.
 7. **UI/UX consistency** — reuse this app's existing patterns (card layout, labels, a11y structure); name the pattern being reused.
 8. **Legal/compliance framing** — never assert or resolve a legal-sufficiency question in a planning doc; flag it for a qualified person, and be precise about what this app's validation does and doesn't guarantee.
-9. **Cross-form method consistency** — Guardian Inventory, Annual/Final/Trust Accounting, and Simplified Accounting each implement the same recurring concepts (ward-percentage apportionment, signature blocks, schedule totals, statutory declarations, address rendering) independently, across their own UI, schema, Excel, and PDF surfaces. Before changing how any one of them computes, renders, or captures one of these, **read — not just grep —** the other two forms' equivalent UI, `probate-guardian-data-model.csv` rows, `excel.js`, `pdf-model.js`, embedded template, and tests for the same pattern, and check this app's own other implementations of the same concept (a classic-script global like `legacy-app.js`'s `calc` counts) before assuming none exists. Classify what you find: authority-backed (the court's own templates genuinely differ — §5), defective, or unresolved — a divergence is not automatically a bug; some are required. **Report it and get scope authorization before fixing it (§3)** — this is a discovery obligation, not a license to silently expand a task into fixing every sibling-form gap it turns up. (Precedent: Milestone 60's first pass found Guardian Inventory's PDF dropping ward-percentage math in 8 of 11 schedules; a second pass, checking the sibling forms and this app's own pre-existing `legacy-app.js` calculator that had already solved the same problem correctly, found the PDF was also using the wrong audit-fee tiers, omitting an entire bond-requirement table the UI already computes, and that Simplified Accounting independently omits the same statutory remuneration declaration Milestone 58D specifically fixed for Annual.)
+9. **Cross-form method consistency** — Guardian Inventory, Annual/Final/Trust Accounting, and Simplified Accounting each implement the same recurring concepts (ward-percentage apportionment, signature blocks, schedule totals, statutory declarations, address rendering) independently, across their own UI, schema, Excel, and PDF surfaces. Before changing how any one of them computes, renders, or captures one of these, **read — not just grep —** the other two forms' equivalent UI, `probate-guardian-data-model.csv` rows, `excel.js`, `pdf-model.js`, embedded template, and tests for the same pattern, and check this app's own other implementations of the same concept (a shared helper like the Initial Inventory's `calc` in `guardian-inventory/totals.js` counts) before assuming none exists. Classify what you find: authority-backed (the court's own templates genuinely differ — §5), defective, or unresolved — a divergence is not automatically a bug; some are required. **Report it and get scope authorization before fixing it (§3)** — this is a discovery obligation, not a license to silently expand a task into fixing every sibling-form gap it turns up. (Precedent: Milestone 60's first pass found Guardian Inventory's PDF dropping ward-percentage math in 8 of 11 schedules; a second pass, checking the sibling forms and this app's own pre-existing `legacy-app.js` calculator that had already solved the same problem correctly, found the PDF was also using the wrong audit-fee tiers, omitting an entire bond-requirement table the UI already computes, and that Simplified Accounting independently omits the same statutory remuneration declaration Milestone 58D specifically fixed for Annual.)
 
 ---
 

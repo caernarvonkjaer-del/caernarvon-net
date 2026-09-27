@@ -119,7 +119,7 @@ test.describe('annual accounting schedule consistency', () => {
 
   // Milestone 43D: Part VIII (Trusts) has the same verify-none checkbox
   // shape as the fourteen schedules above, but computeNavChecks()'s own
-  // 'a-p8' rule (legacy-app.js) also has a second, independent completion
+  // 'a-p8' rule (src/core/status/completion.js) also has a second, independent completion
   // path -- a named trust row -- that none of those schedules has. Both
   // paths were previously only proven by a hand-reimplementation of the
   // rule in a Node-only unit test (content-corrections.spec.js), which

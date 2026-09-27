@@ -2,8 +2,8 @@
  "generatedBy": "node scripts/ms70-assertion-counts.mjs --write-baseline",
  "note": "Milestone 70 per-spec assertion counts (static expect calls). tests/unit/ms70-assertion-counts.spec.js fails when a spec falls below its count; lowering it requires --reason, recorded in dropLog. A tripwire, not proof of equivalence (decision D9).",
  "totals": {
-  "expects": 6836,
-  "tests": 1955
+  "expects": 6856,
+  "tests": 1962
  },
  "counts": {
   "tests/e2e/annotation-toolbar-containment.spec.ts": {
@@ -591,7 +591,7 @@
    "tests": 6
   },
   "tests/unit/case-file.spec.js": {
-   "expects": 73,
+   "expects": 74,
    "tests": 22
   },
   "tests/unit/case-resolver.spec.js": {
@@ -615,7 +615,7 @@
    "tests": 5
   },
   "tests/unit/completion-parity.spec.js": {
-   "expects": 10,
+   "expects": 11,
    "tests": 3
   },
   "tests/unit/content-corrections.spec.js": {
@@ -647,7 +647,7 @@
    "tests": 13
   },
   "tests/unit/date-range-no-mutation.spec.js": {
-   "expects": 14,
+   "expects": 15,
    "tests": 8
   },
   "tests/unit/date-rules.spec.js": {
@@ -775,7 +775,7 @@
    "tests": 48
   },
   "tests/unit/guardian-inventory-totals.spec.js": {
-   "expects": 76,
+   "expects": 75,
    "tests": 21
   },
   "tests/unit/guardian-inventory-yes-no-radio.spec.js": {
@@ -823,8 +823,8 @@
    "tests": 11
   },
   "tests/unit/ms70-declaration-dispositions.spec.js": {
-   "expects": 12,
-   "tests": 6
+   "expects": 15,
+   "tests": 7
   },
   "tests/unit/ms70-dependency-ratchet.spec.js": {
    "expects": 25,
@@ -841,6 +841,10 @@
   "tests/unit/ms70-ledger-guard.spec.js": {
    "expects": 15,
    "tests": 8
+  },
+  "tests/unit/ms70-monolith-deleted.spec.js": {
+   "expects": 11,
+   "tests": 7
   },
   "tests/unit/ms70-state-seam.spec.js": {
    "expects": 50,
@@ -1003,7 +1007,7 @@
    "tests": 7
   },
   "tests/unit/removed-window-bridges.spec.js": {
-   "expects": 6,
+   "expects": 9,
    "tests": 2
   },
   "tests/unit/remuneration-declaration.spec.js": {
@@ -1135,7 +1139,7 @@
    "tests": 7
   },
   "tests/unit/validation-issue.spec.js": {
-   "expects": 30,
+   "expects": 31,
    "tests": 9
   },
   "tests/unit/ward-carryover.spec.js": {
@@ -1152,7 +1156,7 @@
   },
   "tests/unit/window-bridge.spec.js": {
    "expects": 11,
-   "tests": 7
+   "tests": 6
   },
   "tests/unit/xlsx-extract.spec.js": {
    "expects": 22,
@@ -1260,6 +1264,13 @@
    "was": 13,
    "now": 0,
    "reason": "Milestone 70, 70K: legacy-bridge.spec.js and monolith-services.spec.js went with the two doors they held (src/legacy-bridge.js, src/core/runtime/monolith.js); their behavior -- provided once, loud when asked first -- is held by the new tests/unit/feature-services.spec.js; navigation-race.spec.ts and feature-lazy-boundary.spec.ts are new; no assertion dropped.",
+   "date": "2026-09-27"
+  },
+  {
+   "file": "tests/unit/guardian-inventory-totals.spec.js",
+   "was": 76,
+   "now": 75,
+   "reason": "Milestone 70, 70L: the headline-total test's check that legacy-app.js declared no const calc went with legacy-app.js itself; tests/unit/ms70-monolith-deleted.spec.js holds that the file is gone.",
    "date": "2026-09-27"
   }
  ]

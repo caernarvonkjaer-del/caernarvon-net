@@ -1,8 +1,8 @@
-// Hand-maintained (unlike window-bridge.d.ts, which is generated): browser
-// APIs TypeScript's DOM lib does not ship, and vendored classic-script
-// globals from lib/ (see lib/VENDORED-LIBRARIES.md). App-defined bridge
-// names do not belong here -- scripts/audit-window-bridge.mjs --declare
-// owns those.
+// Hand-maintained: browser APIs TypeScript's DOM lib does not ship, and
+// vendored classic-script globals from lib/ (see lib/VENDORED-LIBRARIES.md).
+// The application's own window member, window.GuardianForms, is declared in
+// guardian-forms.d.ts, which tests/unit/window-bridge.spec.js holds to what
+// scripts/audit-window-bridge.mjs finds.
 
 interface FileSystemHandlePermissionDescriptor {
   mode?: 'read' | 'readwrite';

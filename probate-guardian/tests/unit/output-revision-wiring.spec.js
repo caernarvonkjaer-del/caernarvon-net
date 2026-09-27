@@ -9,7 +9,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 // The sidebar marks are src/core/status/nav-marks.js's since Milestone 70's 70F
 // (the tail called window.updateNavDots?.(), which Node did not have); they
-// need a page, so this suite stands them in.
+// need a page, so this suite stands them in, as a module mock.
 vi.mock('../../src/core/status/nav-marks.js', () => ({ updateNavDots: () => {} }));
 // The sidebar's refreshes (src/core/shell/sidebar.js since Milestone 70's 70H) touch the page.
 vi.mock('../../src/core/shell/sidebar.js', () => ({ refreshWardInfoCard: () => {}, syncActiveWardNameDisplay: () => {}, syncGuardianNameDisplay: () => {}, updateSidebar: () => {} }));
@@ -28,11 +28,11 @@ const { addCollectionRow, removeCollectionRow, duplicateCollectionRow } = await 
 const { setPartyIdForSlot } = await import('../../src/core/party-resolver.js');
 const { resolveSimplifiedGuardianAddressConflict } = await import('../../src/features/simplified-accounting/guardian-compatibility.js');
 
-// Every wired call site invokes window.markFilingRevisionChanged?.(...), not
-// the bare import, so legacy-app.js's classic-script call sites (which never
-// import the ES module) can reach it too -- see main.js's own bridge. Tests
-// must set up the same bridge or every hook silently no-ops.
-window.markFilingRevisionChanged = markFilingRevisionChanged;
+// Every wired call site imports markFilingRevisionChanged() (Milestone 70,
+// 70K). Until then each called window.markFilingRevisionChanged?.(...), so the
+// classic monolith could reach it too, and this suite installed that bridge or
+// every hook silently no-opped; with no bridge, a call site that still went
+// through window would fail here.
 
 function acknowledgeBypassableFiling(data = { wardId: 'w1', inventoryType: 'annual' }) {
   const baseIssues = () => [createRequiredIssue({ filingType: 'annual', path: 'wardName', message: 'Missing wardName' })];

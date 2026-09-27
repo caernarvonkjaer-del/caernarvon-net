@@ -38,39 +38,15 @@ import { chkP, inpS, pageNavS, planCheckGroup, planQ, txtP, yesNoCheckboxS, yesN
 import { renderScheduleDocsSection } from '../../core/filing/schedule-docs.js';
 import { setPath } from '../../core/form/paths.js';
 // Annual Guardianship Plan — the third feature extraction (Milestone 4,
-// Phases A and B of INDEX-SPLIT-PLAN.md's migration sequence). Dynamically
-// imported by legacy-app.js's mountPlanAnnualFeature()/mountPlanAnnualNav()
-// bridge (built on src/core/feature-bridge.js), never statically imported.
+// Phases A and B of INDEX-SPLIT-PLAN.md's migration sequence). Loaded only when one of its pages
+// is shown, through src/features-loader.js's feature services
+// (src/core/feature-bridge.js mounts it), never statically imported.
 //
-// legacy-app.js stays a classic (non-module) script (Milestone 1's recorded
-// decision), so its top-level function declarations are real `window`
-// properties this module can destructure -- but a bare top-level `let`
-// (activeInventoryType, currentPage) is not; see src/core/state.js's file
-// header for the full explanation. Everything below that isn't defined in
-// this file is one of those legacy globals, deliberately left in place
-// rather than moved: `planQ`/`planCheckGroup`/`planEmptyRow`/`addPlanRow`/
-// `removePlanRow`/`duplicatePlanRow`/`txtP`/`chkP`/`radioP`/`pageNavS` are
-// still shared with the two not-yet-extracted Plan types (planInitial,
-// planMinor); `PLAN_RIGHTS`/`PLAN_RIGHT_STATES`/`PLAN_ADLS`/
-// `PLAN_ADL_RATINGS`/`PLAN_BENEFITS` stay legacy because
-// computeNavChecks()'s planAnnual branch reads them directly (see the
-// Milestone 4 plan's "Confirmed facts" and "Design decisions").
-// Milestone 41-3: radioP and formatName/formatPhone/formatSSN/formatAddress
-// dropped from this destructure -- all now dead here. wardLiving's radio
-// group moved into residence-facility-card.js (which calls Tier 1's
-// renderRadioGroupField directly), and the guardian block's formatters are
-// applied automatically by renderFormField() from each field's inferred
-// kind, confirmed field-by-field against the previous manual calls.
-// Milestone 51C continues that pass: `countyInputS` and `toggleSsnReveal` were
-// also dead here and are dropped. County goes through renderCaseCaptionFields()
-// (case-caption-card.js, see /p1 below), and the ward SSN field through inpS()
-// per this file's own note above -- so neither global was ever called here.
-//
-// `toggleSsnReveal` in particular was destructured but never called in FIVE
-// feature modules. Its only real call site is the delegated handler in
-// src/form-events.js ('toggle-ssn'), which imports it from
-// src/core/form/form-runtime.js; a feature module never needs it in scope. Plan Minor is the one
-// Plan type that does still call countyInputS (index.js:190), so it keeps it.
+// Until Milestone 70 this module destructured the classic monolith's globals
+// off window -- the shared Plan field helpers and lists -- and this comment
+// recorded which, and why each stayed in the monolith (Milestones 3-6, 41 and
+// 51C). Milestone 70 moved every one into a module this file imports; 70K
+// removed the last window read, and 70L deleted the monolith.
 
 // print.js is dynamically imported only when the user reaches /print or
 // triggers PDF export (Milestone 4, Phase B) -- same lazy boundary as the

@@ -13,24 +13,27 @@ first. This file is only orientation.
 
 ## Layout
 
-- `index.html` — the shell (sidebar, overlays, CSP). Loads `src/legacy-app.js`
-  as a classic script, then `src/main.js` as the ES-module entry.
-- `src/legacy-app.js` — the remaining classic-script core (help system,
-  validation summary, ward lifecycle glue, the Guardian Inventory form
-  engine, init). It publishes functions on `window`; modules reach it the
-  same way. Milestone 42's `scripts/audit-window-bridge.mjs` inventories
-  that bridge. Milestone 70 is moving what is left into modules; code that
-  has moved and is still called from here is reached through one-line
-  wrappers and `src/legacy-bridge.js`.
-- `src/core/` — ES modules: state, persistence (`case-file.js`, crypto,
-  recovery cache), navigation (router, ward lifecycle, ward county), form
-  contract and field primitives, validation, PDF engine and preview, Excel
-  engine, filing descriptors and readiness, icons (`ui/icons.js`), money
-  formatting (`format/money.js`) and import hardening
-  (`security/input-hardening.js`).
+- `index.html` — the shell (sidebar, overlays, CSP). Loads `src/prepaint.js`,
+  a classic script that sets the theme before the first paint, then
+  `src/main.js` as the ES-module entry.
+- `src/main.js` — the composition root: installs `window.GuardianForms` (the
+  one global the app owns: `version`, and `testing` only when the browser
+  suite asks for it before startup), wires the page's listeners, and hands the
+  feature services to `startGuardianForms()` (`src/core/startup/bootstrap.js`).
+  Modules reach each other by import; nothing else of the app is on `window`,
+  and `scripts/audit-window-bridge.mjs` holds it there. (Milestone 70 moved
+  the last of the classic `legacy-app.js` into modules and deleted it.)
+- `src/core/` — ES modules: the case store (`state.js`), persistence
+  (`case-file.js`, `case-reader.js`, crypto, recovery cache), navigation
+  (router, ward lifecycle, ward county), startup, form contract and field
+  primitives, validation, completion (`status/`), the filing registry and
+  blank filings (`filing/`), PDF engine and preview, Excel engine, help,
+  shell, icons (`ui/icons.js`), money formatting (`format/money.js`) and
+  import hardening (`security/input-hardening.js`).
 - `src/features/<filing>/` — one lazily-loaded module per filing type
   (`index.js` pages/nav/validate, `pdf-model.js`, `print.js`, `excel.js`
-  where applicable), loaded through `src/features-loader.js`.
+  where applicable), loaded through `src/features-loader.js`'s feature
+  services only when one of its pages is shown.
 - `src/styles/` — design tokens and component styles (`tokens.css` is the
   source of truth for colors).
 - `lib/` — vendored runtime libraries; see `lib/VENDORED-LIBRARIES.md`.

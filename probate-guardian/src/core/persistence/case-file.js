@@ -275,8 +275,8 @@ export async function buildCaseFileBlob() {
     // caseFile, not loadAppState() -- it IS case-scoped state, not a launch
     // preference. It rides in this blob rather than getting its own CSV row
     // and .enc zip entry (the design 54A originally shipped with) because
-    // this blob is read ONLY at full .sav launch-load (loadCaseFileFromZip()
-    // in legacy-app.js), never by importSavArchiveOrWard()'s merge-import
+    // this blob is read ONLY at full .sav launch-load (loadCaseFileFromZip(),
+    // src/core/persistence/case-reader.js), never by importSavArchiveOrWard()'s merge-import
     // path or by the session-restore-cache path -- exactly the behavior a
     // circuit selection needs: restored when a whole file is opened, left
     // alone by "Open Backup"/"Restore"/"Import" merging data into an
@@ -478,7 +478,7 @@ export async function writeCaseToHandle(handle, viaTimer) {
   const count = (caseFile.wards || []).length;
   // Milestone 62: automatic saves are not written to the Activity Log. `viaTimer`
   // is true for both the interval sweep (silentAutoExport) and the debounced
-  // save after every edit (legacy-app.js saveData()), so logging them would
+  // save after every edit (saveData() below), so logging them would
   // bury the entries that matter -- unlocks, manual backups, restores -- and,
   // because the log rides inside every save, grow the file on each one.
   const rollback = await beginRecordingExport(`Saved ${count} form(s) to existing backup file`, null, { log: !viaTimer });
@@ -636,7 +636,8 @@ export async function saveAutoExportIntervalPref(minutes) {
 }
 
 // Despite the name, this is NOT a second autosave engine. The real autosave
-// is legacy-app.js's 1-second debounce, which writes after every edit. This is
+// is autoSave()'s 1-second debounce (below; legacy-app.js's until Milestone
+// 70's 70I), which writes after every edit. This is
 // a sparse retry-and-nudge sweep: it only does anything when the debounce
 // could NOT write -- no handle established yet, or write permission revoked --
 // in which case it retries once and otherwise raises the reminder toast. The
@@ -671,7 +672,7 @@ export function setupFallbackSaveReminder() {
   if (typeof window !== 'undefined' && window.showSaveFilePicker) return;
   if (_fallbackReminderTimer) clearInterval(_fallbackReminderTimer);
   _fallbackReminderTimer = setInterval(() => {
-    // Same fix as the sweep above: the private copy is never updated by
+    // Same fix as the sweep above: the private copy was never updated by
     // legacy-app.js, so this modal never appeared for the browsers that need
     // it most (no File System Access API means no background save at all).
     if (isDirtySinceExport()) {

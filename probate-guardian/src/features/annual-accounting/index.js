@@ -1781,9 +1781,10 @@ export function validateAnnual(){
 
   return errs;
 }
-// Milestone 33, Phase 2.3: legacy-app.js's shared updateCurrentScheduleNextButton()
-// only itemizes the disabled-Next guidance panel when window.validate<Type> is a
-// function (see its dispatch table) -- guardian-inventory/index.js already does
+// Milestone 33, Phase 2.3: the shared updateCurrentScheduleNextButton() (then
+// legacy-app.js's, reading window.validate<Type>; src/core/status/nav-marks.js's,
+// through the feature services' validator, since Milestone 70) only itemizes the
+// disabled-Next guidance panel when the form's validator is there -- guardian-inventory/index.js already does
 // this for validateGuardian; this file's own errors were computed but never
 // exposed, so finalAccounting/trustAccounting (formEngine()==='annual') fell back
 // to a single generic message with no per-field jump links.

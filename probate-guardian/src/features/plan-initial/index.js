@@ -61,35 +61,21 @@ import { renderScheduleDocsSection } from '../../core/filing/schedule-docs.js';
 import { setPath } from '../../core/form/paths.js';
 // Initial Guardianship Plan — the fourth feature extraction (Milestone 5,
 // Phases A and B of INDEX-SPLIT-PLAN.md's migration sequence: data/
-// validation/pages/nav, and print/PDF export). Dynamically imported by
-// legacy-app.js's mountPlanInitialFeature()/mountPlanInitialNav() bridge
-// (built on src/core/feature-bridge.js), never statically imported.
+// validation/pages/nav, and print/PDF export). Loaded only when one of its pages
+// is shown, through src/features-loader.js's feature services
+// (src/core/feature-bridge.js mounts it), never statically imported.
 //
-// legacy-app.js stays a classic (non-module) script (Milestone 1's recorded
-// decision), so its top-level function declarations are real `window`
-// properties this module can destructure -- but a bare top-level `let`
-// (activeInventoryType, currentPage) is not; see src/core/state.js's file
-// header for the full explanation. Everything below that isn't defined in
-// this file is one of those legacy globals, deliberately left in place
-// rather than moved: `planQ`/`planCheckGroup`/`planEmptyRow`/`addPlanRow`/
-// `removePlanRow`/`duplicatePlanRow`/`txtP`/`chkP`/`radioP`/`pageNavS`/
-// `yesNoCheckboxS` are still shared with the one remaining not-yet-extracted
-// Plan type (planMinor); `INITIAL_ADLS`/`INITIAL_ADL_RATINGS` stay legacy
-// because computeNavChecks()'s planInitial branch reads them directly (see
-// the Milestone 5 plan's "Confirmed facts" and "Design decisions").
-//
+// Until Milestone 70 this module destructured the classic monolith's globals
+// off window -- the shared Plan field helpers and lists -- and this comment
+// recorded which, and why each stayed in the monolith (Milestones 3-6, 41 and
+// 51C). Milestone 70 moved every one into a module this file imports; 70K
+// removed the last window read, and 70L deleted the monolith.
+
 // print.js is dynamically imported only when the user reaches /print or
 // triggers PDF export (Phase B) -- same lazy boundary as the other two
 // extracted Plan features. No excel.js: no Plan filing type has Excel
 // support (confirmed by grep -- see the Milestone 5 plan's "Confirmed
 // facts").
-// Milestone 51C: `countyInputS`, `formatName`, `formatPhone` and
-// `toggleSsnReveal` were all destructured here without ever being called, and
-// are dropped. plan-annual got the formatter half of this cleanup in Milestone
-// 41-3 and plan-simplified in 41-2 (each left a note saying so); plan-initial
-// and plan-minor never got that pass, which is why they still carried them.
-// See plan-annual/index.js's Milestone 51C note for why toggleSsnReveal is
-// never needed in a feature module's scope.
 
 // Milestone 39-C: see plan-annual/index.js's identical comment.
 const signatureHandles = new WeakMap();

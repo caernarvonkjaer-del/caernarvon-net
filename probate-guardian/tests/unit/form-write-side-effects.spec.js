@@ -10,6 +10,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { classicScripts } from './support/classic-scripts.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 
@@ -209,7 +210,8 @@ describe('all three binding paths call the shared tail', () => {
   // legitimately best done via source scan, not a proxy for behavior --
   // there is no function to invoke to prove an absence.
   it('persistFormControl no longer exists anywhere', () => {
-    for (const rel of ['src/form-events.js', 'src/core/form/form-contract.js', 'src/legacy-app.js']) {
+    // With the classic scripts, where legacy-app.js had it (70L deleted that).
+    for (const rel of ['src/form-events.js', 'src/core/form/form-contract.js', ...classicScripts()]) {
       expect(read(rel)).not.toMatch(/function persistFormControl/);
     }
   });

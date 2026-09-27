@@ -31,7 +31,7 @@ test.describe('Supplemental PDF inline rendering for Accounting forms (Annual, T
       const baseDoc = await generateCourtFormPdf(baseModel, { sourceData: d });
       const basePageCount = baseDoc.internal.getNumberOfPages();
 
-      // Key under accounting period as legacy-app.js does
+      // Key under accounting period as src/core/filing/schedule-docs.js does
       const periodKey = `${d.periodFrom}__${d.periodTo}`;
       d.scheduleDocs = {
         schA: {

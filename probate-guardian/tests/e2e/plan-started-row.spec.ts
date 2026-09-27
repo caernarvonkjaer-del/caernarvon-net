@@ -5,8 +5,9 @@ import { freshStartNoPassword, createWard } from './support/target';
 // phone number, a ZIP, a relationship -- used to be invisible to all three
 // surfaces at once: dropped from the filed PDF, raising no export error, and
 // never mentioned by the sidebar. The PDF and validator halves are covered by
-// tests/unit/plan-started-row.spec.js; computeNavChecks() lives in
-// legacy-app.js, a classic script, so its half is proved here in the browser.
+// tests/unit/plan-started-row.spec.js; computeNavChecks() lived in
+// legacy-app.js, a classic script, so its half was proved here in the browser,
+// and still is.
 //
 // What matters is not the specific colour of the dot but that the three
 // surfaces agree about whether the filer has started that row.

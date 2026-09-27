@@ -1,8 +1,8 @@
 // Milestone 43D (Decision 4, option b): this file bundles three genuinely
 // separate concerns under one name -- persistence crypto services (key
 // derivation, salt), .sav packaging/filename helpers, and the single
-// save-clock invariant (plus a legacy-app.js parse guard riding along in
-// the same describe). None has a Decision-1-style correctness defect, so
+// save-clock invariant (plus a guard that every classic script parses,
+// riding along in the same describe; it was legacy-app.js's until 70L). None has a Decision-1-style correctness defect, so
 // this is pure organization, left as one file with its scope named here
 // rather than split into case-file.spec.js/crypto/*.spec.js siblings.
 import { describe, expect, test, beforeAll, beforeEach, afterEach, vi } from 'vitest';
@@ -220,16 +220,18 @@ describe('save timestamp indicator: one clock, only advanced by a real save', ()
   });
 
   // Source-level guard, because this one cannot be reached by name from e2e:
-  // legacy-app.js keeps its own copy of updateLastSavedIndicator(), and that
-  // copy is what runs during initApp() -- before main.js's modules evaluate
-  // and replace window.updateLastSavedIndicator. Its undeclared
+  // legacy-app.js kept its own copy of updateLastSavedIndicator(), and that
+  // copy was what ran during initApp() -- before main.js's modules evaluated
+  // and replaced window.updateLastSavedIndicator. Its undeclared
   // _lastAutoSavedAt reference threw a ReferenceError on every load once a
   // case existed, aborting the rest of initApp(). The existing clean-console
   // e2e test never caught it because a fresh install blocks at the
-  // startup-choice overlay and never reaches that line.
-  test('no executable reference to the removed second clock survives in either implementation', async () => {
+  // startup-choice overlay and never reaches that line. (Milestone 70's 70L
+  // deleted legacy-app.js; the classic scripts index.html loads are read.)
+  test('no executable reference to the removed second clock survives in the implementation or a classic script', async () => {
     const { readFile } = await import('node:fs/promises');
-    for (const file of ['src/legacy-app.js', 'src/core/persistence/case-file.js']) {
+    const { classicScripts } = await import('./support/classic-scripts.js');
+    for (const file of ['src/core/persistence/case-file.js', ...classicScripts()]) {
       const source = await readFile(new URL(`../../${file}`, import.meta.url), 'utf8');
       const offending = source
         .split('\n')
@@ -239,16 +241,18 @@ describe('save timestamp indicator: one clock, only advanced by a real save', ()
     }
   });
 
-  // legacy-app.js is a classic script: no unit spec imports it and tsc does
-  // not type-check it, so a syntax error in it passes both `npm run test:unit`
-  // and `npm run check:types` and only surfaces when a browser loads the app.
-  // A stray brace left by a block deletion during this milestone did exactly
-  // that. Parsing it here keeps the fast checks honest.
-  test('legacy-app.js parses as a script', async () => {
-    const { readFile } = await import('node:fs/promises');
+  // A classic script: no unit spec imports it and tsc does not type-check it,
+  // so a syntax error in it passes both `npm run test:unit` and `npm run
+  // check:types` and only surfaces when a browser loads the app. A stray brace
+  // left by a block deletion in legacy-app.js did exactly that. Parsing each
+  // one here keeps the fast checks honest -- every classic script index.html
+  // loads, since Milestone 70's 70L deleted legacy-app.js.
+  test('every classic script parses as a script', async () => {
     const { default: vm } = await import('node:vm');
-    const source = await readFile(new URL('../../src/legacy-app.js', import.meta.url), 'utf8');
-    expect(() => new vm.Script(source, { filename: 'legacy-app.js' })).not.toThrow();
+    const { classicScriptSources } = await import('./support/classic-scripts.js');
+    const scripts = classicScriptSources();
+    expect(scripts.length, 'index.html loads a classic script (src/prepaint.js)').toBeGreaterThan(0);
+    for (const { file, source } of scripts) expect(() => new vm.Script(source, { filename: file }), file).not.toThrow();
   });
 
   // saveData() is case-file.js's since Milestone 70's 70I.

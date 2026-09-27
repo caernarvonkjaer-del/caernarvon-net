@@ -155,9 +155,9 @@ describe('fault injection: the audit sees what it must (the 70A gate)', () => {
   });
 
   test('classic scripts come from index.html, excluding vendored lib/ and module scripts', () => {
-    expect(classicScriptsFromHtml('<script src="./src/prepaint.js"></script><script src="lib/jszip.min.js"></script><script type="module" src="./src/main.js"></script><script src="./src/legacy-app.js"></script>'))
-      .toEqual(['src/prepaint.js', 'src/legacy-app.js']);
-    expect(moduleEntriesFromHtml('<script src="./src/legacy-app.js"></script><script type="module" src="./src/main.js"></script>')).toEqual(['src/main.js']);
+    expect(classicScriptsFromHtml('<script src="./src/prepaint.js"></script><script src="lib/jszip.min.js"></script><script type="module" src="./src/main.js"></script><script src="./src/classic.js"></script>'))
+      .toEqual(['src/prepaint.js', 'src/classic.js']);
+    expect(moduleEntriesFromHtml('<script src="./src/classic.js"></script><script type="module" src="./src/main.js"></script>')).toEqual(['src/main.js']);
   });
 });
 

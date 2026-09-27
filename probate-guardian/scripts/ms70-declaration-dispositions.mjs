@@ -4,7 +4,10 @@
 // classification as a reviewable draft, from evidence rather than by hand:
 //
 //   - each top-level declaration of src/legacy-app.js, with its kind, lines
-//     and the monolith section it sits in (the file's own banner comments);
+//     and the monolith section it sits in (the file's own banner comments).
+//     70L deleted the file, the last declaration having landed in 70K: with it
+//     gone there is nothing to classify, and the draft and the review keep the
+//     record of where each declaration went;
 //   - how often the monolith itself references it, resolved through real
 //     scoping (scripts/ms70-dependency-audit.mjs's analyzer), so a local
 //     variable of the same name does not count;
@@ -56,6 +59,13 @@ export const DISPOSITION_KINDS = ['delete-as-dead', 'test-only', 'move', 'wrappe
 // What a one-line wrapper forwards through (src/legacy-bridge.js).
 const BRIDGE_READ = 'window.GuardianFormsLegacyBridge.';
 export const DELIVERIES = ['70B', '70C', '70D', '70E', '70F', '70G', '70H', '70I', '70J', '70K', '70L'];
+export const MONOLITH = 'src/legacy-app.js';
+
+/** The monolith's source: '' since Milestone 70's 70L deleted it. */
+export function monolithSource(root = ROOT) {
+  const file = path.join(root, MONOLITH);
+  return fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : '';
+}
 
 // Section title (the line after a banner rule) -> delivery.
 const SECTION_DELIVERY = [
@@ -139,8 +149,8 @@ export function declarationsOf(source) {
 }
 
 export function buildDispositions(root = ROOT) {
-  const legacyRel = 'src/legacy-app.js';
-  const source = fs.readFileSync(path.join(root, legacyRel), 'utf8');
+  const legacyRel = MONOLITH;
+  const source = monolithSource(root);
   const sections = sectionsOf(source);
   const audit = auditApplication(root);
   const e2e = JSON.parse(fs.readFileSync(path.join(root, 'tests/baseline/ms70-e2e-globals.json'), 'utf8')).byName || {};

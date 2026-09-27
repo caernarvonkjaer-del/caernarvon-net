@@ -12,7 +12,7 @@ import { freshStartNoPassword, createWard, createSimplifiedWard } from './suppor
 // mid-filing -- and the panel's "View User Guide" button opens the manual
 // unanchored. Inside a filing, "?" skips the panel entirely and opens the
 // manual straight to the anchor matching the current page, per
-// legacy-app.js's USER_GUIDE_ANCHORS map.
+// USER_GUIDE_ANCHORS (src/core/help/user-guide.js).
 
 async function clickAndCaptureGuideTab(page: Page, context: BrowserContext, selector: string) {
   // The "Save Your First Backup" / "Unsaved Changes" reminder (same
@@ -94,7 +94,8 @@ test.describe('user guide wiring', () => {
     // Save as Excel / Print / E-Filing Portal) rather than the standard
     // topnav-actions bar, which is why there was once no "?" button there and
     // why 'preview' sat in USER_GUIDE_ANCHORS as unreachable data. The
-    // Preview-banner work changed that: legacy-app.js now moves the filing's
+    // Preview-banner work changed that: the print-preview pager
+    // (src/core/ui/print-pager.js) now moves the filing's
     // shell actions into the Preview & Export banner -- All Filings, theme and
     // help-toggle-btn -- for every filing type, single-page previews included.
     // So the anchor is reachable, and was untested until this row existed.

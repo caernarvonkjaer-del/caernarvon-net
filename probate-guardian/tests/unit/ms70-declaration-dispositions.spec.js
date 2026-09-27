@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { describe, expect, test } from 'vitest';
 import {
-  DISPOSITIONS_PATH, REVIEW_PATH, DISPOSITION_KINDS, DELIVERIES, sectionsOf, declarationsOf,
+  DISPOSITIONS_PATH, REVIEW_PATH, DISPOSITION_KINDS, DELIVERIES, MONOLITH, sectionsOf, declarationsOf, monolithSource,
 } from '../../scripts/ms70-declaration-dispositions.mjs';
 
 // Milestone 70, 70A gate: "every legacy declaration has a disposition".
@@ -11,7 +11,9 @@ import {
 // owner's review (tests/baseline/ms70-declaration-review.json). This keeps it
 // complete and reviewed as the monolith changes: a new declaration without an
 // entry, an entry for one that no longer exists, or an entry whose placement
-// no longer matches what the review confirmed, fails.
+// no longer matches what the review confirmed, fails. 70K landed the last
+// declaration and 70L deleted the monolith: the draft lists none, and the
+// review keeps the record of where each went.
 
 const ROOT = path.join(__dirname, '..', '..');
 
@@ -30,10 +32,16 @@ describe('the evidence the draft is built from', () => {
   });
 });
 
-describe('the draft against src/legacy-app.js', () => {
+describe('the draft against the monolith', () => {
   const draft = JSON.parse(fs.readFileSync(path.join(ROOT, DISPOSITIONS_PATH), 'utf8'));
-  const current = declarationsOf(fs.readFileSync(path.join(ROOT, 'src/legacy-app.js'), 'utf8')).map((d) => d.name).sort();
+  const current = declarationsOf(monolithSource(ROOT)).map((d) => d.name).sort();
   const listed = draft.declarations.map((d) => d.name).sort();
+
+  test('the monolith is gone (70L), and nothing is left to classify', () => {
+    expect(fs.existsSync(path.join(ROOT, MONOLITH)), MONOLITH).toBe(false);
+    expect(current).toEqual([]);
+    expect(listed).toEqual([]);
+  });
 
   test('every declaration has exactly one entry, and no entry names a declaration that is gone', () => {
     expect(listed.filter((n, i) => listed.indexOf(n) !== i), 'duplicate entries').toEqual([]);

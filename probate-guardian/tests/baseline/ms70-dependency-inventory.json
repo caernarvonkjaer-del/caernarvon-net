@@ -2,7 +2,6 @@
  "generatedBy": "node scripts/ms70-dependency-audit.mjs --write-baseline",
  "note": "Milestone 70 dependency inventory: every edge between application files (import, window property, bare global), with direction. Informational; regenerated with the baseline.",
  "classic": [
-  "src/legacy-app.js",
   "src/prepaint.js"
  ],
  "classicDeclarations": [],

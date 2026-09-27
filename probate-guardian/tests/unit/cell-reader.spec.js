@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { readRepoSource, LEGACY_APP } from './support/legacy-source-extract.js';
+import { classicScriptSources } from './support/classic-scripts.js';
 import * as cellReader from '../../src/core/excel/cell-reader.js';
 import { fmtDate, unwrapCellValue, readCellText } from '../../src/core/excel/cell-reader.js';
 
@@ -7,20 +7,20 @@ import { fmtDate, unwrapCellValue, readCellText } from '../../src/core/excel/cel
 // then moved the whole cell-reader cluster (fmtDate, unwrapCellValue,
 // readCellText) out to src/core/excel/cell-reader.js and deleted the
 // originals. This scan is the permanent guard against any of the four being
-// reintroduced as a classic-script global. legacy-app.js exposes top-level
-// function declarations on `window` implicitly, so there is no `window.X =`
-// line for the bridge allow-list to catch -- the declaration itself is the
-// global, and this scan is the check.
-describe('legacy-app.js carries no copy of the cell-reader cluster', () => {
+// reintroduced as a classic-script global. A classic script exposes its
+// top-level function declarations on `window` implicitly, so there is no
+// `window.X =` line for the window audit's assignment check to catch -- the
+// declaration itself is the global, and this scan is the check. It read
+// legacy-app.js until Milestone 70's 70L deleted it; it reads every classic
+// script index.html loads now.
+describe('no classic script carries a copy of the cell-reader cluster', () => {
   const NAMES = ['fmtDate', 'fmtDateCard', 'unwrapCellValue', 'readCellText'];
 
   it.each(NAMES)('does not declare a top-level function %s', (name) => {
-    const source = readRepoSource(LEGACY_APP);
     const decl = new RegExp(`^(?:async\\s+)?function\\s+${name}\\s*\\(`, 'm');
     // A boolean, not `expect(source).not.toMatch(decl)`: on failure vitest
-    // prints the received value, and the received value here is all of
-    // legacy-app.js.
-    expect(decl.test(source), `${name} is still declared in ${LEGACY_APP}`).toBe(false);
+    // prints the received value, and the received value here is a whole script.
+    for (const { file, source } of classicScriptSources()) expect(decl.test(source), `${name} is declared in ${file}`).toBe(false);
   });
 });
 

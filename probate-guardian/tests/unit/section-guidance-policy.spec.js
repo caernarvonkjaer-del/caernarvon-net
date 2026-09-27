@@ -20,8 +20,9 @@ import {
 //   3. What should the advice say?     -> depends on whether the page has a
 //                                         "verify there are none" checkbox
 //
-// They are pure functions here, so the classic-script live patch
-// (legacy-app.js) and the Guardian module's initial render read the same rule.
+// They are pure functions here, so the live patch (src/core/status/nav-marks.js;
+// legacy-app.js's until Milestone 70) and the Guardian module's initial render
+// read the same rule.
 
 describe('sectionCheckKey() — the key a route has in computeNavChecks().checks', () => {
   test.each([

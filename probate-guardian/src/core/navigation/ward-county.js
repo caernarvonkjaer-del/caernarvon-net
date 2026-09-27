@@ -134,8 +134,8 @@ export function commitCoverCounty(filing, rawCounty) {
  * Called from form-contract.js's runFieldWriteSideEffects() (Milestone 42D),
  * the one post-write tail every binding convention shares -- data-form-path
  * and data-annual-path via writeDraftValue()/finalizeFieldValue(), and
- * legacy-app.js's bindForms()/afterChange() for Guardian Inventory's
- * data-bind. Before 42D each write path called this separately, and hooking
+ * the Initial Inventory's bindForms()/afterChange() (its form-binding.js;
+ * legacy-app.js's until Milestone 70) for its data-bind. Before 42D each write path called this separately, and hooking
  * only one had silently covered six filing types and missed three.
  *
  * `attorney_county` deliberately does not match: it is a separate field and must
@@ -190,7 +190,8 @@ export function hydrateCountyFromWardParty(filing) {
 // legacy-app.js's carryOverFields() was its single entry point, legacy-app.js
 // never referenced it at all.
 //
-// carryOverFields() (legacy-app.js) reimplements the same intent inline and
+// carryOverFields() (src/core/filing/carry-over.js; legacy-app.js's until
+// Milestone 70's 70G) reimplements the same intent inline and
 // reaches the same end state by a different route, because it builds a field bag
 // for a destination that does not exist yet rather than mutating one that does:
 // it blanks county, carries wardPartyId on the returned bag, runs

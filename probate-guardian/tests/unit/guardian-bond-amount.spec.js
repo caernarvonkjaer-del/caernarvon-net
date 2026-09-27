@@ -8,9 +8,9 @@
 // filing saved before this fix reads the same after it.
 //
 // guardian-inventory/index.js transitively imports src/core/party-resolver.js,
-// which does `window.resolveParty = resolveParty` etc. at module scope, and
-// its own top level destructures legacy-app.js globals off `window` -- both
-// executed at import time, before any ordinary statement in this file (ES
+// which did `window.resolveParty = resolveParty` etc. at module scope, and
+// its own top level destructured legacy-app.js globals off `window` (until
+// Milestone 70's 70K) -- both executed at import time, before any ordinary statement in this file (ES
 // import specifiers are hoisted ahead of a plain `global.window = global`).
 // See guardian-inventory-64a1-validation.spec.js for the same recipe.
 import { afterAll, beforeAll, describe, test, expect, vi } from 'vitest';

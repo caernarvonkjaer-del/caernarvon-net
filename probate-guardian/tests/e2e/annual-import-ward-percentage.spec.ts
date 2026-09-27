@@ -10,7 +10,7 @@ import { freshStartNoPassword, createWard, fillMinimalValidAnnualWard } from './
 // it reads, so the Cover had already imported while D-1 came back empty and
 // nothing after it was read -- a half-imported filing. Found by Milestone
 // 70's dependency audit: annual-accounting/excel.js took r2 off window, but
-// legacy-app.js declares it with const, which is not a window property.
+// legacy-app.js declared it with const, which is not a window property.
 // No test imported a ward percentage before this one.
 
 const ROWS = {

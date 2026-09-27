@@ -1,36 +1,11 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { parse } from 'acorn';
-import { sliceBalancedFunction } from './support/legacy-source-extract.js';
+import { sliceBalancedFunction } from './support/source-slice.js';
 import { openFiling } from './support/open-filing.js';
 
-// Provide browser globals required by legacy feature modules
-global.window = {
-  esc: (s) => s || '',
-  ic: () => '',
-  autoSave: () => {},
-  navigate: () => {},
-  updateNavDots: () => {},
-  renderScheduleDocsSection: () => '',
-  txtP: () => '',
-  chkP: () => '',
-  planQ: () => '',
-  planCheckGroup: () => '',
-  yesNoCheckboxS: () => '',
-  radioP: () => '',
-  pageNavS: () => '',
-  formatName: (s) => s,
-  formatPhone: (s) => s,
-  formatDisplayDate: (s) => s,
-  toggleSsnReveal: () => '',
-  INITIAL_ADLS: [],
-  INITIAL_ADL_RATINGS: [],
-  ANNUAL_ADLS: [],
-  ANNUAL_ADL_RATINGS: [],
-  calcTotals: () => ({}),
-  countyInputS: () => '',
-  inpS: () => '',
-  ...(global.window || {}),
-};
+// Some modules these import touch `window` at import time; none reads an
+// application global from it (Milestone 70, 70K), so an empty one serves.
+globalThis.window = globalThis.window || {};
 
 const { validatePlanInitial } = await import('../../src/features/plan-initial/index.js');
 const { validatePlanAnnual } = await import('../../src/features/plan-annual/index.js');
@@ -108,8 +83,9 @@ describe('checklist vs export validator parity', () => {
 
 // ── Cross-cutting guard (Milestone 36-6 item 13) ─────────────────────────
 //
-// computeNavChecks() in legacy-app.js and each feature's export validator are
-// two hand-maintained rule sets over the same data, with nothing keeping them
+// computeNavChecks() (legacy-app.js's then; src/core/status/completion.js's
+// evaluators now) and each feature's export validator are two hand-maintained
+// rule sets over the same data, with nothing keeping them
 // in agreement. When the validator requires a field the section check never
 // consults, a filer can turn every sidebar marker green and still be refused
 // at Print Preview, with nothing on the page saying what is missing.
@@ -245,8 +221,9 @@ describe('checklist and export validator field parity', () => {
   const readSrc = (rel) => fs.readFileSync(path.resolve(__dirname, '../../src', rel), 'utf8');
 
   // Returns the brace-balanced body that follows `header`. Milestone 52L
-  // moved the brace matching into support/legacy-source-extract.js; this
-  // spec wants the body only (it searches inside it), not the header.
+  // moved the brace matching into a support module (support/source-slice.js
+  // since Milestone 70's 70L); this spec wants the body only (it searches
+  // inside it), not the header.
   const sliceFunction = (src, header) => sliceBalancedFunction(src, header, { includeHeader: false });
 
   const modelFields = (text) => new Set([...text.matchAll(/\b[dD]\.([A-Za-z_][A-Za-z0-9_]*)/g)].map((m) => m[1]));

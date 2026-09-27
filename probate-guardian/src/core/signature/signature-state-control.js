@@ -34,8 +34,8 @@ function esc(s) {
  *
  * `route` re-renders the current page on change so the capture widget
  * mounts/unmounts with the new state, the same pattern this app already
- * uses for other conditionally-rendered sections (e.g. legacy-app.js's
- * directive-execution checkboxes).
+ * uses for other conditionally-rendered sections (e.g. the Plans'
+ * directive-execution checkboxes, legacy-app.js's when this was written).
  */
 export function renderSignatureStateControl({ path, state, route, signatureImage, statePath, imagePath }) {
   const resolvedStatePath = statePath || `${path}.signatureState`;

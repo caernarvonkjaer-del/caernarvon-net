@@ -257,7 +257,7 @@ test('capture: D-5 Certificate of Service with Indicate if Ward is', async ({ pa
 // ═══════════════════════════════════════════════════════════════════════
 // Milestone 66 Finding 9 completion. Milestone 62 renamed the app
 // "Probate Guardian" -> "Guardian Forms" throughout the live source (see
-// index.html:191, :258, :44, :114 and legacy-app.js:5613, :7736 -- all
+// index.html:191, :258, :44, :114 and legacy-app.js:5613, :7736, then -- all
 // already read "Guardian Forms"/"Guardian Forms App", confirmed before
 // writing any of the tests below). Finding 9's first pass fixed three
 // figures for free and named four more; a full image-by-image visual
@@ -284,7 +284,7 @@ test('capture: D-5 Certificate of Service with Indicate if Ward is', async ({ pa
 const GUARDIAN_WARD = 'Eleanor Marie Whitfield';
 const MINOR_WARD = 'Jacob Whitfield';
 
-/** Guardian Inventory (Initial Inventory) schedule row shapes, mirroring legacy-app.js's `mk` factories. */
+/** Guardian Inventory (Initial Inventory) schedule row shapes, mirroring the `mk` factories (src/core/filing/models/guardian.js). */
 const A1_ROW = { propertyDescription: 'Single Family Home', streetAddress: '1850 Coffee Pot Blvd NE', cityStateZip: 'St. Petersburg, FL 33704', notes: 'Homestead; Parcel 07-31-17-1234-000-0050', residence: 'Yes', income: 'No', fullAssetValue: 425000, wardPercent: 50 };
 const A2_ROW = { lenderName: 'Suncoast Credit Union', lenderAddress: '6801 E Hillsborough Ave', lenderCityStateZip: 'Tampa, FL 33610', accountNumber: 'MTG-88213', notes: 'First mortgage on 1850 Coffee Pot Blvd NE', liabilityType: 'Mortgage', fullDebtBalance: 96000, wardPercent: 50 };
 const B1_ROWS = [
@@ -321,7 +321,7 @@ test.describe('Milestone 66 Finding 9: re-shoot every stale-branding figure', ()
     await chooseEncrypted(page, 'CaptureTest123!');
     await createWard(page, GUARDIAN_WARD, 'guardian');
     // Save controls (including Lock) sit collapsed behind "Show save
-    // controls" by default (legacy-app.js's _saveControlsCollapsed) --
+    // controls" by default (the sidebar's _saveControlsCollapsed) --
     // expand before the Lock button is clickable.
     await page.click('#save-controls-toggle-btn');
     await page.locator('[data-shell-action="lock"]').waitFor({ state: 'visible' });

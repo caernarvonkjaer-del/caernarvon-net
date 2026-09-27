@@ -1,5 +1,5 @@
 import { describe, expect, test, vi } from 'vitest';
-import { withOverrides, autoById, createPlanTestWindowStub } from './support/plan-readiness-parity.js';
+import { withOverrides, autoById } from './support/plan-readiness-parity.js';
 import { openFiling } from './support/open-filing.js';
 
 // Milestone 37-3 (see MILESTONE-37-PROPOSAL.md): fixture-based proof that
@@ -8,7 +8,9 @@ import { openFiling } from './support/open-filing.js';
 // required-field fixtures only (see plan-initial-parity.spec.js's identical
 // note) -- secondary "explain when Other" conditionals are not repeated here.
 // This is the fourth and last Plan type for 37-3's reconciliation.
-global.window = { ...createPlanTestWindowStub(), ...(global.window || {}) };
+// Some modules these import touch `window` at import time; none reads an
+// application global from it (Milestone 70, 70K), so an empty one serves.
+globalThis.window = globalThis.window || {};
 
 vi.mock('../../src/features/plan-minor/pdf-model.js', () => ({ buildPlanMinorModel: vi.fn() }));
 vi.mock('../../src/core/pdf/pdf-engine.js', () => ({ generateCourtFormPdf: vi.fn() }));

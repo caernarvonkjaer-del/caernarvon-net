@@ -4,11 +4,12 @@
 // (`typeof window.addGuardian === 'undefined'`). 70T holds the browser suite
 // to one global, GuardianForms, so a spec that names app globals -- even to
 // show they are absent -- is exactly what its guard forbids. The pins moved
-// here, onto the same source audit the window-bridge allow-list uses
+// here, onto the source audit that holds the window surface
 // (scripts/audit-window-bridge.mjs): a name counts as published if src/
-// assigns it to window, declares it as a legacy-app.js top-level function
-// (a classic script's functions are window properties with no assignment at
-// all), or defines it with Object.defineProperty(window, ...).
+// assigns it to window, declares it as a top-level function or var of a
+// classic script index.html loads (a window property with no assignment at
+// all -- src/legacy-app.js's functions were, until Milestone 70's 70L deleted
+// it), or defines it with Object.defineProperty(window, ...).
 //
 // Each entry's `kept` list is the other half of the same decision: bridges
 // the milestone deliberately left in place, which must still be published.
@@ -59,12 +60,16 @@ describe('window.* bridges removed on purpose stay removed', () => {
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'ms70-surface-'));
     try {
       fs.mkdirSync(path.join(tmp, 'src'));
-      fs.writeFileSync(path.join(tmp, 'src', 'legacy-app.js'), 'function navigate(){}\n');
-      fs.writeFileSync(path.join(tmp, 'src', 'a.js'), "export const x = 1;\nwindow.addEntry = () => x;\nObject.defineProperty(window, 'currentPage', { get: () => '/' });\n");
+      fs.writeFileSync(path.join(tmp, 'index.html'), '<script src="./src/classic.js"></script><script type="module" src="./src/a.js"></script>');
+      fs.writeFileSync(path.join(tmp, 'src', 'classic.js'), 'function navigate(){}\nvar pageCount = 1;\nlet notGlobal = 2;\n');
+      fs.writeFileSync(path.join(tmp, 'src', 'a.js'), "export const x = 1;\nwindow.addEntry = () => x;\nObject.defineProperty(window, 'currentPage', { get: () => '/' });\nfunction local(){}\n");
       const seen = windowSurfaceNames(tmp);
       expect(seen.has('addEntry'), 'a window.X = assignment').toBe(true);
-      expect(seen.has('navigate'), 'a legacy-app.js top-level function').toBe(true);
+      expect(seen.has('navigate'), "a classic script's top-level function").toBe(true);
+      expect(seen.has('pageCount'), "a classic script's top-level var").toBe(true);
       expect(seen.has('currentPage'), 'an Object.defineProperty(window, ...)').toBe(true);
+      expect(seen.has('notGlobal'), "a classic script's let is no window property").toBe(false);
+      expect(seen.has('local'), "a module's function is no window property").toBe(false);
     } finally {
       fs.rmSync(tmp, { recursive: true, force: true });
     }

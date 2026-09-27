@@ -9,89 +9,52 @@ import { openFiling } from './support/open-filing.js';
 // across all fixture factories, edge cases, and filing identities before the
 // old dispatcher is removed."
 //
-// OLD is legacy-app.js's computeNavChecks() and getWardProgress() exactly as
-// they stood before 70D moved them (tests/baseline/ms70-70D-nav-checks-before.js.txt,
-// sliced by scripts at the move), evaluated against the same window.D and
-// active type they read, with every global they reached handed the app's real
-// implementation. NEW is the registry's computeCompletion() and
-// filingProgress() over src/core/status/completion.js's evaluators, called
-// with the filing and its dependencies explicitly. Both see the same filings: each
-// identity's blank filing, the browser suite's minimal valid overlays
-// (tests/e2e/support/fixtures.ts), and variants that set or clear one field
-// or row at a time -- the edge cases each branch's `filled`, `hasAny`,
-// verified-empty and started-row rules turn on.
+// 70D moved legacy-app.js's computeNavChecks() and getWardProgress() into
+// src/core/status/completion.js as text, and this spec proved the move changed
+// nothing by evaluating a frozen copy of the old functions beside the new ones
+// on every fixture below. 70L (completion criterion 9: no unit test evaluates
+// legacy application code) replaced the copy with what it returned, recorded
+// from it for the same fixtures and variants: tests/baseline/
+// ms70-completion-golden.json. NEW is the registry's computeCompletion() and
+// filingProgress() over the evaluators, called with the filing and its
+// dependencies explicitly. The filings: each identity's blank filing, the
+// browser suite's minimal valid overlays (tests/e2e/support/fixtures.ts), and
+// variants that set or clear one field or row at a time -- the edge cases
+// each branch's `filled`, `hasAny`, verified-empty and started-row rules turn
+// on.
 //
-// This spec pins behavior that existed before 70D, so it is deleted (with the
-// frozen copy) the first time a deliberate change to completion lands --
-// until then it is the proof the move changed nothing.
+// A deliberate change to completion regenerates the record
+// (PG_UPDATE_GOLDEN=1 npx vitest run tests/unit/completion-parity.spec.js) and
+// says why in its note.
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
-const FROZEN = fs.readFileSync(path.join(root, 'tests/baseline/ms70-70D-nav-checks-before.js.txt'), 'utf8');
-
-// errorRoute() is src/core/validation/error-route.js's since 70F. The frozen
-// function called it with a section alone, and it fell back to the monolith's
-// active type -- the filing's own, since the old code pointed it there.
-const errorRouteFor = (type) => (section, filingType) => m.errorRouteModule.errorRoute(section, filingType || type);
+const GOLDEN = path.join(root, 'tests/baseline/ms70-completion-golden.json');
+const UPDATE = process.env.PG_UPDATE_GOLDEN === '1';
+// One line per result and per variant, so a regeneration changes only the
+// lines whose outcome changed.
+function writeGolden(record) {
+  const line = (x) => JSON.stringify(x);
+  const types = Object.entries(record.types)
+    .map(([type, rows]) => `  ${line(type)}: [\n${rows.map((r) => `   ${line(r)}`).join(',\n')}\n  ]`);
+  fs.writeFileSync(GOLDEN, `{\n "note": ${line(record.note)},\n "results": [\n${record.results.map((r) => `  ${line(r)}`).join(',\n')}\n ],\n "types": {\n${types.join(',\n')}\n }\n}\n`);
+}
 
 let m; // modules, loaded once window exists
 beforeAll(async () => {
+  // Some of these touch `window` at import time; nothing is put on it.
   vi.stubGlobal('window', globalThis);
-  const [completion, registry, guardianModel, planAnnual, planInitial, rowStarted, recipients, signature, attorney, preparer,
-    certificate, totals, guardianFeature, fixtures, errorRouteModule] = await Promise.all([
-    import('../../src/core/status/completion.js'),
+  const [registry, guardianModel, totals, guardianFeature, fixtures] = await Promise.all([
     import('../../src/core/filing/filing-registry.js'),
     import('../../src/core/filing/models/guardian.js'),
-    import('../../src/core/filing/models/plan-annual.js'),
-    import('../../src/core/filing/models/plan-initial.js'),
-    import('../../src/core/validation/row-started.js'),
-    import('../../src/core/validation/service-recipients.js'),
-    import('../../src/core/validation/signature-state.js'),
-    import('../../src/core/validation/attorney-block.js'),
-    import('../../src/core/form/preparer-flag.js'),
-    import('../../src/core/filing/plan-certificate-of-service.js'),
     import('../../src/features/annual-accounting/totals.js'),
     import('../../src/features/guardian-inventory/index.js'),
     import('../e2e/support/fixtures.ts'),
-    import('../../src/core/validation/error-route.js'),
   ]);
-  m = { completion, registry, guardianModel, planAnnual, planInitial, rowStarted, recipients, signature, attorney, preparer,
-    certificate, totals, guardianFeature, fixtures, errorRouteModule };
+  m = { registry, guardianModel, totals, guardianFeature, fixtures };
 });
 afterAll(() => vi.unstubAllGlobals());
 
 const json = (x) => JSON.parse(JSON.stringify(x));
-
-// OLD: the frozen functions, with window.D and the monolith's own
-// activeInventoryType pointed at the filing, as getWardProgress() did.
-function oldRun(D, type, call) {
-  const bridge = {
-    PLAN_BENEFITS: m.planAnnual.PLAN_BENEFITS, PLAN_RIGHTS: m.planAnnual.PLAN_RIGHTS, PLAN_ADLS: m.planAnnual.PLAN_ADLS,
-    INITIAL_ADLS: m.planInitial.INITIAL_ADLS,
-  };
-  const win = {
-    GuardianFormsLegacyBridge: bridge, D,
-    validateGuardian: () => m.guardianFeature.validateGuardian(),
-    serviceRecipientIssues: m.recipients.serviceRecipientIssues,
-    isSignatureComplete: m.signature.isSignatureComplete,
-    resolvePreparer: m.preparer.resolvePreparer,
-    startedRows: m.rowStarted.startedRows,
-    planCertificateStarted: m.certificate.certificateStarted,
-    isPlanInitialAttorneyStarted: m.attorney.isPlanInitialAttorneyStarted,
-  };
-  const errorRoute = errorRouteFor(type);
-  // eslint-disable-next-line no-new-func
-  const run = new Function('D', 'activeInventoryType', 'window', 'validate', 'errorRoute', 'SCHEDULE_NAV_KEYS', 'guardianHasAnyData',
-    'formEngine', 'calcTotalsAnnual', 'annualReconcileState', 'PLAN_BENEFITS', 'PLAN_RIGHTS', 'PLAN_ADLS', 'INITIAL_ADLS',
-    `${FROZEN}\nreturn ${call};`);
-  // validateGuardian() reads the open filing: this one, put in view (70J).
-  return withFilingInView(D, () => run(D, type, win, () => m.guardianFeature.validateGuardian(), errorRoute, m.guardianModel.SCHEDULE_NAV_KEYS,
-    m.rowStarted.guardianHasAnyData, m.registry.formEngine, () => m.totals.calcTotalsAnnual(D), m.totals.annualReconcileState,
-    bridge.PLAN_BENEFITS, bridge.PLAN_RIGHTS, bridge.PLAN_ADLS, bridge.INITIAL_ADLS));
-}
-const oldChecks = (D, type) => oldRun(D, type, 'computeNavChecks()');
-// getWardProgress() swaps the frozen function's window.D and active type to
-// the filing's own, and back.
-const oldProgress = (D) => oldRun(D, D.inventoryType, 'getWardProgress(D)');
 
 // NEW: the module, handed the filing and what it cannot import.
 const newDeps = (type) => ({
@@ -178,23 +141,35 @@ function* filingsFor(type) {
   }
 }
 
-describe('old and new completion maps are equal on every filing identity', () => {
-  test('all nine identities, every fixture and variant', () => {
+describe('completion maps and progress on every filing identity', () => {
+  test('all nine identities, every fixture and variant, return what the pre-move functions did', () => {
+    const golden = JSON.parse(fs.readFileSync(GOLDEN, 'utf8'));
+    const record = { note: golden.note, results: [], types: {} };
+    const seen = new Map();
     const counts = {};
     for (const type of m.registry.FILING_TYPE_KEYS ?? Object.keys(m.registry.FILING_REGISTRY)) {
+      const expected = golden.types[type] || [];
+      const rows = [];
       let n = 0;
       for (const [label, filing] of filingsFor(type)) {
-        const a = json(filing); const b = json(filing);
-        const before = oldChecks(a, type);
-        const after = newChecks(b, type);
-        expect(json(after ?? null), `${type} -- ${label}`).toStrictEqual(json(before ?? null));
-        expect(b, `${type} -- ${label}: the new evaluator changed nothing`).toStrictEqual(a);
-        const c = json(filing); const d = json(filing);
-        expect(newProgress(d), `${type} -- ${label}: progress`).toStrictEqual(oldProgress(c));
+        const b = json(filing);
+        const outcome = [json(newChecks(b, type) ?? null), json(newProgress(json(filing)) ?? null)];
+        expect(b, `${type} -- ${label}: the evaluator changed nothing`).toStrictEqual(json(filing));
+        if (UPDATE) {
+          const k = JSON.stringify(outcome);
+          if (!seen.has(k)) { seen.set(k, record.results.length); record.results.push(outcome); }
+          rows.push([label, seen.get(k)]);
+        } else {
+          expect(label, `${type}: variant ${n}`).toBe(expected[n]?.[0]);
+          expect(outcome, `${type} -- ${label}`).toStrictEqual(golden.results[expected[n][1]]);
+        }
         n++;
       }
+      if (UPDATE) record.types[type] = rows;
+      else expect(n, `${type}: every recorded variant was built`).toBe(expected.length);
       counts[type] = n;
     }
+    if (UPDATE) writeGolden(record);
     // Enough variants that every branch's rules were exercised.
     for (const [type, n] of Object.entries(counts)) expect(n, type).toBeGreaterThan(40);
   }, 120_000);

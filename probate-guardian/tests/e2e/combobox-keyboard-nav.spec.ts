@@ -14,7 +14,7 @@ import { freshStartNoPassword, createWard } from './support/target';
 //
 // The county combobox (Cover page) is deliberately excluded from this
 // file: it already had full keyboard nav before 52J and was not switched
-// to the shared handler (see legacy-app.js's bindComboboxKeyboardNav()
+// to the shared handler (see src/core/ui/combobox.js's bindComboboxKeyboardNav()
 // comment and MILESTONE-52-PROPOSAL.md's 52J section for why) -- its own
 // existing coverage is unaffected by this delivery.
 

@@ -12,6 +12,7 @@ const { checkDateOrder } = await import('../../src/core/validation/date-rules.js
 const { checkSignatureState } = await import('../../src/core/validation/signature-state.js');
 const { adaptValidationErrors } = await import('../../src/core/validation/validation-adapter.js');
 const { prepareFilingOutput } = await import('../../src/core/filing/output-preflight.js');
+const { recordOutputAcknowledgement, isOutputAcknowledgedFor, clearOutputAcknowledgement } = await import('../../src/core/filing/output-revision.js');
 const { validateSimplified } = await import('../../src/features/simplified-accounting/index.js');
 
 describe('validationIssue()', () => {
@@ -121,15 +122,21 @@ describe('shared helpers emit structured issues only when asked', () => {
     // the guardian address conflict is unresolved -- unlike the many ordinary
     // bypassable .required issues validateSimplified() also returns for this
     // near-empty fixture, which acknowledgement is allowed to clear.
-    window.isOutputAcknowledgedFor = () => true;
+    // The acknowledgement is recorded through the real module and checked to
+    // be in force: the preflight imports it (Milestone 70, 70K), so the
+    // window.isOutputAcknowledgedFor this used to set was no longer read, and
+    // the test ran with nothing acknowledged at all.
+    const { descriptor } = prepareFilingOutput(getD(), errs);
+    recordOutputAcknowledgement(getD(), descriptor);
     try {
+      expect(isOutputAcknowledgedFor(getD(), descriptor), 'the acknowledgement stands').toBe(true);
       const preflight = prepareFilingOutput(getD(), errs);
       const conflictIssue = preflight.structuredIssues.find((i) => i.code === 'simplified.guardian.address-conflict');
       expect(conflictIssue?.bypassable).toBe(false);
       expect(preflight.messages.length).toBeGreaterThan(0);
       expect(preflight.canExport).toBe(false);
     } finally {
-      delete window.isOutputAcknowledgedFor;
+      clearOutputAcknowledgement();
     }
   });
 });

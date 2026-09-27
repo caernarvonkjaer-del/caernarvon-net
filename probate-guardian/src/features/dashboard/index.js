@@ -1,8 +1,9 @@
 // Dashboard -- Milestone 9 dashboard rendering extraction (ward card grid,
 // summary strip, deadline/recent worklist, grouping by type/case/flat,
-// search/sort/archive toggles). Dynamically imported by legacy-app.js's
-// mountDashboardFeature() bridge, using the same window.createFeatureBridge()
-// pattern as Guardian, Simplified, Plan, and Annual features.
+// search/sort/archive toggles). Loaded through src/features-loader.js's
+// feature services and mounted by src/core/feature-bridge.js's bridge, like
+// every filing feature (legacy-app.js's mountDashboardFeature() and
+// window.createFeatureBridge() until Milestone 70's 70K).
 import { compareDashboardColumn, compareDashboardPriority, getDashboardMetrics, normalizeDashboardWorkflow, projectDashboardWard } from './view-model.js';
 import { caseNumberOf, countyOf } from '../../core/case-resolver.js';
 import { normalizeCountyName } from '../../core/navigation/ward-county.js';
@@ -383,7 +384,7 @@ async function quickExportPdf(wardId) {
 
 // Shares a standalone copy of just this one ward -- deliberately decoupled
 // from the case's own save state (see finishSingleWardExport()'s comment in
-// legacy-app.js): it does NOT touch _lastExportAt/the "last backup" readout,
+// src/core/persistence/case-file.js): it does NOT touch _lastExportAt/the "last backup" readout,
 // since this action says nothing about whether the real case file itself
 // has been saved.
 async function exportSingleWardZip(wardId) {
@@ -593,8 +594,9 @@ function unbindDashboardEvents(container) {
 // (src/styles/dashboard.css:23) is live spacing between the summary strip and
 // the filing grid; removing the div removes that gap and shifts the whole page
 // up. Delete it only together with a decision about that spacing -- see
-// MILESTONE-51-PROPOSAL.md's 51G/G4, which also notes that
-// legacy-app.js:3895 emits the same class for a different surface.
+// MILESTONE-51-PROPOSAL.md's 51G/G4, which also notes that legacy-app.js
+// emitted the same class for a different surface (the shell pages that moved
+// to src/core/ in Milestone 70 still do).
 function pageDashboard() {
   return `<div class="schedule-page" data-dashboard-root>
     <div id="continue-prompt-container"></div>
@@ -662,9 +664,9 @@ function renderSidebarResources() {
   }
 }
 
-// Feature bridge contract: mount(container, page) and dispose(container)
-// Expected by window.createFeatureBridge() and called via
-// legacy-app.js's mountDashboardFeature().
+// Feature bridge contract: mount(container, page) and dispose(container),
+// called by src/core/feature-bridge.js's bridge for the dashboard
+// (legacy-app.js's mountDashboardFeature() until Milestone 70's 70K).
 export async function mount(container, page) {
   _dashboardHost = container;
   _dashboardTriageSort = { key: 'priority', direction: 'asc' };
@@ -690,7 +692,7 @@ export function dispose(container) {
 }
 
 // Optional nav rendering — this feature doesn't have custom nav per the
-// ward-switch architecture (nav is always the shared topnav from legacy-app.js)
+// ward-switch architecture (nav is always the shared topnav, the shell's)
 export async function mountNav(container) {
   // No-op: dashboard has no feature-specific nav
 }

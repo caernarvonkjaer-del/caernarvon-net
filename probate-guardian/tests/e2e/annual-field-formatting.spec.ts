@@ -150,7 +150,7 @@ test.describe('Annual Accounting on the shared write path', () => {
   // "--" against every plain free-text field in this family, blanking the
   // whole field on blur -- there is no SQL backend anywhere in this app for
   // that check to have ever protected. Removed at the source
-  // (legacy-app.js's detectSQLInjection()); XSS/path-traversal detection is
+  // (then legacy-app.js's detectSQLInjection()); XSS/path-traversal detection is
   // untouched and still fires.
   test('a free-text field is not blanked by an ordinary word that happens to be a SQL keyword', async ({ page }) => {
     await freshStartNoPassword(page);

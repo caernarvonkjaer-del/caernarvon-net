@@ -92,7 +92,8 @@ describe('help/index.html does not reacquire a retired term', () => {
 
 // ── Part 2: the declared-control check ───────────────────────────────────
 //
-// Modelled on window-bridge-allowlist.json (42C): a declared surface, policed.
+// Modelled on 42C's window-bridge allow-list (retired by Milestone 70's 70L,
+// when no module assigned to window any more): a declared surface, policed.
 //
 // WHY THE LABEL-MATCHING DESIGN WAS REJECTED, recorded so it is not retried.
 // An earlier design annotated the guide with a control's visible label and
@@ -125,7 +126,7 @@ describe('help/index.html does not reacquire a retired term', () => {
 // KNOWN LIMIT, named rather than papered over: this catches a surface that
 // DISAPPEARS, not one that is ADDED. Registering a control freezes the
 // surfaces known at registration time; keeping the list current is a human
-// obligation, the same one window-bridge-allowlist.json carries. That is not
+// obligation, the same one 42C's window-bridge allow-list carried. That is not
 // hypothetical -- writing this file found two controls rendering on a surface
 // the proposal's own table did not list (see dashboard-report-bug below).
 const GUIDE_CONTROLS = {
@@ -171,7 +172,7 @@ const GUIDE_CONTROLS = {
   'dashboard-report-bug': {
     label: 'Report a Bug',
     // TWO surfaces, and the proposal's table listed one. The Start New Form
-    // page (legacy-app.js's pageInventorySelector()) carries the same feedback
+    // page (pageInventorySelector(), legacy-app.js's then) carries the same feedback
     // pair as the dashboard toolbar (src/core/shell/start-new-form.js since
     // Milestone 70's 70H). Found by re-deriving this table at
     // execution time instead of trusting the written rows -- which is exactly

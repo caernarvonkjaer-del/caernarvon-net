@@ -166,14 +166,14 @@ test.describe('guardian-inventory feature module', () => {
     await page.evaluate(() => (window as any).GuardianForms.testing.createFiling.addRow('b2'));
     // A row that's still exactly what +Add left it as gets pruned by
     // pruneBlankCards() the moment navigate() actually leaves the
-    // page (see legacy-app.js) -- deliberate, so an untouched +Add row
+    // page (see src/core/form/prune-cards.js) -- deliberate, so an untouched +Add row
     // doesn't linger as a false "incomplete" warning or a blank PDF line.
     // Fill it in before the first switch so the cycle below is testing
     // real row survival, not accidentally relying on pruning not having
     // run yet.
     await page.fill('input[data-bind="scheduleB2.0.description"]', 'Seed row');
     // This field title-cases as a "name"-type data-bind input, but only on
-    // blur (not live per-keystroke -- see legacy-app.js's bindForms(), which
+    // blur (not live per-keystroke -- see the Initial Inventory's bindForms(), which
     // would otherwise misread an in-progress 2-letter word as a state
     // abbreviation and force-uppercase it mid-typing).
     await page.locator('input[data-bind="scheduleB2.0.description"]').blur();

@@ -3,7 +3,7 @@
 ## Status
 
 **70A complete (2026-09-24); 70T, 70B, 70C and 70D complete (2026-09-25); 70E,
-70F, 70G, 70H, 70I and 70J complete (2026-09-26); 70K complete (2026-09-27) -- see their build records. Every remaining delivery, 70L, is approved.** The
+70F, 70G, 70H, 70I and 70J complete (2026-09-26); 70K and 70L built (2026-09-27) -- see their build records. What remains is the merge (Reconstitution and merge): the merge gate, whose release tier needs the requester's approval when it runs, and the requester's release sign-off (D8).** The
 requester approved delivery 70A on 2026-09-24 and it is complete on the
 `milestone-70` branch (see the 70A build record), then approved 70T. On
 2026-09-25 the requester approved every delivery after it ("Finish ms 70. That
@@ -1785,6 +1785,33 @@ The completion criteria below are mechanically true on the exact release
 commit. The final `npm run test:release` is the appropriate release gate, but
 it and any other full regression require the requester's explicit approval at
 execution time.
+
+### 70L build record
+
+Approved with every later delivery on 2026-09-25 (see Status). Everything
+below is on the `milestone-70` branch; the merge waits for the requester's
+release sign-off (D8) and the release gate's approval.
+
+**What a filer sees.** Nothing, by design: 70L deletes the classic script that
+70K had already emptied, and what only it still used. Court output is compared
+file against file with the pre-merge build at the merge gate (below).
+
+**Done, with evidence.**
+
+| Item | Evidence |
+| --- | --- |
+| Commit | Named in the next docs commit (the whole delivery; gate evidence in its message). |
+| The monolith deleted | `src/legacy-app.js` (a comment since 70K), its `<script>` tag in `index.html`, its static-copy rule in `vite.config.js` -- with the header comment that explained it, and master's `6a8224d` comment on the `fragments/` copy carried as master has it, since this edit sits beside it (its ledger row is carried here) -- and its entry in `scripts/generate-service-worker.mjs`'s critical list. The one classic script `index.html` loads of its own is `src/prepaint.js`. `tests/unit/ms70-monolith-deleted.spec.js` holds completion criterion 1 mechanically: the file absent; nothing loads, copies or caches it; no data-model row names it; no test or script reads it by path (two name it, each to find it gone). Seen failing with the script tag put back. |
+| The audits without it | The classic scripts come from `index.html` (the dependency audit's `classicScriptsFromHtml()`), so nothing hard-codes the monolith: `scripts/audit-window-bridge.mjs` counts a classic script's top-level functions *and vars* as window properties (its regex read only `legacy-app.js`'s functions), and its "shadowed legacy twin" pass and `--declare` went; `scripts/ms70-classic-state.mjs` reads every classic script (still empty); `scripts/ms70-declaration-dispositions.mjs` finds the monolith gone and nothing to classify (the review keeps where each declaration went); the dependency audit reports one classic script, `src/prepaint.js`, with no implicit globals. Ratchet unchanged; the inventory records the one classic script. |
+| The declaration | `src/core/types/guardian-forms.d.ts`, written by hand, types `window.GuardianForms` (`version`; `testing` when the runner asks) and the runner's pre-boot flag. It replaced `window-bridge.d.ts` (generated, every name `any`); the window-bridge allow-list, empty since 70K, went. `tests/unit/window-bridge.spec.js` holds the declaration to the audit in both directions -- seen failing with an undeclared `window` read in a module and with a declared name nothing reads -- and the browser suite's `TestWindow` type gained `version`. |
+| Guards that read the monolith | Each kept its purpose and reads what carries it now (`tests/unit/support/classic-scripts.js`: the classic scripts `index.html` loads): the boot-order rule, the parse guard (which now covers `src/prepaint.js`, a classic script `tsc` never checked), the cell-reader and PDF-guide "no classic-script copy" scans, the lifecycle, case-state, carry-over, yes/no and side-effect scans, the calculator's old formulas; the date-range pairing scan reads all of `src/`. 16 unit specs; one assertion dropped (the headline-total test's "no `const calc=` in the monolith", recorded in the assertion-count baseline with its reason). |
+| Criterion 9 | `tests/unit/support/legacy-source-extract.js` became `source-slice.js`, its three remaining uses -- each over an ES module -- documented in its header. Eleven unit specs stopped putting application names on `window` (the monolith's field helpers, `autoSave`, `navigate`, and a hand-copied mirror of the Plans' rights and ADL lists, `createPlanTestWindowStub()`, now gone): nothing had read them since 70K. Two validator specs start from the real `emptyDataGuardian()` instead of a literal copy of it. `completion-parity.spec.js` no longer evaluates a frozen copy of the monolith's `computeNavChecks()`: it holds the evaluators to `tests/baseline/ms70-completion-golden.json`, recorded from that copy for the same 4,803 filings (the two had been equal on every one); a re-recording reproduces it byte for byte, and Part VIII's named-trust rule removed fails it. `ms70-monolith-deleted.spec.js` reads every unit spec's parse for a name put on `window` -- the eleventh stub, in `readiness-predicate-coverage.spec.js`, was the one it found that a text survey had missed. |
+| Findings | (1) `validation-issue.spec.js`'s "an acknowledgement never clears the address conflict" had tested nothing since 70K: it set `window.isOutputAcknowledgedFor`, which the preflight stopped reading, so the filing was never acknowledged. It records a standing acknowledgement through the real module and asserts it holds; with the preflight faulted to clear the conflict on acknowledgement, the new test fails and the old one passed. (2) `output-revision-wiring.spec.js` installed the `window` bridge the call sites used before 70K; without it, a call site still going through `window` fails the suite. (3) `probate-guardian-data-model.csv` named, for 688 fields, a source file that did not hold the field's factory -- `src/legacy-app.js` (244), `src/core/state.js` (408, moved in 70C) and `src/core/form/plan-certificate-of-service.js` (36, stale before Milestone 70) -- each is pointed at its file now, and `npm run verify:data-model` checks that every named file exists (the old file fails it on 280 rows). |
+| Comments and documents | About 30 source comments and 40 test comments that described the monolith as live -- it imports, holds, calls -- say where the code is now or speak in the past tense; the four Plan features' headers, which described the monolith importing them and the globals they destructured, say how they load now. `README.md`'s layout, `AGENTS.md`'s stack line, its sidebar note (section 4) and its cross-form hint (section 8). |
+| Measurements | Taken on this commit, with 70A's commands, and recorded with the comparison in the next docs commit. |
+| Master-fix ledger | `6a8224d` carried here. No row open; the guard reports 12 `master` commits since the branch point, none unlisted. |
+
+**Gate run.** The checkpoint's full gate (D2; the plan's "before deletion in 70L: a green full source regression on the exact candidate, then web/portable builds and every distribution-sensitive profile"), 2026-09-27, on the trial copy this commit was ported from (identical file for file apart from its test ports), 1 h 12 min in all: `npm run test:verify` -- `check:types` clean, `verify:data-model` OK (1009 rows, every named source file present), unit 2067/2067 (157 files), browser 940 passed, 7 skipped, 0 failed (1.1 h, source profile, chromium; 947 tests: 70K's 945 and the two the carries after it added); `npm run test:e2e:web` 34 passed, 2 skipped (2.3 min); `npm run test:e2e:portable` 20 passed, 12 skipped (1.3 min); `npm run test:e2e:portable-http` 33 passed (2.3 min). The `.sav` corpus's 66 tests all passed. `check:types` clean on the ported worktree.
 
 ---
 

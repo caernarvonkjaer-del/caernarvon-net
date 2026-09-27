@@ -1,12 +1,14 @@
 import { describe, expect, test } from 'vitest';
 import fs from 'fs';
 import path from 'path';
+import { classicScriptSources } from './support/classic-scripts.js';
 
 const root = path.resolve(__dirname, '../..');
 const read = relative => fs.readFileSync(path.join(root, relative), 'utf8');
 
 describe('Milestone 37-5 explicit Yes/No radio migration', () => {
-  const legacy = read('src/legacy-app.js');
+  // The classic scripts, where legacy-app.js's markup was (70L deleted it).
+  const classic = classicScriptSources().map(({ source }) => source).join('\n');
   const fieldHtml = read('src/core/form/field-html.js');
   const formFields = read('src/core/form/form-fields.js');
   const annual = read('src/features/annual-accounting/index.js');
@@ -28,12 +30,12 @@ describe('Milestone 37-5 explicit Yes/No radio migration', () => {
     expect(formFields).toContain('type="radio"');
     expect(formFields).toContain('value="Yes"');
     expect(formFields).toContain('value="No"');
-    expect(legacy).not.toContain('function yesNoCheckboxHTML(');
+    expect(classic).not.toContain('function yesNoCheckboxHTML(');
     expect(fieldHtml).not.toContain('function yesNoCheckboxHTML(');
   });
 
   test('does not leave a legacy Yes/No checkbox behind', () => {
-    const source = [legacy, annual, initial, planAnnual].join('\n');
+    const source = [classic, annual, initial, planAnnual].join('\n');
     expect(source).not.toMatch(/type="checkbox"[^>]*(?:data-form-value="yes-no"|data-annual-value="yes-no")/);
   });
 

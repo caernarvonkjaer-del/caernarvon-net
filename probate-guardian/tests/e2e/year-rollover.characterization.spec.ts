@@ -15,7 +15,7 @@ import {
 // transaction schedules, every Plan answer) while carrying identity,
 // addresses and asset schedules forward, with the ending total becoming the
 // next starting balance on the accountings. resetYearlyFieldsForNewYear()
-// alone is 154 lines of legacy-app.js, and 70G moves it.
+// alone was 154 lines of legacy-app.js, and 70G moved it.
 //
 // This is a characterization, not a specification: it records what the app
 // does today, for every filing identity, in tests/baseline/

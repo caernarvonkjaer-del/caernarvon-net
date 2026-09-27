@@ -8,7 +8,8 @@ import { CERT_RECIPIENT_STARTED_FIELDS, certificateOptional, certificateStarted 
 // only when the page's Next button was gated, and the gate looked pages up in
 // SCHEDULE_NAV_KEYS, the 11 schedule pages: narrower than the sidebar's 17. The
 // function that decided this existed twice (legacy-app.js, for the live patch
-// after every edit; the Guardian module, for the first render), so a fix to one
+// after every edit -- src/core/status/nav-marks.js's since Milestone 70; the
+// Guardian module, for the first render), so a fix to one
 // copy would have shown the box on page load and wiped it on the first keystroke.
 //
 // The questions are separate, and each is answered once, here:
@@ -27,9 +28,10 @@ import { CERT_RECIPIENT_STARTED_FIELDS, certificateOptional, certificateStarted 
 //           that checkbox; on a Cover, signature or bond page it told the filer
 //           to tick a box that is not there (D2, decided: all filing types).
 //
-// Pure functions, so the classic-script live patch (legacy-app.js) and the
-// Guardian module's first render read the same rule. Bridged on `window` for the
-// classic script, the same way service-recipients.js is.
+// Pure functions, so the live patch (nav-marks.js's
+// updateCurrentScheduleNextButton()) and the Guardian module's first render
+// read the same rule; both import it. (It was bridged on `window` for the
+// classic monolith until Milestone 70.)
 
 export const VERIFY_NONE_ADVICE = 'Add at least one item, or check the box verifying there are none, before continuing.';
 export const REQUIRED_ITEMS_ADVICE = 'Complete the required items on this page before continuing.';

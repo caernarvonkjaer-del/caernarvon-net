@@ -19,7 +19,7 @@ export type FilingType =
 export type FilingCapabilities = {
   id: FilingType;
   family: 'inventory' | 'accounting' | 'plan';
-  /** Matches INVENTORY_TYPES[id].label in src/legacy-app.js. */
+  /** Matches INVENTORY_TYPES[id].label in src/core/filing/filing-registry.js. */
   displayName: string;
   /**
    * The authoritative document title this filing type's output should

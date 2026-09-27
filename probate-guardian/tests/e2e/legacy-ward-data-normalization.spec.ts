@@ -6,8 +6,10 @@ import { freshStartNoPassword, createWard, reopenFilingWithStoredShape } from '.
 // `if (window.calc)` checks that were always false in that suite's Node-only
 // (no jsdom) environment -- 3/3 "pass" with zero assertions ever executing.
 // normalizeWardData() and window.calc's restricted/unrestricted asset-math
-// functions are classic-script window-only functions in legacy-app.js with
-// no ES-module counterpart, so a real regression guard needs a real browser.
+// functions were classic-script window-only functions in legacy-app.js with
+// no ES-module counterpart, so a real regression guard needed a real browser.
+// (Milestone 70 moved them to src/core/filing/normalize-filing.js and
+// guardian-inventory/totals.js; this guard still drives them in the page.)
 // This is that guard, covering the same two behaviors the dead file claimed
 // to (Guardian Inventory legacy-boolean normalization; restricted/
 // unrestricted totals against the resulting tri-state data).
@@ -168,7 +170,7 @@ test.describe('legacy boolean -> tri-state ward data normalization (Guardian Inv
   // calls (hasSafeDepositBox, safeDepositBoxFiled, amendedForm, and the 13
   // q7* keys) each backfill '' onto a field that is merely absent, so the
   // "empty" sentinel silently grows 16 blank-string keys the instant it's
-  // set. legacy-app.js's own lockApp() sets window.D={} directly for the
+  // set. legacy-app.js's own lockApp() set window.D={} directly for the
   // same purpose and was never affected, which is why this went unnoticed.
   test('normalizeWardData() leaves a genuinely empty object empty (the "no active ward" sentinel)', async ({ page }) => {
     await freshStartNoPassword(page);

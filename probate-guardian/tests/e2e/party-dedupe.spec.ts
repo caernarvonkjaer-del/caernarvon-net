@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { freshStartNoPassword, createWard, chooseCoverCounty, acceptDynDialog, dismissDynDialog } from './support/target';
 
 // End-to-end proof for persistence-rewrite Milestone 7: the party
-// de-duplication screen (src/legacy-app.js's pagePartyManagement(), backed
+// de-duplication screen (src/core/parties/party-management.js's pagePartyManagement(), backed
 // by src/core/party-resolver.js's findDuplicateCandidates()/mergeParties())
 // reached through the real Help-panel button, surfacing two independently
 // -created (never linked) same-named guardian records and merging them.

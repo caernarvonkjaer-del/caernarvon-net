@@ -53,7 +53,8 @@ const LEGACY_ROUTE_MAP = {
 // per-type-numbered headings ("1. Residences", "5–7. Skills & Rights", ...)
 // with no shared convention a regex can generalize (unlike Guardian/Annual/
 // Simplified's letter-dash-number and Roman-numeral "Part N" sections,
-// already handled correctly by legacy-app.js's errorRoute() -- see
+// already handled correctly by errorRoute() (src/core/validation/error-route.js;
+// legacy-app.js's until Milestone 70) -- see
 // resolveRouteFromSection() below). Some labels are also reused verbatim
 // across types for different pages -- bare "Signatures" alone resolves to
 // /p11 for Plan Annual, /p9 for Plan Initial, and /p3 for Plan Simplified --

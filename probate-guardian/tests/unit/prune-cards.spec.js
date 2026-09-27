@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 global.window = global;
 import {
   isBlankCard,
@@ -22,9 +22,6 @@ const REGISTRY = {
 };
 
 describe('prune-cards', () => {
-  beforeEach(() => {
-    window.autoSave = () => {};
-  });
 
   describe('isBlankCard', () => {
     it('identifies blank cards with empty strings, null, undefined, false, or empty arrays', () => {

@@ -4,8 +4,8 @@ import { gotoApp, startNewCase, chooseEncrypted, createWard } from './support/ta
 // Milestone 70, 70A: "Fill the security contract gaps before ownership
 // moves" -- the inactivity lock, the unlock lockout and its backoff, key
 // erasure on lock, and proof that no password reaches the saved case file or
-// any browser storage. 70I moves all of this out of legacy-app.js into
-// services; these characterize today's behavior so the move can be checked
+// any browser storage. 70I moved all of this out of legacy-app.js into
+// services; these characterized the behavior first so the move could be checked
 // against it. tests/unit/crypto-contract.spec.js pins the cipher parameters.
 //
 // What this protects: an unattended, unlocked app locks itself; guessing

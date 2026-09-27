@@ -1,8 +1,9 @@
 import { describe, expect, test } from 'vitest';
 import { readFile } from 'node:fs/promises';
+import { classicScriptSources } from './support/classic-scripts.js';
 
-// Milestone 40G. legacy-app.js is a classic, parser-blocking script, so all of
-// its top-level code runs before any `<script type="module">` has evaluated.
+// Milestone 40G. legacy-app.js was a classic, parser-blocking script, so all
+// of its top-level code ran before any `<script type="module">` had evaluated.
 // Starting the app from there meant initApp() ran against a half-built global
 // surface and threw on every load once a case existed:
 //
@@ -27,18 +28,18 @@ import { readFile } from 'node:fs/promises';
 describe('Milestone 40G: app startup is ordered after ES-module evaluation', () => {
   const read = (rel) => readFile(new URL(`../../${rel}`, import.meta.url), 'utf8');
 
-  // Strip line comments so the prose above (and in legacy-app.js) can discuss
+  // Strip line comments so the prose above (and in any script) can discuss
   // initApp() without tripping the assertions.
   const executableLines = (source) =>
     source.split('\n').map((l) => l.trim()).filter((l) => l && !l.startsWith('//') && !l.startsWith('*'));
 
-  test('legacy-app.js does not start the app itself', async () => {
-    const lines = executableLines(await read('src/legacy-app.js'));
-    const selfStarts = lines.filter((l) => /^initApp\(\s*\)\s*;?$/.test(l) || /^window\.initApp\(\s*\)\s*;?$/.test(l));
-    expect(
-      selfStarts,
-      'legacy-app.js must not call initApp() at top level -- it runs before any module has evaluated'
-    ).toEqual([]);
+  // Milestone 70's 70L deleted legacy-app.js; the rule holds for every classic
+  // script index.html loads, since each runs before any module has evaluated.
+  test('no classic script starts the app itself', () => {
+    for (const { file, source } of classicScriptSources()) {
+      const selfStarts = executableLines(source).filter((l) => /\b(initApp|startGuardianForms)\s*\(/.test(l));
+      expect(selfStarts, `${file} must not start the app -- it runs before any module has evaluated`).toEqual([]);
+    }
   });
 
   test('main.js starts the app with startGuardianForms(), after its imports', async () => {

@@ -36,28 +36,15 @@ import { setPath } from '../../core/form/paths.js';
 import { openFloridaCourtPortal } from '../../core/shell/court-portal.js';
 import { printCurrentFilingPdf } from '../../core/pdf/pdf-preview.js';
 // Simplified Annual Plan — the second feature extraction (Milestone 3,
-// Phase B/C of INDEX-SPLIT-PLAN.md's migration sequence). Dynamically
-// imported by legacy-app.js's mountPlanSimplifiedFeature()/
-// mountPlanSimplifiedNav() bridges (built on src/core/feature-bridge.js),
-// never statically imported.
+// Phase B/C of INDEX-SPLIT-PLAN.md's migration sequence). Loaded only when one of its pages
+// is shown, through src/features-loader.js's feature services
+// (src/core/feature-bridge.js mounts it), never statically imported.
 //
-// legacy-app.js stays a classic (non-module) script (Milestone 1's recorded
-// decision), so its top-level function declarations are real `window`
-// properties this module can destructure -- but a bare top-level `let`
-// (activeInventoryType, currentPage) is not; see src/core/state.js's file
-// header for the full explanation. Everything below that isn't defined in
-// this file is one of those legacy globals, deliberately left in place
-// rather than moved or wrapped: txtP/chkP/yesNoCheckboxS are still shared
-// with the three not-yet-extracted Plan types, and the rest (inpS,
-// pageNavS, renderScheduleDocsSection, esc, formatDisplayDate)
-// are shared across all 9 ward types (see the Milestone 3 plan's
-// "Problem 3"). Milestone 41-2: formatName/formatPhone/formatAddress
-// dropped from this destructure -- their only call sites (the Guardian
-// block's name/phone/mailingAddress fields) now go through
-// renderFormField() via guardian-attorney-card.js, which applies the same
-// formatters automatically from each field's inferred kind.
-// Milestone 51C: `countyInputS` dropped for the same reason -- destructured
-// here but never called. Of the four Plan types only plan-minor still calls it.
+// Until Milestone 70 this module destructured the classic monolith's globals
+// off window -- the shared Plan field helpers and lists -- and this comment
+// recorded which, and why each stayed in the monolith (Milestones 3-6, 41 and
+// 51C). Milestone 70 moved every one into a module this file imports; 70K
+// removed the last window read, and 70L deleted the monolith.
 
 // print.js is dynamically imported only when the user reaches /print or
 // triggers PDF export (Milestone 3, Phase C) -- same lazy boundary as

@@ -1,5 +1,4 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { createPlanTestWindowStub } from './support/plan-readiness-parity.js';
 import { openFiling } from './support/open-filing.js';
 
 // Milestone 38D Phase 2: the predicate -> validator-issue mapping in
@@ -23,7 +22,9 @@ import { openFiling } from './support/open-filing.js';
 // on that list must still be reachable in the validator -- so neither a new
 // rule nor a deleted one can drift past unnoticed.
 
-global.window = { ...createPlanTestWindowStub(), ...(global.window || {}) };
+// Some modules these import touch `window` at import time; none reads an
+// application global from it (Milestone 70, 70K), so an empty one serves.
+globalThis.window = globalThis.window || {};
 
 const { getFilingReadiness, PLAN_PREDICATE_ISSUE_PATHS, predicateIdsCoveringIssue } =
   await import('../../src/core/filing/readiness-config.js');

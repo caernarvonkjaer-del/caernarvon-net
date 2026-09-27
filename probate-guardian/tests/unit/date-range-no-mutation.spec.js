@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { readFile } from 'node:fs/promises';
+import { readFile, readdir } from 'node:fs/promises';
 import { checkDateOrder } from '../../src/core/validation/date-rules.js';
 import { issueFactory } from '../../src/core/validation/validation-issue.js';
 
@@ -88,15 +88,21 @@ describe('Milestone 40C-C: date ranges are validated, never rewritten', () => {
   });
 
   // The removal itself is the fix, so assert the mutating code is gone. A
-  // source check because these were DOM event handlers in a classic script that
-  // a node unit test cannot load.
-  test('no From/To input pairing code remains in legacy-app.js', async () => {
-    const source = await readFile(new URL('../../src/legacy-app.js', import.meta.url), 'utf8');
-    expect(source).not.toMatch(/function\s+wireDateRangePair\s*\(/);
-    expect(source).not.toMatch(/function\s+enforceDateRanges\s*\(/);
-    // And nothing reintroduced the min/max attribute pairing, which separately
-    // broke digit-by-digit typing in Chrome.
-    expect(source).not.toMatch(/toInp\.min\s*=/);
-    expect(source).not.toMatch(/fromInp\.max\s*=/);
+  // source check because these were DOM event handlers in a classic script
+  // (legacy-app.js) that a node unit test could not load. That script is gone
+  // (Milestone 70's 70L), so the check reads all of src/: the code must not
+  // come back anywhere.
+  test('no From/To input pairing code remains anywhere in src/', async () => {
+    const files = (await readdir(new URL('../../src/', import.meta.url), { recursive: true })).filter((f) => f.endsWith('.js'));
+    expect(files.length).toBeGreaterThan(100);
+    for (const f of files) {
+      const source = await readFile(new URL(`../../src/${f.split('\\').join('/')}`, import.meta.url), 'utf8');
+      expect(source, f).not.toMatch(/function\s+wireDateRangePair\s*\(/);
+      expect(source, f).not.toMatch(/function\s+enforceDateRanges\s*\(/);
+      // And nothing reintroduced the min/max attribute pairing, which
+      // separately broke digit-by-digit typing in Chrome.
+      expect(source, f).not.toMatch(/toInp\.min\s*=/);
+      expect(source, f).not.toMatch(/fromInp\.max\s*=/);
+    }
   });
 });

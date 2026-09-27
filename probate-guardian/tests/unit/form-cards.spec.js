@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { renderCaseCaptionFields } from '../../src/core/form/cards/case-caption-card.js';
 import { renderWardIdentityFields, renderReportingPeriodFields } from '../../src/core/form/cards/ward-demographics-card.js';
 import { renderPartyNameField } from '../../src/core/form/cards/guardian-attorney-card.js';
@@ -10,9 +10,6 @@ import { renderResidenceFields } from '../../src/core/form/cards/residence-facil
 // card inside a single visual box unchanged -- see case-caption-card.js's
 // header comment for why Plan Simplified's Cover page needs exactly that.
 describe('renderCaseCaptionFields', () => {
-  beforeEach(() => {
-    global.window = { countyInputS: (id, label, val, req) => `<div class="mb-2"><label class="form-label" for="${id}">${label}${req ? '<span class="req">*</span>' : ''}</label><input id="${id}" value="${val}"></div>` };
-  });
 
   it('binds Case Number to data-form-path via the Tier 1 primitive', () => {
     // A stored case number in the form the app saves it. The field renders

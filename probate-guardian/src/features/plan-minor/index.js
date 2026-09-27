@@ -41,29 +41,15 @@ import { renderScheduleDocsSection } from '../../core/filing/schedule-docs.js';
 import { setPath } from '../../core/form/paths.js';
 // Annual Plan — Minors — the fifth and last feature extraction (Milestone 6,
 // Phases A and B of INDEX-SPLIT-PLAN.md's migration sequence: data/
-// validation/pages/nav, and print/PDF export). Dynamically imported by
-// legacy-app.js's mountPlanMinorFeature()/mountPlanMinorNav() bridge (built
-// on src/core/feature-bridge.js), never statically imported.
+// validation/pages/nav, and print/PDF export). Loaded only when one of its pages
+// is shown, through src/features-loader.js's feature services
+// (src/core/feature-bridge.js mounts it), never statically imported.
 //
-// legacy-app.js stays a classic (non-module) script (Milestone 1's recorded
-// decision), so its top-level function declarations are real `window`
-// properties this module can destructure -- but a bare top-level `let`
-// (activeInventoryType, currentPage) is not; see src/core/state.js's file
-// header for the full explanation. Everything below that isn't defined in
-// this file is one of those legacy globals, deliberately left in place
-// rather than moved: `planQ`/`planCheckGroup`/`planEmptyRow`/`addPlanRow`/
-// `removePlanRow`/`duplicatePlanRow`/`txtP`/`chkP`/`radioP`/`pageNavS`/
-// `yesNoCheckboxS` -- this was the last of the four Plan types, so there is
-// no remaining not-yet-extracted type to justify keeping them legacy on
-// sharing grounds alone; they stay because every already-extracted Plan
-// module already reaches them the same way, and moving them into a shared
-// core module is a separate restructuring, not required by this milestone
-// (see the Milestone 6 plan's "Confirmed facts" and "Design decisions").
-// Milestone 51C: `formatName`, `formatPhone` and `toggleSsnReveal` were
-// destructured here without ever being called, and are dropped -- the same pass
-// plan-annual got in Milestone 41-3 and plan-simplified in 41-2, which
-// plan-initial and plan-minor never received. `countyInputS` stays: unlike the
-// other three Plan types, this one still calls it directly (see /p1 below).
+// Until Milestone 70 this module destructured the classic monolith's globals
+// off window -- the shared Plan field helpers and lists -- and this comment
+// recorded which, and why each stayed in the monolith (Milestones 3-6, 41 and
+// 51C). Milestone 70 moved every one into a module this file imports; 70K
+// removed the last window read, and 70L deleted the monolith.
 
 // print.js is dynamically imported only when the user reaches /print or
 // triggers PDF export (Phase B) -- same lazy boundary as the other three

@@ -21,8 +21,9 @@ import { resolveActiveDocPeriod } from './doc-period.js';
 //
 // Route keys are the schedule identifiers the feature mount() functions already
 // switch on ('/a1' -> 'a1', '/scha' -> 'schA'), mapped here to the collection
-// that actually holds the rows. Verified against src/legacy-app.js:5614
-// (Guardian) and src/core/state.js:434 (Annual family).
+// that actually holds the rows. Verified against the blank filings, then in
+// src/legacy-app.js (Guardian) and src/core/state.js (Annual family), now
+// src/core/filing/models/guardian.js and models/annual.js (Milestone 70, 70C).
 
 export const FINANCIAL_SCHEDULE_COLLECTIONS = Object.freeze({
   guardian: Object.freeze({

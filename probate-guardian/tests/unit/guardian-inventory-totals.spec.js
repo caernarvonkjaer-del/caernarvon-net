@@ -7,6 +7,7 @@ import {
   GUARDIAN_CALC_METHODS, AUDIT_FEE_THRESHOLD, AUDIT_FEE_OVER_THRESHOLD, calc,
 } from '../../src/features/guardian-inventory/totals.js';
 import { withFilingInView } from '../../src/core/state.js';
+import { classicScriptSources } from './support/classic-scripts.js';
 
 // Milestone 60A. The Verified Initial Inventory's arithmetic, checked against
 // the court workbook's own formulas (templates/guardian-template.js, read
@@ -229,7 +230,7 @@ describe('schedule totals, summaries and bond lines against the workbook formula
 // be a forwarder defined in legacy-app.js, sliced out of its source and
 // evaluated here; Milestone 70's 70B moved it into this module as `calc`, so
 // it is imported and tested directly. legacy-app.js kept a one-line Proxy
-// onto it until 70J, checked at the end.
+// onto it until 70J, checked at the end, and 70L deleted legacy-app.js.
 describe('calc: the UI\'s call shape, bound to the open filing', () => {
   // The filing calc reads is the case store's; one is put in view for the call
   // (Milestone 70, 70J -- the test pointed window.D at it).
@@ -237,11 +238,12 @@ describe('calc: the UI\'s call shape, bound to the open filing', () => {
 
   test('is frozen, and holds the old formulas nowhere', () => {
     expect(Object.isFrozen(calc)).toBe(true);
-    // The old per-row formulas are gone from the classic script (secondary
-    // evidence; the behavioral parity below is the proof).
-    const src = fs.readFileSync(path.join(root, 'src', 'legacy-app.js'), 'utf8');
-    expect(src).not.toMatch(/wardPercent\|\|0\)\/100/);
-    expect(src).not.toMatch(/GUARDIAN_CALC_METHODS/);
+    // The old per-row formulas are in no classic script (secondary evidence;
+    // the behavioral parity below is the proof). They were legacy-app.js's.
+    for (const { file, source } of classicScriptSources()) {
+      expect(source, file).not.toMatch(/wardPercent\|\|0\)\/100/);
+      expect(source, file).not.toMatch(/GUARDIAN_CALC_METHODS/);
+    }
   });
 
   test('every method name the UI calls exists on calc and on the module', () => {
@@ -285,11 +287,9 @@ describe('calc: the UI\'s call shape, bound to the open filing', () => {
   // Milestone 70, 70J: the monolith's one use of that Proxy was the
   // dashboard's headline total, which pointed window.D at each filing in turn;
   // it totals the filing it is handed, and the Proxy went. Since 70K the
-  // headline total is the feature services' (src/features-loader.js), and the
-  // monolith holds nothing.
+  // headline total is the feature services' (src/features-loader.js), and
+  // 70L deleted the monolith.
   test("the dashboard's headline total for an Inventory is this module's total of the filing it is handed", async () => {
-    const src = fs.readFileSync(path.join(root, 'src', 'legacy-app.js'), 'utf8');
-    expect(src.split('\n').some((l) => l.startsWith('const calc='))).toBe(false);
     const { featureServices } = await import('../../src/features-loader.js');
     const D = { ...empty(), inventoryType: 'guardian', scheduleA1: ROUNDING_ROWS };
     expect(featureServices.headlineTotal(D)).toBe(calcTotalsGuardian(D).total);

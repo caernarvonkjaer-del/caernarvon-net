@@ -6,7 +6,7 @@
  * They had been classic-script globals that the three feature excel.js files
  * reached by destructuring off `window`; they are now a closed, importable
  * cluster with exactly one implementation reached exactly one way. Nothing in
- * legacy-app.js calls them any more (53A deleted fmtDateCard, the last
+ * legacy-app.js called them by then (53A deleted fmtDateCard, the last
  * legacy-side caller of fmtDate other than readCellText itself), so the move
  * left no `window` reach-back in either direction.
  *

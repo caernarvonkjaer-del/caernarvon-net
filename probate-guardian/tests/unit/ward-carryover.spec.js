@@ -55,7 +55,7 @@ describe('ward-carryover', () => {
       expect(result.caseNumber).toBe('2024-GA-001');
       // Milestone 40C-A item 3: county is NOT taken from the source filing's own
       // snapshot, even when the source has one. The builder leaves it blank and
-      // legacy-app.js's carryOverFields() fills it from the canonical ward
+      // carryOverFields() (src/core/filing/carry-over.js) fills it from the canonical ward
       // Party -- a source filing may name a county the ward has since left.
       expect(result.county).toBe('');
       expect(result.inceptionDate).toBe('2024-01-15');

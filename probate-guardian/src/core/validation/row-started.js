@@ -19,7 +19,8 @@
 // promoting a field to required is a schema change this does not make.
 
 // `id`, where a collection carries one, is bookkeeping rather than filer
-// input: legacy-app.js's own row checks have always skipped it.
+// input: the row checks have always skipped it (the monolith's, when this was
+// written).
 const ALWAYS_IGNORED = ['id'];
 
 /**

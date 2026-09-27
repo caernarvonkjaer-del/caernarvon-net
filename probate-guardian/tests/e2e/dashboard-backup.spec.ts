@@ -379,7 +379,7 @@ test.describe('Dashboard preference isolation and single-ward backup/export', ()
     // Sharing a copy of one ward is a side action now, not a real save of
     // the case -- it deliberately does not clear _dirtySinceExport or the
     // recovery cache, since neither reflects only this one ward. See
-    // finishSingleWardExport()'s comment in legacy-app.js.
+    // finishSingleWardExport()'s comment in src/core/persistence/case-file.js.
     const context = await browser.newContext();
     try {
       const page = await context.newPage();
