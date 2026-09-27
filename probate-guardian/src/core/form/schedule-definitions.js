@@ -1,6 +1,7 @@
 // Milestone 26: Declarative Schedule & Repeatable Group Definitions
 // Centralizes row factories, constraints, party ID lockstep sync, and calculation hooks.
 import { getD } from '../state.js';
+import { markFilingRevisionChanged } from '../filing/output-revision.js';
 
 export const SCHEDULE_SCHEMAS = {
   // Parties & Service
@@ -182,7 +183,7 @@ export function addCollectionRow(collectionKey, data = (typeof window !== 'undef
     }
     data[partyKey].push(null);
   }
-  if (typeof window !== 'undefined') window.markFilingRevisionChanged?.('collection-add');
+  markFilingRevisionChanged('collection-add');
 
   return true;
 }
@@ -213,7 +214,7 @@ export function duplicateCollectionRow(collectionKey, index, data = (typeof wind
     }
     data[partyKey].splice(index + 1, 0, null);
   }
-  if (typeof window !== 'undefined') window.markFilingRevisionChanged?.('collection-duplicate');
+  markFilingRevisionChanged('collection-duplicate');
 
   return true;
 }
@@ -242,14 +243,8 @@ export function removeCollectionRow(collectionKey, index, data = (typeof window 
       data[partyKey].splice(index, 1);
     }
   }
-  if (typeof window !== 'undefined') window.markFilingRevisionChanged?.('collection-remove');
+  markFilingRevisionChanged('collection-remove');
 
   return true;
 }
 
-if (typeof window !== 'undefined') {
-  window.SCHEDULE_SCHEMAS = SCHEDULE_SCHEMAS;
-  window.addCollectionRow = addCollectionRow;
-  window.duplicateCollectionRow = duplicateCollectionRow;
-  window.removeCollectionRow = removeCollectionRow;
-}

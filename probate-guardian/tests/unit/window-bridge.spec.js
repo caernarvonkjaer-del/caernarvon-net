@@ -12,6 +12,7 @@
 // list, policed by a test, updated in the same commit as the change.
 import { describe, it, expect, beforeAll } from 'vitest';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { auditWindowBridge, renderWindowDeclaration, DECLARATION_PATH, findWindowDestructureConsumers } from '../../scripts/audit-window-bridge.mjs';
@@ -19,6 +20,20 @@ import { auditWindowBridge, renderWindowDeclaration, DECLARATION_PATH, findWindo
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const allowlist = JSON.parse(fs.readFileSync(path.join(root, 'tests', 'unit', 'fixtures', 'window-bridge-allowlist.json'), 'utf8'));
 const key = (a) => `${a.file}::${a.name}`;
+
+// A small source tree for the audit's passes: this repo has no example of each
+// shape left to show them on (Milestone 70's 70K removed the last).
+function auditTree(files) {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'ms70-bridge-'));
+  try {
+    fs.mkdirSync(path.join(tmp, 'src'));
+    fs.writeFileSync(path.join(tmp, 'src', 'legacy-app.js'), files['legacy-app.js'] ?? '');
+    for (const [name, text] of Object.entries(files)) if (name !== 'legacy-app.js') fs.writeFileSync(path.join(tmp, 'src', name), text);
+    return auditWindowBridge(tmp);
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+}
 
 describe('window.* bridge inventory', () => {
   const audit = auditWindowBridge(root);
@@ -58,16 +73,35 @@ describe('window.* bridge inventory', () => {
   });
 
   it('sees consumers that only ever destructure off window (Milestone 53D)', () => {
-    // n() is read by annual-accounting/index.js's load-time destructure and by
-    // nothing as `window.n`, so before 53D taught the audit to parse
-    // destructuring a name like it was invisible here -- and therefore missing
-    // from the generated .d.ts. This assertion was red before D1, written
-    // against capitalizeImportedFields, which had the same shape until
-    // Milestone 70's 70B turned its three readers into imports; then against
-    // ensureTemplate, until 70I did the same for its three.
-    const entry = audit.consumers.find((c) => c.name === 'n');
+    // A name read only by a load-time destructure, never as `window.X`, was
+    // invisible to the audit before 53D taught it to parse destructuring --
+    // and so missing from the generated .d.ts. This assertion was red before
+    // D1, written against capitalizeImportedFields; then ensureTemplate; then
+    // annual-accounting/index.js's n(), until Milestone 70's 70K turned the
+    // last feature destructure into imports. It runs on a synthetic tree now.
+    const tree = auditTree({ 'a.js': 'const { n } = window;\nexport const one = n(1);\n' });
+    const entry = tree.consumers.find((c) => c.name === 'n');
     expect(entry, 'n must appear as a consumed bridge name').toBeTruthy();
-    expect(entry.files).toEqual(expect.arrayContaining(['src/features/annual-accounting/index.js']));
+    expect(entry.files).toEqual(['src/a.js']);
+  });
+
+  // Milestone 70, 70K: the member scans read the parse. They matched the
+  // text, so a comment telling the history -- "it read window.caseFile" --
+  // kept a name nothing uses in the generated declaration.
+  it('reads code, not comments: a comment naming window.X is neither a consumer nor a publication', () => {
+    const tree = auditTree({
+      'a.js': '// until 70J this read window.caseFile, and set window.D = {}\nexport const x = window.location.hash;\n',
+      'b.js': 'window.published = 1;\nexport const y = window.readHere;\n',
+    });
+    expect(tree.consumers.map((c) => c.name).sort()).toEqual(['readHere']);
+    expect(tree.assignments).toEqual([{ file: 'src/b.js', name: 'published' }]);
+  });
+
+  // Milestone 70, 70K: "the bridge audit permits only the reviewed
+  // GuardianForms namespace" -- no module assigns to window at all.
+  it('no module assigns an application global to window', () => {
+    expect(audit.assignments).toEqual([]);
+    expect(allowlist.assignments).toEqual([]);
   });
 });
 
@@ -110,12 +144,12 @@ describe('findWindowDestructureConsumers: the parser, case by case', () => {
     expect(findWindowDestructureConsumers(source).sort()).toEqual([...expected].sort());
   });
 
-  it('does not invent a consumer from the prose inside a real repo file', () => {
-    const source = fs.readFileSync(path.join(root, 'src', 'features', 'guardian-inventory', 'index.js'), 'utf8');
-    const names = findWindowDestructureConsumers(source);
-    expect(names).toContain('renderPage');
-    // Named only in a comment inside the braces -- Milestone 51C removed the
-    // actual binding. A comma-splitting parser records it; a real one cannot.
-    expect(names).not.toContain('toggleSsnReveal');
+  // The shape these rows were written against was guardian-inventory/index.js's
+  // own destructure (its comment naming toggleSsnReveal is the "real shape" row
+  // above); since Milestone 70's 70K no module destructures off window at all.
+  it('no module in the repo destructures off window', () => {
+    const walk = (dir) => fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(path.join(dir, e.name)) : e.name.endsWith('.js') ? [path.join(dir, e.name)] : []));
+    const found = walk(path.join(root, 'src')).flatMap((f) => findWindowDestructureConsumers(fs.readFileSync(f, 'utf8')).map((n) => `${path.relative(root, f)}: ${n}`));
+    expect(found).toEqual([]);
   });
 });

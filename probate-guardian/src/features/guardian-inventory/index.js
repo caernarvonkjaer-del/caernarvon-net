@@ -32,11 +32,12 @@ import { saveData } from '../../core/persistence/case-file.js';
 import { afterChange, bindForms } from './form-binding.js';
 import { yesNoCheckboxS, yesNoRadioHTML } from '../../core/form/field-html.js';
 import { browserRecommendationNotice, linkAccordions, linkLabelsToInputs, sanitizeNegativeAmounts, setupAmountFieldValidation } from '../../core/form/form-runtime.js';
-import { updateNavDots } from '../../core/status/nav-marks.js';
 import { initPrintPager } from '../../core/ui/print-pager.js';
 import { renderScheduleDocsSection } from '../../core/filing/schedule-docs.js';
 import { setPath } from '../../core/form/paths.js';
 import { showPickPartyModal } from '../../core/modals/pick-record-dialogs.js';
+import { getCurrentPage, navigate, renderPage } from '../../core/navigation/router.js';
+import { computeNavChecks, updateNavDots } from '../../core/status/nav-marks.js';
 // Milestone 57B: carried verbatim from MILESTONE-57-PROPOSAL.md section 57B.
 // The wording is load bearing (section 8 #8). Do not paraphrase or re-voice it.
 const ATTESTATION_57B = 'No recipients are required for this certificate (filer attestation - app does not determine legal necessity)';
@@ -45,20 +46,9 @@ const ATTESTATION_57B = 'No recipients are required for this certificate (filer 
 // is not started, so the two read the same data the same way.
 const RECIPIENT_STARTED_FIELDS = ['name', 'address', 'cityStateZip'];
 // Guardian Inventory -- Milestone 8A page/nav/validation extraction, plus
-// Milestone 8B (print/PDF/Excel import/export). Dynamically imported by
-// legacy-app.js's mountGuardianFeature()/mountGuardianNav() bridge, using
-// the same window.createFeatureBridge() pattern as Simplified, Plan, and
-// Annual features.
-const {
-  navigate, renderPage, getCurrentPage, 
-  
-  computeNavChecks, 
-  // Milestone 51C dropped `toggleSsnReveal` from this list -- destructured but
-  // never called here (the comment near the SSN field below still points at the
-  // function, which is correct: it runs via src/form-events.js's delegated
-  // 'toggle-ssn' handler, not from this module).
-  
-} = window;
+// Milestone 8B (print/PDF/Excel import/export). Loaded on first use through
+// src/features-loader.js, like every filing feature (Milestone 70's 70K; it
+// was legacy-app.js's mountGuardianFeature() bridge).
 
 const D = new Proxy({}, {
   get: (_target, prop) => getD() && getD()[prop],
@@ -127,6 +117,20 @@ export function normalizeBondAmountValue(v) {
   const parsed = parseFloat(v.replace(/[^0-9.]/g, ''));
   return Number.isFinite(parsed) ? parsed : v;
 }
+// Save as PDF and Save as Excel, for GuardianForms.testing's saveOutput through
+// the feature services (Milestone 70, 70K). The adapter named
+// doSavePdfGuardian() and doSaveExcelGuardian(), which nothing defined, so
+// saveOutput.pdfGuardian() and excelGuardian() could only throw; the page's own
+// buttons reach print.js and excel.js through data-inventory-action.
+export function doSavePdfGuardian() {
+  if (_printModule) return _printModule.doSavePdf();
+  return ensureLazyModules().then(() => _printModule.doSavePdf());
+}
+export function doSaveExcelGuardian() {
+  if (_excelModule) return _excelModule.doSaveExcel();
+  return ensureLazyModules().then(() => _excelModule.doSaveExcel());
+}
+
 function ensureLazyModules() {
   if (_printModule && _excelModule) return Promise.resolve();
   if (!_lazyModulesPromise) {
@@ -138,8 +142,11 @@ function ensureLazyModules() {
   return _lazyModulesPromise;
 }
 
-export async function mount(container, page) {
+export async function mount(container, page, { signal } = {}) {
   await ensureLazyModules();
+  // Superseded while its modules loaded (Milestone 70, 70K): a newer
+  // navigation owns the page, so draw nothing.
+  if (signal?.aborted) return;
   normalizeGuardians();
   // Milestone 67B: a filing saved before the four-state bond question reads
   // back with the state its old fields implied, and the retired bondWaived
@@ -535,7 +542,7 @@ function totalsBox(rows){
 }
 
 // ── Entry add/remove ───────────────────────────────────
-function addEntry(schedule){
+export function addEntry(schedule){
   const map={
     a1:'scheduleA1',a2:'scheduleA2',b1:'scheduleB1',b2:'scheduleB2',b3:'scheduleB3',
     b4:'scheduleB4',c1:'scheduleC1',c2:'scheduleC2',c3:'scheduleC3',c4:'scheduleC4',c5:'scheduleC5'
@@ -585,7 +592,7 @@ function setScheduleNoItems(key,val){
 // differs, which is less work than re-typing what doesn't. Values are plain
 // strings/numbers, so a JSON round-trip is a safe deep copy and can't leave
 // the copy sharing a reference with the original.
-function duplicateEntry(schedule,idx){
+export function duplicateEntry(schedule,idx){
   const map={
     a1:'scheduleA1',a2:'scheduleA2',b1:'scheduleB1',b2:'scheduleB2',b3:'scheduleB3',
     b4:'scheduleB4',c1:'scheduleC1',c2:'scheduleC2',c3:'scheduleC3',c4:'scheduleC4',c5:'scheduleC5'
@@ -719,7 +726,7 @@ function pageHome(){
 // PAGE: SUMMARY
 // ═══════════════════════════════════════════════════════
 function getSummaryConfigGuardian(){
-  const nav=window.computeNavChecks();
+  const nav=computeNavChecks();
   return {
     formTitle:'Verified Initial Inventory — Summary',
     infoRows:[
@@ -1412,6 +1419,3 @@ export function validateGuardian(d=getD()){
 //     global directly (:6675, :7068, :7589). Note the Milestone 40H-A comment at
 //     :6661-6665 recording a real bug caused by calling it before assignment --
 //     that history is a reason to leave this bridge, and that comment, alone.
-window.addEntry = addEntry;
-window.duplicateEntry = duplicateEntry;
-window.validateGuardian = validateGuardian;

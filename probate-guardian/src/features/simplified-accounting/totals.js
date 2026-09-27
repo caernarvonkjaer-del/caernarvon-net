@@ -1,7 +1,7 @@
 // Simplified Accounting's running totals (Part II-III). Moved from
 // src/legacy-app.js by Milestone 70's 70B; loaded eagerly (through
-// src/legacy-bridge.js) because the sidebar's headline total reads it for a
-// Simplified filing whose feature has never been opened.
+// src/features-loader.js since 70K) because the sidebar's headline total reads
+// it for a Simplified filing whose feature has never been opened.
 import { getD } from '../../core/state.js';
 
 // The open filing's totals, or those of the filing given (the dashboard's

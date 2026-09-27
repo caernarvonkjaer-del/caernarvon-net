@@ -201,8 +201,3 @@ export function filingCopy(descriptor) {
   };
 }
 
-if (typeof window !== 'undefined') {
-  window.resolveFilingDescriptor = resolveFilingDescriptor;
-  window.resolveDescriptorForInventoryType = resolveDescriptorForInventoryType;
-  window.applyAccountingFilingType = applyAccountingFilingType;
-}

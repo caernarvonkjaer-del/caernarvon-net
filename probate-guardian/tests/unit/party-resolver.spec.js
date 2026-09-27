@@ -18,6 +18,10 @@ import { beforeEach, describe, expect, test, vi } from 'vitest';
 // party-resolver.js publishes its functions on window when it loads.
 vi.hoisted(() => { globalThis.window = globalThis.window || {}; });
 
+// A Party write marks the case changed (case-file.js's markDirtySinceExport(),
+// imported since Milestone 70's 70K), which tells the other tabs: the page's
+// part, stood in here as case-file.spec.js does.
+vi.mock('../../src/core/navigation/tab-state.js', () => ({ notifyProbateGuardianTabStateChanged: () => {}, getProbateGuardianTabState: () => ({}) }));
 import * as partyResolver from '../../src/core/party-resolver.js';
 import * as caseResolver from '../../src/core/case-resolver.js';
 import * as wardCounty from '../../src/core/navigation/ward-county.js';

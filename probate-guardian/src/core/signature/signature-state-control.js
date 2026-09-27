@@ -10,6 +10,8 @@ import { mountSignaturePad } from './signature-pad.js';
 import { partyForSignaturePath, getActiveSignatureImage, addSignatureImage } from '../party-resolver.js';
 import { confirmModal } from '../ui/dialogs.js';
 import { getD, requestSave } from '../state.js';
+import { markDirtySinceExport } from '../persistence/case-file.js';
+import { renderPage } from '../navigation/router.js';
 
 function esc(s) {
   return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -89,9 +91,9 @@ export function mountSignatureStateControls(container, { setImage, route }) {
 
     const commitImage = (dataUrl) => {
       setImage(imagePath, dataUrl);
-      window.markDirtySinceExport?.();
+      markDirtySinceExport();
       requestSave();
-      if (route && window.renderPage) window.renderPage(route);
+      if (route) renderPage(route);
     };
 
     mountSavedStampAffordance(mountEl, path, commitImage);

@@ -28,6 +28,7 @@ import { formEngine, INVENTORY_TYPES } from './filing-registry.js';
 import { normalizeCountyName } from '../navigation/ward-county.js';
 import { reconcileSlotWithParty, resolveParty } from '../party-resolver.js';
 import { getCaseFile } from '../state.js';
+import { features } from '../runtime/features.js';
 
 export const ACCOUNTING_FORM_TYPES = ['guardian', 'simplified', 'annual', 'finalAccounting', 'trustAccounting'];
 export const PRIOR_ACCOUNTING_SOURCES = ['guardian', 'simplified', 'annual', 'finalAccounting', 'trustAccounting'];
@@ -439,7 +440,7 @@ export function carryOverAccountingToAccounting(src,targetType){
     attorney_bar:attyBar, attorney_phone:attyPhone,
     attorney_street:attyStreet, attorney_cityStateZip:attyCityStateZip,
     ...(carryingFinancials ? {
-      startingBalance:String(window.calcTotalsAnnual(src).netAssetsFromD),
+      startingBalance:String(features().totals.annual(src).netAssetsFromD),
       certRecipients:(src.certRecipients||[]).map(r=>({...r})),
     } : {}),
     guardians:[0,1,2].map(i=>{

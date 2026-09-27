@@ -161,7 +161,7 @@ describe('the filing lifecycle service', () => {
       : n.callee.type === 'MemberExpression' && !n.callee.computed ? n.callee.property.name : null);
     const offenders = [];
     const allowed = {};
-    let transitions = 0;
+    const transitions = {};
     for (const r of modules()) {
       if (r === 'src/core/state.js') continue;
       visit(parseModule(r), (n) => {
@@ -173,11 +173,16 @@ describe('the filing lifecycle service', () => {
           if ((ALLOWED[name] || []).includes(r)) (allowed[name] ||= new Set()).add(r);
           else offenders.push(`${r}:${n.loc.start.line} ${name}()`);
         }
-        if (r === 'src/core/navigation/ward-lifecycle.js' && n.type === 'CallExpression' && n.callee.type === 'Identifier' && n.callee.name === 'setActiveFiling') transitions += 1;
+        if (n.type === 'CallExpression' && n.callee.type === 'Identifier' && n.callee.name === 'setActiveFiling') transitions[r] = (transitions[r] || 0) + 1;
       });
     }
     expect(offenders).toEqual([]);
-    expect(transitions, "ward-lifecycle.js's open and close").toBe(2);
+    // Opening a filing is the lifecycle's; closing it is the router's, which
+    // commits and saves before it leaves (leave-filing.js, since Milestone 70's 70K).
+    expect(transitions, 'the open (ward-lifecycle.js) and the close (leave-filing.js)').toEqual({
+      'src/core/navigation/ward-lifecycle.js': 1,
+      'src/core/navigation/leave-filing.js': 1,
+    });
     // Each allowed caller still is one (no stale allowance left behind).
     expect(Object.fromEntries(Object.entries(allowed).map(([k, v]) => [k, [...v].sort()]))).toEqual(ALLOWED);
 

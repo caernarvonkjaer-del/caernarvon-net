@@ -51,6 +51,7 @@ import { countyInputS, inpS, pageIntroRow, pageNavS, yesNoCheckboxS } from '../.
 import { setPath } from '../../core/form/paths.js';
 import { tooltip } from '../../core/help/tooltips.js';
 import { openFloridaCourtPortal } from '../../core/shell/court-portal.js';
+import { navigate } from '../../core/navigation/router.js';
 // Milestone 57B: carried verbatim from MILESTONE-57-PROPOSAL.md section 57B.
 // The wording is load bearing (section 8 #8). Do not paraphrase or re-voice it.
 const ATTESTATION_57B = 'No recipients are required for this certificate (filer attestation - app does not determine legal necessity)';
@@ -60,31 +61,15 @@ const ATTESTATION_57B = 'No recipients are required for this certificate (filer 
 const RECIPIENT_STARTED_FIELDS = ['name', 'line2', 'line3', 'line4'];
 // Simplified Accounting — the pilot feature extraction (Milestone 2, Phase
 // D of INDEX-SPLIT-PLAN.md's migration sequence). Dynamically imported by
-// legacy-app.js's mountSimplifiedFeature()/mountSimplifiedNav() bridges,
-// never statically imported, so this module's ~700 lines and its own
+// src/features-loader.js (it was legacy-app.js's mountSimplifiedFeature() and
+// mountSimplifiedNav() bridges), never statically imported, so this module's ~700 lines and its own
 // print.js/excel.js children genuinely aren't fetched/evaluated until a
 // user actually opens or creates a Simplified Accounting ward.
 //
-// legacy-app.js stays a classic (non-module) script (Milestone 1's recorded
-// decision), so its top-level function declarations are real `window`
-// properties this module can destructure -- but a bare top-level `let`
-// (activeInventoryType, currentPage) is not; see src/core/state.js's file
-// header for the full explanation. Everything below that isn't defined in
-// this file is one of those legacy globals, deliberately left in place
-// rather than moved or wrapped: some (inpS, countyInputS, pageNavS, tdSig)
-// are still shared with the four not-yet-extracted Plan types. calcTotals
-// was one too, because the dashboard needs it for every Simplified ward's
-// card total *before* this module is ever loaded (see the Milestone 2 plan's
-// "Problem 1" and "Problem 3"); since Milestone 70's 70B it lives in
-// ./totals.js, small enough that src/legacy-bridge.js loads it eagerly for the
-// dashboard while this module stays lazy.
-const {
-  navigate,
-  
-  
-  
-  
-} = window;
+// Until Milestone 70's 70K it took navigate() off window as it loaded (the
+// monolith's); it imports the router's. calcTotals lives in ./totals.js,
+// small enough that src/features-loader.js loads it eagerly for the
+// dashboard's card total while this module stays lazy.
 
 // print.js/excel.js are dynamically imported once, together, the first time
 // this feature mounts (not deferred further to an actual /print visit or
@@ -198,8 +183,11 @@ function ensureLazyModules() {
   return _lazyModulesPromise;
 }
 
-export async function mount(container, page) {
+export async function mount(container, page, { signal } = {}) {
   await ensureLazyModules();
+  // Superseded while its modules loaded (Milestone 70, 70K): a newer
+  // navigation owns the page, so draw nothing.
+  if (signal?.aborted) return;
   normalizeSimplifiedGuardianCompatibility(getD(), { persistedSource: true });
   sanitizeNegativeAmounts();
   let html;
@@ -844,4 +832,3 @@ export function validateSimplified(){
 // Milestone 33, Phase 2.3: see annual-accounting/index.js's identical comment --
 // exposing this lets the shared guidance panel itemize Simplified's own missing
 // fields instead of only showing a generic message.
-window.validateSimplified = validateSimplified;

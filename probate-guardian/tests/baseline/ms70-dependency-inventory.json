@@ -5,1696 +5,8 @@
   "src/legacy-app.js",
   "src/prepaint.js"
  ],
- "classicDeclarations": [
-  {
-   "file": "src/legacy-app.js",
-   "name": "getD",
-   "kind": "function",
-   "line": 22
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "getActiveInventoryType",
-   "kind": "function",
-   "line": 23
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "currentPage",
-   "kind": "let",
-   "line": 60
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "getCurrentPage",
-   "kind": "function",
-   "line": 73
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "calcTotals",
-   "kind": "function",
-   "line": 91
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "calcTotalsGuardian",
-   "kind": "function",
-   "line": 92
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "formEngine",
-   "kind": "function",
-   "line": 97
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "getWardHeadlineTotal",
-   "kind": "function",
-   "line": 209
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "_simplifiedFeatureBridge",
-   "kind": "let",
-   "line": 322
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "getSimplifiedFeatureBridge",
-   "kind": "function",
-   "line": 323
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "mountSimplifiedFeature",
-   "kind": "function",
-   "line": 326
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "mountSimplifiedNav",
-   "kind": "function",
-   "line": 329
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "_annualFeatureBridge",
-   "kind": "let",
-   "line": 343
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "getAnnualFeatureBridge",
-   "kind": "function",
-   "line": 344
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "mountAnnualFeature",
-   "kind": "function",
-   "line": 347
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "mountAnnualNav",
-   "kind": "function",
-   "line": 350
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "_guardianFeatureBridge",
-   "kind": "let",
-   "line": 364
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "getGuardianFeatureBridge",
-   "kind": "function",
-   "line": 365
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "mountGuardianFeature",
-   "kind": "function",
-   "line": 368
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "mountGuardianNav",
-   "kind": "function",
-   "line": 371
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "ensureGuardianFeatureReady",
-   "kind": "function",
-   "line": 374
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "_dashboardFeatureBridge",
-   "kind": "let",
-   "line": 393
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "getDashboardFeatureBridge",
-   "kind": "function",
-   "line": 394
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "mountDashboardFeature",
-   "kind": "function",
-   "line": 397
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "_planSimplifiedFeatureBridge",
-   "kind": "let",
-   "line": 426
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "getPlanSimplifiedFeatureBridge",
-   "kind": "function",
-   "line": 427
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "mountPlanSimplifiedFeature",
-   "kind": "function",
-   "line": 430
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "mountPlanSimplifiedNav",
-   "kind": "function",
-   "line": 433
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "_planAnnualFeatureBridge",
-   "kind": "let",
-   "line": 451
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "getPlanAnnualFeatureBridge",
-   "kind": "function",
-   "line": 452
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "mountPlanAnnualFeature",
-   "kind": "function",
-   "line": 455
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "mountPlanAnnualNav",
-   "kind": "function",
-   "line": 458
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "_planInitialFeatureBridge",
-   "kind": "let",
-   "line": 504
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "getPlanInitialFeatureBridge",
-   "kind": "function",
-   "line": 505
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "mountPlanInitialFeature",
-   "kind": "function",
-   "line": 508
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "mountPlanInitialNav",
-   "kind": "function",
-   "line": 511
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "_planMinorFeatureBridge",
-   "kind": "let",
-   "line": 535
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "getPlanMinorFeatureBridge",
-   "kind": "function",
-   "line": 536
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "mountPlanMinorFeature",
-   "kind": "function",
-   "line": 539
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "mountPlanMinorNav",
-   "kind": "function",
-   "line": 542
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "n",
-   "kind": "function",
-   "line": 549
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "pct",
-   "kind": "function",
-   "line": 550
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "computeNavChecks",
-   "kind": "function",
-   "line": 643
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "getWardProgress",
-   "kind": "function",
-   "line": 651
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "updateNavActive",
-   "kind": "function",
-   "line": 702
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "SPECIAL_PAGES",
-   "kind": "const",
-   "line": 713
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "handleHash",
-   "kind": "function",
-   "line": 714
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "provideMonolithServices",
-   "kind": "function",
-   "line": 758
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "initApp",
-   "kind": "function",
-   "line": 760
-  }
- ],
+ "classicDeclarations": [],
  "edges": [
-  {
-   "from": "src/core/feature-bridge.js",
-   "to": "src/core/navigation/router.js",
-   "kind": "window",
-   "name": "attachFormHeaderActions",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/feature-bridge.js",
-   "to": "src/core/navigation/router.js",
-   "kind": "window",
-   "name": "attachFormHeaderActions",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/filing/carry-over.js",
-   "to": "src/features/annual-accounting/totals.js",
-   "kind": "window",
-   "name": "calcTotalsAnnual",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/filing/output-preflight.js",
-   "to": "src/main.js",
-   "kind": "window",
-   "name": "isOutputAcknowledgedFor",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/filing/output-preflight.js",
-   "to": "src/main.js",
-   "kind": "window",
-   "name": "isOutputAcknowledgedFor",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/form/commit-coordinator.js",
-   "to": "src/core/form/form-contract.js",
-   "kind": "window",
-   "name": "_transientDrafts",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/form/commit-coordinator.js",
-   "to": "src/core/form/form-contract.js",
-   "kind": "window",
-   "name": "_transientDrafts",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/form/commit-coordinator.js",
-   "to": "src/main.js",
-   "kind": "window",
-   "name": "markFilingRevisionChanged",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/form/commit-coordinator.js",
-   "to": "src/core/form/form-contract.js",
-   "kind": "window",
-   "name": "_transientDrafts",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/form/commit-coordinator.js",
-   "to": "src/core/form/form-contract.js",
-   "kind": "window",
-   "name": "_transientDrafts",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/form/commit-coordinator.js",
-   "to": "src/main.js",
-   "kind": "window",
-   "name": "markFilingRevisionChanged",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/form/form-contract.js",
-   "to": "src/core/form/commit-coordinator.js",
-   "kind": "window",
-   "name": "_transientDrafts",
-   "evalTime": true
-  },
-  {
-   "from": "src/core/form/form-contract.js",
-   "to": "src/main.js",
-   "kind": "window",
-   "name": "markFilingRevisionChanged",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/form/form-contract.js",
-   "to": "src/core/navigation/ward-county.js",
-   "kind": "window",
-   "name": "maybeCommitCoverCounty",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/form/form-contract.js",
-   "to": "src/core/party-resolver.js",
-   "kind": "window",
-   "name": "identitySlotForPath",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/form/form-contract.js",
-   "to": "src/core/party-resolver.js",
-   "kind": "window",
-   "name": "syncIdentityField",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/form/form-contract.js",
-   "to": "src/core/party-resolver.js",
-   "kind": "window",
-   "name": "syncIdentityField",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/form/form-contract.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "getCurrentPage",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/form/form-contract.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "getCurrentPage",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/form/form-fields.js",
-   "to": "src/core/form/commit-coordinator.js",
-   "kind": "window",
-   "name": "getFieldDraftDisplay",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/form/schedule-definitions.js",
-   "to": "src/main.js",
-   "kind": "window",
-   "name": "markFilingRevisionChanged",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/form/schedule-definitions.js",
-   "to": "src/main.js",
-   "kind": "window",
-   "name": "markFilingRevisionChanged",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/form/schedule-definitions.js",
-   "to": "src/main.js",
-   "kind": "window",
-   "name": "markFilingRevisionChanged",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/router.js",
-   "to": "src/core/navigation/ward-lifecycle.js",
-   "kind": "window",
-   "name": "currentPage",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/router.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "currentPage",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/router.js",
-   "to": "src/core/navigation/ward-lifecycle.js",
-   "kind": "window",
-   "name": "currentPage",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/router.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "currentPage",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/router.js",
-   "to": "src/core/form/form-contract.js",
-   "kind": "window",
-   "name": "commitPendingFieldValues",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/router.js",
-   "to": "src/core/navigation/ward-lifecycle.js",
-   "kind": "window",
-   "name": "enterDashboardEditingFocus",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/router.js",
-   "to": "src/core/navigation/ward-lifecycle.js",
-   "kind": "window",
-   "name": "enterDashboardEditingFocus",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/router.js",
-   "to": "src/core/navigation/ward-lifecycle.js",
-   "kind": "window",
-   "name": "enterDashboardEditingFocus",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/router.js",
-   "to": "src/core/navigation/ward-lifecycle.js",
-   "kind": "window",
-   "name": "enterDashboardEditingFocus",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/router.js",
-   "to": "src/core/feature-bridge.js",
-   "kind": "window",
-   "name": "disposeActiveFeature",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/router.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "mountDashboardFeature",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/router.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "mountDashboardFeature",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/router.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "mountGuardianFeature",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/router.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "mountSimplifiedFeature",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/router.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "mountAnnualFeature",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/router.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "mountPlanSimplifiedFeature",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/router.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "mountPlanAnnualFeature",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/router.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "mountPlanInitialFeature",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/router.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "mountPlanMinorFeature",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/ward-lifecycle.js",
-   "to": "src/core/form/form-contract.js",
-   "kind": "window",
-   "name": "commitPendingFieldValues",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/ward-lifecycle.js",
-   "to": "src/core/ward-lock.js",
-   "kind": "window",
-   "name": "releaseWardLock",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/ward-lifecycle.js",
-   "to": "src/core/ward-lock.js",
-   "kind": "window",
-   "name": "releaseWardLock",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/ward-lifecycle.js",
-   "to": "src/core/persistence/case-file.js",
-   "kind": "window",
-   "name": "refreshAutoSaveArmedStatus",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/ward-lifecycle.js",
-   "to": "src/core/ward-lock.js",
-   "kind": "window",
-   "name": "acquireWardLock",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/ward-lifecycle.js",
-   "to": "src/core/ward-lock.js",
-   "kind": "window",
-   "name": "acquireWardLock",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/ward-lifecycle.js",
-   "to": "src/core/persistence/case-file.js",
-   "kind": "window",
-   "name": "refreshAutoSaveArmedStatus",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/ward-lifecycle.js",
-   "to": "src/core/persistence/case-file.js",
-   "kind": "window",
-   "name": "refreshAutoSaveArmedStatus",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/ward-lifecycle.js",
-   "to": "src/core/persistence/case-file.js",
-   "kind": "window",
-   "name": "refreshAutoSaveArmedStatus",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/ward-lifecycle.js",
-   "to": "src/core/persistence/case-file.js",
-   "kind": "window",
-   "name": "refreshAutoSaveArmedStatus",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/ward-lifecycle.js",
-   "to": "src/core/ward-lock.js",
-   "kind": "window",
-   "name": "acquireWardLock",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/ward-lifecycle.js",
-   "to": "src/core/ward-lock.js",
-   "kind": "window",
-   "name": "acquireWardLock",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/ward-lifecycle.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "ensureGuardianFeatureReady",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/ward-lifecycle.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "ensureGuardianFeatureReady",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/ward-lifecycle.js",
-   "to": "src/core/persistence/case-file.js",
-   "kind": "window",
-   "name": "refreshAutoSaveArmedStatus",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/ward-lifecycle.js",
-   "to": "src/core/persistence/case-file.js",
-   "kind": "window",
-   "name": "refreshAutoSaveArmedStatus",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/ward-lifecycle.js",
-   "to": "src/core/navigation/router.js",
-   "kind": "window",
-   "name": "navigate",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/ward-lifecycle.js",
-   "to": "src/main.js",
-   "kind": "window",
-   "name": "navigate",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/ward-lifecycle.js",
-   "to": "src/core/navigation/router.js",
-   "kind": "window",
-   "name": "navigate",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/ward-lifecycle.js",
-   "to": "src/main.js",
-   "kind": "window",
-   "name": "navigate",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/ward-lifecycle.js",
-   "to": "src/core/persistence/case-file.js",
-   "kind": "window",
-   "name": "updateLastSavedIndicator",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/ward-lifecycle.js",
-   "to": "src/core/persistence/case-file.js",
-   "kind": "window",
-   "name": "updateLastSavedIndicator",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/ward-lifecycle.js",
-   "to": "src/core/navigation/router.js",
-   "kind": "window",
-   "name": "navigate",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/ward-lifecycle.js",
-   "to": "src/main.js",
-   "kind": "window",
-   "name": "navigate",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/ward-lifecycle.js",
-   "to": "src/core/navigation/router.js",
-   "kind": "window",
-   "name": "navigate",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/ward-lifecycle.js",
-   "to": "src/main.js",
-   "kind": "window",
-   "name": "navigate",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/ward-lifecycle.js",
-   "to": "src/core/persistence/case-file.js",
-   "kind": "window",
-   "name": "showAutoExportReminder",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/ward-lifecycle.js",
-   "to": "src/core/persistence/case-file.js",
-   "kind": "window",
-   "name": "showAutoExportReminder",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/ward-lifecycle.js",
-   "to": "src/core/navigation/router.js",
-   "kind": "window",
-   "name": "closeMobileSidebar",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/ward-lifecycle.js",
-   "to": "src/core/navigation/router.js",
-   "kind": "window",
-   "name": "closeMobileSidebar",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/ward-lifecycle.js",
-   "to": "src/core/navigation/router.js",
-   "kind": "window",
-   "name": "navigate",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/ward-lifecycle.js",
-   "to": "src/main.js",
-   "kind": "window",
-   "name": "navigate",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/ward-lifecycle.js",
-   "to": "src/core/navigation/router.js",
-   "kind": "window",
-   "name": "navigate",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/ward-lifecycle.js",
-   "to": "src/main.js",
-   "kind": "window",
-   "name": "navigate",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/ward-lifecycle.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "mountGuardianFeature",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/ward-lifecycle.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "mountSimplifiedFeature",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/ward-lifecycle.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "mountAnnualFeature",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/ward-lifecycle.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "mountPlanSimplifiedFeature",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/ward-lifecycle.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "mountPlanAnnualFeature",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/ward-lifecycle.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "mountPlanInitialFeature",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/navigation/ward-lifecycle.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "mountPlanMinorFeature",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/party-resolver.js",
-   "to": "src/main.js",
-   "kind": "window",
-   "name": "markFilingRevisionChanged",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/party-resolver.js",
-   "to": "src/core/persistence/case-file.js",
-   "kind": "window",
-   "name": "markDirtySinceExport",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/party-resolver.js",
-   "to": "src/core/persistence/case-file.js",
-   "kind": "window",
-   "name": "markDirtySinceExport",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/party-resolver.js",
-   "to": "src/main.js",
-   "kind": "window",
-   "name": "markFilingRevisionChanged",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/party-resolver.js",
-   "to": "src/core/persistence/case-file.js",
-   "kind": "window",
-   "name": "markDirtySinceExport",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/party-resolver.js",
-   "to": "src/core/persistence/case-file.js",
-   "kind": "window",
-   "name": "markDirtySinceExport",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/party-resolver.js",
-   "to": "src/main.js",
-   "kind": "window",
-   "name": "markFilingRevisionChanged",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/party-resolver.js",
-   "to": "src/main.js",
-   "kind": "window",
-   "name": "markFilingRevisionChanged",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/party-resolver.js",
-   "to": "src/main.js",
-   "kind": "window",
-   "name": "markFilingRevisionChanged",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/pdf/pdf-preview.js",
-   "to": "src/core/persistence/case-file.js",
-   "kind": "window",
-   "name": "markDirtySinceExport",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/pdf/pdf-preview.js",
-   "to": "src/core/persistence/case-file.js",
-   "kind": "window",
-   "name": "markDirtySinceExport",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/signature/signature-state-control.js",
-   "to": "src/core/persistence/case-file.js",
-   "kind": "window",
-   "name": "markDirtySinceExport",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/signature/signature-state-control.js",
-   "to": "src/core/navigation/router.js",
-   "kind": "window",
-   "name": "renderPage",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/signature/signature-state-control.js",
-   "to": "src/core/navigation/router.js",
-   "kind": "window",
-   "name": "renderPage",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/status/nav-marks.js",
-   "to": "src/features/guardian-inventory/index.js",
-   "kind": "window",
-   "name": "validateGuardian",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/status/nav-marks.js",
-   "to": "src/features/simplified-accounting/index.js",
-   "kind": "window",
-   "name": "validateSimplified",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/status/nav-marks.js",
-   "to": "src/features/annual-accounting/index.js",
-   "kind": "window",
-   "name": "validateAnnual",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/status/nav-marks.js",
-   "to": "src/features/plan-simplified/index.js",
-   "kind": "window",
-   "name": "validatePlanSimplified",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/status/nav-marks.js",
-   "to": "src/features/plan-annual/index.js",
-   "kind": "window",
-   "name": "validatePlanAnnual",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/status/nav-marks.js",
-   "to": "src/features/plan-initial/index.js",
-   "kind": "window",
-   "name": "validatePlanInitial",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/status/nav-marks.js",
-   "to": "src/features/plan-minor/index.js",
-   "kind": "window",
-   "name": "validatePlanMinor",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/validation/validation-adapter.js",
-   "to": "src/core/navigation/router.js",
-   "kind": "window",
-   "name": "navigate",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/validation/validation-adapter.js",
-   "to": "src/main.js",
-   "kind": "window",
-   "name": "navigate",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/validation/validation-adapter.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "getCurrentPage",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/validation/validation-adapter.js",
-   "to": "src/core/navigation/router.js",
-   "kind": "window",
-   "name": "navigate",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/validation/validation-adapter.js",
-   "to": "src/main.js",
-   "kind": "window",
-   "name": "navigate",
-   "evalTime": false
-  },
-  {
-   "from": "src/features/annual-accounting/excel.js",
-   "to": "src/main.js",
-   "kind": "window",
-   "name": "markFilingRevisionChanged",
-   "evalTime": false
-  },
-  {
-   "from": "src/features/annual-accounting/excel.js",
-   "to": "src/core/navigation/router.js",
-   "kind": "window",
-   "name": "renderPage",
-   "evalTime": true
-  },
-  {
-   "from": "src/features/annual-accounting/excel.js",
-   "to": "src/features/annual-accounting/totals.js",
-   "kind": "window",
-   "name": "calcTotalsAnnual",
-   "evalTime": true
-  },
-  {
-   "from": "src/features/annual-accounting/excel.js",
-   "to": "src/features/annual-accounting/totals.js",
-   "kind": "window",
-   "name": "annualReconcileState",
-   "evalTime": true
-  },
-  {
-   "from": "src/features/annual-accounting/excel.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "getCurrentPage",
-   "evalTime": true
-  },
-  {
-   "from": "src/features/annual-accounting/index.js",
-   "to": "src/core/navigation/router.js",
-   "kind": "window",
-   "name": "navigate",
-   "evalTime": true
-  },
-  {
-   "from": "src/features/annual-accounting/index.js",
-   "to": "src/main.js",
-   "kind": "window",
-   "name": "navigate",
-   "evalTime": true
-  },
-  {
-   "from": "src/features/annual-accounting/index.js",
-   "to": "src/features/annual-accounting/totals.js",
-   "kind": "window",
-   "name": "calcTotalsAnnual",
-   "evalTime": true
-  },
-  {
-   "from": "src/features/annual-accounting/index.js",
-   "to": "src/features/annual-accounting/totals.js",
-   "kind": "window",
-   "name": "annualReconcileState",
-   "evalTime": true
-  },
-  {
-   "from": "src/features/annual-accounting/index.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "n",
-   "evalTime": true
-  },
-  {
-   "from": "src/features/annual-accounting/index.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "pct",
-   "evalTime": true
-  },
-  {
-   "from": "src/features/annual-accounting/print.js",
-   "to": "src/core/navigation/router.js",
-   "kind": "window",
-   "name": "renderPage",
-   "evalTime": true
-  },
-  {
-   "from": "src/features/guardian-inventory/excel.js",
-   "to": "src/main.js",
-   "kind": "window",
-   "name": "markFilingRevisionChanged",
-   "evalTime": false
-  },
-  {
-   "from": "src/features/guardian-inventory/excel.js",
-   "to": "src/core/navigation/router.js",
-   "kind": "window",
-   "name": "renderPage",
-   "evalTime": true
-  },
-  {
-   "from": "src/features/guardian-inventory/excel.js",
-   "to": "src/core/navigation/router.js",
-   "kind": "window",
-   "name": "navigate",
-   "evalTime": true
-  },
-  {
-   "from": "src/features/guardian-inventory/excel.js",
-   "to": "src/main.js",
-   "kind": "window",
-   "name": "navigate",
-   "evalTime": true
-  },
-  {
-   "from": "src/features/guardian-inventory/index.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "computeNavChecks",
-   "evalTime": false
-  },
-  {
-   "from": "src/features/guardian-inventory/index.js",
-   "to": "src/core/navigation/router.js",
-   "kind": "window",
-   "name": "navigate",
-   "evalTime": true
-  },
-  {
-   "from": "src/features/guardian-inventory/index.js",
-   "to": "src/main.js",
-   "kind": "window",
-   "name": "navigate",
-   "evalTime": true
-  },
-  {
-   "from": "src/features/guardian-inventory/index.js",
-   "to": "src/core/navigation/router.js",
-   "kind": "window",
-   "name": "renderPage",
-   "evalTime": true
-  },
-  {
-   "from": "src/features/guardian-inventory/index.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "getCurrentPage",
-   "evalTime": true
-  },
-  {
-   "from": "src/features/guardian-inventory/index.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "computeNavChecks",
-   "evalTime": true
-  },
-  {
-   "from": "src/features/guardian-inventory/print.js",
-   "to": "src/core/navigation/router.js",
-   "kind": "window",
-   "name": "renderPage",
-   "evalTime": true
-  },
-  {
-   "from": "src/features/plan-annual/print.js",
-   "to": "src/core/navigation/router.js",
-   "kind": "window",
-   "name": "renderPage",
-   "evalTime": true
-  },
-  {
-   "from": "src/features/plan-initial/print.js",
-   "to": "src/core/navigation/router.js",
-   "kind": "window",
-   "name": "renderPage",
-   "evalTime": true
-  },
-  {
-   "from": "src/features/plan-minor/print.js",
-   "to": "src/core/navigation/router.js",
-   "kind": "window",
-   "name": "renderPage",
-   "evalTime": true
-  },
-  {
-   "from": "src/features/plan-simplified/index.js",
-   "to": "src/features/annual-accounting/print.js",
-   "kind": "window",
-   "name": "printCurrentFilingPdf",
-   "evalTime": false
-  },
-  {
-   "from": "src/features/plan-simplified/index.js",
-   "to": "src/features/guardian-inventory/print.js",
-   "kind": "window",
-   "name": "printCurrentFilingPdf",
-   "evalTime": false
-  },
-  {
-   "from": "src/features/plan-simplified/index.js",
-   "to": "src/features/plan-annual/print.js",
-   "kind": "window",
-   "name": "printCurrentFilingPdf",
-   "evalTime": false
-  },
-  {
-   "from": "src/features/plan-simplified/index.js",
-   "to": "src/features/plan-initial/print.js",
-   "kind": "window",
-   "name": "printCurrentFilingPdf",
-   "evalTime": false
-  },
-  {
-   "from": "src/features/plan-simplified/index.js",
-   "to": "src/features/plan-minor/print.js",
-   "kind": "window",
-   "name": "printCurrentFilingPdf",
-   "evalTime": false
-  },
-  {
-   "from": "src/features/plan-simplified/index.js",
-   "to": "src/features/plan-simplified/print.js",
-   "kind": "window",
-   "name": "printCurrentFilingPdf",
-   "evalTime": false
-  },
-  {
-   "from": "src/features/plan-simplified/index.js",
-   "to": "src/features/simplified-accounting/print.js",
-   "kind": "window",
-   "name": "printCurrentFilingPdf",
-   "evalTime": false
-  },
-  {
-   "from": "src/features/plan-simplified/print.js",
-   "to": "src/core/navigation/router.js",
-   "kind": "window",
-   "name": "renderPage",
-   "evalTime": true
-  },
-  {
-   "from": "src/features/simplified-accounting/excel.js",
-   "to": "src/main.js",
-   "kind": "window",
-   "name": "markFilingRevisionChanged",
-   "evalTime": false
-  },
-  {
-   "from": "src/features/simplified-accounting/excel.js",
-   "to": "src/core/navigation/router.js",
-   "kind": "window",
-   "name": "renderPage",
-   "evalTime": true
-  },
-  {
-   "from": "src/features/simplified-accounting/excel.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "getCurrentPage",
-   "evalTime": true
-  },
-  {
-   "from": "src/features/simplified-accounting/guardian-compatibility.js",
-   "to": "src/main.js",
-   "kind": "window",
-   "name": "markFilingRevisionChanged",
-   "evalTime": false
-  },
-  {
-   "from": "src/features/simplified-accounting/index.js",
-   "to": "src/core/navigation/router.js",
-   "kind": "window",
-   "name": "navigate",
-   "evalTime": true
-  },
-  {
-   "from": "src/features/simplified-accounting/index.js",
-   "to": "src/main.js",
-   "kind": "window",
-   "name": "navigate",
-   "evalTime": true
-  },
-  {
-   "from": "src/features/simplified-accounting/print.js",
-   "to": "src/core/navigation/router.js",
-   "kind": "window",
-   "name": "renderPage",
-   "evalTime": true
-  },
-  {
-   "from": "src/form-events.js",
-   "to": "src/features/annual-accounting/print.js",
-   "kind": "window",
-   "name": "printCurrentFilingPdf",
-   "evalTime": false
-  },
-  {
-   "from": "src/form-events.js",
-   "to": "src/features/guardian-inventory/print.js",
-   "kind": "window",
-   "name": "printCurrentFilingPdf",
-   "evalTime": false
-  },
-  {
-   "from": "src/form-events.js",
-   "to": "src/features/plan-annual/print.js",
-   "kind": "window",
-   "name": "printCurrentFilingPdf",
-   "evalTime": false
-  },
-  {
-   "from": "src/form-events.js",
-   "to": "src/features/plan-initial/print.js",
-   "kind": "window",
-   "name": "printCurrentFilingPdf",
-   "evalTime": false
-  },
-  {
-   "from": "src/form-events.js",
-   "to": "src/features/plan-minor/print.js",
-   "kind": "window",
-   "name": "printCurrentFilingPdf",
-   "evalTime": false
-  },
-  {
-   "from": "src/form-events.js",
-   "to": "src/features/plan-simplified/print.js",
-   "kind": "window",
-   "name": "printCurrentFilingPdf",
-   "evalTime": false
-  },
-  {
-   "from": "src/form-events.js",
-   "to": "src/features/simplified-accounting/print.js",
-   "kind": "window",
-   "name": "printCurrentFilingPdf",
-   "evalTime": false
-  },
-  {
-   "from": "src/form-events.js",
-   "to": "src/features/plan-annual/index.js",
-   "kind": "window",
-   "name": "doSavePdfPlanAnnual",
-   "evalTime": false
-  },
-  {
-   "from": "src/form-events.js",
-   "to": "src/features/plan-initial/index.js",
-   "kind": "window",
-   "name": "doSavePdfPlanInitial",
-   "evalTime": false
-  },
-  {
-   "from": "src/form-events.js",
-   "to": "src/features/plan-minor/index.js",
-   "kind": "window",
-   "name": "doSavePdfPlanMinor",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/legacy-bridge.js",
-   "kind": "window",
-   "name": "GuardianFormsLegacyBridge",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/legacy-bridge.js",
-   "kind": "window",
-   "name": "GuardianFormsLegacyBridge",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/legacy-bridge.js",
-   "kind": "window",
-   "name": "GuardianFormsLegacyBridge",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/legacy-bridge.js",
-   "kind": "window",
-   "name": "GuardianFormsLegacyBridge",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/legacy-bridge.js",
-   "kind": "window",
-   "name": "GuardianFormsLegacyBridge",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/core/feature-bridge.js",
-   "kind": "window",
-   "name": "createFeatureBridge",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/features-loader.js",
-   "kind": "window",
-   "name": "loadSimplifiedFeature",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/core/feature-bridge.js",
-   "kind": "window",
-   "name": "createFeatureBridge",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/features-loader.js",
-   "kind": "window",
-   "name": "loadAnnualFeature",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/core/feature-bridge.js",
-   "kind": "window",
-   "name": "createFeatureBridge",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/features-loader.js",
-   "kind": "window",
-   "name": "loadGuardianFeature",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/features-loader.js",
-   "kind": "window",
-   "name": "loadGuardianFeature",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/features-loader.js",
-   "kind": "window",
-   "name": "loadGuardianFeature",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/core/feature-bridge.js",
-   "kind": "window",
-   "name": "createFeatureBridge",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/features-loader.js",
-   "kind": "window",
-   "name": "loadDashboardFeature",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/core/feature-bridge.js",
-   "kind": "window",
-   "name": "createFeatureBridge",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/features-loader.js",
-   "kind": "window",
-   "name": "loadPlanSimplifiedFeature",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/core/feature-bridge.js",
-   "kind": "window",
-   "name": "createFeatureBridge",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/features-loader.js",
-   "kind": "window",
-   "name": "loadPlanAnnualFeature",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/core/feature-bridge.js",
-   "kind": "window",
-   "name": "createFeatureBridge",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/features-loader.js",
-   "kind": "window",
-   "name": "loadPlanInitialFeature",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/core/feature-bridge.js",
-   "kind": "window",
-   "name": "createFeatureBridge",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/features-loader.js",
-   "kind": "window",
-   "name": "loadPlanMinorFeature",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/legacy-bridge.js",
-   "kind": "window",
-   "name": "GuardianFormsLegacyBridge",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/features/guardian-inventory/index.js",
-   "kind": "window",
-   "name": "validateGuardian",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/legacy-bridge.js",
-   "kind": "window",
-   "name": "GuardianFormsLegacyBridge",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/features/guardian-inventory/index.js",
-   "kind": "window",
-   "name": "validateGuardian",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/legacy-bridge.js",
-   "kind": "window",
-   "name": "GuardianFormsLegacyBridge",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/legacy-bridge.js",
-   "kind": "window",
-   "name": "GuardianFormsLegacyBridge",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/legacy-bridge.js",
-   "kind": "window",
-   "name": "GuardianFormsLegacyBridge",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/features/annual-accounting/totals.js",
-   "kind": "bare",
-   "name": "calcTotalsAnnual",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/features/annual-accounting/totals.js",
-   "kind": "bare",
-   "name": "annualReconcileState",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/core/navigation/router.js",
-   "kind": "bare",
-   "name": "navigate",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/main.js",
-   "kind": "bare",
-   "name": "navigate",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/core/navigation/router.js",
-   "kind": "bare",
-   "name": "renderPage",
-   "evalTime": false
-  },
-  {
-   "from": "src/main.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "initApp",
-   "evalTime": true
-  },
-  {
-   "from": "src/main.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "initApp",
-   "evalTime": true
-  },
-  {
-   "from": "src/tab-coordination.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "PG_APP_VERSION",
-   "evalTime": false
-  },
-  {
-   "from": "src/tab-coordination.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "PG_APP_VERSION",
-   "evalTime": false
-  },
   {
    "from": "src/core/activity/activity-log-view.js",
    "to": "src/core/filing/escape-html.js",
@@ -1864,6 +176,13 @@
    "evalTime": null
   },
   {
+   "from": "src/core/filing/carry-over.js",
+   "to": "src/core/runtime/features.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
    "from": "src/core/filing/conversion.js",
    "to": "src/core/case-resolver.js",
    "kind": "import-static",
@@ -1914,7 +233,7 @@
   },
   {
    "from": "src/core/filing/conversion.js",
-   "to": "src/core/runtime/monolith.js",
+   "to": "src/core/runtime/features.js",
    "kind": "import-static",
    "name": null,
    "evalTime": null
@@ -2082,7 +401,7 @@
   },
   {
    "from": "src/core/filing/filing-years.js",
-   "to": "src/core/runtime/monolith.js",
+   "to": "src/core/runtime/features.js",
    "kind": "import-static",
    "name": null,
    "evalTime": null
@@ -2187,7 +506,14 @@
   },
   {
    "from": "src/core/filing/output-authorization.js",
-   "to": "src/core/state.js",
+   "to": "src/core/filing/output-revision.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/output-authorization.js",
+   "to": "src/core/filing/output-revision.js",
    "kind": "import-static",
    "name": null,
    "evalTime": null
@@ -2251,6 +577,20 @@
   {
    "from": "src/core/filing/output-preflight.js",
    "to": "src/core/form/paths.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/output-preflight.js",
+   "to": "src/core/filing/output-revision.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/filing/output-revision.js",
+   "to": "src/core/state.js",
    "kind": "import-static",
    "name": null,
    "evalTime": null
@@ -2404,7 +744,7 @@
   },
   {
    "from": "src/core/filing/schedule-docs.js",
-   "to": "src/core/runtime/monolith.js",
+   "to": "src/core/navigation/route-state.js",
    "kind": "import-static",
    "name": null,
    "evalTime": null
@@ -2482,6 +822,13 @@
   {
    "from": "src/core/form/commit-coordinator.js",
    "to": "src/core/form/paths.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/form/commit-coordinator.js",
+   "to": "src/core/filing/output-revision.js",
    "kind": "import-static",
    "name": null,
    "evalTime": null
@@ -2578,6 +925,34 @@
    "evalTime": null
   },
   {
+   "from": "src/core/form/form-contract.js",
+   "to": "src/core/filing/output-revision.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/form/form-contract.js",
+   "to": "src/core/party-resolver.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/form/form-contract.js",
+   "to": "src/core/navigation/ward-county.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/form/form-contract.js",
+   "to": "src/core/navigation/route-state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
    "from": "src/core/form/form-fields.js",
    "to": "src/core/form/date-parser.js",
    "kind": "import-static",
@@ -2601,6 +976,13 @@
   {
    "from": "src/core/form/form-fields.js",
    "to": "src/core/help/tooltips.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/form/form-fields.js",
+   "to": "src/core/form/commit-coordinator.js",
    "kind": "import-static",
    "name": null,
    "evalTime": null
@@ -2725,6 +1107,13 @@
    "evalTime": null
   },
   {
+   "from": "src/core/form/schedule-definitions.js",
+   "to": "src/core/filing/output-revision.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
    "from": "src/core/form/service-attestation-visibility.js",
    "to": "src/core/validation/service-recipients.js",
    "kind": "import-static",
@@ -2782,7 +1171,7 @@
   },
   {
    "from": "src/core/help/user-guide.js",
-   "to": "src/core/runtime/monolith.js",
+   "to": "src/core/navigation/route-state.js",
    "kind": "import-static",
    "name": null,
    "evalTime": null
@@ -2922,7 +1311,7 @@
   },
   {
    "from": "src/core/modals/filing-dialogs.js",
-   "to": "src/core/runtime/monolith.js",
+   "to": "src/core/navigation/route-state.js",
    "kind": "import-static",
    "name": null,
    "evalTime": null
@@ -3027,7 +1416,7 @@
   },
   {
    "from": "src/core/modals/pick-record-dialogs.js",
-   "to": "src/core/runtime/monolith.js",
+   "to": "src/core/navigation/route-state.js",
    "kind": "import-static",
    "name": null,
    "evalTime": null
@@ -3090,7 +1479,7 @@
   },
   {
    "from": "src/core/modals/year-dialogs.js",
-   "to": "src/core/runtime/monolith.js",
+   "to": "src/core/navigation/route-state.js",
    "kind": "import-static",
    "name": null,
    "evalTime": null
@@ -3140,6 +1529,55 @@
   {
    "from": "src/core/navigation/filing-lifecycle.js",
    "to": "src/core/filing/filing-years.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/leave-filing.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/leave-filing.js",
+   "to": "src/core/form/form-contract.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/leave-filing.js",
+   "to": "src/core/form/prune-cards.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/leave-filing.js",
+   "to": "src/core/persistence/case-file.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/leave-filing.js",
+   "to": "src/core/ward-lock.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/leave-filing.js",
+   "to": "src/core/shell/sidebar.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/leave-filing.js",
+   "to": "src/core/navigation/tab-state.js",
    "kind": "import-static",
    "name": null,
    "evalTime": null
@@ -3202,7 +1640,21 @@
   },
   {
    "from": "src/core/navigation/router.js",
+   "to": "src/core/filing/models/guardian.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/router.js",
    "to": "src/core/form/form-runtime.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/router.js",
+   "to": "src/core/form/form-contract.js",
    "kind": "import-static",
    "name": null,
    "evalTime": null
@@ -3245,6 +1697,48 @@
   {
    "from": "src/core/navigation/router.js",
    "to": "src/core/activity/activity-log-view.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/router.js",
+   "to": "src/core/feature-bridge.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/router.js",
+   "to": "src/core/runtime/features.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/router.js",
+   "to": "src/core/navigation/leave-filing.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/router.js",
+   "to": "src/core/navigation/route-state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/router.js",
+   "to": "src/core/navigation/route-state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/router.js",
+   "to": "src/core/navigation/leave-filing.js",
    "kind": "import-static",
    "name": null,
    "evalTime": null
@@ -3300,28 +1794,7 @@
   },
   {
    "from": "src/core/navigation/ward-lifecycle.js",
-   "to": "src/core/filing/filing-descriptor.js",
-   "kind": "import-static",
-   "name": null,
-   "evalTime": null
-  },
-  {
-   "from": "src/core/navigation/ward-lifecycle.js",
    "to": "src/core/filing/filing-registry.js",
-   "kind": "import-static",
-   "name": null,
-   "evalTime": null
-  },
-  {
-   "from": "src/core/navigation/ward-lifecycle.js",
-   "to": "src/core/form/prune-cards.js",
-   "kind": "import-static",
-   "name": null,
-   "evalTime": null
-  },
-  {
-   "from": "src/core/navigation/ward-lifecycle.js",
-   "to": "src/core/form/form-runtime.js",
    "kind": "import-static",
    "name": null,
    "evalTime": null
@@ -3336,13 +1809,6 @@
   {
    "from": "src/core/navigation/ward-lifecycle.js",
    "to": "src/core/ward-lock.js",
-   "kind": "import-static",
-   "name": null,
-   "evalTime": null
-  },
-  {
-   "from": "src/core/navigation/ward-lifecycle.js",
-   "to": "src/core/status/nav-marks.js",
    "kind": "import-static",
    "name": null,
    "evalTime": null
@@ -3370,13 +1836,6 @@
   },
   {
    "from": "src/core/navigation/ward-lifecycle.js",
-   "to": "src/core/help/help-panel.js",
-   "kind": "import-static",
-   "name": null,
-   "evalTime": null
-  },
-  {
-   "from": "src/core/navigation/ward-lifecycle.js",
    "to": "src/core/persistence/export-state.js",
    "kind": "import-static",
    "name": null,
@@ -3385,6 +1844,34 @@
   {
    "from": "src/core/navigation/ward-lifecycle.js",
    "to": "src/core/persistence/case-file.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/ward-lifecycle.js",
+   "to": "src/core/runtime/features.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/ward-lifecycle.js",
+   "to": "src/core/navigation/leave-filing.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/ward-lifecycle.js",
+   "to": "src/core/navigation/router.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/navigation/ward-lifecycle.js",
+   "to": "src/core/navigation/leave-filing.js",
    "kind": "import-static",
    "name": null,
    "evalTime": null
@@ -3448,6 +1935,20 @@
   {
    "from": "src/core/party-resolver.js",
    "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/party-resolver.js",
+   "to": "src/core/filing/output-revision.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/party-resolver.js",
+   "to": "src/core/persistence/case-file.js",
    "kind": "import-static",
    "name": null,
    "evalTime": null
@@ -3637,6 +2138,13 @@
   {
    "from": "src/core/pdf/pdf-preview.js",
    "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/pdf/pdf-preview.js",
+   "to": "src/core/persistence/case-file.js",
    "kind": "import-static",
    "name": null,
    "evalTime": null
@@ -3964,6 +2472,20 @@
    "evalTime": null
   },
   {
+   "from": "src/core/runtime/browser-api.js",
+   "to": "src/core/feedback/feedback-config.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/runtime/browser-api.js",
+   "to": "src/core/testing/testing-adapter.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
    "from": "src/core/security/app-lock.js",
    "to": "src/core/activity/audit-log.js",
    "kind": "import-static",
@@ -4021,7 +2543,7 @@
   },
   {
    "from": "src/core/security/app-lock.js",
-   "to": "src/core/runtime/monolith.js",
+   "to": "src/core/navigation/router.js",
    "kind": "import-static",
    "name": null,
    "evalTime": null
@@ -4126,7 +2648,14 @@
   },
   {
    "from": "src/core/shell/sidebar.js",
-   "to": "src/core/runtime/monolith.js",
+   "to": "src/core/runtime/features.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/shell/sidebar.js",
+   "to": "src/core/filing/filing-descriptor.js",
    "kind": "import-static",
    "name": null,
    "evalTime": null
@@ -4197,6 +2726,48 @@
   {
    "from": "src/core/signature/signature-state-control.js",
    "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/signature/signature-state-control.js",
+   "to": "src/core/persistence/case-file.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/signature/signature-state-control.js",
+   "to": "src/core/navigation/router.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/startup/bootstrap.js",
+   "to": "src/core/runtime/features.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/startup/bootstrap.js",
+   "to": "src/core/navigation/router.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/startup/bootstrap.js",
+   "to": "src/core/form/date-year-guard.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/startup/bootstrap.js",
+   "to": "src/core/startup/startup.js",
    "kind": "import-static",
    "name": null,
    "evalTime": null
@@ -4322,7 +2893,7 @@
   },
   {
    "from": "src/core/startup/startup.js",
-   "to": "src/core/runtime/monolith.js",
+   "to": "src/core/navigation/router.js",
    "kind": "import-static",
    "name": null,
    "evalTime": null
@@ -4448,13 +3019,6 @@
   },
   {
    "from": "src/core/status/nav-marks.js",
-   "to": "src/core/filing/filing-descriptor.js",
-   "kind": "import-static",
-   "name": null,
-   "evalTime": null
-  },
-  {
-   "from": "src/core/status/nav-marks.js",
    "to": "src/core/status/section-guidance-policy.js",
    "kind": "import-static",
    "name": null,
@@ -4469,7 +3033,14 @@
   },
   {
    "from": "src/core/status/nav-marks.js",
-   "to": "src/core/runtime/monolith.js",
+   "to": "src/core/runtime/features.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/status/nav-marks.js",
+   "to": "src/core/navigation/route-state.js",
    "kind": "import-static",
    "name": null,
    "evalTime": null
@@ -4678,6 +3249,97 @@
    "evalTime": null
   },
   {
+   "from": "src/core/testing/testing-adapter.js",
+   "to": "src/core/runtime/features.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/testing/testing-adapter.js",
+   "to": "src/core/navigation/router.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/testing/testing-adapter.js",
+   "to": "src/core/persistence/case-file.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/testing/testing-adapter.js",
+   "to": "src/core/persistence/recovery-cache.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/testing/testing-adapter.js",
+   "to": "src/core/persistence/launch-preferences.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/testing/testing-adapter.js",
+   "to": "src/core/persistence/crypto.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/testing/testing-adapter.js",
+   "to": "src/core/ward-lock.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/testing/testing-adapter.js",
+   "to": "src/core/ui/test-system-title.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/testing/testing-adapter.js",
+   "to": "src/core/party-resolver.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/testing/testing-adapter.js",
+   "to": "src/core/case-resolver.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/testing/testing-adapter.js",
+   "to": "src/core/navigation/ward-county.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/testing/testing-adapter.js",
+   "to": "src/core/validation/validation-adapter.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/testing/testing-adapter.js",
+   "to": "src/core/filing/output-preflight.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
    "from": "src/core/theme-preference.js",
    "to": "src/core/ui/icons.js",
    "kind": "import-static",
@@ -4797,6 +3459,13 @@
    "evalTime": null
   },
   {
+   "from": "src/core/validation/validation-adapter.js",
+   "to": "src/core/navigation/route-state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
    "from": "src/core/validation/validation-issue.js",
    "to": "src/core/validation/issue-registry.js",
    "kind": "import-static",
@@ -4855,6 +3524,34 @@
   {
    "from": "src/features-loader.js",
    "to": "src/features/guardian-inventory/totals.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features-loader.js",
+   "to": "src/features/simplified-accounting/totals.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features-loader.js",
+   "to": "src/core/feature-bridge.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features-loader.js",
+   "to": "src/core/filing/filing-registry.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features-loader.js",
+   "to": "src/core/filing/filing-descriptor.js",
    "kind": "import-static",
    "name": null,
    "evalTime": null
@@ -5189,6 +3886,27 @@
    "evalTime": null
   },
   {
+   "from": "src/features/annual-accounting/excel.js",
+   "to": "src/core/filing/output-revision.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/excel.js",
+   "to": "src/core/navigation/router.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/excel.js",
+   "to": "src/features/annual-accounting/totals.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
    "from": "src/features/annual-accounting/filing-type.js",
    "to": "src/core/filing/filing-descriptor.js",
    "kind": "import-static",
@@ -5512,6 +4230,20 @@
   },
   {
    "from": "src/features/annual-accounting/index.js",
+   "to": "src/core/navigation/router.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/index.js",
+   "to": "src/features/annual-accounting/totals.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/index.js",
    "to": "src/features/annual-accounting/print.js",
    "kind": "import-dynamic",
    "name": null,
@@ -5707,6 +4439,13 @@
    "evalTime": null
   },
   {
+   "from": "src/features/annual-accounting/print.js",
+   "to": "src/core/navigation/router.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
    "from": "src/features/annual-accounting/totals.js",
    "to": "src/core/state.js",
    "kind": "import-static",
@@ -5848,7 +4587,14 @@
   },
   {
    "from": "src/features/dashboard/index.js",
-   "to": "src/core/runtime/monolith.js",
+   "to": "src/core/runtime/features.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/dashboard/index.js",
+   "to": "src/core/filing/filing-registry.js",
    "kind": "import-static",
    "name": null,
    "evalTime": null
@@ -6003,6 +4749,20 @@
   {
    "from": "src/features/guardian-inventory/excel.js",
    "to": "src/core/persistence/templates.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/excel.js",
+   "to": "src/core/filing/output-revision.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/excel.js",
+   "to": "src/core/navigation/router.js",
    "kind": "import-static",
    "name": null,
    "evalTime": null
@@ -6275,13 +5035,6 @@
   },
   {
    "from": "src/features/guardian-inventory/index.js",
-   "to": "src/core/status/nav-marks.js",
-   "kind": "import-static",
-   "name": null,
-   "evalTime": null
-  },
-  {
-   "from": "src/features/guardian-inventory/index.js",
    "to": "src/core/ui/print-pager.js",
    "kind": "import-static",
    "name": null,
@@ -6304,6 +5057,20 @@
   {
    "from": "src/features/guardian-inventory/index.js",
    "to": "src/core/modals/pick-record-dialogs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/index.js",
+   "to": "src/core/navigation/router.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/index.js",
+   "to": "src/core/status/nav-marks.js",
    "kind": "import-static",
    "name": null,
    "evalTime": null
@@ -6507,6 +5274,13 @@
   {
    "from": "src/features/guardian-inventory/print.js",
    "to": "src/core/filing/schedule-docs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/guardian-inventory/print.js",
+   "to": "src/core/navigation/router.js",
    "kind": "import-static",
    "name": null,
    "evalTime": null
@@ -6829,6 +5603,13 @@
   {
    "from": "src/features/plan-annual/print.js",
    "to": "src/core/filing/schedule-docs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-annual/print.js",
+   "to": "src/core/navigation/router.js",
    "kind": "import-static",
    "name": null,
    "evalTime": null
@@ -7198,6 +5979,13 @@
    "evalTime": null
   },
   {
+   "from": "src/features/plan-initial/print.js",
+   "to": "src/core/navigation/router.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
    "from": "src/features/plan-minor/index.js",
    "to": "src/core/summary-renderer.js",
    "kind": "import-static",
@@ -7506,6 +6294,13 @@
    "evalTime": null
   },
   {
+   "from": "src/features/plan-minor/print.js",
+   "to": "src/core/navigation/router.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
    "from": "src/features/plan-simplified/index.js",
    "to": "src/core/summary-renderer.js",
    "kind": "import-static",
@@ -7661,6 +6456,13 @@
   },
   {
    "from": "src/features/plan-simplified/index.js",
+   "to": "src/core/pdf/pdf-preview.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/plan-simplified/index.js",
    "to": "src/features/plan-simplified/print.js",
    "kind": "import-dynamic",
    "name": null,
@@ -7793,6 +6595,13 @@
    "evalTime": null
   },
   {
+   "from": "src/features/plan-simplified/print.js",
+   "to": "src/core/navigation/router.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
    "from": "src/features/simplified-accounting/excel.js",
    "to": "src/features/simplified-accounting/index.js",
    "kind": "import-static",
@@ -7886,6 +6695,27 @@
   {
    "from": "src/features/simplified-accounting/excel.js",
    "to": "src/core/persistence/templates.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/excel.js",
+   "to": "src/core/filing/output-revision.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/excel.js",
+   "to": "src/core/navigation/router.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/guardian-compatibility.js",
+   "to": "src/core/filing/output-revision.js",
    "kind": "import-static",
    "name": null,
    "evalTime": null
@@ -8116,6 +6946,13 @@
   },
   {
    "from": "src/features/simplified-accounting/index.js",
+   "to": "src/core/navigation/router.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/index.js",
    "to": "src/features/simplified-accounting/print.js",
    "kind": "import-dynamic",
    "name": null,
@@ -8271,6 +7108,13 @@
   {
    "from": "src/features/simplified-accounting/print.js",
    "to": "src/core/filing/schedule-docs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/simplified-accounting/print.js",
+   "to": "src/core/navigation/router.js",
    "kind": "import-static",
    "name": null,
    "evalTime": null
@@ -8437,6 +7281,20 @@
    "evalTime": null
   },
   {
+   "from": "src/form-events.js",
+   "to": "src/core/pdf/pdf-preview.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/form-events.js",
+   "to": "src/core/runtime/features.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
    "from": "src/fragment-loader.js",
    "to": "fragments/common-modals.html",
    "kind": "import-dynamic",
@@ -8444,183 +7302,8 @@
    "evalTime": null
   },
   {
-   "from": "src/legacy-bridge.js",
-   "to": "src/core/filing/escape-html.js",
-   "kind": "import-static",
-   "name": null,
-   "evalTime": null
-  },
-  {
-   "from": "src/legacy-bridge.js",
-   "to": "src/features/simplified-accounting/totals.js",
-   "kind": "import-static",
-   "name": null,
-   "evalTime": null
-  },
-  {
-   "from": "src/legacy-bridge.js",
-   "to": "src/features/guardian-inventory/totals.js",
-   "kind": "import-static",
-   "name": null,
-   "evalTime": null
-  },
-  {
-   "from": "src/legacy-bridge.js",
-   "to": "src/core/state.js",
-   "kind": "import-static",
-   "name": null,
-   "evalTime": null
-  },
-  {
-   "from": "src/legacy-bridge.js",
-   "to": "src/core/filing/filing-registry.js",
-   "kind": "import-static",
-   "name": null,
-   "evalTime": null
-  },
-  {
-   "from": "src/legacy-bridge.js",
-   "to": "src/core/runtime/monolith.js",
-   "kind": "import-static",
-   "name": null,
-   "evalTime": null
-  },
-  {
-   "from": "src/legacy-bridge.js",
-   "to": "src/core/filing/models/guardian.js",
-   "kind": "import-static",
-   "name": null,
-   "evalTime": null
-  },
-  {
    "from": "src/main.js",
-   "to": "src/core/state.js",
-   "kind": "import-static",
-   "name": null,
-   "evalTime": null
-  },
-  {
-   "from": "src/main.js",
-   "to": "src/legacy-bridge.js",
-   "kind": "import-static",
-   "name": null,
-   "evalTime": null
-  },
-  {
-   "from": "src/main.js",
-   "to": "src/core/ui/dialogs.js",
-   "kind": "import-static",
-   "name": null,
-   "evalTime": null
-  },
-  {
-   "from": "src/main.js",
-   "to": "src/core/party-resolver.js",
-   "kind": "import-static",
-   "name": null,
-   "evalTime": null
-  },
-  {
-   "from": "src/main.js",
-   "to": "src/core/case-resolver.js",
-   "kind": "import-static",
-   "name": null,
-   "evalTime": null
-  },
-  {
-   "from": "src/main.js",
-   "to": "src/core/feature-bridge.js",
-   "kind": "import-static",
-   "name": null,
-   "evalTime": null
-  },
-  {
-   "from": "src/main.js",
-   "to": "src/core/ward-lock.js",
-   "kind": "import-static",
-   "name": null,
-   "evalTime": null
-  },
-  {
-   "from": "src/main.js",
-   "to": "src/core/form/schedule-definitions.js",
-   "kind": "import-static",
-   "name": null,
-   "evalTime": null
-  },
-  {
-   "from": "src/main.js",
-   "to": "src/core/status/section-status.js",
-   "kind": "import-static",
-   "name": null,
-   "evalTime": null
-  },
-  {
-   "from": "src/main.js",
-   "to": "src/core/validation/service-recipients.js",
-   "kind": "import-static",
-   "name": null,
-   "evalTime": null
-  },
-  {
-   "from": "src/main.js",
-   "to": "src/core/status/section-guidance-policy.js",
-   "kind": "import-static",
-   "name": null,
-   "evalTime": null
-  },
-  {
-   "from": "src/main.js",
-   "to": "src/core/persistence/crypto.js",
-   "kind": "import-static",
-   "name": null,
-   "evalTime": null
-  },
-  {
-   "from": "src/main.js",
-   "to": "src/core/persistence/launch-preferences.js",
-   "kind": "import-static",
-   "name": null,
-   "evalTime": null
-  },
-  {
-   "from": "src/main.js",
-   "to": "src/core/persistence/recovery-cache.js",
-   "kind": "import-static",
-   "name": null,
-   "evalTime": null
-  },
-  {
-   "from": "src/main.js",
-   "to": "src/core/persistence/case-file.js",
-   "kind": "import-static",
-   "name": null,
-   "evalTime": null
-  },
-  {
-   "from": "src/main.js",
-   "to": "src/core/persistence/templates.js",
-   "kind": "import-static",
-   "name": null,
-   "evalTime": null
-  },
-  {
-   "from": "src/main.js",
-   "to": "src/core/navigation/ward-lifecycle.js",
-   "kind": "import-static",
-   "name": null,
-   "evalTime": null
-  },
-  {
-   "from": "src/main.js",
-   "to": "src/core/navigation/ward-county.js",
-   "kind": "import-static",
-   "name": null,
-   "evalTime": null
-  },
-  {
-   "from": "src/main.js",
-   "to": "src/core/theme-preference.js",
+   "to": "src/core/runtime/browser-api.js",
    "kind": "import-static",
    "name": null,
    "evalTime": null
@@ -8628,41 +7311,6 @@
   {
    "from": "src/main.js",
    "to": "src/core/navigation/router.js",
-   "kind": "import-static",
-   "name": null,
-   "evalTime": null
-  },
-  {
-   "from": "src/main.js",
-   "to": "src/core/filing/output-authorization.js",
-   "kind": "import-static",
-   "name": null,
-   "evalTime": null
-  },
-  {
-   "from": "src/main.js",
-   "to": "src/core/excel/exceljs-loader.js",
-   "kind": "import-static",
-   "name": null,
-   "evalTime": null
-  },
-  {
-   "from": "src/main.js",
-   "to": "src/core/pdf/html2pdf-loader.js",
-   "kind": "import-static",
-   "name": null,
-   "evalTime": null
-  },
-  {
-   "from": "src/main.js",
-   "to": "src/fragment-loader.js",
-   "kind": "import-static",
-   "name": null,
-   "evalTime": null
-  },
-  {
-   "from": "src/main.js",
-   "to": "src/features-loader.js",
    "kind": "import-static",
    "name": null,
    "evalTime": null
@@ -8795,13 +7443,6 @@
   },
   {
    "from": "src/main.js",
-   "to": "src/core/navigation/router.js",
-   "kind": "import-static",
-   "name": null,
-   "evalTime": null
-  },
-  {
-   "from": "src/main.js",
    "to": "src/core/filing/output-authorization.js",
    "kind": "import-static",
    "name": null,
@@ -8816,21 +7457,14 @@
   },
   {
    "from": "src/main.js",
-   "to": "src/core/filing/schedule-doc-ack.js",
+   "to": "src/core/startup/bootstrap.js",
    "kind": "import-static",
    "name": null,
    "evalTime": null
   },
   {
    "from": "src/main.js",
-   "to": "src/core/testing/testing-adapter.js",
-   "kind": "import-static",
-   "name": null,
-   "evalTime": null
-  },
-  {
-   "from": "src/main.js",
-   "to": "src/core/startup/startup.js",
+   "to": "src/features-loader.js",
    "kind": "import-static",
    "name": null,
    "evalTime": null
@@ -9065,6 +7699,13 @@
    "kind": "import-static",
    "name": null,
    "evalTime": null
+  },
+  {
+   "from": "src/tab-coordination.js",
+   "to": "src/core/feedback/feedback-config.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
   }
  ],
  "cycles": [],
@@ -9080,15 +7721,21 @@
  ],
  "unownedWindowReads": [
   {
+   "name": "__GUARDIAN_FORMS_TEST_MODE__",
+   "files": [
+    "src/core/runtime/browser-api.js"
+   ]
+  },
+  {
    "name": "addEventListener",
    "files": [
     "src/core/form/service-attestation-visibility.js",
+    "src/core/navigation/router.js",
     "src/core/persistence/case-file.js",
     "src/core/startup/launch.js",
     "src/core/startup/startup.js",
     "src/features/annual-accounting/index.js",
     "src/features/plan-initial/index.js",
-    "src/legacy-app.js",
     "src/main.js",
     "src/pwa-ui.js",
     "src/tab-coordination.js"
@@ -9170,12 +7817,8 @@
     "src/core/form/form-contract.js",
     "src/core/help/user-guide.js",
     "src/core/navigation/router.js",
-    "src/core/navigation/ward-lifecycle.js",
     "src/core/pdf/pdf-preview.js",
-    "src/core/security/app-lock.js",
-    "src/core/startup/startup.js",
     "src/core/ward-lock.js",
-    "src/legacy-app.js",
     "src/pwa-ui.js"
    ]
   },
@@ -9217,6 +7860,12 @@
    "name": "showSaveFilePicker",
    "files": [
     "src/core/persistence/case-file.js"
+   ]
+  },
+  {
+   "name": "window",
+   "files": [
+    "src/core/runtime/browser-api.js"
    ]
   }
  ],

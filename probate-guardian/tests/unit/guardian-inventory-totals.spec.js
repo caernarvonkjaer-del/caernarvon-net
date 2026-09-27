@@ -284,12 +284,15 @@ describe('calc: the UI\'s call shape, bound to the open filing', () => {
 
   // Milestone 70, 70J: the monolith's one use of that Proxy was the
   // dashboard's headline total, which pointed window.D at each filing in turn;
-  // it totals the filing it is handed now, and the Proxy went.
-  test('legacy-app.js has no calc of its own: its headline total is handed the filing', () => {
+  // it totals the filing it is handed, and the Proxy went. Since 70K the
+  // headline total is the feature services' (src/features-loader.js), and the
+  // monolith holds nothing.
+  test("the dashboard's headline total for an Inventory is this module's total of the filing it is handed", async () => {
     const src = fs.readFileSync(path.join(root, 'src', 'legacy-app.js'), 'utf8');
     expect(src.split('\n').some((l) => l.startsWith('const calc='))).toBe(false);
-    expect(src).toContain("if(ward.inventoryType==='guardian')total=calcTotalsGuardian(ward).total;");
-    const D = { ...empty(), scheduleA1: ROUNDING_ROWS };
+    const { featureServices } = await import('../../src/features-loader.js');
+    const D = { ...empty(), inventoryType: 'guardian', scheduleA1: ROUNDING_ROWS };
+    expect(featureServices.headlineTotal(D)).toBe(calcTotalsGuardian(D).total);
     expect(calcTotalsGuardian(D).total).toBe(withWindowD(D, () => calc.total()));
   });
 });

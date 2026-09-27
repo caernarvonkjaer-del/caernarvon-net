@@ -26,17 +26,30 @@ vi.mock('../../src/core/shell/sidebar.js', () => ({
   syncGuardianNameDisplay: (...a) => sidebar.syncGuardianNameDisplay?.(...a),
 }));
 
+// The county commit (src/core/navigation/ward-county.js) and the Party
+// write-through (src/core/party-resolver.js) are imported by the tail since
+// Milestone 70's 70K -- it read them off window -- so the recorders stand in
+// for those modules too.
+const hooks = vi.hoisted(() => ({}));
+vi.mock('../../src/core/navigation/ward-county.js', () => ({
+  maybeCommitCoverCounty: (...a) => hooks.maybeCommitCoverCounty?.(...a),
+}));
+vi.mock('../../src/core/party-resolver.js', () => ({
+  identitySlotForPath: (...a) => hooks.identitySlotForPath?.(...a),
+  syncIdentityField: (...a) => hooks.syncIdentityField?.(...a),
+}));
+
 function freshWindow() {
   const calls = [];
   const rec = (name, impl) => vi.fn((...args) => { calls.push(name); return impl ? impl(...args) : undefined; });
   const w = {
     D: { wardName: 'W', county: 'Orange' },
     calls,
-    maybeCommitCoverCounty: rec('county'),
+    maybeCommitCoverCounty: (hooks.maybeCommitCoverCounty = rec('county')),
     // Milestone 58A: the slot now carries fieldKeys -- the canonical Party
     // key(s) this path feeds -- and the tail must hand them on.
-    identitySlotForPath: rec('slot', (_d, p) => (p === 'guardians.0.name' ? { role: 'guardian', index: 0, fieldKeys: ['name'] } : null)),
-    syncIdentityField: rec('identity'),
+    identitySlotForPath: (hooks.identitySlotForPath = rec('slot', (_d, p) => (p === 'guardians.0.name' ? { role: 'guardian', index: 0, fieldKeys: ['name'] } : null))),
+    syncIdentityField: (hooks.syncIdentityField = rec('identity')),
     // The tail asks the case store for the save (requestSave(), Milestone 70's
     // 70I); each test points the store's save hook at this recorder.
     autoSave: rec('autoSave'),

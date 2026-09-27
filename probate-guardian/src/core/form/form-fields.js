@@ -5,6 +5,7 @@ import { formatDisplayDate } from './date-parser.js';
 import { ic } from '../ui/icons.js';
 import { formatAccountNumber, formatAddress, formatBarNumber, formatCaseNumber, formatCheckNumber, formatCityStateZip, formatName, formatPhone, formatSSN, sanitizeNonNegativeDecimal } from './form-contract.js';
 import { tooltip } from '../help/tooltips.js';
+import { getFieldDraftDisplay } from './commit-coordinator.js';
 
 // Escapes &<>" but deliberately NOT the apostrophe, unlike
 // core/filing/escape-html.js. Milestone 52E looked at merging the two and
@@ -153,7 +154,7 @@ export function renderFormField({
   let formatted = value ?? '';
   if (typeof window !== 'undefined') {
     if (isDate) {
-      formatted = (window.getFieldDraftDisplay?.(path, formatDisplayDate(value)) || formatDisplayDate(value));
+      formatted = (getFieldDraftDisplay(path, formatDisplayDate(value)) || formatDisplayDate(value));
     } else if (isSSN) {
       formatted = formatSSN(value);
     } else if (isCaseNumber) {

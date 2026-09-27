@@ -286,14 +286,3 @@ export function wardCountyMergeConflict(keepId, discardId) {
   if (!keepCounty || !discardCounty || keepCounty === discardCounty) return null;
   return { keepCounty, discardCounty };
 }
-
-// Global bridge for legacy-app.js, which is a classic script and cannot import
-// an ES module (same pattern as the other core/navigation modules).
-if (typeof window !== 'undefined') {
-  window.wardPartyForFiling = wardPartyForFiling;
-  window.ensureWardPartyForFiling = ensureWardPartyForFiling;
-  window.commitCoverCounty = commitCoverCounty;
-  window.maybeCommitCoverCounty = maybeCommitCoverCounty;
-  window.backfillWardPartyCounties = backfillWardPartyCounties;
-  window.wardCountyMergeConflict = wardCountyMergeConflict;
-}

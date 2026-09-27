@@ -14,7 +14,7 @@ import { validateAnnual } from './index.js';
 import { buildAnnualAccountingModel } from './pdf-model.js';
 import { generateCourtFormPdf } from '../../core/pdf/pdf-engine.js';
 import { finalizeCourtFormPdf, saveFinalizedPdf } from '../../core/pdf/pdf-finalizer.js';
-import { mountPdfPreview, printGeneratedPdf } from '../../core/pdf/pdf-preview.js';
+import { mountPdfPreview, printGeneratedPdf, setPrintCurrentFiling } from '../../core/pdf/pdf-preview.js';
 import { getSupplementalAccessibilityWarning, getSupplementalFilingIssues } from '../../core/pdf/supplemental-pdf.js';
 import { prepareFilingOutput } from '../../core/filing/output-preflight.js';
 import { authorizeFilingOutput } from '../../core/filing/output-authorization.js';
@@ -27,16 +27,12 @@ import { getD } from '../../core/state.js';
 import { excelCapacityPanel } from '../../core/excel/excel-capacity.js';
 import { highlightErrors, validationPanel } from '../../core/validation/validation-panel.js';
 import { queueAllScheduleDocValidations } from '../../core/filing/schedule-docs.js';
+import { renderPage } from '../../core/navigation/router.js';
 
 function buildModelForPreview(D){
   return buildAnnualAccountingModel(D, { printDate: new Date().toISOString().slice(0, 10) });
 }
 
-const {
-  
-  
-  renderPage,
-} = window;
 
 export function pagePrintAnnual(capOver){
   queueAllScheduleDocValidations?.();
@@ -91,7 +87,7 @@ export function pagePrintAnnual(capOver){
 
 export async function mountPreview(){
   const baseIssues = () => [...validateAnnual(), ...getSupplementalFilingIssues(getD())];
-  window.printCurrentFilingPdf = () => printGeneratedPdf(buildModelForPreview, getD(), baseIssues);
+  setPrintCurrentFiling(() => printGeneratedPdf(buildModelForPreview, getD(), baseIssues));
   await mountPdfPreview(buildModelForPreview, getD(), baseIssues, undefined, { annotate: true });
 }
 

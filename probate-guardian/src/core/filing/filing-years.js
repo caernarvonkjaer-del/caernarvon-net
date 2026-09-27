@@ -8,7 +8,7 @@ import { emptyInitialProvider } from './models/plan-initial.js';
 import { emptyMinorProvider, emptyMinorResidence } from './models/plan-minor.js';
 import { hydrateCountyFromWardParty } from '../navigation/ward-county.js';
 import { flushPendingSave, saveWardToState, setDirtySinceExport, updateLastSavedIndicator } from '../persistence/case-file.js';
-import { monolith } from '../runtime/monolith.js';
+import { features } from '../runtime/features.js';
 import { getCaseFile } from '../state.js';
 import { notifyProbateGuardianTabStateChanged } from '../navigation/tab-state.js';
 
@@ -271,7 +271,7 @@ export async function startNewWardYear(wardId){
   const ward=getCaseFile().wards.find(w=>w.wardId===wardId);
   if(!ward)return;
   await flushPendingSave();
-  const priorTotal=monolith.getWardHeadlineTotal(ward);
+  const priorTotal=features().headlineTotal(ward);
   checkInActiveYear(ward);
   const seed=snapshotCurrentYearData(ward);
   resetYearlyFieldsForNewYear(seed,ward.inventoryType);

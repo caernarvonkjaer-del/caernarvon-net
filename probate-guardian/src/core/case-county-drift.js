@@ -42,4 +42,3 @@ export function countyDriftWarnings(filing) {
     }));
 }
 
-if (typeof window !== 'undefined') window.countyDriftWarnings = countyDriftWarnings;

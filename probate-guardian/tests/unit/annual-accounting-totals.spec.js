@@ -137,10 +137,13 @@ describe('one Annual calculator for the page and the court PDF (Slice 19E)', () 
     expect(own.filter((name) => TOTALS_FNS.includes(name))).toEqual([]);
   });
 
-  test('totals.js loads at startup (main.js -> features-loader.js), not with the PDF, and alone publishes the totals on window', () => {
+  // Milestone 70, 70K: the totals reach the dashboard and core through the
+  // feature services (src/features-loader.js imports them), and nothing
+  // publishes them on window -- totals.js did, for the monolith and the tests.
+  test('totals.js loads at startup (main.js -> features-loader.js), not with the PDF, and nothing publishes the totals on window', () => {
     expect(importsFrom('src/main.js', './features-loader.js')).toHaveLength(1);
     expect(importsFrom('src/features-loader.js', './features/annual-accounting/totals.js')).toHaveLength(1);
     const publishers = auditWindowBridge(ROOT).assignments.filter((a) => TOTALS_FNS.includes(a.name));
-    expect(publishers.map((a) => `${a.file}::${a.name}`).sort()).toEqual(TOTALS_FNS.map((n) => `src/features/annual-accounting/totals.js::${n}`).sort());
+    expect(publishers).toEqual([]);
   });
 });

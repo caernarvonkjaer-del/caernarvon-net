@@ -3,7 +3,7 @@
 ## Status
 
 **70A complete (2026-09-24); 70T, 70B, 70C and 70D complete (2026-09-25); 70E,
-70F, 70G, 70H, 70I and 70J complete (2026-09-26) -- see their build records. Every remaining delivery, 70K and 70L, is approved.** The
+70F, 70G, 70H, 70I and 70J complete (2026-09-26); 70K complete (2026-09-27) -- see their build records. Every remaining delivery, 70L, is approved.** The
 requester approved delivery 70A on 2026-09-24 and it is complete on the
 `milestone-70` branch (see the 70A build record), then approved 70T. On
 2026-09-25 the requester approved every delivery after it ("Finish ms 70. That
@@ -1701,6 +1701,48 @@ rapid navigation cannot commit stale work; there are zero top-level feature
 destructures of the application API from `window`; startup is a direct import;
 and the bridge audit permits only the reviewed `GuardianForms` namespace plus
 explicit platform/vendor globals.
+
+### 70K build record
+
+Approved with every later delivery on 2026-09-25 (see Status). Everything
+below is on the `milestone-70` branch.
+
+**What a filer sees.** Two corrections, both on `master` too.
+(1) **A page the filer has moved on from can no longer be drawn over the one
+they moved to.** A filing's code loads the first time one of its pages is
+shown. Opening a new filing and going back to All Filings before that code had
+arrived -- on a slow connection, or an old computer -- used to end with the
+filing's page drawn over the dashboard, its fields empty because no filing was
+open any more. The newer page now stays.
+(2) **Each page is drawn once.** Every move to another page drew it twice:
+once by the move, and again when the change it made to the address bar came
+back as if the filer had made it. Opening a filing drew its Cover twice the
+same way.
+Otherwise nothing, by design: 70K changes how the parts reach each other, not
+what the app does.
+
+**Done, with evidence.**
+
+| Item | Evidence |
+| --- | --- |
+| Commit | Named in the next docs commit (the whole delivery; gate evidence in its message). |
+| One navigation owns the page | `src/core/navigation/router.js`: each render takes an `AbortSignal` and aborts the one before it; after leaving a filing, after loading a feature and after the feature's own mount, a superseded navigation commits nothing more, and the bridge (`src/core/feature-bridge.js`) hands the signal and the filing to the feature's `mount()`, which checks it after loading its own print and Excel modules. No serialized queue: a render that navigates would wait on itself. `tests/e2e/navigation-race.spec.ts` (a new filing's page, its code held back, stays under the dashboard; two navigations in a row draw only the second) and `feature-bridge.spec.js`'s three superseded-mount cases, red first on the 70J build (the Plan drawn over the dashboard; four draws). |
+| Drawn once | A hash change that names the page already shown is ignored -- the router's own `navigate()`, startup's and opening a filing's writes of the hash come back that way -- so only the filer's (Back, a link) draws. `navigation-race.spec.ts`: one draw per navigation, and Back still draws; red first (two draws). |
+| The router owns the route | The current route and the hash handler (`handleHash()`, `updateNavActive()`, `SPECIAL_PAGES`, the `hashchange` listener) moved from `legacy-app.js`; the route is read through `src/core/navigation/route-state.js`, a leaf, by the modules the router imports (an import cycle otherwise), which also hands them `navigateTo()`. Leaving a filing for the dashboard -- commit, flush, release the lock, close -- is the router's `src/core/navigation/leave-filing.js`; opening a filing draws its Cover through the router instead of mounting the feature beside it. |
+| Feature services, not globals | `src/features-loader.js` keeps every feature's literal `import()` (Vite still bundles and inlines them) and builds `featureServices` -- each feature's bridge by id, `load()`/`loaded()`, a loaded feature's validator, completion's inputs, the dashboard's headline total, `run()` for a feature's own commands, the PDF builders -- which `main.js` hands to `startGuardianForms()` and core reaches through `src/core/runtime/features.js` (asking before it is provided throws). They replaced the monolith's services (`src/core/runtime/monolith.js`) and the `window.mount*`, `window.load*` and `window.validate*` globals. `tests/unit/feature-services.spec.js`. |
+| The lazy boundary kept | A filing's code still runs only once one of its pages is shown, in every build: `tests/e2e/feature-lazy-boundary.spec.ts` opens the `.sav` corpus's newest plain archive -- one filing of each of the nine types -- to its dashboard with only the dashboard's code loaded, computes every type's progress but the Initial Inventory's (its rules are its validator, in its pack) and a blank filing of each with no pack, and loads only the Plan's pack when a Plan opens (completion criterion 7). Seen failing with a Plan's pack loaded at startup. It reads the new `GuardianForms.testing.status.loadedFeatures()`; until 70K a loaded pack showed as its `window.validate<Type>`. |
+| Bootstrap is a direct call | `startGuardianForms(services)` (`src/core/startup/bootstrap.js`) provides the feature services, installs the router's hash handling and the date-year guard (`src/core/form/date-year-guard.js`, from `legacy-app.js`) once each, and runs the startup; `main.js` calls it after the terms, with no `window.initApp` lookup. The twenty-two bare imports `main.js` kept only for the globals those modules published went (each module is imported by what uses it; nothing became unreachable). `boot-ordering.spec.js`. |
+| The frozen namespace | `window.GuardianForms` is installed once and frozen by `src/core/runtime/browser-api.js`: `version` always -- the one production member the owner's schema review confirmed (it replaced `window.PG_APP_VERSION`) -- and `testing` only with the runner's pre-boot flag, read once and deleted. `testing-adapter.spec.js` and `testing-adapter.spec.ts` (an ordinary launch holds the version only). |
+| No application global | Every `window.X =` publication went -- 149 file-and-name pairs at 70J -- with every read (103) and load-time destructure (25): modules import what they used, and core reaches a feature through the feature services. `_transientDrafts`, a window mirror of the drafts nothing read, went; the output revision moved to its own leaf (`src/core/filing/output-revision.js`) so the preflight and the draft store reach it without a cycle. `tests/unit/removed-window-bridges.spec.js` pins the whole surface to `GuardianForms`; the allow-list is empty and the declaration names two globals, the namespace and the runner's flag. |
+| The adapter follows | `GuardianForms.testing`'s members run an explicit table of application functions (`applicationImplementations()`) instead of looking each up on `window`; validate queries load the type's feature first; `simulate.validatorNotLoaded()` now holds for the adapter's own completion queries. `saveOutput.pdfGuardian()` and `excelGuardian()` called names nothing defined, so they could only throw; the Initial Inventory exports those saves now, as the Plans export theirs. The specs did not change (70T's promise), but for the namespace test above. |
+| The monolith is empty | `legacy-app.js`'s last 49 declarations moved or went (the review's `landed.70K`), with its three top-level statements; it declares and runs nothing, and 70L deletes it. A click listener on `.nav-link-item[data-page]` elements had nothing to attach to -- the features draw those links later, with their own dispatch -- and went. `src/legacy-bridge.js` and `src/core/runtime/monolith.js` went with their last readers, and `legacy-bridge.spec.js` and `monolith-services.spec.js` with them. |
+| Findings | (1) The three embedded workbook modules (`templates/*-template.js`) put the Clerk's workbook on `window.EMBEDDED_TEMPLATES` and exported it back from there -- an application global outside `src/`, which no audit scanned, found by `check:types`. Each exports its workbook directly now; the base64 string is byte for byte what it was (checked by hash), `scripts/extend-annual-b4-blocks.py --check` verifies the Annual workbook, and the script and `b4-block-map.spec.js` find it by the export. (2) The bridge audit (`scripts/audit-window-bridge.mjs`) matched `window.X` in the text, comments included, so the generated declaration kept names nothing uses; it reads the parse now (`window-bridge.spec.js`, on synthetic trees). (3) The filing-type enumeration guard's exception for `error-route.js` was never needed; an exception that no longer enumerates now fails. |
+| Caught by the gate, fixed | Routing the Plans' Save as PDF through the feature services put an `await` -- the module's already-resolved load -- in front of the save, so its button was still enabled when the click returned: Milestone 67's guard against a second click starting a second download (which the browser blocks) was undone. `export-button-guard.spec.ts` failed on it in the first gate run, which was stopped there. `run()` now calls a loaded feature's command in the same turn, and each save export calls its print module directly once loaded, as the globals they replaced did; `feature-services.spec.js` holds `run()` to that, red first with it asynchronous. |
+| Guards | The dependency audit names the approved boundary (`BOUNDARY`: `GuardianForms` and the runner's flag), reports it as its own ratcheted set, and keeps it out of the application-global ones. Ratchet: `classicDeclarations` 49 to 0, `windowWrites` 149 to 0, `windowReads` 103 to 0, `evalTimeWindowDestructures` 25 to 0, `bareCrossBoundary` 4 to 0, unowned reads, cycles and layer violations 0, `boundary` 2 (both in `browser-api.js`). 70J's growth -- the forwarders `getD`, `getActiveInventoryType`, `calcTotalsGuardian` -- is gone. |
+| Tests converted | 17 unit specs changed for imports in place of `window` stand-ins (mocks of the lock, the router, the feature services; the drafts read on the filing), none losing an assertion; two new browser specs, one new unit spec, two unit specs retired with the doors they held. |
+| Master-fix ledger | Four rows remain to carry, after this commit: `dbee60f` (merges cleanly; carried now because `c62f890` builds on it) with `c62f890` (the Annual pages' Ward's Amount follows the 1% rule), `ae9ecdc` ("?" in a filing announces what it does), and `56ff26a` (the minimal Initial Inventory fixture answers the safe-deposit questions as the form stores them). No unlisted `master` commit. |
+
+**Gate run.** The checkpoint's full gate (D2), 2026-09-27, on the trial copy this commit was ported from (identical file for file apart from its test ports), 1 h 11 min in all: `npm run test:verify` -- `check:types` clean, `verify:data-model` OK (1009 rows), unit 2051/2051 (154 files), browser 938 passed, 7 skipped, 0 failed (1.0 h, source profile, chromium; 945 tests: 70J's 941 and the four of `navigation-race.spec.ts` and `feature-lazy-boundary.spec.ts`); `npm run test:e2e:web` 34 passed, 2 skipped (2.3 min); `npm run test:e2e:portable` 20 passed, 12 skipped (1.3 min); `npm run test:e2e:portable-http` 33 passed (2.4 min). The `.sav` corpus's 66 tests all passed. This was the gate's second run: the first was stopped at its first failure (the Plans' Save as PDF, above) and restarted after the fix. `check:types` clean on the ported worktree.
 
 ---
 

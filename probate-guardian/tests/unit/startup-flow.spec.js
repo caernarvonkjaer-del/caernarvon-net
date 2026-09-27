@@ -36,10 +36,11 @@ vi.mock('../../src/core/navigation/filing-lifecycle.js', () => ({
   filingLifecycle: { open: async (ward) => { calls.push(`open:${ward.wardId}`); return env.openOk; } },
 }));
 vi.mock('../../src/core/shell/sidebar.js', () => ({ renderCopyrightNotice: log('renderCopyrightNotice'), updateSidebar: log('updateSidebar') }));
-vi.mock('../../src/core/runtime/monolith.js', () => ({
-  monolith: {
-    handleHash: () => { calls.push(`route:${globalThis.window.location.hash}`); },
-  },
+// The first page is the router's (Milestone 70, 70K: it was the monolith's
+// handleHash(), a service it handed in).
+vi.mock('../../src/core/navigation/router.js', () => ({
+  setRouteHash: (route) => { globalThis.window.location.hash = route; },
+  handleHash: () => { calls.push(`route:${globalThis.window.location.hash}`); },
 }));
 vi.mock('../../src/core/state.js', () => ({
   getCaseFile: () => ({ wards: env.wards, activeWardId: env.activeWardId }),

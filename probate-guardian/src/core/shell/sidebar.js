@@ -6,7 +6,8 @@
 import { esc } from '../filing/escape-html.js';
 import { formEngine, INVENTORY_TYPE_META, INVENTORY_TYPES, typeIcon } from '../filing/filing-registry.js';
 import { formatDashboardCurrency } from '../format/money.js';
-import { monolith } from '../runtime/monolith.js';
+import { features } from '../runtime/features.js';
+import { FILING_ENGINE_IDS } from '../filing/filing-descriptor.js';
 import { getActiveInventoryType, getActiveWard, getCaseFile, getD } from '../state.js';
 import { updateNavDots } from '../status/nav-marks.js';
 
@@ -64,7 +65,7 @@ export function refreshWardInfoCard(){
     return;
   }
   const meta=INVENTORY_TYPE_META[ward.inventoryType]||{iconName:'folder',accent:'#525d6e',accentText:'var(--ink-3)',totalLabel:'Total'};
-  const headline=monolith.getWardHeadlineTotal(ward);
+  const headline=features().headlineTotal(ward);
   wardInfo.style.display='block';
   wardInfo.style.borderLeftColor=meta.accent;
   // ?. guard: an unregistered type here would throw and blank the sidebar.
@@ -197,15 +198,10 @@ export function updateSidebar(){
   }
   const navContainer=document.getElementById('nav-sections');
 
-  switch(formEngine(getActiveInventoryType())){
-    case 'guardian': monolith.mountGuardianNav(navContainer);break;
-    case 'simplified': monolith.mountSimplifiedNav(navContainer);break;
-    case 'annual': monolith.mountAnnualNav(navContainer);break;
-    case 'planSimplified': monolith.mountPlanSimplifiedNav(navContainer);break;
-    case 'planAnnual': monolith.mountPlanAnnualNav(navContainer);break;
-    case 'planInitial': monolith.mountPlanInitialNav(navContainer);break;
-    case 'planMinor': monolith.mountPlanMinorNav(navContainer);break;
-  }
+  // The open filing's own sidebar sections, drawn by its feature (Milestone
+  // 70, 70K: through the feature services, not the monolith's seven mounts).
+  const engine=formEngine(getActiveInventoryType());
+  if(FILING_ENGINE_IDS.includes(engine))features().mountNav(engine,navContainer);
 }
 
 // Sidebar copyright line -- year computed from the visitor's own clock so it

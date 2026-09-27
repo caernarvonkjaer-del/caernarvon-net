@@ -5,7 +5,8 @@ import { gotoApp, startNewCase, chooseNoPassword, createWard } from './support/t
 // is tests/unit/testing-adapter.spec.js).
 //   - D3/T3: it exists only when the runner set the pre-boot flag -- which the
 //     test support's gotoApp() now does -- and setting the flag after the page
-//     has booted enables nothing.
+//     has booted enables nothing. Since Milestone 70's 70K an ordinary launch
+//     has window.GuardianForms all the same, frozen, holding only the version.
 //   - D9: setField() is the edit a filer makes (the form's own normalization
 //     runs); patchFiling() is setup and deliberately skips it.
 
@@ -18,12 +19,16 @@ test.describe('GuardianForms.testing in the page', () => {
     }))).toEqual({ testing: 'function', flagLeft: false });
   });
 
-  test('absent on an ordinary launch, and a flag set after boot enables nothing', async ({ page }) => {
+  test('absent on an ordinary launch -- the namespace holds only the version -- and a flag set after boot enables nothing', async ({ page }) => {
     await gotoApp(page, { testMode: false });
-    expect(await page.evaluate(() => typeof (window as any).GuardianForms)).toBe('undefined');
+    const ordinary = () => page.evaluate(() => {
+      const ns = (window as any).GuardianForms;
+      return { members: Object.keys(ns), version: typeof ns.version, frozen: Object.isFrozen(ns) };
+    });
+    expect(await ordinary()).toEqual({ members: ['version'], version: 'string', frozen: true });
     await page.evaluate(() => { (window as any).__GUARDIAN_FORMS_TEST_MODE__ = true; });
     await page.waitForTimeout(200);
-    expect(await page.evaluate(() => typeof (window as any).GuardianForms)).toBe('undefined');
+    expect(await ordinary()).toEqual({ members: ['version'], version: 'string', frozen: true });
   });
 
   test('setField() makes the edit a filer makes; patchFiling() only arranges data', async ({ page }) => {

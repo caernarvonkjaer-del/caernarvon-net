@@ -122,11 +122,6 @@ export async function acquireWardLock(wardId) {
   }));
 }
 
-if (typeof window !== 'undefined') {
-  window.acquireWardLock = acquireWardLock;
-  window.releaseWardLock = releaseWardLock;
-  window.getCurrentLockedWardId = getCurrentLockedWardId;
-}
 
 // Milestone 70, 70H: the dialog shown when another tab holds the filing's
 // lock -- focus moves to its button, and back where it was when it closes.

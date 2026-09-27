@@ -2,8 +2,8 @@
  "generatedBy": "node scripts/ms70-assertion-counts.mjs --write-baseline",
  "note": "Milestone 70 per-spec assertion counts (static expect calls). tests/unit/ms70-assertion-counts.spec.js fails when a spec falls below its count; lowering it requires --reason, recorded in dropLog. A tripwire, not proof of equivalence (decision D9).",
  "totals": {
-  "expects": 6757,
-  "tests": 1937
+  "expects": 6793,
+  "tests": 1943
  },
  "counts": {
   "tests/e2e/annotation-toolbar-containment.spec.ts": {
@@ -142,6 +142,10 @@
    "expects": 9,
    "tests": 2
   },
+  "tests/e2e/feature-lazy-boundary.spec.ts": {
+   "expects": 9,
+   "tests": 1
+  },
   "tests/e2e/feature-load-failure.spec.ts": {
    "expects": 18,
    "tests": 3
@@ -221,6 +225,10 @@
   "tests/e2e/mixed-version.characterization.spec.ts": {
    "expects": 32,
    "tests": 8
+  },
+  "tests/e2e/navigation-race.spec.ts": {
+   "expects": 13,
+   "tests": 3
   },
   "tests/e2e/navigation-status.contract.spec.ts": {
    "expects": 141,
@@ -567,7 +575,7 @@
    "tests": 20
   },
   "tests/unit/boot-ordering.spec.js": {
-   "expects": 6,
+   "expects": 9,
    "tests": 4
   },
   "tests/unit/case-county-drift.spec.js": {
@@ -663,12 +671,16 @@
    "tests": 3
   },
   "tests/unit/feature-bridge.spec.js": {
-   "expects": 21,
-   "tests": 7
+   "expects": 28,
+   "tests": 10
   },
   "tests/unit/feature-exports.spec.js": {
    "expects": 1,
    "tests": 1
+  },
+  "tests/unit/feature-services.spec.js": {
+   "expects": 29,
+   "tests": 7
   },
   "tests/unit/feedback-message.spec.js": {
    "expects": 9,
@@ -699,7 +711,7 @@
    "tests": 8
   },
   "tests/unit/filing-type-enumeration-guard.spec.js": {
-   "expects": 2,
+   "expects": 3,
    "tests": 2
   },
   "tests/unit/form-cards.spec.js": {
@@ -786,17 +798,9 @@
    "expects": 35,
    "tests": 15
   },
-  "tests/unit/legacy-bridge.spec.js": {
-   "expects": 20,
-   "tests": 8
-  },
   "tests/unit/live-region.spec.js": {
    "expects": 9,
    "tests": 2
-  },
-  "tests/unit/monolith-services.spec.js": {
-   "expects": 13,
-   "tests": 3
   },
   "tests/unit/ms70-70T-guard.spec.js": {
    "expects": 9,
@@ -991,8 +995,8 @@
    "tests": 7
   },
   "tests/unit/removed-window-bridges.spec.js": {
-   "expects": 5,
-   "tests": 1
+   "expects": 6,
+   "tests": 2
   },
   "tests/unit/remuneration-declaration.spec.js": {
    "expects": 22,
@@ -1095,7 +1099,7 @@
    "tests": 2
   },
   "tests/unit/testing-adapter.spec.js": {
-   "expects": 61,
+   "expects": 64,
    "tests": 18
   },
   "tests/unit/theme-persistence.spec.js": {
@@ -1135,8 +1139,8 @@
    "tests": 10
   },
   "tests/unit/window-bridge.spec.js": {
-   "expects": 8,
-   "tests": 5
+   "expects": 11,
+   "tests": 7
   },
   "tests/unit/xlsx-extract.spec.js": {
    "expects": 22,
@@ -1230,6 +1234,20 @@
    "was": 77,
    "now": 76,
    "reason": "Milestone 70, 70J: unit specs open filings in the case store instead of assigning window.D/window.caseFile, no assertion dropped by that; guardian-inventory-totals.spec.js 77 -> 76 because legacy-app.js's calc Proxy went -- the four checks on it (its exact line, its forwarding, its typo and missing-bridge throws) became three on its absence and on the headline total being handed the filing; ms70-case-authority.spec.js is new.",
+   "date": "2026-09-27"
+  },
+  {
+   "file": "tests/unit/legacy-bridge.spec.js",
+   "was": 20,
+   "now": 0,
+   "reason": "Milestone 70, 70K: legacy-bridge.spec.js and monolith-services.spec.js went with the two doors they held (src/legacy-bridge.js, src/core/runtime/monolith.js); their behavior -- provided once, loud when asked first -- is held by the new tests/unit/feature-services.spec.js; navigation-race.spec.ts and feature-lazy-boundary.spec.ts are new; no assertion dropped.",
+   "date": "2026-09-27"
+  },
+  {
+   "file": "tests/unit/monolith-services.spec.js",
+   "was": 13,
+   "now": 0,
+   "reason": "Milestone 70, 70K: legacy-bridge.spec.js and monolith-services.spec.js went with the two doors they held (src/legacy-bridge.js, src/core/runtime/monolith.js); their behavior -- provided once, loud when asked first -- is held by the new tests/unit/feature-services.spec.js; navigation-race.spec.ts and feature-lazy-boundary.spec.ts are new; no assertion dropped.",
    "date": "2026-09-27"
   }
  ]

@@ -11,24 +11,43 @@
 //
 // The case store (src/core/state.js), the filing lifecycle (ward-lifecycle.js)
 // and the case reader (case-reader.js) are the real modules. What they call
-// outside the store -- the save, the cross-tab lock, the page -- is stood in
-// for, so a fault can be put at each await. The recovery restore and the
+// outside the store -- the save, the cross-tab lock, the router, the feature
+// services -- is stood in for, so a fault can be put at each await. (Since
+// Milestone 70's 70K the lifecycle imports them; the stand-ins were window
+// members, and leaving a filing is the router's leave-filing.js.) The recovery restore and the
 // import merge are held by the static guards (filing-lifecycle.spec.js,
 // ms70-state-seam.spec.js) and their browser specs.
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
-const env = vi.hoisted(() => ({ calls: [], flush: async () => {} }));
+const env = vi.hoisted(() => ({ calls: [], flush: async () => {}, win: null }));
 
 vi.mock('../../src/core/persistence/case-file.js', () => ({
   flushPendingSave: (...args) => env.flush(...args),
   saveWardToState: async (ward) => { env.calls.push(`saveWard:${ward.wardId}`); },
   deleteWardFromState: async (id) => { env.calls.push(`deleteWard:${id}`); },
   showSaveError: () => { env.calls.push('showSaveError'); },
+  refreshAutoSaveArmedStatus: async () => {},
+  updateLastSavedIndicator: () => {},
+  showAutoExportReminder: () => {},
 }));
-vi.mock('../../src/core/form/form-contract.js', () => ({ commitFocusedField: () => {} }));
+vi.mock('../../src/core/form/form-contract.js', () => ({ commitFocusedField: () => {}, commitPendingFieldValues: () => {} }));
 vi.mock('../../src/core/form/prune-cards.js', () => ({ pruneBlankCards: () => {} }));
 vi.mock('../../src/core/form/form-runtime.js', () => ({ linkLabelsToInputs: () => {} }));
-vi.mock('../../src/core/ward-lock.js', () => ({ showWardLockedModal: () => { env.calls.push('lockedModal'); } }));
+vi.mock('../../src/core/ward-lock.js', () => ({
+  showWardLockedModal: () => { env.calls.push('lockedModal'); },
+  acquireWardLock: (...args) => env.win.acquireWardLock(...args),
+  releaseWardLock: (...args) => env.win.releaseWardLock(...args),
+}));
+vi.mock('../../src/core/navigation/router.js', () => ({
+  navigate: (...args) => env.win.navigate(...args),
+  renderPage: async (page) => { env.calls.push(`render:${page}`); },
+  closeMobileSidebar: () => {},
+  setCurrentPage: () => {},
+  setRouteHash: () => {},
+}));
+vi.mock('../../src/core/runtime/features.js', () => ({
+  features: () => ({ load: (id) => env.win.loadFeature(id) }),
+}));
 vi.mock('../../src/core/status/nav-marks.js', () => ({ updateNavDots: () => {} }));
 vi.mock('../../src/core/filing/recent-filings.js', () => ({ addToRecentlyOpened: () => {}, loadRecentlyOpenedWards: () => [] }));
 vi.mock('../../src/core/shell/sidebar.js', () => ({ updateSidebar: () => {} }));
@@ -76,12 +95,15 @@ let win;
 beforeEach(() => {
   env.calls = [];
   env.flush = async () => { env.calls.push(`flush:${getD().wardId}`); };
+  // The lock, the router and the feature loader, each a spy a test can replace.
   win = {
     acquireWardLock: vi.fn(async () => true),
     releaseWardLock: vi.fn(async () => {}),
-    navigate: vi.fn(),
+    navigate: vi.fn(async () => true),
+    loadFeature: vi.fn(async () => ({})),
     location: { hash: '' },
   };
+  env.win = win;
   vi.stubGlobal('window', win);
 });
 afterEach(() => {
@@ -126,7 +148,7 @@ describe('moving to another filing: a fault leaves the filing that was open, who
     const g = { wardId: 'g', inventoryType: 'guardian', wardName: 'G' };
     openCase();
     getCaseFile().wards.push(g);
-    win.ensureGuardianFeatureReady = vi.fn(async () => { throw new Error('chunk failed'); });
+    win.loadFeature = vi.fn(async () => { throw new Error('chunk failed'); });
     await expect(activateWard(g)).rejects.toThrow('chunk failed');
     expect(whatIsOpen()).toBe('g');
   });

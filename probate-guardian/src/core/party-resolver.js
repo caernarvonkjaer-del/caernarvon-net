@@ -5,14 +5,14 @@
 // that mechanism can be proven independently first, against hand-built
 // parties and filings, before any UI depends on it.
 //
-// legacy-app.js is a classic (non-module) script (see src/core/state.js's
-// file header for why), so this reaches into `window.*` directly rather than
-// importing from another module -- the same convention every other file in
-// src/core/ already uses.
+// It imports what it uses (Milestone 70, 70K); until then it reached the
+// monolith and its neighbours through `window.*`, and published itself there.
 
 /** Follows a merge tombstone (see the de-dup screen, a later phase) to the surviving party. */
 import { formEngine } from './filing/filing-registry.js';
 import { getCaseFile } from './state.js';
+import { markFilingRevisionChanged } from './filing/output-revision.js';
+import { markDirtySinceExport } from './persistence/case-file.js';
 export function resolveParty(partyId) {
   const caseFile = getCaseFile();
   if (!partyId || !caseFile || !Array.isArray(caseFile.parties)) return null;
@@ -524,9 +524,9 @@ export function syncFilingSlotWithParty(filing, role, index = 0) {
   const partyId = getPartyIdForSlot(filing, role, index);
   const party = partyId ? resolveParty(partyId) : null;
   if (!party) return false;
-  if (typeof window !== 'undefined') window.markFilingRevisionChanged?.('party-sync');
+  markFilingRevisionChanged('party-sync');
   hydrateFromParty(party, filing, role, index);
-  if (window.markDirtySinceExport) window.markDirtySinceExport();
+  markDirtySinceExport();
   return true;
 }
 
@@ -547,10 +547,10 @@ export function hydrateFromParty(party, filing, role, index = 0, { except = null
 
 /**
  * One flat key, a list of them, or null for "the whole block". Accepting a
- * bare string matters because these functions are published on `window` for
- * legacy-app.js, where a single-key call reads naturally and an accidental
- * string would otherwise silently fall back to whole-block behaviour -- the
- * exact defect 58A exists to remove.
+ * bare string matters because a single-key call reads naturally (these were
+ * called from legacy-app.js through `window`, until Milestone 70) and an
+ * accidental string would otherwise silently fall back to whole-block
+ * behaviour -- the exact defect 58A exists to remove.
  */
 function normalizeFieldKeys(fieldKeys) {
   if (fieldKeys == null) return null;
@@ -617,7 +617,7 @@ export function partyForSignaturePath(filing, path) {
 /** Points a filing's role/index slot at a party id (or clears it with null). */
 export function setPartyIdForSlot(filing, role, index, partyId) {
   if (!filing) return;
-  if (typeof window !== 'undefined') window.markFilingRevisionChanged?.('party-slot');
+  markFilingRevisionChanged('party-slot');
   if (role === 'ward') { filing.wardPartyId = partyId; return; }
   if (role === 'attorney') { filing.attorneyPartyId = partyId; return; }
   if (role === 'preparer') { filing.preparerPartyId = partyId; return; }
@@ -678,7 +678,7 @@ export function syncIdentityField(filing, role, index = 0, fieldKeys = null) {
       }
     }
   }
-  if (window.markDirtySinceExport) window.markDirtySinceExport();
+  markDirtySinceExport();
 }
 
 // ── Party de-duplication (Milestone 7) ─────────────────────────────────────
@@ -706,7 +706,7 @@ export function dismissPartyPair(idA, idB) {
   if (!Array.isArray(caseFile.dismissedPartyPairs)) caseFile.dismissedPartyPairs = [];
   if (!isPartyPairDismissed(idA, idB)) {
     caseFile.dismissedPartyPairs.push([idA, idB].sort());
-    window.markFilingRevisionChanged?.('party-dismiss');
+    markFilingRevisionChanged('party-dismiss');
   }
 }
 
@@ -822,7 +822,7 @@ export function mergeParties(keepId, discardId, { adoptBlankFields = false } = {
   const keep = resolveParty(keepId);
   const discard = resolveParty(discardId);
   if (!keep || !discard || keep === discard) return false;
-  if (typeof window !== 'undefined') window.markFilingRevisionChanged?.('party-merge');
+  markFilingRevisionChanged('party-merge');
 
   const now = new Date().toISOString();
   const record = { mergedAt: now, adoptedFields: [], adoptedRoles: [], repointedSlots: [], repointedCases: [] };
@@ -920,7 +920,7 @@ export function unmergeParty(subId) {
   if (!sub || !sub.mergedInto || !sub.mergeRecord) return false;
   const primary = caseFile.parties.find(p => p.id === sub.mergedInto);
   if (!primary || primary.mergedInto) return false;
-  if (typeof window !== 'undefined') window.markFilingRevisionChanged?.('party-unmerge');
+  markFilingRevisionChanged('party-unmerge');
   const record = sub.mergeRecord;
 
   for (const { wardId, role, index } of record.repointedSlots || []) {
@@ -952,31 +952,4 @@ export function unmergeParty(subId) {
   sub.updatedAt = now;
   primary.updatedAt = now;
   return true;
-}
-
-// Bridged onto window for legacy-app.js (classic script) and for e2e tests
-// to call directly -- see this file's header comment.
-if (typeof window !== 'undefined') {
-  window.resolveParty = resolveParty;
-  window.createParty = createParty;
-  window.identitySlotForPath = identitySlotForPath;
-  window.readRoleFields = readRoleFields;
-  window.writeRoleFields = writeRoleFields;
-  window.hydrateFromParty = hydrateFromParty;
-  window.dehydrateIntoParty = dehydrateIntoParty;
-  window.setPartyIdForSlot = setPartyIdForSlot;
-  // Milestone 46A/46B: reusable per-party signature stamps.
-  window.addSignatureImage = addSignatureImage;
-  window.syncIdentityField = syncIdentityField;
-  window.backfillWardPartyIdentity = backfillWardPartyIdentity;
-  window.closedFilingDrift = closedFilingDrift;
-  window.filingDriftFromParties = filingDriftFromParties;
-  window.syncFilingSlotWithParty = syncFilingSlotWithParty;
-  window.isPartyPairDismissed = isPartyPairDismissed;
-  window.dismissPartyPair = dismissPartyPair;
-  window.findDuplicateCandidates = findDuplicateCandidates;
-  window.referenceCountForParty = referenceCountForParty;
-  window.mergeParties = mergeParties;
-  window.subPartiesOf = subPartiesOf;
-  window.unmergeParty = unmergeParty;
 }

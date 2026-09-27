@@ -180,11 +180,6 @@ export function promptModal(messageOrOptions) {
   });
 }
 
-if (typeof window !== 'undefined') {
-  window.confirmModal = confirmModal;
-  window.alertModal = alertModal;
-  window.promptModal = promptModal;
-}
 
 // Milestone 70, 70H: the static dialogs -- showing and closing one, and
 // loading the fragment that holds it. Moved from legacy-app.js's MODAL

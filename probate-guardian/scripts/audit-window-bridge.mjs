@@ -46,7 +46,7 @@ const PLATFORM = new Set(['location', 'document', 'addEventListener', 'removeEve
   'close', 'getSelection', 'postMessage', 'HTMLElement', 'Node', 'Element', 'Image', 'ImageData', 'OffscreenCanvas',
   'ResizeObserver', 'MutationObserver', 'IntersectionObserver', 'AbortController', 'DOMParser', 'XMLSerializer',
   'caches', 'ServiceWorkerRegistration', 'PDFLib', 'undefined', 'Uint8Array', 'ArrayBuffer', 'Symbol', 'Reflect',
-  'Proxy', 'globalThis', 'window']);
+  'Proxy', 'globalThis', 'window', 'moveTo', 'resizeTo']);
 
 // ── Milestone 53D: the destructure consumer pass ────────────────────────────
 //
@@ -127,6 +127,51 @@ export function findWindowDestructureConsumers(source) {
   return [...names];
 }
 
+// Milestone 70, 70K: the member scans below read the parse, as the
+// destructure pass above always did. They were regexes over the whole file, so
+// a comment naming window.X -- and after Milestone 70 most of those are history
+// -- counted as a consumer and kept its name in the generated declaration.
+function parseFile(source, classic) {
+  try {
+    return parse(source, { ecmaVersion: 'latest', sourceType: classic ? 'script' : 'module' });
+  } catch {
+    return null;
+  }
+}
+
+const isWindow = (node) => node && node.type === 'Identifier' && node.name === 'window';
+
+/** `window.X = ...` targets and `window.X` reads in one parsed file. */
+function windowMembers(ast) {
+  const assigned = [];
+  const read = [];
+  const targets = new Set();
+  walkAst(ast, (node) => {
+    if (node.type === 'AssignmentExpression' && node.left.type === 'MemberExpression' && !node.left.computed && isWindow(node.left.object)) {
+      assigned.push(node.left.property.name);
+      targets.add(node.left);
+    }
+  });
+  walkAst(ast, (node) => {
+    if (node.type === 'MemberExpression' && !node.computed && isWindow(node.object) && !targets.has(node)) read.push(node.property.name);
+  });
+  return { assigned, read };
+}
+
+/** `Object.defineProperty(window, 'X', ...)` names in one parsed file. */
+function windowDefinedProperties(ast) {
+  const names = [];
+  walkAst(ast, (node) => {
+    if (node.type === 'CallExpression' && node.callee.type === 'MemberExpression' && !node.callee.computed
+        && node.callee.object.type === 'Identifier' && node.callee.object.name === 'Object'
+        && node.callee.property.name === 'defineProperty' && isWindow(node.arguments[0])
+        && node.arguments[1]?.type === 'Literal' && typeof node.arguments[1].value === 'string') names.push(node.arguments[1].value);
+  });
+  return names;
+}
+
+const CLASSIC = new Set(['src/legacy-app.js', 'src/prepaint.js']);
+
 function walk(dir, out = []) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     const p = path.join(dir, entry.name);
@@ -146,13 +191,16 @@ export function auditWindowBridge(projectRoot = root) {
   const legacy = fs.readFileSync(legacyPath, 'utf8');
   const legacyTopLevel = new Set([...legacy.matchAll(/^(?:async\s+)?function\s+([A-Za-z_$][\w$]*)\s*\(/gm)].map((m) => m[1]));
 
+  const members = new Map();
   for (const file of files) {
-    const source = fs.readFileSync(file, 'utf8');
     const name = rel(file);
-    for (const m of source.matchAll(/^\s*window\.([A-Za-z_$][\w$]*)\s*=(?!=)/gm)) {
-      assignments.push({ file: name, name: m[1] });
-      if (!assignedBy.has(m[1])) assignedBy.set(m[1], new Set());
-      assignedBy.get(m[1]).add(name);
+    const ast = parseFile(fs.readFileSync(file, 'utf8'), CLASSIC.has(name));
+    const found = ast ? windowMembers(ast) : { assigned: [], read: [] };
+    members.set(name, found);
+    for (const prop of found.assigned) {
+      assignments.push({ file: name, name: prop });
+      if (!assignedBy.has(prop)) assignedBy.set(prop, new Set());
+      assignedBy.get(prop).add(name);
     }
   }
   const recordConsumer = (prop, name) => {
@@ -165,9 +213,7 @@ export function auditWindowBridge(projectRoot = root) {
     const source = fs.readFileSync(file, 'utf8');
     const name = rel(file);
     // Member access: window.X
-    for (const m of source.matchAll(/\bwindow\.([A-Za-z_$][\w$]*)/g)) {
-      recordConsumer(m[1], name);
-    }
+    for (const prop of members.get(name).read) recordConsumer(prop, name);
     // Destructuring: const { X, Y: z } = window  (Milestone 53D)
     for (const prop of findWindowDestructureConsumers(source)) {
       recordConsumer(prop, name);
@@ -198,8 +244,9 @@ export function windowSurfaceNames(projectRoot = root) {
   const legacy = fs.readFileSync(path.join(projectRoot, 'src', 'legacy-app.js'), 'utf8');
   for (const m of legacy.matchAll(/^(?:async\s+)?function\s+([A-Za-z_$][\w$]*)\s*\(/gm)) names.add(m[1]);
   for (const file of walk(path.join(projectRoot, 'src'))) {
-    const source = fs.readFileSync(file, 'utf8');
-    for (const m of source.matchAll(/Object\.defineProperty\(\s*window\s*,\s*['"]([A-Za-z_$][\w$]*)['"]/g)) names.add(m[1]);
+    const relName = path.relative(projectRoot, file).replace(/\\/g, '/');
+    const ast = parseFile(fs.readFileSync(file, 'utf8'), CLASSIC.has(relName));
+    if (ast) for (const n of windowDefinedProperties(ast)) names.add(n);
   }
   return names;
 }

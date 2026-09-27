@@ -11,7 +11,7 @@ import { loadCaseFileFromZip } from '../persistence/case-reader.js';
 import { CRYPTO_VERIFIER_PLAINTEXT, clearCryptoKey, decryptJSONWithKey, deriveAndVerifyKey, deriveKeyFromPassword, encryptJSON, generateSaltB64, getCryptoKey, getSecurityMode, setCryptoKey, setSecurityMode } from '../persistence/crypto.js';
 import { loadAppState, saveAppState } from '../persistence/launch-preferences.js';
 import { readOwnSessionRestoreCache } from '../persistence/recovery-cache.js';
-import { monolith } from '../runtime/monolith.js';
+import { handleHash, setRouteHash } from '../navigation/router.js';
 import { sanitizeObjectData } from './input-hardening.js';
 import { updateSidebar } from '../shell/sidebar.js';
 import { blankCaseFile, getActiveWard, getCaseFile, replaceCaseFile } from '../state.js';
@@ -354,11 +354,11 @@ export async function lockApp(){
   if(activeWard){
     const ok = await filingLifecycle.open(activeWard);
     if (!ok) {
-      window.location.hash = '/dashboard';
+      setRouteHash('/dashboard');
     }
   }
   updateSidebar();
-  monolith.handleHash();
+  handleHash();
 }
 
 // The case as the flush before a lock left it in this page's recovery

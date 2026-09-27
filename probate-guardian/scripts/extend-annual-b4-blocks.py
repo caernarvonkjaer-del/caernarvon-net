@@ -53,8 +53,9 @@ import tempfile
 import zipfile
 
 TEMPLATE_JS = os.path.join('templates', 'annual-template.js')
-JS_PREFIX = 'window.EMBEDDED_TEMPLATES=window.EMBEDDED_TEMPLATES||{},window.EMBEDDED_TEMPLATES.annual="'
-JS_SUFFIX = '";\n'
+# The module's one export is the workbook: `export default "<base64>";` (since
+# Milestone 70's 70K; it was window.EMBEDDED_TEMPLATES.annual = "<base64>").
+PAYLOAD = r'(export default ")([A-Za-z0-9+/=]+)(")'
 
 SHEET_PREFIX = 'SCH B-4 OTHER DISB '
 SUMMARY_SHEET = SHEET_PREFIX + 'SUMMARY p1'
@@ -81,10 +82,10 @@ def accounts_for(last_page):
 
 def read_template_bytes():
     src = open(TEMPLATE_JS, encoding='utf-8').read()
-    m = re.search(r'annual="([A-Za-z0-9+/=]+)"', src)
+    m = re.search(PAYLOAD, src)
     if not m:
         raise SystemExit('could not find the base64 payload in ' + TEMPLATE_JS)
-    return base64.b64decode(m.group(1))
+    return base64.b64decode(m.group(2))
 
 
 def sheet_map(z):
@@ -348,8 +349,7 @@ def main():
     # export broke at boot, not just Annual's. Never reconstruct a file you can
     # patch.
     original = open(TEMPLATE_JS, encoding='utf-8', newline='').read()
-    patched, n = re.subn(r'(annual=")[A-Za-z0-9+/=]+(")',
-                         lambda m: m.group(1) + payload + m.group(2), original, count=1)
+    patched, n = re.subn(PAYLOAD, lambda m: m.group(1) + payload + m.group(3), original, count=1)
     if n != 1:
         raise SystemExit('payload substitution matched %d sites -- expected 1' % n)
     if 'export default' not in patched:

@@ -102,7 +102,6 @@ export function formDerivedOverwriteWarnings(filing, descriptor = null) {
   return out;
 }
 
-// Deliberately NOT bridged onto window. countyDriftWarnings is, for legacy
-// callers that predate the preflight; this has only one consumer --
-// output-preflight.js -- which imports it as a module. A global nothing reads
-// is a maintained declaration and an allow-list entry for nothing.
+// One consumer -- output-preflight.js -- which imports it. (Deliberately never
+// put on window, when countyDriftWarnings still was: a global nothing reads is
+// a maintained declaration and an allow-list entry for nothing.)

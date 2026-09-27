@@ -1,6 +1,6 @@
 // Milestone 70, 70H: the user guide -- where it is, the section for each page,
 // and opening it there. Moved from legacy-app.js's HELP SYSTEM.
-import { monolith } from '../runtime/monolith.js';
+import { getCurrentPage } from '../navigation/route-state.js';
 import { getActiveInventoryType } from '../state.js';
 
 // The standalone help page, deep-linked
@@ -61,6 +61,6 @@ export function openUserGuide(anchor){
 }
 
 export function openUserGuideForCurrentPage(){
-  const route=window.location.hash.replace('#','')||monolith.getCurrentPage()||'/';
+  const route=window.location.hash.replace('#','')||getCurrentPage()||'/';
   openUserGuide(userGuideAnchorFor(getActiveInventoryType(),route));
 }

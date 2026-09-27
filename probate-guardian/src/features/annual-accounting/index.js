@@ -79,42 +79,24 @@ import { showPickPartyModal } from '../../core/modals/pick-record-dialogs.js';
 import { tooltip } from '../../core/help/tooltips.js';
 import { syncActiveWardNameDisplay, syncGuardianNameDisplay } from '../../core/shell/sidebar.js';
 import { setAccountingFilingType } from './filing-type.js';
+import { navigate } from '../../core/navigation/router.js';
+import { calcTotalsAnnual, annualReconcileState, n, pct } from './totals.js';
 // Annual Accounting — the sixth feature extraction (Milestone 7, Phases A
 // and B of INDEX-SPLIT-PLAN.md's migration sequence: data/pages/nav/
 // validate, and print/PDF/Excel import/export). Also covers the
 // finalAccounting/trustAccounting aliases -- formEngine(type) maps all
 // three to 'annual' everywhere the app dispatches on type, so there is no
-// separate code path for them anywhere in this module. Dynamically
-// imported by legacy-app.js's mountAnnualFeature()/mountAnnualNav() bridge
-// (built on src/core/feature-bridge.js), never statically imported.
+// separate code path for them anywhere in this module. Loaded on first use
+// through src/features-loader.js (built on src/core/feature-bridge.js), never
+// statically imported.
 //
-// legacy-app.js stays a classic (non-module) script (Milestone 1's recorded
-// decision), so its top-level function declarations are real `window`
-// properties this module can destructure -- but a bare top-level `let`
-// (activeInventoryType, currentPage) is not; see src/core/state.js's file
-// header for the full explanation. `calcTotalsAnnual`/`annualReconcileState`
-// stay legacy globals because the dashboard needs `calcTotalsAnnual` for
-// every annual-family ward's card total *before* this module is ever
-// loaded (getWardHeadlineTotal(), same "Problem 1" pattern as every prior
-// milestone), and `annualReconcileState` stays alongside it for simplicity
-// even though it isn't strictly forced the same way (Milestone 7 plan's
-// "Confirmed facts"). `n`/`pct` (tiny number helpers) stay bundled with
-// them since `calcTotalsAnnual` is their only legacy caller.
-// `renderScheduleDocsSection` and the other shared page helpers stay legacy
-// because they're shared broadly across every extracted feature, not specific
-// to Annual. (`esc`, `ic`, `guardianHasAnyData` and the formatting and
-// validation helpers were in that group until Milestone 70's 70B moved them
-// into core modules; they are imported above.)
-const {
-  navigate, 
-  
-  // Milestone 51C dropped `toggleSsnReveal` from this list -- destructured but
-  // never called here. Its only call site is the delegated 'toggle-ssn' handler
-  // in src/form-events.js, which imports it (src/core/form/form-runtime.js).
-  
-  
-  calcTotalsAnnual, annualReconcileState, n, pct,
-} = window;
+// Until Milestone 70's 70K this module took navigate(), the Annual totals and
+// the n()/pct() helpers off window as it loaded -- the monolith's globals.
+// They are imported below: the router's navigate(), and this feature's own
+// ./totals.js, which src/features-loader.js loads eagerly because the
+// dashboard's card total needs calcTotalsAnnual() for a filing whose feature
+// has never loaded. One pct() now serves the pages and the totals: the
+// monolith's copy was the pages' until then.
 
 // print.js/excel.js are dynamically imported once, together, the first time
 // this feature mounts -- same reasoning as Simplified Accounting's
@@ -138,8 +120,11 @@ function ensureLazyModules() {
   return _lazyModulesPromise;
 }
 
-export async function mount(container, page) {
+export async function mount(container, page, { signal } = {}) {
   await ensureLazyModules();
+  // Superseded while its modules loaded (Milestone 70, 70K): a newer
+  // navigation owns the page, so draw nothing.
+  if (signal?.aborted) return;
   sanitizeNegativeAmounts();
   // Milestone 67B: a filing saved before the four-state bond question reads
   // back with the state its old fields implied, and the retired
@@ -334,7 +319,6 @@ function duplicateAnnualRow(arrName, idx, route) {
     navigate(route);
   }
 }
-window.duplicateAnnualRow = duplicateAnnualRow;
 
 // Schedule B-4's bank accounts. The court's workbook prints each account's
 // disbursements in that account's own block of register pages, so an account
@@ -1803,4 +1787,3 @@ export function validateAnnual(){
 // this for validateGuardian; this file's own errors were computed but never
 // exposed, so finalAccounting/trustAccounting (formEngine()==='annual') fell back
 // to a single generic message with no per-field jump links.
-window.validateAnnual = validateAnnual;

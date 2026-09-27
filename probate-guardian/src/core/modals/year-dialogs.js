@@ -4,7 +4,7 @@ import { esc } from '../filing/escape-html.js';
 import { describeYearLabel } from '../filing/filing-years.js';
 import { navigate, renderPage } from '../navigation/router.js';
 import { filingLifecycle } from '../navigation/filing-lifecycle.js';
-import { monolith } from '../runtime/monolith.js';
+import { getCurrentPage } from '../navigation/route-state.js';
 import { getCaseFile } from '../state.js';
 import { alertModal, closeModal, ensureFragment, showModal } from '../ui/dialogs.js';
 import { ic } from '../ui/icons.js';
@@ -88,7 +88,7 @@ export async function doDeleteWardYear(){
     // page redraws it. renderDashboardGrid() was never a global, so this line
     // threw after every deletion made from the dashboard, and the filer was
     // told the year had not been deleted when it had (Milestone 70, 70I).
-    if(monolith.getCurrentPage()==='/dashboard')renderPage('/dashboard');
+    if(getCurrentPage()==='/dashboard')renderPage('/dashboard');
   }catch(e){
     console.error('Failed to delete year',e);
     await alertModal('Failed to delete year. Check console.');

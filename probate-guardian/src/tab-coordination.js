@@ -1,5 +1,6 @@
 import { TAB_HEARTBEAT_TTL_MS, TAB_WARNING_TEXT, normalizeTabState, summarizePeerTabs } from './tab-state.js';
 import { getProbateGuardianTabState } from './core/navigation/tab-state.js';
+import { APP_VERSION } from './core/feedback/feedback-config.js';
 
 const CHANNEL_NAME = 'probate-guardian-tabs';
 const STORAGE_KEY = 'pg-tab-heartbeats-v1';
@@ -18,8 +19,9 @@ function createTabId() {
 }
 
 function readAppVersion() {
-  const fromWindow = typeof window.PG_APP_VERSION === 'string' ? window.PG_APP_VERSION : '';
-  if (fromWindow) return fromWindow;
+  // The build's own version (Milestone 70, 70K: it read window.PG_APP_VERSION,
+  // which legacy-app.js set).
+  if (APP_VERSION) return APP_VERSION;
   const build = document.querySelector('meta[name="pg-build"]');
   return build ? build.getAttribute('content') || '' : '';
 }

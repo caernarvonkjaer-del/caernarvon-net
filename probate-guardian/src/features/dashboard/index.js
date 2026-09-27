@@ -22,7 +22,8 @@ import { SHOW_COMMENT_CARD_LINK } from '../../core/shell/start-new-form.js';
 import { navigate } from '../../core/navigation/router.js';
 import { buildSingleWardExportBlob, exportCaseFileZip, finishSingleWardExport, flushPendingSave, formatRelativeTime, getWardFileName, markDirtySinceExport, saveBlobAs, saveWardToState, updateLastSavedIndicator, validateWardBackupOverwrite } from '../../core/persistence/case-file.js';
 import { isContinuePromptShown, markContinuePromptShown, saveAppState } from '../../core/persistence/launch-preferences.js';
-import { monolith } from '../../core/runtime/monolith.js';
+import { features } from '../../core/runtime/features.js';
+import { filingProgress } from '../../core/filing/filing-registry.js';
 import { auditLog } from '../../core/activity/audit-log.js';
 
 // Dashboard's own module state -- all session-only, not persisted, reset on reload.
@@ -48,8 +49,8 @@ const WORKFLOW_LABELS = {
 function projectWard(ward, today = new Date()) {
   return projectDashboardWard(ward, {
     displayType: INVENTORY_TYPES[ward.inventoryType]?.label || ward.inventoryType,
-    total: monolith.getWardHeadlineTotal(ward),
-    progress: monolith.getWardProgress(ward),
+    total: features().headlineTotal(ward),
+    progress: filingProgress(ward, features().completionDeps()),
     today,
   });
 }

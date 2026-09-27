@@ -12,7 +12,12 @@
 //
 // Each entry's `kept` list is the other half of the same decision: bridges
 // the milestone deliberately left in place, which must still be published.
+// Since Milestone 70's 70K none is kept -- addEntry, duplicateEntry and
+// validateGuardian were the last three -- and the whole surface is one name,
+// the reviewed window.GuardianForms namespace.
 import { describe, it, expect } from 'vitest';
+import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { windowSurfaceNames } from '../../scripts/audit-window-bridge.mjs';
@@ -25,7 +30,9 @@ const REMOVED = [
     decision: 'Milestone 51E (4eba207): Initial Inventory Add/Remove controls dispatch through data-inventory-action',
     removed: ['addGuardian', 'removeGuardian', 'addRecipient', 'removeRecipient', 'addWitness', 'removeWitness',
       'syncB2VehicleDescription', 'toggleB2Vehicle', 'setScheduleNoItems', 'removeEntry', 'pageNav'],
-    kept: ['addEntry', 'duplicateEntry', 'validateGuardian'],
+    // Kept until Milestone 70's 70K, which exported them for the feature
+    // services (GuardianForms.testing reaches them there) and removed the globals.
+    kept: [],
   },
   {
     // Was part of tests/e2e/guardian-inventory-mount.spec.ts's first test.
@@ -45,10 +52,28 @@ const REMOVED = [
 describe('window.* bridges removed on purpose stay removed', () => {
   const surface = windowSurfaceNames(root);
 
-  it('sees each kind of publication (so an empty "still present" list means something)', () => {
-    expect(surface.has('addEntry'), 'a window.X = assignment').toBe(true);
-    expect(surface.has('navigate'), 'a legacy-app.js top-level function').toBe(true);
-    expect(surface.has('currentPage'), 'an Object.defineProperty(window, ...)').toBe(true);
+  // The scanner, on a small tree with one publication of each kind: this repo
+  // has none left to show it on (so an empty "still present" list below
+  // still means something).
+  it('sees each kind of publication', () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'ms70-surface-'));
+    try {
+      fs.mkdirSync(path.join(tmp, 'src'));
+      fs.writeFileSync(path.join(tmp, 'src', 'legacy-app.js'), 'function navigate(){}\n');
+      fs.writeFileSync(path.join(tmp, 'src', 'a.js'), "export const x = 1;\nwindow.addEntry = () => x;\nObject.defineProperty(window, 'currentPage', { get: () => '/' });\n");
+      const seen = windowSurfaceNames(tmp);
+      expect(seen.has('addEntry'), 'a window.X = assignment').toBe(true);
+      expect(seen.has('navigate'), 'a legacy-app.js top-level function').toBe(true);
+      expect(seen.has('currentPage'), 'an Object.defineProperty(window, ...)').toBe(true);
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+  });
+
+  // Milestone 70, 70K: "the bridge audit permits only the reviewed
+  // GuardianForms namespace" -- every other application global went.
+  it('the whole surface is the reviewed namespace, window.GuardianForms', () => {
+    expect([...surface].sort()).toEqual(['GuardianForms']);
   });
 
   it.each(REMOVED)('$decision', ({ removed, kept }) => {

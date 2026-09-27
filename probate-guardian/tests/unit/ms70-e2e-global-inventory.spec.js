@@ -32,25 +32,26 @@ describe('the browser-suite global inventory', () => {
   }, 60_000);
 
   // Milestone 70, 70T: a name the spec never declares is a window property in
-  // the page, so `renderPage.length` reaches the app exactly as
-  // window.renderPage does. Declared names -- parameters, locals, imports --
-  // are not globals. (The example was caseFile and D until 70J took both off
-  // window.)
+  // the page, so `GuardianForms.testing` reaches the app exactly as
+  // window.GuardianForms.testing does. Declared names -- parameters, locals,
+  // imports -- are not globals. (The example was caseFile and D until 70J took
+  // both off window, then renderPage and switchWard until 70K took every other
+  // application global: GuardianForms is the one left.)
   test('finds application globals reached bare, and never a name the spec declares', async () => {
     const ts = [
       "import { test } from '@playwright/test';",
       "import { createWard } from './support/target';",
       "test('x', async ({ page }) => {",
-      '  await page.evaluate(() => renderPage.length + switchWard.length);',
+      '  await page.evaluate(() => GuardianForms.testing.snapshot().caseFile.wards.length + GuardianForms.version.length);',
       '  await page.evaluate((navigate: string) => navigate.length, "/p1");',
-      '  await page.evaluate(() => { const renderPage = { wards: [] }; return renderPage.wards; });',
+      '  await page.evaluate(() => { const GuardianForms = { wards: [] }; return GuardianForms.wards; });',
       '  await page.evaluate(() => ({ navigate: 1, obj: { D: 2 } }).navigate);',
       '  await createWard(page, "A");',
       '  await page.evaluate(() => document.title + JSON.stringify([]));',
       '});',
     ].join('\n');
     const r = await inventoryFile('x.spec.ts', ts);
-    expect(r.bare).toEqual({ renderPage: 1, switchWard: 1 });
+    expect(r.bare).toEqual({ GuardianForms: 2 });
     expect(r.names).toEqual({});
   }, 60_000);
 

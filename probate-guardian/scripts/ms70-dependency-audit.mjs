@@ -659,17 +659,29 @@ const PLATFORM_READS = new Set(['location', 'document', 'navigator', 'history', 
   // Vendor globals (index.html's lib/ classic scripts and bundled libraries).
   'JSZip', 'ExcelJS', 'bootstrap', 'html2pdf', 'jspdf', 'jsPDF', 'PDFLib', 'pdfjsLib']);
 
+// Milestone 70, 70K: the approved external boundary (MILESTONE-70-PROPOSAL.md,
+// "The approved window.GuardianForms boundary"): window.GuardianForms, the one
+// application-owned global, which src/core/runtime/browser-api.js installs;
+// and __GUARDIAN_FORMS_TEST_MODE__, the test runner's pre-boot flag it reads
+// once and deletes (decisions D3, T3) -- runner-owned, not an application
+// global. No module reaches another through either, so the application-global
+// sets leave them out; `boundary` below holds where they are touched, and may
+// not grow either.
+export const BOUNDARY = new Set(['GuardianForms', '__GUARDIAN_FORMS_TEST_MODE__']);
+
 /** The sets that must never grow, as sorted string keys. */
 export function ratchetSets(result) {
   const uniq = (xs) => [...new Set(xs)].sort();
+  const app = (x) => !BOUNDARY.has(x.name);
   return {
     classicDeclarations: uniq(result.classicDeclarations.map((d) => `${d.file}::${d.name}`)),
-    windowWrites: uniq(result.windowWrites.map((w) => `${w.file}::${w.name}`)),
-    windowReads: uniq([...result.windowReads, ...result.windowDestructures].filter((r) => !PLATFORM_READS.has(r.name)).map((r) => `${r.file}::${r.name}`)),
+    windowWrites: uniq(result.windowWrites.filter(app).map((w) => `${w.file}::${w.name}`)),
+    windowReads: uniq([...result.windowReads, ...result.windowDestructures].filter((r) => !PLATFORM_READS.has(r.name) && app(r)).map((r) => `${r.file}::${r.name}`)),
+    boundary: uniq([...result.windowWrites, ...result.windowReads].filter((x) => !app(x)).map((x) => `${x.file}::${x.name}`)),
     evalTimeWindowDestructures: uniq(result.windowDestructures.filter((d) => d.evalTime).map((d) => `${d.file}::${d.name}`)),
     bareCrossBoundary: uniq(result.bareCrossBoundary.map((b) => `${b.file}::${b.name}`)),
     unresolvedBareReferences: uniq(result.unresolvedBareReferences.map((b) => `${b.file}::${b.name}`)),
-    unownedWindowReads: uniq(result.unownedWindowReads.filter((u) => !PLATFORM_READS.has(u.name)).map((u) => u.name)),
+    unownedWindowReads: uniq(result.unownedWindowReads.filter((u) => !PLATFORM_READS.has(u.name) && !BOUNDARY.has(u.name)).map((u) => u.name)),
     lexicalOnlyWindowReads: uniq(result.lexicalOnlyWindowReads.map((r) => `${r.file}::${r.name}`)),
     cycles: uniq(result.cycles.map((c) => c.join(' <-> '))),
     layerViolations: uniq(result.layerViolations.map((v) => `${v.from} -> ${v.to} (${v.rule})`)),

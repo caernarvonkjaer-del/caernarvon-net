@@ -5,6 +5,7 @@
 // out documents that honestly instead of inventing types nobody asked for.
 import { getActiveInventoryType } from '../state.js';
 import { errorRoute } from './error-route.js';
+import { getCurrentPage, navigateTo } from '../navigation/route-state.js';
 
 // Milestone 24: Structured Validation Error Adapter & Resilient Jump Link Handler
 
@@ -215,8 +216,8 @@ export async function focusFieldByPath(route, fieldPath) {
 
   let target = findTarget(fieldPath);
 
-  if (!target && route && window.navigate && window.getCurrentPage?.() !== route) {
-    window.navigate(route);
+  if (!target && route && getCurrentPage() !== route) {
+    navigateTo(route);
     await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
     target = findTarget(fieldPath);
   }
@@ -227,8 +228,4 @@ export async function focusFieldByPath(route, fieldPath) {
   }
 }
 
-if (typeof window !== 'undefined') {
-  window.adaptValidationErrors = adaptValidationErrors;
-  window.focusFieldByPath = focusFieldByPath;
-}
 

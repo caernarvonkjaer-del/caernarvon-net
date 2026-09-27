@@ -19,7 +19,7 @@
 //    unlike the cache above, it is fine for it to survive indefinitely and
 //    across sessions. Reopening a case (silent handle reconnect or a plain
 //    "Open Case File") already reloads real data from the actual .sav file;
-//    this marker only decides where initApp() lands the filer afterward,
+//    this marker only decides where startup lands the filer afterward,
 //    instead of always dropping them on the dashboard.
 import { encryptJSON, getSecurityMode, getCryptoKey } from './crypto.js';
 import { openIndexedDbStore } from './launch-preferences.js';
@@ -156,10 +156,4 @@ export function clearLastPosition() {
   } catch (e) {
     /* non-critical */
   }
-}
-
-// Global bridge for legacy scripts and test harnesses
-if (typeof window !== 'undefined') {
-  window.saveSessionRestoreCache = saveSessionRestoreCache;
-  window.clearSessionRestoreCache = clearSessionRestoreCache;
 }

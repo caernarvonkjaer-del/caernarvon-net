@@ -151,13 +151,6 @@ export async function loadAppState(key) {
   return getAppState(key);
 }
 
-// Global bridge for legacy scripts and test harnesses
-if (typeof window !== 'undefined') {
-  window.hasOpenedCaseBefore = hasOpenedCaseBefore;
-  window.readRememberedFile = readRememberedFile;
-  window.loadAppState = loadAppState;
-}
-
 // The dashboard's one-time Continue Editing prompt: shown once per case (the
 // flag is saved with it). Moved from legacy-app.js (Milestone 70, 70I).
 export function isContinuePromptShown(){ return !!appStateObject().continuePromptShown; }

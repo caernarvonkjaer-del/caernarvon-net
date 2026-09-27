@@ -16,6 +16,3 @@ export async function getHtml2Pdf() {
   });
 }
 
-if (typeof window !== 'undefined') {
-  window.getHtml2Pdf = getHtml2Pdf;
-}

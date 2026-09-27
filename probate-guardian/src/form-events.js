@@ -20,6 +20,8 @@ import { showPickPartyModal } from './core/modals/pick-record-dialogs.js';
 import { showAddWardModalForType } from './core/modals/filing-dialogs.js';
 import { exportActivityLog, renderActivityLogList } from './core/activity/activity-log-view.js';
 import { openFloridaCourtPortal } from './core/shell/court-portal.js';
+import { printCurrentFilingPdf } from './core/pdf/pdf-preview.js';
+import { features } from './core/runtime/features.js';
 // Milestone 70, 70H: this module's document listeners are collected here and
 // added by installFormEvents(), once, from main.js -- not as a side effect of
 // importing it; its signal removes them.
@@ -84,11 +86,11 @@ on('click', (event) => {
     case 'party-sync-closed-all': doPartySyncClosedAll(actionElement.dataset.partyId); break;
     case 'party-unmerge-selected': doPartyUnmergeSelected(); break;
     case 'party-unmerge-toggle': togglePartyUnmergeSelection(actionElement.dataset.partyId, actionElement.checked); break;
-    case 'print': window.printCurrentFilingPdf(); break;
+    case 'print': printCurrentFilingPdf(); break;
     case 'remove-plan-row': removePlanRow(actionElement.dataset.collection, Number.parseInt(actionElement.dataset.index, 10), actionElement.dataset.route); break;
-    case 'save-pdf-plan-annual': window.doSavePdfPlanAnnual(); break;
-    case 'save-pdf-plan-initial': window.doSavePdfPlanInitial(); break;
-    case 'save-pdf-plan-minor': window.doSavePdfPlanMinor(); break;
+    case 'save-pdf-plan-annual': features().run('planAnnual', 'doSavePdfPlanAnnual'); break;
+    case 'save-pdf-plan-initial': features().run('planInitial', 'doSavePdfPlanInitial'); break;
+    case 'save-pdf-plan-minor': features().run('planMinor', 'doSavePdfPlanMinor'); break;
     case 'preview-step': pvStep(Number.parseInt(actionElement.dataset.step, 10)); break;
     case 'remove-schedule-doc': removeScheduleDoc(actionElement.dataset.scheduleKey, Number.parseInt(actionElement.dataset.documentIndex, 10)); break;
     case 'toggle-ssn': toggleSsnReveal(actionElement); break;

@@ -181,14 +181,10 @@ export function calcTotalsGuardian(customD) {
   };
 }
 
-// calcTotalsGuardian is published on window for the test adapter
-// (src/core/testing/testing-adapter.js's status.guardianTotals), which is core
-// and so may not import a feature. window.makeGuardianCalc went in Milestone
-// 70's 70B: its one reader was legacy-app.js's calc forwarder, which now
-// reaches `calc` below through src/legacy-bridge.js instead.
-if (typeof window !== 'undefined') {
-  window.calcTotalsGuardian = calcTotalsGuardian;
-}
+// The test adapter's status.guardianTotals reaches calcTotalsGuardian through
+// the feature services (src/features-loader.js), since core may not import a
+// feature; it was published on window until Milestone 70's 70K.
+// window.makeGuardianCalc went in 70B.
 
 // The classic call shape the Guardian Inventory UI uses -- calc.totalA1(),
 // calc.wardVal(entry), ... -- bound to the open filing (whatever getD()

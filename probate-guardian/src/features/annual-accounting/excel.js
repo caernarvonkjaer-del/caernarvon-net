@@ -33,12 +33,10 @@ import { formDisplayName } from '../../core/filing/filing-registry.js';
 import { getD, requestSave } from '../../core/state.js';
 import { ensureTemplate } from '../../core/persistence/templates.js';
 import { setAccountingFilingType } from './filing-type.js';
+import { markFilingRevisionChanged } from '../../core/filing/output-revision.js';
+import { getCurrentPage, renderPage } from '../../core/navigation/router.js';
+import { calcTotalsAnnual, annualReconcileState } from './totals.js';
 
-const {
-  renderPage, calcTotalsAnnual,
-  annualReconcileState, 
-  getCurrentPage,
-} = window;
 
 // r2 is imported (src/core/format/money.js, Milestone 70's 70B). It used to be
 // taken off window, where legacy-app.js's const r2 never was: the first
@@ -904,7 +902,7 @@ export async function importExcel(input){
       // sidebar kept asking for it.
       migrateBondDepository(D);
       requestSave();
-      window.markFilingRevisionChanged?.('excel-import');
+      markFilingRevisionChanged('excel-import');
       setStatus(prog,'✓ Template loaded and data imported successfully.');
       scheduleStatusClear(prog);
       renderPage(getCurrentPage());

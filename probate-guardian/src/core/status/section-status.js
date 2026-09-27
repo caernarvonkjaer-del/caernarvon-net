@@ -98,7 +98,3 @@ export function renderLocalSectionGuidance(currentRoute, rawErrors = [], maxItem
   </div>`;
 }
 
-if (typeof window !== 'undefined') {
-  window.computeSectionStatus = computeSectionStatus;
-  window.renderLocalSectionGuidance = renderLocalSectionGuidance;
-}

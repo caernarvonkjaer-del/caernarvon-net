@@ -21,104 +21,9 @@
   "filing-workflow": "The Add Form, Simplified Accounting eligibility and Delete Form dialogs and their handlers: creating a filing (what it carries over, the case it joins), the eligibility questions that choose Simplified or Annual, and deleting one -- the workflow 70G moves (the plan names eligibility, and its gate needs creation and deletion to go through the filing lifecycle service), not the modal plumbing their section is named for. That (showModal(), closeModal(), ensureFragment(), the ward-name combobox) stays for 70H.",
   "store-forwarder": "A one-line forwarder onto the case store or a module's totals, through src/legacy-bridge.js: since 70J the module store owns the case, so the monolith's remaining readers of the open filing, its type or a filing's Inventory totals reach them this way. It goes with those readers."
  },
- "overrides": {
-  "_simplifiedFeatureBridge": {
-   "delivery": "70K",
-   "why": "bridge"
-  },
-  "calcTotals": {
-   "delivery": "70B",
-   "why": "pure"
-  },
-  "currentPage": {
-   "delivery": "70K",
-   "why": "router-state"
-  },
-  "getCurrentPage": {
-   "delivery": "70K",
-   "why": "router-state"
-  },
-  "getSimplifiedFeatureBridge": {
-   "delivery": "70K",
-   "why": "bridge"
-  },
-  "mountSimplifiedFeature": {
-   "delivery": "70K",
-   "why": "bridge"
-  },
-  "mountSimplifiedNav": {
-   "delivery": "70K",
-   "why": "bridge"
-  },
-  "getWardProgress": {
-   "delivery": "70D",
-   "until": "70K",
-   "why": "dispatcher"
-  },
-  "getD": {
-   "disposition": "wrapper",
-   "delivery": "70K",
-   "why": "store-forwarder"
-  },
-  "getActiveInventoryType": {
-   "disposition": "wrapper",
-   "delivery": "70K",
-   "why": "store-forwarder"
-  },
-  "calcTotalsGuardian": {
-   "disposition": "wrapper",
-   "delivery": "70K",
-   "why": "store-forwarder"
-  }
- },
- "notes": {
-  "getWardHeadlineTotal": "Stays in 70D: it swaps window.D to compute another filing's total, which is exactly 70D's risk.",
-  "pct": "Deleted on master in c62f890 (its only caller now imports totals.js's copy); a re-implement row in MILESTONE-70-FIX-LEDGER.md.",
-  "provideMonolithServices": "Added in 70E: legacy-app.js's one-line door into src/core/runtime/monolith.js, called from initApp(), the second transition exception MILESTONE-70-PROPOSAL.md records; it goes with the monolith (70L at the latest).",
-  "getD": "Added in 70J: the monolith's own caseFile, window.D and activeInventoryType went, so computeNavChecks() and handleHash() read the open filing and its type through getD() and getActiveInventoryType(), and getWardHeadlineTotal() totals the filing it is handed through calcTotalsGuardian() (it used to point window.D at each filing and ask calc). All three callers move in 70K.",
-  "getActiveInventoryType": "Added in 70J: the monolith's own caseFile, window.D and activeInventoryType went, so computeNavChecks() and handleHash() read the open filing and its type through getD() and getActiveInventoryType(), and getWardHeadlineTotal() totals the filing it is handed through calcTotalsGuardian() (it used to point window.D at each filing and ask calc). All three callers move in 70K.",
-  "calcTotalsGuardian": "Added in 70J: the monolith's own caseFile, window.D and activeInventoryType went, so computeNavChecks() and handleHash() read the open filing and its type through getD() and getActiveInventoryType(), and getWardHeadlineTotal() totals the filing it is handed through calcTotalsGuardian() (it used to point window.D at each filing and ask calc). All three callers move in 70K."
- },
- "confirmed": {
-  "SPECIAL_PAGES": "move 70K",
-  "_annualFeatureBridge": "move 70K",
-  "_dashboardFeatureBridge": "move 70K",
-  "_guardianFeatureBridge": "move 70K",
-  "_planAnnualFeatureBridge": "move 70K",
-  "_planInitialFeatureBridge": "move 70K",
-  "_planMinorFeatureBridge": "move 70K",
-  "_planSimplifiedFeatureBridge": "move 70K",
-  "computeNavChecks": "move 70D",
-  "ensureGuardianFeatureReady": "move 70K",
-  "formEngine": "move 70C",
-  "getAnnualFeatureBridge": "move 70K",
-  "getDashboardFeatureBridge": "move 70K",
-  "getGuardianFeatureBridge": "move 70K",
-  "getPlanAnnualFeatureBridge": "move 70K",
-  "getPlanInitialFeatureBridge": "move 70K",
-  "getPlanMinorFeatureBridge": "move 70K",
-  "getPlanSimplifiedFeatureBridge": "move 70K",
-  "getWardHeadlineTotal": "move 70K",
-  "handleHash": "move 70K",
-  "initApp": "move 70K",
-  "mountAnnualFeature": "move 70K",
-  "mountAnnualNav": "move 70K",
-  "mountDashboardFeature": "move 70K",
-  "mountGuardianFeature": "move 70K",
-  "mountGuardianNav": "move 70K",
-  "mountPlanAnnualFeature": "move 70K",
-  "mountPlanAnnualNav": "move 70K",
-  "mountPlanInitialFeature": "move 70K",
-  "mountPlanInitialNav": "move 70K",
-  "mountPlanMinorFeature": "move 70K",
-  "mountPlanMinorNav": "move 70K",
-  "mountPlanSimplifiedFeature": "move 70K",
-  "mountPlanSimplifiedNav": "move 70K",
-  "n": "move 70K",
-  "pct": "move 70K",
-  "updateNavActive": "move 70K",
-  "provideMonolithServices": "move 70E"
- },
+ "overrides": {},
+ "notes": {},
+ "confirmed": {},
  "landed": {
   "70B": {
    "note": "Gone from src/legacy-app.js in 70B. Each keeps the placement the review confirmed (was). Moved into modules: the 70B build record in MILESTONE-70-PROPOSAL.md names each destination; circuitCourtCaption, hasSixthCircuitLocalGuidance, showRenameWardModal and doRenameWard were deleted as unreachable. Names that still appear in the draft as disposition wrapper moved too; only their one-line wrapper is left.",
@@ -1483,6 +1388,164 @@
     },
     "updateSidebar": {
      "was": "move 70H (override: shell)"
+    }
+   }
+  },
+  "70K": {
+   "note": "Gone from src/legacy-app.js in 70K, the last of it: the route (currentPage and its window accessor, getCurrentPage()) and the hash handler (handleHash(), updateNavActive(), SPECIAL_PAGES and the hashchange listener) to src/core/navigation/router.js; the eight feature bridges and their mounts (_<feature>FeatureBridge, get<Feature>FeatureBridge(), mount<Feature>Feature(), mount<Feature>Nav(), ensureGuardianFeatureReady()) to src/features-loader.js's feature services, with the dashboard's headline total (getWardHeadlineTotal()); computeNavChecks() to src/core/status/nav-marks.js; the forwarders getD(), getActiveInventoryType(), calcTotalsGuardian(), calcTotals(), formEngine() and getWardProgress() to their callers' imports; n() and pct() (the Annual pages import totals.js's); initApp() and provideMonolithServices() (startGuardianForms(), src/core/startup/bootstrap.js; the monolith's services went); the date-year guard (src/core/form/date-year-guard.js); window.PG_APP_VERSION (window.GuardianForms.version); and a click listener on .nav-link-item[data-page] elements, which no page has had at load since the features draw the sidebar's sections. The file declares and runs nothing; 70L deletes it.",
+   "entries": {
+    "_annualFeatureBridge": {
+     "was": "move 70K"
+    },
+    "_dashboardFeatureBridge": {
+     "was": "move 70K"
+    },
+    "_guardianFeatureBridge": {
+     "was": "move 70K"
+    },
+    "_planAnnualFeatureBridge": {
+     "was": "move 70K"
+    },
+    "_planInitialFeatureBridge": {
+     "was": "move 70K"
+    },
+    "_planMinorFeatureBridge": {
+     "was": "move 70K"
+    },
+    "_planSimplifiedFeatureBridge": {
+     "was": "move 70K"
+    },
+    "_simplifiedFeatureBridge": {
+     "was": "move 70K (override: bridge)"
+    },
+    "calcTotals": {
+     "was": "move 70B (override: pure)"
+    },
+    "calcTotalsGuardian": {
+     "was": "wrapper 70K (override: store-forwarder)",
+     "note": "Added in 70J: the monolith's own caseFile, window.D and activeInventoryType went, so computeNavChecks() and handleHash() read the open filing and its type through getD() and getActiveInventoryType(), and getWardHeadlineTotal() totals the filing it is handed through calcTotalsGuardian() (it used to point window.D at each filing and ask calc). All three callers move in 70K."
+    },
+    "computeNavChecks": {
+     "was": "move 70D"
+    },
+    "currentPage": {
+     "was": "move 70K (override: router-state)"
+    },
+    "ensureGuardianFeatureReady": {
+     "was": "move 70K"
+    },
+    "formEngine": {
+     "was": "move 70C"
+    },
+    "getActiveInventoryType": {
+     "was": "wrapper 70K (override: store-forwarder)",
+     "note": "Added in 70J: the monolith's own caseFile, window.D and activeInventoryType went, so computeNavChecks() and handleHash() read the open filing and its type through getD() and getActiveInventoryType(), and getWardHeadlineTotal() totals the filing it is handed through calcTotalsGuardian() (it used to point window.D at each filing and ask calc). All three callers move in 70K."
+    },
+    "getAnnualFeatureBridge": {
+     "was": "move 70K"
+    },
+    "getCurrentPage": {
+     "was": "move 70K (override: router-state)"
+    },
+    "getD": {
+     "was": "wrapper 70K (override: store-forwarder)",
+     "note": "Added in 70J: the monolith's own caseFile, window.D and activeInventoryType went, so computeNavChecks() and handleHash() read the open filing and its type through getD() and getActiveInventoryType(), and getWardHeadlineTotal() totals the filing it is handed through calcTotalsGuardian() (it used to point window.D at each filing and ask calc). All three callers move in 70K."
+    },
+    "getDashboardFeatureBridge": {
+     "was": "move 70K"
+    },
+    "getGuardianFeatureBridge": {
+     "was": "move 70K"
+    },
+    "getPlanAnnualFeatureBridge": {
+     "was": "move 70K"
+    },
+    "getPlanInitialFeatureBridge": {
+     "was": "move 70K"
+    },
+    "getPlanMinorFeatureBridge": {
+     "was": "move 70K"
+    },
+    "getPlanSimplifiedFeatureBridge": {
+     "was": "move 70K"
+    },
+    "getSimplifiedFeatureBridge": {
+     "was": "move 70K (override: bridge)"
+    },
+    "getWardHeadlineTotal": {
+     "was": "move 70K",
+     "note": "Stays in 70D: it swaps window.D to compute another filing's total, which is exactly 70D's risk."
+    },
+    "getWardProgress": {
+     "was": "move 70D (override: dispatcher)"
+    },
+    "handleHash": {
+     "was": "move 70K"
+    },
+    "initApp": {
+     "was": "move 70K"
+    },
+    "mountAnnualFeature": {
+     "was": "move 70K"
+    },
+    "mountAnnualNav": {
+     "was": "move 70K"
+    },
+    "mountDashboardFeature": {
+     "was": "move 70K"
+    },
+    "mountGuardianFeature": {
+     "was": "move 70K"
+    },
+    "mountGuardianNav": {
+     "was": "move 70K"
+    },
+    "mountPlanAnnualFeature": {
+     "was": "move 70K"
+    },
+    "mountPlanAnnualNav": {
+     "was": "move 70K"
+    },
+    "mountPlanInitialFeature": {
+     "was": "move 70K"
+    },
+    "mountPlanInitialNav": {
+     "was": "move 70K"
+    },
+    "mountPlanMinorFeature": {
+     "was": "move 70K"
+    },
+    "mountPlanMinorNav": {
+     "was": "move 70K"
+    },
+    "mountPlanSimplifiedFeature": {
+     "was": "move 70K"
+    },
+    "mountPlanSimplifiedNav": {
+     "was": "move 70K"
+    },
+    "mountSimplifiedFeature": {
+     "was": "move 70K (override: bridge)"
+    },
+    "mountSimplifiedNav": {
+     "was": "move 70K (override: bridge)"
+    },
+    "n": {
+     "was": "move 70K"
+    },
+    "pct": {
+     "was": "move 70K",
+     "note": "Deleted on master in c62f890 (its only caller now imports totals.js's copy); a re-implement row in MILESTONE-70-FIX-LEDGER.md."
+    },
+    "provideMonolithServices": {
+     "was": "move 70E",
+     "note": "Added in 70E: legacy-app.js's one-line door into src/core/runtime/monolith.js, called from initApp(), the second transition exception MILESTONE-70-PROPOSAL.md records; it goes with the monolith (70L at the latest)."
+    },
+    "SPECIAL_PAGES": {
+     "was": "move 70K"
+    },
+    "updateNavActive": {
+     "was": "move 70K"
     }
    }
   }

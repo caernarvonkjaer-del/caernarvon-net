@@ -22,6 +22,7 @@ import {
 import { createIssue } from '../validation/issue-registry.js';
 import { getD } from '../state.js';
 import { setPath } from '../form/paths.js';
+import { isOutputAcknowledgedFor } from './output-revision.js';
 
 function normalizeIssue(issue) {
   if (typeof issue === 'string') return createIssue('validation.legacy-unmapped', { message: issue });
@@ -45,9 +46,7 @@ export function prepareFilingOutput(data, baseIssues = [], options = {}) {
   // Existing feature-owned save actions still consume `messages`.  Once the
   // in-memory acknowledgement matches this filing revision, bypassable issues
   // remain visible in `structuredIssues` but no longer veto ordinary output.
-  const acknowledged = typeof window !== 'undefined'
-    && typeof window.isOutputAcknowledgedFor === 'function'
-    && window.isOutputAcknowledgedFor(target, identity.descriptor);
+  const acknowledged = isOutputAcknowledgedFor(target, identity.descriptor);
   const messages = acknowledged && structuredIssues.every(issue => issue.bypassable !== false) ? [] : rawMessages;
   const bondSection = bondSectionFor(identity.descriptor);
   const advisories = [
@@ -76,6 +75,3 @@ export function prepareFilingOutput(data, baseIssues = [], options = {}) {
   };
 }
 
-if (typeof window !== 'undefined') {
-  window.prepareFilingOutput = prepareFilingOutput;
-}

@@ -13,7 +13,7 @@ import { formDisplayName } from '../filing/filing-registry.js';
 import { navigate, renderPage } from '../navigation/router.js';
 import { normalizeCountyName } from '../navigation/ward-county.js';
 import { filingLifecycle } from '../navigation/filing-lifecycle.js';
-import { monolith } from '../runtime/monolith.js';
+import { getCurrentPage } from '../navigation/route-state.js';
 import { getActiveWard, getCaseFile, getD } from '../state.js';
 import { alertModal, closeModal, confirmModal, ensureFragment, showModal } from '../ui/dialogs.js';
 import { esc } from '../filing/escape-html.js';
@@ -219,7 +219,7 @@ export async function confirmDeleteWard(wardId){
 
 export async function doDeleteWard(){
   const wardId=_pendingDeleteWardId||getCaseFile().activeWardId;
-  const wasOnDashboard=monolith.getCurrentPage()==='/dashboard';
+  const wasOnDashboard=getCurrentPage()==='/dashboard';
   try{
     await filingLifecycle.remove(wardId);
     closeModal('deleteWardModal');

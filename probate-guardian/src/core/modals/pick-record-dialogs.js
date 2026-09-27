@@ -4,7 +4,7 @@ import { getOrCreateCaseForWard } from '../case-resolver.js';
 import { esc } from '../filing/escape-html.js';
 import { renderPage } from '../navigation/router.js';
 import { createParty, dehydrateIntoParty, hydrateFromParty, readRoleFields, resolveParty, setPartyIdForSlot } from '../party-resolver.js';
-import { monolith } from '../runtime/monolith.js';
+import { getCurrentPage } from '../navigation/route-state.js';
 import { getCaseFile, getD, requestSave } from '../state.js';
 import { updateNavDots } from '../status/nav-marks.js';
 import { closeModal, ensureFragment, showModal } from '../ui/dialogs.js';
@@ -47,7 +47,7 @@ export async function doPickParty(){
   setPartyIdForSlot(getD(),role,index,partyId);
   hydrateFromParty(party,getD(),role,index);
   requestSave();
-  renderPage(monolith.getCurrentPage());
+  renderPage(getCurrentPage());
   updateNavDots();
 }
 
@@ -64,7 +64,7 @@ export async function doCreatePartyFromSlot(){
   // syncIdentityField() is a no-op -- seed the record directly either way.
   dehydrateIntoParty(getD(),role,index,party);
   requestSave();
-  renderPage(monolith.getCurrentPage());
+  renderPage(getCurrentPage());
   updateNavDots();
 }
 
@@ -102,7 +102,7 @@ export async function doPickCase(){
   closeModal('pickCaseModal');
   ward.caseId=caseId;
   await saveWardToState(ward);
-  renderPage(monolith.getCurrentPage());
+  renderPage(getCurrentPage());
 }
 
 // "+ New Case" — creates a brand-new Case seeded from this filing's own
@@ -115,5 +115,5 @@ export async function doCreateCaseFromWard(){
   const kase=getOrCreateCaseForWard(ward);
   ward.caseId=kase.id;
   await saveWardToState(ward);
-  renderPage(monolith.getCurrentPage());
+  renderPage(getCurrentPage());
 }

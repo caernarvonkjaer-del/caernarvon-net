@@ -10,7 +10,7 @@ import { emptyRowAnnual } from './models/annual.js';
 import { navigate } from '../navigation/router.js';
 import { activateWard, createWardId } from '../navigation/ward-lifecycle.js';
 import { saveWardToState, setDirtySinceExport, updateLastSavedIndicator } from '../persistence/case-file.js';
-import { monolith } from '../runtime/monolith.js';
+import { features } from '../runtime/features.js';
 import { getCaseFile } from '../state.js';
 import { alertModal } from '../ui/dialogs.js';
 
@@ -181,7 +181,7 @@ export function convertToSimplified(src,srcType,dest){
   // is the assertion that is dropped, never the data.
   dest.certNoRecipients='';
   dest.serviceNoRecipients='';
-  const total=monolith.getWardHeadlineTotal(src);
+  const total=features().headlineTotal(src);
   dest.startingBalance=total!=null?String(total):'';
 
   if(srcType==='guardian'){
@@ -249,7 +249,7 @@ export function convertSimplifiedToAnnual(src,dest){
   // is the assertion that is dropped, never the data.
   dest.certNoRecipients='';
   dest.serviceNoRecipients='';
-  const total=monolith.getWardHeadlineTotal(src);
+  const total=features().headlineTotal(src);
   dest.startingBalance=total!=null?String(total):'';
   dest.periodFrom=src.periodFrom||'';
   dest.periodTo=src.periodTo||'';

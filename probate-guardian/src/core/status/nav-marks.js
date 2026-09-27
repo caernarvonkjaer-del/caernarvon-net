@@ -5,17 +5,26 @@
 // the section collapse, the progress summary and the Next button a missing
 // schedule disables. Moved from legacy-app.js's FORM BINDING ENGINE.
 import { esc } from '../filing/escape-html.js';
-import { formEngine } from '../filing/filing-registry.js';
-import { validatorFnName } from '../filing/filing-descriptor.js';
+import { computeCompletion, formEngine } from '../filing/filing-registry.js';
 import { blocksNext, guidanceAdvice, isSectionIncomplete, sectionCheckKey, sectionKeyPrefix, sidebarOnlyWants } from './section-guidance-policy.js';
 import { SCHEDULE_NAV_KEYS } from '../filing/models/guardian.js';
-import { monolith } from '../runtime/monolith.js';
+import { features } from '../runtime/features.js';
+import { getCurrentPage } from '../navigation/route-state.js';
 import { getActiveInventoryType, getCaseFile, getD } from '../state.js';
 import { renderLocalSectionGuidance } from './section-status.js';
 import { ic } from '../ui/icons.js';
 
+// The open filing's completion map: which sections are complete, and the
+// incomplete ones' details. Its validator and totals come from the feature
+// services, since core cannot import a feature (Milestone 70, 70K: this was
+// legacy-app.js's computeNavChecks(), which read the Inventory's validator off
+// window).
+export function computeNavChecks(){
+  return computeCompletion(getD(),getActiveInventoryType(),features().completionDeps());
+}
+
 export function updateNavDots(){
-  const r=monolith.computeNavChecks();
+  const r=computeNavChecks();
   if(r)applyNavChecks(r.checks,r.incomplete);
   updateCurrentScheduleNextButton();
 }
@@ -37,15 +46,15 @@ export function updateNavDots(){
 export function pageCompleteness(route){
   if(!route)return {key:null,incomplete:false,blocked:false};
   const type=getActiveInventoryType();
-  const r=monolith.computeNavChecks();
+  const r=computeNavChecks();
   const key=sectionCheckKey(type,route);
   const incomplete=isSectionIncomplete(r&&r.checks,key);
   const blocked=blocksNext({type,checkKey:key,incomplete,guardianScheduleKeys:SCHEDULE_NAV_KEYS});
   return {key,incomplete,blocked};
 }
 
-// Keeps its name and its meaning -- "does incompleteness block Next on this route" --
-// because it is published on window.
+// Keeps its name and its meaning -- "does incompleteness block Next on this route"
+// (it was published on window until Milestone 70's 70K).
 export function isScheduleIncomplete(route){
   return pageCompleteness(route).blocked;
 }
@@ -53,7 +62,7 @@ export function isScheduleIncomplete(route){
 export function updateCurrentScheduleNextButton(){
   const btn=document.getElementById('page-next-btn');
   if(!btn)return;
-  const route=(typeof monolith.getCurrentPage()==='string'?monolith.getCurrentPage():'').split('?')[0];
+  const route=(typeof getCurrentPage()==='string'?getCurrentPage():'').split('?')[0];
   const {incomplete,blocked}=pageCompleteness(route);
   // The advice must fit the page: "add an item, or check the box verifying there are none"
   // is right only where such a checkbox exists.
@@ -67,7 +76,7 @@ export function updateCurrentScheduleNextButton(){
     try {
       // The filing's export validator, published by its feature once loaded
       // (Final and Trust use the Annual engine's).
-      const validate=type?window[validatorFnName(formEngine(type))]:null;
+      const validate=type?features().validator(formEngine(type)):null;
       if(typeof validate==='function')rawErrors=validate(getD());
     } catch(e) {}
     // Explain whenever the section is incomplete -- not only when Next is blocked. On the
@@ -127,7 +136,7 @@ export function applyNavSectionCollapse(checks){
   const container=document.getElementById('nav-sections');
   if(!container)return;
   const currentKey=getCurrentPageKey();
-  const currentPagePath=(monolith.getCurrentPage()||'').split('?')[0];
+  const currentPagePath=(getCurrentPage()||'').split('?')[0];
   container.querySelectorAll('.nav-section').forEach(section=>{
     const label=section.querySelector(':scope > .nav-section-label');
     if(!label)return;
@@ -191,7 +200,7 @@ export function renderProgressSummary(checks){
 }
 
 export function getCurrentPageKey(){
-  const page=monolith.getCurrentPage().split('?')[0];
+  const page=getCurrentPage().split('?')[0];
   if(getActiveInventoryType()==='guardian'){
     // Guardian nav keys are unprefixed and match the page path directly (e.g. '/a1' -> 'a1').
     // '/' and '/summary' both map to 'cover' -- Summary has no required fields

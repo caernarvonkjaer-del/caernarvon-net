@@ -18,6 +18,7 @@ import {
 import { attributeBag, classListBag } from './support/dom-mocks.js';
 import { openFiling } from './support/open-filing.js';
 import { getD } from '../../src/core/state.js';
+import { getFieldDraft } from '../../src/core/form/commit-coordinator.js';
 
 // The sidebar marks are src/core/status/nav-marks.js's since Milestone 70's 70F
 // (the tail called window.updateNavDots?.(), which Node did not have); they
@@ -39,23 +40,10 @@ function createMockInput(initial = {}) {
 
 describe('form-contract', () => {
   beforeEach(() => {
+    // (Until Milestone 70's 70K this also stood in window.setPath, getPath,
+    // autoSave, updateNavDots and refreshWardInfoCard, and a window mirror of
+    // the drafts; the module imports what it uses, and the mirror went.)
     openFiling({});
-    window._transientDrafts = {};
-    window.setPath = (obj, path, val) => {
-      const parts = path.split('.');
-      let cur = obj;
-      for (let i = 0; i < parts.length - 1; i++) {
-        if (!cur[parts[i]]) cur[parts[i]] = {};
-        cur = cur[parts[i]];
-      }
-      cur[parts[parts.length - 1]] = val;
-    };
-    window.getPath = (obj, path) => {
-      return path.split('.').reduce((acc, k) => acc?.[k], obj);
-    };
-    window.autoSave = () => {};
-    window.updateNavDots = () => {};
-    window.refreshWardInfoCard = () => {};
   });
 
   describe('sanitizeStoredText', () => {
@@ -194,14 +182,14 @@ describe('form-contract', () => {
       writeDraftValue(input);
       // Model remains empty during typing
       expect(getD().periodFrom).toBeUndefined();
-      expect(window._transientDrafts.periodFrom).toBe('Feb 14, 2026');
+      expect(getFieldDraft('periodFrom')?.rawValue).toBe('Feb 14, 2026');
 
       // 2. finalizeFieldValue (blur event)
       finalizeFieldValue(input);
       expect(getD().periodFrom).toBe('2026-02-14');
       expect(input.value).toBe('02/14/2026');
       expect(input.hasAttribute('aria-invalid')).toBe(false);
-      expect(window._transientDrafts.periodFrom).toBeUndefined();
+      expect(getFieldDraft('periodFrom')).toBeNull();
     });
 
     it('auto-masks unpunctuated 8-digit dates live during input and commits on blur', () => {
@@ -214,7 +202,7 @@ describe('form-contract', () => {
       writeDraftValue(input);
       // Automatically formatted to display format live
       expect(input.value).toBe('07/10/2027');
-      expect(window._transientDrafts.periodTo).toBe('07/10/2027');
+      expect(getFieldDraft('periodTo')?.rawValue).toBe('07/10/2027');
       expect(getD().periodTo).toBeUndefined();
 
       // 2. finalizeFieldValue (blur event)
@@ -223,7 +211,7 @@ describe('form-contract', () => {
       expect(input.value).toBe('07/10/2027');
       expect(input.hasAttribute('aria-invalid')).toBe(false);
       expect(input.classList.contains('is-invalid')).toBe(false);
-      expect(window._transientDrafts.periodTo).toBeUndefined();
+      expect(getFieldDraft('periodTo')).toBeNull();
     });
 
     it('canonicalizes unpunctuated 8-digit dates on blur even if unmasked', () => {

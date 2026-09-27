@@ -1,5 +1,14 @@
 // Milestone 38D / 44B: Typed Output Preflight Boundary Unit Tests
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+
+// Whether the filer has acknowledged the outstanding requirements: the
+// preflight asks output-revision.js (since Milestone 70's 70K; it asked
+// window.isOutputAcknowledgedFor), so "acknowledged" stands in for that check.
+const ack = vi.hoisted(() => ({ on: false }));
+vi.mock('../../src/core/filing/output-revision.js', async (importOriginal) => ({
+  ...(await importOriginal()),
+  isOutputAcknowledgedFor: () => ack.on,
+}));
 
 globalThis.window = globalThis.window || {};
 const { prepareFilingOutput } = await import('../../src/core/filing/output-preflight.js');
@@ -12,7 +21,7 @@ describe('prepareFilingOutput() with typed issues', () => {
   });
 
   afterEach(() => {
-    delete globalThis.window.isOutputAcknowledgedFor;
+    ack.on = false;
   });
 
   it('preserves structured issue attributes (code, category, bypassable, capabilities)', () => {
@@ -50,7 +59,7 @@ describe('prepareFilingOutput() with typed issues', () => {
     expect(unackResult.messages).toHaveLength(2);
 
     // Acknowledged: messages cleared, canExport becomes true
-    globalThis.window.isOutputAcknowledgedFor = () => true;
+    ack.on = true;
     const ackResult = prepareFilingOutput({ inventoryType: 'planSimplified' }, bypassableIssues);
     expect(ackResult.structuredIssues).toHaveLength(2);
     expect(ackResult.messages).toHaveLength(0);
@@ -58,7 +67,7 @@ describe('prepareFilingOutput() with typed issues', () => {
   });
 
   it('keeps canExport false and messages intact when ANY non-bypassable issue exists, even if acknowledged', () => {
-    globalThis.window.isOutputAcknowledgedFor = () => true;
+    ack.on = true;
 
     // Mixed: one bypassable validation error, one non-bypassable supplemental PDF issue
     const mixedIssues = [
@@ -78,7 +87,7 @@ describe('prepareFilingOutput() with typed issues', () => {
   });
 
   it('treats corrupted/unreadable supplemental PDF as strictly non-bypassable', () => {
-    globalThis.window.isOutputAcknowledgedFor = () => true;
+    ack.on = true;
 
     const suppCodes = [
       'supplemental.missing-data',
@@ -101,7 +110,7 @@ describe('prepareFilingOutput() with typed issues', () => {
   });
 
   it('treats filing identity issues as strictly non-bypassable', () => {
-    globalThis.window.isOutputAcknowledgedFor = () => true;
+    ack.on = true;
 
     const result = prepareFilingOutput({ inventoryType: 'invalid-type-key' }, []);
     const identityIssue = result.structuredIssues.find(i => i.code === 'filing.identity.unknown');

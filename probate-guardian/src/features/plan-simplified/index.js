@@ -34,6 +34,7 @@ import { chkP, inpS, pageNavS, txtP, yesNoCheckboxS } from '../../core/form/fiel
 import { renderScheduleDocsSection } from '../../core/filing/schedule-docs.js';
 import { setPath } from '../../core/form/paths.js';
 import { openFloridaCourtPortal } from '../../core/shell/court-portal.js';
+import { printCurrentFilingPdf } from '../../core/pdf/pdf-preview.js';
 // Simplified Annual Plan — the second feature extraction (Milestone 3,
 // Phase B/C of INDEX-SPLIT-PLAN.md's migration sequence). Dynamically
 // imported by legacy-app.js's mountPlanSimplifiedFeature()/
@@ -83,7 +84,7 @@ function bindEvents(container) {
     if (!actionElement) return;
     switch (actionElement.dataset.planSimplifiedAction) {
       case 'open-court-portal': openFloridaCourtPortal(); break;
-      case 'print': window.printCurrentFilingPdf(); break;
+      case 'print': printCurrentFilingPdf(); break;
       case 'save-pdf': _printModule.doSavePdf(); break;
     }
   }, { signal: controller.signal });
@@ -98,7 +99,7 @@ function ensurePrintModule() {
   return _printModulePromise;
 }
 
-export async function mount(container, page) {
+export async function mount(container, page, { signal } = {}) {
   // Milestone 68C: a plan saved before the Certificate of Service existed
   // gains its fields on load. Idempotent, so every mount may call it.
   if (migratePlanCertificateOfService(getD())) requestSave();
@@ -106,6 +107,8 @@ export async function mount(container, page) {
   let isPrint = false;
   if (page === '/print') {
     await ensurePrintModule();
+    // Superseded while its print module loaded (Milestone 70, 70K).
+    if (signal?.aborted) return;
     html = _printModule.pagePrintPlanSimplified();
     isPrint = true;
   } else {
@@ -416,7 +419,6 @@ export function validatePlanSimplified(){
 // Milestone 33, Phase 2.3: see annual-accounting/index.js's identical comment --
 // exposing this lets the shared guidance panel itemize Plan Simplified's own
 // missing fields instead of only showing a generic message.
-window.validatePlanSimplified = validatePlanSimplified;
 
 // ── Certificate of Service (Milestone 68C) ───────────────────────────────
 // Shared with the other three Plans; see core/filing/plan-certificate-of-service.js.

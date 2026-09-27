@@ -12,7 +12,7 @@ import { validatePlanMinor } from './index.js';
 import { buildPlanMinorModel } from './pdf-model.js';
 import { generateCourtFormPdf } from '../../core/pdf/pdf-engine.js';
 import { finalizeCourtFormPdf, saveFinalizedPdf } from '../../core/pdf/pdf-finalizer.js';
-import { mountPdfPreview, printGeneratedPdf } from '../../core/pdf/pdf-preview.js';
+import { mountPdfPreview, printGeneratedPdf, setPrintCurrentFiling } from '../../core/pdf/pdf-preview.js';
 import { getSupplementalAccessibilityWarning, getSupplementalFilingIssues } from '../../core/pdf/supplemental-pdf.js';
 import { prepareFilingOutput } from '../../core/filing/output-preflight.js';
 import { authorizeFilingOutput } from '../../core/filing/output-authorization.js';
@@ -23,11 +23,8 @@ import { beginExport } from '../../core/ui/export-guard.js';
 import { getD } from '../../core/state.js';
 import { highlightErrors, validationPanel } from '../../core/validation/validation-panel.js';
 import { queueAllScheduleDocValidations } from '../../core/filing/schedule-docs.js';
+import { renderPage } from '../../core/navigation/router.js';
 
-const {
-  
-  renderPage,
-} = window;
 
 // Milestone 44C: this Plan's readiness predicates live in
 // src/core/filing/readiness-config.js (getFilingReadiness('planMinor')),
@@ -65,7 +62,7 @@ export function pagePrintPlanMinor(){
 
 export async function mountPreview(){
   const baseIssues = () => [...validatePlanMinor(), ...getSupplementalFilingIssues(getD())];
-  window.printCurrentFilingPdf = () => printGeneratedPdf(buildPlanMinorModel, getD(), baseIssues);
+  setPrintCurrentFiling(() => printGeneratedPdf(buildPlanMinorModel, getD(), baseIssues));
   await mountPdfPreview(buildPlanMinorModel, getD(), baseIssues, undefined, { annotate: true });
 }
 

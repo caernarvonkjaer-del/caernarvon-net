@@ -2,55 +2,29 @@
 // What a new filing carries over from an existing one -- the carry tables and
 // builders -- is src/core/filing/carry-over.js's (Milestone 70's 70G moved them
 // there); the lifecycle service the UI and tests call is
-// src/core/navigation/filing-lifecycle.js.
+// src/core/navigation/filing-lifecycle.js. Leaving a filing for the dashboard
+// is the router's (./leave-filing.js, since 70K), and opening one draws its
+// page through the router rather than beside it.
 import { getCaseFile, getD, setActiveFiling, setAppState } from '../state.js';
-import { FILING_ENGINE_IDS, mountFeatureFnName } from '../filing/filing-descriptor.js';
 import { formEngine, initializeEmptyData } from '../filing/filing-registry.js';
-import { pruneBlankCards } from '../form/prune-cards.js';
-import { linkLabelsToInputs } from '../form/form-runtime.js';
 import { commitFocusedField } from '../form/form-contract.js';
-import { showWardLockedModal } from '../ward-lock.js';
-import { updateNavDots } from '../status/nav-marks.js';
+import { acquireWardLock, showWardLockedModal } from '../ward-lock.js';
 import { addToRecentlyOpened } from '../filing/recent-filings.js';
 import { updateSidebar } from '../shell/sidebar.js';
 import { notifyProbateGuardianTabStateChanged } from './tab-state.js';
-import { updateHelpContext } from '../help/help-panel.js';
 import { getLastExportAt, setDirtySinceExport } from '../persistence/export-state.js';
-import { deleteWardFromState, flushPendingSave, saveWardToState, showSaveError } from '../persistence/case-file.js';
+import {
+  deleteWardFromState, flushPendingSave, refreshAutoSaveArmedStatus, saveWardToState,
+  showAutoExportReminder, updateLastSavedIndicator,
+} from '../persistence/case-file.js';
+import { features } from '../runtime/features.js';
+import { enterDashboardEditingFocus } from './leave-filing.js';
+import { closeMobileSidebar, navigate, renderPage, setCurrentPage, setRouteHash } from './router.js';
+
+export { enterDashboardEditingFocus } from './leave-filing.js';
 
 export function createWardId() {
   return 'w_' + Date.now() + '_' + Math.random().toString(36).slice(2, 9);
-}
-
-let dashboardEntryPromise = null;
-
-/** Safely ends editor focus before the dashboard is rendered. */
-export async function enterDashboardEditingFocus() {
-  if (dashboardEntryPromise) return dashboardEntryPromise;
-  dashboardEntryPromise = (async () => {
-    const caseFile = getCaseFile();
-    if (!caseFile.activeWardId) return true;
-    try {
-      // A field still focused is finalized into this filing before it closes
-      // (its late blur would find the filing gone).
-      commitFocusedField();
-      window.commitPendingFieldValues?.();
-      pruneBlankCards();
-      await flushPendingSave();
-      if (typeof window.releaseWardLock === 'function') await window.releaseWardLock();
-    } catch (error) {
-      console.error('Unable to safely leave editor for dashboard:', error);
-      showSaveError();
-      return false;
-    }
-    setActiveFiling(null);
-    updateSidebar?.();
-    await window.refreshAutoSaveArmedStatus?.();
-    notifyProbateGuardianTabStateChanged?.();
-    return true;
-  })();
-  try { return await dashboardEntryPromise; }
-  finally { dashboardEntryPromise = null; }
 }
 
 export async function activateWard(ward, opts = {}) {
@@ -59,16 +33,9 @@ export async function activateWard(ward, opts = {}) {
 
   // 1. If ward is already active and lock held, refresh UI and return true
   if (caseFile.activeWardId === ward.wardId && getD() === ward) {
-    if (typeof window !== 'undefined' && window.acquireWardLock) {
-      const alreadyHeld = await window.acquireWardLock(ward.wardId);
-      if (alreadyHeld) {
-        updateSidebar();
-        if (typeof window.refreshAutoSaveArmedStatus === 'function') await window.refreshAutoSaveArmedStatus();
-        return true;
-      }
-    } else {
-      if (typeof window !== 'undefined') updateSidebar();
-      if (typeof window !== 'undefined' && typeof window.refreshAutoSaveArmedStatus === 'function') await window.refreshAutoSaveArmedStatus();
+    if (await acquireWardLock(ward.wardId)) {
+      updateSidebar();
+      await refreshAutoSaveArmedStatus();
       return true;
     }
   }
@@ -77,15 +44,10 @@ export async function activateWard(ward, opts = {}) {
   // field still focused into it, so the edit is saved with it, once, and its
   // late blur cannot land in the filing opened next.
   commitFocusedField();
-  if (typeof window !== 'undefined') {
-    await flushPendingSave();
-  }
+  await flushPendingSave();
 
   // 3. Acquire target ward lock
-  let acquired = true;
-  if (typeof window !== 'undefined' && window.acquireWardLock) {
-    acquired = await window.acquireWardLock(ward.wardId);
-  }
+  const acquired = await acquireWardLock(ward.wardId);
 
   // 4. On contention: previous lock is still held untouched
   if (!acquired) {
@@ -95,25 +57,21 @@ export async function activateWard(ward, opts = {}) {
 
   // 5. On success, set loaded state
   setActiveFiling(ward);
-  if (typeof window !== 'undefined') {
-    addToRecentlyOpened(ward);
-    if (formEngine(ward.inventoryType) === 'guardian') {
-      if (typeof window.ensureGuardianFeatureReady === 'function') {
-        await window.ensureGuardianFeatureReady();
-      }
-    }
+  addToRecentlyOpened(ward);
+  if (formEngine(ward.inventoryType) === 'guardian') {
+    // The Initial Inventory's validator is its feature's: loaded before the
+    // sidebar asks for completion.
+    await features().load('guardian');
   }
 
-  if (typeof window !== 'undefined') {
-    updateSidebar();
-    if (typeof window.refreshAutoSaveArmedStatus === 'function') await window.refreshAutoSaveArmedStatus();
-    notifyProbateGuardianTabStateChanged();
-  }
+  updateSidebar();
+  await refreshAutoSaveArmedStatus();
+  notifyProbateGuardianTabStateChanged();
   return true;
 }
 
 export async function unloadWard() {
-  if (await enterDashboardEditingFocus() && typeof window !== 'undefined' && typeof window.navigate === 'function') window.navigate('/dashboard');
+  if (await enterDashboardEditingFocus()) await navigate('/dashboard');
 }
 
 export async function addWard(wardName, inventoryType) {
@@ -134,23 +92,15 @@ export async function addWard(wardName, inventoryType) {
   if (!Array.isArray(caseFile.wards)) caseFile.wards = [];
   caseFile.wards.push(newWard);
 
-  if (typeof window !== 'undefined') {
-    await saveWardToState(newWard);
-  }
+  await saveWardToState(newWard);
 
   await activateWard(newWard);
 
-  if (typeof window !== 'undefined') {
-    setDirtySinceExport(true);
-    if (typeof window.updateLastSavedIndicator === 'function') window.updateLastSavedIndicator();
-    if (isFirstWardEver) setAppState('firstLaunchSeen', false);
-    if (typeof window.navigate === 'function') {
-      await window.navigate('/');
-    }
-    if (isFirstWardEver && !getLastExportAt() && typeof window.showAutoExportReminder === 'function') {
-      window.showAutoExportReminder(true);
-    }
-  }
+  setDirtySinceExport(true);
+  updateLastSavedIndicator();
+  if (isFirstWardEver) setAppState('firstLaunchSeen', false);
+  await navigate('/');
+  if (isFirstWardEver && !getLastExportAt()) showAutoExportReminder(true);
   return wardId;
 }
 
@@ -162,19 +112,13 @@ export async function switchWard(wardId) {
   const ok = await activateWard(ward);
   if (!ok) return false;
 
-  if (typeof window !== 'undefined') {
-    window.currentPage = '/';
-    window.location.hash = '';
-    const engine = formEngine(ward.inventoryType);
-    if (FILING_ENGINE_IDS.includes(engine)) {
-      const mount = window[mountFeatureFnName(engine)];
-      if (typeof mount === 'function') await mount('/');
-    }
-    linkLabelsToInputs();
-    updateNavDots();
-    updateHelpContext();
-    if (typeof window.closeMobileSidebar === 'function') window.closeMobileSidebar();
-  }
+  // Its Cover, drawn by the router like any other page (Milestone 70, 70K:
+  // this mounted the feature itself, beside the router, and the hash it
+  // cleared then drew the Cover a second time).
+  setCurrentPage('/');
+  setRouteHash('');
+  await renderPage('/');
+  closeMobileSidebar();
   return true;
 }
 
@@ -189,18 +133,8 @@ export async function deleteWard(wardId) {
   }
 
   caseFile.wards.splice(idx, 1);
-  if (typeof window !== 'undefined') {
-    await deleteWardFromState(wardId);
-    updateSidebar();
-    notifyProbateGuardianTabStateChanged();
-    if (typeof window.navigate === 'function') window.navigate('/dashboard');
-  }
-}
-
-// Global bridge for legacy scripts and test harnesses
-if (typeof window !== 'undefined') {
-  window.activateWard = activateWard;
-  window.enterDashboardEditingFocus = enterDashboardEditingFocus;
-  window.unloadWard = unloadWard;
-  window.switchWard = switchWard;
+  await deleteWardFromState(wardId);
+  updateSidebar();
+  notifyProbateGuardianTabStateChanged();
+  navigate('/dashboard');
 }

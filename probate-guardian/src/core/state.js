@@ -14,7 +14,7 @@ import { normalizeWardData } from './filing/normalize-filing.js';
 // Until 70J the case belonged to the classic monolith, legacy-app.js, which
 // kept it on window.caseFile, the open filing on window.D and its type behind
 // a window accessor; this module read those. None of the three is on window
-// now, and the monolith reaches the case through src/legacy-bridge.js.
+// now.
 
 /** A case with nothing in it: what the app starts with, and what a lock leaves. */
 export function blankCaseFile() {

@@ -1,8 +1,9 @@
 // Milestone 70, 70I: the startup, from the accepted terms to the first page, as
 // an explicit state machine (MILESTONE-70-PROPOSAL.md, 70I). It was
-// legacy-app.js's initApp(), which still hands the monolith's services in and
-// then runs this. Each state does one thing and names the next; the states a
-// launch went through are kept (startupTrace()) for the tests.
+// legacy-app.js's initApp(); since 70K startGuardianForms()
+// (src/core/startup/bootstrap.js) runs it. Each state does one thing and names
+// the next; the states a launch went through are kept (startupTrace()) for the
+// tests.
 //
 //   terms      the first-use acknowledgement is accepted: main.js waits for it
 //              before starting, and hands the promise in, so nothing below
@@ -34,7 +35,7 @@ import { filingLifecycle } from '../navigation/filing-lifecycle.js';
 import { loadAutoExportPrefs, setupAutoExportTimer, setupFallbackSaveReminder, setupLastSavedTicker } from '../persistence/case-file.js';
 import { loadLastPosition } from '../persistence/recovery-cache.js';
 import { autoLoadTemplates } from '../persistence/templates.js';
-import { monolith } from '../runtime/monolith.js';
+import { handleHash, setRouteHash } from '../navigation/router.js';
 import { ensureUnlocked, resumeUnlockedSession } from '../security/app-lock.js';
 import { renderCopyrightNotice, updateSidebar } from '../shell/sidebar.js';
 import { openedFileAtLaunch, setupDragAndDropImport, showStartChoice, trySilentReopen, warnBeforeUnloadIfDirty } from './launch.js';
@@ -94,7 +95,7 @@ const STATES = {
     if (activeWard) {
       const ok = await filingLifecycle.open(activeWard);
       if (!ok) {
-        window.location.hash = '/dashboard';
+        setRouteHash('/dashboard');
         ctx.positionApplies = false;
       }
     }
@@ -103,11 +104,11 @@ const STATES = {
   },
   async route(ctx) {
     if (ctx.positionApplies) {
-      window.location.hash = ctx.lastPosition.route;
+      setRouteHash(ctx.lastPosition.route);
     } else if (ctx.opened || !getCaseFile().activeWardId) {
-      window.location.hash = '/dashboard'; // opened an existing case with no remembered position -- land on All Filings
+      setRouteHash('/dashboard'); // opened an existing case with no remembered position -- land on All Filings
     }
-    monolith.handleHash();
+    handleHash();
     return 'services';
   },
   async services() {

@@ -16,10 +16,9 @@ import { assertWorkbookWithinLimits, getImportProgressEl, sanitizeObjectDataInPl
 import { capitalizeImportedFields } from '../../core/form/form-contract.js';
 import { getD, requestSave } from '../../core/state.js';
 import { ensureTemplate } from '../../core/persistence/templates.js';
+import { markFilingRevisionChanged } from '../../core/filing/output-revision.js';
+import { getCurrentPage, renderPage } from '../../core/navigation/router.js';
 
-const {
-  renderPage, getCurrentPage,
-} = window;
 
 export const SIMPLIFIED_EXCEL_CAPS={
   guardians:{cap:3,label:'Part IV - Guardians',route:'/p4',isPopulated:guardianHasAnyData},
@@ -477,7 +476,7 @@ export async function importExcel(input){
       // in-place because window.D is the live object saveData() persists.
       sanitizeObjectDataInPlace(getD());
       requestSave();
-      window.markFilingRevisionChanged?.('excel-import');
+      markFilingRevisionChanged('excel-import');
       setStatus(prog,'✓ Template loaded and data imported successfully.');
       scheduleStatusClear(prog);
       renderPage(getCurrentPage());

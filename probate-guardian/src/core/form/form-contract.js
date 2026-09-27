@@ -15,10 +15,10 @@ import { getD, requestSave } from '../state.js';
 import { updateNavDots } from '../status/nav-marks.js';
 import { getPath, setPath } from './paths.js';
 import { refreshWardInfoCard, syncActiveWardNameDisplay, syncGuardianNameDisplay } from '../shell/sidebar.js';
-
-if (typeof window !== 'undefined') {
-  window._transientDrafts = window._transientDrafts || {};
-}
+import { markFilingRevisionChanged } from '../filing/output-revision.js';
+import { identitySlotForPath, syncIdentityField } from '../party-resolver.js';
+import { maybeCommitCoverCounty } from '../navigation/ward-county.js';
+import { getCurrentPage } from '../navigation/route-state.js';
 
 // The filing each field is being edited in: bound when the field takes focus
 // (form-events.js) or on its first write. Switching the open filing while a
@@ -362,12 +362,12 @@ export function getControlPolicy(control) {
  */
 export function runFieldWriteSideEffects(path, control = null) {
   if (!path) return;
-  window.markFilingRevisionChanged?.('field-write');
-  window.maybeCommitCoverCounty?.(path);
-  const identitySlot = window.identitySlotForPath?.(getD(), path);
+  markFilingRevisionChanged('field-write');
+  maybeCommitCoverCounty(path);
+  const identitySlot = identitySlotForPath(getD(), path);
   // Milestone 58A: the fourth argument is what stops one edit from promoting
   // its stale neighbours into the shared Party record.
-  if (identitySlot && window.syncIdentityField) window.syncIdentityField(getD(), identitySlot.role, identitySlot.index, identitySlot.fieldKeys);
+  if (identitySlot) syncIdentityField(getD(), identitySlot.role, identitySlot.index, identitySlot.fieldKeys);
   requestSave();
   updateNavDots?.();
   refreshWardInfoCard?.();
@@ -427,7 +427,7 @@ export function writeDraftValue(control, options = {}) {
       rawValue: control.value,
       label: control.dataset?.fieldLabel || '',
       section: control.dataset?.fieldSection || '',
-      route: window.getCurrentPage?.() || window.location?.hash || '/',
+      route: getCurrentPage() || window.location?.hash || '/',
     });
     requestSave();
     return;
@@ -482,7 +482,7 @@ export function finalizeFieldValue(control, options = {}) {
         rawValue,
         label: control.dataset?.fieldLabel || '',
         section: control.dataset?.fieldSection || '',
-        route: window.getCurrentPage?.() || window.location?.hash || '/',
+        route: getCurrentPage() || window.location?.hash || '/',
       });
     } else {
       // Valid canonical date: update display & model
@@ -768,6 +768,3 @@ export function applyZipLimit(el){
   }
 }
 
-if (typeof window !== 'undefined') {
-  window.commitPendingFieldValues = commitPendingFieldValues;
-}

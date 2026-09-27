@@ -10,19 +10,12 @@ const TEMPLATES = {
   guardian: guardianTemplate,
 };
 
-if (typeof window !== 'undefined') {
-  window.EMBEDDED_TEMPLATES = window.EMBEDDED_TEMPLATES || {};
-  window.EMBEDDED_TEMPLATES.annual = annualTemplate;
-  window.EMBEDDED_TEMPLATES.simplified = simplifiedTemplate;
-  window.EMBEDDED_TEMPLATES.guardian = guardianTemplate;
-}
-
+// The embedded workbook for a type, or null. (Until Milestone 70's 70K each
+// template module put its workbook on window.EMBEDDED_TEMPLATES, exported it
+// back from there, and this read it there as a fallback; each exports it
+// directly now, and nothing is on window.)
 export function embeddedTemplate(type) {
-  return (
-    TEMPLATES[type] ||
-    (typeof window !== 'undefined' && window.EMBEDDED_TEMPLATES && window.EMBEDDED_TEMPLATES[type]) ||
-    null
-  );
+  return TEMPLATES[type] || null;
 }
 
 export { annualTemplate, simplifiedTemplate, guardianTemplate };

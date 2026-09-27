@@ -3,18 +3,21 @@
 // D9, technical choice T3; the member list is tests/baseline/
 // ms70-testing-adapter-design.json, confirmed by the owner's schema review).
 //
-// A thin adapter over TODAY's globals. From here on only this file's
-// internals follow the migration -- the store seam in 70E, the owner flip in
-// 70J, the router in 70K -- and the specs do not change again.
+// Written as a thin adapter over the globals of the time; since then only this
+// file's internals followed the migration -- the store seam in 70E, the owner
+// flip in 70J, the router and bootstrap in 70K -- and the specs did not change.
+// Since 70K each member runs an application function from an explicit table
+// (applicationImplementations(), below): imported, or -- a filing feature's
+// own, which core may not import -- reached through the feature services. It
+// looked each one up on window by name.
 //
-// Enablement (D3, T3). The code ships in every build, but the namespace is
+// Enablement (D3, T3). The code ships in every build, but the member is
 // installed only when the test runner set the pre-boot flag
 // window.__GUARDIAN_FORMS_TEST_MODE__ = true (a Playwright init script, before
-// any application script runs). installTestingNamespace() reads the flag once
-// at boot and deletes it; nothing reachable from the running UI -- a URL, a
-// stored preference, a later assignment -- can enable it. On an ordinary
-// launch there is no window.GuardianForms at all until 70K adds the
-// production namespace (the `version` member).
+// any application script runs). src/core/runtime/browser-api.js reads the flag
+// once at boot and deletes it; nothing reachable from the running UI -- a URL,
+// a stored preference, a later assignment -- can enable it. On an ordinary
+// launch window.GuardianForms holds only the version.
 //
 // Rules the members keep:
 //   - a query returns a copy (JSON-cloned) or a freshly built Blob/module, never
@@ -25,7 +28,7 @@
 //     active filing, bypassing the normalization, side effects and
 //     validation a real edit triggers. Any test whose result depends on what
 //     an edit triggers uses setField() or drives the real control.
-import { initializeEmptyData } from '../filing/filing-registry.js';
+import { computeCompletion, filingProgress, formEngine, initializeEmptyData } from '../filing/filing-registry.js';
 import {
   PLAN_RIGHTS, PLAN_RIGHT_STATES, PLAN_ADLS, PLAN_ADL_RATINGS, PLAN_BENEFITS, emptyPlanDirective,
 } from '../filing/models/plan-annual.js';
@@ -39,7 +42,7 @@ import { describeConversion } from '../filing/conversion.js';
 import { getRecentlyOpenedWards } from '../filing/recent-filings.js';
 import { showSimplifiedEligibilityModal } from '../modals/filing-dialogs.js';
 import { showConvertWardModal } from '../modals/convert-ward-modal.js';
-import { convertTargetsFor } from '../filing/filing-descriptor.js';
+import { FILING_TYPE_KEYS, convertTargetsFor } from '../filing/filing-descriptor.js';
 // Milestone 70, 70I: what left the monolith, and the state no longer on window.
 import { getActiveInventoryType, getCaseFile, getD, replaceSaveHook, requestSave, withFilingInView } from '../state.js';
 import { flushPendingSave, saveData } from '../persistence/case-file.js';
@@ -50,6 +53,25 @@ import { isContinuePromptShown } from '../persistence/launch-preferences.js';
 import { _sessionCacheGet } from '../persistence/recovery-cache.js';
 import { auditLog, loadAuditLogEntries } from '../activity/audit-log.js';
 import { lockApp } from '../security/app-lock.js';
+// Milestone 70, 70K: what the members ran through window by name.
+import { features } from '../runtime/features.js';
+import { getCurrentPage, navigate } from '../navigation/router.js';
+import {
+  buildCaseFileBlob, buildSingleWardExportBlob, exportCaseFileZip, finishSingleWardExport, loadCaseFileHandle,
+  markDirtySinceExport, rememberCaseFileHandle, saveBackupNow, saveBlobAs,
+} from '../persistence/case-file.js';
+import { clearSessionRestoreCache, saveSessionRestoreCache } from '../persistence/recovery-cache.js';
+import { hasOpenedCaseBefore, loadAppState, readRememberedFile } from '../persistence/launch-preferences.js';
+import { decryptJSONWithKey } from '../persistence/crypto.js';
+import { acquireWardLock, getCurrentLockedWardId, releaseWardLock } from '../ward-lock.js';
+import { setTestSystemTitleWarningEnabledForTest } from '../ui/test-system-title.js';
+import {
+  addSignatureImage, createParty, dismissPartyPair, isPartyPairDismissed, mergeParties, resolveParty,
+} from '../party-resolver.js';
+import { casesGroupingWards, createCase, getOrCreateCaseForWard, resolveCase } from '../case-resolver.js';
+import { ensureWardPartyForFiling, wardPartyForFiling } from '../navigation/ward-county.js';
+import { adaptValidationErrors } from '../validation/validation-adapter.js';
+import { prepareFilingOutput } from '../filing/output-preflight.js';
 
 export const TEST_MODE_FLAG = '__GUARDIAN_FORMS_TEST_MODE__';
 
@@ -61,18 +83,59 @@ const copy = (value) => (value === undefined ? undefined : JSON.parse(JSON.strin
 const CONSTANT_LISTS = { PLAN_RIGHTS, PLAN_RIGHT_STATES, PLAN_ADLS, PLAN_ADL_RATINGS, PLAN_BENEFITS, INITIAL_ADLS, INITIAL_ADL_RATINGS };
 export const CONSTANTS = Object.keys(CONSTANT_LISTS);
 
-// Each filing type's validator, and the feature loader that defines it.
-const VALIDATORS = {
-  guardian: ['validateGuardian', 'loadGuardianFeature'],
-  annual: ['validateAnnual', 'loadAnnualFeature'],
-  finalAccounting: ['validateAnnual', 'loadAnnualFeature'],
-  trustAccounting: ['validateAnnual', 'loadAnnualFeature'],
-  simplified: ['validateSimplified', 'loadSimplifiedFeature'],
-  planAnnual: ['validatePlanAnnual', 'loadPlanAnnualFeature'],
-  planInitial: ['validatePlanInitial', 'loadPlanInitialFeature'],
-  planMinor: ['validatePlanMinor', 'loadPlanMinorFeature'],
-  planSimplified: ['validatePlanSimplified', 'loadPlanSimplifiedFeature'],
-};
+// The filing types a validate query accepts -- every one: each is judged by
+// its engine's validator (Final and Trust by the Annual one), which its
+// feature defines.
+const VALIDATED_TYPES = FILING_TYPE_KEYS;
+
+/**
+ * The application functions the members run, by the names they use. A filing
+ * feature's own (its row commands, its Save as PDF, its validator) comes
+ * through the feature services; everything else is imported. A unit test
+ * passes its own table instead.
+ */
+export function applicationImplementations() {
+  // A command of the open filing's feature, which has loaded to show it.
+  const loadedFeature = (id, name) => (...args) => {
+    const fn = features().loaded(id)?.[name];
+    if (typeof fn !== 'function') throw new Error(`GuardianForms.testing: ${name}() is not available -- its filing is not open`);
+    return fn(...args);
+  };
+  return {
+    navigate, getCurrentPage,
+    markDirtySinceExport, saveBackupNow, exportGuardianDataZip: exportCaseFileZip, saveBlobAs, finishSingleWardExport,
+    addEntry: loadedFeature('guardian', 'addEntry'),
+    duplicateEntry: loadedFeature('guardian', 'duplicateEntry'),
+    doSavePdfGuardian: () => features().run('guardian', 'doSavePdfGuardian'),
+    doSaveExcelGuardian: () => features().run('guardian', 'doSaveExcelGuardian'),
+    doSavePdfPlanAnnual: () => features().run('planAnnual', 'doSavePdfPlanAnnual'),
+    doSavePdfPlanInitial: () => features().run('planInitial', 'doSavePdfPlanInitial'),
+    doSavePdfPlanMinor: () => features().run('planMinor', 'doSavePdfPlanMinor'),
+    saveSessionRestoreCache, clearSessionRestoreCache, rememberCaseFileHandle,
+    acquireWardLock, releaseWardLock, getCurrentLockedWardId,
+    setTestSystemTitleWarningEnabledForTest,
+    loadGuardianPdf: () => features().pdf.guardian(),
+    loadAnnualPdf: () => features().pdf.annual(),
+    loadSimplifiedPdf: () => features().pdf.simplified(),
+    loadPlanAnnualPdf: () => features().pdf.planAnnual(),
+    loadPlanInitialPdf: () => features().pdf.planInitial(),
+    loadPlanMinorPdf: () => features().pdf.planMinor(),
+    loadPlanSimplifiedPdf: () => features().pdf.planSimplified(),
+    loadAppState, decryptJSONWithKey, hasOpenedCaseBefore, loadCaseFileHandle, readRememberedFile,
+    resolveParty, resolveCase, isPartyPairDismissed, wardPartyForFiling, casesGroupingWards,
+    createCase, getOrCreateCaseForWard, createParty, dismissPartyPair, mergeParties, ensureWardPartyForFiling,
+    addSignatureImage, adaptValidationErrors, prepareFilingOutput,
+    loadFeature: (engine) => features().load(engine),
+    validatorFor: (engine) => features().validator(engine),
+    completionDeps: () => features().completionDeps(),
+    loadedFeatures: () => features().loadedFeatures(),
+    computeCompletion, filingProgress,
+    calcTotalsAnnual: (d) => features().totals.annual(d),
+    annualReconcileState: (t, d) => features().totals.annualReconcile(t, d),
+    calcTotalsGuardian: (d) => features().totals.guardian(d),
+    buildCaseFileBlob, buildSingleWardExportBlob,
+  };
+}
 
 /** Read a dotted path ('guardians.0.name') from an object. */
 function getPath(obj, path) {
@@ -90,12 +153,29 @@ function setPath(obj, path, value) {
   target[keys[keys.length - 1]] = value;
 }
 
-export function createTestingAdapter(w) {
+export function createTestingAdapter(w, impl = applicationImplementations()) {
   const call = (name, ...args) => {
-    const fn = w[name];
+    const fn = impl[name];
     if (typeof fn !== 'function') throw new Error(`GuardianForms.testing: ${name}() is not available`);
     return fn(...args);
   };
+  // Engines whose code simulate.validatorNotLoaded() says has not loaded.
+  const notLoaded = new Set();
+  // What completion needs, less a validator simulated as not loaded yet.
+  const completionDeps = () => {
+    const deps = { ...call('completionDeps') };
+    if (notLoaded.has('guardian')) delete deps.validateGuardian;
+    return deps;
+  };
+  // A filing type's validator, its feature loaded first.
+  async function validatorFor(type, what) {
+    if (!VALIDATED_TYPES.includes(type)) throw new Error(`GuardianForms.testing.${what}: unrecognized inventoryType ${JSON.stringify(type)}`);
+    const engine = formEngine(type);
+    await call('loadFeature', engine);
+    const validate = call('validatorFor', engine);
+    if (typeof validate !== 'function') throw new Error(`GuardianForms.testing.${what}: the ${engine} validator is not available`);
+    return validate;
+  }
   // The live filing record for an id, for app functions that take one; never returned.
   const filingById = (filingId) => {
     const f = (getCaseFile().wards || []).find((x) => x.wardId === filingId);
@@ -110,12 +190,8 @@ export function createTestingAdapter(w) {
 
   async function openIssues() {
     const d = requireActive('validate.open');
-    const type = d.inventoryType;
-    const entry = VALIDATORS[type];
-    if (!entry) throw new Error(`GuardianForms.testing.validate.open: unrecognized inventoryType ${JSON.stringify(type)}`);
-    const [validator, loader] = entry;
-    if (typeof w[validator] !== 'function' && typeof w[loader] === 'function') await w[loader]();
-    return copy(call(validator) || []);
+    const validate = await validatorFor(d.inventoryType, 'validate.open');
+    return copy(validate() || []);
   }
 
   const testing = {
@@ -254,11 +330,14 @@ export function createTestingAdapter(w) {
     // Conditions a spec cannot reach through the UI on demand, reproduced the
     // way the app would meet them. Test mode only, like everything here.
     simulate: Object.freeze({
-      /** A filing type's code has not loaded yet: its validator is not defined. */
+      /**
+       * A filing type's code has not loaded yet: its validator is absent from
+       * what this adapter's completion queries (status.navChecks(),
+       * status.progress()) are given.
+       */
       validatorNotLoaded(type) {
-        const entry = VALIDATORS[type];
-        if (!entry) throw new Error(`GuardianForms.testing.simulate.validatorNotLoaded: unrecognized type ${JSON.stringify(type)}`);
-        delete w[entry[0]];
+        if (!VALIDATED_TYPES.includes(type)) throw new Error(`GuardianForms.testing.simulate.validatorNotLoaded: unrecognized type ${JSON.stringify(type)}`);
+        notLoaded.add(formEngine(type));
       },
     }),
     // The guided tour itself (its steps and where they attach); how a filer
@@ -309,7 +388,7 @@ export function createTestingAdapter(w) {
         caseFile: cf,
         filing: getD().wardId ? getD() : null,
         activeFilingId: cf.activeWardId ?? null,
-        currentPage: w.currentPage ?? null,
+        currentPage: call('getCurrentPage') ?? null,
         activeInventoryType: getActiveInventoryType(),
         dirtySinceExport: !!isDirtySinceExport(),
         hasUnsavedChanges: !!isDirtySinceExport(),
@@ -418,13 +497,10 @@ export function createTestingAdapter(w) {
        */
       async exportGate() {
         const d = requireActive('validate.exportGate');
-        const entry = VALIDATORS[d.inventoryType];
-        if (!entry) throw new Error(`GuardianForms.testing.validate.exportGate: unrecognized inventoryType ${JSON.stringify(d.inventoryType)}`);
-        const [validator, loader] = entry;
-        if (typeof w[validator] !== 'function' && typeof w[loader] === 'function') await w[loader]();
+        const validate = await validatorFor(d.inventoryType, 'validate.exportGate');
         const filing = copy(d);
         return withFilingInView(filing, () => {
-          const prepared = call('prepareFilingOutput', filing, () => call(validator, filing));
+          const prepared = call('prepareFilingOutput', filing, () => validate(filing));
           return copy({ messages: prepared.messages, canExport: prepared.canExport });
         });
       },
@@ -436,13 +512,10 @@ export function createTestingAdapter(w) {
        */
       async fixture(fixture) {
         const type = fixture && fixture.inventoryType;
-        const entry = VALIDATORS[type];
-        if (!entry) throw new Error(`GuardianForms.testing.validate.fixture: unrecognized inventoryType ${JSON.stringify(type)}`);
-        const [validator, loader] = entry;
-        if (typeof w[validator] !== 'function' && typeof w[loader] === 'function') await w[loader]();
+        const validate = await validatorFor(type, 'validate.fixture');
         const filing = copy({ ...initializeEmptyData(type), ...fixture });
         return withFilingInView(filing, () => {
-          const raw = call(validator, filing) || [];
+          const raw = validate(filing) || [];
           const prepared = call('prepareFilingOutput', filing, raw);
           return (prepared.structuredIssues || []).map((i) => ({
             code: String(i?.code || ''), message: String(i?.message || ''), bypassable: i?.bypassable !== false,
@@ -451,8 +524,10 @@ export function createTestingAdapter(w) {
       },
     }),
     status: Object.freeze({
-      navChecks: () => copy(call('computeNavChecks')),                 // computeNavChecks()
-      progress: (filingId) => copy(call('getWardProgress', (getCaseFile().wards || []).find((x) => x.wardId === filingId))),
+      /** The open filing's completion map (the sidebar's computeNavChecks()). */
+      navChecks: () => copy(call('computeCompletion', getD(), getActiveInventoryType(), completionDeps())),
+      /** A filing's progress (the dashboard's filingProgress()). */
+      progress: (filingId) => copy(call('filingProgress', (getCaseFile().wards || []).find((x) => x.wardId === filingId), completionDeps())),
       /** The Annual family's totals for the open filing (calcTotalsAnnual()), as a copy. */
       annualTotals: () => copy(call('calcTotalsAnnual', requireActive('status.annualTotals'))),
       /** The Annual family's balance check for the open filing (annualReconcileState()): diff, outOfBalance, explanation, explained. */
@@ -462,6 +537,12 @@ export function createTestingAdapter(w) {
       },
       /** Guardian Inventory's totals for the open filing (calcTotalsGuardian()), as a copy. */
       guardianTotals: () => copy(call('calcTotalsGuardian', requireActive('status.guardianTotals'))),
+      /**
+       * The feature packs loaded so far, by id ('dashboard', 'annual', ...),
+       * as a copy: a filing's code runs only once one of its pages is shown
+       * (Milestone 70, 70K; it was visible as window.validate<Type> appearing).
+       */
+      loadedFeatures: () => copy(call('loadedFeatures')),
     }),
     exportArchive: Object.freeze({
       caseFile: async () => (await call('buildCaseFileBlob')).blob,   // a fresh Blob
@@ -469,24 +550,4 @@ export function createTestingAdapter(w) {
     }),
   };
   return Object.freeze(testing);
-}
-
-/**
- * Called once by the composition root (src/main.js) before anything else.
- * Reads and deletes the runner-owned flag; installs window.GuardianForms with
- * the testing member only when the flag was exactly `true`.
- */
-export function installTestingNamespace(w = typeof window !== 'undefined' ? window : undefined) {
-  if (!w) return false;
-  // Read by its literal name so the window-bridge audit lists it: the one
-  // runner-owned global (T3), never an application one.
-  const enabled = w.__GUARDIAN_FORMS_TEST_MODE__ === true;
-  try { delete w.__GUARDIAN_FORMS_TEST_MODE__; } catch { w.__GUARDIAN_FORMS_TEST_MODE__ = undefined; }
-  // Installed once: a second call never replaces (or re-enables) it.
-  if (!enabled || w.GuardianForms) return false;
-  Object.defineProperty(w, 'GuardianForms', {
-    value: Object.freeze({ testing: createTestingAdapter(w) }),
-    writable: false, configurable: false, enumerable: false,
-  });
-  return true;
 }

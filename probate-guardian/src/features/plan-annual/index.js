@@ -85,23 +85,27 @@ const signatureHandles = new WeakMap();
 
 let _printModule = null;
 let _printModulePromise = null;
+// The Preview page's Save as PDF (data-form-action="save-pdf-plan-annual"),
+// and GuardianForms.testing's saveOutput, through the feature services
+// (Milestone 70, 70K: a window global this module set once print.js loaded).
+export function doSavePdfPlanAnnual() {
+  // At once when the print module is loaded (it is, once Preview shows): the
+  // save disables its button before its first await (Milestone 67).
+  if (_printModule) return _printModule.doSavePdf();
+  return ensurePrintModule().then(() => _printModule.doSavePdf());
+}
+
 function ensurePrintModule() {
   if (_printModule) return Promise.resolve();
   if (!_printModulePromise) {
     _printModulePromise = import('./print.js').then((mod) => {
       _printModule = mod;
-      // Referenced by name from rendered onclick="..." HTML attributes
-      // (doSavePdfPlanAnnual), which only ever resolve against the global
-      // scope, never a module's own scope, so it must be a real `window`
-      // property. (The planReadinessChecksAnnual bridge went with Milestone
-      // 44C's shared readiness card.)
-      window.doSavePdfPlanAnnual = () => _printModule.doSavePdf();
     });
   }
   return _printModulePromise;
 }
 
-export async function mount(container, page) {
+export async function mount(container, page, { signal } = {}) {
   // Milestone 68C: a plan saved before the Certificate of Service existed
   // gains its fields on load. Idempotent, so every mount may call it.
   if (migratePlanCertificateOfService(getD())) requestSave();
@@ -109,6 +113,8 @@ export async function mount(container, page) {
   let isPrint = false;
   if (page === '/print') {
     await ensurePrintModule();
+    // Superseded while its print module loaded (Milestone 70, 70K).
+    if (signal?.aborted) return;
     html = _printModule.pagePrintPlanAnnual();
     isPrint = true;
   } else {
@@ -809,7 +815,6 @@ export function validatePlanAnnual(){
 // Milestone 33, Phase 2.3: see annual-accounting/index.js's identical comment --
 // exposing this lets the shared guidance panel itemize Plan Annual's own
 // missing fields instead of only showing a generic message.
-window.validatePlanAnnual = validatePlanAnnual;
 
 // ── Certificate of Service (Milestone 68C) ───────────────────────────────
 // Shared with the other three Plans; see core/filing/plan-certificate-of-service.js.

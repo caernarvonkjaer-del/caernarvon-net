@@ -1,5 +1,8 @@
 import { describe, expect, test, vi } from 'vitest';
-import { TEST_MODE_FLAG, createTestingAdapter, installTestingNamespace } from '../../src/core/testing/testing-adapter.js';
+import { TEST_MODE_FLAG, createTestingAdapter } from '../../src/core/testing/testing-adapter.js';
+import { installGuardianForms } from '../../src/core/runtime/browser-api.js';
+import { APP_VERSION } from '../../src/core/feedback/feedback-config.js';
+import { validatorFnName } from '../../src/core/filing/filing-descriptor.js';
 import { PLAN_RIGHTS } from '../../src/core/filing/models/plan-annual.js';
 import { configureCaseStore, replaceCaseFile } from '../../src/core/state.js';
 import { clearCryptoKey, setCryptoKey } from '../../src/core/persistence/crypto.js';
@@ -17,6 +20,24 @@ vi.mock('../../src/core/persistence/case-file.js', async (importOriginal) => ({
 // window (setField, which needs a rendered form, is covered by
 // tests/e2e/testing-adapter.spec.ts). Enablement is decision D3 and choice
 // T3: only a runner-set pre-boot flag, read once and deleted.
+//
+// Milestone 70, 70K: the adapter runs its application functions from a table
+// (applicationImplementations()); it looked each one up on window by name. The
+// stand-in window is also the table here: its functions, plus what the table
+// has that a window never did -- loading a feature, a feature's validator
+// once loaded, completion's inputs, the route.
+function adapterFor(w) {
+  const table = new Proxy(w, {
+    get(target, name) {
+      if (name === 'loadFeature') return async () => {};
+      if (name === 'validatorFor') return (engine) => target[validatorFnName(engine)];
+      if (name === 'completionDeps') return () => ({});
+      if (name === 'getCurrentPage') return () => target.currentPage ?? null;
+      return target[name];
+    },
+  });
+  return createTestingAdapter(w, table);
+}
 
 function fakeWindow(extra = {}) {
   const filing = { wardId: 'w1', wardName: 'Ward One', inventoryType: 'guardian', guardians: [{ name: '' }], county: '' };
@@ -46,33 +67,36 @@ function fakeWindow(extra = {}) {
 }
 
 describe('enablement (D3, T3)', () => {
-  test('the namespace appears only when the runner set the flag to exactly true, and the flag is gone after boot', () => {
+  test('the testing member appears only when the runner set the flag to exactly true; the version always; the flag is gone after boot', () => {
     for (const [value, expected] of [[true, true], ['true', false], [1, false], [undefined, false]]) {
       const w = fakeWindow();
       if (value !== undefined) w[TEST_MODE_FLAG] = value;
-      expect(installTestingNamespace(w), `flag ${String(value)}`).toBe(expected);
+      expect(installGuardianForms(w), `flag ${String(value)}`).toBe(expected);
       expect(TEST_MODE_FLAG in w, 'the flag is deleted during boot').toBe(false);
-      expect(!!w.GuardianForms?.testing).toBe(expected);
+      expect(!!w.GuardianForms.testing).toBe(expected);
+      expect(w.GuardianForms.version, 'the one production member (Milestone 70, 70K)').toBe(APP_VERSION);
     }
   });
 
   test('the namespace is frozen and cannot be replaced; setting the flag after boot enables nothing', () => {
     const w = fakeWindow({ [TEST_MODE_FLAG]: true });
-    installTestingNamespace(w);
+    installGuardianForms(w);
     const ns = w.GuardianForms;
     expect(Object.isFrozen(ns) && Object.isFrozen(ns.testing)).toBe(true);
     expect(() => { 'use strict'; w.GuardianForms = {}; }).toThrow();
     const late = fakeWindow();
-    installTestingNamespace(late);
+    installGuardianForms(late);
     late[TEST_MODE_FLAG] = true; // too late: boot has already read (and deleted) it
-    expect(late.GuardianForms).toBeUndefined();
+    expect(installGuardianForms(late)).toBe(false);
+    expect(late.GuardianForms.testing).toBeUndefined();
+    expect(Object.keys(late.GuardianForms)).toEqual(['version']);
   });
 });
 
 describe('queries return copies, never live objects', () => {
   test('snapshot(): editing the result changes nothing in the app', () => {
     const w = fakeWindow();
-    const t = createTestingAdapter(w);
+    const t = adapterFor(w);
     const snap = t.snapshot();
     expect(snap.filing.wardName).toBe('Ward One');
     expect(snap.activeFilingId).toBe('w1');
@@ -83,7 +107,7 @@ describe('queries return copies, never live objects', () => {
   });
 
   test('field(path) reads a dotted path of the open filing as a copy', () => {
-    const t = createTestingAdapter(fakeWindow());
+    const t = adapterFor(fakeWindow());
     expect(t.field('guardians.0.name')).toBe('');
     const g = t.field('guardians');
     g[0].name = 'x';
@@ -94,7 +118,7 @@ describe('queries return copies, never live objects', () => {
 describe('patchFiling (setup only, D9)', () => {
   test('assigns top-level and dotted keys into the open filing in place, then schedules the save', () => {
     const w = fakeWindow();
-    const t = createTestingAdapter(w);
+    const t = adapterFor(w);
     const rows = [{ amount: 1 }];
     t.patchFiling({ county: 'Pinellas', 'guardians.0.name': 'Pat Guardian', schA: rows });
     expect(w.D.county).toBe('Pinellas');
@@ -107,7 +131,7 @@ describe('patchFiling (setup only, D9)', () => {
 
   test('replaceFiling makes the open filing exactly the edited copy -- deleted keys included -- and refuses another filing', () => {
     const w = fakeWindow();
-    const t = createTestingAdapter(w);
+    const t = adapterFor(w);
     const edited = t.snapshot().filing;
     delete edited.county;
     edited.guardians[0].name = 'Pat';
@@ -121,7 +145,7 @@ describe('patchFiling (setup only, D9)', () => {
   test('seedFiling() adds a filing record without opening it and keeps the open filing the same object', () => {
     const w = fakeWindow();
     const open = w.D;
-    const t = createTestingAdapter(w);
+    const t = adapterFor(w);
     const record = { wardId: 'w2', inventoryType: 'guardian', wardName: 'Ward B' };
     t.seedFiling(record);
     record.wardName = 'changed'; // a copy went in
@@ -133,7 +157,7 @@ describe('patchFiling (setup only, D9)', () => {
   });
 
   test('refuses when no filing is open', () => {
-    const t = createTestingAdapter(fakeWindow({ D: {} }));
+    const t = adapterFor(fakeWindow({ D: {} }));
     expect(() => t.patchFiling({ county: 'Pinellas' })).toThrow('no filing is open');
   });
 
@@ -141,7 +165,7 @@ describe('patchFiling (setup only, D9)', () => {
     const w = fakeWindow();
     const other = { wardId: 'w2', wardName: 'Ward Two', inventoryType: 'annual', dashboardWorkflow: { status: 'draft' } };
     w.caseFile.wards.push(other);
-    const t = createTestingAdapter(w);
+    const t = adapterFor(w);
     t.patchFiling({ periodTo: '2026-06-30', 'dashboardWorkflow.status': 'approved' }, 'w2');
     expect(other.periodTo).toBe('2026-06-30');
     expect(other.dashboardWorkflow.status).toBe('approved');
@@ -156,7 +180,7 @@ describe('reference lists and fixture validation', () => {
     // The lists are the Plan models' own since Milestone 70's 70C (they were
     // read off window), so a stand-in on window no longer counts.
     const w = fakeWindow({ PLAN_RIGHTS: [['vote', 'Right to vote']], caseFile: { activeWardId: null, wards: [] } });
-    const t = createTestingAdapter(w);
+    const t = adapterFor(w);
     const rights = t.constants('PLAN_RIGHTS');
     expect(rights).toEqual(PLAN_RIGHTS);
     rights.push(['x', 'y']);
@@ -176,7 +200,7 @@ describe('reference lists and fixture validation', () => {
       },
     });
     const live = w.D;
-    const t = createTestingAdapter(w);
+    const t = adapterFor(w);
     expect(await t.validate.exportGate()).toEqual({ messages: ['Guardian name is required'], canExport: false });
     expect(judged[0]).not.toBe(live);
     expect(w.D).toBe(live);
@@ -189,7 +213,7 @@ describe('reference lists and fixture validation', () => {
       annualReconcileState: (t, d) => ({ diff: t.netAssets - t.netAssetsFromD, outOfBalance: true, explanation: d.reconcileExplanation || '', explained: false }),
     });
     w.D.reconcileExplanation = 'Late deposit';
-    const t = createTestingAdapter(w);
+    const t = adapterFor(w);
     expect(t.status.annualReconcile()).toEqual({ diff: 10, outOfBalance: true, explanation: 'Late deposit', explained: false });
   });
 
@@ -200,7 +224,7 @@ describe('reference lists and fixture validation', () => {
       mergeParties: (keep, discard, options) => { calls.push([keep, discard, options]); return merged; },
       isPartyPairDismissed: (a, b) => (a === 'p1' && b === 'p2' ? 1 : 0),
     });
-    const t = createTestingAdapter(w);
+    const t = adapterFor(w);
     const result = t.updateSharedRecords.mergeParties('p1', 'p3', { adoptBlankFields: false });
     expect(result).toEqual(merged);
     expect(result).not.toBe(merged);
@@ -215,7 +239,7 @@ describe('reference lists and fixture validation', () => {
       validateGuardian: () => [{ message: 'Guardian name is required', section: 'D-1' }],
       adaptValidationErrors: (issues, type) => { calls.push(type); return issues.map((i) => ({ ...i, route: '/d1' })); },
     });
-    const t = createTestingAdapter(w);
+    const t = adapterFor(w);
     expect(await t.validate.structured()).toEqual([{ message: 'Guardian name is required', section: 'D-1', route: '/d1' }]);
     expect(calls).toEqual(['guardian']);
   });
@@ -228,7 +252,7 @@ describe('reference lists and fixture validation', () => {
       validateGuardian: (d) => { seen.push(d); return d.guardians[0].name ? [] : [{ message: 'name' }]; },
       prepareFilingOutput: (d, raw) => ({ structuredIssues: raw.map(() => ({ code: 'guardian.name', message: 'Name is required' })) }),
     });
-    const t = createTestingAdapter(w);
+    const t = adapterFor(w);
     expect(await t.validate.fixture({ inventoryType: 'guardian' })).toEqual([{ code: 'guardian.name', message: 'Name is required', bypassable: true }]);
     expect(await t.validate.fixture({ inventoryType: 'guardian', guardians: [{ name: 'Pat' }] })).toEqual([]);
     expect(w.D).toBe(open);
@@ -245,7 +269,7 @@ describe('persistence and shared records never hand out key material or live obj
       loadCaseFileHandle: async () => handle,
     });
     setCryptoKey(key); // crypto.js's, in closure memory (Milestone 70, 70I)
-    const t = createTestingAdapter(w);
+    const t = adapterFor(w);
     expect(t.persistenceState.keyHeld()).toBe(true);
     expect(await t.persistenceState.decrypt('ENC')).toEqual({ enc: 'ENC', usedKey: true });
     expect(await t.persistenceState.caseFileName()).toBe('case.sav');
@@ -256,7 +280,7 @@ describe('persistence and shared records never hand out key material or live obj
 
   test('resolveParty() is a copy', () => {
     const party = { id: 'p1', name: 'Pat' };
-    const t = createTestingAdapter(fakeWindow({ resolveParty: () => party }));
+    const t = adapterFor(fakeWindow({ resolveParty: () => party }));
     const copy = t.sharedRecords.resolveParty('p1');
     copy.name = 'Changed';
     expect(party.name).toBe('Pat');
@@ -266,7 +290,7 @@ describe('persistence and shared records never hand out key material or live obj
 describe('commands call the application function they replace', () => {
   test('navigate and save.flush pass through; a missing function fails loudly', async () => {
     const w = fakeWindow();
-    const t = createTestingAdapter(w);
+    const t = adapterFor(w);
     expect(await t.navigate('/print')).toBe('/print');
     expect(await t.save.flush()).toBe('flushed');
     expect(w.flushPendingSave).toHaveBeenCalledTimes(1);

@@ -10,8 +10,14 @@ import { readFile } from 'node:fs/promises';
 // a feature imports while it mounts (its print and Excel modules) -- those fail
 // inside mod.mount(), outside the original load() try/catch.
 //
-// The feature bridge is an ES module that writes to `window` and builds DOM
-// nodes, and the unit environment is plain node, so both are stubbed minimally.
+// The feature bridge builds DOM nodes and its Reload button reloads the page,
+// and the unit environment is plain node, so both are stubbed minimally.
+//
+// Milestone 70, 70K: mountPage() resolves true once the page is drawn and false
+// when it was not (the feature failed to load, or the navigation was
+// superseded); it takes the router's mount context -- the navigation's
+// AbortSignal and the filing -- and hands it to the feature's mount(). The
+// heading's buttons are the router's to add, after a filing page mounts.
 
 function fakeElement(tag) {
   return {
@@ -47,7 +53,6 @@ beforeAll(async () => {
 
 beforeEach(() => {
   reload.mockClear();
-  window.attachFormHeaderActions = vi.fn();
 });
 
 afterEach(() => {
@@ -88,13 +93,12 @@ describe('Milestone 63C: mountPage', () => {
       mount: async () => { throw chunkError(); },
     }));
 
-    await expect(bridge.mountPage(container, '/a1')).resolves.toBeUndefined();
+    await expect(bridge.mountPage(container, '/a1')).resolves.toBe(false);
 
     const panel = container.children[0];
     expect(panel.attrs.role).toBe('alert');
     expect(textOf(panel)).toContain('This section could not be loaded.');
     expect(walk(panel).some((n) => n.tag === 'button' && n.textContent === 'Reload')).toBe(true);
-    expect(window.attachFormHeaderActions).not.toHaveBeenCalled();
     expect(reload).not.toHaveBeenCalled();
   });
 
@@ -116,23 +120,22 @@ describe('Milestone 63C: mountPage', () => {
       .mockResolvedValueOnce({ mount: async () => {} });
     const bridge = bridgeModule.createFeatureBridge(loader);
 
-    await bridge.mountPage(container, '/');
+    expect(await bridge.mountPage(container, '/')).toBe(false);
     expect(textOf(container.children[0])).toContain('This section could not be loaded.');
 
-    await bridge.mountPage(container, '/');
+    expect(await bridge.mountPage(container, '/')).toBe(true);
     expect(loader).toHaveBeenCalledTimes(2);
-    expect(window.attachFormHeaderActions).toHaveBeenCalledTimes(1);
   });
 
-  test('a page that mounts normally still gets its header actions', async () => {
+  test("a page that mounts normally is drawn, the feature given the router's mount context", async () => {
     const container = fakeElement('main');
     const mount = vi.fn(async () => {});
     const bridge = bridgeModule.createFeatureBridge(async () => ({ mount }));
+    const context = { signal: new AbortController().signal, filing: { wardId: 'w1' } };
 
-    await bridge.mountPage(container, '/');
+    expect(await bridge.mountPage(container, '/', context)).toBe(true);
 
-    expect(mount).toHaveBeenCalledWith(container, '/');
-    expect(window.attachFormHeaderActions).toHaveBeenCalledWith(container);
+    expect(mount).toHaveBeenCalledWith(container, '/', context);
   });
 
   test('the panel explains that an update can cause this, and Reload reloads', async () => {
@@ -146,6 +149,51 @@ describe('Milestone 63C: mountPage', () => {
     const button = walk(panel).find((n) => n.tag === 'button');
     button.listeners.click();
     expect(reload).toHaveBeenCalledTimes(1);
+  });
+});
+
+// Milestone 70, 70K: two mounts racing for one host. The router aborts a
+// navigation's signal when a newer one begins; a mount that learns it has
+// been superseded draws nothing more (the race 70G recorded: a slow feature's
+// first mount drawn over the page the filer had moved on to).
+describe('a superseded navigation draws nothing', () => {
+  test('superseded while its feature loaded: its mount never runs, and the page is left to the newer one', async () => {
+    const container = fakeElement('main');
+    const mount = vi.fn(async () => {});
+    let finish;
+    const bridge = bridgeModule.createFeatureBridge(() => new Promise((resolve) => { finish = () => resolve({ mount }); }));
+    const nav = new AbortController();
+
+    const mounting = bridge.mountPage(container, '/p2', { signal: nav.signal });
+    nav.abort();
+    finish();
+    const drawn = await mounting;
+
+    expect(mount, 'the superseded mount never runs').not.toHaveBeenCalled();
+    expect(container.children).toEqual([]);
+    expect(drawn).toBe(false);
+  });
+
+  test('superseded before its feature failed to load: no panel over the newer page', async () => {
+    const container = fakeElement('main');
+    const nav = new AbortController();
+    const bridge = bridgeModule.createFeatureBridge(async () => { nav.abort(); throw chunkError(); });
+
+    const drawn = await bridge.mountPage(container, '/', { signal: nav.signal });
+    expect(container.children, 'no failure panel over the newer page').toEqual([]);
+    expect(drawn).toBe(false);
+  });
+
+  test('superseded while it drew: it is still the feature to dispose next, and reports that it was superseded', async () => {
+    const container = fakeElement('main');
+    const nav = new AbortController();
+    const dispose = vi.fn();
+    const first = { mount: async () => { nav.abort(); }, dispose };
+    const bridge = bridgeModule.createFeatureBridge(async () => first);
+
+    expect(await bridge.mountPage(container, '/', { signal: nav.signal })).toBe(false);
+    bridgeModule.disposeActiveFeature(container);
+    expect(dispose).toHaveBeenCalledWith(container);
   });
 });
 

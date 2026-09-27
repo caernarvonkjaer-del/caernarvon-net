@@ -874,20 +874,3 @@ export function installSaveListeners({signal}={}){
     else updateLastSavedIndicator(); // background tabs throttle the 30s ticker, so the "X minutes ago" text can go stale while hidden
   },{signal});
 }
-
-// Global bridge for legacy scripts and test harnesses
-if (typeof window !== 'undefined') {
-  window.saveBlobAs = saveBlobAs;
-  window.rememberCaseFileHandle = rememberCaseFileHandle;
-  window.loadCaseFileHandle = loadCaseFileHandle;
-  window.refreshAutoSaveArmedStatus = refreshAutoSaveArmedStatus;
-  window.buildCaseFileBlob = buildCaseFileBlob;
-  window.buildSingleWardExportBlob = buildSingleWardExportBlob;
-  window.exportGuardianDataZip = exportCaseFileZip;
-  window.validateWardBackupOverwrite = validateWardBackupOverwrite;
-  window.finishSingleWardExport = finishSingleWardExport;
-  window.saveBackupNow = saveBackupNow;
-  window.showAutoExportReminder = showAutoExportReminder;
-  window.updateLastSavedIndicator = updateLastSavedIndicator;
-  window.markDirtySinceExport = markDirtySinceExport;
-}

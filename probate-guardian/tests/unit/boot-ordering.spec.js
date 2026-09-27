@@ -9,8 +9,12 @@ import { readFile } from 'node:fs/promises';
 //   TypeError: window.createFeatureBridge is not a function   (feature-bridge.js)
 //   ReferenceError: _lastAutoSavedAt is not defined            (Milestone 40F)
 //
-// The fix is an ordering guarantee: main.js calls window.initApp() as its last
-// statement, after every import has evaluated.
+// The fix is an ordering guarantee: main.js starts the app as its last
+// statement, after every import has evaluated. Since Milestone 70's 70K that is
+// a direct call -- startGuardianForms(), imported from
+// src/core/startup/bootstrap.js, with the feature services handed in -- and
+// window.initApp and window.createFeatureBridge are gone: nothing is looked up
+// on window at all.
 //
 // These are source-structure assertions on purpose. The crash is effectively
 // unreproducible in e2e -- every path that reaches the failing code first
@@ -37,28 +41,31 @@ describe('Milestone 40G: app startup is ordered after ES-module evaluation', () 
     ).toEqual([]);
   });
 
-  test('main.js starts the app, after its imports', async () => {
+  test('main.js starts the app with startGuardianForms(), after its imports', async () => {
     const source = await read('src/main.js');
-    expect(source).toMatch(/window\.initApp\(\s*\)/);
+    expect(source).toContain("import { startGuardianForms } from './core/startup/bootstrap.js';");
+    expect(executableLines(source).join('\n')).not.toMatch(/initApp/);
 
     // The call must come after the last import, or the guarantee is void.
     const lastImport = source.lastIndexOf('\nimport ');
-    const callSite = source.indexOf('window.initApp()');
+    const callSite = source.indexOf('await startGuardianForms(');
     expect(lastImport).toBeGreaterThan(-1);
     expect(callSite).toBeGreaterThan(lastImport);
   });
 
-  test('main.js imports the module that provides the global startup depends on', async () => {
-    // window.createFeatureBridge is published by core/feature-bridge.js, and
-    // the dashboard mount calls it during the very first renderPage().
+  test('the features go in as a service: main.js hands in the loader it imports', async () => {
+    // The dashboard's first mount needs the feature bridges; they come from
+    // src/features-loader.js's featureServices, handed to startGuardianForms(),
+    // not from a window global a classic script called.
     const source = await read('src/main.js');
-    expect(source).toContain("import './core/feature-bridge.js'");
+    expect(source).toContain("import { featureServices } from './features-loader.js';");
+    expect(source).toMatch(/startGuardianForms\(\{ features: featureServices,/);
   });
 
-  test('feature-bridge.js still publishes createFeatureBridge on window', async () => {
-    // If this moves to a named export only, legacy-app.js's classic-script
-    // call site breaks silently again.
-    const source = await read('src/core/feature-bridge.js');
-    expect(source).toMatch(/window\.createFeatureBridge\s*=/);
+  test('no module publishes the feature bridge, or looks for initApp, on window', async () => {
+    const bridge = executableLines(await read('src/core/feature-bridge.js')).join('\n');
+    expect(bridge).not.toMatch(/window\.createFeatureBridge|window\.disposeActiveFeature/);
+    const bootstrap = executableLines(await read('src/core/startup/bootstrap.js')).join('\n');
+    expect(bootstrap).not.toMatch(/window\./);
   });
 });

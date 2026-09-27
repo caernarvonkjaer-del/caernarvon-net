@@ -1,5 +1,5 @@
 // Case entity (persistence rewrite Milestone 6) -- mirrors src/core/
-// party-resolver.js's shape and window-bridge convention exactly. A Case
+// party-resolver.js's shape exactly. A Case
 // groups several Filings (still internally called "wards", see this
 // rewrite's plan for why that wasn't renamed) that belong to the same
 // real-world guardianship matter under one court case number, replacing the
@@ -98,22 +98,4 @@ export function casesGroupingWards(wards) {
     groups.get(key).wards.push(ward);
   }
   return [...groups.values()];
-}
-
-// Bridged onto window for legacy-app.js (classic script) and for e2e tests
-// to call directly -- see this file's header comment.
-//
-// Guarded since Milestone 58B-1, matching signature-state.js and
-// attorney-block.js. caseNumberOf() is a pure function that PDF models now
-// import so they stop re-deriving the ucn/ref precedence locally, and those
-// models are built directly in unit tests, where there is no window. Before
-// this guard the bare assignments threw on import, which is why
-// case-county-drift.spec.js has to vi.mock() this whole module out.
-if (typeof window !== 'undefined') {
-  window.resolveCase = resolveCase;
-  window.caseNumberOf = caseNumberOf;
-  window.countyOf = countyOf;
-  window.createCase = createCase;
-  window.getOrCreateCaseForWard = getOrCreateCaseForWard;
-  window.casesGroupingWards = casesGroupingWards;
 }

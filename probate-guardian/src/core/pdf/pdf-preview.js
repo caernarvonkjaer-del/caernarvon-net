@@ -31,6 +31,7 @@ import { adaptValidationErrors } from '../validation/validation-adapter.js';
 import { alertModal, confirmModal } from '../ui/dialogs.js';
 import { initPrintPager } from '../ui/print-pager.js';
 import { requestSave } from '../state.js';
+import { markDirtySinceExport } from '../persistence/case-file.js';
 
 // Milestone 39-A: base64 round-trip for a persisted annotated PDF
 // (D.printAnnotations.pdfBytes). Chunked to avoid a call-stack overflow from
@@ -180,7 +181,7 @@ function mountAnnotateToolbar(container, session, pdfjsLib, D, fingerprint) {
       try {
         const { pdfBytes, encoding } = await encodeAnnotationBytes(bytes);
         D.printAnnotations = { pdfBytes, encoding, contentFingerprint: fingerprint, capturedAt: new Date().toISOString() };
-        window.markDirtySinceExport?.();
+        markDirtySinceExport();
         requestSave();
       } catch (persistError) {
         // Storing failed. The filer still gets the file they asked for --
@@ -389,7 +390,7 @@ async function renderPreviewInto(container, buildModel, D, options = {}) {
         bytesToRender = await decodeAnnotationBytes(stored);
       } else if (stored) {
         delete D.printAnnotations;
-        window.markDirtySinceExport?.();
+        markDirtySinceExport();
         requestSave();
         announceStatus('This filing changed since your saved annotations were made, so they were discarded.', { priority: 'assertive', containerId: 'print-preview-status' });
       }
@@ -443,6 +444,23 @@ async function renderPreviewInto(container, buildModel, D, options = {}) {
 // options.annotate: Milestone 39-A's per-filing-type gate -- opt-in only,
 // so the shared preview stays a fork-free single module while only the
 // pilot (Simplified Annual Plan) mounts the annotation editor.
+// What the Preview page's Print button prints: the open filing's PDF, as the
+// feature whose Preview is showing builds it. Each feature's mountPreview()
+// registers its own (Milestone 70, 70K: it assigned window.printCurrentFilingPdf,
+// which the shared dispatcher called).
+let printCurrentFiling = null;
+
+/** A feature's Preview registers how the open filing prints. */
+export function setPrintCurrentFiling(fn) {
+  printCurrentFiling = fn;
+}
+
+/** The Print button (data-form-action="print", and Plan Simplified's own). */
+export function printCurrentFilingPdf() {
+  if (typeof printCurrentFiling !== 'function') throw new Error('printCurrentFilingPdf(): no Preview has been shown');
+  return printCurrentFiling();
+}
+
 export async function mountPdfPreview(buildModel, D, baseIssues = [], containerId = 'print-doc-container', options = {}) {
   const container = document.getElementById(containerId);
   if (!container) return;

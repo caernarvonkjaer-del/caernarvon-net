@@ -83,15 +83,6 @@ export function resolvePaintTheme() {
   return 'light';
 }
 
-// Global bridge for legacy-app.js, a classic script that cannot import modules.
-if (typeof window !== 'undefined') {
-  window.THEME_STORAGE_KEY = THEME_STORAGE_KEY;
-  window.readStoredTheme = readStoredTheme;
-  window.writeStoredTheme = writeStoredTheme;
-  window.seedStoredThemeFromLegacy = seedStoredThemeFromLegacy;
-  window.resolvePaintTheme = resolvePaintTheme;
-}
-
 // Milestone 70, 70H: the theme button -- the theme in use, applying one and
 // toggling it -- moved from legacy-app.js's THEME (light / dark).
 export function currentTheme(){

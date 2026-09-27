@@ -127,8 +127,3 @@ export async function deriveAndVerifyKey(password, manifest, fileHandle) {
   }
   return key;
 }
-
-// Global bridge for legacy scripts and test harnesses
-if (typeof window !== 'undefined') {
-  window.decryptJSONWithKey = decryptJSONWithKey;
-}
