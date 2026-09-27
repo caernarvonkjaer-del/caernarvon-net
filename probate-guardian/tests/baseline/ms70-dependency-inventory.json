@@ -2156,6 +2156,13 @@
    "evalTime": null
   },
   {
+   "from": "src/core/pdf/pdf-preview.js",
+   "to": "src/core/pdf/print-current.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
    "from": "src/core/pdf/pdfjs-loader.js",
    "to": "lib/pdfjs/pdf.worker.min.mjs",
    "kind": "import-dynamic",
@@ -6455,7 +6462,7 @@
   },
   {
    "from": "src/features/plan-simplified/index.js",
-   "to": "src/core/pdf/pdf-preview.js",
+   "to": "src/core/pdf/print-current.js",
    "kind": "import-static",
    "name": null,
    "evalTime": null
@@ -7281,7 +7288,7 @@
   },
   {
    "from": "src/form-events.js",
-   "to": "src/core/pdf/pdf-preview.js",
+   "to": "src/core/pdf/print-current.js",
    "kind": "import-static",
    "name": null,
    "evalTime": null

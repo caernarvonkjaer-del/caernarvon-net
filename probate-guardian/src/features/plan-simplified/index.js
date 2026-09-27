@@ -34,7 +34,7 @@ import { chkP, inpS, pageNavS, txtP, yesNoCheckboxS } from '../../core/form/fiel
 import { renderScheduleDocsSection } from '../../core/filing/schedule-docs.js';
 import { setPath } from '../../core/form/paths.js';
 import { openFloridaCourtPortal } from '../../core/shell/court-portal.js';
-import { printCurrentFilingPdf } from '../../core/pdf/pdf-preview.js';
+import { printCurrentFilingPdf } from '../../core/pdf/print-current.js';
 // Simplified Annual Plan — the second feature extraction (Milestone 3,
 // Phase B/C of INDEX-SPLIT-PLAN.md's migration sequence). Loaded only when one of its pages
 // is shown, through src/features-loader.js's feature services

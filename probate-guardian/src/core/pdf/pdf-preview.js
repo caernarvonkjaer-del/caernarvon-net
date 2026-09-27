@@ -445,22 +445,10 @@ async function renderPreviewInto(container, buildModel, D, options = {}) {
 // options.annotate: Milestone 39-A's per-filing-type gate -- opt-in only,
 // so the shared preview stays a fork-free single module while only the
 // pilot (Simplified Annual Plan) mounts the annotation editor.
-// What the Preview page's Print button prints: the open filing's PDF, as the
-// feature whose Preview is showing builds it. Each feature's mountPreview()
-// registers its own (Milestone 70, 70K: it assigned window.printCurrentFilingPdf,
-// which the shared dispatcher called).
-let printCurrentFiling = null;
-
-/** A feature's Preview registers how the open filing prints. */
-export function setPrintCurrentFiling(fn) {
-  printCurrentFiling = fn;
-}
-
-/** The Print button (data-form-action="print", and Plan Simplified's own). */
-export function printCurrentFilingPdf() {
-  if (typeof printCurrentFiling !== 'function') throw new Error('printCurrentFilingPdf(): no Preview has been shown');
-  return printCurrentFiling();
-}
+// What the Preview page's Print button prints is held by ./print-current.js,
+// apart from this module so the startup path can reach it without loading the
+// PDF engine; re-exported for the feature print modules that register it.
+export { setPrintCurrentFiling, printCurrentFilingPdf } from './print-current.js';
 
 export async function mountPdfPreview(buildModel, D, baseIssues = [], containerId = 'print-doc-container', options = {}) {
   const container = document.getElementById(containerId);

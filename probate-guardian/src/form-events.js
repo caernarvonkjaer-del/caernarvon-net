@@ -20,7 +20,7 @@ import { showPickPartyModal } from './core/modals/pick-record-dialogs.js';
 import { showAddWardModalForType } from './core/modals/filing-dialogs.js';
 import { exportActivityLog, renderActivityLogList } from './core/activity/activity-log-view.js';
 import { openFloridaCourtPortal } from './core/shell/court-portal.js';
-import { printCurrentFilingPdf } from './core/pdf/pdf-preview.js';
+import { printCurrentFilingPdf } from './core/pdf/print-current.js';
 import { features } from './core/runtime/features.js';
 // Milestone 70, 70H: this module's document listeners are collected here and
 // added by installFormEvents(), once, from main.js -- not as a side effect of
