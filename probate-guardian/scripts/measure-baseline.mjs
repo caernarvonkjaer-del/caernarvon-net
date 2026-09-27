@@ -19,7 +19,7 @@
 // 4322/4323 at the merge (MILESTONE-70-FIX-LEDGER.md).
 
 import { chromium } from '@playwright/test';
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import path from 'node:path';
 import fs from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
@@ -50,6 +50,27 @@ async function waitForServer(url, timeoutMs = 15000) {
   throw new Error(`Server at ${url} did not become ready within ${timeoutMs}ms`);
 }
 
+// Milestone 70, 70L: a server left running by an earlier run would answer on
+// this port and be measured in place of this run's -- refuse it -- and
+// proc.kill() on a shell: true child ends only the shell on Windows, which is
+// how one gets left running, so the whole process tree is stopped.
+async function refuseBusyPort(url) {
+  try {
+    await fetch(url);
+  } catch {
+    return;
+  }
+  throw new Error(`Something is already answering at ${url} -- stop it (a server left by an earlier run?) before measuring`);
+}
+
+function stopServer(proc) {
+  if (process.platform === 'win32' && proc.pid) {
+    spawnSync('taskkill', ['/pid', String(proc.pid), '/T', '/F'], { stdio: 'ignore' });
+  } else {
+    proc.kill();
+  }
+}
+
 async function withServer(target, fn) {
   if (target === 'portable') {
     const filePath = path.join(root, 'dist/portable/index.html');
@@ -57,12 +78,13 @@ async function withServer(target, fn) {
   }
   const cfg = SERVERS[target];
   if (!cfg) throw new Error(`Unknown target: ${target}`);
+  await refuseBusyPort(cfg.url);
   const proc = spawn(cfg.command, cfg.args, { cwd: root, stdio: 'ignore', shell: true });
   try {
     await waitForServer(cfg.url);
     return await fn(cfg.url);
   } finally {
-    proc.kill();
+    stopServer(proc);
   }
 }
 
@@ -146,21 +168,26 @@ async function measure(url) {
   // schedule page 5x, forcing GC before each heap read. Informational only
   // in Milestone 1 -- there's no dispose()/cleanup logic yet for a bound to
   // mean anything against (that's step 8, once mount()/dispose() exist).
-  await page.evaluate(() => {
-    document.getElementById('startup-newcase-btn')?.click();
-  });
-  await page.waitForTimeout(200);
-  await page.evaluate(() => {
-    document.querySelector('#security-choice-overlay [data-startup-action="select-security"][data-security-mode="none"]')?.click();
-  });
-  await page.waitForTimeout(200);
-  await page.evaluate(() => { (window).addWard?.('Baseline Measurement Ward', 'guardian'); });
-  await page.waitForFunction(() => window.D?.wardName === 'Baseline Measurement Ward');
+  //
+  // Milestone 70, 70L: the app has no window globals to drive it with any
+  // more (window.addWard, window.D and window.navigate went in 70J-70K), and
+  // this script measures bundled builds too, where the app's modules cannot be
+  // imported by URL. So, with the first-page figures above taken on a plain
+  // load as before, the page is reloaded with the test runner's pre-boot flag
+  // and the cycle goes through GuardianForms.testing, which calls the same
+  // functions and waits for each page. The heap samples are of that reloaded
+  // page; the adapter it adds is a few kilobytes.
+  await page.addInitScript(() => { window.__GUARDIAN_FORMS_TEST_MODE__ = true; });
+  await page.reload({ waitUntil: 'networkidle' });
+  await page.locator('#startup-newcase-btn').click();
+  await page.locator('#security-choice-overlay [data-startup-action="select-security"][data-security-mode="none"]').click();
+  await page.evaluate(() => window.GuardianForms.testing.createFiling.add('Baseline Measurement Ward', 'guardian'));
+  await page.waitForFunction(() => window.GuardianForms.testing.snapshot().filing?.wardName === 'Baseline Measurement Ward');
 
   const heapSamples = [];
   for (let cycle = 0; cycle < 5; cycle++) {
     for (const route of ROUTE_CYCLE) {
-      await page.evaluate((r) => (window).navigate?.(r), route);
+      await page.evaluate((r) => window.GuardianForms.testing.navigate(r), route);
     }
     await cdp.send('HeapProfiler.enable');
     await cdp.send('HeapProfiler.collectGarbage');

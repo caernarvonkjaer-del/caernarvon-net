@@ -1,0 +1,45 @@
+{
+  "target": "portable",
+  "measuredAt": "2026-09-27T09:02:01.199Z",
+  "gitSha": "161e4ff",
+  "staticInlineScriptBytes": 6961296,
+  "staticExternalScripts": [
+    {
+      "src": "./src/prepaint.js",
+      "bytes": 2166
+    },
+    {
+      "src": "lib/jszip.min.js",
+      "bytes": 96934
+    },
+    {
+      "src": "lib/bootstrap.bundle.min.js",
+      "bytes": 80283
+    }
+  ],
+  "nodeVersion": "v24.16.0",
+  "initialEvaluatedScriptBytes": 7140679,
+  "initialApplicationScriptBytes": 6963462,
+  "browserVersion": "151.0.7922.34",
+  "pageErrors": [],
+  "consoleErrors": [],
+  "JSHeapUsedSize": 9290144,
+  "Nodes": 665,
+  "ScriptDuration": 0.115795,
+  "navigation": {
+    "transferSize": 7306698,
+    "encodedBodySize": 7306398,
+    "duration": 882.6000000238419
+  },
+  "resourceCount": 1,
+  "scriptResources": [],
+  "initialScriptResourceEncodedBytes": 0,
+  "initialScriptResourceDecodedBytes": 0,
+  "heapAfterRouteCycles": [
+    11198280,
+    11226380,
+    11253564,
+    11262216,
+    11294080
+  ]
+}
