@@ -5,7 +5,6 @@
 // legacy-app.js's PRINT-PREVIEW PAGER.
 import { esc } from '../filing/escape-html.js';
 import { ic } from './icons.js';
-import { isHelpPanelOpen } from '../help/help-panel.js';
 
 export let _pvSelection='1';
 
@@ -104,10 +103,11 @@ export function initPrintPager(options={}){
     destination.appendChild(headerActions);
   }else if(destination&&!destination.querySelector('.pv-shell-actions')){
     const isDark=document.documentElement.getAttribute('data-theme')==='dark';
-    const helpOpen=isHelpPanelOpen();
+    // "?" in a filing opens the manual, not the Help panel: see the router's
+    // attachFormHeaderActions(). (master ae9ecdc, carried.)
     const shellActions=document.createElement('div');
     shellActions.className='pv-shell-actions';
-    shellActions.innerHTML=`<button type="button" class="topnav-btn" data-shell-action="dashboard">${ic('home',16)} All Filings</button><button type="button" class="topnav-btn topnav-theme" id="theme-toggle-btn" data-shell-action="toggle-theme" title="Switch theme" aria-label="Switch to ${isDark?'light':'dark'} theme" aria-pressed="${isDark}">${ic(isDark?'sun':'moon',16)}</button><button type="button" class="topnav-btn topnav-help" id="help-toggle-btn" data-shell-action="toggle-help" title="Help" aria-label="Help" aria-haspopup="true" aria-expanded="${helpOpen}" aria-controls="help-panel">?</button>`;
+    shellActions.innerHTML=`<button type="button" class="topnav-btn" data-shell-action="dashboard">${ic('home',16)} All Filings</button><button type="button" class="topnav-btn topnav-theme" id="theme-toggle-btn" data-shell-action="toggle-theme" title="Switch theme" aria-label="Switch to ${isDark?'light':'dark'} theme" aria-pressed="${isDark}">${ic(isDark?'sun':'moon',16)}</button><button type="button" class="topnav-btn topnav-help" id="help-toggle-btn" data-shell-action="toggle-help" title="Help: open the user guide for this page (new tab)" aria-label="Help: open the user guide for this page (new tab)">?</button>`;
     destination.appendChild(shellActions);
   }
   if(pages.length<2)return;                       // nothing to page through

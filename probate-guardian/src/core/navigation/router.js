@@ -31,7 +31,7 @@ import { commitPendingFieldValues } from '../form/form-contract.js';
 import { resetNavSectionExpanded, updateNavDots } from '../status/nav-marks.js';
 import { initPrintPager } from '../ui/print-pager.js';
 import { pagePartyManagement, renderClosedFilingSyncNotice, renderPartyManagementBody } from '../parties/party-management.js';
-import { isHelpPanelOpen, updateHelpContext } from '../help/help-panel.js';
+import { updateHelpContext } from '../help/help-panel.js';
 import { pageInventorySelector } from '../shell/start-new-form.js';
 import { loadAndRenderActivityLog, pageActivityLog } from '../activity/activity-log-view.js';
 import { disposeActiveFeature } from '../feature-bridge.js';
@@ -296,13 +296,17 @@ export function attachFormHeaderActions(container = (typeof document !== 'undefi
   if (!h1 || h1.classList.contains('visually-hidden') || h1.querySelector('.form-header-actions')) return;
 
   const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-  const helpOpen = isHelpPanelOpen();
+  // Inside a filing "?" opens the manual for this page in a new tab
+  // (shell-events.js), not the Help panel, so the button says that and claims
+  // no disclosure state -- it carried aria-haspopup, aria-controls and an
+  // aria-expanded, and a screen reader announced a panel. (master ae9ecdc,
+  // carried after Milestone 70's 70K.)
 
   const actions = document.createElement('div');
   actions.className = 'form-header-actions';
   const homeIcon = ic('home', 16);
   const themeIcon = ic(isDark ? 'sun' : 'moon', 16);
 
-  actions.innerHTML = `<button type="button" class="topnav-btn" data-shell-action="dashboard">${homeIcon} All Filings</button><button type="button" class="topnav-btn topnav-theme" id="theme-toggle-btn" data-shell-action="toggle-theme" title="Switch theme" aria-label="Switch to ${isDark ? 'light' : 'dark'} theme" aria-pressed="${isDark}">${themeIcon}</button><button type="button" class="topnav-btn topnav-help" id="help-toggle-btn" data-shell-action="toggle-help" title="Help" aria-label="Help" aria-haspopup="true" aria-expanded="${helpOpen}" aria-controls="help-panel">?</button>`;
+  actions.innerHTML = `<button type="button" class="topnav-btn" data-shell-action="dashboard">${homeIcon} All Filings</button><button type="button" class="topnav-btn topnav-theme" id="theme-toggle-btn" data-shell-action="toggle-theme" title="Switch theme" aria-label="Switch to ${isDark ? 'light' : 'dark'} theme" aria-pressed="${isDark}">${themeIcon}</button><button type="button" class="topnav-btn topnav-help" id="help-toggle-btn" data-shell-action="toggle-help" title="Help: open the user guide for this page (new tab)" aria-label="Help: open the user guide for this page (new tab)">?</button>`;
   h1.appendChild(actions);
 }

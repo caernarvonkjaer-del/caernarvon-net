@@ -17,7 +17,10 @@ export let currentHelpContext = 'dashboard';
 export function toggleHelpPanel(){
   helpPanelOpen=!helpPanelOpen;
   const panel=document.getElementById('help-panel');
-  const btns=document.querySelectorAll('#help-toggle-btn, .topnav-help');
+  // Only the buttons that really open this panel (the dashboard's "?"); a
+  // filing's "?" opens the manual instead and carries no disclosure state.
+  // (master ae9ecdc, carried.)
+  const btns=document.querySelectorAll('[aria-controls="help-panel"]');
   panel.style.display=helpPanelOpen?'flex':'none';
   btns.forEach(btn=>btn.setAttribute('aria-expanded',String(helpPanelOpen)));
   if(helpPanelOpen){
@@ -72,13 +75,6 @@ export function updateHelpContext(context){
     currentHelpContext='default';
   }
   if(helpPanelOpen)showContextualHelp();
-}
-
-/** Whether the Help panel is open. (print-pager.js and the router asked
- * window.isHelpPanelOpen(), which nothing defined, so Preview & Export drew
- * its help button as closed while the panel was open.) */
-export function isHelpPanelOpen(){
-  return helpPanelOpen;
 }
 
 /**

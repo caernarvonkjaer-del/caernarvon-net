@@ -3417,13 +3417,6 @@
    "evalTime": null
   },
   {
-   "from": "src/core/ui/print-pager.js",
-   "to": "src/core/help/help-panel.js",
-   "kind": "import-static",
-   "name": null,
-   "evalTime": null
-  },
-  {
    "from": "src/core/validation/attorney-block.js",
    "to": "src/core/validation/signature-state.js",
    "kind": "import-static",
