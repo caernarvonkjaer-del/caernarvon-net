@@ -101,6 +101,15 @@ for (const [source, fill] of SOURCES) {
       }, { id: sourceId, t: target });
       await acceptDynDialog(page);
       await page.evaluate(() => (window as any).__conversion);
+      // The conversion opens the new filing and starts drawing its Cover
+      // without waiting for it (navigate('/'), then the "Converted" dialog),
+      // and drawing a page is what turns some values into numbers
+      // (sanitizeNegativeAmounts(): a starting balance of "1005" becomes
+      // 1005). The record was made after that, so wait for the Cover's
+      // fields; the page area is emptied before the dialog opens, so a field
+      // there is the new page's. Under the full suite's load the page could
+      // still be drawing when this read it (2 of 9 types, 2026-09-27).
+      await page.locator('#main-content :is([data-form-path], [data-annual-path], [data-field-path], [data-bind])').first().waitFor();
       const created = (await wardIds(page)).filter((id: string) => !before.has(id));
       expect(created, `${source} -> ${target} creates one filing`).toHaveLength(1);
       conversions[target] = normalize(await wardById(page, created[0]));
