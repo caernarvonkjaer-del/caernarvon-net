@@ -136,7 +136,7 @@ export async function importSavArchiveOrWard(file, options = {}) {
 
     // Milestone 38C: close any open editor BEFORE replacing ward data, using
     // the real unload path. unloadWard() flushes pending values, releases the
-    // ward lock, nulls focus, clears window.D and lands on the dashboard.
+    // ward lock, closes the open filing and lands on the dashboard.
     // Nulling activeWardId directly instead would make
     // enterDashboardEditingFocus() early-return on its `if (!activeWardId)`
     // guard and skip all of that -- leaking the ward lock. Flushing before the

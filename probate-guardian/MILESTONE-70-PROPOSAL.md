@@ -3,7 +3,7 @@
 ## Status
 
 **70A complete (2026-09-24); 70T, 70B, 70C and 70D complete (2026-09-25); 70E,
-70F, 70G, 70H and 70I complete (2026-09-26) -- see their build records. Every remaining delivery, 70J through 70L, is approved.** The
+70F, 70G, 70H, 70I and 70J complete (2026-09-26) -- see their build records. Every remaining delivery, 70K and 70L, is approved.** The
 requester approved delivery 70A on 2026-09-24 and it is complete on the
 `milestone-70` branch (see the 70A build record), then approved 70T. On
 2026-09-25 the requester approved every delivery after it ("Finish ms 70. That
@@ -1622,6 +1622,39 @@ and runs the shipped-build profiles (D2), including `portable-http`.
 Decided (D4): no tester pause follows. 70J is a one-way door: once 70K builds
 on it, it cannot be reverted on its own, so this gate is the last point at
 which to stop.
+
+### 70J build record
+
+Approved with every later delivery on 2026-09-25 (see Status). Everything
+below is on the `milestone-70` branch. 70J is the one-way door (D4): once 70K
+builds on it, it cannot be reverted on its own.
+
+**What a filer sees.** Nothing, by design: 70J changes which code holds the
+case, not what the app does with it. One hardening a filer would not notice:
+opening a case file used to fill the open case in piece by piece -- emptying
+it first, then adding each part as it was read -- so a read that failed
+part-way left the app holding half of the new file. The file is now read into
+a case of its own, which replaces the open one only once it is whole; a read
+that fails part-way leaves the case as it was.
+
+**Done, with evidence.**
+
+| Item | Evidence |
+| --- | --- |
+| Commit | Named in the next docs commit (the whole delivery; gate evidence in its message). |
+| One case, one derivation of the open filing | `src/core/state.js` holds the one case object: `getCaseFile()` is the live object, `replaceCaseFile()` the one way to replace it whole, `blankCaseFile()` an empty one. The open filing and its type are not held at all -- `getD()`, `getActiveWard()` and `getActiveInventoryType()` derive them from the case's `activeWardId` each time they are asked, so they cannot disagree with it; with none open, `getD()` is a scratch `{}` replaced at each close. `setD()`, `setActiveInventoryType()` and `setCaseFile()` went; `setActiveFiling()` (70G) names the open filing. `ms70-state-seam.spec.js`. |
+| No competing mirror | `legacy-app.js`'s `caseFile`, `window.caseFile`, `window.D`, its `activeInventoryType` and the `window` accessor over it went, and nothing of the case is on `window`: the store is no longer excepted from the check that no module reads or writes case state there. The monolith's bare case-state accesses (`scripts/ms70-classic-state.mjs`) are 0, from 27 at 70I, and the recorded list is empty; the audit read `window.D` in comments as accesses and now reads the parse. Fault-injected, each failed the guards: a `let caseFile` in the monolith, a `window.caseFile` write in the store. |
+| Mechanically: every replacement and activation | `filing-lifecycle.spec.js`: which filing is open changes only through `setActiveFiling()` (`ward-lifecycle.js`'s open and close); `replaceCaseFile()` is called only by the lock (it forgets the case, and restores the recovery snapshot) and the case reader; `withFilingInView()` only by `GuardianForms.testing`'s validate queries -- fault-injected with a `replaceCaseFile()` call in `recovery-cache.js`. `ms70-state-seam.spec.js`: no module but the import, a merge that keeps the filings already in the case, writes a case's filings wholesale; it caught the recovery restore's first rewrite, which still assigned them on its new case. |
+| Each operation updates the case once | `tests/unit/ms70-case-authority.spec.js` runs the store, the lifecycle and the reader for real: a switch writes the case's `activeWardId` once, in the same case; deleting the open filing closes it once and removes it once; opening a case file leaves the open case untouched while it is read, then replaces it once with every part and nothing open. A save reads the live case and writes no member of it (`case-file.spec.js`; seen failing with a save that stamped the case). The recovery restore builds its case and replaces the lock's empty one once (the guards above; `lock-and-save-state.contract.spec.ts` holds what it restores). The import merges into the case once, after closing the open filing through the lifecycle, as before (`backup-restore-sav.spec.ts`). |
+| Fault injection (70J's work) | Same spec, a fault at each await: the outgoing filing's save failing, another tab holding the target, and the lock request throwing each leave the filing that was open, whole -- its id, data and type agreeing; a fault after the move (the Inventory feature failing to load) leaves the new one open, whole; leaving for the dashboard with the save failing keeps the filing open and locked, tells the filer, and leaves the page where it is; a second route change during the pending save joins the first, and the filing closes once. A transaction that throws runs no side effect (70E's test). Red first, three mutations, each failing for its stated reason: the old reader (the open case emptied mid-read, and holding half the new file after a part-way failure), `activateWard()` opening the target before the outgoing save, and the dashboard exit closing the filing before its save. |
+| The monolith's state and services | Gone: `caseFile`, `activeInventoryType`, 70I's `clearCaseForLock()` and `focusFilingAtLaunch()`, `setAccountingFilingType()` (to `src/features/annual-accounting/filing-type.js`; it writes the open filing's own type, from which the open type now follows), `calc` (the Proxy the dashboard's headline total used by pointing `window.D` at each card's filing; the total is handed the filing now), and the `autoSave()` and `updateSidebar()` wrappers. The lock forgets the case through `replaceCaseFile(blankCaseFile())`; startup opens the remembered filing directly through the lifecycle -- naming it first, as 70I did, would now make it count as already open and skip its normalization, Recently Opened and the Inventory feature's load. |
+| The test adapter | Reads the case, the open filing and its type from the store; its validate queries (`exportGate`, `fixture`) put their copy in view with `withFilingInView()` -- synchronous, and put back however the call ends -- instead of pointing `window.D` at it and back. No compatibility getter on `window` was needed (the plan allowed one inside the adapter until 70K). |
+| Separate services | The key, the file handle, app state and the template cache stay with their 70I owners; route state (`currentPage`) is 70K's; `main.js`, the composition root, wires the store's hooks. |
+| Tests converted | 26 unit specs changed: 13 by a codemod (`window.D = x` to `openFiling(x)`, from the new `tests/unit/support/open-filing.js`; `window.caseFile = x` to `replaceCaseFile(x)`; their reads to `getD()` and `getCaseFile()`), the rest by hand -- the guards among them rewritten for the store's ownership. No browser spec needed converting: 70T had moved every one off `window.D` and `window.caseFile` (the pre-70 build's driver for the mixed-version characterization is the deliberate exception). One assertion fewer: `guardian-inventory-totals.spec.js`'s four checks on the monolith's `calc` Proxy became three on its absence and the headline total (recorded in `tests/baseline/ms70-assertion-counts.json`). Comments naming `setD()` as what runs today now name `setActiveFiling()`. |
+| Ratchet | `classicDeclarations` 54 to 49, `windowWrites` 156 to 149, `windowReads` 111 to 103; `evalTimeWindowDestructures` 25, `bareCrossBoundary` 4, `unresolvedBareReferences` 0 and import cycles 0 unchanged; the monolith 902 to 843 lines, its bare case-state accesses 27 to 0. 70I's `clearCaseForLock` and `focusFilingAtLaunch` are gone. Grown, recorded here with their removal: `src/legacy-app.js::getD`, `::getActiveInventoryType` and `::calcTotalsGuardian` in `classicDeclarations` -- one-line forwarders for `computeNavChecks()`, `handleHash()` and `getWardHeadlineTotal()`, placed with them in 70K by the review, with a note. |
+| Master-fix ledger | `b2d97f5` and `5de3707` were carried after 70I (`f6ea716`, `296000f`); this checkpoint is the first full run with both. No unlisted `master` commit; the re-implement rows still open, `c62f890` and `ae9ecdc`, change code 70K moves. |
+
+**Gate run.** The checkpoint's full gate (D2), 2026-09-26, on the trial copy this commit was ported from (identical file for file apart from its test port), 1 h 18 min in all: `npm run test:verify` -- `check:types` clean, `verify:data-model` OK (1009 rows), unit 2042/2042 (155 files), browser 934 passed, 7 skipped, 0 failed (1.1 h, source profile, chromium; 941 tests: 70I's 932 and the nine of the two carries' specs); `npm run test:e2e:web` 34 passed, 2 skipped (2.5 min); `npm run test:e2e:portable` 20 passed, 12 skipped (1.4 min); `npm run test:e2e:portable-http` 33 passed (2.5 min). The first full run with both carries: the `.sav` corpus's 66 tests all passed, the golden as the carries left it. `check:types` clean on the ported worktree.
 
 ---
 

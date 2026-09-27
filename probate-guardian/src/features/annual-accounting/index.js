@@ -78,6 +78,7 @@ import { setPath } from '../../core/form/paths.js';
 import { showPickPartyModal } from '../../core/modals/pick-record-dialogs.js';
 import { tooltip } from '../../core/help/tooltips.js';
 import { syncActiveWardNameDisplay, syncGuardianNameDisplay } from '../../core/shell/sidebar.js';
+import { setAccountingFilingType } from './filing-type.js';
 // Annual Accounting — the sixth feature extraction (Milestone 7, Phases A
 // and B of INDEX-SPLIT-PLAN.md's migration sequence: data/pages/nav/
 // validate, and print/PDF/Excel import/export). Also covers the
@@ -290,7 +291,7 @@ function bindEvents(container) {
   container.addEventListener('change', (event) => {
     const control = event.target;
     if (control instanceof HTMLSelectElement && control.dataset.annualPath === 'filingType') {
-      window.setAccountingFilingType?.(control.value);
+      setAccountingFilingType(control.value);
       return;
     }
     if (control instanceof HTMLInputElement && control.dataset.annualChange === 'schedule-no-items') {

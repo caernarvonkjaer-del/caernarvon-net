@@ -16,7 +16,7 @@ import { freshStartNoPassword, createWard, reopenFilingWithStoredShape } from '.
 // filing by hand. They now take the path a filer's data takes: the older
 // shape is stored on the filing (setup, D9), and the filing is closed and
 // opened again -- opening a stored filing is what runs normalizeWardData()
-// (activateWard() -> setD()). The empty-sentinel test likewise leaves the
+// (activateWard() -> setActiveFiling()). The empty-sentinel test likewise leaves the
 // filing for the dashboard, the navigation that sets the sentinel.
 
 test.describe('legacy boolean -> tri-state ward data normalization (Guardian Inventory)', () => {
@@ -174,7 +174,8 @@ test.describe('legacy boolean -> tri-state ward data normalization (Guardian Inv
     await freshStartNoPassword(page);
     await createWard(page, 'Sentinel Check Ward', 'guardian');
 
-    // Leaving the filing for the dashboard is what sets the sentinel (setD({})).
+    // Leaving the filing for the dashboard is what sets the sentinel (setD({})
+    // until Milestone 70's 70J; setActiveFiling(null) and the store's scratch {} since).
     await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/dashboard'));
     await expect(page).toHaveURL(/#\/dashboard/);
     const keyCount = await page.evaluate(() => Object.keys((window as any).GuardianForms.testing.snapshot().filing || {}).length);

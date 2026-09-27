@@ -23,21 +23,22 @@
 // goes with legacy-app.js in 70L.
 import { esc } from './core/filing/escape-html.js';
 import { calcTotals } from './features/simplified-accounting/totals.js';
-import { calc } from './features/guardian-inventory/totals.js';
+import { calcTotalsGuardian } from './features/guardian-inventory/totals.js';
+import { getActiveInventoryType, getD } from './core/state.js';
 import {
   formEngine, FILING_PAGES,
   computeCompletion as computeNavChecks, filingProgress as getWardProgress,
 } from './core/filing/filing-registry.js';
 import { provideMonolithServices } from './core/runtime/monolith.js';
 import { PAGES_GUARDIAN, } from './core/filing/models/guardian.js';
-import { updateSidebar } from './core/shell/sidebar.js';
-import { autoSave } from './core/persistence/case-file.js';
 
 export const LEGACY_BRIDGE = Object.freeze({
   // 70B -- pure helpers
   
   
-  calcTotals, calc,
+  calcTotals, calcTotalsGuardian,
+  // 70J: the open filing and its type, which the monolith no longer holds
+  getD, getActiveInventoryType,
   // 70C -- the filing registry and per-engine models
   formEngine, FILING_PAGES,
   
@@ -49,9 +50,8 @@ export const LEGACY_BRIDGE = Object.freeze({
   // 70F
   // 70G
   // 70H
-  updateSidebar,
   // 70I
-  autoSave,
+  
 });
 
 if (typeof window !== 'undefined') {

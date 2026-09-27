@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, test } from 'vitest';
 import { currentHelpContext, updateHelpContext } from '../../src/core/help/help-panel.js';
-import { setActiveInventoryType, setCaseFile } from '../../src/core/state.js';
+import { replaceCaseFile } from '../../src/core/state.js';
 
 // Milestone 70, 70H finding. The Help panel's context: the page a filer is on
 // chooses the help it shows. updateHelpContext() took no argument, so the
@@ -10,8 +10,7 @@ import { setActiveInventoryType, setCaseFile } from '../../src/core/state.js';
 
 describe('the Help panel shows the help for the page it is on', () => {
   beforeEach(() => {
-    setCaseFile({ wards: [], activeWardId: null });
-    setActiveInventoryType(null);
+    replaceCaseFile({ wards: [], activeWardId: null });
   });
 
   test("a page that names its help gets it -- the Start New Form picker's", () => {
@@ -25,8 +24,8 @@ describe('the Help panel shows the help for the page it is on', () => {
   });
 
   test("with nothing named, the open filing's form decides", () => {
-    setCaseFile({ wards: [{ wardId: 'w1', inventoryType: 'planAnnual' }], activeWardId: 'w1' });
-    setActiveInventoryType('planAnnual');
+    // The open filing's type is that filing's own (Milestone 70, 70J).
+    replaceCaseFile({ wards: [{ wardId: 'w1', inventoryType: 'planAnnual' }], activeWardId: 'w1' });
     updateHelpContext();
     expect(currentHelpContext).toBe('plan-annual');
   });

@@ -2,6 +2,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
+import { getD, withFilingInView } from '../../src/core/state.js';
+import { openFiling } from './support/open-filing.js';
 
 // Milestone 70, 70D gate: "Old and new completion maps and percentages match
 // across all fixture factories, edge cases, and filing identities before the
@@ -81,10 +83,10 @@ function oldRun(D, type, call) {
   const run = new Function('D', 'activeInventoryType', 'window', 'validate', 'errorRoute', 'SCHEDULE_NAV_KEYS', 'guardianHasAnyData',
     'formEngine', 'calcTotalsAnnual', 'annualReconcileState', 'PLAN_BENEFITS', 'PLAN_RIGHTS', 'PLAN_ADLS', 'INITIAL_ADLS',
     `${FROZEN}\nreturn ${call};`);
-  globalThis.D = D;
-  return run(D, type, win, () => m.guardianFeature.validateGuardian(), errorRoute, m.guardianModel.SCHEDULE_NAV_KEYS,
+  // validateGuardian() reads the open filing: this one, put in view (70J).
+  return withFilingInView(D, () => run(D, type, win, () => m.guardianFeature.validateGuardian(), errorRoute, m.guardianModel.SCHEDULE_NAV_KEYS,
     m.rowStarted.guardianHasAnyData, m.registry.formEngine, () => m.totals.calcTotalsAnnual(D), m.totals.annualReconcileState,
-    bridge.PLAN_BENEFITS, bridge.PLAN_RIGHTS, bridge.PLAN_ADLS, bridge.INITIAL_ADLS);
+    bridge.PLAN_BENEFITS, bridge.PLAN_RIGHTS, bridge.PLAN_ADLS, bridge.INITIAL_ADLS));
 }
 const oldChecks = (D, type) => oldRun(D, type, 'computeNavChecks()');
 // getWardProgress() swaps the frozen function's window.D and active type to
@@ -97,12 +99,12 @@ const newDeps = (type) => ({
   calcTotalsAnnual: m.totals.calcTotalsAnnual, annualReconcileState: m.totals.annualReconcileState,
 });
 function newChecks(D, type) {
-  globalThis.D = D; // validateGuardian() reads window.D when not handed a filing
-  return m.registry.computeCompletion(D, type, newDeps(type));
+  // validateGuardian() reads the open filing when not handed one: this one,
+  // put in the case store's view (Milestone 70, 70J; window.D was pointed at it).
+  return withFilingInView(D, () => m.registry.computeCompletion(D, type, newDeps(type)));
 }
-// A filing that is not the open one: window.D stays on another filing.
+// A filing that is not the open one: nothing is in view.
 function newProgress(D) {
-  globalThis.D = {};
   return m.registry.filingProgress(D, newDeps(D.inventoryType));
 }
 
@@ -199,8 +201,7 @@ describe('old and new completion maps are equal on every filing identity', () =>
 
   test('progress is the share of complete sections, for a filing that is not the open one', () => {
     const deps = { calcTotalsAnnual: m.totals.calcTotalsAnnual, annualReconcileState: m.totals.annualReconcileState };
-    const open = json(m.registry.initializeEmptyData('planMinor'));
-    globalThis.D = open;
+    const open = openFiling(json(m.registry.initializeEmptyData('planMinor')));
     const other = json(m.registry.initializeEmptyData('annual'));
     const r = m.registry.computeCompletion(other, 'annual', deps);
     const keys = Object.keys(r.checks);
@@ -208,7 +209,7 @@ describe('old and new completion maps are equal on every filing identity', () =>
       complete: keys.filter((k) => r.checks[k]).length, total: keys.length,
       pct: Math.round(keys.filter((k) => r.checks[k]).length / keys.length * 100),
     });
-    expect(globalThis.D, 'the open filing is never swapped out').toBe(open);
+    expect(getD(), 'the open filing is never swapped out').toBe(open);
   });
 
   test('a filing type with no evaluator, and the Inventory before its validator loads, read as not computed', () => {

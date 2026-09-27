@@ -8,327 +8,297 @@
  "classicDeclarations": [
   {
    "file": "src/legacy-app.js",
-   "name": "setAccountingFilingType",
+   "name": "getD",
    "kind": "function",
-   "line": 19
+   "line": 22
   },
   {
    "file": "src/legacy-app.js",
-   "name": "caseFile",
-   "kind": "let",
-   "line": 44
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "clearCaseForLock",
+   "name": "getActiveInventoryType",
    "kind": "function",
-   "line": 58
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "focusFilingAtLaunch",
-   "kind": "function",
-   "line": 68
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "activeInventoryType",
-   "kind": "let",
-   "line": 105
+   "line": 23
   },
   {
    "file": "src/legacy-app.js",
    "name": "currentPage",
    "kind": "let",
-   "line": 107
+   "line": 60
   },
   {
    "file": "src/legacy-app.js",
    "name": "getCurrentPage",
    "kind": "function",
-   "line": 125
+   "line": 73
   },
   {
    "file": "src/legacy-app.js",
    "name": "calcTotals",
    "kind": "function",
-   "line": 143
+   "line": 91
+  },
+  {
+   "file": "src/legacy-app.js",
+   "name": "calcTotalsGuardian",
+   "kind": "function",
+   "line": 92
   },
   {
    "file": "src/legacy-app.js",
    "name": "formEngine",
    "kind": "function",
-   "line": 148
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "autoSave",
-   "kind": "function",
-   "line": 188
+   "line": 97
   },
   {
    "file": "src/legacy-app.js",
    "name": "getWardHeadlineTotal",
    "kind": "function",
-   "line": 263
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "updateSidebar",
-   "kind": "function",
-   "line": 287
+   "line": 209
   },
   {
    "file": "src/legacy-app.js",
    "name": "_simplifiedFeatureBridge",
    "kind": "let",
-   "line": 381
+   "line": 322
   },
   {
    "file": "src/legacy-app.js",
    "name": "getSimplifiedFeatureBridge",
    "kind": "function",
-   "line": 382
+   "line": 323
   },
   {
    "file": "src/legacy-app.js",
    "name": "mountSimplifiedFeature",
    "kind": "function",
-   "line": 385
+   "line": 326
   },
   {
    "file": "src/legacy-app.js",
    "name": "mountSimplifiedNav",
    "kind": "function",
-   "line": 388
+   "line": 329
   },
   {
    "file": "src/legacy-app.js",
    "name": "_annualFeatureBridge",
    "kind": "let",
-   "line": 402
+   "line": 343
   },
   {
    "file": "src/legacy-app.js",
    "name": "getAnnualFeatureBridge",
    "kind": "function",
-   "line": 403
+   "line": 344
   },
   {
    "file": "src/legacy-app.js",
    "name": "mountAnnualFeature",
    "kind": "function",
-   "line": 406
+   "line": 347
   },
   {
    "file": "src/legacy-app.js",
    "name": "mountAnnualNav",
    "kind": "function",
-   "line": 409
+   "line": 350
   },
   {
    "file": "src/legacy-app.js",
    "name": "_guardianFeatureBridge",
    "kind": "let",
-   "line": 423
+   "line": 364
   },
   {
    "file": "src/legacy-app.js",
    "name": "getGuardianFeatureBridge",
    "kind": "function",
-   "line": 424
+   "line": 365
   },
   {
    "file": "src/legacy-app.js",
    "name": "mountGuardianFeature",
    "kind": "function",
-   "line": 427
+   "line": 368
   },
   {
    "file": "src/legacy-app.js",
    "name": "mountGuardianNav",
    "kind": "function",
-   "line": 430
+   "line": 371
   },
   {
    "file": "src/legacy-app.js",
    "name": "ensureGuardianFeatureReady",
    "kind": "function",
-   "line": 433
+   "line": 374
   },
   {
    "file": "src/legacy-app.js",
    "name": "_dashboardFeatureBridge",
    "kind": "let",
-   "line": 452
+   "line": 393
   },
   {
    "file": "src/legacy-app.js",
    "name": "getDashboardFeatureBridge",
    "kind": "function",
-   "line": 453
+   "line": 394
   },
   {
    "file": "src/legacy-app.js",
    "name": "mountDashboardFeature",
    "kind": "function",
-   "line": 456
+   "line": 397
   },
   {
    "file": "src/legacy-app.js",
    "name": "_planSimplifiedFeatureBridge",
    "kind": "let",
-   "line": 485
+   "line": 426
   },
   {
    "file": "src/legacy-app.js",
    "name": "getPlanSimplifiedFeatureBridge",
    "kind": "function",
-   "line": 486
+   "line": 427
   },
   {
    "file": "src/legacy-app.js",
    "name": "mountPlanSimplifiedFeature",
    "kind": "function",
-   "line": 489
+   "line": 430
   },
   {
    "file": "src/legacy-app.js",
    "name": "mountPlanSimplifiedNav",
    "kind": "function",
-   "line": 492
+   "line": 433
   },
   {
    "file": "src/legacy-app.js",
    "name": "_planAnnualFeatureBridge",
    "kind": "let",
-   "line": 510
+   "line": 451
   },
   {
    "file": "src/legacy-app.js",
    "name": "getPlanAnnualFeatureBridge",
    "kind": "function",
-   "line": 511
+   "line": 452
   },
   {
    "file": "src/legacy-app.js",
    "name": "mountPlanAnnualFeature",
    "kind": "function",
-   "line": 514
+   "line": 455
   },
   {
    "file": "src/legacy-app.js",
    "name": "mountPlanAnnualNav",
    "kind": "function",
-   "line": 517
+   "line": 458
   },
   {
    "file": "src/legacy-app.js",
    "name": "_planInitialFeatureBridge",
    "kind": "let",
-   "line": 563
+   "line": 504
   },
   {
    "file": "src/legacy-app.js",
    "name": "getPlanInitialFeatureBridge",
    "kind": "function",
-   "line": 564
+   "line": 505
   },
   {
    "file": "src/legacy-app.js",
    "name": "mountPlanInitialFeature",
    "kind": "function",
-   "line": 567
+   "line": 508
   },
   {
    "file": "src/legacy-app.js",
    "name": "mountPlanInitialNav",
    "kind": "function",
-   "line": 570
+   "line": 511
   },
   {
    "file": "src/legacy-app.js",
    "name": "_planMinorFeatureBridge",
    "kind": "let",
-   "line": 594
+   "line": 535
   },
   {
    "file": "src/legacy-app.js",
    "name": "getPlanMinorFeatureBridge",
    "kind": "function",
-   "line": 595
+   "line": 536
   },
   {
    "file": "src/legacy-app.js",
    "name": "mountPlanMinorFeature",
    "kind": "function",
-   "line": 598
+   "line": 539
   },
   {
    "file": "src/legacy-app.js",
    "name": "mountPlanMinorNav",
    "kind": "function",
-   "line": 601
+   "line": 542
   },
   {
    "file": "src/legacy-app.js",
    "name": "n",
    "kind": "function",
-   "line": 608
+   "line": 549
   },
   {
    "file": "src/legacy-app.js",
    "name": "pct",
    "kind": "function",
-   "line": 609
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "calc",
-   "kind": "const",
-   "line": 679
+   "line": 550
   },
   {
    "file": "src/legacy-app.js",
    "name": "computeNavChecks",
    "kind": "function",
-   "line": 702
+   "line": 643
   },
   {
    "file": "src/legacy-app.js",
    "name": "getWardProgress",
    "kind": "function",
-   "line": 710
+   "line": 651
   },
   {
    "file": "src/legacy-app.js",
    "name": "updateNavActive",
    "kind": "function",
-   "line": 761
+   "line": 702
   },
   {
    "file": "src/legacy-app.js",
    "name": "SPECIAL_PAGES",
    "kind": "const",
-   "line": 772
+   "line": 713
   },
   {
    "file": "src/legacy-app.js",
    "name": "handleHash",
    "kind": "function",
-   "line": 773
+   "line": 714
   },
   {
    "file": "src/legacy-app.js",
    "name": "provideMonolithServices",
    "kind": "function",
-   "line": 817
+   "line": 758
   },
   {
    "file": "src/legacy-app.js",
    "name": "initApp",
    "kind": "function",
-   "line": 819
+   "line": 760
   }
  ],
  "edges": [
@@ -1012,27 +982,6 @@
    "evalTime": false
   },
   {
-   "from": "src/core/state.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "caseFile",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/state.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "D",
-   "evalTime": false
-  },
-  {
-   "from": "src/core/state.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "activeInventoryType",
-   "evalTime": false
-  },
-  {
    "from": "src/core/status/nav-marks.js",
    "to": "src/features/guardian-inventory/index.js",
    "kind": "window",
@@ -1118,13 +1067,6 @@
   },
   {
    "from": "src/features/annual-accounting/excel.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "setAccountingFilingType",
-   "evalTime": false
-  },
-  {
-   "from": "src/features/annual-accounting/excel.js",
    "to": "src/main.js",
    "kind": "window",
    "name": "markFilingRevisionChanged",
@@ -1157,13 +1099,6 @@
    "kind": "window",
    "name": "getCurrentPage",
    "evalTime": true
-  },
-  {
-   "from": "src/features/annual-accounting/index.js",
-   "to": "src/legacy-app.js",
-   "kind": "window",
-   "name": "setAccountingFilingType",
-   "evalTime": false
   },
   {
    "from": "src/features/annual-accounting/index.js",
@@ -1489,48 +1424,6 @@
   },
   {
    "from": "src/legacy-app.js",
-   "to": "src/main.js",
-   "kind": "window",
-   "name": "markFilingRevisionChanged",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/core/filing/filing-descriptor.js",
-   "kind": "window",
-   "name": "applyAccountingFilingType",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/core/filing/filing-descriptor.js",
-   "kind": "window",
-   "name": "applyAccountingFilingType",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/core/state.js",
-   "kind": "window",
-   "name": "D",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/core/state.js",
-   "kind": "window",
-   "name": "D",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/core/state.js",
-   "kind": "window",
-   "name": "D",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
    "to": "src/legacy-bridge.js",
    "kind": "window",
    "name": "GuardianFormsLegacyBridge",
@@ -1552,9 +1445,9 @@
   },
   {
    "from": "src/legacy-app.js",
-   "to": "src/core/state.js",
+   "to": "src/legacy-bridge.js",
    "kind": "window",
-   "name": "D",
+   "name": "GuardianFormsLegacyBridge",
    "evalTime": false
   },
   {
@@ -1695,20 +1588,6 @@
    "to": "src/legacy-bridge.js",
    "kind": "window",
    "name": "GuardianFormsLegacyBridge",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/legacy-bridge.js",
-   "kind": "window",
-   "name": "GuardianFormsLegacyBridge",
-   "evalTime": false
-  },
-  {
-   "from": "src/legacy-app.js",
-   "to": "src/core/state.js",
-   "kind": "window",
-   "name": "D",
    "evalTime": false
   },
   {
@@ -5303,6 +5182,41 @@
    "evalTime": null
   },
   {
+   "from": "src/features/annual-accounting/excel.js",
+   "to": "src/features/annual-accounting/filing-type.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/filing-type.js",
+   "to": "src/core/filing/filing-descriptor.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/filing-type.js",
+   "to": "src/core/filing/output-authorization.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/filing-type.js",
+   "to": "src/core/shell/sidebar.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/filing-type.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
    "from": "src/features/annual-accounting/index.js",
    "to": "src/core/summary-renderer.js",
    "kind": "import-static",
@@ -5585,6 +5499,13 @@
   {
    "from": "src/features/annual-accounting/index.js",
    "to": "src/core/shell/sidebar.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/features/annual-accounting/index.js",
+   "to": "src/features/annual-accounting/filing-type.js",
    "kind": "import-static",
    "name": null,
    "evalTime": null
@@ -8545,6 +8466,13 @@
   },
   {
    "from": "src/legacy-bridge.js",
+   "to": "src/core/state.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/legacy-bridge.js",
    "to": "src/core/filing/filing-registry.js",
    "kind": "import-static",
    "name": null,
@@ -8560,20 +8488,6 @@
   {
    "from": "src/legacy-bridge.js",
    "to": "src/core/filing/models/guardian.js",
-   "kind": "import-static",
-   "name": null,
-   "evalTime": null
-  },
-  {
-   "from": "src/legacy-bridge.js",
-   "to": "src/core/shell/sidebar.js",
-   "kind": "import-static",
-   "name": null,
-   "evalTime": null
-  },
-  {
-   "from": "src/legacy-bridge.js",
-   "to": "src/core/persistence/case-file.js",
    "kind": "import-static",
    "name": null,
    "evalTime": null

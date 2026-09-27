@@ -2,21 +2,20 @@
  "generatedBy": "node scripts/ms70-declaration-dispositions.mjs --write",
  "note": "Milestone 70, 70A: a disposition and target delivery for every top-level declaration of src/legacy-app.js, built from reference evidence and corrected by the owner's review (tests/baseline/ms70-declaration-review.json; reviewNote says why an entry was moved). reviewed:true means the entry still matches what the review confirmed. delete-as-dead means nothing references it anywhere.",
  "summary": {
-  "total": 54,
+  "total": 49,
   "byDisposition": {
-   "move": 46,
-   "wrapper": 8
+   "wrapper": 8,
+   "move": 41
   },
   "byDelivery": {
-   "70J": 7,
-   "70K": 47
+   "70K": 49
   },
   "windowExportsByReason": {
-   "no-consumer": 32,
-   "tests-only": 64,
-   "monolith-only": 12,
-   "modules-only": 41,
-   "monolith-and-modules": 7
+   "no-consumer": 33,
+   "tests-only": 62,
+   "monolith-only": 10,
+   "modules-only": 38,
+   "monolith-and-modules": 6
   },
   "duplicates": 9,
   "liveDuplicates": [
@@ -27,101 +26,47 @@
  },
  "declarations": [
   {
-   "name": "setAccountingFilingType",
+   "name": "getD",
    "kind": "function",
-   "line": 19,
-   "lines": 18,
+   "line": 22,
+   "lines": 1,
+   "section": "GLOBAL STATE & CONFIG",
+   "internalRefs": 1,
+   "moduleConsumers": [],
+   "e2eFiles": 0,
+   "unitSlices": 0,
+   "duplicateOf": [
+    "src/core/state.js"
+   ],
+   "disposition": "wrapper",
+   "delivery": "70K",
+   "wrapperWhile": null,
+   "reviewed": true,
+   "reviewNote": "A one-line forwarder onto the case store or a module's totals, through src/legacy-bridge.js: since 70J the module store owns the case, so the monolith's remaining readers of the open filing, its type or a filing's Inventory totals reach them this way. It goes with those readers."
+  },
+  {
+   "name": "getActiveInventoryType",
+   "kind": "function",
+   "line": 23,
+   "lines": 1,
    "section": "GLOBAL STATE & CONFIG",
    "internalRefs": 2,
-   "moduleConsumers": [
-    "src/features/annual-accounting/excel.js",
-    "src/features/annual-accounting/index.js"
-   ],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70J",
-   "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": true,
-   "reviewNote": "Assigns the monolith's own `let activeInventoryType` (and updates the sidebar and saves), which no module can do while that binding lives in the classic script; it moves when the binding does (70J). Its pure half is already src/core/filing/filing-descriptor.js's applyAccountingFilingType()."
-  },
-  {
-   "name": "caseFile",
-   "kind": "let",
-   "line": 44,
-   "lines": 9,
-   "section": "GLOBAL STATE & CONFIG",
-   "internalRefs": 6,
-   "moduleConsumers": [
-    "src/core/state.js"
-   ],
-   "e2eFiles": 22,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70J",
-   "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": true,
-   "reviewNote": "The case-state root. 70E adopts a store seam while this stays the owner; the declaration goes when the module store becomes the sole owner (70J), not with the section it happens to sit in."
-  },
-  {
-   "name": "clearCaseForLock",
-   "kind": "function",
-   "line": 58,
-   "lines": 6,
-   "section": "GLOBAL STATE & CONFIG",
-   "internalRefs": 1,
    "moduleConsumers": [],
    "e2eFiles": 0,
    "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70J",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": "The case-state root. 70E adopts a store seam while this stays the owner; the declaration goes when the module store becomes the sole owner (70J), not with the section it happens to sit in."
-  },
-  {
-   "name": "focusFilingAtLaunch",
-   "kind": "function",
-   "line": 68,
-   "lines": 1,
-   "section": "GLOBAL STATE & CONFIG",
-   "internalRefs": 1,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70J",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": "The case-state root. 70E adopts a store seam while this stays the owner; the declaration goes when the module store becomes the sole owner (70J), not with the section it happens to sit in."
-  },
-  {
-   "name": "activeInventoryType",
-   "kind": "let",
-   "line": 105,
-   "lines": 1,
-   "section": "WALKTHROUGH SYSTEM (Phase 4) - Type-Specific Tours",
-   "internalRefs": 7,
-   "moduleConsumers": [
+   "duplicateOf": [
     "src/core/state.js"
    ],
-   "e2eFiles": 1,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70J",
-   "wrapperWhile": "modules read it through window or by bare name",
+   "disposition": "wrapper",
+   "delivery": "70K",
+   "wrapperWhile": null,
    "reviewed": true,
-   "reviewNote": "The case-state root. 70E adopts a store seam while this stays the owner; the declaration goes when the module store becomes the sole owner (70J), not with the section it happens to sit in."
+   "reviewNote": "A one-line forwarder onto the case store or a module's totals, through src/legacy-bridge.js: since 70J the module store owns the case, so the monolith's remaining readers of the open filing, its type or a filing's Inventory totals reach them this way. It goes with those readers."
   },
   {
    "name": "currentPage",
    "kind": "let",
-   "line": 107,
+   "line": 60,
    "lines": 1,
    "section": "WALKTHROUGH SYSTEM (Phase 4) - Type-Specific Tours",
    "internalRefs": 8,
@@ -140,7 +85,7 @@
   {
    "name": "getCurrentPage",
    "kind": "function",
-   "line": 125,
+   "line": 73,
    "lines": 1,
    "section": "WALKTHROUGH SYSTEM (Phase 4) - Type-Specific Tours",
    "internalRefs": 1,
@@ -165,7 +110,7 @@
   {
    "name": "calcTotals",
    "kind": "function",
-   "line": 143,
+   "line": 91,
    "lines": 1,
    "section": "COMMON HELPERS",
    "internalRefs": 1,
@@ -183,9 +128,28 @@
    "movedIn": "70B"
   },
   {
+   "name": "calcTotalsGuardian",
+   "kind": "function",
+   "line": 92,
+   "lines": 1,
+   "section": "COMMON HELPERS",
+   "internalRefs": 1,
+   "moduleConsumers": [],
+   "e2eFiles": 1,
+   "unitSlices": 0,
+   "duplicateOf": [
+    "src/features/guardian-inventory/totals.js"
+   ],
+   "disposition": "wrapper",
+   "delivery": "70K",
+   "wrapperWhile": null,
+   "reviewed": true,
+   "reviewNote": "A one-line forwarder onto the case store or a module's totals, through src/legacy-bridge.js: since 70J the module store owns the case, so the monolith's remaining readers of the open filing, its type or a filing's Inventory totals reach them this way. It goes with those readers."
+  },
+  {
    "name": "formEngine",
    "kind": "function",
-   "line": 148,
+   "line": 97,
    "lines": 1,
    "section": "COMMON HELPERS",
    "internalRefs": 1,
@@ -203,30 +167,10 @@
    "movedIn": "70C"
   },
   {
-   "name": "autoSave",
-   "kind": "function",
-   "line": 188,
-   "lines": 1,
-   "section": "PRINT-PREVIEW PAGER",
-   "internalRefs": 1,
-   "moduleConsumers": [],
-   "e2eFiles": 31,
-   "unitSlices": 0,
-   "duplicateOf": [
-    "src/core/persistence/case-file.js"
-   ],
-   "disposition": "wrapper",
-   "delivery": "70J",
-   "wrapperWhile": "classic callers remain: setAccountingFilingType",
-   "reviewed": true,
-   "reviewNote": "Save, auto-save, export-dirty tracking, template loading or the continue prompt -- persistence and startup (70I), not the section it sits in.",
-   "movedIn": "70I"
-  },
-  {
    "name": "getWardHeadlineTotal",
    "kind": "function",
-   "line": 263,
-   "lines": 16,
+   "line": 209,
+   "lines": 13,
    "section": "ROUTER — see src/core/navigation/router.js",
    "internalRefs": 1,
    "moduleConsumers": [],
@@ -240,29 +184,9 @@
    "reviewNote": "Stays in 70D: it swaps window.D to compute another filing's total, which is exactly 70D's risk."
   },
   {
-   "name": "updateSidebar",
-   "kind": "function",
-   "line": 287,
-   "lines": 1,
-   "section": "ROUTER — see src/core/navigation/router.js",
-   "internalRefs": 1,
-   "moduleConsumers": [],
-   "e2eFiles": 1,
-   "unitSlices": 0,
-   "duplicateOf": [
-    "src/core/shell/sidebar.js"
-   ],
-   "disposition": "wrapper",
-   "delivery": "70J",
-   "wrapperWhile": "classic callers remain: setAccountingFilingType",
-   "reviewed": true,
-   "reviewNote": "Sidebar, header, picker or tab-coordination UI -- a shell controller (70H). The router banner above it is historical: the router itself moved to src/core/navigation/router.js.",
-   "movedIn": "70H"
-  },
-  {
    "name": "_simplifiedFeatureBridge",
    "kind": "let",
-   "line": 381,
+   "line": 322,
    "lines": 1,
    "section": "WIZARD: GUARDIAN INVENTORY",
    "internalRefs": 1,
@@ -279,7 +203,7 @@
   {
    "name": "getSimplifiedFeatureBridge",
    "kind": "function",
-   "line": 382,
+   "line": 323,
    "lines": 3,
    "section": "WIZARD: GUARDIAN INVENTORY",
    "internalRefs": 2,
@@ -296,7 +220,7 @@
   {
    "name": "mountSimplifiedFeature",
    "kind": "function",
-   "line": 385,
+   "line": 326,
    "lines": 3,
    "section": "WIZARD: GUARDIAN INVENTORY",
    "internalRefs": 0,
@@ -316,7 +240,7 @@
   {
    "name": "mountSimplifiedNav",
    "kind": "function",
-   "line": 388,
+   "line": 329,
    "lines": 3,
    "section": "WIZARD: GUARDIAN INVENTORY",
    "internalRefs": 1,
@@ -333,7 +257,7 @@
   {
    "name": "_annualFeatureBridge",
    "kind": "let",
-   "line": 402,
+   "line": 343,
    "lines": 1,
    "section": "Annual Accounting is extracted into src/features/annual-accounting/",
    "internalRefs": 1,
@@ -350,7 +274,7 @@
   {
    "name": "getAnnualFeatureBridge",
    "kind": "function",
-   "line": 403,
+   "line": 344,
    "lines": 3,
    "section": "Annual Accounting is extracted into src/features/annual-accounting/",
    "internalRefs": 2,
@@ -367,7 +291,7 @@
   {
    "name": "mountAnnualFeature",
    "kind": "function",
-   "line": 406,
+   "line": 347,
    "lines": 3,
    "section": "Annual Accounting is extracted into src/features/annual-accounting/",
    "internalRefs": 0,
@@ -387,7 +311,7 @@
   {
    "name": "mountAnnualNav",
    "kind": "function",
-   "line": 409,
+   "line": 350,
    "lines": 3,
    "section": "Annual Accounting is extracted into src/features/annual-accounting/",
    "internalRefs": 1,
@@ -404,7 +328,7 @@
   {
    "name": "_guardianFeatureBridge",
    "kind": "let",
-   "line": 423,
+   "line": 364,
    "lines": 1,
    "section": "Annual Accounting is extracted into src/features/annual-accounting/",
    "internalRefs": 1,
@@ -421,7 +345,7 @@
   {
    "name": "getGuardianFeatureBridge",
    "kind": "function",
-   "line": 424,
+   "line": 365,
    "lines": 3,
    "section": "Annual Accounting is extracted into src/features/annual-accounting/",
    "internalRefs": 2,
@@ -438,7 +362,7 @@
   {
    "name": "mountGuardianFeature",
    "kind": "function",
-   "line": 427,
+   "line": 368,
    "lines": 3,
    "section": "Annual Accounting is extracted into src/features/annual-accounting/",
    "internalRefs": 0,
@@ -458,7 +382,7 @@
   {
    "name": "mountGuardianNav",
    "kind": "function",
-   "line": 430,
+   "line": 371,
    "lines": 3,
    "section": "Annual Accounting is extracted into src/features/annual-accounting/",
    "internalRefs": 1,
@@ -475,7 +399,7 @@
   {
    "name": "ensureGuardianFeatureReady",
    "kind": "function",
-   "line": 433,
+   "line": 374,
    "lines": 6,
    "section": "Annual Accounting is extracted into src/features/annual-accounting/",
    "internalRefs": 0,
@@ -494,7 +418,7 @@
   {
    "name": "_dashboardFeatureBridge",
    "kind": "let",
-   "line": 452,
+   "line": 393,
    "lines": 1,
    "section": "Annual Accounting is extracted into src/features/annual-accounting/",
    "internalRefs": 1,
@@ -511,7 +435,7 @@
   {
    "name": "getDashboardFeatureBridge",
    "kind": "function",
-   "line": 453,
+   "line": 394,
    "lines": 3,
    "section": "Annual Accounting is extracted into src/features/annual-accounting/",
    "internalRefs": 1,
@@ -528,7 +452,7 @@
   {
    "name": "mountDashboardFeature",
    "kind": "function",
-   "line": 456,
+   "line": 397,
    "lines": 3,
    "section": "Annual Accounting is extracted into src/features/annual-accounting/",
    "internalRefs": 0,
@@ -547,7 +471,7 @@
   {
    "name": "_planSimplifiedFeatureBridge",
    "kind": "let",
-   "line": 485,
+   "line": 426,
    "lines": 1,
    "section": "window.createFeatureBridge() is constructed lazily, not at this file's",
    "internalRefs": 1,
@@ -564,7 +488,7 @@
   {
    "name": "getPlanSimplifiedFeatureBridge",
    "kind": "function",
-   "line": 486,
+   "line": 427,
    "lines": 3,
    "section": "window.createFeatureBridge() is constructed lazily, not at this file's",
    "internalRefs": 2,
@@ -581,7 +505,7 @@
   {
    "name": "mountPlanSimplifiedFeature",
    "kind": "function",
-   "line": 489,
+   "line": 430,
    "lines": 3,
    "section": "window.createFeatureBridge() is constructed lazily, not at this file's",
    "internalRefs": 0,
@@ -601,7 +525,7 @@
   {
    "name": "mountPlanSimplifiedNav",
    "kind": "function",
-   "line": 492,
+   "line": 433,
    "lines": 3,
    "section": "window.createFeatureBridge() is constructed lazily, not at this file's",
    "internalRefs": 1,
@@ -618,7 +542,7 @@
   {
    "name": "_planAnnualFeatureBridge",
    "kind": "let",
-   "line": 510,
+   "line": 451,
    "lines": 1,
    "section": "Annual Guardianship Plan is extracted into src/features/plan-annual/",
    "internalRefs": 1,
@@ -635,7 +559,7 @@
   {
    "name": "getPlanAnnualFeatureBridge",
    "kind": "function",
-   "line": 511,
+   "line": 452,
    "lines": 3,
    "section": "Annual Guardianship Plan is extracted into src/features/plan-annual/",
    "internalRefs": 2,
@@ -652,7 +576,7 @@
   {
    "name": "mountPlanAnnualFeature",
    "kind": "function",
-   "line": 514,
+   "line": 455,
    "lines": 3,
    "section": "Annual Guardianship Plan is extracted into src/features/plan-annual/",
    "internalRefs": 0,
@@ -672,7 +596,7 @@
   {
    "name": "mountPlanAnnualNav",
    "kind": "function",
-   "line": 517,
+   "line": 458,
    "lines": 3,
    "section": "Annual Guardianship Plan is extracted into src/features/plan-annual/",
    "internalRefs": 1,
@@ -689,7 +613,7 @@
   {
    "name": "_planInitialFeatureBridge",
    "kind": "let",
-   "line": 563,
+   "line": 504,
    "lines": 1,
    "section": "Initial Guardianship Plan is extracted into src/features/plan-initial/",
    "internalRefs": 1,
@@ -706,7 +630,7 @@
   {
    "name": "getPlanInitialFeatureBridge",
    "kind": "function",
-   "line": 564,
+   "line": 505,
    "lines": 3,
    "section": "Initial Guardianship Plan is extracted into src/features/plan-initial/",
    "internalRefs": 2,
@@ -723,7 +647,7 @@
   {
    "name": "mountPlanInitialFeature",
    "kind": "function",
-   "line": 567,
+   "line": 508,
    "lines": 3,
    "section": "Initial Guardianship Plan is extracted into src/features/plan-initial/",
    "internalRefs": 0,
@@ -743,7 +667,7 @@
   {
    "name": "mountPlanInitialNav",
    "kind": "function",
-   "line": 570,
+   "line": 511,
    "lines": 3,
    "section": "Initial Guardianship Plan is extracted into src/features/plan-initial/",
    "internalRefs": 1,
@@ -760,7 +684,7 @@
   {
    "name": "_planMinorFeatureBridge",
    "kind": "let",
-   "line": 594,
+   "line": 535,
    "lines": 1,
    "section": "Annual Plan -- Minors is extracted into src/features/plan-minor/",
    "internalRefs": 1,
@@ -777,7 +701,7 @@
   {
    "name": "getPlanMinorFeatureBridge",
    "kind": "function",
-   "line": 595,
+   "line": 536,
    "lines": 3,
    "section": "Annual Plan -- Minors is extracted into src/features/plan-minor/",
    "internalRefs": 2,
@@ -794,7 +718,7 @@
   {
    "name": "mountPlanMinorFeature",
    "kind": "function",
-   "line": 598,
+   "line": 539,
    "lines": 3,
    "section": "Annual Plan -- Minors is extracted into src/features/plan-minor/",
    "internalRefs": 0,
@@ -814,7 +738,7 @@
   {
    "name": "mountPlanMinorNav",
    "kind": "function",
-   "line": 601,
+   "line": 542,
    "lines": 3,
    "section": "Annual Plan -- Minors is extracted into src/features/plan-minor/",
    "internalRefs": 1,
@@ -831,7 +755,7 @@
   {
    "name": "n",
    "kind": "function",
-   "line": 608,
+   "line": 549,
    "lines": 1,
    "section": "Annual Plan -- Minors is extracted into src/features/plan-minor/",
    "internalRefs": 0,
@@ -854,7 +778,7 @@
   {
    "name": "pct",
    "kind": "function",
-   "line": 609,
+   "line": 550,
    "lines": 1,
    "section": "Annual Plan -- Minors is extracted into src/features/plan-minor/",
    "internalRefs": 0,
@@ -873,29 +797,9 @@
    "reviewNote": "Deleted on master in c62f890 (its only caller now imports totals.js's copy); a re-implement row in MILESTONE-70-FIX-LEDGER.md."
   },
   {
-   "name": "calc",
-   "kind": "const",
-   "line": 679,
-   "lines": 1,
-   "section": "CALCULATIONS",
-   "internalRefs": 1,
-   "moduleConsumers": [],
-   "e2eFiles": 1,
-   "unitSlices": 0,
-   "duplicateOf": [
-    "src/features/guardian-inventory/totals.js"
-   ],
-   "disposition": "wrapper",
-   "delivery": "70K",
-   "wrapperWhile": "classic callers remain: getWardHeadlineTotal",
-   "reviewed": true,
-   "reviewNote": null,
-   "movedIn": "70B"
-  },
-  {
    "name": "computeNavChecks",
    "kind": "function",
-   "line": 702,
+   "line": 643,
    "lines": 1,
    "section": "FORM BINDING ENGINE",
    "internalRefs": 1,
@@ -915,7 +819,7 @@
   {
    "name": "getWardProgress",
    "kind": "function",
-   "line": 710,
+   "line": 651,
    "lines": 1,
    "section": "FORM BINDING ENGINE",
    "internalRefs": 1,
@@ -933,7 +837,7 @@
   {
    "name": "updateNavActive",
    "kind": "function",
-   "line": 761,
+   "line": 702,
    "lines": 10,
    "section": "INIT",
    "internalRefs": 2,
@@ -950,7 +854,7 @@
   {
    "name": "SPECIAL_PAGES",
    "kind": "const",
-   "line": 772,
+   "line": 713,
    "lines": 1,
    "section": "INIT",
    "internalRefs": 1,
@@ -967,7 +871,7 @@
   {
    "name": "handleHash",
    "kind": "function",
-   "line": 773,
+   "line": 714,
    "lines": 29,
    "section": "INIT",
    "internalRefs": 2,
@@ -984,7 +888,7 @@
   {
    "name": "provideMonolithServices",
    "kind": "function",
-   "line": 817,
+   "line": 758,
    "lines": 1,
    "section": "INIT",
    "internalRefs": 1,
@@ -1004,7 +908,7 @@
   {
    "name": "initApp",
    "kind": "function",
-   "line": 819,
+   "line": 760,
    "lines": 5,
    "section": "INIT",
    "internalRefs": 1,
@@ -1102,11 +1006,9 @@
    "file": "src/core/filing/filing-descriptor.js",
    "name": "applyAccountingFilingType",
    "via": "assignment",
-   "readers": [
-    "src/legacy-app.js"
-   ],
+   "readers": [],
    "e2eFiles": 0,
-   "reason": "monolith-only"
+   "reason": "no-consumer"
   },
   {
    "file": "src/core/filing/filing-descriptor.js",
@@ -1748,32 +1650,6 @@
    "reason": "no-consumer"
   },
   {
-   "file": "src/core/state.js",
-   "name": "activeInventoryType",
-   "via": "assignment",
-   "readers": [],
-   "e2eFiles": 1,
-   "reason": "tests-only"
-  },
-  {
-   "file": "src/core/state.js",
-   "name": "caseFile",
-   "via": "assignment",
-   "readers": [],
-   "e2eFiles": 22,
-   "reason": "tests-only"
-  },
-  {
-   "file": "src/core/state.js",
-   "name": "D",
-   "via": "assignment",
-   "readers": [
-    "src/legacy-app.js"
-   ],
-   "e2eFiles": 81,
-   "reason": "monolith-only"
-  },
-  {
    "file": "src/core/status/live-region.js",
    "name": "announceStatus",
    "via": "assignment",
@@ -2302,26 +2178,6 @@
   },
   {
    "file": "src/legacy-app.js",
-   "name": "activeInventoryType",
-   "via": "defineProperty",
-   "readers": [
-    "src/core/state.js"
-   ],
-   "e2eFiles": 1,
-   "reason": "modules-only"
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "caseFile",
-   "via": "assignment",
-   "readers": [
-    "src/core/state.js"
-   ],
-   "e2eFiles": 22,
-   "reason": "modules-only"
-  },
-  {
-   "file": "src/legacy-app.js",
    "name": "currentPage",
    "via": "defineProperty",
    "readers": [
@@ -2332,31 +2188,10 @@
   },
   {
    "file": "src/legacy-app.js",
-   "name": "D",
-   "via": "assignment",
-   "readers": [
-    "src/core/state.js"
-   ],
-   "e2eFiles": 81,
-   "reason": "modules-only"
-  },
-  {
-   "file": "src/legacy-app.js",
    "name": "PG_APP_VERSION",
    "via": "assignment",
    "readers": [
     "src/tab-coordination.js"
-   ],
-   "e2eFiles": 0,
-   "reason": "modules-only"
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "setAccountingFilingType",
-   "via": "assignment",
-   "readers": [
-    "src/features/annual-accounting/excel.js",
-    "src/features/annual-accounting/index.js"
    ],
    "e2eFiles": 0,
    "reason": "modules-only"
@@ -2393,11 +2228,10 @@
     "src/features/annual-accounting/excel.js",
     "src/features/guardian-inventory/excel.js",
     "src/features/simplified-accounting/excel.js",
-    "src/features/simplified-accounting/guardian-compatibility.js",
-    "src/legacy-app.js"
+    "src/features/simplified-accounting/guardian-compatibility.js"
    ],
    "e2eFiles": 0,
-   "reason": "monolith-and-modules"
+   "reason": "modules-only"
   },
   {
    "file": "src/main.js",

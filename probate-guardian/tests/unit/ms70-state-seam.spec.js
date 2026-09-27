@@ -5,6 +5,13 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { parse } from 'acorn';
 import { CLASSIC_STATE_PATH, classicStateAccesses } from '../../scripts/ms70-classic-state.mjs';
 
+// Milestone 70, 70J gate: "There is one case object and one derivation of the
+// active filing ... No production module or classic wrapper can mutate a
+// competing global mirror." The case is src/core/state.js's; the open filing
+// and its type are derived from the case's activeWardId; none of the three is
+// on window. (The faults and the one-update-each rule:
+// ms70-case-authority.spec.js.)
+//
 // Milestone 70, 70E gate: "No ESM production module treats a browser global
 // as its state API. The transition still has one legacy authority, not two
 // synchronized stores; existing object identity and live update behavior
@@ -19,9 +26,9 @@ const walk = (dir) => fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) =
 // The monolith's case state, as window members: the open filing, the case and
 // its accessors, the filing type, app state and the template cache.
 const STATE_GLOBALS = new Set(['D', 'caseFile', 'getCaseFile', 'getActiveWard', 'activeInventoryType', '_appState', '_templateCache']);
-// The seam itself and the classic scripts (the monolith is held below by the
-// only-shrinks list).
-const OWNERS = new Set(['src/core/state.js', 'src/legacy-app.js', 'src/prepaint.js']);
+// The classic scripts (the monolith is held below, by its empty list). The
+// store is no exception since 70J: it owns the case, and reads no window.
+const OWNERS = new Set(['src/legacy-app.js', 'src/prepaint.js']);
 
 describe('modules reach case state only through src/core/state.js', () => {
   test('no other module reads or writes the monolith\'s state on window', () => {
@@ -52,17 +59,44 @@ describe('modules reach case state only through src/core/state.js', () => {
     expect(offenders).toEqual([]);
   }, 60_000);
 
-  test("the monolith's own bare state accesses may only shrink (the list 70J empties)", () => {
+  // The list only shrank from 70E; 70J emptied it and it stays empty.
+  test('the monolith holds no case state: no caseFile, D or filing type of its own, and none on window', () => {
     const baseline = JSON.parse(fs.readFileSync(path.join(root, CLASSIC_STATE_PATH), 'utf8')).counts;
-    const now = classicStateAccesses(fs.readFileSync(path.join(root, 'src/legacy-app.js'), 'utf8'));
-    const grown = Object.entries(now).filter(([k, n]) => n > (baseline[k] || 0)).map(([k, n]) => `${k}: ${baseline[k] || 0} -> ${n}`);
-    const stale = Object.entries(baseline).filter(([k, n]) => (now[k] || 0) < n).map(([k, n]) => `${k}: ${n} -> ${now[k] || 0}`);
-    expect(grown, 'a new bare access to the monolith-owned state').toEqual([]);
-    expect(stale, 'accesses went away -- lock the shrink in: node scripts/ms70-classic-state.mjs --write-baseline').toEqual([]);
+    const src = fs.readFileSync(path.join(root, 'src/legacy-app.js'), 'utf8');
+    expect(baseline, 'the recorded list').toEqual({});
+    expect(classicStateAccesses(src), 'a bare access to case state in the monolith').toEqual({});
+    expect(src).not.toMatch(/^(let|const|var) (caseFile|activeInventoryType|D)\b/m);
+    expect(src).not.toMatch(/defineProperty\(window,\s*'(D|caseFile|activeInventoryType)'/);
+  }, 60_000);
+
+  // "Confirm, mechanically, that all whole-case replacements use
+  // replaceCaseFile()" (70J's work). Who calls it is held by
+  // filing-lifecycle.spec.js; this holds the other way to replace a case --
+  // writing its filings wholesale -- to the one module that merges into them.
+  test('no module replaces a case\'s filings wholesale but the import, which merges into them', () => {
+    const offenders = [];
+    for (const file of walk(path.join(root, 'src'))) {
+      const r = rel(file);
+      if (OWNERS.has(r) || r === 'src/core/persistence/case-import.js') continue;
+      const ast = parse(fs.readFileSync(file, 'utf8'), { ecmaVersion: 'latest', sourceType: 'module', locations: true });
+      (function visit(node) {
+        if (!node || typeof node.type !== 'string') return;
+        // `x.wards = []` is the defensive start of a missing list, not a replacement.
+        if (node.type === 'AssignmentExpression' && node.left.type === 'MemberExpression' && !node.left.computed
+            && node.left.property.name === 'wards' && !(node.right.type === 'ArrayExpression' && node.right.elements.length === 0)) {
+          offenders.push(`${r}:${node.loc.start.line}`);
+        }
+        for (const k of Object.keys(node)) {
+          const c = node[k];
+          if (Array.isArray(c)) c.forEach(visit); else if (c && typeof c.type === 'string') visit(c);
+        }
+      })(ast);
+    }
+    expect(offenders).toEqual([]);
   }, 60_000);
 });
 
-describe('the seam is the one authority, live and zero-copy', () => {
+describe('the store is the one authority, live and zero-copy', () => {
   let state;
   beforeEach(async () => {
     vi.resetModules();
@@ -71,33 +105,55 @@ describe('the seam is the one authority, live and zero-copy', () => {
   });
   afterEach(() => vi.unstubAllGlobals());
 
-  test('getters hand back the live objects the monolith holds, never copies', () => {
-    const filing = { wardId: 'w1', wardName: 'A' };
+  test('getters hand back the live objects, never copies, and the open filing and its type are the ones activeWardId names', () => {
+    const filing = { wardId: 'w1', wardName: 'A', inventoryType: 'planMinor' };
     const caseFile = { activeWardId: 'w1', wards: [filing] };
-    window.D = filing; window.caseFile = caseFile;
+    state.replaceCaseFile(caseFile);
     expect(state.getD()).toBe(filing);
     expect(state.getActiveFiling()).toBe(filing);
     expect(state.getCaseFile()).toBe(caseFile);
     expect(state.getActiveWard()).toBe(filing);
+    expect(state.getActiveInventoryType()).toBe('planMinor');
     expect(state.select(({ filing: f }) => f)).toBe(filing);
     expect(state.select(({ caseFile: c }) => c)).toBe(caseFile);
-    // A reassignment by the owner is seen at once: nothing was cached.
-    const next = { wardId: 'w2' };
-    window.D = next;
+    // Another filing opened: the open filing and its type follow at once.
+    const next = { wardId: 'w2', inventoryType: 'annual' };
+    caseFile.wards.push(next);
+    state.setActiveFiling(next);
     expect(state.getD()).toBe(next);
+    expect(state.getActiveInventoryType()).toBe('annual');
+    // Closed: a scratch {} and no type, and a fresh scratch after each close.
+    state.setActiveFiling(null);
+    const scratch = state.getD();
+    expect(scratch).toEqual({});
+    expect(state.getActiveInventoryType()).toBeNull();
+    state.setActiveFiling(null);
+    expect(state.getD()).not.toBe(scratch);
+    // None of it is on window.
+    for (const name of ['caseFile', 'D', 'activeInventoryType']) expect(name in window, `window.${name}`).toBe(false);
   });
 
-  test('getActiveWard() answers exactly as the monolith\'s did: null with none open, find() otherwise', () => {
-    window.caseFile = { activeWardId: null, wards: [{ wardId: 'w1' }] };
+  test('getActiveWard() answers as the monolith\'s did: null with none open, find() otherwise', () => {
+    state.replaceCaseFile({ activeWardId: null, wards: [{ wardId: 'w1' }] });
     expect(state.getActiveWard()).toBeNull();
-    window.caseFile = { activeWardId: 'gone', wards: [{ wardId: 'w1' }] };
+    state.replaceCaseFile({ activeWardId: 'gone', wards: [{ wardId: 'w1' }] });
     expect(state.getActiveWard()).toBeUndefined();
+    state.replaceCaseFile(null);
+    expect(state.getCaseFile()).toEqual(state.blankCaseFile());
   });
 
-  test('the filing type is the monolith\'s, written where it reads it; app state is this module\'s own (70I)', () => {
-    state.setActiveInventoryType('planMinor');
-    expect(window.activeInventoryType).toBe('planMinor');
-    expect(state.getActiveInventoryType()).toBe('planMinor');
+  test('a filing put in view is what the validators read, for the call only; the case is untouched', () => {
+    const open = { wardId: 'w1', wardName: 'Open' };
+    state.replaceCaseFile({ activeWardId: 'w1', wards: [open] });
+    const judged = { wardId: 'copy', wardName: 'Judged' };
+    expect(state.withFilingInView(judged, () => state.getD().wardName)).toBe('Judged');
+    expect(state.getD()).toBe(open);
+    expect(() => state.withFilingInView(judged, () => { throw new Error('boom'); })).toThrow('boom');
+    expect(state.getD()).toBe(open);
+    expect(state.getActiveWard()).toBe(open);
+  });
+
+  test('app state and the template cache are this module\'s own (70I)', () => {
     state.setAppState('firstLaunchSeen', false);
     expect(state.getAppState('firstLaunchSeen')).toBe(false);
     expect(state.appStateObject()).toEqual({ firstLaunchSeen: false });
@@ -126,19 +182,19 @@ describe('the seam is the one authority, live and zero-copy', () => {
 
   test('a transaction changes the open filing in place and runs each side effect once, in order', () => {
     const filing = { wardId: 'w1', wardName: 'A' };
-    window.D = filing; window.caseFile = { wards: [filing] };
+    state.replaceCaseFile({ activeWardId: 'w1', wards: [filing] });
     const calls = [];
     state.configureCaseStore({ markRevision: (r) => calls.push(`revision:${r}`), save: () => calls.push('save') });
     state.subscribe((e) => calls.push(`${e.type}:${e.reason}`));
     const out = state.transaction('rename', (d) => { d.wardName = 'B'; return 'done'; });
     expect(out).toBe('done');
-    expect(window.D).toBe(filing);
+    expect(state.getD()).toBe(filing);
     expect(filing.wardName).toBe('B');
     expect(calls).toEqual(['revision:rename', 'save', 'transaction:rename']);
   });
 
   test('a transaction that throws runs no side effect, and a reason is required', () => {
-    window.D = { wardId: 'w1' }; window.caseFile = { wards: [] };
+    state.replaceCaseFile({ activeWardId: 'w1', wards: [{ wardId: 'w1' }] });
     const save = vi.fn();
     state.configureCaseStore({ save });
     expect(() => state.transaction('x', () => { throw new Error('nope'); })).toThrow('nope');
@@ -147,7 +203,7 @@ describe('the seam is the one authority, live and zero-copy', () => {
   });
 
   test('a subscriber can leave, by its function or its AbortSignal, and a failing one does not stop the rest', () => {
-    window.D = {}; window.caseFile = { wards: [] };
+    state.replaceCaseFile({ activeWardId: null, wards: [] });
     const heard = [];
     const ac = new AbortController();
     const off = state.subscribe(() => heard.push('a'));
@@ -169,6 +225,6 @@ describe('main.js wires the store to the owner once', () => {
     expect(main).toContain("configureCaseStore({ markRevision: markFilingRevisionChanged, save: autoSave, commitPending: commitPendingFieldValues });");
     expect(main).toContain("import { autoSave, installSaveListeners } from './core/persistence/case-file.js';");
     expect(main).toContain("import { commitPendingFieldValues } from './core/form/form-contract.js';");
-    expect(main).not.toMatch(/defineProperty\(window,\s*'(D|caseFile)'/);
+    expect(main).not.toMatch(/defineProperty\(window,\s*'(D|caseFile|activeInventoryType)'/);
   });
 });

@@ -6,15 +6,18 @@
 // and several depend on object identity (resolveCase() returning the very
 // Case createCase() pushed), which a browser spec reaching the app only
 // through GuardianForms.testing's copies cannot observe. Nothing in it
-// needed a browser. Same five tests, same assertions; `window.caseFile` is a
-// stub holding just the cases list the module reads.
+// needed a browser. Same five tests, same assertions; the case store holds a
+// case with just the cases list the module reads (until Milestone 70's 70J, a
+// stubbed window.caseFile).
 import { beforeEach, afterEach, describe, expect, test, vi } from 'vitest';
 import { resolveCase, caseNumberOf, createCase, getOrCreateCaseForWard, casesGroupingWards } from '../../src/core/case-resolver.js';
+import { replaceCaseFile } from '../../src/core/state.js';
 
 let caseFile;
 beforeEach(() => {
   caseFile = { cases: [], wards: [] };
-  vi.stubGlobal('window', { caseFile });
+  vi.stubGlobal('window', {});
+  replaceCaseFile(caseFile);
 });
 afterEach(() => { vi.unstubAllGlobals(); });
 

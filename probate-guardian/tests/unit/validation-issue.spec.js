@@ -1,5 +1,7 @@
 // Milestone 42F: the structured issue every validator now emits.
 import { describe, it, expect } from 'vitest';
+import { openFiling } from './support/open-filing.js';
+import { getD } from '../../src/core/state.js';
 
 // Some of the modules below reach for window at import time (the same
 // reason the parity specs import dynamically) -- give them one first.
@@ -74,7 +76,7 @@ describe('shared helpers emit structured issues only when asked', () => {
 
   it('validateSimplified(): emits non-bypassable simplified.guardian.address-conflict code on conflict', () => {
     globalThis.window = globalThis.window || {};
-    globalThis.window.D = {
+    openFiling({
       guardians: [
         {
           name: 'Jane Doe',
@@ -83,7 +85,7 @@ describe('shared helpers emit structured issues only when asked', () => {
           residenceCityStateZip: 'Tampa, FL 33601'
         }
       ]
-    };
+    });
     const errs = validateSimplified();
     const conflictIssue = errs.find(e => e.code === 'simplified.guardian.address-conflict');
     expect(conflictIssue).toBeDefined();
@@ -101,7 +103,7 @@ describe('shared helpers emit structured issues only when asked', () => {
 
   it('prepareFilingOutput(): acknowledgement clears bypassable issues but never the address-conflict', () => {
     globalThis.window = globalThis.window || {};
-    window.D = {
+    openFiling({
       inventoryType: 'simplified',
       guardians: [
         {
@@ -111,7 +113,7 @@ describe('shared helpers emit structured issues only when asked', () => {
           residenceCityStateZip: 'Tampa, FL 33601'
         }
       ]
-    };
+    });
     const errs = validateSimplified();
     // The 44A fix's whole point: an affirmative "Continue despite outstanding
     // requirements" acknowledgement (mocked here exactly as pdf-preview.js's
@@ -121,7 +123,7 @@ describe('shared helpers emit structured issues only when asked', () => {
     // near-empty fixture, which acknowledgement is allowed to clear.
     window.isOutputAcknowledgedFor = () => true;
     try {
-      const preflight = prepareFilingOutput(window.D, errs);
+      const preflight = prepareFilingOutput(getD(), errs);
       const conflictIssue = preflight.structuredIssues.find((i) => i.code === 'simplified.guardian.address-conflict');
       expect(conflictIssue?.bypassable).toBe(false);
       expect(preflight.messages.length).toBeGreaterThan(0);

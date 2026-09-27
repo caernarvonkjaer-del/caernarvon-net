@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { createPlanTestWindowStub } from './support/plan-readiness-parity.js';
+import { openFiling } from './support/open-filing.js';
 
 // Milestone 38D Phase 2: the predicate -> validator-issue mapping in
 // readiness-config.js is what lets the readiness card suppress precisely --
@@ -129,7 +130,7 @@ const CONDITIONAL_FIXTURES = {
 };
 
 function predicateIdsFor(key) {
-  window.D = {};
+  openFiling({});
   return new Set(getFilingReadiness(key, {}, []).automatic.map((row) => row.id));
 }
 
@@ -143,12 +144,12 @@ function allEmittedCodes(key) {
 
 // Every issue code a validator really emits for the given data.
 function codesFrom(key, data) {
-  window.D = data;
+  openFiling(data);
   return VALIDATORS[key]().map((issue) => issue.code).filter(Boolean);
 }
 
 describe('38D Phase 2: Plan predicate -> validator issue coverage', () => {
-  beforeEach(() => { window.D = {}; });
+  beforeEach(() => { openFiling({}); });
 
   it('covers exactly the four Plan types, and no accounting/inventory filing', () => {
     expect(Object.keys(PLAN_PREDICATE_ISSUE_PATHS).sort()).toEqual([...PLAN_KEYS].sort());
@@ -226,7 +227,7 @@ describe('38D Phase 2: Plan predicate -> validator issue coverage', () => {
     // the same code) is real. Every other predicate is still pending here, so
     // 44C's blanket rule hid it; now it shows.
     const reversed = { periodFrom: '2025-12-31', periodTo: '2025-01-01' };
-    window.D = reversed;
+    openFiling(reversed);
     const order = createRequiredIssue({
       filingType: 'planSimplified', path: 'periodTo', section: 'Cover',
       message: 'Cover — Reporting Period To must be on or after Reporting Period From',
@@ -261,7 +262,7 @@ describe('38D Phase 2: Plan predicate -> validator issue coverage', () => {
       q5SocialServices: 'x', q6Interaction: 'x', q7RestoreRights: 'No', q8None: true, q9Remuneration: 'No',
       planGuardians: [{ name: 'Pat', signatureDate: '2026-01-15', email: 'p@x.org', phone: '727-555-0100', mailingAddress: '1 Main St' }],
     };
-    window.D = ready;
+    openFiling(ready);
     const rows = getFilingReadiness('planSimplified', ready, [plain]).automatic;
     expect(rows.filter((row) => row.ok !== true).map((row) => row.label)).toEqual(['Cover — Name of Ward is required']);
   });

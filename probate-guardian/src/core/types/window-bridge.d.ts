@@ -143,7 +143,6 @@ interface Window {
   saveSessionRestoreCache: any;
   SCHEDULE_SCHEMAS: any;
   seedStoredThemeFromLegacy: any;
-  setAccountingFilingType: any;
   setPartyIdForSlot: any;
   setPath: any;
   setTestSystemTitleWarningEnabledForTest: any;
@@ -172,5 +171,4 @@ interface Window {
   wardPartyForFiling: any;
   writeRoleFields: any;
   writeStoredTheme: any;
-  X: any;
 }

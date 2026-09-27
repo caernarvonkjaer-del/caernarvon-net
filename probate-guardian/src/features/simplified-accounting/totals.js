@@ -4,8 +4,9 @@
 // Simplified filing whose feature has never been opened.
 import { getD } from '../../core/state.js';
 
-export function calcTotals(){
-  const d=getD();
+// The open filing's totals, or those of the filing given (the dashboard's
+// headline total for a filing that is not open, Milestone 70, 70J).
+export function calcTotals(d=getD()){
   const n=v=>parseFloat(v)||0;
   const starting=n(d.startingBalance);
   const interest=n(d.interestIncome);

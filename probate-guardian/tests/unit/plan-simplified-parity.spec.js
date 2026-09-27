@@ -1,5 +1,6 @@
 import { describe, expect, test, vi } from 'vitest';
 import { withOverrides, autoById, createPlanTestWindowStub } from './support/plan-readiness-parity.js';
+import { openFiling } from './support/open-filing.js';
 
 // Milestone 37-3 (see MILESTONE-37-PROPOSAL.md): fixture-based proof that
 // Plan Simplified's readiness checklist (planReadinessChecksSimplified()'s
@@ -31,12 +32,12 @@ const { getSupplementalFilingIssues } = await import('../../src/core/pdf/supplem
 // Mirrors pagePrintPlanSimplified()'s own preflight call exactly (print.js),
 // so this suite proves the real export-blocking path, not a stand-in for it.
 function runPreflight(d) {
-  window.D = d;
+  openFiling(d);
   return prepareFilingOutput(d, () => [...validatePlanSimplified(), ...getSupplementalFilingIssues(d)]);
 }
 
 function readiness(d) {
-  window.D = d;
+  openFiling(d);
   return { auto: getFilingReadiness('planSimplified', d).automatic };
 }
 

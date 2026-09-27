@@ -91,8 +91,9 @@ export function convertGuardianSchedulesToAnnual(src,dest){
   dest.certNoRecipients='';
   dest.serviceNoRecipients='';
   // Canonical tri-state fields are preferred, with a fallback for callers
-  // holding pre-normalization legacy booleans. Normal setD() loading migrates
-  // those aliases to canonical values and clears the old keys first.
+  // holding pre-normalization legacy booleans. Opening a filing
+  // (setActiveFiling()) migrates those aliases to canonical values and clears
+  // the old keys first.
   dest.schD1=(src.scheduleB1||[]).map(r=>({
     description:[r.institutionName,r.accountType].filter(Boolean).join(' — '),
     accountNo:r.accountNumber||'', restricted:(r.restricted==='Yes'||r.isRestricted===true)?'Yes':'No', type:r.accountType||'',

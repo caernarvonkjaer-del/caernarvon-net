@@ -1,9 +1,9 @@
 // Milestone 70, 70E: the machine-checked list of the classic monolith's own
 // reads and writes of the case state it still owns -- the bare `D` (the open
 // filing, window.D), its lexical `let caseFile` and `let activeInventoryType`,
-// and window.D / window.caseFile written as members. 70J moves ownership to
-// the module store only once this list is empty; until then it may only
-// shrink (tests/unit/ms70-classic-state.spec.js).
+// and window.D / window.caseFile written as members. It only shrank from 70E,
+// and 70J emptied it when the module store became the case's owner; it stays
+// empty (tests/unit/ms70-state-seam.spec.js).
 //
 // Each entry is `<enclosing top-level declaration>::<name>::<read|write>`
 // with a count, so a delivery that moves a function out removes its entries
@@ -54,9 +54,23 @@ export function classicStateAccesses(source) {
   });
   // window.D = ... / window.caseFile = ... (member writes; the monolith's reads
   // of window.D are the same authority as its bare D and are counted too).
-  for (const m of source.matchAll(/\bwindow\.(D|caseFile)\b(\s*=(?!=))?/g)) {
-    bump(`${ownerOf(m.index)}::window.${m[1]}::${m[2] ? 'write' : 'read'}`);
-  }
+  // From the parse, not the text (Milestone 70, 70J): a comment naming
+  // window.D is not an access, and the list is empty since 70J.
+  const windowState = (n) => n && n.type === 'MemberExpression' && !n.computed && n.object.type === 'Identifier'
+    && n.object.name === 'window' && (n.property.name === 'D' || n.property.name === 'caseFile') ? n.property.name : null;
+  (function members(node) {
+    if (!node || typeof node.type !== 'string') return;
+    if (node.type === 'AssignmentExpression' && windowState(node.left)) {
+      bump(`${ownerOf(node.start)}::window.${windowState(node.left)}::write`);
+      members(node.right);
+      return;
+    }
+    if (windowState(node)) bump(`${ownerOf(node.start)}::window.${windowState(node)}::read`);
+    for (const k of Object.keys(node)) {
+      const c = node[k];
+      if (Array.isArray(c)) c.forEach(members); else if (c && typeof c.type === 'string') members(c);
+    }
+  })(ast);
   return Object.fromEntries(Object.entries(counts).sort(([a], [b]) => a.localeCompare(b)));
 }
 
@@ -69,7 +83,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   if (process.argv.includes('--write-baseline')) {
     fs.writeFileSync(path.join(ROOT, CLASSIC_STATE_PATH), JSON.stringify({
       generatedBy: 'node scripts/ms70-classic-state.mjs --write-baseline',
-      note: "Milestone 70, 70E: every read and write of the case state the classic monolith still owns (bare D, its lexical caseFile and activeInventoryType, window.D and window.caseFile), by enclosing top-level declaration. May only shrink; 70J needs it empty before the module store becomes the owner.",
+      note: "Milestone 70: every read and write of case state by the classic monolith (bare D, a lexical caseFile or activeInventoryType, window.D and window.caseFile), by enclosing top-level declaration. Only shrank from 70E; empty since 70J, when src/core/state.js became the case's owner, and it stays empty.",
       counts,
     }, null, 1) + '\n');
     console.log(`wrote ${CLASSIC_STATE_PATH}`);

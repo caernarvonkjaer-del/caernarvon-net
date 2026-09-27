@@ -89,8 +89,8 @@ export function auditFeeFor(totalInventory) {
 
 /**
  * The per-row helpers and schedule totals, bound to a data source. `source`
- * is either the filing object or a function returning it (legacy-app.js
- * passes a getter so the adapter always reads the CURRENT window.D).
+ * is either the filing object or a function returning it (`calc` below
+ * passes a getter so it always reads the open filing as it is now).
  *
  * Method names and signatures are the legacy `calc` object's, unchanged, so
  * every existing `calc.totalA1()` / `calc.wardVal(entry)` call site keeps
@@ -166,7 +166,7 @@ export const GUARDIAN_CALC_METHODS = Object.freeze(Object.keys(makeGuardianCalc(
  * Annual, and what the PDF model consumes. Unrounded; format before printing.
  */
 export function calcTotalsGuardian(customD) {
-  const d = customD || (typeof window !== 'undefined' ? getD() : null) || {};
+  const d = customD || getD();
   const c = makeGuardianCalc(d);
   return {
     totalA1: c.totalA1(), totalA2: c.totalA2(), netA: c.netA(),

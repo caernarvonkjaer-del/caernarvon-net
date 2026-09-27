@@ -73,21 +73,24 @@ const STATES = {
   // pg-last-position (recovery-cache.js) carries no case data, just the route
   // and filing the filer was last on -- so it means something only once an
   // existing case has been opened, and only if that filing is still in it.
+  // The filing is opened through the lifecycle; until 70J the monolith first
+  // pointed the case at it (focusFilingAtLaunch()), which stamped it as
+  // modified in the flush before opening -- a filing reopened at launch no
+  // longer is.
   async position(ctx) {
     const lastPosition = ctx.opened ? loadLastPosition() : null;
     ctx.lastPosition = lastPosition;
     ctx.positionApplies = false;
+    let remembered = null;
     if (lastPosition && lastPosition.route) {
       if (lastPosition.wardId) {
-        if (getCaseFile().wards.some((w) => w.wardId === lastPosition.wardId)) {
-          monolith.focusFilingAtLaunch(lastPosition.wardId);
-          ctx.positionApplies = true;
-        }
+        remembered = getCaseFile().wards.find((w) => w.wardId === lastPosition.wardId) || null;
+        if (remembered) ctx.positionApplies = true;
       } else {
         ctx.positionApplies = true;
       }
     }
-    const activeWard = getActiveWard();
+    const activeWard = remembered || getActiveWard();
     if (activeWard) {
       const ok = await filingLifecycle.open(activeWard);
       if (!ok) {

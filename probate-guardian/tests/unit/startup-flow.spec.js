@@ -38,7 +38,6 @@ vi.mock('../../src/core/navigation/filing-lifecycle.js', () => ({
 vi.mock('../../src/core/shell/sidebar.js', () => ({ renderCopyrightNotice: log('renderCopyrightNotice'), updateSidebar: log('updateSidebar') }));
 vi.mock('../../src/core/runtime/monolith.js', () => ({
   monolith: {
-    focusFilingAtLaunch: (id) => { calls.push(`focus:${id}`); env.activeWardId = id; },
     handleHash: () => { calls.push(`route:${globalThis.window.location.hash}`); },
   },
 }));
@@ -67,6 +66,9 @@ describe('startup, state by state', () => {
     ]);
   });
 
+  // Since 70J the remembered filing is opened directly: the open filing is
+  // derived from the case's activeWardId, so naming it first (the monolith's
+  // focusFilingAtLaunch()) would have opened it without the lifecycle.
   test('a remembered file reopened with no prompt skips the dialog, is not asked for a password again, and returns to the remembered page', async () => {
     env.silentReopen = true;
     env.wards = [{ wardId: 'w1' }];
@@ -77,7 +79,7 @@ describe('startup, state by state', () => {
     expect(calls).not.toContain('ensureUnlocked');
     expect(calls).toContain('resumeUnlockedSession');
     expect(calls.slice(calls.indexOf('loadLastPosition'), calls.indexOf('route:/p3') + 1))
-      .toEqual(['loadLastPosition', 'focus:w1', 'open:w1', 'updateSidebar', 'route:/p3']);
+      .toEqual(['loadLastPosition', 'open:w1', 'updateSidebar', 'route:/p3']);
   });
 
   test('a file opened from the start dialog whose remembered filing is gone lands on the dashboard', async () => {

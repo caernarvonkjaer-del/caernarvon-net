@@ -1,7 +1,7 @@
 import { describe, expect, test, vi } from 'vitest';
 import { TEST_MODE_FLAG, createTestingAdapter, installTestingNamespace } from '../../src/core/testing/testing-adapter.js';
 import { PLAN_RIGHTS } from '../../src/core/filing/models/plan-annual.js';
-import { configureCaseStore } from '../../src/core/state.js';
+import { configureCaseStore, replaceCaseFile } from '../../src/core/state.js';
 import { clearCryptoKey, setCryptoKey } from '../../src/core/persistence/crypto.js';
 
 // Milestone 70, 70I: the adapter imports what left the monolith. A save it asks
@@ -24,7 +24,7 @@ function fakeWindow(extra = {}) {
   const flushPendingSave = vi.fn(async () => 'flushed');
   configureCaseStore({ save: autoSave });
   persistence.flush = flushPendingSave;
-  return {
+  const w = {
     caseFile: { activeWardId: 'w1', wards: [filing], parties: [], cases: [] },
     D: filing,
     autoSave,
@@ -32,6 +32,17 @@ function fakeWindow(extra = {}) {
     navigate: vi.fn(async (r) => r),
     ...extra,
   };
+  // Milestone 70, 70J: the adapter reads the case from the case store, not
+  // window. The fake's case goes there, its D the open filing when the case
+  // names it (a D of {} is none open).
+  const cf = w.caseFile;
+  if (!(w.D && w.D.wardId)) cf.activeWardId = null;
+  else if (cf.activeWardId === w.D.wardId) {
+    const at = cf.wards.findIndex((f) => f.wardId === w.D.wardId);
+    if (at >= 0) cf.wards[at] = w.D; else cf.wards.push(w.D);
+  }
+  replaceCaseFile(cf);
+  return w;
 }
 
 describe('enablement (D3, T3)', () => {

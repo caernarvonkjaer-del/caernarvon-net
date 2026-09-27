@@ -193,7 +193,7 @@
   {
    "file": "tests/e2e/legacy-ward-data-normalization.spec.ts",
    "what": "The tests normalized hand-built data by calling normalizeWardData() themselves, so they proved the function, not that stored older data is normalized when a filer opens it.",
-   "resolution": "The older shape is stored on the filing, which is closed and opened again (activateWard() -> setD() runs the normalizer); the empty sentinel is checked after leaving for the dashboard."
+   "resolution": "The older shape is stored on the filing, which is closed and opened again (activateWard() -> setActiveFiling() runs the normalizer); the empty sentinel is checked after leaving for the dashboard."
   },
   {
    "file": "tests/e2e/mixed-version.characterization.spec.ts",

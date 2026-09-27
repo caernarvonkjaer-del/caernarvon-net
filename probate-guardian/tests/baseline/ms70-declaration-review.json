@@ -18,28 +18,17 @@
   "completion-data": "The Initial Inventory's eleven schedule route keys, which the completion evaluators read; a model constant, it moved to src/core/filing/models/guardian.js with them.",
   "nav-dom": "Applies the completion map to the page -- the sidebar marks, section collapse, the Next button -- which the plan gives 70F's form runtime ('nav-dot updates, section collapse'), with applyNavSectionCollapse() and renderProgressSummary() that it calls. 70D moved the rules these read; they reach them through the monolith's computeNavChecks() dispatcher until then.",
   "dispatcher": "A one-line dispatcher that nothing in the monolith calls any more, kept because the dashboard still captures it off window (with getWardHeadlineTotal(), 70K). The evaluator it forwards to needs the Initial Inventory's validator, which exists only once that feature has loaded, and errorRoute() (70F): the monolith hands both in until 70K's feature context can. The plan allows the old function as a delegating dispatcher meanwhile; it goes when the dashboard's read does.",
-  "filing-workflow": "The Add Form, Simplified Accounting eligibility and Delete Form dialogs and their handlers: creating a filing (what it carries over, the case it joins), the eligibility questions that choose Simplified or Annual, and deleting one -- the workflow 70G moves (the plan names eligibility, and its gate needs creation and deletion to go through the filing lifecycle service), not the modal plumbing their section is named for. That (showModal(), closeModal(), ensureFragment(), the ward-name combobox) stays for 70H."
+  "filing-workflow": "The Add Form, Simplified Accounting eligibility and Delete Form dialogs and their handlers: creating a filing (what it carries over, the case it joins), the eligibility questions that choose Simplified or Annual, and deleting one -- the workflow 70G moves (the plan names eligibility, and its gate needs creation and deletion to go through the filing lifecycle service), not the modal plumbing their section is named for. That (showModal(), closeModal(), ensureFragment(), the ward-name combobox) stays for 70H.",
+  "store-forwarder": "A one-line forwarder onto the case store or a module's totals, through src/legacy-bridge.js: since 70J the module store owns the case, so the monolith's remaining readers of the open filing, its type or a filing's Inventory totals reach them this way. It goes with those readers."
  },
  "overrides": {
   "_simplifiedFeatureBridge": {
    "delivery": "70K",
    "why": "bridge"
   },
-  "activeInventoryType": {
-   "delivery": "70J",
-   "why": "state-owner"
-  },
-  "autoSave": {
-   "delivery": "70I",
-   "why": "persistence"
-  },
   "calcTotals": {
    "delivery": "70B",
    "why": "pure"
-  },
-  "caseFile": {
-   "delivery": "70J",
-   "why": "state-owner"
   },
   "currentPage": {
    "delivery": "70K",
@@ -61,34 +50,34 @@
    "delivery": "70K",
    "why": "bridge"
   },
-  "updateSidebar": {
-   "delivery": "70H",
-   "why": "shell"
-  },
-  "setAccountingFilingType": {
-   "delivery": "70J",
-   "why": "writes-classic-state"
-  },
   "getWardProgress": {
    "delivery": "70D",
    "until": "70K",
    "why": "dispatcher"
   },
-  "clearCaseForLock": {
-   "delivery": "70J",
-   "why": "state-owner"
+  "getD": {
+   "disposition": "wrapper",
+   "delivery": "70K",
+   "why": "store-forwarder"
   },
-  "focusFilingAtLaunch": {
-   "delivery": "70J",
-   "why": "state-owner"
+  "getActiveInventoryType": {
+   "disposition": "wrapper",
+   "delivery": "70K",
+   "why": "store-forwarder"
+  },
+  "calcTotalsGuardian": {
+   "disposition": "wrapper",
+   "delivery": "70K",
+   "why": "store-forwarder"
   }
  },
  "notes": {
   "getWardHeadlineTotal": "Stays in 70D: it swaps window.D to compute another filing's total, which is exactly 70D's risk.",
   "pct": "Deleted on master in c62f890 (its only caller now imports totals.js's copy); a re-implement row in MILESTONE-70-FIX-LEDGER.md.",
   "provideMonolithServices": "Added in 70E: legacy-app.js's one-line door into src/core/runtime/monolith.js, called from initApp(), the second transition exception MILESTONE-70-PROPOSAL.md records; it goes with the monolith (70L at the latest).",
-  "clearCaseForLock": "Added in 70I: the monolith owns the case until 70J, so the moved lock (clearCaseForLock(): a new, empty case) and startup (focusFilingAtLaunch(): the remembered filing, before it opens) ask it to change the case, through src/core/runtime/monolith.js. They go when the module store owns the case (70J).",
-  "focusFilingAtLaunch": "Added in 70I: the monolith owns the case until 70J, so the moved lock (clearCaseForLock(): a new, empty case) and startup (focusFilingAtLaunch(): the remembered filing, before it opens) ask it to change the case, through src/core/runtime/monolith.js. They go when the module store owns the case (70J)."
+  "getD": "Added in 70J: the monolith's own caseFile, window.D and activeInventoryType went, so computeNavChecks() and handleHash() read the open filing and its type through getD() and getActiveInventoryType(), and getWardHeadlineTotal() totals the filing it is handed through calcTotalsGuardian() (it used to point window.D at each filing and ask calc). All three callers move in 70K.",
+  "getActiveInventoryType": "Added in 70J: the monolith's own caseFile, window.D and activeInventoryType went, so computeNavChecks() and handleHash() read the open filing and its type through getD() and getActiveInventoryType(), and getWardHeadlineTotal() totals the filing it is handed through calcTotalsGuardian() (it used to point window.D at each filing and ask calc). All three callers move in 70K.",
+  "calcTotalsGuardian": "Added in 70J: the monolith's own caseFile, window.D and activeInventoryType went, so computeNavChecks() and handleHash() read the open filing and its type through getD() and getActiveInventoryType(), and getWardHeadlineTotal() totals the filing it is handed through calcTotalsGuardian() (it used to point window.D at each filing and ask calc). All three callers move in 70K."
  },
  "confirmed": {
   "SPECIAL_PAGES": "move 70K",
@@ -99,7 +88,6 @@
   "_planInitialFeatureBridge": "move 70K",
   "_planMinorFeatureBridge": "move 70K",
   "_planSimplifiedFeatureBridge": "move 70K",
-  "calc": "move 70B",
   "computeNavChecks": "move 70D",
   "ensureGuardianFeatureReady": "move 70K",
   "formEngine": "move 70C",
@@ -1464,6 +1452,37 @@
     },
     "warnBeforeUnloadIfDirty": {
      "was": "move 70I (override: persistence)"
+    }
+   }
+  },
+  "70J": {
+   "note": "Gone from src/legacy-app.js in 70J: the case itself -- caseFile and window.caseFile, the open filing's window.D, the filing type's activeInventoryType and its window accessor -- now src/core/state.js's alone, the open filing and its type derived from the case's activeWardId; clearCaseForLock() and focusFilingAtLaunch(), which 70I added so the lock and startup could change the case the monolith owned (the lock now replaces the case through replaceCaseFile(); startup opens the remembered filing through the lifecycle); setAccountingFilingType(), which assigned the monolith's filing type (to src/features/annual-accounting/filing-type.js); calc, the Initial Inventory totals Proxy whose one use, the dashboard's headline total, pointed window.D at each filing in turn (it is handed the filing now); and the autoSave() and updateSidebar() wrappers, whose last callers went. getD(), getActiveInventoryType() and calcTotalsGuardian() are new one-line forwarders for computeNavChecks(), handleHash() and getWardHeadlineTotal(), placed with them in 70K.",
+   "entries": {
+    "activeInventoryType": {
+     "was": "move 70J (override: state-owner)"
+    },
+    "autoSave": {
+     "was": "move 70I (override: persistence)"
+    },
+    "calc": {
+     "was": "move 70B"
+    },
+    "caseFile": {
+     "was": "move 70J (override: state-owner)"
+    },
+    "clearCaseForLock": {
+     "was": "move 70J (override: state-owner)",
+     "note": "Added in 70I: the monolith owns the case until 70J, so the moved lock (clearCaseForLock(): a new, empty case) and startup (focusFilingAtLaunch(): the remembered filing, before it opens) ask it to change the case, through src/core/runtime/monolith.js. They go when the module store owns the case (70J)."
+    },
+    "focusFilingAtLaunch": {
+     "was": "move 70J (override: state-owner)",
+     "note": "Added in 70I: the monolith owns the case until 70J, so the moved lock (clearCaseForLock(): a new, empty case) and startup (focusFilingAtLaunch(): the remembered filing, before it opens) ask it to change the case, through src/core/runtime/monolith.js. They go when the module store owns the case (70J)."
+    },
+    "setAccountingFilingType": {
+     "was": "move 70J (override: writes-classic-state)"
+    },
+    "updateSidebar": {
+     "was": "move 70H (override: shell)"
     }
    }
   }

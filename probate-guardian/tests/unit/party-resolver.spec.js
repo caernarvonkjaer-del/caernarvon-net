@@ -21,13 +21,15 @@ vi.hoisted(() => { globalThis.window = globalThis.window || {}; });
 import * as partyResolver from '../../src/core/party-resolver.js';
 import * as caseResolver from '../../src/core/case-resolver.js';
 import * as wardCounty from '../../src/core/navigation/ward-county.js';
+import { getCaseFile, replaceCaseFile } from '../../src/core/state.js';
 
 const modules = { ...partyResolver, ...caseResolver, ...wardCounty };
-const api = new Proxy({}, { get: (_, name) => (name in modules ? modules[name] : globalThis.window[name]) });
+// `w.caseFile` is the case store's case (Milestone 70, 70J: it was window.caseFile).
+const api = new Proxy({}, { get: (_, name) => (name === 'caseFile' ? getCaseFile() : name in modules ? modules[name] : globalThis.window[name]) });
 
 beforeEach(() => {
   // The case lockApp() and a fresh start leave behind (legacy-app.js).
-  globalThis.window.caseFile = { guardianName: '', guardianEmail: '', wards: [], parties: [], cases: [], dismissedPartyPairs: [], activeWardId: null };
+  replaceCaseFile({ guardianName: '', guardianEmail: '', wards: [], parties: [], cases: [], dismissedPartyPairs: [], activeWardId: null });
 });
 
 // Exercises the hydration/dehydration core (src/core/party-resolver.js,

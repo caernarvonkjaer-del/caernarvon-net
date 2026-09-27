@@ -1,25 +1,5 @@
 {
  "generatedBy": "node scripts/ms70-classic-state.mjs --write-baseline",
- "note": "Milestone 70, 70E: every read and write of the case state the classic monolith still owns (bare D, its lexical caseFile and activeInventoryType, window.D and window.caseFile), by enclosing top-level declaration. May only shrink; 70J needs it empty before the module store becomes the owner.",
- "counts": {
-  "(top level)::activeInventoryType::read": 1,
-  "(top level)::activeInventoryType::write": 1,
-  "(top level)::caseFile::read": 1,
-  "(top level)::window.caseFile::write": 1,
-  "(top level)::window.D::read": 5,
-  "(top level)::window.D::write": 1,
-  "clearCaseForLock::activeInventoryType::write": 1,
-  "clearCaseForLock::caseFile::read": 1,
-  "clearCaseForLock::caseFile::write": 1,
-  "clearCaseForLock::window.caseFile::write": 1,
-  "clearCaseForLock::window.D::write": 1,
-  "computeNavChecks::activeInventoryType::read": 1,
-  "computeNavChecks::window.D::read": 1,
-  "focusFilingAtLaunch::caseFile::read": 1,
-  "getWardHeadlineTotal::window.D::read": 1,
-  "getWardHeadlineTotal::window.D::write": 2,
-  "handleHash::activeInventoryType::read": 1,
-  "setAccountingFilingType::activeInventoryType::write": 2,
-  "setAccountingFilingType::window.D::read": 3
- }
+ "note": "Milestone 70: every read and write of case state by the classic monolith (bare D, a lexical caseFile or activeInventoryType, window.D and window.caseFile), by enclosing top-level declaration. Only shrank from 70E; empty since 70J, when src/core/state.js became the case's owner, and it stays empty.",
+ "counts": {}
 }

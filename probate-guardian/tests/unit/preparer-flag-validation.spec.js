@@ -12,6 +12,8 @@
 // module destructures legacy-app.js globals off `window` at import time, so
 // `window` is stubbed before the dynamic import.
 import { afterAll, beforeAll, beforeEach, describe, test, expect, vi } from 'vitest';
+import { openFiling } from './support/open-filing.js';
+import { getD } from '../../src/core/state.js';
 
 let validateGuardian;
 
@@ -55,7 +57,7 @@ const messages = () => validateGuardian().map((e) => String(e?.message ?? e));
 const startingWith = (prefix) => messages().filter((m) => m.startsWith(prefix));
 
 beforeEach(() => {
-  window.D = baseGuardianData();
+  openFiling(baseGuardianData());
 });
 
 describe('Milestone 67A: validateGuardian() and the preparer flag', () => {
@@ -68,7 +70,7 @@ describe('Milestone 67A: validateGuardian() and the preparer flag', () => {
   });
 
   test('a guardian identified as the preparer: every preparer issue is gone, the attorney block is untouched', () => {
-    window.D.guardians[0].isPreparer = true;
+    getD().guardians[0].isPreparer = true;
     expect(startingWith('D-2 Preparer')).toEqual([]);
     expect(startingWith('D-2 Attorney').length, 'the attorney block keeps its own requirements').toBeGreaterThan(0);
     // And the guardian's own requirements still stand.
@@ -76,7 +78,7 @@ describe('Milestone 67A: validateGuardian() and the preparer flag', () => {
   });
 
   test('the attorney identified as the preparer: the same', () => {
-    window.D.attorney.isPreparer = true;
+    getD().attorney.isPreparer = true;
     expect(startingWith('D-2 Preparer')).toEqual([]);
     expect(startingWith('D-2 Attorney').length).toBeGreaterThan(0);
   });
@@ -85,7 +87,7 @@ describe('Milestone 67A: validateGuardian() and the preparer flag', () => {
     // Before the flag, a co-guardian row with nothing else typed was skipped
     // as blank. A ticked box is data, and a nameless preparer would print
     // "Prepared by [name]".
-    window.D.guardians = [guardianRow({ name: 'Rachel Alvarez' }), guardianRow({ isPreparer: true })];
+    getD().guardians = [guardianRow({ name: 'Rachel Alvarez' }), guardianRow({ isPreparer: true })];
     expect(startingWith('D-2 Preparer')).toEqual([]);
     expect(startingWith('D-1 Guardian #2').some((m) => m.includes('Name'))).toBe(true);
   });
@@ -93,7 +95,7 @@ describe('Milestone 67A: validateGuardian() and the preparer flag', () => {
   test('a legacy row with no isPreparer key at all behaves exactly as before', () => {
     const { isPreparer, ...legacyGuardian } = guardianRow();
     const { isPreparer: _a, ...legacyAttorney } = baseGuardianData().attorney;
-    window.D = baseGuardianData({ guardians: [legacyGuardian], attorney: legacyAttorney });
+    openFiling(baseGuardianData({ guardians: [legacyGuardian], attorney: legacyAttorney }));
     expect(startingWith('D-2 Preparer').length).toBeGreaterThanOrEqual(5);
   });
 });

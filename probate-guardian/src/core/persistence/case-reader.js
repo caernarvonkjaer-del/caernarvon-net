@@ -10,7 +10,7 @@ import { backfillWardPartyCounties } from '../navigation/ward-county.js';
 import { decryptJSONWithKey } from './crypto.js';
 import { setAutoExportIntervalMinutes, setLastExportAt } from './export-state.js';
 import { sanitizeObjectData } from '../security/input-hardening.js';
-import { appStateObject, getCaseFile, getTemplateCache, replaceTemplateCache, setActiveFiling, setAppState } from '../state.js';
+import { appStateObject, blankCaseFile, getTemplateCache, replaceCaseFile, replaceTemplateCache, setAppState } from '../state.js';
 import { applyTheme, seedStoredThemeFromLegacy } from '../theme-preference.js';
 
 // The counterpart to buildCaseFileBlob(): reads wards, guardian info,
@@ -20,8 +20,14 @@ import { applyTheme, seedStoredThemeFromLegacy } from '../theme-preference.js';
 // appState section at all (buildSingleWardExportBlob's single-ward exports
 // never include one) defaults activeWardId to whichever ward the file
 // contains, rather than failing.
+//
+// The case is read into a case of its own, which replaces the open one once,
+// whole, through replaceCaseFile() (Milestone 70, 70J). It was read into the
+// open case member by member, so across each await below the app held a case
+// half this file and half the last; and a read that failed part-way left it
+// that way.
 export async function loadCaseFileFromZip(zip,manifest,key){
-  const caseFile=getCaseFile();
+  const caseFile=blankCaseFile();
   // Every part of the file that exists (or that its manifest lists) but could
   // not be read. These used to be skipped with only a console warning, so a
   // damaged file opened silently without them -- and in Chrome/Edge the first
@@ -31,10 +37,6 @@ export async function loadCaseFileFromZip(zip,manifest,key){
   // simply does not have (an older file with no parties.enc) is not damage and
   // is not listed. (master b2d97f5, carried into Milestone 70's reader.)
   const unreadable=[];
-  caseFile.wards=[];
-  caseFile.parties=[];
-  caseFile.cases=[];
-  caseFile.dismissedPartyPairs=[];
   const partiesFile=zip.file('parties.enc');
   if(partiesFile){
     try{
@@ -66,8 +68,6 @@ export async function loadCaseFileFromZip(zip,manifest,key){
       else unreadable.push(filing);
     }catch(e){console.warn('Skipping unreadable ward in .sav file',entry.file,e);unreadable.push(filing);}
   }
-  caseFile.guardianName='';
-  caseFile.guardianEmail='';
   caseFile.lastSavedFileName=null; // stamped fresh by rememberCaseFileHandle() once this file gets a handle
   if(manifest.guardian){
     try{
@@ -127,8 +127,9 @@ export async function loadCaseFileFromZip(zip,manifest,key){
   // branch: a single-ward export carries no appState section at all, and this
   // used to fall back to opening wards[0] "solely because data was imported",
   // which 38C's storage table prohibits. Focus stays null for every archive
-  // shape; the user chooses Edit from the dashboard.
-  setActiveFiling(null);
+  // shape -- the case read here names no open filing (blankCaseFile()) -- and
+  // the user chooses Edit from the dashboard.
+  replaceCaseFile(caseFile);
   // Milestone 40C-A legacy migration rule. Existing nonblank filing and attorney
   // counties are left exactly as stored. For a ward Party with no county, infer
   // one only when every linked filing that HAS a county agrees on the same

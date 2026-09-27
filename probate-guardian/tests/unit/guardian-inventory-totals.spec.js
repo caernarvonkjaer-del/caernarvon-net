@@ -6,6 +6,7 @@ import {
   n, r2, wardShare, isRestrictedAnswer, auditFeeFor, makeGuardianCalc, calcTotalsGuardian,
   GUARDIAN_CALC_METHODS, AUDIT_FEE_THRESHOLD, AUDIT_FEE_OVER_THRESHOLD, calc,
 } from '../../src/features/guardian-inventory/totals.js';
+import { withFilingInView } from '../../src/core/state.js';
 
 // Milestone 60A. The Verified Initial Inventory's arithmetic, checked against
 // the court workbook's own formulas (templates/guardian-template.js, read
@@ -227,17 +228,12 @@ describe('schedule totals, summaries and bond lines against the workbook formula
 // happen to match. The UI's calc.totalA1(), calc.wardVal(entry), ... used to
 // be a forwarder defined in legacy-app.js, sliced out of its source and
 // evaluated here; Milestone 70's 70B moved it into this module as `calc`, so
-// it is imported and tested directly, and legacy-app.js keeps only a one-line
-// Proxy onto it (through src/legacy-bridge.js), checked at the end.
+// it is imported and tested directly. legacy-app.js kept a one-line Proxy
+// onto it until 70J, checked at the end.
 describe('calc: the UI\'s call shape, bound to the open filing', () => {
-  const withWindowD = (D, fn) => {
-    const original = globalThis.window;
-    globalThis.window = { D };
-    try { return fn(); } finally {
-      if (original === undefined) delete globalThis.window;
-      else globalThis.window = original;
-    }
-  };
+  // The filing calc reads is the case store's; one is put in view for the call
+  // (Milestone 70, 70J -- the test pointed window.D at it).
+  const withWindowD = (D, fn) => withFilingInView(D, fn);
 
   test('is frozen, and holds the old formulas nowhere', () => {
     expect(Object.isFrozen(calc)).toBe(true);
@@ -272,32 +268,28 @@ describe('calc: the UI\'s call shape, bound to the open filing', () => {
     });
   });
 
-  test('calc reads window.D live: the rounding fixture gives the workbook\'s $2,042.10 through it', () => {
+  test('calc reads the open filing live: the rounding fixture gives the workbook\'s $2,042.10 through it', () => {
     const D = { ...empty(), scheduleA1: ROUNDING_ROWS };
     withWindowD(D, () => {
       expect(r2(calc.totalA1())).toBe(2042.1);
       // Mutating the filing is seen on the next call -- no snapshot.
       D.scheduleA1 = [{ fullAssetValue: '100', wardPercent: '100' }];
       expect(calc.totalA1()).toBe(100);
-      // And so is a filing swapped in whole (a caller totalling another one).
-      globalThis.window.D = { ...empty(), scheduleA1: [{ fullAssetValue: '50', wardPercent: '100' }] };
-      expect(calc.totalA1()).toBe(50);
+      // And so is another filing put in view (a caller totalling another one).
+      withWindowD({ ...empty(), scheduleA1: [{ fullAssetValue: '50', wardPercent: '100' }] }, () => {
+        expect(calc.totalA1()).toBe(50);
+      });
     });
   });
 
-  test('legacy-app.js\'s calc is a one-line forwarder onto this one, and fails loudly without it', () => {
+  // Milestone 70, 70J: the monolith's one use of that Proxy was the
+  // dashboard's headline total, which pointed window.D at each filing in turn;
+  // it totals the filing it is handed now, and the Proxy went.
+  test('legacy-app.js has no calc of its own: its headline total is handed the filing', () => {
     const src = fs.readFileSync(path.join(root, 'src', 'legacy-app.js'), 'utf8');
-    const line = src.split('\n').find((l) => l.startsWith('const calc='));
-    expect(line).toBe('const calc=new Proxy({},{get:(_,k)=>window.GuardianFormsLegacyBridge.calc[k]});');
-    const forwarder = (win) => new Function('window', `${line}\nreturn calc;`)(win);
+    expect(src.split('\n').some((l) => l.startsWith('const calc='))).toBe(false);
+    expect(src).toContain("if(ward.inventoryType==='guardian')total=calcTotalsGuardian(ward).total;");
     const D = { ...empty(), scheduleA1: ROUNDING_ROWS };
-    withWindowD(D, () => {
-      const legacy = forwarder({ GuardianFormsLegacyBridge: { calc } });
-      expect(legacy.totalA1()).toBe(calc.totalA1());
-      // A typo still throws rather than printing $0.00.
-      expect(() => legacy.totalAl()).toThrow(TypeError);
-    });
-    // No bridge (main.js never ran): a TypeError, never a silent zero.
-    expect(() => forwarder({}).total()).toThrow(TypeError);
+    expect(calcTotalsGuardian(D).total).toBe(withWindowD(D, () => calc.total()));
   });
 });

@@ -32,6 +32,7 @@ import { r2 } from '../../core/format/money.js';
 import { formDisplayName } from '../../core/filing/filing-registry.js';
 import { getD, requestSave } from '../../core/state.js';
 import { ensureTemplate } from '../../core/persistence/templates.js';
+import { setAccountingFilingType } from './filing-type.js';
 
 const {
   renderPage, calcTotalsAnnual,
@@ -628,7 +629,7 @@ export async function importExcel(input){
         D.typeOfGuardianship=gcStr(p1,'D22');
         D.amendedForm=gcStr(p1,'J6');
         D.filingType=gcStr(p1,'H4')||'Annual';
-        window.setAccountingFilingType?.(D.filingType);
+        setAccountingFilingType(D.filingType);
         // Milestone 40C-A item 5: an imported workbook with no county leaves the
         // filing blank rather than acquiring Pinellas. An explicit workbook
         // county is preserved exactly.

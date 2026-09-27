@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { parse } from 'acorn';
 import { sliceBalancedFunction } from './support/legacy-source-extract.js';
+import { openFiling } from './support/open-filing.js';
 
 // Provide browser globals required by legacy feature modules
 global.window = {
@@ -39,20 +40,20 @@ const { validatePlanMinor } = await import('../../src/features/plan-minor/index.
 describe('checklist vs export validator parity', () => {
   describe('Initial Plan Question 10F / pi-p8', () => {
     it('requires committeeIncorporated in validatePlanInitial', () => {
-      window.D = {
+      openFiling({
         wardName: 'Test Ward',
         caseNumber: '25-001234-GD',
         county: 'Pinellas',
         q11NoDirectives: true,
         needsNone: true,
         committeeIncorporated: '',
-      };
+      });
       const errors = validatePlanInitial();
       expect(errors.some(e => String(e).includes('Whether examining-committee recommendations are incorporated is required'))).toBe(true);
     });
 
     it('requires committeeExplain in validatePlanInitial when committeeIncorporated is No', () => {
-      window.D = {
+      openFiling({
         wardName: 'Test Ward',
         caseNumber: '25-001234-GD',
         county: 'Pinellas',
@@ -60,27 +61,27 @@ describe('checklist vs export validator parity', () => {
         needsNone: true,
         committeeIncorporated: 'No',
         committeeExplain: '',
-      };
+      });
       const errors = validatePlanInitial();
       expect(errors.some(e => String(e).includes('Explanation is required when recommendations are not incorporated'))).toBe(true);
     });
 
     it('passes Question 10F in validatePlanInitial when committeeIncorporated is Yes', () => {
-      window.D = {
+      openFiling({
         wardName: 'Test Ward',
         caseNumber: '25-001234-GD',
         county: 'Pinellas',
         q11NoDirectives: true,
         needsNone: true,
         committeeIncorporated: 'Yes',
-      };
+      });
       const errors = validatePlanInitial();
       expect(errors.some(e => String(e).includes('recommendations are incorporated'))).toBe(false);
       expect(errors.some(e => String(e).includes('Explanation is required'))).toBe(false);
     });
 
     it('passes Question 10F in validatePlanInitial when committeeIncorporated is No with explanation', () => {
-      window.D = {
+      openFiling({
         wardName: 'Test Ward',
         caseNumber: '25-001234-GD',
         county: 'Pinellas',
@@ -88,7 +89,7 @@ describe('checklist vs export validator parity', () => {
         needsNone: true,
         committeeIncorporated: 'No',
         committeeExplain: 'Recommendations reviewed and deferred pending specialist report',
-      };
+      });
       const errors = validatePlanInitial();
       expect(errors.some(e => String(e).includes('recommendations are incorporated'))).toBe(false);
       expect(errors.some(e => String(e).includes('Explanation is required'))).toBe(false);

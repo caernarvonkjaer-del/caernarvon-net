@@ -6,6 +6,7 @@ import { emptyDataPlanInitial } from '../../src/core/filing/models/plan-initial.
 import { emptyDataPlanMinor } from '../../src/core/filing/models/plan-minor.js';
 import { emptyDataAnnual } from '../../src/core/filing/models/annual.js';
 import { emptyDataGuardian } from '../../src/core/filing/models/guardian.js';
+import { getCaseFile, replaceCaseFile } from '../../src/core/state.js';
 // Milestone 40C-A. The governing decision: a ward has NO default county until
 // the user selects County on that ward's first filing Cover. That first explicit
 // choice is stored on the canonical ward Party; later filings for the same ward
@@ -77,15 +78,15 @@ describe('Milestone 40C-A: the ward-county lifecycle', () => {
   let wardCounty;
 
   beforeEach(async () => {
-    window.caseFile = freshCaseFile();
+    replaceCaseFile(freshCaseFile());
     // Imported after window.caseFile exists: party-resolver.js reads it at call
     // time, but keeping the order explicit documents the dependency.
     wardCounty = await import('../../src/core/navigation/ward-county.js');
   });
 
   const newFiling = (overrides = {}) => {
-    const filing = { wardId: `w_${window.caseFile.wards.length}`, wardName: 'Ward One', county: '', ...overrides };
-    window.caseFile.wards.push(filing);
+    const filing = { wardId: `w_${getCaseFile().wards.length}`, wardName: 'Ward One', county: '', ...overrides };
+    getCaseFile().wards.push(filing);
     return filing;
   };
 
@@ -279,10 +280,10 @@ describe('Milestone 40C-A: the ward-county lifecycle', () => {
 
   test('a linked case record follows an explicit Cover edit, but never seeds one', () => {
     const filing = newFiling({ caseNumber: '26-000123-GD' });
-    window.caseFile.cases.push({ id: 'c1', caseNumber: '26-000123-GD', county: 'Pasco' });
+    getCaseFile().cases.push({ id: 'c1', caseNumber: '26-000123-GD', county: 'Pasco' });
 
     wardCounty.commitCoverCounty(filing, 'Orange');
-    expect(window.caseFile.cases[0].county, 'the Cover edit updates the linked case').toBe('Orange');
+    expect(getCaseFile().cases[0].county, 'the Cover edit updates the linked case').toBe('Orange');
 
     // And the reverse never happens: a stale case county is not a default.
     const fresh = newFiling({ caseNumber: '26-000123-GD' });

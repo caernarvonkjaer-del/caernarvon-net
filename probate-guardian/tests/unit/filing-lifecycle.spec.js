@@ -8,7 +8,7 @@ import { addWard, activateWard, switchWard, unloadWard, deleteWard } from '../..
 import { carryOverFields } from '../../src/core/filing/carry-over.js';
 import { convertExistingWard } from '../../src/core/filing/conversion.js';
 import { startNewWardYear, switchWardYear, deleteWardYear } from '../../src/core/filing/filing-years.js';
-import { getActiveInventoryType, getCaseFile, getD, setActiveFiling, setCaseFile } from '../../src/core/state.js';
+import { getActiveInventoryType, getCaseFile, getD, replaceCaseFile, setActiveFiling } from '../../src/core/state.js';
 
 // Milestone 70, 70G gate: "Creation, switching, deletion, rename, carryover,
 // conversion, year operations, party/case write-through, and cross-tab locks
@@ -145,8 +145,22 @@ describe('the filing lifecycle service', () => {
   }, 60_000);
 
   test("which filing is open changes only through state.js's setActiveFiling()", () => {
-    const SETTERS = new Set(['setD', 'setActiveInventoryType', 'setCaseFile']);
+    // Since Milestone 70's 70J the open filing and its type are derived from
+    // the case's activeWardId; setD(), setActiveInventoryType() and
+    // setCaseFile() went. Two other calls change what the validators read,
+    // each allowed where named: replacing the whole case (the lock, which
+    // forgets it and restores it; opening a case file, which names no open
+    // filing) and putting a filing in view for one synchronous call
+    // (GuardianForms.testing's validate queries).
+    const SETTERS = new Set(['setD', 'setActiveInventoryType', 'setCaseFile', 'replaceCaseFile', 'withFilingInView']);
+    const ALLOWED = {
+      replaceCaseFile: ['src/core/persistence/case-reader.js', 'src/core/security/app-lock.js'],
+      withFilingInView: ['src/core/testing/testing-adapter.js'],
+    };
+    const calleeName = (n) => (n.callee.type === 'Identifier' ? n.callee.name
+      : n.callee.type === 'MemberExpression' && !n.callee.computed ? n.callee.property.name : null);
     const offenders = [];
+    const allowed = {};
     let transitions = 0;
     for (const r of modules()) {
       if (r === 'src/core/state.js') continue;
@@ -154,15 +168,21 @@ describe('the filing lifecycle service', () => {
         if (n.type === 'AssignmentExpression' && n.left.type === 'MemberExpression' && !n.left.computed && n.left.property.name === 'activeWardId') {
           offenders.push(`${r}:${n.loc.start.line} assigns activeWardId`);
         }
-        if (n.type === 'CallExpression' && n.callee.type === 'Identifier' && SETTERS.has(n.callee.name)) offenders.push(`${r}:${n.loc.start.line} ${n.callee.name}()`);
+        if (n.type === 'CallExpression' && SETTERS.has(calleeName(n))) {
+          const name = calleeName(n);
+          if ((ALLOWED[name] || []).includes(r)) (allowed[name] ||= new Set()).add(r);
+          else offenders.push(`${r}:${n.loc.start.line} ${name}()`);
+        }
         if (r === 'src/core/navigation/ward-lifecycle.js' && n.type === 'CallExpression' && n.callee.type === 'Identifier' && n.callee.name === 'setActiveFiling') transitions += 1;
       });
     }
     expect(offenders).toEqual([]);
     expect(transitions, "ward-lifecycle.js's open and close").toBe(2);
+    // Each allowed caller still is one (no stale allowance left behind).
+    expect(Object.fromEntries(Object.entries(allowed).map(([k, v]) => [k, [...v].sort()]))).toEqual(ALLOWED);
 
     const ward = { wardId: 'w1', inventoryType: 'annual', wardName: 'One' };
-    setCaseFile({ wards: [ward], activeWardId: null });
+    replaceCaseFile({ wards: [ward], activeWardId: null });
     setActiveFiling(ward);
     expect(getCaseFile().activeWardId).toBe('w1');
     expect(getD()).toBe(ward);

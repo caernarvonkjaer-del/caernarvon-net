@@ -41,7 +41,7 @@ import { showSimplifiedEligibilityModal } from '../modals/filing-dialogs.js';
 import { showConvertWardModal } from '../modals/convert-ward-modal.js';
 import { convertTargetsFor } from '../filing/filing-descriptor.js';
 // Milestone 70, 70I: what left the monolith, and the state no longer on window.
-import { replaceSaveHook, requestSave } from '../state.js';
+import { getActiveInventoryType, getCaseFile, getD, replaceSaveHook, requestSave, withFilingInView } from '../state.js';
 import { flushPendingSave, saveData } from '../persistence/case-file.js';
 import { loadCaseFileFromZip } from '../persistence/case-reader.js';
 import { getCryptoKey, getSecurityMode } from '../persistence/crypto.js';
@@ -98,12 +98,12 @@ export function createTestingAdapter(w) {
   };
   // The live filing record for an id, for app functions that take one; never returned.
   const filingById = (filingId) => {
-    const f = ((w.caseFile && w.caseFile.wards) || []).find((x) => x.wardId === filingId);
+    const f = (getCaseFile().wards || []).find((x) => x.wardId === filingId);
     if (!f) throw new Error(`GuardianForms.testing: no filing ${filingId}`);
     return f;
   };
   const requireActive = (what) => {
-    const d = w.D;
+    const d = getD();
     if (!d || !d.wardId) throw new Error(`GuardianForms.testing.${what}: no filing is open`);
     return d;
   };
@@ -142,7 +142,7 @@ export function createTestingAdapter(w) {
      * exactly what specs did by assigning onto window.caseFile. Saves nothing.
      */
     patchCase(patch) {
-      const cf = w.caseFile;
+      const cf = getCaseFile();
       if (!cf) throw new Error('GuardianForms.testing.patchCase: no case is open');
       for (const [key, value] of Object.entries(patch || {})) cf[key] = copy(value);
     },
@@ -154,7 +154,7 @@ export function createTestingAdapter(w) {
      * with a new wards list would not). Saves nothing.
      */
     seedFiling(record) {
-      const cf = w.caseFile;
+      const cf = getCaseFile();
       if (!cf) throw new Error('GuardianForms.testing.seedFiling: no case is open');
       if (!record || !record.wardId) throw new Error('GuardianForms.testing.seedFiling: a filing record needs a wardId');
       if (!Array.isArray(cf.wards)) cf.wards = [];
@@ -304,13 +304,13 @@ export function createTestingAdapter(w) {
     // ── Queries (copies) ────────────────────────────────────────────────────
     /** The case and the open filing, as copies. */
     snapshot() {
-      const cf = w.caseFile || {};
+      const cf = getCaseFile();
       return copy({
         caseFile: cf,
-        filing: w.D && w.D.wardId ? w.D : null,
+        filing: getD().wardId ? getD() : null,
         activeFilingId: cf.activeWardId ?? null,
         currentPage: w.currentPage ?? null,
-        activeInventoryType: w.activeInventoryType ?? null,
+        activeInventoryType: getActiveInventoryType(),
         dirtySinceExport: !!isDirtySinceExport(),
         hasUnsavedChanges: !!isDirtySinceExport(),
       });
@@ -361,7 +361,7 @@ export function createTestingAdapter(w) {
       wardPartyForFiling: (filingId) => copy(call('wardPartyForFiling', filingById(filingId))),
       /** The case groups for the given filings (all of them when omitted). */
       casesGroupingWards: (filingIds) => copy(call('casesGroupingWards',
-        filingIds ? filingIds.map(filingById) : ((w.caseFile && w.caseFile.wards) || []))),
+        filingIds ? filingIds.map(filingById) : (getCaseFile().wards || []))),
     }),
     // Changes to the shared Party and Case records -- setup, like patchFiling().
     // Each takes filing ids, never live objects, and returns copies.
@@ -423,14 +423,10 @@ export function createTestingAdapter(w) {
         const [validator, loader] = entry;
         if (typeof w[validator] !== 'function' && typeof w[loader] === 'function') await w[loader]();
         const filing = copy(d);
-        const previous = w.D;
-        w.D = filing;
-        try {
+        return withFilingInView(filing, () => {
           const prepared = call('prepareFilingOutput', filing, () => call(validator, filing));
           return copy({ messages: prepared.messages, canExport: prepared.canExport });
-        } finally {
-          w.D = previous;
-        }
+        });
       },
       /**
        * The export-gate issues for a filing that exists only as data: the
@@ -445,22 +441,18 @@ export function createTestingAdapter(w) {
         const [validator, loader] = entry;
         if (typeof w[validator] !== 'function' && typeof w[loader] === 'function') await w[loader]();
         const filing = copy({ ...initializeEmptyData(type), ...fixture });
-        const previous = w.D;
-        w.D = filing;
-        try {
+        return withFilingInView(filing, () => {
           const raw = call(validator, filing) || [];
           const prepared = call('prepareFilingOutput', filing, raw);
           return (prepared.structuredIssues || []).map((i) => ({
             code: String(i?.code || ''), message: String(i?.message || ''), bypassable: i?.bypassable !== false,
           }));
-        } finally {
-          w.D = previous;
-        }
+        });
       },
     }),
     status: Object.freeze({
       navChecks: () => copy(call('computeNavChecks')),                 // computeNavChecks()
-      progress: (filingId) => copy(call('getWardProgress', (w.caseFile.wards || []).find((x) => x.wardId === filingId))),
+      progress: (filingId) => copy(call('getWardProgress', (getCaseFile().wards || []).find((x) => x.wardId === filingId))),
       /** The Annual family's totals for the open filing (calcTotalsAnnual()), as a copy. */
       annualTotals: () => copy(call('calcTotalsAnnual', requireActive('status.annualTotals'))),
       /** The Annual family's balance check for the open filing (annualReconcileState()): diff, outOfBalance, explanation, explained. */

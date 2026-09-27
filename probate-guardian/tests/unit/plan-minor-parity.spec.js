@@ -1,5 +1,6 @@
 import { describe, expect, test, vi } from 'vitest';
 import { withOverrides, autoById, createPlanTestWindowStub } from './support/plan-readiness-parity.js';
+import { openFiling } from './support/open-filing.js';
 
 // Milestone 37-3 (see MILESTONE-37-PROPOSAL.md): fixture-based proof that
 // Plan Minor's readiness checklist agrees with the actual export-blocking
@@ -24,12 +25,12 @@ const { prepareFilingOutput } = await import('../../src/core/filing/output-prefl
 const { getSupplementalFilingIssues } = await import('../../src/core/pdf/supplemental-pdf.js');
 
 function runPreflight(d) {
-  window.D = d;
+  openFiling(d);
   return prepareFilingOutput(d, () => [...validatePlanMinor(), ...getSupplementalFilingIssues(d)]);
 }
 
 function readiness(d) {
-  window.D = d;
+  openFiling(d);
   return { auto: getFilingReadiness('planMinor', d).automatic };
 }
 

@@ -1,5 +1,5 @@
 // Milestone 70, 70C: the idempotent normalizer every filing passes through
-// when it is loaded or activated (src/core/state.js's setD() runs it): it
+// when it is opened (src/core/state.js's setActiveFiling() runs it): it
 // migrates older stored shapes -- legacy booleans to the 'Yes'/'No'/'' tri-state,
 // the Part XI placeholder row, the retired amountInSDB copy -- and never
 // deletes a value the filer entered. Moved from legacy-app.js, where setD()

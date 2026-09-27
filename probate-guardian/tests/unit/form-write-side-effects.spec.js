@@ -52,6 +52,17 @@ function freshWindow() {
   return w;
 }
 
+// The tail reads the open filing, and asks for the save, through the case
+// store. After each module reset the fresh store gets the fake window's filing
+// as the open one and its recorder as the save hook (Milestone 70: 70I for the
+// save, 70J for the filing -- they were window.autoSave and window.D).
+async function useStore(w) {
+  const state = await import('../../src/core/state.js');
+  state.configureCaseStore({ save: w.autoSave });
+  if (!w.D.wardId) w.D.wardId = 'w-unit';
+  state.replaceCaseFile({ ...state.blankCaseFile(), wards: [w.D], activeWardId: w.D.wardId });
+}
+
 describe('runFieldWriteSideEffects()', () => {
   let run;
   let w;
@@ -61,7 +72,7 @@ describe('runFieldWriteSideEffects()', () => {
     globalThis.document = globalThis.document || { querySelectorAll: () => [] };
     vi.resetModules();
     ({ runFieldWriteSideEffects: run } = await import('../../src/core/form/form-contract.js'));
-    (await import('../../src/core/state.js')).configureCaseStore({ save: w.autoSave });
+    await useStore(w);
   });
 
   it('runs county commit and Party write-through before autosave, then the display refreshes', () => {
@@ -128,7 +139,7 @@ describe('all three binding paths call the shared tail', () => {
     globalThis.document = globalThis.document || { querySelectorAll: () => [] };
     vi.resetModules();
     const { writeDraftValue, finalizeFieldValue } = await import('../../src/core/form/form-contract.js');
-    (await import('../../src/core/state.js')).configureCaseStore({ save: w.autoSave });
+    await useStore(w);
 
     // window.getPath is undefined in this mock, so writeDraftValue's
     // `currentVal !== rawValue` guard (comparing against undefined) is
@@ -152,7 +163,7 @@ describe('all three binding paths call the shared tail', () => {
     globalThis.document = globalThis.document || { querySelectorAll: () => [] };
     vi.resetModules();
     const { writeDraftValue, finalizeFieldValue } = await import('../../src/core/form/form-contract.js');
-    (await import('../../src/core/state.js')).configureCaseStore({ save: w.autoSave });
+    await useStore(w);
 
     writeDraftValue({ dataset: { annualPath: 'schC.0.description' }, type: 'text', value: 'Sale of homestead' });
     expect(w.calls).toContain('autoSave');

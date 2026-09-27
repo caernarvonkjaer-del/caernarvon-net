@@ -14,7 +14,7 @@ import { readOwnSessionRestoreCache } from '../persistence/recovery-cache.js';
 import { monolith } from '../runtime/monolith.js';
 import { sanitizeObjectData } from './input-hardening.js';
 import { updateSidebar } from '../shell/sidebar.js';
-import { getActiveWard, getCaseFile } from '../state.js';
+import { blankCaseFile, getActiveWard, getCaseFile, replaceCaseFile } from '../state.js';
 import { alertModal } from '../ui/dialogs.js';
 import { releaseWardLock } from '../ward-lock.js';
 
@@ -323,7 +323,7 @@ export async function lockApp(){
   const handleToReload=await loadCaseFileHandle();
   const fileLacksChanges=isDirtySinceExport();
   clearCryptoKey();
-  monolith.clearCaseForLock();
+  replaceCaseFile(blankCaseFile());
   document.getElementById('sidebar').style.display='none';
   document.getElementById('main-content').innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--ink-3);">Locked</div>';
   await ensureUnlocked();
@@ -378,14 +378,17 @@ async function restoreRecoverySnapshot(){
     if(!restoredWards.length)return false;
     const g=await decryptJSONWithKey(cache.guardian,key);
     const shared=await decryptCaseFileCore(cache,key,{source:'from the recovery snapshot'});
-    const caseFile=getCaseFile();
-    caseFile.wards=restoredWards;
-    caseFile.guardianName=(g&&g.guardianName)||'';
-    caseFile.guardianEmail=(g&&g.guardianEmail)||'';
-    if(g&&g.selectedCircuit!=null)caseFile.selectedCircuit=g.selectedCircuit;
-    caseFile.parties=shared.parties;
-    caseFile.cases=shared.cases;
-    caseFile.dismissedPartyPairs=shared.dismissedPartyPairs;
+    // Replaces the empty case the lock left, once and whole (Milestone 70, 70J).
+    replaceCaseFile({
+      ...blankCaseFile(),
+      wards:restoredWards,
+      guardianName:(g&&g.guardianName)||'',
+      guardianEmail:(g&&g.guardianEmail)||'',
+      ...(g&&g.selectedCircuit!=null?{selectedCircuit:g.selectedCircuit}:{}),
+      parties:shared.parties,
+      cases:shared.cases,
+      dismissedPartyPairs:shared.dismissedPartyPairs,
+    });
     return true;
   }catch(e){
     console.error('Could not reload case data from the recovery cache after unlocking',e);

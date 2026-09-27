@@ -13,59 +13,14 @@
 // (Milestone 7, Phase B) -- Annual Excel export is its only consumer.
 
 
-// Final and Trust accountings use the Annual engine, but they are distinct
-// legal filings. Keep their stored type and Part I selection atomic so every
-// later consumer resolves the same descriptor.
-function setAccountingFilingType(filingType){
-  window.markFilingRevisionChanged?.('filing-type-change');
-  const result=window.applyAccountingFilingType
-    ? window.applyAccountingFilingType(window.D,filingType)
-    : null;
-  if(result?.descriptor){
-    activeInventoryType=result.descriptor.inventoryType;
-  }else{
-    const fallback={Annual:'annual',Final:'finalAccounting',Trust:'trustAccounting'}[filingType];
-    if(!fallback)return result;
-    window.D.inventoryType=fallback;
-    window.D.filingType=filingType;
-    activeInventoryType=fallback;
-  }
-  updateSidebar();
-  autoSave();
-  return result;
-}
-window.setAccountingFilingType=setAccountingFilingType;
-
-// Case-level data structure. `parties` is the shared party-record model
-// (src/core/party-resolver.js); `cases` groups filings by real-world matter
-// (src/core/case-resolver.js); `dismissedPartyPairs` remembers "not the same
-// person" decisions from the de-dup screen (pagePartyManagement()) so they
-// don't resurface every time it's opened.
-let caseFile = {
-  guardianName: '',
-  guardianEmail: '',
-  wards: [],
-  parties: [],
-  cases: [],
-  dismissedPartyPairs: [],
-  activeWardId: null
-};
-window.caseFile = caseFile;
-
-// Locking forgets the case: a new, empty case object and no open filing. The
-// monolith still owns the case (70J moves it to src/core/state.js), so the
-// lock (src/core/security/app-lock.js since Milestone 70's 70I) asks it to.
-function clearCaseForLock(){
-  caseFile={guardianName:'',guardianEmail:'',wards:[],parties:[],cases:[],dismissedPartyPairs:[],activeWardId:null};
-  window.caseFile=caseFile;
-  window.D={};
-  activeInventoryType=null;
-}
-
-// Startup's remembered position names the filing to reopen; the monolith
-// still owns the case (70J), so startup asks it to point the case at that
-// filing before activateWard() opens it, as initApp() used to itself.
-function focusFilingAtLaunch(wardId){caseFile.activeWardId=wardId;}
+// Milestone 70, 70J: the case is src/core/state.js's -- one case object, and
+// the open filing derived from its activeWardId -- and this script reads the
+// open filing and its type through src/legacy-bridge.js (getD(),
+// getActiveInventoryType()). window.caseFile, window.D and the filing type's
+// window accessor went with the monolith's copies; setAccountingFilingType()
+// is the Annual feature's (src/features/annual-accounting/filing-type.js).
+function getD(){return window.GuardianFormsLegacyBridge.getD();}
+function getActiveInventoryType(){return window.GuardianFormsLegacyBridge.getActiveInventoryType();}
 
 // ═══════════════════════════════════════════════════════
 // HELP SYSTEM
@@ -102,22 +57,15 @@ function focusFilingAtLaunch(wardId){caseFile.activeWardId=wardId;}
 
 
 
-let activeInventoryType = null;
-window.D = {}; // Current active ward's data
 let currentPage = '/';
 try {
-  Object.defineProperty(window, 'activeInventoryType', {
-    get: () => activeInventoryType,
-    set: (v) => { activeInventoryType = v; },
-    configurable: true
-  });
   Object.defineProperty(window, 'currentPage', {
     get: () => currentPage,
     set: (v) => { currentPage = v; },
     configurable: true
   });
 } catch (_) {}
-// A bare top-level `let`, like activeInventoryType above, isn't reachable
+// A bare top-level `let`, like currentPage above, isn't reachable
 // from an ES module (see src/core/state.js's file header) -- this tiny
 // accessor (a function declaration, so it's a real window property) is
 // what the Simplified Accounting feature module reaches for after an Excel
@@ -140,7 +88,8 @@ window.PG_APP_VERSION = '1.5.30';
 // keep a one-line wrapper that delegates through src/legacy-bridge.js
 // (a classic script cannot import). A wrapper goes when its last caller here
 // moves out; never put logic back in one.
-function calcTotals(){return window.GuardianFormsLegacyBridge.calcTotals();}
+function calcTotals(d){return window.GuardianFormsLegacyBridge.calcTotals(d);}
+function calcTotalsGuardian(d){return window.GuardianFormsLegacyBridge.calcTotalsGuardian(d);}
 // Milestone 70, 70C: the filing registry and per-engine models -- names,
 // engines, blank filings and rows, the page lists and the normalizer -- live in
 // src/core/filing/filing-registry.js and src/core/filing/models/ now; the lists
@@ -184,8 +133,6 @@ function formEngine(type){return window.GuardianFormsLegacyBridge.formEngine(typ
 // audit-log.js and src/core/startup/. The case they read and write is still
 // this script's until 70J; clearCaseForLock() and focusFilingAtLaunch() above
 // are how they change it.
-// autoSave: src/core/persistence/case-file.js (Milestone 70, 70I).
-function autoSave(){return window.GuardianFormsLegacyBridge.autoSave();}
 
 // ═══════════════════════════════════════════════════════
 // WARD MANAGEMENT
@@ -255,25 +202,21 @@ function autoSave(){return window.GuardianFormsLegacyBridge.autoSave();}
 // top-level `function` here only ever created the same global property that
 // router.js then assigned over.
 
-// Computes each ward's headline "total" using its own inventory type's
-// existing, already-correct totals logic — by briefly pointing window.D at
-// that ward, reading the result, then restoring the real active ward.
-// Safe because this all runs synchronously with no awaits in between, so no
-// other code can observe window.D pointing at the wrong ward mid-computation.
+// Each filing's headline "total" for the dashboard, from its own type's
+// totals, handed the filing. Until Milestone 70's 70J this pointed window.D at
+// the filing for the two calculators that read the open one; they take the
+// filing now, and the open filing is derived, not assignable.
 function getWardHeadlineTotal(ward){
   if(!ward)return null;
-  const previousD=window.D;
-  window.D=ward;
   let total=null;
   try{
-    if(ward.inventoryType==='guardian')total=calc.total();
-    else if(ward.inventoryType==='simplified')total=calcTotals().remaining;
+    if(ward.inventoryType==='guardian')total=calcTotalsGuardian(ward).total;
+    else if(ward.inventoryType==='simplified')total=calcTotals(ward).remaining;
     else if(formEngine(ward.inventoryType)==='annual'){
       const t=calcTotalsAnnual(ward);
       total=(t.netAssetsFromD!==0 || (t.schD1_total||t.schD2_ward||t.schD3_ward||t.schD4_ward||t.schD5_total)) ? t.netAssetsFromD : (t.netAssets||0);
     }
   }catch(e){console.warn('Dashboard: could not compute total for ward',ward.wardId,e);}
-  finally{window.D=previousD;}
   return total;
 }
 
@@ -283,8 +226,6 @@ function getWardHeadlineTotal(ward){
 
 
 
-// updateSidebar: src/core/shell/sidebar.js (Milestone 70, 70H).
-function updateSidebar(){return window.GuardianFormsLegacyBridge.updateSidebar();}
 
 // ═══════════════════════════════════════════════════════
 // CONVERT EXISTING WARD — creates a new ward of a different inventory type,
@@ -653,7 +594,7 @@ function pct(v){if(v===''||v===null||v===undefined)return 1;const p=parseFloat(v
 // kept the two copies in step.
 //
 // The three index.js files now import the core version directly and pass
-// window.D explicitly. It is a strict superset: it takes the data as an argument
+// the open filing explicitly. It is a strict superset: it takes the data as an argument
 // instead of reading the global implicitly, guards a null/non-object caps entry,
 // and adds a `key` field to each overflow record. excelCapacityPanel() below
 // reads only label/route/cap/count, so the extra field is inert, and every cap
@@ -676,7 +617,7 @@ function pct(v){if(v===''||v===null||v===undefined)return 1;const p=parseFloat(v
 // Guardian Inventory's calc.totalA1(), calc.wardVal(entry), ... live in
 // src/features/guardian-inventory/totals.js since Milestone 70's 70B; this is
 // the one-line wrapper this script's callers use (see COMMON HELPERS above).
-const calc=new Proxy({},{get:(_,k)=>window.GuardianFormsLegacyBridge.calc[k]});
+
 
 
 // ═══════════════════════════════════════════════════════
@@ -699,7 +640,7 @@ const calc=new Proxy({},{get:(_,k)=>window.GuardianFormsLegacyBridge.calc[k]});
 // bucketed from the export validator's own issues; it exists once that
 // feature has loaded) and the Annual totals. getWardProgress() below hands the same. updateNavDots()
 // applies the map to the page.
-function computeNavChecks(){return window.GuardianFormsLegacyBridge.computeNavChecks(window.D,activeInventoryType,{validateGuardian:window.validateGuardian,calcTotalsAnnual,annualReconcileState});}
+function computeNavChecks(){return window.GuardianFormsLegacyBridge.computeNavChecks(getD(),getActiveInventoryType(),{validateGuardian:window.validateGuardian,calcTotalsAnnual,annualReconcileState});}
 
 
 
@@ -769,7 +710,7 @@ function updateNavActive(page){
   });
 }
 
-const SPECIAL_PAGES=['/dashboard','/inventory-select','/activity-log','/party-management']; // valid regardless of activeInventoryType
+const SPECIAL_PAGES=['/dashboard','/inventory-select','/activity-log','/party-management']; // valid whatever filing is open
 async function handleHash(){
   const h=window.location.hash.replace('#','');
   if(SPECIAL_PAGES.includes(h)){
@@ -792,7 +733,7 @@ async function handleHash(){
     updateNavActive(currentPage);
     return;
   }
-  const wizardPages=window.GuardianFormsLegacyBridge.FILING_PAGES[activeInventoryType]||window.GuardianFormsLegacyBridge.PAGES_GUARDIAN;
+  const wizardPages=window.GuardianFormsLegacyBridge.FILING_PAGES[getActiveInventoryType()]||window.GuardianFormsLegacyBridge.PAGES_GUARDIAN;
   const valid=wizardPages.map(p=>p.id);
   const page=valid.includes(h)?h:'/';
   currentPage=page;
@@ -819,7 +760,7 @@ function provideMonolithServices(fns){return window.GuardianFormsLegacyBridge.pr
 function initApp(){
   // Milestone 70's 70E: hand the moved code the functions of this script it
   // calls (src/core/runtime/monolith.js), before anything can call back.
-  provideMonolithServices({clearCaseForLock,computeNavChecks,focusFilingAtLaunch,getCurrentPage,getWardHeadlineTotal,getWardProgress,handleHash,mountAnnualNav,mountGuardianNav,mountPlanAnnualNav,mountPlanInitialNav,mountPlanMinorNav,mountPlanSimplifiedNav,mountSimplifiedNav});
+  provideMonolithServices({computeNavChecks,getCurrentPage,getWardHeadlineTotal,getWardProgress,handleHash,mountAnnualNav,mountGuardianNav,mountPlanAnnualNav,mountPlanInitialNav,mountPlanMinorNav,mountPlanSimplifiedNav,mountSimplifiedNav});
 }
 
 
@@ -874,7 +815,7 @@ function initApp(){
 // Bubbles on its own (unlike 'blur'), so no capture flag is needed.
 // Re-dispatches 'change' after clearing so bindForms()'s own listener
 // (and anything else watching 'change') sees the correction and doesn't
-// leave the blanked-out DOM value out of sync with window.D.
+// leave the blanked-out DOM value out of sync with the open filing.
 document.addEventListener('focusout',e=>{
   const el=e.target;
   if(!el||el.tagName!=='INPUT'||el.type!=='date'||!el.value)return;

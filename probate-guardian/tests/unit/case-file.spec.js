@@ -24,7 +24,7 @@ import {
   buildSingleWardExportBlob,
   saveBlobAs,
 } from '../../src/core/persistence/case-file.js';
-import { getCaseFile, setCaseFile } from '../../src/core/state.js';
+import { getCaseFile, replaceCaseFile } from '../../src/core/state.js';
 // Telling other tabs what this one has open (src/core/navigation/tab-state.js since
 // Milestone 70's 70H) and the sidebar's refresh touch the page.
 vi.mock('../../src/core/navigation/tab-state.js', () => ({ notifyProbateGuardianTabStateChanged: () => {}, getProbateGuardianTabState: () => ({}) }));
@@ -128,7 +128,7 @@ describe('case file packaging and filename helpers', () => {
       lastSavedFileName: 'test.sav',
     };
 
-    setCaseFile(testCaseFile);
+    replaceCaseFile(testCaseFile);
 
     // Full case archive test
     const { blob, count } = await buildCaseFileBlob();
@@ -296,7 +296,7 @@ describe('activity log: automatic saves are not logged', () => {
     auditLogModule.replaceAuditLog([]);
     priorDispatch = window.dispatchEvent;
     window.dispatchEvent = () => true;
-    setCaseFile({
+    replaceCaseFile({
       activeWardId: null, guardianName: 'G', guardianEmail: '',
       parties: [], cases: [], dismissedPartyPairs: [],
       wards: [{ wardId: 'w-1', wardName: 'One', caseNumber: '1' }, { wardId: 'w-2', wardName: 'Two', caseNumber: '2' }],
@@ -353,6 +353,20 @@ describe('activity log: automatic saves are not logged', () => {
     const { writeCaseToHandle } = await import('../../src/core/persistence/case-file.js');
     await writeCaseToHandle(fakeHandle(), false);
     expect(await logged()).toEqual([{ type: 'DATA_EXPORT', message: 'Saved 2 form(s) to existing backup file', ok: true }]);
+  });
+
+  // Milestone 70, 70J gate: "a save ... updates that authority once". A save
+  // reads the live case and writes none of it: the case store's object is the
+  // one saved, unchanged, with no copy made on the way.
+  test('a save to the case file reads the live case and writes no member of it', async () => {
+    const { writeCaseToHandle } = await import('../../src/core/persistence/case-file.js');
+    const writes = [];
+    const watched = new Proxy(getCaseFile(), { set(t, k, v) { writes.push(String(k)); t[k] = v; return true; } });
+    replaceCaseFile(watched);
+    expect(await writeCaseToHandle(fakeHandle(), true)).toBe(2);
+    expect(await writeCaseToHandle(fakeHandle(), false)).toBe(2);
+    expect(writes).toEqual([]);
+    expect(getCaseFile()).toBe(watched);
   });
 
   test('a failed automatic write leaves the log and the save clock untouched', async () => {

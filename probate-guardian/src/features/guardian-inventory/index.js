@@ -1236,8 +1236,8 @@ function pageD5(){
 // VALIDATION
 // ═══════════════════════════════════════════════════════
 // D-3 uses the same string tri-state as the schedule radios. Accept booleans
-// only as a defensive read-side fallback for a legacy object before setD()
-// normalizes it.
+// only as a defensive read-side fallback for a legacy object before opening
+// it (setActiveFiling()) normalizes it.
 const sdbValue = (v) => v === true ? 'Yes' : (v === false ? 'No' : (v || ''));
 const sdbIsYes = (v) => v === true || v === 'Yes';
 const sdbIsNo = (v) => v === false || v === 'No';

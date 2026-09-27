@@ -73,7 +73,7 @@ describe('the Activity Log: audit-log.js', () => {
   test('entries are numbered on from a loaded log, tagged with the open filing, and a failed save takes its own back', async () => {
     const state = await import('../../src/core/state.js');
     const log = await import('../../src/core/activity/audit-log.js');
-    state.setCaseFile({ activeWardId: 'w9', wards: [] });
+    state.replaceCaseFile({ activeWardId: 'w9', wards: [{ wardId: 'w9' }] });
     log.replaceAuditLog([{ id: 4, eventType: 'OLD' }, { id: 7, eventType: 'OLDER' }]);
     await log.auditLog('DATA_EXPORT', 'saved', true);
     const entries = await log.loadAuditLogEntries();

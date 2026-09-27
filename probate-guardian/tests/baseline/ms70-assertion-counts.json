@@ -2,8 +2,8 @@
  "generatedBy": "node scripts/ms70-assertion-counts.mjs --write-baseline",
  "note": "Milestone 70 per-spec assertion counts (static expect calls). tests/unit/ms70-assertion-counts.spec.js fails when a spec falls below its count; lowering it requires --reason, recorded in dropLog. A tripwire, not proof of equivalence (decision D9).",
  "totals": {
-  "expects": 6685,
-  "tests": 1923
+  "expects": 6757,
+  "tests": 1937
  },
  "counts": {
   "tests/e2e/annotation-toolbar-containment.spec.ts": {
@@ -575,8 +575,8 @@
    "tests": 6
   },
   "tests/unit/case-file.spec.js": {
-   "expects": 69,
-   "tests": 21
+   "expects": 73,
+   "tests": 22
   },
   "tests/unit/case-resolver.spec.js": {
    "expects": 18,
@@ -691,7 +691,7 @@
    "tests": 6
   },
   "tests/unit/filing-lifecycle.spec.js": {
-   "expects": 17,
+   "expects": 18,
    "tests": 5
   },
   "tests/unit/filing-registry.spec.js": {
@@ -755,7 +755,7 @@
    "tests": 48
   },
   "tests/unit/guardian-inventory-totals.spec.js": {
-   "expects": 77,
+   "expects": 76,
    "tests": 21
   },
   "tests/unit/guardian-inventory-yes-no-radio.spec.js": {
@@ -806,6 +806,10 @@
    "expects": 6,
    "tests": 4
   },
+  "tests/unit/ms70-case-authority.spec.js": {
+   "expects": 55,
+   "tests": 11
+  },
   "tests/unit/ms70-declaration-dispositions.spec.js": {
    "expects": 12,
    "tests": 6
@@ -827,8 +831,8 @@
    "tests": 8
   },
   "tests/unit/ms70-state-seam.spec.js": {
-   "expects": 37,
-   "tests": 10
+   "expects": 50,
+   "tests": 12
   },
   "tests/unit/ms70-testing-adapter-design.spec.js": {
    "expects": 18,
@@ -1220,6 +1224,13 @@
    "now": 55,
    "reason": "70F: section-guidance-policy.spec.js's check that the policy is published as window.sectionGuidancePolicy went with the publication -- its only reader, the sidebar's marks, moved into src/core/status/nav-marks.js and imports it",
    "date": "2026-09-25"
+  },
+  {
+   "file": "tests/unit/guardian-inventory-totals.spec.js",
+   "was": 77,
+   "now": 76,
+   "reason": "Milestone 70, 70J: unit specs open filings in the case store instead of assigning window.D/window.caseFile, no assertion dropped by that; guardian-inventory-totals.spec.js 77 -> 76 because legacy-app.js's calc Proxy went -- the four checks on it (its exact line, its forwarding, its typo and missing-bridge throws) became three on its absence and on the headline total being handed the filing; ms70-case-authority.spec.js is new.",
+   "date": "2026-09-27"
   }
  ]
 }
