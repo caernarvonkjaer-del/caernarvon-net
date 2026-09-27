@@ -78,9 +78,9 @@ a `master` commit is missing from it.
 | `b28bf2516bd5100741bdfff9db759ce87f52672b` | 2026-09-24 | Restore blank-card clean-up (main.js imports prune-cards.js; legacy-app.js publishes BLANK_SCHEDULE_ENTRY); tests that assumed untouched cards survive updated | `src/main.js`, `src/legacy-app.js`, `tests/unit/fixtures/window-bridge-allowlist.json`, `tests/e2e/blank-card-pruning.spec.ts`, `tests/e2e/guardian-inventory-collection-controls.spec.ts`, `tests/e2e/plan-certificate-of-service.spec.ts`, `tests/e2e/schedule-doc-ack.spec.ts`, `TEST-INDEX.md`, `file_index.md` | re-implement | `tests/e2e/blank-card-pruning.spec.ts` | `9b0fd6c` | carried |
 | `dbee60fb2ac3fc376e9f5999602c7282efb9a89a` | 2026-09-24 | Annual Ward's % always a percentage (1% no longer filed as 100%); Preview & Export notes Schedule D shares of 1% or less | `src/features/annual-accounting/totals.js`, `src/core/excel/excel-engine.js`, `src/core/filing/output-preflight.js`, `src/core/filing/ward-share-advisories.js`, `tests/e2e/annual-ward-share-export.spec.ts`, `tests/e2e/annual-import-ward-percentage.spec.ts`, `tests/unit/annual-ward-percentage.spec.js`, `tests/unit/ward-share-advisories.spec.js`, `tests/unit/excel-engine.spec.js`, `TEST-INDEX.md`, `file_index.md` | merges-cleanly | `tests/e2e/annual-ward-share-export.spec.ts`, `tests/unit/annual-ward-percentage.spec.js` | -- | open |
 | `c62f89002c30272ad4555c749b24a28ee1468d59` | 2026-09-24 | Completes dbee60f: each Schedule D line's ward amount (Annual pages; PDF D-1 and D-5 columns) follows the 1% rule; the Annual pages import pct from totals.js and legacy-app.js's stale pct() is deleted (the branch's declaration dispositions list it) | `src/features/annual-accounting/index.js`, `src/features/annual-accounting/pdf-model.js`, `src/legacy-app.js`, `src/core/types/window-bridge.d.ts`, `tests/e2e/annual-ward-share-export.spec.ts`, `tests/unit/annual-ward-percentage.spec.js`, `TEST-INDEX.md` | re-implement | `tests/e2e/annual-ward-share-export.spec.ts`, `tests/unit/annual-ward-percentage.spec.js` | -- | open |
-| `b2d97f52212f3a8735d606aa49a7069872f48656` | 2026-09-24 | A case file with a part that cannot be read now tells the filer exactly what was not read and is never saved over (startup Open, Open backup, re-read after unlock); found by this milestone's .sav corpus | `src/legacy-app.js`, `src/core/persistence/case-file.js`, `src/core/types/window-bridge.d.ts`, `tests/unit/fixtures/window-bridge-allowlist.json`, `tests/e2e/case-file-damaged-open.spec.ts`, `TEST-INDEX.md`, `file_index.md` | re-implement | `tests/e2e/case-file-damaged-open.spec.ts`; carrying it deliberately changes `tests/baseline/ms70-sav-corpus-golden.json`'s damaged-file outcomes (a-listed-filing-missing, unreadable-filing, tampered-encrypted-filing then show the warning): regenerate those with the port, recorded | -- | open |
+| `b2d97f52212f3a8735d606aa49a7069872f48656` | 2026-09-24 | A case file with a part that cannot be read now tells the filer exactly what was not read and is never saved over (startup Open, Open backup, re-read after unlock); found by this milestone's .sav corpus | `src/legacy-app.js`, `src/core/persistence/case-file.js`, `src/core/types/window-bridge.d.ts`, `tests/unit/fixtures/window-bridge-allowlist.json`, `tests/e2e/case-file-damaged-open.spec.ts`, `TEST-INDEX.md`, `file_index.md` | re-implement | `tests/e2e/case-file-damaged-open.spec.ts`; carrying it deliberately changes `tests/baseline/ms70-sav-corpus-golden.json`'s damaged-file outcomes (a-listed-filing-missing, unreadable-filing, tampered-encrypted-filing then show the warning): regenerate those with the port, recorded | `f6ea716` | carried |
 | `2ad4a63336c7568d50e06ca57d712fec4d560ccf` | 2026-09-24 | file_index.md: real descriptions for the fifteen files changed on master today | `file_index.md` | not-applicable | -- (documentation only; merges with the branch's own file_index.md rows, and rows for files the migration moves are rewritten when they move) | -- | n/a |
-| `5de3707a24819f6db055391e27d9002663a89d7e` | 2026-09-25 | A password-protected case file no longer lists ward names in its plaintext manifest; a case file of a newer format version is refused (startup Open, Open Backup, the re-read after unlock) | `src/core/persistence/case-file.js`, `src/legacy-app.js`, `src/core/types/window-bridge.d.ts`, `tests/unit/fixtures/window-bridge-allowlist.json`, `tests/e2e/case-file-manifest-privacy.spec.ts`, `tests/e2e/case-file-newer-format.spec.ts`, `TEST-INDEX.md`, `file_index.md` | re-implement | `tests/e2e/case-file-manifest-privacy.spec.ts`, `tests/e2e/case-file-newer-format.spec.ts` | -- | open |
+| `5de3707a24819f6db055391e27d9002663a89d7e` | 2026-09-25 | A password-protected case file no longer lists ward names in its plaintext manifest; a case file of a newer format version is refused (startup Open, Open Backup, the re-read after unlock) | `src/core/persistence/case-file.js`, `src/legacy-app.js`, `src/core/types/window-bridge.d.ts`, `tests/unit/fixtures/window-bridge-allowlist.json`, `tests/e2e/case-file-manifest-privacy.spec.ts`, `tests/e2e/case-file-newer-format.spec.ts`, `TEST-INDEX.md`, `file_index.md` | re-implement | `tests/e2e/case-file-manifest-privacy.spec.ts`, `tests/e2e/case-file-newer-format.spec.ts` | `296000f` | carried |
 | `ae9ecdcbf8159048832fe6aa85756e3453a1be70` | 2026-09-25 | Inside a filing "?" is announced as opening the user guide (new tab) and claims no disclosure state; the dashboard's "?" keeps the Help panel's | `src/core/navigation/router.js`, `src/legacy-app.js`, `src/core/types/window-bridge.d.ts`, `tests/e2e/user-guide-wiring.spec.ts`, `TEST-INDEX.md`, `file_index.md` | re-implement | `tests/e2e/user-guide-wiring.spec.ts` ("announces what it does") | -- | open |
 | `6a8224d4b9baea47299eafb95a1d9bd5c8e420f3` | 2026-09-25 | vite.config.js comment: the fragments/ copy is needed in dist/portable too (served over http(s) in production) | `vite.config.js`, `file_index.md` | not-applicable | -- (a comment; merges as text) | -- | n/a |
 | `56ff26aeca419bbe47f12ed7207ab77db343bb82` | 2026-09-25 | MINIMAL_VALID_GUARDIAN answers the safe-deposit questions 'No', the stored tri-state, instead of the legacy false | `tests/e2e/support/fixtures.ts`, `file_index.md` | merges-cleanly | the specs built on the fixture (e.g. `tests/e2e/bond-depository.spec.ts`, `tests/e2e/pdf-form-specific.spec.ts`) | -- | open |
@@ -88,12 +88,6 @@ a `master` commit is missing from it.
 
 Notes on open rows:
 
-- `5de3707`: re-implement. Its `legacy-app.js` hunks (`loadCaseFileAtLaunch()` and
-  the re-read in `lockApp()`) land in code the branch moves, and it publishes
-  `window.newerCaseFileFormatMessage`, a new global the branch's ratchet
-  forbids: carried, the check is imported by whatever owns those load paths.
-  Its two specs reach the app through `window` and are converted to
-  `GuardianForms.testing` as they are carried (70T's guard would refuse them).
 - `ae9ecdc`: re-implement. It edits the Print Preview header in
   `legacy-app.js` and `attachFormHeaderActions()` in `router.js`; its new test
   navigates through `window.navigate`, converted to the adapter when carried.
@@ -118,3 +112,23 @@ Notes on open rows:
   `unreachableModules` and `pruneBlankCards` from `unownedWindowReads` in the
   same commit. At the merge, keep the branch's side of `legacy-app.js`,
   `main.js` and those four specs.
+- `b2d97f5`: carried in `f6ea716`, right after 70I (`a89d65d`) moved the code
+  it changes, re-implemented: `case-reader.js`'s `loadCaseFileFromZip()`
+  returns what it could not read, `case-file.js` gains
+  `describeUnreadableParts()` and `protectPartiallyReadCaseFile()` (imported,
+  not published on `window`), and `launch.js`, `app-lock.js` and
+  `case-import.js` use them. `case-file-damaged-open.spec.ts` came across
+  converted to `GuardianForms.testing` and failed on `a89d65d` for its stated
+  reasons (three of four; the undamaged control passed). The corpus golden's
+  three damaged-file outcomes were regenerated with it, as recorded above. At
+  the merge, keep the branch's side of `legacy-app.js`, `case-file.js`,
+  `window-bridge.d.ts`, the allowlist and the spec.
+- `5de3707`: carried in `296000f`, after `b2d97f5`'s carry, re-implemented:
+  `case-file.js` gains `manifestWardEntry()` and
+  `newerCaseFileFormatMessage()` (imported, not published), and the three
+  doors -- `launch.js`, `case-import.js`, the re-read in `app-lock.js`, which
+  also forgets the remembered file -- refuse a newer format. Both specs came
+  across converted to `GuardianForms.testing` and failed on `f6ea716` for
+  their stated reasons (four of five; the unencrypted control passed); the
+  corpus golden's unsupported-version outcome is now the refusal. At the
+  merge, keep the branch's side of the same files and both specs.
