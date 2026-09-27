@@ -67,9 +67,10 @@ test('the reported example reads exactly, and re-rendering, a field change, a th
   await go(page, '/');
   expect(await titleText(page), 'after navigating away and back').toBe(first);
 
-  // The header actions are still there, named and clickable.
+  // The header actions are still there, named and clickable. Inside a filing
+  // "?" opens the user guide for the page, and its name says so (ae9ecdc).
   await expect(page.locator('#main-content .form-header-actions [data-shell-action="dashboard"]')).toBeVisible();
-  await expect(page.locator('#main-content .form-header-actions #help-toggle-btn')).toHaveAccessibleName('Help');
+  await expect(page.locator('#main-content .form-header-actions #help-toggle-btn')).toHaveAccessibleName('Help: open the user guide for this page (new tab)');
 });
 
 test('the dashboard begins with the warning, once, where the old trailing label used to be', async ({ page }) => {
