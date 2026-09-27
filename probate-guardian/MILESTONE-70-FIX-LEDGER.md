@@ -64,6 +64,8 @@ a `master` commit is missing from it.
 
 ## Branch-only settings to undo at the merge
 
+All undone in the merge commit, `f3ca078` (2026-09-27).
+
 | Setting | Where | Why | Undo at the merge |
 | --- | --- | --- | --- |
 | Scoped exception note in section 2 | `AGENTS.md` (committed on `master`, `a9c9930`) | Tells agents that MS 70 work goes to this branch and everything else stays direct-to-master | Remove the note |

@@ -3,7 +3,7 @@
 ## Status
 
 **70A complete (2026-09-24); 70T, 70B, 70C and 70D complete (2026-09-25); 70E,
-70F, 70G, 70H, 70I and 70J complete (2026-09-26); 70K and 70L built (2026-09-27) -- see their build records. What remains is the merge (Reconstitution and merge): the merge gate, whose release tier needs the requester's approval when it runs, and the requester's release sign-off (D8).** The
+70F, 70G, 70H, 70I and 70J complete (2026-09-26); 70K and 70L complete (2026-09-27) -- see their build records. Merged into `master` on 2026-09-27 (`f3ca078`) after the merge gate and the requester's release sign-off (D8); MILESTONE-70-RELEASE-PACKET.md holds the gate's evidence and the merge.** The
 requester approved delivery 70A on 2026-09-24 and it is complete on the
 `milestone-70` branch (see the 70A build record), then approved 70T. On
 2026-09-25 the requester approved every delivery after it ("Finish ms 70. That

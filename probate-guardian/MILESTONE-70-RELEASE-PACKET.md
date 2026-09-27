@@ -22,7 +22,10 @@ head `78de6c5`; `master` is still at `44f46ec`.
    marked "also on `master`" reach production with the merge, rather than
    being made twice.
 4. **The release sign-off (D8)**, on this packet and the release gate's
-   result: **still needed**. Nothing merges without it.
+   result: **given 2026-09-27**, with the D6 freeze announced. Merged the
+   same day; see "The merge, as done" at the end.
+5. **The focus snag found at the gate** ("Found at the release gate"): fixed
+   on `master` after the merge, as its own change.
 
 ## What a filer will see after the merge
 
@@ -213,3 +216,28 @@ Written before the merge, as the plan requires.
    the AGENTS.md section 2 note; restore the test ports 4321 / 4173 / 5173 in
    `playwright.config.ts` and the measurement ports 4322 / 4323.
 6. Build the deployment zip from the merged `master` and deploy it.
+
+## The merge, as done (2026-09-27)
+
+1. Ledger guard re-run: OK, 12 `master` commits since `a9c9930`, none
+   unlisted, no row open; `master` at `44f46ec`.
+2. The release gate had run on the branch (above); nothing but documentation
+   landed after `78de6c5`.
+3. Rollback zip built from `master` at `44f46ec` before the merge:
+   `probate-forms-portable-2026-09-27-rollback-44f46ec.zip` (24 files, as
+   the package inventory above), kept in the `master` worktree's root with
+   the earlier deployment zips.
+4. Merged with a merge commit, `f3ca078` (parents `44f46ec`, `c58ea8b`).
+   Each conflict resolved to the branch's version -- every `master` change
+   was already carried -- and the staged tree was checked identical to
+   `milestone-70` before step 5.
+5. Branch-only settings undone in the merge: the AGENTS.md section 2 note
+   removed; test ports 4321 / 4173 / 5173 and measurement ports 4322 / 4323
+   restored. On the merged tree: types clean, data model OK (1,009 rows),
+   `npm run test:quick` unit 2070/2070 and browser 61/61.
+6. Deployment zip built from the merged `master` (`f3ca078`):
+   `probate-forms-portable-2026-09-27.zip`, 23 files, as the inventory
+   predicts, with no `legacy-app.js`. Opened from disk (`file://`): the
+   terms, a new case, an Initial Inventory from the Start New Form picker and
+   Print Preview, with no page error, console error or failed request.
+   Deploying it to the production site is the requester's step.
