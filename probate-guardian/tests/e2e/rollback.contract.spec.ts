@@ -38,7 +38,7 @@ import { COMPLETE_CASE, PREMERGE_SHA, saveCompleteCase } from './support/pre-mer
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(HERE, '..', '..');
-const PORT = 4338; // the milestone-70 branch's own (MILESTONE-70-FIX-LEDGER.md)
+const PORT = 4340; // the milestone-70 branch's own (MILESTONE-70-FIX-LEDGER.md)
 const PASSWORD = 'rollback-contract-2026';
 type Version = 'old' | 'new';
 
