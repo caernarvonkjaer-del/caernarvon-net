@@ -2,7 +2,7 @@
 // file, the start dialog, opening a .sav (and its password), dropping a file
 // on the window, and the unsaved-changes warning. Moved from legacy-app.js's
 // OPEN / START AT LAUNCH.
-import { protectPartiallyReadCaseFile, refreshAutoSaveArmedStatus, rememberCaseFileHandle } from '../persistence/case-file.js';
+import { newerCaseFileFormatMessage, protectPartiallyReadCaseFile, refreshAutoSaveArmedStatus, rememberCaseFileHandle } from '../persistence/case-file.js';
 import { loadCaseFileFromZip } from '../persistence/case-reader.js';
 import { clearCryptoKey, getCryptoKey, getSecurityMode, setSecurityMode } from '../persistence/crypto.js';
 import { isDirtySinceExport } from '../persistence/export-state.js';
@@ -170,6 +170,9 @@ export async function loadCaseFileAtLaunch(file){
     if(!manifestEntry){await alertModal('Not a Guardian Forms data file (no manifest.json inside).');return false;}
     const manifest=JSON.parse(await manifestEntry.async('string'));
     if(manifest.format!=='probate-guardian-case'){await alertModal('Not a Guardian Forms data file.');return false;}
+    // A newer case-file format than this build reads (case-file.js).
+    const newerFormat=newerCaseFileFormatMessage(manifest);
+    if(newerFormat){await alertModal(newerFormat);return false;}
     setSecurityMode(manifest.securityMode||(manifest.salt?'encrypted':'none'));
     if(getSecurityMode()==='encrypted'){
       await promptPasswordForFile(manifest,zip); // holds the key; only resolves on a verified password

@@ -4170,6 +4170,13 @@
   },
   {
    "from": "src/core/security/app-lock.js",
+   "to": "src/core/ui/dialogs.js",
+   "kind": "import-static",
+   "name": null,
+   "evalTime": null
+  },
+  {
+   "from": "src/core/security/app-lock.js",
    "to": "src/core/ward-lock.js",
    "kind": "import-static",
    "name": null,

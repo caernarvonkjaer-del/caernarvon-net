@@ -132,7 +132,8 @@ const UNREADABLE_PART_LABELS = {
 /** Filer-facing names for the parts of a case file that could not be read. */
 export function describeUnreadableParts(parts) {
   return (Array.isArray(parts) ? parts : []).map((p) => {
-    if (p && p.kind === 'filing') return p.name ? `The filing for "${p.name}"` : `A filing (${p.file || 'unnamed'})`;
+    // A password-protected file's manifest holds no names (manifestWardEntry()).
+    if (p && p.kind === 'filing') return p.name ? `The filing for "${p.name}"` : 'A filing whose name could not be read';
     return UNREADABLE_PART_LABELS[p && p.kind] || 'An unrecognized part of the file';
   });
 }
@@ -206,6 +207,35 @@ export function getJSZip() {
   throw new Error('JSZip library unavailable');
 }
 
+/**
+ * One filing's line in the manifest -- the only part of a .sav a zip tool
+ * shows without the password. A password-protected file used to list each
+ * ward's name here in plain text, so anyone holding the file could read the
+ * names of the people in the case. The name is written only when the file is
+ * unencrypted (readable by anyone anyway); every version reads a filing's
+ * name from the filing itself, never from here. (master 5de3707, carried.)
+ */
+function manifestWardEntry(ward, file) {
+  return getSecurityMode() === 'encrypted'
+    ? { wardId: ward.wardId, file }
+    : { wardId: ward.wardId, wardName: ward.wardName || '', file };
+}
+
+/**
+ * The message for a file saved in a newer case-file format than this build
+ * reads, or null. Such a file used to open as if it were this format: an
+ * older tab -- production caches the page for a year, so old tabs linger --
+ * would drop whatever the newer format added and, in Chrome/Edge, auto-save
+ * over the file. Every way a file comes in refuses it instead. A file with no
+ * version predates the field and is format 1. (master 5de3707, carried.)
+ */
+export function newerCaseFileFormatMessage(manifest) {
+  const version = Number(manifest && manifest.version);
+  if (!(version > CASE_FILE_FORMAT_VERSION)) return null;
+  return 'This file was saved by a newer version of Guardian Forms than the one open in this tab, so it was not opened here: '
+    + 'this version could lose what the newer one saved. Refresh the page (Ctrl+F5) to load the current version, then open the file again.';
+}
+
 export async function buildCaseFileBlob() {
   // A save still pending from the debounce would only write this again.
   if (_saveTimer) {
@@ -222,7 +252,7 @@ export async function buildCaseFileBlob() {
   for (const ward of (caseFile.wards || [])) {
     const file = `wards/${ward.wardId}.enc`;
     zip.file(file, await encryptJSON(ward));
-    wardIndex.push({ wardId: ward.wardId, wardName: ward.wardName || '', file });
+    wardIndex.push(manifestWardEntry(ward, file));
   }
 
   const appStateBlob = {
@@ -325,7 +355,7 @@ export async function buildSingleWardExportBlob(wardId) {
           guardianEmail: caseFile.guardianEmail,
         }),
         templates: [],
-        wards: [{ wardId: ward.wardId, wardName: ward.wardName || '', file: `wards/${ward.wardId}.enc` }],
+        wards: [manifestWardEntry(ward, `wards/${ward.wardId}.enc`)],
       },
       null,
       2

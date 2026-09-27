@@ -5,7 +5,7 @@
 // memory. Moved from legacy-app.js's ENCRYPTION AT REST.
 import { auditLog } from '../activity/audit-log.js';
 import { filingLifecycle } from '../navigation/filing-lifecycle.js';
-import { decryptCaseFileCore, flushPendingSave, loadCaseFileHandle, protectPartiallyReadCaseFile } from '../persistence/case-file.js';
+import { decryptCaseFileCore, flushPendingSave, forgetCaseFileHandle, loadCaseFileHandle, newerCaseFileFormatMessage, protectPartiallyReadCaseFile } from '../persistence/case-file.js';
 import { isDirtySinceExport } from '../persistence/export-state.js';
 import { loadCaseFileFromZip } from '../persistence/case-reader.js';
 import { CRYPTO_VERIFIER_PLAINTEXT, clearCryptoKey, decryptJSONWithKey, deriveAndVerifyKey, deriveKeyFromPassword, encryptJSON, generateSaltB64, getCryptoKey, getSecurityMode, setCryptoKey, setSecurityMode } from '../persistence/crypto.js';
@@ -15,6 +15,7 @@ import { monolith } from '../runtime/monolith.js';
 import { sanitizeObjectData } from './input-hardening.js';
 import { updateSidebar } from '../shell/sidebar.js';
 import { getActiveWard, getCaseFile } from '../state.js';
+import { alertModal } from '../ui/dialogs.js';
 import { releaseWardLock } from '../ward-lock.js';
 
 // Decides whether the user needs to create a master password (fresh install,
@@ -335,9 +336,17 @@ export async function lockApp(){
       const manifestEntry=zip.file('manifest.json');
       if(manifestEntry){
         const manifest=JSON.parse(await manifestEntry.async('string'));
-        const loaded=await loadCaseFileFromZip(zip,manifest,getCryptoKey());
-        // The file on disk may have been damaged since it was opened.
-        await protectPartiallyReadCaseFile(loaded&&loaded.unreadable,handleFile&&handleFile.name);
+        // Another tab on a newer version may have saved this file since it was
+        // opened: do not read it, and never save over it from this tab.
+        const newerFormat=newerCaseFileFormatMessage(manifest);
+        if(newerFormat){
+          await forgetCaseFileHandle();
+          await alertModal(newerFormat);
+        }else{
+          const loaded=await loadCaseFileFromZip(zip,manifest,getCryptoKey());
+          // The file on disk may have been damaged since it was opened.
+          await protectPartiallyReadCaseFile(loaded&&loaded.unreadable,handleFile&&handleFile.name);
+        }
       }
     }catch(e){console.error('Could not reload case data after unlocking',e);}
   }

@@ -18,6 +18,7 @@ import {
   decodeWardRecord,
   decryptCaseFileCore,
   describeUnreadableParts,
+  newerCaseFileFormatMessage,
   flushPendingSave,
   getJSZip,
   hideAutoExportReminder,
@@ -51,6 +52,8 @@ export async function importSavArchiveOrWard(file, options = {}) {
     if (!manifestEntry) throw new Error('Not a Guardian Forms data file (no manifest.json inside).');
     const manifest = JSON.parse(await manifestEntry.async('string'));
     if (manifest.format !== 'probate-guardian-case') throw new Error('Not a Guardian Forms data file.');
+    const newerFormat = newerCaseFileFormatMessage(manifest);
+    if (newerFormat) throw new Error(newerFormat);
 
     const currentSalt = await loadAppState('cryptoSalt');
     let key = cryptoKey;

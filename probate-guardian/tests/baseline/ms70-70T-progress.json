@@ -13,6 +13,8 @@
   "tests/e2e/carryover-workflow.spec.ts",
   "tests/e2e/case-file-core-fields-roundtrip.spec.ts",
   "tests/e2e/case-file-damaged-open.spec.ts",
+  "tests/e2e/case-file-manifest-privacy.spec.ts",
+  "tests/e2e/case-file-newer-format.spec.ts",
   "tests/e2e/case-file-protection.spec.ts",
   "tests/e2e/case-file-roundtrip.spec.ts",
   "tests/e2e/case-write-through.spec.ts",

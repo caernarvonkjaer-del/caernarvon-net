@@ -810,11 +810,11 @@
    "pageErrors": []
   },
   "unsupported-version": {
-   "dialog": null,
-   "startupScreen": false,
+   "dialog": "This file was saved by a newer version of Guardian Forms than the one open in this tab, so it was not opened here: this version could lose what the newer one saved. Refresh the page (Ctrl+F5) to load the current version, then open the file again.",
+   "startupScreen": true,
    "passwordPrompt": false,
    "passwordError": null,
-   "filingsLoaded": 9,
+   "filingsLoaded": 0,
    "pageErrors": []
   },
   "not-a-case-file": {
