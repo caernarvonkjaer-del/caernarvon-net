@@ -93,6 +93,7 @@
   "tests/e2e/plan-simplified-mount.spec.ts",
   "tests/e2e/plan-started-row.spec.ts",
   "tests/e2e/portable-http-parity.spec.ts",
+  "tests/e2e/pre-merge-output.characterization.spec.ts",
   "tests/e2e/preparer-flag.spec.ts",
   "tests/e2e/preparer-note-placement.spec.ts",
   "tests/e2e/print-preview-signature-jump.spec.ts",
@@ -100,6 +101,7 @@
   "tests/e2e/pwa-registration.spec.ts",
   "tests/e2e/readiness-card.contract.spec.ts",
   "tests/e2e/recovery-cache.spec.ts",
+  "tests/e2e/rollback.contract.spec.ts",
   "tests/e2e/routes.spec.ts",
   "tests/e2e/sav-corpus.characterization.spec.ts",
   "tests/e2e/save-pipeline-boot.spec.ts",
@@ -128,6 +130,7 @@
   "tests/e2e/support/fixtures.ts",
   "tests/e2e/support/pdf-extract.ts",
   "tests/e2e/support/plan-fixture.ts",
+  "tests/e2e/support/pre-merge-case.ts",
   "tests/e2e/support/stream.ts",
   "tests/e2e/support/supplemental-pdf-fixture.ts",
   "tests/e2e/support/target-profile.ts",
@@ -151,9 +154,11 @@
  "exempt": [
   {
    "file": "tests/e2e/support/pre-70-build.ts",
-   "why": "Drives a Guardian Forms build from before Milestone 70, which has no GuardianForms namespace, through that build's own window globals: the mixed-version characterization runs such a build beside this tree on purpose. Used by tests/e2e/mixed-version.characterization.spec.ts alone; removed once production runs a post-70 build.",
+   "why": "Drives a Guardian Forms build from before Milestone 70, which has no GuardianForms namespace, through that build's own window globals: the mixed-version characterization runs such a build beside this tree on purpose, and the merge gate's rollback test and output comparison open this tree's case file in the pre-merge build. Used by those three alone; removed once production runs a post-70 build.",
    "usedBy": [
-    "tests/e2e/mixed-version.characterization.spec.ts"
+    "tests/e2e/mixed-version.characterization.spec.ts",
+    "tests/e2e/pre-merge-output.characterization.spec.ts",
+    "tests/e2e/rollback.contract.spec.ts"
    ]
   }
  ],

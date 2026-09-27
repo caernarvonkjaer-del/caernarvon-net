@@ -6,9 +6,11 @@ import type { AppDriver } from './app-driver';
 // a build beside this tree on purpose, so this file names those globals --
 // the one place in the browser suite that does -- and
 // tests/baseline/ms70-70T-progress.json exempts it, and only it, from the 70T
-// guard with that reason. Nothing but the mixed-version characterization may
-// use it. Once production runs a post-70 build, the characterization's old
-// side is pinned to one (PG_MIXED_OLD_SHA) and this file goes.
+// guard with that reason. Nothing but the mixed-version characterization and
+// the merge gate's two checks against the pre-merge build (rollback.contract,
+// pre-merge-output.characterization) may use it. Once production runs a
+// post-70 build, their old sides are pinned to one (PG_MIXED_OLD_SHA,
+// PG_PREMERGE_SHA) and this file goes.
 export const pre70Build: AppDriver = {
   openAddFilingDialog: (page, type) => page.evaluate((t) => (window as any).showAddWardModalForType(t), type),
   navigate: (page, route) => page.evaluate((r) => (window as any).navigate(r), route),
@@ -25,5 +27,12 @@ export const pre70Build: AppDriver = {
     for (const x of cache.wards) wards.push((await w.decryptJSONWithKey(x.enc, null)).wardName);
     const guardian = await w.decryptJSONWithKey(cache.guardian, null);
     return { securityMode: cache.securityMode, wards, guardianKeys: Object.keys(guardian).sort() };
+  }),
+  loadedCase: (page) => page.evaluate(() => {
+    const cf = (window as any).caseFile || {};
+    return JSON.parse(JSON.stringify({
+      wards: cf.wards || [], parties: cf.parties || [], cases: cf.cases || [], dismissedPartyPairs: cf.dismissedPartyPairs || [],
+      guardianName: cf.guardianName ?? null, guardianEmail: cf.guardianEmail ?? null, selectedCircuit: cf.selectedCircuit ?? null,
+    }));
   }),
 };

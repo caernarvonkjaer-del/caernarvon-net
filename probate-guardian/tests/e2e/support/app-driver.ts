@@ -1,8 +1,10 @@
 import type { Page } from '@playwright/test';
 
 // Milestone 70, 70T. The handful of app operations the mixed-version
-// characterization (tests/e2e/mixed-version.characterization.spec.ts) needs
-// from each tab, for either build it is running:
+// characterization (tests/e2e/mixed-version.characterization.spec.ts) and the
+// merge gate's checks against the pre-merge build (rollback.contract.spec.ts,
+// pre-merge-output.characterization.spec.ts) need from each tab, for either
+// build it is running:
 //
 //   currentBuild -- this tree, through GuardianForms.testing (the page must
 //                   have been opened with the runner's test-mode flag set);
@@ -30,6 +32,8 @@ export type AppDriver = {
   saveRecoverySnapshot(page: Page): Promise<boolean>;
   /** Read the stored recovery snapshot through this build's own decryption (no key: a case saved without a password). */
   readRecoverySnapshot(page: Page): Promise<{ securityMode: string; wards: string[]; guardianKeys: string[] }>;
+  /** The open case as this build holds it: filings, people and case records, dismissals, guardian and circuit. */
+  loadedCase(page: Page): Promise<any>;
 };
 
 export const currentBuild: AppDriver = {
@@ -48,5 +52,12 @@ export const currentBuild: AppDriver = {
     for (const x of cache.wards) wards.push((await state.decrypt(x.enc)).wardName);
     const guardian = await state.decrypt(cache.guardian);
     return { securityMode: cache.securityMode, wards, guardianKeys: Object.keys(guardian).sort() };
+  }),
+  loadedCase: (page) => page.evaluate(() => {
+    const cf = (window as any).GuardianForms.testing.snapshot().caseFile || {};
+    return JSON.parse(JSON.stringify({
+      wards: cf.wards || [], parties: cf.parties || [], cases: cf.cases || [], dismissedPartyPairs: cf.dismissedPartyPairs || [],
+      guardianName: cf.guardianName ?? null, guardianEmail: cf.guardianEmail ?? null, selectedCircuit: cf.selectedCircuit ?? null,
+    }));
   }),
 };
