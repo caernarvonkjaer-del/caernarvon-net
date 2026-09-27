@@ -117,6 +117,55 @@ export async function forgetCaseFileHandle() {
   await refreshAutoSaveArmedStatus();
 }
 
+// What a filer is told a case file part is, when it could not be read. The
+// kinds come from case-reader.js's loadCaseFileFromZip() and from this file's
+// decryptCaseFileCore() and case-import.js's importSavArchiveOrWard().
+const UNREADABLE_PART_LABELS = {
+  parties: 'The shared records of people (wards, guardians and attorneys)',
+  cases: 'The case records (case numbers and counties)',
+  partyDismissals: 'Your list of people marked as not duplicates of each other',
+  guardian: 'The guardian name and email saved with this file',
+  preferences: "This file's saved settings (circuit and save reminders)",
+  activity: 'The activity history',
+};
+
+/** Filer-facing names for the parts of a case file that could not be read. */
+export function describeUnreadableParts(parts) {
+  return (Array.isArray(parts) ? parts : []).map((p) => {
+    if (p && p.kind === 'filing') return p.name ? `The filing for "${p.name}"` : `A filing (${p.file || 'unnamed'})`;
+    return UNREADABLE_PART_LABELS[p && p.kind] || 'An unrecognized part of the file';
+  });
+}
+
+/**
+ * A case file was opened, or re-read after an unlock, and some parts could not
+ * be read. Everything else is already loaded. Used to be silent: the file
+ * opened without those parts and, in Chrome/Edge, the first auto-save rewrote
+ * the original without them for good. Now the original stops being the file
+ * auto-save writes to (the next save asks where to save), and the filer is
+ * told exactly what could not be read. Returns true when anything was
+ * unreadable -- the caller must then not remember the file's handle.
+ * (master b2d97f5, carried.)
+ */
+export async function protectPartiallyReadCaseFile(parts, fileName = '') {
+  const labels = describeUnreadableParts(parts);
+  if (!labels.length) return false;
+  try {
+    await forgetCaseFileHandle();
+  } catch (e) {
+    console.warn('Could not detach the damaged case file', e);
+  }
+  const named = fileName ? `"${fileName}"` : 'this file';
+  await alertModal({
+    title: 'Part of this file could not be read',
+    message: `These parts of ${named} could not be read, so they were not opened:\n\n${labels.map((l) => `• ${l}`).join('\n')}\n\n`
+      + 'Everything else opened. Your original file has not been changed, and it will not be saved over automatically. '
+      + 'To keep what opened, use Save Backup and save it under a new name. Keep the original file as well: '
+      + 'what could not be read may still be recoverable from it.',
+  });
+  return true;
+}
+
 export async function refreshAutoSaveArmedStatus() {
   let armed = false;
   let handle = null;
@@ -639,6 +688,8 @@ export async function encryptCaseFileCore({ guardianInfo, parties, cases, dismis
 // (e.g. "from imported file" vs "from session-restore cache").
 export async function decryptCaseFileCore({ parties, cases, partyDismissals }, key, { source = '' } = {}) {
   const suffix = source ? ` ${source}` : '';
+  // Present but unreadable, for protectPartiallyReadCaseFile()'s wording.
+  const unreadable = [];
   let importedParties = [];
   if (parties) {
     try {
@@ -646,6 +697,7 @@ export async function decryptCaseFileCore({ parties, cases, partyDismissals }, k
       if (Array.isArray(p)) importedParties = p;
     } catch (e) {
       console.warn(`Could not read parties${suffix}`, e);
+      unreadable.push({ kind: 'parties' });
     }
   }
   let importedCases = [];
@@ -655,6 +707,7 @@ export async function decryptCaseFileCore({ parties, cases, partyDismissals }, k
       if (Array.isArray(c)) importedCases = c;
     } catch (e) {
       console.warn(`Could not read cases${suffix}`, e);
+      unreadable.push({ kind: 'cases' });
     }
   }
   let importedPartyDismissals = [];
@@ -664,12 +717,14 @@ export async function decryptCaseFileCore({ parties, cases, partyDismissals }, k
       if (Array.isArray(d)) importedPartyDismissals = d;
     } catch (e) {
       console.warn(`Could not read party dismissals${suffix}`, e);
+      unreadable.push({ kind: 'partyDismissals' });
     }
   }
   return {
     parties: importedParties,
     cases: importedCases,
     dismissedPartyPairs: importedPartyDismissals,
+    unreadable,
   };
 }
 

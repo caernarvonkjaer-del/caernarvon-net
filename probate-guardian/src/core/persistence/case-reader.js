@@ -22,6 +22,15 @@ import { applyTheme, seedStoredThemeFromLegacy } from '../theme-preference.js';
 // contains, rather than failing.
 export async function loadCaseFileFromZip(zip,manifest,key){
   const caseFile=getCaseFile();
+  // Every part of the file that exists (or that its manifest lists) but could
+  // not be read. These used to be skipped with only a console warning, so a
+  // damaged file opened silently without them -- and in Chrome/Edge the first
+  // auto-save then rewrote the original without them, for good. Returned to
+  // the caller, which hands it to case-file.js's protectPartiallyReadCaseFile()
+  // to tell the filer and stop the original being saved over. A part a file
+  // simply does not have (an older file with no parties.enc) is not damage and
+  // is not listed. (master b2d97f5, carried into Milestone 70's reader.)
+  const unreadable=[];
   caseFile.wards=[];
   caseFile.parties=[];
   caseFile.cases=[];
@@ -31,29 +40,31 @@ export async function loadCaseFileFromZip(zip,manifest,key){
     try{
       const parties=await decryptJSONWithKey(await partiesFile.async('string'),key);
       if(Array.isArray(parties))caseFile.parties=parties;
-    }catch(e){console.warn('Could not read parties from .sav file',e);}
+    }catch(e){console.warn('Could not read parties from .sav file',e);unreadable.push({kind:'parties'});}
   }
   const casesFile=zip.file('cases.enc');
   if(casesFile){
     try{
       const cases=await decryptJSONWithKey(await casesFile.async('string'),key);
       if(Array.isArray(cases))caseFile.cases=cases;
-    }catch(e){console.warn('Could not read cases from .sav file',e);}
+    }catch(e){console.warn('Could not read cases from .sav file',e);unreadable.push({kind:'cases'});}
   }
   const partyDismissalsFile=zip.file('partyDismissals.enc');
   if(partyDismissalsFile){
     try{
       const dismissals=await decryptJSONWithKey(await partyDismissalsFile.async('string'),key);
       if(Array.isArray(dismissals))caseFile.dismissedPartyPairs=dismissals;
-    }catch(e){console.warn('Could not read party dismissals from .sav file',e);}
+    }catch(e){console.warn('Could not read party dismissals from .sav file',e);unreadable.push({kind:'partyDismissals'});}
   }
   for(const entry of (Array.isArray(manifest.wards)?manifest.wards:[])){
     const f=zip.file(entry.file);
-    if(!f){console.warn('Case file entry missing:',entry.file);continue;}
+    const filing={kind:'filing',name:(entry&&entry.wardName)||'',file:(entry&&entry.file)||''};
+    if(!f){console.warn('Case file entry missing:',entry.file);unreadable.push(filing);continue;}
     try{
       const ward=sanitizeObjectData(await decryptJSONWithKey(await f.async('string'),key));
       if(ward&&ward.wardId)caseFile.wards.push(ward);
-    }catch(e){console.warn('Skipping unreadable ward in .sav file',entry.file,e);}
+      else unreadable.push(filing);
+    }catch(e){console.warn('Skipping unreadable ward in .sav file',entry.file,e);unreadable.push(filing);}
   }
   caseFile.guardianName='';
   caseFile.guardianEmail='';
@@ -63,7 +74,7 @@ export async function loadCaseFileFromZip(zip,manifest,key){
       const g=await decryptJSONWithKey(manifest.guardian,key);
       caseFile.guardianName=g.guardianName||'';
       caseFile.guardianEmail=g.guardianEmail||'';
-    }catch(e){console.warn('Could not read guardian info from .sav file',e);}
+    }catch(e){console.warn('Could not read guardian info from .sav file',e);unreadable.push({kind:'guardian'});}
   }
   setAppState('activeWardId',null);
   setAutoExportIntervalMinutes(10);
@@ -110,7 +121,7 @@ export async function loadCaseFileFromZip(zip,manifest,key){
       // deliberately do not (case-file.js, recovery-cache.js).
       const sc=Number(a.selectedCircuit);
       caseFile.selectedCircuit=(sc>=1&&sc<=20)?sc:6;
-    }catch(e){console.warn('Could not read app preferences from .sav file',e);}
+    }catch(e){console.warn('Could not read app preferences from .sav file',e);unreadable.push({kind:'preferences'});}
   }
   // Milestone 38C, same rule as above and deliberately outside the appState
   // branch: a single-ward export carries no appState section at all, and this
@@ -148,6 +159,7 @@ export async function loadCaseFileFromZip(zip,manifest,key){
     try{
       const entries=await decryptJSONWithKey(await auditFile.async('string'),key);
       if(Array.isArray(entries))replaceAuditLog(entries);
-    }catch(e){console.warn('Could not read audit log from .sav file',e);}
+    }catch(e){console.warn('Could not read audit log from .sav file',e);unreadable.push({kind:'activity'});}
   }
+  return {unreadable};
 }

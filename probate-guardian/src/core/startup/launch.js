@@ -2,7 +2,7 @@
 // file, the start dialog, opening a .sav (and its password), dropping a file
 // on the window, and the unsaved-changes warning. Moved from legacy-app.js's
 // OPEN / START AT LAUNCH.
-import { refreshAutoSaveArmedStatus, rememberCaseFileHandle } from '../persistence/case-file.js';
+import { protectPartiallyReadCaseFile, refreshAutoSaveArmedStatus, rememberCaseFileHandle } from '../persistence/case-file.js';
 import { loadCaseFileFromZip } from '../persistence/case-reader.js';
 import { clearCryptoKey, getCryptoKey, getSecurityMode, setSecurityMode } from '../persistence/crypto.js';
 import { isDirtySinceExport } from '../persistence/export-state.js';
@@ -29,7 +29,7 @@ export async function trySilentReopen(){
     const file=await readRememberedFile(handle);
     const res=await loadCaseFileAtLaunch(file);
     if(res&&res.ok){
-      await rememberCaseFileHandle(handle);
+      if(!res.partial)await rememberCaseFileHandle(handle);
       return true;
     }
     return false;
@@ -98,7 +98,7 @@ export async function openWardFileAtLaunch(){
         const file=await readRememberedFile(remembered);
         const res=await loadCaseFileAtLaunch(file);
         if(res&&res.ok){
-          await rememberCaseFileHandle(remembered);
+          if(!res.partial)await rememberCaseFileHandle(remembered);
           _resolveStartupChoice();
           return;
         }
@@ -121,7 +121,7 @@ export async function openWardFileAtLaunch(){
       const file=await handle.getFile();
       const res=await loadCaseFileAtLaunch(file);
       if(res&&res.ok){
-        await rememberCaseFileHandle(handle);
+        if(!res.partial)await rememberCaseFileHandle(handle);
         _resolveStartupChoice();
       }
     }catch(e){
@@ -182,7 +182,7 @@ export async function loadCaseFileAtLaunch(file){
     appStateObject().securityMode=getSecurityMode();
     appStateObject().cryptoSalt=manifest.salt||null;
     appStateObject().cryptoVerifier=manifest.verifier||null;
-    await loadCaseFileFromZip(zip,manifest,getCryptoKey());
+    const loaded=await loadCaseFileFromZip(zip,manifest,getCryptoKey());
     // Milestone 40D: this line used to be `if(_appState.theme)applyTheme(...)`,
     // re-applying the FILE's theme once the .sav finished loading. That was the
     // flash this delivery removes, and it also meant opening someone else's file
@@ -197,7 +197,11 @@ export async function loadCaseFileAtLaunch(file){
     _openedFileAtLaunch=true;
     markCaseOpenedBefore();
     refreshAutoSaveArmedStatus(); // covers the plain-<input> path too, where no handle was ever remembered
-    return { ok: true, wardId: (getCaseFile().wards[0] && getCaseFile().wards[0].wardId) || null };
+    // A file with parts that could not be read opened without them: tell the
+    // filer, and make sure the damaged original is never the file auto-save
+    // writes to. Callers must not remember its handle when `partial` is true.
+    const partial=await protectPartiallyReadCaseFile(loaded&&loaded.unreadable,file&&file.name);
+    return { ok: true, partial, wardId: (getCaseFile().wards[0] && getCaseFile().wards[0].wardId) || null };
   }catch(e){
     clearCryptoKey(); // a file that did not open leaves no key behind
     console.error('Failed to open case file',e);

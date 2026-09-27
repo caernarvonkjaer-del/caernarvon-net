@@ -802,8 +802,8 @@
    "pageErrors": []
   },
   "a-listed-filing-missing": {
-   "dialog": null,
-   "startupScreen": false,
+   "dialog": "These parts of \"a-listed-filing-missing.sav\" could not be read, so they were not opened:\n\n• The filing for \"Corpus Ward One\"\n\nEverything else opened. Your original file has not been changed, and it will not be saved over automatically. To keep what opened, use Save Backup and save it under a new name. Keep the original file as well: what could not be read may still be recoverable from it.",
+   "startupScreen": true,
    "passwordPrompt": false,
    "passwordError": null,
    "filingsLoaded": 8,
@@ -826,15 +826,15 @@
    "pageErrors": []
   },
   "unreadable-filing": {
-   "dialog": null,
-   "startupScreen": false,
+   "dialog": "These parts of \"unreadable-filing.sav\" could not be read, so they were not opened:\n\n• The filing for \"Corpus Ward One\"\n\nEverything else opened. Your original file has not been changed, and it will not be saved over automatically. To keep what opened, use Save Backup and save it under a new name. Keep the original file as well: what could not be read may still be recoverable from it.",
+   "startupScreen": true,
    "passwordPrompt": false,
    "passwordError": null,
    "filingsLoaded": 8,
    "pageErrors": []
   },
   "tampered-encrypted-filing": {
-   "dialog": null,
+   "dialog": "These parts of \"tampered-encrypted-filing.sav\" could not be read, so they were not opened:\n\n• The filing for \"Corpus Ward One\"\n\nEverything else opened. Your original file has not been changed, and it will not be saved over automatically. To keep what opened, use Save Backup and save it under a new name. Keep the original file as well: what could not be read may still be recoverable from it.",
    "startupScreen": false,
    "passwordPrompt": false,
    "passwordError": null,

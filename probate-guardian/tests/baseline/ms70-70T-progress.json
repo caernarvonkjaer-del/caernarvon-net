@@ -12,6 +12,7 @@
   "tests/e2e/bond-depository.spec.ts",
   "tests/e2e/carryover-workflow.spec.ts",
   "tests/e2e/case-file-core-fields-roundtrip.spec.ts",
+  "tests/e2e/case-file-damaged-open.spec.ts",
   "tests/e2e/case-file-protection.spec.ts",
   "tests/e2e/case-file-roundtrip.spec.ts",
   "tests/e2e/case-write-through.spec.ts",

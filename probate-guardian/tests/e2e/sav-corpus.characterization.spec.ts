@@ -109,8 +109,13 @@ async function observe(page: Page, pageErrors: string[]) {
   return { ...seen, pageErrors: [...pageErrors] };
 }
 
+// Each damaged file under its own name, in a folder for this run: the name is
+// what a filer sees in a warning (master's b2d97f5, carried), so it must not
+// carry the run's process id into the golden.
 const tmpFile = (name: string, bytes: Buffer) => {
-  const file = path.join(os.tmpdir(), `ms70-sav-${process.pid}-${name}`);
+  const dir = path.join(os.tmpdir(), `ms70-sav-${process.pid}`);
+  fs.mkdirSync(dir, { recursive: true });
+  const file = path.join(dir, name);
   fs.writeFileSync(file, bytes);
   return file;
 };

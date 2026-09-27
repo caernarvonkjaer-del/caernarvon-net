@@ -5,7 +5,7 @@
 // memory. Moved from legacy-app.js's ENCRYPTION AT REST.
 import { auditLog } from '../activity/audit-log.js';
 import { filingLifecycle } from '../navigation/filing-lifecycle.js';
-import { decryptCaseFileCore, flushPendingSave, loadCaseFileHandle } from '../persistence/case-file.js';
+import { decryptCaseFileCore, flushPendingSave, loadCaseFileHandle, protectPartiallyReadCaseFile } from '../persistence/case-file.js';
 import { isDirtySinceExport } from '../persistence/export-state.js';
 import { loadCaseFileFromZip } from '../persistence/case-reader.js';
 import { CRYPTO_VERIFIER_PLAINTEXT, clearCryptoKey, decryptJSONWithKey, deriveAndVerifyKey, deriveKeyFromPassword, encryptJSON, generateSaltB64, getCryptoKey, getSecurityMode, setCryptoKey, setSecurityMode } from '../persistence/crypto.js';
@@ -335,7 +335,9 @@ export async function lockApp(){
       const manifestEntry=zip.file('manifest.json');
       if(manifestEntry){
         const manifest=JSON.parse(await manifestEntry.async('string'));
-        await loadCaseFileFromZip(zip,manifest,getCryptoKey());
+        const loaded=await loadCaseFileFromZip(zip,manifest,getCryptoKey());
+        // The file on disk may have been damaged since it was opened.
+        await protectPartiallyReadCaseFile(loaded&&loaded.unreadable,handleFile&&handleFile.name);
       }
     }catch(e){console.error('Could not reload case data after unlocking',e);}
   }

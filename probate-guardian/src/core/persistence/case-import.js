@@ -17,6 +17,7 @@ import { alertModal, confirmModal, promptModal } from '../ui/dialogs.js';
 import {
   decodeWardRecord,
   decryptCaseFileCore,
+  describeUnreadableParts,
   flushPendingSave,
   getJSZip,
   hideAutoExportReminder,
@@ -69,10 +70,15 @@ export async function importSavArchiveOrWard(file, options = {}) {
     }
 
     const imported = [];
+    // Listed in the manifest but not in the file: named in the confirmation
+    // below instead of being skipped silently. (An entry that is present but
+    // unreadable still stops the whole import, as it always has.)
+    const unreadable = [];
     for (const entry of Array.isArray(manifest.wards) ? manifest.wards : []) {
       const f = zip.file(entry.file);
       if (!f) {
         console.warn('Case file entry missing:', entry.file);
+        unreadable.push({ kind: 'filing', name: entry.wardName || '', file: entry.file || '' });
         continue;
       }
       let ward;
@@ -96,6 +102,7 @@ export async function importSavArchiveOrWard(file, options = {}) {
       parties: importedParties,
       cases: importedCases,
       dismissedPartyPairs: importedPartyDismissals,
+      unreadable: unreadableCore,
     } = await decryptCaseFileCore(
       {
         parties: importedPartiesFile ? await importedPartiesFile.async('string') : null,
@@ -115,7 +122,14 @@ export async function importSavArchiveOrWard(file, options = {}) {
         ? `Open backup containing ${imported.length} ward(s) from "${file.name}"?`
         : `Restore backup containing ${imported.length} ward(s) from "${file.name}"?\n\n• ${adding} new ward(s)\n• ${replacing} existing ward(s) will be updated\n\nDo you want to proceed?`
       : `Import ${imported.length} form(s) from "${file.name}"?\n\n• ${adding} new form(s)\n• ${replacing} will replace existing form(s) with the same ID`;
-    if (!(await confirmModal(promptText))) return false;
+    unreadable.push(...unreadableCore);
+    // A backup with parts that cannot be read: say exactly which before the
+    // filer decides, and never make it the file auto-save writes to (below),
+    // so the damaged original is not saved over. (master b2d97f5, carried.)
+    const unreadableNote = unreadable.length
+      ? `Part of this file could not be read and will not be imported:\n${describeUnreadableParts(unreadable).map((l) => `• ${l}`).join('\n')}\n\nThe file itself will not be changed or saved over.\n\n`
+      : '';
+    if (!(await confirmModal(unreadableNote + promptText))) return false;
 
     // Milestone 38C: close any open editor BEFORE replacing ward data, using
     // the real unload path. unloadWard() flushes pending values, releases the
@@ -173,7 +187,7 @@ export async function importSavArchiveOrWard(file, options = {}) {
       updateSidebar();
     }
 
-    if (handle) {
+    if (handle && !unreadable.length) {
       await rememberCaseFileHandle(handle);
     }
 
