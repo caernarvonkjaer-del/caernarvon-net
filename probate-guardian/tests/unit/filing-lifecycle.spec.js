@@ -67,12 +67,10 @@ const IMPLEMENTATION = new Set([
 // A module that still reaches an operation through its window publication --
 // the implementation itself, published by its own module -- and why, with the
 // delivery that removes it.
-const THROUGH_WINDOW = {
-  'src/core/persistence/case-file.js': {
-    names: ['unloadWard'],
-    why: 'opening a backup closes the open filing first; importing the service here would close an import cycle (conversion and the year operations import case-file.js), so it waits for the persistence service (70I)',
-  },
-};
+// None since Milestone 70's 70I: opening a backup, which closes the open
+// filing first, moved out of case-file.js into case-import.js, which imports
+// the service.
+const THROUGH_WINDOW = {};
 // Callers the rule must see going through the service, so it cannot pass by
 // finding nothing.
 const SERVICE_CALLERS = [
@@ -83,6 +81,11 @@ const SERVICE_CALLERS = [
   'src/core/modals/convert-ward-modal.js',
   'src/features/dashboard/index.js',
   'src/core/testing/testing-adapter.js',
+  // Milestone 70, 70I: opening a backup, the lock's reopening, startup's
+  // remembered filing.
+  'src/core/persistence/case-import.js',
+  'src/core/security/app-lock.js',
+  'src/core/startup/startup.js',
 ];
 
 describe('the filing lifecycle service', () => {
@@ -138,7 +141,7 @@ describe('the filing lifecycle service', () => {
       });
     }
     expect([...needed].filter((n) => !published.has(n)), 'reached through window but not published as itself by its module').toEqual([]);
-    expect(calledBare.size, 'the monolith still switches and opens filings (the switcher, 70H; loading a case, 70I)').toBeGreaterThan(0);
+    expect([...calledBare], 'the monolith opens no filing itself: the switcher moved out in 70H, loading a case in 70I').toEqual([]);
   }, 60_000);
 
   test("which filing is open changes only through state.js's setActiveFiling()", () => {

@@ -28,9 +28,11 @@ import { assertWorkbookWithinLimits, getImportProgressEl, sanitizeObjectData, va
 import { capitalizeImportedFields } from '../../core/form/form-contract.js';
 import { mk } from '../../core/filing/models/guardian.js';
 import { getD } from '../../core/state.js';
+import { saveData } from '../../core/persistence/case-file.js';
+import { ensureTemplate } from '../../core/persistence/templates.js';
 
 const {
-  renderPage, ensureTemplate, saveData, navigate,
+  renderPage, navigate,
   
 } = window;
 

@@ -7,9 +7,9 @@ import { esc } from '../filing/escape-html.js';
 import { INVENTORY_TYPES } from '../filing/filing-registry.js';
 import { wardCountyMergeConflict } from '../navigation/ward-county.js';
 import { closedFilingDrift, dismissPartyPair, filingDriftFromParties, findDuplicateCandidates, mergeParties, referenceCountForParty, resolveParty, slotsReferencing, subPartiesOf, syncFilingSlotWithParty, unmergeParty } from '../party-resolver.js';
-import { monolith } from '../runtime/monolith.js';
-import { getCaseFile, getD } from '../state.js';
+import { getCaseFile, getD, requestSave } from '../state.js';
 import { confirmModal } from '../ui/dialogs.js';
+import { auditLog } from '../activity/audit-log.js';
 
 export const PARTY_FIELD_ROWS=[
   ['name','Name'],
@@ -181,17 +181,17 @@ export async function doPartySyncClosed(wardId,role,index){
   const filing=(getCaseFile().wards||[]).find(w=>w.wardId===wardId);
   if(!filing)return;
   if(syncFilingSlotWithParty(filing,role,Number(index)||0)){
-    await monolith.auditLog('PARTY_SYNC',`Synced ${slotLabel(role,Number(index)||0)} on closed filing "${filing.wardName}" with its shared record`,true,wardId);
-    monolith.autoSave();
+    await auditLog('PARTY_SYNC',`Synced ${slotLabel(role,Number(index)||0)} on closed filing "${filing.wardName}" with its shared record`,true,wardId);
+    requestSave();
   }
   renderPartyManagementBody();
 }
 
 export async function doPartySyncClosedAll(partyId){
   for(const d of closedFilingDrift(partyId)){
-    if(syncFilingSlotWithParty(d.filing,d.role,d.index))await monolith.auditLog('PARTY_SYNC',`Synced ${slotLabel(d.role,d.index)} on closed filing "${d.filing.wardName}" with its shared record`,true,d.filing.wardId);
+    if(syncFilingSlotWithParty(d.filing,d.role,d.index))await auditLog('PARTY_SYNC',`Synced ${slotLabel(d.role,d.index)} on closed filing "${d.filing.wardName}" with its shared record`,true,d.filing.wardId);
   }
-  monolith.autoSave();
+  requestSave();
   renderPartyManagementBody();
 }
 
@@ -222,9 +222,9 @@ export async function doFilingSyncClosed(role,index){
   if(!filing)return;
   const slots=role?[{role,index:Number(index)||0}]:filingDriftFromParties(filing).map(d=>({role:d.role,index:d.index}));
   for(const s of slots){
-    if(syncFilingSlotWithParty(filing,s.role,s.index))await monolith.auditLog('PARTY_SYNC',`Synced ${slotLabel(s.role,s.index)} on closed filing "${filing.wardName}" with its shared record`,true,filing.wardId);
+    if(syncFilingSlotWithParty(filing,s.role,s.index))await auditLog('PARTY_SYNC',`Synced ${slotLabel(s.role,s.index)} on closed filing "${filing.wardName}" with its shared record`,true,filing.wardId);
   }
-  monolith.autoSave();
+  requestSave();
   // The page is re-rendered by the dispatcher that handled the click
   // (form-events.js): the router renders this module's page, so this
   // module cannot import it (Milestone 70, 70H).
@@ -275,15 +275,15 @@ export async function doPartyMergeKeep(keepId,discardId){
   }
   if(!(await confirmModal(message)))return;
   mergeParties(keepId,discardId,{adoptBlankFields:adoptable.length>0});
-  await monolith.auditLog('PARTY_MERGE',`Merged "${discard.name}" into "${keep.name}"`,true);
+  await auditLog('PARTY_MERGE',`Merged "${discard.name}" into "${keep.name}"`,true);
   _partyCompareIds=[];
-  monolith.autoSave();
+  requestSave();
   renderPartyManagementBody();
 }
 
 export async function doPartyDismissPair(idA,idB){
   dismissPartyPair(idA,idB);
-  monolith.autoSave();
+  requestSave();
   renderPartyManagementBody();
 }
 
@@ -295,9 +295,9 @@ export async function doPartyUnmergeSelected(){
   if(!(await confirmModal(message)))return;
   for(const sub of subs){
     const primaryName=resolveParty(sub.mergedInto)?.name;
-    if(unmergeParty(sub.id))await monolith.auditLog('PARTY_UNMERGE',`Unmerged "${sub.name}" from "${primaryName}"`,true);
+    if(unmergeParty(sub.id))await auditLog('PARTY_UNMERGE',`Unmerged "${sub.name}" from "${primaryName}"`,true);
   }
   _partyUnmergeIds=[];
-  monolith.autoSave();
+  requestSave();
   renderPartyManagementBody();
 }

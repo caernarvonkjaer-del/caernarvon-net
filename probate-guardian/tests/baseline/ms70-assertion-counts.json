@@ -2,8 +2,8 @@
  "generatedBy": "node scripts/ms70-assertion-counts.mjs --write-baseline",
  "note": "Milestone 70 per-spec assertion counts (static expect calls). tests/unit/ms70-assertion-counts.spec.js fails when a spec falls below its count; lowering it requires --reason, recorded in dropLog. A tripwire, not proof of equivalence (decision D9).",
  "totals": {
-  "expects": 6573,
-  "tests": 1895
+  "expects": 6646,
+  "tests": 1914
  },
  "counts": {
   "tests/e2e/annotation-toolbar-containment.spec.ts": {
@@ -202,8 +202,12 @@
    "expects": 16,
    "tests": 4
   },
+  "tests/e2e/lock-and-save-state.contract.spec.ts": {
+   "expects": 12,
+   "tests": 5
+  },
   "tests/e2e/mixed-version.characterization.spec.ts": {
-   "expects": 31,
+   "expects": 32,
    "tests": 8
   },
   "tests/e2e/navigation-status.contract.spec.ts": {
@@ -358,6 +362,10 @@
    "expects": 6,
    "tests": 2
   },
+  "tests/e2e/prior-year-delete.spec.ts": {
+   "expects": 5,
+   "tests": 1
+  },
   "tests/e2e/pwa-registration.spec.ts": {
    "expects": 2,
    "tests": 1
@@ -443,11 +451,11 @@
    "tests": 6
   },
   "tests/e2e/simplified-remuneration.spec.ts": {
-   "expects": 28,
-   "tests": 4
+   "expects": 31,
+   "tests": 5
   },
   "tests/e2e/startup.spec.ts": {
-   "expects": 22,
+   "expects": 23,
    "tests": 7
   },
   "tests/e2e/supplemental-pdf-accounting.spec.ts": {
@@ -791,8 +799,8 @@
    "tests": 6
   },
   "tests/unit/ms70-dependency-ratchet.spec.js": {
-   "expects": 23,
-   "tests": 13
+   "expects": 25,
+   "tests": 14
   },
   "tests/unit/ms70-e2e-global-inventory.spec.js": {
    "expects": 8,
@@ -807,8 +815,8 @@
    "tests": 8
   },
   "tests/unit/ms70-state-seam.spec.js": {
-   "expects": 28,
-   "tests": 9
+   "expects": 37,
+   "tests": 10
   },
   "tests/unit/ms70-testing-adapter-design.spec.js": {
    "expects": 18,
@@ -861,6 +869,10 @@
   "tests/unit/pdf-model-column-integrity.spec.js": {
    "expects": 4,
    "tests": 3
+  },
+  "tests/unit/persistence-owners.spec.js": {
+   "expects": 19,
+   "tests": 5
   },
   "tests/unit/plan-annual-parity.spec.js": {
    "expects": 21,
@@ -1046,6 +1058,10 @@
    "expects": 15,
    "tests": 8
   },
+  "tests/unit/startup-flow.spec.js": {
+   "expects": 19,
+   "tests": 5
+  },
   "tests/unit/supplemental-pdf.spec.js": {
    "expects": 18,
    "tests": 10
@@ -1063,7 +1079,7 @@
    "tests": 2
   },
   "tests/unit/testing-adapter.spec.js": {
-   "expects": 59,
+   "expects": 61,
    "tests": 18
   },
   "tests/unit/theme-persistence.spec.js": {

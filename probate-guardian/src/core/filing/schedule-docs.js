@@ -6,7 +6,7 @@ import { formatDisplayDate } from '../form/date-parser.js';
 import * as SupplementalPdf from '../pdf/supplemental-pdf.js';
 import { renderPage } from '../navigation/router.js';
 import { monolith } from '../runtime/monolith.js';
-import { getActiveInventoryType, getD } from '../state.js';
+import { getActiveInventoryType, getD, requestSave } from '../state.js';
 import { alertModal } from '../ui/dialogs.js';
 import { ic } from '../ui/icons.js';
 
@@ -98,7 +98,7 @@ export async function handleScheduleDocUpload(scheduleKey,fileList){
   results.filter(Boolean).forEach(r=>{slot.files.push(r);added.push(r);});
   if(rejected.length)await alertModal(`Some supporting documents were not attached: ${rejected.join(', ')}`);
   if(!added.length){renderPage(monolith.getCurrentPage());return;}
-  monolith.autoSave();
+  requestSave();
   renderPage(monolith.getCurrentPage());
 
   for(const record of added){
@@ -121,7 +121,7 @@ export async function handleScheduleDocUpload(scheduleKey,fileList){
         });
       }
     }
-    monolith.autoSave();
+    requestSave();
     renderPage(monolith.getCurrentPage());
   }
 }
@@ -129,7 +129,7 @@ export async function handleScheduleDocUpload(scheduleKey,fileList){
 export function removeScheduleDoc(scheduleKey,idx){
   const slot=getScheduleDocSlot(scheduleKey);
   slot.files.splice(idx,1);
-  monolith.autoSave();
+  requestSave();
   renderPage(monolith.getCurrentPage());
 }
 
@@ -181,7 +181,7 @@ export function queueScheduleDocValidation(scheduleKey,slot){
       try{
         const tools=await getSupplementalPdfTools();
         const prepared=await prepareScheduleDocForValidation(file,tools);
-        if(prepared){monolith.autoSave();renderPage(monolith.getCurrentPage());}
+        if(prepared){requestSave();renderPage(monolith.getCurrentPage());}
         if(file.technicalStatus==='blocked'){file.__validationQueued=false;return;}
         const attempt=file.validationAttempt||1;
         const digest=file.contentDigest;
@@ -191,7 +191,7 @@ export function queueScheduleDocValidation(scheduleKey,slot){
         if(!latest||latest.contentDigest!==digest||(latest.validationAttempt||1)!==attempt)return;
         Object.assign(latest,validation);
         latest.__validationQueued=false;
-        monolith.autoSave();
+        requestSave();
         renderPage(monolith.getCurrentPage());
       }catch(e){
         file.__validationQueued=false;
@@ -215,7 +215,7 @@ export function queueAllScheduleDocValidations(){
 
 export function updateScheduleComment(scheduleKey,value){
   getScheduleDocSlot(scheduleKey).comment=value;
-  monolith.autoSave();
+  requestSave();
 }
 
 export function renderScheduleDocsSection(scheduleKey){

@@ -5,9 +5,10 @@ import { esc } from '../filing/escape-html.js';
 import { renderPage } from '../navigation/router.js';
 import { createParty, dehydrateIntoParty, hydrateFromParty, readRoleFields, resolveParty, setPartyIdForSlot } from '../party-resolver.js';
 import { monolith } from '../runtime/monolith.js';
-import { getCaseFile, getD } from '../state.js';
+import { getCaseFile, getD, requestSave } from '../state.js';
 import { updateNavDots } from '../status/nav-marks.js';
 import { closeModal, ensureFragment, showModal } from '../ui/dialogs.js';
+import { saveWardToState } from '../persistence/case-file.js';
 
 // Tracks which identity slot ({role,index}) the Pick Party modal is
 // currently open for, set by showPickPartyModal() and read by doPickParty()/
@@ -45,7 +46,7 @@ export async function doPickParty(){
   closeModal('pickPartyModal');
   setPartyIdForSlot(getD(),role,index,partyId);
   hydrateFromParty(party,getD(),role,index);
-  monolith.autoSave();
+  requestSave();
   renderPage(monolith.getCurrentPage());
   updateNavDots();
 }
@@ -62,7 +63,7 @@ export async function doCreatePartyFromSlot(){
   // A brand-new party has no other slot to fan out to, and a closed filing's
   // syncIdentityField() is a no-op -- seed the record directly either way.
   dehydrateIntoParty(getD(),role,index,party);
-  monolith.autoSave();
+  requestSave();
   renderPage(monolith.getCurrentPage());
   updateNavDots();
 }
@@ -100,7 +101,7 @@ export async function doPickCase(){
   if(!ward)return;
   closeModal('pickCaseModal');
   ward.caseId=caseId;
-  await monolith.saveWardToState(ward);
+  await saveWardToState(ward);
   renderPage(monolith.getCurrentPage());
 }
 
@@ -113,6 +114,6 @@ export async function doCreateCaseFromWard(){
   closeModal('pickCaseModal');
   const kase=getOrCreateCaseForWard(ward);
   ward.caseId=kase.id;
-  await monolith.saveWardToState(ward);
+  await saveWardToState(ward);
   renderPage(monolith.getCurrentPage());
 }

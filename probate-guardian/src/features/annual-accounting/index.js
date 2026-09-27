@@ -68,7 +68,7 @@ import { sanitizeDecimal } from '../../core/form/form-contract.js';
 import { guardianHasAnyData } from '../../core/validation/row-started.js';
 import { formDisplayName } from '../../core/filing/filing-registry.js';
 import { annualCompletion } from '../../core/status/completion.js';
-import { getD } from '../../core/state.js';
+import { getD, requestSave } from '../../core/state.js';
 import { updateNavDots } from '../../core/status/nav-marks.js';
 import { renderScheduleDocsSection } from '../../core/filing/schedule-docs.js';
 import { pageIntroRow, yesNoCheckboxD, yesNoRadioAnnualHTML } from '../../core/form/field-html.js';
@@ -105,7 +105,7 @@ import { syncActiveWardNameDisplay, syncGuardianNameDisplay } from '../../core/s
 // validation helpers were in that group until Milestone 70's 70B moved them
 // into core modules; they are imported above.)
 const {
-  autoSave, navigate, 
+  navigate, 
   
   // Milestone 51C dropped `toggleSsnReveal` from this list -- destructured but
   // never called here. Its only call site is the delegated 'toggle-ssn' handler
@@ -143,7 +143,7 @@ export async function mount(container, page) {
   // Milestone 67B: a filing saved before the four-state bond question reads
   // back with the state its old fields implied, and the retired
   // restrictedDepository tri-state is dropped. Idempotent.
-  if (migrateBondDepository(getD())) autoSave();
+  if (migrateBondDepository(getD())) requestSave();
   let html;
   switch (page) {
     case '/':      html = pagePart1Annual(); break;
@@ -296,7 +296,7 @@ function bindEvents(container) {
     if (control instanceof HTMLInputElement && control.dataset.annualChange === 'schedule-no-items') {
       if (!getD().scheduleNoItems) getD().scheduleNoItems = {};
       getD().scheduleNoItems[control.dataset.schedule] = control.checked;
-      autoSave();
+      requestSave();
       updateNavDots();
       return;
     }
@@ -329,7 +329,7 @@ export function mountNav(container) {
 // Same idea as the Plan-family's planEmptyRow-family row CRUD, but for the
 function duplicateAnnualRow(arrName, idx, route) {
   if (duplicateCollectionRow(arrName, idx, getD())) {
-    autoSave();
+    requestSave();
     navigate(route);
   }
 }
@@ -346,7 +346,7 @@ async function addB4Account(route) {
     return;
   }
   d.schB4Accounts.push({ id: createBankAccountId(), bankName: '', accountNumber: '' });
-  autoSave();
+  requestSave();
   navigate(route);
 }
 
@@ -365,7 +365,7 @@ async function removeB4Account(index, route) {
   ))) return;
   for (const row of orphans) row.bankAccountId = '';
   d.schB4Accounts.splice(index, 1);
-  autoSave();
+  requestSave();
   navigate(route);
 }
 
@@ -378,14 +378,14 @@ function addAnnualRow(collection, route) {
   // are unaffected either way.
   if (getD()?.scheduleNoItems?.[collection]) getD().scheduleNoItems[collection] = false;
   if (addCollectionRow(collection, getD())) {
-    autoSave();
+    requestSave();
     navigate(route);
   }
 }
 async function removeAnnualRow(collection, index, route) {
   if (collection === 'guardians' && index > 0 && guardianHasAnyData(getD().guardians?.[index]) && !(await confirmModal(`Remove co-guardian ${getD().guardians[index].name || `#${index + 1}`}? This will delete the entered signature information.`))) return;
   if (removeCollectionRow(collection, index, getD())) {
-    autoSave();
+    requestSave();
     navigate(route);
   }
 }

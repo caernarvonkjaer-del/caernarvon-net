@@ -530,6 +530,7 @@ export function auditSources(files, classic, moduleEntries = null) {
 
   const edges = [];
   const bareCrossBoundary = [];
+  const unresolvedBareReferences = [];
   const unownedWindowReads = new Map();
   const lexicalOnlyWindowReads = [];
   for (const r of results) {
@@ -559,6 +560,9 @@ export function auditSources(files, classic, moduleEntries = null) {
         if (providers.length) {
           bareCrossBoundary.push({ file: r.file, name, providers: providers.sort(), line: ref.line });
           for (const to of providers) edges.push({ from: r.file, to, kind: 'bare', name, evalTime: ref.evalTime });
+        } else if (!BARE_GLOBALS.has(name)) {
+          // Nothing provides it: a ReferenceError when the line runs.
+          unresolvedBareReferences.push({ file: r.file, name, line: ref.line });
         }
       }
     }
@@ -588,6 +592,7 @@ export function auditSources(files, classic, moduleEntries = null) {
     windowDestructures: results.flatMap((r) => r.windowDestructures.map((w) => ({ file: r.file, ...w }))),
     computedWindowReads: results.flatMap((r) => r.computedWindowReads.map((c) => ({ file: r.file, ...c }))),
     bareCrossBoundary,
+    unresolvedBareReferences,
     unownedWindowReads: [...unownedWindowReads].map(([name, set]) => ({ name, files: [...set].sort() })).sort((a, b) => a.name.localeCompare(b.name)),
     lexicalOnlyWindowReads,
     cycles: findCycles(graph),
@@ -596,6 +601,42 @@ export function auditSources(files, classic, moduleEntries = null) {
     edges,
   };
 }
+
+// Globals a module may name bare: the language's, the browser's this app uses,
+// and the vendored libraries' (lib/). A bare name that is none of these, and
+// that no classic script declares and no module publishes, resolves to nothing
+// (Milestone 70, 70I: a module named a function the monolith no longer had,
+// which the cross-boundary count cannot see once the declaration is gone).
+const BARE_GLOBALS = new Set([
+  // ECMAScript
+  'globalThis', 'Infinity', 'NaN', 'undefined', 'eval', 'isFinite', 'isNaN', 'parseFloat', 'parseInt',
+  'decodeURI', 'decodeURIComponent', 'encodeURI', 'encodeURIComponent', 'escape', 'unescape', 'Array',
+  'ArrayBuffer', 'Atomics', 'BigInt', 'BigInt64Array', 'BigUint64Array', 'Boolean', 'DataView', 'Date', 'Error',
+  'EvalError', 'FinalizationRegistry', 'Float32Array', 'Float64Array', 'Function', 'Int8Array', 'Int16Array',
+  'Int32Array', 'Intl', 'Iterator', 'JSON', 'Map', 'Math', 'Number', 'Object', 'Promise', 'Proxy', 'RangeError',
+  'ReferenceError', 'Reflect', 'RegExp', 'Set', 'SharedArrayBuffer', 'String', 'Symbol', 'SyntaxError',
+  'TypeError', 'Uint8Array', 'Uint8ClampedArray', 'Uint16Array', 'Uint32Array', 'URIError', 'WeakMap',
+  'WeakRef', 'WeakSet', 'AggregateError', 'WebAssembly', 'arguments',
+  // the browser
+  'window', 'self', 'document', 'navigator', 'location', 'history', 'localStorage', 'sessionStorage', 'indexedDB',
+  'screen', 'console', 'crypto', 'performance', 'fetch', 'atob', 'btoa', 'structuredClone', 'queueMicrotask',
+  'setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'requestAnimationFrame', 'cancelAnimationFrame',
+  'requestIdleCallback', 'cancelIdleCallback', 'getComputedStyle', 'matchMedia', 'getSelection', 'alert',
+  'confirm', 'prompt', 'open', 'print', 'caches', 'showSaveFilePicker', 'showOpenFilePicker', 'devicePixelRatio',
+  'innerWidth', 'innerHeight', 'isSecureContext', 'origin', 'customElements', 'visualViewport',
+  'TextEncoder', 'TextDecoder', 'URL', 'URLSearchParams', 'AbortController', 'AbortSignal', 'Blob', 'File',
+  'FileReader', 'FormData', 'Headers', 'Request', 'Response', 'Event', 'EventTarget', 'CustomEvent',
+  'KeyboardEvent', 'MouseEvent', 'FocusEvent', 'InputEvent', 'PointerEvent', 'MessageChannel',
+  'BroadcastChannel', 'DOMException', 'DOMParser', 'XMLSerializer', 'Node', 'NodeList', 'Element', 'HTMLElement',
+  'HTMLInputElement', 'HTMLSelectElement', 'HTMLTextAreaElement', 'HTMLButtonElement', 'HTMLAnchorElement',
+  'HTMLFormElement', 'HTMLCanvasElement', 'HTMLImageElement', 'HTMLDetailsElement', 'HTMLDialogElement',
+  'SVGElement', 'DocumentFragment', 'Text', 'Range', 'Image', 'CSS', 'MutationObserver', 'ResizeObserver',
+  'IntersectionObserver', 'Worker', 'FileSystemFileHandle', 'DataTransfer', 'ImageData', 'createImageBitmap',
+  'CanvasRenderingContext2D', 'OffscreenCanvas', 'ReadableStream', 'WritableStream', 'TransformStream',
+  'CompressionStream', 'DecompressionStream',
+  // vendored libraries (lib/)
+  'JSZip', 'ExcelJS', 'html2pdf', 'jspdf', 'jsPDF', 'pdfjsLib', 'PDFLib', 'bootstrap',
+]);
 
 // Names that are platform or vendor globals, not application members, when
 // read off window with no application provider.
@@ -627,6 +668,7 @@ export function ratchetSets(result) {
     windowReads: uniq([...result.windowReads, ...result.windowDestructures].filter((r) => !PLATFORM_READS.has(r.name)).map((r) => `${r.file}::${r.name}`)),
     evalTimeWindowDestructures: uniq(result.windowDestructures.filter((d) => d.evalTime).map((d) => `${d.file}::${d.name}`)),
     bareCrossBoundary: uniq(result.bareCrossBoundary.map((b) => `${b.file}::${b.name}`)),
+    unresolvedBareReferences: uniq(result.unresolvedBareReferences.map((b) => `${b.file}::${b.name}`)),
     unownedWindowReads: uniq(result.unownedWindowReads.filter((u) => !PLATFORM_READS.has(u.name)).map((u) => u.name)),
     lexicalOnlyWindowReads: uniq(result.lexicalOnlyWindowReads.map((r) => `${r.file}::${r.name}`)),
     cycles: uniq(result.cycles.map((c) => c.join(' <-> '))),
@@ -674,6 +716,7 @@ function summarize(result, sets) {
     `window reads of application names: ${count('windowReads')} file::name pairs`,
     `destructures off window at evaluation time: ${count('evalTimeWindowDestructures')} pairs in ${new Set(sets.evalTimeWindowDestructures.map((k) => k.split('::')[0])).size} files`,
     `bare cross-boundary references: ${count('bareCrossBoundary')}`,
+    `bare references nothing provides: ${count('unresolvedBareReferences')}`,
     `window reads with no application provider (non-platform): ${count('unownedWindowReads')}`,
     `window reads of names declared only with let/const/class (not window properties): ${count('lexicalOnlyWindowReads')}`,
     `static import cycles: ${count('cycles')}`,

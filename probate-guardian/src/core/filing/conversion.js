@@ -9,7 +9,7 @@ import { formEngine, initializeEmptyData, INVENTORY_TYPES } from './filing-regis
 import { emptyRowAnnual } from './models/annual.js';
 import { navigate } from '../navigation/router.js';
 import { activateWard, createWardId } from '../navigation/ward-lifecycle.js';
-import { setDirtySinceExport, updateLastSavedIndicator } from '../persistence/case-file.js';
+import { saveWardToState, setDirtySinceExport, updateLastSavedIndicator } from '../persistence/case-file.js';
 import { monolith } from '../runtime/monolith.js';
 import { getCaseFile } from '../state.js';
 import { alertModal } from '../ui/dialogs.js';
@@ -318,7 +318,7 @@ export async function convertExistingWard(sourceWardId,targetType){
   newWard.caseId=getOrCreateCaseForWard(sourceWard).id;
 
   getCaseFile().wards.push(newWard);
-  await monolith.saveWardToState(newWard);
+  await saveWardToState(newWard);
 
   await activateWard(newWard);
   setDirtySinceExport(true);

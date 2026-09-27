@@ -1,6 +1,17 @@
 import { describe, expect, test, vi } from 'vitest';
 import { TEST_MODE_FLAG, createTestingAdapter, installTestingNamespace } from '../../src/core/testing/testing-adapter.js';
 import { PLAN_RIGHTS } from '../../src/core/filing/models/plan-annual.js';
+import { configureCaseStore } from '../../src/core/state.js';
+import { clearCryptoKey, setCryptoKey } from '../../src/core/persistence/crypto.js';
+
+// Milestone 70, 70I: the adapter imports what left the monolith. A save it asks
+// for goes through the case store's hook, pointed at each fake window's
+// autoSave; the flush is case-file.js's, stood in for here.
+const persistence = vi.hoisted(() => ({ flush: null }));
+vi.mock('../../src/core/persistence/case-file.js', async (importOriginal) => ({
+  ...(await importOriginal()),
+  flushPendingSave: (...a) => persistence.flush(...a),
+}));
 
 // Milestone 70, 70T: GuardianForms.testing's contract, against a stand-in
 // window (setField, which needs a rendered form, is covered by
@@ -9,11 +20,15 @@ import { PLAN_RIGHTS } from '../../src/core/filing/models/plan-annual.js';
 
 function fakeWindow(extra = {}) {
   const filing = { wardId: 'w1', wardName: 'Ward One', inventoryType: 'guardian', guardians: [{ name: '' }], county: '' };
+  const autoSave = vi.fn();
+  const flushPendingSave = vi.fn(async () => 'flushed');
+  configureCaseStore({ save: autoSave });
+  persistence.flush = flushPendingSave;
   return {
     caseFile: { activeWardId: 'w1', wards: [filing], parties: [], cases: [] },
     D: filing,
-    autoSave: vi.fn(),
-    flushPendingSave: vi.fn(async () => 'flushed'),
+    autoSave,
+    flushPendingSave,
     navigate: vi.fn(async (r) => r),
     ...extra,
   };
@@ -215,15 +230,17 @@ describe('persistence and shared records never hand out key material or live obj
     const key = { algorithm: 'AES-GCM', secret: 'never-leaves' };
     const handle = { name: 'case.sav', createWritable: () => {} };
     const w = fakeWindow({
-      _cryptoKey: key,
       decryptJSONWithKey: vi.fn(async (enc, k) => ({ enc, usedKey: k === key })),
       loadCaseFileHandle: async () => handle,
     });
+    setCryptoKey(key); // crypto.js's, in closure memory (Milestone 70, 70I)
     const t = createTestingAdapter(w);
     expect(t.persistenceState.keyHeld()).toBe(true);
     expect(await t.persistenceState.decrypt('ENC')).toEqual({ enc: 'ENC', usedKey: true });
     expect(await t.persistenceState.caseFileName()).toBe('case.sav');
     expect(JSON.stringify([t.persistenceState.keyHeld(), await t.persistenceState.decrypt('x')])).not.toContain('never-leaves');
+    clearCryptoKey();
+    expect(t.persistenceState.keyHeld()).toBe(false);
   });
 
   test('resolveParty() is a copy', () => {
@@ -241,6 +258,7 @@ describe('commands call the application function they replace', () => {
     const t = createTestingAdapter(w);
     expect(await t.navigate('/print')).toBe('/print');
     expect(await t.save.flush()).toBe('flushed');
-    expect(() => t.lock()).toThrow('lockApp() is not available');
+    expect(w.flushPendingSave).toHaveBeenCalledTimes(1);
+    expect(() => t.save.backupNow()).toThrow('saveBackupNow() is not available');
   });
 });

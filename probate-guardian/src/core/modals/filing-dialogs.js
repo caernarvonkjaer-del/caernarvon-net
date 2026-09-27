@@ -19,6 +19,7 @@ import { alertModal, closeModal, confirmModal, ensureFragment, showModal } from 
 import { esc } from '../filing/escape-html.js';
 import { bindComboboxKeyboardNav, comboboxAssignOptionIds, comboboxFilterItems, comboboxHide, comboboxRenderDropdown } from '../ui/combobox.js';
 import { updateSidebar } from '../shell/sidebar.js';
+import { saveWardToState } from '../persistence/case-file.js';
 
 export async function showAddWardModal(){
   await ensureFragment('common-modals');
@@ -67,7 +68,7 @@ export async function doAddWard(){
         // src/core/case-resolver.js.
         const kase=getOrCreateCaseForWard(src);
         ward.caseId=kase.id;
-        await monolith.saveWardToState(ward);
+        await saveWardToState(ward);
         renderPage('/');
         updateSidebar();
       }
@@ -153,7 +154,7 @@ export async function doConfirmSimplifiedEligibility(){
           await alertModal('The selected source filing could not be found, so nothing was carried over. The new filing was created blank.');
         }
       }
-      await monolith.saveWardToState(getD());
+      await saveWardToState(getD());
       // Milestone 50B: addWard() already rendered the Cover from a blank
       // filing before the Object.assign() above mutated window.D -- nothing
       // repaints on its own, so without this the filer sees blank fields
@@ -174,7 +175,7 @@ export async function doConfirmSimplifiedEligibility(){
           Object.assign(getD(),filingLifecycle.carry(src,'annual'));
           if(getD().wardName!==name)getD().wardName=name;
           getD().caseId=getOrCreateCaseForWard(src).id;
-          await monolith.saveWardToState(getD());
+          await saveWardToState(getD());
           carryNote=carryOverSummaryNote(src,getD());
         }
       }

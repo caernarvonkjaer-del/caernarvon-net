@@ -43,7 +43,8 @@ import { formatDisplayDate } from '../../core/form/date-parser.js';
 import { calcTotals } from './totals.js';
 import { guardianHasAnyData } from '../../core/validation/row-started.js';
 import { simplifiedCompletion } from '../../core/status/completion.js';
-import { getD } from '../../core/state.js';
+import { getD, requestSave } from '../../core/state.js';
+import { updateNavDots } from '../../core/status/nav-marks.js';
 import { browserRecommendationNotice, linkAccordions, sanitizeNegativeAmounts } from '../../core/form/form-runtime.js';
 import { renderScheduleDocsSection } from '../../core/filing/schedule-docs.js';
 import { countyInputS, inpS, pageIntroRow, pageNavS, yesNoCheckboxS } from '../../core/form/field-html.js';
@@ -78,7 +79,7 @@ const RECIPIENT_STARTED_FIELDS = ['name', 'line2', 'line3', 'line4'];
 // ./totals.js, small enough that src/legacy-bridge.js loads it eagerly for the
 // dashboard while this module stays lazy.
 const {
-  autoSave, navigate,
+  navigate,
   
   
   
@@ -112,7 +113,7 @@ function bindEvents(container) {
     switch (actionElement.dataset.simplifiedAction) {
       case 'add-guardian': {
         if (addCollectionRow('guardians', getD(), createSimplifiedGuardian)) {
-          autoSave();
+          requestSave();
           navigate('/p4');
         }
         break;
@@ -120,21 +121,21 @@ function bindEvents(container) {
       case 'remove-guardian': {
         if (index > 0 && guardianHasAnyData(getD().guardians?.[index]) && !(await confirmModal(`Remove co-guardian ${getD().guardians[index].name || `#${index + 1}`}? This will delete the entered signature information.`))) break;
         if (removeCollectionRow('guardians', index, getD())) {
-          autoSave();
+          requestSave();
           navigate('/p4');
         }
         break;
       }
       case 'add-recipient': {
         if (addCollectionRow('certRecipients', getD())) {
-          autoSave();
+          requestSave();
           navigate('/p6');
         }
         break;
       }
       case 'remove-recipient': {
         if (removeCollectionRow('certRecipients', index, getD())) {
-          autoSave();
+          requestSave();
           navigate('/p6');
         }
         break;
@@ -145,7 +146,7 @@ function bindEvents(container) {
         // withdrawn rather than left to contradict the row being added.
         if (getD()?.scheduleNoItems?.remuneration) getD().scheduleNoItems.remuneration = false;
         if (addCollectionRow('remuneration', getD())) {
-          autoSave();
+          requestSave();
           navigate('/p7');
         }
         break;
@@ -154,7 +155,7 @@ function bindEvents(container) {
       case 'open-court-portal': openFloridaCourtPortal(); break;
       case 'remove-remuneration': {
         if (removeCollectionRow('remuneration', index, getD())) {
-          autoSave();
+          requestSave();
           navigate('/p7');
         }
         break;
@@ -163,7 +164,7 @@ function bindEvents(container) {
       case 'save-pdf': _printModule.doSavePdf(); break;
       case 'resolve-guardian-address-conflict': {
         if (resolveSimplifiedGuardianAddressConflict(getD(), index, actionElement.dataset.field, actionElement.dataset.choice)) {
-          autoSave();
+          requestSave();
           navigate('/p4');
         }
         break;
@@ -175,7 +176,7 @@ function bindEvents(container) {
     if (input instanceof HTMLInputElement && input.dataset.simplifiedChange === 'schedule-no-items') {
       if (!getD().scheduleNoItems) getD().scheduleNoItems = {};
       getD().scheduleNoItems[input.dataset.schedule] = input.checked;
-      autoSave();
+      requestSave();
       updateNavDots();
       return;
     }

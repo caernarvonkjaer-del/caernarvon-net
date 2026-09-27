@@ -243,10 +243,29 @@ for (const [writer, reader] of DIRECTIONS) {
       const names = (await app(a).filings(a)).map((w) => w.wardName);
       expect(await app(b).hasOpenedCaseBefore(b)).toBe(true);
       const snapshot = await app(b).readRecoverySnapshot(b);
-      expect(snapshot).toEqual({ securityMode: 'none', wards: names, guardianKeys: ['guardianEmail', 'guardianName'] });
+      // Milestone 70, 70I: the new version's snapshot also carries the case's
+      // circuit with the guardian (and the shared records beside it, which the
+      // old version's lock does not read); either version reads the other's.
+      const guardianKeys = writer === 'new' ? ['guardianEmail', 'guardianName', 'selectedCircuit'] : ['guardianEmail', 'guardianName'];
+      expect(snapshot).toEqual({ securityMode: 'none', wards: names, guardianKeys });
       await context.close();
     });
   });
+}
+
+/**
+ * What the new version writes beyond the old one, each a deliberate, recorded
+ * change the old version reads past. Milestone 70, 70I: the recovery snapshot
+ * keeps the case's shared records -- people, cases, "not the same person"
+ * pairs, each an encrypted string -- so locking a case never saved to a file
+ * no longer loses them (its build record's findings).
+ */
+function withRecordedAdditions(shape: any) {
+  const out = JSON.parse(JSON.stringify(shape));
+  const cache = (out.indexedDB || []).find((db: any) => db.name === 'pg-session-cache');
+  const current = cache && cache.stores && cache.stores.snapshot && cache.stores.snapshot.current;
+  if (current) Object.assign(current, { cases: 'string', parties: 'string', partyDismissals: 'string' });
+  return out;
 }
 
 /** Keys and value shapes, not values: what another version must be able to read. */
@@ -314,7 +333,7 @@ test('both versions write the same shape into everything they share', async ({ b
     shapes[v] = await sharedStorageShape(page);
     await context.close();
   }
-  expect(shapes.new, 'the new version writes exactly what the old one does').toEqual(shapes.old);
+  expect(shapes.new, 'the new version writes what the old one does, plus the additions recorded below').toEqual(withRecordedAdditions(shapes.old));
 
   const record = { note: '', oldVersion: OLD_SHA, shape: shapes.old };
   const golden = fs.existsSync(GOLDEN) ? JSON.parse(fs.readFileSync(GOLDEN, 'utf8')) : null;
@@ -322,5 +341,6 @@ test('both versions write the same shape into everything they share', async ({ b
     record.note = 'Milestone 70, 70A: the shape of everything two versions of Guardian Forms share in one browser (localStorage, sessionStorage, IndexedDB, the tab message, the filing lock name), written by tests/e2e/mixed-version.characterization.spec.ts; both versions must match it. Regenerate only for a deliberate, recorded change.';
     fs.writeFileSync(GOLDEN, JSON.stringify(record, null, 1) + '\n');
   }
-  expect(shapes.new, 'against the golden').toEqual((golden || record).shape);
+  expect(shapes.old, 'the old version against the golden').toEqual((golden || record).shape);
+  expect(shapes.new, 'the new version against the golden, plus the additions recorded below').toEqual(withRecordedAdditions((golden || record).shape));
 });

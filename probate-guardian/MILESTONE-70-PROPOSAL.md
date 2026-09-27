@@ -3,7 +3,7 @@
 ## Status
 
 **70A complete (2026-09-24); 70T, 70B, 70C and 70D complete (2026-09-25); 70E,
-70F, 70G and 70H complete (2026-09-26) -- see their build records. Every remaining delivery, 70I through 70L, is approved.** The
+70F, 70G, 70H and 70I complete (2026-09-26) -- see their build records. Every remaining delivery, 70J through 70L, is approved.** The
 requester approved delivery 70A on 2026-09-24 and it is complete on the
 `milestone-70` branch (see the 70A build record), then approved 70T. On
 2026-09-25 the requester approved every delivery after it ("Finish ms 70. That
@@ -1530,6 +1530,66 @@ mixed-version tests from 70A run here, because 70I moves the owners of the
 shared recovery cache and launch preferences. The master-fix ledger is
 reviewed here too (D7): if it holds 10 or more rows marked "re-implement",
 `master` is merged into the branch at this checkpoint.
+
+### 70I build record
+
+Approved with every later delivery on 2026-09-25 (see Status). Everything
+below is on the `milestone-70` branch.
+
+**What a filer sees.** Six corrections, each a defect found while moving this
+code and fixed with a test that failed first; otherwise nothing, by design.
+All six are on `master` too.
+(1) **A lock no longer throws away work the case file does not have yet.**
+After a browser restart the browser lets the app read the remembered case
+file but not write it until the filer clicks Save Backup. Edits made in that
+state, followed by the automatic lock after 15 idle minutes, came back as the
+file's older contents: the edits were gone, and the next save would have
+written the older data over the file. The lock now restores from the recovery
+snapshot whenever the file lacks changes.
+(2) **Locking a case never saved to a file keeps its shared records.** Its
+people and case records, its "not the same person" decisions and the circuit
+chosen for it were lost at every lock (the filings came back).
+(3) **The auto-save setting is kept.** The interval a filer picks (5, 10 or 30
+minutes, or Off) was never written to the case file, so every reopen went
+back to 10 minutes.
+(4) **An opened case shows when it was last saved.** Opening a case file showed
+"Unsaved changes" or "No backup saved yet", not the file's own last save.
+(5) **Deleting a prior year from the dashboard no longer reports a failure.**
+The year was deleted, and then the filer was told "Failed to delete year.
+Check console."
+(6) **The start dialog says when the remembered case file is gone.** Its
+notice ("The previously opened case file could not be found...") never
+appeared.
+One regression 70H introduced is fixed here as well: ticking "none to report"
+on a Simplified Accounting schedule saved, but the sidebar mark stayed red
+until the next page. Two hardenings a filer would not notice: a lock never
+restores a recovery snapshot an earlier session left in the browser (it could
+put that session's filings into a new case), and the password is cleared from
+the dialog once used.
+
+**Done, with evidence.**
+
+| Item | Evidence |
+| --- | --- |
+| Commit | Named in the next docs commit (the whole delivery; gate evidence in its message). |
+| The services | Out of `legacy-app.js`: saving -- `autoSave()`, `flushPendingSave()`, `saveData()`, `saveWardToState()`, the save-error banner, the unload and hidden-tab saves -- into `src/core/persistence/case-file.js`; opening a case file into `src/core/persistence/case-reader.js`; the Activity Log's entries into `src/core/activity/audit-log.js`; unlocking and locking into `src/core/security/app-lock.js`; the launch into `src/core/startup/launch.js`; the template cache into `src/core/persistence/templates.js`; the continue prompt into `launch-preferences.js`; Clear Data into `src/shell-events.js`. The import and restore flow left `case-file.js` for `src/core/persistence/case-import.js`: it closes the open filing and navigates, which the case file's own module cannot import. 100 names left the monolith (the review's `landed["70I"]`), with twelve wrappers whose last callers these were; the monolith is 902 lines (2,297 at 70H). |
+| One owner each, no window copy | The key and the security mode are `crypto.js`'s, in closure memory; the changed-since-save flag, the last-save time and the auto-save interval are `export-state.js`'s; app state and the template cache are `state.js`'s; the open file's handle is `case-file.js`'s (it was mirrored onto `window`, which nothing read; `window-backed-ref.js` went with its last user). `tests/unit/persistence-owners.spec.js`, red first on the code before 70I (the key and the save state were window accessors). |
+| The key's lifetime | An unlock derives the key, checks it against the verifier, and only then holds it; a new password's key is held only once its verifier is saved; a failed attempt, a file that does not open, and every lock clear it. Nothing puts it or the password on `window` or in the case file, and the dialog's fields are emptied once used. `lock-and-save-state.contract.spec.ts`, red first (`_cryptoKey` and `_securityMode` on `window`, the password left in both fields). |
+| One way to ask for a save | Every module calls the case store's `requestSave()`; `main.js` points the store at `case-file.js`'s `autoSave()`, and a flush commits the field still being typed in through the store's `commitPendingEdits()`, which `main.js` wires to the form layer -- so neither the save nor the form layer imports the other. Twenty `monolith.autoSave()` calls, the `window.autoSave` reads of ten modules and five feature modules' load-time `autoSave` destructures (Annual, Initial Inventory, Simplified) went; the test adapter's `countAutoSaves()` swaps the store's hook. |
+| Startup as a state machine | `src/core/startup/startup.js`: terms, launch, choice, unlock, templates, position, route, services, each naming the next. `main.js` runs it after `window.initApp()` hands in the monolith's services, passing the terms promise its first state waits on; the recovery snapshot is not a startup state (it is only ever read back by a lock in the same page). `tests/unit/startup-flow.spec.js` holds each path; fault-injected, an unlock state that always asks for the password and a route state that ignores the remembered page each failed it. |
+| The monolith still owns the case | Locking empties the case and startup points it at the remembered filing through two new monolith services, `clearCaseForLock()` and `focusFilingAtLaunch()` (placed in 70J by the review, with a note); the moved code opens and closes filings through the filing lifecycle service (`filing-lifecycle.spec.js`: the monolith now opens no filing itself). |
+| Listeners explicit | The unlock dialog's Enter key and the inactivity lock's activity listeners (`installAppLockListeners()`), the unload and hidden-tab saves (`installSaveListeners()`) and the start dialog's controls (`installStartupEvents()`) are installed once by `main.js`, the first two ahead of every other listener as they were; the drop target takes a signal. |
+| The proof against old archives | `tests/e2e/sav-corpus.characterization.spec.ts`: every archive written by the 28 earlier versions -- plain and encrypted -- opens to the same digest as the golden recorded at 70A, and a wrong password and each damaged file fail as they did (all 66 of its tests passed in the checkpoint's source run -- 56 archives to the golden digest, three wrong-password refusals, seven damaged files -- with the golden unchanged since 70A). A damaged template entry is skipped like a damaged filing (it failed the open after the password, leaving a blank page); the characterized damaged cases do not include one, and none changed. |
+| Findings (fixed, red first) | (1) F5, the lock after edits a read-only remembered file lacks; (2) F4, the lock of a never-saved case; (3) F2, the auto-save interval; (4) F1, an opened file's last save -- all four in `lock-and-save-state.contract.spec.ts`, with the snapshot-ownership hardening; (5) F6, deleting a prior year (`prior-year-delete.spec.ts`: `renderDashboardGrid()` was the dashboard's private function, never a global); (6) F3, the start dialog's notice (`startup.spec.ts`: it read the monolith's own copy of a flag the failure set in `launch-preferences.js`; the old text-only check passed with the notice hidden). All confirmed on `master` by probes or its code. |
+| A 70H regression | Simplified Accounting's "none to report" called `updateNavDots()` by its bare global name, which 70H's wrapper pruning removed; the value saved, then the handler threw. `simplified-remuneration.spec.ts`, red first on the 70H build. Found by the audit's new check (next row), with F6 and the Initial Inventory's bare `saveData()` (which this delivery's move would have broken on opening any Inventory filing). |
+| A guard gap closed | The dependency audit counted bare references to names the monolith still declared, so a bare call to a moved or never-global function was invisible to it. It now reports `unresolvedBareReferences` -- a name no script declares, no module publishes, and no language, browser or vendored library provides -- held at zero by the ratchet (fault-injected in `ms70-dependency-ratchet.spec.js`). |
+| Went | The monolith's duplicates of `recovery-cache.js`'s and `launch-preferences.js`'s code and of `crypto.js`'s constants; `loadGuardianData()` (an async no-op whose answer nobody read); `window.pgHasUnsavedChanges` (its reader imports the export state); 39 `window` publications of the persistence modules whose last readers moved or import now. |
+| Types | `check:types` clean: two arguments nothing read (`flushPendingSave()` and `showSaveError()` take none) went, and two JSDoc types were added. |
+| Tests converted | `case-file.spec.js`, `filing-lifecycle.spec.js`, `form-write-side-effects.spec.js`, `ms70-state-seam.spec.js`, `testing-adapter.spec.js` and `window-bridge.spec.js` read the moved owners from their modules; `mixed-version.characterization.spec.ts` records one deliberate addition to what the versions share (the snapshot's shared records, and the circuit with the guardian; the old version reads past them). No assertion was dropped. |
+| Ratchet | `classicDeclarations` 152 to 54, `windowWrites` 226 to 156, `windowReads` 170 to 111, `evalTimeWindowDestructures` 34 to 25, `bareCrossBoundary` 32 to 4, `unresolvedBareReferences` new at 0, `unownedWindowReads` 0, import cycles 0; the monolith's bare case-state accesses 59 to 27. 70H's carried `export-state.js::_dirtySinceExport` and `::_lastExportAt` are gone. Grown, recorded here with their removal: `src/legacy-app.js::clearCaseForLock` and `::focusFilingAtLaunch` in `classicDeclarations` -- the case's owner's two new services, removed in 70J. |
+| Master-fix ledger (D7) | 5 rows marked re-implement (fewer than 10): no merge at this checkpoint. Two of them, `b2d97f5` (a case file with a part that cannot be read says what was not read and is never saved over) and `5de3707` (an encrypted file's manifest lists no ward names; a newer format is refused), change the code 70I moved; they are carried in their own commit after this one, so this delivery's proof against the pre-MS-70 archives stays a comparison with the old reader, and the carry's deliberate change to the damaged-file golden is its own. |
+
+**Gate run.** The checkpoint's full gate (D2), 2026-09-26, on the trial copy this commit was ported from (identical file for file apart from its test port), 1 h 19 min in all: `npm run test:verify` -- `check:types` clean, `verify:data-model` OK (1009 rows), unit 2028/2028 (154 files), browser 925 passed, 7 skipped, 0 failed (1.1 h, source profile, chromium; 932 tests: 70H's 925, the five lock and save-state contracts, the prior-year delete and the Simplified remuneration regression); `npm run test:e2e:web` 34 passed, 2 skipped (2.4 min); `npm run test:e2e:portable` 20 passed, 12 skipped (1.4 min); `npm run test:e2e:portable-http` 33 passed (2.6 min). `check:types` clean on the ported worktree.
 
 ---
 

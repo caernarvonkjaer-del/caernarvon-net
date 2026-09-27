@@ -7,7 +7,7 @@ import { emptyPlanProvider, emptyPlanResidence } from './models/plan-annual.js';
 import { emptyInitialProvider } from './models/plan-initial.js';
 import { emptyMinorProvider, emptyMinorResidence } from './models/plan-minor.js';
 import { hydrateCountyFromWardParty } from '../navigation/ward-county.js';
-import { setDirtySinceExport, updateLastSavedIndicator } from '../persistence/case-file.js';
+import { flushPendingSave, saveWardToState, setDirtySinceExport, updateLastSavedIndicator } from '../persistence/case-file.js';
 import { monolith } from '../runtime/monolith.js';
 import { getCaseFile } from '../state.js';
 import { notifyProbateGuardianTabStateChanged } from '../navigation/tab-state.js';
@@ -248,7 +248,7 @@ export function checkInActiveYear(ward){
 export async function switchWardYear(wardId,targetKey){
   const ward=getCaseFile().wards.find(w=>w.wardId===wardId);
   if(!ward)return;
-  await monolith.flushPendingSave();
+  await flushPendingSave();
   checkInActiveYear(ward);
   const idx=ward.years.findIndex(y=>y.key===targetKey);
   if(idx===-1)return;
@@ -256,7 +256,7 @@ export async function switchWardYear(wardId,targetKey){
   ward.years.splice(idx,1);
   applyYearData(ward,target.data);
   ward.activeYearKey=target.key;
-  await monolith.saveWardToState(ward);
+  await saveWardToState(ward);
   setDirtySinceExport(true);
   updateLastSavedIndicator();
   notifyProbateGuardianTabStateChanged();
@@ -270,7 +270,7 @@ export async function switchWardYear(wardId,targetKey){
 export async function startNewWardYear(wardId){
   const ward=getCaseFile().wards.find(w=>w.wardId===wardId);
   if(!ward)return;
-  await monolith.flushPendingSave();
+  await flushPendingSave();
   const priorTotal=monolith.getWardHeadlineTotal(ward);
   checkInActiveYear(ward);
   const seed=snapshotCurrentYearData(ward);
@@ -287,7 +287,7 @@ export async function startNewWardYear(wardId){
   hydrateCountyFromWardParty(ward);
   ward.yearCounter=(ward.yearCounter||1)+1;
   ward.activeYearKey='Year '+ward.yearCounter;
-  await monolith.saveWardToState(ward);
+  await saveWardToState(ward);
   setDirtySinceExport(true);
   updateLastSavedIndicator();
   notifyProbateGuardianTabStateChanged();
@@ -315,7 +315,7 @@ export async function deleteWardYear(wardId,yearKey){
     }
   }
   ward.years.splice(idx,1);
-  await monolith.saveWardToState(ward);
+  await saveWardToState(ward);
   setDirtySinceExport(true);
   updateLastSavedIndicator();
   notifyProbateGuardianTabStateChanged();

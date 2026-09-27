@@ -94,15 +94,34 @@ describe('the seam is the one authority, live and zero-copy', () => {
     expect(state.getActiveWard()).toBeUndefined();
   });
 
-  test('the filing type and app state are the monolith\'s, written where it reads them', () => {
+  test('the filing type is the monolith\'s, written where it reads it; app state is this module\'s own (70I)', () => {
     state.setActiveInventoryType('planMinor');
     expect(window.activeInventoryType).toBe('planMinor');
     expect(state.getActiveInventoryType()).toBe('planMinor');
-    window._appState = { firstLaunchSeen: true };
     state.setAppState('firstLaunchSeen', false);
-    expect(window._appState).toEqual({ firstLaunchSeen: false });
     expect(state.getAppState('firstLaunchSeen')).toBe(false);
+    expect(state.appStateObject()).toEqual({ firstLaunchSeen: false });
     expect(state.getAppState('missing')).toBeNull();
+    expect(window._appState, 'no window copy').toBeUndefined();
+    state.replaceTemplateCache({ annual: 'UEsDB' });
+    expect(state.getTemplateCache()).toEqual({ annual: 'UEsDB' });
+    expect(window._templateCache, 'no window copy').toBeUndefined();
+  });
+
+  test('requestSave() and commitPendingEdits() run the hooks main.js configures, and do nothing before it does', () => {
+    expect(state.requestSave()).toBeUndefined();
+    expect(state.commitPendingEdits()).toBeUndefined();
+    const calls = [];
+    state.configureCaseStore({ save: () => calls.push('save'), commitPending: () => calls.push('commit') });
+    state.commitPendingEdits();
+    state.requestSave();
+    expect(calls).toEqual(['commit', 'save']);
+    // countAutoSaves() (the test adapter) swaps the save hook and restores it.
+    const restore = state.replaceSaveHook(() => calls.push('counted'));
+    state.requestSave();
+    restore();
+    state.requestSave();
+    expect(calls).toEqual(['commit', 'save', 'counted', 'save']);
   });
 
   test('a transaction changes the open filing in place and runs each side effect once, in order', () => {
@@ -145,9 +164,11 @@ describe('the seam is the one authority, live and zero-copy', () => {
 });
 
 describe('main.js wires the store to the owner once', () => {
-  test('the transaction hooks are the revision counter and the monolith\'s own autoSave(), and no window accessor is installed', () => {
+  test('the store\'s hooks are the revision counter, the persistence service\'s autoSave() and the form layer\'s pending-edit commit, and no window accessor is installed', () => {
     const main = fs.readFileSync(path.join(root, 'src/main.js'), 'utf8');
-    expect(main).toContain("configureCaseStore({ markRevision: markFilingRevisionChanged, save: () => monolith.autoSave() });");
+    expect(main).toContain("configureCaseStore({ markRevision: markFilingRevisionChanged, save: autoSave, commitPending: commitPendingFieldValues });");
+    expect(main).toContain("import { autoSave, installSaveListeners } from './core/persistence/case-file.js';");
+    expect(main).toContain("import { commitPendingFieldValues } from './core/form/form-contract.js';");
     expect(main).not.toMatch(/defineProperty\(window,\s*'(D|caseFile)'/);
   });
 });

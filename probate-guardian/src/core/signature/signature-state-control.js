@@ -9,7 +9,7 @@ import { mountSignaturePad } from './signature-pad.js';
 // below for why applying one copies bytes rather than storing a reference.
 import { partyForSignaturePath, getActiveSignatureImage, addSignatureImage } from '../party-resolver.js';
 import { confirmModal } from '../ui/dialogs.js';
-import { getD } from '../state.js';
+import { getD, requestSave } from '../state.js';
 
 function esc(s) {
   return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -90,7 +90,7 @@ export function mountSignatureStateControls(container, { setImage, route }) {
     const commitImage = (dataUrl) => {
       setImage(imagePath, dataUrl);
       window.markDirtySinceExport?.();
-      window.autoSave?.();
+      requestSave();
       if (route && window.renderPage) window.renderPage(route);
     };
 

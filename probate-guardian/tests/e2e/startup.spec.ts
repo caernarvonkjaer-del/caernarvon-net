@@ -84,6 +84,10 @@ test.describe('startup', { tag: '@origin-state' }, () => {
     await page.reload({ waitUntil: 'networkidle' });
 
     await expect(page.locator('#startup-choice-overlay')).toHaveClass(/show/);
+    // Shown, not merely in the page: the text is there from the start (hidden),
+    // so a text check alone passed while the notice never appeared -- the start
+    // dialog read a flag the failure never set (Milestone 70, 70I).
+    await expect(page.locator('#startup-file-status')).toBeVisible();
     await expect(page.locator('#startup-file-status')).toContainText('could not be found');
     const launchPreferences = await page.evaluate(async () => {
       const db = await new Promise<IDBDatabase>((resolve, reject) => {

@@ -1,6 +1,6 @@
 import { confirmModal } from './core/ui/dialogs.js';
 import { shouldOfferOfflineAccess, writeOfflineAccessAnswer } from './core/offline-access-preference.js';
-import { getProbateGuardianTabState } from './core/navigation/tab-state.js';
+import { isDirtySinceExport } from './core/persistence/export-state.js';
 
 const isHostedPwaBuild = document.querySelector('meta[name="pg-build"][content="web"]');
 
@@ -97,9 +97,7 @@ if (isHostedPwaBuild && location.protocol !== 'file:' && 'serviceWorker' in navi
   }
 
   function hasUnsavedChanges() {
-    if (typeof window.pgHasUnsavedChanges === 'function') return window.pgHasUnsavedChanges();
-    const state = getProbateGuardianTabState();
-    return Boolean(state && state.dirty);
+    return isDirtySinceExport();
   }
 
   function reloadAfterControllerChange() {

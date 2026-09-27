@@ -30,6 +30,7 @@ import { acknowledgeOutstandingRequirements, authorizeFilingOutput, beginFreshPr
 import { adaptValidationErrors } from '../validation/validation-adapter.js';
 import { alertModal, confirmModal } from '../ui/dialogs.js';
 import { initPrintPager } from '../ui/print-pager.js';
+import { requestSave } from '../state.js';
 
 // Milestone 39-A: base64 round-trip for a persisted annotated PDF
 // (D.printAnnotations.pdfBytes). Chunked to avoid a call-stack overflow from
@@ -180,7 +181,7 @@ function mountAnnotateToolbar(container, session, pdfjsLib, D, fingerprint) {
         const { pdfBytes, encoding } = await encodeAnnotationBytes(bytes);
         D.printAnnotations = { pdfBytes, encoding, contentFingerprint: fingerprint, capturedAt: new Date().toISOString() };
         window.markDirtySinceExport?.();
-        window.autoSave?.();
+        requestSave();
       } catch (persistError) {
         // Storing failed. The filer still gets the file they asked for --
         // withholding it would turn a storage problem into a lost document --
@@ -389,7 +390,7 @@ async function renderPreviewInto(container, buildModel, D, options = {}) {
       } else if (stored) {
         delete D.printAnnotations;
         window.markDirtySinceExport?.();
-        window.autoSave?.();
+        requestSave();
         announceStatus('This filing changed since your saved annotations were made, so they were discarded.', { priority: 'assertive', containerId: 'print-preview-status' });
       }
     }

@@ -22,42 +22,36 @@
 // transition (one window write here, one window read in legacy-app.js), and it
 // goes with legacy-app.js in 70L.
 import { esc } from './core/filing/escape-html.js';
-import { validateImportFile, sanitizeObjectData } from './core/security/input-hardening.js';
 import { calcTotals } from './features/simplified-accounting/totals.js';
 import { calc } from './features/guardian-inventory/totals.js';
 import {
-  formEngine, initializeEmptyData, FILING_PAGES,
+  formEngine, FILING_PAGES,
   computeCompletion as computeNavChecks, filingProgress as getWardProgress,
 } from './core/filing/filing-registry.js';
-import { getActiveWard } from './core/state.js';
 import { provideMonolithServices } from './core/runtime/monolith.js';
 import { PAGES_GUARDIAN, } from './core/filing/models/guardian.js';
-import { setPath } from './core/form/paths.js';
-import { addToRecentlyOpened, loadRecentlyOpenedWards } from './core/filing/recent-filings.js';
-import { renderCopyrightNotice, updateSidebar } from './core/shell/sidebar.js';
-import { notifyProbateGuardianTabStateChanged } from './core/navigation/tab-state.js';
-import { applyTheme, currentTheme } from './core/theme-preference.js';
-import { ensureFragment } from './core/ui/dialogs.js';
+import { updateSidebar } from './core/shell/sidebar.js';
+import { autoSave } from './core/persistence/case-file.js';
 
 export const LEGACY_BRIDGE = Object.freeze({
   // 70B -- pure helpers
-  validateImportFile, sanitizeObjectData,
+  
   
   calcTotals, calc,
   // 70C -- the filing registry and per-engine models
-  formEngine, initializeEmptyData, FILING_PAGES,
+  formEngine, FILING_PAGES,
   
   PAGES_GUARDIAN, 
   // 70D -- completion (the monolith's names for them)
   computeNavChecks, getWardProgress, 
   // 70E -- the case-state seam, and the door the other way (src/core/runtime/monolith.js)
-  getActiveWard, provideMonolithServices,
+  provideMonolithServices,
   // 70F
-  setPath, 
   // 70G
-  addToRecentlyOpened, loadRecentlyOpenedWards, 
   // 70H
-  applyTheme, currentTheme, ensureFragment, notifyProbateGuardianTabStateChanged, renderCopyrightNotice, updateSidebar,
+  updateSidebar,
+  // 70I
+  autoSave,
 });
 
 if (typeof window !== 'undefined') {

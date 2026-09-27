@@ -15,6 +15,8 @@ import { addToRecentlyOpened } from '../filing/recent-filings.js';
 import { updateSidebar } from '../shell/sidebar.js';
 import { notifyProbateGuardianTabStateChanged } from './tab-state.js';
 import { updateHelpContext } from '../help/help-panel.js';
+import { getLastExportAt, setDirtySinceExport } from '../persistence/export-state.js';
+import { deleteWardFromState, flushPendingSave, saveWardToState, showSaveError } from '../persistence/case-file.js';
 
 export function createWardId() {
   return 'w_' + Date.now() + '_' + Math.random().toString(36).slice(2, 9);
@@ -34,11 +36,11 @@ export async function enterDashboardEditingFocus() {
       commitFocusedField();
       window.commitPendingFieldValues?.();
       pruneBlankCards();
-      if (typeof window.flushPendingSave === 'function') await window.flushPendingSave({ requireRecovery: true });
+      await flushPendingSave();
       if (typeof window.releaseWardLock === 'function') await window.releaseWardLock();
     } catch (error) {
       console.error('Unable to safely leave editor for dashboard:', error);
-      window.showSaveError?.(error);
+      showSaveError();
       return false;
     }
     setActiveFiling(null);
@@ -75,8 +77,8 @@ export async function activateWard(ward, opts = {}) {
   // field still focused into it, so the edit is saved with it, once, and its
   // late blur cannot land in the filing opened next.
   commitFocusedField();
-  if (typeof window !== 'undefined' && typeof window.flushPendingSave === 'function') {
-    await window.flushPendingSave();
+  if (typeof window !== 'undefined') {
+    await flushPendingSave();
   }
 
   // 3. Acquire target ward lock
@@ -132,20 +134,20 @@ export async function addWard(wardName, inventoryType) {
   if (!Array.isArray(caseFile.wards)) caseFile.wards = [];
   caseFile.wards.push(newWard);
 
-  if (typeof window !== 'undefined' && typeof window.saveWardToState === 'function') {
-    await window.saveWardToState(newWard);
+  if (typeof window !== 'undefined') {
+    await saveWardToState(newWard);
   }
 
   await activateWard(newWard);
 
   if (typeof window !== 'undefined') {
-    window._dirtySinceExport = true;
+    setDirtySinceExport(true);
     if (typeof window.updateLastSavedIndicator === 'function') window.updateLastSavedIndicator();
     if (isFirstWardEver) setAppState('firstLaunchSeen', false);
     if (typeof window.navigate === 'function') {
       await window.navigate('/');
     }
-    if (isFirstWardEver && !window._lastExportAt && typeof window.showAutoExportReminder === 'function') {
+    if (isFirstWardEver && !getLastExportAt() && typeof window.showAutoExportReminder === 'function') {
       window.showAutoExportReminder(true);
     }
   }
@@ -188,9 +190,7 @@ export async function deleteWard(wardId) {
 
   caseFile.wards.splice(idx, 1);
   if (typeof window !== 'undefined') {
-    if (typeof window.deleteWardFromState === 'function') {
-      await window.deleteWardFromState(wardId);
-    }
+    await deleteWardFromState(wardId);
     updateSidebar();
     notifyProbateGuardianTabStateChanged();
     if (typeof window.navigate === 'function') window.navigate('/dashboard');

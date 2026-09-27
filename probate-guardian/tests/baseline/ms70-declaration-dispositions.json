@@ -2,84 +2,34 @@
  "generatedBy": "node scripts/ms70-declaration-dispositions.mjs --write",
  "note": "Milestone 70, 70A: a disposition and target delivery for every top-level declaration of src/legacy-app.js, built from reference evidence and corrected by the owner's review (tests/baseline/ms70-declaration-review.json; reviewNote says why an entry was moved). reviewed:true means the entry still matches what the review confirmed. delete-as-dead means nothing references it anywhere.",
  "summary": {
-  "total": 152,
+  "total": 54,
   "byDisposition": {
-   "wrapper": 19,
-   "move": 123,
-   "delete-as-dead": 10
+   "move": 46,
+   "wrapper": 8
   },
   "byDelivery": {
-   "70I": 98,
-   "70J": 3,
-   "70K": 51
+   "70J": 7,
+   "70K": 47
   },
   "windowExportsByReason": {
-   "no-consumer": 55,
-   "tests-only": 60,
-   "monolith-only": 43,
-   "modules-only": 56,
-   "monolith-and-modules": 12
+   "no-consumer": 32,
+   "tests-only": 64,
+   "monolith-only": 12,
+   "modules-only": 41,
+   "monolith-and-modules": 7
   },
-  "duplicates": 38,
+  "duplicates": 9,
   "liveDuplicates": [
    "getCurrentPage (src/core/navigation/router.js)",
-   "CRYPTO_VERIFIER_PLAINTEXT (src/core/persistence/crypto.js)",
-   "SESSION_CACHE_DB (src/core/persistence/recovery-cache.js)",
-   "SESSION_CACHE_STORE (src/core/persistence/recovery-cache.js)",
-   "_sessionCacheDb (src/core/persistence/recovery-cache.js)",
-   "_sessionCacheGet (src/core/persistence/recovery-cache.js)",
-   "LAUNCH_PREF_DB (src/core/persistence/launch-preferences.js)",
-   "LAUNCH_PREF_STORE (src/core/persistence/launch-preferences.js)",
-   "_launchPrefDb (src/core/persistence/launch-preferences.js)",
    "n (src/core/format/money.js, src/features/annual-accounting/totals.js, src/features/guardian-inventory/totals.js)",
    "pct (src/features/annual-accounting/totals.js)"
   ]
  },
  "declarations": [
   {
-   "name": "currentTheme",
-   "kind": "function",
-   "line": 8,
-   "lines": 1,
-   "section": "THEME (light / dark)",
-   "internalRefs": 1,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [
-    "src/core/theme-preference.js"
-   ],
-   "disposition": "wrapper",
-   "delivery": "70I",
-   "wrapperWhile": "classic callers remain: loadCaseFileAtLaunch",
-   "reviewed": true,
-   "reviewNote": null,
-   "movedIn": "70H"
-  },
-  {
-   "name": "applyTheme",
-   "kind": "function",
-   "line": 10,
-   "lines": 1,
-   "section": "THEME (light / dark)",
-   "internalRefs": 2,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [
-    "src/core/theme-preference.js"
-   ],
-   "disposition": "wrapper",
-   "delivery": "70I",
-   "wrapperWhile": "classic callers remain: loadCaseFileAtLaunch, loadCaseFileFromZip",
-   "reviewed": true,
-   "reviewNote": null,
-   "movedIn": "70H"
-  },
-  {
    "name": "setAccountingFilingType",
    "kind": "function",
-   "line": 23,
+   "line": 19,
    "lines": 18,
    "section": "GLOBAL STATE & CONFIG",
    "internalRefs": 2,
@@ -99,10 +49,10 @@
   {
    "name": "caseFile",
    "kind": "let",
-   "line": 48,
+   "line": 44,
    "lines": 9,
    "section": "GLOBAL STATE & CONFIG",
-   "internalRefs": 37,
+   "internalRefs": 6,
    "moduleConsumers": [
     "src/core/state.js"
    ],
@@ -116,9 +66,43 @@
    "reviewNote": "The case-state root. 70E adopts a store seam while this stays the owner; the declaration goes when the module store becomes the sole owner (70J), not with the section it happens to sit in."
   },
   {
+   "name": "clearCaseForLock",
+   "kind": "function",
+   "line": 58,
+   "lines": 6,
+   "section": "GLOBAL STATE & CONFIG",
+   "internalRefs": 1,
+   "moduleConsumers": [],
+   "e2eFiles": 0,
+   "unitSlices": 0,
+   "duplicateOf": [],
+   "disposition": "move",
+   "delivery": "70J",
+   "wrapperWhile": null,
+   "reviewed": true,
+   "reviewNote": "The case-state root. 70E adopts a store seam while this stays the owner; the declaration goes when the module store becomes the sole owner (70J), not with the section it happens to sit in."
+  },
+  {
+   "name": "focusFilingAtLaunch",
+   "kind": "function",
+   "line": 68,
+   "lines": 1,
+   "section": "GLOBAL STATE & CONFIG",
+   "internalRefs": 1,
+   "moduleConsumers": [],
+   "e2eFiles": 0,
+   "unitSlices": 0,
+   "duplicateOf": [],
+   "disposition": "move",
+   "delivery": "70J",
+   "wrapperWhile": null,
+   "reviewed": true,
+   "reviewNote": "The case-state root. 70E adopts a store seam while this stays the owner; the declaration goes when the module store becomes the sole owner (70J), not with the section it happens to sit in."
+  },
+  {
    "name": "activeInventoryType",
    "kind": "let",
-   "line": 94,
+   "line": 105,
    "lines": 1,
    "section": "WALKTHROUGH SYSTEM (Phase 4) - Type-Specific Tours",
    "internalRefs": 7,
@@ -135,28 +119,9 @@
    "reviewNote": "The case-state root. 70E adopts a store seam while this stays the owner; the declaration goes when the module store becomes the sole owner (70J), not with the section it happens to sit in."
   },
   {
-   "name": "_saveTimer",
-   "kind": "let",
-   "line": 96,
-   "lines": 1,
-   "section": "WALKTHROUGH SYSTEM (Phase 4) - Type-Specific Tours",
-   "internalRefs": 9,
-   "moduleConsumers": [
-    "src/core/persistence/case-file.js"
-   ],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": true,
-   "reviewNote": "Save, auto-save, export-dirty tracking, template loading or the continue prompt -- persistence and startup (70I), not the section it sits in."
-  },
-  {
    "name": "currentPage",
    "kind": "let",
-   "line": 97,
+   "line": 107,
    "lines": 1,
    "section": "WALKTHROUGH SYSTEM (Phase 4) - Type-Specific Tours",
    "internalRefs": 8,
@@ -175,7 +140,7 @@
   {
    "name": "getCurrentPage",
    "kind": "function",
-   "line": 120,
+   "line": 125,
    "lines": 1,
    "section": "WALKTHROUGH SYSTEM (Phase 4) - Type-Specific Tours",
    "internalRefs": 1,
@@ -198,181 +163,9 @@
    "reviewNote": "Navigation state the router owns (src/core/navigation/router.js reads and writes it); moves with the router in 70K."
   },
   {
-   "name": "_dirtySinceExport",
-   "kind": "let",
-   "line": 121,
-   "lines": 1,
-   "section": "WALKTHROUGH SYSTEM (Phase 4) - Type-Specific Tours",
-   "internalRefs": 6,
-   "moduleConsumers": [
-    "src/core/persistence/export-state.js"
-   ],
-   "e2eFiles": 3,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": true,
-   "reviewNote": "Save, auto-save, export-dirty tracking, template loading or the continue prompt -- persistence and startup (70I), not the section it sits in."
-  },
-  {
-   "name": "_autoExportIntervalMinutes",
-   "kind": "let",
-   "line": 128,
-   "lines": 1,
-   "section": "WALKTHROUGH SYSTEM (Phase 4) - Type-Specific Tours",
-   "internalRefs": 5,
-   "moduleConsumers": [
-    "src/core/persistence/case-file.js"
-   ],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": true,
-   "reviewNote": "Save, auto-save, export-dirty tracking, template loading or the continue prompt -- persistence and startup (70I), not the section it sits in."
-  },
-  {
-   "name": "_lastExportAt",
-   "kind": "let",
-   "line": 129,
-   "lines": 1,
-   "section": "WALKTHROUGH SYSTEM (Phase 4) - Type-Specific Tours",
-   "internalRefs": 5,
-   "moduleConsumers": [
-    "src/core/navigation/ward-lifecycle.js",
-    "src/core/persistence/export-state.js"
-   ],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": true,
-   "reviewNote": "Save, auto-save, export-dirty tracking, template loading or the continue prompt -- persistence and startup (70I), not the section it sits in."
-  },
-  {
-   "name": "_appState",
-   "kind": "let",
-   "line": 166,
-   "lines": 1,
-   "section": "STORAGE STRATEGY — canonical .sav file plus temporary recovery",
-   "internalRefs": 14,
-   "moduleConsumers": [
-    "src/core/state.js"
-   ],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "_templateCache",
-   "kind": "let",
-   "line": 167,
-   "lines": 1,
-   "section": "STORAGE STRATEGY — canonical .sav file plus temporary recovery",
-   "internalRefs": 6,
-   "moduleConsumers": [
-    "src/core/state.js"
-   ],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "_auditLogEntries",
-   "kind": "let",
-   "line": 168,
-   "lines": 1,
-   "section": "STORAGE STRATEGY — canonical .sav file plus temporary recovery",
-   "internalRefs": 6,
-   "moduleConsumers": [
-    "src/core/persistence/case-file.js"
-   ],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "_auditLogNextId",
-   "kind": "let",
-   "line": 169,
-   "lines": 1,
-   "section": "STORAGE STRATEGY — canonical .sav file plus temporary recovery",
-   "internalRefs": 3,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "validateImportFile",
-   "kind": "function",
-   "line": 203,
-   "lines": 1,
-   "section": "COMMON HELPERS",
-   "internalRefs": 1,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [
-    "src/core/security/input-hardening.js"
-   ],
-   "disposition": "wrapper",
-   "delivery": "70I",
-   "wrapperWhile": "classic callers remain: loadCaseFileAtLaunch",
-   "reviewed": true,
-   "reviewNote": null,
-   "movedIn": "70B"
-  },
-  {
-   "name": "sanitizeObjectData",
-   "kind": "function",
-   "line": 204,
-   "lines": 1,
-   "section": "COMMON HELPERS",
-   "internalRefs": 2,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [
-    "src/core/security/input-hardening.js"
-   ],
-   "disposition": "wrapper",
-   "delivery": "70I",
-   "wrapperWhile": "classic callers remain: loadCaseFileFromZip, lockApp",
-   "reviewed": true,
-   "reviewNote": null,
-   "movedIn": "70B"
-  },
-  {
    "name": "calcTotals",
    "kind": "function",
-   "line": 205,
+   "line": 143,
    "lines": 1,
    "section": "COMMON HELPERS",
    "internalRefs": 1,
@@ -392,7 +185,7 @@
   {
    "name": "formEngine",
    "kind": "function",
-   "line": 210,
+   "line": 148,
    "lines": 1,
    "section": "COMMON HELPERS",
    "internalRefs": 1,
@@ -410,1492 +203,29 @@
    "movedIn": "70C"
   },
   {
-   "name": "initializeEmptyData",
-   "kind": "function",
-   "line": 211,
-   "lines": 1,
-   "section": "COMMON HELPERS",
-   "internalRefs": 1,
-   "moduleConsumers": [],
-   "e2eFiles": 1,
-   "unitSlices": 0,
-   "duplicateOf": [
-    "src/core/filing/filing-registry.js"
-   ],
-   "disposition": "wrapper",
-   "delivery": "70I",
-   "wrapperWhile": "classic callers remain: clearAllData",
-   "reviewed": true,
-   "reviewNote": null,
-   "movedIn": "70C"
-  },
-  {
-   "name": "auditLog",
-   "kind": "function",
-   "line": 246,
-   "lines": 12,
-   "section": "SECURITY: VALIDATION AND AUDIT LOGGING",
-   "internalRefs": 8,
-   "moduleConsumers": [
-    "src/core/persistence/case-file.js"
-   ],
-   "e2eFiles": 1,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "PBKDF2_ITERATIONS",
-   "kind": "const",
-   "line": 274,
-   "lines": 1,
-   "section": "ENCRYPTION AT REST (AES-256-GCM via the Web Crypto API)",
-   "internalRefs": 0,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [
-    "src/core/persistence/crypto.js"
-   ],
-   "disposition": "delete-as-dead",
-   "delivery": "70I",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24)."
-  },
-  {
-   "name": "CRYPTO_VERIFIER_PLAINTEXT",
-   "kind": "const",
-   "line": 275,
-   "lines": 1,
-   "section": "ENCRYPTION AT REST (AES-256-GCM via the Web Crypto API)",
-   "internalRefs": 2,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [
-    "src/core/persistence/crypto.js"
-   ],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "_cryptoKey",
-   "kind": "let",
-   "line": 276,
-   "lines": 1,
-   "section": "ENCRYPTION AT REST (AES-256-GCM via the Web Crypto API)",
-   "internalRefs": 16,
-   "moduleConsumers": [
-    "src/core/persistence/crypto.js"
-   ],
-   "e2eFiles": 1,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "_securityMode",
-   "kind": "let",
-   "line": 290,
-   "lines": 1,
-   "section": "ENCRYPTION AT REST (AES-256-GCM via the Web Crypto API)",
-   "internalRefs": 12,
-   "moduleConsumers": [
-    "src/core/persistence/crypto.js"
-   ],
-   "e2eFiles": 1,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "PLAIN_MODE_PREFIX",
-   "kind": "const",
-   "line": 298,
-   "lines": 1,
-   "section": "ENCRYPTION AT REST (AES-256-GCM via the Web Crypto API)",
-   "internalRefs": 0,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [
-    "src/core/persistence/crypto.js"
-   ],
-   "disposition": "delete-as-dead",
-   "delivery": "70I",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24)."
-  },
-  {
-   "name": "ensureUnlocked",
-   "kind": "function",
-   "line": 306,
-   "lines": 60,
-   "section": "ENCRYPTION AT REST (AES-256-GCM via the Web Crypto API)",
-   "internalRefs": 2,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "_securityChoiceResolve",
-   "kind": "let",
-   "line": 367,
-   "lines": 1,
-   "section": "ENCRYPTION AT REST (AES-256-GCM via the Web Crypto API)",
-   "internalRefs": 3,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "promptChooseSecurityMode",
-   "kind": "function",
-   "line": 368,
-   "lines": 6,
-   "section": "ENCRYPTION AT REST (AES-256-GCM via the Web Crypto API)",
-   "internalRefs": 1,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "selectSecurityMode",
-   "kind": "function",
-   "line": 374,
-   "lines": 5,
-   "section": "ENCRYPTION AT REST (AES-256-GCM via the Web Crypto API)",
-   "internalRefs": 0,
-   "moduleConsumers": [
-    "src/startup-events.js"
-   ],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "updateLockButtonVisibility",
-   "kind": "function",
-   "line": 382,
-   "lines": 4,
-   "section": "ENCRYPTION AT REST (AES-256-GCM via the Web Crypto API)",
-   "internalRefs": 4,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "_unlockResolve",
-   "kind": "let",
-   "line": 387,
-   "lines": 1,
-   "section": "ENCRYPTION AT REST (AES-256-GCM via the Web Crypto API)",
-   "internalRefs": 9,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "_unlockMode",
-   "kind": "let",
-   "line": 388,
-   "lines": 1,
-   "section": "ENCRYPTION AT REST (AES-256-GCM via the Web Crypto API)",
-   "internalRefs": 6,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "promptUnlock",
-   "kind": "function",
-   "line": 390,
-   "lines": 16,
-   "section": "ENCRYPTION AT REST (AES-256-GCM via the Web Crypto API)",
-   "internalRefs": 1,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "_pendingOpenManifest",
-   "kind": "let",
-   "line": 414,
-   "lines": 1,
-   "section": "ENCRYPTION AT REST (AES-256-GCM via the Web Crypto API)",
-   "internalRefs": 3,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "_pendingOpenZip",
-   "kind": "let",
-   "line": 414,
-   "lines": 1,
-   "section": "ENCRYPTION AT REST (AES-256-GCM via the Web Crypto API)",
-   "internalRefs": 3,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "promptPasswordForFile",
-   "kind": "function",
-   "line": 415,
-   "lines": 26,
-   "section": "ENCRYPTION AT REST (AES-256-GCM via the Web Crypto API)",
-   "internalRefs": 1,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "promptCreatePassword",
-   "kind": "function",
-   "line": 442,
-   "lines": 17,
-   "section": "ENCRYPTION AT REST (AES-256-GCM via the Web Crypto API)",
-   "internalRefs": 2,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "showUnlockError",
-   "kind": "function",
-   "line": 460,
-   "lines": 5,
-   "section": "ENCRYPTION AT REST (AES-256-GCM via the Web Crypto API)",
-   "internalRefs": 8,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "UNLOCK_FAIL_THRESHOLD",
-   "kind": "const",
-   "line": 473,
-   "lines": 1,
-   "section": "ENCRYPTION AT REST (AES-256-GCM via the Web Crypto API)",
-   "internalRefs": 2,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "UNLOCK_LOCKOUT_BASE_MS",
-   "kind": "const",
-   "line": 474,
-   "lines": 1,
-   "section": "ENCRYPTION AT REST (AES-256-GCM via the Web Crypto API)",
-   "internalRefs": 1,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "UNLOCK_LOCKOUT_MAX_MS",
-   "kind": "const",
-   "line": 475,
-   "lines": 1,
-   "section": "ENCRYPTION AT REST (AES-256-GCM via the Web Crypto API)",
-   "internalRefs": 1,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "getUnlockFailState",
-   "kind": "function",
-   "line": 477,
-   "lines": 4,
-   "section": "ENCRYPTION AT REST (AES-256-GCM via the Web Crypto API)",
-   "internalRefs": 1,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "saveUnlockFailState",
-   "kind": "function",
-   "line": 481,
-   "lines": 3,
-   "section": "ENCRYPTION AT REST (AES-256-GCM via the Web Crypto API)",
-   "internalRefs": 3,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "formatLockoutRemaining",
-   "kind": "function",
-   "line": 484,
-   "lines": 4,
-   "section": "ENCRYPTION AT REST (AES-256-GCM via the Web Crypto API)",
-   "internalRefs": 2,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "submitUnlockForm",
-   "kind": "function",
-   "line": 489,
-   "lines": 78,
-   "section": "ENCRYPTION AT REST (AES-256-GCM via the Web Crypto API)",
-   "internalRefs": 1,
-   "moduleConsumers": [
-    "src/startup-events.js"
-   ],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "lockApp",
-   "kind": "function",
-   "line": 580,
-   "lines": 56,
-   "section": "ENCRYPTION AT REST (AES-256-GCM via the Web Crypto API)",
-   "internalRefs": 2,
-   "moduleConsumers": [],
-   "e2eFiles": 4,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "AUTO_LOCK_MS",
-   "kind": "const",
-   "line": 642,
-   "lines": 1,
-   "section": "ENCRYPTION AT REST (AES-256-GCM via the Web Crypto API)",
-   "internalRefs": 1,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "_autoLockTimer",
-   "kind": "let",
-   "line": 643,
-   "lines": 1,
-   "section": "ENCRYPTION AT REST (AES-256-GCM via the Web Crypto API)",
-   "internalRefs": 6,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "resetAutoLockTimer",
-   "kind": "function",
-   "line": 644,
-   "lines": 5,
-   "section": "ENCRYPTION AT REST (AES-256-GCM via the Web Crypto API)",
-   "internalRefs": 4,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "saveWardToState",
-   "kind": "function",
-   "line": 660,
-   "lines": 9,
-   "section": "IN-MEMORY STATE OPERATIONS",
-   "internalRefs": 1,
-   "moduleConsumers": [
-    "src/core/navigation/ward-lifecycle.js",
-    "src/core/persistence/case-file.js"
-   ],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": true,
-   "reviewNote": "Save, auto-save, export-dirty tracking, template loading or the continue prompt -- persistence and startup (70I), not the section it sits in."
-  },
-  {
-   "name": "deleteWardFromState",
-   "kind": "function",
-   "line": 670,
-   "lines": 5,
-   "section": "IN-MEMORY STATE OPERATIONS",
-   "internalRefs": 0,
-   "moduleConsumers": [
-    "src/core/navigation/ward-lifecycle.js"
-   ],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": true,
-   "reviewNote": "Save, auto-save, export-dirty tracking, template loading or the continue prompt -- persistence and startup (70I), not the section it sits in."
-  },
-  {
-   "name": "saveTemplate",
-   "kind": "function",
-   "line": 677,
-   "lines": 5,
-   "section": "IN-MEMORY STATE OPERATIONS",
-   "internalRefs": 1,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": "Save, auto-save, export-dirty tracking, template loading or the continue prompt -- persistence and startup (70I), not the section it sits in."
-  },
-  {
-   "name": "loadTemplate",
-   "kind": "function",
-   "line": 683,
-   "lines": 3,
-   "section": "IN-MEMORY STATE OPERATIONS",
-   "internalRefs": 2,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": "Save, auto-save, export-dirty tracking, template loading or the continue prompt -- persistence and startup (70I), not the section it sits in."
-  },
-  {
-   "name": "appendAuditLogEntry",
-   "kind": "function",
-   "line": 703,
-   "lines": 11,
-   "section": "IN-MEMORY STATE OPERATIONS",
-   "internalRefs": 1,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": "Save, auto-save, export-dirty tracking, template loading or the continue prompt -- persistence and startup (70I), not the section it sits in."
-  },
-  {
-   "name": "loadAuditLogEntries",
-   "kind": "function",
-   "line": 715,
-   "lines": 3,
-   "section": "IN-MEMORY STATE OPERATIONS",
-   "internalRefs": 1,
-   "moduleConsumers": [],
-   "e2eFiles": 1,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": "Save, auto-save, export-dirty tracking, template loading or the continue prompt -- persistence and startup (70I), not the section it sits in."
-  },
-  {
    "name": "autoSave",
    "kind": "function",
-   "line": 748,
-   "lines": 7,
-   "section": "PARTY MANAGEMENT / DE-DUPLICATION (persistence rewrite Milestone 7)",
-   "internalRefs": 5,
-   "moduleConsumers": [
-    "src/core/form/form-contract.js",
-    "src/core/form/prune-cards.js",
-    "src/core/pdf/pdf-preview.js",
-    "src/core/persistence/launch-preferences.js",
-    "src/core/signature/signature-state-control.js",
-    "src/features/annual-accounting/excel.js",
-    "src/features/annual-accounting/index.js",
-    "src/features/guardian-inventory/index.js",
-    "src/features/plan-annual/index.js",
-    "src/features/plan-initial/index.js",
-    "src/features/plan-minor/index.js",
-    "src/features/plan-simplified/index.js",
-    "src/features/simplified-accounting/excel.js",
-    "src/features/simplified-accounting/index.js"
-   ],
+   "line": 188,
+   "lines": 1,
+   "section": "PRINT-PREVIEW PAGER",
+   "internalRefs": 1,
+   "moduleConsumers": [],
    "e2eFiles": 31,
    "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": true,
-   "reviewNote": "Save, auto-save, export-dirty tracking, template loading or the continue prompt -- persistence and startup (70I), not the section it sits in."
-  },
-  {
-   "name": "flushPendingSave",
-   "kind": "function",
-   "line": 760,
-   "lines": 8,
-   "section": "PARTY MANAGEMENT / DE-DUPLICATION (persistence rewrite Milestone 7)",
-   "internalRefs": 4,
-   "moduleConsumers": [
-    "src/core/navigation/ward-lifecycle.js",
+   "duplicateOf": [
     "src/core/persistence/case-file.js"
    ],
-   "e2eFiles": 33,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": true,
-   "reviewNote": "Save, auto-save, export-dirty tracking, template loading or the continue prompt -- persistence and startup (70I), not the section it sits in."
-  },
-  {
-   "name": "showSaveError",
-   "kind": "function",
-   "line": 769,
-   "lines": 4,
-   "section": "PARTY MANAGEMENT / DE-DUPLICATION (persistence rewrite Milestone 7)",
-   "internalRefs": 0,
-   "moduleConsumers": [
-    "src/core/navigation/ward-lifecycle.js",
-    "src/core/persistence/case-file.js"
-   ],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": true,
-   "reviewNote": "Save, auto-save, export-dirty tracking, template loading or the continue prompt -- persistence and startup (70I), not the section it sits in."
-  },
-  {
-   "name": "hideSaveError",
-   "kind": "function",
-   "line": 773,
-   "lines": 4,
-   "section": "PARTY MANAGEMENT / DE-DUPLICATION (persistence rewrite Milestone 7)",
-   "internalRefs": 0,
-   "moduleConsumers": [
-    "src/core/persistence/case-file.js"
-   ],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": true,
-   "reviewNote": "Save, auto-save, export-dirty tracking, template loading or the continue prompt -- persistence and startup (70I), not the section it sits in."
-  },
-  {
-   "name": "saveData",
-   "kind": "function",
-   "line": 793,
-   "lines": 40,
-   "section": "PARTY MANAGEMENT / DE-DUPLICATION (persistence rewrite Milestone 7)",
-   "internalRefs": 4,
-   "moduleConsumers": [
-    "src/core/persistence/case-file.js",
-    "src/features/guardian-inventory/excel.js",
-    "src/features/guardian-inventory/index.js"
-   ],
-   "e2eFiles": 1,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": true,
-   "reviewNote": "Save, auto-save, export-dirty tracking, template loading or the continue prompt -- persistence and startup (70I), not the section it sits in."
-  },
-  {
-   "name": "loadGuardianData",
-   "kind": "function",
-   "line": 836,
-   "lines": 3,
-   "section": "PARTY MANAGEMENT / DE-DUPLICATION (persistence rewrite Milestone 7)",
-   "internalRefs": 2,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": "Save, auto-save, export-dirty tracking, template loading or the continue prompt -- persistence and startup (70I), not the section it sits in."
-  },
-  {
-   "name": "getActiveWard",
-   "kind": "function",
-   "line": 841,
-   "lines": 1,
-   "section": "PARTY MANAGEMENT / DE-DUPLICATION (persistence rewrite Milestone 7)",
-   "internalRefs": 4,
-   "moduleConsumers": [],
-   "e2eFiles": 3,
-   "unitSlices": 0,
-   "duplicateOf": [
-    "src/core/state.js"
-   ],
    "disposition": "wrapper",
-   "delivery": "70K",
-   "wrapperWhile": "classic callers remain: clearAllData, initApp, lockApp, saveData",
+   "delivery": "70J",
+   "wrapperWhile": "classic callers remain: setAccountingFilingType",
    "reviewed": true,
-   "reviewNote": "An accessor modules call to read case state: exactly what 70E's store seam replaces.",
-   "movedIn": "70E"
-  },
-  {
-   "name": "notifyProbateGuardianTabStateChanged",
-   "kind": "function",
-   "line": 844,
-   "lines": 1,
-   "section": "PARTY MANAGEMENT / DE-DUPLICATION (persistence rewrite Milestone 7)",
-   "internalRefs": 2,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [
-    "src/core/navigation/tab-state.js"
-   ],
-   "disposition": "wrapper",
-   "delivery": "70K",
-   "wrapperWhile": "classic callers remain: autoSave, initApp",
-   "reviewed": true,
-   "reviewNote": "Sidebar, header, picker or tab-coordination UI -- a shell controller (70H). The router banner above it is historical: the router itself moved to src/core/navigation/router.js.",
-   "movedIn": "70H"
-  },
-  {
-   "name": "isContinuePromptShown",
-   "kind": "function",
-   "line": 855,
-   "lines": 1,
-   "section": "PARTY MANAGEMENT / DE-DUPLICATION (persistence rewrite Milestone 7)",
-   "internalRefs": 3,
-   "moduleConsumers": [],
-   "e2eFiles": 1,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": "Save, auto-save, export-dirty tracking, template loading or the continue prompt -- persistence and startup (70I), not the section it sits in."
-  },
-  {
-   "name": "markContinuePromptShown",
-   "kind": "function",
-   "line": 857,
-   "lines": 4,
-   "section": "PARTY MANAGEMENT / DE-DUPLICATION (persistence rewrite Milestone 7)",
-   "internalRefs": 3,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": "Save, auto-save, export-dirty tracking, template loading or the continue prompt -- persistence and startup (70I), not the section it sits in."
-  },
-  {
-   "name": "SESSION_CACHE_DB",
-   "kind": "const",
-   "line": 976,
-   "lines": 1,
-   "section": "SESSION-RESTORE CACHE (crash recovery)",
-   "internalRefs": 1,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [
-    "src/core/persistence/recovery-cache.js"
-   ],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "SESSION_CACHE_STORE",
-   "kind": "const",
-   "line": 976,
-   "lines": 1,
-   "section": "SESSION-RESTORE CACHE (crash recovery)",
-   "internalRefs": 7,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [
-    "src/core/persistence/recovery-cache.js"
-   ],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "_sessionCacheDb",
-   "kind": "function",
-   "line": 977,
-   "lines": 8,
-   "section": "SESSION-RESTORE CACHE (crash recovery)",
-   "internalRefs": 3,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [
-    "src/core/persistence/recovery-cache.js"
-   ],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "_sessionCacheGet",
-   "kind": "function",
-   "line": 985,
-   "lines": 10,
-   "section": "SESSION-RESTORE CACHE (crash recovery)",
-   "internalRefs": 1,
-   "moduleConsumers": [],
-   "e2eFiles": 3,
-   "unitSlices": 0,
-   "duplicateOf": [
-    "src/core/persistence/recovery-cache.js"
-   ],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "_sessionCachePut",
-   "kind": "function",
-   "line": 995,
-   "lines": 10,
-   "section": "SESSION-RESTORE CACHE (crash recovery)",
-   "internalRefs": 0,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [
-    "src/core/persistence/recovery-cache.js"
-   ],
-   "disposition": "delete-as-dead",
-   "delivery": "70I",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24)."
-  },
-  {
-   "name": "_sessionCacheClear",
-   "kind": "function",
-   "line": 1005,
-   "lines": 10,
-   "section": "SESSION-RESTORE CACHE (crash recovery)",
-   "internalRefs": 0,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [
-    "src/core/persistence/recovery-cache.js"
-   ],
-   "disposition": "delete-as-dead",
-   "delivery": "70I",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24)."
-  },
-  {
-   "name": "LAUNCH_PREF_DB",
-   "kind": "const",
-   "line": 1027,
-   "lines": 1,
-   "section": "OPEN / START AT LAUNCH",
-   "internalRefs": 1,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [
-    "src/core/persistence/launch-preferences.js"
-   ],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "LAUNCH_PREF_STORE",
-   "kind": "const",
-   "line": 1027,
-   "lines": 1,
-   "section": "OPEN / START AT LAUNCH",
-   "internalRefs": 7,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [
-    "src/core/persistence/launch-preferences.js"
-   ],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "LAUNCH_PREF_KEY_OPENED",
-   "kind": "const",
-   "line": 1028,
-   "lines": 1,
-   "section": "OPEN / START AT LAUNCH",
-   "internalRefs": 0,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [
-    "src/core/persistence/launch-preferences.js"
-   ],
-   "disposition": "delete-as-dead",
-   "delivery": "70I",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24)."
-  },
-  {
-   "name": "LAUNCH_PREF_KEY_HANDLE",
-   "kind": "const",
-   "line": 1028,
-   "lines": 1,
-   "section": "OPEN / START AT LAUNCH",
-   "internalRefs": 0,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [
-    "src/core/persistence/launch-preferences.js"
-   ],
-   "disposition": "delete-as-dead",
-   "delivery": "70I",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24)."
-  },
-  {
-   "name": "REMEMBERED_FILE_TIMEOUT_MS",
-   "kind": "const",
-   "line": 1029,
-   "lines": 1,
-   "section": "OPEN / START AT LAUNCH",
-   "internalRefs": 0,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [
-    "src/core/persistence/launch-preferences.js"
-   ],
-   "disposition": "delete-as-dead",
-   "delivery": "70I",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24)."
-  },
-  {
-   "name": "_rememberedFileUnavailable",
-   "kind": "let",
-   "line": 1030,
-   "lines": 1,
-   "section": "OPEN / START AT LAUNCH",
-   "internalRefs": 1,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "_launchPrefDb",
-   "kind": "function",
-   "line": 1031,
-   "lines": 8,
-   "section": "OPEN / START AT LAUNCH",
-   "internalRefs": 3,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [
-    "src/core/persistence/launch-preferences.js"
-   ],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "_launchPrefGet",
-   "kind": "function",
-   "line": 1039,
-   "lines": 8,
-   "section": "OPEN / START AT LAUNCH",
-   "internalRefs": 0,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [
-    "src/core/persistence/launch-preferences.js"
-   ],
-   "disposition": "delete-as-dead",
-   "delivery": "70I",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24)."
-  },
-  {
-   "name": "_launchPrefPut",
-   "kind": "function",
-   "line": 1047,
-   "lines": 9,
-   "section": "OPEN / START AT LAUNCH",
-   "internalRefs": 0,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [
-    "src/core/persistence/launch-preferences.js"
-   ],
-   "disposition": "delete-as-dead",
-   "delivery": "70I",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24)."
-  },
-  {
-   "name": "_launchPrefDelete",
-   "kind": "function",
-   "line": 1056,
-   "lines": 9,
-   "section": "OPEN / START AT LAUNCH",
-   "internalRefs": 0,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [
-    "src/core/persistence/launch-preferences.js"
-   ],
-   "disposition": "delete-as-dead",
-   "delivery": "70I",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24)."
-  },
-  {
-   "name": "trySilentReopen",
-   "kind": "function",
-   "line": 1070,
-   "lines": 18,
-   "section": "OPEN / START AT LAUNCH",
-   "internalRefs": 1,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "_launchStateResolved",
-   "kind": "let",
-   "line": 1089,
-   "lines": 1,
-   "section": "OPEN / START AT LAUNCH",
-   "internalRefs": 3,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "_openedFileAtLaunch",
-   "kind": "let",
-   "line": 1090,
-   "lines": 1,
-   "section": "OPEN / START AT LAUNCH",
-   "internalRefs": 3,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "_startupChoiceResolve",
-   "kind": "let",
-   "line": 1091,
-   "lines": 1,
-   "section": "OPEN / START AT LAUNCH",
-   "internalRefs": 3,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "promptOpenOrStartAtLaunch",
-   "kind": "function",
-   "line": 1092,
-   "lines": 12,
-   "section": "OPEN / START AT LAUNCH",
-   "internalRefs": 1,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "_resolveStartupChoice",
-   "kind": "function",
-   "line": 1104,
-   "lines": 5,
-   "section": "OPEN / START AT LAUNCH",
-   "internalRefs": 4,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "startNewWardAtLaunch",
-   "kind": "function",
-   "line": 1109,
-   "lines": 5,
-   "section": "OPEN / START AT LAUNCH",
-   "internalRefs": 3,
-   "moduleConsumers": [
-    "src/startup-events.js"
-   ],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "startNewCaseAtLaunch",
-   "kind": "const",
-   "line": 1114,
-   "lines": 1,
-   "section": "OPEN / START AT LAUNCH",
-   "internalRefs": 2,
-   "moduleConsumers": [
-    "src/startup-events.js"
-   ],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "openWardFileAtLaunch",
-   "kind": "function",
-   "line": 1133,
-   "lines": 51,
-   "section": "OPEN / START AT LAUNCH",
-   "internalRefs": 3,
-   "moduleConsumers": [
-    "src/startup-events.js"
-   ],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "openCaseFileAtLaunch",
-   "kind": "const",
-   "line": 1184,
-   "lines": 1,
-   "section": "OPEN / START AT LAUNCH",
-   "internalRefs": 2,
-   "moduleConsumers": [
-    "src/startup-events.js"
-   ],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "handleStartupOpenInputChange",
-   "kind": "function",
-   "line": 1188,
-   "lines": 10,
-   "section": "OPEN / START AT LAUNCH",
-   "internalRefs": 2,
-   "moduleConsumers": [
-    "src/startup-events.js"
-   ],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "loadCaseFileAtLaunch",
-   "kind": "function",
-   "line": 1205,
-   "lines": 45,
-   "section": "OPEN / START AT LAUNCH",
-   "internalRefs": 4,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "loadCaseFileFromZip",
-   "kind": "function",
-   "line": 1258,
-   "lines": 133,
-   "section": "OPEN / START AT LAUNCH",
-   "internalRefs": 2,
-   "moduleConsumers": [],
-   "e2eFiles": 1,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": "Changed on master in b2d97f5 (returns every part it could not read); a re-implement row in MILESTONE-70-FIX-LEDGER.md."
-  },
-  {
-   "name": "setupDragAndDropImport",
-   "kind": "function",
-   "line": 1397,
-   "lines": 41,
-   "section": "OPEN / START AT LAUNCH",
-   "internalRefs": 1,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "clearAllData",
-   "kind": "function",
-   "line": 1439,
-   "lines": 11,
-   "section": "OPEN / START AT LAUNCH",
-   "internalRefs": 1,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": null
-  },
-  {
-   "name": "loadRecentlyOpenedWards",
-   "kind": "function",
-   "line": 1478,
-   "lines": 1,
-   "section": "WARD MANAGEMENT",
-   "internalRefs": 1,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [
-    "src/core/filing/recent-filings.js"
-   ],
-   "disposition": "wrapper",
-   "delivery": "70I",
-   "wrapperWhile": "classic callers remain: loadCaseFileFromZip",
-   "reviewed": true,
-   "reviewNote": null,
-   "movedIn": "70G"
-  },
-  {
-   "name": "addToRecentlyOpened",
-   "kind": "function",
-   "line": 1482,
-   "lines": 1,
-   "section": "WARD MANAGEMENT",
-   "internalRefs": 1,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [
-    "src/core/filing/recent-filings.js"
-   ],
-   "disposition": "wrapper",
-   "delivery": "70I",
-   "wrapperWhile": "classic callers remain: loadCaseFileFromZip",
-   "reviewed": true,
-   "reviewNote": null,
-   "movedIn": "70G"
-  },
-  {
-   "name": "ensureFragment",
-   "kind": "function",
-   "line": 1500,
-   "lines": 1,
-   "section": "MODAL FUNCTIONS",
-   "internalRefs": 1,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [
-    "src/core/ui/dialogs.js"
-   ],
-   "disposition": "wrapper",
-   "delivery": "70I",
-   "wrapperWhile": "classic callers remain: setupDragAndDropImport",
-   "reviewed": true,
-   "reviewNote": null,
-   "movedIn": "70H"
+   "reviewNote": "Save, auto-save, export-dirty tracking, template loading or the continue prompt -- persistence and startup (70I), not the section it sits in.",
+   "movedIn": "70I"
   },
   {
    "name": "getWardHeadlineTotal",
    "kind": "function",
-   "line": 1530,
+   "line": 263,
    "lines": 16,
    "section": "ROUTER — see src/core/navigation/router.js",
    "internalRefs": 1,
@@ -1912,10 +242,10 @@
   {
    "name": "updateSidebar",
    "kind": "function",
-   "line": 1554,
+   "line": 287,
    "lines": 1,
    "section": "ROUTER — see src/core/navigation/router.js",
-   "internalRefs": 4,
+   "internalRefs": 1,
    "moduleConsumers": [],
    "e2eFiles": 1,
    "unitSlices": 0,
@@ -1923,8 +253,8 @@
     "src/core/shell/sidebar.js"
    ],
    "disposition": "wrapper",
-   "delivery": "70K",
-   "wrapperWhile": "classic callers remain: clearAllData, initApp, lockApp, setAccountingFilingType",
+   "delivery": "70J",
+   "wrapperWhile": "classic callers remain: setAccountingFilingType",
    "reviewed": true,
    "reviewNote": "Sidebar, header, picker or tab-coordination UI -- a shell controller (70H). The router banner above it is historical: the router itself moved to src/core/navigation/router.js.",
    "movedIn": "70H"
@@ -1932,7 +262,7 @@
   {
    "name": "_simplifiedFeatureBridge",
    "kind": "let",
-   "line": 1648,
+   "line": 381,
    "lines": 1,
    "section": "WIZARD: GUARDIAN INVENTORY",
    "internalRefs": 1,
@@ -1949,7 +279,7 @@
   {
    "name": "getSimplifiedFeatureBridge",
    "kind": "function",
-   "line": 1649,
+   "line": 382,
    "lines": 3,
    "section": "WIZARD: GUARDIAN INVENTORY",
    "internalRefs": 2,
@@ -1966,7 +296,7 @@
   {
    "name": "mountSimplifiedFeature",
    "kind": "function",
-   "line": 1652,
+   "line": 385,
    "lines": 3,
    "section": "WIZARD: GUARDIAN INVENTORY",
    "internalRefs": 0,
@@ -1986,7 +316,7 @@
   {
    "name": "mountSimplifiedNav",
    "kind": "function",
-   "line": 1655,
+   "line": 388,
    "lines": 3,
    "section": "WIZARD: GUARDIAN INVENTORY",
    "internalRefs": 1,
@@ -2003,7 +333,7 @@
   {
    "name": "_annualFeatureBridge",
    "kind": "let",
-   "line": 1669,
+   "line": 402,
    "lines": 1,
    "section": "Annual Accounting is extracted into src/features/annual-accounting/",
    "internalRefs": 1,
@@ -2020,7 +350,7 @@
   {
    "name": "getAnnualFeatureBridge",
    "kind": "function",
-   "line": 1670,
+   "line": 403,
    "lines": 3,
    "section": "Annual Accounting is extracted into src/features/annual-accounting/",
    "internalRefs": 2,
@@ -2037,7 +367,7 @@
   {
    "name": "mountAnnualFeature",
    "kind": "function",
-   "line": 1673,
+   "line": 406,
    "lines": 3,
    "section": "Annual Accounting is extracted into src/features/annual-accounting/",
    "internalRefs": 0,
@@ -2057,7 +387,7 @@
   {
    "name": "mountAnnualNav",
    "kind": "function",
-   "line": 1676,
+   "line": 409,
    "lines": 3,
    "section": "Annual Accounting is extracted into src/features/annual-accounting/",
    "internalRefs": 1,
@@ -2074,7 +404,7 @@
   {
    "name": "_guardianFeatureBridge",
    "kind": "let",
-   "line": 1690,
+   "line": 423,
    "lines": 1,
    "section": "Annual Accounting is extracted into src/features/annual-accounting/",
    "internalRefs": 1,
@@ -2091,7 +421,7 @@
   {
    "name": "getGuardianFeatureBridge",
    "kind": "function",
-   "line": 1691,
+   "line": 424,
    "lines": 3,
    "section": "Annual Accounting is extracted into src/features/annual-accounting/",
    "internalRefs": 2,
@@ -2108,7 +438,7 @@
   {
    "name": "mountGuardianFeature",
    "kind": "function",
-   "line": 1694,
+   "line": 427,
    "lines": 3,
    "section": "Annual Accounting is extracted into src/features/annual-accounting/",
    "internalRefs": 0,
@@ -2128,7 +458,7 @@
   {
    "name": "mountGuardianNav",
    "kind": "function",
-   "line": 1697,
+   "line": 430,
    "lines": 3,
    "section": "Annual Accounting is extracted into src/features/annual-accounting/",
    "internalRefs": 1,
@@ -2145,7 +475,7 @@
   {
    "name": "ensureGuardianFeatureReady",
    "kind": "function",
-   "line": 1700,
+   "line": 433,
    "lines": 6,
    "section": "Annual Accounting is extracted into src/features/annual-accounting/",
    "internalRefs": 0,
@@ -2164,7 +494,7 @@
   {
    "name": "_dashboardFeatureBridge",
    "kind": "let",
-   "line": 1719,
+   "line": 452,
    "lines": 1,
    "section": "Annual Accounting is extracted into src/features/annual-accounting/",
    "internalRefs": 1,
@@ -2181,7 +511,7 @@
   {
    "name": "getDashboardFeatureBridge",
    "kind": "function",
-   "line": 1720,
+   "line": 453,
    "lines": 3,
    "section": "Annual Accounting is extracted into src/features/annual-accounting/",
    "internalRefs": 1,
@@ -2198,7 +528,7 @@
   {
    "name": "mountDashboardFeature",
    "kind": "function",
-   "line": 1723,
+   "line": 456,
    "lines": 3,
    "section": "Annual Accounting is extracted into src/features/annual-accounting/",
    "internalRefs": 0,
@@ -2217,7 +547,7 @@
   {
    "name": "_planSimplifiedFeatureBridge",
    "kind": "let",
-   "line": 1752,
+   "line": 485,
    "lines": 1,
    "section": "window.createFeatureBridge() is constructed lazily, not at this file's",
    "internalRefs": 1,
@@ -2234,7 +564,7 @@
   {
    "name": "getPlanSimplifiedFeatureBridge",
    "kind": "function",
-   "line": 1753,
+   "line": 486,
    "lines": 3,
    "section": "window.createFeatureBridge() is constructed lazily, not at this file's",
    "internalRefs": 2,
@@ -2251,7 +581,7 @@
   {
    "name": "mountPlanSimplifiedFeature",
    "kind": "function",
-   "line": 1756,
+   "line": 489,
    "lines": 3,
    "section": "window.createFeatureBridge() is constructed lazily, not at this file's",
    "internalRefs": 0,
@@ -2271,7 +601,7 @@
   {
    "name": "mountPlanSimplifiedNav",
    "kind": "function",
-   "line": 1759,
+   "line": 492,
    "lines": 3,
    "section": "window.createFeatureBridge() is constructed lazily, not at this file's",
    "internalRefs": 1,
@@ -2288,7 +618,7 @@
   {
    "name": "_planAnnualFeatureBridge",
    "kind": "let",
-   "line": 1777,
+   "line": 510,
    "lines": 1,
    "section": "Annual Guardianship Plan is extracted into src/features/plan-annual/",
    "internalRefs": 1,
@@ -2305,7 +635,7 @@
   {
    "name": "getPlanAnnualFeatureBridge",
    "kind": "function",
-   "line": 1778,
+   "line": 511,
    "lines": 3,
    "section": "Annual Guardianship Plan is extracted into src/features/plan-annual/",
    "internalRefs": 2,
@@ -2322,7 +652,7 @@
   {
    "name": "mountPlanAnnualFeature",
    "kind": "function",
-   "line": 1781,
+   "line": 514,
    "lines": 3,
    "section": "Annual Guardianship Plan is extracted into src/features/plan-annual/",
    "internalRefs": 0,
@@ -2342,7 +672,7 @@
   {
    "name": "mountPlanAnnualNav",
    "kind": "function",
-   "line": 1784,
+   "line": 517,
    "lines": 3,
    "section": "Annual Guardianship Plan is extracted into src/features/plan-annual/",
    "internalRefs": 1,
@@ -2359,7 +689,7 @@
   {
    "name": "_planInitialFeatureBridge",
    "kind": "let",
-   "line": 1830,
+   "line": 563,
    "lines": 1,
    "section": "Initial Guardianship Plan is extracted into src/features/plan-initial/",
    "internalRefs": 1,
@@ -2376,7 +706,7 @@
   {
    "name": "getPlanInitialFeatureBridge",
    "kind": "function",
-   "line": 1831,
+   "line": 564,
    "lines": 3,
    "section": "Initial Guardianship Plan is extracted into src/features/plan-initial/",
    "internalRefs": 2,
@@ -2393,7 +723,7 @@
   {
    "name": "mountPlanInitialFeature",
    "kind": "function",
-   "line": 1834,
+   "line": 567,
    "lines": 3,
    "section": "Initial Guardianship Plan is extracted into src/features/plan-initial/",
    "internalRefs": 0,
@@ -2413,7 +743,7 @@
   {
    "name": "mountPlanInitialNav",
    "kind": "function",
-   "line": 1837,
+   "line": 570,
    "lines": 3,
    "section": "Initial Guardianship Plan is extracted into src/features/plan-initial/",
    "internalRefs": 1,
@@ -2430,7 +760,7 @@
   {
    "name": "_planMinorFeatureBridge",
    "kind": "let",
-   "line": 1861,
+   "line": 594,
    "lines": 1,
    "section": "Annual Plan -- Minors is extracted into src/features/plan-minor/",
    "internalRefs": 1,
@@ -2447,7 +777,7 @@
   {
    "name": "getPlanMinorFeatureBridge",
    "kind": "function",
-   "line": 1862,
+   "line": 595,
    "lines": 3,
    "section": "Annual Plan -- Minors is extracted into src/features/plan-minor/",
    "internalRefs": 2,
@@ -2464,7 +794,7 @@
   {
    "name": "mountPlanMinorFeature",
    "kind": "function",
-   "line": 1865,
+   "line": 598,
    "lines": 3,
    "section": "Annual Plan -- Minors is extracted into src/features/plan-minor/",
    "internalRefs": 0,
@@ -2484,7 +814,7 @@
   {
    "name": "mountPlanMinorNav",
    "kind": "function",
-   "line": 1868,
+   "line": 601,
    "lines": 3,
    "section": "Annual Plan -- Minors is extracted into src/features/plan-minor/",
    "internalRefs": 1,
@@ -2501,7 +831,7 @@
   {
    "name": "n",
    "kind": "function",
-   "line": 1875,
+   "line": 608,
    "lines": 1,
    "section": "Annual Plan -- Minors is extracted into src/features/plan-minor/",
    "internalRefs": 0,
@@ -2524,7 +854,7 @@
   {
    "name": "pct",
    "kind": "function",
-   "line": 1876,
+   "line": 609,
    "lines": 1,
    "section": "Annual Plan -- Minors is extracted into src/features/plan-minor/",
    "internalRefs": 0,
@@ -2545,7 +875,7 @@
   {
    "name": "calc",
    "kind": "const",
-   "line": 1946,
+   "line": 679,
    "lines": 1,
    "section": "CALCULATIONS",
    "internalRefs": 1,
@@ -2563,29 +893,9 @@
    "movedIn": "70B"
   },
   {
-   "name": "setPath",
-   "kind": "function",
-   "line": 1960,
-   "lines": 1,
-   "section": "FORM BINDING ENGINE",
-   "internalRefs": 1,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [
-    "src/core/form/paths.js"
-   ],
-   "disposition": "wrapper",
-   "delivery": "70I",
-   "wrapperWhile": "classic callers remain: saveData",
-   "reviewed": true,
-   "reviewNote": null,
-   "movedIn": "70F"
-  },
-  {
    "name": "computeNavChecks",
    "kind": "function",
-   "line": 1971,
+   "line": 702,
    "lines": 1,
    "section": "FORM BINDING ENGINE",
    "internalRefs": 1,
@@ -2605,7 +915,7 @@
   {
    "name": "getWardProgress",
    "kind": "function",
-   "line": 1979,
+   "line": 710,
    "lines": 1,
    "section": "FORM BINDING ENGINE",
    "internalRefs": 1,
@@ -2623,7 +933,7 @@
   {
    "name": "updateNavActive",
    "kind": "function",
-   "line": 2030,
+   "line": 761,
    "lines": 10,
    "section": "INIT",
    "internalRefs": 2,
@@ -2640,7 +950,7 @@
   {
    "name": "SPECIAL_PAGES",
    "kind": "const",
-   "line": 2041,
+   "line": 772,
    "lines": 1,
    "section": "INIT",
    "internalRefs": 1,
@@ -2657,10 +967,10 @@
   {
    "name": "handleHash",
    "kind": "function",
-   "line": 2042,
+   "line": 773,
    "lines": 29,
    "section": "INIT",
-   "internalRefs": 3,
+   "internalRefs": 2,
    "moduleConsumers": [],
    "e2eFiles": 0,
    "unitSlices": 0,
@@ -2672,135 +982,9 @@
    "reviewNote": null
   },
   {
-   "name": "warnBeforeUnloadIfDirty",
-   "kind": "function",
-   "line": 2082,
-   "lines": 5,
-   "section": "INIT",
-   "internalRefs": 1,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": "Save, auto-save, export-dirty tracking, template loading or the continue prompt -- persistence and startup (70I), not the section it sits in."
-  },
-  {
-   "name": "TEMPLATE_FILES",
-   "kind": "const",
-   "line": 2088,
-   "lines": 5,
-   "section": "INIT",
-   "internalRefs": 3,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": "Save, auto-save, export-dirty tracking, template loading or the continue prompt -- persistence and startup (70I), not the section it sits in."
-  },
-  {
-   "name": "isValidXlsxB64",
-   "kind": "function",
-   "line": 2094,
-   "lines": 3,
-   "section": "INIT",
-   "internalRefs": 4,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": "Save, auto-save, export-dirty tracking, template loading or the continue prompt -- persistence and startup (70I), not the section it sits in."
-  },
-  {
-   "name": "fetchAndCacheTemplate",
-   "kind": "function",
-   "line": 2098,
-   "lines": 29,
-   "section": "INIT",
-   "internalRefs": 2,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": "Save, auto-save, export-dirty tracking, template loading or the continue prompt -- persistence and startup (70I), not the section it sits in."
-  },
-  {
-   "name": "ensureTemplate",
-   "kind": "function",
-   "line": 2131,
-   "lines": 12,
-   "section": "INIT",
-   "internalRefs": 0,
-   "moduleConsumers": [
-    "src/features/annual-accounting/excel.js",
-    "src/features/guardian-inventory/excel.js",
-    "src/features/simplified-accounting/excel.js"
-   ],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": "modules read it through window or by bare name",
-   "reviewed": true,
-   "reviewNote": "Save, auto-save, export-dirty tracking, template loading or the continue prompt -- persistence and startup (70I), not the section it sits in."
-  },
-  {
-   "name": "autoLoadTemplates",
-   "kind": "function",
-   "line": 2144,
-   "lines": 15,
-   "section": "INIT",
-   "internalRefs": 1,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [],
-   "disposition": "move",
-   "delivery": "70I",
-   "wrapperWhile": null,
-   "reviewed": true,
-   "reviewNote": "Save, auto-save, export-dirty tracking, template loading or the continue prompt -- persistence and startup (70I), not the section it sits in."
-  },
-  {
-   "name": "renderCopyrightNotice",
-   "kind": "function",
-   "line": 2161,
-   "lines": 1,
-   "section": "INIT",
-   "internalRefs": 1,
-   "moduleConsumers": [],
-   "e2eFiles": 0,
-   "unitSlices": 0,
-   "duplicateOf": [
-    "src/core/shell/sidebar.js"
-   ],
-   "disposition": "wrapper",
-   "delivery": "70K",
-   "wrapperWhile": "classic callers remain: initApp",
-   "reviewed": true,
-   "reviewNote": "Sidebar, header, picker or tab-coordination UI -- a shell controller (70H). The router banner above it is historical: the router itself moved to src/core/navigation/router.js.",
-   "movedIn": "70H"
-  },
-  {
    "name": "provideMonolithServices",
    "kind": "function",
-   "line": 2166,
+   "line": 817,
    "lines": 1,
    "section": "INIT",
    "internalRefs": 1,
@@ -2820,8 +1004,8 @@
   {
    "name": "initApp",
    "kind": "function",
-   "line": 2168,
-   "lines": 52,
+   "line": 819,
+   "lines": 5,
    "section": "INIT",
    "internalRefs": 1,
    "moduleConsumers": [
@@ -2962,11 +1146,9 @@
    "file": "src/core/form/commit-coordinator.js",
    "name": "commitStoredDateDrafts",
    "via": "assignment",
-   "readers": [
-    "src/legacy-app.js"
-   ],
+   "readers": [],
    "e2eFiles": 0,
-   "reason": "monolith-only"
+   "reason": "no-consumer"
   },
   {
    "file": "src/core/form/commit-coordinator.js",
@@ -3010,11 +1192,10 @@
    "via": "assignment",
    "readers": [
     "src/core/navigation/router.js",
-    "src/core/navigation/ward-lifecycle.js",
-    "src/legacy-app.js"
+    "src/core/navigation/ward-lifecycle.js"
    ],
    "e2eFiles": 0,
-   "reason": "monolith-and-modules"
+   "reason": "modules-only"
   },
   {
    "file": "src/core/form/schedule-definitions.js",
@@ -3082,7 +1263,6 @@
    "via": "assignment",
    "readers": [
     "src/core/navigation/ward-lifecycle.js",
-    "src/core/persistence/case-file.js",
     "src/core/validation/validation-adapter.js",
     "src/features/annual-accounting/index.js",
     "src/features/guardian-inventory/excel.js",
@@ -3127,12 +1307,9 @@
    "file": "src/core/navigation/ward-county.js",
    "name": "backfillWardPartyCounties",
    "via": "assignment",
-   "readers": [
-    "src/core/persistence/case-file.js",
-    "src/legacy-app.js"
-   ],
+   "readers": [],
    "e2eFiles": 1,
-   "reason": "monolith-and-modules"
+   "reason": "tests-only"
   },
   {
    "file": "src/core/navigation/ward-county.js",
@@ -3178,23 +1355,11 @@
   },
   {
    "file": "src/core/navigation/ward-lifecycle.js",
-   "name": "_dirtySinceExport",
-   "via": "assignment",
-   "readers": [
-    "src/core/persistence/export-state.js"
-   ],
-   "e2eFiles": 3,
-   "reason": "modules-only"
-  },
-  {
-   "file": "src/core/navigation/ward-lifecycle.js",
    "name": "activateWard",
    "via": "assignment",
-   "readers": [
-    "src/legacy-app.js"
-   ],
+   "readers": [],
    "e2eFiles": 0,
-   "reason": "monolith-only"
+   "reason": "no-consumer"
   },
   {
    "file": "src/core/navigation/ward-lifecycle.js",
@@ -3228,11 +1393,9 @@
    "file": "src/core/navigation/ward-lifecycle.js",
    "name": "unloadWard",
    "via": "assignment",
-   "readers": [
-    "src/core/persistence/case-file.js"
-   ],
+   "readers": [],
    "e2eFiles": 1,
-   "reason": "modules-only"
+   "reason": "tests-only"
   },
   {
    "file": "src/core/party-resolver.js",
@@ -3416,38 +1579,6 @@
   },
   {
    "file": "src/core/persistence/case-file.js",
-   "name": "_caseFileHandle",
-   "via": "assignment",
-   "readers": [],
-   "e2eFiles": 0,
-   "reason": "no-consumer"
-  },
-  {
-   "file": "src/core/persistence/case-file.js",
-   "name": "_saveTimer",
-   "via": "assignment",
-   "readers": [],
-   "e2eFiles": 0,
-   "reason": "no-consumer"
-  },
-  {
-   "file": "src/core/persistence/case-file.js",
-   "name": "backupAllWardsNow",
-   "via": "assignment",
-   "readers": [],
-   "e2eFiles": 0,
-   "reason": "no-consumer"
-  },
-  {
-   "file": "src/core/persistence/case-file.js",
-   "name": "beginRecordingExport",
-   "via": "assignment",
-   "readers": [],
-   "e2eFiles": 0,
-   "reason": "no-consumer"
-  },
-  {
-   "file": "src/core/persistence/case-file.js",
    "name": "buildCaseFileBlob",
    "via": "assignment",
    "readers": [],
@@ -3461,22 +1592,6 @@
    "readers": [],
    "e2eFiles": 3,
    "reason": "tests-only"
-  },
-  {
-   "file": "src/core/persistence/case-file.js",
-   "name": "CASE_FILE_FORMAT_VERSION",
-   "via": "assignment",
-   "readers": [],
-   "e2eFiles": 0,
-   "reason": "no-consumer"
-  },
-  {
-   "file": "src/core/persistence/case-file.js",
-   "name": "exportCaseFileZip",
-   "via": "assignment",
-   "readers": [],
-   "e2eFiles": 0,
-   "reason": "no-consumer"
   },
   {
    "file": "src/core/persistence/case-file.js",
@@ -3496,105 +1611,11 @@
   },
   {
    "file": "src/core/persistence/case-file.js",
-   "name": "forgetCaseFileHandle",
-   "via": "assignment",
-   "readers": [],
-   "e2eFiles": 0,
-   "reason": "no-consumer"
-  },
-  {
-   "file": "src/core/persistence/case-file.js",
-   "name": "formatRelativeTime",
-   "via": "assignment",
-   "readers": [],
-   "e2eFiles": 0,
-   "reason": "no-consumer"
-  },
-  {
-   "file": "src/core/persistence/case-file.js",
-   "name": "getLastExportAt",
-   "via": "assignment",
-   "readers": [],
-   "e2eFiles": 0,
-   "reason": "no-consumer"
-  },
-  {
-   "file": "src/core/persistence/case-file.js",
-   "name": "getWardFileName",
-   "via": "assignment",
-   "readers": [],
-   "e2eFiles": 0,
-   "reason": "no-consumer"
-  },
-  {
-   "file": "src/core/persistence/case-file.js",
-   "name": "getWardFileStem",
-   "via": "assignment",
-   "readers": [],
-   "e2eFiles": 0,
-   "reason": "no-consumer"
-  },
-  {
-   "file": "src/core/persistence/case-file.js",
-   "name": "handleBackupImportChange",
-   "via": "assignment",
-   "readers": [],
-   "e2eFiles": 0,
-   "reason": "no-consumer"
-  },
-  {
-   "file": "src/core/persistence/case-file.js",
-   "name": "hideAutoExportReminder",
-   "via": "assignment",
-   "readers": [],
-   "e2eFiles": 0,
-   "reason": "no-consumer"
-  },
-  {
-   "file": "src/core/persistence/case-file.js",
-   "name": "importGuardianDataZip",
-   "via": "assignment",
-   "readers": [
-    "src/legacy-app.js"
-   ],
-   "e2eFiles": 0,
-   "reason": "monolith-only"
-  },
-  {
-   "file": "src/core/persistence/case-file.js",
-   "name": "importSavArchiveOrWard",
-   "via": "assignment",
-   "readers": [],
-   "e2eFiles": 0,
-   "reason": "no-consumer"
-  },
-  {
-   "file": "src/core/persistence/case-file.js",
-   "name": "isAutoSaveArmed",
-   "via": "assignment",
-   "readers": [],
-   "e2eFiles": 0,
-   "reason": "no-consumer"
-  },
-  {
-   "file": "src/core/persistence/case-file.js",
-   "name": "loadAutoExportPrefs",
-   "via": "assignment",
-   "readers": [
-    "src/legacy-app.js"
-   ],
-   "e2eFiles": 0,
-   "reason": "monolith-only"
-  },
-  {
-   "file": "src/core/persistence/case-file.js",
    "name": "loadCaseFileHandle",
    "via": "assignment",
-   "readers": [
-    "src/legacy-app.js"
-   ],
+   "readers": [],
    "e2eFiles": 2,
-   "reason": "monolith-only"
+   "reason": "tests-only"
   },
   {
    "file": "src/core/persistence/case-file.js",
@@ -3613,37 +1634,18 @@
    "name": "refreshAutoSaveArmedStatus",
    "via": "assignment",
    "readers": [
-    "src/core/navigation/ward-lifecycle.js",
-    "src/legacy-app.js"
+    "src/core/navigation/ward-lifecycle.js"
    ],
    "e2eFiles": 0,
-   "reason": "monolith-and-modules"
+   "reason": "modules-only"
   },
   {
    "file": "src/core/persistence/case-file.js",
    "name": "rememberCaseFileHandle",
    "via": "assignment",
-   "readers": [
-    "src/legacy-app.js"
-   ],
+   "readers": [],
    "e2eFiles": 2,
-   "reason": "monolith-only"
-  },
-  {
-   "file": "src/core/persistence/case-file.js",
-   "name": "restoreBackupSavFile",
-   "via": "assignment",
-   "readers": [],
-   "e2eFiles": 0,
-   "reason": "no-consumer"
-  },
-  {
-   "file": "src/core/persistence/case-file.js",
-   "name": "saveAutoExportIntervalPref",
-   "via": "assignment",
-   "readers": [],
-   "e2eFiles": 0,
-   "reason": "no-consumer"
+   "reason": "tests-only"
   },
   {
    "file": "src/core/persistence/case-file.js",
@@ -3663,36 +1665,6 @@
   },
   {
    "file": "src/core/persistence/case-file.js",
-   "name": "setupAutoExportTimer",
-   "via": "assignment",
-   "readers": [
-    "src/legacy-app.js"
-   ],
-   "e2eFiles": 0,
-   "reason": "monolith-only"
-  },
-  {
-   "file": "src/core/persistence/case-file.js",
-   "name": "setupFallbackSaveReminder",
-   "via": "assignment",
-   "readers": [
-    "src/legacy-app.js"
-   ],
-   "e2eFiles": 0,
-   "reason": "monolith-only"
-  },
-  {
-   "file": "src/core/persistence/case-file.js",
-   "name": "setupLastSavedTicker",
-   "via": "assignment",
-   "readers": [
-    "src/legacy-app.js"
-   ],
-   "e2eFiles": 0,
-   "reason": "monolith-only"
-  },
-  {
-   "file": "src/core/persistence/case-file.js",
    "name": "showAutoExportReminder",
    "via": "assignment",
    "readers": [
@@ -3703,38 +1675,13 @@
   },
   {
    "file": "src/core/persistence/case-file.js",
-   "name": "silentAutoExport",
-   "via": "assignment",
-   "readers": [],
-   "e2eFiles": 0,
-   "reason": "no-consumer"
-  },
-  {
-   "file": "src/core/persistence/case-file.js",
-   "name": "suggestedCaseFileName",
-   "via": "assignment",
-   "readers": [],
-   "e2eFiles": 0,
-   "reason": "no-consumer"
-  },
-  {
-   "file": "src/core/persistence/case-file.js",
-   "name": "triggerOpenBackupSav",
-   "via": "assignment",
-   "readers": [],
-   "e2eFiles": 0,
-   "reason": "no-consumer"
-  },
-  {
-   "file": "src/core/persistence/case-file.js",
    "name": "updateLastSavedIndicator",
    "via": "assignment",
    "readers": [
-    "src/core/navigation/ward-lifecycle.js",
-    "src/legacy-app.js"
+    "src/core/navigation/ward-lifecycle.js"
    ],
    "e2eFiles": 0,
-   "reason": "monolith-and-modules"
+   "reason": "modules-only"
   },
   {
    "file": "src/core/persistence/case-file.js",
@@ -3745,168 +1692,12 @@
    "reason": "tests-only"
   },
   {
-   "file": "src/core/persistence/case-file.js",
-   "name": "writeCaseToHandle",
-   "via": "assignment",
-   "readers": [
-    "src/legacy-app.js"
-   ],
-   "e2eFiles": 0,
-   "reason": "monolith-only"
-  },
-  {
-   "file": "src/core/persistence/crypto.js",
-   "name": "_b64FromBytes",
-   "via": "assignment",
-   "readers": [],
-   "e2eFiles": 0,
-   "reason": "no-consumer"
-  },
-  {
-   "file": "src/core/persistence/crypto.js",
-   "name": "_bytesFromB64",
-   "via": "assignment",
-   "readers": [],
-   "e2eFiles": 0,
-   "reason": "no-consumer"
-  },
-  {
-   "file": "src/core/persistence/crypto.js",
-   "name": "_cryptoKey",
-   "via": "assignment",
-   "readers": [],
-   "e2eFiles": 1,
-   "reason": "tests-only"
-  },
-  {
-   "file": "src/core/persistence/crypto.js",
-   "name": "_securityMode",
-   "via": "assignment",
-   "readers": [],
-   "e2eFiles": 1,
-   "reason": "tests-only"
-  },
-  {
-   "file": "src/core/persistence/crypto.js",
-   "name": "CRYPTO_VERIFIER_PLAINTEXT",
-   "via": "assignment",
-   "readers": [],
-   "e2eFiles": 0,
-   "reason": "no-consumer"
-  },
-  {
-   "file": "src/core/persistence/crypto.js",
-   "name": "decryptJSON",
-   "via": "assignment",
-   "readers": [
-    "src/legacy-app.js"
-   ],
-   "e2eFiles": 0,
-   "reason": "monolith-only"
-  },
-  {
    "file": "src/core/persistence/crypto.js",
    "name": "decryptJSONWithKey",
    "via": "assignment",
-   "readers": [
-    "src/legacy-app.js"
-   ],
+   "readers": [],
    "e2eFiles": 1,
-   "reason": "monolith-only"
-  },
-  {
-   "file": "src/core/persistence/crypto.js",
-   "name": "deriveAndVerifyKey",
-   "via": "assignment",
-   "readers": [
-    "src/legacy-app.js"
-   ],
-   "e2eFiles": 0,
-   "reason": "monolith-only"
-  },
-  {
-   "file": "src/core/persistence/crypto.js",
-   "name": "deriveKeyFromPassword",
-   "via": "assignment",
-   "readers": [
-    "src/legacy-app.js"
-   ],
-   "e2eFiles": 0,
-   "reason": "monolith-only"
-  },
-  {
-   "file": "src/core/persistence/crypto.js",
-   "name": "encryptJSON",
-   "via": "assignment",
-   "readers": [
-    "src/legacy-app.js"
-   ],
-   "e2eFiles": 0,
-   "reason": "monolith-only"
-  },
-  {
-   "file": "src/core/persistence/crypto.js",
-   "name": "generateSaltB64",
-   "via": "assignment",
-   "readers": [
-    "src/legacy-app.js"
-   ],
-   "e2eFiles": 0,
-   "reason": "monolith-only"
-  },
-  {
-   "file": "src/core/persistence/crypto.js",
-   "name": "PBKDF2_ITERATIONS",
-   "via": "assignment",
-   "readers": [],
-   "e2eFiles": 0,
-   "reason": "no-consumer"
-  },
-  {
-   "file": "src/core/persistence/crypto.js",
-   "name": "PLAIN_MODE_PREFIX",
-   "via": "assignment",
-   "readers": [],
-   "e2eFiles": 0,
-   "reason": "no-consumer"
-  },
-  {
-   "file": "src/core/persistence/export-state.js",
-   "name": "_dirtySinceExport",
-   "via": "assignment",
-   "readers": [],
-   "e2eFiles": 3,
    "reason": "tests-only"
-  },
-  {
-   "file": "src/core/persistence/export-state.js",
-   "name": "_lastExportAt",
-   "via": "assignment",
-   "readers": [
-    "src/core/navigation/ward-lifecycle.js"
-   ],
-   "e2eFiles": 0,
-   "reason": "modules-only"
-  },
-  {
-   "file": "src/core/persistence/launch-preferences.js",
-   "name": "forgetPersistedCaseFileHandle",
-   "via": "assignment",
-   "readers": [
-    "src/legacy-app.js"
-   ],
-   "e2eFiles": 0,
-   "reason": "monolith-only"
-  },
-  {
-   "file": "src/core/persistence/launch-preferences.js",
-   "name": "handleRememberedFileFailure",
-   "via": "assignment",
-   "readers": [
-    "src/legacy-app.js"
-   ],
-   "e2eFiles": 0,
-   "reason": "monolith-only"
   },
   {
    "file": "src/core/persistence/launch-preferences.js",
@@ -3920,79 +1711,17 @@
    "file": "src/core/persistence/launch-preferences.js",
    "name": "loadAppState",
    "via": "assignment",
-   "readers": [
-    "src/legacy-app.js"
-   ],
+   "readers": [],
    "e2eFiles": 1,
-   "reason": "monolith-only"
-  },
-  {
-   "file": "src/core/persistence/launch-preferences.js",
-   "name": "loadPersistedCaseFileHandle",
-   "via": "assignment",
-   "readers": [
-    "src/legacy-app.js"
-   ],
-   "e2eFiles": 0,
-   "reason": "monolith-only"
-  },
-  {
-   "file": "src/core/persistence/launch-preferences.js",
-   "name": "markCaseOpenedBefore",
-   "via": "assignment",
-   "readers": [
-    "src/legacy-app.js"
-   ],
-   "e2eFiles": 0,
-   "reason": "monolith-only"
+   "reason": "tests-only"
   },
   {
    "file": "src/core/persistence/launch-preferences.js",
    "name": "readRememberedFile",
    "via": "assignment",
-   "readers": [
-    "src/legacy-app.js"
-   ],
-   "e2eFiles": 1,
-   "reason": "monolith-only"
-  },
-  {
-   "file": "src/core/persistence/launch-preferences.js",
-   "name": "runRememberedHandleOperation",
-   "via": "assignment",
-   "readers": [
-    "src/legacy-app.js"
-   ],
-   "e2eFiles": 0,
-   "reason": "monolith-only"
-  },
-  {
-   "file": "src/core/persistence/launch-preferences.js",
-   "name": "saveAppState",
-   "via": "assignment",
-   "readers": [
-    "src/legacy-app.js"
-   ],
-   "e2eFiles": 0,
-   "reason": "monolith-only"
-  },
-  {
-   "file": "src/core/persistence/launch-preferences.js",
-   "name": "savePersistedCaseFileHandle",
-   "via": "assignment",
    "readers": [],
-   "e2eFiles": 0,
-   "reason": "no-consumer"
-  },
-  {
-   "file": "src/core/persistence/recovery-cache.js",
-   "name": "clearLastPosition",
-   "via": "assignment",
-   "readers": [
-    "src/legacy-app.js"
-   ],
-   "e2eFiles": 0,
-   "reason": "monolith-only"
+   "e2eFiles": 1,
+   "reason": "tests-only"
   },
   {
    "file": "src/core/persistence/recovery-cache.js",
@@ -4004,45 +1733,15 @@
   },
   {
    "file": "src/core/persistence/recovery-cache.js",
-   "name": "loadLastPosition",
-   "via": "assignment",
-   "readers": [
-    "src/legacy-app.js"
-   ],
-   "e2eFiles": 0,
-   "reason": "monolith-only"
-  },
-  {
-   "file": "src/core/persistence/recovery-cache.js",
    "name": "saveSessionRestoreCache",
    "via": "assignment",
-   "readers": [
-    "src/legacy-app.js"
-   ],
+   "readers": [],
    "e2eFiles": 2,
-   "reason": "monolith-only"
+   "reason": "tests-only"
   },
   {
    "file": "src/core/persistence/templates.js",
    "name": "EMBEDDED_TEMPLATES",
-   "via": "assignment",
-   "readers": [],
-   "e2eFiles": 0,
-   "reason": "no-consumer"
-  },
-  {
-   "file": "src/core/persistence/templates.js",
-   "name": "embeddedTemplate",
-   "via": "assignment",
-   "readers": [
-    "src/legacy-app.js"
-   ],
-   "e2eFiles": 0,
-   "reason": "monolith-only"
-  },
-  {
-   "file": "src/core/state.js",
-   "name": "_appState",
    "via": "assignment",
    "readers": [],
    "e2eFiles": 0,
@@ -4118,11 +1817,9 @@
    "file": "src/core/theme-preference.js",
    "name": "seedStoredThemeFromLegacy",
    "via": "assignment",
-   "readers": [
-    "src/legacy-app.js"
-   ],
+   "readers": [],
    "e2eFiles": 0,
-   "reason": "monolith-only"
+   "reason": "no-consumer"
   },
   {
    "file": "src/core/theme-preference.js",
@@ -4144,21 +1841,17 @@
    "file": "src/core/ui/dialogs.js",
    "name": "alertModal",
    "via": "assignment",
-   "readers": [
-    "src/legacy-app.js"
-   ],
+   "readers": [],
    "e2eFiles": 0,
-   "reason": "monolith-only"
+   "reason": "no-consumer"
   },
   {
    "file": "src/core/ui/dialogs.js",
    "name": "confirmModal",
    "via": "assignment",
-   "readers": [
-    "src/legacy-app.js"
-   ],
+   "readers": [],
    "e2eFiles": 0,
-   "reason": "monolith-only"
+   "reason": "no-consumer"
   },
   {
    "file": "src/core/ui/dialogs.js",
@@ -4231,11 +1924,10 @@
    "name": "releaseWardLock",
    "via": "assignment",
    "readers": [
-    "src/core/navigation/ward-lifecycle.js",
-    "src/legacy-app.js"
+    "src/core/navigation/ward-lifecycle.js"
    ],
    "e2eFiles": 1,
-   "reason": "monolith-and-modules"
+   "reason": "modules-only"
   },
   {
    "file": "src/features-loader.js",
@@ -4610,111 +2302,10 @@
   },
   {
    "file": "src/legacy-app.js",
-   "name": "_appState",
-   "via": "defineProperty",
-   "readers": [
-    "src/core/state.js"
-   ],
-   "e2eFiles": 0,
-   "reason": "modules-only"
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "_auditLogEntries",
-   "via": "defineProperty",
-   "readers": [
-    "src/core/persistence/case-file.js"
-   ],
-   "e2eFiles": 0,
-   "reason": "modules-only"
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "_autoExportIntervalMinutes",
-   "via": "defineProperty",
-   "readers": [
-    "src/core/persistence/case-file.js"
-   ],
-   "e2eFiles": 0,
-   "reason": "modules-only"
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "_cryptoKey",
-   "via": "defineProperty",
-   "readers": [
-    "src/core/persistence/crypto.js"
-   ],
-   "e2eFiles": 1,
-   "reason": "modules-only"
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "_dirtySinceExport",
-   "via": "defineProperty",
-   "readers": [
-    "src/core/persistence/export-state.js"
-   ],
-   "e2eFiles": 3,
-   "reason": "modules-only"
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "_lastExportAt",
-   "via": "defineProperty",
-   "readers": [
-    "src/core/navigation/ward-lifecycle.js",
-    "src/core/persistence/export-state.js"
-   ],
-   "e2eFiles": 0,
-   "reason": "modules-only"
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "_saveTimer",
-   "via": "defineProperty",
-   "readers": [
-    "src/core/persistence/case-file.js"
-   ],
-   "e2eFiles": 0,
-   "reason": "modules-only"
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "_securityMode",
-   "via": "defineProperty",
-   "readers": [
-    "src/core/persistence/crypto.js"
-   ],
-   "e2eFiles": 1,
-   "reason": "modules-only"
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "_templateCache",
-   "via": "defineProperty",
-   "readers": [
-    "src/core/state.js"
-   ],
-   "e2eFiles": 0,
-   "reason": "modules-only"
-  },
-  {
-   "file": "src/legacy-app.js",
    "name": "activeInventoryType",
    "via": "defineProperty",
    "readers": [
     "src/core/state.js"
-   ],
-   "e2eFiles": 1,
-   "reason": "modules-only"
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "auditLog",
-   "via": "assignment",
-   "readers": [
-    "src/core/persistence/case-file.js"
    ],
    "e2eFiles": 1,
    "reason": "modules-only"
@@ -4751,52 +2342,6 @@
   },
   {
    "file": "src/legacy-app.js",
-   "name": "handleStartupOpenInputChange",
-   "via": "assignment",
-   "readers": [
-    "src/startup-events.js"
-   ],
-   "e2eFiles": 0,
-   "reason": "modules-only"
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "isContinuePromptShown",
-   "via": "assignment",
-   "readers": [],
-   "e2eFiles": 1,
-   "reason": "tests-only"
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "markContinuePromptShown",
-   "via": "assignment",
-   "readers": [],
-   "e2eFiles": 0,
-   "reason": "no-consumer"
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "openCaseFileAtLaunch",
-   "via": "assignment",
-   "readers": [
-    "src/startup-events.js"
-   ],
-   "e2eFiles": 0,
-   "reason": "modules-only"
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "openWardFileAtLaunch",
-   "via": "assignment",
-   "readers": [
-    "src/startup-events.js"
-   ],
-   "e2eFiles": 0,
-   "reason": "modules-only"
-  },
-  {
-   "file": "src/legacy-app.js",
    "name": "PG_APP_VERSION",
    "via": "assignment",
    "readers": [
@@ -4807,41 +2352,11 @@
   },
   {
    "file": "src/legacy-app.js",
-   "name": "pgHasUnsavedChanges",
-   "via": "assignment",
-   "readers": [
-    "src/pwa-ui.js"
-   ],
-   "e2eFiles": 2,
-   "reason": "modules-only"
-  },
-  {
-   "file": "src/legacy-app.js",
    "name": "setAccountingFilingType",
    "via": "assignment",
    "readers": [
     "src/features/annual-accounting/excel.js",
     "src/features/annual-accounting/index.js"
-   ],
-   "e2eFiles": 0,
-   "reason": "modules-only"
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "startNewCaseAtLaunch",
-   "via": "assignment",
-   "readers": [
-    "src/startup-events.js"
-   ],
-   "e2eFiles": 0,
-   "reason": "modules-only"
-  },
-  {
-   "file": "src/legacy-app.js",
-   "name": "startNewWardAtLaunch",
-   "via": "assignment",
-   "readers": [
-    "src/startup-events.js"
    ],
    "e2eFiles": 0,
    "reason": "modules-only"
@@ -4890,7 +2405,6 @@
    "via": "assignment",
    "readers": [
     "src/core/navigation/ward-lifecycle.js",
-    "src/core/persistence/case-file.js",
     "src/core/validation/validation-adapter.js",
     "src/features/annual-accounting/index.js",
     "src/features/guardian-inventory/excel.js",

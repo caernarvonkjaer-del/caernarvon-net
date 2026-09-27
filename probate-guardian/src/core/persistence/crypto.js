@@ -1,33 +1,44 @@
 // WebCrypto PBKDF2/AES-GCM encryption at rest for Probate Guardian case files.
-import { windowBackedRef } from './window-backed-ref.js';
 
 export const PBKDF2_ITERATIONS = 210000;
 export const CRYPTO_VERIFIER_PLAINTEXT = 'PG_VERIFIER_V1';
 export const PLAIN_MODE_PREFIX = 'PLAIN:';
 
-const _cryptoKeyRef = windowBackedRef(
-  () => (typeof window !== 'undefined' ? window._cryptoKey : undefined),
-  (v) => {
-    if (typeof window !== 'undefined') {
-      window._cryptoKey = v;
-    }
-  },
-  null,
-);
-export const getCryptoKey = _cryptoKeyRef.get;
-export const setCryptoKey = _cryptoKeyRef.set;
+// The session's key, and whether this case encrypts at all. Every filing,
+// and the guardian's own name and email, are encrypted before they reach the
+// .sav file, which only ever holds ciphertext. The AES key is derived from the
+// filer's password with PBKDF2 and lives only here, in this module's closure
+// (Milestone 70, 70I; it was a window property of legacy-app.js): set once a
+// password is verified, cleared by every lock and every failed attempt, and
+// never written anywhere. There is no recovery path if the password is lost --
+// the deliberate design.
+//
+// 'encrypted' (the default, recommended) uses AES-256-GCM; 'none' stores plain
+// JSON with no password gate, chosen once when a case is started.
+let cryptoKey = null;
+let securityMode = 'encrypted'; // 'encrypted' | 'none'
 
-const _securityModeRef = windowBackedRef(
-  () => (typeof window !== 'undefined' ? window._securityMode : undefined),
-  (v) => {
-    if (typeof window !== 'undefined') {
-      window._securityMode = v;
-    }
-  },
-  'encrypted', // 'encrypted' | 'none'
-);
-export const getSecurityMode = _securityModeRef.get;
-export const setSecurityMode = _securityModeRef.set;
+export function getCryptoKey() {
+  return cryptoKey;
+}
+
+/** Hold a verified key for the session. */
+export function setCryptoKey(key) {
+  cryptoKey = key || null;
+}
+
+/** Forget the key: a lock, or a password that did not verify. */
+export function clearCryptoKey() {
+  cryptoKey = null;
+}
+
+export function getSecurityMode() {
+  return securityMode;
+}
+
+export function setSecurityMode(mode) {
+  securityMode = mode;
+}
 
 export function _b64FromBytes(bytes) {
   let bin = '';
@@ -119,15 +130,5 @@ export async function deriveAndVerifyKey(password, manifest, fileHandle) {
 
 // Global bridge for legacy scripts and test harnesses
 if (typeof window !== 'undefined') {
-  window.PBKDF2_ITERATIONS = PBKDF2_ITERATIONS;
-  window.CRYPTO_VERIFIER_PLAINTEXT = CRYPTO_VERIFIER_PLAINTEXT;
-  window.PLAIN_MODE_PREFIX = PLAIN_MODE_PREFIX;
-  window._b64FromBytes = _b64FromBytes;
-  window._bytesFromB64 = _bytesFromB64;
-  window.generateSaltB64 = generateSaltB64;
-  window.deriveKeyFromPassword = deriveKeyFromPassword;
-  window.encryptJSON = encryptJSON;
-  window.decryptJSON = decryptJSON;
   window.decryptJSONWithKey = decryptJSONWithKey;
-  window.deriveAndVerifyKey = deriveAndVerifyKey;
 }

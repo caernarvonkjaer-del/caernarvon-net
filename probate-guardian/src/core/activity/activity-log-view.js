@@ -5,9 +5,9 @@
 // from legacy-app.js's ACTIVITY LOG VIEWER.
 import { esc } from '../filing/escape-html.js';
 import { formatRelativeTime, getLastExportAt, isAutoSaveArmed, loadCaseFileHandle, saveBlobAs } from '../persistence/case-file.js';
-import { monolith } from '../runtime/monolith.js';
 import { alertModal } from '../ui/dialogs.js';
 import { ic } from '../ui/icons.js';
+import { loadAuditLogEntries } from './audit-log.js';
 
 export const ACTIVITY_EVENT_META={
   PASSWORD_CREATED: {label:'Master password created', iconName:'shield'},
@@ -26,7 +26,7 @@ export let _activityLogEntries=[];
 export const ACTIVITY_LOG_RENDER_CAP=300;
 
 export async function loadAndRenderActivityLog(){
-  const raw=await monolith.loadAuditLogEntries();
+  const raw=await loadAuditLogEntries();
   // Sort by the in-memory monotonic id; timestamps can collide within one
   // millisecond and are therefore not a reliable ordering key.
   _activityLogEntries=raw.slice().sort((a,b)=>(b.id||0)-(a.id||0));

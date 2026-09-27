@@ -5,11 +5,12 @@ import { normalizeWardData } from './filing/normalize-filing.js';
 // Until 70J the state still belongs to the classic monolith, legacy-app.js:
 // its top-level `caseFile`, which it keeps on window.caseFile (it replaces the
 // case in one place and updates window.caseFile there); the open filing, which
-// it keeps on window.D; and its lexical `activeInventoryType`, `_appState` and
-// `_templateCache`, which it exposes as window accessors. This module reads
-// those live references and keeps no copy of its own -- one authority, the
-// monolith's, made explicit (MILESTONE-70-PROPOSAL.md, "Canonical case
-// store"). No other module assigns window.D or window.caseFile.
+// it keeps on window.D; and its lexical `activeInventoryType`, which it exposes
+// as a window accessor. This module reads those live references and keeps no
+// copy of its own -- one authority, the monolith's, made explicit
+// (MILESTONE-70-PROPOSAL.md, "Canonical case store"). No other module assigns
+// window.D or window.caseFile. App state and the template cache were the
+// monolith's too; since 70I they are this module's own.
 //
 // Every such access is written as window.X, so the dependency audit sees it
 // and the ratchet lists it: this file is the one module allowed it, the
@@ -35,9 +36,13 @@ const standIn = {
   },
   D: {},
   activeInventoryType: null,
-  _appState: {},
-  _templateCache: {},
 };
+
+// The case's app preferences (saved in the .sav's appState section) and the
+// embedded workbook templates cached with it: this module's own since
+// Milestone 70's 70I, not the monolith's window accessors.
+let appState = {};
+let templateCache = {};
 const onPage = () => typeof window !== 'undefined';
 
 /** The case file: the live object, never a copy. */
@@ -99,39 +104,39 @@ export function setActiveFiling(ward) {
   setActiveInventoryType(ward ? ward.inventoryType : null);
 }
 
-/** One app-state value (the monolith's `_appState`), or null. */
+/** One app-state value, or null. */
 export function getAppState(key) {
-  const state = onPage() ? window._appState : standIn._appState;
-  return state && key in state ? state[key] : null;
+  return key in appState ? appState[key] : null;
 }
 
 /**
- * The monolith's _appState object itself, live, for code that reads and sets
- * several of its keys (Milestone 70, 70G: the recent-filings list).
+ * The app-state object itself, live, for code that reads and sets several of
+ * its keys (the recent-filings list, a case file as it opens).
  */
 export function appStateObject() {
-  if (!onPage()) return standIn._appState;
-  if (!window._appState) window._appState = {};
-  return window._appState;
+  return appState;
 }
 
 /**
- * Set one app-state value in memory. Persisting it is the monolith's
- * saveAppState(), as before; this only assigns, as the callers did.
+ * Set one app-state value in memory. Persisting it is launch-preferences.js's
+ * saveAppState(); this only assigns.
  */
 export function setAppState(key, val) {
-  if (!onPage()) { standIn._appState[key] = val; return; }
-  if (!window._appState) window._appState = {};
-  window._appState[key] = val;
+  appState[key] = val;
 }
 
 // Milestone 51B removed getAllAppState() from here -- zero references,
 // including in this module's own spec. Callers that need a single key use
 // getAppState(key) above; nothing ever wanted the whole bag.
 
-/** The embedded-template cache (the monolith's `_templateCache`). */
+/** The embedded-template cache: type -> base64 workbook. */
 export function getTemplateCache() {
-  return (onPage() && window._templateCache) || standIn._templateCache;
+  return templateCache;
+}
+
+/** A case file's own templates, as it opens (case-reader.js). */
+export function replaceTemplateCache(next) {
+  templateCache = next || {};
 }
 
 /**
@@ -158,16 +163,43 @@ export function getActiveWard() {
 //
 // A write's side effects run once each, in this order: the filing's revision
 // is marked changed (so an export can no longer claim the old revision), the
-// save is scheduled, and subscribers hear about it. main.js hands the first
-// two in at startup (configureCaseStore()): the revision counter it imports,
-// and the monolith's own autoSave(), which it reaches through
-// src/core/runtime/monolith.js until 70I's persistence service owns saving.
-const hooks = { markRevision: null, save: null };
+// save is scheduled, and subscribers hear about it. main.js hands them in at
+// startup (configureCaseStore()): the revision counter, and case-file.js's
+// autoSave() (Milestone 70, 70I; it was the monolith's) -- with the form
+// layer's commit of a field still being typed in, which a flush runs first.
+// The store sits below both, so neither needs to import the other.
+const hooks = { markRevision: null, save: null, commitPending: null };
 const subscribers = new Set();
 
-export function configureCaseStore({ markRevision = null, save = null } = {}) {
+export function configureCaseStore({ markRevision = null, save = null, commitPending = null } = {}) {
   hooks.markRevision = markRevision;
   hooks.save = save;
+  hooks.commitPending = commitPending;
+}
+
+/**
+ * Schedule a save of the case: what a write through transaction() does,
+ * without marking a filing revision. How every module asks for one (Milestone
+ * 70, 70I) -- a module the save itself depends on could not import it. Does
+ * nothing until main.js configures the store (unit tests under Node).
+ */
+export function requestSave() {
+  return hooks.save?.();
+}
+
+/**
+ * For GuardianForms.testing's countAutoSaves() only: send every save request
+ * to `fn` until the returned restore() puts the configured hook back.
+ */
+export function replaceSaveHook(fn) {
+  const previous = hooks.save;
+  hooks.save = fn;
+  return () => { hooks.save = previous; };
+}
+
+/** Commit the form's pending edit -- a field still being typed in -- into the case, before it is saved. */
+export function commitPendingEdits() {
+  return hooks.commitPending?.();
 }
 
 /** Read through a selector: select(({ caseFile, filing }) => filing.wardName). Live values, not copies. */

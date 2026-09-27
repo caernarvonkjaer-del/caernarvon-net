@@ -11,7 +11,7 @@ import {
   recordDateDraft,
 } from './commit-coordinator.js';
 import { validateSecurityInput } from '../security/input-hardening.js';
-import { getD } from '../state.js';
+import { getD, requestSave } from '../state.js';
 import { updateNavDots } from '../status/nav-marks.js';
 import { getPath, setPath } from './paths.js';
 import { refreshWardInfoCard, syncActiveWardNameDisplay, syncGuardianNameDisplay } from '../shell/sidebar.js';
@@ -368,7 +368,7 @@ export function runFieldWriteSideEffects(path, control = null) {
   // Milestone 58A: the fourth argument is what stops one edit from promoting
   // its stale neighbours into the shared Party record.
   if (identitySlot && window.syncIdentityField) window.syncIdentityField(getD(), identitySlot.role, identitySlot.index, identitySlot.fieldKeys);
-  window.autoSave?.();
+  requestSave();
   updateNavDots?.();
   refreshWardInfoCard?.();
   const dataset = control?.dataset || {};
@@ -429,7 +429,7 @@ export function writeDraftValue(control, options = {}) {
       section: control.dataset?.fieldSection || '',
       route: window.getCurrentPage?.() || window.location?.hash || '/',
     });
-    if (window.autoSave) window.autoSave();
+    requestSave();
     return;
   }
 

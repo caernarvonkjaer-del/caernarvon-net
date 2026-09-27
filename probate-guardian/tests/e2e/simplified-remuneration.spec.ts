@@ -170,4 +170,22 @@ test.describe('Milestone 60J: Part VII must be answered, and is always declared'
     await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
     expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('remuneration.0.amount'))).toBe('1250.50');
   });
+
+  // Milestone 70, 70I: the box repaints the sidebar mark then and there, with no
+  // page error. 70H removed the monolith's global updateNavDots(), which this
+  // handler called by its bare name: the tick still saved, then the handler
+  // threw before the mark changed. The truth-table test above reads the
+  // sidebar's checks, not its marks, and does not listen for page errors, so
+  // it stayed green.
+  test('ticking "none received" turns Part VII green in the sidebar at once, with no page error', async ({ page }) => {
+    const errors: string[] = [];
+    page.on('pageerror', (e) => errors.push(e.message));
+    await openFreshSimplified(page, 'Part VII Mark Ward');
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/p7'));
+    const mark = page.locator('[data-nav="s-p7"] .nav-check');
+    await expect(mark).toHaveClass(/incomplete/);
+    await page.locator('[data-simplified-change="schedule-no-items"][data-schedule="remuneration"]').check();
+    await expect(mark).toHaveClass(/(^|\s)complete(\s|$)/);
+    expect(errors).toEqual([]);
+  });
 });

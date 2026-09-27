@@ -46,12 +46,14 @@ import { termsAcceptanceReady } from './terms-acceptance.js';
 import { installShellEvents } from './shell-events.js';
 import { installModalEvents } from './modal-events.js';
 import { installFormEvents } from './form-events.js';
-import './startup-events.js';
+import { installStartupEvents } from './startup-events.js';
 import './tab-coordination.js';
 import './pwa-ui.js';
 
 import { configureCaseStore } from './core/state.js';
-import { monolith } from './core/runtime/monolith.js';
+import { autoSave, installSaveListeners } from './core/persistence/case-file.js';
+import { commitPendingFieldValues } from './core/form/form-contract.js';
+import { installAppLockListeners } from './core/security/app-lock.js';
 import { linkLabelsToInputs } from './core/form/form-runtime.js';
 import { applyTheme, currentTheme } from './core/theme-preference.js';
 import { installHelpPanelKeys } from './core/help/help-panel.js';
@@ -63,6 +65,7 @@ import { markFilingRevisionChanged, isOutputAcknowledgedFor, clearOutputAcknowle
 import { bindReadinessCard } from './core/filing/readiness-card.js';
 import { needsScheduleAck, recordScheduleAck, normalizeScheduleDocsAck } from './core/filing/schedule-doc-ack.js';
 import { installTestingNamespace } from './core/testing/testing-adapter.js';
+import { runStartup } from './core/startup/startup.js';
 
 // Milestone 70, 70T (decisions D3/T3): GuardianForms.testing, the one surface
 // the browser suite drives the app through, exists only when the test runner
@@ -70,6 +73,12 @@ import { installTestingNamespace } from './core/testing/testing-adapter.js';
 // The flag is read once and deleted here, before anything else in this file
 // runs; in production nothing sets it and nothing is installed.
 installTestingNamespace();
+
+// Milestone 70, 70I: what legacy-app.js added as it loaded, and so ahead of
+// every other listener -- the unlock dialog's Enter key and the activity that
+// holds off the inactivity lock, then saving before the page goes.
+installAppLockListeners();
+installSaveListeners();
 
 // Milestone 70, 70H: the delegated dispatchers' listeners -- the feedback
 // form, the shell's controls, the dialogs (with the observer that labels each
@@ -80,15 +89,19 @@ installFeedbackModal();
 installShellEvents();
 installModalEvents();
 installFormEvents();
+installStartupEvents();
 
 // Milestone 70, 70E: a store transaction's side effects -- the filing's
-// revision marked changed, then the save scheduled (the monolith's autoSave(),
-// which legacy-app.js hands in when initApp() starts). This file used to put
+// revision marked changed, then the save scheduled. This file used to put
 // window.D and window.caseFile accessors here "for the test harness"; they
 // were never installed (legacy-app.js defines both first) and a writable
 // window accessor over the monolith's state is the second authority the plan
 // forbids, so they went.
-configureCaseStore({ markRevision: markFilingRevisionChanged, save: () => monolith.autoSave() });
+// The case store's hooks (Milestone 70, 70I): a write marks the filing's
+// revision and schedules the save; a flush first commits the field still being
+// typed in. Wired here, where both sides are imported, so the save and the
+// form layer need not import each other.
+configureCaseStore({ markRevision: markFilingRevisionChanged, save: autoSave, commitPending: commitPendingFieldValues });
 
 if (typeof window !== 'undefined') {
   window.navigate = navigate;
@@ -152,5 +165,9 @@ if (typeof window !== 'undefined') {
   // acknowledgement has been accepted. This makes the terms dialog the first
   // application interaction instead of merely a layer above an active flow.
   await termsAcceptanceReady;
+  // The monolith hands the moved code its services (src/core/runtime/
+  // monolith.js), then the startup runs (Milestone 70, 70I: it was the rest
+  // of initApp()); the terms promise goes with it, for its first state.
   window.initApp();
+  await runStartup({ termsAccepted: termsAcceptanceReady });
 }

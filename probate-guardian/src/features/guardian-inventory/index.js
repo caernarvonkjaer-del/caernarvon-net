@@ -27,7 +27,8 @@ import { applyZipLimit, finalizeCaseNumber, formatAccountNumber, formatAddress, 
 import { calc } from './totals.js';
 import { PAGES_GUARDIAN, mk } from '../../core/filing/models/guardian.js';
 import { SCHEDULE_NAV_KEYS } from '../../core/filing/models/guardian.js';
-import { getD } from '../../core/state.js';
+import { getD, requestSave } from '../../core/state.js';
+import { saveData } from '../../core/persistence/case-file.js';
 import { afterChange, bindForms } from './form-binding.js';
 import { yesNoCheckboxS, yesNoRadioHTML } from '../../core/form/field-html.js';
 import { browserRecommendationNotice, linkAccordions, linkLabelsToInputs, sanitizeNegativeAmounts, setupAmountFieldValidation } from '../../core/form/form-runtime.js';
@@ -49,7 +50,7 @@ const RECIPIENT_STARTED_FIELDS = ['name', 'address', 'cityStateZip'];
 // the same window.createFeatureBridge() pattern as Simplified, Plan, and
 // Annual features.
 const {
-  autoSave, navigate, renderPage, getCurrentPage, 
+  navigate, renderPage, getCurrentPage, 
   
   computeNavChecks, 
   // Milestone 51C dropped `toggleSsnReveal` from this list -- destructured but
@@ -110,7 +111,7 @@ function normalizeGuardians() {
   if (!normalized.length) normalized.push(mk.guardian());
   if (normalized.length !== guardians.length || !Array.isArray(D.guardians)) {
     D.guardians = normalized;
-    autoSave();
+    requestSave();
   }
 }
 // Milestone 64A-1, item 1.1. D-4's Bond Amount used to be free text (e.g.
@@ -261,7 +262,7 @@ function bindEvents(container) {
           D.scheduleB2[index][field] = formatted;
           syncB2VehicleDescription(index);
         }
-        autoSave();
+        requestSave();
       }
     }
   }, options);
@@ -275,7 +276,7 @@ function bindEvents(container) {
     const index = Number.parseInt(control.dataset.index, 10);
     D.scheduleB2[index][control.dataset.field] = control.value;
     syncB2VehicleDescription(index);
-    autoSave();
+    requestSave();
   }, options);
 }
 
@@ -550,7 +551,7 @@ function removeEntry(schedule,idx){
   };
   const key=map[schedule];
   getD()[key].splice(idx,1);
-  autoSave();
+  requestSave();
   renderPage(getCurrentPage());
 }
 // Empty-state for a schedule with zero rows: a checkbox the filer checks
@@ -572,7 +573,7 @@ function scheduleEmptyHTML(key,noun){
 function setScheduleNoItems(key,val){
   if(!D.scheduleNoItems)D.scheduleNoItems={};
   D.scheduleNoItems[key]=val;
-  autoSave();
+  requestSave();
   afterChange(`scheduleNoItems.${key}`);
 }
 // Copies an entry and inserts the copy directly beneath the original.
@@ -593,7 +594,7 @@ function duplicateEntry(schedule,idx){
   const list=getD()[key];
   if(!list||!list[idx])return;
   list.splice(idx+1,0,JSON.parse(JSON.stringify(list[idx])));
-  autoSave();
+  requestSave();
   renderPage(getCurrentPage());
 }
 // Same idea for the Annual Accounting schedules, which store their rows in
@@ -603,11 +604,11 @@ function addGuardian(){pendingGuardianIndex=D.guardians.length;D.guardians.push(
 function removeGuardian(i){
   D.guardians.splice(i,1);
   if (Array.isArray(D.guardianPartyIds)) D.guardianPartyIds.splice(i, 1);
-  autoSave();
+  requestSave();
   renderPage('/d1');
 }
 function addRecipient(){D.serviceRecipients.push(mk.recipient());renderPage('/d5');}
-function removeRecipient(i){D.serviceRecipients.splice(i,1);autoSave();renderPage('/d5');}
+function removeRecipient(i){D.serviceRecipients.splice(i,1);requestSave();renderPage('/d5');}
 
 // Witnesses present during the physical inventory of the ward's personal
 // effects (Cover page reminder). Kept separate from the entryCard()/
@@ -615,8 +616,8 @@ function removeRecipient(i){D.serviceRecipients.splice(i,1);autoSave();renderPag
 // witnesses aren't a "schedule" in that sense (no dollar total, not part
 // of the schedule/route map those helpers key off of).
 function mkWitness(){return {name:'',address:'',occupation:''};}
-function addWitness(){D.witnesses=D.witnesses||[];D.witnesses.push(mkWitness());autoSave();renderPage('/');}
-function removeWitness(i){if(!D.witnesses)return;D.witnesses.splice(i,1);autoSave();renderPage('/');}
+function addWitness(){D.witnesses=D.witnesses||[];D.witnesses.push(mkWitness());requestSave();renderPage('/');}
+function removeWitness(i){if(!D.witnesses)return;D.witnesses.splice(i,1);requestSave();renderPage('/');}
 function witnessCardsHTML(){
   const list=D.witnesses||[];
   return list.map((w,i)=>`<div class="col-12 col-lg-6"><div class="entry-card mb-0 h-100">
@@ -893,7 +894,7 @@ function toggleB2Vehicle(i,checked){
     e.inSafeDepositBox = '';
     syncB2VehicleDescription(i);
   }
-  autoSave();
+  requestSave();
   renderPage(getCurrentPage());
 }
 function pageScheduleB2(){

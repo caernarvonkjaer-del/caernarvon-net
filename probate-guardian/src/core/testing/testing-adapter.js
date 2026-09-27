@@ -40,6 +40,16 @@ import { getRecentlyOpenedWards } from '../filing/recent-filings.js';
 import { showSimplifiedEligibilityModal } from '../modals/filing-dialogs.js';
 import { showConvertWardModal } from '../modals/convert-ward-modal.js';
 import { convertTargetsFor } from '../filing/filing-descriptor.js';
+// Milestone 70, 70I: what left the monolith, and the state no longer on window.
+import { replaceSaveHook, requestSave } from '../state.js';
+import { flushPendingSave, saveData } from '../persistence/case-file.js';
+import { loadCaseFileFromZip } from '../persistence/case-reader.js';
+import { getCryptoKey, getSecurityMode } from '../persistence/crypto.js';
+import { isDirtySinceExport, setDirtySinceExport } from '../persistence/export-state.js';
+import { isContinuePromptShown } from '../persistence/launch-preferences.js';
+import { _sessionCacheGet } from '../persistence/recovery-cache.js';
+import { auditLog, loadAuditLogEntries } from '../activity/audit-log.js';
+import { lockApp } from '../security/app-lock.js';
 
 export const TEST_MODE_FLAG = '__GUARDIAN_FORMS_TEST_MODE__';
 
@@ -123,7 +133,7 @@ export function createTestingAdapter(w) {
         if (key.includes('.')) setPath(d, key, copy(value));
         else d[key] = copy(value);
       }
-      call('autoSave');
+      requestSave();
     },
 
     /**
@@ -164,7 +174,7 @@ export function createTestingAdapter(w) {
       const next = copy(filing);
       for (const key of Object.keys(d)) if (!(key in next)) delete d[key];
       Object.assign(d, next);
-      call('autoSave');
+      requestSave();
     },
 
     /**
@@ -207,13 +217,13 @@ export function createTestingAdapter(w) {
     // ── Commands ────────────────────────────────────────────────────────────
     navigate: (route) => call('navigate', route),
     save: Object.freeze({
-      flush: () => call('flushPendingSave'),        // flushPendingSave()
-      auto: () => call('autoSave'),                 // autoSave()
+      flush: () => flushPendingSave(),
+      auto: () => requestSave(),                    // autoSave(), through the case store
       markDirty: () => call('markDirtySinceExport'),
       /** SETUP ONLY (D9): as though the case had just been saved to its file -- nothing unsaved since. */
-      markClean: () => { w._dirtySinceExport = false; },
+      markClean: () => { setDirtySinceExport(false); },
       backupNow: () => call('saveBackupNow'),
-      saveData: () => call('saveData'),
+      saveData: () => saveData(),
     }),
     createFiling: Object.freeze({
       // Opens the real Add Filing dialog for a type from any page; the caller
@@ -240,7 +250,7 @@ export function createTestingAdapter(w) {
       blobAs: (blob, name, validator) => call('saveBlobAs', blob, name, validator),
       finishSingle: (handle, filing) => call('finishSingleWardExport', handle, filing),
     }),
-    lock: () => call('lockApp'),
+    lock: () => lockApp(),
     // Conditions a spec cannot reach through the UI on demand, reproduced the
     // way the app would meet them. Test mode only, like everything here.
     simulate: Object.freeze({
@@ -281,14 +291,14 @@ export function createTestingAdapter(w) {
       describe: (fromType, toType) => copy(describeConversion(fromType, toType)),
     }),
     /** Opens an already-parsed case-file zip as the whole case (loadCaseFileFromZip()). */
-    importArchive: (zip, manifest, key = null) => call('loadCaseFileFromZip', zip, manifest, key),
+    importArchive: (zip, manifest, key = null) => loadCaseFileFromZip(zip, manifest, key),
     setTestSystemTitleWarning: (enabled) => call('setTestSystemTitleWarningEnabledForTest', enabled),
     year: Object.freeze({
       startNew: (filingId) => filingLifecycle.newYear(filingId),
       switchTo: (filingId, yearKey) => filingLifecycle.switchYear(filingId, yearKey),
     }),
     /** Appends an Activity Log entry (auditLog()). */
-    recordActivity: (type, details, success = true, filingId = null) => call('auditLog', type, details, success, filingId),
+    recordActivity: (type, details, success = true, filingId = null) => auditLog(type, details, success, filingId),
     refreshStatus() { updateNavDots(); updateSidebar(); },
 
     // ── Queries (copies) ────────────────────────────────────────────────────
@@ -301,8 +311,8 @@ export function createTestingAdapter(w) {
         activeFilingId: cf.activeWardId ?? null,
         currentPage: w.currentPage ?? null,
         activeInventoryType: w.activeInventoryType ?? null,
-        dirtySinceExport: !!w._dirtySinceExport,
-        hasUnsavedChanges: typeof w.pgHasUnsavedChanges === 'function' ? !!w.pgHasUnsavedChanges() : null,
+        dirtySinceExport: !!isDirtySinceExport(),
+        hasUnsavedChanges: !!isDirtySinceExport(),
       });
     },
     /** One field of the open filing, by dotted path, as a copy. */
@@ -326,19 +336,19 @@ export function createTestingAdapter(w) {
       /** A copy of one saved app-state value (loadAppState(key)). */
       appState: async (key) => copy(await call('loadAppState', key)),
       /** A copy of the recovery snapshot record, as stored (its entries still encrypted). */
-      sessionCache: async () => copy(await call('_sessionCacheGet')),
+      sessionCache: async () => copy(await _sessionCacheGet()),
       /** One stored entry decrypted with the key held in memory; the key itself never leaves. */
-      decrypt: async (enc) => copy(await call('decryptJSONWithKey', enc, w._cryptoKey ?? null)),
+      decrypt: async (enc) => copy(await call('decryptJSONWithKey', enc, getCryptoKey() ?? null)),
       hasOpenedBefore: () => call('hasOpenedCaseBefore'),
       /** The remembered case file's name, never the handle. */
       async caseFileName() { const h = await call('loadCaseFileHandle'); return h ? h.name : null; },
       /** Whether an encryption key is held in memory -- a yes or no, never the key. */
-      keyHeld: () => !!w._cryptoKey,
-      securityMode: () => w._securityMode ?? null,
+      keyHeld: () => !!getCryptoKey(),
+      securityMode: () => getSecurityMode() ?? null,
       lockedFilingId: () => call('getCurrentLockedWardId'),
       recentFilings: () => copy(getRecentlyOpenedWards()),
-      continuePromptShown: () => !!call('isContinuePromptShown'),
-      auditEntries: async () => copy(await call('loadAuditLogEntries')),
+      continuePromptShown: () => !!isContinuePromptShown(),
+      auditEntries: async () => copy(await loadAuditLogEntries()),
       /** Reads a remembered file handle with the app's own timeout (readRememberedFile()). */
       readRememberedFile: (handle, timeoutMs) => call('readRememberedFile', handle, timeoutMs),
     }),
@@ -378,13 +388,13 @@ export function createTestingAdapter(w) {
       /**
        * Replaces the app's save scheduler with a counter, as specs used to do
        * by assigning window.autoSave themselves: edits then count, and save
-       * nothing, until restore() is called.
+       * nothing, until restore() is called. Since Milestone 70's 70I every
+       * save request goes through the case store's hook, which this swaps.
        */
       countAutoSaves() {
-        const original = w.autoSave;
         let count = 0;
-        w.autoSave = () => { count += 1; };
-        return Object.freeze({ get count() { return count; }, restore() { w.autoSave = original; } });
+        const restore = replaceSaveHook(() => { count += 1; });
+        return Object.freeze({ get count() { return count; }, restore() { restore(); } });
       },
     }),
     validate: Object.freeze({

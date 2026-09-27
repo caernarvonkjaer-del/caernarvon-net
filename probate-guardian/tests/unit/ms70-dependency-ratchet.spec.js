@@ -20,6 +20,24 @@ const app = (entries, classic = ['src/legacy.js']) => auditSources(new Map(Objec
 const keys = (list) => list.map((x) => `${x.file}::${x.name}`);
 
 describe('fault injection: the audit sees what it must (the 70A gate)', () => {
+  // Milestone 70, 70I: a module naming, bare, a function nothing declares or
+  // publishes -- a monolith function that moved out, or another module's
+  // private function -- is a ReferenceError when that line runs. The
+  // cross-boundary count saw such a name only while the monolith still
+  // declared it; this is the check that sees it after.
+  test('a bare name nothing provides is reported; language, browser and vendor globals are not', () => {
+    const r = app({
+      'src/legacy.js': 'function kept() {}',
+      'src/mod.js': [
+        "import { imported } from './other.js';",
+        'export function f() { kept(); gone(); imported(); JSON.stringify(document.title); new JSZip(); return Math.max(window.x, 1); }',
+      ].join('\n'),
+      'src/other.js': 'export function imported() {}',
+    });
+    expect(keys(r.unresolvedBareReferences)).toEqual(['src/mod.js::gone']);
+    expect(keys(r.bareCrossBoundary)).toEqual(['src/mod.js::kept']);
+  });
+
   test('an implicit global: every top-level declaration of a classic script, whatever its kind', () => {
     const r = app({ 'src/legacy.js': 'function extra() {}\nvar v = 1;\nlet lexical = 2;\nconst k = 3;\nclass C {}\n(function () { function notTopLevel() {} })();' });
     expect(r.classicDeclarations.map((d) => `${d.name}:${d.kind}`)).toEqual(['extra:function', 'v:var', 'lexical:let', 'k:const', 'C:class']);

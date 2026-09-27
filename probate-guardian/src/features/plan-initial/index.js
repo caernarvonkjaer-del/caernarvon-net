@@ -55,7 +55,7 @@ import { formatDisplayDate } from '../../core/form/date-parser.js';
 import { INITIAL_ADLS, INITIAL_ADL_RATINGS } from '../../core/filing/models/plan-initial.js';
 import { normalizePlanGuardians } from '../../core/filing/models/plan-rows.js';
 import { planInitialCompletion } from '../../core/status/completion.js';
-import { getD } from '../../core/state.js';
+import { getD, requestSave } from '../../core/state.js';
 import { chkP, inpS, pageNavS, planCheckGroup, planQ, radioP, txtP, yesNoCheckboxS } from '../../core/form/field-html.js';
 import { renderScheduleDocsSection } from '../../core/filing/schedule-docs.js';
 import { setPath } from '../../core/form/paths.js';
@@ -159,10 +159,10 @@ function ensurePrintModule() {
 export async function mount(container, page) {
   // Milestone 68C: a plan saved before the Certificate of Service existed
   // gains its fields on load. Idempotent, so every mount may call it.
-  if (migratePlanCertificateOfService(getD())) window.autoSave?.();
+  if (migratePlanCertificateOfService(getD())) requestSave();
   // Milestone 68E: questions 2, 4 and 5 saved as one string read back as
   // their boxes. Idempotent, so every mount may call it.
-  if (migratePlanInitialMultiselect(getD())) window.autoSave?.();
+  if (migratePlanInitialMultiselect(getD())) requestSave();
   let html;
   let isPrint = false;
   if (page === '/print') {

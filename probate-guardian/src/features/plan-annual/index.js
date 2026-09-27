@@ -33,7 +33,7 @@ import { formatDisplayDate } from '../../core/form/date-parser.js';
 import { PLAN_ADLS, PLAN_ADL_RATINGS, PLAN_BENEFITS, PLAN_RIGHTS, PLAN_RIGHT_STATES } from '../../core/filing/models/plan-annual.js';
 import { normalizePlanGuardians } from '../../core/filing/models/plan-rows.js';
 import { planAnnualCompletion } from '../../core/status/completion.js';
-import { getD } from '../../core/state.js';
+import { getD, requestSave } from '../../core/state.js';
 import { chkP, inpS, pageNavS, planCheckGroup, planQ, txtP, yesNoCheckboxS, yesNoRadioHTML } from '../../core/form/field-html.js';
 import { renderScheduleDocsSection } from '../../core/filing/schedule-docs.js';
 import { setPath } from '../../core/form/paths.js';
@@ -104,7 +104,7 @@ function ensurePrintModule() {
 export async function mount(container, page) {
   // Milestone 68C: a plan saved before the Certificate of Service existed
   // gains its fields on load. Idempotent, so every mount may call it.
-  if (migratePlanCertificateOfService(getD())) window.autoSave?.();
+  if (migratePlanCertificateOfService(getD())) requestSave();
   let html;
   let isPrint = false;
   if (page === '/print') {

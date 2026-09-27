@@ -8,7 +8,7 @@
 // never ran -- the defect master fixed in b28bf25, carried here.
 import { mk } from '../filing/models/guardian.js';
 import { formEngine } from '../filing/filing-registry.js';
-import { getD } from '../state.js';
+import { getD, requestSave } from '../state.js';
 
 // Financial line-item schedules covered by pruneBlankCards() (the router runs
 // it on leaving a page), keyed by their property on D, each mapped to the exact blank
@@ -128,8 +128,6 @@ export function pruneBlankCards(targetData, targetType) {
     }
   }
 
-  if (removed && typeof window !== 'undefined' && window.autoSave) {
-    window.autoSave();
-  }
+  if (removed) requestSave();
   return removed;
 }

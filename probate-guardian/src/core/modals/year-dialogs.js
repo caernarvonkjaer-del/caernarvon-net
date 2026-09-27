@@ -2,7 +2,7 @@
 // legacy-app.js's MULTI-YEAR ACCOUNTING.
 import { esc } from '../filing/escape-html.js';
 import { describeYearLabel } from '../filing/filing-years.js';
-import { navigate } from '../navigation/router.js';
+import { navigate, renderPage } from '../navigation/router.js';
 import { filingLifecycle } from '../navigation/filing-lifecycle.js';
 import { monolith } from '../runtime/monolith.js';
 import { getCaseFile } from '../state.js';
@@ -84,7 +84,11 @@ export async function doDeleteWardYear(){
     closeModal('deleteYearModal');
     const ward=getCaseFile().wards.find(w=>w.wardId===wardId);
     if(ward)renderPriorYearsList(ward);
-    if(monolith.getCurrentPage()==='/dashboard')renderDashboardGrid();
+    // The dashboard's own grid is not reachable from here; re-rendering the
+    // page redraws it. renderDashboardGrid() was never a global, so this line
+    // threw after every deletion made from the dashboard, and the filer was
+    // told the year had not been deleted when it had (Milestone 70, 70I).
+    if(monolith.getCurrentPage()==='/dashboard')renderPage('/dashboard');
   }catch(e){
     console.error('Failed to delete year',e);
     await alertModal('Failed to delete year. Check console.');

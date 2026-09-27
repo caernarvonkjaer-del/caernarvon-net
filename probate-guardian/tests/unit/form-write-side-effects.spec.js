@@ -37,6 +37,8 @@ function freshWindow() {
     // key(s) this path feeds -- and the tail must hand them on.
     identitySlotForPath: rec('slot', (_d, p) => (p === 'guardians.0.name' ? { role: 'guardian', index: 0, fieldKeys: ['name'] } : null)),
     syncIdentityField: rec('identity'),
+    // The tail asks the case store for the save (requestSave(), Milestone 70's
+    // 70I); each test points the store's save hook at this recorder.
     autoSave: rec('autoSave'),
     updateNavDots: (navDots.fn = rec('navDots')),
     refreshWardInfoCard: (sidebar.refreshWardInfoCard = rec('wardCard')),
@@ -59,6 +61,7 @@ describe('runFieldWriteSideEffects()', () => {
     globalThis.document = globalThis.document || { querySelectorAll: () => [] };
     vi.resetModules();
     ({ runFieldWriteSideEffects: run } = await import('../../src/core/form/form-contract.js'));
+    (await import('../../src/core/state.js')).configureCaseStore({ save: w.autoSave });
   });
 
   it('runs county commit and Party write-through before autosave, then the display refreshes', () => {
@@ -125,6 +128,7 @@ describe('all three binding paths call the shared tail', () => {
     globalThis.document = globalThis.document || { querySelectorAll: () => [] };
     vi.resetModules();
     const { writeDraftValue, finalizeFieldValue } = await import('../../src/core/form/form-contract.js');
+    (await import('../../src/core/state.js')).configureCaseStore({ save: w.autoSave });
 
     // window.getPath is undefined in this mock, so writeDraftValue's
     // `currentVal !== rawValue` guard (comparing against undefined) is
@@ -148,6 +152,7 @@ describe('all three binding paths call the shared tail', () => {
     globalThis.document = globalThis.document || { querySelectorAll: () => [] };
     vi.resetModules();
     const { writeDraftValue, finalizeFieldValue } = await import('../../src/core/form/form-contract.js');
+    (await import('../../src/core/state.js')).configureCaseStore({ save: w.autoSave });
 
     writeDraftValue({ dataset: { annualPath: 'schC.0.description' }, type: 'text', value: 'Sale of homestead' });
     expect(w.calls).toContain('autoSave');

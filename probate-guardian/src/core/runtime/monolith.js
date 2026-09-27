@@ -6,9 +6,9 @@
 // ratchet forbids a new window read). So the monolith hands them in, once, at
 // the start of initApp() -- before anything it renders can call back:
 //
-//     provideMonolithServices({ autoSave });
+//     provideMonolithServices({ handleHash });
 //
-// and a moved function calls `monolith.autoSave()`. Rules, each checked by
+// and a moved function calls `monolith.handleHash()`. Rules, each checked by
 // tests/unit/monolith-services.spec.js:
 //   - only legacy-app.js provides, through its one-line bridge wrapper called
 //     from initApp(), and only functions it declares;
@@ -32,7 +32,7 @@ export function provideMonolithServices(fns) {
 }
 
 /**
- * The monolith's functions, by name: `monolith.autoSave()`. Asking for one
+ * The monolith's functions, by name: `monolith.handleHash()`. Asking for one
  * that was never handed in throws rather than silently doing nothing -- a
  * missed save or a stale sidebar is worse than a loud error.
  */

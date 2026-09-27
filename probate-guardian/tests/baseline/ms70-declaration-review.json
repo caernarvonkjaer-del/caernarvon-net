@@ -21,26 +21,6 @@
   "filing-workflow": "The Add Form, Simplified Accounting eligibility and Delete Form dialogs and their handlers: creating a filing (what it carries over, the case it joins), the eligibility questions that choose Simplified or Annual, and deleting one -- the workflow 70G moves (the plan names eligibility, and its gate needs creation and deletion to go through the filing lifecycle service), not the modal plumbing their section is named for. That (showModal(), closeModal(), ensureFragment(), the ward-name combobox) stays for 70H."
  },
  "overrides": {
-  "TEMPLATE_FILES": {
-   "delivery": "70I",
-   "why": "persistence"
-  },
-  "_autoExportIntervalMinutes": {
-   "delivery": "70I",
-   "why": "persistence"
-  },
-  "_dirtySinceExport": {
-   "delivery": "70I",
-   "why": "persistence"
-  },
-  "_lastExportAt": {
-   "delivery": "70I",
-   "why": "persistence"
-  },
-  "_saveTimer": {
-   "delivery": "70I",
-   "why": "persistence"
-  },
   "_simplifiedFeatureBridge": {
    "delivery": "70K",
    "why": "bridge"
@@ -48,10 +28,6 @@
   "activeInventoryType": {
    "delivery": "70J",
    "why": "state-owner"
-  },
-  "autoLoadTemplates": {
-   "delivery": "70I",
-   "why": "persistence"
   },
   "autoSave": {
    "delivery": "70I",
@@ -69,22 +45,6 @@
    "delivery": "70K",
    "why": "router-state"
   },
-  "ensureTemplate": {
-   "delivery": "70I",
-   "why": "persistence"
-  },
-  "fetchAndCacheTemplate": {
-   "delivery": "70I",
-   "why": "persistence"
-  },
-  "flushPendingSave": {
-   "delivery": "70I",
-   "why": "persistence"
-  },
-  "getActiveWard": {
-   "delivery": "70E",
-   "why": "store-seam"
-  },
   "getCurrentPage": {
    "delivery": "70K",
    "why": "router-state"
@@ -92,26 +52,6 @@
   "getSimplifiedFeatureBridge": {
    "delivery": "70K",
    "why": "bridge"
-  },
-  "hideSaveError": {
-   "delivery": "70I",
-   "why": "persistence"
-  },
-  "isContinuePromptShown": {
-   "delivery": "70I",
-   "why": "persistence"
-  },
-  "isValidXlsxB64": {
-   "delivery": "70I",
-   "why": "persistence"
-  },
-  "loadGuardianData": {
-   "delivery": "70I",
-   "why": "persistence"
-  },
-  "markContinuePromptShown": {
-   "delivery": "70I",
-   "why": "persistence"
   },
   "mountSimplifiedFeature": {
    "delivery": "70K",
@@ -121,29 +61,9 @@
    "delivery": "70K",
    "why": "bridge"
   },
-  "notifyProbateGuardianTabStateChanged": {
-   "delivery": "70H",
-   "why": "shell"
-  },
-  "renderCopyrightNotice": {
-   "delivery": "70H",
-   "why": "shell"
-  },
-  "saveData": {
-   "delivery": "70I",
-   "why": "persistence"
-  },
-  "showSaveError": {
-   "delivery": "70I",
-   "why": "persistence"
-  },
   "updateSidebar": {
    "delivery": "70H",
    "why": "shell"
-  },
-  "warnBeforeUnloadIfDirty": {
-   "delivery": "70I",
-   "why": "persistence"
   },
   "setAccountingFilingType": {
    "delivery": "70J",
@@ -154,113 +74,35 @@
    "until": "70K",
    "why": "dispatcher"
   },
-  "saveWardToState": {
-   "delivery": "70I",
-   "why": "persistence"
+  "clearCaseForLock": {
+   "delivery": "70J",
+   "why": "state-owner"
   },
-  "deleteWardFromState": {
-   "delivery": "70I",
-   "why": "persistence"
-  },
-  "saveTemplate": {
-   "delivery": "70I",
-   "why": "persistence"
-  },
-  "loadTemplate": {
-   "delivery": "70I",
-   "why": "persistence"
-  },
-  "appendAuditLogEntry": {
-   "delivery": "70I",
-   "why": "persistence"
-  },
-  "loadAuditLogEntries": {
-   "delivery": "70I",
-   "why": "persistence"
+  "focusFilingAtLaunch": {
+   "delivery": "70J",
+   "why": "state-owner"
   }
  },
  "notes": {
-  "LAUNCH_PREF_KEY_HANDLE": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24).",
-  "LAUNCH_PREF_KEY_OPENED": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24).",
-  "PBKDF2_ITERATIONS": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24).",
-  "PLAIN_MODE_PREFIX": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24).",
-  "REMEMBERED_FILE_TIMEOUT_MS": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24).",
-  "_launchPrefDelete": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24).",
-  "_launchPrefGet": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24).",
-  "_launchPrefPut": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24).",
-  "_sessionCacheClear": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24).",
-  "_sessionCachePut": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24).",
   "getWardHeadlineTotal": "Stays in 70D: it swaps window.D to compute another filing's total, which is exactly 70D's risk.",
-  "loadCaseFileFromZip": "Changed on master in b2d97f5 (returns every part it could not read); a re-implement row in MILESTONE-70-FIX-LEDGER.md.",
   "pct": "Deleted on master in c62f890 (its only caller now imports totals.js's copy); a re-implement row in MILESTONE-70-FIX-LEDGER.md.",
-  "saveWardToState": "Placed in 70E by its section (IN-MEMORY STATE OPERATIONS); on review it schedules autoSave() and writes the monolith's template cache or audit buffer, which 70I's persistence service owns, so it moves there.",
-  "deleteWardFromState": "Placed in 70E by its section (IN-MEMORY STATE OPERATIONS); on review it schedules autoSave() and writes the monolith's template cache or audit buffer, which 70I's persistence service owns, so it moves there.",
-  "saveTemplate": "Placed in 70E by its section (IN-MEMORY STATE OPERATIONS); on review it schedules autoSave() and writes the monolith's template cache or audit buffer, which 70I's persistence service owns, so it moves there.",
-  "loadTemplate": "Placed in 70E by its section (IN-MEMORY STATE OPERATIONS); on review it schedules autoSave() and writes the monolith's template cache or audit buffer, which 70I's persistence service owns, so it moves there.",
-  "appendAuditLogEntry": "Placed in 70E by its section (IN-MEMORY STATE OPERATIONS); on review it schedules autoSave() and writes the monolith's template cache or audit buffer, which 70I's persistence service owns, so it moves there.",
-  "loadAuditLogEntries": "Placed in 70E by its section (IN-MEMORY STATE OPERATIONS); on review it schedules autoSave() and writes the monolith's template cache or audit buffer, which 70I's persistence service owns, so it moves there.",
-  "provideMonolithServices": "Added in 70E: legacy-app.js's one-line door into src/core/runtime/monolith.js, called from initApp(), the second transition exception MILESTONE-70-PROPOSAL.md records; it goes with the monolith (70L at the latest)."
+  "provideMonolithServices": "Added in 70E: legacy-app.js's one-line door into src/core/runtime/monolith.js, called from initApp(), the second transition exception MILESTONE-70-PROPOSAL.md records; it goes with the monolith (70L at the latest).",
+  "clearCaseForLock": "Added in 70I: the monolith owns the case until 70J, so the moved lock (clearCaseForLock(): a new, empty case) and startup (focusFilingAtLaunch(): the remembered filing, before it opens) ask it to change the case, through src/core/runtime/monolith.js. They go when the module store owns the case (70J).",
+  "focusFilingAtLaunch": "Added in 70I: the monolith owns the case until 70J, so the moved lock (clearCaseForLock(): a new, empty case) and startup (focusFilingAtLaunch(): the remembered filing, before it opens) ask it to change the case, through src/core/runtime/monolith.js. They go when the module store owns the case (70J)."
  },
  "confirmed": {
-  "AUTO_LOCK_MS": "move 70I",
-  "CRYPTO_VERIFIER_PLAINTEXT": "move 70I",
-  "LAUNCH_PREF_DB": "move 70I",
-  "LAUNCH_PREF_KEY_HANDLE": "delete-as-dead 70I",
-  "LAUNCH_PREF_KEY_OPENED": "delete-as-dead 70I",
-  "LAUNCH_PREF_STORE": "move 70I",
-  "PBKDF2_ITERATIONS": "delete-as-dead 70I",
-  "PLAIN_MODE_PREFIX": "delete-as-dead 70I",
-  "REMEMBERED_FILE_TIMEOUT_MS": "delete-as-dead 70I",
-  "SESSION_CACHE_DB": "move 70I",
-  "SESSION_CACHE_STORE": "move 70I",
   "SPECIAL_PAGES": "move 70K",
-  "UNLOCK_FAIL_THRESHOLD": "move 70I",
-  "UNLOCK_LOCKOUT_BASE_MS": "move 70I",
-  "UNLOCK_LOCKOUT_MAX_MS": "move 70I",
   "_annualFeatureBridge": "move 70K",
-  "_appState": "move 70I",
-  "_auditLogEntries": "move 70I",
-  "_auditLogNextId": "move 70I",
-  "_autoLockTimer": "move 70I",
-  "_cryptoKey": "move 70I",
   "_dashboardFeatureBridge": "move 70K",
   "_guardianFeatureBridge": "move 70K",
-  "_launchPrefDb": "move 70I",
-  "_launchPrefDelete": "delete-as-dead 70I",
-  "_launchPrefGet": "delete-as-dead 70I",
-  "_launchPrefPut": "delete-as-dead 70I",
-  "_launchStateResolved": "move 70I",
-  "_openedFileAtLaunch": "move 70I",
-  "_pendingOpenManifest": "move 70I",
-  "_pendingOpenZip": "move 70I",
   "_planAnnualFeatureBridge": "move 70K",
   "_planInitialFeatureBridge": "move 70K",
   "_planMinorFeatureBridge": "move 70K",
   "_planSimplifiedFeatureBridge": "move 70K",
-  "_rememberedFileUnavailable": "move 70I",
-  "_resolveStartupChoice": "move 70I",
-  "_securityChoiceResolve": "move 70I",
-  "_securityMode": "move 70I",
-  "_sessionCacheClear": "delete-as-dead 70I",
-  "_sessionCacheDb": "move 70I",
-  "_sessionCacheGet": "move 70I",
-  "_sessionCachePut": "delete-as-dead 70I",
-  "_startupChoiceResolve": "move 70I",
-  "_templateCache": "move 70I",
-  "_unlockMode": "move 70I",
-  "_unlockResolve": "move 70I",
-  "addToRecentlyOpened": "move 70G",
-  "applyTheme": "move 70H",
-  "auditLog": "move 70I",
   "calc": "move 70B",
-  "clearAllData": "move 70I",
   "computeNavChecks": "move 70D",
-  "currentTheme": "move 70H",
-  "ensureFragment": "move 70H",
   "ensureGuardianFeatureReady": "move 70K",
-  "ensureUnlocked": "move 70I",
   "formEngine": "move 70C",
-  "formatLockoutRemaining": "move 70I",
   "getAnnualFeatureBridge": "move 70K",
   "getDashboardFeatureBridge": "move 70K",
   "getGuardianFeatureBridge": "move 70K",
@@ -268,16 +110,9 @@
   "getPlanInitialFeatureBridge": "move 70K",
   "getPlanMinorFeatureBridge": "move 70K",
   "getPlanSimplifiedFeatureBridge": "move 70K",
-  "getUnlockFailState": "move 70I",
   "getWardHeadlineTotal": "move 70K",
   "handleHash": "move 70K",
-  "handleStartupOpenInputChange": "move 70I",
   "initApp": "move 70K",
-  "initializeEmptyData": "move 70C",
-  "loadCaseFileAtLaunch": "move 70I",
-  "loadCaseFileFromZip": "move 70I",
-  "loadRecentlyOpenedWards": "move 70G",
-  "lockApp": "move 70I",
   "mountAnnualFeature": "move 70K",
   "mountAnnualNav": "move 70K",
   "mountDashboardFeature": "move 70K",
@@ -292,28 +127,8 @@
   "mountPlanSimplifiedFeature": "move 70K",
   "mountPlanSimplifiedNav": "move 70K",
   "n": "move 70K",
-  "openCaseFileAtLaunch": "move 70I",
-  "openWardFileAtLaunch": "move 70I",
   "pct": "move 70K",
-  "promptChooseSecurityMode": "move 70I",
-  "promptCreatePassword": "move 70I",
-  "promptOpenOrStartAtLaunch": "move 70I",
-  "promptPasswordForFile": "move 70I",
-  "promptUnlock": "move 70I",
-  "resetAutoLockTimer": "move 70I",
-  "sanitizeObjectData": "move 70B",
-  "saveUnlockFailState": "move 70I",
-  "selectSecurityMode": "move 70I",
-  "setPath": "move 70F",
-  "setupDragAndDropImport": "move 70I",
-  "showUnlockError": "move 70I",
-  "startNewCaseAtLaunch": "move 70I",
-  "startNewWardAtLaunch": "move 70I",
-  "submitUnlockForm": "move 70I",
-  "trySilentReopen": "move 70I",
-  "updateLockButtonVisibility": "move 70I",
   "updateNavActive": "move 70K",
-  "validateImportFile": "move 70B",
   "provideMonolithServices": "move 70E"
  },
  "landed": {
@@ -1327,6 +1142,328 @@
     },
     "wardSelectorShowDropdown": {
      "was": "move 70H (override: shell)"
+    }
+   }
+  },
+  "70I": {
+   "note": "Gone from src/legacy-app.js in 70I: saving and the recovery snapshot's use (autoSave(), flushPendingSave(), saveData(), saveWardToState(), deleteWardFromState(), the save-error banner and the save listeners, into src/core/persistence/case-file.js), opening a case file (loadCaseFileFromZip(), src/core/persistence/case-reader.js), the Activity Log's entries (src/core/activity/audit-log.js), unlocking and locking (src/core/security/app-lock.js), the launch (src/core/startup/launch.js) and the startup after it (runStartup(), src/core/startup/startup.js), the template cache (src/core/persistence/templates.js), the continue prompt (src/core/persistence/launch-preferences.js) and Clear Data (src/shell-events.js); the state they held -- the key, the security mode, the export state, app state, the template cache, the log -- is its module's own, with no window accessor; the duplicates of recovery-cache.js's and launch-preferences.js's code and crypto.js's constants were deleted; loadGuardianData() did nothing and went. Twelve wrappers whose last callers these were went with them. clearCaseForLock() and focusFilingAtLaunch() are new: the monolith owns the case until 70J, so the lock and startup ask it to change the case.",
+   "entries": {
+    "_appState": {
+     "was": "move 70I"
+    },
+    "_auditLogEntries": {
+     "was": "move 70I"
+    },
+    "_auditLogNextId": {
+     "was": "move 70I"
+    },
+    "_autoExportIntervalMinutes": {
+     "was": "move 70I (override: persistence)"
+    },
+    "_autoLockTimer": {
+     "was": "move 70I"
+    },
+    "_cryptoKey": {
+     "was": "move 70I"
+    },
+    "_dirtySinceExport": {
+     "was": "move 70I (override: persistence)"
+    },
+    "_lastExportAt": {
+     "was": "move 70I (override: persistence)"
+    },
+    "_launchPrefDb": {
+     "was": "move 70I"
+    },
+    "_launchPrefDelete": {
+     "was": "delete-as-dead 70I",
+     "note": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24)."
+    },
+    "_launchPrefGet": {
+     "was": "delete-as-dead 70I",
+     "note": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24)."
+    },
+    "_launchPrefPut": {
+     "was": "delete-as-dead 70I",
+     "note": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24)."
+    },
+    "_launchStateResolved": {
+     "was": "move 70I"
+    },
+    "_openedFileAtLaunch": {
+     "was": "move 70I"
+    },
+    "_pendingOpenManifest": {
+     "was": "move 70I"
+    },
+    "_pendingOpenZip": {
+     "was": "move 70I"
+    },
+    "_rememberedFileUnavailable": {
+     "was": "move 70I"
+    },
+    "_resolveStartupChoice": {
+     "was": "move 70I"
+    },
+    "_saveTimer": {
+     "was": "move 70I (override: persistence)"
+    },
+    "_securityChoiceResolve": {
+     "was": "move 70I"
+    },
+    "_securityMode": {
+     "was": "move 70I"
+    },
+    "_sessionCacheClear": {
+     "was": "delete-as-dead 70I",
+     "note": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24)."
+    },
+    "_sessionCacheDb": {
+     "was": "move 70I"
+    },
+    "_sessionCacheGet": {
+     "was": "move 70I"
+    },
+    "_sessionCachePut": {
+     "was": "delete-as-dead 70I",
+     "note": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24)."
+    },
+    "_startupChoiceResolve": {
+     "was": "move 70I"
+    },
+    "_templateCache": {
+     "was": "move 70I"
+    },
+    "_unlockMode": {
+     "was": "move 70I"
+    },
+    "_unlockResolve": {
+     "was": "move 70I"
+    },
+    "addToRecentlyOpened": {
+     "was": "move 70G"
+    },
+    "appendAuditLogEntry": {
+     "was": "move 70I (override: persistence)",
+     "note": "Placed in 70E by its section (IN-MEMORY STATE OPERATIONS); on review it schedules autoSave() and writes the monolith's template cache or audit buffer, which 70I's persistence service owns, so it moves there."
+    },
+    "applyTheme": {
+     "was": "move 70H"
+    },
+    "auditLog": {
+     "was": "move 70I"
+    },
+    "AUTO_LOCK_MS": {
+     "was": "move 70I"
+    },
+    "autoLoadTemplates": {
+     "was": "move 70I (override: persistence)"
+    },
+    "clearAllData": {
+     "was": "move 70I"
+    },
+    "CRYPTO_VERIFIER_PLAINTEXT": {
+     "was": "move 70I"
+    },
+    "currentTheme": {
+     "was": "move 70H"
+    },
+    "deleteWardFromState": {
+     "was": "move 70I (override: persistence)",
+     "note": "Placed in 70E by its section (IN-MEMORY STATE OPERATIONS); on review it schedules autoSave() and writes the monolith's template cache or audit buffer, which 70I's persistence service owns, so it moves there."
+    },
+    "ensureFragment": {
+     "was": "move 70H"
+    },
+    "ensureTemplate": {
+     "was": "move 70I (override: persistence)"
+    },
+    "ensureUnlocked": {
+     "was": "move 70I"
+    },
+    "fetchAndCacheTemplate": {
+     "was": "move 70I (override: persistence)"
+    },
+    "flushPendingSave": {
+     "was": "move 70I (override: persistence)"
+    },
+    "formatLockoutRemaining": {
+     "was": "move 70I"
+    },
+    "getActiveWard": {
+     "was": "move 70E (override: store-seam)"
+    },
+    "getUnlockFailState": {
+     "was": "move 70I"
+    },
+    "handleStartupOpenInputChange": {
+     "was": "move 70I"
+    },
+    "hideSaveError": {
+     "was": "move 70I (override: persistence)"
+    },
+    "initializeEmptyData": {
+     "was": "move 70C"
+    },
+    "isContinuePromptShown": {
+     "was": "move 70I (override: persistence)"
+    },
+    "isValidXlsxB64": {
+     "was": "move 70I (override: persistence)"
+    },
+    "LAUNCH_PREF_DB": {
+     "was": "move 70I"
+    },
+    "LAUNCH_PREF_KEY_HANDLE": {
+     "was": "delete-as-dead 70I",
+     "note": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24)."
+    },
+    "LAUNCH_PREF_KEY_OPENED": {
+     "was": "delete-as-dead 70I",
+     "note": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24)."
+    },
+    "LAUNCH_PREF_STORE": {
+     "was": "move 70I"
+    },
+    "loadAuditLogEntries": {
+     "was": "move 70I (override: persistence)",
+     "note": "Placed in 70E by its section (IN-MEMORY STATE OPERATIONS); on review it schedules autoSave() and writes the monolith's template cache or audit buffer, which 70I's persistence service owns, so it moves there."
+    },
+    "loadCaseFileAtLaunch": {
+     "was": "move 70I"
+    },
+    "loadCaseFileFromZip": {
+     "was": "move 70I",
+     "note": "Changed on master in b2d97f5 (returns every part it could not read); a re-implement row in MILESTONE-70-FIX-LEDGER.md."
+    },
+    "loadGuardianData": {
+     "was": "move 70I (override: persistence)"
+    },
+    "loadRecentlyOpenedWards": {
+     "was": "move 70G"
+    },
+    "loadTemplate": {
+     "was": "move 70I (override: persistence)",
+     "note": "Placed in 70E by its section (IN-MEMORY STATE OPERATIONS); on review it schedules autoSave() and writes the monolith's template cache or audit buffer, which 70I's persistence service owns, so it moves there."
+    },
+    "lockApp": {
+     "was": "move 70I"
+    },
+    "markContinuePromptShown": {
+     "was": "move 70I (override: persistence)"
+    },
+    "notifyProbateGuardianTabStateChanged": {
+     "was": "move 70H (override: shell)"
+    },
+    "openCaseFileAtLaunch": {
+     "was": "move 70I"
+    },
+    "openWardFileAtLaunch": {
+     "was": "move 70I"
+    },
+    "PBKDF2_ITERATIONS": {
+     "was": "delete-as-dead 70I",
+     "note": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24)."
+    },
+    "PLAIN_MODE_PREFIX": {
+     "was": "delete-as-dead 70I",
+     "note": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24)."
+    },
+    "promptChooseSecurityMode": {
+     "was": "move 70I"
+    },
+    "promptCreatePassword": {
+     "was": "move 70I"
+    },
+    "promptOpenOrStartAtLaunch": {
+     "was": "move 70I"
+    },
+    "promptPasswordForFile": {
+     "was": "move 70I"
+    },
+    "promptUnlock": {
+     "was": "move 70I"
+    },
+    "REMEMBERED_FILE_TIMEOUT_MS": {
+     "was": "delete-as-dead 70I",
+     "note": "delete-as-dead confirmed: no use anywhere in src, index.html, fragments, help or tests except its canonical module copy and that copy's own tests (checked by name, including markup and window reads, 2026-09-24)."
+    },
+    "renderCopyrightNotice": {
+     "was": "move 70H (override: shell)"
+    },
+    "resetAutoLockTimer": {
+     "was": "move 70I"
+    },
+    "sanitizeObjectData": {
+     "was": "move 70B"
+    },
+    "saveData": {
+     "was": "move 70I (override: persistence)"
+    },
+    "saveTemplate": {
+     "was": "move 70I (override: persistence)",
+     "note": "Placed in 70E by its section (IN-MEMORY STATE OPERATIONS); on review it schedules autoSave() and writes the monolith's template cache or audit buffer, which 70I's persistence service owns, so it moves there."
+    },
+    "saveUnlockFailState": {
+     "was": "move 70I"
+    },
+    "saveWardToState": {
+     "was": "move 70I (override: persistence)",
+     "note": "Placed in 70E by its section (IN-MEMORY STATE OPERATIONS); on review it schedules autoSave() and writes the monolith's template cache or audit buffer, which 70I's persistence service owns, so it moves there."
+    },
+    "selectSecurityMode": {
+     "was": "move 70I"
+    },
+    "SESSION_CACHE_DB": {
+     "was": "move 70I"
+    },
+    "SESSION_CACHE_STORE": {
+     "was": "move 70I"
+    },
+    "setPath": {
+     "was": "move 70F"
+    },
+    "setupDragAndDropImport": {
+     "was": "move 70I"
+    },
+    "showSaveError": {
+     "was": "move 70I (override: persistence)"
+    },
+    "showUnlockError": {
+     "was": "move 70I"
+    },
+    "startNewCaseAtLaunch": {
+     "was": "move 70I"
+    },
+    "startNewWardAtLaunch": {
+     "was": "move 70I"
+    },
+    "submitUnlockForm": {
+     "was": "move 70I"
+    },
+    "TEMPLATE_FILES": {
+     "was": "move 70I (override: persistence)"
+    },
+    "trySilentReopen": {
+     "was": "move 70I"
+    },
+    "UNLOCK_FAIL_THRESHOLD": {
+     "was": "move 70I"
+    },
+    "UNLOCK_LOCKOUT_BASE_MS": {
+     "was": "move 70I"
+    },
+    "UNLOCK_LOCKOUT_MAX_MS": {
+     "was": "move 70I"
+    },
+    "updateLockButtonVisibility": {
+     "was": "move 70I"
+    },
+    "validateImportFile": {
+     "was": "move 70B"
+    },
+    "warnBeforeUnloadIfDirty": {
+     "was": "move 70I (override: persistence)"
     }
    }
   }

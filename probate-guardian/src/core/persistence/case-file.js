@@ -4,48 +4,46 @@ import {
   decryptJSONWithKey,
   getSecurityMode,
   getCryptoKey,
-  deriveKeyFromPassword,
 } from './crypto.js';
 import {
   loadAppState,
-  saveAppState,
   savePersistedCaseFileHandle,
   loadPersistedCaseFileHandle,
   forgetPersistedCaseFileHandle,
   markCaseOpenedBefore,
 } from './launch-preferences.js';
-import { clearSessionRestoreCache } from './recovery-cache.js';
-import { getCaseFile, getTemplateCache } from '../state.js';
-import { windowBackedRef } from './window-backed-ref.js';
-import { getLastExportAt, isDirtySinceExport, setDirtySinceExport, setLastExportAt } from './export-state.js';
+import { clearSessionRestoreCache, saveSessionRestoreCache } from './recovery-cache.js';
+import { commitPendingEdits, getActiveWard, getCaseFile, getTemplateCache } from '../state.js';
+import { getAutoExportIntervalMinutes, getLastExportAt, isDirtySinceExport, setAutoExportIntervalMinutes, setDirtySinceExport, setLastExportAt } from './export-state.js';
+import { auditLog, auditLogLength, loadAuditLogEntries, truncateAuditLog } from '../activity/audit-log.js';
 // Milestone 70, 70H: the export state is ./export-state.js's; re-exported for
 // the modules that import it from here.
 export { getLastExportAt, isDirtySinceExport, setDirtySinceExport, setLastExportAt };
 import { migratePlanTriState } from '../filing/plan-tristate.js';
-import { alertModal, confirmModal, promptModal, showModal } from '../ui/dialogs.js';
-import { validateImportFile, sanitizeObjectData } from '../security/input-hardening.js';
+import { alertModal, confirmModal, showModal } from '../ui/dialogs.js';
+import { sanitizeObjectData } from '../security/input-hardening.js';
 import { notifyProbateGuardianTabStateChanged } from '../navigation/tab-state.js';
-import { updateSidebar } from '../shell/sidebar.js';
+import { commitStoredDateDrafts } from '../form/commit-coordinator.js';
+import { setPath } from '../form/paths.js';
 
 export const CASE_FILE_FORMAT_VERSION = 1;
 
 let _autoSaveArmed = false;
-let _autoExportIntervalMinutes = 10;
+let _saveTimer = null; // the pending debounced save (autoSave()), if any
 let _saveRetrySweepTimer = null;
 let _lastSavedTickTimer = null;
 let _fallbackReminderTimer = null;
 
-const _caseFileHandleRef = windowBackedRef(
-  () => (typeof window !== 'undefined' ? window._caseFileHandle : undefined),
-  (v) => {
-    if (typeof window !== 'undefined') {
-      window._caseFileHandle = v;
-    }
-  },
-  null,
-);
-export const getCaseFileHandle = _caseFileHandleRef.get;
-export const setCaseFileHandle = _caseFileHandleRef.set;
+// The open case file's handle (the file every save writes): this module's
+// own since Milestone 70's 70I -- it was mirrored onto window, which nothing
+// read.
+let _caseFileHandle = null;
+export function getCaseFileHandle() {
+  return _caseFileHandle;
+}
+export function setCaseFileHandle(handle) {
+  _caseFileHandle = handle;
+}
 
 export function isAutoSaveArmed() {
   return _autoSaveArmed;
@@ -152,7 +150,7 @@ export async function refreshAutoSaveArmedStatus() {
   }
 }
 
-function getJSZip() {
+export function getJSZip() {
   if (typeof window !== 'undefined' && window.JSZip) {
     return window.JSZip;
   }
@@ -160,9 +158,10 @@ function getJSZip() {
 }
 
 export async function buildCaseFileBlob() {
-  if (typeof window !== 'undefined' && window._saveTimer) {
-    clearTimeout(window._saveTimer);
-    window._saveTimer = null;
+  // A save still pending from the debounce would only write this again.
+  if (_saveTimer) {
+    clearTimeout(_saveTimer);
+    _saveTimer = null;
   }
   const salt = (await loadAppState('cryptoSalt')) || null;
   const verifier = (await loadAppState('cryptoVerifier')) || null;
@@ -190,7 +189,7 @@ export async function buildCaseFileBlob() {
     firstLaunchSeen: await loadAppState('firstLaunchSeen'),
     continuePromptShown: await loadAppState('continuePromptShown'),
     recentWards: await loadAppState('recentWards'),
-    autoExportIntervalMinutes: (typeof window !== 'undefined' && window._autoExportIntervalMinutes !== undefined) ? window._autoExportIntervalMinutes : _autoExportIntervalMinutes,
+    autoExportIntervalMinutes: getAutoExportIntervalMinutes(),
     lastExportAt: getLastExportAt(),
     unlockFailState: await loadAppState('unlockFailState'),
     // Milestone 54: unlike every other field above, this one is sourced from
@@ -213,7 +212,7 @@ export async function buildCaseFileBlob() {
     zip.file(`templates/${type}.b64`, templateCache[type]);
   }
 
-  const auditLogEntries = (typeof window !== 'undefined' && window._auditLogEntries) || [];
+  const auditLogEntries = await loadAuditLogEntries();
   zip.file('auditLog.enc', await encryptJSON(auditLogEntries));
   const core = await encryptCaseFileCore({
     guardianInfo: { guardianName: caseFile.guardianName, guardianEmail: caseFile.guardianEmail },
@@ -259,7 +258,7 @@ export async function buildSingleWardExportBlob(wardId) {
   const zip = new JSZip();
   zip.file(`wards/${ward.wardId}.enc`, await encryptJSON(ward));
 
-  const auditLogEntries = (typeof window !== 'undefined' && window._auditLogEntries) || [];
+  const auditLogEntries = await loadAuditLogEntries();
   const wardAuditEntries = auditLogEntries.filter((e) => e && e.wardId === wardId);
   zip.file('auditLog.enc', await encryptJSON(wardAuditEntries));
   zip.file(
@@ -335,17 +334,12 @@ export function updateLastSavedIndicator() {
 // log alone.
 export async function beginRecordingExport(message, wardId = null, { log = true } = {}) {
   const previousLastExportAt = getLastExportAt();
-  const auditEntries = (typeof window !== 'undefined' && window._auditLogEntries) || [];
-  const auditLenBefore = auditEntries.length;
+  const auditLenBefore = auditLogLength();
   setLastExportAt(Date.now());
-  if (log && typeof window !== 'undefined' && typeof window.auditLog === 'function') {
-    await window.auditLog('DATA_EXPORT', message, true, wardId);
-  }
+  if (log) await auditLog('DATA_EXPORT', message, true, wardId);
   return function rollback() {
     setLastExportAt(previousLastExportAt);
-    if (log && typeof window !== 'undefined' && window._auditLogEntries) {
-      window._auditLogEntries.length = auditLenBefore;
-    }
+    if (log) truncateAuditLog(auditLenBefore);
   };
 }
 
@@ -386,9 +380,7 @@ export async function exportCaseFileZip() {
     if (rollback) rollback();
     if (e && e.name === 'AbortError') return;
     console.error('export failed', e);
-    if (typeof window !== 'undefined' && typeof window.auditLog === 'function') {
-      window.auditLog('DATA_EXPORT', String((e && e.message) || e), false);
-    }
+    auditLog('DATA_EXPORT', String((e && e.message) || e), false);
     await alertModal('Export failed: ' + ((e && e.message) || e));
   }
 }
@@ -419,16 +411,11 @@ export async function writeCaseToHandle(handle, viaTimer) {
   } catch (e) {
     rollback();
     _consecutiveSaveFailures += 1;
-    if (_consecutiveSaveFailures >= SAVE_FAILURE_THRESHOLD
-      && typeof window !== 'undefined' && typeof window.showSaveError === 'function') {
-      window.showSaveError();
-    }
+    if (_consecutiveSaveFailures >= SAVE_FAILURE_THRESHOLD) showSaveError();
     throw e;
   }
   _consecutiveSaveFailures = 0;
-  if (typeof window !== 'undefined' && typeof window.hideSaveError === 'function') {
-    window.hideSaveError();
-  }
+  hideSaveError();
   setDirtySinceExport(false);
   await clearSessionRestoreCache();
   hideAutoExportReminder();
@@ -545,30 +532,27 @@ export function hideAutoExportReminder() {
   if (el) el.style.display = 'none';
 }
 
+// Shows the case's save settings once startup has it: the auto-save interval
+// and the last-save clock are the case's own (case-reader.js reads both from
+// an opened file; a new case starts at 10 minutes, never saved). Until
+// Milestone 70's 70I this read both back out of app state, where nothing had
+// put them -- so an opened file's last save showed as none, and its interval
+// as 10 minutes.
 export async function loadAutoExportPrefs() {
-  try {
-    const savedMinutes = await loadAppState('autoExportIntervalMinutes');
-    _autoExportIntervalMinutes = savedMinutes === null || savedMinutes === undefined ? 10 : Number(savedMinutes);
-    const savedLast = await loadAppState('lastExportAt');
-    setLastExportAt(savedLast ? Number(savedLast) : null);
-  } catch (e) {
-    console.warn('Could not load auto-export preferences', e);
-  }
   if (typeof document !== 'undefined') {
     const sel = /** @type {HTMLSelectElement|null} */ (document.getElementById('auto-export-interval-select'));
-    if (sel) sel.value = String(_autoExportIntervalMinutes);
+    if (sel) sel.value = String(getAutoExportIntervalMinutes());
   }
   updateLastSavedIndicator();
   refreshAutoSaveArmedStatus();
 }
 
+// The auto-save setting, saved with the case. It used to reach app state
+// only, which the case file does not save, so the choice was gone at the next
+// launch (Milestone 70, 70I).
 export async function saveAutoExportIntervalPref(minutes) {
-  _autoExportIntervalMinutes = minutes;
-  try {
-    await saveAppState('autoExportIntervalMinutes', minutes);
-  } catch (e) {
-    /* non-critical */
-  }
+  setAutoExportIntervalMinutes(minutes);
+  autoSave();
   setupAutoExportTimer();
 }
 
@@ -577,8 +561,8 @@ export async function saveAutoExportIntervalPref(minutes) {
 // a sparse retry-and-nudge sweep: it only does anything when the debounce
 // could NOT write -- no handle established yet, or write permission revoked --
 // in which case it retries once and otherwise raises the reminder toast. The
-// exported name is kept because initApp() and the interval <select> both
-// reach it through window; only the internals are renamed.
+// exported name is kept because startup and the interval setting call it by
+// that name; only the internals are renamed.
 //
 // It read the module-private _dirtySinceExport here, which legacy-app.js never
 // updates (it assigns its own variable, which this module sees only through
@@ -590,12 +574,13 @@ export function setupAutoExportTimer() {
     clearInterval(_saveRetrySweepTimer);
     _saveRetrySweepTimer = null;
   }
-  if (!_autoExportIntervalMinutes) return;
+  const minutes = getAutoExportIntervalMinutes();
+  if (!minutes) return;
   _saveRetrySweepTimer = setInterval(async () => {
     if (!isDirtySinceExport()) return;
     const savedSilently = await silentAutoExport();
     if (!savedSilently) showAutoExportReminder();
-  }, _autoExportIntervalMinutes * 60 * 1000);
+  }, minutes * 60 * 1000);
 }
 
 export function setupLastSavedTicker() {
@@ -688,280 +673,136 @@ export async function decryptCaseFileCore({ parties, cases, partyDismissals }, k
   };
 }
 
-export async function importSavArchiveOrWard(file, options = {}) {
-  const { handle = null, isBackupFlow = false } = options;
-  try {
-    const JSZip = getJSZip();
-    const check = await validateImportFile(file, 'sav');
-    if (!check.ok) {
-      await alertModal(check.message);
-      return false;
-    }
-    const securityMode = getSecurityMode();
-    let cryptoKey = getCryptoKey();
-    if (securityMode === 'encrypted' && !cryptoKey) {
-      await alertModal('Please unlock the app before importing a data file.');
-      return false;
-    }
-    const zip = await JSZip.loadAsync(file);
-    const manifestEntry = zip.file('manifest.json');
-    if (!manifestEntry) throw new Error('Not a Guardian Forms data file (no manifest.json inside).');
-    const manifest = JSON.parse(await manifestEntry.async('string'));
-    if (manifest.format !== 'probate-guardian-case') throw new Error('Not a Guardian Forms data file.');
 
-    const currentSalt = await loadAppState('cryptoSalt');
-    let key = cryptoKey;
-    if (manifest.securityMode !== 'none' && manifest.salt !== currentSalt) {
-      const pw = await promptModal('This file came from a different installation.\nEnter the master password that was in use when it was exported:');
-      if (!pw) return false;
-      key = await deriveKeyFromPassword(pw, manifest.salt);
-    }
+export async function saveWardToState(ward){
+  if(!ward)return false;
+  ward.lastModified=new Date().toISOString();
+  // The ward is already live in caseFile; schedule persistence. Under the
+  // unified single-file model, one autoSave() covers every ward regardless
+  // of which one was actually edited -- there's no per-ward file to track.
+  autoSave();
+  return true;
+}
 
-    let guardianInfo = null;
-    if (manifest.guardian) {
-      try {
-        guardianInfo = await decryptJSONWithKey(manifest.guardian, key);
-      } catch (e) {
-        throw new Error('Wrong password for this file, or the file has been modified/corrupted.');
-      }
-    }
+export async function deleteWardFromState(wardId){
+  // deleteWard() already updates the live array; schedule persistence.
+  autoSave();
+  return true;
+}
 
-    const imported = [];
-    for (const entry of Array.isArray(manifest.wards) ? manifest.wards : []) {
-      const f = zip.file(entry.file);
-      if (!f) {
-        console.warn('Case file entry missing:', entry.file);
-        continue;
-      }
-      let ward;
-      try {
-        ward = await decodeWardRecord(await f.async('string'), key);
-      } catch (err) {
-        throw new Error(`The file's data for "${entry.file}" has been modified or corrupted since it was saved — nothing was imported.`);
-      }
-      if (ward && ward.wardId) imported.push(ward);
-    }
+// Every change schedules one save, a second later (a burst of edits saves
+// once). Moved from legacy-app.js (Milestone 70, 70I); modules ask for it
+// through the case store's requestSave(), which main.js points here.
+export async function autoSave(){
+  setDirtySinceExport(true);
+  updateLastSavedIndicator();
+  notifyProbateGuardianTabStateChanged();
+  if(_saveTimer)clearTimeout(_saveTimer);
+  _saveTimer=setTimeout(()=>{_saveTimer=null;saveData();},1000);
+}
 
-    const importedPartiesFile = zip.file('parties.enc');
-    const importedCasesFile = zip.file('cases.enc');
-    const importedPartyDismissalsFile = zip.file('partyDismissals.enc');
-    // Milestone 54: deliberately no selectedCircuit here -- it lives in the
-    // appState blob now (see buildCaseFileBlob()'s comment), which this
-    // merge-import path has never read for anything. Importing/restoring a
-    // backup must never change which circuit the current session has
-    // selected.
-    const {
-      parties: importedParties,
-      cases: importedCases,
-      dismissedPartyPairs: importedPartyDismissals,
-    } = await decryptCaseFileCore(
-      {
-        parties: importedPartiesFile ? await importedPartiesFile.async('string') : null,
-        cases: importedCasesFile ? await importedCasesFile.async('string') : null,
-        partyDismissals: importedPartyDismissalsFile ? await importedPartyDismissalsFile.async('string') : null,
-      },
-      key,
-      { source: 'from imported file' },
-    );
-    if (!imported.length && !guardianInfo) throw new Error('File contained no readable data.');
-
-    const caseFile = getCaseFile();
-    const replacing = imported.filter((w) => caseFile.wards.some((x) => x.wardId === w.wardId)).length;
-    const adding = imported.length - replacing;
-    const promptText = isBackupFlow
-      ? caseFile.wards.length === 0
-        ? `Open backup containing ${imported.length} ward(s) from "${file.name}"?`
-        : `Restore backup containing ${imported.length} ward(s) from "${file.name}"?\n\n• ${adding} new ward(s)\n• ${replacing} existing ward(s) will be updated\n\nDo you want to proceed?`
-      : `Import ${imported.length} form(s) from "${file.name}"?\n\n• ${adding} new form(s)\n• ${replacing} will replace existing form(s) with the same ID`;
-    if (!(await confirmModal(promptText))) return false;
-
-    // Milestone 38C: close any open editor BEFORE replacing ward data, using
-    // the real unload path. unloadWard() flushes pending values, releases the
-    // ward lock, nulls focus, clears window.D and lands on the dashboard.
-    // Nulling activeWardId directly instead would make
-    // enterDashboardEditingFocus() early-return on its `if (!activeWardId)`
-    // guard and skip all of that -- leaking the ward lock. Flushing before the
-    // swap also means the save writes the ward the user was actually editing,
-    // not an imported replacement of it.
-    if (typeof window !== 'undefined' && caseFile.activeWardId && typeof window.unloadWard === 'function') {
-      await window.unloadWard();
-    } else if (typeof window !== 'undefined' && typeof window.flushPendingSave === 'function') {
-      await window.flushPendingSave();
-    }
-
-    const nextWards = [...caseFile.wards];
-    for (const ward of imported) {
-      const idx = nextWards.findIndex((x) => x.wardId === ward.wardId);
-      if (idx >= 0) nextWards[idx] = ward;
-      else nextWards.push(ward);
-    }
-    caseFile.wards = nextWards;
-
-    if (!Array.isArray(caseFile.parties)) caseFile.parties = [];
-    for (const party of importedParties) {
-      if (party && party.id && !caseFile.parties.some((p) => p.id === party.id)) caseFile.parties.push(party);
-    }
-    if (!Array.isArray(caseFile.cases)) caseFile.cases = [];
-    for (const c of importedCases) {
-      if (c && c.id && !caseFile.cases.some((x) => x.id === c.id)) caseFile.cases.push(c);
-    }
-    if (!Array.isArray(caseFile.dismissedPartyPairs)) caseFile.dismissedPartyPairs = [];
-    for (const pair of importedPartyDismissals) {
-      if (Array.isArray(pair) && !caseFile.dismissedPartyPairs.some((p) => p[0] === pair[0] && p[1] === pair[1])) {
-        caseFile.dismissedPartyPairs.push(pair);
-      }
-    }
-
-    for (const ward of imported) {
-      if (typeof window !== 'undefined' && typeof window.saveWardToState === 'function') {
-        await window.saveWardToState(ward);
-      }
-    }
-    if (typeof window !== 'undefined' && typeof window.backfillWardPartyCounties === 'function') {
-      try { window.backfillWardPartyCounties(); }
-      catch (e) { console.warn('Could not backfill ward-party counties on import', e); }
-    }
-    if (guardianInfo && guardianInfo.guardianName) caseFile.guardianName = guardianInfo.guardianName;
-    if (guardianInfo && guardianInfo.guardianEmail) caseFile.guardianEmail = guardianInfo.guardianEmail;
-
-    if (typeof window !== 'undefined' && typeof window.saveData === 'function') {
-      await window.saveData();
-    }
-
-    // Milestone 38C: importing or restoring data must never open an editor by
-    // itself. This used to switchWard() to a legacy archive's activeWardId,
-    // and failing that to wards[0] "solely because data was imported" -- both
-    // of which 38C's storage table explicitly prohibits. Focus was already
-    // released by the unload above; just refresh the neutral sidebar.
-    if (typeof window !== 'undefined') {
-      updateSidebar();
-    }
-
-    if (handle) {
-      await rememberCaseFileHandle(handle);
-    }
-
-    const auditMsg = isBackupFlow
-      ? `Restored backup containing ${imported.length} ward(s) from "${file.name}"`
-      : `Imported ${imported.length} form(s) from "${file.name}"`;
-    if (typeof window !== 'undefined' && typeof window.auditLog === 'function') {
-      await window.auditLog('DATA_IMPORT', auditMsg, true);
-    }
-
-    setDirtySinceExport(false);
-    await clearSessionRestoreCache();
-    hideAutoExportReminder();
-    updateLastSavedIndicator();
-    if (typeof window !== 'undefined') {
-      notifyProbateGuardianTabStateChanged();
-    }
-
-    // Both flows land on the dashboard. Only the backup flow did before,
-    // because a plain import relied on the switchWard() call removed above to
-    // move the user somewhere; without it an import would silently leave them
-    // on whatever page they were editing.
-    if (typeof window !== 'undefined' && typeof window.navigate === 'function') {
-      await window.navigate('/dashboard');
-    }
-
-    if (isBackupFlow) {
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(
-          new CustomEvent('pg:backup-restored', {
-            detail: { fileName: file.name, count: imported.length },
-          })
-        );
-      }
-      await alertModal(`Backup restored: ${imported.length} ward(s) loaded.`);
-    } else {
-      await alertModal(`Import complete: ${imported.length} form(s) loaded.`);
-    }
-    return true;
-  } catch (e) {
-    console.error('Import failed', e);
-    if (typeof window !== 'undefined' && typeof window.auditLog === 'function') {
-      window.auditLog('DATA_IMPORT', String((e && e.message) || e), false);
-    }
-    await alertModal((isBackupFlow ? 'Could not open backup file: ' : 'Import failed: ') + ((e && e.message) || e));
-    return false;
+// Cancels any pending debounced save and saves the CURRENTLY active ward
+// immediately, after committing a field still being typed in (the case
+// store's commitPendingEdits(), which main.js wires to the form layer). Must be called before reassigning activeWardId/window.D —
+// otherwise a save scheduled for the old ward fires after the switch and
+// silently writes the new ward's data instead, losing the old edit.
+export async function flushPendingSave(){
+  if(_saveTimer){
+    clearTimeout(_saveTimer);
+    _saveTimer=null;
   }
+  commitPendingEdits();
+  await saveData();
 }
 
-export async function importGuardianDataZip(file) {
-  return importSavArchiveOrWard(file, { isBackupFlow: false });
+// The persistent "could not save" banner, shown after consecutive failed
+// writes (writeCaseToHandle(), above) and hidden by the next good one.
+export function showSaveError(){
+  if(typeof document==='undefined')return;
+  const el=document.getElementById('save-error-banner');
+  if(el)el.style.display='block';
 }
 
-export async function triggerOpenBackupSav() {
-  if (typeof window !== 'undefined' && window.showOpenFilePicker) {
-    try {
-      const [handle] = await window.showOpenFilePicker({
-        types: [{ description: 'Guardian Forms backup file (.sav)', accept: { 'application/octet-stream': ['.sav', '.zip'] } }],
-      });
-      const file = await handle.getFile();
-      await restoreBackupSavFile(file, handle);
+export function hideSaveError(){
+  if(typeof document==='undefined')return;
+  const el=document.getElementById('save-error-banner');
+  if(el)el.style.display='none';
+}
+
+// Captures dirty state in the temporary recovery cache, then rewrites the
+// complete case file when a writable handle is available. No open handle
+// is a normal pre-save state, not an error. Under the unified single-file
+// model this is deliberately simple: there is exactly one handle and one
+// write, covering every ward -- the old version had to separately track
+// which non-active wards were dirtied off the active-ward path (dashboard
+// archive toggle, workflow edits) because each ward could have its OWN
+// file; that distinction no longer exists, so there is nothing left to
+// track beyond the single "changed since the last save" flag (export-state.js).
+export async function saveData(){
+  // Nothing should be persisted while the app is locked — there's no
+  // encryption key to write with. This isn't a failure (e.g. autoSave()
+  // debounced from an edit made right before auto-lock kicked in), so it
+  // must not trip the save-error banner the way an actual write problem would.
+  if(getSecurityMode()==='encrypted'&&!getCryptoKey())return;
+  const activeWard=getActiveWard();
+  if(activeWard){
+    commitStoredDateDrafts(activeWard,setPath);
+    activeWard.lastModified=new Date().toISOString();
+  }
+  // Best-effort local resume snapshot, used only by lockApp() when the app
+  // auto-locks before any .sav has ever been saved (see recovery-cache.js's
+  // file header); a successful .sav write clears it. Awaited so callers
+  // that depend on it having landed before acting further (lockApp() wiping
+  // memory, beforeunload) aren't racing an in-flight IndexedDB write.
+  if(isDirtySinceExport()){
+    // This is only a best-effort crash-recovery snapshot. It is not the
+    // durable .sav case file, so an IndexedDB/cache failure must not look
+    // like a failed case-file save (and must not clear a real write error).
+    await saveSessionRestoreCache();
+  }
+  // No "last saved" stamp here: at this point no handle has been checked,
+  // no permission verified, and no write attempted. writeCaseToHandle()
+  // records the save once it has actually written one.
+  const handle=await loadCaseFileHandle();
+  if(!handle)return;
+  try{
+    const perm=await handle.queryPermission({mode:'readwrite'});
+    if(perm!=='granted'){
+      await refreshAutoSaveArmedStatus();
       return;
-    } catch (e) {
-      if (e && e.name === 'AbortError') return;
-      console.warn('showOpenFilePicker failed or cancelled, falling back to input', e);
     }
-  }
-  if (typeof document !== 'undefined') {
-    const inp = /** @type {HTMLInputElement|null} */ (document.getElementById('backup-import-input'));
-    if (inp) {
-      inp.value = '';
-      inp.click();
-    }
+    // Failure counting and the error banner live in writeCaseToHandle() so
+    // every caller reports a failed write identically.
+    await writeCaseToHandle(handle,true);
+  }catch(e){
+    console.error('save failed',e);
   }
 }
 
-export async function handleBackupImportChange(input) {
-  const file = input.files?.[0];
-  input.value = '';
-  if (!file) return;
-  await restoreBackupSavFile(file, null);
-}
-
-export async function restoreBackupSavFile(file, handle) {
-  return importSavArchiveOrWard(file, { handle, isBackupFlow: true });
+// Save before the page goes: on unload, and whenever the tab is hidden.
+// Installed once by main.js (Milestone 70, 70I), not when the code loads.
+/** @param {{ signal?: AbortSignal }} [options] */
+export function installSaveListeners({signal}={}){
+  window.addEventListener('beforeunload',flushPendingSave,{signal});
+  document.addEventListener('visibilitychange',()=>{
+    if(document.hidden)flushPendingSave();
+    else updateLastSavedIndicator(); // background tabs throttle the 30s ticker, so the "X minutes ago" text can go stale while hidden
+  },{signal});
 }
 
 // Global bridge for legacy scripts and test harnesses
 if (typeof window !== 'undefined') {
-  window.CASE_FILE_FORMAT_VERSION = CASE_FILE_FORMAT_VERSION;
   window.saveBlobAs = saveBlobAs;
   window.rememberCaseFileHandle = rememberCaseFileHandle;
-  window.suggestedCaseFileName = suggestedCaseFileName;
   window.loadCaseFileHandle = loadCaseFileHandle;
-  window.forgetCaseFileHandle = forgetCaseFileHandle;
   window.refreshAutoSaveArmedStatus = refreshAutoSaveArmedStatus;
   window.buildCaseFileBlob = buildCaseFileBlob;
   window.buildSingleWardExportBlob = buildSingleWardExportBlob;
-  window.exportCaseFileZip = exportCaseFileZip;
   window.exportGuardianDataZip = exportCaseFileZip;
-  window.backupAllWardsNow = exportCaseFileZip;
-  window.writeCaseToHandle = writeCaseToHandle;
-  window.silentAutoExport = silentAutoExport;
-  window.getWardFileStem = getWardFileStem;
-  window.getWardFileName = getWardFileName;
   window.validateWardBackupOverwrite = validateWardBackupOverwrite;
   window.finishSingleWardExport = finishSingleWardExport;
   window.saveBackupNow = saveBackupNow;
   window.showAutoExportReminder = showAutoExportReminder;
-  window.hideAutoExportReminder = hideAutoExportReminder;
-  window.loadAutoExportPrefs = loadAutoExportPrefs;
-  window.saveAutoExportIntervalPref = saveAutoExportIntervalPref;
-  window.setupAutoExportTimer = setupAutoExportTimer;
-  window.setupLastSavedTicker = setupLastSavedTicker;
-  window.setupFallbackSaveReminder = setupFallbackSaveReminder;
-  window.importSavArchiveOrWard = importSavArchiveOrWard;
-  window.importGuardianDataZip = importGuardianDataZip;
-  window.triggerOpenBackupSav = triggerOpenBackupSav;
-  window.handleBackupImportChange = handleBackupImportChange;
-  window.restoreBackupSavFile = restoreBackupSavFile;
   window.updateLastSavedIndicator = updateLastSavedIndicator;
   window.markDirtySinceExport = markDirtySinceExport;
-  window.beginRecordingExport = beginRecordingExport;
-  window.getLastExportAt = getLastExportAt;
-  window.isAutoSaveArmed = isAutoSaveArmed;
-  window.formatRelativeTime = formatRelativeTime;
 }

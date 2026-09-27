@@ -1,15 +1,18 @@
-import { getCaseFile } from './core/state.js';
+import { getActiveWard, getCaseFile } from './core/state.js';
 import { closeMobileSidebar, navigate, toggleMobileSidebar } from './core/navigation/router.js';
-import { handleBackupImportChange, hideAutoExportReminder, saveAutoExportIntervalPref, saveBackupNow, triggerOpenBackupSav } from './core/persistence/case-file.js';
+import { hideAutoExportReminder, saveAutoExportIntervalPref, saveBackupNow, saveData } from './core/persistence/case-file.js';
 import { filingLifecycle } from './core/navigation/filing-lifecycle.js';
 import { confirmDeleteWard } from './core/modals/filing-dialogs.js';
 import { toggleHelpPanel } from './core/help/help-panel.js';
-import { collapseSaveControls, collapseWardControls, toggleSaveControls } from './core/shell/sidebar.js';
+import { collapseSaveControls, collapseWardControls, toggleSaveControls, updateSidebar } from './core/shell/sidebar.js';
 import { openUserGuide, openUserGuideForCurrentPage } from './core/help/user-guide.js';
 import { nextWalkthroughStep, skipWalkthrough, startWalkthrough } from './core/help/walkthrough.js';
 import { handleSwitchWardClick, onWardSelectorFocus, onWardSelectorInput, onWardSelectorKeydown } from './core/shell/filing-switcher.js';
 import { toggleTheme } from './core/theme-preference.js';
-import { monolith } from './core/runtime/monolith.js';
+import { initializeEmptyData } from './core/filing/filing-registry.js';
+import { confirmModal } from './core/ui/dialogs.js';
+import { handleBackupImportChange, triggerOpenBackupSav } from './core/persistence/case-import.js';
+import { lockApp } from './core/security/app-lock.js';
 // Milestone 70, 70H: this module's document listeners are collected here and
 // added by installShellEvents(), once, from main.js -- not as a side effect of
 // importing it; its signal removes them.
@@ -22,14 +25,14 @@ function handleShellClick(event) {
   switch (actionElement.dataset.shellAction) {
     case 'activity-log': toggleHelpPanel(); navigate('/activity-log'); break;
     case 'backup-all-wards': collapseSaveControls?.(); saveBackupNow(); break;
-    case 'clear-data': collapseSaveControls?.(); monolith.clearAllData(); break;
+    case 'clear-data': collapseSaveControls?.(); clearAllData(); break;
     case 'close-mobile-sidebar': closeMobileSidebar(); break;
     case 'close-ward': collapseWardControls?.(); filingLifecycle.unload(); break;
     case 'dashboard': navigate('/dashboard'); break;
     case 'delete-ward': collapseWardControls?.(); confirmDeleteWard(); break;
     case 'export-help': openUserGuide(); break;
     case 'hide-auto-export-reminder': hideAutoExportReminder(); break;
-    case 'lock': collapseSaveControls?.(); monolith.lockApp(); break;
+    case 'lock': collapseSaveControls?.(); lockApp(); break;
     case 'new-form': collapseWardControls?.(); navigate('/inventory-select'); break;
     case 'next-walkthrough': nextWalkthroughStep(); break;
     case 'open-backup-sav': collapseSaveControls?.(); triggerOpenBackupSav?.(); break;
@@ -91,4 +94,16 @@ export function installShellEvents({ signal } = {}) {
     const opts = typeof options === 'object' && options ? options : { capture: !!options };
     document.addEventListener(type, handler, { ...opts, signal });
   }
+}
+
+export async function clearAllData(){
+  if(!(await confirmModal('Clear all data for current form? This cannot be undone.')))return;
+  const ward=getActiveWard();
+  if(!ward)return;
+  const {wardId,wardName,inventoryType,createdDate}=ward;
+  Object.assign(ward,initializeEmptyData(ward.inventoryType));
+  Object.assign(ward,{wardId,wardName,inventoryType,createdDate});
+  saveData();
+  updateSidebar();
+  navigate('/');
 }

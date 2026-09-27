@@ -193,14 +193,15 @@ describe('save timestamp indicator: one clock, only advanced by a real save', ()
     expect(typeof mod.setLastExportAt).toBe('function');
   });
 
-  test('setLastExportAt writes through to window so bare-property readers see it', async () => {
+  // Milestone 70, 70I: the clock is export-state.js's own. Its one bare-property
+  // reader (ward-lifecycle.js's first-backup reminder, which read
+  // window._lastExportAt) imports it, so nothing is written to window.
+  test('the save clock is one module value, with no window copy', async () => {
     const { setLastExportAt, getLastExportAt } = await import('../../src/core/persistence/case-file.js');
     const now = Date.now();
     setLastExportAt(now);
-    // ward-lifecycle.js reads window._lastExportAt as a plain property, not
-    // via the getter, so the write must land there too.
-    expect(window._lastExportAt).toBe(now);
     expect(getLastExportAt()).toBe(now);
+    expect(window._lastExportAt).toBeUndefined();
   });
 
   test('a recorded save renders as a backup; dirty-with-no-save does not', async () => {
@@ -250,10 +251,11 @@ describe('save timestamp indicator: one clock, only advanced by a real save', ()
     expect(() => new vm.Script(source, { filename: 'legacy-app.js' })).not.toThrow();
   });
 
+  // saveData() is case-file.js's since Milestone 70's 70I.
   test('recovery-cache failures do not invoke the durable save-error banner', async () => {
     const { readFile } = await import('node:fs/promises');
-    const source = await readFile(new URL('../../src/legacy-app.js', import.meta.url), 'utf8');
-    const recoveryBlock = source.match(/if\(_dirtySinceExport\)\{([\s\S]*?)\n  \}\n  \/\/ No "last saved" stamp/);
+    const source = await readFile(new URL('../../src/core/persistence/case-file.js', import.meta.url), 'utf8');
+    const recoveryBlock = source.match(/if\(isDirtySinceExport\(\)\)\{([\s\S]*?)\n  \}\n  \/\/ No "last saved" stamp/);
     expect(recoveryBlock, 'saveData recovery-cache block should remain explicit').not.toBeNull();
     expect(recoveryBlock[1]).not.toMatch(/showSaveError\(\)/);
     expect(recoveryBlock[1]).not.toMatch(/hideSaveError\(\)/);
@@ -270,7 +272,7 @@ describe('save timestamp indicator: one clock, only advanced by a real save', ()
     // A failed write must not leave a save recorded that never happened.
     rollback();
     expect(getLastExportAt()).toBeNull();
-    expect(window._lastExportAt).toBeNull();
+    expect(window._lastExportAt, 'no window copy (Milestone 70, 70I)').toBeUndefined();
   });
 });
 
@@ -278,26 +280,22 @@ describe('save timestamp indicator: one clock, only advanced by a real save', ()
 // `viaTimer` is true for the interval sweep AND the debounced save after each
 // edit, so both stay out of the log while still advancing the save clock.
 describe('activity log: automatic saves are not logged', () => {
-  let logged;
-  let priorAuditLog;
-  let priorEntries;
   let priorMode;
   let priorDispatch;
+  // The Activity Log is src/core/activity/audit-log.js's since Milestone 70's
+  // 70I (it was the monolith's, which these tests stood in for on window).
+  let auditLogModule;
+  const logged = async () => (await auditLogModule.loadAuditLogEntries())
+    .map((e) => ({ type: e.eventType, message: e.details, ok: e.success }));
 
   beforeEach(async () => {
     const { getSecurityMode, setSecurityMode } = await import('../../src/core/persistence/crypto.js');
     priorMode = getSecurityMode();
     setSecurityMode('none');
-    logged = [];
-    priorAuditLog = window.auditLog;
-    priorEntries = window._auditLogEntries;
-    window._auditLogEntries = [];
+    auditLogModule = await import('../../src/core/activity/audit-log.js');
+    auditLogModule.replaceAuditLog([]);
     priorDispatch = window.dispatchEvent;
     window.dispatchEvent = () => true;
-    window.auditLog = async (type, message, ok) => {
-      logged.push({ type, message, ok });
-      window._auditLogEntries.push({ type, message, ok });
-    };
     setCaseFile({
       activeWardId: null, guardianName: 'G', guardianEmail: '',
       parties: [], cases: [], dismissedPartyPairs: [],
@@ -308,10 +306,7 @@ describe('activity log: automatic saves are not logged', () => {
   afterEach(async () => {
     const { setSecurityMode } = await import('../../src/core/persistence/crypto.js');
     setSecurityMode(priorMode);
-    if (priorAuditLog === undefined) delete window.auditLog;
-    else window.auditLog = priorAuditLog;
-    if (priorEntries === undefined) delete window._auditLogEntries;
-    else window._auditLogEntries = priorEntries;
+    auditLogModule.replaceAuditLog([]);
     if (priorDispatch === undefined) delete window.dispatchEvent;
     else window.dispatchEvent = priorDispatch;
     delete window._lastExportAt;
@@ -329,19 +324,19 @@ describe('activity log: automatic saves are not logged', () => {
     setLastExportAt(null);
     const rollback = await beginRecordingExport('quiet', null, { log: false });
     expect(getLastExportAt()).toBeGreaterThan(0);
-    expect(logged).toEqual([]);
+    expect(await logged()).toEqual([]);
 
     // Its rollback must not truncate entries someone else logged meanwhile.
-    window._auditLogEntries.push({ type: 'UNLOCK_SUCCESS' });
+    await auditLogModule.auditLog('UNLOCK_SUCCESS', 'unlocked', true);
     rollback();
     expect(getLastExportAt()).toBeNull();
-    expect(window._auditLogEntries).toEqual([{ type: 'UNLOCK_SUCCESS' }]);
+    expect(await logged()).toEqual([{ type: 'UNLOCK_SUCCESS', message: 'unlocked', ok: true }]);
   });
 
   test('beginRecordingExport still logs by default', async () => {
     const { beginRecordingExport } = await import('../../src/core/persistence/case-file.js');
     await beginRecordingExport('manual write');
-    expect(logged).toEqual([{ type: 'DATA_EXPORT', message: 'manual write', ok: true }]);
+    expect(await logged()).toEqual([{ type: 'DATA_EXPORT', message: 'manual write', ok: true }]);
   });
 
   test('an automatic write (viaTimer=true) is not logged but still counts as the last backup', async () => {
@@ -350,14 +345,14 @@ describe('activity log: automatic saves are not logged', () => {
     setLastExportAt(null);
     const count = await writeCaseToHandle(fakeHandle(), true);
     expect(count).toBe(2);
-    expect(logged).toEqual([]);
+    expect(await logged()).toEqual([]);
     expect(getLastExportAt()).toBeGreaterThan(0);
   });
 
   test('a manual write (viaTimer=false) is logged as a backup save', async () => {
     const { writeCaseToHandle } = await import('../../src/core/persistence/case-file.js');
     await writeCaseToHandle(fakeHandle(), false);
-    expect(logged).toEqual([{ type: 'DATA_EXPORT', message: 'Saved 2 form(s) to existing backup file', ok: true }]);
+    expect(await logged()).toEqual([{ type: 'DATA_EXPORT', message: 'Saved 2 form(s) to existing backup file', ok: true }]);
   });
 
   test('a failed automatic write leaves the log and the save clock untouched', async () => {
@@ -366,7 +361,7 @@ describe('activity log: automatic saves are not logged', () => {
     setLastExportAt(null);
     const failing = { name: 'case.sav', createWritable: async () => { throw new Error('disk full'); } };
     await expect(writeCaseToHandle(failing, true)).rejects.toThrow('disk full');
-    expect(logged).toEqual([]);
+    expect(await logged()).toEqual([]);
     expect(getLastExportAt()).toBeNull();
   });
 });
