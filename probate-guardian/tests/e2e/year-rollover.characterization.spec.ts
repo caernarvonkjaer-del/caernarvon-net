@@ -143,7 +143,9 @@ for (const [type, fill, extra] of TYPES) {
 
     const golden = fs.existsSync(GOLDEN) ? JSON.parse(fs.readFileSync(GOLDEN, 'utf8')) : { note: '', types: {} };
     if (UPDATE) {
-      golden.note = 'Milestone 70, 70A: what starting a new year does to each filing identity, recorded from the app before migration by tests/e2e/year-rollover.characterization.spec.ts. Regenerate only for a deliberate, recorded change.';
+      // The note is kept once written: each regeneration's reason is added to it
+      // by hand, and a rewrite here erased 70C's.
+      golden.note = golden.note || 'Milestone 70, 70A: what starting a new year does to each filing identity, recorded from the app before migration by tests/e2e/year-rollover.characterization.spec.ts. Regenerate only for a deliberate, recorded change.';
       golden.types[type] = record;
       fs.writeFileSync(GOLDEN, JSON.stringify(golden, null, 1) + '\n');
     }

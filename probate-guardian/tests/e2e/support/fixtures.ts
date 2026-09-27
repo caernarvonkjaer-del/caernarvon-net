@@ -34,8 +34,14 @@ export const MINIMAL_VALID_GUARDIAN = {
   guardianName: 'Sample Guardian',
   attorneyForGuardian: 'Sample Attorney',
   typeOfGuardianship: 'Plenary',
-  hasSafeDepositBox: false,
-  safeDepositBoxFiled: false,
+  // The stored tri-state shape ('' / 'Yes' / 'No'), as the form writes it.
+  // These were the pre-tri-state booleans (false), which only the
+  // legacy-save migration turns into 'No' -- so every spec built on this
+  // fixture exercised the migration instead of the stored shape (found by
+  // Milestone 70's year-rollover characterization). Rendered text is the
+  // same either way (yesNoText(false) === yesNoText('No') === 'No').
+  hasSafeDepositBox: 'No',
+  safeDepositBoxFiled: 'No',
   bondAmount: '1000',
   bondPeriodFrom: '2026-01-01',
   bondPeriodTo: '2027-01-01',

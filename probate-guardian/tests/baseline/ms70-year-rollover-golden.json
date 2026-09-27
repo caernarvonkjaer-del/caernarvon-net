@@ -1,5 +1,5 @@
 {
- "note": "Milestone 70, 70A: what starting a new year does to each filing identity, recorded from the app before migration by tests/e2e/year-rollover.characterization.spec.ts. Regenerated in 70C for simplified and planMinor only: master's b28bf25, carried in 70C, removes rows the filer added and never touched when they leave a page, so the Simplified fixture's two blank certificate recipients and the Plan for Minors' blank residence row are gone before the new year starts. Regenerate only for a deliberate, recorded change.",
+ "note": "Milestone 70, 70A: what starting a new year does to each filing identity, recorded from the app before migration by tests/e2e/year-rollover.characterization.spec.ts. Regenerated in 70C for simplified and planMinor only: master's b28bf25, carried in 70C, removes rows the filer added and never touched when they leave a page, so the Simplified fixture's two blank certificate recipients and the Plan for Minors' blank residence row are gone before the new year starts. Regenerated after 70K for guardian only: master's 56ff26a, carried then, makes the minimal Initial Inventory answer the two safe-deposit questions 'No', as the form stores them, instead of the legacy false; the new year no longer shows the legacy-save migration turning false into 'No' (hasSafeDepositBox, safeDepositBoxFiled), and nothing else changed. Regenerate only for a deliberate, recorded change.",
  "types": {
   "guardian": {
    "activeYearKey": "Year 2",
@@ -20,14 +20,6 @@
     "bondAmount": {
      "from": "\"1000\"",
      "to": "1000"
-    },
-    "hasSafeDepositBox": {
-     "from": "false",
-     "to": "\"No\""
-    },
-    "safeDepositBoxFiled": {
-     "from": "false",
-     "to": "\"No\""
     }
    },
    "changedByTheNewYear": {
@@ -51,17 +43,9 @@
      "from": "\"2026-01-02\"",
      "to": "\"\""
     },
-    "hasSafeDepositBox": {
-     "from": "false",
-     "to": "\"No\""
-    },
     "preparer.signatureDate": {
      "from": "\"2026-01-02\"",
      "to": "\"\""
-    },
-    "safeDepositBoxFiled": {
-     "from": "false",
-     "to": "\"No\""
     },
     "serviceDate": {
      "from": "\"2026-01-02\"",

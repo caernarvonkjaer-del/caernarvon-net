@@ -47,7 +47,9 @@ function readGolden(): Golden {
 function record(section: 'fixtures' | 'wrongPassword' | 'damaged', key: string, value: unknown): unknown {
   const golden = readGolden();
   if (UPDATE) {
-    golden.note = "Milestone 70, 70A: what today's reader makes of each tests/fixtures/sav/ case file (a digest of everything loaded), and what a filer sees for a wrong password or a damaged file; written by tests/e2e/sav-corpus.characterization.spec.ts. Regenerate only for a deliberate, recorded change.";
+    // The note is kept once written, so a regeneration's reason added to it by
+    // hand survives the next one (the rollover golden's was erased that way).
+    golden.note = golden.note || "Milestone 70, 70A: what today's reader makes of each tests/fixtures/sav/ case file (a digest of everything loaded), and what a filer sees for a wrong password or a damaged file; written by tests/e2e/sav-corpus.characterization.spec.ts. Regenerate only for a deliberate, recorded change.";
     golden[section][key] = value;
     fs.writeFileSync(GOLDEN, JSON.stringify(golden, null, 1) + '\n');
   }
