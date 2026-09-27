@@ -132,6 +132,31 @@ test.describe('Milestone 57C-R: supplemental-documentation acknowledgement', () 
     expect(await acceptDynDialog(page)).toMatch(/supporting documentation/i);
   });
 
+  // Found at Milestone 70's release gate. A filer on Preview & Export clicks
+  // a Filing Readiness item's "Go to field" for a field on a schedule whose
+  // question is still unanswered; the page asks it as it draws, and it holds the cursor while
+  // it is open, as a dialog should. Answering it left the cursor nowhere: the
+  // page had scrolled to the field, but a keyboard user had to Tab down to it
+  // from the top. The field the link names takes the cursor once the
+  // question is answered, either way.
+  for (const [action, label] of [['confirm', 'I understand'], ['cancel', 'Not now']]) {
+    test(`"Go to field" into an unanswered schedule ends in the field after "${label}"`, async ({ page }) => {
+      await freshStartNoPassword(page);
+      await createWard(page, 'Jump Ward', 'annual');
+      await page.evaluate(() => {
+        (window as any).GuardianForms.testing.patchFiling({ 'schB1': [{ bankAcct: '111222333', checkNo: '1001', datePaid: '01/01/2024', payee: '', amount: '500' }] });
+      });
+      await goto(page, '/print');
+
+      await page.locator('.validation-go[data-jump-path="schB1.0.payee"]').click();
+      const button = page.locator(`${DYN_DIALOG} [data-dyn-action="${action}"]`);
+      await expect(page.locator(DYN_DIALOG)).toContainText(/supporting documentation/i);
+      await expect(page.locator(`${DYN_DIALOG} [data-dyn-action="confirm"]`), 'the question holds the cursor while it is open').toBeFocused();
+      await button.click();
+      await expect(page.locator('#main-content [data-annual-path="schB1.0.payee"], #main-content [data-form-path="schB1.0.payee"]')).toBeFocused();
+    });
+  }
+
   test('a recorded acknowledgement survives re-normalization', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Roundtrip Ward', 'guardian');

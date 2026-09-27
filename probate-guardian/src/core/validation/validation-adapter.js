@@ -225,8 +225,29 @@ export async function focusFieldByPath(route, fieldPath) {
 
   if (target) {
     target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    target.focus?.();
+    if (document.querySelector(OPEN_DIALOG)) focusWhenDialogsClose(() => findTarget(fieldPath));
+    else target.focus?.();
   }
+}
+
+// A dialog the page raised as it drew -- the Supporting documentation notice
+// (Milestone 57C-R) asks as a schedule with unacknowledged entries opens --
+// keeps the cursor while it is open. The field takes it once the last dialog
+// has closed, so "Go to field" still ends in the field it names; a closing
+// dialog returns the cursor only to what had it when the dialog opened, and
+// that was never the field, so the cursor went nowhere. Not if the filer has
+// moved to another page by then. The app's dialogs (src/core/ui/dialogs.js) are each
+// a body child with a dyn-dialog-N id, removed when they close.
+const OPEN_DIALOG = '.modal-overlay[id^="dyn-dialog-"]';
+
+function focusWhenDialogsClose(findTarget) {
+  const page = getCurrentPage();
+  const observer = new MutationObserver(() => {
+    if (document.querySelector(OPEN_DIALOG)) return;
+    observer.disconnect();
+    if (getCurrentPage() === page) findTarget()?.focus?.();
+  });
+  observer.observe(document.body, { childList: true });
 }
 
 
