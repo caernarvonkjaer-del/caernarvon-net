@@ -33,9 +33,12 @@ test.describe('Case file .sav round-trip: unencrypted, encrypted, and corrupted 
       // explicitly is what proves the ward data round-tripped.
       await expect(reopenPage.locator('#ward-selector')).toHaveValue('');
       // The picker is empty before the case has loaded as well as after, so
-      // wait for the filing itself: an encrypted case is still decrypting
-      // when the password dialog closes (about half a second in WebKit).
-      await expect.poll(() => reopenPage.evaluate(() => (window as any).GuardianForms.testing.snapshot().caseFile.wards.length)).toBe(1);
+      // wait for what a filer waits for before choosing Edit: the dashboard
+      // listing the filing. Opening a case ends by drawing the dashboard,
+      // which closes any open filing, and that comes after the filing list
+      // fills in -- an encrypted case is still decrypting when the password
+      // dialog closes, and the startup finishes its own work after that.
+      await expect(reopenPage.locator('#main-content')).toContainText('Roundtrip Ward Plain');
       await reopenPage.evaluate(() => (() => { const tt = (window as any).GuardianForms.testing; return tt.activateFiling.open(tt.snapshot().caseFile.wards[0].wardId); })());
       await expect(reopenPage.locator('#ward-selector')).toHaveValue('Roundtrip Ward Plain');
     } finally {
@@ -86,9 +89,12 @@ test.describe('Case file .sav round-trip: unencrypted, encrypted, and corrupted 
       // explicitly is what proves the ward data round-tripped.
       await expect(reopenPage.locator('#ward-selector')).toHaveValue('');
       // The picker is empty before the case has loaded as well as after, so
-      // wait for the filing itself: an encrypted case is still decrypting
-      // when the password dialog closes (about half a second in WebKit).
-      await expect.poll(() => reopenPage.evaluate(() => (window as any).GuardianForms.testing.snapshot().caseFile.wards.length)).toBe(1);
+      // wait for what a filer waits for before choosing Edit: the dashboard
+      // listing the filing. Opening a case ends by drawing the dashboard,
+      // which closes any open filing, and that comes after the filing list
+      // fills in -- an encrypted case is still decrypting when the password
+      // dialog closes, and the startup finishes its own work after that.
+      await expect(reopenPage.locator('#main-content')).toContainText('Roundtrip Ward Encrypted');
       await reopenPage.evaluate(() => (() => { const tt = (window as any).GuardianForms.testing; return tt.activateFiling.open(tt.snapshot().caseFile.wards[0].wardId); })());
       await expect(reopenPage.locator('#ward-selector')).toHaveValue('Roundtrip Ward Encrypted');
     } finally {
