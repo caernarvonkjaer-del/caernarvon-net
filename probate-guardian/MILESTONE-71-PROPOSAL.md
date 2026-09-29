@@ -33,7 +33,7 @@ everything else is sequential because the items share files (see
 
 | # | Item | Subject | Decision | Build |
 | --- | --- | --- | --- | --- |
-| 1 | 71A | Measure how the Clerk's workbook displays a half cent, in Microsoft Excel itself | **DECIDED** — measure before choosing the rounding rule | Not started |
+| 1 | 71A | Measure how the Clerk's workbook displays a half cent, in Microsoft Excel itself | **DECIDED** — measure before choosing the rounding rule | **Done** 2026-09-29 — Excel = 15 significant digits, half away from zero (Appendix B) |
 | 2 | 71B | Filers who need no attorney are blocked on five of the nine forms | **DECIDED** — attorney optional when blank; ask the basis; the guardian who served the copies signs the certificate of service | Not started |
 | 3 | 71C | Every percentage field is secretly a money field: 150% accepted, "-10" silently becomes 10 | **DECIDED** — a real percent field, 0–100; an out-of-range share is an ordinary, bypassable error; imported share cells read as the workbook stores them | Not started |
 | 4 | 71D | Ward's %: a wrong on-screen instruction, and three different answers for a blank share | **DECIDED** — fix the text; a blank share counts as 0%, as in the court's workbook, and prints as blank, not "100%" | Not started |
@@ -88,7 +88,7 @@ describe the report's P0 list as closed.
 | Legal Q-03 (audit-fee base) | The workbook's fee table (`PART II, III` rows 13–17) lists tiers by "value" with no base formula; net vs gross is a legal question for the Clerk. |
 | BUG-08, except the carry (Trust Accounting never identifies the trust) | 71E only stops the wrong carry (D9). Choosing which Part VIII trust a Trust Accounting reports on, carrying its identity, and computing its starting figure need their own design: the Clerk's trust work slip starts a first trust accounting from "the disbursement amount on the annual accounting", which is not Part VIII's value. Still open; still rated P0 by the report. |
 | BUG-01, BUG-09, BUG-10, BUG-12, and all other report items | Separate defects with separate root causes. BUG-09 (title-case) and BUG-01 (positive loss; the report rated it P0) are confirmed from source and are good candidates for a follow-on milestone. BUG-10's likely cause is a load race, not two gate functions, and needs a reproduction first. |
-| Found while reviewing: the Part VIII trust amount may print as a date in Excel | The Clerk's `PART VIII` formats D16, D17 and D18 (type, percentage and amount of the trust) as dates (`[$-409]mmmm d, yyyy;@`, parsed). The exporter writes the percentage as text, which displays as typed, but writes the amount as a number (`annual-accounting/excel.js:467-468`), which Excel would show as a date. **Provisional** (AGENTS.md §10 P2): inferred from the template and the writer, not yet seen in an exported file. 71A's Excel session reads those two cells in a real export and records what it finds; the fix is a separate item and a Clerk question. |
+| Found while reviewing: the Part VIII trust amount prints as a date in Excel | The Clerk's `PART VIII` formats D16, D17 and D18 (type, percentage and amount of the trust) as dates (`[$-409]mmmm d, yyyy;@`, parsed). The exporter writes the percentage as text, which displays as typed, but writes the amount as a number (`annual-accounting/excel.js:467-468`). **Confirmed by 71A in a real export:** a trust amount of $80,000 displays as "January 11, 2119" ([Appendix B](#appendix-b--excel-rounding-measurement)). The fix is a separate item and a Clerk question. |
 | Found while reviewing: activity-log entries tagged with the wrong filing | `appendAuditLogEntry()` (`src/core/activity/audit-log.js:46`) replaces an explicit `wardId` with the active filing's, so an entry about another filing (for example `PARTY_SYNC` on a closed filing) is tagged with whichever filing is open. That matters for single-filing exports. Found while designing D8's log entry, which D13 withdrew; the fix is a separate item. |
 
 ---
@@ -165,7 +165,7 @@ out. None may be described in release notes as solved.
 | **The guardian's certificate of service is app-authored filed text the Clerk has not reviewed.** Rules 2.515 and 2.516 support a guardian certifying service; neither establishes what the Pinellas Clerk accepts or the wording it prefers. Releasing before the Clerk answers is a conscious **local-practice risk acceptance**, not a legal determination. | D5, D11; release gate declined | A certificate signed by the guardian, in the app's wording | Release notes; [Questions for the Clerk](#questions-for-the-clerk) 1–2; 71B's legal framing |
 | **Inventory → Annual now carries a Starting Balance where it carried none.** Justified by Rule 5.696(b)(1), and what the draft wrongly said already happened, but still a behavior change a returning filer will notice. | D6 as corrected | A prefilled Starting Balance on a converted first Annual | Release notes; `describeConversion()`'s text; `filing-conversion.characterization.spec.ts` and 71E's `carried-balance.spec.js` |
 | **A Trust Accounting starts with a blank Starting Balance.** D9 stops a wrong figure without supplying the right one. | D9 | A blank box and a note quoting the work slip | Release notes; BUG-08 stays open |
-| **The Part VIII trust amount may print as a date in Excel.** Provisional; 71A checks it. | Not in scope | Possibly a date in the exported workbook's Part VIII | [Not covered](#what-this-milestone-covers-and-what-it-does-not); Clerk question 7 |
+| **The Part VIII trust amount prints as a date in Excel.** Confirmed by 71A ($80,000 → "January 11, 2119"). | Not in scope | A date instead of the trust amount in the exported workbook's Part VIII | [Not covered](#what-this-milestone-covers-and-what-it-does-not); Clerk question 7 |
 | **Activity-log entries about another filing are tagged with the open filing.** Untouched by this milestone, which (after D13) writes no activity-log entries. | Not in scope | Single-filing exports can include or omit the wrong entries | [Not covered](#what-this-milestone-covers-and-what-it-does-not) |
 | **BUG-01 and the rest of BUG-08 remain open**, both rated P0 by the report. | Requester's triage | Unchanged | [What this milestone covers](#what-this-milestone-covers-and-what-it-does-not) |
 
@@ -321,6 +321,18 @@ Legal framing: none — this measures a display behavior. Cross-form: the
 measurement covers all three workbooks' total cells (step 2), and the format
 is the same in all three (step 1), so one function can serve every form. If
 71A finds otherwise, that too is the decision point.
+
+### Build record — DONE 2026-09-29
+
+Measured on the development workstation (Excel 16.0.19127.20752, en-US).
+Results and the specification are in [Appendix B](#appendix-b--excel-rounding-measurement):
+the rule "15 significant digits, then half away from zero" matched Excel on
+all 3,480 controlled cases and all 322 visible money cells of three real
+exports. `r2()` missed 1,712 of the controlled cases, `toFixed(2)` 1,648, and
+`toLocaleString` 3. The decision point did not trigger. Nothing in the
+repository changed except this document. The Part VIII date-format finding
+was confirmed from a real export (trust amount $80,000 shown as
+"January 11, 2119").
 
 ---
 
@@ -1459,8 +1471,8 @@ answered by a default the requester has chosen.
    1's type, percentage and amount cells (D16, D17, D18) as dates
    (`mmmm d, yyyy`), and Trusts 2 and 3's percentage cells (D27, D37) the same
    way (the cells checked). Intended? A trust amount
-   entered as a number would display as a date. 71A confirms what an export
-   actually shows.
+   entered as a number displays as a date (71A: $80,000 shows as "January 11,
+   2119").
 8. **A trust accounting's starting figure (D9, BUG-08 follow-on).** For a first
    trust accounting, is "the disbursement amount on the annual accounting" a
    single line the app could identify (for example, a Schedule E transfer to
@@ -1539,9 +1551,100 @@ REVIEW.docx` and `GD ANN Work slip Simplified 02272020.docx`.
 
 # Appendix B — Excel rounding measurement
 
-*To be filled by 71A.* The conditions (Excel version and build, separators,
-regional format); each value, its formula (if any), the number format applied
-(as read from the template's `styles.xml`), Excel's `.Text`, and the output of
-each of the app's three current methods; the sweep's disagreement count per
-method; the real-export readings for all three workbooks and for
-`'PART VIII'!D17`/`D18`; then the rounding specification 71E implements.
+Measured 2026-09-29 by 71A, through Excel's COM interface, read-only; the
+scratch workbook was never saved and the throwaway export spec was deleted.
+
+**Conditions.** Microsoft Excel 16.0.19127.20752 (`Application.Build` 19127),
+Windows 11 Enterprise 10.0.26100, culture `en-US`; decimal separator `.`,
+thousands separator `,`, `UseSystemSeparators` on. The result below is claimed
+for these conditions only.
+
+**Controlled workbook: 3,480 cases.** Each was generated in Node and written
+into Excel as the identical double (emitted with `String(x)`, parsed by .NET's
+round-trip parser). Excel then formatted each case three ways: the Clerk's
+money format `"$"#,##0.00_);\("$"#,##0.00\)` (numFmtId 7), `#,##0.00`, and
+`0.00`. Every column was 40 characters wide; no `####` reading occurred.
+
+- *named* (16): the values in 71A's table, `0.125`, `0.005`, `999999999.995`,
+  and the negative of each;
+- *sweep* (3,400): every half-cent ending `.005`–`.995` on 17 integer parts
+  from 0 to 999,999,999, and each negative;
+- *product* (56): `full × share` computed by an Excel formula, for eight
+  amounts ending in odd cents and seven shares (0.5, 0.25, 0.333333, 0.125,
+  0.75, 0.1, 0.07);
+- *sum* (8): additions whose binary result is not the decimal one
+  (`0.1+0.2`, `797229.18+0.0049999999`, …).
+
+For every formula case, Excel's stored double equalled JavaScript's own result
+(no 15-digit snapping on these operations). The three formats agreed on every
+case.
+
+| Method | Cases where it prints a different figure from Excel |
+| --- | --- |
+| `r2()` — `Math.round(x*100)/100` (`money.js:16`, the Inventory PDF) | **1,712** of 3,480 (it rounds negative halves toward zero, and `1.005` down) |
+| `toFixed(2)` (audit fee, Simplified Excel string) | **1,648** |
+| `toLocaleString` / `Intl.NumberFormat` (Annual and Simplified screens and PDFs) | **3** (`±797229.1849999999`, and the same value built by a sum) |
+| **Reduce to 15 significant digits, then round half away from zero** | **0** |
+
+Selected rows:
+
+| Value (double) | Excel displays | `r2()` | `toLocaleString` | `toFixed(2)` | 15 digits, half away |
+| --- | --- | --- | --- | --- | --- |
+| `797229.1849999999` | `$797,229.19` | 797,229.19 | **797,229.18** | **797,229.18** | 797,229.19 |
+| `-797229.1849999999` | `($797,229.19)` | **-797,229.18** | **-797,229.18** | **-797,229.18** | -797,229.19 |
+| `1.005` | `$1.01` | **1.00** | 1.01 | **1.00** | 1.01 |
+| `-1.005` | `($1.01)` | **-1.00** | -1.01 | **-1.00** | -1.01 |
+| `2.675` | `$2.68` | 2.68 | 2.68 | **2.67** | 2.68 |
+| `-0.005` | `($0.01)` | **0.00** | -0.01 | -0.01 | -0.01 |
+| `20000.005` (`40000.01×0.5`) | `$20,000.01` | 20,000.01 | 20,000.01 | 20,000.01 | 20,000.01 |
+| `999999999.995` | `$1,000,000,000.00` | 1,000,000,000.00 | 1,000,000,000.00 | 1,000,000,000.00 | 1,000,000,000.00 |
+
+**Real exports.** Three filings were built in the app (a throwaway Playwright
+spec against the local server) with half-cent Ward's shares, and exported with
+Save as Excel: an Annual Accounting, an Initial Inventory and a Simplified
+Accounting. Each `.xlsx` was opened read-only in Excel and fully recalculated.
+Then every formula cell on all 51 sheets whose value is a number and whose
+format is a two-decimal, non-percent format was read: **340 cells**, and no
+formula cell held an error value.
+
+- The 15-digit rule reproduces all 322 cells with visible text.
+- The other 18 hold `0` in the helper column `'SCH B-4 OTHER DISB p2'!AK8:AK25`,
+  whose Accounting format (`_($* #,##0.00_);…;_($* "-"??_);…`) displays no
+  digits for zero, so there is no rounding to compare.
+- `r2()` and `toLocaleString` each misprint one real cell:
+  `'PARTS I, II '!H31` on the Simplified workbook holds `1233.5549999999998`
+  (`1234.56 + 0.1 + 0.2 − 0.3 − 1.005`) and Excel shows **`$1,233.56`**; both
+  methods print 1,233.55.
+
+Key cells:
+
+| Workbook | Cell | Formula | Value | Excel displays |
+| --- | --- | --- | --- | --- |
+| Annual | `'SCH D-1 CASH p1'!K25` | `=H25*I25` | `20000.005` | `$20,000.01` |
+| Annual | `'SCH D-1 CASH p1'!K28` | `=H28*I28` | `797229.185` | `$797,229.19` |
+| Annual | `'PART VI, VII '!I20` | `=I8+I11+I17+I19` | `797729.18` | `$797,729.18` |
+| Annual | `'PART VI, VII '!I30` | `=SUM(H25:H29)` | `819555.73621667` | `$819,555.74` |
+| Inventory | `'SUMMARY I '!H39` | `=H32+H38` | `818772.39875` | `$818,772.40` |
+| Simplified | `'PARTS I, II '!H31` | — | `1233.5549999999998` | `$1,233.56` |
+
+**Part VIII, confirmed.** With a trust at 25% and $80,000, the exported
+`'PART VIII'!D17` shows `25` (written as text, so the date format has no
+effect), but **`D18` shows `January 11, 2119`**: the number 80000 under the
+Clerk's date format `[$-409]mmmm d, yyyy;@`. The finding listed under
+[Not covered](#what-this-milestone-covers-and-what-it-does-not) is therefore
+confirmed, not provisional. It remains out of this milestone's scope.
+
+**Specification for 71E.** `roundCents(x)`:
+
+1. If `x` is not a finite number, the result is 0.
+2. Take the decimal form of `x` to **15 significant digits** (`x.toPrecision(15)`,
+   expanded if in exponent form).
+3. Round that decimal — not the binary value — to two places, **half away
+   from zero**: `…5` in the third decimal rounds up in magnitude for positive
+   and negative alike.
+4. Return the resulting two-decimal figure; `formatMoney()` prints that figure's
+   digits directly, never re-rounding the binary result.
+
+The decision point did not trigger. Excel's display is a deterministic
+function of the stored double alone, and the same function holds under all
+three formats measured.
