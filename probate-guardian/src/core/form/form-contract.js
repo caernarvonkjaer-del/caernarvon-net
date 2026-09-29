@@ -1,6 +1,7 @@
 // Milestone 24: Shared Form Contract & Two-Phase Field Commit API
 // Governs storage sanitization, identifier preservation, date normalization, and blur formatting.
 
+import { percentProblem } from '../validation/percent-range.js';
 import { parseFlexibleDate, formatDisplayDate } from './date-parser.js';
 import {
   clearFieldDraft,
@@ -312,6 +313,8 @@ export function getControlKind(control) {
   if (format === 'address' || has('address') || has('street')) return 'address';
   if (format === 'phone' || has('phone')) return 'phone';
   if (format === 'ssn' || has('ssn') || has('ein')) return 'ssn';
+  // Milestone 71C: a share (0-100), its own kind -- see percent-range.js.
+  if (format === 'percent') return 'percent';
   if (format === 'signed-decimal') return 'signed-money';
   if (format === 'decimal' || control.type === 'number') return 'money';
   if (control.type === 'date' || has('date')) return 'date';
@@ -396,14 +399,16 @@ export function writeDraftValue(control, options = {}) {
     ? (control.dataset?.formValue === 'yes-no' ? (control.checked ? 'Yes' : 'No') : control.checked)
     : control.value;
 
-  if ((kind === 'money' || kind === 'signed-money') && !isCheckbox) {
+  if ((kind === 'money' || kind === 'signed-money' || kind === 'percent') && !isCheckbox) {
     // Live character filtering only -- the caret-safe kind of formatting (a
     // rejected keystroke, like maxlength), never a rewrite. Both legacy write
     // paths did this for amounts, and the live schedule totals read the model
     // on every keystroke, so a typed "1,000" must not sit there as 1 until
     // blur. Phone/SSN stay blur-only: those formatters insert punctuation and
     // move the caret, which Milestone 24 ruled out here on purpose.
-    const filter = kind === 'signed-money' ? sanitizeDecimal : sanitizeNonNegativeDecimal;
+    // Milestone 71C: a share keeps its minus sign visible, so the filer sees
+    // what they typed and the range check (percent-range.js) can say so.
+    const filter = kind === 'money' ? sanitizeNonNegativeDecimal : sanitizeDecimal;
     const filtered = filter(rawValue);
     if (control.value !== filtered) control.value = filtered;
     rawValue = filtered;
@@ -549,16 +554,29 @@ export function finalizeFieldValue(control, options = {}) {
     const formatted = formatSafeTitleCase(rawValue);
     control.value = formatted;
     if (setPath) setPath(getD(), path, formatted);
+  } else if (kind === 'percent') {
+    // Milestone 71C: a share stores a number, or '' for an empty box -- never
+    // money's `|| 0`, which would record a cleared share as an entered 0% and
+    // silence "Ward's % is required". The minus sign stays; an out-of-range
+    // share is shown here and reported by the form's validator.
+    const cleaned = sanitizeDecimal(rawValue);
+    control.value = cleaned;
+    const stored = parseStoredDecimal(cleaned);
+    if (setPath) setPath(getD(), path, stored);
+    setPercentFeedback(control, percentProblem(stored));
   } else if (kind === 'money') {
     const cleaned = sanitizeNonNegativeDecimal(rawValue);
     control.value = cleaned;
-    if (setPath) setPath(getD(), path, parseFloat(cleaned) || 0);
+    // Milestone 71C/71E: data-field-blank="keep" (renderFormField()'s
+    // keepBlank option) stores '' for an empty box, so "empty" and "$0.00"
+    // stay distinguishable. Opt-in per field; every other amount is unchanged.
+    if (setPath) setPath(getD(), path, keepsBlank(control) ? parseStoredDecimal(cleaned) : (parseFloat(cleaned) || 0));
   } else if (kind === 'signed-money') {
     // "Enter as negative" amounts (Annual Schedule C losses, Schedule E
     // transfers out): the one money kind that keeps a leading minus.
     const cleaned = sanitizeDecimal(rawValue);
     control.value = cleaned;
-    if (setPath) setPath(getD(), path, parseFloat(cleaned) || 0);
+    if (setPath) setPath(getD(), path, keepsBlank(control) ? parseStoredDecimal(cleaned) : (parseFloat(cleaned) || 0));
   }
 
   runFieldWriteSideEffects(path, control);
@@ -614,6 +632,75 @@ export function sanitizeNonNegativeDecimal(s){
 // from app-wide (inconsistent '-' handling and no keydown events from the
 // spinner buttons across WebView versions) -- these two were simply never
 // migrated when the rest of the app was.
+// Milestone 71C. The sanitizers above take `s||''`, so a stored number 0
+// renders as an empty box -- harmless for an amount, wrong for a share, where
+// 0% is an answer. displayDecimal() is how a percent (or a blank-keeping
+// amount) field draws the value the model holds: '' for blank, a number as
+// written, a string sanitized (minus kept when `signed`).
+export function displayDecimal(value, { signed = true } = {}) {
+  if (value === '' || value === null || value === undefined) return '';
+  if (typeof value === 'number') return Number.isFinite(value) ? String(value) : '';
+  return signed ? sanitizeDecimal(value) : sanitizeNonNegativeDecimal(value);
+}
+
+// The number a sanitized entry stands for, or '' when it stands for none (an
+// empty box, or an entry still being typed: "-", ".", "-.").
+export function parseStoredDecimal(cleaned) {
+  const s = String(cleaned ?? '').trim();
+  if (s === '' || s === '-' || s === '.' || s === '-.') return '';
+  const n = parseFloat(s);
+  return Number.isFinite(n) ? n : '';
+}
+
+const keepsBlank = (control) => control?.dataset?.fieldBlank === 'keep';
+
+// Inline feedback for a share outside 0-100 -- the same shape as
+// setCityStateZipFeedback() above (is-invalid, aria-invalid, and an
+// .invalid-feedback message tied in through aria-describedby).
+export function setPercentFeedback(control, problem) {
+  if (!control) return;
+  if (problem) {
+    control.classList.add('is-invalid');
+    control.setAttribute('aria-invalid', 'true');
+  } else {
+    control.classList.remove('is-invalid');
+    control.removeAttribute('aria-invalid');
+  }
+  if (typeof control.insertAdjacentElement !== 'function') return;
+  let feedback = control.parentElement?.querySelector?.('[data-percent-feedback="true"]') || null;
+  if (problem) {
+    if (!feedback) {
+      feedback = document.createElement('div');
+      feedback.className = 'invalid-feedback d-block';
+      feedback.dataset.percentFeedback = 'true';
+      feedback.id = `pct_feedback_${Math.random().toString(36).slice(2, 9)}`;
+      (control.closest?.('.input-group') || control).insertAdjacentElement('afterend', feedback);
+    }
+    feedback.textContent = `The percentage ${problem}.`;
+    const ids = new Set(String(control.getAttribute('aria-describedby') || '').split(/\s+/).filter(Boolean));
+    ids.add(feedback.id);
+    control.setAttribute('aria-describedby', [...ids].join(' '));
+  } else if (feedback) {
+    const ids = String(control.getAttribute('aria-describedby') || '').split(/\s+/).filter((id) => id && id !== feedback.id);
+    if (ids.length) control.setAttribute('aria-describedby', ids.join(' '));
+    else control.removeAttribute('aria-describedby');
+    feedback.remove();
+  }
+}
+
+// Milestone 71C: on render, every percent field shows whether the share it
+// holds is out of range -- so a reopened filing says what is wrong without
+// the filer touching the field first. The Inventory's bindForms() does the
+// same for its own data-bind shares.
+export function syncPercentFeedback(container) {
+  if (!container || typeof container.querySelectorAll !== 'function') return;
+  container.querySelectorAll('input[data-field-kind="percent"]').forEach((el) => {
+    const path = getControlPath(el);
+    if (!path || !getPath) return;
+    setPercentFeedback(el, percentProblem(getPath(getD(), path)));
+  });
+}
+
 export function sanitizeDecimal(s){
   const str=String(s||'');
   const neg=str.trim().startsWith('-');

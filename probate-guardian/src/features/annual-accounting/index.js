@@ -64,7 +64,7 @@ import { promptScheduleAckIfNeeded } from '../../core/filing/schedule-doc-ack.js
 import { renderReportingPeriodFields } from '../../core/form/cards/ward-demographics-card.js';
 import { esc } from '../../core/filing/escape-html.js';
 import { ic } from '../../core/ui/icons.js';
-import { sanitizeDecimal } from '../../core/form/form-contract.js';
+import { sanitizeDecimal, syncPercentFeedback } from '../../core/form/form-contract.js';
 import { guardianHasAnyData } from '../../core/validation/row-started.js';
 import { formDisplayName } from '../../core/filing/filing-registry.js';
 import { annualCompletion } from '../../core/status/completion.js';
@@ -82,6 +82,7 @@ import { setAccountingFilingType } from './filing-type.js';
 import { navigate } from '../../core/navigation/router.js';
 import { calcTotalsAnnual, annualReconcileState, n, pct } from './totals.js';
 import { isAttorneyStarted } from '../../core/validation/attorney-block.js';
+import { percentProblem } from '../../core/validation/percent-range.js';
 import { resolveServiceCertifier, certifierChoiceNeeded, certifyingCandidates, serviceCertifierChoiceHTML, waiverBasisQuestionHTML } from '../../core/filing/unrepresented-filing.js';
 import { watchAttorneyRequiredMarkers } from '../../core/form/attorney-required-markers.js';
 
@@ -175,6 +176,7 @@ export async function mount(container, page, { signal } = {}) {
   }
   container.innerHTML = html;
   bindEvents(container);
+  syncPercentFeedback(container);
   container.scrollTop = 0;
   if (page === '/' || !page || page === '/p1') linkAccordions('instructionsZoneAnnual', 'importZonePart1');
   signatureHandles.get(container)?.forEach((h) => h.destroy());
@@ -479,12 +481,16 @@ function countyInputD(label,val,setter){
   const inputId='cty_'+Math.random().toString(36).slice(2,9);
   return `<div class="mb-2"><label class="form-label" for="${inputId}">${label}</label>${countyAutocompleteHTML(inputId,val,setterPath(setter))}</div>`;
 }
-function inpDWithTooltip(label,tooltipKey,val,setter,req=false,type='text'){
+// Milestone 71C: `kind` passes a field kind through to the renderer --
+// `type: 'number'` alone always meant money, so a Ward's % could not be a
+// percent field (0-100, minus kept) without it.
+function inpDWithTooltip(label,tooltipKey,val,setter,req=false,type='text',kind=null){
   return renderFormField({
     path: setterPath(setter),
     label,
     value: val,
     type,
+    kind,
     required: req,
     tooltipKey,
     securitySanitize: true,
@@ -1082,7 +1088,7 @@ function pageSchD1Annual(){
           <div class="col-md-2">${yesNoRadioAnnualHTML(`schD1_restricted_${i}`,'Restricted?',r.restricted,`schD1.${i}.restricted`,true,'restricted')}</div>
           <div class="col-md-2">${inpD('Type (CD, Checking…)',r.type,`D.schD1[${i}].type=this.value`,true)}</div>
           <div class="col-md-2">${inpD('Full Asset Amount',r.fullAmount,`D.schD1[${i}].fullAmount=this.value`,true,'number')}</div>
-          <div class="col-md-2">${inpDWithTooltip("Ward's % ",'ward_pct',r.wardPct,`D.schD1[${i}].wardPct=this.value`,false,'number')}</div>
+          <div class="col-md-2">${inpDWithTooltip("Ward's % ",'ward_pct',r.wardPct,`D.schD1[${i}].wardPct=this.value`,false,'number','percent')}</div>
           <div class="col-md-2"><label class="form-label">Ward's Amount</label><input class="form-control" readonly value="${fmtAnnual(wardAmt)}" data-annual-calc="schD1.${i}.wardAmt"></div>
         </div></div>
       </div></div>`;
@@ -1117,7 +1123,7 @@ function pageSchD2Annual(){
           <div class="col-md-6">${inpD('Description / Address / Owners',r.description,`D.schD2[${i}].description=this.value`,true)}</div>
           <div class="col-md-2">${yesNoRadioAnnualHTML(`schD2_residence_${i}`,'Personal Residence?',r.residence,`schD2.${i}.residence`,true,'personal_residence')}</div>
           <div class="col-md-2">${yesNoRadioAnnualHTML(`schD2_income_${i}`,'Income Property?',r.income,`schD2.${i}.income`,true,'income_property')}</div>
-          <div class="col-md-2">${inpDWithTooltip("Ward's % ",'ward_pct',r.wardPct,`D.schD2[${i}].wardPct=this.value`,false,'number')}</div>
+          <div class="col-md-2">${inpDWithTooltip("Ward's % ",'ward_pct',r.wardPct,`D.schD2[${i}].wardPct=this.value`,false,'number','percent')}</div>
           <div class="col-md-3">${inpD('Full Asset Value',r.fullValue,`D.schD2[${i}].fullValue=this.value`,true,'number')}</div>
           <div class="col-md-3">${inpDWithTooltip('Carrying Value','carrying_value',r.carryingValue,`D.schD2[${i}].carryingValue=this.value`,true,'number')}</div>
           <div class="col-md-3"><label class="form-label">Total Value</label><input class="form-control" readonly value="${fmtAnnual(wardVal)}" data-annual-calc="schD2.${i}.wardVal"></div>
@@ -1153,7 +1159,7 @@ function pageSchD3Annual(){
         <div class="entry-card-body"><div class="row g-2">
           <div class="col-md-6">${inpD('Description / Location / Owners',r.description,`D.schD3[${i}].description=this.value`,true)}</div>
           <div class="col-md-2">${inpD('Full Asset Amount',r.fullAmount,`D.schD3[${i}].fullAmount=this.value`,true,'number')}</div>
-          <div class="col-md-2">${inpDWithTooltip("Ward's % ",'ward_pct',r.wardPct,`D.schD3[${i}].wardPct=this.value`,false,'number')}</div>
+          <div class="col-md-2">${inpDWithTooltip("Ward's % ",'ward_pct',r.wardPct,`D.schD3[${i}].wardPct=this.value`,false,'number','percent')}</div>
           <div class="col-md-2">${inpDWithTooltip('Carrying Value','carrying_value',r.carryingValue,`D.schD3[${i}].carryingValue=this.value`,true,'number')}</div>
           <div class="col-md-2"><label class="form-label">Ward's Amount</label><input class="form-control" readonly value="${fmtAnnual(wardAmt)}" data-annual-calc="schD3.${i}.wardAmt"></div>
         </div></div>
@@ -1189,7 +1195,7 @@ function pageSchD4Annual(){
           <div class="col-md-5">${inpD('Description (stocks, annuities, policies, notes…)',r.description,`D.schD4[${i}].description=this.value`,true)}</div>
           <div class="col-md-2">${yesNoRadioAnnualHTML(`schD4_restricted_${i}`,'Restricted?',r.restricted,`schD4.${i}.restricted`,true,'restricted')}</div>
           <div class="col-md-2">${inpD('Full Asset Amount',r.fullAmount,`D.schD4[${i}].fullAmount=this.value`,true,'number')}</div>
-          <div class="col-md-2">${inpDWithTooltip("Ward's % ",'ward_pct',r.wardPct,`D.schD4[${i}].wardPct=this.value`,false,'number')}</div>
+          <div class="col-md-2">${inpDWithTooltip("Ward's % ",'ward_pct',r.wardPct,`D.schD4[${i}].wardPct=this.value`,false,'number','percent')}</div>
           <div class="col-md-2">${inpDWithTooltip('Carrying Value','carrying_value',r.carryingValue,`D.schD4[${i}].carryingValue=this.value`,true,'number')}</div>
           <div class="col-md-2"><label class="form-label">Total Value</label><input class="form-control" readonly value="${fmtAnnual(wardVal)}" data-annual-calc="schD4.${i}.wardVal"></div>
         </div></div>
@@ -1227,7 +1233,7 @@ function pageSchD5Annual(){
           <div class="col-md-2">${inpD('Loan / Account #',r.loanNo,`D.schD5[${i}].loanNo=this.value`,true)}</div>
           <div class="col-md-2"><label class="form-label" for="schD5_loanType_${i}">Type (M/N/L/O) <span class="req">*</span></label><select class="form-select" id="schD5_loanType_${i}" data-annual-path="schD5.${i}.loanType"><option value="">—</option>${LIAB_TYPES.map(lt=>`<option value="${lt}" ${r.loanType===lt?'selected':''}>${lt}</option>`).join('')}</select></div>
           <div class="col-md-2">${inpDWithTooltip('Full Debt Amount','full_debt',r.fullDebt,`D.schD5[${i}].fullDebt=this.value`,true,'number')}</div>
-          <div class="col-md-2">${inpDWithTooltip("Ward's %",'ward_pct',r.wardPct,`D.schD5[${i}].wardPct=this.value`,true,'number')}</div>
+          <div class="col-md-2">${inpDWithTooltip("Ward's %",'ward_pct',r.wardPct,`D.schD5[${i}].wardPct=this.value`,true,'number','percent')}</div>
           <div class="col-md-2"><label class="form-label">Ward's Balance Due</label><input class="form-control" readonly value="${fmtAnnual(wardBal)}" data-annual-calc="schD5.${i}.wardBal"></div>
         </div></div>
       </div></div>`;
@@ -1412,7 +1418,7 @@ function pagePart8Annual(){
             <div class="col-md-4">${inpD('Trustee Account Number',t.accountNo,`D.trusts[${i}].accountNo=this.value`,true)}</div>
             <div class="col-md-4">${inpD('Date Trust Created',t.dateCreated,`D.trusts[${i}].dateCreated=this.value`,true,'date')}</div>
             <div class="col-md-4">${inpD('Type of Trust',t.trustType,`D.trusts[${i}].trustType=this.value`,true)}</div>
-            <div class="col-md-4">${inpDWithTooltip("Ward's %",'ward_pct',t.wardPct,`D.trusts[${i}].wardPct=this.value`,false,'number')}</div>
+            <div class="col-md-4">${inpDWithTooltip("Ward's %",'ward_pct',t.wardPct,`D.trusts[${i}].wardPct=this.value`,false,'number','percent')}</div>
             <div class="col-md-8">${inpD('Amount (Ward\'s Interest)',t.wardAmount,`D.trusts[${i}].wardAmount=this.value`,false,'number')}</div>
           </div>
         </div>
@@ -1808,6 +1814,20 @@ export function validateAnnual(){
   checkRows(d.schD3,[['description','Description'],['fullAmount','Full Amount'],['wardPct',"Ward's %"],['carryingValue','Carrying Value']],'Schedule D-3','schD3');
   checkRows(d.schD4,[['description','Description'],['restricted','Restricted?'],['fullAmount','Full Amount'],['wardPct',"Ward's %"],['carryingValue','Carrying Value']],'Schedule D-4','schD4');
   checkRows(d.schD5,[['description','Description'],['loanNo','Loan #'],['loanType','Loan Type'],['fullDebt','Full Debt'],['wardPct',"Ward's %"]],'Schedule D-5','schD5');
+  // Milestone 71C: a share is a percentage from 0 to 100 (percent-range.js);
+  // out of range or unreadable is an ordinary, bypassable issue (D7). Blank
+  // is checkRows()' business above. Part VIII's trust share gets the same.
+  [['schD1','Schedule D-1'],['schD2','Schedule D-2'],['schD3','Schedule D-3'],['schD4','Schedule D-4'],['schD5','Schedule D-5']].forEach(([collection,label])=>{
+    (d[collection]||[]).forEach((r,i)=>{
+      if(!rowHasAnyData(r))return;
+      const problem=percentProblem(r.wardPct);
+      if(problem)errs.push(issue(`${label} — Line ${i+1} — Ward's % ${problem}`,`${collection}.${i}.wardPct`));
+    });
+  });
+  (d.trusts||[]).forEach((tr,i)=>{
+    const problem=percentProblem(tr&&tr.wardPct);
+    if(problem)errs.push(issue(`Part VIII — Trust ${i+1} — Ward's % ${problem}`,`trusts.${i}.wardPct`));
+  });
   checkRows(d.schE,[['bankName','Bank Name']],'Schedule E','schE');
   (d.schE||[]).forEach((r,i)=>{
     if(!rowHasAnyData(r))return;

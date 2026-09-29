@@ -3,7 +3,7 @@
 
 import { formatDisplayDate } from './date-parser.js';
 import { ic } from '../ui/icons.js';
-import { formatAccountNumber, formatAddress, formatBarNumber, formatCaseNumber, formatCheckNumber, formatCityStateZip, formatName, formatPhone, formatSSN, sanitizeNonNegativeDecimal } from './form-contract.js';
+import { displayDecimal, formatAccountNumber, formatAddress, formatBarNumber, formatCaseNumber, formatCheckNumber, formatCityStateZip, formatName, formatPhone, formatSSN, sanitizeNonNegativeDecimal } from './form-contract.js';
 import { tooltip } from '../help/tooltips.js';
 import { getFieldDraftDisplay } from './commit-coordinator.js';
 
@@ -117,6 +117,11 @@ export function renderFormField({
   // field of every filing type. An opt-in rather than keyed off that format
   // attribute, so the other eight filing types keep never running it.
   securitySanitize = false,
+  // Milestone 71C/71E: store '' for an empty box instead of money's 0, so an
+  // unanswered field and an entered 0 stay distinguishable. Stamps
+  // data-field-blank="keep", which finalizeFieldValue() reads. Percent fields
+  // always keep blank; this opts an amount in (Starting Balance).
+  keepBlank = false,
 } = {}) {
   const inputId = id || `inp_${(path || 'field').replace(/[^a-zA-Z0-9_]/g, '_')}_${Math.random().toString(36).slice(2, 7)}`;
   const fieldKind = kind || inferFieldKind(label, type);
@@ -124,7 +129,14 @@ export function renderFormField({
   const isPreserve = ['text', 'caseNumber', 'accountNumber', 'checkNumber', 'barNumber', 'ssn'].includes(fieldKind);
   const resolvedPolicy = policy || (isPreserve ? 'preserve' : (fieldKind === 'name' || fieldKind === 'address') ? 'display-only' : 'normalize');
 
-  const isAmountField = type === 'number' || fieldKind === 'money';
+  // Milestone 71C/71E: a share (`kind: 'percent'`) and a signed amount
+  // (`kind: 'signed-money'`) are amount fields too, but keep a typed minus
+  // and are stamped with their own format. Before 71C a passed kind changed
+  // nothing here: `type: 'number'` alone made every one of them `money`,
+  // stamped `decimal` and drawn with its minus stripped.
+  const isPercentKind = fieldKind === 'percent';
+  const isSignedKind = fieldKind === 'signed-money';
+  const isAmountField = type === 'number' || fieldKind === 'money' || isPercentKind || isSignedKind;
   const isDate = fieldKind === 'date';
   const isSSN = fieldKind === 'ssn';
   const isPhone = fieldKind === 'phone';
@@ -141,6 +153,8 @@ export function renderFormField({
     : isBarNumber ? 'bar'
     : isAccountNumber ? 'account'
     : isCheckNumber ? 'check'
+    : isPercentKind ? 'percent'
+    : isSignedKind ? 'signed-decimal'
     : isAmountField ? 'decimal'
     : isPhone ? 'phone'
     : isName ? 'name'
@@ -178,19 +192,24 @@ export function renderFormField({
     formatted = formatDisplayDate(value) || value;
   }
 
-  const cleanedValue = (isAmountField && typeof window !== 'undefined')
-    ? sanitizeNonNegativeDecimal(formatted)
-    : formatted;
+  const cleanedValue = (isPercentKind || isSignedKind || (isAmountField && keepBlank))
+    ? displayDecimal(value, { signed: isPercentKind || isSignedKind })
+    : (isAmountField && typeof window !== 'undefined')
+      ? sanitizeNonNegativeDecimal(formatted)
+      : formatted;
 
   // Guardian Inventory's numInput() has no label of its own (a separate
   // reqLabel()/optLabel() call renders it) -- it named a field's dollar-vs-
   // percent wrapping from its bind path's own "...Percent" suffix instead.
   // Checked here too so delegating it to this renderer doesn't lose that.
-  const isPercentField = isAmountField && (label.includes('%') || label.toLowerCase().includes('percent') || /Percent$/i.test(path));
+  const isPercentField = isAmountField && (isPercentKind || label.includes('%') || label.toLowerCase().includes('percent') || /Percent$/i.test(path));
   const isDollarField = isAmountField && !isPercentField;
 
   const inputType = isAmountField ? 'text' : (isDate ? 'text' : type);
-  const inputMode = isAmountField ? ' inputmode="decimal"' : (isDate ? ' inputmode="text"' : '');
+  // Milestone 71E: iOS's decimal keypad has no minus key, so a signed amount
+  // (a negative Starting Balance) gets the text keyboard. A share never needs
+  // a minus -- a negative share is an error -- so it keeps the decimal pad.
+  const inputMode = isSignedKind ? ' inputmode="text"' : isAmountField ? ' inputmode="decimal"' : (isDate ? ' inputmode="text"' : '');
   const actualPlaceholder = placeholder !== null
     ? ` placeholder="${esc(placeholder)}"`
     : (isDate ? ' placeholder="MM/DD/YYYY"' : '');
@@ -210,9 +229,10 @@ export function renderFormField({
     : ` data-form-path="${esc(path)}" data-annual-path="${esc(path)}"`;
   const inputTypeAttr = bindInputType ? ` data-input-type="${esc(bindInputType)}"` : '';
   const sanitizeAttr = (securitySanitize && format === 'security') ? ' data-field-sanitize="security"' : '';
+  const blankAttr = (keepBlank || isPercentKind) ? ' data-field-blank="keep"' : '';
 
   const fieldPathAttr = claimSharedWriteListener ? ` data-field-path="${esc(path)}"` : '';
-  const inputHtml = `<input type="${inputType}" class="${classes.join(' ')}" id="${inputId}" autocomplete="off"${inputMode}${actualPlaceholder} value="${esc(cleanedValue)}"${fieldPathAttr}${bindingAttrs} data-field-label="${esc(label)}" data-annual-label="${esc(label)}" data-field-kind="${fieldKind}" data-field-format-policy="${resolvedPolicy}"${required ? ' data-field-required="true"' : ''}${format ? ` data-annual-format="${format}" data-form-format="${format}"` : ''}${isWardField ? ' data-sync-ward-name="true"' : ''}${isGuardField ? ' data-sync-guardian-name="true"' : ''}${inputTypeAttr}${sanitizeAttr}${ariaDesc}>`;
+  const inputHtml = `<input type="${inputType}" class="${classes.join(' ')}" id="${inputId}" autocomplete="off"${inputMode}${actualPlaceholder} value="${esc(cleanedValue)}"${fieldPathAttr}${bindingAttrs} data-field-label="${esc(label)}" data-annual-label="${esc(label)}" data-field-kind="${fieldKind}" data-field-format-policy="${resolvedPolicy}"${required ? ' data-field-required="true"' : ''}${format ? ` data-annual-format="${format}" data-form-format="${format}"` : ''}${isWardField ? ' data-sync-ward-name="true"' : ''}${isGuardField ? ' data-sync-guardian-name="true"' : ''}${inputTypeAttr}${sanitizeAttr}${blankAttr}${ariaDesc}>`;
 
   const lockIcon = ic('lock', 14);
 

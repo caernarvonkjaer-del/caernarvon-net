@@ -14,6 +14,7 @@ import { getExcelJS, saveWorkbookFile, setCell, setDateCell } from '../../core/e
 import { hasIdentifiedPreparer } from '../../core/form/preparer-flag.js';
 import { migrateBondDepository, bondAmountFromCell } from '../../core/filing/bond-depository.js';
 import { readCellText, unwrapCellValue } from '../../core/excel/cell-reader.js';
+import { shareFromWorkbookCell } from '../../core/excel/share-cell.js';
 import { pruneSheets } from '../../core/excel/sheet-pruning.js';
 import {
   SCHEDULE_A1_PAGES, SCHEDULE_A2_PAGES, SCHEDULE_B1_PAGES, SCHEDULE_B2_PAGES,
@@ -50,22 +51,18 @@ import { navigate, renderPage } from '../../core/navigation/router.js';
 //   writer: blank stays blank (an empty Ward's % cell reads as 0 in the
 //           workbook, same as a blank percentage in the app); otherwise
 //           model 0-100 -> fraction 0-1.
-//   reader: a cell value <= 1 is a fraction -> 0-100; a value above 1 is a
-//           0-100 number a pre-60K export of this app wrote, kept as-is so
-//           those files still import. (A genuine fraction of exactly 1 is
-//           100%; a legacy "1" meaning 1% would read as 100% -- accepted, and
-//           the only ambiguity this rule has.)
+//   reader: Milestone 71C (decision D10) -- shareFromWorkbookCell() in
+//           src/core/excel/share-cell.js, shared with the Annual importer:
+//           every numeric share cell is a fraction (1.5 is 150%, which the
+//           range check flags), blank stays blank, unreadable text is kept as
+//           imported. It replaced this module's percentFromWorkbook(), which
+//           read any value above 1 as a pre-60K 0-100 figure -- so a genuine
+//           150% share imported as 1.5% -- and turned a blank cell into 0.
 const pctCell=(v)=>{
   if(v==null||v==='')return '';
   const num=parseFloat(v);
   return Number.isFinite(num)?num/100:'';
 };
-export function percentFromWorkbook(raw){
-  const num=parseFloat(raw);
-  if(!Number.isFinite(num))return 0;
-  const scaled=num>1?num:num*100;
-  return Math.round(scaled*1e6)/1e6;
-}
 
 // Each cap is the total row count across that schedule's template pages
 // (e.g. A-1 spans 3 pages holding 4 + 8 + 8). Initial Inventory overflows
@@ -660,8 +657,8 @@ function parseInitialInventoryWorkbook(wb){
   };
   const bool=(s,a)=>txt(s,a).toLowerCase()==='yes';
   const triState=(s,a)=>{const t=txt(s,a).trim().toLowerCase();if(t==='yes')return 'Yes';if(t==='no')return 'No';return '';};
-  // Milestone 60K: fraction -> 0-100, with pre-60K 0-100 files still read (see percentFromWorkbook).
-  const pct=(s,a)=>percentFromWorkbook(rawv(s,a));
+  // Milestone 60K wrote fractions; Milestone 71C (D10) reads every share cell as one.
+  const pct=(s,a)=>shareFromWorkbookCell(rawv(s,a));
   const readRows=(pages,reader)=>{const out=[];for(const{name,rows}of pages){const s=ws(name);if(!s)continue;for(const r of rows){const e=reader(s,r);if(e)out.push(e);}}return out;};
   const si=ws('SUMMARY I ');
   const inv={

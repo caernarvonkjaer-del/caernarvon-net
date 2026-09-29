@@ -350,7 +350,12 @@ test.describe('Guardian Inventory Excel export writes what the court form comput
       };
     });
     // Row 2 was rewritten to the legacy 50; rows 1 and 3 keep the fractions 0.25 and 1.
-    expect(imported.a1Pct).toEqual([25, 50, 100]);
+    // Milestone 71C (decision D10): a share cell is read the way the Clerk's
+    // workbook reads it -- 50 in a 0.00% cell is 5,000% -- so row 2 imports as
+    // 5000 and the range check flags it, instead of the pre-60K reading this
+    // spec used to pin (no such export needs reading: AGENTS.md section 8
+    // item 2, and the change fails visibly).
+    expect(imported.a1Pct).toEqual([25, 5000, 100]);
     // Row 2's account number was moved to the legacy fourth line; the reader finds it there.
     expect(imported.b4Acct).toEqual(['B4-ACCT-0', 'LEGACY-ACCT', 'B4-ACCT-100']);
     // The stored safe-deposit amount is gone from imported rows.

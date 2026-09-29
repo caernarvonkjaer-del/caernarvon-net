@@ -38,7 +38,10 @@ export function setupAmountFieldValidation() {
 }
 
 export function sanitizeNegativeAmounts(){
-  const amountFields=['fullAmount','wardPct','restrictedAmt','fullValue','carryingValue','wardPercent','wardB2','wardB3','fullAssetValue','fullDebtBalance','fullAssetAmount','wardValue','wardAmt','income','charge','tax','balance','price'];
+  // Milestone 71C: wardPct and wardPercent are no longer here. A share is a
+  // percent field whose minus sign stays visible so the range check can say
+  // so; clamping it on every open would set a typed -10 back to 0 unseen.
+  const amountFields=['fullAmount','restrictedAmt','fullValue','carryingValue','wardB2','wardB3','fullAssetValue','fullDebtBalance','fullAssetAmount','wardValue','wardAmt','income','charge','tax','balance','price'];
   const cleanValue=v=>{const n=parseFloat(v);return isNaN(n)?v:Math.max(0,n)};
   if(getD()){
     if(Array.isArray(getD().schD1)){getD().schD1.forEach(r=>{amountFields.forEach(f=>{if(f in r)r[f]=cleanValue(r[f])});})}

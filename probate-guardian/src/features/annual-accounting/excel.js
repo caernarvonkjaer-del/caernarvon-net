@@ -18,6 +18,7 @@ import { getExcelJS, numValue, percentValue, saveWorkbookFile, setCell, setDateC
 import { hasIdentifiedPreparer } from '../../core/form/preparer-flag.js';
 import { migrateBondDepository, bondAmountCellValue, bondAmountFromCell } from '../../core/filing/bond-depository.js';
 import { readCellText, unwrapCellValue } from '../../core/excel/cell-reader.js';
+import { shareFromWorkbookCell } from '../../core/excel/share-cell.js';
 import { planB4PagesToKeep, isB4RegisterSheetName, b4PageNumber, SCH_B4_ACCOUNT_BLOCKS, B4_REGISTER_PREFIX } from '../../core/excel/b4-register-pages.js';
 import { pruneSheets } from '../../core/excel/sheet-pruning.js';
 import { planSchB4Export } from '../../core/excel/b4-export-plan.js';
@@ -605,11 +606,13 @@ export async function importExcel(input){
         return '';
       };
       const gcNum=(ws,addr)=>{const v=gcv(ws,addr);if(v==null||v==='')return '';const n=typeof v==='number'?v:parseFloat(v);return isNaN(n)?'':n;};
-      // Inverse of the export's pv(): a percentage cell holds a decimal
-      // fraction (1 = 100%) when typed as a real Excel percentage, so
-      // values <=1 are scaled back up to match this app's convention of
-      // storing wardPct as a plain number (50, not 0.5).
-      const gcPct=(ws,addr)=>{const v=gcv(ws,addr);if(v==null||v==='')return '';const n=typeof v==='number'?v:parseFloat(v);if(isNaN(n))return '';return n<=1?String(r2(n*100)):String(n);};
+      // Inverse of the export's pv(): a share cell holds a fraction (1 =
+      // 100%), stored here as the 0-100 number the form collects. Milestone
+      // 71C (D10): shareFromWorkbookCell() (src/core/excel/share-cell.js),
+      // shared with the Inventory importer -- every numeric cell is a
+      // fraction, so 1.5 imports as 150% and is flagged rather than as 1.5%;
+      // unreadable text is kept as imported for the range check to report.
+      const gcPct=(ws,addr)=>shareFromWorkbookCell(gcv(ws,addr));
       const rowHasData=(...vals)=>vals.some(v=>v!=null&&String(v).trim()!=='');
 
       const D=getD();

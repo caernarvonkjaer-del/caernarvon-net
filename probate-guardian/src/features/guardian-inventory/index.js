@@ -31,6 +31,18 @@ import { getD, requestSave } from '../../core/state.js';
 import { saveData } from '../../core/persistence/case-file.js';
 import { afterChange, bindForms } from './form-binding.js';
 import { isAttorneyStarted } from '../../core/validation/attorney-block.js';
+import { percentProblem } from '../../core/validation/percent-range.js';
+
+// Milestone 71C: the 17 share fields' Inventory half -- every schedule's
+// Ward's %, and C-5's Joint Owner's %.
+const INVENTORY_SHARE_FIELDS = [
+  ['scheduleA1', 'A-1', 'wardPercent', "Ward's %"], ['scheduleA2', 'A-2', 'wardPercent', "Ward's %"],
+  ['scheduleB1', 'B-1', 'wardPercent', "Ward's %"], ['scheduleB2', 'B-2', 'wardPercent', "Ward's %"],
+  ['scheduleB3', 'B-3', 'wardPercent', "Ward's %"], ['scheduleB4', 'B-4', 'wardPercent', "Ward's %"],
+  ['scheduleC1', 'C-1', 'wardPercent', "Ward's %"], ['scheduleC2', 'C-2', 'wardPercent', "Ward's %"],
+  ['scheduleC3', 'C-3', 'wardPercent', "Ward's %"], ['scheduleC4', 'C-4', 'wardPercent', "Ward's %"],
+  ['scheduleC5', 'C-5', 'jointOwnerPercent', "Joint Owner's %"],
+];
 import { resolveServiceCertifier, certifyingCandidates, serviceCertifierChoiceHTML, waiverBasisQuestionHTML } from '../../core/filing/unrepresented-filing.js';
 import { watchAttorneyRequiredMarkers } from '../../core/form/attorney-required-markers.js';
 
@@ -464,15 +476,20 @@ function textInput(bind,placeholder='',type=''){
 // optLabel() call renders the caller's own label), which renderFormField()
 // now also checks for exactly this caller.
 function numInput(bind){
+  // Milestone 71C: a share (every `...Percent` path -- wardPercent on A-1 to
+  // C-4, jointOwnerPercent on C-5) is a percent field, 0-100 with its minus
+  // kept visible, not a money field with a "%" suffix; bindForms() handles
+  // the 'percent' input type.
+  const isShare = /Percent$/.test(bind);
   return renderFormField({
     path: bind,
     label: '',
     value: '',
-    kind: 'money',
+    kind: isShare ? 'percent' : 'money',
     policy: 'normalize',
     wrapperClass: '',
     binding: 'bind',
-    inputType: 'decimal',
+    inputType: isShare ? 'percent' : 'decimal',
     claimSharedWriteListener: false,
   });
 }
@@ -1382,6 +1399,18 @@ export function validateGuardian(d=getD()){
   d.scheduleC3.forEach((e,i)=>{const p=`C-3 row ${i+1}`,k=`scheduleC3.${i}`;req(e.defendantName,`${p} — Defendant Name`,`${k}.defendantName`);req(e.actionDescription,`${p} — Action Description`,`${k}.actionDescription`);req(e.status,`${p} — Status`,`${k}.status`);req(e.courtJurisdiction,`${p} — Court/Jurisdiction`,`${k}.courtJurisdiction`);if(e.estimatedSettlement<=0)push(`${p} — Estimated Settlement must be > 0.`,`${k}.estimatedSettlement`);});
   d.scheduleC4.forEach((e,i)=>{const p=`C-4 row ${i+1}`,k=`scheduleC4.${i}`;req(e.trustName,`${p} — Trust Name`,`${k}.trustName`);req(e.trusteeName,`${p} — Trustee Name`,`${k}.trusteeName`);req(e.trusteeAddress,`${p} — Trustee Address`,`${k}.trusteeAddress`);req(e.trusteeCityStateZip,`${p} — Trustee City/State/Zip`,`${k}.trusteeCityStateZip`);if(!e.dateCreated)push(`${p} — Date Created is required.`,`${k}.dateCreated`);if(e.trustAmount<=0)push(`${p} — Trust Amount must be > 0.`,`${k}.trustAmount`);});
   d.scheduleC5.forEach((e,i)=>{const p=`C-5 row ${i+1}`,k=`scheduleC5.${i}`;req(e.assetDescription,`${p} — Asset Description`,`${k}.assetDescription`);req(e.ownerName,`${p} — Owner Name`,`${k}.ownerName`);req(e.ownerAddress,`${p} — Owner Address`,`${k}.ownerAddress`);req(e.ownerCityStateZip,`${p} — Owner City/State/Zip`,`${k}.ownerCityStateZip`);req(e.relationshipToWard,`${p} — Relationship to Ward`,`${k}.relationshipToWard`);if(e.totalAssetValue<=0)push(`${p} — Total Asset Value must be > 0.`,`${k}.totalAssetValue`);});
+  // Milestone 71C: every share is a percentage from 0 to 100 (percent-range.js).
+  // An out-of-range or unreadable share is an ordinary, bypassable issue (D7).
+  // A-1's own "must be > 0" above already speaks for a blank, zero or negative
+  // share there, so this adds only what it does not: over 100, or unreadable.
+  INVENTORY_SHARE_FIELDS.forEach(([collection,route,field,label])=>{
+    (d[collection]||[]).forEach((e,i)=>{
+      const v=e&&e[field];
+      if(collection==='scheduleA1'&&!(Number(v)>0)&&percentProblem(v)!=='must be a number from 0 to 100')return;
+      const problem=percentProblem(v);
+      if(problem)push(`${route} row ${i+1} — ${label} ${problem}.`,`${collection}.${i}.${field}`);
+    });
+  });
   // Guardian #1 (index 0) is required and always validated, matching
   // pageD1()'s own always-show-index-0 rule -- only co-guardians (index>0)
   // are optional and skipped when entirely blank. Using the ORIGINAL index

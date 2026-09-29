@@ -35,7 +35,7 @@ everything else is sequential because the items share files (see
 | --- | --- | --- | --- | --- |
 | 1 | 71A | Measure how the Clerk's workbook displays a half cent, in Microsoft Excel itself | **DECIDED** — measure before choosing the rounding rule | **Done** 2026-09-29 — Excel = 15 significant digits, half away from zero (Appendix B) |
 | 2 | 71B | Filers who need no attorney are blocked on five of the nine forms | **DECIDED** — attorney optional when blank; ask the basis; the guardian who served the copies signs the certificate of service | **Built** 2026-09-29 (see its Build record) |
-| 3 | 71C | Every percentage field is secretly a money field: 150% accepted, "-10" silently becomes 10 | **DECIDED** — a real percent field, 0–100; an out-of-range share is an ordinary, bypassable error; imported share cells read as the workbook stores them | Not started |
+| 3 | 71C | Every percentage field is secretly a money field: 150% accepted, "-10" silently becomes 10 | **DECIDED** — a real percent field, 0–100; an out-of-range share is an ordinary, bypassable error; imported share cells read as the workbook stores them | **Built** 2026-09-29 (see its Build record) |
 | 4 | 71D | Ward's %: a wrong on-screen instruction, and three different answers for a blank share | **DECIDED** — fix the text; a blank share counts as 0%, as in the court's workbook, and prints as blank, not "100%" | Not started |
 | 5 | 71E | The app rounds money three different ways; carried balances are unrounded and inconsistent | **DECIDED** — one rounding rule matching the Clerk's workbook (per 71A); carry Line 30 and warn on mismatch; never carry the estate's net assets into or out of a Trust Accounting; keep negative balances | Not started |
 
@@ -958,7 +958,81 @@ would still arrive as 1.5%); *keep today's reading* (D10 — silent).
 9. **Cross-form.** One field kind for every percentage in the app. The Plans
    have no percentages.
 
-### Build record — NOT STARTED
+### Build record — BUILT 2026-09-29
+
+**What was built** (every layer of the design's table):
+
+- **The percent kind:**
+  - `getControlKind()` maps the new `percent` format to it;
+  - the live filter keeps the minus;
+  - the blur branch stores a number, or `''` for an empty box;
+  - `displayDecimal()` / `parseStoredDecimal()` draw and store shares
+    without turning a real 0 into an empty box;
+  - `setPercentFeedback()` and `syncPercentFeedback()` show an out-of-range
+    share inline, on blur and on render.
+- **The blank-keeping opt-in** for amounts (`data-field-blank="keep"`),
+  ready for 71E.
+- **The renderer** (`renderFormField()`) has percent and signed branches: its
+  own format, the minus kept, `displayDecimal()`, and the `keepBlank`
+  option. Signed amounts get `inputmode="text"`, because iOS's decimal pad
+  has no minus key. Shares keep the decimal pad, since a negative share is
+  an error anyway.
+- **The Inventory's `bindForms()`** has a `percent` input type. `numInput()`
+  routes every `...Percent` path to it. `inpDWithTooltip()` gains `kind`,
+  and the six Annual share inputs (D-1 to D-5 and Part VIII) pass
+  `percent`.
+- **`sanitizeNegativeAmounts()`** no longer clamps shares.
+- **`percent-range.js`**, used by:
+  - `validateGuardian()` (all 11 Inventory share fields, C-5 as "Joint
+    Owner's %");
+  - `validateAnnual()` (D-1 to D-5 and Part VIII);
+  - the Annual sidebar (`a-schd1` to `a-schd5`, `a-p8`).
+- **`share-cell.js`** (D10) replaces both importers' above-1 readers.
+- **The data model:** the 17 share rows gain the range; the Annual D rows
+  and Inventory A-1 are `conditional`, "required on a populated row".
+
+**Decisions taken during the build:**
+
+1. *Unreadable imported text is kept as imported, not blanked with an
+   import notice.* The importers have no notice channel. Keeping the text
+   lets the range check report it ("must be a number from 0 to 100"), which
+   is just as visible and alters nothing.
+2. *The share reader lives in its own module* (`src/core/excel/share-cell.js`),
+   not in `cell-reader.js`, whose header and spec keep it a closed
+   three-function cluster.
+3. *The inline message says "The percentage …"*, not "Ward's % …", because
+   C-5's field is the Joint Owner's %.
+4. *Inventory A-1 keeps its one existing "must be > 0" message* for a blank,
+   zero or negative share. The range check adds only over-100 and
+   unreadable, so a filer never sees two messages for one share.
+
+**Found, not fixed:**
+
+- The Inventory requires a share only on A-1. The other ten share fields
+  show a required marker, but no validator rule checks for a blank.
+- Schedule C's loss and Schedule E's transfer-out fields are hand-written
+  signed inputs with `inputmode="decimal"`, so an iOS keyboard cannot type
+  their minus.
+
+Both predate 71C and are left for a decision.
+
+**Tests:**
+
+- New: `tests/unit/percent-field.spec.js` (44) and
+  `tests/e2e/percent-range.spec.ts` (3). Every e2e value is typed with the
+  keyboard, and the import round trip goes through the filer's real
+  override.
+- Updated with a stated reason:
+  - `guardian-inventory-excel-schedule-layout.spec.ts`: its legacy-import
+    case now expects a cell of 50 to arrive as 5000;
+  - the completion golden: the D and Part VIII marks' range condition,
+    with its note extended.
+- **Red-first**, with `src/` stashed:
+  - the six out-of-range validator cases fail, because no issue was raised;
+  - the e2e Annual case fails because a typed `-10` shows as `10`, exactly
+    the report's BUG-03.
+- All unit specs pass. `verify:data-model` and `check:types` were run
+  before the commit.
 
 ---
 

@@ -7,7 +7,8 @@
 import { getFieldDraftDisplay } from '../../core/form/commit-coordinator.js';
 import { filterCountyDropdown } from '../../core/form/county-autocomplete.js';
 import { formatDisplayDate } from '../../core/form/date-parser.js';
-import { applyZipLimit, finalizeCaseNumber, formatAccountNumber, formatAddress, formatBarNumber, formatCaseNumber, formatCheckNumber, formatCityStateZip, formatName, formatPhone, formatSSN, runFieldWriteSideEffects, sanitizeNonNegativeDecimal } from '../../core/form/form-contract.js';
+import { applyZipLimit, displayDecimal, finalizeCaseNumber, formatAccountNumber, formatAddress, formatBarNumber, formatCaseNumber, formatCheckNumber, formatCityStateZip, formatName, formatPhone, formatSSN, parseStoredDecimal, runFieldWriteSideEffects, sanitizeDecimal, sanitizeNonNegativeDecimal, setPercentFeedback } from '../../core/form/form-contract.js';
+import { percentProblem } from '../../core/validation/percent-range.js';
 import { getPath, setPath } from '../../core/form/paths.js';
 import { fmt } from '../../core/format/money.js';
 import { getD } from '../../core/state.js';
@@ -69,6 +70,10 @@ export function bindForms(){
         el.value=formatCheckNumber(cur||'');
       }else if(inputType==='zip'){
         el.value=formatCityStateZip(cur||'');
+      }else if(inputType==='percent'){
+        // Milestone 71C: a share draws what the model holds -- a real 0 stays
+        // "0", a minus stays visible (displayDecimal()).
+        el.value=displayDecimal(cur);
       }else if(inputType==='decimal'){
         el.value=sanitizeNonNegativeDecimal(cur||'');
       }else{
@@ -81,6 +86,18 @@ export function bindForms(){
           return;
         }
         let val=e.target.value;
+        if(inputType==='percent'){
+          // Milestone 71C: the Inventory's shares are written here, never by
+          // form-contract.js (numInput() binds them with claimSharedWriteListener
+          // false), so the percent kind is implemented here too: the minus is
+          // kept and an empty box stores '' -- never the `|| 0` below, which
+          // would record a cleared share as an entered 0%.
+          val=sanitizeDecimal(val);
+          e.target.value=val;
+          setPath(getD(),path,parseStoredDecimal(val));
+          afterChange(path);
+          return;
+        }
         if(inputType==='decimal'){
           val=sanitizeNonNegativeDecimal(val);
           e.target.value=val;
@@ -154,6 +171,16 @@ export function bindForms(){
           if(getD()!==boundD)return;
           el.value=formatBarNumber(el.value);
           setPath(getD(),path,el.value);afterChange(path);
+        });
+      }
+      // Milestone 71C: a share outside 0-100 is shown on the field as soon as
+      // the filer leaves it (the validator reports it too), and again on
+      // render so a reopened filing shows what is wrong.
+      if(inputType==='percent'){
+        setPercentFeedback(el,percentProblem(cur));
+        el.addEventListener('blur',()=>{
+          if(getD()!==boundD)return;
+          setPercentFeedback(el,percentProblem(getPath(getD(),path)));
         });
       }
       // Name/address formatting is finalize-only, same reasoning as modal-events.js's

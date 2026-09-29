@@ -28,6 +28,7 @@ import { serviceRecipientIssues } from '../validation/service-recipients.js';
 import { isSignatureComplete } from '../validation/signature-state.js';
 import { isPlanInitialAttorneyStarted, isAttorneyStarted } from '../validation/attorney-block.js';
 import { resolveServiceCertifier } from '../filing/unrepresented-filing.js';
+import { isPercentInRange } from '../validation/percent-range.js';
 import { resolvePreparer } from '../form/preparer-flag.js';
 import { certificateStarted as planCertificateStarted } from '../filing/plan-certificate-of-service.js';
 import { errorRoute } from '../validation/error-route.js';
@@ -172,6 +173,9 @@ export function annualCompletion(D, deps = {}) {
   const verifiedEmpty=k=>!!(D.scheduleNoItems&&D.scheduleNoItems[k]);
   const rowsComplete=(rows,fields,noItemsKey)=>verifiedEmpty(noItemsKey)||((rows||[]).length>0&&(rows||[]).every(r=>rowHasAnyData(r)&&fields.every(f=>filled(r[f]))));
   const rowsStarted=(rows,fields)=>(rows||[]).some(r=>rowHasAnyData(r));
+  // Milestone 71C: a schedule with a share outside 0-100 is not finished --
+  // the same rule validateAnnual() reports (percent-range.js).
+  const sharesInRange=(rows)=>(rows||[]).every(r=>!r||isPercentInRange(r.wardPct));
   const t=deps.calcTotalsAnnual(D);
   const checks={
     'a-p1':filled(D.wardName)&&filled(D.caseNumber)&&filled(D.periodFrom)&&filled(D.periodTo)&&filled(D.gid)&&filled(D.guardian)&&filled(D.county)&&filled(D.filingType)
@@ -194,7 +198,8 @@ export function annualCompletion(D, deps = {}) {
     'a-p67':(()=>{const r=deps.annualReconcileState(t,D);return !r.outOfBalance||r.explained;})(),
     // Part VIII is satisfied either by naming a trust or by certifying there
     // are none, matching the verifiedEmpty pattern the other Annual checks use.
-    'a-p8':verifiedEmpty('a-p8')||verifiedEmpty('p8')||(D.trusts||[]).some(t=>t.name),
+    // Milestone 71C: and no trust share outside 0-100, as validateAnnual() says.
+    'a-p8':(verifiedEmpty('a-p8')||verifiedEmpty('p8')||(D.trusts||[]).some(t=>t.name))&&sharesInRange(D.trusts),
     // Milestone 67B: the sidebar asks which bond / restricted-depository
     // arrangement applies; nothing in the block gates export, so this is
     // the one sidebar-only rule on the page (section-guidance-policy.js's
@@ -228,11 +233,11 @@ export function annualCompletion(D, deps = {}) {
     'a-schb3':rowsComplete(D.schB3,['bankAcct','checkNo','datePaid','payee','amount'],'schb3'),
     'a-schb4':rowsComplete(D.schB4,['checkNo','datePaid','category','payee','amount'],'schb4'),
     'a-schc':verifiedEmpty('schc')||((D.schC||[]).length>0&&(D.schC||[]).every(r=>rowHasAnyData(r)&&filled(r.description)&&filled(r.date)&&(filled(r.gain)||filled(r.loss)))),
-    'a-schd1':rowsComplete(D.schD1,['description','accountNo','restricted','type','fullAmount','wardPct'],'schd1'),
-    'a-schd2':rowsComplete(D.schD2,['description','residence','income','fullValue','wardPct','carryingValue'],'schd2'),
-    'a-schd3':rowsComplete(D.schD3,['description','fullAmount','wardPct','carryingValue'],'schd3'),
-    'a-schd4':rowsComplete(D.schD4,['description','restricted','fullAmount','wardPct','carryingValue'],'schd4'),
-    'a-schd5':rowsComplete(D.schD5,['description','loanNo','loanType','fullDebt','wardPct'],'schd5'),
+    'a-schd1':rowsComplete(D.schD1,['description','accountNo','restricted','type','fullAmount','wardPct'],'schd1')&&sharesInRange(D.schD1),
+    'a-schd2':rowsComplete(D.schD2,['description','residence','income','fullValue','wardPct','carryingValue'],'schd2')&&sharesInRange(D.schD2),
+    'a-schd3':rowsComplete(D.schD3,['description','fullAmount','wardPct','carryingValue'],'schd3')&&sharesInRange(D.schD3),
+    'a-schd4':rowsComplete(D.schD4,['description','restricted','fullAmount','wardPct','carryingValue'],'schd4')&&sharesInRange(D.schD4),
+    'a-schd5':rowsComplete(D.schD5,['description','loanNo','loanType','fullDebt','wardPct'],'schd5')&&sharesInRange(D.schD5),
     'a-sche':verifiedEmpty('sche')||((D.schE||[]).length>0&&(D.schE||[]).every(r=>rowHasAnyData(r)&&filled(r.bankName)&&((filled(r.transferInDate)&&filled(r.transferInAmt))||(filled(r.transferOutDate)&&filled(r.transferOutAmt))))),
     'a-schf1':rowsComplete(D.schF1,['description','bank','accountNo','courtOrderDate','salePrice'],'schf1'),
     'a-schf2':rowsComplete(D.schF2,['description','bank','accountNo','courtOrderDate','salePrice'],'schf2'),
