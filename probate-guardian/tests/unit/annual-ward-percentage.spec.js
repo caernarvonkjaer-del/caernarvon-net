@@ -12,10 +12,8 @@ import { percentValue } from '../../src/core/excel/excel-engine.js';
 // (D-1: K25 = H25 * I25), so a 1% share of a $10,000 account was filed as
 // $10,000. The Guardian Inventory has always read the number as a
 // percentage. Fixed with the requester's approval (AGENTS.md section 5), on
-// 2026-09-24: the typed number is always a percentage. A blank share is
-// unchanged -- pct('') is still 1 (the whole asset) for the in-progress
-// totals, and validation requires Ward's % on every populated line before
-// export, so a blank share never reaches the workbook.
+// 2026-09-24: the typed number is always a percentage. A blank share counted
+// as the whole asset until Milestone 71D, which made it 0% (see below).
 
 describe('pct(): the Annual Accounting\'s ward-share calculation', () => {
   test('the typed number is always a percentage', () => {
@@ -27,11 +25,17 @@ describe('pct(): the Annual Accounting\'s ward-share calculation', () => {
     expect(pct(33.33)).toBeCloseTo(0.3333, 10);
   });
 
-  test('a blank or unreadable share still counts as the whole asset, as before', () => {
-    expect(pct('')).toBe(1);
-    expect(pct(null)).toBe(1);
-    expect(pct(undefined)).toBe(1);
-    expect(pct('not a number')).toBe(1);
+  // Milestone 71D (decision D3, approved under AGENTS.md section 5): this
+  // used to pin the old rule -- a blank or unreadable share counted as the
+  // whole asset here while the D-1/D-5 PDF rows counted it as 0%, so an
+  // override export printed a column that did not add up. It now counts as
+  // 0%, as the court's workbook computes it and as the Initial Inventory
+  // always has (wardShare(), src/core/format/money.js).
+  test('a blank or unreadable share counts as 0%, as in the workbook', () => {
+    expect(pct('')).toBe(0);
+    expect(pct(null)).toBe(0);
+    expect(pct(undefined)).toBe(0);
+    expect(pct('not a number')).toBe(0);
   });
 
   test('Schedule D totals follow: a 1% share of $10,000 is $100, not $10,000', () => {

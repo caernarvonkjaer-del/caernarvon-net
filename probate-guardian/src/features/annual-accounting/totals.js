@@ -1,6 +1,7 @@
 // Canonical statutory calculations and reconciliation state for Annual Guardianship Accounting.
 // Single source of truth shared between UI forms, preview, Excel export, and accessible PDF generation.
 import { getD } from '../../core/state.js';
+import { wardShare } from '../../core/format/money.js';
 
 export function n(v) {
   const num = parseFloat(v);
@@ -12,13 +13,17 @@ export function n(v) {
 // counted as 100% here and in the court workbook (percentValue() in
 // core/excel/excel-engine.js); changed with the requester's approval, per
 // AGENTS.md section 5 -- the workbook holds each share in a percentage cell
-// it multiplies into the ward's share. A blank share still counts as the
-// whole asset for the in-progress totals; validation requires Ward's % on
-// every populated line before export.
+// it multiplies into the ward's share.
+//
+// Milestone 71D (decision D3, approved by the requester under AGENTS.md
+// section 5): a blank or unreadable share counts as 0%, as the workbook's own
+// `=H25*I25` does with an empty share cell and as the Initial Inventory
+// always has -- one rule, wardShare() in src/core/format/money.js. It used to
+// count as 100% here (the on-screen totals, Line 30, the bond and the audit
+// fee base) while the D-1/D-5 PDF rows counted it as 0%. Validation still
+// requires Ward's % on every populated line, and flags an unreadable one.
 export function pct(v) {
-  if (v === '' || v === null || v === undefined) return 1;
-  const p = parseFloat(v);
-  return isNaN(p) ? 1 : p / 100;
+  return wardShare(1, v);
 }
 
 // Milestone 64B-1, item 9.1 / D7. Shared by calcTotalsAnnual() below and by

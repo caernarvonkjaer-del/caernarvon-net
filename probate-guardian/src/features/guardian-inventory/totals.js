@@ -39,21 +39,11 @@
 
 // n() and r2() live in src/core/format/money.js since Milestone 70's 70B,
 // shared with the other forms; re-exported so this module's importers are unchanged.
-import { n, r2 } from '../../core/format/money.js';
+// wardShare() too, since Milestone 71D: the one share rule for every form.
+import { n, r2, wardShare } from '../../core/format/money.js';
 import { getD } from '../../core/state.js';
 
-export { n, r2 };
-
-/**
- * The ward's share of a full figure at a percentage expressed 0-100, at full
- * precision. A blank percentage is 0%, exactly what a blank Ward's % cell
- * produces in the workbook (`=G17*H17` with H17 empty is 0). The UI's row
- * factories default the percentage to 100, so a blank one only arises from
- * an import or an old save -- and it must not be silently read as 100%.
- */
-export function wardShare(full, percent) {
-  return n(full) * (n(percent) / 100);
-}
+export { n, r2, wardShare };
 
 /**
  * Whether a B-1 / B-3 row is in a restricted depository. A current explicit

@@ -1088,7 +1088,7 @@ function pageSchD1Annual(){
           <div class="col-md-2">${yesNoRadioAnnualHTML(`schD1_restricted_${i}`,'Restricted?',r.restricted,`schD1.${i}.restricted`,true,'restricted')}</div>
           <div class="col-md-2">${inpD('Type (CD, Checking…)',r.type,`D.schD1[${i}].type=this.value`,true)}</div>
           <div class="col-md-2">${inpD('Full Asset Amount',r.fullAmount,`D.schD1[${i}].fullAmount=this.value`,true,'number')}</div>
-          <div class="col-md-2">${inpDWithTooltip("Ward's % ",'ward_pct',r.wardPct,`D.schD1[${i}].wardPct=this.value`,false,'number','percent')}</div>
+          <div class="col-md-2">${inpDWithTooltip("Ward's % ",'ward_pct',r.wardPct,`D.schD1[${i}].wardPct=this.value`,true,'number','percent')}</div>
           <div class="col-md-2"><label class="form-label">Ward's Amount</label><input class="form-control" readonly value="${fmtAnnual(wardAmt)}" data-annual-calc="schD1.${i}.wardAmt"></div>
         </div></div>
       </div></div>`;
@@ -1098,7 +1098,7 @@ function pageSchD1Annual(){
   }
   return `<div class="schedule-page">
   <h1>Schedule D-1 — Cash Assets</h1>
-  <div class="schedule-instructions">Include all liquid assets: cash on hand, savings, checking, CDs, money market, attorney trust, patient trust, burial savings. List each account separately. Enter Ward's % as decimal (e.g., 1 for 100%, 0.5 for 50%) or as a percentage (e.g., 100, 50).</div>
+  <div class="schedule-instructions">Include all liquid assets: cash on hand, savings, checking, CDs, money market, attorney trust, patient trust, burial savings. List each account separately. Enter Ward's % as a number from 0 to 100: 100 if the ward owns the whole account, 50 for half.</div>
   ${rows}
   <button class="btn btn-outline-primary btn-sm mb-2" data-annual-action="add-row" data-collection="schD1" data-route="/schd1">+ Add Account</button>
   <div class="schedule-totals"><div class="tbl">
@@ -1123,7 +1123,7 @@ function pageSchD2Annual(){
           <div class="col-md-6">${inpD('Description / Address / Owners',r.description,`D.schD2[${i}].description=this.value`,true)}</div>
           <div class="col-md-2">${yesNoRadioAnnualHTML(`schD2_residence_${i}`,'Personal Residence?',r.residence,`schD2.${i}.residence`,true,'personal_residence')}</div>
           <div class="col-md-2">${yesNoRadioAnnualHTML(`schD2_income_${i}`,'Income Property?',r.income,`schD2.${i}.income`,true,'income_property')}</div>
-          <div class="col-md-2">${inpDWithTooltip("Ward's % ",'ward_pct',r.wardPct,`D.schD2[${i}].wardPct=this.value`,false,'number','percent')}</div>
+          <div class="col-md-2">${inpDWithTooltip("Ward's % ",'ward_pct',r.wardPct,`D.schD2[${i}].wardPct=this.value`,true,'number','percent')}</div>
           <div class="col-md-3">${inpD('Full Asset Value',r.fullValue,`D.schD2[${i}].fullValue=this.value`,true,'number')}</div>
           <div class="col-md-3">${inpDWithTooltip('Carrying Value','carrying_value',r.carryingValue,`D.schD2[${i}].carryingValue=this.value`,true,'number')}</div>
           <div class="col-md-3"><label class="form-label">Total Value</label><input class="form-control" readonly value="${fmtAnnual(wardVal)}" data-annual-calc="schD2.${i}.wardVal"></div>
@@ -1159,7 +1159,7 @@ function pageSchD3Annual(){
         <div class="entry-card-body"><div class="row g-2">
           <div class="col-md-6">${inpD('Description / Location / Owners',r.description,`D.schD3[${i}].description=this.value`,true)}</div>
           <div class="col-md-2">${inpD('Full Asset Amount',r.fullAmount,`D.schD3[${i}].fullAmount=this.value`,true,'number')}</div>
-          <div class="col-md-2">${inpDWithTooltip("Ward's % ",'ward_pct',r.wardPct,`D.schD3[${i}].wardPct=this.value`,false,'number','percent')}</div>
+          <div class="col-md-2">${inpDWithTooltip("Ward's % ",'ward_pct',r.wardPct,`D.schD3[${i}].wardPct=this.value`,true,'number','percent')}</div>
           <div class="col-md-2">${inpDWithTooltip('Carrying Value','carrying_value',r.carryingValue,`D.schD3[${i}].carryingValue=this.value`,true,'number')}</div>
           <div class="col-md-2"><label class="form-label">Ward's Amount</label><input class="form-control" readonly value="${fmtAnnual(wardAmt)}" data-annual-calc="schD3.${i}.wardAmt"></div>
         </div></div>
@@ -1195,7 +1195,7 @@ function pageSchD4Annual(){
           <div class="col-md-5">${inpD('Description (stocks, annuities, policies, notes…)',r.description,`D.schD4[${i}].description=this.value`,true)}</div>
           <div class="col-md-2">${yesNoRadioAnnualHTML(`schD4_restricted_${i}`,'Restricted?',r.restricted,`schD4.${i}.restricted`,true,'restricted')}</div>
           <div class="col-md-2">${inpD('Full Asset Amount',r.fullAmount,`D.schD4[${i}].fullAmount=this.value`,true,'number')}</div>
-          <div class="col-md-2">${inpDWithTooltip("Ward's % ",'ward_pct',r.wardPct,`D.schD4[${i}].wardPct=this.value`,false,'number','percent')}</div>
+          <div class="col-md-2">${inpDWithTooltip("Ward's % ",'ward_pct',r.wardPct,`D.schD4[${i}].wardPct=this.value`,true,'number','percent')}</div>
           <div class="col-md-2">${inpDWithTooltip('Carrying Value','carrying_value',r.carryingValue,`D.schD4[${i}].carryingValue=this.value`,true,'number')}</div>
           <div class="col-md-2"><label class="form-label">Total Value</label><input class="form-control" readonly value="${fmtAnnual(wardVal)}" data-annual-calc="schD4.${i}.wardVal"></div>
         </div></div>

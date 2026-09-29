@@ -48,7 +48,7 @@
  * @property {string} [residence] - 'Yes' | 'No' homestead or residence flag.
  * @property {string} [income] - 'Yes' | 'No' dividend/income producing flag.
  * @property {string | number} fullValue - Market value of entire asset.
- * @property {string | number} wardPct - Ward's fractional ownership percentage.
+ * @property {string | number} wardPct - Ward's share as a percentage, 0-100 (50 is half; Milestone 71D).
  * @property {string | number} [carryingValue] - Carrying or inventory value.
  * @property {string | number} wardValue - Ward's share of market value.
  */
@@ -57,7 +57,7 @@
  * @typedef {Object} SchD3Item
  * @property {string} description - Real property legal or street description.
  * @property {string | number} fullAmount - Total assessed or appraised value.
- * @property {string | number} wardPct - Ward's fractional ownership percentage.
+ * @property {string | number} wardPct - Ward's share as a percentage, 0-100 (50 is half; Milestone 71D).
  * @property {string | number} [carryingValue] - Historical carrying value.
  * @property {string | number} wardAmount - Ward's dollar share of real estate value.
  */

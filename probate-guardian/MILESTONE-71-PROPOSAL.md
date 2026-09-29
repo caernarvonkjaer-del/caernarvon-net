@@ -36,7 +36,7 @@ everything else is sequential because the items share files (see
 | 1 | 71A | Measure how the Clerk's workbook displays a half cent, in Microsoft Excel itself | **DECIDED** — measure before choosing the rounding rule | **Done** 2026-09-29 — Excel = 15 significant digits, half away from zero (Appendix B) |
 | 2 | 71B | Filers who need no attorney are blocked on five of the nine forms | **DECIDED** — attorney optional when blank; ask the basis; the guardian who served the copies signs the certificate of service | **Built** 2026-09-29 (see its Build record) |
 | 3 | 71C | Every percentage field is secretly a money field: 150% accepted, "-10" silently becomes 10 | **DECIDED** — a real percent field, 0–100; an out-of-range share is an ordinary, bypassable error; imported share cells read as the workbook stores them | **Built** 2026-09-29 (see its Build record) |
-| 4 | 71D | Ward's %: a wrong on-screen instruction, and three different answers for a blank share | **DECIDED** — fix the text; a blank share counts as 0%, as in the court's workbook, and prints as blank, not "100%" | Not started |
+| 4 | 71D | Ward's %: a wrong on-screen instruction, and three different answers for a blank share | **DECIDED** — fix the text; a blank share counts as 0%, as in the court's workbook, and prints as blank, not "100%" | **Built** 2026-09-29 (see its Build record) |
 | 5 | 71E | The app rounds money three different ways; carried balances are unrounded and inconsistent | **DECIDED** — one rounding rule matching the Clerk's workbook (per 71A); carry Line 30 and warn on mismatch; never carry the estate's net assets into or out of a Trust Accounting; keep negative balances | Not started |
 
 ### Provenance
@@ -744,6 +744,9 @@ its siblings; whether to enforce the field is a separate question.
   its first 71B assertion.
 - All 159 unit files pass, and `npm run check:types` is clean.
 
+**Commits.** `3103238` holds the code; it went in by mistake under the previous commit's (71A's) message.
+`ea703fe` is an empty commit carrying its intended message. History was not rewritten.
+
 ---
 
 ## 71C — Every percentage field is secretly a money field
@@ -1032,7 +1035,9 @@ Both predate 71C and are left for a decision.
   - the e2e Annual case fails because a typed `-10` shows as `10`, exactly
     the report's BUG-03.
 - All unit specs pass. `verify:data-model` and `check:types` were run
-  before the commit.
+  before the commit. The 48 existing share-related e2e tests pass.
+
+**Commit.** `5a5793a`.
 
 ---
 
@@ -1198,7 +1203,50 @@ but the app would still disagree with the Clerk's workbook.
 9. **Cross-form.** The Inventory and the Annual family end on one helper and
    one blank-share rule.
 
-### Build record — NOT STARTED
+### Build record — BUILT 2026-09-29
+
+**What was built.**
+
+- `wardShare()` moved to `src/core/format/money.js`, and
+  `guardian-inventory/totals.js` re-exports it.
+- The Annual `pct()` is now `wardShare(1, v)`, so a blank or unreadable
+  share is 0% on screen, in Line 30, in the bond and in the audit-fee base.
+- The D-1 and D-5 PDF rows use `wardShare()`.
+- A new `formatShare()` prints the entered number as `50%`, or "—" for a
+  blank or unreadable share. It is used by all six share columns (D-1 to D-5
+  and Part VIII).
+- The D-1 instruction now reads "Enter Ward's % as a number from 0 to 100:
+  100 if the ward owns the whole account, 50 for half."
+- The Help page line now says the same, and that a blank counts as 0%.
+- D-1 to D-4's shares get the required marker D-5's already had.
+- Stale developer comments were fixed in `excel-engine.js` and
+  `types/schedules.js`.
+- The data model's five D share rows note the rule.
+
+**Decisions taken during the build.**
+
+- None beyond D3. The design's unreadable-share rule (0%, and 71C's error)
+  fell out of using `wardShare()`.
+
+**Tests.**
+
+- New: `tests/unit/annual-pdf-share-rows.spec.js`. It covers all five D
+  tables and Part VIII, across Annual, Final and Trust. Every row's printed
+  Ward's Amount must equal its contribution to the total, and the column
+  must add up to it.
+- New: `tests/e2e/annual-blank-share-footing.spec.ts`.
+- Updated: `tests/unit/annual-ward-percentage.spec.js`. Its blank-share case
+  pinned the old 100% rule and now pins 0%, with the reason stated.
+- **Red-first**, with `src/` and `help/` stashed:
+  - the unit spec fails because the D-1 column added to $1,510 against a
+    $3,510 total (the report's footing defect);
+  - D-2 counted a blank share as 100%;
+  - Part VIII printed "100%";
+  - the e2e spec fails with an on-screen D-1 total of $6,100, which counted
+    the blank row's whole $5,000.
+- All 161 unit files (2,164 tests) pass. `verify:data-model` and
+  `check:types` are clean.
+- The Annual PDF and share e2e specs pass (23 tests).
 
 ---
 

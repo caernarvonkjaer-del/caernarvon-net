@@ -251,7 +251,8 @@ export function numValue(val) {
 }
 
 /**
- * Converts percentage string/number to decimal (e.g. 50 -> 0.5 or 0.5 -> 0.5).
+ * Converts a 0-100 percentage to the fraction the workbook's share cell holds
+ * (50 -> 0.5, 1 -> 0.01, 0.5 -> 0.005); blank or unreadable -> 0.
  * @param {any} val
  * @returns {number}
  */

@@ -2,6 +2,7 @@
 // Maps window.D into the unified, accessible court document model (WCAG 2.1 Level AA).
 
 import { calcTotalsAnnual, annualReconcileState, n as toAmount, scheduleDRow } from './totals.js';
+import { wardShare, formatShare } from '../../core/format/money.js';
 import { REMUNERATION_DECLARATION, REMUNERATION_NONE_REPORTED } from '../../core/filing/statutory-text.js';
 import { yesNoText } from '../../core/form/form-contract.js';
 import { filingCopy, resolveFilingDescriptor } from '../../core/filing/filing-descriptor.js';
@@ -677,11 +678,9 @@ export function buildAnnualAccountingModel(D, options = {}) {
 
   // ── Schedule D-1: Cash Assets ─────────────────────────────────────────────
   const schD1Rows = (d.schD1 || []).map((r, i) => {
-    const p = parseFloat(r.wardPct);
-    // Ward's % is always a percentage (1 is 1%), as in totals.js's pct().
-    const wardFraction = isNaN(p) ? 0 : p / 100;
-    const full = parseFloat(r.fullAmount) || 0;
-    const wa = full * wardFraction;
+    // Milestone 71D: the one share rule (wardShare(), src/core/format/money.js),
+    // the same one the schedule total uses -- this row used to keep its own copy.
+    const wa = wardShare(r.fullAmount, r.wardPct);
     return [
       String(i + 1),
       r.description || '',
@@ -689,7 +688,7 @@ export function buildAnnualAccountingModel(D, options = {}) {
       r.restricted || '',
       r.type || '',
       fmtS(r.fullAmount),
-      r.wardPct ? `${r.wardPct}%` : '100%',
+      formatShare(r.wardPct),
       fmtS(wa),
     ];
   });
@@ -727,7 +726,7 @@ export function buildAnnualAccountingModel(D, options = {}) {
       r.residence || '',
       r.income || '',
       fmtS(r.fullValue),
-      r.wardPct ? `${r.wardPct}%` : '100%',
+      formatShare(r.wardPct),
       fmtS(cv),
       fmtS(wv),
     ];
@@ -761,7 +760,7 @@ export function buildAnnualAccountingModel(D, options = {}) {
       String(i + 1),
       r.description || '',
       fmtS(r.fullAmount),
-      r.wardPct ? `${r.wardPct}%` : '100%',
+      formatShare(r.wardPct),
       fmtS(cv),
       fmtS(wv),
     ];
@@ -801,7 +800,7 @@ export function buildAnnualAccountingModel(D, options = {}) {
       r.description || '',
       r.restricted || '',
       fmtS(r.fullAmount),
-      r.wardPct ? `${r.wardPct}%` : '100%',
+      formatShare(r.wardPct),
       fmtS(cv),
       fmtS(wv),
       ra > 0 ? fmtS(ra) : '—',
@@ -830,18 +829,15 @@ export function buildAnnualAccountingModel(D, options = {}) {
 
   // ── Schedule D-5: Mortgages / Liabilities ─────────────────────────────────
   const schD5Rows = (d.schD5 || []).map((r, i) => {
-    const p = parseFloat(r.wardPct);
-    // Ward's % is always a percentage (1 is 1%), as in totals.js's pct().
-    const wardFraction = isNaN(p) ? 0 : p / 100;
-    const fullDebt = parseFloat(r.fullDebt) || 0;
-    const wb = fullDebt * wardFraction;
+    // Milestone 71D: the one share rule, as D-1 above.
+    const wb = wardShare(r.fullDebt, r.wardPct);
     return [
       String(i + 1),
       r.description || '',
       r.loanNo || '',
       r.loanType || '',
       fmtS(r.fullDebt),
-      r.wardPct ? `${r.wardPct}%` : '100%',
+      formatShare(r.wardPct),
       fmtS(wb),
     ];
   });
@@ -1000,7 +996,7 @@ export function buildAnnualAccountingModel(D, options = {}) {
       fmtD(t.dateCreated),
       t.trustType || '',
       t.createdAfterGID || '',
-      t.wardPct ? `${t.wardPct}%` : '100%',
+      formatShare(t.wardPct),
       fmtS(t.wardAmount),
     ]);
     trustBlocks.push({

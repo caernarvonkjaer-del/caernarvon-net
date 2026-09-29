@@ -16,6 +16,35 @@ export function r2(v) {
   return Math.round(n(v) * 100) / 100;
 }
 
+/**
+ * The ward's share of a full figure at a percentage expressed 0-100, at full
+ * precision. A blank or unreadable percentage is 0%, exactly what a blank
+ * Ward's % cell produces in the court's workbooks (`=G17*H17`, `=H25*I25`
+ * with the share cell empty is 0) -- never silently the whole asset.
+ *
+ * Milestone 71D moved this here from src/features/guardian-inventory/totals.js
+ * (which re-exports it) so the Annual, Final and Trust Accountings use the
+ * same rule: their pct() read a blank share as 100% for the on-screen totals
+ * and Line 30 while their D-1/D-5 PDF rows read it as 0%, so a filing exported
+ * through the override printed a column that did not add up (decision D3).
+ */
+export function wardShare(full, percent) {
+  return n(full) * (n(percent) / 100);
+}
+
+/**
+ * How a Ward's % prints on a filed page: the number the filer entered, as
+ * `50%`; a blank or unreadable share as "—" -- never a figure the filer did not
+ * enter. (Milestone 71D: all six Annual share columns printed a blank share as
+ * "100%", beside a Ward's Amount that counted it as 0%.)
+ */
+export function formatShare(v) {
+  if (v === '' || v === null || v === undefined) return '—';
+  if (typeof v === 'number') return Number.isFinite(v) ? `${v}%` : '—';
+  const s = String(v).trim();
+  return s !== '' && Number.isFinite(Number(s)) ? `${s}%` : '—';
+}
+
 /** US-dollar display ($1,234.56); blank and null print as $0.00. */
 export const fmt = (v)=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(v||0);
 
