@@ -2,27 +2,28 @@
 
 ## Status
 
-**Draft. This document authorizes no change.** Each item below is proposed,
-not approved. Nothing here may be implemented without the requester's explicit,
-named approval of that specific item (AGENTS.md §3). Approving one item
-authorizes only that item.
+**Approved for build, 2026-09-29.** The requester approved the whole milestone
+by name ("Begin the MS 71 work"): 71A–71E, in the order below, with the full
+regression at the end. Until then this was a Draft that authorized no change.
 
-**The design decisions are settled; the build is not authorized.** On
-2026-09-29 the requester (Alan) answered every design question this document
-raises, and asked for this write-up instead of a build ("No. Write this up as
-Milestone 71 Proposal."). Two rounds of independent review the same day (Codex)
+**The design decisions are settled.** On 2026-09-29 the requester (Alan)
+answered every design question this document raises, and first asked for this
+write-up instead of a build ("No. Write this up as Milestone 71 Proposal."). Two rounds of independent review the same day (Codex)
 found gaps. Each claim was checked against source; the four that needed a
 decision were put to the requester and answered (D9–D12), and the rest were
 corrected in the design. See [Independent review](#independent-review-2026-09-29)
 and [Risks accepted](#risks-accepted-and-what-this-milestone-does-not-fix).
 
-**No legacy data (D13).** The requester confirmed on 2026-09-29 that the app is
-in production as a test system only: there are no legacy files and no
-backward-compatibility requirement. Every item's AGENTS.md §8 "legacy data"
-answer is therefore *none*. The earlier draft's on-open normalization (D8), its
-activity-log entry, and its pre-60K import-compatibility costs are withdrawn.
-Data already on the test system is test data and is not preserved. The only item still
-marked **OPEN** is the exact wording of one printed sentence in 71B, which goes
+**Legacy data is proportionate (D13).** The requester confirmed on 2026-09-29
+that the app is in production as a test system only, then set the rule now in
+AGENTS.md §8 item 2: migrations are allowed, nothing is broken *silently*, and
+compatibility work that only test-era data would need is skipped when its cost
+is visible and one-time. Under that rule the earlier draft's on-open
+normalization (D8), its activity-log entry, and the pre-60K import reader are
+withdrawn. Each skip is visible: an old test-system Starting Balance shows its
+long number until re-entered, and a pre-60K share imports as a flagged 5,000%.
+
+Progress is in each item's Build record. The only item still marked **OPEN** is the exact wording of one printed sentence in 71B, which goes
 to the Clerk. The decisions are recorded under each item and summarized in
 [Decisions already made](#decisions-already-made).
 
@@ -113,7 +114,7 @@ fact from the requester, not a choice prompt.
 | D10 | How is an imported share cell above 1 read, when the Clerk's workbook stores 150% as `1.5` and pre-60K exports of this app stored 50% as `50`? | The way the workbook reads it: every share cell is a fraction. `1.5` imports as 150% and is flagged (D7); a cell holding `50` imports as 5,000% and is flagged. Nothing is silently rescaled. (No pre-60K export exists to be affected — D13.) | 71C |
 | D11 | With no attorney and co-guardians, who signs the certificate of service? | One guardian: the one who served the copies. The form asks which guardian only when there is more than one. | 71B |
 | D12 | A ward whose debts exceed their assets has negative net assets; today the Starting Balance box strips the minus and opening a filing turns a carried negative into $0. Fix it in 71E? | Yes — Starting Balance accepts and keeps a negative figure on the Annual family and the Simplified Accounting | 71E |
-| D13 | Must any existing filing, case file or exported workbook be preserved or migrated? | **No.** The app is in production as a test system only; there are no legacy files and no backward-compatibility requirement (requester, 2026-09-29) | All items |
+| D13 | Must any existing filing, case file or exported workbook be preserved or migrated? | **Proportionately** (requester, 2026-09-29; AGENTS.md §8 item 2): the app is a test system only. Migrations are allowed, nothing may break silently, and compatibility work is skipped when its only cost is visible and one-time. | All items |
 
 ---
 

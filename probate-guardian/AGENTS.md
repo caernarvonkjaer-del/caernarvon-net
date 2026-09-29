@@ -373,7 +373,14 @@ scoping — a plan silent on one of these isn't finished, and implementation or
 review discovering the gap costs more than asking would have:
 
 1. **Data model** — exact `probate-guardian-data-model.csv` rows needed (§4); check the collection is already fully expanded (one summary row ≠ expanded).
-2. **Legacy data migration** — does this touch data that could exist in a `.sav` already? State the migration/inference rule explicitly; a missing new field must never silently resolve less complete than today's rules already produce.
+2. **Legacy data migration** — does this touch data that could exist in a `.sav` or an exported workbook already? State the migration/inference rule explicitly; a missing new field must never silently resolve less complete than today's rules already produce.
+
+   **Proportionate, not absolute** (requester, 2026-09-29). The app is in production as a test system only, so no real filer's case file depends on it yet. Migrations are allowed; compatibility work still has to earn its cost. The line is **silent vs visible**:
+   - **Never break existing data silently.** An older `.sav` must still open, and nothing in it may be lost, altered, or read as something else without the filer seeing it. A change that would do that needs a migration, or the requester's named approval.
+   - **Write the migration** when it's cheap, or when skipping it would lose or misstate a figure a filer submits.
+   - **Skip it** when the only cost is visible and one-time: a value that shows oddly until re-entered, or a validation error the filer can see and correct. Say so, and why, in this item's answer.
+   - **Retire compatibility code that only test-era files need** (for example, reading pre-60K Inventory percentages), as long as its removal fails visibly, never by silently rescaling.
+   - **This tightens back to full backward compatibility once the app has real filers.** Whoever first ships to them updates this item.
 3. **Fixture & factory audit** — the test-fixture analog of #2: grep every `fillMinimalValid*Ward()`, `BASELINE`, and fixture factory for the touched filing type(s), and add any new required field wherever a sibling required field already appears. (Milestone 55D added one new field across four filing types and needed three separate discovery rounds — two e2e fixtures, two unit fixtures, two more e2e cases found only by the full suite — because this wasn't done up front.)
 4. **Test coverage & index** — name the actual new/changed test files, and track the `TEST-INDEX.md` update (§7) as part of the plan itself.
 5. **Export/import/portability** — does this touch any existing export/import/backup path? Check that path's real code; don't assume new data rides along for free.
