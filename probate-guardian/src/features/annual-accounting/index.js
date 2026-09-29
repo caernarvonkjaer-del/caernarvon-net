@@ -81,6 +81,15 @@ import { syncActiveWardNameDisplay, syncGuardianNameDisplay } from '../../core/s
 import { setAccountingFilingType } from './filing-type.js';
 import { navigate } from '../../core/navigation/router.js';
 import { calcTotalsAnnual, annualReconcileState, n, pct } from './totals.js';
+import { isAttorneyStarted } from '../../core/validation/attorney-block.js';
+import { resolveServiceCertifier, certifierChoiceNeeded, certifyingCandidates, serviceCertifierChoiceHTML, waiverBasisQuestionHTML } from '../../core/filing/unrepresented-filing.js';
+import { watchAttorneyRequiredMarkers } from '../../core/form/attorney-required-markers.js';
+
+// Milestone 71B: the Part V fields that become required once an attorney is
+// started (and only then) -- the live markers and validateAnnual() share it.
+const ANNUAL_ATTORNEY_REQUIRED = ['attorney_bar', 'attorney_phone', 'attorney_email', 'attorney_street', 'attorney_cityStateZip', 'attorney_signatureDate'];
+const ANNUAL_ATTORNEY_TRIGGERS = ['attorney', 'attorney_secondaryEmail', 'attorney_signatureState', 'attorney_isPreparer'];
+const attorneyMarkerAborts = new WeakMap();
 // Annual Accounting — the sixth feature extraction (Milestone 7, Phases A
 // and B of INDEX-SPLIT-PLAN.md's migration sequence: data/pages/nav/
 // validate, and print/PDF/Excel import/export). Also covers the
@@ -176,6 +185,13 @@ export async function mount(container, page, { signal } = {}) {
       route: page,
     }));
   }
+  attorneyMarkerAborts.get(container)?.abort();
+  attorneyMarkerAborts.delete(container);
+  if (page === '/p5') {
+    attorneyMarkerAborts.set(container, watchAttorneyRequiredMarkers(container, {
+      engineId: 'annual', paths: ANNUAL_ATTORNEY_REQUIRED, triggerPaths: ANNUAL_ATTORNEY_TRIGGERS,
+    }));
+  }
   if (page === '/print') await _printModule.mountPreview();
   // Milestone 57C-R -- see guardian-inventory/index.js's note on why this is a
   // floating call and must not be awaited. window.D.inventoryType rather than
@@ -189,6 +205,8 @@ export function dispose(container) {
   eventControllers.delete(container);
   signatureHandles.get(container)?.forEach((h) => h.destroy());
   signatureHandles.delete(container);
+  attorneyMarkerAborts.get(container)?.abort();
+  attorneyMarkerAborts.delete(container);
   container.replaceChildren();
 }
 
@@ -639,6 +657,7 @@ function pagePart1Annual(){
       </div>
     </div>
   </div>
+  ${isAttorneyStarted(d,'annual')?'':waiverBasisQuestionHTML(d,{route:'/',dateField:(path,label)=>inpD(label,d[path],`D.${path}=this.value`,false,'date')})}
   <div class="summary-box mt-3">
     <h2 class="subsection-heading">Quick Summary (auto-calculated)</h2>
     <div class="summary-line"><span>Starting Balance</span><span>${fmtAnnual(d.startingBalance)||'—'}</span></div>
@@ -764,9 +783,16 @@ function pagePart4Annual(){
 function pagePart5Annual(){
   const d=getD();
   const copy=filingCopy(annualDescriptor(d));
+  // Milestone 71B: required only once an attorney is started; the markers
+  // then follow live (watchAttorneyRequiredMarkers() in mount()).
+  const started=isAttorneyStarted(d,'annual');
+  const noAttorney=started?'':`<div class="alert alert-secondary" role="status" data-no-attorney-notice>
+    <strong>No attorney is entered</strong>, so this part is not required. The filed PDF states why the guardian has no attorney in place of this attestation (see the question on Part I). If an attorney represents the guardian, enter them below and this part becomes required.
+  </div>`;
   return `<div class="schedule-page">
   <h1>Part V — Guardian Attorney Signature</h1>
   ${preparerNoteHTML()}
+  ${noAttorney}
   <div class="attestation-text">${esc(copy.attorneyStatement(d.wardName||'[ward]',fmtD(d.periodFrom),fmtD(d.periodTo),d.attorney_county||d.county||'[county]'))}</div>
   <div class="row g-3 card-grid-2col">
     <div class="col-12 col-lg-6">
@@ -778,15 +804,15 @@ function pagePart5Annual(){
         <div class="entry-card-body">
           <div class="row g-2">
             <div class="col-md-5">${inpD("Attorney Name (linked to Part I)",d.attorney,"D.attorney=this.value")}</div>
-            <div class="col-md-3">${inpDWithTooltip("Signature Date",'signature_date',d.attorney_signatureDate,"D.attorney_signatureDate=this.value",true,'date')}</div>
+            <div class="col-md-3">${inpDWithTooltip("Signature Date",'signature_date',d.attorney_signatureDate,"D.attorney_signatureDate=this.value",started,'date')}</div>
             <div class="col-12">${renderSignatureStateControl({ path: 'attorney', state: inferLegacySignatureState(d.attorney_signatureState, d.attorney_signatureDate), route: '/p5', signatureImage: d.attorney_signatureImage, statePath: 'attorney_signatureState', imagePath: 'attorney_signatureImage' })}</div>
             <div class="col-12">${preparerFlagCheckboxHTML({ path: 'attorney_isPreparer', checked: !!d.attorney_isPreparer, route: '/p5' })}</div>
-            <div class="col-md-4">${inpD("Bar Number",d.attorney_bar,"D.attorney_bar=this.value",true)}</div>
-            <div class="col-md-4">${inpD("Phone Number",d.attorney_phone,"D.attorney_phone=this.value",true)}</div>
-            <div class="col-md-4">${inpD("Primary Email (e-filing)",d.attorney_email,"D.attorney_email=this.value",true,'email')}</div>
+            <div class="col-md-4">${inpD("Bar Number",d.attorney_bar,"D.attorney_bar=this.value",started)}</div>
+            <div class="col-md-4">${inpD("Phone Number",d.attorney_phone,"D.attorney_phone=this.value",started)}</div>
+            <div class="col-md-4">${inpD("Primary Email (e-filing)",d.attorney_email,"D.attorney_email=this.value",started,'email')}</div>
             <div class="col-md-4">${inpD("Secondary Email (optional)",d.attorney_secondaryEmail,"D.attorney_secondaryEmail=this.value",false,'email')}</div>
-            <div class="col-md-8">${inpD("Street Address",d.attorney_street,"D.attorney_street=this.value",true)}</div>
-            <div class="col-md-8">${inpD("City / State / Zip Code",d.attorney_cityStateZip,"D.attorney_cityStateZip=this.value",true)}</div>
+            <div class="col-md-8">${inpD("Street Address",d.attorney_street,"D.attorney_street=this.value",started)}</div>
+            <div class="col-md-8">${inpD("City / State / Zip Code",d.attorney_cityStateZip,"D.attorney_cityStateZip=this.value",started)}</div>
             <div class="col-md-4">${countyInputD("County",d.attorney_county,"D.attorney_county=this.value")}</div>
           </div>
         </div>
@@ -1468,21 +1494,13 @@ function pagePart10Annual(){
       </div></div>
     </div></div>`;
   }).join('');
-  return `<div class="schedule-page">
-  <h1>Part X — Guardian Attorney Certificate of Service</h1>
-  ${preparerNoteHTML()}
-  <div class="schedule-instructions">Pursuant to Florida Statute 744.367(4), I hereby certify that a copy of this accounting has been furnished to the recipients listed below.</div>
-  <div class="row g-2 mb-3">
-    <div class="col-md-4">${inpD('Date of Service',d.certDate,"D.certDate=this.value",true,'date')}</div>
-    <div class="col-md-6">${inpD('Indicate if (e.g. hand-delivered, mailed)',d.certIndicator,"D.certIndicator=this.value")}</div>
-  </div>
-  <h2 style="color:var(--ink);margin:.75rem 0 .4rem;font-size:.95rem;">Recipients</h2>
-  ${renderServiceAttestationRow({html:yesNoCheckboxD(ATTESTATION_57B,d.certNoRecipients,'certNoRecipients','/p10'),rows:d.certRecipients,attestation:d.certNoRecipients,startedFields:RECIPIENT_STARTED_FIELDS,recipientsPath:'certRecipients',attestationPath:'certNoRecipients'})}
-  ${d.certNoRecipients==='Yes'?'':`<div class="row g-3 card-grid-2col mb-3">
-    ${cards}
-  </div>`}
-  ${d.certNoRecipients==='Yes'?'':`<button type="button" class="btn btn-outline-secondary btn-sm mb-4 no-print" data-annual-action="add-row" data-collection="certRecipients" data-route="/p10">+ Add Recipient</button>`}
-  <h2 style="color:var(--ink);margin:.75rem 0 .4rem;font-size:.95rem;">Attorney Signature</h2>
+  // Milestone 71B: with no attorney started, the guardian who served the
+  // copies signs the certificate (unrepresented-filing.js). The attorney card
+  // and whatever it holds come back unchanged once an attorney is entered.
+  const started=isAttorneyStarted(d,'annual');
+  const labels=['Guardian #1','Co-Guardian #2','Co-Guardian #3'];
+  const certifier=started?null:resolveServiceCertifier(d);
+  const signerCard=started?`<h2 style="color:var(--ink);margin:.75rem 0 .4rem;font-size:.95rem;">Attorney Signature</h2>
   <div class="row g-3 card-grid-2col">
     <div class="col-12 col-lg-6">
       <div class="entry-card mb-0 h-100">
@@ -1500,7 +1518,40 @@ function pagePart10Annual(){
         </div>
       </div>
     </div>
+  </div>`:`<h2 style="color:var(--ink);margin:.75rem 0 .4rem;font-size:.95rem;">Guardian Signature</h2>
+  <div class="alert alert-secondary" role="status" data-guardian-certificate-notice>
+    <strong>No attorney is entered</strong>, so the guardian who served the copies signs this certificate. The court's Excel workbook has an attorney signature line only; the guardian's certificate prints on the PDF.
   </div>
+  ${serviceCertifierChoiceHTML(d,{route:'/p10',labels})}
+  <div class="row g-3 card-grid-2col">
+    <div class="col-12 col-lg-6">
+      <div class="entry-card mb-0 h-100" data-guardian-certificate>
+        <div class="entry-card-header">Guardian Certification</div>
+        <div class="entry-card-body">
+          <p class="mb-2">${certifier?`Signed by <strong>${esc(certifier.name||`${labels[certifier.index]} (name not entered)`)}</strong>, ${esc(labels[certifier.index])} — name and contact details come from Part III.`:'Tick the guardian who served the copies above.'}</p>
+          <div class="row g-2">
+            <div class="col-md-5">${inpDWithTooltip('Signature Date','signature_date',d.certGuardianSignDate,"D.certGuardianSignDate=this.value",false,'date')}</div>
+            <div class="col-12">${renderSignatureStateControl({ path: 'certGuardian', state: inferLegacySignatureState(d.certGuardianSignatureState, d.certGuardianSignDate), route: '/p10', signatureImage: d.certGuardianSignatureImage, statePath: 'certGuardianSignatureState', imagePath: 'certGuardianSignatureImage' })}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+  return `<div class="schedule-page">
+  <h1>Part X — ${started?'Guardian Attorney ':''}Certificate of Service</h1>
+  ${preparerNoteHTML()}
+  <div class="schedule-instructions">Pursuant to Florida Statute 744.367(4), I hereby certify that a copy of this accounting has been furnished to the recipients listed below.</div>
+  <div class="row g-2 mb-3">
+    <div class="col-md-4">${inpD('Date of Service',d.certDate,"D.certDate=this.value",true,'date')}</div>
+    <div class="col-md-6">${inpD('Indicate if (e.g. hand-delivered, mailed)',d.certIndicator,"D.certIndicator=this.value")}</div>
+  </div>
+  <h2 style="color:var(--ink);margin:.75rem 0 .4rem;font-size:.95rem;">Recipients</h2>
+  ${renderServiceAttestationRow({html:yesNoCheckboxD(ATTESTATION_57B,d.certNoRecipients,'certNoRecipients','/p10'),rows:d.certRecipients,attestation:d.certNoRecipients,startedFields:RECIPIENT_STARTED_FIELDS,recipientsPath:'certRecipients',attestationPath:'certNoRecipients'})}
+  ${d.certNoRecipients==='Yes'?'':`<div class="row g-3 card-grid-2col mb-3">
+    ${cards}
+  </div>`}
+  ${d.certNoRecipients==='Yes'?'':`<button type="button" class="btn btn-outline-secondary btn-sm mb-4 no-print" data-annual-action="add-row" data-collection="certRecipients" data-route="/p10">+ Add Recipient</button>`}
+  ${signerCard}
   ${pageNavAnnual('/p9','/p11')}
   </div>`;
 }
@@ -1619,6 +1670,15 @@ export function validateAnnual(){
     filingType:T,laterPath:'preparer.signatureDate',
   }));
   }
+  // Milestone 71B: Part V -- and the attorney's Part X signature below -- are
+  // required only once the filer has started entering an attorney. A pro se
+  // guardian, a guardian advocate (Rule 5.030(a)), a guardian whose
+  // representation the court waived, or a guardian who is a Florida attorney
+  // files with none; AGENTS.md section 4 keeps attorney certification off such
+  // a filing's export gate. Why there is no attorney is asked on Part I and
+  // noted on Preview & Export, never blocked on (unrepresented-filing.js).
+  const attorneyStarted=isAttorneyStarted(d,'annual');
+  if(attorneyStarted){
   req(d.attorney_bar,'Part V — Attorney Bar Number','attorney_bar');
   req(d.attorney_phone,'Part V — Attorney Phone','attorney_phone');
   // Milestone 55D: attorney_email already rendered a required asterisk
@@ -1644,6 +1704,7 @@ export function validateAnnual(){
     sectionLabel:'Part V',earlierLabel:'Accounting Period To',laterLabel:'Attorney Signature Date',allowSameDay:true,
     filingType:T,laterPath:'attorney_signatureDate',
   }));
+  }
   // Part IX's bond fields: nothing required (Milestone 67B; see the note above).
   req(d.certDate,'Part X — Certificate of Service Date','certDate');
   errs.push(...checkDateOrder(d.periodTo,d.certDate,{
@@ -1674,6 +1735,7 @@ export function validateAnnual(){
   // audit). name is passed for the same reason as Part V above -- this
   // card's "Attorney Name" field is the same shared, never-independently-
   // required d.attorney field.
+  if(attorneyStarted){
   errs.push(...checkSignatureState({
     state: inferLegacySignatureState(d.certAttySignatureState, d.certAttySignDate),
     name: d.attorney,
@@ -1682,6 +1744,29 @@ export function validateAnnual(){
     sectionLabel: 'Part X', roleLabel: 'Attorney',
     filingType:T, namePath:'attorney', datePath:'certAttySignDate', imagePath:'certAttySignatureImage',
   }));
+  }else{
+    // Milestone 71B: with no attorney the guardian who served the copies
+    // signs (Rules 2.515(a), 2.516(a) and (f)). With co-guardians the filer
+    // says which one -- never defaulted to Guardian #1.
+    const certifier=resolveServiceCertifier(d);
+    if(!certifier){
+      const first=certifyingCandidates(d)[0];
+      errs.push(issue('Part X — Tick the guardian who served the copies; that guardian signs the certificate of service',`guardians.${first?first.index:0}.certifiesService`));
+    }else{
+      errs.push(...checkSignatureState({
+        state: inferLegacySignatureState(d.certGuardianSignatureState, d.certGuardianSignDate),
+        name: certifier.name,
+        date: d.certGuardianSignDate,
+        image: d.certGuardianSignatureImage,
+        sectionLabel: 'Part X', roleLabel: 'Guardian',
+        filingType:T, namePath:`guardians.${certifier.index}.name`, datePath:'certGuardianSignDate', imagePath:'certGuardianSignatureImage',
+      }));
+      errs.push(...checkDateOrder(d.periodTo,d.certGuardianSignDate,{
+        sectionLabel:'Part X',earlierLabel:'Accounting Period To',laterLabel:'Guardian Certificate Signature Date',allowSameDay:true,
+        filingType:T,laterPath:'certGuardianSignDate',
+      }));
+    }
+  }
 
   const rowHasAnyData=r=>Object.values(r).some(v=>v!==''&&v!=null);
   const checkRows=(rows,fields,schedLabel,collection)=>{

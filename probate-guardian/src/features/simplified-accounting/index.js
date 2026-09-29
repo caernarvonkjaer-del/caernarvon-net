@@ -46,6 +46,20 @@ import { simplifiedCompletion } from '../../core/status/completion.js';
 import { getD, requestSave } from '../../core/state.js';
 import { updateNavDots } from '../../core/status/nav-marks.js';
 import { browserRecommendationNotice, linkAccordions, sanitizeNegativeAmounts } from '../../core/form/form-runtime.js';
+import { isAttorneyStarted } from '../../core/validation/attorney-block.js';
+import { resolveServiceCertifier, certifyingCandidates, serviceCertifierChoiceHTML } from '../../core/filing/unrepresented-filing.js';
+import { watchAttorneyRequiredMarkers } from '../../core/form/attorney-required-markers.js';
+
+// Milestone 71B: the attorney fields that become required once an attorney is
+// started (and only then), per page -- the live markers and
+// validateSimplified() share the rule. Section 744.3679(3): a Simplified
+// Accounting needs no attorney at all.
+const SIMPLIFIED_ATTORNEY_REQUIRED = {
+  '/': ['attorney'],
+  '/p5': ['attorney_barNumber', 'attorney_phone', 'attorney_email', 'attorney_street', 'attorney_cityStateZip'],
+};
+const SIMPLIFIED_ATTORNEY_TRIGGERS = ['attorney', 'attorney_barNumber', 'attorney_phone', 'attorney_email', 'attorney_secondaryEmail', 'attorney_street', 'attorney_cityStateZip', 'attorney_signatureDate', 'attorney_signatureState'];
+const attorneyMarkerAborts = new WeakMap();
 import { renderScheduleDocsSection } from '../../core/filing/schedule-docs.js';
 import { countyInputS, inpS, pageIntroRow, pageNavS, yesNoCheckboxS } from '../../core/form/field-html.js';
 import { setPath } from '../../core/form/paths.js';
@@ -219,6 +233,14 @@ export async function mount(container, page, { signal } = {}) {
       route: page,
     }));
   }
+  attorneyMarkerAborts.get(container)?.abort();
+  attorneyMarkerAborts.delete(container);
+  const markerPaths = SIMPLIFIED_ATTORNEY_REQUIRED[page || '/'];
+  if (markerPaths) {
+    attorneyMarkerAborts.set(container, watchAttorneyRequiredMarkers(container, {
+      engineId: 'simplified', paths: markerPaths, triggerPaths: SIMPLIFIED_ATTORNEY_TRIGGERS,
+    }));
+  }
   if (page === '/print') await _printModule.mountPreview();
 }
 
@@ -227,6 +249,8 @@ export function dispose(container) {
   eventControllers.delete(container);
   signatureHandles.get(container)?.forEach((h) => h.destroy());
   signatureHandles.delete(container);
+  attorneyMarkerAborts.get(container)?.abort();
+  attorneyMarkerAborts.delete(container);
   container.replaceChildren();
 }
 
@@ -399,7 +423,7 @@ function pageCover(){
           <h2 class="subsection-heading">Guardian &amp; Attorney</h2>
           ${inpS('guardian','Guardian',d.guardian,true)}
           <div class="row g-2">
-            <div class="col-md-8">${inpS('attorney','Attorney for Guardian',d.attorney,true)}</div>
+            <div class="col-md-8">${inpS('attorney','Attorney for Guardian',d.attorney,isAttorneyStarted(d,'simplified'))}</div>
             <div class="col-md-4">${countyInputS('county','County',d.county,true)}</div>
           </div>
           ${renderSelectField({path:'typeOfGuardianship',label:'Type of Guardianship',value:d.typeOfGuardianship,options:optionsWithLegacyValue(GUARDIANSHIP_TYPE_OPTIONS,d.typeOfGuardianship),required:true})}
@@ -555,6 +579,9 @@ function pagePart5(){
   return `<div class="schedule-page">
     <h1>Part V — Guardian Attorney Signature</h1>
   ${preparerNoteHTML()}
+    ${isAttorneyStarted(d,'simplified')?'':`<div class="alert alert-secondary" role="status" data-no-attorney-notice>
+      <strong>No attorney is entered</strong>, so this part is not required: a guardian need not be represented by an attorney to file a simplified annual accounting (§744.3679(3), Florida Statutes). The filed PDF says so in place of this attestation. If an attorney represents the guardian, enter them below and this part becomes required.
+    </div>`}
     <div class="attestation-text">The undersigned Attorney hereby notifies the Court of the filing of the simplified annual accounting of the Guardian. This simplified annual accounting is the representation of the guardian. The undersigned attorney represents that he/she has examined the contents of the accounting and that it conforms to the requirements of the Florida Guardianship Law.</div>
     <div class="row g-3 card-grid-2col">
       <div class="col-12 col-lg-6">
@@ -565,12 +592,12 @@ function pagePart5(){
               <div class="col-md-6">${inpS('attorney','Attorney Name (linked to Part I)',d.attorney)}</div>
               <div class="col-md-3">${inpSWithTooltip('attorney_signatureDate','Signature Date','signature_date',d.attorney_signatureDate,'','date')}</div>
               <div class="col-12">${renderSignatureStateControl({ path: 'attorney', state: inferLegacySignatureState(d.attorney_signatureState, d.attorney_signatureDate), route: '/p5', signatureImage: d.attorney_signatureImage, statePath: 'attorney_signatureState', imagePath: 'attorney_signatureImage' })}</div>
-              <div class="col-md-3">${inpS('attorney_barNumber','Bar Number',d.attorney_barNumber,true)}</div>
-              <div class="col-md-4">${inpS('attorney_phone','Phone Number',d.attorney_phone,true)}</div>
-              <div class="col-md-4">${inpS('attorney_email','Primary Email (e-filing)',d.attorney_email,true,'email')}</div>
+              <div class="col-md-3">${inpS('attorney_barNumber','Bar Number',d.attorney_barNumber,isAttorneyStarted(d,'simplified'))}</div>
+              <div class="col-md-4">${inpS('attorney_phone','Phone Number',d.attorney_phone,isAttorneyStarted(d,'simplified'))}</div>
+              <div class="col-md-4">${inpS('attorney_email','Primary Email (e-filing)',d.attorney_email,isAttorneyStarted(d,'simplified'),'email')}</div>
               <div class="col-md-4">${inpS('attorney_secondaryEmail','Secondary Email (optional)',d.attorney_secondaryEmail,false,'email')}</div>
-              <div class="col-md-8">${inpS('attorney_street','Street Address',d.attorney_street,true)}</div>
-              <div class="col-md-4">${inpS('attorney_cityStateZip','City / State / Zip Code',d.attorney_cityStateZip,true)}</div>
+              <div class="col-md-8">${inpS('attorney_street','Street Address',d.attorney_street,isAttorneyStarted(d,'simplified'))}</div>
+              <div class="col-md-4">${inpS('attorney_cityStateZip','City / State / Zip Code',d.attorney_cityStateZip,isAttorneyStarted(d,'simplified'))}</div>
             </div>
           </div>
         </div>
@@ -597,21 +624,14 @@ function pagePart6(){
       </div>
     </div></div>`;
   }).join('');
-  return `<div class="schedule-page">
-    <h1>Part VI (Part X) — Guardian Attorney Certificate of Service</h1>
-  ${preparerNoteHTML()}
-    <div class="schedule-instructions">Pursuant to Florida Statute 744.362(1), I hereby certify that a copy of this simplified annual accounting has been furnished to the recipients below.</div>
-    <div class="row g-3 mb-3">
-      <div class="col-md-4">${inpS('certServiceDate','Date of Service',d.certServiceDate,true,'date')}</div>
-      <div class="col-md-8">${inpS('certIndicator','Indicate if (e.g. hand-delivered, mailed)',d.certIndicator,true)}</div>
-    </div>
-    <h2 style="color:var(--ink);margin:.75rem 0 .4rem;font-size:.95rem;">Recipients</h2>
-    ${renderServiceAttestationRow({html:yesNoCheckboxS('certNoRecipients',ATTESTATION_57B,d.certNoRecipients,false,'/p6'),rows:d.certRecipients,attestation:d.certNoRecipients,startedFields:RECIPIENT_STARTED_FIELDS,recipientsPath:'certRecipients',attestationPath:'certNoRecipients'})}
-    ${d.certNoRecipients==='Yes'?'':`<div class="row g-3 card-grid-2col mb-3">
-      ${cards}
-    </div>
-    <button type="button" class="btn btn-outline-secondary btn-sm mb-4 no-print" data-simplified-action="add-recipient">+ Add Recipient</button>`}
-    <h2 style="color:var(--ink);margin:.75rem 0 .4rem;font-size:.95rem;">Attorney Signature</h2>
+  // Milestone 71B: with no attorney started -- which section 744.3679(3)
+  // allows on every Simplified Accounting -- the guardian who served the
+  // copies signs the certificate (unrepresented-filing.js). The attorney card
+  // and whatever it holds come back unchanged once an attorney is entered.
+  const started=isAttorneyStarted(d,'simplified');
+  const gLabels=['Guardian #1','Co-Guardian #2','Co-Guardian #3'];
+  const certifier=started?null:resolveServiceCertifier(d);
+  const signerCard=started?`<h2 style="color:var(--ink);margin:.75rem 0 .4rem;font-size:.95rem;">Attorney Signature</h2>
     <div class="schedule-instructions">Leave these blank to reuse the Bar Number, Phone, Street Address, and City/State/Zip entered on the Part V — Atty Signature page; only fill them in if this signature uses different contact information.</div>
     <div class="row g-3 card-grid-2col">
       <div class="col-12 col-lg-6">
@@ -630,7 +650,40 @@ function pagePart6(){
           </div>
         </div>
       </div>
+    </div>`:`<h2 style="color:var(--ink);margin:.75rem 0 .4rem;font-size:.95rem;">Guardian Signature</h2>
+    <div class="alert alert-secondary" role="status" data-guardian-certificate-notice>
+      <strong>No attorney is entered</strong>, so the guardian who served the copies signs this certificate. The court's Excel workbook has an attorney signature line only; the guardian's certificate prints on the PDF.
     </div>
+    ${serviceCertifierChoiceHTML(d,{route:'/p6',labels:gLabels})}
+    <div class="row g-3 card-grid-2col">
+      <div class="col-12 col-lg-6">
+        <div class="entry-card mb-0 h-100" data-guardian-certificate>
+          <div class="entry-card-header">Guardian Certification</div>
+          <div class="entry-card-body">
+            <p class="mb-2">${certifier?`Signed by <strong>${esc(certifier.name||`${gLabels[certifier.index]} (name not entered)`)}</strong>, ${esc(gLabels[certifier.index])} — name and contact details come from Part IV.`:'Tick the guardian who served the copies above.'}</p>
+            <div class="row g-2">
+              <div class="col-md-5">${inpSWithTooltip('certGuardianSignDate','Signature Date','signature_date',d.certGuardianSignDate,'','date')}</div>
+              <div class="col-12">${renderSignatureStateControl({ path: 'certGuardian', state: inferLegacySignatureState(d.certGuardianSignatureState, d.certGuardianSignDate), route: '/p6', signatureImage: d.certGuardianSignatureImage, statePath: 'certGuardianSignatureState', imagePath: 'certGuardianSignatureImage' })}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  return `<div class="schedule-page">
+    <h1>Part VI (Part X) — ${started?'Guardian Attorney ':''}Certificate of Service</h1>
+  ${preparerNoteHTML()}
+    <div class="schedule-instructions">Pursuant to Florida Statute 744.362(1), I hereby certify that a copy of this simplified annual accounting has been furnished to the recipients below.</div>
+    <div class="row g-3 mb-3">
+      <div class="col-md-4">${inpS('certServiceDate','Date of Service',d.certServiceDate,true,'date')}</div>
+      <div class="col-md-8">${inpS('certIndicator','Indicate if (e.g. hand-delivered, mailed)',d.certIndicator,true)}</div>
+    </div>
+    <h2 style="color:var(--ink);margin:.75rem 0 .4rem;font-size:.95rem;">Recipients</h2>
+    ${renderServiceAttestationRow({html:yesNoCheckboxS('certNoRecipients',ATTESTATION_57B,d.certNoRecipients,false,'/p6'),rows:d.certRecipients,attestation:d.certNoRecipients,startedFields:RECIPIENT_STARTED_FIELDS,recipientsPath:'certRecipients',attestationPath:'certNoRecipients'})}
+    ${d.certNoRecipients==='Yes'?'':`<div class="row g-3 card-grid-2col mb-3">
+      ${cards}
+    </div>
+    <button type="button" class="btn btn-outline-secondary btn-sm mb-4 no-print" data-simplified-action="add-recipient">+ Add Recipient</button>`}
+    ${signerCard}
     ${renderScheduleDocsSection('p6')}
     ${pageNavS('/p5','/p7')}
   </div>`;
@@ -706,7 +759,12 @@ export function validateSimplified(){
   req(d.periodFrom,'Cover — Accounting Period From','periodFrom');
   req(d.periodTo,'Cover — Accounting Period To','periodTo');
   req(d.guardian,'Cover — Guardian','guardian');
-  req(d.attorney,'Cover — Attorney for Guardian','attorney');
+  // Milestone 71B: section 744.3679(3) -- "The guardian need not be
+  // represented by an attorney in order to file the annual accounting allowed
+  // by subsection (1)." Every attorney requirement below applies only once the
+  // filer has started entering an attorney (attorney-block.js).
+  const attorneyStarted=isAttorneyStarted(d,'simplified');
+  if(attorneyStarted)req(d.attorney,'Cover — Attorney for Guardian','attorney');
   req(d.typeOfGuardianship,'Cover — Type of Guardianship','typeOfGuardianship');
   req(d.county,'Cover — County','county');
   req(d.amendedForm,'Cover — Amended Form?','amendedForm');
@@ -752,6 +810,7 @@ export function validateSimplified(){
       filingType:T,laterPath:`${gp}.signatureDate`,
     }));
   });
+  if(attorneyStarted){
   req(d.attorney_barNumber,'Part V — Attorney Bar Number','attorney_barNumber');
   req(d.attorney_phone,'Part V — Attorney Phone Number','attorney_phone');
   // Milestone 55D: attorney_email already rendered a required asterisk
@@ -775,6 +834,7 @@ export function validateSimplified(){
     sectionLabel: 'Part V', roleLabel: 'Attorney',
     filingType:T, datePath:'attorney_signatureDate', imagePath:'attorney_signatureImage',
   }));
+  }
   req(d.certServiceDate,'Part VI — Date of Service','certServiceDate');
   errs.push(...checkDateOrder(d.periodTo,d.certServiceDate,{
     sectionLabel:'Part VI',earlierLabel:'Accounting Period To',laterLabel:'Date of Service',allowSameDay:true,
@@ -799,6 +859,7 @@ export function validateSimplified(){
   // audit). The attorney name here is the same shared `d.attorney` field
   // Part V uses (already required at Cover), so name is omitted for the
   // same reason as Part V's own check above.
+  if(attorneyStarted){
   errs.push(...checkSignatureState({
     state: inferLegacySignatureState(d.certAttySignatureState, d.certAttySignDate),
     date: d.certAttySignDate,
@@ -806,6 +867,28 @@ export function validateSimplified(){
     sectionLabel: 'Part VI', roleLabel: 'Attorney',
     filingType:T, datePath:'certAttySignDate', imagePath:'certAttySignatureImage',
   }));
+  }else{
+    // Milestone 71B: with no attorney the guardian who served the copies
+    // signs; with co-guardians the filer says which one, never defaulted.
+    const certifier=resolveServiceCertifier(d);
+    if(!certifier){
+      const first=certifyingCandidates(d)[0];
+      errs.push(issue('Part VI — Tick the guardian who served the copies; that guardian signs the certificate of service',`guardians.${first?first.index:0}.certifiesService`));
+    }else{
+      errs.push(...checkSignatureState({
+        state: inferLegacySignatureState(d.certGuardianSignatureState, d.certGuardianSignDate),
+        name: certifier.name,
+        date: d.certGuardianSignDate,
+        image: d.certGuardianSignatureImage,
+        sectionLabel: 'Part VI', roleLabel: 'Guardian',
+        filingType:T, namePath:`guardians.${certifier.index}.name`, datePath:'certGuardianSignDate', imagePath:'certGuardianSignatureImage',
+      }));
+      errs.push(...checkDateOrder(d.periodTo,d.certGuardianSignDate,{
+        sectionLabel:'Part VI',earlierLabel:'Accounting Period To',laterLabel:'Guardian Certificate Signature Date',allowSameDay:true,
+        filingType:T,laterPath:'certGuardianSignDate',
+      }));
+    }
+  }
   (d.remuneration || []).forEach((r, i) => {
     if (!r || (!r.guardian && !r.type && !r.amount && !r.description)) return;
     req(r.guardian, `Part VII — Line ${i + 1} — Guardian Name`, `remuneration.${i}.guardian`);

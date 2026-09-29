@@ -1,5 +1,5 @@
 {
- "generatedFrom": "Milestone 70, 70C: captured from src/legacy-app.js and src/core/state.js at the 70B tree, BEFORE 70C moved anything (the declarations sliced out and evaluated with state.js and schedule-doc-ack.js loaded as the app loads them). tests/unit/filing-registry.spec.js requires the moved modules to reproduce every value here. Regenerate only for a deliberate, recorded change to a blank filing.",
+ "generatedFrom": "Milestone 70, 70C: captured from src/legacy-app.js and src/core/state.js at the 70B tree, BEFORE 70C moved anything (the declarations sliced out and evaluated with state.js and schedule-doc-ack.js loaded as the app loads them). tests/unit/filing-registry.spec.js requires the moved modules to reproduce every value here. Regenerate only for a deliberate, recorded change to a blank filing. Changed by Milestone 71B (2026-09-29, attorney optional when none is entered): added attorneyWaiverBasis, attorneyWaiverOrderDate, guardians[].certifiesService, serviceGuardian, certGuardianSignDate, certGuardianSignatureState, certGuardianSignatureImage, row.certifiesService.",
  "types": [
   "guardian",
   "simplified",
@@ -22,6 +22,8 @@
    "attorneyForGuardian": "",
    "typeOfGuardianship": "",
    "hasSafeDepositBox": "",
+   "attorneyWaiverBasis": "",
+   "attorneyWaiverOrderDate": null,
    "safeDepositBoxFiled": "",
    "amendedForm": "",
    "scheduleA1": [],
@@ -46,7 +48,8 @@
      "signatureDate": null,
      "signatureState": "",
      "signatureImage": "",
-     "isPreparer": false
+     "isPreparer": false,
+     "certifiesService": false
     }
    ],
    "preparer": {
@@ -102,6 +105,11 @@
     "signatureState": "",
     "signatureImage": ""
    },
+   "serviceGuardian": {
+    "signatureDate": null,
+    "signatureState": "",
+    "signatureImage": ""
+   },
    "serviceIndicateIf": "",
    "witnesses": [],
    "wardPartyId": null,
@@ -142,7 +150,8 @@
      "residenceCityStateZip": "",
      "signatureDate": "",
      "signatureState": "",
-     "signatureImage": ""
+     "signatureImage": "",
+     "certifiesService": false
     }
    ],
    "attorney_barNumber": "",
@@ -157,6 +166,9 @@
    "certAttySignDate": "",
    "certAttySignatureState": "",
    "certAttySignatureImage": "",
+   "certGuardianSignDate": "",
+   "certGuardianSignatureState": "",
+   "certGuardianSignatureImage": "",
    "certAttyBarNumber": "",
    "certAttyPhone": "",
    "certAttyStreet": "",
@@ -206,6 +218,8 @@
    "amendedForm": "",
    "filingType": "Annual",
    "relatedCaseNumbers": "",
+   "attorneyWaiverBasis": "",
+   "attorneyWaiverOrderDate": "",
    "startingBalance": "",
    "guardians": [
     {
@@ -221,7 +235,8 @@
      "signatureDateLabel": "",
      "signatureState": "",
      "signatureImage": "",
-     "isPreparer": false
+     "isPreparer": false,
+     "certifiesService": false
     }
    ],
    "preparer": {
@@ -308,6 +323,9 @@
    "certAttySignDate": "",
    "certAttySignatureState": "",
    "certAttySignatureImage": "",
+   "certGuardianSignDate": "",
+   "certGuardianSignatureState": "",
+   "certGuardianSignatureImage": "",
    "certNoRecipients": "",
    "certRecipients": [
     {
@@ -357,6 +375,8 @@
    "amendedForm": "",
    "filingType": "Final",
    "relatedCaseNumbers": "",
+   "attorneyWaiverBasis": "",
+   "attorneyWaiverOrderDate": "",
    "startingBalance": "",
    "guardians": [
     {
@@ -372,7 +392,8 @@
      "signatureDateLabel": "",
      "signatureState": "",
      "signatureImage": "",
-     "isPreparer": false
+     "isPreparer": false,
+     "certifiesService": false
     }
    ],
    "preparer": {
@@ -459,6 +480,9 @@
    "certAttySignDate": "",
    "certAttySignatureState": "",
    "certAttySignatureImage": "",
+   "certGuardianSignDate": "",
+   "certGuardianSignatureState": "",
+   "certGuardianSignatureImage": "",
    "certNoRecipients": "",
    "certRecipients": [
     {
@@ -508,6 +532,8 @@
    "amendedForm": "",
    "filingType": "Trust",
    "relatedCaseNumbers": "",
+   "attorneyWaiverBasis": "",
+   "attorneyWaiverOrderDate": "",
    "startingBalance": "",
    "guardians": [
     {
@@ -523,7 +549,8 @@
      "signatureDateLabel": "",
      "signatureState": "",
      "signatureImage": "",
-     "isPreparer": false
+     "isPreparer": false,
+     "certifiesService": false
     }
    ],
    "preparer": {
@@ -610,6 +637,9 @@
    "certAttySignDate": "",
    "certAttySignatureState": "",
    "certAttySignatureImage": "",
+   "certGuardianSignDate": "",
+   "certGuardianSignatureState": "",
+   "certGuardianSignatureImage": "",
    "certNoRecipients": "",
    "certRecipients": [
     {
@@ -1341,6 +1371,8 @@
    "attorneyForGuardian": "",
    "typeOfGuardianship": "",
    "hasSafeDepositBox": "",
+   "attorneyWaiverBasis": "",
+   "attorneyWaiverOrderDate": null,
    "safeDepositBoxFiled": "",
    "amendedForm": "",
    "scheduleA1": [],
@@ -1365,7 +1397,8 @@
      "signatureDate": null,
      "signatureState": "",
      "signatureImage": "",
-     "isPreparer": false
+     "isPreparer": false,
+     "certifiesService": false
     }
    ],
    "preparer": {
@@ -1418,6 +1451,11 @@
     "phone": "",
     "streetAddress": "",
     "cityStateZip": "",
+    "signatureState": "",
+    "signatureImage": ""
+   },
+   "serviceGuardian": {
+    "signatureDate": null,
     "signatureState": "",
     "signatureImage": ""
    },
@@ -1475,7 +1513,8 @@
      "residenceCityStateZip": "",
      "signatureDate": "",
      "signatureState": "",
-     "signatureImage": ""
+     "signatureImage": "",
+     "certifiesService": false
     }
    ],
    "attorney_barNumber": "",
@@ -1490,6 +1529,9 @@
    "certAttySignDate": "",
    "certAttySignatureState": "",
    "certAttySignatureImage": "",
+   "certGuardianSignDate": "",
+   "certGuardianSignatureState": "",
+   "certGuardianSignatureImage": "",
    "certAttyBarNumber": "",
    "certAttyPhone": "",
    "certAttyStreet": "",
@@ -1555,6 +1597,8 @@
    "amendedForm": "",
    "filingType": "Annual",
    "relatedCaseNumbers": "",
+   "attorneyWaiverBasis": "",
+   "attorneyWaiverOrderDate": "",
    "startingBalance": "",
    "guardians": [
     {
@@ -1570,7 +1614,8 @@
      "signatureDateLabel": "",
      "signatureState": "",
      "signatureImage": "",
-     "isPreparer": false
+     "isPreparer": false,
+     "certifiesService": false
     }
    ],
    "preparer": {
@@ -1657,6 +1702,9 @@
    "certAttySignDate": "",
    "certAttySignatureState": "",
    "certAttySignatureImage": "",
+   "certGuardianSignDate": "",
+   "certGuardianSignatureState": "",
+   "certGuardianSignatureImage": "",
    "certNoRecipients": "",
    "certRecipients": [
     {
@@ -1722,6 +1770,8 @@
    "amendedForm": "",
    "filingType": "Final",
    "relatedCaseNumbers": "",
+   "attorneyWaiverBasis": "",
+   "attorneyWaiverOrderDate": "",
    "startingBalance": "",
    "guardians": [
     {
@@ -1737,7 +1787,8 @@
      "signatureDateLabel": "",
      "signatureState": "",
      "signatureImage": "",
-     "isPreparer": false
+     "isPreparer": false,
+     "certifiesService": false
     }
    ],
    "preparer": {
@@ -1824,6 +1875,9 @@
    "certAttySignDate": "",
    "certAttySignatureState": "",
    "certAttySignatureImage": "",
+   "certGuardianSignDate": "",
+   "certGuardianSignatureState": "",
+   "certGuardianSignatureImage": "",
    "certNoRecipients": "",
    "certRecipients": [
     {
@@ -1889,6 +1943,8 @@
    "amendedForm": "",
    "filingType": "Trust",
    "relatedCaseNumbers": "",
+   "attorneyWaiverBasis": "",
+   "attorneyWaiverOrderDate": "",
    "startingBalance": "",
    "guardians": [
     {
@@ -1904,7 +1960,8 @@
      "signatureDateLabel": "",
      "signatureState": "",
      "signatureImage": "",
-     "isPreparer": false
+     "isPreparer": false,
+     "certifiesService": false
     }
    ],
    "preparer": {
@@ -1991,6 +2048,9 @@
    "certAttySignDate": "",
    "certAttySignatureState": "",
    "certAttySignatureImage": "",
+   "certGuardianSignDate": "",
+   "certGuardianSignatureState": "",
+   "certGuardianSignatureImage": "",
    "certNoRecipients": "",
    "certRecipients": [
     {
@@ -2943,7 +3003,8 @@
    "signatureDate": null,
    "signatureState": "",
    "signatureImage": "",
-   "isPreparer": false
+   "isPreparer": false,
+   "certifiesService": false
   },
   "guardian:preparer": {
    "name": "",

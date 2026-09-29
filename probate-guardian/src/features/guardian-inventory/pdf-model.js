@@ -9,6 +9,7 @@ import { composePdfAddressLines } from '../../core/pdf/address-format.js';
 import { maskSSN } from '../../core/pdf/ssn-format.js';
 import { calcTotalsGuardian, makeGuardianCalc, isRestrictedAnswer, isInSafeDepositBox, AUDIT_FEE_THRESHOLD, AUDIT_FEE_OVER_THRESHOLD } from './totals.js';
 import { preparedByLine } from '../../core/form/preparer-flag.js';
+import { isUnrepresented, unrepresentedStatement, resolveServiceCertifier } from '../../core/filing/unrepresented-filing.js';
 import { inferBondDepositoryState, bondDepositoryPdfLines, revealsBond } from '../../core/filing/bond-depository.js';
 
 export function buildVerifiedInventoryModel(D, options = {}) {
@@ -606,6 +607,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
 
   // 15. Part III-B: Attorney Attestation
   const attorney = d.attorney || {};
+  const unrepresented = isUnrepresented(d, 'guardian');
   const attorneyDetails = {
     'Florida Bar #': attorney.barNumber || '',
     'Filing Date': fmtDate(attorney.filingDate),
@@ -659,6 +661,14 @@ export function buildVerifiedInventoryModel(D, options = {}) {
       },
       preparerBlock,
       ]),
+      // Milestone 71B: with no attorney started, one line states why in place
+      // of the attorney attestation and its empty signature block.
+      ...(unrepresented ? [{
+        type: 'notice',
+        tag: 'P',
+        title: 'GUARDIAN ATTORNEY SIGNATURE',
+        text: unrepresentedStatement(d, 'guardian'),
+      }] : [
       {
         type: 'notice',
         tag: 'P',
@@ -691,6 +701,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
           [{ label: 'Address', value: attorneyDetails.Address }],
         ],
       },
+      ]),
     ],
   });
 
@@ -790,6 +801,26 @@ export function buildVerifiedInventoryModel(D, options = {}) {
 
   // 17. Part VI: Certificate of Service (D-5)
   const serviceAttorney = d.serviceAttorney || {};
+  // Milestone 71B: with no attorney, the guardian who served the copies
+  // signs, with the name and contact details from their D-1 card.
+  const serviceCertifier = unrepresented ? resolveServiceCertifier(d) : null;
+  const scg = serviceCertifier ? serviceCertifier.guardian : {};
+  const serviceGuardian = d.serviceGuardian || {};
+  const serviceGuardianBlock = unrepresented ? {
+    type: 'signature-block',
+    tag: 'Part',
+    role: 'Guardian (Service)',
+    signerName: serviceCertifier ? serviceCertifier.name : '',
+    signature: formatSignature(serviceCertifier ? serviceCertifier.name : ''),
+    signatureStyle,
+    signatureDate: fmtDate(serviceGuardian.signatureDate),
+    signatureState: serviceGuardian.signatureState || '',
+    signatureImage: serviceGuardian.signatureImage || '',
+    fields: [
+      [{ label: 'Phone', value: scg.phone || '' }],
+      [{ label: 'Address', value: composePdfAddressLines(scg.streetAddress, scg.cityStateZip) }],
+    ],
+  } : null;
   sections.push({
     id: 'd5',
     title: 'Part VI — CERTIFICATE OF SERVICE',
@@ -830,7 +861,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
         tag: 'P',
         text: `Indicate if Ward is: ${d.serviceIndicateIf || '—'}`,
       },
-      {
+      serviceGuardianBlock || {
         type: 'signature-block',
         tag: 'Part',
         role: 'Attorney for Guardian (Service)',

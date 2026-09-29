@@ -26,7 +26,8 @@ import { INITIAL_ADLS } from '../filing/models/plan-initial.js';
 import { guardianHasAnyData, startedRows } from '../validation/row-started.js';
 import { serviceRecipientIssues } from '../validation/service-recipients.js';
 import { isSignatureComplete } from '../validation/signature-state.js';
-import { isPlanInitialAttorneyStarted } from '../validation/attorney-block.js';
+import { isPlanInitialAttorneyStarted, isAttorneyStarted } from '../validation/attorney-block.js';
+import { resolveServiceCertifier } from '../filing/unrepresented-filing.js';
 import { resolvePreparer } from '../form/preparer-flag.js';
 import { certificateStarted as planCertificateStarted } from '../filing/plan-certificate-of-service.js';
 import { errorRoute } from '../validation/error-route.js';
@@ -116,20 +117,27 @@ export function simplifiedCompletion(D, deps = {}) {
   // validator -- the attorney's printed name is required at Cover, and
   // duplicating it here would report the same blank field twice.
   const sigComplete=(state,date,image)=>isSignatureComplete({state,date,image});
+  // Milestone 71B: section 744.3679(3) -- no attorney is needed to file a
+  // Simplified Accounting, so every attorney check below applies only once one
+  // is started, exactly as validateSimplified() now does.
+  const attorneyStarted=isAttorneyStarted(D,'simplified');
+  const certifier=attorneyStarted?null:resolveServiceCertifier(D);
   const checks={
-    's-cover':D.eligDepository==='Yes'&&D.eligOnlyTransactions==='Yes'&&filled(D.wardName)&&filled(D.caseNumber)&&filled(D.ssn)&&filled(D.gid)&&filled(D.periodFrom)&&filled(D.periodTo)&&filled(D.guardian)&&filled(D.attorney)&&filled(D.typeOfGuardianship)&&filled(D.county)&&filled(D.amendedForm)
+    's-cover':D.eligDepository==='Yes'&&D.eligOnlyTransactions==='Yes'&&filled(D.wardName)&&filled(D.caseNumber)&&filled(D.ssn)&&filled(D.gid)&&filled(D.periodFrom)&&filled(D.periodTo)&&filled(D.guardian)&&(!attorneyStarted||filled(D.attorney))&&filled(D.typeOfGuardianship)&&filled(D.county)&&filled(D.amendedForm)
       &&datesOrdered(D.periodFrom,D.periodTo,false)&&datesOrdered(D.gid,D.periodFrom,true),
     's-p2':filled(D.startingBalance)&&filled(D.interestIncome)&&filled(D.depositsSettlement)&&filled(D.serviceCharges)&&filled(D.federalIncomeTax),
     's-p3':filled(D.periodFrom)&&filled(D.periodTo)
       &&datesOrdered(D.periodFrom,D.periodTo,false)&&datesOrdered(D.gid,D.periodFrom,true),
     's-p4':guardianComplete(D.guardians[0]||{})&&D.guardians.every((g,i)=>i===0||!guardianHasAnyData(g)||guardianComplete(g))
       &&D.guardians.every(g=>datesOrdered(D.periodTo,g.signatureDate,true)),
-    's-p5':filled(D.attorney_barNumber)&&filled(D.attorney_phone)&&filled(D.attorney_email)&&filled(D.attorney_street)&&filled(D.attorney_cityStateZip)
+    's-p5':!attorneyStarted||(filled(D.attorney_barNumber)&&filled(D.attorney_phone)&&filled(D.attorney_email)&&filled(D.attorney_street)&&filled(D.attorney_cityStateZip)
       &&datesOrdered(D.periodTo,D.attorney_signatureDate,true)
-      &&sigComplete(D.attorney_signatureState,D.attorney_signatureDate,D.attorney_signatureImage),
+      &&sigComplete(D.attorney_signatureState,D.attorney_signatureDate,D.attorney_signatureImage)),
     's-p6':filled(D.certServiceDate)&&filled(D.certIndicator)&&recipientsSettled(D.certRecipients,D.certNoRecipients)
       &&datesOrdered(D.periodTo,D.certServiceDate,true)
-      &&sigComplete(D.certAttySignatureState,D.certAttySignDate,D.certAttySignatureImage),
+      &&(attorneyStarted
+        ?sigComplete(D.certAttySignatureState,D.certAttySignDate,D.certAttySignatureImage)
+        :(!!certifier&&sigComplete(D.certGuardianSignatureState,D.certGuardianSignDate,D.certGuardianSignatureImage))),
     // Milestone 60J: Part VII is complete when every populated row is
     // complete AND the part has been answered -- entries, or the "none to
     // report" declaration. Matches Annual's 'a-p11' and validateSimplified().
@@ -177,8 +185,11 @@ export function annualCompletion(D, deps = {}) {
     'a-p4':!!resolvePreparer(D)
       ||(filled(D.preparer.name)&&filled(D.preparer.signatureDate)&&filled(D.preparer.ssn)&&filled(D.preparer.phone)&&filled(D.preparer.street)&&filled(D.preparer.cityStateZip)
       &&datesOrdered(D.periodTo,D.preparer.signatureDate,true)),
-    'a-p5':filled(D.attorney_bar)&&filled(D.attorney_phone)&&filled(D.attorney_email)&&filled(D.attorney_street)&&filled(D.attorney_cityStateZip)&&filled(D.attorney_signatureDate)
-      &&datesOrdered(D.periodTo,D.attorney_signatureDate,true),
+    // Milestone 71B: complete with no attorney at all, as validateAnnual()
+    // now allows; once one is started, the whole block, as before.
+    'a-p5':!isAttorneyStarted(D,'annual')
+      ||(filled(D.attorney_bar)&&filled(D.attorney_phone)&&filled(D.attorney_email)&&filled(D.attorney_street)&&filled(D.attorney_cityStateZip)&&filled(D.attorney_signatureDate)
+      &&datesOrdered(D.periodTo,D.attorney_signatureDate,true)),
     // Complete when the two lines agree, or the difference is explained.
     'a-p67':(()=>{const r=deps.annualReconcileState(t,D);return !r.outOfBalance||r.explained;})(),
     // Part VIII is satisfied either by naming a trust or by certifying there
@@ -191,8 +202,17 @@ export function annualCompletion(D, deps = {}) {
     // sidebar asks "have you finished?", the gate asks "does this satisfy
     // the court?", and they are allowed to differ.
     'a-p9':filled(D.bondDepositoryState),
+    // Milestone 71B: with no attorney, the certificate is not finished until
+    // the guardian who served the copies is known (asked only with
+    // co-guardians) and their certificate signature is valid -- the rule
+    // validateAnnual() applies, so the sidebar names every field the export
+    // gate does (tests/unit/checklist-export-parity.spec.js).
     'a-p10':filled(D.certDate)&&recipientsSettled(D.certRecipients,D.certNoRecipients)
-      &&datesOrdered(D.periodTo,D.certDate,true),
+      &&datesOrdered(D.periodTo,D.certDate,true)
+      &&(isAttorneyStarted(D,'annual')
+        ||(!!resolveServiceCertifier(D)
+          &&isSignatureComplete({state:D.certGuardianSignatureState,date:D.certGuardianSignDate,image:D.certGuardianSignatureImage})
+          &&datesOrdered(D.periodTo,D.certGuardianSignDate,true))),
     // Milestone 58D: Part XI is complete once it is ANSWERED -- either the
     // no-items declaration is ticked, or there is at least one populated row
     // and every populated row is complete. Previously an untouched Part XI
@@ -524,7 +544,16 @@ export function planMinorCompletion(D, deps = {}) {
     // matching validatePlanMinor().
     'pm-p6':anyOf(D.certIncapacitated,D.certMinor,D.certConsulted,D.certNoRestriction,D.certProvidesCare,D.certPhysicianAttached)
       &&filled(g0.name)&&filled(g0.signatureDate),
-    'pm-p7':filled(D.preparer_name)&&filled(D.attorney_name)&&filled(D.attorney_signatureDate),
+    // Milestone 71B: the preparer and the attorney are each optional until
+    // started (pro se filers and Guardian Advocates need neither), exactly as
+    // validatePlanMinor() has always said; the sidebar used to demand both, so
+    // a pro se filing never reached 100%. A started role is complete with its
+    // name and a valid signature choice -- the validator's own two checks.
+    'pm-p7':[['preparer_name','preparer_signatureDate','preparer_signatureState','preparer_signatureImage'],['attorney_name','attorney_signatureDate','attorney_signatureState','attorney_signatureImage']]
+      .every(([name,date,state,image])=>{
+        const started=filled(D[name])||filled(D[date])||(!!D[state]&&D[state]!=='none');
+        return !started||(filled(D[name])&&isSignatureComplete({state:D[state],date:D[date],image:D[image]}));
+      }),
     // Milestone 68C: the Certificate of Service -- see Plan Simplified's ps-p4.
     'pm-p8':recipientsSettled(D.certRecipients,D.certNoRecipients),
   };

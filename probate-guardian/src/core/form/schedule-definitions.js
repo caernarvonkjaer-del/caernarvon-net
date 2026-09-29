@@ -22,6 +22,9 @@ export const SCHEDULE_SCHEMAS = {
       // Milestone 67A: "This person prepared this filing" -- lives on the
       // row so it is removed with the guardian (src/core/form/preparer-flag.js).
       isPreparer: false,
+      // Milestone 71B: "This guardian served the copies" -- on the row for
+      // the same reason (src/core/filing/unrepresented-filing.js).
+      certifiesService: false,
     }),
     label: 'Co-Guardian',
     floor: 1,

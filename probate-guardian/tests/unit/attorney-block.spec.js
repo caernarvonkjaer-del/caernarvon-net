@@ -30,3 +30,19 @@ describe('isPlanInitialAttorneyStarted()', () => {
     expect(isPlanInitialAttorneyStarted({ ...BLANK, [field]: value })).toBe(true);
   });
 });
+
+// Milestone 71B generalized the rule to the Inventory and the Annual family and
+// Simplified Accounting (isAttorneyStarted(d, engineId), one field list per
+// engine); the Initial Plan's own function is now a thin wrapper over it, so
+// its callers did not change. The per-engine behaviour is in
+// tests/unit/attorney-optional.spec.js.
+describe('isAttorneyStarted(): the one rule, per engine', () => {
+  test('the Initial Plan wrapper answers exactly what the general rule answers', async () => {
+    const { isAttorneyStarted } = await import('../../src/core/validation/attorney-block.js');
+    for (const [field, value] of [['attorney_phone', '727-555-0143'], ['attorney_name', 'Rob Atty'], ['attorney_signatureState', 'typed'], ['attorney_signatureState', 'none']]) {
+      const d = { ...BLANK, [field]: value };
+      expect(isPlanInitialAttorneyStarted(d), field).toBe(isAttorneyStarted(d, 'planInitial'));
+    }
+    expect(isAttorneyStarted(BLANK, 'planInitial')).toBe(false);
+  });
+});

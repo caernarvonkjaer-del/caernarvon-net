@@ -23,7 +23,7 @@ export function emptyDataSimplified() {
     depositsSettlement:'',
     serviceCharges:'',
     federalIncomeTax:'',
-    guardians:[{name:'',ssn:'',phone:'',email:'',mailingStreet:'',mailingCityStateZip:'',residenceStreet:'',residenceCityStateZip:'',signatureDate:'',signatureState:'',signatureImage:''}],
+    guardians:[{name:'',ssn:'',phone:'',email:'',mailingStreet:'',mailingCityStateZip:'',residenceStreet:'',residenceCityStateZip:'',signatureDate:'',signatureState:'',signatureImage:'',certifiesService:false}],
     attorney_barNumber:'', attorney_phone:'', attorney_email:'', attorney_street:'', attorney_cityStateZip:'',
     attorney_signatureDate:'',
     // Milestone 39-C
@@ -32,6 +32,8 @@ export function emptyDataSimplified() {
     certAttySignDate:'',
     // Milestone 39-C
     certAttySignatureState:'', certAttySignatureImage:'',
+    // Milestone 71B: the guardian's certificate-of-service signature, used when no attorney is started.
+    certGuardianSignDate:'', certGuardianSignatureState:'', certGuardianSignatureImage:'',
     certAttyBarNumber:'', certAttyPhone:'', certAttyStreet:'', certAttyCityStateZip:'',
     // Milestone 57B: filer attestation that no one requires service.
     // Tri-state, never coerced (section 4): '' is unanswered, and an

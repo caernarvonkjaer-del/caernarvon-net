@@ -30,6 +30,19 @@ import { SCHEDULE_NAV_KEYS } from '../../core/filing/models/guardian.js';
 import { getD, requestSave } from '../../core/state.js';
 import { saveData } from '../../core/persistence/case-file.js';
 import { afterChange, bindForms } from './form-binding.js';
+import { isAttorneyStarted } from '../../core/validation/attorney-block.js';
+import { resolveServiceCertifier, certifyingCandidates, serviceCertifierChoiceHTML, waiverBasisQuestionHTML } from '../../core/filing/unrepresented-filing.js';
+import { watchAttorneyRequiredMarkers } from '../../core/form/attorney-required-markers.js';
+
+// Milestone 71B: the attorney fields that become required once an attorney is
+// started (and only then), per page -- the live markers and validateGuardian()
+// share the rule.
+const INVENTORY_ATTORNEY_REQUIRED = {
+  '/': ['attorneyForGuardian'],
+  '/d2': ['attorney.name', 'attorney.signatureDate', 'attorney.filingDate', 'attorney.barNumber', 'attorney.phone', 'attorney.email', 'attorney.streetAddress', 'attorney.cityStateZip'],
+};
+const INVENTORY_ATTORNEY_TRIGGERS = ['attorneyForGuardian', 'attorney'];
+const attorneyMarkerAborts = new WeakMap();
 import { yesNoCheckboxS, yesNoRadioHTML } from '../../core/form/field-html.js';
 import { browserRecommendationNotice, linkAccordions, linkLabelsToInputs, sanitizeNegativeAmounts, setupAmountFieldValidation } from '../../core/form/form-runtime.js';
 import { initPrintPager } from '../../core/ui/print-pager.js';
@@ -201,6 +214,14 @@ export async function mount(container, page, { signal } = {}) {
   linkLabelsToInputs();
   // Milestone 40C-C removed enforceDateRanges() (see the router's note).
   setupAmountFieldValidation();
+  attorneyMarkerAborts.get(container)?.abort();
+  attorneyMarkerAborts.delete(container);
+  const markerPaths = INVENTORY_ATTORNEY_REQUIRED[page || '/'];
+  if (markerPaths) {
+    attorneyMarkerAborts.set(container, watchAttorneyRequiredMarkers(container, {
+      engineId: 'guardian', paths: markerPaths, triggerPaths: INVENTORY_ATTORNEY_TRIGGERS,
+    }));
+  }
   updateNavDots();
   // The pv-pager needs the real .pdf-page elements in the DOM before it can
   // count/label them, so it must run after the async preview render, not
@@ -222,6 +243,8 @@ export function dispose(container) {
   eventControllers.delete(container);
   signatureHandles.get(container)?.forEach((h) => h.destroy());
   signatureHandles.delete(container);
+  attorneyMarkerAborts.get(container)?.abort();
+  attorneyMarkerAborts.delete(container);
   container.replaceChildren();
 }
 
@@ -366,6 +389,9 @@ export function pageNav(current){
 
 
 function reqLabel(text){return `<label class="form-label"><strong>${text}</strong><span class="req">*</span></label>`;}
+// Milestone 71B: an attorney field is required only once an attorney is
+// started; the markers then follow live (watchAttorneyRequiredMarkers()).
+function attyLabel(text){return isAttorneyStarted(D,'guardian')?reqLabel(text):`<label class="form-label"><strong>${text}</strong></label>`;}
 function optLabel(text){return `<label class="form-label">${text}</label>`;}
 function formRow(...cols){
   return `<div class="row g-2 mb-1">${cols.join('')}</div>`;
@@ -705,12 +731,13 @@ function pageHome(){
       <div class="summary-box">
         <h2 class="subsection-heading">Guardian &amp; Attorney</h2>
         ${formRow(col(12,reqLabel('Guardian Name(s)')+textInput('guardianName','','name')))}
-        ${formRow(col(12,reqLabel('Attorney for Guardian')+textInput('attorneyForGuardian','','name')))}
+        ${formRow(col(12,attyLabel('Attorney for Guardian')+textInput('attorneyForGuardian','','name')))}
         ${formRow(col(12,reqLabel('Type of Guardianship')+selectInput('typeOfGuardianship',optionsWithLegacyValuePairs(GUARDIANSHIP_TYPE_OPTIONS,D.typeOfGuardianship),D.typeOfGuardianship)))}
         ${formRow(col(12,yesNoRadioHTML('amendedForm','Amended Form?',D.amendedForm||(D.isAmended?'Yes':(D.isAmended===false?'No':'')),'amendedForm')))}
       </div>
     </div>
   </div>
+  ${isAttorneyStarted(D,'guardian')?'':waiverBasisQuestionHTML(D,{route:'/',dateField:(path,label)=>optLabel(label)+dateInput(path)})}
   <div class="summary-box mb-3">
     <h2 class="subsection-heading">Inventory Witnesses</h2>
     <div class="schedule-instructions">A personal property inventory must include the names, addresses, and occupations of witnesses present during the physical inventory of the ward's personal effects.</div>
@@ -1118,6 +1145,9 @@ function pageD2(){
   </div>
   <div class="col-12 col-lg-6">
   <h2 style="color:var(--ink);margin:.75rem 0 .4rem;font-size:.95rem;">Guardian Attorney Signature</h2>
+  ${isAttorneyStarted(D,'guardian')?'':`<div class="alert alert-secondary" role="status" data-no-attorney-notice>
+    <strong>No attorney is entered</strong>, so the attorney attestation is not required. The filed PDF states why the guardian has no attorney in its place (see the question on the Cover). If an attorney represents the guardian, enter them here and it becomes required.
+  </div>`}
   <p style="font-size:.78rem;font-style:italic;color:var(--ink-3);">The attorney may use an electronic signature "/s/".</p>
   <div class="entry-card mb-0 h-100">
     <div class="entry-card-header d-flex justify-content-between align-items-center">
@@ -1125,10 +1155,10 @@ function pageD2(){
       <button class="btn btn-sm btn-outline-secondary no-print" data-inventory-action="link-party" data-role="attorney" data-index="0">Link Person</button>
     </div>
     <div class="entry-card-body">
-      ${formRow(col(5,reqLabel("Attorney's Name")+textInput('attorney.name','','name')),col(3,reqLabel('Signature Date')+dateInput('attorney.signatureDate')),col(4,reqLabel('Filing Date (as of)')+dateInput('attorney.filingDate')))}
-      ${formRow(col(4,reqLabel('Florida Bar Number')+textInput('attorney.barNumber','','barNumber')),col(4,reqLabel('Phone Number')+textInput('attorney.phone','','phone')))}
-      ${formRow(col(6,reqLabel('Primary Email (e-filing)')+textInput('attorney.email','name@lawfirm.com','email')),col(6,optLabel('Secondary Email (optional)')+textInput('attorney.secondaryEmail','assistant@lawfirm.com','email')))}
-      ${formRow(col(8,reqLabel('Street Address')+textInput('attorney.streetAddress','','address')),col(6,reqLabel('City / State / Zip')+textInput('attorney.cityStateZip','','zip')))}
+      ${formRow(col(5,attyLabel("Attorney's Name")+textInput('attorney.name','','name')),col(3,attyLabel('Signature Date')+dateInput('attorney.signatureDate')),col(4,attyLabel('Filing Date (as of)')+dateInput('attorney.filingDate')))}
+      ${formRow(col(4,attyLabel('Florida Bar Number')+textInput('attorney.barNumber','','barNumber')),col(4,attyLabel('Phone Number')+textInput('attorney.phone','','phone')))}
+      ${formRow(col(6,attyLabel('Primary Email (e-filing)')+textInput('attorney.email','name@lawfirm.com','email')),col(6,optLabel('Secondary Email (optional)')+textInput('attorney.secondaryEmail','assistant@lawfirm.com','email')))}
+      ${formRow(col(8,attyLabel('Street Address')+textInput('attorney.streetAddress','','address')),col(6,attyLabel('City / State / Zip')+textInput('attorney.cityStateZip','','zip')))}
       ${renderSignatureStateControl({ path: 'attorney', state: inferLegacySignatureState(D.attorney.signatureState, D.attorney.signatureDate), route: '/d2', signatureImage: D.attorney.signatureImage })}
       ${preparerFlagCheckboxHTML({ path: 'attorney.isPreparer', checked: !!D.attorney.isPreparer, route: '/d2' })}
     </div>
@@ -1209,6 +1239,42 @@ function pageD4(){
 }
 
 function pageD5(){
+  // Milestone 71B: with no attorney started, the guardian who served the copies
+  // signs the certificate (unrepresented-filing.js). The attorney card and
+  // whatever it holds come back unchanged once an attorney is entered.
+  const serviceCertificateHTML=()=>{
+    const serviceRow=formRow(col(4,reqLabel('Service Date (on this date)')+dateInput('serviceDate')),col(8,reqLabel('Indicate if Ward is:')+selectInput('serviceIndicateIf',[['','— Select —'],['Ward is totally incapacitated','Ward is totally incapacitated'],['Ward is under 14 years old','Ward is under 14 years old'],['N/A','N/A']],D.serviceIndicateIf)));
+    if(isAttorneyStarted(D,'guardian'))return `<h2 style="color:var(--ink);margin:.75rem 0 .4rem;font-size:.95rem;">Attorney Certification</h2>
+    <div class="attorney-certification-card entry-card">
+      <div class="entry-card-body">
+        ${serviceRow}
+        ${formRow(col(5,reqLabel("Attorney's Name")+textInput('serviceAttorney.name','','name')),col(3,reqLabel('Signature Date')+dateInput('serviceAttorney.signatureDate')),col(4,reqLabel('Florida Bar Number')+textInput('serviceAttorney.barNumber','','barNumber')))}
+        ${formRow(col(4,reqLabel('Phone')+textInput('serviceAttorney.phone','','phone')),col(8,reqLabel('Street Address')+textInput('serviceAttorney.streetAddress','','address')))}
+        ${formRow(col(6,reqLabel('City / State / Zip')+textInput('serviceAttorney.cityStateZip','','zip')))}
+        ${renderSignatureStateControl({ path: 'serviceAttorney', state: inferLegacySignatureState(D.serviceAttorney.signatureState, D.serviceAttorney.signatureDate), route: '/d5', signatureImage: D.serviceAttorney.signatureImage })}
+      </div>
+    </div>`;
+    if(!D.serviceGuardian||typeof D.serviceGuardian!=='object')D.serviceGuardian={signatureDate:null,signatureState:'',signatureImage:''};
+    const sg=D.serviceGuardian;
+    const certifier=resolveServiceCertifier(D);
+    const who=certifier
+      ?`Signed by <strong>${esc(certifier.name||`Guardian #${certifier.index+1} (name not entered)`)}</strong>, Guardian #${certifier.index+1} — name and contact details come from D-1.`
+      :'Tick the guardian who served the copies above.';
+    return `<h2 style="color:var(--ink);margin:.75rem 0 .4rem;font-size:.95rem;">Guardian Certification</h2>
+    <div class="alert alert-secondary" role="status" data-guardian-certificate-notice>
+      <strong>No attorney is entered</strong>, so the guardian who served the copies signs this certificate. The court's Excel workbook has an attorney signature line only; the guardian's certificate prints on the PDF.
+    </div>
+    ${serviceCertifierChoiceHTML(D,{route:'/d5'})}
+    <div class="attorney-certification-card entry-card" data-guardian-certificate>
+      <div class="entry-card-body">
+        ${serviceRow}
+        <p class="mb-2">${who}</p>
+        ${formRow(col(4,optLabel('Signature Date')+dateInput('serviceGuardian.signatureDate')))}
+        ${renderSignatureStateControl({ path: 'serviceGuardian', state: inferLegacySignatureState(sg.signatureState, sg.signatureDate), route: '/d5', signatureImage: sg.signatureImage })}
+      </div>
+    </div>`;
+  };
+
   const cards=D.serviceRecipients.map((r,i)=>{
     const removeBtn=D.serviceRecipients.length>1?`<button class="btn btn-sm btn-outline-danger no-print" data-inventory-action="remove-recipient" data-index="${i}">✕ Remove</button>`:'';
     return `<div class="col-12 col-lg-6"><div class="entry-card mb-0 h-100">
@@ -1227,16 +1293,7 @@ function pageD5(){
   <h2 style="color:var(--ink);margin:.75rem 0 .4rem;font-size:.95rem;">Recipients</h2>
   ${renderServiceAttestationRow({html:yesNoCheckboxS('serviceNoRecipients',ATTESTATION_57B,D.serviceNoRecipients,false,'/d5'),rows:D.serviceRecipients,attestation:D.serviceNoRecipients,startedFields:RECIPIENT_STARTED_FIELDS,recipientsPath:'serviceRecipients',attestationPath:'serviceNoRecipients'})}
   ${D.serviceNoRecipients==='Yes'?'':`<div class="row g-3 card-grid-2col">${cards}</div>${addBtn2}`}
-  <h2 style="color:var(--ink);margin:.75rem 0 .4rem;font-size:.95rem;">Attorney Certification</h2>
-  <div class="attorney-certification-card entry-card">
-    <div class="entry-card-body">
-      ${formRow(col(4,reqLabel('Service Date (on this date)')+dateInput('serviceDate')),col(8,reqLabel('Indicate if Ward is:')+selectInput('serviceIndicateIf',[['','— Select —'],['Ward is totally incapacitated','Ward is totally incapacitated'],['Ward is under 14 years old','Ward is under 14 years old'],['N/A','N/A']],D.serviceIndicateIf)))}
-      ${formRow(col(5,reqLabel("Attorney's Name")+textInput('serviceAttorney.name','','name')),col(3,reqLabel('Signature Date')+dateInput('serviceAttorney.signatureDate')),col(4,reqLabel('Florida Bar Number')+textInput('serviceAttorney.barNumber','','barNumber')))}
-      ${formRow(col(4,reqLabel('Phone')+textInput('serviceAttorney.phone','','phone')),col(8,reqLabel('Street Address')+textInput('serviceAttorney.streetAddress','','address')))}
-      ${formRow(col(6,reqLabel('City / State / Zip')+textInput('serviceAttorney.cityStateZip','','zip')))}
-      ${renderSignatureStateControl({ path: 'serviceAttorney', state: inferLegacySignatureState(D.serviceAttorney.signatureState, D.serviceAttorney.signatureDate), route: '/d5', signatureImage: D.serviceAttorney.signatureImage })}
-    </div>
-  </div>
+  ${serviceCertificateHTML()}
   ${pageNav('/d5')}</div>`;
 }
 
@@ -1269,7 +1326,14 @@ export function validateGuardian(d=getD()){
   if(!d.gid)push('Cover — Guardianship Inception Date (GID) is required.','gid');
   req(d.county,'Cover — County is required.','county');
   req(d.guardianName,'Cover — Guardian Name(s) is required.','guardianName');
-  req(d.attorneyForGuardian,'Cover — Attorney for Guardian is required.','attorneyForGuardian');
+  // Milestone 71B: every attorney requirement applies only once the filer has
+  // started entering an attorney. A guardian advocate (Rule 5.030(a)), a
+  // guardian whose representation the court waived, or a guardian who is a
+  // Florida attorney files with none; AGENTS.md section 4 keeps attorney
+  // certification off such a filing's export gate. Why there is no attorney is
+  // asked on the Cover and noted on Preview & Export (unrepresented-filing.js).
+  const attorneyStarted=isAttorneyStarted(d,'guardian');
+  if(attorneyStarted)req(d.attorneyForGuardian,'Cover — Attorney for Guardian is required.','attorneyForGuardian');
   req(d.typeOfGuardianship,'Cover — Type of Guardianship is required.','typeOfGuardianship');
   // A schedule left totally untouched -- no rows, and the "I verify there
   // are no X to report" checkbox (scheduleEmptyHTML()/setScheduleNoItems())
@@ -1334,7 +1398,7 @@ export function validateGuardian(d=getD()){
   if(!hasIdentifiedPreparer(d)){
   req(d.preparer.name,'D-2 Preparer — Name','preparer.name');errors.push(...checkSignatureState({state:inferLegacySignatureState(d.preparer.signatureState,d.preparer.signatureDate),date:d.preparer.signatureDate,image:d.preparer.signatureImage,sectionLabel:'D-2 Preparer',roleLabel:'',filingType:T,datePath:'preparer.signatureDate',imagePath:'preparer.signatureImage'}));req(d.preparer.ssnEin,'D-2 Preparer — SSN/EIN','preparer.ssnEin');req(d.preparer.phone,'D-2 Preparer — Phone','preparer.phone');req(d.preparer.streetAddress,'D-2 Preparer — Street Address','preparer.streetAddress');req(d.preparer.cityStateZip,'D-2 Preparer — City/State/Zip','preparer.cityStateZip');
   }
-  req(d.attorney.name,'D-2 Attorney — Name','attorney.name');errors.push(...checkSignatureState({state:inferLegacySignatureState(d.attorney.signatureState,d.attorney.signatureDate),date:d.attorney.signatureDate,image:d.attorney.signatureImage,sectionLabel:'D-2 Attorney',roleLabel:'',filingType:T,datePath:'attorney.signatureDate',imagePath:'attorney.signatureImage'}));if(!d.attorney.filingDate)push('D-2 Attorney — Filing Date is required.','attorney.filingDate');req(d.attorney.barNumber,'D-2 Attorney — Bar Number','attorney.barNumber');req(d.attorney.phone,'D-2 Attorney — Phone','attorney.phone');req(d.attorney.streetAddress,'D-2 Attorney — Street Address','attorney.streetAddress');req(d.attorney.cityStateZip,'D-2 Attorney — City/State/Zip','attorney.cityStateZip');
+  if(attorneyStarted){req(d.attorney.name,'D-2 Attorney — Name','attorney.name');errors.push(...checkSignatureState({state:inferLegacySignatureState(d.attorney.signatureState,d.attorney.signatureDate),date:d.attorney.signatureDate,image:d.attorney.signatureImage,sectionLabel:'D-2 Attorney',roleLabel:'',filingType:T,datePath:'attorney.signatureDate',imagePath:'attorney.signatureImage'}));if(!d.attorney.filingDate)push('D-2 Attorney — Filing Date is required.','attorney.filingDate');req(d.attorney.barNumber,'D-2 Attorney — Bar Number','attorney.barNumber');req(d.attorney.phone,'D-2 Attorney — Phone','attorney.phone');req(d.attorney.streetAddress,'D-2 Attorney — Street Address','attorney.streetAddress');req(d.attorney.cityStateZip,'D-2 Attorney — City/State/Zip','attorney.cityStateZip');}
   // "Unanswered" is anything other than Yes or No. New filings start with
   // '', and both explicit strings satisfy the parent answer; the filed
   // question is required only when the parent is Yes.
@@ -1394,7 +1458,20 @@ export function validateGuardian(d=getD()){
   // real, complete answer -- not a stand-in for unanswered -- so req()'s
   // truthy check is exactly right: it only flags the empty string.
   req(d.serviceIndicateIf,'D-5 — Indicate if Ward is:','serviceIndicateIf');
+  if(attorneyStarted){
   req(d.serviceAttorney.name,'D-5 Attorney — Name','serviceAttorney.name');errors.push(...checkSignatureState({state:inferLegacySignatureState(d.serviceAttorney.signatureState,d.serviceAttorney.signatureDate),date:d.serviceAttorney.signatureDate,image:d.serviceAttorney.signatureImage,sectionLabel:'D-5 Attorney',roleLabel:'',filingType:T,datePath:'serviceAttorney.signatureDate',imagePath:'serviceAttorney.signatureImage'}));req(d.serviceAttorney.barNumber,'D-5 Attorney — Bar Number','serviceAttorney.barNumber');req(d.serviceAttorney.phone,'D-5 Attorney — Phone','serviceAttorney.phone');req(d.serviceAttorney.streetAddress,'D-5 Attorney — Street Address','serviceAttorney.streetAddress');req(d.serviceAttorney.cityStateZip,'D-5 Attorney — City/State/Zip','serviceAttorney.cityStateZip');
+  }else{
+    // Milestone 71B: with no attorney the guardian who served the copies
+    // signs; with co-guardians the filer says which one, never defaulted.
+    const certifier=resolveServiceCertifier(d);
+    if(!certifier){
+      const first=certifyingCandidates(d)[0];
+      push('D-5 — Tick the guardian who served the copies; that guardian signs the certificate of service',`guardians.${first?first.index:0}.certifiesService`);
+    }else{
+      const sg=d.serviceGuardian||{};
+      errors.push(...checkSignatureState({state:inferLegacySignatureState(sg.signatureState,sg.signatureDate),name:certifier.name,date:sg.signatureDate,image:sg.signatureImage,sectionLabel:'D-5 Guardian',roleLabel:'',filingType:T,namePath:`guardians.${certifier.index}.name`,datePath:'serviceGuardian.signatureDate',imagePath:'serviceGuardian.signatureImage'}));
+    }
+  }
   return errors;
 }
 

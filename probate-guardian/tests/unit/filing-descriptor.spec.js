@@ -54,10 +54,14 @@ describe('Annual-family filing identity in generated output', () => {
     ['trustAccounting', 'Trust', 'TRUST GUARDIANSHIP ACCOUNTING', 'Trust Accounting'],
   ]) {
     test(`${filingType} uses its own headers and signed-attestation language`, () => {
+      // Milestone 71B: the attorney attestation prints only once an attorney
+      // is entered (with none, Part V states why instead), so the attestation
+      // wording under test needs one.
       const model = buildAnnualAccountingModel({
         ...annualBase,
         inventoryType,
         filingType,
+        attorney: 'Jordan Pike',
         periodFrom: '2026-01-01',
         periodTo: '2026-12-31',
       });

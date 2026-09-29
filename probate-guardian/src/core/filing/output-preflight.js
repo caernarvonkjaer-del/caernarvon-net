@@ -8,6 +8,15 @@ import { formDerivedOverwriteWarnings } from './form-derived-fields.js';
 import { bondDepositoryAdvisories } from './bond-depository.js';
 import { planCertificateAdvisories, certificateOptional } from './plan-certificate-of-service.js';
 import { wardShareAdvisories } from './ward-share-advisories.js';
+import { unrepresentedAdvisories } from './unrepresented-filing.js';
+
+// Milestone 71B. Where each accounting form asks why there is no attorney,
+// and where its certificate of service is, by the registry's engine id.
+const UNREPRESENTED_SECTIONS = Object.freeze({
+  guardian: { basisSection: 'Cover', certificateSection: 'D-5' },
+  annual: { basisSection: 'Part I', certificateSection: 'Part X' },
+  simplified: { basisSection: 'Cover', certificateSection: 'Part VI' },
+});
 
 // Milestone 67B. The page each form asks the bond / restricted-depository
 // question on, by the registry's own engine id (the Annual family shares
@@ -69,6 +78,12 @@ export function prepareFilingOutput(data, baseIssues = [], options = {}) {
     // Accountings: Ward's % now reads as a percentage everywhere, so a share
     // typed as a fraction under the old reading is pointed out, never blocked.
     ...(identity.descriptor?.engineId === 'annual' ? wardShareAdvisories(target) : []),
+    // Milestone 71B: a filing with no attorney is never blocked for it; the
+    // unanswered basis and the Excel certificate's attorney-only line are
+    // said here instead.
+    ...(UNREPRESENTED_SECTIONS[identity.descriptor?.engineId]
+      ? unrepresentedAdvisories(target, { engineId: identity.descriptor.engineId, ...UNREPRESENTED_SECTIONS[identity.descriptor.engineId] })
+      : []),
   ];
 
   return {

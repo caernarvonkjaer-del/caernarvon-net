@@ -1,6 +1,7 @@
 import { bindFieldToFiling, finalizeFieldValue, writeDraftValue } from './core/form/form-contract.js';
 import { focusFieldByPath } from './core/validation/validation-adapter.js';
 import { claimPreparer, PREPARER_FLAG_CHANGE } from './core/form/preparer-flag.js';
+import { claimServiceCertifier, SERVICE_CERTIFIER_CHANGE } from './core/filing/unrepresented-filing.js';
 import { applyExclusiveChoice } from './core/form/exclusive-none.js';
 import './core/filing/filing-descriptor.js';
 import './core/filing/output-preflight.js';
@@ -140,6 +141,11 @@ on('change', (event) => {
     // clear on the click.
     if (control.dataset.formChange === PREPARER_FLAG_CHANGE && control.checked && getD()) {
       claimPreparer(getD(), control.dataset.formPath);
+    }
+    // Milestone 71B: only one guardian certifies service. Same shape as the
+    // preparer flag above.
+    if (control.dataset.formChange === SERVICE_CERTIFIER_CHANGE && control.checked && getD()) {
+      claimServiceCertifier(getD(), control.dataset.formPath);
     }
     // Milestone 68E: a "None" box clears its siblings and a sibling clears
     // "None", in the model and the DOM, before any route re-render.

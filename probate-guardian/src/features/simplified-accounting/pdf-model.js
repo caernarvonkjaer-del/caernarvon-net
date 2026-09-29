@@ -6,6 +6,7 @@ import { resolveDescriptorForInventoryType } from '../../core/filing/filing-desc
 import { composePdfAddressLines } from '../../core/pdf/address-format.js';
 import { maskSSN } from '../../core/pdf/ssn-format.js';
 import { REMUNERATION_DECLARATION, REMUNERATION_NONE_REPORTED } from '../../core/filing/statutory-text.js';
+import { isUnrepresented, unrepresentedStatement, resolveServiceCertifier } from '../../core/filing/unrepresented-filing.js';
 
 export function buildSimplifiedAccountingModel(D, options = {}) {
   const d = D || {};
@@ -202,6 +203,10 @@ export function buildSimplifiedAccountingModel(D, options = {}) {
   });
 
   // 5. Part V: Signature of Guardian Attorney
+  // Milestone 71B: section 744.3679(3) -- no attorney is needed to file this
+  // accounting. With none started, one line says so in place of the attorney
+  // attestation and its empty signature block (unrepresented-filing.js).
+  const unrepresented = isUnrepresented(d, 'simplified');
   sections.push({
     id: 'part5',
     title: 'Part V — SIGNATURE OF GUARDIAN ATTORNEY',
@@ -209,7 +214,9 @@ export function buildSimplifiedAccountingModel(D, options = {}) {
     parentBookmark: null,
     level: 1,
     pageBreakBefore: false,
-    blocks: [
+    blocks: unrepresented ? [
+      { type: 'notice', tag: 'P', text: unrepresentedStatement(d, 'simplified') },
+    ] : [
       {
         type: 'notice',
         tag: 'P',
@@ -244,9 +251,29 @@ export function buildSimplifiedAccountingModel(D, options = {}) {
   const serviceDateText = fmtDate(d.certServiceDate) || 'the date indicated below';
   const indicatorNote = d.certIndicator ? ` | Indicate if: ${d.certIndicator}` : '';
 
+  // Milestone 71B: with no attorney, the guardian who served the copies signs,
+  // with the name and contact details from their Part IV card.
+  const certifier = unrepresented ? resolveServiceCertifier(d) : null;
+  const cg = certifier ? certifier.guardian : {};
+  const serviceSigner = unrepresented ? {
+    type: 'signature-block',
+    tag: 'Part',
+    role: 'Guardian (Service)',
+    signerName: certifier ? certifier.name : '',
+    signature: formatSig(certifier ? certifier.name : ''),
+    signatureStyle,
+    signatureDate: fmtDate(d.certGuardianSignDate),
+    signatureState: d.certGuardianSignatureState || '',
+    signatureImage: d.certGuardianSignatureImage || '',
+    fields: [
+      [{ label: 'Phone', value: cg.phone || '' }, { label: 'Email', value: cg.email || '' }],
+      [{ label: 'Address', value: composePdfAddressLines(cg.mailingStreet, cg.mailingCityStateZip) }],
+    ],
+  } : null;
+
   sections.push({
     id: 'part6',
-    title: 'Part VI — GUARDIAN ATTORNEY CERTIFICATE OF SERVICE',
+    title: unrepresented ? 'Part VI — CERTIFICATE OF SERVICE' : 'Part VI — GUARDIAN ATTORNEY CERTIFICATE OF SERVICE',
     bookmarkTitle: 'Part VI - Certificate of Service',
     parentBookmark: null,
     level: 1,
@@ -286,7 +313,7 @@ export function buildSimplifiedAccountingModel(D, options = {}) {
         tag: 'P',
         text: `on this date: ${fmtDate(d.certServiceDate) || 'the date indicated below'}${d.certIndicator ? `  |  Indicate if: ${d.certIndicator}` : ''}`,
       },
-      {
+      serviceSigner || {
         type: 'signature-block',
         tag: 'Part',
         role: 'Attorney for Guardian (Service)',

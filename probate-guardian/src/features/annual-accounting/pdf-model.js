@@ -9,6 +9,7 @@ import { composePdfAddressLines } from '../../core/pdf/address-format.js';
 import { maskSSN } from '../../core/pdf/ssn-format.js';
 import { b4AccountHeading } from '../../core/accounting/bank-accounts.js';
 import { preparedByLine } from '../../core/form/preparer-flag.js';
+import { isUnrepresented, unrepresentedStatement, resolveServiceCertifier } from '../../core/filing/unrepresented-filing.js';
 import { inferBondDepositoryState, bondDepositoryPdfLines, revealsBond } from '../../core/filing/bond-depository.js';
 
 export const DISB_CATS = [
@@ -320,6 +321,9 @@ export function buildAnnualAccountingModel(D, options = {}) {
   });
 
   // ── Part V: Guardian Attorney Signature ───────────────────────────────────
+  // Milestone 71B: with no attorney started, one line states why in place of
+  // the attestation and its empty signature block (unrepresented-filing.js).
+  const unrepresented = isUnrepresented(d, 'annual');
   sections.push({
     id: 'part5',
     title: 'Part V — GUARDIAN ATTORNEY SIGNATURE',
@@ -327,7 +331,9 @@ export function buildAnnualAccountingModel(D, options = {}) {
     parentBookmark: null,
     level: 1,
     pageBreakBefore: false,
-    blocks: [
+    blocks: unrepresented ? [
+      { type: 'notice', tag: 'P', text: unrepresentedStatement(d, 'annual') },
+    ] : [
       {
         type: 'notice',
         tag: 'P',
@@ -1142,6 +1148,27 @@ export function buildAnnualAccountingModel(D, options = {}) {
     text: `on this date: ${fmtD(d.certDate) || 'the date indicated below'}${d.certIndicator ? ` | ${d.certIndicator}` : ''}`,
   });
 
+  if (unrepresented) {
+    // Milestone 71B: the guardian who served the copies signs, with the
+    // name and contact details from their Part III card.
+    const certifier = resolveServiceCertifier(d);
+    const g = certifier ? certifier.guardian : {};
+    certBlocks.push({
+      type: 'signature-block',
+      tag: 'Part',
+      role: 'Guardian (Service)',
+      signerName: certifier ? certifier.name : '',
+      signature: formatSig(certifier ? certifier.name : ''),
+      signatureStyle,
+      signatureDate: fmtD(d.certGuardianSignDate),
+      signatureState: d.certGuardianSignatureState || '',
+      signatureImage: d.certGuardianSignatureImage || '',
+      fields: [
+        [{ label: 'Phone', value: g.phone || '' }, { label: 'Email', value: g.email || '' }],
+        [{ label: 'Address', value: composePdfAddressLines(g.mailingStreet, g.mailingCityStateZip) }],
+      ],
+    });
+  } else {
   certBlocks.push({
     type: 'signature-block',
     tag: 'Part',
@@ -1159,10 +1186,11 @@ export function buildAnnualAccountingModel(D, options = {}) {
       [{ label: 'Address', value: composePdfAddressLines(d.attorney_street, d.attorney_cityStateZip) }],
     ],
   });
+  }
 
   sections.push({
     id: 'part10',
-    title: 'Part X — GUARDIAN ATTORNEY CERTIFICATE OF SERVICE',
+    title: unrepresented ? 'Part X — CERTIFICATE OF SERVICE' : 'Part X — GUARDIAN ATTORNEY CERTIFICATE OF SERVICE',
     bookmarkTitle: 'Part X - Certificate of Service',
     parentBookmark: null,
     level: 1,

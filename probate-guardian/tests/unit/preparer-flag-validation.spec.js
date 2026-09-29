@@ -58,6 +58,9 @@ describe('Milestone 67A: validateGuardian() and the preparer flag', () => {
 
   test('a guardian identified as the preparer: every preparer issue is gone, the attorney block is untouched', () => {
     getD().guardians[0].isPreparer = true;
+    // Milestone 71B: the attorney block has requirements only once an attorney
+    // is started, so start one to show the preparer flag leaves them alone.
+    getD().attorney.name = 'Jordan Pike';
     expect(startingWith('D-2 Preparer')).toEqual([]);
     expect(startingWith('D-2 Attorney').length, 'the attorney block keeps its own requirements').toBeGreaterThan(0);
     // And the guardian's own requirements still stand.

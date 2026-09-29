@@ -2,8 +2,8 @@
  "generatedBy": "node scripts/ms70-assertion-counts.mjs --write-baseline",
  "note": "Milestone 70 per-spec assertion counts (static expect calls). tests/unit/ms70-assertion-counts.spec.js fails when a spec falls below its count; lowering it requires --reason, recorded in dropLog. A tripwire, not proof of equivalence (decision D9).",
  "totals": {
-  "expects": 6883,
-  "tests": 1967
+  "expects": 7000,
+  "tests": 1999
  },
  "counts": {
   "tests/e2e/annotation-toolbar-containment.spec.ts": {
@@ -33,6 +33,10 @@
   "tests/e2e/annual-ward-share-export.spec.ts": {
    "expects": 7,
    "tests": 1
+  },
+  "tests/e2e/attorney-optional-export.spec.ts": {
+   "expects": 32,
+   "tests": 3
   },
   "tests/e2e/backup-restore-sav.spec.ts": {
    "expects": 41,
@@ -71,7 +75,7 @@
    "tests": 4
   },
   "tests/e2e/case-file-roundtrip.spec.ts": {
-   "expects": 12,
+   "expects": 14,
    "tests": 3
   },
   "tests/e2e/case-write-through.spec.ts": {
@@ -431,8 +435,8 @@
    "tests": 15
   },
   "tests/e2e/schedule-doc-ack.spec.ts": {
-   "expects": 12,
-   "tests": 7
+   "expects": 18,
+   "tests": 9
   },
   "tests/e2e/schedule-docs-period-key.spec.ts": {
    "expects": 26,
@@ -567,8 +571,12 @@
    "tests": 7
   },
   "tests/unit/attorney-block.spec.js": {
-   "expects": 3,
-   "tests": 1
+   "expects": 5,
+   "tests": 2
+  },
+  "tests/unit/attorney-optional.spec.js": {
+   "expects": 66,
+   "tests": 22
   },
   "tests/unit/b4-block-map.spec.js": {
    "expects": 9,
@@ -1031,8 +1039,8 @@
    "tests": 5
   },
   "tests/unit/schedule-doc-ack.spec.js": {
-   "expects": 57,
-   "tests": 28
+   "expects": 66,
+   "tests": 32
   },
   "tests/unit/schedule-docs.spec.js": {
    "expects": 1,

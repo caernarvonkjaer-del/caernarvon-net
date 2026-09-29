@@ -34,7 +34,7 @@ everything else is sequential because the items share files (see
 | # | Item | Subject | Decision | Build |
 | --- | --- | --- | --- | --- |
 | 1 | 71A | Measure how the Clerk's workbook displays a half cent, in Microsoft Excel itself | **DECIDED** — measure before choosing the rounding rule | **Done** 2026-09-29 — Excel = 15 significant digits, half away from zero (Appendix B) |
-| 2 | 71B | Filers who need no attorney are blocked on five of the nine forms | **DECIDED** — attorney optional when blank; ask the basis; the guardian who served the copies signs the certificate of service | Not started |
+| 2 | 71B | Filers who need no attorney are blocked on five of the nine forms | **DECIDED** — attorney optional when blank; ask the basis; the guardian who served the copies signs the certificate of service | **Built** 2026-09-29 (see its Build record) |
 | 3 | 71C | Every percentage field is secretly a money field: 150% accepted, "-10" silently becomes 10 | **DECIDED** — a real percent field, 0–100; an out-of-range share is an ordinary, bypassable error; imported share cells read as the workbook stores them | Not started |
 | 4 | 71D | Ward's %: a wrong on-screen instruction, and three different answers for a blank share | **DECIDED** — fix the text; a blank share counts as 0%, as in the court's workbook, and prints as blank, not "100%" | Not started |
 | 5 | 71E | The app rounds money three different ways; carried balances are unrounded and inconsistent | **DECIDED** — one rounding rule matching the Clerk's workbook (per 71A); carry Line 30 and warn on mismatch; never carry the estate's net assets into or out of a Trust Accounting; keep negative balances | Not started |
@@ -665,7 +665,84 @@ serve or is blank).
    `attorney-block.js`). The four Plans already comply; this brings the other
    five into line and fixes the Minor Plan's sidebar.
 
-### Build record — NOT STARTED
+### Build record — BUILT 2026-09-29
+
+**What was built.**
+
+- `attorney-block.js`: `isAttorneyStarted(d, engineId)` with one field list
+  per engine. The Initial Plan's function is now a wrapper over it.
+- A new `src/core/filing/unrepresented-filing.js` holds everything else:
+  - the "why no attorney?" question, the court-order date, and the
+    Guardian Advocate hint (a hint, never an answer);
+  - the certifying guardian, stored as a row flag with a
+    `claimServiceCertifier()` write-time rule;
+  - the PDF basis line, and the three Preview & Export notes (wired into
+    `output-preflight.js`).
+- A new `src/core/form/attorney-required-markers.js` gives live required
+  markers on the Inventory Cover and D-2, Annual Part V, and Simplified
+  Cover and Part V.
+- The three validators, `completion.js` (`a-p5`, `a-p10`, `s-cover`, `s-p5`,
+  `s-p6`, `pm-p7`) and the three PDF models follow the rule. The Inventory's
+  sidebar follows its validator unchanged. The non-Plan readiness rows are
+  built from the validator's own issues, so they needed no change.
+- Models, factories and the data-model CSV: 16 rows changed from required
+  to conditional, and 19 new rows. `npm run verify:data-model` passes.
+
+**Decisions taken during the build** (the requester was away; each is
+reversible):
+
+1. *Where the "which guardian served?" checkboxes live.* The design said
+   "each guardian card". They are on the **certificate page itself** (Annual
+   Part X, Simplified Part VI, Inventory D-5), listed by guardian name,
+   because that is where the filer is when the question matters. Storage is
+   unchanged: the flag lives on the guardian's own row, and the same one-flag
+   rule and the same wiring as Milestone 67A are used.
+2. *A date-order check on the guardian's certificate signature* (not after
+   the period end), matching Part V's rule for the attorney. The attorney's
+   own Part X signature never had one; that is unchanged.
+3. *The Minor Plan sidebar* now mirrors `validatePlanMinor()` exactly. Each
+   of the preparer and the attorney is optional until started, then needs a
+   name and a valid signature. The regenerated completion golden shows the
+   consequence on its artificial "saturated" variants, whose signature
+   fields hold the literal `Yes`: they now read incomplete there, exactly as
+   the validator reads them.
+4. *The Annual certificate's sidebar mark (`a-p10`)* checks the guardian's
+   certificate signature when there is no attorney. The alternative was
+   adding its three fields to `checklist-export-parity.spec.js`'s known-gap
+   list, whose rule is "shrink, never grow".
+
+**Found, not fixed.** The Inventory's D-2 "Primary Email (e-filing)" shows a
+required marker that no validator rule enforces. This is the Milestone 55D
+pattern, and it predates 71B. The marker now follows the attorney rule like
+its siblings; whether to enforce the field is a separate question.
+
+**Tests.**
+
+- New: `tests/unit/attorney-optional.spec.js` (24) and
+  `tests/e2e/attorney-optional-export.spec.ts` (3).
+- Updated with a stated reason: `attorney-block.spec.js` (the generalized
+  rule), and the fixtures of `filing-descriptor.spec.js`,
+  `preparer-flag-validation.spec.js` and three field-path tests in
+  `tests/e2e/navigation-status.contract.spec.ts`. Each tested behaviour that
+  needs an attorney, so each now starts one; no assertion changed.
+- Registries: the new e2e spec is listed as converted in
+  `tests/baseline/ms70-70T-progress.json`, and
+  `tests/baseline/ms70-assertion-counts.json` was rewritten by its script
+  (no spec lost an assertion).
+- Targeted e2e: `navigation-status.contract.spec.ts`,
+  `preparer-flag.spec.ts` and `readiness-card.contract.spec.ts` (119 tests)
+  pass. The three field-path tests above failed first, for the stated reason
+  (they expected attorney issues on a filing with no attorney).
+- `tests/baseline/ms70-70C-filing-shapes.json`: only the 71B fields were
+  folded in. A script refused any other difference, and the file's
+  `generatedFrom` records the change.
+- `tests/baseline/ms70-completion-golden.json`: regenerated per its own
+  instruction, with every changed key reviewed and the note extended.
+- **Red-first:** with all `src/` changes stashed, the unit spec's
+  no-attorney describe fails for its stated reason. The attorney issues it
+  forbids appear, e.g. "Cover — Attorney for Guardian". The e2e spec fails at
+  its first 71B assertion.
+- All 159 unit files pass, and `npm run check:types` is clean.
 
 ---
 

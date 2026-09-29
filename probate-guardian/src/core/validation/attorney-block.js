@@ -22,9 +22,18 @@
 // export gate each had their own reading of the same signature fields, and
 // they disagreed for months. Two rules over the same data drift. This is one.
 
+//
+// Milestone 71B: the Initial Inventory and the Annual, Final, Trust and
+// Simplified Accountings required an attorney unconditionally -- five of the
+// nine forms, including a Guardian Advocate's filing (Rule 5.030(a) exempts
+// them) and every Simplified Accounting (section 744.3679(3) says no attorney
+// is needed). They now ask this module the same question the Initial Plan
+// does, through isAttorneyStarted() and one field list per engine.
+
 import { inferLegacySignatureState, SIGNATURE_STATES } from './signature-state.js';
 
-const has = (v) => v !== '' && v !== null && v !== undefined;
+const has = (v) => v !== '' && v !== null && v !== undefined && v !== false;
+const read = (d, path) => String(path).split('.').reduce((o, k) => (o == null ? undefined : o[k]), d);
 
 /**
  * Every field the attorney block collects. Signature state is deliberately
@@ -58,8 +67,64 @@ export const PLAN_INITIAL_ATTORNEY_FIELDS = Object.freeze([
  * single answer to what such a filing meant.
  */
 export function isPlanInitialAttorneyStarted(d) {
+  return isAttorneyStarted(d, 'planInitial');
+}
+
+/**
+ * Milestone 71B. Per engine: the fields that identify an attorney, and the
+ * [state, date] pair of the attorney's own signature control. The
+ * certificate-of-service signer is deliberately NOT here on any engine
+ * (Inventory `serviceAttorney.*`, Annual/Simplified `certAtty*`): with no
+ * attorney the guardian certifies service, so those fields name whoever
+ * signs the certificate, not whether the filing has an attorney.
+ *
+ * The attorney's "This person prepared this filing" flag counts only when
+ * ticked -- `has()` treats `false` as blank.
+ */
+export const ATTORNEY_ENTRY = Object.freeze({
+  planInitial: Object.freeze({
+    fields: PLAN_INITIAL_ATTORNEY_FIELDS,
+    signature: ['attorney_signatureState', 'attorney_signatureDate'],
+  }),
+  guardian: Object.freeze({
+    fields: Object.freeze([
+      'attorneyForGuardian',
+      'attorney.name', 'attorney.barNumber', 'attorney.phone', 'attorney.email', 'attorney.secondaryEmail',
+      'attorney.streetAddress', 'attorney.cityStateZip', 'attorney.signatureDate', 'attorney.filingDate',
+      'attorney.isPreparer',
+    ]),
+    signature: ['attorney.signatureState', 'attorney.signatureDate'],
+  }),
+  annual: Object.freeze({
+    fields: Object.freeze([
+      'attorney', 'attorney_bar', 'attorney_phone', 'attorney_email', 'attorney_secondaryEmail',
+      'attorney_street', 'attorney_cityStateZip', 'attorney_signatureDate', 'attorney_isPreparer',
+    ]),
+    signature: ['attorney_signatureState', 'attorney_signatureDate'],
+  }),
+  simplified: Object.freeze({
+    fields: Object.freeze([
+      'attorney', 'attorney_barNumber', 'attorney_phone', 'attorney_email', 'attorney_secondaryEmail',
+      'attorney_street', 'attorney_cityStateZip', 'attorney_signatureDate',
+    ]),
+    signature: ['attorney_signatureState', 'attorney_signatureDate'],
+  }),
+});
+
+/**
+ * True once the filer has entered anything identifying an attorney on a
+ * filing of this engine (`guardian`, `annual` -- which also serves Final and
+ * Trust -- `simplified`, or `planInitial`). Same contract as
+ * isPlanInitialAttorneyStarted() above: pure, and false for a blank block,
+ * which is what keeps every attorney requirement off a pro se or Guardian
+ * Advocate filing. An unknown engine answers true, so a caller that asks
+ * about a form this module does not know keeps its attorney requirements.
+ */
+export function isAttorneyStarted(d, engineId) {
   if (!d) return false;
-  if (PLAN_INITIAL_ATTORNEY_FIELDS.some((key) => has(d[key]))) return true;
-  return inferLegacySignatureState(d.attorney_signatureState, d.attorney_signatureDate)
-    !== SIGNATURE_STATES.NONE;
+  const entry = ATTORNEY_ENTRY[engineId];
+  if (!entry) return true;
+  if (entry.fields.some((path) => has(read(d, path)))) return true;
+  const [statePath, datePath] = entry.signature;
+  return inferLegacySignatureState(read(d, statePath), read(d, datePath)) !== SIGNATURE_STATES.NONE;
 }

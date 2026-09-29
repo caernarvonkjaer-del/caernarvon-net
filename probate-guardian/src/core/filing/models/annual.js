@@ -40,12 +40,14 @@ export function emptyDataAnnual() {
     wardName:'', caseNumber:'', ucn:'', gid:'', periodFrom:'', periodTo:'',
     guardian:'', attorney:'', typeOfGuardianship:'', county:'',
     amendedForm:'', filingType:'Annual', relatedCaseNumbers:'',
+    // Milestone 71B: why there is no attorney (src/core/filing/unrepresented-filing.js).
+    attorneyWaiverBasis:'', attorneyWaiverOrderDate:'',
     // Part II
     startingBalance:'',
     // Part III – guardians (up to 3)
     // isPreparer: Milestone 67A -- "This person prepared this filing"; at
     // most one guardian/attorney flag is true (src/core/form/preparer-flag.js).
-    guardians:[{name:'',ssn:'',phone:'',email:'',mailingStreet:'',mailingCityStateZip:'',officeStreet:'',officeCityStateZip:'',signatureDate:'',signatureDateLabel:'',signatureState:'',signatureImage:'',isPreparer:false}],
+    guardians:[{name:'',ssn:'',phone:'',email:'',mailingStreet:'',mailingCityStateZip:'',officeStreet:'',officeCityStateZip:'',signatureDate:'',signatureDateLabel:'',signatureState:'',signatureImage:'',isPreparer:false,certifiesService:false}],
     // Part IV – preparer
     preparer:{name:'',ssn:'',phone:'',street:'',cityStateZip:'',signatureDate:'',signatureState:'',signatureImage:''},
     // Part V – attorney
@@ -95,6 +97,8 @@ export function emptyDataAnnual() {
     certAttySignDate:'',
     // Milestone 39-C
     certAttySignatureState:'', certAttySignatureImage:'',
+    // Milestone 71B: the guardian's certificate-of-service signature, used when no attorney is started.
+    certGuardianSignDate:'', certGuardianSignatureState:'', certGuardianSignatureImage:'',
     // Milestone 57B: filer attestation that no one requires service.
     // Tri-state, never coerced (section 4): '' is unanswered, and an
     // empty recipient list must never infer 'Yes'. Asked only when no

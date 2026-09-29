@@ -484,6 +484,9 @@ test.describe('Guardian Inventory navigation/status contract', () => {
       // a "D-5 Recipient 1 — Name" issue for this test to resolve. Starting
       // the row is what makes it owed, which is the shape being tested here.
       (window as any).GuardianForms.testing.patchFiling({ 'serviceRecipients': [{ name: '', address: '100 2nd Ave S', cityStateZip: '' }] });
+      // Milestone 71B: attorney fields raise issues only once an attorney is
+      // started, so start one -- the paths under test are the attorney issues'.
+      (window as any).GuardianForms.testing.patchFiling({ 'attorneyForGuardian': 'Sample Attorney' });
     });
     await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/d5'));
 
@@ -604,6 +607,11 @@ test.describe('Annual/Final/Trust field-path accuracy (Milestone 33, Item 3, sub
   test('Part IV Preparer and Part V Attorney resolve to their own distinct field shapes', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Annual Preparer Attorney Ward', 'annual');
+    await page.evaluate(() => {
+      // Milestone 71B: attorney fields raise issues only once an attorney is
+      // started, so start one -- the paths under test are the attorney issues'.
+      (window as any).GuardianForms.testing.patchFiling({ 'attorney': 'Sample Attorney' });
+    });
     await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/p4'));
 
     const paths = await page.evaluate(async () => {
@@ -674,6 +682,9 @@ test.describe('Simplified field-path accuracy (Milestone 33, Item 3, sub-phase 3
         name: 'Guardian One', signatureDate: '01/01/2024', ssn: '123-45-6789', phone: '555-111-2222', email: 'g1@example.com',
         mailingStreet: '1 Main St', mailingCityStateZip: 'Tampa, FL 33601', residenceStreet: '', residenceCityStateZip: '',
       } });
+      // Milestone 71B: attorney fields raise issues only once an attorney is
+      // started, so start one -- the paths under test are the attorney issues'.
+      (window as any).GuardianForms.testing.patchFiling({ 'attorney': 'Sample Attorney' });
     });
     await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/p4'));
 
