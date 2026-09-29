@@ -14,7 +14,14 @@ Milestone 71 Proposal."). Two rounds of independent review the same day (Codex)
 found gaps. Each claim was checked against source; the four that needed a
 decision were put to the requester and answered (D9–D12), and the rest were
 corrected in the design. See [Independent review](#independent-review-2026-09-29)
-and [Risks accepted](#risks-accepted-and-what-this-milestone-does-not-fix). The only item still
+and [Risks accepted](#risks-accepted-and-what-this-milestone-does-not-fix).
+
+**No legacy data (D13).** The requester confirmed on 2026-09-29 that the app is
+in production as a test system only: there are no legacy files and no
+backward-compatibility requirement. Every item's AGENTS.md §8 "legacy data"
+answer is therefore *none*. The earlier draft's on-open normalization (D8), its
+activity-log entry, and its pre-60K import-compatibility costs are withdrawn.
+Data already on the test system is test data and is not preserved. The only item still
 marked **OPEN** is the exact wording of one printed sentence in 71B, which goes
 to the Clerk. The decisions are recorded under each item and summarized in
 [Decisions already made](#decisions-already-made).
@@ -29,7 +36,7 @@ everything else is sequential because the items share files (see
 | 2 | 71B | Filers who need no attorney are blocked on five of the nine forms | **DECIDED** — attorney optional when blank; ask the basis; the guardian who served the copies signs the certificate of service | Not started |
 | 3 | 71C | Every percentage field is secretly a money field: 150% accepted, "-10" silently becomes 10 | **DECIDED** — a real percent field, 0–100; an out-of-range share is an ordinary, bypassable error; imported share cells read as the workbook stores them | Not started |
 | 4 | 71D | Ward's %: a wrong on-screen instruction, and three different answers for a blank share | **DECIDED** — fix the text; a blank share counts as 0%, as in the court's workbook, and prints as blank, not "100%" | Not started |
-| 5 | 71E | The app rounds money three different ways; carried balances are unrounded and inconsistent | **DECIDED** — one rounding rule matching the Clerk's workbook (per 71A); carry Line 30 and warn on mismatch; never carry the estate's net assets into or out of a Trust Accounting; keep negative balances; normalize stored raw Starting Balances on load | Not started |
+| 5 | 71E | The app rounds money three different ways; carried balances are unrounded and inconsistent | **DECIDED** — one rounding rule matching the Clerk's workbook (per 71A); carry Line 30 and warn on mismatch; never carry the estate's net assets into or out of a Trust Accounting; keep negative balances | Not started |
 
 ### Provenance
 
@@ -81,15 +88,16 @@ describe the report's P0 list as closed.
 | BUG-08, except the carry (Trust Accounting never identifies the trust) | 71E only stops the wrong carry (D9). Choosing which Part VIII trust a Trust Accounting reports on, carrying its identity, and computing its starting figure need their own design: the Clerk's trust work slip starts a first trust accounting from "the disbursement amount on the annual accounting", which is not Part VIII's value. Still open; still rated P0 by the report. |
 | BUG-01, BUG-09, BUG-10, BUG-12, and all other report items | Separate defects with separate root causes. BUG-09 (title-case) and BUG-01 (positive loss; the report rated it P0) are confirmed from source and are good candidates for a follow-on milestone. BUG-10's likely cause is a load race, not two gate functions, and needs a reproduction first. |
 | Found while reviewing: the Part VIII trust amount may print as a date in Excel | The Clerk's `PART VIII` formats D16, D17 and D18 (type, percentage and amount of the trust) as dates (`[$-409]mmmm d, yyyy;@`, parsed). The exporter writes the percentage as text, which displays as typed, but writes the amount as a number (`annual-accounting/excel.js:467-468`), which Excel would show as a date. **Provisional** (AGENTS.md §10 P2): inferred from the template and the writer, not yet seen in an exported file. 71A's Excel session reads those two cells in a real export and records what it finds; the fix is a separate item and a Clerk question. |
-| Found while reviewing: activity-log entries tagged with the wrong filing | `appendAuditLogEntry()` (`src/core/activity/audit-log.js:46`) replaces an explicit `wardId` with the active filing's, so an entry about another filing (for example `PARTY_SYNC` on a closed filing) is tagged with whichever filing is open. That matters for single-filing exports. 71E's design works around it; the fix itself is a separate item. |
+| Found while reviewing: activity-log entries tagged with the wrong filing | `appendAuditLogEntry()` (`src/core/activity/audit-log.js:46`) replaces an explicit `wardId` with the active filing's, so an entry about another filing (for example `PARTY_SYNC` on a closed filing) is tagged with whichever filing is open. That matters for single-filing exports. Found while designing D8's log entry, which D13 withdrew; the fix is a separate item. |
 
 ---
 
 ## Decisions already made
 
 All on 2026-09-29, by the requester, answering choice prompts (AGENTS.md §3).
-The recommended option was chosen every time except D8. D9–D12 were asked after
-the independent review.
+The recommended option was chosen every time except D8 (since withdrawn by
+D13). D9–D12 were asked after the independent review. D13 is a statement of
+fact from the requester, not a choice prompt.
 
 | # | Question | Answer | Governs |
 | --- | --- | --- | --- |
@@ -100,11 +108,12 @@ the independent review.
 | D5 | Who signs the certificate of service when there is no attorney? | The guardian | 71B |
 | D6 | Which prior figure becomes the new filing's Starting Balance? | Line 30; Line 20 only when the prior filing has no Schedule D at all; warn when the prior's Line 20 and Line 30 differ; always from the latest (amended) version. **Narrowed by D9** for Trust Accountings. | 71E |
 | D7 | When a share is outside 0–100, can the filer still export with "Continue despite outstanding requirements"? | Yes — an ordinary, bypassable validation error | 71C |
-| D8 | Existing filings may store a raw carried Starting Balance such as `797229.1849999999`. What happens to it? | Normalize it to cents on load (the recommendation was to leave it; the requester chose otherwise) | 71E |
+| D8 | Existing filings may store a raw carried Starting Balance such as `797229.1849999999`. What happens to it? | ~~Normalize it to cents on load~~ **Withdrawn (D13):** there are no existing filings to normalize. New carries are rounded by D6 | — |
 | D9 | **D6 re-asked** (the Clerk's trust work slip showed D6 had a cost it was not asked against — AGENTS.md §3): what does a carry into or out of a Trust Accounting carry? | Nothing. Annual/Final/Inventory/Simplified → Trust, and Trust → any other type, leave Starting Balance blank, with a note quoting the work slip. Trust → Trust carries under D6. The rest of BUG-08 is a follow-on. | 71E |
-| D10 | How is an imported share cell above 1 read, when the Clerk's workbook stores 150% as `1.5` and pre-60K exports of this app stored 50% as `50`? | The way the workbook reads it: every share cell is a fraction. `1.5` imports as 150% and is flagged (D7); a pre-2026-09-20 Inventory export's `50` imports as 5,000% and is flagged. Nothing is silently rescaled. | 71C |
+| D10 | How is an imported share cell above 1 read, when the Clerk's workbook stores 150% as `1.5` and pre-60K exports of this app stored 50% as `50`? | The way the workbook reads it: every share cell is a fraction. `1.5` imports as 150% and is flagged (D7); a cell holding `50` imports as 5,000% and is flagged. Nothing is silently rescaled. (No pre-60K export exists to be affected — D13.) | 71C |
 | D11 | With no attorney and co-guardians, who signs the certificate of service? | One guardian: the one who served the copies. The form asks which guardian only when there is more than one. | 71B |
 | D12 | A ward whose debts exceed their assets has negative net assets; today the Starting Balance box strips the minus and opening a filing turns a carried negative into $0. Fix it in 71E? | Yes — Starting Balance accepts and keeps a negative figure on the Annual family and the Simplified Accounting | 71E |
+| D13 | Must any existing filing, case file or exported workbook be preserved or migrated? | **No.** The app is in production as a test system only; there are no legacy files and no backward-compatibility requirement (requester, 2026-09-29) | All items |
 
 ---
 
@@ -136,6 +145,15 @@ first round's gaps were closed, and raised five more. Checked the same way:
 | 11 | Add the Rule PDF to `reference/` now, not when 71B lands. | Agreed: the proposal cites it as authority. | Added at `reference/legal/statutes/Florida-Rules-of-General-Practice-and-Judicial-Administration-07-01-26.pdf`, with `reference/README.md` (source URL) and `file_index.md`. |
 | 12 | Keep residual risks visible. | Agreed. | [Risks accepted](#risks-accepted-and-what-this-milestone-does-not-fix), below. |
 
+**Superseded by D13.** Both rounds were answered on the assumption that
+existing filings and exported workbooks had to be preserved. The requester has
+since confirmed they do not (D13). What rows 2 and 4 added for legacy data —
+71E's on-open normalization (D8) with its activity-log entry, tagging
+workaround and once-only guarantee, and D10's cost to pre-60K Inventory
+exports — has been removed. The rest of what those rows found (the mount clamp,
+the importers' above-1 rule, number vs string, "no Schedule D", amendments)
+concerns new data too and stands.
+
 ## Risks accepted, and what this milestone does not fix
 
 Each of these is a cost the requester chose, or a defect deliberately left
@@ -143,12 +161,11 @@ out. None may be described in release notes as solved.
 
 | Risk | Accepted by | What a filer sees | Where it must stay visible |
 | --- | --- | --- | --- |
-| **Old Inventory Excel files import with wrong shares.** Under D10, an Initial Inventory `.xlsx` exported by this app before 2026-09-20 imports every share 100× too large (50% → 5,000%), each flagged for re-entry. | D10 | Range errors on every share line of an old re-imported file; the filer retypes them | Release notes; 71C's e2e spec pins the behavior |
 | **The guardian's certificate of service is app-authored filed text the Clerk has not reviewed.** Rules 2.515 and 2.516 support a guardian certifying service; neither establishes what the Pinellas Clerk accepts or the wording it prefers. Releasing before the Clerk answers is a conscious **local-practice risk acceptance**, not a legal determination. | D5, D11; release gate declined | A certificate signed by the guardian, in the app's wording | Release notes; [Questions for the Clerk](#questions-for-the-clerk) 1–2; 71B's legal framing |
 | **Inventory → Annual now carries a Starting Balance where it carried none.** Justified by Rule 5.696(b)(1), and what the draft wrongly said already happened, but still a behavior change a returning filer will notice. | D6 as corrected | A prefilled Starting Balance on a converted first Annual | Release notes; `describeConversion()`'s text; `filing-conversion.characterization.spec.ts` and 71E's `carried-balance.spec.js` |
 | **A Trust Accounting starts with a blank Starting Balance.** D9 stops a wrong figure without supplying the right one. | D9 | A blank box and a note quoting the work slip | Release notes; BUG-08 stays open |
 | **The Part VIII trust amount may print as a date in Excel.** Provisional; 71A checks it. | Not in scope | Possibly a date in the exported workbook's Part VIII | [Not covered](#what-this-milestone-covers-and-what-it-does-not); Clerk question 7 |
-| **Activity-log entries about another filing are tagged with the open filing.** 71E works around it for its own entry only. | Not in scope | Single-filing exports can include or omit the wrong entries | [Not covered](#what-this-milestone-covers-and-what-it-does-not) |
+| **Activity-log entries about another filing are tagged with the open filing.** Untouched by this milestone, which (after D13) writes no activity-log entries. | Not in scope | Single-filing exports can include or omit the wrong entries | [Not covered](#what-this-milestone-covers-and-what-it-does-not) |
 | **BUG-01 and the rest of BUG-08 remain open**, both rated P0 by the report. | Requester's triage | Unchanged | [What this milestone covers](#what-this-milestone-covers-and-what-it-does-not) |
 
 ---
@@ -590,9 +607,9 @@ serve or is blank).
    guardian signature fields (state, date, stamp image) for all three engines —
    the stamp image classified `document-content`, like every existing signature
    image. `npm run verify:data-model` must pass.
-2. **Legacy data.** Existing filings have no basis answer: they show the
-   advisory once opened, nothing else. Existing attorney data is untouched; an
-   existing filing with an attorney behaves exactly as today. No migration.
+2. **Legacy data.** None to preserve (D13). A test-system filing opened after
+   71B simply has no basis answer and shows the advisory. A filing with an
+   attorney behaves exactly as today. No migration.
 3. **Fixtures.** `fillMinimalValidGuardianWard`, `…SimplifiedWard` and
    `…AnnualWard` (`tests/e2e/support/target.ts:147`, `:211`, `:379`) enter an
    attorney today. They keep doing so; relaxing a requirement cannot break
@@ -663,7 +680,7 @@ Annual, Final and Trust Accountings.
 | No export validator, sidebar check or importer tests the range | grep for range checks on `wardPercent`/`wardPct`/`jointOwnerPercent`, 2026-09-29: none |
 | A cleared money field stores **`0`**, not blank | `form-contract.js:555` (`parseFloat(cleaned) \|\| 0`). A percent kind copied from it would turn a cleared share into an entered 0%, and "Ward's % is required" would stop firing |
 | Negative shares are **also erased on open**, not only while typing | `src/core/form/form-runtime.js:41-47`, `sanitizeNegativeAmounts()`, run on every mount of the Annual family (`annual-accounting/index.js:128`): `Math.max(0, …)` over `wardPct` on D-1 to D-4. **Not** D-5, **not** Part VIII — so an imported negative D-5 share survives today while a D-1 one silently becomes 0 |
-| The Excel importers read a cell above 1 as an old export, silently | `guardian-inventory/excel.js:63-68` (`percentFromWorkbook`: a cell above 1 is kept as-is, so a 150% share cell holding `1.5` imports as **1.5%**; a blank or unreadable cell imports as an entered **0**, not blank); `annual-accounting/excel.js:612` (`gcPct`, same above-1 rule; blank stays blank). The above-1 rule exists for Inventory files exported before Milestone 60K (commit `86dcd01`, 2026-09-20), which wrote 50 for 50% |
+| The Excel importers read a cell above 1 as an old export, silently | `guardian-inventory/excel.js:63-68` (`percentFromWorkbook`: a cell above 1 is kept as-is, so a 150% share cell holding `1.5` imports as **1.5%**; a blank or unreadable cell imports as an entered **0**, not blank); `annual-accounting/excel.js:612` (`gcPct`, same above-1 rule; blank stays blank). The above-1 rule exists for Inventory files exported before Milestone 60K (commit `86dcd01`, 2026-09-20), which wrote 50 for 50%. No such file needs to be read (D13), so the rule is compatibility code with nothing left to be compatible with |
 
 **Scope — 17 fields on 4 forms.** Initial Inventory: `wardPercent` on A-1, A-2,
 B-1, B-2, B-3, B-4, C-1, C-2, C-3, C-4 and `jointOwnerPercent` on C-5
@@ -709,14 +726,13 @@ required field.
 
 **D10.** An imported share cell is read the way the Clerk's workbook reads it:
 as a fraction. *What the filer sees:* a workbook that says 150% imports as 150%
-with the range error. An Initial Inventory exported by this app before
-2026-09-20 imports each share as 100 times too large (50% → 5,000%), each with
-the range error, and the filer retypes them. No share is ever silently
-rescaled.
+with the range error; a cell holding `50` imports as 5,000% with the range
+error. No share is ever silently rescaled. The pre-60K reading this retires
+has no files left to serve (D13).
 
 Options not taken: *a non-bypassable data-integrity issue* (D7 — a ward cannot
 own 150% of anything, but that would leave no way to export until the share is
-corrected, including on an older filing that already holds one); *keep reading
+corrected); *keep reading
 values above 1 as an old export, with a notice on each* (D10 — a genuine 150%
 would still arrive as 1.5%); *keep today's reading* (D10 — silent).
 
@@ -783,7 +799,8 @@ would still arrive as 1.5%); *keep today's reading* (D10 — silent).
    reader.
    - A **number** cell is a fraction: the stored share is `value × 100`,
      rounded to six decimals as today (`1` → 100, `0.5` → 50, `1.5` → 150,
-     `-0.1` → -10, and a pre-60K `50` → 5000).
+     `-0.1` → -10, `50` → 5000). `percentFromWorkbook()`'s and `gcPct`'s
+     above-1 branch is deleted, not kept as a fallback (D13).
    - A **text** cell is read the way the workbook's `=H25*I25` would read it,
      since Excel's arithmetic turns number-like text into a number: `"50%"` →
      0.5 → 50; `"0.5"` → 50. Text Excel could not turn into a number (the
@@ -795,13 +812,10 @@ would still arrive as 1.5%); *keep today's reading* (D10 — silent).
    - Nothing is clamped or rescaled after reading. An out-of-range result
      arrives as read and 71C's validator flags it (AGENTS.md §4: never silently
      alter data).
-6. **Legacy data.** A saved filing that already holds a share above 100 shows
-   the error when opened; nothing is changed. The draft said a negative share
-   could not exist in saved data; **that was wrong.** A D-5 share can hold one
-   today (imported; the mount clamp skips D-5), and so can an Inventory share
-   imported from a negative cell. Both now show the range error when opened.
-   A D-1 to D-4 share that was negative has already been stored as 0 by the
-   clamp and cannot be recovered; nothing to migrate.
+6. **Legacy data.** None to preserve (D13). A test-system filing holding an
+   out-of-range share simply shows the error when opened. (The draft also
+   claimed a negative share could not exist in saved data; that was wrong —
+   the mount clamp skips D-5 — but it no longer matters.)
 
 ### Cross-cutting checklist (AGENTS.md §8)
 
@@ -813,16 +827,15 @@ would still arrive as 1.5%); *keep today's reading* (D10 — silent).
    Inventory draws a required marker and the Annual requires the share on every
    populated line; reconcile each row to its validator (`conditional`:
    "required on a populated row").
-2. **Legacy data.** Covered in design step 6. Legacy **files**: an Inventory
-   `.xlsx` exported before 2026-09-20 imports with shares 100 times too large,
-   each flagged (D10). Say so in the release notes, so a filer who re-imports
-   an old export knows to retype the shares.
+2. **Legacy data.** None (D13): no saved filing or exported workbook needs to
+   keep working. Design step 6.
 3. **Fixtures.** Grep every fixture and unit test for share values outside
    0–100 (for example, tests pinning the old fraction reading) — each is either
    deliberately testing a range error or needs its value corrected. Grep the
    importer specs (`guardian-inventory` and `annual-accounting` Excel import
-   tests) for cases pinning the above-1 legacy reading or the Inventory's
-   blank-to-0; each changes under D10 with the reason stated.
+   tests) for cases pinning the above-1 pre-60K reading or the Inventory's
+   blank-to-0; each is deleted or rewritten under D10 and D13, with the reason
+   stated.
 4. **Tests.** New: `tests/unit/percent-field.spec.js` (normalize and validate
    `''`, `0`, `0.5`, `1`, `50`, `100`, `100.01`, `150`, `-10`, `-0`, `abc`; a
    cleared box stores `''`, not 0; `shareFromWorkbookCell()` over number cells
@@ -841,8 +854,8 @@ would still arrive as 1.5%); *keep today's reading* (D10 — silent).
    returning, and reopening the saved case file**, and error; a cleared share
    stays blank and reports "required"; Part VIII's share at 150 errors; an Excel import of
    a workbook with share cells `1.5` and `-0.1` arrives as 150 and -10, both
-   flagged, on an Inventory and on an Annual; an import of a workbook written
-   the pre-60K way arrives at 5,000% and flagged). Red-first. `TEST-INDEX.md`
+   flagged, on an Inventory and on an Annual; a share cell holding `50`
+   arrives at 5,000% and flagged). Red-first. `TEST-INDEX.md`
    rows.
 5. **Export/import.** Export writes shares exactly as today. Import: step 5.
    Re-verify, with a real exported file read by a parser, that exporting then
@@ -949,7 +962,8 @@ decisions):
   reports it ("Ward's % must be a number from 0 to 100"). The workbook itself
   would show `#VALUE!` and stop the total; the app cannot print `#VALUE!`, and
   "counts as nothing, and says so" is the reading that can never inflate a
-  total. With 71C in place such a value can only come from an old save.
+  total. With 71C in place such a value can only arrive in a hand-edited case
+  file.
 - **A blank share prints as blank**, not as a figure: "—", the PDF's existing
   mark for an absent value (as D-4's Restricted Amt column already uses). The
   workbook's empty share cell shows nothing, and the app should not print a
@@ -977,8 +991,10 @@ but the app would still disagree with the Clerk's workbook.
 4. **Show the requirement where it is.** Ward's % gets a required marker on
    populated D-schedule rows; the export message stays. With 71C in place, a
    blank share is flagged inline.
-5. **Keep `ward-share-advisories.js`** (the "reads as 1%" note for shares of 1
-   or less) — it still catches filings typed under the old reading.
+5. **Keep `ward-share-advisories.js`** (the "reads as 1%" note for shares
+   above 0 and at most 1). It was written for old saves, which D13 says do
+   not matter. It stays because it still catches a filer typing `1` or `0.5`
+   for a whole or half share — exactly the mistake the D-1 text taught (BUG-02).
 6. **The printed Ward's % column shows what was entered.** One formatter,
    `formatShare(v)`, in `money.js` beside `wardShare()`: a number prints as
    `${v}%`; blank or unreadable prints "—". Used by the six sites in the
@@ -989,14 +1005,10 @@ but the app would still disagree with the Clerk's workbook.
 
 1. **Data model.** Update the `notes` of the five `schD*[].wardPct` rows: a
    blank share counts as 0 (Milestone 71D).
-2. **Legacy data.** An in-progress Annual filing with a blank share will show
-   **lower totals** after this lands — the blank rows stop counting in full.
-   That is the correction, but it is visible. The same happens for an
-   unreadable share, which also stops counting in full. No stored data
-   changes. A re-generated PDF prints "—" where it printed "100%" for a blank
-   share, including on Part VIII. Otherwise no filed PDF changes, unless it was
-   produced through the override path, where the totals now agree with the
-   rows already printed.
+2. **Legacy data.** None to preserve (D13). On the test system, a filing with
+   a blank or unreadable share shows **lower totals** after this lands, and
+   its PDF prints "—" where it printed "100%". That is the correction; no
+   stored data changes.
 3. **Fixtures.** Grep Annual fixtures and unit tests for rows with a blank
    `wardPct` that rely on the 100% reading (`tests/e2e/support/fixtures.ts`,
    `fillMinimalValidAnnualWard`, `annual-accounting-totals.spec.js`).
@@ -1118,7 +1130,7 @@ two visibly different numbers equal.
 | Clerk's trust work slip (`GD ANN Work Slip TRUST.docx`, parsed) | "If 1st trust accounting, is **the disbursement amount on the annual accounting** the same as the beginning of the trust accounting? OR Ending balance of **last inventory/trust accounting or amended trust accounting** / Beginning balance of this trust accounting / If the balances are not the same, list as a discrepancy." A trust accounting never starts from the guardianship estate's net assets. |
 | Rounding contract, approved 2026-09-20 for the Inventory (`guardian-inventory/totals.js:31-38`); the same rule is stated for every form at `src/core/format/money.js:14` | Compute at full precision, sum unrounded values, round the aggregate to cents only when producing a displayed or output figure. **Kept, and applied to all forms.** This milestone changes *how* the display rounds, never *when*. |
 
-### Decision — SETTLED 2026-09-29 (D2, D6, D8, D9, D12)
+### Decision — SETTLED 2026-09-29 (D2, D6, D9, D12; D8 withdrawn by D13)
 
 - **D2.** Every printed figure and every carried balance uses one rounding
   function that reproduces what the Clerk's workbook displays in Excel, as
@@ -1234,53 +1246,13 @@ own design); for D12, *a follow-on* (a carried negative keeps becoming $0).
    cell (`'PART VI, VII '!I8`, Simplified `'PARTS I, II '!H19`) as the rounded
    number, not the raw double, negative included. No formula cell is written.
 
-7. **Normalize stored raw Starting Balances on open (D8).** Filings created
-   before 71E may hold `797229.1849999999`, as a string or, once the mount
-   pass has run, as a number. When `roundCents(value)` differs from the stored
-   numeric value, the stored value is replaced with `roundCents(value)`, **as a
-   number**.
-   - **Where:** `normalizeWardData()` (`src/core/filing/normalize-filing.js:10`),
-     the pass `setActiveFiling()` (`src/core/state.js:96-97`) runs every time a
-     filing opens, which already migrates older shapes and is documented as
-     idempotent. Not in a render path, and not on every keystroke.
-   - **Only `startingBalance`,** on the Annual family and the Simplified
-     Accounting. No other money field is rewritten.
-   - **Recorded, not silent.** Each normalization writes one activity-log
-     entry, a new event type `STARTING_BALANCE_ROUNDED` in
-     `ACTIVITY_EVENT_META` (`src/core/activity/activity-log-view.js:12`). Its
-     details name the filing (form type and period) and the old and new
-     values. The filing is marked as changed, so the next save persists the
-     new value.
-   - **Logged against the right filing.** `setActiveFiling()` normalizes
-     *before* it sets `activeWardId`, and `appendAuditLogEntry()` tags every
-     entry with the *active* filing, overriding any `wardId` it is given
-     (`audit-log.js:46`). An entry written inside `normalizeWardData()` would
-     therefore be tagged with the previously open filing. So
-     `normalizeWardData()` returns what it changed, and `setActiveFiling()`
-     writes the entry after `activeWardId` is set. The override itself is a
-     separate defect ([Not covered](#what-this-milestone-covers-and-what-it-does-not)).
-   - **Written once, not once per open.** The rule fires only while the
-     stored value has sub-cent digits; after it runs, it has none, so opening
-     the filing again in the same session changes and logs nothing. The
-     activity log is saved **inside the `.sav`**, alongside the filing
-     (`audit-log.js`: "saved inside the case file"). A filer who opens a legacy
-     filing and closes without saving loses the rounded value and its log
-     entry together, and the next open does both again. The saved file never
-     holds a log entry for a change it does not also hold, and never holds two
-     entries for one change.
-   - **Printed figures:** the rounded Starting Balance prints exactly as the
-     unrounded one did (both go through `roundCents`). Line 20, which sums the
-     Starting Balance with the period's changes, can move by one cent in the
-     rare case where the dropped fraction and other half cents combine — the
-     accounting then starts from the same cents figure the prior filing
-     printed, which is what Rule 5.696(b)(1) and the Clerk's work slip compare.
-   - **No provenance record** is created for a normalized legacy value, so
-     neither design-step-5 note appears on such filings.
-
-   Option not taken (the recommendation): *leave the stored value alone* and
-   let display rounding make everything printed agree; the box would have kept
-   showing the long number until the filer edited it. The requester chose
-   normalization so the stored figure itself is clean.
+7. **Withdrawn (D13).** The draft normalized raw Starting Balances already
+   stored in existing filings (D8), with an activity-log entry for each.
+   There are no existing filings to preserve, so there is nothing to
+   normalize: every Starting Balance from here on is either typed or carried
+   through step 4, which rounds it. Test-system filings holding a raw value
+   are test data. The step number is kept so references to steps 8 and 9
+   stay valid.
 
 8. **Negative Starting Balances are kept (D12).**
    - Remove `startingBalance` from `sanitizeNegativeAmounts()`'s clamp
@@ -1332,7 +1304,7 @@ own design); for D12, *a follow-on* (a carried negative keeps becoming $0).
 
    | `field_path` | `data_type` | `format` | `requiredness` | `allowed_values` | `derived_or_input` | `notes` |
    | --- | --- | --- | --- | --- | --- | --- |
-   | `startingBalanceCarry` | object | — | optional | — | derived | Written only by `carriedEndingBalance()` (71E). Absent = no carry recorded: typed by hand, or carried before 71E. No migration and no inference; the notes simply do not appear. |
+   | `startingBalanceCarry` | object | — | optional | — | derived | Written only by `carriedEndingBalance()` (71E). Absent = no carry recorded (typed by hand, or a test-system filing created before 71E); the notes simply do not appear. No migration (D13). |
    | `startingBalanceCarry.sourceWardId` | string | id | optional | — | derived | The source filing's `wardId`. |
    | `startingBalanceCarry.sourceLabel` | string | text | optional | — | derived | Form type and period only, e.g. "Annual Accounting 03/15/2026–08/31/2026" — no names — so the note still reads if the source is deleted. |
    | `startingBalanceCarry.used` | string | enum | optional | `line30`; `line20`; `inventoryTotal`; `simplifiedRemaining`; `none-trust` | derived | Which figure was carried (D6, D9). |
@@ -1344,22 +1316,13 @@ own design); for D12, *a follow-on* (a carried negative keeps becoming $0).
    Update the two `startingBalance` rows (CSV lines 59 and 103): `data_type`
    stays `decimal`; `allowed_values` "any amount; negative allowed (Milestone
    71E, D12)"; `notes` "`''` = unanswered; `0` is an answer (71E step 9).
-   Carried values are rounded to cents. Legacy sub-cent values are rounded on
-   open and logged (D8)." `npm run verify:data-model` must pass.
-2. **Legacy data.**
-   - Printed figures on existing filings may change by one cent where a total
-     lands on a half cent — the intended correction, toward the workbook.
-   - Stored raw Starting Balances are rounded to cents on open and logged
-     (design step 7, D8).
-   - A negative Starting Balance that the mount clamp already turned into 0
-     **and that was saved** cannot be recovered: nothing records the original.
-     No migration; carrying again from the source after 71E gives the right
-     figure.
-   - Existing Trust Accountings keep whatever Starting Balance they hold; D9
-     changes only new carries.
-   - Existing filings have no `startingBalanceCarry`, so none of the step-5
-     notes appear on them.
-   - Record each rule in the `startingBalance` rows' `notes` (item 1).
+   Carried values are rounded to cents." `npm run verify:data-model` must pass.
+2. **Legacy data.** None to preserve (D13): no migration, no on-open
+   normalization, no compatibility reader. On the test system, printed
+   figures may move by one cent where a total lands on a half cent (the
+   intended correction, toward the workbook). Filings created before 71E
+   simply have no `startingBalanceCarry`, so the step-5 notes don't appear on
+   them.
 3. **Fixtures.** `tests/baseline/ms70-conversion-golden.json` (20 occurrences
    of `startingBalance`) and `ms70-year-rollover-golden.json` (12) record carry
    output; re-derive them from the new function, never hand-edit them to pass.
@@ -1383,11 +1346,8 @@ own design); for D12, *a follow-on* (a carried negative keeps becoming $0).
      - Provenance is recorded with the item-1 fields. Every step-5 note,
        including the amended-period note, fires on the right inputs and on
        no others.
-     - A legacy filing holding `797229.1849999999` (as a string and as a
-       number) opens as `797229.19`, or whatever 71A's rule gives. It gets
-       exactly one `STARTING_BALANCE_ROUNDED` entry tagged with that filing,
-       not the previously open one. Opening it a second time in the session
-       adds no entry, and a two-decimal value is left untouched.
+     - The QA source (Line 30 `797229.1849999999`) carries as the number
+       `797229.19`, or whatever 71A's rule gives, never the raw double.
      - The Annual accepts a Starting Balance of 0 and still reports an
        empty one.
    - `tests/e2e/carry-balance-matches-prior.spec.ts`:
@@ -1451,10 +1411,10 @@ Per AGENTS.md §2:
 
 - **Each item:** its targeted specs, red-first for every new test that claims
   to catch a regression.
-- **Type check:** 71E adds to `src/core/filing/`, `src/core/state.js` and
-  `src/core/activity/`. `activity-log-view.js` is in the checked program
-  transitively (its own header says so; the router imports it). Run
-  `npm run check:types` after 71E, and after any item that touches a file in
+- **Type check:** 71C and 71E change `src/core/form/form-runtime.js`, which
+  is in the checked program transitively (its own header says so; the router
+  imports it), and 71E adds to `src/core/filing/`. Run `npm run check:types`
+  after 71C and after 71E, and after any item that touches a file in
   `tsconfig.json`'s `include` list or pulled in by one.
 - **Data model:** `npm run verify:data-model` after 71B, 71C, 71D and 71E.
 - **Full regression:** all four code items are cross-cutting (three form
