@@ -2,8 +2,8 @@
  "generatedBy": "node scripts/ms70-assertion-counts.mjs --write-baseline",
  "note": "Milestone 70 per-spec assertion counts (static expect calls). tests/unit/ms70-assertion-counts.spec.js fails when a spec falls below its count; lowering it requires --reason, recorded in dropLog. A tripwire, not proof of equivalence (decision D9).",
  "totals": {
-  "expects": 7086,
-  "tests": 2014
+  "expects": 7197,
+  "tests": 2045
  },
  "counts": {
   "tests/e2e/annotation-toolbar-containment.spec.ts": {
@@ -54,6 +54,10 @@
    "expects": 50,
    "tests": 6
   },
+  "tests/e2e/carry-balance-matches-prior.spec.ts": {
+   "expects": 42,
+   "tests": 5
+  },
   "tests/e2e/carryover-workflow.spec.ts": {
    "expects": 34,
    "tests": 5
@@ -103,7 +107,7 @@
    "tests": 4
   },
   "tests/e2e/convert-ward.spec.ts": {
-   "expects": 26,
+   "expects": 28,
    "tests": 6
   },
   "tests/e2e/cover-county.spec.ts": {
@@ -614,6 +618,10 @@
    "expects": 9,
    "tests": 4
   },
+  "tests/unit/carried-balance.spec.js": {
+   "expects": 46,
+   "tests": 21
+  },
   "tests/unit/case-county-drift.spec.js": {
    "expects": 15,
    "tests": 6
@@ -837,6 +845,10 @@
   "tests/unit/live-region.spec.js": {
    "expects": 9,
    "tests": 2
+  },
+  "tests/unit/money-rounding.spec.js": {
+   "expects": 21,
+   "tests": 5
   },
   "tests/unit/ms70-70T-guard.spec.js": {
    "expects": 9,

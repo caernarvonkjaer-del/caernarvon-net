@@ -28,6 +28,7 @@ import { calcTotalsGuardian } from './features/guardian-inventory/totals.js';
 import { calcTotals } from './features/simplified-accounting/totals.js';
 import { createFeatureBridge } from './core/feature-bridge.js';
 import { formEngine } from './core/filing/filing-registry.js';
+import { hasScheduleDFigure } from './core/filing/schedule-d-figure.js';
 import { validatorFnName } from './core/filing/filing-descriptor.js';
 
 export function loadSimplifiedFeature() {
@@ -207,7 +208,10 @@ function headlineTotal(ward) {
     else if (ward.inventoryType === 'simplified') total = calcTotals(ward).remaining;
     else if (formEngine(ward.inventoryType) === 'annual') {
       const t = calcTotalsAnnual(ward);
-      total = (t.netAssetsFromD !== 0 || (t.schD1_total || t.schD2_ward || t.schD3_ward || t.schD4_ward || t.schD5_total)) ? t.netAssetsFromD : (t.netAssets || 0);
+      // Milestone 71E: "has a Schedule D" means entered amounts
+      // (schedule-d-figure.js), the same test the carry uses -- the computed
+      // ward's-share totals read zero for a D with blank shares (71D).
+      total = hasScheduleDFigure(ward) ? t.netAssetsFromD : (t.netAssets || 0);
     }
   } catch (e) { console.warn('Dashboard: could not compute total for ward', ward.wardId, e); }
   return total;

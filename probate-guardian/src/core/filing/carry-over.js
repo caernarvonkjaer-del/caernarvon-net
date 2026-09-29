@@ -28,7 +28,7 @@ import { formEngine, INVENTORY_TYPES } from './filing-registry.js';
 import { normalizeCountyName } from '../navigation/ward-county.js';
 import { reconcileSlotWithParty, resolveParty } from '../party-resolver.js';
 import { getCaseFile } from '../state.js';
-import { features } from '../runtime/features.js';
+import { applyCarriedStartingBalance } from './starting-balance-carry.js';
 
 export const ACCOUNTING_FORM_TYPES = ['guardian', 'simplified', 'annual', 'finalAccounting', 'trustAccounting'];
 export const PRIOR_ACCOUNTING_SOURCES = ['guardian', 'simplified', 'annual', 'finalAccounting', 'trustAccounting'];
@@ -436,11 +436,18 @@ export function carryOverAccountingToAccounting(src,targetType){
   // to that one source/target combination so it can't shadow or race the
   // two dedicated mappers' own values for the other two paths.
   const carryingFinancials = formEngine(src.inventoryType)==='annual';
+  // Milestone 71E: the one carry (starting-balance-carry.js) -- Line 30, or
+  // Line 20 when the source has no Schedule D figure (this used to carry Line
+  // 30 even when it was a meaningless $0), rounded to cents by the workbook's
+  // rule, nothing across the trust boundary, and a provenance record the
+  // Starting Balance notes read.
+  const carried={};
+  if(carryingFinancials)applyCarriedStartingBalance(carried,src,targetType);
   return {...base, gid:src.gid||'', guardian:guardianName, attorney:attorneyName,
     attorney_bar:attyBar, attorney_phone:attyPhone,
     attorney_street:attyStreet, attorney_cityStateZip:attyCityStateZip,
     ...(carryingFinancials ? {
-      startingBalance:String(features().totals.annual(src).netAssetsFromD),
+      ...carried,
       certRecipients:(src.certRecipients||[]).map(r=>({...r})),
     } : {}),
     guardians:[0,1,2].map(i=>{

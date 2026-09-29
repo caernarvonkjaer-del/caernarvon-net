@@ -9,6 +9,7 @@ import { bondDepositoryAdvisories } from './bond-depository.js';
 import { planCertificateAdvisories, certificateOptional } from './plan-certificate-of-service.js';
 import { wardShareAdvisories } from './ward-share-advisories.js';
 import { unrepresentedAdvisories } from './unrepresented-filing.js';
+import { startingBalanceNotes } from './starting-balance-carry.js';
 
 // Milestone 71B. Where each accounting form asks why there is no attorney,
 // and where its certificate of service is, by the registry's engine id.
@@ -30,7 +31,7 @@ import {
   getFieldDraftIssues,
 } from '../form/commit-coordinator.js';
 import { createIssue } from '../validation/issue-registry.js';
-import { getD } from '../state.js';
+import { getCaseFile, getD } from '../state.js';
 import { setPath } from '../form/paths.js';
 import { isOutputAcknowledgedFor } from './output-revision.js';
 
@@ -83,6 +84,13 @@ export function prepareFilingOutput(data, baseIssues = [], options = {}) {
     // said here instead.
     ...(UNREPRESENTED_SECTIONS[identity.descriptor?.engineId]
       ? unrepresentedAdvisories(target, { engineId: identity.descriptor.engineId, ...UNREPRESENTED_SECTIONS[identity.descriptor.engineId] })
+      : []),
+    // Milestone 71E: what the carried Starting Balance needs the filer to
+    // know -- nothing carried into or out of a Trust Accounting, a prior
+    // filing whose Lines 20 and 30 differ, a Starting Balance changed since
+    // the carry, an amended accounting for the source's period.
+    ...(['annual', 'simplified'].includes(identity.descriptor?.engineId)
+      ? startingBalanceNotes(target, { wards: getCaseFile()?.wards || null, section: 'Part II' })
       : []),
   ];
 

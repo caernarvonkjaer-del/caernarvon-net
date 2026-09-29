@@ -10,7 +10,7 @@ import { emptyRowAnnual } from './models/annual.js';
 import { navigate } from '../navigation/router.js';
 import { activateWard, createWardId } from '../navigation/ward-lifecycle.js';
 import { saveWardToState, setDirtySinceExport, updateLastSavedIndicator } from '../persistence/case-file.js';
-import { features } from '../runtime/features.js';
+import { applyCarriedStartingBalance, crossesTrustBoundary as crossesTrust } from './starting-balance-carry.js';
 import { getCaseFile } from '../state.js';
 import { alertModal } from '../ui/dialogs.js';
 
@@ -18,18 +18,30 @@ import { alertModal } from '../ui/dialogs.js';
 // converting and reused in the confirmation alert afterward — so the
 // explanation of what will/won't carry over is never out of sync with what
 // the code actually does below.
+// Milestone 71E: a Trust Accounting never takes a Starting Balance from a
+// guardianship filing, nor gives one to it (starting-balance-carry.js); the
+// dialog says so rather than promising a figure that does not arrive.
+const TRUST_NO_CARRY=' Starting Balance is left blank: a trust accounting does not start from the guardianship\'s net assets (the Clerk compares a first trust accounting with the amount the annual accounting disbursed into the trust), so enter it yourself.';
+
 export function describeConversion(srcType,destType){
   if(srcType==='guardian'&&formEngine(destType)==='annual'){
-    return 'Real estate, cash accounts, personal property, intangible assets, debts, income sources, and trusts are carried into the matching schedules, along with the attorney block and certificate of service. Review each schedule afterward — carrying values and this year\'s actual activity still need to be confirmed.';
+    return 'Real estate, cash accounts, personal property, intangible assets, debts, income sources, and trusts are carried into the matching schedules, along with the attorney block and certificate of service. Review each schedule afterward — carrying values and this year\'s actual activity still need to be confirmed.'
+      +(crossesTrust(srcType,destType)?TRUST_NO_CARRY:' The Initial Inventory\'s total becomes the Starting Balance, rounded to cents.');
   }
   if(srcType==='guardian'&&destType==='simplified'){
     return 'The Initial Inventory\'s total Ward\'s Value becomes the Starting Balance, and the attorney block and certificate of service recipients are carried over too. Simplified Accounting has no asset schedules, so itemised assets collapse into that single figure rather than transferring line by line.';
   }
   if(formEngine(srcType)==='annual'&&destType==='simplified'){
-    return 'The Annual Accounting\'s net asset total becomes the Starting Balance, and the reporting period, attorney block, certificate of service and any remuneration are carried over too. Simplified Accounting has no asset schedules, so itemised schedule data collapses into that single figure rather than transferring line by line.';
+    return (crossesTrust(srcType,destType)
+      ?'The reporting period, attorney block, certificate of service and any remuneration are carried over. Starting Balance is left blank: a trust accounting\'s ending balance is not the guardianship\'s, so enter it yourself.'
+      :'The Annual Accounting\'s net asset total becomes the Starting Balance, and the reporting period, attorney block, certificate of service and any remuneration are carried over too.')
+      +' Simplified Accounting has no asset schedules, so itemised schedule data collapses into that single figure rather than transferring line by line.';
   }
   if(srcType==='simplified'&&formEngine(destType)==='annual'){
-    return 'The Simplified Accounting\'s Ending Balance becomes the Starting Balance, and the reporting period, attorney block, certificate of service and any remuneration are carried over too. Since Simplified Accounting doesn\'t track itemized assets, the new Annual Accounting\'s schedules start blank for you to complete.';
+    return (crossesTrust(srcType,destType)
+      ?'The reporting period, attorney block, certificate of service and any remuneration are carried over.'+TRUST_NO_CARRY
+      :'The Simplified Accounting\'s Ending Balance becomes the Starting Balance, and the reporting period, attorney block, certificate of service and any remuneration are carried over too.')
+      +' Since Simplified Accounting doesn\'t track itemized assets, the new Annual Accounting\'s schedules start blank for you to complete.';
   }
   // Milestone 40H-I: same-family accounting-to-accounting (e.g. Annual ->
   // Final/Trust) -- checked ahead of the generic fallback below, which would
@@ -40,7 +52,10 @@ export function describeConversion(srcType,destType){
   // cert recipients once carryOverAccountingToAccounting() started carrying
   // them for this exact pair.
   if(formEngine(srcType)==='annual'&&formEngine(destType)==='annual'&&srcType!==destType){
-    return `The ward's name, case number, guardian, and attorney details are carried over. Starting Balance is set to this filing's ending net assets, and certificate-of-service recipients are carried too. County is restored from this ward's case record rather than copied from this filing. The accounting period and every schedule start blank for you to complete.`;
+    const balance=crossesTrust(srcType,destType)
+      ?`Starting Balance is left blank: a trust accounting and a guardianship accounting do not share an ending balance, so enter it yourself.`
+      :`Starting Balance is set to this filing's ending net assets (Line 30, or Line 20 if it has no Schedule D figures), rounded to cents.`;
+    return `The ward's name, case number, guardian, and attorney details are carried over. ${balance} Certificate-of-service recipients are carried too. County is restored from this ward's case record rather than copied from this filing. The accounting period and every schedule start blank for you to complete.`;
   }
   if(carrySourcesFor(destType).includes(srcType)){
     return `This creates a new ${INVENTORY_TYPES[destType].name} for the same ward. The ward's name, case number, county, and guardian contact details are carried over exactly as entered — nothing is renamed. Everything specific to this new filing (residence and care details, schedules, signatures, etc.) starts blank for you to complete.`;
@@ -77,6 +92,13 @@ export function mapConvertedHeaderFields(src,srcType,dest,destType){
 // year's actual income/activity is left for the user to confirm rather than
 // silently assumed from the inventory's projected figures.
 export function convertGuardianSchedulesToAnnual(src,dest){
+  // Milestone 71E: an Initial Inventory converted into its first Annual now
+  // carries its Summary I total as the Starting Balance -- Rule 5.696(b)(1):
+  // "the ending balance of the preceding accounting, or if none, the value of
+  // assets on the inventory". It carried nothing before (Milestone 40H-I's
+  // comment in carry-over.js says this mapper set it; it did not). Nothing is
+  // carried into a Trust Accounting (starting-balance-carry.js).
+  applyCarriedStartingBalance(dest,src,dest.inventoryType);
   // Milestone 57B (D7): the attestation never survives a conversion. It is
   // THIS filer's assertion about THIS filing -- that nobody required service
   // on it -- and a new filing has its own recipients and its own answer. It
@@ -181,8 +203,9 @@ export function convertToSimplified(src,srcType,dest){
   // is the assertion that is dropped, never the data.
   dest.certNoRecipients='';
   dest.serviceNoRecipients='';
-  const total=features().headlineTotal(src);
-  dest.startingBalance=total!=null?String(total):'';
+  // Milestone 71E: the one carry (starting-balance-carry.js), rounded to cents
+  // by the workbook's rule; nothing across the trust boundary.
+  applyCarriedStartingBalance(dest,src,'simplified');
 
   if(srcType==='guardian'){
     const a=src.attorney||{}, sa=src.serviceAttorney||{};
@@ -249,8 +272,9 @@ export function convertSimplifiedToAnnual(src,dest){
   // is the assertion that is dropped, never the data.
   dest.certNoRecipients='';
   dest.serviceNoRecipients='';
-  const total=features().headlineTotal(src);
-  dest.startingBalance=total!=null?String(total):'';
+  // Milestone 71E: the one carry (starting-balance-carry.js), rounded to cents
+  // by the workbook's rule; nothing across the trust boundary.
+  applyCarriedStartingBalance(dest,src,dest.inventoryType);
   dest.periodFrom=src.periodFrom||'';
   dest.periodTo=src.periodTo||'';
   dest.amendedForm=src.amendedForm||'';

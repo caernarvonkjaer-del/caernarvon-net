@@ -37,7 +37,7 @@ everything else is sequential because the items share files (see
 | 2 | 71B | Filers who need no attorney are blocked on five of the nine forms | **DECIDED** — attorney optional when blank; ask the basis; the guardian who served the copies signs the certificate of service | **Built** 2026-09-29 (see its Build record) |
 | 3 | 71C | Every percentage field is secretly a money field: 150% accepted, "-10" silently becomes 10 | **DECIDED** — a real percent field, 0–100; an out-of-range share is an ordinary, bypassable error; imported share cells read as the workbook stores them | **Built** 2026-09-29 (see its Build record) |
 | 4 | 71D | Ward's %: a wrong on-screen instruction, and three different answers for a blank share | **DECIDED** — fix the text; a blank share counts as 0%, as in the court's workbook, and prints as blank, not "100%" | **Built** 2026-09-29 (see its Build record) |
-| 5 | 71E | The app rounds money three different ways; carried balances are unrounded and inconsistent | **DECIDED** — one rounding rule matching the Clerk's workbook (per 71A); carry Line 30 and warn on mismatch; never carry the estate's net assets into or out of a Trust Accounting; keep negative balances | Not started |
+| 5 | 71E | The app rounds money three different ways; carried balances are unrounded and inconsistent | **DECIDED** — one rounding rule matching the Clerk's workbook (per 71A); carry Line 30 and warn on mismatch; never carry the estate's net assets into or out of a Trust Accounting; keep negative balances | **Built** 2026-09-29 (see its Build record) |
 
 ### Provenance
 
@@ -1613,7 +1613,172 @@ own design); for D12, *a follow-on* (a carried negative keeps becoming $0).
    $0 Starting Balances behave the same on the Annual family and the
    Simplified Accounting.
 
-### Build record — NOT STARTED
+### Build record — BUILT 2026-09-29
+
+**What was built.**
+
+- `src/core/format/money.js`: `roundCents()` and `formatMoney(v, {style,
+  grouping})`, implementing Appendix B's specification (15 significant
+  digits, then half away from zero, on the decimal string). `r2()` is
+  `roundCents()` under its old name; `fmt()` and `formatDashboardCurrency()`
+  are `formatMoney()` in their existing styles.
+- Every formatting site in the Evidence table now calls `formatMoney()`, in
+  its own style: `dollar` on the Annual and Simplified PDFs ("$-1,234.50"),
+  `signFirst` on the Inventory PDF ("-$1,234.50"), `parens` on the Annual
+  screens, `dollarParens` on the Simplified screens and the dashboard, and
+  no grouping for the Simplified workbook's amount string. Both audit-fee
+  figures use it too.
+- `annualReconcileState()` compares the two lines as they print: balanced
+  only when `roundCents(line20) === roundCents(line30)`, and the difference
+  shown is the difference of the printed figures.
+- `src/core/filing/schedule-d-figure.js`: `hasScheduleDFigure()`, a D-1 to
+  D-5 row with a nonzero number in any money column. `headlineTotal()` uses
+  it, so the dashboard and the carry agree.
+- `src/core/filing/starting-balance-carry.js`: `carriedEndingBalance()`,
+  `applyCarriedStartingBalance()` (writes the number and the
+  `startingBalanceCarry` record), `crossesTrustBoundary()`,
+  `startingBalanceNotes()` and its HTML. All five paths call it:
+  `carry-over.js` (New Filing from Existing), `conversion.js` (Inventory →
+  Annual family, which now carries; → Simplified; Simplified → Annual
+  family) and `filing-years.js` (New Year).
+- `describeConversion()` says "Starting Balance is left blank…" for every
+  pair across the trust boundary, and says that the Initial Inventory's total
+  becomes the Starting Balance for Inventory → Annual/Final.
+- The notes appear beside Starting Balance on both engines' pages and in
+  Preview & Export (`output-preflight.js`), never blocking.
+- Starting Balance keeps a negative: removed from
+  `sanitizeNegativeAmounts()`; the Annual box is `signed-money` with the
+  blank-keeping opt-in (through `inpD()`'s new options argument); the
+  Simplified box is `signed-decimal`, `inputmode="text"`, drawn through
+  `displayDecimal()`, with the blank-keeping opt-in.
+- The Annual's required check for Starting Balance accepts 0 and reports only
+  an empty value. `req` is unchanged.
+- Data model: both `startingBalance` rows updated, and eight
+  `startingBalanceCarry.*` rows per engine (1,041 rows; `verify:data-model`
+  passes).
+
+**Decisions taken during the build.**
+
+- **The carry lives in its own module**, `starting-balance-carry.js`, not
+  inside `carry-over.js` as design step 4 said. Five callers need it (two
+  pages, Preview & Export, conversion, New Year), and `carry-over.js` also
+  holds the carry-source picker's page code. It is the one allowed exception
+  added to `filing-type-enumeration-guard.spec.js`. `conversion.js` asks it
+  `crossesTrustBoundary()` rather than naming the Trust Accounting itself.
+- **A figure that rounds to zero prints 0.00, never "-0.00" or "($0.00)".**
+  Appendix B's measurement has no negative smaller than half a cent, so this
+  is a choice, not a measurement. Where Excel shows such a value is
+  unconfirmed. A reconciliation difference of −0.000000001 printing as
+  "($0.00)" would mislead a filer.
+- **"The prior filing's ending balances differ" appears only when Line 30
+  was carried.** When the source has no Schedule D, its Line 30 is $0 by
+  construction, and the note would fire on every such filing.
+- **"Starting Balance differs from the prior filing's ending balance"**
+  compares the figures as they print, and stays silent while the box is
+  empty (the required-field error already covers that).
+- **The amended-period note** matches the same form type, the same `caseId`,
+  the same `periodFrom` and `periodTo`, Amended Form = Yes, and never the new
+  filing itself.
+- **The Simplified box keeps its hand-written markup** (the design's
+  allowed choice), so its line layout is unchanged.
+- **No activity-log entry.** Checklist item 6 mentions one; it belonged to
+  the normalization withdrawn by D13.
+- **Unused imports.** `carry-over.js`, `conversion.js` and `filing-years.js`
+  no longer import `features`, which only the carry used.
+
+**Found during the build.**
+
+- `ms70-conversion-golden.json` and `ms70-year-rollover-golden.json` had
+  been stale since 71B: 71B's new blank fields were not in them, and the two
+  characterization specs were not in 71B's targeted runs. Both were
+  regenerated here from the running app, not hand-edited. Each golden's note
+  records the 71B and 71E changes.
+
+**Tests.**
+
+- New: `tests/unit/money-rounding.spec.js`. Every one of 71A's 3,480
+  measured cases, in the Clerk's format and `#,##0.00`, and all 322 visible
+  real-export cells, must equal Excel's own text.
+- New: `tests/unit/carried-balance.spec.js`. It covers the one carry for
+  every source, every pair across the trust boundary, the four conversion
+  and carry-over paths called directly, the dialog text, the provenance
+  record, each note, $0 versus blank, and the printed-equality balance check.
+- New: `tests/e2e/carry-balance-matches-prior.spec.ts`. It runs for Annual,
+  Final and Trust, and covers:
+  - the QA figures balancing at $797,229.19;
+  - the carry to a Final (a converted one, or a New Year);
+  - a blank Trust Accounting with its note;
+  - `-5000` typed with the keyboard, kept through leaving the page and
+    reopening the filing, printed as "$-5,000.00", and landing in
+    `'PART VI, VII '!I8` as −5000;
+  - 0 accepted, and blank reported;
+  - a negative ending balance carried and surviving a reopen.
+
+  The Simplified box does the same through `'PARTS I, II '!H19`. The
+  Inventory and Annual PDFs print a half cent alike. All three exported
+  workbooks keep every template formula on every sheet they keep, read with
+  ExcelJS from the exported file.
+- Updated, with reasons: `convert-ward.spec.ts` (the Annual → Trust
+  description), `filing-type-enumeration-guard.spec.js` (the exception), and
+  both characterization goldens.
+- **Red-first**, with the implementing files stashed:
+  - unit: $0.00 was reported missing; −5000 became 0; 797,229.19 against
+    797,229.18 read as balanced. With only `conversion.js` and
+    `carry-over.js` stashed:
+    - New Filing from Existing carried the text `"0"` (a $0 Line 30);
+    - Inventory → Annual carried nothing;
+    - the Annual → Trust dialog promised "Starting Balance is set to this
+      filing's ending net assets".
+  - e2e, `src/` stashed, all 11 fail:
+    - the banner read "(797,229.18) equals … (797,229.19)";
+    - −5000 showed as 5000, and −250.5 as 250.5;
+    - a carried −5000 became 0 on opening;
+    - a Final's or Trust's New Year carried the text `"-5000"`;
+    - the Inventory PDF printed $1.00.
+  - Formatter, with only the exponent handling reverted: a 19-digit value
+    printed `1,234,567,890,123,460,096.00`, and a 22-digit value threw
+    "Cannot convert 1e+21 to a BigInt", which would break the page showing
+    it.
+- All 163 unit files pass (2,212 tests). `check:types` and
+  `verify:data-model` (1,041 rows) are clean.
+- The targeted browser specs pass: 80 tests in the specs below, and the new
+  spec's 11.
+  - `carryover-workflow`, `convert-ward`, both characterization specs;
+  - `annual-mount`, `excel-form-field-placement`, `pdf-form-specific`,
+    `pdf-structure-tags`, `dashboard-visual`.
+- **Excel acceptance (verification plan).** One real export of each
+  template was read with ExcelJS and compared with the Clerk's template. On
+  every sheet the export keeps, no template formula cell holds a plain value,
+  with two exceptions, both listed exactly in the spec:
+  - Annual `'PART II, III'!F25` (Guardian #1's name): decided 2026-09-19,
+    allowed with an advisory.
+  - Inventory `'PART III'!F8`: see "Found during the build".
+
+  A formula that blank-page pruning rewrote is not counted. Pruning drops
+  removed pages from each page-total formula by design, and its own specs
+  cover that.
+
+**Decision taken after review.**
+
+- **A value past 15 significant digits prints its 15-digit figure with
+  zeros.** The formatter first expanded exponent form through a JavaScript
+  number, which brought back binary digits and threw from 10²¹ up. It now
+  moves the decimal point in the 15-digit string itself. No filing holds such
+  a figure; a mistyped one should print, not break the page.
+
+**Found during the build, not fixed (outside Milestone 71).**
+
+- **Inventory `'PART III'!F8`.** The export writes the first guardian's name
+  over the template's `='SUMMARY I '!D23`, the guardian named on Summary I.
+  Usually the two names are the same. When they differ, the filed Part III
+  shows the guardian card's name, not Summary I's, and nothing warns the
+  filer. The Annual has the same kind of overwrite at `F25`, which was
+  decided with an advisory; the Inventory's was never decided.
+  `excel-write-targets.spec.js` cannot see it: the Inventory writes Part III
+  through a computed address (`` `F${b+1}` ``), which that guard's pattern
+  does not read. The same blind spot would hide any other computed-address
+  write. Needs its own decision: conform to the Annual's approach (allow,
+  with an advisory) or stop writing F8.
 
 ---
 

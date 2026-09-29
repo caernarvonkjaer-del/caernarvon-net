@@ -1,5 +1,5 @@
 {
- "note": "Milestone 70, 70G: what converting a filing into each type the app offers produces, recorded from the app before 70G moved conversion out of legacy-app.js by tests/e2e/filing-conversion.characterization.spec.ts. Regenerate only for a deliberate, recorded change.",
+ "note": "Milestone 70, 70G: what converting a filing into each type the app offers produces, recorded from the app before 70G moved conversion out of legacy-app.js by tests/e2e/filing-conversion.characterization.spec.ts. Regenerate only for a deliberate, recorded change. Changed by Milestone 71 (2026-09-29): 71B added fields to the Inventory, Annual-family and Simplified blanks (attorneyWaiverBasis, attorneyWaiverOrderDate, certGuardianSign*, certifiesService, serviceGuardian), which every converted filing now carries; 71E made every carry one function -- Annual family to Annual family carries Line 20 when the source has no Schedule D figure (the minimal fixture has none: 10500, where Line 30 was a meaningless 0), an Initial Inventory converted into an Annual or Final now carries its Summary I total (it carried nothing), nothing is carried into or out of a Trust Accounting (empty Starting Balance), and each carry records startingBalanceCarry.",
  "types": {
   "guardian": {
    "targets": [
@@ -280,6 +280,9 @@
      "certAttySignatureState": "",
      "certAttySignDate": "",
      "certAttyStreet": "123 Main St",
+     "certGuardianSignatureImage": "",
+     "certGuardianSignatureState": "",
+     "certGuardianSignDate": "",
      "certIndicator": "",
      "certNoRecipients": "",
      "certRecipients": [
@@ -376,6 +379,15 @@
      "serviceNoRecipients": "",
      "ssn": "",
      "startingBalance": 0,
+     "startingBalanceCarry": {
+      "carriedAt": "<time>",
+      "line20": "",
+      "line30": "",
+      "sourceLabel": "Initial Inventory as of 01/01/2026",
+      "sourceWardId": "<id>",
+      "used": "inventoryTotal",
+      "value": 0
+     },
      "typeOfGuardianship": "Plenary",
      "ucn": "",
      "wardId": "<id>",
@@ -396,6 +408,8 @@
      "attorney_signatureState": "",
      "attorney_street": "123 Main St",
      "attorneyPartyId": null,
+     "attorneyWaiverBasis": "",
+     "attorneyWaiverOrderDate": "",
      "bondAmount": "",
      "bondDepositoryState": "",
      "bondingCompany": "",
@@ -408,6 +422,9 @@
      "certAttySignatureState": "",
      "certAttySignDate": "",
      "certDate": "",
+     "certGuardianSignatureImage": "",
+     "certGuardianSignatureState": "",
+     "certGuardianSignDate": "",
      "certIndicator": "",
      "certNoRecipients": "",
      "certRecipients": [
@@ -532,7 +549,16 @@
      "schF1": [],
      "schF2": [],
      "serviceNoRecipients": "",
-     "startingBalance": "",
+     "startingBalance": 0,
+     "startingBalanceCarry": {
+      "carriedAt": "<time>",
+      "line20": "",
+      "line30": "",
+      "sourceLabel": "Initial Inventory as of 01/01/2026",
+      "sourceWardId": "<id>",
+      "used": "inventoryTotal",
+      "value": 0
+     },
      "trusts": [
       {
        "accountNo": "",
@@ -588,6 +614,8 @@
      "attorney_signatureState": "",
      "attorney_street": "123 Main St",
      "attorneyPartyId": null,
+     "attorneyWaiverBasis": "",
+     "attorneyWaiverOrderDate": "",
      "bondAmount": "",
      "bondDepositoryState": "",
      "bondingCompany": "",
@@ -600,6 +628,9 @@
      "certAttySignatureState": "",
      "certAttySignDate": "",
      "certDate": "",
+     "certGuardianSignatureImage": "",
+     "certGuardianSignatureState": "",
+     "certGuardianSignDate": "",
      "certIndicator": "",
      "certNoRecipients": "",
      "certRecipients": [
@@ -724,7 +755,16 @@
      "schF1": [],
      "schF2": [],
      "serviceNoRecipients": "",
-     "startingBalance": "",
+     "startingBalance": 0,
+     "startingBalanceCarry": {
+      "carriedAt": "<time>",
+      "line20": "",
+      "line30": "",
+      "sourceLabel": "Initial Inventory as of 01/01/2026",
+      "sourceWardId": "<id>",
+      "used": "inventoryTotal",
+      "value": 0
+     },
      "trusts": [
       {
        "accountNo": "",
@@ -780,6 +820,8 @@
      "attorney_signatureState": "",
      "attorney_street": "123 Main St",
      "attorneyPartyId": null,
+     "attorneyWaiverBasis": "",
+     "attorneyWaiverOrderDate": "",
      "bondAmount": "",
      "bondDepositoryState": "",
      "bondingCompany": "",
@@ -792,6 +834,9 @@
      "certAttySignatureState": "",
      "certAttySignDate": "",
      "certDate": "",
+     "certGuardianSignatureImage": "",
+     "certGuardianSignatureState": "",
+     "certGuardianSignDate": "",
      "certIndicator": "",
      "certNoRecipients": "",
      "certRecipients": [
@@ -917,6 +962,15 @@
      "schF2": [],
      "serviceNoRecipients": "",
      "startingBalance": "",
+     "startingBalanceCarry": {
+      "carriedAt": "<time>",
+      "line20": "",
+      "line30": "",
+      "sourceLabel": "Initial Inventory as of 01/01/2026",
+      "sourceWardId": "<id>",
+      "used": "none-trust",
+      "value": ""
+     },
      "trusts": [
       {
        "accountNo": "",
@@ -1093,6 +1147,8 @@
      "attorney_signatureState": "",
      "attorney_street": "123 Main St",
      "attorneyPartyId": null,
+     "attorneyWaiverBasis": "",
+     "attorneyWaiverOrderDate": "",
      "bondAmount": "",
      "bondDepositoryState": "",
      "bondingCompany": "",
@@ -1105,6 +1161,9 @@
      "certAttySignatureState": "",
      "certAttySignDate": "",
      "certDate": "2027-01-05",
+     "certGuardianSignatureImage": "",
+     "certGuardianSignatureState": "",
+     "certGuardianSignDate": "",
      "certIndicator": "Mailed",
      "certNoRecipients": "",
      "certRecipients": [
@@ -1230,6 +1289,15 @@
      "schF2": [],
      "serviceNoRecipients": "",
      "startingBalance": 1005,
+     "startingBalanceCarry": {
+      "carriedAt": "<time>",
+      "line20": "",
+      "line30": "",
+      "sourceLabel": "Simplified Annual Accounting 01/01/2026–12/31/2026",
+      "sourceWardId": "<id>",
+      "used": "simplifiedRemaining",
+      "value": 1005
+     },
      "trusts": [
       {
        "accountNo": "",
@@ -1285,6 +1353,8 @@
      "attorney_signatureState": "",
      "attorney_street": "123 Main St",
      "attorneyPartyId": null,
+     "attorneyWaiverBasis": "",
+     "attorneyWaiverOrderDate": "",
      "bondAmount": "",
      "bondDepositoryState": "",
      "bondingCompany": "",
@@ -1297,6 +1367,9 @@
      "certAttySignatureState": "",
      "certAttySignDate": "",
      "certDate": "2027-01-05",
+     "certGuardianSignatureImage": "",
+     "certGuardianSignatureState": "",
+     "certGuardianSignDate": "",
      "certIndicator": "Mailed",
      "certNoRecipients": "",
      "certRecipients": [
@@ -1422,6 +1495,15 @@
      "schF2": [],
      "serviceNoRecipients": "",
      "startingBalance": 1005,
+     "startingBalanceCarry": {
+      "carriedAt": "<time>",
+      "line20": "",
+      "line30": "",
+      "sourceLabel": "Simplified Annual Accounting 01/01/2026–12/31/2026",
+      "sourceWardId": "<id>",
+      "used": "simplifiedRemaining",
+      "value": 1005
+     },
      "trusts": [
       {
        "accountNo": "",
@@ -1477,6 +1559,8 @@
      "attorney_signatureState": "",
      "attorney_street": "123 Main St",
      "attorneyPartyId": null,
+     "attorneyWaiverBasis": "",
+     "attorneyWaiverOrderDate": "",
      "bondAmount": "",
      "bondDepositoryState": "",
      "bondingCompany": "",
@@ -1489,6 +1573,9 @@
      "certAttySignatureState": "",
      "certAttySignDate": "",
      "certDate": "2027-01-05",
+     "certGuardianSignatureImage": "",
+     "certGuardianSignatureState": "",
+     "certGuardianSignDate": "",
      "certIndicator": "Mailed",
      "certNoRecipients": "",
      "certRecipients": [
@@ -1613,7 +1700,16 @@
      "schF1": [],
      "schF2": [],
      "serviceNoRecipients": "",
-     "startingBalance": 1005,
+     "startingBalance": "",
+     "startingBalanceCarry": {
+      "carriedAt": "<time>",
+      "line20": "",
+      "line30": "",
+      "sourceLabel": "Simplified Annual Accounting 01/01/2026–12/31/2026",
+      "sourceWardId": "<id>",
+      "used": "none-trust",
+      "value": ""
+     },
      "trusts": [
       {
        "accountNo": "",
@@ -2033,6 +2129,9 @@
      "certAttySignatureState": "",
      "certAttySignDate": "",
      "certAttyStreet": "123 Main St",
+     "certGuardianSignatureImage": "",
+     "certGuardianSignatureState": "",
+     "certGuardianSignDate": "",
      "certIndicator": "",
      "certNoRecipients": "",
      "certRecipients": [
@@ -2129,6 +2228,15 @@
      "serviceNoRecipients": "",
      "ssn": "",
      "startingBalance": 10500,
+     "startingBalanceCarry": {
+      "carriedAt": "<time>",
+      "line20": 10500,
+      "line30": 0,
+      "sourceLabel": "Annual Accounting 01/01/2026–12/31/2026",
+      "sourceWardId": "<id>",
+      "used": "line20",
+      "value": 10500
+     },
      "typeOfGuardianship": "",
      "ucn": "",
      "wardId": "<id>",
@@ -2149,6 +2257,8 @@
      "attorney_signatureState": "",
      "attorney_street": "123 Main St",
      "attorneyPartyId": null,
+     "attorneyWaiverBasis": "",
+     "attorneyWaiverOrderDate": "",
      "bondAmount": "",
      "bondDepositoryState": "",
      "bondingCompany": "",
@@ -2161,6 +2271,9 @@
      "certAttySignatureState": "",
      "certAttySignDate": "",
      "certDate": "",
+     "certGuardianSignatureImage": "",
+     "certGuardianSignatureState": "",
+     "certGuardianSignDate": "",
      "certIndicator": "",
      "certNoRecipients": "",
      "certRecipients": [
@@ -2266,7 +2379,16 @@
      "scheduleDocsAck": {},
      "schF1": [],
      "schF2": [],
-     "startingBalance": 0,
+     "startingBalance": 10500,
+     "startingBalanceCarry": {
+      "carriedAt": "<time>",
+      "line20": 10500,
+      "line30": 0,
+      "sourceLabel": "Annual Accounting 01/01/2026–12/31/2026",
+      "sourceWardId": "<id>",
+      "used": "line20",
+      "value": 10500
+     },
      "trusts": [
       {
        "accountNo": "",
@@ -2322,6 +2444,8 @@
      "attorney_signatureState": "",
      "attorney_street": "123 Main St",
      "attorneyPartyId": null,
+     "attorneyWaiverBasis": "",
+     "attorneyWaiverOrderDate": "",
      "bondAmount": "",
      "bondDepositoryState": "",
      "bondingCompany": "",
@@ -2334,6 +2458,9 @@
      "certAttySignatureState": "",
      "certAttySignDate": "",
      "certDate": "",
+     "certGuardianSignatureImage": "",
+     "certGuardianSignatureState": "",
+     "certGuardianSignDate": "",
      "certIndicator": "",
      "certNoRecipients": "",
      "certRecipients": [
@@ -2439,7 +2566,16 @@
      "scheduleDocsAck": {},
      "schF1": [],
      "schF2": [],
-     "startingBalance": 0,
+     "startingBalance": "",
+     "startingBalanceCarry": {
+      "carriedAt": "<time>",
+      "line20": "",
+      "line30": "",
+      "sourceLabel": "Annual Accounting 01/01/2026–12/31/2026",
+      "sourceWardId": "<id>",
+      "used": "none-trust",
+      "value": ""
+     },
      "trusts": [
       {
        "accountNo": "",
@@ -2517,6 +2653,9 @@
      "certAttySignatureState": "",
      "certAttySignDate": "",
      "certAttyStreet": "123 Main St",
+     "certGuardianSignatureImage": "",
+     "certGuardianSignatureState": "",
+     "certGuardianSignDate": "",
      "certIndicator": "",
      "certNoRecipients": "",
      "certRecipients": [
@@ -2613,6 +2752,15 @@
      "serviceNoRecipients": "",
      "ssn": "",
      "startingBalance": 10500,
+     "startingBalanceCarry": {
+      "carriedAt": "<time>",
+      "line20": 10500,
+      "line30": 0,
+      "sourceLabel": "Final Accounting 01/01/2026–12/31/2026",
+      "sourceWardId": "<id>",
+      "used": "line20",
+      "value": 10500
+     },
      "typeOfGuardianship": "",
      "ucn": "",
      "wardId": "<id>",
@@ -2633,6 +2781,8 @@
      "attorney_signatureState": "",
      "attorney_street": "123 Main St",
      "attorneyPartyId": null,
+     "attorneyWaiverBasis": "",
+     "attorneyWaiverOrderDate": "",
      "bondAmount": "",
      "bondDepositoryState": "",
      "bondingCompany": "",
@@ -2645,6 +2795,9 @@
      "certAttySignatureState": "",
      "certAttySignDate": "",
      "certDate": "",
+     "certGuardianSignatureImage": "",
+     "certGuardianSignatureState": "",
+     "certGuardianSignDate": "",
      "certIndicator": "",
      "certNoRecipients": "",
      "certRecipients": [
@@ -2750,7 +2903,16 @@
      "scheduleDocsAck": {},
      "schF1": [],
      "schF2": [],
-     "startingBalance": 0,
+     "startingBalance": 10500,
+     "startingBalanceCarry": {
+      "carriedAt": "<time>",
+      "line20": 10500,
+      "line30": 0,
+      "sourceLabel": "Final Accounting 01/01/2026–12/31/2026",
+      "sourceWardId": "<id>",
+      "used": "line20",
+      "value": 10500
+     },
      "trusts": [
       {
        "accountNo": "",
@@ -2806,6 +2968,8 @@
      "attorney_signatureState": "",
      "attorney_street": "123 Main St",
      "attorneyPartyId": null,
+     "attorneyWaiverBasis": "",
+     "attorneyWaiverOrderDate": "",
      "bondAmount": "",
      "bondDepositoryState": "",
      "bondingCompany": "",
@@ -2818,6 +2982,9 @@
      "certAttySignatureState": "",
      "certAttySignDate": "",
      "certDate": "",
+     "certGuardianSignatureImage": "",
+     "certGuardianSignatureState": "",
+     "certGuardianSignDate": "",
      "certIndicator": "",
      "certNoRecipients": "",
      "certRecipients": [
@@ -2923,7 +3090,16 @@
      "scheduleDocsAck": {},
      "schF1": [],
      "schF2": [],
-     "startingBalance": 0,
+     "startingBalance": "",
+     "startingBalanceCarry": {
+      "carriedAt": "<time>",
+      "line20": "",
+      "line30": "",
+      "sourceLabel": "Final Accounting 01/01/2026–12/31/2026",
+      "sourceWardId": "<id>",
+      "used": "none-trust",
+      "value": ""
+     },
      "trusts": [
       {
        "accountNo": "",
@@ -3001,6 +3177,9 @@
      "certAttySignatureState": "",
      "certAttySignDate": "",
      "certAttyStreet": "123 Main St",
+     "certGuardianSignatureImage": "",
+     "certGuardianSignatureState": "",
+     "certGuardianSignDate": "",
      "certIndicator": "",
      "certNoRecipients": "",
      "certRecipients": [
@@ -3096,7 +3275,16 @@
      "serviceCharges": "",
      "serviceNoRecipients": "",
      "ssn": "",
-     "startingBalance": 10500,
+     "startingBalance": "",
+     "startingBalanceCarry": {
+      "carriedAt": "<time>",
+      "line20": "",
+      "line30": "",
+      "sourceLabel": "Trust Accounting 01/01/2026–12/31/2026",
+      "sourceWardId": "<id>",
+      "used": "none-trust",
+      "value": ""
+     },
      "typeOfGuardianship": "",
      "ucn": "",
      "wardId": "<id>",
@@ -3117,6 +3305,8 @@
      "attorney_signatureState": "",
      "attorney_street": "123 Main St",
      "attorneyPartyId": null,
+     "attorneyWaiverBasis": "",
+     "attorneyWaiverOrderDate": "",
      "bondAmount": "",
      "bondDepositoryState": "",
      "bondingCompany": "",
@@ -3129,6 +3319,9 @@
      "certAttySignatureState": "",
      "certAttySignDate": "",
      "certDate": "",
+     "certGuardianSignatureImage": "",
+     "certGuardianSignatureState": "",
+     "certGuardianSignDate": "",
      "certIndicator": "",
      "certNoRecipients": "",
      "certRecipients": [
@@ -3234,7 +3427,16 @@
      "scheduleDocsAck": {},
      "schF1": [],
      "schF2": [],
-     "startingBalance": 0,
+     "startingBalance": "",
+     "startingBalanceCarry": {
+      "carriedAt": "<time>",
+      "line20": "",
+      "line30": "",
+      "sourceLabel": "Trust Accounting 01/01/2026–12/31/2026",
+      "sourceWardId": "<id>",
+      "used": "none-trust",
+      "value": ""
+     },
      "trusts": [
       {
        "accountNo": "",
@@ -3290,6 +3492,8 @@
      "attorney_signatureState": "",
      "attorney_street": "123 Main St",
      "attorneyPartyId": null,
+     "attorneyWaiverBasis": "",
+     "attorneyWaiverOrderDate": "",
      "bondAmount": "",
      "bondDepositoryState": "",
      "bondingCompany": "",
@@ -3302,6 +3506,9 @@
      "certAttySignatureState": "",
      "certAttySignDate": "",
      "certDate": "",
+     "certGuardianSignatureImage": "",
+     "certGuardianSignatureState": "",
+     "certGuardianSignDate": "",
      "certIndicator": "",
      "certNoRecipients": "",
      "certRecipients": [
@@ -3407,7 +3614,16 @@
      "scheduleDocsAck": {},
      "schF1": [],
      "schF2": [],
-     "startingBalance": 0,
+     "startingBalance": "",
+     "startingBalanceCarry": {
+      "carriedAt": "<time>",
+      "line20": "",
+      "line30": "",
+      "sourceLabel": "Trust Accounting 01/01/2026–12/31/2026",
+      "sourceWardId": "<id>",
+      "used": "none-trust",
+      "value": ""
+     },
      "trusts": [
       {
        "accountNo": "",
@@ -3483,6 +3699,9 @@
      "certAttySignatureState": "",
      "certAttySignDate": "",
      "certAttyStreet": "",
+     "certGuardianSignatureImage": "",
+     "certGuardianSignatureState": "",
+     "certGuardianSignDate": "",
      "certIndicator": "",
      "certNoRecipients": "",
      "certRecipients": [
@@ -3617,6 +3836,8 @@
      "attorneyEmail": "",
      "attorneyPartyId": null,
      "attorneyPhone": "",
+     "attorneyWaiverBasis": "",
+     "attorneyWaiverOrderDate": "",
      "bondAmount": "",
      "bondDepositoryState": "",
      "bondingCompany": "",
@@ -3629,6 +3850,9 @@
      "certAttySignatureState": "",
      "certAttySignDate": "",
      "certDate": "",
+     "certGuardianSignatureImage": "",
+     "certGuardianSignatureState": "",
+     "certGuardianSignDate": "",
      "certIndicator": "",
      "certNoRecipients": "",
      "certRecipients": [
@@ -3811,6 +4035,8 @@
      "attorneyEmail": "",
      "attorneyPartyId": null,
      "attorneyPhone": "",
+     "attorneyWaiverBasis": "",
+     "attorneyWaiverOrderDate": "",
      "bondAmount": "",
      "bondDepositoryState": "",
      "bondingCompany": "",
@@ -3823,6 +4049,9 @@
      "certAttySignatureState": "",
      "certAttySignDate": "",
      "certDate": "",
+     "certGuardianSignatureImage": "",
+     "certGuardianSignatureState": "",
+     "certGuardianSignDate": "",
      "certIndicator": "",
      "certNoRecipients": "",
      "certRecipients": [
@@ -4005,6 +4234,8 @@
      "attorneyEmail": "",
      "attorneyPartyId": null,
      "attorneyPhone": "",
+     "attorneyWaiverBasis": "",
+     "attorneyWaiverOrderDate": "",
      "bondAmount": "",
      "bondDepositoryState": "",
      "bondingCompany": "",
@@ -4017,6 +4248,9 @@
      "certAttySignatureState": "",
      "certAttySignDate": "",
      "certDate": "",
+     "certGuardianSignatureImage": "",
+     "certGuardianSignatureState": "",
+     "certGuardianSignDate": "",
      "certIndicator": "",
      "certNoRecipients": "",
      "certRecipients": [
@@ -4210,6 +4444,8 @@
      },
      "attorneyForGuardian": "Sample Attorney",
      "attorneyPartyId": null,
+     "attorneyWaiverBasis": "",
+     "attorneyWaiverOrderDate": null,
      "bondAmount": "",
      "bondDepositoryState": "",
      "bondingCompany": "",
@@ -4286,6 +4522,11 @@
       "streetAddress": ""
      },
      "serviceDate": null,
+     "serviceGuardian": {
+      "signatureDate": null,
+      "signatureImage": "",
+      "signatureState": ""
+     },
      "serviceIndicateIf": "",
      "serviceNoRecipients": "",
      "serviceRecipients": [

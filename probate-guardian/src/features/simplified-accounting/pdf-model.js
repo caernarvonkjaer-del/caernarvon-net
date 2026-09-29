@@ -6,6 +6,7 @@ import { resolveDescriptorForInventoryType } from '../../core/filing/filing-desc
 import { composePdfAddressLines } from '../../core/pdf/address-format.js';
 import { maskSSN } from '../../core/pdf/ssn-format.js';
 import { REMUNERATION_DECLARATION, REMUNERATION_NONE_REPORTED } from '../../core/filing/statutory-text.js';
+import { formatMoney } from '../../core/format/money.js';
 import { isUnrepresented, unrepresentedStatement, resolveServiceCertifier } from '../../core/filing/unrepresented-filing.js';
 
 export function buildSimplifiedAccountingModel(D, options = {}) {
@@ -20,10 +21,8 @@ export function buildSimplifiedAccountingModel(D, options = {}) {
   const signatureStyle = options.signatureStyle || d.signatureStyle || 'typed';
   const descriptor = resolveDescriptorForInventoryType('simplified');
 
-  const fmtS = (v) => {
-    const n = parseFloat(v) || 0;
-    return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  };
+  // Milestone 71E: formatMoney() (src/core/format/money.js) -- the Clerk's workbook's own rounding.
+  const fmtS = (v) => formatMoney(v, { style: 'dollar' });
 
   const fmtDate = (iso) => {
     if (!iso) return '';

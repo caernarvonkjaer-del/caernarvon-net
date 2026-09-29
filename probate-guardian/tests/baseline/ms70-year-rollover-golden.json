@@ -1,5 +1,5 @@
 {
- "note": "Milestone 70, 70A: what starting a new year does to each filing identity, recorded from the app before migration by tests/e2e/year-rollover.characterization.spec.ts. Regenerated in 70C for simplified and planMinor only: master's b28bf25, carried in 70C, removes rows the filer added and never touched when they leave a page, so the Simplified fixture's two blank certificate recipients and the Plan for Minors' blank residence row are gone before the new year starts. Regenerated after 70K for guardian only: master's 56ff26a, carried then, makes the minimal Initial Inventory answer the two safe-deposit questions 'No', as the form stores them, instead of the legacy false; the new year no longer shows the legacy-save migration turning false into 'No' (hasSafeDepositBox, safeDepositBoxFiled), and nothing else changed. Regenerate only for a deliberate, recorded change.",
+ "note": "Milestone 70, 70A: what starting a new year does to each filing identity, recorded from the app before migration by tests/e2e/year-rollover.characterization.spec.ts. Regenerated in 70C for simplified and planMinor only: master's b28bf25, carried in 70C, removes rows the filer added and never touched when they leave a page, so the Simplified fixture's two blank certificate recipients and the Plan for Minors' blank residence row are gone before the new year starts. Regenerated after 70K for guardian only: master's 56ff26a, carried then, makes the minimal Initial Inventory answer the two safe-deposit questions 'No', as the form stores them, instead of the legacy false; the new year no longer shows the legacy-save migration turning false into 'No' (hasSafeDepositBox, safeDepositBoxFiled), and nothing else changed. Regenerate only for a deliberate, recorded change. Changed by Milestone 71 (2026-09-29): 71E -- New Year records startingBalanceCarry with the carried, cent-rounded figure (Line 30 with a Schedule D figure, else Line 20; a Simplified Accounting's remaining assets), and opening a filing no longer clamps startingBalance (71E) or a Ward's % (71C), so a stored value keeps the type it was saved with (the fixture's \"10000\" and \"100\" stay strings) and the archive no longer differs from the year before in those fields. 71B's new blank fields ride along.",
  "types": {
   "guardian": {
    "activeYearKey": "Year 2",
@@ -111,6 +111,14 @@
      "from": null,
      "to": "null"
     },
+    "years.0.data.attorneyWaiverBasis": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.attorneyWaiverOrderDate": {
+     "from": null,
+     "to": "null"
+    },
     "years.0.data.bondAmount": {
      "from": null,
      "to": "1000"
@@ -158,6 +166,10 @@
     "years.0.data.guardianPartyIds": {
      "from": null,
      "to": "[]"
+    },
+    "years.0.data.guardians.0.certifiesService": {
+     "from": null,
+     "to": "false"
     },
     "years.0.data.guardians.0.cityStateZip": {
      "from": null,
@@ -455,6 +467,18 @@
      "from": null,
      "to": "\"2026-01-02\""
     },
+    "years.0.data.serviceGuardian.signatureDate": {
+     "from": null,
+     "to": "null"
+    },
+    "years.0.data.serviceGuardian.signatureImage": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.serviceGuardian.signatureState": {
+     "from": null,
+     "to": "\"\""
+    },
     "years.0.data.serviceIndicateIf": {
      "from": null,
      "to": "\"N/A\""
@@ -565,10 +589,6 @@
     "serviceCharges": {
      "from": "\"3.00\"",
      "to": "3"
-    },
-    "startingBalance": {
-     "from": "\"1000\"",
-     "to": "1000"
     }
    },
    "changedByTheNewYear": {
@@ -642,6 +662,34 @@
     },
     "startingBalance": {
      "from": "\"1000\"",
+     "to": "1009.5"
+    },
+    "startingBalanceCarry.carriedAt": {
+     "from": null,
+     "to": "\"<time>\""
+    },
+    "startingBalanceCarry.line20": {
+     "from": null,
+     "to": "\"\""
+    },
+    "startingBalanceCarry.line30": {
+     "from": null,
+     "to": "\"\""
+    },
+    "startingBalanceCarry.sourceLabel": {
+     "from": null,
+     "to": "\"Simplified Annual Accounting 01/01/2026–12/31/2026\""
+    },
+    "startingBalanceCarry.sourceWardId": {
+     "from": null,
+     "to": "\"<id>\""
+    },
+    "startingBalanceCarry.used": {
+     "from": null,
+     "to": "\"simplifiedRemaining\""
+    },
+    "startingBalanceCarry.value": {
+     "from": null,
      "to": "1009.5"
     },
     "yearCounter": {
@@ -732,6 +780,18 @@
      "from": null,
      "to": "\"\""
     },
+    "years.0.data.certGuardianSignatureImage": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certGuardianSignatureState": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certGuardianSignDate": {
+     "from": null,
+     "to": "\"\""
+    },
     "years.0.data.certIndicator": {
      "from": null,
      "to": "\"Mailed\""
@@ -799,6 +859,10 @@
     "years.0.data.guardianPartyIds": {
      "from": null,
      "to": "[]"
+    },
+    "years.0.data.guardians.0.certifiesService": {
+     "from": null,
+     "to": "false"
     },
     "years.0.data.guardians.0.email": {
      "from": null,
@@ -942,7 +1006,7 @@
     },
     "years.0.data.startingBalance": {
      "from": null,
-     "to": "1000"
+     "to": "\"1000\""
     },
     "years.0.data.typeOfGuardianship": {
      "from": null,
@@ -986,16 +1050,7 @@
     "lastModified",
     "wardId"
    ],
-   "archiveDiffersFromTheYearBeforeAt": {
-    "schD1.0.wardPct": {
-     "from": "\"100\"",
-     "to": "100"
-    },
-    "startingBalance": {
-     "from": "\"10000\"",
-     "to": "10000"
-    }
-   },
+   "archiveDiffersFromTheYearBeforeAt": {},
    "changedByTheNewYear": {
     "activeYearKey": {
      "from": null,
@@ -1053,12 +1108,36 @@
      "from": "\"SSA\"",
      "to": null
     },
-    "schD1.0.wardPct": {
-     "from": "\"100\"",
-     "to": "100"
-    },
     "startingBalance": {
      "from": "\"10000\"",
+     "to": "5000"
+    },
+    "startingBalanceCarry.carriedAt": {
+     "from": null,
+     "to": "\"<time>\""
+    },
+    "startingBalanceCarry.line20": {
+     "from": null,
+     "to": "11200"
+    },
+    "startingBalanceCarry.line30": {
+     "from": null,
+     "to": "5000"
+    },
+    "startingBalanceCarry.sourceLabel": {
+     "from": null,
+     "to": "\"Annual Accounting 01/01/2026–12/31/2026\""
+    },
+    "startingBalanceCarry.sourceWardId": {
+     "from": null,
+     "to": "\"<id>\""
+    },
+    "startingBalanceCarry.used": {
+     "from": null,
+     "to": "\"line30\""
+    },
+    "startingBalanceCarry.value": {
+     "from": null,
      "to": "5000"
     },
     "yearCounter": {
@@ -1121,6 +1200,14 @@
      "from": null,
      "to": "null"
     },
+    "years.0.data.attorneyWaiverBasis": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.attorneyWaiverOrderDate": {
+     "from": null,
+     "to": "\"\""
+    },
     "years.0.data.bondAmount": {
      "from": null,
      "to": "\"5000\""
@@ -1169,6 +1256,18 @@
      "from": null,
      "to": "\"2026-12-31\""
     },
+    "years.0.data.certGuardianSignatureImage": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certGuardianSignatureState": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certGuardianSignDate": {
+     "from": null,
+     "to": "\"\""
+    },
     "years.0.data.certIndicator": {
      "from": null,
      "to": "\"\""
@@ -1216,6 +1315,10 @@
     "years.0.data.guardianRelationship": {
      "from": null,
      "to": "\"Professional Guardian\""
+    },
+    "years.0.data.guardians.0.certifiesService": {
+     "from": null,
+     "to": "false"
     },
     "years.0.data.guardians.0.email": {
      "from": null,
@@ -1459,7 +1562,7 @@
     },
     "years.0.data.schD1.0.wardPct": {
      "from": null,
-     "to": "100"
+     "to": "\"100\""
     },
     "years.0.data.schD2": {
      "from": null,
@@ -1499,7 +1602,7 @@
     },
     "years.0.data.startingBalance": {
      "from": null,
-     "to": "10000"
+     "to": "\"10000\""
     },
     "years.0.data.trusts.0.accountNo": {
      "from": null,
@@ -1579,12 +1682,7 @@
     "lastModified",
     "wardId"
    ],
-   "archiveDiffersFromTheYearBeforeAt": {
-    "startingBalance": {
-     "from": "\"10000\"",
-     "to": "10000"
-    }
-   },
+   "archiveDiffersFromTheYearBeforeAt": {},
    "changedByTheNewYear": {
     "activeYearKey": {
      "from": null,
@@ -1644,6 +1742,34 @@
     },
     "startingBalance": {
      "from": "\"10000\"",
+     "to": "11200"
+    },
+    "startingBalanceCarry.carriedAt": {
+     "from": null,
+     "to": "\"<time>\""
+    },
+    "startingBalanceCarry.line20": {
+     "from": null,
+     "to": "11200"
+    },
+    "startingBalanceCarry.line30": {
+     "from": null,
+     "to": "0"
+    },
+    "startingBalanceCarry.sourceLabel": {
+     "from": null,
+     "to": "\"Final Accounting 01/01/2026–12/31/2026\""
+    },
+    "startingBalanceCarry.sourceWardId": {
+     "from": null,
+     "to": "\"<id>\""
+    },
+    "startingBalanceCarry.used": {
+     "from": null,
+     "to": "\"line20\""
+    },
+    "startingBalanceCarry.value": {
+     "from": null,
      "to": "11200"
     },
     "yearCounter": {
@@ -1706,6 +1832,14 @@
      "from": null,
      "to": "null"
     },
+    "years.0.data.attorneyWaiverBasis": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.attorneyWaiverOrderDate": {
+     "from": null,
+     "to": "\"\""
+    },
     "years.0.data.bondAmount": {
      "from": null,
      "to": "\"5000\""
@@ -1754,6 +1888,18 @@
      "from": null,
      "to": "\"2026-12-31\""
     },
+    "years.0.data.certGuardianSignatureImage": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certGuardianSignatureState": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certGuardianSignDate": {
+     "from": null,
+     "to": "\"\""
+    },
     "years.0.data.certIndicator": {
      "from": null,
      "to": "\"\""
@@ -1801,6 +1947,10 @@
     "years.0.data.guardianRelationship": {
      "from": null,
      "to": "\"Professional Guardian\""
+    },
+    "years.0.data.guardians.0.certifiesService": {
+     "from": null,
+     "to": "false"
     },
     "years.0.data.guardians.0.email": {
      "from": null,
@@ -2060,7 +2210,7 @@
     },
     "years.0.data.startingBalance": {
      "from": null,
-     "to": "10000"
+     "to": "\"10000\""
     },
     "years.0.data.trusts.0.accountNo": {
      "from": null,
@@ -2140,12 +2290,7 @@
     "lastModified",
     "wardId"
    ],
-   "archiveDiffersFromTheYearBeforeAt": {
-    "startingBalance": {
-     "from": "\"10000\"",
-     "to": "10000"
-    }
-   },
+   "archiveDiffersFromTheYearBeforeAt": {},
    "changedByTheNewYear": {
     "activeYearKey": {
      "from": null,
@@ -2205,6 +2350,34 @@
     },
     "startingBalance": {
      "from": "\"10000\"",
+     "to": "11200"
+    },
+    "startingBalanceCarry.carriedAt": {
+     "from": null,
+     "to": "\"<time>\""
+    },
+    "startingBalanceCarry.line20": {
+     "from": null,
+     "to": "11200"
+    },
+    "startingBalanceCarry.line30": {
+     "from": null,
+     "to": "0"
+    },
+    "startingBalanceCarry.sourceLabel": {
+     "from": null,
+     "to": "\"Trust Accounting 01/01/2026–12/31/2026\""
+    },
+    "startingBalanceCarry.sourceWardId": {
+     "from": null,
+     "to": "\"<id>\""
+    },
+    "startingBalanceCarry.used": {
+     "from": null,
+     "to": "\"line20\""
+    },
+    "startingBalanceCarry.value": {
+     "from": null,
      "to": "11200"
     },
     "yearCounter": {
@@ -2267,6 +2440,14 @@
      "from": null,
      "to": "null"
     },
+    "years.0.data.attorneyWaiverBasis": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.attorneyWaiverOrderDate": {
+     "from": null,
+     "to": "\"\""
+    },
     "years.0.data.bondAmount": {
      "from": null,
      "to": "\"5000\""
@@ -2315,6 +2496,18 @@
      "from": null,
      "to": "\"2026-12-31\""
     },
+    "years.0.data.certGuardianSignatureImage": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certGuardianSignatureState": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.certGuardianSignDate": {
+     "from": null,
+     "to": "\"\""
+    },
     "years.0.data.certIndicator": {
      "from": null,
      "to": "\"\""
@@ -2362,6 +2555,10 @@
     "years.0.data.guardianRelationship": {
      "from": null,
      "to": "\"Professional Guardian\""
+    },
+    "years.0.data.guardians.0.certifiesService": {
+     "from": null,
+     "to": "false"
     },
     "years.0.data.guardians.0.email": {
      "from": null,
@@ -2621,7 +2818,7 @@
     },
     "years.0.data.startingBalance": {
      "from": null,
-     "to": "10000"
+     "to": "\"10000\""
     },
     "years.0.data.trusts.0.accountNo": {
      "from": null,

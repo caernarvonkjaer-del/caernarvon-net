@@ -68,7 +68,7 @@ import { sanitizeDecimal, syncPercentFeedback } from '../../core/form/form-contr
 import { guardianHasAnyData } from '../../core/validation/row-started.js';
 import { formDisplayName } from '../../core/filing/filing-registry.js';
 import { annualCompletion } from '../../core/status/completion.js';
-import { getD, requestSave } from '../../core/state.js';
+import { getCaseFile, getD, requestSave } from '../../core/state.js';
 import { updateNavDots } from '../../core/status/nav-marks.js';
 import { renderScheduleDocsSection } from '../../core/filing/schedule-docs.js';
 import { pageIntroRow, yesNoCheckboxD, yesNoRadioAnnualHTML } from '../../core/form/field-html.js';
@@ -82,6 +82,8 @@ import { setAccountingFilingType } from './filing-type.js';
 import { navigate } from '../../core/navigation/router.js';
 import { calcTotalsAnnual, annualReconcileState, n, pct } from './totals.js';
 import { isAttorneyStarted } from '../../core/validation/attorney-block.js';
+import { startingBalanceNotesHTML } from '../../core/filing/starting-balance-carry.js';
+import { formatMoney } from '../../core/format/money.js';
 import { percentProblem } from '../../core/validation/percent-range.js';
 import { resolveServiceCertifier, certifierChoiceNeeded, certifyingCandidates, serviceCertifierChoiceHTML, waiverBasisQuestionHTML } from '../../core/filing/unrepresented-filing.js';
 import { watchAttorneyRequiredMarkers } from '../../core/form/attorney-required-markers.js';
@@ -440,7 +442,8 @@ function buildNavAnnual(container){
 // Exported (not just module-local) because print.js also needs these --
 // statically imported back from here rather than duplicated, same
 // safe-circularity pattern as validateAnnual.
-export function fmtAnnual(v){if(v===''||v===null||v===undefined)return '';const x=parseFloat(v);if(isNaN(x))return '';return x<0?`(${Math.abs(x).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})})`:`${x.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}`;}
+// Milestone 71E: formatMoney() -- the Clerk's workbook's own rounding; (1,234.56) for a negative.
+export function fmtAnnual(v){if(v===''||v===null||v===undefined)return '';const x=parseFloat(v);if(isNaN(x))return '';return formatMoney(x,{style:'parens'});}
 // The `instanceof Date` guard matters here more than anywhere: this helper feeds
 // pdf-model.js's Part I period line, every signature date, and the
 // under-penalties-of-perjury attestation's "from X through Y". Without it,
@@ -456,7 +459,9 @@ export { fmtD };
 // comment in form-fields.js) -- the behavior of the retired
 // persistAnnualControl() focusout handler, now declared per field rather
 // than assumed of everything inside this module's container.
-function inpD(label,val,setter,req=false,type='text'){
+// Milestone 71E: `opts` passes a field kind and keepBlank through to the
+// renderer (the Starting Balance is a signed amount that keeps a blank).
+function inpD(label,val,setter,req=false,type='text',opts={}){
   return renderFormField({
     path: setterPath(setter),
     label,
@@ -464,6 +469,7 @@ function inpD(label,val,setter,req=false,type='text'){
     type,
     required: req,
     securitySanitize: true,
+    ...opts,
   });
 }
 function selD(label,val,setter,opts,req=false){
@@ -690,10 +696,11 @@ function pagePart2Annual(){
     <div class="summary-line"><span>From $25,000.01 up to and including $100,000</span><span>$85.00</span></div>
     <div class="summary-line"><span>From $100,000.01 up to and including $500,000</span><span>$170.00</span></div>
     <div class="summary-line"><span>In excess of $500,000</span><span>$250.00</span></div>
-    <div class="summary-line total"><span>Applicable Fee (based on total assets ${fmtAnnual(t.netAssetsFromD)})</span><span><strong>${fee.toFixed(2)}</strong></span></div>
+    <div class="summary-line total"><span>Applicable Fee (based on total assets ${fmtAnnual(t.netAssetsFromD)})</span><span><strong>${formatMoney(fee)}</strong></span></div>
   </div>
   <div class="row g-2">
-    <div class="col-md-4">${inpD('Starting Balance (Net Assets per Prior Report)',d.startingBalance,"D.startingBalance=this.value",false,'number')}</div>
+    <div class="col-md-4">${inpD('Starting Balance (Net Assets per Prior Report)',d.startingBalance,"D.startingBalance=this.value",false,'number',{kind:'signed-money',keepBlank:true})}</div>
+    <div class="col-12">${startingBalanceNotesHTML(d,{wards:getCaseFile()?.wards||null})}</div>
   </div>
   ${pageNavAnnual('/summary','/p3')}
   </div>`;
@@ -1609,7 +1616,11 @@ export function validateAnnual(){
   req(d.county,'Part I — County','county');
   req(d.filingType,'Part I — Filing Type','filingType');
   req(d.amendedForm,'Part I — Amended Form?','amendedForm');
-  req(d.startingBalance,'Part II — Starting Balance','startingBalance');
+  // Milestone 71E: $0.00 is an answer. The shared req() reads a number 0 as
+  // missing, and every edit stores a number, so a $0.00 Starting Balance --
+  // typed, or carried from a prior filing with no net assets -- was reported
+  // missing. Only an empty box is.
+  if(d.startingBalance===''||d.startingBalance===null||d.startingBalance===undefined)errs.push(issue('Part II — Starting Balance','startingBalance'));
   // Milestone 67B (decided 2026-09-23): nothing in the Part IX bond block
   // gates export -- Milestone 57A's "restricted depository?" question and
   // its receipt-date blocker are gone, and so are the Bond Amount / Bonding

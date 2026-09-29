@@ -2,6 +2,7 @@
 // alongside print.js, by index.js's ensureLazyModules() -- see that file's
 // header. Statically imports back from index.js; see print.js's header for
 // why that circularity is safe.
+import { formatMoney } from '../../core/format/money.js';
 import { validateSimplified } from './index.js';
 import { authorizeFilingOutput } from '../../core/filing/output-authorization.js';
 import { getExcelCapacityIssues } from '../../core/excel/excel-capacity.js';
@@ -245,7 +246,8 @@ export async function doSaveExcel(){
         // omitted rather than left blank, so the filed line never reads
         // "—    —"; the importer tells the layouts apart by segment count
         // plus whether the third segment is shaped like a currency figure.
-        const amt=(r.amount===''||r.amount==null)?'':`$${(parseFloat(r.amount)||0).toFixed(2)}`;
+        // Milestone 71E: the workbook's rounding (formatMoney()), still without thousands separators.
+        const amt=(r.amount===''||r.amount==null)?'':`$${formatMoney(r.amount,{grouping:false})}`;
         const parts=[r.guardian||'',r.type||''];
         if(amt)parts.push(amt);
         if(r.description)parts.push(r.description);

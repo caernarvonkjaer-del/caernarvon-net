@@ -2,7 +2,7 @@
 // Maps window.D into the unified, accessible court document model (WCAG 2.1 Level AA).
 
 import { calcTotalsAnnual, annualReconcileState, n as toAmount, scheduleDRow } from './totals.js';
-import { wardShare, formatShare } from '../../core/format/money.js';
+import { wardShare, formatShare, formatMoney } from '../../core/format/money.js';
 import { REMUNERATION_DECLARATION, REMUNERATION_NONE_REPORTED } from '../../core/filing/statutory-text.js';
 import { yesNoText } from '../../core/form/form-contract.js';
 import { filingCopy, resolveFilingDescriptor } from '../../core/filing/filing-descriptor.js';
@@ -47,10 +47,8 @@ export function buildAnnualAccountingModel(D, options = {}) {
   const descriptor = resolveFilingDescriptor(d).descriptor;
   const copy = filingCopy(descriptor);
 
-  const fmtS = (v) => {
-    const num = parseFloat(v) || 0;
-    return '$' + num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  };
+  // Milestone 71E: formatMoney() (src/core/format/money.js) -- the Clerk's workbook's own rounding.
+  const fmtS = (v) => formatMoney(v, { style: 'dollar' });
 
   const fmtD = (iso) => {
     if (!iso) return '';
@@ -147,7 +145,7 @@ export function buildAnnualAccountingModel(D, options = {}) {
         ],
         totals: {
           label: `Applicable Audit Fee (Total Assets: ${fmtS(t.netAssetsFromD)})`,
-          value: `$${t.auditFee.toFixed(2)}`,
+          value: formatMoney(t.auditFee, { style: 'dollar' }),
         },
         colWidths: [75, 25],
         colAlign: ['left', 'right'],

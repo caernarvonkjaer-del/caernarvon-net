@@ -8,7 +8,7 @@ import { emptyInitialProvider } from './models/plan-initial.js';
 import { emptyMinorProvider, emptyMinorResidence } from './models/plan-minor.js';
 import { hydrateCountyFromWardParty } from '../navigation/ward-county.js';
 import { flushPendingSave, saveWardToState, setDirtySinceExport, updateLastSavedIndicator } from '../persistence/case-file.js';
-import { features } from '../runtime/features.js';
+import { applyCarriedStartingBalance } from './starting-balance-carry.js';
 import { getCaseFile } from '../state.js';
 import { notifyProbateGuardianTabStateChanged } from '../navigation/tab-state.js';
 
@@ -271,12 +271,19 @@ export async function startNewWardYear(wardId){
   const ward=getCaseFile().wards.find(w=>w.wardId===wardId);
   if(!ward)return;
   await flushPendingSave();
-  const priorTotal=features().headlineTotal(ward);
+  // Milestone 71E: the one carry (starting-balance-carry.js), read from the
+  // year being closed before it is archived -- rounded to cents by the
+  // workbook's rule, with the provenance record the Starting Balance notes
+  // read. A Trust Accounting's new year carries its own ending balance.
+  const carried={};
+  const carries=(formEngine(ward.inventoryType)==='annual'||ward.inventoryType==='simplified')
+    &&!!applyCarriedStartingBalance(carried,ward,ward.inventoryType);
   checkInActiveYear(ward);
   const seed=snapshotCurrentYearData(ward);
   resetYearlyFieldsForNewYear(seed,ward.inventoryType);
-  if((formEngine(ward.inventoryType)==='annual'||ward.inventoryType==='simplified')&&priorTotal!=null){
-    seed.startingBalance=String(priorTotal);
+  if(carries){
+    seed.startingBalance=carried.startingBalance;
+    seed.startingBalanceCarry=carried.startingBalanceCarry;
   }
   applyYearData(ward,seed);
   // Milestone 40C-A item 3: a new year is a new filing for the same ward, so it

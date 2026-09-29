@@ -48,7 +48,11 @@ export function sanitizeNegativeAmounts(){
     if(Array.isArray(getD().schD2)){getD().schD2.forEach(r=>{amountFields.forEach(f=>{if(f in r)r[f]=cleanValue(r[f])});})}
     if(Array.isArray(getD().schD3)){getD().schD3.forEach(r=>{amountFields.forEach(f=>{if(f in r)r[f]=cleanValue(r[f])});})}
     if(Array.isArray(getD().schD4)){getD().schD4.forEach(r=>{amountFields.forEach(f=>{if(f in r)r[f]=cleanValue(r[f])});})}
-    ['startingBalance','interestIncome','depositsSettlement','serviceCharges','federalIncomeTax'].forEach(f=>{if(f in getD())getD()[f]=cleanValue(getD()[f])});
+    // Milestone 71E (decision D12): startingBalance is no longer here. A ward
+    // whose debts exceed their assets ends a period with negative net assets,
+    // and the next filing starts from them; clamping it on every open turned a
+    // carried negative into $0 and left Line 20 off by the whole amount.
+    ['interestIncome','depositsSettlement','serviceCharges','federalIncomeTax'].forEach(f=>{if(f in getD())getD()[f]=cleanValue(getD()[f])});
     // Simplified's remuneration rows no longer have an amount field, but Annual's still do.
     if(Array.isArray(getD().remuneration)){getD().remuneration.forEach(r=>{if('amount' in r)r.amount=cleanValue(r.amount);})}
   }

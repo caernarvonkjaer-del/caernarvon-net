@@ -42,6 +42,7 @@ const ALLOWED = {
   // lived in ward-lifecycle.js until Milestone 70's 70G brought it here, to
   // the carry-over builders that read it.
   'src/core/filing/carry-over.js': 'creation-time carry-source eligibility, its correct home',
+  'src/core/filing/starting-balance-carry.js': "which ending balance each accounting form carries, and the Trust Accounting boundary -- carry-over.js's own concern, split out (MS 71E)",
   // Milestone 70, 70G: what a new year resets, form by form
   // (resetYearlyFieldsForNewYear()) -- each form's own period and balance
   // fields, which differ by schema; moved from legacy-app.js (the exception

@@ -56,9 +56,9 @@ test.describe('Convert Ward / "New Filing from Existing"', () => {
     const newWard = await page.evaluate(() => (window as any).__testPromise);
 
     expect(newWard.inventoryType).toBe('finalAccounting');
-    // Annual Accounting's own mount-time sanitizeNegativeAmounts() coerces
-    // startingBalance to a number regardless of what carryOverAccountingToAccounting()
-    // hands it, so this asserts numeric correctness rather than a JS type.
+    // Milestone 71E: the carry itself stores a number rounded to cents
+    // (starting-balance-carry.js); the mount no longer touches startingBalance.
+    // Numeric correctness is what this asserts.
     expect(Number(newWard.startingBalance)).toBe(expectedStartingBalance);
     expect(newWard.certRecipients).toEqual([
       { name: 'Jane Interested Party', line2: '100 Main St', line3: 'Tampa, FL 33602', line4: '' },
@@ -186,9 +186,17 @@ test.describe('Convert Ward / "New Filing from Existing"', () => {
 
     const message = await page.evaluate(() => (window as any).GuardianForms.testing.convertFiling.describe('annual', 'trustAccounting'));
 
-    expect(message).toContain('Starting Balance is set to this filing\'s ending net assets');
-    expect(message).toContain('certificate-of-service recipients are carried');
+    // Milestone 71E (decision D9): nothing is carried into a Trust Accounting
+    // -- a trust accounting does not start from the guardianship's net
+    // assets -- so the dialog says the Starting Balance is left blank. It used
+    // to promise "this filing's ending net assets", which was carried.
+    expect(message).toContain('Starting Balance is left blank');
+    expect(message).not.toContain('Starting Balance is set to this filing\'s ending net assets');
+    expect(message).toContain('Certificate-of-service recipients are carried');
     expect(message).toContain('County is restored from this ward\'s case record');
     expect(message).toContain('accounting period and every schedule start blank');
+    // Between two guardianship accountings the balance still carries.
+    const toFinal = await page.evaluate(() => (window as any).GuardianForms.testing.convertFiling.describe('annual', 'finalAccounting'));
+    expect(toFinal).toContain('Starting Balance is set to this filing\'s ending net assets');
   });
 });

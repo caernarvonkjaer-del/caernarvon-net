@@ -11,9 +11,84 @@ export function n(v) {
   return Number.isFinite(num) ? num : 0;
 }
 
-/** Round to cents. For DISPLAY of an aggregate, never for intermediate sums. */
+/**
+ * Milestone 71E: the one way a money figure becomes cents -- the rule the
+ * Clerk's own workbooks display, measured in Microsoft Excel by 71A
+ * (MILESTONE-71-PROPOSAL.md, Appendix B: 3,480 controlled cases and every
+ * money cell of three real exports, no disagreement). Take the value's
+ * 15-significant-digit decimal form, then round THAT decimal -- never the
+ * binary product -- to two places, half away from zero. So 797229.1849999999
+ * is 797,229.19 (as Excel shows it), 1.005 is 1.01, -1.005 is -1.01.
+ *
+ * The app used three rules before this and they disagreed on exactly these
+ * values: Math.round(x*100)/100 (1.005 -> 1.00, -1.005 -> -1.00),
+ * toLocaleString (797229.1849999999 -> .18) and toFixed(2) (2.675 -> 2.67). The
+ * QA filing printed Line 20 $797,229.19 beside Line 30 $797,229.18 and called
+ * them equal.
+ *
+ * Returns { negative, whole, cents }: `whole` a BigInt-safe digit string,
+ * `cents` two digits. A figure that rounds to zero is never negative.
+ */
+function centsParts(v) {
+  const x = n(v);
+  let s = x.toPrecision(15);
+  // Exponent form (from 1e15 up, and tiny values): move the decimal point in
+  // the 15-digit string itself. Going back through a Number would bring the
+  // binary value's extra digits with it (1.23456789012346e+18 -> ...460096).
+  const e = /^(-?)(\d)(?:\.(\d+))?e([+-]\d+)$/i.exec(s);
+  if (e) {
+    const digits = e[2] + (e[3] || '');
+    const point = 1 + Number(e[4]);
+    s = e[1] + (point <= 0 ? `0.${'0'.repeat(-point)}${digits}`
+      : point >= digits.length ? digits + '0'.repeat(point - digits.length)
+        : `${digits.slice(0, point)}.${digits.slice(point)}`);
+  }
+  let negative = s.startsWith('-');
+  if (negative) s = s.slice(1);
+  const [int, frac = ''] = s.split('.');
+  const f = (frac + '000').slice(0, 3);
+  let total = BigInt(int || '0') * 100n + BigInt(f.slice(0, 2));
+  if (Number(f[2]) >= 5) total += 1n;
+  if (total === 0n) negative = false;
+  return { negative, whole: (total / 100n).toString(), cents: String(total % 100n).padStart(2, '0') };
+}
+
+/** Milestone 71E: a money figure rounded to cents by the workbook's rule (above), as a number. */
+export function roundCents(v) {
+  const { negative, whole, cents } = centsParts(v);
+  return Number(`${negative ? '-' : ''}${whole}.${cents}`);
+}
+
+/**
+ * Milestone 71E: the one money formatter. Rounds by roundCents()'s rule and
+ * prints those digits directly (the binary result is never re-rounded).
+ * `style` keeps each surface's established look:
+ *   'plain'        1,234.56   -1,234.56
+ *   'dollar'       $1,234.56  $-1,234.56   (Annual/Simplified PDF bodies)
+ *   'parens'       1,234.56   (1,234.56)   (Annual screens)
+ *   'dollarParens' $1,234.56  ($1,234.56)  (Simplified screens, dashboard)
+ *   'signFirst'    $1,234.56  -$1,234.56   (Inventory PDF, fmt())
+ * `grouping: false` omits the thousands separators.
+ */
+export function formatMoney(v, { style = 'plain', grouping = true } = {}) {
+  const { negative, whole, cents } = centsParts(v);
+  const body = `${grouping ? whole.replace(/\B(?=(\d{3})+(?!\d))/g, ',') : whole}.${cents}`;
+  switch (style) {
+    case 'dollar': return `$${negative ? '-' : ''}${body}`;
+    case 'parens': return negative ? `(${body})` : body;
+    case 'dollarParens': return negative ? `($${body})` : `$${body}`;
+    case 'signFirst': return `${negative ? '-' : ''}$${body}`;
+    default: return `${negative ? '-' : ''}${body}`;
+  }
+}
+
+/**
+ * Round to cents. For DISPLAY of an aggregate, never for intermediate sums.
+ * Milestone 71E: now roundCents() under its old name, so its callers keep
+ * working and round the way the Clerk's workbook displays.
+ */
 export function r2(v) {
-  return Math.round(n(v) * 100) / 100;
+  return roundCents(v);
 }
 
 /**
@@ -45,12 +120,14 @@ export function formatShare(v) {
   return s !== '' && Number.isFinite(Number(s)) ? `${s}%` : '—';
 }
 
-/** US-dollar display ($1,234.56); blank and null print as $0.00. */
-export const fmt = (v)=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(v||0);
+/**
+ * US-dollar display ($1,234.56, negatives -$1,234.56); blank and null print as
+ * $0.00. Milestone 71E: rounded by formatMoney()'s rule, not Intl's.
+ */
+export const fmt = (v)=>formatMoney(v, { style: 'signFirst' });
 
+/** The dashboard's and sidebar's figure: ($1,234.56) for a negative, "—" for none. */
 export function formatDashboardCurrency(v){
   if(v===null||v===undefined)return '—';
-  const abs=Math.abs(v);
-  const str=abs.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
-  return v<0?`($${str})`:`$${str}`;
+  return formatMoney(v, { style: 'dollarParens' });
 }

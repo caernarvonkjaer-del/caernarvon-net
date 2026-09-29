@@ -1,7 +1,7 @@
 // Canonical statutory calculations and reconciliation state for Annual Guardianship Accounting.
 // Single source of truth shared between UI forms, preview, Excel export, and accessible PDF generation.
 import { getD } from '../../core/state.js';
-import { wardShare } from '../../core/format/money.js';
+import { wardShare, roundCents } from '../../core/format/money.js';
 
 export function n(v) {
   const num = parseFloat(v);
@@ -106,11 +106,19 @@ export function calcTotalsAnnual(customD) {
   };
 }
 
+// Milestone 71E: the two figures are compared as they PRINT -- each rounded
+// to cents by the Clerk's workbook's rule (roundCents()) -- and "equals" is
+// said only when the printed figures are identical. It used to call two lines
+// balanced whenever they differed by $0.01 or less, so the QA filing printed
+// "Net Assets from Changes (797,229.19) equals Net Assets from Balances
+// (797,229.18)". The workbook itself says "Line 20 should equal line 30".
 export function annualReconcileState(t, customD) {
   const totals = t || calcTotalsAnnual(customD);
-  const diff = totals.netAssets - totals.netAssetsFromD;
-  const hasFigures = [totals.netAssets, totals.netAssetsFromD].some(v => Math.abs(v) > 0.005);
-  const outOfBalance = hasFigures && Math.abs(diff) > 0.01;
+  const shown20 = roundCents(totals.netAssets);
+  const shown30 = roundCents(totals.netAssetsFromD);
+  const diff = roundCents(shown20 - shown30);
+  const hasFigures = shown20 !== 0 || shown30 !== 0;
+  const outOfBalance = hasFigures && shown20 !== shown30;
   const d = customD || getD();
   const explanation = String(d.reconcileExplanation || '').trim();
   return { diff, outOfBalance, explanation, explained: outOfBalance && explanation.length > 0 };

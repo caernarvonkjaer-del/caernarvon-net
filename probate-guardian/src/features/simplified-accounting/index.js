@@ -38,15 +38,17 @@ import { serviceRecipientIssues } from '../../core/validation/service-recipients
 import { renderServiceAttestationRow } from '../../core/form/service-attestation-visibility.js';
 import { esc } from '../../core/filing/escape-html.js';
 import { ic } from '../../core/ui/icons.js';
-import { formatAddress, formatName, formatPhone, formatSSN, sanitizeNonNegativeDecimal } from '../../core/form/form-contract.js';
+import { displayDecimal, formatAddress, formatName, formatPhone, formatSSN, sanitizeNonNegativeDecimal } from '../../core/form/form-contract.js';
 import { formatDisplayDate } from '../../core/form/date-parser.js';
 import { calcTotals } from './totals.js';
 import { guardianHasAnyData } from '../../core/validation/row-started.js';
 import { simplifiedCompletion } from '../../core/status/completion.js';
-import { getD, requestSave } from '../../core/state.js';
+import { getCaseFile, getD, requestSave } from '../../core/state.js';
+import { startingBalanceNotesHTML } from '../../core/filing/starting-balance-carry.js';
 import { updateNavDots } from '../../core/status/nav-marks.js';
 import { browserRecommendationNotice, linkAccordions, sanitizeNegativeAmounts } from '../../core/form/form-runtime.js';
 import { isAttorneyStarted } from '../../core/validation/attorney-block.js';
+import { formatMoney } from '../../core/format/money.js';
 import { resolveServiceCertifier, certifyingCandidates, serviceCertifierChoiceHTML } from '../../core/filing/unrepresented-filing.js';
 import { watchAttorneyRequiredMarkers } from '../../core/form/attorney-required-markers.js';
 
@@ -262,7 +264,8 @@ export function mountNav(container) {
 // import them back from here via a static `import` -- safe despite this
 // module dynamically importing them, since neither side needs the other's
 // export until a function body actually runs, well after both are loaded).
-export function fmtS(n){if(n===''||n===null||n===undefined)return '';const v=parseFloat(n);if(isNaN(v))return '';return v<0?`($${Math.abs(v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})})`:`$${v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}`;}
+// Milestone 71E: formatMoney() -- the Clerk's workbook's own rounding; ($1,234.56) for a negative.
+export function fmtS(n){if(n===''||n===null||n===undefined)return '';const v=parseFloat(n);if(isNaN(v))return '';return formatMoney(v,{style:'dollarParens'});}
 
 function inpSWithTooltip(id,label,tooltipKey,val,req=false,type='text'){
   const html=inpS(id,label,val,req,type);
@@ -460,7 +463,7 @@ function pagePart2(){
         <div class="line-row">
           <span class="line-tag">Line 1</span>
           <span class="line-label">Starting Balance — Net Assets per Prior Report<span class="req">*</span></span>
-          <div class="line-input"><div class="input-group"><span class="input-group-text">$</span><input type="text" inputmode="decimal" class="form-control" id="startingBalance" value="${esc(sanitizeNonNegativeDecimal(d.startingBalance))}" data-form-path="startingBalance" data-form-format="decimal" data-simplified-refresh="part2"></div></div>
+          <div class="line-input"><div class="input-group"><span class="input-group-text">$</span><input type="text" inputmode="text" class="form-control" id="startingBalance" value="${esc(displayDecimal(d.startingBalance))}" data-form-path="startingBalance" data-form-format="signed-decimal" data-field-blank="keep" data-simplified-refresh="part2"></div>${startingBalanceNotesHTML(d,{wards:getCaseFile()?.wards||null})}</div>
         </div>
       </div>
     </div>

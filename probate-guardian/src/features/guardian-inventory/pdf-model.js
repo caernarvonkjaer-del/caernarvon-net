@@ -9,6 +9,7 @@ import { composePdfAddressLines } from '../../core/pdf/address-format.js';
 import { maskSSN } from '../../core/pdf/ssn-format.js';
 import { calcTotalsGuardian, makeGuardianCalc, isRestrictedAnswer, isInSafeDepositBox, AUDIT_FEE_THRESHOLD, AUDIT_FEE_OVER_THRESHOLD } from './totals.js';
 import { preparedByLine } from '../../core/form/preparer-flag.js';
+import { formatMoney } from '../../core/format/money.js';
 import { isUnrepresented, unrepresentedStatement, resolveServiceCertifier } from '../../core/filing/unrepresented-filing.js';
 import { inferBondDepositoryState, bondDepositoryPdfLines, revealsBond } from '../../core/filing/bond-depository.js';
 
@@ -29,11 +30,8 @@ export function buildVerifiedInventoryModel(D, options = {}) {
   // (totals.js's rounding contract: sums are unrounded until display). A
   // negative net -- debts above assets in Summary I, which the workbook prints
   // rather than clamping -- reads "-$4,000.00", sign first.
-  const fmt = (v) => {
-    const cents = Math.round((parseFloat(v) || 0) * 100) / 100;
-    const body = Math.abs(cents).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    return (cents < 0 ? '-$' : '$') + body;
-  };
+  // Milestone 71E: formatMoney() (src/core/format/money.js) -- the Clerk's workbook's own rounding.
+  const fmt = (v) => formatMoney(v, { style: 'signFirst' });
   // A blank Ward's % is 0% in the calculation (as in the workbook) and prints
   // as unanswered, never as "100%" -- the two must not disagree on the page.
   const fmtPct = (p) => {
