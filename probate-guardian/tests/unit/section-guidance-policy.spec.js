@@ -163,10 +163,14 @@ describe('sidebarOnlyWants() — what a sidebar-only rule still wants, as items 
     expect(items[0].label).toMatch(/benefit/i);
   });
 
-  test('Plan - Minors Preparer & Attorney: wants only what is blank', () => {
-    expect(paths(sidebarOnlyWants('planMinor', '/p7', {}))).toEqual(['preparer_name', 'attorney_name', 'attorney_signatureDate']);
-    expect(paths(sidebarOnlyWants('planMinor', '/p7', { preparer_name: 'P', attorney_signatureDate: '2027-01-01' }))).toEqual(['attorney_name']);
-    expect(sidebarOnlyWants('planMinor', '/p7', { preparer_name: 'P', attorney_name: 'A', attorney_signatureDate: '2027-01-01' })).toEqual([]);
+  // Milestone 71B made pm-p7 validatePlanMinor()'s own rule (each role
+  // optional until started), so its validator messages explain the mark. The
+  // list this pinned -- preparer name, attorney name, attorney signature date,
+  // whenever blank -- would tell a filer who started only an attorney to add a
+  // preparer too.
+  test('Plan - Minors Preparer & Attorney: no longer a sidebar-only rule, so it wants nothing of its own', () => {
+    expect(sidebarOnlyWants('planMinor', '/p7', {})).toEqual([]);
+    expect(sidebarOnlyWants('planMinor', '/p7', { attorney_signatureDate: '2027-01-01' })).toEqual([]);
   });
 
   // Milestone 67B. The bond / restricted-depository arrangement is asked, never

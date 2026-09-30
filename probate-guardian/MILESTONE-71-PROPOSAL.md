@@ -747,6 +747,30 @@ its siblings; whether to enforce the field is a separate question.
 **Commits.** `3103238` holds the code; it went in by mistake under the previous commit's (71A's) message.
 `ea703fe` is an empty commit carrying its intended message. History was not rewritten.
 
+**Follow-up, found by the milestone's full regression.** The Plan for
+Minors' Preparer & Attorney page has a "what's missing" box. The box read
+its own list (preparer name, attorney name, attorney signature date, each
+whenever blank) from `section-guidance-policy.js`'s `sidebarOnlyWants()`,
+which design step 8's change to `'pm-p7'` did not reach. A blank page was
+fine: it is complete now, and the box only shows on an incomplete page.
+
+A half-finished page was not. A filer who started only an attorney was told
+to enter a **preparer name** as well. Entering one starts a preparer, which
+then needs its own signature. The page is no longer a sidebar-only rule, so
+its entry was removed: the export check's own messages explain the mark.
+
+`tests/e2e/sidebar-only-wants.spec.ts` had pinned the pre-71B list, and it
+was not in 71B's targeted runs. It now covers:
+
+- a blank page: complete, with no box;
+- a started attorney: lists only "Attorney name is required", never a
+  preparer;
+- the name entered: the mark turns green.
+
+`tests/unit/section-guidance-policy.spec.js` was updated to match.
+Red-first, with `section-guidance-policy.js` stashed: the box asked for a
+preparer.
+
 ---
 
 ## 71C — Every percentage field is secretly a money field
@@ -1800,6 +1824,41 @@ Per AGENTS.md §2:
 - **Excel:** 71E's acceptance includes opening a real exported workbook for each
   of the three templates and confirming, with a parser, that no formula cell was
   written.
+
+### Full regression — run 2026-09-29, after 71E (`025657a`)
+
+Pre-approved by the requester for this one point.
+
+- **Unit:** 163 files, 2,212 tests, all pass.
+- **Browser:** 971 passed, 7 skipped, 2 failed, in 1.7 hours (serial).
+
+**Failure 1, a real defect from 71B.** `sidebar-only-wants.spec.ts`, Plan
+for Minors, Preparer & Attorney. Fixed; see 71B's Build record, "Follow-up,
+found by the milestone's full regression".
+
+**Failure 2, time limit, not Milestone 71.** `routes.spec.ts`, "all 9 form
+types render a standardized summary page", exceeded its 60-second limit. It
+passes alone (47 s). The same test was timed on the code before and after
+Milestone 71, on the same drive, at the same hour:
+
+| Copy | Run 1 | Run 2 |
+| --- | --- | --- |
+| Before 71 (`4aa091f`), C: | 21.9 s | 22.6 s |
+| After 71 (`025657a`), C: | 22.4 s | 24.4 s |
+| After 71, D: (the repository) | 47.3 s | 49.1 s |
+
+The difference is the drive. D: is FAT32, and pages and code modules load
+from it about twice as slowly. That matches the whole run: files ran a
+median 2.2 times longer than in `tests/baseline/milestone-59-runtime.json`,
+including files no part of 71 touches. Near its limit on D:, this test fails
+under full-suite load. It is not changed here. The options are for the
+requester: a longer limit for this one test, or running the suite from an
+NTFS drive.
+
+After the fix, the targeted specs pass: `sidebar-only-wants`,
+`section-guidance-invariant`, and `plan-minor-mount` with the Plan for
+Minors navigation checks (25 tests), plus all 163 unit files. The full
+browser suite was not re-run; the one pre-approved run was used.
 
 ---
 

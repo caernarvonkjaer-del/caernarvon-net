@@ -120,8 +120,8 @@ export function guidanceAdvice({ hasVerifyNoneBox }) {
 //   1. Route ownership. Simplified's period dates are rendered on the Cover AND on Part III, but the one
 //      validator message for each is filed under the Cover, so Part III could not explain a mark that
 //      depends on them.                                                        -> pageAlsoOwns()
-//   2. Sidebar-only rules. Plan - Annual 3G and Plan - Minors Preparer & Attorney have rules the validators
-//      do not, so there is no message anywhere to list.                       -> sidebarOnlyWants()
+//   2. Sidebar-only rules. Plan - Annual 3G (and, until Milestone 71B, Plan - Minors Preparer & Attorney)
+//      have rules the validators do not, so there is no message anywhere to list. -> sidebarOnlyWants()
 //
 // The export is deliberately NOT changed to demand these (option 2 of D13, rejected): the box only tells the
 // filer what the sidebar is waiting for. sidebarOnlyWants() is consulted only for a page the sidebar already
@@ -188,13 +188,11 @@ export function sidebarOnlyWants(type, route, data) {
     if (answered || d.q3BenefitsNone || d.q3BenefitsOther) return [];
     return [{ label: 'Answer at least one benefit above, or check "None of the above" or "Other"', path: 'q3BenefitsNone' }];
   }
-  if (type === 'planMinor' && route === '/p7') {
-    // pm-p7: preparer name, attorney name and the attorney's signature date.
-    return [
-      ['preparer_name', 'Preparer name'],
-      ['attorney_name', 'Attorney name'],
-      ['attorney_signatureDate', 'Attorney signature date'],
-    ].filter(([key]) => blank(d[key])).map(([path, label]) => ({ label, path }));
-  }
+  // Plan - Minors Preparer & Attorney (pm-p7) was listed here until Milestone
+  // 71B made its sidebar rule validatePlanMinor()'s own: each role optional
+  // until started, then a name and a valid signature. The validator's
+  // messages now explain the mark; a list here would still tell a filer with
+  // no preparer to enter one, which would start a role the page then marks
+  // unsigned.
   return [];
 }

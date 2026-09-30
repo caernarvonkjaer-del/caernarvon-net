@@ -91,28 +91,25 @@ test.describe('Plan - Annual 3G Insurance & Benefits: one benefit answered, or N
   });
 });
 
-test.describe('Plan - Minors Preparer & Attorney: three names and a date', () => {
-  test('lists exactly what is missing, and supplying it turns the mark green and clears the box', async ({ page }) => {
+// Milestone 71B: this page's sidebar rule is now validatePlanMinor()'s own --
+// the preparer and the attorney are each optional until started, then need a
+// name and a valid signature -- so it is no longer a sidebar-only rule and the
+// validator's messages explain it. Until 71B this test pinned the old rule
+// (three names and a date, always), under which a filer with no attorney could
+// never finish the page; and the box's own list would have told a filer who
+// started only an attorney to add a preparer as well.
+test.describe('Plan - Minors Preparer & Attorney: each role optional until started (Milestone 71B)', () => {
+  test('a blank page is finished; a started attorney lists only what that attorney lacks, and supplying it turns the mark green', async ({ page }) => {
     await open(page, 'planMinor', '/p7');
-    await expect(mark(page, 'pm-p7')).toHaveClass(/incomplete/);
+    await expect(mark(page, 'pm-p7'), 'no preparer and no attorney: nothing to finish').toHaveClass(/\bcomplete\b/);
+    await expect(box(page)).toHaveCount(0);
 
-    for (const name of [/Preparer name/i, /Attorney name/i, /Attorney signature date/i]) {
-      await expect(box(page).getByRole('button', { name }), `${name}`).toBeVisible();
-    }
-
-    // Supply one at a time: the list shrinks to what is left.
-    await edit(page, 'preparer_name', 'A Preparer');
-    await expect(box(page).getByRole('button', { name: /Preparer name/i })).toHaveCount(0);
-    await expect(box(page).getByRole('button', { name: /Attorney name/i })).toBeVisible();
-
-    // Setup (D9): the reporting period lives on the Cover, not on this page; a
-    // signature date must not precede its end, which the sidebar also checks.
-    await page.evaluate(() => {
-      const t = (window as any).GuardianForms.testing;
-      t.patchFiling({ periodFrom: t.field('periodFrom') || '2026-01-01', periodTo: t.field('periodTo') || '2026-12-31' });
-    });
-    await edit(page, 'attorney_name', 'An Attorney');
     await edit(page, 'attorney_signatureDate', '2027-01-15');
+    await expect(mark(page, 'pm-p7')).toHaveClass(/incomplete/);
+    await expect(box(page).getByRole('button', { name: /Attorney name is required/i })).toBeVisible();
+    await expect(box(page).getByRole('button', { name: /Preparer/i }), 'a preparer was never started, so none is asked for').toHaveCount(0);
+
+    await edit(page, 'attorney_name', 'An Attorney');
     await expect(mark(page, 'pm-p7')).toHaveClass(/\bcomplete\b/);
     await expect(box(page)).toHaveCount(0);
   });

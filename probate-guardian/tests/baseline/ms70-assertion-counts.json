@@ -471,7 +471,7 @@
    "tests": 3
   },
   "tests/e2e/sidebar-only-wants.spec.ts": {
-   "expects": 24,
+   "expects": 25,
    "tests": 5
   },
   "tests/e2e/signature-block-address-margin.spec.ts": {
@@ -1075,7 +1075,7 @@
    "tests": 1
   },
   "tests/unit/section-guidance-policy.spec.js": {
-   "expects": 55,
+   "expects": 54,
    "tests": 24
   },
   "tests/unit/section-status.spec.js": {
@@ -1320,6 +1320,13 @@
    "now": 75,
    "reason": "Milestone 70, 70L: the headline-total test's check that legacy-app.js declared no const calc went with legacy-app.js itself; tests/unit/ms70-monolith-deleted.spec.js holds that the file is gone.",
    "date": "2026-09-27"
+  },
+  {
+   "file": "tests/unit/section-guidance-policy.spec.js",
+   "was": 55,
+   "now": 54,
+   "reason": "Milestone 71B follow-up: sidebar-only-wants.spec.ts's Plan-Minors case now pins 71B's optional-until-started rule (the old case pinned the pre-71B list); section-guidance-policy.spec.js's Plan-Minors case likewise",
+   "date": "2026-09-30"
   }
  ]
 }
