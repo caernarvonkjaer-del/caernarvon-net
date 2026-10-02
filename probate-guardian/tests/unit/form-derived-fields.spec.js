@@ -87,16 +87,24 @@ describe('form-derived cells the filing overwrites', () => {
     expect(codes(annual({ guardian: '', guardians: [{ name: 'Someone Else' }] }))).toEqual([]);
   });
 
-  test('the whole annual family is covered and nothing else is', () => {
+  test('the whole annual family is covered, and only the Inventory beside it', () => {
     const divergent = { bondPeriodFrom: '2025-07-01', guardians: [{ name: 'Someone Else' }] };
     for (const type of ['annual', 'finalAccounting', 'trustAccounting']) {
       expect(codes(annual({ ...divergent, inventoryType: type })), type).toHaveLength(2);
     }
     // The Initial Inventory's bond cells are real input boxes in its own
-    // template, so there is no derived value to disagree with.
+    // template, so there is no derived value to disagree with; its Guardian #1
+    // rule reads the Cover's Guardian Name(s), not Part I's Guardian (below).
     for (const type of ['guardian', 'simplified', 'planAnnual', 'planInitial', 'planMinor', 'planSimplified']) {
       expect(codes(annual({ ...divergent, inventoryType: type })), type).toEqual([]);
     }
+  });
+
+  // Milestone 72A: listing co-guardians in Part I is not a disagreement. The
+  // rule used to demand identical names, so it warned here.
+  test("a Part I Guardian naming co-guardians includes Guardian #1, so it raises nothing", () => {
+    expect(codes(annual({ guardian: 'Rachel Alvarez and Tom Alvarez' }))).toEqual([]);
+    expect(codes(annual({ guardian: 'Tom Alvarez; Rachel Alvarez' }))).toEqual([]);
   });
 
   test('the resolved descriptor wins over a filing that does not name its type', () => {
@@ -109,4 +117,56 @@ describe('form-derived cells the filing overwrites', () => {
     expect(formDerivedOverwriteWarnings(null)).toEqual([]);
     expect(formDerivedOverwriteWarnings(undefined, null)).toEqual([]);
   });
+});
+
+// Milestone 72A. The Inventory's 'PART III'!F8 is the form's link to the
+// Cover's Guardian Name(s); the app writes Guardian #1's name over it, by the
+// 2026-09-19 Annual decision applied to the Inventory (2026-10-01), and warns
+// when that name is not among the Cover's.
+describe("the Inventory's Guardian #1 against the Cover's Guardian Name(s)", () => {
+  const inventory = (cover, first) => ({ inventoryType: 'guardian', guardianName: cover, guardians: [{ name: first }] });
+  const warns = (cover, first) => codes(inventory(cover, first)).includes('form-derived.guardian-name');
+
+  test('the same name raises nothing', () => {
+    expect(warns('Jane Doe', 'Jane Doe')).toBe(false);
+  });
+
+  test('a co-guardian Cover includes Guardian #1', () => {
+    expect(warns('Jane Doe and John Doe', 'Jane Doe')).toBe(false);
+    expect(warns('Jane Doe and John Doe', 'John Doe')).toBe(false);
+  });
+
+  // The Cover is never split at commas, so a name holding one matches itself.
+  test('a name with a comma in it matches itself', () => {
+    expect(warns('John Smith, Jr.', 'John Smith, Jr.')).toBe(false);
+    expect(warns('Acme Trust Co., Inc.', 'Acme Trust Co., Inc.')).toBe(false);
+    expect(warns('Acme Trust Co., Inc. and Jane Doe', 'Acme Trust Co., Inc.')).toBe(false);
+  });
+
+  test('a name containing "and" matches itself', () => {
+    expect(warns('Rand Anderson', 'Rand Anderson')).toBe(false);
+    expect(warns('Smith and Wesson Trust Company', 'Smith and Wesson Trust Company')).toBe(false);
+  });
+
+  test('extra spaces, letter case and punctuation are not disagreements', () => {
+    expect(warns('  JANE   DOE ', 'jane doe')).toBe(false);
+    expect(warns('Robert T. Nguyen', 'Robert T Nguyen')).toBe(false);
+  });
+
+  test('a real mismatch warns, names both, and says which name the export carries', () => {
+    expect(warns('Jane Doe', 'Mary Roe')).toBe(true);
+    // Whole words only: "Ann" is not "Anne".
+    expect(warns('Anne Smith', 'Ann Smith')).toBe(true);
+    const [w] = formDerivedOverwriteWarnings(inventory('Jane Doe', 'Mary Roe'));
+    expect(w).toMatchObject({ severity: 'advisory', field: 'guardians.0.name', entered: 'Mary Roe', derived: 'Jane Doe' });
+    expect(w.message).toContain('D-1 — Guardian #1 (Mary Roe) is not among the Guardian Name(s) on the Cover (Jane Doe).');
+    expect(w.message).toContain("this filing will be exported with Guardian #1's name as entered");
+  });
+
+  test('a blank on either side raises nothing', () => {
+    expect(warns('', 'Mary Roe')).toBe(false);
+    expect(warns('Jane Doe', '')).toBe(false);
+    expect(codes({ inventoryType: 'guardian', guardianName: 'Jane Doe' })).toEqual([]);
+  });
+
 });

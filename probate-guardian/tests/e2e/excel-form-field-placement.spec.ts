@@ -1,13 +1,21 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page, type BrowserContext } from '@playwright/test';
 import JSZip from 'jszip';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {
   freshStartNoPassword, createWard, createSimplifiedWard,
-  fillMinimalValidGuardianWard, fillMinimalValidSimplifiedWard,
+  fillMinimalValidGuardianWard, fillMinimalValidSimplifiedWard, fillMinimalValidAnnualWard, autoAcceptDynDialogs,
 } from './support/target';
 import { readAll } from './support/stream';
+import {
+  exportWithWrites, templateWorkbook, loadWorkbook, integrityProblems, placementProblems,
+  completenessProblems, templateValue, DECIDED_OVERWRITES, type FormName, type Write,
+} from './support/workbook-vs-template';
+import {
+  inventoryManifest, annualManifest, simplifiedManifest, codedRuns, codeFinite, setPath,
+  type Manifest, type Coding,
+} from './support/export-manifests';
 
 // Values land in the court's input boxes, checked against the exported file.
 //
@@ -280,5 +288,230 @@ test.describe('Initial Inventory fills its boxes, not its captions', () => {
     expect(back.attyFiling).toBe('2026-06-06');
     expect(String(back.svcBar).toUpperCase()).toBe('SVC-BAR');
     expect(String(back.svcStreet).toUpperCase()).toBe('SVC-STREET');
+  });
+});
+
+// ── Milestone 72A: every box every exporter writes ───────────────────────────
+//
+// The tests above pin particular boxes. These check every box, on every page,
+// against the Clerk's own workbook (support/workbook-vs-template.ts), for a
+// filing filled to the workbook's capacity (support/export-manifests.ts):
+//
+//   - no caption of the form changed, and no formula changed -- except the
+//     decided overwrites below, a box carrying a dropdown (its text is a
+//     default to replace), and a page total that lost only the terms naming
+//     pages the export removed;
+//   - every value in its own box, each value unique to its box;
+//   - every write the exporters made is one the manifest names, and none was
+//     aimed inside a merge (ExcelJS moves those to the merge's master);
+//   - each Yes/No and dropdown box, over a few more exports, holding its own
+//     sequence of answers, so a swapped pair cannot pass.
+//
+// Found by building it: the Inventory's PART III (fifteen captions), C-3 (the
+// defendant over each printed Line #) and C-5 (the joint owner's name and
+// street swapped against the form's instructions).
+
+// Time limits: about three times what each took on this workstation's D:
+// drive (FAT32, where the browser suite runs about twice as slowly as from an
+// NTFS copy) with the spec run on its own, 2026-10-02 -- the Inventory's
+// capacity filing built and exported in about 30 s and each further export
+// took about 9 s; the Annual's (with all 1,382 Schedule B-4 rows) about 56 s
+// and 19 s; the Simplified's about 23 s. The suite's 60 s default is left as it is.
+type Guarded = { form: FormName; build: () => Manifest; open: (page: Page) => Promise<void>; setup: number; run: number };
+const GUARDED: readonly Guarded[] = [
+  {
+    form: 'guardian', build: inventoryManifest, setup: 120_000, run: 45_000,
+    open: async (page) => { await freshStartNoPassword(page); await createWard(page, 'Guard Inventory', 'guardian'); await fillMinimalValidGuardianWard(page); },
+  },
+  {
+    form: 'annual', build: () => annualManifest('Annual'), setup: 180_000, run: 75_000,
+    open: async (page) => { await freshStartNoPassword(page); await createWard(page, 'Guard Annual', 'annual'); await fillMinimalValidAnnualWard(page); },
+  },
+  {
+    form: 'simplified', build: simplifiedManifest, setup: 90_000, run: 45_000,
+    open: async (page) => { await freshStartNoPassword(page); await createSimplifiedWard(page, 'Guard Simplified'); await fillMinimalValidSimplifiedWard(page); },
+  },
+];
+
+/**
+ * Merges `patch` into the open filing -- objects key by key, arrays index by
+ * index -- so the fixture's own fields (the attorney's name, a guardian's
+ * flags) survive beside the manifest's.
+ */
+async function mergeIntoFiling(page: Page, patch: Record<string, unknown>) {
+  await page.evaluate((p) => {
+    const t = (window as any).GuardianForms.testing;
+    const d = t.snapshot().filing;
+    const isObj = (v: unknown) => v !== null && typeof v === 'object' && !Array.isArray(v);
+    const merge = (into: any, from: any) => {
+      for (const [k, v] of Object.entries(from)) {
+        if (Array.isArray(v)) {
+          if (!Array.isArray(into[k])) into[k] = [];
+          v.forEach((item, i) => { if (isObj(item) && isObj(into[k][i])) merge(into[k][i], item); else into[k][i] = item; });
+        } else if (isObj(v) && isObj(into[k])) merge(into[k], v);
+        else into[k] = v;
+      }
+    };
+    merge(d, p);
+    t.replaceFiling(d);
+  }, patch);
+}
+
+const list = (problems: string[]) => `${problems.length} problem(s):\n${problems.slice(0, 60).join('\n')}${problems.length > 60 ? '\n...' : ''}`;
+
+for (const g of GUARDED) {
+  const manifest = g.build();
+  const runs = codedRuns(manifest.finite);
+
+  // Not serial: a failed check must not hide the others. The shared export is
+  // made once per worker; a failure restarts the worker, which makes it again.
+  test.describe(`${g.form}: every box the exporter writes, against the Clerk's workbook`, () => {
+    let context: BrowserContext;
+    let page: Page;
+    let coding: Coding;
+    let exported: any;
+    let template: any;
+    let writes: Write[] = [];
+
+    const finiteExpectations = (run: number) => manifest.finite.map((f) => ({ sheet: f.sheet, cell: f.cell, value: coding.answer(f, run), path: `${f.path} (export ${run + 1} of ${runs})` }));
+
+    test.beforeAll(async ({ browser }) => {
+      test.setTimeout(g.setup);
+      context = await browser.newContext();
+      page = await context.newPage();
+      await g.open(page);
+      template = await templateWorkbook(g.form);
+      coding = codeFinite(manifest.finite, (f) => templateValue(template, f.sheet, f.cell));
+      const patch = structuredClone(manifest.patch);
+      for (const f of manifest.finite) setPath(patch, f.path, coding.answer(f, 0));
+      await mergeIntoFiling(page, patch);
+      const out = await exportWithWrites(page, g.form);
+      writes = out.writes;
+      exported = await loadWorkbook(out.bytes);
+    });
+
+    test.afterAll(async () => { await context?.close(); });
+
+    test("no caption of the form is changed, and no formula", () => {
+      const { problems, formulas, captions } = integrityProblems(template, exported, { overwrites: DECIDED_OVERWRITES[g.form] });
+      expect(formulas, 'the template has formulas to check').toBeGreaterThan(5);
+      expect(captions, 'the template has captions to check').toBeGreaterThan(20);
+      expect(problems, list(problems)).toEqual([]);
+    });
+
+    test('every value is in its own box', () => {
+      const problems = placementProblems(exported, [...manifest.expectations, ...finiteExpectations(0)]);
+      expect(problems, list(problems)).toEqual([]);
+    });
+
+    test('every write is a box the manifest names, aimed at the box itself', () => {
+      expect(writes.length, 'the recorder saw the export').toBeGreaterThan(manifest.expectations.length / 2);
+      const problems = completenessProblems(writes, [...manifest.expectations, ...finiteExpectations(0)]);
+      expect(problems, list(problems)).toEqual([]);
+    });
+
+    for (let run = 1; run < runs; run++) {
+      test(`Yes/No and dropdown boxes, export ${run + 1} of ${runs}: each box holds its own sequence of answers`, async () => {
+        test.setTimeout(g.run);
+        const patch: Record<string, unknown> = {};
+        for (const f of manifest.finite) setPath(patch, f.path, coding.answer(f, run));
+        await mergeIntoFiling(page, patch);
+        const out = await exportWithWrites(page, g.form);
+        const problems = placementProblems(await loadWorkbook(out.bytes), finiteExpectations(run));
+        expect(problems, list(problems)).toEqual([]);
+      });
+    }
+  });
+}
+
+// ── Milestone 72A: workbooks exported before the fixes still import ─────────
+//
+// An exported file is put back into the layout the app used to write --
+// with ExcelJS, on the file itself -- and imported through the real Import
+// from Excel control. The importer reads each field's box, and falls back to
+// the old place only where the file shows it was written the old way.
+
+async function importInto(page: Page, form: 'guardian' | 'annual', bytes: Buffer, name: string) {
+  const file = path.join(os.tmpdir(), `pg-72a-${form}-${Date.now()}.xlsx`);
+  fs.writeFileSync(file, bytes);
+  await createWard(page, name, form);
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
+  const dialogs = autoAcceptDynDialogs(page);
+  await page.setInputFiles('input[type="file"][accept=".xlsx"]', file);
+  await page.waitForFunction((n) => {
+    const d = (window as any).GuardianForms.testing.snapshot().filing;
+    return d && d.wardName && d.wardName !== n;
+  }, name, { timeout: 30_000 });
+  dialogs.stop();
+  return page.evaluate(() => (window as any).GuardianForms.testing.snapshot().filing);
+}
+
+test.describe('Milestone 72A: workbooks exported before the fixes still import', () => {
+  // About 17 s each on D: (see the time limits above).
+  test('Inventory: PART III details on the caption rows, and C-3 written the old way, arrive in their fields; a 72A export round-trips', async ({ page }) => {
+    test.setTimeout(60_000);
+    await freshStartNoPassword(page);
+    await createWard(page, 'Legacy Inventory Source', 'guardian');
+    await fillMinimalValidGuardianWard(page);
+    await page.evaluate(() => (window as any).GuardianForms.testing.patchFiling({
+      wardName: 'Legacy Ward',
+      guardians: [
+        { name: 'Ann Guardian', signatureDate: '2026-03-04', ssnEin: '111-22-3333', streetAddress: '1 First St', phone: '727-555-0101', cityStateZip: 'Clearwater, FL 33755' },
+        { name: 'Bob Coguardian', signatureDate: '2026-03-05', ssnEin: '444-55-6666', streetAddress: '2 Second St', phone: '727-555-0102', cityStateZip: 'Largo, FL 33770' },
+      ],
+      scheduleC3: [
+        { defendantName: 'Big Chain Store', actionDescription: 'Negligence', status: 'Mediation set', courtJurisdiction: 'Civil, Pinellas', caseNumber: '25-0001-CI', actionDate: '2026-02-02', estimatedSettlement: 30000, wardPercent: 100 },
+        { defendantName: 'Acme Movers', actionDescription: 'Property Damage', status: 'Demand sent', courtJurisdiction: 'County Court', caseNumber: '', actionDate: null, estimatedSettlement: 5000, wardPercent: 50 },
+      ],
+      scheduleNoItems: {},
+    }));
+    const { bytes } = await exportWithWrites(page, 'guardian');
+
+    // A 72A export reads straight back.
+    const now = await importInto(page, 'guardian', bytes, 'Round Trip Target');
+    expect(now.guardians.slice(0, 2).map((g: any) => [g.ssnEin, g.streetAddress, g.phone, g.cityStateZip, g.signatureDate]))
+      .toEqual([['111-22-3333', '1 First St', '727-555-0101', 'Clearwater, FL 33755', '2026-03-04'], ['444-55-6666', '2 Second St', '727-555-0102', 'Largo, FL 33770', '2026-03-05']]);
+    expect(now.scheduleC3.map((r: any) => [r.defendantName, r.actionDescription, r.caseNumber]))
+      .toEqual([['Big Chain Store', 'Negligence', '25-0001-CI'], ['Acme Movers', 'Property Damage', '']]);
+
+    // The same file, laid out as the app wrote it before 72A.
+    const wb = await loadWorkbook(bytes);
+    const p3 = wb.getWorksheet('PART III');
+    for (const b of [7, 13]) {
+      for (const [caption, box] of [[`D${b}`, `D${b + 1}`], [`B${b + 2}`, `B${b + 3}`], [`F${b + 2}`, `F${b + 3}`], [`B${b + 4}`, `B${b + 5}`], [`F${b + 4}`, `F${b + 5}`]]) {
+        p3.getCell(caption).value = p3.getCell(box).value;
+        p3.getCell(box).value = null;
+      }
+    }
+    const c3 = wb.getWorksheet('C-3 LAWSUIT BY WARD pg 1');
+    c3.getCell('B20').value = 'Big Chain Store'; c3.getCell('C20').value = 'Negligence / 25-0001-CI'; c3.getCell('C23').value = null;
+    c3.getCell('B25').value = 'Acme Movers'; c3.getCell('C25').value = 'Property Damage'; c3.getCell('C28').value = null;
+    const legacy = Buffer.from(await wb.xlsx.writeBuffer());
+
+    const before = await importInto(page, 'guardian', legacy, 'Legacy Import Target');
+    expect(before.guardians.slice(0, 2).map((g: any) => [g.ssnEin, g.streetAddress, g.phone, g.cityStateZip, g.signatureDate]), 'the details on the caption rows arrive')
+      .toEqual([['111-22-3333', '1 First St', '727-555-0101', 'Clearwater, FL 33755', '2026-03-04'], ['444-55-6666', '2 Second St', '727-555-0102', 'Largo, FL 33770', '2026-03-05']]);
+    expect(before.scheduleC3.map((r: any) => [r.defendantName, r.actionDescription, r.caseNumber]), 'the old C-3 layout arrives in its fields')
+      .toEqual([['Big Chain Store', 'Negligence', '25-0001-CI'], ['Acme Movers', 'Property Damage', '']]);
+  });
+
+  test("Annual: the county arrives from the county box, and from D23 in a workbook exported before 72A", async ({ page }) => {
+    test.setTimeout(60_000);
+    await freshStartNoPassword(page);
+    await createWard(page, 'Legacy Annual Source', 'annual');
+    await fillMinimalValidAnnualWard(page);
+    await page.evaluate(() => (window as any).GuardianForms.testing.patchFiling({ wardName: 'Legacy Annual Ward', county: 'Pasco' }));
+    const { bytes } = await exportWithWrites(page, 'annual');
+    const wb = await loadWorkbook(bytes);
+    expect(wb.getWorksheet('PART I').getCell('H2').value, "the county is in the form's county box").toBe('Pasco');
+    expect(wb.getWorksheet('PART IV, V').getCell('B29').formula, "Part V's Name of county still reads it").toBe("'PART I'!H2");
+
+    expect((await importInto(page, 'annual', bytes, 'Annual Round Trip Target')).county).toBe('Pasco');
+
+    const p1 = wb.getWorksheet('PART I');
+    p1.getCell('D23').value = 'Pasco';
+    p1.getCell('H2').value = 'Select County';
+    const legacy = Buffer.from(await wb.xlsx.writeBuffer());
+    expect((await importInto(page, 'annual', legacy, 'Annual Legacy Target')).county, 'the county from D23').toBe('Pasco');
   });
 });

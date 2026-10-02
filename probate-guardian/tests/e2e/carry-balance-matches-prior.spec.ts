@@ -2,6 +2,7 @@ import { test, expect, type Page, type Locator } from '@playwright/test';
 import { freshStartNoPassword, createWard, createSimplifiedWard, fillMinimalValidAnnualWard, fillMinimalValidGuardianWard, fillMinimalValidSimplifiedWard, acceptDynDialog, dismissScheduleDocPrompt } from './support/target';
 import { readAll } from './support/stream';
 import { extractPdfText } from './support/pdf-extract';
+import { DECIDED_OVERWRITES } from './support/workbook-vs-template';
 import annualTemplate from '../../templates/annual-template.js';
 import guardianTemplate from '../../templates/guardian-template.js';
 import simplifiedTemplate from '../../templates/simplified-template.js';
@@ -67,18 +68,14 @@ async function download(page: Page, selector: string): Promise<Buffer> {
 const pdfText = async (page: Page, selector: string) => (await extractPdfText(await download(page, selector))).replace(/\s+/g, ' ');
 
 /**
- * Template formula cells the export replaces with a value today. Listed
- * exactly, so a new one fails and the day one is fixed this spec says so.
- * - Annual 'PART II, III'!F25, Guardian #1's name over the form's link to
- *   Part I: DECIDED 2026-09-19 (the requester, by name) -- allowed, with an
- *   advisory on divergence (excel-write-targets.spec.js, form-derived-fields.js).
- * - Inventory 'PART III'!F8, the first guardian's name over the form's
- *   ='SUMMARY I '!D23: found by this spec, NOT part of Milestone 71 and not
- *   decided; reported for its own decision. The exporter writes PART III
- *   through a computed address (`F${b+1}`) that excel-write-targets.spec.js's
- *   static pattern cannot read, and no advisory covers the Inventory.
+ * Template formula cells the export replaces with a value, by decision -- the
+ * one list, shared with the export guard (support/workbook-vs-template.ts),
+ * so a new overwrite fails here as well as there. Both are Guardian #1's name
+ * over the form's own link: the Annual's F25 decided 2026-09-19, and the
+ * Inventory's 'PART III'!F8 decided 2026-10-01 (Milestone 72A; this spec found
+ * it during Milestone 71), each with a warning when the names differ.
  */
-const KNOWN_OVERWRITES: Record<string, string[]> = { guardian: ["'PART III'!F8"], annual: ["'PART II, III'!F25"], simplified: [] };
+const KNOWN_OVERWRITES = DECIDED_OVERWRITES;
 
 /**
  * Loads the exported workbook and the Clerk's template with ExcelJS. Returns
@@ -260,7 +257,7 @@ test.describe('Milestone 71E: figures that match the Clerk\'s workbook, and carr
     expect(inventoryPdf).not.toMatch(/Half Cent Lot.*?\$1\.00 /);
     const wb = await readWorkbook(page, await download(page, '[data-inventory-action="save-excel"]'), guardianTemplate, []);
     expect(wb.checked).toBeGreaterThan(100);
-    expect(wb.lost, 'no template formula on a kept sheet is replaced by a value (one known, pre-existing)').toEqual(KNOWN_OVERWRITES.guardian);
+    expect(wb.lost, 'no template formula on a kept sheet is replaced by a value (one, by decision)').toEqual(KNOWN_OVERWRITES.guardian);
 
     await createWard(page, 'Half Cent Annual', 'annual');
     await fillMinimalValidAnnualWard(page);

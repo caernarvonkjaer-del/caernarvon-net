@@ -20,7 +20,7 @@ import {
   SCHEDULE_A1_PAGES, SCHEDULE_A2_PAGES, SCHEDULE_B1_PAGES, SCHEDULE_B2_PAGES,
   SCHEDULE_B3_PAGES, SCHEDULE_B4_PAGES, SCHEDULE_C1_PAGES, SCHEDULE_C2_PAGES,
   SCHEDULE_C3_PAGES, SCHEDULE_C4_PAGES, SCHEDULE_C5_PAGES,
-  unusedGuardianContinuationSheets,
+  unusedGuardianContinuationSheets, partIIIGuardianCells, isPrintedCaption,
 } from '../../core/excel/guardian-inventory-pages.js';
 import { alertModal } from '../../core/ui/dialogs.js';
 import { setStatus, scheduleStatusClear } from '../../core/ui/transient-status.js';
@@ -385,11 +385,18 @@ export async function doSaveExcel(){
         const pg=workbook.getWorksheet(pages[pageIdx].name);
         if(!pg)continue;
         const r=pages[pageIdx].rows[rowIdxInPage];
-        const desc=`${e.actionDescription||''}${e.caseNumber?' / '+e.caseNumber:''}`;
-        setCell(pg,`B${r}`,e.defendantName||'');
-        setCell(pg,`C${r}`,desc);
+        // Milestone 72A (found during build). The form's own instructions and
+        // its worked example agree: first line "Name of person or entity in
+        // suit / description of the Type of Pending Legal Action" ("Big Chain
+        // Store / Negligence"), second the status, third the court, fourth
+        // "Case number, if filed". The defendant used to be written into
+        // column B -- the cell holding the entry's printed Line # -- and the
+        // case number tacked onto the first line, so a filed C-3 showed a name
+        // where the form numbers its entries.
+        setCell(pg,`C${r}`,[e.defendantName,e.actionDescription].map(s=>String(s||'').trim()).filter(Boolean).join(' / '));
         setCell(pg,`C${r+1}`,e.status||'');
         setCell(pg,`C${r+2}`,e.courtJurisdiction||'');
+        setCell(pg,`C${r+3}`,e.caseNumber||'');
         setDateCell(pg,`E${r}`,e.actionDate);
         setCell(pg,`F${r}`,e.estimatedSettlement||'');
         setCell(pg,`G${r}`,pctCell(e.wardPercent));
@@ -428,9 +435,13 @@ export async function doSaveExcel(){
         const pg=workbook.getWorksheet(pages[pageIdx].name);
         if(!pg)continue;
         const r=pages[pageIdx].rows[rowIdxInPage];
+        // Milestone 72A (found during build): the form's instructions put the
+        // joint owner's name on the second line, the street on the third and
+        // the city/state/zip on the fourth. The name and street used to be
+        // swapped, so a filed C-5 split the owner's address around their name.
         setCell(pg,`C${r}`,e.assetDescription||'');
-        setCell(pg,`C${r+1}`,e.ownerAddress||'');
-        setCell(pg,`C${r+2}`,e.ownerName||'');
+        setCell(pg,`C${r+1}`,e.ownerName||'');
+        setCell(pg,`C${r+2}`,e.ownerAddress||'');
         setCell(pg,`C${r+3}`,e.ownerCityStateZip||'');
         setCell(pg,`E${r}`,e.relationshipToWard||'');
         setCell(pg,`F${r}`,e.totalAssetValue||'');
@@ -451,17 +462,22 @@ export async function doSaveExcel(){
     fillScheduleC4(inv.scheduleC4);
     fillScheduleC5(inv.scheduleC5);
 
+    // Milestone 72A. Each guardian block prints its captions on one row and
+    // the box on the row beneath (partIIIGuardianCells()). Every field but the
+    // name used to be written onto the caption row, so a filed inventory read
+    // "123-45-6789" where the form prints "Guardian #1's SSN / EIN" and left
+    // the box beneath it empty -- fifteen captions for three guardians. The
+    // name box F8 is the form's own ='SUMMARY I '!D23; writing Guardian #1's
+    // name over it is the 2026-09-19 Annual decision applied here (2026-10-01),
+    // with a warning when the two differ (form-derived-fields.js).
     const p3=workbook.getWorksheet('PART III');
     if(p3&&inv.guardians.length){
       for(let i=0;i<Math.min(inv.guardians.length,3);i++){
-        const b=7+i*6;
         const g=inv.guardians[i];
-        setDateCell(p3,`D${b}`,g.signatureDate);
-        setCell(p3,`F${b+1}`,g.name||'');
-        setCell(p3,`B${b+2}`,g.ssnEin||'');
-        setCell(p3,`F${b+2}`,g.streetAddress||'');
-        setCell(p3,`B${b+4}`,g.phone||'');
-        setCell(p3,`F${b+4}`,g.cityStateZip||'');
+        for(const f of partIIIGuardianCells(i)){
+          if(f.date)setDateCell(p3,f.box,g[f.key]);
+          else setCell(p3,f.box,g[f.key]||'');
+        }
       }
     }
 
@@ -525,9 +541,16 @@ export async function doSaveExcel(){
       setDateCell(p5,'G15',inv.bondWaivedDate);
     }
 
+    // Milestone 72A (found during build): the certificate's own boxes -- the
+    // service date, "Indicate if:" and the attorney's details -- used to sit
+    // inside a test for at least one recipient card. No path empties that list
+    // today (D-5 keeps one card; import and a new filing supply one), so this
+    // was latent, but a filing reaching here with none would have filed a
+    // certificate with no date. The Annual's PART X and the Simplified's
+    // PARTS V, VI write theirs regardless; so does this one now.
     const p6=workbook.getWorksheet('PART VI');
-    if(p6&&inv.serviceRecipients.length){
-      const recs=inv.serviceRecipients;
+    if(p6){
+      const recs=inv.serviceRecipients||[];
       if(recs[0]){setCell(p6,'B13',recs[0].name||'');setCell(p6,'B14',recs[0].address||'');setCell(p6,'B15',recs[0].cityStateZip||'');}
       if(recs[1]){setCell(p6,'H13',recs[1].name||'');setCell(p6,'H14',recs[1].address||'');setCell(p6,'H15',recs[1].cityStateZip||'');}
       if(recs[2]){setCell(p6,'B19',recs[2].name||'');setCell(p6,'B20',recs[2].address||'');setCell(p6,'B21',recs[2].cityStateZip||'');}
@@ -673,10 +696,44 @@ function parseInitialInventoryWorkbook(wb){
     scheduleB4:readRows(SCHEDULE_B4_PAGES,(s,r)=>{const name=txt(s,`C${r}`).trim(),val=num(s,`F${r}`);if(!name||val<=0)return null;return{lenderName:name,lenderAddress:txt(s,`C${r+1}`),relatedProperty:txt(s,`C${r+2}`),accountNumber:txt(s,`C${r+4}`)||txt(s,`C${r+3}`),liabilityType:txt(s,`E${r}`)||'Loan',fullLiabilityBalance:val,wardPercent:pct(s,`G${r}`)}}),
     scheduleC1:readRows(SCHEDULE_C1_PAGES,(s,r)=>{const name=txt(s,`C${r}`),val=num(s,`H${r}`);if(!name&&!val)return null;return{payerName:name,payerAddress:txt(s,`C${r+1}`),payerCityStateZip:txt(s,`C${r+2}`),typeOfIncome:txt(s,`E${r}`),frequencyOfPayment:txt(s,`G${r}`)||'Monthly',paymentBasis:txt(s,`E${r+2}`),annualIncomeAmount:val,wardPercent:pct(s,`I${r}`)}}),
     scheduleC2:readRows(SCHEDULE_C2_PAGES,(s,r)=>{const desc=txt(s,`C${r}`),val=num(s,`F${r}`);if(!desc&&!val)return null;const parts=desc.split(' / ');return{lawsuitDescription:parts[0]||desc,caseNumber:parts[1]||'',courtJurisdiction:txt(s,`C${r+1}`),claimantName:txt(s,`C${r+2}`),claimantAddress:txt(s,`C${r+3}`),claimantCityStateZip:txt(s,`C${r+4}`),dateFiled:dt(s,`E${r}`),amountOfClaim:val,wardPercent:pct(s,`G${r}`)}}),
-    scheduleC3:readRows(SCHEDULE_C3_PAGES,(s,r)=>{const defendantName=txt(s,`B${r}`),desc=txt(s,`C${r}`),val=num(s,`F${r}`);if(!desc)return null;const parts=desc.split(' / ');return{defendantName,actionDescription:parts[0]||desc,caseNumber:parts[1]||'',status:txt(s,`C${r+1}`),courtJurisdiction:txt(s,`C${r+2}`),actionDate:dt(s,`E${r}`),estimatedSettlement:val,wardPercent:pct(s,`G${r}`)}}),
+    // Milestone 72A: the first line is "defendant / type of action" and the
+    // fourth the case number, as the form instructs. Column B holds the
+    // entry's printed Line #; a workbook exported before 72A wrote the
+    // defendant over it (so it no longer holds a number) and put the case
+    // number after the description on the first line -- read that layout too.
+    scheduleC3:readRows(SCHEDULE_C3_PAGES,(s,r)=>{
+      const first=txt(s,`C${r}`),val=num(s,`F${r}`);
+      if(!first)return null;
+      const common={status:txt(s,`C${r+1}`),courtJurisdiction:txt(s,`C${r+2}`),actionDate:dt(s,`E${r}`),estimatedSettlement:val,wardPercent:pct(s,`G${r}`)};
+      const lineNo=rawv(s,`B${r}`);
+      if(!(typeof lineNo==='number'||/^\d+$/.test(String(lineNo??'').trim()))){
+        const parts=first.split(' / ');
+        return{defendantName:txt(s,`B${r}`),actionDescription:parts[0]||first,caseNumber:parts[1]||'',...common};
+      }
+      const cut=first.indexOf(' / ');
+      return{defendantName:cut<0?first:first.slice(0,cut),actionDescription:cut<0?'':first.slice(cut+3),caseNumber:txt(s,`C${r+3}`),...common};
+    }),
     scheduleC4:readRows(SCHEDULE_C4_PAGES,(s,r)=>{const name=txt(s,`C${r}`),val=num(s,`I${r}`);if(!name&&!val)return null;return{trustName:name,trusteeName:txt(s,`C${r+1}`),trusteeAddress:txt(s,`C${r+2}`),trusteeCityStateZip:txt(s,`C${r+3}`),dateCreated:dt(s,`E${r}`),accountNumber:txt(s,`F${r}`),trustType:txt(s,`H${r}`)||'Pooled',trustAmount:val,wardPercent:pct(s,`J${r}`)}}),
-    scheduleC5:readRows(SCHEDULE_C5_PAGES,(s,r)=>{const desc=txt(s,`C${r}`),val=num(s,`F${r}`);if(!desc&&!val)return null;return{assetDescription:desc,ownerAddress:txt(s,`C${r+1}`),ownerName:txt(s,`C${r+2}`),ownerCityStateZip:txt(s,`C${r+3}`),relationshipToWard:txt(s,`E${r}`),totalAssetValue:val,jointOwnerPercent:pct(s,`G${r}`)}}),
-    guardians:(()=>{const p3=ws('PART III');const gs=[];for(let i=0;i<3;i++){const b=7+i*6;const name=txt(p3,`F${b+1}`);if(!name&&i>0)continue;gs.push({signatureDate:dt(p3,`D${b}`),name,ssnEin:txt(p3,`B${b+2}`),streetAddress:txt(p3,`F${b+2}`),phone:txt(p3,`B${b+4}`),cityStateZip:txt(p3,`F${b+4}`)});}return gs.length?gs:[mk.guardian()];})(),
+    // Milestone 72A: name on the second line, street on the third, as the form
+    // instructs. A workbook exported before 72A has the two swapped and nothing
+    // in it says so; it imports with them swapped, visibly, for the filer to
+    // correct (AGENTS.md section 8 item 2: visible and one-time).
+    scheduleC5:readRows(SCHEDULE_C5_PAGES,(s,r)=>{const desc=txt(s,`C${r}`),val=num(s,`F${r}`);if(!desc&&!val)return null;return{assetDescription:desc,ownerName:txt(s,`C${r+1}`),ownerAddress:txt(s,`C${r+2}`),ownerCityStateZip:txt(s,`C${r+3}`),relationshipToWard:txt(s,`E${r}`),totalAssetValue:val,jointOwnerPercent:pct(s,`G${r}`)}}),
+    // Milestone 72A: each field is read from its box. A workbook exported
+    // before 72A holds the value on the caption row above it instead, so an
+    // empty box falls back to that cell -- unless it still holds the form's
+    // own caption, which is never a value.
+    guardians:(()=>{const p3=ws('PART III');const gs=[];for(let i=0;i<3;i++){
+      const g={};
+      for(const f of partIIIGuardianCells(i)){
+        const read=(a)=>f.date?dt(p3,a):txt(p3,a);
+        let v=read(f.box);
+        if(!v&&f.caption){const shown=txt(p3,f.caption);if(shown&&!isPrintedCaption(shown,f.text))v=read(f.caption);}
+        g[f.key]=v||(f.date?null:'');
+      }
+      if(!g.name&&i>0)continue;
+      gs.push(g);
+    }return gs.length?gs:[mk.guardian()];})(),
     // The same input-box addresses doSaveExcel() writes. Both sides used to
     // read and write the caption row instead, together, which is why the
     // round trip agreed with itself while the filed form was wrong.

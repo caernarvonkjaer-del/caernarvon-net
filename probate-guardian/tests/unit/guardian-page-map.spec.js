@@ -4,7 +4,10 @@ import { readFileSync } from 'node:fs';
 import {
   GUARDIAN_PAGED_SCHEDULES,
   GUARDIAN_NEVER_WRITTEN_SHEETS,
+  partIIIGuardianCells,
+  isPrintedCaption,
 } from '../../src/core/excel/guardian-inventory-pages.js';
+import { templateSheets } from './support/template-cells.js';
 
 // Drift guard between the Initial Inventory page maps and the shipped
 // workbook. The maps say which sheets each schedule spans; the workbook is the
@@ -100,5 +103,54 @@ describe('Initial Inventory page maps against the shipped workbook', () => {
         expect(new Set(p.rows).size, `${key} ${p.name} repeats a row`).toBe(p.rows.length);
       }
     }
+  });
+});
+
+// Milestone 72A. PART III's field table is the one place the exporter and the
+// importer learn where each guardian's details go, so it is checked against
+// the workbook here rather than trusted. The defect it replaced wrote every
+// field onto the caption row above its box, for the whole life of the form.
+describe('PART III guardian blocks against the shipped workbook', () => {
+  test("each caption cell holds the form's caption, and each box beneath it is an empty, writable cell", async () => {
+    const p3 = (await templateSheets('guardian')).get('PART III');
+    expect(p3, 'the workbook has a PART III sheet').toBeTruthy();
+    for (let i = 0; i < 3; i++) {
+      for (const f of partIIIGuardianCells(i)) {
+        const where = `guardian ${i + 1} ${f.key}`;
+        if (f.caption) expect(p3.cells.get(f.caption)?.text, `${where}: caption ${f.caption}`).toBe(f.text);
+        expect(p3.covered.has(f.box), `${where}: ${f.box} is not hidden inside a merge`).toBe(false);
+        if (i === 0 && f.key === 'name') {
+          // The one box the form fills itself; written over by decision (2026-10-01).
+          expect(p3.cells.get(f.box), "Guardian #1's name box links to the Cover").toEqual({ kind: 'FORMULA', text: "'SUMMARY I '!D23" });
+        } else {
+          expect(p3.cells.get(f.box), `${where}: ${f.box} is empty in the template`).toBeUndefined();
+        }
+      }
+    }
+  });
+
+  test('every box sits directly beneath its own caption', () => {
+    for (let i = 0; i < 3; i++) {
+      for (const f of partIIIGuardianCells(i).filter((x) => x.caption)) {
+        const [, bc, br] = /([A-Z]+)(\d+)/.exec(f.box);
+        const [, cc, cr] = /([A-Z]+)(\d+)/.exec(f.caption);
+        expect(bc, `${f.key} box and caption share a column`).toBe(cc);
+        expect(Number(br), `${f.key} box is the row beneath its caption`).toBe(Number(cr) + 1);
+      }
+    }
+  });
+
+  // The importer's fallback for workbooks exported before 72A reads the
+  // caption row only when it holds something other than the caption. A
+  // caption saved slightly differently by another program must still count
+  // as the caption, or the importer would read it in as a guardian's SSN.
+  test('a caption is recognized loosely, and a value is never mistaken for one', () => {
+    const caption = "Guardian #1's SSN / EIN";
+    expect(isPrintedCaption(caption, caption)).toBe(true);
+    expect(isPrintedCaption("  guardian #1’s   SSN / EIN ", caption), 'spaces, case and a curly apostrophe').toBe(true);
+    expect(isPrintedCaption('123-45-6789', caption)).toBe(false);
+    expect(isPrintedCaption('', caption), 'an empty cell is not the caption').toBe(false);
+    expect(isPrintedCaption(null, caption)).toBe(false);
+    expect(isPrintedCaption("Co-Guardian #2's SSN / EIN", caption), "another guardian's caption is not this one").toBe(false);
   });
 });

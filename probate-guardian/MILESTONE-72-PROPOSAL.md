@@ -2,7 +2,11 @@
 
 ## Status
 
-**Draft. It authorizes no change.**
+**Approved for build, 2026-10-02** ("Execute MS 72": every item, 72A–72J,
+in the build order below; each item pushed as it lands; decisions the
+proposal did not settle are taken, recorded in that item's Build record and
+reported at the end; the full regression runs from a copy on C:, once after
+72C and once at the end). Each item's Build record says what was built.
 - 72A–72F were settled 2026-10-01.
 - 72G–72J were added 2026-10-02 from the requester's browser review of
   Milestone 71.
@@ -35,7 +39,7 @@ recorded as **Pinellas Clerk practice**, not as a reading of a statute or rule
 
 | # | Item | What a filer sees today | Decision | Build |
 | --- | --- | --- | --- | --- |
-| 1 | 72A | The Inventory's Excel Part III prints each guardian's date, SSN/EIN, street, phone and city **over the form's printed captions**, and leaves the boxes beneath them empty | **DECIDED.** Put each value in its box. Keep writing Guardian #1's name, with a warning when it is not among the Cover's Guardian Name(s). Guard every export: no caption overwritten and no formula changed, and **every box the exporters write** gets a typed test value checked in its expected cell, with a few extra exports so Yes/No and dropdown boxes can't swap unnoticed | Not started |
+| 1 | 72A | The Inventory's Excel Part III prints each guardian's date, SSN/EIN, street, phone and city **over the form's printed captions**, and leaves the boxes beneath them empty | **DECIDED.** Put each value in its box. Keep writing Guardian #1's name, with a warning when it is not among the Cover's Guardian Name(s). Guard every export: no caption overwritten and no formula changed, and **every box the exporters write** gets a typed test value checked in its expected cell, with a few extra exports so Yes/No and dropdown boxes can't swap unnoticed | **Built** 2026-10-02 (see its Build record; four more defects found and fixed) |
 | 2 | 72B | A blank share on ten Inventory schedules silently counts as 0%, and a 0 share becomes blank when converted or when the Annual's Part VIII is exported. The Inventory attorney's primary email is marked required but never checked. **Six forms** collect a secondary attorney email that their models and the data model omit, and carry-over passes on only the primary | **DECIDED.** Require a share on every started row (0 allowed); keep 0 as 0 on every share path. Require the Inventory attorney's email once an attorney is entered. Every form's model, data model, carry-over and conversion keeps both attorney emails | Not started |
 | 3 | 72C | The Inventory and the Initial Plan have no guardian email. The Annual, Annual Plan and Plan for Minors collect it but never check it. The Simplified Accounting and Simplified Plan block without it. The Plan for Minors never checks the attorney's email. The Annual family and Annual Plan accept an attorney with no name, and the Simplified Plan's certificate can't find its attorney's name | **DECIDED.** Add it where it's missing. On all three accountings and all four Plans, a missing guardian email **warns, never blocks**, and only when no attorney is entered. "Attorney entered" means any attorney field, by one shared definition per form, and then the Annual family and Annual Plan also require the attorney's name. The Plan for Minors requires the attorney's email once an attorney is entered. The Simplified Plan's attorney stays optional, and its warning shows until the attorney's name and email are both entered. Its certificate is fixed to find the attorney | Not started |
 | 4 | 72D | With no attorney, the filed PDF prints an app-written sentence that no Clerk form has | **DECIDED.** Match the Clerk's forms: print the attorney block blank, as they do | Not started |
@@ -453,7 +457,128 @@ below covers both.
    probed: neither overwrites a caption. The Annual's F25 is the decided
    precedent for the name.
 
-### Build record — NOT STARTED
+### Build record — BUILT 2026-10-02
+
+**What a filer sees now.** The Inventory's Part III prints each guardian's
+details in the boxes beneath the form's captions, and the captions are back.
+Four more defects of the same kind turned up while building the guard and are
+fixed (below). An Inventory whose Guardian #1 is not among the Cover's Guardian
+Name(s) gets a warning in Preview & Export; an Annual whose Part I lists
+co-guardians no longer gets a false one.
+
+**Built as designed:**
+- Exporter and importer share one PART III field table,
+  `partIIIGuardianCells()` in `src/core/excel/guardian-inventory-pages.js`,
+  checked against the template by `tests/unit/guardian-page-map.spec.js`. The
+  importer reads each box and falls back to the caption row only when it holds
+  something other than the form's caption (`isPrintedCaption()`: spaces, case
+  and a curly apostrophe ignored).
+- The Guardian #1 warning (`form-derived-fields.js`, `nameAmong()`): the
+  conservative containment test, with the named hard cases in
+  `tests/unit/form-derived-fields.spec.js`.
+- The guard: `tests/e2e/support/workbook-vs-template.ts` (ExcelJS in the test
+  process; integrity, placement and completeness checks),
+  `tests/e2e/support/export-manifests.ts` (every box, with unique typed
+  values) and the write recorder (`excelWriteRecorder` in
+  `excel-engine.js`, `GuardianForms.testing.excelWrites`). Formulas are
+  compared exactly; ExcelJS's `cell.formula` gives a shared formula's own
+  expression in each cell.
+- `carry-balance-matches-prior.spec.ts` takes the decided list
+  (`DECIDED_OVERWRITES`) from the helper; its "not decided" note is gone.
+  `excel-write-targets.spec.js` names its blind spot: 186 of the exporters'
+  362 set(Date)Cell calls build their address at run time.
+
+**Found while building, and fixed** (each the same class as Part III: a value
+in a cell the form uses for something else, invisible to a round trip):
+1. **Inventory C-3 (lawsuits by the ward).** The defendant was written into
+   column B, over each entry's printed Line #, and the case number tacked onto
+   the first line. The form's instructions and its worked example agree:
+   first line "defendant / type of action" ("Big Chain Store / Negligence"),
+   then status, court, and the case number on the fourth line. Now written so;
+   the importer reads both layouts (an older file no longer has a number in
+   column B).
+2. **Inventory C-5 (joint owners).** The owner's street and name were swapped
+   against the form's instructions (line 2 the name, line 3 the street), so the
+   owner's address printed split around their name. Fixed. *Decision taken:* a
+   workbook exported before 72A imports with the two swapped -- nothing in the
+   file says which layout it is -- which is visible on the page and one-time
+   (AGENTS.md §8 item 2); no migration.
+3. **Annual county.** The county went to `PART I`!D23, a blank cell beside the
+   form's "Revision 11/17/2022" note. The form's county box is H2, its "Select
+   County" dropdown, which Part V's "Name of county" reads (`='PART I'!H2`).
+   So **every exported Annual, Final and Trust Accounting showed "Select
+   County" at the top of Part I and in the attorney's Part V**, since
+   Milestone 7. Now written to H2 (a blank county keeps the form's own prompt);
+   the importer falls back to D23 for older files. The Inventory (G3) and the
+   Simplified (G2) always wrote their county boxes.
+4. **Simplified certificate recipients.** The right-hand recipient boxes are
+   the merges I27:L27 … I35:L35; the exporter aimed at J, inside them, and the
+   values reached the boxes only through ExcelJS's merge redirect (AGENTS.md
+   §10, P1). No change to what a filer received; now written to I.
+5. **Latent: Inventory PART VI.** The certificate's own boxes were written
+   only when the recipient list had at least one card. No path empties it
+   today (D-5 keeps one card), so nothing filed was affected; now written
+   regardless, as the Annual and Simplified do.
+
+**Research on the printed line numbers** (asked during the build). On every
+Inventory schedule page, the rows the exporter writes are exactly the rows the
+page's own total adds and the rows carrying a printed Line #. The Clerk's
+workbook numbers two pages irregularly: B-1 page 1 prints no line numbers, and
+B-2 page 1 labels its six rows 2–7 with page 2 starting at 9 (no 1 or 8). Every
+slot is still reached (B-2 holds 39). The app's PDF prints no line numbers, so
+nothing a filer files disagrees. **Reported for the Clerk's office** (the
+requester): those labels could be corrected in the master workbook; the app
+does not change the Clerk's printed labels. The Annual's numbering is
+consecutive throughout, restarting per Schedule B-4 account block.
+
+**Decisions taken during the build** (reported for review):
+- The Annual's existing Guardian #1 warning moved onto the same containment
+  test, for consistency: identical names were required, so a Part I listing
+  co-guardians warned falsely.
+- C-3 and C-5 follow the form's printed instructions (C-3's example agrees).
+- B-1 keeps its current line order, which matches its instructions; its worked
+  example differs and is not followed. C-1's frequency stays in the form's own
+  frequency box (column G), the place its "Frequency of payment?" column asks
+  for it.
+- The guard's manifest addresses were read from the template and then each
+  one-off box was checked against the caption printed above or beside it
+  (all 228 match); schedule rows from each page's own total; columns from the
+  header captions.
+
+**Corrections to this proposal:**
+- "A filing at capacity prunes nothing" is untrue for the Annual: its
+  exporter never writes the schedules' continuation pages (each schedule is
+  capped at page 1; the PDF carries the rest), so those pages are always
+  pruned and their page totals rewritten. The guard therefore states the
+  allowed change independently: a formula may lose only the added terms that
+  name a page the export removed. The explicit expected-formula map stays
+  empty.
+- Yes/No and dropdown boxes need five exports in all for the Inventory (up to
+  22 Yes/No boxes on one page) and the Annual (16 on D-2), none extra for the
+  Simplified; estimated 2–3 extra, measured 4.
+- Noted, not built (a new capability, not a defect): the Annual's schedule
+  continuation pages are never written, so an Annual with more entries than a
+  schedule's first page holds must be filed as PDF, as the app already says.
+
+**Tests and evidence:**
+- `tests/e2e/excel-form-field-placement.spec.ts`: per form, three checks on a
+  capacity filing (integrity, placement, completeness) and four more coded
+  exports for the Inventory and the Annual; two import tests for workbooks
+  exported before 72A. Time on D:, the spec alone: Inventory about 30 s, then
+  about 9 s an export; Annual 56 s, then 19 s; Simplified 23 s; import tests
+  about 17 s each -- about 3.7 minutes in all. Each test's limit is about three
+  times that.
+- **Red-first**, each exporter stashed: 29 caption problems (the 15 PART III
+  captions and 14 C-3 Line #s), 89 misplaced values (PART III, C-3, C-5), 29
+  unlisted writes; the Annual's county ("Select County" in H2) and its D23
+  write; the Simplified's six writes aimed inside merges; both import tests;
+  and with `form-derived-fields.js` stashed, the co-guardian case and the
+  Inventory mismatch.
+- Unit suite: 163 files, 2,223 tests pass. `npm run check:types` passes.
+  `excel-form-field-placement.spec.ts` and `carry-balance-matches-prior.spec.ts`:
+  38 tests pass.
+- Indexes: `TEST-INDEX.md`, `file_index.md`, the 70T progress list, the
+  fixture inventory and the assertion-count baseline.
 
 ---
 

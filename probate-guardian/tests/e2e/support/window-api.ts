@@ -84,6 +84,8 @@ export interface GuardianFormsTesting {
   };
   status: { navChecks(): { checks: Record<string, boolean>; incomplete?: Record<string, unknown> }; progress(filingId: string): unknown };
   exportArchive: { caseFile(): Promise<Blob>; singleFiling(filingId: string): Promise<Blob> };
+  /** Milestone 72A: every cell an Excel export writes -- start() before Save as Excel, stop() after the download. */
+  excelWrites: { start(): void; stop(): Array<{ sheet: string; aimed: string; landed: string }> };
 }
 
 // window.GuardianForms as the runner sees it: the namespace (declared in

@@ -2,8 +2,8 @@
  "generatedBy": "node scripts/ms70-assertion-counts.mjs --write-baseline",
  "note": "Milestone 70 per-spec assertion counts (static expect calls). tests/unit/ms70-assertion-counts.spec.js fails when a spec falls below its count; lowering it requires --reason, recorded in dropLog. A tripwire, not proof of equivalence (decision D9).",
  "totals": {
-  "expects": 7197,
-  "tests": 2045
+  "expects": 7245,
+  "tests": 2062
  },
  "counts": {
   "tests/e2e/annotation-toolbar-containment.spec.ts": {
@@ -143,8 +143,8 @@
    "tests": 6
   },
   "tests/e2e/excel-form-field-placement.spec.ts": {
-   "expects": 71,
-   "tests": 8
+   "expects": 86,
+   "tests": 14
   },
   "tests/e2e/excel-import-cell-shapes.spec.ts": {
    "expects": 11,
@@ -767,8 +767,8 @@
    "tests": 39
   },
   "tests/unit/form-derived-fields.spec.js": {
-   "expects": 26,
-   "tests": 10
+   "expects": 46,
+   "tests": 18
   },
   "tests/unit/form-fields-legacy-delegation.spec.js": {
    "expects": 15,
@@ -819,8 +819,8 @@
    "tests": 5
   },
   "tests/unit/guardian-page-map.spec.js": {
-   "expects": 9,
-   "tests": 6
+   "expects": 22,
+   "tests": 9
   },
   "tests/unit/guardianship-options.spec.js": {
    "expects": 9,

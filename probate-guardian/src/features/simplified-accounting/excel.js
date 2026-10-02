@@ -210,16 +210,20 @@ export async function doSaveExcel(){
       setDateCell(p56,'H39',inv.certServiceDate);
       setCell(p56,'J39',inv.certIndicator||'');
       const r=inv.certRecipients;
+      // Milestone 72A: the right-hand recipient boxes are the merged I27:L27,
+      // I28:L28 ... -- I is each box's own cell. These used to be written to
+      // J, a covered member of the merge, and reached the box only because
+      // ExcelJS redirects such a write to the master (AGENTS.md section 10, P1).
       [[27,28,29,30],[27,28,29,30]].forEach((_,side)=>{
         const ri=r[side]||{};
-        const col=side===0?'B':'J';
+        const col=side===0?'B':'I';
         setCell(p56,`${col}27`,ri.name||'');
         setCell(p56,`${col}28`,ri.line2||'');
         setCell(p56,`${col}29`,ri.line3||'');
       });
       [[33,34,35,36],[33,34,35,36]].forEach((_,side)=>{
         const ri=r[side+2]||{};
-        const col=side===0?'B':'J';
+        const col=side===0?'B':'I';
         setCell(p56,`${col}33`,ri.name||'');
         setCell(p56,`${col}34`,ri.line2||'');
         setCell(p56,`${col}35`,ri.line3||'');
@@ -418,17 +422,17 @@ export async function importExcel(input){
         r[0].line2=gc56('B28');
         r[0].line3=gc56('B29');
         r[1]=r[1]||{};
-        r[1].name=gc56('J27');
-        r[1].line2=gc56('J28');
-        r[1].line3=gc56('J29');
+        r[1].name=gc56('I27');
+        r[1].line2=gc56('I28');
+        r[1].line3=gc56('I29');
         r[2]=r[2]||{};
         r[2].name=gc56('B33');
         r[2].line2=gc56('B34');
         r[2].line3=gc56('B35');
         r[3]=r[3]||{};
-        r[3].name=gc56('J33');
-        r[3].line2=gc56('J34');
-        r[3].line3=gc56('J35');
+        r[3].name=gc56('I33');
+        r[3].line2=gc56('I34');
+        r[3].line3=gc56('I35');
         getD().certRecipients=r;
       }
 

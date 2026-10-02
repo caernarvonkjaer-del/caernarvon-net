@@ -29,11 +29,25 @@
 //   the app's field is blank: the form derives it, and a warning would push
 //   the filer to fill in what the form fills for them.
 //
-// Annual family only. The Initial Inventory's bond cells are genuine input
-// boxes in its own template, so there is nothing derived there to disagree
-// with.
+// The Initial Inventory has one such cell too (Milestone 72A): 'PART III'!F8,
+// Guardian #1's name box, is the form's own ='SUMMARY I '!D23 -- the Cover's
+// Guardian Name(s). The app writes guardians[0].name over it, by the same
+// decision applied to the Inventory (2026-10-01), and warns the same way. Its
+// bond cells are genuine input boxes, so there is no bond advisory there.
+//
+// "Is Guardian #1 among the names?" is a containment test, not equality and
+// not a split (nameAmong() below): a Cover or Part I may list co-guardians
+// ("Jane Doe and John Doe"), and a name may itself hold a comma ("Smith,
+// Jr.", "Acme Trust Co., Inc."). Milestone 72A moved the Annual's rule onto
+// the same test -- it used to require the two to be identical, so listing a
+// co-guardian in Part I raised a false warning. Any doubt resolves to no
+// warning: a missed one costs nothing the printed form doesn't show, and a
+// false one teaches the filer to ignore the panel.
 
-const ANNUAL_ENGINE = new Set(['annual', 'finalAccounting', 'trustAccounting']);
+import { resolveDescriptorForInventoryType } from './filing-descriptor.js';
+
+/** The form engine a filing type runs on ('annual' for Final and Trust too), from the registry. */
+const engineOf = (type) => resolveDescriptorForInventoryType(type)?.engineId || '';
 
 /** A date as the workbook stores it: YYYY-MM-DD, or '' when absent. */
 function asDay(value) {
@@ -44,6 +58,24 @@ function asDay(value) {
 }
 
 const asName = (value) => String(value || '').trim().replace(/\s+/g, ' ');
+
+/** A name reduced for comparison: case folded; . , ; & / and runs of spaces become one space. */
+const nameWords = (value) => String(value ?? '').replace(/[‘’]/g, "'").toLowerCase()
+  .replace(/[.,;&\/]/g, ' ').replace(/\s+/g, ' ').trim();
+
+/**
+ * Whether `name` appears in `names` as a run of whole words, after both are
+ * reduced by nameWords(). "Robert T. Nguyen" is among "Robert T. Nguyen,
+ * Esq."; "Jane Doe" is among "Jane Doe and John Doe"; "R. M. Alvarez" is not
+ * among "Rachel Alvarez". A blank on either side is never "not among" -- the
+ * callers stay silent then.
+ */
+export function nameAmong(name, names) {
+  const a = nameWords(name);
+  const b = nameWords(names);
+  if (!a || !b) return true;
+  return ` ${b} `.includes(` ${a} `);
+}
 
 /**
  * Advisories for each form-derived cell the filing overwrites with something
@@ -57,7 +89,9 @@ const asName = (value) => String(value || '').trim().replace(/\s+/g, ' ');
  */
 export function formDerivedOverwriteWarnings(filing, descriptor = null) {
   const type = descriptor?.inventoryType || filing?.inventoryType || '';
-  if (!ANNUAL_ENGINE.has(type)) return [];
+  const engine = engineOf(type);
+  if (engine === 'guardian') return inventoryWarnings(filing);
+  if (engine !== 'annual') return [];
 
   const out = [];
 
@@ -86,7 +120,7 @@ export function formDerivedOverwriteWarnings(filing, descriptor = null) {
 
   const guardianOne = asName(filing?.guardians?.[0]?.name);
   const partOne = asName(filing?.guardian);
-  if (guardianOne && partOne && guardianOne !== partOne) {
+  if (guardianOne && partOne && !nameAmong(guardianOne, partOne)) {
     out.push({
       code: 'form-derived.guardian-name',
       severity: 'advisory',
@@ -100,6 +134,23 @@ export function formDerivedOverwriteWarnings(filing, descriptor = null) {
   }
 
   return out;
+}
+
+/** The Initial Inventory's one derived cell: Guardian #1's name box (Milestone 72A). */
+function inventoryWarnings(filing) {
+  const guardianOne = asName(filing?.guardians?.[0]?.name);
+  const cover = asName(filing?.guardianName);
+  if (!guardianOne || !cover || nameAmong(guardianOne, cover)) return [];
+  return [{
+    code: 'form-derived.guardian-name',
+    severity: 'advisory',
+    field: 'guardians.0.name',
+    entered: guardianOne,
+    derived: cover,
+    message: `D-1 — Guardian #1 (${guardianOne}) is not among the Guardian Name(s) on the Cover (${cover}). `
+      + "The court's form fills Guardian #1's name from the Cover; this filing will be exported with Guardian #1's name as entered. "
+      + 'Confirm which is right before filing.',
+  }];
 }
 
 // One consumer -- output-preflight.js -- which imports it. (Deliberately never

@@ -72,6 +72,7 @@ import { casesGroupingWards, createCase, getOrCreateCaseForWard, resolveCase } f
 import { ensureWardPartyForFiling, wardPartyForFiling } from '../navigation/ward-county.js';
 import { adaptValidationErrors } from '../validation/validation-adapter.js';
 import { prepareFilingOutput } from '../filing/output-preflight.js';
+import { excelWriteRecorder } from '../excel/excel-engine.js';
 
 export const TEST_MODE_FLAG = '__GUARDIAN_FORMS_TEST_MODE__';
 
@@ -543,6 +544,17 @@ export function createTestingAdapter(w, impl = applicationImplementations()) {
        * (Milestone 70, 70K; it was visible as window.validate<Type> appearing).
        */
       loadedFeatures: () => copy(call('loadedFeatures')),
+    }),
+    /**
+     * Milestone 72A. Every cell an Excel export writes, for the export guard
+     * (tests/e2e/excel-form-field-placement.spec.ts): start() before clicking
+     * Save as Excel, stop() after the download to get [{sheet, aimed,
+     * landed}] -- landed differs from aimed when the address was a covered
+     * member of a merged range. See excelWriteRecorder in excel-engine.js.
+     */
+    excelWrites: Object.freeze({
+      start: () => excelWriteRecorder.start(),
+      stop: () => copy(excelWriteRecorder.stop()),
     }),
     exportArchive: Object.freeze({
       caseFile: async () => (await call('buildCaseFileBlob')).blob,   // a fresh Blob

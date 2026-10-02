@@ -83,6 +83,46 @@ export const SCHEDULE_C5_PAGES = Object.freeze([
   page('C-5 JOINT OWNERS pg 3', [7, 12, 17, 22, 27, 32, 37, 42]),
 ]);
 
+// Milestone 72A. PART III signs up to three guardians, in blocks starting on
+// rows 7, 13 and 19. Each block prints its captions on one row and the box on
+// the row beneath -- "Date" over D8, "Guardian #1's SSN / EIN" over B10 -- so
+// a field's box is never its caption's cell. The exporter used to write every
+// field but the name onto the caption row, and the importer read the same
+// cells back, so the round trip agreed with a form whose fifteen captions had
+// been replaced. The captions are the workbook's own text, read with a parser;
+// tests/unit/guardian-page-map.spec.js checks each against the template.
+const PART_III_SIGNER = Object.freeze(['Guardian #1', 'Co-Guardian #2', 'Co-Guardian #3']);
+export const PART_III_BLOCK_ROWS = Object.freeze([7, 13, 19]);
+
+/**
+ * The cells of guardian block `i` (0-2): for each field, its box and, where
+ * the form prints one, the caption cell above it and the caption's text.
+ * The name has no caption to fall back to: it has always been written to its
+ * box (F8 is the form's own link to the Cover, overwritten by decision).
+ */
+export function partIIIGuardianCells(i) {
+  const b = PART_III_BLOCK_ROWS[i];
+  const who = PART_III_SIGNER[i];
+  return Object.freeze([
+    Object.freeze({ key: 'signatureDate', box: `D${b + 1}`, caption: `D${b}`, text: 'Date', date: true }),
+    Object.freeze({ key: 'name', box: `F${b + 1}`, caption: null, text: null, date: false }),
+    Object.freeze({ key: 'ssnEin', box: `B${b + 3}`, caption: `B${b + 2}`, text: `${who}'s SSN / EIN`, date: false }),
+    Object.freeze({ key: 'streetAddress', box: `F${b + 3}`, caption: `F${b + 2}`, text: `${who}'s Street Address`, date: false }),
+    Object.freeze({ key: 'phone', box: `B${b + 5}`, caption: `B${b + 4}`, text: `${who}'s Phone Number`, date: false }),
+    Object.freeze({ key: 'cityStateZip', box: `F${b + 5}`, caption: `F${b + 4}`, text: `${who}'s City / State / Zip Code`, date: false }),
+  ]);
+}
+
+const captionForm = (s) => String(s ?? '').replace(/[‘’]/g, "'").replace(/\s+/g, ' ').trim().toLowerCase();
+
+/**
+ * Whether a cell's text is the form's own printed caption. Compared loosely
+ * (spaces, letter case, curly or straight apostrophe), so a caption another
+ * program saved slightly differently is still recognized as the caption --
+ * never read in as a guardian's SSN or address.
+ */
+export const isPrintedCaption = (cellText, caption) => captionForm(cellText) !== '' && captionForm(cellText) === captionForm(caption);
+
 /** Every paged schedule, keyed by the inventory field that fills it. */
 export const GUARDIAN_PAGED_SCHEDULES = Object.freeze([
   Object.freeze({ key: 'scheduleA1', pages: SCHEDULE_A1_PAGES }),

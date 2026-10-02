@@ -207,7 +207,15 @@ export async function doSaveExcel(){
       // member to its master, so this used to replace that prompt. The box is
       // the row beneath.
       setCell(p1,'I13',inv.relatedCaseNumbers);
-      setCell(p1,'D23',inv.county||'');
+      // Milestone 72A (found during build): the county box is H2, the form's
+      // "Select County" dropdown at the top of Part I -- and Part V's "Name of
+      // county" (='PART I'!H2) reads it. The county used to go to D23, a blank
+      // cell beside the form's "Revision 11/17/2022" note, so every exported
+      // Annual, Final and Trust Accounting showed "Select County" at the top
+      // and in the attorney's Part V. The Inventory (SUMMARY I G3) and the
+      // Simplified (PARTS I, II G2) always wrote their own county boxes. A
+      // blank county leaves the form's own "Select County" prompt.
+      if(String(inv.county||'').trim())setCell(p1,'H2',inv.county);
     }
 
     // PART II, III
@@ -634,7 +642,10 @@ export async function importExcel(input){
         // Milestone 40C-A item 5: an imported workbook with no county leaves the
         // filing blank rather than acquiring Pinellas. An explicit workbook
         // county is preserved exactly.
-        D.county=gcStr(p1,'D23')||'';
+        // Milestone 72A: from the county box, H2. A workbook exported before
+        // 72A left H2 at the form's "Select County" and put the county in D23.
+        const countyBox=gcStr(p1,'H2');
+        D.county=(countyBox&&countyBox.trim().toLowerCase()!=='select county'?countyBox:gcStr(p1,'D23'))||'';
         D.relatedCaseNumbers=gcStr(p1,'I13');
       }
 

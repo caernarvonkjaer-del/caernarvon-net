@@ -130,6 +130,33 @@ export function sanitizeCellValue(str) {
   return s;
 }
 
+// Milestone 72A: a record of every cell the exporters write, for the export
+// guard in tests/e2e/excel-form-field-placement.spec.ts. Off (null) unless a
+// test switches it on through GuardianForms.testing.excelWrites, which exists
+// only when the app is started in test mode. About half of the exporters'
+// write addresses are built while the export runs (`F${b+1}`, a page table's
+// row), so no reading of the source can list them; this is how the guard
+// learns every write, wherever its address came from.
+//
+// It records the cell a write was aimed at and the cell it landed on. They
+// differ when the address is a covered member of a merged range: ExcelJS
+// redirects the write to the range's master, which is how Simplified's period
+// dates once landed on the =H4 formula in D14 (AGENTS.md section 10, P1).
+/** @type {Array<{sheet: string, aimed: string, landed: string}> | null} */
+let writeRecord = null;
+
+/** Test only (see above): start a fresh record, or stop and hand it back. */
+export const excelWriteRecorder = Object.freeze({
+  start() { writeRecord = []; },
+  /** @returns {Array<{sheet: string, aimed: string, landed: string}>} */
+  stop() { const out = writeRecord || []; writeRecord = null; return out; },
+});
+
+function recordWrite(sheet, addr, cell) {
+  if (!writeRecord) return;
+  writeRecord.push({ sheet: String(sheet?.name ?? ''), aimed: String(addr), landed: String(cell?.master?.address ?? cell?.address ?? addr) });
+}
+
 /**
  * Safely sets a worksheet cell's value, handling nulls, numbers, and sanitized text.
  * @param {any} sheet
@@ -147,6 +174,7 @@ export function setCell(sheet, addr, value) {
   } else {
     cell.value = sanitizeCellValue(String(value));
   }
+  recordWrite(sheet, addr, cell);
   return cell;
 }
 
@@ -238,6 +266,8 @@ export function setDateCell(sheet, addr, value) {
   const cell = sheet.getCell(addr);
   cell.value = serial;
   if (!isDateNumFmt(cell.numFmt)) cell.numFmt = 'mm/dd/yy;@';
+  // (The other branches above go through setCell(), which records them.)
+  recordWrite(sheet, addr, cell);
   return cell;
 }
 
