@@ -19,6 +19,10 @@
   Plan's certificate finds its attorney. The export guard catches swapped
   Yes/No and dropdown boxes and changed formulas. The migrations run where
   the app's migrations already run.
+- It was revised a fourth time the same day after a review by Antigravity.
+  Most of its points were already covered or did not hold. One led to a
+  real gap: Convert reads its source without opening it, so it now applies
+  the same one-time rules to a source not yet opened since the change.
   See [Independent review](#independent-review-codex-2026-10-02).
 
 Building any item still needs the requester's named approval of that item
@@ -62,9 +66,10 @@ recorded as **Pinellas Clerk practice**, not as a reading of a statute or rule
   under "Reported, not reproduced"). Each finding was checked against the
   code, the Clerk's workbooks and the rule text before being written up here.
   Where the review's account differed from what was found, that item says so.
-- **Three rounds of independent review of this proposal by Codex,
-  2026-10-02.** Every point was checked against the code before the plan
-  changed. See [Independent review](#independent-review-codex-2026-10-02).
+- **Three rounds of independent review of this proposal by Codex, and
+  one by Antigravity, 2026-10-02.** Every point was checked against the
+  code before the plan changed, and points that did not hold are recorded
+  with the reason. See [Independent review](#independent-review-codex-2026-10-02).
 
 ### Decisions already made (the requester)
 
@@ -93,6 +98,7 @@ recorded as **Pinellas Clerk practice**, not as a reading of a statute or rule
 | Yes/No and dropdown boxes in the export guard (10-02, third review; re-asked at its added cost) | A few extra exports per form, so that every Yes/No and dropdown box on a sheet has its own pattern of answers and a swap is caught. Estimated to add 1–3 minutes on D: (about half on C:), measured at build. Checking one box at a time (hundreds of exports) was ruled out |
 | The attorney's name on the Annual family and the Annual Plan (10-02, third review) | Required once any attorney detail is entered, as on the other five forms. The Annual Plan keeps requiring the primary email |
 | The Simplified Plan's attorney (10-02, third review) | Optional, as today: the court's Simplified Plan has no attorney section, and the app prints none (Milestone 61E). The guardian-email warning keeps showing until the attorney's name and primary email are both entered. Nothing new blocks export |
+| Converting a filing not yet opened since the change (10-02, Antigravity review) | The one-time rules stay where they run today, when a filing opens. Convert reads a source that hasn't been opened since as if they had run, without changing the source, so the new filing gets the old certificate's attorney details and the ward's status. A never-opened filing's percent complete on the dashboard may read one section low until it is first opened |
 | The Simplified Plan certificate's attorney name (10-02, third review) | Fixed in 72C: the certificate reads the form's own attorney name. A certificate already signed while it defaulted to the guardian stays the guardian's (that choice is saved once) |
 | The sidebar's NET ASSETS finding (10-02) | Not reproduced; dropped, with no test added |
 
@@ -148,6 +154,20 @@ at the second review as addressed. Every point was checked:
 | 6 | **The migration hook's location is wrong**: `form-runtime.js` holds generic DOM and form helpers, not on-open passes. | **Confirmed.** Opening a filing runs `normalizeWardData()` (`normalize-filing.js`, from `state.js`'s `setActiveFiling()`). Form-specific migrations run in each feature's `mount()`, as `migrateBondDepository()` does (Inventory `index.js` near 181, Annual near 144), and again after an Excel import (Inventory `excel.js` near 615, Annual near 906). | A new pure module, `src/core/filing/certificate-migrations.js`, called from the affected `mount()`s once the filing is active (Build order; 72C step 10, 72G step 5, 72H step 6) |
 | 7 | **`file_index.md` describes 72A's older coverage** ("a marked value on every template page"). | **Confirmed.** | Row rewritten |
 
+### Antigravity review (same day)
+
+Verdict as received: well researched, with four remaining risks to resolve
+before building. Each was checked against the code, and not accepted on its
+own say-so:
+
+| # | Antigravity's point | Checked | What changed |
+| --- | --- | --- | --- |
+| 1 | **Migrations in `mount()` are bypassed by the dashboard's direct PDF and Excel exports and by headless batch scripts.** Fix: run them in `normalizeWardData()` or `setActiveFiling()`. | **Not as stated.** The dashboard's PDF action is `quickExportPdf()` (`dashboard/index.js` near 380): it opens the filing and goes to its `/print` page, which each form serves from `mount()` (Inventory `index.js` near 204, Annual near 172, Simplified near 219), after the mount-time passes. No batch script evaluates filings (`scripts/` holds build and measurement tools). The proposed fix runs at the same moment: `normalizeWardData()` is called only from `setActiveFiling()` (`state.js` near 97), when a filing is opened, never across a case on load. It would reach no filing `mount()` misses. **A real gap nearby (mine):** Convert reads its source straight from the case (`convertExistingWard()`, `conversion.js` near 304), without opening it. Today, Inventory → Annual fills a blank attorney Bar number from the old certificate's (near 184), and Inventory → Simplified copies all four old details (near 211–219). As 72H was written, both would stop, and a source not opened since 72H would lose them. New Filing from Existing reads none of these fields (`carry-over.js`), and New Year keeps them with the filing. The dashboard's percent complete is also read from unopened filings (`filingProgress()`, `filing-registry.js` near 225). | Decision (the requester, 10-02): Convert applies the same rules to an unopened source, read-only (72G step 6, 72H step 6) |
+| 2 | **A blank share may be coerced to 0%** by a form binding or loose number parsing. | **Already handled.** Clearing the Inventory's share box stores `''`, never 0 (`guardian-inventory/form-binding.js` near 89–97, Milestone 71C; `parseStoredDecimal()` returns `''` for an empty entry). A blank workbook cell imports as `''` (`shareFromWorkbookCell()`, `share-cell.js` near 28). 72B already defines blank as `''`, `null` or `undefined`. | None |
+| 3 | **The Simplified Plan signer pin could conflict** between the attorney's signature block and the guardian's certifier block when there is no signature image. | **Does not apply.** The Simplified Plan prints no attorney signature block (Milestone 61E; the data model's `plan_simplified attorney_*` notes). The pin is triggered by a signature date or an applied "/s/", not only an image, and it keeps the certificate printing what it printed before. | None |
+| 4 | **72A's guard may exceed Playwright's time limit on D:**; add `test.setTimeout(120_000)`. | **A real gap; the suggested fix is wrong.** The suite's limit is 60 s (`playwright.config.ts` near 113), and this spec's existing export tests already set 180–240 s each (near lines 89–249). A flat 120 s would be lower. The proposal had not said how the guard's checks are split into tests or what limit each gets. | 72A step 4: one test per form and per check, each with an explicit limit measured on D: |
+| — | Smaller points: normalize the 72A importer's caption comparison; type the new `tests/e2e/support` helper or use `// @ts-nocheck`; run `verify:data-model` for the email rows; keep the sidebar from requiring the guardian email. | The template's Part III captions are clean (read with a parser: no stray spaces). Normalizing is cheap insurance against reading a caption as a guardian's SSN, so it is adopted. The other three are already in the plan (72A checklist item 4, the Verification plan, 72C step 5). Its agreement on 72D, 72I and 72J needs no change. | 72A step 2 |
+
 ---
 
 ## Build order and file overlap
@@ -162,8 +182,8 @@ at any point).
 | 72B | `src/features/guardian-inventory/index.js` (validator), every model in `src/core/filing/models/` with an attorney (`guardian.js`, `annual.js`, `simplified.js`, `plan-initial.js`, `plan-annual.js`, `plan-minor.js`), `src/core/filing/conversion.js` (share mappings, both attorney emails), `src/core/filing/carry-over.js` (`extractCarryIdentity()` and every destination), `src/features/annual-accounting/excel.js` (Part VIII), CSV | new `tests/unit/inventory-required-share-and-email.spec.js`, new `tests/unit/share-zero-paths.spec.js`, new `tests/unit/attorney-emails-carry.spec.js`, `tests/baseline/ms70-conversion-golden.json`, `ms70-70C-filing-shapes.json` |
 | 72C | Inventory `index.js` (D-1 field, the three lists), `models/guardian.js`, `models/plan-initial.js`, `models/plan-simplified.js` (the signer marker), Inventory `pdf-model.js`, `src/core/filing/unrepresented-filing.js`, `src/core/filing/output-preflight.js` (the Plans' warnings), `src/core/validation/attorney-block.js` (Plan entries, the Simplified Plan's represented test), Simplified `index.js`, Annual `index.js` (the attorney's name), `src/core/status/completion.js` (`a-p5`, `pa-p11`, `pm-p7`), `src/core/filing/readiness-config.js` (re-read), `carry-over.js`, `conversion.js`, the four `plan-*/index.js` (incl. the Simplified Plan's certificate configuration) and `pdf-model.js`, new `src/core/filing/certificate-migrations.js` (the signer pin; 72H and 72G add theirs), CSV | new `tests/unit/guardian-email-advisory.spec.js`, new `tests/unit/plan-attorney-started.spec.js`, new `tests/e2e/guardian-email-advisory.spec.ts`, `tests/unit/attorney-block.spec.js`, `tests/unit/plan-certificate-of-service.spec.js`, `tests/e2e/plan-certificate-of-service.spec.ts`, `tests/unit/plan-annual-parity.spec.js`, `tests/unit/checklist-export-parity.spec.js`, `ms70-completion-golden.json`, `ms70-70C-filing-shapes.json` |
 | 72D | `unrepresented-filing.js`, the three accounting `pdf-model.js` files | `tests/unit/attorney-optional.spec.js`, `tests/e2e/attorney-optional-export.spec.ts` |
-| 72H | Inventory `index.js` (D-5 page, its "Discard old details" action), `pdf-model.js`, `excel.js` (`PART VI`, importer); Simplified `index.js` (Part VI page and action), `pdf-model.js`, `excel.js`; `models/guardian.js` and `models/simplified.js` (the migration marker); `src/core/filing/certificate-migrations.js` (the once-only fill and the import comparison), called from the Inventory's and the Simplified's `mount()` and used by their importers; `conversion.js` (near 167, 211–219, 238–242); `src/core/validation/attorney-block.js`; `form-derived-fields.js` (the name warning); `output-preflight.js`; CSV | new `tests/unit/certificate-attorney.spec.js`, new `tests/e2e/certificate-old-details.spec.ts`; every spec that names `serviceAttorney` or `certAtty…` today: `tests/e2e/attorney-optional-export.spec.ts`, `excel-form-field-placement.spec.ts`, `navigation-status.contract.spec.ts`, `pdf-accessibility-and-signatures.spec.ts`, `pdf-form-specific.spec.ts`, `pdf-structure-tags.spec.ts`, `signature-capture.contract.spec.ts`, `tests/e2e/support/fixtures.ts`, `tests/unit/attorney-optional.spec.js`, `pdf-model-column-integrity.spec.js`, `signature-block-fields.spec.js`, `tests/capture/guide-screenshots.capture.ts`; `ms70-conversion-golden.json` |
-| 72G | the three accountings' `index.js`, `pdf-model.js` and `excel.js` (Annual `PART X`!K23, Simplified J39, importers), `src/core/filing/plan-certificate-of-service.js`, `src/core/form/plan-certificate-of-service-page.js`, `completion.js`, `conversion.js` (every certificate mapping), `carry-over.js` (certificate fields into a new filing), **`src/core/filing/filing-years.js`** (`resetYearlyFieldsForNewYear()`, all seven branches), `output-preflight.js` (the method warning), `certificate-migrations.js` (the ward-status move and the import reading of the box), called from the Annual's and the Simplified's `mount()` and used by their importers, the models (`guardian.js`, `annual.js`, `simplified.js`, the four Plan models), CSV | `tests/unit/plan-certificate-of-service.spec.js`, `tests/e2e/plan-certificate-of-service.spec.ts`, `excel-form-field-placement.spec.ts`, `pdf-form-specific.spec.ts`, `pdf-structure-tags.spec.ts`, `tests/unit/guardian-inventory-64a1-validation.spec.js`, `guardian-inventory-pdf-model.spec.js`, `field-kind-inference.spec.js`, `tests/e2e/support/fixtures.ts`, `guide-screenshots.capture.ts`; the goldens `ms70-70C-filing-shapes.json`, `ms70-completion-golden.json`, `ms70-conversion-golden.json`, `ms70-year-rollover-golden.json`; new `tests/unit/service-method.spec.js`, `tests/e2e/certificate-service-method.spec.ts` |
+| 72H | Inventory `index.js` (D-5 page, its "Discard old details" action), `pdf-model.js`, `excel.js` (`PART VI`, importer); Simplified `index.js` (Part VI page and action), `pdf-model.js`, `excel.js`; `models/guardian.js` and `models/simplified.js` (the migration marker); `src/core/filing/certificate-migrations.js` (the once-only fill and the import comparison), called from the Inventory's and the Simplified's `mount()`, and used by their importers and, read-only, by Convert for an unopened source; `conversion.js` (near 167, 211–219, 238–242); `src/core/validation/attorney-block.js`; `form-derived-fields.js` (the name warning); `output-preflight.js`; CSV | new `tests/unit/certificate-attorney.spec.js`, new `tests/e2e/certificate-old-details.spec.ts`; every spec that names `serviceAttorney` or `certAtty…` today: `tests/e2e/attorney-optional-export.spec.ts`, `excel-form-field-placement.spec.ts`, `navigation-status.contract.spec.ts`, `pdf-accessibility-and-signatures.spec.ts`, `pdf-form-specific.spec.ts`, `pdf-structure-tags.spec.ts`, `signature-capture.contract.spec.ts`, `tests/e2e/support/fixtures.ts`, `tests/unit/attorney-optional.spec.js`, `pdf-model-column-integrity.spec.js`, `signature-block-fields.spec.js`, `tests/capture/guide-screenshots.capture.ts`; `ms70-conversion-golden.json` |
+| 72G | the three accountings' `index.js`, `pdf-model.js` and `excel.js` (Annual `PART X`!K23, Simplified J39, importers), `src/core/filing/plan-certificate-of-service.js`, `src/core/form/plan-certificate-of-service-page.js`, `completion.js`, `conversion.js` (every certificate mapping), `carry-over.js` (certificate fields into a new filing), **`src/core/filing/filing-years.js`** (`resetYearlyFieldsForNewYear()`, all seven branches), `output-preflight.js` (the method warning), `certificate-migrations.js` (the ward-status move and the import reading of the box), called from the Annual's and the Simplified's `mount()`, and used by their importers and, read-only, by Convert for an unopened source, the models (`guardian.js`, `annual.js`, `simplified.js`, the four Plan models), CSV | `tests/unit/plan-certificate-of-service.spec.js`, `tests/e2e/plan-certificate-of-service.spec.ts`, `excel-form-field-placement.spec.ts`, `pdf-form-specific.spec.ts`, `pdf-structure-tags.spec.ts`, `tests/unit/guardian-inventory-64a1-validation.spec.js`, `guardian-inventory-pdf-model.spec.js`, `field-kind-inference.spec.js`, `tests/e2e/support/fixtures.ts`, `guide-screenshots.capture.ts`; the goldens `ms70-70C-filing-shapes.json`, `ms70-completion-golden.json`, `ms70-conversion-golden.json`, `ms70-year-rollover-golden.json`; new `tests/unit/service-method.spec.js`, `tests/e2e/certificate-service-method.spec.ts` |
 | 72I | `unrepresented-filing.js`, the Inventory's and the Annual's Cover wiring | new `tests/e2e/guardian-advocate-hint.spec.ts` |
 | 72J | the three accountings' validators | a unit case per engine |
 | 72E | Annual `index.js` | new `tests/e2e/signed-amount-keypad.spec.ts` |
@@ -268,6 +288,10 @@ below covers both.
    exported before this fix: when a box is empty and its caption cell holds
    anything other than the template's own caption, it reads the caption
    cell. Under AGENTS.md §8 item 2, a cheap migration is written.
+   - The caption is compared loosely: spaces trimmed and collapsed, case
+     ignored, and ' and ’ treated alike. A caption saved slightly
+     differently by another program is still recognized as the caption,
+     never read in as a guardian's SSN or address (Antigravity review).
 3. **Guardian #1's name box, with a warning.** The exporter keeps writing
    `guardians[0].name` to F8.
 
@@ -377,6 +401,13 @@ below covers both.
    The manifest is the larger cost: several hundred entries, kept current
    whenever an exporter changes. The completeness check makes a stale
    manifest fail loudly rather than quietly.
+
+   **Time limits** (Antigravity review). Each form's checks run as
+   separate tests: integrity, placement, and each extra Yes/No and
+   dropdown export. Each test sets its own `test.setTimeout()`, from its
+   measured time on D: with headroom, as this spec's export tests already
+   do (180–240 s). The suite's 60 s default (`playwright.config.ts`) is
+   not raised.
 5. `carry-balance-matches-prior.spec.ts` keeps its own formula check but
    takes the decided list from the new helper. Its comment calling F8 "not
    decided" is corrected.
@@ -1321,6 +1352,14 @@ which was false (Independent review, point 1).*
    - Implementation: `conversion.js` (every certificate mapping),
      `carry-over.js` (certificate fields into a new filing), and all seven
      branches of `filing-years.js`'s `resetYearlyFieldsForNewYear()`.
+   - **A source not yet opened since 72G** (decided at the Antigravity
+     review). Convert reads its source without opening it, so step 5's move
+     may not have run. A same-period conversion reads the source's ward
+     status as the move would leave it: `certWardStatus`, or, while the
+     source's `certIndicatorMigrated` is unset, an exact ward-status value
+     in its `certIndicator`. It uses the same function from
+     `certificate-migrations.js`, read-only: the source is not changed or
+     logged until it is opened.
    - **The year-rollover golden's note first states the intended behavior**:
      after New Year, every certificate field except the recipients is
      blank. The golden is then regenerated, and its diff reviewed against
@@ -1370,6 +1409,9 @@ which was false (Independent review, point 1).*
      - the ward-status requirement on all three accountings;
      - the exact-match migration (a ward-status value moves; "mailed"
        stays; a second open changes nothing; the log entry holds no value);
+     - a same-period conversion from a source not yet opened since 72G
+       carries an exact ward-status value from its old box, and leaves the
+       source unchanged;
      - **every cell of the lifecycle table**, for each conversion path and
        for each of the seven New Year branches;
      - the import reading of the box: each ward-status value, "mailed",
@@ -1563,6 +1605,18 @@ independent review (point 2).*
    - **Conversions stop writing them.** `conversion.js` near 167, 211–219
      and 238–242 map only the filing attorney's fields, so a converted
      filing starts with nothing to note.
+   - **A source not yet opened since 72H** (decided at the Antigravity
+     review). Convert reads its source without opening it, so the fill
+     above may not have run. While the source's `certAttorneyMigrated` is
+     unset, the conversion reads the filing attorney's details as the fill
+     would leave them: each blank D-2 or Part V field taken from the old
+     certificate's. It uses the same function from
+     `certificate-migrations.js`, read-only: the source is not changed or
+     logged until it is opened.
+     - This keeps what Inventory conversions carry today: Inventory →
+       Annual fills a blank Bar number from the old certificate's (near
+       184), and Inventory → Simplified copies all four details (near
+       211–219). It now covers all four fields in every direction.
 7. **No attorney** (a guardian certifies): unchanged from 71B.
 8. **Importing a workbook** (third review, point 2). A workbook exported
    before 72H can hold certificate details that differ from the filing
@@ -1627,7 +1681,11 @@ independent review (point 2).*
      - the import comparison (step 8): the same, the certificate blank, the
        filing attorney blank, both different, and a difference in spaces
        only;
-     - the conversions writing no `certAtty…` or `serviceAttorney` detail.
+     - the conversions writing no `certAtty…` or `serviceAttorney` detail;
+     - a conversion from an Inventory or a Simplified not yet opened since
+       72H, with a blank D-2 or Part V Bar number and the old certificate's
+       filled, carrying that Bar number into the new filing, and leaving
+       the source unchanged.
    - Extended: `tests/e2e/excel-form-field-placement.spec.ts`. A Bar number
      typed on D-2 appears in the PDF certificate and in the exported `PART
      VI`!B29, read with ExcelJS.
@@ -1647,7 +1705,10 @@ independent review (point 2).*
    - **Red-first:** D-5's own value prints, and the conversion writes
      `certAtty…`. With the importer reading only the filing attorney's
      boxes (the design as first written), a differing certificate value is
-     lost, and the Inventory's blank D-2 Bar number stays blank.
+     lost, and the Inventory's blank D-2 Bar number stays blank. With
+     conversions mapping only D-2 (the design as first written), an
+     unopened Inventory's old certificate Bar number is lost from the new
+     Annual.
    - `ms70-conversion-golden.json` is regenerated with a note.
    - `TEST-INDEX.md`.
 5. **Export/import.** The Inventory's `PART VI` and the Simplified's
