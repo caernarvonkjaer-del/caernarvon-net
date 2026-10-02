@@ -2,10 +2,16 @@
 
 ## Status
 
-**Draft, 2026-10-01; items 72G–72J added 2026-10-02. It authorizes no
-change.** Every decision below was settled by the requester on 2026-10-01 or
-2026-10-02. Building any item still needs the requester's named approval of
-that item (AGENTS.md §3).
+**Draft. It authorizes no change.**
+- 72A–72F were settled 2026-10-01.
+- 72G–72J were added 2026-10-02 from the requester's browser review of
+  Milestone 71.
+- The whole plan was revised 2026-10-02 after an independent review
+  (Codex) found 72G's premise false and gaps in 72A, 72B, 72C and 72H. See
+  [Independent review](#independent-review-codex-2026-10-02).
+
+Building any item still needs the requester's named approval of that item
+(AGENTS.md §3).
 
 The requester is a representative of the Clerk of the Circuit Court, Pinellas
 County. Where an answer below is about what the Clerk's office accepts, it is
@@ -14,23 +20,23 @@ recorded as **Pinellas Clerk practice**, not as a reading of a statute or rule
 
 | # | Item | What a filer sees today | Decision | Build |
 | --- | --- | --- | --- | --- |
-| 1 | 72A | The Inventory's Excel Part III prints each guardian's date, SSN/EIN, street, phone and city **over the form's printed captions**, and leaves the boxes beneath them empty | **DECIDED.** Put each value in its box. Keep writing Guardian #1's name, and warn when it is not among the Cover's Guardian Name(s). Add a check of every export against the Clerk's templates, on all three forms | Not started |
-| 2 | 72B | A blank share on ten Inventory schedules silently counts as 0%. The attorney's primary email is marked required but never checked | **DECIDED.** Require a share on every started row (0 allowed). Require the attorney's email once an attorney is entered | Not started |
-| 3 | 72C | The Inventory has no guardian email. The Annual marks it required but never checks it. The Simplified blocks without it | **DECIDED.** Add it to the Inventory. On all three forms, a missing guardian email **warns, never blocks**, and only when no attorney is entered | Not started |
+| 1 | 72A | The Inventory's Excel Part III prints each guardian's date, SSN/EIN, street, phone and city **over the form's printed captions**, and leaves the boxes beneath them empty | **DECIDED.** Put each value in its box. Keep writing Guardian #1's name, with a warning when it is not among the Cover's Guardian Name(s). Guard every export: no caption or formula overwritten, and a marked value on every template page lands in its expected cell | Not started |
+| 2 | 72B | A blank share on ten Inventory schedules silently counts as 0%, and a 0 share becomes blank when converted or when the Annual's Part VIII is exported. The Inventory attorney's primary email is marked required but never checked, is missing from the Inventory's data model, and is dropped by carry-over and conversion | **DECIDED.** Require a share on every started row (0 allowed); keep 0 as 0 on every share path. Require the attorney's email once an attorney is entered, and carry both attorney emails everywhere | Not started |
+| 3 | 72C | The Inventory and the Initial Plan have no guardian email. The Annual, Annual Plan and Plan for Minors collect it but never check it. The Simplified Accounting and Simplified Plan block without it. The Plan for Minors never checks the attorney's email | **DECIDED.** Add it where it's missing. On all three accountings and all four Plans, a missing guardian email **warns, never blocks**, and only when no attorney is entered. The Plan for Minors requires the attorney's email once an attorney is entered | Not started |
 | 4 | 72D | With no attorney, the filed PDF prints an app-written sentence that no Clerk form has | **DECIDED.** Match the Clerk's forms: print the attorney block blank, as they do | Not started |
 | 5 | 72E | On a phone, Schedule C's loss and Schedule E's transfer-out boxes offer a keypad with no minus key | No decision needed (a defect) | Not started |
 | 6 | 72F | The nine-form summary-page browser test runs out of time on the D: drive | **DECIDED.** Split it into nine tests, one per form | Not started |
-| 7 | 72G | No certificate of service says **how** the copies were served (Rule 2.516(f)(5)), on any of the seven forms that have one | **DECIDED.** Ask once per certificate; print it on the PDF; a missing method warns, never blocks. All seven certificates | Not started |
-| 8 | 72H | The Inventory's and the Simplified's certificates re-type the attorney's details, so one PDF can show two Bar Numbers for one attorney | **DECIDED.** The certificate's attorney is the filing's attorney, as on the Annual and the Clerk's forms | Not started |
+| 7 | 72G | Six of the seven certificates of service already have a free-text method box, labelled "Indicate if (e.g. hand-delivered, mailed)"; the Inventory has none. The Annual and Simplified **write that method into the workbook's ward-status box**, and the Simplified blocks without it | **DECIDED.** That box is the method of service, on all seven forms, printed on the PDF only. A missing method warns, never blocks. The Annual and Simplified get a separate ward-status dropdown (the workbook box's real meaning), required on all three accountings | Not started |
+| 8 | 72H | The Inventory's D-5 and the Simplified's Part VI re-type the attorney's details, so one PDF can show two Bar Numbers for one attorney. The Inventory also has two attorney-name fields, which can differ between PDF and Excel | **DECIDED.** The certificate uses the filing's attorney details. Both name fields stay, with a warning when they differ that says which output prints which. Old typed values fill blanks, then are noted once | Not started |
 | 9 | 72I | Choosing "Guardian Advocate" as the Type of Guardianship shows no hint at the reason question until the filer leaves the page and returns | No decision needed (a defect) | Not started |
 | 10 | 72J | The missing-recipients issue reads "No recipients are required for this certificate (filer attestation …)", the checkbox's caption, not a question | No decision needed (reuse the Plans' wording) | Not started |
 | — | — | The sidebar's NET ASSETS stays at $0.00 for a negative Starting Balance (browser review, H2) | **Not reproduced; dropped** (see "Reported, not reproduced") | — |
 
 ### Provenance
 
-- Milestone 71's build and its full regression listed these as "found, not
-  fixed" (`MILESTONE-71-PROPOSAL.md`: 71B, 71C and 71E Build records, and
-  "Full regression — run 2026-09-29").
+- Milestone 71's build and its full regression listed 72A–72F as "found,
+  not fixed" (`MILESTONE-71-PROPOSAL.md`: the 71B, 71C and 71E Build
+  records, and "Full regression — run 2026-09-29").
 - The research for this plan, 2026-09-30 to 10-01:
   - The Clerk's three workbooks were read with a parser.
   - Real Excel exports from the running app were read with ExcelJS and
@@ -43,56 +49,87 @@ recorded as **Pinellas Clerk practice**, not as a reading of a statute or rule
 - **72G–72J** come from the requester's browser-only review of Milestone 71
   on the test system, reported 2026-10-02 (findings H1, M3, M1 and M2; H2 is
   under "Reported, not reproduced"). Each finding was checked against the
-  code, the Clerk's workbooks and the rule text before being written up here,
-  and where the review's account differed from what was found, the
-  difference is stated in that item.
+  code, the Clerk's workbooks and the rule text before being written up here.
+  Where the review's account differed from what was found, that item says so.
+- **An independent review of this proposal by Codex, 2026-10-02.** Every
+  point was checked against the code before the plan changed. See
+  [Independent review](#independent-review-codex-2026-10-02).
 
-### Decisions already made (2026-10-01, the requester)
+### Decisions already made (the requester)
 
 | Question | Answer |
 | --- | --- |
-| Inventory Part III, Guardian #1's name box | Keep writing the first guardian card's name over the form's link to the Cover; warn when that name is not among the Cover's Guardian Name(s). This is the 2026-09-19 Annual decision, applied to the Inventory |
-| An export check against the templates | On all three forms, with every schedule filled |
-| A blank share on Inventory A-2 to C-5 | Required on a started row, as on the Annual's Schedule D. 0 is allowed. A-1 keeps "must be > 0" |
-| The Inventory attorney's primary email | Required once an attorney is entered, as on the Annual and Simplified |
-| The guardian's email (Rule 2.515(c)) | Add it to the Inventory. A missing one warns, never blocks, and only when no attorney is entered. The same rule applies on the Annual family and the Simplified, so the Simplified's existing block becomes a warning. Recorded as Clerk practice |
-| The no-attorney sentence on the PDF | Remove it. The PDF leaves the attorney block blank, as every Clerk form does. This supersedes 71B design step 6 and its open wording question. It also supersedes an earlier 2026-10-01 answer to reword one sentence: with no sentence printed, nothing remains to reword |
-| The slow summary test | Split per form |
-| Method of service on a certificate (2026-10-02) | Add it, once per certificate, on all seven certificates (the three accountings and the four Plans). PDF only. A missing method warns, never blocks. Recorded as Clerk practice |
-| The certificate's attorney (2026-10-02) | The filing's attorney, as on the Annual and the Clerk's forms. The Inventory's and the Simplified's re-typed certificate attorney details are no longer printed |
-| The sidebar's NET ASSETS finding (2026-10-02) | Not reproduced; dropped, with no test added |
+| Inventory Part III, Guardian #1's name box (10-01) | Keep writing the first guardian card's name over the form's link to the Cover; warn when that name is not among the Cover's Guardian Name(s). This is the 2026-09-19 Annual decision, applied to the Inventory |
+| An export check against the templates (10-01) | On all three forms, with every schedule filled |
+| A blank share on Inventory A-2 to C-5 (10-01) | Required on a started row, as on the Annual's Schedule D. 0 is allowed. A-1 keeps "must be > 0" |
+| Zero shares elsewhere (10-02) | Fix every share read, write and conversion so 0 stays 0 and blank stays blank, including the Annual's Part VIII export |
+| The Inventory attorney's primary email (10-01) | Required once an attorney is entered, as on the Annual and Simplified |
+| The guardian's email, Rule 2.515(c) (10-01, extended 10-02) | Add it where it is missing. A missing one warns, never blocks, and only when no attorney is entered. This applies on the Inventory, the Annual family, the Simplified **and the four Plans**, so the Simplified's and the Simplified Plan's blocks become warnings. Recorded as Clerk practice |
+| The Plan for Minors attorney email (10-02) | Required once an attorney is entered, as on the Annual and Initial Plans |
+| Email classification (10-02) | Every email row in the data model is `personal`, matching the Party record. Documentation only |
+| The no-attorney sentence on the PDF (10-01) | Remove it. The PDF leaves the attorney block blank, as every Clerk form does. This supersedes 71B design step 6 and its open wording question, and an earlier 10-01 answer to reword one sentence |
+| The slow summary test (10-01) | Split per form |
+| Method of service (10-02, re-asked) | Use the existing free-text box, relabelled "How were the copies served?", on all seven certificates, with one new box on the Inventory. PDF only. A missing method warns, never blocks, so the Simplified's block goes. **This supersedes the first 10-02 answer** (a new choice field), which was given on 72G's false premise that no method field existed |
+| The ward's status, "Indicate if:" (10-02) | A separate dropdown on the Annual and Simplified, like the Inventory's (totally incapacitated / under 14 / N/A); it, not the method, goes to the workbook box. Required on all three accountings |
+| The certificate's attorney (10-02) | The filing's attorney details (D-2 / Part V), as on the Annual and the Clerk's forms |
+| The Inventory's two attorney names (10-02) | Keep both, the Cover's "Attorney for Guardian" and D-2's name. Warn when they differ, saying the workbook prints the Cover's and the PDF prints D-2's |
+| Old certificate attorney details (10-02) | On first open, each fills the matching D-2 / Part V field only where that field is blank, recorded in the Activity Log. Where both are filled and differ, Preview & Export notes it until the filer dismisses it once. The old values stay in the file, unused. Conversions stop writing them |
+| The sidebar's NET ASSETS finding (10-02) | Not reproduced; dropped, with no test added |
+
+---
+
+## Independent review (Codex, 2026-10-02)
+
+Verdict as received: *not build-ready*. 72G rests on a false premise, and
+72B, 72C and 72H miss related data paths. Every point was checked against
+the code before anything here changed:
+
+| # | Codex's point | Checked | What changed |
+| --- | --- | --- | --- |
+| 1 | **72G: a method field already exists.** The Annual, Simplified and four Plans have `certIndicator`, labelled "Indicate if (e.g. hand-delivered, mailed)". The Plans print it as the method. The Simplified blocks without it and its sidebar requires it. The Annual and Simplified write it into the workbook's ward-status box, so one field means two things. | **Confirmed**, and the original 72G was wrong: its search looked for "method" and missed a field labelled "Indicate if". Annual `index.js` near 1559; Simplified near 681, validator near 846; `completion.js` near 137; `plan-certificate-of-service-page.js` near 45; `plan-certificate-of-service.js` near 174; Annual `excel.js` near 513 (`PART X`!K23); Simplified `excel.js` near 211 (J39). The Inventory alone keeps them apart: `serviceIndicateIf` is its ward-status dropdown, and it has no method. | 72G rewritten as a field-by-field matrix. The method decision was re-asked with the facts (free text, warning on all seven), and a ward-status decision was added |
+| 2 | **72H: two Inventory attorney names; an unclearable warning; conversions.** | **Confirmed.** The Cover's `attorneyForGuardian` feeds the workbook (`'SUMMARY I '!D24`, linked from Parts IV and VI); D-2's `attorney.name` feeds the PDF signature block (`pdf-model.js` near 690). Conversions write the retiring fields (`conversion.js` near 167, 211–219 and 238–242). | Two decisions added: keep both names with a warning; old values fill blanks, then a once-only note. The conversions are in scope |
+| 3 | **72B: 0 is erased elsewhere; the attorney emails are missing from the model.** | **Confirmed.** `convertGuardianSchedulesToAnnual()` maps every share with `wardPercent\|\|''` (`conversion.js` near 122–143); the Annual's Part VIII export writes `t.wardPct\|\|''` (`excel.js` near 468). `mk`/`emptyDataGuardian()`'s `attorney` has neither `email` nor `secondaryEmail` (`models/guardian.js` near 28) although D-2 collects both (`index.js` near 1177); the CSV has no Inventory `attorney.secondaryEmail` row. Also found: `convertGuardianExtrasToAnnual()` and the Inventory → Simplified mapping drop the attorney's email, and carry-over *into* an Inventory drops it, under a stale comment saying the Inventory has no attorney email (`carry-over.js` near 260). | 72B covers every share path (decision added), and the attorney emails in the model, the schema, carry-over and conversions |
+| 4 | **72C: pruning, carry-over, the Plans, email classification.** | **Confirmed.** Three hand-kept "guardian has data" lists omit email (Inventory `index.js` near 95, 1105, 1421), and carry-over into an Inventory omits guardian email (`carry-over.js` near 235). On the Plans: the Simplified Plan blocks without Guardian 1's email (`plan-simplified/index.js` near 395); the Annual Plan and Plan for Minors collect it unchecked; the Initial Plan has no field; the Plan for Minors prints the attorney's email but never checks it. Party emails are classed `personal`, form emails `none` (a label nothing reads). | 72C covers the lists, carry-over and all four Plans (decision added); every email row is relabelled `personal` (decision added) |
+| 5 | **72A's test** fills only the first page plus one row, checks only captions and formulas (a value in the wrong empty box passes), and splits names at commas. | **Confirmed** (the earlier design). The Annual's Schedule B-4 alone has 51 pages. | 72A's test now puts a marked value on every template page, each checked against its expected cell; captions and formulas are checked separately; it extends `excel-form-field-placement.spec.ts`; and the name rule is a conservative containment test with named hard cases |
+| 6 | **The file and test inventory is incomplete**; "grep at build" is not enough. | **Confirmed.** | Each item now names its files and tests (Build order below, and each checklist) |
+| — | 72A's defect, 72D's scope, 72E's two controls, 72F's explanation, 72I's two engines and 72J's scope are sound; 72F's sentence "it passed 60 s" should read "it exceeded the 60-second limit". | Agreed. | 72F's sentence corrected |
 
 ---
 
 ## Build order and file overlap
 
-Sequential, because the items share files:
+Sequential, because the items share files. **Order: 72A, 72B, 72C, 72D,
+72H, 72G, 72I, 72J, then 72E and 72F** (those two share nothing and can run
+at any point).
 
-| Item | Files |
-| --- | --- |
-| 72A | `src/features/guardian-inventory/excel.js`, `src/core/filing/form-derived-fields.js`, new `tests/e2e/support/workbook-vs-template.ts`, new `tests/e2e/excel-template-integrity.spec.ts`, `tests/e2e/carry-balance-matches-prior.spec.ts` |
-| 72B | `src/features/guardian-inventory/index.js` (validator), `probate-guardian-data-model.csv` |
-| 72C | `src/features/guardian-inventory/index.js` (D-1), `src/core/filing/models/guardian.js`, `src/features/guardian-inventory/pdf-model.js`, `src/core/filing/unrepresented-filing.js`, `src/features/simplified-accounting/index.js`, `src/features/annual-accounting/index.js`, `src/core/status/completion.js`, CSV |
-| 72D | `src/core/filing/unrepresented-filing.js`, the three `pdf-model.js` files |
-| 72E | `src/features/annual-accounting/index.js` |
-| 72F | `tests/e2e/routes.spec.ts` |
-| 72G | the three accountings' `index.js` and `pdf-model.js`, `src/core/filing/plan-certificate-of-service.js`, a new `src/core/filing/service-method.js`, `src/core/filing/output-preflight.js`, the models, CSV |
-| 72H | `src/features/guardian-inventory/index.js` (D-5), `pdf-model.js` and `excel.js`; `src/features/simplified-accounting/index.js` (Part VI) and `pdf-model.js`; CSV |
-| 72I | `src/core/filing/unrepresented-filing.js`, the Inventory's and the Annual's Cover wiring |
-| 72J | the three accountings' validators |
+| Item | Source | Tests and baselines |
+| --- | --- | --- |
+| 72A | `src/features/guardian-inventory/excel.js` (Part III writes, importer), `src/core/filing/form-derived-fields.js` | `tests/e2e/excel-form-field-placement.spec.ts` (extended), new `tests/e2e/support/workbook-vs-template.ts`, `tests/e2e/carry-balance-matches-prior.spec.ts`, `tests/unit/form-derived-fields.spec.js`, `tests/unit/excel-write-targets.spec.js` (header) |
+| 72B | `src/features/guardian-inventory/index.js` (validator), `src/core/filing/models/guardian.js`, `src/core/filing/conversion.js` (share mappings, attorney email), `src/core/filing/carry-over.js` (attorney email into an Inventory), `src/features/annual-accounting/excel.js` (Part VIII), CSV | new `tests/unit/inventory-required-share-and-email.spec.js`, new `tests/unit/share-zero-paths.spec.js`, `tests/baseline/ms70-conversion-golden.json`, `ms70-70C-filing-shapes.json` |
+| 72C | Inventory `index.js` (D-1 field, the three lists), `models/guardian.js`, Inventory `pdf-model.js`, `src/core/filing/unrepresented-filing.js`, Simplified `index.js`, Annual `index.js`, `src/core/status/completion.js`, `carry-over.js`, the four `plan-*/index.js` and `pdf-model.js`, the Plan models, CSV | new `tests/unit/guardian-email-advisory.spec.js`, new `tests/e2e/guardian-email-advisory.spec.ts`, `ms70-completion-golden.json`, `ms70-70C-filing-shapes.json` |
+| 72D | `unrepresented-filing.js`, the three accounting `pdf-model.js` files | `tests/unit/attorney-optional.spec.js`, `tests/e2e/attorney-optional-export.spec.ts` |
+| 72H | Inventory `index.js` (D-5), `pdf-model.js`, `excel.js` (`PART VI`, importer); Simplified `index.js` (Part VI), `pdf-model.js`, `excel.js`; `conversion.js` (near 167, 211–219, 238–242); `src/core/validation/attorney-block.js`; `form-derived-fields.js` (the name warning); CSV | new `tests/unit/certificate-attorney.spec.js`; every spec that names `serviceAttorney` or `certAtty…` today: `tests/e2e/attorney-optional-export.spec.ts`, `excel-form-field-placement.spec.ts`, `navigation-status.contract.spec.ts`, `pdf-accessibility-and-signatures.spec.ts`, `pdf-form-specific.spec.ts`, `pdf-structure-tags.spec.ts`, `signature-capture.contract.spec.ts`, `tests/e2e/support/fixtures.ts`, `tests/unit/attorney-optional.spec.js`, `pdf-model-column-integrity.spec.js`, `signature-block-fields.spec.js`, `tests/capture/guide-screenshots.capture.ts`; `ms70-conversion-golden.json` |
+| 72G | the three accountings' `index.js`, `pdf-model.js` and `excel.js` (Annual `PART X`!K23, Simplified J39, importers), `src/core/filing/plan-certificate-of-service.js`, `src/core/form/plan-certificate-of-service-page.js`, `completion.js`, `conversion.js` (near 237, 292), the models, CSV | `tests/unit/plan-certificate-of-service.spec.js`, `tests/e2e/plan-certificate-of-service.spec.ts`, `excel-form-field-placement.spec.ts`, `pdf-form-specific.spec.ts`, `pdf-structure-tags.spec.ts`, `tests/unit/guardian-inventory-64a1-validation.spec.js`, `guardian-inventory-pdf-model.spec.js`, `field-kind-inference.spec.js`, `tests/e2e/support/fixtures.ts`, `guide-screenshots.capture.ts`; the goldens `ms70-70C-filing-shapes.json`, `ms70-completion-golden.json`, `ms70-conversion-golden.json`, `ms70-year-rollover-golden.json`; new `tests/unit/service-method.spec.js`, `tests/e2e/certificate-service-method.spec.ts` |
+| 72I | `unrepresented-filing.js`, the Inventory's and the Annual's Cover wiring | new `tests/e2e/guardian-advocate-hint.spec.ts` |
+| 72J | the three accountings' validators | a unit case per engine |
+| 72E | Annual `index.js` | new `tests/e2e/signed-amount-keypad.spec.ts` |
+| 72F | — | `tests/e2e/routes.spec.ts` |
 
-- 72B and 72C both edit the Inventory's `index.js`.
+- 72B and 72C both edit the Inventory's `index.js`, its model, `carry-over.js`
+  and `conversion.js`.
 - 72C and 72D both edit `unrepresented-filing.js` and the Inventory PDF
   model.
-- 72C and 72E both edit the Annual's `index.js`.
-- 72G and 72H both edit every accounting's certificate page and PDF; build
-  72H first, so the method is added to the certificate's final shape.
-- 72F touches no source and can run at any point.
-- **Order:** 72A, 72B, 72C, 72D, 72H, 72G, 72I, 72J, then 72E and 72F.
+- 72H and 72G both reshape every accounting's certificate page, PDF and
+  Excel. 72H goes first, so the method lands on the certificate's final
+  shape.
+- 72C, 72E and 72G all edit the Annual's `index.js`.
+- Every item that adds or retires a field updates `TEST-INDEX.md`,
+  `file_index.md`, the 70T progress list and the assertion-count baseline in
+  its own commit.
 
 ---
 
-## 72A — Inventory Part III, and a check of every export against the Clerk's templates
+## 72A — Inventory Part III, and a guard on every export
 
 ### What a filer observes
 
@@ -154,7 +191,9 @@ other value written over a caption or a formula. The only other changes:
 - the Annual's `'PART II, III'!F25`, allowed with a warning by the
   2026-09-19 decision.
 
-Later rows and later pages were not probed. The check below covers them.
+**What that check could not see:** a value written into the wrong *empty*
+box, and anything on later pages (Independent review, point 5). The guard
+below covers both.
 
 ### Authority
 
@@ -179,46 +218,63 @@ Later rows and later pages were not probed. The check below covers them.
    `guardians[0].name` to F8.
 
    `form-derived-fields.js` adds an Inventory rule beside the Annual's. When
-   both are filled and Guardian #1's name is not among the Cover's Guardian
-   Name(s), Preview & Export shows a warning that never blocks:
+   both are filled and Guardian #1's name is not found in the Cover's
+   Guardian Name(s), Preview & Export shows a warning that never blocks:
    *"D-1 — Guardian #1 (NAME) is not among the Guardian Name(s) on the
    Cover (NAMES). The court's form fills Guardian #1's name from the Cover;
    this filing will be exported with Guardian #1's name as entered. Confirm
    which is right before filing."*
 
-   "Among" means the Cover's text, split at commas, semicolons, "&", "/" and
-   the word "and", contains the name, ignoring case and extra spaces. A
-   Cover listing two co-guardians therefore does not warn. The file's header
-   comment ("Annual family only") is updated.
-4. **The export check.** A new browser spec,
-   `tests/e2e/excel-template-integrity.spec.ts`, and its helper
-   `tests/e2e/support/workbook-vs-template.ts`.
-   - It builds a filing of each type: the Inventory, the Annual and the
-     Simplified. Every schedule is filled through its first page and one row
-     onto the next. Every field is filled, including three guardians, Part
-     VIII trusts, four certificate recipients and remuneration lines.
-   - It saves each as Excel and loads the exported file and the Clerk's
-     template with ExcelJS.
-   - On every sheet the export keeps, it fails on any template caption whose
-     text changed and any template formula that is no longer a formula. Each
-     failure names the cell.
-   - Allowed:
-     - cells carrying data validation (the dropdown defaults);
-     - an exact list of decided overwrites: Annual `'PART II, III'!F25`
-       (2026-09-19) and Inventory `'PART III'!F8` (2026-10-01).
-   - A formula that blank-page pruning rewrote is not counted. Pruning
-     drops removed pages from page totals by design, and its own specs cover
-     it.
+   **"Found in" is a conservative containment test, not a split.**
+   - Both texts are normalized: case folded; runs of spaces and the
+     punctuation `. , ; & /` reduced to single spaces.
+   - Guardian #1's whole name must appear in the Cover's text as a run of
+     whole words.
+   - The Cover is never split at commas, so *"Smith, Jr."* and *"Acme
+     Trust Co., Inc."* match themselves, and an "and" inside a name
+     matches.
+   - Any doubt resolves to **no** warning: a missed warning costs the
+     filer nothing they wouldn't see on the printed form; a false one
+     teaches them to ignore it.
 
-   It also asserts that Part III's 18 values sit in their boxes. Finally, a
-   workbook built the old way (values moved back onto the captions with
-   ExcelJS) is imported through the real Import from Excel control, and the
-   guardian details must arrive.
+   The file's header comment ("Annual family only") is updated. The same
+   containment test is used by 72H's attorney-name warning.
+4. **The guard.** It extends `tests/e2e/excel-form-field-placement.spec.ts`,
+   the spec that already owns this class of defect. A new helper,
+   `tests/e2e/support/workbook-vs-template.ts`, loads the exported file and
+   the Clerk's template with ExcelJS. For each of the Inventory, the Annual
+   and the Simplified, two separate checks run:
+   - **Integrity.** It builds a filing with every schedule filled to
+     capacity, so that no page is pruned. On every sheet the export keeps,
+     the guard fails on any template caption whose text changed, and on any
+     template formula that is no longer a formula. Each failure names the
+     cell.
+     - Allowed: cells carrying data validation (the dropdown defaults), and
+       an exact list of decided overwrites: Annual `'PART II, III'!F25`
+       (2026-09-19) and Inventory `'PART III'!F8` (2026-10-01).
+     - A formula that blank-page pruning rewrote is not counted. Pruning
+       drops removed pages from page totals by design, and its own specs
+       cover it.
+   - **Placement.** The same filing carries a unique marked value
+     (`S-<schedule>-<page>-<field>`) in at least one row of **every
+     template page** of every schedule. That includes each of the Annual's
+     51 Schedule B-4 pages, and Part III's 18 values. A table in the spec
+     maps each marked value to the cell it must land in, and the guard
+     reads that cell. A value in the wrong box fails by name, even when no
+     caption or formula was touched.
+
+   A pre-72 workbook (values moved back onto the captions with ExcelJS) is
+   imported through the real Import from Excel control, and the guardian
+   details must arrive.
+
+   **Cost.** The existing capacity round trip for all 11 Inventory schedules
+   takes 16.5 s on D:. The three forms together are estimated at 2–3
+   minutes on D:, to be measured at build and recorded in the Build record.
 5. `carry-balance-matches-prior.spec.ts` keeps its own formula check but
    takes the decided list from the new helper. Its comment calling F8 "not
    decided" is corrected.
 6. `excel-write-targets.spec.js`'s header names its blind spot (addresses
-   built at run time) and points to the new spec.
+   built at run time) and points to the guard.
 
 ### Cross-cutting checklist (AGENTS.md §8)
 
@@ -226,18 +282,22 @@ Later rows and later pages were not probed. The check below covers them.
    exporter, not the CSV.
 2. **Legacy data.** Inventory workbooks exported before 72A import correctly
    through step 2's fallback. Nothing stored in a `.sav` changes.
-3. **Fixtures.** None changed. The new spec builds its own filings.
+3. **Fixtures.** None changed. The guard builds its own filings.
 4. **Tests.**
-   - New: `tests/e2e/excel-template-integrity.spec.ts` and
-     `tests/e2e/support/workbook-vs-template.ts`.
-   - Extended: `tests/unit/form-derived-fields.spec.js`, for the Inventory
-     rule, including the co-guardian Cover that must not warn.
+   - Extended: `tests/e2e/excel-form-field-placement.spec.ts`.
+   - New: the helper `tests/e2e/support/workbook-vs-template.ts`.
+   - Extended: `tests/unit/form-derived-fields.spec.js`. The Inventory rule
+     with named cases: an exact match; a co-guardian Cover (*"Jane Doe and
+     John Doe"*); *"Smith, Jr."*; *"Acme Trust Co., Inc."*; a name
+     containing "and"; extra spaces and punctuation; and a real mismatch
+     that must warn.
    - Changed: `carry-balance-matches-prior.spec.ts` and the header of
      `excel-write-targets.spec.js`.
-   - **Red-first:** the new spec, run against today's exporter, must fail
-     with the 15 Part III captions named.
-   - `TEST-INDEX.md` rows and `file_index.md` rows, the 70T progress list
-     and the assertion-count baseline, all in the same commit.
+   - **Red-first:** against today's exporter, the integrity check names the
+     15 Part III captions and the placement check names the 15 misplaced
+     values.
+   - `TEST-INDEX.md` and `file_index.md` rows, the 70T progress list and
+     the assertion-count baseline, all in the same commit.
    - `npm run check:types`, because a `tests/e2e/support/*.ts` file is
      added.
 5. **Export/import.** The Inventory exporter and importer both change. The
@@ -255,43 +315,73 @@ Later rows and later pages were not probed. The check below covers them.
 
 ---
 
-## 72B — Inventory: a blank share, and the attorney's email
+## 72B — Shares that mean what was entered, and the Inventory attorney's emails
 
 ### What a filer observes
 
-- **Shares.** On Inventory schedules A-2, B-1 to B-4 and C-1 to C-4
+- **Blank shares.** On Inventory schedules A-2, B-1 to B-4 and C-1 to C-4
   (Ward's %), and C-5 (Joint Owner's %), the box is marked required, but a
   blank passes Preview & Export. A blank counts as 0%, so that asset's ward
   amount is $0. It silently drops out of the ward's totals, the bond and the
   audit-fee base. Only A-1 is checked ("Ward's % must be > 0").
-- **Attorney's email.** On D-2, "Primary Email (e-filing)" is marked
-  required, but an Inventory with an attorney is exported without one. The
-  Annual and Simplified require it once an attorney is entered.
+- **Zero shares.** A share of exactly 0 turns into a blank in two places.
+  Once 0 is an answer, a converted 0% share would show up as "required":
+  - when an Initial Inventory is converted into an Annual;
+  - when the Annual's Part VIII trust share is saved as Excel.
+- **The attorney's emails.**
+  - On D-2, "Primary Email (e-filing)" is marked required, but an
+    Inventory with an attorney is exported without one. The Annual and
+    Simplified require it once an attorney is entered.
+  - Both D-2 emails, primary and secondary, are collected but missing from
+    the Inventory's data model.
+  - The email is lost when an Inventory is converted into an Annual or
+    Simplified, and when a new Inventory is created from another filing.
 
 ### Evidence
 
-- `validateGuardian()` (`guardian-inventory/index.js`, near lines 1375–1411).
+- **Blank shares.** `validateGuardian()` (`guardian-inventory/index.js`,
+  near lines 1375–1411).
   - A-1: `if(e.wardPercent<=0)` reports "must be > 0". A blank coerces to 0
     and is caught.
-  - The other ten shares go only through Milestone 71C's range check,
+  - The other ten shares go only through 71C's range check,
     `percentProblem()`, which passes a blank.
-- `wardShare()` (`src/core/format/money.js`) counts a blank as 0%. The
-  Clerk's workbook computes the same (`full × share`).
-- The Annual family: `checkRows()` requires `wardPct` on every started
-  Schedule D row ("Ward's % is required"; 0 allowed). Its sidebar requires
-  it too.
-- D-2: `if(attorneyStarted){…}` requires the name, bar number, phone, street
-  and city/state/zip, but not `attorney.email`. The Annual (`'Part V —
-  Attorney Email'`) and the Simplified require it under the same
-  condition.
+  - `wardShare()` (`src/core/format/money.js`) counts a blank as 0%, as the
+    Clerk's workbook does (`full × share`).
+  - The Annual family's `checkRows()` requires `wardPct` on every started
+    Schedule D row ("Ward's % is required"; 0 allowed), and so does its
+    sidebar.
+- **Zero shares**, each written `x||''`:
+  - `convertGuardianSchedulesToAnnual()`, `src/core/filing/conversion.js`,
+    near lines 122, 126, 129, 133, 136, 137 and 143: every Inventory share
+    mapped into a Schedule D;
+  - the Annual's Part VIII export, `annual-accounting/excel.js`, near line
+    468: `t.wardPct||''`.
+
+  No other share path in the features uses the pattern. The readers (71C's
+  `shareFromWorkbookCell()`, the exporters' percent-cell helpers,
+  `displayDecimal()`) are covered by the new test below rather than assumed.
+- **The attorney's emails.**
+  - The model: `emptyDataGuardian()`'s `attorney` has neither `email` nor
+    `secondaryEmail` (`models/guardian.js` near line 28). D-2 renders both
+    (`index.js` near 1177), and the PDF prints both. The CSV has
+    `attorney.email` but no `attorney.secondaryEmail`.
+  - D-2's check: `if(attorneyStarted){…}` requires the name, bar number,
+    phone, street and city/state/zip, not the email.
+  - Carry-over *into* an Inventory: `carryOverFieldsForAccounting()`
+    computes the attorney's email and then discards it. Its comment says
+    the Inventory has no attorney email (`carry-over.js` near 260), which
+    is stale.
+  - Conversion *out of* an Inventory: `convertGuardianExtrasToAnnual()`
+    (near 167) and the Inventory → Simplified branch (near 211) copy the
+    bar number, phone and address but not the email.
 - None of the Clerk's three workbooks has an attorney email box (searched
   with a parser). The email appears on the app's PDF only.
 
 ### Authority
 
-- **Shares.** Matching the Annual family's existing rule. The Clerk's
-  workbook would compute a blank as 0%; the rule asks the filer to say so
-  rather than assume it.
+- **Shares.** The Annual family's existing rule. The Clerk's workbook would
+  compute a blank as 0%; the rule asks the filer to say so rather than
+  assume it.
 - **Email.** Fla. R. Gen. Prac. & Jud. Admin. 2.515(c) (July 1, 2026): *"A
   document signed under this rule must include a signature block containing
   the filer and each signer's name, electronic signature indicator, mailing
@@ -302,19 +392,28 @@ Later rows and later pages were not probed. The check below covers them.
 
 ### Design
 
-1. **Shares.** In `validateGuardian()`'s share loop, any schedule except A-1
-   reports a blank as an ordinary, overridable issue: *"B-1 row 2 — Ward's %
-   is required."*, or *"Joint Owner's %"* on C-5.
+1. **Blank shares.** In `validateGuardian()`'s share loop, any schedule
+   except A-1 reports a blank as an ordinary, overridable issue: *"B-1 row
+   2 — Ward's % is required."*, or *"Joint Owner's %"* on C-5.
    - Blank means `''`, `null` or `undefined`. **0 is an answer.**
    - A-1 is unchanged.
-   - The Inventory's sidebar is built from this validator, so the schedule's
-     mark follows automatically.
-2. **Email.** Inside the existing `if(attorneyStarted)` block:
-   `req(d.attorney.email,'D-2 Attorney — Primary Email','attorney.email')`.
-   - The D-2 marker already follows the attorney rule (Milestone 71B).
-   - A filing with no attorney is untouched (AGENTS.md §4, the pro se and
-     Guardian Advocate protection).
-3. Re-read `src/core/filing/readiness-config.js` and confirm it has no
+   - The Inventory's sidebar is built from this validator, so the mark
+     follows automatically.
+2. **Zero shares.** The eight `x||''` sites become a blank test (`x === '' ||
+   x == null ? '' : x`), so 0 stays 0 and a blank stays blank.
+3. **The attorney's emails.**
+   - `emptyDataGuardian()`'s `attorney` gains `email: ''` and
+     `secondaryEmail: ''`, and the CSV gains `attorney.secondaryEmail`.
+   - D-2's check gains
+     `req(d.attorney.email,'D-2 Attorney — Primary Email','attorney.email')`
+     inside the existing `if(attorneyStarted)` block. The D-2 marker already
+     follows the attorney rule (71B). A filing with no attorney is
+     untouched (AGENTS.md §4, the pro se and Guardian Advocate protection).
+   - Carry-over into an Inventory carries both emails into `attorney`, and
+     the stale comment is replaced.
+   - Conversion out of an Inventory carries `attorney.email` to the
+     destination's `attorney_email`.
+4. Re-read `src/core/filing/readiness-config.js` and confirm it has no
    Inventory item for either field, keeping the readiness panel and the
    export checks one-to-one.
 
@@ -327,16 +426,26 @@ Later rows and later pages were not probed. The check below covers them.
      (validateGuardian(), Milestone 72B); 0 is an answer".
    - `attorney.email`: from `optional` to `conditional`, with
      `required_when` "an attorney is started (attorney-block.js
-     isAttorneyStarted())". These are the Annual's and Simplified's words.
-   - `npm run verify:data-model` must pass.
-2. **Legacy data.** Inventory filings on the test system with a blank share,
-   or an attorney without an email, now show an issue the filer can see and
-   correct. Visible and one-time, so no migration (AGENTS.md §8 item 2).
+     isAttorneyStarted())". The source becomes `emptyDataGuardian()`.
+   - A new `attorney.secondaryEmail` row: optional.
+   - Every email row is `sensitive` `personal` (the 10-02 decision; see
+     72C).
+   - `npm run verify:data-model`.
+2. **Legacy data.**
+   - Inventory filings on the test system with a blank share, or an
+     attorney without an email, show an issue the filer can see and
+     correct. No migration (AGENTS.md §8 item 2).
+   - Existing attorney emails already sit on the stored `attorney` object,
+     since the UI wrote them there. The factory change only gives new
+     filings the keys.
 3. **Fixtures.**
-   - 28 test files build Inventory schedule rows. Grep each for a row with
-     no share, and for an Inventory attorney without an email. Add the
-     missing value wherever a sibling required field already appears.
-   - Check `fillMinimalValidGuardianWard()` first.
+   - The 28 test files that build Inventory schedule rows are listed in the
+     Build record as each is checked. Any row with no share gets one where
+     a sibling required field already appears.
+   - `fillMinimalValidGuardianWard()` is checked first, as is any Inventory
+     fixture that starts an attorney without an email.
+   - `ms70-conversion-golden.json` and `ms70-70C-filing-shapes.json` are
+     regenerated by their own instructions, each with its note extended.
 4. **Tests.**
    - New: `tests/unit/inventory-required-share-and-email.spec.js`. It
      covers:
@@ -344,141 +453,211 @@ Later rows and later pages were not probed. The check below covers them.
      - A-1 unchanged;
      - an attorney with no email reported, and no attorney not reported;
      - the sidebar mark for one schedule and for D-2.
-   - **Red-first** with the validator stashed: the blank share and the
-     missing email pass.
+   - New: `tests/unit/share-zero-paths.spec.js`. A 0 share and a blank
+     share go through each path and come out unchanged:
+     - every conversion mapping;
+     - the Annual's Part VIII export;
+     - each importer's share reader.
+   - Extended: carry-over and conversion cases carrying both attorney
+     emails.
+   - **Red-first:** a blank share and a missing email pass, and a 0 share
+     comes out blank.
    - `TEST-INDEX.md`.
-5. **Export/import.** None. Validation only.
-6. **Security.** No new data.
+5. **Export/import.** The Annual's Part VIII export changes for a 0 share.
+   Validation, conversion and carry-over change.
+6. **Security.** No new kind of data. The attorney's secondary email is
+   already collected.
 7. **UI/UX.** The existing markers become true; the messages use the
    validator's existing wording.
 8. **Legal framing.** Rule 2.515(c) is quoted, not interpreted. Whether a
    given filing is "filed or served electronically" is the filer's matter.
-9. **Cross-form.** This brings the Inventory to the Annual's existing rules.
-   The Simplified has no shares.
+9. **Cross-form.** This brings the Inventory to the Annual's rules. The
+   Simplified has no shares.
 
 ### Build record — NOT STARTED
 
 ---
 
-## 72C — The guardian's email: on the Inventory, and the same warning on every form
+## 72C — The guardian's email: the same warning on every form
 
 ### What a filer observes
 
-- **Inventory.** There is no place to enter a guardian's email.
-- **Annual, Final, Trust.** Each guardian's email is marked required, but
-  nothing checks it.
-- **Simplified.** Export is blocked until every guardian has an email.
+Seven forms, four behaviors, for one rule:
 
-Three forms, three behaviors, for one requirement.
+| Form | Guardian email today |
+| --- | --- |
+| Initial Inventory | no field |
+| Annual, Final, Trust | collected, marked required, never checked |
+| Simplified Accounting | export blocked without it |
+| Initial Plan | no field |
+| Annual Plan, Plan for Minors | collected, not checked |
+| Simplified Plan | export blocked without Guardian 1's |
+
+The Plan for Minors also prints the attorney's email but never checks it,
+while the Annual and Initial Plans require it once an attorney is entered.
 
 ### Evidence
 
 - **Inventory.**
-  - `mk.guardian()` has no `email`.
-  - D-1 renders none, and the PDF prints none.
+  - `mk.guardian()` has no `email`; D-1 renders none; the PDF prints none.
   - The data model nonetheless lists `guardian_inventory,
     guardians[].email` as optional, citing `mk.guardian()`: a row for a
     field that does not exist.
+  - Three hand-kept "does this co-guardian have data?" lists, all without
+    email:
+    - `guardianHasData()` (`index.js` near line 95), used when cleaning up
+      blank cards;
+    - D-1's render filter (near 1105);
+    - the validator's skip test (near 1421).
+  - Carry-over into an Inventory builds its guardians without email
+    (`carry-over.js` near 235).
   - The Clerk's Inventory workbook has no guardian email box.
-- **Annual.**
-  - The Part III guardian email field (`index.js` near line 728) is drawn with the
+- **Annual family.**
+  - The Part III email field (`index.js` near 728) is drawn with the
     required marker.
-  - `validateAnnual()`'s guardian checks (near line 1639) do not include
-    it, and neither does the sidebar's `guardianComplete`.
-  - The Clerk's Annual workbook has a box (`'PART II, III'!B30` caption,
-    B31 box). The exporter writes it.
-- **Simplified.**
-  - `validateSimplified()` blocks: `req(g.email,'Part IV — … — Email
-    Address',…)`.
-  - Its sidebar's `guardianComplete` requires it too.
-  - The Clerk's Simplified workbook has a box.
-- The data model lists both siblings' `guardians[].email` as
-  `conditional, active guardian`.
+  - `validateAnnual()`'s guardian checks (near 1639) don't include it, and
+    neither does the sidebar's `guardianComplete`.
+  - The workbook has a box (`'PART II, III'!B31`), and the exporter writes
+    it.
+- **Simplified.** `validateSimplified()` blocks (`req(g.email,'Part IV — … —
+  Email Address',…)`), and its sidebar's `guardianComplete` requires it
+  (`completion.js` near 113). The workbook has a box.
+- **Plans.**
+  - The Simplified Plan blocks: `req(g.email,'Signatures — Guardian 1 email
+    is required',…)` (`plan-simplified/index.js` near 395).
+  - The Annual Plan and the Plan for Minors render `planGuardians[].email`
+    and never check it.
+  - The Initial Plan's `planGuardians[]` has no email (`models/plan-initial.js`
+    near 91; `plan-initial/index.js` near 617–624).
+  - The Plan for Minors prints `attorney_email` (`pdf-model.js` near 292)
+    but `validatePlanMinor()` never checks it. The Annual Plan (near 788)
+    and Initial Plan (near 810) require it once an attorney is entered.
+- **Classification.** The Party record's emails are `personal`; every
+  form-level email row is `none`. Only `verify-data-model.mjs` reads the
+  label (to check it is one of six allowed values).
 
-### Decision (the requester, 2026-10-01; Clerk practice)
+### Decision (the requester; Clerk practice)
 
-- Add the guardian's email to the Inventory.
-- On all three forms, a missing guardian email **warns and never blocks**,
-  and only when **no attorney is entered**. When the attorney also signs,
-  Rule 2.515(c) asks only for the attorney's details.
-- The Simplified's existing block becomes this warning.
+- **10-01:** add the guardian's email to the Inventory. A missing one
+  **warns, never blocks**, and only when **no attorney is entered**, on the
+  Inventory, the Annual family and the Simplified. The Simplified's block
+  becomes this warning.
+- **10-02, extended:**
+  - the same rule applies on all four Plans (the Simplified Plan's block
+    becomes the warning, and the Initial Plan gains the field);
+  - the Plan for Minors requires the attorney's email once an attorney is
+    entered;
+  - every email row is classed `personal`.
 
 ### Design
 
-1. **Inventory field.**
-   - `mk.guardian()` gains `email: ''`.
-   - D-1 shows "Email Address (for e-service)" with no required marker,
-     beside the phone.
-   - The PDF's Part III prints it with each guardian's details.
-   - The workbook has no box for it, so it is not written to Excel and not
-     imported.
-2. **One warning, three forms.** `unrepresentedAdvisories()`
-   (`unrepresented-filing.js`, already called by `output-preflight.js` for
-   the three engines) adds, for each guardian in play with no email, when no
-   attorney is started:
-   *"D-1 — Guardian #2 has no email address. With no attorney, the court's
-   rules expect each signer's e-mail address for service in the signature
-   block when a document is filed electronically (Fla. R. Gen. Prac. & Jud.
-   Admin. 2.515(c))."*
-
-   The section label follows each form: D-1 on the Inventory, Part III on
-   the Annual, Part IV on the Simplified. The warning is advisory only.
-3. **Simplified.**
-   - Remove `req(g.email,…)` from `validateSimplified()`.
-   - Remove `filled(g.email)` from its sidebar's `guardianComplete`. A
-     warning-only field does not hold back the sidebar, so a filer without
-     an attorney can still reach 100%.
-4. **Annual.** The guardian email field drops its required marker. The
-   warning now speaks for it.
-5. **Completion golden.** Regenerate `tests/baseline/ms70-completion-golden.json`
-   by its own instruction (`PG_UPDATE_GOLDEN=1`), with the Simplified change
-   stated in its note.
+1. **The fields.**
+   - The Inventory: `mk.guardian()` gains `email: ''`. D-1 shows *"Email
+     Address (for e-service)"* with no required marker, beside the phone.
+     The PDF's Part III prints it with each guardian's details. No workbook
+     box exists, so it is not written to Excel or imported.
+   - The Initial Plan: `planGuardians[]` gains `email: ''`, the same label
+     on its signature page, printed on its PDF.
+2. **"Has data" includes the email.** The three Inventory lists (and the
+   Initial Plan's equivalent, if it keeps one) count `email`, so a
+   co-guardian who enters only an email is not treated as blank, hidden or
+   cleaned up. Where a list exists only to repeat the field set, it becomes
+   one shared list.
+3. **Carry-over and conversion.** Guardian emails carry into an Inventory
+   (`carry-over.js` near 235), and out of one through the conversions
+   (`conversion.js`). The Plans' carry already maps `g.email`.
+4. **One warning, seven forms.** For each guardian in play with no email,
+   when no attorney is started:
+   *"<section> — Guardian #2 has no email address. With no attorney, the
+   court's rules expect each signer's e-mail address for service in the
+   signature block when a document is filed electronically (Fla. R. Gen.
+   Prac. & Jud. Admin. 2.515(c))."*
+   - The accountings use `unrepresentedAdvisories()` (already called by
+     `output-preflight.js`). The Plans use their own advisory channel.
+   - "Attorney started" is each form's existing test:
+     `isAttorneyStarted()` for the accountings,
+     `isPlanInitialAttorneyStarted()` for the Initial Plan, and each other
+     Plan's validator condition.
+   - The section label follows each form (D-1, Part III, Part IV, each
+     Plan's signature page).
+5. **Blocks and markers go.**
+   - Remove `req(g.email,…)` from `validateSimplified()` and
+     `validatePlanSimplified()`.
+   - Remove `filled(g.email)` from the Simplified's sidebar
+     `guardianComplete`, and the equivalent from the Simplified Plan's
+     sidebar if present. A warning-only field never holds back a sidebar
+     mark.
+   - The Annual's guardian email field drops its required marker.
+6. **The Plan for Minors' attorney email.** Inside `validatePlanMinor()`'s
+   existing attorney-started block:
+   `req(d.attorney_email,'Preparer & Attorney — Attorney email is
+   required','attorney_email')`. Its field's marker follows the same rule.
+7. **Completion golden.** Regenerate `tests/baseline/ms70-completion-golden.json`
+   by its own instruction (`PG_UPDATE_GOLDEN=1`), with the Simplified and
+   Simplified Plan changes stated in its note.
 
 ### Cross-cutting checklist (AGENTS.md §8)
 
 1. **Data model.**
-   - `guardian_inventory guardians[].email`: the source is now true;
-     `required_when` reads "advisory only, when no attorney is started
+   - `guardian_inventory guardians[].email`: the source becomes true,
+     `required_when` "advisory only, when no attorney is started
      (Milestone 72C)".
-   - The Annual and Simplified `guardians[].email` rows: `requiredness`
-     changes from `conditional` to `optional`, with the same advisory note.
+   - The Annual's, Simplified's, Simplified Plan's, Annual Plan's and Plan
+     for Minors' guardian email rows: `requiredness` `optional`, with the
+     same advisory note.
+   - A new `plan_initial planGuardians[].email` row.
+   - `plan_minor attorney_email`: `conditional`, "an attorney is started".
+   - **Every email row in the CSV** (guardian, attorney, preparer,
+     certificate attorney, party) has `sensitive` `personal`.
    - `npm run verify:data-model`.
-2. **Legacy data.** Inventory filings on the test system have no `email`
-   key; a missing key reads as blank, so the warning shows. Simplified
-   filings that were blocked can now export. No migration.
+2. **Legacy data.**
+   - Inventory and Initial Plan filings have no `email` key; a missing key
+     reads as blank, so the warning shows.
+   - Simplified and Simplified Plan filings that were blocked can now
+     export.
+   - No migration.
 3. **Fixtures.**
-   - Grep for Simplified specs that expect the blocking "Email Address"
-     issue, and for completion-parity cases that fill a guardian email to
-     reach complete.
-   - Each is updated with the reason stated.
+   - Simplified and Simplified Plan specs that expect the blocking email
+     issue: each found spec is named in the Build record and updated with
+     its reason.
+   - Completion-parity cases that fill an email to reach complete.
+   - Any `fillMinimalValid*` that fills a guardian email only to satisfy
+     the old block.
 4. **Tests.**
-   - New: `tests/unit/guardian-email-advisory.spec.js`. It covers the three
-     engines:
+   - New: `tests/unit/guardian-email-advisory.spec.js`. It covers the seven
+     forms:
      - no attorney and no email: a warning;
      - an attorney and no email: none;
      - an email entered: none;
      - never an export error;
-     - the Simplified sidebar complete without one.
+     - the sidebars complete without one.
+     - It also covers the three Inventory lists with an email-only
+       co-guardian, the carry-over, and the Plan for Minors' attorney email
+       required with an attorney.
    - New: `tests/e2e/guardian-email-advisory.spec.ts`. With real keystrokes
-     on the Inventory's D-1, the email is saved, printed on the PDF, survives
-     reopening, and clears the warning.
-   - Changed: the Simplified specs found in item 3.
-   - **Red-first:** the Simplified blocks, and the Inventory has no field.
+     on the Inventory's D-1 and the Initial Plan's signature page, the email
+     is saved, printed on the PDF, survives reopening, and clears the
+     warning.
+   - **Red-first:**
+     - the Simplified and Simplified Plan block;
+     - the Inventory and Initial Plan have no field;
+     - an email-only co-guardian is dropped;
+     - the Plan for Minors passes with an attorney and no email.
    - `TEST-INDEX.md`.
-5. **Export/import.** The Inventory's PDF changes; its workbook does not (no
-   box). The Annual and Simplified keep writing their boxes.
-6. **Security.** A guardian's email address is newly stored on the
-   Inventory. It is the same class as the Annual's and Simplified's (the
-   CSV's `sensitive` is `none`). It is encrypted in the `.sav` when a
-   password is set, printed on the filed PDF, and never sent anywhere.
-7. **UI/UX.** It is the same field, label and placement as the Annual's Part III
-   email, and the warning uses the existing advisory channel.
+5. **Export/import.** The Inventory and Initial Plan PDFs change; their
+   workbooks have no box. The Annual and Simplified keep writing theirs.
+6. **Security.** A guardian's email is newly stored on the Inventory and
+   the Initial Plan. It is classed `personal` like every email, encrypted in
+   the `.sav` when a password is set, printed on the filed PDF, and never
+   sent anywhere.
+7. **UI/UX.** The same field, label and placement as the Annual's Part III
+   email. The warning uses the existing advisory channels.
 8. **Legal framing.** Rule 2.515(c) is quoted. That the office does not need
-   the email to accept a filing, and that a warning is enough, is **Pinellas
-   Clerk practice** (2026-10-01), not a reading of the rule. Another county
-   may differ.
+   the email to accept a filing, and that a warning is enough, is
+   **Pinellas Clerk practice** (2026-10-01/02), not a reading of the rule.
+   Another county may differ.
 9. **Cross-form.** This item is the cross-form fix, authorized by the
-   requester's "warn on all three".
+   requester's answers.
 
 ### Build record — NOT STARTED
 
@@ -618,7 +797,7 @@ on this test's 60-second limit, not on a defect.
 - `tests/e2e/routes.spec.ts`, "all 9 form types render a standardized
   summary page", walks all nine form types in one test.
 - It takes 22–24 s from a C: copy of the repository and 47–49 s from D:,
-  which is FAT32. Under full-suite load on D:, it passed 60 s.
+  which is FAT32. Under full-suite load on D:, it exceeded the 60-second limit.
 - No other browser test came within 25 s of its limit in that run.
 
 ### Design
@@ -640,142 +819,190 @@ on this test's 60-second limit, not on a defect.
 
 ---
 
-## 72G — Every certificate of service says how the copies were served
+## 72G — The method of service and the ward's status, kept apart
 
-*From the browser review, finding H1.*
+*From the browser review, finding H1. **Rewritten 2026-10-02** after the
+independent review: the first version said no certificate captured a method,
+which was false (Independent review, point 1).*
 
 ### What a filer observes
 
-No certificate of service in the app asks how service was made, and no
-filed PDF says it. This applies to both kinds of certificate:
-
-- signed by an attorney: the Inventory, the Annual family and the
-  Simplified;
-- signed by a guardian when there is no attorney (Milestone 71B).
-
-It also applies to the four Plans' certificates (Milestone 68C). An
-Inventory's prints, for example: *"Pursuant to the Florida Statute
-744.362(1), I hereby certify that a copy of this inventory has been
-furnished to the following persons on this date, 09/30/2026:"* There is no
-"by mail", "by e-mail" or similar.
+- **The method exists, but it is mislabelled and goes to the wrong place.**
+  - The Annual family, the Simplified and the four Plans have a free-text
+    box labelled *"Indicate if (e.g. hand-delivered, mailed)"*. Filers type
+    a method of service there.
+  - On the Annual and Simplified, that text is written into the Clerk's
+    workbook box "Indicate if:". On the Clerk's form, that box is the
+    **ward's status**, a dropdown: *"Ward is totally incapacitated, Ward is
+    under 14 years old, N/A"*.
+  - So a filed Annual can carry "mailed" in the ward-status box, and
+    neither form has anywhere to state the ward's status.
+- **The Simplified blocks** export until that box is filled, and its
+  sidebar requires it.
+- **The Inventory keeps the two apart, but has no method at all.**
+  - Its D-5 has a proper ward-status dropdown, "Indicate if Ward is:"
+    (`serviceIndicateIf`), which is required and written to the workbook.
+  - It has nowhere to say how the copies were served.
+- **On the PDF**, the method is tacked onto the date line: *"on this date:
+  09/30/2026 | mailed"*, or on the Simplified *"… | Indicate if: mailed"*.
 
 ### Evidence
 
 - **Rule 2.516(f)** (July 1, 2026): *"A person establishes prima facie proof
   of service by including the following: (1) certification; (2) date of
   service; (3) name(s) of person(s) served (4) service address(es); and (5)
-  method of service."* The rule's sample certificate reads *"…furnished to
-  (here insert name(s) and service address(es) by (here insert method of
-  service such as portal, e-mail, delivery, or mail)."* Probate Rule 5.041
-  sends service to Rule 2.516 (`reference/README.md`).
-- **The Clerk's workbooks** (parsed) do not ask for a method. Each has only
-  the certificate sentence (Inventory `PART VI`!B8, Annual `PART X`!B9,
-  Simplified `PARTS V, VI `!B25: *"…I hereby certify that a copy of this …
-  has been furnished to:"*), the recipients, a date, and "Indicate if:"
-  (*"Ward is totally incapacitated, Ward is under 14 years old, N/A"*).
-- **The app**:
-  - No form, model or PDF has a method field. `serviceMethod` exists only
-    in a type comment (`src/core/types/parties.js`, `ServiceRecipient`).
-  - The certificate sentences are in the Inventory PDF model (near line
-    837), the Annual's (near 1104), the Simplified's (near 284) and
-    `plan-certificate-of-service.js` (near 162).
+  method of service."* Probate Rule 5.041 sends service to Rule 2.516.
+- **The Clerk's workbooks** (parsed):
+  - the certificate sentence has no method (Inventory `PART VI`!B8, Annual
+    `PART X`!B9, Simplified `PARTS V, VI `!B25);
+  - each has "Indicate if:" with the ward-status dropdown (Inventory J25,
+    Annual K23, Simplified J39).
+- **The app**, field by field:
+
+| Form | Method box | Ward-status box | Excel "Indicate if:" gets | Required today |
+| --- | --- | --- | --- | --- |
+| Inventory | none | `serviceIndicateIf` dropdown (`index.js` near 1263) | ward status (J25) ✓ | ward status (near 1489) |
+| Annual family | `certIndicator`, "Indicate if (e.g. hand-delivered, mailed)" (`index.js` near 1559) | none | **the method** (`excel.js` near 513, K23; read back near 883) | neither |
+| Simplified | `certIndicator`, same label (`index.js` near 681) | none | **the method** (`excel.js` near 211, J39; read back near 401) | the method (`index.js` near 846; `completion.js` near 137) |
+| Four Plans | `certIndicator`, same label (`plan-certificate-of-service-page.js` near 45); data model: "method of service" | none (no Plan form has one) | — | neither |
+
+- The PDFs print the method on the date line: the Annual
+  `pdf-model.js` near 1142; the Simplified near 251 and 313;
+  `plan-certificate-of-service.js` near 174. The Inventory prints *"Indicate
+  if Ward is: …"* (near 860).
+- Conversions copy `certIndicator` between the Annual family and the
+  Simplified (`conversion.js` near 237 and 292).
 - **Milestone 71's record.** 71B's design (step 5) said the guardian's
-  certificate *"uses the same recipient list, addresses and method fields
-  the attorney certificate already uses"*. There were no method fields.
-  The review attributes the claim to 71B's build record; it is in the
-  design, and the build record makes no such claim.
+  certificate reused the attorney certificate's *"method fields"*. A method
+  box did exist on the Annual and Simplified, but under a ward-status label
+  and wired to the ward-status cell, and the Inventory had none. The claim
+  was half right, for the wrong reason.
 
-### Decision (the requester, 2026-10-02)
+### Decisions (the requester, 2026-10-02)
 
-- Ask once per certificate, on all seven certificates.
-- Print it on the PDF only.
-- A missing method warns, never blocks. Recorded as Clerk practice.
+- **The method:** use the existing free-text box, relabelled, on all seven
+  certificates, adding one to the Inventory. PDF only. A missing method
+  **warns, never blocks**, so the Simplified's block goes.
+- **The ward's status:** a separate dropdown on the Annual and Simplified,
+  like the Inventory's. It, not the method, fills the workbook's "Indicate
+  if:" box. **Required** on all three accountings.
 
 ### Design
 
-1. **A new `src/core/filing/service-method.js`.**
-   - The choices, each with its label and the phrase the PDF prints:
-
-     | Label | Prints as |
-     | --- | --- |
-     | Florida Courts E-Filing Portal | "the Florida Courts E-Filing Portal" |
-     | E-mail | "e-mail" |
-     | Hand delivery | "hand delivery" |
-     | U.S. Mail | "U.S. Mail" |
-     | Other | the filer's own words |
-
-   - `serviceMethodPhrase()` returns `''` when nothing is chosen, or when
-     Other has no text.
-   - It also builds the warning.
-2. **Fields**, in each form's existing naming: the Inventory gets
-   `serviceMethod` and `serviceMethodOther`; the Annual family, the
-   Simplified and the Plans get `certMethod` and `certMethodOther`. Both
-   default to `''`.
-3. **On screen.** Each certificate page gets a fieldset, *"How were the
-   copies served?"*, beside the service date: five radios, and a text box
-   when Other is chosen. It is the same whoever signs. The Plans get it
-   through the shared certificate section.
-4. **On the PDF**, the certificate sentence takes the method, as in the
-   rule's sample:
-   - Inventory: *"…has been furnished to the following persons by U.S. Mail
-     on this date, 09/30/2026:"*;
-   - the others: *"…has been furnished by U.S. Mail to:"*.
-
-   With no method chosen, the sentence is today's, unchanged.
-5. **Excel.** Not written: the workbooks have no box for it, and writing it
-   into the certificate sentence's cell would overwrite the Clerk's text.
-   Not imported.
-6. **The warning.** Preview & Export, when the certificate lists at least
-   one recipient and no method is stated: *"<section> — How the copies were
-   served is not stated. Rule 2.516(f) lists the method of service among
-   what a certificate of service includes."*
-   - It does not appear when the filer affirms that no recipients are
+1. **The method box.**
+   - `certIndicator` on the Annual family, the Simplified and the Plans
+     stays the method. It is relabelled *"How were the copies served?
+     (e.g. U.S. Mail; e-mail to the attorney, mail to the ward)"*.
+   - The Inventory gains `serviceMethod` with the same label on D-5.
+   - It is one box per certificate. Mixed service is written out in it;
+     there are no per-recipient methods. That is a stated limitation.
+2. **The ward-status dropdown.**
+   - The Annual family and the Simplified gain `certWardStatus`, a select
+     with the workbook's three values, like the Inventory's
+     `serviceIndicateIf`.
+   - It is written to the workbook box (Annual K23, Simplified J39) and
+     read back from it on import. The method is no longer written there or
+     read from there.
+   - **Required**, as an ordinary, overridable issue: *"Part X — Indicate if
+     Ward is: is required"* (and the Simplified's Part VI equivalent). The
+     Inventory's existing requirement is unchanged.
+   - The Annual's (`a-p10`) and Simplified's (`s-p6`) sidebar marks check
+     `certWardStatus` in place of `certIndicator`.
+3. **On the PDF**, every certificate prints the method on its own line,
+   after the recipients and date: *"Method of service: U.S. Mail"*. With no
+   method, the line is omitted. The ward's status prints as the Inventory's
+   does: *"Indicate if Ward is: Ward is under 14 years old"*.
+4. **The warning.** In Preview & Export, when the certificate lists at least
+   one recipient and the method box is empty: *"<section> — How the copies
+   were served is not stated. Rule 2.516(f) lists the method of service
+   among what a certificate of service includes."*
+   - It is not shown when the filer affirms that no recipients are
      required.
    - It never blocks, and the sidebar is unaffected.
    - The Plans' warning goes through `planCertificateAdvisories()`.
-7. **`MILESTONE-71-PROPOSAL.md`.** 71B step 5's claim gets a correction
-   note pointing here.
+   - The Simplified's `req(d.certIndicator,…)` and its sidebar requirement
+     are removed.
+5. **Existing data (visible inference).** On the Annual family and the
+   Simplified, `certIndicator` holds whatever filers typed under the old
+   label.
+   - On open, a value that exactly matches one of the three ward-status
+     values (case and spacing ignored) moves to `certWardStatus`, and
+     `certIndicator` is cleared. The Activity Log records it, and the page
+     shows both fields as they now stand.
+   - Every other value stays as the method, since the label always asked
+     for one ("hand-delivered, mailed").
+   - A blank ward status then shows its required issue, so the filer sees
+     and answers it.
+   - Nothing is guessed from free text beyond an exact match.
+6. **Conversions.**
+   - `certIndicator` keeps copying between the Annual family and the
+     Simplified, and `certWardStatus` copies alongside it.
+   - Between the Inventory and the accountings, `serviceIndicateIf` maps to
+     `certWardStatus` and `serviceMethod` maps to `certIndicator`.
+7. **`MILESTONE-71-PROPOSAL.md`.** 71B step 5 gets a correction note
+   pointing here.
 
 ### Cross-cutting checklist (AGENTS.md §8)
 
-1. **Data model.** Fourteen new rows: `serviceMethod` and
-   `serviceMethodOther` for `guardian_inventory`, and `certMethod` and
-   `certMethodOther` for the annual, simplified and four plan scopes.
-   - `serviceMethod` and `certMethod`: `string`, `enum`, optional, allowed
-     `portal`, `email`, `hand`, `mail`, `other`.
-   - The `…Other` fields: `string`, `text`, optional.
-   - Each is `sensitive` `none`, `persisted`, `input`.
+1. **Data model.**
+   - New: `guardian_inventory serviceMethod`, and `certWardStatus` for the
+     annual and simplified scopes (`enum`; the three values).
+   - Changed: the annual, simplified and four Plan `certIndicator` rows get
+     the label "Method of service" and become optional with the advisory
+     note (the Simplified's was required).
+   - The Annual and Simplified `certWardStatus` rows are `conditional`,
+     "required (Milestone 72G)".
    - `npm run verify:data-model`.
-2. **Legacy data.** An older filing has no method, so it reads as `''` and
-   the warning shows: visible, no migration. The Plans'
-   `migratePlanCertificateOfService()` adds the two fields on mount, as it
-   does the others.
-3. **Fixtures.** Nothing new is required (it is a warning). Grep for specs
-   pinning a certificate sentence (`has been furnished`); each still passes
-   with no method chosen.
+2. **Legacy data.** Step 5's exact-match move is visible and logged; every
+   other value keeps its meaning. A blank ward status is a visible issue.
+3. **Fixtures and baselines.**
+   - Known references, to update with reasons:
+     - `tests/e2e/support/fixtures.ts`, `tests/capture/guide-screenshots.capture.ts`;
+     - `tests/unit/field-kind-inference.spec.js`,
+       `guardian-inventory-64a1-validation.spec.js`,
+       `guardian-inventory-pdf-model.spec.js`,
+       `plan-certificate-of-service.spec.js`;
+     - `tests/e2e/excel-form-field-placement.spec.ts`,
+       `pdf-form-specific.spec.ts`, `pdf-structure-tags.spec.ts`,
+       `plan-certificate-of-service.spec.ts`.
+   - Each `fillMinimalValid*` for the Annual and Simplified gains a ward
+     status.
+   - The goldens `ms70-70C-filing-shapes.json`, `ms70-completion-golden.json`,
+     `ms70-conversion-golden.json` and `ms70-year-rollover-golden.json` are
+     regenerated by their own instructions, with notes.
 4. **Tests.**
    - New: `tests/unit/service-method.spec.js`. It covers:
-     - each method's phrase;
-     - each engine's and each Plan's PDF sentence, with and without a
-       method;
-     - the warning: only with recipients and no method, never an export
-       error.
-   - New: `tests/e2e/certificate-service-method.spec.ts`. With real clicks,
-     on the Inventory's D-5 (attorney- and guardian-signed), the Annual's
-     Part X and one Plan, the chosen method prints on the PDF and survives
-     reopening. Other prints the typed words.
-   - **Red-first:** no field, and no method in the sentence.
+     - each form's PDF method line, with and without a method;
+     - the ward-status line;
+     - the warning (only with recipients and no method, never an export
+       error);
+     - the ward-status requirement on all three accountings;
+     - the exact-match migration (a ward-status value moves; "mailed"
+       stays);
+     - the conversion mappings.
+   - New: `tests/e2e/certificate-service-method.spec.ts`. With real clicks
+     and keystrokes on the Inventory's D-5, the Annual's Part X, the
+     Simplified's Part VI and one Plan, the method prints on the PDF, the
+     ward's status lands in the exported workbook box (read with ExcelJS),
+     and the method is not in that box. Both survive reopening.
+   - **Red-first:**
+     - "mailed" lands in Annual K23;
+     - the Inventory has no method;
+     - the Simplified blocks without one.
    - `TEST-INDEX.md`.
-5. **Export/import.** The PDF only.
+5. **Export/import.** The Annual and Simplified workbook boxes change
+   meaning (ward status), along with their readers. The PDFs gain a method
+   line.
 6. **Security.** No sensitive data.
-7. **UI/UX.** The app's existing radio-choice fieldset pattern
-   (`<fieldset>`/`<legend>`), beside the service date.
+7. **UI/UX.** The ward status uses the Inventory's existing dropdown. The
+   method box keeps its place, with a clearer label.
 8. **Legal framing.** Rule 2.516(f) is quoted, not interpreted. Whether it
    governs the copies furnished under §744.362(1) and §744.367(4) is not
    decided here. That a missing method is a warning, not a block, is
-   Pinellas Clerk practice (2026-10-02).
-9. **Cross-form.** All seven certificates change together. The Clerk's
-   workbooks keep their own wording.
+   Pinellas Clerk practice (2026-10-02). That the ward's status is required
+   follows the Clerk's own form.
+9. **Cross-form.** All seven certificates change together, and the three
+   accountings now treat the ward's status alike.
 
 ### Build record — NOT STARTED
 
@@ -783,20 +1010,27 @@ furnished to the following persons on this date, 09/30/2026:"* There is no
 
 ## 72H — The certificate's attorney is the filing's attorney
 
-*From the browser review, finding M3.*
+*From the browser review, finding M3. **Revised 2026-10-02** after the
+independent review (point 2).*
 
 ### What a filer observes
 
-- On the Inventory's D-5, an attorney-signed certificate asks again for the
-  attorney's name, Florida Bar number, phone and address, and prints those.
-- On the Simplified's Part VI, it asks again for the Bar number, phone and
-  address.
-
-A typo, or a later correction on D-2 or Part V, leaves the certificate
-printing different details for the same attorney. The review saw a seeded
-Inventory print Bar # 00123456 in Part IV and 01234567 in Part VI. The code
-cannot tell whether that filing was typed that way, but the app allows it
-either way, and nothing warns.
+- **Two Bar Numbers.**
+  - On the Inventory's D-5, an attorney-signed certificate asks again for
+    the attorney's name, Florida Bar number, phone and address, and prints
+    those.
+  - On the Simplified's Part VI, it asks again for the Bar number, phone
+    and address.
+  - A typo, or a later correction on D-2 or Part V, leaves the certificate
+    printing different details for the same attorney. The review saw a
+    seeded Inventory print Bar # 00123456 in Part IV and 01234567 in Part
+    VI.
+- **Two attorney names on the Inventory.**
+  - The Cover's *"Attorney for Guardian"* fills the workbook: Summary I,
+    and through the form's own links, Parts IV and VI.
+  - D-2's *"Attorney's Name"* fills the PDF's signature block.
+  - Nothing compares them, so the PDF and the Excel can name different
+    attorneys.
 
 ### Evidence
 
@@ -808,26 +1042,42 @@ either way, and nothing warns.
 | Annual `PART X` | K25 `=Attorney` | **linked**: B27 `=Attorney_Bar_No`, K27 `=Attorney_Address` |
 | Simplified `PARTS V, VI ` | J41 `='PARTS I, II '!D15` | separate boxes |
 
-**The app has three variants:**
+**The app:**
 
-- **Annual:** the certificate keeps only its own signature and date
-  (`certAttySignDate`, `certAttySignatureState`, `certAttySignatureImage`)
-  and uses Part V's attorney. This matches the form.
+- **Annual:** one attorney name (Part I). The certificate keeps only its
+  own signature and date (`certAttySignDate`, `certAttySignatureState`,
+  `certAttySignatureImage`). This matches the form.
 - **Simplified:** re-typed `certAttyBarNumber`, `certAttyPhone`,
   `certAttyStreet` and `certAttyCityStateZip` (`index.js` near 648–651).
-  The PDF (near 327–329) and Excel print them, falling back to Part V when
-  blank.
+  - The PDF (near 327–329) and Excel (`excel.js` near 230–233) print them,
+    falling back to Part V when blank.
+  - The importer reads them back (near 409–411).
 - **Inventory:** `serviceAttorney.name`, `barNumber`, `phone`,
   `streetAddress` and `cityStateZip` (`index.js` near 1268–1270).
   - The validator requires `serviceAttorney.name` (near 1491).
   - The PDF prints them (near 866–874); only the email falls back to D-2's.
+    D-5 never had an email input, so that fallback reads a field nothing
+    collects.
   - Excel writes them to `PART VI` B29, J29, B31 and J31 (`excel.js` near
     547–550).
+  - The Inventory's names: the Cover's `attorneyForGuardian` goes to
+    `'SUMMARY I '!D24` (`excel.js` near 177) and the PDF cover; D-2's
+    `attorney.name` goes to the PDF signature block (`pdf-model.js` near
+    690).
+- **Conversions write the fields being retired:**
+  - `conversion.js` near 167 reads `serviceAttorney` into the Annual's
+    attorney;
+  - near 211–219, Inventory → Simplified writes `certAtty…` from
+    `serviceAttorney`, then `attorney`;
+  - near 238–242, Annual → Simplified writes `certAtty…` from the Annual's
+    attorney.
 
-### Decision (the requester, 2026-10-02)
+### Decisions (the requester, 2026-10-02)
 
-The certificate's attorney is the filing's attorney, as on the Annual and
-the Clerk's forms.
+- The certificate's attorney is the filing's attorney.
+- The Inventory keeps both name fields. Preview & Export warns when they
+  differ, saying which output prints which.
+- Old certificate details fill blanks, then are noted once.
 
 ### Design
 
@@ -836,33 +1086,50 @@ the Clerk's forms.
      come from D-2"*, read-only, like 71B's guardian-certifier line.
    - It keeps its own signature control and date
      (`serviceAttorney.signatureDate`, `signatureState`, `signatureImage`).
-   - The name, Bar number, phone and address inputs go, and so does the D-5
-     attorney name check. D-2 already validates the attorney. (D-5 never had
-     an email input; the PDF's fallback to D-2's email read a field nothing
-     collects.)
-2. **The Inventory PDF's Part VI** prints the attorney from D-2
-   (`attorney.*`), and the signature and date from `serviceAttorney.*`.
+   - The name, Bar number, phone and address inputs go, and so does the
+     D-5 attorney name check. D-2 already validates the attorney.
+   - `attorney-block.js` already leaves `serviceAttorney` out of "attorney
+     started", and that stays.
+2. **The Inventory PDF's Part VI** prints D-2's attorney (`attorney.*`,
+   including both emails), and the signature and date from
+   `serviceAttorney.*`.
 3. **The Inventory Excel's `PART VI`.**
    - B29, J29, B31 and J31 get D-2's Bar number, street, phone and
      city/state/zip.
    - G27 keeps the certificate's signature date.
-   - J27 stays the form's link.
-   - The importer stops reading those boxes into `serviceAttorney.*`. Check
-     at build that `PART IV` still supplies D-2's.
-4. **Simplified Part VI.** The four re-typed inputs go. The PDF and Excel
-   use Part V's `attorney_*`. Its own signature and date stay. The importer
-   stops reading `PARTS V, VI ` B43, J43 and their neighbours into
-   `certAtty…` (`excel.js` near 409-411); Part V's own cells supply the
-   attorney.
-5. **Typed data is kept, not printed.**
-   - Values already stored stay in the `.sav` (AGENTS.md §4,
-     non-destructive).
-   - When any non-blank one differs from the filing's attorney, Preview &
-     Export notes it once, for example: *"D-5 — Attorney details entered on
-     this certificate earlier (Florida Bar # 01234567) differ from D-2
-     (00123456). The certificate now prints D-2's; confirm D-2 is right."*
-   - The same applies on the Simplified, against Part V.
-6. **No attorney** (a guardian certifies): unchanged from 71B.
+   - J27 stays the form's link to the Cover's name.
+   - The importer stops reading those boxes into `serviceAttorney.*`;
+     `PART IV` supplies D-2's.
+4. **Simplified Part VI.**
+   - The four re-typed inputs go; its own signature and date stay.
+   - The PDF and Excel use Part V's `attorney_*`.
+   - The importer stops reading `PARTS V, VI ` B43, J43 and their
+     neighbours into `certAtty…`.
+5. **The Inventory's two names.** `form-derived-fields.js` adds a rule,
+   using 72A's containment test. When the Cover's `attorneyForGuardian` and
+   D-2's `attorney.name` are both filled and neither contains the other,
+   Preview & Export warns without blocking:
+   *"D-2 — The attorney's name (NAME) differs from the Cover's Attorney for
+   Guardian (NAME). The Excel workbook prints the Cover's name in Summary I
+   and Parts IV and VI; the PDF prints D-2's name in its signature blocks.
+   Confirm which is right before filing."*
+   - "Robert T. Nguyen" against "Robert T. Nguyen, Esq." does not warn.
+6. **Old certificate details** (decided):
+   - **Fill blanks.** On first open, each old D-5 or Simplified Part VI
+     detail fills the matching D-2 or Part V field **only where that field
+     is blank**. The Activity Log records each fill.
+   - **Note once.** Where both are filled and differ, Preview & Export
+     shows one note listing them, for example *"D-5 — Florida Bar #
+     01234567 was entered on this certificate earlier; the certificate now
+     prints D-2's (00123456)."* It has a *Dismiss* control. Dismissing
+     stores `certAttorneyNoteDismissed: true` on the filing, and the note
+     does not return.
+   - **Keep.** The old values stay in the file, unused (AGENTS.md §4,
+     non-destructive). Nothing deletes them.
+   - **Conversions stop writing them.** `conversion.js` near 167, 211–219
+     and 238–242 map only the filing attorney's fields, so a converted
+     filing starts with nothing to note.
+7. **No attorney** (a guardian certifies): unchanged from 71B.
 
 ### Cross-cutting checklist (AGENTS.md §8)
 
@@ -870,28 +1137,42 @@ the Clerk's forms.
    - The Inventory's `serviceAttorney.name`, `barNumber`, `phone`,
      `streetAddress` and `cityStateZip` rows, and the Simplified's four
      `certAtty…` rows: the notes read "retained; no longer entered or
-     printed (Milestone 72H)".
+     printed; filled into the filing attorney's blank fields on first open
+     (Milestone 72H)".
    - The `serviceAttorney.email` row describes a field no model or form
      has; it is removed.
+   - New: `certAttorneyNoteDismissed`, boolean, on both scopes.
    - `npm run verify:data-model`.
-2. **Legacy data.** Kept, and noted when they differ: visible. No
-   migration.
-3. **Fixtures.** Grep for specs filling `serviceAttorney.*` or `certAtty…`,
-   and for any `fillMinimalValid*` that fills the D-5 name to satisfy its
-   old requirement.
+2. **Legacy data.** Fill-blanks plus a once-only note, as decided.
+   Visible, logged, and nothing is deleted.
+3. **Fixtures.** Every spec that names `serviceAttorney` or `certAtty…`
+   today, listed under Build order, is updated with its reason. So is
+   `tests/e2e/support/fixtures.ts`'s D-5 fill, and any `fillMinimalValid*`
+   that fills the D-5 name for its old requirement.
 4. **Tests.**
-   - New: `tests/unit/certificate-attorney.spec.js`. Both engines' PDF
-     models print D-2's or Part V's details. The difference note fires only
-     when a stored value differs.
-   - New: an e2e case in which a Bar number typed on D-2 appears in the PDF
-     certificate and in the exported `PART VI`!B29, read with ExcelJS.
-   - **Red-first:** D-5's own value prints.
+   - New: `tests/unit/certificate-attorney.spec.js`. It covers:
+     - both engines' PDF models printing D-2's or Part V's details;
+     - the name warning, including "Esq." against no "Esq.", and a real
+       difference;
+     - the fill-blanks migration (fills only blanks; logs it);
+     - the note (shown on a difference, gone after Dismiss);
+     - the conversions writing no `certAtty…` or `serviceAttorney` detail.
+   - Extended: `tests/e2e/excel-form-field-placement.spec.ts`. A Bar number
+     typed on D-2 appears in the PDF certificate and in the exported `PART
+     VI`!B29, read with ExcelJS.
+   - **Red-first:** D-5's own value prints, and the conversion writes
+     `certAtty…`.
+   - `ms70-conversion-golden.json` is regenerated with a note.
    - `TEST-INDEX.md`.
-5. **Export/import.** The Inventory's `PART VI` writes and reads change, and
-   so do the Simplified's certificate boxes.
+5. **Export/import.** The Inventory's `PART VI` and the Simplified's
+   certificate boxes change in both directions. The conversions change.
 6. **Security.** None.
 7. **UI/UX.** Reuses 71B's read-only "Signed by … — details come from …"
-   line.
+   line and the existing advisory channel. The app has no generic
+   dismissible note. The nearest precedent for a dismissal stored with the
+   case is the Party record's "not the same person" pairs
+   (`party-resolver.js`), and this one is stored on the filing the same
+   way.
 8. **Legal framing.** None. The Clerk's forms link the two.
 9. **Cross-form.** The Annual already works this way and is unchanged.
 
