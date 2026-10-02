@@ -78,6 +78,7 @@ recorded as **Pinellas Clerk practice**, not as a reading of a statute or rule
 | Method of service (10-02, re-asked) | Use the existing free-text box, relabelled "How were the copies served?", on all seven certificates, with one new box on the Inventory. PDF only. A missing method warns, never blocks, so the Simplified's block goes. **This supersedes the first 10-02 answer** (a new choice field), which was given on 72G's false premise that no method field existed |
 | The ward's status, "Indicate if:" (10-02) | A separate dropdown on the Annual and Simplified, like the Inventory's (totally incapacitated / under 14 / N/A); it, not the method, goes to the workbook box. **Required on all three accountings: the requester's decision, recorded as Pinellas Clerk practice**, not something the form's having the box proves |
 | The certificate on a new filing (10-02, second review) | On any conversion, New Filing from Existing or New Year, **only the recipients carry**. The service date, method, "no recipients required" answer, signer choice and every certificate signature start blank. The ward's status carries only on a same-period conversion (Annual family ↔ Simplified) and starts blank otherwise |
+| The attorney's own Part V signature date on conversion (10-02) | Starts blank when a filing is converted between the Annual family and the Simplified (either direction), as Inventory → Annual already does: the attorney signs the new filing. Part of 72G |
 | The certificate's attorney (10-02) | The filing's attorney details (D-2 / Part V), as on the Annual and the Clerk's forms |
 | The Inventory's two attorney names (10-02) | Keep both, the Cover's "Attorney for Guardian" and D-2's name. Warn when they differ, saying the workbook prints the Cover's and the PDF prints D-2's |
 | Old certificate attorney details (10-02; changed at the second review) | Once, marked by a saved migration marker: each fills the matching D-2 / Part V field only where that field is blank, and the Activity Log records which fields, never their values. Old values that differ are shown on the certificate page under the "Signed by" line with a **"Discard old details"** button (an explicit deletion). **This replaces the earlier dismissible Preview & Export note**, which would have needed clickable-warning machinery the app doesn't have. Conversions stop writing them |
@@ -1009,7 +1010,9 @@ which was false (Independent review, point 1).*
 - **What carries today.**
   - Same-period conversions between the Annual family and the Simplified
     copy the service date, `certIndicator` and the certificate signature
-    date (`conversion.js` near 236–238 and 290–293). That contradicts the
+    date (`conversion.js` near 236–238 and 290–293). They also copy the
+    attorney's own Part V signature date, `attorney_signatureDate` (near
+    235 and 285). That contradicts the
     rule written above the Inventory → Annual mapping (near 149–151):
     *"Signature dates are never carried — the new filing is signed and
     served on its own date."*
@@ -1108,6 +1111,11 @@ which was false (Independent review, point 1).*
      `certifiesService` flag (71B).
    - "Certificate signatures" means every certificate signature date,
      state and image, whether attorney- or guardian-signed.
+   - **The attorney's own Part V signature date** (`attorney_signatureDate`)
+     also starts blank on an Annual family ↔ Simplified conversion, in both
+     directions (`conversion.js` near 235 and 285). This was decided
+     2026-10-02 as an addition to the certificate decision. Inventory →
+     Annual already leaves it blank.
    - Mapped across forms, where they carry: `serviceIndicateIf` ↔
      `certWardStatus`, and the recipients by each form's existing mapping.
    - A blank ward status shows its required issue, and a blank method shows
@@ -1175,7 +1183,8 @@ which was false (Independent review, point 1).*
      - the Inventory has no method;
      - the Simplified blocks without one;
      - a Plan's New Year keeps last year's service date and method;
-     - an Annual → Simplified conversion carries the service date.
+     - an Annual → Simplified conversion carries the service date and the
+       attorney's Part V signature date.
    - `TEST-INDEX.md`.
 5. **Export/import.** The Annual and Simplified workbook boxes change
    meaning (ward status), along with their readers. The PDFs gain a method
@@ -1556,12 +1565,6 @@ Per AGENTS.md §2:
 
 ## Not in scope
 
-- **The attorney's own signature date on same-period conversions.** Found at
-  the second review: Annual family ↔ Simplified conversions also carry
-  `attorney_signatureDate`, the attorney's Part V signature, not the
-  certificate's (`conversion.js` near 235). The rule written in that file
-  says signature dates never carry. This is not part of 72G's certificate
-  decision; it is left for its own decision.
 - **Part VIII's trust amount prints as a date in Excel.** `D16`–`D18` carry
   the Clerk's date format. Confirmed by Milestone 71A; still open.
 - **Activity-log entries tagged with the wrong filing.** Listed in
