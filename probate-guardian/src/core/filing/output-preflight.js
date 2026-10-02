@@ -10,6 +10,7 @@ import { planCertificateAdvisories, certificateOptional } from './plan-certifica
 import { wardShareAdvisories } from './ward-share-advisories.js';
 import { unrepresentedAdvisories } from './unrepresented-filing.js';
 import { startingBalanceNotes } from './starting-balance-carry.js';
+import { guardianEmailAdvisories } from './guardian-email.js';
 
 // Milestone 71B. Where each accounting form asks why there is no attorney,
 // and where its certificate of service is, by the registry's engine id.
@@ -92,6 +93,10 @@ export function prepareFilingOutput(data, baseIssues = [], options = {}) {
     ...(['annual', 'simplified'].includes(identity.descriptor?.engineId)
       ? startingBalanceNotes(target, { wards: getCaseFile()?.wards || null, section: 'Part II' })
       : []),
+    // Milestone 72C: a guardian with no email address while no attorney is
+    // entered, on all seven forms -- warned, never blocked (Pinellas Clerk
+    // practice, 2026-10-01/02; Rule 2.515(c)). See guardian-email.js.
+    ...guardianEmailAdvisories(target, identity.descriptor?.engineId),
   ];
 
   return {

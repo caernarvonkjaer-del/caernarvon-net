@@ -112,7 +112,8 @@ const CASES = [
     override: { 'planGuardians.0.signatureState': 'typed', 'planGuardians.0.signatureDate': '' },
     message: 'Signatures — Guardian 1 date signed is required to apply "/s/" Signed',
   },
-  { autoId: 'signatures.guardian1.contact', override: { 'planGuardians.0.email': '' }, message: 'Signatures — Guardian 1 email is required' },
+  // Milestone 72C: no email case. A guardian's email is a print-preview
+  // warning now, never a blocker -- see the dedicated test below.
   { autoId: 'signatures.guardian1.contact', override: { 'planGuardians.0.phone': '' }, message: 'Signatures — Guardian 1 phone is required' },
   { autoId: 'signatures.guardian1.contact', override: { 'planGuardians.0.mailingAddress': '' }, message: 'Signatures — Guardian 1 mailing address is required' },
   { autoId: 'plan.q1', override: { q1Residences: '' }, message: 'The Plan — Question 1 (places resided) is required' },
@@ -203,6 +204,20 @@ describe('Plan Simplified: Milestone 39-B tri-state signature parity', () => {
     });
     const { auto } = readiness(fixture);
     expect(autoById(auto, 'signatures.guardian1.core').ok).toBe(true);
+
+    const preflight = runPreflight(fixture);
+    expect(preflight.messages).toEqual([]);
+    expect(preflight.canExport).toBe(true);
+  });
+});
+
+// Milestone 72C: the guardian's email was the one contact field this Plan
+// blocked on, and no other form did. It is a warning now, on all seven forms.
+describe('Plan Simplified: a guardian with no email (Milestone 72C)', () => {
+  test('exports, with the contact row ready and no blocking message', () => {
+    const fixture = withOverrides(BASELINE, { 'planGuardians.0.email': '' });
+    const { auto } = readiness(fixture);
+    expect(autoById(auto, 'signatures.guardian1.contact').ok).toBe(true);
 
     const preflight = runPreflight(fixture);
     expect(preflight.messages).toEqual([]);

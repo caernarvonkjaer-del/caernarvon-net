@@ -172,7 +172,8 @@ export function buildPlanSimplifiedModel(D) {
 
   // Milestone 68C: the Certificate of Service, last, on every Plan (offered
   // as not required on this one).
-  sections.push(planCertificateOfServiceSection(d, { attorneyName: (f) => f.attorney || '', planNoun: 'plan', optional: true }, fmtDate));
+  // Milestone 72C: `attorney_name`, as the page reads it (index.js's CERT_CFG).
+  sections.push(planCertificateOfServiceSection(d, { attorneyName: (f) => f.attorney_name || '', planNoun: 'plan', optional: true }, fmtDate));
 
   return { metadata, sections };
 }

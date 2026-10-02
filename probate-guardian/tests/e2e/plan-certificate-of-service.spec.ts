@@ -224,6 +224,53 @@ for (const form of FORMS) {
         await expect(advisory.first(), 'started: Preview & Export says what is blank').toBeVisible();
         await expect(advisory.filter({ hasText: 'No recipient is listed' })).toHaveCount(1);
       });
+
+      // Milestone 72C. The Simplified Plan's certificate looked for its
+      // attorney under a field this form does not have, so it always fell back
+      // to Guardian 1 and never printed an attorney -- unlike the other three
+      // Plans, whose certificates default to the attorney once one is named.
+      test('Milestone 72C: with an attorney named, the certificate defaults to the attorney and prints their name', async ({ page }) => {
+        test.setTimeout(120_000);
+        await freshStartNoPassword(page);
+        await createWard(page, 'Simplified Plan Certificate Attorney', form.type);
+        await form.fill(page);
+        await page.evaluate(() => (window as any).GuardianForms.testing.patchFiling({ attorney_name: 'Jordan Reyes, Esq.', attorney_email: 'jordan@law.example' }));
+        await go(page, form.route);
+        await expect(page.locator('input[data-form-path="certSigner"][value="attorney"]')).toBeChecked();
+        await expect(page.locator('#main-content')).toContainText('Printed name, from the plan: Jordan Reyes, Esq.');
+        await page.evaluate(() => (window as any).GuardianForms.testing.patchFiling({ certDate: '2026-03-01', certSignatureDate: '2026-03-02', certSignatureState: 'typed' }));
+        const text = (await extractPdfText(await download(page, form.pdfButton))).replace(/\s+/g, ' ');
+        expect(text).toContain('Certified by (Attorney)');
+        expect(text).toContain('Jordan Reyes, Esq.');
+      });
+
+      // And a certificate the guardian already signed under the old default
+      // keeps the guardian it printed: on the first open after 72C a blank
+      // signer on a signed certificate is saved as the guardian, once.
+      test('Milestone 72C: a certificate signed before the change keeps its guardian, once, on opening', async ({ page }) => {
+        await freshStartNoPassword(page);
+        await createWard(page, 'Simplified Plan Certificate Pinned', form.type);
+        await form.fill(page);
+        // As a plan saved before 72C: never opened since, signed, no stored signer.
+        await page.evaluate(() => (window as any).GuardianForms.testing.patchFiling({
+          certSignerMigrated: false, certSigner: '', certSignatureDate: '2026-03-02', certSignatureState: 'typed',
+          attorney_name: 'Jordan Reyes, Esq.',
+        }));
+        await go(page, form.route);
+        const state = () => page.evaluate(() => ({
+          signer: (window as any).GuardianForms.testing.field('certSigner'),
+          migrated: (window as any).GuardianForms.testing.field('certSignerMigrated'),
+        }));
+        expect(await state()).toEqual({ signer: 'guardian', migrated: true });
+        await expect(page.locator('input[data-form-path="certSigner"][value="guardian"]')).toBeChecked();
+
+        // Never again: cleared afterwards, the choice is left to the default.
+        await page.evaluate(() => (window as any).GuardianForms.testing.patchFiling({ certSigner: '' }));
+        await go(page, '/p3');
+        await go(page, form.route);
+        expect(await state()).toEqual({ signer: '', migrated: true });
+        await expect(page.locator('input[data-form-path="certSigner"][value="attorney"]')).toBeChecked();
+      });
     }
   });
 }

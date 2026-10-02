@@ -110,7 +110,9 @@ export function simplifiedCompletion(D, deps = {}) {
   const filled=v=>v!==''&&v!==null&&v!==undefined;
   const hasAny=(...vals)=>vals.some(v=>filled(v));
   const rowHasAnyData=r=>Object.entries(r||{}).some(([key,v])=>key!=='id'&&v!==''&&v!=null);
-  const guardianComplete=g=>filled(g.name)&&filled(g.signatureDate)&&filled(g.ssn)&&filled(g.phone)&&filled(g.email)&&filled(g.mailingStreet)&&filled(g.mailingCityStateZip)&&filled(g.residenceStreet)&&filled(g.residenceCityStateZip);
+  // Milestone 72C: the guardian's email is a warning, never a requirement, so
+  // it no longer holds back Part IV's mark (guardian-email.js).
+  const guardianComplete=g=>filled(g.name)&&filled(g.signatureDate)&&filled(g.ssn)&&filled(g.phone)&&filled(g.mailingStreet)&&filled(g.mailingCityStateZip)&&filled(g.residenceStreet)&&filled(g.residenceCityStateZip);
   // Milestone 57, Simplified parity gap. The same rule validateSimplified()
   // applies, not a second reading of it: a boolean reimplementation of the
   // signature states is how the sidebar and the export gate drifted apart
@@ -191,8 +193,9 @@ export function annualCompletion(D, deps = {}) {
       &&datesOrdered(D.periodTo,D.preparer.signatureDate,true)),
     // Milestone 71B: complete with no attorney at all, as validateAnnual()
     // now allows; once one is started, the whole block, as before.
+    // Milestone 72C: and the attorney's name, as validateAnnual() now says.
     'a-p5':!isAttorneyStarted(D,'annual')
-      ||(filled(D.attorney_bar)&&filled(D.attorney_phone)&&filled(D.attorney_email)&&filled(D.attorney_street)&&filled(D.attorney_cityStateZip)&&filled(D.attorney_signatureDate)
+      ||(filled(D.attorney)&&filled(D.attorney_bar)&&filled(D.attorney_phone)&&filled(D.attorney_email)&&filled(D.attorney_street)&&filled(D.attorney_cityStateZip)&&filled(D.attorney_signatureDate)
       &&datesOrdered(D.periodTo,D.attorney_signatureDate,true)),
     // Complete when the two lines agree, or the difference is explained.
     'a-p67':(()=>{const r=deps.annualReconcileState(t,D);return !r.outOfBalance||r.explained;})(),
@@ -371,8 +374,10 @@ export function planAnnualCompletion(D, deps = {}) {
     // bare `D.attorney` truthiness the validator uses -- a blank
     // attorney card is unaffected, matching validatePlanAnnual()'s
     // `if(d.attorney)req(d.attorney_email,...)`.
+    // Milestone 72C: the shared "attorney started" test, then the name and
+    // email both, as validatePlanAnnual() now says.
     'pa-p11':filled(g0.name)&&filled(g0.signatureDate)
-      &&(!D.attorney||filled(D.attorney_email)),
+      &&(!isAttorneyStarted(D,'planAnnual')||(filled(D.attorney)&&filled(D.attorney_email))),
     // Milestone 68C: the Certificate of Service -- see Plan Simplified's ps-p4.
     'pa-p12':recipientsSettled(D.certRecipients,D.certNoRecipients),
   };
@@ -389,7 +394,8 @@ export function planAnnualCompletion(D, deps = {}) {
     'pa-p8':!checks['pa-p8']&&anyOf(D.q9MentalDementia,D.q9MentalAlzheimers,D.q9PhysMobility,D.q9UsesGlasses,D.q9NeedsGlasses,D.q9MentalNone,D.q9PhysNone),
     'pa-p9':!checks['pa-p9']&&anyOf(D.q10NoDirectives,D.q10Executed),
     'pa-p10':!checks['pa-p10']&&anyOf(D.q11NoRemuneration,D.q11ReceivedName,D.q11Amount,D.q11From),
-    'pa-p11':!checks['pa-p11']&&hasAny(g0.name,g0.signatureDate,g0.phone,g0.email,g0.ssn),
+    // Milestone 72C: an attorney started on its own also marks the page begun.
+    'pa-p11':!checks['pa-p11']&&(hasAny(g0.name,g0.signatureDate,g0.phone,g0.email,g0.ssn)||isAttorneyStarted(D,'planAnnual')),
     'pa-p12':!checks['pa-p12']&&((D.certRecipients||[]).some(r=>r&&hasAny(r.name,r.line2,r.line3,r.line4))||filled(D.certNoRecipients)||filled(D.certDate)),
   };
   return {checks,incomplete};
@@ -554,11 +560,16 @@ export function planMinorCompletion(D, deps = {}) {
     // validatePlanMinor() has always said; the sidebar used to demand both, so
     // a pro se filing never reached 100%. A started role is complete with its
     // name and a valid signature choice -- the validator's own two checks.
-    'pm-p7':[['preparer_name','preparer_signatureDate','preparer_signatureState','preparer_signatureImage'],['attorney_name','attorney_signatureDate','attorney_signatureState','attorney_signatureImage']]
-      .every(([name,date,state,image])=>{
-        const started=filled(D[name])||filled(D[date])||(!!D[state]&&D[state]!=='none');
-        return !started||(filled(D[name])&&isSignatureComplete({state:D[state],date:D[date],image:D[image]}));
-      }),
+    // Milestone 72C: the attorney is "started" by the shared definition
+    // (attorney-block.js, any attorney field) and then needs the email too, as
+    // validatePlanMinor() now says; the preparer keeps its own test.
+    'pm-p7':(()=>{
+      const preparerStarted=filled(D.preparer_name)||filled(D.preparer_signatureDate)||(!!D.preparer_signatureState&&D.preparer_signatureState!=='none');
+      const preparerDone=!preparerStarted||(filled(D.preparer_name)&&isSignatureComplete({state:D.preparer_signatureState,date:D.preparer_signatureDate,image:D.preparer_signatureImage}));
+      const attorneyDone=!isAttorneyStarted(D,'planMinor')
+        ||(filled(D.attorney_name)&&filled(D.attorney_email)&&isSignatureComplete({state:D.attorney_signatureState,date:D.attorney_signatureDate,image:D.attorney_signatureImage}));
+      return preparerDone&&attorneyDone;
+    })(),
     // Milestone 68C: the Certificate of Service -- see Plan Simplified's ps-p4.
     'pm-p8':recipientsSettled(D.certRecipients,D.certNoRecipients),
   };
@@ -569,7 +580,9 @@ export function planMinorCompletion(D, deps = {}) {
     'pm-p4':!checks['pm-p4']&&anyOf(D.q4Primary,D.q4Dentist,D.q4Specialist,D.q4PT,D.q4ST,D.q4OT),
     'pm-p5':!checks['pm-p5']&&hasAny(D.q5SchoolProgress,D.q5SocialDevelopment,D.q5Communicates,D.q5Interpersonal),
     'pm-p6':!checks['pm-p6']&&hasAny(g0.name,g0.signatureDate,g0.phone,g0.tin),
-    'pm-p7':!checks['pm-p7']&&hasAny(D.preparer_name,D.attorney_name,D.attorney_signatureDate),
+    // Milestone 72C: any attorney field begins the page, as it begins the
+    // attorney (a lone Bar number or phone used to leave it looking untouched).
+    'pm-p7':!checks['pm-p7']&&(hasAny(D.preparer_name)||isAttorneyStarted(D,'planMinor')),
     'pm-p8':!checks['pm-p8']&&((D.certRecipients||[]).some(r=>r&&hasAny(r.name,r.line2,r.line3,r.line4))||filled(D.certNoRecipients)||filled(D.certDate)),
   };
   return {checks,incomplete};

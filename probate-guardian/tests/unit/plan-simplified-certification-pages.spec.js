@@ -33,10 +33,16 @@ const FILLED = {
   attorney_signatureDate: '2026-01-07',
 };
 
-function flatten(model) {
+// Milestone 72C: `exceptId` leaves one section out. The Certificate of
+// Service (68C) is not the court form's certification: it is signed by the
+// attorney or a party (Rule 2.516), and now that it finds this form's
+// attorney it prints the attorney's name when one is entered, as the other
+// Plans' certificates do.
+function flatten(model, { exceptId = '' } = {}) {
   const roles = [];
   const text = [];
   for (const section of model.sections || []) {
+    if (exceptId && section.id === exceptId) continue;
     for (const block of section.blocks || []) {
       if (block.type === 'signature-block') {
         roles.push(block.role || '');
@@ -59,10 +65,20 @@ describe('Milestone 61E: Simplified\'s filed PDF matches its own court form', ()
   });
 
   test('no attorney certification reaches the output, even fully filled in', () => {
-    const { roles, text } = flatten(buildPlanSimplifiedModel(FILLED));
-    expect(roles).not.toContain('Attorney Signature');
-    expect(text).not.toMatch(/CERTIFICATION AND SIGNATURE OF GUARDIAN'S ATTORNEY/i);
+    const all = flatten(buildPlanSimplifiedModel(FILLED));
+    expect(all.roles).not.toContain('Attorney Signature');
+    expect(all.text).not.toMatch(/CERTIFICATION AND SIGNATURE OF GUARDIAN'S ATTORNEY/i);
+    // Milestone 72C: the attorney's name appears only on the certificate of
+    // service, which the next test pins.
+    const { text } = flatten(buildPlanSimplifiedModel(FILLED), { exceptId: 'certificate-of-service' });
     expect(text).not.toMatch(/Jordan Pike/);
+  });
+
+  test('Milestone 72C: the certificate of service names the attorney who certifies it', () => {
+    const cert = buildPlanSimplifiedModel(FILLED).sections.find((s) => s.id === 'certificate-of-service');
+    const block = cert.blocks.find((b) => b.type === 'signature-block');
+    expect(block.role).toBe('Certified by (Attorney)');
+    expect(block.signerName).toBe('Jordan Pike');
   });
 
   test('the guardian signature block and filing notice are untouched', () => {

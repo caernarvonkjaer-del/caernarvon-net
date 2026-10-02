@@ -556,7 +556,7 @@ function pagePart4(){
           <div class="col-12">${renderSignatureStateControl({ path: `guardians.${i}`, state: inferLegacySignatureState(g.signatureState, g.signatureDate), route: '/p4', signatureImage: g.signatureImage })}</div>
           <div class="col-md-3">${renderFormField({ path: `guardians.${i}.ssn`, label: 'SSN / EIN', value: g.ssn, required: true })}</div>
           <div class="col-md-4">${renderFormField({ path: `guardians.${i}.phone`, label: 'Phone Number', value: g.phone, required: true })}</div>
-          <div class="col-md-8">${renderFormField({ path: `guardians.${i}.email`, label: 'Email Address', value: g.email, type: 'email', required: true })}</div>
+          <div class="col-md-8">${renderFormField({ path: `guardians.${i}.email`, label: 'Email Address', value: g.email, type: 'email' })}</div>
           <div class="col-md-6">${renderFormField({ path: `guardians.${i}.mailingStreet`, label: 'Mailing Street Address', value: g.mailingStreet, required: true })}</div>
           <div class="col-md-6">${renderFormField({ path: `guardians.${i}.mailingCityStateZip`, label: 'Mailing City / State / Zip', value: g.mailingCityStateZip, required: true })}</div>
           <div class="col-md-6">${renderFormField({ path: `guardians.${i}.residenceStreet`, label: 'Residence / Corporate Street Address', value: g.residenceStreet, required: true })}</div>
@@ -803,7 +803,9 @@ export function validateSimplified(){
     }));
     req(g.ssn,`Part IV — ${p} — SSN/EIN`,`${gp}.ssn`);
     req(g.phone,`Part IV — ${p} — Phone Number`,`${gp}.phone`);
-    req(g.email,`Part IV — ${p} — Email Address`,`${gp}.email`);
+    // Milestone 72C: a guardian's email no longer blocks export -- it warns,
+    // and only when no attorney is entered (guardian-email.js), the same rule
+    // on all seven forms (Pinellas Clerk practice, 2026-10-01/02).
     req(g.mailingStreet,`Part IV — ${p} — Mailing Street Address`,`${gp}.mailingStreet`);
     req(g.mailingCityStateZip,`Part IV — ${p} — Mailing City/State/Zip`,`${gp}.mailingCityStateZip`);
     req(g.residenceStreet,`Part IV — ${p} — Residence Street Address`,`${gp}.residenceStreet`);

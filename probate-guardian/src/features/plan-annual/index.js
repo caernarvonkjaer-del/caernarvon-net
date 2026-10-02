@@ -3,6 +3,8 @@ import { checkDateOrder } from '../../core/validation/date-rules.js';
 import { checkSignatureState, inferLegacySignatureState } from '../../core/validation/signature-state.js';
 import { issueFactory } from '../../core/validation/validation-issue.js';
 import { startedRows } from '../../core/validation/row-started.js';
+import { isAttorneyStarted } from '../../core/validation/attorney-block.js';
+import { watchAttorneyRequiredMarkers } from '../../core/form/attorney-required-markers.js';
 import { renderSignatureStateControl, mountSignatureStateControls } from '../../core/signature/signature-state-control.js';
 import { migratePlanCertificateOfService } from '../../core/filing/plan-certificate-of-service.js';
 import { renderPlanCertificateOfServicePage } from '../../core/form/plan-certificate-of-service-page.js';
@@ -121,12 +123,27 @@ export async function mount(container, page, { signal } = {}) {
       route: page,
     }));
   }
+  // Milestone 72C: the attorney's name and email are marked required exactly
+  // while an attorney is started, following the filer's typing, as the
+  // accountings' attorney blocks do (71B).
+  attorneyMarkerAborts.get(container)?.abort();
+  attorneyMarkerAborts.delete(container);
+  if (page === '/p11') {
+    attorneyMarkerAborts.set(container, watchAttorneyRequiredMarkers(container, {
+      engineId: 'planAnnual', paths: ['attorney', 'attorney_email'],
+      triggerPaths: ['attorney', 'attorney_bar', 'attorney_phone', 'attorney_email', 'attorney_secondary_email', 'attorney_street', 'attorney_cityStateZip', 'attorney_signatureDate', 'attorney_signatureState'],
+    }));
+  }
   if (isPrint) await _printModule.mountPreview();
 }
+
+const attorneyMarkerAborts = new WeakMap();
 
 export function dispose(container) {
   signatureHandles.get(container)?.forEach((h) => h.destroy());
   signatureHandles.delete(container);
+  attorneyMarkerAborts.get(container)?.abort();
+  attorneyMarkerAborts.delete(container);
   container.replaceChildren();
 }
 
@@ -633,12 +650,12 @@ function pagePlanASignatures(){
           <div class="entry-card-header d-flex justify-content-between align-items-center gap-2"><span>Attorney Certification</span><button type="button" class="btn btn-outline-secondary btn-sm" data-form-action="link-party" data-role="attorney" data-index="0">Link Person</button></div>
           <div class="entry-card-body">
             <div class="row g-2">
-              <div class="col-md-7">${inpS('attorney','Attorney Name',d.attorney)}</div>
+              <div class="col-md-7">${inpS('attorney','Attorney Name',d.attorney,isAttorneyStarted(d,'planAnnual'))}</div>
               <div class="col-md-5">${inpS('attorney_signatureDate','Date Signed',d.attorney_signatureDate,false,'date')}</div>
               <div class="col-12">${renderSignatureStateControl({ path: 'attorney', state: inferLegacySignatureState(d.attorney_signatureState, d.attorney_signatureDate), route: '/p11', signatureImage: d.attorney_signatureImage, statePath: 'attorney_signatureState', imagePath: 'attorney_signatureImage' })}</div>
               <div class="col-md-6">${inpS('attorney_bar','Bar Number',d.attorney_bar)}</div>
               <div class="col-md-6">${inpS('attorney_phone','Phone Number',d.attorney_phone)}</div>
-              <div class="col-12">${inpS('attorney_email','Primary Email (e-filing)',d.attorney_email,true,'email')}</div>
+              <div class="col-12">${inpS('attorney_email','Primary Email (e-filing)',d.attorney_email,isAttorneyStarted(d,'planAnnual'),'email')}</div>
               <div class="col-12">${inpS('attorney_secondary_email','Secondary Email (optional)',d.attorney_secondary_email || d.attorney_secondaryEmail,false,'email')}</div>
               <div class="col-12">${inpS('attorney_street','Street Address',d.attorney_street)}</div>
               <div class="col-12">${inpS('attorney_cityStateZip','City / State / ZIP',d.attorney_cityStateZip)}</div>
@@ -771,13 +788,15 @@ export function validatePlanAnnual(){
   // choice with no typed name would otherwise pass silently.
   // Milestone 42F: namePath is the bare `attorney` scalar; the pre-42F
   // adapter sent this message to the guardian's name field.
+  // Milestone 72C: the name is required below once an attorney is started,
+  // so it is no longer passed here, where it would repeat that message (the
+  // convention checkSignatureState() documents; the guardian's call follows it).
   errs.push(...checkSignatureState({
     state: inferLegacySignatureState(d.attorney_signatureState, d.attorney_signatureDate),
-    name: d.attorney,
     date: d.attorney_signatureDate,
     image: d.attorney_signatureImage,
     sectionLabel: 'Signatures', roleLabel: 'Attorney',
-    filingType:T, namePath:'attorney', datePath:'attorney_signatureDate', imagePath:'attorney_signatureImage',
+    filingType:T, datePath:'attorney_signatureDate', imagePath:'attorney_signatureImage',
   }));
   // Milestone 55D: attorney_email already rendered a required asterisk
   // (inpS(...,true,'email')) with no matching rule here. Unlike bar/phone/
@@ -785,7 +804,15 @@ export function validatePlanAnnual(){
   // new requirement -- gated on bare `d.attorney` truthiness, co-existing
   // with (not replacing) checkSignatureState()'s own signature-state-keyed
   // name requirement just above. A blank attorney card is unaffected.
-  if(d.attorney)req(d.attorney_email,'Signatures — Attorney email is required','attorney_email');
+  // Milestone 72C (decided 2026-10-02): once any attorney field is entered
+  // (attorney-block.js, the shared definition), the attorney's name and
+  // primary email are both required, as on the other Plans and the
+  // accountings. This used to test only d.attorney, so a Bar number alone was
+  // "no attorney", and the name was asked only through "/s/".
+  if(isAttorneyStarted(d,'planAnnual')){
+    req(d.attorney,'Signatures — Attorney name is required','attorney');
+    req(d.attorney_email,'Signatures — Attorney email is required','attorney_email');
+  }
   return errs;
 }
 // Milestone 33, Phase 2.3: see annual-accounting/index.js's identical comment --

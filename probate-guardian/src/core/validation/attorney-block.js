@@ -109,12 +109,46 @@ export const ATTORNEY_ENTRY = Object.freeze({
     ]),
     signature: ['attorney_signatureState', 'attorney_signatureDate'],
   }),
+  // Milestone 72C (decided 2026-10-02): the Annual Plan and the Plan for
+  // Minors use the rule the accountings and the Initial Plan already use --
+  // any attorney field counts. The Annual Plan used to test only the name, and
+  // the Plan for Minors the name, signature date or state, so an attorney with
+  // only a Bar number entered counted as "no attorney" there.
+  planAnnual: Object.freeze({
+    fields: Object.freeze([
+      'attorney', 'attorney_bar', 'attorney_phone', 'attorney_email', 'attorney_secondary_email',
+      'attorney_street', 'attorney_cityStateZip', 'attorney_signatureDate',
+    ]),
+    signature: ['attorney_signatureState', 'attorney_signatureDate'],
+  }),
+  planMinor: Object.freeze({
+    fields: Object.freeze([
+      'attorney_name', 'attorney_bar', 'attorney_phone', 'attorney_email', 'attorney_secondary_email',
+      'attorney_street', 'attorney_cityStateZip', 'attorney_signatureDate',
+    ]),
+    signature: ['attorney_signatureState', 'attorney_signatureDate'],
+  }),
 });
+
+/**
+ * Milestone 72C (decided 2026-10-02). The Simplified Plan's attorney fields
+ * are optional and print nowhere -- the court's Simplified Plan has no
+ * attorney section (Milestone 61E) -- so nothing is ever required of them,
+ * and this form has no entry in ATTORNEY_ENTRY. Whether the plan has an
+ * attorney to serve, which silences the guardian-email warning, needs the
+ * attorney's name and primary email both: a phone number alone is not an
+ * attorney anyone can serve.
+ */
+export function isPlanSimplifiedRepresented(d) {
+  return !!d && String(d.attorney_name ?? '').trim() !== '' && String(d.attorney_email ?? '').trim() !== '';
+}
 
 /**
  * True once the filer has entered anything identifying an attorney on a
  * filing of this engine (`guardian`, `annual` -- which also serves Final and
- * Trust -- `simplified`, or `planInitial`). Same contract as
+ * Trust -- `simplified`, `planInitial`, and since Milestone 72C `planAnnual`
+ * and `planMinor`; the Simplified Plan uses isPlanSimplifiedRepresented()
+ * above). Same contract as
  * isPlanInitialAttorneyStarted() above: pure, and false for a blank block,
  * which is what keeps every attorney requirement off a pro se or Guardian
  * Advocate filing. An unknown engine answers true, so a caller that asks

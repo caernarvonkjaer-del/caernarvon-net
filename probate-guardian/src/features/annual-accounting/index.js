@@ -90,7 +90,8 @@ import { watchAttorneyRequiredMarkers } from '../../core/form/attorney-required-
 
 // Milestone 71B: the Part V fields that become required once an attorney is
 // started (and only then) -- the live markers and validateAnnual() share it.
-const ANNUAL_ATTORNEY_REQUIRED = ['attorney_bar', 'attorney_phone', 'attorney_email', 'attorney_street', 'attorney_cityStateZip', 'attorney_signatureDate'];
+// Milestone 72C: the attorney's name ('attorney', on Part I and Part V) too.
+const ANNUAL_ATTORNEY_REQUIRED = ['attorney', 'attorney_bar', 'attorney_phone', 'attorney_email', 'attorney_street', 'attorney_cityStateZip', 'attorney_signatureDate'];
 const ANNUAL_ATTORNEY_TRIGGERS = ['attorney', 'attorney_secondaryEmail', 'attorney_signatureState', 'attorney_isPreparer'];
 const attorneyMarkerAborts = new WeakMap();
 // Annual Accounting — the sixth feature extraction (Milestone 7, Phases A
@@ -194,6 +195,13 @@ export async function mount(container, page, { signal } = {}) {
   if (page === '/p5') {
     attorneyMarkerAborts.set(container, watchAttorneyRequiredMarkers(container, {
       engineId: 'annual', paths: ANNUAL_ATTORNEY_REQUIRED, triggerPaths: ANNUAL_ATTORNEY_TRIGGERS,
+    }));
+  } else if (page === '/' || !page || page === '/p1') {
+    // Milestone 72C: Part I's "Attorney for Guardian" is the same field as
+    // Part V's name, so it is marked the same way -- as the Simplified's Cover
+    // marks its own (SIMPLIFIED_ATTORNEY_REQUIRED['/']).
+    attorneyMarkerAborts.set(container, watchAttorneyRequiredMarkers(container, {
+      engineId: 'annual', paths: ['attorney'], triggerPaths: ANNUAL_ATTORNEY_TRIGGERS,
     }));
   }
   if (page === '/print') await _printModule.mountPreview();
@@ -661,7 +669,7 @@ function pagePart1Annual(){
         <h2 class="subsection-heading">Guardian &amp; Attorney</h2>
         ${inpD('Guardian',d.guardian,"D.guardian=this.value",true)}
         <div class="row g-2">
-          <div class="col-md-8">${inpD('Attorney for Guardian',d.attorney,"D.attorney=this.value")}</div>
+          <div class="col-md-8">${inpD('Attorney for Guardian',d.attorney,"D.attorney=this.value",isAttorneyStarted(d,'annual'))}</div>
           <div class="col-md-4">${countyInputD('County',d.county,"D.county=this.value")}</div>
         </div>
         ${renderSelectField({path:'typeOfGuardianship',label:'Type of Guardianship',value:d.typeOfGuardianship,options:optionsWithLegacyValue(GUARDIANSHIP_TYPE_OPTIONS,d.typeOfGuardianship),required:true})}
@@ -725,7 +733,7 @@ function pagePart3Annual(){
           <div class="col-12">${preparerFlagCheckboxHTML({ path: `guardians.${i}.isPreparer`, checked: !!g.isPreparer, route: '/p3' })}</div>
           <div class="col-md-4">${inpDWithTooltip('SSN / EIN','ssn_ein',g.ssn,`D.guardians[${i}].ssn=this.value`,true)}</div>
           <div class="col-md-4">${inpD('Phone Number',g.phone,`D.guardians[${i}].phone=this.value`,true)}</div>
-          <div class="col-md-8">${inpD('Email Address',g.email,`D.guardians[${i}].email=this.value`,true)}</div>
+          <div class="col-md-8">${inpD('Email Address',g.email,`D.guardians[${i}].email=this.value`,false,'email')}</div>
           <div class="col-md-6">${inpD('Mailing Street Address',g.mailingStreet,`D.guardians[${i}].mailingStreet=this.value`,true)}</div>
           <div class="col-md-6">${inpD('Mailing City / State / Zip',g.mailingCityStateZip,`D.guardians[${i}].mailingCityStateZip=this.value`,true)}</div>
           <div class="col-md-6">${inpD('Residence / Office Street Address',g.officeStreet,`D.guardians[${i}].officeStreet=this.value`,true)}</div>
@@ -816,7 +824,7 @@ function pagePart5Annual(){
         </div>
         <div class="entry-card-body">
           <div class="row g-2">
-            <div class="col-md-5">${inpD("Attorney Name (linked to Part I)",d.attorney,"D.attorney=this.value")}</div>
+            <div class="col-md-5">${inpD("Attorney Name (linked to Part I)",d.attorney,"D.attorney=this.value",started)}</div>
             <div class="col-md-3">${inpDWithTooltip("Signature Date",'signature_date',d.attorney_signatureDate,"D.attorney_signatureDate=this.value",started,'date')}</div>
             <div class="col-12">${renderSignatureStateControl({ path: 'attorney', state: inferLegacySignatureState(d.attorney_signatureState, d.attorney_signatureDate), route: '/p5', signatureImage: d.attorney_signatureImage, statePath: 'attorney_signatureState', imagePath: 'attorney_signatureImage' })}</div>
             <div class="col-12">${preparerFlagCheckboxHTML({ path: 'attorney_isPreparer', checked: !!d.attorney_isPreparer, route: '/p5' })}</div>
@@ -1704,18 +1712,23 @@ export function validateAnnual(){
   req(d.attorney_email,'Part V — Attorney Email','attorney_email');
   req(d.attorney_street,'Part V — Attorney Street','attorney_street');
   req(d.attorney_cityStateZip,'Part V — Attorney City/State/Zip','attorney_cityStateZip');
+  // Milestone 72C (decided 2026-10-02): the attorney's name, once an attorney
+  // is started, as the Inventory, the Simplified and the Plans require it. It
+  // used to be asked only through the "/s/" check below, so a Bar number and
+  // email could be filed under a blank name. The field is shared by Part I's
+  // "Attorney for Guardian" and Part V's "Attorney Name (linked to Part I)";
+  // the path is the one that check always used.
+  req(d.attorney,'Part V — Attorney Name','attorney');
   // Milestone 39-C: replaces the old unconditional
-  // req(d.attorney_signatureDate,...). Unlike Preparer/Guardian above,
-  // d.attorney (the attorney's own name) is never required anywhere in this
-  // validator -- checked directly, confirmed absent -- so name IS passed
-  // here to avoid a silent "/s/"/Stamp pass with no typed name.
+  // req(d.attorney_signatureDate,...). Milestone 72C: the name is required
+  // just above, so it is no longer passed here, where it would only repeat
+  // that message (checkSignatureState()'s documented convention).
   errs.push(...checkSignatureState({
     state: inferLegacySignatureState(d.attorney_signatureState, d.attorney_signatureDate),
-    name: d.attorney,
     date: d.attorney_signatureDate,
     image: d.attorney_signatureImage,
     sectionLabel: 'Part V', roleLabel: 'Attorney',
-    filingType:T, namePath:'attorney', datePath:'attorney_signatureDate', imagePath:'attorney_signatureImage',
+    filingType:T, datePath:'attorney_signatureDate', imagePath:'attorney_signatureImage',
   }));
   errs.push(...checkDateOrder(d.periodTo,d.attorney_signatureDate,{
     sectionLabel:'Part V',earlierLabel:'Accounting Period To',laterLabel:'Attorney Signature Date',allowSameDay:true,
@@ -1753,13 +1766,13 @@ export function validateAnnual(){
   // card's "Attorney Name" field is the same shared, never-independently-
   // required d.attorney field.
   if(attorneyStarted){
+  // Milestone 72C: no name here either -- Part V requires it (above).
   errs.push(...checkSignatureState({
     state: inferLegacySignatureState(d.certAttySignatureState, d.certAttySignDate),
-    name: d.attorney,
     date: d.certAttySignDate,
     image: d.certAttySignatureImage,
     sectionLabel: 'Part X', roleLabel: 'Attorney',
-    filingType:T, namePath:'attorney', datePath:'certAttySignDate', imagePath:'certAttySignatureImage',
+    filingType:T, datePath:'certAttySignDate', imagePath:'certAttySignatureImage',
   }));
   }else{
     // Milestone 71B: with no attorney the guardian who served the copies

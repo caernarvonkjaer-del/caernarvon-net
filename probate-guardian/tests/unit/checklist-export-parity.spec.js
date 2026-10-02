@@ -145,7 +145,11 @@ describe('checklist and export validator field parity', () => {
     // they are the same pre-existing gap the comment above describes.
     // Milestone 55B additionally closed `preparer_signatureDate` (pm-p7 now
     // references it via the new date-order check).
-    planMinor: ['attorney_signatureImage', 'attorney_signatureState', 'preparer_signatureDate', 'preparer_signatureImage', 'preparer_signatureState'],
+    // Milestone 72C closed the rest: pm-p7 now tests each signature the way
+    // validatePlanMinor() does (isSignatureComplete() over its state, date and
+    // image), for the preparer and for the attorney, so none of these five is
+    // invisible to the sidebar any more.
+    planMinor: [],
     // Milestone 55D closed the `attorney_signatureState` gap this list used
     // to carry: the rewritten pi-p10 now references `D.attorney_signatureState`
     // directly in its "started" predicate (mirroring the validator's own
@@ -190,7 +194,9 @@ describe('checklist and export validator field parity', () => {
     // SignatureImage. An entry appearing here later means the two have drifted
     // apart again.
     simplified: [],
-    annual: ['amendedForm', 'attorney', 'attorney_signatureImage', 'attorney_signatureState', 'certAttySignDate', 'certAttySignatureImage', 'certAttySignatureState'],
+    // Milestone 72C closed `attorney`: validateAnnual() requires the name in
+    // its own right once an attorney is started, and a-p5 asks for it too.
+    annual: ['amendedForm', 'attorney_signatureImage', 'attorney_signatureState', 'certAttySignDate', 'certAttySignatureImage', 'certAttySignatureState'],
   };
 
   // Milestone 70, 70D: the section checks are one evaluator per engine in

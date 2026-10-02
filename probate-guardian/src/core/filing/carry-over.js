@@ -184,13 +184,15 @@ export function carryOverFieldsForPlan(sourceWard, planType) {
           ssn: g.ssn || g.ssnEin || g.tin || '',
           street: g.streetAddress || g.street || g.mailingStreet || '',
           phone: g.phone || '',
+          // Milestone 72C: the Initial Plan's guardian has an email now.
+          email: g.email || '',
           cityStateZip: g.cityStateZip || g.mailingCityStateZip || '',
           signatureDate: '',
           relationship: g.relationship || '',
         },
-        { name: '', ssn: '', street: '', phone: '', cityStateZip: '', signatureDate: '', relationship: '' },
-        { name: '', ssn: '', street: '', phone: '', cityStateZip: '', signatureDate: '', relationship: '' },
-        { name: '', ssn: '', street: '', phone: '', cityStateZip: '', signatureDate: '', relationship: '' },
+        { name: '', ssn: '', street: '', phone: '', email: '', cityStateZip: '', signatureDate: '', relationship: '' },
+        { name: '', ssn: '', street: '', phone: '', email: '', cityStateZip: '', signatureDate: '', relationship: '' },
+        { name: '', ssn: '', street: '', phone: '', email: '', cityStateZip: '', signatureDate: '', relationship: '' },
       ],
     };
   }
@@ -298,6 +300,8 @@ export function carryOverFieldsForAccounting(sourceWard, accountingType) {
           name: g.name || gName || '',
           ssnEin: g.ssn || g.ssnEin || g.tin || '',
           phone: g.phone || '',
+          // Milestone 72C: the Inventory's guardian has an email now.
+          email: g.email || '',
           streetAddress: g.street || g.streetAddress || g.mailingStreet || '',
           cityStateZip: g.cityStateZip || g.mailingCityStateZip || '',
           signatureDate: null,
@@ -425,6 +429,8 @@ export function carryOverAccountingToAccounting(src,targetType){
     return {...base, gid:src.gid||'', guardianName, ...attorney,
       guardians:gs.slice(0,1).map(g=>({
         name:g.name||'', ssnEin:g.ssnEin||g.ssn||'', phone:g.phone||'',
+        // Milestone 72C: the Inventory's guardian has an email now.
+        email:g.email||'',
         streetAddress:g.streetAddress||g.mailingStreet||'',
         cityStateZip:g.cityStateZip||g.mailingCityStateZip||'', signatureDate:null
       }))};

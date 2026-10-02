@@ -20,7 +20,8 @@ export function emptyDataGuardian(){
     scheduleNoItems:{},
     // isPreparer on the guardian and attorney: Milestone 67A, "This person
     // prepared this filing" -- see src/core/form/preparer-flag.js.
-    guardians:[{name:'',ssnEin:'',phone:'',streetAddress:'',cityStateZip:'',signatureDate:null,signatureState:'',signatureImage:'',isPreparer:false,certifiesService:false}],
+    // Milestone 72C: email, as mk.guardian() gives every added co-guardian.
+    guardians:[{name:'',ssnEin:'',phone:'',email:'',streetAddress:'',cityStateZip:'',signatureDate:null,signatureState:'',signatureImage:'',isPreparer:false,certifiesService:false}],
     // Milestone 64A-2, item 2.5: asOfDate is the compilation statement's own
     // "as of" date (form PART IV H9), distinct from the signature date it
     // falls back to when blank.
@@ -83,7 +84,8 @@ export const PAGES_GUARDIAN=[
 export const mk = {
   // isPreparer: Milestone 67A, "This person prepared this filing" -- see
   // src/core/form/preparer-flag.js.
-  guardian:()=>({name:'',ssnEin:'',phone:'',streetAddress:'',cityStateZip:'',signatureDate:null,signatureState:'',signatureImage:'',isPreparer:false,certifiesService:false}),
+  // Milestone 72C: email -- the signer's address for service (Rule 2.515(c)); warned when blank with no attorney.
+  guardian:()=>({name:'',ssnEin:'',phone:'',email:'',streetAddress:'',cityStateZip:'',signatureDate:null,signatureState:'',signatureImage:'',isPreparer:false,certifiesService:false}),
   preparer:()=>({name:'',ssnEin:'',phone:'',streetAddress:'',cityStateZip:'',signatureDate:null,signatureState:'',signatureImage:''}),
   attorney:()=>({name:'',barNumber:'',phone:'',streetAddress:'',cityStateZip:'',signatureDate:null,filingDate:null,signatureState:'',signatureImage:''}),
   recipient:()=>({name:'',address:'',cityStateZip:''}),

@@ -447,6 +447,8 @@ export function buildPlanInitialModel(D, options) {
       fields: [
         [{ label: 'Printed Name', value: p.name || '' }, { label: 'SSN / EIN', value: maskSSN(p.ssn || '') }, { label: 'Phone Number', value: p.phone || '' }],
         [{ label: 'Relationship to Ward', value: p.relationship || '' }, { label: 'Street Address', value: p.street || '' }, { label: 'City / State / ZIP', value: p.cityStateZip || '' }],
+        // Milestone 72C: the signer's email for service (Rule 2.515(c)), as the other Plans print it.
+        [{ label: 'Email Address', value: p.email || '' }],
       ],
     };
   };

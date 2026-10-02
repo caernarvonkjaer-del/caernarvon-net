@@ -10,7 +10,8 @@ import { emptyMinorResidence, emptyMinorProvider, emptyMinorGuardianSig } from '
 export function planGuardianBlank(type){
   // Milestone 39-C: every Plan type's guardian row now carries signatureState/
   // signatureImage (39-B piloted planSimplified's only).
-  if(type==='planInitial')return {name:'',ssn:'',street:'',phone:'',cityStateZip:'',signatureDate:'',relationship:'',signatureState:'',signatureImage:''};
+  // Milestone 72C: the Initial Plan's guardian gains an email, as the other three Plans' have.
+  if(type==='planInitial')return {name:'',ssn:'',street:'',phone:'',email:'',cityStateZip:'',signatureDate:'',relationship:'',signatureState:'',signatureImage:''};
   if(type==='planAnnual')return {name:'',ssn:'',phone:'',email:'',signatureDate:'',mailingStreet:'',mailingCityStateZip:'',officeStreet:'',officeCityStateZip:'',relationship:'',signatureState:'',signatureImage:''};
   if(type==='planMinor')return emptyMinorGuardianSig();
   return {name:'',signatureDate:'',email:'',phone:'',mailingAddress:'',signatureState:'',signatureImage:''};

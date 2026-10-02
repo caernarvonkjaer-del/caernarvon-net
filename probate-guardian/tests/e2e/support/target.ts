@@ -304,6 +304,7 @@ export async function fillMinimalValidPlanMinorWard(page: Page): Promise<void> {
       preparer_name: 'Sample Preparer',
       preparer_signatureDate: '2026-01-12',
       attorney_name: 'Sample Attorney',
+      attorney_email: 'attorney@example.com', // Milestone 72C: required once an attorney is started, as on every other form
       attorney_signatureDate: '2026-01-12',
     });
     d.planGuardians = [

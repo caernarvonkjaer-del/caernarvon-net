@@ -4,6 +4,8 @@ import { isTriStateAnswer } from '../../core/form/form-contract.js';
 import { checkSignatureState, inferLegacySignatureState } from '../../core/validation/signature-state.js';
 import { issueFactory } from '../../core/validation/validation-issue.js';
 import { rowStarted } from '../../core/validation/row-started.js';
+import { isAttorneyStarted } from '../../core/validation/attorney-block.js';
+import { watchAttorneyRequiredMarkers, syncRequiredMarkers } from '../../core/form/attorney-required-markers.js';
 import { renderSignatureStateControl, mountSignatureStateControls } from '../../core/signature/signature-state-control.js';
 import { migratePlanCertificateOfService } from '../../core/filing/plan-certificate-of-service.js';
 import { renderPlanCertificateOfServicePage } from '../../core/form/plan-certificate-of-service-page.js';
@@ -117,13 +119,49 @@ export async function mount(container, page, { signal } = {}) {
       route: page,
     }));
   }
+  // Milestone 72C: the attorney's name and email are marked required exactly
+  // while an attorney is started, following the filer's typing, as the
+  // accountings' attorney blocks do (71B). The name was always marked.
+  attorneyMarkerAborts.get(container)?.abort();
+  attorneyMarkerAborts.delete(container);
+  preparerMarkerAborts.get(container)?.abort();
+  preparerMarkerAborts.delete(container);
+  if (page === '/p7') {
+    attorneyMarkerAborts.set(container, watchAttorneyRequiredMarkers(container, {
+      engineId: 'planMinor', paths: ['attorney_name', 'attorney_email'],
+      triggerPaths: ['attorney_name', 'attorney_bar', 'attorney_phone', 'attorney_email', 'attorney_secondary_email', 'attorney_street', 'attorney_cityStateZip', 'attorney_signatureDate', 'attorney_signatureState'],
+    }));
+    // Milestone 72C: the preparer's name likewise, by the validator's own
+    // "preparer started" test (it was marked required on every plan).
+    const preparer = new AbortController();
+    const syncPreparer = () => syncRequiredMarkers(container, { required: planMinorPreparerStarted(getD()), paths: ['preparer_name'] });
+    window.addEventListener('pg:field-written', (event) => {
+      if (String(event?.detail?.path || '').startsWith('preparer_')) syncPreparer();
+    }, { signal: preparer.signal });
+    syncPreparer();
+    preparerMarkerAborts.set(container, preparer);
+  }
   if (isPrint) await _printModule.mountPreview();
 }
+
+const attorneyMarkerAborts = new WeakMap();
+const preparerMarkerAborts = new WeakMap();
 
 export function dispose(container) {
   signatureHandles.get(container)?.forEach((h) => h.destroy());
   signatureHandles.delete(container);
+  attorneyMarkerAborts.get(container)?.abort();
+  attorneyMarkerAborts.delete(container);
+  preparerMarkerAborts.get(container)?.abort();
+  preparerMarkerAborts.delete(container);
   container.replaceChildren();
+}
+
+// Milestone 35-3 / 39-C: the preparer is optional until a name, a signature
+// date, or a "/s/" or stamp choice is entered. Shared by validatePlanMinor()
+// and the page's required marker (Milestone 72C), so the two cannot disagree.
+function planMinorPreparerStarted(d) {
+  return !!(d && (d.preparer_name || d.preparer_signatureDate || (d.preparer_signatureState && d.preparer_signatureState !== 'none')));
 }
 
 export function mountNav(container) {
@@ -403,7 +441,7 @@ function pagePlanMPreparerAttorney(){
           <div class="entry-card-body">
             <div class="schedule-instructions mb-3">The preparation of this form is based upon the information provided by the guardian(s) and/or attorney with no independent verification. The preparer has not audited or reviewed the guardianship plan or supporting documents.</div>
             <div class="row g-2">
-              <div class="col-12">${inpS('preparer_name','Preparer Name',d.preparer_name,true)}</div>
+              <div class="col-12">${inpS('preparer_name','Preparer Name',d.preparer_name,planMinorPreparerStarted(d))}</div>
               <div class="col-md-6">${inpS('preparer_tin','SSN/EIN #',d.preparer_tin)}</div>
               <div class="col-md-6">${inpS('preparer_phone','Telephone #',d.preparer_phone)}</div>
               <div class="col-12">${inpS('preparer_signatureDate','Date Signed',d.preparer_signatureDate,false,'date')}</div>
@@ -421,14 +459,14 @@ function pagePlanMPreparerAttorney(){
           <div class="entry-card-body">
             <div class="schedule-instructions mb-3">The undersigned notifies the Court of the filing of this plan. This is the representation of the guardian; the attorney has not audited the accompanying plan, but represents that they have examined its contents and that it conforms to the requirements of Florida Guardianship Law.</div>
             <div class="row g-2">
-              <div class="col-md-7">${inpS('attorney_name','Attorney Name',d.attorney_name,true)}</div>
+              <div class="col-md-7">${inpS('attorney_name','Attorney Name',d.attorney_name,isAttorneyStarted(d,'planMinor'))}</div>
               <div class="col-md-5">${inpS('attorney_bar','Bar Number',d.attorney_bar)}</div>
               <div class="col-12">${inpS('attorney_street','Mailing Address',d.attorney_street)}</div>
               <div class="col-12">${inpS('attorney_cityStateZip','City / State / Zip',d.attorney_cityStateZip)}</div>
               <div class="col-md-6">${inpS('attorney_phone','Telephone #',d.attorney_phone)}</div>
-              <div class="col-md-6">${inpS('attorney_signatureDate','Date Signed',d.attorney_signatureDate,true,'date')}</div>
+              <div class="col-md-6">${inpS('attorney_signatureDate','Date Signed',d.attorney_signatureDate,false,'date')}</div>
               <div class="col-12">${renderSignatureStateControl({ path: 'attorney', state: inferLegacySignatureState(d.attorney_signatureState, d.attorney_signatureDate), route: '/p7', signatureImage: d.attorney_signatureImage, statePath: 'attorney_signatureState', imagePath: 'attorney_signatureImage' })}</div>
-              <div class="col-12">${inpS('attorney_email',"Primary Email (e-filing)",d.attorney_email)}</div>
+              <div class="col-12">${inpS('attorney_email',"Primary Email (e-filing)",d.attorney_email,isAttorneyStarted(d,'planMinor'),'email')}</div>
               <div class="col-12">${inpS('attorney_secondary_email',"Secondary Email (optional)",d.attorney_secondary_email)}</div>
             </div>
           </div>
@@ -512,7 +550,7 @@ export function validatePlanMinor(){
   // Milestone 39-C: an explicit "/s/"/Stamp choice also counts as "started"
   // (see Plan Initial's identical comment); an explicit or default Unsigned
   // choice does not, preserving the pro se exemption.
-  if(d.preparer_name||d.preparer_signatureDate||(d.preparer_signatureState&&d.preparer_signatureState!=='none')){
+  if(planMinorPreparerStarted(d)){
     req(d.preparer_name,'Preparer & Attorney — Preparer name is required','preparer_name');
     errs.push(...checkSignatureState({
       state: inferLegacySignatureState(d.preparer_signatureState, d.preparer_signatureDate),
@@ -522,8 +560,13 @@ export function validatePlanMinor(){
       filingType:T, datePath:'preparer_signatureDate', imagePath:'preparer_signatureImage',
     }));
   }
-  if(d.attorney_name||d.attorney_signatureDate||(d.attorney_signatureState&&d.attorney_signatureState!=='none')){
+  // Milestone 72C: "an attorney is started" is the shared definition
+  // (attorney-block.js) -- any attorney field, not only the name, signature
+  // date or state -- and the attorney's email, which this form prints, is then
+  // required, as on the Annual and Initial Plans.
+  if(isAttorneyStarted(d,'planMinor')){
     req(d.attorney_name,'Preparer & Attorney — Attorney name is required','attorney_name');
+    req(d.attorney_email,'Preparer & Attorney — Attorney email is required','attorney_email');
     errs.push(...checkSignatureState({
       state: inferLegacySignatureState(d.attorney_signatureState, d.attorney_signatureDate),
       date: d.attorney_signatureDate,

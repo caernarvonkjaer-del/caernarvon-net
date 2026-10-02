@@ -90,7 +90,10 @@ function planSimplifiedAutomatic(d) {
       image: g0.signatureImage,
       sectionLabel: 'Signatures', roleLabel: 'Guardian 1',
     }) },
-    { id: 'signatures.guardian1.contact', label: 'Guardian contact details provided (email, phone, mailing address)', ok: has(g0.email) && has(g0.phone) && has(g0.mailingAddress) },
+    // Milestone 72C: no email. A guardian's email is a warning on every form
+    // now (guardian-email.js), never a blocker, so a row requiring it here
+    // would show "outstanding" on a plan the export accepts.
+    { id: 'signatures.guardian1.contact', label: 'Guardian contact details provided (phone, mailing address)', ok: has(g0.phone) && has(g0.mailingAddress) },
     { id: 'plan.q1', label: "Ward's residences for the year are listed", ok: has(d.q1Residences) },
     { id: 'plan.q2', label: 'Question 2 — reason this placement best suits the ward is stated', ok: has(d.q2BestPlacement) },
     { id: 'plan.q3', label: 'Professional medical / mental health treatment is listed', ok: has(d.q3MedicalTreatment) },
@@ -463,7 +466,7 @@ const PLAN_PREDICATE_ISSUE_PATHS = Object.freeze({
     'cover.period': ['periodFrom', 'periodTo'],
     'cover.wardCaseCounty': ['wardName', 'caseNumber', 'county'],
     'signatures.guardian1.core': ['planGuardians[].name', 'planGuardians[].signatureDate', 'planGuardians[].signatureImage'],
-    'signatures.guardian1.contact': ['planGuardians[].email', 'planGuardians[].phone', 'planGuardians[].mailingAddress'],
+    'signatures.guardian1.contact': ['planGuardians[].phone', 'planGuardians[].mailingAddress'],
     'plan.q1': ['q1Residences'],
     'plan.q2': ['q2BestPlacement'],
     'plan.q3': ['q3MedicalTreatment'],
@@ -492,7 +495,9 @@ const PLAN_PREDICATE_ISSUE_PATHS = Object.freeze({
     'plan.q11remuneration': ['q11NoRemuneration', 'q11NoRemunerationName'],
     'signatures.guardian1.core': ['planGuardians[].name', 'planGuardians[].signatureDate', 'planGuardians[].signatureImage'],
     'signatures.guardian1.contact': ['planGuardians[].mailingStreet', 'planGuardians[].phone', 'planGuardians[].ssn'],
-    'signatures.attorney': ['attorney', 'attorney_signatureDate', 'attorney_signatureImage'],
+    // Milestone 72C: and the email, which is now required once an attorney
+    // is started -- grouped with the attorney's row as the Initial Plan's is.
+    'signatures.attorney': ['attorney', 'attorney_signatureDate', 'attorney_signatureImage', 'attorney_email'],
   },
   planInitial: {
     'cover.wardCaseCounty': ['wardName', 'caseNumber', 'county'],
@@ -531,7 +536,8 @@ const PLAN_PREDICATE_ISSUE_PATHS = Object.freeze({
     'signatures.guardian1.core': ['planGuardians[].name', 'planGuardians[].signatureDate', 'planGuardians[].signatureImage'],
     'signatures.guardian1.contact': ['planGuardians[].mailingStreet', 'planGuardians[].phone', 'planGuardians[].tin'],
     'signatures.preparer': ['preparer_name', 'preparer_signatureDate', 'preparer_signatureImage'],
-    'signatures.attorney': ['attorney_name', 'attorney_signatureDate', 'attorney_signatureImage'],
+    // Milestone 72C: the email, as on the Initial Plan and the Annual Plan.
+    'signatures.attorney': ['attorney_name', 'attorney_signatureDate', 'attorney_signatureImage', 'attorney_email'],
   },
 });
 
@@ -573,7 +579,7 @@ export const PLAN_PREDICATE_ROUTES = Object.freeze({
     'cover.period': { route: '/', path: 'periodFrom' },
     'cover.wardCaseCounty': { route: '/', path: 'wardName' },
     'signatures.guardian1.core': { route: '/p3', path: 'planGuardians.0.name' },
-    'signatures.guardian1.contact': { route: '/p3', path: 'planGuardians.0.email' },
+    'signatures.guardian1.contact': { route: '/p3', path: 'planGuardians.0.phone' },
     'plan.q1': { route: '/p2', path: 'q1Residences' },
     'plan.q2': { route: '/p2', path: 'q2BestPlacement' },
     'plan.q3': { route: '/p2', path: 'q3MedicalTreatment' },

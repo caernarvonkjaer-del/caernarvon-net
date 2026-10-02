@@ -67,7 +67,8 @@ const CONFIGS: ReadinessConfig[] = [
     blankPromotedField: (page) => page.evaluate(() => {
       (window as any).GuardianForms.testing.patchFiling({ 'planGuardians.0.phone': '' });
     }),
-    readinessRowLabel: 'Guardian contact details provided (email, phone, mailing address)',
+    // Milestone 72C: no email -- a guardian's email is a warning now, never a blocker.
+    readinessRowLabel: 'Guardian contact details provided (phone, mailing address)',
     saveButtonSelector: '[data-plan-simplified-action="save-pdf"]',
   },
 ];

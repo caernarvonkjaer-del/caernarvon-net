@@ -109,7 +109,13 @@ test.describe('Plan - Minors Preparer & Attorney: each role optional until start
     await expect(box(page).getByRole('button', { name: /Attorney name is required/i })).toBeVisible();
     await expect(box(page).getByRole('button', { name: /Preparer/i }), 'a preparer was never started, so none is asked for').toHaveCount(0);
 
+    // Milestone 72C: a started attorney also needs a primary email, as on
+    // every other form, so the name alone leaves exactly that outstanding.
     await edit(page, 'attorney_name', 'An Attorney');
+    await expect(mark(page, 'pm-p7')).toHaveClass(/incomplete/);
+    await expect(box(page).getByRole('button', { name: /Attorney email is required/i })).toBeVisible();
+
+    await edit(page, 'attorney_email', 'attorney@example.com');
     await expect(mark(page, 'pm-p7')).toHaveClass(/\bcomplete\b/);
     await expect(box(page)).toHaveCount(0);
   });

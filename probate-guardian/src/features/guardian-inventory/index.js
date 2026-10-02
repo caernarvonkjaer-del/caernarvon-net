@@ -92,17 +92,15 @@ const eventControllers = new WeakMap();
 const signatureHandles = new WeakMap();
 let pendingGuardianIndex = null;
 let visiblePendingGuardianIndex = null;
+// Every field that makes a co-guardian card "entered" -- one list, read by
+// normalizeGuardians() (via guardianHasData()), D-1's drawing and
+// validateGuardian(), which used to repeat it three times. Milestone 39-C: the
+// signature image, so a stamp applied before a name is typed is never pruned.
+// Milestone 67A: the preparer box. Milestone 72C: the email, so a co-guardian
+// who has entered only an email is not treated as blank, hidden or removed.
+const GUARDIAN_DATA_FIELDS = Object.freeze(['name', 'signatureDate', 'ssnEin', 'phone', 'email', 'streetAddress', 'cityStateZip', 'signatureImage', 'isPreparer']);
 function guardianHasData(guardian) {
-  return [
-    guardian?.name, guardian?.signatureDate, guardian?.ssnEin, guardian?.phone,
-    guardian?.streetAddress, guardian?.cityStateZip,
-    // Milestone 39-C: a co-guardian who has drawn/applied a signature stamp
-    // image before typing a name must not be silently pruned by
-    // normalizeGuardians() -- that image can't be recreated once discarded.
-    guardian?.signatureImage,
-    // Milestone 67A: a card ticked as the preparer is not a blank card.
-    guardian?.isPreparer,
-  ].some(value => String(value || '').trim());
+  return GUARDIAN_DATA_FIELDS.some(key => String(guardian?.[key] || '').trim());
 }
 function normalizeGuardians() {
   const guardians = Array.isArray(D.guardians) ? D.guardians : [];
@@ -1101,9 +1099,7 @@ function pageD1(){
   // normalizeGuardians()'s own always-keep-index-0 rule -- without this,
   // a brand-new filing with no guardian data typed in yet renders zero
   // cards here, with no way to even see the required Guardian #1 fields.
-  const partyRecords=(D.guardians||[]).map((g,i)=>({g,i})).filter(({g,i})=>i===0||i===visiblePendingGuardianIndex||[
-    g.name,g.signatureDate,g.ssnEin,g.phone,g.streetAddress,g.cityStateZip,g.signatureImage,g.isPreparer
-  ].some(value=>String(value||'').trim()));
+  const partyRecords=(D.guardians||[]).map((g,i)=>({g,i})).filter(({g,i})=>i===0||i===visiblePendingGuardianIndex||guardianHasData(g));
   const cards=partyRecords.map(({g,i},visibleIndex)=>{
     const isFirst=visibleIndex===0;
     const title=isFirst?'Guardian #1':`Co-Guardian #${visibleIndex+1}`;
@@ -1114,7 +1110,7 @@ function pageD1(){
       <div class="entry-card-body">
         ${formRow(col(5,reqLabel("Guardian's Full Name")+textInput(`guardians.${i}.name`,'','name')),col(3,reqLabel('Signature Date')+dateInput(`guardians.${i}.signatureDate`)),col(4,reqLabel('SSN / EIN')+textInput(`guardians.${i}.ssnEin`,'','ssn')))}
         ${formRow(col(4,reqLabel('Phone Number')+textInput(`guardians.${i}.phone`,'','phone')),col(8,reqLabel('Street Address')+textInput(`guardians.${i}.streetAddress`,'','address')))}
-        ${formRow(col(6,reqLabel('City / State / Zip')+textInput(`guardians.${i}.cityStateZip`,'','zip')))}
+        ${formRow(col(6,reqLabel('City / State / Zip')+textInput(`guardians.${i}.cityStateZip`,'','zip')),col(6,optLabel('Email Address')+textInput(`guardians.${i}.email`,'name@example.com','email')))}
         ${renderSignatureStateControl({ path: `guardians.${i}`, state: inferLegacySignatureState(g.signatureState, g.signatureDate), route: '/d1', signatureImage: g.signatureImage })}
         ${preparerFlagCheckboxHTML({ path: `guardians.${i}.isPreparer`, checked: !!g.isPreparer, route: '/d1' })}
       </div>
@@ -1426,7 +1422,7 @@ export function validateGuardian(d=getD()){
   // mislabeling bug this filter/forEach split previously had: a co-guardian
   // with data would be mislabeled "Guardian #1" whenever guardian #1 itself
   // was still blank.
-  d.guardians.forEach((g,i)=>{if(i>0&&![g.name,g.signatureDate,g.ssnEin,g.phone,g.streetAddress,g.cityStateZip,g.signatureImage,g.isPreparer].some(value=>String(value||'').trim()))return;const p=`D-1 Guardian #${i+1}`,k=`guardians.${i}`;req(g.name,`${p} — Name`,`${k}.name`);errors.push(...checkSignatureState({state:inferLegacySignatureState(g.signatureState,g.signatureDate),date:g.signatureDate,image:g.signatureImage,sectionLabel:p,roleLabel:'',filingType:T,datePath:`${k}.signatureDate`,imagePath:`${k}.signatureImage`}));req(g.ssnEin,`${p} — SSN/EIN`,`${k}.ssnEin`);req(g.phone,`${p} — Phone`,`${k}.phone`);req(g.streetAddress,`${p} — Street Address`,`${k}.streetAddress`);req(g.cityStateZip,`${p} — City/State/Zip`,`${k}.cityStateZip`);});
+  d.guardians.forEach((g,i)=>{if(i>0&&!guardianHasData(g))return;const p=`D-1 Guardian #${i+1}`,k=`guardians.${i}`;req(g.name,`${p} — Name`,`${k}.name`);errors.push(...checkSignatureState({state:inferLegacySignatureState(g.signatureState,g.signatureDate),date:g.signatureDate,image:g.signatureImage,sectionLabel:p,roleLabel:'',filingType:T,datePath:`${k}.signatureDate`,imagePath:`${k}.signatureImage`}));req(g.ssnEin,`${p} — SSN/EIN`,`${k}.ssnEin`);req(g.phone,`${p} — Phone`,`${k}.phone`);req(g.streetAddress,`${p} — Street Address`,`${k}.streetAddress`);req(g.cityStateZip,`${p} — City/State/Zip`,`${k}.cityStateZip`);});
   // Milestone 67A: the outside-preparer block is required only while nobody
   // is identified as the preparer. The form itself tells a guardian,
   // co-guardian or guardian attorney "DO NOT SIGN HERE"; the Clerk accepts

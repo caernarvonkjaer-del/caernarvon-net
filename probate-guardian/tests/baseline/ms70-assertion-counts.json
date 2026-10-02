@@ -2,8 +2,8 @@
  "generatedBy": "node scripts/ms70-assertion-counts.mjs --write-baseline",
  "note": "Milestone 70 per-spec assertion counts (static expect calls). tests/unit/ms70-assertion-counts.spec.js fails when a spec falls below its count; lowering it requires --reason, recorded in dropLog. A tripwire, not proof of equivalence (decision D9).",
  "totals": {
-  "expects": 7302,
-  "tests": 2087
+  "expects": 7430,
+  "tests": 2125
  },
  "counts": {
   "tests/e2e/annotation-toolbar-containment.spec.ts": {
@@ -194,6 +194,10 @@
    "expects": 23,
    "tests": 6
   },
+  "tests/e2e/guardian-email-advisory.spec.ts": {
+   "expects": 38,
+   "tests": 7
+  },
   "tests/e2e/guardian-inventory-collection-controls.spec.ts": {
    "expects": 27,
    "tests": 7
@@ -247,7 +251,7 @@
    "tests": 3
   },
   "tests/e2e/navigation-status.contract.spec.ts": {
-   "expects": 141,
+   "expects": 142,
    "tests": 55
   },
   "tests/e2e/offline.spec.ts": {
@@ -335,8 +339,8 @@
    "tests": 2
   },
   "tests/e2e/plan-certificate-of-service.spec.ts": {
-   "expects": 43,
-   "tests": 6
+   "expects": 51,
+   "tests": 8
   },
   "tests/e2e/plan-directive-cards.spec.ts": {
    "expects": 19,
@@ -471,7 +475,7 @@
    "tests": 3
   },
   "tests/e2e/sidebar-only-wants.spec.ts": {
-   "expects": 25,
+   "expects": 27,
    "tests": 5
   },
   "tests/e2e/signature-block-address-margin.spec.ts": {
@@ -587,8 +591,8 @@
    "tests": 7
   },
   "tests/unit/attorney-block.spec.js": {
-   "expects": 5,
-   "tests": 2
+   "expects": 19,
+   "tests": 6
   },
   "tests/unit/attorney-emails-carry.spec.js": {
    "expects": 8,
@@ -802,6 +806,10 @@
    "expects": 6,
    "tests": 6
   },
+  "tests/unit/guardian-email-advisory.spec.js": {
+   "expects": 25,
+   "tests": 15
+  },
   "tests/unit/guardian-inventory-64a1-validation.spec.js": {
    "expects": 18,
    "tests": 9
@@ -959,7 +967,7 @@
    "tests": 5
   },
   "tests/unit/plan-annual-parity.spec.js": {
-   "expects": 21,
+   "expects": 23,
    "tests": 6
   },
   "tests/unit/plan-annual-pdf-model.spec.js": {
@@ -970,9 +978,13 @@
    "expects": 4,
    "tests": 3
   },
+  "tests/unit/plan-attorney-started.spec.js": {
+   "expects": 21,
+   "tests": 5
+  },
   "tests/unit/plan-certificate-of-service.spec.js": {
-   "expects": 49,
-   "tests": 11
+   "expects": 61,
+   "tests": 14
   },
   "tests/unit/plan-co-guardian-pdf.spec.js": {
    "expects": 8,
@@ -999,8 +1011,8 @@
    "tests": 8
   },
   "tests/unit/plan-simplified-certification-pages.spec.js": {
-   "expects": 10,
-   "tests": 3
+   "expects": 12,
+   "tests": 4
   },
   "tests/unit/plan-simplified-certification-schema.spec.js": {
    "expects": 6,
@@ -1011,8 +1023,8 @@
    "tests": 4
   },
   "tests/unit/plan-simplified-parity.spec.js": {
-   "expects": 17,
-   "tests": 4
+   "expects": 20,
+   "tests": 5
   },
   "tests/unit/plan-started-row.spec.js": {
    "expects": 20,

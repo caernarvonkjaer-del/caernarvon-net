@@ -541,8 +541,9 @@ export function buildVerifiedInventoryModel(D, options = {}) {
   };
 
   // 14. Part III & IV: Attestations & Oaths (Guardian & Preparer)
+  // Milestone 72C: an email alone is an entered card too, as on D-1.
   const guardianBlocks = (d.guardians || []).filter(g => [
-    g.name, g.signatureDate, g.ssnEin, g.phone, g.streetAddress, g.cityStateZip,
+    g.name, g.signatureDate, g.ssnEin, g.phone, g.email, g.streetAddress, g.cityStateZip,
   ].some(value => String(value || '').trim())).map((g, i) => ({
     type: 'signature-block',
     tag: 'Part',
@@ -555,6 +556,8 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     signatureImage: g.signatureImage || '',
     fields: [
       [{ label: 'Phone', value: g.phone || '' }, { label: 'SSN/EIN', value: maskSSN(g.ssnEin || '') }],
+      // Milestone 72C: the signer's email for service (Rule 2.515(c)), as the Annual prints it.
+      [{ label: 'Email', value: g.email || '' }],
       [{ label: 'Address', value: composePdfAddressLines(g.streetAddress, g.cityStateZip) }],
     ],
   }));

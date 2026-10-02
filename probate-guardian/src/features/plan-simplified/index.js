@@ -4,6 +4,7 @@ import { checkSignatureState, inferLegacySignatureState } from '../../core/valid
 import { issueFactory } from '../../core/validation/validation-issue.js';
 import { renderSignatureStateControl, mountSignatureStateControls } from '../../core/signature/signature-state-control.js';
 import { migratePlanCertificateOfService } from '../../core/filing/plan-certificate-of-service.js';
+import { pinPlanSimplifiedCertSigner } from '../../core/filing/certificate-migrations.js';
 import { renderPlanCertificateOfServicePage } from '../../core/form/plan-certificate-of-service-page.js';
 import { preparerNoteHTML } from '../../core/signature/preparer-note.js';
 // Milestone 41-2: Tier 2 card templates. Plan Simplified is the pilot --
@@ -90,6 +91,9 @@ export async function mount(container, page, { signal } = {}) {
   // Milestone 68C: a plan saved before the Certificate of Service existed
   // gains its fields on load. Idempotent, so every mount may call it.
   if (migratePlanCertificateOfService(getD())) requestSave();
+  // Milestone 72C: once, a certificate signed before its attorney could be
+  // found keeps the guardian it printed (certificate-migrations.js).
+  if (pinPlanSimplifiedCertSigner(getD())) requestSave();
   let html;
   let isPrint = false;
   if (page === '/print') {
@@ -392,7 +396,8 @@ export function validatePlanSimplified(){
     sectionLabel: 'Signatures', roleLabel: 'Guardian 1',
     filingType:T, datePath:'planGuardians.0.signatureDate', imagePath:'planGuardians.0.signatureImage',
   }));
-  req(g.email,'Signatures — Guardian 1 email is required','planGuardians.0.email');
+  // Milestone 72C: Guardian 1's email no longer blocks export -- it warns,
+  // and only when no attorney is entered (guardian-email.js), as on every form.
   req(g.phone,'Signatures — Guardian 1 phone is required','planGuardians.0.phone');
   req(g.mailingAddress,'Signatures — Guardian 1 mailing address is required','planGuardians.0.mailingAddress');
   // Milestone 68A: no date order between the guardian's, preparer's or
@@ -411,7 +416,11 @@ export function validatePlanSimplified(){
 // Shared with the other three Plans; see core/filing/plan-certificate-of-service.js.
 // Offered as not required on this form: the Clerk's Simplified Plan checklist
 // says so, and the page and the readiness card say the same.
-const CERT_CFG = { attorneyName: (d) => d.attorney || '', planNoun: 'plan', optional: true };
+// Milestone 72C: this form's attorney is `attorney_name`, as on the Initial
+// Plan and the Plan for Minors. It read `attorney`, which this form never
+// has, so the certificate always defaulted to the guardian and never printed
+// an attorney's name.
+const CERT_CFG = { attorneyName: (d) => d.attorney_name || '', planNoun: 'plan', optional: true };
 function pagePlanSCertificate(){
   return `<div class="schedule-page">
     ${renderPlanCertificateOfServicePage({ filing: getD(), route: '/p4', cfg: CERT_CFG })}

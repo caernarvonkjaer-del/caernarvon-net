@@ -42,9 +42,9 @@
   "fixtures.ts::MINIMAL_VALID_PLAN_ANNUAL (1 specs)",
   "plan-fixture.ts::registerPlanMountTests (4 specs)",
   "supplemental-pdf-fixture.ts::buildSupplementalAttachmentFixture (4 specs)",
-  "target.ts::fillMinimalValidGuardianWard (26 specs)",
-  "target.ts::fillMinimalValidSimplifiedWard (18 specs)",
-  "target.ts::fillMinimalValidPlanSimplifiedWard (17 specs)",
+  "target.ts::fillMinimalValidGuardianWard (27 specs)",
+  "target.ts::fillMinimalValidSimplifiedWard (19 specs)",
+  "target.ts::fillMinimalValidPlanSimplifiedWard (18 specs)",
   "target.ts::fillMinimalValidPlanAnnualWard (15 specs)",
   "target.ts::fillMinimalValidPlanMinorWard (15 specs)",
   "target.ts::fillMinimalValidPlanInitialWard (17 specs)",
@@ -272,7 +272,7 @@
    "module": "tests/e2e/support/pdf-extract.ts",
    "name": "extractPdfText",
    "kind": "function",
-   "specFiles": 22,
+   "specFiles": 23,
    "factory": false
   },
   {
@@ -342,7 +342,7 @@
    "module": "tests/e2e/support/stream.ts",
    "name": "readAll",
    "kind": "function",
-   "specFiles": 23,
+   "specFiles": 24,
    "factory": false
   },
   {
@@ -440,7 +440,7 @@
    "module": "tests/e2e/support/target.ts",
    "name": "freshStartNoPassword",
    "kind": "function",
-   "specFiles": 116,
+   "specFiles": 117,
    "factory": false
   },
   {
@@ -454,14 +454,14 @@
    "module": "tests/e2e/support/target.ts",
    "name": "createWard",
    "kind": "function",
-   "specFiles": 102,
+   "specFiles": 103,
    "factory": false
   },
   {
    "module": "tests/e2e/support/target.ts",
    "name": "reopenFilingWithStoredShape",
    "kind": "function",
-   "specFiles": 2,
+   "specFiles": 3,
    "factory": false
   },
   {
@@ -475,28 +475,28 @@
    "module": "tests/e2e/support/target.ts",
    "name": "fillMinimalValidGuardianWard",
    "kind": "function",
-   "specFiles": 26,
+   "specFiles": 27,
    "factory": true
   },
   {
    "module": "tests/e2e/support/target.ts",
    "name": "createSimplifiedWard",
    "kind": "function",
-   "specFiles": 25,
+   "specFiles": 26,
    "factory": false
   },
   {
    "module": "tests/e2e/support/target.ts",
    "name": "fillMinimalValidSimplifiedWard",
    "kind": "function",
-   "specFiles": 18,
+   "specFiles": 19,
    "factory": true
   },
   {
    "module": "tests/e2e/support/target.ts",
    "name": "fillMinimalValidPlanSimplifiedWard",
    "kind": "function",
-   "specFiles": 17,
+   "specFiles": 18,
    "factory": true
   },
   {

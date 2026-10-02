@@ -190,7 +190,11 @@ describe('Plan Annual: Milestone 39-C tri-state signature parity', () => {
     expect(preflight.canExport).toBe(true);
   });
 
-  test('Attorney with "/s/" Signed selected but no typed name blocks (name has no independent requirement here)', () => {
+  // Milestone 72C: the name has its own requirement now, once an attorney is
+  // started -- and a signature state and date start one -- so the blank name
+  // is reported once, by that rule, not again by the "/s/" check. Starting an
+  // attorney asks for the primary email too.
+  test('Attorney with "/s/" Signed selected but no typed name blocks, under the name rule', () => {
     const fixture = withOverrides(BASELINE, {
       // BASELINE never sets `attorney` (it's undefined, not ''); explicit ''
       // here so checkSignatureState's own `name !== undefined` skip-check
@@ -204,7 +208,9 @@ describe('Plan Annual: Milestone 39-C tri-state signature parity', () => {
     expect(autoById(auto, 'signatures.attorney').ok).toBe(false);
 
     const preflight = runPreflight(fixture);
-    expect(preflight.messages).toContain('Signatures — Attorney printed name is required to apply "/s/" Signed');
+    expect(preflight.messages).toContain('Signatures — Attorney name is required');
+    expect(preflight.messages).toContain('Signatures — Attorney email is required');
+    expect(preflight.messages).not.toContain('Signatures — Attorney printed name is required to apply "/s/" Signed');
     expect(preflight.canExport).toBe(false);
   });
 

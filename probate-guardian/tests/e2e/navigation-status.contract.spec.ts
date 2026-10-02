@@ -1347,28 +1347,37 @@ test.describe('Milestone 55D: attorney email is required exactly where the UI al
     expect(state.navComplete, 'pi-p10 must agree with the exemption on a blank card').toBe(true);
   });
 
+  // Milestone 72C: `attorney_name`, the Simplified Plan's own field (it has
+  // no `attorney`), and still unaffected -- its attorney fields print nowhere,
+  // so nothing is required of them; and its guardian's email is a warning now.
   test('Plan Simplified is unaffected', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Attorney Email PS Ward', 'planSimplified');
     await fillMinimalValidPlanSimplifiedWard(page);
     const psBaseline = await page.evaluate(async () => {
       const w = window as any;
-      w.GuardianForms.testing.patchFiling({ 'attorney': 'Jordan Reyes, Esq.' }); w.GuardianForms.testing.patchFiling({ 'attorney_email': '' });
+      w.GuardianForms.testing.patchFiling({ 'attorney_name': 'Jordan Reyes, Esq.' }); w.GuardianForms.testing.patchFiling({ 'attorney_email': '' });
       return (await w.GuardianForms.testing.validate.open()).some((m: ValidatorIssue) => m.message.toLowerCase().includes('email'));
     });
     expect(psBaseline, 'Plan Simplified never required attorney_email and this sub-delivery does not add it there').toBe(false);
   });
 
-  test('Plan Minor is unaffected', async ({ page }) => {
+  // Milestone 72C: the Plan for Minors joins the rule -- an attorney started
+  // there needs a primary email too, and the sidebar agrees.
+  test('Plan Minor requires it once an attorney is started (Milestone 72C)', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Attorney Email PM Ward', 'planMinor');
     await fillMinimalValidPlanMinorWard(page);
-    const pmBaseline = await page.evaluate(async () => {
+    const pm = await page.evaluate(async () => {
       const w = window as any;
       w.GuardianForms.testing.patchFiling({ 'attorney_name': 'Jordan Reyes, Esq.' }); w.GuardianForms.testing.patchFiling({ 'attorney_email': '' });
-      return (await w.GuardianForms.testing.validate.open()).some((m: ValidatorIssue) => m.message.toLowerCase().includes('email'));
+      return {
+        navComplete: w.GuardianForms.testing.status.navChecks().checks['pm-p7'],
+        blocked: (await w.GuardianForms.testing.validate.open()).some((m: ValidatorIssue) => m.message.includes('Preparer & Attorney — Attorney email is required')),
+      };
     });
-    expect(pmBaseline, 'Plan Minor never required attorney_email and this sub-delivery does not add it there').toBe(false);
+    expect(pm.blocked, 'an attorney with no email cannot be served (Rule 2.516)').toBe(true);
+    expect(pm.navComplete).toBe(false);
   });
 });
 

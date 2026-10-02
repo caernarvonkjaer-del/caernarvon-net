@@ -46,3 +46,77 @@ describe('isAttorneyStarted(): the one rule, per engine', () => {
     expect(isAttorneyStarted(BLANK, 'planInitial')).toBe(false);
   });
 });
+
+// Milestone 72C: the Annual Plan and the Plan for Minors join the rule, and the
+// Simplified Plan gets its own, narrower test. Behaviour through each Plan's
+// validator and sidebar is in tests/unit/plan-attorney-started.spec.js.
+describe('Milestone 72C: every Plan has an entry, and each lists a real field', () => {
+  test('the Annual Plan and the Plan for Minors list every attorney field their blank filing has', async () => {
+    const { ATTORNEY_ENTRY } = await import('../../src/core/validation/attorney-block.js');
+    const { emptyDataPlanAnnual } = await import('../../src/core/filing/models/plan-annual.js');
+    const { emptyDataPlanMinor } = await import('../../src/core/filing/models/plan-minor.js');
+    for (const [type, blank] of [['planAnnual', emptyDataPlanAnnual()], ['planMinor', emptyDataPlanMinor()]]) {
+      const listed = new Set([...ATTORNEY_ENTRY[type].fields, ...ATTORNEY_ENTRY[type].signature]);
+      for (const f of listed) expect(Object.prototype.hasOwnProperty.call(blank, f), `${type}.${f}`).toBe(true);
+      // Every attorney_* field the model carries counts, except the stamp image
+      // (an image needs a stamp state, which counts) and the "Unsigned" state.
+      const modelFields = Object.keys(blank).filter((k) => /^attorney/.test(k) && k !== 'attorney_signatureImage');
+      for (const f of modelFields) expect(listed.has(f), `${type}: ${f} is not in its entry`).toBe(true);
+    }
+  });
+
+  test('the Simplified Plan has no entry; isPlanSimplifiedRepresented() needs the name and the email', async () => {
+    const { ATTORNEY_ENTRY, isPlanSimplifiedRepresented } = await import('../../src/core/validation/attorney-block.js');
+    expect(ATTORNEY_ENTRY.planSimplified).toBeUndefined();
+    expect(isPlanSimplifiedRepresented(null)).toBe(false);
+    expect(isPlanSimplifiedRepresented({ attorney_name: 'Rob Atty' })).toBe(false);
+    expect(isPlanSimplifiedRepresented({ attorney_email: 'rob@law.example' })).toBe(false);
+    expect(isPlanSimplifiedRepresented({ attorney_name: '  ', attorney_email: 'rob@law.example' })).toBe(false);
+    expect(isPlanSimplifiedRepresented({ attorney_name: 'Rob Atty', attorney_email: 'rob@law.example' })).toBe(true);
+  });
+});
+
+// Milestone 72C, the Annual, Final and Trust Accountings: the attorney's name
+// was asked for only through the "/s/" check, so a Bar number, phone and email
+// exported under a blank name. Once an attorney is started it is required in
+// its own right, reported once, and Part V's sidebar mark waits for it.
+describe('Milestone 72C: the Annual family asks for the attorney\'s name', () => {
+  let validateAnnual;
+  let annualCompletion;
+  let openFiling;
+  let emptyDataAnnual;
+  const deps = { calcTotalsAnnual: () => ({}), annualReconcileState: () => ({ outOfBalance: false, explained: true }) };
+  const ready = async () => {
+    if (validateAnnual) return;
+    globalThis.window = globalThis.window || globalThis;
+    ({ openFiling } = await import('./support/open-filing.js'));
+    ({ emptyDataAnnual } = await import('../../src/core/filing/models/annual.js'));
+    ({ validateAnnual } = await import('../../src/features/annual-accounting/index.js'));
+    ({ annualCompletion } = await import('../../src/core/status/completion.js'));
+  };
+  const COMPLETE = {
+    attorney_bar: '0123456', attorney_phone: '(727) 555-0100', attorney_email: 'rachel@law.example',
+    attorney_street: '1 Court St', attorney_cityStateZip: 'Clearwater, FL 33756', attorney_signatureDate: '2027-01-05',
+  };
+  const annual = (over) => ({ ...emptyDataAnnual(), inventoryType: 'annual', periodFrom: '2026-01-01', periodTo: '2026-12-31', ...over });
+  const messages = (d) => { openFiling(d); return validateAnnual().map((e) => String(e?.message ?? e)); };
+
+  test.each(['annual', 'finalAccounting', 'trustAccounting'])('%s: a Bar number alone asks for the name', async (inventoryType) => {
+    await ready();
+    expect(messages(annual({ inventoryType, attorney_bar: '0123456' }))).toContain('Part V — Attorney Name');
+    expect(messages(annual({ inventoryType }))).not.toContain('Part V — Attorney Name');
+  });
+
+  test('"/s/" with no name: the name is reported once, not again by the signature check', async () => {
+    await ready();
+    const m = messages(annual({ ...COMPLETE, attorney_signatureState: 'typed' }));
+    expect(m.filter((s) => /Attorney (Name|printed name)/.test(s))).toEqual(['Part V — Attorney Name']);
+  });
+
+  test('a-p5 stays unfinished until the name is entered', async () => {
+    await ready();
+    expect(annualCompletion(annual(COMPLETE), deps).checks['a-p5']).toBe(false);
+    expect(annualCompletion(annual({ ...COMPLETE, attorney: 'Rachel Lawyer' }), deps).checks['a-p5']).toBe(true);
+    expect(messages(annual({ ...COMPLETE, attorney: 'Rachel Lawyer' })).filter((s) => s.startsWith('Part V —'))).toEqual([]);
+  });
+});

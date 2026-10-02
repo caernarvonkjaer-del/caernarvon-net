@@ -88,7 +88,8 @@ export function emptyDataPlanInitial() {
     certIncapacitatedNoCopy:false, certMinorNoCopy:false, certConsulted:false,
     certRecognizeRights:false, certNoRestriction:false, certProvidesCare:false,
     // Guardians (form provides up to four signature blocks) + attorney
-    planGuardians:[{name:'',ssn:'',street:'',phone:'',cityStateZip:'',signatureDate:'',relationship:'',signatureState:'',signatureImage:''}],
+    // Milestone 72C: email, as on the other three Plans' guardian rows.
+    planGuardians:[{name:'',ssn:'',street:'',phone:'',email:'',cityStateZip:'',signatureDate:'',relationship:'',signatureState:'',signatureImage:''}],
     // Milestone 72B: attorney_secondaryEmail -- the attorney page has always collected it.
     attorney_name:'', attorney_bar:'', attorney_phone:'', attorney_email:'', attorney_secondaryEmail:'',
     attorney_street:'', attorney_cityStateZip:'', attorney_signatureDate:'',

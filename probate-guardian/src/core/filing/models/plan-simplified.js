@@ -12,6 +12,9 @@ export function emptyDataPlanSimplified() {
     planTriStateSchemaVersion:2,
     // Milestone 68C: the Certificate of Service, on every Plan.
     ...emptyCertificateOfService(),
+    // Milestone 72C: set by certificate-migrations.js's once-only signer pin;
+    // a new plan has nothing to pin, and the first open sets it.
+    certSignerMigrated:false,
     wardName:'', caseNumber:'', ucn:'', periodFrom:'', periodTo:'', county:'',
     q1Residences:'', q2BestPlacement:'', q3MedicalTreatment:'', q4Diagnosis:'',
     q5SocialServices:'', q6Interaction:'',

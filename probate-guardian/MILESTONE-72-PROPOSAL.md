@@ -41,7 +41,7 @@ recorded as **Pinellas Clerk practice**, not as a reading of a statute or rule
 | --- | --- | --- | --- | --- |
 | 1 | 72A | The Inventory's Excel Part III prints each guardian's date, SSN/EIN, street, phone and city **over the form's printed captions**, and leaves the boxes beneath them empty | **DECIDED.** Put each value in its box. Keep writing Guardian #1's name, with a warning when it is not among the Cover's Guardian Name(s). Guard every export: no caption overwritten and no formula changed, and **every box the exporters write** gets a typed test value checked in its expected cell, with a few extra exports so Yes/No and dropdown boxes can't swap unnoticed | **Built** 2026-10-02 (see its Build record; four more defects found and fixed) |
 | 2 | 72B | A blank share on ten Inventory schedules silently counts as 0%, and a 0 share becomes blank when converted or when the Annual's Part VIII is exported. The Inventory attorney's primary email is marked required but never checked. **Six forms** collect a secondary attorney email that their models and the data model omit, and carry-over passes on only the primary | **DECIDED.** Require a share on every started row (0 allowed); keep 0 as 0 on every share path. Require the Inventory attorney's email once an attorney is entered. Every form's model, data model, carry-over and conversion keeps both attorney emails | **Built** 2026-10-02 (see its Build record; more found and fixed) |
-| 3 | 72C | The Inventory and the Initial Plan have no guardian email. The Annual, Annual Plan and Plan for Minors collect it but never check it. The Simplified Accounting and Simplified Plan block without it. The Plan for Minors never checks the attorney's email. The Annual family and Annual Plan accept an attorney with no name, and the Simplified Plan's certificate can't find its attorney's name | **DECIDED.** Add it where it's missing. On all three accountings and all four Plans, a missing guardian email **warns, never blocks**, and only when no attorney is entered. "Attorney entered" means any attorney field, by one shared definition per form, and then the Annual family and Annual Plan also require the attorney's name. The Plan for Minors requires the attorney's email once an attorney is entered. The Simplified Plan's attorney stays optional, and its warning shows until the attorney's name and email are both entered. Its certificate is fixed to find the attorney | Not started |
+| 3 | 72C | The Inventory and the Initial Plan have no guardian email. The Annual, Annual Plan and Plan for Minors collect it but never check it. The Simplified Accounting and Simplified Plan block without it. The Plan for Minors never checks the attorney's email. The Annual family and Annual Plan accept an attorney with no name, and the Simplified Plan's certificate can't find its attorney's name | **DECIDED.** Add it where it's missing. On all three accountings and all four Plans, a missing guardian email **warns, never blocks**, and only when no attorney is entered. "Attorney entered" means any attorney field, by one shared definition per form, and then the Annual family and Annual Plan also require the attorney's name. The Plan for Minors requires the attorney's email once an attorney is entered. The Simplified Plan's attorney stays optional, and its warning shows until the attorney's name and email are both entered. Its certificate is fixed to find the attorney | **Built** 2026-10-02 (see its Build record; four more found and fixed) |
 | 4 | 72D | With no attorney, the filed PDF prints an app-written sentence that no Clerk form has | **DECIDED.** Match the Clerk's forms: print the attorney block blank, as they do | Not started |
 | 5 | 72E | On a phone, Schedule C's loss and Schedule E's transfer-out boxes offer a keypad with no minus key | No decision needed (a defect) | Not started |
 | 6 | 72F | The nine-form summary-page browser test runs out of time on the D: drive | **DECIDED.** Split it into nine tests, one per form | Not started |
@@ -1221,7 +1221,140 @@ instead of asking the filer to finish the attorney.
 9. **Cross-form.** This item is the cross-form fix, authorized by the
    requester's answers.
 
-### Build record — NOT STARTED
+### Build record — BUILT 2026-10-02
+
+**What a filer sees now.**
+- Every form collects each guardian's email, and none refuses to export
+  without it. With no attorney entered, Preview & Export lists, for each
+  guardian in play with no email, "<page> — Guardian #N has no email
+  address. With no attorney, the court's rules expect each signer's e-mail
+  address for service … (Fla. R. Gen. Prac. & Jud. Admin. 2.515(c))." The
+  page is D-1, Part III, Part IV, or the Plan's signature page.
+- The Simplified Accounting and the Simplified Plan export without the
+  guardian's email; they used to refuse.
+- The Initial Inventory's D-1 and the Initial Plan's signature page have an
+  Email Address field. It prints in the guardian's signature block and
+  carries into and out of those forms.
+- On the Annual Plan and the Plan for Minors, typing any attorney detail (a
+  Bar number, a phone) starts an attorney. The page then marks the
+  attorney's name and primary email required as the filer types, and export
+  asks for both. The Plan for Minors never asked for the attorney's email
+  before.
+- On the Annual, Final and Trust Accountings an attorney's name is required
+  once an attorney is started ("Part V — Attorney Name"), marked live on
+  Part I and Part V, and reported once even with "/s/" applied.
+- The Simplified Plan's certificate of service defaults to the attorney when
+  one is named, and prints the attorney's name. A certificate the guardian
+  already signed keeps printing the guardian.
+
+**Built as designed:** the shared `guardianEmailAdvisories()`; the removed
+email blocks in `validateSimplified()` and `validatePlanSimplified()` and in
+the Simplified's sidebar; the Annual's Part III email marker removed;
+`ATTORNEY_ENTRY` entries for the Annual Plan and the Plan for Minors, and
+`isPlanSimplifiedRepresented()`; their validators wrapped in
+`isAttorneyStarted()`, with the name and primary email required; the Annual
+family's name rule and `a-p5`; `pa-p11` and `pm-p7` on the shared test; the
+Simplified Plan's certificate configuration (page and PDF) reading
+`attorney_name`; the once-only signer pin in the new
+`certificate-migrations.js`, run from the Simplified Plan's `mount()`; the
+guardian email in the Inventory and Initial Plan models, pages, PDFs and
+carry-over; the data-model rows.
+
+**Decisions taken:**
+1. **One warning module, not two channels.** The proposal had the accountings
+   use `unrepresentedAdvisories()` and the Plans their own channel. Built as
+   one module, `guardian-email.js`, called once from `output-preflight.js` for
+   all seven forms, so the message, the "attorney entered" test and the
+   co-guardian rule live in one place. What a filer sees is what the proposal
+   describes.
+2. **The field's label** is "Email Address", as on the Annual's Part III, not
+   a new wording.
+3. **Live required markers on the Plans.** The Annual Plan's Signatures page
+   and the Plan for Minors' Preparer & Attorney page mark the attorney's name
+   and email as the filer types, as the accountings' attorney blocks have
+   since Milestone 71B. The Plan for Minors marked the name required always,
+   attorney or not; it now marks it only once an attorney is started.
+4. **The Annual Plan's message** is "Signatures — Attorney name is required",
+   that page's own style (its email message reads the same way).
+5. **Part I's "Attorney for Guardian"** on the Annual family is marked the same
+   live way, because it is the same field as Part V's name. The Simplified's
+   Cover already marks its own.
+6. **Readiness.** The Annual Plan's and the Plan for Minors' attorney-email
+   issue is grouped under the attorney's readiness row, as the Initial Plan's
+   already was: hidden only while that row is itself outstanding, listed on
+   its own once the row passes.
+7. **"Begun" on the sidebar.** On the Annual Plan and the Plan for Minors, an
+   attorney started on its own (a lone Bar number) shows the signature page
+   as begun rather than untouched.
+8. **A blank Inventory's Guardian #1** carries an email key, as every added
+   co-guardian does.
+9. **`completion.js`** is a documented exception to the filing-type
+   enumeration guard: each engine's sidebar evaluator names its own engine to
+   the shared attorney test, as the validators do.
+
+**Found while building, and fixed:**
+1. **The Simplified Plan's readiness card required the guardian's email.**
+   With the export block removed, a plan the export accepts would still have
+   shown "Guardian contact details provided (email, phone, mailing address)"
+   as outstanding. The row now asks for the phone and mailing address only
+   (AGENTS.md §4: a readiness row must map to an export error).
+2. **The Simplified Plan's certificate, with "Attorney" chosen,** printed
+   "Certified by (Attorney)" over a blank name (the proposal's third-review
+   point, confirmed by test).
+3. **The Plan for Minors marked "Preparer Name" and the attorney's "Date
+   Signed" required on every plan,** though neither role is required until
+   started, and the other Plans never mark the attorney's date. Preparer Name
+   is now marked by the validator's own "preparer started" test (one shared
+   function), live; the date is unmarked, as on the other Plans. The data
+   model's `plan_minor preparer_name` row said `required`; it is
+   `conditional`, as the validator has always treated it.
+4. **Three page snapshots pinned the old markers:** the Annual's Cover (its
+   filing names an attorney, so Attorney for Guardian is now marked), the
+   Annual Plan's Signatures page (Primary Email marked with no attorney) and
+   the Initial Plan's (no guardian email field). Each difference was read and
+   is one of the changes above.
+
+**Not built:** nothing in 72C.
+
+**Tests and evidence:**
+- New `tests/unit/guardian-email-advisory.spec.js` (45 tests) and
+  `tests/unit/plan-attorney-started.spec.js` (34). Extended
+  `attorney-block.spec.js` (the Plans' entries; the Annual family's name
+  rule) and `plan-certificate-of-service.spec.js` (the pin; the Simplified
+  Plan's certificate).
+- Red-first, source reverted in groups and each rerun: validators, sidebar and
+  readiness (26 fail across five specs); models, carry-over and the
+  Inventory and Initial Plan pages and PDFs (5); the certificate (8, with the
+  module absent and the old PDF model); the Preview & Export hookup (1); the
+  Annual family's name rule and the explicit Attorney choice (6).
+- Updated with reasons: `plan-annual-parity` ("/s/" with no name is now the
+  name rule, reported once), `plan-simplified-parity` (no email case; a new
+  export-without-it test), `plan-simplified-certification-pages` (the
+  attorney's name appears only on the certificate of service, which is the
+  decided behavior), `checklist-export-parity` (the Plan for Minors' gaps and
+  the Annual's `attorney` gap closed), `filing-type-enumeration-guard`,
+  `filing-registry` with `ms70-70C-filing-shapes.json`, and
+  `ms70-completion-golden.json` (regenerated; every changed outcome read and
+  listed in its note).
+- Browser: new `tests/e2e/guardian-email-advisory.spec.ts` (9 tests; red-first:
+  each fails on the old forms);
+  `plan-certificate-of-service.spec.ts` gains the Simplified Plan's attorney
+  default and the once-only pin (red-first: both fail on the old page and
+  PDF model). Fixtures: the Plan for Minors' minimal attorney gains an email
+  (`tests/e2e/support/target.ts`); `navigation-status.contract.spec.ts` now
+  pins the Plan for Minors' attorney email as required (it pinned it as
+  "unaffected"); `sidebar-only-wants.spec.ts` and
+  `plan-readiness.contract.spec.ts` follow the new rules. Runs: those six
+  edited or nearby specs (152 tests), then -- because files changed during
+  that run -- the seven page specs and the new spec again (79; the three
+  snapshot differences above, then 30 of 30), and the certificate spec (20).
+- **One process slip, recorded:** a red-first revert was made while a
+  browser run was in progress, and the browser runs load files straight
+  from the working folder, so that run's results were not relied on; the
+  affected specs were run again afterwards. The full regression that follows
+  this commit reruns everything.
+- `npm run verify:data-model`: 1,049 rows valid. `npm run check:types`
+  passes. Unit suite: 168 files, 2,445 tests.
 
 ---
 

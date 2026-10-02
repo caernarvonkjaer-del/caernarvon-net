@@ -144,3 +144,61 @@ describe('which certificate is optional', () => {
     }
   });
 });
+
+// Milestone 72C. The Simplified Plan's certificate looked for its attorney
+// under `attorney`, a field that form does not have (its attorney is
+// `attorney_name`), so it always defaulted to Guardian 1 and never printed an
+// attorney. It finds the attorney now -- and, once, a certificate already
+// signed under the old default is pinned to the guardian it printed, so a
+// signature the guardian applied never moves under the attorney's name.
+describe('Milestone 72C: the Simplified Plan certificate finds its attorney', () => {
+  const signedBy = {
+    'a date': { certSignatureDate: '2026-01-05' },
+    '"/s/"': { certSignatureState: 'typed' },
+    'a stamp': { certSignatureState: 'stamp' },
+    'an image': { certSignatureImage: 'data:image/png;base64,AAAA' },
+  };
+
+  test.each(Object.entries(signedBy))('signed with %s and no stored signer: pinned to the guardian, once', async (_, signature) => {
+    const { pinPlanSimplifiedCertSigner } = await import('../../src/core/filing/certificate-migrations.js');
+    const d = { ...emptyCertificateOfService(), certSignerMigrated: false, attorney_name: 'Jordan Reyes, Esq.', ...signature };
+    expect(pinPlanSimplifiedCertSigner(d)).toBe(true);
+    expect(d).toMatchObject({ certSigner: 'guardian', certSignerMigrated: true });
+  });
+
+  test('an unsigned certificate is left to the default, and the marker still set', async () => {
+    const { pinPlanSimplifiedCertSigner } = await import('../../src/core/filing/certificate-migrations.js');
+    for (const extra of [{}, { certSignatureState: 'none' }, { certDate: '2026-01-05', certRecipients: [{ name: 'Sam Lee', line2: '', line3: '', line4: '' }] }]) {
+      const d = { ...emptyCertificateOfService(), certSignerMigrated: false, ...extra };
+      expect(pinPlanSimplifiedCertSigner(d)).toBe(true);
+      expect(d.certSigner).toBe('');
+      expect(d.certSignerMigrated).toBe(true);
+    }
+  });
+
+  test('a stored choice is never changed, and a filing a 72C open has seen is never touched again', async () => {
+    const { pinPlanSimplifiedCertSigner } = await import('../../src/core/filing/certificate-migrations.js');
+    const chose = { ...emptyCertificateOfService(), certSigner: 'attorney', certSignatureDate: '2026-01-05' };
+    pinPlanSimplifiedCertSigner(chose);
+    expect(chose.certSigner).toBe('attorney');
+    // Opened once since 72C, unsigned; the attorney signs later under the
+    // default. The next open leaves it to the attorney.
+    const later = { ...emptyCertificateOfService(), certSignerMigrated: true, certSignatureDate: '2026-02-01' };
+    expect(pinPlanSimplifiedCertSigner(later)).toBe(false);
+    expect(later.certSigner).toBe('');
+    expect(pinPlanSimplifiedCertSigner(null)).toBe(false);
+  });
+
+  test('the filed certificate: the attorney by default, the guardian once pinned', async () => {
+    globalThis.window = globalThis.window || {};
+    const { buildPlanSimplifiedModel } = await import('../../src/features/plan-simplified/pdf-model.js');
+    const { emptyDataPlanSimplified } = await import('../../src/core/filing/models/plan-simplified.js');
+    const filing = (over) => ({ ...emptyDataPlanSimplified(), planGuardians: [{ name: 'Pat Rivera', signatureDate: '', email: '', phone: '', mailingAddress: '' }], attorney_name: 'Jordan Reyes, Esq.', ...over });
+    const signer = (d) => buildPlanSimplifiedModel(d).sections.find((s) => s.id === 'certificate-of-service').blocks.find((b) => b.type === 'signature-block');
+    expect(signer(filing({}))).toMatchObject({ role: 'Certified by (Attorney)', signerName: 'Jordan Reyes, Esq.' });
+    expect(signer(filing({ certSigner: 'guardian' }))).toMatchObject({ role: 'Certified by (Guardian)', signerName: 'Pat Rivera' });
+    // Chosen explicitly: it used to print "Certified by (Attorney)" over a
+    // blank name.
+    expect(signer(filing({ certSigner: 'attorney' }))).toMatchObject({ role: 'Certified by (Attorney)', signerName: 'Jordan Reyes, Esq.' });
+  });
+});
