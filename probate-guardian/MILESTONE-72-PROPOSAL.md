@@ -2,9 +2,10 @@
 
 ## Status
 
-**Draft, 2026-10-01. It authorizes no change.** Every decision below was
-settled by the requester on 2026-10-01. Building any item still needs the
-requester's named approval of that item (AGENTS.md §3).
+**Draft, 2026-10-01; items 72G–72J added 2026-10-02. It authorizes no
+change.** Every decision below was settled by the requester on 2026-10-01 or
+2026-10-02. Building any item still needs the requester's named approval of
+that item (AGENTS.md §3).
 
 The requester is a representative of the Clerk of the Circuit Court, Pinellas
 County. Where an answer below is about what the Clerk's office accepts, it is
@@ -19,6 +20,11 @@ recorded as **Pinellas Clerk practice**, not as a reading of a statute or rule
 | 4 | 72D | With no attorney, the filed PDF prints an app-written sentence that no Clerk form has | **DECIDED.** Match the Clerk's forms: print the attorney block blank, as they do | Not started |
 | 5 | 72E | On a phone, Schedule C's loss and Schedule E's transfer-out boxes offer a keypad with no minus key | No decision needed (a defect) | Not started |
 | 6 | 72F | The nine-form summary-page browser test runs out of time on the D: drive | **DECIDED.** Split it into nine tests, one per form | Not started |
+| 7 | 72G | No certificate of service says **how** the copies were served (Rule 2.516(f)(5)), on any of the seven forms that have one | **DECIDED.** Ask once per certificate; print it on the PDF; a missing method warns, never blocks. All seven certificates | Not started |
+| 8 | 72H | The Inventory's and the Simplified's certificates re-type the attorney's details, so one PDF can show two Bar Numbers for one attorney | **DECIDED.** The certificate's attorney is the filing's attorney, as on the Annual and the Clerk's forms | Not started |
+| 9 | 72I | Choosing "Guardian Advocate" as the Type of Guardianship shows no hint at the reason question until the filer leaves the page and returns | No decision needed (a defect) | Not started |
+| 10 | 72J | The missing-recipients issue reads "No recipients are required for this certificate (filer attestation …)", the checkbox's caption, not a question | No decision needed (reuse the Plans' wording) | Not started |
+| — | — | The sidebar's NET ASSETS stays at $0.00 for a negative Starting Balance (browser review, H2) | **Not reproduced; dropped** (see "Reported, not reproduced") | — |
 
 ### Provenance
 
@@ -34,6 +40,12 @@ recorded as **Pinellas Clerk practice**, not as a reading of a statute or rule
   - The original Plan forms were read from their extracted text.
   - The July 2026 Florida Rules of General Practice and Judicial
     Administration were read from `reference/legal/statutes/`.
+- **72G–72J** come from the requester's browser-only review of Milestone 71
+  on the test system, reported 2026-10-02 (findings H1, M3, M1 and M2; H2 is
+  under "Reported, not reproduced"). Each finding was checked against the
+  code, the Clerk's workbooks and the rule text before being written up here,
+  and where the review's account differed from what was found, the
+  difference is stated in that item.
 
 ### Decisions already made (2026-10-01, the requester)
 
@@ -46,6 +58,9 @@ recorded as **Pinellas Clerk practice**, not as a reading of a statute or rule
 | The guardian's email (Rule 2.515(c)) | Add it to the Inventory. A missing one warns, never blocks, and only when no attorney is entered. The same rule applies on the Annual family and the Simplified, so the Simplified's existing block becomes a warning. Recorded as Clerk practice |
 | The no-attorney sentence on the PDF | Remove it. The PDF leaves the attorney block blank, as every Clerk form does. This supersedes 71B design step 6 and its open wording question. It also supersedes an earlier 2026-10-01 answer to reword one sentence: with no sentence printed, nothing remains to reword |
 | The slow summary test | Split per form |
+| Method of service on a certificate (2026-10-02) | Add it, once per certificate, on all seven certificates (the three accountings and the four Plans). PDF only. A missing method warns, never blocks. Recorded as Clerk practice |
+| The certificate's attorney (2026-10-02) | The filing's attorney, as on the Annual and the Clerk's forms. The Inventory's and the Simplified's re-typed certificate attorney details are no longer printed |
+| The sidebar's NET ASSETS finding (2026-10-02) | Not reproduced; dropped, with no test added |
 
 ---
 
@@ -61,12 +76,19 @@ Sequential, because the items share files:
 | 72D | `src/core/filing/unrepresented-filing.js`, the three `pdf-model.js` files |
 | 72E | `src/features/annual-accounting/index.js` |
 | 72F | `tests/e2e/routes.spec.ts` |
+| 72G | the three accountings' `index.js` and `pdf-model.js`, `src/core/filing/plan-certificate-of-service.js`, a new `src/core/filing/service-method.js`, `src/core/filing/output-preflight.js`, the models, CSV |
+| 72H | `src/features/guardian-inventory/index.js` (D-5), `pdf-model.js` and `excel.js`; `src/features/simplified-accounting/index.js` (Part VI) and `pdf-model.js`; CSV |
+| 72I | `src/core/filing/unrepresented-filing.js`, the Inventory's and the Annual's Cover wiring |
+| 72J | the three accountings' validators |
 
 - 72B and 72C both edit the Inventory's `index.js`.
 - 72C and 72D both edit `unrepresented-filing.js` and the Inventory PDF
   model.
 - 72C and 72E both edit the Annual's `index.js`.
+- 72G and 72H both edit every accounting's certificate page and PDF; build
+  72H first, so the method is added to the certificate's final shape.
 - 72F touches no source and can run at any point.
+- **Order:** 72A, 72B, 72C, 72D, 72H, 72G, 72I, 72J, then 72E and 72F.
 
 ---
 
@@ -618,6 +640,398 @@ on this test's 60-second limit, not on a defect.
 
 ---
 
+## 72G — Every certificate of service says how the copies were served
+
+*From the browser review, finding H1.*
+
+### What a filer observes
+
+No certificate of service in the app asks how service was made, and no
+filed PDF says it. This applies to both kinds of certificate:
+
+- signed by an attorney: the Inventory, the Annual family and the
+  Simplified;
+- signed by a guardian when there is no attorney (Milestone 71B).
+
+It also applies to the four Plans' certificates (Milestone 68C). An
+Inventory's prints, for example: *"Pursuant to the Florida Statute
+744.362(1), I hereby certify that a copy of this inventory has been
+furnished to the following persons on this date, 09/30/2026:"* There is no
+"by mail", "by e-mail" or similar.
+
+### Evidence
+
+- **Rule 2.516(f)** (July 1, 2026): *"A person establishes prima facie proof
+  of service by including the following: (1) certification; (2) date of
+  service; (3) name(s) of person(s) served (4) service address(es); and (5)
+  method of service."* The rule's sample certificate reads *"…furnished to
+  (here insert name(s) and service address(es) by (here insert method of
+  service such as portal, e-mail, delivery, or mail)."* Probate Rule 5.041
+  sends service to Rule 2.516 (`reference/README.md`).
+- **The Clerk's workbooks** (parsed) do not ask for a method. Each has only
+  the certificate sentence (Inventory `PART VI`!B8, Annual `PART X`!B9,
+  Simplified `PARTS V, VI `!B25: *"…I hereby certify that a copy of this …
+  has been furnished to:"*), the recipients, a date, and "Indicate if:"
+  (*"Ward is totally incapacitated, Ward is under 14 years old, N/A"*).
+- **The app**:
+  - No form, model or PDF has a method field. `serviceMethod` exists only
+    in a type comment (`src/core/types/parties.js`, `ServiceRecipient`).
+  - The certificate sentences are in the Inventory PDF model (near line
+    837), the Annual's (near 1104), the Simplified's (near 284) and
+    `plan-certificate-of-service.js` (near 162).
+- **Milestone 71's record.** 71B's design (step 5) said the guardian's
+  certificate *"uses the same recipient list, addresses and method fields
+  the attorney certificate already uses"*. There were no method fields.
+  The review attributes the claim to 71B's build record; it is in the
+  design, and the build record makes no such claim.
+
+### Decision (the requester, 2026-10-02)
+
+- Ask once per certificate, on all seven certificates.
+- Print it on the PDF only.
+- A missing method warns, never blocks. Recorded as Clerk practice.
+
+### Design
+
+1. **A new `src/core/filing/service-method.js`.**
+   - The choices, each with its label and the phrase the PDF prints:
+
+     | Label | Prints as |
+     | --- | --- |
+     | Florida Courts E-Filing Portal | "the Florida Courts E-Filing Portal" |
+     | E-mail | "e-mail" |
+     | Hand delivery | "hand delivery" |
+     | U.S. Mail | "U.S. Mail" |
+     | Other | the filer's own words |
+
+   - `serviceMethodPhrase()` returns `''` when nothing is chosen, or when
+     Other has no text.
+   - It also builds the warning.
+2. **Fields**, in each form's existing naming: the Inventory gets
+   `serviceMethod` and `serviceMethodOther`; the Annual family, the
+   Simplified and the Plans get `certMethod` and `certMethodOther`. Both
+   default to `''`.
+3. **On screen.** Each certificate page gets a fieldset, *"How were the
+   copies served?"*, beside the service date: five radios, and a text box
+   when Other is chosen. It is the same whoever signs. The Plans get it
+   through the shared certificate section.
+4. **On the PDF**, the certificate sentence takes the method, as in the
+   rule's sample:
+   - Inventory: *"…has been furnished to the following persons by U.S. Mail
+     on this date, 09/30/2026:"*;
+   - the others: *"…has been furnished by U.S. Mail to:"*.
+
+   With no method chosen, the sentence is today's, unchanged.
+5. **Excel.** Not written: the workbooks have no box for it, and writing it
+   into the certificate sentence's cell would overwrite the Clerk's text.
+   Not imported.
+6. **The warning.** Preview & Export, when the certificate lists at least
+   one recipient and no method is stated: *"<section> — How the copies were
+   served is not stated. Rule 2.516(f) lists the method of service among
+   what a certificate of service includes."*
+   - It does not appear when the filer affirms that no recipients are
+     required.
+   - It never blocks, and the sidebar is unaffected.
+   - The Plans' warning goes through `planCertificateAdvisories()`.
+7. **`MILESTONE-71-PROPOSAL.md`.** 71B step 5's claim gets a correction
+   note pointing here.
+
+### Cross-cutting checklist (AGENTS.md §8)
+
+1. **Data model.** Fourteen new rows: `serviceMethod` and
+   `serviceMethodOther` for `guardian_inventory`, and `certMethod` and
+   `certMethodOther` for the annual, simplified and four plan scopes.
+   - `serviceMethod` and `certMethod`: `string`, `enum`, optional, allowed
+     `portal`, `email`, `hand`, `mail`, `other`.
+   - The `…Other` fields: `string`, `text`, optional.
+   - Each is `sensitive` `none`, `persisted`, `input`.
+   - `npm run verify:data-model`.
+2. **Legacy data.** An older filing has no method, so it reads as `''` and
+   the warning shows: visible, no migration. The Plans'
+   `migratePlanCertificateOfService()` adds the two fields on mount, as it
+   does the others.
+3. **Fixtures.** Nothing new is required (it is a warning). Grep for specs
+   pinning a certificate sentence (`has been furnished`); each still passes
+   with no method chosen.
+4. **Tests.**
+   - New: `tests/unit/service-method.spec.js`. It covers:
+     - each method's phrase;
+     - each engine's and each Plan's PDF sentence, with and without a
+       method;
+     - the warning: only with recipients and no method, never an export
+       error.
+   - New: `tests/e2e/certificate-service-method.spec.ts`. With real clicks,
+     on the Inventory's D-5 (attorney- and guardian-signed), the Annual's
+     Part X and one Plan, the chosen method prints on the PDF and survives
+     reopening. Other prints the typed words.
+   - **Red-first:** no field, and no method in the sentence.
+   - `TEST-INDEX.md`.
+5. **Export/import.** The PDF only.
+6. **Security.** No sensitive data.
+7. **UI/UX.** The app's existing radio-choice fieldset pattern
+   (`<fieldset>`/`<legend>`), beside the service date.
+8. **Legal framing.** Rule 2.516(f) is quoted, not interpreted. Whether it
+   governs the copies furnished under §744.362(1) and §744.367(4) is not
+   decided here. That a missing method is a warning, not a block, is
+   Pinellas Clerk practice (2026-10-02).
+9. **Cross-form.** All seven certificates change together. The Clerk's
+   workbooks keep their own wording.
+
+### Build record — NOT STARTED
+
+---
+
+## 72H — The certificate's attorney is the filing's attorney
+
+*From the browser review, finding M3.*
+
+### What a filer observes
+
+- On the Inventory's D-5, an attorney-signed certificate asks again for the
+  attorney's name, Florida Bar number, phone and address, and prints those.
+- On the Simplified's Part VI, it asks again for the Bar number, phone and
+  address.
+
+A typo, or a later correction on D-2 or Part V, leaves the certificate
+printing different details for the same attorney. The review saw a seeded
+Inventory print Bar # 00123456 in Part IV and 01234567 in Part VI. The code
+cannot tell whether that filing was typed that way, but the app allows it
+either way, and nothing warns.
+
+### Evidence
+
+**The Clerk's forms tie the certificate to the filing's attorney** (parsed):
+
+| Form | Certificate attorney's name | Bar number, address, phone |
+| --- | --- | --- |
+| Inventory `PART VI` | J27 `='SUMMARY I '!D24` (Attorney for Guardian), as is `PART IV`'s I26 | separate boxes (B29, J29, B31, J31) |
+| Annual `PART X` | K25 `=Attorney` | **linked**: B27 `=Attorney_Bar_No`, K27 `=Attorney_Address` |
+| Simplified `PARTS V, VI ` | J41 `='PARTS I, II '!D15` | separate boxes |
+
+**The app has three variants:**
+
+- **Annual:** the certificate keeps only its own signature and date
+  (`certAttySignDate`, `certAttySignatureState`, `certAttySignatureImage`)
+  and uses Part V's attorney. This matches the form.
+- **Simplified:** re-typed `certAttyBarNumber`, `certAttyPhone`,
+  `certAttyStreet` and `certAttyCityStateZip` (`index.js` near 648–651).
+  The PDF (near 327–329) and Excel print them, falling back to Part V when
+  blank.
+- **Inventory:** `serviceAttorney.name`, `barNumber`, `phone`,
+  `streetAddress` and `cityStateZip` (`index.js` near 1268–1270).
+  - The validator requires `serviceAttorney.name` (near 1491).
+  - The PDF prints them (near 866–874); only the email falls back to D-2's.
+  - Excel writes them to `PART VI` B29, J29, B31 and J31 (`excel.js` near
+    547–550).
+
+### Decision (the requester, 2026-10-02)
+
+The certificate's attorney is the filing's attorney, as on the Annual and
+the Clerk's forms.
+
+### Design
+
+1. **Inventory D-5 with an attorney.**
+   - It shows *"Signed by NAME, Florida Bar # … — name and contact details
+     come from D-2"*, read-only, like 71B's guardian-certifier line.
+   - It keeps its own signature control and date
+     (`serviceAttorney.signatureDate`, `signatureState`, `signatureImage`).
+   - The name, Bar number, phone and address inputs go, and so does the D-5
+     attorney name check. D-2 already validates the attorney. (D-5 never had
+     an email input; the PDF's fallback to D-2's email read a field nothing
+     collects.)
+2. **The Inventory PDF's Part VI** prints the attorney from D-2
+   (`attorney.*`), and the signature and date from `serviceAttorney.*`.
+3. **The Inventory Excel's `PART VI`.**
+   - B29, J29, B31 and J31 get D-2's Bar number, street, phone and
+     city/state/zip.
+   - G27 keeps the certificate's signature date.
+   - J27 stays the form's link.
+   - The importer stops reading those boxes into `serviceAttorney.*`. Check
+     at build that `PART IV` still supplies D-2's.
+4. **Simplified Part VI.** The four re-typed inputs go. The PDF and Excel
+   use Part V's `attorney_*`. Its own signature and date stay. The importer
+   stops reading `PARTS V, VI ` B43, J43 and their neighbours into
+   `certAtty…` (`excel.js` near 409-411); Part V's own cells supply the
+   attorney.
+5. **Typed data is kept, not printed.**
+   - Values already stored stay in the `.sav` (AGENTS.md §4,
+     non-destructive).
+   - When any non-blank one differs from the filing's attorney, Preview &
+     Export notes it once, for example: *"D-5 — Attorney details entered on
+     this certificate earlier (Florida Bar # 01234567) differ from D-2
+     (00123456). The certificate now prints D-2's; confirm D-2 is right."*
+   - The same applies on the Simplified, against Part V.
+6. **No attorney** (a guardian certifies): unchanged from 71B.
+
+### Cross-cutting checklist (AGENTS.md §8)
+
+1. **Data model.**
+   - The Inventory's `serviceAttorney.name`, `barNumber`, `phone`,
+     `streetAddress` and `cityStateZip` rows, and the Simplified's four
+     `certAtty…` rows: the notes read "retained; no longer entered or
+     printed (Milestone 72H)".
+   - The `serviceAttorney.email` row describes a field no model or form
+     has; it is removed.
+   - `npm run verify:data-model`.
+2. **Legacy data.** Kept, and noted when they differ: visible. No
+   migration.
+3. **Fixtures.** Grep for specs filling `serviceAttorney.*` or `certAtty…`,
+   and for any `fillMinimalValid*` that fills the D-5 name to satisfy its
+   old requirement.
+4. **Tests.**
+   - New: `tests/unit/certificate-attorney.spec.js`. Both engines' PDF
+     models print D-2's or Part V's details. The difference note fires only
+     when a stored value differs.
+   - New: an e2e case in which a Bar number typed on D-2 appears in the PDF
+     certificate and in the exported `PART VI`!B29, read with ExcelJS.
+   - **Red-first:** D-5's own value prints.
+   - `TEST-INDEX.md`.
+5. **Export/import.** The Inventory's `PART VI` writes and reads change, and
+   so do the Simplified's certificate boxes.
+6. **Security.** None.
+7. **UI/UX.** Reuses 71B's read-only "Signed by … — details come from …"
+   line.
+8. **Legal framing.** None. The Clerk's forms link the two.
+9. **Cross-form.** The Annual already works this way and is unchanged.
+
+### Build record — NOT STARTED
+
+---
+
+## 72I — The Guardian Advocate hint appears as soon as it's chosen
+
+*From the browser review, finding M1.*
+
+### What a filer observes
+
+On the Inventory's and the Annual's Cover, the question *"No attorney is
+entered. Why is this guardian filing without one?"* sits on the same page as
+Type of Guardianship. A filer who chooses "Guardian Advocate" there sees no
+hint pointing at the matching answer. The hint appears only after they leave
+the Cover and come back.
+
+### Evidence
+
+- `waiverBasisQuestionHTML()` (`unrepresented-filing.js`, near line 160)
+  builds the hint (`[data-waiver-advocate-hint]`) only when the page is
+  drawn.
+- The question is drawn on the Cover (`'/'`) of the Annual (`index.js` near
+  672) and of the Inventory (near 757).
+- **Reproduced on the Annual**, with the real dropdown: no hint right after
+  choosing Guardian Advocate; the hint is present after leaving and
+  returning.
+- The Inventory draws the same block the same way. It was not separately
+  driven: the probe's own selector failed there, not the app.
+- The review confirmed the other half: choosing Guardian Advocate does not
+  auto-answer the question.
+- The Simplified asks no reason; its basis is fixed by §744.3679(3).
+
+### Design
+
+- When Type of Guardianship changes, redraw the reason block. This is the
+  same refresh the reason radios already trigger, which is why the chosen
+  reason's caption updates live.
+- The hint shows only while the type is Guardian Advocate and no reason is
+  chosen.
+
+### Tests and checklist
+
+- New: `tests/e2e/guardian-advocate-hint.spec.ts`, on both engines, with the
+  real dropdown:
+  - the hint is visible at once;
+  - changing to Plenary removes it;
+  - choosing a reason removes it.
+- **Red-first:** the hint is absent until the filer navigates away and
+  back.
+- `TEST-INDEX.md`.
+- No data, legacy, export, security or legal effect. Cross-form: the
+  Simplified has no such question.
+
+### Build record — NOT STARTED
+
+---
+
+## 72J — The missing-recipients issue names what to do
+
+*From the browser review, finding M2.*
+
+### What a filer observes
+
+On an accounting with an empty certificate, Preview & Export's missing list
+and the Clerk's Review Readiness list both show: *"Part X — No recipients
+are required for this certificate (filer attestation - app does not
+determine legal necessity)"*. That is the caption of the checkbox, read as
+if it were the missing item. The Inventory (D-5) and the Simplified
+(Part VI) show the same.
+
+### Evidence
+
+- The validators push `` `<section> — ${ATTESTATION_57B}` ``: the Annual's
+  near line 1745, the Inventory's near 1479, the Simplified's near 855.
+- The Plans already word the same condition as *"List at least one
+  recipient who was served, or state that no recipients are required"*
+  (`section-guidance-policy.js`).
+- No spec pins the old text.
+
+### Design
+
+- The message becomes *"<section> — List at least one recipient who was
+  served, or state that no recipients are required"*.
+- The field path is unchanged, so "Go to field" still lands on the
+  checkbox.
+- Re-read `readiness-config.js`. If an auto item matches the old text,
+  update it, so each auto item still maps to its export error one-to-one.
+
+### Tests and checklist
+
+- Extended: a unit case per engine for an empty certificate's message.
+- **Red-first:** the caption text appears.
+- `TEST-INDEX.md` for any spec touched.
+- No data, legacy, export, security or legal effect. Cross-form: brings the
+  accountings to the Plans' wording.
+
+### Build record — NOT STARTED
+
+---
+
+## Reported, not reproduced
+
+### The sidebar's NET ASSETS with a negative Starting Balance (browser review, H2)
+
+**Reported.** On a new Annual Accounting, with −5000 typed as the Starting
+Balance and nothing else entered, the left sidebar's NET ASSETS stayed at
+$0.00. This persisted after leaving the page and returning, on Summary and
+Print Preview, and after a browser reload. Meanwhile the Summary page and the
+PDF showed the negative correctly.
+
+**Checked 2026-10-02.**
+
+- The sidebar uses `headlineTotal()`, which for a filing with no Schedule D
+  figure returns Line 20 (−5,000 here).
+- Two throwaway browser probes, run on the source and on a fresh web
+  build, typed −5000 with the keyboard. The sidebar read "($5,000.00)":
+  - right after typing;
+  - after leaving and returning;
+  - with two filings in the case, switching between them;
+  - on Summary and on Print.
+- The test system serves the same main bundle as that fresh build
+  (`assets/index-ZGEyU5dO-v2.js`).
+- After a reload, the probe landed on the start screen, so that last step
+  was not compared.
+
+**Decision (the requester, 2026-10-02).** Dropped, with no test added. If
+it is seen again, the exact steps are needed, especially how the filing was
+reopened.
+
+### Also from the review
+
+The review's "Confirmed working" list matches the build records. It also
+confirmed that 71B's printed no-attorney sentence appears as designed; 72D
+removes that sentence by decision.
+
+---
+
 ## Verification plan for the milestone
 
 Per AGENTS.md §2:
@@ -626,11 +1040,12 @@ Per AGENTS.md §2:
   catch a defect.
 - **Type check:** after 72A (a new `tests/e2e/support/*.ts`), and after any
   item that touches a file in `tsconfig.json`'s scope.
-- **Data model:** `npm run verify:data-model` after 72B and 72C.
+- **Data model:** `npm run verify:data-model` after 72B, 72C, 72G and 72H.
 - **Full regression:** 72A changes an exporter and importer, 72C changes
-  three engines' validation, and 72D changes three PDFs. **Recommend
-  `npm test` after 72F**, to be run only with the requester's go-ahead. On
-  D: it takes about 1.7 h.
+  three engines' validation, 72D, 72G and 72H change every accounting's
+  PDF, and 72G changes the four Plans' certificates. **Recommend `npm test`
+  after the last item**, to be run only with the requester's go-ahead. On D:
+  it takes about 1.7 h.
 
 ---
 
