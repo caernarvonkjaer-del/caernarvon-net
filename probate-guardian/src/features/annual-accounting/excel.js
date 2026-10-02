@@ -79,6 +79,12 @@ const ANNUAL_NEVER_WRITTEN_CONTINUATION_SHEETS = Object.freeze([
   'SCH F-2 SALES PERSONAL PROP p2',
 ]);
 
+// Milestone 72B: the Annual workbook's own number formats, read from its
+// styles -- Schedule D's Ward's % cells use the built-in 0.00% and its amounts
+// this dollar format -- for the Part VIII boxes the template formats as dates.
+export const WORKBOOK_SHARE_FORMAT = '0.00%';
+export const WORKBOOK_MONEY_FORMAT = '"$"#,##0.00_);\\("$"#,##0.00\\)';
+
 /** 'SCH B-4 OTHER DISB p8' for page 8. */
 export const b4SheetName = (page) => `${B4_REGISTER_PREFIX}${page}`;
 
@@ -465,6 +471,15 @@ export async function doSaveExcel(){
     if(p8){
       setCell(p8,'D8',inv.trusts?.[0]?.hasTrust||'');
       const trustRows=[[10,12,13,14,15,16,17,18],[20,22,23,24,25,26,27,28],[30,32,33,34,35,36,37,38]];
+      // Milestone 72B. The Clerk's workbook formats each trust's Ward's % and
+      // Amount boxes as long dates ("mmmm d, yyyy"), so a 50% share used to
+      // show as "February 19, 1900", and the $0 written for every empty trust
+      // slot -- every Annual has three -- as "January 0, 1900". They now carry
+      // the workbook's own share and money formats (its Schedule D share
+      // cells' 0.00%, its amounts' dollar format), the share as the fraction
+      // every other share cell holds (50 -> 0.5), 0 kept as 0 and a blank as
+      // blank (it used to be `x||''`, so a 0% share was filed blank, and nv()
+      // wrote $0 for an empty amount). No formula reads these boxes.
       inv.trusts.forEach((t,i)=>{
         const rows=trustRows[i];
         setCell(p8,`H${rows[0]}`,t.createdAfterGID||'');
@@ -473,8 +488,10 @@ export async function doSaveExcel(){
         setCell(p8,`D${rows[3]}`,t.accountNo||'');
         setDateCell(p8,`D${rows[4]}`,t.dateCreated);
         setCell(p8,`D${rows[5]}`,t.trustType||'');
-        setCell(p8,`D${rows[6]}`,t.wardPct||'');
-        setCell(p8,`D${rows[7]}`,nv(t.wardAmount));
+        const share=setCell(p8,`D${rows[6]}`,pv(t.wardPct));
+        if(share)share.numFmt=WORKBOOK_SHARE_FORMAT;
+        const amount=setCell(p8,`D${rows[7]}`,(t.wardAmount===''||t.wardAmount==null)?'':nv(t.wardAmount));
+        if(amount)amount.numFmt=WORKBOOK_MONEY_FORMAT;
       });
     }
 
@@ -851,13 +868,29 @@ export async function importExcel(input){
       if(p8){
         const trustRows=[[10,12,13,14,15,16,17,18],[20,22,23,24,25,26,27,28],[30,32,33,34,35,36,37,38]];
         const hasTrust=gcStr(p8,'D8');
+        // Milestone 72B: the share is the fraction under the workbook's 0.00%
+        // and the amount a number under its dollar format. A workbook exported
+        // before 72B kept the template's date format on both, so ExcelJS hands
+        // the number back as a date -- read back to the number it was (the
+        // share then a 0-100 figure, as the app wrote it); typed text is read
+        // as the 0-100 figure it was too. (gcStr() used to turn the share into
+        // the date's text.)
+        const asNumberWritten=(v)=>v instanceof Date?Math.round((v.getTime()/86400000+25569)*1e6)/1e6:v;
+        const trustShare=(addr)=>{
+          const v=asNumberWritten(gcv(p8,addr));
+          if(v==null||v==='')return '';
+          if(typeof v==='number')return String(p8.getCell(addr).numFmt||'').includes('%')?shareFromWorkbookCell(v):v;
+          const n=parseFloat(String(v).replace(/%$/,''));
+          return Number.isFinite(n)?n:String(v);
+        };
+        const trustAmount=(addr)=>{const v=asNumberWritten(gcv(p8,addr));if(v==null||v==='')return '';const n=typeof v==='number'?v:parseFloat(v);return Number.isFinite(n)?n:'';};
         D.trusts=trustRows.map(rows=>{
           const [gidRow,nameRow,trusteeRow,acctRow,dateRow,typeRow,pctRow,amtRow]=rows;
           return {
             hasTrust, createdAfterGID:gcStr(p8,`H${gidRow}`),
             name:gcStr(p8,`D${nameRow}`), trustee:gcStr(p8,`D${trusteeRow}`),
             accountNo:gcStr(p8,`D${acctRow}`), dateCreated:gcDate(p8,`D${dateRow}`),
-            trustType:gcStr(p8,`D${typeRow}`), wardPct:gcStr(p8,`D${pctRow}`), wardAmount:gcNum(p8,`D${amtRow}`)
+            trustType:gcStr(p8,`D${typeRow}`), wardPct:trustShare(`D${pctRow}`), wardAmount:trustAmount(`D${amtRow}`)
           };
         });
       }

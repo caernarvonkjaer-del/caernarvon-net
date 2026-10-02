@@ -40,7 +40,7 @@ recorded as **Pinellas Clerk practice**, not as a reading of a statute or rule
 | # | Item | What a filer sees today | Decision | Build |
 | --- | --- | --- | --- | --- |
 | 1 | 72A | The Inventory's Excel Part III prints each guardian's date, SSN/EIN, street, phone and city **over the form's printed captions**, and leaves the boxes beneath them empty | **DECIDED.** Put each value in its box. Keep writing Guardian #1's name, with a warning when it is not among the Cover's Guardian Name(s). Guard every export: no caption overwritten and no formula changed, and **every box the exporters write** gets a typed test value checked in its expected cell, with a few extra exports so Yes/No and dropdown boxes can't swap unnoticed | **Built** 2026-10-02 (see its Build record; four more defects found and fixed) |
-| 2 | 72B | A blank share on ten Inventory schedules silently counts as 0%, and a 0 share becomes blank when converted or when the Annual's Part VIII is exported. The Inventory attorney's primary email is marked required but never checked. **Six forms** collect a secondary attorney email that their models and the data model omit, and carry-over passes on only the primary | **DECIDED.** Require a share on every started row (0 allowed); keep 0 as 0 on every share path. Require the Inventory attorney's email once an attorney is entered. Every form's model, data model, carry-over and conversion keeps both attorney emails | Not started |
+| 2 | 72B | A blank share on ten Inventory schedules silently counts as 0%, and a 0 share becomes blank when converted or when the Annual's Part VIII is exported. The Inventory attorney's primary email is marked required but never checked. **Six forms** collect a secondary attorney email that their models and the data model omit, and carry-over passes on only the primary | **DECIDED.** Require a share on every started row (0 allowed); keep 0 as 0 on every share path. Require the Inventory attorney's email once an attorney is entered. Every form's model, data model, carry-over and conversion keeps both attorney emails | **Built** 2026-10-02 (see its Build record; more found and fixed) |
 | 3 | 72C | The Inventory and the Initial Plan have no guardian email. The Annual, Annual Plan and Plan for Minors collect it but never check it. The Simplified Accounting and Simplified Plan block without it. The Plan for Minors never checks the attorney's email. The Annual family and Annual Plan accept an attorney with no name, and the Simplified Plan's certificate can't find its attorney's name | **DECIDED.** Add it where it's missing. On all three accountings and all four Plans, a missing guardian email **warns, never blocks**, and only when no attorney is entered. "Attorney entered" means any attorney field, by one shared definition per form, and then the Annual family and Annual Plan also require the attorney's name. The Plan for Minors requires the attorney's email once an attorney is entered. The Simplified Plan's attorney stays optional, and its warning shows until the attorney's name and email are both entered. Its certificate is fixed to find the attorney | Not started |
 | 4 | 72D | With no attorney, the filed PDF prints an app-written sentence that no Clerk form has | **DECIDED.** Match the Clerk's forms: print the attorney block blank, as they do | Not started |
 | 5 | 72E | On a phone, Schedule C's loss and Schedule E's transfer-out boxes offer a keypad with no minus key | No decision needed (a defect) | Not started |
@@ -779,7 +779,100 @@ consecutive throughout, restarting per Schedule B-4 account block.
    (the Simplified has no shares). The secondary email covers all seven
    forms.
 
-### Build record — NOT STARTED
+### Build record — BUILT 2026-10-02
+
+**What a filer sees now.**
+- An Inventory row with no share on A-2 to C-5 shows an issue ("B-1 row 2 —
+  Ward's %"), and the schedule's sidebar mark stays unfinished; 0 is accepted.
+- An Inventory with an attorney but no primary email shows "D-2 Attorney —
+  Primary Email". A filing with no attorney is never asked.
+- Converting an Inventory into an Annual keeps each 0% share, each $0 value
+  and each unanswered Yes/No as entered.
+- A new filing made from another, and a converted one, starts with the
+  attorney's name, Bar number, phone, both emails and address, under its own
+  form's fields.
+- The Annual workbook's Part VIII shows a trust's share as a percentage and its
+  amount in dollars, and leaves an empty trust slot empty.
+
+**Built as designed:** the blank-share and attorney-email requirements
+(`validateGuardian()`); the `x||''` share mappings in
+`convertGuardianSchedulesToAnnual()` and the Annual's Part VIII export; both
+emails in the Inventory's model and the secondary email in the Annual,
+Simplified, Initial Plan, Annual Plan and Plan for Minors models, each under the
+form's existing spelling (no stored value moves); data-model rows (the ten share
+rows conditional, `attorney.email` conditional, six new secondary-email rows,
+each `personal`); `extractCarryIdentity()` returns the secondary email; every
+conversion maps both emails.
+
+**Decision taken:** the blank-share issue reads "B-1 row 2 — Ward's %", the
+Inventory's own style for a required field (its validator names the field,
+"D-2 Attorney — Name"), not the proposal's "… is required."
+
+**Found while building, and fixed:**
+1. **Carry-over wrote the attorney to keys some forms never read.** Plan ->
+   Annual wrote `attorneyBar`, `attorneyPhone` and `attorneyEmail`; the Annual
+   reads `attorney_bar` and so on, so all three were dropped (a test in
+   `ward-carryover.spec.js` pinned the wrong keys). Plan -> Simplified and ->
+   Annual Plan carried only the name; the Simplified Plan received no
+   attorney; carry into an Inventory, and accounting to accounting, dropped
+   even the primary email. Now one table, `attorneyCarryFields()`, writes the
+   name, Bar number, phone, both emails and address under each destination's
+   own keys, for every form.
+2. **A Simplified's Bar number never carried.** It is `attorney_barNumber`,
+   which `extractCarryIdentity()` did not read.
+3. **Unanswered Yes/No became "No" on conversion.** An Inventory's unanswered
+   Restricted?, Personal Residence? or Income Property? arrived on the Annual as
+   an affirmative "No" (AGENTS.md §4 forbids it at any stage). Now carried
+   unanswered.
+4. **$0 became blank** on the same conversion, and in remuneration converted
+   either way between the Annual and the Simplified: the same `x||''`. Now 0.
+5. **The Annual's share writer** (`percentValue()`) wrote a blank share as an
+   asserted 0%; it now writes an empty cell, as the Inventory's always has.
+6. **Part VIII displayed shares and amounts as dates.** The Clerk's workbook
+   formats each trust's Ward's % and Amount boxes as long dates ("mmmm d,
+   yyyy"), so a 50% share showed as "February 19, 1900", and the $0 the
+   exporter wrote into every empty trust slot -- every Annual has three -- as
+   "January 0, 1900". *Decision taken:* the boxes now carry the workbook's own
+   share and dollar formats (those of its Schedule D cells), the share as the
+   fraction every other share cell holds, and an empty slot stays empty. No
+   formula reads these boxes. The importer reads both this and the old layout
+   (it used to turn the share into the date's text). This was listed under
+   "Not in scope" as found by Milestone 71A; it is fixed here under the
+   standing instruction to fix bugs found during the build. **Reported for the
+   Clerk's office:** the master workbook's Part VIII D16-D18, D26-D28 and
+   D36-D38 carry date formats.
+
+**Not built:** carrying guardian emails into an Inventory and Initial Plan is
+72C (those forms gain the field there).
+
+**Tests and evidence:**
+- New `tests/unit/inventory-required-share-and-email.spec.js` (17; red-first:
+  13 fail against the old validator and model), `share-zero-paths.spec.js` (9;
+  red-first: 6 fail), `attorney-emails-carry.spec.js` (101, every form to every
+  form; red-first: 91 fail).
+- Updated with reasons: `excel-engine.spec.js` and
+  `annual-ward-percentage.spec.js` (a blank share writes an empty cell),
+  `ward-carryover.spec.js` (the Annual's real keys; the Inventory's attorney has
+  emails); the goldens `ms70-70C-filing-shapes.json` (blank filings gain the
+  email keys) and `ms70-completion-golden.json` (new variants only; no outcome
+  changed), each note saying so; the Inventory overlay in
+  `tests/e2e/support/fixtures.ts` names its attorney's email.
+- `tests/e2e/excel-form-field-placement.spec.ts`: a Part VIII test (formats,
+  0, empty slots, a 72B export and an old-layout one both reading back) and the
+  guard's manifest expecting the fraction.
+- The conversion and New Year goldens (`ms70-conversion-golden.json`,
+  `ms70-year-rollover-golden.json`) regenerated by their own instruction and
+  each diff read: the conversions' shows exactly the changes above (both emails
+  arriving, the Plans receiving the attorney, the three never-read keys gone);
+  the New Year's shows new keys only. Each note says so.
+- Browser: 13 specs touching conversions, carry-over, shares and the export
+  guard (203 tests). The first run's 20 failures were all expected -- four
+  older placement tests whose own setup entered an attorney without an email
+  (fixed in the spec), and the 16 characterization checks of the two goldens
+  above -- and pass after. Part VIII red-first: against 72A's exporter, the
+  50% share is 50 under a date format.
+- `npm run verify:data-model`: 1,047 rows valid. Unit suite: 166 files,
+  2,350 tests. `npm run check:types` passes.
 
 ---
 
@@ -2005,7 +2098,9 @@ Per AGENTS.md §2:
 
 ## Not in scope
 
-- **Part VIII's trust amount prints as a date in Excel.** `D16`–`D18` carry
-  the Clerk's date format. Confirmed by Milestone 71A; still open.
+- ~~**Part VIII's trust amount prints as a date in Excel.**~~ Fixed in 72B
+  (2026-10-02), under the instruction to fix bugs found during the build: the
+  share and amount boxes now carry the workbook's own share and dollar
+  formats. See 72B's Build record.
 - **Activity-log entries tagged with the wrong filing.** Listed in
   `MILESTONE-71-PROPOSAL.md`; still open.

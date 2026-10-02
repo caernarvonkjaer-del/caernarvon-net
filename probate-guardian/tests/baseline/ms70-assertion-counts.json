@@ -2,8 +2,8 @@
  "generatedBy": "node scripts/ms70-assertion-counts.mjs --write-baseline",
  "note": "Milestone 70 per-spec assertion counts (static expect calls). tests/unit/ms70-assertion-counts.spec.js fails when a spec falls below its count; lowering it requires --reason, recorded in dropLog. A tripwire, not proof of equivalence (decision D9).",
  "totals": {
-  "expects": 7245,
-  "tests": 2062
+  "expects": 7302,
+  "tests": 2087
  },
  "counts": {
   "tests/e2e/annotation-toolbar-containment.spec.ts": {
@@ -143,8 +143,8 @@
    "tests": 6
   },
   "tests/e2e/excel-form-field-placement.spec.ts": {
-   "expects": 86,
-   "tests": 14
+   "expects": 93,
+   "tests": 15
   },
   "tests/e2e/excel-import-cell-shapes.spec.ts": {
    "expects": 11,
@@ -583,12 +583,16 @@
    "tests": 3
   },
   "tests/unit/annual-ward-percentage.spec.js": {
-   "expects": 20,
+   "expects": 24,
    "tests": 7
   },
   "tests/unit/attorney-block.spec.js": {
    "expects": 5,
    "tests": 2
+  },
+  "tests/unit/attorney-emails-carry.spec.js": {
+   "expects": 8,
+   "tests": 7
   },
   "tests/unit/attorney-optional.spec.js": {
    "expects": 66,
@@ -703,7 +707,7 @@
    "tests": 7
   },
   "tests/unit/excel-engine.spec.js": {
-   "expects": 58,
+   "expects": 59,
    "tests": 22
   },
   "tests/unit/excel-write-targets.spec.js": {
@@ -837,6 +841,10 @@
   "tests/unit/help-panel.spec.js": {
    "expects": 4,
    "tests": 4
+  },
+  "tests/unit/inventory-required-share-and-email.spec.js": {
+   "expects": 12,
+   "tests": 8
   },
   "tests/unit/issue-registry.spec.js": {
    "expects": 35,
@@ -1098,6 +1106,10 @@
    "expects": 29,
    "tests": 17
   },
+  "tests/unit/share-zero-paths.spec.js": {
+   "expects": 21,
+   "tests": 9
+  },
   "tests/unit/sheet-pruning.spec.js": {
    "expects": 30,
    "tests": 15
@@ -1191,7 +1203,7 @@
    "tests": 9
   },
   "tests/unit/ward-carryover.spec.js": {
-   "expects": 79,
+   "expects": 83,
    "tests": 19
   },
   "tests/unit/ward-lock.spec.js": {

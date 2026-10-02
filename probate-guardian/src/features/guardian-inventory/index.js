@@ -1403,9 +1403,17 @@ export function validateGuardian(d=getD()){
   // An out-of-range or unreadable share is an ordinary, bypassable issue (D7).
   // A-1's own "must be > 0" above already speaks for a blank, zero or negative
   // share there, so this adds only what it does not: over 100, or unreadable.
+  // Milestone 72B: a blank share on A-2 to C-5 is reported, as the Annual's
+  // Schedule D reports one (decided 2026-10-01). It used to pass: a blank
+  // counts as 0% in wardShare() and in the Clerk's workbook (full x share), so
+  // that asset silently dropped out of the ward's totals, the bond and the
+  // audit-fee base. 0 is an answer -- the filer saying the ward owns none of
+  // it -- and is not reported. Inventory required issues name the field
+  // ("D-2 Attorney — Name"), so this one reads "B-1 row 2 — Ward's %".
   INVENTORY_SHARE_FIELDS.forEach(([collection,route,field,label])=>{
     (d[collection]||[]).forEach((e,i)=>{
       const v=e&&e[field];
+      if(collection!=='scheduleA1'&&(v===''||v==null)){push(`${route} row ${i+1} — ${label}`,`${collection}.${i}.${field}`);return;}
       if(collection==='scheduleA1'&&!(Number(v)>0)&&percentProblem(v)!=='must be a number from 0 to 100')return;
       const problem=percentProblem(v);
       if(problem)push(`${route} row ${i+1} — ${label} ${problem}.`,`${collection}.${i}.${field}`);
@@ -1427,7 +1435,9 @@ export function validateGuardian(d=getD()){
   if(!hasIdentifiedPreparer(d)){
   req(d.preparer.name,'D-2 Preparer — Name','preparer.name');errors.push(...checkSignatureState({state:inferLegacySignatureState(d.preparer.signatureState,d.preparer.signatureDate),date:d.preparer.signatureDate,image:d.preparer.signatureImage,sectionLabel:'D-2 Preparer',roleLabel:'',filingType:T,datePath:'preparer.signatureDate',imagePath:'preparer.signatureImage'}));req(d.preparer.ssnEin,'D-2 Preparer — SSN/EIN','preparer.ssnEin');req(d.preparer.phone,'D-2 Preparer — Phone','preparer.phone');req(d.preparer.streetAddress,'D-2 Preparer — Street Address','preparer.streetAddress');req(d.preparer.cityStateZip,'D-2 Preparer — City/State/Zip','preparer.cityStateZip');
   }
-  if(attorneyStarted){req(d.attorney.name,'D-2 Attorney — Name','attorney.name');errors.push(...checkSignatureState({state:inferLegacySignatureState(d.attorney.signatureState,d.attorney.signatureDate),date:d.attorney.signatureDate,image:d.attorney.signatureImage,sectionLabel:'D-2 Attorney',roleLabel:'',filingType:T,datePath:'attorney.signatureDate',imagePath:'attorney.signatureImage'}));if(!d.attorney.filingDate)push('D-2 Attorney — Filing Date is required.','attorney.filingDate');req(d.attorney.barNumber,'D-2 Attorney — Bar Number','attorney.barNumber');req(d.attorney.phone,'D-2 Attorney — Phone','attorney.phone');req(d.attorney.streetAddress,'D-2 Attorney — Street Address','attorney.streetAddress');req(d.attorney.cityStateZip,'D-2 Attorney — City/State/Zip','attorney.cityStateZip');}
+  // Milestone 72B: the primary email joins the rest once an attorney is
+  // started, as on the Annual and the Simplified; D-2 always marked it required.
+  if(attorneyStarted){req(d.attorney.name,'D-2 Attorney — Name','attorney.name');errors.push(...checkSignatureState({state:inferLegacySignatureState(d.attorney.signatureState,d.attorney.signatureDate),date:d.attorney.signatureDate,image:d.attorney.signatureImage,sectionLabel:'D-2 Attorney',roleLabel:'',filingType:T,datePath:'attorney.signatureDate',imagePath:'attorney.signatureImage'}));if(!d.attorney.filingDate)push('D-2 Attorney — Filing Date is required.','attorney.filingDate');req(d.attorney.barNumber,'D-2 Attorney — Bar Number','attorney.barNumber');req(d.attorney.phone,'D-2 Attorney — Phone','attorney.phone');req(d.attorney.email,'D-2 Attorney — Primary Email','attorney.email');req(d.attorney.streetAddress,'D-2 Attorney — Street Address','attorney.streetAddress');req(d.attorney.cityStateZip,'D-2 Attorney — City/State/Zip','attorney.cityStateZip');}
   // "Unanswered" is anything other than Yes or No. New filings start with
   // '', and both explicit strings satisfy the parent answer; the filed
   // question is required only when the parent is Yes.

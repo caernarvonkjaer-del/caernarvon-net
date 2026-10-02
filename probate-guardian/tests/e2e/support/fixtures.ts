@@ -68,6 +68,8 @@ export const MINIMAL_VALID_GUARDIAN = {
   },
   attorney: {
     name: 'Sample Attorney', barNumber: '123456', phone: '555-555-5557',
+    // Milestone 72B: required once an attorney is entered, as on the Annual and Simplified.
+    email: 'attorney@example.com',
     streetAddress: '123 Main St', cityStateZip: 'Clearwater, FL 33755',
     signatureDate: '2026-01-02', filingDate: '2026-01-02',
   },

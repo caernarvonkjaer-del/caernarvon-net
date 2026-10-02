@@ -147,11 +147,18 @@ describe('ward-carryover', () => {
       expect(result.attorney_cityStateZip).toBe('Clearwater, FL 33755');
     });
 
+    // Milestone 72B: under the Annual's own keys. This used to expect
+    // attorneyBar/attorneyPhone -- keys the Annual never reads (it reads
+    // attorney_bar/attorney_phone), so the carried values were silently lost.
     it('maps every nested attorney field into an accounting destination', () => {
       const result = carryOverFieldsForAccounting(nestedInventorySource(), 'annual');
       expect(result.attorney).toBe('Nina Nested, Esq.');
-      expect(result.attorneyBar).toBe('0456789');
-      expect(result.attorneyPhone).toBe('727-555-0142');
+      expect(result.attorney_bar).toBe('0456789');
+      expect(result.attorney_phone).toBe('727-555-0142');
+      expect(result.attorney_street).toBe('400 Cleveland St');
+      expect(result.attorney_cityStateZip).toBe('Clearwater, FL 33755');
+      expect(result).not.toHaveProperty('attorneyBar');
+      expect(result).not.toHaveProperty('attorneyPhone');
     });
 
     it('never assigns the nested attorney OBJECT into a string field', () => {
@@ -250,7 +257,7 @@ describe('ward-carryover', () => {
       expect(result.caseNumber).toBe('');
       expect(result.guardian).toBe('Guardian Parent');
       expect(result.attorney).toBe('Counselor Minor');
-      expect(result.attorneyBar).toBe('1122334');
+      expect(result.attorney_bar, "the Annual's own key (Milestone 72B)").toBe('1122334');
       expect(result.guardians[0].name).toBe('Guardian Parent');
       expect(result.guardians[0].ssn).toBe('123-45-6789');
     });
@@ -280,10 +287,14 @@ describe('ward-carryover', () => {
 
       const result = carryOverFieldsForAccounting(src, 'guardian');
 
+      // Milestone 72B: the Inventory's attorney has both emails too (blank
+      // here: this source has none).
       expect(result.attorney).toEqual({
         name: 'Nina Nested, Esq.',
         barNumber: '0456789',
         phone: '727-555-0142',
+        email: '',
+        secondaryEmail: '',
         streetAddress: '400 Cleveland St',
         cityStateZip: 'Clearwater, FL 33755',
         signatureDate: null,

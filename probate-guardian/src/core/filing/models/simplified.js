@@ -24,7 +24,8 @@ export function emptyDataSimplified() {
     serviceCharges:'',
     federalIncomeTax:'',
     guardians:[{name:'',ssn:'',phone:'',email:'',mailingStreet:'',mailingCityStateZip:'',residenceStreet:'',residenceCityStateZip:'',signatureDate:'',signatureState:'',signatureImage:'',certifiesService:false}],
-    attorney_barNumber:'', attorney_phone:'', attorney_email:'', attorney_street:'', attorney_cityStateZip:'',
+    // Milestone 72B: attorney_secondaryEmail -- Part V has always collected it.
+    attorney_barNumber:'', attorney_phone:'', attorney_email:'', attorney_secondaryEmail:'', attorney_street:'', attorney_cityStateZip:'',
     attorney_signatureDate:'',
     // Milestone 39-C
     attorney_signatureState:'', attorney_signatureImage:'',

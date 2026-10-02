@@ -91,6 +91,14 @@ export function mapConvertedHeaderFields(src,srcType,dest,destType){
 // starting assumption before any market change is recorded), and this
 // year's actual income/activity is left for the user to confirm rather than
 // silently assumed from the inventory's projected figures.
+// Milestone 72B: an answer is carried as given. keep() leaves 0 as 0 and a
+// blank blank -- `x||''` turned a 0% share or a $0 value into a blank, which
+// the Annual then reported as missing. tri() carries Yes, No or unanswered:
+// an unanswered Restricted?/Residence?/Income? used to arrive as an
+// affirmative 'No', which AGENTS.md section 4 forbids at any stage.
+const keep=(v)=>(v===''||v==null)?'':v;
+const tri=(v,legacy)=>(v==='Yes'||legacy===true)?'Yes':((v==='No'||legacy===false)?'No':'');
+
 export function convertGuardianSchedulesToAnnual(src,dest){
   // Milestone 71E: an Initial Inventory converted into its first Annual now
   // carries its Summary I total as the Starting Balance -- Rule 5.696(b)(1):
@@ -118,29 +126,29 @@ export function convertGuardianSchedulesToAnnual(src,dest){
   // the old keys first.
   dest.schD1=(src.scheduleB1||[]).map(r=>({
     description:[r.institutionName,r.accountType].filter(Boolean).join(' — '),
-    accountNo:r.accountNumber||'', restricted:(r.restricted==='Yes'||r.isRestricted===true)?'Yes':'No', type:r.accountType||'',
-    fullAmount:r.fullAssetAmount||'', wardPct:r.wardPercent||'', restrictedAmt:''
+    accountNo:r.accountNumber||'', restricted:tri(r.restricted,r.isRestricted), type:r.accountType||'',
+    fullAmount:keep(r.fullAssetAmount), wardPct:keep(r.wardPercent), restrictedAmt:''
   }));
   dest.schD2=(src.scheduleA1||[]).map(r=>({
-    description:r.propertyDescription||'', residence:(r.residence==='Yes'||r.isPersonalResidence===true)?'Yes':'No', income:(r.income==='Yes'||r.isIncomeProperty===true)?'Yes':'No',
-    fullValue:r.fullAssetValue||'', wardPct:r.wardPercent||'', carryingValue:r.fullAssetValue||'', wardValue:''
+    description:r.propertyDescription||'', residence:tri(r.residence,r.isPersonalResidence), income:tri(r.income,r.isIncomeProperty),
+    fullValue:keep(r.fullAssetValue), wardPct:keep(r.wardPercent), carryingValue:keep(r.fullAssetValue), wardValue:''
   }));
   dest.schD3=(src.scheduleB2||[]).map(r=>({
-    description:r.description||'', fullAmount:r.fullAssetValue||'', wardPct:r.wardPercent||'', carryingValue:r.fullAssetValue||'', wardAmount:''
+    description:r.description||'', fullAmount:keep(r.fullAssetValue), wardPct:keep(r.wardPercent), carryingValue:keep(r.fullAssetValue), wardAmount:''
   }));
   dest.schD4=(src.scheduleB3||[]).map(r=>({
-    description:r.description||'', restricted:(r.restricted==='Yes'||r.isRestricted===true)?'Yes':'No', fullAmount:r.fullAssetValue||'',
-    wardPct:r.wardPercent||'', carryingValue:r.fullAssetValue||'', wardValue:'', restrictedAmt:''
+    description:r.description||'', restricted:tri(r.restricted,r.isRestricted), fullAmount:keep(r.fullAssetValue),
+    wardPct:keep(r.wardPercent), carryingValue:keep(r.fullAssetValue), wardValue:'', restrictedAmt:''
   }));
   dest.schD5=[
-    ...(src.scheduleA2||[]).map(r=>({description:r.lenderName||'',loanNo:r.accountNumber||'',loanType:r.liabilityType||'',fullDebt:r.fullDebtBalance||'',wardPct:r.wardPercent||'',wardBalance:''})),
-    ...(src.scheduleB4||[]).map(r=>({description:r.lenderName||'',loanNo:r.accountNumber||'',loanType:r.liabilityType||'',fullDebt:r.fullLiabilityBalance||'',wardPct:r.wardPercent||'',wardBalance:''}))
+    ...(src.scheduleA2||[]).map(r=>({description:r.lenderName||'',loanNo:r.accountNumber||'',loanType:r.liabilityType||'',fullDebt:keep(r.fullDebtBalance),wardPct:keep(r.wardPercent),wardBalance:''})),
+    ...(src.scheduleB4||[]).map(r=>({description:r.lenderName||'',loanNo:r.accountNumber||'',loanType:r.liabilityType||'',fullDebt:keep(r.fullLiabilityBalance),wardPct:keep(r.wardPercent),wardBalance:''}))
   ];
-  dest.schA=(src.scheduleC1||[]).map(r=>({payer:r.payerName||'',description:r.typeOfIncome||'',bank:'',accountNo:'',amount:r.annualIncomeAmount||''}));
+  dest.schA=(src.scheduleC1||[]).map(r=>({payer:r.payerName||'',description:r.typeOfIncome||'',bank:'',accountNo:'',amount:keep(r.annualIncomeAmount)}));
   const trustRows=(src.scheduleC4||[]).map(r=>({
     hasTrust:'Yes', createdAfterGID:'No', name:r.trustName||'', trustee:r.trusteeName||'',
     accountNo:r.accountNumber||'', dateCreated:r.dateCreated||'', trustType:r.trustType||'',
-    wardPct:r.wardPercent||'', wardAmount:''
+    wardPct:keep(r.wardPercent), wardAmount:''
   }));
   while(trustRows.length<3)trustRows.push(emptyRowAnnual('trust'));
   dest.trusts=trustRows.slice(0,3);
@@ -167,6 +175,9 @@ export function convertGuardianExtrasToAnnual(src,dest){
   const a=src.attorney||{}, sa=src.serviceAttorney||{};
   dest.attorney_bar=a.barNumber||'';
   dest.attorney_phone=a.phone||'';
+  // Milestone 72B: both of D-2's emails, which were dropped here.
+  dest.attorney_email=a.email||'';
+  dest.attorney_secondaryEmail=a.secondaryEmail||'';
   dest.attorney_street=a.streetAddress||'';
   dest.attorney_cityStateZip=a.cityStateZip||'';
   // Milestone 40C-A item 3: attorney_county is a SEPARATE field from the
@@ -211,6 +222,9 @@ export function convertToSimplified(src,srcType,dest){
     const a=src.attorney||{}, sa=src.serviceAttorney||{};
     dest.attorney_barNumber=a.barNumber||'';
     dest.attorney_phone=a.phone||'';
+    // Milestone 72B: both of D-2's emails, which were dropped here.
+    dest.attorney_email=a.email||'';
+    dest.attorney_secondaryEmail=a.secondaryEmail||'';
     dest.attorney_street=a.streetAddress||'';
     dest.attorney_cityStateZip=a.cityStateZip||'';
     dest.certAttyBarNumber=sa.barNumber||a.barNumber||'';
@@ -230,6 +244,9 @@ export function convertToSimplified(src,srcType,dest){
   dest.amendedForm=src.amendedForm||'';
   dest.attorney_barNumber=src.attorney_bar||'';
   dest.attorney_phone=src.attorney_phone||'';
+  // Milestone 72B: both emails, beside the rest of the attorney's details.
+  dest.attorney_email=src.attorney_email||'';
+  dest.attorney_secondaryEmail=src.attorney_secondaryEmail||'';
   dest.attorney_street=src.attorney_street||'';
   dest.attorney_cityStateZip=src.attorney_cityStateZip||'';
   dest.attorney_signatureDate=src.attorney_signatureDate||'';
@@ -251,7 +268,7 @@ export function convertToSimplified(src,srcType,dest){
   const rem=(src.remuneration||[]).filter(r=>r.guardian||r.type||r.description||r.amount);
   if(rem.length){
     dest.remuneration=rem.map(r=>({guardian:r.guardian||'',type:r.type||'',
-      amount:r.amount||'',description:r.description||''}));
+      amount:keep(r.amount),description:r.description||''}));
   }
 }
 
@@ -280,6 +297,9 @@ export function convertSimplifiedToAnnual(src,dest){
   dest.amendedForm=src.amendedForm||'';
   dest.attorney_bar=src.attorney_barNumber||'';
   dest.attorney_phone=src.attorney_phone||'';
+  // Milestone 72B: both emails, beside the rest of the attorney's details.
+  dest.attorney_email=src.attorney_email||'';
+  dest.attorney_secondaryEmail=src.attorney_secondaryEmail||'';
   dest.attorney_street=src.attorney_street||'';
   dest.attorney_cityStateZip=src.attorney_cityStateZip||'';
   dest.attorney_signatureDate=src.attorney_signatureDate||'';
@@ -297,7 +317,7 @@ export function convertSimplifiedToAnnual(src,dest){
   const rem=(src.remuneration||[]).filter(r=>r.guardian||r.type||r.description||r.amount);
   if(rem.length){
     dest.remuneration=rem.map(r=>({guardian:r.guardian||'',type:r.type||'',
-      amount:r.amount||'',description:r.description||''}));
+      amount:keep(r.amount),description:r.description||''}));
   }
 }
 

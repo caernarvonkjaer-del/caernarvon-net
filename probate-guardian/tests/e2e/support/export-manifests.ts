@@ -25,7 +25,7 @@
 
 import type { Expectation } from './workbook-vs-template';
 
-export type Kind = 'text' | 'money' | 'pct' | 'pctRaw' | 'date' | 'blank';
+export type Kind = 'text' | 'money' | 'pct' | 'date' | 'blank';
 export type Finite = { sheet: string; cell: string; path: string; options: readonly string[] };
 export type Manifest = { patch: Record<string, unknown>; expectations: Expectation[]; finite: Finite[] };
 
@@ -47,7 +47,6 @@ class Values {
       case 'text': { const t = `V${String(n).padStart(4, '0')}`; return [t, t]; }
       case 'money': { const m = 200000 + n + 0.25; return [m, m]; }
       case 'pct': { const p = Math.round((1 + (n % 9800) * 0.01) * 100) / 100; return [p, p / 100]; }
-      case 'pctRaw': { const p = Math.round((1 + (n % 9800) * 0.01) * 100) / 100; return [p, p]; }
       case 'date': {
         const ms = EPOCH + n * DAY;
         return [new Date(ms).toISOString().slice(0, 10), ms / DAY + 25569];
@@ -464,7 +463,7 @@ export function annualManifest(filingTypeValue = 'Annual'): Manifest {
     b.choice(`${t}.createdAfterGID`, 'PART VIII', `H${r[0]}`, YES_NO);
     b.box(`${t}.name`, 'PART VIII', `D${r[1]}`, 'text'); b.box(`${t}.trustee`, 'PART VIII', `D${r[2]}`, 'text');
     b.box(`${t}.accountNo`, 'PART VIII', `D${r[3]}`, 'text'); b.box(`${t}.dateCreated`, 'PART VIII', `D${r[4]}`, 'date');
-    b.box(`${t}.trustType`, 'PART VIII', `D${r[5]}`, 'text'); b.box(`${t}.wardPct`, 'PART VIII', `D${r[6]}`, 'pctRaw');
+    b.box(`${t}.trustType`, 'PART VIII', `D${r[5]}`, 'text'); b.box(`${t}.wardPct`, 'PART VIII', `D${r[6]}`, 'pct');
     b.box(`${t}.wardAmount`, 'PART VIII', `D${r[7]}`, 'money');
   });
 

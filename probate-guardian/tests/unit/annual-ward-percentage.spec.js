@@ -54,9 +54,15 @@ describe('percentValue(): what the exporter writes into the workbook\'s percenta
     expect(percentValue('12.5')).toBe(0.125);
   });
 
-  test('an empty or unreadable value writes 0, as before', () => {
-    expect(percentValue('')).toBe(0);
-    expect(percentValue('invalid')).toBe(0);
+  // Milestone 72B: a blank share is an empty cell -- the Inventory's writer's
+  // rule -- not an asserted 0% (it was 0 here); 0 itself stays 0.
+  test('an empty or unreadable value writes an empty cell; 0 writes 0', () => {
+    expect(percentValue('')).toBe('');
+    expect(percentValue(null)).toBe('');
+    expect(percentValue(undefined)).toBe('');
+    expect(percentValue('invalid')).toBe('');
+    expect(percentValue(0)).toBe(0);
+    expect(percentValue('0')).toBe(0);
   });
 });
 

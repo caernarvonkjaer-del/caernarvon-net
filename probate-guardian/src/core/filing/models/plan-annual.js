@@ -155,7 +155,8 @@ export function emptyDataPlanAnnual() {
     certRecognizeRights:false, certRightsChangedExplain:'',
     // Guardians (form provides three signature blocks) + attorney
     planGuardians:[{name:'',ssn:'',phone:'',email:'',signatureDate:'',mailingStreet:'',mailingCityStateZip:'',officeStreet:'',officeCityStateZip:'',relationship:'',signatureState:'',signatureImage:''}],
-    attorney_signatureDate:'', attorney_bar:'', attorney_phone:'', attorney_email:'',
+    // Milestone 72B: attorney_secondary_email -- the signature page has always collected it.
+    attorney_signatureDate:'', attorney_bar:'', attorney_phone:'', attorney_email:'', attorney_secondary_email:'',
     attorney_street:'', attorney_cityStateZip:'',
     // Milestone 39-C
     attorney_signatureState:'', attorney_signatureImage:''

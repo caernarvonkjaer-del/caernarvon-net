@@ -25,7 +25,8 @@ export function emptyDataGuardian(){
     // "as of" date (form PART IV H9), distinct from the signature date it
     // falls back to when blank.
     preparer:{name:'',ssnEin:'',phone:'',streetAddress:'',cityStateZip:'',signatureDate:null,asOfDate:null,signatureState:'',signatureImage:''},
-    attorney:{name:'',barNumber:'',phone:'',streetAddress:'',cityStateZip:'',signatureDate:null,filingDate:null,signatureState:'',signatureImage:'',isPreparer:false},
+    // Milestone 72B: D-2 has always collected both emails; the model now names them.
+    attorney:{name:'',barNumber:'',phone:'',email:'',secondaryEmail:'',streetAddress:'',cityStateZip:'',signatureDate:null,filingDate:null,signatureState:'',signatureImage:'',isPreparer:false},
     // bondDepositoryState (Milestone 67B): which arrangement applies --
     // restricted depository only, bond and depository, bond only, or bond
     // waived by court order; '' is unanswered and is never coerced. It

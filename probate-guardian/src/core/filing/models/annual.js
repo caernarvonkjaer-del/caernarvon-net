@@ -51,7 +51,8 @@ export function emptyDataAnnual() {
     // Part IV – preparer
     preparer:{name:'',ssn:'',phone:'',street:'',cityStateZip:'',signatureDate:'',signatureState:'',signatureImage:''},
     // Part V – attorney
-    attorney_bar:'', attorney_phone:'', attorney_email:'', attorney_street:'', attorney_cityStateZip:'',
+    // Milestone 72B: attorney_secondaryEmail -- Part V has always collected it.
+    attorney_bar:'', attorney_phone:'', attorney_email:'', attorney_secondaryEmail:'', attorney_street:'', attorney_cityStateZip:'',
     attorney_county:'', attorney_signatureDate:'',
     // Milestone 39-C
     attorney_signatureState:'', attorney_signatureImage:'',

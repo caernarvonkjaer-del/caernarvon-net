@@ -38,7 +38,10 @@ describe('Excel Engine unit tests', () => {
       // that filed a 1% ward share as 100% (tests/unit/annual-ward-percentage.spec.js).
       expect(percentValue(0.75)).toBe(0.0075);
       expect(percentValue('0.15')).toBe(0.0015);
-      expect(percentValue('invalid')).toBe(0);
+      // Milestone 72B: an unreadable or blank share is an empty cell, not an
+      // asserted 0% (the Inventory's writer's rule); 0 stays 0.
+      expect(percentValue('invalid')).toBe('');
+      expect(percentValue(0)).toBe(0);
     });
 
     it('numValue matches the closure it replaced in annual-accounting/excel.js; percentValue changed deliberately', () => {
@@ -48,8 +51,9 @@ describe('Excel Engine unit tests', () => {
       // than merely asserted.
       // percentValue's closure was `p>1?p/100:p`; the requester-approved rule
       // of 2026-09-24 divides every value by 100, so it is pinned to that now.
+      // Milestone 72B: and a blank or unreadable share writes an empty cell.
       const localNv = v => parseFloat(v) || 0;
-      const localPv = (v) => { const p = parseFloat(v); return isNaN(p) ? 0 : p / 100; };
+      const localPv = (v) => { if (v === '' || v == null) return ''; const p = parseFloat(v); return isNaN(p) ? '' : p / 100; };
       for (const v of ['', null, undefined, 0, 1, 0.5, 50, 100, '0', '50', '0.25', 'x', '12.5%', -3, 1e3]) {
         expect(numValue(v), `numValue(${JSON.stringify(v)})`).toBe(localNv(v));
         expect(percentValue(v), `percentValue(${JSON.stringify(v)})`).toBe(localPv(v));

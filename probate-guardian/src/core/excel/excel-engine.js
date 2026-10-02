@@ -282,17 +282,23 @@ export function numValue(val) {
 
 /**
  * Converts a 0-100 percentage to the fraction the workbook's share cell holds
- * (50 -> 0.5, 1 -> 0.01, 0.5 -> 0.005); blank or unreadable -> 0.
+ * (50 -> 0.5, 1 -> 0.01, 0.5 -> 0.005, 0 -> 0); blank or unreadable -> ''
+ * (an empty cell).
  * @param {any} val
- * @returns {number}
+ * @returns {number | ''}
  */
 // The fraction the court workbook's percentage cells hold: always the typed
 // percentage divided by 100 (1% -> 0.01). It used to pass values of 1 or less
 // through unchanged, writing a 1% share as 100%; see pct() in
 // features/annual-accounting/totals.js.
 export function percentValue(val) {
+  // Milestone 72B: a blank share is written as an empty cell, as the
+  // Inventory's own share writer always has, never as an asserted 0%. 0 stays
+  // 0. (The workbook computes an empty cell as 0 either way; what changes is
+  // that the filed form no longer shows 0.00% where nothing was stated.)
+  if (val === '' || val == null) return '';
   const p = parseFloat(val);
-  return isNaN(p) ? 0 : p / 100;
+  return isNaN(p) ? '' : p / 100;
 }
 
 /**

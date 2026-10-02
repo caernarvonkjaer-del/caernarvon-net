@@ -1,5 +1,5 @@
 {
- "generatedFrom": "Milestone 70, 70C: captured from src/legacy-app.js and src/core/state.js at the 70B tree, BEFORE 70C moved anything (the declarations sliced out and evaluated with state.js and schedule-doc-ack.js loaded as the app loads them). tests/unit/filing-registry.spec.js requires the moved modules to reproduce every value here. Regenerate only for a deliberate, recorded change to a blank filing. Changed by Milestone 71B (2026-09-29, attorney optional when none is entered): added attorneyWaiverBasis, attorneyWaiverOrderDate, guardians[].certifiesService, serviceGuardian, certGuardianSignDate, certGuardianSignatureState, certGuardianSignatureImage, row.certifiesService.",
+ "generatedFrom": "Milestone 70, 70C: captured from src/legacy-app.js and src/core/state.js at the 70B tree, BEFORE 70C moved anything (the declarations sliced out and evaluated with state.js and schedule-doc-ack.js loaded as the app loads them). tests/unit/filing-registry.spec.js requires the moved modules to reproduce every value here. Regenerate only for a deliberate, recorded change to a blank filing. Changed by Milestone 71B (2026-09-29, attorney optional when none is entered): added attorneyWaiverBasis, attorneyWaiverOrderDate, guardians[].certifiesService, serviceGuardian, certGuardianSignDate, certGuardianSignatureState, certGuardianSignatureImage, row.certifiesService. Changed by Milestone 72B (2026-10-02, the attorney's emails on every form): guardian attorney.email and attorney.secondaryEmail; attorney_secondaryEmail on the Annual family, the Simplified and the Initial Plan; attorney_secondary_email on the Annual Plan and the Plan for Minors -- each form already collected them on screen.",
  "types": [
   "guardian",
   "simplified",
@@ -73,7 +73,9 @@
     "filingDate": null,
     "signatureState": "",
     "signatureImage": "",
-    "isPreparer": false
+    "isPreparer": false,
+    "email": "",
+    "secondaryEmail": ""
    },
    "bondAmount": "",
    "bondPeriodFrom": null,
@@ -202,7 +204,8 @@
    "guardianPartyIds": [],
    "attorneyPartyId": null,
    "preparerPartyId": null,
-   "caseId": null
+   "caseId": null,
+   "attorney_secondaryEmail": ""
   },
   "annual": {
    "wardName": "",
@@ -359,7 +362,8 @@
    "attorneyPartyId": null,
    "preparerPartyId": null,
    "caseId": null,
-   "inventoryType": "annual"
+   "inventoryType": "annual",
+   "attorney_secondaryEmail": ""
   },
   "finalAccounting": {
    "wardName": "",
@@ -516,7 +520,8 @@
    "attorneyPartyId": null,
    "preparerPartyId": null,
    "caseId": null,
-   "inventoryType": "finalAccounting"
+   "inventoryType": "finalAccounting",
+   "attorney_secondaryEmail": ""
   },
   "trustAccounting": {
    "wardName": "",
@@ -673,7 +678,8 @@
    "attorneyPartyId": null,
    "preparerPartyId": null,
    "caseId": null,
-   "inventoryType": "trustAccounting"
+   "inventoryType": "trustAccounting",
+   "attorney_secondaryEmail": ""
   },
   "planSimplified": {
    "planTriStateSchemaVersion": 2,
@@ -1032,7 +1038,8 @@
    "guardianPartyIds": [],
    "attorneyPartyId": null,
    "preparerPartyId": null,
-   "caseId": null
+   "caseId": null,
+   "attorney_secondary_email": ""
   },
   "planInitial": {
    "planTriStateSchemaVersion": 2,
@@ -1234,7 +1241,8 @@
    "guardianPartyIds": [],
    "attorneyPartyId": null,
    "preparerPartyId": null,
-   "caseId": null
+   "caseId": null,
+   "attorney_secondaryEmail": ""
   },
   "planMinor": {
    "planTriStateSchemaVersion": 2,
@@ -1357,7 +1365,8 @@
    "guardianPartyIds": [],
    "attorneyPartyId": null,
    "preparerPartyId": null,
-   "caseId": null
+   "caseId": null,
+   "attorney_secondary_email": ""
   }
  },
  "normalizedTwice": {
@@ -1422,7 +1431,9 @@
     "filingDate": null,
     "signatureState": "",
     "signatureImage": "",
-    "isPreparer": false
+    "isPreparer": false,
+    "email": "",
+    "secondaryEmail": ""
    },
    "bondAmount": "",
    "bondPeriodFrom": null,
@@ -1581,7 +1592,8 @@
    "q7Medicaid": "",
    "q7Va": "",
    "q7Trusts": "",
-   "q7PendingBenefits": ""
+   "q7PendingBenefits": "",
+   "attorney_secondaryEmail": ""
   },
   "annual": {
    "wardName": "",
@@ -1754,7 +1766,8 @@
    "q7Medicaid": "",
    "q7Va": "",
    "q7Trusts": "",
-   "q7PendingBenefits": ""
+   "q7PendingBenefits": "",
+   "attorney_secondaryEmail": ""
   },
   "finalAccounting": {
    "wardName": "",
@@ -1927,7 +1940,8 @@
    "q7Medicaid": "",
    "q7Va": "",
    "q7Trusts": "",
-   "q7PendingBenefits": ""
+   "q7PendingBenefits": "",
+   "attorney_secondaryEmail": ""
   },
   "trustAccounting": {
    "wardName": "",
@@ -2100,7 +2114,8 @@
    "q7Medicaid": "",
    "q7Va": "",
    "q7Trusts": "",
-   "q7PendingBenefits": ""
+   "q7PendingBenefits": "",
+   "attorney_secondaryEmail": ""
   },
   "planSimplified": {
    "planTriStateSchemaVersion": 2,
@@ -2493,7 +2508,8 @@
    "q7Medicaid": "",
    "q7Va": "",
    "q7Trusts": "",
-   "q7PendingBenefits": ""
+   "q7PendingBenefits": "",
+   "attorney_secondary_email": ""
   },
   "planInitial": {
    "planTriStateSchemaVersion": 2,
@@ -2699,7 +2715,8 @@
    "scheduleDocsAck": {},
    "hasSafeDepositBox": "",
    "safeDepositBoxFiled": "",
-   "amendedForm": ""
+   "amendedForm": "",
+   "attorney_secondaryEmail": ""
   },
   "planMinor": {
    "planTriStateSchemaVersion": 2,
@@ -2838,7 +2855,8 @@
    "q7Medicaid": "",
    "q7Va": "",
    "q7Trusts": "",
-   "q7PendingBenefits": ""
+   "q7PendingBenefits": "",
+   "attorney_secondary_email": ""
   }
  },
  "idempotent": {

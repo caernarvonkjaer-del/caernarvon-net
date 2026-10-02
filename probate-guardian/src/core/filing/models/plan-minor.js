@@ -48,7 +48,8 @@ export function emptyDataPlanMinor() {
     preparer_signatureState:'', preparer_signatureImage:'',
     // Attorney certification
     attorney_name:'', attorney_bar:'', attorney_phone:'',
-    attorney_street:'', attorney_cityStateZip:'', attorney_email:'', attorney_signatureDate:'',
+    // Milestone 72B: attorney_secondary_email -- the attorney card has always collected it.
+    attorney_street:'', attorney_cityStateZip:'', attorney_email:'', attorney_secondary_email:'', attorney_signatureDate:'',
     // Milestone 39-C
     attorney_signatureState:'', attorney_signatureImage:''
   };

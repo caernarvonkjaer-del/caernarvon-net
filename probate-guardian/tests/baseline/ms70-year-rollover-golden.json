@@ -1,5 +1,5 @@
 {
- "note": "Milestone 70, 70A: what starting a new year does to each filing identity, recorded from the app before migration by tests/e2e/year-rollover.characterization.spec.ts. Regenerated in 70C for simplified and planMinor only: master's b28bf25, carried in 70C, removes rows the filer added and never touched when they leave a page, so the Simplified fixture's two blank certificate recipients and the Plan for Minors' blank residence row are gone before the new year starts. Regenerated after 70K for guardian only: master's 56ff26a, carried then, makes the minimal Initial Inventory answer the two safe-deposit questions 'No', as the form stores them, instead of the legacy false; the new year no longer shows the legacy-save migration turning false into 'No' (hasSafeDepositBox, safeDepositBoxFiled), and nothing else changed. Regenerate only for a deliberate, recorded change. Changed by Milestone 71 (2026-09-29): 71E -- New Year records startingBalanceCarry with the carried, cent-rounded figure (Line 30 with a Schedule D figure, else Line 20; a Simplified Accounting's remaining assets), and opening a filing no longer clamps startingBalance (71E) or a Ward's % (71C), so a stored value keeps the type it was saved with (the fixture's \"10000\" and \"100\" stay strings) and the archive no longer differs from the year before in those fields. 71B's new blank fields ride along.",
+ "note": "Milestone 70, 70A: what starting a new year does to each filing identity, recorded from the app before migration by tests/e2e/year-rollover.characterization.spec.ts. Regenerated in 70C for simplified and planMinor only: master's b28bf25, carried in 70C, removes rows the filer added and never touched when they leave a page, so the Simplified fixture's two blank certificate recipients and the Plan for Minors' blank residence row are gone before the new year starts. Regenerated after 70K for guardian only: master's 56ff26a, carried then, makes the minimal Initial Inventory answer the two safe-deposit questions 'No', as the form stores them, instead of the legacy false; the new year no longer shows the legacy-save migration turning false into 'No' (hasSafeDepositBox, safeDepositBoxFiled), and nothing else changed. Regenerate only for a deliberate, recorded change. Changed by Milestone 71 (2026-09-29): 71E -- New Year records startingBalanceCarry with the carried, cent-rounded figure (Line 30 with a Schedule D figure, else Line 20; a Simplified Accounting's remaining assets), and opening a filing no longer clamps startingBalance (71E) or a Ward's % (71C), so a stored value keeps the type it was saved with (the fixture's \"10000\" and \"100\" stay strings) and the archive no longer differs from the year before in those fields. 71B's new blank fields ride along. Changed by Milestone 72B (2026-10-02): new keys only -- each form's attorney secondary email, and the Inventory attorney's email and secondaryEmail (the Inventory overlay now names its attorney's email); no field's reset, carry or archive changed.",
  "types": {
   "guardian": {
    "activeYearKey": "Year 2",
@@ -71,6 +71,10 @@
      "from": null,
      "to": "\"Clearwater, FL 33755\""
     },
+    "years.0.data.attorney.email": {
+     "from": null,
+     "to": "\"attorney@example.com\""
+    },
     "years.0.data.attorney.filingDate": {
      "from": null,
      "to": "\"2026-01-02\""
@@ -86,6 +90,10 @@
     "years.0.data.attorney.phone": {
      "from": null,
      "to": "\"555-555-5557\""
+    },
+    "years.0.data.attorney.secondaryEmail": {
+     "from": null,
+     "to": "\"\""
     },
     "years.0.data.attorney.signatureDate": {
      "from": null,
@@ -724,6 +732,10 @@
      "from": null,
      "to": "\"555-555-5557\""
     },
+    "years.0.data.attorney_secondaryEmail": {
+     "from": null,
+     "to": "\"\""
+    },
     "years.0.data.attorney_signatureDate": {
      "from": null,
      "to": "\"\""
@@ -1179,6 +1191,10 @@
     "years.0.data.attorney_phone": {
      "from": null,
      "to": "\"555-555-5555\""
+    },
+    "years.0.data.attorney_secondaryEmail": {
+     "from": null,
+     "to": "\"\""
     },
     "years.0.data.attorney_signatureDate": {
      "from": null,
@@ -1812,6 +1828,10 @@
      "from": null,
      "to": "\"555-555-5555\""
     },
+    "years.0.data.attorney_secondaryEmail": {
+     "from": null,
+     "to": "\"\""
+    },
     "years.0.data.attorney_signatureDate": {
      "from": null,
      "to": "\"2027-01-05\""
@@ -2419,6 +2439,10 @@
     "years.0.data.attorney_phone": {
      "from": null,
      "to": "\"555-555-5555\""
+    },
+    "years.0.data.attorney_secondaryEmail": {
+     "from": null,
+     "to": "\"\""
     },
     "years.0.data.attorney_signatureDate": {
      "from": null,
@@ -3655,6 +3679,10 @@
      "to": "\"\""
     },
     "years.0.data.attorney_phone": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.attorney_secondary_email": {
      "from": null,
      "to": "\"\""
     },
@@ -5059,6 +5087,10 @@
      "from": null,
      "to": "\"\""
     },
+    "years.0.data.attorney_secondaryEmail": {
+     "from": null,
+     "to": "\"\""
+    },
     "years.0.data.attorney_signatureDate": {
      "from": null,
      "to": "\"2026-01-12\""
@@ -6037,6 +6069,10 @@
      "to": "\"Sample Attorney\""
     },
     "years.0.data.attorney_phone": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.attorney_secondary_email": {
      "from": null,
      "to": "\"\""
     },

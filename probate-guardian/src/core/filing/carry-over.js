@@ -105,17 +105,67 @@ export function extractCarryIdentity(sourceWard) {
   const atty = (src.attorney && typeof src.attorney === 'object') ? src.attorney : {};
   const attyFlat = typeof src.attorney === 'string' ? src.attorney : '';
   const attyName = src.attorney_name || atty.name || src.attorneyForGuardian || src.attorneyName || attyFlat || '';
-  const attyBar = src.attorneyBar || src.attorney_bar || atty.barNumber || '';
+  // Milestone 72B: the Simplified keeps its Bar number as attorney_barNumber,
+  // which this chain never read, so a carry out of a Simplified lost it.
+  const attyBar = src.attorneyBar || src.attorney_bar || src.attorney_barNumber || atty.barNumber || '';
   const attyPhone = src.attorneyPhone || src.attorney_phone || atty.phone || '';
   const attyEmail = src.attorneyEmail || src.attorney_email || atty.email || '';
+  // Milestone 72B: the secondary email, under each form's spelling -- the
+  // Inventory's attorney.secondaryEmail, attorney_secondaryEmail (Annual
+  // family, Simplified, Initial Plan), attorney_secondary_email (Annual Plan,
+  // Plan for Minors, Simplified Plan). It was never carried.
+  const attySecondaryEmail = src.attorney_secondaryEmail || src.attorney_secondary_email || atty.secondaryEmail || '';
   const attyStreet = src.attorneyAddress || src.attorney_street || atty.streetAddress || '';
   const attyCityStateZip = src.attorneyCityStateZip || src.attorney_cityStateZip || atty.cityStateZip || '';
-  return { caseNum, ucn, gName, attyName, attyBar, attyPhone, attyEmail, attyStreet, attyCityStateZip };
+  return { caseNum, ucn, gName, attyName, attyBar, attyPhone, attyEmail, attySecondaryEmail, attyStreet, attyCityStateZip };
+}
+
+/**
+ * Milestone 72B. The attorney a new filing starts with, under the destination
+ * form's own field names -- every form now receives the name, Bar number,
+ * phone, both emails and address. Before, the destinations disagreed: Plan ->
+ * Annual wrote attorneyBar/attorneyPhone/attorneyEmail, keys the Annual never
+ * reads (it reads attorney_bar ...), so all three were dropped; Plan ->
+ * Simplified and -> Annual Plan carried only the name; the Simplified Plan
+ * received no attorney at all; and no destination received the secondary
+ * email, and several not even the primary. Signatures never carry: the new
+ * filing is signed on its own date.
+ * @param {string} type the destination inventoryType (the Annual family as 'annual')
+ * @param {ReturnType<typeof extractCarryIdentity>} id
+ */
+export function attorneyCarryFields(type, id) {
+  const { attyName, attyBar, attyPhone, attyEmail, attySecondaryEmail, attyStreet, attyCityStateZip } = id;
+  switch (formEngine(type)) {
+    case 'guardian':
+      return {
+        attorneyForGuardian: attyName,
+        attorney: {
+          name: attyName, barNumber: attyBar, phone: attyPhone, email: attyEmail, secondaryEmail: attySecondaryEmail,
+          streetAddress: attyStreet, cityStateZip: attyCityStateZip,
+          signatureDate: null, filingDate: null, signatureState: '', signatureImage: '',
+        },
+      };
+    case 'annual':
+      return { attorney: attyName, attorney_bar: attyBar, attorney_phone: attyPhone, attorney_email: attyEmail, attorney_secondaryEmail: attySecondaryEmail, attorney_street: attyStreet, attorney_cityStateZip: attyCityStateZip };
+    case 'simplified':
+      return { attorney: attyName, attorney_barNumber: attyBar, attorney_phone: attyPhone, attorney_email: attyEmail, attorney_secondaryEmail: attySecondaryEmail, attorney_street: attyStreet, attorney_cityStateZip: attyCityStateZip };
+    case 'planAnnual':
+      return { attorney: attyName, attorney_bar: attyBar, attorney_phone: attyPhone, attorney_email: attyEmail, attorney_secondary_email: attySecondaryEmail, attorney_street: attyStreet, attorney_cityStateZip: attyCityStateZip };
+    case 'planInitial':
+      return { attorneyName: attyName, attorney_name: attyName, attorney_bar: attyBar, attorney_phone: attyPhone, attorney_email: attyEmail, attorney_secondaryEmail: attySecondaryEmail, attorney_street: attyStreet, attorney_cityStateZip: attyCityStateZip };
+    case 'planMinor':
+    case 'planSimplified':
+      return { attorney_name: attyName, attorney_bar: attyBar, attorney_phone: attyPhone, attorney_email: attyEmail, attorney_secondary_email: attySecondaryEmail, attorney_street: attyStreet, attorney_cityStateZip: attyCityStateZip };
+    default:
+      return {};
+  }
 }
 
 export function carryOverFieldsForPlan(sourceWard, planType) {
   const src = sourceWard || {};
-  const { caseNum, ucn, gName, attyName, attyBar, attyPhone, attyEmail, attyStreet, attyCityStateZip } = extractCarryIdentity(sourceWard);
+  const identity = extractCarryIdentity(sourceWard);
+  const { caseNum, ucn, gName } = identity;
+  const attorney = attorneyCarryFields(planType, identity);
   const gs = (src.guardians && src.guardians.length ? src.guardians : src.planGuardians) || [];
 
   if (planType === 'planInitial') {
@@ -127,13 +177,7 @@ export function carryOverFieldsForPlan(sourceWard, planType) {
       county: '',
       inceptionDate: src.gid || src.inceptionDate || '',
       guardianNames: gName,
-      attorneyName: attyName,
-      attorney_name: attyName,
-      attorney_bar: attyBar,
-      attorney_phone: attyPhone,
-      attorney_email: attyEmail,
-      attorney_street: attyStreet,
-      attorney_cityStateZip: attyCityStateZip,
+      ...attorney,
       planGuardians: [
         {
           name: g.name || gName || '',
@@ -157,6 +201,7 @@ export function carryOverFieldsForPlan(sourceWard, planType) {
       caseNumber: caseNum,
       ucn,
       county: '',
+      ...attorney,
       planGuardians: [0, 1].map((i) => {
         const g = gs[i] || (i === 0 ? { name: gName } : {});
         return {
@@ -177,7 +222,7 @@ export function carryOverFieldsForPlan(sourceWard, planType) {
       county: '',
       gid: src.gid || src.inceptionDate || '',
       guardian: gName,
-      attorney: attyName,
+      ...attorney,
       planGuardians: [0, 1, 2].map((i) => {
         const g = gs[i] || (i === 0 ? { name: gName } : {});
         return {
@@ -208,12 +253,7 @@ export function carryOverFieldsForPlan(sourceWard, planType) {
       ucn,
       ref: caseNum,
       guardianName: gName,
-      attorney_name: attyName,
-      attorney_bar: attyBar,
-      attorney_phone: attyPhone,
-      attorney_email: attyEmail,
-      attorney_street: attyStreet,
-      attorney_cityStateZip: attyCityStateZip,
+      ...attorney,
       planGuardians: [0, 1].map((i) => {
         const g = gs[i] || (i === 0 ? { name: gName } : {});
         return {
@@ -234,7 +274,9 @@ export function carryOverFieldsForPlan(sourceWard, planType) {
 
 export function carryOverFieldsForAccounting(sourceWard, accountingType) {
   const src = sourceWard || {};
-  const { caseNum, ucn, gName, attyName, attyBar, attyPhone, attyEmail, attyStreet, attyCityStateZip } = extractCarryIdentity(sourceWard);
+  const identity = extractCarryIdentity(sourceWard);
+  const { caseNum, ucn, gName } = identity;
+  const attorney = attorneyCarryFields(accountingType, identity);
   const gs = src.planGuardians || src.guardians || [];
 
   if (accountingType === 'guardian') {
@@ -246,30 +288,11 @@ export function carryOverFieldsForAccounting(sourceWard, accountingType) {
       county: '',
       gid: src.inceptionDate || src.gid || '',
       guardianName: gName,
-      attorneyForGuardian: attyName,
-      // Milestone 40H-J: emptyDataGuardian() has no flat attorneyBar/
-      // attorneyPhone/attorneyAddress/attorneyCityStateZip keys at all --
-      // only attorneyForGuardian (flat name) and a nested attorney{...}
-      // object, which is what validateGuardian()/pdf-model.js actually
-      // read. Writing the flat keys here computed the values correctly and
-      // then silently dropped them onto a shape the destination's editor,
-      // validator, and PDF model never look at -- the symmetric defect to
-      // 40C-F item 2 (which fixed the read side), on the write side. Mirrors
-      // the nested shape legacy-app.js's carryOverAccountingToAccounting()
-      // guardian branch already emits. No email field: Guardian Inventory's
-      // attorney block has none, nested or flat -- attyEmail is correctly
-      // computed above and correctly has nowhere to go.
-      attorney: {
-        name: attyName,
-        barNumber: attyBar,
-        phone: attyPhone,
-        streetAddress: attyStreet,
-        cityStateZip: attyCityStateZip,
-        signatureDate: null,
-        filingDate: null,
-        signatureState: '',
-        signatureImage: '',
-      },
+      // Milestone 40H-J: the Inventory's attorney is nested (attorney{...}),
+      // which is what validateGuardian()/pdf-model.js read. Milestone 72B: it
+      // has both emails too -- D-2 always collected them; the note that it
+      // had "no email field" was wrong (attorneyCarryFields()).
+      ...attorney,
       guardians: [
         {
           name: g.name || gName || '',
@@ -295,7 +318,7 @@ export function carryOverFieldsForAccounting(sourceWard, accountingType) {
       county: '',
       gid: src.gid || src.inceptionDate || '',
       guardian: gName,
-      attorney: attyName,
+      ...attorney,
       guardians: [0, 1, 2].map((i) => {
         const g = gs[i] || (i === 0 ? { name: gName } : {});
         const addr = g.mailingStreet ? { street: g.mailingStreet, cityStateZip: g.mailingCityStateZip || '' } : split(g.mailingAddress || g.streetAddress || g.street);
@@ -321,10 +344,7 @@ export function carryOverFieldsForAccounting(sourceWard, accountingType) {
       county: '',
       gid: src.gid || src.inceptionDate || '',
       guardian: gName,
-      attorney: attyName,
-      attorneyBar: attyBar,
-      attorneyPhone: attyPhone,
-      attorneyEmail: attyEmail,
+      ...attorney,
       guardians: [0, 1, 2].map((i) => {
         const g = gs[i] || (i === 0 ? { name: gName } : {});
         return {
@@ -395,14 +415,14 @@ export function carryOverAccountingToAccounting(src,targetType){
   // its own simple src.caseNumber||'' -- extractCarryIdentity()'s caseNum
   // adds ucn/ref fallbacks that matter for Plan Minor sources, which never
   // reach this accounting-to-accounting-only function.
-  const { gName: guardianName, attyName: attorneyName, attyBar, attyPhone, attyEmail, attyStreet, attyCityStateZip } = extractCarryIdentity(src);
+  const identity=extractCarryIdentity(src);
+  const { gName: guardianName } = identity;
+  // Milestone 72B: the attorney under the destination's own names, both
+  // emails included -- none of these three branches carried an email.
+  const attorney=attorneyCarryFields(engine,identity);
 
   if(engine==='guardian'){
-    return {...base, gid:src.gid||'', guardianName, attorneyForGuardian:attorneyName,
-      // Guardian Inventory's own shape is nested (see emptyDataGuardian()).
-      attorney:{name:attorneyName,barNumber:attyBar,phone:attyPhone,
-        streetAddress:attyStreet,cityStateZip:attyCityStateZip,
-        signatureDate:null,filingDate:null,signatureState:'',signatureImage:''},
+    return {...base, gid:src.gid||'', guardianName, ...attorney,
       guardians:gs.slice(0,1).map(g=>({
         name:g.name||'', ssnEin:g.ssnEin||g.ssn||'', phone:g.phone||'',
         streetAddress:g.streetAddress||g.mailingStreet||'',
@@ -410,9 +430,7 @@ export function carryOverAccountingToAccounting(src,targetType){
       }))};
   }
   if(engine==='simplified'){
-    return {...base, gid:src.gid||'', guardian:guardianName, attorney:attorneyName,
-      attorney_barNumber:attyBar, attorney_phone:attyPhone,
-      attorney_street:attyStreet, attorney_cityStateZip:attyCityStateZip,
+    return {...base, gid:src.gid||'', guardian:guardianName, ...attorney,
       guardians:[0,1,2].map(i=>{
         const g=gs[i]||{};
         return {name:g.name||'', ssn:g.ssn||g.ssnEin||'', phone:g.phone||'', email:g.email||'',
@@ -443,9 +461,7 @@ export function carryOverAccountingToAccounting(src,targetType){
   // Starting Balance notes read.
   const carried={};
   if(carryingFinancials)applyCarriedStartingBalance(carried,src,targetType);
-  return {...base, gid:src.gid||'', guardian:guardianName, attorney:attorneyName,
-    attorney_bar:attyBar, attorney_phone:attyPhone,
-    attorney_street:attyStreet, attorney_cityStateZip:attyCityStateZip,
+  return {...base, gid:src.gid||'', guardian:guardianName, ...attorney,
     ...(carryingFinancials ? {
       ...carried,
       certRecipients:(src.certRecipients||[]).map(r=>({...r})),
