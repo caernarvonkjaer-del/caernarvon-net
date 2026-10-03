@@ -2559,6 +2559,14 @@ fail without the fix. The 30 browser specs that read the
 sidebar, its progress card or the guided tour (347 tests) pass; unit suite
 175 files, 2,528 tests; `check:types` clean.
 
+**Full regression after it, 2026-10-03** (at the requester's decision):
+`npm test` on a copy on C: of d9338d8 -- unit 175 files, 2,528 tests; browser
+1,009 passed, 16 skipped (the usual 7 hosted- or portable-only and 9 opt-in
+merge-gate comparisons), 1 failed and 14 did not run, all one file:
+`mixed-version.characterization.spec.ts`, which could not unpack its old
+build there (the copy in the temp folder had gone, and git on the C: copy
+cannot read the repository). Run from D:, its 15 pass. No app defect.
+
 ### Also from the review
 
 The review's "Confirmed working" list matches the build records. It also
