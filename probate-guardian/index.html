@@ -226,7 +226,7 @@
 <div id="security-choice-overlay" class="modal-overlay">
   <div class="modal-box">
     <h2 class="modal-box-title">Choose How to Protect This Data</h2>
-    <p class="modal-box-intro">This file holds sensitive information (Social Security Numbers, financial records, case details) that will live in the .sav file you save. Pick how it should be protected. <strong>This choice applies to this ward going forward and cannot be changed later without starting over.</strong></p>
+    <p class="modal-box-intro">This file holds sensitive information (Social Security Numbers, financial records, case details) that will live in the .sav file you save. Pick how it should be protected. <strong>This choice applies to this case going forward and cannot be changed later without starting over.</strong></p>
     <button type="button" class="security-choice-option" data-startup-action="select-security" data-security-mode="none">
       <div class="security-choice-header">
         <span class="security-choice-icon"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4.6" y="10.4" width="14.8" height="9.6" rx="1.8"/><path d="M8.2 10.4V7.8a3.8 3.8 0 0 1 6.9-2.2"/></svg></span>
@@ -246,7 +246,7 @@
       <ul class="security-choice-list">
         <li>All case data is encrypted (AES-256) in a file on your local computer and is unreadable without your master password.</li>
         <li>There is no requirement to encrypt this data and if you do, a master password is required every time you open the app.</li>
-        <li>If the password is lost, the data cannot be recovered unless you save ward data to an excel sheet manually — there is no reset option.</li>
+        <li>If the password is lost, the data cannot be recovered — there is no reset option and no fallback copy. Keep the master password somewhere safe and save your .sav file often; an Excel export is not a backup.</li>
       </ul>
     </button>
   </div>

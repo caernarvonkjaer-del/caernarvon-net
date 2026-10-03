@@ -17,7 +17,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`icons\icon-192.png`](<icons/icon-192.png>) | Repository file. |
 | [`icons\icon-512.png`](<icons/icon-512.png>) | Repository file. |
 | [`implementation_plan.md`](<implementation_plan.md>) | Project documentation or policy reference. |
-| [`index.html`](<index.html>) | HTML entry point or help content. |
+| [`index.html`](<index.html>) | HTML entry point or help content. 2026-10-03: the Choose How to Protect This Data dialog says a lost password's data cannot be recovered, with no Excel fallback (an Excel export is not a backup), and that the choice applies to the case. |
 | [`lib\bootstrap.bundle.min.js`](<lib/bootstrap.bundle.min.js>) | Build, tooling, or configuration source. |
 | [`lib\bootstrap.bundle.min.js.LICENSE.txt`](<lib/bootstrap.bundle.min.js.LICENSE.txt>) | Text reference or run instructions. |
 | [`lib\bootstrap.min.css`](<lib/bootstrap.min.css>) | Stylesheet. |

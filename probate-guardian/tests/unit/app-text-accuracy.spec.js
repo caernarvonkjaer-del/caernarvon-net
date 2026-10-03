@@ -74,6 +74,30 @@ describe('General Instructions', () => {
   });
 });
 
+// 6. (Added the same day, also at the requester's decision.) The "Choose How
+//    to Protect This Data" dialog said a lost password's data "cannot be
+//    recovered unless you save ward data to an excel sheet manually" -- an
+//    Excel export is not a backup (nothing rebuilds a case from one, and the
+//    four Plans have none), as the user guide says; and it called the choice
+//    one for "this ward" when it covers the whole case.
+describe('the Choose How to Protect This Data dialog', () => {
+  const dialog = () => {
+    const html = readRepoSource('index.html');
+    const start = html.indexOf('id="security-choice-overlay"');
+    return html.slice(start, html.indexOf('</div>\n</div>', start) + 1);
+  };
+
+  test('offers no Excel sheet as a way to recover a lost password', () => {
+    expect(dialog()).toMatch(/If the password is lost, the data cannot be recovered/);
+    expect(dialog()).not.toMatch(/excel sheet/i);
+    expect(dialog()).toMatch(/an Excel export is not a backup/);
+  });
+
+  test('says the choice applies to the case, not one ward', () => {
+    expect(dialog()).toMatch(/This choice applies to this case going forward/);
+  });
+});
+
 describe('the Activity Log', () => {
   test('a certificate move is labelled without claiming where it went', () => {
     expect(ACTIVITY_EVENT_META.CERTIFICATE_MIGRATION.label).toBe('Certificate of service details moved');

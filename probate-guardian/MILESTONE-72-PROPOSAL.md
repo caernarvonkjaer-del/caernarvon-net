@@ -2778,6 +2778,13 @@ words no longer matched what it does.
 5. The Activity Log labelled 72G's move of the ward's status "Certificate
    details moved to the filing attorney", the label 72H gave its own entry; it
    now reads "Certificate of service details moved" for both.
+6. (Asked and decided separately, the same day.) The Choose How to Protect
+   This Data dialog said a lost password's data "cannot be recovered unless
+   you save ward data to an excel sheet manually"; an Excel export is not a
+   backup (nothing rebuilds a case from one, and the four Plans have none).
+   It now says the data cannot be recovered, to keep the password safe and
+   save the .sav file often, and that the choice applies to the case. Two
+   more tests in the same spec; red-first, both fail against the old dialog.
 
 Tests: new `tests/unit/app-text-accuracy.spec.js` (6); red-first, all 6 fail
 against the previous text. Unit suite: 175 files, 2,526
