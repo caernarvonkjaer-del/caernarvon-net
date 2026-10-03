@@ -220,11 +220,64 @@ const GUIDE_CONTROLS = {
   },
   'guardian-indicate-if-ward': {
     label: 'Indicate if Ward is:',
-    // Guardian Inventory D-5 only (65A's own finding: the identically-worded
-    // "Indicate if" on Annual/Simplified's certificate pages is a different
-    // question -- method of service, not the ward's status -- and is not
-    // this control).
-    evidence: [{ file: 'src/features/guardian-inventory/index.js', pattern: /reqLabel\('Indicate if Ward is:'\)/ }],
+    // The ward's status on the certificate of service. Guardian Inventory D-5
+    // since 64A-2/65A; Milestone 72G gave the Annual family's Part X and the
+    // Simplified's Part VI the same question (their old "Indicate if" box was
+    // the method of service, now 'service-method' below).
+    evidence: [
+      { file: 'src/features/guardian-inventory/index.js', pattern: /reqLabel\('Indicate if Ward is:'\)/ },
+      { file: 'src/features/annual-accounting/index.js', pattern: /selD\('Indicate if Ward is:'/ },
+      { file: 'src/features/simplified-accounting/index.js', pattern: /label: 'Indicate if Ward is:'/ },
+    ],
+  },
+  // The user-guide update of 2026-10-03 documents four controls added by
+  // Milestones 67A, 71B and 72G that the guide had never mentioned.
+  'service-method': {
+    label: 'How were the copies served?',
+    // 72G: one label, every certificate of service -- the three accountings
+    // render it directly, the four Plans through their shared page.
+    evidence: [
+      { file: 'src/core/filing/service-method.js', pattern: /SERVICE_METHOD_LABEL = 'How were the copies served\?/ },
+      { file: 'src/features/guardian-inventory/index.js', pattern: /optLabel\(SERVICE_METHOD_LABEL\)/ },
+      { file: 'src/features/annual-accounting/index.js', pattern: /inpD\(SERVICE_METHOD_LABEL/ },
+      { file: 'src/features/simplified-accounting/index.js', pattern: /label: SERVICE_METHOD_LABEL/ },
+      { file: 'src/core/form/plan-certificate-of-service-page.js', pattern: /label: SERVICE_METHOD_LABEL/ },
+      { file: 'src/features/plan-annual/index.js', pattern: /renderPlanCertificateOfServicePage\(/ },
+      { file: 'src/features/plan-simplified/index.js', pattern: /renderPlanCertificateOfServicePage\(/ },
+      { file: 'src/features/plan-initial/index.js', pattern: /renderPlanCertificateOfServicePage\(/ },
+      { file: 'src/features/plan-minor/index.js', pattern: /renderPlanCertificateOfServicePage\(/ },
+    ],
+  },
+  'attorney-waiver-basis': {
+    label: 'No attorney is entered. Why is this guardian filing without one?',
+    // 71B: the Inventory's Cover and the Annual family's Part I only (the
+    // Simplified's basis is the statute, so it does not ask).
+    evidence: [
+      { file: 'src/core/filing/unrepresented-filing.js', pattern: /No attorney is entered\. Why is this guardian filing without one\?/ },
+      { file: 'src/features/guardian-inventory/index.js', pattern: /waiverBasisQuestionHTML\(/ },
+      { file: 'src/features/annual-accounting/index.js', pattern: /waiverBasisQuestionHTML\(/ },
+    ],
+  },
+  'service-certifier': {
+    label: 'Which guardian served these copies?',
+    // 71B: on each accounting's certificate page, with no attorney and more
+    // than one guardian.
+    evidence: [
+      { file: 'src/core/filing/unrepresented-filing.js', pattern: /Which guardian served these copies\?/ },
+      { file: 'src/features/guardian-inventory/index.js', pattern: /serviceCertifierChoiceHTML\(/ },
+      { file: 'src/features/annual-accounting/index.js', pattern: /serviceCertifierChoiceHTML\(/ },
+      { file: 'src/features/simplified-accounting/index.js', pattern: /serviceCertifierChoiceHTML\(/ },
+    ],
+  },
+  'preparer-flag': {
+    label: 'This person prepared this filing (no outside preparer)',
+    // 67A: each guardian's card and the attorney's, on the Inventory and the
+    // Annual family (the Simplified has no Preparer block).
+    evidence: [
+      { file: 'src/core/form/preparer-flag.js', pattern: /PREPARER_FLAG_LABEL = 'This person prepared this filing \(no outside preparer\)'/ },
+      { file: 'src/features/guardian-inventory/index.js', pattern: /preparerFlagCheckboxHTML\(/ },
+      { file: 'src/features/annual-accounting/index.js', pattern: /preparerFlagCheckboxHTML\(/ },
+    ],
   },
   'service-no-recipients-attestation': {
     label: 'No recipients are required for this certificate',

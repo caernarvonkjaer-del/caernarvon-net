@@ -36,7 +36,7 @@ test.beforeAll(() => fs.mkdirSync(OUT, { recursive: true }));
 test('capture: signature Draw tab and applied stamp', async ({ page }) => {
   await freshStartNoPassword(page);
   await createWard(page, WARD, 'guardian');
-  await page.evaluate(() => (window as any).navigate('/d1'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/d1'));
   await page.waitForURL(/#\/d1$/);
 
   // 'stamp', not 'image' -- SIGNATURE_STATES in core/validation/signature-state.js.
@@ -72,7 +72,7 @@ test('capture: signature Draw tab and applied stamp', async ({ page }) => {
 test('capture: dashboard toolbar, Helpful Resources, Help panel', async ({ page }) => {
   await freshStartNoPassword(page);
   await createWard(page, WARD, 'guardian');
-  await page.evaluate(() => (window as any).navigate('/dashboard'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/dashboard'));
   await page.waitForURL(/#\/dashboard/);
   const reminder = page.locator('[data-shell-action="hide-auto-export-reminder"]');
   if (await reminder.count()) await reminder.click();
@@ -117,7 +117,7 @@ test('capture: dashboard toolbar, Helpful Resources, Help panel', async ({ page 
 test('probe: does a blocked preview carry the shell actions?', async ({ page }) => {
   await freshStartNoPassword(page);
   await createWard(page, WARD, 'guardian');
-  await page.evaluate(() => (window as any).navigate('/print'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
   await page.waitForURL(/#\/print$/);
   await page.waitForTimeout(800);
   const report = {
@@ -191,7 +191,7 @@ async function dismissFloatingToasts(page: import('@playwright/test').Page) {
 test('capture: D-4 Bond & Surety Info with the waiver question', async ({ page }) => {
   await freshStartNoPassword(page);
   await createWard(page, WARD, 'guardian');
-  await page.evaluate(() => (window as any).navigate('/d4'));
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/d4'));
   await page.waitForURL(/#\/d4$/);
   await dismissFloatingToasts(page);
 
@@ -223,31 +223,47 @@ test('capture: D-4 Bond & Surety Info with the waiver question', async ({ page }
 test('capture: D-5 Certificate of Service with Indicate if Ward is', async ({ page }) => {
   await freshStartNoPassword(page);
   await createWard(page, WARD, 'guardian');
-  await page.evaluate(() => (window as any).navigate('/d5'));
-  await page.waitForURL(/#\/d5$/);
   await dismissFloatingToasts(page);
-
-  // See the D-4 test above: scoped to input/select[...], not the bare
-  // attribute, for the same jump-to-field-button collision.
-  await page.locator('input[data-field-path="serviceRecipients.0.name"]').fill('Harold J. Whitfield');
-  await page.locator('input[data-field-path="serviceRecipients.0.address"]').fill('1850 Coffee Pot Blvd NE');
-  await page.locator('input[data-field-path="serviceRecipients.0.cityStateZip"]').fill('St. Petersburg, FL 33704');
-  await page.locator('input[data-field-path="serviceRecipients.1.name"]').fill('Clerk of the Circuit Court, Probate Division');
-  await page.locator('input[data-field-path="serviceRecipients.1.address"]').fill('315 Court St, Room 106');
-  await page.locator('input[data-field-path="serviceRecipients.1.cityStateZip"]').fill('Clearwater, FL 33756');
-  await page.locator('input[data-field-path="serviceDate"]').fill('05/04/2026');
-  await page.locator('select[data-bind="serviceIndicateIf"]').selectOption('Ward is totally incapacitated');
-  // Milestone 72H: the certificate's attorney is D-2's -- D-5 asks only for
-  // the certificate's own signature date (and signature); the name and
-  // contact details come from D-2.
-  await page.locator('input[data-field-path="serviceAttorney.signatureDate"]').fill('05/04/2026');
-  await page.locator('h1').first().click();
+  // A filing with an attorney, so D-5 shows the Attorney Certification (with
+  // no attorney it shows the guardian's instead -- Milestone 71B). Set
+  // through the testing interface rather than typed: since Milestone 72H the
+  // certificate asks only its own signature date, and typing a recipient
+  // redraws the recipient cards under the next fill.
+  await fillMinimalValidGuardianWard(page);
+  await page.evaluate(() => (window as any).GuardianForms.testing.patchFiling({
+    attorneyForGuardian: 'Daniel R. Okafor, Esq.',
+    'attorney.name': 'Daniel R. Okafor, Esq.', 'attorney.barNumber': '00123456',
+    serviceRecipients: [
+      { name: 'Harold J. Whitfield', address: '1850 Coffee Pot Blvd NE', cityStateZip: 'St. Petersburg, FL 33704' },
+      { name: 'Clerk of the Circuit Court, Probate Division', address: '315 Court St, Room 106', cityStateZip: 'Clearwater, FL 33756' },
+    ],
+    serviceNoRecipients: '',
+    serviceDate: '2026-05-04',
+    serviceIndicateIf: 'Ward is totally incapacitated',
+    serviceMethod: 'U.S. Mail',
+    'serviceAttorney.signatureDate': '2026-05-04',
+    // The fixture's certificate carries its own older attorney details; left
+    // in, D-5 would list them as "Entered on this certificate before" -- a
+    // real note, but not what a filer normally sees.
+    'serviceAttorney.name': '', 'serviceAttorney.barNumber': '', 'serviceAttorney.phone': '',
+    'serviceAttorney.streetAddress': '', 'serviceAttorney.cityStateZip': '',
+  }));
+  await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/d5'));
+  await page.waitForURL(/#\/d5$/);
   await page.waitForTimeout(300);
 
-  // The field this figure exists to show -- Milestone 64A-2/65A's required
-  // "Indicate if Ward is:" dropdown, absent from the current image.
-  await expect(page.locator('select[data-bind="serviceIndicateIf"]')).toBeVisible();
+  // The fields this figure exists to show: the ward's status (Milestone
+  // 64A-2/65A), how the copies were served (72G), and the attorney taken from
+  // D-2 (72H).
   await expect(page.locator('select[data-bind="serviceIndicateIf"]')).toHaveValue('Ward is totally incapacitated');
+  await expect(page.locator('[data-certificate-attorney-line]')).toContainText('Okafor');
+  // The certificate itself -- the ward's status, the method and the "Signed
+  // by ... come from D-2" line -- not the recipient cards above it, which the
+  // guide describes in words.
+  await page.locator('h2', { hasText: 'Recipients' }).evaluate((el) => el.scrollIntoView({ block: 'start' }));
+  await page.mouse.wheel(0, 260);
+  await page.waitForTimeout(300);
 
   await page.screenshot({ path: path.join(OUT, 'd5-certificate.jpg'), quality: 82, type: 'jpeg' });
 });
@@ -373,29 +389,30 @@ test.describe('Milestone 66 Finding 9: re-shoot every stale-branding figure', ()
     // the yellow "what's required" checklist only shows before the schedule
     // is satisfied either way, so this has to happen before the valid-data
     // fill below marks every schedule complete via scheduleNoItems.
-    await page.evaluate(() => (window as any).navigate('/a1'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/a1'));
     await page.waitForURL(/#\/a1$/);
     await page.locator('button:has-text("Add Property")').first().waitFor({ state: 'visible' });
     await page.screenshot({ path: path.join(OUT, 'inventory-a1-empty.jpg'), quality: 82, type: 'jpeg' });
 
     await fillMinimalValidGuardianWard(page);
     await page.evaluate(([a1, a2, b1, b2, b3, b4, c1, c2, c4, c5]) => {
-      const d = (window as any).D;
+      const t = (window as any).GuardianForms.testing;
+      const d = t.snapshot().filing;
       Object.assign(d, {
         caseNumber: '26-001234-GD', gid: '2026-03-15', county: 'Pinellas',
         guardianName: 'Margaret Whitfield-Harris', attorneyForGuardian: 'Daniel R. Okafor, Esq.',
         hasSafeDepositBox: true, safeDepositBoxFiled: true,
       });
-      d.guardians = [{ name: 'Margaret Whitfield-Harris', ssnEin: '123-45-6789', phone: '(727) 555-0142', streetAddress: '220 12th Ave NE', cityStateZip: 'St. Petersburg, FL 33701', signatureDate: '2026-05-01' }];
+      d.guardians = [{ name: 'Margaret Whitfield-Harris', ssnEin: '123-45-6789', phone: '(727) 555-0142', email: 'mwhitfield@example.com', streetAddress: '220 12th Ave NE', cityStateZip: 'St. Petersburg, FL 33701', signatureDate: '2026-05-01' }];
       d.preparer = { name: 'Lisa Chen, Paralegal', ssnEin: '987-65-4321', phone: '(727) 555-0199', streetAddress: '150 2nd Ave N, Suite 800', cityStateZip: 'St. Petersburg, FL 33701', signatureDate: '2026-05-01' };
-      d.attorney = { name: 'Daniel R. Okafor, Esq.', barNumber: '00123456', phone: '(727) 555-0188', streetAddress: '150 2nd Ave N, Suite 800', cityStateZip: 'St. Petersburg, FL 33701', signatureDate: '2026-05-01', filingDate: '2026-05-04' };
+      d.attorney = { name: 'Daniel R. Okafor, Esq.', barNumber: '00123456', phone: '(727) 555-0188', email: 'dokafor@example.com', streetAddress: '150 2nd Ave N, Suite 800', cityStateZip: 'St. Petersburg, FL 33701', signatureDate: '2026-05-01', filingDate: '2026-05-04' };
       d.scheduleA1 = [a1]; d.scheduleA2 = [a2];
       d.scheduleB1 = b1; d.scheduleB2 = b2; d.scheduleB3 = [b3]; d.scheduleB4 = [b4];
       d.scheduleC1 = [c1]; d.scheduleC2 = [c2]; d.scheduleC4 = [c4]; d.scheduleC5 = [c5];
       Object.assign(d.scheduleNoItems, { a1: false, a2: false, b1: false, b2: false, b3: false, b4: false, c1: false, c2: false, c3: true, c4: false, c5: false });
-      (window as any).autoSave();
+      t.replaceFiling(d);
     }, [A1_ROW, A2_ROW, B1_ROWS, B2_ROWS, B3_ROW, B4_ROW, C1_ROW, C2_ROW, C4_ROW, C5_ROW]);
-    await page.evaluate(() => (window as any).flushPendingSave());
+    await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
 
     const shots: Array<[string, string]> = [
       ['/', 'inventory-cover.jpg'],
@@ -415,7 +432,7 @@ test.describe('Milestone 66 Finding 9: re-shoot every stale-branding figure', ()
       ['/d3', 'inventory-d3.jpg'],
     ];
     for (const [route, file] of shots) {
-      await page.evaluate((r) => (window as any).navigate(r), route);
+      await page.evaluate((r) => (window as any).GuardianForms.testing.navigate(r), route);
       await page.waitForURL(new RegExp(`#${route.replace('/', '\\/')}$`));
       await dismissFloatingToasts(page);
       // schedule-doc-ack.js's advisory modal ("Supporting documentation --
@@ -431,7 +448,7 @@ test.describe('Milestone 66 Finding 9: re-shoot every stale-branding figure', ()
 
     // C-3's "I verify there are none" state -- the schedule this pattern was
     // already documented against (stale figure's own caption).
-    await page.evaluate(() => (window as any).navigate('/c3'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/c3'));
     await page.waitForURL(/#\/c3$/);
     // The advisory modal re-appears on every schedule navigation once ANY
     // schedule has rows this session (its "Not now"/Cancel dismissal is
@@ -444,11 +461,15 @@ test.describe('Milestone 66 Finding 9: re-shoot every stale-branding figure', ()
 
     // Supporting Documents / Comments -- same page, scrolled so that block
     // sits in view instead of an exact crop (documented simplification).
-    await page.evaluate(() => (window as any).navigate('/c2'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/c2'));
     await page.waitForURL(/#\/c2$/);
     await dismissScheduleDocPrompt(page);
-    await page.getByRole('heading', { name: /Supporting Documents/ }).first().scrollIntoViewIfNeeded();
-    await page.waitForTimeout(200);
+    // scrollIntoView, not scrollIntoViewIfNeeded: the heading is already just
+    // inside the viewport, so "if needed" left the figure showing the C-2
+    // card with the blocks it is about cut off at the bottom.
+    await page.getByRole('heading', { name: /Supporting Documents/ }).first().evaluate((el) => el.scrollIntoView({ block: 'start' }));
+    await page.mouse.wheel(0, -24);
+    await page.waitForTimeout(300);
     await page.screenshot({ path: path.join(OUT, 'inventory-supporting-docs.jpg'), quality: 82, type: 'jpeg' });
   });
 
@@ -458,11 +479,12 @@ test.describe('Milestone 66 Finding 9: re-shoot every stale-branding figure', ()
     await dismissFloatingToasts(page);
     await fillMinimalValidSimplifiedWard(page);
     await page.evaluate(() => {
-      const d = (window as any).D;
+      const t = (window as any).GuardianForms.testing;
+      const d = t.snapshot().filing;
       Object.assign(d, { caseNumber: '26-001234-GD', gid: '2026-03-15', county: 'Pinellas', guardian: 'Margaret Whitfield-Harris', attorney: 'Daniel R. Okafor, Esq.' });
-      (window as any).autoSave();
+      t.replaceFiling(d);
     });
-    await page.evaluate(() => (window as any).flushPendingSave());
+    await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
 
     const shots: Array<[string, string, string]> = [
       ['/', 'simplified-cover.jpg', ''],
@@ -472,7 +494,7 @@ test.describe('Milestone 66 Finding 9: re-shoot every stale-branding figure', ()
       ['/p7', 'simplified-partVII.jpg', 'Part VII'],
     ];
     for (const [route, file, headingHint] of shots) {
-      await page.evaluate((r) => (window as any).navigate(r), route);
+      await page.evaluate((r) => (window as any).GuardianForms.testing.navigate(r), route);
       await page.waitForURL(new RegExp(`#${route.replace('/', '\\/')}$`));
       await dismissFloatingToasts(page);
       if (headingHint) {
@@ -489,7 +511,8 @@ test.describe('Milestone 66 Finding 9: re-shoot every stale-branding figure', ()
     await dismissFloatingToasts(page);
     await fillMinimalValidAnnualWard(page);
     await page.evaluate(() => {
-      const d = (window as any).D;
+      const t = (window as any).GuardianForms.testing;
+      const d = t.snapshot().filing;
       Object.assign(d, { caseNumber: '26-001234-GD', gid: '2025-03-15', county: 'Pinellas', guardian: 'Margaret Whitfield-Harris', attorney: 'Daniel R. Okafor, Esq.', startingBalance: '398130.42' });
       d.schB4 = [
         { bankAccountId: '', checkNo: '1041', datePaid: '2026-04-03', category: 'Care Facility', payee: 'Sunrise Senior Living', amount: '4850' },
@@ -498,9 +521,9 @@ test.describe('Milestone 66 Finding 9: re-shoot every stale-branding figure', ()
       ];
       d.schD1 = [{ description: 'Bank of Tampa checking', accountNo: '4471', restricted: 'No', type: 'Checking', fullAmount: '18250.42', wardPct: '100', restrictedAmt: '0' }];
       d.schD4 = [{ description: 'Vanguard IRA', restricted: 'No', fullAmount: '99120', wardPct: '100', carryingValue: '99120', wardValue: '99120', restrictedAmt: '0' }];
-      (window as any).autoSave();
+      t.replaceFiling(d);
     });
-    await page.evaluate(() => (window as any).flushPendingSave());
+    await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
 
     const shots: Array<[string, string, string]> = [
       ['/', 'annual-cover.jpg', ''],
@@ -510,7 +533,7 @@ test.describe('Milestone 66 Finding 9: re-shoot every stale-branding figure', ()
       ['/p9', 'annual-p9-bond.jpg', 'Part IX'],
     ];
     for (const [route, file, headingHint] of shots) {
-      await page.evaluate((r) => (window as any).navigate(r), route);
+      await page.evaluate((r) => (window as any).GuardianForms.testing.navigate(r), route);
       await page.waitForURL(new RegExp(`#${route.replace('/', '\\/')}$`));
       await dismissFloatingToasts(page);
       await dismissScheduleDocPrompt(page); // see Guardian Inventory loop's comment above
@@ -536,7 +559,7 @@ test.describe('Milestone 66 Finding 9: re-shoot every stale-branding figure', ()
       ['/p9', 'plan-initial-signatures.jpg'],
     ];
     for (const [route, file] of shots) {
-      await page.evaluate((r) => (window as any).navigate(r), route);
+      await page.evaluate((r) => (window as any).GuardianForms.testing.navigate(r), route);
       await page.waitForURL(new RegExp(`#${route.replace('/', '\\/')}$`));
       await dismissFloatingToasts(page);
       await page.screenshot({ path: path.join(OUT, file), quality: 82, type: 'jpeg' });
@@ -559,7 +582,7 @@ test.describe('Milestone 66 Finding 9: re-shoot every stale-branding figure', ()
       ['/p11', 'plan-annual-signatures.jpg'],
     ];
     for (const [route, file] of shots) {
-      await page.evaluate((r) => (window as any).navigate(r), route);
+      await page.evaluate((r) => (window as any).GuardianForms.testing.navigate(r), route);
       await page.waitForURL(new RegExp(`#${route.replace('/', '\\/')}$`));
       await dismissFloatingToasts(page);
       await page.screenshot({ path: path.join(OUT, file), quality: 82, type: 'jpeg' });
@@ -571,7 +594,7 @@ test.describe('Milestone 66 Finding 9: re-shoot every stale-branding figure', ()
     await createWard(page, GUARDIAN_WARD, 'planSimplified');
     await dismissFloatingToasts(page);
     await fillMinimalValidPlanSimplifiedWard(page);
-    await page.evaluate(() => (window as any).navigate('/p2'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/p2'));
     await page.waitForURL(/#\/p2$/);
     await dismissFloatingToasts(page);
     await page.screenshot({ path: path.join(OUT, 'plan-simplified-questions.jpg'), quality: 82, type: 'jpeg' });
@@ -589,7 +612,7 @@ test.describe('Milestone 66 Finding 9: re-shoot every stale-branding figure', ()
       ['/p7', 'plan-minor-preparer.jpg'],
     ];
     for (const [route, file] of shots) {
-      await page.evaluate((r) => (window as any).navigate(r), route);
+      await page.evaluate((r) => (window as any).GuardianForms.testing.navigate(r), route);
       await page.waitForURL(new RegExp(`#${route.replace('/', '\\/')}$`));
       await dismissFloatingToasts(page);
       await page.screenshot({ path: path.join(OUT, file), quality: 82, type: 'jpeg' });
@@ -601,7 +624,7 @@ test.describe('Milestone 66 Finding 9: re-shoot every stale-branding figure', ()
     await createWard(page, GUARDIAN_WARD, 'guardian');
     await dismissFloatingToasts(page);
     await fillMinimalValidGuardianWard(page);
-    await page.evaluate(() => (window as any).navigate('/print'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
     await page.waitForURL(/#\/print$/);
     await dismissFloatingToasts(page);
     await page.locator('button:has-text("Save as PDF")').first().waitFor({ state: 'visible' });
@@ -613,13 +636,13 @@ test.describe('Milestone 66 Finding 9: re-shoot every stale-branding figure', ()
     await createWard(page, GUARDIAN_WARD, 'guardian');
     await dismissFloatingToasts(page);
     await fillMinimalValidGuardianWard(page);
-    // fillMinimalValidGuardianWard() only mutates window.D -- it does not
+    // fillMinimalValidGuardianWard() only changes the open filing -- it does not
     // itself re-render, so the cover page's own inputs were still showing
     // whatever was on screen from before the fill (blank, immediately after
     // ward creation) until this navigate() forces a fresh render off the
     // now-populated data. Confirmed live: a first attempt without this line
     // shot an entirely blank cover for both figures below.
-    await page.evaluate(() => (window as any).navigate('/'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
     await page.waitForURL(/#\/$/);
 
     await page.click('#save-controls-toggle-btn');
@@ -647,7 +670,7 @@ test.describe('Milestone 66 Finding 9: re-shoot every stale-branding figure', ()
     await createWard(page, GUARDIAN_WARD, 'guardian');
     await dismissFloatingToasts(page);
     await fillMinimalValidGuardianWard(page);
-    await page.evaluate(() => (window as any).navigate('/dashboard'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/dashboard'));
     await page.waitForURL(/#\/dashboard/);
     await dismissFloatingToasts(page);
 
@@ -660,7 +683,7 @@ test.describe('Milestone 66 Finding 9: re-shoot every stale-branding figure', ()
     await page.getByRole('heading', { name: 'Manage Shared Records' }).waitFor({ state: 'visible' });
     await page.screenshot({ path: path.join(OUT, 'manage-shared-records.jpg'), quality: 82, type: 'jpeg' });
 
-    await page.evaluate(() => (window as any).navigate('/dashboard'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/dashboard'));
     await page.waitForURL(/#\/dashboard/);
     await dismissFloatingToasts(page);
     await page.click('#help-toggle-btn');
@@ -681,7 +704,7 @@ test.describe('Milestone 66 Finding 9: re-shoot every stale-branding figure', ()
     await page.click('[data-shell-action="skip-walkthrough"]');
     await page.locator('#walkthrough-tooltip').waitFor({ state: 'hidden' }).catch(() => {});
 
-    await page.evaluate(() => (window as any).navigate('/dashboard'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/dashboard'));
     await page.waitForURL(/#\/dashboard/);
     await dismissFloatingToasts(page);
     await page.click('#help-toggle-btn');
@@ -689,6 +712,95 @@ test.describe('Milestone 66 Finding 9: re-shoot every stale-branding figure', ()
     await page.click('[data-shell-action="activity-log"]');
     await page.getByRole('heading', { name: 'Activity Log' }).waitFor({ state: 'visible' });
     await page.screenshot({ path: path.join(OUT, 'activity-log.jpg'), quality: 82, type: 'jpeg' });
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════
+// The user-guide update of 2026-10-03 (after Milestone 72). Three figures the
+// guide had carried as one-off shots now come from here, because the text
+// they show was corrected on screen the same day (the Add New Form hint, the
+// Inventory's General Instructions, the New Filing from Existing note); and
+// one new figure, the "why is there no attorney?" question Milestone 71B
+// added, which the guide had no picture of.
+// ═══════════════════════════════════════════════════════════════════════
+test.describe('User guide 2026-10-03: corrected dialogs and the no-attorney question', () => {
+  // Close-ups of one dialog or panel, at twice the resolution, as the one-off
+  // figures they replace were taken -- at 1x a 460px dialog would show at
+  // half the size of the figures beside it.
+  test.use({ deviceScaleFactor: 2 });
+  test('capture: Add New Form dialog', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await page.evaluate(() => (window as any).GuardianForms.testing.createFiling.openDialog('guardian'));
+    await page.locator('#addWardModal.show').waitFor({ state: 'visible' });
+    await page.fill('#new-ward-name', WARD);
+    // Close the name suggestions so they do not cover the form type.
+    await page.locator('#addWardModal .modal-box-title').click();
+    await page.waitForTimeout(200);
+    await expect(page.locator('#addWardModal')).toContainText("the attorney's details");
+    await page.locator('#addWardModal .modal-box').screenshot({ path: path.join(OUT, 'add-new-form.jpg'), quality: 82, type: 'jpeg' });
+  });
+
+  test('capture: Inventory General Instructions and Import Excel File, expanded', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, WARD, 'guardian');
+    await dismissFloatingToasts(page);
+    await page.click('[data-bs-target="#instructionsZone"]');
+    await page.locator('#instructionsZone.show').waitFor({ state: 'visible' });
+    if (!(await page.locator('#importZone.show').isVisible().catch(() => false))) {
+      await page.click('[data-bs-target="#importZone"]');
+    }
+    await page.locator('#importZone.show').waitFor({ state: 'visible' });
+    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+    await page.waitForTimeout(400);
+    await expect(page.locator('#instructionsZone')).toContainText('An attorney is optional');
+    const a = await page.locator('#instructionsZone').locator('xpath=ancestor::div[contains(@class,"accordion")][1]').boundingBox();
+    const b = await page.locator('#importZone').locator('xpath=ancestor::div[contains(@class,"accordion")][1]').boundingBox();
+    if (!a || !b) throw new Error('General Instructions panels not found');
+    const x = Math.min(a.x, b.x) - 8;
+    const y = Math.min(a.y, b.y) - 8;
+    const clip = { x, y, width: Math.max(a.x + a.width, b.x + b.width) - x + 8, height: Math.max(a.y + a.height, b.y + b.height) - y + 8 };
+    await page.screenshot({ path: path.join(OUT, 'inventory-instructions.jpg'), quality: 82, type: 'jpeg', clip });
+  });
+
+  test('capture: Create New Form for Existing Ward dialog', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, WARD, 'guardian');
+    await dismissFloatingToasts(page);
+    await fillMinimalValidGuardianWard(page);
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/dashboard'));
+    await page.waitForURL(/#\/dashboard/);
+    await dismissFloatingToasts(page);
+    await page.evaluate(() => (window as any).GuardianForms.testing.convertFiling.openDialog());
+    await page.locator('#convertWardModal.show').waitFor({ state: 'visible' });
+    await page.selectOption('#convert-target-type', 'planInitial');
+    await page.locator('#convertWardModal .modal-box-title').click();
+    await page.waitForTimeout(200);
+    await expect(page.locator('#convert-note')).toContainText("the attorney's details");
+    await page.locator('#convertWardModal .modal-box').screenshot({ path: path.join(OUT, 'new-filing-from-existing.jpg'), quality: 82, type: 'jpeg' });
+  });
+
+  test('capture: the no-attorney question on the Inventory cover, with the Guardian Advocate hint', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, WARD, 'guardian');
+    await dismissFloatingToasts(page);
+    await fillMinimalValidGuardianWard(page);
+    // A guardian advocate filing with no attorney: every attorney field blank.
+    await page.evaluate(() => {
+      const t = (window as any).GuardianForms.testing;
+      const d = t.snapshot().filing;
+      d.attorneyForGuardian = '';
+      d.typeOfGuardianship = 'Guardian Advocate';
+      d.attorneyWaiverBasis = '';
+      d.attorney = { ...d.attorney, name: '', barNumber: '', phone: '', email: '', secondaryEmail: '', streetAddress: '', cityStateZip: '', signatureDate: null, filingDate: null, signatureState: '', signatureImage: '', isPreparer: false };
+      t.replaceFiling(d);
+    });
+    await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
+    const question = page.locator('[data-attorney-waiver-basis]');
+    await question.waitFor({ state: 'visible' });
+    await expect(question.locator('[data-waiver-advocate-hint]')).toBeVisible();
+    await question.scrollIntoViewIfNeeded();
+    await question.screenshot({ path: path.join(OUT, 'no-attorney-question.jpg'), quality: 82, type: 'jpeg' });
   });
 });
 
@@ -727,6 +839,7 @@ test.afterAll(() => {
     'print-preview.jpg',
     'sidebar-save-controls.jpg', 'manage-shared-records.jpg', 'guided-tour-step.jpg',
     'activity-log.jpg', 'dark-mode.jpg',
+    'add-new-form.jpg', 'inventory-instructions.jpg', 'new-filing-from-existing.jpg', 'no-attorney-question.jpg',
   ];
 
   const actualFiles = fs.readdirSync(OUT).filter((f) => fs.statSync(path.join(OUT, f)).isFile());
