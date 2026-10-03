@@ -91,6 +91,8 @@ test.describe('Non-Raster PDF Generation, Signatures & Bookmarks', () => {
         },
         attorney: {
           name: 'Robert Vance, Esq.',
+          // Milestone 72B: required once an attorney is entered.
+          email: 'rvance@vancelaw.example',
           barNumber: '0184920',
           filingDate: '2026-03-01',
           signatureDate: '2026-03-01',

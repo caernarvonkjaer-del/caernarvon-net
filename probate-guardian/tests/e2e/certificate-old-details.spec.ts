@@ -20,12 +20,17 @@ const field = (page: Page, p: string) => page.evaluate((x) => (window as any).Gu
 const go = (page: Page, route: string) => page.evaluate((r) => (window as any).GuardianForms.testing.navigate(r), route);
 const note = (page: Page) => page.locator('#main-content [data-old-certificate-details]');
 
+// The import is finished when the workbook's ward name replaces a placeholder
+// only the import can overwrite -- a check on a value the filing may already
+// hold would pass before the import had run.
 async function importWorkbook(page: Page, bytes: Buffer, until: () => Promise<boolean>) {
   const file = path.join(os.tmpdir(), `pg-72h-${Date.now()}-${Math.random().toString(36).slice(2)}.xlsx`);
   fs.writeFileSync(file, bytes);
+  await page.evaluate(() => (window as any).GuardianForms.testing.patchFiling({ wardName: 'Import Pending' }));
   await go(page, '/');
   const dialogs = autoAcceptDynDialogs(page);
   await page.setInputFiles('input[type="file"][accept=".xlsx"]', file);
+  await expect.poll(() => field(page, 'wardName'), { timeout: 30_000 }).not.toBe('Import Pending');
   await expect.poll(until, { timeout: 30_000 }).toBe(true);
   dialogs.stop();
 }

@@ -1468,9 +1468,9 @@ form does. The reason question adds that the answer is not printed.
   date is not printed). Red-first: 3 fail against 71B's models.
 - `tests/e2e/attorney-optional-export.spec.ts`: the three PDFs carry the
   attestation and not the sentence; the Simplified's notice says what the PDF
-  does. Run on a copy of this commit once the mid-build regression finished
-  (the browser server is shared, so it could not run alongside); its result
-  is recorded with 72H's.
+  does. Run once the mid-build regression had finished with the shared
+  browser server, on a copy of 72H's commit (which carries this one): 3 of
+  3 passed.
 - `npm run verify:data-model`: 1,049 rows valid. Unit suite: 168 files,
   2,445 tests.
 
@@ -2199,10 +2199,13 @@ the data-model rows (the certificate detail rows retained with the new note,
   `navigation-status.contract.spec.ts` (D-5's attorney issue resolves on D-2),
   `pdf-accessibility-and-signatures.spec.ts` (the certificate is signed by
   D-2's attorney). The guide screenshot script fills only the certificate's
-  date. These browser specs, and 72D's, run on a copy of this commit
-  once the mid-build regression has finished with the shared browser server;
-  their results are recorded here when they have run, and neither item is
-  pushed before they pass.
+  date. Run once the mid-build regression had finished with the shared
+  browser server, on a copy of this commit with the regression's fixes: all
+  pass. The new spec's first run failed on its own wait -- it took D-2's Bar
+  number, already 123456 before the import, as the sign the import had
+  finished -- so it now waits for the workbook's ward name to replace a
+  placeholder only the import writes. Red-first: with 72D's source in place,
+  all 3 of its cases fail (no note, no fill marker, D-5's old inputs).
 - `npm run verify:data-model`: 1,050 rows valid. `npm run check:types`
   passes. Unit suite: 169 files, 2,457 tests.
 
@@ -2338,6 +2341,49 @@ reopened.
 The review's "Confirmed working" list matches the build records. It also
 confirmed that 71B's printed no-attorney sentence appears as designed; 72D
 removes that sentence by decision.
+
+---
+
+## Mid-build full regression — RUN 2026-10-02
+
+`npm test` on a temporary copy on C: of 72C's commit (41dc46f): **969 passed,
+13 failed, 7 skipped, 22 did not run, in 1.3 h.** No failure was an app
+defect; each was a test or recorded baseline that 72B or 72C should have
+updated, or the environment. Fixed in their own commit, after 72H:
+
+1. **The conversion and New Year goldens** (`ms70-conversion-golden.json`,
+   `ms70-year-rollover-golden.json`): 72C's new guardian email key and
+   Simplified Plan signer marker. Regenerated at 72H's tree, so they also
+   carry 72H's changes (no certificate attorney details written by a
+   conversion; the fill marker). Each diff was read; each note says what
+   changed.
+2. **Four PDF tests whose filings stopped being fileable under 72B's rules**
+   -- `pdf-form-specific` (axesCheck), `pdf-structure-tags` (19A, 19D) and
+   `pdf-accessibility-and-signatures`: Inventory rows with no Ward's %, and
+   attorneys with no email, now required. Each fixture states them.
+   *Lesson:* 72B's and 72C's targeted runs did not include the PDF specs
+   whose fixtures go through the real export check (AGENTS.md §10, P6). The
+   later items' targeted runs include every spec that calls
+   `expectFileableFixture()`.
+3. **The Plan for Minors' "entirely blank" attorney card**
+   (`signature-capture.contract.spec.ts`) still held the email the fixture
+   fills, which 72C counts as an attorney; it clears it now.
+4. **Milestone 70's merge-gate comparison** (`pre-merge-output.characterization.spec.ts`)
+   compares today's court output with a build from before Milestone 70,
+   on the premise that the migration changed no output. Milestones 71 and 72
+   change court output on purpose, each pinned by its own tests, so it can
+   only fail; and, being serial, its failure kept the other eight forms
+   from running (most of the "did not run"). **Decision taken:** it runs
+   only when a merge gate pins the build to compare against
+   (`PG_PREMERGE_SHA`).
+5. **`mixed-version.characterization.spec.ts`** could not extract its old
+   build: git refuses a repository on a drive that does not record file
+   ownership when run from the C: copy. Environmental; it runs from D:.
+
+The specs that failed, were cut short, or that 72D and 72H touched were then
+run on 72H's tree with these fixes: 206 passed, 2 failed (the new 72H spec's
+own wait, fixed and rerun, 3 of 3; and `mixed-version` on C:, which runs from
+D:), 9 skipped.
 
 ---
 

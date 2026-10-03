@@ -610,7 +610,9 @@ test.describe('Milestone 39-C: signature state control rollout -- Plan Minor', (
     await page.evaluate(() => {
       const d = (window as any).GuardianForms.testing.snapshot().filing;
       d.preparer_name = ''; d.preparer_signatureDate = '';
-      d.attorney_name = ''; d.attorney_signatureDate = '';
+      // Milestone 72C: any attorney field starts an attorney now, so "entirely
+      // blank" includes the email the fixture fills.
+      d.attorney_name = ''; d.attorney_signatureDate = ''; d.attorney_email = '';
       (window as any).GuardianForms.testing.replaceFiling(d); // setup (D9)
     });
     await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));

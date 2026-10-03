@@ -377,7 +377,7 @@
    "module": "tests/e2e/support/target-profile.ts",
    "name": "skipExpectedTargetExclusion",
    "kind": "function",
-   "specFiles": 6,
+   "specFiles": 7,
    "factory": false
   },
   {

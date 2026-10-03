@@ -1,4 +1,5 @@
 import { test, expect, type Browser, type Page } from '@playwright/test';
+import { skipExpectedTargetExclusion } from './support/target-profile';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -42,6 +43,17 @@ type Version = 'old' | 'new';
 const DRIVER: Record<Version, AppDriver> = { old: pre70Build, new: currentBuild };
 
 test.describe.configure({ mode: 'serial' });
+
+// Milestone 72 (decided 2026-10-02): this comparison was Milestone 70's merge
+// gate, and its premise -- "the migration changes no court output" -- held
+// only for that migration. Milestones 71 and 72 change court output on purpose
+// (72A's Inventory and Annual workbook boxes, 72C's guardian emails on the
+// Inventory PDF, 72D, 72G and 72H's certificates), each pinned by its own
+// tests, so against the pre-70 build it can only fail -- and, being serial,
+// its first failure stopped the other eight forms from running at all. It now
+// runs when a merge gate pins the build to compare against on purpose:
+// PG_PREMERGE_SHA=<sha> (support/pre-merge-case.ts).
+skipExpectedTargetExclusion(!process.env.PG_PREMERGE_SHA, 'a merge-gate comparison, run only with PG_PREMERGE_SHA set to the build to compare against');
 
 let server: any;
 let caseFile = '';
