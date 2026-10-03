@@ -29,6 +29,10 @@ reported at the end; the full regression runs from a copy on C:, once after
   the same one-time rules to a source not yet opened since the change.
   See [Independent review](#independent-review-codex-2026-10-02).
 
+**Built 2026-10-02, all ten items, with a follow-up;** the final full
+regression ran 2026-10-03 and found one stale test, fixed (see "Final full
+regression").
+
 Building any item still needs the requester's named approval of that item
 (AGENTS.md §3).
 
@@ -2627,6 +2631,31 @@ unchanged, apart from the first fix below.
   `excel-form-field-placement`, `simplified-part1-identity-cells` and the
   three mount specs), and `signature-capture.contract` (36): all pass.
 - Unit suite: 171 files, 2,502 tests.
+
+---
+
+## Final full regression — RUN 2026-10-03
+
+`npm test` on a temporary copy on C: of the final commit (7478a74, the import
+follow-up): **unit, 171 files and 2,502 tests, all pass; browser, 1,018
+passed, 1 failed, 16 skipped, in 1.3 h.** No failure was an app defect.
+
+1. **The one failure was a test 72J should have updated.**
+   `navigation-status.contract.spec.ts` ("a filer with nobody to serve can
+   say so") found the missing-recipients issue by the old caption's words,
+   "filer attestation", which 72J replaced with "List at least one recipient
+   who was served, or state that no recipients are required". It found no
+   issue and so reported the question as never asked. It now looks for the
+   new wording; rerun from D:, it passes. *Lesson:* 72J's targeted run did
+   not search the tests for the old wording; a reworded message needs that
+   search, as a new requirement needs the fixture search (AGENTS.md §10, P6).
+2. **The 16 skipped are the expected ones:** 7 run only against a hosted or
+   portable build (the hashed web build's chunk-failure test, five offline
+   cache tests and the portable parity test), as in every source run; 9 are
+   the merge-gate comparison, opt-in since the mid-build regression.
+3. **`mixed-version.characterization.spec.ts` passed on the C: copy** this
+   time: the old build it compares against was already unpacked in the temp
+   folder by an earlier run on D:, so it needed no git.
 
 ---
 

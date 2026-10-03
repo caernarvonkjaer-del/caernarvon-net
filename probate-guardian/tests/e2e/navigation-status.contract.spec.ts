@@ -1463,7 +1463,9 @@ test.describe('Milestone 57B: service recipients, one rule and no carry-over', (
       const w = window as any;
       w.GuardianForms.testing.patchFiling({ 'certRecipients': [{ name: '', line2: '', line3: '', line4: '' }] });
       w.GuardianForms.testing.patchFiling({ 'certNoRecipients': '' });
-      const unanswered = (await w.GuardianForms.testing.validate.open()).filter((m: any) => /filer attestation/.test(String(m.message))).length;
+      // Milestone 72J: the issue says what to do (service-recipients.js's
+      // RECIPIENTS_OR_ATTESTATION), no longer the checkbox's caption.
+      const unanswered = (await w.GuardianForms.testing.validate.open()).filter((m: any) => /List at least one recipient who was served, or state that no recipients are required/.test(String(m.message))).length;
       w.GuardianForms.testing.patchFiling({ 'certNoRecipients': 'Yes' });
       const attested = (await w.GuardianForms.testing.validate.open()).filter((m: any) => /Part X —/.test(String(m.message))).length;
       return { unanswered, attested, nav: w.GuardianForms.testing.status.navChecks().checks['a-p10'] };
