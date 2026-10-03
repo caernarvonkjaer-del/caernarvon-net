@@ -2621,6 +2621,23 @@ unchanged, apart from the first fix below.
    workbook's names with themselves. It compares with the guardians as the
    filing held them before the import.
 
+**Found 2026-10-03, when the milestone's open items were listed, and
+fixed:** the Inventory's outside preparer. Its importer rebuilds the preparer
+from the workbook as well, and this follow-up kept the guardians' and the
+attorney's signatures but not the preparer's, so importing an Inventory's own
+workbook still reset an outside preparer's stamp to the default. It is now
+kept for the same person, as the Annual family's preparer is. Every other
+signer on the three forms was then checked: each is kept, or the import never
+touches it (the Annual's and Simplified's attorney signatures are separate
+fields the importers do not write; the Inventory's certificate guardian is not
+imported). The browser test gains an outside-preparer case for the Inventory
+and the Annual, whose preparer was fixed here but tested only for its
+guardians. Red-first: with the previous Inventory importer, "the same
+preparer keeps the stamp" fails (received undefined); with the Annual
+importer from before this follow-up, the Annual case fails the same way.
+Every spec that drives Import from Excel, with `signature-capture.contract`
+(20 files, 161 tests): all pass.
+
 **Decisions taken:**
 1. **Matched by name, not by slot,** as 72H's Inventory fix is: a workbook
    with the guardians in another order never hands one guardian another's
@@ -2677,7 +2694,9 @@ passed, 1 failed, 16 skipped, in 1.3 h.** No failure was an app defect.
    the merge-gate comparison, opt-in since the mid-build regression.
 3. **`mixed-version.characterization.spec.ts` passed on the C: copy** this
    time: the old build it compares against was already unpacked in the temp
-   folder by an earlier run on D:, so it needed no git.
+   folder by an earlier run on D:, so it needed no git. AGENTS.md §1 said it
+   fails from C: (written in 72F); corrected 2026-10-03 to say it fails there
+   only when no run on D: has unpacked that build yet.
 
 ---
 

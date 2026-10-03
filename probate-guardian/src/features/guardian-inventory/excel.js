@@ -640,6 +640,9 @@ export async function importExcel(input){
     // same person only (import-keep.js).
     (importedData.guardians||[]).forEach((g,i)=>keepUnboxedFields(g,prior.guardians?.[i],['email',...SIGNATURE_FIELDS,'certifiesService']));
     keepUnboxedFields(importedData.attorney,prior.attorney,['email','secondaryEmail',...SIGNATURE_FIELDS]);
+    // The outside preparer's signature too (Milestone 72 follow-up, missed
+    // the first time round): the Annual family keeps its preparer's the same way.
+    keepUnboxedFields(importedData.preparer,prior.preparer,SIGNATURE_FIELDS);
     // The certificate's signer is the attorney (72H), so it is kept when the
     // attorney is the same person.
     if(importedData.serviceAttorney&&importedData.attorney&&prior.serviceAttorney&&samePerson(importedData.attorney.name,prior.attorney?.name)){

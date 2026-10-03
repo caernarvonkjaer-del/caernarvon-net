@@ -40,11 +40,10 @@ async function importWorkbook(page: Page, bytes: Buffer) {
 }
 
 /**
- * The workbook with Guardian #1's name box set to `to`. On the Simplified that
- * box (F15) is the workbook's formula link to the Cover; a hand-edited
- * workbook can still hold a typed name there, which is what this simulates.
+ * The workbook with one person's name box (a guardian's or the preparer's) set
+ * to `to`, as a hand-edited workbook might hold.
  */
-async function withGuardianRenamed(bytes: Buffer, sheet: string, cell: string, to: string): Promise<Buffer> {
+async function withNameBox(bytes: Buffer, sheet: string, cell: string, to: string): Promise<Buffer> {
   const wb = await loadWorkbook(bytes);
   wb.getWorksheet(sheet).getCell(cell).value = to;
   return Buffer.from(await wb.xlsx.writeBuffer());
@@ -89,9 +88,38 @@ for (const form of [
 
     // A workbook whose Guardian #1 is someone else: that person must not
     // inherit the filing's guardian's stamp.
-    await importWorkbook(page, await withGuardianRenamed(bytes, form.sheet, form.cell, 'Someone Else Entirely'));
+    await importWorkbook(page, await withNameBox(bytes, form.sheet, form.cell, 'Someone Else Entirely'));
     expect(String(await field(page, `${g}.name`)).toLowerCase()).toBe('someone else entirely');
     expect(await field(page, `${g}.signatureState`) || '', 'a different person keeps nothing').not.toBe('stamp');
     expect(await field(page, `${g}.certifiesService`) || false, 'nor becomes the guardian who served the copies').toBe(false);
+  });
+}
+
+for (const form of [
+  // The outside preparer and the preparer's name box: PART IV I13 on the
+  // Inventory, PART IV, V J15 on the Annual. The Inventory's was missed when the
+  // guardians were fixed, and found when the milestone's open items were
+  // listed; the Annual's was fixed with its guardians but tested only here.
+  { type: 'guardian', fill: fillMinimalValidGuardianWard, sheet: 'PART IV', cell: 'I13' },
+  { type: 'annual', fill: fillMinimalValidAnnualWard, sheet: 'PART IV, V', cell: 'J15' },
+] as const) {
+  test(`${form.type}: an outside preparer's stamped signature survives importing the filing's own workbook, and only for the same person`, async ({ page }) => {
+    test.setTimeout(240_000);
+    await freshStartNoPassword(page);
+    await createWard(page, `Keep Preparer ${form.type}`, form.type);
+    await form.fill(page);
+    await page.evaluate((img) => (window as any).GuardianForms.testing.patchFiling({
+      'preparer.name': 'Outside Preparer', 'preparer.signatureState': 'stamp', 'preparer.signatureImage': img,
+    }), PNG);
+    const { bytes } = await exportWithWrites(page, form.type);
+
+    await importWorkbook(page, bytes);
+    expect(await field(page, 'preparer.name')).toBe('Outside Preparer');
+    expect(await field(page, 'preparer.signatureState'), 'the same preparer keeps the stamp').toBe('stamp');
+    expect(await field(page, 'preparer.signatureImage')).toBe(PNG);
+
+    await importWorkbook(page, await withNameBox(bytes, form.sheet, form.cell, 'Someone Else Entirely'));
+    expect(String(await field(page, 'preparer.name')).toLowerCase()).toBe('someone else entirely');
+    expect(await field(page, 'preparer.signatureState') || '', 'a different preparer keeps nothing').not.toBe('stamp');
   });
 }

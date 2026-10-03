@@ -56,8 +56,11 @@ non-zero, so a later stage never runs against a broken prerequisite.
   (2026-10-02). Re-measure from an NTFS copy before trusting any figure.
 - **A copy on C: can't run git against this repository**: git refuses a
   repository on a drive that records no file ownership ("dubious
-  ownership"), so `mixed-version.characterization.spec.ts`, which extracts
-  an old build with `git archive`, fails there and must run from D:.
+  ownership"). `mixed-version.characterization.spec.ts` extracts an old build
+  with `git archive` once and then reuses it from the temp folder
+  (`%TEMP%\ms70-sav-corpus\<sha>`), so from a C: copy it fails only when no
+  run on D: has extracted that build yet; run it from D: once in that case.
+  (The final Milestone 72 regression, 2026-10-03, passed it from C: this way.)
 
 **Stack (Archetype 1 — Client-Side Static PWA, pinned for this repo):**
 Vanilla ES Modules (`src/main.js`, the composition root, with core and
