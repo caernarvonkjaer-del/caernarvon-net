@@ -46,7 +46,7 @@ recorded as **Pinellas Clerk practice**, not as a reading of a statute or rule
 | 5 | 72E | On a phone, Schedule C's loss and Schedule E's transfer-out boxes offer a keypad with no minus key | No decision needed (a defect) | Not started |
 | 6 | 72F | The nine-form summary-page browser test runs out of time on the D: drive | **DECIDED.** Split it into nine tests, one per form | Not started |
 | 7 | 72G | Six of the seven certificates of service already have a free-text method box, labelled "Indicate if (e.g. hand-delivered, mailed)"; the Inventory has none. The Annual and Simplified **write that method into the workbook's ward-status box**, and the Simplified blocks without it | **DECIDED.** That box is the method of service, on all seven forms, printed on the PDF only. A missing method warns, never blocks. The Annual and Simplified get a separate ward-status dropdown (the workbook box's real meaning), required on all three accountings. On a new filing made from another, only recipients carry (the ward's status also carries within the same period). An older workbook imports by what its box holds: a ward-status answer as the ward's status, anything else as the method | Not started |
-| 8 | 72H | The Inventory's D-5 and the Simplified's Part VI re-type the attorney's details, so one PDF can show two Bar Numbers for one attorney. The Inventory also has two attorney-name fields, which can differ between PDF and Excel | **DECIDED.** The certificate uses the filing's attorney details. Both name fields stay, with a warning when they differ that says which output prints which. Old typed values fill blank fields once (a saved marker stops repeats); any that differ show on the certificate page with a "Discard old details" button. An older workbook imports the same way: its certificate details fill the filing attorney's blanks, and any that differ are kept and shown | Not started |
+| 8 | 72H | The Inventory's D-5 and the Simplified's Part VI re-type the attorney's details, so one PDF can show two Bar Numbers for one attorney. The Inventory also has two attorney-name fields, which can differ between PDF and Excel | **DECIDED.** The certificate uses the filing's attorney details. Both name fields stay, with a warning when they differ that says which output prints which. Old typed values fill blank fields once (a saved marker stops repeats); any that differ show on the certificate page with a "Discard old details" button. An older workbook imports the same way: its certificate details fill the filing attorney's blanks, and any that differ are kept and shown | **Built** 2026-10-02 (see its Build record; an import data-loss defect found and fixed) |
 | 9 | 72I | Choosing "Guardian Advocate" as the Type of Guardianship shows no hint at the reason question until the filer leaves the page and returns | No decision needed (a defect) | Not started |
 | 10 | 72J | The missing-recipients issue reads "No recipients are required for this certificate (filer attestation …)", the checkbox's caption, not a question | No decision needed (reuse the Plans' wording) | Not started |
 | — | — | The sidebar's NET ASSETS stays at $0.00 for a negative Starting Balance (browser review, H2) | **Not reproduced; dropped** (see "Reported, not reproduced") | — |
@@ -2113,7 +2113,98 @@ independent review (point 2).*
 8. **Legal framing.** None. The Clerk's forms link the two.
 9. **Cross-form.** The Annual already works this way and is unchanged.
 
-### Build record — NOT STARTED
+### Build record — BUILT 2026-10-02
+
+**What a filer sees now.**
+- On the Inventory's D-5, an attorney-signed certificate shows *"Signed by
+  NAME, Florida Bar # … — name and contact details come from D-2"* and asks
+  only for the certificate's own signature date and signature. On the
+  Simplified's Part VI, the Bar number, phone and address inputs are gone; a
+  line says they come from Part V.
+- The PDF and Excel certificates print the filing attorney's details (D-2;
+  Part V), both emails included on the PDF. A detail typed on the old
+  certificate can no longer make the certificate print a different Bar number
+  from Part IV / Part V.
+- A filing saved before 72H: the first time it opens, each detail typed on
+  the old certificate fills the filing attorney's field where that one is
+  blank, once, and the Activity Log names the fields filled (never their
+  values). Details that still differ are listed on the certificate page --
+  *"Florida Bar #: 01234567. The certificate now prints D-2's (00123456)."* --
+  with a **Discard old details** button, until discarded or made to match.
+- Importing a workbook exported before 72H: a blank D-2 / Part V box is
+  filled from the certificate's; a certificate value that differs is kept and
+  listed the same way; a 72H export imports with nothing to note.
+- Converting a filing, or starting a new one from it, carries the filing
+  attorney -- for a filing not opened since 72H, as the once-only fill would
+  leave it -- and writes no certificate detail.
+- On the Inventory, Preview & Export warns when the Cover's Attorney for
+  Guardian and D-2's attorney name differ (not for "Esq." or a blank), saying
+  which output prints which.
+
+**Built as designed:** D-5 and Part VI (pages, PDF, Excel, importers); the
+validator no longer requires D-5's attorney details; `certificate-migrations.js`
+gains the once-only fill, its read-only twin for Convert, the old-details list,
+Discard, and the import comparison; the shared page pieces in
+`src/core/form/certificate-attorney-note.js`; the conversions; the name
+warning in `form-derived-fields.js`; `certAttorneyMigrated` on both models;
+the data-model rows (the certificate detail rows retained with the new note,
+`serviceAttorney.email` removed, the two markers added; 1,050 rows).
+
+**Decisions taken:**
+1. **Carry-over reads an unopened source the same way as Convert.** The
+   decision named Convert; starting a new filing from another (carry-over)
+   reads a source without opening it too, so it uses the same read-only fill.
+   Without it, the two ways of making a filing from another would carry
+   different attorneys from the same source.
+2. **The Simplified's Part VI keeps its linked attorney-name field.** It was
+   always the filing's own `attorney` field ("Attorney Name (linked)"), not a
+   re-typed one, so only the four re-typed details went. The Inventory's D-5
+   name was re-typed, so it becomes the read-only "Signed by" line.
+3. **The note's wording:** *"Entered on this certificate before (no longer
+   printed): … The certificate now uses the attorney entered on D-2. Correct
+   D-2 if one of these is right, then discard them."*
+4. **The Activity Log entry** is a new type, "Certificate details moved to
+   the filing attorney".
+5. **The PDF certificate prints the secondary email,** as the D-2 / Part V
+   signature blocks do.
+
+**Found while building, and fixed:**
+1. **Importing an Initial Inventory workbook wiped details the workbook has
+   no box for.** The importer replaced each guardian, the attorney and the
+   certificate's signer whole, so an import silently dropped each guardian's
+   email (72C), the attorney's two emails (72B), and every signature's chosen
+   state and stamp image. They are now kept from the filing -- but only for
+   the same person, matched by name (72A's containment test, either way
+   round), so a reordered workbook never gives one guardian another's stamp.
+   *Not yet done:* the Annual and Simplified importers drop the signature
+   states and stamps the same way (their workbooks do carry the guardian
+   email); recorded for a follow-up within this milestone.
+2. **The Inventory importer filled D-5's attorney name from the Cover's
+   Attorney for Guardian,** which is now meaningless (the name is not
+   compared: on both workbooks the certificate's name is a formula to the
+   Cover). It keeps nothing for it.
+
+**Tests and evidence:**
+- New `tests/unit/certificate-attorney.spec.js` (12; red-first: all 12 fail
+  against the pre-72H models, conversions and module).
+- Updated with reasons: `attorney-optional.spec.js` (D-5 no longer re-asks
+  the attorney's details), `signature-block-fields.spec.js` (the Simplified
+  certificate's grouping), the goldens `ms70-70C-filing-shapes.json` (the two
+  markers) and `ms70-completion-golden.json` (clearing a D-5 detail no longer
+  leaves D-5 incomplete), each note saying so.
+- Browser: new `tests/e2e/certificate-old-details.spec.ts`.
+  `excel-form-field-placement.spec.ts`: PART VI's boxes hold D-2's details;
+  the round trip keeps nothing for the certificate; the guard's manifest
+  expects the certificate boxes to repeat the filing attorney's (`alsoIn()`).
+  `navigation-status.contract.spec.ts` (D-5's attorney issue resolves on D-2),
+  `pdf-accessibility-and-signatures.spec.ts` (the certificate is signed by
+  D-2's attorney). The guide screenshot script fills only the certificate's
+  date. These browser specs, and 72D's, run on a copy of this commit
+  once the mid-build regression has finished with the shared browser server;
+  their results are recorded here when they have run, and neither item is
+  pushed before they pass.
+- `npm run verify:data-model`: 1,050 rows valid. `npm run check:types`
+  passes. Unit suite: 169 files, 2,457 tests.
 
 ---
 

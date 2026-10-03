@@ -858,20 +858,25 @@ export function buildVerifiedInventoryModel(D, options = {}) {
         tag: 'P',
         text: `Indicate if Ward is: ${d.serviceIndicateIf || '—'}`,
       },
+      // Milestone 72H: the certificate's attorney is D-2's -- name, Florida
+      // Bar number, phone, both emails and address -- as the Clerk's workbook
+      // links PART VI's attorney to the filing's. Only the signature and its
+      // date are the certificate's own (serviceAttorney.*). The details once
+      // typed on D-5 are no longer printed.
       serviceGuardianBlock || {
         type: 'signature-block',
         tag: 'Part',
         role: 'Attorney for Guardian (Service)',
-        signerName: serviceAttorney.name || '',
-        signature: formatSignature(serviceAttorney.name),
+        signerName: attorney.name || '',
+        signature: formatSignature(attorney.name),
         signatureStyle,
         signatureDate: fmtDate(serviceAttorney.signatureDate),
         signatureState: serviceAttorney.signatureState || '',
         signatureImage: serviceAttorney.signatureImage || '',
         fields: [
-          [{ label: 'Florida Bar #', value: serviceAttorney.barNumber || '' }, { label: 'Phone', value: serviceAttorney.phone || '' }],
-          [{ label: 'Primary Email', value: serviceAttorney.email || attorney.email || '' }],
-          [{ label: 'Address', value: composePdfAddressLines(serviceAttorney.streetAddress, serviceAttorney.cityStateZip) }],
+          [{ label: 'Florida Bar #', value: attorney.barNumber || '' }, { label: 'Phone', value: attorney.phone || '' }],
+          [{ label: 'Primary Email', value: attorney.email || '' }, { label: 'Secondary Email', value: attorney.secondaryEmail || '' }],
+          [{ label: 'Address', value: composePdfAddressLines(attorney.streetAddress, attorney.cityStateZip) }],
         ],
       },
     ],

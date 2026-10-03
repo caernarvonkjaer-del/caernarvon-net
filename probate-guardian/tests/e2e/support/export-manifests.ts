@@ -80,10 +80,23 @@ class Builder {
     t[keys[keys.length - 1]] = value;
   }
 
+  private readonly expectedByPath = new Map<string, string | number | null>();
+
   box(path: string, sheet: string, cell: string, kind: Kind) {
     const [stored, expected] = this.values.next(kind);
     if (kind !== 'blank') this.set(path, stored);
+    this.expectedByPath.set(path, expected);
     this.expectations.push({ sheet, cell, value: expected, path });
+  }
+
+  /**
+   * Milestone 72H: a second box the exporter fills from a field already
+   * given a box -- the certificate of service's attorney is the filing's, so
+   * the certificate's boxes repeat it. Expects the same value there.
+   */
+  alsoIn(path: string, sheet: string, cell: string) {
+    if (!this.expectedByPath.has(path)) throw new Error(`alsoIn(${path}) before its box()`);
+    this.expectations.push({ sheet, cell, value: this.expectedByPath.get(path) ?? null, path });
   }
 
   choice(path: string, sheet: string, cell: string, options: readonly string[]) {
@@ -253,8 +266,9 @@ export function inventoryManifest(): Manifest {
   b.box('serviceDate', 'PART VI', 'G25', 'date');
   b.choice('serviceIndicateIf', 'PART VI', 'J25', INDICATE_IF);
   b.box('serviceAttorney.signatureDate', 'PART VI', 'G27', 'date');
-  b.box('serviceAttorney.barNumber', 'PART VI', 'B29', 'text'); b.box('serviceAttorney.streetAddress', 'PART VI', 'J29', 'text');
-  b.box('serviceAttorney.phone', 'PART VI', 'B31', 'text'); b.box('serviceAttorney.cityStateZip', 'PART VI', 'J31', 'text');
+  // Milestone 72H: the certificate's attorney is D-2's (PART IV's boxes above).
+  b.alsoIn('attorney.barNumber', 'PART VI', 'B29'); b.alsoIn('attorney.streetAddress', 'PART VI', 'J29');
+  b.alsoIn('attorney.phone', 'PART VI', 'B31'); b.alsoIn('attorney.cityStateZip', 'PART VI', 'J31');
 
   // Schedules: the column under each header caption; for the free-text lines,
   // the line the page's own instructions give each item.
@@ -516,8 +530,9 @@ export function simplifiedManifest(): Manifest {
     b.box(`certRecipients.${i}.line3`, P56, `${c}${r + 2}`, 'text');
   });
   b.box('certAttySignDate', P56, 'H41', 'date');
-  b.box('certAttyBarNumber', P56, 'B43', 'text'); b.box('certAttyPhone', P56, 'B45', 'text');
-  b.box('certAttyStreet', P56, 'J43', 'text'); b.box('certAttyCityStateZip', P56, 'J45', 'text');
+  // Milestone 72H: the certificate's attorney is Part V's (B19/B21/J19/J21 above).
+  b.alsoIn('attorney_barNumber', P56, 'B43'); b.alsoIn('attorney_phone', P56, 'B45');
+  b.alsoIn('attorney_street', P56, 'J43'); b.alsoIn('attorney_cityStateZip', P56, 'J45');
 
   // PART VII: one free-text line per remuneration entry, A6..A32, the fields
   // joined as the exporter's own comment describes.

@@ -8,6 +8,7 @@ import { authorizeFilingOutput } from '../../core/filing/output-authorization.js
 import { getExcelCapacityIssues } from '../../core/excel/excel-capacity.js';
 import { getExcelJS, saveWorkbookFile, setCell, setDateCell } from '../../core/excel/excel-engine.js';
 import { readCellText } from '../../core/excel/cell-reader.js';
+import { compareImportedCertificate } from '../../core/filing/certificate-migrations.js';
 import { alertModal, confirmModal } from '../../core/ui/dialogs.js';
 import { setStatus, scheduleStatusClear } from '../../core/ui/transient-status.js';
 import { beginExport } from '../../core/ui/export-guard.js';
@@ -231,10 +232,11 @@ export async function doSaveExcel(){
       // B41 already reads '/s/' and J41 is the "[linked to Part I]" formula --
       // see the note above the Part V signature block.
       setDateCell(p56,'H41',inv.certAttySignDate||inv.attorney_signatureDate);
-      setCell(p56,'B43',inv.certAttyBarNumber||inv.attorney_barNumber||'');
-      setCell(p56,'B45',inv.certAttyPhone||inv.attorney_phone||'');
-      setCell(p56,'J43',inv.certAttyStreet||inv.attorney_street||'');
-      setCell(p56,'J45',inv.certAttyCityStateZip||inv.attorney_cityStateZip||'');
+      // Milestone 72H: the certificate's attorney is Part V's (B19/J19/B21/J21).
+      setCell(p56,'B43',inv.attorney_barNumber||'');
+      setCell(p56,'B45',inv.attorney_phone||'');
+      setCell(p56,'J43',inv.attorney_street||'');
+      setCell(p56,'J45',inv.attorney_cityStateZip||'');
     }
 
     const p7=workbook.getWorksheet('PART VII');
@@ -393,14 +395,19 @@ export async function importExcel(input){
         const gc56=(addr)=>readCellText(p56.getCell(addr));
         // Part V (the attorney's own signature block) lives at B19/B21/J19/
         // J21; Part VI (certificate of service) repeats the attorney at
-        // B43/B45/J43/J45. These are separate blocks and can legitimately
-        // differ, so each is read from its own cells — falling back to the
-        // Part VI copy only when Part V is blank, which is how hand-filled
-        // forms and pre-fix exports tend to arrive.
-        getD().attorney_barNumber=gc56('B19')||gc56('B43');
-        getD().attorney_phone=gc56('B21')||gc56('B45');
-        getD().attorney_street=gc56('J19')||gc56('J43');
-        getD().attorney_cityStateZip=gc56('J21')||gc56('J45');
+        // B43/B45/J43/J45. Milestone 72H: the certificate's attorney is Part
+        // V's, so the two are compared (certificate-migrations.js): a blank
+        // Part V box is filled from Part VI's -- how hand-filled forms and
+        // older exports tend to arrive; a Part VI value that differs is kept
+        // as an old detail, shown on Part VI with "Discard old details"; the
+        // same, or a blank Part VI box, keeps nothing.
+        const certCmp=compareImportedCertificate(
+          { bar: gc56('B19'), phone: gc56('B21'), street: gc56('J19'), csz: gc56('J21') },
+          { bar: gc56('B43'), phone: gc56('B45'), street: gc56('J43'), csz: gc56('J45') });
+        getD().attorney_barNumber=certCmp.attorney.bar;
+        getD().attorney_phone=certCmp.attorney.phone;
+        getD().attorney_street=certCmp.attorney.street;
+        getD().attorney_cityStateZip=certCmp.attorney.csz;
         getD().certServiceDate=gc56('H39').substring(0,10);
         getD().certIndicator=gc56('J39');
         const attySignDate=gc56('H41').substring(0,10);
@@ -410,10 +417,10 @@ export async function importExcel(input){
         // attorney_signatureDate. Mirroring it back into both keeps the value
         // from being dropped entirely on a round-trip.
         getD().attorney_signatureDate=attySignDate;
-        getD().certAttyBarNumber=gc56('B43');
-        getD().certAttyPhone=gc56('B45');
-        getD().certAttyStreet=gc56('J43');
-        getD().certAttyCityStateZip=gc56('J45');
+        getD().certAttyBarNumber=certCmp.old.bar;
+        getD().certAttyPhone=certCmp.old.phone;
+        getD().certAttyStreet=certCmp.old.street;
+        getD().certAttyCityStateZip=certCmp.old.csz;
 
         // Certificate recipients
         const r=getD().certRecipients||[];

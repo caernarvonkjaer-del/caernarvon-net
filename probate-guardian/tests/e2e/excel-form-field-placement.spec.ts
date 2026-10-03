@@ -240,11 +240,14 @@ test.describe('Initial Inventory fills its boxes, not its captions', () => {
     expect(c.get('J28')?.text, 'the Street Address caption').toBe("Attorney's Street Address");
     expect(c.get('G25')?.text, 'the service date 2026-08-08 as a serial').toBe('46242');
     expect(c.get('G27')?.text, 'the attorney signature date 2026-07-07 as a serial').toBe('46210');
-    // These two used to be swapped onto each other's cells.
-    expect(c.get('B29')?.text, 'bar number').toBe('SVC-BAR');
-    expect(c.get('J29')?.text, 'street address').toBe('SVC-STREET');
-    expect(c.get('B31')?.text).toBe('SVC-PHONE');
-    expect(c.get('J31')?.text).toBe('SVC-CITY');
+    // These two used to be swapped onto each other's cells. Milestone 72H:
+    // and they hold D-2's attorney, as PART IV does -- the certificate's
+    // attorney is the filing's. The SVC-* values this filing still holds were
+    // typed on D-5 before; they are no longer exported.
+    expect(c.get('B29')?.text, 'bar number').toBe('ATTY-BAR');
+    expect(c.get('J29')?.text, 'street address').toBe('ATTY-STREET');
+    expect(c.get('B31')?.text).toBe('ATTY-PHONE');
+    expect(c.get('J31')?.text).toBe('ATTY-CITY');
     expect(c.get('J27')?.formula, "the attorney's name is linked").toBe("'SUMMARY I '!D24");
     // Milestone 64A-2, item 2.4. J24 holds the workbook's own pre-printed
     // "Indicate if:" caption (confirmed by reading the real cell -- read-first,
@@ -288,8 +291,10 @@ test.describe('Initial Inventory fills its boxes, not its captions', () => {
     // the caption cell and read back from it as the word "Date".
     expect(back.attySig).toBe('2026-05-05');
     expect(back.attyFiling).toBe('2026-06-06');
-    expect(String(back.svcBar).toUpperCase()).toBe('SVC-BAR');
-    expect(String(back.svcStreet).toUpperCase()).toBe('SVC-STREET');
+    // Milestone 72H: the workbook's certificate boxes hold D-2's values, so
+    // the import keeps nothing for the certificate -- nothing to note.
+    expect(back.svcBar).toBe('');
+    expect(back.svcStreet).toBe('');
   });
 });
 

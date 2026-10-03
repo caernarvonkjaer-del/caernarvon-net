@@ -323,9 +323,11 @@ export function buildSimplifiedAccountingModel(D, options = {}) {
         signatureState: d.certAttySignatureState || '',
         signatureImage: d.certAttySignatureImage || '',
         fields: [
-          [{ label: 'Florida Bar #', value: d.certAttyBarNumber || d.attorney_barNumber || '' }, { label: 'Phone', value: d.certAttyPhone || d.attorney_phone || '' }],
-          [{ label: 'Primary Email', value: d.attorney_email || '' }],
-          [{ label: 'Address', value: composePdfAddressLines(d.certAttyStreet || d.attorney_street, d.certAttyCityStateZip || d.attorney_cityStateZip) }],
+          // Milestone 72H: Part V's attorney, as the Clerk's workbook links
+          // it; the details once typed on Part VI are no longer printed.
+          [{ label: 'Florida Bar #', value: d.attorney_barNumber || '' }, { label: 'Phone', value: d.attorney_phone || '' }],
+          [{ label: 'Primary Email', value: d.attorney_email || '' }, { label: 'Secondary Email', value: d.attorney_secondaryEmail || '' }],
+          [{ label: 'Address', value: composePdfAddressLines(d.attorney_street, d.attorney_cityStateZip) }],
         ],
       },
     ],

@@ -138,19 +138,43 @@ export function formDerivedOverwriteWarnings(filing, descriptor = null) {
 
 /** The Initial Inventory's one derived cell: Guardian #1's name box (Milestone 72A). */
 function inventoryWarnings(filing) {
+  const out = [];
   const guardianOne = asName(filing?.guardians?.[0]?.name);
   const cover = asName(filing?.guardianName);
-  if (!guardianOne || !cover || nameAmong(guardianOne, cover)) return [];
-  return [{
-    code: 'form-derived.guardian-name',
-    severity: 'advisory',
-    field: 'guardians.0.name',
-    entered: guardianOne,
-    derived: cover,
-    message: `D-1 — Guardian #1 (${guardianOne}) is not among the Guardian Name(s) on the Cover (${cover}). `
-      + "The court's form fills Guardian #1's name from the Cover; this filing will be exported with Guardian #1's name as entered. "
-      + 'Confirm which is right before filing.',
-  }];
+  if (guardianOne && cover && !nameAmong(guardianOne, cover)) {
+    out.push({
+      code: 'form-derived.guardian-name',
+      severity: 'advisory',
+      field: 'guardians.0.name',
+      entered: guardianOne,
+      derived: cover,
+      message: `D-1 — Guardian #1 (${guardianOne}) is not among the Guardian Name(s) on the Cover (${cover}). `
+        + "The court's form fills Guardian #1's name from the Cover; this filing will be exported with Guardian #1's name as entered. "
+        + 'Confirm which is right before filing.',
+    });
+  }
+  // Milestone 72H (decided 2026-10-02): the Inventory keeps both attorney
+  // names -- the Cover's, which the workbook prints in Summary I and, by its
+  // own links, Parts IV and VI; and D-2's, which the PDF prints in its
+  // signature blocks. Nothing compared them, so the two outputs could name
+  // different attorneys. Warned, never blocked; the same containment test as
+  // the guardian's, either way round, so "Robert T. Nguyen" against "Robert
+  // T. Nguyen, Esq." is the same person.
+  const d2Attorney = asName(filing?.attorney?.name);
+  const coverAttorney = asName(filing?.attorneyForGuardian);
+  if (d2Attorney && coverAttorney && !nameAmong(d2Attorney, coverAttorney) && !nameAmong(coverAttorney, d2Attorney)) {
+    out.push({
+      code: 'form-derived.attorney-name',
+      severity: 'advisory',
+      field: 'attorney.name',
+      entered: d2Attorney,
+      derived: coverAttorney,
+      message: `D-2 — The attorney's name (${d2Attorney}) differs from the Cover's Attorney for Guardian (${coverAttorney}). `
+        + "The Excel workbook prints the Cover's name in Summary I and Parts IV and VI; the PDF prints D-2's name in its signature blocks. "
+        + 'Confirm which is right before filing.',
+    });
+  }
+  return out;
 }
 
 // One consumer -- output-preflight.js -- which imports it. (Deliberately never

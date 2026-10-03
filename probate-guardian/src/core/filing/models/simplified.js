@@ -35,7 +35,12 @@ export function emptyDataSimplified() {
     certAttySignatureState:'', certAttySignatureImage:'',
     // Milestone 71B: the guardian's certificate-of-service signature, used when no attorney is started.
     certGuardianSignDate:'', certGuardianSignatureState:'', certGuardianSignatureImage:'',
+    // Milestone 72H: no longer entered or printed -- the certificate's
+    // attorney is Part V's. They only hold details typed on Part VI before,
+    // until the filer discards them; certAttorneyMigrated marks the once-only
+    // fill of Part V's blanks from them (certificate-migrations.js).
     certAttyBarNumber:'', certAttyPhone:'', certAttyStreet:'', certAttyCityStateZip:'',
+    certAttorneyMigrated:false,
     // Milestone 57B: filer attestation that no one requires service.
     // Tri-state, never coerced (section 4): '' is unanswered, and an
     // empty recipient list must never infer 'Yes'. Asked only when no

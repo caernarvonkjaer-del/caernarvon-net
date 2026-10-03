@@ -473,7 +473,9 @@ test.describe('Guardian Inventory navigation/status contract', () => {
     await expect(page.locator('[data-bind="bondingCompany"]')).toBeFocused();
   });
 
-  test('D-5 resolves its three distinct shapes: bare service date, recipient rows, and attorney', async ({ page }) => {
+  // Milestone 72H: D-5 no longer asks for the attorney's name -- the
+  // certificate's attorney is D-2's, and D-2 asks; its issue resolves there.
+  test('D-5 resolves its distinct shapes: bare service date and recipient rows; the attorney is asked on D-2', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Guardian D-5 Ward', 'guardian');
     await page.evaluate(() => {
@@ -496,11 +498,13 @@ test.describe('Guardian Inventory navigation/status contract', () => {
         serviceDate: structured.find((e: any) => e.section === 'D-5')?.path,
         recipientName: structured.find((e: any) => e.section === 'D-5 Recipient 1' && e.label === 'Name')?.path,
         attorneyName: structured.find((e: any) => e.section === 'D-5 Attorney' && e.label === 'Name')?.path,
+        d2AttorneyName: structured.find((e: any) => e.section === 'D-2 Attorney' && e.label === 'Name')?.path,
       };
     });
     expect(paths.serviceDate).toBe('serviceDate');
     expect(paths.recipientName).toBe('serviceRecipients.0.name');
-    expect(paths.attorneyName).toBe('serviceAttorney.name');
+    expect(paths.attorneyName, 'D-5 asks for no attorney name (72H)').toBeUndefined();
+    expect(paths.d2AttorneyName).toBe('attorney.name');
 
     await followJumpLink(page, '/d5', paths.recipientName);
     await expect(page.locator(`[data-bind="${paths.recipientName}"]`)).toBeFocused();

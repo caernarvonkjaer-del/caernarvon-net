@@ -1,5 +1,5 @@
 {
- "generatedFrom": "Milestone 70, 70C: captured from src/legacy-app.js and src/core/state.js at the 70B tree, BEFORE 70C moved anything (the declarations sliced out and evaluated with state.js and schedule-doc-ack.js loaded as the app loads them). tests/unit/filing-registry.spec.js requires the moved modules to reproduce every value here. Regenerate only for a deliberate, recorded change to a blank filing. Changed by Milestone 71B (2026-09-29, attorney optional when none is entered): added attorneyWaiverBasis, attorneyWaiverOrderDate, guardians[].certifiesService, serviceGuardian, certGuardianSignDate, certGuardianSignatureState, certGuardianSignatureImage, row.certifiesService. Changed by Milestone 72B (2026-10-02, the attorney's emails on every form): guardian attorney.email and attorney.secondaryEmail; attorney_secondaryEmail on the Annual family, the Simplified and the Initial Plan; attorney_secondary_email on the Annual Plan and the Plan for Minors -- each form already collected them on screen. Changed by Milestone 72C (2026-10-02, guardian emails a warning on every form; the Simplified Plan's certificate finds its attorney): added guardians[].email to the Initial Inventory's guardian row and its blank filing's Guardian 1 (D-1 collects it now), planGuardians[].email to the Initial Plan's guardian block and blank filing (its signature blocks had no email field), and certSignerMigrated:false to the Simplified Plan's blank filing (the once-only certificate signer pin in certificate-migrations.js).",
+ "generatedFrom": "Milestone 70, 70C: captured from src/legacy-app.js and src/core/state.js at the 70B tree, BEFORE 70C moved anything (the declarations sliced out and evaluated with state.js and schedule-doc-ack.js loaded as the app loads them). tests/unit/filing-registry.spec.js requires the moved modules to reproduce every value here. Regenerate only for a deliberate, recorded change to a blank filing. Changed by Milestone 71B (2026-09-29, attorney optional when none is entered): added attorneyWaiverBasis, attorneyWaiverOrderDate, guardians[].certifiesService, serviceGuardian, certGuardianSignDate, certGuardianSignatureState, certGuardianSignatureImage, row.certifiesService. Changed by Milestone 72B (2026-10-02, the attorney's emails on every form): guardian attorney.email and attorney.secondaryEmail; attorney_secondaryEmail on the Annual family, the Simplified and the Initial Plan; attorney_secondary_email on the Annual Plan and the Plan for Minors -- each form already collected them on screen. Changed by Milestone 72C (2026-10-02, guardian emails a warning on every form; the Simplified Plan's certificate finds its attorney): added guardians[].email to the Initial Inventory's guardian row and its blank filing's Guardian 1 (D-1 collects it now), planGuardians[].email to the Initial Plan's guardian block and blank filing (its signature blocks had no email field), and certSignerMigrated:false to the Simplified Plan's blank filing (the once-only certificate signer pin in certificate-migrations.js). Changed by Milestone 72H (2026-10-02, the certificate's attorney is the filing's): added certAttorneyMigrated:false to the Initial Inventory's and the Simplified Accounting's blank filings (the once-only fill of the filing attorney's blank fields from an old certificate's details, certificate-migrations.js).",
  "types": [
   "guardian",
   "simplified",
@@ -108,6 +108,7 @@
     "signatureState": "",
     "signatureImage": ""
    },
+   "certAttorneyMigrated": false,
    "serviceGuardian": {
     "signatureDate": null,
     "signatureState": "",
@@ -176,6 +177,7 @@
    "certAttyPhone": "",
    "certAttyStreet": "",
    "certAttyCityStateZip": "",
+   "certAttorneyMigrated": false,
    "certNoRecipients": "",
    "certRecipients": [
     {
@@ -1469,6 +1471,7 @@
     "signatureState": "",
     "signatureImage": ""
    },
+   "certAttorneyMigrated": false,
    "serviceGuardian": {
     "signatureDate": null,
     "signatureState": "",
@@ -1551,6 +1554,7 @@
    "certAttyPhone": "",
    "certAttyStreet": "",
    "certAttyCityStateZip": "",
+   "certAttorneyMigrated": false,
    "certNoRecipients": "",
    "certRecipients": [
     {

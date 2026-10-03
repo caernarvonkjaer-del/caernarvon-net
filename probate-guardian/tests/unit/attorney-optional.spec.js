@@ -80,12 +80,14 @@ describe('Milestone 71B: a filing with no attorney raises no attorney issue', ()
 });
 
 describe('once an attorney is started, the whole block is required again', () => {
-  test('Inventory: an attorney name alone brings back the Cover and D-2 and D-5 attorney requirements', () => {
+  // Milestone 72H: D-5's certificate uses D-2's attorney, so it no longer
+  // asks for the attorney's name or details again; D-2 does.
+  test('Inventory: an attorney name alone brings back the Cover and D-2 attorney requirements; D-5 asks for none of the details again', () => {
     guardianFiling({ attorney: { ...emptyDataGuardian().attorney, name: 'Jordan Pike' } });
     const m = inventoryMessages();
     expect(m).toContain('Cover — Attorney for Guardian is required.');
     expect(m.some((s) => s.startsWith('D-2 Attorney — Bar Number'))).toBe(true);
-    expect(m.some((s) => s.startsWith('D-5 Attorney — Name'))).toBe(true);
+    expect(m.filter((s) => /^D-5 Attorney — (Name|Bar Number|Phone|Street Address|City)/.test(s))).toEqual([]);
   });
 
   test('Annual: a bar number alone brings back Part V', () => {

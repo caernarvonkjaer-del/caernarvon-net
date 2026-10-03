@@ -44,6 +44,9 @@ const INVENTORY_SHARE_FIELDS = [
   ['scheduleC5', 'C-5', 'jointOwnerPercent', "Joint Owner's %"],
 ];
 import { resolveServiceCertifier, certifyingCandidates, serviceCertifierChoiceHTML, waiverBasisQuestionHTML } from '../../core/filing/unrepresented-filing.js';
+import { fillAttorneyFromOldCertificate, discardOldCertificateDetails } from '../../core/filing/certificate-migrations.js';
+import { certificateAttorneyLineHTML, oldCertificateDetailsHTML } from '../../core/form/certificate-attorney-note.js';
+import { auditLog } from '../../core/activity/audit-log.js';
 import { watchAttorneyRequiredMarkers } from '../../core/form/attorney-required-markers.js';
 
 // Milestone 71B: the attorney fields that become required once an attorney is
@@ -177,6 +180,14 @@ export async function mount(container, page, { signal } = {}) {
   // itself, not this module's D proxy: the migration deletes a key, and the
   // proxy forwards reads and writes but not `in` or `delete`.
   if (migrateBondDepository(getD())) saveData();
+  // Milestone 72H: once, each detail typed on the old D-5 attorney
+  // certificate fills D-2's matching field where that one is blank; the log
+  // names the fields, never their values (certificate-migrations.js).
+  const certFilled = fillAttorneyFromOldCertificate(getD(), 'guardian');
+  if (certFilled) {
+    saveData();
+    if (certFilled.length) void auditLog('CERTIFICATE_MIGRATION', `D-2 attorney fields filled from the old D-5 certificate: ${certFilled.join(', ')}`, true);
+  }
   sanitizeNegativeAmounts();
   D.bondAmount = normalizeBondAmountValue(D.bondAmount);
   let html;
@@ -280,6 +291,8 @@ function bindEvents(container) {
       case 'remove-entry': removeEntry(control.dataset.schedule, index); break;
       case 'remove-guardian': removeGuardian(index); break;
       case 'remove-recipient': removeRecipient(index); break;
+      // Milestone 72H: the filer's explicit deletion of the old D-5 details.
+      case 'discard-old-certificate-details': if (discardOldCertificateDetails(getD(), 'guardian')) requestSave(); renderPage('/d5'); break;
       case 'remove-witness': removeWitness(index); break;
       case 'save-excel': _excelModule.doSaveExcel(); break;
       case 'save-pdf': _printModule.doSavePdf(); break;
@@ -1257,13 +1270,17 @@ function pageD5(){
   // whatever it holds come back unchanged once an attorney is entered.
   const serviceCertificateHTML=()=>{
     const serviceRow=formRow(col(4,reqLabel('Service Date (on this date)')+dateInput('serviceDate')),col(8,reqLabel('Indicate if Ward is:')+selectInput('serviceIndicateIf',[['','— Select —'],['Ward is totally incapacitated','Ward is totally incapacitated'],['Ward is under 14 years old','Ward is under 14 years old'],['N/A','N/A']],D.serviceIndicateIf)));
+    // Milestone 72H: the certificate's attorney is D-2's, as the Clerk's
+    // workbook links it -- its name, Florida Bar number, phone and address
+    // are no longer asked again here. The certificate keeps its own signature
+    // and date. Details typed here before are listed until discarded.
     if(isAttorneyStarted(D,'guardian'))return `<h2 style="color:var(--ink);margin:.75rem 0 .4rem;font-size:.95rem;">Attorney Certification</h2>
     <div class="attorney-certification-card entry-card">
       <div class="entry-card-body">
         ${serviceRow}
-        ${formRow(col(5,reqLabel("Attorney's Name")+textInput('serviceAttorney.name','','name')),col(3,reqLabel('Signature Date')+dateInput('serviceAttorney.signatureDate')),col(4,reqLabel('Florida Bar Number')+textInput('serviceAttorney.barNumber','','barNumber')))}
-        ${formRow(col(4,reqLabel('Phone')+textInput('serviceAttorney.phone','','phone')),col(8,reqLabel('Street Address')+textInput('serviceAttorney.streetAddress','','address')))}
-        ${formRow(col(6,reqLabel('City / State / Zip')+textInput('serviceAttorney.cityStateZip','','zip')))}
+        ${certificateAttorneyLineHTML({ name: D.attorney?.name, barNumber: D.attorney?.barNumber, engineId: 'guardian' })}
+        ${oldCertificateDetailsHTML(D, 'guardian', { actionAttr: 'data-inventory-action' })}
+        ${formRow(col(4,reqLabel('Signature Date')+dateInput('serviceAttorney.signatureDate')))}
         ${renderSignatureStateControl({ path: 'serviceAttorney', state: inferLegacySignatureState(D.serviceAttorney.signatureState, D.serviceAttorney.signatureDate), route: '/d5', signatureImage: D.serviceAttorney.signatureImage })}
       </div>
     </div>`;
@@ -1494,7 +1511,9 @@ export function validateGuardian(d=getD()){
   // truthy check is exactly right: it only flags the empty string.
   req(d.serviceIndicateIf,'D-5 — Indicate if Ward is:','serviceIndicateIf');
   if(attorneyStarted){
-  req(d.serviceAttorney.name,'D-5 Attorney — Name','serviceAttorney.name');errors.push(...checkSignatureState({state:inferLegacySignatureState(d.serviceAttorney.signatureState,d.serviceAttorney.signatureDate),date:d.serviceAttorney.signatureDate,image:d.serviceAttorney.signatureImage,sectionLabel:'D-5 Attorney',roleLabel:'',filingType:T,datePath:'serviceAttorney.signatureDate',imagePath:'serviceAttorney.signatureImage'}));req(d.serviceAttorney.barNumber,'D-5 Attorney — Bar Number','serviceAttorney.barNumber');req(d.serviceAttorney.phone,'D-5 Attorney — Phone','serviceAttorney.phone');req(d.serviceAttorney.streetAddress,'D-5 Attorney — Street Address','serviceAttorney.streetAddress');req(d.serviceAttorney.cityStateZip,'D-5 Attorney — City/State/Zip','serviceAttorney.cityStateZip');
+  // Milestone 72H: the certificate's attorney is D-2's, which D-2 already
+  // requires; only the certificate's own signature is checked here.
+  errors.push(...checkSignatureState({state:inferLegacySignatureState(d.serviceAttorney.signatureState,d.serviceAttorney.signatureDate),date:d.serviceAttorney.signatureDate,image:d.serviceAttorney.signatureImage,sectionLabel:'D-5 Attorney',roleLabel:'',filingType:T,datePath:'serviceAttorney.signatureDate',imagePath:'serviceAttorney.signatureImage'}));
   }else{
     // Milestone 71B: with no attorney the guardian who served the copies
     // signs; with co-guardians the filer says which one, never defaulted.

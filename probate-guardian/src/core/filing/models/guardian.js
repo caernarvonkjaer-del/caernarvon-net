@@ -41,7 +41,12 @@ export function emptyDataGuardian(){
     // conversion (D7) -- it is this filer's assertion about this filing.
     serviceNoRecipients:'',
     serviceRecipients:[{name:'',address:'',cityStateZip:''},{name:'',address:'',cityStateZip:''}],
+    // Milestone 72H: the certificate's attorney is D-2's; serviceAttorney's
+    // name and contact fields only hold details typed on D-5 before, until the
+    // filer discards them. certAttorneyMigrated marks the once-only fill of
+    // D-2's blanks from them (certificate-migrations.js).
     serviceDate:null,serviceAttorney:{name:'',barNumber:'',phone:'',streetAddress:'',cityStateZip:'',signatureState:'',signatureImage:''},
+    certAttorneyMigrated:false,
     // Milestone 71B: the guardian's certificate-of-service signature, used when no attorney is started.
     serviceGuardian:{signatureDate:null,signatureState:'',signatureImage:''},
     // Milestone 64A-2, item 2.4. Form PART VI J24/J25: 'Indicate if:' -- Ward

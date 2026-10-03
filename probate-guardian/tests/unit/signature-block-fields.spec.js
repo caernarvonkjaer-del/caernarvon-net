@@ -97,8 +97,10 @@ describe('60F: every migrated block\'s rows are the grouping that was chosen', (
     expect(shape(blockIn(simplifiedModel(), 'part5'))).toEqual([
       ['Florida Bar #', 'Phone'], ['Primary Email', 'Secondary Email'], ['Address'],
     ]);
+    // Milestone 72H: the certificate prints Part V's attorney, both emails
+    // included, in Part V's own grouping.
     expect(shape(blockIn(simplifiedModel(), 'part6'))).toEqual([
-      ['Florida Bar #', 'Phone'], ['Primary Email'], ['Address'],
+      ['Florida Bar #', 'Phone'], ['Primary Email', 'Secondary Email'], ['Address'],
     ]);
   });
 

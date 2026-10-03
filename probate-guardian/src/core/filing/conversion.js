@@ -11,6 +11,7 @@ import { navigate } from '../navigation/router.js';
 import { activateWard, createWardId } from '../navigation/ward-lifecycle.js';
 import { saveWardToState, setDirtySinceExport, updateLastSavedIndicator } from '../persistence/case-file.js';
 import { applyCarriedStartingBalance, crossesTrustBoundary as crossesTrust } from './starting-balance-carry.js';
+import { withOldCertificateFilled } from './certificate-migrations.js';
 import { getCaseFile } from '../state.js';
 import { alertModal } from '../ui/dialogs.js';
 
@@ -172,7 +173,11 @@ export function convertGuardianExtrasToAnnual(src,dest){
   // is the assertion that is dropped, never the data.
   dest.certNoRecipients='';
   dest.serviceNoRecipients='';
-  const a=src.attorney||{}, sa=src.serviceAttorney||{};
+  // Milestone 72H: D-2's attorney only. A blank D-2 Bar number used to be
+  // filled here from D-5's; convertWard() now hands every mapper the source
+  // as the once-only fill would leave it (withOldCertificateFilled()), which
+  // covers all four details in every direction.
+  const a=src.attorney||{};
   dest.attorney_bar=a.barNumber||'';
   dest.attorney_phone=a.phone||'';
   // Milestone 72B: both of D-2's emails, which were dropped here.
@@ -192,7 +197,6 @@ export function convertGuardianExtrasToAnnual(src,dest){
     if(!dest.certRecipients[i])dest.certRecipients[i]={name:'',line2:'',line3:'',line4:''};
     dest.certRecipients[i]={name:r.name||'',line2:r.address||'',line3:r.cityStateZip||'',line4:''};
   });
-  if(sa.barNumber&&!dest.attorney_bar)dest.attorney_bar=sa.barNumber;
 }
 
 // Everything that has a genuine counterpart on the Simplified Accounting.
@@ -219,7 +223,7 @@ export function convertToSimplified(src,srcType,dest){
   applyCarriedStartingBalance(dest,src,'simplified');
 
   if(srcType==='guardian'){
-    const a=src.attorney||{}, sa=src.serviceAttorney||{};
+    const a=src.attorney||{};
     dest.attorney_barNumber=a.barNumber||'';
     dest.attorney_phone=a.phone||'';
     // Milestone 72B: both of D-2's emails, which were dropped here.
@@ -227,10 +231,8 @@ export function convertToSimplified(src,srcType,dest){
     dest.attorney_secondaryEmail=a.secondaryEmail||'';
     dest.attorney_street=a.streetAddress||'';
     dest.attorney_cityStateZip=a.cityStateZip||'';
-    dest.certAttyBarNumber=sa.barNumber||a.barNumber||'';
-    dest.certAttyPhone=sa.phone||a.phone||'';
-    dest.certAttyStreet=sa.streetAddress||a.streetAddress||'';
-    dest.certAttyCityStateZip=sa.cityStateZip||a.cityStateZip||'';
+    // Milestone 72H: no certAtty... details -- the certificate's attorney is
+    // Part V's, so a converted filing starts with nothing to note.
     dest.certServiceDate=src.serviceDate||'';
     (src.serviceRecipients||[]).slice(0,4).forEach((r,i)=>{
       dest.certRecipients[i]={name:r.name||'',line2:r.address||'',line3:r.cityStateZip||''};
@@ -253,10 +255,8 @@ export function convertToSimplified(src,srcType,dest){
   dest.certServiceDate=src.certDate||'';
   dest.certIndicator=src.certIndicator||'';
   dest.certAttySignDate=src.certAttySignDate||'';
-  dest.certAttyBarNumber=src.attorney_bar||'';
-  dest.certAttyPhone=src.attorney_phone||'';
-  dest.certAttyStreet=src.attorney_street||'';
-  dest.certAttyCityStateZip=src.attorney_cityStateZip||'';
+  // Milestone 72H: no certAtty... details (Part V's attorney is the
+  // certificate's).
   // The Annual gives each recipient a 4th line the Simplified form lacks —
   // fold it onto line 3 rather than silently dropping an address line.
   (src.certRecipients||[]).slice(0,4).forEach((r,i)=>{
@@ -327,6 +327,12 @@ export async function convertExistingWard(sourceWardId,targetType){
   const srcType=sourceWard.inventoryType;
   if(srcType===targetType){await alertModal('Please choose a different inventory type to convert to.');return;}
 
+  // Milestone 72H (decided at the Antigravity review): a source not opened
+  // since 72H has not had its once-only certificate fill, so every mapper
+  // below reads it as that fill would leave it -- the filing attorney's blank
+  // fields taken from the old certificate's details. The source itself is
+  // not changed (withOldCertificateFilled() returns a copy).
+  const source=withOldCertificateFilled(sourceWard,formEngine(srcType));
   const wardId=createWardId();
   const newWard={
     wardId,
@@ -336,9 +342,9 @@ export async function convertExistingWard(sourceWardId,targetType){
   };
   // Identity and contact details first, whichever direction this is.
   if(carrySourcesFor(targetType).includes(srcType)){
-    Object.assign(newWard,carryOverFields(sourceWard,targetType));
+    Object.assign(newWard,carryOverFields(source,targetType));
   }else{
-    mapConvertedHeaderFields(sourceWard,srcType,newWard,targetType);
+    mapConvertedHeaderFields(source,srcType,newWard,targetType);
   }
 
   // Then the financial mapping, for the pairs whose schedules genuinely
@@ -347,12 +353,12 @@ export async function convertExistingWard(sourceWardId,targetType){
   // everything mapped here. (Regression guard — that is exactly what
   // happened once the Initial Inventory became a valid carry source.)
   if(srcType==='guardian'&&formEngine(targetType)==='annual'){
-    convertGuardianSchedulesToAnnual(sourceWard,newWard);
-    convertGuardianExtrasToAnnual(sourceWard,newWard);
+    convertGuardianSchedulesToAnnual(source,newWard);
+    convertGuardianExtrasToAnnual(source,newWard);
   }else if(targetType==='simplified'){
-    convertToSimplified(sourceWard,srcType,newWard);
+    convertToSimplified(source,srcType,newWard);
   }else if(srcType==='simplified'&&formEngine(targetType)==='annual'){
-    convertSimplifiedToAnnual(sourceWard,newWard);
+    convertSimplifiedToAnnual(source,newWard);
   }
   // annual->guardian and simplified->guardian: header fields only (mapped
   // above) — an Initial Inventory has no accounting-period equivalent to

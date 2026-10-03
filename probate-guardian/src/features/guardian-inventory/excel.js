@@ -13,6 +13,8 @@ import { getExcelCapacityIssues } from '../../core/excel/excel-capacity.js';
 import { getExcelJS, saveWorkbookFile, setCell, setDateCell } from '../../core/excel/excel-engine.js';
 import { hasIdentifiedPreparer } from '../../core/form/preparer-flag.js';
 import { migrateBondDepository, bondAmountFromCell } from '../../core/filing/bond-depository.js';
+import { compareImportedCertificate } from '../../core/filing/certificate-migrations.js';
+import { nameAmong } from '../../core/filing/form-derived-fields.js';
 import { readCellText, unwrapCellValue } from '../../core/excel/cell-reader.js';
 import { shareFromWorkbookCell } from '../../core/excel/share-cell.js';
 import { pruneSheets } from '../../core/excel/sheet-pruning.js';
@@ -567,10 +569,12 @@ export async function doSaveExcel(){
       setDateCell(p6,'G27',inv.serviceAttorney.signatureDate);
       // J27 is the workbook's formula for the attorney's name, from
       // SUMMARY I D24, exactly as on PART IV.
-      setCell(p6,'B29',inv.serviceAttorney.barNumber||'');
-      setCell(p6,'J29',inv.serviceAttorney.streetAddress||'');
-      setCell(p6,'B31',inv.serviceAttorney.phone||'');
-      setCell(p6,'J31',inv.serviceAttorney.cityStateZip||'');
+      // Milestone 72H: the certificate's attorney is D-2's (the same boxes
+      // PART IV's B28/I28/B30/I30 carry); G27 stays the certificate's own date.
+      setCell(p6,'B29',inv.attorney.barNumber||'');
+      setCell(p6,'J29',inv.attorney.streetAddress||'');
+      setCell(p6,'B31',inv.attorney.phone||'');
+      setCell(p6,'J31',inv.attorney.cityStateZip||'');
     }
 
     // The court's workbook ships every printed page of every schedule, and the
@@ -628,6 +632,25 @@ export async function importExcel(input){
     const prior=getD()||{};
     (importedData.guardians||[]).forEach((g,i)=>{g.isPreparer=!namesOutsidePreparer&&!!prior.guardians?.[i]?.isPreparer;});
     if(importedData.attorney)importedData.attorney.isPreparer=!namesOutsidePreparer&&!!prior.attorney?.isPreparer;
+    // Found while building Milestone 72H: the workbook has no box for a
+    // guardian's email (72C), the attorney's two emails (72B), or any
+    // signature's chosen state and stamp image, and the assign below replaced
+    // each guardian, the attorney and the certificate's signer whole -- so an
+    // import silently wiped them. They are kept from this filing now, but only
+    // for the same person (by name, 72A's containment test, either way round),
+    // so a reordered workbook never hands one guardian another's stamp.
+    const samePerson=(a,b)=>nameAmong(a,b)||nameAmong(b,a);
+    const keepAbsent=(fromWorkbook,before,keys)=>{
+      if(!fromWorkbook||!before||typeof before!=='object'||!samePerson(fromWorkbook.name,before.name))return;
+      for(const k of keys)if(before[k]!==undefined)fromWorkbook[k]=before[k];
+    };
+    (importedData.guardians||[]).forEach((g,i)=>keepAbsent(g,prior.guardians?.[i],['email','signatureState','signatureImage','certifiesService']));
+    keepAbsent(importedData.attorney,prior.attorney,['email','secondaryEmail','signatureState','signatureImage']);
+    // The certificate's signer is the attorney (72H), so it is kept when the
+    // attorney is the same person.
+    if(importedData.serviceAttorney&&importedData.attorney&&prior.serviceAttorney&&samePerson(importedData.attorney.name,prior.attorney?.name)){
+      for(const k of ['signatureState','signatureImage'])if(prior.serviceAttorney[k]!==undefined)importedData.serviceAttorney[k]=prior.serviceAttorney[k];
+    }
     Object.assign(getD(),importedData);
     // Milestone 67B: the workbook has no cell for the bond / restricted
     // depository arrangement, and importedData carries no key for it, so an
@@ -756,8 +779,23 @@ function parseInitialInventoryWorkbook(wb){
     serviceNoRecipients:'',
     serviceDate:dt(ws('PART VI'),'G25'),
     serviceIndicateIf:txt(ws('PART VI'),'J25'),
-    serviceAttorney:(()=>{const p6=ws('PART VI');return{signatureDate:dt(p6,'G27'),name:txt(si,'D24'),barNumber:txt(p6,'B29'),streetAddress:txt(p6,'J29'),phone:txt(p6,'B31'),cityStateZip:txt(p6,'J31')};})()
+    // Milestone 72H: the certificate's name is the workbook's formula link to
+    // the Cover, as D-2's is, so nothing is kept for it; its other details are
+    // compared with D-2's just below.
+    serviceAttorney:(()=>{const p6=ws('PART VI');return{signatureDate:dt(p6,'G27'),name:'',barNumber:txt(p6,'B29'),streetAddress:txt(p6,'J29'),phone:txt(p6,'B31'),cityStateZip:txt(p6,'J31')};})()
   };
+  // Milestone 72H, step 8: a workbook exported before 72H can hold certificate
+  // details that differ from D-2's. A blank D-2 box is filled from the
+  // certificate's; one that differs is kept as an old detail, shown on D-5
+  // with "Discard old details"; the same, or a blank certificate box, keeps
+  // nothing. A workbook exported since holds the same values in both.
+  {
+    const keys=['barNumber','streetAddress','phone','cityStateZip'];
+    const pick=(o)=>Object.fromEntries(keys.map(k=>[k,o[k]||'']));
+    const cmp=compareImportedCertificate(pick(inv.attorney),pick(inv.serviceAttorney));
+    Object.assign(inv.attorney,cmp.attorney);
+    Object.assign(inv.serviceAttorney,cmp.old);
+  }
   capitalizeImportedFields(inv);
   return inv;
 }

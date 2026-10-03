@@ -29,6 +29,7 @@ import { normalizeCountyName } from '../navigation/ward-county.js';
 import { reconcileSlotWithParty, resolveParty } from '../party-resolver.js';
 import { getCaseFile } from '../state.js';
 import { applyCarriedStartingBalance } from './starting-balance-carry.js';
+import { withOldCertificateFilled } from './certificate-migrations.js';
 
 export const ACCOUNTING_FORM_TYPES = ['guardian', 'simplified', 'annual', 'finalAccounting', 'trustAccounting'];
 export const PRIOR_ACCOUNTING_SOURCES = ['guardian', 'simplified', 'annual', 'finalAccounting', 'trustAccounting'];
@@ -487,6 +488,11 @@ export function carryOverAccountingToAccounting(src,targetType){
 // the source AND target types, so callers don't need to know which direction
 // they're going.
 export function carryOverFields(sourceWard,targetType){
+  // Milestone 72H: a source not opened since 72H is read as its once-only
+  // certificate fill would leave it (the filing attorney's blank fields taken
+  // from the old certificate's details), as Convert reads it. A copy; the
+  // source is not changed.
+  sourceWard=withOldCertificateFilled(sourceWard,formEngine(sourceWard?.inventoryType));
   const srcIsAccounting=ACCOUNTING_FORM_TYPES.includes(sourceWard.inventoryType);
   const targetIsAccounting=ACCOUNTING_FORM_TYPES.includes(targetType);
   const fields=/** @type {Record<string, any>} */ (targetIsAccounting

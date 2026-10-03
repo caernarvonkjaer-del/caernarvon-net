@@ -250,7 +250,10 @@ test.describe('Non-Raster PDF Generation, Signatures & Bookmarks', () => {
     expect(extractedText).not.toContain('Guardian #2');
     expect(extractedText).toContain('/s/ Marcus Thorne');
     expect(extractedText).toContain('/s/ Robert Vance, Esq.');
-    expect(extractedText).toContain('/s/ Elena Rostova');
+    // Milestone 72H: the certificate of service is signed by D-2's attorney;
+    // the different name this fixture still holds on D-5 (typed there before
+    // 72H) is no longer printed.
+    expect(extractedText).not.toContain('Elena Rostova');
   });
 
   test('renders supporting PDFs as visual source pages with tagged selectable text', async ({ page }) => {

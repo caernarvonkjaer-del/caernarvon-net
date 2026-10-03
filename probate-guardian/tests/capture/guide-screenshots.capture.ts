@@ -237,12 +237,10 @@ test('capture: D-5 Certificate of Service with Indicate if Ward is', async ({ pa
   await page.locator('input[data-field-path="serviceRecipients.1.cityStateZip"]').fill('Clearwater, FL 33756');
   await page.locator('input[data-field-path="serviceDate"]').fill('05/04/2026');
   await page.locator('select[data-bind="serviceIndicateIf"]').selectOption('Ward is totally incapacitated');
-  await page.locator('input[data-field-path="serviceAttorney.name"]').fill('Daniel R. Okafor, Esq.');
+  // Milestone 72H: the certificate's attorney is D-2's -- D-5 asks only for
+  // the certificate's own signature date (and signature); the name and
+  // contact details come from D-2.
   await page.locator('input[data-field-path="serviceAttorney.signatureDate"]').fill('05/04/2026');
-  await page.locator('input[data-field-path="serviceAttorney.barNumber"]').fill('0123456');
-  await page.locator('input[data-field-path="serviceAttorney.phone"]').fill('(727) 555-0188');
-  await page.locator('input[data-field-path="serviceAttorney.streetAddress"]').fill('150 2nd Ave N, Suite 800');
-  await page.locator('input[data-field-path="serviceAttorney.cityStateZip"]').fill('St. Petersburg, FL 33701');
   await page.locator('h1').first().click();
   await page.waitForTimeout(300);
 

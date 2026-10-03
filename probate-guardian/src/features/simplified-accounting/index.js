@@ -63,6 +63,9 @@ const SIMPLIFIED_ATTORNEY_REQUIRED = {
 const SIMPLIFIED_ATTORNEY_TRIGGERS = ['attorney', 'attorney_barNumber', 'attorney_phone', 'attorney_email', 'attorney_secondaryEmail', 'attorney_street', 'attorney_cityStateZip', 'attorney_signatureDate', 'attorney_signatureState'];
 const attorneyMarkerAborts = new WeakMap();
 import { renderScheduleDocsSection } from '../../core/filing/schedule-docs.js';
+import { fillAttorneyFromOldCertificate, discardOldCertificateDetails } from '../../core/filing/certificate-migrations.js';
+import { oldCertificateDetailsHTML } from '../../core/form/certificate-attorney-note.js';
+import { auditLog } from '../../core/activity/audit-log.js';
 import { countyInputS, inpS, pageIntroRow, pageNavS, yesNoCheckboxS } from '../../core/form/field-html.js';
 import { setPath } from '../../core/form/paths.js';
 import { tooltip } from '../../core/help/tooltips.js';
@@ -153,6 +156,12 @@ function bindEvents(container) {
         break;
       }
       case 'choose-excel': actionElement.parentElement.querySelector('input[type="file"]')?.click(); break;
+      // Milestone 72H: the filer's explicit deletion of the old Part VI details.
+      case 'discard-old-certificate-details': {
+        if (discardOldCertificateDetails(getD(), 'simplified')) requestSave();
+        navigate('/p6');
+        break;
+      }
       case 'open-court-portal': openFloridaCourtPortal(); break;
       case 'remove-remuneration': {
         if (removeCollectionRow('remuneration', index, getD())) {
@@ -205,6 +214,14 @@ export async function mount(container, page, { signal } = {}) {
   // navigation owns the page, so draw nothing.
   if (signal?.aborted) return;
   normalizeSimplifiedGuardianCompatibility(getD(), { persistedSource: true });
+  // Milestone 72H: once, each detail typed on the old Part VI certificate
+  // fills Part V's matching field where that one is blank; the log names the
+  // fields, never their values (certificate-migrations.js).
+  const certFilled = fillAttorneyFromOldCertificate(getD(), 'simplified');
+  if (certFilled) {
+    requestSave();
+    if (certFilled.length) void auditLog('CERTIFICATE_MIGRATION', `Part V attorney fields filled from the old Part VI certificate: ${certFilled.join(', ')}`, true);
+  }
   sanitizeNegativeAmounts();
   let html;
   switch (page) {
@@ -634,8 +651,13 @@ function pagePart6(){
   const started=isAttorneyStarted(d,'simplified');
   const gLabels=['Guardian #1','Co-Guardian #2','Co-Guardian #3'];
   const certifier=started?null:resolveServiceCertifier(d);
+  // Milestone 72H: the certificate's attorney is Part V's, as the Clerk's
+  // workbook links it -- the Bar number, phone and address are no longer
+  // asked again here. The certificate keeps its own signature and date.
+  // Details typed here before are listed until discarded.
   const signerCard=started?`<h2 style="color:var(--ink);margin:.75rem 0 .4rem;font-size:.95rem;">Attorney Signature</h2>
-    <div class="schedule-instructions">Leave these blank to reuse the Bar Number, Phone, Street Address, and City/State/Zip entered on the Part V — Atty Signature page; only fill them in if this signature uses different contact information.</div>
+    <div class="schedule-instructions" data-certificate-attorney-line>The Florida Bar number, phone and address printed with this signature come from Part V — Atty Signature.</div>
+    ${oldCertificateDetailsHTML(d, 'simplified', { actionAttr: 'data-simplified-action' })}
     <div class="row g-3 card-grid-2col">
       <div class="col-12 col-lg-6">
         <div class="entry-card mb-0 h-100">
@@ -645,10 +667,6 @@ function pagePart6(){
               <div class="col-md-6"><label class="form-label">Attorney Name (linked)</label><input type="text" class="form-control" value="${esc(formatName(d.attorney||''))}" data-form-path="attorney" data-form-format="name"></div>
               <div class="col-md-3">${inpSWithTooltip('certAttySignDate','Signature Date','signature_date',d.certAttySignDate,'','date')}</div>
               <div class="col-12">${renderSignatureStateControl({ path: 'certAttorney', state: inferLegacySignatureState(d.certAttySignatureState, d.certAttySignDate), route: '/p6', signatureImage: d.certAttySignatureImage, statePath: 'certAttySignatureState', imagePath: 'certAttySignatureImage' })}</div>
-              <div class="col-md-3">${inpS('certAttyBarNumber','Bar Number',d.certAttyBarNumber)}</div>
-              <div class="col-md-4">${inpS('certAttyPhone','Phone Number',d.certAttyPhone)}</div>
-              <div class="col-md-8">${inpS('certAttyStreet','Street Address',d.certAttyStreet)}</div>
-              <div class="col-md-12">${inpS('certAttyCityStateZip','City / State / Zip Code',d.certAttyCityStateZip)}</div>
             </div>
           </div>
         </div>
