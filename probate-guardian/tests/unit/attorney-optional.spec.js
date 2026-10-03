@@ -201,26 +201,36 @@ describe('why there is no attorney: asked, noted, never blocked on', () => {
     expect(codes({ ...emptyDataAnnual(), attorney: 'Jordan Pike' })).toEqual([]);
   });
 
-  test('the line the PDF prints for each basis', async () => {
-    const { unrepresentedStatement } = await import('../../src/core/filing/unrepresented-filing.js');
-    expect(unrepresentedStatement({ ...emptyDataAnnual(), attorneyWaiverBasis: 'guardian-advocate' }, 'annual'))
-      .toBe('The guardian is not represented by counsel: guardian advocate (Fla. Prob. R. 5.030(a)).');
-    expect(unrepresentedStatement({ ...emptyDataAnnual(), attorneyWaiverBasis: 'court-order', attorneyWaiverOrderDate: '2025-03-04' }, 'annual'))
-      .toBe('The guardian is not represented by counsel: representation waived by court order dated 03/04/2025.');
-    expect(unrepresentedStatement({ ...emptyDataGuardian(), attorneyWaiverBasis: 'self-represented-attorney' }, 'guardian'))
-      .toContain('the guardian is a Florida attorney representing themselves');
-    expect(unrepresentedStatement(emptyDataAnnual(), 'annual')).toBe('The guardian is not represented by counsel.');
-    expect(unrepresentedStatement(emptyDataSimplified(), 'simplified')).toContain('§744.3679(3)');
-    expect(unrepresentedStatement({ ...emptyDataAnnual(), attorney: 'Jordan Pike' }, 'annual')).toBe('');
+  // Milestone 72D: the reason is asked on screen and filed nowhere -- the
+  // module no longer offers a sentence for the PDF (71B's
+  // unrepresentedStatement() is gone).
+  test('nothing is offered for the filed PDF', async () => {
+    const mod = await import('../../src/core/filing/unrepresented-filing.js');
+    expect(mod.unrepresentedStatement).toBeUndefined();
   });
 });
 
+// Milestone 72D (decided 2026-10-01): the Clerk's workbooks and the original
+// forms have no wording for a filing without an attorney; they leave the
+// attorney block blank. So does the PDF now, on all three engines -- 71B
+// printed one app-written line ("The guardian is not represented by counsel:
+// ...") in its place. Red-first: each case below fails against 71B's models,
+// which print that line and no attorney block.
+const NOT_REPRESENTED = /not represented by counsel/i;
+const textOf = (section) => JSON.stringify(section.blocks);
+
 describe('the filed PDF', () => {
-  test('Annual: Part V states the basis instead of an empty attestation; Part X is signed by the guardian', async () => {
+  test('Annual: Part V prints the attestation and a blank attorney block, as the workbook does; Part X is signed by the guardian', async () => {
     const { buildAnnualAccountingModel } = await import('../../src/features/annual-accounting/pdf-model.js');
     const model = buildAnnualAccountingModel({ ...emptyDataAnnual(), inventoryType: 'annual', attorneyWaiverBasis: 'guardian-advocate', guardians: [g('Maria Lopez', { phone: '727-555-0100' })] });
     const part5 = model.sections.find((s) => s.id === 'part5');
-    expect(part5.blocks).toEqual([{ type: 'notice', tag: 'P', text: 'The guardian is not represented by counsel: guardian advocate (Fla. Prob. R. 5.030(a)).' }]);
+    expect(textOf(part5)).not.toMatch(NOT_REPRESENTED);
+    expect(part5.blocks[0]).toMatchObject({ type: 'notice' });
+    expect(part5.blocks[0].text).toMatch(/attorney/i);
+    const block = part5.blocks.find((b) => b.type === 'signature-block');
+    expect(block).toMatchObject({ role: 'Attorney for Guardian', signerName: '', signatureDate: '' });
+    // Every detail blank (the address is a list of lines, empty here).
+    expect(block.fields.flat().every((f) => [].concat(f.value ?? '').join('') === '')).toBe(true);
     const part10 = model.sections.find((s) => s.id === 'part10');
     expect(part10.title).toBe('Part X — CERTIFICATE OF SERVICE');
     const signer = part10.blocks.find((b) => b.type === 'signature-block');
@@ -244,14 +254,20 @@ describe('the filed PDF', () => {
   test('Simplified and Inventory follow the same rule', async () => {
     const { buildSimplifiedAccountingModel } = await import('../../src/features/simplified-accounting/pdf-model.js');
     const s = buildSimplifiedAccountingModel({ ...emptyDataSimplified(), inventoryType: 'simplified', guardians: [{ ...emptyDataSimplified().guardians[0], name: 'Rosa Delgado' }] });
-    expect(s.sections.find((x) => x.id === 'part5').blocks[0].text).toContain('§744.3679(3)');
+    const part5 = s.sections.find((x) => x.id === 'part5');
+    expect(textOf(part5)).not.toMatch(NOT_REPRESENTED);
+    expect(part5.blocks[0].text).toMatch(/^The undersigned Attorney hereby notifies the Court/);
+    expect(part5.blocks.find((b) => b.type === 'signature-block')).toMatchObject({ role: 'Attorney for Guardian', signerName: '' });
     expect(s.sections.find((x) => x.id === 'part6').blocks.find((b) => b.type === 'signature-block').signerName).toBe('Rosa Delgado');
 
     const { buildVerifiedInventoryModel } = await import('../../src/features/guardian-inventory/pdf-model.js');
     const inv = buildVerifiedInventoryModel({ ...emptyDataGuardian(), inventoryType: 'guardian', attorneyWaiverBasis: 'court-order', attorneyWaiverOrderDate: '2025-03-04', guardians: [{ ...emptyDataGuardian().guardians[0], name: 'Harold Pemberton' }] });
     const d2 = inv.sections.find((x) => x.id === 'd2_attorney');
-    expect(d2.blocks.some((b) => b.text === 'The guardian is not represented by counsel: representation waived by court order dated 03/04/2025.')).toBe(true);
-    expect(d2.blocks.some((b) => b.type === 'signature-block' && b.role === 'Attorney for Guardian')).toBe(false);
+    expect(textOf(d2)).not.toMatch(NOT_REPRESENTED);
+    // Nor the waiver's date: the reason is asked on screen, filed nowhere.
+    expect(textOf(d2)).not.toContain('03/04/2025');
+    expect(d2.blocks.some((b) => /The undersigned Attorney hereby notifies the Court/.test(b.text || ''))).toBe(true);
+    expect(d2.blocks.find((b) => b.type === 'signature-block' && b.role === 'Attorney for Guardian')).toMatchObject({ signerName: '' });
     expect(inv.sections.find((x) => x.id === 'd5').blocks.find((b) => b.type === 'signature-block')).toMatchObject({ role: 'Guardian (Service)', signerName: 'Harold Pemberton' });
   });
 });

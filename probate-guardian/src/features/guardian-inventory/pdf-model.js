@@ -10,7 +10,7 @@ import { maskSSN } from '../../core/pdf/ssn-format.js';
 import { calcTotalsGuardian, makeGuardianCalc, isRestrictedAnswer, isInSafeDepositBox, AUDIT_FEE_THRESHOLD, AUDIT_FEE_OVER_THRESHOLD } from './totals.js';
 import { preparedByLine } from '../../core/form/preparer-flag.js';
 import { formatMoney } from '../../core/format/money.js';
-import { isUnrepresented, unrepresentedStatement, resolveServiceCertifier } from '../../core/filing/unrepresented-filing.js';
+import { isUnrepresented, resolveServiceCertifier } from '../../core/filing/unrepresented-filing.js';
 import { inferBondDepositoryState, bondDepositoryPdfLines, revealsBond } from '../../core/filing/bond-depository.js';
 
 export function buildVerifiedInventoryModel(D, options = {}) {
@@ -662,14 +662,11 @@ export function buildVerifiedInventoryModel(D, options = {}) {
       },
       preparerBlock,
       ]),
-      // Milestone 71B: with no attorney started, one line states why in place
-      // of the attorney attestation and its empty signature block.
-      ...(unrepresented ? [{
-        type: 'notice',
-        tag: 'P',
-        title: 'GUARDIAN ATTORNEY SIGNATURE',
-        text: unrepresentedStatement(d, 'guardian'),
-      }] : [
+      // Milestone 72D: the attorney attestation and its signature block are
+      // printed whether or not an attorney is entered -- blank with none, as
+      // the Clerk's workbook leaves them. 71B printed one app-written line in
+      // their place, which no Clerk form has. `unrepresented` still decides
+      // who signs D-5's certificate of service.
       {
         type: 'notice',
         tag: 'P',
@@ -702,7 +699,6 @@ export function buildVerifiedInventoryModel(D, options = {}) {
           [{ label: 'Address', value: attorneyDetails.Address }],
         ],
       },
-      ]),
     ],
   });
 

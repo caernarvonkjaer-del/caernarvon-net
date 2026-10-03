@@ -583,7 +583,7 @@ function pagePart5(){
     <h1>Part V — Guardian Attorney Signature</h1>
   ${preparerNoteHTML()}
     ${isAttorneyStarted(d,'simplified')?'':`<div class="alert alert-secondary" role="status" data-no-attorney-notice>
-      <strong>No attorney is entered</strong>, so this part is not required: a guardian need not be represented by an attorney to file a simplified annual accounting (§744.3679(3), Florida Statutes). The filed PDF says so in place of this attestation. If an attorney represents the guardian, enter them below and this part becomes required.
+      <strong>No attorney is entered</strong>, so this part is not required: a guardian need not be represented by an attorney to file a simplified annual accounting (§744.3679(3), Florida Statutes). The filed PDF prints this attestation with the attorney's signature block blank, as the Clerk's form does. If an attorney represents the guardian, enter them below and this part becomes required.
     </div>`}
     <div class="attestation-text">The undersigned Attorney hereby notifies the Court of the filing of the simplified annual accounting of the Guardian. This simplified annual accounting is the representation of the guardian. The undersigned attorney represents that he/she has examined the contents of the accounting and that it conforms to the requirements of the Florida Guardianship Law.</div>
     <div class="row g-3 card-grid-2col">

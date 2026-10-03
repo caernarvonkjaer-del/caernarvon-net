@@ -808,7 +808,7 @@ function pagePart5Annual(){
   // then follow live (watchAttorneyRequiredMarkers() in mount()).
   const started=isAttorneyStarted(d,'annual');
   const noAttorney=started?'':`<div class="alert alert-secondary" role="status" data-no-attorney-notice>
-    <strong>No attorney is entered</strong>, so this part is not required. The filed PDF states why the guardian has no attorney in place of this attestation (see the question on Part I). If an attorney represents the guardian, enter them below and this part becomes required.
+    <strong>No attorney is entered</strong>, so this part is not required. The filed PDF prints this attestation with the attorney's signature block blank, as the Clerk's form does. If an attorney represents the guardian, enter them below and this part becomes required.
   </div>`;
   return `<div class="schedule-page">
   <h1>Part V — Guardian Attorney Signature</h1>

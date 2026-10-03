@@ -9,8 +9,9 @@ import { extractPdfText } from './support/pdf-extract';
 // every attorney field was required, export stayed blocked until the filer
 // overrode it, and the PDF then carried an empty attorney attestation and an
 // attorney certificate of service nobody signed. Here each reaches an enabled
-// Save as PDF with NO override; the PDF says why there is no attorney and is
-// certified by the guardian who served the copies; Preview & Export notes the
+// Save as PDF with NO override; the PDF is certified by the guardian who
+// served the copies (and, since Milestone 72D, prints the attorney block
+// blank, as the Clerk's forms do, with no app-written reason); Preview & Export notes the
 // Excel workbook's attorney-only certificate line. The controls a filer uses
 // are driven with real clicks and keystrokes.
 
@@ -61,6 +62,8 @@ test.describe('Milestone 71B: a filing with no attorney', () => {
     // Part V: nothing marked required while no attorney is started...
     await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/p5'));
     await expect(page.locator('#main-content [data-no-attorney-notice]')).toContainText('744.3679(3)');
+    // Milestone 72D: and it says what the PDF does -- the attestation with a blank attorney block.
+    await expect(page.locator('#main-content [data-no-attorney-notice]')).toContainText("signature block blank, as the Clerk's form does");
     const barRequired = () => page.evaluate(() => {
       const input = document.querySelector('#main-content input[data-form-path="attorney_barNumber"], #main-content input[data-field-path="attorney_barNumber"]') as HTMLInputElement | null;
       return input?.getAttribute('aria-required') === 'true';
@@ -77,14 +80,17 @@ test.describe('Milestone 71B: a filing with no attorney', () => {
     await expect.poll(barRequired).toBe(false);
 
     const pdf = await downloadPdf(page, '[data-simplified-action="save-pdf"]');
-    expect(pdf).toContain('The guardian is not represented by counsel: a simplified accounting');
+    // Milestone 72D: Part V prints blank, as the Clerk's workbook leaves it --
+    // no app-written "not represented by counsel" line.
+    expect(pdf).not.toContain('not represented by counsel');
+    expect(pdf).toContain('The undersigned Attorney hereby notifies the Court');
     expect(pdf).toContain('Part VI — CERTIFICATE OF SERVICE');
     expect(pdf).not.toContain('GUARDIAN ATTORNEY CERTIFICATE OF SERVICE');
     await expect(page.locator('#main-content')).toContainText(EXCEL_NOTE);
     expect(await page.evaluate(() => (window as any).GuardianForms.testing.status.navChecks().checks['s-p5']), 'the sidebar agrees').toBe(true);
   });
 
-  test('a Guardian Advocate Initial Inventory: the Cover asks why, and the PDF says so', async ({ page }) => {
+  test('a Guardian Advocate Initial Inventory: the Cover asks why; the PDF files no reason (72D)', async ({ page }) => {
     test.setTimeout(240_000);
     await freshStartNoPassword(page);
     await createWard(page, 'Advocate Inventory', 'guardian');
@@ -109,7 +115,9 @@ test.describe('Milestone 71B: a filing with no attorney', () => {
     await expect.poll(() => page.evaluate(() => (window as any).GuardianForms.testing.field('attorneyWaiverBasis'))).toBe('guardian-advocate');
 
     const pdf = await downloadPdf(page, '[data-inventory-action="save-pdf"]');
-    expect(pdf).toContain('The guardian is not represented by counsel: guardian advocate (Fla. Prob. R. 5.030(a)).');
+    // Milestone 72D: the reason is asked on screen and filed nowhere.
+    expect(pdf).not.toContain('not represented by counsel');
+    expect(pdf).toContain('The undersigned Attorney hereby notifies the Court');
     await expect(page.locator('#main-content')).toContainText(EXCEL_NOTE);
     await expect(page.locator('#main-content'), 'the basis is answered, so no basis note').not.toContainText('does not say why');
   });
@@ -146,7 +154,8 @@ test.describe('Milestone 71B: a filing with no attorney', () => {
     expect((await issues()).filter((m) => m.includes('Tick the guardian'))).toEqual([]);
 
     const pdf = await downloadPdf(page, '[data-annual-action="save-pdf"]');
-    expect(pdf).toContain('The guardian is not represented by counsel: representation waived by court order.');
+    // Milestone 72D: the reason is asked on screen and filed nowhere.
+    expect(pdf).not.toContain('not represented by counsel');
     expect(pdf).toContain('Part X — CERTIFICATE OF SERVICE');
     // The court order's date is blank: noted, never blocked.
     await expect(page.locator('#main-content')).toContainText("the order's date is blank");

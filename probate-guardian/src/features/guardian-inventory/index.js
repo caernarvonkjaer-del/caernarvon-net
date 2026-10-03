@@ -1159,7 +1159,7 @@ function pageD2(){
   <div class="col-12 col-lg-6">
   <h2 style="color:var(--ink);margin:.75rem 0 .4rem;font-size:.95rem;">Guardian Attorney Signature</h2>
   ${isAttorneyStarted(D,'guardian')?'':`<div class="alert alert-secondary" role="status" data-no-attorney-notice>
-    <strong>No attorney is entered</strong>, so the attorney attestation is not required. The filed PDF states why the guardian has no attorney in its place (see the question on the Cover). If an attorney represents the guardian, enter them here and it becomes required.
+    <strong>No attorney is entered</strong>, so the attorney attestation is not required. The filed PDF prints the attestation with the attorney's signature block blank, as the Clerk's form does. If an attorney represents the guardian, enter them here and it becomes required.
   </div>`}
   <p style="font-size:.78rem;font-style:italic;color:var(--ink-3);">The attorney may use an electronic signature "/s/".</p>
   <div class="entry-card mb-0 h-100">

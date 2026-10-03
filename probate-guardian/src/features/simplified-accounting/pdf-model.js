@@ -7,7 +7,7 @@ import { composePdfAddressLines } from '../../core/pdf/address-format.js';
 import { maskSSN } from '../../core/pdf/ssn-format.js';
 import { REMUNERATION_DECLARATION, REMUNERATION_NONE_REPORTED } from '../../core/filing/statutory-text.js';
 import { formatMoney } from '../../core/format/money.js';
-import { isUnrepresented, unrepresentedStatement, resolveServiceCertifier } from '../../core/filing/unrepresented-filing.js';
+import { isUnrepresented, resolveServiceCertifier } from '../../core/filing/unrepresented-filing.js';
 
 export function buildSimplifiedAccountingModel(D, options = {}) {
   const d = D || {};
@@ -203,8 +203,9 @@ export function buildSimplifiedAccountingModel(D, options = {}) {
 
   // 5. Part V: Signature of Guardian Attorney
   // Milestone 71B: section 744.3679(3) -- no attorney is needed to file this
-  // accounting. With none started, one line says so in place of the attorney
-  // attestation and its empty signature block (unrepresented-filing.js).
+  // accounting. Milestone 72D: Part V is printed either way, blank with no
+  // attorney, as the Clerk's workbook leaves it (71B's one app-written line
+  // in its place is gone). `unrepresented` still decides who signs Part VI.
   const unrepresented = isUnrepresented(d, 'simplified');
   sections.push({
     id: 'part5',
@@ -213,9 +214,7 @@ export function buildSimplifiedAccountingModel(D, options = {}) {
     parentBookmark: null,
     level: 1,
     pageBreakBefore: false,
-    blocks: unrepresented ? [
-      { type: 'notice', tag: 'P', text: unrepresentedStatement(d, 'simplified') },
-    ] : [
+    blocks: [
       {
         type: 'notice',
         tag: 'P',

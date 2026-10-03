@@ -23,8 +23,10 @@ normalization (D8), its activity-log entry, and the pre-60K import reader are
 withdrawn. Each skip is visible: an old test-system Starting Balance shows its
 long number until re-entered, and a pre-60K share imports as a flagged 5,000%.
 
-Progress is in each item's Build record. The only item still marked **OPEN** is the exact wording of one printed sentence in 71B, which goes
-to the Clerk. The decisions are recorded under each item and summarized in
+Progress is in each item's Build record. The one item that was marked
+**OPEN** -- the exact wording of one printed sentence in 71B -- closed on
+2026-10-01: the requester decided no sentence is printed, and the PDF leaves
+the attorney block blank as the Clerk's forms do (Milestone 72D). The decisions are recorded under each item and summarized in
 [Decisions already made](#decisions-already-made).
 
 Listed in build order. 71A has no source changes and may run alongside 71B;
@@ -584,9 +586,12 @@ serve or is blank).
    *"The guardian is not represented by counsel: guardian advocate (Fla. Prob.
    R. 5.030(a))."* or *"…representation waived by court order dated
    MM/DD/YYYY."* On the Simplified Accounting: *"…a simplified accounting
-   (§744.3679(3))."* **OPEN (wording only):** the exact sentences, which are
+   (§744.3679(3))."* ~~**OPEN (wording only):** the exact sentences, which are
    app-authored filed text — to be confirmed with the Clerk before release;
-   the proposed wording above is the default.
+   the proposed wording above is the default.~~ **Closed 2026-10-01: no
+   sentence is printed.** No Clerk form has wording for a filing without an
+   attorney; the forms leave the attorney block blank, so the PDF does too.
+   The reason is still asked on screen and filed nowhere (Milestone 72D).
 7. **Excel.** With no attorney, the workbook's attorney cells stay blank and
    the formula cells stay formulas (AGENTS.md §5). When the guardian signs the
    certificate, a Save-as-Excel advisory says so: *"The court's workbook has a

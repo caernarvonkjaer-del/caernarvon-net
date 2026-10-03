@@ -10,7 +10,7 @@ import { composePdfAddressLines } from '../../core/pdf/address-format.js';
 import { maskSSN } from '../../core/pdf/ssn-format.js';
 import { b4AccountHeading } from '../../core/accounting/bank-accounts.js';
 import { preparedByLine } from '../../core/form/preparer-flag.js';
-import { isUnrepresented, unrepresentedStatement, resolveServiceCertifier } from '../../core/filing/unrepresented-filing.js';
+import { isUnrepresented, resolveServiceCertifier } from '../../core/filing/unrepresented-filing.js';
 import { inferBondDepositoryState, bondDepositoryPdfLines, revealsBond } from '../../core/filing/bond-depository.js';
 
 export const DISB_CATS = [
@@ -320,8 +320,10 @@ export function buildAnnualAccountingModel(D, options = {}) {
   });
 
   // ── Part V: Guardian Attorney Signature ───────────────────────────────────
-  // Milestone 71B: with no attorney started, one line states why in place of
-  // the attestation and its empty signature block (unrepresented-filing.js).
+  // Milestone 72D: printed whether or not an attorney is entered, blank when
+  // none is, as the Clerk's workbook leaves it. 71B printed one app-written
+  // line here instead ("The guardian is not represented by counsel: ..."),
+  // which no Clerk form has. `unrepresented` still decides who signs Part X.
   const unrepresented = isUnrepresented(d, 'annual');
   sections.push({
     id: 'part5',
@@ -330,9 +332,7 @@ export function buildAnnualAccountingModel(D, options = {}) {
     parentBookmark: null,
     level: 1,
     pageBreakBefore: false,
-    blocks: unrepresented ? [
-      { type: 'notice', tag: 'P', text: unrepresentedStatement(d, 'annual') },
-    ] : [
+    blocks: [
       {
         type: 'notice',
         tag: 'P',

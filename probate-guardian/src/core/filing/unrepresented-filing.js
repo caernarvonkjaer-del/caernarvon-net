@@ -24,8 +24,10 @@
 //     are Milestone 67A's preparer flag (preparer-flag.js): guardian rows have
 //     no stable id and are removed by position, so an index would name the
 //     wrong person after a delete, while a flag travels with its row;
-//   - the one-line statement the PDF prints in place of the attorney
-//     attestation.
+//   - (Milestone 72D) nothing on the filed PDF: 71B printed one app-written
+//     line in place of the attorney attestation, which no Clerk form has.
+//     The forms leave the attorney block blank with no attorney, so the PDF
+//     does too; the reason stays a question on screen, filed nowhere.
 //
 // Whether a filer actually qualifies is not decided here. The filer states
 // the basis; the Clerk checks it.
@@ -167,43 +169,13 @@ export function waiverBasisQuestionHTML(d, { route, dateField }) {
   return `<fieldset class="entry-card mb-3" data-attorney-waiver-basis>
     <legend class="entry-card-header" style="font-size:.9rem;">No attorney is entered. Why is this guardian filing without one?</legend>
     <div class="entry-card-body">
-      <p class="form-text mt-0">Optional here, but the Clerk checks it. If an attorney represents the guardian, enter the attorney instead and this question goes away.</p>
+      <p class="form-text mt-0">Optional here, but the Clerk checks it in the court file. Your answer is a check for you; it is not printed on the filing. If an attorney represents the guardian, enter the attorney instead and this question goes away.</p>
       ${radios}
       ${advocateHint}
       ${chosen ? `<p class="form-text mb-0">${esc(chosen.hint)}</p>` : ''}
       ${orderDate}
     </div>
   </fieldset>`;
-}
-
-const fmtDate = (iso) => {
-  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || ''));
-  return m ? `${m[2]}/${m[3]}/${m[1]}` : '';
-};
-
-/**
- * The sentence the filed PDF prints in place of the attorney attestation,
- * or '' when an attorney is started. OPEN (MILESTONE-71-PROPOSAL.md, 71B step
- * 6): the wording is app-authored filed text awaiting the Clerk's review;
- * this is the proposal's default.
- */
-export function unrepresentedStatement(d, engineId) {
-  if (!isUnrepresented(d, engineId)) return '';
-  if (engineId === 'simplified') {
-    return 'The guardian is not represented by counsel: a simplified accounting (§744.3679(3), Florida Statutes).';
-  }
-  switch (d.attorneyWaiverBasis) {
-    case 'guardian-advocate':
-      return 'The guardian is not represented by counsel: guardian advocate (Fla. Prob. R. 5.030(a)).';
-    case 'court-order': {
-      const date = fmtDate(d.attorneyWaiverOrderDate);
-      return `The guardian is not represented by counsel: representation waived by court order${date ? ` dated ${date}` : ''}.`;
-    }
-    case 'self-represented-attorney':
-      return 'The guardian is not represented by counsel: the guardian is a Florida attorney representing themselves (Fla. Prob. R. 5.030(a)).';
-    default:
-      return 'The guardian is not represented by counsel.';
-  }
 }
 
 /**

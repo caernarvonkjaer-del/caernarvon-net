@@ -42,7 +42,7 @@ recorded as **Pinellas Clerk practice**, not as a reading of a statute or rule
 | 1 | 72A | The Inventory's Excel Part III prints each guardian's date, SSN/EIN, street, phone and city **over the form's printed captions**, and leaves the boxes beneath them empty | **DECIDED.** Put each value in its box. Keep writing Guardian #1's name, with a warning when it is not among the Cover's Guardian Name(s). Guard every export: no caption overwritten and no formula changed, and **every box the exporters write** gets a typed test value checked in its expected cell, with a few extra exports so Yes/No and dropdown boxes can't swap unnoticed | **Built** 2026-10-02 (see its Build record; four more defects found and fixed) |
 | 2 | 72B | A blank share on ten Inventory schedules silently counts as 0%, and a 0 share becomes blank when converted or when the Annual's Part VIII is exported. The Inventory attorney's primary email is marked required but never checked. **Six forms** collect a secondary attorney email that their models and the data model omit, and carry-over passes on only the primary | **DECIDED.** Require a share on every started row (0 allowed); keep 0 as 0 on every share path. Require the Inventory attorney's email once an attorney is entered. Every form's model, data model, carry-over and conversion keeps both attorney emails | **Built** 2026-10-02 (see its Build record; more found and fixed) |
 | 3 | 72C | The Inventory and the Initial Plan have no guardian email. The Annual, Annual Plan and Plan for Minors collect it but never check it. The Simplified Accounting and Simplified Plan block without it. The Plan for Minors never checks the attorney's email. The Annual family and Annual Plan accept an attorney with no name, and the Simplified Plan's certificate can't find its attorney's name | **DECIDED.** Add it where it's missing. On all three accountings and all four Plans, a missing guardian email **warns, never blocks**, and only when no attorney is entered. "Attorney entered" means any attorney field, by one shared definition per form, and then the Annual family and Annual Plan also require the attorney's name. The Plan for Minors requires the attorney's email once an attorney is entered. The Simplified Plan's attorney stays optional, and its warning shows until the attorney's name and email are both entered. Its certificate is fixed to find the attorney | **Built** 2026-10-02 (see its Build record; four more found and fixed) |
-| 4 | 72D | With no attorney, the filed PDF prints an app-written sentence that no Clerk form has | **DECIDED.** Match the Clerk's forms: print the attorney block blank, as they do | Not started |
+| 4 | 72D | With no attorney, the filed PDF prints an app-written sentence that no Clerk form has | **DECIDED.** Match the Clerk's forms: print the attorney block blank, as they do | **Built** 2026-10-02 (see its Build record; the on-screen notices corrected too) |
 | 5 | 72E | On a phone, Schedule C's loss and Schedule E's transfer-out boxes offer a keypad with no minus key | No decision needed (a defect) | Not started |
 | 6 | 72F | The nine-form summary-page browser test runs out of time on the D: drive | **DECIDED.** Split it into nine tests, one per form | Not started |
 | 7 | 72G | Six of the seven certificates of service already have a free-text method box, labelled "Indicate if (e.g. hand-delivered, mailed)"; the Inventory has none. The Annual and Simplified **write that method into the workbook's ward-status box**, and the Simplified blocks without it | **DECIDED.** That box is the method of service, on all seven forms, printed on the PDF only. A missing method warns, never blocks. The Annual and Simplified get a separate ward-status dropdown (the workbook box's real meaning), required on all three accountings. On a new filing made from another, only recipients carry (the ward's status also carries within the same period). An older workbook imports by what its box holds: a ward-status answer as the ward's status, anything else as the method | Not started |
@@ -1434,7 +1434,45 @@ asking the reason on screen, as a check for the filer, but files nothing.
    reviewer's check of the court file is the Clerk's own process.
 9. **Cross-form.** All three engines change together.
 
-### Build record — NOT STARTED
+### Build record — BUILT 2026-10-02
+
+**What a filer sees now.** With no attorney entered, the filed PDF of the
+Initial Inventory, the Annual, Final and Trust Accountings and the Simplified
+Accounting prints the attorney attestation with its Attorney for Guardian
+block blank, as the Clerk's forms leave it. The line *"The guardian is not
+represented by counsel: …"* is gone, and so is the waiver order's date it
+carried. The reason question stays on screen, now saying that the answer is a
+check for the filer and is not printed. The guardian-signed certificate of
+service and the Excel advisory are unchanged.
+
+**Built as designed:** the three PDF models (Inventory D-2, Annual Part V,
+Simplified Part V) print the attestation and block either way;
+`unrepresentedStatement()` is deleted with its date helper and imports; the
+data-model notes for `attorneyWaiverBasis` and `attorneyWaiverOrderDate` say
+"asked on screen, not printed"; `MILESTONE-71-PROPOSAL.md`'s Status and 71B
+step 6 record the open wording question as closed.
+
+**Found while building, and fixed:** the no-attorney notice on each of the
+three attorney pages told the filer *"The filed PDF states why the guardian
+has no attorney …"*, which would now be false. Each now says the PDF prints
+the attestation with the attorney's signature block blank, as the Clerk's
+form does. The reason question adds that the answer is not printed.
+
+**Decisions taken:** none beyond the proposal.
+
+**Tests and evidence:**
+- `tests/unit/attorney-optional.spec.js`: the sentence cases go; a test that
+  the module offers no sentence; each engine's PDF model with no attorney has
+  the attestation and a blank Attorney for Guardian block, and no "not
+  represented by counsel" (the Inventory case also checks the waiver order's
+  date is not printed). Red-first: 3 fail against 71B's models.
+- `tests/e2e/attorney-optional-export.spec.ts`: the three PDFs carry the
+  attestation and not the sentence; the Simplified's notice says what the PDF
+  does. Run on a copy of this commit once the mid-build regression finished
+  (the browser server is shared, so it could not run alongside); its result
+  is recorded with 72H's.
+- `npm run verify:data-model`: 1,049 rows valid. Unit suite: 168 files,
+  2,445 tests.
 
 ---
 

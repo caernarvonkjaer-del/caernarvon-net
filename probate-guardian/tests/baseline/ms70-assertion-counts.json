@@ -2,7 +2,7 @@
  "generatedBy": "node scripts/ms70-assertion-counts.mjs --write-baseline",
  "note": "Milestone 70 per-spec assertion counts (static expect calls). tests/unit/ms70-assertion-counts.spec.js fails when a spec falls below its count; lowering it requires --reason, recorded in dropLog. A tripwire, not proof of equivalence (decision D9).",
  "totals": {
-  "expects": 7430,
+  "expects": 7436,
   "tests": 2125
  },
  "counts": {
@@ -39,7 +39,7 @@
    "tests": 1
   },
   "tests/e2e/attorney-optional-export.spec.ts": {
-   "expects": 32,
+   "expects": 35,
    "tests": 3
   },
   "tests/e2e/backup-restore-sav.spec.ts": {
@@ -599,7 +599,7 @@
    "tests": 7
   },
   "tests/unit/attorney-optional.spec.js": {
-   "expects": 66,
+   "expects": 69,
    "tests": 22
   },
   "tests/unit/b4-block-map.spec.js": {
