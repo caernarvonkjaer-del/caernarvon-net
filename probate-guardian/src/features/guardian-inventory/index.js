@@ -43,7 +43,7 @@ const INVENTORY_SHARE_FIELDS = [
   ['scheduleC3', 'C-3', 'wardPercent', "Ward's %"], ['scheduleC4', 'C-4', 'wardPercent', "Ward's %"],
   ['scheduleC5', 'C-5', 'jointOwnerPercent', "Joint Owner's %"],
 ];
-import { resolveServiceCertifier, certifyingCandidates, serviceCertifierChoiceHTML, waiverBasisQuestionHTML } from '../../core/filing/unrepresented-filing.js';
+import { resolveServiceCertifier, certifyingCandidates, serviceCertifierChoiceHTML, waiverBasisQuestionHTML, watchWaiverAdvocateHint } from '../../core/filing/unrepresented-filing.js';
 import { fillAttorneyFromOldCertificate, discardOldCertificateDetails } from '../../core/filing/certificate-migrations.js';
 import { WARD_STATUS_VALUES, SERVICE_METHOD_LABEL } from '../../core/filing/service-method.js';
 import { certificateAttorneyLineHTML, oldCertificateDetailsHTML } from '../../core/form/certificate-attorney-note.js';
@@ -59,6 +59,7 @@ const INVENTORY_ATTORNEY_REQUIRED = {
 };
 const INVENTORY_ATTORNEY_TRIGGERS = ['attorneyForGuardian', 'attorney'];
 const attorneyMarkerAborts = new WeakMap();
+const waiverHintAborts = new WeakMap();
 import { yesNoCheckboxS, yesNoRadioHTML } from '../../core/form/field-html.js';
 import { browserRecommendationNotice, linkAccordions, linkLabelsToInputs, sanitizeNegativeAmounts, setupAmountFieldValidation } from '../../core/form/form-runtime.js';
 import { initPrintPager } from '../../core/ui/print-pager.js';
@@ -236,6 +237,11 @@ export async function mount(container, page, { signal } = {}) {
   linkLabelsToInputs();
   // Milestone 40C-C removed enforceDateRanges() (see the router's note).
   setupAmountFieldValidation();
+  // Milestone 72I: the Guardian Advocate hint follows Type of Guardianship on
+  // the Cover as the filer changes it.
+  waiverHintAborts.get(container)?.abort();
+  waiverHintAborts.delete(container);
+  if (!page || page === '/') waiverHintAborts.set(container, watchWaiverAdvocateHint(container, getD));
   attorneyMarkerAborts.get(container)?.abort();
   attorneyMarkerAborts.delete(container);
   const markerPaths = INVENTORY_ATTORNEY_REQUIRED[page || '/'];
@@ -267,6 +273,8 @@ export function dispose(container) {
   signatureHandles.delete(container);
   attorneyMarkerAborts.get(container)?.abort();
   attorneyMarkerAborts.delete(container);
+  waiverHintAborts.get(container)?.abort();
+  waiverHintAborts.delete(container);
   container.replaceChildren();
 }
 

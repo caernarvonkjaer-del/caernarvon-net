@@ -49,6 +49,7 @@
   "tests/e2e/form-entry.contract.spec.ts",
   "tests/e2e/form-field-labels.spec.ts",
   "tests/e2e/form-runtime-lifecycle.contract.spec.ts",
+  "tests/e2e/guardian-advocate-hint.spec.ts",
   "tests/e2e/guardian-blank-page-pruning.spec.ts",
   "tests/e2e/guardian-email-advisory.spec.ts",
   "tests/e2e/guardian-inventory-collection-controls.spec.ts",

@@ -152,6 +152,42 @@ export function serviceCertifierChoiceHTML(d, { route, labels = null }) {
  * by the caller's own date renderer (`dateField(path, label)`), so the field
  * uses that form's date input and draft handling.
  */
+// The Guardian Advocate hint: shown while Type of Guardianship is Guardian
+// Advocate and no reason is chosen -- a pointer, never an answer.
+const ADVOCATE_HINT_HTML = '<p class="form-text mb-1" data-waiver-advocate-hint>Type of Guardianship is Guardian Advocate — if that is why there is no attorney, choose "Guardian Advocate" above.</p>';
+const showsAdvocateHint = (d) => !d?.attorneyWaiverBasis && d?.typeOfGuardianship === 'Guardian Advocate';
+
+/**
+ * Milestone 72I: keeps the hint in step with Type of Guardianship as the filer
+ * changes it. The question and the dropdown share the Cover, and the hint was
+ * built only when the page was drawn, so it appeared only after leaving the
+ * Cover and coming back. Adds or removes the hint alone -- redrawing the page,
+ * as the reason radios do, would scroll it to the top and take focus off the
+ * dropdown the filer just used.
+ */
+export function syncWaiverAdvocateHint(container, d) {
+  const block = container?.querySelector?.('[data-attorney-waiver-basis]');
+  if (!block) return;
+  const hint = block.querySelector('[data-waiver-advocate-hint]');
+  if (showsAdvocateHint(d)) {
+    if (hint) return;
+    const choices = block.querySelectorAll('.form-check');
+    choices[choices.length - 1]?.insertAdjacentHTML('afterend', ADVOCATE_HINT_HTML);
+  } else {
+    hint?.remove();
+  }
+}
+
+/** Watches the two fields the hint depends on; returns an AbortController for dispose. */
+export function watchWaiverAdvocateHint(container, readFiling) {
+  const controller = new AbortController();
+  window.addEventListener('pg:field-written', (event) => {
+    const path = event?.detail?.path;
+    if (path === 'typeOfGuardianship' || path === 'attorneyWaiverBasis') syncWaiverAdvocateHint(container, readFiling());
+  }, { signal: controller.signal });
+  return controller;
+}
+
 export function waiverBasisQuestionHTML(d, { route, dateField }) {
   const current = d?.attorneyWaiverBasis || '';
   const group = 'attorney_waiver_basis';
@@ -159,9 +195,7 @@ export function waiverBasisQuestionHTML(d, { route, dateField }) {
       <input class="form-check-input" type="radio" name="${group}" id="${group}_${b.value}" value="${b.value}" ${current === b.value ? 'checked' : ''} data-form-path="attorneyWaiverBasis" data-field-path="attorneyWaiverBasis" data-form-route="${esc(route)}">
       <label class="form-check-label" for="${group}_${b.value}">${esc(b.label)}</label>
     </div>`).join('');
-  const advocateHint = !current && d?.typeOfGuardianship === 'Guardian Advocate'
-    ? '<p class="form-text mb-1" data-waiver-advocate-hint>Type of Guardianship is Guardian Advocate — if that is why there is no attorney, choose "Guardian Advocate" above.</p>'
-    : '';
+  const advocateHint = showsAdvocateHint(d) ? ADVOCATE_HINT_HTML : '';
   const chosen = basisOption(current);
   const orderDate = current === 'court-order' && typeof dateField === 'function'
     ? `<div class="mt-2" style="max-width:18rem;">${dateField('attorneyWaiverOrderDate', 'Date of the order')}</div>`

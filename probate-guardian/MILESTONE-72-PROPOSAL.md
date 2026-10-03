@@ -47,7 +47,7 @@ recorded as **Pinellas Clerk practice**, not as a reading of a statute or rule
 | 6 | 72F | The nine-form summary-page browser test runs out of time on the D: drive | **DECIDED.** Split it into nine tests, one per form | Not started |
 | 7 | 72G | Six of the seven certificates of service already have a free-text method box, labelled "Indicate if (e.g. hand-delivered, mailed)"; the Inventory has none. The Annual and Simplified **write that method into the workbook's ward-status box**, and the Simplified blocks without it | **DECIDED.** That box is the method of service, on all seven forms, printed on the PDF only. A missing method warns, never blocks. The Annual and Simplified get a separate ward-status dropdown (the workbook box's real meaning), required on all three accountings. On a new filing made from another, only recipients carry (the ward's status also carries within the same period). An older workbook imports by what its box holds: a ward-status answer as the ward's status, anything else as the method | **Built** 2026-10-02 (see its Build record; a title-casing defect in the new box found and fixed) |
 | 8 | 72H | The Inventory's D-5 and the Simplified's Part VI re-type the attorney's details, so one PDF can show two Bar Numbers for one attorney. The Inventory also has two attorney-name fields, which can differ between PDF and Excel | **DECIDED.** The certificate uses the filing's attorney details. Both name fields stay, with a warning when they differ that says which output prints which. Old typed values fill blank fields once (a saved marker stops repeats); any that differ show on the certificate page with a "Discard old details" button. An older workbook imports the same way: its certificate details fill the filing attorney's blanks, and any that differ are kept and shown | **Built** 2026-10-02 (see its Build record; an import data-loss defect found and fixed) |
-| 9 | 72I | Choosing "Guardian Advocate" as the Type of Guardianship shows no hint at the reason question until the filer leaves the page and returns | No decision needed (a defect) | Not started |
+| 9 | 72I | Choosing "Guardian Advocate" as the Type of Guardianship shows no hint at the reason question until the filer leaves the page and returns | No decision needed (a defect) | **Built** 2026-10-02 (see its Build record) |
 | 10 | 72J | The missing-recipients issue reads "No recipients are required for this certificate (filer attestation …)", the checkbox's caption, not a question | No decision needed (reuse the Plans' wording) | Not started |
 | — | — | The sidebar's NET ASSETS stays at $0.00 for a negative Starting Balance (browser review, H2) | **Not reproduced; dropped** (see "Reported, not reproduced") | — |
 
@@ -2361,7 +2361,29 @@ the Cover and come back.
 - No data, legacy, export, security or legal effect. Cross-form: the
   Simplified has no such question.
 
-### Build record — NOT STARTED
+### Build record — BUILT 2026-10-02
+
+**What a filer sees now.** On the Inventory's Cover and the Annual's Part I,
+choosing "Guardian Advocate" in Type of Guardianship shows the hint under the
+"why no attorney?" question at once; changing to another type removes it, and
+choosing a reason removes it. It still answers nothing.
+
+**Built as designed,** with one **decision taken:** rather than redrawing the
+reason block (the refresh the reason radios trigger, which redraws the whole
+page, scrolls it to the top and takes focus off the dropdown just used), the
+hint alone is added or removed as Type of Guardianship changes
+(`syncWaiverAdvocateHint()`, `watchWaiverAdvocateHint()` in
+`unrepresented-filing.js`, watching the page's own field-written event), by the
+same rule the page is drawn with, now one shared test (`showsAdvocateHint()`).
+
+**Tests and evidence:**
+- New `tests/e2e/guardian-advocate-hint.spec.ts`, both engines, the real
+  dropdown: the hint at once; Plenary removes it; a reason removes it; never
+  an answer. Red-first: with the old source the hint is absent until the
+  filer leaves the Cover and returns.
+- The Cover's other specs (`attorney-optional-export`, `annual-mount`,
+  `guardian-inventory-mount`, `form-runtime-lifecycle.contract`): 43 passed.
+- No data, legacy, export, security or legal effect. Unit suite: 170 files, 2,486 tests.
 
 ---
 

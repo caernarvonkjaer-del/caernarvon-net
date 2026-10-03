@@ -85,7 +85,7 @@ import { isAttorneyStarted } from '../../core/validation/attorney-block.js';
 import { startingBalanceNotesHTML } from '../../core/filing/starting-balance-carry.js';
 import { formatMoney } from '../../core/format/money.js';
 import { percentProblem } from '../../core/validation/percent-range.js';
-import { resolveServiceCertifier, certifierChoiceNeeded, certifyingCandidates, serviceCertifierChoiceHTML, waiverBasisQuestionHTML } from '../../core/filing/unrepresented-filing.js';
+import { resolveServiceCertifier, certifierChoiceNeeded, certifyingCandidates, serviceCertifierChoiceHTML, waiverBasisQuestionHTML, watchWaiverAdvocateHint } from '../../core/filing/unrepresented-filing.js';
 import { WARD_STATUS_VALUES, SERVICE_METHOD_LABEL, SERVICE_METHOD_KIND } from '../../core/filing/service-method.js';
 import { moveWardStatusFromMethod } from '../../core/filing/certificate-migrations.js';
 import { auditLog } from '../../core/activity/audit-log.js';
@@ -97,6 +97,7 @@ import { watchAttorneyRequiredMarkers } from '../../core/form/attorney-required-
 const ANNUAL_ATTORNEY_REQUIRED = ['attorney', 'attorney_bar', 'attorney_phone', 'attorney_email', 'attorney_street', 'attorney_cityStateZip', 'attorney_signatureDate'];
 const ANNUAL_ATTORNEY_TRIGGERS = ['attorney', 'attorney_secondaryEmail', 'attorney_signatureState', 'attorney_isPreparer'];
 const attorneyMarkerAborts = new WeakMap();
+const waiverHintAborts = new WeakMap();
 // Annual Accounting — the sixth feature extraction (Milestone 7, Phases A
 // and B of INDEX-SPLIT-PLAN.md's migration sequence: data/pages/nav/
 // validate, and print/PDF/Excel import/export). Also covers the
@@ -201,6 +202,11 @@ export async function mount(container, page, { signal } = {}) {
       route: page,
     }));
   }
+  // Milestone 72I: the Guardian Advocate hint follows Type of Guardianship on
+  // Part I as the filer changes it.
+  waiverHintAborts.get(container)?.abort();
+  waiverHintAborts.delete(container);
+  if (page === '/' || !page || page === '/p1') waiverHintAborts.set(container, watchWaiverAdvocateHint(container, getD));
   attorneyMarkerAborts.get(container)?.abort();
   attorneyMarkerAborts.delete(container);
   if (page === '/p5') {
@@ -230,6 +236,8 @@ export function dispose(container) {
   signatureHandles.delete(container);
   attorneyMarkerAborts.get(container)?.abort();
   attorneyMarkerAborts.delete(container);
+  waiverHintAborts.get(container)?.abort();
+  waiverHintAborts.delete(container);
   container.replaceChildren();
 }
 
