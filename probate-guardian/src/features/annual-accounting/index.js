@@ -1076,6 +1076,9 @@ function pageSchB4Annual(){
 }
 
 // ── Schedule C — Capital Adjustments ─────────────────────
+// Milestone 72E: the Loss / Reduction box is a signed amount, so it asks for
+// inputmode="text" -- a phone's "decimal" keypad has no minus key -- as the
+// shared field builder already does for every signed kind.
 function pageSchCAnnual(){
   const d=getD(); const t=calcTotalsAnnual();
   let rows='';
@@ -1086,7 +1089,7 @@ function pageSchCAnnual(){
         <div class="col-md-5">${inpD('Full Description and Identification',r.description,`D.schC[${i}].description=this.value`,true)}</div>
         <div class="col-md-2">${inpD('Date of Adjustment',r.date,`D.schC[${i}].date=this.value`,true,'date')}</div>
         <div class="col-md-2">${inpD('Gain / Addition',r.gain,`D.schC[${i}].gain=this.value`,true,'number')}</div>
-        <div class="col-md-3"><label class="form-label">Loss / Reduction <span class="req">*</span> <small>(enter as negative)</small></label><div class="input-group"><span class="input-group-text">$</span><input type="text" inputmode="decimal" class="form-control" value="${esc(sanitizeDecimal(r.loss))}" data-annual-path="schC.${i}.loss" data-annual-format="signed-decimal"></div></div>
+        <div class="col-md-3"><label class="form-label">Loss / Reduction <span class="req">*</span> <small>(enter as negative)</small></label><div class="input-group"><span class="input-group-text">$</span><input type="text" inputmode="text" class="form-control" value="${esc(sanitizeDecimal(r.loss))}" data-annual-path="schC.${i}.loss" data-annual-format="signed-decimal"></div></div>
       </div></div>
     </div></div>`).join('')+'</div>';
   } else {
@@ -1287,6 +1290,9 @@ function pageSchD5Annual(){
 }
 
 // ── Schedule E — Bank Transfers ──────────────────────────
+// Milestone 72E: the Transfer Out Amt box is a signed amount, so it asks for
+// inputmode="text" -- a phone's "decimal" keypad has no minus key -- as the
+// shared field builder already does for every signed kind.
 function pageSchEAnnual(){
   const d=getD(); const t=calcTotalsAnnual();
   let rows='';
@@ -1298,7 +1304,7 @@ function pageSchEAnnual(){
         <div class="col-md-2">${inpD('Transfer In Date',r.transferInDate,`D.schE[${i}].transferInDate=this.value`,true,'date')}</div>
         <div class="col-md-2">${inpD('Transfer In Amount',r.transferInAmt,`D.schE[${i}].transferInAmt=this.value`,true,'number')}</div>
         <div class="col-md-2">${inpD('Transfer Out Date',r.transferOutDate,`D.schE[${i}].transferOutDate=this.value`,true,'date')}</div>
-        <div class="col-md-2"><label class="form-label">Transfer Out Amt (negative)</label><div class="input-group"><span class="input-group-text">$</span><input type="text" inputmode="decimal" class="form-control" value="${esc(sanitizeDecimal(r.transferOutAmt))}" data-annual-path="schE.${i}.transferOutAmt" data-annual-format="signed-decimal"></div></div>
+        <div class="col-md-2"><label class="form-label">Transfer Out Amt (negative)</label><div class="input-group"><span class="input-group-text">$</span><input type="text" inputmode="text" class="form-control" value="${esc(sanitizeDecimal(r.transferOutAmt))}" data-annual-path="schE.${i}.transferOutAmt" data-annual-format="signed-decimal"></div></div>
       </div></div>
     </div></div>`).join('')+'</div>';
   } else {

@@ -439,7 +439,7 @@
    "module": "tests/e2e/support/target.ts",
    "name": "freshStartNoPassword",
    "kind": "function",
-   "specFiles": 120,
+   "specFiles": 121,
    "factory": false
   },
   {
@@ -453,7 +453,7 @@
    "module": "tests/e2e/support/target.ts",
    "name": "createWard",
    "kind": "function",
-   "specFiles": 106,
+   "specFiles": 107,
    "factory": false
   },
   {
@@ -481,7 +481,7 @@
    "module": "tests/e2e/support/target.ts",
    "name": "createSimplifiedWard",
    "kind": "function",
-   "specFiles": 28,
+   "specFiles": 29,
    "factory": false
   },
   {
@@ -600,7 +600,7 @@
    "module": "tests/e2e/support/target.ts",
    "name": "dismissScheduleDocPrompt",
    "kind": "function",
-   "specFiles": 16,
+   "specFiles": 17,
    "factory": false
   },
   {

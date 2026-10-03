@@ -43,7 +43,7 @@ recorded as **Pinellas Clerk practice**, not as a reading of a statute or rule
 | 2 | 72B | A blank share on ten Inventory schedules silently counts as 0%, and a 0 share becomes blank when converted or when the Annual's Part VIII is exported. The Inventory attorney's primary email is marked required but never checked. **Six forms** collect a secondary attorney email that their models and the data model omit, and carry-over passes on only the primary | **DECIDED.** Require a share on every started row (0 allowed); keep 0 as 0 on every share path. Require the Inventory attorney's email once an attorney is entered. Every form's model, data model, carry-over and conversion keeps both attorney emails | **Built** 2026-10-02 (see its Build record; more found and fixed) |
 | 3 | 72C | The Inventory and the Initial Plan have no guardian email. The Annual, Annual Plan and Plan for Minors collect it but never check it. The Simplified Accounting and Simplified Plan block without it. The Plan for Minors never checks the attorney's email. The Annual family and Annual Plan accept an attorney with no name, and the Simplified Plan's certificate can't find its attorney's name | **DECIDED.** Add it where it's missing. On all three accountings and all four Plans, a missing guardian email **warns, never blocks**, and only when no attorney is entered. "Attorney entered" means any attorney field, by one shared definition per form, and then the Annual family and Annual Plan also require the attorney's name. The Plan for Minors requires the attorney's email once an attorney is entered. The Simplified Plan's attorney stays optional, and its warning shows until the attorney's name and email are both entered. Its certificate is fixed to find the attorney | **Built** 2026-10-02 (see its Build record; four more found and fixed) |
 | 4 | 72D | With no attorney, the filed PDF prints an app-written sentence that no Clerk form has | **DECIDED.** Match the Clerk's forms: print the attorney block blank, as they do | **Built** 2026-10-02 (see its Build record; the on-screen notices corrected too) |
-| 5 | 72E | On a phone, Schedule C's loss and Schedule E's transfer-out boxes offer a keypad with no minus key | No decision needed (a defect) | Not started |
+| 5 | 72E | On a phone, Schedule C's loss and Schedule E's transfer-out boxes offer a keypad with no minus key | No decision needed (a defect) | **Built** 2026-10-02 (see its Build record) |
 | 6 | 72F | The nine-form summary-page browser test runs out of time on the D: drive | **DECIDED.** Split it into nine tests, one per form | Not started |
 | 7 | 72G | Six of the seven certificates of service already have a free-text method box, labelled "Indicate if (e.g. hand-delivered, mailed)"; the Inventory has none. The Annual and Simplified **write that method into the workbook's ward-status box**, and the Simplified blocks without it | **DECIDED.** That box is the method of service, on all seven forms, printed on the PDF only. A missing method warns, never blocks. The Annual and Simplified get a separate ward-status dropdown (the workbook box's real meaning), required on all three accountings. On a new filing made from another, only recipients carry (the ward's status also carries within the same period). An older workbook imports by what its box holds: a ward-status answer as the ward's status, anything else as the method | **Built** 2026-10-02 (see its Build record; a title-casing defect in the new box found and fixed) |
 | 8 | 72H | The Inventory's D-5 and the Simplified's Part VI re-type the attorney's details, so one PDF can show two Bar Numbers for one attorney. The Inventory also has two attorney-name fields, which can differ between PDF and Excel | **DECIDED.** The certificate uses the filing's attorney details. Both name fields stay, with a warning when they differ that says which output prints which. Old typed values fill blank fields once (a saved marker stops repeats); any that differ show on the certificate page with a "Discard old details" button. An older workbook imports the same way: its certificate details fill the filing attorney's blanks, and any that differ are kept and shown | **Built** 2026-10-02 (see its Build record; an import data-loss defect found and fixed) |
@@ -1514,7 +1514,24 @@ The filer cannot type the minus sign.
   `decimal`. Its Starting Balance already uses `text`.
 - **Tests.** The new spec, its `TEST-INDEX.md` row and the registries.
 
-### Build record — NOT STARTED
+### Build record — BUILT 2026-10-02
+
+**What a filer sees now.** On a phone or tablet, the Annual's Schedule C
+"Loss / Reduction (enter as negative)" and Schedule E "Transfer Out Amt
+(negative)" boxes bring up a keypad with a minus key, as the Starting Balance
+boxes already did. The Simplified's non-negative amount boxes keep the
+decimal keypad.
+
+**Built as designed:** both inputs ask for `inputmode="text"`, the shared
+field builder's rule for every signed kind.
+
+**Tests and evidence:** new `tests/e2e/signed-amount-keypad.spec.ts` (2): on
+Schedule C, Schedule E and Part II of the Annual and Part II of the
+Simplified, every signed box asks for `text` (or nothing), and -50 typed with
+the keyboard is stored as -50. Red-first: the two schedule boxes report
+`decimal`. Playwright cannot show a phone keyboard; `inputmode` is the
+attribute a phone chooses one by, so that is what is checked. No data,
+legacy, export, security or legal effect.
 
 ---
 

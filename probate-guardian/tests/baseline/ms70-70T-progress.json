@@ -126,6 +126,7 @@
   "tests/e2e/signature-capture.contract.spec.ts",
   "tests/e2e/signature-stamp-reuse.spec.ts",
   "tests/e2e/signature-style-removal.spec.ts",
+  "tests/e2e/signed-amount-keypad.spec.ts",
   "tests/e2e/simplified-mount.spec.ts",
   "tests/e2e/simplified-part1-identity-cells.spec.ts",
   "tests/e2e/simplified-remuneration.spec.ts",
