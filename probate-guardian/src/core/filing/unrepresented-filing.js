@@ -182,7 +182,9 @@ export function syncWaiverAdvocateHint(container, d) {
 export function watchWaiverAdvocateHint(container, readFiling) {
   const controller = new AbortController();
   window.addEventListener('pg:field-written', (event) => {
-    const path = event?.detail?.path;
+    // A CustomEvent (form-contract.js); this file is type-checked by way of
+    // its importers, and a plain Event has no `detail`.
+    const path = /** @type {CustomEvent} */ (event)?.detail?.path;
     if (path === 'typeOfGuardianship' || path === 'attorneyWaiverBasis') syncWaiverAdvocateHint(container, readFiling());
   }, { signal: controller.signal });
   return controller;

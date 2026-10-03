@@ -2434,6 +2434,9 @@ same rule the page is drawn with, now one shared test (`showsAdvocateHint()`).
 - The Cover's other specs (`attorney-optional-export`, `annual-mount`,
   `guardian-inventory-mount`, `form-runtime-lifecycle.contract`): 43 passed.
 - No data, legacy, export, security or legal effect. Unit suite: 170 files, 2,486 tests.
+- **The type check was not run for this item,** and its new listener failed
+  it; found by the release gate on 2026-10-03 and fixed (see "Release gate"
+  under "After the build").
 - **Unit test, added 2026-10-03 after the final regression.** The
   instruction asked for a unit test of each section; this item had only its
   browser test, which the end report did not say. New
@@ -2756,6 +2759,18 @@ entry that names another filing's ward.
   read the Activity Log (`backup-restore-sav`, `form-field-labels`): 10 pass.
 
 ### Release gate — PENDING
+
+**First attempt, 2026-10-03, on ebe1a2c: stopped at its first step, the type
+check.** 72I's new listener reads the event's `detail`, which the type
+checker does not allow on a plain `Event`. `unrepresented-filing.js` is not
+in `tsconfig.json`'s list, but a file in it imports it, so it is checked.
+72I never ran the type check, and `npm test` does not include it, so the
+final regression could not catch it. Fixed by telling the checker the event
+is a `CustomEvent` (no change in behaviour); the type check is clean, and the
+hint's unit (7) and browser (2) tests pass. *Lesson:* the verification plan's
+"type check after any item that touches a file in `tsconfig.json`'s scope"
+has to count files reached through imports, as AGENTS.md §2 says; the
+simplest guard is to run it after every item that changes `src/`.
 
 ---
 
