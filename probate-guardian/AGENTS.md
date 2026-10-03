@@ -38,7 +38,8 @@ non-zero, so a later stage never runs against a broken prerequisite.
 
 - **`npm test` is unchanged and stays unchanged.** It is the full regression
   §2 governs. `test:quick` is not a substitute for it and is not a merge gate:
-  it runs 60 of the suite's 678 browser tests.
+  it runs 69 of the suite's 1,032 browser tests (counted with `--list`,
+  2026-10-02).
 - **`test:release` deliberately does not compose `test:verify` or `npm test`.**
   `test:e2e:all-profiles` already runs the complete source profile, so
   composing either would run the entire source suite twice. It also builds web
@@ -47,6 +48,16 @@ non-zero, so a later stage never runs against a broken prerequisite.
   go-ahead per §2. `test:quick` does not.
 - Timings are from `tests/baseline/milestone-59-runtime.json`, measured
   2026-09-19 on one workstation; re-measure rather than trusting them.
+- **The repository on this workstation is on a FAT32 drive (D:), and single
+  browser tests run about twice as slowly there** -- the summary-page test
+  that walked all nine forms took 22–24 s from a copy on C: (NTFS) and
+  47–49 s from D: (Milestone 72F). A full `npm test` took 1.7 h for 980
+  browser tests on D: (2026-09-29) and 1.3 h for 1,011 from a copy on C:
+  (2026-10-02). Re-measure from an NTFS copy before trusting any figure.
+- **A copy on C: can't run git against this repository**: git refuses a
+  repository on a drive that records no file ownership ("dubious
+  ownership"), so `mixed-version.characterization.spec.ts`, which extracts
+  an old build with `git archive`, fails there and must run from D:.
 
 **Stack (Archetype 1 — Client-Side Static PWA, pinned for this repo):**
 Vanilla ES Modules (`src/main.js`, the composition root, with core and

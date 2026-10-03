@@ -585,12 +585,20 @@ test.describe('routes', () => {
     await expect(page.locator('[data-form-path][oninput], [data-form-path][onchange], [data-form-path][onfocus], [data-form-path][onblur], [data-form-control][oninput], [data-form-control][onfocus], [data-form-control][onblur]')).toHaveCount(0);
   });
 
-  test('all 9 form types render a standardized summary page at /summary with case info', async ({ page }) => {
-    const errors: string[] = [];
-    page.on('pageerror', (e) => errors.push(e.message));
-    page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
+  // Milestone 72F: one test per form type. Walking all nine in one test took
+  // 22-24 s from a C: copy and 47-49 s from D: (FAT32), and under full-suite
+  // load on D: it ran past the 60-second limit -- the only failure of the
+  // 2026-09-29 regression, and not a defect. Each test now gets its own fresh
+  // browser context, so Milestone 50G's save-flush and recovery-cache clearing
+  // between iterations (which kept one form's autosave from putting a
+  // "restore?" dialog in front of the next form's start screen) has nothing
+  // left to guard against and is gone.
+  for (const type of INVENTORY_TYPES) {
+    test(`${type}: renders a standardized summary page at /summary with case info`, async ({ page }) => {
+      const errors: string[] = [];
+      page.on('pageerror', (e) => errors.push(e.message));
+      page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
 
-    for (const type of INVENTORY_TYPES) {
       await freshStartNoPassword(page);
       await page.evaluate((t) => (window as any).GuardianForms.testing.createFiling.add(`Summary Test Ward ${t}`, t), type);
       await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/summary'));
@@ -599,30 +607,9 @@ test.describe('routes', () => {
       await expect(main).not.toBeEmpty();
       await expect(main.locator('.summary-box').first()).toBeVisible();
       await expect(main.getByRole('heading', { level: 1 })).toContainText('Summary');
-
-      // Milestone 50G: addWard() above leaves the debounced autosave dirty,
-      // which writes to the shared pg-session-cache IndexedDB store. Left in
-      // place, the NEXT iteration's freshStartNoPassword() reload would hit
-      // checkSessionRestoreCacheAtLaunch()'s confirmModal() before its own
-      // #startup-choice-overlay ever shows -- a DOM dialog nobody interacts
-      // with just sits there, unlike a native confirm() (which a previous
-      // run's unlistened dialog would have had auto-dismissed by Playwright,
-      // clearing the cache as a side effect of declining, not of saving).
-      await page.evaluate(async () => {
-        const t = (window as any).GuardianForms.testing;
-        await t.save.flush();
-        await t.recoveryCache.clear();
-        // Confirmed live: without this, some later mount/render tick
-        // re-marks the app dirty and re-arms the debounced autosave, which
-        // can fire and re-populate the cache before the next reload's
-        // navigation actually unloads this page -- clearing alone isn't
-        // enough to prevent the offer from reappearing.
-        t.save.markClean();
-      });
-    }
-
-    expect(errors).toEqual([]);
-  });
+      expect(errors).toEqual([]);
+    });
+  }
 
   // A real click on a Summary page's Section Completion link, not the direct
   // window.navigate() call the test above uses -- summary-renderer.js's

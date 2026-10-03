@@ -44,7 +44,7 @@ recorded as **Pinellas Clerk practice**, not as a reading of a statute or rule
 | 3 | 72C | The Inventory and the Initial Plan have no guardian email. The Annual, Annual Plan and Plan for Minors collect it but never check it. The Simplified Accounting and Simplified Plan block without it. The Plan for Minors never checks the attorney's email. The Annual family and Annual Plan accept an attorney with no name, and the Simplified Plan's certificate can't find its attorney's name | **DECIDED.** Add it where it's missing. On all three accountings and all four Plans, a missing guardian email **warns, never blocks**, and only when no attorney is entered. "Attorney entered" means any attorney field, by one shared definition per form, and then the Annual family and Annual Plan also require the attorney's name. The Plan for Minors requires the attorney's email once an attorney is entered. The Simplified Plan's attorney stays optional, and its warning shows until the attorney's name and email are both entered. Its certificate is fixed to find the attorney | **Built** 2026-10-02 (see its Build record; four more found and fixed) |
 | 4 | 72D | With no attorney, the filed PDF prints an app-written sentence that no Clerk form has | **DECIDED.** Match the Clerk's forms: print the attorney block blank, as they do | **Built** 2026-10-02 (see its Build record; the on-screen notices corrected too) |
 | 5 | 72E | On a phone, Schedule C's loss and Schedule E's transfer-out boxes offer a keypad with no minus key | No decision needed (a defect) | **Built** 2026-10-02 (see its Build record) |
-| 6 | 72F | The nine-form summary-page browser test runs out of time on the D: drive | **DECIDED.** Split it into nine tests, one per form | Not started |
+| 6 | 72F | The nine-form summary-page browser test runs out of time on the D: drive | **DECIDED.** Split it into nine tests, one per form | **Built** 2026-10-02 (see its Build record) |
 | 7 | 72G | Six of the seven certificates of service already have a free-text method box, labelled "Indicate if (e.g. hand-delivered, mailed)"; the Inventory has none. The Annual and Simplified **write that method into the workbook's ward-status box**, and the Simplified blocks without it | **DECIDED.** That box is the method of service, on all seven forms, printed on the PDF only. A missing method warns, never blocks. The Annual and Simplified get a separate ward-status dropdown (the workbook box's real meaning), required on all three accountings. On a new filing made from another, only recipients carry (the ward's status also carries within the same period). An older workbook imports by what its box holds: a ward-status answer as the ward's status, anything else as the method | **Built** 2026-10-02 (see its Build record; a title-casing defect in the new box found and fixed) |
 | 8 | 72H | The Inventory's D-5 and the Simplified's Part VI re-type the attorney's details, so one PDF can show two Bar Numbers for one attorney. The Inventory also has two attorney-name fields, which can differ between PDF and Excel | **DECIDED.** The certificate uses the filing's attorney details. Both name fields stay, with a warning when they differ that says which output prints which. Old typed values fill blank fields once (a saved marker stops repeats); any that differ show on the certificate page with a "Discard old details" button. An older workbook imports the same way: its certificate details fill the filing attorney's blanks, and any that differ are kept and shown | **Built** 2026-10-02 (see its Build record; an import data-loss defect found and fixed) |
 | 9 | 72I | Choosing "Guardian Advocate" as the Type of Guardianship shows no hint at the reason question until the filer leaves the page and returns | No decision needed (a defect) | **Built** 2026-10-02 (see its Build record) |
@@ -1565,7 +1565,23 @@ on this test's 60-second limit, not on a defect.
   twice as slowly there. The 2026-09-29 full `npm test` took 1.7 h for 980
   tests. Re-measure from an NTFS copy before trusting either figure.
 
-### Build record — NOT STARTED
+### Build record — BUILT 2026-10-02
+
+**What a filer sees now.** Nothing; test reliability.
+
+**Built as designed:** `routes.spec.ts`'s summary-page test is one test per
+form type, generated from `INVENTORY_TYPES`, each with the same assertions
+(main content, a summary box, the "Summary" heading, no page or console
+errors) in its own fresh browser context; Milestone 50G's save-flush and
+recovery-cache clearing between iterations is removed, with a comment saying
+why. AGENTS.md §1 records the FAT32 note beside the tier timings, in figures
+measured rather than estimated (single tests about twice as slow on D:; the
+full runs of 2026-09-29 on D: and 2026-10-02 from a C: copy), corrects the
+quick tier's count (69 of 1,032 browser tests, from `--list`; it said 60 of
+678), and notes that a copy on C: can't run git against the repository.
+
+**Tests and evidence:** the nine summary tests, 9 of 9 on D: (about 5 s
+each); the assertion-count baseline records eight more test declarations.
 
 ---
 
