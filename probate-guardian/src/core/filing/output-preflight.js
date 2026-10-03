@@ -11,6 +11,7 @@ import { wardShareAdvisories } from './ward-share-advisories.js';
 import { unrepresentedAdvisories } from './unrepresented-filing.js';
 import { startingBalanceNotes } from './starting-balance-carry.js';
 import { guardianEmailAdvisories } from './guardian-email.js';
+import { serviceMethodAdvisories } from './service-method.js';
 
 // Milestone 71B. Where each accounting form asks why there is no attorney,
 // and where its certificate of service is, by the registry's engine id.
@@ -97,6 +98,10 @@ export function prepareFilingOutput(data, baseIssues = [], options = {}) {
     // entered, on all seven forms -- warned, never blocked (Pinellas Clerk
     // practice, 2026-10-01/02; Rule 2.515(c)). See guardian-email.js.
     ...guardianEmailAdvisories(target, identity.descriptor?.engineId),
+    // Milestone 72G: a certificate that lists someone served but not how
+    // (Rule 2.516(f)) -- warned, never blocked. The Plans' comes through
+    // planCertificateAdvisories() above.
+    ...serviceMethodAdvisories(target, identity.descriptor?.engineId),
   ];
 
   return {

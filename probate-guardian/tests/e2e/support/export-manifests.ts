@@ -489,7 +489,9 @@ export function annualManifest(filingTypeValue = 'Annual'): Manifest {
     b.box(`certRecipients.${i}.line3`, 'PART X', `${c}${r + 2}`, 'text'); b.box(`certRecipients.${i}.line4`, 'PART X', `${c}${r + 3}`, 'text');
   });
   b.box('certDate', 'PART X', 'G23', 'date');
-  b.box('certIndicator', 'PART X', 'K23', 'text');
+  // Milestone 72G: "Indicate if:" is the ward's status (a dropdown on the
+  // Clerk's form); the method of service (certIndicator) is PDF only.
+  b.choice('certWardStatus', 'PART X', 'K23', INDICATE_IF);
   b.box('certAttySignDate', 'PART X', 'G25', 'date');
   return b.done();
 }
@@ -523,7 +525,8 @@ export function simplifiedManifest(): Manifest {
   const P56 = 'PARTS V, VI ';
   b.box('attorney_barNumber', P56, 'B19', 'text'); b.box('attorney_phone', P56, 'B21', 'text');
   b.box('attorney_street', P56, 'J19', 'text'); b.box('attorney_cityStateZip', P56, 'J21', 'text');
-  b.box('certServiceDate', P56, 'H39', 'date'); b.box('certIndicator', P56, 'J39', 'text');
+  // Milestone 72G: J39 is the ward's status; the method is PDF only.
+  b.box('certServiceDate', P56, 'H39', 'date'); b.choice('certWardStatus', P56, 'J39', INDICATE_IF);
   // The right-hand recipient boxes are the merges I27:L27, I28:L28 ...: I is each box's own cell.
   ([['B', 27], ['I', 27], ['B', 33], ['I', 33]] as const).forEach(([c, r], i) => {
     b.box(`certRecipients.${i}.name`, P56, `${c}${r}`, 'text'); b.box(`certRecipients.${i}.line2`, P56, `${c}${r + 1}`, 'text');

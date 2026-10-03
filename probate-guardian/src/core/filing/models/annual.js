@@ -94,7 +94,11 @@ export function emptyDataAnnual() {
     restrictedDepositoryReceiptDate:'', bondWaivedDate:'',
     bondAmount:'', bondPeriodFrom:'', bondPeriodTo:'', bondingCompany:'',
     // Part X – Cert of Service
-    certDate:'', certIndicator:'',
+    // Milestone 72G: certIndicator is the method of service (PDF only);
+    // certWardStatus is the workbook's "Indicate if Ward is:" (K23), required.
+    // certIndicatorMigrated marks the once-only move of an exact ward-status
+    // value out of the method box (certificate-migrations.js).
+    certDate:'', certIndicator:'', certWardStatus:'', certIndicatorMigrated:false,
     certAttySignDate:'',
     // Milestone 39-C
     certAttySignatureState:'', certAttySignatureImage:'',

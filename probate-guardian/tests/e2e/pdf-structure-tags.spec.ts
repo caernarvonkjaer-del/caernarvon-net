@@ -388,6 +388,7 @@ test.describe('PDF Accessibility: Tagged Structure, StructTreeRoot & Marked Cont
         attorney_barNumber: '1029384',
         attorney_signatureDate: '2026-03-01',
         certServiceDate: '2026-03-01',
+        certWardStatus: 'N/A', // Milestone 72G: the ward's status, required
         certAttySignDate: '2026-03-01',
         certIndicator: 'Electronic / Florida Courts E-Filing Portal',
         certRecipients: [{ name: 'Clerk of Court', line2: '315 Court St', line3: 'Clearwater, FL 33756' }],

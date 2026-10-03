@@ -53,7 +53,10 @@ export function emptyDataSimplified() {
       {name:'',line2:'',line3:''},
       {name:'',line2:'',line3:''}
     ],
-    certIndicator:'',
+    // Milestone 72G: certIndicator is the method of service (PDF only);
+    // certWardStatus is the workbook's "Indicate if:" (J39), required.
+    // certIndicatorMigrated marks the once-only move (certificate-migrations.js).
+    certIndicator:'', certWardStatus:'', certIndicatorMigrated:false,
     // Part VII — Remuneration.
     //
     // Milestone 60J: starts EMPTY, not with two blank placeholder rows, for

@@ -53,6 +53,9 @@ export function emptyDataGuardian(){
     // is totally incapacitated / Ward is under 14 years old / N/A. Required;
     // '' is unanswered and 'N/A' is a real, complete answer, not coerced.
     serviceIndicateIf:'',
+    // Milestone 72G: how the copies were served -- the PDF's method line; never
+    // written to the workbook, whose "Indicate if:" is the ward's status.
+    serviceMethod:'',
     // Witnesses present during the physical inventory of the ward's personal
     // effects. Optional (not export-blocking) -- the Cover page reminder
     // states the requirement, but not every inventory necessarily has a

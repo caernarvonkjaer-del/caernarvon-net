@@ -17,6 +17,7 @@ import { resolveFilingDescriptor } from '../../core/filing/filing-descriptor.js'
 import { getExcelJS, numValue, percentValue, saveWorkbookFile, setCell, setDateCell } from '../../core/excel/excel-engine.js';
 import { hasIdentifiedPreparer } from '../../core/form/preparer-flag.js';
 import { migrateBondDepository, bondAmountCellValue, bondAmountFromCell } from '../../core/filing/bond-depository.js';
+import { readIndicateIfBox } from '../../core/filing/certificate-migrations.js';
 import { readCellText, unwrapCellValue } from '../../core/excel/cell-reader.js';
 import { shareFromWorkbookCell } from '../../core/excel/share-cell.js';
 import { planB4PagesToKeep, isB4RegisterSheetName, b4PageNumber, SCH_B4_ACCOUNT_BLOCKS, B4_REGISTER_PREFIX } from '../../core/excel/b4-register-pages.js';
@@ -535,7 +536,9 @@ export async function doSaveExcel(){
       setCell(p10,'B17',r[2]&&r[2].name||''); setCell(p10,'B18',r[2]&&r[2].line2||''); setCell(p10,'B19',r[2]&&r[2].line3||''); setCell(p10,'B20',r[2]&&r[2].line4||'');
       setCell(p10,'I17',r[3]&&r[3].name||''); setCell(p10,'I18',r[3]&&r[3].line2||''); setCell(p10,'I19',r[3]&&r[3].line3||''); setCell(p10,'I20',r[3]&&r[3].line4||'');
       setDateCell(p10,'G23',inv.certDate);
-      setCell(p10,'K23',inv.certIndicator||'');
+      // Milestone 72G: "Indicate if:" is the ward's status, a dropdown on the
+      // Clerk's form; the method of service is printed on the PDF only.
+      setCell(p10,'K23',inv.certWardStatus||'');
       setDateCell(p10,'G25',inv.certAttySignDate);
     }
 
@@ -924,7 +927,17 @@ export async function importExcel(input){
           {name:gcStr(p10,'I17'),line2:gcStr(p10,'I18'),line3:gcStr(p10,'I19'),line4:gcStr(p10,'I20')}
         ];
         D.certDate=gcDate(p10,'G23');
-        D.certIndicator=gcStr(p10,'K23');
+        // Milestone 72G: read by what the box holds -- a workbook exported before
+        // 72G holds the method there (certificate-migrations.js). A ward's
+        // status sets the ward's status; any other text is the method and says
+        // nothing of the status; blank is an unanswered status. The filing's
+        // method is otherwise kept: a 72G workbook carries none, and an absence
+        // must not erase what the filer typed (67A's rule).
+        {
+          const box=readIndicateIfBox(gcStr(p10,'K23'));
+          if('wardStatus' in box)D.certWardStatus=box.wardStatus;
+          if(box.method)D.certIndicator=box.method;
+        }
         D.certAttySignDate=gcDate(p10,'G25');
       }
 

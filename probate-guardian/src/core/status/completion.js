@@ -136,7 +136,9 @@ export function simplifiedCompletion(D, deps = {}) {
     's-p5':!attorneyStarted||(filled(D.attorney_barNumber)&&filled(D.attorney_phone)&&filled(D.attorney_email)&&filled(D.attorney_street)&&filled(D.attorney_cityStateZip)
       &&datesOrdered(D.periodTo,D.attorney_signatureDate,true)
       &&sigComplete(D.attorney_signatureState,D.attorney_signatureDate,D.attorney_signatureImage)),
-    's-p6':filled(D.certServiceDate)&&filled(D.certIndicator)&&recipientsSettled(D.certRecipients,D.certNoRecipients)
+    // Milestone 72G: the ward's status in place of the method, which now
+    // warns and never holds the page back.
+    's-p6':filled(D.certServiceDate)&&filled(D.certWardStatus)&&recipientsSettled(D.certRecipients,D.certNoRecipients)
       &&datesOrdered(D.periodTo,D.certServiceDate,true)
       &&(attorneyStarted
         ?sigComplete(D.certAttySignatureState,D.certAttySignDate,D.certAttySignatureImage)
@@ -153,7 +155,7 @@ export function simplifiedCompletion(D, deps = {}) {
     's-p3':!checks['s-p3']&&hasAny(D.periodFrom,D.periodTo),
     's-p4':!checks['s-p4']&&(D.guardians.length>0||guardianHasAnyData(D.guardians[0]||{})),
     's-p5':!checks['s-p5']&&hasAny(D.attorney_barNumber,D.attorney_phone,D.attorney_street,D.attorney_cityStateZip),
-    's-p6':!checks['s-p6']&&hasAny(D.certServiceDate,D.certIndicator,D.certRecipients?.[0]?.name),
+    's-p6':!checks['s-p6']&&hasAny(D.certServiceDate,D.certIndicator,D.certWardStatus,D.certRecipients?.[0]?.name),
     's-p7':!checks['s-p7']&&D.remuneration.some(r=>hasAny(r.guardian,r.type)),
   };
   return {checks,incomplete};
@@ -215,7 +217,8 @@ export function annualCompletion(D, deps = {}) {
     // co-guardians) and their certificate signature is valid -- the rule
     // validateAnnual() applies, so the sidebar names every field the export
     // gate does (tests/unit/checklist-export-parity.spec.js).
-    'a-p10':filled(D.certDate)&&recipientsSettled(D.certRecipients,D.certNoRecipients)
+    // Milestone 72G: and the ward's status, as validateAnnual() now requires.
+    'a-p10':filled(D.certDate)&&filled(D.certWardStatus)&&recipientsSettled(D.certRecipients,D.certNoRecipients)
       &&datesOrdered(D.periodTo,D.certDate,true)
       &&(isAttorneyStarted(D,'annual')
         ||(!!resolveServiceCertifier(D)

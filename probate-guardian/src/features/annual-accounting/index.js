@@ -86,6 +86,9 @@ import { startingBalanceNotesHTML } from '../../core/filing/starting-balance-car
 import { formatMoney } from '../../core/format/money.js';
 import { percentProblem } from '../../core/validation/percent-range.js';
 import { resolveServiceCertifier, certifierChoiceNeeded, certifyingCandidates, serviceCertifierChoiceHTML, waiverBasisQuestionHTML } from '../../core/filing/unrepresented-filing.js';
+import { WARD_STATUS_VALUES, SERVICE_METHOD_LABEL, SERVICE_METHOD_KIND } from '../../core/filing/service-method.js';
+import { moveWardStatusFromMethod } from '../../core/filing/certificate-migrations.js';
+import { auditLog } from '../../core/activity/audit-log.js';
 import { watchAttorneyRequiredMarkers } from '../../core/form/attorney-required-markers.js';
 
 // Milestone 71B: the Part V fields that become required once an attorney is
@@ -143,6 +146,14 @@ export async function mount(container, page, { signal } = {}) {
   // back with the state its old fields implied, and the retired
   // restrictedDepository tri-state is dropped. Idempotent.
   if (migrateBondDepository(getD())) requestSave();
+  // Milestone 72G: once, a ward's status typed into the method box (it was
+  // labelled "Indicate if") moves to Indicate if Ward is:, exact matches only;
+  // the log names the fields, never the value (certificate-migrations.js).
+  const statusMove = moveWardStatusFromMethod(getD());
+  if (statusMove) {
+    requestSave();
+    if (statusMove.moved) void auditLog('CERTIFICATE_MIGRATION', "Part X: the ward's status moved from the method-of-service box (certIndicator) to Indicate if Ward is (certWardStatus)", true);
+  }
   let html;
   switch (page) {
     case '/':      html = pagePart1Annual(); break;
@@ -1558,13 +1569,16 @@ function pagePart10Annual(){
       </div>
     </div>
   </div>`;
+  // Milestone 72G: the ward's status is the workbook's "Indicate if:" (K23),
+  // required; how the copies were served is its own box, printed on the PDF only.
   return `<div class="schedule-page">
   <h1>Part X — ${started?'Guardian Attorney ':''}Certificate of Service</h1>
   ${preparerNoteHTML()}
   <div class="schedule-instructions">Pursuant to Florida Statute 744.367(4), I hereby certify that a copy of this accounting has been furnished to the recipients listed below.</div>
   <div class="row g-2 mb-3">
     <div class="col-md-4">${inpD('Date of Service',d.certDate,"D.certDate=this.value",true,'date')}</div>
-    <div class="col-md-6">${inpD('Indicate if (e.g. hand-delivered, mailed)',d.certIndicator,"D.certIndicator=this.value")}</div>
+    <div class="col-md-6">${selD('Indicate if Ward is:',d.certWardStatus,"D.certWardStatus=this.value",WARD_STATUS_VALUES,true)}</div>
+    <div class="col-12">${inpD(SERVICE_METHOD_LABEL,d.certIndicator,"D.certIndicator=this.value",false,'text',{kind:SERVICE_METHOD_KIND})}</div>
   </div>
   <h2 style="color:var(--ink);margin:.75rem 0 .4rem;font-size:.95rem;">Recipients</h2>
   ${renderServiceAttestationRow({html:yesNoCheckboxD(ATTESTATION_57B,d.certNoRecipients,'certNoRecipients','/p10'),rows:d.certRecipients,attestation:d.certNoRecipients,startedFields:RECIPIENT_STARTED_FIELDS,recipientsPath:'certRecipients',attestationPath:'certNoRecipients'})}
@@ -1737,6 +1751,10 @@ export function validateAnnual(){
   }
   // Part IX's bond fields: nothing required (Milestone 67B; see the note above).
   req(d.certDate,'Part X — Certificate of Service Date','certDate');
+  // Milestone 72G: the ward's status, the workbook's "Indicate if:" (K23),
+  // required on all three accountings (the requester's decision, recorded as
+  // Pinellas Clerk practice), in the Inventory's own message style.
+  req(d.certWardStatus,'Part X — Indicate if Ward is:','certWardStatus');
   errs.push(...checkDateOrder(d.periodTo,d.certDate,{
     sectionLabel:'Part X',earlierLabel:'Accounting Period To',laterLabel:'Certificate of Service Date',allowSameDay:true,
     filingType:T,laterPath:'certDate',

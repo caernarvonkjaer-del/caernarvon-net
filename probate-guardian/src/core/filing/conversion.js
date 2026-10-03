@@ -11,7 +11,7 @@ import { navigate } from '../navigation/router.js';
 import { activateWard, createWardId } from '../navigation/ward-lifecycle.js';
 import { saveWardToState, setDirtySinceExport, updateLastSavedIndicator } from '../persistence/case-file.js';
 import { applyCarriedStartingBalance, crossesTrustBoundary as crossesTrust } from './starting-balance-carry.js';
-import { withOldCertificateFilled } from './certificate-migrations.js';
+import { withOldCertificateFilled, wardStatusAsMigrated } from './certificate-migrations.js';
 import { getCaseFile } from '../state.js';
 import { alertModal } from '../ui/dialogs.js';
 
@@ -233,7 +233,8 @@ export function convertToSimplified(src,srcType,dest){
     dest.attorney_cityStateZip=a.cityStateZip||'';
     // Milestone 72H: no certAtty... details -- the certificate's attorney is
     // Part V's, so a converted filing starts with nothing to note.
-    dest.certServiceDate=src.serviceDate||'';
+    // Milestone 72G: a later filing -- only the recipients carry; the
+    // service date, method and ward's status start blank.
     (src.serviceRecipients||[]).slice(0,4).forEach((r,i)=>{
       dest.certRecipients[i]={name:r.name||'',line2:r.address||'',line3:r.cityStateZip||''};
     });
@@ -251,10 +252,13 @@ export function convertToSimplified(src,srcType,dest){
   dest.attorney_secondaryEmail=src.attorney_secondaryEmail||'';
   dest.attorney_street=src.attorney_street||'';
   dest.attorney_cityStateZip=src.attorney_cityStateZip||'';
-  dest.attorney_signatureDate=src.attorney_signatureDate||'';
-  dest.certServiceDate=src.certDate||'';
-  dest.certIndicator=src.certIndicator||'';
-  dest.certAttySignDate=src.certAttySignDate||'';
+  // Milestone 72G (decided 2026-10-02): a certificate describes one filing
+  // being served. A same-period conversion carries the recipients and the
+  // ward's status -- for a source not opened since 72G, as its once-only move
+  // would leave it (wardStatusAsMigrated(), read-only) -- and starts the date,
+  // the method, every certificate signature and the attorney's own Part V
+  // signature date blank: the new filing is signed and served on its own date.
+  dest.certWardStatus=wardStatusAsMigrated(src);
   // Milestone 72H: no certAtty... details (Part V's attorney is the
   // certificate's).
   // The Annual gives each recipient a 4th line the Simplified form lacks —
@@ -302,15 +306,18 @@ export function convertSimplifiedToAnnual(src,dest){
   dest.attorney_secondaryEmail=src.attorney_secondaryEmail||'';
   dest.attorney_street=src.attorney_street||'';
   dest.attorney_cityStateZip=src.attorney_cityStateZip||'';
-  dest.attorney_signatureDate=src.attorney_signatureDate||'';
   // Milestone 40C-A item 3: attorney_county is a SEPARATE field from the
   // filing's county and must never be populated from the ward's county, nor
   // silently defaulted to Pinellas. It carries over only an existing
   // attorney_county, and otherwise stays blank for the filer to supply.
   dest.attorney_county=dest.attorney_county||src.attorney_county||'';
-  dest.certDate=src.certServiceDate||'';
-  dest.certIndicator=src.certIndicator||'';
-  dest.certAttySignDate=src.certAttySignDate||'';
+  // Milestone 72G (decided 2026-10-02): a certificate describes one filing
+  // being served. A same-period conversion carries the recipients and the
+  // ward's status -- for a source not opened since 72G, as its once-only move
+  // would leave it (wardStatusAsMigrated(), read-only) -- and starts the date,
+  // the method, every certificate signature and the attorney's own Part V
+  // signature date blank: the new filing is signed and served on its own date.
+  dest.certWardStatus=wardStatusAsMigrated(src);
   (src.certRecipients||[]).slice(0,4).forEach((r,i)=>{
     dest.certRecipients[i]={name:r.name||'',line2:r.line2||'',line3:r.line3||'',line4:''};
   });

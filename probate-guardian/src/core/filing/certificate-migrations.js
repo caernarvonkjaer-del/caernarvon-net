@@ -5,6 +5,8 @@
 // form's mount() once the filing is active (the bond migration's pattern), so
 // a filing nobody reopens is never touched.
 
+import { wardStatusFromText } from './service-method.js';
+
 const text = (v) => String(v ?? '').trim();
 
 /**
@@ -159,4 +161,56 @@ export function compareImportedCertificate(attorney, certificate) {
     out.old[key] = certificate[key];
   }
   return out;
+}
+
+// ── Milestone 72G: the ward's status, out of the method box ─────────────────
+//
+// On the Annual and the Simplified the method box (certIndicator) was labelled
+// "Indicate if", so a filer may have typed the ward's status there. Once, on
+// the first open after 72G, a value that is exactly one of the three
+// ward-status values moves to the new ward-status field; every other value
+// stays the method, which the label always asked for ("hand-delivered,
+// mailed"). Nothing is guessed from other free text.
+
+/**
+ * Returns { moved } -- whether a value moved -- or null when it did not run
+ * (already done). Sets `certIndicatorMigrated` either way.
+ */
+export function moveWardStatusFromMethod(filing) {
+  if (!filing || typeof filing !== 'object' || filing.certIndicatorMigrated === true) return null;
+  const status = wardStatusFromText(filing.certIndicator);
+  let moved = false;
+  if (status && !text(filing.certWardStatus)) {
+    filing.certWardStatus = status;
+    filing.certIndicator = '';
+    moved = true;
+  }
+  filing.certIndicatorMigrated = true;
+  return { moved };
+}
+
+/**
+ * The ward's status of a filing as the move would leave it, read-only: for a
+ * same-period conversion from a source not opened since 72G (decided at the
+ * Antigravity review). The source is not changed.
+ */
+export function wardStatusAsMigrated(filing) {
+  if (!filing) return '';
+  return text(filing.certWardStatus)
+    || (filing.certIndicatorMigrated === true ? '' : wardStatusFromText(filing.certIndicator));
+}
+
+/**
+ * An imported workbook's "Indicate if:" box (Annual K23, Simplified J39), read
+ * by what it holds (72G step 2): a workbook exported before 72G holds the
+ * method there. One of the three values is the ward's status; any other text
+ * is the method (and says nothing of the ward's status); blank is an
+ * unanswered ward status.
+ * @returns {{ wardStatus?: string, method?: string }}
+ */
+export function readIndicateIfBox(value) {
+  const status = wardStatusFromText(value);
+  if (status) return { wardStatus: status };
+  if (text(value)) return { method: text(value) };
+  return { wardStatus: '' };
 }

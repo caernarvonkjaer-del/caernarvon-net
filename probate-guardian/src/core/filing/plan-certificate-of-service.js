@@ -20,6 +20,7 @@
 // Clerk's own Simplified Plan checklist says so).
 import { serviceRecipientIssues } from '../validation/service-recipients.js';
 import { inferLegacySignatureState } from '../validation/signature-state.js';
+import { methodOfServiceLine, methodMissingMessage } from './service-method.js';
 
 // The same words the three accounting-family pages declare for themselves
 // (tests/unit/user-guide-drift-guard.spec.js lists every surface).
@@ -140,6 +141,13 @@ export function planCertificateAdvisories(filing, { section = 'Certificate of Se
   rec.firstRowMissing.forEach((f) => advise('recipient-1', 'certRecipients.0.name', `Recipient 1 ${f} is blank. The plan can be filed without it.`));
   rec.extraRows.forEach(({ index, missing }) => missing.forEach((f) => advise(`recipient-${index + 1}`, `certRecipients.${index}.name`, `Recipient ${index + 1} ${f} is blank. The plan can be filed without it.`)));
   if (!text(filing.certDate)) advise('date', 'certDate', 'Date of Service is blank. The plan can be filed without it.');
+  // Milestone 72G: the same method warning as the accountings' -- someone is
+  // listed, "no recipients are required" is not affirmed, and the method box
+  // is empty (service-method.js).
+  const listed = (filing.certRecipients || []).some((r) => r && CERT_RECIPIENT_STARTED_FIELDS.some((f) => text(r[f])));
+  if (listed && filing.certNoRecipients !== 'Yes' && !text(filing.certIndicator)) {
+    out.push({ code: 'plan-certificate.method', severity: 'advisory', field: 'certIndicator', message: methodMissingMessage(section) });
+  }
   const state = inferLegacySignatureState(filing.certSignatureState, filing.certSignatureDate);
   if (!state || state === 'none') advise('signature', 'certSignatureDate', 'The certificate is not signed. The plan can be filed without it.');
   return out;
@@ -171,7 +179,9 @@ export function planCertificateOfServiceSection(filing, cfg = {}, fmtDate = (v) 
   } else {
     blocks.push({ type: 'notice', tag: 'P', text: d.certNoRecipients === 'Yes' ? ATTESTATION_57B : 'No service recipients listed.' });
   }
-  blocks.push({ type: 'notice', tag: 'P', text: `on this date: ${fmtDate(d.certDate) || 'the date indicated below'}${d.certIndicator ? ` | ${d.certIndicator}` : ''}` });
+  // Milestone 72G: the method on its own line, omitted when none is entered.
+  blocks.push({ type: 'notice', tag: 'P', text: `on this date: ${fmtDate(d.certDate) || 'the date indicated below'}` });
+  if (methodOfServiceLine(d.certIndicator)) blocks.push({ type: 'notice', tag: 'P', text: methodOfServiceLine(d.certIndicator) });
   blocks.push({
     type: 'signature-block', tag: 'Part',
     role: `Certified by (${signer.role === 'attorney' ? 'Attorney' : 'Guardian'})`,

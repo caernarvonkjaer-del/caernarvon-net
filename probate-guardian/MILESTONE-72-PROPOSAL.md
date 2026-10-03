@@ -45,7 +45,7 @@ recorded as **Pinellas Clerk practice**, not as a reading of a statute or rule
 | 4 | 72D | With no attorney, the filed PDF prints an app-written sentence that no Clerk form has | **DECIDED.** Match the Clerk's forms: print the attorney block blank, as they do | **Built** 2026-10-02 (see its Build record; the on-screen notices corrected too) |
 | 5 | 72E | On a phone, Schedule C's loss and Schedule E's transfer-out boxes offer a keypad with no minus key | No decision needed (a defect) | Not started |
 | 6 | 72F | The nine-form summary-page browser test runs out of time on the D: drive | **DECIDED.** Split it into nine tests, one per form | Not started |
-| 7 | 72G | Six of the seven certificates of service already have a free-text method box, labelled "Indicate if (e.g. hand-delivered, mailed)"; the Inventory has none. The Annual and Simplified **write that method into the workbook's ward-status box**, and the Simplified blocks without it | **DECIDED.** That box is the method of service, on all seven forms, printed on the PDF only. A missing method warns, never blocks. The Annual and Simplified get a separate ward-status dropdown (the workbook box's real meaning), required on all three accountings. On a new filing made from another, only recipients carry (the ward's status also carries within the same period). An older workbook imports by what its box holds: a ward-status answer as the ward's status, anything else as the method | Not started |
+| 7 | 72G | Six of the seven certificates of service already have a free-text method box, labelled "Indicate if (e.g. hand-delivered, mailed)"; the Inventory has none. The Annual and Simplified **write that method into the workbook's ward-status box**, and the Simplified blocks without it | **DECIDED.** That box is the method of service, on all seven forms, printed on the PDF only. A missing method warns, never blocks. The Annual and Simplified get a separate ward-status dropdown (the workbook box's real meaning), required on all three accountings. On a new filing made from another, only recipients carry (the ward's status also carries within the same period). An older workbook imports by what its box holds: a ward-status answer as the ward's status, anything else as the method | **Built** 2026-10-02 (see its Build record; a title-casing defect in the new box found and fixed) |
 | 8 | 72H | The Inventory's D-5 and the Simplified's Part VI re-type the attorney's details, so one PDF can show two Bar Numbers for one attorney. The Inventory also has two attorney-name fields, which can differ between PDF and Excel | **DECIDED.** The certificate uses the filing's attorney details. Both name fields stay, with a warning when they differ that says which output prints which. Old typed values fill blank fields once (a saved marker stops repeats); any that differ show on the certificate page with a "Discard old details" button. An older workbook imports the same way: its certificate details fill the filing attorney's blanks, and any that differ are kept and shown | **Built** 2026-10-02 (see its Build record; an import data-loss defect found and fixed) |
 | 9 | 72I | Choosing "Guardian Advocate" as the Type of Guardianship shows no hint at the reason question until the filer leaves the page and returns | No decision needed (a defect) | Not started |
 | 10 | 72J | The missing-recipients issue reads "No recipients are required for this certificate (filer attestation …)", the checkbox's caption, not a question | No decision needed (reuse the Plans' wording) | Not started |
@@ -1851,7 +1851,108 @@ which was false (Independent review, point 1).*
 9. **Cross-form.** All seven certificates change together, and the three
    accountings now treat the ward's status alike.
 
-### Build record — NOT STARTED
+### Build record — BUILT 2026-10-02
+
+**What a filer sees now.**
+- Every certificate's method box reads *"How were the copies served? (e.g.
+  U.S. Mail; e-mail to the attorney, mail to the ward)"*; the Inventory's D-5
+  has one now. The PDF prints it on its own line, *"Method of service: U.S.
+  Mail"*, and leaves the line out when the box is blank. It never reaches a
+  workbook.
+- The Annual's Part X and the Simplified's Part VI have an *"Indicate if Ward
+  is:"* dropdown with the Clerk's three values, like the Inventory's. It, not
+  the method, fills the workbook's "Indicate if:" box (Annual K23,
+  Simplified J39), prints on the PDF, and is required on all three
+  accountings (*"Part X — Indicate if Ward is:"*), an ordinary, overridable
+  issue.
+- The Simplified no longer refuses to export without a method. On every
+  certificate, Preview & Export warns when someone is listed, "no recipients
+  are required" is not affirmed, and the method is blank: *"<section> — How
+  the copies were served is not stated. Rule 2.516(f) lists the method of
+  service among what a certificate of service includes."*
+- A filing saved before 72G: the first time an Annual or Simplified opens, a
+  method box holding exactly one of the three ward-status values (case and
+  spacing ignored) moves it to the ward's status, once, logged by field name;
+  anything else stays the method.
+- Importing an older workbook reads its "Indicate if:" box by what it holds:
+  a ward-status value is the ward's status; any other text ("mailed") is the
+  method and leaves the ward's status alone; blank is an unanswered status.
+  A 72G workbook carries no method, so importing one never erases the
+  filing's.
+- A certificate describes one filing being served. A same-period conversion
+  (Annual family ↔ Simplified) carries the recipients and the ward's status
+  and starts the date, the method, the "no recipients" answer, the signer
+  choice, every certificate signature, and the attorney's own Part V
+  signature date blank. A later filing (Inventory → accounting, a new filing
+  from an existing one) carries only the recipients. A new year keeps the
+  recipients for review and blanks every answer, on all seven forms.
+
+**Built as designed:** the new `src/core/filing/service-method.js` (the
+values, label, PDF line, warning and the lifecycle reset); the once-only move,
+its read-only twin for conversions, and the import reading in
+`certificate-migrations.js`; the three pages, three PDF models, the Plans'
+shared certificate page and PDF section, both workbooks and both importers;
+`validateAnnual()` and `validateSimplified()`; the sidebar marks `a-p10` and
+`s-p6`; the conversions and `resetYearlyFieldsForNewYear()`;
+`MILESTONE-71-PROPOSAL.md`'s correction note; the data-model rows (the six
+method rows relabelled "Method of service", optional with the advisory note,
+`personal`; the Inventory's new `serviceMethod`; `certWardStatus` and
+`certIndicatorMigrated` on the Annual and Simplified; 1,055 rows).
+
+**Decisions taken:**
+1. **The requirement's message** follows the Inventory's existing wording,
+   *"Part X — Indicate if Ward is:"* (and Part VI's), not the proposal's
+   *"… is required"*: each validator's `req()` names the field, as the
+   Inventory's *"D-5 — Indicate if Ward is:"* always has.
+2. **The New Year reset is one shared step,** `clearCertificateAnswers()`,
+   run at the end of `resetYearlyFieldsForNewYear()` for every form, rather
+   than seven hand-written edits, so the seven branches cannot drift apart.
+3. **The once-only move needs the ward's status blank.** A value in the
+   method box is moved only when the ward's status is still unanswered;
+   otherwise both are left as they are.
+
+**Found while building, and fixed:**
+1. **The new label made the method box title-case what was typed.** The
+   shared field renderer guesses a field's kind from its label; "attorney"
+   and "ward" in the new label made it a name, so "U.S. Mail to each
+   recipient" was saved as "U.S. Mail to Each Recipient" -- and an e-mail
+   address typed there would have been mangled. The box's kind is now stated
+   as plain text, kept as typed, on all seven certificates (caught by the new
+   browser spec; a unit check now pins it).
+2. The Simplified PDF model built a "| Indicate if: …" note and a
+   service-date string it never used (dead code); removed with the method's
+   move to its own line.
+
+**Tests and evidence:**
+- New `tests/unit/service-method.spec.js` (29): each certificate's method and
+  ward-status lines, the warning, the requirement on all three accountings,
+  the once-only move, the import reading, every cell of the lifecycle table
+  (each conversion path, each of the seven New Year branches), and the method
+  box's kind. Red-first: 23 of the first 27 fail against the pre-72G code;
+  the 4 that pass describe behavior that was already right (the Inventory's
+  existing requirement, its warning with nothing to block, carry-over already
+  carrying only recipients).
+- New `tests/e2e/certificate-service-method.spec.ts` (6), real clicks and
+  keystrokes: the ward's status lands in K23 / J39 and the method reaches no
+  cell; the PDF prints both lines; both survive reopening; pre-72G workbooks
+  with "mailed" in the box import it as the method; the Inventory's and a
+  Plan's method print. Red-first: all 6 fail with the pre-72G source.
+- Updated with reasons: `plan-certificate-of-service` (unit and browser),
+  `pdf-form-specific` and `pdf-structure-tags` (fixtures answer the ward's
+  status), the guard's manifest (K23 and J39 are ward-status dropdown runs),
+  `tests/e2e/support/fixtures.ts` (the Annual and Simplified overlays answer
+  it); the goldens `ms70-70C-filing-shapes.json`,
+  `ms70-completion-golden.json`, `ms70-conversion-golden.json` (checked
+  against step 6's table) and `ms70-year-rollover-golden.json` (its note
+  stated the intended behavior first; the diff matches it), each note saying
+  what changed.
+- Browser, the 16 affected spec files -- every spec whose fixtures go
+  through the real export check, the placement guard, the page snapshots,
+  the sidebar and guidance specs and both characterizations: 224 passed; the
+  4 failures were the new spec's (the title-casing above, and its own cell
+  reader), fixed and rerun, 6 of 6.
+- `npm run verify:data-model`: 1,055 rows valid. `npm run check:types`
+  passes. Unit suite: 170 files, 2,486 tests.
 
 ---
 

@@ -45,6 +45,7 @@ const INVENTORY_SHARE_FIELDS = [
 ];
 import { resolveServiceCertifier, certifyingCandidates, serviceCertifierChoiceHTML, waiverBasisQuestionHTML } from '../../core/filing/unrepresented-filing.js';
 import { fillAttorneyFromOldCertificate, discardOldCertificateDetails } from '../../core/filing/certificate-migrations.js';
+import { WARD_STATUS_VALUES, SERVICE_METHOD_LABEL } from '../../core/filing/service-method.js';
 import { certificateAttorneyLineHTML, oldCertificateDetailsHTML } from '../../core/form/certificate-attorney-note.js';
 import { auditLog } from '../../core/activity/audit-log.js';
 import { watchAttorneyRequiredMarkers } from '../../core/form/attorney-required-markers.js';
@@ -1269,7 +1270,10 @@ function pageD5(){
   // signs the certificate (unrepresented-filing.js). The attorney card and
   // whatever it holds come back unchanged once an attorney is entered.
   const serviceCertificateHTML=()=>{
-    const serviceRow=formRow(col(4,reqLabel('Service Date (on this date)')+dateInput('serviceDate')),col(8,reqLabel('Indicate if Ward is:')+selectInput('serviceIndicateIf',[['','— Select —'],['Ward is totally incapacitated','Ward is totally incapacitated'],['Ward is under 14 years old','Ward is under 14 years old'],['N/A','N/A']],D.serviceIndicateIf)));
+    // Milestone 72G: the ward's status is the workbook's "Indicate if:"; how
+    // the copies were served is its own box, printed on the PDF only.
+    const serviceRow=formRow(col(4,reqLabel('Service Date (on this date)')+dateInput('serviceDate')),col(8,reqLabel('Indicate if Ward is:')+selectInput('serviceIndicateIf',[['','— Select —'],...WARD_STATUS_VALUES.map(v=>[v,v])],D.serviceIndicateIf)))
+      +formRow(col(12,optLabel(SERVICE_METHOD_LABEL)+textInput('serviceMethod','U.S. Mail')));
     // Milestone 72H: the certificate's attorney is D-2's, as the Clerk's
     // workbook links it -- its name, Florida Bar number, phone and address
     // are no longer asked again here. The certificate keeps its own signature

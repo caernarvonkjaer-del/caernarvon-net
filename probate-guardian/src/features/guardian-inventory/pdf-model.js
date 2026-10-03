@@ -11,6 +11,7 @@ import { calcTotalsGuardian, makeGuardianCalc, isRestrictedAnswer, isInSafeDepos
 import { preparedByLine } from '../../core/form/preparer-flag.js';
 import { formatMoney } from '../../core/format/money.js';
 import { isUnrepresented, resolveServiceCertifier } from '../../core/filing/unrepresented-filing.js';
+import { methodOfServiceLine } from '../../core/filing/service-method.js';
 import { inferBondDepositoryState, bondDepositoryPdfLines, revealsBond } from '../../core/filing/bond-depository.js';
 
 export function buildVerifiedInventoryModel(D, options = {}) {
@@ -858,6 +859,8 @@ export function buildVerifiedInventoryModel(D, options = {}) {
         tag: 'P',
         text: `Indicate if Ward is: ${d.serviceIndicateIf || '—'}`,
       },
+      // Milestone 72G: how the copies were served, omitted when none is entered.
+      ...(methodOfServiceLine(d.serviceMethod) ? [{ type: 'notice', tag: 'P', text: methodOfServiceLine(d.serviceMethod) }] : []),
       // Milestone 72H: the certificate's attorney is D-2's -- name, Florida
       // Bar number, phone, both emails and address -- as the Clerk's workbook
       // links PART VI's attorney to the filing's. Only the signature and its

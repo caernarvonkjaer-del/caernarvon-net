@@ -8,6 +8,7 @@ import { maskSSN } from '../../core/pdf/ssn-format.js';
 import { REMUNERATION_DECLARATION, REMUNERATION_NONE_REPORTED } from '../../core/filing/statutory-text.js';
 import { formatMoney } from '../../core/format/money.js';
 import { isUnrepresented, resolveServiceCertifier } from '../../core/filing/unrepresented-filing.js';
+import { methodOfServiceLine } from '../../core/filing/service-method.js';
 
 export function buildSimplifiedAccountingModel(D, options = {}) {
   const d = D || {};
@@ -246,8 +247,6 @@ export function buildSimplifiedAccountingModel(D, options = {}) {
   // service entirely -- no row at all, rather than a truncated address.
   // Annual Accounting's equivalent filter already included it.
   const certRecipients = (d.certRecipients || []).filter(r => r && (r.name || r.line2 || r.line3 || r.line4));
-  const serviceDateText = fmtDate(d.certServiceDate) || 'the date indicated below';
-  const indicatorNote = d.certIndicator ? ` | Indicate if: ${d.certIndicator}` : '';
 
   // Milestone 71B: with no attorney, the guardian who served the copies signs,
   // with the name and contact details from their Part IV card.
@@ -306,11 +305,16 @@ export function buildSimplifiedAccountingModel(D, options = {}) {
           text: 'None listed.',
         }
       ]),
+      // Milestone 72G: the method on its own line (omitted when none is
+      // entered), no longer passed off as "Indicate if:"; the ward's status
+      // prints as the Inventory's does.
       {
         type: 'notice',
         tag: 'P',
-        text: `on this date: ${fmtDate(d.certServiceDate) || 'the date indicated below'}${d.certIndicator ? `  |  Indicate if: ${d.certIndicator}` : ''}`,
+        text: `on this date: ${fmtDate(d.certServiceDate) || 'the date indicated below'}`,
       },
+      ...(methodOfServiceLine(d.certIndicator) ? [{ type: 'notice', tag: 'P', text: methodOfServiceLine(d.certIndicator) }] : []),
+      { type: 'notice', tag: 'P', text: `Indicate if Ward is: ${d.certWardStatus || '—'}` },
       serviceSigner || {
         type: 'signature-block',
         tag: 'Part',

@@ -18,6 +18,7 @@ import { renderFormField, renderYesNoField, renderRadioGroupField, esc } from '.
 import { renderSignatureStateControl } from '../signature/signature-state-control.js';
 import { inferLegacySignatureState } from '../validation/signature-state.js';
 import { preparerNoteHTML } from '../signature/preparer-note.js';
+import { SERVICE_METHOD_LABEL, SERVICE_METHOD_KIND } from '../filing/service-method.js';
 
 export function renderPlanCertificateOfServicePage({ filing, route, cfg = {} }) {
   const d = filing || {};
@@ -42,7 +43,7 @@ export function renderPlanCertificateOfServicePage({ filing, route, cfg = {} }) 
     <div class="schedule-instructions">${lead} I hereby certify that a copy of this ${esc(cfg.planNoun || 'plan')} has been furnished to the recipients listed below. Nothing on this page is required to file; the print preview notes what is still blank.</div>
     <div class="row g-2 mb-3">
       <div class="col-md-4">${renderFormField({ path: 'certDate', label: 'Date of Service', value: d.certDate || '', type: 'date', id: 'certDate' })}</div>
-      <div class="col-md-6">${renderFormField({ path: 'certIndicator', label: 'Indicate if (e.g. hand-delivered, mailed)', value: d.certIndicator || '', id: 'certIndicator' })}</div>
+      <div class="col-md-6">${renderFormField({ path: 'certIndicator', label: SERVICE_METHOD_LABEL, value: d.certIndicator || '', kind: SERVICE_METHOD_KIND, id: 'certIndicator' })}</div>
     </div>
     <h2 class="subsection-heading">Recipients</h2>
     ${renderServiceAttestationRow({

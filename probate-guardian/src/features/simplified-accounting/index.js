@@ -63,7 +63,8 @@ const SIMPLIFIED_ATTORNEY_REQUIRED = {
 const SIMPLIFIED_ATTORNEY_TRIGGERS = ['attorney', 'attorney_barNumber', 'attorney_phone', 'attorney_email', 'attorney_secondaryEmail', 'attorney_street', 'attorney_cityStateZip', 'attorney_signatureDate', 'attorney_signatureState'];
 const attorneyMarkerAborts = new WeakMap();
 import { renderScheduleDocsSection } from '../../core/filing/schedule-docs.js';
-import { fillAttorneyFromOldCertificate, discardOldCertificateDetails } from '../../core/filing/certificate-migrations.js';
+import { fillAttorneyFromOldCertificate, discardOldCertificateDetails, moveWardStatusFromMethod } from '../../core/filing/certificate-migrations.js';
+import { WARD_STATUS_VALUES, SERVICE_METHOD_LABEL, SERVICE_METHOD_KIND } from '../../core/filing/service-method.js';
 import { oldCertificateDetailsHTML } from '../../core/form/certificate-attorney-note.js';
 import { auditLog } from '../../core/activity/audit-log.js';
 import { countyInputS, inpS, pageIntroRow, pageNavS, yesNoCheckboxS } from '../../core/form/field-html.js';
@@ -221,6 +222,13 @@ export async function mount(container, page, { signal } = {}) {
   if (certFilled) {
     requestSave();
     if (certFilled.length) void auditLog('CERTIFICATE_MIGRATION', `Part V attorney fields filled from the old Part VI certificate: ${certFilled.join(', ')}`, true);
+  }
+  // Milestone 72G: once, a ward's status typed into the method box moves to
+  // Indicate if Ward is:, exact matches only; logged by field name.
+  const statusMove = moveWardStatusFromMethod(getD());
+  if (statusMove) {
+    requestSave();
+    if (statusMove.moved) void auditLog('CERTIFICATE_MIGRATION', "Part VI: the ward's status moved from the method-of-service box (certIndicator) to Indicate if Ward is (certWardStatus)", true);
   }
   sanitizeNegativeAmounts();
   let html;
@@ -690,13 +698,17 @@ function pagePart6(){
         </div>
       </div>
     </div>`;
+  // Milestone 72G: the ward's status is the workbook's "Indicate if:" (J39),
+  // required; how the copies were served is its own box, printed on the PDF
+  // only -- a missing one warns, never blocks.
   return `<div class="schedule-page">
     <h1>Part VI (Part X) — ${started?'Guardian Attorney ':''}Certificate of Service</h1>
   ${preparerNoteHTML()}
     <div class="schedule-instructions">Pursuant to Florida Statute 744.362(1), I hereby certify that a copy of this simplified annual accounting has been furnished to the recipients below.</div>
     <div class="row g-3 mb-3">
       <div class="col-md-4">${inpS('certServiceDate','Date of Service',d.certServiceDate,true,'date')}</div>
-      <div class="col-md-8">${inpS('certIndicator','Indicate if (e.g. hand-delivered, mailed)',d.certIndicator,true)}</div>
+      <div class="col-md-8">${renderSelectField({ path: 'certWardStatus', label: 'Indicate if Ward is:', value: d.certWardStatus, options: WARD_STATUS_VALUES, required: true })}</div>
+      <div class="col-12">${renderFormField({ path: 'certIndicator', label: SERVICE_METHOD_LABEL, value: d.certIndicator, kind: SERVICE_METHOD_KIND, id: 'certIndicator' })}</div>
     </div>
     <h2 style="color:var(--ink);margin:.75rem 0 .4rem;font-size:.95rem;">Recipients</h2>
     ${renderServiceAttestationRow({html:yesNoCheckboxS('certNoRecipients',ATTESTATION_57B,d.certNoRecipients,false,'/p6'),rows:d.certRecipients,attestation:d.certNoRecipients,startedFields:RECIPIENT_STARTED_FIELDS,recipientsPath:'certRecipients',attestationPath:'certNoRecipients'})}
@@ -863,7 +875,12 @@ export function validateSimplified(){
     sectionLabel:'Part VI',earlierLabel:'Accounting Period To',laterLabel:'Date of Service',allowSameDay:true,
     filingType:T,laterPath:'certServiceDate',
   }));
-  req(d.certIndicator,'Part VI — "Indicate if"','certIndicator');
+  // Milestone 72G: the method of service (certIndicator) no longer blocks --
+  // a missing one is a Preview & Export warning (service-method.js). The
+  // ward's status is the workbook's "Indicate if:" box, required on all three
+  // accountings (the requester's decision, recorded as Pinellas Clerk
+  // practice), in the Inventory's own message style.
+  req(d.certWardStatus,'Part VI — Indicate if Ward is:','certWardStatus');
   // Milestone 57B (D16/D17): same rule as the Annual family and the Inventory.
   {
     const rec=serviceRecipientIssues({

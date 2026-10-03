@@ -1,5 +1,5 @@
 {
- "note": "Milestone 70, 70G: what converting a filing into each type the app offers produces, recorded from the app before 70G moved conversion out of legacy-app.js by tests/e2e/filing-conversion.characterization.spec.ts. Regenerate only for a deliberate, recorded change. Changed by Milestone 71 (2026-09-29): 71B added fields to the Inventory, Annual-family and Simplified blanks (attorneyWaiverBasis, attorneyWaiverOrderDate, certGuardianSign*, certifiesService, serviceGuardian), which every converted filing now carries; 71E made every carry one function -- Annual family to Annual family carries Line 20 when the source has no Schedule D figure (the minimal fixture has none: 10500, where Line 30 was a meaningless 0), an Initial Inventory converted into an Annual or Final now carries its Summary I total (it carried nothing), nothing is carried into or out of a Trust Accounting (empty Starting Balance), and each carry records startingBalanceCarry. Changed by Milestone 72B (2026-10-02): every conversion and carry now carries the attorney's primary and secondary email under the destination's own keys; the Simplified Plan and the Annual Plan now receive the attorney's name, Bar number, phone, emails and address (the Annual Plan had only the name, the Simplified Plan nothing); the keys attorneyBar/attorneyPhone/attorneyEmail, which the Annual never reads, are no longer written; the Inventory's attorney carries email and secondaryEmail; and the browser suite's Inventory overlay now names its attorney's email, which arrives on every destination. Changed by Milestones 72C and 72H (2026-10-02; regenerated after the mid-build regression): the Initial Plan's guardian rows carry an email key (72C); a converted Simplified Plan source records certSignerMigrated (72C's once-only certificate signer pin, set when it is opened); a conversion into a Simplified Accounting writes no certificate attorney details -- the certificate's attorney is the filing's (72H) -- and an opened Inventory or Simplified source records certAttorneyMigrated. No other mapping changed.",
+ "note": "Milestone 70, 70G: what converting a filing into each type the app offers produces, recorded from the app before 70G moved conversion out of legacy-app.js by tests/e2e/filing-conversion.characterization.spec.ts. Regenerate only for a deliberate, recorded change. Changed by Milestone 71 (2026-09-29): 71B added fields to the Inventory, Annual-family and Simplified blanks (attorneyWaiverBasis, attorneyWaiverOrderDate, certGuardianSign*, certifiesService, serviceGuardian), which every converted filing now carries; 71E made every carry one function -- Annual family to Annual family carries Line 20 when the source has no Schedule D figure (the minimal fixture has none: 10500, where Line 30 was a meaningless 0), an Initial Inventory converted into an Annual or Final now carries its Summary I total (it carried nothing), nothing is carried into or out of a Trust Accounting (empty Starting Balance), and each carry records startingBalanceCarry. Changed by Milestone 72B (2026-10-02): every conversion and carry now carries the attorney's primary and secondary email under the destination's own keys; the Simplified Plan and the Annual Plan now receive the attorney's name, Bar number, phone, emails and address (the Annual Plan had only the name, the Simplified Plan nothing); the keys attorneyBar/attorneyPhone/attorneyEmail, which the Annual never reads, are no longer written; the Inventory's attorney carries email and secondaryEmail; and the browser suite's Inventory overlay now names its attorney's email, which arrives on every destination. Changed by Milestones 72C and 72H (2026-10-02; regenerated after the mid-build regression): the Initial Plan's guardian rows carry an email key (72C); a converted Simplified Plan source records certSignerMigrated (72C's once-only certificate signer pin, set when it is opened); a conversion into a Simplified Accounting writes no certificate attorney details -- the certificate's attorney is the filing's (72H) -- and an opened Inventory or Simplified source records certAttorneyMigrated. No other mapping changed. Changed by Milestone 72G (2026-10-02, the certificate's lifecycle): a same-period conversion (Annual family <-> Simplified) carries the recipients and the ward's status (certWardStatus) and starts the service date, the method, every certificate signature and the attorney's own Part V signature date blank; Inventory -> Simplified, a later filing, no longer carries the Inventory's service date; destinations gain certWardStatus, opened Annual and Simplified sources certIndicatorMigrated, and the Inventory serviceMethod. Checked against 72G step 6's table.",
  "types": {
   "guardian": {
    "targets": [
@@ -291,6 +291,7 @@
      "certGuardianSignatureState": "",
      "certGuardianSignDate": "",
      "certIndicator": "",
+     "certIndicatorMigrated": true,
      "certNoRecipients": "",
      "certRecipients": [
       {
@@ -314,7 +315,8 @@
        "name": ""
       }
      ],
-     "certServiceDate": "2026-01-02",
+     "certServiceDate": "",
+     "certWardStatus": "",
      "county": "",
      "createdDate": "<time>",
      "depositsSettlement": "",
@@ -434,6 +436,7 @@
      "certGuardianSignatureState": "",
      "certGuardianSignDate": "",
      "certIndicator": "",
+     "certIndicatorMigrated": true,
      "certNoRecipients": "",
      "certRecipients": [
       {
@@ -461,6 +464,7 @@
        "name": ""
       }
      ],
+     "certWardStatus": "",
      "county": "",
      "createdDate": "<time>",
      "filingType": "Annual",
@@ -641,6 +645,7 @@
      "certGuardianSignatureState": "",
      "certGuardianSignDate": "",
      "certIndicator": "",
+     "certIndicatorMigrated": true,
      "certNoRecipients": "",
      "certRecipients": [
       {
@@ -668,6 +673,7 @@
        "name": ""
       }
      ],
+     "certWardStatus": "",
      "county": "",
      "createdDate": "<time>",
      "filingType": "Final",
@@ -848,6 +854,7 @@
      "certGuardianSignatureState": "",
      "certGuardianSignDate": "",
      "certIndicator": "",
+     "certIndicatorMigrated": true,
      "certNoRecipients": "",
      "certRecipients": [
       {
@@ -875,6 +882,7 @@
        "name": ""
       }
      ],
+     "certWardStatus": "",
      "county": "",
      "createdDate": "<time>",
      "filingType": "Trust",
@@ -1172,11 +1180,12 @@
      "certAttySignatureImage": "",
      "certAttySignatureState": "",
      "certAttySignDate": "",
-     "certDate": "2027-01-05",
+     "certDate": "",
      "certGuardianSignatureImage": "",
      "certGuardianSignatureState": "",
      "certGuardianSignDate": "",
-     "certIndicator": "Mailed",
+     "certIndicator": "",
+     "certIndicatorMigrated": true,
      "certNoRecipients": "",
      "certRecipients": [
       {
@@ -1204,6 +1213,7 @@
        "name": ""
       }
      ],
+     "certWardStatus": "N/A",
      "county": "",
      "createdDate": "<time>",
      "filingType": "Annual",
@@ -1379,11 +1389,12 @@
      "certAttySignatureImage": "",
      "certAttySignatureState": "",
      "certAttySignDate": "",
-     "certDate": "2027-01-05",
+     "certDate": "",
      "certGuardianSignatureImage": "",
      "certGuardianSignatureState": "",
      "certGuardianSignDate": "",
-     "certIndicator": "Mailed",
+     "certIndicator": "",
+     "certIndicatorMigrated": true,
      "certNoRecipients": "",
      "certRecipients": [
       {
@@ -1411,6 +1422,7 @@
        "name": ""
       }
      ],
+     "certWardStatus": "N/A",
      "county": "",
      "createdDate": "<time>",
      "filingType": "Final",
@@ -1586,11 +1598,12 @@
      "certAttySignatureImage": "",
      "certAttySignatureState": "",
      "certAttySignDate": "",
-     "certDate": "2027-01-05",
+     "certDate": "",
      "certGuardianSignatureImage": "",
      "certGuardianSignatureState": "",
      "certGuardianSignDate": "",
-     "certIndicator": "Mailed",
+     "certIndicator": "",
+     "certIndicatorMigrated": true,
      "certNoRecipients": "",
      "certRecipients": [
       {
@@ -1618,6 +1631,7 @@
        "name": ""
       }
      ],
+     "certWardStatus": "N/A",
      "county": "",
      "createdDate": "<time>",
      "filingType": "Trust",
@@ -2131,7 +2145,7 @@
      "attorney_email": "attorney@example.com",
      "attorney_phone": "555-555-5555",
      "attorney_secondaryEmail": "",
-     "attorney_signatureDate": "2027-01-05",
+     "attorney_signatureDate": "",
      "attorney_signatureImage": "",
      "attorney_signatureState": "",
      "attorney_street": "123 Main St",
@@ -2150,6 +2164,7 @@
      "certGuardianSignatureState": "",
      "certGuardianSignDate": "",
      "certIndicator": "",
+     "certIndicatorMigrated": true,
      "certNoRecipients": "",
      "certRecipients": [
       {
@@ -2173,7 +2188,8 @@
        "name": ""
       }
      ],
-     "certServiceDate": "2026-12-31",
+     "certServiceDate": "",
+     "certWardStatus": "N/A",
      "county": "",
      "createdDate": "<time>",
      "depositsSettlement": "",
@@ -2293,6 +2309,7 @@
      "certGuardianSignatureState": "",
      "certGuardianSignDate": "",
      "certIndicator": "",
+     "certIndicatorMigrated": true,
      "certNoRecipients": "",
      "certRecipients": [
       {
@@ -2302,6 +2319,7 @@
        "name": "Sample Recipient"
       }
      ],
+     "certWardStatus": "",
      "county": "",
      "createdDate": "<time>",
      "filingType": "Final",
@@ -2481,6 +2499,7 @@
      "certGuardianSignatureState": "",
      "certGuardianSignDate": "",
      "certIndicator": "",
+     "certIndicatorMigrated": true,
      "certNoRecipients": "",
      "certRecipients": [
       {
@@ -2490,6 +2509,7 @@
        "name": "Sample Recipient"
       }
      ],
+     "certWardStatus": "",
      "county": "",
      "createdDate": "<time>",
      "filingType": "Trust",
@@ -2659,7 +2679,7 @@
      "attorney_email": "attorney@example.com",
      "attorney_phone": "555-555-5555",
      "attorney_secondaryEmail": "",
-     "attorney_signatureDate": "2027-01-05",
+     "attorney_signatureDate": "",
      "attorney_signatureImage": "",
      "attorney_signatureState": "",
      "attorney_street": "123 Main St",
@@ -2678,6 +2698,7 @@
      "certGuardianSignatureState": "",
      "certGuardianSignDate": "",
      "certIndicator": "",
+     "certIndicatorMigrated": true,
      "certNoRecipients": "",
      "certRecipients": [
       {
@@ -2701,7 +2722,8 @@
        "name": ""
       }
      ],
-     "certServiceDate": "2026-12-31",
+     "certServiceDate": "",
+     "certWardStatus": "N/A",
      "county": "",
      "createdDate": "<time>",
      "depositsSettlement": "",
@@ -2821,6 +2843,7 @@
      "certGuardianSignatureState": "",
      "certGuardianSignDate": "",
      "certIndicator": "",
+     "certIndicatorMigrated": true,
      "certNoRecipients": "",
      "certRecipients": [
       {
@@ -2830,6 +2853,7 @@
        "name": "Sample Recipient"
       }
      ],
+     "certWardStatus": "",
      "county": "",
      "createdDate": "<time>",
      "filingType": "Annual",
@@ -3009,6 +3033,7 @@
      "certGuardianSignatureState": "",
      "certGuardianSignDate": "",
      "certIndicator": "",
+     "certIndicatorMigrated": true,
      "certNoRecipients": "",
      "certRecipients": [
       {
@@ -3018,6 +3043,7 @@
        "name": "Sample Recipient"
       }
      ],
+     "certWardStatus": "",
      "county": "",
      "createdDate": "<time>",
      "filingType": "Trust",
@@ -3187,7 +3213,7 @@
      "attorney_email": "attorney@example.com",
      "attorney_phone": "555-555-5555",
      "attorney_secondaryEmail": "",
-     "attorney_signatureDate": "2027-01-05",
+     "attorney_signatureDate": "",
      "attorney_signatureImage": "",
      "attorney_signatureState": "",
      "attorney_street": "123 Main St",
@@ -3206,6 +3232,7 @@
      "certGuardianSignatureState": "",
      "certGuardianSignDate": "",
      "certIndicator": "",
+     "certIndicatorMigrated": true,
      "certNoRecipients": "",
      "certRecipients": [
       {
@@ -3229,7 +3256,8 @@
        "name": ""
       }
      ],
-     "certServiceDate": "2026-12-31",
+     "certServiceDate": "",
+     "certWardStatus": "N/A",
      "county": "",
      "createdDate": "<time>",
      "depositsSettlement": "",
@@ -3349,6 +3377,7 @@
      "certGuardianSignatureState": "",
      "certGuardianSignDate": "",
      "certIndicator": "",
+     "certIndicatorMigrated": true,
      "certNoRecipients": "",
      "certRecipients": [
       {
@@ -3358,6 +3387,7 @@
        "name": "Sample Recipient"
       }
      ],
+     "certWardStatus": "",
      "county": "",
      "createdDate": "<time>",
      "filingType": "Annual",
@@ -3537,6 +3567,7 @@
      "certGuardianSignatureState": "",
      "certGuardianSignDate": "",
      "certIndicator": "",
+     "certIndicatorMigrated": true,
      "certNoRecipients": "",
      "certRecipients": [
       {
@@ -3546,6 +3577,7 @@
        "name": "Sample Recipient"
       }
      ],
+     "certWardStatus": "",
      "county": "",
      "createdDate": "<time>",
      "filingType": "Final",
@@ -3732,6 +3764,7 @@
      "certGuardianSignatureState": "",
      "certGuardianSignDate": "",
      "certIndicator": "",
+     "certIndicatorMigrated": true,
      "certNoRecipients": "",
      "certRecipients": [
       {
@@ -3756,6 +3789,7 @@
       }
      ],
      "certServiceDate": "",
+     "certWardStatus": "",
      "county": "",
      "createdDate": "<time>",
      "depositsSettlement": "",
@@ -3881,6 +3915,7 @@
      "certGuardianSignatureState": "",
      "certGuardianSignDate": "",
      "certIndicator": "",
+     "certIndicatorMigrated": true,
      "certNoRecipients": "",
      "certRecipients": [
       {
@@ -3908,6 +3943,7 @@
        "name": ""
       }
      ],
+     "certWardStatus": "",
      "county": "",
      "createdDate": "<time>",
      "filingType": "Annual",
@@ -4078,6 +4114,7 @@
      "certGuardianSignatureState": "",
      "certGuardianSignDate": "",
      "certIndicator": "",
+     "certIndicatorMigrated": true,
      "certNoRecipients": "",
      "certRecipients": [
       {
@@ -4105,6 +4142,7 @@
        "name": ""
       }
      ],
+     "certWardStatus": "",
      "county": "",
      "createdDate": "<time>",
      "filingType": "Final",
@@ -4275,6 +4313,7 @@
      "certGuardianSignatureState": "",
      "certGuardianSignDate": "",
      "certIndicator": "",
+     "certIndicatorMigrated": true,
      "certNoRecipients": "",
      "certRecipients": [
       {
@@ -4302,6 +4341,7 @@
        "name": ""
       }
      ],
+     "certWardStatus": "",
      "county": "",
      "createdDate": "<time>",
      "filingType": "Trust",
@@ -4555,6 +4595,7 @@
       "signatureState": ""
      },
      "serviceIndicateIf": "",
+     "serviceMethod": "",
      "serviceNoRecipients": "",
      "serviceRecipients": [
       {

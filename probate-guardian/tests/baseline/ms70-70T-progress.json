@@ -23,6 +23,7 @@
   "tests/e2e/case-file-roundtrip.spec.ts",
   "tests/e2e/case-write-through.spec.ts",
   "tests/e2e/certificate-old-details.spec.ts",
+  "tests/e2e/certificate-service-method.spec.ts",
   "tests/e2e/closed-filing-sync.spec.ts",
   "tests/e2e/combobox-keyboard-nav.spec.ts",
   "tests/e2e/conditional-reveal-routes.spec.ts",

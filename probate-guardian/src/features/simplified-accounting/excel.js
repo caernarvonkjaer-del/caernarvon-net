@@ -8,7 +8,7 @@ import { authorizeFilingOutput } from '../../core/filing/output-authorization.js
 import { getExcelCapacityIssues } from '../../core/excel/excel-capacity.js';
 import { getExcelJS, saveWorkbookFile, setCell, setDateCell } from '../../core/excel/excel-engine.js';
 import { readCellText } from '../../core/excel/cell-reader.js';
-import { compareImportedCertificate } from '../../core/filing/certificate-migrations.js';
+import { compareImportedCertificate, readIndicateIfBox } from '../../core/filing/certificate-migrations.js';
 import { alertModal, confirmModal } from '../../core/ui/dialogs.js';
 import { setStatus, scheduleStatusClear } from '../../core/ui/transient-status.js';
 import { beginExport } from '../../core/ui/export-guard.js';
@@ -209,7 +209,9 @@ export async function doSaveExcel(){
       setCell(p56,'J19',inv.attorney_street||'');
       setCell(p56,'J21',inv.attorney_cityStateZip||'');
       setDateCell(p56,'H39',inv.certServiceDate);
-      setCell(p56,'J39',inv.certIndicator||'');
+      // Milestone 72G: "Indicate if:" is the ward's status, a dropdown on the
+      // Clerk's form; the method of service is printed on the PDF only.
+      setCell(p56,'J39',inv.certWardStatus||'');
       const r=inv.certRecipients;
       // Milestone 72A: the right-hand recipient boxes are the merged I27:L27,
       // I28:L28 ... -- I is each box's own cell. These used to be written to
@@ -409,7 +411,17 @@ export async function importExcel(input){
         getD().attorney_street=certCmp.attorney.street;
         getD().attorney_cityStateZip=certCmp.attorney.csz;
         getD().certServiceDate=gc56('H39').substring(0,10);
-        getD().certIndicator=gc56('J39');
+        // Milestone 72G: read by what the box holds -- a workbook exported before
+        // 72G holds the method there (certificate-migrations.js). A ward's
+        // status sets the ward's status; any other text is the method and says
+        // nothing of the status; blank is an unanswered status. The filing's
+        // method is otherwise kept: a 72G workbook carries none, and an absence
+        // must not erase what the filer typed (67A's rule).
+        {
+          const box=readIndicateIfBox(gc56('J39'));
+          if('wardStatus' in box)getD().certWardStatus=box.wardStatus;
+          if(box.method)getD().certIndicator=box.method;
+        }
         const attySignDate=gc56('H41').substring(0,10);
         getD().certAttySignDate=attySignDate;
         // The template exposes only one attorney signature-date cell (H41),

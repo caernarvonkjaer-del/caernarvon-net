@@ -28,7 +28,6 @@
    "target.ts::fillDynPrompt",
    "window-api.ts::testing",
    "workbook-vs-template.ts::excel",
-   "workbook-vs-template.ts::cellValue",
    "workbook-vs-template.ts::formulaAfterPruning"
   ]
  },
@@ -42,13 +41,13 @@
   "fixtures.ts::MINIMAL_VALID_PLAN_ANNUAL (1 specs)",
   "plan-fixture.ts::registerPlanMountTests (4 specs)",
   "supplemental-pdf-fixture.ts::buildSupplementalAttachmentFixture (4 specs)",
-  "target.ts::fillMinimalValidGuardianWard (28 specs)",
-  "target.ts::fillMinimalValidSimplifiedWard (20 specs)",
+  "target.ts::fillMinimalValidGuardianWard (29 specs)",
+  "target.ts::fillMinimalValidSimplifiedWard (21 specs)",
   "target.ts::fillMinimalValidPlanSimplifiedWard (18 specs)",
-  "target.ts::fillMinimalValidPlanAnnualWard (15 specs)",
+  "target.ts::fillMinimalValidPlanAnnualWard (16 specs)",
   "target.ts::fillMinimalValidPlanMinorWard (15 specs)",
   "target.ts::fillMinimalValidPlanInitialWard (17 specs)",
-  "target.ts::fillMinimalValidAnnualWard (33 specs)"
+  "target.ts::fillMinimalValidAnnualWard (34 specs)"
  ],
  "helpers": [
   {
@@ -272,7 +271,7 @@
    "module": "tests/e2e/support/pdf-extract.ts",
    "name": "extractPdfText",
    "kind": "function",
-   "specFiles": 23,
+   "specFiles": 24,
    "factory": false
   },
   {
@@ -342,7 +341,7 @@
    "module": "tests/e2e/support/stream.ts",
    "name": "readAll",
    "kind": "function",
-   "specFiles": 24,
+   "specFiles": 25,
    "factory": false
   },
   {
@@ -440,7 +439,7 @@
    "module": "tests/e2e/support/target.ts",
    "name": "freshStartNoPassword",
    "kind": "function",
-   "specFiles": 118,
+   "specFiles": 119,
    "factory": false
   },
   {
@@ -454,14 +453,14 @@
    "module": "tests/e2e/support/target.ts",
    "name": "createWard",
    "kind": "function",
-   "specFiles": 104,
+   "specFiles": 105,
    "factory": false
   },
   {
    "module": "tests/e2e/support/target.ts",
    "name": "reopenFilingWithStoredShape",
    "kind": "function",
-   "specFiles": 4,
+   "specFiles": 5,
    "factory": false
   },
   {
@@ -475,21 +474,21 @@
    "module": "tests/e2e/support/target.ts",
    "name": "fillMinimalValidGuardianWard",
    "kind": "function",
-   "specFiles": 28,
+   "specFiles": 29,
    "factory": true
   },
   {
    "module": "tests/e2e/support/target.ts",
    "name": "createSimplifiedWard",
    "kind": "function",
-   "specFiles": 27,
+   "specFiles": 28,
    "factory": false
   },
   {
    "module": "tests/e2e/support/target.ts",
    "name": "fillMinimalValidSimplifiedWard",
    "kind": "function",
-   "specFiles": 20,
+   "specFiles": 21,
    "factory": true
   },
   {
@@ -503,7 +502,7 @@
    "module": "tests/e2e/support/target.ts",
    "name": "fillMinimalValidPlanAnnualWard",
    "kind": "function",
-   "specFiles": 15,
+   "specFiles": 16,
    "factory": true
   },
   {
@@ -524,7 +523,7 @@
    "module": "tests/e2e/support/target.ts",
    "name": "fillMinimalValidAnnualWard",
    "kind": "function",
-   "specFiles": 33,
+   "specFiles": 34,
    "factory": true
   },
   {
@@ -594,7 +593,7 @@
    "module": "tests/e2e/support/target.ts",
    "name": "autoAcceptDynDialogs",
    "kind": "function",
-   "specFiles": 3,
+   "specFiles": 4,
    "factory": false
   },
   {
@@ -622,7 +621,7 @@
    "module": "tests/e2e/support/workbook-vs-template.ts",
    "name": "loadWorkbook",
    "kind": "function",
-   "specFiles": 2,
+   "specFiles": 3,
    "factory": false
   },
   {
@@ -636,14 +635,14 @@
    "module": "tests/e2e/support/workbook-vs-template.ts",
    "name": "exportWithWrites",
    "kind": "function",
-   "specFiles": 2,
+   "specFiles": 3,
    "factory": false
   },
   {
    "module": "tests/e2e/support/workbook-vs-template.ts",
    "name": "cellValue",
    "kind": "function",
-   "specFiles": 0,
+   "specFiles": 1,
    "factory": false
   },
   {

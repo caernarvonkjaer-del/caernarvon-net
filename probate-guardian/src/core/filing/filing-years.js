@@ -10,6 +10,7 @@ import { hydrateCountyFromWardParty } from '../navigation/ward-county.js';
 import { flushPendingSave, saveWardToState, setDirtySinceExport, updateLastSavedIndicator } from '../persistence/case-file.js';
 import { applyCarriedStartingBalance } from './starting-balance-carry.js';
 import { getCaseFile } from '../state.js';
+import { clearCertificateAnswers } from './service-method.js';
 import { notifyProbateGuardianTabStateChanged } from '../navigation/tab-state.js';
 
 // A ward's flat top-level fields (schedules, balances, signatures, etc.)
@@ -206,6 +207,13 @@ export function resetYearlyFieldsForNewYear(data,type){
   if(Array.isArray(data.remuneration)){
     data.remuneration=data.remuneration.map(()=>formEngine(type)==='annual'?emptyRowAnnual('remun'):({guardian:'',type:'',description:''}));
   }
+  // Milestone 72G (decided 2026-10-02): a certificate describes one filing
+  // being served, so a new year keeps its recipients for review and starts
+  // every answer blank -- date, method, "no recipients are required", the
+  // signer choice, every certificate signature and the ward's status -- on
+  // all seven forms (service-method.js). It used to keep last year's method,
+  // attestation and signatures, and on the Plans even the service date.
+  clearCertificateAnswers(data,String(formEngine(type)).startsWith('plan')?'plan':formEngine(type));
 }
 
 // Guardianship annual/simplified accounting periods commonly span two

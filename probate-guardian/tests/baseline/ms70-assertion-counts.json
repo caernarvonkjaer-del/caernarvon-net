@@ -2,8 +2,8 @@
  "generatedBy": "node scripts/ms70-assertion-counts.mjs --write-baseline",
  "note": "Milestone 70 per-spec assertion counts (static expect calls). tests/unit/ms70-assertion-counts.spec.js fails when a spec falls below its count; lowering it requires --reason, recorded in dropLog. A tripwire, not proof of equivalence (decision D9).",
  "totals": {
-  "expects": 7507,
-  "tests": 2140
+  "expects": 7595,
+  "tests": 2160
  },
  "counts": {
   "tests/e2e/annotation-toolbar-containment.spec.ts": {
@@ -93,6 +93,10 @@
   "tests/e2e/certificate-old-details.spec.ts": {
    "expects": 25,
    "tests": 3
+  },
+  "tests/e2e/certificate-service-method.spec.ts": {
+   "expects": 21,
+   "tests": 4
   },
   "tests/e2e/closed-filing-sync.spec.ts": {
    "expects": 18,
@@ -343,7 +347,7 @@
    "tests": 2
   },
   "tests/e2e/plan-certificate-of-service.spec.ts": {
-   "expects": 51,
+   "expects": 52,
    "tests": 8
   },
   "tests/e2e/plan-directive-cards.spec.ts": {
@@ -991,7 +995,7 @@
    "tests": 5
   },
   "tests/unit/plan-certificate-of-service.spec.js": {
-   "expects": 61,
+   "expects": 64,
    "tests": 14
   },
   "tests/unit/plan-co-guardian-pdf.spec.js": {
@@ -1121,6 +1125,10 @@
   "tests/unit/service-attestation-visibility.spec.js": {
    "expects": 13,
    "tests": 7
+  },
+  "tests/unit/service-method.spec.js": {
+   "expects": 63,
+   "tests": 16
   },
   "tests/unit/service-recipients.spec.js": {
    "expects": 29,

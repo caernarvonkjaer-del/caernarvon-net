@@ -575,6 +575,12 @@ serve or is blank).
      recipient list, addresses and method fields the attorney certificate
      already uses. The build confirms each element prints on each engine's
      PDF, rather than assuming the attorney version has them all;
+     **Correction (Milestone 72G, 2026-10-02):** half right, for the wrong
+     reason. A method box existed on the Annual and the Simplified, but under
+     a ward-status label ("Indicate if") and written into the workbook's
+     ward-status box; the Inventory had none. 72G relabels it as the method
+     on all seven certificates (adding the Inventory's), prints it on its own
+     PDF line, and gives the ward's status its own dropdown;
    - the certificate's heading drops "GUARDIAN ATTORNEY" in the PDF only when
      the guardian signs;
    - once an attorney is started, today's attorney certificate returns

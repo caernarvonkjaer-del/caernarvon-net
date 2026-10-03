@@ -98,6 +98,8 @@ export const MINIMAL_VALID_ANNUAL = {
   // requires. Stated anyway, matching the bond details above.
   bondDepositoryState: 'bond-only',
   certDate: '2026-12-31',
+  // Milestone 72G: the ward's status (Part X's "Indicate if Ward is:"), required.
+  certWardStatus: 'N/A',
   schA: [{ payer: 'Social Security', description: 'Monthly benefit', bank: 'Sample Bank', accountNo: '1234', amount: '500' }],
   // Line 20 (starting balance + income - disbursements) will not equal Line 30
   // (sum of Schedule D listings) unless the D schedules are populated to
@@ -162,7 +164,10 @@ export const MINIMAL_VALID_SIMPLIFIED = {
   attorney_street: '123 Main St',
   attorney_cityStateZip: 'Clearwater, FL 33755',
   certServiceDate: '2027-01-05',
+  // Milestone 72G: the method of service, and the ward's status (Part VI's
+  // "Indicate if Ward is:"), which is required.
   certIndicator: 'Mailed',
+  certWardStatus: 'N/A',
   guardians: [{
     name: 'Sample Guardian', ssn: '123-45-6789', phone: '555-555-5555', email: 'guardian@example.com',
     mailingStreet: '123 Main St', mailingCityStateZip: 'Clearwater, FL 33755',

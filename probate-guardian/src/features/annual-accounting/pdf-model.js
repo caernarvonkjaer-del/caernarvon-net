@@ -11,6 +11,7 @@ import { maskSSN } from '../../core/pdf/ssn-format.js';
 import { b4AccountHeading } from '../../core/accounting/bank-accounts.js';
 import { preparedByLine } from '../../core/form/preparer-flag.js';
 import { isUnrepresented, resolveServiceCertifier } from '../../core/filing/unrepresented-filing.js';
+import { methodOfServiceLine } from '../../core/filing/service-method.js';
 import { inferBondDepositoryState, bondDepositoryPdfLines, revealsBond } from '../../core/filing/bond-depository.js';
 
 export const DISB_CATS = [
@@ -1136,11 +1137,16 @@ export function buildAnnualAccountingModel(D, options = {}) {
     });
   }
 
+  // Milestone 72G: the date line no longer carries the method ("| mailed");
+  // the method has its own line, omitted when none is entered, and the ward's
+  // status prints as the Inventory's does.
   certBlocks.push({
     type: 'notice',
     tag: 'P',
-    text: `on this date: ${fmtD(d.certDate) || 'the date indicated below'}${d.certIndicator ? ` | ${d.certIndicator}` : ''}`,
+    text: `on this date: ${fmtD(d.certDate) || 'the date indicated below'}`,
   });
+  if (methodOfServiceLine(d.certIndicator)) certBlocks.push({ type: 'notice', tag: 'P', text: methodOfServiceLine(d.certIndicator) });
+  certBlocks.push({ type: 'notice', tag: 'P', text: `Indicate if Ward is: ${d.certWardStatus || '—'}` });
 
   if (unrepresented) {
     // Milestone 71B: the guardian who served the copies signs, with the

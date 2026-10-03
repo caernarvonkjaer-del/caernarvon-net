@@ -89,8 +89,11 @@ describe('settled and started -- the sidebar and the print preview', () => {
     const started = { ...emptyCertificateOfService(), certIndicator: 'mailed' };
     expect(codes(started)).toEqual(['plan-certificate.recipients', 'plan-certificate.date', 'plan-certificate.signature']);
     expect(codes(started, { optional: true }), 'once started, an optional certificate is told the same as any other').toEqual(codes(started));
-    const complete = { ...emptyCertificateOfService(), certRecipients: [{ name: 'Sam', line2: '', line3: '', line4: '' }], certDate: '2026-03-01', certSignatureState: 'typed', certSignatureDate: '2026-03-01' };
+    // Milestone 72G: a complete certificate states how the copies were served.
+    const complete = { ...emptyCertificateOfService(), certRecipients: [{ name: 'Sam', line2: '', line3: '', line4: '' }], certDate: '2026-03-01', certIndicator: 'U.S. Mail', certSignatureState: 'typed', certSignatureDate: '2026-03-01' };
     expect(codes(complete)).toEqual([]);
+    expect(codes({ ...complete, certIndicator: '' }), 'someone listed and no method: the 72G warning').toEqual(['plan-certificate.method']);
+    expect(planCertificateAdvisories({ ...complete, certIndicator: '' })[0].message).toBe('Certificate of Service — How the copies were served is not stated. Rule 2.516(f) lists the method of service among what a certificate of service includes.');
     const attested = { ...emptyCertificateOfService(), certNoRecipients: 'Yes', certDate: '2026-03-01', certSignatureDate: '2026-03-01' };
     expect(codes(attested), 'a legacy-style date alone counts as a typed signature').toEqual([]);
     expect(codes({ ...complete, certRecipients: [...complete.certRecipients, { name: '', line2: 'PO Box 1', line3: '', line4: '' }] })).toEqual(['plan-certificate.recipient-2']);
@@ -109,11 +112,13 @@ describe('the PDF section', () => {
     };
     const s = planCertificateOfServiceSection(f, cfg, fmt);
     expect(s).toMatchObject({ id: 'certificate-of-service', title: 'Certificate of Service', pageBreakBefore: true });
-    const [certify, table, dated, sig] = s.blocks;
+    // Milestone 72G: the method has its own line after the date.
+    const [certify, table, dated, method, sig] = s.blocks;
     expect(certify.text).toBe('I hereby certify that a copy of this plan has been furnished to:');
     expect(table.type).toBe('table');
     expect(table.rows).toEqual([['1', 'Sam Recipient', ['1 Main St', 'Clearwater, FL 33755']]]);
-    expect(dated.text).toBe('on this date: 03/01/2026 | mailed');
+    expect(dated.text).toBe('on this date: 03/01/2026');
+    expect(method.text).toBe('Method of service: mailed');
     expect(sig).toMatchObject({ type: 'signature-block', role: 'Certified by (Attorney)', signerName: 'Jordan Reyes, Esq.', signatureDate: '03/02/2026', signatureState: 'typed' });
   });
 

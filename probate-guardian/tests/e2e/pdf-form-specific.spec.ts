@@ -50,6 +50,7 @@ test.describe('PDF Accessibility: Accounting & Inventory Filing-Specific Coverag
         attorney_cityStateZip: 'Clearwater, FL 33765',
         attorney_signatureDate: '2026-03-01',
         certServiceDate: '2026-03-01',
+        certWardStatus: 'N/A', // Milestone 72G: the ward's status, required
         certAttySignDate: '2026-03-01',
         certAttyBarNumber: '1029384',
         certAttyPhone: '(727) 555-0100',
@@ -258,6 +259,7 @@ test.describe('PDF Accessibility: Accounting & Inventory Filing-Specific Coverag
           { name: 'Clerk of Court', line2: '315 Court St', line3: 'Clearwater, FL 33756', line4: 'Room 100' }
         ],
         certDate: '2026-03-01',
+        certWardStatus: 'N/A', // Milestone 72G: the ward's status, required
         certIndicator: 'E-Portal / Florida Courts E-Filing',
         certAttySignDate: '2026-03-01',
         remuneration: [
@@ -498,6 +500,7 @@ test.describe('PDF Accessibility: Accounting & Inventory Filing-Specific Coverag
           { name: 'DRIFT_GUARD_RECIPIENT_NAME', line2: 'DRIFT_GUARD_ADDR_LINE2', line3: 'Clearwater, FL 33756', line4: '' }
         ],
         certDate: '2026-03-01',
+        certWardStatus: 'N/A', // Milestone 72G: the ward's status, required
         certIndicator: 'DRIFT_GUARD_PORTAL_INDICATOR',
         certAttySignDate: '2026-03-01',
         remuneration: [

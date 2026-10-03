@@ -168,7 +168,9 @@ for (const form of FORMS) {
       const text = (await extractPdfText(await download(page, form.pdfButton))).replace(/\s+/g, ' ');
       expect(text).toContain('Certificate of Service');
       expect(text).toContain('Sam Recipient');
-      expect(text).toContain('on this date: 03/01/2026 | mailed');
+      // Milestone 72G: the method on its own line.
+      expect(text).toContain('on this date: 03/01/2026');
+      expect(text).toContain('Method of service: mailed');
       expect(text).toContain('Certified by (Guardian)');
     });
 
