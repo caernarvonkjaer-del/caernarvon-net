@@ -38,12 +38,18 @@ export async function auditLog(eventType, details, success = true, wardId = null
 // the ward-edit debounce as the old IDB store's own audit log always was.
 export async function appendAuditLogEntry(entry){
   entry.id=_auditLogNextId++;
-  // Tag with the active ward so a single-ward export (buildSingleWardExportBlob)
-  // can include only that ward's own entries. Entries created before this
-  // tagging, or app-level events with no active ward, will have wardId
-  // undefined/null and are excluded from single-ward exports (but preserved
-  // in the main case file and the activity log).
-  if(getCaseFile().activeWardId)entry.wardId=getCaseFile().activeWardId;
+  // Tag with the filing the entry is about, so a single-ward export
+  // (buildSingleWardExportBlob) can include only that filing's own entries.
+  // A caller that names the filing keeps it: syncing a closed filing from
+  // Manage Shared Records logs about that filing while another is open, and
+  // tagging every entry with the open one filed it under the wrong filing --
+  // that filing's export carried it, the closed one's missed it (found in
+  // Milestone 71's review; fixed after Milestone 72, 2026-10-03). Otherwise
+  // the active ward. Entries created before this tagging, or app-level events
+  // with no active ward, will have wardId undefined/null and are excluded
+  // from single-ward exports (but preserved in the main case file and the
+  // activity log).
+  if(!entry.wardId&&getCaseFile().activeWardId)entry.wardId=getCaseFile().activeWardId;
   _auditLogEntries.push(entry);
   return true;
 }

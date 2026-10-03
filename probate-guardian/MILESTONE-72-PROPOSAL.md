@@ -31,7 +31,8 @@ reported at the end; the full regression runs from a copy on C:, once after
 
 **Built 2026-10-02, all ten items, with a follow-up;** the final full
 regression ran 2026-10-03 and found one stale test, fixed (see "Final full
-regression").
+regression"). The requester's decisions on what was left open, 2026-10-03,
+are under "After the build".
 
 Building any item still needs the requester's named approval of that item
 (AGENTS.md §3).
@@ -2700,6 +2701,64 @@ passed, 1 failed, 16 skipped, in 1.3 h.** No failure was an app defect.
 
 ---
 
+## After the build: decisions of 2026-10-03
+
+Asked as choices once the milestone's open items were listed (the requester,
+2026-10-03).
+
+1. **The Annual's schedule continuation pages (found in 72A): left as they
+   are.** An Annual with more entries on a schedule than the workbook's first
+   page holds is still filed as PDF, as the app tells the filer. The
+   Inventory fills its continuation pages; the Annual does not.
+2. **Activity-log entries filed under the wrong filing: fixed now** (below).
+3. **The release gate: run once that fix is pushed,** so one run covers
+   everything that would go to production. No production package: the
+   requester builds it. The result is recorded below.
+4. **The two workbook corrections:** a note for the Clerk's office, drafted
+   for the requester to pass on (not kept in the repository).
+
+### Activity-log entries filed under the filing they are about — BUILT 2026-10-03
+
+**What a filer sees now.** Syncing a closed filing with its shared record
+from Manage Shared Records, while another filing is open, records the sync
+under the closed filing. Before, it went under whichever filing was open:
+that filing's single-filing export carried an entry about a different
+filing, its ward's name included, and the closed filing's own export missed
+it. An entry that names no filing goes under the open filing, as before.
+
+**Built:** `appendAuditLogEntry()` (`src/core/activity/audit-log.js`) keeps
+the filing a caller names and tags only an entry that names none. The three
+closed-filing syncs in `party-management.js` are the only callers that name
+one; every other entry is tagged as before.
+
+**Legacy data:** entries already saved under the wrong filing stay there.
+They cannot be re-filed reliably: an entry records the filing's ward name,
+not its ID, and two filings for one ward share that name. Only test-era case
+files hold them, and new entries are right (AGENTS.md §8, item 2).
+
+**Security:** no new data. The fix stops one filing's export carrying an
+entry that names another filing's ward.
+
+**Tests and evidence:**
+- New `tests/unit/audit-log-filing.spec.js` (4): an entry that names its
+  filing keeps it whichever filing is open; one that names none goes under
+  the open filing, or none; a single-filing export carries the entries about
+  that filing and none about another. Red-first: with the previous
+  `audit-log.js` the named entry reads the open filing ("w-2") and the export
+  test fails.
+- `tests/e2e/closed-filing-sync.spec.ts`: after Sync with Current in Manage
+  Shared Records, with the other Plan open, the entry is filed under the
+  closed filing, whose single-filing export carries it, and the open
+  filing's does not. Red-first: with the previous code it is filed under the
+  open filing.
+- `tests/e2e/dashboard-backup.spec.ts`, the single-filing export tests: 9
+  pass. Unit suite: 174 files, 2,516 tests. The other specs that
+  read the Activity Log (`backup-restore-sav`, `form-field-labels`): 10 pass.
+
+### Release gate — PENDING
+
+---
+
 ## Verification plan for the milestone
 
 Per AGENTS.md §2:
@@ -2723,5 +2782,6 @@ Per AGENTS.md §2:
   (2026-10-02), under the instruction to fix bugs found during the build: the
   share and amount boxes now carry the workbook's own share and dollar
   formats. See 72B's Build record.
-- **Activity-log entries tagged with the wrong filing.** Listed in
-  `MILESTONE-71-PROPOSAL.md`; still open.
+- ~~**Activity-log entries tagged with the wrong filing.**~~ Listed in
+  `MILESTONE-71-PROPOSAL.md`. Fixed 2026-10-03 at the requester's decision;
+  see "After the build".

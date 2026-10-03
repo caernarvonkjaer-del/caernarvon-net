@@ -66,6 +66,23 @@ test('ward residence syncs between open Plans, stops for a closed one, and syncs
   await expect(page.locator('#party-directory-rows')).not.toContainText('Closed filing');
   expect(await page.evaluate((id) => (window as any).GuardianForms.testing.snapshot().caseFile.wards.find((x: any) => x.wardId === id).residencePhone, filing1)).toBe('(727) 555-0202');
 
+  // The Activity Log files the sync under the closed filing it was about, not
+  // under filing 2, which was open at the time; so filing 1's single-filing
+  // export carries it and filing 2's does not (fixed 2026-10-03; before, both
+  // the other way round).
+  const logged = await page.evaluate(async ([closed, open]) => {
+    const t = (window as any).GuardianForms.testing;
+    const exported = async (id: string) => {
+      const zip = await (window as any).JSZip.loadAsync(await t.exportArchive.singleFiling(id));
+      return JSON.parse((await zip.file('auditLog.enc').async('string')).replace(/^PLAIN:/, '')).map((e: any) => e.eventType);
+    };
+    const sync = (await t.persistenceState.auditEntries()).filter((e: any) => e.eventType === 'PARTY_SYNC');
+    return { tags: sync.map((e: any) => e.wardId), closed: await exported(closed), open: await exported(open) };
+  }, [filing1, filing2]);
+  expect(logged.tags, 'the sync entry is filed under the closed filing').toEqual([filing1]);
+  expect(logged.closed).toContain('PARTY_SYNC');
+  expect(logged.open).not.toContain('PARTY_SYNC');
+
   // Drift again, this time synced from the closed filing's own Cover.
   await page.evaluate((id) => (window as any).GuardianForms.testing.activateFiling.open(id), filing2);
   await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
