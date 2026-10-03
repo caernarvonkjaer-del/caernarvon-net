@@ -740,6 +740,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`tests\unit\signature-capture.spec.js`](<tests/unit/signature-capture.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\signature-completeness.spec.js`](<tests/unit/signature-completeness.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\signature-stamp-history.spec.js`](<tests/unit/signature-stamp-history.spec.js>) | Automated test covering the named behavior or contract. |
+| [`tests\unit\signed-amount-keypad.spec.js`](<tests/unit/signed-amount-keypad.spec.js>) | Milestone 72E: signed amount boxes offer a keypad with a minus key -- the field builder's rule and a scan of hand-written boxes. |
 | [`tests\unit\simplified-no-blank-pages.spec.js`](<tests/unit/simplified-no-blank-pages.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\skip-classification-audit.spec.js`](<tests/unit/skip-classification-audit.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\ssn-format.spec.js`](<tests/unit/ssn-format.spec.js>) | Automated test covering the named behavior or contract. |
@@ -764,6 +765,7 @@ This index inventories repository files retained as source or project artifacts.
 | [`tests\unit\user-guide-drift-guard.spec.js`](<tests/unit/user-guide-drift-guard.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\validation-adapter.spec.js`](<tests/unit/validation-adapter.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\validation-issue.spec.js`](<tests/unit/validation-issue.spec.js>) | Automated test covering the named behavior or contract. |
+| [`tests\unit\waiver-advocate-hint.spec.js`](<tests/unit/waiver-advocate-hint.spec.js>) | Milestone 72I: the Guardian Advocate hint is drawn, added, removed and watched by the same rule. |
 | [`tests\unit\ward-carryover.spec.js`](<tests/unit/ward-carryover.spec.js>) | Automated test covering the named behavior or contract. Imports from src/core/filing/carry-over.js since Milestone 70's 70G. |
 | [`tests\unit\ward-lock.spec.js`](<tests/unit/ward-lock.spec.js>) | Automated test covering the named behavior or contract. |
 | [`tests\unit\ward-share-advisories.spec.js`](<tests/unit/ward-share-advisories.spec.js>) | The Preview & Export note for Schedule D ward shares above 0 and at most 1 (src/core/filing/ward-share-advisories.js): its wording, schedule and line, advisory only. |

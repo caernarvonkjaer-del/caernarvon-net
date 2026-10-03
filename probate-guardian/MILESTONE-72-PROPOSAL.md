@@ -1537,6 +1537,17 @@ the keyboard is stored as -50. Red-first: the two schedule boxes report
 attribute a phone chooses one by, so that is what is checked. No data,
 legacy, export, security or legal effect.
 
+**Unit test, added 2026-10-03 after the final regression.** The instruction
+asked for a unit test of each section; this item had only its browser test,
+which the end report did not say. New `tests/unit/signed-amount-keypad.spec.js`
+(3): the shared field builder gives a signed amount the text keyboard and
+keeps the decimal keypad for other amounts and shares; every box written out
+by hand in a page with the signed format offers a keyboard with a minus key;
+and the scan finds the Schedule C, Schedule E and Simplified Starting Balance
+boxes, so it cannot pass by finding nothing. Red-first: with the Annual's page
+source from before 72E, the scan reports the two schedule boxes, each asking
+for `decimal`.
+
 ---
 
 ## 72F — Split the summary-page browser test
@@ -2422,6 +2433,17 @@ same rule the page is drawn with, now one shared test (`showsAdvocateHint()`).
 - The Cover's other specs (`attorney-optional-export`, `annual-mount`,
   `guardian-inventory-mount`, `form-runtime-lifecycle.contract`): 43 passed.
 - No data, legacy, export, security or legal effect. Unit suite: 170 files, 2,486 tests.
+- **Unit test, added 2026-10-03 after the final regression.** The
+  instruction asked for a unit test of each section; this item had only its
+  browser test, which the end report did not say. New
+  `tests/unit/waiver-advocate-hint.spec.js` (7): the page draws the hint only
+  for Guardian Advocate with no reason chosen; choosing Guardian Advocate adds
+  that same hint after the last reason, never twice; another type or a reason
+  takes it away; a page without the question is left alone; and the watcher
+  updates it on a write to either field, ignores other fields and stops when
+  disposed. Red-first: against the module from before 72I, the five tests of
+  the live update fail -- nothing existed to update the hint once the page was
+  drawn -- and the two of the drawn page pass, as drawing was never wrong.
 
 ---
 
