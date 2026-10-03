@@ -41,13 +41,13 @@
   "fixtures.ts::MINIMAL_VALID_PLAN_ANNUAL (1 specs)",
   "plan-fixture.ts::registerPlanMountTests (4 specs)",
   "supplemental-pdf-fixture.ts::buildSupplementalAttachmentFixture (4 specs)",
-  "target.ts::fillMinimalValidGuardianWard (30 specs)",
+  "target.ts::fillMinimalValidGuardianWard (31 specs)",
   "target.ts::fillMinimalValidSimplifiedWard (22 specs)",
   "target.ts::fillMinimalValidPlanSimplifiedWard (18 specs)",
   "target.ts::fillMinimalValidPlanAnnualWard (16 specs)",
   "target.ts::fillMinimalValidPlanMinorWard (15 specs)",
   "target.ts::fillMinimalValidPlanInitialWard (17 specs)",
-  "target.ts::fillMinimalValidAnnualWard (35 specs)"
+  "target.ts::fillMinimalValidAnnualWard (36 specs)"
  ],
  "helpers": [
   {
@@ -439,7 +439,7 @@
    "module": "tests/e2e/support/target.ts",
    "name": "freshStartNoPassword",
    "kind": "function",
-   "specFiles": 122,
+   "specFiles": 123,
    "factory": false
   },
   {
@@ -453,7 +453,7 @@
    "module": "tests/e2e/support/target.ts",
    "name": "createWard",
    "kind": "function",
-   "specFiles": 108,
+   "specFiles": 109,
    "factory": false
   },
   {
@@ -474,7 +474,7 @@
    "module": "tests/e2e/support/target.ts",
    "name": "fillMinimalValidGuardianWard",
    "kind": "function",
-   "specFiles": 30,
+   "specFiles": 31,
    "factory": true
   },
   {
@@ -523,7 +523,7 @@
    "module": "tests/e2e/support/target.ts",
    "name": "fillMinimalValidAnnualWard",
    "kind": "function",
-   "specFiles": 35,
+   "specFiles": 36,
    "factory": true
   },
   {
@@ -593,14 +593,14 @@
    "module": "tests/e2e/support/target.ts",
    "name": "autoAcceptDynDialogs",
    "kind": "function",
-   "specFiles": 5,
+   "specFiles": 6,
    "factory": false
   },
   {
    "module": "tests/e2e/support/target.ts",
    "name": "dismissScheduleDocPrompt",
    "kind": "function",
-   "specFiles": 17,
+   "specFiles": 18,
    "factory": false
   },
   {
@@ -635,7 +635,7 @@
    "module": "tests/e2e/support/workbook-vs-template.ts",
    "name": "exportWithWrites",
    "kind": "function",
-   "specFiles": 4,
+   "specFiles": 5,
    "factory": false
   },
   {

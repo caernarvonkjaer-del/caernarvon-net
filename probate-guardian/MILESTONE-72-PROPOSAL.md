@@ -2542,6 +2542,23 @@ PDF showed the negative correctly.
 it is seen again, the exact steps are needed, especially how the filing was
 reopened.
 
+**A related defect, found 2026-10-03 and fixed at the requester's decision.**
+While the user guide's screenshots were re-shot, the sidebar's NET ASSETS and
+TOTAL VALUE showed $0.00 beside non-zero figures. The card was recalculated
+after a typed edit and when a filing was opened or switched, but a page
+redraw refreshed only its progress bar. So Remove and Duplicate on a schedule
+row, and an Excel import, changed the figures on every page while the card
+kept the old total until the next keystroke. Confirmed in a browser: after a
+$1,000 disbursement was removed, Net Assets was $8,500 and the card said
+$7,500. `renderPage()` now refreshes the whole card. Whether this is what the
+review saw is not known -- the review typed its figure, which always updated
+the card -- so H2 itself stays as recorded above. Tests: new
+`tests/e2e/sidebar-total-follows-changes.spec.ts` (3: the Annual's Remove and
+Duplicate, the Inventory's Remove, an Annual Excel import); red-first, all 3
+fail without the fix. The 30 browser specs that read the
+sidebar, its progress card or the guided tour (347 tests) pass; unit suite
+175 files, 2,528 tests; `check:types` clean.
+
 ### Also from the review
 
 The review's "Confirmed working" list matches the build records. It also

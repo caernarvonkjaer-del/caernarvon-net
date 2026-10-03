@@ -29,6 +29,7 @@ import { PAGES_GUARDIAN } from '../filing/models/guardian.js';
 import { linkLabelsToInputs, setupAmountFieldValidation } from '../form/form-runtime.js';
 import { commitPendingFieldValues } from '../form/form-contract.js';
 import { resetNavSectionExpanded, updateNavDots } from '../status/nav-marks.js';
+import { refreshWardInfoCard } from '../shell/sidebar.js';
 import { initPrintPager } from '../ui/print-pager.js';
 import { pagePartyManagement, renderClosedFilingSyncNotice, renderPartyManagementBody } from '../parties/party-management.js';
 import { updateHelpContext } from '../help/help-panel.js';
@@ -210,7 +211,14 @@ export async function renderPage(page) {
   // Milestone 40C-C removed the `enforceDateRanges()` window-global; date-range
   // order is reported by checkDateOrder() in each validator, not wired onto the inputs.
   setupAmountFieldValidation();
-  updateNavDots();
+  // The sidebar's filing card -- its headline total and, inside it, the
+  // progress bar (refreshWardInfoCard() ends with updateNavDots()). A typed
+  // edit refreshes it, but Remove, Duplicate and an Excel import change the
+  // figures and then only redraw the page, which used to refresh the
+  // progress bar alone: the total stayed stale until the next keystroke
+  // (found 2026-10-03; tests/e2e/sidebar-total-follows-changes.spec.ts).
+  if (document.getElementById('ward-info-display')) refreshWardInfoCard();
+  else updateNavDots();
   initPrintPager();
   attachFormHeaderActions(el);
 }
