@@ -19,7 +19,7 @@ import { fmtDate as fmtD } from '../../core/excel/cell-reader.js';
 import { filingCopy, resolveFilingDescriptor } from '../../core/filing/filing-descriptor.js';
 import { renderFormField, renderSelectField } from '../../core/form/form-fields.js';
 import { issueFactory } from '../../core/validation/validation-issue.js';
-import { serviceRecipientIssues } from '../../core/validation/service-recipients.js';
+import { serviceRecipientIssues, RECIPIENTS_OR_ATTESTATION } from '../../core/validation/service-recipients.js';
 import { renderServiceAttestationRow } from '../../core/form/service-attestation-visibility.js';
 // Milestone 57B: carried verbatim from MILESTONE-57-PROPOSAL.md section 57B.
 // The wording is load bearing -- it keeps the app on the right side of
@@ -1781,7 +1781,9 @@ export function validateAnnual(){
       // probate-guardian-data-model.csv, so a name is what completes a card.
       missingFields:(r)=>((r.name||'').trim()?[]:['Name']),
     });
-    if(rec.needsAttestation)req('',`Part X — ${ATTESTATION_57B}`,'certNoRecipients');
+    // Milestone 72J: say what to do, not the checkbox's caption; the path
+    // still lands "Go to field" on the checkbox.
+    if(rec.needsAttestation)req('',`Part X — ${RECIPIENTS_OR_ATTESTATION}`,'certNoRecipients');
     rec.firstRowMissing.forEach(f=>req('',`Part X — Recipient 1 ${f}`,'certRecipients.0.name'));
     rec.extraRows.forEach(({index,missing})=>missing.forEach(f=>
       req('',`Part X — Recipient ${index+1} ${f}`,`certRecipients.${index}.name`)));

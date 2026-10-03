@@ -18,7 +18,7 @@ import { renderFormField, renderRadioGroupField } from '../../core/form/form-fie
 import { renderSignatureStateControl, mountSignatureStateControls } from '../../core/signature/signature-state-control.js';
 import { preparerNoteHTML } from '../../core/signature/preparer-note.js';
 import { hasIdentifiedPreparer, preparerFlagCheckboxHTML, preparerWaivedNoticeHTML } from '../../core/form/preparer-flag.js';
-import { serviceRecipientIssues } from '../../core/validation/service-recipients.js';
+import { serviceRecipientIssues, RECIPIENTS_OR_ATTESTATION } from '../../core/validation/service-recipients.js';
 import { renderServiceAttestationRow } from '../../core/form/service-attestation-visibility.js';
 import { esc } from '../../core/filing/escape-html.js';
 import { ic } from '../../core/ui/icons.js';
@@ -1511,7 +1511,9 @@ export function validateGuardian(d=getD()){
       startedFields:RECIPIENT_STARTED_FIELDS,
       missingFields:(r)=>RECIPIENT_FIELDS.filter(([k])=>!String(r[k]||'').trim()).map(([,label])=>label),
     });
-    if(rec.needsAttestation)req('',`D-5 — ${ATTESTATION_57B}`,'serviceNoRecipients');
+    // Milestone 72J: say what to do, not the checkbox's caption; the path
+    // still lands "Go to field" on the checkbox.
+    if(rec.needsAttestation)req('',`D-5 — ${RECIPIENTS_OR_ATTESTATION}`,'serviceNoRecipients');
     rec.firstRowMissing.forEach(f=>req('',`D-5 Recipient 1 — ${f}`,`serviceRecipients.0.${f==='Name'?'name':f==='Address'?'address':'cityStateZip'}`));
     rec.extraRows.forEach(({index,missing})=>missing.forEach(f=>
       req('',`D-5 Recipient ${index+1} — ${f}`,`serviceRecipients.${index}.${f==='Name'?'name':f==='Address'?'address':'cityStateZip'}`)));

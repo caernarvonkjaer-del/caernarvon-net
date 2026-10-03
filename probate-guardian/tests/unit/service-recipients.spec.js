@@ -124,3 +124,37 @@ describe('attestationRelevant() — Milestone 63B, D3', () => {
     }
   });
 });
+
+// Milestone 72J. An empty certificate's issue read the checkbox's caption --
+// "No recipients are required for this certificate (filer attestation - app
+// does not determine legal necessity)" -- as if it were the missing item, in
+// Preview & Export and the Review Readiness list. It now says what to do, in
+// the Plans' own words, on all three accountings; the field path still lands
+// "Go to field" on the checkbox. Red-first: each case fails against the old
+// validators, which push the caption.
+describe('Milestone 72J: an empty certificate says what to do', () => {
+  test.each([
+    ['guardian', 'D-5', 'serviceNoRecipients'],
+    ['annual', 'Part X', 'certNoRecipients'],
+    ['simplified', 'Part VI', 'certNoRecipients'],
+  ])('%s', async (engine, section, path) => {
+    const { vi } = await import('vitest');
+    vi.stubGlobal('window', globalThis);
+    const { openFiling } = await import('./support/open-filing.js');
+    const models = {
+      guardian: (await import('../../src/core/filing/models/guardian.js')).emptyDataGuardian,
+      annual: (await import('../../src/core/filing/models/annual.js')).emptyDataAnnual,
+      simplified: (await import('../../src/core/filing/models/simplified.js')).emptyDataSimplified,
+    };
+    const validators = {
+      guardian: async () => (await import('../../src/features/guardian-inventory/index.js')).validateGuardian,
+      annual: async () => (await import('../../src/features/annual-accounting/index.js')).validateAnnual,
+      simplified: async () => (await import('../../src/features/simplified-accounting/index.js')).validateSimplified,
+    };
+    const validate = await validators[engine]();
+    openFiling({ ...models[engine](), inventoryType: engine });
+    const issue = validate().find((e) => e?.path === path);
+    expect(issue?.message).toBe(`${section} — List at least one recipient who was served, or state that no recipients are required`);
+    expect(issue.message).not.toMatch(/filer attestation/);
+  });
+});

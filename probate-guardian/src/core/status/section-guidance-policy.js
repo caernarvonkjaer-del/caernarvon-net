@@ -1,4 +1,4 @@
-import { serviceRecipientIssues } from '../validation/service-recipients.js';
+import { serviceRecipientIssues, RECIPIENTS_OR_ATTESTATION } from '../validation/service-recipients.js';
 import { CERT_RECIPIENT_STARTED_FIELDS, certificateOptional, certificateStarted } from '../filing/plan-certificate-of-service.js';
 // Milestone 63A. Three questions that one function used to answer as one.
 //
@@ -177,7 +177,7 @@ export function sidebarOnlyWants(type, route, data) {
       missingFields: (r) => (blank(r?.name) ? ['Name'] : []),
     });
     const wants = [];
-    if (rec.needsAttestation) wants.push({ label: 'List at least one recipient who was served, or state that no recipients are required', path: 'certRecipients.0.name' });
+    if (rec.needsAttestation) wants.push({ label: RECIPIENTS_OR_ATTESTATION, path: 'certRecipients.0.name' });
     rec.firstRowMissing.forEach(() => wants.push({ label: 'Recipient 1 name', path: 'certRecipients.0.name' }));
     rec.extraRows.forEach(({ index }) => wants.push({ label: `Recipient ${index + 1} name (finish the card, or remove it)`, path: `certRecipients.${index}.name` }));
     return wants;

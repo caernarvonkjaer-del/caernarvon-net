@@ -34,7 +34,7 @@ import { renderReportingPeriodFields } from '../../core/form/cards/ward-demograp
 // same constant the PDF prints, so the page a filer reads and the document
 // they sign cannot drift apart.
 import { REMUNERATION_DECLARATION } from '../../core/filing/statutory-text.js';
-import { serviceRecipientIssues } from '../../core/validation/service-recipients.js';
+import { serviceRecipientIssues, RECIPIENTS_OR_ATTESTATION } from '../../core/validation/service-recipients.js';
 import { renderServiceAttestationRow } from '../../core/form/service-attestation-visibility.js';
 import { esc } from '../../core/filing/escape-html.js';
 import { ic } from '../../core/ui/icons.js';
@@ -889,7 +889,9 @@ export function validateSimplified(){
       startedFields:RECIPIENT_STARTED_FIELDS,
       missingFields:(r)=>((r.name||'').trim()?[]:['Name and Address']),
     });
-    if(rec.needsAttestation)req('',`Part VI — ${ATTESTATION_57B}`,'certNoRecipients');
+    // Milestone 72J: say what to do, not the checkbox's caption; the path
+    // still lands "Go to field" on the checkbox.
+    if(rec.needsAttestation)req('',`Part VI — ${RECIPIENTS_OR_ATTESTATION}`,'certNoRecipients');
     rec.firstRowMissing.forEach(f=>req('',`Part VI — Recipient 1 — ${f}`,'certRecipients.0.name'));
     rec.extraRows.forEach(({index,missing})=>missing.forEach(f=>
       req('',`Part VI — Recipient ${index+1} — ${f}`,`certRecipients.${index}.name`)));

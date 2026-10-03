@@ -29,6 +29,14 @@
 // model owns, and 57B does not authorize that.
 
 /** True if any field on the row carries content. */
+/**
+ * Milestone 72J: what an empty certificate needs, in words a filer can act on
+ * -- the Plans' wording, now every form's. The accountings used to report the
+ * checkbox's own caption ("No recipients are required for this certificate
+ * (filer attestation - ...)") as if it were the missing item.
+ */
+export const RECIPIENTS_OR_ATTESTATION = 'List at least one recipient who was served, or state that no recipients are required';
+
 export function recipientRowStarted(row, fields) {
   if (!row) return false;
   return fields.some((f) => {
