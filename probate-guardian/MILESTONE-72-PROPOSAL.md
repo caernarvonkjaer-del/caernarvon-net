@@ -2758,7 +2758,31 @@ entry that names another filing's ward.
   pass. Unit suite: 174 files, 2,516 tests. The other specs that
   read the Activity Log (`backup-restore-sav`, `form-field-labels`): 10 pass.
 
-### Release gate — PENDING
+### Release gate — PASSED 2026-10-03
+
+`npm run test:release` from a temporary copy on C: of a949780: **every step
+passed.** No production package was built (the requester builds it).
+
+| Step | Result |
+| --- | --- |
+| Type check, data model | Clean; 1,055 rows valid |
+| Unit | 174 files, 2,516 tests |
+| Source, Chromium | 1,021 passed, 16 skipped |
+| Web build, Chromium | 34 passed, 2 skipped |
+| Portable build opened as a file | 20 passed, 12 skipped |
+| Portable build served from a subfolder | 33 passed |
+| Firefox | 117 passed, 2 skipped |
+| WebKit | 117 passed, 2 skipped |
+| Edge | 119 passed |
+
+Every skip has a stated reason. Source: the same 16 as the final regression
+(7 hosted- or portable-only tests, 9 opt-in merge-gate comparisons). Web:
+two chunk-failure tests that need the unbundled source (their web sibling
+ran). Portable as a file: 12 tests that need a real web address (tab locks,
+updates, a remembered case file), all of which ran and passed in the served
+stage. Firefox and WebKit: a real paste (Playwright grants clipboard access
+only on Chromium) and the remembered case file (Chromium's file access API).
+
 
 **First attempt, 2026-10-03, on ebe1a2c: stopped at its first step, the type
 check.** 72I's new listener reads the event's `detail`, which the type
