@@ -9,6 +9,7 @@ import { getExcelCapacityIssues } from '../../core/excel/excel-capacity.js';
 import { getExcelJS, saveWorkbookFile, setCell, setDateCell } from '../../core/excel/excel-engine.js';
 import { readCellText } from '../../core/excel/cell-reader.js';
 import { compareImportedCertificate, readIndicateIfBox } from '../../core/filing/certificate-migrations.js';
+import { keepUnboxedFields, SIGNATURE_FIELDS } from '../../core/excel/import-keep.js';
 import { alertModal, confirmModal } from '../../core/ui/dialogs.js';
 import { setStatus, scheduleStatusClear } from '../../core/ui/transient-status.js';
 import { beginExport } from '../../core/ui/export-guard.js';
@@ -334,6 +335,11 @@ export async function importExcel(input){
 
       // PARTS III, IV — Guardians
       const p34=workbook.getWorksheet('PARTS III, IV');
+      // Milestone 72 follow-up: the guardians as this filing had them, before
+      // the block below writes the workbook's values into them in place -- the
+      // same-person test further down must compare the workbook's names with
+      // the filing's own, not with names this import has already copied in.
+      const guardiansBeforeImport=(getD().guardians||[]).map(g=>({...(g||{})}));
       if(p34){
         const gc34=(addr)=>readCellText(p34.getCell(addr));
         const g1=getD().guardians[0]||{};
@@ -388,7 +394,10 @@ export async function importExcel(input){
         if(!(await confirmModal('Replace the first three guardian slots with the values from this workbook? Any additional saved guardians will be kept.'))) return;
         const overflowRows=(getD().guardians||[]).slice(3);
         const overflowPartyIds=(getD().guardianPartyIds||[]).slice(3);
-        getD().guardians=[...guardianSlotsFromWorkbook(p34),...overflowRows];
+        // Milestone 72 follow-up: the workbook carries no signature state,
+        // stamp image or "served the copies" flag; kept from this filing for
+        // the same person (import-keep.js), as on the Inventory.
+        getD().guardians=[...guardianSlotsFromWorkbook(p34).map((g,i)=>keepUnboxedFields(g,guardiansBeforeImport[i],[...SIGNATURE_FIELDS,'certifiesService'])),...overflowRows];
         getD().guardianPartyIds=[null,null,null,...overflowPartyIds];
       }
 

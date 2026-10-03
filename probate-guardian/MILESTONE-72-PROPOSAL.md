@@ -2310,9 +2310,10 @@ the data-model rows (the certificate detail rows retained with the new note,
    state and stamp image. They are now kept from the filing -- but only for
    the same person, matched by name (72A's containment test, either way
    round), so a reordered workbook never gives one guardian another's stamp.
-   *Not yet done:* the Annual and Simplified importers drop the signature
-   states and stamps the same way (their workbooks do carry the guardian
-   email); recorded for a follow-up within this milestone.
+   *Not done in 72H:* the Annual and Simplified importers dropped the
+   signature states and stamps the same way (their workbooks do carry the
+   guardian email). Fixed in its own commit; see "Follow-up: an import keeps
+   what the workbook has no box for", after the mid-build regression.
 2. **The Inventory importer filled D-5's attorney name from the Cover's
    Attorney for Guardian,** which is now meaningless (the name is not
    compared: on both workbooks the certificate's name is a formula to the
@@ -2559,6 +2560,73 @@ The specs that failed, were cut short, or that 72D and 72H touched were then
 run on 72H's tree with these fixes: 206 passed, 2 failed (the new 72H spec's
 own wait, fixed and rerun, 3 of 3; and `mixed-version` on C:, which runs from
 D:), 9 skipped.
+
+---
+
+## Follow-up: an import keeps what the workbook has no box for — BUILT 2026-10-02
+
+Found while building 72H (see its Build record), and fixed in its own commit.
+
+**What a filer sees now.** Importing an Annual-family or Simplified
+Accounting workbook -- including the one this app has just exported -- no
+longer resets a guardian's stamped signature to the default or clears the
+"served the copies" tick. On the Annual family the preparer's stamp is kept
+the same way. A workbook that names a different person in a guardian's box
+gives that person nothing of the old guardian's, and a workbook that leaves a
+guardian's slot empty leaves it empty.
+
+**Built:** one shared helper, `src/core/excel/import-keep.js`, used by all
+three importers. It copies the fields no court workbook carries -- the
+signature's chosen state and stamp image, and which guardian served the
+copies (71B) -- from the filing's record onto the record rebuilt from the
+workbook, when both are the same person by name (72A's containment test,
+either way round). The Inventory's own copy of this from 72H moved into it
+unchanged, apart from the first fix below.
+
+**Found while building, and fixed:**
+1. **72H's same-person test let a blank name match anyone.** On the
+   Inventory, a workbook with an empty Guardian #2 slot would have left the
+   filing's Guardian #2's stamp and tick on the empty slot, and a workbook
+   with no attorney would have kept the old attorney's stamp on the
+   certificate's signer. A blank name now matches only a blank.
+2. **The Simplified copies the workbook's guardian details into the
+   filing's guardian records before it asks to replace the guardian slots,**
+   so a same-person test made at the replacement would compare the
+   workbook's names with themselves. It compares with the guardians as the
+   filing held them before the import.
+
+**Decisions taken:**
+1. **Matched by name, not by slot,** as 72H's Inventory fix is: a workbook
+   with the guardians in another order never hands one guardian another's
+   stamp. A guardian whose name was changed in the workbook beyond the
+   containment test (a different surname, say) loses the stamp and tick; the
+   filer sees the signature back at its default and chooses again. Visible
+   and one-time, so no more is done (AGENTS.md §8, item 2).
+2. **On the Annual family and the Simplified only the signature fields and
+   the tick are kept:** their workbooks have a box for the guardian's email,
+   so the workbook's email wins. The Inventory also keeps the guardian's and
+   attorney's emails it has no box for, as in 72H.
+
+**Tests and evidence:**
+- New `tests/unit/import-keep.spec.js` (13). Red-first for the blank-name
+  rule: with 72H's test, the three blank-against-a-name cases and the
+  dropped co-guardian case fail.
+- New `tests/e2e/import-keeps-signatures.spec.ts` (3, one per form): importing
+  the filing's own workbook keeps a guardian's stamp, its image and the
+  served-the-copies tick; a workbook naming someone else in that guardian's
+  box keeps none of them. On the Simplified it uses Guardian #2, because
+  Guardian #1's name there is the Cover's guardian, linked by formula. Red-first:
+  with the old Annual and Simplified importers both fail ("the same person
+  keeps the stamp": received undefined); the Inventory, fixed in 72H, passes.
+  Its first runs failed on its own wait: every importer reads the ward's
+  name first, before the Simplified asks to replace its guardian slots, so
+  the test now also waits for the file box to be emptied, each importer's
+  last step.
+- The other 18 specs that drive Import from Excel (120 tests, including
+  `certificate-old-details`, `certificate-service-method`,
+  `excel-form-field-placement`, `simplified-part1-identity-cells` and the
+  three mount specs), and `signature-capture.contract` (36): all pass.
+- Unit suite: 171 files, 2,502 tests.
 
 ---
 

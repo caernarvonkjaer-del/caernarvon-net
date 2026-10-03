@@ -18,6 +18,7 @@ import { getExcelJS, numValue, percentValue, saveWorkbookFile, setCell, setDateC
 import { hasIdentifiedPreparer } from '../../core/form/preparer-flag.js';
 import { migrateBondDepository, bondAmountCellValue, bondAmountFromCell } from '../../core/filing/bond-depository.js';
 import { readIndicateIfBox } from '../../core/filing/certificate-migrations.js';
+import { keepUnboxedFields, SIGNATURE_FIELDS } from '../../core/excel/import-keep.js';
 import { readCellText, unwrapCellValue } from '../../core/excel/cell-reader.js';
 import { shareFromWorkbookCell } from '../../core/excel/share-cell.js';
 import { planB4PagesToKeep, isB4RegisterSheetName, b4PageNumber, SCH_B4_ACCOUNT_BLOCKS, B4_REGISTER_PREFIX } from '../../core/excel/b4-register-pages.js';
@@ -679,16 +680,20 @@ export async function importExcel(input){
         // rebuilt rows by position; the PART IV, V block below clears them
         // again if the workbook names an outside preparer.
         const priorFlags=(D.guardians||[]).map(g=>!!g?.isPreparer);
+        // Milestone 72 follow-up: the workbook carries no signature state,
+        // stamp image or "served the copies" flag; kept from this filing for
+        // the same person (import-keep.js), as on the Inventory.
+        const priorGuardians=(D.guardians||[]).slice();
         D.guardians=guardianRows.map((rows,i)=>{
           const [sigRow,ssnRow,phoneRow,emailRow,streetRow]=rows;
-          return {
+          return keepUnboxedFields({
             name:gcStr(p23,`F${sigRow}`), signatureDate:gcDate(p23,`D${sigRow}`),
             ssn:gcStr(p23,`B${ssnRow}`), mailingStreet:gcStr(p23,`F${ssnRow}`),
             phone:gcStr(p23,`B${phoneRow}`), mailingCityStateZip:gcStr(p23,`F${phoneRow}`),
             email:gcStr(p23,`B${emailRow}`), officeStreet:gcStr(p23,`F${emailRow}`),
             officeCityStateZip:gcStr(p23,`F${streetRow}`), signatureDateLabel:'',
             isPreparer:!!priorFlags[i]
-          };
+          },priorGuardians[i],[...SIGNATURE_FIELDS,'certifiesService']);
         }).filter((g,i)=>i===0||guardianHasAnyData(g));
         while(D.guardians.length<1)D.guardians.push({name:'',ssn:'',phone:'',email:'',mailingStreet:'',mailingCityStateZip:'',officeStreet:'',officeCityStateZip:'',signatureDate:'',signatureDateLabel:'',isPreparer:false});
       }
@@ -696,11 +701,12 @@ export async function importExcel(input){
       // PART IV, V — preparer and attorney
       const p45=workbook.getWorksheet('PART IV, V');
       if(p45){
-        D.preparer={
+        const priorPreparer=D.preparer;
+        D.preparer=keepUnboxedFields({
           name:gcStr(p45,'J15'), signatureDate:gcDate(p45,'H15'),
           ssn:gcStr(p45,'B17'), phone:gcStr(p45,'B19'),
           street:gcStr(p45,'J17'), cityStateZip:gcStr(p45,'J19')
-        };
+        },priorPreparer,SIGNATURE_FIELDS);
         // Milestone 67A: a workbook that names an outside preparer is the
         // stronger statement -- it clears any guardian/attorney flag this
         // filing carried. Empty preparer cells leave the flags alone (see

@@ -61,6 +61,7 @@
   "tests/e2e/guided-tour-navigation.spec.ts",
   "tests/e2e/help-panel-state.spec.ts",
   "tests/e2e/highlight-toolbar-style.spec.ts",
+  "tests/e2e/import-keeps-signatures.spec.ts",
   "tests/e2e/legacy-ward-data-normalization.spec.ts",
   "tests/e2e/lock-and-save-state.contract.spec.ts",
   "tests/e2e/mixed-version.characterization.spec.ts",

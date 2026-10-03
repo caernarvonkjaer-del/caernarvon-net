@@ -14,7 +14,7 @@ import { getExcelJS, saveWorkbookFile, setCell, setDateCell } from '../../core/e
 import { hasIdentifiedPreparer } from '../../core/form/preparer-flag.js';
 import { migrateBondDepository, bondAmountFromCell } from '../../core/filing/bond-depository.js';
 import { compareImportedCertificate } from '../../core/filing/certificate-migrations.js';
-import { nameAmong } from '../../core/filing/form-derived-fields.js';
+import { keepUnboxedFields, samePerson, SIGNATURE_FIELDS } from '../../core/excel/import-keep.js';
 import { readCellText, unwrapCellValue } from '../../core/excel/cell-reader.js';
 import { shareFromWorkbookCell } from '../../core/excel/share-cell.js';
 import { pruneSheets } from '../../core/excel/sheet-pruning.js';
@@ -636,20 +636,14 @@ export async function importExcel(input){
     // guardian's email (72C), the attorney's two emails (72B), or any
     // signature's chosen state and stamp image, and the assign below replaced
     // each guardian, the attorney and the certificate's signer whole -- so an
-    // import silently wiped them. They are kept from this filing now, but only
-    // for the same person (by name, 72A's containment test, either way round),
-    // so a reordered workbook never hands one guardian another's stamp.
-    const samePerson=(a,b)=>nameAmong(a,b)||nameAmong(b,a);
-    const keepAbsent=(fromWorkbook,before,keys)=>{
-      if(!fromWorkbook||!before||typeof before!=='object'||!samePerson(fromWorkbook.name,before.name))return;
-      for(const k of keys)if(before[k]!==undefined)fromWorkbook[k]=before[k];
-    };
-    (importedData.guardians||[]).forEach((g,i)=>keepAbsent(g,prior.guardians?.[i],['email','signatureState','signatureImage','certifiesService']));
-    keepAbsent(importedData.attorney,prior.attorney,['email','secondaryEmail','signatureState','signatureImage']);
+    // import silently wiped them. They are kept from this filing now, for the
+    // same person only (import-keep.js).
+    (importedData.guardians||[]).forEach((g,i)=>keepUnboxedFields(g,prior.guardians?.[i],['email',...SIGNATURE_FIELDS,'certifiesService']));
+    keepUnboxedFields(importedData.attorney,prior.attorney,['email','secondaryEmail',...SIGNATURE_FIELDS]);
     // The certificate's signer is the attorney (72H), so it is kept when the
     // attorney is the same person.
     if(importedData.serviceAttorney&&importedData.attorney&&prior.serviceAttorney&&samePerson(importedData.attorney.name,prior.attorney?.name)){
-      for(const k of ['signatureState','signatureImage'])if(prior.serviceAttorney[k]!==undefined)importedData.serviceAttorney[k]=prior.serviceAttorney[k];
+      for(const k of SIGNATURE_FIELDS)if(prior.serviceAttorney[k]!==undefined)importedData.serviceAttorney[k]=prior.serviceAttorney[k];
     }
     Object.assign(getD(),importedData);
     // Milestone 67B: the workbook has no cell for the bond / restricted
