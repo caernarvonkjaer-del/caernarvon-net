@@ -388,7 +388,7 @@ function pageCover(){
                 <li>Fields marked with an asterisk (<span class="req">*</span>) are required before export.</li>
                 <li>Ward Name and Case Number auto-populate all form pages.</li>
                 <li>Verify that this guardianship meets the designated depository criteria under Fla. Stat. § 744.3679.</li>
-                <li>Complete Parts I through VII, including guardian signatures and attorney certification.</li>
+                <li>Complete Parts I through VII, including the guardians' signatures; Part V only if an attorney represents the guardian.</li>
                 <li>Use Print Preview to save as PDF or Excel for filing.</li>
               </ul>
               ${browserRecommendationNotice('margin-top:0.75rem;margin-bottom:0;')}

@@ -2758,6 +2758,33 @@ entry that names another filing's ward.
   pass. Unit suite: 174 files, 2,516 tests. The other specs that
   read the Activity Log (`backup-restore-sav`, `form-field-labels`): 10 pass.
 
+### On-screen text corrected — 2026-10-03
+
+Found while the user guide was checked against the app, and corrected at the
+requester's decision (asked as a choice): five places where the app's own
+words no longer matched what it does.
+
+1. The Initial Inventory's General Instructions listed the attorney among
+   the required fields; it has been optional since 71B.
+2. The Simplified's General Instructions said to complete the "attorney
+   certification"; Part V is needed only when an attorney represents the
+   guardian (71B).
+3. The Add New Form dialog's Load Ward Info From hint, and the New Filing from
+   Existing note for most pairs, left out the attorney's details, which carry
+   over since 72B.
+4. Four New Filing from Existing notes said "the certificate of service"
+   carries over; since 72G only its recipients do (and, between accountings
+   of the same period, the ward's status).
+5. The Activity Log labelled 72G's move of the ward's status "Certificate
+   details moved to the filing attorney", the label 72H gave its own entry; it
+   now reads "Certificate of service details moved" for both.
+
+Tests: new `tests/unit/app-text-accuracy.spec.js` (6); red-first, all 6 fail
+against the previous text. Unit suite: 175 files, 2,526
+tests. `convert-ward` and the three accounting mount specs pass (their
+visible-text snapshots are unchanged: the corrected lines sit in collapsed
+panels).
+
 ### Release gate — PASSED 2026-10-03
 
 `npm run test:release` from a temporary copy on C: of a949780: **every step

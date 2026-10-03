@@ -26,7 +26,7 @@ const TRUST_NO_CARRY=' Starting Balance is left blank: a trust accounting does n
 
 export function describeConversion(srcType,destType){
   if(srcType==='guardian'&&formEngine(destType)==='annual'){
-    return 'Real estate, cash accounts, personal property, intangible assets, debts, income sources, and trusts are carried into the matching schedules, along with the attorney block and certificate of service. Review each schedule afterward — carrying values and this year\'s actual activity still need to be confirmed.'
+    return 'Real estate, cash accounts, personal property, intangible assets, debts, income sources, and trusts are carried into the matching schedules, along with the attorney block and the certificate of service\'s recipients. Review each schedule afterward — carrying values and this year\'s actual activity still need to be confirmed.'
       +(crossesTrust(srcType,destType)?TRUST_NO_CARRY:' The Initial Inventory\'s total becomes the Starting Balance, rounded to cents.');
   }
   if(srcType==='guardian'&&destType==='simplified'){
@@ -34,14 +34,14 @@ export function describeConversion(srcType,destType){
   }
   if(formEngine(srcType)==='annual'&&destType==='simplified'){
     return (crossesTrust(srcType,destType)
-      ?'The reporting period, attorney block, certificate of service and any remuneration are carried over. Starting Balance is left blank: a trust accounting\'s ending balance is not the guardianship\'s, so enter it yourself.'
-      :'The Annual Accounting\'s net asset total becomes the Starting Balance, and the reporting period, attorney block, certificate of service and any remuneration are carried over too.')
+      ?'The reporting period, attorney block, certificate-of-service recipients and the ward\'s status, and any remuneration are carried over. Starting Balance is left blank: a trust accounting\'s ending balance is not the guardianship\'s, so enter it yourself.'
+      :'The Annual Accounting\'s net asset total becomes the Starting Balance, and the reporting period, attorney block, certificate-of-service recipients and the ward\'s status, and any remuneration are carried over too.')
       +' Simplified Accounting has no asset schedules, so itemised schedule data collapses into that single figure rather than transferring line by line.';
   }
   if(srcType==='simplified'&&formEngine(destType)==='annual'){
     return (crossesTrust(srcType,destType)
-      ?'The reporting period, attorney block, certificate of service and any remuneration are carried over.'+TRUST_NO_CARRY
-      :'The Simplified Accounting\'s Ending Balance becomes the Starting Balance, and the reporting period, attorney block, certificate of service and any remuneration are carried over too.')
+      ?'The reporting period, attorney block, certificate-of-service recipients and the ward\'s status, and any remuneration are carried over.'+TRUST_NO_CARRY
+      :'The Simplified Accounting\'s Ending Balance becomes the Starting Balance, and the reporting period, attorney block, certificate-of-service recipients and the ward\'s status, and any remuneration are carried over too.')
       +' Since Simplified Accounting doesn\'t track itemized assets, the new Annual Accounting\'s schedules start blank for you to complete.';
   }
   // Milestone 40H-I: same-family accounting-to-accounting (e.g. Annual ->
@@ -59,7 +59,7 @@ export function describeConversion(srcType,destType){
     return `The ward's name, case number, guardian, and attorney details are carried over. ${balance} Certificate-of-service recipients are carried too. County is restored from this ward's case record rather than copied from this filing. The accounting period and every schedule start blank for you to complete.`;
   }
   if(carrySourcesFor(destType).includes(srcType)){
-    return `This creates a new ${INVENTORY_TYPES[destType].name} for the same ward. The ward's name, case number, county, and guardian contact details are carried over exactly as entered — nothing is renamed. Everything specific to this new filing (residence and care details, schedules, signatures, etc.) starts blank for you to complete.`;
+    return `This creates a new ${INVENTORY_TYPES[destType].name} for the same ward. The ward's name, case number, county, guardian contact details and the attorney's details are carried over exactly as entered — nothing is renamed. Everything specific to this new filing (residence and care details, schedules, signatures, etc.) starts blank for you to complete.`;
   }
   return 'Only case, guardian, and attorney information will be carried over. An Initial Inventory is a point-in-time snapshot of assets as of the Guardianship Inception Date, which can\'t be derived from an accounting period record — asset schedules will need to be completed manually.';
 }
