@@ -2,19 +2,24 @@
 
 ## Status
 
-**Draft, 2026-10-04. This proposal authorizes no change.** Building any
-item needs the requester's named approval of that item (AGENTS.md §3).
-Each item's open decisions are listed with a recommended option. They are
-asked as choices and recorded here once answered.
+**Draft, 2026-10-04; decisions settled the same day.** The requester took
+every recommended option, answered the Clerk-practice and legal questions,
+and departed from the recommendation in three places: guardians no longer
+sign with "/s/" (73A), and the UCN is starred with a reminder, never
+blocking, in every county (73S). See
+[Decisions](#decisions-the-requester-2026-10-04).
+
+**This proposal still authorizes no change.** Building any item needs the
+requester's named approval of that item (AGENTS.md §3).
 
 The requester is a representative of the Clerk of the Circuit Court, Pinellas
 County. Where an answer below is about what the Clerk's office accepts, it is
 recorded as **Pinellas Clerk practice**, not as a reading of a statute or rule
 (AGENTS.md §4 and §5). Practice is county-specific.
 
-| # | Item | What a filer sees today | Severity | Decisions |
+| # | Item | What a filer sees today | Severity | Decisions (all settled 2026-10-04) |
 | --- | --- | --- | --- | --- |
-| 1 | 73A | Choosing **Unsigned** still prints "/s/ Name" and the electronic-signature caption on every form, contrary to the guide | High | 73A-1 to 73A-3; one question for a qualified person |
+| 1 | 73A | Choosing **Unsigned** still prints "/s/ Name" and the electronic-signature caption on every form, contrary to the guide | High | Decided: Unsigned prints a blank line; **guardians no longer sign with "/s/"** |
 | 2 | 73B | The filed PDF says **"Plenary"** when no Type of Guardianship was chosen; a new Annual says **"Professional Guardian"**; new rows arrive with answers and shares the filer never gave | High | 73B-1 to 73B-4 |
 | 3 | 73C | **"+ Add Co-Guardian" does nothing** on all four Plans | High | None (a defect) |
 | 4 | 73D | Ticking and unticking **"This item is a vehicle"** on Inventory B-2 erases the Description and the safe-deposit answer | High | 73D-1, 73D-2 |
@@ -32,7 +37,7 @@ recorded as **Pinellas Clerk practice**, not as a reading of a statute or rule
 | 16 | 73P | Small text and behaviour fixes (removing a card, Link to Case, Start New Year, Export All Filings, encryption wording, Enter in the filing picker, help panel) | Low | 73P-1, 73P-2 |
 | 17 | 73Q | **The user guide** says things the app doesn't do, contradicts itself in four places, and runs the full width of a wide window | Medium | None beyond the items it follows |
 | 18 | 73R | The requester's change requests: a shorter sidebar top (R1), "GF" for "PG" (R2), fit-height and full-width in Print Preview (R3) | Requested | 73R-1 to 73R-6 |
-| 19 | 73S | The requester's change request R4: **treat the UCN as required.** Reverses the Milestone 63 decision | Requested | 73S-1 to 73S-4 |
+| 19 | 73S | The requester's change request R4: **treat the UCN as required.** Reverses the Milestone 63 decision | Requested | Decided: starred with a reminder, never blocking, every county |
 
 ### Provenance
 
@@ -69,6 +74,26 @@ Lock and encrypted cases, Clear All Data, narrow windows, a second tab on the
 same filing, Excel row limits, Save Annotated PDF, signature upload, merging
 shared records, offline install, Firefox and Safari. Nothing in this proposal
 claims to have tested them either.
+
+### Decisions (the requester, 2026-10-04)
+
+Asked as choices. "Practice" marks an answer about what the Pinellas Clerk's
+office accepts (AGENTS.md §4 and §5).
+
+| Question | Answer |
+| --- | --- |
+| Every decision not listed below (41 of 49) | **The recommended option**, as written in each item |
+| Who may sign with "/s/" (73A; the question flagged for a qualified person) | **Departs from the recommendation.** Guardians no longer choose "/s/" Signed **wherever a guardian signs**: their own signature block on all nine forms, and the certificate of service when a guardian signs it (71B). They choose Unsigned (a blank line for wet ink) or a Signature Stamp. Attorneys and outside preparers keep "/s/". The basis is the Clerk's workbook: *"Only the guardian's signature must be original"* and *"The attorney may use an electronic signature "/s/""*. Practice; still recorded for a qualified person's review |
+| Saved filings where a guardian already chose "/s/" (73A) | **Asked again, visibly:** the choice shows as not made and is listed as missing until the guardian picks Unsigned or a Signature Stamp. Nothing changes unseen |
+| The remuneration Amount (73F-7; flagged for a qualified person) | Required on both the Annual and the Simplified once a row is entered. Whether §744.367(3)(a) needs the amount stays recorded for review |
+| Blank Inventory schedules (73F-4) | The office accepts them as it does Annual schedules: the Inventory's sidebar prompts, and export no longer demands an entry or the "no items" tick. Practice |
+| An annual accounting's due date (73I-1) | The first day of the fourth month after Period To (April 1 for a calendar year), as §744.367(2) and the workbook say. Practice confirmed |
+| The Plans' "For the period" (73I-3) | The year just ended. Keep counting 90 days from Period To, use April 1 when it ends December 31, and say so on the covers. Practice |
+| The trust accounting's signer when the trustee is not the guardian (73O-5) | The guardian, as today. Practice |
+| The trust accounting's PDF title (73O-5) | Kept: "TRUST GUARDIANSHIP ACCOUNTING" |
+| What "required" means for the UCN (73S-1) | **Departs from the recommendation:** starred, with a reminder in Preview's "Review recommended" box when blank. It never blocks |
+| Which counties (73S-2) | **Departs from the recommendation:** every county. Because it never blocks, no filer anywhere is stopped by it |
+| The Plan for Minors (73S-3) | The same rule as the other forms: the UCN as above, and the Case # always required |
 
 ---
 
@@ -175,8 +200,22 @@ already claims an electronic signature.
    line.
 4. "/s/" Signed and Signature Stamp print as today.
 5. The Clerk's pre-printed "/s/" in the Simplified workbook stays (§5).
+6. **Guardians don't sign with "/s/" (decided 2026-10-04).** Wherever a
+   guardian signs — their own block on all nine forms, and the certificate
+   of service when a guardian signs it — the signature choice offers only
+   Unsigned and Signature Stamp. Attorneys and outside preparers keep all
+   three choices.
+7. **Saved guardian "/s/" choices are asked again.** A guardian block saved
+   as "/s/" Signed, or with no choice and a date (which today counts as
+   "/s/"), shows the choice as not made and is listed as missing until the
+   guardian picks one. Because a blank choice means Unsigned today, this
+   needs a per-block marker that the migration sets and the choice clears;
+   it runs where the app's other one-time migrations run, when a filing
+   opens.
 
 ### Decisions
+
+*Settled 2026-10-04: the recommended option for each, except where the [Decisions](#decisions-the-requester-2026-10-04) table says otherwise.*
 
 - **73A-1. What Unsigned prints.** (1) *Recommended:* a blank line for wet
   ink, as the guide says and the "original signatures" sentences expect.
@@ -187,28 +226,43 @@ already claims an electronic signature.
 - **73A-3. The Simplified workbook's pre-printed "/s/".** (1) *Recommended:*
   leave it; it is the Clerk's text. (2) Blank those two cells when the
   attorney's block is Unsigned. This writes over the Clerk's template text.
-- **For a qualified person, not decided here:** whether the Rule 2.515
-  electronic-signature caption belongs under a guardian's (non-attorney)
-  signature at all, given the workbook's *"Only the guardian's signature must
-  be original."*
+- **For a qualified person:** whether a non-attorney guardian may sign with
+  "/s/" and the Rule 2.515 caption at all, given the workbook's *"Only the
+  guardian's signature must be original."*
+
+**Decided 2026-10-04:** 73A-1, 73A-2 and 73A-3 as recommended. On the
+qualified person's question, the requester decided, as Pinellas Clerk
+practice, that guardians no longer sign with "/s/" (design steps 6 and 7);
+the question stays recorded for review.
 
 ### Cross-cutting checklist (AGENTS.md §8)
 
-1. **Data model.** No field changes.
-2. **Legacy data.** None. Saved filings keep their state; only what prints
-   changes, and the filer sees it in Preview.
-3. **Fixtures.** Plan PDF tests carry a date and no state, so they keep
-   printing "/s/". The blank-line fixture at `pdf-structure-tags.spec.ts`
-   near 566 covers the new branch.
-4. **Tests.** New unit spec over the block resolution for every form; new
-   e2e reading an Unsigned block's PDF text on one accounting and one Plan.
-   Red-first: both fail today on the printed "/s/".
+1. **Data model.** The guardian signature-state rows (and the certificate's
+   when a guardian signs) allow only `none` and `stamp`; the migration
+   marker is a new row per guardian block. `verify:data-model`.
+2. **Legacy data.** Saved guardian "/s/" choices are asked again, visibly
+   (step 7). Attorneys' and preparers' saved choices are unchanged; only
+   what an Unsigned block prints changes, which the filer sees in Preview.
+3. **Fixtures.** Every fixture that gives a guardian "/s/" Signed
+   (`tests/e2e/support/fixtures.ts` and the `fillMinimalValid*` helpers)
+   moves to a Signature Stamp or Unsigned, grepped across all nine forms
+   before the change lands (§8.3). Plan PDF tests that carry a date and no
+   state on a guardian block are re-pointed the same way.
+4. **Tests.** New unit spec over the block resolution for every form and
+   role; new e2e reading an Unsigned block's PDF text on one accounting and
+   one Plan; new e2e that a guardian's choice offers no "/s/" on every form
+   and that a saved guardian "/s/" is listed as missing after opening.
+   Red-first: each fails today.
 5. **Export/import.** PDF only. Excel writes names and dates, never a
    signature state, on every form.
 6. **Security.** None.
-7. **UI/UX.** The Signatures table in the guide becomes true.
-8. **Legal framing.** The caption question above is flagged, not resolved.
-9. **Cross-form.** One engine serves all nine forms.
+7. **UI/UX.** The shared signature control, with one choice fewer for
+   guardians. The guide's Signatures table is rewritten (73Q).
+8. **Legal framing.** The guardian "/s/" decision is recorded as Clerk
+   practice resting on the workbook's text, not as a reading of Rule 2.515,
+   and stays flagged for a qualified person.
+9. **Cross-form.** One engine and one signature control serve all nine
+   forms.
 
 ---
 
@@ -271,6 +325,8 @@ The guide says Yes/No questions "are never answered for you". Today:
 4. Per 73B-3 and 73B-4, the Inventory's shares and dropdowns start blank.
 
 ### Decisions
+
+*Settled 2026-10-04: the recommended option for each, except where the [Decisions](#decisions-the-requester-2026-10-04) table says otherwise.*
 
 - **73B-1. Type of Guardianship on the Annual, Final and Trust.**
   (1) *Recommended:* required, as on the Inventory and Simplified and as the
@@ -381,6 +437,8 @@ typed underneath — tick it again and your text is back."*
 
 ### Decisions
 
+*Settled 2026-10-04: the recommended option for each, except where the [Decisions](#decisions-the-requester-2026-10-04) table says otherwise.*
+
 - **73D-1.** After unticking, the filer sees: (1) *Recommended:* their
   original Description. (2) The vehicle text, as today.
 - **73D-2.** A vehicle's safe-deposit answer: (1) *Recommended:* hidden and
@@ -441,6 +499,8 @@ typed underneath — tick it again and your text is back."*
    workbook does not carry (73M).
 
 ### Decisions
+
+*Settled 2026-10-04: the recommended option for each, except where the [Decisions](#decisions-the-requester-2026-10-04) table says otherwise.*
 
 - **73E-1. The confirmation.** (1) *Recommended:* as in step 2, plus the
   after-import notice. (2) A confirmation only when the ward names differ.
@@ -601,6 +661,8 @@ stars that follow the signature choice; the Plans' contact fields.
 
 ### Decisions
 
+*Settled 2026-10-04: the recommended option for each, except where the [Decisions](#decisions-the-requester-2026-10-04) table says otherwise.*
+
 - **73F-1. "Amended Form?"** The workbooks label it *"Amended Form? [Place
   'Yes' in this box.]"* and the Annual template's answer box holds "No".
   Today the Simplified and the Plan for Minors require it on the page, in
@@ -732,6 +794,8 @@ stars that follow the signature choice; the Plans' contact fields.
 
 ### Decisions
 
+*Settled 2026-10-04: the recommended option for each, except where the [Decisions](#decisions-the-requester-2026-10-04) table says otherwise.*
+
 - **73G-1. A positive loss or transfer out.** (1) *Recommended:* a warning;
   the figure stays as typed, as in the Clerk's workbook. (2) Turn it negative
   automatically: this departs from the workbook and needs the requester's
@@ -823,6 +887,8 @@ stars that follow the signature choice; the Plans' contact fields.
 
 ### Decisions
 
+*Settled 2026-10-04: the recommended option for each, except where the [Decisions](#decisions-the-requester-2026-10-04) table says otherwise.*
+
 - **73H-1. Negative amounts.** (1) *Recommended:* ($5,000.00) everywhere,
   the Clerk's workbook format. (2) Keep each surface's style and fix only
   the broken cases.
@@ -878,6 +944,8 @@ The gap is one to three days depending on the month (12/31/2027 → 03/30/2028;
   §744.362(1).
 
 ### Decisions
+
+*Settled 2026-10-04: the recommended option for each, except where the [Decisions](#decisions-the-requester-2026-10-04) table says otherwise.*
 
 - **73I-1. Annual, Trust and Simplified accountings.** (1) *Recommended:*
   the first day of the fourth month after Period To, as the statute and the
@@ -996,6 +1064,8 @@ red-first. `npm test` recommended: every page redraw goes through the router.
 
 ### Decisions
 
+*Settled 2026-10-04: the recommended option for each, except where the [Decisions](#decisions-the-requester-2026-10-04) table says otherwise.*
+
 - **73L-1. The Help panel.** (1) *Recommended:* push the page over, so
   nothing is covered. (2) Keep it overlaying.
 
@@ -1042,6 +1112,8 @@ recommended: every dialog goes through `dialogs.js`.
 5. 73E's after-import notice lists what the workbook doesn't carry.
 
 ### Decisions
+
+*Settled 2026-10-04: the recommended option for each, except where the [Decisions](#decisions-the-requester-2026-10-04) table says otherwise.*
 
 - **73M-1. A-2 Notes in Excel.** (1) *Recommended:* leave them out of the
   workbook and say so at Save as Excel; don't write into a row the Clerk's
@@ -1092,6 +1164,8 @@ explanation. The workbook is never written in an undefined cell unless
    no place for it, so it is not printed."
 
 ### Decisions
+
+*Settled 2026-10-04: the recommended option for each, except where the [Decisions](#decisions-the-requester-2026-10-04) table says otherwise.*
 
 - **73N-1. The questions' wording on the PDF.** (1) *Recommended:* the
   original form's full text, parentheticals included. (2) Keep today's
@@ -1192,6 +1266,8 @@ requester decided), **defect**, or **open**.
 
 ### Decisions
 
+*Settled 2026-10-04: the recommended option for each, except where the [Decisions](#decisions-the-requester-2026-10-04) table says otherwise.*
+
 - **73O-1. The Simplified's guardian name, Cover and Part IV.**
   (1) *Recommended:* keep the Clerk's link in Excel; warn when the two names
   differ, saying the workbook prints the Cover's and the PDF prints Part
@@ -1258,6 +1334,8 @@ requester decided), **defect**, or **open**.
 
 ### Decisions
 
+*Settled 2026-10-04: the recommended option for each, except where the [Decisions](#decisions-the-requester-2026-10-04) table says otherwise.*
+
 - **73P-1. Removing a card.** (1) *Recommended:* confirm when the card holds
   anything, as co-guardians already do on most forms. (2) An Undo link
   instead. (3) Leave as is.
@@ -1273,7 +1351,7 @@ Done last, against the finished app, with the figures re-shot through
 `npm run capture:guide` and checked one by one.
 
 **Statements to correct** (the app is right, or will be after the items
-above): Unsigned (73A); "the sidebar and the check that blocks your export
+above): Unsigned, and "/s/" no longer offered to guardians (73A); "the sidebar and the check that blocks your export
 now apply the same rule" (73F); "never answered for you" (73B); "County is
 not free text" (73F-2); un-ticking (73D); the Plans' co-guardian blocks,
 which are added with a button, not fixed (73C); the Simplified's Part IV has
@@ -1359,6 +1437,8 @@ choice is kept on this device, with the other display settings (AGENTS.md
 
 ### Decisions
 
+*Settled 2026-10-04: the recommended option for each, except where the [Decisions](#decisions-the-requester-2026-10-04) table says otherwise.*
+
 - **73R-1. The Clerk's copyright line.** (1) *Recommended:* one line,
   shortened with the full text on hover. (2) Moved to the bottom of the
   scrolling section list. (3) Fully visible, as today.
@@ -1437,6 +1517,8 @@ six characters (county use and courthouse) are not in the app's case number.
 
 ### Decisions
 
+*Settled 2026-10-04: the recommended option for each, except where the [Decisions](#decisions-the-requester-2026-10-04) table says otherwise.*
+
 - **73S-1. What "required" means.** (1) *Recommended:* required like the
   Case Number: starred, listed as missing, and blocking at Preview (a filer
   can still continue past it, as with every required field). (2) Starred,
@@ -1450,21 +1532,41 @@ six characters (county use and courthouse) are not in the app's case number.
 - **73S-4. Checking its form.** (1) *Recommended:* a warning when it isn't
   20 characters in the UCN's shape. (2) No check.
 
+**Decided 2026-10-04:** 73S-1 (2), starred with a non-blocking reminder;
+73S-2 (3), every county; 73S-3 (1); 73S-4 (1). So:
+
+1. All nine covers star the UCN. A blank UCN adds a reminder to Preview's
+   "Review recommended" box ("The UCN is blank. Enter it from the Clerk's
+   case record."); it is not a missing item, never blocks, and doesn't
+   change the sidebar's ✓.
+2. A UCN that isn't in the 20-character shape gets the same kind of
+   reminder.
+3. The Plan for Minors requires the Case # always, as the other forms do;
+   its UCN follows point 1.
+4. Save as Excel notes that the Clerk's workbook has no UCN box.
+
+Because the reminder never blocks, applying it in every county doesn't
+present one office's practice as a statewide requirement (§5); it is
+recorded as the requester's decision.
+
 ### Checklist
 
-1. **Data model.** The UCN row's requiredness; `verify:data-model`.
-2. **Legacy data.** Every existing filing without a UCN turns incomplete, with
-   the item named: visible, and allowed (§8.2), but every test-system filing
-   is affected.
-3. **Fixtures.** Every `MINIMAL_VALID_*`, `fillMinimalValid*` and unit
-   fixture gains a UCN (§8.3).
-4. **Tests.** `ucn-cover-field.spec.ts` (which asserts it is optional) is
-   rewritten; `ucn-header.spec.js`; the completion golden.
+1. **Data model.** The UCN row: optional, with a reminder when blank; the
+   Plan for Minors' Case # row becomes required. `verify:data-model`.
+2. **Legacy data.** No filing turns incomplete for a missing UCN; a reminder
+   appears. A Plan for Minors saved with a UCN and no Case # now lists the
+   Case # as missing (visible, §8.2).
+3. **Fixtures.** None for the UCN. Plan for Minors fixtures that give only a
+   UCN gain a Case # (§8.3).
+4. **Tests.** `ucn-cover-field.spec.ts` (which asserts it is optional)
+   gains the asterisk and the reminder; `ucn-header.spec.js` unchanged; a
+   unit case for the shape check; the Plan for Minors' Case # rule.
 5. **Export/import.** The workbook has no UCN box: a Save as Excel note says
    so.
 6. **Security.** None.
-7. **UI/UX.** The Case Number's pattern.
-8. **Legal framing.** Above; recorded as Clerk practice, not as a rule.
+7. **UI/UX.** The existing "Review recommended" box (as for the guardian's
+   email, 72C).
+8. **Legal framing.** Recorded as the requester's decision, not as a rule.
 9. **Cross-form.** All nine covers.
 
 ---
@@ -1476,10 +1578,10 @@ six characters (county use and courthouse) are not in the app's case number.
 | The supporting-documents reminder fires on unrelated pages | Partly explained; the exact path is not established (73L) |
 | The ward-creation console line repeats for earlier wards | Not reproduced: one line per click, one listener. The line itself goes (73O) |
 | The Simplified's certificate has two recipient cards | Not reproduced: a new filing shows one |
-| The Trust PDF's title and "the guardian" wording | Mostly by design: the Clerk's Annual workbook covers trust accountings (73O-5 asks about the title and the signer) |
+| The Trust PDF's title and "the guardian" wording | Mostly by design: the Clerk's Annual workbook covers trust accountings. The title is kept and the guardian signs (73O-5, decided 2026-10-04) |
 | Amount boxes accept letters | Only digits are stored; letters never reach the filing |
 | Three decimals stay in the box | By design: the rounding contract of 2026-09-20 sums unrounded and rounds for display, as the workbook does |
-| Annual schedules with no entries don't block | By design: AGENTS.md §4, Pinellas Clerk practice (73F-4 asks about the Inventory) |
+| Annual schedules with no entries don't block | By design: AGENTS.md §4, Pinellas Clerk practice; extended to the Inventory (73F-4, decided 2026-10-04) |
 | The Simplified Plan's PDF omits the preparer | By design: Milestone 61E, the court's original has no such section (73N fixes the page and guide) |
 | The Simplified Accounting's Excel has "/s/" in the attorney cells | The Clerk's workbook ships with it pre-printed; the app doesn't write it (73A-3) |
 | D-2's attorney comes back from Excel as the Cover's name | By design: the Clerk's formula (`PART IV`!I26 `='SUMMARY I '!D24`), Milestone 72H, with a Preview warning when they differ |
