@@ -33,6 +33,15 @@ export function detectPathTraversal(s){
   return pathPatterns.some(p=>p.test(String(s||'')));
 }
 
+// A drawn signature stamp or an attached supporting PDF, as stored: exactly
+// "data:<type>/<subtype>;base64," then base64. It can hold none of the
+// characters sanitizeInput() removes (<, >, ", `, or the colon of
+// "javascript:"), but its /on\w+=/ strip matched the end of about 1 in 50 of
+// them ("...onXk=") and cut it off, so the next save kept a stamp that no
+// longer decodes or a PDF that can no longer be read (found 2026-10-04;
+// tests/unit/sanitize-keeps-stored-files.spec.js). Left exactly as stored.
+const BASE64_DATA_URL=/^data:[a-z0-9.+-]+\/[a-z0-9.+-]+;base64,[A-Za-z0-9+/]*={0,2}$/i;
+
 // Sanitize input: remove dangerous characters but preserve legitimate data
 // Milestone 40H-G: dropped the straight apostrophe from the stripped set --
 // it turned "ward's" into "wards" in ordinary narrative text. Only the
@@ -41,6 +50,7 @@ export function detectPathTraversal(s){
 // narrowing this doesn't reopen it.
 export function sanitizeInput(s){
   if(!s)return s;
+  if(typeof s==='string'&&s.startsWith('data:')&&BASE64_DATA_URL.test(s))return s;
   let cleaned=String(s);
   cleaned=cleaned.replace(/[<>"`]/g,'');
   cleaned=cleaned.replace(/javascript:/gi,'');
