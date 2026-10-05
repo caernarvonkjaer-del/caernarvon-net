@@ -9,8 +9,15 @@ sign with "/s/" (73A), and the UCN is starred with a reminder, never
 blocking, in every county (73S). See
 [Decisions](#decisions-the-requester-2026-10-04).
 
-**This proposal still authorizes no change.** Building any item needs the
-requester's named approval of that item (AGENTS.md §3).
+**Reviewed 2026-10-04** for accuracy, effectiveness and blast radius at the
+requester's request; the review added two items (73T, 73U), revised every
+item's design, and raised decisions that were settled the same day — four
+earlier answers superseded, and County left overridable against the
+recommendation. See [Review](#review-of-this-proposal-2026-10-04-accuracy-effectiveness-blast-radius).
+**73U was fixed 2026-10-04 (`5b8849b`)** at the requester's choice.
+
+**This proposal otherwise authorizes no change.** Building any item needs
+the requester's named approval of that item (AGENTS.md §3).
 
 The requester is a representative of the Clerk of the Circuit Court, Pinellas
 County. Where an answer below is about what the Clerk's office accepts, it is
@@ -38,6 +45,8 @@ recorded as **Pinellas Clerk practice**, not as a reading of a statute or rule
 | 17 | 73Q | **The user guide** says things the app doesn't do, contradicts itself in four places, and runs the full width of a wide window | Medium | None beyond the items it follows |
 | 18 | 73R | The requester's change requests: a shorter sidebar top (R1), "GF" for "PG" (R2), fit-height and full-width in Print Preview (R3) | Requested | 73R-1 to 73R-6 |
 | 19 | 73S | The requester's change request R4: **treat the UCN as required.** Reverses the Milestone 63 decision | Requested | Decided: starred with a reminder, never blocking, every county |
+| 20 | 73T | *Added by the review.* **Exporting to Excel and importing back loses or changes data**: the Simplified blanks Guardian #1's name, imports scramble signature choices, the Annual writes Part VIII beside the Clerk's boxes, a Trust can turn into an Annual, rows and recipients go missing | High | 73T-1 to 73T-3 |
+| 21 | 73U | *Added by the review.* Opening a case file **cut the end off about 1 in 50 stored signature stamps and supporting PDFs** | High | Decided and **fixed 2026-10-04** |
 
 ### Provenance
 
@@ -82,13 +91,13 @@ office accepts (AGENTS.md §4 and §5).
 
 | Question | Answer |
 | --- | --- |
-| Every decision not listed below (41 of 49) | **The recommended option**, as written in each item |
+| Every decision not listed below (41 of 49) | **The recommended option**, as written in each item. Three were re-asked after the review and superseded: 73F-9, 73G-3, and 73O-2 for guardian names (see [the review's decisions](#decisions-raised-by-the-review-the-requester-2026-10-04)) |
 | Who may sign with "/s/" (73A; the question flagged for a qualified person) | **Departs from the recommendation.** Guardians no longer choose "/s/" Signed **wherever a guardian signs**: their own signature block on all nine forms, and the certificate of service when a guardian signs it (71B). They choose Unsigned (a blank line for wet ink) or a Signature Stamp. Attorneys and outside preparers keep "/s/". The basis is the Clerk's workbook: *"Only the guardian's signature must be original"* and *"The attorney may use an electronic signature "/s/""*. Practice; still recorded for a qualified person's review |
 | Saved filings where a guardian already chose "/s/" (73A) | **Asked again, visibly:** the choice shows as not made and is listed as missing until the guardian picks Unsigned or a Signature Stamp. Nothing changes unseen |
 | The remuneration Amount (73F-7; flagged for a qualified person) | Required on both the Annual and the Simplified once a row is entered. Whether §744.367(3)(a) needs the amount stays recorded for review |
 | Blank Inventory schedules (73F-4) | The office accepts them as it does Annual schedules: the Inventory's sidebar prompts, and export no longer demands an entry or the "no items" tick. Practice |
 | An annual accounting's due date (73I-1) | The first day of the fourth month after Period To (April 1 for a calendar year), as §744.367(2) and the workbook say. Practice confirmed |
-| The Plans' "For the period" (73I-3) | The year just ended. Keep counting 90 days from Period To, use April 1 when it ends December 31, and say so on the covers. Practice |
+| The Plans' "For the period" (73I-3) | ~~The year just ended.~~ **Superseded after the review (73I-N3): the coming plan year**, following §744.367(1) |
 | The trust accounting's signer when the trustee is not the guardian (73O-5) | The guardian, as today. Practice |
 | The trust accounting's PDF title (73O-5) | Kept: "TRUST GUARDIANSHIP ACCOUNTING" |
 | What "required" means for the UCN (73S-1) | **Departs from the recommendation:** starred, with a reminder in Preview's "Review recommended" box when blank. It never blocks |
@@ -97,11 +106,141 @@ office accepts (AGENTS.md §4 and §5).
 
 ---
 
+## Review of this proposal (2026-10-04): accuracy, effectiveness, blast radius
+
+At the requester's request ("review MS 73 for accuracy and effectiveness;
+assume the problems may be global and determine each one's blast radius"),
+six read-only reviews each re-checked a group of items against the code,
+asked whether the design would fix the problem on every surface (screen,
+PDF, Excel export and import, carry-over, conversion, New Year, dashboard),
+and hunted the same class of defect across the whole app. Three more
+reviews inventoried the Excel round trip field by field, one per workbook.
+They ran the real validators, sidebar rules, PDF models, sanitizers,
+formatters, importers and exporters from node, read the Clerk's workbooks
+with a parser (cell values, formulas, locking, data validations), and
+measured PDF text with the app's own font metrics.
+
+**Every load-bearing claim below was re-checked by hand before it was
+written here**: the code lines, the workbook cells with a separate parser,
+and three behaviours in a browser (73C, the Escape double-close, and the
+reminder path). Claims shown "(needs a browser)" are from code or node
+simulation only.
+
+### What the review found, in short
+
+1. **A defect outside the milestone's scope, now fixed.** The import filter
+   cut the end off about 1 in 50 stored signature stamps and supporting PDFs
+   every time a case file was opened. Fixed first at the requester's choice
+   (73U).
+2. **The Excel round trip is the largest blast radius** (new item 73T).
+   Re-importing a Simplified Accounting's own workbook blanks Guardian #1's
+   name; every Annual or Simplified import scrambles the attorney's and the
+   certificate's signature choices; the Annual writes Part VIII's answers
+   beside the Clerk's boxes, not in them; and a dozen fields are lost or
+   altered on the way back.
+3. **Five designs would not have worked as written**: 73A (the guardian
+   "/s/" rule), 73E (one confirmation over importers that write as they
+   read), 73F Step 1 (the dashboard never has an open filing), 73G-3 (a kept
+   negative is shown, and re-saved, as positive), and 73L step 1 (it would
+   have replaced a newer, tested rule).
+4. **Most items reach further than the browser test saw.** The shortened
+   court wording is on six forms, not one; the stale-page pattern has three
+   more cases; the "answers never given" pattern continues through the
+   Inventory's Excel export and import; the complete sidebar-versus-export
+   inventory has five more defect classes.
+5. **Five settled decisions are re-asked** because their basis or cost
+   changed (listed under "Decisions raised by the review").
+
+### Item by item
+
+| Item | Accuracy corrections | Design gaps (now in the item's revision) | Same defect elsewhere (blast radius) |
+| --- | --- | --- | --- |
+| 73A | The "workflow that explicitly requires it" quote is `MILESTONE-ARCHIVE.md` near 3798. **All three workbooks** pre-print "/s/" in both attorney cells (Annual `PART IV, V`!B31 and `PART X`!B25; Inventory `PART IV`!B26 and `PART VI`!B27; Simplified B17 and B41). The bare-"/s/" list also includes the Simplified's Part V attorney and the Inventory's unnamed D-1 guardian; "Plans' preparer" exists only on the Plan for Minors | Step 1 kept "a blank choice with a date is /s/", which contradicts the guardian rule (every screen pre-selects "/s/" once a guardian types a date). The control, validator and engine are role-blind. On the Plans one certificate field serves guardian and attorney, so the signer can flip after a one-time migration. A Stamp with no image prints "/s/". New Year keeps last year's stamp on every signer. A per-block marker is dropped by every Excel import. "Listed as missing" needs `completion.js`, `readiness-config.js` and the Plans' co-guardian validators. "Use my saved signature" isn't offered on certificate blocks a guardian signs | Every "/s/" path is the one engine branch; the extra instances are the stamp-without-image, New Year and the Plans' signer flip |
+| 73B | B-4's `liabilityType:'Loan'` was missed; C-4's trust type is a pre-filled text box, not a dropdown. The Inventory's selects have no "— select —" option, so the checklist's UI line was wrong | The Inventory's Excel export writes "Mortgage", "Loan", "Monthly", "Pooled" for a blank (`excel.js` near 222, 314, 334, 424) and the import puts them back (near 712–736), so 73B-4 alone would make the PDF and workbook disagree. A blank G8 must import blank. 73B-2's warning needs `output-preflight.js` | Annual Part IX prints "None" for a blank receipt date; an unanswered Annual Plan Q11 prints the sworn "I have received the monies…" sentence; every PDF prints "Ward" for a blank ward name after an override |
+| 73C | 51H fixed only the second click; the Inventory's one-draw exception is `904c523` | The Plans' clean-up must re-index `guardianPartyIds` (today removing a middle guardian shifts the next one onto the removed guardian's shared record) and must always keep row 0. `filing-registry.spec.js` near 130 pins today's dropping | Inventory D-1: a new co-guardian card also vanishes at the next redraw if it holds only a signature choice (needs a browser) |
+| 73D | Also overwritten when leaving Make or Model (`index.js` near 317–328). Validation doesn't read the vehicle description; conversion does, into the Annual's **D-3** | The built description must live in core (conversion can't import a feature module); the safe-deposit exclusion must reach `totals.js` and the workbook (column H written blank for a vehicle, or the workbook's own formula counts it) | On the Initial, Annual and Minors Plans, about 20 "Explanation" boxes are hidden when Other or None is unticked but **still print** |
+| 73E | The Simplified also writes type of guardianship, GID, county, amended and the guardians' details before its question. The "Import complete" message is written by each importer, not `input-hardening.js`. **Only 5 of 20 specs that import accept dialogs** | The Annual writes into the live filing about 70 times and calls `setAccountingFilingType()` mid-import: a Trust or Final filled from the Clerk's blank workbook (H4 = "Annual") silently becomes an Annual. The whole-filing title-casing and filtering passes must be limited to imported values. Imports bypass the shared-record layer | After an import, editing one field of a linked guardian restores the shared record's old name and address (node-confirmed); Link Person overwrites typed fields with blanks; Merge doesn't say which open filings change |
+| 73F | The dashboard never has an open filing (`leave-filing.js` near 42), so Step 1's dashboard clause changed nothing. Export uses `checkSignatureState()`. The golden has 5,003 rows. The Simplified Plan asks no SSN. "Milestone 38", not 38D | Step 1 alone leaves the dashboard sidebar-only, so a filing can read 100% there and drop when opened. Moving the seven validators to modules loaded at startup is a moderate job (about 1,120 lines), not large, and closes it everywhere. 73F-3 needs impossible-date drafts cleared when a row is removed (never built; an orphaned draft would become an unclearable block) | Five more classes: the "no items" tick isn't cleared by "+ Add" (about 890 variants per Annual-family form); a blank row from "+ Add" marks the page incomplete naming nothing; Part VIII's other cases; the Initial Plan's Q7 benefits question is sidebar-only; the Plan Annual attorney's signature isn't checked by the sidebar. Plus about 30 asterisk mismatches (e.g. the Annual's Starting Balance and Schedule A Amount are enforced but not starred) |
+| 73G | "Schedule E works the same way": a positive transfer out changes only Schedule E's own total. The negatives clamp runs from three mounts **on every page drawn**, also zeroes Part XI amounts, and turns "1,234.56" into 1. **All three workbooks tell filers any amount may be negative**: "Enter all amounts … e.g., 2500.50 or -2500.50 … ($2,500.50)" (Annual `PART I`!C11, Simplified `PARTS I, II `!C9, Inventory `SUMMARY I `!C15) | 73G-3's "keep and warn" can't work as written: the box shows a stored −50 as 50, and tabbing through it stores +50. A typed "(" is removed on the keystroke. The Simplified's remuneration Amount is a free-text box: "$1,234.56" files as $0.00 and "1,234.56" as $1.00. Stopping the clamp changes Line 30, the bond requirement and possibly the audit-fee tier for affected filings (toward the template) | Text-cell amounts in the importers are truncated or zeroed; paste "1.000,50" files as $1.00 |
+| 73H | "Every amount cell" is the dominant format, not all: Schedule C's loss column shows red with no sign, and a few columns use −$x. The Inventory Summary screen shows liabilities as positive while its PDF and workbook negate them | Part VI must format the **negated** value, as the workbook does (`H13 =-…`), or disbursements lose their "subtracted" cue. Don't change the importer's date normaliser. A blank Q11 must print blank, not $0.00 | The Simplified correctly keeps disbursements positive (its workbook does); not to be harmonised |
+| 73I | 0–3 days early for month-end periods; **16–32 days** for a period ending mid-month. The Final's 90 days has the work slip's (lowest) basis. **§744.511 was missed**: a removed guardian's final report is due within 20 days | No Design section; the formula must be "first day of Period To's month plus four months". The dashboard must draw the Final's basis text (today it is blanked) | April 1 falls on a weekend in 2028 and 2029 |
+| 73J | Row 4 is a link that reads as a to-do, not stale content | A shared "redraw this region when these fields change" helper on the existing `pg:field-written` event, instead of five patches. `check:types` (router) | The cover's "Why is this guardian filing without an attorney?" stays after an attorney is typed; B-4's bank-account dropdowns keep old names; the sidebar header also goes stale after Link Person and Sync |
+| 73K | Add, Remove and Duplicate redraw through `navigate()` to the same page too | Save the position before the old page is cleared; exempt Preview; keyboard focus is lost the same way (the cursor falls to the top of the document) | Background redraws (supporting-document checks, Sync) redraw the page the filer is typing on |
+| 73L | **The reminder rule changed in `0598150` (2026-09-27)**: after "Not now" it waits until the filer next arrives at the page, and a guard stops it stacking; tested by `schedule-doc-ack.spec.ts`. Design step 1 would have replaced it | A queue must cover pop-ups only (the fixed form dialogs await pop-ups while open). The background-tab stall may be a test-tool artifact (frames resume on return; needs a browser) | **One Escape closes two dialogs** (reproduced in a browser: a notice over Add Form, one Escape, both gone). The eligibility dialog also stays behind two other notices. **A dialog stays visible and clickable over the lock screen**, showing names (code-confirmed: dialogs at layer 10010, the unlock screen at 10000, and locking doesn't close them) |
+| 73M | "Bond and depository" returns as "Bond only" only into a filing whose answer is blank. The Annual's Part IX has the same guess. The Part XI explanation is reachable on the Preview page; the tooltip gives the wrong reason | The guess fix must be limited to imports (the same function migrates old saved files). Several items each add a Save as Excel note: one list per form of "what this workbook won't carry" should feed Preview and 73E's notice. Making Save as Excel clickable changes 18 specs that wait for it | Save as Excel can look enabled and do nothing after an override; bond fields hidden by the chosen answer are still written to the workbook |
+| 73N | Q8 is about 625pt in a **468pt** column: it runs into the margin and off the paper. The attorney's name **does** print, in the certificate | Wrapping must cover every one-line title (eight kinds), with space checks using the wrapped height | **Court wording is shortened on six forms**: the Annual family's declaration drops the investigatory-fees certification; its receipts certification drops the §744.3678(3) inspection clause; the attorney statement drops "I have not audited the accompanying guardianship accounting" (Annual family and Simplified); the Annual and Initial Plans drop clauses from certifications, Q2 and Q10; the Initial Plan prints Q11 between 10D and 10E. Fixed text otherwise fits; typed text (a long ward name in the caption, a long B-4 account title) can overflow |
+| 73O | The banner has three wordings, not four. The Annual Plan and Plan for Minors have the same unlinked guardian-name pattern as the Initial Plan. No Plan binds guardian names, so 73O-2's "one field each" had no precedent for guardians. **The Simplified has a hidden recipient line 4** that prints on the PDF but has no box on screen | 73O-3 touches all three accountings (and the Plans if included), the shared factory, five conversions and three goldens. 73O-2's merge makes the attorney "started" on filings whose Cover alone named one, so the certification becomes required (visible) | Link Person and Link to Case show "O&#39;Brien" for apostrophe names |
+| 73P | — | — | The Simplified's Part VI stars Recipient 3's name with no rule behind it |
+| 73Q | — | — | **The guide misstates protection:** it says only the last four SSN digits print or export, but Excel writes the full SSN/EIN (§8.6). It also says Comments don't print (they do), that 0 is allowed as a share (A-1 rejects it), and that the fee is from "total assets". The guided tour says the Simplified has no Excel output |
+| 73R | — | "Full width" at high resolution would need about 1.4 GB of canvas for a 19-page Inventory: the design needs a scale cap or lazy page rendering. Keeping notes across a zoom needs a new save step. Eight more specs use the save-controls toggle | — |
+| 73S | — | The covers say "Fields marked with an asterisk (*) are required before export", which a never-blocking star would make false. The UCN box is drawn by five helpers. The Plan for Minors identifies by UCN first on the dashboard and in file names. The shape check must strip separators and not require "GA" or "XXGD" | — |
+
+### New items
+
+- **73T — The Excel round trip, field by field.** See the item below.
+- **73U — Stored stamps and PDFs cut by the import filter.** Fixed
+  2026-10-04; see the item below.
+
+### Decisions raised by the review (the requester, 2026-10-04)
+
+Asked as choices. "Practice" marks Pinellas Clerk practice (AGENTS.md §4
+and §5). Each item's "Revised after the review" section gives the options.
+
+**Re-asked because the basis or cost changed — these supersede the earlier
+answers:**
+
+| Question | Answer |
+| --- | --- |
+| Minus signs in amount boxes (73G-N1; supersedes 73G-3) | **Accepted in every amount box**, as all three workbooks instruct ("e.g., 2500.50 or -2500.50"), with a non-blocking note where a negative is unusual (a negative asset or income). Screen, PDF and workbook agree. Filings that hold a negative D-1–D-4 or Part II amount change Line 30 (or the Simplified's Line 8), the bond requirement and possibly the fee tier — toward the workbook, which zeroes nothing |
+| The Plans' "For the period" (73I-N3; supersedes 73I-3) | **The coming plan year**, following §744.367(1) ("must cover the coming fiscal year") and §744.3675, on the Annual and Minors Plans. The due date is 90 days after the end of the anniversary month — the month that ends the day before Period From — or April 1 when the period starts January 1. The covers say which year to enter. The Simplified Plan's form looks back and has no period of its own; it keeps today's count. Practice |
+| Guardian names on the Initial, Annual and Minors Plans (73O-N1; supersedes 73O-2 for guardians) | **The cover keeps its list**, with a warning when a signer isn't among it, as 72A does for the Inventory. The Initial Plan's attorney still becomes one field |
+| The dashboard and the single rule list (73F-N1; supersedes 73F-9) | **One rule everywhere**: the seven export checks move to modules loaded at startup, and the dashboard's percentage and "Ready to file", the sidebar and Print Preview all use it, for every filing, open or not |
+| The supporting-documents reminder after "Not now" (73L) | Not a decision: the design is corrected to keep the existing, tested rule (`0598150`) |
+
+**Needing the requester's named approval or Clerk practice:**
+
+| Question | Answer |
+| --- | --- |
+| A blank or unrecognised county after "Continue despite…" (73F-N2) | **Departs from the recommendation: it can still be overridden, as today.** After an override the PDF prints with no court heading. 73F-2's check (a Florida county) is otherwise as decided, and stays overridable like other required fields |
+| The Plan for Minors' identity (73S-N2) | **The Case # first.** The requester's named approval to change AGENTS.md §6's rule ("Plan Minor always falls back `ward.ucn \|\| ward.ref \|\| ''`") to `ref` first; the edit is made with 73S |
+| The Clerk's Schedule B-4 subtotal formula (73T-1) | **Corrected in the embedded workbook**, with the requester's named approval as the Clerk's representative (AGENTS.md §5), so the filed workbook and the PDF agree; the office is told so its published copy is fixed too |
+| Annual Part XI's blank lines (73T-2) | **Each remuneration entry is written on its own Part XI line**, as the Simplified does on its Part VII, so a filing with remuneration can be saved as Excel. This retires Milestone 58D's Excel block for Part XI and the AGENTS.md and code comments that describe the sheet as having nothing to fill in. Practice |
+| Weekend and holiday due dates (73I-N1) | **The computed date, with a note** when it falls on a weekend or legal holiday: "check whether the next business day applies (Rule 2.514)". No legal reading is asserted |
+
+**Every other decision the review raised: the recommended option** (the
+requester, "take the recommendations"): 73A-N1 (filings already filed keep
+their "/s/"), 73A-N2 (New Year clears every signer's choice and stamp),
+73A-N3 (a Stamp never applied prints a blank line), 73B-N1 (the Inventory's
+liability type, payment frequency and trust type are required on a started
+row), 73B-N2 (the unanswered Q11 and Part IX's "None" are fixed here), 73C-N1
+(Inventory D-1 keeps a blank card until the filer leaves the page), 73D-N1
+(hidden Plan "Explanation" text is kept and not printed), 73E-N1 (an imported
+person stays linked only when the workbook names the same person), 73E-N2 (a
+filing keeps its type on import), 73E-N3 (Link Person fills only blanks and
+asks first; Merge names the filings it changes), 73F-N3 (common county
+spellings are corrected to the official name), 73F-N4 (the Initial Plan's Q7
+is kept and named on its page), 73F-N5 (Next follows each form's existing
+rule, once draft clean-up is built), 73G-N2 (the Simplified's remuneration
+Amount becomes a real amount box), 73I-N2 (the Plans count from the last day
+of the anniversary month), 73K-N1 (a new entry scrolls into view and takes
+the cursor), 73M-N1 (the workbook's bond block shows only what the chosen
+arrangement shows), 73N-N1 (court wording is restored on every form, with a
+text-parity test), 73O-N2 (the Plans' certificates get the fourth address
+line too), 73S-N1 (the UCN keeps its star and the covers' sentence is
+amended), 73T-3 (quotation marks survive an import).
+
+---
+
 ## Build order and file overlap
 
 Proposed order, safest and most independent first:
 
-1. **73C, 73D, 73E** — data safety; each touches its own files.
+0. **73U** — fixed first, 2026-10-04, at the requester's choice.
+1. **73C, 73D, 73E, then 73T** — data safety. (Corrected by the review: they
+   do not each touch their own files. 73D, 73E, 73M and 73T all edit
+   `guardian-inventory/excel.js`; 73E, 73M and 73T share `import-keep.js` and
+   the other two importers; 73D's core helper shares `models/guardian.js`
+   with 73B.)
 2. **73A** — the PDF engine's signature block (73N's heading wrap also edits
    `pdf-engine.js`, so 73A goes first).
 3. **73B, then 73G, then 73F** — all three change rules and defaults that
@@ -134,6 +273,8 @@ Proposed order, safest and most independent first:
 | 73Q | `help/index.html`, `tests/capture/guide-screenshots.capture.ts` | `user-guide-drift-guard.spec.js` |
 | 73R | `src/styles/shell.css`, `index.html`, `icons/`, `manifest.json`, `help/index.html`, `src/core/pdf/pdf-preview.js`, `print-pager.js`, `pdf-annotate.js`, `print.css` | `routes.spec.ts`, `lock-and-save-state.contract.spec.ts`, `pdf-annotate.spec.ts`, new `tests/e2e/preview-zoom.spec.ts`; `npm run test:e2e:portable` (icons and manifest are packaging) |
 | 73S | the nine covers, every validator, `completion.js`, `readiness-config.js`, `county-guidance.js`, CSV, `help-content.js` | `ucn-cover-field.spec.ts` (rewritten), `ucn-header.spec.js`, fixtures |
+| 73T | the three importers and exporters (`excel.js` in `guardian-inventory/`, `annual-accounting/`, `simplified-accounting/`), `src/core/excel/import-keep.js`, `excel-engine.js`, `form-contract.js` (`capitalizeImportedFields`), `input-hardening.js`, `party-resolver.js`, a new per-form carry list, `templates/annual-template.js` (73T-1 only) | `excel-form-field-placement.spec.ts`, `tests/e2e/support/export-manifests.ts`, `excel-write-targets.spec.js` (unlocked-cell check), new full round-trip and hand-filled-workbook specs, `import-keep.spec.js` |
+| 73U | `src/core/security/input-hardening.js` | new `tests/unit/sanitize-keeps-stored-files.spec.js` — **built, `5b8849b`** |
 
 Every item that adds or changes a test updates `TEST-INDEX.md`,
 `file_index.md`, the 70T progress list and the assertion-count baseline in
@@ -264,6 +405,64 @@ the question stays recorded for review.
 9. **Cross-form.** One engine and one signature control serve all nine
    forms.
 
+
+### Revised after the review (2026-10-04)
+
+- **Design step 1 is replaced.** Each PDF model resolves its block from the
+  signer's role (guardian, attorney, preparer; on the Plans' certificate, the
+  signer `resolveCertSigner()` names) and passes the engine a print mode:
+  blank line, "/s/" or stamp. For attorneys and preparers a blank choice with
+  a date is "/s/", as today. For a guardian a blank choice is Unsigned, and
+  "/s/" never prints. A Signature Stamp chosen with no image prints the blank
+  line (73A-N3); today it prints "/s/ Name" with the caption.
+- **The shared pieces take the signer's role**: the signature control
+  (`signature-state-control.js`), `checkSignatureState()`,
+  `isSignatureComplete()` and `inferLegacySignatureState()`. A guardian's
+  control offers Unsigned and Signature Stamp only. Today every screen
+  pre-selects "/s/" as soon as a guardian types a date.
+- **Design step 7's mechanism is replaced.** A guardian block holding "/s/"
+  shows no choice, is listed as missing on every surface (the validators,
+  including the Plans' co-guardians, which no validator checks today; the
+  sidebar; the readiness card; the Plans' certificate advisory) and prints a
+  blank line. Once per filing, on open, a guardian block with no choice and a
+  date is set to "/s/" so it falls under the same rule; a filing-level flag,
+  set by every factory for new filings, stops it running again. No per-block
+  marker: it would be dropped by every Excel import, and would miss the Plans'
+  certificate, whose single signature field changes owner when "Who is
+  certifying service" changes after the filing was opened.
+- **Also:** New Year clears every signer's choice and stamp (73A-N2; today it
+  keeps last year's stamp, undated, on the new filing); "Use my saved
+  signature" is offered on the certificate blocks a guardian signs; the Plans'
+  "The certificate is not signed" advisory and the "Signed and dated by a
+  guardian" readiness label are reworded for signing by hand.
+- **The sidebar's guardian-signature rule moves here from 73F** (step 2.1).
+  Without it, a guardian who signs by hand, undated, could never reach ✓.
+- **Files added:** `signature-state-control.js`, `completion.js`,
+  `readiness-config.js`, the nine forms' `index.js` and `pdf-model.js`,
+  `plan-certificate-of-service.js` and its page, `normalize-filing.js`,
+  `filing-years.js`, `party-resolver.js`, the CSV (one flag row per form).
+- **Fixtures and tests:** every `MINIMAL_VALID_*` in
+  `tests/e2e/support/fixtures.ts` gives guardians a date with no choice, so
+  all of them, not only the Plan PDF tests, would become "asked again"; they
+  move to Unsigned or a Stamp. `signature-capture.contract.spec.ts` (which
+  asserts a guardian's date pre-selects "/s/"), the four `plan-*-mount`
+  snapshots, `plan-pdf-wcag-compliance.spec.ts` and `pdf-form-specific.spec.ts`
+  (guardians printing "/s/"), and the signature-completeness, Plan-parity and
+  readiness units; the goldens `ms70-70C-filing-shapes.json` and, since the
+  flag is set on open, `ms70-sav-corpus-golden`.
+- **Decisions raised:**
+  - **73A-N1. A filing already filed** (marked closed, or an earlier year)
+    where a guardian used "/s/". (1) *Recommended:* left as filed; no re-ask,
+    and a reprint matches the filed copy. (2) Asked again there too; a reprint
+    shows a blank line where the filed copy had "/s/".
+  - **73A-N2. New Year and last year's Signature Stamp.** (1) *Recommended:*
+    New Year clears every signer's choice and stamp, as it already does for
+    certificates; the guardian re-applies with "Use my saved signature".
+    (2) Keep it; the new year's filing prints last year's stamp unless someone
+    notices.
+  - **73A-N3. A Stamp chosen but never applied, after "Continue despite…".**
+    (1) *Recommended:* a blank line for every role. (2) Attorneys and
+    preparers print "/s/"; guardians get the blank line.
 ---
 
 ## 73B — No answer the filer didn't give (P3, D3)
@@ -365,6 +564,42 @@ The guide says Yes/No questions "are never answered for you". Today:
 8. **Legal framing.** None decided; the workbook's own heading is cited.
 9. **Cross-form.** The fallback is on three forms; the Plans have no field.
 
+
+### Revised after the review (2026-10-04)
+
+- **Design additions.** Step 5: the Inventory's Excel export and import
+  write and read a blank liability type, payment frequency and trust type as
+  blank (`guardian-inventory/excel.js` near 222, 314, 334, 424; near
+  712–736); today they write "Mortgage", "Loan", "Monthly" and "Pooled" back
+  in, so 73B-4 alone would make the PDF and the workbook disagree. Step 6: a
+  blank Part IX relationship (G8) imports as blank. Step 7: Part IX's
+  restricted-depository receipt date prints blank, never "None". Step 8: the
+  Inventory's dropdowns gain a "— select —" option (they have none today, so
+  this item's UI line was wrong). Step 9: the blank-row clean-up recognises
+  the old Inventory row shape (100%, "Mortgage", 0) as untouched.
+- **Evidence:** B-4's `liabilityType:'Loan'` (`models/guardian.js` near 107)
+  was missed; C-4's trust type is a pre-filled text box, not a dropdown.
+- **A visible side effect, intended:** Annual D-1, D-2 and D-4 rows added and
+  never touched are never cleaned up today (their factory doesn't match the
+  clean-up's blank template); after the fix they disappear when the filer
+  leaves the page, as on every other schedule.
+- **Files added:** `output-preflight.js` (73B-2's warning),
+  `guardian-inventory/excel.js` and `index.js`, `prune-cards.js`. The CSV's
+  "required" for the relationship becomes a warning.
+- **Tests:** the Inventory row units (prune-cards, percent-field,
+  yes-no-radio, carried-balance, required-share), `export-manifests.ts` (the
+  type, frequency and trust-type cells), and the 70C golden's Inventory rows.
+- **Decisions raised:**
+  - **73B-N1. The Inventory's liability Type (A-2, B-4), payment Frequency
+    (C-1) and Type of Trust (C-4), once they start blank.** (1)
+    *Recommended:* required on a started row; they are already starred and
+    the workbook's instructions say "Indicate…". A skipped one is listed and
+    can be passed at Preview. (2) Optional, with the asterisks removed.
+  - **73B-N2. Same-class findings added to this item:** an unanswered Annual
+    Plan Q11 prints the sworn "I have received the monies … from …" sentence;
+    Part IX's "None". (1) *Recommended:* fix both here. (2) Record them only.
+    (Also found, recorded only: every PDF prints "Ward" for a blank ward name
+    after an override; a blank B-4 related property prints "Unsecured".)
 ---
 
 ## 73C — "+ Add Co-Guardian" works on the Plans (D1)
@@ -403,6 +638,26 @@ No data-model, legacy, export or security change. New
 Plans; red-first, it fails today with one block after the click. The guide's
 "fixed blocks for up to three or four guardians" is corrected in 73Q.
 
+
+### Revised after the review (2026-10-04)
+
+- **Evidence corrected:** 51H (`0db1258`) fixed only the second click; the
+  Inventory's one-draw exception for a new card is `904c523`.
+- **Design additions.** The Plans' clean-up re-indexes `guardianPartyIds`
+  with the rows it removes, as the accountings' does; today removing a middle
+  guardian moves the next one onto the removed guardian's shared record, so a
+  later Sync copies one person's details onto another (AGENTS.md §6). It
+  always keeps row 0 and never promotes a co-guardian to Guardian #1.
+- **Tests:** `tests/unit/filing-registry.spec.js` near 130 pins today's
+  dropping and changes; `prune-cards.spec.js` gains a Plans case in which the
+  links follow their rows.
+- **Legacy:** carry-over seeds blank Plan guardian rows; after the fix they
+  show on the Signatures page until the filer leaves it (visible, harmless).
+- **Decision raised:**
+  - **73C-N1. Inventory D-1's new co-guardian card** disappears at the next
+    redraw when all it holds is a signature choice (from the code; needs a
+    browser). (1) *Recommended:* the Plans' model — a blank card stays until
+    the filer leaves the page. (2) Leave it.
 ---
 
 ## 73D — Unticking "This item is a vehicle" never loses what was typed (D2)
@@ -460,6 +715,33 @@ typed underneath — tick it again and your text is back."*
 6. **Security, UI, legal, cross-form.** No change; only the Inventory has
    this box.
 
+
+### Revised after the review (2026-10-04)
+
+- **Evidence corrected:** the vehicle text also overwrites the Description
+  when the filer leaves the Make or Model box (`index.js` near 317–328).
+  Validation doesn't read a vehicle's description; conversion does, into the
+  Annual family's **Schedule D-3**.
+- **Design corrected:** the built description is read by the PDF, the Excel
+  export and conversion, and the builder lives in core (`models/guardian.js`),
+  because conversion can't import a feature module. The safe-deposit
+  exclusion reaches `totals.js` (near 64, 116, 134), the PDF row and the B-2
+  safe-deposit total, and the workbook: column H is written blank for a
+  vehicle (the workbook's own formula would otherwise count it; "No" would be
+  an answer never given).
+- **Data model:** no shape change; the notes on the B-2 description and
+  safe-deposit rows say what is ignored for a vehicle.
+- **Build order:** shares `guardian-inventory/excel.js` with 73E, 73M and 73T,
+  and `models/guardian.js` with 73B.
+- **Decision raised:**
+  - **73D-N1. Hidden "Explanation" text that still prints on three Plans.**
+    About 20 "Explanation" boxes on the Initial, Annual and Minors Plans are
+    hidden when Other or None is unticked but still print
+    (`field-html.js` near 130–135; `plan-initial/pdf-model.js` near 110,
+    `plan-annual` near 53, `plan-minor` near 71). A filer who ticks None files
+    "None" plus "Explanation: …". (1) *Recommended:* extend this item's rule
+    to them — hidden, kept, not printed — as the Simplified Plan already does.
+    (2) A separate item later.
 ---
 
 ## 73E — An Excel import asks first and never half-applies (D6)
@@ -521,6 +803,52 @@ typed underneath — tick it again and your text is back."*
 8. **Legal framing.** None.
 9. **Cross-form.** All three importers get the same flow.
 
+
+### Revised after the review (2026-10-04)
+
+- **Evidence corrected:** the Simplified also writes type of guardianship,
+  GID, county, amended and the guardians' details before its question. The
+  "Import complete" message is written by each importer
+  (`guardian-inventory/excel.js` near 661, Annual near 972, Simplified near
+  514), not `input-hardening.js`. **Only 5 of the 20 specs that import a
+  workbook accept dialogs**; 15 more need changing, and three pass today only
+  because the cover is written before the question they never answer
+  (`simplified-mount.spec.ts` near 85–97,
+  `simplified-part1-identity-cells.spec.ts` near 200–205,
+  `excel-import-cell-shapes.spec.ts` near 90–95).
+- **Design, per importer.** The Inventory already parses into a separate
+  object: the confirmation goes before its `Object.assign`. The Annual reads
+  into a copy (`snapshotCurrentYearData()`, which leaves out stored documents
+  and years), sets the filing type on the copy (73E-N2), makes no
+  `requestSave()` mid-import, and runs `migrateBondDepository` on the live
+  filing after applying. The Simplified's in-place guardian edits move into the
+  copy and its guardian question merges into the one confirmation.
+- **All three:** the name-casing and filtering passes run only on the values
+  read from the workbook — today they walk the whole filing, including
+  archived years, Part XI, document names and stamps (73T rows 2 and 11). An
+  import that fills a schedule clears its "no items" tick. The after-import
+  notice appears after the redraw (neither redraw is awaited today) and lists
+  what was kept from 73T's carry list; an Activity Log entry is written, as
+  for a `.sav` import. The Cancel test also checks that no save was queued.
+- **Decisions raised:**
+  - **73E-N1. Imported people linked to shared records.** Today, after an
+    import, correcting one detail of a linked guardian puts back that
+    guardian's old name, SSN and address. (1) *Recommended:* when the
+    workbook names the same person, keep the link and update the shared
+    record (the notice lists the other filings that change); when it names a
+    different person, unlink that slot, and the notice says so. (2) Unlink
+    every imported person; the filer re-links with Link Person.
+  - **73E-N2. The workbook's Filing Type box** (Annual family). Today a Trust
+    or Final Accounting filled from the Clerk's blank workbook silently
+    becomes an Annual. (1) *Recommended:* the filing keeps its type, and the
+    confirmation says when the workbook is marked differently. (2) The import
+    changes the type, and the confirmation says so.
+  - **73E-N3. Link Person and Merge** (found beside imports). Link Person
+    overwrites every typed field in the slot with the shared record's,
+    blanks included, so a typed SSN or phone is wiped; Merge doesn't say
+    which open filings' details will change. (1) *Recommended:* fix both
+    here — Link Person fills only blanks and asks before overwriting typed
+    values; Merge names the filings. (2) Record them only.
 ---
 
 ## 73F — One answer to "is this section complete?" (P1, P2, D10, D13, D16, D17, D28)
@@ -729,6 +1057,98 @@ stars that follow the signature choice; the Plans' contact fields.
 8. **Legal framing.** 73F-4 is asked as Clerk practice; 73F-7 is flagged.
 9. **Cross-form.** Every step applies to all nine forms.
 
+
+### Revised after the review (2026-10-04)
+
+- **Evidence corrected:**
+  - The dashboard never has an open filing (entering it calls
+    `setActiveFiling(null)`, `leave-filing.js` near 42), so Step 1's
+    dashboard clause changed nothing.
+  - Export uses `checkSignatureState()`; `isSignatureComplete()` is its
+    yes/no twin.
+  - The golden has 5,003 rows, not 4,803.
+  - The Simplified Plan asks no SSN; "the list vanishes once one box is
+    ticked" applies to the Initial Plan and the Plan for Minors.
+  - The impossible-date bypass came from Milestone 38 (`b0321dd`).
+  - The guide's line 284 ("If you later add an entry, the verification is
+    cleared automatically") is false for the 25 Annual and Inventory
+    schedules.
+- **The complete inventory** (16,638 single-change variants of 20 complete
+  filings, run through both engines) adds five defect classes:
+  - "+ Add Entry" doesn't clear the schedule's "no items" tick (the key is
+    `schA`, the tick's is `scha`; Annual `index.js` near 413), and the tick
+    then hides incomplete rows: about 890 variants per Annual-family form;
+  - a blank row from "+ Add" marks the page incomplete, names nothing,
+    disables Next, and hides the "no items" box;
+  - Part VIII's other mismatches (a stale tick with "Yes"; a described trust
+    with no name);
+  - the Initial Plan's Q7 benefits question is sidebar-only and named
+    nowhere (73F-N4);
+  - the Plan Annual attorney's and the Annual Part X attorney's signatures
+    aren't checked by the sidebar at all.
+
+  The readiness card's automatic rows agreed with export in every variant
+  (AGENTS.md §4 holds); its overview rows contradict it on the Annual family
+  (any Part I issue, and "part v" matching "part viii") and the Simplified
+  (the certificate and signature rows).
+- **Asterisks** (from rendered markup): about 30 mismatches beyond P2's —
+  enforced but unstarred include the Annual's Starting Balance, Schedule A
+  Amount, Part VIII questions and certificate dates, the Simplified's Part V
+  and VI dates, and every Plan question-level requirement (`planQ()` has no
+  required flag); starred but unenforced include the Annual's Part III office
+  address and the B-1–B-3 court-order and period dates.
+- **Design: Step 1 is replaced** (73F-N1). The seven validators move into
+  modules loaded at startup that take the filing as an argument, as
+  `totals.js` is (about 1,120 lines move; their dependencies are already
+  core modules). Every page's mark becomes "no validator issue routed to
+  this page, and the page's sidebar-only prompts satisfied", for every
+  filing, open or not, so the dashboard's percentage and "Ready to file" agree
+  with Preview. The sidebar-only prompts become one small table, each with
+  its `sidebarOnlyWants` wording: the 14 Annual schedules and, after 73F-4,
+  the Inventory's 11; the bond question; the Plans' certificates; the Annual
+  Plan's 3G; the Initial Plan's Q7 if kept. `completion.js`'s six
+  hand-written rule sets retire, and "✓ while blocked" becomes impossible.
+  The page checklist includes impossible-date drafts.
+- **Step 2 additions:** "+ Add Entry" clears the tick; a blank row counts as
+  no row; Part VIII's rule is the validator's.
+- **73F-3's prerequisite:** impossible-date drafts are cleared and re-keyed
+  when a row is removed or duplicated (Milestone 25 required it; it was never
+  built). Without it an orphaned draft becomes a block nobody can clear, and
+  a new row at the same position shows the stale text.
+- **73F-4's consequences:** remove the Inventory's empty-schedule export rule
+  (near 1381–1396); add the 11 schedules to the prompt table; reword the
+  readiness rows ("…or verified empty") and the guide.
+- **73F-2's consequences:** the check is `normalizeCountyName()` over the 67
+  counties; the Plans' readiness predicates change too. Note that "blocks
+  like a blank county" is overridable today, and after an override the PDF
+  prints with no court caption (73F-N2).
+- **The golden:** step 2 alone changes about 1,944 of 5,003 rows, mostly
+  because its variant generator writes "Yes" into signature-choice fields.
+  Fix the generator first, then pin the new two-way parity test as the
+  oracle and retire the weaker `checklist-export-parity.spec.js`.
+- **Decisions raised:**
+  - **73F-N1. The dashboard** (73F-9 re-asked: the full rule list is a
+    moderate job and the only way the dashboard agrees). (1)
+    *Recommended:* the dashboard's percentage and "Ready to file" use the same
+    rule as Preview, for every filing. (2) As first proposed: a filing can
+    read "Ready to file" on the dashboard and drop below 100% when opened.
+  - **73F-N2. A blank or unrecognised county after "Continue despite…".**
+    (1) *Recommended:* it can't be passed, and the panel says why — this adds
+    to AGENTS.md §4's list of issues that can't be overridden, so it needs the
+    requester's named approval. (2) It can be passed; the PDF prints with no
+    court heading.
+  - **73F-N3. County spellings.** (1) *Recommended:* common variants are
+    corrected to the official name ("St Lucie" → "St. Lucie", "Miami Dade" →
+    "Miami-Dade", "De Soto" → "DeSoto", "Pinellas County" → "Pinellas").
+    (2) They block as misspellings.
+  - **73F-N4. The Initial Plan's Q7 (benefits).** (1) *Recommended:* keep
+    asking, and name it on the page as the Annual Plan's 3G is. (2) Stop
+    asking, matching export.
+  - **73F-N5. Next on pages newly marked incomplete.** (1) *Recommended:*
+    follow each form's existing rule (disabled on most pages; never on the
+    Inventory's Cover and D-1 to D-5 or the Plans' certificates), once draft
+    clean-up is built. (2) Explain only; never disable Next for an
+    export-only issue.
 ---
 
 ## 73G — Signs in amount boxes (P6, D5)
@@ -826,6 +1246,52 @@ stars that follow the signature choice; the Plans' contact fields.
    Inventory negates liabilities in its own formulas, and the Simplified has
    no loss column.
 
+
+### Revised after the review (2026-10-04)
+
+- **Evidence corrected:**
+  - A positive Schedule E transfer out changes only Schedule E's own total
+    (nothing else uses it).
+  - `sanitizeNegativeAmounts()` is called from three mounts (Annual,
+    Inventory, Simplified) and so runs **on every page drawn**, not only on
+    open. It also zeroes the Annual's Part XI amounts and turns a stored
+    "1,234.56" into 1.
+  - **All three workbooks tell filers any amount may be negative**: *"Enter
+    all amounts in this document in numbers, e.g., 2500.50 or -2500.50. Each
+    entry will be automatically converted into dollars and cents: $2,500.50
+    or ($2,500.50)."* (Annual `PART I`!C11, Simplified `PARTS I, II `!C9,
+    Inventory `SUMMARY I `!C15).
+- **Why "keep and warn" (73G-3) can't work as written:** an amount box shows
+  a stored −50 as 50, and tabbing through it stores +50 (`form-fields.js`
+  near 196–198 with `form-contract.js` near 568–573); the Inventory flips the
+  sign on the first keystroke. This is also a defect in itself, for imported
+  and carried negatives today.
+- **Design additions:** amount boxes show a stored minus and never re-store
+  a box the filer didn't edit; a typed "(" is kept until the box is left; the
+  refusal note covers "(…)", "−" and "–"; the Simplified's remuneration
+  Amount becomes a real amount box (today it is free text, so "$1,234.56"
+  files as $0.00 and "1,234.56" as $1.00); Excel text-cell amounts are read
+  as typed input is (as `share-cell.js` already does for shares).
+- **Calculation effect, stated:** stopping the zeroing changes Line 30, the
+  Simplified's Line 8, the bond requirement and possibly the audit-fee tier
+  for a filing that holds a negative D-1–D-4 or Part II amount. It moves
+  toward the Clerk's workbook, which zeroes nothing (worked example: an
+  imported overdrawn −200 account takes the fee from $85 back to $20). "No
+  total changes" in this item and under "Not in scope" is corrected.
+- **Fixtures:** `ms70-year-rollover-golden.json` and
+  `ms70-conversion-golden.json` record the zeroing turning text into
+  numbers; `percent-field.spec.js` and `carried-balance.spec.js` call it.
+- **Decisions raised:**
+  - **73G-N1 (73G-3 re-asked: the workbooks invite negatives everywhere,
+    and "keep and warn" costs more).** (1) *Recommended:* accept a minus in
+    every amount box, as the workbooks instruct, with a non-blocking note
+    where a negative is unusual (a negative asset or income); screen, PDF and
+    workbook agree. (2) Keep the decided option, with the display fixes: an
+    imported −200 stays, but a minus can't be typed, and editing that box
+    drops it with a note.
+  - **73G-N2. The Simplified's remuneration Amount.** (1) *Recommended:* a
+    real amount box; saved text is converted when the filing opens, and
+    anything unreadable is kept and flagged. (2) Leave it as text, validated.
 ---
 
 ## 73H — One way to show dates and negative amounts (P9, D21)
@@ -902,6 +1368,27 @@ or legacy change. New `tests/unit/display-formats.spec.js`; the PDF text
 specs that pin today's formats are updated with the change stated. All nine
 forms.
 
+
+### Revised after the review (2026-10-04)
+
+- **Evidence corrected:** not every amount cell uses
+  `"$"#,##0.00_);("$"#,##0.00)`: it is the dominant format, but Schedule C's
+  loss column shows red with no sign (printing like a positive in black and
+  white) and a few columns show −$x. The authority for 73H-1 is the
+  workbooks' instruction text quoted under 73G's revision. The Inventory
+  Summary screen shows the A-2 and B-4 liability totals as positive while its
+  PDF and workbook negate them.
+- **Design additions:** Part VI formats the **negated** value, as the
+  workbook does (`H13 =-…`), so a disbursement keeps its "subtracted" cue and
+  a net refund prints as positive; the cover's Quick Summary and the Summary
+  page follow it. The importer's date normaliser (`cell-reader.js` near 36)
+  is left alone. A blank Q11 prints a blank line, not $0.00. Screen amounts in
+  parentheses get visually hidden "minus" text for screen readers; the
+  narrowest money columns are checked for width.
+- **Not harmonised:** the Simplified keeps disbursements positive, because
+  its workbook does (`H29 =SUM(G27:G28)`).
+- **Note:** 73H-2 replaces the bond lines' "[date]", which was approved word
+  for word in Milestone 67D (2026-09-23).
 ---
 
 ## 73I — Due dates that match the statute (D33)
@@ -967,6 +1454,46 @@ No data model or legacy change; dashboard display only. The four pinned rows
 in `dashboard-view-model.spec.js` change, with cases for each month length
 and a leap year.
 
+
+### Revised after the review (2026-10-04)
+
+- **Evidence corrected:** for a period ending on a month's last day the
+  dashboard is 0–3 days early; for a period ending mid-month it is **16–32
+  days** early. The Final's 90 days has the audit work slip's basis (the
+  lowest). **§744.511 was missed:** a removed guardian files the final report
+  within 20 days after removal; Probate Rule 5.680(c) also applies.
+- **Design (new):**
+  - Annual, Trust and Simplified accountings: due on the first day of the
+    month four months after Period To's month (`new Date(y, m + 4, 1)`), never
+    "Period To plus three months and a day".
+  - Final: no due date, with its basis drawn on the dashboard ("Due promptly;
+    within 45 days after letters of administration if the ward has died;
+    within 20 days after removal (§§744.527, 744.511)"). Today the basis text
+    is blanked whenever there is no date. Finals sort last and are never
+    counted overdue.
+  - Plans: per 73I-3 as re-asked (73I-N3).
+- **Files added:** `dashboard/index.js`, `readiness-config.js` near 180 and
+  301, `help-content.js` near 110, `help/index.html` near 717, the Plans'
+  covers.
+- **Decisions raised:**
+  - **73I-N1. Weekend and holiday due dates** (April 1 falls on a Saturday
+    in 2028 and a Sunday in 2029; Probate Rule 5.042(a) applies Rule 2.514).
+    (1) *Recommended:* show the computed date, and when it falls on a weekend
+    or legal holiday add "check whether the next business day applies (Rule
+    2.514)". (2) Move it to the next business day, which needs a holiday
+    table and asserts a legal reading.
+  - **73I-N2. The Plans' 90 days.** (1) *Recommended:* count from the last
+    day of Period To's month, as the statute counts "after the last day of
+    the anniversary month". (2) Count from Period To exactly as entered.
+  - **73I-N3 (73I-3 re-asked).** §744.367(1): the plan "must cover the coming
+    fiscal year, ending on the last day in such anniversary month"; §744.3675:
+    it "updates information" and says how needs "are proposed to be met in the
+    coming year", and the Annual and Minors Plan forms "propose". The
+    Simplified Plan's form looks back ("preceding year") and has no period
+    field of its own. (1) *Recommended, following the statute:* on the Annual
+    and Minors Plans, "For the period" is the coming plan year, and the due
+    date is 90 days after the day before Period From. (2) The year just ended,
+    as answered earlier: count from Period To.
 ---
 
 ## 73J — Pages that keep up with a change (P5)
@@ -986,6 +1513,24 @@ and a leap year.
 No decision, data model, legacy or export change. New
 `tests/e2e/live-page-parts.spec.ts`, one case per row; red-first.
 
+
+### Revised after the review (2026-10-04)
+
+- **Row 4 corrected:** the Inventory Summary's D-4 line is a link that reads
+  as a to-do, not stale content. Row 5 also needs `dashboard/view-model.js`
+  (`workflowState()` returns only the effective status).
+- **Design replaced:** one shared helper — "redraw this tagged region when
+  these fields change" — on the existing `pg:field-written` event, which the
+  attorney asterisks, the Guardian Advocate hint and the service-attestation
+  visibility already use, instead of five separate patches.
+- **Three more cases:** the cover's "No attorney is entered. Why is this
+  guardian filing without one?" question stays after an attorney is typed,
+  although it says it "goes away" (Annual Part I, Inventory Cover); Schedule
+  B-4's bank-account dropdowns keep "Bank Account 2" after the account is
+  named; the sidebar's guardian name also goes stale after Link Person and
+  after Sync on a closed filing.
+- **`npm run check:types`** is required: `router.js` is in
+  `src/core/navigation/`.
 ---
 
 ## 73K — The page stays where the filer was (D9)
@@ -1015,6 +1560,27 @@ No decision, data or export change. New
 `tests/e2e/redraw-keeps-scroll.spec.ts` on one accounting and one Plan;
 red-first. `npm test` recommended: every page redraw goes through the router.
 
+
+### Revised after the review (2026-10-04)
+
+- **Evidence corrected:** Add, Remove and Duplicate redraw through
+  `navigate()` to the same page or `renderPage(getCurrentPage())`; all end in
+  `renderPage()`.
+- **Design additions.** `renderPage()` can't tell today whether the page is
+  being redrawn or revisited (the current page is set before it runs); the
+  signal is `getPageVisit()` (`route-state.js`) together with which filing is
+  shown, because switching filings and New Year redraw the same page for
+  different data. The scroll position is saved before the old page is
+  cleared and restored after drawing. Preview is exempt (it draws in stages).
+  Keyboard focus is lost the same way (after a confirmation the cursor falls
+  to the top of the document) and is restored too. Background redraws (a
+  supporting-document check finishing; Sync) skip a page the filer is typing
+  on.
+- **Decision raised:**
+  - **73K-N1. After "+ Add" or Duplicate.** (1) *Recommended:* the new entry
+    scrolls into view if it is off-screen and its first box takes the cursor;
+    every other redraw keeps the filer's place. (2) The page stays exactly
+    where it was, and the new entry may be below the window.
 ---
 
 ## 73L — Dialogs that wait their turn (P10, P12)
@@ -1075,6 +1641,36 @@ No data or export change. New `tests/e2e/dialog-order.spec.ts`;
 `schedule-doc-ack.spec.ts` extended (an empty row asks nothing). `npm test`
 recommended: every dialog goes through `dialogs.js`.
 
+
+### Revised after the review (2026-10-04)
+
+- **Design step 1 corrected.** The reminder rule changed on 2026-09-27
+  (`0598150`, in the tested build): after "Not now" or Escape it waits until
+  the filer next arrives at the page, and a guard stops a second reminder
+  stacking on the first; `schedule-doc-ack.spec.ts` tests it. That rule
+  stays. The fix adds only: no reminder for rows that are still empty, and
+  none while any dialog — including Add Form and the eligibility dialog — is
+  open.
+- **The queue covers pop-ups only.** Add Form and the eligibility dialog wait
+  on pop-ups while they stay open, so a queue that waited for them would
+  deadlock. The cursor's return point is recorded when a pop-up is shown, not
+  created; a queued reminder is dropped if the page or filing changed.
+- **Three more defects:**
+  - **One Escape closes two dialogs** (reproduced in a browser: a notice over
+    Add Form, one Escape, both closed). Escape stops at the top dialog.
+  - The eligibility dialog also stays open behind its carry-over note and its
+    "source not found" notice; it closes as soon as the filing exists.
+  - **A pop-up stays visible and clickable over the lock screen** (pop-ups sit
+    at layer 10010, the unlock screen at 10000, and locking doesn't close
+    them), showing whatever names its text holds and acting on cleared data.
+    Locking closes every pop-up.
+- **The background-tab stall** may be a test-tool artifact: frames resume
+  when the tab returns. Design step 4 is kept only if a browser check shows
+  Preview doesn't finish on its own on return; showing dialogs at once stays
+  (the frame is not needed: label the box in `buildShell()`).
+- **73L-1 as decided, with a limit:** below about 1,000px wide, a 410px push
+  leaves too little room, so the Help panel overlays there.
+- **Files added:** `modal-events.js`, `help-panel.js`, `app-lock.js`.
 ---
 
 ## 73M — Excel: what it doesn't carry, said plainly (D7, D12, D15)
@@ -1130,6 +1726,36 @@ No data model change. `bond-depository.spec.js` (the ambiguous guess),
 explanation. The workbook is never written in an undefined cell unless
 73M-1 (2) is chosen.
 
+
+### Revised after the review (2026-10-04)
+
+- **Evidence corrected.** "Bond and depository" returns as "Bond only" only
+  when imported into a filing whose answer is blank. The Annual's Part IX has
+  the same guess. The Part XI explanation is reachable: Preview's capacity
+  panel says "Save as PDF instead"; the disabled button's tooltip gives the
+  wrong reason.
+- **Design corrected and extended:**
+  - Step 1 applies to imports only: the same function migrates old saved
+    files on open.
+  - A-2 notes are kept by position and the same lender, as `import-keep.js`
+    matches people.
+  - The workbook's bond block shows only the fields the chosen arrangement
+    shows, as the PDF does (73M-N1).
+  - Save as Excel can look enabled and do nothing after an override: all
+    three `doSaveExcel()`s redraw silently when an acknowledgement is
+    pending. It says so.
+  - The override's re-enable test keys on the tooltip's wording ("template
+    can hold", `pdf-preview.js` near 476–478); it is specified together with
+    step 3, or the override would re-enable a capacity-blocked button.
+  - Making Save as Excel clickable changes 18 specs that wait for it as a
+    "ready" signal.
+  - The notes from several items (73M, 73S's UCN, signature choices, the
+    guardian's email) come from 73T's one carry list per form.
+- **Decision raised:**
+  - **73M-N1. What the workbook's bond block shows.** (1) *Recommended:* only
+    the fields the chosen arrangement shows, as the PDF does; the filing keeps
+    the hidden values. (2) As today: everything typed, so a workbook can show
+    a waiver date beside a bond.
 ---
 
 ## 73N — The Simplified Annual Plan's PDF (D19, D8)
@@ -1176,6 +1802,57 @@ explanation. The workbook is never written in an undefined cell unless
 No data change. `pdf-form-specific.spec.ts` (numbering, full Q8 and Q9
 text), `dashboard-view-model.spec.js` (the contact). Red-first for each.
 
+
+### Revised after the review (2026-10-04)
+
+- **Evidence corrected.** Q8 is about 625pt in a **468pt** text column: it
+  runs into the right margin after "…the following was" and off the paper
+  after "…executed by or". Q7's and Q9's parentheticals belong to their "Yes"
+  explanations. **The attorney's name does print** on the Simplified Plan, in
+  the certificate's "Certified by (Attorney)" block, so design point 5's card
+  text changes to "The court's Simplified Plan has no place for this; it is
+  kept for your records. The attorney's name prints on the certificate of
+  service if the attorney certifies it." "No other heading overflows" holds
+  for fixed text only: a long ward name in the caption, or a long B-4 account
+  title, can overflow.
+- **Design corrected:** one wrap helper serves every one-line title (section,
+  notice, key-value grid, checklist, table, supporting-documents, totals
+  label, page-1 caption), and every space check uses the wrapped height.
+  Restored wording prints as full-width wrapped headings above the answer,
+  as the original form lays it out (in today's 98pt label column Q9 would be
+  16 lines tall). The dashboard's contacts honour "this person prepared this
+  filing".
+- **Blast radius — court wording shortened elsewhere:**
+  - **Annual family:** the guardian's declaration ends at the period; the
+    workbook (`PART II, III`!B23) continues "…and includes a statement of the
+    ward's assets at the close of said period. I also certify that any and
+    all annual investigatory forms and fees have been filed and paid, unless
+    exempt…". The receipts certification drops "and will upon request make
+    available for inspection as the court may order (F.S. 744.3678(3))".
+  - **Annual family and Simplified:** the attorney statement drops "I have
+    not audited the accompanying guardianship accounting" (`PART IV, V`!B27;
+    `PARTS V, VI`!B13).
+  - **Annual and Initial Plans:** the "consulted" certification drops "…or
+    consistent with the rights retained by the Ward" (the Annual Plan's
+    screen paraphrases it differently again); Q2 drops the county-move
+    wording; the directives question shortens "(including but not limited
+    to: …)"; the Annual Plan's Q10 drops "and I have taken the following
+    steps to verify there are none"; the certification preamble on changed
+    capacity isn't printed; the Initial Plan prints Q11 between 10D and 10E.
+  - **The Inventory and the Plan for Minors** are faithful.
+  - **No PDF ever says "A MINOR" or "GUARDIAN ADVOCACY" in the caption**: no
+    model sets the ward type the caption helper reads (`circuit-lookup.js`
+    near 114–125), though the Minors original's caption does. For a
+    qualified person.
+- **Tests:** `pdf-engine-notice-title.spec.js` reads the engine's source and
+  changes; a "no ink past the right margin" check for all nine forms with
+  long-text fixtures (today only the Inventory's schedules have one).
+- **Decision raised:**
+  - **73N-N1. Court wording on the other forms.** (1) *Recommended:* restore
+    the original form's or workbook's wording wherever a question or
+    certification prints, with a text-parity test against
+    `reference/plan-forms/*.txt` and the workbooks' text. (2) The Simplified
+    Plan only, as 73N-1 says.
 ---
 
 ## 73O — Cross-form differences (P7, P8, P11, D18, D20, D29)
@@ -1316,6 +1993,49 @@ requester decided), **defect**, or **open**.
 8. **Legal framing.** 73O-5 is asked as Clerk practice.
 9. **Cross-form.** This item is the cross-form pass.
 
+
+### Revised after the review (2026-10-04)
+
+- **Evidence corrected:** the banner has three wordings (the Inventory's;
+  the Annual and Simplified with the Excel-capacity clause; the Plans'), not
+  four. The Annual Plan and the Plan for Minors have the same unlinked,
+  unwarned guardian-name pattern as the Initial Plan. **No Plan binds guardian
+  names** — the Annual Plan binds only the attorney — and a Cover's "Guardian
+  Name(s)" is a free-text list ("Jane Doe and John Doe") while signature
+  blocks are one person each, so 73O-2's "one field each" has no precedent for
+  guardians (73O-N1).
+- **The Simplified has a hidden recipient line 4:** it is in the CSV, the
+  add-row factory, the PDF and the "started" test, but has no box on screen,
+  isn't exported and isn't cleared by import. A stored line 4 prints on the
+  filed PDF, unseen and uneditable.
+- **73O-3's real reach** (decided option 1): the shared recipient factory,
+  `models/simplified.js` and `models/guardian.js`; CSV rows for all three
+  accountings; the three certificate pages; the started-field lists; three
+  PDF models (and the Plans' certificate if 73O-N2); three exporters (Annual
+  B15/I15/B21/I21; Simplified rows 30–31 and 36–37; Inventory B/H 16–17 and
+  22–23, none of them formulas); three importers; five conversion mappings
+  (one of which folds lines 3 and 4 together); goldens
+  `ms70-conversion-golden.json`, `ms70-year-rollover-golden.json`,
+  `ms70-completion-golden.json`.
+- **73O-2's side effect:** merging the Initial Plan's cover attorney into the
+  certification's makes the attorney "started" on filings whose cover alone
+  named one, so the certification (Bar number, signature, email) becomes
+  required. Visible; stated under §8.2.
+- **Also:** the other `console.log` lines are noise only; each PDF build
+  clones the whole page through html2canvas, which costs time too (cache the
+  PDF constructor after the first build; needs a browser check). The Start
+  New Form cards are the outlier in naming: the registry, PDF title and
+  workbook all say "Simplified Annual Accounting". More stale "inventory
+  type" text: `conversion.js` near 335 and `help-content.js` near 20.
+- **Decisions raised:**
+  - **73O-N1 (73O-2 re-asked for guardian names).** (1) *Recommended:* the
+    attorney becomes one field as decided; guardian names keep the cover list
+    and warn when a signer isn't among it (as 72A does for the Inventory), on
+    the Initial, Annual and Minors Plans. (2) Build the cover's list from the
+    signature blocks.
+  - **73O-N2. The fourth address line on the Plans' certificates.** (1)
+    *Recommended:* yes, one shape and rule for every certificate. (2) The
+    accountings only.
 ---
 
 ## 73P — Small fixes (D14, D22–D27, D32, the Help panel)
@@ -1343,6 +2063,13 @@ requester decided), **defect**, or **open**.
   as…" and keep its current behaviour, so the name says what it does.
   (2) Keep the name and stop it becoming the live case file.
 
+
+### Revised after the review (2026-10-04)
+
+- **Also found:** Link Person and Link to Case show "O&#39;Brien" for an
+  apostrophe in a name (escaped text put into `textContent`,
+  `pick-record-dialogs.js` near 29 and 84); the Simplified's Part VI stars
+  Recipient 3's name with no rule behind it.
 ---
 
 ## 73Q — The user guide matches the app (section 6 of the test)
@@ -1384,6 +2111,26 @@ by the Clerk's own formula (72H).
 2,560px window), and figures shrink into two-across thumbnails. A text width
 of about 75 characters, with figures shown at natural size, fixes both.
 
+
+### Revised after the review (2026-10-04)
+
+- **Statements that mislead a filer, beyond those listed:**
+  - The guide says only the last four SSN digits appear on printed or
+    exported documents (near 300 and 847); **Excel writes the full SSN/EIN**
+    on all three workbooks. This overstates the protection (AGENTS.md §8.6).
+  - "Comments do not appear on the court document" (near 320): they print as
+    "Comment: …".
+  - "0 is allowed" for a share (near 290): Schedule A-1 rejects 0.
+  - Part XI (near 677): any entry blocks Save as Excel entirely (73T-2).
+  - The fee "computed from total assets" (near 500): it is Line 30, net.
+  - "Everything you type is kept on this device" (near 756) needs the
+    recovery cache's limits.
+  - `help-content.js` near 79 says amounts are rounded to the nearest dollar;
+    the app keeps cents.
+  - The guided tour says the Simplified has no Excel output (`walkthrough.js`
+    near 28); its "Signatures" stop points at Part III, not Part IV.
+- **Cosmetic:** three help entries can never be shown (`help-content.js`
+  near 151–191); the tour's second stop can highlight a hidden dialog field.
 ---
 
 ## 73R — The requester's change requests R1–R3
@@ -1469,6 +2216,23 @@ choice is kept on this device, with the other display settings (AGENTS.md
 - **UI/UX and cross-form.** All nine forms share the sidebar and the
   preview.
 
+
+### Revised after the review (2026-10-04)
+
+- **R1:** no statute, rule or order in `reference/` requires the copyright
+  line to be visible; the full clause stays in the Terms of Use. Eight more
+  specs use the save-controls toggle (`dashboard-backup`,
+  `backup-restore-sav`, `case-file-damaged-open`, `case-file-newer-format`,
+  `case-file-protection`, `ward-lock` and the two listed), and the guide's
+  capture script; the tour's progress stop is covered by
+  `guided-tour-navigation.spec.ts` and `guided-tour-content.spec.js`.
+- **R3 design gaps:** the canvas isn't scaled for high-resolution screens and
+  every page renders at once, so "Full width" on a 2,560px screen at double
+  density would need about 1.4 GB of canvas for a 19-page Inventory (and
+  exceed iOS Safari's canvas limit): the design needs a scale cap or pages
+  rendered as they come into view. Keeping notes across a zoom (73R-5) needs
+  a new save-and-restore step: unsaved notes live only in pdf.js's editor
+  layer.
 ---
 
 ## 73S — The UCN (request R4)
@@ -1569,6 +2333,203 @@ recorded as the requester's decision.
 8. **Legal framing.** Recorded as the requester's decision, not as a rule.
 9. **Cross-form.** All nine covers.
 
+
+### Revised after the review (2026-10-04)
+
+- **Conflict with the covers.** The Inventory, Annual and Simplified covers
+  say "Fields marked with an asterisk (*) are required before export"; a
+  never-blocking star makes that false (73S-N1).
+- **Files corrected:** the UCN box is drawn by five helpers
+  (`case-caption-card.js` near 31 for three Plans; the Inventory near 762;
+  the Annual near 675; the Simplified near 438; the Plan for Minors near
+  241). `county-guidance.js` isn't needed (every county). The Plan for
+  Minors' identity also lives in `case-resolver.js` near 35,
+  `dashboard/view-model.js` near 162, `dashboard/index.js` near 452 and 472
+  (judge propagation), `delete-confirmation.js` near 47 and its PDF model
+  near 27; CSV row 597 is labelled "Reference number" where the screen says
+  "Case #".
+- **The shape check** strips hyphens and spaces before counting 20
+  characters (Milestone 63's own example was "50-2026-CP-001234-XXXX-MB"),
+  never reformats the stored value, and doesn't require "GA" or "XXGD" (the
+  court-type and county-use codes vary). The statewide format isn't sourced
+  in `reference/`.
+- **The Save as Excel note** goes in Preview's box: no Save as Excel path
+  shows advisories.
+- **Decisions raised:**
+  - **73S-N1. How the UCN is marked.** (1) *Recommended:* keep the star,
+    amend the covers' sentence ("…required before export; the UCN is starred
+    as a reminder and never blocks"), give it a screen-reader description,
+    and exempt it from 73F's asterisk sync. (2) A "Recommended" tag instead
+    of a star. (3) A star only, leaving the sentence false.
+  - **73S-N2. The Plan for Minors' identity** (the dashboard's case-number
+    column, judge propagation, the PDF title and file name). (1)
+    *Recommended:* the Case # first, now that it is required. This changes
+    AGENTS.md §6's rule ("Plan Minor always falls back `ward.ucn || ward.ref`"),
+    so it needs the requester's named approval. (2) The UCN first: a Plan for
+    Minors with a UCN never matches its sibling filings' "26-001234-GD".
+---
+
+## 73T — The Excel round trip, field by field (added by the review)
+
+### What a filer observes
+
+Exporting a filing to the Clerk's workbook and importing that workbook back
+(into the same filing, or a new one) should give back what was exported,
+except for the things the workbook has no box for — and those should be
+said plainly (73M). Today, on all three forms with Excel:
+
+| # | Form | What happens | How established |
+| --- | --- | --- | --- |
+| 1 | Simplified | **Re-importing its own workbook blanks Guardian #1's name** in Part IV, and drops that guardian's signature choice, stamp and "served the copies" tick as if a different person. Part IV's name box (`PARTS III, IV`!F15) is the Clerk's formula from the cover, which the export leaves alone and ExcelJS writes back with no result; the importer reads it as blank (`excel.js` near 31–37, 400) | Node simulation of export and import; needs a browser |
+| 2 | Annual family, Simplified | **Every import scrambles the attorney's and the certificate guardian's signature choice**: the whole-filing name-casing pass treats any key containing "attorney" or "guardian" as a name (`form-contract.js` near 832), so "typed" becomes "Typed". Preview then reports "signature selection is invalid", and a stamp stops printing | Code; the function run in node |
+| 3 | Annual family | **Part VIII's answers are written beside the Clerk's boxes, not in them.** The boxes are `PART VIII`!H8 (with the Yes/No list), H17/H27/H37 (share) and H18/H28/H38 (amount), unlocked on a protected sheet; the app writes D8, D17, D18…, locked dotted leaders beside them (`excel.js` near 474–497). A workbook filled in by hand on the Clerk's form imports with question #1 and every share and amount lost. The current placement is pinned by `tests/e2e/support/export-manifests.ts` near 474–481 | Parser (locking and validation) |
+| 4 | Annual family | **Importing into a Trust or Final Accounting can turn it into an Annual**: the import copies `PART I`!H4 into the filing type and treats a blank as "Annual"; the Clerk's blank workbook holds "Annual" there (`excel.js` near 661–662). Its own "Amended " option isn't recognised and blocks as an unknown type | Code and parser |
+| 5 | All three | **Imported people bypass the shared-record layer.** After an import, correcting one field of a linked guardian puts back that guardian's old name, SSN and address from the shared record (`party-resolver.js` near 658–681); correcting the ward's name after importing another ward's workbook renames that ward on its other filings. The Simplified unlinks guardians 1–3 even for the same people; the Annual leaves links that no longer fit | Node, with the real party code |
+| 6 | Inventory | **D-2's attorney name is replaced by the Cover's "Attorney for Guardian"** (the workbook's I26 is the Clerk's link to D24). When the two name different people — the case 72H warns about — the attorney's emails, signature choice and stamp are dropped as a different person | Code |
+| 7 | Inventory, Annual | **Rows dropped on import**: an Inventory B-4 creditor with a $0 or blank balance, or no lender name (`excel.js` near 716); an Annual B-1/B-2 row with only an amount (the "has data" test reads the date column, near 748) | Code |
+| 8 | Annual, Simplified | **Recipients 5 and later are not exported**, with no capacity warning; the Annual's import then rebuilds exactly four, erasing the rest | Code |
+| 9 | Inventory, Annual | **A hidden outside-preparer block is erased** by import while a guardian or the attorney is ticked as preparer (the cells aren't exported, so they read back blank), breaking AGENTS.md §4 | Code |
+| 10 | Simplified | **Part V's attorney signature date never reaches its own box** (`PARTS V, VI`!H17); the certificate's date box (H41) falls back to it; import copies H41 into both | Parser and code |
+| 11 | All three | **Import strips `"`, `<`, `>` and backticks from all text**: the Clerk's own B-2 example `30" Flat screen TV` comes back as `30 Flat screen TV`. Typing keeps them | Code (73T-3) |
+| 12 | Inventory | C-2 and C-3 entries whose text contains " / " are split back wrongly: "Foreclosure / Lien" returns as description "Foreclosure", case number "Lien" | Code |
+| 13 | Annual family | Blank amounts are written as 0: a blank Starting Balance returns as $0.00, silencing "required"; an untouched card returns as a $0.00 row with four errors | Code |
+| 14 | Inventory, Simplified | The Inventory's "no recipients are required" answer is cleared by import; the Simplified's workbook lists recipients the PDF suppresses when that answer is Yes | Code |
+| 15 | Inventory | Part V's own safe-deposit Yes/No box (H12) is never written; "inventory filed?" (H26) is written when the ward has no box | Parser and code |
+| 16 | Inventory, Annual | Bond fields hidden by the chosen arrangement are still written, so a workbook can show a $50,000 bond beside a waiver, and an old waiver date can win the import's guess | Code (73M) |
+| 17 | All three | Text starting with = + - @ gains a visible leading apostrophe that comes back on import | Code |
+| 18 | Simplified | Import clears old certificate attorney details the filer never discarded, contrary to 72H's "never thrown away unasked" | Code |
+| 19 | Inventory | Smaller: names typed as "kept as entered" are title-cased on import; a legacy free-text date imports blank; "this person prepared this filing" is carried by position, not by person | Code |
+
+### Problems in the Clerk's own workbooks
+
+- **Annual Schedule B-4: a subtotal formula tests the wrong cell** on every
+  register page — for example `SCH B-4 OTHER DISB p2`!L23 is
+  `=IF(D21="Taxes: Intangible",H21,0)`, comparing another row's date column
+  with a category name. Per the review, an intangible-tax payment on the
+  first register row and a utilities payment on a block's first row drop
+  out of the workbook's SUMMARY and so out of Part VI H16 and Line 20; the
+  PDF counts them. This repo's own page-copying script copied the error into
+  the added pages. (73T-1)
+- **Annual Part XI has 27 blank, unlocked lines** (`PART XI`!A6:A32) below
+  the statutory paragraph — a writing area. The app blocks Save as Excel for
+  any Part XI entry on the premise that the sheet has nothing to fill in
+  (Milestone 58D; `excel.js` near 548–553; AGENTS.md). (73T-2)
+- The Simplified's `PART VII`!F1 is a text cell holding the literal
+  `='PARTS I, II '!H4`, so its case-number box prints the formula's text.
+- All three workbooks' county lists hold only Pinellas and Pasco under a
+  fixed "SIXTH JUDICIAL CIRCUIT" caption.
+
+### Design
+
+1. **One carry list per form**: for every field, the workbook cell it
+   travels in, or "not carried". The exporter, the importer, Preview's "what
+   this workbook won't carry" note and 73E's after-import notice all read
+   it.
+2. Fix rows 1–19, each with a test seen failing first. Rows 2 and 11 are
+   fixed by limiting the import's name-casing and filtering passes to the
+   values read from the workbook (73E), and by keeping `"` as typing does
+   (73T-3).
+3. **Three new guards**, which would have caught most of the above:
+   - every exporter target is an unlocked cell of the Clerk's template
+     (catches row 3, and D-5's locked Type column);
+   - a full round trip per form, with a distinct value in every field,
+     compared field by field (the browser inventory the review could not
+     finish);
+   - importing a workbook filled in by hand on the Clerk's own form.
+
+### Decisions
+
+*Settled 2026-10-04: option (1) for all three — 73T-1 with the requester's
+named approval as the Clerk's representative.*
+
+- **73T-1. The Clerk's B-4 subtotal formula.** (1) *Recommended:* correct
+  it in the embedded workbook, with the requester's named approval as the
+  Clerk's representative (AGENTS.md §5), and tell the office so its
+  published copy is fixed too. (2) Leave the Clerk's formula and warn at
+  Preview when a payment sits on an affected row.
+- **73T-2. Part XI's lines.** (1) *Recommended:* write each remuneration
+  entry on its own Part XI line, as the Simplified does on its Part VII, so a
+  filing with remuneration can be saved as Excel. (2) Keep blocking Save as
+  Excel when Part XI has entries.
+- **73T-3. Quotation marks in imported text.** (1) *Recommended:* keep `"`
+  as typing does (the screens already display typed quotation marks safely);
+  keep stripping `<`, `>` and backticks. (2) Keep stripping all four.
+
+### Checklist
+
+1. **Data model.** None for the defects; 73T-2 option (1) records the Part
+   XI cells in the exporter, not the CSV.
+2. **Legacy data.** Workbooks exported before the Part VIII fix hold the
+   answers in the leaders: the importer reads the box first, then the old
+   cell. Values already lost on an earlier import can't be recovered.
+3. **Fixtures.** `export-manifests.ts` changes for Part VIII and Simplified
+   H17; every spec that imports a workbook (73E).
+4. **Tests.** The three guards above; one red-first case per row.
+5. **Export/import.** This item.
+6. **Security.** 73T-3 narrows the import filter to match typing.
+7. **UI/UX.** The notices come from 73E and 73M.
+8. **Legal framing.** 73T-2 touches §744.367(3)(a)'s declaration; it is
+   asked as Clerk practice.
+9. **Cross-form.** All three workbooks.
+
+---
+
+## 73U — Stored stamps and PDFs cut by the import filter (FIXED 2026-10-04)
+
+### What a filer observed
+
+Every time a case file was opened, a backup restored, the recovery snapshot
+restored, or an Annual or Simplified workbook imported, the app passed each
+filing through its import filter (`src/core/security/input-hardening.js`),
+which strips text that looks like script. It also ran over the drawn
+signature stamps and attached supporting PDFs, which are stored as base64
+data URLs. Its `on…=` rule matched the end of about 1 in 50 of them
+("…onXk=") and cut it off, and the damaged copy was what the next save kept:
+a stamp that no longer displays, or a PDF that makes Save as PDF fail when
+the attachments are merged. Found by the review of 73E; measured at 1.95% of
+20,000 random data URLs. Only test-system data could have been affected.
+
+### Decision (the requester, 2026-10-04)
+
+Fix it now, ahead of the rest of the milestone.
+
+### Fix
+
+A strict base64 data URL — `data:<type>/<subtype>;base64,` then base64 —
+is left exactly as stored. It can hold none of the characters the filter
+removes (`<`, `>`, `"`, backticks, or the colon of "javascript:"), so no
+protection is lost. Anything else, including a data URL with markup or
+parameters, is filtered as before. Files already cut can't be repaired.
+
+### Found while fixing, not changed
+
+On opening a case file the filter skips text held directly in a list (for
+example a list of strings), while the in-place version used by the Annual
+and Simplified imports filters it. Text is made safe where it is displayed,
+so this is a consistency gap, not an exposure; it is left for 73T's import
+work.
+
+### Build record — BUILT 2026-10-04 (`5b8849b`)
+
+- `src/core/security/input-hardening.js`: `sanitizeInput()` returns a strict
+  base64 data URL unchanged; every caller (`sanitizeObjectData()`,
+  `sanitizeObjectDataInPlace()`, and through them the case-file reader, the
+  backup restore, the recovery snapshot and the Excel importers) inherits it.
+  No other code calls `sanitizeInput()` directly.
+- New `tests/unit/sanitize-keeps-stored-files.spec.js` (6 tests), using
+  valid base64 payloads that end in an `on…=` run, as about 1 in 50 real
+  ones do. **Red-first:** the four stored-file tests fail against the old
+  filter (the stamp loses "onXk="); the two guard tests — the payloads are
+  valid, and non-strict data URLs and script text are still filtered — pass
+  both ways.
+- Related tests: the case-file, crypto-contract and security-source-audit
+  units; e2e `backup-restore-sav`, `signature-stamp-reuse`,
+  `schedule-docs-period-key`, `sav-corpus.characterization`,
+  `annual-field-formatting`, `import-keeps-signatures` and
+  `signature-capture.contract` — 130 passed. `npm run check:types` clean.
+- `TEST-INDEX.md`, `file_index.md` and the assertion-count baseline updated
+  in the same commit.
+
 ---
 
 ## Reported, not reproduced or by design
@@ -1617,8 +2578,13 @@ recorded as the requester's decision.
 
 ## Not in scope
 
-- Changing any total, sign rule or fee base (§5). 73G and 73H change
-  warnings and presentation only; the audit-fee base stays with the Clerk's
-  answer to Legal Q-03.
+- Changing a fee base or a sign rule against the Clerk's workbooks (§5).
+  73G and 73H change warnings and presentation, with one stated exception
+  found by the review: stopping the silent zeroing of negative D-1–D-4 and
+  Part II amounts (73G-3) changes Line 30, the Simplified's Line 8, the bond
+  requirement and possibly the audit-fee tier for filings that hold one —
+  toward the workbooks, which zero nothing. The audit-fee base stays with the
+  Clerk's answer to Legal Q-03. 73T-1 would correct a formula in the Clerk's
+  own workbook only with the requester's named approval.
 - The four things the test could not exercise (encrypted cases, Clear All
   Data, Firefox/Safari, narrow windows) beyond what the items above touch.
