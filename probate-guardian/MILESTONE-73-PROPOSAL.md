@@ -559,6 +559,10 @@ now the rule on every list.
   nothing from either guardian list and did not keep the first block).
 - Full unit suite 2,560 passed; `npm run check:types` clean. **Related browser
   specs: 33 files, 345 tests — every one passed in its final run.** The first run (stopped by its time limit at 322 of 345) failed one test, `guardian-inventory-collection-controls.spec.ts`'s Milestone 51H case, which pinned the old tidy-up and was updated (above). The rerun of that file and the three the stop cut short (`signature-capture.contract`, `signature-stamp-reuse`, `year-rollover.characterization`) passed 52 and failed the year-rollover record on the four Plans: their sample filings carry empty co-guardian blocks, which leaving the filing now removes, so the archived year holds the first guardian's block alone and the link list reads `[null]` instead of `[]`. Expected (the legacy note above); the record was regenerated, every changed entry checked to be a co-guardian block or the link list, the other five types unchanged; 9 of 9 then passed.
+- **Full regression (`npm test`, approved 2026-10-05), run at `04e17cc`
+  (73C plus the Milestone 74 proposal) from a copy on C::** all unit tests
+  passed (2,560); browser 1,033 passed, 16 skipped, none failed, flaky or
+  left unrun, of 1,049 (1.2 h).
 
 **Found, not changed:**
 
