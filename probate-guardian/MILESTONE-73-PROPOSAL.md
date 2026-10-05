@@ -26,6 +26,9 @@ How this document got here:
   link fix, keyed by filing type and list, with transient row identity; 73E
   part 1 made workbook-independent; 73F part 1 given a compatibility contract
   that keeps each issue's outputs.
+- Corrected 2026-10-05 after **Codex's third round**: the summary and
+  build-order tables repaired (a scripted edit had swapped their rows), and
+  73V's compatibility layer and the registry's direct users named.
 
 The requester is a representative of the Clerk of the Circuit Court, Pinellas
 County. Where an answer is about what the Clerk's office accepts, it is
@@ -34,18 +37,18 @@ recorded as **Pinellas Clerk practice**, not as a reading of a statute or rule
 
 | # | Item | What a filer sees today | Severity | Parts |
 | --- | --- | --- | --- | --- |
-| 1 | 73V — row rules (behaviour-preserving; only the link fix is visible) | — | `src/core/form/schedule-definitions.js` (keyed by filing type and list), `src/core/form/plan-row-actions.js`, `prune-cards.js`, `src/core/filing/models/plan-rows.js`, the row actions in the Inventory, Annual and Simplified `index.js`, the Annual importer's guardian filter, `src/form-events.js` | new `tests/unit/collection-descriptors.spec.js` (explicit expected inventory of every list; each form's behaviour unchanged); `prune-cards.spec.js`, `filing-registry.spec.js` |
+| 1 | 73A | Choosing **Unsigned** prints "/s/ Name" and the electronic-signature caption on every form; a typed date makes it look signed; a Stamp never applied prints "/s/" | High | One |
 | 2 | 73B | The PDF says **"Plenary"** when no Type of Guardianship was chosen; a new Annual says **"Professional Guardian"**; rows, PDFs and the Inventory's workbook carry answers and shares the filer never gave | High | One |
 | 3 | 73C | **"+ Add Co-Guardian" does nothing** on all four Plans | High | One |
 | 4 | 73D | Ticking and unticking **"This item is a vehicle"** erases the Description and the safe-deposit answer; hidden Plan "Explanation" text still prints | High | One |
-| 5 | 73F part 1 — shared checks | — | the seven validators moved to `src/core/validation/engines/` with `evaluate<Engine>()`, a registry, `validate<Engine>()` kept as wrappers, `output-preflight.js` | the existing validator and export-gate units; a wrapper-equivalence test; completion golden unchanged |
-| 6 | 73E part 1 — the import transaction (no importer connected) | 73J p1 | new `src/core/excel/import-transaction.js`, `import-keep.js` (exact-name identity), `party-resolver.js`, the activity log | new `tests/unit/import-transaction.spec.js` (synthetic adapters) |
-| 7 | 73T part 1 — the workbook contract | 73E p1, 73G p1 | new `src/core/excel/workbook-contract/` (one per form, the importers' adapters), `excel-engine.js` | `excel-write-targets.spec.js`, `export-manifests.ts`, new round-trip and hand-filled specs |
+| 5 | 73E | **An Excel import replaces the filing unasked** (the Simplified's Cancel half-applies it), can turn a Trust into an Annual, and changes shared people's records in other filings unseen | High | Two |
+| 6 | 73F | **A section shows ✓ and Print Preview then blocks it**; asterisks don't match what is enforced; a misspelled county passes everywhere | High | Three |
+| 7 | 73G | A loss typed positive is **added** unwarned; the Clerk's "(1000)" is stored as **+1000**; negatives are refused, shown as positive, or **zeroed on every page drawn**; "$1,234.56" in the Simplified's remuneration files as **$0.00** | High | Two |
 | 8 | 73H | Dates print as **2025-01-01** on several screens; negative amounts appear **five ways**; Plan Q11 prints a bare number | Medium | One |
 | 9 | 73I | The dashboard marks an annual accounting **overdue early: 0–3 days for a month-end period, 16–32 days for a mid-month one**; a Final gets a due date with no basis | Medium | One |
-| 10 | 73T part 2 — Inventory workbook, connected to the transaction | 73T p1, 73D | `guardian-inventory/excel.js` | Inventory round trip; `import-confirm.spec.ts` (Inventory); that form's import specs |
-| 11 | 73T part 3 — Annual-family workbook, connected | 73T p1 | `annual-accounting/excel.js`, `templates/annual-template.js` (B-4 formula) | Annual round trip; Part VIII and Part XI placement; `import-confirm.spec.ts` (Annual); that form's import specs |
-| 12 | 73T part 4 — Simplified workbook, connected | 73T p1 | `simplified-accounting/excel.js` | Simplified round trip; `import-confirm.spec.ts` (Simplified, the half-apply); that form's import specs |
+| 10 | 73J | Parts of a page stay **stale** after a change (eight cases) | Medium | Two |
+| 11 | 73K | The page **jumps to the top**, and the cursor is lost, after a choice, Add, Remove and similar actions, on all nine forms | Medium | Two |
+| 12 | 73L | **One Escape closes two dialogs**; a dialog stays **over the lock screen**; dialogs stack; a reminder fires for an empty row | Medium | One |
 | 13 | 73M | Excel silently **doesn't carry** some answers, and one comes back wrong; Save as Excel can look enabled and do nothing | Medium | One |
 | 14 | 73N | PDF headings can run **off the page** (the Simplified Plan's Q8 does); **sworn and certification wording is shortened on six forms** | Medium | Three |
 | 15 | 73O | The Simplified's PDF and workbook print **different guardian names**; the Initial Plan keeps **two attorney names**; no **Print** button on four previews; recipients get three address lines on two forms; screen readers hear "startingBalance"; the **ward's name goes to the browser console** | Medium | Four |
@@ -123,18 +126,18 @@ behaviour on its own except where its row says so.
 | Order | Item / part | Depends on | Main files | Tests and baselines |
 | --- | --- | --- | --- | --- |
 | 0 | 73U | — | `src/core/security/input-hardening.js` | **Built** `5b8849b` |
-| 1 | 73V — row rules | — | `src/core/form/schedule-definitions.js`, `plan-row-actions.js`, `prune-cards.js`, `src/core/filing/models/plan-rows.js`, the row actions in the Inventory, Annual and Simplified `index.js`, `src/form-events.js` | new `tests/unit/collection-descriptors.spec.js`; `prune-cards.spec.js`, `filing-registry.spec.js` |
+| 1 | 73V — row rules (behaviour-preserving; only the link fix is visible) | — | `src/core/form/schedule-definitions.js` (descriptions keyed by filing type and list; the three row actions keep their signatures; `SCHEDULE_SCHEMAS` kept as a read-only compatibility export), `src/core/form/plan-row-actions.js`, `prune-cards.js`, `src/core/filing/models/plan-rows.js`, the Inventory's row actions and `normalizeGuardians()`, the Annual importer's guardian filter | new `tests/unit/collection-descriptors.spec.js` (explicit expected inventory of every list; each form's behaviour unchanged); changed: `schedule-definitions.spec.js`, `output-revision-wiring.spec.js`, `prune-cards.spec.js`, `filing-registry.spec.js`; unchanged through the compatibility export: `types-contract.spec.js`, `remuneration-declaration.spec.js` |
 | 2 | 73J part 1 — one change event | — | `src/core/form/form-contract.js`, a new `src/core/model-change.js`, every committed mutation path (row actions, New Year, conversion, Sync, Link Person, Merge, year switch) | new `tests/unit/model-change-event.spec.js` |
 | 3 | 73K part 1 — why the page is drawn | 73V | `src/core/navigation/router.js` and its callers | `router.spec.js`; `npm run check:types` |
 | 4 | 73G part 1 — the amount codec | — | `form-contract.js`, `form-fields.js`, `guardian-inventory/form-binding.js`, `form-runtime.js`, `share-cell.js`, the three importers' amount readers | new `tests/unit/amount-codec.spec.js`; the year-rollover and conversion goldens |
-| 5 | 73F part 1 — shared checks | — | the seven validators moved to `src/core/validation/engines/`, a registry, `output-preflight.js` | the existing validator units; completion golden unchanged |
-| 6 | 73E part 1 — the import transaction | 73J p1 | new `src/core/excel/import-transaction.js`, `import-keep.js`, `party-resolver.js`, the activity log | new `tests/unit/import-transaction.spec.js`, new `tests/e2e/import-confirm.spec.ts`; 15 import specs |
-| 7 | 73T part 1 — the workbook contract | 73E p1, 73G p1 | new `src/core/excel/workbook-contract/` (one per form), `excel-engine.js` | `excel-write-targets.spec.js`, `export-manifests.ts`, new round-trip and hand-filled specs |
+| 5 | 73F part 1 — shared checks | — | the seven validators moved to `src/core/validation/engines/` with `evaluate<Engine>()`, a registry, `validate<Engine>()` kept as wrappers, `output-preflight.js` | the existing validator and export-gate units; a wrapper-equivalence test; completion golden unchanged |
+| 6 | 73E part 1 — the import transaction (no importer connected) | 73J p1 | new `src/core/excel/import-transaction.js`, `import-keep.js` (exact-name identity), `party-resolver.js`, the activity log | new `tests/unit/import-transaction.spec.js` (synthetic adapters) |
+| 7 | 73T part 1 — the workbook contract | 73E p1, 73G p1 | new `src/core/excel/workbook-contract/` (one per form, the importers' adapters), `excel-engine.js` | `excel-write-targets.spec.js`, `export-manifests.ts`, new round-trip and hand-filled specs |
 | 8 | 73C | 73V | `plan-rows.js`, Inventory `index.js` (D-1) | new `tests/e2e/plan-add-co-guardian.spec.ts` |
 | 9 | 73D | — | Inventory `index.js` (B-2), `models/guardian.js`, `totals.js`, Inventory `pdf-model.js`, `excel.js`, `conversion.js`, `field-html.js`, three Plan `pdf-model.js` | new `tests/e2e/b2-vehicle-toggle.spec.ts`, Plan PDF units |
-| 10 | 73T part 2 — Inventory workbook | 73T p1, 73D | `guardian-inventory/excel.js` | Inventory round trip |
-| 11 | 73T part 3 — Annual-family workbook | 73T p1 | `annual-accounting/excel.js`, `templates/annual-template.js` (B-4 formula) | Annual round trip; Part VIII and Part XI placement |
-| 12 | 73T part 4 — Simplified workbook | 73T p1 | `simplified-accounting/excel.js` | Simplified round trip |
+| 10 | 73T part 2 — Inventory workbook, connected to the transaction | 73T p1, 73D | `guardian-inventory/excel.js` | Inventory round trip; `import-confirm.spec.ts` (Inventory); that form's import specs |
+| 11 | 73T part 3 — Annual-family workbook, connected | 73T p1 | `annual-accounting/excel.js`, `templates/annual-template.js` (B-4 formula) | Annual round trip; Part VIII and Part XI placement; `import-confirm.spec.ts` (Annual); that form's import specs |
+| 12 | 73T part 4 — Simplified workbook, connected | 73T p1 | `simplified-accounting/excel.js` | Simplified round trip; `import-confirm.spec.ts` (Simplified, the half-apply); that form's import specs |
 | 13 | 73M | 73T p2–p4 | `bond-depository.js`, the three `print.js`, `pdf-preview.js` | `bond-depository.spec.js`, 18 specs that wait for Save as Excel |
 | 14 | 73E part 2 — Link Person and Merge | 73E p1 | `pick-record-dialogs.js`, `party-management.js`, `party-resolver.js` | new e2e cases |
 | 15 | 73A | 73F p1 | `pdf-engine.js`, `signature-state.js`, `signature-state-control.js`, nine `index.js` and `pdf-model.js`, the Plans' certificate, `normalize-filing.js`, `filing-years.js`, `party-resolver.js`, the dashboard's Mark Open, CSV | new signature units and e2e; every `MINIMAL_VALID_*` |
@@ -1994,8 +1997,21 @@ each of which is approved separately.
    and the cursor falls back to the page's default.
 5. **Missing descriptions fail loudly.** Every action resolves its
    description first and throws an error naming the missing (filing type,
-   list key) if there is none.
-6. **Existing misaligned links are not repaired.** Links already shifted in
+   list key) if there is none — including for a filing that carries no
+   filing type.
+6. **The existing API stays, as an explicit compatibility layer.** The
+   three row actions keep their signatures — `addCollectionRow(listKey,
+   filing, factoryOverride?)`, `duplicateCollectionRow(listKey, index,
+   filing)`, `removeCollectionRow(listKey, index, filing)` — and find the
+   description by the filing's own `inventoryType` and the list key, so their
+   callers (Annual `index.js` near 366, 414, 421; Simplified `index.js` near
+   120–153, whose `createSimplifiedGuardian` override stays accepted) don't
+   change. A filing with no type fails loudly (step 5). `SCHEDULE_SCHEMAS`
+   stays exported, read-only and marked deprecated, holding exactly the
+   descriptions it holds today; after 73V nothing in `src/` reads it, and new
+   code must use the (filing type, list) lookup. The side-effect import in
+   `src/form-events.js` near 9 stays.
+7. **Existing misaligned links are not repaired.** Links already shifted in
    saved files can't be told apart from intended ones, so 73V neither guesses
    nor rewrites them. They stay as they are and visible in the shared-records
    list, which shows every filing and slot linked to each record
@@ -2014,12 +2030,29 @@ each of which is approved separately.
     absent from the saved filing and from exports; floors and maximums;
   - **each form's current behaviour unchanged** (what add, duplicate, remove
     and clean-up do today, apart from the links).
+- **Direct users of today's registry, audited** (every file that imports
+  `schedule-definitions.js`):
+  - `tests/unit/schedule-definitions.spec.js` — **changes**: its sample
+    filings carry no filing type, so they gain `inventoryType: 'annual'`
+    where they call the three actions; its `SCHEDULE_SCHEMAS` assertions keep
+    passing through the compatibility export.
+  - `tests/unit/output-revision-wiring.spec.js` — **changes**: the filing it
+    passes to the three actions gains `inventoryType: 'annual'`; its
+    assertions are unchanged.
+  - `tests/unit/types-contract.spec.js` (reads `SCHEDULE_SCHEMAS.schA` and
+    `.schB1`) and `tests/unit/remuneration-declaration.spec.js` (reads
+    `SCHEDULE_SCHEMAS.remuneration`) — **unchanged**, through the
+    compatibility export.
+  - `src/features/annual-accounting/index.js` and
+    `src/features/simplified-accounting/index.js` — unchanged (same
+    signatures); `src/core/filing/models/simplified.js` mentions the registry
+    only in a comment; `src/form-events.js` keeps its side-effect import.
 - `prune-cards.spec.js` and `filing-registry.spec.js` change only where they
   pin the shifted links. Red-first: removing a middle guardian on a Plan, on
   the Inventory, and through the Annual importer's filter moves the next
   guardian's link today.
 - **Data model:** no change; the identity is never persisted.
-- **Legacy data:** prevents future misalignment only (step 6).
+- **Legacy data:** prevents future misalignment only (step 7).
 - **Export/import:** none, except that the Annual importer's guardian filter
   keeps links with their rows.
 
@@ -2260,13 +2293,29 @@ coherent. Not yet 73V: its boundary was ambiguous. Every finding was checked:
 | 2 | 73V would switch on behaviour that belongs to 73P, 73F and 73K | **Confirmed** | 73V is behaviour-preserving plus the link fix; the confirmation, "no items" and cursor policies stay inactive until their deliveries (73V scope) |
 | 3 | Descriptions must be keyed by filing type and list, with no generic fallback | **Confirmed**: `SCHEDULE_SCHEMAS` is keyed by list alone (`schedule-definitions.js` near 6); the Plans pick factories and maximums by type (`src/core/form/plan-row-actions.js` — Codex's path under `src/features/plans/` doesn't exist; the substance holds) | Keyed by (filing type, list key) (73V step 1) |
 | 4 | A test over "every registered list" can't find an unregistered one | **Confirmed** | An explicit expected inventory written in the test, and every action throws on a missing description (73V step 5, tests) |
-| 5 | "Legacy: none" is too broad for links already shifted | **Confirmed**: shifted links in saved files can't be told from intended ones | 73V prevents future shifts only; existing links stay, visible in the shared-records list (each record's filings and slots, `party-management.js` near 50–57) for manual correction (73V step 6) |
+| 5 | "Legacy: none" is too broad for links already shifted | **Confirmed**: shifted links in saved files can't be told from intended ones | 73V prevents future shifts only; existing links stay, visible in the shared-records list (each record's filings and slots, `party-management.js` near 50–57) for manual correction (73V step 7) |
 | 6 | 73E part 1 used 73T's contract while 73T depended on 73E | **Confirmed**: a circular dependency in the text | Codex's recommended arrangement: 73E part 1 is a workbook-independent engine fed by adapters, tested with synthetic ones, no importer connected; 73T part 1 supplies the contract and 73T parts 2–4 connect each importer (and carry the per-form Cancel tests) |
 | 7 | 73F part 1 needs a compatibility contract, and issues must keep which outputs they block | **Confirmed**: issues carry capabilities (`issue-registry.js`: supporting-document problems block Preview, Print and PDF only; Excel capacity blocks Excel only) | `evaluate<Engine>()` returns the three kinds with each issue's capabilities intact; `validate<Engine>()` stays as an unchanged wrapper until part 2 moves its callers; a wrapper-equivalence test |
 
 Codex said that after this revision 73V would be a reasonable first approval
 candidate — but only scoped as a behaviour-preserving foundation plus
 prevention of future linked-id shifting, which is how it now reads.
+
+### Third round (Codex, 2026-10-05)
+
+Verdict as received: *the seven findings are substantively addressed and
+73V's specification is now sound*, but three document errors introduced in
+`b3d4726` had to be corrected first. All three were checked and held:
+
+| # | Codex's finding | Checked | What changed |
+| --- | --- | --- | --- |
+| 1 | The opening summary table was corrupted: rows 1, 5–7 and 10–12 held build-order entries | **Confirmed — my error**: the script meant for the build-order table matched the first table in the file | Those rows restored from `e00c368`; the summary table is byte-identical to that version's |
+| 2 | The build-order table was never updated, so it still gave 73E part 1 the real import tests | **Confirmed**, the same error | Rows 1, 5–7 and 10–12 of the build order now carry the revised entries; the per-form import tests sit in 73T parts 2–4 |
+| 3 | 73V's manifest omitted the direct users of the registry it replaces | **Confirmed**: four tests import `schedule-definitions.js` directly | An explicit compatibility layer (73V step 6): the three row actions keep their signatures and resolve by the filing's type; `SCHEDULE_SCHEMAS` stays as a deprecated, read-only export. `schedule-definitions.spec.js` and `output-revision-wiring.spec.js` change (their sample filings gain a filing type); `types-contract.spec.js` and `remuneration-declaration.spec.js` don't. The two source callers keep the same calls |
+
+Codex recommended approving 73V by name after these corrections, with exactly
+its current scope: a behaviour-preserving consolidation plus prevention of
+future guardian-link shifting.
 
 ---
 
