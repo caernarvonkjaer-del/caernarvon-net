@@ -66,21 +66,21 @@ describe('Milestone 38D/44B mutation-boundary wiring: each real mutation invalid
 
   it('adding a collection row (e.g. Add Co-Guardian)', () => {
     const data = acknowledgeBypassableFiling();
-    const filing = { guardians: [{ name: 'A' }] };
+    const filing = { inventoryType: 'annual', guardians: [{ name: 'A' }] };
     expect(addCollectionRow('guardians', filing)).toBe(true);
     expect(isOutputAcknowledgedFor(data, { inventoryType: 'annual' })).toBe(false);
   });
 
   it('duplicating a collection row', () => {
     const data = acknowledgeBypassableFiling();
-    const filing = { guardians: [{ name: 'A' }] };
+    const filing = { inventoryType: 'annual', guardians: [{ name: 'A' }] };
     expect(duplicateCollectionRow('guardians', 0, filing)).toBe(true);
     expect(isOutputAcknowledgedFor(data, { inventoryType: 'annual' })).toBe(false);
   });
 
   it('removing a collection row', () => {
     const data = acknowledgeBypassableFiling();
-    const filing = { guardians: [{ name: 'A' }, { name: 'B' }] };
+    const filing = { inventoryType: 'annual', guardians: [{ name: 'A' }, { name: 'B' }] };
     expect(removeCollectionRow('guardians', 1, filing)).toBe(true);
     expect(isOutputAcknowledgedFor(data, { inventoryType: 'annual' })).toBe(false);
   });
@@ -102,7 +102,7 @@ describe('Milestone 38D/44B mutation-boundary wiring: each real mutation invalid
 
   it('a no-op mutation (e.g. removing past the schema floor) must NOT spuriously invalidate', () => {
     const data = acknowledgeBypassableFiling();
-    const filing = { guardians: [{ name: 'A' }] };
+    const filing = { inventoryType: 'annual', guardians: [{ name: 'A' }] };
     // schema floor for guardians is >=1 row in every filing type that uses
     // this shared collection -- removing the only row must fail, not mutate.
     expect(removeCollectionRow('guardians', 0, filing)).toBe(false);

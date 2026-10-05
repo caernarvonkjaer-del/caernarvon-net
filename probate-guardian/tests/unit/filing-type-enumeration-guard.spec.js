@@ -74,7 +74,13 @@ const ALLOWED = {
   // which filing types, and their min counts) -- AGENTS.md section 3: never
   // share generic factories across forms with differing schemas. This is
   // domain data about individual forms, not filing identity.
-  'src/core/form/prune-cards.js': 'per-schema collection membership, not filing identity',
+  // Milestone 73V moved that table, unchanged, from prune-cards.js to
+  // blank-rows.js (so the list rules can read it without an import cycle), and
+  // added the list rules themselves: each form's repeating lists, found by
+  // (filing type, list key) because the same list differs between forms --
+  // per-schema rules again, not a second listing of filing identity.
+  'src/core/form/blank-rows.js': 'per-schema collection membership, not filing identity (moved from prune-cards.js, MS 73V)',
+  'src/core/form/collections.js': "each form's list rules, keyed by filing type and list because the schemas differ (MS 73V)",
   // Per-type dashboard presentation/derived-stat logic (headline figures,
   // deadlines) -- behavior that depends on filing type, not a second
   // listing of the identity registry itself.

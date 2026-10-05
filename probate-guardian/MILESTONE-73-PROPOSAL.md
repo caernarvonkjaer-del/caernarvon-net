@@ -2,8 +2,9 @@
 
 ## Status
 
-**Draft. Every decision is settled (2026-10-04 and 2026-10-05). This
-proposal authorizes no change except 73U, built 2026-10-04 (`5b8849b`).**
+**Draft. Every decision is settled (2026-10-04 and 2026-10-05). Built so
+far: 73U (2026-10-04, `5b8849b`) and 73V (2026-10-05), each approved by
+name.** Nothing else is approved.
 Building any other item, or any part of a split item, needs the requester's
 named approval of that item or part (AGENTS.md §3).
 
@@ -58,7 +59,7 @@ recorded as **Pinellas Clerk practice**, not as a reading of a statute or rule
 | 19 | 73S | The requester's change request: **the UCN** (starred, a reminder, never blocking) | Requested | One |
 | 20 | 73T | **Exporting to Excel and importing back loses or changes data** on all three workbooks (Guardian #1's name, signature choices, Part VIII, rows, recipients) | High | Four |
 | 21 | 73U | Opening a case file **cut the end off about 1 in 50 stored stamps and supporting PDFs** | High | **Built** (`5b8849b`) |
-| 22 | 73V | Removing a guardian can **move the next guardian onto the removed one's shared record**; each form keeps its own row rules | High | One (a foundation) |
+| 22 | 73V | Removing a guardian can **move the next guardian onto the removed one's shared record**; each form keeps its own row rules | High | **Built** (2026-10-05) |
 
 ### Provenance
 
@@ -2055,6 +2056,78 @@ each of which is approved separately.
 - **Legacy data:** prevents future misalignment only (step 7).
 - **Export/import:** none, except that the Annual importer's guardian filter
   keeps links with their rows.
+
+### Build record — BUILT 2026-10-05 (approved by name by the requester, 2026-10-05)
+
+**What changed for a filer:** removing or cleaning up a guardian row no longer
+moves the next guardian onto the removed one's shared record, at **four**
+places (one more than the specification named — found while building):
+
+| Where | Before |
+| --- | --- |
+| A Plan's guardian list (`normalizePlanGuardians()`, every Signatures-page draw) | dropped blank co-guardians, links left in place |
+| The Inventory's D-1 (`normalizeGuardians()`, every Inventory page draw) | dropped co-guardians with no details, links left in place |
+| The Annual family's Excel import | dropped the workbook's empty guardian slots, links left in place |
+| **The Inventory's Excel import** (found while building) | skipped a co-guardian slot with no name, links left in place |
+
+Everything else each form does on add, duplicate, remove and clean-up is
+unchanged. One invisible difference: adding a guardian on the Inventory or a
+Plan now also adds an unlinked slot to `guardianPartyIds`, as the Annual and
+Simplified always did, so the two arrays stay the same length.
+
+**New files:** `src/core/form/collections.js` (the list rules for all nine
+filing types, the shared actions, the in-memory row identity),
+`src/core/form/row-links.js` (dependency-free: which lists carry links, and
+keeping rows with their links), `src/core/form/blank-rows.js` and
+`src/core/form/schedule-schemas.js` (moved unchanged from `prune-cards.js` and
+`schedule-definitions.js` — both verified byte-identical — to avoid import
+cycles; the old modules re-export them).
+
+**Changed:** `schedule-definitions.js` (the three actions delegate, same
+signatures); `prune-cards.js` (links for any list through `row-links.js`; a
+typed filing's lists must have rules); `plan-row-actions.js`; `plan-rows.js`;
+the Inventory's `index.js` (all its row actions) and `excel.js`; the Annual's
+`index.js` (the B-4 accounts) and `excel.js`; `models/simplified.js` gains
+`simplifiedGuardianRow()`, which the feature's `createSimplifiedGuardian()`
+now returns (identical row).
+
+**Tests:**
+
+- New `tests/unit/collection-descriptors.spec.js` (20): the explicit
+  inventory against the registry; loud failures; every form's rows, floors and
+  limits as before (including the row each of the eleven Plan "+ Add" buttons
+  names, read from the pages); inactive policies; links through remove,
+  clean-up, duplicate and add on all nine guardian lists; transient identity.
+- New `tests/e2e/guardian-links-follow-rows.spec.ts` (4): the four places,
+  through the real pages and Import control.
+- **Red-first:** with the four sites' old code restored, the unit Plans case
+  and all four browser cases fail for the stated reason — the dropped row's
+  link stays and the next guardian sits on it (`['party-ann', 'party-blank',
+  'party-carol']`, and likewise); with the fix, all pass.
+- Changed as specified: `schedule-definitions.spec.js` and
+  `output-revision-wiring.spec.js` (sample filings name their type; a
+  loud-failure case added); `types-contract.spec.js` and
+  `remuneration-declaration.spec.js` unchanged.
+  `filing-type-enumeration-guard.spec.js`: its documented exception for
+  per-schema collection membership moved with the table to `blank-rows.js`,
+  and `collections.js` joined it.
+- Full unit suite: all pass. `npm run check:types` clean (the router reaches
+  the new modules through the clean-up). **Related browser specs: the 24
+  files that add, duplicate, remove or clean up rows on any form, plus the new
+  one — 264 passed, 1 failed:** the Inventory's case-number test timed out
+  waiting for the app's startup screen 32 minutes into the run, before any row
+  action; rerun on its own, its file passed 7 of 7.
+
+**Found while building, not changed (outside 73V's behaviour-preserving
+scope):**
+
+- On the Annual family, an untouched Schedule **B-3** or **B-4** row is never
+  cleaned up: "+ Add" makes a row whose fields differ from the clean-up's
+  blank template (B-3 adds period dates; B-4 adds `bankAcct` and
+  `description`). Same class as 73B's D-1, D-2 and D-4 mismatch; for 73B.
+- The Inventory's import matches the kept "prepared this filing" ticks,
+  emails and signatures to the earlier guardians by position in the shortened
+  list, not by workbook slot; for 73T.
 
 ---
 

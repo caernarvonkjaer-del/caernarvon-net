@@ -32,13 +32,14 @@ const ATTESTATION_57B = 'No recipients are required for this certificate (filer 
 const RECIPIENT_STARTED_FIELDS = ['name', 'line2', 'line3', 'line4'];
 import { GUARDIANSHIP_TYPE_OPTIONS, optionsWithLegacyValue } from '../../core/form/guardianship-options.js';
 import { addCollectionRow, duplicateCollectionRow, removeCollectionRow } from '../../core/form/schedule-definitions.js';
+import { appendRow, removeRowAt } from '../../core/form/collections.js';
 import { checkSignatureState, inferLegacySignatureState } from '../../core/validation/signature-state.js';
 import { renderSignatureStateControl, mountSignatureStateControls } from '../../core/signature/signature-state-control.js';
 import { preparerNoteHTML } from '../../core/signature/preparer-note.js';
 import { hasIdentifiedPreparer, preparerFlagCheckboxHTML, preparerWaivedNoticeHTML } from '../../core/form/preparer-flag.js';
 import { confirmModal, alertModal } from '../../core/ui/dialogs.js';
 import { SCH_B4_ACCOUNT_BLOCKS } from '../../core/excel/b4-register-pages.js';
-import { b4AccountHeading, createBankAccountId } from '../../core/accounting/bank-accounts.js';
+import { b4AccountHeading } from '../../core/accounting/bank-accounts.js';
 import { createIssue } from '../../core/validation/issue-registry.js';
 import { migrateBondDepository, inferBondDepositoryState, BOND_DEPOSITORY_OPTIONS, BOND_DEPOSITORY_QUESTION, revealsBond, revealsDepository, revealsWaiver } from '../../core/filing/bond-depository.js';
 import { renderRadioGroupField } from '../../core/form/form-fields.js';
@@ -379,7 +380,8 @@ async function addB4Account(route) {
     await alertModal(`The court's Excel workbook has ${SCH_B4_MAX_ACCOUNTS} Schedule B-4 account sections, so ${SCH_B4_MAX_ACCOUNTS} is the most this filing can hold. The PDF is not limited.`);
     return;
   }
-  d.schB4Accounts.push({ id: createBankAccountId(), bankName: '', accountNumber: '' });
+  // Milestone 73V: the account row (a new id, no bank yet) is the list rules'.
+  appendRow(d, 'schB4Accounts');
   requestSave();
   navigate(route);
 }
@@ -398,7 +400,7 @@ async function removeB4Account(index, route) {
     `Remove ${name}? Its ${orphans.length} disbursement${orphans.length === 1 ? '' : 's'} will stay in Schedule B-4 but will no longer be assigned to a bank account, and Excel export is blocked until they are reassigned.`
   ))) return;
   for (const row of orphans) row.bankAccountId = '';
-  d.schB4Accounts.splice(index, 1);
+  removeRowAt(d, 'schB4Accounts', index);
   requestSave();
   navigate(route);
 }

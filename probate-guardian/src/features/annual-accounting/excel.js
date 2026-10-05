@@ -39,6 +39,7 @@ import { setAccountingFilingType } from './filing-type.js';
 import { markFilingRevisionChanged } from '../../core/filing/output-revision.js';
 import { getCurrentPage, renderPage } from '../../core/navigation/router.js';
 import { calcTotalsAnnual, annualReconcileState } from './totals.js';
+import { keepRows } from '../../core/form/row-links.js';
 
 
 // r2 is imported (src/core/format/money.js, Milestone 70's 70B). It used to be
@@ -684,7 +685,7 @@ export async function importExcel(input){
         // stamp image or "served the copies" flag; kept from this filing for
         // the same person (import-keep.js), as on the Inventory.
         const priorGuardians=(D.guardians||[]).slice();
-        D.guardians=guardianRows.map((rows,i)=>{
+        const slots=guardianRows.map((rows,i)=>{
           const [sigRow,ssnRow,phoneRow,emailRow,streetRow]=rows;
           return keepUnboxedFields({
             name:gcStr(p23,`F${sigRow}`), signatureDate:gcDate(p23,`D${sigRow}`),
@@ -694,7 +695,14 @@ export async function importExcel(input){
             officeCityStateZip:gcStr(p23,`F${streetRow}`), signatureDateLabel:'',
             isPreparer:!!priorFlags[i]
           },priorGuardians[i],[...SIGNATURE_FIELDS,'certifiesService']);
-        }).filter((g,i)=>i===0||guardianHasAnyData(g));
+        });
+        // Milestone 73V: the workbook's empty slots are dropped by position, so
+        // each kept guardian keeps the shared-record link of the slot it came
+        // from. Filtering the rows alone used to move slot 3's guardian onto
+        // slot 2's link when slot 2 was empty.
+        const keepIndexes=slots.map((_,i)=>i).filter(i=>i===0||guardianHasAnyData(slots[i]));
+        D.guardians=slots;
+        keepRows(D,'guardians',keepIndexes);
         while(D.guardians.length<1)D.guardians.push({name:'',ssn:'',phone:'',email:'',mailingStreet:'',mailingCityStateZip:'',officeStreet:'',officeCityStateZip:'',signatureDate:'',signatureDateLabel:'',isPreparer:false});
       }
 

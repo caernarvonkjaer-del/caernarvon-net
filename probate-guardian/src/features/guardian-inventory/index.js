@@ -65,6 +65,8 @@ import { browserRecommendationNotice, linkAccordions, linkLabelsToInputs, saniti
 import { initPrintPager } from '../../core/ui/print-pager.js';
 import { renderScheduleDocsSection } from '../../core/filing/schedule-docs.js';
 import { setPath } from '../../core/form/paths.js';
+import { appendRow, duplicateRowAt, removeRowAt } from '../../core/form/collections.js';
+import { remapLinkedIds } from '../../core/form/row-links.js';
 import { showPickPartyModal } from '../../core/modals/pick-record-dialogs.js';
 import { getCurrentPage, navigate, renderPage } from '../../core/navigation/router.js';
 import { computeNavChecks, updateNavDots } from '../../core/status/nav-marks.js';
@@ -122,12 +124,17 @@ function normalizeGuardians() {
   // blank entry. Resolving the row's new position after the prune keeps what is
   // stored and what is rendered in agreement.
   const pendingRow = pendingGuardianIndex == null ? null : guardians[pendingGuardianIndex];
-  const normalized = guardians.filter((guardian, index) => index === 0 || index === pendingGuardianIndex || guardianHasData(guardian));
+  // Milestone 73V: kept by position, so the dropped rows' shared-record links
+  // (D.guardianPartyIds) go with them. Filtering the rows alone used to leave
+  // the next co-guardian linked to the dropped one's record.
+  const keepIndexes = guardians.map((_, index) => index).filter(index => index === 0 || index === pendingGuardianIndex || guardianHasData(guardians[index]));
+  const normalized = keepIndexes.map(index => guardians[index]);
   const pendingAfterPrune = pendingRow ? normalized.indexOf(pendingRow) : -1;
   visiblePendingGuardianIndex = pendingAfterPrune >= 0 ? pendingAfterPrune : null;
   pendingGuardianIndex = null;
   if (!normalized.length) normalized.push(mk.guardian());
   if (normalized.length !== guardians.length || !Array.isArray(D.guardians)) {
+    if (guardians.length && keepIndexes.length !== guardians.length) remapLinkedIds(D, 'guardians', keepIndexes);
     D.guardians = normalized;
     requestSave();
   }
@@ -606,13 +613,16 @@ function totalsBox(rows){
 }
 
 // ── Entry add/remove ───────────────────────────────────
+// Milestone 73V: the rows change through the shared row actions
+// (src/core/form/collections.js), which hold each schedule's row; what each
+// action saves and redraws is unchanged.
 export function addEntry(schedule){
   const map={
     a1:'scheduleA1',a2:'scheduleA2',b1:'scheduleB1',b2:'scheduleB2',b3:'scheduleB3',
     b4:'scheduleB4',c1:'scheduleC1',c2:'scheduleC2',c3:'scheduleC3',c4:'scheduleC4',c5:'scheduleC5'
   };
   const key=map[schedule];
-  getD()[key].push(mk[schedule]());
+  appendRow(getD(),key);
   renderPage(getCurrentPage());
 }
 function removeEntry(schedule,idx){
@@ -621,7 +631,7 @@ function removeEntry(schedule,idx){
     b4:'scheduleB4',c1:'scheduleC1',c2:'scheduleC2',c3:'scheduleC3',c4:'scheduleC4',c5:'scheduleC5'
   };
   const key=map[schedule];
-  getD()[key].splice(idx,1);
+  removeRowAt(getD(),key,idx);
   requestSave();
   renderPage(getCurrentPage());
 }
@@ -664,31 +674,30 @@ export function duplicateEntry(schedule,idx){
   const key=map[schedule];
   const list=getD()[key];
   if(!list||!list[idx])return;
-  list.splice(idx+1,0,JSON.parse(JSON.stringify(list[idx])));
+  duplicateRowAt(getD(),key,idx);
   requestSave();
   renderPage(getCurrentPage());
 }
 // Same idea for the Annual Accounting schedules, which store their rows in
 // D.schA / D.schB1 / … and are rendered inline rather than through
 
-function addGuardian(){pendingGuardianIndex=D.guardians.length;D.guardians.push(mk.guardian());renderPage('/d1');}
+function addGuardian(){pendingGuardianIndex=D.guardians.length;appendRow(D,'guardians');renderPage('/d1');}
 function removeGuardian(i){
-  D.guardians.splice(i,1);
-  if (Array.isArray(D.guardianPartyIds)) D.guardianPartyIds.splice(i, 1);
+  removeRowAt(D,'guardians',i);
   requestSave();
   renderPage('/d1');
 }
-function addRecipient(){D.serviceRecipients.push(mk.recipient());renderPage('/d5');}
-function removeRecipient(i){D.serviceRecipients.splice(i,1);requestSave();renderPage('/d5');}
+function addRecipient(){appendRow(D,'serviceRecipients');renderPage('/d5');}
+function removeRecipient(i){removeRowAt(D,'serviceRecipients',i);requestSave();renderPage('/d5');}
 
 // Witnesses present during the physical inventory of the ward's personal
 // effects (Cover page reminder). Kept separate from the entryCard()/
 // addEntry()/removeEntry() machinery used by the 11 numbered schedules --
 // witnesses aren't a "schedule" in that sense (no dollar total, not part
 // of the schedule/route map those helpers key off of).
-function mkWitness(){return {name:'',address:'',occupation:''};}
-function addWitness(){D.witnesses=D.witnesses||[];D.witnesses.push(mkWitness());requestSave();renderPage('/');}
-function removeWitness(i){if(!D.witnesses)return;D.witnesses.splice(i,1);requestSave();renderPage('/');}
+// The witness row lives with the list rules (src/core/form/collections.js).
+function addWitness(){appendRow(D,'witnesses');requestSave();renderPage('/');}
+function removeWitness(i){if(!D.witnesses)return;removeRowAt(D,'witnesses',i);requestSave();renderPage('/');}
 function witnessCardsHTML(){
   const list=D.witnesses||[];
   return list.map((w,i)=>`<div class="col-12 col-lg-6"><div class="entry-card mb-0 h-100">

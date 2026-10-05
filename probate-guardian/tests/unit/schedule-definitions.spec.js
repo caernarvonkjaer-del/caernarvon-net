@@ -6,9 +6,13 @@ import {
   removeCollectionRow,
 } from '../../src/core/form/schedule-definitions.js';
 
+// Milestone 73V: the three helpers find a list's rules by the filing's type
+// and the list (src/core/form/collections.js), so each sample filing names its
+// type; the assertions are unchanged.
 describe('SCHEDULE_SCHEMAS and collection helpers', () => {
   it('adds a guardian row and extends parallel guardianPartyIds with null', () => {
     const data = {
+      inventoryType: 'annual',
       guardians: [
         { name: 'Primary Guardian', phone: '555-1234' },
       ],
@@ -24,6 +28,7 @@ describe('SCHEDULE_SCHEMAS and collection helpers', () => {
 
   it('enforces maximum row constraint on co-guardians (max: 3)', () => {
     const data = {
+      inventoryType: 'annual',
       guardians: [
         { name: 'G1' },
         { name: 'G2' },
@@ -39,6 +44,7 @@ describe('SCHEDULE_SCHEMAS and collection helpers', () => {
 
   it('duplicates a row and inserts null party slot in lockstep', () => {
     const data = {
+      inventoryType: 'annual',
       guardians: [
         { name: 'G1', phone: '555-0001' },
         { name: 'G2', phone: '555-0002' },
@@ -55,6 +61,7 @@ describe('SCHEDULE_SCHEMAS and collection helpers', () => {
 
   it('removes a row and splices guardianPartyIds in lockstep while respecting floor', () => {
     const data = {
+      inventoryType: 'annual',
       guardians: [
         { name: 'G1' },
         { name: 'G2' },
@@ -77,6 +84,7 @@ describe('SCHEDULE_SCHEMAS and collection helpers', () => {
 
   it('handles general schedule rows without party sync', () => {
     const data = {
+      inventoryType: 'annual',
       schA: [
         { payer: 'Social Security', amount: 1500 },
       ],
@@ -92,5 +100,10 @@ describe('SCHEDULE_SCHEMAS and collection helpers', () => {
     // Schedule A floor is 0, so it can be emptied
     removeCollectionRow('schA', 0, data);
     expect(data.schA.length).toBe(0);
+  });
+
+  it('fails loudly for a filing with no type, or a list its form does not have (73V)', () => {
+    expect(() => addCollectionRow('guardians', { guardians: [] })).toThrow('No row rules for the list "guardians" on filing type "(none)"');
+    expect(() => addCollectionRow('schA', { inventoryType: 'simplified', schA: [] })).toThrow('No row rules for the list "schA" on filing type "simplified"');
   });
 });

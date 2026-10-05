@@ -1,7 +1,9 @@
 import { markFilingRevisionChanged } from '../../core/filing/output-revision.js';
+import { simplifiedGuardianRow } from '../../core/filing/models/simplified.js';
+// Milestone 73V: the row shape lives in the core model, where the list rules
+// can name it; this keeps its old name for this feature's callers.
 export function createSimplifiedGuardian() {
-  // Milestone 39-C
-  return { name: '', ssn: '', phone: '', email: '', mailingStreet: '', mailingCityStateZip: '', residenceStreet: '', residenceCityStateZip: '', signatureDate: '', signatureState: '', signatureImage: '' };
+  return simplifiedGuardianRow();
 }
 
 const pairs = [['residenceStreet', 'officeStreet'], ['residenceCityStateZip', 'officeCityStateZip']];

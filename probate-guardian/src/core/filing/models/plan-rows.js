@@ -3,6 +3,7 @@
 // guardian list well formed, and the blank row for each repeating Plan table.
 // Moved from legacy-app.js.
 import { getD } from '../../state.js';
+import { remapLinkedIds } from '../../form/row-links.js';
 import { emptyPlanResidence, emptyPlanProvider, emptyPlanDirective } from './plan-annual.js';
 import { emptyInitialProvider } from './plan-initial.js';
 import { emptyMinorResidence, emptyMinorProvider, emptyMinorGuardianSig } from './plan-minor.js';
@@ -24,8 +25,16 @@ export function planGuardianMax(type){return type==='planInitial'?4:type==='plan
 export function normalizePlanGuardians(data=getD()){
   const rows=Array.isArray(data?.planGuardians)?data.planGuardians:[];
   const primary=rows[0]||planGuardianBlank(data?.inventoryType);
-  const kept=[primary,...rows.slice(1).filter(planGuardianHasAnyData)].slice(0,planGuardianMax(data?.inventoryType));
-  if(data) data.planGuardians=kept;
+  // Milestone 73V: which of the rows as they were survive, so their
+  // shared-record links (D.guardianPartyIds) move with them. Dropping a blank
+  // co-guardian between two others used to leave the next guardian linked to
+  // the dropped one's record.
+  const keepIndexes=[0,...rows.map((_,i)=>i).filter(i=>i>0&&planGuardianHasAnyData(rows[i]))].slice(0,planGuardianMax(data?.inventoryType));
+  const kept=keepIndexes.map(i=>i===0?primary:rows[i]);
+  if(data){
+    if(rows.length&&keepIndexes.length!==rows.length)remapLinkedIds(data,'planGuardians',keepIndexes);
+    data.planGuardians=kept;
+  }
   return kept;
 }
 

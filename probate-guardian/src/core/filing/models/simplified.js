@@ -12,6 +12,17 @@
 // as calcTotals() being kept out of the lazy feature for the dashboard's sake
 // (see the Milestone 2 plan's "Problem 1"; since Milestone 70's 70B it is
 // features/simplified-accounting/totals.js, loaded eagerly).
+
+// The blank row "+ Add Co-Guardian" adds on Part IV. Moved here from the
+// feature's guardian-compatibility.js by Milestone 73V, unchanged, so the list
+// rules (src/core/form/collections.js) can name it; the feature's
+// createSimplifiedGuardian() returns it. (The filing's first guardian above
+// also carries certifiesService; an added one gains it when it is ticked.)
+export function simplifiedGuardianRow() {
+  // Milestone 39-C
+  return { name: '', ssn: '', phone: '', email: '', mailingStreet: '', mailingCityStateZip: '', residenceStreet: '', residenceCityStateZip: '', signatureDate: '', signatureState: '', signatureImage: '' };
+}
+
 export function emptyDataSimplified() {
   return {
     wardName:'', ssn:'', caseNumber:'', ucn:'', periodFrom:'', periodTo:'',

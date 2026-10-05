@@ -2,8 +2,8 @@
  "generatedBy": "node scripts/ms70-assertion-counts.mjs --write-baseline",
  "note": "Milestone 70 per-spec assertion counts (static expect calls). tests/unit/ms70-assertion-counts.spec.js fails when a spec falls below its count; lowering it requires --reason, recorded in dropLog. A tripwire, not proof of equivalence (decision D9).",
  "totals": {
-  "expects": 7702,
-  "tests": 2200
+  "expects": 7768,
+  "tests": 2217
  },
  "counts": {
   "tests/e2e/annotation-toolbar-containment.spec.ts": {
@@ -229,6 +229,10 @@
   "tests/e2e/guardian-inventory-tri-state-radios.spec.ts": {
    "expects": 9,
    "tests": 2
+  },
+  "tests/e2e/guardian-links-follow-rows.spec.ts": {
+   "expects": 15,
+   "tests": 4
   },
   "tests/e2e/guardianship-selection-controls.spec.ts": {
    "expects": 8,
@@ -690,6 +694,10 @@
    "expects": 51,
    "tests": 9
   },
+  "tests/unit/collection-descriptors.spec.js": {
+   "expects": 49,
+   "tests": 12
+  },
   "tests/unit/comment-card-hide.spec.js": {
    "expects": 9,
    "tests": 5
@@ -1127,8 +1135,8 @@
    "tests": 6
   },
   "tests/unit/schedule-definitions.spec.js": {
-   "expects": 21,
-   "tests": 5
+   "expects": 23,
+   "tests": 6
   },
   "tests/unit/schedule-doc-ack.spec.js": {
    "expects": 66,

@@ -57,6 +57,7 @@
   "tests/e2e/guardian-inventory-mount.spec.ts",
   "tests/e2e/guardian-inventory-schedule-layout.spec.ts",
   "tests/e2e/guardian-inventory-tri-state-radios.spec.ts",
+  "tests/e2e/guardian-links-follow-rows.spec.ts",
   "tests/e2e/guardianship-selection-controls.spec.ts",
   "tests/e2e/guided-tour-navigation.spec.ts",
   "tests/e2e/help-panel-state.spec.ts",

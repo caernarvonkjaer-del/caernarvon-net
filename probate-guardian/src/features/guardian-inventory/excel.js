@@ -35,6 +35,7 @@ import { saveData } from '../../core/persistence/case-file.js';
 import { ensureTemplate } from '../../core/persistence/templates.js';
 import { markFilingRevisionChanged } from '../../core/filing/output-revision.js';
 import { navigate, renderPage } from '../../core/navigation/router.js';
+import { remapLinkedIds } from '../../core/form/row-links.js';
 
 
 // Milestone 60K: the Excel boundary conversion for percentages, both ways.
@@ -622,7 +623,9 @@ export async function importExcel(input){
     // No template cache write here — see the note above ensureTemplate():
     // an imported file is never retained past this parse, so the app's own
     // bundled blank template is what every later "Export as Excel" uses.
-    const importedData=sanitizeObjectData(parseInitialInventoryWorkbook(workbook));
+    const parsed=parseInitialInventoryWorkbook(workbook);
+    const guardianSlots=importedGuardianSlots.get(parsed)||null;
+    const importedData=sanitizeObjectData(parsed);
     // Milestone 67A: the workbook has no cell for "this person prepared this
     // filing". A workbook that names an outside preparer is the stronger
     // statement and clears the flags; one whose preparer cells are empty
@@ -649,6 +652,10 @@ export async function importExcel(input){
       for(const k of SIGNATURE_FIELDS)if(prior.serviceAttorney[k]!==undefined)importedData.serviceAttorney[k]=prior.serviceAttorney[k];
     }
     Object.assign(getD(),importedData);
+    // Milestone 73V: a co-guardian slot the workbook left empty is skipped, so
+    // the guardians after it move up; their shared-record links move with them
+    // instead of staying where the skipped slot's link was.
+    if(guardianSlots&&guardianSlots.length===getD().guardians.length&&!guardianSlots.every((slot,position)=>slot===position))remapLinkedIds(getD(),'guardians',guardianSlots);
     // Milestone 67B: the workbook has no cell for the bond / restricted
     // depository arrangement, and importedData carries no key for it, so an
     // answer this filing already had survives the assign. A blank one is read
@@ -674,6 +681,10 @@ export async function importExcel(input){
 // this function and to cache it via saveTemplate; neither is done
 // anymore (see importExcel above), so there is no longer a buffer to
 // smuggle across, and the raw workbook bytes are not retained past this call.
+// Milestone 73V: the parser's record of which workbook slot each kept guardian
+// came from, keyed by its result (the import sanitizes a copy of that result,
+// so nothing extra is carried into the filing).
+const importedGuardianSlots=new WeakMap();
 function parseInitialInventoryWorkbook(wb){
   const ws=name=>wb.getWorksheet(name);
   const rawv=(sheet,addr)=>sheet?unwrapCellValue(sheet.getCell(addr).value):null;
@@ -704,6 +715,9 @@ function parseInitialInventoryWorkbook(wb){
   const pct=(s,a)=>shareFromWorkbookCell(rawv(s,a));
   const readRows=(pages,reader)=>{const out=[];for(const{name,rows}of pages){const s=ws(name);if(!s)continue;for(const r of rows){const e=reader(s,r);if(e)out.push(e);}}return out;};
   const si=ws('SUMMARY I ');
+  // Milestone 73V: the workbook slot (0-2) each kept guardian came from, so
+  // the import can move the filing's shared-record links with the rows.
+  const guardianSlots=[];
   const inv={
     wardName:txt(si,'C7'),caseNumber:txt(si,'H7'),gid:dt(si,'F7'),county:txt(si,'G3'),
     guardianName:txt(si,'D23'),attorneyForGuardian:txt(si,'D24'),typeOfGuardianship:txt(si,'D25'),
@@ -753,6 +767,7 @@ function parseInitialInventoryWorkbook(wb){
       }
       if(!g.name&&i>0)continue;
       gs.push(g);
+      guardianSlots.push(i);
     }return gs.length?gs:[mk.guardian()];})(),
     // The same input-box addresses doSaveExcel() writes. Both sides used to
     // read and write the caption row instead, together, which is why the
@@ -794,5 +809,6 @@ function parseInitialInventoryWorkbook(wb){
     Object.assign(inv.serviceAttorney,cmp.old);
   }
   capitalizeImportedFields(inv);
+  importedGuardianSlots.set(inv,guardianSlots);
   return inv;
 }

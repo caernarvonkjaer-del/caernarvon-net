@@ -1,14 +1,20 @@
 // Milestone 70, 70F: the Plans' Add / Remove / Duplicate row and guardian
 // actions. Moved from legacy-app.js.
-import { normalizePlanGuardians, planEmptyRow, planGuardianBlank, planGuardianHasAnyData, planGuardianMax } from '../filing/models/plan-rows.js';
+//
+// Milestone 73V: the rows themselves change through the shared row actions
+// (collections.js), which find each Plan's own rules by its type and move the
+// guardians' shared-record links with them. What each action checks, asks,
+// saves and redraws is unchanged.
+import { normalizePlanGuardians, planGuardianHasAnyData } from '../filing/models/plan-rows.js';
 import { navigate } from '../navigation/router.js';
 import { getD, requestSave } from '../state.js';
 import { confirmModal } from '../ui/dialogs.js';
+import { appendRow, duplicateRowAt, removeRowAt } from './collections.js';
 
 export function addPlanGuardian(route){
-  const d=getD(); const rows=normalizePlanGuardians(d);
-  if(rows.length>=planGuardianMax(d.inventoryType))return false;
-  rows.push(planGuardianBlank(d.inventoryType)); d.planGuardians=rows; requestSave(); navigate(route); return true;
+  const d=getD(); normalizePlanGuardians(d);
+  if(!appendRow(d,'planGuardians'))return false;
+  requestSave(); navigate(route); return true;
 }
 
 export async function removePlanGuardian(index,route){
@@ -16,29 +22,31 @@ export async function removePlanGuardian(index,route){
   if(index<=0||index>=rows.length)return false;
   const row=rows[index];
   if(planGuardianHasAnyData(row)&&!(await confirmModal(`Remove co-guardian ${row.name||`#${index+1}`}? This will delete the entered signature information.`)))return false;
-  rows.splice(index,1); d.planGuardians=rows;
-  if(Array.isArray(d.guardianPartyIds))d.guardianPartyIds.splice(index,1);
+  removeRowAt(d,'planGuardians',index);
   requestSave(); navigate(route); return true;
 }
 
 // Row add/remove/duplicate for the Plan's repeating tables. Generic over the
-// array name so residences, providers and directives all share it.
+// array name so residences, providers and directives all share it. The row an
+// array gets is the one its Plan's rules name -- the same `planEmptyRow(kind)`
+// the button's data-row-type asks for (tests/unit/collection-descriptors.spec.js
+// checks every button against it); `kind` stays in the signature for the
+// buttons that pass it.
 export function addPlanRow(arrName,kind,route){
-  getD()[arrName]=getD()[arrName]||[];
-  getD()[arrName].push(planEmptyRow(kind));
+  appendRow(getD(),arrName);
   requestSave();navigate(route);
 }
 
 export function removePlanRow(arrName,idx,route){
   const list=getD()[arrName];
   if(!list||!list[idx])return;
-  list.splice(idx,1);
+  removeRowAt(getD(),arrName,idx);
   requestSave();navigate(route);
 }
 
 export function duplicatePlanRow(arrName,idx,route){
   const list=getD()[arrName];
   if(!list||!list[idx])return;
-  list.splice(idx+1,0,JSON.parse(JSON.stringify(list[idx])));
+  duplicateRowAt(getD(),arrName,idx);
   requestSave();navigate(route);
 }
