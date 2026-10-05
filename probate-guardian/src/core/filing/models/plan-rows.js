@@ -22,14 +22,27 @@ export function planGuardianHasAnyData(g){return !!(g&&Object.values(g).some(v=>
 
 export function planGuardianMax(type){return type==='planInitial'?4:type==='planAnnual'?3:2;}
 
+// Milestone 73C: the first guardian's block always, and every co-guardian
+// block -- an empty one included -- up to the Plan's limit. This used to drop
+// each empty co-guardian block on every draw of the Signatures page, so
+// "+ Add Co-Guardian" added one and the redraw it asked for took it away again.
+// An untouched block now goes when the filer leaves the page (the clean-up,
+// prune-cards.js, which keeps the first block). Over the limit -- only older
+// data can be -- empty co-guardian blocks go first, from the end.
 export function normalizePlanGuardians(data=getD()){
   const rows=Array.isArray(data?.planGuardians)?data.planGuardians:[];
   const primary=rows[0]||planGuardianBlank(data?.inventoryType);
+  const max=planGuardianMax(data?.inventoryType);
   // Milestone 73V: which of the rows as they were survive, so their
   // shared-record links (D.guardianPartyIds) move with them. Dropping a blank
   // co-guardian between two others used to leave the next guardian linked to
   // the dropped one's record.
-  const keepIndexes=[0,...rows.map((_,i)=>i).filter(i=>i>0&&planGuardianHasAnyData(rows[i]))].slice(0,planGuardianMax(data?.inventoryType));
+  // A co-guardian slot that isn't a row at all (damaged data) still goes.
+  const keepIndexes=rows.length?rows.map((_,i)=>i).filter(i=>i===0||(rows[i]&&typeof rows[i]==='object')):[0];
+  for(let at=keepIndexes.length-1;keepIndexes.length>max&&at>0;at--){
+    if(!planGuardianHasAnyData(rows[keepIndexes[at]]))keepIndexes.splice(at,1);
+  }
+  keepIndexes.length=Math.min(keepIndexes.length,max);
   const kept=keepIndexes.map(i=>i===0?primary:rows[i]);
   if(data){
     if(rows.length&&keepIndexes.length!==rows.length)remapLinkedIds(data,'planGuardians',keepIndexes);

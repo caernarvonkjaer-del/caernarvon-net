@@ -12,8 +12,10 @@ import { exportWithWrites } from './support/workbook-vs-template';
 // dropped guardian rows without moving the links, so the next guardian was left
 // linked to the dropped guardian's shared record -- and a later edit or Sync
 // copied one person's details onto another (AGENTS.md section 6):
-//   - a Plan's guardian list, which drops blank co-guardians on every draw;
-//   - the Inventory's D-1, which drops co-guardians holding no details;
+//   - a Plan's guardian list, which dropped blank co-guardians on every draw;
+//   - the Inventory's D-1, which dropped co-guardians holding no details;
+//   (since Milestone 73C both are dropped by the clean-up when the filer leaves
+//   a page instead -- each case below arrives from another page, so it runs);
 //   - the Annual family's Excel import, which drops the workbook's empty slots;
 //   - the Inventory's Excel import, which skips a slot with no name.
 // Each case is driven through the real page or the real Import control. The
@@ -53,7 +55,7 @@ test('a Plan: dropping a blank co-guardian keeps the next guardian on its own sh
     planGuardians: [{ name: 'Ann First', phone: '(727) 555-0101' }, { name: '' }, { name: 'Carol Third', phone: '(727) 555-0103' }],
     guardianPartyIds: ['party-ann', 'party-blank', 'party-carol'],
   });
-  await go(page, '/p11'); // the Signatures page draws the guardian list
+  await go(page, '/p11'); // leaving the Cover runs the clean-up; the Signatures page draws what is left
   expect((await field(page, 'planGuardians')).map((g: any) => g.name)).toEqual(['Ann First', 'Carol Third']);
   expect(await field(page, 'guardianPartyIds')).toEqual(['party-ann', 'party-carol']);
   expect(errors).toEqual([]);
@@ -65,8 +67,8 @@ test('the Inventory D-1: dropping a co-guardian with no details keeps the next g
   await freshStartNoPassword(page);
   await createWard(page, 'Links Inventory', 'guardian');
   await patch(page, {
-    // A card with only a signature choice: the clean-up keeps it (not blank),
-    // D-1's own rule drops it (no name or details).
+    // A card with only a signature choice: no name or details, so D-1's own
+    // rule -- which the clean-up on leaving a page uses since 73C -- drops it.
     guardians: [{ name: 'Ann First', phone: '(727) 555-0101' }, { name: '', signatureState: 'none' }, { name: 'Carol Third', phone: '(727) 555-0103' }],
     guardianPartyIds: ['party-ann', 'party-blank', 'party-carol'],
   });

@@ -8,6 +8,7 @@ import {
   BLANK_SCHEDULE_ENTRY,
 } from '../../src/core/form/prune-cards.js';
 import { mk } from '../../src/core/filing/models/guardian.js';
+import { planGuardianBlank, planGuardianMax } from '../../src/core/filing/models/plan-rows.js';
 import { initializeEmptyData } from '../../src/core/filing/filing-registry.js';
 
 // A registry passed in explicitly, for the function's own semantics (a
@@ -171,6 +172,49 @@ describe('prune-cards', () => {
       const removed = pruneBlankCards(data, 'planInitial');
       expect(removed).toBe(0);
       expect(data.q11Directives.length).toBe(1);
+    });
+
+    // Milestone 73C: the Signatures page no longer drops an empty co-guardian
+    // block when it is drawn (that made "+ Add Co-Guardian" do nothing); the
+    // clean-up on leaving the page does, with the block's shared-record link.
+    it('drops an untouched co-guardian block with its link, and keeps one with anything in it', () => {
+      const blank = planGuardianBlank('planAnnual');
+      const data = {
+        inventoryType: 'planAnnual',
+        planGuardians: [{ ...blank, name: 'Ann' }, { ...blank }, { ...blank, signatureState: 'typed' }],
+        guardianPartyIds: ['pA', 'pB', 'pC'],
+      };
+      expect(pruneBlankCards(data)).toBe(1);
+      expect(data.planGuardians.map((g) => g.signatureState)).toEqual(['', 'typed']);
+      expect(data.guardianPartyIds).toEqual(['pA', 'pC']);
+    });
+
+    it("keeps the first guardian's block though it is empty: a co-guardian never moves into it", () => {
+      for (const type of ['planInitial', 'planAnnual', 'planSimplified', 'planMinor']) {
+        const blank = planGuardianBlank(type);
+        const data = { inventoryType: type, planGuardians: [{ ...blank }, { ...blank, name: 'Carol' }, { ...blank }].slice(0, planGuardianMax(type)) };
+        pruneBlankCards(data);
+        expect(data.planGuardians.map((g) => g.name), type).toEqual(['', 'Carol']);
+      }
+      const alone = { inventoryType: 'planMinor', planGuardians: [planGuardianBlank('planMinor')] };
+      expect(pruneBlankCards(alone)).toBe(0);
+      expect(alone.planGuardians).toHaveLength(1);
+    });
+  });
+
+  // Milestone 73C: D-1 no longer drops a co-guardian card when it is drawn (a
+  // new card used to vanish at the next redraw); the clean-up on leaving the
+  // page removes one with none of the fields D-1 counts as entered.
+  describe("pruneBlankCards on the Inventory's D-1", () => {
+    it('removes a card holding only a signature choice, with its link; keeps one with an email', () => {
+      const data = {
+        inventoryType: 'guardian',
+        guardians: [{ ...mk.guardian(), name: 'Ann' }, { ...mk.guardian(), signatureState: 'typed' }, { ...mk.guardian(), email: 'c@example.com' }],
+        guardianPartyIds: ['pA', 'pB', 'pC'],
+      };
+      expect(pruneBlankCards(data)).toBe(1);
+      expect(data.guardians.map((g) => g.email)).toEqual(['', 'c@example.com']);
+      expect(data.guardianPartyIds).toEqual(['pA', 'pC']);
     });
   });
   // Milestone 70, 70C: the table the clean-up now uses by default -- the

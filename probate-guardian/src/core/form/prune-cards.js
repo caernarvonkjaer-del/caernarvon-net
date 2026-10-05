@@ -46,18 +46,21 @@ export function pruneBlankCards(targetData, targetType) {
     if (engine && spec.types && !spec.types.includes(engine)) continue;
     const arr = data[key];
     if (!Array.isArray(arr) || !arr.length) continue;
+    // Milestone 73V: a typed filing's list must have rules (collections.js).
+    // Milestone 73C: and the rules say what an untouched card is on that form
+    // -- on the Inventory's D-1, a card with none of the fields D-1 counts as
+    // entered. A list may keep its first card whatever it holds (keepFirst).
+    const isBlank = activeType ? getCollection(activeType, key).isBlank : isBlankCard;
     const keep = [];
-    arr.forEach((card, i) => { if (!isBlankCard(card)) keep.push(i); });
+    arr.forEach((card, i) => { if ((spec.keepFirst && i === 0) || !isBlank(card)) keep.push(i); });
     for (let i = 0; i < arr.length && keep.length < spec.min; i++) {
       if (!keep.includes(i)) keep.push(i);
     }
     keep.sort((a, b) => a - b);
     if (keep.length === arr.length) continue;
     removed += arr.length - keep.length;
-    // Milestone 73V: a typed filing's list must have rules (collections.js),
-    // and every list's shared-record links move with its rows -- the same
-    // re-indexing this did for `guardians` alone.
-    if (activeType) getCollection(activeType, key);
+    // Milestone 73V: every list's shared-record links move with its rows --
+    // the same re-indexing this did for `guardians` alone.
     keepRows(data, key, keep);
   }
 

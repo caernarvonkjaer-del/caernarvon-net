@@ -3,8 +3,9 @@
 ## Status
 
 **Draft. Every decision is settled (2026-10-04 and 2026-10-05). Built so
-far: 73U (2026-10-04, `5b8849b`) and 73V (2026-10-05), each approved by
-name.** Nothing else is approved.
+far: 73U (2026-10-04, `5b8849b`), 73V (2026-10-05, `8b96aa3`) and 73C
+(2026-10-05, brought forward from its place in the build order at the
+requester's choice), each approved by name.** Nothing else is approved.
 Building any other item, or any part of a split item, needs the requester's
 named approval of that item or part (AGENTS.md §3).
 
@@ -40,7 +41,7 @@ recorded as **Pinellas Clerk practice**, not as a reading of a statute or rule
 | --- | --- | --- | --- | --- |
 | 1 | 73A | Choosing **Unsigned** prints "/s/ Name" and the electronic-signature caption on every form; a typed date makes it look signed; a Stamp never applied prints "/s/" | High | One |
 | 2 | 73B | The PDF says **"Plenary"** when no Type of Guardianship was chosen; a new Annual says **"Professional Guardian"**; rows, PDFs and the Inventory's workbook carry answers and shares the filer never gave | High | One |
-| 3 | 73C | **"+ Add Co-Guardian" does nothing** on all four Plans | High | One |
+| 3 | 73C | **"+ Add Co-Guardian" does nothing** on all four Plans | High | **Built** (2026-10-05) |
 | 4 | 73D | Ticking and unticking **"This item is a vehicle"** erases the Description and the safe-deposit answer; hidden Plan "Explanation" text still prints | High | One |
 | 5 | 73E | **An Excel import replaces the filing unasked** (the Simplified's Cancel half-applies it), can turn a Trust into an Annual, and changes shared people's records in other filings unseen | High | Two |
 | 6 | 73F | **A section shows ✓ and Print Preview then blocks it**; asterisks don't match what is enforced; a misspelled county passes everywhere | High | Three |
@@ -127,14 +128,14 @@ behaviour on its own except where its row says so.
 | Order | Item / part | Depends on | Main files | Tests and baselines |
 | --- | --- | --- | --- | --- |
 | 0 | 73U | — | `src/core/security/input-hardening.js` | **Built** `5b8849b` |
-| 1 | 73V — row rules (behaviour-preserving; only the link fix is visible) | — | `src/core/form/schedule-definitions.js` (descriptions keyed by filing type and list; the three row actions keep their signatures; `SCHEDULE_SCHEMAS` kept as a read-only compatibility export), `src/core/form/plan-row-actions.js`, `prune-cards.js`, `src/core/filing/models/plan-rows.js`, the Inventory's row actions and `normalizeGuardians()`, the Annual importer's guardian filter | new `tests/unit/collection-descriptors.spec.js` (explicit expected inventory of every list; each form's behaviour unchanged); changed: `schedule-definitions.spec.js`, `output-revision-wiring.spec.js`, `prune-cards.spec.js`, `filing-registry.spec.js`; unchanged through the compatibility export: `types-contract.spec.js`, `remuneration-declaration.spec.js` |
+| 1 | 73V — row rules (behaviour-preserving; only the link fix is visible) | — | `src/core/form/schedule-definitions.js` (descriptions keyed by filing type and list; the three row actions keep their signatures; `SCHEDULE_SCHEMAS` kept as a read-only compatibility export), `src/core/form/plan-row-actions.js`, `prune-cards.js`, `src/core/filing/models/plan-rows.js`, the Inventory's row actions and `normalizeGuardians()`, the Annual importer's guardian filter | new `tests/unit/collection-descriptors.spec.js` (explicit expected inventory of every list; each form's behaviour unchanged); changed: `schedule-definitions.spec.js`, `output-revision-wiring.spec.js`, `prune-cards.spec.js`, `filing-registry.spec.js`; unchanged through the compatibility export: `types-contract.spec.js`, `remuneration-declaration.spec.js` — **Built** `8b96aa3` |
 | 2 | 73J part 1 — one change event | — | `src/core/form/form-contract.js`, a new `src/core/model-change.js`, every committed mutation path (row actions, New Year, conversion, Sync, Link Person, Merge, year switch) | new `tests/unit/model-change-event.spec.js` |
 | 3 | 73K part 1 — why the page is drawn | 73V | `src/core/navigation/router.js` and its callers | `router.spec.js`; `npm run check:types` |
 | 4 | 73G part 1 — the amount codec | — | `form-contract.js`, `form-fields.js`, `guardian-inventory/form-binding.js`, `form-runtime.js`, `share-cell.js`, the three importers' amount readers | new `tests/unit/amount-codec.spec.js`; the year-rollover and conversion goldens |
 | 5 | 73F part 1 — shared checks | — | the seven validators moved to `src/core/validation/engines/` with `evaluate<Engine>()`, a registry, `validate<Engine>()` kept as wrappers, `output-preflight.js` | the existing validator and export-gate units; a wrapper-equivalence test; completion golden unchanged |
 | 6 | 73E part 1 — the import transaction (no importer connected) | 73J p1 | new `src/core/excel/import-transaction.js`, `import-keep.js` (exact-name identity), `party-resolver.js`, the activity log | new `tests/unit/import-transaction.spec.js` (synthetic adapters) |
 | 7 | 73T part 1 — the workbook contract | 73E p1, 73G p1 | new `src/core/excel/workbook-contract/` (one per form, the importers' adapters), `excel-engine.js` | `excel-write-targets.spec.js`, `export-manifests.ts`, new round-trip and hand-filled specs |
-| 8 | 73C | 73V | `plan-rows.js`, Inventory `index.js` (D-1) | new `tests/e2e/plan-add-co-guardian.spec.ts` |
+| 8 | 73C | 73V | `plan-rows.js`, Inventory `index.js` (D-1) | new `tests/e2e/plan-add-co-guardian.spec.ts` — **Built** 2026-10-05, ahead of rows 2–7 at the requester's choice |
 | 9 | 73D | — | Inventory `index.js` (B-2), `models/guardian.js`, `totals.js`, Inventory `pdf-model.js`, `excel.js`, `conversion.js`, `field-html.js`, three Plan `pdf-model.js` | new `tests/e2e/b2-vehicle-toggle.spec.ts`, Plan PDF units |
 | 10 | 73T part 2 — Inventory workbook, connected to the transaction | 73T p1, 73D | `guardian-inventory/excel.js` | Inventory round trip; `import-confirm.spec.ts` (Inventory); that form's import specs |
 | 11 | 73T part 3 — Annual-family workbook, connected | 73T p1 | `annual-accounting/excel.js`, `templates/annual-template.js` (B-4 formula) | Annual round trip; Part VIII and Part XI placement; `import-confirm.spec.ts` (Annual); that form's import specs |
@@ -492,6 +493,84 @@ button; red-first: one block after the click today) and an Inventory D-1 case
 No data-model or export change. **Legacy:** carry-over seeds blank Plan
 guardian rows, which now show on the Signatures page until the filer leaves
 it (visible, harmless). The guide's "fixed blocks" is corrected in 73Q.
+
+### Build record — BUILT 2026-10-05 (approved by name by the requester, 2026-10-05)
+
+**What changed for a filer:**
+
+- On all four Plans, **"+ Add Co-Guardian" adds a co-guardian block**, up to
+  each Plan's limit (Initial 4, Annual 3, Simplified Annual 2, Minors 2); the
+  button goes away at the limit. A block left untouched is removed when the
+  filer leaves the page. The first guardian's block always stays, even
+  empty, and a co-guardian is never moved into it — as before.
+- On the Inventory's D-1, **a new co-guardian card no longer disappears at the
+  next redraw**: choosing a signature method redraws the page, and the card
+  and the choice stay. When the filer leaves the page, a card with none of
+  the fields D-1 counts as entered (name, signature date, SSN/EIN, phone,
+  email, address, stamp image, the preparer box) is removed, as it was one
+  step later before; the PDF and the export checks already ignored such a
+  card.
+- A Plan carried into a new year with blank co-guardian blocks shows them on
+  the Signatures page until the filer moves to another page (the legacy note
+  above).
+
+**How:** the two lists that dropped empty rows on every draw stop doing so.
+`normalizePlanGuardians()` keeps every block up to the Plan's limit (over the
+limit, which only older data can be, empty blocks go first, from the end);
+D-1's `normalizeGuardians()` only makes sure there is one card, and D-1 draws
+every card — the one-draw grace period for a new card (Milestone 51H) is
+gone. The clean-up when the filer leaves a page (`prune-cards.js`) now covers
+the Plans' guardian blocks, keeps the first (`keepFirst` in
+`blank-rows.js`), and asks each list's rules (`collections.js`) what an
+untouched card is: on the Inventory, D-1's own entered-fields rule
+(`guardianHasData()`, moved unchanged from the feature to
+`models/guardian.js`); on the Plans, a block holding nothing at all, as the
+page counted it; every other list as before. Links move with the rows through
+the clean-up (73V). 73V's inactive keep-until-leave policy is retired: it is
+now the rule on every list.
+
+**Changed:** `src/core/filing/models/plan-rows.js`,
+`src/core/filing/models/guardian.js`, `src/core/form/blank-rows.js`,
+`src/core/form/prune-cards.js`, `src/core/form/collections.js`,
+`src/features/guardian-inventory/index.js`.
+
+**Tests:**
+
+- New `tests/e2e/plan-add-co-guardian.spec.ts` (5): each Plan through the real
+  button — the block appears, a filled one survives leaving and returning, the
+  button adds up to the limit and goes away, leaving removes untouched blocks
+  and keeps the first guardian's empty one; D-1 — a new card keeps a
+  signature choice through its redraw, and leaving removes it.
+- `prune-cards.spec.js` (+3) and `collection-descriptors.spec.js` (+4, one
+  rewritten, the policy test updated). `filing-registry.spec.js` needed no
+  change: its over-the-limit case still gives `['A', 'B', 'C', 'D']`.
+  `guardian-links-follow-rows.spec.ts`: comments only (its Plan and D-1 cases
+  arrive from another page, so the clean-up now does the dropping).
+  `guardian-inventory-collection-controls.spec.ts`: Milestone 51H's case
+  pinned the old tidy-up (a second "+ Add Co-Guardian" with nothing typed
+  left one card, the first blank one dropped); it now expects two cards, as on
+  the Annual and the Simplified, and leaving the page to remove both. What it
+  protects is kept: no card the button made vanishes, and what is shown and
+  what is stored agree.
+- **Red-first:** before the fix, all five browser cases failed for the stated
+  reason (one block after the click on every Plan; the D-1 card gone after
+  the choice); with the six source files stashed, the six new unit cases
+  failed (the old draw dropped the empty block; the old clean-up removed
+  nothing from either guardian list and did not keep the first block).
+- Full unit suite 2,560 passed; `npm run check:types` clean. **Related browser
+  specs: 33 files, 345 tests — every one passed in its final run.** The first run (stopped by its time limit at 322 of 345) failed one test, `guardian-inventory-collection-controls.spec.ts`'s Milestone 51H case, which pinned the old tidy-up and was updated (above). The rerun of that file and the three the stop cut short (`signature-capture.contract`, `signature-stamp-reuse`, `year-rollover.characterization`) passed 52 and failed the year-rollover record on the four Plans: their sample filings carry empty co-guardian blocks, which leaving the filing now removes, so the archived year holds the first guardian's block alone and the link list reads `[null]` instead of `[]`. Expected (the legacy note above); the record was regenerated, every changed entry checked to be a co-guardian block or the link list, the other five types unchanged; 9 of 9 then passed.
+
+**Found, not changed:**
+
+- On the Inventory, the Annual family and the Simplified, if Guardian #1's
+  card is empty and a co-guardian's is filled, leaving the page removes the
+  empty first card and the co-guardian becomes Guardian #1. Unchanged; the
+  Plans keep the first block. Now Milestone 74's 74A.
+- The Inventory's PDF prints a co-guardian with a name, date, SSN/EIN, phone,
+  email or address; D-1 also counts a stamp image or the preparer box as
+  entered, so a co-guardian with only a stamp image is kept and checked but
+  not printed. Unchanged; now Milestone 74's 74B, which found the Annual
+  family and the Simplified drop such a card from everything, unchecked.
 
 ---
 

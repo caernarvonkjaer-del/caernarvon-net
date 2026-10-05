@@ -67,7 +67,14 @@ test.describe('Milestone 51E: Initial Inventory collection Add/Remove controls',
   //
   // The user-visible symptom was a button that appeared to delete the card it had
   // just created, with no error anywhere.
-  test('co-guardians: adding twice with nothing typed still leaves exactly one co-guardian card', async ({ page }) => {
+  //
+  // Milestone 73C (2026-10-05): D-1 no longer drops blank co-guardian cards when
+  // the page is drawn -- that tidy-up was also what made a new card vanish at
+  // its next redraw -- so a second click now shows a second card, as on the
+  // Annual and the Simplified, and leaving the page removes the untouched ones.
+  // What this test protects is unchanged: no card the button made vanishes, and
+  // what is rendered and what is stored agree.
+  test('co-guardians: adding twice with nothing typed leaves both cards, and leaving the page removes them', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Collection Controls Ward', 'guardian');
     await goto(page, GUARDIAN_ROUTE);
@@ -80,18 +87,23 @@ test.describe('Milestone 51E: Initial Inventory collection Add/Remove controls',
 
     // Second click, still nothing typed into the first co-guardian.
     await addCo.click();
+    await expect(removeCo, 'neither co-guardian card vanishes on a second add').toHaveCount(2);
 
-    // The blank row is pruned (by design) and the newly added one takes its place,
-    // so the count stays at one rather than dropping to zero.
-    await expect(removeCo, 'the co-guardian card must not vanish on a second add').toHaveCount(1);
-
-    // And the store must not accumulate invisible blank rows behind the UI: what
-    // is rendered and what is stored have to agree.
-    const state = await page.evaluate(() => ({
+    // The store must not hold rows the page doesn't show: what is rendered and
+    // what is stored have to agree.
+    const rendered = () => page.evaluate(() => ({
       stored: (window as any).GuardianForms.testing.field('guardians.length'),
       rendered: document.querySelectorAll('[data-inventory-action="remove-guardian"]').length + 1,
     }));
+    let state = await rendered();
     expect(state.stored, 'stored guardian rows must match the rendered cards').toBe(state.rendered);
+
+    // Leaving the page removes both untouched cards; coming back, the two agree.
+    await goto(page, COVER_ROUTE);
+    await goto(page, GUARDIAN_ROUTE);
+    await expect(removeCo).toHaveCount(0);
+    state = await rendered();
+    expect(state).toEqual({ stored: 1, rendered: 1 });
   });
 
   test('co-guardians: Remove drops the chosen row and leaves the others intact', async ({ page }) => {

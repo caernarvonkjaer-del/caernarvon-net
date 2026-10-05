@@ -52,6 +52,11 @@ export const BLANK_CARD_COLLECTIONS = {
   q9Providers: { min: 0, types: ['planInitial'] },
   q2Residences: { min: 0, types: ['planMinor'] },
   q3Providers: { min: 0, types: ['planMinor'] },
+  // Milestone 73C: the Plans' guardian blocks. Drawing the Signatures page used
+  // to drop an empty co-guardian block, so "+ Add Co-Guardian" did nothing; an
+  // untouched one goes here instead. The first block always stays (keepFirst),
+  // as it did when the page dropped them: a co-guardian never moves into it.
+  planGuardians: { min: 1, keepFirst: true, types: ['planInitial', 'planAnnual', 'planSimplified', 'planMinor'] },
 };
 
 /**

@@ -8,6 +8,8 @@
 //      (behaviour-preserving);
 //   3. shared-record links move with their rows, and a row's identity is never
 //      saved, exported or copied.
+// Milestone 73C added what the clean-up counts as an untouched guardian card on
+// the Inventory and the Plans, and retired the keep-until-leave policy.
 import { describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -133,9 +135,11 @@ describe("73V: each form's rows, floors and limits are what it used before", () 
     expect(buttons).toBe(11); // 3 Annual Plan + 2 Initial + 2 Minors tables, and the certificate on 4 Plans
   });
 
-  it('nothing reads the inactive policies yet (73C, 73F part 3, 73K part 2, 73P)', () => {
+  // Milestone 73C retired keepBlankUntilLeave: a new row staying until the filer
+  // leaves the page is now the rule on every list.
+  it('nothing reads the inactive policies yet (73F part 3, 73K part 2, 73P)', () => {
     for (const [type, list] of registeredCollections()) {
-      expect(getCollection(type, list).policies).toEqual({ confirmRemove: null, clearNoItemsOnAdd: null, keepBlankUntilLeave: false, focusAfterAction: null });
+      expect(getCollection(type, list).policies).toEqual({ confirmRemove: null, clearNoItemsOnAdd: null, focusAfterAction: null });
     }
   });
 });
@@ -179,8 +183,18 @@ describe('73V: shared-record links move with their rows', () => {
     });
   }
 
-  it("the Plans' guardian list drops a blank co-guardian with its link (it used to keep the next guardian on the dropped one's record)", () => {
+  // Milestone 73C: drawing the Signatures page keeps an empty co-guardian
+  // block (the clean-up on leaving the page drops it, with its link --
+  // tests/unit/prune-cards.spec.js); over a Plan's limit, empty blocks go first.
+  it("the Plans' guardian list keeps an empty co-guardian block when the page is drawn (73C)", () => {
     const data = { inventoryType: 'planAnnual', planGuardians: [named('A'), planGuardianBlank('planAnnual'), named('C')], guardianPartyIds: ['pA', 'pB', 'pC'] };
+    normalizePlanGuardians(data);
+    expect(data.planGuardians.map(r => r.name)).toEqual(['A', '', 'C']);
+    expect(data.guardianPartyIds).toEqual(['pA', 'pB', 'pC']);
+  });
+
+  it("over a Plan's limit, empty co-guardian blocks go first, each with its link (73C)", () => {
+    const data = { inventoryType: 'planSimplified', planGuardians: [named('A'), planGuardianBlank('planSimplified'), named('C')], guardianPartyIds: ['pA', 'pB', 'pC'] };
     normalizePlanGuardians(data);
     expect(data.planGuardians.map(r => r.name)).toEqual(['A', 'C']);
     expect(data.guardianPartyIds).toEqual(['pA', 'pC']);
@@ -190,6 +204,31 @@ describe('73V: shared-record links move with their rows', () => {
     const data = { inventoryType: 'planInitial', planGuardians: [named('A'), named('B')], guardianPartyIds: ['pA', 'pB', 'stale'] };
     normalizePlanGuardians(data);
     expect(data.guardianPartyIds).toEqual(['pA', 'pB', 'stale']);
+  });
+});
+
+describe('73C: what the clean-up counts as an untouched guardian card', () => {
+  it("the Inventory's D-1: none of the fields D-1 counts as entered -- a signature choice alone is untouched", () => {
+    const { isBlank } = getCollection('guardian', 'guardians');
+    expect(isBlank(mk.guardian())).toBe(true);
+    expect(isBlank({ ...mk.guardian(), signatureState: 'typed', certifiesService: true })).toBe(true);
+    for (const entered of [{ email: 'a@b.c' }, { signatureImage: 'data:image/png;base64,AA==' }, { isPreparer: true }, { name: 'Ann' }]) {
+      expect(isBlank({ ...mk.guardian(), ...entered }), JSON.stringify(entered)).toBe(false);
+    }
+  });
+
+  it('a Plan: anything at all, a signature choice included (as the page always counted it)', () => {
+    for (const type of ['planInitial', 'planAnnual', 'planSimplified', 'planMinor']) {
+      const { isBlank } = getCollection(type, 'planGuardians');
+      expect(isBlank(planGuardianBlank(type)), type).toBe(true);
+      expect(isBlank({ ...planGuardianBlank(type), signatureState: 'typed' }), type).toBe(false);
+    }
+  });
+
+  it('every other list keeps its 73V blank test', () => {
+    expect(getCollection('annual', 'guardians').isBlank({ name: '', signatureState: '' })).toBe(true);
+    expect(getCollection('annual', 'guardians').isBlank({ name: '', signatureState: 'typed' })).toBe(false);
+    expect(getCollection('simplified', 'guardians').isBlank({ name: '', signatureState: 'typed' })).toBe(false);
   });
 });
 

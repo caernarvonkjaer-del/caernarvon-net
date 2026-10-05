@@ -2,8 +2,8 @@
  "generatedBy": "node scripts/ms70-assertion-counts.mjs --write-baseline",
  "note": "Milestone 70 per-spec assertion counts (static expect calls). tests/unit/ms70-assertion-counts.spec.js fails when a spec falls below its count; lowering it requires --reason, recorded in dropLog. A tripwire, not proof of equivalence (decision D9).",
  "totals": {
-  "expects": 7768,
-  "tests": 2217
+  "expects": 7806,
+  "tests": 2226
  },
  "counts": {
   "tests/e2e/annotation-toolbar-containment.spec.ts": {
@@ -211,7 +211,7 @@
    "tests": 7
   },
   "tests/e2e/guardian-inventory-collection-controls.spec.ts": {
-   "expects": 27,
+   "expects": 29,
    "tests": 7
   },
   "tests/e2e/guardian-inventory-excel-schedule-layout.spec.ts": {
@@ -345,6 +345,10 @@
   "tests/e2e/persistence-recovery.contract.spec.ts": {
    "expects": 16,
    "tests": 4
+  },
+  "tests/e2e/plan-add-co-guardian.spec.ts": {
+   "expects": 17,
+   "tests": 2
   },
   "tests/e2e/plan-annual-mount.spec.ts": {
    "expects": 2,
@@ -695,8 +699,8 @@
    "tests": 9
   },
   "tests/unit/collection-descriptors.spec.js": {
-   "expects": 49,
-   "tests": 12
+   "expects": 59,
+   "tests": 16
   },
   "tests/unit/comment-card-hide.spec.js": {
    "expects": 9,
@@ -1099,8 +1103,8 @@
    "tests": 8
   },
   "tests/unit/prune-cards.spec.js": {
-   "expects": 36,
-   "tests": 13
+   "expects": 45,
+   "tests": 16
   },
   "tests/unit/readiness-card.spec.js": {
    "expects": 52,

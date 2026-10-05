@@ -25,7 +25,7 @@ import { ic } from '../../core/ui/icons.js';
 import { fmt } from '../../core/format/money.js';
 import { applyZipLimit, finalizeCaseNumber, formatAccountNumber, formatAddress, formatBarNumber, formatCaseNumber, formatCheckNumber, formatName, formatPhone, formatSSN, sanitizeNonNegativeDecimal } from '../../core/form/form-contract.js';
 import { calc } from './totals.js';
-import { PAGES_GUARDIAN, mk } from '../../core/filing/models/guardian.js';
+import { PAGES_GUARDIAN, mk, guardianHasData } from '../../core/filing/models/guardian.js';
 import { SCHEDULE_NAV_KEYS } from '../../core/filing/models/guardian.js';
 import { getD, requestSave } from '../../core/state.js';
 import { saveData } from '../../core/persistence/case-file.js';
@@ -66,7 +66,6 @@ import { initPrintPager } from '../../core/ui/print-pager.js';
 import { renderScheduleDocsSection } from '../../core/filing/schedule-docs.js';
 import { setPath } from '../../core/form/paths.js';
 import { appendRow, duplicateRowAt, removeRowAt } from '../../core/form/collections.js';
-import { remapLinkedIds } from '../../core/form/row-links.js';
 import { showPickPartyModal } from '../../core/modals/pick-record-dialogs.js';
 import { getCurrentPage, navigate, renderPage } from '../../core/navigation/router.js';
 import { computeNavChecks, updateNavDots } from '../../core/status/nav-marks.js';
@@ -97,47 +96,18 @@ let _excelModule = null;
 let _lazyModulesPromise = null;
 const eventControllers = new WeakMap();
 const signatureHandles = new WeakMap();
-let pendingGuardianIndex = null;
-let visiblePendingGuardianIndex = null;
-// Every field that makes a co-guardian card "entered" -- one list, read by
-// normalizeGuardians() (via guardianHasData()), D-1's drawing and
-// validateGuardian(), which used to repeat it three times. Milestone 39-C: the
-// signature image, so a stamp applied before a name is typed is never pruned.
-// Milestone 67A: the preparer box. Milestone 72C: the email, so a co-guardian
-// who has entered only an email is not treated as blank, hidden or removed.
-const GUARDIAN_DATA_FIELDS = Object.freeze(['name', 'signatureDate', 'ssnEin', 'phone', 'email', 'streetAddress', 'cityStateZip', 'signatureImage', 'isPreparer']);
-function guardianHasData(guardian) {
-  return GUARDIAN_DATA_FIELDS.some(key => String(guardian?.[key] || '').trim());
-}
+// Milestone 73C: D-1 keeps every guardian card through redraws, a new card the
+// filer hasn't filled in yet included; the clean-up when the filer leaves the
+// page removes a co-guardian card that is still not entered (guardianHasData(),
+// through collections.js), with its shared-record link. This used to drop such
+// cards on every draw, with a one-draw exception for a card just added
+// (Milestone 51H), so a new card disappeared at the next redraw -- and a
+// signature choice redraws the page. All that is left here is the one card D-1
+// always shows.
 function normalizeGuardians() {
-  const guardians = Array.isArray(D.guardians) ? D.guardians : [];
-  // Milestone 51H: hold the pending row by IDENTITY, not by index. The filter
-  // below prunes blank co-guardian rows, which REINDEXES the array -- so
-  // pendingGuardianIndex (recorded against the pre-prune array in addGuardian())
-  // can point at the wrong row, or past the end, once the prune has run.
-  //
-  // Carrying the stale index straight over to visiblePendingGuardianIndex meant
-  // pageD1()'s filter matched no row for a guardian that had just been added:
-  // clicking "+ Add Co-Guardian" twice with nothing typed pruned the first blank
-  // row, shifted the new one down into its place, and then rendered neither --
-  // the card appeared to delete itself, while D.guardians silently kept an extra
-  // blank entry. Resolving the row's new position after the prune keeps what is
-  // stored and what is rendered in agreement.
-  const pendingRow = pendingGuardianIndex == null ? null : guardians[pendingGuardianIndex];
-  // Milestone 73V: kept by position, so the dropped rows' shared-record links
-  // (D.guardianPartyIds) go with them. Filtering the rows alone used to leave
-  // the next co-guardian linked to the dropped one's record.
-  const keepIndexes = guardians.map((_, index) => index).filter(index => index === 0 || index === pendingGuardianIndex || guardianHasData(guardians[index]));
-  const normalized = keepIndexes.map(index => guardians[index]);
-  const pendingAfterPrune = pendingRow ? normalized.indexOf(pendingRow) : -1;
-  visiblePendingGuardianIndex = pendingAfterPrune >= 0 ? pendingAfterPrune : null;
-  pendingGuardianIndex = null;
-  if (!normalized.length) normalized.push(mk.guardian());
-  if (normalized.length !== guardians.length || !Array.isArray(D.guardians)) {
-    if (guardians.length && keepIndexes.length !== guardians.length) remapLinkedIds(D, 'guardians', keepIndexes);
-    D.guardians = normalized;
-    requestSave();
-  }
+  if (Array.isArray(D.guardians) && D.guardians.length) return;
+  D.guardians = [mk.guardian()];
+  requestSave();
 }
 // Milestone 64A-1, item 1.1. D-4's Bond Amount used to be free text (e.g.
 // "$25,000"), formatted however the filer typed it; numInput() now stores it
@@ -227,7 +197,6 @@ export async function mount(container, page, { signal } = {}) {
     default:      html='<p>Page not found</p>';
   }
   container.innerHTML = html;
-  visiblePendingGuardianIndex = null;
   bindEvents(container);
   bindForms();
   afterChange('');
@@ -681,7 +650,7 @@ export function duplicateEntry(schedule,idx){
 // Same idea for the Annual Accounting schedules, which store their rows in
 // D.schA / D.schB1 / … and are rendered inline rather than through
 
-function addGuardian(){pendingGuardianIndex=D.guardians.length;appendRow(D,'guardians');renderPage('/d1');}
+function addGuardian(){appendRow(D,'guardians');renderPage('/d1');}
 function removeGuardian(i){
   removeRowAt(D,'guardians',i);
   requestSave();
@@ -1126,14 +1095,12 @@ function pageScheduleC5(){
 // ATTESTATION & FILING PAGES (D1–D5)
 // ═══════════════════════════════════════════════════════
 function pageD1(){
-  // Guardian #1 (index 0) is required and always shown, matching
-  // normalizeGuardians()'s own always-keep-index-0 rule -- without this,
-  // a brand-new filing with no guardian data typed in yet renders zero
-  // cards here, with no way to even see the required Guardian #1 fields.
-  const partyRecords=(D.guardians||[]).map((g,i)=>({g,i})).filter(({g,i})=>i===0||i===visiblePendingGuardianIndex||guardianHasData(g));
-  const cards=partyRecords.map(({g,i},visibleIndex)=>{
-    const isFirst=visibleIndex===0;
-    const title=isFirst?'Guardian #1':`Co-Guardian #${visibleIndex+1}`;
+  // Every card is drawn (Milestone 73C): Guardian #1 always, and each
+  // co-guardian card until the clean-up removes an unentered one when the
+  // filer leaves the page.
+  const cards=(D.guardians||[]).map((g,i)=>{
+    const isFirst=i===0;
+    const title=isFirst?'Guardian #1':`Co-Guardian #${i+1}`;
     const removeBtn=isFirst?'':`<button class="btn btn-sm btn-outline-danger no-print" data-inventory-action="remove-guardian" data-index="${i}">✕ Remove</button>`;
     const linkBtn=`<button class="btn btn-sm btn-outline-secondary no-print" data-inventory-action="link-party" data-role="guardian" data-index="${i}">Link Person</button>`;
     return `<div class="col-12 col-lg-6"><div class="entry-card mb-0 h-100">

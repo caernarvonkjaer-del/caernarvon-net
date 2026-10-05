@@ -2999,11 +2999,48 @@
     "scheduleDocs",
     "wardId"
    ],
-   "archiveDiffersFromTheYearBeforeAt": {},
+   "archiveDiffersFromTheYearBeforeAt": {
+    "guardianPartyIds": {
+     "from": "[]",
+     "to": null
+    },
+    "guardianPartyIds.0": {
+     "from": null,
+     "to": "null"
+    },
+    "planGuardians.1.email": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.1.mailingAddress": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.1.name": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.1.phone": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.1.signatureDate": {
+     "from": "\"\"",
+     "to": null
+    }
+   },
    "changedByTheNewYear": {
     "activeYearKey": {
      "from": null,
      "to": "\"Year 2\""
+    },
+    "guardianPartyIds": {
+     "from": "[]",
+     "to": null
+    },
+    "guardianPartyIds.0": {
+     "from": null,
+     "to": "null"
     },
     "periodFrom": {
      "from": "\"2026-01-01\"",
@@ -3016,6 +3053,26 @@
     "planGuardians.0.signatureDate": {
      "from": "\"2026-01-05\"",
      "to": "\"\""
+    },
+    "planGuardians.1.email": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.1.mailingAddress": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.1.name": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.1.phone": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.1.signatureDate": {
+     "from": "\"\"",
+     "to": null
     },
     "q1Residences": {
      "from": "\"123 Main St, Clearwater, FL 33755 (all year)\"",
@@ -3169,9 +3226,9 @@
      "from": null,
      "to": "\"Pinellas\""
     },
-    "years.0.data.guardianPartyIds": {
+    "years.0.data.guardianPartyIds.0": {
      "from": null,
-     "to": "[]"
+     "to": "null"
     },
     "years.0.data.hasSafeDepositBox": {
      "from": null,
@@ -3204,26 +3261,6 @@
     "years.0.data.planGuardians.0.signatureDate": {
      "from": null,
      "to": "\"2026-01-05\""
-    },
-    "years.0.data.planGuardians.1.email": {
-     "from": null,
-     "to": "\"\""
-    },
-    "years.0.data.planGuardians.1.mailingAddress": {
-     "from": null,
-     "to": "\"\""
-    },
-    "years.0.data.planGuardians.1.name": {
-     "from": null,
-     "to": "\"\""
-    },
-    "years.0.data.planGuardians.1.phone": {
-     "from": null,
-     "to": "\"\""
-    },
-    "years.0.data.planGuardians.1.signatureDate": {
-     "from": null,
-     "to": "\"\""
     },
     "years.0.data.planTriStateSchemaVersion": {
      "from": null,
@@ -3424,7 +3461,96 @@
     "scheduleDocs",
     "wardId"
    ],
-   "archiveDiffersFromTheYearBeforeAt": {},
+   "archiveDiffersFromTheYearBeforeAt": {
+    "guardianPartyIds": {
+     "from": "[]",
+     "to": null
+    },
+    "guardianPartyIds.0": {
+     "from": null,
+     "to": "null"
+    },
+    "planGuardians.1.email": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.1.mailingCityStateZip": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.1.mailingStreet": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.1.name": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.1.officeCityStateZip": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.1.officeStreet": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.1.phone": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.1.relationship": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.1.signatureDate": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.1.ssn": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.2.email": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.2.mailingCityStateZip": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.2.mailingStreet": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.2.name": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.2.officeCityStateZip": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.2.officeStreet": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.2.phone": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.2.relationship": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.2.signatureDate": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.2.ssn": {
+     "from": "\"\"",
+     "to": null
+    }
+   },
    "changedByTheNewYear": {
     "activeYearKey": {
      "from": null,
@@ -3498,6 +3624,14 @@
      "from": "true",
      "to": "false"
     },
+    "guardianPartyIds": {
+     "from": "[]",
+     "to": null
+    },
+    "guardianPartyIds.0": {
+     "from": null,
+     "to": "null"
+    },
     "periodFrom": {
      "from": "\"2026-01-01\"",
      "to": "\"\""
@@ -3509,6 +3643,86 @@
     "planGuardians.0.signatureDate": {
      "from": "\"2026-01-05\"",
      "to": "\"\""
+    },
+    "planGuardians.1.email": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.1.mailingCityStateZip": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.1.mailingStreet": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.1.name": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.1.officeCityStateZip": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.1.officeStreet": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.1.phone": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.1.relationship": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.1.signatureDate": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.1.ssn": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.2.email": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.2.mailingCityStateZip": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.2.mailingStreet": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.2.name": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.2.officeCityStateZip": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.2.officeStreet": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.2.phone": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.2.relationship": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.2.signatureDate": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.2.ssn": {
+     "from": "\"\"",
+     "to": null
     },
     "q10Directives": {
      "from": null,
@@ -3978,9 +4192,9 @@
      "from": null,
      "to": "\"Sample Guardian\""
     },
-    "years.0.data.guardianPartyIds": {
+    "years.0.data.guardianPartyIds.0": {
      "from": null,
-     "to": "[]"
+     "to": "null"
     },
     "years.0.data.hasSafeDepositBox": {
      "from": null,
@@ -4049,86 +4263,6 @@
     "years.0.data.planGuardians.0.ssn": {
      "from": null,
      "to": "\"123-45-6789\""
-    },
-    "years.0.data.planGuardians.1.email": {
-     "from": null,
-     "to": "\"\""
-    },
-    "years.0.data.planGuardians.1.mailingCityStateZip": {
-     "from": null,
-     "to": "\"\""
-    },
-    "years.0.data.planGuardians.1.mailingStreet": {
-     "from": null,
-     "to": "\"\""
-    },
-    "years.0.data.planGuardians.1.name": {
-     "from": null,
-     "to": "\"\""
-    },
-    "years.0.data.planGuardians.1.officeCityStateZip": {
-     "from": null,
-     "to": "\"\""
-    },
-    "years.0.data.planGuardians.1.officeStreet": {
-     "from": null,
-     "to": "\"\""
-    },
-    "years.0.data.planGuardians.1.phone": {
-     "from": null,
-     "to": "\"\""
-    },
-    "years.0.data.planGuardians.1.relationship": {
-     "from": null,
-     "to": "\"\""
-    },
-    "years.0.data.planGuardians.1.signatureDate": {
-     "from": null,
-     "to": "\"\""
-    },
-    "years.0.data.planGuardians.1.ssn": {
-     "from": null,
-     "to": "\"\""
-    },
-    "years.0.data.planGuardians.2.email": {
-     "from": null,
-     "to": "\"\""
-    },
-    "years.0.data.planGuardians.2.mailingCityStateZip": {
-     "from": null,
-     "to": "\"\""
-    },
-    "years.0.data.planGuardians.2.mailingStreet": {
-     "from": null,
-     "to": "\"\""
-    },
-    "years.0.data.planGuardians.2.name": {
-     "from": null,
-     "to": "\"\""
-    },
-    "years.0.data.planGuardians.2.officeCityStateZip": {
-     "from": null,
-     "to": "\"\""
-    },
-    "years.0.data.planGuardians.2.officeStreet": {
-     "from": null,
-     "to": "\"\""
-    },
-    "years.0.data.planGuardians.2.phone": {
-     "from": null,
-     "to": "\"\""
-    },
-    "years.0.data.planGuardians.2.relationship": {
-     "from": null,
-     "to": "\"\""
-    },
-    "years.0.data.planGuardians.2.signatureDate": {
-     "from": null,
-     "to": "\"\""
-    },
-    "years.0.data.planGuardians.2.ssn": {
-     "from": null,
-     "to": "\"\""
     },
     "years.0.data.planTriStateSchemaVersion": {
      "from": null,
@@ -4857,7 +4991,100 @@
     "scheduleDocs",
     "wardId"
    ],
-   "archiveDiffersFromTheYearBeforeAt": {},
+   "archiveDiffersFromTheYearBeforeAt": {
+    "guardianPartyIds": {
+     "from": "[]",
+     "to": null
+    },
+    "guardianPartyIds.0": {
+     "from": null,
+     "to": "null"
+    },
+    "planGuardians.1.cityStateZip": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.1.name": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.1.phone": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.1.relationship": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.1.signatureDate": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.1.ssn": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.1.street": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.2.cityStateZip": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.2.name": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.2.phone": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.2.relationship": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.2.signatureDate": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.2.ssn": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.2.street": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.3.cityStateZip": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.3.name": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.3.phone": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.3.relationship": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.3.signatureDate": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.3.ssn": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.3.street": {
+     "from": "\"\"",
+     "to": null
+    }
+   },
    "changedByTheNewYear": {
     "activeYearKey": {
      "from": null,
@@ -4935,6 +5162,14 @@
      "from": "\"Yes\"",
      "to": "\"\""
     },
+    "guardianPartyIds": {
+     "from": "[]",
+     "to": null
+    },
+    "guardianPartyIds.0": {
+     "from": null,
+     "to": "null"
+    },
     "inceptionDate": {
      "from": "\"2026-01-05\"",
      "to": "\"\""
@@ -4966,6 +5201,90 @@
     "planGuardians.0.signatureDate": {
      "from": "\"2026-01-11\"",
      "to": "\"\""
+    },
+    "planGuardians.1.cityStateZip": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.1.name": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.1.phone": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.1.relationship": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.1.signatureDate": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.1.ssn": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.1.street": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.2.cityStateZip": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.2.name": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.2.phone": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.2.relationship": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.2.signatureDate": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.2.ssn": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.2.street": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.3.cityStateZip": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.3.name": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.3.phone": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.3.relationship": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.3.signatureDate": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.3.ssn": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.3.street": {
+     "from": "\"\"",
+     "to": null
     },
     "q11Directives": {
      "from": null,
@@ -5287,9 +5606,9 @@
      "from": null,
      "to": "\"Sample Guardian\""
     },
-    "years.0.data.guardianPartyIds": {
+    "years.0.data.guardianPartyIds.0": {
      "from": null,
-     "to": "[]"
+     "to": "null"
     },
     "years.0.data.hasSafeDepositBox": {
      "from": null,
@@ -5458,90 +5777,6 @@
     "years.0.data.planGuardians.0.street": {
      "from": null,
      "to": "\"123 Main St\""
-    },
-    "years.0.data.planGuardians.1.cityStateZip": {
-     "from": null,
-     "to": "\"\""
-    },
-    "years.0.data.planGuardians.1.name": {
-     "from": null,
-     "to": "\"\""
-    },
-    "years.0.data.planGuardians.1.phone": {
-     "from": null,
-     "to": "\"\""
-    },
-    "years.0.data.planGuardians.1.relationship": {
-     "from": null,
-     "to": "\"\""
-    },
-    "years.0.data.planGuardians.1.signatureDate": {
-     "from": null,
-     "to": "\"\""
-    },
-    "years.0.data.planGuardians.1.ssn": {
-     "from": null,
-     "to": "\"\""
-    },
-    "years.0.data.planGuardians.1.street": {
-     "from": null,
-     "to": "\"\""
-    },
-    "years.0.data.planGuardians.2.cityStateZip": {
-     "from": null,
-     "to": "\"\""
-    },
-    "years.0.data.planGuardians.2.name": {
-     "from": null,
-     "to": "\"\""
-    },
-    "years.0.data.planGuardians.2.phone": {
-     "from": null,
-     "to": "\"\""
-    },
-    "years.0.data.planGuardians.2.relationship": {
-     "from": null,
-     "to": "\"\""
-    },
-    "years.0.data.planGuardians.2.signatureDate": {
-     "from": null,
-     "to": "\"\""
-    },
-    "years.0.data.planGuardians.2.ssn": {
-     "from": null,
-     "to": "\"\""
-    },
-    "years.0.data.planGuardians.2.street": {
-     "from": null,
-     "to": "\"\""
-    },
-    "years.0.data.planGuardians.3.cityStateZip": {
-     "from": null,
-     "to": "\"\""
-    },
-    "years.0.data.planGuardians.3.name": {
-     "from": null,
-     "to": "\"\""
-    },
-    "years.0.data.planGuardians.3.phone": {
-     "from": null,
-     "to": "\"\""
-    },
-    "years.0.data.planGuardians.3.relationship": {
-     "from": null,
-     "to": "\"\""
-    },
-    "years.0.data.planGuardians.3.signatureDate": {
-     "from": null,
-     "to": "\"\""
-    },
-    "years.0.data.planGuardians.3.ssn": {
-     "from": null,
-     "to": "\"\""
-    },
-    "years.0.data.planGuardians.3.street": {
-     "from": null,
-     "to": "\"\""
     },
     "years.0.data.planTriStateSchemaVersion": {
      "from": null,
@@ -5986,7 +6221,48 @@
     "scheduleDocs",
     "wardId"
    ],
-   "archiveDiffersFromTheYearBeforeAt": {},
+   "archiveDiffersFromTheYearBeforeAt": {
+    "guardianPartyIds": {
+     "from": "[]",
+     "to": null
+    },
+    "guardianPartyIds.0": {
+     "from": null,
+     "to": "null"
+    },
+    "planGuardians.1.email": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.1.mailingCityStateZip": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.1.mailingStreet": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.1.name": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.1.phone": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.1.relationship": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.1.signatureDate": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.1.tin": {
+     "from": "\"\"",
+     "to": null
+    }
+   },
    "changedByTheNewYear": {
     "activeYearKey": {
      "from": null,
@@ -6004,6 +6280,14 @@
      "from": "true",
      "to": "false"
     },
+    "guardianPartyIds": {
+     "from": "[]",
+     "to": null
+    },
+    "guardianPartyIds.0": {
+     "from": null,
+     "to": "null"
+    },
     "periodFrom": {
      "from": "\"2026-01-01\"",
      "to": "\"\""
@@ -6015,6 +6299,38 @@
     "planGuardians.0.signatureDate": {
      "from": "\"2026-01-11\"",
      "to": "\"\""
+    },
+    "planGuardians.1.email": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.1.mailingCityStateZip": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.1.mailingStreet": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.1.name": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.1.phone": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.1.relationship": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.1.signatureDate": {
+     "from": "\"\"",
+     "to": null
+    },
+    "planGuardians.1.tin": {
+     "from": "\"\"",
+     "to": null
     },
     "preparer_signatureDate": {
      "from": "\"2026-01-12\"",
@@ -6260,9 +6576,9 @@
      "from": null,
      "to": "\"Sample Guardian\""
     },
-    "years.0.data.guardianPartyIds": {
+    "years.0.data.guardianPartyIds.0": {
      "from": null,
-     "to": "[]"
+     "to": "null"
     },
     "years.0.data.hasSafeDepositBox": {
      "from": null,
@@ -6307,38 +6623,6 @@
     "years.0.data.planGuardians.0.tin": {
      "from": null,
      "to": "\"123-45-6789\""
-    },
-    "years.0.data.planGuardians.1.email": {
-     "from": null,
-     "to": "\"\""
-    },
-    "years.0.data.planGuardians.1.mailingCityStateZip": {
-     "from": null,
-     "to": "\"\""
-    },
-    "years.0.data.planGuardians.1.mailingStreet": {
-     "from": null,
-     "to": "\"\""
-    },
-    "years.0.data.planGuardians.1.name": {
-     "from": null,
-     "to": "\"\""
-    },
-    "years.0.data.planGuardians.1.phone": {
-     "from": null,
-     "to": "\"\""
-    },
-    "years.0.data.planGuardians.1.relationship": {
-     "from": null,
-     "to": "\"\""
-    },
-    "years.0.data.planGuardians.1.signatureDate": {
-     "from": null,
-     "to": "\"\""
-    },
-    "years.0.data.planGuardians.1.tin": {
-     "from": null,
-     "to": "\"\""
     },
     "years.0.data.planTriStateSchemaVersion": {
      "from": null,

@@ -86,6 +86,7 @@
   "tests/e2e/pdf-table-semantics.spec.ts",
   "tests/e2e/percent-range.spec.ts",
   "tests/e2e/persistence-recovery.contract.spec.ts",
+  "tests/e2e/plan-add-co-guardian.spec.ts",
   "tests/e2e/plan-annual-mount.spec.ts",
   "tests/e2e/plan-annual-rights-no.spec.ts",
   "tests/e2e/plan-benefits-tristate.spec.ts",

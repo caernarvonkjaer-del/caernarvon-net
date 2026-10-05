@@ -14,14 +14,20 @@
 // behaviour as it was; the one change is that dropping rows moves their
 // shared-record links with them (row-links.js). The policies later
 // deliveries switch on -- a confirmation before removing a card (73P), clearing
-// "no items" on add (73F part 3), keeping a blank row until the filer leaves
-// the page (73C), where the cursor goes after an action (73K part 2) -- are
-// named below and inactive.
+// "no items" on add (73F part 3), where the cursor goes after an action (73K
+// part 2) -- are named below and inactive.
+//
+// Milestone 73C: on every list, a new row stays through redraws until the
+// filer leaves the page, where the clean-up (prune-cards.js) removes it if it
+// is still untouched by the list's own `isBlank`. The Plans' guardian list and
+// the Inventory's D-1 were the two that dropped rows on every draw, so their
+// "+ Add Co-Guardian" lost the row it had just added. It is the rule for every
+// list now, so it is no longer a policy.
 //
 // The actions change the filing's data only: saving, redrawing and the output
 // revision stay with each caller, exactly where they were.
-import { mk } from '../filing/models/guardian.js';
-import { planEmptyRow, planGuardianBlank, planGuardianMax } from '../filing/models/plan-rows.js';
+import { mk, guardianHasData } from '../filing/models/guardian.js';
+import { planEmptyRow, planGuardianBlank, planGuardianHasAnyData, planGuardianMax } from '../filing/models/plan-rows.js';
 import { simplifiedGuardianRow } from '../filing/models/simplified.js';
 import { createBankAccountId } from '../accounting/bank-accounts.js';
 import { SCH_B4_ACCOUNT_BLOCKS } from '../excel/b4-register-pages.js';
@@ -33,7 +39,6 @@ import { LINKED_ID_ARRAYS, keepRows } from './row-links.js';
 const INACTIVE_POLICIES = Object.freeze({
   confirmRemove: null,      // 73P: ask before removing a card that holds anything
   clearNoItemsOnAdd: null,  // 73F part 3: the "no items" key "+ Add" clears
-  keepBlankUntilLeave: false, // 73C: a new blank row survives redraws until the filer leaves the page
   focusAfterAction: null,   // 73K part 2: where the cursor goes after an action
 });
 
@@ -54,18 +59,18 @@ const keyOf = (filingType, listKey) => `${filingType}\u0000${listKey}`;
 
 /**
  * @param {string} listKey
- * @param {{label: string, factory: () => Record<string, any>, floor?: number, max?: number}} spec
+ * @param {{label: string, factory: () => Record<string, any>, floor?: number, max?: number, isBlank?: (row: any) => boolean}} spec
  * @returns {ListRules}
  */
-function describeList(listKey, { label, factory, floor = 0, max = Infinity }) {
+function describeList(listKey, { label, factory, floor = 0, max = Infinity, isBlank }) {
   return Object.freeze({
     label,
     factory,
     floor,
     max,
-    isBlank: BLANK_SCHEDULE_ENTRY[listKey]
+    isBlank: isBlank || (BLANK_SCHEDULE_ENTRY[listKey]
       ? (row) => isBlankScheduleEntry(listKey, row)
-      : (row) => isBlankCard(row),
+      : (row) => isBlankCard(row)),
     linkedIds: LINKED_ID_ARRAYS[listKey] || null,
     policies: INACTIVE_POLICIES,
   });
@@ -89,8 +94,10 @@ const INVENTORY_SCHEDULES = {
 register(['guardian'], {
   ...Object.fromEntries(Object.entries(INVENTORY_SCHEDULES).map(([listKey, kind]) =>
     [listKey, describeList(listKey, { label: `Schedule ${kind.toUpperCase()} entry`, factory: mk[kind] })])),
-  // D-1 offers "+ Add Co-Guardian" below three and no Remove on the first.
-  guardians: describeList('guardians', { label: 'Co-Guardian', factory: mk.guardian, floor: 1, max: 3 }),
+  // D-1 offers "+ Add Co-Guardian" below three and no Remove on the first. A
+  // card is untouched while it has none of the fields D-1 counts as entered
+  // (Milestone 73C; D-1 used to drop such a card on every draw).
+  guardians: describeList('guardians', { label: 'Co-Guardian', factory: mk.guardian, floor: 1, max: 3, isBlank: (row) => !guardianHasData(row) }),
   // D-5 offers "+ Add Recipient" below four and Remove only above one.
   serviceRecipients: describeList('serviceRecipients', { label: 'Service Recipient', factory: mk.recipient, floor: 1, max: 4 }),
   // The cover's inventory witnesses.
@@ -123,8 +130,11 @@ register(['simplified'], {
 // ── The four Plans ─────────────────────────────────────
 // Each Plan's guardian row and limit are its own; its tables' rows are the
 // ones that Plan's "+ Add" buttons name (data-row-type).
+// Milestone 73C: a guardian block is untouched while it holds nothing at all
+// (the Signatures page used to drop such a block on every draw).
 const planGuardians = (filingType) => describeList('planGuardians', {
   label: 'Guardian', factory: () => planGuardianBlank(filingType), floor: 1, max: planGuardianMax(filingType),
+  isBlank: (row) => !planGuardianHasAnyData(row),
 });
 const planTable = (listKey, kind, label) => describeList(listKey, { label, factory: () => planEmptyRow(kind) });
 const planRecipients = planTable('certRecipients', 'certRecipient', 'Service Recipient');
