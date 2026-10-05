@@ -296,10 +296,7 @@ function bindEvents(container) {
         const index = Number.parseInt(control.dataset.index, 10);
         const formatted = formatName(control.value);
         control.value = formatted;
-        if (D.scheduleB2?.[index]) {
-          D.scheduleB2[index][field] = formatted;
-          syncB2VehicleDescription(index);
-        }
+        if (D.scheduleB2?.[index]) D.scheduleB2[index][field] = formatted;
         requestSave();
       }
     }
@@ -313,7 +310,6 @@ function bindEvents(container) {
     if (control.dataset.inventoryFormat === 'mileage') control.value = control.value.replace(/[^0-9,]/g, '');
     const index = Number.parseInt(control.dataset.index, 10);
     D.scheduleB2[index][control.dataset.field] = control.value;
-    syncB2VehicleDescription(index);
     requestSave();
   }, options);
 }
@@ -893,31 +889,12 @@ function pageScheduleB1(){
   ${pageNav('/b1')}</div>`;
 }
 
-// Recomposes the free-text `description` field (still the field every
-// other consumer of B-2 -- validate(), the print document, the Excel
-// export -- reads) from the structured vehicle fields, so splitting Year/
-// Make/Model/VIN into their own inputs didn't require touching any of
-// those downstream readers.
-function syncB2VehicleDescription(i){
-  const e=D.scheduleB2[i];
-  if(!e)return;
-  const parts=[e.vehicleYear,e.vehicleMake,e.vehicleModel].filter(Boolean).join(' ');
-  let desc=parts+(e.vehicleVin?(parts?' — VIN: ':'VIN: ')+e.vehicleVin:'');
-  if(e.odometerMileage)desc+=(desc?' — ':'')+'Odometer: '+e.odometerMileage+' mi';
-  e.description=desc;
-}
-// Bespoke handler (not data-bind) because checking this box must trigger a
-// full re-render to swap the free-text Description field for the Year/
-// Make/Model/VIN fields -- bindForms()'s generic checkbox wiring only
-// calls afterChange(), which never re-renders the page.
-// Deliberately does NOT call syncB2VehicleDescription() here: on an
-// existing row the vehicle fields start blank, so syncing immediately
-// would overwrite (and silently lose) whatever free-text description was
-// already there before any Year/Make/Model/VIN has been typed. Syncing
-// only on those fields' own oninput (see pageScheduleB2()) means
-// description is only touched once the guardian has actually entered
-// replacement data -- unchecking the box before then leaves the original
-// description untouched.
+// Milestone 73D: a vehicle row shows its Year/Make/Model/VIN/mileage fields in
+// place of the free-text Description. They are stored on their own and never
+// copied into `description` -- the PDF, the workbook and conversion build a
+// vehicle's description from them (b2ItemDescription(), models/guardian.js).
+// They used to be copied over the Description on ticking and on every
+// keystroke, so unticking showed an empty Description, or "2019".
 function renderB2Fields(e, i){
   if(e.isVehicle){
     return `
@@ -936,14 +913,18 @@ function renderB2Fields(e, i){
   `;
 }
 
+// Bespoke handler (not data-bind) because checking this box must trigger a
+// full re-render to swap the free-text Description field for the vehicle
+// fields -- bindForms()'s generic checkbox wiring only calls afterChange(),
+// which never re-renders the page. Milestone 73D: ticking changes nothing
+// else. The Description and "In Safe Deposit Box?" are kept, hidden while the
+// row is a vehicle and back when it is unticked (AGENTS.md section 4); a
+// vehicle's answer counts nowhere (totals.js isInSafeDepositBox()). Ticking
+// used to erase the answer for good.
 function toggleB2Vehicle(i,checked){
   const e=D.scheduleB2[i];
   if(!e)return;
   e.isVehicle=checked;
-  if(checked){
-    e.inSafeDepositBox = '';
-    syncB2VehicleDescription(i);
-  }
   requestSave();
   renderPage(getCurrentPage());
 }

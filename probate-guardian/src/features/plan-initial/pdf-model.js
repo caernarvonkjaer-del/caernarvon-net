@@ -10,6 +10,7 @@ import { triStateText } from '../../core/form/form-contract.js';
 import { maskSSN } from '../../core/pdf/ssn-format.js';
 import { rowStarted, startedRows } from '../../core/validation/row-started.js';
 import { INITIAL_ADLS } from '../../core/filing/models/plan-initial.js';
+import { PLAN_INITIAL_EXPLANATIONS, shownExplanation } from '../../core/filing/plan-explanations.js';
 
 export function buildPlanInitialModel(D, options) {
   const d = D || {};
@@ -107,7 +108,12 @@ export function buildPlanInitialModel(D, options) {
   });
 
   // Page 2: Q2-Q5
-  const explainNotice = (text) => (text ? [{ type: 'notice', text: `Explanation: ${text}` }] : []);
+  // Milestone 73D: an Explanation is filed only while the page shows its box
+  // (plan-explanations.js); hidden text is kept, not filed.
+  const explainNotice = (id) => {
+    const text = shownExplanation(PLAN_INITIAL_EXPLANATIONS, d, id);
+    return text ? [{ type: 'notice', text: `Explanation: ${text}` }] : [];
+  };
   sections.push({
     id: 'q2-q5',
     title: 'Questions 2–5',
@@ -130,7 +136,7 @@ export function buildPlanInitialModel(D, options) {
           { checked: !!d.q2Other, label: 'Other' },
         ],
       },
-      ...explainNotice(d.q2Explain),
+      ...explainNotice('q2Explain'),
       {
         type: 'checklist',
         title: '3. Provision of Medical Services',
@@ -146,7 +152,7 @@ export function buildPlanInitialModel(D, options) {
           { checked: !!d.q3MedOther, label: 'Other' },
         ],
       },
-      ...explainNotice(d.q3MedExplain),
+      ...explainNotice('q3MedExplain'),
       {
         type: 'checklist',
         title: '4. Provision of Mental Health Services',
@@ -158,7 +164,7 @@ export function buildPlanInitialModel(D, options) {
           { checked: !!d.q4Other, label: 'Other' },
         ],
       },
-      ...explainNotice(d.q4Explain),
+      ...explainNotice('q4Explain'),
       {
         type: 'checklist',
         title: '5. Provision of Personal Care',
@@ -169,7 +175,7 @@ export function buildPlanInitialModel(D, options) {
           { checked: !!d.q5Other, label: 'Other' },
         ],
       },
-      ...explainNotice(d.q5Explain),
+      ...explainNotice('q5Explain'),
     ],
   });
 
@@ -194,7 +200,7 @@ export function buildPlanInitialModel(D, options) {
           { checked: !!d.q6Other, label: 'Other' },
         ],
       },
-      ...explainNotice(d.q6Explain),
+      ...explainNotice('q6Explain'),
       {
         type: 'table',
         title: '7. Insurance / Governmental Benefits',
@@ -218,7 +224,7 @@ export function buildPlanInitialModel(D, options) {
         ],
       },
       { type: 'checklist', items: [{ checked: !!d.q7Other, label: 'Other' }] },
-      ...explainNotice(d.q7Explain),
+      ...explainNotice('q7Explain'),
     ],
   });
 
@@ -302,7 +308,7 @@ export function buildPlanInitialModel(D, options) {
           { checked: !!d.mentalOther, label: 'Other' },
         ],
       },
-      ...explainNotice(d.mentalExplain),
+      ...explainNotice('mentalExplain'),
       {
         type: 'checklist',
         title: 'C. Physical Disabilities of the Ward',
@@ -316,7 +322,7 @@ export function buildPlanInitialModel(D, options) {
           { checked: !!d.physOther, label: 'Other' },
         ],
       },
-      ...explainNotice(d.physExplain),
+      ...explainNotice('physExplain'),
       {
         type: 'checklist',
         title: 'D. Assistive Devices Currently Used',
@@ -332,7 +338,7 @@ export function buildPlanInitialModel(D, options) {
           { checked: !!d.usesOther, label: 'Other' },
         ],
       },
-      ...explainNotice(d.usesExplain),
+      ...explainNotice('usesExplain'),
     ],
   });
 
@@ -374,7 +380,7 @@ export function buildPlanInitialModel(D, options) {
           { checked: !!d.q11ExecDNR, label: 'Order Not to Resuscitate (DNR), F.S. 401.45(3)' },
           { checked: !!d.q11ExecHealthcare, label: 'Advance Directive for Healthcare (surrogate, living will, anatomical gift)' },
           { checked: !!d.q11ExecPOA, label: 'Durable Power of Attorney, F.S. Chapter 709' },
-          { checked: !!d.q11ExecOther, label: `Other${d.q11ExecOtherText ? ' — ' + d.q11ExecOtherText : ''}` },
+          { checked: !!d.q11ExecOther, label: `Other${shownExplanation(PLAN_INITIAL_EXPLANATIONS, d, 'q11ExecOtherText') ? ' — ' + d.q11ExecOtherText : ''}` },
         ],
       }] : []),
       {
@@ -392,7 +398,7 @@ export function buildPlanInitialModel(D, options) {
           { checked: !!d.needsOther, label: 'Other' },
         ],
       },
-      ...explainNotice(d.needsExplain),
+      ...explainNotice('needsExplain'),
       {
         type: 'checklist',
         title: 'F. Examining Committee Recommendations Incorporated?',
@@ -401,7 +407,7 @@ export function buildPlanInitialModel(D, options) {
           { checked: triStateText(d.committeeIncorporated) === 'No', label: 'No' },
         ],
       },
-      ...explainNotice(d.committeeExplain),
+      ...explainNotice('committeeExplain'),
     ],
   });
 

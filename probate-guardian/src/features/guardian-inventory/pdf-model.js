@@ -8,6 +8,7 @@ import { resolveDescriptorForInventoryType } from '../../core/filing/filing-desc
 import { composePdfAddressLines } from '../../core/pdf/address-format.js';
 import { maskSSN } from '../../core/pdf/ssn-format.js';
 import { calcTotalsGuardian, makeGuardianCalc, isRestrictedAnswer, isInSafeDepositBox, AUDIT_FEE_THRESHOLD, AUDIT_FEE_OVER_THRESHOLD } from './totals.js';
+import { b2ItemDescription } from '../../core/filing/models/guardian.js';
 import { preparedByLine } from '../../core/form/preparer-flag.js';
 import { formatMoney } from '../../core/format/money.js';
 import { isUnrepresented, resolveServiceCertifier } from '../../core/filing/unrepresented-filing.js';
@@ -380,7 +381,9 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     // ('B-2 PER PROP pg 1'!I, =IF(H="Yes",G,0), totalled at I63/I64) -- derived
     // from the answer and the ward share by the calculator, never stored.
     ['Description', 'Location Address', 'Valuation Method', 'Full Value', "Ward's %", 'In Safe Deposit Box?', "Ward's Value", 'Amount in Safe Deposit Box'],
-    (d.scheduleB2 || []).map(r => [r.description || '', composePdfAddressLines(r.streetAddress, r.cityStateZip), r.valuationMethod || '', fmt(r.fullAssetValue), fmtPct(r.wardPercent), triText(r.inSafeDepositBox), fmt(gc.wardB2(r)), isInSafeDepositBox(r) ? fmt(gc.sdbB2(r)) : '—']),
+    // Milestone 73D: a vehicle files its own description and no safe-deposit
+    // answer (its kept answer counts nowhere -- totals.js isInSafeDepositBox()).
+    (d.scheduleB2 || []).map(r => [b2ItemDescription(r), composePdfAddressLines(r.streetAddress, r.cityStateZip), r.valuationMethod || '', fmt(r.fullAssetValue), fmtPct(r.wardPercent), r.isVehicle ? '' : triText(r.inSafeDepositBox), fmt(gc.wardB2(r)), isInSafeDepositBox(r) ? fmt(gc.sdbB2(r)) : '—']),
     "Schedule B-2 Total (Ward's Value)",
     totalB2,
     'personal property assets',

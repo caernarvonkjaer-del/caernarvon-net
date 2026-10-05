@@ -41,6 +41,7 @@ import { getD, requestSave } from '../../core/state.js';
 import { chkP, countyInputS, inpS, pageNavS, planCheckGroup, planQ, radioP, txtP, yesNoCheckboxS } from '../../core/form/field-html.js';
 import { renderScheduleDocsSection } from '../../core/filing/schedule-docs.js';
 import { setPath } from '../../core/form/paths.js';
+import { PLAN_MINOR_EXPLANATIONS, explanationShown } from '../../core/filing/plan-explanations.js';
 // Annual Plan — Minors — the fifth and last feature extraction (Milestone 6,
 // Phases A and B of INDEX-SPLIT-PLAN.md's migration sequence: data/
 // validation/pages/nav, and print/PDF export). Loaded only when one of its pages
@@ -359,7 +360,7 @@ function pagePlanMMedical(){
       ${chkP('q4MinorDecides','The Minor retains the right to make his or her own decision',d.q4MinorDecides)}
       ${chkP('q4Other','Other',d.q4Other,'/p4')}
     </div>
-    ${d.q4Other?`<div class="plan-conditional mt-2">${txtP('q4Explain','Explanation (required if "Other" checked)',d.q4Explain,3)}</div>`:''}
+    ${explanationShown(PLAN_MINOR_EXPLANATIONS,d,'q4Explain')?`<div class="plan-conditional mt-2">${txtP('q4Explain','Explanation (required if "Other" checked)',d.q4Explain,3)}</div>`:''}
     ${renderScheduleDocsSection('planMMedical')}
     ${pageNavS('/p3','/p5')}
   </div>`;
@@ -380,7 +381,7 @@ function pagePlanMEducation(){
         +cb('q5DoesNotCareToSocialize','The Minor does not care to socialize')
         +cb('q5UnmetNeeds','Unmet Needs')
         +cb('q5Other','Other','/p5'),
-        'q5Explain',d.q5Explain,d.q5Other))}
+        'q5Explain',d.q5Explain,explanationShown(PLAN_MINOR_EXPLANATIONS,d,'q5Explain')))}
     ${renderScheduleDocsSection('planMEducation')}
     ${pageNavS('/p4','/p6')}
   </div>`;

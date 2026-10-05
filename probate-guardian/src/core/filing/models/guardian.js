@@ -115,6 +115,24 @@ export const mk = {
   c5:()=>({assetDescription:'',ownerName:'',ownerAddress:'',ownerCityStateZip:'',relationshipToWard:'',totalAssetValue:0,jointOwnerPercent:50}),
 };
 
+// Milestone 73D: a Schedule B-2 vehicle's description, built from its Year,
+// Make, Model, VIN and mileage where it is filed -- the PDF, the workbook and
+// conversion to the Annual family's Schedule D-3. The page used to copy these
+// over the filer's own Description on every keystroke, so ticking and
+// unticking "This item is a vehicle" emptied it (or left "2019" in it). The
+// filer's Description is now never written by the vehicle fields and comes
+// back when the box is unticked (AGENTS.md section 4). Same wording as before.
+export function vehicleDescription(e){
+  const parts=[e?.vehicleYear,e?.vehicleMake,e?.vehicleModel].filter(Boolean).join(' ');
+  let desc=parts+(e?.vehicleVin?(parts?' — VIN: ':'VIN: ')+e.vehicleVin:'');
+  if(e?.odometerMileage)desc+=(desc?' — ':'')+'Odometer: '+e.odometerMileage+' mi';
+  return desc;
+}
+/** What a B-2 row files as its description: a vehicle's own, else the filer's. */
+export function b2ItemDescription(e){
+  return e?.isVehicle?vehicleDescription(e):(e?.description||'');
+}
+
 // Every field that makes a D-1 co-guardian card "entered" -- one list, read by
 // D-1's drawing, validateGuardian() and the clean-up when the filer leaves the
 // page (collections.js), which used to repeat it three times. Milestone 39-C:

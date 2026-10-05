@@ -10,6 +10,7 @@
   "tests/e2e/annual-schedule-consistency.spec.ts",
   "tests/e2e/annual-ward-share-export.spec.ts",
   "tests/e2e/attorney-optional-export.spec.ts",
+  "tests/e2e/b2-vehicle-toggle.spec.ts",
   "tests/e2e/backup-restore-sav.spec.ts",
   "tests/e2e/blank-card-pruning.spec.ts",
   "tests/e2e/bond-depository.spec.ts",

@@ -39,6 +39,7 @@ import { getD, requestSave } from '../../core/state.js';
 import { chkP, inpS, pageNavS, planCheckGroup, planQ, txtP, yesNoCheckboxS, yesNoRadioHTML } from '../../core/form/field-html.js';
 import { renderScheduleDocsSection } from '../../core/filing/schedule-docs.js';
 import { setPath } from '../../core/form/paths.js';
+import { PLAN_ANNUAL_EXPLANATIONS, explanationShown } from '../../core/filing/plan-explanations.js';
 // Annual Guardianship Plan — the third feature extraction (Milestone 4,
 // Phases A and B of INDEX-SPLIT-PLAN.md's migration sequence). Loaded only when one of its pages
 // is shown, through src/features-loader.js's feature services
@@ -318,7 +319,7 @@ function pagePlanACarePlan(){
          cb('q3SettingIntermediate','Intermediate'),cb('q3SettingPrivate','Private Residence'),
          cb('q3SettingSkilled','Skilled Nursing'),cb('q3SettingSpecialized','Specialized'),
          cb('q3SettingStateHospital','State Hospital'),cb('q3SettingOther','Other','/p3')].join(''),
-        'q3SettingExplain',d.q3SettingExplain,d.q3SettingOther)
+        'q3SettingExplain',d.q3SettingExplain,explanationShown(PLAN_ANNUAL_EXPLANATIONS,d,'q3SettingExplain'))
       +planCheckGroup('The guardian will ensure this remains the best setting by:',
         [cb('q3EnsureAssessing','Periodically assessing needs'),
          cb('q3EnsureWardDecides','The ward retains the right to decide'),
@@ -332,7 +333,7 @@ function pagePlanACarePlan(){
          cb('q3MedOccupationalTherapy','Occupational therapy'),
          cb('q3MedWardDecides','The ward retains the right to make their own decision'),
          cb('q3MedNone','None','/p3'),cb('q3MedOther','Other','/p3')].join(''),
-        'q3MedExplain',d.q3MedExplain,d.q3MedOther||d.q3MedNone)
+        'q3MedExplain',d.q3MedExplain,explanationShown(PLAN_ANNUAL_EXPLANATIONS,d,'q3MedExplain'))
       +(d.q3MedSpecialist?`<div class="plan-conditional mb-3">${inpS('q3MedSpecialistArea','Area of specialty',d.q3MedSpecialistArea,true)}</div>`:'')
       +planCheckGroup('Provision for mental health services:',
         [cb('q3MentalPsych','Routine examination by psychiatrist / psychologist'),
@@ -340,18 +341,18 @@ function pagePlanACarePlan(){
          cb('q3MentalOutpatient','Ongoing treatment — outpatient'),
          cb('q3MentalInpatient','Ongoing treatment — inpatient'),
          cb('q3MentalNone','None','/p3'),cb('q3MentalOther','Other','/p3')].join(''),
-        'q3MentalExplain',d.q3MentalExplain,d.q3MentalOther||d.q3MentalNone)
+        'q3MentalExplain',d.q3MentalExplain,explanationShown(PLAN_ANNUAL_EXPLANATIONS,d,'q3MentalExplain'))
       +planCheckGroup('Provision for personal care (bathing, grooming, feeding):',
         [cb('q3PersonalFacility','Care facility'),cb('q3PersonalNurses','Nurses and aides'),
          cb('q3PersonalFamily','Family and friends'),cb('q3PersonalWithout','Ward does without assistance'),
          cb('q3PersonalNone','None; ward can provide own personal care','/p3'),cb('q3PersonalOther','Other','/p3')].join(''),
-        'q3PersonalExplain',d.q3PersonalExplain,d.q3PersonalOther||d.q3PersonalNone)
+        'q3PersonalExplain',d.q3PersonalExplain,explanationShown(PLAN_ANNUAL_EXPLANATIONS,d,'q3PersonalExplain'))
       +planCheckGroup('Provision for socialization and recreational activities:',
         [cb('q3SocialFacility','Care facility'),cb('q3SocialNurses','Nurses and aides'),
          cb('q3SocialFamily','Family and friends'),
          cb('q3SocialWardDecides','The ward retains the right to make their own decision'),
          cb('q3SocialNone','None','/p3'),cb('q3SocialOther','Other','/p3')].join(''),
-        'q3SocialExplain',d.q3SocialExplain,d.q3SocialOther||d.q3SocialNone))}
+        'q3SocialExplain',d.q3SocialExplain,explanationShown(PLAN_ANNUAL_EXPLANATIONS,d,'q3SocialExplain')))}
     ${renderScheduleDocsSection('planACarePlan')}
     ${pageNavS('/p2','/p4')}
   </div>`;
@@ -379,7 +380,7 @@ function pagePlanABenefits(){
       ${chkP('q3BenefitsNone','None of the above',d.q3BenefitsNone,'/p4')}
       ${chkP('q3BenefitsOther','Other (explain below)',d.q3BenefitsOther,'/p4')}
     </div>
-    ${(d.q3BenefitsOther||d.q3BenefitsNone)?`<div class="plan-conditional mt-2">${txtP('q3BenefitsExplain','Explanation',d.q3BenefitsExplain,3)}</div>`:''}
+    ${explanationShown(PLAN_ANNUAL_EXPLANATIONS,d,'q3BenefitsExplain')?`<div class="plan-conditional mt-2">${txtP('q3BenefitsExplain','Explanation',d.q3BenefitsExplain,3)}</div>`:''}
     ${renderScheduleDocsSection('planABenefits')}
     ${pageNavS('/p3','/p5')}
   </div>`;
@@ -488,17 +489,17 @@ function pagePlanADisabilities(){
          cb('q9MentalSchizophrenia','Schizophrenia or related disorders'),cb('q9MentalDepression','Depression'),
          cb('q9MentalSubstance','Induced by substance abuse'),
          cb('q9MentalNone','Ward has no mental disabilities'),cb('q9MentalOther','Other','/p8')].join(''),
-        'q9MentalExplain',d.q9MentalExplain,d.q9MentalOther)
+        'q9MentalExplain',d.q9MentalExplain,explanationShown(PLAN_ANNUAL_EXPLANATIONS,d,'q9MentalExplain'))
       +planCheckGroup('The physical disabilities of the ward are:',
         [cb('q9PhysMobility','Mobility'),cb('q9PhysBlindness','Blindness'),
          cb('q9PhysDeafness','Deafness'),cb('q9PhysDiabetic','Diabetic'),
          cb('q9PhysParkinsons',"Parkinson's disease"),cb('q9PhysArthritis','Severe arthritis'),
          cb('q9PhysNone','Ward has no physical disabilities'),cb('q9PhysOther','Other','/p8')].join(''),
-        'q9PhysExplain',d.q9PhysExplain,d.q9PhysOther)
+        'q9PhysExplain',d.q9PhysExplain,explanationShown(PLAN_ANNUAL_EXPLANATIONS,d,'q9PhysExplain'))
       +planCheckGroup('Assistive devices the ward currently uses:',devices('q9Uses'),
-        'q9UsesExplain',d.q9UsesExplain,d.q9UsesOther)
+        'q9UsesExplain',d.q9UsesExplain,explanationShown(PLAN_ANNUAL_EXPLANATIONS,d,'q9UsesExplain'))
       +planCheckGroup('Assistive devices the ward needs but does not yet have:',devices('q9Needs'),
-        'q9NeedsExplain',d.q9NeedsExplain,d.q9NeedsOther))}
+        'q9NeedsExplain',d.q9NeedsExplain,explanationShown(PLAN_ANNUAL_EXPLANATIONS,d,'q9NeedsExplain')))}
     ${renderScheduleDocsSection('planADisabilities')}
     ${pageNavS('/p7','/p9')}
   </div>`;

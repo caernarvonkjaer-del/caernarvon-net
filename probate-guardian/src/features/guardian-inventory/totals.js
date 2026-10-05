@@ -60,8 +60,15 @@ export function isRestrictedAnswer(entry) {
  * after normalization; the boolean is honoured only for a not-yet-normalized
  * older save. Blank/unanswered is "not in the box", exactly as the workbook's
  * =IF(H18="Yes",...) reads an empty answer.
+ *
+ * Milestone 73D: a B-2 vehicle is never in the box. Its page hides the
+ * question and keeps whatever answer the row had before it was ticked as a
+ * vehicle (it used to erase it), so the answer is kept but counted nowhere --
+ * the totals, the PDF and the workbook (column H is written blank) all agree.
+ * B-3 rows carry no vehicle flag.
  */
 export function isInSafeDepositBox(entry) {
+  if (entry?.isVehicle) return false;
   return entry?.inSafeDepositBox === 'Yes' || entry?.inSafeDepositBox === true;
 }
 

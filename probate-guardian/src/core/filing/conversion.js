@@ -7,6 +7,7 @@ import { getOrCreateCaseForWard } from '../case-resolver.js';
 import { carryOverFields, carrySourcesFor } from './carry-over.js';
 import { formEngine, initializeEmptyData, INVENTORY_TYPES } from './filing-registry.js';
 import { emptyRowAnnual } from './models/annual.js';
+import { b2ItemDescription } from './models/guardian.js';
 import { navigate } from '../navigation/router.js';
 import { activateWard, createWardId } from '../navigation/ward-lifecycle.js';
 import { saveWardToState, setDirtySinceExport, updateLastSavedIndicator } from '../persistence/case-file.js';
@@ -134,8 +135,9 @@ export function convertGuardianSchedulesToAnnual(src,dest){
     description:r.propertyDescription||'', residence:tri(r.residence,r.isPersonalResidence), income:tri(r.income,r.isIncomeProperty),
     fullValue:keep(r.fullAssetValue), wardPct:keep(r.wardPercent), carryingValue:keep(r.fullAssetValue), wardValue:''
   }));
+  // Milestone 73D: a vehicle carries its own description, as it is filed.
   dest.schD3=(src.scheduleB2||[]).map(r=>({
-    description:r.description||'', fullAmount:keep(r.fullAssetValue), wardPct:keep(r.wardPercent), carryingValue:keep(r.fullAssetValue), wardAmount:''
+    description:b2ItemDescription(r), fullAmount:keep(r.fullAssetValue), wardPct:keep(r.wardPercent), carryingValue:keep(r.fullAssetValue), wardAmount:''
   }));
   dest.schD4=(src.scheduleB3||[]).map(r=>({
     description:r.description||'', restricted:tri(r.restricted,r.isRestricted), fullAmount:keep(r.fullAssetValue),

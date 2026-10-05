@@ -29,7 +29,7 @@ import { setStatus, scheduleStatusClear } from '../../core/ui/transient-status.j
 import { beginExport } from '../../core/ui/export-guard.js';
 import { assertWorkbookWithinLimits, getImportProgressEl, sanitizeObjectData, validateImportFile } from '../../core/security/input-hardening.js';
 import { capitalizeImportedFields } from '../../core/form/form-contract.js';
-import { mk } from '../../core/filing/models/guardian.js';
+import { mk, b2ItemDescription } from '../../core/filing/models/guardian.js';
 import { getD } from '../../core/state.js';
 import { saveData } from '../../core/persistence/case-file.js';
 import { ensureTemplate } from '../../core/persistence/templates.js';
@@ -257,13 +257,16 @@ export async function doSaveExcel(){
         const pg=workbook.getWorksheet(pages[pageIdx].name);
         if(!pg)continue;
         const r=pages[pageIdx].rows[rowIdxInPage];
-        setCell(pg,`C${r}`,e.description||'');
+        // Milestone 73D: a vehicle files its own description, and column H
+        // blank -- no safe-deposit answer applies to it, so the form's own
+        // =IF(H="Yes",G,0) counts it nowhere, as the app's totals don't.
+        setCell(pg,`C${r}`,b2ItemDescription(e));
         setCell(pg,`C${r+1}`,e.streetAddress||'');
         setCell(pg,`C${r+2}`,e.cityStateZip||'');
         setCell(pg,`C${r+3}`,e.valuationMethod||'');
         setCell(pg,`E${r}`,e.fullAssetValue||'');
         setCell(pg,`F${r}`,pctCell(e.wardPercent));
-        setCell(pg,`H${r}`,yesNo(e.inSafeDepositBox));
+        setCell(pg,`H${r}`,e.isVehicle?'':yesNo(e.inSafeDepositBox));
         idx++;
       }
     };

@@ -42,7 +42,7 @@ recorded as **Pinellas Clerk practice**, not as a reading of a statute or rule
 | 1 | 73A | Choosing **Unsigned** prints "/s/ Name" and the electronic-signature caption on every form; a typed date makes it look signed; a Stamp never applied prints "/s/" | High | One |
 | 2 | 73B | The PDF says **"Plenary"** when no Type of Guardianship was chosen; a new Annual says **"Professional Guardian"**; rows, PDFs and the Inventory's workbook carry answers and shares the filer never gave | High | One |
 | 3 | 73C | **"+ Add Co-Guardian" does nothing** on all four Plans | High | **Built** (2026-10-05) |
-| 4 | 73D | Ticking and unticking **"This item is a vehicle"** erases the Description and the safe-deposit answer; hidden Plan "Explanation" text still prints | High | One |
+| 4 | 73D | Ticking and unticking **"This item is a vehicle"** erases the Description and the safe-deposit answer; hidden Plan "Explanation" text still prints | High | **Built** (2026-10-05) |
 | 5 | 73E | **An Excel import replaces the filing unasked** (the Simplified's Cancel half-applies it), can turn a Trust into an Annual, and changes shared people's records in other filings unseen | High | Two |
 | 6 | 73F | **A section shows ✓ and Print Preview then blocks it**; asterisks don't match what is enforced; a misspelled county passes everywhere | High | Three |
 | 7 | 73G | A loss typed positive is **added** unwarned; the Clerk's "(1000)" is stored as **+1000**; negatives are refused, shown as positive, or **zeroed on every page drawn**; "$1,234.56" in the Simplified's remuneration files as **$0.00** | High | Two |
@@ -136,7 +136,7 @@ behaviour on its own except where its row says so.
 | 6 | 73E part 1 — the import transaction (no importer connected) | 73J p1 | new `src/core/excel/import-transaction.js`, `import-keep.js` (exact-name identity), `party-resolver.js`, the activity log | new `tests/unit/import-transaction.spec.js` (synthetic adapters) |
 | 7 | 73T part 1 — the workbook contract | 73E p1, 73G p1 | new `src/core/excel/workbook-contract/` (one per form, the importers' adapters), `excel-engine.js` | `excel-write-targets.spec.js`, `export-manifests.ts`, new round-trip and hand-filled specs |
 | 8 | 73C | 73V | `plan-rows.js`, Inventory `index.js` (D-1) | new `tests/e2e/plan-add-co-guardian.spec.ts` — **Built** `861b6a9`, ahead of rows 2–7 at the requester's choice |
-| 9 | 73D | — | Inventory `index.js` (B-2), `models/guardian.js`, `totals.js`, Inventory `pdf-model.js`, `excel.js`, `conversion.js`, `field-html.js`, three Plan `pdf-model.js` | new `tests/e2e/b2-vehicle-toggle.spec.ts`, Plan PDF units |
+| 9 | 73D | — | Inventory `index.js` (B-2), `models/guardian.js`, `totals.js`, Inventory `pdf-model.js`, `excel.js`, `conversion.js`, `field-html.js`, three Plan `pdf-model.js` | new `tests/e2e/b2-vehicle-toggle.spec.ts`, Plan PDF units — **Built** 2026-10-05 |
 | 10 | 73T part 2 — Inventory workbook, connected to the transaction | 73T p1, 73D | `guardian-inventory/excel.js` | Inventory round trip; `import-confirm.spec.ts` (Inventory); that form's import specs |
 | 11 | 73T part 3 — Annual-family workbook, connected | 73T p1 | `annual-accounting/excel.js`, `templates/annual-template.js` (B-4 formula) | Annual round trip; Part VIII and Part XI placement; `import-confirm.spec.ts` (Annual); that form's import specs |
 | 12 | 73T part 4 — Simplified workbook, connected | 73T p1 | `simplified-accounting/excel.js` | Simplified round trip; `import-confirm.spec.ts` (Simplified, the half-apply); that form's import specs |
@@ -642,6 +642,67 @@ vehicle rows hold the joined text in `description`; unticking shows it
 description cell, so a vehicle still exports its joined text and imports as
 an ordinary item (73M's notice says so). Shares `models/guardian.js` with
 73B.
+
+### Build record — BUILT 2026-10-05 (approved by name by the requester, 2026-10-05)
+
+**What changed for a filer:**
+
+- Inventory B-2: ticking "This item is a vehicle", typing into the vehicle
+  fields and unticking it **leaves the Description as the filer typed it**
+  (it used to be emptied, or become "2019"). "In Safe Deposit Box?" is
+  hidden while the row is a vehicle and **comes back with its answer**
+  (ticking used to erase it for good). The PDF, the workbook and conversion
+  to an Annual's Schedule D-3 file a vehicle's description built from its
+  Year, Make, Model, VIN and mileage — the same wording as before — and file
+  no safe-deposit answer for it.
+- Initial, Annual and Minors Plans: an "Explanation" is filed only while the
+  page shows its box. A filer who ticks Other, explains, then changes the
+  answer no longer files both; the text is kept and comes back with the box.
+  **24 boxes** — the "about 20" check-group boxes (Initial 10, Annual 9,
+  Minors 1), three shown by other answers (the Initial Plan's committee
+  explanation, the Annual Plan's benefits explanation, the Minors Plan's Q4),
+  and the Initial Plan's "Other" directive description, which printed beside
+  an unticked "Other".
+- No filed number changes: a vehicle never counted toward the safe-deposit
+  total (its answer was erased on ticking); its kept answer now counts
+  nowhere — totals, PDF and the workbook's column H (written blank, so the
+  form's own `=IF(H="Yes",G,0)` agrees).
+
+**How:** `vehicleDescription()` and `b2ItemDescription()` in
+`models/guardian.js` (core, because `conversion.js` can't import the feature)
+build what a B-2 row files; the page's `syncB2VehicleDescription()` — which
+copied the vehicle fields into `description` on ticking and on every
+keystroke — is gone, and `toggleB2Vehicle()` changes only `isVehicle`.
+`isInSafeDepositBox()` (`totals.js`) is false for a vehicle. New
+`src/core/filing/plan-explanations.js` holds one show rule per Plan
+Explanation box; each page passes it where it used to write the condition
+inline (24 places), and each PDF files a box's text only while its rule
+holds. A box with no rule throws, so a new Explanation can't be filed without
+one.
+
+**Changed:** `models/guardian.js`, `conversion.js`, the Inventory's
+`totals.js`, `pdf-model.js`, `excel.js` and `index.js`; the Initial, Annual
+and Minors Plans' `index.js` and `pdf-model.js`; the CSV's notes on the B-2
+description, safe-deposit answer and vehicle flag (`verify:data-model`
+passes). New: `plan-explanations.js`.
+
+**Tests:**
+
+- New `tests/unit/unticked-boxes-keep-text.spec.js` (28): the B-2 PDF row,
+  total, conversion and an empty vehicle; each of the 24 explanations hidden
+  (kept, not filed) and shown (filed), listed by hand from the pages.
+- New `tests/e2e/b2-vehicle-toggle.spec.ts`: through the real page — tick,
+  type a Year, untick: Description and answer intact; the exported
+  workbook's C33 holds the vehicle's description and H33 nothing.
+- **Red-first:** all 28 unit cases failed against the old code before any
+  change (the PDF and conversion filed the stored Description, the total
+  counted a vehicle, every hidden explanation printed); with the B-2 source
+  stashed, the browser case failed on the Description reading "2019".
+- Full unit suite: all pass (bar the three bookkeeping checks, then fixed);
+  `npm run check:types` clean. **Related browser specs: 39 files (every one
+  touching B-2, vehicles, Plan explanations, conversion, the Inventory and
+  Plan exports, plus the Plan page snapshots and the saved-file corpus) — 416
+  passed, none failed.**
 
 ---
 

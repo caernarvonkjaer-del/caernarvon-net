@@ -10,6 +10,7 @@ import { caseNumberOf } from '../../core/case-resolver.js';
 import { triStateText } from '../../core/form/form-contract.js';
 import { maskSSN } from '../../core/pdf/ssn-format.js';
 import { rowStarted, startedRows } from '../../core/validation/row-started.js';
+import { PLAN_MINOR_EXPLANATIONS, shownExplanation } from '../../core/filing/plan-explanations.js';
 
 export function buildPlanMinorModel(D) {
   const d = D || {};
@@ -68,7 +69,12 @@ export function buildPlanMinorModel(D) {
   metadata.filingId = descriptor.id;
 
   const sections = [];
-  const explainNotice = (text) => (text ? [{ type: 'notice', text: `Explanation: ${text}` }] : []);
+  // Milestone 73D: an Explanation is filed only while the page shows its box
+  // (plan-explanations.js); hidden text is kept, not filed.
+  const explainNotice = (id) => {
+    const text = shownExplanation(PLAN_MINOR_EXPLANATIONS, d, id);
+    return text ? [{ type: 'notice', text: `Explanation: ${text}` }] : [];
+  };
 
   // Page 1: Cover
   sections.push({
@@ -176,7 +182,7 @@ export function buildPlanMinorModel(D) {
           { checked: !!d.q4Other, label: 'Other' },
         ],
       },
-      ...explainNotice(d.q4Explain),
+      ...explainNotice('q4Explain'),
     ],
   });
 
@@ -209,7 +215,7 @@ export function buildPlanMinorModel(D) {
           { checked: !!d.q5Other, label: 'Other' },
         ],
       },
-      ...explainNotice(d.q5Explain),
+      ...explainNotice('q5Explain'),
     ],
   });
 

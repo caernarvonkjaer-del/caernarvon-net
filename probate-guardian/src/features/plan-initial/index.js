@@ -59,6 +59,7 @@ import { getD, requestSave } from '../../core/state.js';
 import { chkP, inpS, pageNavS, planCheckGroup, planQ, radioP, txtP, yesNoCheckboxS } from '../../core/form/field-html.js';
 import { renderScheduleDocsSection } from '../../core/filing/schedule-docs.js';
 import { setPath } from '../../core/form/paths.js';
+import { PLAN_INITIAL_EXPLANATIONS, explanationShown } from '../../core/filing/plan-explanations.js';
 // Initial Guardianship Plan — the fourth feature extraction (Milestone 5,
 // Phases A and B of INDEX-SPLIT-PLAN.md's migration sequence: data/
 // validation/pages/nav, and print/PDF export). Loaded only when one of its pages
@@ -348,7 +349,7 @@ function pagePlanISettingMedical(){
       // reveals its explanation on the click (67F).
       planCheckGroup('',
         Q2_OPTIONS.map((o)=>renderCheckboxField({ path:o.key, label:o.label, checked:!!d[o.key], id:o.key, route:o.key==='q2Other'?'/p2':'' })).join(''),
-        'q2Explain',d.q2Explain,d.q2Other))}
+        'q2Explain',d.q2Explain,explanationShown(PLAN_INITIAL_EXPLANATIONS,d,'q2Explain')))}
     ${planQ('3','For the plan period, the guardian proposes the following as to the provision of medical services for the Ward:',
       planCheckGroup('',
         cb('q3MedPrimary','Routine examination by primary care physician')
@@ -360,7 +361,7 @@ function pagePlanISettingMedical(){
         +cb('q3MedOT','Occupational Therapy')
         +cb('q3MedWardDecides','The ward retains the right to make their own decision')
         +cb('q3MedOther','Other','/p2'),
-        'q3MedExplain',d.q3MedExplain,d.q3MedOther)
+        'q3MedExplain',d.q3MedExplain,explanationShown(PLAN_INITIAL_EXPLANATIONS,d,'q3MedExplain'))
       +(d.q3MedSpecialist?`<div class="plan-conditional mt-2">${inpS('q3MedSpecialistArea','Specialist — area of specialty',d.q3MedSpecialistArea)}</div>`:''))}
     ${renderScheduleDocsSection('planISettingMedical')}
     ${pageNavS('/summary','/p3')}
@@ -376,11 +377,11 @@ function pagePlanIMentalPersonal(){
       // exclusive with the other boxes and, like Other, reveals the explanation.
       planCheckGroup('',
         Q4_OPTIONS.map((o)=>renderCheckboxField({ path:o.key, label:o.label, checked:!!d[o.key], id:o.key, route:(o.key==='q4Other'||o.key==='q4None')?'/p3':'', exclusiveGroup:'q4', exclusiveRole:o.key==='q4None'?'none':'member' })).join(''),
-        'q4Explain',d.q4Explain,d.q4Other||d.q4None))}
+        'q4Explain',d.q4Explain,explanationShown(PLAN_INITIAL_EXPLANATIONS,d,'q4Explain')))}
     ${planQ('5','For the plan period, the guardian proposes the following as to the provision of personal care of the ward, such as bathing, grooming and feeding:',
       planCheckGroup('',
         Q5_OPTIONS.map((o)=>renderCheckboxField({ path:o.key, label:o.label, checked:!!d[o.key], id:o.key, route:o.key==='q5Other'?'/p3':'' })).join(''),
-        'q5Explain',d.q5Explain,d.q5Other))}
+        'q5Explain',d.q5Explain,explanationShown(PLAN_INITIAL_EXPLANATIONS,d,'q5Explain')))}
     ${renderScheduleDocsSection('planIMentalPersonal')}
     ${pageNavS('/p2','/p4')}
   </div>`;
@@ -399,7 +400,7 @@ function pagePlanISocialBenefits(){
         +cb('q6DayProgram','Day Program')
         +cb('q6WardDecides','The Ward retains the right to make their own decision')
         +cb('q6Other','Other','/p4'),
-        'q6Explain',d.q6Explain,d.q6Other))}
+        'q6Explain',d.q6Explain,explanationShown(PLAN_INITIAL_EXPLANATIONS,d,'q6Explain')))}
     ${planQ('7','The Ward has the following health insurance, accident insurance, private benefits, or governmental benefits received to meet any part of the costs of medical, mental health or related services:',
       planCheckGroup('',
         yesNoCheckboxS('q7SocialSecurity','Social Security',d.q7SocialSecurity)
@@ -417,9 +418,9 @@ function pagePlanISocialBenefits(){
         +yesNoCheckboxS('q7PendingBenefits','Pending Benefits (explain why not yet receiving, or date applied, below)',d.q7PendingBenefits,false,'/p4')
         +cb('q7Other','Other','/p4'),
         // Milestone 40C-H: same predicate as validatePlanInitial() and
-        // computeNavChecks() so all three agree. This one was already correct;
-        // it is the reference the other two were brought in line with.
-        'q7Explain',d.q7Explain,(isAffirmative(d.q7Trusts)||isAffirmative(d.q7PendingBenefits)||!!d.q7Other),
+        // computeNavChecks() so all three agree. Milestone 73D moved it to
+        // plan-explanations.js, which the PDF also reads.
+        'q7Explain',d.q7Explain,explanationShown(PLAN_INITIAL_EXPLANATIONS,d,'q7Explain'),
         'If Trusts or Pending Benefits is Yes, explain below.'))}
     ${renderScheduleDocsSection('planISocialBenefits')}
     ${pageNavS('/p3','/p5')}
@@ -494,7 +495,7 @@ function pagePlanIDisabilities(){
         +cb('mentalSubstance','Induced by substance abuse')
         +cb('mentalSchizophrenia','Schizophrenia or related disorders')
         +cb('mentalOther','Other','/p7'),
-        'mentalExplain',d.mentalExplain,d.mentalOther))}
+        'mentalExplain',d.mentalExplain,explanationShown(PLAN_INITIAL_EXPLANATIONS,d,'mentalExplain')))}
     ${planQ('C','The physical disabilities of the Ward are:',
       planCheckGroup('',
         cb('physMobility','Mobility')
@@ -504,7 +505,7 @@ function pagePlanIDisabilities(){
         +cb('physParkinsons',"Parkinson's disease")
         +cb('physArthritis','Severe arthritis')
         +cb('physOther','Other','/p7'),
-        'physExplain',d.physExplain,d.physOther))}
+        'physExplain',d.physExplain,explanationShown(PLAN_INITIAL_EXPLANATIONS,d,'physExplain')))}
     ${planQ('D','The assistive devices currently used by the Ward are:',
       planCheckGroup('',
         // Milestone 68F: "None" clears the devices and a device clears "None".
@@ -517,7 +518,7 @@ function pagePlanIDisabilities(){
         +exclusiveBox(d,'usesGlasses','Glasses','uses')
         +exclusiveBox(d,'usesNone','None','uses','none')
         +exclusiveBox(d,'usesOther','Other','uses','member','/p7'),
-        'usesExplain',d.usesExplain,d.usesOther))}
+        'usesExplain',d.usesExplain,explanationShown(PLAN_INITIAL_EXPLANATIONS,d,'usesExplain')))}
     ${renderScheduleDocsSection('planIDisabilities')}
     ${pageNavS('/p6','/p8')}
   </div>`;
@@ -577,7 +578,7 @@ function pagePlanIDirectives(){
         +cb('q11ExecHealthcare','Advance Directive for Healthcare (healthcare surrogate, living will, or anatomical gift)')
         +cb('q11ExecPOA','Durable Power of Attorney, F.S. Chapter 709')
         +cb('q11ExecOther','Other','/p8'),
-        'q11ExecOtherText',d.q11ExecOtherText,d.q11ExecOther,'Describe the "Other" directive.')
+        'q11ExecOtherText',d.q11ExecOtherText,explanationShown(PLAN_INITIAL_EXPLANATIONS,d,'q11ExecOtherText'),'Describe the "Other" directive.')
       +(dirs?`<div class="row g-3 schedule-entry-grid">${dirs}</div>`:'')
       +`<button class="btn btn-outline-primary btn-sm mt-2" data-form-action="add-plan-row" data-collection="q11Directives" data-row-type="directive" data-route="/p8">+ Add Directive</button>`
       :''))}
@@ -593,10 +594,10 @@ function pagePlanIDirectives(){
         +exclusiveBox(d,'needsGlasses','Glasses','needs')
         +exclusiveBox(d,'needsNone','None','needs','none')
         +exclusiveBox(d,'needsOther','Other','needs','member','/p8'),
-        'needsExplain',d.needsExplain,d.needsOther))}
+        'needsExplain',d.needsExplain,explanationShown(PLAN_INITIAL_EXPLANATIONS,d,'needsExplain')))}
     ${planQ('F','Are the recommendations of the examining committee incorporated into this plan?',
       yesNoCheckboxS('committeeIncorporated','Recommendations of the examining committee are incorporated into this plan',d.committeeIncorporated,false,'/p8')
-      +(d.committeeIncorporated==='No'?`<div class="plan-conditional mt-2">${txtP('committeeExplain','Explanation',d.committeeExplain,3)}</div>`:''))}
+      +(explanationShown(PLAN_INITIAL_EXPLANATIONS,d,'committeeExplain')?`<div class="plan-conditional mt-2">${txtP('committeeExplain','Explanation',d.committeeExplain,3)}</div>`:''))}
     ${renderScheduleDocsSection('planIDirectives')}
     ${pageNavS('/p7','/p9')}
   </div>`;

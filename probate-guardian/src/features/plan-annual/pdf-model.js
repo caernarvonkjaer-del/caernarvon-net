@@ -9,6 +9,7 @@ import { planCertificateOfServiceSection } from '../../core/filing/plan-certific
 import { maskSSN } from '../../core/pdf/ssn-format.js';
 import { startedRows } from '../../core/validation/row-started.js';
 import { PLAN_ADLS, PLAN_BENEFITS, PLAN_RIGHTS, planRightLabel } from '../../core/filing/models/plan-annual.js';
+import { PLAN_ANNUAL_EXPLANATIONS, shownExplanation } from '../../core/filing/plan-explanations.js';
 
 export function buildPlanAnnualModel(D) {
   const d = D || {};
@@ -50,7 +51,12 @@ export function buildPlanAnnualModel(D) {
   metadata.filingId = descriptor.id;
 
   const sections = [];
-  const explainNotice = (text) => (text ? [{ type: 'notice', text: `Explanation: ${text}` }] : []);
+  // Milestone 73D: an Explanation is filed only while the page shows its box
+  // (plan-explanations.js); hidden text is kept, not filed.
+  const explainNotice = (id) => {
+    const text = shownExplanation(PLAN_ANNUAL_EXPLANATIONS, d, id);
+    return text ? [{ type: 'notice', text: `Explanation: ${text}` }] : [];
+  };
 
   // Page 1: Cover
   sections.push({
@@ -174,7 +180,7 @@ export function buildPlanAnnualModel(D) {
           { checked: !!d.q3SettingOther, label: 'Other' },
         ],
       },
-      ...explainNotice(d.q3SettingExplain),
+      ...explainNotice('q3SettingExplain'),
       {
         type: 'checklist',
         title: 'The guardian will ensure this remains the best setting by',
@@ -200,7 +206,7 @@ export function buildPlanAnnualModel(D) {
           { checked: !!d.q3MedOther, label: 'Other' },
         ],
       },
-      ...explainNotice(d.q3MedExplain),
+      ...explainNotice('q3MedExplain'),
       {
         type: 'checklist',
         title: 'Provision for mental health services',
@@ -213,7 +219,7 @@ export function buildPlanAnnualModel(D) {
           { checked: !!d.q3MentalOther, label: 'Other' },
         ],
       },
-      ...explainNotice(d.q3MentalExplain),
+      ...explainNotice('q3MentalExplain'),
       {
         type: 'checklist',
         title: 'Provision for personal care (bathing, grooming, feeding)',
@@ -226,7 +232,7 @@ export function buildPlanAnnualModel(D) {
           { checked: !!d.q3PersonalOther, label: 'Other' },
         ],
       },
-      ...explainNotice(d.q3PersonalExplain),
+      ...explainNotice('q3PersonalExplain'),
       {
         type: 'checklist',
         title: 'Provision for socialization and recreational activities',
@@ -239,7 +245,7 @@ export function buildPlanAnnualModel(D) {
           { checked: !!d.q3SocialOther, label: 'Other' },
         ],
       },
-      ...explainNotice(d.q3SocialExplain),
+      ...explainNotice('q3SocialExplain'),
     ],
   });
 
@@ -277,7 +283,7 @@ export function buildPlanAnnualModel(D) {
           { checked: !!d.q3BenefitsOther, label: 'Other' },
         ],
       },
-      ...explainNotice(d.q3BenefitsExplain),
+      ...explainNotice('q3BenefitsExplain'),
     ],
   });
 
@@ -405,7 +411,7 @@ export function buildPlanAnnualModel(D) {
           { checked: !!d.q9MentalOther, label: 'Other' },
         ],
       },
-      ...explainNotice(d.q9MentalExplain),
+      ...explainNotice('q9MentalExplain'),
       {
         type: 'checklist',
         title: 'Physical disabilities of the ward',
@@ -420,11 +426,11 @@ export function buildPlanAnnualModel(D) {
           { checked: !!d.q9PhysOther, label: 'Other' },
         ],
       },
-      ...explainNotice(d.q9PhysExplain),
+      ...explainNotice('q9PhysExplain'),
       { type: 'checklist', title: 'Assistive devices currently used', items: deviceItems('q9Uses') },
-      ...explainNotice(d.q9UsesExplain),
+      ...explainNotice('q9UsesExplain'),
       { type: 'checklist', title: 'Assistive devices needed but not yet obtained', items: deviceItems('q9Needs') },
-      ...explainNotice(d.q9NeedsExplain),
+      ...explainNotice('q9NeedsExplain'),
     ],
   });
 
