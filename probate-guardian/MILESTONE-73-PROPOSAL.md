@@ -2117,6 +2117,17 @@ now returns (identical row).
   one — 264 passed, 1 failed:** the Inventory's case-number test timed out
   waiting for the app's startup screen 32 minutes into the run, before any row
   action; rerun on its own, its file passed 7 of 7.
+- **Full regression (`npm test`, approved 2026-10-05), run at `8b96aa3` from
+  a copy on C::** all unit tests passed (2,554); browser 1,025 passed,
+  16 skipped, 2 failed, 1 did not run (2.3 h). Neither failure involves rows:
+  - `rollback.contract.spec.ts` never opened a page. It unpacks the pre-merge
+    build with `git archive`, and the copy's git store lacked the index for
+    one of its packs ("packfile … index unavailable"), so the extraction
+    failed; its password twin did not run for the same reason. The
+    repository on D: reads that commit normally.
+  - `tab-and-update.spec.ts`'s update-banner test read from the page while
+    "Reload now" was reloading it ("Execution context was destroyed").
+  - Both files rerun from D: at the same commit: 7 of 7 passed.
 
 **Found while building, not changed (outside 73V's behaviour-preserving
 scope):**
