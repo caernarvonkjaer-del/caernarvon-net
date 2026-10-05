@@ -4,7 +4,7 @@
 
 **Draft. Every decision is settled (2026-10-04 and 2026-10-05). Built so
 far: 73U (2026-10-04, `5b8849b`), 73V (2026-10-05, `8b96aa3`) and 73C
-(2026-10-05, brought forward from its place in the build order at the
+(2026-10-05, `861b6a9`, brought forward from its place in the build order at the
 requester's choice), each approved by name.** Nothing else is approved.
 Building any other item, or any part of a split item, needs the requester's
 named approval of that item or part (AGENTS.md §3).
@@ -135,7 +135,7 @@ behaviour on its own except where its row says so.
 | 5 | 73F part 1 — shared checks | — | the seven validators moved to `src/core/validation/engines/` with `evaluate<Engine>()`, a registry, `validate<Engine>()` kept as wrappers, `output-preflight.js` | the existing validator and export-gate units; a wrapper-equivalence test; completion golden unchanged |
 | 6 | 73E part 1 — the import transaction (no importer connected) | 73J p1 | new `src/core/excel/import-transaction.js`, `import-keep.js` (exact-name identity), `party-resolver.js`, the activity log | new `tests/unit/import-transaction.spec.js` (synthetic adapters) |
 | 7 | 73T part 1 — the workbook contract | 73E p1, 73G p1 | new `src/core/excel/workbook-contract/` (one per form, the importers' adapters), `excel-engine.js` | `excel-write-targets.spec.js`, `export-manifests.ts`, new round-trip and hand-filled specs |
-| 8 | 73C | 73V | `plan-rows.js`, Inventory `index.js` (D-1) | new `tests/e2e/plan-add-co-guardian.spec.ts` — **Built** 2026-10-05, ahead of rows 2–7 at the requester's choice |
+| 8 | 73C | 73V | `plan-rows.js`, Inventory `index.js` (D-1) | new `tests/e2e/plan-add-co-guardian.spec.ts` — **Built** `861b6a9`, ahead of rows 2–7 at the requester's choice |
 | 9 | 73D | — | Inventory `index.js` (B-2), `models/guardian.js`, `totals.js`, Inventory `pdf-model.js`, `excel.js`, `conversion.js`, `field-html.js`, three Plan `pdf-model.js` | new `tests/e2e/b2-vehicle-toggle.spec.ts`, Plan PDF units |
 | 10 | 73T part 2 — Inventory workbook, connected to the transaction | 73T p1, 73D | `guardian-inventory/excel.js` | Inventory round trip; `import-confirm.spec.ts` (Inventory); that form's import specs |
 | 11 | 73T part 3 — Annual-family workbook, connected | 73T p1 | `annual-accounting/excel.js`, `templates/annual-template.js` (B-4 formula) | Annual round trip; Part VIII and Part XI placement; `import-confirm.spec.ts` (Annual); that form's import specs |
@@ -494,7 +494,7 @@ No data-model or export change. **Legacy:** carry-over seeds blank Plan
 guardian rows, which now show on the Signatures page until the filer leaves
 it (visible, harmless). The guide's "fixed blocks" is corrected in 73Q.
 
-### Build record — BUILT 2026-10-05 (approved by name by the requester, 2026-10-05)
+### Build record — BUILT 2026-10-05 in `861b6a9` (approved by name by the requester, 2026-10-05)
 
 **What changed for a filer:**
 
