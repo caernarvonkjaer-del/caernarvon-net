@@ -507,7 +507,8 @@ on all seven forms, naming the date (`guardians.0.signatureDate`,
   part 2, which puts the dashboard on the same checks, applies the open-time
   rule to what it judges.
 
-**Full regression:** not run yet.
+**Full regression:** not run — the requester chose one full run after 73F part 2,
+covering 73F part 1, 73A and 73F part 2 together (2026-10-06).
 
 ---
 
