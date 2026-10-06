@@ -1083,7 +1083,7 @@ function pageD1(){
         ${formRow(col(5,reqLabel("Guardian's Full Name")+textInput(`guardians.${i}.name`,'','name')),col(3,reqLabel('Signature Date')+dateInput(`guardians.${i}.signatureDate`)),col(4,reqLabel('SSN / EIN')+textInput(`guardians.${i}.ssnEin`,'','ssn')))}
         ${formRow(col(4,reqLabel('Phone Number')+textInput(`guardians.${i}.phone`,'','phone')),col(8,reqLabel('Street Address')+textInput(`guardians.${i}.streetAddress`,'','address')))}
         ${formRow(col(6,reqLabel('City / State / Zip')+textInput(`guardians.${i}.cityStateZip`,'','zip')),col(6,optLabel('Email Address')+textInput(`guardians.${i}.email`,'name@example.com','email')))}
-        ${renderSignatureStateControl({ path: `guardians.${i}`, state: inferLegacySignatureState(g.signatureState, g.signatureDate), route: '/d1', signatureImage: g.signatureImage })}
+        ${renderSignatureStateControl({ path: `guardians.${i}`, state: g.signatureState, date: g.signatureDate, route: '/d1', signatureImage: g.signatureImage })}
         ${preparerFlagCheckboxHTML({ path: `guardians.${i}.isPreparer`, checked: !!g.isPreparer, route: '/d1' })}
       </div>
     </div></div>`;
@@ -1124,7 +1124,7 @@ function pageD2(){
       ${formRow(col(5,optLabel('Compilation "as of" date (defaults to the signature date)')+dateInput('preparer.asOfDate')))}
       ${formRow(col(4,reqLabel('Phone Number')+textInput('preparer.phone','','phone')),col(8,reqLabel('Street Address')+textInput('preparer.streetAddress','','address')))}
       ${formRow(col(6,reqLabel('City / State / Zip')+textInput('preparer.cityStateZip','','zip')))}
-      ${renderSignatureStateControl({ path: 'preparer', state: inferLegacySignatureState(D.preparer.signatureState, D.preparer.signatureDate), route: '/d2', signatureImage: D.preparer.signatureImage })}
+      ${renderSignatureStateControl({ path: 'preparer', state: D.preparer.signatureState, date: D.preparer.signatureDate, route: '/d2', signatureImage: D.preparer.signatureImage })}
     </div>
   </div>`}
   </div>
@@ -1144,7 +1144,7 @@ function pageD2(){
       ${formRow(col(4,attyLabel('Florida Bar Number')+textInput('attorney.barNumber','','barNumber')),col(4,attyLabel('Phone Number')+textInput('attorney.phone','','phone')))}
       ${formRow(col(6,attyLabel('Primary Email (e-filing)')+textInput('attorney.email','name@lawfirm.com','email')),col(6,optLabel('Secondary Email (optional)')+textInput('attorney.secondaryEmail','assistant@lawfirm.com','email')))}
       ${formRow(col(8,attyLabel('Street Address')+textInput('attorney.streetAddress','','address')),col(6,attyLabel('City / State / Zip')+textInput('attorney.cityStateZip','','zip')))}
-      ${renderSignatureStateControl({ path: 'attorney', state: inferLegacySignatureState(D.attorney.signatureState, D.attorney.signatureDate), route: '/d2', signatureImage: D.attorney.signatureImage })}
+      ${renderSignatureStateControl({ path: 'attorney', state: D.attorney.signatureState, date: D.attorney.signatureDate, route: '/d2', signatureImage: D.attorney.signatureImage })}
       ${preparerFlagCheckboxHTML({ path: 'attorney.isPreparer', checked: !!D.attorney.isPreparer, route: '/d2' })}
     </div>
   </div>
@@ -1243,7 +1243,7 @@ function pageD5(){
         ${certificateAttorneyLineHTML({ name: D.attorney?.name, barNumber: D.attorney?.barNumber, engineId: 'guardian' })}
         ${oldCertificateDetailsHTML(D, 'guardian', { actionAttr: 'data-inventory-action' })}
         ${formRow(col(4,reqLabel('Signature Date')+dateInput('serviceAttorney.signatureDate')))}
-        ${renderSignatureStateControl({ path: 'serviceAttorney', state: inferLegacySignatureState(D.serviceAttorney.signatureState, D.serviceAttorney.signatureDate), route: '/d5', signatureImage: D.serviceAttorney.signatureImage })}
+        ${renderSignatureStateControl({ path: 'serviceAttorney', state: D.serviceAttorney.signatureState, date: D.serviceAttorney.signatureDate, route: '/d5', signatureImage: D.serviceAttorney.signatureImage })}
       </div>
     </div>`;
     if(!D.serviceGuardian||typeof D.serviceGuardian!=='object')D.serviceGuardian={signatureDate:null,signatureState:'',signatureImage:''};
@@ -1262,7 +1262,7 @@ function pageD5(){
         ${serviceRow}
         <p class="mb-2">${who}</p>
         ${formRow(col(4,optLabel('Signature Date')+dateInput('serviceGuardian.signatureDate')))}
-        ${renderSignatureStateControl({ path: 'serviceGuardian', state: inferLegacySignatureState(sg.signatureState, sg.signatureDate), route: '/d5', signatureImage: sg.signatureImage })}
+        ${renderSignatureStateControl({ path: 'serviceGuardian', state: sg.signatureState, date: sg.signatureDate, route: '/d5', signatureImage: sg.signatureImage })}
       </div>
     </div>`;
   };

@@ -19,7 +19,7 @@
 // Plan; the Simplified Plan's certificate is offered as not required (the
 // Clerk's own Simplified Plan checklist says so).
 import { serviceRecipientIssues } from '../validation/service-recipients.js';
-import { inferLegacySignatureState } from '../validation/signature-state.js';
+import { inferLegacySignatureState, signaturePolicyOf, SIGNATURE_POLICIES } from '../validation/signature-state.js';
 import { methodOfServiceLine, methodMissingMessage } from './service-method.js';
 
 // The same words the three accounting-family pages declare for themselves
@@ -72,6 +72,13 @@ export function migratePlanCertificateOfService(filing) {
  * plan names one, else Guardian 1 -- Rule 2.516's "attorney or party". `cfg`
  * is the form's own config: { attorneyName(filing), planNoun, optional }.
  */
+/**
+ * Milestone 73A: the attorney's name on each Plan, for resolveCertSigner()
+ * where no Plan's CERT_CFG is at hand (the advisories, the signature policy).
+ * The Annual Plan keeps it in `attorney`; the other three in `attorney_name`.
+ */
+export const planCertAttorneyName = (d) => (d?.inventoryType === 'planAnnual' ? d.attorney : d.attorney_name) || '';
+
 export function resolveCertSigner(filing, cfg = {}) {
   const guardian = text(((filing?.planGuardians || [])[0] || {}).name);
   const attorney = text(typeof cfg.attorneyName === 'function' ? cfg.attorneyName(filing || {}) : '');
@@ -148,8 +155,20 @@ export function planCertificateAdvisories(filing, { section = 'Certificate of Se
   if (listed && filing.certNoRecipients !== 'Yes' && !text(filing.certIndicator)) {
     out.push({ code: 'plan-certificate.method', severity: 'advisory', field: 'certIndicator', message: methodMissingMessage(section) });
   }
-  const state = inferLegacySignatureState(filing.certSignatureState, filing.certSignatureDate);
-  if (!state || state === 'none') advise('signature', 'certSignatureDate', 'The certificate is not signed. The plan can be filed without it.');
+  // Milestone 73A: judged from whoever certifies now (a later change of "Who
+  // is certifying service" can't slip a guardian's "/s/" through), under the
+  // year's signature policy. A guardian signs by hand or with a stamp, so an
+  // Unsigned certificate is not "not signed" -- it is to be signed by hand.
+  const signer = resolveCertSigner(filing, { attorneyName: planCertAttorneyName });
+  const policy = signaturePolicyOf(filing);
+  const state = inferLegacySignatureState(filing.certSignatureState, filing.certSignatureDate, { role: signer.role, policy });
+  if (signer.role === 'guardian' && policy === SIGNATURE_POLICIES.BY_HAND_OR_STAMP && state === 'typed') {
+    advise('signature', 'certSignatureState', 'Choose how the guardian signs it: Unsigned (signed by hand) or Signature Stamp; a guardian no longer signs with "/s/". The plan can be filed without it.');
+  } else if (state === 'stamp' && !text(filing.certSignatureImage)) {
+    advise('signature', 'certSignatureImage', 'The Signature Stamp has not been applied, so it prints a blank line to be signed by hand. The plan can be filed without it.');
+  } else if (!state || state === 'none') {
+    advise('signature', 'certSignatureDate', 'It prints with a blank line, to be signed by hand before it is filed. The plan can be filed without it.');
+  }
   return out;
 }
 
@@ -185,6 +204,7 @@ export function planCertificateOfServiceSection(filing, cfg = {}, fmtDate = (v) 
   blocks.push({
     type: 'signature-block', tag: 'Part',
     role: `Certified by (${signer.role === 'attorney' ? 'Attorney' : 'Guardian'})`,
+    signerRole: signer.role,
     signerName: signer.name,
     signatureDate: fmtDate(d.certSignatureDate),
     signatureState: d.certSignatureState || '',

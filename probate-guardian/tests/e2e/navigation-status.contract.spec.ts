@@ -388,28 +388,28 @@ test.describe('Guardian Inventory navigation/status contract', () => {
   // focusFieldByPath() are the two functions a jump link uses, and the bugs
   // recorded here (D-1's hardcoded guardian-#1 fallback; D-2's Preparer/Attorney
   // fields resolving to nothing) live entirely inside them.
-  test('D-1 Guardian #2 signature-date jump link targets guardian #2, not guardian #1 (regression)', async ({ page }) => {
+  test('D-1 Guardian #2 signature jump link targets guardian #2, not guardian #1 (regression)', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Guardian D-1 Co-Guardian Ward', 'guardian');
     await page.evaluate(() => {
       const w = window as any;
       w.GuardianForms.testing.patchFiling({ 'guardians.0': { name: 'Guardian One', signatureDate: '01/01/2024', ssnEin: '123-45-6789', phone: '555-111-2222', streetAddress: '1 Main St', cityStateZip: 'Tampa, FL 33601' } });
-      // Milestone 39-C: a blank date with no signatureState now legitimately
-      // resolves to Unsigned (checkSignatureState() correctly reports no
-      // error) -- signatureState must be set explicitly to "typed" to force
-      // a real, findable "date signed" error for this test to target.
+      // Milestone 73A: a guardian's saved "/s/" is asked again (a guardian
+      // signs by hand or by stamp), which gives Guardian #2 a real, findable
+      // signature issue for this test to target.
       w.GuardianForms.testing.patchFiling({ guardians: [...w.GuardianForms.testing.field('guardians'), { name: 'Guardian Two', signatureDate: '', signatureState: 'typed', ssnEin: '987-65-4321', phone: '555-333-4444', streetAddress: '2 Oak St', cityStateZip: 'Tampa, FL 33602' }] });
     });
     await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/d1'));
 
     const targetPath = await page.evaluate(async () => {
       const structured = await (window as any).GuardianForms.testing.validate.structured();
-      return structured.find((e: any) => e.section === 'D-1 Guardian #2' && e.label.includes('date signed'))?.path;
+      return structured.find((e: any) => e.section === 'D-1 Guardian #2' && e.label.includes('choose Unsigned'))?.path;
     });
-    expect(targetPath).toBe('guardians.1.signatureDate');
+    expect(targetPath).toBe('guardians.1.signatureState');
 
     await followJumpLink(page, '/d1', targetPath);
-    await expect(page.locator(`[data-bind="${targetPath}"]`)).toBeFocused();
+    // The first of Guardian #2's own choices (Unsigned), not Guardian #1's.
+    await expect(page.locator('#sigstate_guardians_1_none')).toBeFocused();
   });
 
   test('D-2 Preparer and Attorney fields resolve to distinct targets despite sharing bare labels', async ({ page }) => {
@@ -558,13 +558,12 @@ test.describe('Annual/Final/Trust field-path accuracy (Milestone 33, Item 3, sub
   // path (formEngine() aliases) -- one instance proves the fix for all
   // three, same reasoning annual-mount.spec.ts's own alias test already
   // uses for legal-copy/identity differences.
-  test('Part III co-guardian #2 signature date targets guardian #2, not guardian #1 (regression)', async ({ page }) => {
+  test('Part III co-guardian #2 signature targets guardian #2, not guardian #1 (regression)', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Annual Co-Guardian Ward', 'annual');
-    // Milestone 39-C: a blank date with no signatureState now legitimately
-    // resolves to Unsigned (checkSignatureState() correctly reports no
-    // error) -- signatureState must be set explicitly to "typed" to force
-    // a real, findable "date signed" error for this test to target.
+    // Milestone 73A: a guardian's saved "/s/" is asked again (a guardian
+    // signs by hand or by stamp), which gives Guardian #2 a real, findable
+    // signature issue for this test to target.
     await page.evaluate(() => {
       const w = window as any;
       w.GuardianForms.testing.patchFiling({ 'guardians': [
@@ -576,12 +575,13 @@ test.describe('Annual/Final/Trust field-path accuracy (Milestone 33, Item 3, sub
 
     const targetPath = await page.evaluate(async () => {
       const structured = await (window as any).GuardianForms.testing.validate.structured();
-      return structured.find((e: any) => e.section === 'Part III' && e.label.includes('Guardian #2') && e.label.includes('date signed'))?.path;
+      return structured.find((e: any) => e.section === 'Part III' && e.label.includes('Guardian #2') && e.label.includes('choose Unsigned'))?.path;
     });
-    expect(targetPath).toBe('guardians.1.signatureDate');
+    expect(targetPath).toBe('guardians.1.signatureState');
 
     await followJumpLink(page, '/p3', targetPath);
-    await expect(page.locator(`[data-form-path="${targetPath}"]`)).toBeFocused();
+    // The first of Guardian #2's own choices (Unsigned), not Guardian #1's.
+    await expect(page.locator('#sigstate_guardians_1_none')).toBeFocused();
   });
 
   test('Schedule B-1 row resolves via the detail-side "Line N" ordinal, not the section', async ({ page }) => {

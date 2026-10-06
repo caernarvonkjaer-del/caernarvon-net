@@ -81,10 +81,12 @@ test('the Inventory D-1: a new co-guardian card keeps a signature choice through
 
   await addButton(page).click();
   await expect(cards).toHaveCount(2);
-  await page.locator('label[for="sigstate_guardians_1_typed"]').click();
-  await expect(page.locator('#sigstate_guardians_1_typed'), 'the choice redrew the page and is still shown').toBeChecked();
+  // Milestone 73A: a guardian chooses Unsigned or Signature Stamp; Stamp
+  // redraws the page (its capture widget mounts).
+  await page.locator('label[for="sigstate_guardians_1_stamp"]').click();
+  await expect(page.locator('#sigstate_guardians_1_stamp'), 'the choice redrew the page and is still shown').toBeChecked();
   await expect(cards, 'the card survives the redraw').toHaveCount(2);
-  expect((await field(page, 'guardians'))[1].signatureState).toBe('typed');
+  expect((await field(page, 'guardians'))[1].signatureState).toBe('stamp');
 
   // A signature choice alone is not an entered co-guardian on D-1 (its PDF and
   // checks ignore such a card), so leaving the page removes it, as before.

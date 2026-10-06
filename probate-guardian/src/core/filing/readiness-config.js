@@ -25,7 +25,7 @@ import { Q2_OPTIONS, Q4_OPTIONS, Q5_OPTIONS, anyChecked } from './plan-initial-m
 import { FILING_TYPE_KEYS, resolveDescriptorForInventoryType } from './filing-descriptor.js';
 import { hasSixthCircuitLocalGuidance } from './county-guidance.js';
 import { resolveRouteFromSection } from '../validation/validation-adapter.js';
-import { checkSignatureState, inferLegacySignatureState } from '../validation/signature-state.js';
+import { checkSignatureState, inferLegacySignatureState, signaturePolicyOf } from '../validation/signature-state.js';
 import { isAffirmative, isTriStateAnswer } from '../form/form-contract.js';
 import { PLAN_RIGHTS, PLAN_ADLS } from './models/plan-annual.js';
 import { INITIAL_ADLS } from './models/plan-initial.js';
@@ -66,9 +66,12 @@ const has = v => !!(v !== '' && v !== null && v !== undefined);
 // at the call site: it is about a different field, not part of the
 // signature-state shape.
 function signedAndDated(fields) {
+  // Milestone 73A: a guardian's block (fields.role) reads its stored choice
+  // itself, under the year's signature policy -- a guardian signs by hand or
+  // with a stamp, and a blank choice is Unsigned whatever the date.
   return checkSignatureState({
     ...fields,
-    state: inferLegacySignatureState(fields.state, fields.date),
+    state: fields.role ? fields.state : inferLegacySignatureState(fields.state, fields.date),
   }).length === 0;
 }
 
@@ -84,11 +87,12 @@ function planSimplifiedAutomatic(d) {
   return [
     { id: 'cover.period', label: 'Reporting period is stated', ok: has(d.periodFrom) && has(d.periodTo) },
     { id: 'cover.wardCaseCounty', label: 'Ward name, case number, and county are on the plan', ok: has(d.wardName) && has(d.caseNumber) && has(d.county) },
-    { id: 'signatures.guardian1.core', label: 'Signed and dated by a guardian', ok: has(g0.name) && signedAndDated({
+    { id: 'signatures.guardian1.core', label: "Guardian's signature block complete (signed by hand or stamped)", ok: has(g0.name) && signedAndDated({
       state: g0.signatureState,
       date: g0.signatureDate,
       image: g0.signatureImage,
       sectionLabel: 'Signatures', roleLabel: 'Guardian 1',
+      role: 'guardian', policy: signaturePolicyOf(d),
     }) },
     // Milestone 72C: no email. A guardian's email is a warning on every form
     // now (guardian-email.js), never a blocker, so a row requiring it here
@@ -142,11 +146,12 @@ function planAnnualAutomatic(d) {
     { id: 'cover.wardCaseGid', label: 'Ward name, case number and inception date are on the plan', ok: has(d.wardName) && has(d.caseNumber) && has(d.gid) },
     { id: 'cover.county', label: 'County is on the plan', ok: has(d.county) },
     { id: 'cover.guardianName', label: 'Guardian Name(s) is on the plan', ok: has(d.guardian) },
-    { id: 'signatures.guardian1.core', label: 'Signed and dated by a guardian', ok: has(g0.name) && signedAndDated({
+    { id: 'signatures.guardian1.core', label: "Guardian's signature block complete (signed by hand or stamped)", ok: has(g0.name) && signedAndDated({
       state: g0.signatureState,
       date: g0.signatureDate,
       image: g0.signatureImage,
       sectionLabel: 'Signatures', roleLabel: 'Guardian',
+      role: 'guardian', policy: signaturePolicyOf(d),
     }) },
     { id: 'signatures.guardian1.contact', label: 'Guardian address, phone and SSN/EIN provided', ok: has(g0.mailingStreet) && has(g0.phone) && has(g0.ssn) },
     { id: 'signatures.attorney', label: 'Attorney certification signature complete (if attorney included)', ok: signedAndDated({
@@ -205,11 +210,12 @@ function planInitialAutomatic(d) {
     // Milestone 68B: required now, as on the other Plans; there was no item.
     { id: 'cover.period', label: 'Reporting period is stated', ok: has(d.periodFrom) && has(d.periodTo) },
     { id: 'cover.guardianNames', label: "Guardian name(s) are on the plan", ok: has(d.guardianNames) },
-    { id: 'signatures.guardian1.core', label: 'Signed and dated by a guardian', ok: has(g0.name) && signedAndDated({
+    { id: 'signatures.guardian1.core', label: "Guardian's signature block complete (signed by hand or stamped)", ok: has(g0.name) && signedAndDated({
       state: g0.signatureState,
       date: g0.signatureDate,
       image: g0.signatureImage,
       sectionLabel: 'Signatures', roleLabel: 'Guardian',
+      role: 'guardian', policy: signaturePolicyOf(d),
     }) },
     { id: 'signatures.guardian1.contact', label: 'Guardian address, phone and SSN/EIN provided', ok: has(g0.street) && has(g0.phone) && has(g0.ssn) },
     { id: 'cover.wardResidence', label: "Ward's current living arrangement and address, including city/state/ZIP, are stated", ok: has(d.wardLiving) && has(d.residenceAddress) && has(d.residenceCityStateZip) },
@@ -268,11 +274,12 @@ function planMinorAutomatic(d) {
     { id: 'cover.caseNumber', label: 'Case number (UCN or Case #) is on the plan', ok: has(d.ucn) || has(d.ref) },
     { id: 'cover.guardianName', label: 'Guardian Name is on the plan', ok: has(d.guardianName) },
     { id: 'cover.residence', label: 'Current residence and address stated', ok: has(d.q1ResidenceName) && has(d.q1Street) },
-    { id: 'signatures.guardian1.core', label: 'Signed and dated by a guardian', ok: has(g0.name) && signedAndDated({
+    { id: 'signatures.guardian1.core', label: "Guardian's signature block complete (signed by hand or stamped)", ok: has(g0.name) && signedAndDated({
       state: g0.signatureState,
       date: g0.signatureDate,
       image: g0.signatureImage,
       sectionLabel: 'Guardian Signatures', roleLabel: 'Guardian',
+      role: 'guardian', policy: signaturePolicyOf(d),
     }) },
     { id: 'signatures.guardian1.contact', label: 'Guardian address, phone and SSN/EIN provided', ok: has(g0.mailingStreet) && has(g0.phone) && has(g0.tin) },
     { id: 'signatures.certifications', label: 'At least one certification statement is checked', ok: !!(d.certIncapacitated || d.certMinor || d.certConsulted || d.certNoRestriction || d.certProvidesCare || d.certPhysicianAttached) },

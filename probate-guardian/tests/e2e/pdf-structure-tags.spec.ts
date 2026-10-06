@@ -563,7 +563,10 @@ test.describe('PDF Accessibility: Tagged Structure, StructTreeRoot & Marked Cont
                 type: 'signature-block',
                 role: 'Synthetic Signer',
                 signerName: 'Pat Example',
-                wetSignatureExplicit: true,
+                // Milestone 73A: the model resolves each block's print mode
+                // (signature-modes.js); 'blank' is the line signed by hand.
+                signerRole: 'guardian',
+                signatureMode: 'blank',
                 fields: [
                   [{ label: 'Phone', value: '555-0100' }, { label: 'Street', value: '1 Test Way' }],
                   [{ label: 'City/State/Zip', value: 'Testville, FL 00000' }],

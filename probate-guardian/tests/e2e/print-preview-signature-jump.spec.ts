@@ -13,13 +13,13 @@ import { freshStartNoPassword, createWard, fillMinimalValidPlanSimplifiedWard } 
 // surface does, and the existing global [data-form-action="jump-to-field"]
 // click delegation (src/form-events.js) picks it up with no new listener.
 test.describe('Milestone 39-E: Print Preview missing-signature navigation', () => {
-  test('a blocked "/s/" Signed signature card gets a working jump-to-field link from Print Preview', async ({ page }) => {
+  test('a blocked guardian signature card gets a working jump-to-field link from Print Preview', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'PS Jump Ward', 'planSimplified');
     await fillMinimalValidPlanSimplifiedWard(page);
-    // Explicit "typed" state with a blank date is a real, findable
-    // checkSignatureState() error -- a blank date with no signatureState at
-    // all would legitimately infer Unsigned and produce no error.
+    // Milestone 73A: a guardian's saved "/s/" is asked again (a guardian
+    // signs by hand or by stamp) -- a real, findable signature issue; a
+    // blank choice is Unsigned and produces none.
     await page.evaluate(() => {
       const d = (window as any).GuardianForms.testing.snapshot().filing;
       d.planGuardians[0].signatureState = 'typed';
@@ -33,14 +33,14 @@ test.describe('Milestone 39-E: Print Preview missing-signature navigation', () =
     // The panel's "Show what is missing" list is collapsed by default.
     await blockedPanel.locator('.pdf-preview-blocked-details summary').click();
 
-    const jumpLink = blockedPanel.locator('[data-form-action="jump-to-field"]', { hasText: 'date signed' });
+    const jumpLink = blockedPanel.locator('[data-form-action="jump-to-field"]', { hasText: 'choose Unsigned' });
     await expect(jumpLink).toBeVisible();
     await jumpLink.click();
 
     // Print Preview is its own route (/print) -- clicking must navigate
-    // away to the Signatures page and focus the real field, not just look
-    // for it in the (wrong) current DOM.
-    await expect(page.locator('[data-form-path="planGuardians.0.signatureDate"]')).toBeFocused();
+    // away to the Signatures page and focus the real field (the guardian's
+    // first choice, Unsigned), not just look for it in the (wrong) current DOM.
+    await expect(page.locator('#sigstate_planGuardians_0_none')).toBeFocused();
   });
 
   test('a blocked Guardian Inventory Preparer card resolves through its own section-embedded convention', async ({ page }) => {

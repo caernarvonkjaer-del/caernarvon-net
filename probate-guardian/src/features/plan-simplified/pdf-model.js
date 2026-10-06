@@ -8,6 +8,7 @@
 import { resolveDescriptorForInventoryType } from '../../core/filing/filing-descriptor.js';
 import { planCertificateOfServiceSection } from '../../core/filing/plan-certificate-of-service.js';
 import { triStateText } from '../../core/form/form-contract.js';
+import { resolveSignatureModes } from '../../core/pdf/signature-modes.js';
 
 export function buildPlanSimplifiedModel(D) {
   const d = D || {};
@@ -124,6 +125,7 @@ export function buildPlanSimplifiedModel(D) {
   const makeSigBlock = (label, g) => ({
     type: 'signature-block',
     role: `${label} Signature`,
+    signerRole: 'guardian',
     signerName: g.name || '',
     signatureDate: fmtDate(g.signatureDate),
     // Milestone 39-B pilot: only the Guardian role carries these yet.
@@ -175,5 +177,7 @@ export function buildPlanSimplifiedModel(D) {
   // Milestone 72C: `attorney_name`, as the page reads it (index.js's CERT_CFG).
   sections.push(planCertificateOfServiceSection(d, { attorneyName: (f) => f.attorney_name || '', planNoun: 'plan', optional: true }, fmtDate));
 
-  return { metadata, sections };
+  // Milestone 73A: each signature block's print mode, from its signer's role
+  // and the year's signature policy (src/core/pdf/signature-modes.js).
+  return resolveSignatureModes({ metadata, sections }, d);
 }

@@ -11,6 +11,7 @@ import { triStateText } from '../../core/form/form-contract.js';
 import { maskSSN } from '../../core/pdf/ssn-format.js';
 import { rowStarted, startedRows } from '../../core/validation/row-started.js';
 import { PLAN_MINOR_EXPLANATIONS, shownExplanation } from '../../core/filing/plan-explanations.js';
+import { resolveSignatureModes } from '../../core/pdf/signature-modes.js';
 
 export function buildPlanMinorModel(D) {
   const d = D || {};
@@ -219,9 +220,10 @@ export function buildPlanMinorModel(D) {
     ],
   });
 
-  const makeSigBlock = (role, p, fields) => ({
+  const makeSigBlock = (role, p, fields, signerRole = 'guardian') => ({
     type: 'signature-block',
     role,
+    signerRole,
     signerName: p.name || '',
     signatureDate: fmtDate(p.signatureDate),
     // Milestone 39-C
@@ -287,7 +289,7 @@ export function buildPlanMinorModel(D) {
         [{ label: 'Preparer Name', value: d.preparer_name || '' }, { label: 'SSN/EIN #', value: maskSSN(d.preparer_tin || '') }, { label: 'Telephone #', value: d.preparer_phone || '' }],
         [{ label: 'Email Address', value: d.preparer_email || '' }],
         [{ label: 'Mailing Address', value: d.preparer_mailingStreet || '' }, { label: 'City / State / Zip', value: d.preparer_cityStateZip || '' }],
-      ]),
+      ], 'preparer'),
       {
         type: 'notice',
         title: "Certification and Signature of Guardian's Attorney",
@@ -297,12 +299,14 @@ export function buildPlanMinorModel(D) {
         [{ label: 'Attorney Name', value: d.attorney_name || '' }, { label: 'Florida Bar Number', value: d.attorney_bar || '' }, { label: 'Telephone', value: d.attorney_phone || '' }],
         [{ label: 'Primary Email', value: d.attorney_email || '' }, { label: 'Secondary Email', value: d.attorney_secondary_email || '' }],
         [{ label: 'Mailing Address', value: d.attorney_street || '' }, { label: 'City / State / Zip', value: d.attorney_cityStateZip || '' }],
-      ]),
+      ], 'attorney'),
     ],
   });
 
   // Milestone 68C: the Certificate of Service, last, on every Plan.
   sections.push(planCertificateOfServiceSection(d, { attorneyName: (f) => f.attorney_name || '', planNoun: 'plan' }, fmtDate));
 
-  return { metadata, sections };
+  // Milestone 73A: each signature block's print mode, from its signer's role
+  // and the year's signature policy (src/core/pdf/signature-modes.js).
+  return resolveSignatureModes({ metadata, sections }, d);
 }

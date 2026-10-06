@@ -7,7 +7,7 @@ import { RECIPIENTS_OR_ATTESTATION, serviceRecipientIssues } from '../service-re
 import { SCHEDULE_NAV_KEYS, guardianHasData } from '../../filing/models/guardian.js';
 import { certifyingCandidates, resolveServiceCertifier } from '../../filing/unrepresented-filing.js';
 import { checkDateOrder } from '../date-rules.js';
-import { checkSignatureState, inferLegacySignatureState } from '../signature-state.js';
+import { checkSignatureState, inferLegacySignatureState, signaturePolicyOf } from '../signature-state.js';
 import { hasIdentifiedPreparer } from '../../form/preparer-flag.js';
 import { isAttorneyStarted } from '../attorney-block.js';
 import { issueFactory } from '../validation-issue.js';
@@ -120,7 +120,7 @@ export function collectGuardianIssues(d){
   // mislabeling bug this filter/forEach split previously had: a co-guardian
   // with data would be mislabeled "Guardian #1" whenever guardian #1 itself
   // was still blank.
-  d.guardians.forEach((g,i)=>{if(i>0&&!guardianHasData(g))return;const p=`D-1 Guardian #${i+1}`,k=`guardians.${i}`;req(g.name,`${p} — Name`,`${k}.name`);errors.push(...checkSignatureState({state:inferLegacySignatureState(g.signatureState,g.signatureDate),date:g.signatureDate,image:g.signatureImage,sectionLabel:p,roleLabel:'',filingType:T,datePath:`${k}.signatureDate`,imagePath:`${k}.signatureImage`}));req(g.ssnEin,`${p} — SSN/EIN`,`${k}.ssnEin`);req(g.phone,`${p} — Phone`,`${k}.phone`);req(g.streetAddress,`${p} — Street Address`,`${k}.streetAddress`);req(g.cityStateZip,`${p} — City/State/Zip`,`${k}.cityStateZip`);});
+  d.guardians.forEach((g,i)=>{if(i>0&&!guardianHasData(g))return;const p=`D-1 Guardian #${i+1}`,k=`guardians.${i}`;req(g.name,`${p} — Name`,`${k}.name`);errors.push(...checkSignatureState({state:g.signatureState,date:g.signatureDate,image:g.signatureImage,sectionLabel:p,roleLabel:'',filingType:T,statePath:`${k}.signatureState`,datePath:`${k}.signatureDate`,imagePath:`${k}.signatureImage`,role:'guardian',policy:signaturePolicyOf(d)}));req(g.ssnEin,`${p} — SSN/EIN`,`${k}.ssnEin`);req(g.phone,`${p} — Phone`,`${k}.phone`);req(g.streetAddress,`${p} — Street Address`,`${k}.streetAddress`);req(g.cityStateZip,`${p} — City/State/Zip`,`${k}.cityStateZip`);});
   // Milestone 67A: the outside-preparer block is required only while nobody
   // is identified as the preparer. The form itself tells a guardian,
   // co-guardian or guardian attorney "DO NOT SIGN HERE"; the Clerk accepts
@@ -206,7 +206,7 @@ export function collectGuardianIssues(d){
       push('D-5 — Tick the guardian who served the copies; that guardian signs the certificate of service',`guardians.${first?first.index:0}.certifiesService`);
     }else{
       const sg=d.serviceGuardian||{};
-      errors.push(...checkSignatureState({state:inferLegacySignatureState(sg.signatureState,sg.signatureDate),name:certifier.name,date:sg.signatureDate,image:sg.signatureImage,sectionLabel:'D-5 Guardian',roleLabel:'',filingType:T,namePath:`guardians.${certifier.index}.name`,datePath:'serviceGuardian.signatureDate',imagePath:'serviceGuardian.signatureImage'}));
+      errors.push(...checkSignatureState({state:sg.signatureState,name:certifier.name,date:sg.signatureDate,image:sg.signatureImage,sectionLabel:'D-5 Guardian',roleLabel:'',filingType:T,namePath:`guardians.${certifier.index}.name`,statePath:'serviceGuardian.signatureState',datePath:'serviceGuardian.signatureDate',imagePath:'serviceGuardian.signatureImage',role:'guardian',policy:signaturePolicyOf(d)}));
     }
   }
   return errors;

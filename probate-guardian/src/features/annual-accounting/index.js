@@ -747,7 +747,7 @@ function pagePart3Annual(){
         <div class="row g-2">
           <div class="col-md-5">${inpD(`${labels[i]}'s Name`,g.name,`D.guardians[${i}].name=this.value`,true)}</div>
           <div class="col-md-3">${inpDWithTooltip('Signature Date','signature_date',g.signatureDate,`D.guardians[${i}].signatureDate=this.value`,true,'date')}</div>
-          <div class="col-12">${renderSignatureStateControl({ path: `guardians.${i}`, state: inferLegacySignatureState(g.signatureState, g.signatureDate), route: '/p3', signatureImage: g.signatureImage })}</div>
+          <div class="col-12">${renderSignatureStateControl({ path: `guardians.${i}`, state: g.signatureState, date: g.signatureDate, route: '/p3', signatureImage: g.signatureImage })}</div>
           <div class="col-12">${preparerFlagCheckboxHTML({ path: `guardians.${i}.isPreparer`, checked: !!g.isPreparer, route: '/p3' })}</div>
           <div class="col-md-4">${inpDWithTooltip('SSN / EIN','ssn_ein',g.ssn,`D.guardians[${i}].ssn=this.value`,true)}</div>
           <div class="col-md-4">${inpD('Phone Number',g.phone,`D.guardians[${i}].phone=this.value`,true)}</div>
@@ -804,7 +804,7 @@ function pagePart4Annual(){
           <div class="row g-2">
             <div class="col-md-5">${inpD("Preparer's Name",p.name,"D.preparer.name=this.value",true)}</div>
             <div class="col-md-3">${inpDWithTooltip("Signature Date",'signature_date',p.signatureDate,"D.preparer.signatureDate=this.value",true,'date')}</div>
-            <div class="col-12">${renderSignatureStateControl({ path: 'preparer', state: inferLegacySignatureState(p.signatureState, p.signatureDate), route: '/p4', signatureImage: p.signatureImage })}</div>
+            <div class="col-12">${renderSignatureStateControl({ path: 'preparer', state: p.signatureState, date: p.signatureDate, route: '/p4', signatureImage: p.signatureImage })}</div>
             <div class="col-md-4">${inpDWithTooltip("Preparer's SSN / EIN",'ssn_ein',p.ssn,"D.preparer.ssn=this.value",true)}</div>
             <div class="col-md-4">${inpD("Preparer's Phone Number",p.phone,"D.preparer.phone=this.value",true)}</div>
             <div class="col-md-8">${inpD("Preparer's Street Address",p.street,"D.preparer.street=this.value",true)}</div>
@@ -844,7 +844,7 @@ function pagePart5Annual(){
           <div class="row g-2">
             <div class="col-md-5">${inpD("Attorney Name (linked to Part I)",d.attorney,"D.attorney=this.value",started)}</div>
             <div class="col-md-3">${inpDWithTooltip("Signature Date",'signature_date',d.attorney_signatureDate,"D.attorney_signatureDate=this.value",started,'date')}</div>
-            <div class="col-12">${renderSignatureStateControl({ path: 'attorney', state: inferLegacySignatureState(d.attorney_signatureState, d.attorney_signatureDate), route: '/p5', signatureImage: d.attorney_signatureImage, statePath: 'attorney_signatureState', imagePath: 'attorney_signatureImage' })}</div>
+            <div class="col-12">${renderSignatureStateControl({ path: 'attorney', state: d.attorney_signatureState, date: d.attorney_signatureDate, route: '/p5', signatureImage: d.attorney_signatureImage, statePath: 'attorney_signatureState', imagePath: 'attorney_signatureImage' })}</div>
             <div class="col-12">${preparerFlagCheckboxHTML({ path: 'attorney_isPreparer', checked: !!d.attorney_isPreparer, route: '/p5' })}</div>
             <div class="col-md-4">${inpD("Bar Number",d.attorney_bar,"D.attorney_bar=this.value",started)}</div>
             <div class="col-md-4">${inpD("Phone Number",d.attorney_phone,"D.attorney_phone=this.value",started)}</div>
@@ -1554,7 +1554,7 @@ function pagePart10Annual(){
           <div class="row g-2">
             <div class="col-md-5">${inpD('Attorney Name',d.attorney,"D.attorney=this.value")}</div>
             <div class="col-md-3">${inpDWithTooltip('Signature Date','signature_date',d.certAttySignDate,"D.certAttySignDate=this.value",false,'date')}</div>
-            <div class="col-12">${renderSignatureStateControl({ path: 'certAttorney', state: inferLegacySignatureState(d.certAttySignatureState, d.certAttySignDate), route: '/p10', signatureImage: d.certAttySignatureImage, statePath: 'certAttySignatureState', imagePath: 'certAttySignatureImage' })}</div>
+            <div class="col-12">${renderSignatureStateControl({ path: 'certAttorney', state: d.certAttySignatureState, date: d.certAttySignDate, route: '/p10', signatureImage: d.certAttySignatureImage, statePath: 'certAttySignatureState', imagePath: 'certAttySignatureImage' })}</div>
             <div class="col-md-4">${inpD('Bar Number',d.attorney_bar,"D.attorney_bar=this.value")}</div>
             <div class="col-md-4">${inpD('Phone Number',d.attorney_phone,"D.attorney_phone=this.value")}</div>
             <div class="col-md-8">${inpD('Street Address',d.attorney_street,"D.attorney_street=this.value")}</div>
@@ -1576,7 +1576,7 @@ function pagePart10Annual(){
           <p class="mb-2">${certifier?`Signed by <strong>${esc(certifier.name||`${labels[certifier.index]} (name not entered)`)}</strong>, ${esc(labels[certifier.index])} — name and contact details come from Part III.`:'Tick the guardian who served the copies above.'}</p>
           <div class="row g-2">
             <div class="col-md-5">${inpDWithTooltip('Signature Date','signature_date',d.certGuardianSignDate,"D.certGuardianSignDate=this.value",false,'date')}</div>
-            <div class="col-12">${renderSignatureStateControl({ path: 'certGuardian', state: inferLegacySignatureState(d.certGuardianSignatureState, d.certGuardianSignDate), route: '/p10', signatureImage: d.certGuardianSignatureImage, statePath: 'certGuardianSignatureState', imagePath: 'certGuardianSignatureImage' })}</div>
+            <div class="col-12">${renderSignatureStateControl({ path: 'certGuardian', state: d.certGuardianSignatureState, date: d.certGuardianSignDate, route: '/p10', signatureImage: d.certGuardianSignatureImage, statePath: 'certGuardianSignatureState', imagePath: 'certGuardianSignatureImage' })}</div>
           </div>
         </div>
       </div>

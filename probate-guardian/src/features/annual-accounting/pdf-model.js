@@ -13,6 +13,7 @@ import { preparedByLine } from '../../core/form/preparer-flag.js';
 import { isUnrepresented, resolveServiceCertifier } from '../../core/filing/unrepresented-filing.js';
 import { methodOfServiceLine } from '../../core/filing/service-method.js';
 import { inferBondDepositoryState, bondDepositoryPdfLines, revealsBond } from '../../core/filing/bond-depository.js';
+import { resolveSignatureModes } from '../../core/pdf/signature-modes.js';
 
 export const DISB_CATS = [
   'Accounting',
@@ -241,6 +242,7 @@ export function buildAnnualAccountingModel(D, options = {}) {
       type: 'signature-block',
       tag: 'Part',
       role: gRole,
+      signerRole: 'guardian',
       signerName: g.name || '',
       signature: formatSig(g.name),
       signatureStyle,
@@ -305,6 +307,7 @@ export function buildAnnualAccountingModel(D, options = {}) {
         type: 'signature-block',
         tag: 'Part',
         role: 'Preparer',
+        signerRole: 'preparer',
         signerName: p.name || '',
         signature: formatSig(p.name),
         signatureStyle,
@@ -343,6 +346,7 @@ export function buildAnnualAccountingModel(D, options = {}) {
         type: 'signature-block',
         tag: 'Part',
         role: 'Attorney for Guardian',
+        signerRole: 'attorney',
         signerName: d.attorney || '',
         signature: formatSig(d.attorney),
         signatureStyle,
@@ -1157,6 +1161,7 @@ export function buildAnnualAccountingModel(D, options = {}) {
       type: 'signature-block',
       tag: 'Part',
       role: 'Guardian (Service)',
+      signerRole: 'guardian',
       signerName: certifier ? certifier.name : '',
       signature: formatSig(certifier ? certifier.name : ''),
       signatureStyle,
@@ -1173,6 +1178,7 @@ export function buildAnnualAccountingModel(D, options = {}) {
     type: 'signature-block',
     tag: 'Part',
     role: 'Attorney for Guardian (Service)',
+    signerRole: 'attorney',
     signerName: d.attorney || '',
     signature: formatSig(d.attorney),
     signatureStyle,
@@ -1249,5 +1255,7 @@ export function buildAnnualAccountingModel(D, options = {}) {
     });
   }
 
-  return { metadata, sections };
+  // Milestone 73A: each signature block's print mode, from its signer's role
+  // and the year's signature policy (src/core/pdf/signature-modes.js).
+  return resolveSignatureModes({ metadata, sections }, d);
 }

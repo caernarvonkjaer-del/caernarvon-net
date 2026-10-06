@@ -1,4 +1,5 @@
 import { normalizeWardData } from './filing/normalize-filing.js';
+import { applySignaturePolicyOnOpen } from './signature/signature-policy.js';
 // The case store (Milestone 70: the seam since 70E, the owner since 70J).
 // Every module reads and writes case state through here, never through window.
 //
@@ -94,7 +95,13 @@ export function getActiveInventoryType() {
  * lifecycle's open and close; tests/unit/filing-lifecycle.spec.js holds it).
  */
 export function setActiveFiling(ward) {
-  if (ward) normalizeWardData(ward);
+  if (ward) {
+    normalizeWardData(ward);
+    // Milestone 73A: a filing being prepared moves to signature policy 2
+    // when opened (guardians sign by hand or stamp; a saved guardian "/s/"
+    // is asked again); a closed filing keeps what it was filed with.
+    applySignaturePolicyOnOpen(ward);
+  }
   caseFile.activeWardId = ward ? ward.wardId : null;
   if (!ward) noFiling = {};
 }

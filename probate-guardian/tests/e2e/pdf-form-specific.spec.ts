@@ -849,7 +849,10 @@ test.describe('PDF Accessibility: Accounting & Inventory Filing-Specific Coverag
     expect(text1).toContain('HAROLD THOMAS BENNETT');
     expect(text1).toContain('VERIFIED INITIAL INVENTORY');
     // Electronic signature with /s/ format and citation
-    expect(text1).toContain('/s/ Rachel M. Alvarez');
+    // Milestone 73A: the guardian signs by hand (a blank line with their
+    // name beneath); the attorney's "/s/" carries the caption below.
+    expect(text1).toContain('Signature of Rachel M. Alvarez');
+    expect(text1).not.toContain('/s/ Rachel M. Alvarez');
     expect(text1).toContain('pursuant to Fla. R. Gen. Prac. & Jud. Admin. 2.515');
     // Attorney primary and secondary email
     expect(text1).toContain('Primary Email');

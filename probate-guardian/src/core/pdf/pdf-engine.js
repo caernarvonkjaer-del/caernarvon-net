@@ -1573,11 +1573,10 @@ export async function generateCourtFormPdf(model, options = {}) {
       }
 
       else if (block.type === 'signature-block') {
-        // wetSignatureExplicit: a blank pen-signature line with no electronic /s/
-        // text and no electronic-signature legal notice (Milestone 19-2's
-        // plan-* forms are wet-signed, unlike guardian-inventory's
-        // electronic /s/ attestations -- the previous renderer had no
-        // mode for this and always drew electronic-signature text/notice).
+        // A blank pen-signature line ('blank' mode) carries no electronic /s/
+        // text and no electronic-signature legal notice: it is signed by hand
+        // (Milestone 19-2 introduced the line; 73A made each block's mode the
+        // model's to resolve -- see signatureMode below).
         // fields: an array of rows of [{label, value}, ...], laid out as
         // full-width deliberate column groups. This replaced a flat `details`
         // vertical stack that rendered Object.keys() in one column, losing the
@@ -1587,14 +1586,20 @@ export async function generateCourtFormPdf(model, options = {}) {
         // with a known-bad one. tests/unit/signature-block-fields.spec.js
         // holds both halves of that: each block's chosen grouping, and that
         // nothing sets `details` any more.
-        const isWetSignature = block.wetSignatureExplicit === true;
-        // Milestone 39-B: a Signature Stamp takes priority over both the
-        // wet-ink and electronic "/s/" renderings -- signatureState is only
-        // ever 'stamp' when the filer actually applied one (see
-        // src/core/validation/signature-state.js's checkSignatureState()),
-        // so this never silently overrides a typed signature that's
-        // actually in effect.
-        const hasStampImage = block.signatureState === 'stamp' && !!block.signatureImage;
+        // Milestone 73A: the model resolved how this block prints
+        // (src/core/pdf/signature-modes.js) -- 'blank' (a line to sign by
+        // hand), 'typed' ("/s/ Name" with the Rule 2.515 caption) or 'stamp'
+        // -- and the engine draws exactly that. It used to infer: anything but
+        // an applied stamp printed "/s/ Name" with the electronic-signature
+        // caption, so an Unsigned block, a stamp never applied and a block with
+        // no name all looked signed. (The wet-ink line once needed
+        // `wetSignatureExplicit`, which no model set.)
+        const signatureMode = block.signatureMode;
+        if (!['blank', 'typed', 'stamp'].includes(signatureMode)) {
+          throw new Error(`The signature block "${block.role || ''}" has no print mode; resolveSignatureModes() sets it`);
+        }
+        const isWetSignature = signatureMode === 'blank';
+        const hasStampImage = signatureMode === 'stamp' && !!block.signatureImage;
         // Rows are planned before anything is drawn, so the block reserves
         // real height for a wrapped address -- see planFieldRows(). A block
         // with no fields at all is a signature and date alone, which is a
@@ -1680,7 +1685,7 @@ export async function generateCourtFormPdf(model, options = {}) {
           doc.setFont('PGSans', 'normal');
           doc.setFontSize(7.5);
           doc.setTextColor(100, 110, 125);
-          doc.text(`Signature of ${block.signerName || ''}`.trim(), margin + 2, curY + 46);
+          doc.text(block.signerName ? `Signature of ${block.signerName}` : 'Signature', margin + 2, curY + 46);
           writeMarkedContentEnd(doc);
         } else {
           // Electronic /s/ Signature Rendering

@@ -622,7 +622,7 @@ function pagePlanISignatures(){
           <div class="col-md-6">${renderFormField({ path: `planGuardians.${i}.phone`, label: 'Phone Number', value: gd.phone })}</div>
           <div class="col-12">${renderFormField({ path: `planGuardians.${i}.email`, label: 'Email Address', value: gd.email, type: 'email' })}</div>
           <div class="col-12"><label class="form-label" for="plan_guardians_${i}_sigDate">Date Signed</label><input type="text" inputmode="text" class="form-control" id="plan_guardians_${i}_sigDate" placeholder="MM/DD/YYYY" value="${esc(formatDisplayDate(gd.signatureDate||''))}" data-form-path="planGuardians.${i}.signatureDate" data-field-path="planGuardians.${i}.signatureDate" data-field-kind="date" data-field-format-policy="normalize" aria-describedby="plan_guardians_${i}_sigDate_hint"><div id="plan_guardians_${i}_sigDate_hint" class="form-text text-muted" style="font-size:0.75rem;margin-top:0.2rem;">Use MM/DD/YYYY</div></div>
-          <div class="col-12">${renderSignatureStateControl({ path: `planGuardians.${i}`, state: inferLegacySignatureState(gd.signatureState, gd.signatureDate), route: '/p9', signatureImage: gd.signatureImage })}</div>
+          <div class="col-12">${renderSignatureStateControl({ path: `planGuardians.${i}`, state: gd.signatureState, date: gd.signatureDate, route: '/p9', signatureImage: gd.signatureImage })}</div>
           <div class="col-12">${renderFormField({ path: `planGuardians.${i}.street`, label: 'Street Address', value: gd.street })}</div>
           <div class="col-12">${renderFormField({ path: `planGuardians.${i}.cityStateZip`, label: 'City/State/Zip', value: gd.cityStateZip })}</div>
         </div>
@@ -672,7 +672,7 @@ function pagePlanIAttorney(){
               <div class="col-12">${inpS('attorney_cityStateZip','Attorney City/State/Zip',d.attorney_cityStateZip)}</div>
               <div class="col-md-6">${inpS('attorney_phone','Attorney Phone Number',d.attorney_phone)}</div>
               <div class="col-md-6">${inpS('attorney_signatureDate','Date Signed',d.attorney_signatureDate,false,'date')}</div>
-              <div class="col-12">${renderSignatureStateControl({ path: 'attorney', state: inferLegacySignatureState(d.attorney_signatureState, d.attorney_signatureDate), route: '/p10', signatureImage: d.attorney_signatureImage, statePath: 'attorney_signatureState', imagePath: 'attorney_signatureImage' })}</div>
+              <div class="col-12">${renderSignatureStateControl({ path: 'attorney', state: d.attorney_signatureState, date: d.attorney_signatureDate, route: '/p10', signatureImage: d.attorney_signatureImage, statePath: 'attorney_signatureState', imagePath: 'attorney_signatureImage' })}</div>
             </div>
           </div>
         </div>

@@ -14,6 +14,7 @@ import { formatMoney } from '../../core/format/money.js';
 import { isUnrepresented, resolveServiceCertifier } from '../../core/filing/unrepresented-filing.js';
 import { methodOfServiceLine } from '../../core/filing/service-method.js';
 import { inferBondDepositoryState, bondDepositoryPdfLines, revealsBond } from '../../core/filing/bond-depository.js';
+import { resolveSignatureModes } from '../../core/pdf/signature-modes.js';
 
 export function buildVerifiedInventoryModel(D, options = {}) {
   const d = D || {};
@@ -552,6 +553,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     type: 'signature-block',
     tag: 'Part',
     role: `Guardian #${i + 1}`,
+    signerRole: 'guardian',
     signerName: g.name || '',
     signature: formatSignature(g.name),
     signatureStyle,
@@ -571,6 +573,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     type: 'signature-block',
     tag: 'Part',
     role: 'Preparer',
+    signerRole: 'preparer',
     signerName: preparer.name || '',
     signature: formatSignature(preparer.name),
     signatureStyle,
@@ -691,6 +694,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
         type: 'signature-block',
         tag: 'Part',
         role: 'Attorney for Guardian',
+        signerRole: 'attorney',
         signerName: attorney.name || '',
         signature: formatSignature(attorney.name),
         signatureStyle,
@@ -811,6 +815,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     type: 'signature-block',
     tag: 'Part',
     role: 'Guardian (Service)',
+    signerRole: 'guardian',
     signerName: serviceCertifier ? serviceCertifier.name : '',
     signature: formatSignature(serviceCertifier ? serviceCertifier.name : ''),
     signatureStyle,
@@ -873,6 +878,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
         type: 'signature-block',
         tag: 'Part',
         role: 'Attorney for Guardian (Service)',
+        signerRole: 'attorney',
         signerName: attorney.name || '',
         signature: formatSignature(attorney.name),
         signatureStyle,
@@ -888,8 +894,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
     ],
   });
 
-  return {
-    metadata,
-    sections,
-  };
+  // Milestone 73A: each signature block's print mode, from its signer's role
+  // and the year's signature policy (src/core/pdf/signature-modes.js).
+  return resolveSignatureModes({ metadata, sections }, d);
 }

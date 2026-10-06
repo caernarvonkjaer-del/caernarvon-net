@@ -13,6 +13,8 @@ import { formEngine } from './filing/filing-registry.js';
 import { getCaseFile } from './state.js';
 import { markFilingRevisionChanged } from './filing/output-revision.js';
 import { markDirtySinceExport } from './persistence/case-file.js';
+import { resolveServiceCertifier } from './filing/unrepresented-filing.js';
+import { resolveCertSigner, planCertAttorneyName } from './filing/plan-certificate-of-service.js';
 export function resolveParty(partyId) {
   const caseFile = getCaseFile();
   if (!partyId || !caseFile || !Array.isArray(caseFile.parties)) return null;
@@ -592,10 +594,11 @@ export function getPartyIdForSlot(filing, role, index = 0) {
 /**
  * Milestone 46B: maps a signature control's `path` to the role/index slot
  * that owns it, so the reusable-stamp affordance can find the party without
- * every filing type wiring it through by hand. The three shapes below are
- * the only ones renderSignatureStateControl() is ever called with, across
- * all nine filing types: a collection row (`planGuardians.2`, `guardians.0`),
- * or a flat role prefix (`attorney`, `preparer`).
+ * every filing type wiring it through by hand. The shapes below map straight
+ * to a slot: a collection row (`planGuardians.2`, `guardians.0`), or a flat
+ * role prefix (`attorney`, `preparer`). The certificate cards (`certGuardian`,
+ * `serviceGuardian`, a Plan's `cert`) resolve through certificateSignerSlot()
+ * below (Milestone 73A); the attorney's certificate cards offer nothing.
  */
 export function partySlotForSignaturePath(path) {
   if (!path) return null;
@@ -606,9 +609,28 @@ export function partySlotForSignaturePath(path) {
   return null;
 }
 
+/**
+ * Milestone 73A: the certificate blocks a guardian signs offer that guardian's
+ * saved stamp too -- the accountings' `certGuardian` and the Inventory's
+ * `serviceGuardian` (whichever guardian certifies service), and a Plan's
+ * `cert` (the first guardian, or the attorney when the attorney certifies).
+ * They offered nothing, though a guardian now signs them by hand or by stamp.
+ */
+function certificateSignerSlot(filing, path) {
+  if (path === 'certGuardian' || path === 'serviceGuardian') {
+    const certifier = resolveServiceCertifier(filing || {});
+    return certifier ? { role: 'guardian', index: certifier.index } : null;
+  }
+  if (path === 'cert') {
+    const signer = resolveCertSigner(filing || {}, { attorneyName: planCertAttorneyName });
+    return signer.role === 'attorney' ? { role: 'attorney', index: 0 } : { role: 'guardian', index: 0 };
+  }
+  return null;
+}
+
 /** Resolves the party linked to a signature control's path, or null. */
 export function partyForSignaturePath(filing, path) {
-  const slot = partySlotForSignaturePath(path);
+  const slot = partySlotForSignaturePath(path) || certificateSignerSlot(filing, path);
   if (!slot) return null;
   const partyId = getPartyIdForSlot(filing, slot.role, slot.index);
   return partyId ? resolveParty(partyId) : null;

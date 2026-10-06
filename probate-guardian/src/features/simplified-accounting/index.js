@@ -579,7 +579,7 @@ function pagePart4(){
         <div class="row g-2">
           <div class="col-md-6">${renderFormField({ path: `guardians.${i}.name`, label: `${labels[i]||`Co-Guardian #${i+1}`}'s Name`, value: g.name, required: true })}</div>
           <div class="col-md-3">${renderFormField({ path: `guardians.${i}.signatureDate`, label: 'Signature Date', value: g.signatureDate, type: 'date', required: true, id: `guardians_${i}_sigDate` })}</div>
-          <div class="col-12">${renderSignatureStateControl({ path: `guardians.${i}`, state: inferLegacySignatureState(g.signatureState, g.signatureDate), route: '/p4', signatureImage: g.signatureImage })}</div>
+          <div class="col-12">${renderSignatureStateControl({ path: `guardians.${i}`, state: g.signatureState, date: g.signatureDate, route: '/p4', signatureImage: g.signatureImage })}</div>
           <div class="col-md-3">${renderFormField({ path: `guardians.${i}.ssn`, label: 'SSN / EIN', value: g.ssn, required: true })}</div>
           <div class="col-md-4">${renderFormField({ path: `guardians.${i}.phone`, label: 'Phone Number', value: g.phone, required: true })}</div>
           <div class="col-md-8">${renderFormField({ path: `guardians.${i}.email`, label: 'Email Address', value: g.email, type: 'email' })}</div>
@@ -620,7 +620,7 @@ function pagePart5(){
             <div class="row g-2">
               <div class="col-md-6">${inpS('attorney','Attorney Name (linked to Part I)',d.attorney)}</div>
               <div class="col-md-3">${inpSWithTooltip('attorney_signatureDate','Signature Date','signature_date',d.attorney_signatureDate,'','date')}</div>
-              <div class="col-12">${renderSignatureStateControl({ path: 'attorney', state: inferLegacySignatureState(d.attorney_signatureState, d.attorney_signatureDate), route: '/p5', signatureImage: d.attorney_signatureImage, statePath: 'attorney_signatureState', imagePath: 'attorney_signatureImage' })}</div>
+              <div class="col-12">${renderSignatureStateControl({ path: 'attorney', state: d.attorney_signatureState, date: d.attorney_signatureDate, route: '/p5', signatureImage: d.attorney_signatureImage, statePath: 'attorney_signatureState', imagePath: 'attorney_signatureImage' })}</div>
               <div class="col-md-3">${inpS('attorney_barNumber','Bar Number',d.attorney_barNumber,isAttorneyStarted(d,'simplified'))}</div>
               <div class="col-md-4">${inpS('attorney_phone','Phone Number',d.attorney_phone,isAttorneyStarted(d,'simplified'))}</div>
               <div class="col-md-4">${inpS('attorney_email','Primary Email (e-filing)',d.attorney_email,isAttorneyStarted(d,'simplified'),'email')}</div>
@@ -675,7 +675,7 @@ function pagePart6(){
             <div class="row g-2">
               <div class="col-md-6"><label class="form-label">Attorney Name (linked)</label><input type="text" class="form-control" value="${esc(formatName(d.attorney||''))}" data-form-path="attorney" data-form-format="name"></div>
               <div class="col-md-3">${inpSWithTooltip('certAttySignDate','Signature Date','signature_date',d.certAttySignDate,'','date')}</div>
-              <div class="col-12">${renderSignatureStateControl({ path: 'certAttorney', state: inferLegacySignatureState(d.certAttySignatureState, d.certAttySignDate), route: '/p6', signatureImage: d.certAttySignatureImage, statePath: 'certAttySignatureState', imagePath: 'certAttySignatureImage' })}</div>
+              <div class="col-12">${renderSignatureStateControl({ path: 'certAttorney', state: d.certAttySignatureState, date: d.certAttySignDate, route: '/p6', signatureImage: d.certAttySignatureImage, statePath: 'certAttySignatureState', imagePath: 'certAttySignatureImage' })}</div>
             </div>
           </div>
         </div>
@@ -693,7 +693,7 @@ function pagePart6(){
             <p class="mb-2">${certifier?`Signed by <strong>${esc(certifier.name||`${gLabels[certifier.index]} (name not entered)`)}</strong>, ${esc(gLabels[certifier.index])} — name and contact details come from Part IV.`:'Tick the guardian who served the copies above.'}</p>
             <div class="row g-2">
               <div class="col-md-5">${inpSWithTooltip('certGuardianSignDate','Signature Date','signature_date',d.certGuardianSignDate,'','date')}</div>
-              <div class="col-12">${renderSignatureStateControl({ path: 'certGuardian', state: inferLegacySignatureState(d.certGuardianSignatureState, d.certGuardianSignDate), route: '/p6', signatureImage: d.certGuardianSignatureImage, statePath: 'certGuardianSignatureState', imagePath: 'certGuardianSignatureImage' })}</div>
+              <div class="col-12">${renderSignatureStateControl({ path: 'certGuardian', state: d.certGuardianSignatureState, date: d.certGuardianSignDate, route: '/p6', signatureImage: d.certGuardianSignatureImage, statePath: 'certGuardianSignatureState', imagePath: 'certGuardianSignatureImage' })}</div>
             </div>
           </div>
         </div>

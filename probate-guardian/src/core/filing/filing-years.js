@@ -13,6 +13,7 @@ import { getCaseFile } from '../state.js';
 import { clearCertificateAnswers } from './service-method.js';
 import { notifyProbateGuardianTabStateChanged } from '../navigation/tab-state.js';
 import { recordModelChange } from '../model-change.js';
+import { clearSignaturesForNewYear, keepYearSignaturePolicy } from '../signature/signature-policy.js';
 
 // A ward's flat top-level fields (schedules, balances, signatures, etc.)
 // always represent whichever year is currently "active" — every existing
@@ -215,6 +216,11 @@ export function resetYearlyFieldsForNewYear(data,type){
   // all seven forms (service-method.js). It used to keep last year's method,
   // attestation and signatures, and on the Plans even the service date.
   clearCertificateAnswers(data,String(formEngine(type)).startsWith('plan')?'plan':formEngine(type));
+  // Milestone 73A: and every signer's choice and stamp image, the new year on
+  // signature policy 2 -- the comment above always said signatures were
+  // cleared, but only the dates were, so last year's stamp printed on the new
+  // year's unsigned filing.
+  clearSignaturesForNewYear(data);
 }
 
 // Guardianship annual/simplified accounting periods commonly span two
@@ -264,6 +270,9 @@ export async function switchWardYear(wardId,targetKey){
   const target=ward.years[idx];
   ward.years.splice(idx,1);
   applyYearData(ward,target.data);
+  // Milestone 73A: a filed year keeps the signature policy it was filed
+  // under, so its reprint matches the filed copy (signature-policy.js).
+  keepYearSignaturePolicy(ward);
   ward.activeYearKey=target.key;
   await saveWardToState(ward);
   setDirtySinceExport(true);

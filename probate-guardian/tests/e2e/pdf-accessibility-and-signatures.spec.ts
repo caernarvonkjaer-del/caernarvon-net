@@ -248,7 +248,10 @@ test.describe('Non-Raster PDF Generation, Signatures & Bookmarks', () => {
 
     // Selectable /s/ Signature Text Extraction Verification (Unicode decoded via /ToUnicode CMap)
     const extractedText = await extractPdfText(rawPdfString);
-    expect(extractedText).toContain('/s/ Rachel M. Alvarez');
+    // Milestone 73A: the guardian signs by hand -- a blank line with their
+    // name beneath, never "/s/"; the preparer and attorney keep "/s/".
+    expect(extractedText).toContain('Signature of Rachel M. Alvarez');
+    expect(extractedText).not.toContain('/s/ Rachel M. Alvarez');
     expect(extractedText).not.toContain('Guardian #2');
     expect(extractedText).toContain('/s/ Marcus Thorne');
     expect(extractedText).toContain('/s/ Robert Vance, Esq.');

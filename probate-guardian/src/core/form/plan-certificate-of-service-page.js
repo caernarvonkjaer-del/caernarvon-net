@@ -57,6 +57,6 @@ export function renderPlanCertificateOfServicePage({ filing, route, cfg = {} }) 
     <div class="row g-2">
       <div class="col-12">${renderRadioGroupField({ path: 'certSigner', id: 'certSigner', label: 'Who is certifying service', value: signer.role, options: CERT_SIGNER_OPTIONS, hint: signer.name ? `Printed name, from the plan: ${esc(signer.name)}` : 'The printed name is carried from the plan once it is entered there.', route })}</div>
       <div class="col-md-4">${renderFormField({ path: 'certSignatureDate', label: 'Date Signed', value: d.certSignatureDate || '', type: 'date', id: 'certSignatureDate' })}</div>
-      <div class="col-12">${renderSignatureStateControl({ path: 'cert', state: inferLegacySignatureState(d.certSignatureState, d.certSignatureDate), route, signatureImage: d.certSignatureImage, statePath: 'certSignatureState', imagePath: 'certSignatureImage' })}</div>
+      <div class="col-12">${renderSignatureStateControl({ path: 'cert', role: signer.role, state: d.certSignatureState, date: d.certSignatureDate, route, signatureImage: d.certSignatureImage, statePath: 'certSignatureState', imagePath: 'certSignatureImage' })}</div>
     </div>`;
 }

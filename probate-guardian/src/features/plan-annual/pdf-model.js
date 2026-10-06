@@ -10,6 +10,7 @@ import { maskSSN } from '../../core/pdf/ssn-format.js';
 import { startedRows } from '../../core/validation/row-started.js';
 import { PLAN_ADLS, PLAN_BENEFITS, PLAN_RIGHTS, planRightLabel } from '../../core/filing/models/plan-annual.js';
 import { PLAN_ANNUAL_EXPLANATIONS, shownExplanation } from '../../core/filing/plan-explanations.js';
+import { resolveSignatureModes } from '../../core/pdf/signature-modes.js';
 
 export function buildPlanAnnualModel(D) {
   const d = D || {};
@@ -521,6 +522,7 @@ export function buildPlanAnnualModel(D) {
   const makeSigBlock = (role, p) => ({
     type: 'signature-block',
     role,
+    signerRole: 'guardian',
     signerName: p.name || '',
     signatureDate: fmtDate(p.signatureDate),
     // Milestone 39-C
@@ -601,6 +603,7 @@ export function buildPlanAnnualModel(D) {
       {
         type: 'signature-block',
         role: "Guardian's Attorney",
+        signerRole: 'attorney',
         signerName: d.attorney || '',
         signatureDate: fmtDate(d.attorney_signatureDate),
         // Milestone 39-C
@@ -618,5 +621,7 @@ export function buildPlanAnnualModel(D) {
   // Milestone 68C: the Certificate of Service, last, on every Plan.
   sections.push(planCertificateOfServiceSection(d, { attorneyName: (f) => f.attorney || '', planNoun: 'plan' }, fmtDate));
 
-  return { metadata, sections };
+  // Milestone 73A: each signature block's print mode, from its signer's role
+  // and the year's signature policy (src/core/pdf/signature-modes.js).
+  return resolveSignatureModes({ metadata, sections }, d);
 }

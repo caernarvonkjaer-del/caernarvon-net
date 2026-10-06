@@ -26,6 +26,7 @@ import { isContinuePromptShown, markContinuePromptShown, saveAppState } from '..
 import { features } from '../../core/runtime/features.js';
 import { filingProgress } from '../../core/filing/filing-registry.js';
 import { auditLog } from '../../core/activity/audit-log.js';
+import { upgradeSignaturePolicy } from '../../core/signature/signature-policy.js';
 
 // Dashboard's own module state -- all session-only, not persisted, reset on reload.
 // These would be window properties if the dashboard stayed monolithic, but now that
@@ -420,6 +421,9 @@ async function toggleDashboardWardArchived(wardId) {
   const ward = caseFile.wards.find(w => w.wardId === wardId);
   if (!ward) return;
   ward.archived = !ward.archived;
+  // Milestone 73A: a closed filing reopened is being prepared again, so it
+  // moves to signature policy 2 and a guardian's saved "/s/" is asked again.
+  if (!ward.archived) upgradeSignaturePolicy(ward, { force: true });
   await saveWardToState(ward);
   markDirtySinceExport();
   updateLastSavedIndicator();

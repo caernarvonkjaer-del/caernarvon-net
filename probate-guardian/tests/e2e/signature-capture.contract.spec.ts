@@ -19,20 +19,42 @@ async function gotoSignaturesPage(page: import('@playwright/test').Page) {
   await page.locator('[data-signature-state-group^="planGuardians.0"]').waitFor({ state: 'visible' });
 }
 
+// Milestone 73A: a guardian signs by hand (Unsigned) or with a stamp, never
+// "/s/" (the requester, 2026-10-04, as Pinellas Clerk practice). With a date
+// typed and no choice made, Unsigned is chosen -- typing the date no longer
+// pre-selects "/s/" -- "/s/" is not offered, and the filing exports as it is,
+// nothing written back. A guardian's "/s/" saved before the rule is asked
+// again: nothing shows as chosen, and Preview is blocked naming it.
+async function expectGuardianSignsByHandOrStamp(
+  page: import('@playwright/test').Page,
+  group: string,
+  reopen: () => Promise<void>,
+  { banner = true }: { banner?: boolean } = {},
+) {
+  const radio = (value: string) => page.locator(`[data-signature-state-group="${group}"] input[type="radio"][value="${value}"]`);
+  await expect(radio('none'), 'Unsigned is chosen though a date is typed').toBeChecked();
+  await expect(radio('typed'), 'a guardian is not offered "/s/"').toHaveCount(0);
+  await expect(radio('stamp')).toHaveCount(1);
+  expect(await page.evaluate((g) => (window as any).GuardianForms.testing.field(`${g}.signatureState`), group), 'nothing is written back').toBeFalsy();
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
+  await expect(page.locator('#print-doc-container .pdf-page').first()).toBeVisible({ timeout: 15000 });
+  if (banner) await expect(page.locator('.print-preview-banner')).toContainText('Ready to export');
+
+  await page.evaluate((g) => { (window as any).GuardianForms.testing.patchFiling({ [`${g}.signatureState`]: 'typed' }); }, group);
+  await reopen();
+  await expect(page.locator(`[data-signature-state-group="${group}"] input[type="radio"]:checked`), 'a saved "/s/" shows as not chosen').toHaveCount(0);
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
+  await expect(page.locator('body')).toContainText('a guardian no longer signs with "/s/"', { timeout: 10000 });
+  await expect(page.locator('#print-doc-container .pdf-page')).toHaveCount(0);
+}
+
 test.describe('Milestone 39-B: signature state control (pilot: Plan Simplified Guardian)', () => {
-  test('legacy migration: a filing with a signatureDate but no stored signatureState shows "/s/" Signed pre-selected', async ({ page }) => {
+  test('a guardian with a date and no choice is Unsigned, is never offered "/s/", and a saved "/s/" is asked again (Milestone 73A)', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Sig Legacy Ward', 'planSimplified');
     await fillMinimalValidPlanSimplifiedWard(page); // sets signatureDate, never signatureState
     await gotoSignaturesPage(page);
-
-    const typedRadio = page.locator('[data-signature-state-group="planGuardians.0"] input[value="typed"]');
-    await expect(typedRadio).toBeChecked();
-
-    // And the real export path already treats this filing as complete --
-    // the inference is read-time only, never written back into window.D.
-    const storedState = await page.evaluate(() => (window as any).GuardianForms.testing.field('planGuardians.0.signatureState'));
-    expect(storedState).toBeFalsy();
+    await expectGuardianSignsByHandOrStamp(page, 'planGuardians.0', () => gotoSignaturesPage(page));
   });
 
   test('Unsigned validates and exports cleanly with no date required', async ({ page }) => {
@@ -41,29 +63,30 @@ test.describe('Milestone 39-B: signature state control (pilot: Plan Simplified G
     await fillMinimalValidPlanSimplifiedWard(page);
     await gotoSignaturesPage(page);
 
-    await page.locator('[data-signature-state-group="planGuardians.0"] input[value="none"]').check();
-    // Milestone 59C-3: wait for the state this test depends on, not a fixed
-    // 200ms. What follows is page.evaluate(navigate(...)), which waits for
-    // nothing at all -- so the only thing standing between the click and the
-    // export gate reading window.D was a sleep long enough to cover the
-    // re-render. Polling the model asserts the handler actually ran.
-    await expect
-      .poll(() => page.evaluate(() => (window as any).GuardianForms.testing.field('planGuardians.0.signatureState')))
-      .toBe('none');
+    // Milestone 73A: a guardian's blank choice is Unsigned whatever the date,
+    // so with the date cleared too there is nothing to choose: Unsigned shows
+    // as chosen, and the filing exports with no date.
+    await page.evaluate(() => { (window as any).GuardianForms.testing.patchFiling({ 'planGuardians.0.signatureDate': '' }); });
+    await gotoSignaturesPage(page);
+    await expect(page.locator('[data-signature-state-group="planGuardians.0"] input[value="none"]')).toBeChecked();
 
     await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
     await expect(page.locator('#print-doc-container .pdf-page').first()).toBeVisible({ timeout: 15000 });
     await expect(page.locator('.print-preview-banner')).toContainText('Ready to export');
   });
 
-  test('"/s/" Signed selected but date blank blocks with the tri-state message', async ({ page }) => {
+  // Milestone 73A: a guardian is no longer offered "/s/", so the tri-state
+  // message is proved on a signer who still is -- the Annual Plan's attorney.
+  test('"/s/" Signed selected but date blank blocks with the tri-state message (the Annual Plan\'s attorney)', async ({ page }) => {
     await freshStartNoPassword(page);
-    await createWard(page, 'Sig Typed Incomplete Ward', 'planSimplified');
-    await fillMinimalValidPlanSimplifiedWard(page);
-    await page.evaluate(() => { (window as any).GuardianForms.testing.patchFiling({ 'planGuardians.0.signatureDate': '' }); });
-    await gotoSignaturesPage(page);
+    await createWard(page, 'Sig Typed Incomplete Ward', 'planAnnual');
+    await fillMinimalValidPlanAnnualWard(page);
+    await page.evaluate(() => { (window as any).GuardianForms.testing.patchFiling({ attorney: 'Sample Attorney', attorney_email: 'attorney@example.com', attorney_signatureDate: '' }); });
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/p11'));
+    await page.locator('[data-signature-state-group="attorney"]').waitFor({ state: 'visible' });
 
-    await page.locator('[data-signature-state-group="planGuardians.0"] input[value="typed"]').check();
+    await page.locator('[data-signature-state-group="attorney"] input[value="typed"]').check();
+    await expect.poll(() => page.evaluate(() => (window as any).GuardianForms.testing.field('attorney_signatureState'))).toBe('typed');
     await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
 
     await expect(page.locator('body')).toContainText('date signed is required to apply "/s/" Signed', { timeout: 10000 });
@@ -336,28 +359,12 @@ test.describe('Milestone 39-C: signature state control rollout -- Plan Annual', 
     await page.locator('[data-signature-state-group="planGuardians.0"]').waitFor({ state: 'visible' });
   }
 
-  test('Guardian legacy migration, Unsigned-passes, and incomplete-"/s/" blocking', async ({ page }) => {
+  test('Guardian signs by hand or by stamp: Unsigned chosen, no "/s/", exports; a saved "/s/" is asked again (Milestone 73A)', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'PA Sig Ward', 'planAnnual');
     await fillMinimalValidPlanAnnualWard(page); // sets signatureDate, never signatureState
     await gotoSignaturesPage(page);
-
-    await expect(page.locator('[data-signature-state-group="planGuardians.0"] input[value="typed"]')).toBeChecked();
-
-    await page.locator('[data-signature-state-group="planGuardians.0"] input[value="none"]').check();
-    await expect
-      .poll(() => page.evaluate(() => (window as any).GuardianForms.testing.field('planGuardians.0.signatureState')))
-      .toBe('none');
-    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
-    await expect(page.locator('#print-doc-container .pdf-page').first()).toBeVisible({ timeout: 15000 });
-    await expect(page.locator('.print-preview-banner')).toContainText('Ready to export');
-
-    await gotoSignaturesPage(page);
-    await page.evaluate(() => { (window as any).GuardianForms.testing.patchFiling({ 'planGuardians.0.signatureDate': '' }); });
-    await page.locator('[data-signature-state-group="planGuardians.0"] input[value="typed"]').check();
-    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
-    await expect(page.locator('body')).toContainText('date signed is required to apply "/s/" Signed', { timeout: 10000 });
-    await expect(page.locator('#print-doc-container .pdf-page')).toHaveCount(0);
+    await expectGuardianSignsByHandOrStamp(page, 'planGuardians.0', () => gotoSignaturesPage(page));
   });
 
   test('Guardian Signature Stamp: draw, apply, unblocks export, and paints an image', async ({ page }) => {
@@ -437,28 +444,12 @@ test.describe('Milestone 39-C: signature state control rollout -- Plan Initial',
   // real export path with no test-only data manipulation, which was 40C-H's
   // own item 4.
 
-  test('Guardian legacy migration, Unsigned-passes, and incomplete-"/s/" blocking', async ({ page }) => {
+  test('Guardian signs by hand or by stamp: Unsigned chosen, no "/s/", exports; a saved "/s/" is asked again (Milestone 73A)', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'PI Sig Ward', 'planInitial');
     await fillMinimalValidPlanInitialWard(page); // sets signatureDate, never signatureState
     await gotoGuardianPage(page);
-
-    await expect(page.locator('[data-signature-state-group="planGuardians.0"] input[value="typed"]')).toBeChecked();
-
-    await page.locator('[data-signature-state-group="planGuardians.0"] input[value="none"]').check();
-    await expect
-      .poll(() => page.evaluate(() => (window as any).GuardianForms.testing.field('planGuardians.0.signatureState')))
-      .toBe('none');
-    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
-    await expect(page.locator('#print-doc-container .pdf-page').first()).toBeVisible({ timeout: 15000 });
-    await expect(page.locator('.print-preview-banner')).toContainText('Ready to export');
-
-    await gotoGuardianPage(page);
-    await page.evaluate(() => { (window as any).GuardianForms.testing.patchFiling({ 'planGuardians.0.signatureDate': '' }); });
-    await page.locator('[data-signature-state-group="planGuardians.0"] input[value="typed"]').check();
-    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
-    await expect(page.locator('body')).toContainText('date signed is required to apply "/s/" Signed', { timeout: 10000 });
-    await expect(page.locator('#print-doc-container .pdf-page')).toHaveCount(0);
+    await expectGuardianSignsByHandOrStamp(page, 'planGuardians.0', () => gotoGuardianPage(page));
   });
 
   test('Guardian Signature Stamp: draw, apply, unblocks export, and paints an image', async ({ page }) => {
@@ -547,28 +538,12 @@ test.describe('Milestone 39-C: signature state control rollout -- Plan Minor', (
     await page.locator('[data-signature-state-group="preparer"]').waitFor({ state: 'visible' });
   }
 
-  test('Guardian legacy migration, Unsigned-passes, and incomplete-"/s/" blocking', async ({ page }) => {
+  test('Guardian signs by hand or by stamp: Unsigned chosen, no "/s/", exports; a saved "/s/" is asked again (Milestone 73A)', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'PM Sig Ward', 'planMinor');
     await fillMinimalValidPlanMinorWard(page); // sets signatureDate, never signatureState
     await gotoGuardianPage(page);
-
-    await expect(page.locator('[data-signature-state-group="planGuardians.0"] input[value="typed"]')).toBeChecked();
-
-    await page.locator('[data-signature-state-group="planGuardians.0"] input[value="none"]').check();
-    await expect
-      .poll(() => page.evaluate(() => (window as any).GuardianForms.testing.field('planGuardians.0.signatureState')))
-      .toBe('none');
-    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
-    await expect(page.locator('#print-doc-container .pdf-page').first()).toBeVisible({ timeout: 15000 });
-    await expect(page.locator('.print-preview-banner')).toContainText('Ready to export');
-
-    await gotoGuardianPage(page);
-    await page.evaluate(() => { (window as any).GuardianForms.testing.patchFiling({ 'planGuardians.0.signatureDate': '' }); });
-    await page.locator('[data-signature-state-group="planGuardians.0"] input[value="typed"]').check();
-    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
-    await expect(page.locator('body')).toContainText('date signed is required to apply "/s/" Signed', { timeout: 10000 });
-    await expect(page.locator('#print-doc-container .pdf-page')).toHaveCount(0);
+    await expectGuardianSignsByHandOrStamp(page, 'planGuardians.0', () => gotoGuardianPage(page));
   });
 
   test('Guardian Signature Stamp: draw, apply, unblocks export, and paints an image', async ({ page }) => {
@@ -664,28 +639,12 @@ test.describe('Milestone 39-C: signature state control rollout -- Simplified Acc
     await page.locator(`[data-signature-state-group="${groupPath}"]`).waitFor({ state: 'visible' });
   }
 
-  test('Guardian legacy migration, Unsigned-passes, and incomplete-"/s/" blocking', async ({ page }) => {
+  test('Guardian signs by hand or by stamp: Unsigned chosen, no "/s/", exports; a saved "/s/" is asked again (Milestone 73A)', async ({ page }) => {
     await freshStartNoPassword(page);
     await createSimplifiedWard(page, 'SA Sig Ward');
     await fillMinimalValidSimplifiedWard(page); // sets signatureDate, never signatureState
     await gotoPage(page, '/p4', 'guardians.0');
-
-    await expect(page.locator('[data-signature-state-group="guardians.0"] input[value="typed"]')).toBeChecked();
-
-    await page.locator('[data-signature-state-group="guardians.0"] input[value="none"]').check();
-    await expect
-      .poll(() => page.evaluate(() => (window as any).GuardianForms.testing.field('guardians.0.signatureState')))
-      .toBe('none');
-    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
-    await expect(page.locator('#print-doc-container .pdf-page').first()).toBeVisible({ timeout: 15000 });
-    await expect(page.locator('.print-preview-banner')).toContainText('Ready to export');
-
-    await gotoPage(page, '/p4', 'guardians.0');
-    await page.evaluate(() => { (window as any).GuardianForms.testing.patchFiling({ 'guardians.0.signatureDate': '' }); });
-    await page.locator('[data-signature-state-group="guardians.0"] input[value="typed"]').check();
-    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
-    await expect(page.locator('body')).toContainText('date signed is required to apply "/s/" Signed', { timeout: 10000 });
-    await expect(page.locator('#print-doc-container .pdf-page')).toHaveCount(0);
+    await expectGuardianSignsByHandOrStamp(page, 'guardians.0', () => gotoPage(page, '/p4', 'guardians.0'));
   });
 
   test('Guardian Signature Stamp: draw, apply, unblocks export, and paints an image', async ({ page }) => {
@@ -755,28 +714,12 @@ test.describe('Milestone 39-C: signature state control rollout -- Annual Account
     await page.locator(`[data-signature-state-group="${groupPath}"]`).waitFor({ state: 'visible' });
   }
 
-  test('Guardian legacy migration, Unsigned-passes, and incomplete-"/s/" blocking', async ({ page }) => {
+  test('Guardian signs by hand or by stamp: Unsigned chosen, no "/s/", exports; a saved "/s/" is asked again (Milestone 73A)', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'AA Sig Ward', 'annual');
     await fillMinimalValidAnnualWard(page); // sets signatureDate, never signatureState
     await gotoPage(page, '/p3', 'guardians.0');
-
-    await expect(page.locator('[data-signature-state-group="guardians.0"] input[value="typed"]')).toBeChecked();
-
-    await page.locator('[data-signature-state-group="guardians.0"] input[value="none"]').check();
-    await expect
-      .poll(() => page.evaluate(() => (window as any).GuardianForms.testing.field('guardians.0.signatureState')))
-      .toBe('none');
-    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
-    await expect(page.locator('#print-doc-container .pdf-page').first()).toBeVisible({ timeout: 15000 });
-    await expect(page.locator('.print-preview-banner')).toContainText('Ready to export');
-
-    await gotoPage(page, '/p3', 'guardians.0');
-    await page.evaluate(() => { (window as any).GuardianForms.testing.patchFiling({ 'guardians.0.signatureDate': '' }); });
-    await page.locator('[data-signature-state-group="guardians.0"] input[value="typed"]').check();
-    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
-    await expect(page.locator('body')).toContainText('date signed is required to apply "/s/" Signed', { timeout: 10000 });
-    await expect(page.locator('#print-doc-container .pdf-page')).toHaveCount(0);
+    await expectGuardianSignsByHandOrStamp(page, 'guardians.0', () => gotoPage(page, '/p3', 'guardians.0'));
   });
 
   test('Guardian Signature Stamp: draw, apply, unblocks export, and paints an image', async ({ page }) => {
@@ -870,27 +813,12 @@ test.describe('Milestone 39-C: signature state control rollout -- Guardian Inven
     await page.locator(`[data-signature-state-group="${groupPath}"]`).waitFor({ state: 'visible' });
   }
 
-  test('Guardian (D-1) legacy migration, Unsigned-passes, and incomplete-"/s/" blocking', async ({ page }) => {
+  test('Guardian (D-1) signs by hand or by stamp: Unsigned chosen, no "/s/", exports; a saved "/s/" is asked again (Milestone 73A)', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'GI Sig Ward', 'guardian');
     await fillMinimalValidGuardianWard(page); // sets signatureDate, never signatureState
     await gotoPage(page, '/d1', 'guardians.0');
-
-    await expect(page.locator('[data-signature-state-group="guardians.0"] input[value="typed"]')).toBeChecked();
-
-    await page.locator('[data-signature-state-group="guardians.0"] input[value="none"]').check();
-    await expect
-      .poll(() => page.evaluate(() => (window as any).GuardianForms.testing.field('guardians.0.signatureState')))
-      .toBe('none');
-    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
-    await expect(page.locator('#print-doc-container .pdf-page').first()).toBeVisible({ timeout: 15000 });
-
-    await gotoPage(page, '/d1', 'guardians.0');
-    await page.evaluate(() => { (window as any).GuardianForms.testing.patchFiling({ 'guardians.0.signatureDate': '' }); });
-    await page.locator('[data-signature-state-group="guardians.0"] input[value="typed"]').check();
-    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
-    await expect(page.locator('body')).toContainText('date signed is required to apply "/s/" Signed', { timeout: 10000 });
-    await expect(page.locator('#print-doc-container .pdf-page')).toHaveCount(0);
+    await expectGuardianSignsByHandOrStamp(page, 'guardians.0', () => gotoPage(page, '/d1', 'guardians.0'), { banner: false });
   });
 
   test('Guardian (D-1) Signature Stamp: draw, apply, unblocks export, and paints an image', async ({ page }) => {

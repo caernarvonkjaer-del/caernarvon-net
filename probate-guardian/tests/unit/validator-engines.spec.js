@@ -28,7 +28,9 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '.
 const GOLDEN = path.join(root, 'tests/baseline/ms73-validator-golden.json');
 const UPDATE = process.env.PG_UPDATE_GOLDEN === '1';
 const NOTE = 'Milestone 73F part 1: what each export validator returned before the move to src/core/validation/engines/, '
-  + 'over tests/unit/support/filing-variants.js\'s variants, with the clock at 2026-10-05 noon.';
+  + 'over tests/unit/support/filing-variants.js\'s variants, with the clock at 2026-10-05 noon.'
+  + ' Changed by Milestone 73A (2026-10-06, a guardian signs by hand or by stamp): a guardian\'s blank choice is Unsigned under signature policy 2, so a certificate guardian\'s date alone (the Annual family, the Simplified) or the Inventory\'s D-5 guardian\'s no longer asks for a printed name to apply "/s/" (5 variants); the Annual, Initial and Minors\' Plans check each started co-guardian\'s signature choice (3 variants). New variants clear signaturePolicy (the legacy rule); each returns what its sibling does.'
+  + ' Also by 73A: every guardian signature issue (asked again, or an unreadable choice) names the guardian\'s signature choice as its field -- its path and code -- in place of the date, so its jump link lands on the choice (1,656 variants, no other change).';
 const json = (x) => JSON.parse(JSON.stringify(x));
 
 // Each distinct issue is stored once; a result is the list of its issues'

@@ -25,7 +25,7 @@ import { PLAN_RIGHTS, PLAN_ADLS, PLAN_BENEFITS } from '../filing/models/plan-ann
 import { INITIAL_ADLS } from '../filing/models/plan-initial.js';
 import { guardianHasAnyData, startedRows } from '../validation/row-started.js';
 import { serviceRecipientIssues } from '../validation/service-recipients.js';
-import { isSignatureComplete } from '../validation/signature-state.js';
+import { isSignatureComplete, signaturePolicyOf } from '../validation/signature-state.js';
 import { isPlanInitialAttorneyStarted, isAttorneyStarted } from '../validation/attorney-block.js';
 import { resolveServiceCertifier } from '../filing/unrepresented-filing.js';
 import { isPercentInRange } from '../validation/percent-range.js';
@@ -112,7 +112,13 @@ export function simplifiedCompletion(D, deps = {}) {
   const rowHasAnyData=r=>Object.entries(r||{}).some(([key,v])=>key!=='id'&&v!==''&&v!=null);
   // Milestone 72C: the guardian's email is a warning, never a requirement, so
   // it no longer holds back Part IV's mark (guardian-email.js).
-  const guardianComplete=g=>filled(g.name)&&filled(g.signatureDate)&&filled(g.ssn)&&filled(g.phone)&&filled(g.mailingStreet)&&filled(g.mailingCityStateZip)&&filled(g.residenceStreet)&&filled(g.residenceCityStateZip);
+  // Milestone 73A: a guardian's signature is complete by the role-aware rule
+  // the export check applies -- signed by hand (Unsigned, undated is fine) or a
+  // stamp applied; under signature policy 2 a saved "/s/" is asked again. It
+  // used to be "has a date", which kept an undated Unsigned guardian from ever
+  // reaching its mark while export passed it.
+  const guardianSigned=g=>isSignatureComplete({state:g.signatureState,date:g.signatureDate,image:g.signatureImage,role:'guardian',policy:signaturePolicyOf(D)});
+  const guardianComplete=g=>filled(g.name)&&guardianSigned(g)&&filled(g.ssn)&&filled(g.phone)&&filled(g.mailingStreet)&&filled(g.mailingCityStateZip)&&filled(g.residenceStreet)&&filled(g.residenceCityStateZip);
   // Milestone 57, Simplified parity gap. The same rule validateSimplified()
   // applies, not a second reading of it: a boolean reimplementation of the
   // signature states is how the sidebar and the export gate drifted apart
@@ -142,7 +148,7 @@ export function simplifiedCompletion(D, deps = {}) {
       &&datesOrdered(D.periodTo,D.certServiceDate,true)
       &&(attorneyStarted
         ?sigComplete(D.certAttySignatureState,D.certAttySignDate,D.certAttySignatureImage)
-        :(!!certifier&&sigComplete(D.certGuardianSignatureState,D.certGuardianSignDate,D.certGuardianSignatureImage))),
+        :(!!certifier&&guardianSigned({signatureState:D.certGuardianSignatureState,signatureDate:D.certGuardianSignDate,signatureImage:D.certGuardianSignatureImage}))),
     // Milestone 60J: Part VII is complete when every populated row is
     // complete AND the part has been answered -- entries, or the "none to
     // report" declaration. Matches Annual's 'a-p11' and validateSimplified().
@@ -165,7 +171,13 @@ export function simplifiedCompletion(D, deps = {}) {
 export function annualCompletion(D, deps = {}) {
   const filled=v=>v!==''&&v!==null&&v!==undefined;
   const hasAny=(...vals)=>vals.some(v=>filled(v));
-  const guardianComplete=g=>filled(g.name)&&filled(g.signatureDate)&&filled(g.ssn)&&filled(g.phone)&&filled(g.mailingStreet)&&filled(g.mailingCityStateZip);
+  // Milestone 73A: a guardian's signature is complete by the role-aware rule
+  // the export check applies -- signed by hand (Unsigned, undated is fine) or a
+  // stamp applied; under signature policy 2 a saved "/s/" is asked again. It
+  // used to be "has a date", which kept an undated Unsigned guardian from ever
+  // reaching its mark while export passed it.
+  const guardianSigned=g=>isSignatureComplete({state:g.signatureState,date:g.signatureDate,image:g.signatureImage,role:'guardian',policy:signaturePolicyOf(D)});
+  const guardianComplete=g=>filled(g.name)&&guardianSigned(g)&&filled(g.ssn)&&filled(g.phone)&&filled(g.mailingStreet)&&filled(g.mailingCityStateZip);
   const rowHasAnyData=r=>Object.entries(r||{}).some(([key,v])=>key!=='id'&&v!==''&&v!=null);
   // "I verify there are no X to report" (scheduleEmptyHTMLAnnual()) is an
   // affirmative answer, not a blank -- an empty schedule the guardian has
@@ -222,7 +234,7 @@ export function annualCompletion(D, deps = {}) {
       &&datesOrdered(D.periodTo,D.certDate,true)
       &&(isAttorneyStarted(D,'annual')
         ||(!!resolveServiceCertifier(D)
-          &&isSignatureComplete({state:D.certGuardianSignatureState,date:D.certGuardianSignDate,image:D.certGuardianSignatureImage})
+          &&guardianSigned({signatureState:D.certGuardianSignatureState,signatureDate:D.certGuardianSignDate,signatureImage:D.certGuardianSignatureImage})
           &&datesOrdered(D.periodTo,D.certGuardianSignDate,true))),
     // Milestone 58D: Part XI is complete once it is ANSWERED -- either the
     // no-items declaration is ticked, or there is at least one populated row
@@ -277,6 +289,8 @@ export function planSimplifiedCompletion(D, deps = {}) {
   const filled=v=>v!==''&&v!==null&&v!==undefined&&v!==false;
   const hasAny=(...vals)=>vals.some(v=>filled(v));
   const g0=(D.planGuardians||[])[0]||{};
+  // Milestone 73A: the first guardian signs by hand or with a stamp (see guardianSigned above).
+  const planGuardianSigned=g=>isSignatureComplete({state:g.signatureState,date:g.signatureDate,image:g.signatureImage,role:'guardian',policy:signaturePolicyOf(D)});
   // Anything entered on the (optional) Certificate of Service: the shared
   // rule in plan-certificate-of-service.js, imported like serviceRecipientIssues.
   const certStarted=planCertificateStarted(D);
@@ -298,7 +312,7 @@ export function planSimplifiedCompletion(D, deps = {}) {
     // Milestone 68A removed them with the validator's rule -- a plan is
     // written before the period it plans for, so a signature is not
     // ordered against it. Presence only, matching validatePlanSimplified().
-    'ps-p3':filled(g0.name)&&filled(g0.signatureDate),
+    'ps-p3':filled(g0.name)&&planGuardianSigned(g0),
     // Milestone 68C: the Certificate of Service. The sidebar asks (someone
     // listed, or "no recipients are required" answered Yes -- the
     // accountings' rule, the same import); export never demands.
@@ -323,6 +337,8 @@ export function planAnnualCompletion(D, deps = {}) {
   const hasAny=(...vals)=>vals.some(v=>filled(v));
   const anyOf=(...vals)=>vals.some(v=>!!v);
   const g0=(D.planGuardians||[])[0]||{};
+  // Milestone 73A: the first guardian signs by hand or with a stamp (see guardianSigned above).
+  const planGuardianSigned=g=>isSignatureComplete({state:g.signatureState,date:g.signatureDate,image:g.signatureImage,role:'guardian',policy:signaturePolicyOf(D)});
   // Milestone 61B: the same started-row rule the PDF model and the export
   // validator use (core/validation/row-started.js).
   // These three lists used to be a fourth hand-written copy that disagreed
@@ -379,7 +395,7 @@ export function planAnnualCompletion(D, deps = {}) {
     // `if(d.attorney)req(d.attorney_email,...)`.
     // Milestone 72C: the shared "attorney started" test, then the name and
     // email both, as validatePlanAnnual() now says.
-    'pa-p11':filled(g0.name)&&filled(g0.signatureDate)
+    'pa-p11':filled(g0.name)&&planGuardianSigned(g0)
       &&(!isAttorneyStarted(D,'planAnnual')||(filled(D.attorney)&&filled(D.attorney_email))),
     // Milestone 68C: the Certificate of Service -- see Plan Simplified's ps-p4.
     'pa-p12':recipientsSettled(D.certRecipients,D.certNoRecipients),
@@ -417,6 +433,8 @@ export function planInitialCompletion(D, deps = {}) {
   // the sidebar and the export blocker disagree about the same question.
   const isYes=v=>v===true||String(v??'').trim().toLowerCase()==='yes';
   const g0=(D.planGuardians||[])[0]||{};
+  // Milestone 73A: the first guardian signs by hand or with a stamp (see guardianSigned above).
+  const planGuardianSigned=g=>isSignatureComplete({state:g.signatureState,date:g.signatureDate,image:g.signatureImage,role:'guardian',policy:signaturePolicyOf(D)});
   // Milestone 61B: shared started-row rule -- see the Plan Annual note.
   const provs=startedRows(D.q9Providers);
   const adls=D.adls||{};
@@ -470,7 +488,7 @@ export function planInitialCompletion(D, deps = {}) {
       &&(!D.needsOther||filled(D.needsExplain))
       &&filled(D.committeeIncorporated)&&(D.committeeIncorporated!=='No'||filled(D.committeeExplain)),
     'pi-p9':anyOf(D.certIncapacitatedNoCopy,D.certMinorNoCopy,D.certConsulted,D.certRecognizeRights,D.certNoRestriction,D.certProvidesCare)
-      &&filled(g0.name)&&filled(g0.signatureDate),
+      &&filled(g0.name)&&planGuardianSigned(g0),
     // Milestone 55D (Error 4): this key was unconditional -- a completely
     // blank attorney card (the pro se/Guardian Advocate exemption
     // Milestone 35-3 protects) already showed incomplete here, directly
@@ -525,6 +543,8 @@ export function planMinorCompletion(D, deps = {}) {
     return s==='yes'||s==='no';
   };
   const g0=(D.planGuardians||[])[0]||{};
+  // Milestone 73A: the first guardian signs by hand or with a stamp (see guardianSigned above).
+  const planGuardianSigned=g=>isSignatureComplete({state:g.signatureState,date:g.signatureDate,image:g.signatureImage,role:'guardian',policy:signaturePolicyOf(D)});
   // Milestone 61B: shared started-row rule -- see the Plan Annual note.
   const provs=startedRows(D.q3Providers);
   const checks={
@@ -557,7 +577,7 @@ export function planMinorCompletion(D, deps = {}) {
     // plan is written before the period it plans for. Presence only now,
     // matching validatePlanMinor().
     'pm-p6':anyOf(D.certIncapacitated,D.certMinor,D.certConsulted,D.certNoRestriction,D.certProvidesCare,D.certPhysicianAttached)
-      &&filled(g0.name)&&filled(g0.signatureDate),
+      &&filled(g0.name)&&planGuardianSigned(g0),
     // Milestone 71B: the preparer and the attorney are each optional until
     // started (pro se filers and Guardian Advocates need neither), exactly as
     // validatePlanMinor() has always said; the sidebar used to demand both, so

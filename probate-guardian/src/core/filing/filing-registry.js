@@ -173,6 +173,9 @@ export function initializeEmptyData(type){
     data.inventoryType=type;
     data.filingType=type==='finalAccounting'?'Final':type==='trustAccounting'?'Trust':'Annual';
   }
+  // Milestone 73A: a new filing starts on signature policy 2 -- guardians sign
+  // by hand or with a stamp (src/core/validation/signature-state.js).
+  data.signaturePolicy=2;
   return data;
 }
 

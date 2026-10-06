@@ -611,7 +611,7 @@ function pagePlanASignatures(){
         <div class="row g-2">
           <div class="col-md-7">${renderFormField({ path: `planGuardians.${i}.name`, label: 'Printed Name', value: p.name, required: i===0 })}</div>
           <div class="col-md-5"><label class="form-label" for="plan_guardians_${i}_sigDate">Date Signed${reqMark}</label><input type="text" inputmode="text" class="form-control" id="plan_guardians_${i}_sigDate" placeholder="MM/DD/YYYY" value="${esc(formatDisplayDate(p.signatureDate||''))}" data-form-path="planGuardians.${i}.signatureDate" data-field-path="planGuardians.${i}.signatureDate" data-field-kind="date" data-field-format-policy="normalize" aria-describedby="plan_guardians_${i}_sigDate_hint"><div id="plan_guardians_${i}_sigDate_hint" class="form-text text-muted" style="font-size:0.75rem;margin-top:0.2rem;">Use MM/DD/YYYY</div></div>
-          <div class="col-12">${renderSignatureStateControl({ path: `planGuardians.${i}`, state: inferLegacySignatureState(p.signatureState, p.signatureDate), route: '/p11', signatureImage: p.signatureImage })}</div>
+          <div class="col-12">${renderSignatureStateControl({ path: `planGuardians.${i}`, state: p.signatureState, date: p.signatureDate, route: '/p11', signatureImage: p.signatureImage })}</div>
           <div class="col-md-5">${renderFormField({ path: `planGuardians.${i}.ssn`, label: 'SSN / EIN', value: p.ssn })}</div>
           <div class="col-md-7">${renderFormField({ path: `planGuardians.${i}.phone`, label: 'Phone Number', value: p.phone })}</div>
           <div class="col-12">${renderFormField({ path: `planGuardians.${i}.email`, label: 'Email Address', value: p.email })}</div>
@@ -654,7 +654,7 @@ function pagePlanASignatures(){
             <div class="row g-2">
               <div class="col-md-7">${inpS('attorney','Attorney Name',d.attorney,isAttorneyStarted(d,'planAnnual'))}</div>
               <div class="col-md-5">${inpS('attorney_signatureDate','Date Signed',d.attorney_signatureDate,false,'date')}</div>
-              <div class="col-12">${renderSignatureStateControl({ path: 'attorney', state: inferLegacySignatureState(d.attorney_signatureState, d.attorney_signatureDate), route: '/p11', signatureImage: d.attorney_signatureImage, statePath: 'attorney_signatureState', imagePath: 'attorney_signatureImage' })}</div>
+              <div class="col-12">${renderSignatureStateControl({ path: 'attorney', state: d.attorney_signatureState, date: d.attorney_signatureDate, route: '/p11', signatureImage: d.attorney_signatureImage, statePath: 'attorney_signatureState', imagePath: 'attorney_signatureImage' })}</div>
               <div class="col-md-6">${inpS('attorney_bar','Bar Number',d.attorney_bar)}</div>
               <div class="col-md-6">${inpS('attorney_phone','Phone Number',d.attorney_phone)}</div>
               <div class="col-12">${inpS('attorney_email','Primary Email (e-filing)',d.attorney_email,isAttorneyStarted(d,'planAnnual'),'email')}</div>

@@ -7,7 +7,7 @@ import { RECIPIENTS_OR_ATTESTATION, serviceRecipientIssues } from '../service-re
 import { annualReconcileState } from '../../accounting/annual-totals.js';
 import { certifyingCandidates, resolveServiceCertifier } from '../../filing/unrepresented-filing.js';
 import { checkDateOrder } from '../date-rules.js';
-import { checkSignatureState, inferLegacySignatureState } from '../signature-state.js';
+import { checkSignatureState, inferLegacySignatureState, signaturePolicyOf } from '../signature-state.js';
 import { formatMoney } from '../../format/money.js';
 import { getD } from '../../state.js';
 import { guardianHasAnyData } from '../row-started.js';
@@ -67,11 +67,11 @@ export function collectAnnualIssues(d){
     // rule as 39-B's Guardian pilot. name omitted: g.name is already
     // unconditionally required immediately above.
     errs.push(...checkSignatureState({
-      state: inferLegacySignatureState(g.signatureState, g.signatureDate),
+      state: g.signatureState,
       date: g.signatureDate,
       image: g.signatureImage,
       sectionLabel: 'Part III', roleLabel: `Guardian #${i+1}`,
-      filingType:T, datePath:`${k}.signatureDate`, imagePath:`${k}.signatureImage`,
+      filingType:T, statePath:`${k}.signatureState`, datePath:`${k}.signatureDate`, imagePath:`${k}.signatureImage`,role:'guardian',policy:signaturePolicyOf(d),
     }));
     req(g.ssn,`${p} — SSN/EIN`,`${k}.ssn`);
     req(g.phone,`${p} — Phone`,`${k}.phone`);
@@ -203,12 +203,12 @@ export function collectAnnualIssues(d){
       errs.push(issue('Part X — Tick the guardian who served the copies; that guardian signs the certificate of service',`guardians.${first?first.index:0}.certifiesService`));
     }else{
       errs.push(...checkSignatureState({
-        state: inferLegacySignatureState(d.certGuardianSignatureState, d.certGuardianSignDate),
+        state: d.certGuardianSignatureState,
         name: certifier.name,
         date: d.certGuardianSignDate,
         image: d.certGuardianSignatureImage,
         sectionLabel: 'Part X', roleLabel: 'Guardian',
-        filingType:T, namePath:`guardians.${certifier.index}.name`, datePath:'certGuardianSignDate', imagePath:'certGuardianSignatureImage',
+        filingType:T, namePath:`guardians.${certifier.index}.name`, statePath:'certGuardianSignatureState', datePath:'certGuardianSignDate', imagePath:'certGuardianSignatureImage',role:'guardian',policy:signaturePolicyOf(d),
       }));
       errs.push(...checkDateOrder(d.periodTo,d.certGuardianSignDate,{
         sectionLabel:'Part X',earlierLabel:'Accounting Period To',laterLabel:'Guardian Certificate Signature Date',allowSameDay:true,

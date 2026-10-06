@@ -4,7 +4,7 @@
 // can judge any filing (73F part 2 uses that). validatePlanMinor() stays as a wrapper
 // returning exactly what it did; tests/unit/validator-engines.spec.js holds it.
 import { checkDateOrder } from '../date-rules.js';
-import { checkSignatureState, inferLegacySignatureState } from '../signature-state.js';
+import { checkSignatureState, inferLegacySignatureState, signaturePolicyOf } from '../signature-state.js';
 import { isAttorneyStarted } from '../attorney-block.js';
 import { isTriStateAnswer } from '../../form/form-contract.js';
 import { issueFactory } from '../validation-issue.js';
@@ -64,12 +64,22 @@ export function collectPlanMinorIssues(d){
   // rule as 39-B's Guardian pilot on Plan Simplified. name omitted: g0.name
   // is already unconditionally required immediately above.
   errs.push(...checkSignatureState({
-    state: inferLegacySignatureState(g0.signatureState, g0.signatureDate),
+    state: g0.signatureState,
     date: g0.signatureDate,
     image: g0.signatureImage,
     sectionLabel: 'Guardian Signatures', roleLabel: 'Guardian',
-    filingType:T, datePath:'planGuardians.0.signatureDate', imagePath:'planGuardians.0.signatureImage',
+    filingType:T, statePath:'planGuardians.0.signatureState', datePath:'planGuardians.0.signatureDate', imagePath:'planGuardians.0.signatureImage',role:'guardian',policy:signaturePolicyOf(d),
   }));
+  // Milestone 73A: each started co-guardian's signature, by the same
+  // role-aware rule as the first guardian's -- no Plan checked a
+  // co-guardian before, so a co-guardian's saved "/s/" could never be asked
+  // again (Milestone 74B adds the rest of a started co-guardian's checks).
+  (d.planGuardians||[]).forEach((cg,i)=>{
+    if(i===0||!rowStarted(cg))return;
+    errs.push(...checkSignatureState({state:cg.signatureState,date:cg.signatureDate,image:cg.signatureImage,sectionLabel:'Guardian Signatures',roleLabel:`Co-Guardian ${i+1}`,
+      filingType:T,statePath:`planGuardians.${i}.signatureState`,datePath:`planGuardians.${i}.signatureDate`,imagePath:`planGuardians.${i}.signatureImage`,
+      role:'guardian',policy:signaturePolicyOf(d)}));
+  });
   req(g0.mailingStreet,'Guardian Signatures — Guardian mailing street address is required','planGuardians.0.mailingStreet');
   req(g0.phone,'Guardian Signatures — Guardian phone is required','planGuardians.0.phone');
   req(g0.tin,'Guardian Signatures — Guardian SSN/EIN is required','planGuardians.0.tin');

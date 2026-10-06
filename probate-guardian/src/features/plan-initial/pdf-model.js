@@ -11,6 +11,7 @@ import { maskSSN } from '../../core/pdf/ssn-format.js';
 import { rowStarted, startedRows } from '../../core/validation/row-started.js';
 import { INITIAL_ADLS } from '../../core/filing/models/plan-initial.js';
 import { PLAN_INITIAL_EXPLANATIONS, shownExplanation } from '../../core/filing/plan-explanations.js';
+import { resolveSignatureModes } from '../../core/pdf/signature-modes.js';
 
 export function buildPlanInitialModel(D, options) {
   const d = D || {};
@@ -444,6 +445,7 @@ export function buildPlanInitialModel(D, options) {
     return {
       type: 'signature-block',
       role,
+      signerRole: 'guardian',
       signerName: p.name || '',
       signatureDate: fmtDate(p.signatureDate),
       signatureStyle,
@@ -529,6 +531,7 @@ export function buildPlanInitialModel(D, options) {
       {
         type: 'signature-block',
         role: "Guardian's Attorney",
+        signerRole: 'attorney',
         signerName: d.attorney_name || '',
         signatureDate: fmtDate(d.attorney_signatureDate),
         signatureStyle,
@@ -547,5 +550,7 @@ export function buildPlanInitialModel(D, options) {
   // Milestone 68C: the Certificate of Service, last, on every Plan.
   sections.push(planCertificateOfServiceSection(d, { attorneyName: (f) => f.attorney_name || '', planNoun: 'plan' }, fmtDate));
 
-  return { metadata, sections };
+  // Milestone 73A: each signature block's print mode, from its signer's role
+  // and the year's signature policy (src/core/pdf/signature-modes.js).
+  return resolveSignatureModes({ metadata, sections }, d);
 }

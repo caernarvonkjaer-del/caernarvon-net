@@ -2,8 +2,8 @@
  "generatedBy": "node scripts/ms70-assertion-counts.mjs --write-baseline",
  "note": "Milestone 70 per-spec assertion counts (static expect calls). tests/unit/ms70-assertion-counts.spec.js fails when a spec falls below its count; lowering it requires --reason, recorded in dropLog. A tripwire, not proof of equivalence (decision D9).",
  "totals": {
-  "expects": 7893,
-  "tests": 2250
+  "expects": 7960,
+  "tests": 2275
  },
  "counts": {
   "tests/e2e/annotation-toolbar-containment.spec.ts": {
@@ -307,7 +307,7 @@
    "tests": 1
   },
   "tests/e2e/pdf-accessibility-and-signatures.spec.ts": {
-   "expects": 58,
+   "expects": 59,
    "tests": 4
   },
   "tests/e2e/pdf-annotate.spec.ts": {
@@ -327,7 +327,7 @@
    "tests": 3
   },
   "tests/e2e/pdf-form-specific.spec.ts": {
-   "expects": 131,
+   "expects": 132,
    "tests": 8
   },
   "tests/e2e/pdf-notice-title.spec.ts": {
@@ -518,8 +518,12 @@
    "expects": 20,
    "tests": 5
   },
+  "tests/e2e/signature-by-hand.spec.ts": {
+   "expects": 38,
+   "tests": 7
+  },
   "tests/e2e/signature-capture.contract.spec.ts": {
-   "expects": 137,
+   "expects": 110,
    "tests": 36
   },
   "tests/e2e/signature-stamp-reuse.spec.ts": {
@@ -1206,6 +1210,10 @@
    "expects": 12,
    "tests": 10
   },
+  "tests/unit/signature-by-hand.spec.js": {
+   "expects": 54,
+   "tests": 18
+  },
   "tests/unit/signature-capture.spec.js": {
    "expects": 47,
    "tests": 27
@@ -1439,6 +1447,13 @@
    "now": 54,
    "reason": "Milestone 71B follow-up: sidebar-only-wants.spec.ts's Plan-Minors case now pins 71B's optional-until-started rule (the old case pinned the pre-71B list); section-guidance-policy.spec.js's Plan-Minors case likewise",
    "date": "2026-09-30"
+  },
+  {
+   "file": "tests/e2e/signature-capture.contract.spec.ts",
+   "was": 137,
+   "now": 110,
+   "reason": "Milestone 73A (2026-10-06): signature-capture.contract's seven guardian cases now call one helper, expectGuardianSignsByHandOrStamp() (9 assertions, run on each of the seven forms): a guardian signs by hand or by stamp, so the '/s/' pre-selection and '/s/'-without-a-date guardian cases were replaced by Unsigned-chosen, no '/s/', and a saved '/s/' asked again; the '/s/'-without-a-date message moved to the Annual Plan's attorney. Written assertions fall; executed ones rise.",
+   "date": "2026-10-06"
   }
  ]
 }

@@ -9,6 +9,7 @@ import { REMUNERATION_DECLARATION, REMUNERATION_NONE_REPORTED } from '../../core
 import { formatMoney } from '../../core/format/money.js';
 import { isUnrepresented, resolveServiceCertifier } from '../../core/filing/unrepresented-filing.js';
 import { methodOfServiceLine } from '../../core/filing/service-method.js';
+import { resolveSignatureModes } from '../../core/pdf/signature-modes.js';
 
 export function buildSimplifiedAccountingModel(D, options = {}) {
   const d = D || {};
@@ -167,6 +168,7 @@ export function buildSimplifiedAccountingModel(D, options = {}) {
       type: 'signature-block',
       tag: 'Part',
       role: gRole,
+      signerRole: 'guardian',
       signerName: g.name || '',
       signature: formatSig(g.name),
       signatureStyle,
@@ -225,6 +227,7 @@ export function buildSimplifiedAccountingModel(D, options = {}) {
         type: 'signature-block',
         tag: 'Part',
         role: 'Attorney for Guardian',
+        signerRole: 'attorney',
         signerName: d.attorney || '',
         signature: formatSig(d.attorney),
         signatureStyle,
@@ -256,6 +259,7 @@ export function buildSimplifiedAccountingModel(D, options = {}) {
     type: 'signature-block',
     tag: 'Part',
     role: 'Guardian (Service)',
+    signerRole: 'guardian',
     signerName: certifier ? certifier.name : '',
     signature: formatSig(certifier ? certifier.name : ''),
     signatureStyle,
@@ -319,6 +323,7 @@ export function buildSimplifiedAccountingModel(D, options = {}) {
         type: 'signature-block',
         tag: 'Part',
         role: 'Attorney for Guardian (Service)',
+        signerRole: 'attorney',
         signerName: d.attorney || '',
         signature: formatSig(d.attorney),
         signatureStyle,
@@ -393,8 +398,7 @@ export function buildSimplifiedAccountingModel(D, options = {}) {
     });
   }
 
-  return {
-    metadata,
-    sections,
-  };
+  // Milestone 73A: each signature block's print mode, from its signer's role
+  // and the year's signature policy (src/core/pdf/signature-modes.js).
+  return resolveSignatureModes({ metadata, sections }, d);
 }

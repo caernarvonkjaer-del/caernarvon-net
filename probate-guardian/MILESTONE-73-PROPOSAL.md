@@ -5,8 +5,8 @@
 **Draft. Every decision is settled (2026-10-04 and 2026-10-05). Built so
 far: 73U (2026-10-04, `5b8849b`), 73V (2026-10-05, `8b96aa3`), 73C
 (2026-10-05, `861b6a9`, brought forward from its place in the build order at the
-requester's choice) 73D (2026-10-05, `c8e84fe`, likewise), 73J part 1 (2026-10-05, `d819c4a`)
-and 73F part 1 (2026-10-06), each approved by name.** Nothing else is approved.
+requester's choice) 73D (2026-10-05, `c8e84fe`, likewise), 73J part 1 (2026-10-05, `d819c4a`),
+73F part 1 (2026-10-06, `5e9e17b`) and 73A (2026-10-06), each approved by name.** Nothing else is approved.
 Building any other item, or any part of a split item, needs the requester's
 named approval of that item or part (AGENTS.md §3).
 
@@ -40,7 +40,7 @@ recorded as **Pinellas Clerk practice**, not as a reading of a statute or rule
 
 | # | Item | What a filer sees today | Severity | Parts |
 | --- | --- | --- | --- | --- |
-| 1 | 73A | Choosing **Unsigned** prints "/s/ Name" and the electronic-signature caption on every form; a typed date makes it look signed; a Stamp never applied prints "/s/" | High | One |
+| 1 | 73A | Choosing **Unsigned** prints "/s/ Name" and the electronic-signature caption on every form; a typed date makes it look signed; a Stamp never applied prints "/s/" | High | **Built** (2026-10-06) |
 | 2 | 73B | The PDF says **"Plenary"** when no Type of Guardianship was chosen; a new Annual says **"Professional Guardian"**; rows, PDFs and the Inventory's workbook carry answers and shares the filer never gave | High | One |
 | 3 | 73C | **"+ Add Co-Guardian" does nothing** on all four Plans | High | **Built** (2026-10-05) |
 | 4 | 73D | Ticking and unticking **"This item is a vehicle"** erases the Description and the safe-deposit answer; hidden Plan "Explanation" text still prints | High | **Built** (2026-10-05) |
@@ -143,7 +143,7 @@ behaviour on its own except where its row says so.
 | 12 | 73T part 4 — Simplified workbook, connected | 73T p1 | `simplified-accounting/excel.js` | Simplified round trip; `import-confirm.spec.ts` (Simplified, the half-apply); that form's import specs |
 | 13 | 73M | 73T p2–p4 | `bond-depository.js`, the three `print.js`, `pdf-preview.js` | `bond-depository.spec.js`, 18 specs that wait for Save as Excel |
 | 14 | 73E part 2 — Link Person and Merge | 73E p1 | `pick-record-dialogs.js`, `party-management.js`, `party-resolver.js` | new e2e cases |
-| 15 | 73A | 73F p1 | `pdf-engine.js`, `signature-state.js`, `signature-state-control.js`, nine `index.js` and `pdf-model.js`, the Plans' certificate, `normalize-filing.js`, `filing-years.js`, `party-resolver.js`, the dashboard's Mark Open, CSV | new signature units and e2e; every `MINIMAL_VALID_*` |
+| 15 | 73A | 73F p1 | `pdf-engine.js`, `signature-state.js`, `signature-state-control.js`, nine `index.js` and `pdf-model.js`, the Plans' certificate, `normalize-filing.js`, `filing-years.js`, `party-resolver.js`, the dashboard's Mark Open, CSV | new signature units and e2e; every `MINIMAL_VALID_*` — **Built** 2026-10-06 |
 | 16 | 73B | 73T p2–p3 | three accounting `pdf-model.js`, `models/annual.js`, `models/guardian.js`, `schedule-definitions.js`, Annual and Inventory `index.js`, `output-preflight.js`, CSV | new `tests/unit/no-invented-answers.spec.js`; three goldens |
 | 17 | 73F part 2 — the screens use the shared checks | 73F p1, 73A | `completion.js` (retired rules), `nav-marks.js`, `section-status.js`, `readiness-config.js`, `dashboard/view-model.js`, `pdf-preview.js`, `validation-panel.js` | new `tests/unit/sidebar-export-parity.spec.js`; completion golden regenerated |
 | 18 | 73F part 3 — rules and asterisks | 73F p2 | every validator, `commit-coordinator.js` (draft clean-up), `ward-county.js`, `attorney-required-markers.js`, CSV | fixtures (§8.3), parity spec |
@@ -339,6 +339,175 @@ forms' `index.js` (controls and validators) and `pdf-model.js`;
 8. **Legal framing:** recorded as Clerk practice resting on the workbook's
    text, not as a reading of Rule 2.515; flagged for a qualified person.
 9. **Cross-form:** one engine and one control serve all nine forms.
+
+### Build record — BUILT 2026-10-06 (approved by name by the requester, 2026-10-06)
+
+**What changed for a filer:**
+
+- **Unsigned prints a blank line** with "Signature of <name>" beneath and no
+  Rule 2.515 caption, on all nine forms. So does a Signature Stamp chosen but
+  never applied, and any block with no name. A typed date still prints.
+- **A guardian signs by hand or by stamp.** Wherever a guardian signs — their
+  own block on all nine forms, and a certificate of service a guardian signs —
+  the choices are Unsigned and Signature Stamp. "/s/" Signed is not offered,
+  and typing the date no longer pre-selects anything. Attorneys and outside
+  preparers keep all three choices; for them a blank choice with a date is
+  still "/s/".
+- **A guardian's "/s/" on a filing being prepared is asked again.** When the
+  filing is opened, the block shows nothing chosen, with the note "A guardian
+  no longer signs with "/s/"". It is listed as missing on the page, in the
+  sidebar, on the readiness card and in Preview, and prints the blank line
+  until the filer chooses.
+- **Filed copies reprint as filed.** A closed filing, and an archived year
+  switched back in, keep their guardian "/s/": it prints and shows as chosen,
+  but can't be newly chosen. Mark Open asks again.
+- **New Year clears every signer's choice and stamp** — guardians, preparers,
+  attorneys and every certificate signer.
+- **A guardian signing by hand reaches ✓ without a date.** The sidebar counts
+  a guardian's signature by the export check's own rule, so a guardian's
+  unreadable choice no longer shows ✓ either.
+- **"Use my saved signature"** is offered on the certificate blocks a guardian
+  signs: the accountings' and the Inventory's certificates, and a Plan's when
+  the guardian certifies.
+- **The Plans check each started co-guardian's signature choice.** No Plan
+  checked a co-guardian before; the rest of the co-guardian rule is 74B's.
+- **Wording:** the readiness row reads "Guardian's signature block complete
+  (signed by hand or stamped)"; the Plans' certificate advisory says how a
+  guardian signs it.
+
+**How:**
+
+- **A policy on each year's data** (`signaturePolicy`,
+  `src/core/signature/signature-policy.js`): absent or 1 is the legacy rule, 2
+  the guardian rule. New filings and New Year write 2. Opening a filing that
+  isn't closed and has no policy upgrades it (`setActiveFiling()`, right after
+  `normalizeWardData()` — the open, not every normalisation, so a filing only
+  listed on the dashboard is untouched); Mark Open forces the upgrade; an
+  archived year switched back in that never decided is marked 1; an Excel
+  import writes no policy, so never changes it.
+- **Asked again, not erased.** Under the guardian rule a blank choice means
+  Unsigned, so a blank can't stand for "not chosen". The design said a
+  guardian's "/s/" "becomes not chosen"; the build keeps the stored choice
+  and reads it as not chosen — asked again, listed, printed blank. The upgrade
+  first writes "/s/" where the legacy rule implied it (a blank choice with a
+  date), so exactly those blocks are asked again. Nothing the filer entered is
+  erased.
+- **Role-aware shared pieces** (`signature-state.js`):
+  `checkSignatureState()`, `isSignatureComplete()`,
+  `inferLegacySignatureState()` and the new `signaturePrintMode()` take the
+  signer's role and the year's policy. The signature control reads the stored
+  choice and date itself, takes the role from its card's path
+  (`signerRoleForPath()`) or from its caller where the signer varies (the
+  Plans' certificate), and draws a guardian's two choices; a card with no role
+  fails loudly.
+- **Print modes.** Every PDF model names each block's signer role, and
+  `src/core/pdf/signature-modes.js` resolves its mode — blank line, "/s/" or
+  stamp — before the engine draws. The engine infers nothing; a block without
+  a mode, or naming no role, fails loudly. The old `wetSignatureExplicit`
+  switch, which no model set, is gone.
+- **The checks:** the ten guardian signature checks across the seven engines
+  pass the role and policy, and name the guardian's signature choice as the
+  issue's field, so "Go to field" lands on the choice, not the date; each Plan
+  checks every started co-guardian's choice (`rowStarted()`). On a Plan whose
+  Guardian #1 is asked again, the readiness card shows the guardian row and,
+  beneath it, the specific "choose Unsigned or Signature Stamp" line: the
+  choice's field is deliberately not folded into the guardian row, because
+  every row index shares one code and folding it in would hide a
+  co-guardian's issue behind Guardian #1's row (the table's own rule: a
+  duplicated row is cosmetic, a hidden blocker is not).
+- **The sidebar** (`completion.js`) counts a guardian's signature by
+  `isSignatureComplete()` with the role and policy, in place of "has a date";
+  **the readiness card**'s four guardian rows likewise.
+- **Saved stamps on certificate blocks:** `certificateSignerSlot()` in
+  `party-resolver.js` finds the certificate signer's shared record
+  (`certGuardian`, `serviceGuardian`, and the Plans' `cert` through
+  `resolveCertSigner()`).
+- **Data model:** a `signaturePolicy` row and a note on the ten guardian
+  signature-choice rows; `verify:data-model` passes (1,056 rows).
+
+**Tests:**
+
+- New `tests/unit/signature-by-hand.spec.js` (36): the rules for every role
+  under each policy; the policy functions; New Year's clearing on seven forms;
+  the control's choices; signer roles; every form's print modes; the
+  missing-role failure; every form's checks under each policy, the Plans'
+  co-guardians included; the sidebar's undated Unsigned; the certificate's
+  saved stamp. **Red-first:** with the source changes stashed
+  (`signature-state.js` kept, so the spec loads), 24 fail for their stated
+  reasons.
+- New `tests/e2e/signature-by-hand.spec.ts` (7): the Annual's and the Annual
+  Plan's PDFs print an Unsigned guardian as a blank line, the attorney's "/s/"
+  intact; every form's guardian offers Unsigned and Signature Stamp only; an
+  old "/s/" is asked again and Unsigned answers it; a closed filing reprints
+  its "/s/" and Mark Open asks again; an archived year switched back in
+  reprints its "/s/", also after reopening; New Year clears choices and
+  stamps; an Excel export and re-import keeps the rule. **Red-first:** with
+  every source change stashed, all 7 fail for their stated reasons — the
+  Annual Plan printed "/s/ Sample Guardian" above the Rule 2.515 caption.
+- **Goldens regenerated, each change checked by variant name** (the variant
+  generator gained a "signaturePolicy cleared" variant per filing, which
+  shifts every later index):
+  - the completion golden: a guardian's signature counts only as the export
+    check reads it. The saturated filings' unreadable guardian choice, which
+    every validator already refused, now leaves the guardian page incomplete
+    (a-p3, s-p4, pa-p11, pi-p9, pm-p6; on the Annual family a second
+    guardian's too). A first Plan guardian signing by hand with only a name, or
+    the date cleared, no longer leaves pa-p11 or ps-p3 incomplete. Each
+    legacy-rule variant returns what its sibling does. Recorded in its note.
+  - the validator golden: 8 changes of outcome. A certificate guardian's
+    date alone, or the Inventory's D-5 guardian's, no longer asks for a
+    printed name to apply "/s/" (5); the Annual, Initial and Minors' Plans
+    check a started co-guardian's choice (3). And every guardian signature
+    issue — asked again, or an unreadable choice — names the choice as its
+    field (path and code) instead of the date (1,656 variants, no other
+    change). Recorded in its note and the spec's.
+  - `ms70-70C-filing-shapes.json`: every new filing carries
+    `signaturePolicy: 2`.
+  - `ms70-year-rollover-golden.json`: the archived year records
+    `signaturePolicy: 2`; nothing else moves (no fixture fills a signature
+    choice or stamp).
+- **Changed browser specs**, each an intended change (the proposal named most
+  of them): the four Plans' Signatures-page snapshots;
+  `signature-capture.contract.spec.ts` (each form's guardian case proves the
+  guardian rule through one helper, and the "/s/"-without-a-date message moved
+  to the Annual Plan's attorney); the Inventory's two PDF text specs; the two
+  `navigation-status` jump links and Print Preview's (they follow the
+  guardian's asked-again choice to its own Unsigned choice); 73C's
+  co-guardian redraw case (chooses Stamp); `pdf-structure-tags.spec.ts` (the
+  hand-signed fixture names its role and mode).
+- **Related browser specs:** 42 files, 535 tests — every spec printing,
+  offering, checking or counting a signature, the sidebar and readiness
+  contracts, the year rollover, the closed-filing and mixed-version specs. The
+  first run: 507 passed, 28 failed, every failure one of the intended changes
+  above. After the changes and the fix above, the 13 changed files: **198 passed, none failed** (19.2 minutes).
+- Full unit suite passes; `npm run check:types` clean (`isSignatureComplete()`'s
+  type gained the role and policy); `verify:data-model` passes.
+
+**Found while building and fixed here:** the related browser run's two
+jump-link tests showed the asked-again issue sending "Go to field" to the
+guardian's date box on every form: the guardian checks named only the date's
+field. Each now names the choice's (above). **Red-first:** the unit spec's
+per-form check that every asked-again issue names a signature choice failed
+on all seven forms, naming the date (`guardians.0.signatureDate`,
+`planGuardians.0.signatureDate`); with the fix it passes.
+
+**Found while building, recorded and not changed here:**
+
+- **On the Annual and Simplified Plans the guardian page can now show ✓ while
+  export still wants the guardian's phone, address or SSN** (only the name
+  entered). The sidebar's Plan rules never checked those; the date requirement
+  removed here happened to hide the gap. 73F part 2 makes the sidebar read the
+  export checks themselves, which closes it.
+- **The guardian's "Date Signed" is still starred** on the Plans' Signatures
+  pages, though no rule requires it when a guardian signs by hand — and export
+  never did. 73F part 3 draws the asterisks from the rules.
+- **A filing saved before this and not opened since** is judged on the
+  dashboard by the legacy rule until it is opened, so its guardian's "/s/"
+  counts as signed there until opening asks again. Visible and one-time; 73F
+  part 2, which puts the dashboard on the same checks, applies the open-time
+  rule to what it judges.
+
+**Full regression:** not run yet.
 
 ---
 

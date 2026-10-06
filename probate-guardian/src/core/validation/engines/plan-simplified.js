@@ -4,8 +4,9 @@
 // can judge any filing (73F part 2 uses that). validatePlanSimplified() stays as a wrapper
 // returning exactly what it did; tests/unit/validator-engines.spec.js holds it.
 import { checkDateOrder } from '../date-rules.js';
-import { checkSignatureState, inferLegacySignatureState } from '../signature-state.js';
+import { checkSignatureState, inferLegacySignatureState, signaturePolicyOf } from '../signature-state.js';
 import { issueFactory } from '../validation-issue.js';
+import { rowStarted } from '../row-started.js';
 
 export function collectPlanSimplifiedIssues(d){
   const errs=[];
@@ -50,12 +51,22 @@ export function collectPlanSimplifiedIssues(d){
   // signature state -- passing it here too would just duplicate that
   // message for the same blank field.
   errs.push(...checkSignatureState({
-    state: inferLegacySignatureState(g.signatureState, g.signatureDate),
+    state: g.signatureState,
     date: g.signatureDate,
     image: g.signatureImage,
     sectionLabel: 'Signatures', roleLabel: 'Guardian 1',
-    filingType:T, datePath:'planGuardians.0.signatureDate', imagePath:'planGuardians.0.signatureImage',
+    filingType:T, statePath:'planGuardians.0.signatureState', datePath:'planGuardians.0.signatureDate', imagePath:'planGuardians.0.signatureImage',role:'guardian',policy:signaturePolicyOf(d),
   }));
+  // Milestone 73A: each started co-guardian's signature, by the same
+  // role-aware rule as the first guardian's -- no Plan checked a
+  // co-guardian before, so a co-guardian's saved "/s/" could never be asked
+  // again (Milestone 74B adds the rest of a started co-guardian's checks).
+  (d.planGuardians||[]).forEach((cg,i)=>{
+    if(i===0||!rowStarted(cg))return;
+    errs.push(...checkSignatureState({state:cg.signatureState,date:cg.signatureDate,image:cg.signatureImage,sectionLabel:'Signatures',roleLabel:`Guardian ${i+1}`,
+      filingType:T,statePath:`planGuardians.${i}.signatureState`,datePath:`planGuardians.${i}.signatureDate`,imagePath:`planGuardians.${i}.signatureImage`,
+      role:'guardian',policy:signaturePolicyOf(d)}));
+  });
   // Milestone 72C: Guardian 1's email no longer blocks export -- it warns,
   // and only when no attorney is entered (guardian-email.js), as on every form.
   req(g.phone,'Signatures — Guardian 1 phone is required','planGuardians.0.phone');
