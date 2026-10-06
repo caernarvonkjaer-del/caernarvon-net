@@ -82,7 +82,7 @@ describe('Milestone 72C: every Plan has an entry, and each lists a real field', 
 // its own right, reported once, and Part V's sidebar mark waits for it.
 describe('Milestone 72C: the Annual family asks for the attorney\'s name', () => {
   let validateAnnual;
-  let annualCompletion;
+  let sectionMarks;
   let openFiling;
   let emptyDataAnnual;
   const deps = { calcTotalsAnnual: () => ({}), annualReconcileState: () => ({ outOfBalance: false, explained: true }) };
@@ -92,7 +92,7 @@ describe('Milestone 72C: the Annual family asks for the attorney\'s name', () =>
     ({ openFiling } = await import('./support/open-filing.js'));
     ({ emptyDataAnnual } = await import('../../src/core/filing/models/annual.js'));
     ({ validateAnnual } = await import('../../src/features/annual-accounting/index.js'));
-    ({ annualCompletion } = await import('../../src/core/status/completion.js'));
+    ({ sectionMarks } = await import('../../src/core/status/section-marks.js'));
   };
   const COMPLETE = {
     attorney_bar: '0123456', attorney_phone: '(727) 555-0100', attorney_email: 'rachel@law.example',
@@ -115,8 +115,9 @@ describe('Milestone 72C: the Annual family asks for the attorney\'s name', () =>
 
   test('a-p5 stays unfinished until the name is entered', async () => {
     await ready();
-    expect(annualCompletion(annual(COMPLETE), deps).checks['a-p5']).toBe(false);
-    expect(annualCompletion(annual({ ...COMPLETE, attorney: 'Rachel Lawyer' }), deps).checks['a-p5']).toBe(true);
+    // Milestone 73F part 2: the mark is the export checks' own answer for Part V.
+    expect(sectionMarks(annual(COMPLETE), 'annual').checks['a-p5']).toBe(false);
+    expect(sectionMarks(annual({ ...COMPLETE, attorney: 'Rachel Lawyer' }), 'annual').checks['a-p5']).toBe(true);
     expect(messages(annual({ ...COMPLETE, attorney: 'Rachel Lawyer' })).filter((s) => s.startsWith('Part V —'))).toEqual([]);
   });
 });

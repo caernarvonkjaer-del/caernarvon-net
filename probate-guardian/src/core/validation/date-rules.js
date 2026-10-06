@@ -1,3 +1,5 @@
+// @ts-nocheck -- in tsconfig.json's checked program only transitively (router.js -> nav-marks.js -> section-marks.js -> the
+// export checks, Milestone 73F part 2); never written with JSDoc types (AGENTS.md section 2).
 // Milestone 34-1A: shared date-ordering validation rule.
 // Canonical date storage is YYYY-MM-DD (see src/core/form/date-parser.js),
 // which is directly string-comparable — no Date object parsing needed.

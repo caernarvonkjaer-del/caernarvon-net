@@ -2,8 +2,8 @@
  "generatedBy": "node scripts/ms70-assertion-counts.mjs --write-baseline",
  "note": "Milestone 70 per-spec assertion counts (static expect calls). tests/unit/ms70-assertion-counts.spec.js fails when a spec falls below its count; lowering it requires --reason, recorded in dropLog. A tripwire, not proof of equivalence (decision D9).",
  "totals": {
-  "expects": 7960,
-  "tests": 2275
+  "expects": 7979,
+  "tests": 2278
  },
  "counts": {
   "tests/e2e/annotation-toolbar-containment.spec.ts": {
@@ -494,6 +494,10 @@
    "expects": 2,
    "tests": 1
   },
+  "tests/e2e/section-marks-follow-export.spec.ts": {
+   "expects": 23,
+   "tests": 5
+  },
   "tests/e2e/security-contract.spec.ts": {
    "expects": 21,
    "tests": 3
@@ -551,7 +555,7 @@
    "tests": 5
   },
   "tests/e2e/startup.spec.ts": {
-   "expects": 23,
+   "expects": 24,
    "tests": 7
   },
   "tests/e2e/supplemental-pdf-accounting.spec.ts": {
@@ -702,10 +706,6 @@
    "expects": 45,
    "tests": 12
   },
-  "tests/unit/checklist-export-parity.spec.js": {
-   "expects": 14,
-   "tests": 6
-  },
   "tests/unit/circuit-lookup.spec.js": {
    "expects": 51,
    "tests": 9
@@ -791,7 +791,7 @@
    "tests": 1
   },
   "tests/unit/feature-services.spec.js": {
-   "expects": 30,
+   "expects": 28,
    "tests": 8
   },
   "tests/unit/feedback-message.spec.js": {
@@ -819,8 +819,8 @@
    "tests": 5
   },
   "tests/unit/filing-registry.spec.js": {
-   "expects": 55,
-   "tests": 8
+   "expects": 56,
+   "tests": 9
   },
   "tests/unit/filing-type-enumeration-guard.spec.js": {
    "expects": 3,
@@ -1206,12 +1206,16 @@
    "expects": 6,
    "tests": 3
   },
+  "tests/unit/sidebar-export-parity.spec.js": {
+   "expects": 8,
+   "tests": 3
+  },
   "tests/unit/signature-block-fields.spec.js": {
    "expects": 12,
    "tests": 10
   },
   "tests/unit/signature-by-hand.spec.js": {
-   "expects": 54,
+   "expects": 56,
    "tests": 18
   },
   "tests/unit/signature-capture.spec.js": {
@@ -1453,6 +1457,20 @@
    "was": 137,
    "now": 110,
    "reason": "Milestone 73A (2026-10-06): signature-capture.contract's seven guardian cases now call one helper, expectGuardianSignsByHandOrStamp() (9 assertions, run on each of the seven forms): a guardian signs by hand or by stamp, so the '/s/' pre-selection and '/s/'-without-a-date guardian cases were replaced by Unsigned-chosen, no '/s/', and a saved '/s/' asked again; the '/s/'-without-a-date message moved to the Annual Plan's attorney. Written assertions fall; executed ones rise.",
+   "date": "2026-10-06"
+  },
+  {
+   "file": "tests/unit/feature-services.spec.js",
+   "was": 30,
+   "now": 28,
+   "reason": "Milestone 73F part 2 (2026-10-06): the sidebar's marks come from the export checks. checklist-export-parity.spec.js retired -- the page checklist and the marks now read the export checks themselves, and tests/unit/sidebar-export-parity.spec.js proves the one-way invariant over every variant instead; feature-services.spec.js lost its completionDeps() test with the retired completion inputs (the marks need no feature).",
+   "date": "2026-10-06"
+  },
+  {
+   "file": "tests/unit/checklist-export-parity.spec.js",
+   "was": 14,
+   "now": 0,
+   "reason": "Milestone 73F part 2 (2026-10-06): the sidebar's marks come from the export checks. checklist-export-parity.spec.js retired -- the page checklist and the marks now read the export checks themselves, and tests/unit/sidebar-export-parity.spec.js proves the one-way invariant over every variant instead; feature-services.spec.js lost its completionDeps() test with the retired completion inputs (the marks need no feature).",
    "date": "2026-10-06"
   }
  ]

@@ -65,11 +65,9 @@ const ALLOWED = {
   // one form's own Save as PDF / Excel, by that form's feature -- four names,
   // one per member, not a listing of the types.
   'src/core/testing/testing-adapter.js': "saveOutput's per-form save commands, by feature (MS 70 70K)",
-  // Milestone 72C: one sidebar evaluator per engine, each passing its own
-  // engine to the one shared "attorney started" test (attorney-block.js's
-  // isAttorneyStarted()) -- the same call the validators make. Five call
-  // sites, one per evaluator, not a listing of the types.
-  'src/core/status/completion.js': "each engine's sidebar evaluator names its own engine to the shared attorney-started test (MS 72C)",
+  // (src/core/status/completion.js left this list in Milestone 73F part 2:
+  // its per-engine completeness rules retired, and the two "begun" maps that
+  // still name the attorney-started test's engine are below the threshold.)
   // Per-schema collection membership (which schedules/collections exist on
   // which filing types, and their min counts) -- AGENTS.md section 3: never
   // share generic factories across forms with differing schemas. This is

@@ -4,6 +4,7 @@
 
 import { adaptValidationErrors } from '../validation/validation-adapter.js';
 import { pageAlsoOwns } from './section-guidance-policy.js';
+import { issueItemText } from '../validation/issue-groups.js';
 
 /**
  * Computes section-level status and local missing fields.
@@ -68,6 +69,11 @@ export function renderLocalSectionGuidance(currentRoute, rawErrors = [], maxItem
   }
 
   const visibleItems = localErrors.slice(0, maxItems);
+  // Milestone 73F part 2: an item keeps its owner. The Inventory names the
+  // card in the section ("D-1 Guardian #2 — Phone"), so its label alone read
+  // "Phone" twice on D-1 with no way to tell whose; the other forms keep the
+  // owner in the label already ("Part III — Guardian #2 — Phone").
+  const itemText = (err) => issueItemText(err.section, err.label || err.message);
   const remainingCount = localErrors.length - visibleItems.length;
 
   const itemsHtml = visibleItems.map((err) => {
@@ -80,7 +86,7 @@ export function renderLocalSectionGuidance(currentRoute, rawErrors = [], maxItem
         data-route="${err.route}"
         data-field-path="${err.path}"
       >
-        👉 ${err.label || err.message}
+        👉 ${itemText(err)}
       </button>
     </li>`;
   }).join('');

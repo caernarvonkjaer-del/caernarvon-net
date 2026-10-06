@@ -234,12 +234,6 @@ export const featureServices = Object.freeze({
     const fn = loadedModules.get(engineId)?.[validatorFnName(engineId)];
     return typeof fn === 'function' ? fn : null;
   },
-  /** What the completion evaluators cannot import (filing-registry.js's computeCompletion()). */
-  completionDeps: () => ({
-    validateGuardian: loadedModules.get('guardian')?.validateGuardian,
-    calcTotalsAnnual,
-    annualReconcileState,
-  }),
   headlineTotal,
   /** The canonical totals, for core code that carries or reports them. */
   totals: Object.freeze({ annual: calcTotalsAnnual, annualReconcile: annualReconcileState, guardian: calcTotalsGuardian, simplified: calcTotals }),

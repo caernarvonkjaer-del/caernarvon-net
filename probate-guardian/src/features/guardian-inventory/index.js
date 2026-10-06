@@ -372,8 +372,10 @@ export function pageNav(current){
   const incomplete=isSectionIncomplete(checks&&checks.checks,checkKey);
   const nextDisabled=blocksNext({type:'guardian',checkKey,incomplete,guardianScheduleKeys:SCHEDULE_NAV_KEYS});
   const advice=guidanceAdvice({hasVerifyNoneBox:SCHEDULE_NAV_KEYS.includes(checkKey)});
-  const rawErrors=incomplete&&typeof validateGuardian==='function'?validateGuardian(getD()):[];
-  const guidanceHtml=incomplete?renderLocalSectionGuidance(current,rawErrors,Infinity,{message:advice}):'';
+  // Milestone 73F part 2: the same list the live refresh draws -- this page's blockers from the
+  // export checks and its unanswered questions (nav-marks.js's updateCurrentScheduleNextButton()).
+  const owed=incomplete&&checks?checks.pageIssues(current):{blockers:[],prompts:[]};
+  const guidanceHtml=incomplete?renderLocalSectionGuidance(current,owed.blockers,Infinity,{message:advice,wants:owed.prompts.map(p=>({label:p.label,path:p.path}))}):'';
   return `<div class="page-nav-wrap no-print">
     <div class="page-nav d-flex justify-content-between align-items-center">
       <div>${prev?`<button class="btn btn-outline-primary btn-sm" data-form-action="navigate" data-route="${prev.id}">← Previous: ${prev.label}</button>`:'&nbsp;'}</div>

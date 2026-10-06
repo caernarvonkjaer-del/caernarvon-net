@@ -29,10 +29,16 @@ export function* filingsFor(type, m) {
   // checks and (compared with itself) date order, so from here clearing one
   // field at a time isolates each requirement -- the forms without an overlay
   // above get their "complete filing" this way.
-  const saturate = (x) => {
-    if (Array.isArray(x)) return x.map(saturate);
-    if (x && typeof x === 'object') return Object.fromEntries(Object.entries(x).map(([k, v]) => [k, saturate(v)]));
-    return x === '' || x === null || x === undefined ? 'Yes' : x;
+  // Milestone 73F part 2: a signature choice is answered with a choice it can
+  // hold -- Unsigned -- not 'Yes', which every check reads as an unreadable
+  // choice, so the saturated filings were never complete on any signature
+  // block. The "/s/" and stamp cases are their own variants below.
+  const isSignatureChoice = (k) => /[sS]ignatureState$/.test(k);
+  const saturate = (x, key = '') => {
+    if (Array.isArray(x)) return x.map((v) => saturate(v));
+    if (x && typeof x === 'object') return Object.fromEntries(Object.entries(x).map(([k, v]) => [k, saturate(v, k)]));
+    if (x === '' || x === null || x === undefined) return isSignatureChoice(key) ? 'none' : 'Yes';
+    return x;
   };
   const saturated = () => saturate(valid ? valid() : normalized());
   yield ['blank', blank()];
@@ -48,6 +54,23 @@ export function* filingsFor(type, m) {
     const last = at[at.length - 1];
     o[last] = typeof o[last] === 'boolean' ? !o[last] : '';
     yield [`saturated: ${at.join('.')} cleared`, d];
+    // Milestone 73F part 2: each signature block also as "/s/" with its date
+    // cleared, and as a stamp with no image -- the two incomplete choices.
+    if (isSignatureChoice(last)) {
+      const imageKey = last.replace(/State$/, 'Image');
+      const typed = saturated();
+      let t = typed; for (const k of at.slice(0, -1)) t = t[k];
+      // The certificates' dates are `…SignDate` (certGuardianSignDate).
+      const dateKey = [last.replace(/State$/, 'Date'), last.replace(/SignatureState$/, 'SignDate')].find((k) => k in t);
+      t[last] = 'typed';
+      if (dateKey) t[dateKey] = '';
+      yield [`saturated: ${at.join('.')} "/s/" undated`, typed];
+      const stamp = saturated();
+      let s = stamp; for (const k of at.slice(0, -1)) s = s[k];
+      s[last] = 'stamp';
+      if (imageKey in s) s[imageKey] = '';
+      yield [`saturated: ${at.join('.')} stamp without image`, stamp];
+    }
   }
   for (const [label, base] of [['blank', normalized], ...(valid ? [['valid', valid]] : []), ['saturated', saturated]]) {
     const keys = Object.keys(base());

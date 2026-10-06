@@ -29,7 +29,7 @@ import { esc } from '../../core/filing/escape-html.js';
 import { ic } from '../../core/ui/icons.js';
 import { formatDisplayDate } from '../../core/form/date-parser.js';
 import { normalizePlanGuardians } from '../../core/filing/models/plan-rows.js';
-import { planSimplifiedCompletion } from '../../core/status/completion.js';
+import { sectionMarks } from '../../core/status/section-marks.js';
 import { getD, requestSave } from '../../core/state.js';
 import { chkP, inpS, pageNavS, txtP, yesNoCheckboxS } from '../../core/form/field-html.js';
 import { renderScheduleDocsSection } from '../../core/filing/schedule-docs.js';
@@ -162,9 +162,9 @@ function buildNavPlanSimplified(container){
 
 function getSummaryConfigPlanSimplified(){
   const d=getD();
-  // This filing's own section marks (Milestone 70, 70D: its engine's evaluator,
-  // imported; it was window.computeNavChecks()).
-  const nav=planSimplifiedCompletion(d);
+  // This filing's own section marks (Milestone 73F part 2: from the export
+  // checks, src/core/status/section-marks.js; 70D's per-type evaluator before).
+  const nav=sectionMarks(d);
   // Kept as a finer-grained progress count alongside (not instead of) the
   // standardized page-level badges below -- computeNavChecks() has no
   // equivalent partial-credit number, and this one's still accurate since

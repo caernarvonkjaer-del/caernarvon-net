@@ -42,7 +42,7 @@ import { displayDecimal, formatAddress, formatName, formatPhone, formatSSN, sani
 import { formatDisplayDate } from '../../core/form/date-parser.js';
 import { calcTotals } from './totals.js';
 import { guardianHasAnyData } from '../../core/validation/row-started.js';
-import { simplifiedCompletion } from '../../core/status/completion.js';
+import { sectionMarks } from '../../core/status/section-marks.js';
 import { getCaseFile, getD, requestSave } from '../../core/state.js';
 import { startingBalanceNotesHTML } from '../../core/filing/starting-balance-carry.js';
 import { updateNavDots } from '../../core/status/nav-marks.js';
@@ -323,9 +323,9 @@ function buildNavSimplified(container){
 
 function getSummaryConfigSimplified(){
   const d=getD();
-  // This filing's own section marks (Milestone 70, 70D: its engine's evaluator,
-  // imported; it was window.computeNavChecks()).
-  const nav=simplifiedCompletion(d);
+  // This filing's own section marks (Milestone 73F part 2: from the export
+  // checks, src/core/status/section-marks.js; 70D's per-type evaluator before).
+  const nav=sectionMarks(d);
   const t=calcTotals();
   const f=v=>fmtS(v)||'—';
   return {

@@ -24,7 +24,7 @@ import { navigate } from '../../core/navigation/router.js';
 import { buildSingleWardExportBlob, exportCaseFileZip, finishSingleWardExport, flushPendingSave, formatRelativeTime, getWardFileName, markDirtySinceExport, saveBlobAs, saveWardToState, updateLastSavedIndicator, validateWardBackupOverwrite } from '../../core/persistence/case-file.js';
 import { isContinuePromptShown, markContinuePromptShown, saveAppState } from '../../core/persistence/launch-preferences.js';
 import { features } from '../../core/runtime/features.js';
-import { filingProgress } from '../../core/filing/filing-registry.js';
+import { filingProgress } from '../../core/status/section-marks.js';
 import { auditLog } from '../../core/activity/audit-log.js';
 import { upgradeSignaturePolicy } from '../../core/signature/signature-policy.js';
 
@@ -52,7 +52,7 @@ function projectWard(ward, today = new Date()) {
   return projectDashboardWard(ward, {
     displayType: INVENTORY_TYPES[ward.inventoryType]?.label || ward.inventoryType,
     total: features().headlineTotal(ward),
-    progress: filingProgress(ward, features().completionDeps()),
+    progress: filingProgress(ward),
     today,
   });
 }

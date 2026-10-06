@@ -19,7 +19,8 @@ const sig = await import('../../src/core/validation/signature-state.js');
 const policy = await import('../../src/core/signature/signature-policy.js');
 const { renderSignatureStateControl, signerRoleForPath } = await import('../../src/core/signature/signature-state-control.js');
 const { resolveSignatureModes } = await import('../../src/core/pdf/signature-modes.js');
-const { initializeEmptyData, computeCompletion } = await import('../../src/core/filing/filing-registry.js');
+const { initializeEmptyData } = await import('../../src/core/filing/filing-registry.js');
+const { sectionMarks } = await import('../../src/core/status/section-marks.js');
 const { engineChecks } = await import('../../src/core/validation/engines/index.js');
 const { resetYearlyFieldsForNewYear } = await import('../../src/core/filing/filing-years.js');
 const { partySlotForSignaturePath, partyForSignaturePath } = await import('../../src/core/party-resolver.js');
@@ -232,10 +233,11 @@ describe('73A: every form\'s checks list a guardian\'s "/s/" under policy 2, and
 
   it('the sidebar: a guardian who signs by hand, undated, reaches the mark (it needed a date)', () => {
     const d = { ...json(initializeEmptyData('planSimplified')), inventoryType: 'planSimplified', signaturePolicy: 2 };
-    d.planGuardians[0] = { ...d.planGuardians[0], name: 'Ann', signatureState: 'none', signatureDate: '' };
-    expect(computeCompletion(d, 'planSimplified', {}).checks['ps-p3']).toBe(true);
+    // Contact details as export asks (73F part 2: the mark is the export checks').
+    d.planGuardians[0] = { ...d.planGuardians[0], name: 'Ann', signatureState: 'none', signatureDate: '', phone: '(727) 555-0100', mailingAddress: '1 Main St' };
+    expect(sectionMarks(d, 'planSimplified').checks['ps-p3']).toBe(true);
     d.planGuardians[0].signatureState = 'typed';
-    expect(computeCompletion(d, 'planSimplified', {}).checks['ps-p3']).toBe(false);
+    expect(sectionMarks(d, 'planSimplified').checks['ps-p3']).toBe(false);
   });
 });
 

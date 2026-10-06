@@ -54,7 +54,7 @@ import { ic } from '../../core/ui/icons.js';
 import { formatDisplayDate } from '../../core/form/date-parser.js';
 import { INITIAL_ADLS, INITIAL_ADL_RATINGS } from '../../core/filing/models/plan-initial.js';
 import { normalizePlanGuardians } from '../../core/filing/models/plan-rows.js';
-import { planInitialCompletion } from '../../core/status/completion.js';
+import { sectionMarks } from '../../core/status/section-marks.js';
 import { getD, requestSave } from '../../core/state.js';
 import { chkP, inpS, pageNavS, planCheckGroup, planQ, radioP, txtP, yesNoCheckboxS } from '../../core/form/field-html.js';
 import { renderScheduleDocsSection } from '../../core/filing/schedule-docs.js';
@@ -246,9 +246,9 @@ function buildNavPlanInitial(container){
 
 function getSummaryConfigPlanInitial(){
   const d=getD();
-  // This filing's own section marks (Milestone 70, 70D: its engine's evaluator,
-  // imported; it was window.computeNavChecks()).
-  const nav=planInitialCompletion(d);
+  // This filing's own section marks (Milestone 73F part 2: from the export
+  // checks, src/core/status/section-marks.js; 70D's per-type evaluator before).
+  const nav=sectionMarks(d);
   return {
     formTitle:'Initial Guardianship Plan — Summary',
     infoRows:[

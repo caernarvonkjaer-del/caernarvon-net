@@ -67,7 +67,7 @@ import { ic } from '../../core/ui/icons.js';
 import { sanitizeDecimal, syncPercentFeedback } from '../../core/form/form-contract.js';
 import { guardianHasAnyData } from '../../core/validation/row-started.js';
 import { formDisplayName } from '../../core/filing/filing-registry.js';
-import { annualCompletion } from '../../core/status/completion.js';
+import { sectionMarks } from '../../core/status/section-marks.js';
 import { getCaseFile, getD, requestSave } from '../../core/state.js';
 import { updateNavDots } from '../../core/status/nav-marks.js';
 import { renderScheduleDocsSection } from '../../core/filing/schedule-docs.js';
@@ -542,9 +542,9 @@ function pageNavAnnual(prev,next){
 function getSummaryConfigAnnual(){
   const d=getD();
   const descriptor=annualDescriptor(d);
-  // This filing's own section marks (Milestone 70, 70D: its engine's evaluator,
-  // imported; it was window.computeNavChecks()).
-  const nav=annualCompletion(d,{calcTotalsAnnual,annualReconcileState});
+  // This filing's own section marks (Milestone 73F part 2: from the export
+  // checks, src/core/status/section-marks.js; 70D's per-type evaluator before).
+  const nav=sectionMarks(d);
   const t=calcTotalsAnnual();
   const f=v=>fmtAnnual(v)||'—';
   return {

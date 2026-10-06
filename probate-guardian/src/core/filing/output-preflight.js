@@ -100,6 +100,30 @@ export function collectOutputIssues(target, baseIssues = []) {
   return { descriptor: identity.descriptor, structuredIssues, advisories };
 }
 
+/**
+ * Milestone 73F part 2: Print Preview's banner status, one wording on every
+ * form. Before an override it counts what blocks; after "Continue despite
+ * outstanding requirements" it says what is still outstanding -- it used to
+ * read "Ready to export" over items the filer had chosen to file past.
+ * `readyHtml` is what the banner says with nothing outstanding.
+ * @param {{ messages?: any[], structuredIssues?: any[] }} preflight
+ * @param {string} [readyHtml]
+ */
+export function previewStatusHtml(preflight, readyHtml = ' — Ready to export') {
+  const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
+  const blocking = preflight?.messages?.length || 0;
+  const outstanding = preflight?.structuredIssues?.length || 0;
+  const status = (inner) => `<span data-preview-status>${inner}</span>`;
+  if (blocking) return status(`<span style="color:var(--danger-text)"> — ${plural(blocking, 'issue')}</span>`);
+  if (outstanding) return status(`<span style="color:var(--warn-text)"> — Continuing with ${plural(outstanding, 'item')} outstanding</span>`);
+  return status(readyHtml);
+}
+
+/**
+ * @param {Record<string, any>} data
+ * @param {any[] | (() => any[])} [baseIssues]
+ * @param {{ setPath?: Function }} [options]
+ */
 export function prepareFilingOutput(data, baseIssues = [], options = {}) {
   const target = data || getD() || {};
   commitStoredDateDrafts(target, options.setPath || setPath);

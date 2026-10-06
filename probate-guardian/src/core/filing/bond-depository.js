@@ -1,3 +1,5 @@
+// @ts-nocheck -- in tsconfig.json's checked program only transitively (router.js -> nav-marks.js -> section-marks.js -> the
+// export checks, Milestone 73F part 2); never written with JSDoc types (AGENTS.md section 2).
 // Milestone 67B. Which bond / restricted-depository arrangement a guardianship
 // has -- one question, the same on the Initial Inventory (D-4) and the
 // Annual/Final/Trust Accounting (Part IX) -- and everything that follows from

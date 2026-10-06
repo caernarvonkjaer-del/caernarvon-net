@@ -15,7 +15,7 @@ import { generateCourtFormPdf } from '../../core/pdf/pdf-engine.js';
 import { finalizeCourtFormPdf, saveFinalizedPdf } from '../../core/pdf/pdf-finalizer.js';
 import { mountPdfPreview, printGeneratedPdf, setPrintCurrentFiling } from '../../core/pdf/pdf-preview.js';
 import { getSupplementalAccessibilityWarning, getSupplementalFilingIssues } from '../../core/pdf/supplemental-pdf.js';
-import { prepareFilingOutput } from '../../core/filing/output-preflight.js';
+import { prepareFilingOutput, previewStatusHtml } from '../../core/filing/output-preflight.js';
 import { authorizeFilingOutput } from '../../core/filing/output-authorization.js';
 import { renderOutputAdvisories } from '../../core/filing/output-advisories.js';
 import { renderReadinessCard } from '../../core/filing/readiness-card.js';
@@ -45,7 +45,7 @@ export function pagePrintPlanAnnual(){
   return `<div>
     <h1 class="visually-hidden">Print Preview</h1>
     <div class="print-preview-banner no-print">
-      <div><strong>Preview &amp; Export</strong> ${errors.length?`<span style="color:var(--danger-text)"> — ${errors.length} issue(s)</span>`:' — Ready to export'}</div>
+      <div><strong>Preview &amp; Export</strong> ${previewStatusHtml(preflight)}</div>
       <div class="d-flex gap-2 flex-wrap">
         <span id="export-status" style="font-size:.8rem;color:var(--ink-3);"></span>
         <button class="btn btn-primary btn-sm" data-form-action="save-pdf-plan-annual" ${pdfBlocked?'disabled':''}>Save as PDF</button>

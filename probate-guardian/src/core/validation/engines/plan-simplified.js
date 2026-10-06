@@ -1,3 +1,5 @@
+// @ts-nocheck -- in tsconfig.json's checked program only transitively (router.js -> nav-marks.js -> section-marks.js -> the
+// export checks, Milestone 73F part 2); never written with JSDoc types (AGENTS.md section 2).
 // Milestone 73F part 1: the Simplified Annual Guardianship Plan's export checks, moved unchanged from
 // src/features/plan-simplified/index.js's validatePlanSimplified() but for taking the filing as
 // an argument instead of reading the open one, so they load with the app and

@@ -35,8 +35,8 @@ beforeAll(async () => {
     planMinor: (await import('../../src/features/plan-minor/index.js')).validatePlanMinor,
     planSimplified: (await import('../../src/features/plan-simplified/index.js')).validatePlanSimplified,
   };
-  const c = await import('../../src/core/status/completion.js');
-  completion = { planAnnual: (d) => c.planAnnualCompletion(d).checks['pa-p11'], planMinor: (d) => c.planMinorCompletion(d).checks['pm-p7'] };
+  const { sectionMarks } = await import('../../src/core/status/section-marks.js');
+  completion = { planAnnual: (d) => sectionMarks(d, 'planAnnual').checks['pa-p11'], planMinor: (d) => sectionMarks(d, 'planMinor').checks['pm-p7'] };
   ({ guardianEmailAdvisories } = await import('../../src/core/filing/guardian-email.js'));
 });
 afterAll(() => vi.unstubAllGlobals());
@@ -48,10 +48,15 @@ const PLANS = {
 const VALUE = (field) => (/email/.test(field) ? 'atty@law.example' : /Date$/.test(field) ? '2026-01-05' : 'x');
 
 function plan(type, over = {}) {
-  const d = { ...structuredClone(PLANS[type].make()), inventoryType: type, ...over };
-  // A guardian who has signed, so pa-p11's guardian half holds and only the
-  // attorney decides it.
-  d.planGuardians[0] = { ...d.planGuardians[0], name: 'Pat Rivera', signatureDate: '2026-01-05' };
+  // Milestone 73F part 2: a filing made today carries the guardian signature
+  // rule (73A), and its marks are the export checks' -- so the guardian is
+  // complete as export reads it (signed by hand, contact details given), and
+  // only the attorney decides pa-p11.
+  const d = { ...structuredClone(PLANS[type].make()), inventoryType: type, signaturePolicy: 2, ...over };
+  d.planGuardians[0] = {
+    ...d.planGuardians[0], name: 'Pat Rivera', signatureDate: '2026-01-05',
+    ssn: '123-45-6789', tin: '123-45-6789', phone: '(727) 555-0100', mailingStreet: '1 Main St', mailingCityStateZip: 'Clearwater, FL 33756',
+  };
   return d;
 }
 const issuePaths = (type, d) => { openFiling(d); return validate[type]().map((e) => e?.path); };

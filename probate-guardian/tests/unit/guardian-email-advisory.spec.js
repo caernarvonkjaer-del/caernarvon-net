@@ -135,22 +135,22 @@ describe('the warning reaches Preview & Export without blocking it', () => {
 
 describe('the two forms that used to require it: the sidebar completes without it', () => {
   test('Simplified Accounting Part IV', async () => {
-    const { simplifiedCompletion } = await import('../../src/core/status/completion.js');
-    const d = filing('simplified');
+    const { sectionMarks } = await import('../../src/core/status/section-marks.js');
+    // A filing made today carries the guardian signature rule (73A).
+    const d = { ...filing('simplified'), signaturePolicy: 2 };
     Object.assign(d.guardians[0], {
       signatureDate: '2026-01-05', ssn: '123-45-6789', phone: '(727) 555-0100',
       mailingStreet: '1 Main St', mailingCityStateZip: 'Clearwater, FL 33756',
       residenceStreet: '1 Main St', residenceCityStateZip: 'Clearwater, FL 33756',
     });
-    const deps = { calcTotals: () => ({}) };
-    expect(simplifiedCompletion(d, deps).checks['s-p4']).toBe(true);
+    expect(sectionMarks(d, 'simplified').checks['s-p4']).toBe(true);
   });
 
   test('Simplified Plan Signatures', async () => {
-    const { planSimplifiedCompletion } = await import('../../src/core/status/completion.js');
-    const d = filing('planSimplified');
+    const { sectionMarks } = await import('../../src/core/status/section-marks.js');
+    const d = { ...filing('planSimplified'), signaturePolicy: 2 };
     Object.assign(d.planGuardians[0], { signatureDate: '2026-01-05', phone: '(727) 555-0100', mailingAddress: '1 Main St' });
-    expect(planSimplifiedCompletion(d).checks['ps-p3']).toBe(true);
+    expect(sectionMarks(d, 'planSimplified').checks['ps-p3']).toBe(true);
   });
 });
 

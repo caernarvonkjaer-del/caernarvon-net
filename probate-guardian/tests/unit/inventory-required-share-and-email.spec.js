@@ -19,7 +19,7 @@ import { afterAll, beforeAll, beforeEach, describe, test, expect, vi } from 'vit
 import { openFiling } from './support/open-filing.js';
 import { emptyDataGuardian, mk } from '../../src/core/filing/models/guardian.js';
 import { getD } from '../../src/core/state.js';
-import { guardianCompletion } from '../../src/core/status/completion.js';
+import { sectionMarks } from '../../src/core/status/section-marks.js';
 
 let validateGuardian;
 
@@ -71,9 +71,9 @@ describe('a blank share on A-2 to C-5 is required; 0 is an answer', () => {
   test("the schedule's sidebar mark follows the validator: a complete row with a blank share is unfinished, with 0 it is finished", () => {
     const row = { ...mk.b1(), institutionName: 'First Bank', accountType: 'Checking', streetAddress: '1 Main St', cityStateZip: 'Largo, FL 33770', restricted: 'No', fullAssetAmount: 2500 };
     getD().scheduleB1 = [{ ...row, wardPercent: '' }];
-    expect(guardianCompletion(getD(), { validateGuardian }).checks.b1).toBe(false);
+    expect(sectionMarks(getD(), 'guardian').checks.b1).toBe(false);
     getD().scheduleB1 = [{ ...row, wardPercent: 0 }];
-    expect(guardianCompletion(getD(), { validateGuardian }).checks.b1).toBe(true);
+    expect(sectionMarks(getD(), 'guardian').checks.b1).toBe(true);
   });
 });
 
@@ -100,7 +100,7 @@ describe("D-2: the attorney's primary email once an attorney is entered", () => 
   test("D-2's sidebar mark follows", () => {
     getD().attorneyForGuardian = 'Rachel Lawyer';
     getD().attorney = { ...getD().attorney, ...ATTORNEY, email: '' };
-    expect(guardianCompletion(getD(), { validateGuardian }).checks.d2).toBe(false);
+    expect(sectionMarks(getD(), 'guardian').checks.d2).toBe(false);
   });
 
   test('the blank model names both emails, so a new filing has the keys', () => {

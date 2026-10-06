@@ -5,9 +5,9 @@ import { describe, expect, test } from 'vitest';
 import { parse } from 'acorn';
 import {
   FILING_REGISTRY, FILING_PAGES, INVENTORY_TYPES, INVENTORY_TYPE_META, ANNUAL_FORM_ALIASES, formEngine, formDisplayName,
-  initializeEmptyData, normalizeWardData, typeIcon, computeCompletion, filingProgress,
+  initializeEmptyData, normalizeWardData, typeIcon,
 } from '../../src/core/filing/filing-registry.js';
-import { COMPLETION_BY_ENGINE } from '../../src/core/status/completion.js';
+import { sectionMarks, filingProgress } from '../../src/core/status/section-marks.js';
 import { FILING_TYPE_KEYS, resolveDescriptorForInventoryType } from '../../src/core/filing/filing-descriptor.js';
 import { mk, PAGES_GUARDIAN } from '../../src/core/filing/models/guardian.js';
 import { emptyRowAnnual } from '../../src/core/filing/models/annual.js';
@@ -73,17 +73,17 @@ describe('the nine filing identities, created and normalized through imports', (
     expect(new Set(['annual', 'finalAccounting', 'trustAccounting'].map(formDisplayName)).size).toBe(3);
   });
 
-  // Milestone 70, 70D: section completion is part of each identity, so an
-  // unopened filing's progress needs no feature (completion-parity.spec.js
-  // proves the evaluators equal to the monolith's).
-  test("each identity carries its engine's completion evaluator, Final and Trust the Annual one", () => {
+  // Milestone 70, 70D put each identity's completion evaluator in the
+  // registry. Milestone 73F part 2: the marks come from the export checks
+  // (src/core/status/section-marks.js), which load with the app, so an
+  // unopened filing's progress still needs no feature; the registry no longer
+  // carries an evaluator.
+  test('an identity carries no completion evaluator; the marks come from the export checks, for every identity', () => {
     for (const type of FILING_TYPE_KEYS) {
-      expect(typeof FILING_REGISTRY[type].completion, type).toBe('function');
-      expect(FILING_REGISTRY[type].completion, type).toBe(COMPLETION_BY_ENGINE[formEngine(type)]);
+      expect(FILING_REGISTRY[type].completion, type).toBeUndefined();
+      expect(sectionMarks({ ...json(initializeEmptyData(type)), inventoryType: type }, type), type).toBeTruthy();
     }
-    expect(FILING_REGISTRY.finalAccounting.completion).toBe(COMPLETION_BY_ENGINE.annual);
-    expect(FILING_REGISTRY.trustAccounting.completion).toBe(COMPLETION_BY_ENGINE.annual);
-    expect(computeCompletion({}, 'nonsense')).toBeUndefined();
+    expect(sectionMarks({}, 'nonsense')).toBeUndefined();
     // An unopened Plan, with no feature loaded and nothing handed in (a filing
     // in the case carries its type; the blank alone does not).
     const progress = filingProgress({ ...json(initializeEmptyData('planMinor')), inventoryType: 'planMinor' });
@@ -159,6 +159,14 @@ describe('no feature pack loaded', () => {
     // pdf.js loader (moved to src/core/filing/doc-period.js in 70C).
     expect(graph.filter((f) => /^src\/core\/pdf\/(supplemental-pdf|pdfjs-loader|pdf-engine)\.js$/.test(f))).toEqual([]);
     expect(graph).toContain('src/core/filing/models/annual.js');
-    expect(graph).toContain('src/core/status/completion.js');
+    // Milestone 73F part 2: the registry decides no marks now.
+    expect(graph).not.toContain('src/core/status/completion.js');
+    expect(graph).not.toContain('src/core/status/section-marks.js');
+  });
+
+  test('the marks\' static import graph stays out of src/features, so the dashboard reads any filing\'s progress unopened', () => {
+    const graph = [...reach('src/core/status/section-marks.js')];
+    expect(graph.filter((f) => f.startsWith('src/features/'))).toEqual([]);
+    expect(graph).toContain('src/core/validation/engines/index.js');
   });
 });

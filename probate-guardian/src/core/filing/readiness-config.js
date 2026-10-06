@@ -23,10 +23,11 @@
 
 import { Q2_OPTIONS, Q4_OPTIONS, Q5_OPTIONS, anyChecked } from './plan-initial-multiselect.js';
 import { FILING_TYPE_KEYS, resolveDescriptorForInventoryType } from './filing-descriptor.js';
+import { FILING_PAGES } from './filing-registry.js';
 import { hasSixthCircuitLocalGuidance } from './county-guidance.js';
 import { resolveRouteFromSection } from '../validation/validation-adapter.js';
 import { checkSignatureState, inferLegacySignatureState, signaturePolicyOf } from '../validation/signature-state.js';
-import { isAffirmative, isTriStateAnswer } from '../form/form-contract.js';
+import { isAffirmative, isTriStateAnswer } from '../form/yes-no.js';
 import { PLAN_RIGHTS, PLAN_ADLS } from './models/plan-annual.js';
 import { INITIAL_ADLS } from './models/plan-initial.js';
 
@@ -354,9 +355,25 @@ const nonPlanManual = {
 // has passed so filers receive the same detailed review view as Plan filers.
 // A failed overview row is informational; the exact validator issue below it
 // remains the one export-blocking, routed readiness row.
-const issueText = issue => `${issue?.section || ''} ${issue?.message || ''}`.toLowerCase();
-const matchesSection = (issues, pattern) => !(issues || []).some(issue => pattern.test(issueText(issue)));
-const detailRow = (id, label, issues, pattern) => ({ id, label, ok: matchesSection(issues, pattern) });
+//
+// Milestone 73F part 2: an overview row covers pages, and an issue counts
+// against the row whose pages hold it -- the page its route names, or its
+// section's (as every jump link resolves it). Rows used to match words in the
+// message, so "Cover information … complete" sat beside a Part I issue (the
+// Annual's Cover is "Part I"), "part v" matched "Part VIII", and a Part XI
+// line naming the guardian failed the signatures row.
+const pageOf = (issue, type) => issue?.route || resolveRouteFromSection(issue?.section, type);
+/**
+ * A row is ok when none of the issues it owns remains; by default it owns the
+ * issues on its pages.
+ * @param {string} id @param {string} label @param {any[]} issues @param {string} type @param {string[]} pages
+ * @param {(issue: any) => boolean} [owns]
+ */
+const detailRow = (id, label, issues, type, pages, owns = issue => pages.includes(pageOf(issue, type))) => ({
+  id, label, ok: !(issues || []).some(owns),
+});
+const isEligibilityIssue = issue => /^elig/.test(String(issue?.path || ''));
+const pagesMatching = (type, pattern) => (FILING_PAGES[type] || []).map(page => page.id).filter(id => pattern.test(id));
 
 // Guardian and Simplified each need a structurally distinct detail-row
 // breakdown; every other non-Plan type (annual/finalAccounting/
@@ -366,43 +383,45 @@ const detailRow = (id, label, issues, pattern) => ({ id, label, ok: matchesSecti
 // flags a 4th+ quoted repeat of a filing-type key outside filing-descriptor.js
 // on sight, and a `type === 'guardian'` style comparison is exactly that.
 const NON_PLAN_DETAIL_BUILDERS = {
-  guardian: (prefix, common, issues) => [
+  guardian: (prefix, common, issues, type) => [
     ...common.slice(0, 1),
-    detailRow(`${prefix}.real-property`, 'Schedule A \u2014 real property and secured debt entries are complete or verified empty', issues, /\ba-1\b|\ba-2\b/),
-    detailRow(`${prefix}.personal-property`, 'Schedule B \u2014 financial accounts, personal property, and liabilities are complete or verified empty', issues, /\bb-1\b|\bb-2\b|\bb-3\b|\bb-4\b/),
-    detailRow(`${prefix}.income-claims`, 'Schedule C \u2014 income, claims, actions, trusts, and other assets are complete or verified empty', issues, /\bc-1\b|\bc-2\b|\bc-3\b|\bc-4\b|\bc-5\b/),
-    ...common.slice(1),
-    detailRow(`${prefix}.bond-service`, 'Bond and certificate-of-service information is complete', issues, /\bd-3\b|\bd-4\b|\bd-5\b/),
+    detailRow(`${prefix}.real-property`, 'Schedule A \u2014 real property and secured debt entries are complete or verified empty', issues, type, ['/a1', '/a2']),
+    detailRow(`${prefix}.personal-property`, 'Schedule B \u2014 financial accounts, personal property, and liabilities are complete or verified empty', issues, type, ['/b1', '/b2', '/b3', '/b4']),
+    detailRow(`${prefix}.income-claims`, 'Schedule C \u2014 income, claims, actions, trusts, and other assets are complete or verified empty', issues, type, ['/c1', '/c2', '/c3', '/c4', '/c5']),
+    detailRow(`${prefix}.signatures`, 'Guardian, preparer, attorney, and certification information is complete where required', issues, type, ['/d1', '/d2']),
+    detailRow(`${prefix}.bond-service`, 'Bond and certificate-of-service information is complete', issues, type, ['/d3', '/d4', '/d5']),
   ],
-  simplified: (prefix, common, issues) => [
-    detailRow(`${prefix}.eligibility`, 'Simplified-accounting eligibility is confirmed', issues, /eligibility/),
-    ...common.slice(0, 1),
-    detailRow(`${prefix}.activity`, 'Part II financial activity and Part III reconciliation are complete', issues, /part ii|part iii/),
-    ...common.slice(1),
-    detailRow(`${prefix}.bond-service`, 'Bond and certificate-of-service information is complete', issues, /part ix|part x|certificate of service/),
+  simplified: (prefix, common, issues, type) => [
+    // The eligibility answers sit on the Cover; the Cover row leaves them to this one.
+    detailRow(`${prefix}.eligibility`, 'Simplified-accounting eligibility is confirmed', issues, type, ['/'], isEligibilityIssue),
+    detailRow(`${prefix}.cover`, 'Cover information, filing identity, and reporting dates are complete', issues, type, ['/'], issue => pageOf(issue, type) === '/' && !isEligibilityIssue(issue)),
+    detailRow(`${prefix}.activity`, 'Part II financial activity and Part III reconciliation are complete', issues, type, ['/p2', '/p3']),
+    detailRow(`${prefix}.signatures`, 'Guardian, preparer, attorney, and certification information is complete where required', issues, type, ['/p4', '/p5']),
+    detailRow(`${prefix}.bond-service`, 'Bond and certificate-of-service information is complete', issues, type, ['/p6']),
+    detailRow(`${prefix}.remuneration`, 'Part VII remuneration is declared', issues, type, ['/p7']),
   ],
 };
 
 function nonPlanDetails(type, issues) {
   const prefix = `${type}.review`;
   const common = [
-    detailRow(`${prefix}.cover`, 'Cover information, filing identity, and reporting dates are complete', issues, /\bcover\b/),
-    detailRow(`${prefix}.signatures`, 'Guardian, preparer, attorney, and certification information is complete where required', issues, /guardian|preparer|attorney|certificate of service|certification/),
+    detailRow(`${prefix}.cover`, 'Cover information, filing identity, and reporting dates are complete', issues, type, ['/']),
   ];
   const builder = NON_PLAN_DETAIL_BUILDERS[type];
-  if (builder) return builder(prefix, common, issues);
+  if (builder) return builder(prefix, common, issues, type);
 
   // annual/finalAccounting/trustAccounting share this shape; only the trusts
   // row's display label differs, and that already exists once, canonically,
   // as filing-descriptor.js's own displayName -- no second copy needed.
   const filingLabel = resolveDescriptorForInventoryType(type)?.displayName || 'Accounting';
   return [
-    ...common.slice(0, 1),
-    detailRow(`${prefix}.activity`, 'Accounting activity, totals, and reconciliation are complete', issues, /part ii|part iii|part iv|part v|part vi|part vii|reconcile|net assets/),
-    detailRow(`${prefix}.schedules`, 'Schedules A through F are complete for every entered line', issues, /schedule [a-f]/),
-    detailRow(`${prefix}.trusts`, `${filingLabel} trust disclosures are complete`, issues, /part viii|trust/),
-    ...common.slice(1),
-    detailRow(`${prefix}.bond-service`, 'Bond and certificate-of-service information is complete', issues, /part ix|part x|certificate of service/),
+    ...common,
+    detailRow(`${prefix}.activity`, 'Accounting activity, totals, and reconciliation are complete', issues, type, ['/p2', '/p67']),
+    detailRow(`${prefix}.schedules`, 'Schedules A through F are complete for every entered line', issues, type, pagesMatching(type, /^\/sch/)),
+    detailRow(`${prefix}.trusts`, `${filingLabel} trust disclosures are complete`, issues, type, ['/p8']),
+    detailRow(`${prefix}.signatures`, 'Guardian, preparer, attorney, and certification information is complete where required', issues, type, ['/p3', '/p4', '/p5']),
+    detailRow(`${prefix}.bond-service`, 'Bond and certificate-of-service information is complete', issues, type, ['/p9', '/p10']),
+    detailRow(`${prefix}.remuneration`, 'Part XI remuneration is declared', issues, type, ['/p11']),
   ];
 }
 

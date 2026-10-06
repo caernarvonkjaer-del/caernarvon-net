@@ -58,11 +58,11 @@ describe("src/features-loader.js's feature services", () => {
     expect(featureServices.validator('planMinor')()).toEqual([{ message: 'Minor' }]);
   });
 
-  test("completion's inputs carry the Inventory's validator only once its feature has loaded", async () => {
-    expect(featureServices.completionDeps().validateGuardian).toBeUndefined();
-    expect(typeof featureServices.completionDeps().calcTotalsAnnual).toBe('function');
-    await featureServices.load('guardian');
-    expect(typeof featureServices.completionDeps().validateGuardian).toBe('function');
+  // Milestone 73F part 2: the section marks read the export checks, which load
+  // with the app; nothing a feature loads feeds them, so the completion inputs
+  // this service handed out are gone.
+  test('no completion inputs are handed out: the marks need no feature', () => {
+    expect(featureServices.completionDeps).toBeUndefined();
   });
 
   test("run() loads a feature and runs one of its own commands; one it does not have is refused", async () => {

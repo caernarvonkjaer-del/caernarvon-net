@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
-import { getD, withFilingInView } from '../../src/core/state.js';
+import { getD } from '../../src/core/state.js';
 import { openFiling } from './support/open-filing.js';
 import { filingsFor as variantsFor } from './support/filing-variants.js';
 
@@ -27,6 +27,11 @@ import { filingsFor as variantsFor } from './support/filing-variants.js';
 // A deliberate change to completion regenerates the record
 // (PG_UPDATE_GOLDEN=1 npx vitest run tests/unit/completion-parity.spec.js) and
 // says why in its note.
+//
+// Milestone 73F part 2: NEW is src/core/status/section-marks.js's
+// sectionMarks() and filingProgress(), which read the export checks themselves
+// (the per-type rules in completion.js retired); the record was regenerated
+// with every change stated in its note.
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const GOLDEN = path.join(root, 'tests/baseline/ms70-completion-golden.json');
@@ -44,32 +49,26 @@ let m; // modules, loaded once window exists
 beforeAll(async () => {
   // Some of these touch `window` at import time; nothing is put on it.
   vi.stubGlobal('window', globalThis);
-  const [registry, guardianModel, totals, guardianFeature, fixtures] = await Promise.all([
+  const [registry, guardianModel, marks, fixtures] = await Promise.all([
     import('../../src/core/filing/filing-registry.js'),
     import('../../src/core/filing/models/guardian.js'),
-    import('../../src/features/annual-accounting/totals.js'),
-    import('../../src/features/guardian-inventory/index.js'),
+    import('../../src/core/status/section-marks.js'),
     import('../e2e/support/fixtures.ts'),
   ]);
-  m = { registry, guardianModel, totals, guardianFeature, fixtures };
+  m = { registry, guardianModel, marks, fixtures };
 });
 afterAll(() => vi.unstubAllGlobals());
 
 const json = (x) => JSON.parse(JSON.stringify(x));
 
-// NEW: the module, handed the filing and what it cannot import.
-const newDeps = (type) => ({
-  validateGuardian: m.guardianFeature.validateGuardian,
-  calcTotalsAnnual: m.totals.calcTotalsAnnual, annualReconcileState: m.totals.annualReconcileState,
-});
+// NEW: the marks, handed the filing and its type. Nothing is put in the case
+// store's view: the export checks read the filing they are handed.
 function newChecks(D, type) {
-  // validateGuardian() reads the open filing when not handed one: this one,
-  // put in the case store's view (Milestone 70, 70J; window.D was pointed at it).
-  return withFilingInView(D, () => m.registry.computeCompletion(D, type, newDeps(type)));
+  return m.marks.sectionMarks(D, type);
 }
-// A filing that is not the open one: nothing is in view.
+// A filing that is not the open one.
 function newProgress(D) {
-  return m.registry.filingProgress(D, newDeps(D.inventoryType));
+  return m.marks.filingProgress(D);
 }
 
 // Filings to compare. Each is built fresh (the evaluators must not mutate,
@@ -112,22 +111,24 @@ describe('completion maps and progress on every filing identity', () => {
   }, 120_000);
 
   test('progress is the share of complete sections, for a filing that is not the open one', () => {
-    const deps = { calcTotalsAnnual: m.totals.calcTotalsAnnual, annualReconcileState: m.totals.annualReconcileState };
     const open = openFiling(json(m.registry.initializeEmptyData('planMinor')));
     const other = json(m.registry.initializeEmptyData('annual'));
-    const r = m.registry.computeCompletion(other, 'annual', deps);
+    const r = m.marks.sectionMarks(other, 'annual');
     const keys = Object.keys(r.checks);
-    expect(m.registry.filingProgress(other, deps)).toEqual({
+    expect(m.marks.filingProgress(other)).toEqual({
       complete: keys.filter((k) => r.checks[k]).length, total: keys.length,
       pct: Math.round(keys.filter((k) => r.checks[k]).length / keys.length * 100),
     });
     expect(getD(), 'the open filing is never swapped out').toBe(open);
   });
 
-  test('a filing type with no evaluator, and the Inventory before its validator loads, read as not computed', () => {
-    expect(m.registry.computeCompletion({}, 'nonsense', {})).toBeUndefined();
-    expect(m.registry.computeCompletion({}, 'constructor', {})).toBeUndefined();
-    expect(m.registry.computeCompletion(json(m.registry.initializeEmptyData('guardian')), 'guardian', {})).toBeNull();
-    expect(m.registry.filingProgress(json(m.registry.initializeEmptyData('guardian')), {})).toBeNull();
+  // Milestone 73F part 2: the Inventory's marks no longer wait on its feature
+  // (40H-A's "not computed" case is gone): the export checks load with the app.
+  test('a filing type with no checks reads as not computed; the Inventory is computed unopened, never 100% blank', () => {
+    expect(m.marks.sectionMarks({}, 'nonsense')).toBeUndefined();
+    expect(m.marks.sectionMarks({}, 'constructor')).toBeUndefined();
+    const blank = { ...json(m.registry.initializeEmptyData('guardian')), inventoryType: 'guardian' };
+    expect(Object.values(m.marks.sectionMarks(blank, 'guardian').checks)).toContain(false);
+    expect(m.marks.filingProgress(blank).pct).toBeLessThan(100);
   });
 });

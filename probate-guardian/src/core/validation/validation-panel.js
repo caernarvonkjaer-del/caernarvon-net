@@ -6,31 +6,26 @@ import { FILING_PAGES } from '../filing/filing-registry.js';
 import { PAGES_GUARDIAN } from '../filing/models/guardian.js';
 import { getActiveInventoryType } from '../state.js';
 import { ic } from '../ui/icons.js';
-import { errorRoute } from './error-route.js';
+import { groupIssuesByPage } from './issue-groups.js';
 
 export function validationPanel(errors,opts){
   opts=opts||{};
-  const groups=new Map();
-  errors.forEach(e=>{
-    // Milestone 42F: issues may be objects with .message; see validation-issue.js.
-    const str=e&&typeof e==='object'?String(e.message??e):String(e);
-    const i=str.indexOf(' — ');
-    const section=i>-1?str.slice(0,i).trim():'Other';
-    let field=i>-1?str.slice(i+3).trim():str;
-    field=field.replace(/\s+is required\.?$/i,'').replace(/\.$/,'');
-    if(!groups.has(section))groups.set(section,[]);
-    groups.get(section).push(field);
-  });
+  // Milestone 73F part 2: grouped by page, as the sidebar and the blocked
+  // preview count sections (src/core/validation/issue-groups.js); it grouped
+  // by each issue's full section text, so "D-1 Guardian #1" and "D-1 Guardian
+  // #2" were two sections. Each field keeps its owner ("Guardian #2 — Phone").
+  const type=getActiveInventoryType();
+  const groups=groupIssuesByPage(errors,type);
   // Only offer a jump link when the route is a real page in this wizard.
-  const valid=new Set((FILING_PAGES[getActiveInventoryType()]||PAGES_GUARDIAN||[]).map(p=>p.id));
-  const rows=[...groups.entries()].map(([section,fields])=>{
-    const route=errorRoute(section, getActiveInventoryType());
+  const valid=new Set((FILING_PAGES[type]||PAGES_GUARDIAN||[]).map(p=>p.id));
+  const rows=groups.map(({route,name,items})=>{
+    const fields=items.map(item=>item.text.replace(/\s+is required\.?$/i,'').replace(/\.$/,''));
     const go=(route&&valid.has(route))
       ? `<button type="button" class="validation-go" data-form-action="navigate" data-route="${esc(route)}">Go to section ${ic('external',13)}</button>`
       : '';
     return `<div class="validation-group">
       <div class="validation-group-head">
-        <span class="validation-group-name">${esc(section)}</span>
+        <span class="validation-group-name">${esc(name)}</span>
         <span class="validation-count">${fields.length}</span>
         ${go}
       </div>
@@ -43,7 +38,7 @@ export function validationPanel(errors,opts){
       ${ic('alert',17)}
       <div>
         <div class="validation-title">${n} required field${n===1?'':'s'} still missing</div>
-        <div class="validation-sub">${opts.subtitle||`Across ${groups.size} section${groups.size===1?'':'s'}, listed below. These must be completed before this ward can be exported.`}</div>
+        <div class="validation-sub">${opts.subtitle||`Across ${groups.length} section${groups.length===1?'':'s'}, listed below. These must be completed before this ward can be exported.`}</div>
       </div>
     </div>
     <div class="validation-groups">${rows}</div>

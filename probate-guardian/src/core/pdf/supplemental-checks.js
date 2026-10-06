@@ -1,0 +1,222 @@
+// @ts-nocheck -- in tsconfig.json's checked program only transitively (router.js -> nav-marks.js -> section-marks.js -> the
+// export checks, Milestone 73F part 2); never written with JSDoc types (AGENTS.md section 2).
+// Milestone 73F part 2: the supporting-document checks -- limits, decoding,
+// eligibility and the filing issues -- moved unchanged from ./supplemental-pdf.js
+// (which re-exports them). The export checks read these after every change
+// now, through the sidebar, and they never needed the PDF viewer that
+// module loads to inspect a new upload.
+import { createIssue } from '../validation/issue-registry.js';
+import { resolveActiveDocPeriod } from '../filing/doc-period.js';
+
+export const SUPPLEMENTAL_PDF_LIMITS = Object.freeze({
+  maxFileBytes: 15 * 1024 * 1024,
+  maxFilePages: 50,
+  maxTotalBytes: 40 * 1024 * 1024,
+  maxTotalPages: 150,
+  finalPacketWarningBytes: 75 * 1024 * 1024,
+});
+
+const PDF_HEADER = [0x25, 0x50, 0x44, 0x46];
+
+export function dataUrlToBytes(dataUrl) {
+  const base64 = String(dataUrl || '').split(',')[1] || '';
+  const bin = atob(base64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return bytes;
+}
+
+export function isPdfBytes(bytes) {
+  return PDF_HEADER.every((value, index) => bytes && bytes[index] === value);
+}
+
+export function isPdfLikeFile(file) {
+  const name = String(file?.name || '').toLowerCase();
+  const type = String(file?.type || '').toLowerCase();
+  return type === 'application/pdf' || name.endsWith('.pdf');
+}
+
+export async function digestBytes(bytes) {
+  if (!globalThis.crypto?.subtle) throw new Error('Secure digest support is unavailable.');
+  const digest = await crypto.subtle.digest('SHA-256', bytes);
+  const hex = [...new Uint8Array(digest)].map(byte => byte.toString(16).padStart(2, '0')).join('');
+  return `sha256-${hex}`;
+}
+
+export async function digestDataUrl(dataUrl) {
+  return digestBytes(dataUrlToBytes(dataUrl));
+}
+
+export function createSupplementalFileId() {
+  if (globalThis.crypto?.randomUUID) return `supplement-${crypto.randomUUID()}`;
+  return `supplement-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+export function formatSupplementalPdfLimit(bytes = SUPPLEMENTAL_PDF_LIMITS.maxFileBytes) {
+  return `${Math.round(bytes / (1024 * 1024))}MB`;
+}
+
+function statusFailure(message, code = 'ineligible') {
+  return { eligible: false, code, message };
+}
+
+export function isFilingEligibleSupplement(file, limits = SUPPLEMENTAL_PDF_LIMITS) {
+  return supplementEligibility(file, limits, (dataUrl) => {
+    const bytes = dataUrlToBytes(dataUrl);
+    return { bytes, isPdf: isPdfBytes(bytes), length: bytes.length };
+  });
+}
+
+// Milestone 73F part 2: the sidebar asks the export checks after every change,
+// and they ask whether each supporting PDF can be filed -- which decoded the
+// whole file (up to 15MB) twice per ask. The issue list needs only the decoded
+// facts (decodable, a PDF, its length), which depend on nothing but the
+// stored data, so they are remembered per stored file; the few most recent
+// are kept. isFilingEligibleSupplement(), which the PDF builder uses for the
+// bytes themselves, still decodes every time.
+const DECODE_FACTS_KEPT = 16;
+const decodeFacts = new Map();
+function rememberedDecodeFacts(dataUrl) {
+  if (decodeFacts.has(dataUrl)) return decodeFacts.get(dataUrl);
+  let facts;
+  try {
+    const bytes = dataUrlToBytes(dataUrl);
+    facts = { isPdf: isPdfBytes(bytes), length: bytes.length };
+  } catch (error) {
+    facts = { error };
+  }
+  decodeFacts.set(dataUrl, facts);
+  if (decodeFacts.size > DECODE_FACTS_KEPT) decodeFacts.delete(decodeFacts.keys().next().value);
+  if (facts.error) throw facts.error;
+  return facts;
+}
+const isFilingEligibleSupplementFacts = (file, limits) => supplementEligibility(file, limits, rememberedDecodeFacts);
+
+function supplementEligibility(file, limits, decode) {
+  if (!file || typeof file !== 'object') return statusFailure('Supporting document record is missing.');
+  if (!file.dataUrl) return statusFailure(`${file.name || 'Supporting document'} is missing PDF data.`, 'missing-data');
+
+  let decoded;
+  try {
+    decoded = decode(file.dataUrl);
+  } catch {
+    return statusFailure(`${file.name || 'Supporting document'} could not be decoded.`, 'decode-failed');
+  }
+  const { bytes } = decoded;
+
+  if (!decoded.isPdf) return statusFailure(`${file.name || 'Supporting document'} is not a PDF.`, 'not-pdf');
+  if (decoded.length > limits.maxFileBytes || Number(file.size || decoded.length) > limits.maxFileBytes) {
+    return statusFailure(`${file.name || 'Supporting document'} exceeds the ${formatSupplementalPdfLimit(limits.maxFileBytes)} per-file limit.`, 'too-large');
+  }
+  if (file.technicalStatus === 'checking') {
+    return statusFailure(`${file.name || 'Supporting document'} is still being checked.`, 'checking');
+  }
+  if (!['ready', 'warning'].includes(file.technicalStatus)) {
+    return statusFailure(`${file.name || 'Supporting document'} needs PDF checks before filing.`, 'not-ready');
+  }
+  if (!file.contentDigest) {
+    return statusFailure(`${file.name || 'Supporting document'} needs PDF checks before filing.`, 'not-ready');
+  }
+  if (!Number.isInteger(file.pageCount) || file.pageCount < 1 || file.pageCount > limits.maxFilePages) {
+    return statusFailure(`${file.name || 'Supporting document'} has an invalid or over-limit page count.`, 'page-limit');
+  }
+  if (file.encrypted || file.corrupt || file.removed || file.stale || file.technicalStatus === 'blocked') {
+    return statusFailure(`${file.name || 'Supporting document'} is blocked from filing.`, 'blocked');
+  }
+  return { eligible: true, code: 'eligible', bytes };
+}
+
+export function assertFilingEligibleSupplement(file) {
+  const result = isFilingEligibleSupplement(file);
+  if (!result.eligible) {
+    const error = new Error(result.message);
+    error.code = result.code;
+    error.file = file;
+    throw error;
+  }
+  return result;
+}
+
+export function summarizeSupplementTotals(files, limits = SUPPLEMENTAL_PDF_LIMITS) {
+  const totals = (files || []).reduce((acc, file) => {
+    acc.bytes += Number(file?.size || 0);
+    acc.pages += Number(file?.pageCount || 0);
+    return acc;
+  }, { bytes: 0, pages: 0 });
+  return {
+    ...totals,
+    overBytes: totals.bytes > limits.maxTotalBytes,
+    overPages: totals.pages > limits.maxTotalPages,
+  };
+}
+
+// resolveActiveDocPeriod() lives in src/core/filing/doc-period.js since
+// Milestone 70's 70C (re-exported here for this module's importers).
+export { resolveActiveDocPeriod };
+
+export function collectActiveSupplementalFiles(sourceData) {
+  const scheduleDocs = sourceData?.scheduleDocs;
+  if (!scheduleDocs || typeof scheduleDocs !== 'object') return [];
+  const activePeriod = resolveActiveDocPeriod(sourceData);
+  const files = [];
+  for (const value of Object.values(scheduleDocs)) {
+    if (!value || typeof value !== 'object') continue;
+    const slot = Array.isArray(value.files) || value.comment
+      ? value
+      : value[activePeriod] || value.initial || null;
+    if (Array.isArray(slot?.files)) files.push(...slot.files.filter(file => file?.dataUrl));
+  }
+  return files;
+}
+
+export function hasActiveSupplementalFiles(sourceData) {
+  return collectActiveSupplementalFiles(sourceData).length > 0;
+}
+
+export function getSupplementalAccessibilityWarning(sourceData) {
+  return hasActiveSupplementalFiles(sourceData)
+    ? 'Supplemental PDFs are inserted as uploaded and may not be ADA/accessibility compliant. Review them before filing.'
+    : '';
+}
+
+export function getSupplementalFilingIssues(sourceData, limits = SUPPLEMENTAL_PDF_LIMITS) {
+  const files = collectActiveSupplementalFiles(sourceData);
+  const issues = [];
+  for (const file of files) {
+    const result = isFilingEligibleSupplementFacts(file, limits);
+    if (!result.eligible) {
+      const codeSuffix = result.code && result.code !== 'ineligible' ? result.code : 'blocked';
+      const issue = createIssue(`supplemental.${codeSuffix}`, {
+        message: result.message,
+        label: file?.name || 'Supporting document',
+        path: 'scheduleDocs',
+        section: 'Supporting documents',
+      });
+      Object.defineProperty(issue, 'toString', { value() { return this.message; }, enumerable: false });
+      issues.push(issue);
+    }
+  }
+  const eligibleFiles = files.filter(file => isFilingEligibleSupplementFacts(file, limits).eligible);
+  const totals = summarizeSupplementTotals(eligibleFiles, limits);
+  if (totals.overBytes) {
+    const issue = createIssue('supplemental.total-bytes', {
+      message: 'Supplemental PDFs exceed the total packet attachment size limit.',
+      label: 'Supplemental PDFs total size',
+      path: 'scheduleDocs',
+      section: 'Supporting documents',
+    });
+    Object.defineProperty(issue, 'toString', { value() { return this.message; }, enumerable: false });
+    issues.push(issue);
+  }
+  if (totals.overPages) {
+    const issue = createIssue('supplemental.total-pages', {
+      message: 'Supplemental PDFs exceed the total packet page limit.',
+      label: 'Supplemental PDFs total pages',
+      path: 'scheduleDocs',
+      section: 'Supporting documents',
+    });
+    Object.defineProperty(issue, 'toString', { value() { return this.message; }, enumerable: false });
+    issues.push(issue);
+  }
+  return issues;
+}

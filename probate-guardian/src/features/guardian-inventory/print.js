@@ -15,7 +15,7 @@ import { generateVerifiedInventoryPdf } from './pdf-engine.js';
 import { finalizeCourtFormPdf, saveFinalizedPdf } from '../../core/pdf/pdf-finalizer.js';
 import { mountPdfPreview, printGeneratedPdf, setPrintCurrentFiling } from '../../core/pdf/pdf-preview.js';
 import { getSupplementalAccessibilityWarning, getSupplementalFilingIssues } from '../../core/pdf/supplemental-pdf.js';
-import { prepareFilingOutput } from '../../core/filing/output-preflight.js';
+import { prepareFilingOutput, previewStatusHtml } from '../../core/filing/output-preflight.js';
 import { authorizeFilingOutput } from '../../core/filing/output-authorization.js';
 import { renderReadinessCard } from '../../core/filing/readiness-card.js';
 import { renderOutputAdvisories } from '../../core/filing/output-advisories.js';
@@ -54,7 +54,7 @@ export function pagePrint(capOver){
   return `<div>
   <h1 class="visually-hidden">Print Preview</h1>
   <div class="print-preview-banner no-print">
-    <span><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6.4 3.4h7l4.2 4.2v13H6.4Z"/><path d="M13.2 3.4v4.4h4.4"/><path d="M9.2 12.6h5.6M9.2 16h5.6"/></svg> Print Preview — use <strong>Save as PDF</strong>, <strong>Save as Excel</strong>, or <strong>Print</strong>.</span>
+    <span><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6.4 3.4h7l4.2 4.2v13H6.4Z"/><path d="M13.2 3.4v4.4h4.4"/><path d="M9.2 12.6h5.6M9.2 16h5.6"/></svg> Print Preview — use <strong>Save as PDF</strong>, <strong>Save as Excel</strong>, or <strong>Print</strong>.${previewStatusHtml(preflight,'')}</span>
     <div class="d-flex gap-2 align-items-center flex-wrap">
       <span id="export-status" style="font-size:.8rem;color:var(--ink-3);"></span>
       <button class="btn btn-outline-primary btn-sm" data-inventory-action="save-pdf" ${canExport?'':'disabled'}><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6.4 3.4h7l4.2 4.2v13H6.4Z"/><path d="M13.2 3.4v4.4h4.4"/><path d="M9.2 12.6h5.6M9.2 16h5.6"/></svg> Save as PDF</button>

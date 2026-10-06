@@ -6,7 +6,7 @@
 far: 73U (2026-10-04, `5b8849b`), 73V (2026-10-05, `8b96aa3`), 73C
 (2026-10-05, `861b6a9`, brought forward from its place in the build order at the
 requester's choice) 73D (2026-10-05, `c8e84fe`, likewise), 73J part 1 (2026-10-05, `d819c4a`),
-73F part 1 (2026-10-06, `5e9e17b`) and 73A (2026-10-06), each approved by name.** Nothing else is approved.
+73F part 1 (2026-10-06, `5e9e17b`), 73A (2026-10-06, `83352d0`) and 73F part 2 (2026-10-06), each approved by name.** Nothing else is approved.
 Building any other item, or any part of a split item, needs the requester's
 named approval of that item or part (AGENTS.md §3).
 
@@ -45,7 +45,7 @@ recorded as **Pinellas Clerk practice**, not as a reading of a statute or rule
 | 3 | 73C | **"+ Add Co-Guardian" does nothing** on all four Plans | High | **Built** (2026-10-05) |
 | 4 | 73D | Ticking and unticking **"This item is a vehicle"** erases the Description and the safe-deposit answer; hidden Plan "Explanation" text still prints | High | **Built** (2026-10-05) |
 | 5 | 73E | **An Excel import replaces the filing unasked** (the Simplified's Cancel half-applies it), can turn a Trust into an Annual, and changes shared people's records in other filings unseen | High | Two |
-| 6 | 73F | **A section shows ✓ and Print Preview then blocks it**; asterisks don't match what is enforced; a misspelled county passes everywhere | High | Three (part 1 **built** 2026-10-06) |
+| 6 | 73F | **A section shows ✓ and Print Preview then blocks it**; asterisks don't match what is enforced; a misspelled county passes everywhere | High | Three (parts 1 and 2 **built** 2026-10-06) |
 | 7 | 73G | A loss typed positive is **added** unwarned; the Clerk's "(1000)" is stored as **+1000**; negatives are refused, shown as positive, or **zeroed on every page drawn**; "$1,234.56" in the Simplified's remuneration files as **$0.00** | High | Two |
 | 8 | 73H | Dates print as **2025-01-01** on several screens; negative amounts appear **five ways**; Plan Q11 prints a bare number | Medium | One |
 | 9 | 73I | The dashboard marks an annual accounting **overdue early: 0–3 days for a month-end period, 16–32 days for a mid-month one**; a Final gets a due date with no basis | Medium | One |
@@ -145,7 +145,7 @@ behaviour on its own except where its row says so.
 | 14 | 73E part 2 — Link Person and Merge | 73E p1 | `pick-record-dialogs.js`, `party-management.js`, `party-resolver.js` | new e2e cases |
 | 15 | 73A | 73F p1 | `pdf-engine.js`, `signature-state.js`, `signature-state-control.js`, nine `index.js` and `pdf-model.js`, the Plans' certificate, `normalize-filing.js`, `filing-years.js`, `party-resolver.js`, the dashboard's Mark Open, CSV | new signature units and e2e; every `MINIMAL_VALID_*` — **Built** 2026-10-06 |
 | 16 | 73B | 73T p2–p3 | three accounting `pdf-model.js`, `models/annual.js`, `models/guardian.js`, `schedule-definitions.js`, Annual and Inventory `index.js`, `output-preflight.js`, CSV | new `tests/unit/no-invented-answers.spec.js`; three goldens |
-| 17 | 73F part 2 — the screens use the shared checks | 73F p1, 73A | `completion.js` (retired rules), `nav-marks.js`, `section-status.js`, `readiness-config.js`, `dashboard/view-model.js`, `pdf-preview.js`, `validation-panel.js` | new `tests/unit/sidebar-export-parity.spec.js`; completion golden regenerated |
+| 17 | 73F part 2 — the screens use the shared checks | 73F p1, 73A | `completion.js` (retired rules), `nav-marks.js`, `section-status.js`, `readiness-config.js`, `dashboard/view-model.js`, `pdf-preview.js`, `validation-panel.js` | new `tests/unit/sidebar-export-parity.spec.js`; completion golden regenerated — **Built** 2026-10-06 |
 | 18 | 73F part 3 — rules and asterisks | 73F p2 | every validator, `commit-coordinator.js` (draft clean-up), `ward-county.js`, `attorney-required-markers.js`, CSV | fixtures (§8.3), parity spec |
 | 19 | 73G part 2 — warnings and boxes | 73G p1, 73F p2 | Annual `index.js` (C, E), Annual `pdf-model.js` (E totals), Simplified Part VII, `output-preflight.js`, `ward-share-advisories.js` | new `tests/unit/sign-advisories.spec.js` |
 | 20 | 73H | 73G p1 | `money.js`, `date-parser.js`, `summary-renderer.js`, every `pdf-model.js`, Annual and Inventory `index.js` | new `tests/unit/display-formats.spec.js`; PDF text specs |
@@ -1209,6 +1209,131 @@ variant and that every prompt is on the enumerated list with its wording;
 `checklist-export-parity.spec.js` retires. The completion golden's variant
 generator writes "Yes" into signature-choice fields; it is fixed first, then
 the golden is regenerated with each change stated.
+
+### Build record, part 2 — BUILT 2026-10-06 (approved by name by the requester, 2026-10-06)
+
+**What changed for a filer:**
+
+- **The sidebar's ✓ is the export checks' own answer.** A page shows ✓ only
+  when nothing that would stop its Preview belongs to it and its sidebar-only
+  questions are answered (an Annual schedule's "no items" box, the bond
+  question, a Plan's certificate, the Annual Plan's 3G, the Initial Plan's
+  Q7). So a page can no longer show ✓ while Print Preview blocks it. Pages
+  that now show −, with the item named: a blank "Amended Form?" (Annual,
+  Final, Trust Part I); Part X's attorney signature undated, a stamp with no
+  image, or unreadable; the preparer's, the attorney's (Part IV, Part V, the
+  Initial Plan's) stamp with no image; a Part XI line started under a ticked
+  "no items" box; Part VIII's trusts question unanswered; the Annual and
+  Simplified Plans' guardian phone, address or SSN (the gap 73A exposed); a
+  date still being typed that can't be a date.
+- **And ✓ where export passes:** an Unsigned preparer or attorney without a
+  date; Part VIII answered without the extra tick (73F-5).
+- **The page's "Complete these items" list** names exactly what holds the
+  page back -- its own blockers and questions -- never the generic sentence,
+  and each item keeps its owner ("Guardian #2 — Phone", where D-1 listed
+  "Phone" twice).
+- **The dashboard's percentage and "Ready to file"** read the same marks, for
+  every filing, open or not; an unopened filing saved before 73A is judged as
+  opening it will leave it (its guardian's "/s/" asked again), so it can't
+  read "Ready to file" until then. The Initial Inventory's percentage no
+  longer waits for its feature to load.
+- **Print Preview:** both lists count sections by page, as the sidebar does
+  ("Part I" and "Part III" were one "Part"); a screen reader hears "1 required
+  item is still missing"; after "Continue despite outstanding requirements"
+  the banner says "Continuing with N items outstanding" (it kept the count it
+  was drawn with, and a later redraw said "Ready to export"), on every form,
+  the Inventory included.
+- **The readiness card's overview rows** are decided by the pages issues
+  belong to (a Part I issue no longer sits beside "Cover information …
+  complete"; "part v" no longer matches Part VIII; a Part XI line no longer
+  fails the signatures row), with a "remuneration is declared" row on the
+  Annual family (Part XI) and the Simplified (Part VII).
+
+**How:**
+
+- **`src/core/status/section-marks.js`** reads `evaluateFiling()` once and
+  splits it by page: a blocker belongs to the page its route names, or its
+  section's (as every "Go to field" link resolves it), and to each page that
+  also shows its field (`pageAlsoOwns()`); one no page owns (none is known)
+  holds the first page back. `judgeFiling()` gives the marks, the begun map
+  and each page's list; `sectionMarks()` and `filingProgress()` replace the
+  registry's `computeCompletion()` and `filingProgress()`. Only blockers that
+  stop Preview count: an Excel-only capacity problem holds no page back, so a
+  filing too big for the workbook can still read "Ready to file" and be
+  filed as a PDF (as the app tells the filer) -- today's behaviour, kept.
+- **`completion.js`'s six rule sets retired.** What stays is each engine's
+  "begun" map, unchanged, which the Summary pages' "in progress" badge reads
+  (a page reads begun only while incomplete). The design said the rule sets
+  retire and said nothing of the badge; keeping its signal keeps the badges
+  as they were.
+- **One reading per refresh:** the sidebar's marks, Next and the page's list
+  come from the same judgement (`nav-marks.js`); the Inventory's first render
+  draws the same list. Every Summary page, the dashboard and the test adapter
+  read `section-marks.js`; the completion inputs features handed out
+  (`completionDeps()`) and the adapter's "validator not loaded" simulation
+  retired with them.
+- **One grouping helper** (`src/core/validation/issue-groups.js`) groups both
+  Preview lists by page, named and ordered as the sidebar has them.
+- **One banner status** (`previewStatusHtml()` in `output-preflight.js`) on
+  all seven Preview pages; the override redraws it and announces it.
+- **Made fast enough to run after every change.** The checks judge a copy
+  that shares the filing's text (a JSON round trip copied every byte of every
+  attachment), and the supporting-document check remembers each stored file's
+  decoded facts: on a filing carrying 16MB of supporting PDFs one judgement
+  fell from about 98ms to 4ms; an ordinary filing takes under 1ms.
+- **Two modules split so the checks stay light:** the Yes/No helpers moved to
+  `src/core/form/yes-no.js` (the checks imported them from the field-write
+  path, which refreshes the sidebar -- an import cycle once the checks fed
+  it), and the supporting-document checks to `src/core/pdf/supplemental-checks.js`
+  (the old module loaded the PDF viewer); both old modules re-export them.
+- **Type check:** the checks are now reached from the router, so the files
+  never written with types gained `// @ts-nocheck` with the reason (AGENTS.md
+  section 2); the three with my own small type gaps were fixed instead.
+
+**Tests:**
+
+- **The variants first.** `tests/unit/support/filing-variants.js` wrote 'Yes'
+  into signature-choice fields, so the saturated filings were never complete
+  on any signature block (the design: "it is fixed first"). They take Unsigned
+  now, and each signature block gained '"/s/" undated' and 'stamp without
+  image' variants (70 new). Both goldens were regenerated on unchanged code
+  first: only variants built from the saturated filing changed.
+- **Then the marks.** The completion golden regenerated again, every change
+  diffed by variant name and stated in its note (the groups above, mirrored on
+  the Annual, Final and Trust; the Initial Inventory unchanged). One group
+  accepted as harmless: an emptied guardian list reads ✓ on Part III, as
+  export finds no card to ask about -- not reachable through the pages, which
+  keep one card, and the Cover still asks for the guardian.
+- New `tests/unit/sidebar-export-parity.spec.js` (3): over every variant of
+  all nine identities, a ✓ never hides a Preview blocker or a question
+  (judged independently of the module's own bucketing), 100% means nothing
+  outstanding and a − page always has something, and every sidebar-only
+  question is an enumerated kind in the page's own words (each kind seen);
+  Excel-only problems hold no page back; an old filing is judged as opened, a
+  closed one as filed. **Red-first:** with the module reading the old
+  per-type rules (completion.js at HEAD), it fails for the stated reasons --
+  Part I ✓ over "Amended Form?", Part X ✓ over the attorney's undated "/s/",
+  Part VIII ✓ over its question, pages − with nothing outstanding.
+  `checklist-export-parity.spec.js` retired, as the design said.
+- New `tests/e2e/section-marks-follow-export.spec.ts` (5): the Annual Plan's
+  Signatures page names a missing guardian phone and completes when it is
+  entered; an impossible GID marks Part I and the page lists it; the banner
+  after an override; sections counted by page in both Preview lists; D-1's
+  "Guardian #2 — Phone". **Red-first:** with the source changes stashed, all
+  5 fail for their stated reasons (Signatures ✓ with the phone missing; Part I
+  ✓ over the bad date; no banner status to update; "across 1 section"; a bare
+  "Phone").
+- Changed: the unit specs that called a retired per-type rule read
+  `sectionMarks()` (their fixtures carry the guardian signature rule, and the
+  Plans' guardian is complete as export reads it); `startup.spec.ts`'s 40H-A
+  case now proves the Inventory's progress is read unopened, never a
+  fabricated 100%.
+- Full unit suite passes; `npm run check:types` clean.
+- **Full regression:** [REGRESSION]
+
+**Found while building, recorded and not changed here:** none beyond the
+design gaps above (the "begun" signal kept; Excel-only problems kept out of
+the marks).
 
 ### Design — part 3: rules and asterisks
 

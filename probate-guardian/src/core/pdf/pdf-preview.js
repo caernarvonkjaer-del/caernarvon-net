@@ -25,9 +25,9 @@ import { ensurePdfjs } from './pdfjs-loader.js';
 import { AnnotationSession, computeContentFingerprint } from './pdf-annotate.js';
 import { base64ToBytes } from '../images/png-dimensions.js';
 import { announceStatus } from '../status/live-region.js';
-import { prepareFilingOutput } from '../filing/output-preflight.js';
+import { prepareFilingOutput, previewStatusHtml } from '../filing/output-preflight.js';
+import { groupIssuesByPage } from '../validation/issue-groups.js';
 import { acknowledgeOutstandingRequirements, authorizeFilingOutput, beginFreshPreview } from '../filing/output-authorization.js';
-import { adaptValidationErrors } from '../validation/validation-adapter.js';
 import { alertModal, confirmModal } from '../ui/dialogs.js';
 import { initPrintPager } from '../ui/print-pager.js';
 import { requestSave } from '../state.js';
@@ -269,6 +269,7 @@ function refreshPreviewPager() {
   initPrintPager({ refresh: true });
 }
 
+
 // buildModel(D) must be the exact same model builder doSavePdf() for that
 // feature uses, so preview and
 // Save-as-PDF can never diverge again by construction (this is also the
@@ -284,29 +285,6 @@ function refreshPreviewPager() {
 // baseIssues at all (only draft/identity issues do); checking `canExport`
 // (which does fold baseIssues in, via `messages`) is what actually wires
 // this argument in, not just adding it.
-// A blocked filing can carry fifty-odd messages, and printing them as one
-// run-on paragraph is what the banner used to do. Every message is shaped
-// "<section> — <detail>", so the section is the natural grouping key, and the
-// leading token of it collapses "D-2 Preparer" and "D-2 Attorney" onto the one
-// schedule the filer would actually navigate to.
-//
-// Milestone 39-E: grouping now runs on adaptValidationErrors()'s own
-// structured split (the same section/detail parse this used to redo ad hoc)
-// so each item also carries the route/path the resolver already computed --
-// letting each one become a real jump-to-field link instead of static text,
-// reusing the exact resolver renderLocalSectionGuidance() already calls for
-// this same purpose elsewhere.
-function groupStructuredIssues(structured) {
-  const groups = new Map();
-  for (const issue of structured) {
-    const section = issue.section || '';
-    const key = section ? section.split(/\s+/)[0] : 'General';
-    if (!groups.has(key)) groups.set(key, []);
-    const text = section && section !== key ? `${section.slice(key.length).trim()} — ${issue.label}` : issue.label;
-    groups.get(key).push({ text, route: issue.route, path: issue.path });
-  }
-  return groups;
-}
 
 // The global `[data-form-action]` click delegation (src/form-events.js)
 // already handles "jump-to-field" for every other page's own local guidance
@@ -329,15 +307,20 @@ function jumpLinkHTML(item) {
   return `<button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-start pdf-preview-blocked-jump" data-form-action="jump-to-field" data-route="${escapeHtml(item.route || '')}" data-jump-path="${escapeHtml(item.path || '')}">${escapeHtml(item.text)}</button>`;
 }
 
+// A blocked filing can carry fifty-odd messages, so they are grouped, and
+// each item is a jump-to-field link carrying the route and path the resolver
+// computes (Milestone 39-E). Milestone 73F part 2: grouped by page, as the
+// sidebar and the missing-items panel count sections
+// (src/core/validation/issue-groups.js) -- it grouped by a section's first
+// word, so "Part III" and "Part IV" were one "Part".
 function blockedPanelHTML(issues, filingType) {
-  const structured = adaptValidationErrors(issues, filingType);
-  const groups = groupStructuredIssues(structured);
+  const groups = groupIssuesByPage(issues, filingType);
   const total = issues.length;
   // A section with one item reads better on the section's own line than as a
   // one-entry nested list -- and most of a blank filing's sections are exactly
   // that, one schedule needing an entry or the verified-empty box.
-  const items = [...groups.entries()].map(([section, details]) => `<li class="pdf-preview-blocked-group">
-    <span class="pdf-preview-blocked-section">${escapeHtml(section)}</span>
+  const items = groups.map(({ name, items: details }) => `<li class="pdf-preview-blocked-group">
+    <span class="pdf-preview-blocked-section">${escapeHtml(name)}</span>
     <span class="pdf-preview-blocked-count">${details.length}</span>
     ${details.length === 1
       ? `<span class="pdf-preview-blocked-single">${jumpLinkHTML(details[0])}</span>`
@@ -345,7 +328,7 @@ function blockedPanelHTML(issues, filingType) {
   </li>`).join('');
   return `<div class="pdf-preview-blocked no-print">
     <p class="pdf-preview-blocked-title">Preview blocked</p>
-    <p class="pdf-preview-blocked-summary">${total} required item${total === 1 ? '' : 's'} still missing, across ${groups.size} section${groups.size === 1 ? '' : 's'}.</p>
+    <p class="pdf-preview-blocked-summary">${total} required item${total === 1 ? '' : 's'} still missing, across ${groups.length} section${groups.length === 1 ? '' : 's'}.</p>
     <div class="pdf-preview-blocked-actions">
       <button type="button" class="btn btn-sm btn-outline-secondary" data-preview-action="override">Continue despite outstanding requirements</button>
     </div>
@@ -459,7 +442,8 @@ export async function mountPdfPreview(buildModel, D, baseIssues = [], containerI
   if (authorization.status !== 'allowed') {
     // Announce the count, not the list -- an assertive region reading fifty
     // items aloud is worse than useless. The list is on the page to be read.
-    announceStatus(`Preview is blocked. ${authorization.issues.length} required items are still missing.`, { priority: 'assertive', containerId: 'print-preview-status' });
+    const missing = authorization.issues.length;
+    announceStatus(`Preview is blocked. ${missing} required item${missing === 1 ? ' is' : 's are'} still missing.`, { priority: 'assertive', containerId: 'print-preview-status' });
     // Milestone 42F: pass the structured issues through -- each already
     // carries the field path its own validator stated. Mapping to
     // issue.message here used to discard that and rely on
@@ -477,6 +461,14 @@ export async function mountPdfPreview(buildModel, D, baseIssues = [], containerI
             // remain unavailable because their output would omit data.
             if (!String(control.title || '').toLowerCase().includes('template can hold')) control.disabled = false;
           });
+          // Milestone 73F part 2: the banner says what is still outstanding --
+          // it kept the count it was drawn with, and a later redraw said
+          // "Ready to export".
+          const outstanding = authorization.issues.length;
+          document.querySelectorAll('[data-preview-status]').forEach((status) => {
+            status.outerHTML = previewStatusHtml({ messages: [], structuredIssues: authorization.issues });
+          });
+          announceStatus(`Continuing with ${outstanding} item${outstanding === 1 ? '' : 's'} outstanding.`, { containerId: 'print-preview-status' });
           void renderPreviewInto(container, buildModel, D, options);
         }
       });

@@ -28,7 +28,8 @@
 //     active filing, bypassing the normalization, side effects and
 //     validation a real edit triggers. Any test whose result depends on what
 //     an edit triggers uses setField() or drives the real control.
-import { computeCompletion, filingProgress, formEngine, initializeEmptyData } from '../filing/filing-registry.js';
+import { formEngine, initializeEmptyData } from '../filing/filing-registry.js';
+import { sectionMarks, filingProgress } from '../status/section-marks.js';
 import {
   PLAN_RIGHTS, PLAN_RIGHT_STATES, PLAN_ADLS, PLAN_ADL_RATINGS, PLAN_BENEFITS, emptyPlanDirective,
 } from '../filing/models/plan-annual.js';
@@ -129,9 +130,8 @@ export function applicationImplementations() {
     addSignatureImage, adaptValidationErrors, prepareFilingOutput, evaluateFiling,
     loadFeature: (engine) => features().load(engine),
     validatorFor: (engine) => features().validator(engine),
-    completionDeps: () => features().completionDeps(),
     loadedFeatures: () => features().loadedFeatures(),
-    computeCompletion, filingProgress,
+    sectionMarks, filingProgress,
     calcTotalsAnnual: (d) => features().totals.annual(d),
     annualReconcileState: (t, d) => features().totals.annualReconcile(t, d),
     calcTotalsGuardian: (d) => features().totals.guardian(d),
@@ -160,14 +160,6 @@ export function createTestingAdapter(w, impl = applicationImplementations()) {
     const fn = impl[name];
     if (typeof fn !== 'function') throw new Error(`GuardianForms.testing: ${name}() is not available`);
     return fn(...args);
-  };
-  // Engines whose code simulate.validatorNotLoaded() says has not loaded.
-  const notLoaded = new Set();
-  // What completion needs, less a validator simulated as not loaded yet.
-  const completionDeps = () => {
-    const deps = { ...call('completionDeps') };
-    if (notLoaded.has('guardian')) delete deps.validateGuardian;
-    return deps;
   };
   // A filing type's validator, its feature loaded first.
   async function validatorFor(type, what) {
@@ -329,19 +321,6 @@ export function createTestingAdapter(w, impl = applicationImplementations()) {
       finishSingle: (handle, filing) => call('finishSingleWardExport', handle, filing),
     }),
     lock: () => lockApp(),
-    // Conditions a spec cannot reach through the UI on demand, reproduced the
-    // way the app would meet them. Test mode only, like everything here.
-    simulate: Object.freeze({
-      /**
-       * A filing type's code has not loaded yet: its validator is absent from
-       * what this adapter's completion queries (status.navChecks(),
-       * status.progress()) are given.
-       */
-      validatorNotLoaded(type) {
-        if (!VALIDATED_TYPES.includes(type)) throw new Error(`GuardianForms.testing.simulate.validatorNotLoaded: unrecognized type ${JSON.stringify(type)}`);
-        notLoaded.add(formEngine(type));
-      },
-    }),
     // The guided tour itself (its steps and where they attach); how a filer
     // reaches the Help panel's "Start guided tour" is not what this starts.
     tour: Object.freeze({ start: () => startWalkthrough() }),
@@ -536,10 +515,10 @@ export function createTestingAdapter(w, impl = applicationImplementations()) {
       },
     }),
     status: Object.freeze({
-      /** The open filing's completion map (the sidebar's computeNavChecks()). */
-      navChecks: () => copy(call('computeCompletion', getD(), getActiveInventoryType(), completionDeps())),
+      /** The open filing's section marks, { checks, incomplete } (the sidebar's; section-marks.js). */
+      navChecks: () => copy(call('sectionMarks', getD(), getActiveInventoryType())),
       /** A filing's progress (the dashboard's filingProgress()). */
-      progress: (filingId) => copy(call('filingProgress', (getCaseFile().wards || []).find((x) => x.wardId === filingId), completionDeps())),
+      progress: (filingId) => copy(call('filingProgress', (getCaseFile().wards || []).find((x) => x.wardId === filingId))),
       /** The Annual family's totals for the open filing (calcTotalsAnnual()), as a copy. */
       annualTotals: () => copy(call('calcTotalsAnnual', requireActive('status.annualTotals'))),
       /** The Annual family's balance check for the open filing (annualReconcileState()): diff, outOfBalance, explanation, explained. */

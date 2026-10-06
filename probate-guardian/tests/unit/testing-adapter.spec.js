@@ -25,13 +25,12 @@ vi.mock('../../src/core/persistence/case-file.js', async (importOriginal) => ({
 // (applicationImplementations()); it looked each one up on window by name. The
 // stand-in window is also the table here: its functions, plus what the table
 // has that a window never did -- loading a feature, a feature's validator
-// once loaded, completion's inputs, the route.
+// once loaded, the route.
 function adapterFor(w) {
   const table = new Proxy(w, {
     get(target, name) {
       if (name === 'loadFeature') return async () => {};
       if (name === 'validatorFor') return (engine) => target[validatorFnName(engine)];
-      if (name === 'completionDeps') return () => ({});
       if (name === 'getCurrentPage') return () => target.currentPage ?? null;
       return target[name];
     },

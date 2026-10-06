@@ -123,6 +123,7 @@
   "tests/e2e/schedule-doc-ack.spec.ts",
   "tests/e2e/schedule-docs-period-key.spec.ts",
   "tests/e2e/section-guidance-invariant.spec.ts",
+  "tests/e2e/section-marks-follow-export.spec.ts",
   "tests/e2e/security-contract.spec.ts",
   "tests/e2e/security.spec.ts",
   "tests/e2e/service-attestation-visibility.spec.ts",

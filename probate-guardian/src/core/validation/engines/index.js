@@ -24,7 +24,7 @@ import { formEngine, FILING_PAGES } from '../../filing/filing-registry.js';
 import { collectOutputIssues } from '../../filing/output-preflight.js';
 import { commitStoredDateDrafts } from '../../form/commit-coordinator.js';
 import { setPath } from '../../form/paths.js';
-import { getSupplementalFilingIssues } from '../../pdf/supplemental-pdf.js';
+import { getSupplementalFilingIssues } from '../../pdf/supplemental-checks.js';
 import { getExcelCapacityIssues } from '../../excel/excel-capacity.js';
 import { GUARDIAN_EXCEL_CAPS, ANNUAL_EXCEL_CAPS, SIMPLIFIED_EXCEL_CAPS } from '../../excel/excel-caps.js';
 import { planSchB4Export } from '../../excel/b4-export-plan.js';
@@ -32,7 +32,7 @@ import { SCH_B4_ACCOUNT_BLOCKS } from '../../excel/b4-register-pages.js';
 import { createIssue } from '../issue-registry.js';
 import { sidebarOnlyWants } from '../../status/section-guidance-policy.js';
 import { rowStarted } from '../row-started.js';
-import { isAffirmative } from '../../form/form-contract.js';
+import { isAffirmative } from '../../form/yes-no.js';
 import { collectGuardianIssues } from './guardian.js';
 import { collectAnnualIssues } from './annual.js';
 import { collectSimplifiedIssues } from './simplified.js';
@@ -45,7 +45,7 @@ import { collectPlanSimplifiedIssues } from './plan-simplified.js';
 /** @typedef {{ blockers: any[], advisories: any[], prompts: Prompt[] }} Evaluation */
 
 // Save as Excel's own capacity checks, per engine (each feature's doSaveExcel()).
-const annualB4Issues = (d, type) => planSchB4Export(d?.schB4, d?.schB4Accounts, SCH_B4_ACCOUNT_BLOCKS)
+const annualB4Issues = (d, type) => planSchB4Export(d?.schB4, d?.schB4Accounts, /** @type {any} */ (SCH_B4_ACCOUNT_BLOCKS))
   .problems.map((p) => createIssue(`excel.capacity.${type}.schB4-${p.code}`, {
     message: p.message,
     label: 'Schedule B-4 — All Other Disbursements',
@@ -110,6 +110,16 @@ function promptsFor(engineId, type, d) {
   return [...fromPages, ...ENGINES[engineId].prompts(d)];
 }
 
+// Milestone 73F part 2: the sidebar now judges the filing after every change,
+// so the copy shares the filing's text rather than re-serialising it -- a
+// supporting PDF or stamp is a long string, and a JSON round trip copied every
+// byte of it each time. Objects and arrays are copied (the draft commit below
+// writes into them); strings, numbers and booleans are immutable and shared.
+// The filing is persisted JSON, so nothing else needs JSON's conversions.
+export const cloneData = (x) => (Array.isArray(x) ? x.map(cloneData)
+  : x && typeof x === 'object' ? Object.fromEntries(Object.entries(x).map(([k, v]) => [k, cloneData(v)]))
+    : x);
+
 /**
  * What the filing still needs, judged on a copy: see the top of this file.
  * @param {Record<string, any>} filing
@@ -121,7 +131,7 @@ export function evaluateFiling(filing) {
   const engine = ENGINES[engineId];
   if (!engine) throw new Error(`No export checks registered for the filing type "${type || '(none)'}"`);
   // Everything below reads the copy it is handed, never the open filing.
-  const copy = JSON.parse(JSON.stringify(filing));
+  const copy = cloneData(filing);
   commitStoredDateDrafts(copy, setPath);
   const checks = engine.collect(copy);
   const preview = collectOutputIssues(copy, [...checks, ...getSupplementalFilingIssues(copy)]);

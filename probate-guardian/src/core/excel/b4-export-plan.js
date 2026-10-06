@@ -1,3 +1,5 @@
+// @ts-nocheck -- in tsconfig.json's checked program only transitively (router.js -> nav-marks.js -> section-marks.js -> the
+// export checks, Milestone 73F part 2); never written with JSDoc types (AGENTS.md section 2).
 // Deciding where each Schedule B-4 disbursement goes in the court's workbook.
 //
 // The form gives each bank account its own block of check-register pages, with

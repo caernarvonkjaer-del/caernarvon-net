@@ -5,28 +5,28 @@
 // the section collapse, the progress summary and the Next button a missing
 // schedule disables. Moved from legacy-app.js's FORM BINDING ENGINE.
 import { esc } from '../filing/escape-html.js';
-import { computeCompletion, formEngine } from '../filing/filing-registry.js';
-import { blocksNext, guidanceAdvice, isSectionIncomplete, sectionCheckKey, sectionKeyPrefix, sidebarOnlyWants } from './section-guidance-policy.js';
+import { judgeFiling } from './section-marks.js';
+import { blocksNext, guidanceAdvice, isSectionIncomplete, sectionCheckKey, sectionKeyPrefix } from './section-guidance-policy.js';
 import { SCHEDULE_NAV_KEYS } from '../filing/models/guardian.js';
-import { features } from '../runtime/features.js';
 import { getCurrentPage } from '../navigation/route-state.js';
 import { getActiveInventoryType, getCaseFile, getD } from '../state.js';
 import { renderLocalSectionGuidance } from './section-status.js';
 import { ic } from '../ui/icons.js';
 
-// The open filing's completion map: which sections are complete, and the
-// incomplete ones' details. Its validator and totals come from the feature
-// services, since core cannot import a feature (Milestone 70, 70K: this was
-// legacy-app.js's computeNavChecks(), which read the Inventory's validator off
-// window).
+// The open filing's section marks: which sections are complete, the begun
+// ones, and each page's own blockers and questions. Milestone 73F part 2: read
+// from the export checks themselves (src/core/status/section-marks.js), so a
+// ✓ never hides what Print Preview would block; it was legacy-app.js's
+// computeNavChecks(), then the per-type rules in completion.js.
 export function computeNavChecks(){
-  return computeCompletion(getD(),getActiveInventoryType(),features().completionDeps());
+  return judgeFiling(getD(),getActiveInventoryType());
 }
 
+// One reading per refresh: the marks, Next and the page's list all come from it.
 export function updateNavDots(){
-  const r=computeNavChecks();
-  if(r)applyNavChecks(r.checks,r.incomplete);
-  updateCurrentScheduleNextButton();
+  const judged=computeNavChecks();
+  if(judged)applyNavChecks(judged.checks,judged.incomplete);
+  updateCurrentScheduleNextButton(judged);
 }
 
 // Live-patches the current page's own "Next" button (see pageNav())
@@ -43,10 +43,10 @@ export function updateNavDots(){
 //   isSectionIncomplete  whether to EXPLAIN what is missing: the sidebar's own map, every type
 //   blocksNext           whether to disable Next: a per-type policy (Guardian: schedule pages only)
 //   guidanceAdvice       what to say: "tick the none box" only where the page has that box
-export function pageCompleteness(route){
+export function pageCompleteness(route,judged=computeNavChecks()){
   if(!route)return {key:null,incomplete:false,blocked:false};
   const type=getActiveInventoryType();
-  const r=computeNavChecks();
+  const r=judged;
   const key=sectionCheckKey(type,route);
   const incomplete=isSectionIncomplete(r&&r.checks,key);
   const blocked=blocksNext({type,checkKey:key,incomplete,guardianScheduleKeys:SCHEDULE_NAV_KEYS});
@@ -59,11 +59,11 @@ export function isScheduleIncomplete(route){
   return pageCompleteness(route).blocked;
 }
 
-export function updateCurrentScheduleNextButton(){
+export function updateCurrentScheduleNextButton(judged=computeNavChecks()){
   const btn=document.getElementById('page-next-btn');
   if(!btn)return;
   const route=(typeof getCurrentPage()==='string'?getCurrentPage():'').split('?')[0];
-  const {incomplete,blocked}=pageCompleteness(route);
+  const {incomplete,blocked}=pageCompleteness(route,judged);
   // The advice must fit the page: "add an item, or check the box verifying there are none"
   // is right only where such a checkbox exists.
   const advice=guidanceAdvice({hasVerifyNoneBox:!!document.querySelector('#main-content .schedule-empty-check')});
@@ -71,21 +71,17 @@ export function updateCurrentScheduleNextButton(){
   btn.title=blocked?advice:'';
   const guidanceContainer=document.getElementById('page-local-guidance');
   if(guidanceContainer){
-    let rawErrors=[];
     const type=getActiveInventoryType()||getD()?.inventoryType;
-    try {
-      // The filing's export validator, published by its feature once loaded
-      // (Final and Trust use the Annual engine's).
-      const validate=type?features().validator(formEngine(type)):null;
-      if(typeof validate==='function')rawErrors=validate(getD());
-    } catch(e) {}
     // Explain whenever the section is incomplete -- not only when Next is blocked. On the
     // Guardian Cover and D-1..D-5 the page explains but Next stays enabled (D1); clearing the
     // box here whenever Next was not blocked is what would have wiped the explanation on the
     // first edit.
-    // Milestone 63F: a sidebar-only rule has no validator message to list, so it names what it still wants.
-    const wants=sidebarOnlyWants(type,route,getD());
-    guidanceContainer.innerHTML=incomplete?renderLocalSectionGuidance(route,rawErrors,Infinity,{message:advice,wants},type):'';
+    // Milestone 73F part 2: the list is exactly what holds the mark back -- this page's blockers
+    // from the export checks and its unanswered sidebar-only questions (63F's wants, now the
+    // checks' prompts) -- so an incomplete page always names what it needs.
+    const owed=judged?judged.pageIssues(route):{blockers:[],prompts:[]};
+    const wants=owed.prompts.map(p=>({label:p.label,path:p.path}));
+    guidanceContainer.innerHTML=incomplete?renderLocalSectionGuidance(route,owed.blockers,Infinity,{message:advice,wants},type):'';
   }
 }
 
