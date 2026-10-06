@@ -3,7 +3,8 @@
 
 import { formatDisplayDate } from './date-parser.js';
 import { ic } from '../ui/icons.js';
-import { displayDecimal, formatAccountNumber, formatAddress, formatBarNumber, formatCaseNumber, formatCheckNumber, formatCityStateZip, formatName, formatPhone, formatSSN, sanitizeNonNegativeDecimal } from './form-contract.js';
+import { displayDecimal, formatAccountNumber, formatAddress, formatBarNumber, formatCaseNumber, formatCheckNumber, formatCityStateZip, formatName, formatPhone, formatSSN } from './form-contract.js';
+import { amountBoxText } from './amount-codec.js';
 import { tooltip } from '../help/tooltips.js';
 import { getFieldDraftDisplay } from './commit-coordinator.js';
 
@@ -192,10 +193,14 @@ export function renderFormField({
     formatted = formatDisplayDate(value) || value;
   }
 
-  const cleanedValue = (isPercentKind || isSignedKind || (isAmountField && keepBlank))
-    ? displayDecimal(value, { signed: isPercentKind || isSignedKind })
-    : (isAmountField && typeof window !== 'undefined')
-      ? sanitizeNonNegativeDecimal(formatted)
+  // Milestone 73G part 1: an amount box draws what the filing holds, minus
+  // included (amountBoxText()): it used to strip the minus, so a stored -50
+  // showed as 50 and tabbing through stored it back positive. 0 draws as an
+  // empty box unless the box keeps blank apart from $0.00 (keepBlank).
+  const cleanedValue = isPercentKind
+    ? displayDecimal(value, { signed: true })
+    : isAmountField
+      ? amountBoxText(value, { blankZero: !keepBlank })
       : formatted;
 
   // Guardian Inventory's numInput() has no label of its own (a separate

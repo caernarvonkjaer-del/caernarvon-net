@@ -211,11 +211,12 @@ describe('the Starting Balance itself', () => {
     expect(validateAnnual().map((e) => String(e.message))).toContain('Part II — Starting Balance');
   });
 
+  // Milestone 73G part 1: what opening a filing does to its amounts is
+  // normalizeWardData()'s lossless reading (the per-page clamp is retired).
   test('opening a filing no longer turns a negative Starting Balance into $0', async () => {
-    const { sanitizeNegativeAmounts } = await import('../../src/core/form/form-runtime.js');
-    openFiling(annual({ startingBalance: -5000 }));
-    sanitizeNegativeAmounts();
-    expect(getD().startingBalance).toBe(-5000);
+    const { normalizeWardData } = await import('../../src/core/filing/normalize-filing.js');
+    expect(normalizeWardData(annual({ startingBalance: -5000 })).startingBalance).toBe(-5000);
+    expect(normalizeWardData(annual({ startingBalance: '(5,000.00)' })).startingBalance).toBe(-5000);
   });
 
   test('the balance check compares the two lines as they print', () => {

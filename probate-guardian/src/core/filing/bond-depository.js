@@ -40,6 +40,8 @@
 // inference: two fields expressing the same fact would drift. The dates they
 // gated (bondWaivedDate, restrictedDepositoryReceiptDate) stay.
 
+import { amountForStore } from '../form/amount-codec.js';
+
 export const BOND_DEPOSITORY_STATES = Object.freeze(['depository-only', 'bond-and-depository', 'bond-only', 'bond-waived']);
 
 /** The question's options, in the order the tester proposed them. */
@@ -102,7 +104,10 @@ export function bondAmountCellValue(value) {
  */
 export function bondAmountFromCell(value) {
   if (value == null || value === '') return '';
-  const n = typeof value === 'number' ? value : parseFloat(String(value));
+  // Milestone 73G part 1: text is read by the one amount codec (a sign and
+  // "$1,000" kept); text that is not an amount is kept for the export checks.
+  const n = typeof value === 'number' ? value : amountForStore(String(value));
+  if (typeof n === 'string') return n;
   return Number.isFinite(n) && n !== 0 ? n : '';
 }
 

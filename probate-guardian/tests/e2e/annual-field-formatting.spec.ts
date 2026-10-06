@@ -99,10 +99,12 @@ test.describe('Annual Accounting on the shared write path', () => {
 
     // This field is hand-rolled (data-annual-path only, no data-field-path):
     // the one kind of Annual control the shared listener never used to see.
+    // Milestone 73G part 1: while typed, the box keeps what was typed and the
+    // filing holds the number read so far.
     await loss.fill('-1,250');
-    await expect(loss).toHaveValue('-1250');
+    await expect(loss).toHaveValue('-1,250');
     await expect(page.locator('[data-annual-total="schC_losses"]')).toHaveText('(1,250.00)');
-    expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('schC.0.loss'))).toBe('-1250');
+    expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('schC.0.loss'))).toBe(-1250);
 
     await loss.blur();
     expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('schC.0.loss'))).toBe(-1250);
@@ -120,11 +122,12 @@ test.describe('Annual Accounting on the shared write path', () => {
     await amount.waitFor({ state: 'visible' });
 
     await amount.fill('1,000');
-    await expect(amount).toHaveValue('1000');
+    await expect(amount).toHaveValue('1,000');
     await expect(page.locator('[data-annual-total="schA"]')).toHaveText('1,000.00');
-    expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('schA.0.amount'))).toBe('1000');
+    expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('schA.0.amount'))).toBe(1000);
     await amount.blur();
     expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('schA.0.amount'))).toBe(1000);
+    await expect(amount).toHaveValue('1000');
   });
 
   test('phone and SSN format on blur through the shared finalizer', async ({ page }) => {

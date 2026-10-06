@@ -24,6 +24,7 @@ import { esc } from '../../core/filing/escape-html.js';
 import { ic } from '../../core/ui/icons.js';
 import { fmt } from '../../core/format/money.js';
 import { applyZipLimit, finalizeCaseNumber, formatAccountNumber, formatAddress, formatBarNumber, formatCaseNumber, formatCheckNumber, formatName, formatPhone, formatSSN, sanitizeNonNegativeDecimal } from '../../core/form/form-contract.js';
+import { amountForStore } from '../../core/form/amount-codec.js';
 import { calc } from './totals.js';
 import { PAGES_GUARDIAN, mk } from '../../core/filing/models/guardian.js';
 import { SCHEDULE_NAV_KEYS } from '../../core/filing/models/guardian.js';
@@ -53,7 +54,7 @@ const INVENTORY_ATTORNEY_TRIGGERS = ['attorneyForGuardian', 'attorney'];
 const attorneyMarkerAborts = new WeakMap();
 const waiverHintAborts = new WeakMap();
 import { yesNoCheckboxS, yesNoRadioHTML } from '../../core/form/field-html.js';
-import { browserRecommendationNotice, linkAccordions, linkLabelsToInputs, sanitizeNegativeAmounts, setupAmountFieldValidation } from '../../core/form/form-runtime.js';
+import { browserRecommendationNotice, linkAccordions, linkLabelsToInputs, setupAmountFieldValidation } from '../../core/form/form-runtime.js';
 import { initPrintPager } from '../../core/ui/print-pager.js';
 import { renderScheduleDocsSection } from '../../core/filing/schedule-docs.js';
 import { setPath } from '../../core/form/paths.js';
@@ -110,10 +111,13 @@ function normalizeGuardians() {
 // (AGENTS.md section 4's tri-state rule, extended here: 0 would read as "no
 // bond amount entered" as wrongly as the old "$25,000" string that failed
 // parseFloat() and printed $0.00).
+//
+// Milestone 73G part 1: read by the one amount codec, so the sign survives
+// ("$-25,000" used to become 25000) and text that is not an amount is kept as
+// it was for the export checks to name.
 export function normalizeBondAmountValue(v) {
   if (typeof v !== 'string' || !v.trim()) return v;
-  const parsed = parseFloat(v.replace(/[^0-9.]/g, ''));
-  return Number.isFinite(parsed) ? parsed : v;
+  return amountForStore(v);
 }
 // Save as PDF and Save as Excel, for GuardianForms.testing's saveOutput through
 // the feature services (Milestone 70, 70K). The adapter named
@@ -160,7 +164,6 @@ export async function mount(container, page, { signal } = {}) {
     saveData();
     if (certFilled.length) void auditLog('CERTIFICATE_MIGRATION', `D-2 attorney fields filled from the old D-5 certificate: ${certFilled.join(', ')}`, true);
   }
-  sanitizeNegativeAmounts();
   D.bondAmount = normalizeBondAmountValue(D.bondAmount);
   let html;
   switch(page){

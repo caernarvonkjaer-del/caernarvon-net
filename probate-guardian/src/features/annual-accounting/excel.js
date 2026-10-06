@@ -29,6 +29,7 @@ import { alertModal } from '../../core/ui/dialogs.js';
 import { setStatus, scheduleStatusClear } from '../../core/ui/transient-status.js';
 import { beginExport } from '../../core/ui/export-guard.js';
 import { rowStarted } from '../../core/validation/row-started.js';
+import { amountForStore } from '../../core/form/amount-codec.js';
 import { assertWorkbookWithinLimits, getImportProgressEl, sanitizeObjectDataInPlace, validateImportFile } from '../../core/security/input-hardening.js';
 import { capitalizeImportedFields } from '../../core/form/form-contract.js';
 import { r2 } from '../../core/format/money.js';
@@ -614,7 +615,12 @@ export async function importExcel(input){
         m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2})$/); if(m){const yy=+m[3];return `${yy<50?2000+yy:1900+yy}-${m[1].padStart(2,'0')}-${m[2].padStart(2,'0')}`;}
         return '';
       };
-      const gcNum=(ws,addr)=>{const v=gcv(ws,addr);if(v==null||v==='')return '';const n=typeof v==='number'?v:parseFloat(v);return isNaN(n)?'':n;};
+      // Milestone 73G part 1: a text cell is read by the one amount codec --
+      // "(1,000.00)" and "$-5,000.00" are -1000 and -5000 (they used to come
+      // in blank), "1,234.56" is 1234.56 (it was 1), and text that is not an
+      // amount is kept for the export checks to name. A date cell reads as
+      // blank, as before (row presence on B-1/B-2 reads the date column).
+      const gcNum=(ws,addr)=>{const v=gcv(ws,addr);if(v==null||v===''||v instanceof Date)return '';return amountForStore(v);};
       // Inverse of the export's pv(): a share cell holds a fraction (1 =
       // 100%), stored here as the 0-100 number the form collects. Milestone
       // 71C (D10): shareFromWorkbookCell() (src/core/excel/share-cell.js),
@@ -879,7 +885,7 @@ export async function importExcel(input){
           const n=parseFloat(String(v).replace(/%$/,''));
           return Number.isFinite(n)?n:String(v);
         };
-        const trustAmount=(addr)=>{const v=asNumberWritten(gcv(p8,addr));if(v==null||v==='')return '';const n=typeof v==='number'?v:parseFloat(v);return Number.isFinite(n)?n:'';};
+        const trustAmount=(addr)=>amountForStore(asNumberWritten(gcv(p8,addr)));
         D.trusts=trustRows.map(rows=>{
           const [gidRow,nameRow,trusteeRow,acctRow,dateRow,typeRow,pctRow,amtRow]=rows;
           return {

@@ -139,14 +139,15 @@ describe('how a share is drawn, typed and stored', () => {
     expect(money).not.toContain('data-field-blank');
   });
 
-  test('opening a filing no longer clamps a negative share to 0 (D-1 and D-5)', async () => {
-    const { sanitizeNegativeAmounts } = await import('../../src/core/form/form-runtime.js');
-    openFiling({ ...emptyDataAnnual(), inventoryType: 'annual', schD1: [d1Row(-10)], schD5: [{ description: 'Loan', fullDebt: 100, wardPct: -5 }] });
-    sanitizeNegativeAmounts();
-    expect(getD().schD1[0].wardPct).toBe(-10);
-    expect(getD().schD5[0].wardPct).toBe(-5);
-    // An amount is still clamped, as before.
-    expect(getD().schD1[0].fullAmount).toBe(1000);
+  // Milestone 73G part 1: the clamp that ran on every page drawn
+  // (sanitizeNegativeAmounts()) is retired; what opening a filing does to
+  // its amounts is normalizeWardData()'s lossless reading.
+  test('opening a filing no longer clamps a negative share to 0 (D-1 and D-5), nor a negative amount', async () => {
+    const { normalizeWardData } = await import('../../src/core/filing/normalize-filing.js');
+    const d = normalizeWardData({ ...emptyDataAnnual(), inventoryType: 'annual', schD1: [{ ...d1Row(-10), fullAmount: -200 }], schD5: [{ description: 'Loan', fullDebt: 100, wardPct: -5 }] });
+    expect(d.schD1[0].wardPct).toBe(-10);
+    expect(d.schD5[0].wardPct).toBe(-5);
+    expect(d.schD1[0].fullAmount).toBe(-200);
   });
 });
 

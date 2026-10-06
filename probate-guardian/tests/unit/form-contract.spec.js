@@ -438,30 +438,88 @@ describe('form-contract', () => {
       expect(getControlPolicy(loss)).toBe('normalize');
     });
 
+    // Milestone 73G part 1: while an amount box is typed in, the box keeps what
+    // was typed and the filing gets the number read so far (the live totals
+    // follow it); the box shows the stored number once it is left.
     it('keeps a leading minus on a signed-money field, filtering live, and stores a Number on blur', () => {
       const loss = createMockInput({ dataset: { annualPath: 'schC.0.loss', annualFormat: 'signed-decimal' }, value: '-1,250.5' });
       writeDraftValue(loss);
-      expect(loss.value).toBe('-1250.5');
-      expect(getD().schC[0].loss).toBe('-1250.5');
+      expect(loss.value).toBe('-1,250.5');
+      expect(getD().schC[0].loss).toBe(-1250.5);
       finalizeFieldValue(loss);
       expect(getD().schC[0].loss).toBe(-1250.5);
       expect(loss.value).toBe('-1250.5');
     });
 
-    it('keeps a lone minus as an in-progress draft rather than wiping it', () => {
+    it('keeps a lone minus in the box as an entry in progress, writing nothing yet', () => {
       const loss = createMockInput({ dataset: { annualPath: 'schC.0.loss', annualFormat: 'signed-decimal' }, value: '-' });
       writeDraftValue(loss);
       expect(loss.value).toBe('-');
-      expect(getD().schC[0].loss).toBe('-');
+      expect(getD().schC[0].loss).toBe('');
     });
 
-    it('filters a money field live on input (caret-safe character rejection, minus included) and stores a Number on blur', () => {
-      const amount = createMockInput({ dataset: { fieldPath: 'schA.0.amount', fieldKind: 'money' }, value: '-1,000' });
+    it('filters a money field live on input (caret-safe character rejection) and keeps its minus (decision 73G-N1)', () => {
+      const amount = createMockInput({ dataset: { fieldPath: 'schA.0.amount', fieldKind: 'money' }, value: '-1,000abc' });
       writeDraftValue(amount);
-      expect(amount.value).toBe('1000');
-      expect(getD().schA[0].amount).toBe('1000');
+      expect(amount.value).toBe('-1,000');
+      expect(getD().schA[0].amount).toBe(-1000);
       finalizeFieldValue(amount);
-      expect(getD().schA[0].amount).toBe(1000);
+      expect(getD().schA[0].amount).toBe(-1000);
+      expect(amount.value).toBe('-1000');
+    });
+
+    it('Milestone 73G part 1: an amount box left as it was drawn writes nothing', () => {
+      openFiling({ schA: [{ amount: '' }, { amount: -50 }] });
+      // An unanswered amount, drawn as an empty box: leaving it used to store 0.
+      const blankBox = createMockInput({ dataset: { fieldPath: 'schA.0.amount', fieldKind: 'money' }, value: '' });
+      finalizeFieldValue(blankBox);
+      expect(getD().schA[0].amount).toBe('');
+      // A stored -50, drawn as "-50" (it used to be drawn as 50, and tabbing
+      // through stored it back positive).
+      const negative = createMockInput({ dataset: { fieldPath: 'schA.1.amount', fieldKind: 'money' }, value: '-50' });
+      finalizeFieldValue(negative);
+      expect(getD().schA[1].amount).toBe(-50);
+    });
+
+    it("Milestone 73G part 1: reads the Clerk's parentheses and pasted minus signs as negative (decision 73G-2)", () => {
+      openFiling({ schA: [{}, {}, {}, {}] });
+      const typed = [['(1000)', -1000], ['−250', -250], ['–250', -250], ['$-5,000.00', -5000]];
+      typed.forEach(([text], i) => {
+        const box = createMockInput({ dataset: { fieldPath: `schA.${i}.amount`, fieldKind: 'money' }, value: text });
+        writeDraftValue(box);
+        finalizeFieldValue(box);
+        expect(box.value, text).toBe(String(typed[i][1]));
+      });
+      expect(getD().schA.map((r) => r.amount)).toEqual(typed.map(([, value]) => value));
+    });
+
+    it("Milestone 73G part 1: keeps text that isn't an amount, in the box and the filing, and marks the box", () => {
+      openFiling({ schA: [{ amount: 100 }] });
+      const box = createMockInput({ dataset: { fieldPath: 'schA.0.amount', fieldKind: 'money' }, value: '1.000,50' });
+      writeDraftValue(box);
+      finalizeFieldValue(box);
+      expect(getD().schA[0].amount).toBe('1.000,50');
+      expect(box.value).toBe('1.000,50');
+      expect(box.classList.contains('is-invalid')).toBe(true);
+      expect(box.getAttribute('aria-invalid')).toBe('true');
+      box.value = '1000.50';
+      writeDraftValue(box);
+      finalizeFieldValue(box);
+      expect(getD().schA[0].amount).toBe(1000.5);
+      expect(box.classList.contains('is-invalid')).toBe(false);
+    });
+
+    it("Milestone 73G part 1: the Simplified's remuneration Amount is an amount box that keeps blank apart from $0.00 (decision 73G-N2)", () => {
+      openFiling({ remuneration: [{ amount: '' }] });
+      const box = createMockInput({ dataset: { formPath: 'remuneration.0.amount', formFormat: 'currency', fieldBlank: 'keep' }, value: '$1,234.56' });
+      expect(getControlKind(box)).toBe('money');
+      writeDraftValue(box);
+      finalizeFieldValue(box);
+      expect(getD().remuneration[0].amount).toBe(1234.56);
+      box.value = '';
+      writeDraftValue(box);
+      finalizeFieldValue(box);
+      expect(getD().remuneration[0].amount).toBe('');
     });
 
     it('applies the nine-digit ZIP+4 cap before formatting City / State / Zip', () => {

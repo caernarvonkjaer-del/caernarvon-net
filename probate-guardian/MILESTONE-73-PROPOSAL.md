@@ -6,7 +6,7 @@
 far: 73U (2026-10-04, `5b8849b`), 73V (2026-10-05, `8b96aa3`), 73C
 (2026-10-05, `861b6a9`, brought forward from its place in the build order at the
 requester's choice) 73D (2026-10-05, `c8e84fe`, likewise), 73J part 1 (2026-10-05, `d819c4a`),
-73F part 1 (2026-10-06, `5e9e17b`), 73A (2026-10-06, `83352d0`) and 73F part 2 (2026-10-06), each approved by name.** Nothing else is approved.
+73F part 1 (2026-10-06, `5e9e17b`), 73A (2026-10-06, `83352d0`), 73F part 2 (2026-10-06, `d01edd4`) and 73G part 1 (2026-10-06), each approved by name.** Nothing else is approved.
 Building any other item, or any part of a split item, needs the requester's
 named approval of that item or part (AGENTS.md §3).
 
@@ -46,7 +46,7 @@ recorded as **Pinellas Clerk practice**, not as a reading of a statute or rule
 | 4 | 73D | Ticking and unticking **"This item is a vehicle"** erases the Description and the safe-deposit answer; hidden Plan "Explanation" text still prints | High | **Built** (2026-10-05) |
 | 5 | 73E | **An Excel import replaces the filing unasked** (the Simplified's Cancel half-applies it), can turn a Trust into an Annual, and changes shared people's records in other filings unseen | High | Two |
 | 6 | 73F | **A section shows ✓ and Print Preview then blocks it**; asterisks don't match what is enforced; a misspelled county passes everywhere | High | Three (parts 1 and 2 **built** 2026-10-06) |
-| 7 | 73G | A loss typed positive is **added** unwarned; the Clerk's "(1000)" is stored as **+1000**; negatives are refused, shown as positive, or **zeroed on every page drawn**; "$1,234.56" in the Simplified's remuneration files as **$0.00** | High | Two |
+| 7 | 73G | A loss typed positive is **added** unwarned; the Clerk's "(1000)" is stored as **+1000**; negatives are refused, shown as positive, or **zeroed on every page drawn**; "$1,234.56" in the Simplified's remuneration files as **$0.00** | High | Two (part 1 **built** 2026-10-06) |
 | 8 | 73H | Dates print as **2025-01-01** on several screens; negative amounts appear **five ways**; Plan Q11 prints a bare number | Medium | One |
 | 9 | 73I | The dashboard marks an annual accounting **overdue early: 0–3 days for a month-end period, 16–32 days for a mid-month one**; a Final gets a due date with no basis | Medium | One |
 | 10 | 73J | Parts of a page stay **stale** after a change (eight cases) | Medium | Two (part 1 **built** 2026-10-05) |
@@ -132,7 +132,7 @@ behaviour on its own except where its row says so.
 | 1 | 73V — row rules (behaviour-preserving; only the link fix is visible) | — | `src/core/form/schedule-definitions.js` (descriptions keyed by filing type and list; the three row actions keep their signatures; `SCHEDULE_SCHEMAS` kept as a read-only compatibility export), `src/core/form/plan-row-actions.js`, `prune-cards.js`, `src/core/filing/models/plan-rows.js`, the Inventory's row actions and `normalizeGuardians()`, the Annual importer's guardian filter | new `tests/unit/collection-descriptors.spec.js` (explicit expected inventory of every list; each form's behaviour unchanged); changed: `schedule-definitions.spec.js`, `output-revision-wiring.spec.js`, `prune-cards.spec.js`, `filing-registry.spec.js`; unchanged through the compatibility export: `types-contract.spec.js`, `remuneration-declaration.spec.js` — **Built** `8b96aa3` |
 | 2 | 73J part 1 — one change event | — | `src/core/form/form-contract.js`, a new `src/core/model-change.js`, every committed mutation path (row actions, New Year, conversion, Sync, Link Person, Merge, year switch) | new `tests/unit/model-change-event.spec.js` — **Built** 2026-10-05 |
 | 3 | 73K part 1 — why the page is drawn | 73V | `src/core/navigation/router.js` and its callers | `router.spec.js`; `npm run check:types` |
-| 4 | 73G part 1 — the amount codec | — | `form-contract.js`, `form-fields.js`, `guardian-inventory/form-binding.js`, `form-runtime.js`, `share-cell.js`, the three importers' amount readers | new `tests/unit/amount-codec.spec.js`; the year-rollover and conversion goldens |
+| 4 | 73G part 1 — the amount codec | — | `form-contract.js`, `form-fields.js`, `guardian-inventory/form-binding.js`, `form-runtime.js`, `share-cell.js`, the three importers' amount readers | new `tests/unit/amount-codec.spec.js`; the year-rollover and conversion goldens — **Built** 2026-10-06 |
 | 5 | 73F part 1 — shared checks | — | the seven validators moved to `src/core/validation/engines/` with `evaluate<Engine>()`, a registry, `validate<Engine>()` kept as wrappers, `output-preflight.js` | the existing validator and export-gate units; a wrapper-equivalence test; completion golden unchanged — **Built** 2026-10-06 |
 | 6 | 73E part 1 — the import transaction (no importer connected) | 73J p1 | new `src/core/excel/import-transaction.js`, `import-keep.js` (exact-name identity), `party-resolver.js`, the activity log | new `tests/unit/import-transaction.spec.js` (synthetic adapters) |
 | 7 | 73T part 1 — the workbook contract | 73E p1, 73G p1 | new `src/core/excel/workbook-contract/` (one per form, the importers' adapters), `excel-engine.js` | `excel-write-targets.spec.js`, `export-manifests.ts`, new round-trip and hand-filled specs |
@@ -1481,6 +1481,95 @@ unreadable text is kept and flagged.
 Part II amount (or Part XI amount) change Line 30 (the Simplified's Line 8),
 the bond requirement and possibly the fee tier — toward the Clerk's workbook,
 which zeroes nothing. No formula changes.
+
+### Build record, part 1 — BUILT 2026-10-06 (approved by name by the requester, 2026-10-06)
+
+**What changed for a filer:**
+
+- Every amount box accepts a minus, as all three of the Clerk's workbooks
+  instruct (73G-N1), and the Clerk's "(1000)", a "−250" or "–250" pasted from
+  Word or a PDF, and "$-5,000.00" are read as negative (73G-2). An ordinary
+  box keeps its decimal keypad; the boxes where a negative is expected keep
+  the text keyboard (72E).
+- A box holding a negative -- imported, carried or converted -- shows it,
+  minus included, and tabbing through a box changes nothing. A -50 used to
+  show as 50 and be stored back positive.
+- Negative D-1 to D-4, Simplified Part II and Part XI amounts are no longer
+  set to 0 on every page drawn, and "1,234.56" saved as text is no longer cut
+  to 1. **The effect on filed figures, as the design stated:** a filing
+  holding such a negative changes Line 30 (the Simplified's Line 8), the bond
+  requirement and possibly the fee tier, toward the Clerk's workbook, which
+  zeroes nothing. No formula changed.
+- The Simplified's remuneration Amount is an amount box (73G-N2):
+  "$1,234.56" files as $1,234.56. It filed as $0.00, and "1,234.56" as
+  $1.00. Text saved before is read when the filing opens.
+- Text that isn't an amount -- "1.000,50", or "N/A" from a workbook -- is
+  kept as typed, the box says it can't be read, and Print Preview and the
+  page's list name it, on its own page. It can be overridden, as an
+  impossible date can.
+- Importing a workbook reads text amount cells the same way. "(1,000.00)"
+  came in blank on the Annual and 0 on the Inventory, and "1,234.56" as 1. An
+  Inventory B-4 row with a negative balance is kept (it was dropped), and a
+  negative remuneration amount on the Simplified imports as an amount (it
+  became the description).
+
+**How:** a new `src/core/form/amount-codec.js` reads, keeps and shows every
+amount: parse, store, show in the box (court-style presentation stays
+73H's). Every amount box goes through it -- the shared write path
+(`form-contract.js`: a live filter and value while typing, and
+`finalizeAmountControl()` on leaving, which writes nothing for a box left as
+it was drawn and keeps and marks unreadable text), the shared renderer, the
+Inventory's own binding, and the hand-written Part II, remuneration, Loss and
+Transfer Out boxes. So do the three importers' amount readers and the bond
+cell reader. `sanitizeNegativeAmounts()` is retired from the three mounts.
+In its place a new `src/core/filing/amount-fields.js` lists where each form
+keeps an entered amount -- exactly the data model's entered currency fields,
+held in step by a unit test. That list drives a lossless reading of amounts
+saved as text when a filing opens (`normalizeWardData()`), and one export
+check, `field.amount.unreadable` (bypassable), merged beside the impossible
+dates. The router's post-draw hook, which enforced "no negatives" on number
+inputs that no longer exist, now marks unreadable amounts. Data model: every
+entered currency field "negative allowed", with notes. `verify:data-model`
+passes.
+
+**Found while building, recorded and not changed here:**
+
+- The Inventory's own checks still require each schedule's Full Asset Value
+  to be more than 0, so a negative there is still a (bypassable) Preview
+  issue on the Inventory. Decision 73G-N1 makes a negative asset a
+  non-blocking note; that change belongs to part 2 ("a negative where it is
+  unusual: a non-blocking note").
+- Two dead branches in the Inventory's binding still clamp `type="number"`
+  inputs. No amount box renders as one, so they do nothing; left as found.
+
+**Tests:**
+
+- New `tests/unit/amount-codec.spec.js` (9) and `tests/unit/amount-fields.spec.js`
+  (5): every notation, blank and unreadable; the amount list against the data
+  model; the open-time reading, idempotent; the unreadable-amount issue in
+  Preview and the page list. New `tests/e2e/amounts-keep-their-sign.spec.ts`
+  (5): an imported -50 on Schedule A survives a tab-through; an imported -200
+  D-1 survives a page change; "(1000)" in Transfer Out is -1000; "$1,234.56"
+  in the Simplified's remuneration files as $1,234.56; "1.000,50" stays,
+  is marked and is named. `form-contract.spec.js` (+4 cases),
+  `signed-amount-keypad.spec.ts` (+1: an ordinary box keeps a minus).
+- **Red-first:** with the app changes set aside, all six new browser cases
+  fail for their stated reasons (-50 shown as 50; -200 zeroed; "(1000)"
+  stored as 1000; "$1,234.56" kept as text; "1.000,50" cut as typed; the
+  minus dropped), as do the seven amount cases in `form-contract.spec.js` and
+  the open-time case in `carried-balance.spec.js`; the two new modules don't
+  exist there.
+- Changed to the new behaviour: `form-contract.spec.js`'s three typing cases,
+  `percent-field.spec.js` and `carried-balance.spec.js` (the retired clamp),
+  `annual-field-formatting.spec.ts`, `simplified-remuneration.spec.ts`.
+  Goldens: the completion golden (400 variants whose amounts hold the variant
+  builder's placeholder text are now unfinished, nothing else) and the
+  year-rollover golden (17 entries where the fixtures' text amounts are the
+  same figures as numbers, nothing else), each with its note; the conversion
+  golden and the .sav corpus did not change.
+- Full unit suite passes; `npm run check:types` clean; `npm run
+  verify:data-model` OK. **Related browser specs: 41 files, 333 tests -- 329
+  passed; the 4 failures were the year-rollover record above, regenerated (9/9).**
 
 ### Design — part 2: warnings and boxes
 

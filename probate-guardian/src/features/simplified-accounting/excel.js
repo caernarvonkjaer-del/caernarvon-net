@@ -3,6 +3,7 @@
 // header. Statically imports back from index.js; see print.js's header for
 // why that circularity is safe.
 import { formatMoney } from '../../core/format/money.js';
+import { amountForStore, parseAmount } from '../../core/form/amount-codec.js';
 import { validateSimplified } from './index.js';
 import { authorizeFilingOutput } from '../../core/filing/output-authorization.js';
 import { getExcelCapacityIssues } from '../../core/excel/excel-capacity.js';
@@ -327,11 +328,14 @@ export async function importExcel(input){
         // ranges define -- see the note beside the writer. Both sides read one
         // row low together, which is why the round trip looked clean while
         // every figure on the filed accounting was wrong.
-        getD().startingBalance=gc('H19');
-        getD().interestIncome=gc('G22');
-        getD().depositsSettlement=gc('G23');
-        getD().serviceCharges=gc('G27');
-        getD().federalIncomeTax=gc('G28');
+        // Milestone 73G part 1: read by the one amount codec, so each is the
+        // number the cell holds, sign kept (they were kept as the cell's text,
+        // which a later page then cut at the first comma or zeroed).
+        getD().startingBalance=amountForStore(gc('H19'));
+        getD().interestIncome=amountForStore(gc('G22'));
+        getD().depositsSettlement=amountForStore(gc('G23'));
+        getD().serviceCharges=amountForStore(gc('G27'));
+        getD().federalIncomeTax=amountForStore(gc('G28'));
       }
 
       // PARTS III, IV — Guardians
@@ -478,8 +482,11 @@ export async function importExcel(input){
             // description in position 2 instead, so detect which layout this
             // is by shape — that keeps older backups importing correctly.
             const parts=val.split('  —  ');
-            const looksLikeAmount=s=>/^\$?\s*[\d,]+(\.\d{1,2})?$/.test(String(s||'').trim());
-            const money=s=>String(s).replace(/[^0-9.]/g,'');
+            // Milestone 73G part 1: the amount segment is read by the one
+            // amount codec, so a negative ("$-500.00", "($500.00)") imports
+            // as one instead of turning into the description.
+            const looksLikeAmount=s=>{const r=parseAmount(String(s||''));return 'value' in r&&!('blank' in r);};
+            const money=s=>amountForStore(String(s));
             let amount='',description='';
             if(parts.length>=4){
               // guardian — type — amount — description

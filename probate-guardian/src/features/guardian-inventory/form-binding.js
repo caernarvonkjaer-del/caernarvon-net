@@ -7,7 +7,8 @@
 import { getFieldDraftDisplay } from '../../core/form/commit-coordinator.js';
 import { filterCountyDropdown } from '../../core/form/county-autocomplete.js';
 import { formatDisplayDate } from '../../core/form/date-parser.js';
-import { applyZipLimit, displayDecimal, finalizeCaseNumber, formatAccountNumber, formatAddress, formatBarNumber, formatCaseNumber, formatCheckNumber, formatCityStateZip, formatName, formatPhone, formatSSN, parseStoredDecimal, runFieldWriteSideEffects, sanitizeDecimal, sanitizeNonNegativeDecimal, setPercentFeedback } from '../../core/form/form-contract.js';
+import { applyZipLimit, displayDecimal, finalizeAmountControl, finalizeCaseNumber, formatAccountNumber, formatAddress, formatBarNumber, formatCaseNumber, formatCheckNumber, formatCityStateZip, formatName, formatPhone, formatSSN, parseStoredDecimal, runFieldWriteSideEffects, sanitizeDecimal, setAmountFeedback, setPercentFeedback } from '../../core/form/form-contract.js';
+import { amountBoxText, filterAmountTyping, isUnreadableAmount, liveAmountValue } from '../../core/form/amount-codec.js';
 import { percentProblem } from '../../core/validation/percent-range.js';
 import { getPath, setPath } from '../../core/form/paths.js';
 import { fmt } from '../../core/format/money.js';
@@ -75,7 +76,11 @@ export function bindForms(){
         // "0", a minus stays visible (displayDecimal()).
         el.value=displayDecimal(cur);
       }else if(inputType==='decimal'){
-        el.value=sanitizeNonNegativeDecimal(cur||'');
+        // Milestone 73G part 1: an amount draws what the filing holds, minus
+        // included (a stored 0 as an empty box, as before), and says so when
+        // it holds text that can't be read as an amount.
+        el.value=amountBoxText(cur,{blankZero:true});
+        setAmountFeedback(el,isUnreadableAmount(cur));
       }else{
         el.value=cur||'';
       }
@@ -99,9 +104,14 @@ export function bindForms(){
           return;
         }
         if(inputType==='decimal'){
-          val=sanitizeNonNegativeDecimal(val);
-          e.target.value=val;
-          setPath(getD(),path,parseFloat(val)||0);
+          // Milestone 73G part 1: the one amount codec, as every other form's
+          // boxes -- a minus, "(", "$" and "," are kept while typing, and the
+          // number read so far is written (nothing yet stores 0, as before).
+          // Leaving the box is the 'change' listener below.
+          val=filterAmountTyping(val);
+          if(e.target.value!==val)e.target.value=val;
+          const live=liveAmountValue(val);
+          setPath(getD(),path,live===''?0:live);
           afterChange(path);
           return;
         }else if(inputType==='phone'){
@@ -144,6 +154,16 @@ export function bindForms(){
         }
         setPath(getD(),path,val);afterChange(path);
       });
+      // Milestone 73G part 1: leaving an amount box stores what it reads -- the
+      // signed number, or text that can't be read, kept and marked -- and a box
+      // left as it was drawn stores nothing (form-contract.js's
+      // finalizeAmountControl(), the rule every amount box shares).
+      if(inputType==='decimal'){
+        el.addEventListener('change',()=>{
+          if(getD()!==boundD)return;
+          if(finalizeAmountControl(el,path,{keepBlank:false}))afterChange(path);
+        });
+      }
       // Case Number only fully resolves to YY-######-GD (padded sequence,
       // fixed GD suffix) on blur -- see finalizeCaseNumber()'s own comment
       // for why that can't happen on every keystroke like the other

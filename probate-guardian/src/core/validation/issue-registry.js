@@ -8,6 +8,9 @@ export const EXCEL_CAPABILITIES = ['excel'];
 const definitions = Object.freeze({
   'validation.legacy-unmapped': { category: 'validation', bypassable: true, capabilities: ALL_CAPABILITIES, showInReadiness: true },
   'field.date.invalid': { category: 'validation', bypassable: true, capabilities: ALL_CAPABILITIES, showInReadiness: true },
+  // Milestone 73G part 1: an amount kept as text it can't be read as
+  // (src/core/filing/amount-fields.js) -- bypassable, like an impossible date.
+  'field.amount.unreadable': { category: 'validation', bypassable: true, capabilities: ALL_CAPABILITIES, showInReadiness: true },
   'filing.identity.unknown': { category: 'data-integrity', bypassable: false, capabilities: ALL_CAPABILITIES, showInReadiness: false },
   'filing.identity.conflict': { category: 'data-integrity', bypassable: false, capabilities: ALL_CAPABILITIES, showInReadiness: false },
   'simplified.guardian.address-conflict': { category: 'data-integrity', bypassable: false, capabilities: ALL_CAPABILITIES, showInReadiness: true },

@@ -28,10 +28,11 @@ import {
 //
 // The archive is not byte-for-byte the year before, and that is recorded, not
 // asserted away. "Start new year" re-opens the filing first, and opening a
-// Guardian Inventory or an accounting runs sanitizeNegativeAmounts() (money
-// text becomes a number: "12.50" -> 12.5, the same value the form stores when
-// a filer types it) and normalizeWardData()'s migration of pre-tri-state
-// booleans (false -> 'No'; only the Guardian fixture still writes those). The
+// filing runs normalizeWardData(): money text becomes its number ("12.50" ->
+// 12.5, the same value the form stores when a filer types it -- since
+// Milestone 73G part 1 losslessly, for every amount, where a per-page clamp
+// used to do it for some and zero negatives), and pre-tri-state booleans are
+// migrated (false -> 'No'; only the Guardian fixture still writes those). The
 // Plans archive their data unchanged. Traced 2026-09-24 with a setter trap.
 // Regenerate the golden only for a deliberate, recorded change:
 // PG_UPDATE_GOLDEN=1 npx playwright test tests/e2e/year-rollover.characterization.spec.ts

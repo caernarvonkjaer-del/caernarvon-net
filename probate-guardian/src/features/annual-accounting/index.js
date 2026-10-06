@@ -64,7 +64,8 @@ import { promptScheduleAckIfNeeded } from '../../core/filing/schedule-doc-ack.js
 import { renderReportingPeriodFields } from '../../core/form/cards/ward-demographics-card.js';
 import { esc } from '../../core/filing/escape-html.js';
 import { ic } from '../../core/ui/icons.js';
-import { sanitizeDecimal, syncPercentFeedback } from '../../core/form/form-contract.js';
+import { syncPercentFeedback } from '../../core/form/form-contract.js';
+import { amountBoxText } from '../../core/form/amount-codec.js';
 import { rowStarted } from '../../core/validation/row-started.js';
 import { formDisplayName } from '../../core/filing/filing-registry.js';
 import { sectionMarks } from '../../core/status/section-marks.js';
@@ -72,7 +73,7 @@ import { getCaseFile, getD, requestSave } from '../../core/state.js';
 import { updateNavDots } from '../../core/status/nav-marks.js';
 import { renderScheduleDocsSection } from '../../core/filing/schedule-docs.js';
 import { pageIntroRow, yesNoCheckboxD, yesNoRadioAnnualHTML } from '../../core/form/field-html.js';
-import { browserRecommendationNotice, linkAccordions, sanitizeNegativeAmounts } from '../../core/form/form-runtime.js';
+import { browserRecommendationNotice, linkAccordions } from '../../core/form/form-runtime.js';
 import { countyAutocompleteHTML } from '../../core/form/county-autocomplete.js';
 import { setPath } from '../../core/form/paths.js';
 import { showPickPartyModal } from '../../core/modals/pick-record-dialogs.js';
@@ -144,7 +145,6 @@ export async function mount(container, page, { signal } = {}) {
   // Superseded while its modules loaded (Milestone 70, 70K): a newer
   // navigation owns the page, so draw nothing.
   if (signal?.aborted) return;
-  sanitizeNegativeAmounts();
   // Milestone 67B: a filing saved before the four-state bond question reads
   // back with the state its old fields implied, and the retired
   // restrictedDepository tri-state is dropped. Idempotent.
@@ -1088,7 +1088,7 @@ function pageSchCAnnual(){
         <div class="col-md-5">${inpD('Full Description and Identification',r.description,`D.schC[${i}].description=this.value`,true)}</div>
         <div class="col-md-2">${inpD('Date of Adjustment',r.date,`D.schC[${i}].date=this.value`,true,'date')}</div>
         <div class="col-md-2">${inpD('Gain / Addition',r.gain,`D.schC[${i}].gain=this.value`,true,'number')}</div>
-        <div class="col-md-3"><label class="form-label">Loss / Reduction <span class="req">*</span> <small>(enter as negative)</small></label><div class="input-group"><span class="input-group-text">$</span><input type="text" inputmode="text" class="form-control" value="${esc(sanitizeDecimal(r.loss))}" data-annual-path="schC.${i}.loss" data-annual-format="signed-decimal"></div></div>
+        <div class="col-md-3"><label class="form-label">Loss / Reduction <span class="req">*</span> <small>(enter as negative)</small></label><div class="input-group"><span class="input-group-text">$</span><input type="text" inputmode="text" class="form-control" value="${esc(amountBoxText(r.loss,{blankZero:true}))}" data-annual-path="schC.${i}.loss" data-annual-format="signed-decimal"></div></div>
       </div></div>
     </div></div>`).join('')+'</div>';
   } else {
@@ -1303,7 +1303,7 @@ function pageSchEAnnual(){
         <div class="col-md-2">${inpD('Transfer In Date',r.transferInDate,`D.schE[${i}].transferInDate=this.value`,true,'date')}</div>
         <div class="col-md-2">${inpD('Transfer In Amount',r.transferInAmt,`D.schE[${i}].transferInAmt=this.value`,true,'number')}</div>
         <div class="col-md-2">${inpD('Transfer Out Date',r.transferOutDate,`D.schE[${i}].transferOutDate=this.value`,true,'date')}</div>
-        <div class="col-md-2"><label class="form-label">Transfer Out Amt (negative)</label><div class="input-group"><span class="input-group-text">$</span><input type="text" inputmode="text" class="form-control" value="${esc(sanitizeDecimal(r.transferOutAmt))}" data-annual-path="schE.${i}.transferOutAmt" data-annual-format="signed-decimal"></div></div>
+        <div class="col-md-2"><label class="form-label">Transfer Out Amt (negative)</label><div class="input-group"><span class="input-group-text">$</span><input type="text" inputmode="text" class="form-control" value="${esc(amountBoxText(r.transferOutAmt,{blankZero:true}))}" data-annual-path="schE.${i}.transferOutAmt" data-annual-format="signed-decimal"></div></div>
       </div></div>
     </div></div>`).join('')+'</div>';
   } else {

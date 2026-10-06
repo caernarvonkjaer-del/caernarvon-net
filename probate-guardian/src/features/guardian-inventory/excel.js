@@ -8,6 +8,7 @@
 // loaded (see src/features/simplified-accounting/excel.js's comment on the
 // same pattern).
 import { validateGuardian } from './index.js';
+import { amountForStore } from '../../core/form/amount-codec.js';
 import { authorizeFilingOutput } from '../../core/filing/output-authorization.js';
 import { getExcelCapacityIssues } from '../../core/excel/excel-capacity.js';
 import { getExcelJS, saveWorkbookFile, setCell, setDateCell } from '../../core/excel/excel-engine.js';
@@ -672,7 +673,11 @@ function parseInitialInventoryWorkbook(wb){
   const ws=name=>wb.getWorksheet(name);
   const rawv=(sheet,addr)=>sheet?unwrapCellValue(sheet.getCell(addr).value):null;
   const txt=(s,a)=>s?readCellText(s.getCell(a)):'';
-  const num=(s,a)=>Number(rawv(s,a))||0;
+  // Milestone 73G part 1: a text cell is read by the one amount codec
+  // ("(1,000.00)" is -1000, "1,234.56" 1234.56; both used to come in as 0);
+  // text that is not an amount is kept for the export checks to name. A
+  // blank cell is 0, as before.
+  const num=(s,a)=>{const v=rawv(s,a);if(v==null||v==='')return 0;if(typeof v==='number'||typeof v==='string')return amountForStore(v,{blank:0});return Number(v)||0;};
   // Mirrors annual-accounting/excel.js's gcDate(): a date cell may come back
   // as a real Date, an Excel serial number, an ISO string, or US-format text
   // (an older build of this app wrote 'MM/DD/YYYY' text, so re-importing a
@@ -710,7 +715,7 @@ function parseInitialInventoryWorkbook(wb){
     scheduleB1:readRows(SCHEDULE_B1_PAGES,(s,r)=>{const name=txt(s,`C${r}`),val=num(s,`G${r}`);if(!name&&!val)return null;return{institutionName:name,accountNumber:txt(s,`C${r+1}`),streetAddress:txt(s,`C${r+2}`),cityStateZip:txt(s,`C${r+3}`),restricted:triState(s,`E${r}`),accountType:txt(s,`F${r}`),fullAssetAmount:val,wardPercent:pct(s,`H${r}`)}}),
     scheduleB2:readRows(SCHEDULE_B2_PAGES,(s,r)=>{const desc=txt(s,`C${r}`),val=num(s,`E${r}`);if(!desc&&!val)return null;return{description:desc,streetAddress:txt(s,`C${r+1}`),cityStateZip:txt(s,`C${r+2}`),valuationMethod:txt(s,`C${r+3}`),fullAssetValue:val,wardPercent:pct(s,`F${r}`),inSafeDepositBox:triState(s,`H${r}`)}}),
     scheduleB3:readRows(SCHEDULE_B3_PAGES,(s,r)=>{const desc=txt(s,`C${r}`),val=num(s,`F${r}`);if(!desc&&!val)return null;return{description:desc,streetAddress:txt(s,`C${r+1}`),cityStateZip:txt(s,`C${r+2}`),restricted:triState(s,`E${r}`),fullAssetValue:val,wardPercent:pct(s,`G${r}`),inSafeDepositBox:triState(s,`J${r}`)}}),
-    scheduleB4:readRows(SCHEDULE_B4_PAGES,(s,r)=>{const name=txt(s,`C${r}`).trim(),val=num(s,`F${r}`);if(!name||val<=0)return null;return{lenderName:name,lenderAddress:txt(s,`C${r+1}`),relatedProperty:txt(s,`C${r+2}`),accountNumber:txt(s,`C${r+4}`)||txt(s,`C${r+3}`),liabilityType:txt(s,`E${r}`)||'Loan',fullLiabilityBalance:val,wardPercent:pct(s,`G${r}`)}}),
+    scheduleB4:readRows(SCHEDULE_B4_PAGES,(s,r)=>{const name=txt(s,`C${r}`).trim(),val=num(s,`F${r}`);if(!name||!val)return null;return{lenderName:name,lenderAddress:txt(s,`C${r+1}`),relatedProperty:txt(s,`C${r+2}`),accountNumber:txt(s,`C${r+4}`)||txt(s,`C${r+3}`),liabilityType:txt(s,`E${r}`)||'Loan',fullLiabilityBalance:val,wardPercent:pct(s,`G${r}`)}}),
     scheduleC1:readRows(SCHEDULE_C1_PAGES,(s,r)=>{const name=txt(s,`C${r}`),val=num(s,`H${r}`);if(!name&&!val)return null;return{payerName:name,payerAddress:txt(s,`C${r+1}`),payerCityStateZip:txt(s,`C${r+2}`),typeOfIncome:txt(s,`E${r}`),frequencyOfPayment:txt(s,`G${r}`)||'Monthly',paymentBasis:txt(s,`E${r+2}`),annualIncomeAmount:val,wardPercent:pct(s,`I${r}`)}}),
     scheduleC2:readRows(SCHEDULE_C2_PAGES,(s,r)=>{const desc=txt(s,`C${r}`),val=num(s,`F${r}`);if(!desc&&!val)return null;const parts=desc.split(' / ');return{lawsuitDescription:parts[0]||desc,caseNumber:parts[1]||'',courtJurisdiction:txt(s,`C${r+1}`),claimantName:txt(s,`C${r+2}`),claimantAddress:txt(s,`C${r+3}`),claimantCityStateZip:txt(s,`C${r+4}`),dateFiled:dt(s,`E${r}`),amountOfClaim:val,wardPercent:pct(s,`G${r}`)}}),
     // Milestone 72A: the first line is "defendant / type of action" and the

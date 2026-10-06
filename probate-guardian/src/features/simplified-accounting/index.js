@@ -38,7 +38,8 @@ import { serviceRecipientIssues, RECIPIENTS_OR_ATTESTATION } from '../../core/va
 import { renderServiceAttestationRow } from '../../core/form/service-attestation-visibility.js';
 import { esc } from '../../core/filing/escape-html.js';
 import { ic } from '../../core/ui/icons.js';
-import { displayDecimal, formatAddress, formatName, formatPhone, formatSSN, sanitizeNonNegativeDecimal } from '../../core/form/form-contract.js';
+import { formatAddress, formatName, formatPhone, formatSSN } from '../../core/form/form-contract.js';
+import { amountBoxText } from '../../core/form/amount-codec.js';
 import { formatDisplayDate } from '../../core/form/date-parser.js';
 import { calcTotals } from './totals.js';
 import { rowStarted } from '../../core/validation/row-started.js';
@@ -46,7 +47,7 @@ import { sectionMarks } from '../../core/status/section-marks.js';
 import { getCaseFile, getD, requestSave } from '../../core/state.js';
 import { startingBalanceNotesHTML } from '../../core/filing/starting-balance-carry.js';
 import { updateNavDots } from '../../core/status/nav-marks.js';
-import { browserRecommendationNotice, linkAccordions, sanitizeNegativeAmounts } from '../../core/form/form-runtime.js';
+import { browserRecommendationNotice, linkAccordions } from '../../core/form/form-runtime.js';
 import { isAttorneyStarted } from '../../core/validation/attorney-block.js';
 import { formatMoney } from '../../core/format/money.js';
 import { resolveServiceCertifier, certifyingCandidates, serviceCertifierChoiceHTML } from '../../core/filing/unrepresented-filing.js';
@@ -231,7 +232,6 @@ export async function mount(container, page, { signal } = {}) {
     requestSave();
     if (statusMove.moved) void auditLog('CERTIFICATE_MIGRATION', "Part VI: the ward's status moved from the method-of-service box (certIndicator) to Indicate if Ward is (certWardStatus)", true);
   }
-  sanitizeNegativeAmounts();
   let html;
   switch (page) {
     case '/':      html = pageCover(); break;
@@ -489,7 +489,7 @@ function pagePart2(){
         <div class="line-row">
           <span class="line-tag">Line 1</span>
           <span class="line-label">Starting Balance — Net Assets per Prior Report<span class="req">*</span></span>
-          <div class="line-input"><div class="input-group"><span class="input-group-text">$</span><input type="text" inputmode="text" class="form-control" id="startingBalance" value="${esc(displayDecimal(d.startingBalance))}" data-form-path="startingBalance" data-form-format="signed-decimal" data-field-blank="keep" data-simplified-refresh="part2"></div>${startingBalanceNotesHTML(d,{wards:getCaseFile()?.wards||null})}</div>
+          <div class="line-input"><div class="input-group"><span class="input-group-text">$</span><input type="text" inputmode="text" class="form-control" id="startingBalance" value="${esc(amountBoxText(d.startingBalance))}" data-form-path="startingBalance" data-form-format="signed-decimal" data-field-blank="keep" data-simplified-refresh="part2"></div>${startingBalanceNotesHTML(d,{wards:getCaseFile()?.wards||null})}</div>
         </div>
       </div>
     </div>
@@ -499,12 +499,12 @@ function pagePart2(){
         <div class="line-row">
           <span class="line-tag">Line 2</span>
           <span class="line-label">Interest Income<span class="req">*</span></span>
-          <div class="line-input"><div class="input-group"><span class="input-group-text">$</span><input type="text" inputmode="decimal" class="form-control" id="interestIncome" value="${esc(sanitizeNonNegativeDecimal(d.interestIncome))}" data-form-path="interestIncome" data-form-format="decimal" data-simplified-refresh="part2"></div></div>
+          <div class="line-input"><div class="input-group"><span class="input-group-text">$</span><input type="text" inputmode="decimal" class="form-control" id="interestIncome" value="${esc(amountBoxText(d.interestIncome,{blankZero:true}))}" data-form-path="interestIncome" data-form-format="decimal" data-simplified-refresh="part2"></div></div>
         </div>
         <div class="line-row">
           <span class="line-tag">Line 3</span>
           <span class="line-label">Deposits Pursuant to Settlement<span class="req">*</span></span>
-          <div class="line-input"><div class="input-group"><span class="input-group-text">$</span><input type="text" inputmode="decimal" class="form-control" id="depositsSettlement" value="${esc(sanitizeNonNegativeDecimal(d.depositsSettlement))}" data-form-path="depositsSettlement" data-form-format="decimal" data-simplified-refresh="part2"></div></div>
+          <div class="line-input"><div class="input-group"><span class="input-group-text">$</span><input type="text" inputmode="decimal" class="form-control" id="depositsSettlement" value="${esc(amountBoxText(d.depositsSettlement,{blankZero:true}))}" data-form-path="depositsSettlement" data-form-format="decimal" data-simplified-refresh="part2"></div></div>
         </div>
         <div class="line-row total-line">
           <span class="line-tag">Line 4</span>
@@ -519,12 +519,12 @@ function pagePart2(){
         <div class="line-row">
           <span class="line-tag">Line 5</span>
           <span class="line-label">Financial Institution Service Charges<span class="req">*</span></span>
-          <div class="line-input"><div class="input-group"><span class="input-group-text">$</span><input type="text" inputmode="decimal" class="form-control" id="serviceCharges" value="${esc(sanitizeNonNegativeDecimal(d.serviceCharges))}" data-form-path="serviceCharges" data-form-format="decimal" data-simplified-refresh="part2"></div></div>
+          <div class="line-input"><div class="input-group"><span class="input-group-text">$</span><input type="text" inputmode="decimal" class="form-control" id="serviceCharges" value="${esc(amountBoxText(d.serviceCharges,{blankZero:true}))}" data-form-path="serviceCharges" data-form-format="decimal" data-simplified-refresh="part2"></div></div>
         </div>
         <div class="line-row">
           <span class="line-tag">Line 6</span>
           <span class="line-label">Federal Income Tax<span class="req">*</span></span>
-          <div class="line-input"><div class="input-group"><span class="input-group-text">$</span><input type="text" inputmode="decimal" class="form-control" id="federalIncomeTax" value="${esc(sanitizeNonNegativeDecimal(d.federalIncomeTax))}" data-form-path="federalIncomeTax" data-form-format="decimal" data-simplified-refresh="part2"></div></div>
+          <div class="line-input"><div class="input-group"><span class="input-group-text">$</span><input type="text" inputmode="decimal" class="form-control" id="federalIncomeTax" value="${esc(amountBoxText(d.federalIncomeTax,{blankZero:true}))}" data-form-path="federalIncomeTax" data-form-format="decimal" data-simplified-refresh="part2"></div></div>
         </div>
         <div class="line-row total-line">
           <span class="line-tag">Line 7</span>
@@ -740,7 +740,7 @@ function pagePart7(){
           <div class="col-md-6"><label class="form-label">Guardian Name <span class="req">*</span></label><input type="text" class="form-control" value="${esc(formatName(r.guardian||''))}" data-form-path="remuneration.${i}.guardian" data-form-format="name"></div>
           <div class="col-md-6"><label class="form-label">Type <span class="req">*</span></label><input type="text" class="form-control" value="${esc(formatName(r.type||''))}" data-form-path="remuneration.${i}.type" data-form-format="name"></div>
           <div class="col-md-8"><label class="form-label">Description</label><input type="text" class="form-control" value="${esc(r.description||'')}" data-form-path="remuneration.${i}.description"></div>
-          <div class="col-md-4"><label class="form-label">Amount</label><input type="text" class="form-control" inputmode="decimal" value="${esc(r.amount||'')}" data-form-path="remuneration.${i}.amount" data-form-format="currency"></div>
+          <div class="col-md-4"><label class="form-label">Amount</label><input type="text" class="form-control" inputmode="decimal" value="${esc(amountBoxText(r.amount))}" data-form-path="remuneration.${i}.amount" data-form-format="currency" data-field-blank="keep"></div>
         </div>
       </div>
     </div></div>`).join('')+'</div>';

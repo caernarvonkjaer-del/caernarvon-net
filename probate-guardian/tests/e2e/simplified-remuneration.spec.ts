@@ -168,7 +168,8 @@ test.describe('Milestone 60J: Part VII must be answered, and is always declared'
     await amount.fill('1250.50');
     await amount.blur();
     await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
-    expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('remuneration.0.amount'))).toBe('1250.50');
+    // Milestone 73G part 1 (decision 73G-N2): a real amount box, storing the number.
+    expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('remuneration.0.amount'))).toBe(1250.5);
   });
 
   // Milestone 70, 70I: the box repaints the sidebar mark then and there, with no

@@ -6,6 +6,7 @@
 // reached it through window. Running it twice gives the same filing as once
 // (tests/unit/filing-registry.spec.js).
 import { normalizeScheduleDocsAck } from './schedule-doc-ack.js';
+import { normalizeAmountFields } from './amount-fields.js';
 
 export function normalizeWardData(d){
   if(!d||typeof d!=='object'||Object.keys(d).length===0)return d;
@@ -14,6 +15,10 @@ export function normalizeWardData(d){
   // read as "already acknowledged", since that would silently retire a prompt
   // the filer never saw.
   try{ normalizeScheduleDocsAck(d); }catch(e){}
+  // Milestone 73G part 1: amounts saved as readable text become their
+  // numbers ("$1,234.56" is 1234.56); text that is not an amount is kept
+  // for the export checks to name. Nothing is zeroed or cut short.
+  try{ normalizeAmountFields(d); }catch(e){}
   // Milestone 58D: reconcile Part XI's two ways of saying "nothing to report".
   //
   // A .sav written before 58D carries the seeded blank placeholder row, which

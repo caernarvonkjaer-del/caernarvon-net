@@ -2,10 +2,14 @@
  "generatedBy": "node scripts/ms70-assertion-counts.mjs --write-baseline",
  "note": "Milestone 70 per-spec assertion counts (static expect calls). tests/unit/ms70-assertion-counts.spec.js fails when a spec falls below its count; lowering it requires --reason, recorded in dropLog. A tripwire, not proof of equivalence (decision D9).",
  "totals": {
-  "expects": 8019,
-  "tests": 2286
+  "expects": 8125,
+  "tests": 2310
  },
  "counts": {
+  "tests/e2e/amounts-keep-their-sign.spec.ts": {
+   "expects": 20,
+   "tests": 5
+  },
   "tests/e2e/annotation-toolbar-containment.spec.ts": {
    "expects": 21,
    "tests": 3
@@ -19,7 +23,7 @@
    "tests": 3
   },
   "tests/e2e/annual-field-formatting.spec.ts": {
-   "expects": 26,
+   "expects": 27,
    "tests": 7
   },
   "tests/e2e/annual-import-ward-percentage.spec.ts": {
@@ -539,8 +543,8 @@
    "tests": 1
   },
   "tests/e2e/signed-amount-keypad.spec.ts": {
-   "expects": 7,
-   "tests": 2
+   "expects": 11,
+   "tests": 3
   },
   "tests/e2e/simplified-mount.spec.ts": {
    "expects": 23,
@@ -622,6 +626,14 @@
    "expects": 8,
    "tests": 5
   },
+  "tests/unit/amount-codec.spec.js": {
+   "expects": 45,
+   "tests": 9
+  },
+  "tests/unit/amount-fields.spec.js": {
+   "expects": 21,
+   "tests": 5
+  },
   "tests/unit/annual-accounting-pdf-model.spec.js": {
    "expects": 43,
    "tests": 12
@@ -687,7 +699,7 @@
    "tests": 4
   },
   "tests/unit/carried-balance.spec.js": {
-   "expects": 46,
+   "expects": 47,
    "tests": 21
   },
   "tests/unit/case-county-drift.spec.js": {
@@ -835,8 +847,8 @@
    "tests": 15
   },
   "tests/unit/form-contract.spec.js": {
-   "expects": 145,
-   "tests": 39
+   "expects": 159,
+   "tests": 43
   },
   "tests/unit/form-derived-fields.spec.js": {
    "expects": 46,

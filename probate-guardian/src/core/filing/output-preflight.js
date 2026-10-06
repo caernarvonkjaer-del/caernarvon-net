@@ -12,6 +12,7 @@ import { unrepresentedAdvisories } from './unrepresented-filing.js';
 import { startingBalanceNotes } from './starting-balance-carry.js';
 import { guardianEmailAdvisories } from './guardian-email.js';
 import { serviceMethodAdvisories } from './service-method.js';
+import { amountFieldIssues } from './amount-fields.js';
 
 // Milestone 71B. Where each accounting form asks why there is no attorney,
 // and where its certificate of service is, by the registry's engine id.
@@ -54,7 +55,9 @@ function normalizeIssue(issue) {
 export function collectOutputIssues(target, baseIssues = []) {
   const identity = resolveFilingDescriptor(target);
   const base = (baseIssues || []).map(normalizeIssue);
-  const structuredIssues = [...base, ...getFieldDraftIssues(target).map(normalizeIssue), ...identity.issues.map(normalizeIssue)];
+  // Milestone 73G part 1: amounts kept as text that can't be read, beside
+  // the impossible dates -- one check for every form.
+  const structuredIssues = [...base, ...getFieldDraftIssues(target).map(normalizeIssue), ...amountFieldIssues(target).map(normalizeIssue), ...identity.issues.map(normalizeIssue)];
   const bondSection = bondSectionFor(identity.descriptor);
   const advisories = [
     ...countyDriftWarnings(target),

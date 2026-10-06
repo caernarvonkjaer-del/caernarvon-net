@@ -2,6 +2,7 @@
 // Governs storage sanitization, identifier preservation, date normalization, and blur formatting.
 
 import { percentProblem } from '../validation/percent-range.js';
+import { amountBoxText, amountForStore, filterAmountTyping, isUnreadableAmount, liveAmountValue, UNREADABLE_AMOUNT_HINT } from './amount-codec.js';
 import { parseFlexibleDate, formatDisplayDate } from './date-parser.js';
 import {
   clearFieldDraft,
@@ -271,7 +272,9 @@ export function getControlKind(control) {
   // Milestone 71C: a share (0-100), its own kind -- see percent-range.js.
   if (format === 'percent') return 'percent';
   if (format === 'signed-decimal') return 'signed-money';
-  if (format === 'decimal' || control.type === 'number') return 'money';
+  // Milestone 73G part 1: "currency" (the Simplified's remuneration Amount)
+  // is an amount box; it used to fall through to free text.
+  if (format === 'decimal' || format === 'currency' || control.type === 'number') return 'money';
   if (control.type === 'date' || has('date')) return 'date';
   return 'text';
 }
@@ -357,17 +360,22 @@ export function writeDraftValue(control, options = {}) {
     ? (control.dataset?.formValue === 'yes-no' ? (control.checked ? 'Yes' : 'No') : control.checked)
     : control.value;
 
-  if ((kind === 'money' || kind === 'signed-money' || kind === 'percent') && !isCheckbox) {
+  if ((kind === 'money' || kind === 'signed-money') && !isCheckbox) {
     // Live character filtering only -- the caret-safe kind of formatting (a
-    // rejected keystroke, like maxlength), never a rewrite. Both legacy write
-    // paths did this for amounts, and the live schedule totals read the model
-    // on every keystroke, so a typed "1,000" must not sit there as 1 until
-    // blur. Phone/SSN stay blur-only: those formatters insert punctuation and
-    // move the caret, which Milestone 24 ruled out here on purpose.
+    // rejected keystroke, like maxlength), never a rewrite. Phone/SSN stay
+    // blur-only: those formatters insert punctuation and move the caret,
+    // which Milestone 24 ruled out here on purpose.
+    // Milestone 73G part 1: every amount box keeps a minus, "(", "$" and
+    // ",", and the model gets the number read so far, so the live schedule
+    // totals follow the keystrokes ("1,000" is 1000, "(250" is -250). The box
+    // shows the stored number once it is left (finalizeFieldValue()).
+    const filtered = filterAmountTyping(rawValue);
+    if (control.value !== filtered) control.value = filtered;
+    rawValue = liveAmountValue(filtered);
+  } else if (kind === 'percent' && !isCheckbox) {
     // Milestone 71C: a share keeps its minus sign visible, so the filer sees
     // what they typed and the range check (percent-range.js) can say so.
-    const filter = kind === 'money' ? sanitizeNonNegativeDecimal : sanitizeDecimal;
-    const filtered = filter(rawValue);
+    const filtered = sanitizeDecimal(rawValue);
     if (control.value !== filtered) control.value = filtered;
     rawValue = filtered;
   }
@@ -522,19 +530,10 @@ export function finalizeFieldValue(control, options = {}) {
     const stored = parseStoredDecimal(cleaned);
     if (setPath) setPath(getD(), path, stored);
     setPercentFeedback(control, percentProblem(stored));
-  } else if (kind === 'money') {
-    const cleaned = sanitizeNonNegativeDecimal(rawValue);
-    control.value = cleaned;
-    // Milestone 71C/71E: data-field-blank="keep" (renderFormField()'s
-    // keepBlank option) stores '' for an empty box, so "empty" and "$0.00"
-    // stay distinguishable. Opt-in per field; every other amount is unchanged.
-    if (setPath) setPath(getD(), path, keepsBlank(control) ? parseStoredDecimal(cleaned) : (parseFloat(cleaned) || 0));
-  } else if (kind === 'signed-money') {
-    // "Enter as negative" amounts (Annual Schedule C losses, Schedule E
-    // transfers out): the one money kind that keeps a leading minus.
-    const cleaned = sanitizeDecimal(rawValue);
-    control.value = cleaned;
-    if (setPath) setPath(getD(), path, keepsBlank(control) ? parseStoredDecimal(cleaned) : (parseFloat(cleaned) || 0));
+  } else if (kind === 'money' || kind === 'signed-money') {
+    // Milestone 73G part 1: one rule for every amount box (finalizeAmountControl()).
+    // A box left as it was drawn writes nothing.
+    if (!finalizeAmountControl(control, path)) return;
   }
 
   runFieldWriteSideEffects(path, control);
@@ -568,11 +567,13 @@ export function getFieldDraftIssueMessages(data = getD()) {
 // above that they build on. validateSecurityInput() lives with the other
 // injection checks in src/core/security/input-hardening.js.
 
-// Strip everything except digits and a single decimal point — used for
-// amount/percent fields instead of type="number" so we fully own character
+// Strip everything except digits and a single decimal point -- used for
+// percent fields instead of type="number" so we fully own character
 // filtering (native number inputs allow '-' inconsistently across WebView
 // versions, and their spinner buttons don't fire keydown so keydown-based
-// minus-blocking can't catch them).
+// minus-blocking can't catch them). Since Milestone 73G part 1 no amount box
+// uses this or sanitizeDecimal() below: amounts are read, kept and shown by
+// src/core/form/amount-codec.js, which keeps the minus these drop.
 export function sanitizeNonNegativeDecimal(s){
   let v=String(s||'').replace(/[^0-9.]/g,'');
   const firstDot=v.indexOf('.');
@@ -582,18 +583,12 @@ export function sanitizeNonNegativeDecimal(s){
   return v;
 }
 
-// Same as sanitizeNonNegativeDecimal but keeps a single leading '-' -- for
-// the couple of fields (Annual Schedule C's Loss/Reduction, Schedule E's
-// Transfer Out Amt) that are explicitly entered as negative. Those used to
-// be native type="number" instead, which is exactly the pattern the
-// comment above sanitizeNonNegativeDecimal explains this app moved away
-// from app-wide (inconsistent '-' handling and no keydown events from the
-// spinner buttons across WebView versions) -- these two were simply never
-// migrated when the rest of the app was.
+// sanitizeDecimal() (below) is the same but keeps a single leading '-': a
+// share keeps its minus so the range check can name it.
 // Milestone 71C. The sanitizers above take `s||''`, so a stored number 0
 // renders as an empty box -- harmless for an amount, wrong for a share, where
-// 0% is an answer. displayDecimal() is how a percent (or a blank-keeping
-// amount) field draws the value the model holds: '' for blank, a number as
+// 0% is an answer. displayDecimal() is how a percent field draws the value
+// the model holds: '' for blank, a number as
 // written, a string sanitized (minus kept when `signed`).
 export function displayDecimal(value, { signed = true } = {}) {
   if (value === '' || value === null || value === undefined) return '';
@@ -611,6 +606,83 @@ export function parseStoredDecimal(cleaned) {
 }
 
 const keepsBlank = (control) => control?.dataset?.fieldBlank === 'keep';
+
+/**
+ * Milestone 73G part 1: leaving an amount box. The text is read by the one
+ * amount codec (src/core/form/amount-codec.js): a number is stored signed
+ * and shown as stored; nothing entered stores '' where the box keeps blank
+ * apart from $0.00 (data-field-blank="keep", Milestone 71C/71E) and 0
+ * otherwise; text that is not an amount stays in the box and in the filing,
+ * marked here and named by the export checks. A box whose text is still what
+ * it was drawn with is not stored again -- tabbing through a box can never
+ * change what it holds (a stored -50 used to be shown as 50 and stored back
+ * positive).
+ *
+ * Returns false when nothing was written.
+ */
+export function finalizeAmountControl(control, path = getControlPath(control), { keepBlank = keepsBlank(control) } = {}) {
+  const current = getPath ? getPath(getD(), path) : undefined;
+  if (control.value === amountBoxText(current, { blankZero: !keepBlank })) {
+    setAmountFeedback(control, isUnreadableAmount(current));
+    return false;
+  }
+  const stored = amountForStore(control.value, { blank: keepBlank ? '' : 0 });
+  if (setPath) setPath(getD(), path, stored);
+  control.value = amountBoxText(stored, { blankZero: !keepBlank });
+  setAmountFeedback(control, isUnreadableAmount(stored));
+  return true;
+}
+
+// Inline feedback for an amount box holding text that can't be read -- the
+// same shape as setPercentFeedback() below.
+export function setAmountFeedback(control, unreadable) {
+  if (!control) return;
+  if (unreadable) {
+    control.classList.add('is-invalid');
+    control.setAttribute('aria-invalid', 'true');
+  } else {
+    control.classList.remove('is-invalid');
+    control.removeAttribute('aria-invalid');
+  }
+  if (typeof control.insertAdjacentElement !== 'function') return;
+  const anchor = control.closest?.('.input-group') || control;
+  let feedback = anchor.nextElementSibling?.dataset?.amountFeedback === 'true' ? anchor.nextElementSibling : null;
+  if (unreadable) {
+    if (!feedback) {
+      feedback = document.createElement('div');
+      feedback.className = 'invalid-feedback d-block';
+      feedback.dataset.amountFeedback = 'true';
+      feedback.id = `amt_feedback_${Math.random().toString(36).slice(2, 9)}`;
+      anchor.insertAdjacentElement('afterend', feedback);
+    }
+    feedback.textContent = `This can't be read as an amount. ${UNREADABLE_AMOUNT_HINT}`;
+    const ids = new Set(String(control.getAttribute('aria-describedby') || '').split(/\s+/).filter(Boolean));
+    ids.add(feedback.id);
+    control.setAttribute('aria-describedby', [...ids].join(' '));
+  } else if (feedback) {
+    const ids = String(control.getAttribute('aria-describedby') || '').split(/\s+/).filter((id) => id && id !== feedback.id);
+    if (ids.length) control.setAttribute('aria-describedby', ids.join(' '));
+    else control.removeAttribute('aria-describedby');
+    feedback.remove();
+  }
+}
+
+/**
+ * Milestone 73G part 1: on a drawn page, every amount box whose stored amount
+ * is text that can't be read says so without the filer touching it first, as
+ * syncPercentFeedback() does for shares. The Inventory's amount boxes are its
+ * data-bind "decimal" boxes.
+ */
+export function syncAmountFeedback(container = document) {
+  if (!container || typeof container.querySelectorAll !== 'function' || !getPath || !getD()) return;
+  /** @type {NodeListOf<HTMLInputElement>} */ (container.querySelectorAll('input[data-form-path], input[data-annual-path], input[data-bind][data-input-type="decimal"]')).forEach((el) => {
+    const isAmount = el.dataset.bind ? true : ['money', 'signed-money'].includes(getControlKind(el));
+    if (!isAmount) return;
+    const path = el.dataset.bind || getControlPath(el);
+    if (!path) return;
+    setAmountFeedback(el, isUnreadableAmount(getPath(getD(), path)));
+  });
+}
 
 // Inline feedback for a share outside 0-100 -- the same shape as
 // setCityStateZipFeedback() above (is-invalid, aria-invalid, and an
