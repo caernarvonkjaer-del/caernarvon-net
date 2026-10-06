@@ -4,6 +4,7 @@
 // Moved from legacy-app.js.
 import { getD } from '../../state.js';
 import { remapLinkedIds } from '../../form/row-links.js';
+import { rowStarted } from '../../validation/row-started.js';
 import { emptyPlanResidence, emptyPlanProvider, emptyPlanDirective } from './plan-annual.js';
 import { emptyInitialProvider } from './plan-initial.js';
 import { emptyMinorResidence, emptyMinorProvider, emptyMinorGuardianSig } from './plan-minor.js';
@@ -18,7 +19,9 @@ export function planGuardianBlank(type){
   return {name:'',signatureDate:'',email:'',phone:'',mailingAddress:'',signatureState:'',signatureImage:''};
 }
 
-export function planGuardianHasAnyData(g){return !!(g&&Object.values(g).some(v=>v!==''&&v!==null&&v!==undefined&&v!==false));}
+// Milestone 74B: planGuardianHasAnyData() -- the Plans' own "is this guardian
+// block in use?", which also counted a bare "Unsigned" and a row's id --
+// retired onto rowStarted(), the one rule on all nine forms.
 
 export function planGuardianMax(type){return type==='planInitial'?4:type==='planAnnual'?3:2;}
 
@@ -40,7 +43,7 @@ export function normalizePlanGuardians(data=getD()){
   // A co-guardian slot that isn't a row at all (damaged data) still goes.
   const keepIndexes=rows.length?rows.map((_,i)=>i).filter(i=>i===0||(rows[i]&&typeof rows[i]==='object')):[0];
   for(let at=keepIndexes.length-1;keepIndexes.length>max&&at>0;at--){
-    if(!planGuardianHasAnyData(rows[keepIndexes[at]]))keepIndexes.splice(at,1);
+    if(!rowStarted(rows[keepIndexes[at]]))keepIndexes.splice(at,1);
   }
   keepIndexes.length=Math.min(keepIndexes.length,max);
   const kept=keepIndexes.map(i=>i===0?primary:rows[i]);

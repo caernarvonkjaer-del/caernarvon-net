@@ -9,6 +9,7 @@ import { resolveDescriptorForInventoryType } from '../../core/filing/filing-desc
 import { planCertificateOfServiceSection } from '../../core/filing/plan-certificate-of-service.js';
 import { triStateText } from '../../core/form/form-contract.js';
 import { resolveSignatureModes } from '../../core/pdf/signature-modes.js';
+import { rowStarted } from '../../core/validation/row-started.js';
 
 export function buildPlanSimplifiedModel(D) {
   const d = D || {};
@@ -120,8 +121,8 @@ export function buildPlanSimplifiedModel(D) {
   // Milestone 39-B: a co-guardian who only applied a signature choice (a
   // real "/s/" or stamp, not the unsigned default) has real data too, even
   // if every other field is blank.
-  const hasSigData = (g) => !!(g && (g.name || g.signatureDate || g.email || g.phone || g.mailingAddress
-    || (g.signatureState && g.signatureState !== 'none') || g.signatureImage));
+  // Milestone 74B: a guardian block is started by the one rule every form uses.
+  const hasSigData = (g) => rowStarted(g);
   const makeSigBlock = (label, g) => ({
     type: 'signature-block',
     role: `${label} Signature`,

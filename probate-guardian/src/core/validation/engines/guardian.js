@@ -6,7 +6,8 @@
 // can judge any filing (73F part 2 uses that). validateGuardian() stays as a wrapper
 // returning exactly what it did; tests/unit/validator-engines.spec.js holds it.
 import { RECIPIENTS_OR_ATTESTATION, serviceRecipientIssues } from '../service-recipients.js';
-import { SCHEDULE_NAV_KEYS, guardianHasData } from '../../filing/models/guardian.js';
+import { SCHEDULE_NAV_KEYS } from '../../filing/models/guardian.js';
+import { rowStarted } from '../row-started.js';
 import { certifyingCandidates, resolveServiceCertifier } from '../../filing/unrepresented-filing.js';
 import { checkDateOrder } from '../date-rules.js';
 import { checkSignatureState, inferLegacySignatureState, signaturePolicyOf } from '../signature-state.js';
@@ -122,7 +123,8 @@ export function collectGuardianIssues(d){
   // mislabeling bug this filter/forEach split previously had: a co-guardian
   // with data would be mislabeled "Guardian #1" whenever guardian #1 itself
   // was still blank.
-  d.guardians.forEach((g,i)=>{if(i>0&&!guardianHasData(g))return;const p=`D-1 Guardian #${i+1}`,k=`guardians.${i}`;req(g.name,`${p} — Name`,`${k}.name`);errors.push(...checkSignatureState({state:g.signatureState,date:g.signatureDate,image:g.signatureImage,sectionLabel:p,roleLabel:'',filingType:T,statePath:`${k}.signatureState`,datePath:`${k}.signatureDate`,imagePath:`${k}.signatureImage`,role:'guardian',policy:signaturePolicyOf(d)}));req(g.ssnEin,`${p} — SSN/EIN`,`${k}.ssnEin`);req(g.phone,`${p} — Phone`,`${k}.phone`);req(g.streetAddress,`${p} — Street Address`,`${k}.streetAddress`);req(g.cityStateZip,`${p} — City/State/Zip`,`${k}.cityStateZip`);});
+  // Milestone 74B: a started card -- rowStarted(), a signature choice included -- is checked.
+  d.guardians.forEach((g,i)=>{if(i>0&&!rowStarted(g))return;const p=`D-1 Guardian #${i+1}`,k=`guardians.${i}`;req(g.name,`${p} — Name`,`${k}.name`);errors.push(...checkSignatureState({state:g.signatureState,date:g.signatureDate,image:g.signatureImage,sectionLabel:p,roleLabel:'',filingType:T,statePath:`${k}.signatureState`,datePath:`${k}.signatureDate`,imagePath:`${k}.signatureImage`,role:'guardian',policy:signaturePolicyOf(d)}));req(g.ssnEin,`${p} — SSN/EIN`,`${k}.ssnEin`);req(g.phone,`${p} — Phone`,`${k}.phone`);req(g.streetAddress,`${p} — Street Address`,`${k}.streetAddress`);req(g.cityStateZip,`${p} — City/State/Zip`,`${k}.cityStateZip`);});
   // Milestone 67A: the outside-preparer block is required only while nobody
   // is identified as the preparer. The form itself tells a guardian,
   // co-guardian or guardian attorney "DO NOT SIGN HERE"; the Clerk accepts

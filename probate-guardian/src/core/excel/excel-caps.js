@@ -3,7 +3,7 @@
 // (which re-exports its own), so the shared export checks
 // (src/core/validation/engines/) can report an Excel capacity problem the way
 // Save as Excel does.
-import { guardianHasAnyData } from '../validation/row-started.js';
+import { rowStarted } from '../validation/row-started.js';
 
 // Each cap is the total row count across that schedule's template pages
 // (e.g. A-1 spans 3 pages holding 4 + 8 + 8). Initial Inventory overflows
@@ -58,6 +58,6 @@ export const ANNUAL_EXCEL_CAPS={
 };
 
 export const SIMPLIFIED_EXCEL_CAPS={
-  guardians:{cap:3,label:'Part IV - Guardians',route:'/p4',isPopulated:guardianHasAnyData},
+  guardians:{cap:3,label:'Part IV - Guardians',route:'/p4',isPopulated:rowStarted},
   remuneration:{cap:27,label:'Part VII — Remuneration',route:'/p7'},
 };

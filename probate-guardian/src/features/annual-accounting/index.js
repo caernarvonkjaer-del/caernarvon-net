@@ -65,7 +65,7 @@ import { renderReportingPeriodFields } from '../../core/form/cards/ward-demograp
 import { esc } from '../../core/filing/escape-html.js';
 import { ic } from '../../core/ui/icons.js';
 import { sanitizeDecimal, syncPercentFeedback } from '../../core/form/form-contract.js';
-import { guardianHasAnyData } from '../../core/validation/row-started.js';
+import { rowStarted } from '../../core/validation/row-started.js';
 import { formDisplayName } from '../../core/filing/filing-registry.js';
 import { sectionMarks } from '../../core/status/section-marks.js';
 import { getCaseFile, getD, requestSave } from '../../core/state.js';
@@ -417,7 +417,7 @@ function addAnnualRow(collection, route) {
   }
 }
 async function removeAnnualRow(collection, index, route) {
-  if (collection === 'guardians' && index > 0 && guardianHasAnyData(getD().guardians?.[index]) && !(await confirmModal(`Remove co-guardian ${getD().guardians[index].name || `#${index + 1}`}? This will delete the entered signature information.`))) return;
+  if (collection === 'guardians' && index > 0 && rowStarted(getD().guardians?.[index]) && !(await confirmModal(`Remove co-guardian ${getD().guardians[index].name || `#${index + 1}`}? This will delete the entered signature information.`))) return;
   if (removeCollectionRow(collection, index, getD())) {
     commitModelChange('collection-remove', [collection]);
     navigate(route);

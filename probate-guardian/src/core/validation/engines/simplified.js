@@ -11,7 +11,7 @@ import { checkDateOrder } from '../date-rules.js';
 import { checkSignatureState, inferLegacySignatureState, signaturePolicyOf } from '../signature-state.js';
 import { createIssue } from '../issue-registry.js';
 import { getSimplifiedGuardianAddressConflicts } from '../../filing/models/simplified.js';
-import { guardianHasAnyData } from '../row-started.js';
+import { rowStarted } from '../row-started.js';
 import { isAttorneyStarted } from '../attorney-block.js';
 import { issueFactory } from '../validation-issue.js';
 
@@ -65,7 +65,9 @@ export function collectSimplifiedIssues(d){
   req(d.federalIncomeTax,'Part II — Federal Income Tax (Line 6)','federalIncomeTax');
   const gLabel=['Guardian #1','Co-Guardian #2','Co-Guardian #3'];
   d.guardians.forEach((g,i)=>{
-    if(i>0&&!guardianHasAnyData(g))return;
+    // Milestone 74B: a started card (rowStarted(): a stamp or a signature
+    // choice counts) is checked; an untouched co-guardian card is not.
+    if(i>0&&!rowStarted(g))return;
     const p=gLabel[i];
     const gp=`guardians.${i}`;
     req(g.name,`Part IV — ${p} — Name`,`${gp}.name`);

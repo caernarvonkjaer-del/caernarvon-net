@@ -10,6 +10,7 @@ import { formatMoney } from '../../core/format/money.js';
 import { isUnrepresented, resolveServiceCertifier } from '../../core/filing/unrepresented-filing.js';
 import { methodOfServiceLine } from '../../core/filing/service-method.js';
 import { resolveSignatureModes } from '../../core/pdf/signature-modes.js';
+import { rowStarted } from '../../core/validation/row-started.js';
 
 export function buildSimplifiedAccountingModel(D, options = {}) {
   const d = D || {};
@@ -161,9 +162,14 @@ export function buildSimplifiedAccountingModel(D, options = {}) {
   });
 
   // 4. Part IV: Guardian(s) Information
-  const guardianList = (d.guardians || []).filter(g => g && g.name);
-  const guardianBlocks = guardianList.map((g, i) => {
-    const gRole = ['Guardian #1', 'Co-Guardian #2', 'Co-Guardian #3'][i] || `Guardian #${i + 1}`;
+  // Milestone 74B: Guardian #1's block always prints, and each co-guardian card the
+  // filer started (rowStarted(): a stamp or a signature choice counts) prints in its
+  // own card's place, labelled by its card. This kept only guardians with a name
+  // and numbered the blocks by position, so a stamped co-guardian was left out and,
+  // after an override, a nameless Guardian #1 moved the next card up into its label.
+  const guardianCards = (d.guardians || []).map((g, i) => [g || {}, i]).filter(([g, i]) => i === 0 || rowStarted(g));
+  const guardianBlocks = guardianCards.map(([g, i]) => {
+    const gRole = i === 0 ? 'Guardian #1' : `Co-Guardian #${i + 1}`;
     return {
       type: 'signature-block',
       tag: 'Part',

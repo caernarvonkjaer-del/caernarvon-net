@@ -58,20 +58,26 @@ describe('Excel capacity parity — Guardian Inventory (11 schedules)', () => {
 });
 
 describe('Excel capacity parity — Simplified Accounting (guardians & remuneration)', () => {
-  it('evaluates populated guardians using guardianHasAnyData predicate', () => {
+  // Milestone 74B: a guardian is counted by rowStarted(), the one "started"
+  // rule on all nine forms -- the workbook has a slot for every card the
+  // filing includes, so a card holding only a stamp takes one.
+  it('evaluates populated guardians using rowStarted()', () => {
     const data = {
       inventoryType: 'simplified',
       guardians: [
         { name: 'G1' },
         { name: 'G2' },
         { name: 'G3' },
-        { name: '' }, // blank guardian does not consume slot
+        { name: '', signatureState: 'none' }, // blank (Unsigned only) guardian does not consume slot
       ],
     };
 
     // cap is 3; 3 populated + 1 blank = 3 counted <= cap 3
     const over = checkExcelCapacity(SIMPLIFIED_EXCEL_CAPS, data);
     expect(over).toHaveLength(0);
+
+    // A fourth card holding only a stamp is started: 4 > cap 3
+    expect(checkExcelCapacity(SIMPLIFIED_EXCEL_CAPS, { ...data, guardians: [...data.guardians.slice(0, 3), { name: '', signatureState: 'stamp', signatureImage: 'data:image/png;base64,AA==' }] })).toHaveLength(1);
 
     // 4 populated > cap 3
     data.guardians[3].name = 'G4';

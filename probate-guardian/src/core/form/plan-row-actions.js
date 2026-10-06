@@ -5,7 +5,8 @@
 // (collections.js), which find each Plan's own rules by its type and move the
 // guardians' shared-record links with them. What each action checks, asks,
 // saves and redraws is unchanged.
-import { normalizePlanGuardians, planGuardianHasAnyData } from '../filing/models/plan-rows.js';
+import { normalizePlanGuardians } from '../filing/models/plan-rows.js';
+import { rowStarted } from '../validation/row-started.js';
 import { navigate } from '../navigation/router.js';
 import { getD } from '../state.js';
 import { confirmModal } from '../ui/dialogs.js';
@@ -22,7 +23,7 @@ export async function removePlanGuardian(index,route){
   const d=getD(); const rows=normalizePlanGuardians(d);
   if(index<=0||index>=rows.length)return false;
   const row=rows[index];
-  if(planGuardianHasAnyData(row)&&!(await confirmModal(`Remove co-guardian ${row.name||`#${index+1}`}? This will delete the entered signature information.`)))return false;
+  if(rowStarted(row)&&!(await confirmModal(`Remove co-guardian ${row.name||`#${index+1}`}? This will delete the entered signature information.`)))return false;
   removeRowAt(d,'planGuardians',index);
   commitModelChange('collection-remove', ['planGuardians']); navigate(route); return true;
 }

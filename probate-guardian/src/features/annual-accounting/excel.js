@@ -28,7 +28,7 @@ import { createBankAccountId } from '../../core/accounting/bank-accounts.js';
 import { alertModal } from '../../core/ui/dialogs.js';
 import { setStatus, scheduleStatusClear } from '../../core/ui/transient-status.js';
 import { beginExport } from '../../core/ui/export-guard.js';
-import { guardianHasAnyData } from '../../core/validation/row-started.js';
+import { rowStarted } from '../../core/validation/row-started.js';
 import { assertWorkbookWithinLimits, getImportProgressEl, sanitizeObjectDataInPlace, validateImportFile } from '../../core/security/input-hardening.js';
 import { capitalizeImportedFields } from '../../core/form/form-contract.js';
 import { r2 } from '../../core/format/money.js';
@@ -221,14 +221,15 @@ export async function doSaveExcel(){
       setCell(p23,'F27',g1.mailingStreet||''); setCell(p23,'F29',g1.mailingCityStateZip||'');
       setCell(p23,'F31',g1.officeStreet||''); setCell(p23,'F33',g1.officeCityStateZip||'');
       // Guardian 2
-      if(guardianHasAnyData(g2)){
+      // Milestone 74B: every started card's slot (rowStarted(): a stamp counts).
+      if(rowStarted(g2)){
         setDateCell(p23,'D35',g2.signatureDate); setCell(p23,'F35',g2.name||'');
         setCell(p23,'B37',g2.ssn||''); setCell(p23,'B39',g2.phone||''); setCell(p23,'B41',g2.email||'');
         setCell(p23,'F37',g2.mailingStreet||''); setCell(p23,'F39',g2.mailingCityStateZip||'');
         setCell(p23,'F41',g2.officeStreet||''); setCell(p23,'F43',g2.officeCityStateZip||'');
       }
       // Guardian 3
-      if(guardianHasAnyData(g3)){
+      if(rowStarted(g3)){
         setDateCell(p23,'D45',g3.signatureDate); setCell(p23,'F45',g3.name||'');
         setCell(p23,'B47',g3.ssn||''); setCell(p23,'B49',g3.phone||''); setCell(p23,'B51',g3.email||'');
         setCell(p23,'F47',g3.mailingStreet||''); setCell(p23,'F49',g3.mailingCityStateZip||'');
@@ -678,7 +679,7 @@ export async function importExcel(input){
         // each kept guardian keeps the shared-record link of the slot it came
         // from. Filtering the rows alone used to move slot 3's guardian onto
         // slot 2's link when slot 2 was empty.
-        const keepIndexes=slots.map((_,i)=>i).filter(i=>i===0||guardianHasAnyData(slots[i]));
+        const keepIndexes=slots.map((_,i)=>i).filter(i=>i===0||rowStarted(slots[i]));
         D.guardians=slots;
         keepRows(D,'guardians',keepIndexes);
         while(D.guardians.length<1)D.guardians.push({name:'',ssn:'',phone:'',email:'',mailingStreet:'',mailingCityStateZip:'',officeStreet:'',officeCityStateZip:'',signatureDate:'',signatureDateLabel:'',isPreparer:false});

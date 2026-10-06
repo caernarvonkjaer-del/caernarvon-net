@@ -138,6 +138,7 @@
   "tests/e2e/simplified-mount.spec.ts",
   "tests/e2e/simplified-part1-identity-cells.spec.ts",
   "tests/e2e/simplified-remuneration.spec.ts",
+  "tests/e2e/stamped-co-guardian.spec.ts",
   "tests/e2e/startup.spec.ts",
   "tests/e2e/supplemental-pdf-accounting.spec.ts",
   "tests/e2e/support/app-driver.ts",

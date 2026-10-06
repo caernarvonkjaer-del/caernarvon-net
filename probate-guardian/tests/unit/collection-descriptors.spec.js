@@ -208,11 +208,13 @@ describe('73V: shared-record links move with their rows', () => {
 });
 
 describe('73C: what the clean-up counts as an untouched guardian card', () => {
-  it("the Inventory's D-1: none of the fields D-1 counts as entered -- a signature choice alone is untouched", () => {
+  // Milestone 74B: the one rule on all nine forms (rowStarted()) -- anything
+  // entered counts, a signature choice included (73C counted it untouched).
+  it("the Inventory's D-1: anything entered counts, a signature choice included; an untouched card and Unsigned do not", () => {
     const { isBlank } = getCollection('guardian', 'guardians');
     expect(isBlank(mk.guardian())).toBe(true);
-    expect(isBlank({ ...mk.guardian(), signatureState: 'typed', certifiesService: true })).toBe(true);
-    for (const entered of [{ email: 'a@b.c' }, { signatureImage: 'data:image/png;base64,AA==' }, { isPreparer: true }, { name: 'Ann' }]) {
+    expect(isBlank({ ...mk.guardian(), signatureState: 'none' })).toBe(true);
+    for (const entered of [{ signatureState: 'typed' }, { signatureState: 'stamp' }, { certifiesService: true }, { email: 'a@b.c' }, { signatureImage: 'data:image/png;base64,AA==' }, { isPreparer: true }, { name: 'Ann' }]) {
       expect(isBlank({ ...mk.guardian(), ...entered }), JSON.stringify(entered)).toBe(false);
     }
   });

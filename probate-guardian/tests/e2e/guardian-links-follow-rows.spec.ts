@@ -5,7 +5,7 @@ import path from 'node:path';
 import {
   freshStartNoPassword, createWard, fillMinimalValidAnnualWard, fillMinimalValidGuardianWard, autoAcceptDynDialogs,
 } from './support/target';
-import { exportWithWrites } from './support/workbook-vs-template';
+import { exportWithWrites, loadWorkbook } from './support/workbook-vs-template';
 
 // Milestone 73V: a guardian row's shared-record link (D.guardianPartyIds, a
 // parallel array) must move with the row whenever rows are dropped. Four places
@@ -86,16 +86,46 @@ test("the Annual's Excel import: an empty middle slot no longer moves slot 3's g
   await fillMinimalValidAnnualWard(page);
   const first = (await field(page, 'guardians'))[0];
   await patch(page, {
-    // Slot 2 holds only a signature choice, which the workbook has no box
-    // for: it is exported empty, and the import drops it.
-    guardians: [first, { name: '', signatureState: 'none' }, { name: 'Carol Third', phone: '(727) 555-0103', mailingStreet: '3 Third St', mailingCityStateZip: 'Clearwater, FL 33755' }],
-    guardianPartyIds: ['party-first', 'party-blank', 'party-carol'],
+    guardians: [first, { name: 'Bob Second', phone: '(727) 555-0102', mailingStreet: '2 Second St', mailingCityStateZip: 'Clearwater, FL 33755' }, { name: 'Carol Third', phone: '(727) 555-0103', mailingStreet: '3 Third St', mailingCityStateZip: 'Clearwater, FL 33755' }],
+    guardianPartyIds: ['party-first', 'party-bob', 'party-carol'],
+  });
+  const { bytes } = await exportWithWrites(page, 'annual');
+  expect((await field(page, 'guardians')).length, 'the filing still has three guardian rows when it is exported').toBe(3);
+  // Slot 2 emptied in the workbook, as by hand. (Until Milestone 74B a card
+  // holding only "Unsigned" exported an empty slot; it is untouched now, so
+  // the clean-up removes it before export, and every card the filing keeps
+  // fills its slot.)
+  const wb = await loadWorkbook(bytes);
+  for (const cell of ['D35', 'F35', 'B37', 'F37', 'B39', 'F39', 'B41', 'F41', 'F43']) wb.getWorksheet('PART II, III').getCell(cell).value = '';
+  await importWorkbook(page, Buffer.from(await wb.xlsx.writeBuffer()));
+  expect((await field(page, 'guardians')).map((g: any) => g.name)).toEqual([first.name, 'Carol Third']);
+  expect(await field(page, 'guardianPartyIds')).toEqual(['party-first', 'party-carol']);
+  expect(errors).toEqual([]);
+});
+
+// Milestone 74B: a co-guardian holding only a stamp is started. The workbook
+// has no box for a stamp, so its slot goes out empty and the import carries
+// the stamp back from the filing (import-keep.js); the old rule then dropped
+// the card, stamp and link, because it did not count a stamp.
+test("the Annual's Excel import: a co-guardian holding only a stamp keeps its place, its stamp and its shared record", async ({ page }) => {
+  test.setTimeout(240_000);
+  const errors = watchErrors(page);
+  await freshStartNoPassword(page);
+  await createWard(page, 'Links Annual Stamp', 'annual');
+  await fillMinimalValidAnnualWard(page);
+  const first = (await field(page, 'guardians'))[0];
+  const stamp = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAAAAonXk=';
+  await patch(page, {
+    guardians: [first, { name: '', signatureState: 'stamp', signatureImage: stamp }, { name: 'Carol Third', phone: '(727) 555-0103', mailingStreet: '3 Third St', mailingCityStateZip: 'Clearwater, FL 33755' }],
+    guardianPartyIds: ['party-first', 'party-stamp', 'party-carol'],
   });
   const { bytes } = await exportWithWrites(page, 'annual');
   expect((await field(page, 'guardians')).length, 'the filing still has three guardian rows when it is exported').toBe(3);
   await importWorkbook(page, bytes);
-  expect((await field(page, 'guardians')).map((g: any) => g.name)).toEqual([first.name, 'Carol Third']);
-  expect(await field(page, 'guardianPartyIds')).toEqual(['party-first', 'party-carol']);
+  const after = await field(page, 'guardians');
+  expect(after.map((g: any) => g.name)).toEqual([first.name, '', 'Carol Third']);
+  expect(after[1].signatureImage, 'the stamp stays').toBe(stamp);
+  expect(await field(page, 'guardianPartyIds')).toEqual(['party-first', 'party-stamp', 'party-carol']);
   expect(errors).toEqual([]);
 });
 

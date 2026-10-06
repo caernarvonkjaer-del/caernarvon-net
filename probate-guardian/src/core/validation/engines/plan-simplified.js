@@ -59,20 +59,24 @@ export function collectPlanSimplifiedIssues(d){
     sectionLabel: 'Signatures', roleLabel: 'Guardian 1',
     filingType:T, statePath:'planGuardians.0.signatureState', datePath:'planGuardians.0.signatureDate', imagePath:'planGuardians.0.signatureImage',role:'guardian',policy:signaturePolicyOf(d),
   }));
-  // Milestone 73A: each started co-guardian's signature, by the same
-  // role-aware rule as the first guardian's -- no Plan checked a
-  // co-guardian before, so a co-guardian's saved "/s/" could never be asked
-  // again (Milestone 74B adds the rest of a started co-guardian's checks).
-  (d.planGuardians||[]).forEach((cg,i)=>{
-    if(i===0||!rowStarted(cg))return;
-    errs.push(...checkSignatureState({state:cg.signatureState,date:cg.signatureDate,image:cg.signatureImage,sectionLabel:'Signatures',roleLabel:`Guardian ${i+1}`,
-      filingType:T,statePath:`planGuardians.${i}.signatureState`,datePath:`planGuardians.${i}.signatureDate`,imagePath:`planGuardians.${i}.signatureImage`,
-      role:'guardian',policy:signaturePolicyOf(d)}));
-  });
   // Milestone 72C: Guardian 1's email no longer blocks export -- it warns,
   // and only when no attorney is entered (guardian-email.js), as on every form.
   req(g.phone,'Signatures — Guardian 1 phone is required','planGuardians.0.phone');
   req(g.mailingAddress,'Signatures — Guardian 1 mailing address is required','planGuardians.0.mailingAddress');
+  // Milestone 74B: a co-guardian the filer has started (rowStarted(): anything
+  // entered, a stamp or a signature choice included) is checked like the first
+  // guardian -- the form asks every guardian for the same details. An untouched
+  // co-guardian block is not checked. (Milestone 73A checked its signature only.)
+  (d.planGuardians||[]).forEach((cg,i)=>{
+    if(i===0||!rowStarted(cg))return;
+    const who=`Guardian ${i+1}`, at=`planGuardians.${i}`;
+    req(cg.name,`Signatures — ${who} printed name is required`,`${at}.name`);
+    errs.push(...checkSignatureState({state:cg.signatureState,date:cg.signatureDate,image:cg.signatureImage,sectionLabel:'Signatures',roleLabel:who,
+      filingType:T,statePath:`${at}.signatureState`,datePath:`${at}.signatureDate`,imagePath:`${at}.signatureImage`,
+      role:'guardian',policy:signaturePolicyOf(d)}));
+    req(cg.phone,`Signatures — ${who} phone is required`,`${at}.phone`);
+    req(cg.mailingAddress,`Signatures — ${who} mailing address is required`,`${at}.mailingAddress`);
+  });
   // Milestone 68A: no date order between the guardian's, preparer's or
   // attorney's signature and the reporting period -- a plan is written
   // before the period it plans for (see Plan Annual's note). This form

@@ -19,7 +19,7 @@
 // begun, and still doesn't.
 import { PLAN_RIGHTS, PLAN_ADLS } from '../filing/models/plan-annual.js';
 import { INITIAL_ADLS } from '../filing/models/plan-initial.js';
-import { guardianHasAnyData } from '../validation/row-started.js';
+import { rowStarted } from '../validation/row-started.js';
 import { isPlanInitialAttorneyStarted, isAttorneyStarted } from '../validation/attorney-block.js';
 import { certificateStarted as planCertificateStarted } from '../filing/plan-certificate-of-service.js';
 
@@ -40,7 +40,7 @@ export function simplifiedStarted(D) {
     's-cover': hasAny(D.wardName, D.caseNumber, D.ssn, D.gid, D.periodFrom, D.periodTo, D.guardian, D.attorney, D.typeOfGuardianship, D.county),
     's-p2': hasAny(D.startingBalance, D.interestIncome, D.depositsSettlement, D.serviceCharges, D.federalIncomeTax),
     's-p3': hasAny(D.periodFrom, D.periodTo),
-    's-p4': guardians.length > 0 || guardianHasAnyData(guardians[0] || {}),
+    's-p4': guardians.length > 0 || rowStarted(guardians[0] || {}),
     's-p5': hasAny(D.attorney_barNumber, D.attorney_phone, D.attorney_street, D.attorney_cityStateZip),
     's-p6': hasAny(D.certServiceDate, D.certIndicator, D.certWardStatus, D.certRecipients?.[0]?.name),
     's-p7': (D.remuneration || []).some((r) => hasAny(r.guardian, r.type)),
@@ -55,7 +55,7 @@ export function annualStarted(D) {
   return {
     'a-p1': true,
     'a-p2': filledText(D.startingBalance),
-    'a-p3': guardians.length > 0 || guardianHasAnyData(guardians[0] || {}),
+    'a-p3': guardians.length > 0 || rowStarted(guardians[0] || {}),
     'a-p4': true,
     'a-p5': true,
     'a-scha': rowsStarted(D.schA),

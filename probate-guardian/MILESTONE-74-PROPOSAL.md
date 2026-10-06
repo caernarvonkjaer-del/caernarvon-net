@@ -3,9 +3,9 @@
 ## Status
 
 **Draft.** Every decision for 74A and 74B is settled (2026-10-05). **Built so
-far: 74A (2026-10-05), approved by name.** Nothing else is approved:
-building 74B, or any of 74C–74S, needs the requester's named approval of
-that item (AGENTS.md §3). **Every decision in 74C–74S is settled
+far: 74A (2026-10-05) and 74B (2026-10-06), each approved by name.**
+Nothing else is approved: building any of 74C–74S needs the requester's
+named approval of that item (AGENTS.md §3). **Every decision in 74C–74S is settled
 (2026-10-06)**, each recorded under its item and gathered in
 [Appendix B](#appendix-b--every-decision-in-74c74s-as-asked-and-settled): the
 27 ordinary ones as recommended, taken together; the 18 questions of Clerk
@@ -58,7 +58,7 @@ the item says so.
 | # | Item | What a filer sees today | Severity | Parts |
 | --- | --- | --- | --- | --- |
 | 1 | 74A | On the Inventory, the Annual, Final and Trust Accountings and the Simplified, an **empty Guardian #1 card is removed** when the filer leaves the page, and the co-guardian they filled in **becomes Guardian #1** without a word | Medium | **Built** (2026-10-05) |
-| 2 | 74B | **A co-guardian whose only entry is a signature stamp is left out of the filing**: on the Inventory the PDF drops it; on the Annual family and the Simplified no check, workbook or PDF includes it at all | High | One |
+| 2 | 74B | **A co-guardian whose only entry is a signature stamp is left out of the filing**: on the Inventory the PDF drops it; on the Annual family and the Simplified no check, workbook or PDF includes it at all | High | **Built** (2026-10-06) |
 | 3 | 74C | On the Simplified Annual Plan, **Save as PDF stays greyed out after "Continue despite outstanding requirements"**, though Print works; on every form a greyed-out export button gives no reason | High | One |
 | 4 | 74D | Five reports **not yet seen in the code** — two entry points disagreeing on "Ready to export", Save as Excel hanging, the New Form dialog pointing at the wrong ward, a stale screen-reader message, a misleading "no other forms" note — need a reproduction first | Medium | One (investigation) |
 | 5 | 74E | **What a filer types is changed:** "margaret a. collins" files as "Margaret a. Collins", a masked account "xxxx5510" as "Xxxx5510", and descriptions are capitalized word by word | High | One |
@@ -400,6 +400,97 @@ the three accounting-type features' `index.js`, `pdf-model.js` and
 
 74A overlaps nothing pending: it is one entry in `blank-rows.js`, which 73C
 already changed.
+
+### Build record — BUILT 2026-10-06 (approved by name by the requester, 2026-10-06)
+
+**What changed for a filer:**
+
+- On the Inventory, the Annual, Final and Trust Accountings and the
+  Simplified, a co-guardian card the filer has started -- a stamp applied, or
+  a signature choice made, before the name is typed -- is part of the filing.
+  Print Preview asks for its name. Before, the Annual family and the
+  Simplified asked nothing and left the card out of the PDF; the Inventory
+  asked, but its PDF still dropped the card after "Continue". After
+  "Continue", the PDF prints the card's block in its own place, labelled by
+  its card ("Co-Guardian #2"; "Guardian #2" on the Inventory), with the stamp.
+- Leaving the page keeps such a card. (73C had removed a card holding only a
+  signature choice on the Inventory's D-1.)
+- Remove asks before deleting it. On the Annual family and the Simplified a
+  card holding only a stamp used to go without a word, stamp and all; the
+  Plans already asked.
+- A co-guardian holding only a stamp keeps its place, its stamp and its
+  shared-record link through importing the filing's own workbook. The
+  workbook has no box for a stamp, so the slot goes out empty and the import
+  carries the stamp back from the filing; the old rule then dropped the card.
+  The design said imports were unaffected; this is the one way they are.
+- On the four Plans, a started co-guardian is checked for what that Plan asks
+  of its first guardian: name, signature, address, phone and SSN (the
+  Simplified Plan asks no SSN). Before, only its signature was checked (73A).
+- An untouched co-guardian card, or one left at "Unsigned", is still not in
+  the filing and still goes when the filer leaves the page. On the Annual
+  family, the Simplified and the Plans a card holding only "Unsigned" used to
+  count as entered and stay; it now goes like any untouched card.
+
+**How:** `rowStarted()` (`src/core/validation/row-started.js`) is the one
+rule for a guardian card on all nine forms. `guardianHasAnyData()`
+(row-started.js), `guardianHasData()` and `GUARDIAN_DATA_FIELDS`
+(`models/guardian.js`) and `planGuardianHasAnyData()` (`plan-rows.js`) are
+retired onto it. It decides: the seven export checks' guardian loops (the
+Plans run their first-guardian checks on every started co-guardian); the
+marks, which follow the checks since 73F part 2, and the Annual and
+Simplified "begun" maps; the clean-up (`collections.js`, every guardian
+list's untouched-card test, and `normalizePlanGuardians()`); the PDFs (the
+Inventory, Annual and Simplified models print Guardian #1 and every started
+co-guardian, labelled by card index; the Simplified Plan's block test); the
+workbooks (a started card's slot is written, and the import's keep test);
+the Simplified's workbook capacity count; and Remove's confirmation. The
+data model's 18 `planGuardians[]` rows are required for the primary guardian
+or a co-guardian the filer has started; `verify:data-model` passes.
+
+**The workbook, as built:** each card already had its own numbered slot.
+74B decides only whether a slot is written, and a stamp-only card's slot
+holds nothing a workbook carries (no name, no stamp), so the exported file
+does not change for it. There is nothing in the file to test; the design's
+"the workbook writes slot 2" is recorded here as not observable. The
+Simplified's capacity count (three slots) now counts a stamp-only card.
+
+**Tests:**
+
+- New `tests/unit/started-guardian.spec.js` (52 tests): on all nine forms,
+  a second card holding only a stamp, only a signature choice, or only the
+  preparer box (where the form has one) is checked, listed on its page,
+  kept by the clean-up and printed in its own place with its label and
+  stamp; an untouched or Unsigned-only card is none of those; a nameless
+  Guardian #1 still prints its own block. Remove's confirmation and the
+  workbook are covered in the browser instead (below). **Red-first:** with 74B's app changes set aside, 41 of the 52 fail, each at its first unmet expectation: the checks don't ask for the second card's name (every form; on the Inventory, for a signature choice alone); the PDF prints no block for it; the clean-up keeps a card holding only "Unsigned" (the Annual family, the Simplified, the Plans); the Inventory's PDF labels a co-guardian by its position among the printed blocks.
+- New `tests/e2e/stamped-co-guardian.spec.ts` (7): on the Inventory, the
+  Annual and the Simplified, a co-guardian holding only a stamp -- the
+  checks ask for its name, Print Preview lists it, and after the override
+  the saved PDF prints its block ("Co-Guardian #2"; "Guardian #2"); on the
+  Annual Plan a started co-guardian is checked for name, mailing street,
+  phone and SSN and its Signatures page names it; on the Annual, the
+  Simplified and the Annual Plan, Remove asks first, Cancel keeps the card
+  and its stamp, and confirming removes it. **Red-first:** with 74B's app
+  changes set aside, the first four fail for the stated reasons (no check
+  asks for the Annual's or the Simplified's card; the Inventory's PDF leaves
+  it out; the Plan's co-guardian is not checked). The Annual's and the Simplified's Remove cases fail because no confirmation appears (the card is deleted at once); the Annual Plan's passes against the old code too -- the Plans already asked before removing a card holding a stamp image -- and stays as coverage.
+- `tests/e2e/guardian-links-follow-rows.spec.ts`: the Annual import case
+  made its empty middle slot from a card holding only "Unsigned", which 74B
+  removes before export; it now empties slot 2 in the exported workbook
+  itself. New: the stamp-only round trip above. **Red-first:** the stamp round trip fails against the old code (the card is dropped); the empty-slot case passes against it, as it should (it covers 73V's fix, not 74B's).
+- `tests/e2e/plan-add-co-guardian.spec.ts`: the D-1 card holding only a
+  signature choice stays after leaving the page, and the checks ask for its
+  name. **Red-first:** fails against the old code (the card gone).
+- Changed unit specs: `prune-cards.spec.js`, `collection-descriptors.spec.js`
+  (a signature choice counts as entered, a bare Unsigned does not),
+  `filing-registry.spec.js` (the normalizer case reads `rowStarted()`),
+  `excel-capacity-issues.spec.js` (a stamp-only fourth card takes a slot;
+  red-first: fails against the old code, the card taking no slot). Goldens: 8 Annual Plan variants in each, with notes. No PDF-model
+  spec needed changing: none relied on a positional label for a started card.
+- Fixture audit (checklist 3): every co-guardian row in the fixtures is
+  entirely blank, so none is started and none is newly checked.
+- Full unit suite passes; `npm run check:types` clean; `npm run
+  verify:data-model` OK. **Related browser specs: 26 files, 283 tests -- 282 passed; the one failure was the Annual import case whose setup 74B made obsolete (above). Rewritten, it and the new stamp round trip pass (2/2), and the three Remove cases, added after that run, pass (3/3).**
 
 ---
 

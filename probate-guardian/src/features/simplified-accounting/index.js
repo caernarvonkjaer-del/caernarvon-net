@@ -41,7 +41,7 @@ import { ic } from '../../core/ui/icons.js';
 import { displayDecimal, formatAddress, formatName, formatPhone, formatSSN, sanitizeNonNegativeDecimal } from '../../core/form/form-contract.js';
 import { formatDisplayDate } from '../../core/form/date-parser.js';
 import { calcTotals } from './totals.js';
-import { guardianHasAnyData } from '../../core/validation/row-started.js';
+import { rowStarted } from '../../core/validation/row-started.js';
 import { sectionMarks } from '../../core/status/section-marks.js';
 import { getCaseFile, getD, requestSave } from '../../core/state.js';
 import { startingBalanceNotesHTML } from '../../core/filing/starting-balance-carry.js';
@@ -125,7 +125,7 @@ function bindEvents(container) {
         break;
       }
       case 'remove-guardian': {
-        if (index > 0 && guardianHasAnyData(getD().guardians?.[index]) && !(await confirmModal(`Remove co-guardian ${getD().guardians[index].name || `#${index + 1}`}? This will delete the entered signature information.`))) break;
+        if (index > 0 && rowStarted(getD().guardians?.[index]) && !(await confirmModal(`Remove co-guardian ${getD().guardians[index].name || `#${index + 1}`}? This will delete the entered signature information.`))) break;
         if (removeCollectionRow('guardians', index, getD())) {
           commitModelChange('collection-remove', ['guardians']);
           navigate('/p4');

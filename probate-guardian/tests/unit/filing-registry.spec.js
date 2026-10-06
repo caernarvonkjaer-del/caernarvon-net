@@ -15,7 +15,8 @@ import {
   PLAN_RIGHTS, PLAN_RIGHT_STATES, planRightLabel, PLAN_ADLS, PLAN_ADL_RATINGS, PLAN_BENEFITS,
 } from '../../src/core/filing/models/plan-annual.js';
 import { INITIAL_ADLS, INITIAL_ADL_RATINGS } from '../../src/core/filing/models/plan-initial.js';
-import { planEmptyRow, planGuardianBlank, planGuardianMax, planGuardianHasAnyData, normalizePlanGuardians } from '../../src/core/filing/models/plan-rows.js';
+import { planEmptyRow, planGuardianBlank, planGuardianMax, normalizePlanGuardians } from '../../src/core/filing/models/plan-rows.js';
+import { rowStarted } from '../../src/core/validation/row-started.js';
 
 // Milestone 70, 70C gate: "All nine filing identities can be created,
 // normalized repeatedly without change, routed, and summarized through
@@ -129,8 +130,10 @@ describe('the rows, lists and page list moved with them', () => {
     }
     const d = { inventoryType: 'planInitial', planGuardians: [{ name: 'A' }, { name: '' }, { name: 'B' }, { name: 'C' }, { name: 'D' }, { name: 'E' }] };
     expect(normalizePlanGuardians(d).map((g) => g.name)).toEqual(['A', 'B', 'C', 'D']);
-    expect(planGuardianHasAnyData({ name: '', signatureDate: '' })).toBe(false);
-    expect(planGuardianHasAnyData({ name: '', phone: '555' })).toBe(true);
+    expect(rowStarted({ name: '', signatureDate: '' })).toBe(false);
+    expect(rowStarted({ name: '', phone: '555' })).toBe(true);
+    // Milestone 74B: one rule on all nine forms -- a bare "Unsigned" is not a started block.
+    expect(rowStarted({ name: '', signatureState: 'none' })).toBe(false);
   });
 });
 

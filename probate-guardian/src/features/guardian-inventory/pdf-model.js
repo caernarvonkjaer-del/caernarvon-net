@@ -15,6 +15,7 @@ import { isUnrepresented, resolveServiceCertifier } from '../../core/filing/unre
 import { methodOfServiceLine } from '../../core/filing/service-method.js';
 import { inferBondDepositoryState, bondDepositoryPdfLines, revealsBond } from '../../core/filing/bond-depository.js';
 import { resolveSignatureModes } from '../../core/pdf/signature-modes.js';
+import { rowStarted } from '../../core/validation/row-started.js';
 
 export function buildVerifiedInventoryModel(D, options = {}) {
   const d = D || {};
@@ -547,9 +548,12 @@ export function buildVerifiedInventoryModel(D, options = {}) {
 
   // 14. Part III & IV: Attestations & Oaths (Guardian & Preparer)
   // Milestone 72C: an email alone is an entered card too, as on D-1.
-  const guardianBlocks = (d.guardians || []).filter(g => [
-    g.name, g.signatureDate, g.ssnEin, g.phone, g.email, g.streetAddress, g.cityStateZip,
-  ].some(value => String(value || '').trim())).map((g, i) => ({
+  // Milestone 74B: Guardian #1's block always prints, and each co-guardian card the
+  // filer started (rowStarted(): a stamp or a signature choice counts) prints in its
+  // own card's place, labelled by its card. This kept only guardians with a name
+  // and numbered the blocks by position, so a stamped co-guardian was left out and,
+  // after an override, a nameless Guardian #1 moved the next card up into its label.
+  const guardianBlocks = (d.guardians || []).map((g, i) => [g || {}, i]).filter(([g, i]) => i === 0 || rowStarted(g)).map(([g, i]) => ({
     type: 'signature-block',
     tag: 'Part',
     role: `Guardian #${i + 1}`,

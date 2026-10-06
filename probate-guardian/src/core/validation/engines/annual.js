@@ -12,7 +12,7 @@ import { checkDateOrder } from '../date-rules.js';
 import { checkSignatureState, inferLegacySignatureState, signaturePolicyOf } from '../signature-state.js';
 import { formatMoney } from '../../format/money.js';
 import { getD } from '../../state.js';
-import { guardianHasAnyData } from '../row-started.js';
+import { rowStarted } from '../row-started.js';
 import { hasIdentifiedPreparer } from '../../form/preparer-flag.js';
 import { isAttorneyStarted } from '../attorney-block.js';
 import { issueFactory } from '../validation-issue.js';
@@ -60,7 +60,9 @@ export function collectAnnualIssues(d){
     filingType:T,laterPath:'periodFrom',
   }));
   d.guardians.forEach((g,i)=>{
-    if(i>0&&!guardianHasAnyData(g))return;
+    // Milestone 74B: a started card (rowStarted(): a stamp or a signature
+    // choice counts) is checked; an untouched co-guardian card is not.
+    if(i>0&&!rowStarted(g))return;
     const p=`Part III — Guardian #${i+1}`;
     const k=`guardians.${i}`;
     req(g.name,`${p} — Name`,`${k}.name`);

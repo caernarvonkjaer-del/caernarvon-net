@@ -206,15 +206,18 @@ describe('prune-cards', () => {
   // new card used to vanish at the next redraw); the clean-up on leaving the
   // page removes one with none of the fields D-1 counts as entered.
   describe("pruneBlankCards on the Inventory's D-1", () => {
-    it('removes a card holding only a signature choice, with its link; keeps one with an email', () => {
+    // Milestone 74B: a signature choice is something the filer entered -- the
+    // one rule on all nine forms (rowStarted()) -- so that card stays (73C
+    // removed it); an untouched card still goes, with its link.
+    it('keeps a card holding only a signature choice, and one with an email; removes an untouched one, with its link', () => {
       const data = {
         inventoryType: 'guardian',
-        guardians: [{ ...mk.guardian(), name: 'Ann' }, { ...mk.guardian(), signatureState: 'typed' }, { ...mk.guardian(), email: 'c@example.com' }],
-        guardianPartyIds: ['pA', 'pB', 'pC'],
+        guardians: [{ ...mk.guardian(), name: 'Ann' }, { ...mk.guardian(), signatureState: 'typed' }, { ...mk.guardian() }, { ...mk.guardian(), email: 'c@example.com' }],
+        guardianPartyIds: ['pA', 'pB', 'pU', 'pC'],
       };
       expect(pruneBlankCards(data)).toBe(1);
-      expect(data.guardians.map((g) => g.email)).toEqual(['', 'c@example.com']);
-      expect(data.guardianPartyIds).toEqual(['pA', 'pC']);
+      expect(data.guardians.map((g) => g.signatureState || g.email)).toEqual(['', 'typed', 'c@example.com']);
+      expect(data.guardianPartyIds).toEqual(['pA', 'pB', 'pC']);
     });
   });
   // Milestone 74A: an empty Guardian #1 card and a filled co-guardian used to

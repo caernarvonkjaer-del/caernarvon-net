@@ -109,19 +109,24 @@ export function collectPlanInitialIssues(d){
     sectionLabel: 'Signatures', roleLabel: 'Guardian',
     filingType:T, statePath:'planGuardians.0.signatureState', datePath:'planGuardians.0.signatureDate', imagePath:'planGuardians.0.signatureImage',role:'guardian',policy:signaturePolicyOf(d),
   }));
-  // Milestone 73A: each started co-guardian's signature, by the same
-  // role-aware rule as the first guardian's -- no Plan checked a
-  // co-guardian before, so a co-guardian's saved "/s/" could never be asked
-  // again (Milestone 74B adds the rest of a started co-guardian's checks).
-  (d.planGuardians||[]).forEach((cg,i)=>{
-    if(i===0||!rowStarted(cg))return;
-    errs.push(...checkSignatureState({state:cg.signatureState,date:cg.signatureDate,image:cg.signatureImage,sectionLabel:'Signatures',roleLabel:`Co-Guardian ${i+1}`,
-      filingType:T,statePath:`planGuardians.${i}.signatureState`,datePath:`planGuardians.${i}.signatureDate`,imagePath:`planGuardians.${i}.signatureImage`,
-      role:'guardian',policy:signaturePolicyOf(d)}));
-  });
   req(g0.street,'Signatures — Guardian street address is required','planGuardians.0.street');
   req(g0.phone,'Signatures — Guardian phone is required','planGuardians.0.phone');
   req(g0.ssn,'Signatures — Guardian SSN/EIN is required','planGuardians.0.ssn');
+  // Milestone 74B: a co-guardian the filer has started (rowStarted(): anything
+  // entered, a stamp or a signature choice included) is checked like the first
+  // guardian -- the form asks every guardian for the same details. An untouched
+  // co-guardian block is not checked. (Milestone 73A checked its signature only.)
+  (d.planGuardians||[]).forEach((cg,i)=>{
+    if(i===0||!rowStarted(cg))return;
+    const who=`Co-Guardian ${i+1}`, at=`planGuardians.${i}`;
+    req(cg.name,`Signatures — ${who} name is required`,`${at}.name`);
+    errs.push(...checkSignatureState({state:cg.signatureState,date:cg.signatureDate,image:cg.signatureImage,sectionLabel:'Signatures',roleLabel:who,
+      filingType:T,statePath:`${at}.signatureState`,datePath:`${at}.signatureDate`,imagePath:`${at}.signatureImage`,
+      role:'guardian',policy:signaturePolicyOf(d)}));
+    req(cg.street,`Signatures — ${who} street address is required`,`${at}.street`);
+    req(cg.phone,`Signatures — ${who} phone is required`,`${at}.phone`);
+    req(cg.ssn,`Signatures — ${who} SSN/EIN is required`,`${at}.ssn`);
+  });
 
   // Milestone 35-3: pro se filers and Guardian Advocates (Ch. 393, exempt from
   // attorney representation under Fla. Prob. R. 5.030) must be able to export

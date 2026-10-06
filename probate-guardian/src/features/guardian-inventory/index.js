@@ -25,7 +25,7 @@ import { ic } from '../../core/ui/icons.js';
 import { fmt } from '../../core/format/money.js';
 import { applyZipLimit, finalizeCaseNumber, formatAccountNumber, formatAddress, formatBarNumber, formatCaseNumber, formatCheckNumber, formatName, formatPhone, formatSSN, sanitizeNonNegativeDecimal } from '../../core/form/form-contract.js';
 import { calc } from './totals.js';
-import { PAGES_GUARDIAN, mk, guardianHasData } from '../../core/filing/models/guardian.js';
+import { PAGES_GUARDIAN, mk } from '../../core/filing/models/guardian.js';
 import { SCHEDULE_NAV_KEYS } from '../../core/filing/models/guardian.js';
 import { getD, requestSave } from '../../core/state.js';
 import { saveData } from '../../core/persistence/case-file.js';
@@ -91,8 +91,8 @@ const eventControllers = new WeakMap();
 const signatureHandles = new WeakMap();
 // Milestone 73C: D-1 keeps every guardian card through redraws, a new card the
 // filer hasn't filled in yet included; the clean-up when the filer leaves the
-// page removes a co-guardian card that is still not entered (guardianHasData(),
-// through collections.js), with its shared-record link. This used to drop such
+// page removes a co-guardian card that is still not entered (rowStarted() since
+// Milestone 74B, through collections.js), with its shared-record link. This used to drop such
 // cards on every draw, with a one-draw exception for a card just added
 // (Milestone 51H), so a new card disappeared at the next redraw -- and a
 // signature choice redraws the page. All that is left here is the one card D-1

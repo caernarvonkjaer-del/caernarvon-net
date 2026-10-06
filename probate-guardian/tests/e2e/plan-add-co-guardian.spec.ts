@@ -88,10 +88,13 @@ test('the Inventory D-1: a new co-guardian card keeps a signature choice through
   await expect(cards, 'the card survives the redraw').toHaveCount(2);
   expect((await field(page, 'guardians'))[1].signatureState).toBe('stamp');
 
-  // A signature choice alone is not an entered co-guardian on D-1 (its PDF and
-  // checks ignore such a card), so leaving the page removes it, as before.
+  // Milestone 74B: a signature choice is something the filer entered -- the one
+  // rule on all nine forms -- so leaving the page keeps the card (73C removed
+  // it), and the checks ask for its name.
   await go(page, '/');
   await go(page, '/d1');
-  await expect(cards).toHaveCount(1);
+  await expect(cards).toHaveCount(2);
+  const asked = await page.evaluate(async () => (await (window as any).GuardianForms.testing.validate.open()).map((m: any) => String(m.path || '')));
+  expect(asked).toContain('guardians.1.name');
   expect(errors).toEqual([]);
 });

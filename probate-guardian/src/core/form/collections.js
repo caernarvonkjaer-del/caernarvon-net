@@ -26,8 +26,9 @@
 //
 // The actions change the filing's data only: saving, redrawing and the output
 // revision stay with each caller, exactly where they were.
-import { mk, guardianHasData } from '../filing/models/guardian.js';
-import { planEmptyRow, planGuardianBlank, planGuardianHasAnyData, planGuardianMax } from '../filing/models/plan-rows.js';
+import { mk } from '../filing/models/guardian.js';
+import { rowStarted } from '../validation/row-started.js';
+import { planEmptyRow, planGuardianBlank, planGuardianMax } from '../filing/models/plan-rows.js';
 import { simplifiedGuardianRow } from '../filing/models/simplified.js';
 import { createBankAccountId } from '../accounting/bank-accounts.js';
 import { SCH_B4_ACCOUNT_BLOCKS } from '../excel/b4-register-pages.js';
@@ -97,7 +98,7 @@ register(['guardian'], {
   // D-1 offers "+ Add Co-Guardian" below three and no Remove on the first. A
   // card is untouched while it has none of the fields D-1 counts as entered
   // (Milestone 73C; D-1 used to drop such a card on every draw).
-  guardians: describeList('guardians', { label: 'Co-Guardian', factory: mk.guardian, floor: 1, max: 3, isBlank: (row) => !guardianHasData(row) }),
+  guardians: describeList('guardians', { label: 'Co-Guardian', factory: mk.guardian, floor: 1, max: 3, isBlank: (row) => !rowStarted(row) }),
   // D-5 offers "+ Add Recipient" below four and Remove only above one.
   serviceRecipients: describeList('serviceRecipients', { label: 'Service Recipient', factory: mk.recipient, floor: 1, max: 4 }),
   // The cover's inventory witnesses.
@@ -106,8 +107,11 @@ register(['guardian'], {
 
 // ── The Annual, Final and Trust Accountings (one engine) ──
 const fromSchema = (listKey) => describeList(listKey, SCHEDULE_SCHEMAS[listKey]);
+// Milestone 74B: a guardian card is untouched by the one rule on all nine forms,
+// rowStarted() (a bare "Unsigned" is not something the filer entered).
+const guardianCard = { isBlank: (row) => !rowStarted(row) };
 register(['annual', 'finalAccounting', 'trustAccounting'], {
-  guardians: fromSchema('guardians'),
+  guardians: describeList('guardians', { ...SCHEDULE_SCHEMAS.guardians, ...guardianCard }),
   certRecipients: fromSchema('certRecipients'),
   remuneration: fromSchema('remuneration'),
   ...Object.fromEntries(['schA', 'schB1', 'schB2', 'schB3', 'schB4', 'schC', 'schD1', 'schD2', 'schD3', 'schD4', 'schD5', 'schE', 'schF1', 'schF2']
@@ -122,7 +126,7 @@ register(['annual', 'finalAccounting', 'trustAccounting'], {
 
 // ── The Simplified Accounting ──────────────────────────
 register(['simplified'], {
-  guardians: describeList('guardians', { ...SCHEDULE_SCHEMAS.guardians, factory: simplifiedGuardianRow }),
+  guardians: describeList('guardians', { ...SCHEDULE_SCHEMAS.guardians, factory: simplifiedGuardianRow, ...guardianCard }),
   certRecipients: fromSchema('certRecipients'),
   remuneration: fromSchema('remuneration'),
 });
@@ -134,7 +138,7 @@ register(['simplified'], {
 // (the Signatures page used to drop such a block on every draw).
 const planGuardians = (filingType) => describeList('planGuardians', {
   label: 'Guardian', factory: () => planGuardianBlank(filingType), floor: 1, max: planGuardianMax(filingType),
-  isBlank: (row) => !planGuardianHasAnyData(row),
+  isBlank: (row) => !rowStarted(row),
 });
 const planTable = (listKey, kind, label) => describeList(listKey, { label, factory: () => planEmptyRow(kind) });
 const planRecipients = planTable('certRecipients', 'certRecipient', 'Service Recipient');

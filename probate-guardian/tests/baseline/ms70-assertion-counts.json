@@ -2,8 +2,8 @@
  "generatedBy": "node scripts/ms70-assertion-counts.mjs --write-baseline",
  "note": "Milestone 70 per-spec assertion counts (static expect calls). tests/unit/ms70-assertion-counts.spec.js fails when a spec falls below its count; lowering it requires --reason, recorded in dropLog. A tripwire, not proof of equivalence (decision D9).",
  "totals": {
-  "expects": 7981,
-  "tests": 2278
+  "expects": 8019,
+  "tests": 2286
  },
  "counts": {
   "tests/e2e/annotation-toolbar-containment.spec.ts": {
@@ -239,8 +239,8 @@
    "tests": 2
   },
   "tests/e2e/guardian-links-follow-rows.spec.ts": {
-   "expects": 15,
-   "tests": 4
+   "expects": 20,
+   "tests": 5
   },
   "tests/e2e/guardianship-selection-controls.spec.ts": {
    "expects": 8,
@@ -355,7 +355,7 @@
    "tests": 4
   },
   "tests/e2e/plan-add-co-guardian.spec.ts": {
-   "expects": 17,
+   "expects": 18,
    "tests": 2
   },
   "tests/e2e/plan-annual-mount.spec.ts": {
@@ -553,6 +553,10 @@
   "tests/e2e/simplified-remuneration.spec.ts": {
    "expects": 31,
    "tests": 5
+  },
+  "tests/e2e/stamped-co-guardian.spec.ts": {
+   "expects": 16,
+   "tests": 3
   },
   "tests/e2e/startup.spec.ts": {
    "expects": 24,
@@ -767,7 +771,7 @@
    "tests": 8
   },
   "tests/unit/excel-capacity-issues.spec.js": {
-   "expects": 31,
+   "expects": 32,
    "tests": 7
   },
   "tests/unit/excel-engine.spec.js": {
@@ -819,7 +823,7 @@
    "tests": 5
   },
   "tests/unit/filing-registry.spec.js": {
-   "expects": 56,
+   "expects": 57,
    "tests": 9
   },
   "tests/unit/filing-type-enumeration-guard.spec.js": {
@@ -1245,6 +1249,10 @@
   "tests/unit/ssn-format.spec.js": {
    "expects": 15,
    "tests": 8
+  },
+  "tests/unit/started-guardian.spec.js": {
+   "expects": 14,
+   "tests": 4
   },
   "tests/unit/startup-flow.spec.js": {
    "expects": 19,

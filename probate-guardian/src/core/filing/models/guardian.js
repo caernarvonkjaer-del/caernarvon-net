@@ -133,18 +133,10 @@ export function b2ItemDescription(e){
   return e?.isVehicle?vehicleDescription(e):(e?.description||'');
 }
 
-// Every field that makes a D-1 co-guardian card "entered" -- one list, read by
-// D-1's drawing, validateGuardian() and the clean-up when the filer leaves the
-// page (collections.js), which used to repeat it three times. Milestone 39-C:
-// the signature image, so a stamp applied before a name is typed is never
-// removed. Milestone 67A: the preparer box. Milestone 72C: the email, so a
-// co-guardian who has entered only an email is not treated as blank, hidden or
-// removed. A signature choice alone is not an entered card. (Moved here from
-// the feature by Milestone 73C, unchanged.)
-export const GUARDIAN_DATA_FIELDS = Object.freeze(['name', 'signatureDate', 'ssnEin', 'phone', 'email', 'streetAddress', 'cityStateZip', 'signatureImage', 'isPreparer']);
-export function guardianHasData(guardian) {
-  return GUARDIAN_DATA_FIELDS.some(key => String(guardian?.[key] || '').trim());
-}
+// Milestone 74B: whether a D-1 co-guardian card is "entered" is the one rule
+// every form uses, src/core/validation/row-started.js's rowStarted(): anything
+// the filer entered counts, a stamp and a signature choice included. The
+// field list that decided it here (guardianHasData()) retired.
 
 // The Inventory's eleven schedule pages, by route key: the pages whose Next
 // button a missing schedule disables, and the keys the sidebar's schedule

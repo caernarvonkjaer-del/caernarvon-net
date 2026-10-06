@@ -14,7 +14,7 @@ import { alertModal, confirmModal } from '../../core/ui/dialogs.js';
 import { setStatus, scheduleStatusClear } from '../../core/ui/transient-status.js';
 import { beginExport } from '../../core/ui/export-guard.js';
 import { calcTotals } from './totals.js';
-import { guardianHasAnyData } from '../../core/validation/row-started.js';
+import { rowStarted } from '../../core/validation/row-started.js';
 import { assertWorkbookWithinLimits, getImportProgressEl, sanitizeObjectDataInPlace, validateImportFile } from '../../core/security/input-hardening.js';
 import { capitalizeImportedFields } from '../../core/form/form-contract.js';
 import { getD } from '../../core/state.js';
@@ -172,7 +172,8 @@ export async function doSaveExcel(){
       setCell(p34,'F21',g1.residenceStreet||'');
       setCell(p34,'F23',g1.residenceCityStateZip||'');
       const g2=inv.guardians[1]||{};
-      if(guardianHasAnyData(g2)){
+      // Milestone 74B: every started card's slot (rowStarted(): a stamp counts).
+      if(rowStarted(g2)){
         setDateCell(p34,'D25',g2.signatureDate);
         setCell(p34,'F25',g2.name||'');
         setCell(p34,'B27',g2.ssn||'');
@@ -184,7 +185,7 @@ export async function doSaveExcel(){
         setCell(p34,'F33',g2.residenceCityStateZip||'');
       }
       const g3=inv.guardians[2]||{};
-      if(guardianHasAnyData(g3)){
+      if(rowStarted(g3)){
         setDateCell(p34,'D35',g3.signatureDate);
         setCell(p34,'F35',g3.name||'');
         setCell(p34,'B37',g3.ssn||'');
