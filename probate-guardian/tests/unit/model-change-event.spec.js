@@ -173,6 +173,7 @@ const ANNOUNCEMENTS = {
   'src/core/filing/schedule-docs.js': 3,            // a supporting document added, removed, its comment
   'src/core/filing/filing-years.js': 2,             // New Year; a switch to another year
   'src/core/filing/conversion.js': 1,               // a conversion
+  'src/core/excel/import-transaction.js': 1,        // an import as one transaction (73E part 1; the importers move onto it in 73T)
   'src/features/annual-accounting/excel.js': 1,     // the Annual family's Excel import
   'src/features/simplified-accounting/excel.js': 1, // the Simplified's Excel import
   'src/features/guardian-inventory/excel.js': 1,    // the Inventory's Excel import

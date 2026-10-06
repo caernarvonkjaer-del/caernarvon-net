@@ -40,6 +40,9 @@ import { startWalkthrough } from '../help/walkthrough.js';
 import { updateSidebar } from '../shell/sidebar.js';
 import { filingLifecycle } from '../navigation/filing-lifecycle.js';
 import { describeConversion } from '../filing/conversion.js';
+import { planImport, runImportTransaction } from '../excel/import-transaction.js';
+import { confirmImport } from '../excel/import-confirm.js';
+import { alertModal } from '../ui/dialogs.js';
 import { getRecentlyOpenedWards } from '../filing/recent-filings.js';
 import { showSimplifiedEligibilityModal } from '../modals/filing-dialogs.js';
 import { showConvertWardModal } from '../modals/convert-ward-modal.js';
@@ -349,6 +352,26 @@ export function createTestingAdapter(w, impl = applicationImplementations()) {
       targetsFor: (type) => copy(convertTargetsFor(type)),
       /** The app's own description of a conversion. */
       describe: (fromType, toType) => copy(describeConversion(fromType, toType)),
+    }),
+    /**
+     * Milestone 73E part 1: the import transaction (src/core/excel/
+     * import-transaction.js) and its confirmation, which no importer uses
+     * until 73T parts 2-4. `plan` is what importing `draft` into the open
+     * filing would change and ask, as a copy; `confirm` shows a plan's
+     * confirmation and resolves the filer's choices, or null; `run` imports
+     * `draft` into the open filing through the whole transaction -- the
+     * confirmation, the commit, the redraw and the notice.
+     */
+    importTransaction: Object.freeze({
+      plan: (draft, options) => copy(planImport(requireActive('importTransaction.plan'), draft, options)),
+      confirm: (plan, options) => confirmImport(plan, options),
+      run: async (draft, { sourceName = '', workbookType = '', notCarried = [] } = {}) => copy(await runImportTransaction({
+        filing: requireActive('importTransaction.run'),
+        adapter: async () => ({ draft, sourceName, workbookType, notCarried }),
+        confirmChoices: (plan) => confirmImport(plan, { sourceName }),
+        redraw: () => navigate(getCurrentPage() || '/'),
+        notify: (notice) => alertModal({ title: 'Import complete', message: notice }),
+      })),
     }),
     /** Opens an already-parsed case-file zip as the whole case (loadCaseFileFromZip()). */
     importArchive: (zip, manifest, key = null) => loadCaseFileFromZip(zip, manifest, key),

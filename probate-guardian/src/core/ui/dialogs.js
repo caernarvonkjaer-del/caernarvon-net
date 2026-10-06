@@ -181,6 +181,61 @@ export function promptModal(messageOrOptions) {
 }
 
 
+/**
+ * Milestone 73E part 1: an awaitable confirmation that also asks questions,
+ * each answered with one of its options (radio buttons in a fieldset whose
+ * legend is the question). The confirm button stays disabled until every
+ * question shown has an answer; a question with `onlyIf: { id, value }` is
+ * shown only while question `id` holds `value` (a near-name match's
+ * shared-record question, asked only if the filer says it is the same
+ * person). Resolves `{ [questionId]: value }` for the questions shown, or
+ * null on Cancel or Escape. The import transaction's confirmation
+ * (src/core/excel/import-confirm.js) is its first caller.
+ */
+export function choicesModal(options) {
+  const { title, message, questions, confirmLabel, cancelLabel } = normalizeOptions(options, {
+    title: 'Please confirm', message: '', questions: [], confirmLabel: 'OK', cancelLabel: 'Cancel',
+  });
+  return new Promise((resolve) => {
+    const { overlay, box } = buildShell();
+    const groupName = (i) => `${overlay.id}-q${i}`;
+    box.innerHTML = `<h2 class="modal-box-title mb-3">${esc(title)}</h2>
+      ${message ? `<div class="modal-box-intro" style="white-space:pre-line">${esc(message)}</div>` : ''}
+      ${questions.map((q, i) => `<fieldset class="mb-3" data-dyn-question="${esc(q.id)}">
+        <legend class="form-label fs-6">${esc(q.prompt)}</legend>
+        ${q.options.map((o, j) => `<div class="form-check"><input class="form-check-input" type="radio" name="${groupName(i)}" id="${groupName(i)}-${j}" value="${esc(o.value)}"><label class="form-check-label" for="${groupName(i)}-${j}">${esc(o.label)}</label></div>`).join('')}
+      </fieldset>`).join('')}
+      <div class="d-flex gap-2 mt-2">
+        <button type="button" class="btn btn-primary flex-fill" data-dyn-action="confirm">${esc(confirmLabel)}</button>
+        <button type="button" class="btn btn-outline-secondary flex-fill" data-dyn-action="cancel">${esc(cancelLabel)}</button>
+      </div>`;
+    const finish = makeFinisher(overlay, resolve);
+    const confirmBtn = box.querySelector('[data-dyn-action="confirm"]');
+    const fieldsets = [...box.querySelectorAll('fieldset[data-dyn-question]')];
+    const answers = () => Object.fromEntries(questions.map((q, i) => [q.id, box.querySelector(`input[name="${groupName(i)}"]:checked`)?.value]));
+    const isShown = (q, given) => !q.onlyIf || given[q.onlyIf.id] === q.onlyIf.value;
+    const refresh = () => {
+      const given = answers();
+      let complete = true;
+      questions.forEach((q, i) => {
+        const shown = isShown(q, given);
+        fieldsets[i].hidden = !shown;
+        if (shown && !given[q.id]) complete = false;
+      });
+      confirmBtn.disabled = !complete;
+    };
+    box.addEventListener('change', refresh);
+    refresh();
+    confirmBtn.addEventListener('click', () => {
+      const given = answers();
+      finish(Object.fromEntries(questions.filter((q) => isShown(q, given) && given[q.id]).map((q) => [q.id, given[q.id]])));
+    });
+    box.querySelector('[data-dyn-action="cancel"]').addEventListener('click', () => finish(null));
+    onEscape(finish, null);
+    showAndFocus(overlay, box.querySelector('input[type="radio"]') || confirmBtn);
+  });
+}
+
 // Milestone 70, 70H: the static dialogs -- showing and closing one, and
 // loading the fragment that holds it. Moved from legacy-app.js's MODAL
 // FUNCTIONS.

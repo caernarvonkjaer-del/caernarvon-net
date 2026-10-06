@@ -300,28 +300,35 @@ function joinCityStateZipValue({ city, state, zip }) {
   return [city, tail].filter(Boolean).join(', ');
 }
 
-/** Reads a role's fields off a filing into the flat shape hydrate/dehydrate share. Returns {} if this type/role has no mapping (e.g. simplified has no preparer). */
-export function readRoleFields(filing, role, index = 0) {
+/**
+ * Reads a role's fields off a filing into the flat shape hydrate/dehydrate share. Returns {} if this type/role has no mapping (e.g. simplified has no preparer).
+ *
+ * `presentOnly` (Milestone 73E part 1) reads only the fields the object
+ * actually holds, so an import's draft -- which carries only what its source
+ * carries -- is not read as blanking everything else.
+ */
+export function readRoleFields(filing, role, index = 0, { presentOnly = false } = {}) {
   if (!filing) return {};
   const config = roleConfigFor(filing, role);
-  if (!config) return role === 'ward' ? { name: filing.wardName || '' } : {};
+  if (!config) return role === 'ward' ? (presentOnly && !('wardName' in filing) ? {} : { name: filing.wardName || '' }) : {};
   const { container, keys, joinedAddress, splitCityStateZip } = config;
   let sub;
   if (container.type === 'array') sub = ((filing[container.field] || [])[index]) || {};
   else if (container.type === 'object') sub = filing[container.field] || {};
   else sub = filing; // 'flat' -- keys name exact top-level fields already
+  const has = (field) => !presentOnly || Object.prototype.hasOwnProperty.call(sub, field);
 
   const out = {};
   for (const flatKey of FLAT_KEYS) {
-    if (keys[flatKey]) out[flatKey] = sub[keys[flatKey]] || '';
+    if (keys[flatKey] && has(keys[flatKey])) out[flatKey] = sub[keys[flatKey]] || '';
   }
-  if (joinedAddress) {
+  if (joinedAddress && has(joinedAddress)) {
     const raw = String(sub[joinedAddress] || '');
     const i = raw.indexOf(', ');
     out.street = i === -1 ? raw : raw.slice(0, i);
     out.cityStateZip = i === -1 ? '' : raw.slice(i + 2);
   }
-  if (splitCityStateZip) {
+  if (splitCityStateZip && Object.values(splitCityStateZip).some(has)) {
     out.cityStateZip = joinCityStateZipValue({ city: sub[splitCityStateZip.city] || '', state: sub[splitCityStateZip.state] || '', zip: sub[splitCityStateZip.zip] || '' });
   }
   return out;

@@ -6,7 +6,7 @@
 far: 73U (2026-10-04, `5b8849b`), 73V (2026-10-05, `8b96aa3`), 73C
 (2026-10-05, `861b6a9`, brought forward from its place in the build order at the
 requester's choice) 73D (2026-10-05, `c8e84fe`, likewise), 73J part 1 (2026-10-05, `d819c4a`),
-73F part 1 (2026-10-06, `5e9e17b`), 73A (2026-10-06, `83352d0`), 73F part 2 (2026-10-06, `d01edd4`) and 73G part 1 (2026-10-06), each approved by name.** Nothing else is approved.
+73F part 1 (2026-10-06, `5e9e17b`), 73A (2026-10-06, `83352d0`), 73F part 2 (2026-10-06, `d01edd4`), 73G part 1 (2026-10-06, `69a1b46`) and 73E part 1 (2026-10-06), each approved by name.** Nothing else is approved.
 Building any other item, or any part of a split item, needs the requester's
 named approval of that item or part (AGENTS.md §3).
 
@@ -44,7 +44,7 @@ recorded as **Pinellas Clerk practice**, not as a reading of a statute or rule
 | 2 | 73B | The PDF says **"Plenary"** when no Type of Guardianship was chosen; a new Annual says **"Professional Guardian"**; rows, PDFs and the Inventory's workbook carry answers and shares the filer never gave | High | One |
 | 3 | 73C | **"+ Add Co-Guardian" does nothing** on all four Plans | High | **Built** (2026-10-05) |
 | 4 | 73D | Ticking and unticking **"This item is a vehicle"** erases the Description and the safe-deposit answer; hidden Plan "Explanation" text still prints | High | **Built** (2026-10-05) |
-| 5 | 73E | **An Excel import replaces the filing unasked** (the Simplified's Cancel half-applies it), can turn a Trust into an Annual, and changes shared people's records in other filings unseen | High | Two |
+| 5 | 73E | **An Excel import replaces the filing unasked** (the Simplified's Cancel half-applies it), can turn a Trust into an Annual, and changes shared people's records in other filings unseen | High | Two (part 1 **built** 2026-10-06) |
 | 6 | 73F | **A section shows ✓ and Print Preview then blocks it**; asterisks don't match what is enforced; a misspelled county passes everywhere | High | Three (parts 1 and 2 **built** 2026-10-06) |
 | 7 | 73G | A loss typed positive is **added** unwarned; the Clerk's "(1000)" is stored as **+1000**; negatives are refused, shown as positive, or **zeroed on every page drawn**; "$1,234.56" in the Simplified's remuneration files as **$0.00** | High | Two (part 1 **built** 2026-10-06) |
 | 8 | 73H | Dates print as **2025-01-01** on several screens; negative amounts appear **five ways**; Plan Q11 prints a bare number | Medium | One |
@@ -134,7 +134,7 @@ behaviour on its own except where its row says so.
 | 3 | 73K part 1 — why the page is drawn | 73V | `src/core/navigation/router.js` and its callers | `router.spec.js`; `npm run check:types` |
 | 4 | 73G part 1 — the amount codec | — | `form-contract.js`, `form-fields.js`, `guardian-inventory/form-binding.js`, `form-runtime.js`, `share-cell.js`, the three importers' amount readers | new `tests/unit/amount-codec.spec.js`; the year-rollover and conversion goldens — **Built** 2026-10-06 |
 | 5 | 73F part 1 — shared checks | — | the seven validators moved to `src/core/validation/engines/` with `evaluate<Engine>()`, a registry, `validate<Engine>()` kept as wrappers, `output-preflight.js` | the existing validator and export-gate units; a wrapper-equivalence test; completion golden unchanged — **Built** 2026-10-06 |
-| 6 | 73E part 1 — the import transaction (no importer connected) | 73J p1 | new `src/core/excel/import-transaction.js`, `import-keep.js` (exact-name identity), `party-resolver.js`, the activity log | new `tests/unit/import-transaction.spec.js` (synthetic adapters) |
+| 6 | 73E part 1 — the import transaction (no importer connected) | 73J p1 | new `src/core/excel/import-transaction.js`, `import-keep.js` (exact-name identity), `party-resolver.js`, the activity log | new `tests/unit/import-transaction.spec.js` (synthetic adapters) — **Built** 2026-10-06 |
 | 7 | 73T part 1 — the workbook contract | 73E p1, 73G p1 | new `src/core/excel/workbook-contract/` (one per form, the importers' adapters), `excel-engine.js` | `excel-write-targets.spec.js`, `export-manifests.ts`, new round-trip and hand-filled specs |
 | 8 | 73C | 73V | `plan-rows.js`, Inventory `index.js` (D-1) | new `tests/e2e/plan-add-co-guardian.spec.ts` — **Built** `861b6a9`, ahead of rows 2–7 at the requester's choice |
 | 9 | 73D | — | Inventory `index.js` (B-2), `models/guardian.js`, `totals.js`, Inventory `pdf-model.js`, `excel.js`, `conversion.js`, `field-html.js`, three Plan `pdf-model.js` | new `tests/e2e/b2-vehicle-toggle.spec.ts`, Plan PDF units — **Built** `c8e84fe` |
@@ -967,6 +967,96 @@ form.
 No importer is touched in this part; each moves onto the transaction in its
 73T part (the Inventory's first, since it already parses into a separate
 object).
+
+### Build record, part 1 — BUILT 2026-10-06 (approved by name by the requester, 2026-10-06)
+
+**What changed for a filer:** nothing yet, as designed. No importer uses
+the transaction until 73T parts 2–4, which is where the confirmation, the
+safe Cancel and the notice reach filers, form by form.
+
+**What was built:** `src/core/excel/import-transaction.js` takes an
+adapter's detached draft -- the filing's fields as the source has them --
+and works through the eight steps above:
+
+- It reads the draft without touching the filing, diffs it against the
+  filing, its shared-record links and the records, and finds the conflicts:
+  a near-name match, a shared person whose details differ (with every other
+  open filing sharing them), and a workbook marked as another type.
+- It confirms once, then commits the filing and the records together in one
+  synchronous step.
+- It ends with one save, one Activity Log entry, one change event, and a
+  notice after the redraw.
+
+Cancel, or a confirmation that leaves a question unanswered, changes nothing
+and queues no save. The settled decisions, as built:
+
+- The same person is the same name ignoring case, spaces and punctuation
+  (`sameName()`, in `import-keep.js`). A near match -- the shared-records
+  review's rule, or the importers' containment rule ("Robert T. Nguyen,
+  Esq.") -- is a question for the filer: the same person keeps their stamp
+  and record, a different person starts afresh. The shared-record question
+  is asked only for the same person.
+- A linked person whose details differ: "Update the shared record" changes
+  the record and every other open filing sharing it; "This filing only"
+  stops sharing it here.
+- A different person in a slot -- including another ward's workbook --
+  stops sharing the old person's record here, so a later edit can't rename
+  the ward, or rewrite a guardian, on other filings.
+- The filing keeps its own type (73E-N2), its signature rule (73A), its
+  years and identity. The same person's signature choice, stamp and
+  certificate tick are kept. A schedule the import fills has its "no items"
+  tick cleared (`src/core/form/no-items-keys.js`, which 73F part 3's
+  "+ Add Entry" will read).
+- The confirmation (`src/core/excel/import-confirm.js`) names what is
+  replaced, a different ward or type, the people who stop sharing a record,
+  and each question. It is shown by a new `choicesModal()` in `dialogs.js`:
+  radio groups, a conditional question, and an Import button that waits for
+  every answer shown.
+
+**As built, beside the design:**
+
+- The design names `import-keep.js` for exact-name identity. `sameName()` is
+  there; the importers' own containment rule (`samePerson()`) is unchanged
+  until each importer moves onto the transaction. Changing it now would drop
+  a near-match's stamp with no confirmation to offer keeping it.
+- The transaction is reachable through `GuardianForms.testing.importTransaction`
+  (plan, confirm, run). That keeps the new modules loaded (the dependency
+  ratchet forbids unreachable ones) and lets the browser tests run on every
+  build. Nothing a filer can reach changed.
+
+**Found while building, and handled here:** compared field by field, a
+draft that doesn't carry a field read as a blank. "Update the shared
+record" would then have blanked a guardian's email and address on every
+filing sharing them, and a workbook that doesn't carry the attorney would
+have unlinked the attorney. `readRoleFields()` gained `presentOnly`, and the
+plan compares and writes only what the draft holds. **For 73T's adapters:** a
+blank cell is a blank, but a field the workbook has no box for must be left
+out of the draft. The flat roles' signature keys that belong to a person are
+the adapter's to name (`unboxed`).
+
+**Tests:**
+
+- New `tests/unit/import-transaction.spec.js` (14 tests). It covers who is
+  the same person; the plan; Cancel and an unanswered question changing
+  nothing (byte for byte, no save, no log entry, no change event); the
+  commit's four outcomes (update, this filing only, another ward, a near
+  match either way), each with one save, one log entry and one change
+  event; never blanking what the workbook doesn't carry; and the
+  confirmation's wording.
+- New `tests/e2e/import-transaction-dialog.spec.ts` (3 tests). It covers the
+  confirmation's questions, its conditional question, Cancel and Escape,
+  and the whole transaction on an Annual: Cancel changes and saves nothing;
+  Import replaces, saves once, logs once, and gives its notice after the
+  redraw.
+- `model-change-event.spec.js` lists the transaction's one announcement.
+- **Red-first:** with the change to `party-resolver.js` alone set aside,
+  three cases fail for the stated reason: blanks are read as changes, the
+  attorney is unlinked, and the confirmation lists the blanks. With all of
+  73E part 1 set aside, the module doesn't exist and the adapter has no
+  `importTransaction`.
+- Full unit suite passes; `npm run check:types` clean. **Related browser specs:
+  6 files (the new one, signatures kept through an import, shared-record
+  write-through, links following rows, stamp reuse, startup) -- 25 passed.**
 
 ### Design — part 2: Link Person and Merge
 

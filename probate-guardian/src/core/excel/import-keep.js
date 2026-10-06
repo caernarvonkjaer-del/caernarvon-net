@@ -26,6 +26,19 @@ export const samePerson = (a, b) => {
   return nameAmong(a, b) || nameAmong(b, a);
 };
 
+/**
+ * Milestone 73E part 1: the same person for the import transaction -- the
+ * same name ignoring case, spaces and punctuation (the requester's decision,
+ * 2026-10-05). Two blanks are the same; nothing changes hands. A near match
+ * (samePerson() above among them) is not the same person by this rule: the
+ * transaction lists it for the filer to decide. The importers keep
+ * samePerson() until each moves onto the transaction (73T parts 2-4).
+ */
+export function sameName(a, b) {
+  const canon = (s) => String(s ?? '').toLowerCase().replace(/[\s\p{P}\p{S}]+/gu, '');
+  return canon(a) === canon(b);
+}
+
 /** Signature fields no workbook carries. */
 export const SIGNATURE_FIELDS = Object.freeze(['signatureState', 'signatureImage']);
 
