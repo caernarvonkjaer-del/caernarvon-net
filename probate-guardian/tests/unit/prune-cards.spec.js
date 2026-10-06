@@ -217,6 +217,32 @@ describe('prune-cards', () => {
       expect(data.guardianPartyIds).toEqual(['pA', 'pC']);
     });
   });
+  // Milestone 74A: an empty Guardian #1 card and a filled co-guardian used to
+  // lose the empty card on leaving the page, and the co-guardian moved into
+  // Guardian #1 -- on all five filing types with `guardians`. The first card
+  // now stays, as the pages, the imports and the Plans already keep it.
+  describe('74A: Guardian #1 stays Guardian #1', () => {
+    for (const type of ['guardian', 'annual', 'finalAccounting', 'trustAccounting', 'simplified']) {
+      it(`${type}: an empty first card and a filled co-guardian both stay, in order, with their links`, () => {
+        const data = initializeEmptyData(type);
+        const blank = { ...data.guardians[0] };
+        data.guardians = [blank, { ...blank, name: 'Carol Co-Guardian', phone: '(727) 555-0103' }];
+        data.guardianPartyIds = ['party-first', 'party-carol'];
+        pruneBlankCards(data); // (it also tidies the filing's other lists)
+        expect(data.guardians.map((g) => g.name)).toEqual(['', 'Carol Co-Guardian']);
+        expect(data.guardianPartyIds).toEqual(['party-first', 'party-carol']);
+      });
+
+      it(`${type}: untouched co-guardian cards still go, the first card stays`, () => {
+        const data = initializeEmptyData(type);
+        const blank = { ...data.guardians[0] };
+        data.guardians = [{ ...blank }, { ...blank }, { ...blank }];
+        pruneBlankCards(data);
+        expect(data.guardians).toHaveLength(1);
+      });
+    }
+  });
+
   // Milestone 70, 70C: the table the clean-up now uses by default -- the
   // Inventory's own +Add rows (mk) and the Annual Accounting's -- and the
   // clean-up itself on real rows, with no window stand-ins.

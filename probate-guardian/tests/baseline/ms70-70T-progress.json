@@ -46,6 +46,7 @@
   "tests/e2e/feature-load-failure.spec.ts",
   "tests/e2e/filing-conversion.characterization.spec.ts",
   "tests/e2e/filing-identity.contract.spec.ts",
+  "tests/e2e/first-guardian-stays.spec.ts",
   "tests/e2e/form-entry-ux.spec.ts",
   "tests/e2e/form-entry.contract.spec.ts",
   "tests/e2e/form-field-labels.spec.ts",

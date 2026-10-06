@@ -35,7 +35,12 @@ export const BLANK_SCHEDULE_ENTRY = {
 };
 
 export const BLANK_CARD_COLLECTIONS = {
-  guardians: { min: 1, types: ['guardian', 'annual', 'simplified'] },
+  // Milestone 74A: Guardian #1's card always stays (keepFirst), whatever it
+  // holds. With only `min: 1`, an empty first card and a filled co-guardian
+  // lost the empty card here, and the co-guardian moved into Guardian #1
+  // without a word -- though the pages offer no Remove on the first card, the
+  // three Excel imports keep its slot, and the Plans keep theirs (below).
+  guardians: { min: 1, keepFirst: true, types: ['guardian', 'annual', 'simplified'] },
   serviceRecipients: { min: 1, types: ['guardian'] },
   witnesses: { min: 0, types: ['guardian'] },
   // Milestone 68C: the four Plans carry the accountings' recipient shape.

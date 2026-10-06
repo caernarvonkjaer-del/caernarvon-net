@@ -2,9 +2,9 @@
 
 ## Status
 
-**Draft. Authorizes no change.** Every decision is settled (2026-10-05).
-Building either item needs the requester's named approval of that item
-(AGENTS.md §3). Items 74A and 74B are the first two; more may be added.
+**Draft.** Every decision is settled (2026-10-05). **Built so far: 74A
+(2026-10-05), approved by name.** Nothing else is approved; building 74B needs
+the requester's named approval (AGENTS.md §3). Items 74A and 74B are the first two; more may be added.
 
 Both were found on 2026-10-05 while building Milestone 73's 73C (the Plans'
 "+ Add Co-Guardian"), recorded in 73C's build record as found and not
@@ -14,7 +14,7 @@ Evidence.
 
 | # | Item | What a filer sees today | Severity | Parts |
 | --- | --- | --- | --- | --- |
-| 1 | 74A | On the Inventory, the Annual, Final and Trust Accountings and the Simplified, an **empty Guardian #1 card is removed** when the filer leaves the page, and the co-guardian they filled in **becomes Guardian #1** without a word | Medium | One |
+| 1 | 74A | On the Inventory, the Annual, Final and Trust Accountings and the Simplified, an **empty Guardian #1 card is removed** when the filer leaves the page, and the co-guardian they filled in **becomes Guardian #1** without a word | Medium | **Built** (2026-10-05) |
 | 2 | 74B | **A co-guardian whose only entry is a signature stamp is left out of the filing**: on the Inventory the PDF drops it; on the Annual family and the Simplified no check, workbook or PDF includes it at all | High | One |
 
 ---
@@ -123,6 +123,38 @@ empty first card stays, and the export checks keep asking for its name.
 8. **Legal framing:** none — this keeps the order the filer entered.
 9. **Cross-form:** the Plans already behave this way (73C); this brings the
    other five filing types to the same rule.
+
+### Build record — BUILT 2026-10-05 (approved by name by the requester, 2026-10-05)
+
+**What changed for a filer:** on the Inventory, the Annual, Final and Trust
+Accountings and the Simplified, an empty Guardian #1 card **stays** when the
+filer leaves the page, and a filled co-guardian stays second. The checks keep
+asking for Guardian #1's name (the page shows "👉 Guardian #1 — Name"). An
+untouched co-guardian card still goes when the filer leaves, as before.
+
+**How:** `keepFirst: true` on the `guardians` entry in
+`src/core/form/blank-rows.js` — the setting 73C added for the Plans'
+guardian blocks. Nothing else changed.
+
+**Tests:**
+
+- `tests/unit/prune-cards.spec.js` (+10): on each of the five filing types,
+  an empty first card and a filled co-guardian both stay, in order, with
+  their links; untouched co-guardian cards still go.
+- New `tests/e2e/first-guardian-stays.spec.ts` (3): the Inventory's D-1, the
+  Annual's Part III and the Simplified's Part IV, through the real "+ Add
+  Co-Guardian" button and name box — empty Guardian #1, filled co-guardian,
+  leave and return: the order holds, Guardian #1's box is empty, and the
+  checks ask for its name.
+- **Red-first:** with the fix stashed, the five keep-first unit cases and all
+  three browser cases fail for the stated reason (the co-guardian moved into
+  Guardian #1); with it, all pass.
+- Fixture audit (checklist 3): every minimal ward fills Guardian #1, so none
+  relied on the move.
+- Full unit suite passes. **Related browser specs: 37 files (every one
+  working with guardian cards on the Inventory or the accountings, the
+  clean-up, shared-person links and the year rollover) — 383 passed, none
+  failed.**
 
 ---
 
@@ -315,7 +347,7 @@ already changed.
 
 | Order | Item | Depends on | Main files | Tests |
 | --- | --- | --- | --- | --- |
-| 1 | 74A | 73C | `src/core/form/blank-rows.js` | `prune-cards.spec.js`; new `tests/e2e/first-guardian-stays.spec.ts` |
+| 1 | 74A | 73C | `src/core/form/blank-rows.js` | `prune-cards.spec.js`; new `tests/e2e/first-guardian-stays.spec.ts` — **Built** 2026-10-05 |
 | 2 | 74B | 73A; sequenced with 73F part 1 and 73T parts 2–4 | `row-started.js`, `models/guardian.js`, `collections.js`, `completion.js`, three accounting-type features, four Plans' checks | new `tests/unit/started-guardian.spec.js`, new `tests/e2e/stamped-co-guardian.spec.ts` |
 
 74A can be built at any time. Neither changes a calculation or a workbook
