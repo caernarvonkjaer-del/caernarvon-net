@@ -7,9 +7,10 @@ import { esc } from '../filing/escape-html.js';
 import { INVENTORY_TYPES } from '../filing/filing-registry.js';
 import { wardCountyMergeConflict } from '../navigation/ward-county.js';
 import { closedFilingDrift, dismissPartyPair, filingDriftFromParties, findDuplicateCandidates, mergeParties, referenceCountForParty, resolveParty, slotsReferencing, subPartiesOf, syncFilingSlotWithParty, unmergeParty } from '../party-resolver.js';
-import { getCaseFile, getD, requestSave } from '../state.js';
+import { getCaseFile, getD } from '../state.js';
 import { confirmModal } from '../ui/dialogs.js';
 import { auditLog } from '../activity/audit-log.js';
+import { commitModelChange } from '../model-change.js';
 
 export const PARTY_FIELD_ROWS=[
   ['name','Name'],
@@ -182,7 +183,7 @@ export async function doPartySyncClosed(wardId,role,index){
   if(!filing)return;
   if(syncFilingSlotWithParty(filing,role,Number(index)||0)){
     await auditLog('PARTY_SYNC',`Synced ${slotLabel(role,Number(index)||0)} on closed filing "${filing.wardName}" with its shared record`,true,wardId);
-    requestSave();
+    commitModelChange('party-sync');
   }
   renderPartyManagementBody();
 }
@@ -191,7 +192,7 @@ export async function doPartySyncClosedAll(partyId){
   for(const d of closedFilingDrift(partyId)){
     if(syncFilingSlotWithParty(d.filing,d.role,d.index))await auditLog('PARTY_SYNC',`Synced ${slotLabel(d.role,d.index)} on closed filing "${d.filing.wardName}" with its shared record`,true,d.filing.wardId);
   }
-  requestSave();
+  commitModelChange('party-sync');
   renderPartyManagementBody();
 }
 
@@ -224,7 +225,7 @@ export async function doFilingSyncClosed(role,index){
   for(const s of slots){
     if(syncFilingSlotWithParty(filing,s.role,s.index))await auditLog('PARTY_SYNC',`Synced ${slotLabel(s.role,s.index)} on closed filing "${filing.wardName}" with its shared record`,true,filing.wardId);
   }
-  requestSave();
+  commitModelChange('party-sync');
   // The page is re-rendered by the dispatcher that handled the click
   // (form-events.js): the router renders this module's page, so this
   // module cannot import it (Milestone 70, 70H).
@@ -277,13 +278,13 @@ export async function doPartyMergeKeep(keepId,discardId){
   mergeParties(keepId,discardId,{adoptBlankFields:adoptable.length>0});
   await auditLog('PARTY_MERGE',`Merged "${discard.name}" into "${keep.name}"`,true);
   _partyCompareIds=[];
-  requestSave();
+  commitModelChange('party-merge');
   renderPartyManagementBody();
 }
 
 export async function doPartyDismissPair(idA,idB){
   dismissPartyPair(idA,idB);
-  requestSave();
+  commitModelChange('party-dismiss');
   renderPartyManagementBody();
 }
 
@@ -298,6 +299,6 @@ export async function doPartyUnmergeSelected(){
     if(unmergeParty(sub.id))await auditLog('PARTY_UNMERGE',`Unmerged "${sub.name}" from "${primaryName}"`,true);
   }
   _partyUnmergeIds=[];
-  requestSave();
+  commitModelChange('party-unmerge');
   renderPartyManagementBody();
 }

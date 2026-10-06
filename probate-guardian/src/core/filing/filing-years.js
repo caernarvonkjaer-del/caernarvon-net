@@ -12,6 +12,7 @@ import { applyCarriedStartingBalance } from './starting-balance-carry.js';
 import { getCaseFile } from '../state.js';
 import { clearCertificateAnswers } from './service-method.js';
 import { notifyProbateGuardianTabStateChanged } from '../navigation/tab-state.js';
+import { recordModelChange } from '../model-change.js';
 
 // A ward's flat top-level fields (schedules, balances, signatures, etc.)
 // always represent whichever year is currently "active" — every existing
@@ -268,6 +269,7 @@ export async function switchWardYear(wardId,targetKey){
   setDirtySinceExport(true);
   updateLastSavedIndicator();
   notifyProbateGuardianTabStateChanged();
+  recordModelChange('year-switch');
 }
 
 // Archives the current year (carrying forward everything by default) and
@@ -306,6 +308,7 @@ export async function startNewWardYear(wardId){
   setDirtySinceExport(true);
   updateLastSavedIndicator();
   notifyProbateGuardianTabStateChanged();
+  recordModelChange('new-year');
 }
 
 // The period key a given archived year's supporting-document uploads and

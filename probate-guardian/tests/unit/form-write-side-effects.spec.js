@@ -60,8 +60,10 @@ function freshWindow() {
     syncGuardianNameDisplay: (sidebar.syncGuardianNameDisplay = rec('guardianName')),
     // The tail closes by dispatching `pg:field-written` on window -- the hook
     // Annual Accounting's refreshAnnualTotals() subscribes to now that its
-    // own persistAnnualControl() (which called it directly) is gone.
-    dispatchEvent: rec('fieldWritten'),
+    // own persistAnnualControl() (which called it directly) is gone -- and
+    // then, since Milestone 73J part 1, the change event every committed
+    // change sends (src/core/model-change.js).
+    dispatchEvent: vi.fn((event) => { calls.push(({ 'pg:field-written': 'fieldWritten', 'pg:model-changed': 'modelChanged' })[event?.type] || String(event?.type)); }),
   };
   return w;
 }
@@ -91,8 +93,9 @@ describe('runFieldWriteSideEffects()', () => {
 
   it('runs county commit and Party write-through before autosave, then the display refreshes', () => {
     run('guardians.0.name', { dataset: {} });
-    expect(w.calls).toEqual(['county', 'slot', 'identity', 'autoSave', 'navDots', 'wardCard', 'guardianName', 'fieldWritten']);
+    expect(w.calls).toEqual(['county', 'slot', 'identity', 'autoSave', 'navDots', 'wardCard', 'guardianName', 'fieldWritten', 'modelChanged']);
     expect(w.dispatchEvent.mock.calls[0][0]).toMatchObject({ type: 'pg:field-written', detail: { path: 'guardians.0.name' } });
+    expect(w.dispatchEvent.mock.calls[1][0]).toMatchObject({ type: 'pg:model-changed', detail: { reason: 'field-write', paths: ['guardians.0.name'] } });
   });
 
   it('hands every path to maybeCommitCoverCounty (it is the one that scopes to `county`)', () => {

@@ -5,8 +5,8 @@
 **Draft. Every decision is settled (2026-10-04 and 2026-10-05). Built so
 far: 73U (2026-10-04, `5b8849b`), 73V (2026-10-05, `8b96aa3`), 73C
 (2026-10-05, `861b6a9`, brought forward from its place in the build order at the
-requester's choice) and 73D (2026-10-05, `c8e84fe`, likewise), each approved by
-name.** Nothing else is approved.
+requester's choice) 73D (2026-10-05, `c8e84fe`, likewise) and 73J part 1 (2026-10-05), each
+approved by name.** Nothing else is approved.
 Building any other item, or any part of a split item, needs the requester's
 named approval of that item or part (AGENTS.md §3).
 
@@ -49,7 +49,7 @@ recorded as **Pinellas Clerk practice**, not as a reading of a statute or rule
 | 7 | 73G | A loss typed positive is **added** unwarned; the Clerk's "(1000)" is stored as **+1000**; negatives are refused, shown as positive, or **zeroed on every page drawn**; "$1,234.56" in the Simplified's remuneration files as **$0.00** | High | Two |
 | 8 | 73H | Dates print as **2025-01-01** on several screens; negative amounts appear **five ways**; Plan Q11 prints a bare number | Medium | One |
 | 9 | 73I | The dashboard marks an annual accounting **overdue early: 0–3 days for a month-end period, 16–32 days for a mid-month one**; a Final gets a due date with no basis | Medium | One |
-| 10 | 73J | Parts of a page stay **stale** after a change (eight cases) | Medium | Two |
+| 10 | 73J | Parts of a page stay **stale** after a change (eight cases) | Medium | Two (part 1 **built** 2026-10-05) |
 | 11 | 73K | The page **jumps to the top**, and the cursor is lost, after a choice, Add, Remove and similar actions, on all nine forms | Medium | Two |
 | 12 | 73L | **One Escape closes two dialogs**; a dialog stays **over the lock screen**; dialogs stack; a reminder fires for an empty row | Medium | One |
 | 13 | 73M | Excel silently **doesn't carry** some answers, and one comes back wrong; Save as Excel can look enabled and do nothing | Medium | One |
@@ -130,7 +130,7 @@ behaviour on its own except where its row says so.
 | --- | --- | --- | --- | --- |
 | 0 | 73U | — | `src/core/security/input-hardening.js` | **Built** `5b8849b` |
 | 1 | 73V — row rules (behaviour-preserving; only the link fix is visible) | — | `src/core/form/schedule-definitions.js` (descriptions keyed by filing type and list; the three row actions keep their signatures; `SCHEDULE_SCHEMAS` kept as a read-only compatibility export), `src/core/form/plan-row-actions.js`, `prune-cards.js`, `src/core/filing/models/plan-rows.js`, the Inventory's row actions and `normalizeGuardians()`, the Annual importer's guardian filter | new `tests/unit/collection-descriptors.spec.js` (explicit expected inventory of every list; each form's behaviour unchanged); changed: `schedule-definitions.spec.js`, `output-revision-wiring.spec.js`, `prune-cards.spec.js`, `filing-registry.spec.js`; unchanged through the compatibility export: `types-contract.spec.js`, `remuneration-declaration.spec.js` — **Built** `8b96aa3` |
-| 2 | 73J part 1 — one change event | — | `src/core/form/form-contract.js`, a new `src/core/model-change.js`, every committed mutation path (row actions, New Year, conversion, Sync, Link Person, Merge, year switch) | new `tests/unit/model-change-event.spec.js` |
+| 2 | 73J part 1 — one change event | — | `src/core/form/form-contract.js`, a new `src/core/model-change.js`, every committed mutation path (row actions, New Year, conversion, Sync, Link Person, Merge, year switch) | new `tests/unit/model-change-event.spec.js` — **Built** 2026-10-05 |
 | 3 | 73K part 1 — why the page is drawn | 73V | `src/core/navigation/router.js` and its callers | `router.spec.js`; `npm run check:types` |
 | 4 | 73G part 1 — the amount codec | — | `form-contract.js`, `form-fields.js`, `guardian-inventory/form-binding.js`, `form-runtime.js`, `share-cell.js`, the three importers' amount readers | new `tests/unit/amount-codec.spec.js`; the year-rollover and conversion goldens |
 | 5 | 73F part 1 — shared checks | — | the seven validators moved to `src/core/validation/engines/` with `evaluate<Engine>()`, a registry, `validate<Engine>()` kept as wrappers, `output-preflight.js` | the existing validator and export-gate units; a wrapper-equivalence test; completion golden unchanged |
@@ -1343,6 +1343,67 @@ complete; the dashboard label shows what Automatic would infer.
 New `tests/unit/model-change-event.spec.js` (every mutation path emits);
 new `tests/e2e/live-page-parts.spec.ts`, one case per row; red-first.
 `npm run check:types` (the sidebar and router). No data or export change.
+
+### Build record, part 1 — BUILT 2026-10-05 (approved by name by the requester, 2026-10-05)
+
+**What changed for a filer:** nothing visible — by design. Every committed
+change to a filing now announces itself once, when the action is complete,
+naming what it changed; part 2's live page parts will listen. As a side
+effect, the actions that didn't mark the filing as changed for Preview's
+override now do (the Inventory's and Plans' row actions, the B-4 accounts,
+the "no items" boxes on the Annual and Simplified, a signature stamp, a supporting document, New Year, a year switch, a conversion): an
+override given before one of them no longer carries past it, as it already
+didn't past a typed field. Opening Preview clears an override anyway, so a
+filer sees no difference.
+
+**How:** new `src/core/model-change.js`. `commitModelChange(reason, paths)`
+marks the output revision, queues the save and dispatches
+`pg:model-changed` with `{ reason, paths }` (`'*'` for the whole filing);
+it replaces `requestSave()` at the end of each action.
+`recordModelChange()` is for an action that saves by its own means (the
+Inventory's import, New Year, a year switch, a conversion);
+`announceModelChange()` closes the field write, after `pg:field-written`
+and the page's refreshes; `onModelChange()` listens. The event is sent at the
+end of an action, never inside a helper it calls: Link Person sets the link
+and then fills the fields, and an event in between would show a listener the
+half-filled slot. The helpers keep marking the revision as before.
+
+**Where (55 announcements in 16 files):** the field write and a date draft
+(`form-contract.js`); the Plans' five row actions; the clean-up on leaving
+a page (naming the lists it emptied); Link Person and "+ New Shared Record";
+a signature stamp; Sync (three), Merge, Dismiss, Unmerge; a supporting
+document added, removed, or its comment; New Year and a year switch
+(`filing-years.js`); a conversion; the three Excel imports; Annual / Final /
+Trust; the Annual's rows, B-4 accounts and "no items"; the Inventory's rows,
+guardians, recipients, witnesses, the B-2 vehicle box and fields and the old
+D-5 details (the "no items" box already went through the field write, whose
+extra save call went); the Simplified's guardians, recipients, remuneration,
+"no items", address conflict and old certificate details. **Saves that
+announce nothing, each with its reason** (14 files): app preferences and
+templates; Preview's annotations (storing them must not undo the override
+just given); a supporting document's background check finishing; the field
+write's own save; the repairs forms make on opening; test hooks.
+
+**Tests:**
+
+- New `tests/unit/model-change-event.spec.js` (9): the event's shape and
+  the three calls' effects; through the real entry points — the field write
+  (once, naming the field, after `pg:field-written`), the clean-up (the lists
+  it emptied; silent when nothing was untouched), a Plan's add, duplicate and
+  remove (one event and one save each); and a structural guard over `src/`:
+  every `requestSave()` is a listed save that announces nothing, the
+  announcements per file are pinned, and only `model-change.js` dispatches the
+  event — so a new way of changing a filing can't skip it.
+- Changed: `form-write-side-effects.spec.js` (the tail's order now ends with
+  the change event).
+- **Red-first:** with the 16 call sites stashed and the module kept, the
+  field write, the clean-up and the Plan row actions announce nothing and the
+  guard finds 22 files saving without announcing against the 14 listed;
+  with them, all pass.
+- Full unit suite passes; `npm run check:types` clean. **Full regression (`npm test`,
+  approved 2026-10-05) at this commit, which also carries 73D and 74A, from a
+  copy on C::** all unit tests passed (2,606); browser 1,037 passed, 16
+  skipped, none failed, flaky or left unrun, of 1,053 (1.2 h).
 
 ---
 

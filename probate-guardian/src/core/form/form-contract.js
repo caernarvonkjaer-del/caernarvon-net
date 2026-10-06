@@ -20,6 +20,7 @@ import { markFilingRevisionChanged } from '../filing/output-revision.js';
 import { identitySlotForPath, syncIdentityField } from '../party-resolver.js';
 import { maybeCommitCoverCounty } from '../navigation/ward-county.js';
 import { getCurrentPage } from '../navigation/route-state.js';
+import { announceModelChange, commitModelChange } from '../model-change.js';
 
 // The filing each field is being edited in: bound when the field takes focus
 // (form-events.js) or on its first write. Switching the open filing while a
@@ -379,6 +380,9 @@ export function runFieldWriteSideEffects(path, control = null) {
   if (dataset.syncWardName || path === 'wardName') syncActiveWardNameDisplay?.();
   if (dataset.syncGuardianName || path === 'guardianName' || path === 'guardians.0.name') syncGuardianNameDisplay?.();
   if (typeof CustomEvent === 'function') window.dispatchEvent?.(new CustomEvent('pg:field-written', { detail: { path } }));
+  // Milestone 73J part 1: the field write's change event, last, once the
+  // page's own refreshes above have run (marked and saved above too).
+  announceModelChange('field-write', [path]);
 }
 
 /**
@@ -435,7 +439,7 @@ export function writeDraftValue(control, options = {}) {
       section: control.dataset?.fieldSection || '',
       route: getCurrentPage() || window.location?.hash || '/',
     });
-    requestSave();
+    commitModelChange('date-draft', [path]);
     return;
   }
 

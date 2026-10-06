@@ -4,12 +4,11 @@
 // (Milestone 70, 70J); the open filing's type follows its inventoryType (the
 // case store derives it), so there is no second copy to set.
 import { applyAccountingFilingType } from '../../core/filing/filing-descriptor.js';
-import { markFilingRevisionChanged } from '../../core/filing/output-authorization.js';
 import { updateSidebar } from '../../core/shell/sidebar.js';
-import { getD, requestSave } from '../../core/state.js';
+import { getD } from '../../core/state.js';
+import { commitModelChange } from '../../core/model-change.js';
 
 export function setAccountingFilingType(filingType) {
-  markFilingRevisionChanged('filing-type-change');
   const d = getD();
   const result = applyAccountingFilingType(d, filingType);
   if (!result?.descriptor) {
@@ -19,6 +18,6 @@ export function setAccountingFilingType(filingType) {
     d.filingType = filingType;
   }
   updateSidebar();
-  requestSave();
+  commitModelChange('filing-type-change');
   return result;
 }

@@ -15,6 +15,7 @@ import { applyCarriedStartingBalance, crossesTrustBoundary as crossesTrust } fro
 import { withOldCertificateFilled, wardStatusAsMigrated } from './certificate-migrations.js';
 import { getCaseFile } from '../state.js';
 import { alertModal } from '../ui/dialogs.js';
+import { recordModelChange } from '../model-change.js';
 
 // One human-readable description per source→target pair, shown before
 // converting and reused in the confirmation alert afterward — so the
@@ -383,6 +384,7 @@ export async function convertExistingWard(sourceWardId,targetType){
   await activateWard(newWard);
   setDirtySinceExport(true);
   updateLastSavedIndicator();
+  recordModelChange('conversion');
   navigate('/');
   await alertModal(`Converted "${sourceWard.wardName}" into a new ${INVENTORY_TYPES[targetType].name} form.\n\n${describeConversion(srcType,targetType)}`);
 }

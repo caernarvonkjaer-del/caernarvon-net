@@ -9,6 +9,7 @@ import { getCurrentPage } from '../navigation/route-state.js';
 import { getActiveInventoryType, getD, requestSave } from '../state.js';
 import { alertModal } from '../ui/dialogs.js';
 import { ic } from '../ui/icons.js';
+import { commitModelChange } from '../model-change.js';
 
 // Every schedule (across all three inventory types) can carry uploaded
 // supporting documents and a free-text comment. Guardianships are re-filed
@@ -98,7 +99,7 @@ export async function handleScheduleDocUpload(scheduleKey,fileList){
   results.filter(Boolean).forEach(r=>{slot.files.push(r);added.push(r);});
   if(rejected.length)await alertModal(`Some supporting documents were not attached: ${rejected.join(', ')}`);
   if(!added.length){renderPage(getCurrentPage());return;}
-  requestSave();
+  commitModelChange('supporting-documents',[`scheduleDocs.${scheduleKey}`]);
   renderPage(getCurrentPage());
 
   for(const record of added){
@@ -129,7 +130,7 @@ export async function handleScheduleDocUpload(scheduleKey,fileList){
 export function removeScheduleDoc(scheduleKey,idx){
   const slot=getScheduleDocSlot(scheduleKey);
   slot.files.splice(idx,1);
-  requestSave();
+  commitModelChange('supporting-documents',[`scheduleDocs.${scheduleKey}`]);
   renderPage(getCurrentPage());
 }
 
@@ -215,7 +216,7 @@ export function queueAllScheduleDocValidations(){
 
 export function updateScheduleComment(scheduleKey,value){
   getScheduleDocSlot(scheduleKey).comment=value;
-  requestSave();
+  commitModelChange('supporting-documents',[`scheduleDocs.${scheduleKey}`]);
 }
 
 export function renderScheduleDocsSection(scheduleKey){

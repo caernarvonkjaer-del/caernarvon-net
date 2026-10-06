@@ -17,10 +17,10 @@ import { calcTotals } from './totals.js';
 import { guardianHasAnyData } from '../../core/validation/row-started.js';
 import { assertWorkbookWithinLimits, getImportProgressEl, sanitizeObjectDataInPlace, validateImportFile } from '../../core/security/input-hardening.js';
 import { capitalizeImportedFields } from '../../core/form/form-contract.js';
-import { getD, requestSave } from '../../core/state.js';
+import { getD } from '../../core/state.js';
 import { ensureTemplate } from '../../core/persistence/templates.js';
-import { markFilingRevisionChanged } from '../../core/filing/output-revision.js';
 import { getCurrentPage, renderPage } from '../../core/navigation/router.js';
+import { commitModelChange } from '../../core/model-change.js';
 
 
 export const SIMPLIFIED_EXCEL_CAPS={
@@ -509,8 +509,7 @@ export async function importExcel(input){
       // importExcelFile already applies to every field via sanitizeObjectData;
       // in-place because window.D is the live object saveData() persists.
       sanitizeObjectDataInPlace(getD());
-      requestSave();
-      markFilingRevisionChanged('excel-import');
+      commitModelChange('excel-import');
       setStatus(prog,'✓ Template loaded and data imported successfully.');
       scheduleStatusClear(prog);
       renderPage(getCurrentPage());

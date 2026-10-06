@@ -33,9 +33,9 @@ import { mk, b2ItemDescription } from '../../core/filing/models/guardian.js';
 import { getD } from '../../core/state.js';
 import { saveData } from '../../core/persistence/case-file.js';
 import { ensureTemplate } from '../../core/persistence/templates.js';
-import { markFilingRevisionChanged } from '../../core/filing/output-revision.js';
 import { navigate, renderPage } from '../../core/navigation/router.js';
 import { remapLinkedIds } from '../../core/form/row-links.js';
+import { recordModelChange } from '../../core/model-change.js';
 
 
 // Milestone 60K: the Excel boundary conversion for percentages, both ways.
@@ -667,7 +667,7 @@ export async function importExcel(input){
     // the sidebar kept asking for it.
     migrateBondDepository(getD());
     saveData();
-    markFilingRevisionChanged('excel-import');
+    recordModelChange('excel-import');
     setStatus(prog,'✓ Import complete!');
     scheduleStatusClear(prog);
     navigate('/');

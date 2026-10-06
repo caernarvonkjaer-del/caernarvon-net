@@ -72,6 +72,7 @@ import { setPath } from '../../core/form/paths.js';
 import { tooltip } from '../../core/help/tooltips.js';
 import { openFloridaCourtPortal } from '../../core/shell/court-portal.js';
 import { navigate } from '../../core/navigation/router.js';
+import { commitModelChange } from '../../core/model-change.js';
 // Milestone 57B: carried verbatim from MILESTONE-57-PROPOSAL.md section 57B.
 // The wording is load bearing (section 8 #8). Do not paraphrase or re-voice it.
 const ATTESTATION_57B = 'No recipients are required for this certificate (filer attestation - app does not determine legal necessity)';
@@ -118,7 +119,7 @@ function bindEvents(container) {
     switch (actionElement.dataset.simplifiedAction) {
       case 'add-guardian': {
         if (addCollectionRow('guardians', getD(), createSimplifiedGuardian)) {
-          requestSave();
+          commitModelChange('collection-add', ['guardians']);
           navigate('/p4');
         }
         break;
@@ -126,21 +127,21 @@ function bindEvents(container) {
       case 'remove-guardian': {
         if (index > 0 && guardianHasAnyData(getD().guardians?.[index]) && !(await confirmModal(`Remove co-guardian ${getD().guardians[index].name || `#${index + 1}`}? This will delete the entered signature information.`))) break;
         if (removeCollectionRow('guardians', index, getD())) {
-          requestSave();
+          commitModelChange('collection-remove', ['guardians']);
           navigate('/p4');
         }
         break;
       }
       case 'add-recipient': {
         if (addCollectionRow('certRecipients', getD())) {
-          requestSave();
+          commitModelChange('collection-add', ['certRecipients']);
           navigate('/p6');
         }
         break;
       }
       case 'remove-recipient': {
         if (removeCollectionRow('certRecipients', index, getD())) {
-          requestSave();
+          commitModelChange('collection-remove', ['certRecipients']);
           navigate('/p6');
         }
         break;
@@ -151,7 +152,7 @@ function bindEvents(container) {
         // withdrawn rather than left to contradict the row being added.
         if (getD()?.scheduleNoItems?.remuneration) getD().scheduleNoItems.remuneration = false;
         if (addCollectionRow('remuneration', getD())) {
-          requestSave();
+          commitModelChange('collection-add', ['remuneration', 'scheduleNoItems.remuneration']);
           navigate('/p7');
         }
         break;
@@ -159,14 +160,14 @@ function bindEvents(container) {
       case 'choose-excel': actionElement.parentElement.querySelector('input[type="file"]')?.click(); break;
       // Milestone 72H: the filer's explicit deletion of the old Part VI details.
       case 'discard-old-certificate-details': {
-        if (discardOldCertificateDetails(getD(), 'simplified')) requestSave();
+        if (discardOldCertificateDetails(getD(), 'simplified')) commitModelChange('certificate-details-discarded');
         navigate('/p6');
         break;
       }
       case 'open-court-portal': openFloridaCourtPortal(); break;
       case 'remove-remuneration': {
         if (removeCollectionRow('remuneration', index, getD())) {
-          requestSave();
+          commitModelChange('collection-remove', ['remuneration']);
           navigate('/p7');
         }
         break;
@@ -175,7 +176,7 @@ function bindEvents(container) {
       case 'save-pdf': _printModule.doSavePdf(); break;
       case 'resolve-guardian-address-conflict': {
         if (resolveSimplifiedGuardianAddressConflict(getD(), index, actionElement.dataset.field, actionElement.dataset.choice)) {
-          requestSave();
+          commitModelChange('address-conflict-resolved', ['guardians']);
           navigate('/p4');
         }
         break;
@@ -187,7 +188,7 @@ function bindEvents(container) {
     if (input instanceof HTMLInputElement && input.dataset.simplifiedChange === 'schedule-no-items') {
       if (!getD().scheduleNoItems) getD().scheduleNoItems = {};
       getD().scheduleNoItems[input.dataset.schedule] = input.checked;
-      requestSave();
+      commitModelChange('no-items', [`scheduleNoItems.${input.dataset.schedule}`]);
       updateNavDots();
       return;
     }

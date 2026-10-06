@@ -33,13 +33,13 @@ import { assertWorkbookWithinLimits, getImportProgressEl, sanitizeObjectDataInPl
 import { capitalizeImportedFields } from '../../core/form/form-contract.js';
 import { r2 } from '../../core/format/money.js';
 import { formDisplayName } from '../../core/filing/filing-registry.js';
-import { getD, requestSave } from '../../core/state.js';
+import { getD } from '../../core/state.js';
 import { ensureTemplate } from '../../core/persistence/templates.js';
 import { setAccountingFilingType } from './filing-type.js';
-import { markFilingRevisionChanged } from '../../core/filing/output-revision.js';
 import { getCurrentPage, renderPage } from '../../core/navigation/router.js';
 import { calcTotalsAnnual, annualReconcileState } from './totals.js';
 import { keepRows } from '../../core/form/row-links.js';
+import { commitModelChange } from '../../core/model-change.js';
 
 
 // r2 is imported (src/core/format/money.js, Milestone 70's 70B). It used to be
@@ -975,8 +975,7 @@ export async function importExcel(input){
       // otherwise the page would show the answer those imply while the
       // sidebar kept asking for it.
       migrateBondDepository(D);
-      requestSave();
-      markFilingRevisionChanged('excel-import');
+      commitModelChange('excel-import');
       setStatus(prog,'✓ Template loaded and data imported successfully.');
       scheduleStatusClear(prog);
       renderPage(getCurrentPage());

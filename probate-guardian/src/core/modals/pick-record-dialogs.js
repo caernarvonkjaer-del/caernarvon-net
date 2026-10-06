@@ -5,10 +5,11 @@ import { esc } from '../filing/escape-html.js';
 import { renderPage } from '../navigation/router.js';
 import { createParty, dehydrateIntoParty, hydrateFromParty, readRoleFields, resolveParty, setPartyIdForSlot } from '../party-resolver.js';
 import { getCurrentPage } from '../navigation/route-state.js';
-import { getCaseFile, getD, requestSave } from '../state.js';
+import { getCaseFile, getD } from '../state.js';
 import { updateNavDots } from '../status/nav-marks.js';
 import { closeModal, ensureFragment, showModal } from '../ui/dialogs.js';
 import { saveWardToState } from '../persistence/case-file.js';
+import { commitModelChange } from '../model-change.js';
 
 // Tracks which identity slot ({role,index}) the Pick Party modal is
 // currently open for, set by showPickPartyModal() and read by doPickParty()/
@@ -46,7 +47,7 @@ export async function doPickParty(){
   closeModal('pickPartyModal');
   setPartyIdForSlot(getD(),role,index,partyId);
   hydrateFromParty(party,getD(),role,index);
-  requestSave();
+  commitModelChange('link-person');
   renderPage(getCurrentPage());
   updateNavDots();
 }
@@ -63,7 +64,7 @@ export async function doCreatePartyFromSlot(){
   // A brand-new party has no other slot to fan out to, and a closed filing's
   // syncIdentityField() is a no-op -- seed the record directly either way.
   dehydrateIntoParty(getD(),role,index,party);
-  requestSave();
+  commitModelChange('new-shared-record');
   renderPage(getCurrentPage());
   updateNavDots();
 }

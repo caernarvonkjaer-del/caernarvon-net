@@ -7,10 +7,11 @@
 // it: before that, on this branch nothing loaded the module, so the clean-up
 // never ran -- the defect master fixed in b28bf25, carried here.
 import { formEngine } from '../filing/filing-registry.js';
-import { getD, requestSave } from '../state.js';
+import { getD } from '../state.js';
 import { BLANK_CARD_COLLECTIONS, BLANK_SCHEDULE_ENTRY, isBlankCard, isBlankScheduleEntry } from './blank-rows.js';
 import { getCollection } from './collections.js';
 import { keepRows } from './row-links.js';
+import { commitModelChange } from '../model-change.js';
 
 // Milestone 73V: the blank tests and the two tables moved, unchanged, to
 // blank-rows.js (so the list rules can read them without an import cycle).
@@ -30,6 +31,7 @@ export function pruneBlankCards(targetData, targetType) {
   const activeType = targetType || data.inventoryType;
   const engine = formEngine(activeType);
   let removed = 0;
+  const changed = [];
 
   for (const key of Object.keys(BLANK_SCHEDULE_ENTRY)) {
     const arr = data[key];
@@ -38,6 +40,7 @@ export function pruneBlankCards(targetData, targetType) {
     if (kept.length !== arr.length) {
       removed += arr.length - kept.length;
       data[key] = kept;
+      changed.push(key);
     }
   }
 
@@ -59,11 +62,13 @@ export function pruneBlankCards(targetData, targetType) {
     keep.sort((a, b) => a - b);
     if (keep.length === arr.length) continue;
     removed += arr.length - keep.length;
+    changed.push(key);
     // Milestone 73V: every list's shared-record links move with its rows --
     // the same re-indexing this did for `guardians` alone.
     keepRows(data, key, keep);
   }
 
-  if (removed) requestSave();
+  // Milestone 73J part 1: the lists it emptied of untouched rows.
+  if (removed) commitModelChange('clean-up', changed);
   return removed;
 }

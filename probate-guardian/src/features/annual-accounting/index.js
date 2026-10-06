@@ -91,6 +91,7 @@ import { WARD_STATUS_VALUES, SERVICE_METHOD_LABEL, SERVICE_METHOD_KIND } from '.
 import { moveWardStatusFromMethod } from '../../core/filing/certificate-migrations.js';
 import { auditLog } from '../../core/activity/audit-log.js';
 import { watchAttorneyRequiredMarkers } from '../../core/form/attorney-required-markers.js';
+import { commitModelChange } from '../../core/model-change.js';
 
 // Milestone 71B: the Part V fields that become required once an attorney is
 // started (and only then) -- the live markers and validateAnnual() share it.
@@ -332,7 +333,7 @@ function bindEvents(container) {
     if (control instanceof HTMLInputElement && control.dataset.annualChange === 'schedule-no-items') {
       if (!getD().scheduleNoItems) getD().scheduleNoItems = {};
       getD().scheduleNoItems[control.dataset.schedule] = control.checked;
-      requestSave();
+      commitModelChange('no-items', [`scheduleNoItems.${control.dataset.schedule}`]);
       updateNavDots();
       return;
     }
@@ -365,7 +366,7 @@ export function mountNav(container) {
 // Same idea as the Plan-family's planEmptyRow-family row CRUD, but for the
 function duplicateAnnualRow(arrName, idx, route) {
   if (duplicateCollectionRow(arrName, idx, getD())) {
-    requestSave();
+    commitModelChange('collection-duplicate', [arrName]);
     navigate(route);
   }
 }
@@ -382,7 +383,7 @@ async function addB4Account(route) {
   }
   // Milestone 73V: the account row (a new id, no bank yet) is the list rules'.
   appendRow(d, 'schB4Accounts');
-  requestSave();
+  commitModelChange('collection-add', ['schB4Accounts']);
   navigate(route);
 }
 
@@ -401,7 +402,7 @@ async function removeB4Account(index, route) {
   ))) return;
   for (const row of orphans) row.bankAccountId = '';
   removeRowAt(d, 'schB4Accounts', index);
-  requestSave();
+  commitModelChange('collection-remove', ['schB4Accounts', 'schB4']);
   navigate(route);
 }
 
@@ -414,14 +415,14 @@ function addAnnualRow(collection, route) {
   // are unaffected either way.
   if (getD()?.scheduleNoItems?.[collection]) getD().scheduleNoItems[collection] = false;
   if (addCollectionRow(collection, getD())) {
-    requestSave();
+    commitModelChange('collection-add', [collection]);
     navigate(route);
   }
 }
 async function removeAnnualRow(collection, index, route) {
   if (collection === 'guardians' && index > 0 && guardianHasAnyData(getD().guardians?.[index]) && !(await confirmModal(`Remove co-guardian ${getD().guardians[index].name || `#${index + 1}`}? This will delete the entered signature information.`))) return;
   if (removeCollectionRow(collection, index, getD())) {
-    requestSave();
+    commitModelChange('collection-remove', [collection]);
     navigate(route);
   }
 }

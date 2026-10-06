@@ -69,6 +69,7 @@ import { appendRow, duplicateRowAt, removeRowAt } from '../../core/form/collecti
 import { showPickPartyModal } from '../../core/modals/pick-record-dialogs.js';
 import { getCurrentPage, navigate, renderPage } from '../../core/navigation/router.js';
 import { computeNavChecks, updateNavDots } from '../../core/status/nav-marks.js';
+import { commitModelChange } from '../../core/model-change.js';
 // Milestone 57B: carried verbatim from MILESTONE-57-PROPOSAL.md section 57B.
 // The wording is load bearing (section 8 #8). Do not paraphrase or re-voice it.
 const ATTESTATION_57B = 'No recipients are required for this certificate (filer attestation - app does not determine legal necessity)';
@@ -277,7 +278,7 @@ function bindEvents(container) {
       case 'remove-guardian': removeGuardian(index); break;
       case 'remove-recipient': removeRecipient(index); break;
       // Milestone 72H: the filer's explicit deletion of the old D-5 details.
-      case 'discard-old-certificate-details': if (discardOldCertificateDetails(getD(), 'guardian')) requestSave(); renderPage('/d5'); break;
+      case 'discard-old-certificate-details': if (discardOldCertificateDetails(getD(), 'guardian')) commitModelChange('certificate-details-discarded'); renderPage('/d5'); break;
       case 'remove-witness': removeWitness(index); break;
       case 'save-excel': _excelModule.doSaveExcel(); break;
       case 'save-pdf': _printModule.doSavePdf(); break;
@@ -297,7 +298,7 @@ function bindEvents(container) {
         const formatted = formatName(control.value);
         control.value = formatted;
         if (D.scheduleB2?.[index]) D.scheduleB2[index][field] = formatted;
-        requestSave();
+        commitModelChange('field-write', [`scheduleB2.${index}.${field}`]);
       }
     }
   }, options);
@@ -310,7 +311,7 @@ function bindEvents(container) {
     if (control.dataset.inventoryFormat === 'mileage') control.value = control.value.replace(/[^0-9,]/g, '');
     const index = Number.parseInt(control.dataset.index, 10);
     D.scheduleB2[index][control.dataset.field] = control.value;
-    requestSave();
+    commitModelChange('field-write', [`scheduleB2.${index}.${control.dataset.field}`]);
   }, options);
 }
 
@@ -588,6 +589,7 @@ export function addEntry(schedule){
   };
   const key=map[schedule];
   appendRow(getD(),key);
+  commitModelChange('collection-add',[key]);
   renderPage(getCurrentPage());
 }
 function removeEntry(schedule,idx){
@@ -597,7 +599,7 @@ function removeEntry(schedule,idx){
   };
   const key=map[schedule];
   removeRowAt(getD(),key,idx);
-  requestSave();
+  commitModelChange('collection-remove',[key]);
   renderPage(getCurrentPage());
 }
 // Empty-state for a schedule with zero rows: a checkbox the filer checks
@@ -619,7 +621,6 @@ function scheduleEmptyHTML(key,noun){
 function setScheduleNoItems(key,val){
   if(!D.scheduleNoItems)D.scheduleNoItems={};
   D.scheduleNoItems[key]=val;
-  requestSave();
   afterChange(`scheduleNoItems.${key}`);
 }
 // Copies an entry and inserts the copy directly beneath the original.
@@ -640,20 +641,20 @@ export function duplicateEntry(schedule,idx){
   const list=getD()[key];
   if(!list||!list[idx])return;
   duplicateRowAt(getD(),key,idx);
-  requestSave();
+  commitModelChange('collection-duplicate',[key]);
   renderPage(getCurrentPage());
 }
 // Same idea for the Annual Accounting schedules, which store their rows in
 // D.schA / D.schB1 / … and are rendered inline rather than through
 
-function addGuardian(){appendRow(D,'guardians');renderPage('/d1');}
+function addGuardian(){appendRow(D,'guardians');commitModelChange('collection-add',['guardians']);renderPage('/d1');}
 function removeGuardian(i){
   removeRowAt(D,'guardians',i);
-  requestSave();
+  commitModelChange('collection-remove',['guardians']);
   renderPage('/d1');
 }
-function addRecipient(){appendRow(D,'serviceRecipients');renderPage('/d5');}
-function removeRecipient(i){removeRowAt(D,'serviceRecipients',i);requestSave();renderPage('/d5');}
+function addRecipient(){appendRow(D,'serviceRecipients');commitModelChange('collection-add',['serviceRecipients']);renderPage('/d5');}
+function removeRecipient(i){removeRowAt(D,'serviceRecipients',i);commitModelChange('collection-remove',['serviceRecipients']);renderPage('/d5');}
 
 // Witnesses present during the physical inventory of the ward's personal
 // effects (Cover page reminder). Kept separate from the entryCard()/
@@ -661,8 +662,8 @@ function removeRecipient(i){removeRowAt(D,'serviceRecipients',i);requestSave();r
 // witnesses aren't a "schedule" in that sense (no dollar total, not part
 // of the schedule/route map those helpers key off of).
 // The witness row lives with the list rules (src/core/form/collections.js).
-function addWitness(){appendRow(D,'witnesses');requestSave();renderPage('/');}
-function removeWitness(i){if(!D.witnesses)return;removeRowAt(D,'witnesses',i);requestSave();renderPage('/');}
+function addWitness(){appendRow(D,'witnesses');commitModelChange('collection-add',['witnesses']);renderPage('/');}
+function removeWitness(i){if(!D.witnesses)return;removeRowAt(D,'witnesses',i);commitModelChange('collection-remove',['witnesses']);renderPage('/');}
 function witnessCardsHTML(){
   const list=D.witnesses||[];
   return list.map((w,i)=>`<div class="col-12 col-lg-6"><div class="entry-card mb-0 h-100">
@@ -925,7 +926,7 @@ function toggleB2Vehicle(i,checked){
   const e=D.scheduleB2[i];
   if(!e)return;
   e.isVehicle=checked;
-  requestSave();
+  commitModelChange('field-write',[`scheduleB2.${i}.isVehicle`]);
   renderPage(getCurrentPage());
 }
 function pageScheduleB2(){
