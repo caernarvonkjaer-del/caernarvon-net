@@ -1329,7 +1329,18 @@ the golden is regenerated with each change stated.
   case now proves the Inventory's progress is read unopened, never a
   fabricated 100%.
 - Full unit suite passes; `npm run check:types` clean.
-- **Full regression:** [REGRESSION]
+- **Full regression:** `npm test` once, as approved, on a copy on C: at
+  d01edd4 (2026-10-06, 1.7 h): 1,038 passed, 16 skipped, 11 failed. Ten were
+  tests of behaviour this milestone changed on purpose, updated in 1a164c8:
+  Part VIII's test still expected the "no trusts" box alone to complete it
+  (73F-5: the question decides it); the dashboard test still expected the
+  Initial Inventory's progress to wait for its form's code (the shared checks
+  load with the app); the conversion record (8 of its 9 cases) predated 73A's
+  signature rule on every new filing (24 added lines, one per conversion,
+  nothing else). The eleventh, the Final Accounting route smoke test, failed
+  inside Playwright ("Resulting promise was garbage collected" while creating
+  the filing), not in the app; it passed on D: and on the rerun. The four
+  specs rerun on the same copy with 1a164c8's files: 47 passed.
 
 **Found while building, recorded and not changed here:** none beyond the
 design gaps above (the "begun" signal kept; Excel-only problems kept out of
