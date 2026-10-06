@@ -117,41 +117,43 @@ test.describe('annual accounting schedule consistency', () => {
     expect(after.checks['a-p11'], 'an unanswered Part XI is unfinished in the sidebar').toBe(false);
   });
 
-  // Milestone 43D: Part VIII (Trusts) has the same verify-none checkbox
-  // shape as the fourteen schedules above, but computeNavChecks()'s own
-  // 'a-p8' rule (src/core/status/completion.js) also has a second, independent completion
-  // path -- a named trust row -- that none of those schedules has. Both
-  // paths were previously only proven by a hand-reimplementation of the
-  // rule in a Node-only unit test (content-corrections.spec.js), which
-  // cannot catch a regression in the real, unexported rule; this drives it
-  // through the real UI in a real browser instead.
-  test('Part VIII (Trusts) completes via verify-none OR a named trust row, matching computeNavChecks()', async ({ page }) => {
+  // Milestone 43D drove Part VIII's own completion rule through the real UI:
+  // the "I certify there are no trusts" box, or a named trust row. Milestone
+  // 73F part 2 (decision 73F-5) made Part VIII's mark the export checks' rule
+  // instead: question #1 decides it. "No" completes Part VIII; "Yes" needs a
+  // trust described and its "created after the GID?" answered. The box alone
+  // no longer completes it -- the question is still unanswered, and Print
+  // Preview asks it -- and the box itself goes in 73F part 3.
+  test('Part VIII (Trusts) completes when its question is answered, as Print Preview reads it', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Part VIII Trusts Ward', 'annual');
     await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/p8'));
+    const done = () => page.evaluate(() => !!(window as any).GuardianForms.testing.status.navChecks().checks['a-p8']);
+    const answer = (path: string, value: string) => page.locator(`#main-content input[type="radio"][data-form-path="${path}"][value="${value}"]`);
 
-    const before = await page.evaluate(() => !!(window as any).GuardianForms.testing.status.navChecks().checks['a-p8']);
-    expect(before, '/p8 should start incomplete on a blank filing').toBe(false);
+    expect(await done(), '/p8 should start incomplete on a blank filing').toBe(false);
 
     const box = page.locator('input[data-annual-change="schedule-no-items"][data-schedule="a-p8"]');
-    await expect(box, '/p8 should offer a verify-none checkbox').toBeVisible();
+    await expect(box).toBeVisible();
     await box.check();
-    const afterVerifyNone = await page.evaluate(() => !!(window as any).GuardianForms.testing.status.navChecks().checks['a-p8']);
-    expect(afterVerifyNone, '/p8 should be complete once the filer verifies there are no trusts').toBe(true);
+    expect(await done(), 'the box alone leaves the question unanswered').toBe(false);
+    await expect(page.locator('#main-content #page-local-guidance')).toContainText('Does the Ward have one or more Trusts?');
+    await box.uncheck();
+
+    await answer('trusts.0.hasTrust', 'No').check();
+    expect(await done(), '"No" completes Part VIII').toBe(true);
     await expect(page.locator('[data-nav="a-p8"] .nav-check')).toHaveClass(/\bcomplete\b/);
 
-    await box.uncheck();
-    const undone = await page.evaluate(() => !!(window as any).GuardianForms.testing.status.navChecks().checks['a-p8']);
-    expect(undone, '/p8 should return to incomplete when the filer unchecks the box').toBe(false);
-
-    // The second, independent completion path: a named trust row completes
-    // Part VIII even with the verify-none box unchecked.
+    await answer('trusts.0.hasTrust', 'Yes').check();
+    expect(await done(), '"Yes" naming no trust is incomplete').toBe(false);
     await page.evaluate(() => {
-      (window as any).GuardianForms.testing.patchFiling({ 'trusts': [{ name: 'Family Trust', trustee: 'Jane Doe' }] });
-      (window as any).GuardianForms.testing.navigate('/p8');
+      const t = (window as any).GuardianForms.testing;
+      t.setField('trusts.0.name', 'Family Trust');
+      t.setField('trusts.0.trustee', 'Jane Doe');
     });
-    const afterNamedTrust = await page.evaluate(() => !!(window as any).GuardianForms.testing.status.navChecks().checks['a-p8']);
-    expect(afterNamedTrust, '/p8 should be complete once a trust row has a name, regardless of the checkbox').toBe(true);
+    expect(await done(), 'a described trust still needs "created after the GID?"').toBe(false);
+    await answer('trusts.0.createdAfterGID', 'No').check();
+    expect(await done(), '"Yes" with a described trust, its question answered, completes Part VIII').toBe(true);
   });
 
   test('schedule totals update as the filer types, on schedules other than A', async ({ page }) => {

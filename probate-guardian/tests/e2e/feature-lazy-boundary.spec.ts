@@ -37,12 +37,13 @@ test("a case of every filing type opens to its dashboard with no filing's code l
   });
   expect(status.types).toHaveLength(9);
   expect(status.loaded, 'only the dashboard, drawn now').toEqual(['dashboard']);
-  // Every type's progress is computed without its pack -- but the Initial
-  // Inventory's, whose rules are its validator, which lives in its pack: it
-  // reads as not computed until that loads (completion-parity.spec.js).
+  // Every type's progress is computed without its pack. Until Milestone 73F
+  // part 2 the Initial Inventory's was not: its rules were its validator, in
+  // its pack, so its progress read as not computed until that loaded. The
+  // sidebar and the dashboard now read the shared export checks
+  // (src/core/validation/engines/), which load with the app.
   for (const [type, p] of Object.entries(status.progress)) {
-    if (type === 'guardian') expect(p, type).toBeNull();
-    else expect(p, type).toMatchObject({ total: expect.any(Number), pct: expect.any(Number) });
+    expect(p, type).toMatchObject({ total: expect.any(Number), pct: expect.any(Number) });
   }
   expect(status.blanks).toEqual(Array(9).fill('object'));
   expect(status.loadedAfter, 'progress and blank filings loaded no pack').toEqual(['dashboard']);

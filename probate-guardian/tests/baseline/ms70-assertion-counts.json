@@ -2,7 +2,7 @@
  "generatedBy": "node scripts/ms70-assertion-counts.mjs --write-baseline",
  "note": "Milestone 70 per-spec assertion counts (static expect calls). tests/unit/ms70-assertion-counts.spec.js fails when a spec falls below its count; lowering it requires --reason, recorded in dropLog. A tripwire, not proof of equivalence (decision D9).",
  "totals": {
-  "expects": 7979,
+  "expects": 7981,
   "tests": 2278
  },
  "counts": {
@@ -31,7 +31,7 @@
    "tests": 14
   },
   "tests/e2e/annual-schedule-consistency.spec.ts": {
-   "expects": 25,
+   "expects": 28,
    "tests": 4
   },
   "tests/e2e/annual-ward-share-export.spec.ts": {
@@ -171,7 +171,7 @@
    "tests": 2
   },
   "tests/e2e/feature-lazy-boundary.spec.ts": {
-   "expects": 9,
+   "expects": 8,
    "tests": 1
   },
   "tests/e2e/feature-load-failure.spec.ts": {
@@ -1471,6 +1471,13 @@
    "was": 14,
    "now": 0,
    "reason": "Milestone 73F part 2 (2026-10-06): the sidebar's marks come from the export checks. checklist-export-parity.spec.js retired -- the page checklist and the marks now read the export checks themselves, and tests/unit/sidebar-export-parity.spec.js proves the one-way invariant over every variant instead; feature-services.spec.js lost its completionDeps() test with the retired completion inputs (the marks need no feature).",
+   "date": "2026-10-06"
+  },
+  {
+   "file": "tests/e2e/feature-lazy-boundary.spec.ts",
+   "was": 9,
+   "now": 8,
+   "reason": "Milestone 73F part 2: the Initial Inventory's dashboard progress no longer needs its pack (the shared export checks load with the app), so the spec's separate 'guardian reads as not computed' expectation went; every type is now held to the same computed-progress expectation.",
    "date": "2026-10-06"
   }
  ]
