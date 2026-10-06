@@ -72,6 +72,7 @@ import { casesGroupingWards, createCase, getOrCreateCaseForWard, resolveCase } f
 import { ensureWardPartyForFiling, wardPartyForFiling } from '../navigation/ward-county.js';
 import { adaptValidationErrors } from '../validation/validation-adapter.js';
 import { prepareFilingOutput } from '../filing/output-preflight.js';
+import { evaluateFiling } from '../validation/engines/index.js';
 import { excelWriteRecorder } from '../excel/excel-engine.js';
 
 export const TEST_MODE_FLAG = '__GUARDIAN_FORMS_TEST_MODE__';
@@ -125,7 +126,7 @@ export function applicationImplementations() {
     loadAppState, decryptJSONWithKey, hasOpenedCaseBefore, loadCaseFileHandle, readRememberedFile,
     resolveParty, resolveCase, isPartyPairDismissed, wardPartyForFiling, casesGroupingWards,
     createCase, getOrCreateCaseForWard, createParty, dismissPartyPair, mergeParties, ensureWardPartyForFiling,
-    addSignatureImage, adaptValidationErrors, prepareFilingOutput,
+    addSignatureImage, adaptValidationErrors, prepareFilingOutput, evaluateFiling,
     loadFeature: (engine) => features().load(engine),
     validatorFor: (engine) => features().validator(engine),
     completionDeps: () => features().completionDeps(),
@@ -496,6 +497,16 @@ export function createTestingAdapter(w, impl = applicationImplementations()) {
        * prepareFilingOutput() commits stored date drafts into what it is
        * given, and a query changes nothing.
        */
+      /**
+       * Milestone 73F part 1: the open filing's evaluation by the shared
+       * export checks (src/core/validation/engines/) -- its blockers (with the
+       * outputs each blocks), advisories and sidebar-only prompts -- judged on
+       * a copy, as copies. Nothing in the app reads this yet (73F part 2).
+       */
+      evaluate() {
+        const d = requireActive('validate.evaluate');
+        return copy(call('evaluateFiling', d));
+      },
       async exportGate() {
         const d = requireActive('validate.exportGate');
         const validate = await validatorFor(d.inventoryType, 'validate.exportGate');

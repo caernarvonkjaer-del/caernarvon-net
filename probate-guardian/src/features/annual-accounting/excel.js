@@ -40,6 +40,10 @@ import { getCurrentPage, renderPage } from '../../core/navigation/router.js';
 import { calcTotalsAnnual, annualReconcileState } from './totals.js';
 import { keepRows } from '../../core/form/row-links.js';
 import { commitModelChange } from '../../core/model-change.js';
+// Milestone 73F part 1: the capacity limits live in core (excel-caps.js) so the
+// shared export checks can say what the workbook can't hold.
+import { ANNUAL_EXCEL_CAPS } from '../../core/excel/excel-caps.js';
+export { ANNUAL_EXCEL_CAPS };
 
 
 // r2 is imported (src/core/format/money.js, Milestone 70's 70B). It used to be
@@ -100,32 +104,6 @@ export function unusedAnnualContinuationSheets(inv) {
   return out;
 }
 
-export const ANNUAL_EXCEL_CAPS={
-  schA:{cap:50,label:'Schedule A — Income',route:'/scha'}, // 20 on p1 + 30 on p2 (SCH A INCOME p2)
-  schB1:{cap:24,label:'Schedule B-1 — Attorney Fees',route:'/schb1'},
-  schB2:{cap:24,label:'Schedule B-2 — Guardian Fees',route:'/schb2'},
-  schB3:{cap:24,label:'Schedule B-3 — Other Court-Ordered Disbursements',route:'/schb3'},
-  // Backstop only. Schedule B-4's real limit is per bank account and is
-  // decided by planSchB4Export(); 1382 is the workbook's total across all
-  // twelve account blocks, so this catches only an absurd row count.
-  schB4:{cap:1382,label:'Schedule B-4 — All Other Disbursements',route:'/schb4'},
-  schC:{cap:6,label:'Schedule C — Capital Adjustments',route:'/schc'},
-  schD1:{cap:11,label:'Schedule D-1 — Cash Assets',route:'/schd1'},
-  schD2:{cap:8,label:'Schedule D-2 — Real Estate',route:'/schd2'},
-  schD3:{cap:4,label:'Schedule D-3 — Personal Property',route:'/schd3'},
-  schD4:{cap:9,label:'Schedule D-4 — Intangible Assets',route:'/schd4'},
-  schD5:{cap:7,label:'Schedule D-5 — Mortgages / Loans / Liabilities',route:'/schd5'},
-  schE:{cap:27,label:'Schedule E — Bank Transfers',route:'/sche'},
-  schF1:{cap:8,label:'Schedule F-1 — Sales of Real Property',route:'/schf1'},
-  schF2:{cap:11,label:'Schedule F-2 — Sales of Personal Property',route:'/schf2'},
-  // Milestone 58D: cap 0, not 25. The court's PART XI sheet has no entry grid
-  // at all -- one statutory paragraph in a merged A:G band, and nothing to
-  // fill in -- so the workbook cannot carry a single remuneration entry, let
-  // alone 25. `unsupported` replaces the generic "template holds N" wording
-  // with one that tells the filer what to do instead.
-  remuneration:{cap:0,label:'Part XI — Remuneration',route:'/p11',
-    unsupported:"the court's Excel workbook has no entry area for Part XI, so remuneration cannot be written to it. File this accounting as PDF, where Part XI prints in full."},
-};
 export async function doSaveExcel(){
   const filingDescriptor = resolveFilingDescriptor(getD()).descriptor;
   const type = filingDescriptor?.inventoryType || 'annual';

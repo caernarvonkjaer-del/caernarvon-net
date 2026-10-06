@@ -1,32 +1,12 @@
 import { markFilingRevisionChanged } from '../../core/filing/output-revision.js';
 import { simplifiedGuardianRow } from '../../core/filing/models/simplified.js';
+// Milestone 73F part 1: the residence/office address reconciliation moved,
+// unchanged, to the core model, where the shared export checks can read it.
+export { normalizeSimplifiedGuardianCompatibility, getSimplifiedGuardianAddressConflicts } from '../../core/filing/models/simplified.js';
 // Milestone 73V: the row shape lives in the core model, where the list rules
 // can name it; this keeps its old name for this feature's callers.
 export function createSimplifiedGuardian() {
   return simplifiedGuardianRow();
-}
-
-const pairs = [['residenceStreet', 'officeStreet'], ['residenceCityStateZip', 'officeCityStateZip']];
-
-export function normalizeSimplifiedGuardianCompatibility(data, { persistedSource = false } = {}) {
-  let changed = false;
-  const conflicts = [];
-  if (!Array.isArray(data?.guardians)) return { changed, conflicts };
-  data.guardians.forEach((guardian, rowIndex) => {
-    if (!guardian || typeof guardian !== 'object') return;
-    pairs.forEach(([canonical, legacy]) => {
-      const canonicalValue = guardian[canonical] || '';
-      const legacyValue = guardian[legacy] || '';
-      if (!canonicalValue && legacyValue) { guardian[canonical] = legacyValue; changed = true; }
-      else if (canonicalValue && legacyValue && canonicalValue !== legacyValue) conflicts.push({ rowIndex, field: canonical, legacyField: legacy, canonicalValue, legacyValue });
-      else if (persistedSource && canonicalValue && canonicalValue === legacyValue) { delete guardian[legacy]; changed = true; }
-    });
-  });
-  return { changed, conflicts };
-}
-
-export function getSimplifiedGuardianAddressConflicts(data) {
-  return normalizeSimplifiedGuardianCompatibility(data).conflicts;
 }
 
 export function resolveSimplifiedGuardianAddressConflict(data, rowIndex, field, choice) {

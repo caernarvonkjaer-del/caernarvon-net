@@ -216,12 +216,16 @@ describe('checklist and export validator field parity', () => {
     // so the assertion had never once run for that filing type -- which is
     // why its Part V / Part VI signature gaps went unrecorded while Annual
     // carried the identical fields as KNOWN_GAPS entries above.
-    simplified: ['simplified-accounting', 'export function validateSimplified('],
-    planInitial: ['plan-initial', 'export function validatePlanInitial('],
-    planAnnual: ['plan-annual', 'export function validatePlanAnnual('],
-    planSimplified: ['plan-simplified', 'export function validatePlanSimplified('],
-    planMinor: ['plan-minor', 'export function validatePlanMinor('],
-    annual: ['annual-accounting', 'export function validateAnnual('],
+    //
+    // Milestone 73F part 1: the checks moved, unchanged, from each feature's
+    // validate<Engine>() into src/core/validation/engines/ (the feature keeps
+    // a wrapper), so this reads them there.
+    simplified: ['core/validation/engines/simplified.js', 'export function collectSimplifiedIssues('],
+    planInitial: ['core/validation/engines/plan-initial.js', 'export function collectPlanInitialIssues('],
+    planAnnual: ['core/validation/engines/plan-annual.js', 'export function collectPlanAnnualIssues('],
+    planSimplified: ['core/validation/engines/plan-simplified.js', 'export function collectPlanSimplifiedIssues('],
+    planMinor: ['core/validation/engines/plan-minor.js', 'export function collectPlanMinorIssues('],
+    annual: ['core/validation/engines/annual.js', 'export function collectAnnualIssues('],
   };
 
   const readSrc = (rel) => fs.readFileSync(path.resolve(__dirname, '../../src', rel), 'utf8');
@@ -250,10 +254,10 @@ describe('checklist and export validator field parity', () => {
     }
   });
 
-  for (const [type, [feature, header]] of Object.entries(VALIDATORS)) {
+  for (const [type, [file, header]] of Object.entries(VALIDATORS)) {
     it(`${type}: export validator requires nothing the section checks ignore, beyond the known gaps`, () => {
-      const body = sliceFunction(readSrc(`features/${feature}/index.js`), header);
-      expect(body.length, `${header} not found in features/${feature}/index.js`).toBeGreaterThan(0);
+      const body = sliceFunction(readSrc(file), header);
+      expect(body.length, `${header} not found in ${file}`).toBeGreaterThan(0);
 
       const checklistFields = navFieldsByType[type] || new Set();
       expect(checklistFields.size, `no completion evaluator found for ${type}`).toBeGreaterThan(0);

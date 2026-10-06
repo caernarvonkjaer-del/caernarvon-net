@@ -36,6 +36,10 @@ import { ensureTemplate } from '../../core/persistence/templates.js';
 import { navigate, renderPage } from '../../core/navigation/router.js';
 import { remapLinkedIds } from '../../core/form/row-links.js';
 import { recordModelChange } from '../../core/model-change.js';
+// Milestone 73F part 1: the capacity limits live in core (excel-caps.js) so the
+// shared export checks can say what the workbook can't hold.
+import { GUARDIAN_EXCEL_CAPS } from '../../core/excel/excel-caps.js';
+export { GUARDIAN_EXCEL_CAPS };
 
 
 // Milestone 60K: the Excel boundary conversion for percentages, both ways.
@@ -67,30 +71,6 @@ const pctCell=(v)=>{
   return Number.isFinite(num)?num/100:'';
 };
 
-// Each cap is the total row count across that schedule's template pages
-// (e.g. A-1 spans 3 pages holding 4 + 8 + 8). Initial Inventory overflows
-// differently from the other two types: its fillScheduleXX() helpers walk
-// a fixed list of template pages, and once the slots run out pageIdx runs
-// past the end of pages[], so `pages[pageIdx].name` throws. The export
-// then dies in its catch block and prints the raw TypeError into a status
-// line that clears itself after three seconds — no file, no usable
-// explanation. This cap guard turns that into a clear, actionable message.
-export const GUARDIAN_EXCEL_CAPS={
-  scheduleA1:{cap:20,label:'Schedule A-1 — Real Estate',route:'/a1'},
-  scheduleA2:{cap:24,label:'Schedule A-2 — Real Estate Liabilities',route:'/a2'},
-  scheduleB1:{cap:36,label:'Schedule B-1 — Cash / Cash Equivalents',route:'/b1'},
-  scheduleB2:{cap:39,label:'Schedule B-2 — Personal Property',route:'/b2'},
-  scheduleB3:{cap:20,label:'Schedule B-3 — Intangible Assets',route:'/b3'},
-  scheduleB4:{cap:33,label:'Schedule B-4 — Personal Property Liabilities',route:'/b4'},
-  scheduleC1:{cap:23,label:'Schedule C-1 — Income',route:'/c1'},
-  scheduleC2:{cap:13,label:'Schedule C-2 — Lawsuits Against Ward',route:'/c2'},
-  scheduleC3:{cap:14,label:'Schedule C-3 — Lawsuits By Ward',route:'/c3'},
-  scheduleC4:{cap:16,label:'Schedule C-4 — Trusts',route:'/c4'},
-  // 23 = page 1's 7 slots + 8 each on pages 2 and 3, matching the form's own
-  // pre-printed Line # 1-23. Was 15 until D10, because the page map stopped at
-  // page 2 (see core/excel/guardian-inventory-pages.js).
-  scheduleC5:{cap:23,label:'Schedule C-5 — Joint Owners',route:'/c5'},
-};
 
 // Milestone 52K: each schedule's page/sheet-name + row-number layout used to
 // be hand-typed twice -- once in its fillScheduleXX() writer below, once

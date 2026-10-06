@@ -43,24 +43,18 @@ function normalizeIssue(issue) {
   return createIssue('validation.legacy-unmapped', { message: issue?.message || String(issue) });
 }
 
-export function prepareFilingOutput(data, baseIssues = [], options = {}) {
-  const target = data || getD() || {};
-  commitStoredDateDrafts(target, options.setPath || setPath);
-  const resolvedBaseIssues = typeof baseIssues === 'function'
-    ? baseIssues()
-    : baseIssues;
-
+/**
+ * What Preview and the export gate judge a filing by, without changing it: its
+ * issues -- the base issues handed in, the date entries still in progress, the
+ * filing's identity problems -- and its advisories. prepareFilingOutput()
+ * commits the stored date drafts first and then asks this; Milestone 73F part
+ * 1's evaluate<Engine>() (src/core/validation/engines/) asks it of a copy that
+ * has had the same done. Split out of prepareFilingOutput() unchanged.
+ */
+export function collectOutputIssues(target, baseIssues = []) {
   const identity = resolveFilingDescriptor(target);
-  const base = (resolvedBaseIssues || []).map(normalizeIssue);
+  const base = (baseIssues || []).map(normalizeIssue);
   const structuredIssues = [...base, ...getFieldDraftIssues(target).map(normalizeIssue), ...identity.issues.map(normalizeIssue)];
-  const rawMessages = [
-    ...structuredIssues.map(issue => issue?.message || String(issue)),
-  ];
-  // Existing feature-owned save actions still consume `messages`.  Once the
-  // in-memory acknowledgement matches this filing revision, bypassable issues
-  // remain visible in `structuredIssues` but no longer veto ordinary output.
-  const acknowledged = isOutputAcknowledgedFor(target, identity.descriptor);
-  const messages = acknowledged && structuredIssues.every(issue => issue.bypassable !== false) ? [] : rawMessages;
   const bondSection = bondSectionFor(identity.descriptor);
   const advisories = [
     ...countyDriftWarnings(target),
@@ -103,9 +97,28 @@ export function prepareFilingOutput(data, baseIssues = [], options = {}) {
     // planCertificateAdvisories() above.
     ...serviceMethodAdvisories(target, identity.descriptor?.engineId),
   ];
+  return { descriptor: identity.descriptor, structuredIssues, advisories };
+}
+
+export function prepareFilingOutput(data, baseIssues = [], options = {}) {
+  const target = data || getD() || {};
+  commitStoredDateDrafts(target, options.setPath || setPath);
+  const resolvedBaseIssues = typeof baseIssues === 'function'
+    ? baseIssues()
+    : baseIssues;
+
+  const { descriptor, structuredIssues, advisories } = collectOutputIssues(target, resolvedBaseIssues);
+  const rawMessages = [
+    ...structuredIssues.map(issue => issue?.message || String(issue)),
+  ];
+  // Existing feature-owned save actions still consume `messages`.  Once the
+  // in-memory acknowledgement matches this filing revision, bypassable issues
+  // remain visible in `structuredIssues` but no longer veto ordinary output.
+  const acknowledged = isOutputAcknowledgedFor(target, descriptor);
+  const messages = acknowledged && structuredIssues.every(issue => issue.bypassable !== false) ? [] : rawMessages;
 
   return {
-    descriptor: identity.descriptor,
+    descriptor,
     structuredIssues,
     messages,
     advisories,

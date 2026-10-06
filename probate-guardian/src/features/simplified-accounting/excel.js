@@ -21,12 +21,12 @@ import { getD } from '../../core/state.js';
 import { ensureTemplate } from '../../core/persistence/templates.js';
 import { getCurrentPage, renderPage } from '../../core/navigation/router.js';
 import { commitModelChange } from '../../core/model-change.js';
+// Milestone 73F part 1: the capacity limits live in core (excel-caps.js) so the
+// shared export checks can say what the workbook can't hold.
+import { SIMPLIFIED_EXCEL_CAPS } from '../../core/excel/excel-caps.js';
+export { SIMPLIFIED_EXCEL_CAPS };
 
 
-export const SIMPLIFIED_EXCEL_CAPS={
-  guardians:{cap:3,label:'Part IV - Guardians',route:'/p4',isPopulated:guardianHasAnyData},
-  remuneration:{cap:27,label:'Part VII — Remuneration',route:'/p7'},
-};
 
 function guardianSlotsFromWorkbook(sheet) {
   const text = (address) => readCellText(sheet.getCell(address));

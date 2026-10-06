@@ -81,6 +81,11 @@ const ALLOWED = {
   // per-schema rules again, not a second listing of filing identity.
   'src/core/form/blank-rows.js': 'per-schema collection membership, not filing identity (moved from prune-cards.js, MS 73V)',
   'src/core/form/collections.js': "each form's list rules, keyed by filing type and list because the schemas differ (MS 73V)",
+  // Milestone 73F part 1: the seven export-check engines, registered by
+  // engine id (the Annual family is one engine), each with its own workbook
+  // capacity checks and sidebar-only prompts -- per-engine behaviour, not a
+  // second listing of filing identity.
+  'src/core/validation/engines/index.js': "the export-check engines, keyed by engine id, with each engine's capacity checks and prompts (MS 73F part 1)",
   // Per-type dashboard presentation/derived-stat logic (headline figures,
   // deadlines) -- behavior that depends on filing type, not a second
   // listing of the identity registry itself.

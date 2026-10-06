@@ -1,0 +1,244 @@
+// Milestone 73F part 1: the seven export validators as shared engines.
+//
+// Each form's checks moved, unchanged, out of its lazily loaded feature into
+// src/core/validation/engines/, taking the filing as an argument; the old
+// validate<Engine>() functions stay as thin wrappers, so every caller -- the
+// export gate, the page checklist, the readiness card, completion.js -- is
+// untouched. This spec proves:
+//   1. each wrapper returns the same issues, in the same order, as the
+//      validator did before the move -- recorded from the pre-move code over
+//      the completion golden's variants (tests/unit/support/filing-variants.js)
+//      into tests/baseline/ms73-validator-golden.json, the clock fixed;
+//   2. evaluate<Engine>(filing) returns what Preview and the export gate see
+//      today -- blockers with their codes, routes, whether they can be
+//      overridden and which outputs they block; the advisories; and the
+//      sidebar-only prompts -- without changing the filing.
+//
+// A deliberate change to a validator regenerates the record
+// (PG_UPDATE_GOLDEN=1 npx vitest run tests/unit/validator-engines.spec.js)
+// and says why in its note.
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
+import { withFilingInView } from '../../src/core/state.js';
+import { filingsFor } from './support/filing-variants.js';
+
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+const GOLDEN = path.join(root, 'tests/baseline/ms73-validator-golden.json');
+const UPDATE = process.env.PG_UPDATE_GOLDEN === '1';
+const NOTE = 'Milestone 73F part 1: what each export validator returned before the move to src/core/validation/engines/, '
+  + 'over tests/unit/support/filing-variants.js\'s variants, with the clock at 2026-10-05 noon.';
+const json = (x) => JSON.parse(JSON.stringify(x));
+
+// Each distinct issue is stored once; a result is the list of its issues'
+// numbers, and each variant names its result -- one line each, so a
+// regeneration changes only the lines whose outcome changed.
+function writeGolden(record) {
+  const line = (x) => JSON.stringify(x);
+  const types = Object.entries(record.types)
+    .map(([type, rows]) => `  ${line(type)}: [\n${rows.map((r) => `   ${line(r)}`).join(',\n')}\n  ]`);
+  fs.writeFileSync(GOLDEN, `{\n "note": ${line(record.note)},\n "issues": [\n${record.issues.map((r) => `  ${line(r)}`).join(',\n')}\n ],\n "results": [\n${record.results.map((r) => `  ${line(r)}`).join(',\n')}\n ],\n "types": {\n${types.join(',\n')}\n }\n}\n`);
+}
+
+// The validator each engine's feature exports.
+const FEATURES = {
+  guardian: ['guardian-inventory', 'validateGuardian'],
+  annual: ['annual-accounting', 'validateAnnual'],
+  simplified: ['simplified-accounting', 'validateSimplified'],
+  planInitial: ['plan-initial', 'validatePlanInitial'],
+  planAnnual: ['plan-annual', 'validatePlanAnnual'],
+  planMinor: ['plan-minor', 'validatePlanMinor'],
+  planSimplified: ['plan-simplified', 'validatePlanSimplified'],
+};
+
+let m;
+beforeAll(async () => {
+  vi.stubGlobal('window', globalThis);
+  vi.useFakeTimers({ toFake: ['Date'] });
+  vi.setSystemTime(new Date('2026-10-05T12:00:00'));
+  const [registry, guardianModel, fixtures, engines, preflight, supplemental, capacity, caps, b4Plan, b4Pages, issues] = await Promise.all([
+    import('../../src/core/filing/filing-registry.js'),
+    import('../../src/core/filing/models/guardian.js'),
+    import('../e2e/support/fixtures.ts'),
+    import('../../src/core/validation/engines/index.js'),
+    import('../../src/core/filing/output-preflight.js'),
+    import('../../src/core/pdf/supplemental-pdf.js'),
+    import('../../src/core/excel/excel-capacity.js'),
+    import('../../src/core/excel/excel-caps.js'),
+    import('../../src/core/excel/b4-export-plan.js'),
+    import('../../src/core/excel/b4-register-pages.js'),
+    import('../../src/core/validation/issue-registry.js'),
+  ]);
+  const features = {};
+  for (const [engine, [dir]] of Object.entries(FEATURES)) features[engine] = await import(`../../src/features/${dir}/index.js`);
+  m = { registry, guardianModel, fixtures, features, engines, preflight, supplemental, capacity, caps, b4Plan, b4Pages, issues };
+}, 120_000);
+afterAll(() => {
+  vi.useRealTimers();
+  vi.unstubAllGlobals();
+});
+
+/** The feature's own validator (the wrapper, after the move), on this filing. */
+function validatorIssues(filing, type) {
+  const engine = m.registry.formEngine(type);
+  const fn = m.features[engine][FEATURES[engine][1]];
+  return withFilingInView(filing, () => fn(filing));
+}
+
+describe('73F part 1: every validator wrapper returns what the validator did before the move', () => {
+  test('all nine identities, every variant: the same issues, in the same order', () => {
+    const golden = UPDATE ? { note: NOTE, issues: [], results: [], types: {} } : JSON.parse(fs.readFileSync(GOLDEN, 'utf8'));
+    const record = { note: NOTE, issues: [], results: [], types: {} };
+    const seen = new Map();
+    const seenIssue = new Map();
+    const intern = (issue) => {
+      const k = JSON.stringify(issue);
+      if (!seenIssue.has(k)) { seenIssue.set(k, record.issues.length); record.issues.push(issue); }
+      return seenIssue.get(k);
+    };
+    const expand = (numbers) => numbers.map((i) => golden.issues[i]);
+    const counts = {};
+    for (const type of m.registry.FILING_TYPE_KEYS ?? Object.keys(m.registry.FILING_REGISTRY)) {
+      const expected = golden.types[type] || [];
+      const rows = [];
+      let n = 0;
+      for (const [label, filing] of filingsFor(type, m)) {
+        const before = json(filing);
+        const outcome = json(validatorIssues(filing, type));
+        expect(json(filing), `${type} -- ${label}: the validator changed nothing`).toStrictEqual(before);
+        if (UPDATE) {
+          const numbers = outcome.map(intern);
+          const k = JSON.stringify(numbers);
+          if (!seen.has(k)) { seen.set(k, record.results.length); record.results.push(numbers); }
+          rows.push([label, seen.get(k)]);
+        } else {
+          expect(label, `${type}: variant ${n}`).toBe(expected[n]?.[0]);
+          expect(outcome, `${type} -- ${label}`).toStrictEqual(expand(golden.results[expected[n][1]]));
+        }
+        n++;
+      }
+      if (UPDATE) record.types[type] = rows;
+      else expect(n, `${type}: every recorded variant was built`).toBe(expected.length);
+      counts[type] = n;
+    }
+    if (UPDATE) writeGolden(record);
+    for (const [type, n] of Object.entries(counts)) expect(n, type).toBeGreaterThan(40);
+  }, 300_000);
+});
+
+// What each output's gate computes today, on its own copy: Preview, Print and
+// the PDF judge the form's checks and its supporting documents (each
+// print.js's baseIssues); Save as Excel the form's checks plus the workbook's
+// capacity (each excel.js's doSaveExcel()).
+const CAPABILITIES = ['preview', 'print', 'pdf', 'excel'];
+const typed = (type) => ({ ...json(m.registry.initializeEmptyData(type)), inventoryType: type });
+function todaysGates(filing, type) {
+  const engine = m.registry.formEngine(type);
+  const validate = m.features[engine][FEATURES[engine][1]];
+  const gate = (base) => {
+    const copy = json(filing);
+    return withFilingInView(copy, () => m.preflight.prepareFilingOutput(copy, () => base(copy)));
+  };
+  const preview = gate((d) => [...validate(d), ...m.supplemental.getSupplementalFilingIssues(d)]);
+  const excelBase = gate((d) => validate(d));
+  const d = json(filing);
+  const b4 = () => m.b4Plan.planSchB4Export(d.schB4, d.schB4Accounts, m.b4Pages.SCH_B4_ACCOUNT_BLOCKS).problems
+    .map((p) => m.issues.createIssue(`excel.capacity.${type}.schB4-${p.code}`, {
+      message: p.message, label: 'Schedule B-4 — All Other Disbursements', section: 'Schedule B-4 — All Other Disbursements', route: '/schb4',
+    }));
+  const capacity = engine === 'guardian' ? m.capacity.getExcelCapacityIssues('guardian', d, m.caps.GUARDIAN_EXCEL_CAPS)
+    : engine === 'simplified' ? m.capacity.getExcelCapacityIssues('simplified', d, m.caps.SIMPLIFIED_EXCEL_CAPS)
+      : engine === 'annual' ? [...m.capacity.getExcelCapacityIssues(type, d, m.caps.ANNUAL_EXCEL_CAPS), ...b4()]
+        : [];
+  const only = (list, cap) => json(list.filter((i) => !i.capabilities || i.capabilities.includes(cap)));
+  return {
+    advisories: json(preview.advisories),
+    byCapability: Object.fromEntries(CAPABILITIES.map((cap) => [cap,
+      cap === 'excel' ? only([...excelBase.structuredIssues, ...capacity], cap) : only(preview.structuredIssues, cap)])),
+  };
+}
+
+describe('73F part 1: evaluate<Engine>(filing) returns what Preview and the export gate see today', () => {
+  test('every identity and variant: each output\'s blockers and the advisories match, and the filing is untouched', () => {
+    for (const type of m.registry.FILING_TYPE_KEYS ?? Object.keys(m.registry.FILING_REGISTRY)) {
+      for (const [label, variant] of filingsFor(type, m)) {
+        // A filing record carries its type (the case file's ward); the
+        // generator's data does not.
+        const filing = { ...variant, inventoryType: type };
+        const before = json(filing);
+        const result = m.engines.evaluateFiling(filing);
+        expect(json(filing), `${type} -- ${label}: evaluate changed the filing`).toStrictEqual(before);
+        const today = todaysGates(filing, type);
+        for (const cap of CAPABILITIES) {
+          expect(json(result.blockers.filter((i) => !i.capabilities || i.capabilities.includes(cap))), `${type} -- ${label}: ${cap}`)
+            .toStrictEqual(today.byCapability[cap]);
+        }
+        expect(json(result.advisories), `${type} -- ${label}: advisories`).toStrictEqual(today.advisories);
+        for (const b of result.blockers) {
+          expect(typeof b.code, `${type} -- ${label}`).toBe('string');
+          expect(Array.isArray(b.capabilities) && b.capabilities.length > 0, `${type} -- ${label}: ${b.code} names the outputs it blocks`).toBe(true);
+          expect(typeof b.bypassable, `${type} -- ${label}: ${b.code}`).toBe('boolean');
+        }
+      }
+    }
+  }, 900_000);
+
+  test('a supporting-document problem blocks Preview, Print and the PDF, never Excel; a capacity problem only Excel', () => {
+    const d = typed('guardian');
+    d.scheduleDocs = { a1: { files: [{ name: 'note.txt', dataUrl: 'data:text/plain;base64,aGVsbG8=' }] } };
+    d.scheduleA1 = Array.from({ length: 21 }, (_, i) => ({ ...m.guardianModel.mk.a1(), propertyDescription: `House ${i + 1}` }));
+    const { blockers } = m.engines.evaluateGuardian(d);
+    expect(blockers.find((b) => b.code === 'supplemental.not-pdf')?.capabilities).toEqual(['preview', 'print', 'pdf']);
+    expect(blockers.find((b) => /^excel\.capacity\./.test(b.code))?.capabilities).toEqual(['excel']);
+  });
+
+  test('a date still being typed is reported, and the filing keeps its drafts (Preview would commit the valid one)', () => {
+    const d = typed('annual');
+    d.__fieldDrafts = { periodFrom: { kind: 'date', rawValue: '13/45/2026' }, periodTo: { kind: 'date', rawValue: '12/31/2026' } };
+    const before = json(d);
+    const { blockers } = m.engines.evaluateAnnual(d);
+    expect(json(d)).toStrictEqual(before);
+    const draftFor = (path) => blockers.filter((b) => b.path === path && b.code === 'field.date.invalid');
+    expect(draftFor('periodFrom')).toHaveLength(1);
+    expect(draftFor('periodTo')).toHaveLength(0);
+  });
+
+  test('prompts: the sidebar-only questions, each with its words and path, gone once answered', () => {
+    const codes = (r) => r.prompts.map((p) => p.code);
+    const annual = typed('annual');
+    let r = m.engines.evaluateAnnual(annual);
+    expect(r.prompts.filter((p) => /no-items/.test(p.code))).toHaveLength(14);
+    expect(r.prompts.find((p) => p.code === 'prompt.annual.no-items.scha')).toEqual({
+      code: 'prompt.annual.no-items.scha', route: '/scha', label: 'Schedule A — Income: add an entry, or tick "I verify there are no items to report"',
+      path: 'scheduleNoItems.scha', sidebarOnly: true,
+    });
+    expect(r.prompts.some((p) => p.path === 'bondDepositoryState' && p.route === '/p9')).toBe(true);
+    annual.scheduleNoItems = { scha: true };
+    annual.schB1 = [{ payee: 'Attorney' }];
+    annual.bondDepositoryState = 'bond';
+    r = m.engines.evaluateAnnual(annual);
+    expect(codes(r)).not.toContain('prompt.annual.no-items.scha');
+    expect(codes(r)).not.toContain('prompt.annual.no-items.schb1');
+    expect(r.prompts.some((p) => p.path === 'bondDepositoryState')).toBe(false);
+    expect(r.prompts.every((p) => p.sidebarOnly === true)).toBe(true);
+
+    const initial = typed('planInitial');
+    expect(codes(m.engines.evaluatePlanInitial(initial))).toContain('prompt.planInitial.q7');
+    initial.q7Medicare = true;
+    expect(codes(m.engines.evaluatePlanInitial(initial))).not.toContain('prompt.planInitial.q7');
+
+    const planAnnual = typed('planAnnual');
+    expect(m.engines.evaluatePlanAnnual(planAnnual).prompts.some((p) => p.route === '/p4' && p.path === 'q3BenefitsNone')).toBe(true);
+    expect(m.engines.evaluateGuardian(typed('guardian')).prompts.some((p) => p.route === '/d4')).toBe(true);
+  });
+
+  test('the wrappers and the registry hand out the same checks; a wrong or unknown filing fails loudly', () => {
+    const d = typed('planMinor');
+    expect(json(withFilingInView(d, () => m.features.planMinor.validatePlanMinor()))).toStrictEqual(json(m.engines.engineChecks('planMinor')(d)));
+    expect(m.engines.ENGINE_IDS).toEqual(['guardian', 'annual', 'simplified', 'planInitial', 'planAnnual', 'planMinor', 'planSimplified']);
+    expect(() => m.engines.evaluateAnnual(d)).toThrow('evaluate for "annual" was handed a "planMinor" filing');
+    expect(() => m.engines.evaluateFiling({ inventoryType: 'nonsense' })).toThrow(/No export checks registered/);
+    expect(() => m.engines.engineChecks('nonsense')).toThrow(/No export checks registered/);
+  });
+});

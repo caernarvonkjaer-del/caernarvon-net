@@ -5,8 +5,8 @@
 **Draft. Every decision is settled (2026-10-04 and 2026-10-05). Built so
 far: 73U (2026-10-04, `5b8849b`), 73V (2026-10-05, `8b96aa3`), 73C
 (2026-10-05, `861b6a9`, brought forward from its place in the build order at the
-requester's choice) 73D (2026-10-05, `c8e84fe`, likewise) and 73J part 1 (2026-10-05), each
-approved by name.** Nothing else is approved.
+requester's choice) 73D (2026-10-05, `c8e84fe`, likewise), 73J part 1 (2026-10-05, `d819c4a`)
+and 73F part 1 (2026-10-06), each approved by name.** Nothing else is approved.
 Building any other item, or any part of a split item, needs the requester's
 named approval of that item or part (AGENTS.md §3).
 
@@ -45,7 +45,7 @@ recorded as **Pinellas Clerk practice**, not as a reading of a statute or rule
 | 3 | 73C | **"+ Add Co-Guardian" does nothing** on all four Plans | High | **Built** (2026-10-05) |
 | 4 | 73D | Ticking and unticking **"This item is a vehicle"** erases the Description and the safe-deposit answer; hidden Plan "Explanation" text still prints | High | **Built** (2026-10-05) |
 | 5 | 73E | **An Excel import replaces the filing unasked** (the Simplified's Cancel half-applies it), can turn a Trust into an Annual, and changes shared people's records in other filings unseen | High | Two |
-| 6 | 73F | **A section shows ✓ and Print Preview then blocks it**; asterisks don't match what is enforced; a misspelled county passes everywhere | High | Three |
+| 6 | 73F | **A section shows ✓ and Print Preview then blocks it**; asterisks don't match what is enforced; a misspelled county passes everywhere | High | Three (part 1 **built** 2026-10-06) |
 | 7 | 73G | A loss typed positive is **added** unwarned; the Clerk's "(1000)" is stored as **+1000**; negatives are refused, shown as positive, or **zeroed on every page drawn**; "$1,234.56" in the Simplified's remuneration files as **$0.00** | High | Two |
 | 8 | 73H | Dates print as **2025-01-01** on several screens; negative amounts appear **five ways**; Plan Q11 prints a bare number | Medium | One |
 | 9 | 73I | The dashboard marks an annual accounting **overdue early: 0–3 days for a month-end period, 16–32 days for a mid-month one**; a Final gets a due date with no basis | Medium | One |
@@ -133,7 +133,7 @@ behaviour on its own except where its row says so.
 | 2 | 73J part 1 — one change event | — | `src/core/form/form-contract.js`, a new `src/core/model-change.js`, every committed mutation path (row actions, New Year, conversion, Sync, Link Person, Merge, year switch) | new `tests/unit/model-change-event.spec.js` — **Built** 2026-10-05 |
 | 3 | 73K part 1 — why the page is drawn | 73V | `src/core/navigation/router.js` and its callers | `router.spec.js`; `npm run check:types` |
 | 4 | 73G part 1 — the amount codec | — | `form-contract.js`, `form-fields.js`, `guardian-inventory/form-binding.js`, `form-runtime.js`, `share-cell.js`, the three importers' amount readers | new `tests/unit/amount-codec.spec.js`; the year-rollover and conversion goldens |
-| 5 | 73F part 1 — shared checks | — | the seven validators moved to `src/core/validation/engines/` with `evaluate<Engine>()`, a registry, `validate<Engine>()` kept as wrappers, `output-preflight.js` | the existing validator and export-gate units; a wrapper-equivalence test; completion golden unchanged |
+| 5 | 73F part 1 — shared checks | — | the seven validators moved to `src/core/validation/engines/` with `evaluate<Engine>()`, a registry, `validate<Engine>()` kept as wrappers, `output-preflight.js` | the existing validator and export-gate units; a wrapper-equivalence test; completion golden unchanged — **Built** 2026-10-06 |
 | 6 | 73E part 1 — the import transaction (no importer connected) | 73J p1 | new `src/core/excel/import-transaction.js`, `import-keep.js` (exact-name identity), `party-resolver.js`, the activity log | new `tests/unit/import-transaction.spec.js` (synthetic adapters) |
 | 7 | 73T part 1 — the workbook contract | 73E p1, 73G p1 | new `src/core/excel/workbook-contract/` (one per form, the importers' adapters), `excel-engine.js` | `excel-write-targets.spec.js`, `export-manifests.ts`, new round-trip and hand-filled specs |
 | 8 | 73C | 73V | `plan-rows.js`, Inventory `index.js` (D-1) | new `tests/e2e/plan-add-co-guardian.spec.ts` — **Built** `861b6a9`, ahead of rows 2–7 at the requester's choice |
@@ -956,6 +956,74 @@ Codex's second review):
 **No behaviour change in this part**: the existing validator tests, the
 export-gate tests and the completion golden pass unchanged, and a new test
 proves each wrapper returns the same issues, in the same order, as before.
+
+### Build record, part 1 — BUILT 2026-10-06 (approved by name by the requester, 2026-10-06)
+
+**What changed for a filer:** nothing — by design. Every check, message,
+order, page, sidebar mark and export decision is what it was; the proof is
+below.
+
+**How:**
+
+- **The engines.** The seven export validators moved into
+  `src/core/validation/engines/` (`guardian.js`, `annual.js`, `simplified.js`
+  and the four Plans'), each as `collect<Engine>Issues(d)` taking the filing as
+  an argument: the code unchanged but for its opening (checked against the
+  committed originals with a parser, character for character, the Annual's one
+  whitespace difference aside) and one call — the Annual's reconciliation
+  check now reads the filing it is handed, where it read the open one through
+  `annualReconcileState()`'s default. The few helpers they need moved with
+  them and are imported back by the features. Each feature's
+  `validate<Engine>()` is now a one-line wrapper, so every caller — the export
+  gate, the page checklist, the readiness card, `completion.js` — is untouched.
+- **Their dependencies in core.** Core may not import a feature, and three
+  things they need lived in features: the Annual family's totals
+  (`src/core/accounting/annual-totals.js`), the Simplified's guardian address
+  reconciliation (`models/simplified.js`) and the three workbooks' capacity
+  limits (`src/core/excel/excel-caps.js`). Each moved unchanged; the old
+  modules re-export them. (The proposal's "their dependencies are already
+  core modules" was true of all but these.)
+- **`evaluate<Engine>(filing)`** (`engines/index.js`, registered by engine
+  id) returns `{ blockers, advisories, prompts }`: the blockers are exactly
+  what Preview, Print, the PDF and Save as Excel judge today — the form's
+  checks, a supporting document's problems, a date still being typed, the
+  filing's identity problems and the workbook's capacity — each issue with
+  its code, section, label, path, route, whether it can be overridden and
+  which outputs it blocks; the advisories are "Review recommended"'s; the
+  prompts are the sidebar-only questions (each Annual-family schedule's "no
+  items" box, the bond question, a Plan's certificate, the Annual Plan's 3G,
+  the Initial Plan's Q7) with the words and paths the pages use. It works on a
+  copy, with the stored date drafts committed into the copy as
+  `prepareFilingOutput()` does for real, so the filing is never touched — to
+  do that, `output-preflight.js`'s issue collection was split out of
+  `prepareFilingOutput()` unchanged (`collectOutputIssues()`). Nothing in the
+  app reads it yet; `GuardianForms.testing.validate.evaluate()` exposes it
+  for part 2's tests.
+
+**Tests:**
+
+- New `tests/unit/validator-engines.spec.js` (6). **Same issues, same
+  order:** every wrapper against `tests/baseline/ms73-validator-golden.json`,
+  recorded from the pre-move validators over the completion golden's 5,003
+  variants of all nine identities (the variants moved, unchanged, to
+  `tests/unit/support/filing-variants.js`), the clock fixed; 721 distinct
+  issues in 1,288 distinct results. **What the gates see:** over every
+  variant, `evaluate`'s blockers for each output equal that output's gate
+  today, the advisories match and the filing is untouched; a
+  supporting-document problem blocks Preview, Print and the PDF only, a
+  capacity problem only Excel; a date being typed is reported and the drafts
+  kept; the prompts carry their words and go once answered; a wrong or
+  unknown filing fails loudly.
+- **Not vacuous:** one word changed in one engine's message fails the
+  golden; the gate comparison found the Annual's reconciliation check still
+  reading the open filing (fixed above).
+- Changed: `checklist-export-parity.spec.js` reads the checks from the
+  engines (same findings); `completion-parity.spec.js` imports the shared
+  variants (its golden unchanged); `filing-type-enumeration-guard.spec.js`
+  documents the engines registry.
+- Full unit suite passes; `npm run check:types` clean. **Full regression: not run** — the
+  requester chose to push on the unit proofs (2026-10-06); the next full
+  regression covers this part.
 
 ### Design — part 2: the screens use them
 
