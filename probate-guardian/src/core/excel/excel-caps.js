@@ -61,4 +61,7 @@ export const ANNUAL_EXCEL_CAPS={
 export const SIMPLIFIED_EXCEL_CAPS={
   guardians:{cap:3,label:'Part IV - Guardians',route:'/p4',isPopulated:rowStarted},
   remuneration:{cap:27,label:'Part VII — Remuneration',route:'/p7'},
+  // Milestone 73T part 4 (row 8): PARTS V, VI holds four recipients, counted as
+  // the export writes them -- the started ones, in order.
+  certRecipients:{cap:4,label:'Part VI — Certificate of Service recipients',route:'/p6',isPopulated:rowStarted},
 };

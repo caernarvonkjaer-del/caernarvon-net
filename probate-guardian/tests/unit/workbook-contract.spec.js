@@ -29,7 +29,8 @@
 // field the workbook has no box for is kept, not lost.
 //
 // Milestone 73T part 2: the Inventory runs on its contract; part 3, the Annual
-// family. Each form's fixed rows have cases of their own at the end.
+// family; part 4, the Simplified. Each form's fixed rows have cases of their
+// own at the end.
 import { beforeAll, describe, expect, test, vi } from 'vitest';
 
 vi.mock('../../src/core/navigation/router.js', () => ({ navigate: () => {}, renderPage: () => {}, getCurrentPage: () => '/' }));
@@ -45,7 +46,7 @@ const { SIMPLIFIED_CONTRACT } = await import('../../src/core/excel/workbook-cont
 const contractIndex = await import('../../src/core/excel/workbook-contract/index.js');
 const { partIIIGuardianCells } = await import('../../src/core/excel/guardian-inventory-pages.js');
 const { checkExcelCapacity } = await import('../../src/core/excel/excel-capacity.js');
-const { ANNUAL_EXCEL_CAPS } = await import('../../src/core/excel/excel-caps.js');
+const { ANNUAL_EXCEL_CAPS, SIMPLIFIED_EXCEL_CAPS } = await import('../../src/core/excel/excel-caps.js');
 const partIIINameBox = (i) => partIIIGuardianCells(i).find((f) => f.key === 'name').box;
 const { sameName } = await import('../../src/core/excel/import-keep.js');
 const manifests = await import('../e2e/support/export-manifests.ts');
@@ -92,7 +93,8 @@ function applyDraft(filing, draft, rowSources = {}) {
   for (const [list, sources] of Object.entries(rowSources || {})) out[list] = sources.map((i) => (out[list] || [])[i]);
   for (const [k, v] of Object.entries(draft)) {
     if (k === 'guardians' && Array.isArray(v)) {
-      out[k] = v.map((row, i) => { const old = (out[k] || [])[i]; return old && sameName(old.name, row.name) ? { ...old, ...row } : row; });
+      // The same person as the transaction decides it: the same name, or a row that carries none (the filing keeps it).
+      out[k] = v.map((row, i) => { const old = (out[k] || [])[i]; return old && (!('name' in row) || sameName(old.name, row.name)) ? { ...old, ...row } : row; });
     } else out[k] = isRec(v) && isRec(out[k]) ? { ...out[k], ...v } : v;
   }
   return out;
@@ -185,16 +187,13 @@ const FORMS = [
     form: 'simplified', contract: SIMPLIFIED_CONTRACT, manifest: () => manifests.simplifiedManifest(), base: fixtures.MINIMAL_VALID_SIMPLIFIED, ctx: {},
     allowedTargets: new Map(),
     lockedInClerkForm: [],
-    roundTripLosses: new Map([
-      ['guardians.0.name', [1, 4, "Guardian #1's name box is the form's link to Part I, with no value until Excel calculates it"]],
-    ]),
+    roundTripLosses: new Map(),
     roundTripSetup: () => {},
+    // Guardian #1's name survives since 73T part 4 (row 1).
     roundTripExtraPaths: ['guardians.0.name'],
-    // Part V's own date box H17 (73T row 10): the app writes and reads only the certificate's H41.
-    handFilledBoxes: () => [{ path: 'attorney_signatureDate', sheet: 'PARTS V, VI ', cell: 'H17', kind: 'date', value: 45000 }],
-    handFilledLosses: new Map([
-      ['attorney_signatureDate', [10, 4, "Part V's date box H17 is never read; the certificate's H41 is read into it"]],
-    ]),
+    // Since 73T part 4 the app's boxes are the Clerk's (Part V's H17).
+    handFilledBoxes: () => [],
+    handFilledLosses: new Map(),
   },
 ];
 
@@ -396,12 +395,13 @@ describe('the import adapter (workbook-contract/index.js)', () => {
     expect(index.workbookTypeOf(undefined, 'guardian')).toBe('guardian');
   });
 
-  test("a draft goes through today's import text passes: names re-cased, quotation marks removed (73T rows 11 and 19)", async () => {
+  test("a draft goes through the import's text passes: a name formatted as typing formats it, its quotation marks kept (73T rows 11 and 19); < > and backticks removed", async () => {
     const wb = await templateWorkbook('simplified');
     wb.getWorksheet('PARTS I, II ').getCell('C4').value = 'jane "jj" doe';
+    wb.getWorksheet('PARTS I, II ').getCell('D17').value = 'plenary <b>`x`</b>';
     const draft = index.draftFromWorkbook(wb, 'simplified');
-    expect(draft.wardName).not.toContain('"');
-    expect(draft.wardName.startsWith('Jane')).toBe(true);
+    expect(draft.wardName).toBe('Jane "jj" Doe');
+    expect(draft.typeOfGuardianship, 'not a name field: as typed, filtered').toBe('plenary bx/b');
   });
 });
 
@@ -662,6 +662,131 @@ describe("the Annual's casing table matches the fields its pages format", () => 
     }
     // Part I's attorney renders under three labels (one page each); one field.
     const table = Object.fromEntries(Object.entries(ANNUAL_CONTRACT.casing).map(([k, v]) => [k, [...v].sort()]));
+    expect(Object.fromEntries(Object.entries(found).map(([k, v]) => [k, [...v].sort()]))).toEqual(table);
+  });
+});
+
+// Milestone 73T part 4: the Simplified's rows of the 73T table, fixed. One
+// export of a filing showing every case, saved and opened again, then the
+// import cases the export can't produce, made in the opened workbook.
+describe("the Simplified's 73T rows, fixed in part 4", () => {
+  const STAMP = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAAAAonXk=';
+  const P56 = 'PARTS V, VI ';
+  let wrote, back;
+  const filingOf = (patch) => merge(merge({ ...json(initializeEmptyData('simplified')), inventoryType: 'simplified' }, json(fixtures.MINIMAL_VALID_SIMPLIFIED)), json(patch));
+  const cell = (sheet, ref) => cellValue(back.getWorksheet(sheet).getCell(ref));
+  const read = (filing) => contractIndex.readWorkbookDraft(back, 'simplified', { filing });
+
+  beforeAll(async () => {
+    wrote = filingOf({
+      guardian: 'Ann Guardian',
+      guardians: [{ name: 'Ann Guardian', signatureState: 'stamp', signatureImage: STAMP, certifiesService: true }],
+      attorney_signatureDate: '2026-03-01', certAttySignDate: '2026-03-05', attorney_signatureState: 'typed',
+      startingBalance: '', interestIncome: 12.5,
+      certNoRecipients: '', certRecipients: [{ name: '' }, { name: 'Pat Recipient', line2: '1 Main St' }, { name: '' }, { name: '' }],
+      certAttyBarNumber: '00011111',
+    });
+    const wb = await templateWorkbook('simplified');
+    writeContract(wb, SIMPLIFIED_CONTRACT, wrote, {});
+    back = await reopened(wb);
+  }, 240_000);
+
+  test("row 1: re-importing the filing's own workbook keeps Guardian #1 -- name, stamp, served the copies; a filing with none takes Part I's guardian", () => {
+    expect(cell('PARTS III, IV', 'F15'), "the Clerk's link, never written").toBe(null);
+    const result = applyDraft(wrote, read(wrote).draft);
+    expect(result.guardians[0]).toMatchObject({ name: 'Ann Guardian', signatureState: 'stamp', signatureImage: STAMP, certifiesService: true });
+    const blank = { ...json(wrote), guardians: [{ name: '' }] };
+    expect(applyDraft(blank, read(blank).draft).guardians[0].name).toBe('Ann Guardian');
+  });
+
+  test("row 2: the attorney's signature choice is never re-cased", () => {
+    const { draft } = read(wrote);
+    expect('attorney_signatureState' in draft).toBe(false);
+    expect(applyDraft(wrote, draft).attorney_signatureState).toBe('typed');
+  });
+
+  test('row 8: the started recipients are written in order and come back; more than four stops Save as Excel', () => {
+    expect([cell(P56, 'B27'), cell(P56, 'B28'), cell(P56, 'I27')]).toEqual(['Pat Recipient', '1 Main St', null]);
+    expect(read(wrote).draft.certRecipients).toEqual([{ name: 'Pat Recipient', line2: '1 Main St', line3: '' }]);
+    const five = Array.from({ length: 5 }, (_, i) => ({ name: `R${i}` }));
+    expect(checkExcelCapacity(SIMPLIFIED_EXCEL_CAPS, { certRecipients: five }).map((o) => [o.key, o.count, o.cap])).toEqual([['certRecipients', 5, 4]]);
+  });
+
+  test("row 10: Part V's own date box H17 gets the attorney's date and the certificate's H41 its own; each comes back to its field", () => {
+    expect([cell(P56, 'H17'), cell(P56, 'H41')]).toEqual([Date.UTC(2026, 2, 1) / 86400000 + 25569, Date.UTC(2026, 2, 5) / 86400000 + 25569]);
+    expect(read(wrote).draft).toMatchObject({ attorney_signatureDate: '2026-03-01', certAttySignDate: '2026-03-05' });
+    back.getWorksheet(P56).getCell('H17').value = null;
+    expect('attorney_signatureDate' in read(wrote).draft, 'an older workbook (H17 blank) keeps the filing\'s date').toBe(false);
+    back.getWorksheet(P56).getCell('H17').value = new Date(Date.UTC(2026, 2, 1));
+  });
+
+  test('row 13: a blank Starting Balance is written blank and comes back blank', () => {
+    expect([cell('PARTS I, II ', 'H19'), cell('PARTS I, II ', 'G22')]).toEqual([null, 12.5]);
+    expect(read(wrote).draft.startingBalance).toBe('');
+  });
+
+  test('row 14: "no recipients are required" answered Yes writes no recipients; an import keeps the answer unless the workbook lists recipients', async () => {
+    const none = { ...json(wrote), certNoRecipients: 'Yes' };
+    const wb = await templateWorkbook('simplified');
+    writeContract(wb, SIMPLIFIED_CONTRACT, none, {});
+    expect(cellValue(wb.getWorksheet(P56).getCell('B27')), 'the PDF prints none, and so does the workbook').toBe(null);
+    expect(applyDraft(none, contractIndex.readWorkbookDraft(wb, 'simplified', { filing: none }).draft).certNoRecipients).toBe('Yes');
+    expect(applyDraft(none, read(none).draft).certNoRecipients, 'contradicted by listed recipients').toBe('');
+  });
+
+  test("row 18: an import keeps the certificate's old details the filer hasn't discarded, unless the workbook's differ", () => {
+    expect(applyDraft(wrote, read(wrote).draft).certAttyBarNumber).toBe('00011111');
+    back.getWorksheet(P56).getCell('B43').value = '00022222';
+    expect(applyDraft(wrote, read(wrote).draft).certAttyBarNumber).toBe('00022222');
+    back.getWorksheet(P56).getCell('B43').value = cell(P56, 'B19');
+  });
+
+  test('dates (the requester\'s choice, 2026-10-07): a date typed as US text reads as the day; text that is no date comes back as a date still being typed', () => {
+    back.getWorksheet('PARTS I, II ').getCell('F4').value = '1/5/2001';
+    back.getWorksheet('PARTS I, II ').getCell('E13').value = 'early 2026';
+    const { draft, dateDrafts } = read(wrote);
+    expect(draft.gid).toBe('2001-01-05');
+    expect(draft.periodFrom).toBe('');
+    expect(dateDrafts).toEqual([{ path: 'periodFrom', text: 'early 2026' }]);
+    back.getWorksheet('PARTS I, II ').getCell('F4').value = wrote.gid ? new Date(`${wrote.gid}T00:00:00Z`) : null;
+    back.getWorksheet('PARTS I, II ').getCell('E13').value = wrote.periodFrom ? new Date(`${wrote.periodFrom}T00:00:00Z`) : null;
+  });
+
+  test('the guardians after the third stay where they are, and 74B\'s stamp-only co-guardian keeps its slot', () => {
+    const four = { ...json(wrote), guardians: [{ name: 'Ann Guardian' }, { name: '', signatureState: 'stamp', signatureImage: STAMP }, { name: '' }, { name: 'Dee Fourth', phone: '4' }] };
+    const { draft, rowSources } = read(four);
+    // Guardian #1's name is left out (the filing has one); the stamp-only slot is kept; the fourth follows.
+    expect(draft.guardians.map((g) => g.name)).toEqual([undefined, '', 'Dee Fourth']);
+    expect(rowSources.guardians).toEqual([0, 1, 3]);
+    const result = applyDraft(four, draft, rowSources);
+    expect(result.guardians.map((g) => g.name)).toEqual(['Ann Guardian', '', 'Dee Fourth']);
+    expect(result.guardians[1]).toMatchObject({ signatureImage: STAMP });
+  });
+});
+
+// Milestone 73T part 4: the Simplified's casing table is what its pages type.
+describe("the Simplified's casing table matches the fields its pages format", () => {
+  test("every field the Simplified's pages give a name, address or city/state/ZIP box is in the table, and nothing else", async () => {
+    const { readFileSync } = await import('node:fs');
+    const { inferFieldKind } = await import('../../src/core/form/form-fields.js');
+    const src = readFileSync('src/features/simplified-accounting/index.js', 'utf8');
+    const norm = (p) => p.replace(/\$\{[^}]*\}/g, '*');
+    const found = { name: new Set(), address: new Set(), zip: new Set() };
+    const add = (kind, path) => { if (found[kind]) found[kind].add(norm(path)); };
+    const str = `('(?:[^'\\\\]|\\\\.)*'|"(?:[^"\\\\]|\\\\.)*"|\`[^\`]*\`)`;
+    for (const m of src.matchAll(new RegExp(`inpS(?:WithTooltip)?\\(\\s*${str}\\s*,\\s*${str}`, 'g'))) add(inferFieldKind(norm(m[2].slice(1, -1))), m[1].slice(1, -1));
+    for (const m of src.matchAll(/renderFormField\(\{([^}]*(?:\}[^}]*)*?)\}\)/g)) {
+      const path = /path:\s*(`[^`]*`|'[^']*')/.exec(m[1])?.[1]?.slice(1, -1);
+      const label = /label:\s*(`[^`]*`|'[^']*')/.exec(m[1])?.[1]?.slice(1, -1);
+      const kind = /kind:\s*'([a-zA-Z]+)'/.exec(m[1])?.[1];
+      if (path && label) add(kind || inferFieldKind(norm(label)), path);
+    }
+    for (const m of src.matchAll(/data-form-path="([^"]+)" data-form-format="([a-z-]+)"/g)) add({ name: 'name', address: 'address', 'city-state-zip': 'zip', zip: 'zip' }[m[2]], m[1]);
+    // A guardian's name: its label is built from a nested template string
+    // (`${labels[i]||`Co-Guardian #${i+1}`}'s Name`) this scan can't read; it
+    // renders as a name box.
+    found.name.add('guardians.*.name');
+    const table = Object.fromEntries(Object.entries(SIMPLIFIED_CONTRACT.casing).map(([k, v]) => [k, [...v].sort()]));
     expect(Object.fromEntries(Object.entries(found).map(([k, v]) => [k, [...v].sort()]))).toEqual(table);
   });
 });

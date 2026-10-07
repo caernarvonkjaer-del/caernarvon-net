@@ -173,8 +173,7 @@ const ANNOUNCEMENTS = {
   'src/core/filing/schedule-docs.js': 3,            // a supporting document added, removed, its comment
   'src/core/filing/filing-years.js': 2,             // New Year; a switch to another year
   'src/core/filing/conversion.js': 1,               // a conversion
-  'src/core/excel/import-transaction.js': 1,        // an import as one transaction (73E part 1): the Inventory's since 73T part 2, the Annual family's since part 3
-  'src/features/simplified-accounting/excel.js': 1, // the Simplified's Excel import
+  'src/core/excel/import-transaction.js': 1,        // an import as one transaction (73E part 1): every Excel import since 73T parts 2-4
   'src/features/annual-accounting/filing-type.js': 1, // Annual/Final/Trust
   'src/features/annual-accounting/index.js': 6,     // no-items; add/remove/duplicate row; add/remove B-4 account
   'src/features/guardian-inventory/index.js': 13,   // rows, guardians, recipients, witnesses, the vehicle box and fields, old D-5 details

@@ -2,18 +2,18 @@
 // 73E's transaction takes (src/core/excel/import-transaction.js's
 // runImportTransaction()).
 //
-// 73T parts 2-4 move each form's importer onto it -- the Inventory (part 2),
-// then the Annual family, then the Simplified -- which is where a filer sees
-// the one confirmation, a Cancel that changes nothing and the notice of what
-// was kept. A form's contract carries a `casing` table once its importer has
-// moved; until then its text passes are the ones its own importer runs.
+// 73T parts 2-4 moved each form's importer onto it -- the Inventory (part 2),
+// the Annual family (part 3), the Simplified (part 4) -- which is where a filer
+// sees the one confirmation, a Cancel that changes nothing and the notice of
+// what was kept. Each contract carries a `casing` table: the import formats
+// those fields, as typing does, and no other.
 import { GUARDIAN_CONTRACT } from './guardian.js';
 import { ANNUAL_CONTRACT, WORKBOOK_FILING_TYPE } from './annual.js';
 import { SIMPLIFIED_CONTRACT } from './simplified.js';
 import { getPath, readContract } from './engine.js';
 import { getExcelJS } from '../excel-engine.js';
-import { assertWorkbookWithinLimits, sanitizeImportedText, sanitizeObjectDataInPlace } from '../../security/input-hardening.js';
-import { capitalizeImportedFields, formatAddress, formatCityStateZip, formatName } from '../../form/form-contract.js';
+import { assertWorkbookWithinLimits, sanitizeImportedText } from '../../security/input-hardening.js';
+import { formatAddress, formatCityStateZip, formatName } from '../../form/form-contract.js';
 import { formEngine } from '../../filing/filing-registry.js';
 import { descriptorForAccountingFilingType } from '../../filing/filing-descriptor.js';
 
@@ -81,18 +81,12 @@ export function readWorkbookDraft(workbook, inventoryType, { filing = null, ctx 
   // is never a filing field (the filing keeps its own type, 73E-N2).
   const typeBox = draft[WORKBOOK_FILING_TYPE];
   delete draft[WORKBOOK_FILING_TYPE];
-  if (contract.casing) {
-    for (const entry of contract.entries) {
-      if (entry.fillBlankOnly && filing && String(getPath(filing, entry.path) ?? '').trim()) deletePath(draft, entry.path);
-    }
-    contract.reconcile?.(draft, filing);
-    importedText(draft, contract.casing);
-  } else {
-    // A form whose importer hasn't moved yet: its passes as they are today
-    // (73T rows 2, 11, 17 and 19, fixed as each part connects its form).
-    capitalizeImportedFields(draft);
-    sanitizeObjectDataInPlace(draft);
+  const fillBlankOnly = [...contract.entries.filter((e) => e.fillBlankOnly).map((e) => e.path), ...(contract.fillBlankOnly || [])];
+  for (const path of fillBlankOnly) {
+    if (filing && String(getPath(filing, path) ?? '').trim()) deletePath(draft, path);
   }
+  contract.reconcile?.(draft, filing, report);
+  importedText(draft, contract.casing || {});
   return { draft, rowSources: report.rowSources, dateDrafts: report.unreadableDates, workbookType: workbookTypeOf(typeBox, inventoryType) };
 }
 

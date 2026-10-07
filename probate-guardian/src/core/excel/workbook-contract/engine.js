@@ -188,7 +188,10 @@ export function readContract(workbook, contract, ctx = {}, report = null) {
           let v = spec.codec.read(cell);
           for (const f of (spec.fallback ? spec.fallback(i) : [])) {
             if (!blank(v)) break;
-            const fcell = ws.getCell(f.cell);
+            // A fallback may sit on another sheet (the Simplified's Guardian #1 name: Part I's D16).
+            const fws = f.sheet ? workbook.getWorksheet(f.sheet) : ws;
+            if (!fws) continue;
+            const fcell = fws.getCell(f.cell);
             if (f.unless && f.unless(fcell)) continue;
             cell = fcell;
             v = (f.codec || spec.codec).read(fcell);

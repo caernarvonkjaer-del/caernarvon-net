@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import path from 'node:path';
 import os from 'node:os';
-import { freshStartNoPassword, createWard, createSimplifiedWard, fillMinimalValidSimplifiedWard, crossCheckNavAndSummaryStatus, extractFormContentSnapshot, acceptDynDialog } from './support/target';
+import { freshStartNoPassword, createWard, createSimplifiedWard, fillMinimalValidSimplifiedWard, crossCheckNavAndSummaryStatus, extractFormContentSnapshot, acceptDynDialog, importWorkbookConfirmed } from './support/target';
 
 // Simplified Accounting is the pilot feature extraction (Milestone 2, Phase
 // D of INDEX-SPLIT-PLAN.md) -- these specs go beyond routes.spec.ts's single
@@ -82,7 +82,8 @@ test.describe('simplified-accounting feature module', () => {
 
     const errors: string[] = [];
     page.on('pageerror', (e) => errors.push(e.message));
-    await page.setInputFiles('input[type="file"][accept=".xlsx"]', xlsxPath);
+    // Milestone 73T part 4: the Simplified's import confirms, then gives a notice.
+    await importWorkbookConfirmed(page, xlsxPath);
     // Poll the actual completion signal instead of guessing a timeout -- same
     // idiom annual-mount.spec.ts's own Excel-import test already establishes.
     await page.waitForFunction(() => (window as any).GuardianForms.testing.field('caseNumber') === '2026-CP-000456', { timeout: 10_000 });

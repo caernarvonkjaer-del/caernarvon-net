@@ -7,10 +7,9 @@
 //     format (Part VIII's share and amount boxes);
 //   - read takes the ExcelJS cell and returns the field's value.
 //
-// Part 1 describes the exporters and importers as they are, so several
-// codecs come in the variants the three forms use today (the Inventory reads
-// a blank amount as 0, the Annual as blank; the Simplified reads a date as
-// the cell's text). Where a variant is one of the losses 73T catalogues, the
+// Part 1 described the exporters and importers as they were, so several
+// codecs come in the variants the forms used (the Inventory reads a blank
+// amount as 0, the Annual as blank). Where a variant is one of the losses 73T catalogues, the
 // contract entry using it says so, and the part that connects the form
 // changes it there.
 import { amountForStore } from '../../form/amount-codec.js';
@@ -46,8 +45,13 @@ export const codecs = Object.freeze({
   date: Object.freeze({ kind: 'date', write: (v) => ({ value: v, date: true }), read: (cell) => isoDateFromCell(cell) }),
   /** The Annual's reader: '' for a blank or unreadable date -- and for a bare number (a serial with no date format), which it doesn't read as a date. */
   dateOrBlank: Object.freeze({ kind: 'date', write: (v) => ({ value: v, date: true }), read: (cell) => (typeof raw(cell) === 'number' ? '' : isoDateFromCell(cell) || '') }),
-  /** The Simplified's reader: the cell's text, cut to ten characters. */
-  dateText: Object.freeze({ kind: 'date', write: (v) => ({ value: v, date: true }), read: (cell) => readCellText(cell).substring(0, 10) }),
+  /**
+   * Milestone 73T part 4 (the requester's choice, 2026-10-07): a real date, an
+   * Excel serial, ISO or US-style text read as the day; '' for a blank -- and
+   * for text that isn't a date, which the import brings back as a date still
+   * being typed (engine.js's unreadable-date report).
+   */
+  dateOrBlankAny: Object.freeze({ kind: 'date', write: (v) => ({ value: v, date: true }), read: (cell) => isoDateFromCell(cell) || '' }),
 
   /** The Inventory's amounts: written as stored (0 and blank alike leave the cell empty); a blank cell reads as 0. */
   amountRaw: Object.freeze({
@@ -70,10 +74,13 @@ export const codecs = Object.freeze({
     write: (v) => ({ value: v === '' || v == null ? '' : numValue(v) }),
     read: (cell) => { const v = raw(cell); if (v == null || v === '' || v instanceof Date) return ''; return amountForStore(v); },
   }),
-  /** The Simplified's Part II amounts: written as a number (a blank as 0), read from the cell's text. */
+  /**
+   * The Simplified's Part II amounts: written as a number, a blank as a blank
+   * (Milestone 73T part 4, row 13 -- it used to be 0), read from the cell's text.
+   */
   amountNumberText: Object.freeze({
     kind: 'amount',
-    write: (v) => ({ value: numValue(v) }),
+    write: (v) => ({ value: v === '' || v == null ? '' : numValue(v) }),
     read: (cell) => amountForStore(readCellText(cell)),
   }),
 

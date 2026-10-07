@@ -583,6 +583,8 @@ export function simplifiedManifest(): Manifest {
     b.box(`certRecipients.${i}.line3`, P56, `${c}${r + 2}`, 'text');
   });
   b.box('certAttySignDate', P56, 'H41', 'date');
+  // Milestone 73T part 4 (row 10): Part V's own date box, H17, beneath its "Date" caption.
+  b.box('attorney_signatureDate', P56, 'H17', 'date');
   // Milestone 72H: the certificate's attorney is Part V's (B19/B21/J19/J21 above).
   b.alsoIn('attorney_barNumber', P56, 'B43'); b.alsoIn('attorney_phone', P56, 'B45');
   b.alsoIn('attorney_street', P56, 'J43'); b.alsoIn('attorney_cityStateZip', P56, 'J45');

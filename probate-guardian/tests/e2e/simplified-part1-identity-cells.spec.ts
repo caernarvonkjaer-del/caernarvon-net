@@ -2,7 +2,7 @@ import { test as base, expect } from '@playwright/test';
 import JSZip from 'jszip';
 import path from 'node:path';
 import os from 'node:os';
-import { freshStartNoPassword, createSimplifiedWard, fillMinimalValidSimplifiedWard } from './support/target';
+import { freshStartNoPassword, createSimplifiedWard, fillMinimalValidSimplifiedWard, importWorkbookConfirmed } from './support/target';
 import { readAll } from './support/stream';
 
 // Simplified Annual Accounting's Part I identity block, checked against the
@@ -197,7 +197,8 @@ test.describe('Simplified Part I writes each value beside its own label', () => 
     await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
     const errors: string[] = [];
     page.on('pageerror', (e) => errors.push(e.message));
-    await page.setInputFiles('input[type="file"][accept=".xlsx"]', file);
+    // Milestone 73T part 4: the Simplified's import confirms, then gives a notice.
+    await importWorkbookConfirmed(page, file);
     await page.waitForFunction(
       (w) => (window as any).GuardianForms.testing.field('wardName') === w,
       WARD,

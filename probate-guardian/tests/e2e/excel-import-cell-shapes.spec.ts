@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
-import { freshStartNoPassword, createSimplifiedWard } from './support/target';
+import { freshStartNoPassword, createSimplifiedWard, importWorkbookConfirmed } from './support/target';
 
 // Milestone 53B: the non-vacuous gate for the Excel IMPORT direction.
 //
@@ -87,7 +87,8 @@ test.describe('Excel import: cell shapes the app never exports (Milestone 53B)',
     const errors: string[] = [];
     page.on('pageerror', (e) => errors.push(e.message));
 
-    await page.setInputFiles('input[type="file"][accept=".xlsx"]', xlsxPath);
+    // Milestone 73T part 4: the Simplified's import confirms, then gives a notice.
+    await importWorkbookConfirmed(page, xlsxPath);
     await page.waitForFunction(
       (expected) => (window as any).GuardianForms.testing.field('wardName') === expected,
       EXPECTED.wardName,

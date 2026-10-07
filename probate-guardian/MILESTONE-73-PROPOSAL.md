@@ -6,9 +6,9 @@
 far: 73U (2026-10-04, `5b8849b`), 73V (2026-10-05, `8b96aa3`), 73C
 (2026-10-05, `861b6a9`, brought forward from its place in the build order at the
 requester's choice) 73D (2026-10-05, `c8e84fe`, likewise), 73J part 1 (2026-10-05, `d819c4a`),
-73F part 1 (2026-10-06, `5e9e17b`), 73A (2026-10-06, `83352d0`), 73F part 2 (2026-10-06, `d01edd4`), 73G part 1 (2026-10-06, `69a1b46`), 73E part 1 (2026-10-06, `8e02051`), 73F part 3 (2026-10-06, `67fc66c`), 73I (2026-10-06, `56a7c30`), 73T part 1 (2026-10-07, `4cae1e7`), 73T part 2 (2026-10-07, `2a1cbc5`) and 73T part 3 (2026-10-07), each approved by name.**
+73F part 1 (2026-10-06, `5e9e17b`), 73A (2026-10-06, `83352d0`), 73F part 2 (2026-10-06, `d01edd4`), 73G part 1 (2026-10-06, `69a1b46`), 73E part 1 (2026-10-06, `8e02051`), 73F part 3 (2026-10-06, `67fc66c`), 73I (2026-10-06, `56a7c30`), 73T part 1 (2026-10-07, `4cae1e7`), 73T part 2 (2026-10-07, `2a1cbc5`), 73T part 3 (2026-10-07, `9d2bc72`) and 73T part 4 (2026-10-07), each approved by name.**
 **Approved and not yet built** (2026-10-07, one batch, built in this order
-with a full regression midway and at the end): 73T part 4, 73M (with
+with a full regression midway and at the end): 73M (with
 74C), 73B (then 74P), 73O part 2 (with 74F), 73G part 2 (with 74H), 73H and
 73S. Nothing else is approved. Building any other item, or any part of a
 split item, needs the requester's named approval of that item or part
@@ -2884,6 +2884,10 @@ removed (73T-3).
   in "Amended Form?" (J6). An imported H4 of "Amended " is read as an
   amended filing of the filing's own type (J6 "Yes"), not as an Annual.
   Built in part 3.
+- **The Simplified's dates** (found connecting part 4): read as the
+  Inventory reads them, not as the cell's text cut to ten characters, so a
+  date typed into the Clerk's workbook as text arrives as a date. Built in
+  part 4.
 
 ### Design — part 1: the workbook contract and its checks
 
@@ -3179,6 +3183,62 @@ says nothing (Part XI).
   Part XI's lines. Eight browser specs that import an Annual-family workbook
   answer the confirmation; the bond spec exports the Annual "depository only".
 - **Browser specs: 22 files, 140 tests, all passed** (25.6 min on D:, then the two below rerun): every spec that exports or imports an Annual-family workbook, the transaction's dialog spec, and the specs sharing the import helpers. Two needed changes, both expectations rather than faults: the ward-percentage import spec expected every imported description title-cased (now only the ones the pages format are), and the new Trust case took its "before" snapshot while its own setup's save was still pending. **Red-first:** with the Annual's Excel module set aside, the Trust case fails waiting for the confirmation. Full unit suite: 2,843 passed; `check:types` clean. Full regression: the batch's mid-batch run.
+
+### Build record, part 4 — BUILT 2026-10-07 (approved by name by the requester, 2026-10-07)
+
+**What changed for a filer, on the Simplified Accounting:**
+
+- **Import asks first, and Cancel really cancels.** The old import wrote the
+  ward's name, case number, period, Part II and more before asking "Replace
+  the first three guardian slots…?", and its Cancel left all of that in the
+  filing. Now one confirmation comes before anything changes, Cancel changes
+  and saves nothing, and a notice follows.
+- **Rows 1, 2, 8, 10, 13, 14 and 18, fixed:**
+  - 1: re-importing the filing's own workbook keeps Guardian #1 -- name,
+    signature choice, stamp and "served the copies". The name is read from
+    the Clerk's link F15 when Excel has computed it, else from Part I's
+    guardian (D16), and a filing that names its Guardian #1 keeps that name.
+  - 2: signature choices are never re-cased; the import formats only the
+    fields the pages format as names, addresses or city/state/ZIP.
+  - 8: more than four certificate recipients stops Save as Excel; the
+    started recipients are written in order.
+  - 10: Part V's own date box (H17) gets the attorney's date and the
+    certificate's box (H41) the certificate's, as the PDF prints them; each
+    comes back to its own field (an older workbook's blank H17 keeps the
+    filing's date).
+  - 13: a blank Part II amount is written blank, not $0 (the requester's
+    choice, 2026-10-07).
+  - 14: while "no recipients are required" is answered Yes, the workbook
+    lists no recipients, as the PDF prints none; the answer survives an
+    import unless the workbook lists recipients.
+  - 18: an import keeps the certificate's old attorney details the filer
+    hasn't discarded, unless the workbook's differ (Milestone 72H).
+- **Dates** (the requester's choice, 2026-10-07): read as the Inventory
+  reads them -- a real date, an Excel serial, ISO or US-style text -- where
+  they used to be the cell's text cut to ten characters; text that is no date
+  comes back as a date still being typed.
+- Guardians after the third stay where they are; a co-guardian holding only
+  a stamp keeps their slot (74B), as on the Annual.
+
+**With this part 73T is complete:** all three forms' Excel export and import
+run on their workbook contracts, every import on 73E's transaction, and the
+import's old keyword casing and quotation-mark stripping are gone.
+
+**Tests:**
+
+- `tests/unit/workbook-contract.spec.js`: the Simplified's round trip keeps
+  Guardian #1's name and its hand-filled import loses nothing; a case for
+  each fixed row, the dates and the guardians after the third, from one
+  export; its casing table checked against the pages. **Red-first:** with
+  part 4's contract, adapter, engine, codec and capacity changes set aside,
+  all eight row cases fail, each for its row's reason (row 2's passes either
+  way, as on the Annual).
+- `import-confirm.spec.ts`: the Simplified's real Import -- Cancel leaves the
+  filing byte for byte and saves nothing; Guardian #1 keeps their name and
+  stamp. `export-manifests.ts`: Part V's H17. Three Simplified specs answer
+  the confirmation; `excel-write-targets.spec.js` now reads every exporter
+  from its contract.
+- **Browser specs: 13 files, 99 tests, all passed** (17.5 min on D:): every spec that exports or imports a Simplified workbook, the transaction's dialog spec, and the specs sharing the import helpers. **Red-first:** with the Simplified's Excel module set aside, the new case fails -- the old import's only question is asked after it has written the cover. Full unit suite: 2,853 passed; `check:types` clean. Full regression: the batch's mid-batch run.
 
 ---
 

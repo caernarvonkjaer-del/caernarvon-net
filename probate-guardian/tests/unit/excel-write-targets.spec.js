@@ -7,6 +7,7 @@ globalThis.window = globalThis.window || globalThis;
 const { contractTargets } = await import('../../src/core/excel/workbook-contract/engine.js');
 const { GUARDIAN_CONTRACT } = await import('../../src/core/excel/workbook-contract/guardian.js');
 const { ANNUAL_CONTRACT } = await import('../../src/core/excel/workbook-contract/annual.js');
+const { SIMPLIFIED_CONTRACT } = await import('../../src/core/excel/workbook-contract/simplified.js');
 
 // Every setCell() target in every exporter, checked against the court's
 // template. This is the guard for a defect class that shipped three times.
@@ -45,8 +46,9 @@ const { ANNUAL_CONTRACT } = await import('../../src/core/excel/workbook-contract
 // (src/core/excel/workbook-contract/) is read from the contract instead --
 // every address it can write, the built ones included, so for those forms the
 // blind spot is gone. The Inventory's is the first (part 2), the Annual
-// family's the second (part 3).
-const CONTRACT_EXPORTERS = { guardian: GUARDIAN_CONTRACT, annual: ANNUAL_CONTRACT };
+// family's the second (part 3), the Simplified's the third (part 4) -- so for
+// every exporter now.
+const CONTRACT_EXPORTERS = { guardian: GUARDIAN_CONTRACT, annual: ANNUAL_CONTRACT, simplified: SIMPLIFIED_CONTRACT };
 
 const EXPORTERS = [
   ['annual', 'src/features/annual-accounting/excel.js'],

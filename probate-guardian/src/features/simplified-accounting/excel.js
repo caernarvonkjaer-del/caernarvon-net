@@ -2,41 +2,37 @@
 // alongside print.js, by index.js's ensureLazyModules() -- see that file's
 // header. Statically imports back from index.js; see print.js's header for
 // why that circularity is safe.
-import { formatMoney } from '../../core/format/money.js';
-import { amountForStore, parseAmount } from '../../core/form/amount-codec.js';
+//
+// Milestone 73T part 4: which box of the court's workbook each field goes in,
+// and how it comes back, is the Simplified's workbook contract
+// (src/core/excel/workbook-contract/simplified.js) -- the export writes it and
+// the import reads it -- and the import is one transaction
+// (src/core/excel/import-transaction.js): one confirmation before anything
+// changes, a Cancel that changes nothing, a notice of what was kept. (The
+// import used to write the cover and Part II before asking "Replace the first
+// three guardian slots…?", and its Cancel left all of that in the filing.) The
+// cell addresses and the reasons behind them live with the contract now.
 import { validateSimplified } from './index.js';
 import { authorizeFilingOutput } from '../../core/filing/output-authorization.js';
 import { getExcelCapacityIssues } from '../../core/excel/excel-capacity.js';
 import { getExcelJS, saveWorkbookFile, setCell, setDateCell } from '../../core/excel/excel-engine.js';
-import { readCellText } from '../../core/excel/cell-reader.js';
-import { compareImportedCertificate, readIndicateIfBox } from '../../core/filing/certificate-migrations.js';
-import { keepUnboxedFields, SIGNATURE_FIELDS } from '../../core/excel/import-keep.js';
-import { alertModal, confirmModal } from '../../core/ui/dialogs.js';
+import { writeContract } from '../../core/excel/workbook-contract/engine.js';
+import { SIMPLIFIED_CONTRACT } from '../../core/excel/workbook-contract/simplified.js';
+import { workbookAdapter } from '../../core/excel/workbook-contract/index.js';
+import { runImportTransaction } from '../../core/excel/import-transaction.js';
+import { confirmImport } from '../../core/excel/import-confirm.js';
+import { recordDateDraft } from '../../core/form/commit-coordinator.js';
+import { alertModal } from '../../core/ui/dialogs.js';
 import { setStatus, scheduleStatusClear } from '../../core/ui/transient-status.js';
 import { beginExport } from '../../core/ui/export-guard.js';
-import { calcTotals } from './totals.js';
-import { rowStarted } from '../../core/validation/row-started.js';
-import { assertWorkbookWithinLimits, getImportProgressEl, sanitizeObjectDataInPlace, validateImportFile } from '../../core/security/input-hardening.js';
-import { capitalizeImportedFields } from '../../core/form/form-contract.js';
+import { getImportProgressEl, validateImportFile } from '../../core/security/input-hardening.js';
 import { getD } from '../../core/state.js';
 import { ensureTemplate } from '../../core/persistence/templates.js';
 import { getCurrentPage, renderPage } from '../../core/navigation/router.js';
-import { commitModelChange } from '../../core/model-change.js';
 // Milestone 73F part 1: the capacity limits live in core (excel-caps.js) so the
 // shared export checks can say what the workbook can't hold.
 import { SIMPLIFIED_EXCEL_CAPS } from '../../core/excel/excel-caps.js';
 export { SIMPLIFIED_EXCEL_CAPS };
-
-
-
-function guardianSlotsFromWorkbook(sheet) {
-  const text = (address) => readCellText(sheet.getCell(address));
-  const slot = (signatureDate, name, ssn, phone, email, mailingStreet, mailingCityStateZip, residenceStreet, residenceCityStateZip) => ({
-    name: text(name), signatureDate: text(signatureDate).substring(0, 10), ssn: text(ssn), phone: text(phone), email: text(email),
-    mailingStreet: text(mailingStreet), mailingCityStateZip: text(mailingCityStateZip), residenceStreet: text(residenceStreet), residenceCityStateZip: text(residenceCityStateZip),
-  });
-  return [slot('D15','F15','B17','B19','B21','F17','F19','F21','F23'), slot('D25','F25','B27','B29','B31','F27','F29','F31','F33'), slot('D35','F35','B37','B39','B41','F37','F39','F41','F43')];
-}
 
 export async function doSaveExcel(){
   const capacityIssues = getExcelCapacityIssues('simplified', getD(), SIMPLIFIED_EXCEL_CAPS);
@@ -68,203 +64,17 @@ export async function doSaveExcel(){
     const templateB64=await ensureTemplate('simplified');
     if(!templateB64){await alertModal('Template not loaded. Please import the Excel template first.');return;}
 
-    // Dates are written through setDateCell() (Milestone 67E) -- a real Excel
-    // date, not ISO text; the local string formatter that lived here is gone.
-    // Milestone 51D: setCell now comes from core/excel/excel-engine.js. The local
-    // closure this replaces was byte-identical in all three feature excel.js files
-    // apart from a null-sheet guard, and routed text through the same
-    // formula-injection guard, sanitizeCellValue().
-    const n=v=>parseFloat(v)||0;
-
     const bin=atob(templateB64);
     const buf=new Uint8Array(bin.length);
     for(let i=0;i<bin.length;i++)buf[i]=bin.charCodeAt(i);
-
     const ExcelJS=await getExcelJS();
     const workbook=new ExcelJS.Workbook();
     await workbook.xlsx.load(buf.buffer);
 
-    const p1=workbook.getWorksheet('PARTS I, II ');
-    if(p1){
-      // Part I's identity block. Every label sits in column B and its value in
-      // the merged D<row>:I<row> beside it. These addresses were read back out
-      // of the shipped workbook with an XML parser (AGENTS.md section 10);
-      // every one of them used to be written one row too low, so the ward's
-      // SSN printed over the "From" label, the case number under "Attorney for
-      // Guardian", the attorney under "Guardian", the guardian under "Type of
-      // Guardianship", and the type of guardianship over the "Part II" heading.
-      //
-      // Nothing caught it because importExcel() below read the same wrong
-      // cells, so the app round-tripped its own output perfectly while
-      // disagreeing with the court's form on every field (AGENTS.md
-      // section 13).
-      setCell(p1,'C4',inv.wardName||'');
-      setCell(p1,'H4',inv.caseNumber||'');
-      // The period cells are r13's own merges, NOT r14's. Writing them to
-      // E14/H14 put them inside the D14:I14 merge, and ExcelJS redirects a
-      // write on a merged member to the merge master -- so both landed on D14
-      // and destroyed the =H4 formula the workbook fills the Case Number box
-      // with, leaving the period end date in its place there and on the COVER
-      // page, which reads D14. The period boxes themselves printed blank.
-      setDateCell(p1,'E13',inv.periodFrom);
-      setDateCell(p1,'H13',inv.periodTo);
-      // D12 (=C4) and D14 (=H4) are the workbook's own formulas: the ward name
-      // and case number reach Part I from the header cells written above. The
-      // app writes the inputs and leaves the formulas alone -- AGENTS.md
-      // section 13, "never write into a formula cell".
-      setCell(p1,'D15',inv.attorney||'');
-      setCell(p1,'D16',inv.guardian||'');
-      setCell(p1,'D17',inv.typeOfGuardianship||'');
-      // The ward's SSN is deliberately not written. The court's Simplified
-      // workbook has no ward-SSN field -- its only SSN cells are the
-      // guardians' SSN/EIN on PARTS III, IV, which are written below. It used
-      // to go to D13, which is the printed "From" label, so a required and
-      // sensitive field was both destroying a label and appearing unmasked on
-      // a form that never asked for it (the PDF prints it through maskSSN).
-      setDateCell(p1,'F4',inv.gid);
-      setCell(p1,'G2',inv.county||'');
-      setCell(p1,'I5',inv.amendedForm||'');
-      const t=calcTotals();
-      // Part II's accounting summary. Each Line's figure goes in that Line's
-      // own row, and the workbook adds them up itself:
-      //
-      //   Line 1  Starting Balance          H19
-      //   Line 2  Interest Income           G22 -.
-      //   Line 3  Deposits per Settlement   G23 -+-> H24 =SUM(G22:G23)
-      //   Line 5  Service Charges           G27 -.
-      //   Line 6  Federal Income Tax        G28 -+-> H29 =SUM(G27:G28)
-      //   Line 8  Remaining Assets              H31 =H19+H24-H29
-      //
-      // Every one of these used to be written one row low, which did far more
-      // than misplace them. Line 1 never reached the form at all (the balance
-      // landed on the "Income" banner), Line 3 received Line 2's figure, and
-      // the two figures that fell on the total rows -- deposits and federal
-      // income tax -- overwrote the "Total Income" and "Total Disbursements"
-      // labels AND never entered the sums, because the workbook's own SUM
-      // ranges stop at G23 and G28. A filing reporting 100,000 opening,
-      // 2,200 in deposits and 4,400 in tax was filed with a blank Line 1,
-      // Total Income of 11, Total Disbursements of 33, and Remaining Assets
-      // On Hand of -22 instead of 97,778.
-      //
-      // The SUM ranges are the authority for these addresses (AGENTS.md
-      // section 13), and the totals stay formula-driven -- the app writes the
-      // five inputs and nothing else.
-      setCell(p1,'H19',n(inv.startingBalance));
-      setCell(p1,'G22',n(inv.interestIncome));
-      setCell(p1,'G23',n(inv.depositsSettlement));
-      setCell(p1,'G27',n(inv.serviceCharges));
-      setCell(p1,'G28',n(inv.federalIncomeTax));
-    }
-
-    const p34=workbook.getWorksheet('PARTS III, IV');
-    if(p34){
-      // The period and the guardian's name are NOT written here. C10, F10 and
-      // F15 already hold the workbook's own formulas pulling them from
-      // PARTS I, II (E13, H13 and D16 -- the cells written above), so writing
-      // literals over them replaced live propagation with a snapshot and, on
-      // C10/F10, destroyed it for every later edit. AGENTS.md section 5.
-      const g1=inv.guardians[0]||{};
-      setDateCell(p34,'D15',g1.signatureDate);
-      setCell(p34,'B17',g1.ssn||'');
-      setCell(p34,'B19',g1.phone||'');
-      setCell(p34,'B21',g1.email||'');
-      setCell(p34,'F17',g1.mailingStreet||'');
-      setCell(p34,'F19',g1.mailingCityStateZip||'');
-      setCell(p34,'F21',g1.residenceStreet||'');
-      setCell(p34,'F23',g1.residenceCityStateZip||'');
-      const g2=inv.guardians[1]||{};
-      // Milestone 74B: every started card's slot (rowStarted(): a stamp counts).
-      if(rowStarted(g2)){
-        setDateCell(p34,'D25',g2.signatureDate);
-        setCell(p34,'F25',g2.name||'');
-        setCell(p34,'B27',g2.ssn||'');
-        setCell(p34,'B29',g2.phone||'');
-        setCell(p34,'B31',g2.email||'');
-        setCell(p34,'F27',g2.mailingStreet||'');
-        setCell(p34,'F29',g2.mailingCityStateZip||'');
-        setCell(p34,'F31',g2.residenceStreet||'');
-        setCell(p34,'F33',g2.residenceCityStateZip||'');
-      }
-      const g3=inv.guardians[2]||{};
-      if(rowStarted(g3)){
-        setDateCell(p34,'D35',g3.signatureDate);
-        setCell(p34,'F35',g3.name||'');
-        setCell(p34,'B37',g3.ssn||'');
-        setCell(p34,'B39',g3.phone||'');
-        setCell(p34,'B41',g3.email||'');
-        setCell(p34,'F37',g3.mailingStreet||'');
-        setCell(p34,'F39',g3.mailingCityStateZip||'');
-        setCell(p34,'F41',g3.residenceStreet||'');
-        setCell(p34,'F43',g3.residenceCityStateZip||'');
-      }
-    }
-
-    const p56=workbook.getWorksheet('PARTS V, VI ');
-    if(p56){
-      // The period, the attorney's name and the '/s/' marks are the
-      // workbook's own. D12/J12 and J17/J41 carry formulas pulling from
-      // PARTS I, II -- the form even labels them "[linked to Part I]" -- and
-      // B17/B41 ship with '/s/' already in them. Writing the period to C12 was
-      // worse than redundant: C12 sits inside the merged B11:C12, so ExcelJS
-      // redirected it to B11 and it landed on the printed "from" label.
-      setCell(p56,'B19',inv.attorney_barNumber||'');
-      setCell(p56,'B21',inv.attorney_phone||'');
-      setCell(p56,'J19',inv.attorney_street||'');
-      setCell(p56,'J21',inv.attorney_cityStateZip||'');
-      setDateCell(p56,'H39',inv.certServiceDate);
-      // Milestone 72G: "Indicate if:" is the ward's status, a dropdown on the
-      // Clerk's form; the method of service is printed on the PDF only.
-      setCell(p56,'J39',inv.certWardStatus||'');
-      const r=inv.certRecipients;
-      // Milestone 72A: the right-hand recipient boxes are the merged I27:L27,
-      // I28:L28 ... -- I is each box's own cell. These used to be written to
-      // J, a covered member of the merge, and reached the box only because
-      // ExcelJS redirects such a write to the master (AGENTS.md section 10, P1).
-      [[27,28,29,30],[27,28,29,30]].forEach((_,side)=>{
-        const ri=r[side]||{};
-        const col=side===0?'B':'I';
-        setCell(p56,`${col}27`,ri.name||'');
-        setCell(p56,`${col}28`,ri.line2||'');
-        setCell(p56,`${col}29`,ri.line3||'');
-      });
-      [[33,34,35,36],[33,34,35,36]].forEach((_,side)=>{
-        const ri=r[side+2]||{};
-        const col=side===0?'B':'I';
-        setCell(p56,`${col}33`,ri.name||'');
-        setCell(p56,`${col}34`,ri.line2||'');
-        setCell(p56,`${col}35`,ri.line3||'');
-      });
-      // B41 already reads '/s/' and J41 is the "[linked to Part I]" formula --
-      // see the note above the Part V signature block.
-      setDateCell(p56,'H41',inv.certAttySignDate||inv.attorney_signatureDate);
-      // Milestone 72H: the certificate's attorney is Part V's (B19/J19/B21/J21).
-      setCell(p56,'B43',inv.attorney_barNumber||'');
-      setCell(p56,'B45',inv.attorney_phone||'');
-      setCell(p56,'J43',inv.attorney_street||'');
-      setCell(p56,'J45',inv.attorney_cityStateZip||'');
-    }
-
-    const p7=workbook.getWorksheet('PART VII');
-    if(p7){
-      const entries=(inv.remuneration||[]).filter(r=>r.guardian||r.type||r.description||r.amount);
-      entries.forEach((r,i)=>{
-        const row=6+i;
-        if(row>32)return;
-        // The court's template gives this part a single free-text column, so
-        // the fields are packed into one cell. Amount goes in as a segment
-        // after the type (it's disclosable remuneration — it belongs in the
-        // filed document, not just the round-trip). Empty segments are
-        // omitted rather than left blank, so the filed line never reads
-        // "—    —"; the importer tells the layouts apart by segment count
-        // plus whether the third segment is shaped like a currency figure.
-        // Milestone 71E: the workbook's rounding (formatMoney()), still without thousands separators.
-        const amt=(r.amount===''||r.amount==null)?'':`$${formatMoney(r.amount,{grouping:false})}`;
-        const parts=[r.guardian||'',r.type||''];
-        if(amt)parts.push(amt);
-        if(r.description)parts.push(r.description);
-        setCell(p7,`A${row}`,parts.join('  —  '));
-      });
-    }
+    // Every field into its box, by the contract. setCell() keeps the
+    // formula-injection guard and records each write for the export guard
+    // (tests/e2e/excel-form-field-placement.spec.ts).
+    writeContract(workbook, SIMPLIFIED_CONTRACT, inv, {}, { setCell, setDateCell });
 
     const ward2=(inv.wardName||'SimplifiedAccounting').replace(/[^a-z0-9]/gi,'_');
     await saveWorkbookFile(workbook, `${ward2}_SimplifiedAccounting.xlsx`);
@@ -280,253 +90,35 @@ export async function importExcel(input){
   const file=input.files[0];
   if(!file)return;
   const prog=getImportProgressEl(input);
-  setStatus(prog,'Checking file…');
-  const check=await validateImportFile(file,'xlsx');
-  if(!check.ok){
-    setStatus(prog,'✗ '+check.message);
+  try{
+    setStatus(prog,'Checking file…');
+    const check=await validateImportFile(file,'xlsx');
+    if(!check.ok){setStatus(prog,'✗ '+check.message);return;}
+    setStatus(prog,'Reading file…');
+    const data=await file.arrayBuffer();
+    const filing=getD();
+    const adapter=workbookAdapter({ data, sourceName: file.name, inventoryType: filing.inventoryType, filing });
+    let read=null;
+    // No template-cache write here — an imported file is extracted and
+    // discarded, never retained (see the note above ensureTemplate()).
+    const result=await runImportTransaction({
+      filing,
+      adapter: async () => (read = await adapter()),
+      confirmChoices: (plan) => { setStatus(prog,''); return confirmImport(plan, { sourceName: file.name }); },
+      redraw: () => renderPage(getCurrentPage()),
+      notify: (notice) => alertModal({ title: 'Import complete', message: notice }),
+      afterCommit: (f) => {
+        // Milestone 73T: a date cell holding text no reader understands comes
+        // back as a date still being typed -- shown in its box and named at
+        // Preview -- not as a blank.
+        for (const d of read?.dateDrafts || []) recordDateDraft({ data: f, path: d.path, rawValue: d.text, section: 'Imported from Excel' });
+      },
+    });
+    if(!result.committed){setStatus(prog,'Import cancelled — nothing was changed.');scheduleStatusClear(prog);}
+  }catch(err){
+    console.error('Simplified Accounting import failed:',err);
+    setStatus(prog,'✗ Import failed: '+(err&&err.message?err.message:'the file could not be parsed.'));
+  }finally{
     input.value='';
-    return;
   }
-  const reader=new FileReader();
-  reader.onerror=()=>{
-    setStatus(prog,'✗ That file could not be read.');
-    input.value='';
-  };
-  reader.onload=async(e)=>{
-    setStatus(prog,'Parsing Excel…');
-    try{
-      // No template-cache write here — an imported file is extracted and
-      // discarded, never retained (see the note above ensureTemplate()).
-      const ExcelJS=await getExcelJS();
-      const workbook=new ExcelJS.Workbook();
-      await workbook.xlsx.load(e.target.result);
-      assertWorkbookWithinLimits(workbook);
-      const p1=workbook.getWorksheet('PARTS I, II ');
-      if(p1){
-        const gc=addr=>readCellText(p1.getCell(addr));
-        // The same addresses doSaveExcel() writes -- see the note there. Both
-        // sides used to be one row low together, which is exactly why the
-        // round trip looked clean.
-        getD().wardName=gc('C4');
-        getD().caseNumber=gc('H4');
-        getD().periodFrom=gc('E13').substring(0,10);
-        getD().periodTo=gc('H13').substring(0,10);
-        getD().attorney=gc('D15');
-        getD().guardian=gc('D16');
-        getD().typeOfGuardianship=gc('D17');
-        // No ward SSN: the workbook has no field for it, so an import leaves
-        // whatever the filing already holds rather than blanking a required
-        // field the file simply has nothing to say about. Reading E14/H14 for
-        // the period used to return the same value twice -- both sit inside
-        // the D14:I14 merge, so both resolved to that one master cell.
-        getD().gid=gc('F4').substring(0,10);
-        // Milestone 40C-A item 5: see annual-accounting/excel.js -- an imported
-        // workbook with no county leaves the filing blank.
-        getD().county=gc('G2')||'';
-        getD().amendedForm=gc('I5');
-        // Part II's five inputs, at the addresses the workbook's own SUM
-        // ranges define -- see the note beside the writer. Both sides read one
-        // row low together, which is why the round trip looked clean while
-        // every figure on the filed accounting was wrong.
-        // Milestone 73G part 1: read by the one amount codec, so each is the
-        // number the cell holds, sign kept (they were kept as the cell's text,
-        // which a later page then cut at the first comma or zeroed).
-        getD().startingBalance=amountForStore(gc('H19'));
-        getD().interestIncome=amountForStore(gc('G22'));
-        getD().depositsSettlement=amountForStore(gc('G23'));
-        getD().serviceCharges=amountForStore(gc('G27'));
-        getD().federalIncomeTax=amountForStore(gc('G28'));
-      }
-
-      // PARTS III, IV — Guardians
-      const p34=workbook.getWorksheet('PARTS III, IV');
-      // Milestone 72 follow-up: the guardians as this filing had them, before
-      // the block below writes the workbook's values into them in place -- the
-      // same-person test further down must compare the workbook's names with
-      // the filing's own, not with names this import has already copied in.
-      const guardiansBeforeImport=(getD().guardians||[]).map(g=>({...(g||{})}));
-      if(p34){
-        const gc34=(addr)=>readCellText(p34.getCell(addr));
-        const g1=getD().guardians[0]||{};
-        g1.signatureDate=gc34('D15').substring(0,10);
-        // F15 is the workbook's own formula pulling Guardian #1's name from
-        // PARTS I, II D16 -- the court's form treats the two as one name and
-        // the exporter no longer writes over it, so this takes the value from
-        // the cell that actually backs it rather than from a cached result.
-        g1.name=getD().guardian||'';
-        g1.ssn=gc34('B17');
-        g1.phone=gc34('B19');
-        g1.email=gc34('B21');
-        g1.mailingStreet=gc34('F17');
-        g1.mailingCityStateZip=gc34('F19');
-        g1.residenceStreet=gc34('F21');
-        g1.residenceCityStateZip=gc34('F23');
-        if(!getD().guardians[0])getD().guardians[0]=g1;
-
-        const g2Data=gc34('F25');
-        if(g2Data){
-          const g2=getD().guardians[1]||{};
-          g2.signatureDate=gc34('D25').substring(0,10);
-          g2.name=g2Data;
-          g2.ssn=gc34('B27');
-          g2.phone=gc34('B29');
-          g2.email=gc34('B31');
-          g2.mailingStreet=gc34('F27');
-          g2.mailingCityStateZip=gc34('F29');
-          g2.residenceStreet=gc34('F31');
-          g2.residenceCityStateZip=gc34('F33');
-          if(!getD().guardians[1])getD().guardians[1]=g2;
-        }
-
-        const g3Data=gc34('F35');
-        if(g3Data){
-          const g3=getD().guardians[2]||{};
-          g3.signatureDate=gc34('D35').substring(0,10);
-          g3.name=g3Data;
-          g3.ssn=gc34('B37');
-          g3.phone=gc34('B39');
-          g3.email=gc34('B41');
-          g3.mailingStreet=gc34('F37');
-          g3.mailingCityStateZip=gc34('F39');
-          g3.residenceStreet=gc34('F41');
-          g3.residenceCityStateZip=gc34('F43');
-          if(!getD().guardians[2])getD().guardians[2]=g3;
-        }
-      }
-
-      // PARTS V, VI — Attorney and Certificate of Service
-      if(p34){
-        if(!(await confirmModal('Replace the first three guardian slots with the values from this workbook? Any additional saved guardians will be kept.'))) return;
-        const overflowRows=(getD().guardians||[]).slice(3);
-        const overflowPartyIds=(getD().guardianPartyIds||[]).slice(3);
-        // Milestone 72 follow-up: the workbook carries no signature state,
-        // stamp image or "served the copies" flag; kept from this filing for
-        // the same person (import-keep.js), as on the Inventory.
-        getD().guardians=[...guardianSlotsFromWorkbook(p34).map((g,i)=>keepUnboxedFields(g,guardiansBeforeImport[i],[...SIGNATURE_FIELDS,'certifiesService'])),...overflowRows];
-        getD().guardianPartyIds=[null,null,null,...overflowPartyIds];
-      }
-
-      const p56=workbook.getWorksheet('PARTS V, VI ');
-      if(p56){
-        const gc56=(addr)=>readCellText(p56.getCell(addr));
-        // Part V (the attorney's own signature block) lives at B19/B21/J19/
-        // J21; Part VI (certificate of service) repeats the attorney at
-        // B43/B45/J43/J45. Milestone 72H: the certificate's attorney is Part
-        // V's, so the two are compared (certificate-migrations.js): a blank
-        // Part V box is filled from Part VI's -- how hand-filled forms and
-        // older exports tend to arrive; a Part VI value that differs is kept
-        // as an old detail, shown on Part VI with "Discard old details"; the
-        // same, or a blank Part VI box, keeps nothing.
-        const certCmp=compareImportedCertificate(
-          { bar: gc56('B19'), phone: gc56('B21'), street: gc56('J19'), csz: gc56('J21') },
-          { bar: gc56('B43'), phone: gc56('B45'), street: gc56('J43'), csz: gc56('J45') });
-        getD().attorney_barNumber=certCmp.attorney.bar;
-        getD().attorney_phone=certCmp.attorney.phone;
-        getD().attorney_street=certCmp.attorney.street;
-        getD().attorney_cityStateZip=certCmp.attorney.csz;
-        getD().certServiceDate=gc56('H39').substring(0,10);
-        // Milestone 72G: read by what the box holds -- a workbook exported before
-        // 72G holds the method there (certificate-migrations.js). A ward's
-        // status sets the ward's status; any other text is the method and says
-        // nothing of the status; blank is an unanswered status. The filing's
-        // method is otherwise kept: a 72G workbook carries none, and an absence
-        // must not erase what the filer typed (67A's rule).
-        {
-          const box=readIndicateIfBox(gc56('J39'));
-          if('wardStatus' in box)getD().certWardStatus=box.wardStatus;
-          if(box.method)getD().certIndicator=box.method;
-        }
-        const attySignDate=gc56('H41').substring(0,10);
-        getD().certAttySignDate=attySignDate;
-        // The template exposes only one attorney signature-date cell (H41),
-        // which the export fills from certAttySignDate falling back to
-        // attorney_signatureDate. Mirroring it back into both keeps the value
-        // from being dropped entirely on a round-trip.
-        getD().attorney_signatureDate=attySignDate;
-        getD().certAttyBarNumber=certCmp.old.bar;
-        getD().certAttyPhone=certCmp.old.phone;
-        getD().certAttyStreet=certCmp.old.street;
-        getD().certAttyCityStateZip=certCmp.old.csz;
-
-        // Certificate recipients
-        const r=getD().certRecipients||[];
-        r[0]=r[0]||{};
-        r[0].name=gc56('B27');
-        r[0].line2=gc56('B28');
-        r[0].line3=gc56('B29');
-        r[1]=r[1]||{};
-        r[1].name=gc56('I27');
-        r[1].line2=gc56('I28');
-        r[1].line3=gc56('I29');
-        r[2]=r[2]||{};
-        r[2].name=gc56('B33');
-        r[2].line2=gc56('B34');
-        r[2].line3=gc56('B35');
-        r[3]=r[3]||{};
-        r[3].name=gc56('I33');
-        r[3].line2=gc56('I34');
-        r[3].line3=gc56('I35');
-        getD().certRecipients=r;
-      }
-
-      // PART VII — Remuneration
-      const p7=workbook.getWorksheet('PART VII');
-      if(p7){
-        const gc7=(addr)=>readCellText(p7.getCell(addr));
-        getD().remuneration=[];
-        for(let row=6;row<=32;row++){
-          const val=gc7(`A${row}`);
-          if(val){
-            // Parse the combined "guardian — type — amount — description"
-            // cell. Files exported before the amount was included carry the
-            // description in position 2 instead, so detect which layout this
-            // is by shape — that keeps older backups importing correctly.
-            const parts=val.split('  —  ');
-            // Milestone 73G part 1: the amount segment is read by the one
-            // amount codec, so a negative ("$-500.00", "($500.00)") imports
-            // as one instead of turning into the description.
-            const looksLikeAmount=s=>{const r=parseAmount(String(s||''));return 'value' in r&&!('blank' in r);};
-            const money=s=>amountForStore(String(s));
-            let amount='',description='';
-            if(parts.length>=4){
-              // guardian — type — amount — description
-              if(looksLikeAmount(parts[2]))amount=money(parts[2]);
-              description=parts[3]||'';
-            }else if(parts.length===3){
-              // Third segment is either the amount (description omitted) or
-              // the description (no amount, or a pre-fix 3-segment file).
-              if(looksLikeAmount(parts[2]))amount=money(parts[2]);
-              else description=parts[2];
-            }
-            getD().remuneration.push({
-              guardian:parts[0]||'',
-              type:parts[1]||'',
-              amount,
-              description
-            });
-          }
-        }
-      }
-
-      capitalizeImportedFields(getD());
-      // capitalizeImportedFields only reformats fields whose name looks like
-      // a name/address (see its own keyword list) — it happens to strip
-      // <>"'` from those via formatName/formatAddress, but fields outside
-      // that list (caseNumber, county, amendedForm, ssn, remuneration…)
-      // never went through any of that. This is the same stripping
-      // importExcelFile already applies to every field via sanitizeObjectData;
-      // in-place because window.D is the live object saveData() persists.
-      sanitizeObjectDataInPlace(getD());
-      commitModelChange('excel-import');
-      setStatus(prog,'✓ Template loaded and data imported successfully.');
-      scheduleStatusClear(prog);
-      renderPage(getCurrentPage());
-    }catch(err){
-      console.error('Simplified Accounting import failed:',err);
-      setStatus(prog,'✗ Import failed: '+(err&&err.message?err.message:'the file could not be parsed.'));
-    }finally{
-      input.value='';
-    }
-  };
-  reader.readAsArrayBuffer(file);
 }
