@@ -5,6 +5,7 @@
 // an argument instead of reading the open one, so they load with the app and
 // can judge any filing (73F part 2 uses that). validatePlanInitial() stays as a wrapper
 // returning exactly what it did; tests/unit/validator-engines.spec.js holds it.
+import { countyProblem, notFloridaCountyMessage } from '../county-rule.js';
 import { INITIAL_ADLS } from '../../filing/models/plan-initial.js';
 import { Q2_OPTIONS, Q4_OPTIONS, Q5_OPTIONS, anyChecked } from '../../filing/plan-initial-multiselect.js';
 import { checkDateOrder } from '../date-rules.js';
@@ -21,7 +22,8 @@ export function collectPlanInitialIssues(d){
   const req=(v,label,path)=>{if(v===''||v===null||v===undefined)errs.push(issue(label,path));};
   req(d.wardName,'Cover — Name of Ward is required','wardName');
   req(d.caseNumber,'Cover — Case Number is required','caseNumber');
-  req(d.county,'Cover — County is required','county');
+  // Milestone 73F part 3 (73F-2): a Florida county, not only a non-blank one.
+  {const county=countyProblem(d.county);if(county==='blank')errs.push(issue('Cover — County is required','county'));else if(county)errs.push(issue(notFloridaCountyMessage('Cover',county),'county'));}
   // Milestone 68B: the reporting period is required, as on the Annual and
   // Simplified Plans. There was no rule here at all -- an Initial Plan with
   // both dates blank exported a cover reading "For the period   through".

@@ -9,6 +9,8 @@
 // variants. `m` is { registry, guardianModel, fixtures }: the filing registry,
 // the Inventory's model and the browser fixtures, loaded by the caller.
 
+import { amountFieldsFor } from '../../../src/core/filing/amount-fields.js';
+
 const json = (x) => JSON.parse(JSON.stringify(x));
 const SAMPLE = { string: 'x', number: 5, boolean: true };
 
@@ -34,10 +36,17 @@ export function* filingsFor(type, m) {
   // choice, so the saturated filings were never complete on any signature
   // block. The "/s/" and stamp cases are their own variants below.
   const isSignatureChoice = (k) => /[sS]ignatureState$/.test(k);
+  // Milestone 73F part 3: an answer the field can hold. The county is a
+  // Florida county (73F-2) and an amount a number (73G part 1), so a saturated
+  // filing is complete there and clearing one field still isolates one rule;
+  // "Yes" in either used to be an issue of its own in every variant.
+  const amounts = new Set(amountFieldsFor(type).map((e) => e.path || e.field));
+  const answerFor = (k) => (isSignatureChoice(k) ? 'none' : k === 'county' ? 'Pinellas' : amounts.has(k) ? 1 : 'Yes');
+  const sampleFor = (k) => (k === 'county' ? 'Pinellas' : amounts.has(k) ? 1 : SAMPLE.string);
   const saturate = (x, key = '') => {
     if (Array.isArray(x)) return x.map((v) => saturate(v));
     if (x && typeof x === 'object') return Object.fromEntries(Object.entries(x).map(([k, v]) => [k, saturate(v, k)]));
-    if (x === '' || x === null || x === undefined) return isSignatureChoice(key) ? 'none' : 'Yes';
+    if (x === '' || x === null || x === undefined) return answerFor(key);
     return x;
   };
   const saturated = () => saturate(valid ? valid() : normalized());
@@ -80,10 +89,10 @@ export function* filingsFor(type, m) {
         const empty = base(); empty[k] = []; yield [`${label}: ${k} emptied`, empty];
         const row = v[0] && typeof v[0] === 'object' ? v[0] : { name: '' };
         for (const f of Object.keys(row)) {
-          const one = base(); one[k] = [{ ...Object.fromEntries(Object.keys(row).map((x) => [x, ''])), [f]: SAMPLE.string }];
+          const one = base(); one[k] = [{ ...Object.fromEntries(Object.keys(row).map((x) => [x, ''])), [f]: sampleFor(f) }];
           yield [`${label}: ${k}[0] only ${f}`, one];
         }
-        const full = base(); full[k] = [Object.fromEntries(Object.keys(row).map((x) => [x, SAMPLE.string])), { ...row }];
+        const full = base(); full[k] = [Object.fromEntries(Object.keys(row).map((x) => [x, sampleFor(x)])), { ...row }];
         yield [`${label}: ${k} one full row and one as seeded`, full];
       } else if (v && typeof v === 'object') {
         for (const f of Object.keys(v)) {
@@ -91,7 +100,7 @@ export function* filingsFor(type, m) {
           yield [`${label}: ${k}.${f} toggled`, one];
         }
       } else {
-        const set = base(); set[k] = typeof v === 'boolean' ? !v : (v === '' || v == null ? (typeof v === 'number' ? 1 : 'Yes') : '');
+        const set = base(); set[k] = typeof v === 'boolean' ? !v : (v === '' || v == null ? (typeof v === 'number' ? 1 : (k === 'county' || amounts.has(k) ? answerFor(k) : 'Yes')) : '');
         yield [`${label}: ${k} ${v === '' || v == null ? 'answered' : 'cleared'}`, set];
       }
     }

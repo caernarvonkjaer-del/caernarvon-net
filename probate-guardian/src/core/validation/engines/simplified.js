@@ -5,6 +5,7 @@
 // an argument instead of reading the open one, so they load with the app and
 // can judge any filing (73F part 2 uses that). validateSimplified() stays as a wrapper
 // returning exactly what it did; tests/unit/validator-engines.spec.js holds it.
+import { countyProblem, notFloridaCountyMessage } from '../county-rule.js';
 import { RECIPIENTS_OR_ATTESTATION, serviceRecipientIssues } from '../service-recipients.js';
 import { certifyingCandidates, resolveServiceCertifier } from '../../filing/unrepresented-filing.js';
 import { checkDateOrder } from '../date-rules.js';
@@ -48,7 +49,8 @@ export function collectSimplifiedIssues(d){
   const attorneyStarted=isAttorneyStarted(d,'simplified');
   if(attorneyStarted)req(d.attorney,'Cover — Attorney for Guardian','attorney');
   req(d.typeOfGuardianship,'Cover — Type of Guardianship','typeOfGuardianship');
-  req(d.county,'Cover — County','county');
+  // Milestone 73F part 3 (73F-2): a Florida county, not only a non-blank one.
+  {const county=countyProblem(d.county);if(county==='blank')errs.push(issue('Cover — County','county'));else if(county)errs.push(issue(notFloridaCountyMessage('Cover',county),'county'));}
   req(d.amendedForm,'Cover — Amended Form?','amendedForm');
   errs.push(...checkDateOrder(d.periodFrom,d.periodTo,{
     sectionLabel:'Cover',earlierLabel:'Accounting Period From',laterLabel:'Accounting Period To',allowSameDay:false,
@@ -186,6 +188,11 @@ export function collectSimplifiedIssues(d){
     if (!r || (!r.guardian && !r.type && !r.amount && !r.description)) return;
     req(r.guardian, `Part VII — Line ${i + 1} — Guardian Name`, `remuneration.${i}.guardian`);
     req(r.type, `Part VII — Line ${i + 1} — Type`, `remuneration.${i}.type`);
+    // Milestone 73F part 3 (decision 73F-7): the Amount too, as on the Annual's
+    // Part XI. Neither workbook has an Amount column; whether 744.367(3)(a)'s
+    // "declaration of all remuneration" needs the figure is for a qualified
+    // person -- this only makes the two accountings ask the same.
+    req(r.amount, `Part VII — Line ${i + 1} — Amount`, `remuneration.${i}.amount`);
   });
   // Milestone 60J, mirroring Annual's Milestone 58D. Part VII must be answered
   // one way or the other before this filing leaves: 744.367(3)(a) requires the

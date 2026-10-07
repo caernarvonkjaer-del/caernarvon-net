@@ -7,7 +7,10 @@ export const EXCEL_CAPABILITIES = ['excel'];
 
 const definitions = Object.freeze({
   'validation.legacy-unmapped': { category: 'validation', bypassable: true, capabilities: ALL_CAPABILITIES, showInReadiness: true },
-  'field.date.invalid': { category: 'validation', bypassable: true, capabilities: ALL_CAPABILITIES, showInReadiness: true },
+  // Milestone 73F part 3 (decision 73F-3): an impossible date can't be
+  // overridden -- export would otherwise use the date entered before it
+  // (Milestone 25) -- now that a draft moves and goes with its row.
+  'field.date.invalid': { category: 'validation', bypassable: false, capabilities: ALL_CAPABILITIES, showInReadiness: true },
   // Milestone 73G part 1: an amount kept as text it can't be read as
   // (src/core/filing/amount-fields.js) -- bypassable, like an impossible date.
   'field.amount.unreadable': { category: 'validation', bypassable: true, capabilities: ALL_CAPABILITIES, showInReadiness: true },

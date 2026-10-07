@@ -313,7 +313,7 @@ function jumpLinkHTML(item) {
 // sidebar and the missing-items panel count sections
 // (src/core/validation/issue-groups.js) -- it grouped by a section's first
 // word, so "Part III" and "Part IV" were one "Part".
-function blockedPanelHTML(issues, filingType) {
+function blockedPanelHTML(issues, filingType, { overridable = true } = {}) {
   const groups = groupIssuesByPage(issues, filingType);
   const total = issues.length;
   // A section with one item reads better on the section's own line than as a
@@ -330,7 +330,10 @@ function blockedPanelHTML(issues, filingType) {
     <p class="pdf-preview-blocked-title">Preview blocked</p>
     <p class="pdf-preview-blocked-summary">${total} required item${total === 1 ? '' : 's'} still missing, across ${groups.length} section${groups.length === 1 ? '' : 's'}.</p>
     <div class="pdf-preview-blocked-actions">
-      <button type="button" class="btn btn-sm btn-outline-secondary" data-preview-action="override">Continue despite outstanding requirements</button>
+      ${overridable
+        ? '<button type="button" class="btn btn-sm btn-outline-secondary" data-preview-action="override">Continue despite outstanding requirements</button>'
+        // Milestone 73F part 3: the button stayed, and did nothing.
+        : '<p class="pdf-preview-blocked-final mb-0" data-preview-final>At least one of these can\'t be overridden: correct it to continue.</p>'}
     </div>
     <details class="pdf-preview-blocked-details">
       <summary>Show what is missing</summary>
@@ -450,7 +453,7 @@ export async function mountPdfPreview(buildModel, D, baseIssues = [], containerI
     // adaptValidationErrors()'s now-deleted text-matching fallback to
     // re-derive it, which silently broke every jump-to-field link in this
     // panel once that fallback was gone.
-    container.innerHTML = blockedPanelHTML(authorization.issues, D.inventoryType);
+    container.innerHTML = blockedPanelHTML(authorization.issues, D.inventoryType, { overridable: authorization.status !== 'blocked' });
     container.querySelector('[data-preview-action="override"]')
       ?.addEventListener('click', async () => {
         if (authorization.status === 'blocked') return;

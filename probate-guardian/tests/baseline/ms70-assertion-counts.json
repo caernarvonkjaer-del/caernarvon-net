@@ -2,8 +2,8 @@
  "generatedBy": "node scripts/ms70-assertion-counts.mjs --write-baseline",
  "note": "Milestone 70 per-spec assertion counts (static expect calls). tests/unit/ms70-assertion-counts.spec.js fails when a spec falls below its count; lowering it requires --reason, recorded in dropLog. A tripwire, not proof of equivalence (decision D9).",
  "totals": {
-  "expects": 8223,
-  "tests": 2327
+  "expects": 8300,
+  "tests": 2352
  },
  "counts": {
   "tests/e2e/amounts-keep-their-sign.spec.ts": {
@@ -35,11 +35,15 @@
    "tests": 14
   },
   "tests/e2e/annual-schedule-consistency.spec.ts": {
-   "expects": 28,
+   "expects": 27,
    "tests": 4
   },
   "tests/e2e/annual-ward-share-export.spec.ts": {
    "expects": 7,
+   "tests": 1
+  },
+  "tests/e2e/asterisks-follow-rules.spec.ts": {
+   "expects": 3,
    "tests": 1
   },
   "tests/e2e/attorney-optional-export.spec.ts": {
@@ -474,6 +478,10 @@
    "expects": 148,
    "tests": 17
   },
+  "tests/e2e/rules-follow-rows.spec.ts": {
+   "expects": 20,
+   "tests": 3
+  },
   "tests/e2e/sav-corpus.characterization.spec.ts": {
    "expects": 18,
    "tests": 3
@@ -731,8 +739,8 @@
    "tests": 9
   },
   "tests/unit/collection-descriptors.spec.js": {
-   "expects": 59,
-   "tests": 16
+   "expects": 65,
+   "tests": 18
   },
   "tests/unit/comment-card-hide.spec.js": {
    "expects": 9,
@@ -753,6 +761,10 @@
   "tests/unit/county-guidance.spec.js": {
    "expects": 16,
    "tests": 3
+  },
+  "tests/unit/county-rule.spec.js": {
+   "expects": 19,
+   "tests": 5
   },
   "tests/unit/crypto-contract.spec.js": {
    "expects": 27,
@@ -785,6 +797,10 @@
   "tests/unit/delete-confirmation.spec.js": {
    "expects": 17,
    "tests": 8
+  },
+  "tests/unit/drafts-follow-rows.spec.js": {
+   "expects": 13,
+   "tests": 7
   },
   "tests/unit/excel-capacity-issues.spec.js": {
    "expects": 32,
@@ -1023,8 +1039,8 @@
    "tests": 5
   },
   "tests/unit/output-revision-wiring.spec.js": {
-   "expects": 17,
-   "tests": 9
+   "expects": 18,
+   "tests": 10
   },
   "tests/unit/part-xi-remuneration.spec.js": {
    "expects": 23,
@@ -1173,6 +1189,10 @@
   "tests/unit/router.spec.js": {
    "expects": 7,
    "tests": 3
+  },
+  "tests/unit/rules-and-warnings.spec.js": {
+   "expects": 16,
+   "tests": 6
   },
   "tests/unit/sanitize-keeps-stored-files.spec.js": {
    "expects": 19,
@@ -1506,6 +1526,13 @@
    "was": 9,
    "now": 8,
    "reason": "Milestone 73F part 2: the Initial Inventory's dashboard progress no longer needs its pack (the shared export checks load with the app), so the spec's separate 'guardian reads as not computed' expectation went; every type is now held to the same computed-progress expectation.",
+   "date": "2026-10-06"
+  },
+  {
+   "file": "tests/e2e/annual-schedule-consistency.spec.ts",
+   "was": 28,
+   "now": 27,
+   "reason": "Milestone 73F part 3 (2026-10-06): annual-schedule-consistency.spec.ts's Part VIII test no longer ticks the \"no trusts\" box (decision 73F-5 removed it) -- it checks the box is gone and the page asks the question, one assertion fewer",
    "date": "2026-10-06"
   }
  ]

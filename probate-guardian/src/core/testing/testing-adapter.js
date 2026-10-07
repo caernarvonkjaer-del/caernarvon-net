@@ -509,6 +509,24 @@ export function createTestingAdapter(w, impl = applicationImplementations()) {
         const d = requireActive('validate.evaluate');
         return copy(call('evaluateFiling', d));
       },
+      /**
+       * Milestone 73F part 3: which of `paths` the export checks require in
+       * the open filing as it stands -- for each, a copy with only that field
+       * cleared is judged, and the path is required when a Preview-blocking
+       * issue then names it. What the asterisk drift test compares each
+       * page's asterisks with. A query: the open filing is never changed.
+       */
+      requiredPaths(paths) {
+        const d = requireActive('validate.requiredPaths');
+        const required = [];
+        for (const path of new Set(paths || [])) {
+          const probe = JSON.parse(JSON.stringify(d));
+          setPath(probe, path, '');
+          const blockers = call('evaluateFiling', probe).blockers || [];
+          if (blockers.some((issue) => issue?.path === path && (issue.capabilities || []).includes('preview'))) required.push(path);
+        }
+        return required;
+      },
       async exportGate() {
         const d = requireActive('validate.exportGate');
         const validate = await validatorFor(d.inventoryType, 'validate.exportGate');

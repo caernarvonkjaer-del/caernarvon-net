@@ -5,7 +5,7 @@ import { issueFactory } from '../../core/validation/validation-issue.js';
 import { startedRows } from '../../core/validation/row-started.js';
 import { isAttorneyStarted } from '../../core/validation/attorney-block.js';
 import { watchAttorneyRequiredMarkers } from '../../core/form/attorney-required-markers.js';
-import { renderSignatureStateControl, mountSignatureStateControls } from '../../core/signature/signature-state-control.js';
+import { renderSignatureStateControl, mountSignatureStateControls, signatureDateRequired } from '../../core/signature/signature-state-control.js';
 import { migratePlanCertificateOfService } from '../../core/filing/plan-certificate-of-service.js';
 import { renderPlanCertificateOfServicePage } from '../../core/form/plan-certificate-of-service-page.js';
 import { preparerNoteHTML } from '../../core/signature/preparer-note.js';
@@ -36,7 +36,7 @@ import { PLAN_ADLS, PLAN_ADL_RATINGS, PLAN_BENEFITS, PLAN_RIGHTS, PLAN_RIGHT_STA
 import { normalizePlanGuardians } from '../../core/filing/models/plan-rows.js';
 import { sectionMarks } from '../../core/status/section-marks.js';
 import { getD, requestSave } from '../../core/state.js';
-import { chkP, inpS, pageNavS, planCheckGroup, planQ, txtP, yesNoCheckboxS, yesNoRadioHTML } from '../../core/form/field-html.js';
+import { REQ_MARK, chkP, inpS, pageNavS, planCheckGroup, planQ, txtP, yesNoCheckboxS, yesNoRadioHTML } from '../../core/form/field-html.js';
 import { renderScheduleDocsSection } from '../../core/filing/schedule-docs.js';
 import { setPath } from '../../core/form/paths.js';
 import { PLAN_ANNUAL_EXPLANATIONS, explanationShown } from '../../core/filing/plan-explanations.js';
@@ -306,7 +306,7 @@ function pagePlanACarePlan(){
   const cb=(id,label,route='')=>chkP(id,label,d[id],route);
   return `<div class="schedule-page">
     <h1>2–3. Residence Change &amp; Care Plan</h1>
-    ${planQ(2,"If the ward's address has changed since the last plan was filed",
+    ${planQ(2,"If the ward's address has changed since the last plan was filed"+REQ_MARK,
       `<div class="plan-check-grid">
         ${cb('q2NoMove','N/A — the ward has not moved since the last plan was filed')}
         ${cb('q2WithinCounty','The move was within this county and a change of address was provided to the court')}
@@ -315,7 +315,7 @@ function pagePlanACarePlan(){
         ${cb('q2OutsideVenuePetition','The move was outside this Circuit and a petition to change venue is filed with this plan')}
       </div>`,'Check all that apply.')}
     ${planQ(3,'For the best welfare of the ward, the guardian plans as follows',
-      planCheckGroup("The residential setting best suited to the ward's needs is:",
+      planCheckGroup("The residential setting best suited to the ward's needs is:"+REQ_MARK,
         [cb('q3SettingALF','Assisted Living (ALF)'),cb('q3SettingGroupHome','Group Home'),
          cb('q3SettingIntermediate','Intermediate'),cb('q3SettingPrivate','Private Residence'),
          cb('q3SettingSkilled','Skilled Nursing'),cb('q3SettingSpecialized','Specialized'),
@@ -436,7 +436,7 @@ function pagePlanARights(){
         'For example: the ward communicates well; communicates with gestures; cannot communicate at all. Also describe any change from the previous plan period.')
       +txtP('q5Activities',"Activities undertaken to increase the ward's capacity",d.q5Activities,4,true,
         'For example: encouragement, physical or mental therapy, rehabilitative services. Say whether these activities were effective.'))}
-    ${planQ(6,'Is the ward now capable of having any of these rights restored?',
+    ${planQ(6,'Is the ward now capable of having any of these rights restored?'+REQ_MARK,
       `<table class="table plan-rights-table">
         <thead><tr><th>Right</th>${PLAN_RIGHT_STATES.map(s=>`<th class="text-center" style="width:9rem">${esc(s.label)}</th>`).join('')}</tr></thead>
         <tbody>${rows}</tbody>
@@ -464,6 +464,7 @@ function pagePlanAADLs(){
     <h1>8. Activities of Daily Living</h1>
     <div class="schedule-instructions">Rate all sixteen honestly, including the ones that haven't changed. The court compares these year over year to see whether the ward's independence is improving or declining, so a blank row is a gap in the record rather than a neutral answer.</div>
     <table class="table plan-adl-table">
+      <caption>Rate every activity${REQ_MARK}</caption>
       <thead><tr><th>Activity</th><th>Rating</th></tr></thead>
       <tbody>${rows}</tbody>
     </table>
@@ -483,7 +484,7 @@ function pagePlanADisabilities(){
   return `<div class="schedule-page">
     <h1>9. Disabilities &amp; Assistive Devices</h1>
     ${planQ(9,'Disabilities and assistive devices',
-      planCheckGroup('The mental disabilities of the ward are:',
+      planCheckGroup('The mental disabilities of the ward are:'+REQ_MARK,
         [cb('q9MentalDementia','Dementia'),cb('q9MentalAlzheimers',"Alzheimer's type of dementia"),
          cb('q9MentalAutism','Autism spectrum disorders'),cb('q9MentalHeadInjury','Closed head injury'),
          cb('q9MentalDevelopmental','Developmental disabilities'),cb('q9MentalIntellectual','Intellectual disability'),
@@ -491,7 +492,7 @@ function pagePlanADisabilities(){
          cb('q9MentalSubstance','Induced by substance abuse'),
          cb('q9MentalNone','Ward has no mental disabilities'),cb('q9MentalOther','Other','/p8')].join(''),
         'q9MentalExplain',d.q9MentalExplain,explanationShown(PLAN_ANNUAL_EXPLANATIONS,d,'q9MentalExplain'))
-      +planCheckGroup('The physical disabilities of the ward are:',
+      +planCheckGroup('The physical disabilities of the ward are:'+REQ_MARK,
         [cb('q9PhysMobility','Mobility'),cb('q9PhysBlindness','Blindness'),
          cb('q9PhysDeafness','Deafness'),cb('q9PhysDiabetic','Diabetic'),
          cb('q9PhysParkinsons',"Parkinson's disease"),cb('q9PhysArthritis','Severe arthritis'),
@@ -580,7 +581,7 @@ function pagePlanARemuneration(){
   const d=getD();
   return `<div class="schedule-page">
     <h1>11. Remuneration</h1>
-    ${planQ(11,'Declaration of remuneration',
+    ${planQ(11,'Declaration of remuneration'+REQ_MARK,
       `<div class="plan-check-grid">${chkP('q11NoRemuneration','I have received NO remuneration from any source for services rendered to or on behalf of the ward',d.q11NoRemuneration,'/p10')}</div>
       ${d.q11NoRemuneration
         ? `<div class="plan-conditional mt-2">${inpS('q11NoRemunerationName',"Declaring guardian's name",d.q11NoRemunerationName,true)}</div>`
@@ -604,18 +605,17 @@ function pagePlanASignatures(){
   const cb=(id,label,route='')=>chkP(id,label,d[id],route);
   const block=(i,label)=>{
     const p=g[i]||{};
-    const reqMark=i===0?'<span class="req">*</span>':'';
     return `<div class="col-12 col-lg-6"><div class="entry-card mb-0 h-100">
       <div class="entry-card-header d-flex justify-content-between align-items-center gap-2"><span>${label}</span><span class="d-flex gap-2"><button type="button" class="btn btn-outline-secondary btn-sm" data-form-action="link-party" data-role="guardian" data-index="${i}">Link Person</button>${i?`<button type="button" class="btn btn-outline-danger btn-sm" data-form-action="remove-plan-guardian" data-index="${i}" data-route="/p11">Remove</button>`:''}</span></div>
       <div class="entry-card-body">
         <div class="row g-2">
           <div class="col-md-7">${renderFormField({ path: `planGuardians.${i}.name`, label: 'Printed Name', value: p.name, required: i===0 })}</div>
-          <div class="col-md-5"><label class="form-label" for="plan_guardians_${i}_sigDate">Date Signed${reqMark}</label><input type="text" inputmode="text" class="form-control" id="plan_guardians_${i}_sigDate" placeholder="MM/DD/YYYY" value="${esc(formatDisplayDate(p.signatureDate||''))}" data-form-path="planGuardians.${i}.signatureDate" data-field-path="planGuardians.${i}.signatureDate" data-field-kind="date" data-field-format-policy="normalize" aria-describedby="plan_guardians_${i}_sigDate_hint"><div id="plan_guardians_${i}_sigDate_hint" class="form-text text-muted" style="font-size:0.75rem;margin-top:0.2rem;">Use MM/DD/YYYY</div></div>
+          <div class="col-md-5"><label class="form-label" for="plan_guardians_${i}_sigDate">Date Signed${signatureDateRequired({ path: `planGuardians.${i}`, state: p.signatureState })?REQ_MARK:''}</label><input type="text" inputmode="text" class="form-control" id="plan_guardians_${i}_sigDate" placeholder="MM/DD/YYYY" value="${esc(formatDisplayDate(p.signatureDate||''))}" data-form-path="planGuardians.${i}.signatureDate" data-field-path="planGuardians.${i}.signatureDate" data-field-kind="date" data-field-format-policy="normalize" aria-describedby="plan_guardians_${i}_sigDate_hint"><div id="plan_guardians_${i}_sigDate_hint" class="form-text text-muted" style="font-size:0.75rem;margin-top:0.2rem;">Use MM/DD/YYYY</div></div>
           <div class="col-12">${renderSignatureStateControl({ path: `planGuardians.${i}`, state: p.signatureState, date: p.signatureDate, route: '/p11', signatureImage: p.signatureImage })}</div>
-          <div class="col-md-5">${renderFormField({ path: `planGuardians.${i}.ssn`, label: 'SSN / EIN', value: p.ssn })}</div>
-          <div class="col-md-7">${renderFormField({ path: `planGuardians.${i}.phone`, label: 'Phone Number', value: p.phone })}</div>
+          <div class="col-md-5">${renderFormField({ path: `planGuardians.${i}.ssn`, label: 'SSN / EIN', value: p.ssn, required: true })}</div>
+          <div class="col-md-7">${renderFormField({ path: `planGuardians.${i}.phone`, label: 'Phone Number', value: p.phone, required: true })}</div>
           <div class="col-12">${renderFormField({ path: `planGuardians.${i}.email`, label: 'Email Address', value: p.email })}</div>
-          <div class="col-12">${renderFormField({ path: `planGuardians.${i}.mailingStreet`, label: 'Mailing Street Address', value: p.mailingStreet })}</div>
+          <div class="col-12">${renderFormField({ path: `planGuardians.${i}.mailingStreet`, label: 'Mailing Street Address', value: p.mailingStreet, required: true })}</div>
           <div class="col-12">${renderFormField({ path: `planGuardians.${i}.mailingCityStateZip`, label: 'Mailing City / State / ZIP', value: p.mailingCityStateZip })}</div>
           <div class="col-12">${renderFormField({ path: `planGuardians.${i}.officeStreet`, label: 'Residence or Office Street Address', value: p.officeStreet })}</div>
           <div class="col-12">${renderFormField({ path: `planGuardians.${i}.officeCityStateZip`, label: 'Residence or Office City / State / ZIP', value: p.officeCityStateZip })}</div>
@@ -653,7 +653,7 @@ function pagePlanASignatures(){
           <div class="entry-card-body">
             <div class="row g-2">
               <div class="col-md-7">${inpS('attorney','Attorney Name',d.attorney,isAttorneyStarted(d,'planAnnual'))}</div>
-              <div class="col-md-5">${inpS('attorney_signatureDate','Date Signed',d.attorney_signatureDate,false,'date')}</div>
+              <div class="col-md-5">${inpS('attorney_signatureDate','Date Signed',d.attorney_signatureDate,signatureDateRequired({ path: 'attorney', state: d.attorney_signatureState }),'date')}</div>
               <div class="col-12">${renderSignatureStateControl({ path: 'attorney', state: d.attorney_signatureState, date: d.attorney_signatureDate, route: '/p11', signatureImage: d.attorney_signatureImage, statePath: 'attorney_signatureState', imagePath: 'attorney_signatureImage' })}</div>
               <div class="col-md-6">${inpS('attorney_bar','Bar Number',d.attorney_bar)}</div>
               <div class="col-md-6">${inpS('attorney_phone','Phone Number',d.attorney_phone)}</div>

@@ -25,6 +25,8 @@ import { Q2_OPTIONS, Q4_OPTIONS, Q5_OPTIONS, anyChecked } from './plan-initial-m
 import { FILING_TYPE_KEYS, resolveDescriptorForInventoryType } from './filing-descriptor.js';
 import { FILING_PAGES } from './filing-registry.js';
 import { hasSixthCircuitLocalGuidance } from './county-guidance.js';
+// Milestone 73F part 3: the county rows follow the export checks' county rule.
+import { isFloridaCounty } from '../validation/county-rule.js';
 import { resolveRouteFromSection } from '../validation/validation-adapter.js';
 import { checkSignatureState, inferLegacySignatureState, signaturePolicyOf } from '../validation/signature-state.js';
 import { isAffirmative, isTriStateAnswer } from '../form/yes-no.js';
@@ -87,7 +89,7 @@ function planSimplifiedAutomatic(d) {
   const g0 = (d.planGuardians || [])[0] || {};
   return [
     { id: 'cover.period', label: 'Reporting period is stated', ok: has(d.periodFrom) && has(d.periodTo) },
-    { id: 'cover.wardCaseCounty', label: 'Ward name, case number, and county are on the plan', ok: has(d.wardName) && has(d.caseNumber) && has(d.county) },
+    { id: 'cover.wardCaseCounty', label: 'Ward name, case number, and county are on the plan', ok: has(d.wardName) && has(d.caseNumber) && isFloridaCounty(d.county) },
     { id: 'signatures.guardian1.core', label: "Guardian's signature block complete (signed by hand or stamped)", ok: has(g0.name) && signedAndDated({
       state: g0.signatureState,
       date: g0.signatureDate,
@@ -145,7 +147,7 @@ function planAnnualAutomatic(d) {
   return [
     { id: 'cover.period', label: 'Reporting period is stated', ok: has(d.periodFrom) && has(d.periodTo) },
     { id: 'cover.wardCaseGid', label: 'Ward name, case number and inception date are on the plan', ok: has(d.wardName) && has(d.caseNumber) && has(d.gid) },
-    { id: 'cover.county', label: 'County is on the plan', ok: has(d.county) },
+    { id: 'cover.county', label: 'County is on the plan', ok: isFloridaCounty(d.county) },
     { id: 'cover.guardianName', label: 'Guardian Name(s) is on the plan', ok: has(d.guardian) },
     { id: 'signatures.guardian1.core', label: "Guardian's signature block complete (signed by hand or stamped)", ok: has(g0.name) && signedAndDated({
       state: g0.signatureState,
@@ -206,7 +208,7 @@ function planInitialAutomatic(d) {
   const provs = (d.q9Providers || []).filter(r => r && r.name);
   const adls = d.adls || {};
   return [
-    { id: 'cover.wardCaseCounty', label: 'Ward name, case number and county are on the plan', ok: has(d.wardName) && has(d.caseNumber) && has(d.county) },
+    { id: 'cover.wardCaseCounty', label: 'Ward name, case number and county are on the plan', ok: has(d.wardName) && has(d.caseNumber) && isFloridaCounty(d.county) },
     { id: 'cover.dates', label: 'Guardianship Inception Date and date Letters were signed are stated', ok: has(d.inceptionDate) && has(d.lettersSignedDate) },
     // Milestone 68B: required now, as on the other Plans; there was no item.
     { id: 'cover.period', label: 'Reporting period is stated', ok: has(d.periodFrom) && has(d.periodTo) },
@@ -271,7 +273,7 @@ function planMinorAutomatic(d) {
   const provs = (d.q3Providers || []).filter(r => r && r.last);
   return [
     { id: 'cover.amendedForm', label: 'Amended Form? is answered', ok: isTriStateAnswer(d.amendedForm) },
-    { id: 'cover.wardCountyPeriod', label: "Minor's name, county, and reporting period are on the plan", ok: has(d.wardName) && has(d.county) && has(d.periodFrom) && has(d.periodTo) },
+    { id: 'cover.wardCountyPeriod', label: "Minor's name, county, and reporting period are on the plan", ok: has(d.wardName) && isFloridaCounty(d.county) && has(d.periodFrom) && has(d.periodTo) },
     { id: 'cover.caseNumber', label: 'Case number (UCN or Case #) is on the plan', ok: has(d.ucn) || has(d.ref) },
     { id: 'cover.guardianName', label: 'Guardian Name is on the plan', ok: has(d.guardianName) },
     { id: 'cover.residence', label: 'Current residence and address stated', ok: has(d.q1ResidenceName) && has(d.q1Street) },

@@ -5,6 +5,7 @@
 // an argument instead of reading the open one, so they load with the app and
 // can judge any filing (73F part 2 uses that). validateAnnual() stays as a wrapper
 // returning exactly what it did; tests/unit/validator-engines.spec.js holds it.
+import { countyProblem, notFloridaCountyMessage } from '../county-rule.js';
 import { RECIPIENTS_OR_ATTESTATION, serviceRecipientIssues } from '../service-recipients.js';
 import { annualReconcileState } from '../../accounting/annual-totals.js';
 import { certifyingCandidates, resolveServiceCertifier } from '../../filing/unrepresented-filing.js';
@@ -13,6 +14,7 @@ import { checkSignatureState, inferLegacySignatureState, signaturePolicyOf } fro
 import { formatMoney } from '../../format/money.js';
 import { getD } from '../../state.js';
 import { rowStarted } from '../row-started.js';
+import { getCollection } from '../../form/collections.js';
 import { hasIdentifiedPreparer } from '../../form/preparer-flag.js';
 import { isAttorneyStarted } from '../attorney-block.js';
 import { issueFactory } from '../validation-issue.js';
@@ -36,7 +38,8 @@ export function collectAnnualIssues(d){
   req(d.periodFrom,'Part I — Accounting Period From','periodFrom');
   req(d.periodTo,'Part I — Accounting Period To','periodTo');
   req(d.gid,'Part I — Guardianship Inception Date (GID)','gid');
-  req(d.county,'Part I — County','county');
+  // Milestone 73F part 3 (73F-2): a Florida county, not only a non-blank one.
+  {const county=countyProblem(d.county);if(county==='blank')errs.push(issue('Part I — County','county'));else if(county)errs.push(issue(notFloridaCountyMessage('Part I',county),'county'));}
   req(d.filingType,'Part I — Filing Type','filingType');
   req(d.amendedForm,'Part I — Amended Form?','amendedForm');
   // Milestone 71E: $0.00 is an answer. The shared req() reads a number 0 as
@@ -221,10 +224,15 @@ export function collectAnnualIssues(d){
     }
   }
 
-  const rowHasAnyData=r=>Object.values(r).some(v=>v!==''&&v!=null);
+  // Milestone 73F part 3: a row "+ Add" added and the filer never touched is
+  // no row (the list's own blank test), so it raises nothing -- D-1, D-2 and
+  // D-4's rows start with "No" answers, which used to count as data.
+  // (The three Annual-family types share one set of row rules; a filing handed
+  // in without its type is read as an Annual.)
+  const rowHasAnyData=(collection,r)=>!getCollection(d.inventoryType||'annual',collection).isBlank(r);
   const checkRows=(rows,fields,schedLabel,collection)=>{
     (rows||[]).forEach((r,i)=>{
-      if(!rowHasAnyData(r))return;
+      if(!rowHasAnyData(collection,r))return;
       fields.forEach(([key,label])=>{
         if(r[key]===''||r[key]==null)errs.push(issue(`${schedLabel} — Line ${i+1} — ${label} is required`,`${collection}.${i}.${key}`));
       });
@@ -252,7 +260,7 @@ export function collectAnnualIssues(d){
   }
   checkRows(d.schC,[['description','Description'],['date','Date of Adjustment']],'Schedule C','schC');
   (d.schC||[]).forEach((r,i)=>{
-    if(!rowHasAnyData(r))return;
+    if(!rowHasAnyData('schC',r))return;
     // Either field satisfies this; route to the first of the pair.
     if((r.gain===''||r.gain==null)&&(r.loss===''||r.loss==null))errs.push(issue(`Schedule C — Line ${i+1} — Gain or Loss amount is required`,`schC.${i}.gain`));
   });
@@ -266,7 +274,7 @@ export function collectAnnualIssues(d){
   // is checkRows()' business above. Part VIII's trust share gets the same.
   [['schD1','Schedule D-1'],['schD2','Schedule D-2'],['schD3','Schedule D-3'],['schD4','Schedule D-4'],['schD5','Schedule D-5']].forEach(([collection,label])=>{
     (d[collection]||[]).forEach((r,i)=>{
-      if(!rowHasAnyData(r))return;
+      if(!rowHasAnyData(collection,r))return;
       const problem=percentProblem(r.wardPct);
       if(problem)errs.push(issue(`${label} — Line ${i+1} — Ward's % ${problem}`,`${collection}.${i}.wardPct`));
     });
@@ -277,7 +285,7 @@ export function collectAnnualIssues(d){
   });
   checkRows(d.schE,[['bankName','Bank Name']],'Schedule E','schE');
   (d.schE||[]).forEach((r,i)=>{
-    if(!rowHasAnyData(r))return;
+    if(!rowHasAnyData('schE',r))return;
     const hasIn=r.transferInDate!==''&&r.transferInDate!=null&&r.transferInAmt!==''&&r.transferInAmt!=null;
     const hasOut=r.transferOutDate!==''&&r.transferOutDate!=null&&r.transferOutAmt!==''&&r.transferOutAmt!=null;
     // Spans two field pairs; route to the first of them.

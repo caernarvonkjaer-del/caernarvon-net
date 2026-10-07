@@ -34,12 +34,13 @@ import { createBankAccountId } from '../accounting/bank-accounts.js';
 import { SCH_B4_ACCOUNT_BLOCKS } from '../excel/b4-register-pages.js';
 import { SCHEDULE_SCHEMAS } from './schedule-schemas.js';
 import { BLANK_SCHEDULE_ENTRY, isBlankCard, isBlankScheduleEntry } from './blank-rows.js';
-import { LINKED_ID_ARRAYS, keepRows } from './row-links.js';
+import { LINKED_ID_ARRAYS, keepRows, remapFieldDrafts } from './row-links.js';
+import { noItemsKeyFor } from './no-items-keys.js';
 
 // Named for the deliveries that will use them; nothing reads these yet.
+// (Clearing a list's "no items" tick on "+ Add" is appendRow()'s since 73F part 3.)
 const INACTIVE_POLICIES = Object.freeze({
   confirmRemove: null,      // 73P: ask before removing a card that holds anything
-  clearNoItemsOnAdd: null,  // 73F part 3: the "no items" key "+ Add" clears
   focusAfterAction: null,   // 73K part 2: where the cursor goes after an action
 });
 
@@ -226,6 +227,12 @@ export function appendRow(data, listKey, { factory } = {}) {
     if (!Array.isArray(data[rules.linkedIds])) data[rules.linkedIds] = [];
     data[rules.linkedIds].push(null);
   }
+  // Milestone 73F part 3: an entry withdraws the list's "I verify there are no
+  // items to report" tick, under the key the page's checkbox writes
+  // (no-items-keys.js). The Annual cleared `scheduleNoItems.schA` while the
+  // box writes `scha`, so the tick stayed beside the new row, hidden.
+  const tick = noItemsKeyFor(data.inventoryType, listKey);
+  if (tick && data.scheduleNoItems?.[tick]) data.scheduleNoItems[tick] = false;
   return row;
 }
 
@@ -248,6 +255,9 @@ export function duplicateRowAt(data, listKey, index) {
     if (!Array.isArray(data[rules.linkedIds])) data[rules.linkedIds] = [];
     data[rules.linkedIds].splice(at + 1, 0, null);
   }
+  // Milestone 73F part 3: the rows below move down one, with their dates still
+  // being typed; the copy starts with none.
+  remapFieldDrafts(data, listKey, (old) => (old > at ? old + 1 : old));
   return copy;
 }
 
@@ -266,6 +276,9 @@ export function removeRowAt(data, listKey, index) {
   if (rows.length <= rules.floor) return false;
   rows.splice(at, 1);
   if (rules.linkedIds && Array.isArray(data[rules.linkedIds])) data[rules.linkedIds].splice(at, 1);
+  // Milestone 73F part 3: the removed row's dates still being typed go with it,
+  // and the rows below move up one with theirs.
+  remapFieldDrafts(data, listKey, (old) => (old === at ? -1 : old > at ? old - 1 : old));
   return true;
 }
 

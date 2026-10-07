@@ -34,6 +34,8 @@ export const MINIMAL_VALID_GUARDIAN = {
   guardianName: 'Sample Guardian',
   attorneyForGuardian: 'Sample Attorney',
   typeOfGuardianship: 'Plenary',
+  // Milestone 73F part 3 (73F-1): required on the Inventory, as everywhere it is asked.
+  amendedForm: 'No',
   // The stored tri-state shape ('' / 'Yes' / 'No'), as the form writes it.
   // These were the pre-tri-state booleans (false), which only the
   // legacy-save migration turns into 'No' -- so every spec built on this

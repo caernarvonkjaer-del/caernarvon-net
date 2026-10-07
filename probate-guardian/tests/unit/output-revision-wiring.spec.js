@@ -24,6 +24,7 @@ const {
 const { createRequiredIssue } = await import('../../src/core/validation/issue-registry.js');
 const { runFieldWriteSideEffects } = await import('../../src/core/form/form-contract.js');
 const { recordDateDraft, clearFieldDraft } = await import('../../src/core/form/commit-coordinator.js');
+const { openFiling } = await import('./support/open-filing.js');
 const { addCollectionRow, removeCollectionRow, duplicateCollectionRow } = await import('../../src/core/form/schedule-definitions.js');
 const { setPartyIdForSlot } = await import('../../src/core/party-resolver.js');
 const { resolveSimplifiedGuardianAddressConflict } = await import('../../src/features/simplified-accounting/guardian-compatibility.js');
@@ -59,9 +60,18 @@ describe('Milestone 38D/44B mutation-boundary wiring: each real mutation invalid
   });
 
   it('a cleared date draft (draft resolved back to a valid/empty value)', () => {
-    const data = acknowledgeBypassableFiling();
-    clearFieldDraft('periodFrom', {});
+    const data = acknowledgeBypassableFiling(openFiling({ wardId: 'w1', inventoryType: 'annual' }));
+    clearFieldDraft('periodFrom', data);
     expect(isOutputAcknowledgedFor(data, { inventoryType: 'annual' })).toBe(false);
+  });
+
+  // Milestone 73F part 3: judging a copy of the filing (the sidebar, on every
+  // change) commits the copy's drafts; that must not clear an override the
+  // filer has just made.
+  it('a draft cleared on a copy of the filing leaves the acknowledgement standing', () => {
+    const data = acknowledgeBypassableFiling(openFiling({ wardId: 'w1', inventoryType: 'annual' }));
+    clearFieldDraft('periodFrom', { ...data });
+    expect(isOutputAcknowledgedFor(data, { inventoryType: 'annual' })).toBe(true);
   });
 
   it('adding a collection row (e.g. Add Co-Guardian)', () => {

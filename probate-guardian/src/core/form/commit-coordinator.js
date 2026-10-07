@@ -35,18 +35,35 @@ export function getFieldDraftDisplay(path, fallback = '', data) {
 export function clearFieldDraft(path, data) {
   const target = activeData(data);
   if (target.__fieldDrafts) delete target.__fieldDrafts[path];
-  markFilingRevisionChanged('date-draft-cleared');
+  // Milestone 73F part 3: only the open filing's revision. Judging a copy
+  // (evaluateFiling(), on every change since 73F part 2) commits the copy's
+  // drafts through here, and used to mark the open filing changed -- clearing
+  // an override the filer had just made at Preview.
+  if (target === getD()) markFilingRevisionChanged('date-draft-cleared');
+}
+
+// Milestone 73F part 3: a row's draft is named by its row ("Line 2 — Date
+// Paid", "Guardian #2 — Signature Date"), read from the path when the message
+// is drawn -- Remove and Duplicate move a draft to another row
+// (row-links.js's remapFieldDrafts()), and a row number stored with it would
+// name the row it left.
+function draftLabelFor(path, label) {
+  const row = /^([A-Za-z]\w*)\.(\d+)\./.exec(path || '');
+  if (!row) return label || path;
+  const n = Number(row[2]) + 1;
+  const where = /^(?:plan)?[Gg]uardians$/.test(row[1]) ? `Guardian #${n}` : `Line ${n}`;
+  return label ? `${where} — ${label}` : where;
 }
 
 export function getFieldDraftIssues(data) {
   const target = activeData(data);
   return Object.entries(target.__fieldDrafts || {}).flatMap(([path, record]) => {
     if (record?.kind !== 'date' || !record.rawValue || parseFlexibleDate(record.rawValue) !== null) return [];
-    const label = record.label || path;
+    const label = draftLabelFor(path, record.label);
     return [{
       code: 'field.date.invalid', severity: 'blocking', section: record.section || 'Date entry',
       path, label, route: record.route || '/',
-      message: `${record.section || 'Date entry'} - ${label} must be a valid date using a four-digit year.`,
+      message: `${record.section || 'Date entry'} — ${label} must be a valid date using a four-digit year.`,
     }];
   });
 }
@@ -59,6 +76,10 @@ export function commitStoredDateDrafts(data, setPath) {
     if (record?.kind !== 'date') continue;
     const parsed = parseFlexibleDate(record.rawValue);
     if (parsed === null) continue;
+    // Milestone 73F part 3: a draft whose row is gone is dropped, never written
+    // -- writing it used to create the missing row as a bare { date } object.
+    const parent = path.includes('.') ? path.slice(0, path.lastIndexOf('.')).split('.').reduce((o, k) => (o == null ? o : o[k]), target) : target;
+    if (!parent || typeof parent !== 'object') { delete target.__fieldDrafts[path]; continue; }
     if (setter) setter(target, path, parsed);
     clearFieldDraft(path, target);
     committed.push(path);

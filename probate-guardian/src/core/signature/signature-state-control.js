@@ -28,6 +28,21 @@ export function signerRoleForPath(path) {
   return null;
 }
 
+/**
+ * Milestone 73F part 3: whether a signature block's date is required -- the
+ * asterisk on its label. Only under "/s/" Signed (checkSignatureState()); a
+ * guardian's "/s/" saved before the guardian rule is asked again, and what it
+ * asks for is the choice, not the date. Choosing redraws the page (the
+ * control's `route`), so a label reading this follows the choice.
+ * @param {{ path: string, state?: string, role?: string, policy?: number }} block
+ */
+export function signatureDateRequired({ path, state, role: givenRole, policy: givenPolicy }) {
+  if (state !== SIGNATURE_STATES.TYPED) return false;
+  const role = givenRole || signerRoleForPath(path);
+  const policy = givenPolicy ?? signaturePolicyOf(getD());
+  return !(role === SIGNER_ROLES.GUARDIAN && policy === SIGNATURE_POLICIES.BY_HAND_OR_STAMP);
+}
+
 function esc(s) {
   return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }

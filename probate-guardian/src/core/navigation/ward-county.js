@@ -20,7 +20,7 @@
 // `filing.wardPartyId`; that is what makes a canonical county possible.
 
 import { getCaseFile, getD } from '../state.js';
-import { FL_COUNTY_CIRCUIT } from '../pdf/circuit-lookup.js';
+import { canonicalFloridaCounty } from '../pdf/circuit-lookup.js';
 import { createParty, resolveParty, setPartyIdForSlot, getPartyIdForSlot, reconcileSlotWithParty, backfillWardPartyIdentity } from '../party-resolver.js';
 
 /**
@@ -30,13 +30,12 @@ import { createParty, resolveParty, setPartyIdForSlot, getPartyIdForSlot, reconc
  * equal -- which matters for the unanimity check below, where two spellings of
  * the same county must not read as a conflict.
  */
+//
+// Milestone 73F part 3 (decision 73F-N3): the common variants too -- "St Lucie",
+// "Miami Dade", "De Soto", "Pinellas County" -- so the Cover writes the
+// official name back as the filer leaves the box.
 export function normalizeCountyName(value) {
-  const trimmed = String(value ?? '').trim();
-  if (!trimmed) return '';
-  for (const key of Object.keys(FL_COUNTY_CIRCUIT)) {
-    if (key.toLowerCase() === trimmed.toLowerCase()) return key;
-  }
-  return '';
+  return canonicalFloridaCounty(value);
 }
 
 /** Every filing in the case file linked to this ward Party id. */

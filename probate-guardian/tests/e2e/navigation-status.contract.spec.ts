@@ -282,18 +282,24 @@ test.describe('Guardian Inventory navigation/status contract', () => {
 
     // blocksNext() (core/status/section-guidance-policy.js) gates only the 11
     // numbered schedule pages -- Cover/D1-D5 are explained but never block Next
-    // (Milestone 63A, D1), and Print is unmarked. A brand-new schedule has 0 rows, so validateGuardian()'s
-    // only possible error here is the schedule-empty message (whose jump
-    // link has no real field target -- the "none apply" checkbox itself
-    // carries no data-bind/id). A row must exist before any per-field jump
-    // link with a real focusable target appears.
+    // (Milestone 63A, D1), and Print is unmarked. A brand-new schedule has 0 rows, so the page's
+    // only item here is the schedule's own question -- an entry, or the "none
+    // apply" tick (a prompt since Milestone 73F part 3, 73F-4) -- whose jump
+    // link has no real field target (the checkbox carries no data-bind/id). A
+    // row must exist before any per-field jump link with a real focusable
+    // target appears.
     await expect(page.locator('#page-next-btn')).toBeDisabled();
     await page.locator('[data-inventory-action="add-entry"][data-schedule="a1"]').click();
     await dismissScheduleDocPrompt(page); // Milestone 57C-R advisory modal
 
+    // The page lists its blockers and its own questions (Milestone 73F part
+    // 2); a row nobody has typed in is no entry, so A-1 still asks for one
+    // (73F part 3), as an Annual schedule does.
     const expectedCount = await page.evaluate(async () => {
-      const structured = await (window as any).GuardianForms.testing.validate.structured();
-      return structured.filter((e: any) => e.route === '/a1').length;
+      const t = (window as any).GuardianForms.testing;
+      const structured = await t.validate.structured();
+      const prompts = t.validate.evaluate().prompts || [];
+      return structured.filter((e: any) => e.route === '/a1').length + prompts.filter((p: any) => p.route === '/a1').length;
     });
     expect(expectedCount).toBeGreaterThan(0);
 
@@ -338,9 +344,12 @@ test.describe('Guardian Inventory navigation/status contract', () => {
       await page.locator(`[data-inventory-action="add-entry"][data-schedule="${key}"]`).click();
       await dismissScheduleDocPrompt(page); // Milestone 57C-R advisory modal
 
+      // Its blockers and its own question, as on A-1 above (73F part 3).
       const expectedCount = await page.evaluate(async (r) => {
-        const structured = await (window as any).GuardianForms.testing.validate.structured();
-        return structured.filter((e: any) => e.route === r).length;
+        const t = (window as any).GuardianForms.testing;
+        const structured = await t.validate.structured();
+        const prompts = t.validate.evaluate().prompts || [];
+        return structured.filter((e: any) => e.route === r).length + prompts.filter((p: any) => p.route === r).length;
       }, route);
       expect(expectedCount).toBeGreaterThan(0);
 

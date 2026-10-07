@@ -238,7 +238,7 @@ describe('form-contract', () => {
       expect(input.value).toBe('02/30/2026'); // stays visible
       expect(input.getAttribute('aria-invalid')).toBe('true');
       expect(input.classList.contains('is-invalid')).toBe(true);
-      expect(getFieldDraftIssueMessages()).toContain('Date entry - periodFrom must be a valid date using a four-digit year.');
+      expect(getFieldDraftIssueMessages()).toContain('Date entry — periodFrom must be a valid date using a four-digit year.');
     });
 
     it('sets aria-invalid on blur when 8-digit unpunctuated date is impossible calendar date', () => {

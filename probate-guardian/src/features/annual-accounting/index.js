@@ -33,7 +33,7 @@ import { GUARDIANSHIP_TYPE_OPTIONS, optionsWithLegacyValue } from '../../core/fo
 import { addCollectionRow, duplicateCollectionRow, removeCollectionRow } from '../../core/form/schedule-definitions.js';
 import { appendRow, removeRowAt } from '../../core/form/collections.js';
 import { checkSignatureState, inferLegacySignatureState } from '../../core/validation/signature-state.js';
-import { renderSignatureStateControl, mountSignatureStateControls } from '../../core/signature/signature-state-control.js';
+import { renderSignatureStateControl, mountSignatureStateControls, signatureDateRequired } from '../../core/signature/signature-state-control.js';
 import { preparerNoteHTML } from '../../core/signature/preparer-note.js';
 import { hasIdentifiedPreparer, preparerFlagCheckboxHTML, preparerWaivedNoticeHTML } from '../../core/form/preparer-flag.js';
 import { confirmModal, alertModal } from '../../core/ui/dialogs.js';
@@ -72,7 +72,7 @@ import { sectionMarks } from '../../core/status/section-marks.js';
 import { getCaseFile, getD, requestSave } from '../../core/state.js';
 import { updateNavDots } from '../../core/status/nav-marks.js';
 import { renderScheduleDocsSection } from '../../core/filing/schedule-docs.js';
-import { pageIntroRow, yesNoCheckboxD, yesNoRadioAnnualHTML } from '../../core/form/field-html.js';
+import { REQ_MARK, pageIntroRow, yesNoCheckboxD, yesNoRadioAnnualHTML, yesNoRadioHTML } from '../../core/form/field-html.js';
 import { browserRecommendationNotice, linkAccordions } from '../../core/form/form-runtime.js';
 import { countyAutocompleteHTML } from '../../core/form/county-autocomplete.js';
 import { setPath } from '../../core/form/paths.js';
@@ -97,7 +97,9 @@ import { collectAnnualIssues, RECIPIENT_STARTED_FIELDS, annualDescriptor, fmtAnn
 // Milestone 71B: the Part V fields that become required once an attorney is
 // started (and only then) -- the live markers and validateAnnual() share it.
 // Milestone 72C: the attorney's name ('attorney', on Part I and Part V) too.
-const ANNUAL_ATTORNEY_REQUIRED = ['attorney', 'attorney_bar', 'attorney_phone', 'attorney_email', 'attorney_street', 'attorney_cityStateZip', 'attorney_signatureDate'];
+const ANNUAL_ATTORNEY_REQUIRED = ['attorney', 'attorney_bar', 'attorney_phone', 'attorney_email', 'attorney_street', 'attorney_cityStateZip'];
+// Milestone 73F part 3: Part X repeats the attorney's details for the certificate.
+const ANNUAL_CERT_ATTORNEY_REQUIRED = ['attorney', 'attorney_bar', 'attorney_phone', 'attorney_street', 'attorney_cityStateZip'];
 const ANNUAL_ATTORNEY_TRIGGERS = ['attorney', 'attorney_secondaryEmail', 'attorney_signatureState', 'attorney_isPreparer'];
 const attorneyMarkerAborts = new WeakMap();
 const waiverHintAborts = new WeakMap();
@@ -214,6 +216,10 @@ export async function mount(container, page, { signal } = {}) {
   if (page === '/p5') {
     attorneyMarkerAborts.set(container, watchAttorneyRequiredMarkers(container, {
       engineId: 'annual', paths: ANNUAL_ATTORNEY_REQUIRED, triggerPaths: ANNUAL_ATTORNEY_TRIGGERS,
+    }));
+  } else if (page === '/p10') {
+    attorneyMarkerAborts.set(container, watchAttorneyRequiredMarkers(container, {
+      engineId: 'annual', paths: ANNUAL_CERT_ATTORNEY_REQUIRED, triggerPaths: ANNUAL_ATTORNEY_TRIGGERS,
     }));
   } else if (page === '/' || !page || page === '/p1') {
     // Milestone 72C: Part I's "Attorney for Guardian" is the same field as
@@ -406,13 +412,10 @@ async function removeB4Account(index, route) {
 function addAnnualRow(collection, route) {
   // Milestone 58D: adding an entry answers Part XI by itself, so a previously
   // ticked "no items to report" declaration is withdrawn rather than left to
-  // contradict the row being added. Keyed on the collection name, which is the
-  // scheduleNoItems key for remuneration; the schedules whose flag is keyed
-  // differently (`scha` against collection `schA`) are outside 58D's scope and
-  // are unaffected either way.
-  if (getD()?.scheduleNoItems?.[collection]) getD().scheduleNoItems[collection] = false;
+  // contradict the row being added -- since 73F part 3 on every schedule, by
+  // appendRow() under the key the page's box writes (no-items-keys.js).
   if (addCollectionRow(collection, getD())) {
-    commitModelChange('collection-add', [collection]);
+    commitModelChange('collection-add', [collection, 'scheduleNoItems']);
     navigate(route);
   }
 }
@@ -509,9 +512,9 @@ function selD(label,val,setter,opts,req=false){
 }
 // County-field counterpart to selD() -- same custom-setter-string
 // convention, but a filtered-autocomplete text input instead of a <select>.
-function countyInputD(label,val,setter){
+function countyInputD(label,val,setter,req=false){
   const inputId='cty_'+Math.random().toString(36).slice(2,9);
-  return `<div class="mb-2"><label class="form-label" for="${inputId}">${label}</label>${countyAutocompleteHTML(inputId,val,setterPath(setter))}</div>`;
+  return `<div class="mb-2"><label class="form-label" for="${inputId}">${label}${req?REQ_MARK:''}</label>${countyAutocompleteHTML(inputId,val,setterPath(setter))}</div>`;
 }
 // Milestone 71C: `kind` passes a field kind through to the renderer --
 // `type: 'number'` alone always meant money, so a Ward's % could not be a
@@ -677,8 +680,8 @@ function pagePart1Annual(){
           ${renderReportingPeriodFields({ periodFrom: d.periodFrom, periodTo: d.periodTo, fromLabel: 'Period From', toLabel: 'Period To' })}
         </div>
         <div class="row g-2">
-          <div class="col-md-6">${selD('Filing Type',d.filingType,"D.filingType=this.value",['Annual','Final','Trust'])}</div>
-          <div class="col-md-6">${yesNoCheckboxD('Amended Form?',d.amendedForm,'amendedForm')}</div>
+          <div class="col-md-6">${selD('Filing Type',d.filingType,"D.filingType=this.value",['Annual','Final','Trust'],true)}</div>
+          <div class="col-md-6">${yesNoCheckboxD('Amended Form?',d.amendedForm,'amendedForm',true)}</div>
         </div>
       </div>
     </div>
@@ -688,7 +691,7 @@ function pagePart1Annual(){
         ${inpD('Guardian',d.guardian,"D.guardian=this.value",true)}
         <div class="row g-2">
           <div class="col-md-8">${inpD('Attorney for Guardian',d.attorney,"D.attorney=this.value",isAttorneyStarted(d,'annual'))}</div>
-          <div class="col-md-4">${countyInputD('County',d.county,"D.county=this.value")}</div>
+          <div class="col-md-4">${countyInputD('County',d.county,"D.county=this.value",true)}</div>
         </div>
         ${renderSelectField({path:'typeOfGuardianship',label:'Type of Guardianship',value:d.typeOfGuardianship,options:optionsWithLegacyValue(GUARDIANSHIP_TYPE_OPTIONS,d.typeOfGuardianship),required:true})}
         ${inpD('Related Case Numbers (siblings/relatives with guardianships)',d.relatedCaseNumbers,"D.relatedCaseNumbers=this.value")}
@@ -725,7 +728,7 @@ function pagePart2Annual(){
     <div class="summary-line total"><span>Applicable Fee (based on total assets ${fmtAnnual(t.netAssetsFromD)})</span><span><strong>${formatMoney(fee)}</strong></span></div>
   </div>
   <div class="row g-2">
-    <div class="col-md-4">${inpD('Starting Balance (Net Assets per Prior Report)',d.startingBalance,"D.startingBalance=this.value",false,'number',{kind:'signed-money',keepBlank:true})}</div>
+    <div class="col-md-4">${inpD('Starting Balance (Net Assets per Prior Report)',d.startingBalance,"D.startingBalance=this.value",true,'number',{kind:'signed-money',keepBlank:true})}</div>
     <div class="col-12">${startingBalanceNotesHTML(d,{wards:getCaseFile()?.wards||null})}</div>
   </div>
   ${pageNavAnnual('/summary','/p3')}
@@ -746,7 +749,7 @@ function pagePart3Annual(){
       <div class="entry-card-body">
         <div class="row g-2">
           <div class="col-md-5">${inpD(`${labels[i]}'s Name`,g.name,`D.guardians[${i}].name=this.value`,true)}</div>
-          <div class="col-md-3">${inpDWithTooltip('Signature Date','signature_date',g.signatureDate,`D.guardians[${i}].signatureDate=this.value`,true,'date')}</div>
+          <div class="col-md-3">${inpDWithTooltip('Signature Date','signature_date',g.signatureDate,`D.guardians[${i}].signatureDate=this.value`,signatureDateRequired({ path: `guardians.${i}`, state: g.signatureState }),'date')}</div>
           <div class="col-12">${renderSignatureStateControl({ path: `guardians.${i}`, state: g.signatureState, date: g.signatureDate, route: '/p3', signatureImage: g.signatureImage })}</div>
           <div class="col-12">${preparerFlagCheckboxHTML({ path: `guardians.${i}.isPreparer`, checked: !!g.isPreparer, route: '/p3' })}</div>
           <div class="col-md-4">${inpDWithTooltip('SSN / EIN','ssn_ein',g.ssn,`D.guardians[${i}].ssn=this.value`,true)}</div>
@@ -754,8 +757,8 @@ function pagePart3Annual(){
           <div class="col-md-8">${inpD('Email Address',g.email,`D.guardians[${i}].email=this.value`,false,'email')}</div>
           <div class="col-md-6">${inpD('Mailing Street Address',g.mailingStreet,`D.guardians[${i}].mailingStreet=this.value`,true)}</div>
           <div class="col-md-6">${inpD('Mailing City / State / Zip',g.mailingCityStateZip,`D.guardians[${i}].mailingCityStateZip=this.value`,true)}</div>
-          <div class="col-md-6">${inpD('Residence / Office Street Address',g.officeStreet,`D.guardians[${i}].officeStreet=this.value`,true)}</div>
-          <div class="col-md-6">${inpD('Residence / Office City / State / Zip',g.officeCityStateZip,`D.guardians[${i}].officeCityStateZip=this.value`,true)}</div>
+          <div class="col-md-6">${inpD('Residence / Office Street Address',g.officeStreet,`D.guardians[${i}].officeStreet=this.value`,false)}</div>
+          <div class="col-md-6">${inpD('Residence / Office City / State / Zip',g.officeCityStateZip,`D.guardians[${i}].officeCityStateZip=this.value`,false)}</div>
         </div>
       </div>
     </div></div>`;
@@ -803,7 +806,7 @@ function pagePart4Annual(){
         <div class="entry-card-body">
           <div class="row g-2">
             <div class="col-md-5">${inpD("Preparer's Name",p.name,"D.preparer.name=this.value",true)}</div>
-            <div class="col-md-3">${inpDWithTooltip("Signature Date",'signature_date',p.signatureDate,"D.preparer.signatureDate=this.value",true,'date')}</div>
+            <div class="col-md-3">${inpDWithTooltip("Signature Date",'signature_date',p.signatureDate,"D.preparer.signatureDate=this.value",signatureDateRequired({ path: 'preparer', state: p.signatureState }),'date')}</div>
             <div class="col-12">${renderSignatureStateControl({ path: 'preparer', state: p.signatureState, date: p.signatureDate, route: '/p4', signatureImage: p.signatureImage })}</div>
             <div class="col-md-4">${inpDWithTooltip("Preparer's SSN / EIN",'ssn_ein',p.ssn,"D.preparer.ssn=this.value",true)}</div>
             <div class="col-md-4">${inpD("Preparer's Phone Number",p.phone,"D.preparer.phone=this.value",true)}</div>
@@ -843,7 +846,7 @@ function pagePart5Annual(){
         <div class="entry-card-body">
           <div class="row g-2">
             <div class="col-md-5">${inpD("Attorney Name (linked to Part I)",d.attorney,"D.attorney=this.value",started)}</div>
-            <div class="col-md-3">${inpDWithTooltip("Signature Date",'signature_date',d.attorney_signatureDate,"D.attorney_signatureDate=this.value",started,'date')}</div>
+            <div class="col-md-3">${inpDWithTooltip("Signature Date",'signature_date',d.attorney_signatureDate,"D.attorney_signatureDate=this.value",signatureDateRequired({ path: 'attorney', state: d.attorney_signatureState }),'date')}</div>
             <div class="col-12">${renderSignatureStateControl({ path: 'attorney', state: d.attorney_signatureState, date: d.attorney_signatureDate, route: '/p5', signatureImage: d.attorney_signatureImage, statePath: 'attorney_signatureState', imagePath: 'attorney_signatureImage' })}</div>
             <div class="col-12">${preparerFlagCheckboxHTML({ path: 'attorney_isPreparer', checked: !!d.attorney_isPreparer, route: '/p5' })}</div>
             <div class="col-md-4">${inpD("Bar Number",d.attorney_bar,"D.attorney_bar=this.value",started)}</div>
@@ -893,7 +896,7 @@ function pageSchAAnnual(){
         <div class="col-md-4">${inpD('Description',r.description,`D.schA[${i}].description=this.value`,true)}</div>
         <div class="col-md-2">${inpD('Bank Name',r.bank,`D.schA[${i}].bank=this.value`,true)}</div>
         <div class="col-md-2">${inpD('Account #',r.accountNo,`D.schA[${i}].accountNo=this.value`,true)}</div>
-        <div class="col-md-3">${inpD("Ward's Income Amount ",r.amount,`D.schA[${i}].amount=this.value`,false,'number')}</div>
+        <div class="col-md-3">${inpD("Ward's Income Amount ",r.amount,`D.schA[${i}].amount=this.value`,true,'number')}</div>
       </div></div>
     </div></div>`).join('')+'</div>';
   } else {
@@ -920,11 +923,11 @@ function pageSchB1Annual(){
       <div class="entry-card-body"><div class="row g-2">
         <div class="col-md-3">${inpD('Bank Account #',r.bankAcct,`D.schB1[${i}].bankAcct=this.value`,true)}</div>
         <div class="col-md-2">${inpD('Check #',r.checkNo,`D.schB1[${i}].checkNo=this.value`,true)}</div>
-        <div class="col-md-2">${inpD('Period From',r.periodFrom,`D.schB1[${i}].periodFrom=this.value`,true,'date')}</div>
-        <div class="col-md-2">${inpD('Period To',r.periodTo,`D.schB1[${i}].periodTo=this.value`,true,'date')}</div>
+        <div class="col-md-2">${inpD('Period From',r.periodFrom,`D.schB1[${i}].periodFrom=this.value`,false,'date')}</div>
+        <div class="col-md-2">${inpD('Period To',r.periodTo,`D.schB1[${i}].periodTo=this.value`,false,'date')}</div>
         <div class="col-md-2">${inpD('Date Paid',r.datePaid,`D.schB1[${i}].datePaid=this.value`,true,'date')}</div>
         <div class="col-md-4">${inpD('Payee',r.payee,`D.schB1[${i}].payee=this.value`,true)}</div>
-        <div class="col-md-3">${inpD('Court Order Date',r.courtOrderDate,`D.schB1[${i}].courtOrderDate=this.value`,true,'date')}</div>
+        <div class="col-md-3">${inpD('Court Order Date',r.courtOrderDate,`D.schB1[${i}].courtOrderDate=this.value`,false,'date')}</div>
         <div class="col-md-3">${inpD('Amount',r.amount,`D.schB1[${i}].amount=this.value`,true,'number')}</div>
       </div></div>
     </div></div>`).join('')+'</div>';
@@ -952,11 +955,11 @@ function pageSchB2Annual(){
       <div class="entry-card-body"><div class="row g-2">
         <div class="col-md-3">${inpD('Bank Account #',r.bankAcct,`D.schB2[${i}].bankAcct=this.value`,true)}</div>
         <div class="col-md-2">${inpD('Check #',r.checkNo,`D.schB2[${i}].checkNo=this.value`,true)}</div>
-        <div class="col-md-2">${inpD('Period From',r.periodFrom,`D.schB2[${i}].periodFrom=this.value`,true,'date')}</div>
-        <div class="col-md-2">${inpD('Period To',r.periodTo,`D.schB2[${i}].periodTo=this.value`,true,'date')}</div>
+        <div class="col-md-2">${inpD('Period From',r.periodFrom,`D.schB2[${i}].periodFrom=this.value`,false,'date')}</div>
+        <div class="col-md-2">${inpD('Period To',r.periodTo,`D.schB2[${i}].periodTo=this.value`,false,'date')}</div>
         <div class="col-md-2">${inpD('Date Paid',r.datePaid,`D.schB2[${i}].datePaid=this.value`,true,'date')}</div>
         <div class="col-md-4">${inpD('Payee',r.payee,`D.schB2[${i}].payee=this.value`,true)}</div>
-        <div class="col-md-3">${inpD('Court Order Date',r.courtOrderDate,`D.schB2[${i}].courtOrderDate=this.value`,true,'date')}</div>
+        <div class="col-md-3">${inpD('Court Order Date',r.courtOrderDate,`D.schB2[${i}].courtOrderDate=this.value`,false,'date')}</div>
         <div class="col-md-3">${inpD('Amount',r.amount,`D.schB2[${i}].amount=this.value`,true,'number')}</div>
       </div></div>
     </div></div>`).join('')+'</div>';
@@ -986,7 +989,7 @@ function pageSchB3Annual(){
         <div class="col-md-2">${inpD('Check #',r.checkNo,`D.schB3[${i}].checkNo=this.value`,true)}</div>
         <div class="col-md-2">${inpD('Date Paid',r.datePaid,`D.schB3[${i}].datePaid=this.value`,true,'date')}</div>
         <div class="col-md-5">${inpD('Payee',r.payee,`D.schB3[${i}].payee=this.value`,true)}</div>
-        <div class="col-md-3">${inpD('Court Order Date',r.courtOrderDate,`D.schB3[${i}].courtOrderDate=this.value`,true,'date')}</div>
+        <div class="col-md-3">${inpD('Court Order Date',r.courtOrderDate,`D.schB3[${i}].courtOrderDate=this.value`,false,'date')}</div>
         <div class="col-md-3">${inpD('Amount',r.amount,`D.schB3[${i}].amount=this.value`,true,'number')}</div>
       </div></div>
     </div></div>`).join('')+'</div>';
@@ -1430,8 +1433,8 @@ function reconcileBlockAnnual(t){
     If the difference is correct as filed, explain it below; an explanation is required before you can export.
   </div>
   <div class="summary-box">
-    <h2 class="subsection-heading">Explanation of Difference<span class="req">*</span></h2>
-    <textarea class="form-control" rows="4" id="reconcile-explanation"
+    <h2 class="subsection-heading" id="reconcile-explanation-heading">Explanation of Difference<span class="req">*</span></h2>
+    <textarea class="form-control" rows="4" id="reconcile-explanation" aria-labelledby="reconcile-explanation-heading"
       placeholder="Explain why Net Assets from Changes and Net Assets from Balances differ (for example: a correcting entry from a prior period, or an asset discovered after the period closed)."
       data-annual-path="reconcileExplanation"
       >${esc(st.explanation)}</textarea>
@@ -1468,9 +1471,12 @@ function pagePart8Annual(){
   <h1>Part VIII — Trust Information</h1>
   <div class="schedule-instructions">If a trust was created after the Guardianship Inception Date, you MUST file a separate trust accounting for that trust.</div>
   <div class="row g-2 mb-3">
-    <div class="col-md-6">${yesNoCheckboxD('#1. Does the Ward have one or more Trusts?',d.trusts?.[0]?.hasTrust||'','trusts.0.hasTrust','/p8')}</div>
+    <div class="col-md-6">${yesNoRadioHTML('trusts.0.hasTrust','#1. Does the Ward have one or more Trusts?',d.trusts?.[0]?.hasTrust||'','trusts.0.hasTrust',true,'/p8')}</div>
   </div>
-  ${hasTrusts ? `<div class="row g-3 schedule-entry-grid">${cards}</div>` : scheduleEmptyHTMLAnnual('a-p8', 'trusts', null, 'I certify there are no trusts')}
+  ${/* Milestone 73F part 3 (decision 73F-5): question #1 answers Part VIII;
+      the separate "I certify there are no trusts" box, which completed nothing
+      since 73F part 2, is gone. A tick saved before is left in the filing, unread. */''}
+  ${hasTrusts ? `<div class="row g-3 schedule-entry-grid">${cards}</div>` : ''}
   ${pageNavAnnual('/p67','/p9')}
   </div>`;
 }
@@ -1532,7 +1538,7 @@ function pagePart10Annual(){
     return `<div class="col-12 col-lg-6"><div class="entry-card mb-0 h-100">
       <div class="entry-card-header d-flex justify-content-between align-items-center gap-2"><span>Recipient ${i+1}</span><span class="entry-card-actions">${removeBtn}</span></div>
       <div class="entry-card-body"><div class="row g-2">
-        <div class="col-12">${inpD('Name',r.name,`D.certRecipients[${i}].name=this.value`,i===0)}</div>
+        <div class="col-12">${inpD('Name',r.name,`D.certRecipients[${i}].name=this.value`,true)}</div>
         <div class="col-12">${inpD('Line 2',r.line2,`D.certRecipients[${i}].line2=this.value`,false)}</div>
         <div class="col-12">${inpD('Line 3',r.line3,`D.certRecipients[${i}].line3=this.value`,false)}</div>
         <div class="col-12">${inpD('Line 4',r.line4,`D.certRecipients[${i}].line4=this.value`,false)}</div>
@@ -1553,7 +1559,7 @@ function pagePart10Annual(){
         <div class="entry-card-body">
           <div class="row g-2">
             <div class="col-md-5">${inpD('Attorney Name',d.attorney,"D.attorney=this.value")}</div>
-            <div class="col-md-3">${inpDWithTooltip('Signature Date','signature_date',d.certAttySignDate,"D.certAttySignDate=this.value",false,'date')}</div>
+            <div class="col-md-3">${inpDWithTooltip('Signature Date','signature_date',d.certAttySignDate,"D.certAttySignDate=this.value",signatureDateRequired({ path: 'certAttorney', state: d.certAttySignatureState }),'date')}</div>
             <div class="col-12">${renderSignatureStateControl({ path: 'certAttorney', state: d.certAttySignatureState, date: d.certAttySignDate, route: '/p10', signatureImage: d.certAttySignatureImage, statePath: 'certAttySignatureState', imagePath: 'certAttySignatureImage' })}</div>
             <div class="col-md-4">${inpD('Bar Number',d.attorney_bar,"D.attorney_bar=this.value")}</div>
             <div class="col-md-4">${inpD('Phone Number',d.attorney_phone,"D.attorney_phone=this.value")}</div>
@@ -1575,7 +1581,7 @@ function pagePart10Annual(){
         <div class="entry-card-body">
           <p class="mb-2">${certifier?`Signed by <strong>${esc(certifier.name||`${labels[certifier.index]} (name not entered)`)}</strong>, ${esc(labels[certifier.index])} — name and contact details come from Part III.`:'Tick the guardian who served the copies above.'}</p>
           <div class="row g-2">
-            <div class="col-md-5">${inpDWithTooltip('Signature Date','signature_date',d.certGuardianSignDate,"D.certGuardianSignDate=this.value",false,'date')}</div>
+            <div class="col-md-5">${inpDWithTooltip('Signature Date','signature_date',d.certGuardianSignDate,"D.certGuardianSignDate=this.value",signatureDateRequired({ path: 'certGuardian', state: d.certGuardianSignatureState }),'date')}</div>
             <div class="col-12">${renderSignatureStateControl({ path: 'certGuardian', state: d.certGuardianSignatureState, date: d.certGuardianSignDate, route: '/p10', signatureImage: d.certGuardianSignatureImage, statePath: 'certGuardianSignatureState', imagePath: 'certGuardianSignatureImage' })}</div>
           </div>
         </div>

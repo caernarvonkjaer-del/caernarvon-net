@@ -5,6 +5,7 @@
 // an argument instead of reading the open one, so they load with the app and
 // can judge any filing (73F part 2 uses that). validatePlanMinor() stays as a wrapper
 // returning exactly what it did; tests/unit/validator-engines.spec.js holds it.
+import { countyProblem, notFloridaCountyMessage } from '../county-rule.js';
 import { checkDateOrder } from '../date-rules.js';
 import { checkSignatureState, inferLegacySignatureState, signaturePolicyOf } from '../signature-state.js';
 import { isAttorneyStarted } from '../attorney-block.js';
@@ -23,7 +24,8 @@ export function collectPlanMinorIssues(d){
   if(!isTriStateAnswer(d.amendedForm)) errs.push(issue('Cover — Amended Form? must be answered','amendedForm'));
   const req=(v,label,path)=>{if(v===''||v===null||v===undefined||v===false)errs.push(issue(label,path));};
   req(d.wardName,"Cover — Minor's Name is required",'wardName');
-  req(d.county,'Cover — County is required','county');
+  // Milestone 73F part 3 (73F-2): a Florida county, not only a non-blank one.
+  {const county=countyProblem(d.county);if(county==='blank')errs.push(issue('Cover — County is required','county'));else if(county)errs.push(issue(notFloridaCountyMessage('Cover',county),'county'));}
   req(d.periodFrom,'Cover — Reporting Period From is required','periodFrom');
   req(d.periodTo,'Cover — Reporting Period To is required','periodTo');
   errs.push(...checkDateOrder(d.periodFrom,d.periodTo,{

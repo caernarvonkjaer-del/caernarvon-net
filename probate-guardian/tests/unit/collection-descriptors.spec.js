@@ -137,10 +137,39 @@ describe("73V: each form's rows, floors and limits are what it used before", () 
 
   // Milestone 73C retired keepBlankUntilLeave: a new row staying until the filer
   // leaves the page is now the rule on every list.
-  it('nothing reads the inactive policies yet (73F part 3, 73K part 2, 73P)', () => {
+  it('nothing reads the inactive policies yet (73K part 2, 73P)', () => {
     for (const [type, list] of registeredCollections()) {
-      expect(getCollection(type, list).policies).toEqual({ confirmRemove: null, clearNoItemsOnAdd: null, focusAfterAction: null });
+      expect(getCollection(type, list).policies).toEqual({ confirmRemove: null, focusAfterAction: null });
     }
+  });
+
+  // Milestone 73F part 3: "+ Add" withdraws the list's "no items" tick under the
+  // key the page's checkbox writes. The Annual cleared `scheduleNoItems.schA`
+  // while its box writes `scha`, so the tick stayed beside the new row.
+  it('"+ Add" clears the list\'s "no items" tick, under the key its page writes, on every form that has one', () => {
+    const cases = [['annual', 'schA', 'scha'], ['trustAccounting', 'schD1', 'schd1'], ['annual', 'remuneration', 'remuneration'],
+      ['guardian', 'scheduleC4', 'c4'], ['simplified', 'remuneration', 'remuneration']];
+    for (const [type, list, tick] of cases) {
+      const data = { inventoryType: type, [list]: [], scheduleNoItems: { [tick]: true, other: true } };
+      appendRow(data, list);
+      expect(data.scheduleNoItems, `${type} ${list}`).toEqual({ [tick]: false, other: true });
+    }
+    // A list with no tick is untouched by it.
+    const plan = { inventoryType: 'planAnnual', q1Residences: [], scheduleNoItems: { x: true } };
+    appendRow(plan, 'q1Residences');
+    expect(plan.scheduleNoItems).toEqual({ x: true });
+  });
+
+  it('a blank row is no row: a row "+ Add" added is untouched until the filer enters something, its "No" defaults included', () => {
+    for (const list of ['schB3', 'schB4', 'schD1', 'schD2', 'schD4']) {
+      const { factory, isBlank } = getCollection('annual', list);
+      expect(isBlank(factory()), list).toBe(true);
+    }
+    // Saved under the older template shape (no "No" defaults) -- still untouched.
+    expect(getCollection('annual', 'schD1').isBlank({ description: '', accountNo: '', restricted: '', type: '', fullAmount: '', wardPct: '', restrictedAmt: '' })).toBe(true);
+    // Anything entered counts, a changed answer included.
+    expect(getCollection('annual', 'schD1').isBlank({ ...getCollection('annual', 'schD1').factory(), restricted: 'Yes' })).toBe(false);
+    expect(getCollection('annual', 'schB4').isBlank({ ...getCollection('annual', 'schB4').factory(), payee: 'Bank' })).toBe(false);
   });
 });
 

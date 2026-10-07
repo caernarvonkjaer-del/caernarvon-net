@@ -12,7 +12,7 @@ import { createSimplifiedGuardian, getSimplifiedGuardianAddressConflicts, normal
 import { checkSignatureState, inferLegacySignatureState } from '../../core/validation/signature-state.js';
 import { issueFactory } from '../../core/validation/validation-issue.js';
 import { createIssue } from '../../core/validation/issue-registry.js';
-import { renderSignatureStateControl, mountSignatureStateControls } from '../../core/signature/signature-state-control.js';
+import { renderSignatureStateControl, mountSignatureStateControls, signatureDateRequired } from '../../core/signature/signature-state-control.js';
 import { preparerNoteHTML } from '../../core/signature/preparer-note.js';
 import { confirmModal } from '../../core/ui/dialogs.js';
 // Milestone 41-3: only renderReportingPeriodFields() fits this filing type,
@@ -59,7 +59,9 @@ import { watchAttorneyRequiredMarkers } from '../../core/form/attorney-required-
 // Accounting needs no attorney at all.
 const SIMPLIFIED_ATTORNEY_REQUIRED = {
   '/': ['attorney'],
-  '/p5': ['attorney_barNumber', 'attorney_phone', 'attorney_email', 'attorney_street', 'attorney_cityStateZip'],
+  '/p5': ['attorney', 'attorney_barNumber', 'attorney_phone', 'attorney_email', 'attorney_street', 'attorney_cityStateZip'],
+  // Milestone 73F part 3: Part VI repeats the attorney's name for the certificate.
+  '/p6': ['attorney'],
 };
 const SIMPLIFIED_ATTORNEY_TRIGGERS = ['attorney', 'attorney_barNumber', 'attorney_phone', 'attorney_email', 'attorney_secondaryEmail', 'attorney_street', 'attorney_cityStateZip', 'attorney_signatureDate', 'attorney_signatureState'];
 const attorneyMarkerAborts = new WeakMap();
@@ -150,8 +152,8 @@ function bindEvents(container) {
       case 'add-remuneration': {
         // Milestone 60J (Annual's 58D rule): adding an entry answers Part VII
         // by itself, so a previously ticked "none to report" declaration is
-        // withdrawn rather than left to contradict the row being added.
-        if (getD()?.scheduleNoItems?.remuneration) getD().scheduleNoItems.remuneration = false;
+        // withdrawn rather than left to contradict the row being added
+        // (appendRow() does it, for every form, since 73F part 3).
         if (addCollectionRow('remuneration', getD())) {
           commitModelChange('collection-add', ['remuneration', 'scheduleNoItems.remuneration']);
           navigate('/p7');
@@ -578,7 +580,7 @@ function pagePart4(){
       <div class="entry-card-body">
         <div class="row g-2">
           <div class="col-md-6">${renderFormField({ path: `guardians.${i}.name`, label: `${labels[i]||`Co-Guardian #${i+1}`}'s Name`, value: g.name, required: true })}</div>
-          <div class="col-md-3">${renderFormField({ path: `guardians.${i}.signatureDate`, label: 'Signature Date', value: g.signatureDate, type: 'date', required: true, id: `guardians_${i}_sigDate` })}</div>
+          <div class="col-md-3">${renderFormField({ path: `guardians.${i}.signatureDate`, label: 'Signature Date', value: g.signatureDate, type: 'date', required: signatureDateRequired({ path: `guardians.${i}`, state: g.signatureState }), id: `guardians_${i}_sigDate` })}</div>
           <div class="col-12">${renderSignatureStateControl({ path: `guardians.${i}`, state: g.signatureState, date: g.signatureDate, route: '/p4', signatureImage: g.signatureImage })}</div>
           <div class="col-md-3">${renderFormField({ path: `guardians.${i}.ssn`, label: 'SSN / EIN', value: g.ssn, required: true })}</div>
           <div class="col-md-4">${renderFormField({ path: `guardians.${i}.phone`, label: 'Phone Number', value: g.phone, required: true })}</div>
@@ -619,7 +621,7 @@ function pagePart5(){
           <div class="entry-card-body">
             <div class="row g-2">
               <div class="col-md-6">${inpS('attorney','Attorney Name (linked to Part I)',d.attorney)}</div>
-              <div class="col-md-3">${inpSWithTooltip('attorney_signatureDate','Signature Date','signature_date',d.attorney_signatureDate,'','date')}</div>
+              <div class="col-md-3">${inpSWithTooltip('attorney_signatureDate','Signature Date','signature_date',d.attorney_signatureDate,signatureDateRequired({ path: 'attorney', state: d.attorney_signatureState }),'date')}</div>
               <div class="col-12">${renderSignatureStateControl({ path: 'attorney', state: d.attorney_signatureState, date: d.attorney_signatureDate, route: '/p5', signatureImage: d.attorney_signatureImage, statePath: 'attorney_signatureState', imagePath: 'attorney_signatureImage' })}</div>
               <div class="col-md-3">${inpS('attorney_barNumber','Bar Number',d.attorney_barNumber,isAttorneyStarted(d,'simplified'))}</div>
               <div class="col-md-4">${inpS('attorney_phone','Phone Number',d.attorney_phone,isAttorneyStarted(d,'simplified'))}</div>
@@ -640,7 +642,7 @@ function pagePart5(){
 function pagePart6(){
   const d=getD();
   const cards=(d.certRecipients||[]).map((r,i)=>{
-    const req=(i===0||i===2)?'<span class="req">*</span>':'';
+    const req='<span class="req">*</span>';
     const removeBtn=i===0?'':`<button type="button" class="btn btn-outline-danger btn-sm" data-simplified-action="remove-recipient" data-index="${i}">✕ Remove</button>`;
     return `<div class="col-12 col-lg-6"><div class="entry-card mb-0 h-100">
       <div class="entry-card-header d-flex justify-content-between align-items-center gap-2"><span>Recipient ${i+1}</span><span class="entry-card-actions">${removeBtn}</span></div>
@@ -673,8 +675,8 @@ function pagePart6(){
           <div class="entry-card-header">Attorney Certification</div>
           <div class="entry-card-body">
             <div class="row g-2">
-              <div class="col-md-6"><label class="form-label">Attorney Name (linked)</label><input type="text" class="form-control" value="${esc(formatName(d.attorney||''))}" data-form-path="attorney" data-form-format="name"></div>
-              <div class="col-md-3">${inpSWithTooltip('certAttySignDate','Signature Date','signature_date',d.certAttySignDate,'','date')}</div>
+              <div class="col-md-6"><label class="form-label" for="cert_attorney_name">Attorney Name (linked)</label><input type="text" class="form-control" id="cert_attorney_name" value="${esc(formatName(d.attorney||''))}" data-form-path="attorney" data-form-format="name"></div>
+              <div class="col-md-3">${inpSWithTooltip('certAttySignDate','Signature Date','signature_date',d.certAttySignDate,signatureDateRequired({ path: 'certAttorney', state: d.certAttySignatureState }),'date')}</div>
               <div class="col-12">${renderSignatureStateControl({ path: 'certAttorney', state: d.certAttySignatureState, date: d.certAttySignDate, route: '/p6', signatureImage: d.certAttySignatureImage, statePath: 'certAttySignatureState', imagePath: 'certAttySignatureImage' })}</div>
             </div>
           </div>
@@ -692,7 +694,7 @@ function pagePart6(){
           <div class="entry-card-body">
             <p class="mb-2">${certifier?`Signed by <strong>${esc(certifier.name||`${gLabels[certifier.index]} (name not entered)`)}</strong>, ${esc(gLabels[certifier.index])} — name and contact details come from Part IV.`:'Tick the guardian who served the copies above.'}</p>
             <div class="row g-2">
-              <div class="col-md-5">${inpSWithTooltip('certGuardianSignDate','Signature Date','signature_date',d.certGuardianSignDate,'','date')}</div>
+              <div class="col-md-5">${inpSWithTooltip('certGuardianSignDate','Signature Date','signature_date',d.certGuardianSignDate,signatureDateRequired({ path: 'certGuardian', state: d.certGuardianSignatureState }),'date')}</div>
               <div class="col-12">${renderSignatureStateControl({ path: 'certGuardian', state: d.certGuardianSignatureState, date: d.certGuardianSignDate, route: '/p6', signatureImage: d.certGuardianSignatureImage, statePath: 'certGuardianSignatureState', imagePath: 'certGuardianSignatureImage' })}</div>
             </div>
           </div>
@@ -740,7 +742,7 @@ function pagePart7(){
           <div class="col-md-6"><label class="form-label">Guardian Name <span class="req">*</span></label><input type="text" class="form-control" value="${esc(formatName(r.guardian||''))}" data-form-path="remuneration.${i}.guardian" data-form-format="name"></div>
           <div class="col-md-6"><label class="form-label">Type <span class="req">*</span></label><input type="text" class="form-control" value="${esc(formatName(r.type||''))}" data-form-path="remuneration.${i}.type" data-form-format="name"></div>
           <div class="col-md-8"><label class="form-label">Description</label><input type="text" class="form-control" value="${esc(r.description||'')}" data-form-path="remuneration.${i}.description"></div>
-          <div class="col-md-4"><label class="form-label">Amount</label><input type="text" class="form-control" inputmode="decimal" value="${esc(amountBoxText(r.amount))}" data-form-path="remuneration.${i}.amount" data-form-format="currency" data-field-blank="keep"></div>
+          <div class="col-md-4"><label class="form-label">Amount <span class="req">*</span></label><input type="text" class="form-control" inputmode="decimal" value="${esc(amountBoxText(r.amount))}" data-form-path="remuneration.${i}.amount" data-form-format="currency" data-field-blank="keep"></div>
         </div>
       </div>
     </div></div>`).join('')+'</div>';

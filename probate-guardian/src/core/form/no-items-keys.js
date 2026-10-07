@@ -6,7 +6,8 @@
 //
 // The keys are the ones each page's checkbox writes:
 // - the Annual, Final and Trust Accountings: the list lowercased ("schA" ->
-//   "scha"); Part VIII's trusts "a-p8"; Part XI "remuneration";
+//   "scha"); Part XI "remuneration" (Part VIII's trusts have none since 73F
+//   part 3: question #1 answers Part VIII);
 // - the Initial Inventory: the schedule's code ("scheduleA1" -> "a1");
 // - the Simplified: Part VII "remuneration".
 import { formEngine } from '../filing/filing-registry.js';
@@ -22,7 +23,6 @@ export function noItemsKeyFor(filingType, listKey) {
   const list = String(listKey || '');
   if (engine === 'annual') {
     if (/^sch[A-F]\d?$/.test(list)) return list.toLowerCase();
-    if (list === 'trusts') return 'a-p8';
     if (list === 'remuneration') return 'remuneration';
     return null;
   }

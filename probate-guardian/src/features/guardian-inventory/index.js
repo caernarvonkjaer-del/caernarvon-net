@@ -15,7 +15,7 @@ import { issueFactory } from '../../core/validation/validation-issue.js';
 import { createIssue } from '../../core/validation/issue-registry.js';
 import { migrateBondDepository, inferBondDepositoryState, BOND_DEPOSITORY_OPTIONS, BOND_DEPOSITORY_QUESTION, revealsBond, revealsDepository, revealsWaiver } from '../../core/filing/bond-depository.js';
 import { renderFormField, renderRadioGroupField } from '../../core/form/form-fields.js';
-import { renderSignatureStateControl, mountSignatureStateControls } from '../../core/signature/signature-state-control.js';
+import { renderSignatureStateControl, mountSignatureStateControls, signatureDateRequired } from '../../core/signature/signature-state-control.js';
 import { preparerNoteHTML } from '../../core/signature/preparer-note.js';
 import { hasIdentifiedPreparer, preparerFlagCheckboxHTML, preparerWaivedNoticeHTML } from '../../core/form/preparer-flag.js';
 import { serviceRecipientIssues, RECIPIENTS_OR_ATTESTATION } from '../../core/validation/service-recipients.js';
@@ -48,7 +48,7 @@ import { watchAttorneyRequiredMarkers } from '../../core/form/attorney-required-
 // share the rule.
 const INVENTORY_ATTORNEY_REQUIRED = {
   '/': ['attorneyForGuardian'],
-  '/d2': ['attorney.name', 'attorney.signatureDate', 'attorney.filingDate', 'attorney.barNumber', 'attorney.phone', 'attorney.email', 'attorney.streetAddress', 'attorney.cityStateZip'],
+  '/d2': ['attorney.name', 'attorney.filingDate', 'attorney.barNumber', 'attorney.phone', 'attorney.email', 'attorney.streetAddress', 'attorney.cityStateZip'],
 };
 const INVENTORY_ATTORNEY_TRIGGERS = ['attorneyForGuardian', 'attorney'];
 const attorneyMarkerAborts = new WeakMap();
@@ -493,11 +493,15 @@ function numInput(bind){
 // its own dataset.fieldKind==='date' early return), so there is no
 // competing writer or type mismatch to guard against here -- the field was
 // already, safely, claimed by both attributes at once.
-function dateInput(bind){
+// Milestone 73F part 3: `label` is the visible label the caller draws beside
+// the box, carried as the field's name so a date that can't be read is named
+// ("Date Filed", not "scheduleC2.0.dateFiled").
+function dateInput(bind,label=''){
   const inputId='date_'+Math.random().toString(36).slice(2,9);
   return renderFormField({
     path: bind,
     label: '',
+    dataLabel: label,
     value: '',
     kind: 'date',
     policy: 'normalize',
@@ -732,7 +736,7 @@ function pageHome(){
         ${formRow(col(12,reqLabel('Name of Ward')+textInput('wardName','Full legal name of ward','name')))}
         ${formRow(col(12,reqLabel('Case Number')+textInput('caseNumber','','caseNumber')))}
         ${formRow(col(12,optLabel('UCN')+textInput('ucn','')))}
-        ${formRow(col(12,reqLabel('Guardianship Inception Date (GID)')+dateInput('gid')))}
+        ${formRow(col(12,reqLabel('Guardianship Inception Date (GID)')+dateInput('gid','Guardianship Inception Date (GID)')))}
         ${formRow(col(6,reqLabel('County')+countyInputBind('county')))}
       </div>
     </div>
@@ -742,11 +746,11 @@ function pageHome(){
         ${formRow(col(12,reqLabel('Guardian Name(s)')+textInput('guardianName','','name')))}
         ${formRow(col(12,attyLabel('Attorney for Guardian')+textInput('attorneyForGuardian','','name')))}
         ${formRow(col(12,reqLabel('Type of Guardianship')+selectInput('typeOfGuardianship',optionsWithLegacyValuePairs(GUARDIANSHIP_TYPE_OPTIONS,D.typeOfGuardianship),D.typeOfGuardianship)))}
-        ${formRow(col(12,yesNoRadioHTML('amendedForm','Amended Form?',D.amendedForm||(D.isAmended?'Yes':(D.isAmended===false?'No':'')),'amendedForm')))}
+        ${formRow(col(12,yesNoRadioHTML('amendedForm','Amended Form?',D.amendedForm||(D.isAmended?'Yes':(D.isAmended===false?'No':'')),'amendedForm',true)))}
       </div>
     </div>
   </div>
-  ${isAttorneyStarted(D,'guardian')?'':waiverBasisQuestionHTML(D,{route:'/',dateField:(path,label)=>optLabel(label)+dateInput(path)})}
+  ${isAttorneyStarted(D,'guardian')?'':waiverBasisQuestionHTML(D,{route:'/',dateField:(path,label)=>optLabel(label)+dateInput(path,label)})}
   <div class="summary-box mb-3">
     <h2 class="subsection-heading">Inventory Witnesses</h2>
     <div class="schedule-instructions">A personal property inventory must include the names, addresses, and occupations of witnesses present during the physical inventory of the ward's personal effects.</div>
@@ -995,7 +999,7 @@ function pageScheduleB4(){
 function pageScheduleC1(){
   const entries=D.scheduleC1.map((e,i)=>entryCard(`Income Source ${i+1}`,i,'c1',`
     ${formRow(col(5,reqLabel('Payer Name')+textInput(`scheduleC1.${i}.payerName`,'e.g., Social Security Administration','name')),col(3,reqLabel('Type of Income')+textInput(`scheduleC1.${i}.typeOfIncome`,'SSI, SSD, Pension…')),col(4,reqLabel('Frequency')+selectInput(`scheduleC1.${i}.frequencyOfPayment`,[['Monthly','Monthly'],['Quarterly','Quarterly'],['Semi-Annually','Semi-Annually'],['Annually','Annually'],['Other','Other']])))}
-    ${formRow(col(6,reqLabel('Payer Street Address')+textInput(`scheduleC1.${i}.payerAddress`,'','address')),col(6,reqLabel('Payer City / State / Zip')+textInput(`scheduleC1.${i}.payerCityStateZip`,'','zip')))}
+    ${formRow(col(6,reqLabel('Payer Street Address')+textInput(`scheduleC1.${i}.payerAddress`,'','address')),col(6,optLabel('Payer City / State / Zip')+textInput(`scheduleC1.${i}.payerCityStateZip`,'','zip')))}
     ${formRow(col(4,reqLabel('Basis for Payment')+textInput(`scheduleC1.${i}.paymentBasis`,'e.g., $600/month')))}
     ${formRow(col(3,reqLabel('Annual Income Amount ($)')+numInput(`scheduleC1.${i}.annualIncomeAmount`)),col(3,reqLabel("Ward's % (0-100)")+numInput(`scheduleC1.${i}.wardPercent`)),col(3,optLabel("Ward's Annual Income (calculated)")+calcInput(`scheduleC1.${i}.wardC1`)))}
   `)).join('');
@@ -1013,8 +1017,8 @@ function pageScheduleC2(){
     ${formRow(col(6,reqLabel('Claimant / Petitioner Name')+textInput(`scheduleC2.${i}.claimantName`,'','name')),col(6,reqLabel('Type of Lawsuit / Description')+textInput(`scheduleC2.${i}.lawsuitDescription`,'e.g., Mortgage Foreclosure','name')))}
     ${formRow(col(6,optLabel("Claimant's Attorney (if any)")+textInput(`scheduleC2.${i}.claimantAttorney`,'e.g., John Smith','name')))}
     ${formRow(col(6,reqLabel('Court / Jurisdiction')+textInput(`scheduleC2.${i}.courtJurisdiction`,'e.g., Circuit Court / County')),col(6,reqLabel('Case Number')+textInput(`scheduleC2.${i}.caseNumber`)))}
-    ${formRow(col(6,reqLabel('Claimant / Attorney Street Address')+textInput(`scheduleC2.${i}.claimantAddress`,'','address')),col(6,optLabel('Claimant City / State / Zip')+textInput(`scheduleC2.${i}.claimantCityStateZip`,'','zip')))}
-    ${formRow(col(3,reqLabel('Date Filed')+dateInput(`scheduleC2.${i}.dateFiled`)),col(3,reqLabel('Amount of Claim ($)')+numInput(`scheduleC2.${i}.amountOfClaim`)),col(3,reqLabel("Ward's % (0-100)")+numInput(`scheduleC2.${i}.wardPercent`)),col(3,optLabel("Ward's Share (calculated)")+calcInput(`scheduleC2.${i}.wardC2`)))}
+    ${formRow(col(6,optLabel('Claimant / Attorney Street Address')+textInput(`scheduleC2.${i}.claimantAddress`,'','address')),col(6,optLabel('Claimant City / State / Zip')+textInput(`scheduleC2.${i}.claimantCityStateZip`,'','zip')))}
+    ${formRow(col(3,reqLabel('Date Filed')+dateInput(`scheduleC2.${i}.dateFiled`,'Date Filed')),col(3,reqLabel('Amount of Claim ($)')+numInput(`scheduleC2.${i}.amountOfClaim`)),col(3,reqLabel("Ward's % (0-100)")+numInput(`scheduleC2.${i}.wardPercent`)),col(3,optLabel("Ward's Share (calculated)")+calcInput(`scheduleC2.${i}.wardC2`)))}
   `)).join('');
   return `<div class="schedule-page">
   <h1>Schedule C-2: Lawsuits Pending Against the Ward</h1>
@@ -1029,7 +1033,7 @@ function pageScheduleC3(){
     ${formRow(col(6,reqLabel('Defendant / Entity Name')+textInput(`scheduleC3.${i}.defendantName`,'','name')),col(6,reqLabel('Type of Pending Legal Action')+textInput(`scheduleC3.${i}.actionDescription`,'e.g., Negligence, Personal Injury','name')))}
     ${formRow(col(12,reqLabel('Status of Action')+textInput(`scheduleC3.${i}.status`,'e.g., Mediation scheduled for…')))}
     ${formRow(col(6,reqLabel('Court / Jurisdiction / Attorney of Record')+textInput(`scheduleC3.${i}.courtJurisdiction`)),col(6,optLabel('Case Number (if filed)')+textInput(`scheduleC3.${i}.caseNumber`)))}
-    ${formRow(col(3,optLabel('Action Date (if filed)')+dateInput(`scheduleC3.${i}.actionDate`)),col(3,reqLabel('Estimated Settlement ($)')+numInput(`scheduleC3.${i}.estimatedSettlement`)),col(3,reqLabel("Ward's % (0-100)")+numInput(`scheduleC3.${i}.wardPercent`)),col(3,optLabel("Ward's Share (calculated)")+calcInput(`scheduleC3.${i}.wardC3`)))}
+    ${formRow(col(3,optLabel('Action Date (if filed)')+dateInput(`scheduleC3.${i}.actionDate`,'Action Date (if filed)')),col(3,reqLabel('Estimated Settlement ($)')+numInput(`scheduleC3.${i}.estimatedSettlement`)),col(3,reqLabel("Ward's % (0-100)")+numInput(`scheduleC3.${i}.wardPercent`)),col(3,optLabel("Ward's Share (calculated)")+calcInput(`scheduleC3.${i}.wardC3`)))}
   `)).join('');
   return `<div class="schedule-page">
   <h1>Schedule C-3: Lawsuits Pending by the Ward</h1>
@@ -1043,7 +1047,7 @@ function pageScheduleC4(){
   const entries=D.scheduleC4.map((e,i)=>entryCard(`Trust ${i+1}`,i,'c4',`
     ${formRow(col(5,reqLabel('Trust Name')+textInput(`scheduleC4.${i}.trustName`)),col(4,reqLabel('Trustee Name')+textInput(`scheduleC4.${i}.trusteeName`)),col(3,reqLabel('Type of Trust')+textInput(`scheduleC4.${i}.trustType`,'Pooled, Special Needs, Living…')))}
     ${formRow(col(6,reqLabel('Trustee Street Address')+textInput(`scheduleC4.${i}.trusteeAddress`,'','address')),col(6,reqLabel('Trustee City / State / Zip')+textInput(`scheduleC4.${i}.trusteeCityStateZip`,'','zip')))}
-    ${formRow(col(3,reqLabel('Date Created')+dateInput(`scheduleC4.${i}.dateCreated`)),col(3,optLabel('Account Number')+textInput(`scheduleC4.${i}.accountNumber`,'','accountNumber')))}
+    ${formRow(col(3,reqLabel('Date Created')+dateInput(`scheduleC4.${i}.dateCreated`,'Date Created')),col(3,optLabel('Account Number')+textInput(`scheduleC4.${i}.accountNumber`,'','accountNumber')))}
     ${formRow(col(3,reqLabel('Trust Amount ($)')+numInput(`scheduleC4.${i}.trustAmount`)),col(3,reqLabel("Ward's % (0-100)")+numInput(`scheduleC4.${i}.wardPercent`)),col(3,optLabel("Ward's Share (calculated)")+calcInput(`scheduleC4.${i}.wardC4`)))}
   `)).join('');
   return `<div class="schedule-page">
@@ -1085,7 +1089,7 @@ function pageD1(){
     return `<div class="col-12 col-lg-6"><div class="entry-card mb-0 h-100">
       <div class="entry-card-header d-flex justify-content-between align-items-center"><span>${title}</span><div class="d-flex align-items-center gap-2">${linkBtn}${removeBtn}</div></div>
       <div class="entry-card-body">
-        ${formRow(col(5,reqLabel("Guardian's Full Name")+textInput(`guardians.${i}.name`,'','name')),col(3,reqLabel('Signature Date')+dateInput(`guardians.${i}.signatureDate`)),col(4,reqLabel('SSN / EIN')+textInput(`guardians.${i}.ssnEin`,'','ssn')))}
+        ${formRow(col(5,reqLabel("Guardian's Full Name")+textInput(`guardians.${i}.name`,'','name')),col(3,(signatureDateRequired({ path: `guardians.${i}`, state: g.signatureState })?reqLabel:optLabel)('Signature Date')+dateInput(`guardians.${i}.signatureDate`,'Signature Date')),col(4,reqLabel('SSN / EIN')+textInput(`guardians.${i}.ssnEin`,'','ssn')))}
         ${formRow(col(4,reqLabel('Phone Number')+textInput(`guardians.${i}.phone`,'','phone')),col(8,reqLabel('Street Address')+textInput(`guardians.${i}.streetAddress`,'','address')))}
         ${formRow(col(6,reqLabel('City / State / Zip')+textInput(`guardians.${i}.cityStateZip`,'','zip')),col(6,optLabel('Email Address')+textInput(`guardians.${i}.email`,'name@example.com','email')))}
         ${renderSignatureStateControl({ path: `guardians.${i}`, state: g.signatureState, date: g.signatureDate, route: '/d1', signatureImage: g.signatureImage })}
@@ -1125,8 +1129,8 @@ function pageD2(){
       <button class="btn btn-sm btn-outline-secondary no-print" data-inventory-action="link-party" data-role="preparer" data-index="0">Link Person</button>
     </div>
     <div class="entry-card-body">
-      ${formRow(col(5,reqLabel("Preparer's Name")+textInput('preparer.name','','name')),col(3,reqLabel('Date')+dateInput('preparer.signatureDate')),col(4,reqLabel('SSN / EIN')+textInput('preparer.ssnEin','','ssn')))}
-      ${formRow(col(5,optLabel('Compilation "as of" date (defaults to the signature date)')+dateInput('preparer.asOfDate')))}
+      ${formRow(col(5,reqLabel("Preparer's Name")+textInput('preparer.name','','name')),col(3,(signatureDateRequired({ path: 'preparer', state: D.preparer.signatureState })?reqLabel:optLabel)('Date')+dateInput('preparer.signatureDate','Date')),col(4,reqLabel('SSN / EIN')+textInput('preparer.ssnEin','','ssn')))}
+      ${formRow(col(5,optLabel('Compilation "as of" date (defaults to the signature date)')+dateInput('preparer.asOfDate','Compilation "as of" date (defaults to the signature date)')))}
       ${formRow(col(4,reqLabel('Phone Number')+textInput('preparer.phone','','phone')),col(8,reqLabel('Street Address')+textInput('preparer.streetAddress','','address')))}
       ${formRow(col(6,reqLabel('City / State / Zip')+textInput('preparer.cityStateZip','','zip')))}
       ${renderSignatureStateControl({ path: 'preparer', state: D.preparer.signatureState, date: D.preparer.signatureDate, route: '/d2', signatureImage: D.preparer.signatureImage })}
@@ -1145,7 +1149,7 @@ function pageD2(){
       <button class="btn btn-sm btn-outline-secondary no-print" data-inventory-action="link-party" data-role="attorney" data-index="0">Link Person</button>
     </div>
     <div class="entry-card-body">
-      ${formRow(col(5,attyLabel("Attorney's Name")+textInput('attorney.name','','name')),col(3,attyLabel('Signature Date')+dateInput('attorney.signatureDate')),col(4,attyLabel('Filing Date (as of)')+dateInput('attorney.filingDate')))}
+      ${formRow(col(5,attyLabel("Attorney's Name")+textInput('attorney.name','','name')),col(3,(signatureDateRequired({ path: 'attorney', state: D.attorney.signatureState })?reqLabel:optLabel)('Signature Date')+dateInput('attorney.signatureDate','Signature Date')),col(4,attyLabel('Filing Date (as of)')+dateInput('attorney.filingDate','Filing Date (as of)')))}
       ${formRow(col(4,attyLabel('Florida Bar Number')+textInput('attorney.barNumber','','barNumber')),col(4,attyLabel('Phone Number')+textInput('attorney.phone','','phone')))}
       ${formRow(col(6,attyLabel('Primary Email (e-filing)')+textInput('attorney.email','name@lawfirm.com','email')),col(6,optLabel('Secondary Email (optional)')+textInput('attorney.secondaryEmail','assistant@lawfirm.com','email')))}
       ${formRow(col(8,attyLabel('Street Address')+textInput('attorney.streetAddress','','address')),col(6,attyLabel('City / State / Zip')+textInput('attorney.cityStateZip','','zip')))}
@@ -1217,10 +1221,10 @@ function pageD4(){
           // is routed (67F) so the reveal appears on the click.
           const state=inferBondDepositoryState(D);
           return renderRadioGroupField({ path:'bondDepositoryState', id:'bondDepositoryState', label:BOND_DEPOSITORY_QUESTION, value:state, options:BOND_DEPOSITORY_OPTIONS, hint:'Not required to file. Each answer shows only the fields it needs.', route:'/d4' })
-            +(revealsDepository(state)?formRow(col(6,optLabel('Date of most recent restricted depository receipt')+dateInput('restrictedDepositoryReceiptDate'))):'')
-            +(revealsBond(state)?formRow(col(4,optLabel('Bond Amount')+numInput('bondAmount')),col(3,optLabel('Bond Period – From')+dateInput('bondPeriodFrom')),col(3,optLabel('Bond Period – To')+dateInput('bondPeriodTo')))
+            +(revealsDepository(state)?formRow(col(6,optLabel('Date of most recent restricted depository receipt')+dateInput('restrictedDepositoryReceiptDate','Date of most recent restricted depository receipt'))):'')
+            +(revealsBond(state)?formRow(col(4,optLabel('Bond Amount')+numInput('bondAmount')),col(3,optLabel('Bond Period – From')+dateInput('bondPeriodFrom','Bond Period – From')),col(3,optLabel('Bond Period – To')+dateInput('bondPeriodTo','Bond Period – To')))
               +formRow(col(12,optLabel('Name of Bonding Company')+textInput('bondingCompany','','name'))):'')
-            +(revealsWaiver(state)?formRow(col(6,optLabel('Date of the order waiving the bond')+dateInput('bondWaivedDate'))):'');
+            +(revealsWaiver(state)?formRow(col(6,optLabel('Date of the order waiving the bond')+dateInput('bondWaivedDate','Date of the order waiving the bond'))):'');
         })()}
       </div>
     </div>
@@ -1235,7 +1239,7 @@ function pageD5(){
   const serviceCertificateHTML=()=>{
     // Milestone 72G: the ward's status is the workbook's "Indicate if:"; how
     // the copies were served is its own box, printed on the PDF only.
-    const serviceRow=formRow(col(4,reqLabel('Service Date (on this date)')+dateInput('serviceDate')),col(8,reqLabel('Indicate if Ward is:')+selectInput('serviceIndicateIf',[['','— Select —'],...WARD_STATUS_VALUES.map(v=>[v,v])],D.serviceIndicateIf)))
+    const serviceRow=formRow(col(4,reqLabel('Service Date (on this date)')+dateInput('serviceDate','Service Date (on this date)')),col(8,reqLabel('Indicate if Ward is:')+selectInput('serviceIndicateIf',[['','— Select —'],...WARD_STATUS_VALUES.map(v=>[v,v])],D.serviceIndicateIf)))
       +formRow(col(12,optLabel(SERVICE_METHOD_LABEL)+textInput('serviceMethod','U.S. Mail')));
     // Milestone 72H: the certificate's attorney is D-2's, as the Clerk's
     // workbook links it -- its name, Florida Bar number, phone and address
@@ -1247,7 +1251,7 @@ function pageD5(){
         ${serviceRow}
         ${certificateAttorneyLineHTML({ name: D.attorney?.name, barNumber: D.attorney?.barNumber, engineId: 'guardian' })}
         ${oldCertificateDetailsHTML(D, 'guardian', { actionAttr: 'data-inventory-action' })}
-        ${formRow(col(4,reqLabel('Signature Date')+dateInput('serviceAttorney.signatureDate')))}
+        ${formRow(col(4,(signatureDateRequired({ path: 'serviceAttorney', state: D.serviceAttorney.signatureState })?reqLabel:optLabel)('Signature Date')+dateInput('serviceAttorney.signatureDate','Signature Date')))}
         ${renderSignatureStateControl({ path: 'serviceAttorney', state: D.serviceAttorney.signatureState, date: D.serviceAttorney.signatureDate, route: '/d5', signatureImage: D.serviceAttorney.signatureImage })}
       </div>
     </div>`;
@@ -1266,7 +1270,7 @@ function pageD5(){
       <div class="entry-card-body">
         ${serviceRow}
         <p class="mb-2">${who}</p>
-        ${formRow(col(4,optLabel('Signature Date')+dateInput('serviceGuardian.signatureDate')))}
+        ${formRow(col(4,(signatureDateRequired({ path: 'serviceGuardian', state: sg.signatureState })?reqLabel:optLabel)('Signature Date')+dateInput('serviceGuardian.signatureDate','Signature Date')))}
         ${renderSignatureStateControl({ path: 'serviceGuardian', state: sg.signatureState, date: sg.signatureDate, route: '/d5', signatureImage: sg.signatureImage })}
       </div>
     </div>`;

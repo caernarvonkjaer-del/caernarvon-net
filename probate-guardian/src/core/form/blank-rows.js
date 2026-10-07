@@ -4,6 +4,7 @@
 // the list rules can read these tests without an import cycle; prune-cards.js
 // re-exports them under their old names.
 import { mk } from '../filing/models/guardian.js';
+import { SCHEDULE_SCHEMAS } from './schedule-schemas.js';
 
 // Financial line-item schedules covered by pruneBlankCards() (the router runs
 // it on leaving a page), keyed by their property on D, each mapped to the exact blank
@@ -17,21 +18,13 @@ export const BLANK_SCHEDULE_ENTRY = {
   // Guardian form (Initial Inventory) -- same factory addEntry() already uses.
   scheduleA1:mk.a1, scheduleA2:mk.a2, scheduleB1:mk.b1, scheduleB2:mk.b2, scheduleB3:mk.b3,
   scheduleB4:mk.b4, scheduleC1:mk.c1, scheduleC2:mk.c2, scheduleC3:mk.c3, scheduleC4:mk.c4, scheduleC5:mk.c5,
-  // Annual Accounting -- copied verbatim from each schedule's own +Add button.
-  schA:()=>({payer:'',description:'',bank:'',accountNo:'',amount:''}),
-  schB1:()=>({bankAcct:'',checkNo:'',periodFrom:'',periodTo:'',datePaid:'',payee:'',courtOrderDate:'',amount:''}),
-  schB2:()=>({bankAcct:'',checkNo:'',periodFrom:'',periodTo:'',datePaid:'',payee:'',courtOrderDate:'',amount:''}),
-  schB3:()=>({bankAcct:'',checkNo:'',datePaid:'',payee:'',courtOrderDate:'',amount:''}),
-  schB4:()=>({bankAccountId:'',checkNo:'',datePaid:'',category:'',payee:'',amount:''}),
-  schC:()=>({description:'',date:'',gain:'',loss:''}),
-  schD1:()=>({description:'',accountNo:'',restricted:'',type:'',fullAmount:'',wardPct:'',restrictedAmt:''}),
-  schD2:()=>({description:'',residence:'',income:'',fullValue:'',wardPct:'',carryingValue:'',wardValue:''}),
-  schD3:()=>({description:'',fullAmount:'',wardPct:'',carryingValue:'',wardAmount:''}),
-  schD4:()=>({description:'',restricted:'',fullAmount:'',wardPct:'',carryingValue:'',wardValue:'',restrictedAmt:''}),
-  schD5:()=>({description:'',loanNo:'',loanType:'',fullDebt:'',wardPct:'',wardBalance:''}),
-  schE:()=>({bankName:'',transferInDate:'',transferInAmt:'',transferOutDate:'',transferOutAmt:''}),
-  schF1:()=>({description:'',bank:'',accountNo:'',courtOrderDate:'',salePrice:''}),
-  schF2:()=>({description:'',bank:'',accountNo:'',courtOrderDate:'',salePrice:''}),
+  // Annual Accounting -- since Milestone 73F part 3, the rows "+ Add" itself
+  // adds (SCHEDULE_SCHEMAS, which collections.js's factories are). These were
+  // hand copies, and five had drifted from what "+ Add" pushes (B-3's period,
+  // B-4's account, D-1/D-2/D-4's "No" defaults), so an untouched row on those
+  // schedules was never cleaned up and counted as an entry.
+  ...Object.fromEntries(['schA', 'schB1', 'schB2', 'schB3', 'schB4', 'schC', 'schD1', 'schD2', 'schD3', 'schD4', 'schD5', 'schE', 'schF1', 'schF2']
+    .map((key) => [key, SCHEDULE_SCHEMAS[key].factory])),
 };
 
 export const BLANK_CARD_COLLECTIONS = {
@@ -76,15 +69,20 @@ export function isBlankCard(card) {
 }
 
 /**
- * Deep-equals a schedule's own template from BLANK_SCHEDULE_ENTRY.
+ * Whether a schedule row is untouched: every field still blank, or still at
+ * the default its "+ Add" row starts with (BLANK_SCHEDULE_ENTRY). Milestone
+ * 73F part 3: a blank field counts as untouched whatever the template holds,
+ * so a row saved under an older template shape (no "No" defaults) is
+ * recognised too, and "a blank row counts as no row" everywhere it is asked.
  */
 export function isBlankScheduleEntry(key, entry, registry = BLANK_SCHEDULE_ENTRY) {
   if (!registry) return false;
   const template = registry[key];
   if (!template || !entry || typeof entry !== 'object') return false;
   const blank = template();
+  const isEmpty = (v) => v === '' || v === null || v === undefined;
   for (const k of new Set([...Object.keys(blank), ...Object.keys(entry)])) {
-    if (entry[k] !== blank[k]) return false;
+    if (entry[k] !== blank[k] && !isEmpty(entry[k])) return false;
   }
   return true;
 }

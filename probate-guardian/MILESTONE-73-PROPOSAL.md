@@ -6,7 +6,7 @@
 far: 73U (2026-10-04, `5b8849b`), 73V (2026-10-05, `8b96aa3`), 73C
 (2026-10-05, `861b6a9`, brought forward from its place in the build order at the
 requester's choice) 73D (2026-10-05, `c8e84fe`, likewise), 73J part 1 (2026-10-05, `d819c4a`),
-73F part 1 (2026-10-06, `5e9e17b`), 73A (2026-10-06, `83352d0`), 73F part 2 (2026-10-06, `d01edd4`), 73G part 1 (2026-10-06, `69a1b46`) and 73E part 1 (2026-10-06), each approved by name.** Nothing else is approved.
+73F part 1 (2026-10-06, `5e9e17b`), 73A (2026-10-06, `83352d0`), 73F part 2 (2026-10-06, `d01edd4`), 73G part 1 (2026-10-06, `69a1b46`), 73E part 1 (2026-10-06, `8e02051`) and 73F part 3 (2026-10-06), each approved by name. 73I is approved and not yet built.** Nothing else is approved.
 Building any other item, or any part of a split item, needs the requester's
 named approval of that item or part (AGENTS.md §3).
 
@@ -45,7 +45,7 @@ recorded as **Pinellas Clerk practice**, not as a reading of a statute or rule
 | 3 | 73C | **"+ Add Co-Guardian" does nothing** on all four Plans | High | **Built** (2026-10-05) |
 | 4 | 73D | Ticking and unticking **"This item is a vehicle"** erases the Description and the safe-deposit answer; hidden Plan "Explanation" text still prints | High | **Built** (2026-10-05) |
 | 5 | 73E | **An Excel import replaces the filing unasked** (the Simplified's Cancel half-applies it), can turn a Trust into an Annual, and changes shared people's records in other filings unseen | High | Two (part 1 **built** 2026-10-06) |
-| 6 | 73F | **A section shows ✓ and Print Preview then blocks it**; asterisks don't match what is enforced; a misspelled county passes everywhere | High | Three (parts 1 and 2 **built** 2026-10-06) |
+| 6 | 73F | **A section shows ✓ and Print Preview then blocks it**; asterisks don't match what is enforced; a misspelled county passes everywhere | High | Three (all **built** 2026-10-06) |
 | 7 | 73G | A loss typed positive is **added** unwarned; the Clerk's "(1000)" is stored as **+1000**; negatives are refused, shown as positive, or **zeroed on every page drawn**; "$1,234.56" in the Simplified's remuneration files as **$0.00** | High | Two (part 1 **built** 2026-10-06) |
 | 8 | 73H | Dates print as **2025-01-01** on several screens; negative amounts appear **five ways**; Plan Q11 prints a bare number | Medium | One |
 | 9 | 73I | The dashboard marks an annual accounting **overdue early: 0–3 days for a month-end period, 16–32 days for a mid-month one**; a Final gets a due date with no basis | Medium | One |
@@ -1474,6 +1474,146 @@ reads these results).
 7. **UI/UX:** the existing checklist, readiness card and advisory box.
 8. **Legal framing:** 73F-4 recorded as practice; 73F-7 flagged.
 9. **Cross-form:** all nine forms.
+
+### Build record, part 3 — BUILT 2026-10-06 (approved by name by the requester, 2026-10-06)
+
+**What changed for a filer:**
+
+- **"Amended Form?" is required on the Inventory** (73F-1). Its Cover asked
+  it and nothing checked it; Preview now names it, as on the other forms.
+- **The county must be a Florida county, on all nine forms** (73F-2). A
+  county that isn't one is named -- *County: "Pinelas" is not a Florida
+  county, so the court heading can't be printed. Choose the county from the
+  list.* -- and can still be passed at Preview (73F-N2), the PDF then
+  printing no court heading. "St Lucie", "Saint Johns", "Miami Dade",
+  "Dade", "De Soto" and "Pinellas County" are written as the list's name
+  when the filing opens (73F-N3). The Plans' readiness rows follow the same
+  rule.
+- **An impossible date can't be overridden** (73F-3). Preview lists it and
+  says "At least one of these can't be overridden: correct it to continue."
+  where it showed "Continue despite outstanding requirements" -- a button
+  that stayed on screen, and did nothing, for any issue that can't be
+  overridden. Its message reads "Section — Label": the Inventory's date boxes
+  carried no label, so its pages listed "gid" and Preview "Date entry — gid".
+- **A date still being typed stays with its row.** Remove and Duplicate move
+  it with its row, and it goes when its row goes. It stayed at its old
+  position -- shown on whichever row moved there, or, past the end of the
+  list, held unseen where nothing could clear it -- and with 73F-3 that
+  would have blocked the filing for good. It is named by the line it is on
+  now.
+- **The Inventory's empty schedules are a prompt, not a block** (73F-4), as
+  on the Annual: a schedule with no entries and no "none" tick is asked on
+  its page and in the sidebar, and export no longer stops on it. This is
+  Pinellas Clerk practice, recorded as such (AGENTS.md §4).
+- **Part VIII has no "no trusts" tick** (73F-5); question #1 answers it, and
+  is now a starred Yes/No.
+- **Two Preview warnings on the Annual, Final and Trust**, never blocking: a
+  transaction dated outside the accounting period (Schedules B-1 to B-4, C,
+  E; 73F-8), and a trust whose creation date is after the GID but answered
+  No to "created after the GID?" (73F-6).
+- **The Simplified's remuneration Amount is required** once a line is
+  entered, as on the Annual's Part XI; 0 is an answer (73F-7). Whether
+  §744.367(3)(a) itself requires the amount remains flagged for a qualified
+  person.
+- **"+ Add" after "I verify there are no items to report" withdraws the
+  tick** on every form. The Inventory's stayed ticked, so the filing said
+  both "here is an entry" and "nothing to report". A row "+ Add" left
+  untouched is no row.
+- **Asterisks follow the checks.** About seventy labels across the nine
+  forms disagreed with what Print stops on. Now starred: the Inventory's
+  "Amended Form?"; the Annual's Filing Type, "Amended Form?", County,
+  Starting Balance, Schedule A's amount, Part VIII's question and every
+  certificate recipient's name; the Simplified's recipients' names and
+  remuneration Amount; the Plans' questions, check-box groups and rating
+  tables that need an answer (rights restored, disabilities, residence,
+  medical, mental health, personal care, socialization, unmet needs,
+  committee recommendations, the remuneration declaration, the Plan for
+  Minors' Q5 A to D), the Plans' guardian SSN, phone and address, and the
+  Plan for Minors' "Amended Form?". No longer starred: the Inventory's payer
+  and claimant addresses, the Annual's guardian office address, Schedules
+  B-1 and B-2's periods and B-1 to B-3's court-order dates. A signature date
+  is starred only under "/s/" Signed -- the only choice under which it is
+  required -- and follows the choice as it changes. The attorney's name and
+  details on the Annual's Part X and the Simplified's Part VI, and the
+  Initial Plan's attorney name, are starred once an attorney is entered, as
+  the attorney block already was. The Annual's Explanation of Difference box
+  had no accessible name; its starred heading now names it.
+- **Kept starred by the requester's choice (2026-10-06):** four fields 73B
+  will make required -- the Inventory's liability Type (A-2, B-4), payment
+  Frequency (C-1) and Type of Trust (C-4), and the Annual family's Type of
+  Guardianship -- keep their asterisks until 73B adds the checks. Also kept:
+  the either-or pairs (Schedule C's gain or loss, Schedule E's transfer in or
+  out) and, until 73S, the Plan for Minors' case number.
+
+**How:**
+
+- `src/core/validation/county-rule.js` (new) holds the county rule; all
+  seven engines and `readiness-config.js` use it. `canonicalFloridaCounty()`
+  in `circuit-lookup.js` reads the spellings; `normalize-filing.js` writes
+  them on open; `ward-county.js` reads through it.
+- `field.date.invalid` is not bypassable (`issue-registry.js`). Drafts:
+  `row-links.js`'s `remapFieldDrafts()` moves them on Remove, Duplicate and
+  the clean-up; a draft whose row is gone is dropped; the row is read from
+  the path when the message is drawn, so a moved draft names its new line;
+  judging a copy of the filing no longer marks the open filing changed.
+- `appendRow()` clears the list's tick (`no-items-keys.js`) for every form;
+  the forms' own clears went. The blank-row rule reads the shared
+  descriptors, treating '', null and a missing value alike.
+- The Inventory's schedule blocks became `inventoryNoItemsPrompts()` in the
+  shared checks; the Simplified requires the remuneration Amount;
+  `date-advisories.js` (new) holds the two warnings, wired in
+  `output-preflight.js` for the Annual family.
+- Asterisks: `REQ_MARK` (`field-html.js`) for headings drawn as raw HTML;
+  `signatureDateRequired()` (`signature-state-control.js`) for signature
+  dates; the existing live markers (`attorney-required-markers.js`) on the
+  Annual's Part X and the Simplified's Part VI; the Initial Plan's own
+  marker covers the attorney's name.
+- `pdf-preview.js`: when an item can't be overridden, the blocked panel says
+  so instead of drawing the button.
+- `testing.validate.requiredPaths()`: which fields, cleared one at a time,
+  block Preview -- what the asterisk test asks.
+
+**Tests:**
+
+- New `tests/unit/county-rule.spec.js` (13), `drafts-follow-rows.spec.js`
+  (7), `rules-and-warnings.spec.js` (6). **Red-first** (with the app changes
+  set aside, the county lookup kept so the spec loads): county-rule 12 of 13 fail -- the spellings read as no county, no form names "Pinelas", the Plans' readiness rows pass it (the green case asks that a name that isn't a county reads as none, as it did); drafts-follow-rows 6 of 7 -- each draft left at its old position, a gone row's valid draft written as five bare rows, no line named, the date bypassable ("+ Add" moving none is a guard); rules-and-warnings all 6. The changed specs fail for theirs: the tick kept after "+ Add" and a blank row counted (collection-descriptors), "Date entry — periodFrom" (form-contract), the date bypassable (issue-registry), a copy marking the open filing changed (output-revision-wiring), the Inventory's schedules not asked (sidebar-export-parity).
+- New `tests/e2e/asterisks-follow-rules.spec.ts` (7, one per form): every
+  page, a row added to every list, each asterisk compared with whether
+  clearing that field blocks Preview, signature pages again under "/s/"
+  Signed; its exceptions must each still disagree, so one that stops is
+  removed. New `tests/e2e/rules-follow-rows.spec.ts` (5). **Red-first:**
+  the asterisk test fails on all seven forms, listing each mismatch this part fixes (and the five kept for 73B); the rules spec fails 4 of 5 -- "gid" listed, the Inventory's and the Annual's ticks kept after "+ Add" (the Annual's own clear used the wrong key), the draft listed without its line. The Simplified's case passes -- its own clear worked -- and now guards the shared one.
+- Changed: `collection-descriptors`, `form-contract`, `issue-registry`,
+  `output-authorization` (its bypassable example is now an unreadable
+  amount), `output-revision-wiring`, `sidebar-export-parity`; the variant
+  builder answers a county with a Florida county and an amount with a
+  number. Both goldens regenerated, every change stated in their notes:
+  168 Inventory variants ("Amended Form?" gained, the empty-schedule blocks
+  gone), three Annual-family reconciliation variants; the completion
+  golden's placeholder-text amounts from 73G part 1 gone.
+- Browser, on D:: the 23 specs touching what changed (274 tests). 256
+  passed first time. The other 18 were this part's intended changes -- the
+  Annual Cover's and three Plans' text snapshots (the new asterisks), Part
+  VIII's box (gone), the Inventory's schedule pages counting their own
+  question (11 cases), a B-4 layout test planting a row with nothing in it
+  -- and two slips in the new rules spec (a notice not dismissed; Preview
+  lists an item by its label, not its sentence). Updated, all 18 pass.
+- The Plans' Signatures list named in this part's test plan was delivered
+  with part 2 (`section-marks-follow-export.spec.ts`).
+- Fixtures (§8.3): the Inventory's `MINIMAL_VALID_GUARDIAN` answers
+  "Amended Form?"; every other fixture already did, used a Florida county,
+  and had no remuneration line without an amount.
+- Data model: County, "Amended Form?" and the Simplified's remuneration
+  Amount; `verify:data-model` passes. Full unit suite passes;
+  `check:types` clean.
+
+**Found while building, fixed here:** the dead "Continue despite…" button
+above. **Left as decided:** Next follows each form's existing rule (73F-N5);
+the Initial Plan's Q7 and the Annual Plan's 3G stay prompts (part 2).
+
+**Full regression:** not yet run; recommended once at the end of this batch
+(with 74B, 73G part 1, 73E part 1 and 73I).
 
 ---
 

@@ -5,8 +5,8 @@
 // an argument instead of reading the open one, so they load with the app and
 // can judge any filing (73F part 2 uses that). validateGuardian() stays as a wrapper
 // returning exactly what it did; tests/unit/validator-engines.spec.js holds it.
+import { countyProblem, notFloridaCountyMessage } from '../county-rule.js';
 import { RECIPIENTS_OR_ATTESTATION, serviceRecipientIssues } from '../service-recipients.js';
-import { SCHEDULE_NAV_KEYS } from '../../filing/models/guardian.js';
 import { rowStarted } from '../row-started.js';
 import { certifyingCandidates, resolveServiceCertifier } from '../../filing/unrepresented-filing.js';
 import { checkDateOrder } from '../date-rules.js';
@@ -38,7 +38,8 @@ export function collectGuardianIssues(d){
   req(d.wardName,'Cover — Name of Ward is required.','wardName');
   req(d.caseNumber,'Cover — Case Number is required.','caseNumber');
   if(!d.gid)push('Cover — Guardianship Inception Date (GID) is required.','gid');
-  req(d.county,'Cover — County is required.','county');
+  // Milestone 73F part 3 (73F-2): a Florida county, not only a non-blank one.
+  {const county=countyProblem(d.county);if(county==='blank')push('Cover — County is required.','county');else if(county)push(notFloridaCountyMessage('Cover',county),'county');}
   req(d.guardianName,'Cover — Guardian Name(s) is required.','guardianName');
   // Milestone 71B: every attorney requirement applies only once the filer has
   // started entering an attorney. A guardian advocate (Rule 5.030(a)), a
@@ -49,23 +50,16 @@ export function collectGuardianIssues(d){
   const attorneyStarted=isAttorneyStarted(d,'guardian');
   if(attorneyStarted)req(d.attorneyForGuardian,'Cover — Attorney for Guardian is required.','attorneyForGuardian');
   req(d.typeOfGuardianship,'Cover — Type of Guardianship is required.','typeOfGuardianship');
-  // A schedule left totally untouched -- no rows, and the "I verify there
-  // are no X to report" checkbox (scheduleEmptyHTML()/setScheduleNoItems())
-  // never checked -- produced NO validate() errors before this, since every
-  // per-row check below is inside a .forEach() that simply never runs on an
-  // empty array. That's what let a schedule sit blank-and-unconfirmed while
-  // still showing 100% complete in the sidebar (computeNavChecks() derives
-  // its checks from these same errors) and passing Print Preview's export
-  // gate. Mirrors the same "row or checkbox" rule the schedule's own Next
-  // button already enforces (isScheduleIncomplete()), so there's exactly
-  // one definition of "done" for a schedule, not two that can disagree.
-  SCHEDULE_NAV_KEYS.forEach(key=>{
-    const dataKey='schedule'+key[0].toUpperCase()+key.slice(1);
-    if((d[dataKey]||[]).length===0&&!(d.scheduleNoItems&&d.scheduleNoItems[key])){
-      const route=key[0].toUpperCase()+'-'+key.slice(1);
-      push(`${route} — Add at least one entry, or check the box verifying there are none, before this schedule counts as complete.`,`scheduleNoItems.${key}`);
-    }
-  });
+  // Milestone 73F part 3 (decision 73F-1): "Amended Form?" is required wherever
+  // the field exists; the Inventory asked it on its Cover and never checked it.
+  req(d.amendedForm,'Cover — Amended Form?','amendedForm');
+  // Milestone 73F part 3 (decision 73F-4): a schedule with no entries and its
+  // "I verify there are no items to report" box unticked no longer blocks
+  // export; the sidebar asks it as a prompt (engines/index.js), as on the
+  // Annual. The court's Inventory workbook has the same wording and no "none"
+  // declaration either, and the Pinellas Clerk's office accepts blank
+  // schedules (AGENTS.md section 4) -- county practice, not a reading of the
+  // statute.
   // Row paths: `<collection>.<index>.<field>`. Schedule B-2's vehicle
   // sub-fields are raw inputs with no data-bind -- their only focusable
   // selector is the literal element id (see renderB2Fields()).

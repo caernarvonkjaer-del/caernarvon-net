@@ -63,20 +63,36 @@ export const CIRCUIT_ORDINALS = [
 // This matches src/core/filing/county-guidance.js, which already declines to
 // derive from circuitForCounty() for exactly this reason.
 
+// Milestone 73F part 3 (decision 73F-N3): the common ways a county is written
+// are read as the official name -- case, spacing, punctuation and a trailing
+// "County" ignored, "Saint" read as "St." ("St Lucie", "Saint Johns",
+// "Miami Dade", "De Soto", "Pinellas County"), and Dade County's former name.
+const countyKey = (name) => String(name ?? '').toLowerCase()
+  .replace(/\bcounty\s*$/, '').replace(/\bsaint\b/g, 'st').replace(/[^a-z]/g, '');
+/** @type {Map<string, string>} */
+const COUNTY_BY_KEY = new Map(/** @type {Array<[string, string]>} */ ([
+  ...Object.keys(FL_COUNTY_CIRCUIT).map((county) => [countyKey(county), county]),
+  ['dade', 'Miami-Dade'],
+]));
+
+/**
+ * The official spelling of a Florida county written any of the common ways,
+ * or '' for a blank or a name that is not a Florida county.
+ * @param {unknown} name
+ * @returns {string}
+ */
+export function canonicalFloridaCounty(name) {
+  if (!String(name ?? '').trim()) return '';
+  return COUNTY_BY_KEY.get(countyKey(name)) || '';
+}
+
 /**
  * Resolves the Florida Judicial Circuit number (1-20) for a given county name.
  * Returns null for a blank or unrecognized county -- there is no default circuit.
  */
 export function circuitForCounty(county) {
-  const trimmed = (county || '').trim();
-  if (!trimmed) return null;
-  // Case-insensitive match against FL_COUNTY_CIRCUIT keys
-  for (const [k, v] of Object.entries(FL_COUNTY_CIRCUIT)) {
-    if (k.toLowerCase() === trimmed.toLowerCase()) {
-      return v;
-    }
-  }
-  return null;
+  const official = canonicalFloridaCounty(county);
+  return official ? FL_COUNTY_CIRCUIT[official] : null;
 }
 
 /**

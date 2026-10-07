@@ -225,7 +225,9 @@ test('Schedule B-4 Category aligns with its primitive-built row-mates (reported 
   await freshStartNoPassword(page);
   await createWard(page, 'B4 Alignment Ward', 'annual');
   await page.evaluate(() => {
-    (window as any).GuardianForms.testing.patchFiling({ 'schB4': [{}] });
+    // Milestone 73F part 3: a row with nothing in it is no row (the clean-up
+    // removes it), so the row carries a payee.
+    (window as any).GuardianForms.testing.patchFiling({ 'schB4': [{ payee: 'Alignment Payee' }] });
     (window as any).GuardianForms.testing.navigate('/schb4');
   });
   await dismissScheduleDocPrompt(page); // Milestone 57C-R advisory modal

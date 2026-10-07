@@ -123,6 +123,9 @@ export function renderFormField({
   // data-field-blank="keep", which finalizeFieldValue() reads. Percent fields
   // always keep blank; this opts an amount in (Starting Balance).
   keepBlank = false,
+  // Milestone 73F part 3: the field's name for messages (data-field-label)
+  // when its visible label is drawn separately, as the Inventory's are.
+  dataLabel = '',
 } = {}) {
   const inputId = id || `inp_${(path || 'field').replace(/[^a-zA-Z0-9_]/g, '_')}_${Math.random().toString(36).slice(2, 7)}`;
   const fieldKind = kind || inferFieldKind(label, type);
@@ -237,7 +240,7 @@ export function renderFormField({
   const blankAttr = (keepBlank || isPercentKind) ? ' data-field-blank="keep"' : '';
 
   const fieldPathAttr = claimSharedWriteListener ? ` data-field-path="${esc(path)}"` : '';
-  const inputHtml = `<input type="${inputType}" class="${classes.join(' ')}" id="${inputId}" autocomplete="off"${inputMode}${actualPlaceholder} value="${esc(cleanedValue)}"${fieldPathAttr}${bindingAttrs} data-field-label="${esc(label)}" data-annual-label="${esc(label)}" data-field-kind="${fieldKind}" data-field-format-policy="${resolvedPolicy}"${required ? ' data-field-required="true"' : ''}${format ? ` data-annual-format="${format}" data-form-format="${format}"` : ''}${isWardField ? ' data-sync-ward-name="true"' : ''}${isGuardField ? ' data-sync-guardian-name="true"' : ''}${inputTypeAttr}${sanitizeAttr}${blankAttr}${ariaDesc}>`;
+  const inputHtml = `<input type="${inputType}" class="${classes.join(' ')}" id="${inputId}" autocomplete="off"${inputMode}${actualPlaceholder} value="${esc(cleanedValue)}"${fieldPathAttr}${bindingAttrs} data-field-label="${esc(label || dataLabel)}" data-annual-label="${esc(label || dataLabel)}" data-field-kind="${fieldKind}" data-field-format-policy="${resolvedPolicy}"${required ? ' data-field-required="true"' : ''}${format ? ` data-annual-format="${format}" data-form-format="${format}"` : ''}${isWardField ? ' data-sync-ward-name="true"' : ''}${isGuardField ? ' data-sync-guardian-name="true"' : ''}${inputTypeAttr}${sanitizeAttr}${blankAttr}${ariaDesc}>`;
 
   const lockIcon = ic('lock', 14);
 

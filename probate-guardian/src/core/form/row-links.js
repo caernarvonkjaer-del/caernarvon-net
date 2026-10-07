@@ -33,8 +33,38 @@ export function remapLinkedIds(data, listKey, keepIndexes) {
 }
 
 /**
+ * Milestone 73F part 3: a date still being typed is kept as a draft keyed by
+ * its full path (commit-coordinator.js's `__fieldDrafts`, "schB1.2.datePaid"),
+ * so it must move with its row too. Removing row 1 used to leave row 3's
+ * draft on whichever row moved into index 2 -- its text shown in the wrong
+ * row -- and a list cut below that index left the draft orphaned: an
+ * impossible date nobody could see or clear. `newIndexFor(old)` gives each
+ * row's new index, or -1 for a row that went (its drafts go with it).
+ * @param {Record<string, any>} data
+ * @param {string} listKey
+ * @param {(oldIndex: number) => number} newIndexFor
+ */
+export function remapFieldDrafts(data, listKey, newIndexFor) {
+  const drafts = data?.__fieldDrafts;
+  if (!drafts || typeof drafts !== 'object') return;
+  const prefix = `${listKey}.`;
+  const moved = {};
+  for (const path of Object.keys(drafts)) {
+    if (!path.startsWith(prefix)) continue;
+    const m = /^(\d+)(\..*)?$/.exec(path.slice(prefix.length));
+    if (!m) continue;
+    const record = drafts[path];
+    delete drafts[path];
+    const to = newIndexFor(Number(m[1]));
+    if (to >= 0) moved[`${prefix}${to}${m[2] || ''}`] = record;
+  }
+  Object.assign(drafts, moved);
+}
+
+/**
  * Keeps the rows at `keepIndexes` (in that order) and drops the rest, moving
- * the list's links with them. Returns true when anything was dropped.
+ * the list's links -- and its dates still being typed -- with them. Returns
+ * true when anything was dropped.
  * @param {Record<string, any>} data
  * @param {string} listKey
  * @param {number[]} keepIndexes
@@ -45,5 +75,6 @@ export function keepRows(data, listKey, keepIndexes) {
   if (unchanged) return false;
   data[listKey] = keepIndexes.map(i => rows[i]);
   remapLinkedIds(data, listKey, keepIndexes);
+  remapFieldDrafts(data, listKey, (old) => keepIndexes.indexOf(old));
   return true;
 }

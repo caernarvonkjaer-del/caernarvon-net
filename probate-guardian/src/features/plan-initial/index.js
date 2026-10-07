@@ -7,7 +7,7 @@ import { isPlanInitialAttorneyStarted } from '../../core/validation/attorney-blo
 import { issueFactory } from '../../core/validation/validation-issue.js';
 import { rowStarted } from '../../core/validation/row-started.js';
 import { isAffirmative } from '../../core/form/form-contract.js';
-import { renderSignatureStateControl, mountSignatureStateControls } from '../../core/signature/signature-state-control.js';
+import { renderSignatureStateControl, mountSignatureStateControls, signatureDateRequired } from '../../core/signature/signature-state-control.js';
 import { migratePlanCertificateOfService } from '../../core/filing/plan-certificate-of-service.js';
 import { renderPlanCertificateOfServicePage } from '../../core/form/plan-certificate-of-service-page.js';
 import { migratePlanInitialMultiselect, Q2_OPTIONS, Q4_OPTIONS, Q5_OPTIONS, anyChecked } from '../../core/filing/plan-initial-multiselect.js';
@@ -56,7 +56,7 @@ import { INITIAL_ADLS, INITIAL_ADL_RATINGS } from '../../core/filing/models/plan
 import { normalizePlanGuardians } from '../../core/filing/models/plan-rows.js';
 import { sectionMarks } from '../../core/status/section-marks.js';
 import { getD, requestSave } from '../../core/state.js';
-import { chkP, inpS, pageNavS, planCheckGroup, planQ, radioP, txtP, yesNoCheckboxS } from '../../core/form/field-html.js';
+import { REQ_MARK, chkP, inpS, pageNavS, planCheckGroup, planQ, radioP, txtP, yesNoCheckboxS } from '../../core/form/field-html.js';
 import { renderScheduleDocsSection } from '../../core/filing/schedule-docs.js';
 import { setPath } from '../../core/form/paths.js';
 import { PLAN_INITIAL_EXPLANATIONS, explanationShown } from '../../core/filing/plan-explanations.js';
@@ -95,34 +95,39 @@ const attorneyMarkerAborts = new WeakMap();
  * page: /p10 is where the filer is typing, and rebuilding the field under
  * them would move the caret and drop focus mid-word.
  */
+// Milestone 73F part 3: the attorney's name too -- once an attorney is started
+// both are required (the export checks ask for each), and only the email was
+// starred.
 function syncAttorneyEmailRequired(container) {
   const d = getD();
   if (!container || !d) return;
   const required = isPlanInitialAttorneyStarted(d);
-  // `input[...]`, not a bare attribute match: once this section reports
-  // incomplete, the local-guidance panel renders a "jump to field" BUTTON
-  // carrying the same data-field-path, and it appears above the card in DOM
-  // order. Matching it would toggle aria-required on a link.
-  const input = container.querySelector('input[data-field-path="attorney_email"]');
-  if (input) {
-    if (required) {
-      input.setAttribute('data-field-required', 'true');
-      input.setAttribute('aria-required', 'true');
-    } else {
-      input.removeAttribute('data-field-required');
-      input.removeAttribute('aria-required');
+  for (const path of ['attorney_email', 'attorney_name']) {
+    // `input[...]`, not a bare attribute match: once this section reports
+    // incomplete, the local-guidance panel renders a "jump to field" BUTTON
+    // carrying the same data-field-path, and it appears above the card in DOM
+    // order. Matching it would toggle aria-required on a link.
+    const input = container.querySelector(`input[data-field-path="${path}"]`);
+    if (input) {
+      if (required) {
+        input.setAttribute('data-field-required', 'true');
+        input.setAttribute('aria-required', 'true');
+      } else {
+        input.removeAttribute('data-field-required');
+        input.removeAttribute('aria-required');
+      }
     }
-  }
-  const label = container.querySelector('label[for="attorney_email"]');
-  if (!label) return;
-  const mark = label.querySelector('.req');
-  if (required && !mark) {
-    const span = document.createElement('span');
-    span.className = 'req';
-    span.textContent = '*';
-    label.appendChild(span);
-  } else if (!required && mark) {
-    mark.remove();
+    const label = container.querySelector(`label[for="${path}"]`);
+    if (!label) continue;
+    const mark = label.querySelector('.req');
+    if (required && !mark) {
+      const span = document.createElement('span');
+      span.className = 'req';
+      span.textContent = '*';
+      label.appendChild(span);
+    } else if (!required && mark) {
+      mark.remove();
+    }
   }
 }
 
@@ -345,13 +350,13 @@ function pagePlanISettingMedical(){
   const cb=(id,label,route='')=>chkP(id,label,d[id],route);
   return `<div class="schedule-page">
     <h1>2–3. Residential Setting &amp; Medical Services</h1>
-    ${planQ('2','The guardian states the place and kind of residential setting best suited for the needs of the Ward is:',
+    ${planQ('2','The guardian states the place and kind of residential setting best suited for the needs of the Ward is:'+REQ_MARK,
       // Milestone 68E: a checkbox list, as on the court's form (page 2); Other
       // reveals its explanation on the click (67F).
       planCheckGroup('',
         Q2_OPTIONS.map((o)=>renderCheckboxField({ path:o.key, label:o.label, checked:!!d[o.key], id:o.key, route:o.key==='q2Other'?'/p2':'' })).join(''),
         'q2Explain',d.q2Explain,explanationShown(PLAN_INITIAL_EXPLANATIONS,d,'q2Explain')))}
-    ${planQ('3','For the plan period, the guardian proposes the following as to the provision of medical services for the Ward:',
+    ${planQ('3','For the plan period, the guardian proposes the following as to the provision of medical services for the Ward:'+REQ_MARK,
       planCheckGroup('',
         cb('q3MedPrimary','Routine examination by primary care physician')
         +cb('q3MedDentist','Routine examination by dentist')
@@ -373,13 +378,13 @@ function pagePlanIMentalPersonal(){
   const d=getD();
   return `<div class="schedule-page">
     <h1>4–5. Mental Health &amp; Personal Care</h1>
-    ${planQ('4','For the plan period, the guardian proposes the following as to the provision of mental health services for the Ward:',
+    ${planQ('4','For the plan period, the guardian proposes the following as to the provision of mental health services for the Ward:'+REQ_MARK,
       // Milestone 68E: a checkbox list, as on the court's form; None is
       // exclusive with the other boxes and, like Other, reveals the explanation.
       planCheckGroup('',
         Q4_OPTIONS.map((o)=>renderCheckboxField({ path:o.key, label:o.label, checked:!!d[o.key], id:o.key, route:(o.key==='q4Other'||o.key==='q4None')?'/p3':'', exclusiveGroup:'q4', exclusiveRole:o.key==='q4None'?'none':'member' })).join(''),
         'q4Explain',d.q4Explain,explanationShown(PLAN_INITIAL_EXPLANATIONS,d,'q4Explain')))}
-    ${planQ('5','For the plan period, the guardian proposes the following as to the provision of personal care of the ward, such as bathing, grooming and feeding:',
+    ${planQ('5','For the plan period, the guardian proposes the following as to the provision of personal care of the ward, such as bathing, grooming and feeding:'+REQ_MARK,
       planCheckGroup('',
         Q5_OPTIONS.map((o)=>renderCheckboxField({ path:o.key, label:o.label, checked:!!d[o.key], id:o.key, route:o.key==='q5Other'?'/p3':'' })).join(''),
         'q5Explain',d.q5Explain,explanationShown(PLAN_INITIAL_EXPLANATIONS,d,'q5Explain')))}
@@ -393,7 +398,7 @@ function pagePlanISocialBenefits(){
   const cb=(id,label,route='')=>chkP(id,label,d[id],route);
   return `<div class="schedule-page">
     <h1>6–7. Socialization &amp; Benefits</h1>
-    ${planQ('6','For the plan period, the guardian proposes the following to provide for socialization and/or recreational services for the Ward (e.g.: arranging friends and family to visit, encourage participation in facility or day program activities):',
+    ${planQ('6','For the plan period, the guardian proposes the following to provide for socialization and/or recreational services for the Ward (e.g.: arranging friends and family to visit, encourage participation in facility or day program activities):'+REQ_MARK,
       planCheckGroup('',
         cb('q6CareFacility','Care Facility')
         +cb('q6NursesAides','Nurses and Aides')
@@ -474,7 +479,7 @@ function pagePlanIADLs(){
   return `<div class="schedule-page">
     <h1>10A. Activities of Daily Living</h1>
     <div class="schedule-instructions">To assist the Court with review of the initial plan, rate the ability of the Ward to engage in each activity of daily living honestly — these ratings become the baseline that future Annual Plans are compared against.</div>
-    <div class="table-responsive"><table class="table plan-adl-table"><thead><tr><th style="width:45%;">Activity</th><th>Rating</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <div class="table-responsive"><table class="table plan-adl-table"><caption>Rate every activity${REQ_MARK}</caption><thead><tr><th style="width:45%;">Activity</th><th>Rating</th></tr></thead><tbody>${rows}</tbody></table></div>
     ${renderScheduleDocsSection('planIADLs')}
     ${pageNavS('/p5','/p7')}
   </div>`;
@@ -497,7 +502,7 @@ function pagePlanIDisabilities(){
         +cb('mentalSchizophrenia','Schizophrenia or related disorders')
         +cb('mentalOther','Other','/p7'),
         'mentalExplain',d.mentalExplain,explanationShown(PLAN_INITIAL_EXPLANATIONS,d,'mentalExplain')))}
-    ${planQ('C','The physical disabilities of the Ward are:',
+    ${planQ('C','The physical disabilities of the Ward are:'+REQ_MARK,
       planCheckGroup('',
         cb('physMobility','Mobility')
         +cb('physBlindness','Blindness')
@@ -597,7 +602,7 @@ function pagePlanIDirectives(){
         +exclusiveBox(d,'needsOther','Other','needs','member','/p8'),
         'needsExplain',d.needsExplain,explanationShown(PLAN_INITIAL_EXPLANATIONS,d,'needsExplain')))}
     ${planQ('F','Are the recommendations of the examining committee incorporated into this plan?',
-      yesNoCheckboxS('committeeIncorporated','Recommendations of the examining committee are incorporated into this plan',d.committeeIncorporated,false,'/p8')
+      yesNoCheckboxS('committeeIncorporated','Recommendations of the examining committee are incorporated into this plan',d.committeeIncorporated,true,'/p8')
       +(explanationShown(PLAN_INITIAL_EXPLANATIONS,d,'committeeExplain')?`<div class="plan-conditional mt-2">${txtP('committeeExplain','Explanation',d.committeeExplain,3)}</div>`:''))}
     ${renderScheduleDocsSection('planIDirectives')}
     ${pageNavS('/p7','/p9')}
@@ -618,12 +623,12 @@ function pagePlanISignatures(){
         <div class="row g-2">
           ${renderPartyNameField({ pathPrefix: `planGuardians.${i}`, name: gd.name, required: i===0, label: 'Name' })}
           <div class="col-12">${renderFormField({ path: `planGuardians.${i}.relationship`, label: 'Relationship to Ward', value: gd.relationship })}</div>
-          <div class="col-md-6">${renderFormField({ path: `planGuardians.${i}.ssn`, label: 'SSN/EIN', value: gd.ssn })}</div>
-          <div class="col-md-6">${renderFormField({ path: `planGuardians.${i}.phone`, label: 'Phone Number', value: gd.phone })}</div>
+          <div class="col-md-6">${renderFormField({ path: `planGuardians.${i}.ssn`, label: 'SSN/EIN', value: gd.ssn, required: true })}</div>
+          <div class="col-md-6">${renderFormField({ path: `planGuardians.${i}.phone`, label: 'Phone Number', value: gd.phone, required: true })}</div>
           <div class="col-12">${renderFormField({ path: `planGuardians.${i}.email`, label: 'Email Address', value: gd.email, type: 'email' })}</div>
-          <div class="col-12"><label class="form-label" for="plan_guardians_${i}_sigDate">Date Signed</label><input type="text" inputmode="text" class="form-control" id="plan_guardians_${i}_sigDate" placeholder="MM/DD/YYYY" value="${esc(formatDisplayDate(gd.signatureDate||''))}" data-form-path="planGuardians.${i}.signatureDate" data-field-path="planGuardians.${i}.signatureDate" data-field-kind="date" data-field-format-policy="normalize" aria-describedby="plan_guardians_${i}_sigDate_hint"><div id="plan_guardians_${i}_sigDate_hint" class="form-text text-muted" style="font-size:0.75rem;margin-top:0.2rem;">Use MM/DD/YYYY</div></div>
+          <div class="col-12"><label class="form-label" for="plan_guardians_${i}_sigDate">Date Signed${signatureDateRequired({ path: `planGuardians.${i}`, state: gd.signatureState })?REQ_MARK:''}</label><input type="text" inputmode="text" class="form-control" id="plan_guardians_${i}_sigDate" placeholder="MM/DD/YYYY" value="${esc(formatDisplayDate(gd.signatureDate||''))}" data-form-path="planGuardians.${i}.signatureDate" data-field-path="planGuardians.${i}.signatureDate" data-field-kind="date" data-field-format-policy="normalize" aria-describedby="plan_guardians_${i}_sigDate_hint"><div id="plan_guardians_${i}_sigDate_hint" class="form-text text-muted" style="font-size:0.75rem;margin-top:0.2rem;">Use MM/DD/YYYY</div></div>
           <div class="col-12">${renderSignatureStateControl({ path: `planGuardians.${i}`, state: gd.signatureState, date: gd.signatureDate, route: '/p9', signatureImage: gd.signatureImage })}</div>
-          <div class="col-12">${renderFormField({ path: `planGuardians.${i}.street`, label: 'Street Address', value: gd.street })}</div>
+          <div class="col-12">${renderFormField({ path: `planGuardians.${i}.street`, label: 'Street Address', value: gd.street, required: true })}</div>
           <div class="col-12">${renderFormField({ path: `planGuardians.${i}.cityStateZip`, label: 'City/State/Zip', value: gd.cityStateZip })}</div>
         </div>
       </div>
@@ -671,7 +676,7 @@ function pagePlanIAttorney(){
               <div class="col-12">${inpS('attorney_street','Attorney Address',d.attorney_street)}</div>
               <div class="col-12">${inpS('attorney_cityStateZip','Attorney City/State/Zip',d.attorney_cityStateZip)}</div>
               <div class="col-md-6">${inpS('attorney_phone','Attorney Phone Number',d.attorney_phone)}</div>
-              <div class="col-md-6">${inpS('attorney_signatureDate','Date Signed',d.attorney_signatureDate,false,'date')}</div>
+              <div class="col-md-6">${inpS('attorney_signatureDate','Date Signed',d.attorney_signatureDate,signatureDateRequired({ path: 'attorney', state: d.attorney_signatureState }),'date')}</div>
               <div class="col-12">${renderSignatureStateControl({ path: 'attorney', state: d.attorney_signatureState, date: d.attorney_signatureDate, route: '/p10', signatureImage: d.attorney_signatureImage, statePath: 'attorney_signatureState', imagePath: 'attorney_signatureImage' })}</div>
             </div>
           </div>

@@ -2,7 +2,7 @@ import { renderSummaryPage, navStatus, formatSummaryDate } from '../../core/summ
 import { checkDateOrder } from '../../core/validation/date-rules.js';
 import { checkSignatureState, inferLegacySignatureState } from '../../core/validation/signature-state.js';
 import { issueFactory } from '../../core/validation/validation-issue.js';
-import { renderSignatureStateControl, mountSignatureStateControls } from '../../core/signature/signature-state-control.js';
+import { renderSignatureStateControl, mountSignatureStateControls, signatureDateRequired } from '../../core/signature/signature-state-control.js';
 import { migratePlanCertificateOfService } from '../../core/filing/plan-certificate-of-service.js';
 import { pinPlanSimplifiedCertSigner } from '../../core/filing/certificate-migrations.js';
 import { renderPlanCertificateOfServicePage } from '../../core/form/plan-certificate-of-service-page.js';
@@ -31,7 +31,7 @@ import { formatDisplayDate } from '../../core/form/date-parser.js';
 import { normalizePlanGuardians } from '../../core/filing/models/plan-rows.js';
 import { sectionMarks } from '../../core/status/section-marks.js';
 import { getD, requestSave } from '../../core/state.js';
-import { chkP, inpS, pageNavS, txtP, yesNoCheckboxS } from '../../core/form/field-html.js';
+import { REQ_MARK, chkP, inpS, pageNavS, txtP, yesNoCheckboxS } from '../../core/form/field-html.js';
 import { renderScheduleDocsSection } from '../../core/filing/schedule-docs.js';
 import { setPath } from '../../core/form/paths.js';
 import { openFloridaCourtPortal } from '../../core/shell/court-portal.js';
@@ -286,11 +286,11 @@ function pagePlanSSignatures(){
       <div class="entry-card-body">
         <div class="row g-2">
           ${renderPartyNameField({ pathPrefix: `planGuardians.${i}`, name: p.name, required: i===0 })}
-          <div class="col-md-6"><label class="form-label" for="plan_guardians_${i}_sigDate">Date Signed</label><input type="text" inputmode="text" class="form-control" id="plan_guardians_${i}_sigDate" placeholder="MM/DD/YYYY" value="${esc(formatDisplayDate(p.signatureDate||''))}" data-form-path="planGuardians.${i}.signatureDate" data-field-path="planGuardians.${i}.signatureDate" data-field-kind="date" data-field-format-policy="normalize" aria-describedby="plan_guardians_${i}_sigDate_hint"><div id="plan_guardians_${i}_sigDate_hint" class="form-text text-muted" style="font-size:0.75rem;margin-top:0.2rem;">Use MM/DD/YYYY</div></div>
+          <div class="col-md-6"><label class="form-label" for="plan_guardians_${i}_sigDate">Date Signed${signatureDateRequired({ path: `planGuardians.${i}`, state: p.signatureState })?REQ_MARK:''}</label><input type="text" inputmode="text" class="form-control" id="plan_guardians_${i}_sigDate" placeholder="MM/DD/YYYY" value="${esc(formatDisplayDate(p.signatureDate||''))}" data-form-path="planGuardians.${i}.signatureDate" data-field-path="planGuardians.${i}.signatureDate" data-field-kind="date" data-field-format-policy="normalize" aria-describedby="plan_guardians_${i}_sigDate_hint"><div id="plan_guardians_${i}_sigDate_hint" class="form-text text-muted" style="font-size:0.75rem;margin-top:0.2rem;">Use MM/DD/YYYY</div></div>
           <div class="col-12">${renderSignatureStateControl({ path: `planGuardians.${i}`, state: p.signatureState, date: p.signatureDate, route: '/p3', signatureImage: p.signatureImage })}</div>
-          <div class="col-md-6">${renderFormField({ path: `planGuardians.${i}.phone`, label: 'Phone Number', value: p.phone })}</div>
+          <div class="col-md-6">${renderFormField({ path: `planGuardians.${i}.phone`, label: 'Phone Number', value: p.phone, required: true })}</div>
           <div class="col-12">${renderFormField({ path: `planGuardians.${i}.email`, label: 'Email Address', value: p.email })}</div>
-          <div class="col-12">${renderFormField({ path: `planGuardians.${i}.mailingAddress`, label: 'Mailing Address', value: p.mailingAddress })}</div>
+          <div class="col-12">${renderFormField({ path: `planGuardians.${i}.mailingAddress`, label: 'Mailing Address', value: p.mailingAddress, required: true })}</div>
         </div>
       </div>
     </div></div>`;

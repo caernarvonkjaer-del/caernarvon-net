@@ -122,8 +122,8 @@ test.describe('annual accounting schedule consistency', () => {
   // 73F part 2 (decision 73F-5) made Part VIII's mark the export checks' rule
   // instead: question #1 decides it. "No" completes Part VIII; "Yes" needs a
   // trust described and its "created after the GID?" answered. The box alone
-  // no longer completes it -- the question is still unanswered, and Print
-  // Preview asks it -- and the box itself goes in 73F part 3.
+  // no longer completed it -- the question was still unanswered, and Print
+  // Preview asked it -- and 73F part 3 removed the box.
   test('Part VIII (Trusts) completes when its question is answered, as Print Preview reads it', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Part VIII Trusts Ward', 'annual');
@@ -133,12 +133,8 @@ test.describe('annual accounting schedule consistency', () => {
 
     expect(await done(), '/p8 should start incomplete on a blank filing').toBe(false);
 
-    const box = page.locator('input[data-annual-change="schedule-no-items"][data-schedule="a-p8"]');
-    await expect(box).toBeVisible();
-    await box.check();
-    expect(await done(), 'the box alone leaves the question unanswered').toBe(false);
+    await expect(page.locator('input[data-annual-change="schedule-no-items"][data-schedule="a-p8"]'), 'no "no trusts" box').toHaveCount(0);
     await expect(page.locator('#main-content #page-local-guidance')).toContainText('Does the Ward have one or more Trusts?');
-    await box.uncheck();
 
     await answer('trusts.0.hasTrust', 'No').check();
     expect(await done(), '"No" completes Part VIII').toBe(true);

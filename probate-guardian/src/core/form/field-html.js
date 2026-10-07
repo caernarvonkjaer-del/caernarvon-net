@@ -116,6 +116,11 @@ export function pageNavS(prev,next){
 export function tdSig(label,val){return td(label,val);}
 
 // Shared section wrapper, mirroring the Simplified Plan's q() helper.
+// Milestone 73F part 3: the asterisk a required question's title, check-group
+// label or table caption carries (tests/e2e/asterisks-follow-rules.spec.ts
+// holds every page's asterisks to what the export checks require).
+export const REQ_MARK = '<span class="req">*</span>';
+
 export function planQ(num,title,body,intro){
   return `<div class="plan-question">
     <div class="plan-question-num">Question ${num}</div>

@@ -48,6 +48,8 @@ const blocksPreview = (issue) => (issue.capabilities || []).includes('preview');
 // model"): each code's shape, and where its words come from.
 const PROMPTS = [
   { name: "an Annual-family schedule's \"no items\" box", code: /^prompt\.annual\.no-items\.(sch[a-f]\d?|sch[a-f])$/, own: true },
+  // Milestone 73F part 3 (decision 73F-4): the Inventory's eleven schedules, a prompt where they used to block export.
+  { name: "an Inventory schedule's \"no items\" box", code: /^prompt\.guardian\.no-items\.[abc]\d$/, own: true },
   { name: 'the bond question (the Inventory D-4, the Annual family Part IX)', code: /^prompt\.(guardian\.d4|annual\.p9)\.bondDepositoryState$/ },
   { name: "a Plan's certificate of service", code: /^prompt\.plan(Initial|Annual|Minor|Simplified)\.p(4|8|11|12)\.certRecipients\.\d+\.name$/ },
   { name: "the Annual Plan's 3G (benefits)", code: /^prompt\.planAnnual\.p4\.q3BenefitsNone$/ },

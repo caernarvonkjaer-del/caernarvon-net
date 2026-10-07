@@ -398,7 +398,7 @@ export function writeDraftValue(control, options = {}) {
       path,
       rawValue: control.value,
       label: control.dataset?.fieldLabel || '',
-      section: control.dataset?.fieldSection || '',
+      section: draftSection(control),
       route: getCurrentPage() || window.location?.hash || '/',
     });
     commitModelChange('date-draft', [path]);
@@ -453,7 +453,7 @@ export function finalizeFieldValue(control, options = {}) {
         path,
         rawValue,
         label: control.dataset?.fieldLabel || '',
-        section: control.dataset?.fieldSection || '',
+        section: draftSection(control),
         route: getCurrentPage() || window.location?.hash || '/',
       });
     } else {
@@ -606,6 +606,16 @@ export function parseStoredDecimal(cleaned) {
 }
 
 const keepsBlank = (control) => control?.dataset?.fieldBlank === 'keep';
+
+// Milestone 73F part 3: what a date that can't be read is called -- "Section
+// — Label", the section being the page's own heading (the row is added when
+// the message is drawn: commit-coordinator.js's getFieldDraftIssues()). It
+// used to read "Date entry - gid" on the Inventory.
+function draftSection(control) {
+  if (control.dataset?.fieldSection) return control.dataset.fieldSection;
+  const heading = typeof document !== 'undefined' ? document.querySelector('#main-content h1') : null;
+  return String(heading?.textContent || '').replace(/\s+/g, ' ').trim();
+}
 
 /**
  * Milestone 73G part 1: leaving an amount box. The text is read by the one

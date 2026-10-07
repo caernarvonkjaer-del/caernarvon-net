@@ -242,7 +242,7 @@ In practice: open with one sentence a non-engineer could act on (*what breaks, f
 - Every `auto` readiness item maps 1-to-1 to a real export validation error; a filing that passes export must never show blocked in the readiness panel.
 - `auto` = machine-verifiable blockers (missing fields, bad date order, incomplete grids). `manual` = unobservable procedural duties (attaching reports, serving parties, paying fees) — non-blocking, must never flip `auto: false` or halt export.
 - **Pro se / Ch. 393 Guardian Advocate protection**: never make attorney-certification fields mandatory blockers on an unrepresented filing — skip attorney validation entirely if no attorney is entered.
-- **Bypassable output acknowledgement**: after an affirmative override, court output still generates faithfully (no watermark/filename/formatting degradation); issues stay visible in the UI. Non-bypassable issues (data-integrity conflicts, format-capacity overflow, generation failures) are never overridable.
+- **Bypassable output acknowledgement**: after an affirmative override, court output still generates faithfully (no watermark/filename/formatting degradation); issues stay visible in the UI. Non-bypassable issues (data-integrity conflicts, format-capacity overflow, generation failures, and since Milestone 73F part 3 an impossible date -- decision 73F-3) are never overridable.
 
 **The sidebar is not the export gate, and on 14 Annual schedules it is
 deliberately stricter. Do not "fix" that by tightening export.**
@@ -270,6 +270,15 @@ distinguish "genuinely empty" from "not got to it yet". That distinction is
 worth prompting for, which is why the sidebar asks; it is not something the
 court requires, so export must never demand it. Requiring it to file would
 block filings that are complete and valid under the court's own form.
+
+*Since Milestones 73F parts 2 and 3:* the sidebar's "no items" question is a
+prompt raised by the export checks themselves (`annualNoItemsPrompts()` in
+`src/core/validation/engines/index.js`; the functions named above are
+retired), a row "+ Add" added and the filer never touched counts as no row,
+and the Initial Inventory's eleven schedules follow the same rule
+(`inventoryNoItemsPrompts()`, decision 73F-4): a prompt, never an export
+block. The Inventory's workbook has no "none" declaration either; the
+Pinellas Clerk practice below is what this rests on for both.
 
 **Part XI is the one exception, and only because a statute names it.**
 §744.367(3)(a) requires the annual report to *include* a declaration of

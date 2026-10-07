@@ -31,7 +31,7 @@ import { planSchB4Export } from '../../excel/b4-export-plan.js';
 import { SCH_B4_ACCOUNT_BLOCKS } from '../../excel/b4-register-pages.js';
 import { createIssue } from '../issue-registry.js';
 import { sidebarOnlyWants } from '../../status/section-guidance-policy.js';
-import { rowStarted } from '../row-started.js';
+import { getCollection } from '../../form/collections.js';
 import { isAffirmative } from '../../form/yes-no.js';
 import { collectGuardianIssues } from './guardian.js';
 import { collectAnnualIssues } from './annual.js';
@@ -53,14 +53,16 @@ const annualB4Issues = (d, type) => planSchB4Export(d?.schB4, d?.schB4Accounts, 
     route: '/schb4',
   }));
 
-// The Annual family's fourteen schedules, each answered by a started row or
-// its "I verify there are no items to report" box (completion.js's
-// verifiedEmpty()); named as the workbook names them.
+// The Annual family's fourteen schedules, each answered by an entry or its
+// "I verify there are no items to report" box; named as the workbook names
+// them. Milestone 73F part 3: a row "+ Add" added and the filer never
+// touched is no entry (the list's own blank test).
 const ANNUAL_SCHEDULES = ['schA', 'schB1', 'schB2', 'schB3', 'schB4', 'schC', 'schD1', 'schD2', 'schD3', 'schD4', 'schD5', 'schE', 'schF1', 'schF2'];
 function annualNoItemsPrompts(d, engineId) {
   return ANNUAL_SCHEDULES.flatMap((list) => {
     const key = list.toLowerCase();
-    if (d?.scheduleNoItems?.[key] || (d?.[list] || []).some((row) => rowStarted(row))) return [];
+    const untouched = getCollection(d?.inventoryType || 'annual', list).isBlank;
+    if (d?.scheduleNoItems?.[key] || (d?.[list] || []).some((row) => !untouched(row))) return [];
     const { label, route } = ANNUAL_EXCEL_CAPS[list];
     return [{ code: `prompt.${engineId}.no-items.${key}`, route, label: `${label}: add an entry, or tick "I verify there are no items to report"`, path: `scheduleNoItems.${key}`, sidebarOnly: true }];
   });
@@ -75,9 +77,24 @@ function planInitialQ7Prompts(d) {
   return answered ? [] : [{ code: 'prompt.planInitial.q7', route: '/p4', label: 'Question 7: tick each benefit the ward receives or has applied for, or explain', path: 'q7SocialSecurity', sidebarOnly: true }];
 }
 
+// Milestone 73F part 3 (decision 73F-4): the Inventory's eleven schedules, each
+// answered by an entry or its "I verify there are no items to report" box --
+// a prompt, as on the Annual, where it used to block export. A row "+ Add"
+// added and the filer never touched is no entry.
+const INVENTORY_SCHEDULES = ['a1', 'a2', 'b1', 'b2', 'b3', 'b4', 'c1', 'c2', 'c3', 'c4', 'c5'];
+function inventoryNoItemsPrompts(d) {
+  return INVENTORY_SCHEDULES.flatMap((key) => {
+    const list = `schedule${key.toUpperCase()}`;
+    const untouched = getCollection('guardian', list).isBlank;
+    if (d?.scheduleNoItems?.[key] || (d?.[list] || []).some((row) => !untouched(row))) return [];
+    const label = `${key[0].toUpperCase()}-${key.slice(1)}`;
+    return [{ code: `prompt.guardian.no-items.${key}`, route: `/${key}`, label: `Schedule ${label}: add an entry, or tick "I verify there are no items to report"`, path: `scheduleNoItems.${key}`, sidebarOnly: /** @type {const} */ (true) }];
+  });
+}
+
 /** Each engine's checks, Save as Excel's capacity checks, and its own prompts. */
 const ENGINES = Object.freeze({
-  guardian: { collect: collectGuardianIssues, excel: (d) => getExcelCapacityIssues('guardian', d, GUARDIAN_EXCEL_CAPS), prompts: () => [] },
+  guardian: { collect: collectGuardianIssues, excel: (d) => getExcelCapacityIssues('guardian', d, GUARDIAN_EXCEL_CAPS), prompts: inventoryNoItemsPrompts },
   annual: {
     collect: collectAnnualIssues,
     excel: (d, type) => [...getExcelCapacityIssues(type, d, ANNUAL_EXCEL_CAPS), ...annualB4Issues(d, type)],

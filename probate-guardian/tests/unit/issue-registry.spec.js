@@ -21,10 +21,11 @@ describe('issue-registry definitions', () => {
       showInReadiness: true,
     });
 
+    // Milestone 73F part 3 (decision 73F-3): an impossible date can't be overridden.
     const dateInvalid = getIssueDefinition('field.date.invalid');
     expect(dateInvalid).toEqual({
       category: 'validation',
-      bypassable: true,
+      bypassable: false,
       capabilities: ALL_CAPABILITIES,
       showInReadiness: true,
     });

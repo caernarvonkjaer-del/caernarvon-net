@@ -54,7 +54,8 @@ describe('acknowledgeOutstandingRequirements()', () => {
     const data = { wardId: 'ward-2', inventoryType: 'simplified' };
     const baseIssues = () => [
       createRequiredIssue({ filingType: 'simplified', path: 'wardName', message: 'Ward name required' }),
-      createIssue('field.date.invalid', { message: 'Date invalid' }),
+      // (An impossible date can't be overridden since Milestone 73F part 3.)
+      createIssue('field.amount.unreadable', { message: 'Amount unreadable' }),
     ];
 
     const result = acknowledgeOutstandingRequirements(data, baseIssues);

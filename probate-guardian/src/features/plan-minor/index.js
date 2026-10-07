@@ -6,7 +6,7 @@ import { issueFactory } from '../../core/validation/validation-issue.js';
 import { rowStarted } from '../../core/validation/row-started.js';
 import { isAttorneyStarted } from '../../core/validation/attorney-block.js';
 import { watchAttorneyRequiredMarkers, syncRequiredMarkers } from '../../core/form/attorney-required-markers.js';
-import { renderSignatureStateControl, mountSignatureStateControls } from '../../core/signature/signature-state-control.js';
+import { renderSignatureStateControl, mountSignatureStateControls, signatureDateRequired } from '../../core/signature/signature-state-control.js';
 import { migratePlanCertificateOfService } from '../../core/filing/plan-certificate-of-service.js';
 import { renderPlanCertificateOfServicePage } from '../../core/form/plan-certificate-of-service-page.js';
 import { preparerNoteHTML } from '../../core/signature/preparer-note.js';
@@ -38,7 +38,7 @@ import { formatDisplayDate } from '../../core/form/date-parser.js';
 import { normalizePlanGuardians } from '../../core/filing/models/plan-rows.js';
 import { sectionMarks } from '../../core/status/section-marks.js';
 import { getD, requestSave } from '../../core/state.js';
-import { chkP, countyInputS, inpS, pageNavS, planCheckGroup, planQ, radioP, txtP, yesNoCheckboxS } from '../../core/form/field-html.js';
+import { REQ_MARK, chkP, countyInputS, inpS, pageNavS, planCheckGroup, planQ, radioP, txtP, yesNoCheckboxS } from '../../core/form/field-html.js';
 import { renderScheduleDocsSection } from '../../core/filing/schedule-docs.js';
 import { setPath } from '../../core/form/paths.js';
 import { PLAN_MINOR_EXPLANATIONS, explanationShown } from '../../core/filing/plan-explanations.js';
@@ -240,7 +240,7 @@ function pagePlanMCover(){
             <div class="col-md-6">${inpS('ucn','UCN',d.ucn)}</div>
             <div class="col-12">${inpS('ref','Case #',d.ref)}</div>
             ${renderReportingPeriodFields({ periodFrom: d.periodFrom, periodTo: d.periodTo, fromLabel: 'For the Period From', toLabel: 'To' })}
-            <div class="col-md-6 mt-2">${yesNoCheckboxS('amendedForm','Amended Form?',d.amendedForm,false,'/')}</div>
+            <div class="col-md-6 mt-2">${yesNoCheckboxS('amendedForm','Amended Form?',d.amendedForm,true,'/')}</div>
             <div class="col-md-6 mt-2">${d.amendedForm==='Yes'?radioP('amendedVersion','Version',d.amendedVersion,['1st','2nd','3rd']):''}</div>
           </div>
         </div>
@@ -339,6 +339,7 @@ function pagePlanMMedical(){
   return `<div class="schedule-page">
     <h1>4. Provision of Medical Services</h1>
     <div class="schedule-instructions">For the plan period, the guardian proposes the following as to the provision of medical services for the Minor.</div>
+    <label class="form-label">Medical services the guardian proposes (choose at least one)${REQ_MARK}</label>
     <div class="plan-check-grid">
       ${chkP('q4Primary','Routine examination by primary care physician',d.q4Primary,'/p4')}
     </div>
@@ -369,11 +370,11 @@ function pagePlanMEducation(){
   const cb=(id,label,route='')=>chkP(id,label,d[id],route);
   return `<div class="schedule-page">
     <h1>5. Education &amp; Social Development</h1>
-    ${txtP('q5SchoolProgress',"A. Summary of the Minor's school progress report",d.q5SchoolProgress,4)}
-    ${txtP('q5SocialDevelopment',"B. Description of the social development of the Minor",d.q5SocialDevelopment,4)}
-    ${txtP('q5Communicates',"C. Statement of how well the Minor communicates with others",d.q5Communicates,4)}
-    ${txtP('q5Interpersonal',"D. Statement of how well the Minor maintains interpersonal relationships",d.q5Interpersonal,4)}
-    ${planQ('E','Description of the unmet social needs of the Minor:',
+    ${txtP('q5SchoolProgress',"A. Summary of the Minor's school progress report",d.q5SchoolProgress,4,true)}
+    ${txtP('q5SocialDevelopment',"B. Description of the social development of the Minor",d.q5SocialDevelopment,4,true)}
+    ${txtP('q5Communicates',"C. Statement of how well the Minor communicates with others",d.q5Communicates,4,true)}
+    ${txtP('q5Interpersonal',"D. Statement of how well the Minor maintains interpersonal relationships",d.q5Interpersonal,4,true)}
+    ${planQ('E','Description of the unmet social needs of the Minor:'+REQ_MARK,
       planCheckGroup('',
         cb('q5NoUnmetNeeds','No Unmet Needs')
         +cb('q5DoesNotCareToSocialize','The Minor does not care to socialize')
@@ -396,11 +397,11 @@ function pagePlanMSignatures(){
         <div class="row g-2">
           ${renderPartyNameField({ pathPrefix: `planGuardians.${i}`, name: gd.name, required: i===0, label: 'Name' })}
           <div class="col-12">${renderFormField({ path: `planGuardians.${i}.relationship`, label: 'Relationship to Ward', value: gd.relationship })}</div>
-          <div class="col-md-6">${renderFormField({ path: `planGuardians.${i}.tin`, label: 'SSN/EIN #', value: gd.tin })}</div>
-          <div class="col-md-6">${renderFormField({ path: `planGuardians.${i}.phone`, label: 'Telephone #', value: gd.phone })}</div>
-          <div class="col-12"><label class="form-label" for="plan_guardians_${i}_sigDate">Date Signed</label><input type="text" inputmode="text" class="form-control" id="plan_guardians_${i}_sigDate" placeholder="MM/DD/YYYY" value="${esc(formatDisplayDate(gd.signatureDate||''))}" data-form-path="planGuardians.${i}.signatureDate" data-field-path="planGuardians.${i}.signatureDate" data-field-kind="date" data-field-format-policy="normalize" aria-describedby="plan_guardians_${i}_sigDate_hint"><div id="plan_guardians_${i}_sigDate_hint" class="form-text text-muted" style="font-size:0.75rem;margin-top:0.2rem;">Use MM/DD/YYYY</div></div>
+          <div class="col-md-6">${renderFormField({ path: `planGuardians.${i}.tin`, label: 'SSN/EIN #', value: gd.tin, required: true })}</div>
+          <div class="col-md-6">${renderFormField({ path: `planGuardians.${i}.phone`, label: 'Telephone #', value: gd.phone, required: true })}</div>
+          <div class="col-12"><label class="form-label" for="plan_guardians_${i}_sigDate">Date Signed${signatureDateRequired({ path: `planGuardians.${i}`, state: gd.signatureState })?REQ_MARK:''}</label><input type="text" inputmode="text" class="form-control" id="plan_guardians_${i}_sigDate" placeholder="MM/DD/YYYY" value="${esc(formatDisplayDate(gd.signatureDate||''))}" data-form-path="planGuardians.${i}.signatureDate" data-field-path="planGuardians.${i}.signatureDate" data-field-kind="date" data-field-format-policy="normalize" aria-describedby="plan_guardians_${i}_sigDate_hint"><div id="plan_guardians_${i}_sigDate_hint" class="form-text text-muted" style="font-size:0.75rem;margin-top:0.2rem;">Use MM/DD/YYYY</div></div>
           <div class="col-12">${renderSignatureStateControl({ path: `planGuardians.${i}`, state: gd.signatureState, date: gd.signatureDate, route: '/p6', signatureImage: gd.signatureImage })}</div>
-          <div class="col-12">${renderFormField({ path: `planGuardians.${i}.mailingStreet`, label: 'Mailing Address', value: gd.mailingStreet })}</div>
+          <div class="col-12">${renderFormField({ path: `planGuardians.${i}.mailingStreet`, label: 'Mailing Address', value: gd.mailingStreet, required: true })}</div>
           <div class="col-12">${renderFormField({ path: `planGuardians.${i}.mailingCityStateZip`, label: 'City/State/Zip', value: gd.mailingCityStateZip })}</div>
           <div class="col-12">${renderFormField({ path: `planGuardians.${i}.email`, label: 'Email Address', value: gd.email })}</div>
         </div>
@@ -443,7 +444,7 @@ function pagePlanMPreparerAttorney(){
               <div class="col-12">${inpS('preparer_name','Preparer Name',d.preparer_name,planMinorPreparerStarted(d))}</div>
               <div class="col-md-6">${inpS('preparer_tin','SSN/EIN #',d.preparer_tin)}</div>
               <div class="col-md-6">${inpS('preparer_phone','Telephone #',d.preparer_phone)}</div>
-              <div class="col-12">${inpS('preparer_signatureDate','Date Signed',d.preparer_signatureDate,false,'date')}</div>
+              <div class="col-12">${inpS('preparer_signatureDate','Date Signed',d.preparer_signatureDate,signatureDateRequired({ path: 'preparer', state: d.preparer_signatureState }),'date')}</div>
               <div class="col-12">${renderSignatureStateControl({ path: 'preparer', state: d.preparer_signatureState, date: d.preparer_signatureDate, route: '/p7', signatureImage: d.preparer_signatureImage, statePath: 'preparer_signatureState', imagePath: 'preparer_signatureImage' })}</div>
               <div class="col-12">${inpS('preparer_mailingStreet','Mailing Address',d.preparer_mailingStreet)}</div>
               <div class="col-12">${inpS('preparer_cityStateZip','City / State / Zip',d.preparer_cityStateZip)}</div>
@@ -463,7 +464,7 @@ function pagePlanMPreparerAttorney(){
               <div class="col-12">${inpS('attorney_street','Mailing Address',d.attorney_street)}</div>
               <div class="col-12">${inpS('attorney_cityStateZip','City / State / Zip',d.attorney_cityStateZip)}</div>
               <div class="col-md-6">${inpS('attorney_phone','Telephone #',d.attorney_phone)}</div>
-              <div class="col-md-6">${inpS('attorney_signatureDate','Date Signed',d.attorney_signatureDate,false,'date')}</div>
+              <div class="col-md-6">${inpS('attorney_signatureDate','Date Signed',d.attorney_signatureDate,signatureDateRequired({ path: 'attorney', state: d.attorney_signatureState }),'date')}</div>
               <div class="col-12">${renderSignatureStateControl({ path: 'attorney', state: d.attorney_signatureState, date: d.attorney_signatureDate, route: '/p7', signatureImage: d.attorney_signatureImage, statePath: 'attorney_signatureState', imagePath: 'attorney_signatureImage' })}</div>
               <div class="col-12">${inpS('attorney_email',"Primary Email (e-filing)",d.attorney_email,isAttorneyStarted(d,'planMinor'),'email')}</div>
               <div class="col-12">${inpS('attorney_secondary_email',"Secondary Email (optional)",d.attorney_secondary_email)}</div>
