@@ -6,8 +6,7 @@
 import { codecs } from './codecs.js';
 import { writeCell } from './engine.js';
 import { readCellText } from '../cell-reader.js';
-import { amountForStore, parseAmount } from '../../form/amount-codec.js';
-import { formatMoney } from '../../format/money.js';
+import { remunerationEntered, remunerationLine, splitRemuneration } from './remuneration-line.js';
 import { compareImportedCertificate, readIndicateIfBox } from '../../filing/certificate-migrations.js';
 import { rowStarted } from '../../validation/row-started.js';
 
@@ -29,32 +28,7 @@ const guardianSlots = [15, 25, 35].map((r) => Object.fromEntries(Object.entries(
 // merges I27:L27, I28:L28 ...; I is each box's own cell (Milestone 72A).
 const RECIPIENT_SLOTS = [['B', 27], ['I', 27], ['B', 33], ['I', 33]].map(([c, r]) => ({ name: `${c}${r}`, line2: `${c}${r + 1}`, line3: `${c}${r + 2}` }));
 
-// PART VII: one free-text line per remuneration entry, "guardian — type —
-// $amount — description", empty segments left out. The importer tells the
-// layouts apart by segment count and whether the third looks like an amount
-// (files exported before the amount was included carry the description there).
-const SEP = '  —  ';
-const remunerationLine = (r) => {
-  const amt = r.amount === '' || r.amount == null ? '' : `$${formatMoney(r.amount, { grouping: false })}`;
-  const parts = [r.guardian || '', r.type || ''];
-  if (amt) parts.push(amt);
-  if (r.description) parts.push(r.description);
-  return parts.join(SEP);
-};
-const looksLikeAmount = (s) => { const r = parseAmount(String(s || '')); return 'value' in r && !('blank' in r); };
-const splitRemuneration = (val) => {
-  if (!val) return { __line: '' };
-  const parts = val.split(SEP);
-  let amt = '', description = '';
-  if (parts.length >= 4) {
-    if (looksLikeAmount(parts[2])) amt = amountForStore(String(parts[2]));
-    description = parts[3] || '';
-  } else if (parts.length === 3) {
-    if (looksLikeAmount(parts[2])) amt = amountForStore(String(parts[2]));
-    else description = parts[2];
-  }
-  return { __line: val, guardian: parts[0] || '', type: parts[1] || '', amount: amt, description };
-};
+// PART VII: one free-text line per remuneration entry (remuneration-line.js).
 
 // The Indicate if box (Milestone 72G): the ward's status; a workbook exported
 // before 72G holds the method there, read by what it holds.
@@ -137,7 +111,7 @@ export const SIMPLIFIED_CONTRACT = Object.freeze({
     // PART VII -- remuneration, one line per entry.
     {
       kind: 'rows', path: 'remuneration', pages: [{ sheet: 'PART VII', rows: Array.from({ length: 27 }, (_, i) => 6 + i) }],
-      exportFilter: (r) => r.guardian || r.type || r.description || r.amount,
+      exportFilter: remunerationEntered,
       columns: [],
       combined: [{ col: 'A', fields: ['guardian', 'type', 'amount', 'description'], codec: text, join: remunerationLine, split: splitRemuneration }],
       present: (r) => !!r.__line,

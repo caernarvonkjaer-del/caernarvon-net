@@ -48,13 +48,14 @@ export const ANNUAL_EXCEL_CAPS={
   schE:{cap:27,label:'Schedule E — Bank Transfers',route:'/sche'},
   schF1:{cap:8,label:'Schedule F-1 — Sales of Real Property',route:'/schf1'},
   schF2:{cap:11,label:'Schedule F-2 — Sales of Personal Property',route:'/schf2'},
-  // Milestone 58D: cap 0, not 25. The court's PART XI sheet has no entry grid
-  // at all -- one statutory paragraph in a merged A:G band, and nothing to
-  // fill in -- so the workbook cannot carry a single remuneration entry, let
-  // alone 25. `unsupported` replaces the generic "template holds N" wording
-  // with one that tells the filer what to do instead.
-  remuneration:{cap:0,label:'Part XI — Remuneration',route:'/p11',
-    unsupported:"the court's Excel workbook has no entry area for Part XI, so remuneration cannot be written to it. File this accounting as PDF, where Part XI prints in full."},
+  // Milestone 73T part 3 (decision 73T-2): one entry per line on PART XI's 27
+  // lines (A6:A32), as the Simplified writes its PART VII. Milestone 58D had
+  // made this cap 0, reading the sheet as having no entry area at all.
+  remuneration:{cap:27,label:'Part XI — Remuneration',route:'/p11'},
+  // Milestone 73T part 3 (row 8): PART X holds four recipients; a fifth used to
+  // be left out of the workbook with no word. Counted as the export writes
+  // them: the started ones, in order.
+  certRecipients:{cap:4,label:'Part X — Certificate of Service recipients',route:'/p10',isPopulated:rowStarted},
 };
 
 export const SIMPLIFIED_EXCEL_CAPS={

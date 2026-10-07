@@ -508,16 +508,22 @@ export function annualManifest(filingTypeValue = 'Annual'): Manifest {
   b.schedule('schF2', [{ sheet: 'SCH F-2 SALES PERSONAL PROP p1', rows: run(17, 4, 11) }], sales);
 
   // PART VIII: the one "any trust?" question, then three trust blocks.
-  b.choice('trusts.0.hasTrust', 'PART VIII', 'D8', YES_NO);
+  // Milestone 73T part 3 (row 3): the answer, each share and each amount in
+  // the Clerk's H boxes (unlocked; H8 carries the Yes/No list), not the
+  // locked D cells beside them.
+  b.choice('trusts.0.hasTrust', 'PART VIII', 'H8', YES_NO);
   [[10, 12, 13, 14, 15, 16, 17, 18], [20, 22, 23, 24, 25, 26, 27, 28], [30, 32, 33, 34, 35, 36, 37, 38]].forEach((r, i) => {
     const t = `trusts.${i}`;
     b.choice(`${t}.createdAfterGID`, 'PART VIII', `H${r[0]}`, YES_NO);
     b.box(`${t}.name`, 'PART VIII', `D${r[1]}`, 'text'); b.box(`${t}.trustee`, 'PART VIII', `D${r[2]}`, 'text');
     b.box(`${t}.accountNo`, 'PART VIII', `D${r[3]}`, 'text'); b.box(`${t}.dateCreated`, 'PART VIII', `D${r[4]}`, 'date');
-    b.box(`${t}.trustType`, 'PART VIII', `D${r[5]}`, 'text'); b.box(`${t}.wardPct`, 'PART VIII', `D${r[6]}`, 'pct');
-    b.box(`${t}.wardAmount`, 'PART VIII', `D${r[7]}`, 'money');
+    b.box(`${t}.trustType`, 'PART VIII', `D${r[5]}`, 'text'); b.box(`${t}.wardPct`, 'PART VIII', `H${r[6]}`, 'pct');
+    b.box(`${t}.wardAmount`, 'PART VIII', `H${r[7]}`, 'money');
   });
 
+  // PART IX. Milestone 73T part 3 (row 16): the block shows what the
+  // arrangement shows -- "bond and depository" shows all three boxes.
+  b.set('bondDepositoryState', 'bond-and-depository');
   b.box('guardianRelationship', 'PART IX ', 'G8', 'text'); b.box('restrictedDepositoryReceiptDate', 'PART IX ', 'G9', 'date');
   b.box('bondAmount', 'PART IX ', 'H20', 'money'); b.box('bondingCompany', 'PART IX ', 'D22', 'text');
 
@@ -530,6 +536,13 @@ export function annualManifest(filingTypeValue = 'Annual'): Manifest {
   // Clerk's form); the method of service (certIndicator) is PDF only.
   b.choice('certWardStatus', 'PART X', 'K23', INDICATE_IF);
   b.box('certAttySignDate', 'PART X', 'G25', 'date');
+
+  // PART XI (Milestone 73T part 3, decision 73T-2): one line per remuneration
+  // entry, A6..A32, joined as the Simplified's PART VII is.
+  b.schedule('remuneration', [{ sheet: 'PART XI', rows: run(6, 1, 27) }], [], [
+    { col: 'A', fields: [['guardian', 'text'], ['type', 'text'], ['amount', 'money'], ['description', 'text']],
+      compose: (r) => `${r.guardian}  —  ${r.type}  —  $${Number(r.amount).toFixed(2)}  —  ${r.description}` },
+  ]);
   return b.done();
 }
 

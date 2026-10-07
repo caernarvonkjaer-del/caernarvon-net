@@ -11,12 +11,13 @@
 //   slots    a fixed number of blocks with a cell per field (the guardians):
 //            { kind: 'slots', path, sheet, slots: [{ field: cell, ... }],
 //              fields: { field: { codec, dir?, fallback?, formula?, defect? } },
-//              exportIf?, keep?, defect? }
+//              exportFilter?, exportIf?, keep(row, i, ctx)?, defect? }
+//            (ctx.filing, when the import gives it, is the filing read into)
 //            (a field's dir and defect may be functions of the slot's index:
 //            the Simplified's Guardian #1 name is read but never written)
 //   rows     a repeating schedule over pages of rows:
 //            { kind: 'rows', path, pages: [{ sheet, rows }], columns, combined?,
-//              blankLines?, present, capacity }
+//              blankLines?, present, finish?, exportFilter?, alwaysRead?, keepIfNone? }
 //   custom   an entry no table can express (Schedule B-4's account blocks):
 //            { kind: 'custom', path, write, read, targets }
 //   constant a value the import sets without reading a cell:
@@ -87,7 +88,8 @@ export function writeContract(workbook, contract, filing, ctx = {}, io = { setCe
       const v = entry.value ? entry.value(filing, ctx) : getPath(filing, entry.path);
       writeCell(workbook, io, entry.sheet, entry.cell, entry.codec, v, filing);
     } else if (entry.kind === 'slots') {
-      const list = getPath(filing, entry.path) || [];
+      // exportFilter: the rows given a slot, in order (the Annual's started recipients).
+      const list = (getPath(filing, entry.path) || []).filter((r) => (entry.exportFilter ? entry.exportFilter(r) : true));
       entry.slots.forEach((cells, i) => {
         const row = list[i];
         if (entry.exportIf && !entry.exportIf(row, i, filing)) return;
@@ -189,12 +191,12 @@ export function readContract(workbook, contract, ctx = {}, report = null) {
             const fcell = ws.getCell(f.cell);
             if (f.unless && f.unless(fcell)) continue;
             cell = fcell;
-            v = spec.codec.read(fcell);
+            v = (f.codec || spec.codec).read(fcell);
           }
           row[field] = v;
           dates.push([spec.codec, cell, v, field]);
         }
-        if (entry.keep && !entry.keep(row, i)) return;
+        if (entry.keep && !entry.keep(row, i, ctx)) return;
         for (const [codec, cell, v, field] of dates) noteUnreadableDate(report, codec, cell, v, `${entry.path}.${rows.length}.${field}`);
         rows.push(row);
         sources.push(i);
@@ -232,7 +234,9 @@ export function readContract(workbook, contract, ctx = {}, report = null) {
           out.push(entry.finish ? entry.finish(row) : row);
         }
       }
-      if (any || entry.alwaysRead) setPath(draft, entry.path, out);
+      // keepIfNone: a schedule the workbook holds no row of says nothing
+      // (Part XI's lines, blank in every workbook exported before 73T part 3).
+      if ((any || entry.alwaysRead) && !(entry.keepIfNone && !out.length)) setPath(draft, entry.path, out);
     } else if (entry.kind === 'custom') {
       entry.read(workbook, draft, ctx);
     }

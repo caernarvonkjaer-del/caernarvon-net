@@ -3,7 +3,7 @@ import JSZip from 'jszip';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { freshStartNoPassword, createWard, fillMinimalValidGuardianWard, fillMinimalValidAnnualWard } from './support/target';
+import { freshStartNoPassword, createWard, fillMinimalValidGuardianWard, fillMinimalValidAnnualWard, importWorkbookConfirmed } from './support/target';
 import { readAll } from './support/stream';
 import { extractPdfText } from './support/pdf-extract';
 
@@ -243,7 +243,8 @@ test.describe('Milestone 67A: a guardian or attorney can be the preparer', () =>
     const importInto = async (file: string) => {
       await page.evaluate(() => { const w = window as any; w.GuardianForms.testing.patchFiling({ 'caseNumber': '' }); w.GuardianForms.testing.save.auto(); });
       await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
-      await page.setInputFiles('input[type="file"][accept=".xlsx"]', file);
+      // Milestone 73T part 3: the import confirms, then gives a notice.
+      await importWorkbookConfirmed(page, file);
       await page.waitForFunction(() => (window as any).GuardianForms.testing.field('caseNumber') === '2026-CP-000789', undefined, { timeout: 20_000 });
     };
 

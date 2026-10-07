@@ -8,7 +8,7 @@
 // was kept. A form's contract carries a `casing` table once its importer has
 // moved; until then its text passes are the ones its own importer runs.
 import { GUARDIAN_CONTRACT } from './guardian.js';
-import { ANNUAL_CONTRACT } from './annual.js';
+import { ANNUAL_CONTRACT, WORKBOOK_FILING_TYPE } from './annual.js';
 import { SIMPLIFIED_CONTRACT } from './simplified.js';
 import { getPath, readContract } from './engine.js';
 import { getExcelJS } from '../excel-engine.js';
@@ -76,7 +76,11 @@ export function readWorkbookDraft(workbook, inventoryType, { filing = null, ctx 
   const contract = contractFor(inventoryType);
   if (!contract) throw new Error(`No court workbook for ${inventoryType}.`);
   const report = {};
-  const draft = readContract(workbook, contract, ctx, report);
+  const draft = readContract(workbook, contract, { ...ctx, filing }, report);
+  // The Annual family's filing-type box says what the workbook is marked; it
+  // is never a filing field (the filing keeps its own type, 73E-N2).
+  const typeBox = draft[WORKBOOK_FILING_TYPE];
+  delete draft[WORKBOOK_FILING_TYPE];
   if (contract.casing) {
     for (const entry of contract.entries) {
       if (entry.fillBlankOnly && filing && String(getPath(filing, entry.path) ?? '').trim()) deletePath(draft, entry.path);
@@ -89,7 +93,7 @@ export function readWorkbookDraft(workbook, inventoryType, { filing = null, ctx 
     capitalizeImportedFields(draft);
     sanitizeObjectDataInPlace(draft);
   }
-  return { draft, rowSources: report.rowSources, dateDrafts: report.unreadableDates };
+  return { draft, rowSources: report.rowSources, dateDrafts: report.unreadableDates, workbookType: workbookTypeOf(typeBox, inventoryType) };
 }
 
 /** The draft alone (readWorkbookDraft()'s), for callers that need nothing else. */
@@ -98,14 +102,17 @@ export function draftFromWorkbook(workbook, inventoryType, ctx = {}) {
 }
 
 /**
- * The form a workbook says it is: the Annual family's by its PART I filing
- * type box, a blank or unknown one as an Annual (73T row 4: "Amended " isn't
- * recognised yet; part 3 recognises it).
+ * The form a workbook says it is. The Annual family's says it in PART I's
+ * filing-type box: Annual, Final or Trust is that filing type; the Clerk's
+ * "Amended " is an amended filing of this filing's own type (Pinellas Clerk
+ * practice, 2026-10-07); a blank or unknown box says nothing ('').
  */
-export function workbookTypeOf(draft, inventoryType) {
+export function workbookTypeOf(filingTypeBox, inventoryType) {
   const contract = contractFor(inventoryType);
   if (contract !== ANNUAL_CONTRACT) return contract?.form || inventoryType;
-  return descriptorForAccountingFilingType(draft.filingType)?.inventoryType || 'annual';
+  const box = String(filingTypeBox ?? '').trim();
+  if (/^amended$/i.test(box)) return inventoryType;
+  return descriptorForAccountingFilingType(box)?.inventoryType || '';
 }
 
 /**
@@ -123,10 +130,10 @@ export function workbookAdapter({ data, sourceName, inventoryType, filing = null
     await workbook.xlsx.load(data);
     assertWorkbookWithinLimits(workbook);
     const contract = contractFor(inventoryType);
-    const { draft, rowSources, dateDrafts } = readWorkbookDraft(workbook, inventoryType, { filing });
+    const { draft, rowSources, dateDrafts, workbookType } = readWorkbookDraft(workbook, inventoryType, { filing });
     const unboxed = Object.fromEntries(Object.entries(contract.preserve).filter(([role]) => role !== 'guardian'));
     return {
-      draft, sourceName, workbookType: workbookTypeOf(draft, inventoryType),
+      draft, sourceName, workbookType,
       notCarried: [...contract.notCarried], importedAs: [...(contract.importedAs || [])], unboxed, rowSources, dateDrafts,
     };
   };

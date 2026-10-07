@@ -28,8 +28,8 @@
 // passes included) and apply the draft as 73E's transaction commits it, so a
 // field the workbook has no box for is kept, not lost.
 //
-// Milestone 73T part 2: the Inventory runs on its contract; its fixed rows
-// have cases of their own at the end.
+// Milestone 73T part 2: the Inventory runs on its contract; part 3, the Annual
+// family. Each form's fixed rows have cases of their own at the end.
 import { beforeAll, describe, expect, test, vi } from 'vitest';
 
 vi.mock('../../src/core/navigation/router.js', () => ({ navigate: () => {}, renderPage: () => {}, getCurrentPage: () => '/' }));
@@ -44,6 +44,8 @@ const { ANNUAL_CONTRACT } = await import('../../src/core/excel/workbook-contract
 const { SIMPLIFIED_CONTRACT } = await import('../../src/core/excel/workbook-contract/simplified.js');
 const contractIndex = await import('../../src/core/excel/workbook-contract/index.js');
 const { partIIIGuardianCells } = await import('../../src/core/excel/guardian-inventory-pages.js');
+const { checkExcelCapacity } = await import('../../src/core/excel/excel-capacity.js');
+const { ANNUAL_EXCEL_CAPS } = await import('../../src/core/excel/excel-caps.js');
 const partIIINameBox = (i) => partIIIGuardianCells(i).find((f) => f.key === 'name').box;
 const { sameName } = await import('../../src/core/excel/import-keep.js');
 const manifests = await import('../e2e/support/export-manifests.ts');
@@ -175,20 +177,9 @@ const FORMS = [
     roundTripLosses: new Map(),
     roundTripSetup: () => {},
     roundTripExtraPaths: [],
-    // Part VIII's own boxes (73T row 3): the Yes/No answer H8, each trust's
-    // share and amount in H; the app writes and reads the locked D cells beside them.
-    handFilledBoxes: () => [
-      { path: 'trusts.0.hasTrust', sheet: 'PART VIII', cell: 'H8' },
-      ...[0, 1, 2].flatMap((i) => [
-        { path: `trusts.${i}.wardPct`, sheet: 'PART VIII', cell: `H${17 + 10 * i}` },
-        { path: `trusts.${i}.wardAmount`, sheet: 'PART VIII', cell: `H${18 + 10 * i}` },
-      ]),
-    ],
-    handFilledLosses: new Map([
-      ['trusts.*.hasTrust', [3, 3, "Part VIII's answer is read from the locked D8, not the Clerk's box H8"]],
-      ['trusts.*.wardPct', [3, 3, "each trust's share is read from D17/D27/D37, not the Clerk's H boxes"]],
-      ['trusts.*.wardAmount', [3, 3, "each trust's amount is read from D18/D28/D38, not the Clerk's H boxes"]],
-    ]),
+    // Since 73T part 3 the app's boxes are the Clerk's (Part VIII's H boxes).
+    handFilledBoxes: () => [],
+    handFilledLosses: new Map(),
   },
   {
     form: 'simplified', contract: SIMPLIFIED_CONTRACT, manifest: () => manifests.simplifiedManifest(), base: fixtures.MINIMAL_VALID_SIMPLIFIED, ctx: {},
@@ -395,12 +386,14 @@ describe('the import adapter (workbook-contract/index.js)', () => {
     for (const t of ['planInitial', 'planAnnual', 'planMinor', 'planSimplified']) expect(index.contractFor(t)).toBeNull();
   });
 
-  test("an Annual-family workbook says which filing it is by PART I's box; a blank or unknown box reads as an Annual (73T row 4)", () => {
-    expect(index.workbookTypeOf({ filingType: 'Final' }, 'annual')).toBe('finalAccounting');
-    expect(index.workbookTypeOf({ filingType: 'Trust' }, 'finalAccounting')).toBe('trustAccounting');
-    expect(index.workbookTypeOf({ filingType: '' }, 'trustAccounting')).toBe('annual');
-    expect(index.workbookTypeOf({ filingType: 'Amended ' }, 'annual')).toBe('annual');
-    expect(index.workbookTypeOf({}, 'guardian')).toBe('guardian');
+  test("an Annual-family workbook says which filing it is by PART I's box: \"Amended \" is the filing's own type, a blank or unknown box says nothing (73T part 3, row 4)", () => {
+    expect(index.workbookTypeOf('Final', 'annual')).toBe('finalAccounting');
+    expect(index.workbookTypeOf('Trust', 'finalAccounting')).toBe('trustAccounting');
+    expect(index.workbookTypeOf('Annual', 'trustAccounting')).toBe('annual');
+    expect(index.workbookTypeOf('Amended ', 'trustAccounting')).toBe('trustAccounting');
+    expect(index.workbookTypeOf('', 'trustAccounting')).toBe('');
+    expect(index.workbookTypeOf('Quarterly', 'annual')).toBe('');
+    expect(index.workbookTypeOf(undefined, 'guardian')).toBe('guardian');
   });
 
   test("a draft goes through today's import text passes: names re-cased, quotation marks removed (73T rows 11 and 19)", async () => {
@@ -529,5 +522,146 @@ describe("the Inventory's 73T rows, fixed in part 2", () => {
     expect(draft.guardians.map((g) => g.name)).toEqual(['Ann Guardian', 'Cy Guardian']);
     expect(rowSources).toEqual({ guardians: [0, 2] });
     p3.getCell(name(2)).value = null;
+  });
+});
+
+// Milestone 73T part 3: the Annual family's rows of the 73T table, fixed. One
+// export of a Trust Accounting showing every case, saved and opened again,
+// then the import cases the export can't produce, made in the opened workbook.
+describe("the Annual family's 73T rows, fixed in part 3", () => {
+  const STAMP = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAAAAonXk=';
+  let wrote, back;
+  const filingOf = (patch) => merge(merge({ ...json(initializeEmptyData('annual')), inventoryType: 'trustAccounting', filingType: 'Trust' }, json(fixtures.MINIMAL_VALID_ANNUAL)), json(patch));
+  const cell = (sheet, ref) => cellValue(back.getWorksheet(sheet).getCell(ref));
+  const read = (filing) => contractIndex.readWorkbookDraft(back, filing.inventoryType, { filing });
+
+  beforeAll(async () => {
+    wrote = filingOf({
+      startingBalance: '',
+      guardians: [{ name: 'Ann Guardian', isPreparer: true }, { name: '', signatureState: 'stamp', signatureImage: STAMP }],
+      attorney_signatureState: 'typed',
+      preparer: { name: 'Hidden Preparer', phone: '555-0100' },
+      schA: [{ payer: 'social security', description: 'monthly benefit', amount: '' }],
+      schB1: [{ amount: 250 }],
+      trusts: [{ hasTrust: 'Yes', name: 'Smith Family Trust', wardPct: 50, wardAmount: 12000 }],
+      bondDepositoryState: 'depository-only', restrictedDepositoryReceiptDate: '2026-02-02', bondAmount: 50000, bondingCompany: 'Old Surety',
+      certRecipients: [{ name: '' }, { name: 'Pat Recipient', line2: '1 Main St' }],
+      remuneration: [{ guardian: 'Ann Guardian', type: 'Fee', amount: 1500, description: 'Annual fee / Q1' }],
+      typeOfGuardianship: '=Plenary',
+    });
+    const wb = await templateWorkbook('annual');
+    writeContract(wb, ANNUAL_CONTRACT, wrote, { filingTypeValue: 'Trust' });
+    back = await reopened(wb);
+  }, 240_000);
+
+  test("row 2: an import never re-cases what the workbook doesn't carry -- the attorney's signature choice stays as the filing has it", () => {
+    const { draft } = read(wrote);
+    expect('attorney_signatureState' in draft).toBe(false);
+    expect(applyDraft(wrote, draft).attorney_signatureState).toBe('typed');
+  });
+
+  test("row 3: Part VIII's answer, share and amount are written to the Clerk's H boxes, and read back; an older workbook's D cells are read when the H box is empty", () => {
+    expect([cell('PART VIII', 'H8'), cell('PART VIII', 'H17'), cell('PART VIII', 'H18')]).toEqual(['Yes', 0.5, 12000]);
+    expect([cell('PART VIII', 'D8'), cell('PART VIII', 'D17'), cell('PART VIII', 'D18')]).toEqual([null, null, null]);
+    expect(read(wrote).draft.trusts[0]).toMatchObject({ hasTrust: 'Yes', wardPct: 50, wardAmount: 12000 });
+    const p8 = back.getWorksheet('PART VIII');
+    for (const ref of ['H8', 'H17', 'H18']) p8.getCell(ref).value = null;
+    p8.getCell('D8').value = 'Yes';
+    p8.getCell('D17').value = 0.25; p8.getCell('D17').numFmt = '0.00%';
+    p8.getCell('D18').value = 3000;
+    expect(read(wrote).draft.trusts[0]).toMatchObject({ hasTrust: 'Yes', wardPct: 25, wardAmount: 3000 });
+    for (const ref of ['D8', 'D17', 'D18']) p8.getCell(ref).value = null;
+    p8.getCell('H8').value = 'Yes'; p8.getCell('H17').value = 0.5; p8.getCell('H18').value = 12000;
+  });
+
+  test('row 4: a Trust Accounting keeps its type -- the workbook says what it is marked -- and "Amended " is an amended filing of its own type', () => {
+    expect(cell('PART I', 'H4')).toBe('Trust');
+    const { draft, workbookType } = read(wrote);
+    expect('filingType' in draft).toBe(false);
+    expect(workbookType).toBe('trustAccounting');
+    back.getWorksheet('PART I').getCell('H4').value = 'Annual';
+    expect(read(wrote).workbookType).toBe('annual');
+    back.getWorksheet('PART I').getCell('H4').value = 'Amended ';
+    const amended = read(wrote);
+    expect([amended.workbookType, amended.draft.amendedForm]).toEqual(['trustAccounting', 'Yes']);
+    back.getWorksheet('PART I').getCell('H4').value = 'Trust';
+  });
+
+  test('row 7: a B-1 row holding only an amount comes back', () => {
+    expect(read(wrote).draft.schB1.map((r) => r.amount)).toEqual([250]);
+  });
+
+  test('row 8: the started recipients are written in order and come back; more than four stops Save as Excel', () => {
+    expect([cell('PART X', 'B11'), cell('PART X', 'B12'), cell('PART X', 'I11')]).toEqual(['Pat Recipient', '1 Main St', null]);
+    expect(read(wrote).draft.certRecipients).toEqual([{ name: 'Pat Recipient', line2: '1 Main St', line3: '', line4: '' }]);
+    const five = Array.from({ length: 5 }, (_, i) => ({ name: `R${i}` }));
+    expect(checkExcelCapacity(ANNUAL_EXCEL_CAPS, { certRecipients: five }).map((o) => [o.key, o.count, o.cap])).toEqual([['certRecipients', 5, 4]]);
+    expect(checkExcelCapacity(ANNUAL_EXCEL_CAPS, { certRecipients: [...five.slice(0, 4), { name: '' }] })).toEqual([]);
+  });
+
+  test("row 9: an outside-preparer block the export left blank keeps the filing's preparer and the guardian's tick", () => {
+    expect(cell('PART IV, V', 'J15')).toBe(null);
+    const result = applyDraft(wrote, read(wrote).draft);
+    expect(result.preparer).toMatchObject({ name: 'Hidden Preparer', phone: '555-0100' });
+    expect(result.guardians[0].isPreparer).toBe(true);
+  });
+
+  test('row 13: a blank Starting Balance and a blank income amount are written blank and come back blank', () => {
+    expect([cell('PART VI, VII ', 'I8'), cell('SCH A INCOME p1', 'H21')]).toEqual([null, null]);
+    const { draft } = read(wrote);
+    expect([draft.startingBalance, draft.schA[0].amount]).toEqual(['', '']);
+  });
+
+  test('row 16: a depository-only filing files the receipt date and no bond details; the hidden ones stay in the filing', () => {
+    expect([cell('PART IX ', 'G9'), cell('PART IX ', 'H20'), cell('PART IX ', 'D22')]).toEqual([Date.UTC(2026, 1, 2) / 86400000 + 25569, null, null]);
+    const result = applyDraft(wrote, read(wrote).draft);
+    expect([result.restrictedDepositoryReceiptDate, result.bondAmount, result.bondingCompany]).toEqual(['2026-02-02', 50000, 'Old Surety']);
+  });
+
+  test('row 17: the apostrophe the export puts before "=Plenary" comes off again', () => {
+    expect(cell('PART I', 'D22')).toBe("'=Plenary");
+    expect(read(wrote).draft.typeOfGuardianship).toBe('=Plenary');
+  });
+
+  test('row 19 / casing: only the fields typing formats are formatted on import', () => {
+    const { draft } = read(wrote);
+    expect([draft.schA[0].payer, draft.schA[0].description]).toEqual(['Social Security', 'monthly benefit']);
+  });
+
+  test("Part XI (73T-2): each remuneration entry on its own line, read back; a workbook with no line keeps the filing's entries", () => {
+    expect(cell('PART XI', 'A6')).toBe('Ann Guardian  —  Fee  —  $1500.00  —  Annual fee / Q1');
+    expect(cell('PART XI', 'A7')).toBe(null);
+    expect(read(wrote).draft.remuneration).toEqual([{ guardian: 'Ann Guardian', type: 'Fee', amount: 1500, description: 'Annual fee / Q1' }]);
+    expect(checkExcelCapacity(ANNUAL_EXCEL_CAPS, { remuneration: wrote.remuneration })).toEqual([]);
+    back.getWorksheet('PART XI').getCell('A6').value = null;
+    expect('remuneration' in read(wrote).draft).toBe(false);
+    back.getWorksheet('PART XI').getCell('A6').value = 'Ann Guardian  —  Fee  —  $1500.00  —  Annual fee / Q1';
+  });
+
+  test('74B kept: a co-guardian slot the workbook shows blank still holds the filing\'s co-guardian who has only a stamp', () => {
+    const { draft, rowSources } = read(wrote);
+    expect(draft.guardians.map((g) => g.name)).toEqual(['Ann Guardian', '']);
+    expect(rowSources, 'no row moved').toEqual({});
+    expect(applyDraft(wrote, draft).guardians[1]).toMatchObject({ signatureState: 'stamp', signatureImage: STAMP });
+  });
+});
+
+// Milestone 73T part 3: the Annual's casing table is what its pages type.
+describe("the Annual's casing table matches the fields its pages format", () => {
+  test('every field the Annual\'s pages label as a name, address or city/state/ZIP is in the table, and nothing else', async () => {
+    const { readFileSync } = await import('node:fs');
+    const { inferFieldKind } = await import('../../src/core/form/form-fields.js');
+    const src = readFileSync('src/features/annual-accounting/index.js', 'utf8');
+    const found = { name: new Set(), address: new Set(), zip: new Set() };
+    const re = /inpD(?:WithTooltip)?\(\s*('(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*"|`[^`]*`)\s*,[^,]*?,\s*(`[^`]*`|'[^']*'|"[^"]*")/g;
+    for (const m of src.matchAll(re)) {
+      const label = m[1].slice(1, -1).replace(/\$\{[^}]*\}/g, '#');
+      const path = (/D\.([\w.[\]$}{]+)\s*=/.exec(m[2])?.[1] || '').replace(/\[\$\{[^}]*\}\]|\[\d+\]/g, '.*').replace(/\$\{[^}]*\}/g, '*');
+      const kind = inferFieldKind(label);
+      if (path && found[kind]) found[kind].add(path);
+    }
+    // Part I's attorney renders under three labels (one page each); one field.
+    const table = Object.fromEntries(Object.entries(ANNUAL_CONTRACT.casing).map(([k, v]) => [k, [...v].sort()]));
+    expect(Object.fromEntries(Object.entries(found).map(([k, v]) => [k, [...v].sort()]))).toEqual(table);
   });
 });

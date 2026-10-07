@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import { freshStartNoPassword, createWard, fillMinimalValidAnnualWard } from './support/target';
+import { freshStartNoPassword, createWard, fillMinimalValidAnnualWard, importWorkbookConfirmed } from './support/target';
 import { extractXlsx } from './support/xlsx-extract';
 import { readAll } from './support/stream';
 
@@ -105,7 +105,8 @@ test.describe('Schedule B-4 with five bank accounts', () => {
     await createWard(page, 'Multi Account Import', 'annual');
     const errors: string[] = [];
     page.on('pageerror', (e) => errors.push(e.message));
-    await page.setInputFiles('input[type="file"][accept=".xlsx"]', file);
+    // Milestone 73T part 3: the Annual family's import confirms, then gives a notice.
+    await importWorkbookConfirmed(page, file);
     await page.waitForFunction(
       () => ((window as any).GuardianForms.testing.snapshot().filing?.schB4 || []).length > 0,
       undefined,

@@ -2,15 +2,17 @@ import { test, expect } from '@playwright/test';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { freshStartNoPassword, createWard, fillMinimalValidGuardianWard } from './support/target';
+import { freshStartNoPassword, createWard, fillMinimalValidGuardianWard, fillMinimalValidAnnualWard } from './support/target';
 import { exportWithWrites } from './support/workbook-vs-template';
 
 // Milestone 73T part 2: the Initial Inventory's Import control runs on the
 // import transaction (src/core/excel/import-transaction.js) -- one
 // confirmation before anything changes, a Cancel that changes nothing and
 // saves nothing, and a notice after the redraw of what was kept. Before part
-// 2 choosing a workbook replaced every page at once, with no question.
-// (73T parts 3 and 4 add the Annual family's and the Simplified's cases.)
+// 2 choosing a workbook replaced every page at once, with no question. Part 3
+// connects the Annual family the same way (a Trust or Final keeps its type;
+// the old importer turned it into whatever the workbook said, and re-cased
+// the attorney's signature choice "typed" to "Typed"); part 4 the Simplified.
 
 const DIALOG = '.modal-overlay[id^="dyn-dialog-"].show .modal-box';
 const snapshot = (page: import('@playwright/test').Page) => page.evaluate(() => JSON.stringify((window as any).GuardianForms.testing.snapshot().filing));
@@ -63,5 +65,44 @@ test("the Inventory's Import: Cancel changes and saves nothing; Import replaces,
   await page.evaluate(() => (window as any).__saves.restore());
   const log = await page.evaluate(() => (window as any).GuardianForms.testing.persistenceState.auditEntries());
   expect(log.length - logBefore, 'one Activity Log entry').toBe(1);
+  expect(errors).toEqual([]);
+});
+
+test("a Trust Accounting's Import: it stays a Trust Accounting, and the attorney's signature choice isn't re-cased", async ({ page }) => {
+  test.setTimeout(240_000);
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(String(e)));
+  await freshStartNoPassword(page);
+  await createWard(page, 'Confirm Trust', 'trustAccounting');
+  await fillMinimalValidAnnualWard(page);
+  await page.evaluate(() => (window as any).GuardianForms.testing.patchFiling({ attorney_signatureState: 'typed' }));
+  const { bytes } = await exportWithWrites(page, 'annual');
+  const file = path.join(os.tmpdir(), `pg-73t3-confirm-${Date.now()}.xlsx`);
+  fs.writeFileSync(file, bytes);
+  await page.evaluate(() => (window as any).GuardianForms.testing.patchFiling({ caseNumber: '2026-GD-999999' }));
+  await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
+  await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
+
+  // Cancel changes nothing and saves nothing.
+  const before = await snapshot(page);
+  await page.evaluate(() => { (window as any).__saves = (window as any).GuardianForms.testing.observe.countAutoSaves(); });
+  await page.setInputFiles('input[type="file"][accept=".xlsx"]', file);
+  await expect(page.locator(DIALOG)).toContainText('replaces', { timeout: 30_000 });
+  await page.locator(DIALOG).locator('[data-dyn-action="cancel"]').click();
+  await expect(page.locator('input[type="file"][accept=".xlsx"]')).toHaveJSProperty('value', '', { timeout: 30_000 });
+  expect(await snapshot(page)).toBe(before);
+  expect(await page.evaluate(() => (window as any).__saves.count), 'Cancel queues no save').toBe(0);
+  await page.evaluate(() => (window as any).__saves.restore());
+
+  await page.setInputFiles('input[type="file"][accept=".xlsx"]', file);
+  await page.locator(DIALOG).locator('[data-dyn-action="confirm"]').click({ timeout: 30_000 });
+  const notice = page.locator(DIALOG).filter({ hasText: 'Imported' });
+  await expect(notice).toContainText(`Imported ${path.basename(file)} into Confirm Trust`, { timeout: 30_000 });
+  await notice.locator('[data-dyn-action="ok"]').click();
+  const after = await page.evaluate(() => {
+    const t = (window as any).GuardianForms.testing;
+    return { type: t.snapshot().filing.inventoryType, filingType: t.field('filingType'), caseNumber: t.field('caseNumber'), state: t.field('attorney_signatureState') };
+  });
+  expect(after).toEqual({ type: 'trustAccounting', filingType: 'Trust', caseNumber: expect.not.stringMatching('2026-GD-999999'), state: 'typed' });
   expect(errors).toEqual([]);
 });

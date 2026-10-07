@@ -60,10 +60,14 @@ export const codecs = Object.freeze({
       return Number(v) || 0;
     },
   }),
-  /** The Annual's amounts: written as a number (a blank as 0 -- 73T row 13); a blank or date cell reads as blank. */
+  /**
+   * The Annual's amounts: written as a number, a blank as a blank (Milestone
+   * 73T part 3, row 13 -- it used to be 0, so a re-import turned a blank into
+   * an entered $0.00); a blank or date cell reads as blank.
+   */
   amountNumber: Object.freeze({
     kind: 'amount',
-    write: (v) => ({ value: numValue(v) }),
+    write: (v) => ({ value: v === '' || v == null ? '' : numValue(v) }),
     read: (cell) => { const v = raw(cell); if (v == null || v === '' || v instanceof Date) return ''; return amountForStore(v); },
   }),
   /** The Simplified's Part II amounts: written as a number (a blank as 0), read from the cell's text. */

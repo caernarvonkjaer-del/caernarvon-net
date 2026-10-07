@@ -6,9 +6,9 @@
 far: 73U (2026-10-04, `5b8849b`), 73V (2026-10-05, `8b96aa3`), 73C
 (2026-10-05, `861b6a9`, brought forward from its place in the build order at the
 requester's choice) 73D (2026-10-05, `c8e84fe`, likewise), 73J part 1 (2026-10-05, `d819c4a`),
-73F part 1 (2026-10-06, `5e9e17b`), 73A (2026-10-06, `83352d0`), 73F part 2 (2026-10-06, `d01edd4`), 73G part 1 (2026-10-06, `69a1b46`), 73E part 1 (2026-10-06, `8e02051`), 73F part 3 (2026-10-06, `67fc66c`), 73I (2026-10-06, `56a7c30`), 73T part 1 (2026-10-07, `4cae1e7`) and 73T part 2 (2026-10-07), each approved by name.**
+73F part 1 (2026-10-06, `5e9e17b`), 73A (2026-10-06, `83352d0`), 73F part 2 (2026-10-06, `d01edd4`), 73G part 1 (2026-10-06, `69a1b46`), 73E part 1 (2026-10-06, `8e02051`), 73F part 3 (2026-10-06, `67fc66c`), 73I (2026-10-06, `56a7c30`), 73T part 1 (2026-10-07, `4cae1e7`), 73T part 2 (2026-10-07, `2a1cbc5`) and 73T part 3 (2026-10-07), each approved by name.**
 **Approved and not yet built** (2026-10-07, one batch, built in this order
-with a full regression midway and at the end): 73T parts 3–4, 73M (with
+with a full regression midway and at the end): 73T part 4, 73M (with
 74C), 73B (then 74P), 73O part 2 (with 74F), 73G part 2 (with 74H), 73H and
 73S. Nothing else is approved. Building any other item, or any part of a
 split item, needs the requester's named approval of that item or part
@@ -3105,6 +3105,80 @@ A-2 Notes (kept on import there) and the import-only bond guess.
   `importWorkbookConfirmed()` (`support/target.ts`), and two shared import
   helpers now wait until the import has finished, its notice dismissed.
 - **Browser specs: 17 files, 103 tests, all passed** (18.3 min on D:): the new spec, the transaction's dialog spec, and every spec that exports or imports an Inventory workbook (the export guard, mount, page pruning, schedule layout, bond, Ward's %, certificates, links following rows, signatures kept, preparer, B-2 vehicles, date cells, defined names, export buttons). **Red-first:** with the Inventory's Excel module set aside, the new spec fails waiting for the confirmation -- the workbook is applied at once. Full unit suite: 2,828 passed, after six source-scanning guards were brought to the new shape (the write-target guard now reads the Inventory's targets from its contract -- every address, so its old blind spot is gone for this form -- and lists PART III F8, Guardian #1's name over the Cover link, decided 2026-10-01); `check:types` clean. Full regression: the batch's mid-batch run.
+
+### Build record, part 3 — BUILT 2026-10-07 (approved by name by the requester, 2026-10-07)
+
+**What changed for a filer, on the Annual, Final and Trust Accountings:**
+
+- **Import asks first**, as the Inventory's does since part 2: one
+  confirmation, a Cancel that changes nothing, a notice of what was kept.
+  **A Trust or Final keeps its type** whatever the workbook's filing-type box
+  says (the confirmation says when they differ); the old importer turned it
+  into whatever the box held. The box's own "Amended " is read as an amended
+  filing of the filing's own type (Pinellas Clerk practice, 2026-10-07).
+- **Part XI carries into Excel (73T-2).** Each remuneration entry goes on its
+  own line of the Clerk's 27 (A6:A32), as the Simplified writes its Part VII,
+  and is read back; Save as Excel no longer stops for Part XI entries (more
+  than 27 stop it). A workbook with no Part XI line -- every one exported
+  before this -- leaves the filing's entries as they are.
+- **Schedule B-4's totals are complete (73T-1).** The workbook's hidden
+  category subtotals no longer drop an intangible-tax payment on a register
+  page's first line, or a utilities payment on p8's (and its copies') second
+  line and p12's first: 301 formula cells corrected in the app's copy, nothing
+  else in the workbook changed (checked cell by cell with a parser). The
+  office has been told about pages 2-19 of its published copy.
+- **Rows 2, 3, 4, 7, 8, 9, 13, 16 and 17, fixed:**
+  - 2: the import no longer re-cases the whole filing, so the attorney's and
+    the certificate guardian's signature choices stay as chosen ("typed",
+    not "Typed").
+  - 3: Part VIII's answer, each trust's share and each amount go to the
+    Clerk's own boxes (H8; H17/H18, H27/H28, H37/H38), not the locked cells
+    beside them, so a workbook filled in by hand imports them; a workbook
+    exported before reads its old cells.
+  - 4: as above.
+  - 7: a B-1 or B-2 row holding only an amount comes back.
+  - 8: more than four certificate recipients stops Save as Excel, as any
+    schedule over the workbook's room does; the started recipients are written
+    in order, and the import brings back those the workbook lists.
+  - 9: an outside-preparer block left blank keeps the filing's preparer.
+  - 13: a blank amount -- the Starting Balance or any schedule's -- is written
+    blank, not $0, so a re-import no longer turns it into an entered $0.00.
+  - 16: Part IX shows what the arrangement shows (the receipt date for a
+    restricted depository; the bond amount and company for a bond or no
+    answer); the filing keeps a hidden value.
+  - 17: the export's protective apostrophe comes off on import.
+  - Casing: the import formats only the fields the Annual's pages format as
+    a name, address or city/state/ZIP.
+- **Kept from 74B:** a co-guardian whose slot holds only a stamp keeps it
+  through an import.
+
+**How:** the Annual family's exporter writes, and its importer reads, its
+workbook contract (`workbook-contract/annual.js`), with the import on 73E's
+transaction. `scripts/fix-annual-b4-subtotals.py` corrected the embedded
+workbook. Engine additions: the filing reaches a slot list's keep rule; slot
+fallbacks with their own reader (Part VIII's older layouts); a slot list
+that exports only its started rows; a schedule with no row in the workbook
+says nothing (Part XI).
+
+**Tests:**
+
+- New `tests/unit/annual-b4-subtotals.spec.js`. **Red-first:** on the
+  workbook as shipped it lists the 301 cells.
+- `tests/unit/workbook-contract.spec.js`: the Annual's hand-filled import
+  now loses nothing; a case for each fixed row, Part XI and the stamp-only
+  co-guardian, from one export of a Trust Accounting; and a check that its
+  casing table is exactly the fields its pages format. **Red-first:** with
+  part 3's contract, adapter, engine, codec and capacity changes set aside,
+  all eleven row cases fail, each for its row's reason (row 2's case passes
+  either way -- the draft never carried a signature choice; its fix is the
+  importer no longer re-casing the whole filing, covered in the browser).
+- `import-confirm.spec.ts`: a Trust Accounting's real Import keeps its type
+  and the attorney's "typed". `excel-form-field-placement.spec.ts`: Part VIII
+  in the H boxes, nothing in the D cells, both older layouts importing.
+  `export-manifests.ts`: Part VIII's H boxes, Part IX "bond and depository",
+  Part XI's lines. Eight browser specs that import an Annual-family workbook
+  answer the confirmation; the bond spec exports the Annual "depository only".
+- **Browser specs: 22 files, 140 tests, all passed** (25.6 min on D:, then the two below rerun): every spec that exports or imports an Annual-family workbook, the transaction's dialog spec, and the specs sharing the import helpers. Two needed changes, both expectations rather than faults: the ward-percentage import spec expected every imported description title-cased (now only the ones the pages format are), and the new Trust case took its "before" snapshot while its own setup's save was still pending. **Red-first:** with the Annual's Excel module set aside, the Trust case fails waiting for the confirmation. Full unit suite: 2,843 passed; `check:types` clean. Full regression: the batch's mid-batch run.
 
 ---
 

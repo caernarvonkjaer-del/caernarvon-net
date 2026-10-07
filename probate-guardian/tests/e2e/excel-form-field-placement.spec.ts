@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import {
   freshStartNoPassword, createWard, createSimplifiedWard,
-  fillMinimalValidGuardianWard, fillMinimalValidSimplifiedWard, fillMinimalValidAnnualWard, autoAcceptDynDialogs, importWorkbookConfirmed,
+  fillMinimalValidGuardianWard, fillMinimalValidSimplifiedWard, fillMinimalValidAnnualWard, importWorkbookConfirmed,
 } from './support/target';
 import { readAll } from './support/stream';
 import {
@@ -443,15 +443,12 @@ async function importInto(page: Page, form: 'guardian' | 'annual', bytes: Buffer
   fs.writeFileSync(file, bytes);
   await createWard(page, name, form);
   await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
-  // Milestone 73T part 2: the Inventory's import confirms and then gives a notice.
-  if (form === 'guardian') await importWorkbookConfirmed(page, file);
-  const dialogs = autoAcceptDynDialogs(page);
-  if (form !== 'guardian') await page.setInputFiles('input[type="file"][accept=".xlsx"]', file);
+  // Milestone 73T parts 2 and 3: the import confirms and then gives a notice.
+  await importWorkbookConfirmed(page, file);
   await page.waitForFunction((n) => {
     const d = (window as any).GuardianForms.testing.snapshot().filing;
     return d && d.wardName && d.wardName !== n;
   }, name, { timeout: 30_000 });
-  dialogs.stop();
   return page.evaluate(() => (window as any).GuardianForms.testing.snapshot().filing);
 }
 
@@ -525,16 +522,18 @@ test.describe('Milestone 72A: workbooks exported before the fixes still import',
   });
 });
 
-// ── Milestone 72B: Part VIII's share and amount display as a share and an amount ──
+// ── Milestones 72B and 73T part 3: Part VIII's share and amount in the Clerk's boxes ──
 //
-// The Clerk's workbook formats each trust's Ward's % and Amount boxes as long
-// dates, so a 50% share showed as "February 19, 1900", and the $0 the exporter
-// wrote into every empty trust slot -- every Annual has three -- as "January
-// 0, 1900". The share is now the fraction under the workbook's own 0.00%, the
-// amount under its dollar format, 0 stays 0 and an empty slot stays empty; a
-// workbook exported the old way still imports the numbers it held.
-test.describe("Milestone 72B: the Annual's Part VIII trusts", () => {
-  test('a share shows as a percentage and an amount as dollars; 0 stays 0; an empty trust slot stays empty; the old layout imports', async ({ page }) => {
+// Milestone 72B: the app wrote each trust's share and amount into the D cells
+// beside their captions, which the Clerk's workbook formats as long dates, so
+// a 50% share showed as "February 19, 1900"; it gave them the share and money
+// formats. Milestone 73T part 3 (row 3): those D cells are locked leaders --
+// the Clerk's boxes are H17/H18 (and H27/H28, H37/H38), already formatted as a
+// share and an amount, and H8 for "any trust?". Written there now; 0 stays 0
+// and an empty slot stays empty; a workbook exported either older way still
+// imports the numbers it held.
+test.describe("Milestones 72B and 73T: the Annual's Part VIII trusts", () => {
+  test("a share and an amount land in the Clerk's boxes as a percentage and dollars; 0 stays 0; an empty trust slot stays empty; the older layouts import", async ({ page }) => {
     test.setTimeout(60_000);
     await freshStartNoPassword(page);
     await createWard(page, 'Part VIII Source', 'annual');
@@ -550,27 +549,36 @@ test.describe("Milestone 72B: the Annual's Part VIII trusts", () => {
     const { bytes } = await exportWithWrites(page, 'annual');
     const wb = await loadWorkbook(bytes);
     const p8 = wb.getWorksheet('PART VIII');
-    expect([p8.getCell('D17').value, p8.getCell('D17').numFmt], 'a 50% share is the fraction under a percentage format').toEqual([0.5, '0.00%']);
-    expect(p8.getCell('D18').value, 'the amount is a number').toBe(12000);
-    expect(String(p8.getCell('D18').numFmt), "under the workbook's dollar format").toContain('$');
-    expect([p8.getCell('D27').value, p8.getCell('D28').value], '0% and $0 stay 0').toEqual([0, 0]);
-    expect([p8.getCell('D37').value, p8.getCell('D38').value], 'an empty trust slot stays empty, not $0').toEqual([null, null]);
+    expect(p8.getCell('H8').value, '"any trust?" in the Clerk\'s H8').toBe('Yes');
+    expect([p8.getCell('H17').value, p8.getCell('H17').numFmt], 'a 50% share is the fraction under the box\'s percentage format').toEqual([0.5, '0.00%']);
+    expect(p8.getCell('H18').value, 'the amount is a number').toBe(12000);
+    expect(String(p8.getCell('H18').numFmt), "under the box's own number format").not.toMatch(/yy|mmmm/);
+    expect([p8.getCell('H27').value, p8.getCell('H28').value], '0% and $0 stay 0').toEqual([0, 0]);
+    expect([p8.getCell('H37').value, p8.getCell('H38').value], 'an empty trust slot stays empty, not $0').toEqual([null, null]);
+    expect(['D8', 'D17', 'D18', 'D27', 'D28'].map((a) => p8.getCell(a).value), 'nothing in the locked D cells').toEqual([null, null, null, null, null]);
 
     const file = path.join(os.tmpdir(), `pg-72b-part8-${Date.now()}.xlsx`);
     const reimport = async (buf: Buffer, name: string) => {
       fs.writeFileSync(file, buf);
       await createWard(page, name, 'annual');
       await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
-      const dialogs = autoAcceptDynDialogs(page);
-      await page.setInputFiles('input[type="file"][accept=".xlsx"]', file);
+      await importWorkbookConfirmed(page, file);
       await page.waitForFunction(() => ((window as any).GuardianForms.testing.snapshot().filing?.trusts?.[0]?.name || '') !== '', undefined, { timeout: 30_000 });
-      dialogs.stop();
       return page.evaluate(() => (window as any).GuardianForms.testing.snapshot().filing.trusts.map((t: any) => [t.wardPct, t.wardAmount]));
     };
-    expect(await reimport(bytes, 'Part VIII Round Trip'), 'a 72B export reads back').toEqual([[50, 12000], [0, 0], ['', '']]);
+    expect(await reimport(bytes, 'Part VIII Round Trip'), 'this export reads back').toEqual([[50, 12000], [0, 0], ['', '']]);
 
-    // The layout every Annual had before 72B: the 0-100 figure and the amount
-    // as plain numbers under the template's own date format.
+    // The layouts before 73T part 3 wrote the D cells and left the H boxes
+    // empty: since 72B the fraction and the amount under share and money
+    // formats; before it the 0-100 figure and the amount as plain numbers
+    // under the template's own date format.
+    for (const ref of ['H17', 'H18', 'H27', 'H28']) p8.getCell(ref).value = null;
+    for (const [pct, amt, share, amount] of [['D17', 'D18', 0.5, 12000], ['D27', 'D28', 0, 0]] as const) {
+      p8.getCell(pct).value = share; p8.getCell(pct).numFmt = '0.00%';
+      p8.getCell(amt).value = amount; p8.getCell(amt).numFmt = '"$"#,##0.00';
+    }
+    expect(await reimport(Buffer.from(await wb.xlsx.writeBuffer()), 'Part VIII Before 73T'), 'an export from 72B to 73T reads back the numbers it held')
+      .toEqual([[50, 12000], [0, 0], ['', '']]);
     for (const [pct, amt, share, amount] of [['D17', 'D18', 50, 12000], ['D27', 'D28', 0, 0]] as const) {
       p8.getCell(pct).value = share; p8.getCell(pct).numFmt = '[$-409]mmmm\\ d\\,\\ yyyy;@';
       p8.getCell(amt).value = amount; p8.getCell(amt).numFmt = '[$-409]mmmm\\ d\\,\\ yyyy;@';

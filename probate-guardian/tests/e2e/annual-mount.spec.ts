@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import path from 'node:path';
 import os from 'node:os';
-import { freshStartNoPassword, createWard, fillMinimalValidAnnualWard, crossCheckNavAndSummaryStatus, extractFormContentSnapshot, acceptDynDialog } from './support/target';
+import { freshStartNoPassword, createWard, fillMinimalValidAnnualWard, crossCheckNavAndSummaryStatus, extractFormContentSnapshot, acceptDynDialog, importWorkbookConfirmed } from './support/target';
 import { dismissScheduleDocPrompt } from './support/target';
 
 // Annual Accounting is the sixth feature extraction (Milestone 7 of
@@ -89,7 +89,8 @@ test.describe('annual-accounting feature module', () => {
 
     const errors: string[] = [];
     page.on('pageerror', (e) => errors.push(e.message));
-    await page.setInputFiles('input[type="file"][accept=".xlsx"]', xlsxPath);
+    // Milestone 73T part 3: the Annual family's import confirms, then gives a notice.
+    await importWorkbookConfirmed(page, xlsxPath);
     // Annual's workbook has far more sheets than Simplified's, so parsing
     // can take longer than a fixed short wait -- poll for the actual
     // completion signal instead of guessing a timeout.

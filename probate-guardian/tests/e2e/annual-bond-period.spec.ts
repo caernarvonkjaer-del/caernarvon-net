@@ -3,7 +3,7 @@ import JSZip from 'jszip';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { freshStartNoPassword, createWard, fillMinimalValidAnnualWard } from './support/target';
+import { freshStartNoPassword, createWard, fillMinimalValidAnnualWard, importWorkbookConfirmed } from './support/target';
 import { readAll } from './support/stream';
 import { extractPdfTextItems } from './support/pdf-extract';
 
@@ -120,7 +120,8 @@ test.describe('Milestone 67D: the Bond Period is the accounting period', () => {
     fs.writeFileSync(file, bytes);
     await createWard(page, 'Bond Period Import Target', 'annual');
     await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
-    await page.setInputFiles('input[type="file"][accept=".xlsx"]', file);
+    // Milestone 73T part 3: the Annual family's import confirms, then gives a notice.
+    await importWorkbookConfirmed(page, file);
     await page.waitForFunction(() => (window as any).GuardianForms.testing.field('caseNumber') === '2026-CP-000789', undefined, { timeout: 20_000 });
     const back = await page.evaluate(() => {
       const d = (window as any).GuardianForms.testing.snapshot().filing;

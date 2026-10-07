@@ -258,9 +258,13 @@ for (const form of [
       expect(depositoryPdf).not.toContain('Bond waived by court order');
 
       // Excel: the state itself has no cell on either form. The Inventory's
-      // waiver date reaches PART V G15 as it always has; the Annual's receipt
-      // date reaches PART IX G9 as it always has. Nothing else is written.
-      await setFields(page, { bondDepositoryState: 'bond-waived', ...BLANK_BOND, bondWaivedDate: '2026-03-03', restrictedDepositoryReceiptDate: '2026-02-02' });
+      // waiver date reaches PART V G15; the Annual's receipt date reaches PART
+      // IX G9. Since 73T parts 2 and 3 a box reaches the workbook only when the
+      // arrangement shows it, as on the PDF -- so each form exports the
+      // arrangement whose date it carries (the Annual has no waiver box).
+      await setFields(page, form.type === 'guardian'
+        ? { bondDepositoryState: 'bond-waived', ...BLANK_BOND, bondWaivedDate: '2026-03-03' }
+        : { bondDepositoryState: 'depository-only', ...BLANK_BOND, restrictedDepositoryReceiptDate: '2026-02-02' });
       const bytes = await download(page, form.excelButton);
       if (form.type === 'guardian') {
         const p5 = await sheetText(bytes, 'PART V');
@@ -285,8 +289,8 @@ for (const form of [
       expect(caseNumber, 'the fixture case number is the import signal').toBeTruthy();
       await setFields(page, { bondDepositoryState: '', ...BLANK_BOND, caseNumber: '' });
       await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
-      // Milestone 73T part 2: the Inventory's import confirms and then gives a notice.
-      if (form.type === 'guardian') await importWorkbookConfirmed(page, file); else await page.setInputFiles('input[type="file"][accept=".xlsx"]', file);
+      // Milestone 73T parts 2 and 3: the import confirms and then gives a notice.
+      await importWorkbookConfirmed(page, file);
       await page.waitForFunction((cn) => (window as any).GuardianForms.testing.field('caseNumber') === cn, caseNumber, { timeout: 20_000 });
       expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('bondDepositoryState')), 'the imported date answers the question')
         .toBe(form.type === 'guardian' ? 'bond-waived' : 'depository-only');
@@ -298,8 +302,8 @@ for (const form of [
       // that cannot carry one.
       await setFields(page, { bondDepositoryState: 'bond-and-depository', caseNumber: '' });
       await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
-      // Milestone 73T part 2: the Inventory's import confirms and then gives a notice.
-      if (form.type === 'guardian') await importWorkbookConfirmed(page, file); else await page.setInputFiles('input[type="file"][accept=".xlsx"]', file);
+      // Milestone 73T parts 2 and 3: the import confirms and then gives a notice.
+      await importWorkbookConfirmed(page, file);
       await page.waitForFunction((cn) => (window as any).GuardianForms.testing.field('caseNumber') === cn, caseNumber, { timeout: 20_000 });
       expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('bondDepositoryState')), 'a stored answer survives the import').toBe('bond-and-depository');
     });

@@ -148,7 +148,8 @@ test.describe('Milestone 71C: a share is a percentage from 0 to 100', () => {
     await exportExcelWithOverride(page, '[data-annual-action="save-excel"]', annualFile);
     await createWard(page, 'Percent Annual Import', 'annual');
     await navigate(page, '/');
-    await page.setInputFiles('input[type="file"][accept=".xlsx"]', annualFile);
+    // Milestone 73T part 3: the Annual family's import confirms, then gives a notice.
+    await importWorkbookConfirmed(page, annualFile);
     await page.waitForFunction(() => ((window as any).GuardianForms.testing.field('schD1') || []).length === 3, undefined, { timeout: 20_000 });
     expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('schD1').map((r: any) => r.wardPct))).toEqual([150, -10, 5000]);
     const annualIssues = await issues(page);

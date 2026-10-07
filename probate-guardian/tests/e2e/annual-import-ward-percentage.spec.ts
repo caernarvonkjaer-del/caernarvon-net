@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import path from 'node:path';
 import os from 'node:os';
-import { freshStartNoPassword, createWard, fillMinimalValidAnnualWard } from './support/target';
+import { freshStartNoPassword, createWard, fillMinimalValidAnnualWard, importWorkbookConfirmed } from './support/target';
 
 // Importing an Annual Accounting workbook stopped at the first ward
 // percentage on Schedules D-1 to D-5: "Import failed: r2 is not a function".
@@ -46,7 +46,8 @@ test('an Annual workbook with ward percentages on Schedules D-1 to D-5 re-import
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
   page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
-  await page.setInputFiles('input[type="file"][accept=".xlsx"]', xlsxPath);
+  // Milestone 73T part 3: the import confirms, then gives a notice.
+  await importWorkbookConfirmed(page, xlsxPath);
   // Schedule E is read after D-5: its row arriving means the import ran past the percentages.
   await page.waitForFunction(() => ((window as any).GuardianForms.testing.field('schE') || []).length > 0 || ((window as any).GuardianForms.testing.field('caseNumber') && ((window as any).GuardianForms.testing.field('schD1') || []).length === 0 && document.body.innerText.includes('Import failed')), undefined, { timeout: 15_000 }).catch(() => {});
 
@@ -65,11 +66,14 @@ test('an Annual workbook with ward percentages on Schedules D-1 to D-5 re-import
   expect(errors, 'no import error').toEqual([]);
   expect(imported.caseNumber).toBe('2026-CP-000789');
   expect(imported.pct).toEqual([
-    // Descriptions come back title-cased: the importer capitalizes imported text.
-    ['schD1', 'Brokerage Account', '50'],
+    // Milestone 73T part 3: the import formats a description only where the
+    // page formats it when typed -- D-2's is an address field and D-5's a
+    // name field (their labels); D-1's, D-3's and D-4's are kept as typed.
+    // (The old importer title-cased every field whose key held "description".)
+    ['schD1', 'Brokerage account', '50'],
     ['schD2', 'Family Home', '100'],
-    ['schD3', 'Mineral Rights', '33.33'],
-    ['schD4', 'Certificate of Deposit', '12.5'],
+    ['schD3', 'Mineral rights', '33.33'],
+    ['schD4', 'Certificate of deposit', '12.5'],
     ['schD5', 'Car Loan', '1'],
   ]);
   expect(imported.schE, 'Schedule E, read after D-5, imported too').toBe('First Bank');

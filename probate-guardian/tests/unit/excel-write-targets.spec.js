@@ -6,6 +6,7 @@ vi.mock('../../src/core/navigation/router.js', () => ({ navigate: () => {}, rend
 globalThis.window = globalThis.window || globalThis;
 const { contractTargets } = await import('../../src/core/excel/workbook-contract/engine.js');
 const { GUARDIAN_CONTRACT } = await import('../../src/core/excel/workbook-contract/guardian.js');
+const { ANNUAL_CONTRACT } = await import('../../src/core/excel/workbook-contract/annual.js');
 
 // Every setCell() target in every exporter, checked against the court's
 // template. This is the guard for a defect class that shipped three times.
@@ -43,8 +44,9 @@ const { GUARDIAN_CONTRACT } = await import('../../src/core/excel/workbook-contra
 // Milestone 73T part 2: an exporter that writes through its workbook contract
 // (src/core/excel/workbook-contract/) is read from the contract instead --
 // every address it can write, the built ones included, so for those forms the
-// blind spot is gone. The Inventory's is the first.
-const CONTRACT_EXPORTERS = { guardian: GUARDIAN_CONTRACT };
+// blind spot is gone. The Inventory's is the first (part 2), the Annual
+// family's the second (part 3).
+const CONTRACT_EXPORTERS = { guardian: GUARDIAN_CONTRACT, annual: ANNUAL_CONTRACT };
 
 const EXPORTERS = [
   ['annual', 'src/features/annual-accounting/excel.js'],

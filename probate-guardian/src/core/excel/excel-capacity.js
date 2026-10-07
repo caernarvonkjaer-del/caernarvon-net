@@ -43,7 +43,8 @@ export function getExcelCapacityIssues(inventoryType, data, caps) {
     const code = `excel.capacity.${type}.${o.key}`;
     const issue = createIssue(code, {
       // Milestone 58D: a schedule the workbook cannot represent AT ALL reads
-      // differently from one that simply ran out of rows. "Part XI —
+      // differently from one that simply ran out of rows (Part XI was the
+      // case until Milestone 73T part 3). "Part XI —
       // Remuneration: 3 entries (template holds 0)" is accurate but tells the
       // filer nothing they can act on, and implies a bigger template would
       // help. `unsupported` supplies wording that names the way forward.
@@ -64,8 +65,9 @@ export function getExcelCapacityIssues(inventoryType, data, caps) {
 // has more rows than the court's workbook holds (moved from legacy-app.js).
 export function excelCapacityPanel(over){
   // Milestone 64B-2, item 11 / D13. A cap entry may carry an `unsupported`
-  // sentence instead of a row limit: Part XI is the case -- the court's
-  // workbook has no entry area for it at all, so `cap` is 0 and the
+  // sentence instead of a row limit. Part XI was the case until Milestone 73T
+  // part 3 found its 27 lines: 58D had read the court's workbook as having no
+  // entry area for it at all, so `cap` was 0 and the
   // count-of-cap shape rendered "2 of 0" with "2 entries would be left out",
   // which is both nonsense and an understatement (all of them are left out,
   // and not because a schedule filled up). Those entries show the same

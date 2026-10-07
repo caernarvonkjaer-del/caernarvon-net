@@ -10,15 +10,24 @@ import { checkExcelCapacity, excelCapacityPanel, getExcelCapacityIssues } from '
 // The court's own PART XI sheet, read from templates/annual-template.js:
 // A4 "Part XI", C4 the declaration heading, A5 (merged A5:G5) the statutory
 // paragraph, rows 6-32 empty merged A:G bands, print area A1:G32. No column
-// headers, no table, no data validation, no named range -- no entry grid at
-// all. The exporter nonetheless wrote entries to B/D/F/I on rows 16-40, where
-// column I is outside the print area and rows 33-40 are past the sheet end.
-// A guardian who entered remuneration and filed the workbook filed a Part XI
-// carrying only the statutory paragraph, with the declaration missing.
+// headers, no table, no data validation, no named range. The exporter wrote
+// entries to B/D/F/I on rows 16-40, where column I is outside the print area
+// and rows 33-40 are past the sheet end. A guardian who entered remuneration
+// and filed the workbook filed a Part XI carrying only the statutory
+// paragraph, with the declaration missing. 58D read the bands as no entry
+// area at all and blocked Excel for any entry (the cap of 0 below).
+//
+// Milestone 73T part 3 (decision 73T-2) found them to be 27 blank, UNLOCKED
+// lines: each entry now goes on its own line (A6..A32), as the Simplified
+// writes its PART VII, and the real cap is 27 (excel-caps.js; the workbook
+// contract's PART XI entry, tests/unit/workbook-contract.spec.js). The
+// "the workbook can't carry this at all" mechanism stays -- a schedule a
+// workbook has no room for reads as such, not as a row count -- and is tested
+// below with 58D's limit as its example.
 const REMUNERATION_LIMIT = { remuneration: { cap: 0, label: 'Part XI — Remuneration', route: '/p11',
   unsupported: "the court's Excel workbook has no entry area for Part XI, so remuneration cannot be written to it. File this accounting as PDF, where Part XI prints in full." } };
 
-describe('58D: Excel cannot carry Part XI, and says so', () => {
+describe("58D: a schedule the workbook cannot carry at all says so (58D's Part XI limit as the example; 73T part 3 lifted it)", () => {
   test('a single populated entry exceeds the workbook', () => {
     const over = checkExcelCapacity(REMUNERATION_LIMIT, { remuneration: [{ guardian: 'G', type: 'Fee', amount: '100' }] });
     expect(over).toHaveLength(1);

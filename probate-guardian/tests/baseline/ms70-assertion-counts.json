@@ -2,8 +2,8 @@
  "generatedBy": "node scripts/ms70-assertion-counts.mjs --write-baseline",
  "note": "Milestone 70 per-spec assertion counts (static expect calls). tests/unit/ms70-assertion-counts.spec.js fails when a spec falls below its count; lowering it requires --reason, recorded in dropLog. A tripwire, not proof of equivalence (decision D9).",
  "totals": {
-  "expects": 8388,
-  "tests": 2379
+  "expects": 8439,
+  "tests": 2395
  },
  "counts": {
   "tests/e2e/amounts-keep-their-sign.spec.ts": {
@@ -167,7 +167,7 @@
    "tests": 6
   },
   "tests/e2e/excel-form-field-placement.spec.ts": {
-   "expects": 93,
+   "expects": 96,
    "tests": 15
   },
   "tests/e2e/excel-import-cell-shapes.spec.ts": {
@@ -271,8 +271,8 @@
    "tests": 4
   },
   "tests/e2e/import-confirm.spec.ts": {
-   "expects": 14,
-   "tests": 1
+   "expects": 21,
+   "tests": 2
   },
   "tests/e2e/import-keeps-signatures.spec.ts": {
    "expects": 13,
@@ -661,6 +661,10 @@
   "tests/unit/annual-accounting-totals.spec.js": {
    "expects": 21,
    "tests": 11
+  },
+  "tests/unit/annual-b4-subtotals.spec.js": {
+   "expects": 4,
+   "tests": 2
   },
   "tests/unit/annual-pdf-schb4-attribution.spec.js": {
    "expects": 32,
@@ -1387,8 +1391,8 @@
    "tests": 6
   },
   "tests/unit/workbook-contract.spec.js": {
-   "expects": 47,
-   "tests": 19
+   "expects": 84,
+   "tests": 32
   },
   "tests/unit/workbook-recalc-on-open.spec.js": {
    "expects": 3,

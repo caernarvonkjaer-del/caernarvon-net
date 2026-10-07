@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import {
   freshStartNoPassword, createWard, createSimplifiedWard,
-  fillMinimalValidAnnualWard, fillMinimalValidGuardianWard, fillMinimalValidSimplifiedWard,
+  fillMinimalValidAnnualWard, fillMinimalValidGuardianWard, fillMinimalValidSimplifiedWard, importWorkbookConfirmed,
 } from './support/target';
 import { readAll } from './support/stream';
 
@@ -213,7 +213,8 @@ test.describe('Milestone 67E: exported dates are dates, not text', () => {
     fs.writeFileSync(file, bytes);
     await createWard(page, 'Date Cells Import Target', 'annual');
     await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
-    await page.setInputFiles('input[type="file"][accept=".xlsx"]', file);
+    // Milestone 73T part 3: the Annual family's import confirms, then gives a notice.
+    await importWorkbookConfirmed(page, file);
     await page.waitForFunction(() => (window as any).GuardianForms.testing.field('caseNumber') === '2026-CP-000789', undefined, { timeout: 20_000 });
     const back = await page.evaluate(() => {
       const d = (window as any).GuardianForms.testing.snapshot().filing;

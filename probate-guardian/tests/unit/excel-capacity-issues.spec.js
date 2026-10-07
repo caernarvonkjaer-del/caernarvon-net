@@ -119,7 +119,7 @@ describe('Excel capacity parity — Simplified Accounting (guardians & remunerat
   });
 });
 
-describe('Excel capacity parity — Annual Accounting (15 schedules)', () => {
+describe('Excel capacity parity — Annual Accounting (16 lists; the Part X recipients since 73T part 3)', () => {
   it('passes when every schedule is at capacity', () => {
     const data = { inventoryType: 'annual' };
     for (const [key, info] of Object.entries(ANNUAL_EXCEL_CAPS)) {
@@ -130,7 +130,7 @@ describe('Excel capacity parity — Annual Accounting (15 schedules)', () => {
     expect(over).toHaveLength(0);
   });
 
-  it('blocks and creates typed capacity issues for each of the 15 schedules at cap + 1', () => {
+  it('blocks and creates typed capacity issues for each of the 16 lists at cap + 1', () => {
     for (const [key, info] of Object.entries(ANNUAL_EXCEL_CAPS)) {
       const data = {
         inventoryType: 'annual',
