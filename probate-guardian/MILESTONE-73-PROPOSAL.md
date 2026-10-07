@@ -6,7 +6,7 @@
 far: 73U (2026-10-04, `5b8849b`), 73V (2026-10-05, `8b96aa3`), 73C
 (2026-10-05, `861b6a9`, brought forward from its place in the build order at the
 requester's choice) 73D (2026-10-05, `c8e84fe`, likewise), 73J part 1 (2026-10-05, `d819c4a`),
-73F part 1 (2026-10-06, `5e9e17b`), 73A (2026-10-06, `83352d0`), 73F part 2 (2026-10-06, `d01edd4`), 73G part 1 (2026-10-06, `69a1b46`), 73E part 1 (2026-10-06, `8e02051`) and 73F part 3 (2026-10-06), each approved by name. 73I is approved and not yet built.** Nothing else is approved.
+73F part 1 (2026-10-06, `5e9e17b`), 73A (2026-10-06, `83352d0`), 73F part 2 (2026-10-06, `d01edd4`), 73G part 1 (2026-10-06, `69a1b46`), 73E part 1 (2026-10-06, `8e02051`) and 73F part 3 (2026-10-06, `67fc66c`) and 73I (2026-10-06), each approved by name.** Nothing else is approved.
 Building any other item, or any part of a split item, needs the requester's
 named approval of that item or part (AGENTS.md §3).
 
@@ -48,7 +48,7 @@ recorded as **Pinellas Clerk practice**, not as a reading of a statute or rule
 | 6 | 73F | **A section shows ✓ and Print Preview then blocks it**; asterisks don't match what is enforced; a misspelled county passes everywhere | High | Three (all **built** 2026-10-06) |
 | 7 | 73G | A loss typed positive is **added** unwarned; the Clerk's "(1000)" is stored as **+1000**; negatives are refused, shown as positive, or **zeroed on every page drawn**; "$1,234.56" in the Simplified's remuneration files as **$0.00** | High | Two (part 1 **built** 2026-10-06) |
 | 8 | 73H | Dates print as **2025-01-01** on several screens; negative amounts appear **five ways**; Plan Q11 prints a bare number | Medium | One |
-| 9 | 73I | The dashboard marks an annual accounting **overdue early: 0–3 days for a month-end period, 16–32 days for a mid-month one**; a Final gets a due date with no basis | Medium | One |
+| 9 | 73I | The dashboard marks an annual accounting **overdue early: 0–3 days for a month-end period, 16–32 days for a mid-month one**; a Final gets a due date with no basis | Medium | One (**built** 2026-10-06) |
 | 10 | 73J | Parts of a page stay **stale** after a change (eight cases) | Medium | Two (part 1 **built** 2026-10-05) |
 | 11 | 73K | The page **jumps to the top**, and the cursor is lost, after a choice, Add, Remove and similar actions, on all nine forms | Medium | Two |
 | 12 | 73L | **One Escape closes two dialogs**; a dialog stays **over the lock screen**; dialogs stack; a reminder fires for an empty row | Medium | One |
@@ -1994,6 +1994,80 @@ year, mid-month periods, a calendar-year Plan, a Final, a weekend date.
 
 Dashboard and cover text only; no data model or legacy change. Practice
 answers recorded as practice; the weekend rule is flagged, not decided.
+
+### Build record — BUILT 2026-10-06 (approved by name by the requester, 2026-10-06)
+
+**What changed for a filer:**
+
+- **Accountings** (Annual, Trust, Simplified) are due on the first day of the
+  fourth month after the period ends -- April 1 for a calendar year -- as
+  §744.367(2) says (73I-1). The dashboard counted 90 days, so a filing read
+  overdue early: 12/31/2025 was due 03/31/2026 instead of 04/01/2026, and a
+  period ending 06/15/2026 was due 09/13/2026 instead of 10/01/2026.
+- **A Final Accounting** has no date the app can count from (73I-2). Its
+  row now reads "Due promptly; within 45 days after being served with
+  letters of administration or curatorship if the ward has died; within 20
+  days after removal (F.S. 744.527(1), 744.511)" where it showed a 90-day
+  date, is never overdue, and sorts after dated filings.
+- **The Annual and Minors Plans** cover the coming plan year (73I-N3): due
+  90 days after the last day of the anniversary month -- the month before
+  Period From -- and April 1 for a plan year beginning January 1 (73I-N2,
+  §744.367(1)). They counted 90 days from Period To. Their Covers now say to
+  enter the coming plan year.
+- **The Simplified Plan** looks back and has no plan year of its own: 90
+  days after the last day of Period To's month, and **April 1 for a period
+  ending December 31** -- the statute's calendar-year date, as on the other
+  Plans (the requester, 2026-10-06; the design named April 1 for the Annual
+  and Minors Plans only).
+- **A due date on a weekend or legal holiday** keeps its date and gains
+  "Falls on a weekend or legal holiday: check whether the next business day
+  applies (Rule 2.514)." (73I-N1). The legal holidays are Rule
+  2.514(a)(6)(A)'s nine -- the days §110.117 sets aside for New Year's Day,
+  Martin Luther King, Jr.'s Birthday, Memorial Day, Independence Day, Labor
+  Day, Veterans' Day, Thanksgiving Day, the Friday after it and Christmas
+  Day -- plus the Friday before one on a Saturday and the Monday after one
+  on a Sunday. Days only the clerk's office closes (Rule 2.514(a)(6)(B)) are
+  not listed (the requester, 2026-10-06). §110.117 itself is not in
+  `reference/`; flagging both the day and its weekday stand-in only asks the
+  filer to check, and asserts no reading.
+- The Inventory's basis cites §744.362(1); the Plans' readiness reminder and
+  the Help add April 1 for calendar-year filing.
+
+**Authority, read for this build:** §744.367(1)-(2), §744.362(1),
+§744.527(1) and §744.511 from the Chapter 744 PDF in `reference/`; Rule
+2.514(a)(6) from the Rules of General Practice PDF there.
+
+**How:** `dashboard/view-model.js` (`deriveWardDeadline()`,
+`isWeekendOrLegalHoliday()`, the projection's `deadlineNote` and a Final's
+kept basis); `dashboard/index.js` (the deadline cell); `readiness-config.js`;
+`help-content.js`; `help/index.html`; the Annual and Minors Plans' Covers.
+
+**Tests:**
+
+- `tests/unit/dashboard-view-model.spec.js`: every month length, a leap
+  February, mid-month periods, calendar-year Plans (a leap year included),
+  the Simplified Plan's look-back count, a Final, weekends and each legal
+  holiday (Juneteenth, a possible clerk-only closure, not flagged); the
+  triage metrics' "approaching" filing moved to a period due two days out.
+  **Red-first:** with the app changes set aside, 49 of 61 fail for their stated reasons
+  (the 90-day counts, no Plan date from Period From, a dated Final, no
+  holiday check); the 12 that pass are unrelated cases and dates where both
+  counts agree (January 31 plus 90 days is May 1).
+- New `tests/e2e/dashboard-due-dates.spec.ts`: a Final's row shows its basis
+  and is never overdue; a Saturday April 1 carries the note. **Red-first:**
+  with the app changes set aside, it fails at the Final's row
+  (a 90-day date, no basis).
+- Changed: `dashboard-visual.spec.ts`'s "Deadline Approaching" row is an
+  Inventory 8 days from its due date (an accounting now falls due on a
+  month's first day, so it could no longer be placed 8 days out); the
+  Annual and Minors Plans' Cover snapshots carry the plan-year hint.
+- Browser: the dashboard, routes and both Plans' mount specs (74 tests) on D:: 72
+  passed first time; two were setup slips, fixed -- the new spec added both
+  filings in one step and navigated before the second opened, and
+  `routes.spec.ts`'s "due today" Simplified Plan was placed by the old 90
+  days (now an Initial Plan 60 days after its Letters, since a Simplified
+  Plan's date can no longer always be put within two weeks); both pass.
+- Full unit suite: 188 files, 2,795 tests pass; `check:types` clean.
 
 ---
 

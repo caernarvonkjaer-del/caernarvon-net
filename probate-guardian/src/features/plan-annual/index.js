@@ -239,6 +239,7 @@ function pagePlanACover(){
             <div class="col-md-6">${inpS('ssn','Social Security Number',d.ssn)}</div>
             <div class="col-md-6">${inpS('gid','Guardianship Inception Date',d.gid,true,'date')}</div>
             ${renderReportingPeriodFields({ periodFrom: d.periodFrom, periodTo: d.periodTo })}
+            <!-- Milestone 73I (73I-N3): the plan covers the coming year. --><div class="col-12"><div class="plan-field-hint" data-plan-year-hint>Enter the coming plan year: it begins the day after the anniversary month of the Letters of Guardianship ends, and ends on the last day of that month a year later (F.S. 744.367(1)). For calendar-year filing, January 1 to December 31.</div></div>
           </div>
         </div>
       </div>

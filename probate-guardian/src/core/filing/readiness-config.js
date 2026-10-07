@@ -185,7 +185,7 @@ function planAnnualManual(d, local) {
     // a manual reminder, never a machine-checked, export-blocking requirement.
     { id: `${f}.physician-statement`, label: "Confirm the physician's statement of an examination within 90 days before the plan period is attached, and check the certification box for it." },
     { id: `${f}.physician-report`, label: "File the physician's report separately, at the same time as this plan. The app does not produce it." },
-    { id: `${f}.deadline`, label: 'File within 90 days after the last day of the anniversary month the Letters were signed (F.S. 744.367).' },
+    { id: `${f}.deadline`, label: 'File within 90 days after the last day of the anniversary month the Letters were signed, or by April 1 if the court requires calendar-year filing (F.S. 744.367(1)).' },
     { id: `${f}.service`, label: serviceReminder(local,
       'Local Sixth Judicial Circuit requirement: serve a copy on all interested persons and file the certificate of service.',
       'Serve a copy on all interested persons.'),
@@ -308,7 +308,7 @@ function planMinorAutomatic(d) {
 function planMinorManual(d, local) {
   const f = 'planMinor.readiness.external-steps';
   return [
-    { id: `${f}.deadline`, label: "File within 90 days after the last day of the anniversary month the Letters were signed (F.S. 744.367)." },
+    { id: `${f}.deadline`, label: "File within 90 days after the last day of the anniversary month the Letters were signed, or by April 1 if the court requires calendar-year filing (F.S. 744.367(1))." },
     { id: `${f}.physician-statement`, label: "Attach the physician's statement of an examination of the ward no more than 180 days before the beginning of the plan period (F.S. 744.3675), if the certification box for it is checked." },
     { id: `${f}.service`, label: serviceReminder(local,
       'Local Sixth Judicial Circuit requirement: serve a copy on all interested persons and file the certificate of service, unless the ward was declared totally incapacitated or is a minor (see the certification checkboxes).',

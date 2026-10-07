@@ -107,7 +107,7 @@ export const HELP_CONTENT = Object.freeze({
     <div class="help-section-title">Filed With the Physician's Report</div>
     <p>This plan is only half of the Annual Report of the Guardian of the Person. A physician who examined the ward no more than 90 days before the reporting period began must file a separate report at the same time. <strong>The app does not produce that report</strong> — you obtain it from the physician.</p>
     <div class="help-section-title">When It's Due</div>
-    <p>Within 90 days after the last day of the anniversary month in which the Letters of Guardianship were signed (F.S. 744.367).</p>
+    <p>Within 90 days after the last day of the anniversary month in which the Letters of Guardianship were signed, or by April 1 if the court requires calendar-year filing (F.S. 744.367(1)). The plan covers the coming year.</p>
     <div class="help-section-title">Rights and Restoration</div>
     <p>Question 6 asks whether the ward could now have removed rights restored. If you mark a right as capable of restoration — and the physician's report agrees — you must file a <strong>separate petition to restore that right</strong>. This plan alone does not restore anything.</p>
     <div class="help-section-title">Activities of Daily Living</div>

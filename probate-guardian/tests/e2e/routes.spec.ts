@@ -237,7 +237,10 @@ test.describe('routes', () => {
     await page.evaluate(() => (window as any).GuardianForms.testing.createFiling.add('<img src=x onerror=alert(1)> Alpha Ward', 'guardian'));
     await page.locator('[data-inventory-change="import-excel"]').waitFor({ state: 'attached' });
     await page.evaluate(() => (window as any).GuardianForms.testing.createFiling.add('Beta Ward', 'annual'));
-    await page.evaluate(() => (window as any).GuardianForms.testing.createFiling.add('Gamma Ward', 'planSimplified'));
+    // Milestone 73I: a Simplified Plan is due 90 days after its period's month
+    // ends, which can't always be placed within the two weeks a warning needs;
+    // an Initial Plan (60 days after the Letters) can.
+    await page.evaluate(() => (window as any).GuardianForms.testing.createFiling.add('Gamma Ward', 'planInitial'));
     await page.evaluate(() => (window as any).GuardianForms.testing.createFiling.add('Delta Ward', 'annual'));
     await page.evaluate(() => {
       // Setup (D9): each filing's dates and workflow status.
@@ -248,7 +251,9 @@ test.describe('routes', () => {
       const dueTodayPeriodEnd = [periodTo.getFullYear(), String(periodTo.getMonth() + 1).padStart(2, '0'), String(periodTo.getDate()).padStart(2, '0')].join('-');
       t.patchFiling({ gid: '2026-01-01', dashboardWorkflow: { status: 'disapproved-needs-correction', assigneeName: 'Alex Attorney' } }, ids[0]);
       t.patchFiling({ periodTo: dueTodayPeriodEnd, dashboardWorkflow: { status: 'pending-court-review' } }, ids[1]);
-      t.patchFiling({ periodTo: dueTodayPeriodEnd }, ids[2]);
+      const letters = new Date();
+      letters.setDate(letters.getDate() - 60);
+      t.patchFiling({ lettersSignedDate: [letters.getFullYear(), String(letters.getMonth() + 1).padStart(2, '0'), String(letters.getDate()).padStart(2, '0')].join('-') }, ids[2]);
       t.patchFiling({ periodTo: dueTodayPeriodEnd, dashboardWorkflow: { status: 'approved' } }, ids[3]);
     });
     await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/dashboard'));

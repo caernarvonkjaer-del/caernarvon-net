@@ -202,8 +202,16 @@ function showContinuePromptIfNeeded() {
   </div>`;
 }
 
+// Milestone 73I: a Final Accounting has no date, and says when it is due in
+// its place; a date on a weekend or legal holiday carries a note to check
+// whether the next business day applies.
 function deadlineDisplay(row) {
-  if (!row.deadlineDate) return '<span class="dashboard-triage-muted">No deadline</span>';
+  if (!row.deadlineDate) return `<span class="dashboard-triage-muted" data-deadline-basis>${esc(row.deadlineBasis || 'No deadline')}</span>`;
+  const note = row.deadlineNote ? `<span class="dashboard-triage-muted d-block small" data-deadline-note>${esc(row.deadlineNote)}</span>` : '';
+  return deadlineStatusHTML(row) + note;
+}
+
+function deadlineStatusHTML(row) {
   const date = row.deadlineDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   if (!row.isDeadlineActionable) return `<span class="dashboard-triage-muted">${esc(date)}</span>`;
   if (row.workflowStatus === 'disapproved-needs-correction') return `${priorityBadgeHTML(row)}<strong class="dashboard-priority-reason">Needs correction</strong>`;

@@ -5,6 +5,7 @@ import {
   deriveFilingContacts,
   deriveWardDeadline,
   getDashboardMetrics,
+  isWeekendOrLegalHoliday,
   normalizeDashboardWorkflow,
   projectDashboardWard,
 } from '../../src/features/dashboard/view-model.js';
@@ -17,22 +18,94 @@ function deepFreeze(value) {
 }
 
 const TODAY = new Date('2026-08-30T12:00:00');
+// A local date as YYYY-MM-DD, whatever the machine's time zone.
+const ymd = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 
 describe('dashboard view model', () => {
+  // Milestone 73I: the due dates the statute sets (F.S. 744.362(1),
+  // 744.367(1)-(2)). Each type's own date and basis; the Final has none.
   test.each([
-    ['guardian', { gid: '2026-07-01' }, '2026-08-30', 'Guardianship Inception Date'],
-    ['simplified', { periodTo: '2026-06-01' }, '2026-08-30', 'accounting period'],
-    ['annual', { periodTo: '2026-06-01' }, '2026-08-30', 'accounting period'],
-    ['finalAccounting', { periodTo: '2026-06-01' }, '2026-08-30', 'accounting period'],
-    ['trustAccounting', { periodTo: '2026-06-01' }, '2026-08-30', 'accounting period'],
+    ['guardian', { gid: '2026-07-01' }, '2026-08-30', 'F.S. 744.362(1)'],
+    ['simplified', { periodTo: '2026-06-01' }, '2026-10-01', 'fourth month after the accounting period ends'],
+    ['annual', { periodTo: '2026-06-01' }, '2026-10-01', 'fourth month after the accounting period ends'],
+    ['trustAccounting', { periodTo: '2026-06-01' }, '2026-10-01', 'fourth month after the accounting period ends'],
     ['planInitial', { lettersSignedDate: '2026-07-01' }, '2026-08-30', 'Letters of Guardianship'],
-    ['planAnnual', { periodTo: '2026-06-01' }, '2026-08-30', 'reporting period'],
-    ['planSimplified', { periodTo: '2026-06-01' }, '2026-08-30', 'reporting period'],
-    ['planMinor', { periodTo: '2026-06-01' }, '2026-08-30', 'reporting period'],
+    ['planAnnual', { periodFrom: '2026-07-01' }, '2026-09-28', 'anniversary month'],
+    ['planMinor', { periodFrom: '2026-07-01' }, '2026-09-28', 'anniversary month'],
+    ['planSimplified', { periodTo: '2026-06-01' }, '2026-09-28', 'the month the reporting period ends'],
   ])('derives the %s statutory deadline', (inventoryType, fields, expectedDate, basis) => {
     const deadline = deriveWardDeadline({ inventoryType, ...fields });
-    expect(deadline.deadlineDate.toISOString().slice(0, 10)).toBe(expectedDate);
+    expect(ymd(deadline.deadlineDate)).toBe(expectedDate);
     expect(deadline.deadlineBasis).toContain(basis);
+  });
+
+  // §744.367(2): the first day of the fourth month after the period ends --
+  // April 1 for a calendar year. 90 days marked it overdue 0-3 days early
+  // after a month's last day, up to a month early after a mid-month one.
+  test.each([
+    ['2025-01-31', '2025-05-01'], ['2025-02-28', '2025-06-01'], ['2024-02-29', '2024-06-01'],
+    ['2025-03-31', '2025-07-01'], ['2025-04-30', '2025-08-01'], ['2025-05-31', '2025-09-01'],
+    ['2025-06-30', '2025-10-01'], ['2025-07-31', '2025-11-01'], ['2025-08-31', '2025-12-01'],
+    ['2025-09-30', '2026-01-01'], ['2025-10-31', '2026-02-01'], ['2025-11-30', '2026-03-01'],
+    ['2025-12-31', '2026-04-01'], ['2026-06-15', '2026-10-01'], ['2026-06-01', '2026-10-01'],
+  ])('an accounting whose period ends %s is due %s', (periodTo, due) => {
+    for (const inventoryType of ['annual', 'trustAccounting', 'simplified']) {
+      expect(ymd(deriveWardDeadline({ inventoryType, periodTo }).deadlineDate), inventoryType).toBe(due);
+    }
+  });
+
+  // §744.367(1): the Annual and Minors Plans cover the coming plan year, due 90
+  // days after the last day of the anniversary month (the month before Period
+  // From); April 1 for a calendar year. The Simplified Plan looks back: 90 days
+  // after the last day of Period To's month, April 1 after December 31.
+  test.each([
+    ['planAnnual', { periodFrom: '2026-01-01' }, '2026-04-01'],
+    ['planMinor', { periodFrom: '2028-01-01' }, '2028-04-01'],
+    ['planAnnual', { periodFrom: '2026-04-01' }, '2026-06-29'],
+    ['planMinor', { periodFrom: '2026-03-01' }, '2026-05-29'],
+    ['planAnnual', { periodFrom: '2024-03-01' }, '2024-05-29'],
+    ['planAnnual', { periodFrom: '2026-03-15' }, '2026-06-29'],
+    ['planSimplified', { periodTo: '2025-12-31' }, '2026-04-01'],
+    ['planSimplified', { periodTo: '2027-12-31' }, '2028-04-01'],
+    ['planSimplified', { periodTo: '2026-03-31' }, '2026-06-29'],
+    ['planSimplified', { periodTo: '2024-02-29' }, '2024-05-29'],
+    ['planSimplified', { periodTo: '2026-03-10' }, '2026-06-29'],
+  ])('%s %o is due %s', (inventoryType, fields, due) => {
+    expect(ymd(deriveWardDeadline({ inventoryType, ...fields }).deadlineDate)).toBe(due);
+  });
+
+  test('a Final Accounting has no due date: it says when it is due, is never overdue, and sorts after dated filings', () => {
+    const final = projectDashboardWard({ wardId: 'final', wardName: 'Final', inventoryType: 'finalAccounting', periodTo: '2025-01-01' }, { progress: { pct: 50 }, today: TODAY });
+    expect(final.deadlineDate).toBe(null);
+    expect(final.deadlineBucket).toBe('none');
+    expect(final.deadlineBasis).toBe('Due promptly; within 45 days after being served with letters of administration or curatorship if the ward has died; within 20 days after removal (F.S. 744.527(1), 744.511)');
+    const dated = projectDashboardWard({ wardId: 'annual', wardName: 'Annual', inventoryType: 'annual', periodTo: '2026-12-31' }, { progress: { pct: 50 }, today: TODAY });
+    expect(compareDashboardPriority(dated, final)).toBeLessThan(0);
+    expect(compareDashboardColumn(dated, final, 'deadline', 'asc')).toBeLessThan(0);
+    // Any other filing without its date still reads "No deadline".
+    expect(projectDashboardWard({ wardId: 'a', inventoryType: 'annual' }, { today: TODAY }).deadlineBasis).toBe('');
+  });
+
+  // Rule 2.514(a)(6)(A)'s legal holidays and weekends get a note; the date
+  // itself never moves (decision 73I-N1).
+  test.each([
+    ['2028-04-01', true, 'a Saturday April 1'], ['2029-04-01', true, 'a Sunday April 1'],
+    ['2026-04-01', false, 'a Wednesday'], ['2026-10-01', false, 'a Thursday'],
+    ['2026-01-01', true, "New Year's Day"], ['2026-01-19', true, 'Martin Luther King, Jr. Day'],
+    ['2026-05-25', true, 'Memorial Day'], ['2026-07-03', true, 'Independence Day on a Saturday, the Friday before'],
+    ['2026-09-07', true, 'Labor Day'], ['2026-11-11', true, "Veterans' Day"],
+    ['2026-11-26', true, 'Thanksgiving'], ['2026-11-27', true, 'the Friday after'],
+    ['2026-12-25', true, 'Christmas'], ['2027-12-31', true, "New Year's Day 2028 on a Saturday, the Friday before"],
+    ['2027-01-01', true, "New Year's Day"], ['2026-06-19', false, 'Juneteenth, a clerk-only closure if any'],
+  ])('%s is a weekend or legal holiday: %s (%s)', (date, expected) => {
+    expect(isWeekendOrLegalHoliday(new Date(`${date}T00:00:00`))).toBe(expected);
+  });
+
+  test('a due date on a weekend or legal holiday carries the note; one on a business day does not', () => {
+    const saturday = projectDashboardWard({ wardId: 's', inventoryType: 'annual', periodTo: '2027-12-31' }, { today: TODAY });
+    expect(ymd(saturday.deadlineDate)).toBe('2028-04-01');
+    expect(saturday.deadlineNote).toBe('Falls on a weekend or legal holiday: check whether the next business day applies (Rule 2.514).');
+    expect(projectDashboardWard({ wardId: 'w', inventoryType: 'annual', periodTo: '2025-12-31' }, { today: TODAY }).deadlineNote).toBe('');
   });
 
   test('projects without mutating a deeply frozen ward', () => {
@@ -129,7 +202,9 @@ describe('dashboard view model', () => {
     const metrics = getDashboardMetrics([
       project('disapproved-soon', 'disapproved-needs-correction', '2026-08-25'),
       project('overdue', 'draft', '2026-01-01'),
-      project('approaching', 'draft', '2026-06-01'),
+      // Milestone 73I: due 2026-09-01, two days after TODAY (a period ending in
+      // June is now due October 1, no longer "approaching").
+      project('approaching', 'draft', '2026-05-31'),
       project('pending-overdue', 'pending-court-review', '2026-01-01'),
       project('approved-overdue', 'approved', '2026-01-01'),
     ]);

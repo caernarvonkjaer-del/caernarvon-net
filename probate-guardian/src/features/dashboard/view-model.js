@@ -84,17 +84,62 @@ function calendarDayNumber(date) {
   return Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / 86400000;
 }
 
+// Milestone 73I: the due dates the statute sets. An accounting is due on the
+// first day of the fourth month after its period ends -- §744.367(2)'s
+// fiscal-year date, April 1 for a calendar year (decision 73I-1, Pinellas Clerk
+// practice confirmed). It counted 90 days, so a filing read overdue up to a
+// month early.
+function firstOfFourthMonthAfter(value) {
+  const date = parseLocalDate(value);
+  return date ? new Date(date.getFullYear(), date.getMonth() + 4, 1) : null;
+}
+
+function ninetyDaysAfterMonthEnd(date) {
+  const end = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+  end.setDate(end.getDate() + 90);
+  return end;
+}
+
+// The Annual and Minors Plans cover the coming plan year (73I-N3): its
+// anniversary month is the month before it begins -- the month of the day
+// before Period From -- and the plan is due 90 days after that month's last
+// day (73I-N2, §744.367(1)); a plan year beginning January 1 is calendar-year
+// filing, due April 1.
+function comingYearPlanDue(periodFrom) {
+  const from = parseLocalDate(periodFrom);
+  if (!from) return null;
+  if (from.getMonth() === 0 && from.getDate() === 1) return new Date(from.getFullYear(), 3, 1);
+  return ninetyDaysAfterMonthEnd(new Date(from.getFullYear(), from.getMonth(), from.getDate() - 1));
+}
+
+// The Simplified Plan looks back and has no plan year of its own: 90 days
+// after the last day of Period To's month, and April 1 for a period ending
+// December 31, as on the other Plans (the requester, 2026-10-06).
+function lookBackPlanDue(periodTo) {
+  const to = parseLocalDate(periodTo);
+  if (!to) return null;
+  if (to.getMonth() === 11 && to.getDate() === 31) return new Date(to.getFullYear() + 1, 3, 1);
+  return ninetyDaysAfterMonthEnd(to);
+}
+
+// A Final Accounting has no date the app can count from (73I-2): it says when
+// it is due instead (§744.527(1), §744.511).
+const FINAL_DEADLINE_BASIS = 'Due promptly; within 45 days after being served with letters of administration or curatorship if the ward has died; within 20 days after removal (F.S. 744.527(1), 744.511)';
+
 export function deriveWardDeadline(ward) {
   if (ward.inventoryType === 'guardian') {
     return {
       deadlineDate: addLocalDays(ward.gid, 60),
-      deadlineBasis: '60 days after the Guardianship Inception Date (F.S. 744.365)',
+      deadlineBasis: '60 days after the Guardianship Inception Date (F.S. 744.362(1))',
     };
+  }
+  if (ward.inventoryType === 'finalAccounting') {
+    return { deadlineDate: null, deadlineBasis: FINAL_DEADLINE_BASIS, basisWithoutDate: true };
   }
   if (ward.inventoryType === 'simplified' || ANNUAL_ACCOUNTING_TYPES.has(ward.inventoryType)) {
     return {
-      deadlineDate: addLocalDays(ward.periodTo, 90),
-      deadlineBasis: '90 days after the end of the accounting period (F.S. 744.367)',
+      deadlineDate: firstOfFourthMonthAfter(ward.periodTo),
+      deadlineBasis: 'The first day of the fourth month after the accounting period ends; April 1 for a calendar year (F.S. 744.367(2))',
     };
   }
   if (ward.inventoryType === 'planInitial') {
@@ -103,13 +148,64 @@ export function deriveWardDeadline(ward) {
       deadlineBasis: '60 days after the Letters of Guardianship were signed (F.S. 744.362(1))',
     };
   }
-  if (['planAnnual', 'planSimplified', 'planMinor'].includes(ward.inventoryType)) {
+  if (ward.inventoryType === 'planAnnual' || ward.inventoryType === 'planMinor') {
     return {
-      deadlineDate: addLocalDays(ward.periodTo, 90),
-      deadlineBasis: '90 days after the end of the reporting period (F.S. 744.367)',
+      deadlineDate: comingYearPlanDue(ward.periodFrom),
+      deadlineBasis: '90 days after the last day of the anniversary month, the month before the plan year begins; April 1 for a plan year beginning January 1 (F.S. 744.367(1))',
+    };
+  }
+  if (ward.inventoryType === 'planSimplified') {
+    return {
+      deadlineDate: lookBackPlanDue(ward.periodTo),
+      deadlineBasis: '90 days after the last day of the month the reporting period ends; April 1 for a period ending December 31 (F.S. 744.367(1))',
     };
   }
   return { deadlineDate: null, deadlineBasis: '' };
+}
+
+// Milestone 73I (decision 73I-N1): a due date on a weekend or legal holiday
+// keeps its date and gains a note -- whether the next business day applies is
+// for the filer to check, not for the app to decide. Rule 2.514(a)(6)(A)'s
+// legal holidays: the days §110.117 sets aside for New Year's Day, Martin
+// Luther King, Jr.'s Birthday, Memorial Day, Independence Day, Labor Day,
+// Veterans' Day, Thanksgiving Day, the Friday after it and Christmas Day. One
+// on a Saturday is flagged on the Friday before as well, one on a Sunday on
+// the Monday after (the days §110.117 observes them; that statute isn't in
+// reference/, and the note only asks). Days only the clerk's office observes
+// (Rule 2.514(a)(6)(B)) are not listed (the requester, 2026-10-06).
+export const DEADLINE_WEEKEND_NOTE = 'Falls on a weekend or legal holiday: check whether the next business day applies (Rule 2.514).';
+
+function nthWeekdayOfMonth(year, month, weekday, n) {
+  const first = new Date(year, month, 1);
+  return new Date(year, month, 1 + ((weekday - first.getDay() + 7) % 7) + (n - 1) * 7);
+}
+
+function lastWeekdayOfMonth(year, month, weekday) {
+  const last = new Date(year, month + 1, 0);
+  return new Date(year, month, last.getDate() - ((last.getDay() - weekday + 7) % 7));
+}
+
+function legalHolidays(year) {
+  const thanksgiving = nthWeekdayOfMonth(year, 10, 4, 4);
+  const days = [
+    new Date(year, 0, 1), nthWeekdayOfMonth(year, 0, 1, 3), lastWeekdayOfMonth(year, 4, 1),
+    new Date(year, 6, 4), nthWeekdayOfMonth(year, 8, 1, 1), new Date(year, 10, 11),
+    thanksgiving, new Date(year, 10, thanksgiving.getDate() + 1), new Date(year, 11, 25),
+  ];
+  return days.flatMap((day) => {
+    const shift = day.getDay() === 6 ? -1 : day.getDay() === 0 ? 1 : 0;
+    return shift ? [day, new Date(year, day.getMonth(), day.getDate() + shift)] : [day];
+  });
+}
+
+export function isWeekendOrLegalHoliday(date) {
+  if (!date) return false;
+  if (date.getDay() === 0 || date.getDay() === 6) return true;
+  const day = calendarDayNumber(date);
+  // The next year's list too: a New Year's Day on a Saturday is observed on
+  // December 31.
+  return [date.getFullYear(), date.getFullYear() + 1]
+    .some((year) => legalHolidays(year).some((holiday) => calendarDayNumber(holiday) === day));
 }
 
 function deadlineState(deadlineDate, today) {
@@ -149,7 +245,7 @@ export function projectDashboardWard(ward, { displayType, total, progress, today
   const progressPercent = Number.isFinite(progress?.pct) ? progress.pct : 0;
   const dashboardWorkflow = normalizeDashboardWorkflow(ward.dashboardWorkflow);
   const { workflowStatus, workflowSource } = workflowState(ward, dashboardWorkflow, progressPercent);
-  const { deadlineDate, deadlineBasis } = deriveWardDeadline(ward);
+  const { deadlineDate, deadlineBasis, basisWithoutDate } = deriveWardDeadline(ward);
   const { deadlineBucket, daysUntilDeadline } = deadlineState(deadlineDate, today);
   const isDeadlineActionable = !ward.archived && ACTIONABLE_DEADLINE_STATUSES.has(workflowStatus);
   const assigneeName = dashboardWorkflow.assigneeName || '';
@@ -165,7 +261,8 @@ export function projectDashboardWard(ward, { displayType, total, progress, today
     progress,
     progressPercent,
     deadlineDate,
-    deadlineBasis: deadlineDate ? deadlineBasis : '',
+    deadlineBasis: deadlineDate || basisWithoutDate ? deadlineBasis : '',
+    deadlineNote: isWeekendOrLegalHoliday(deadlineDate) ? DEADLINE_WEEKEND_NOTE : '',
     deadlineBucket,
     daysUntilDeadline,
     isDeadlineActionable,

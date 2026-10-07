@@ -20,7 +20,9 @@ async function setUpDashboard(page: Page) {
   await freshStartNoPassword(page);
   for (const [name, type] of [
     ['Correction Required', 'guardian'],
-    ['Deadline Approaching', 'annual'],
+    // Milestone 73I: an accounting is due on the first of a month now, so the
+    // row due in 8 days is an Inventory (60 days after the GID).
+    ['Deadline Approaching', 'guardian'],
     ['Awaiting Court', 'annual'],
     ['Approved Filing', 'planSimplified'],
     ['Standard Draft', 'planAnnual'],
@@ -36,7 +38,9 @@ async function setUpDashboard(page: Page) {
     const dueSoonPeriodEnd = new Date();
     dueSoonPeriodEnd.setDate(dueSoonPeriodEnd.getDate() - 82);
     t.patchFiling({ gid: dateString(dueSoonPeriodEnd), dashboardWorkflow: { status: 'disapproved-needs-correction', assigneeName: 'Morgan Lee' } }, ids[0]);
-    t.patchFiling({ periodTo: dateString(dueSoonPeriodEnd), dashboardWorkflow: { status: 'draft', assigneeName: 'Morgan Lee' } }, ids[1]);
+    const dueSoonGid = new Date();
+    dueSoonGid.setDate(dueSoonGid.getDate() - 52);
+    t.patchFiling({ gid: dateString(dueSoonGid), dashboardWorkflow: { status: 'draft', assigneeName: 'Morgan Lee' } }, ids[1]);
     t.patchFiling({ periodTo: dateString(dueSoonPeriodEnd), dashboardWorkflow: { status: 'pending-court-review', assigneeName: 'Jordan Patel' } }, ids[2]);
     t.patchFiling({ periodTo: dateString(dueSoonPeriodEnd), dashboardWorkflow: { status: 'approved', assigneeName: 'Jordan Patel' } }, ids[3]);
     t.patchFiling({ dashboardWorkflow: { status: 'draft' } }, ids[4]);

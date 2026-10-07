@@ -34,6 +34,7 @@
   "tests/e2e/convert-ward.spec.ts",
   "tests/e2e/cover-county.spec.ts",
   "tests/e2e/dashboard-backup.spec.ts",
+  "tests/e2e/dashboard-due-dates.spec.ts",
   "tests/e2e/dashboard-visual.spec.ts",
   "tests/e2e/date-validation.contract.spec.ts",
   "tests/e2e/excel-b4-multi-account.spec.ts",

@@ -240,6 +240,7 @@ function pagePlanMCover(){
             <div class="col-md-6">${inpS('ucn','UCN',d.ucn)}</div>
             <div class="col-12">${inpS('ref','Case #',d.ref)}</div>
             ${renderReportingPeriodFields({ periodFrom: d.periodFrom, periodTo: d.periodTo, fromLabel: 'For the Period From', toLabel: 'To' })}
+            <!-- Milestone 73I (73I-N3): the plan covers the coming year. --><div class="col-12"><div class="plan-field-hint" data-plan-year-hint>Enter the coming plan year: it begins the day after the anniversary month of the Letters of Guardianship ends, and ends on the last day of that month a year later (F.S. 744.367(1)). For calendar-year filing, January 1 to December 31.</div></div>
             <div class="col-md-6 mt-2">${yesNoCheckboxS('amendedForm','Amended Form?',d.amendedForm,true,'/')}</div>
             <div class="col-md-6 mt-2">${d.amendedForm==='Yes'?radioP('amendedVersion','Version',d.amendedVersion,['1st','2nd','3rd']):''}</div>
           </div>
