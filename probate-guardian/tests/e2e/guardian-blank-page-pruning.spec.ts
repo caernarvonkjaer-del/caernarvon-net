@@ -2,7 +2,7 @@ import { test as base, expect } from '@playwright/test';
 import JSZip from 'jszip';
 import path from 'node:path';
 import os from 'node:os';
-import { freshStartNoPassword, createWard, fillMinimalValidGuardianWard } from './support/target';
+import { freshStartNoPassword, createWard, fillMinimalValidGuardianWard, importWorkbookConfirmed } from './support/target';
 import { extractXlsx } from './support/xlsx-extract';
 import { readAll } from './support/stream';
 
@@ -293,7 +293,7 @@ test.describe('blank Initial Inventory pages are pruned from the Excel export', 
     await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
     const errors: string[] = [];
     page.on('pageerror', (e) => errors.push(e.message));
-    await page.setInputFiles('input[type="file"][accept=".xlsx"]', file);
+    await importWorkbookConfirmed(page, file);
     await page.waitForFunction(
       () => ((window as any).GuardianForms.testing.snapshot().filing?.scheduleA1 || []).length > 0,
       undefined,

@@ -3,7 +3,7 @@ import JSZip from 'jszip';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { freshStartNoPassword, createWard, fillMinimalValidGuardianWard, fillMinimalValidAnnualWard } from './support/target';
+import { freshStartNoPassword, createWard, fillMinimalValidGuardianWard, fillMinimalValidAnnualWard, importWorkbookConfirmed } from './support/target';
 import { readAll } from './support/stream';
 import { extractPdfText } from './support/pdf-extract';
 
@@ -285,7 +285,8 @@ for (const form of [
       expect(caseNumber, 'the fixture case number is the import signal').toBeTruthy();
       await setFields(page, { bondDepositoryState: '', ...BLANK_BOND, caseNumber: '' });
       await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
-      await page.setInputFiles('input[type="file"][accept=".xlsx"]', file);
+      // Milestone 73T part 2: the Inventory's import confirms and then gives a notice.
+      if (form.type === 'guardian') await importWorkbookConfirmed(page, file); else await page.setInputFiles('input[type="file"][accept=".xlsx"]', file);
       await page.waitForFunction((cn) => (window as any).GuardianForms.testing.field('caseNumber') === cn, caseNumber, { timeout: 20_000 });
       expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('bondDepositoryState')), 'the imported date answers the question')
         .toBe(form.type === 'guardian' ? 'bond-waived' : 'depository-only');
@@ -297,7 +298,8 @@ for (const form of [
       // that cannot carry one.
       await setFields(page, { bondDepositoryState: 'bond-and-depository', caseNumber: '' });
       await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
-      await page.setInputFiles('input[type="file"][accept=".xlsx"]', file);
+      // Milestone 73T part 2: the Inventory's import confirms and then gives a notice.
+      if (form.type === 'guardian') await importWorkbookConfirmed(page, file); else await page.setInputFiles('input[type="file"][accept=".xlsx"]', file);
       await page.waitForFunction((cn) => (window as any).GuardianForms.testing.field('caseNumber') === cn, caseNumber, { timeout: 20_000 });
       expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('bondDepositoryState')), 'a stored answer survives the import').toBe('bond-and-depository');
     });

@@ -26,7 +26,12 @@
 import type { Expectation } from './workbook-vs-template';
 
 export type Kind = 'text' | 'money' | 'pct' | 'date' | 'blank';
-export type Finite = { sheet: string; cell: string; path: string; options: readonly string[] };
+/**
+ * A Yes/No or dropdown box. Milestone 73T part 2: a box that repeats another's
+ * answer shares its path (and so its sequence of answers); `onlyIf` is a box
+ * written only while another box holds a given answer, and empty otherwise.
+ */
+export type Finite = { sheet: string; cell: string; path: string; options: readonly string[]; onlyIf?: { path: string; equals: string } };
 export type Manifest = { patch: Record<string, unknown>; expectations: Expectation[]; finite: Finite[] };
 
 export const YES_NO = Object.freeze(['Yes', 'No']);
@@ -99,8 +104,8 @@ class Builder {
     this.expectations.push({ sheet, cell, value: this.expectedByPath.get(path) ?? null, path });
   }
 
-  choice(path: string, sheet: string, cell: string, options: readonly string[]) {
-    this.finite.push({ sheet, cell, path, options });
+  choice(path: string, sheet: string, cell: string, options: readonly string[], onlyIf?: Finite['onlyIf']) {
+    this.finite.push({ sheet, cell, path, options, ...(onlyIf ? { onlyIf } : {}) });
   }
 
   /**
@@ -204,20 +209,33 @@ export function codeFinite(finite: readonly Finite[], templateHolds: (f: Finite)
   const runs = codedRuns(finite);
   const code = new Map<string, number>();
   const next = new Map<string, number>();
+  const byPath = new Map<string, number>();
   const digit = (c: number, m: number, v: number) => Math.floor(c / m ** v) % m;
   for (const f of finite) {
+    // A box repeating another's answer (the same path) takes its code.
+    if (byPath.has(f.path)) { code.set(`${f.sheet}!${f.cell}`, byPath.get(f.path)!); continue; }
     const m = f.options.length;
     const held = templateHolds(f);
     let c = next.get(groupOf(f)) ?? 0;
     // Skip a code whose answer would equal the template's own in every export.
     while (held !== null && Array.from({ length: runs }, (_, v) => f.options[digit(c, m, v)]).every((a) => a === held)) c++;
     code.set(`${f.sheet}!${f.cell}`, c);
+    byPath.set(f.path, c);
     next.set(groupOf(f), c + 1);
   }
   return {
     runs,
     answer: (f, run) => f.options[digit(code.get(`${f.sheet}!${f.cell}`)!, f.options.length, run)],
   };
+}
+
+/** What a Yes/No or dropdown box holds in export `run`: its answer, or empty while its `onlyIf` box holds another. */
+export function finiteExpected(finite: readonly Finite[], coding: Coding, f: Finite, run: number): string | null {
+  if (f.onlyIf) {
+    const control = finite.find((x) => x.path === f.onlyIf!.path);
+    if (control && coding.answer(control, run) !== f.onlyIf.equals) return null;
+  }
+  return coding.answer(f, run);
 }
 
 // ── Initial Inventory (templates/guardian-template.js) ───────────────────────
@@ -242,7 +260,11 @@ export function inventoryManifest(): Manifest {
   b.box('wardName', SI, 'C7', 'text'); b.box('caseNumber', SI, 'H7', 'text'); b.box('gid', SI, 'F7', 'date');
   b.named('county', SI, 'G3', 'Pinellas'); b.box('guardianName', SI, 'D23', 'text'); b.box('attorneyForGuardian', SI, 'D24', 'text');
   b.box('typeOfGuardianship', SI, 'D25', 'text');
-  b.choice('hasSafeDepositBox', SI, 'D26', YES_NO); b.choice('safeDepositBoxFiled', SI, 'H26', YES_NO); b.choice('amendedForm', SI, 'I8', YES_NO);
+  // Milestone 73T part 2 (row 15): "Inventory filed?" is written only when the
+  // ward has a box, and empty otherwise -- the Clerk's form pre-fills it "Yes".
+  b.choice('hasSafeDepositBox', SI, 'D26', YES_NO);
+  b.choice('safeDepositBoxFiled', SI, 'H26', YES_NO, { path: 'hasSafeDepositBox', equals: 'Yes' });
+  b.choice('amendedForm', SI, 'I8', YES_NO);
 
   // PART III: captions on rows 7/13/19 (+2, +4), each box on the row beneath.
   // Guardian #1's name box F8 is the form's link to the Cover, written over by decision.
@@ -263,10 +285,14 @@ export function inventoryManifest(): Manifest {
   b.box('attorney.barNumber', 'PART IV', 'B28', 'text'); b.box('attorney.streetAddress', 'PART IV', 'I28', 'text');
   b.box('attorney.phone', 'PART IV', 'B30', 'text'); b.box('attorney.cityStateZip', 'PART IV', 'I30', 'text');
 
-  // PART V: the bond block and the waiver order date.
+  // PART V: the safe-deposit question (row 15: the app's D-3 asks it in Part
+  // V's words), the bond block and the waiver order date. Milestone 73T part 2
+  // (row 16): the block shows what the arrangement shows -- this filing's is
+  // "bond only" (fixtures.ts), so the waiver date box stays empty.
+  b.choice('hasSafeDepositBox', 'PART V', 'H12', YES_NO);
   b.box('bondAmount', 'PART V', 'G26', 'money'); b.box('bondPeriodFrom', 'PART V', 'E27', 'date');
   b.box('bondPeriodTo', 'PART V', 'G27', 'date'); b.box('bondingCompany', 'PART V', 'D28', 'text');
-  b.box('bondWaivedDate', 'PART V', 'G15', 'date');
+  b.box('bondWaivedDate', 'PART V', 'G15', 'blank');
 
   // PART VI: four recipient blocks, then the certificate's own boxes.
   ([['B', 13], ['H', 13], ['B', 19], ['H', 19]] as const).forEach(([c, r], i) => {

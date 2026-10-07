@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import path from 'node:path';
 import os from 'node:os';
 import JSZip from 'jszip';
-import { freshStartNoPassword, createWard, fillMinimalValidGuardianWard, crossCheckNavAndSummaryStatus, acceptDynDialog, dismissScheduleDocPrompt } from './support/target';
+import { freshStartNoPassword, createWard, fillMinimalValidGuardianWard, crossCheckNavAndSummaryStatus, acceptDynDialog, dismissScheduleDocPrompt, importWorkbookConfirmed } from './support/target';
 
 // Guardian Inventory is Milestone 8 of INDEX-SPLIT-PLAN.md: Phase A moved
 // page/nav/validation/row UI into src/features/guardian-inventory/index.js;
@@ -245,7 +245,8 @@ test.describe('guardian-inventory feature module', () => {
 
     const errors: string[] = [];
     page.on('pageerror', (e) => errors.push(e.message));
-    await page.setInputFiles('input[type="file"][accept=".xlsx"]', xlsxPath);
+    // Milestone 73T part 2: one confirmation, then a notice.
+    await importWorkbookConfirmed(page, xlsxPath);
     await page.waitForFunction(() => (window as any).GuardianForms.testing.field('caseNumber') === '2026-CP-000123', { timeout: 10_000 });
 
     const imported = await page.evaluate(() => ({

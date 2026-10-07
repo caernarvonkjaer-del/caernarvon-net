@@ -10,10 +10,9 @@
 //   - schedule-doc-ack.spec.js holds that those validators never call the
 //     supporting-documentation acknowledgement (57C-R must never gate
 //     export): an absence, which only the source can show.
-//   - guardian-inventory-date-roundtrip.spec.js evaluates dt(), the Initial
-//     Inventory importer's date reader. It is a closure inside
-//     parseInitialInventoryWorkbook() (guardian-inventory/excel.js), not an
-//     export, so the spec slices the real source rather than a copy of it.
+//   (guardian-inventory-date-roundtrip.spec.js sliced dt(), the Initial
+//   Inventory importer's date reader, until 73T part 2 made it the workbook
+//   contract's exported date codec, which the spec now calls directly.)
 //
 // The brace matching is Milestone 52L's, byte for byte, deliberately including
 // its limitation: it counts raw { and } characters with no awareness of

@@ -225,6 +225,60 @@ describe('the commit', () => {
   });
 });
 
+// Milestone 73T part 2: what the Inventory's workbook needs of the transaction.
+describe('nested records and rows that move (73T part 2)', () => {
+  // An Inventory: its attorney is a nested record, as are the preparer and the certificate's attorney.
+  function setUpInventory() {
+    const cf = blankCaseFile();
+    cf.parties = [
+      { id: 'p-a', role: 'guardian', name: 'Ann Guardian', identifiers: {} },
+      { id: 'p-b', role: 'guardian', name: 'Bob Guardian', identifiers: {} },
+      { id: 'p-c', role: 'guardian', name: 'Cy Guardian', identifiers: {} },
+    ];
+    const open = {
+      wardId: 'w-inv', inventoryType: 'guardian', wardName: 'Ward One',
+      attorney: { name: 'Sam Lawyer', email: 'sam@example.com', barNumber: '00012345', signatureState: 'stamp', signatureImage: STAMP },
+      guardians: [{ name: 'Ann Guardian' }, { name: 'Bob Guardian' }, { name: 'Cy Guardian', signatureState: 'stamp', signatureImage: STAMP }],
+      guardianPartyIds: ['p-a', 'p-b', 'p-c'],
+    };
+    cf.wards = [open];
+    cf.activeWardId = open.wardId;
+    replaceCaseFile(cf);
+    return open;
+  }
+
+  it('a nested record takes only the fields the workbook carries; the rest stay as the filing has them', async () => {
+    const open = setUpInventory();
+    const plan = planImport(open, { attorney: { barNumber: '00099999' } });
+    expect(plan.fieldChanges.map((c) => c.path)).toEqual(['attorney']);
+    await runImportTransaction({ filing: open, adapter: async () => ({ draft: { attorney: { barNumber: '00099999' } } }), confirmChoices: async () => ({}) });
+    expect(open.attorney).toEqual({ name: 'Sam Lawyer', email: 'sam@example.com', barNumber: '00099999', signatureState: 'stamp', signatureImage: STAMP });
+  });
+
+  it("a different person in a nested record doesn't inherit what the workbook can't carry", async () => {
+    const open = setUpInventory();
+    await runImportTransaction({
+      filing: open,
+      adapter: async () => ({ draft: { attorney: { name: 'Pat Other', barNumber: '00099999' } }, unboxed: { attorney: ['attorney.email', 'attorney.signatureState', 'attorney.signatureImage'] } }),
+      confirmChoices: async () => ({}),
+    });
+    expect(open.attorney).toEqual({ name: 'Pat Other', email: '', barNumber: '00099999', signatureState: '', signatureImage: '' });
+  });
+
+  it("rows that move up past a skipped slot keep their person's link and what the workbook can't carry", async () => {
+    const open = setUpInventory();
+    // The workbook's Guardian #2 slot is blank: its Guardian #3 is the draft's second row.
+    const draft = { guardians: [{ name: 'Ann Guardian', phone: '1' }, { name: 'Cy Guardian', phone: '3' }] };
+    const plan = planImport(open, draft, { rowSources: { guardians: [0, 2] } });
+    expect(plan.people.filter((p) => p.role === 'guardian').map((p) => [p.identity, p.partyId])).toEqual([['same', 'p-a'], ['same', 'p-c']]);
+    // Their phones differ from the shared records: the filer is asked, about Cy as Guardian #2.
+    expect(plan.conflicts.map((c) => c.id)).toEqual(['shared:guardian:0', 'shared:guardian:1']);
+    await runImportTransaction({ filing: open, adapter: async () => ({ draft, rowSources: { guardians: [0, 2] } }), confirmChoices: async () => ({ 'shared:guardian:0': 'update', 'shared:guardian:1': 'update' }) });
+    expect(open.guardians).toEqual([{ name: 'Ann Guardian', phone: '1' }, { name: 'Cy Guardian', phone: '3', signatureState: 'stamp', signatureImage: STAMP }]);
+    expect(open.guardianPartyIds).toEqual(['p-a', 'p-c']);
+  });
+});
+
 describe("the confirmation, in a filer's words", () => {
   it('says what is replaced, a different ward and type, and asks each question -- the record question only if a near match is the same person', () => {
     const { open } = setUpCase();

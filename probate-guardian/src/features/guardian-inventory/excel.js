@@ -7,91 +7,39 @@
 // other's export until a function body actually runs, well after both are
 // loaded (see src/features/simplified-accounting/excel.js's comment on the
 // same pattern).
+//
+// Milestone 73T part 2: which box of the court's workbook each field goes in,
+// and how it comes back, is the Inventory's workbook contract
+// (src/core/excel/workbook-contract/guardian.js) -- the export writes it and
+// the import reads it, and the import is one transaction
+// (src/core/excel/import-transaction.js): one confirmation before anything
+// changes, a Cancel that changes nothing, and a notice of what was kept. The
+// page tables, the captions above PART III's boxes, the share conversion and
+// the reasons behind each address live with the contract now.
 import { validateGuardian } from './index.js';
-import { amountForStore } from '../../core/form/amount-codec.js';
 import { authorizeFilingOutput } from '../../core/filing/output-authorization.js';
 import { getExcelCapacityIssues } from '../../core/excel/excel-capacity.js';
 import { getExcelJS, saveWorkbookFile, setCell, setDateCell } from '../../core/excel/excel-engine.js';
-import { hasIdentifiedPreparer } from '../../core/form/preparer-flag.js';
-import { migrateBondDepository, bondAmountFromCell } from '../../core/filing/bond-depository.js';
-import { compareImportedCertificate } from '../../core/filing/certificate-migrations.js';
-import { keepUnboxedFields, samePerson, SIGNATURE_FIELDS } from '../../core/excel/import-keep.js';
-import { readCellText, unwrapCellValue } from '../../core/excel/cell-reader.js';
-import { shareFromWorkbookCell } from '../../core/excel/share-cell.js';
+import { migrateBondDepository } from '../../core/filing/bond-depository.js';
 import { pruneSheets } from '../../core/excel/sheet-pruning.js';
-import {
-  SCHEDULE_A1_PAGES, SCHEDULE_A2_PAGES, SCHEDULE_B1_PAGES, SCHEDULE_B2_PAGES,
-  SCHEDULE_B3_PAGES, SCHEDULE_B4_PAGES, SCHEDULE_C1_PAGES, SCHEDULE_C2_PAGES,
-  SCHEDULE_C3_PAGES, SCHEDULE_C4_PAGES, SCHEDULE_C5_PAGES,
-  unusedGuardianContinuationSheets, partIIIGuardianCells, isPrintedCaption,
-} from '../../core/excel/guardian-inventory-pages.js';
+import { unusedGuardianContinuationSheets } from '../../core/excel/guardian-inventory-pages.js';
+import { writeContract } from '../../core/excel/workbook-contract/engine.js';
+import { GUARDIAN_CONTRACT } from '../../core/excel/workbook-contract/guardian.js';
+import { workbookAdapter } from '../../core/excel/workbook-contract/index.js';
+import { runImportTransaction } from '../../core/excel/import-transaction.js';
+import { confirmImport } from '../../core/excel/import-confirm.js';
+import { recordDateDraft } from '../../core/form/commit-coordinator.js';
 import { alertModal } from '../../core/ui/dialogs.js';
 import { setStatus, scheduleStatusClear } from '../../core/ui/transient-status.js';
 import { beginExport } from '../../core/ui/export-guard.js';
-import { assertWorkbookWithinLimits, getImportProgressEl, sanitizeObjectData, validateImportFile } from '../../core/security/input-hardening.js';
-import { capitalizeImportedFields } from '../../core/form/form-contract.js';
-import { mk, b2ItemDescription } from '../../core/filing/models/guardian.js';
+import { getImportProgressEl, validateImportFile } from '../../core/security/input-hardening.js';
 import { getD } from '../../core/state.js';
-import { saveData } from '../../core/persistence/case-file.js';
 import { ensureTemplate } from '../../core/persistence/templates.js';
 import { navigate, renderPage } from '../../core/navigation/router.js';
-import { remapLinkedIds } from '../../core/form/row-links.js';
-import { recordModelChange } from '../../core/model-change.js';
 // Milestone 73F part 1: the capacity limits live in core (excel-caps.js) so the
 // shared export checks can say what the workbook can't hold.
 import { GUARDIAN_EXCEL_CAPS } from '../../core/excel/excel-caps.js';
 export { GUARDIAN_EXCEL_CAPS };
-
-
-// Milestone 60K: the Excel boundary conversion for percentages, both ways.
-//
-// The app's model holds a Ward's % / Joint Owner's % as the 0-100 number the
-// form's "Ward's % (0-100)" input collects. The court workbook's Ward's %
-// cells are formatted 0.00% (styles.xml numFmtId 10) and hold FRACTIONS --
-// the template's own worked examples are 0.5, 1 and 0.8 -- and every Ward's
-// Value cell multiplies by them (=G17*H17). Until 60K the exporter wrote the
-// model's number as-is, so a 50% row landed as 50: the filed workbook showed
-// 5000.00% and computed 1000 x 50 = 50,000 where the form intends 1000 x 0.5
-// = 500 -- every apportioned value 100 times too large. The PDF path was
-// never affected (guardian-inventory/totals.js keeps the 0-100 model
-// convention); this is strictly a write/read conversion at the file edge.
-//
-//   writer: blank stays blank (an empty Ward's % cell reads as 0 in the
-//           workbook, same as a blank percentage in the app); otherwise
-//           model 0-100 -> fraction 0-1.
-//   reader: Milestone 71C (decision D10) -- shareFromWorkbookCell() in
-//           src/core/excel/share-cell.js, shared with the Annual importer:
-//           every numeric share cell is a fraction (1.5 is 150%, which the
-//           range check flags), blank stays blank, unreadable text is kept as
-//           imported. It replaced this module's percentFromWorkbook(), which
-//           read any value above 1 as a pre-60K 0-100 figure -- so a genuine
-//           150% share imported as 1.5% -- and turned a blank cell into 0.
-const pctCell=(v)=>{
-  if(v==null||v==='')return '';
-  const num=parseFloat(v);
-  return Number.isFinite(num)?num/100:'';
-};
-
-
-// Milestone 52K: each schedule's page/sheet-name + row-number layout used to
-// be hand-typed twice -- once in its fillScheduleXX() writer below, once
-// more in parseInitialInventoryWorkbook()'s readRows() calls -- with a
-// different key for the same field (`name` on the writer side, `sheet` on
-// the reader side). Neither name is read generically; readRows() destructures
-// its own `sheet` key locally and the writers read `.name` directly, so
-// there is no external consumer to keep in sync -- both sides now share one
-// object per schedule and read the same `name` key. A template sheet
-// renumbered on one side and not the other used to silently desync export
-// and import for that schedule; now there is only one side to edit. The
-// sheet-name strings are copied verbatim from the court's Excel template,
-// trailing spaces/punctuation quirks included (e.g. 'A-2-REAL ESTATE MTG
-// pg 1 ', 'B-3 INTANGIBLE pg 1;') -- these are real worksheet names, not
-// typos to fix.
-//
-// Those shared page objects now live in core/excel/guardian-inventory-pages.js
-// alongside the paging rules that read them, so the rules can be unit-tested
-// without a browser -- this module reaches for window.* at its top level and
-// cannot be imported under Node.
 
 export async function doSaveExcel(){
   const capacityIssues = getExcelCapacityIssues('guardian', getD(), GUARDIAN_EXCEL_CAPS);
@@ -125,23 +73,6 @@ export async function doSaveExcel(){
     const templateB64=await ensureTemplate('guardian');
     if(!templateB64){await alertModal('Template not loaded. Please import the Excel template first.');return;}
 
-    // Dates are written through setDateCell() (Milestone 67E) -- a real Excel
-    // date, not ISO text; the local string formatter that lived here is gone.
-    // Milestone 51D: this is the canonical tri-state Excel writer for this app,
-    // and it stays local deliberately. core/excel/excel-engine.js used to export a
-    // yesNo(bool) under the SAME NAME that returned 'No' for '', null and
-    // undefined -- which AGENTS.md section 3 forbids ("Never default or coerce an
-    // unanswered field to 'No', at any stage"). Consolidating onto that export
-    // would have turned every unanswered binary in a filed Initial Inventory into
-    // an affirmative 'No', so the dead one was deleted instead. This version is
-    // also a superset of the engine's yesNoTristate(), which handled only real
-    // booleans, not the 'Yes'/'No' strings these fields actually store.
-    const yesNo=v=>(v==='Yes'||v===true)?'Yes':((v==='No'||v===false)?'No':'');
-    // Milestone 51D: setCell now comes from core/excel/excel-engine.js. The local
-    // closure this replaces was byte-identical in all three feature excel.js files
-    // apart from a null-sheet guard, and routed text through the same
-    // formula-injection guard, sanitizeCellValue().
-
     setStatus(stat,'Loading template…');
     const bin=atob(templateB64);
     const buf=new Uint8Array(bin.length);
@@ -151,416 +82,10 @@ export async function doSaveExcel(){
     const workbook=new ExcelJS.Workbook();
     await workbook.xlsx.load(buf.buffer);
 
-    const si=workbook.getWorksheet('SUMMARY I ');
-    if(si){
-      setCell(si,'C7',inv.wardName||'');
-      setCell(si,'H7',inv.caseNumber||'');
-      setDateCell(si,'F7',inv.gid);
-      setCell(si,'G3',inv.county||'');
-      setCell(si,'D23',inv.guardianName||'');
-      setCell(si,'D24',inv.attorneyForGuardian||'');
-      setCell(si,'D25',inv.typeOfGuardianship||'');
-      setCell(si,'D26',yesNo(inv.hasSafeDepositBox));
-      setCell(si,'H26',yesNo(inv.safeDepositBoxFiled));
-      setCell(si,'I8',yesNo(inv.amendedForm!=null&&inv.amendedForm!==''?inv.amendedForm:inv.isAmended));
-    }
-
-    const fillScheduleA1=(entries)=>{
-      const sheet=workbook.getWorksheet('A-1-REAL ESTATE pg 1');
-      if(!sheet)return;
-      let idx=0;
-      const pages=SCHEDULE_A1_PAGES;
-      for(const e of entries||[]){
-        let pageIdx=0,rowIdxInPage=0;
-        for(let i=0;i<=idx;i++){if(i>0&&pages[pageIdx].rows.length===rowIdxInPage){pageIdx++;rowIdxInPage=0;}if(i===idx)break;rowIdxInPage++;}
-        const pg=workbook.getWorksheet(pages[pageIdx].name);
-        if(!pg)continue;
-        const r=pages[pageIdx].rows[rowIdxInPage];
-        setCell(pg,`C${r}`,e.propertyDescription||'');
-        setCell(pg,`C${r+1}`,e.streetAddress||'');
-        setCell(pg,`C${r+2}`,e.cityStateZip||'');
-        setCell(pg,`C${r+3}`,e.notes||'');
-        setCell(pg,`E${r}`,yesNo(e.residence!=null&&e.residence!==''?e.residence:e.isPersonalResidence));
-        setCell(pg,`F${r}`,yesNo(e.income!=null&&e.income!==''?e.income:e.isIncomeProperty));
-        setCell(pg,`G${r}`,e.fullAssetValue||'');
-        setCell(pg,`H${r}`,pctCell(e.wardPercent));
-        idx++;
-      }
-    };
-
-    const fillScheduleA2=(entries)=>{
-      const pages=SCHEDULE_A2_PAGES;
-      let idx=0;
-      for(const e of entries||[]){
-        let pageIdx=0,rowIdxInPage=0;
-        for(let i=0;i<=idx;i++){if(i>0&&pages[pageIdx].rows.length===rowIdxInPage){pageIdx++;rowIdxInPage=0;}if(i===idx)break;rowIdxInPage++;}
-        const pg=workbook.getWorksheet(pages[pageIdx].name);
-        if(!pg)continue;
-        const r=pages[pageIdx].rows[rowIdxInPage];
-        setCell(pg,`C${r}`,e.lenderName||'');
-        setCell(pg,`C${r+1}`,e.lenderAddress||'');
-        setCell(pg,`C${r+2}`,e.lenderCityStateZip||'');
-        setCell(pg,`C${r+3}`,e.accountNumber||'');
-        setCell(pg,`E${r}`,e.liabilityType||'Mortgage');
-        setCell(pg,`F${r}`,e.fullDebtBalance||'');
-        setCell(pg,`G${r}`,pctCell(e.wardPercent));
-        idx++;
-      }
-    };
-
-    const fillScheduleB1=(entries)=>{
-      const pages=SCHEDULE_B1_PAGES;
-      let idx=0;
-      for(const e of entries||[]){
-        let pageIdx=0,rowIdxInPage=0;
-        for(let i=0;i<=idx;i++){if(i>0&&pages[pageIdx].rows.length===rowIdxInPage){pageIdx++;rowIdxInPage=0;}if(i===idx)break;rowIdxInPage++;}
-        const pg=workbook.getWorksheet(pages[pageIdx].name);
-        if(!pg)continue;
-        const r=pages[pageIdx].rows[rowIdxInPage];
-        setCell(pg,`C${r}`,e.institutionName||'');
-        setCell(pg,`C${r+1}`,e.accountNumber||'');
-        setCell(pg,`C${r+2}`,e.streetAddress||'');
-        setCell(pg,`C${r+3}`,e.cityStateZip||'');
-        setCell(pg,`E${r}`,yesNo(e.restricted!=null&&e.restricted!==''?e.restricted:e.isRestricted));
-        setCell(pg,`F${r}`,e.accountType||'');
-        setCell(pg,`G${r}`,e.fullAssetAmount||'');
-        setCell(pg,`H${r}`,pctCell(e.wardPercent));
-        idx++;
-      }
-    };
-
-    const fillScheduleB2=(entries)=>{
-      const pages=SCHEDULE_B2_PAGES;
-      let idx=0;
-      for(const e of entries||[]){
-        let pageIdx=0,rowIdxInPage=0;
-        for(let i=0;i<=idx;i++){if(i>0&&pages[pageIdx].rows.length===rowIdxInPage){pageIdx++;rowIdxInPage=0;}if(i===idx)break;rowIdxInPage++;}
-        const pg=workbook.getWorksheet(pages[pageIdx].name);
-        if(!pg)continue;
-        const r=pages[pageIdx].rows[rowIdxInPage];
-        // Milestone 73D: a vehicle files its own description, and column H
-        // blank -- no safe-deposit answer applies to it, so the form's own
-        // =IF(H="Yes",G,0) counts it nowhere, as the app's totals don't.
-        setCell(pg,`C${r}`,b2ItemDescription(e));
-        setCell(pg,`C${r+1}`,e.streetAddress||'');
-        setCell(pg,`C${r+2}`,e.cityStateZip||'');
-        setCell(pg,`C${r+3}`,e.valuationMethod||'');
-        setCell(pg,`E${r}`,e.fullAssetValue||'');
-        setCell(pg,`F${r}`,pctCell(e.wardPercent));
-        setCell(pg,`H${r}`,e.isVehicle?'':yesNo(e.inSafeDepositBox));
-        idx++;
-      }
-    };
-
-    const fillScheduleB3=(entries)=>{
-      const pages=SCHEDULE_B3_PAGES;
-      let idx=0;
-      for(const e of entries||[]){
-        let pageIdx=0,rowIdxInPage=0;
-        for(let i=0;i<=idx;i++){if(i>0&&pages[pageIdx].rows.length===rowIdxInPage){pageIdx++;rowIdxInPage=0;}if(i===idx)break;rowIdxInPage++;}
-        const pg=workbook.getWorksheet(pages[pageIdx].name);
-        if(!pg)continue;
-        const r=pages[pageIdx].rows[rowIdxInPage];
-        setCell(pg,`C${r}`,e.description||'');
-        setCell(pg,`C${r+1}`,e.streetAddress||'');
-        setCell(pg,`C${r+2}`,e.cityStateZip||'');
-        setCell(pg,`E${r}`,yesNo(e.restricted!=null&&e.restricted!==''?e.restricted:e.isRestricted));
-        setCell(pg,`F${r}`,e.fullAssetValue||'');
-        setCell(pg,`G${r}`,pctCell(e.wardPercent));
-        setCell(pg,`J${r}`,yesNo(e.inSafeDepositBox));
-        idx++;
-      }
-    };
-
-    const fillScheduleB4=(entries)=>{
-      const pages=SCHEDULE_B4_PAGES;
-      let idx=0;
-      for(const e of entries||[]){
-        let pageIdx=0,rowIdxInPage=0;
-        for(let i=0;i<=idx;i++){if(i>0&&pages[pageIdx].rows.length===rowIdxInPage){pageIdx++;rowIdxInPage=0;}if(i===idx)break;rowIdxInPage++;}
-        const pg=workbook.getWorksheet(pages[pageIdx].name);
-        if(!pg)continue;
-        const r=pages[pageIdx].rows[rowIdxInPage];
-        setCell(pg,`C${r}`,e.lenderName||'');
-        setCell(pg,`C${r+1}`,e.lenderAddress||'');
-        setCell(pg,`C${r+2}`,e.relatedProperty||'');
-        // Milestone 60K: the account number goes on the FIFTH line of the block,
-        // where the form's worked example puts it ("Acct #112358132134" on row
-        // 22 of an 18-22 block). It used to land on the fourth. The form's
-        // written instructions say "Third line: Account Number" and never
-        // describe the address/asset lines the example actually shows, so the
-        // template contradicts itself; the example is what a clerk visually
-        // matches, and it is what the requester authorized (MS 60K). Line four
-        // is left blank on purpose (B-4 has no free-text note field). The
-        // importer reads the fifth line and falls back to the fourth for
-        // workbooks exported before 60K.
-        setCell(pg,`C${r+3}`,'');
-        setCell(pg,`C${r+4}`,e.accountNumber||'');
-        setCell(pg,`E${r}`,e.liabilityType||'Loan');
-        setCell(pg,`F${r}`,e.fullLiabilityBalance||'');
-        setCell(pg,`G${r}`,pctCell(e.wardPercent));
-        idx++;
-      }
-    };
-
-    const fillScheduleC1=(entries)=>{
-      const pages=SCHEDULE_C1_PAGES;
-      let idx=0;
-      for(const e of entries||[]){
-        let pageIdx=0,rowIdxInPage=0;
-        for(let i=0;i<=idx;i++){if(i>0&&pages[pageIdx].rows.length===rowIdxInPage){pageIdx++;rowIdxInPage=0;}if(i===idx)break;rowIdxInPage++;}
-        const pg=workbook.getWorksheet(pages[pageIdx].name);
-        if(!pg)continue;
-        const r=pages[pageIdx].rows[rowIdxInPage];
-        setCell(pg,`C${r}`,e.payerName||'');
-        setCell(pg,`C${r+1}`,e.payerAddress||'');
-        setCell(pg,`C${r+2}`,e.payerCityStateZip||'');
-        setCell(pg,`E${r}`,e.typeOfIncome||'');
-        setCell(pg,`G${r}`,e.frequencyOfPayment||'Monthly');
-        setCell(pg,`E${r+2}`,e.paymentBasis||'');
-        setCell(pg,`H${r}`,e.annualIncomeAmount||'');
-        setCell(pg,`I${r}`,pctCell(e.wardPercent));
-        idx++;
-      }
-    };
-
-    // Mirrors pdf-model.js's line of the same name, so the workbook and the
-    // printed filing show the claimant/attorney line identically.
-    const c2ClaimantLine=(e)=>{
-      const claimant=(e.claimantName||'').trim();
-      const atty=(e.claimantAttorney||'').trim();
-      if(!atty)return claimant;
-      return claimant?`Atty ${atty} for ${claimant}`:`Atty ${atty}`;
-    };
-    const fillScheduleC2=(entries)=>{
-      const pages=SCHEDULE_C2_PAGES;
-      let idx=0;
-      for(const e of entries||[]){
-        let pageIdx=0,rowIdxInPage=0;
-        for(let i=0;i<=idx;i++){if(i>0&&pages[pageIdx].rows.length===rowIdxInPage){pageIdx++;rowIdxInPage=0;}if(i===idx)break;rowIdxInPage++;}
-        const pg=workbook.getWorksheet(pages[pageIdx].name);
-        if(!pg)continue;
-        const r=pages[pageIdx].rows[rowIdxInPage];
-        const desc=`${e.lawsuitDescription||''}${e.caseNumber?' / '+e.caseNumber:''}`;
-        setCell(pg,`C${r}`,desc);
-        setCell(pg,`C${r+1}`,e.courtJurisdiction||'');
-        // Milestone 64A-2, item 3.4. The form gives the claimant and their
-        // attorney ONE free-text line (C7), and its own example writes it as
-        // "Atty John Smith for Bob Jones, plaintiff". The combined line is
-        // written here; the importer deliberately does NOT split it back
-        // (decided 2026-09-22) -- the form defines no delimiter, and any the
-        // app invented would misparse the form's own example. A round trip
-        // therefore merges the attorney into claimantName, which is recorded
-        // in the CSV row and is why claimantAttorney is optional.
-        setCell(pg,`C${r+2}`,c2ClaimantLine(e));
-        setCell(pg,`C${r+3}`,e.claimantAddress||'');
-        // Milestone 60K: the form's fifth C-2 line (worked example row 18: "St Petersburg, FL 33710").
-        setCell(pg,`C${r+4}`,e.claimantCityStateZip||'');
-        setDateCell(pg,`E${r}`,e.dateFiled);
-        setCell(pg,`F${r}`,e.amountOfClaim||'');
-        setCell(pg,`G${r}`,pctCell(e.wardPercent));
-        idx++;
-      }
-    };
-
-    const fillScheduleC3=(entries)=>{
-      const pages=SCHEDULE_C3_PAGES;
-      let idx=0;
-      for(const e of entries||[]){
-        let pageIdx=0,rowIdxInPage=0;
-        for(let i=0;i<=idx;i++){if(i>0&&pages[pageIdx].rows.length===rowIdxInPage){pageIdx++;rowIdxInPage=0;}if(i===idx)break;rowIdxInPage++;}
-        const pg=workbook.getWorksheet(pages[pageIdx].name);
-        if(!pg)continue;
-        const r=pages[pageIdx].rows[rowIdxInPage];
-        // Milestone 72A (found during build). The form's own instructions and
-        // its worked example agree: first line "Name of person or entity in
-        // suit / description of the Type of Pending Legal Action" ("Big Chain
-        // Store / Negligence"), second the status, third the court, fourth
-        // "Case number, if filed". The defendant used to be written into
-        // column B -- the cell holding the entry's printed Line # -- and the
-        // case number tacked onto the first line, so a filed C-3 showed a name
-        // where the form numbers its entries.
-        setCell(pg,`C${r}`,[e.defendantName,e.actionDescription].map(s=>String(s||'').trim()).filter(Boolean).join(' / '));
-        setCell(pg,`C${r+1}`,e.status||'');
-        setCell(pg,`C${r+2}`,e.courtJurisdiction||'');
-        setCell(pg,`C${r+3}`,e.caseNumber||'');
-        setDateCell(pg,`E${r}`,e.actionDate);
-        setCell(pg,`F${r}`,e.estimatedSettlement||'');
-        setCell(pg,`G${r}`,pctCell(e.wardPercent));
-        idx++;
-      }
-    };
-
-    const fillScheduleC4=(entries)=>{
-      const pages=SCHEDULE_C4_PAGES;
-      let idx=0;
-      for(const e of entries||[]){
-        let pageIdx=0,rowIdxInPage=0;
-        for(let i=0;i<=idx;i++){if(i>0&&pages[pageIdx].rows.length===rowIdxInPage){pageIdx++;rowIdxInPage=0;}if(i===idx)break;rowIdxInPage++;}
-        const pg=workbook.getWorksheet(pages[pageIdx].name);
-        if(!pg)continue;
-        const r=pages[pageIdx].rows[rowIdxInPage];
-        setCell(pg,`C${r}`,e.trustName||'');
-        setCell(pg,`C${r+1}`,e.trusteeName||'');
-        setCell(pg,`C${r+2}`,e.trusteeAddress||'');
-        setCell(pg,`C${r+3}`,e.trusteeCityStateZip||'');
-        setDateCell(pg,`E${r}`,e.dateCreated);
-        setCell(pg,`F${r}`,e.accountNumber||'');
-        setCell(pg,`H${r}`,e.trustType||'Pooled');
-        setCell(pg,`I${r}`,e.trustAmount||'');
-        setCell(pg,`J${r}`,pctCell(e.wardPercent));
-        idx++;
-      }
-    };
-
-    const fillScheduleC5=(entries)=>{
-      const pages=SCHEDULE_C5_PAGES;
-      let idx=0;
-      for(const e of entries||[]){
-        let pageIdx=0,rowIdxInPage=0;
-        for(let i=0;i<=idx;i++){if(i>0&&pages[pageIdx].rows.length===rowIdxInPage){pageIdx++;rowIdxInPage=0;}if(i===idx)break;rowIdxInPage++;}
-        const pg=workbook.getWorksheet(pages[pageIdx].name);
-        if(!pg)continue;
-        const r=pages[pageIdx].rows[rowIdxInPage];
-        // Milestone 72A (found during build): the form's instructions put the
-        // joint owner's name on the second line, the street on the third and
-        // the city/state/zip on the fourth. The name and street used to be
-        // swapped, so a filed C-5 split the owner's address around their name.
-        setCell(pg,`C${r}`,e.assetDescription||'');
-        setCell(pg,`C${r+1}`,e.ownerName||'');
-        setCell(pg,`C${r+2}`,e.ownerAddress||'');
-        setCell(pg,`C${r+3}`,e.ownerCityStateZip||'');
-        setCell(pg,`E${r}`,e.relationshipToWard||'');
-        setCell(pg,`F${r}`,e.totalAssetValue||'');
-        setCell(pg,`G${r}`,pctCell(e.jointOwnerPercent));
-        idx++;
-      }
-    };
-
-    fillScheduleA1(inv.scheduleA1);
-    fillScheduleA2(inv.scheduleA2);
-    fillScheduleB1(inv.scheduleB1);
-    fillScheduleB2(inv.scheduleB2);
-    fillScheduleB3(inv.scheduleB3);
-    fillScheduleB4(inv.scheduleB4);
-    fillScheduleC1(inv.scheduleC1);
-    fillScheduleC2(inv.scheduleC2);
-    fillScheduleC3(inv.scheduleC3);
-    fillScheduleC4(inv.scheduleC4);
-    fillScheduleC5(inv.scheduleC5);
-
-    // Milestone 72A. Each guardian block prints its captions on one row and
-    // the box on the row beneath (partIIIGuardianCells()). Every field but the
-    // name used to be written onto the caption row, so a filed inventory read
-    // "123-45-6789" where the form prints "Guardian #1's SSN / EIN" and left
-    // the box beneath it empty -- fifteen captions for three guardians. The
-    // name box F8 is the form's own ='SUMMARY I '!D23; writing Guardian #1's
-    // name over it is the 2026-09-19 Annual decision applied here (2026-10-01),
-    // with a warning when the two differ (form-derived-fields.js).
-    const p3=workbook.getWorksheet('PART III');
-    if(p3&&inv.guardians.length){
-      for(let i=0;i<Math.min(inv.guardians.length,3);i++){
-        const g=inv.guardians[i];
-        for(const f of partIIIGuardianCells(i)){
-          if(f.date)setDateCell(p3,f.box,g[f.key]);
-          else setCell(p3,f.box,g[f.key]||'');
-        }
-      }
-    }
-
-    const p4=workbook.getWorksheet('PART IV');
-    if(p4){
-      // PART IV's signature blocks put each caption in one row and its input
-      // box in the row BENEATH it -- "Preparer's Name" is the merged I12:K12,
-      // the box for it is I13:K13. Every field here used to be written to the
-      // caption row, so a filed inventory had twelve printed labels replaced
-      // by values and twelve empty boxes underneath them.
-      // Milestone 64A-2, item 2.5. The compilation statement's "as of" date.
-      // H8 is the workbook's own "Date " CAPTION and H9 the box beneath it
-      // (same caption-above-box shape as the rest of this block, confirmed by
-      // reading the real template); B9 next to it is a formula pulling the
-      // ward name from SUMMARY I C7 and is left alone.
-      // Milestone 67A: while a guardian or the attorney is identified as the
-      // preparer, the outside-preparer block is not filed. Whatever was typed
-      // into it before the box was ticked stays in the app (section 4) but
-      // must not reach the workbook -- hidden is not filed -- so the cells
-      // are left as the template has them, empty.
-      if(!hasIdentifiedPreparer(inv)){
-      setDateCell(p4,'H9',inv.preparer.asOfDate);
-      setDateCell(p4,'G13',inv.preparer.signatureDate);
-      setCell(p4,'I13',inv.preparer.name||'');
-      setCell(p4,'B15',inv.preparer.ssnEin||'');
-      setCell(p4,'I15',inv.preparer.streetAddress||'');
-      setCell(p4,'B17',inv.preparer.phone||'');
-      setCell(p4,'I17',inv.preparer.cityStateZip||'');
-      }
-      // The attorney block has two different dates on the form: C21 is the
-      // "Date:" on the notification line above, G26 the one beside "Attorney
-      // Signature". The signature date used to go to the G25 caption and the
-      // filing date to G26, so the signature date never appeared at all and
-      // never survived a round trip.
-      setDateCell(p4,'C21',inv.attorney.filingDate);
-      setDateCell(p4,'G26',inv.attorney.signatureDate);
-      // I26 is the workbook's own formula pulling the attorney's name from
-      // SUMMARY I D24 -- the form links the two -- so the app writes that cell
-      // and leaves this one alone (AGENTS.md section 5).
-      setCell(p4,'B28',inv.attorney.barNumber||'');
-      setCell(p4,'I28',inv.attorney.streetAddress||'');
-      setCell(p4,'B30',inv.attorney.phone||'');
-      setCell(p4,'I30',inv.attorney.cityStateZip||'');
-    }
-
-    const p5=workbook.getWorksheet('PART V');
-    if(p5){
-      // The bond block's captions are in column B (and D27/F27's "From:" and
-      // "To:"); the boxes are to their right. All three of these used to be
-      // written onto the captions, so a filed inventory read a bare number
-      // where "Bond Amount" belongs, dates where "From:" and "To:" belong, and
-      // had all three bond boxes empty -- on the page the court uses to check
-      // the surety bond.
-      setCell(p5,'G26',inv.bondAmount||'');
-      setDateCell(p5,'E27',inv.bondPeriodFrom);
-      setDateCell(p5,'G27',inv.bondPeriodTo);
-      setCell(p5,'D28',inv.bondingCompany||'');
-      // Milestone 67B: a real date now (it was free text), like every other
-      // date since 67E. The arrangement itself has no cell; only the order
-      // date the form's own line asks for reaches the workbook.
-      setDateCell(p5,'G15',inv.bondWaivedDate);
-    }
-
-    // Milestone 72A (found during build): the certificate's own boxes -- the
-    // service date, "Indicate if:" and the attorney's details -- used to sit
-    // inside a test for at least one recipient card. No path empties that list
-    // today (D-5 keeps one card; import and a new filing supply one), so this
-    // was latent, but a filing reaching here with none would have filed a
-    // certificate with no date. The Annual's PART X and the Simplified's
-    // PARTS V, VI write theirs regardless; so does this one now.
-    const p6=workbook.getWorksheet('PART VI');
-    if(p6){
-      const recs=inv.serviceRecipients||[];
-      if(recs[0]){setCell(p6,'B13',recs[0].name||'');setCell(p6,'B14',recs[0].address||'');setCell(p6,'B15',recs[0].cityStateZip||'');}
-      if(recs[1]){setCell(p6,'H13',recs[1].name||'');setCell(p6,'H14',recs[1].address||'');setCell(p6,'H15',recs[1].cityStateZip||'');}
-      if(recs[2]){setCell(p6,'B19',recs[2].name||'');setCell(p6,'B20',recs[2].address||'');setCell(p6,'B21',recs[2].cityStateZip||'');}
-      if(recs[3]){setCell(p6,'H19',recs[3].name||'');setCell(p6,'H20',recs[3].address||'');setCell(p6,'H21',recs[3].cityStateZip||'');}
-      // Same caption-above-box shape as PART IV. The recipient blocks above
-      // were already right; the certificate's own fields were not. The bar
-      // number was the odd one out -- it went to J29, the street address's
-      // box, while the street address went to the J28 caption.
-      setDateCell(p6,'G25',inv.serviceDate);
-      // Milestone 64A-2, item 2.4. J24 is the workbook's own pre-printed
-      // "Indicate if:" caption (confirmed by reading the real cell, not
-      // assumed); the answer goes in J25, its own empty box, directly below.
-      setCell(p6,'J25',inv.serviceIndicateIf||'');
-      setDateCell(p6,'G27',inv.serviceAttorney.signatureDate);
-      // J27 is the workbook's formula for the attorney's name, from
-      // SUMMARY I D24, exactly as on PART IV.
-      // Milestone 72H: the certificate's attorney is D-2's (the same boxes
-      // PART IV's B28/I28/B30/I30 carry); G27 stays the certificate's own date.
-      setCell(p6,'B29',inv.attorney.barNumber||'');
-      setCell(p6,'J29',inv.attorney.streetAddress||'');
-      setCell(p6,'B31',inv.attorney.phone||'');
-      setCell(p6,'J31',inv.attorney.cityStateZip||'');
-    }
+    // Every field into its box, by the contract. setCell() keeps the
+    // formula-injection guard and records each write for the export guard
+    // (tests/e2e/excel-form-field-placement.spec.ts).
+    writeContract(workbook, GUARDIAN_CONTRACT, inv, {}, { setCell, setDateCell });
 
     // The court's workbook ships every printed page of every schedule, and the
     // writer fills only the ones a filing reaches. Without this an inventory
@@ -571,9 +96,9 @@ export async function doSaveExcel(){
     // continuation pages, so removing one on its own leaves #REF! in a filed
     // financial document. Anything it cannot rebuild safely is kept.
     //
-    // Re-import is unaffected: parseInitialInventoryWorkbook()'s readRows()
-    // skips a page that is not in the file, so a pruned workbook reads back
-    // exactly the entries it was written with.
+    // Re-import is unaffected: the contract's reader skips a page that is not
+    // in the file, so a pruned workbook reads back exactly the entries it was
+    // written with.
     pruneSheets(workbook, unusedGuardianContinuationSheets(inv));
 
     setStatus(stat,'Writing file…');
@@ -598,205 +123,38 @@ export async function importExcel(input){
     const check=await validateImportFile(file,'xlsx');
     if(!check.ok){setStatus(prog,'✗ '+check.message);return;}
     setStatus(prog,'Reading file…');
-    const buf=await file.arrayBuffer();
-    const ExcelJS=await getExcelJS();
-    const workbook=new ExcelJS.Workbook();
-    setStatus(prog,'Parsing Excel…');
-    await workbook.xlsx.load(buf);
-    assertWorkbookWithinLimits(workbook);
-    // No template cache write here — see the note above ensureTemplate():
-    // an imported file is never retained past this parse, so the app's own
+    const data=await file.arrayBuffer();
+    const filing=getD();
+    const adapter=workbookAdapter({ data, sourceName: file.name, inventoryType: filing.inventoryType, filing });
+    let read=null;
+    // No template cache write here — see the note above ensureTemplate(): an
+    // imported file is never retained past this parse, so the app's own
     // bundled blank template is what every later "Export as Excel" uses.
-    const parsed=parseInitialInventoryWorkbook(workbook);
-    const guardianSlots=importedGuardianSlots.get(parsed)||null;
-    const importedData=sanitizeObjectData(parsed);
-    // Milestone 67A: the workbook has no cell for "this person prepared this
-    // filing". A workbook that names an outside preparer is the stronger
-    // statement and clears the flags; one whose preparer cells are empty
-    // keeps whatever this filing already had, matched to the guardian rows
-    // by position -- a silent absence must not un-name the preparer.
-    const namesOutsidePreparer=!!String(importedData.preparer?.name||'').trim();
-    const prior=getD()||{};
-    (importedData.guardians||[]).forEach((g,i)=>{g.isPreparer=!namesOutsidePreparer&&!!prior.guardians?.[i]?.isPreparer;});
-    if(importedData.attorney)importedData.attorney.isPreparer=!namesOutsidePreparer&&!!prior.attorney?.isPreparer;
-    // Found while building Milestone 72H: the workbook has no box for a
-    // guardian's email (72C), the attorney's two emails (72B), or any
-    // signature's chosen state and stamp image, and the assign below replaced
-    // each guardian, the attorney and the certificate's signer whole -- so an
-    // import silently wiped them. They are kept from this filing now, for the
-    // same person only (import-keep.js).
-    (importedData.guardians||[]).forEach((g,i)=>keepUnboxedFields(g,prior.guardians?.[i],['email',...SIGNATURE_FIELDS,'certifiesService']));
-    keepUnboxedFields(importedData.attorney,prior.attorney,['email','secondaryEmail',...SIGNATURE_FIELDS]);
-    // The outside preparer's signature too (Milestone 72 follow-up, missed
-    // the first time round): the Annual family keeps its preparer's the same way.
-    keepUnboxedFields(importedData.preparer,prior.preparer,SIGNATURE_FIELDS);
-    // The certificate's signer is the attorney (72H), so it is kept when the
-    // attorney is the same person.
-    if(importedData.serviceAttorney&&importedData.attorney&&prior.serviceAttorney&&samePerson(importedData.attorney.name,prior.attorney?.name)){
-      for(const k of SIGNATURE_FIELDS)if(prior.serviceAttorney[k]!==undefined)importedData.serviceAttorney[k]=prior.serviceAttorney[k];
-    }
-    Object.assign(getD(),importedData);
-    // Milestone 73V: a co-guardian slot the workbook left empty is skipped, so
-    // the guardians after it move up; their shared-record links move with them
-    // instead of staying where the skipped slot's link was.
-    if(guardianSlots&&guardianSlots.length===getD().guardians.length&&!guardianSlots.every((slot,position)=>slot===position))remapLinkedIds(getD(),'guardians',guardianSlots);
-    // Milestone 67B: the workbook has no cell for the bond / restricted
-    // depository arrangement, and importedData carries no key for it, so an
-    // answer this filing already had survives the assign. A blank one is read
-    // from what the workbook did carry (the G15 waiver date, the bond
-    // details) -- otherwise the page would show the answer those imply while
-    // the sidebar kept asking for it.
-    migrateBondDepository(getD());
-    saveData();
-    recordModelChange('excel-import');
-    setStatus(prog,'✓ Import complete!');
-    scheduleStatusClear(prog);
-    navigate('/');
+    const result=await runImportTransaction({
+      filing,
+      adapter: async () => (read = await adapter()),
+      confirmChoices: (plan) => { setStatus(prog,''); return confirmImport(plan, { sourceName: file.name }); },
+      redraw: () => navigate('/'),
+      notify: (notice) => alertModal({ title: 'Import complete', message: notice }),
+      afterCommit: (f) => {
+        // Milestone 73T part 2 (row 19): a date cell holding text no reader
+        // understands (a free-text date from before Milestone 67B) comes back
+        // as a date still being typed -- shown in its box and named at
+        // Preview -- not as a blank.
+        for (const d of read?.dateDrafts || []) recordDateDraft({ data: f, path: d.path, rawValue: d.text, section: 'Imported from Excel' });
+        // Milestone 67B: the workbook has no cell for the bond / restricted
+        // depository arrangement, so an answer this filing already had stands.
+        // A blank one is read from what the workbook did carry (the G15
+        // waiver date, the bond details) -- otherwise the page would show the
+        // answer those imply while the sidebar kept asking for it.
+        migrateBondDepository(f);
+      },
+    });
+    if(!result.committed){setStatus(prog,'Import cancelled — nothing was changed.');scheduleStatusClear(prog);}
   }catch(e){
     console.error('Initial Inventory import failed:',e);
     setStatus(prog,'✗ Import failed: '+(e&&e.message?e.message:'the file could not be parsed.'));
   }finally{
     input.value='';
   }
-}
-// Extracts the Initial Inventory fields from an already-loaded workbook.
-// Takes the ExcelJS.Workbook directly (not a base64 string) — the previous
-// version round-tripped the whole file through base64 solely to hand it to
-// this function and to cache it via saveTemplate; neither is done
-// anymore (see importExcel above), so there is no longer a buffer to
-// smuggle across, and the raw workbook bytes are not retained past this call.
-// Milestone 73V: the parser's record of which workbook slot each kept guardian
-// came from, keyed by its result (the import sanitizes a copy of that result,
-// so nothing extra is carried into the filing).
-const importedGuardianSlots=new WeakMap();
-function parseInitialInventoryWorkbook(wb){
-  const ws=name=>wb.getWorksheet(name);
-  const rawv=(sheet,addr)=>sheet?unwrapCellValue(sheet.getCell(addr).value):null;
-  const txt=(s,a)=>s?readCellText(s.getCell(a)):'';
-  // Milestone 73G part 1: a text cell is read by the one amount codec
-  // ("(1,000.00)" is -1000, "1,234.56" 1234.56; both used to come in as 0);
-  // text that is not an amount is kept for the export checks to name. A
-  // blank cell is 0, as before.
-  const num=(s,a)=>{const v=rawv(s,a);if(v==null||v==='')return 0;if(typeof v==='number'||typeof v==='string')return amountForStore(v,{blank:0});return Number(v)||0;};
-  // Mirrors annual-accounting/excel.js's gcDate(): a date cell may come back
-  // as a real Date, an Excel serial number, an ISO string, or US-format text
-  // (an older build of this app wrote 'MM/DD/YYYY' text, so re-importing a
-  // file it exported used to hand back '10/01/2026' verbatim, 10 characters
-  // unchanged but not the ISO 'YYYY-MM-DD' every date field elsewhere
-  // expects). Since Milestone 67E every date is written as a serial under a
-  // date format, which ExcelJS hands back as a Date at UTC midnight -- the
-  // first branch below, read by UTC components, so the day cannot shift.
-  const dt=(s,a)=>{
-    const v=rawv(s,a);
-    if(v==null||v==='')return null;
-    if(v instanceof Date)return v.toISOString().substring(0,10);
-    if(typeof v==='number'){const d=new Date((v-25569)*86400*1000);return d.toISOString().substring(0,10);}
-    const str=String(v).trim();
-    let m=str.match(/^(\d{4})-(\d{2})-(\d{2})/); if(m)return `${m[1]}-${m[2]}-${m[3]}`;
-    m=str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/); if(m)return `${m[3]}-${m[1].padStart(2,'0')}-${m[2].padStart(2,'0')}`;
-    m=str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2})$/); if(m){const yy=+m[3];return `${yy<50?2000+yy:1900+yy}-${m[1].padStart(2,'0')}-${m[2].padStart(2,'0')}`;}
-    return null;
-  };
-  const bool=(s,a)=>txt(s,a).toLowerCase()==='yes';
-  const triState=(s,a)=>{const t=txt(s,a).trim().toLowerCase();if(t==='yes')return 'Yes';if(t==='no')return 'No';return '';};
-  // Milestone 60K wrote fractions; Milestone 71C (D10) reads every share cell as one.
-  const pct=(s,a)=>shareFromWorkbookCell(rawv(s,a));
-  const readRows=(pages,reader)=>{const out=[];for(const{name,rows}of pages){const s=ws(name);if(!s)continue;for(const r of rows){const e=reader(s,r);if(e)out.push(e);}}return out;};
-  const si=ws('SUMMARY I ');
-  // Milestone 73V: the workbook slot (0-2) each kept guardian came from, so
-  // the import can move the filing's shared-record links with the rows.
-  const guardianSlots=[];
-  const inv={
-    wardName:txt(si,'C7'),caseNumber:txt(si,'H7'),gid:dt(si,'F7'),county:txt(si,'G3'),
-    guardianName:txt(si,'D23'),attorneyForGuardian:txt(si,'D24'),typeOfGuardianship:txt(si,'D25'),
-    hasSafeDepositBox:triState(si,'D26'),safeDepositBoxFiled:triState(si,'H26'),amendedForm:triState(si,'I8'),
-    scheduleA1:readRows(SCHEDULE_A1_PAGES,(s,r)=>{const desc=txt(s,`C${r}`),val=num(s,`G${r}`);if(!desc&&!val)return null;return{propertyDescription:desc,streetAddress:txt(s,`C${r+1}`),cityStateZip:txt(s,`C${r+2}`),notes:txt(s,`C${r+3}`),residence:triState(s,`E${r}`),income:triState(s,`F${r}`),fullAssetValue:val,wardPercent:pct(s,`H${r}`)}}),
-    scheduleA2:readRows(SCHEDULE_A2_PAGES,(s,r)=>{const name=txt(s,`C${r}`),val=num(s,`F${r}`);if(!name&&!val)return null;return{lenderName:name,lenderAddress:txt(s,`C${r+1}`),lenderCityStateZip:txt(s,`C${r+2}`),accountNumber:txt(s,`C${r+3}`),notes:'',liabilityType:txt(s,`E${r}`)||'Mortgage',fullDebtBalance:val,wardPercent:pct(s,`G${r}`)}}),
-    scheduleB1:readRows(SCHEDULE_B1_PAGES,(s,r)=>{const name=txt(s,`C${r}`),val=num(s,`G${r}`);if(!name&&!val)return null;return{institutionName:name,accountNumber:txt(s,`C${r+1}`),streetAddress:txt(s,`C${r+2}`),cityStateZip:txt(s,`C${r+3}`),restricted:triState(s,`E${r}`),accountType:txt(s,`F${r}`),fullAssetAmount:val,wardPercent:pct(s,`H${r}`)}}),
-    scheduleB2:readRows(SCHEDULE_B2_PAGES,(s,r)=>{const desc=txt(s,`C${r}`),val=num(s,`E${r}`);if(!desc&&!val)return null;return{description:desc,streetAddress:txt(s,`C${r+1}`),cityStateZip:txt(s,`C${r+2}`),valuationMethod:txt(s,`C${r+3}`),fullAssetValue:val,wardPercent:pct(s,`F${r}`),inSafeDepositBox:triState(s,`H${r}`)}}),
-    scheduleB3:readRows(SCHEDULE_B3_PAGES,(s,r)=>{const desc=txt(s,`C${r}`),val=num(s,`F${r}`);if(!desc&&!val)return null;return{description:desc,streetAddress:txt(s,`C${r+1}`),cityStateZip:txt(s,`C${r+2}`),restricted:triState(s,`E${r}`),fullAssetValue:val,wardPercent:pct(s,`G${r}`),inSafeDepositBox:triState(s,`J${r}`)}}),
-    scheduleB4:readRows(SCHEDULE_B4_PAGES,(s,r)=>{const name=txt(s,`C${r}`).trim(),val=num(s,`F${r}`);if(!name||!val)return null;return{lenderName:name,lenderAddress:txt(s,`C${r+1}`),relatedProperty:txt(s,`C${r+2}`),accountNumber:txt(s,`C${r+4}`)||txt(s,`C${r+3}`),liabilityType:txt(s,`E${r}`)||'Loan',fullLiabilityBalance:val,wardPercent:pct(s,`G${r}`)}}),
-    scheduleC1:readRows(SCHEDULE_C1_PAGES,(s,r)=>{const name=txt(s,`C${r}`),val=num(s,`H${r}`);if(!name&&!val)return null;return{payerName:name,payerAddress:txt(s,`C${r+1}`),payerCityStateZip:txt(s,`C${r+2}`),typeOfIncome:txt(s,`E${r}`),frequencyOfPayment:txt(s,`G${r}`)||'Monthly',paymentBasis:txt(s,`E${r+2}`),annualIncomeAmount:val,wardPercent:pct(s,`I${r}`)}}),
-    scheduleC2:readRows(SCHEDULE_C2_PAGES,(s,r)=>{const desc=txt(s,`C${r}`),val=num(s,`F${r}`);if(!desc&&!val)return null;const parts=desc.split(' / ');return{lawsuitDescription:parts[0]||desc,caseNumber:parts[1]||'',courtJurisdiction:txt(s,`C${r+1}`),claimantName:txt(s,`C${r+2}`),claimantAddress:txt(s,`C${r+3}`),claimantCityStateZip:txt(s,`C${r+4}`),dateFiled:dt(s,`E${r}`),amountOfClaim:val,wardPercent:pct(s,`G${r}`)}}),
-    // Milestone 72A: the first line is "defendant / type of action" and the
-    // fourth the case number, as the form instructs. Column B holds the
-    // entry's printed Line #; a workbook exported before 72A wrote the
-    // defendant over it (so it no longer holds a number) and put the case
-    // number after the description on the first line -- read that layout too.
-    scheduleC3:readRows(SCHEDULE_C3_PAGES,(s,r)=>{
-      const first=txt(s,`C${r}`),val=num(s,`F${r}`);
-      if(!first)return null;
-      const common={status:txt(s,`C${r+1}`),courtJurisdiction:txt(s,`C${r+2}`),actionDate:dt(s,`E${r}`),estimatedSettlement:val,wardPercent:pct(s,`G${r}`)};
-      const lineNo=rawv(s,`B${r}`);
-      if(!(typeof lineNo==='number'||/^\d+$/.test(String(lineNo??'').trim()))){
-        const parts=first.split(' / ');
-        return{defendantName:txt(s,`B${r}`),actionDescription:parts[0]||first,caseNumber:parts[1]||'',...common};
-      }
-      const cut=first.indexOf(' / ');
-      return{defendantName:cut<0?first:first.slice(0,cut),actionDescription:cut<0?'':first.slice(cut+3),caseNumber:txt(s,`C${r+3}`),...common};
-    }),
-    scheduleC4:readRows(SCHEDULE_C4_PAGES,(s,r)=>{const name=txt(s,`C${r}`),val=num(s,`I${r}`);if(!name&&!val)return null;return{trustName:name,trusteeName:txt(s,`C${r+1}`),trusteeAddress:txt(s,`C${r+2}`),trusteeCityStateZip:txt(s,`C${r+3}`),dateCreated:dt(s,`E${r}`),accountNumber:txt(s,`F${r}`),trustType:txt(s,`H${r}`)||'Pooled',trustAmount:val,wardPercent:pct(s,`J${r}`)}}),
-    // Milestone 72A: name on the second line, street on the third, as the form
-    // instructs. A workbook exported before 72A has the two swapped and nothing
-    // in it says so; it imports with them swapped, visibly, for the filer to
-    // correct (AGENTS.md section 8 item 2: visible and one-time).
-    scheduleC5:readRows(SCHEDULE_C5_PAGES,(s,r)=>{const desc=txt(s,`C${r}`),val=num(s,`F${r}`);if(!desc&&!val)return null;return{assetDescription:desc,ownerName:txt(s,`C${r+1}`),ownerAddress:txt(s,`C${r+2}`),ownerCityStateZip:txt(s,`C${r+3}`),relationshipToWard:txt(s,`E${r}`),totalAssetValue:val,jointOwnerPercent:pct(s,`G${r}`)}}),
-    // Milestone 72A: each field is read from its box. A workbook exported
-    // before 72A holds the value on the caption row above it instead, so an
-    // empty box falls back to that cell -- unless it still holds the form's
-    // own caption, which is never a value.
-    guardians:(()=>{const p3=ws('PART III');const gs=[];for(let i=0;i<3;i++){
-      const g={};
-      for(const f of partIIIGuardianCells(i)){
-        const read=(a)=>f.date?dt(p3,a):txt(p3,a);
-        let v=read(f.box);
-        if(!v&&f.caption){const shown=txt(p3,f.caption);if(shown&&!isPrintedCaption(shown,f.text))v=read(f.caption);}
-        g[f.key]=v||(f.date?null:'');
-      }
-      if(!g.name&&i>0)continue;
-      gs.push(g);
-      guardianSlots.push(i);
-    }return gs.length?gs:[mk.guardian()];})(),
-    // The same input-box addresses doSaveExcel() writes. Both sides used to
-    // read and write the caption row instead, together, which is why the
-    // round trip agreed with itself while the filed form was wrong.
-    preparer:(()=>{const p4=ws('PART IV');return{signatureDate:dt(p4,'G13'),asOfDate:dt(p4,'H9'),name:txt(p4,'I13'),ssnEin:txt(p4,'B15'),streetAddress:txt(p4,'I15'),phone:txt(p4,'B17'),cityStateZip:txt(p4,'I17')};})(),
-    // name comes from SUMMARY I D24, the cell the form's own I26 formula
-    // reads, rather than from a formula cell's cached result.
-    attorney:(()=>{const p4=ws('PART IV');return{signatureDate:dt(p4,'G26'),filingDate:dt(p4,'C21'),name:txt(si,'D24'),barNumber:txt(p4,'B28'),streetAddress:txt(p4,'I28'),phone:txt(p4,'B30'),cityStateZip:txt(p4,'I30')};})(),
-    // Milestone 64A-1, item 1.1: bondAmount is now stored numeric (matching
-    // every other currency field's num() reader), not the display string
-    // txt() previously returned.
-    // num() hands a blank G26 back as 0; a blank cell is a blank field, not a
-    // $0 bond (2026-09-24).
-    bondAmount:bondAmountFromCell(num(ws('PART V'),'G26')),bondPeriodFrom:dt(ws('PART V'),'E27'),bondPeriodTo:dt(ws('PART V'),'G27'),bondingCompany:txt(ws('PART V'),'D28'),bondWaivedDate:dt(ws('PART V'),'G15')||'',
-    serviceRecipients:(()=>{const p6=ws('PART VI');const all=[{name:txt(p6,'B13'),address:txt(p6,'B14'),cityStateZip:txt(p6,'B15')},{name:txt(p6,'H13'),address:txt(p6,'H14'),cityStateZip:txt(p6,'H15')},{name:txt(p6,'B19'),address:txt(p6,'B20'),cityStateZip:txt(p6,'B21')},{name:txt(p6,'H19'),address:txt(p6,'H20'),cityStateZip:txt(p6,'H21')}];const filtered=all.filter(r=>r.name||r.address||r.cityStateZip);return filtered.length>0?filtered:[mk.recipient()];})(),
-    // Milestone 57B: imported as unanswered, never inferred. A blank PART VI
-    // means the workbook carries no recipients; it does NOT mean the filer
-    // attested that none are required. That is the section 4 tri-state rule,
-    // and the same one-way reasoning bond-depository.js keeps for the bond
-    // arrangement (Milestone 67B): an absent answer is never coerced.
-    serviceNoRecipients:'',
-    serviceDate:dt(ws('PART VI'),'G25'),
-    serviceIndicateIf:txt(ws('PART VI'),'J25'),
-    // Milestone 72H: the certificate's name is the workbook's formula link to
-    // the Cover, as D-2's is, so nothing is kept for it; its other details are
-    // compared with D-2's just below.
-    serviceAttorney:(()=>{const p6=ws('PART VI');return{signatureDate:dt(p6,'G27'),name:'',barNumber:txt(p6,'B29'),streetAddress:txt(p6,'J29'),phone:txt(p6,'B31'),cityStateZip:txt(p6,'J31')};})()
-  };
-  // Milestone 72H, step 8: a workbook exported before 72H can hold certificate
-  // details that differ from D-2's. A blank D-2 box is filled from the
-  // certificate's; one that differs is kept as an old detail, shown on D-5
-  // with "Discard old details"; the same, or a blank certificate box, keeps
-  // nothing. A workbook exported since holds the same values in both.
-  {
-    const keys=['barNumber','streetAddress','phone','cityStateZip'];
-    const pick=(o)=>Object.fromEntries(keys.map(k=>[k,o[k]||'']));
-    const cmp=compareImportedCertificate(pick(inv.attorney),pick(inv.serviceAttorney));
-    Object.assign(inv.attorney,cmp.attorney);
-    Object.assign(inv.serviceAttorney,cmp.old);
-  }
-  capitalizeImportedFields(inv);
-  importedGuardianSlots.set(inv,guardianSlots);
-  return inv;
 }

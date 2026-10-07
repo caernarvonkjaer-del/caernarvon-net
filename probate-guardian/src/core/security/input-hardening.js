@@ -58,6 +58,22 @@ export function sanitizeInput(s){
   return cleaned;
 }
 
+// Milestone 73T part 2 (decision 73T-3): text read from an imported workbook
+// keeps the quotation mark typing keeps -- the Clerk's own example is
+// `30" Flat screen TV` -- and loses what sanitizeInput() removes otherwise
+// (< > and backticks, script URLs, inline handlers). Used by the workbook
+// contract's import (src/core/excel/workbook-contract/index.js) for each form
+// as it moves onto it.
+export function sanitizeImportedText(s){
+  if(!s)return s;
+  if(typeof s==='string'&&s.startsWith('data:')&&BASE64_DATA_URL.test(s))return s;
+  let cleaned=String(s);
+  cleaned=cleaned.replace(/[<>`]/g,'');
+  cleaned=cleaned.replace(/javascript:/gi,'');
+  cleaned=cleaned.replace(/on\w+=/gi,'');
+  return cleaned;
+}
+
 // Validate field value for security and format
 export function validateSecurityInput(fieldName,value){
   const v=String(value||'');

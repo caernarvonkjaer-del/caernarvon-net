@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import {
   freshStartNoPassword, createWard, createSimplifiedWard,
-  fillMinimalValidGuardianWard, fillMinimalValidSimplifiedWard, fillMinimalValidAnnualWard, autoAcceptDynDialogs,
+  fillMinimalValidGuardianWard, fillMinimalValidSimplifiedWard, fillMinimalValidAnnualWard, autoAcceptDynDialogs, importWorkbookConfirmed,
 } from './support/target';
 import { readAll } from './support/stream';
 import {
@@ -13,7 +13,7 @@ import {
   completenessProblems, templateValue, DECIDED_OVERWRITES, type FormName, type Write,
 } from './support/workbook-vs-template';
 import {
-  inventoryManifest, annualManifest, simplifiedManifest, codedRuns, codeFinite, setPath,
+  inventoryManifest, annualManifest, simplifiedManifest, codedRuns, codeFinite, finiteExpected, setPath,
   type Manifest, type Coding,
 } from './support/export-manifests';
 
@@ -266,7 +266,7 @@ test.describe('Initial Inventory fills its boxes, not its captions', () => {
 
     await createWard(page, 'Placement Import Target', 'guardian');
     await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
-    await page.setInputFiles('input[type="file"][accept=".xlsx"]', file);
+    await importWorkbookConfirmed(page, file);
     await page.waitForFunction(() => ((window as any).GuardianForms.testing.snapshot().filing?.bondAmount || '') !== '', undefined, { timeout: 20_000 });
 
     const back = await page.evaluate(() => {
@@ -380,7 +380,7 @@ for (const g of GUARDED) {
     let template: any;
     let writes: Write[] = [];
 
-    const finiteExpectations = (run: number) => manifest.finite.map((f) => ({ sheet: f.sheet, cell: f.cell, value: coding.answer(f, run), path: `${f.path} (export ${run + 1} of ${runs})` }));
+    const finiteExpectations = (run: number) => manifest.finite.map((f) => ({ sheet: f.sheet, cell: f.cell, value: finiteExpected(manifest.finite, coding, f, run), path: `${f.path} (export ${run + 1} of ${runs})` }));
 
     test.beforeAll(async ({ browser }) => {
       test.setTimeout(g.setup);
@@ -443,8 +443,10 @@ async function importInto(page: Page, form: 'guardian' | 'annual', bytes: Buffer
   fs.writeFileSync(file, bytes);
   await createWard(page, name, form);
   await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
+  // Milestone 73T part 2: the Inventory's import confirms and then gives a notice.
+  if (form === 'guardian') await importWorkbookConfirmed(page, file);
   const dialogs = autoAcceptDynDialogs(page);
-  await page.setInputFiles('input[type="file"][accept=".xlsx"]', file);
+  if (form !== 'guardian') await page.setInputFiles('input[type="file"][accept=".xlsx"]', file);
   await page.waitForFunction((n) => {
     const d = (window as any).GuardianForms.testing.snapshot().filing;
     return d && d.wardName && d.wardName !== n;

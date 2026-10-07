@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
-import { readRepoSource, sliceBalancedFunction } from './support/source-slice.js';
 import { setDateCell, toExcelSerialDate } from '../../src/core/excel/excel-engine.js';
+import { codecs } from '../../src/core/excel/workbook-contract/codecs.js';
 
 // Milestone 57 review: Guardian Inventory's importer dt() only handled a Date
 // object or an Excel serial number. A date string fell through to
@@ -26,19 +26,12 @@ import { setDateCell, toExcelSerialDate } from '../../src/core/excel/excel-engin
 // test below pins THAT round trip, across the year boundary, in place of the
 // ISO-text one it used to pin.
 //
-// dt() is not exported (it is local to parseInitialInventoryWorkbook() in
-// guardian-inventory/excel.js), so it is sliced out of the real source and
-// evaluated, the same technique bar-number.spec.js established for the
-// classic monolith's closures (support/source-slice.js lists this use).
-const EXCEL_FILE = 'src/features/guardian-inventory/excel.js';
-
+// Milestone 73T part 2: the importer's dt() closure became the Inventory's
+// workbook-contract date reader (src/core/excel/workbook-contract/codecs.js,
+// codecs.date -- isoDateFromCell()), the same rules, and is tested here
+// directly; dt(sheet, address) is a cell lookup in front of it.
 function loadDt() {
-  const source = readRepoSource(EXCEL_FILE);
-  const body = sliceBalancedFunction(source, 'const dt=(s,a)=>{');
-  expect(body, 'dt not found (or braces unbalanced) in ' + EXCEL_FILE).toBeTruthy();
-  // dt()'s only external reference is rawv(s,a); stub it as a plain lookup
-  // so the sheet/cell shape ExcelJS normally provides doesn't need mocking.
-  return new Function('rawv', `${body}\nreturn dt;`)((s, a) => s[a]);
+  return (sheet, addr) => codecs.date.read({ value: sheet[addr] });
 }
 
 describe('Guardian Inventory Excel date round-trip (gid, dateFiled, actionDate, dateCreated)', () => {

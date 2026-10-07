@@ -6,9 +6,9 @@
 far: 73U (2026-10-04, `5b8849b`), 73V (2026-10-05, `8b96aa3`), 73C
 (2026-10-05, `861b6a9`, brought forward from its place in the build order at the
 requester's choice) 73D (2026-10-05, `c8e84fe`, likewise), 73J part 1 (2026-10-05, `d819c4a`),
-73F part 1 (2026-10-06, `5e9e17b`), 73A (2026-10-06, `83352d0`), 73F part 2 (2026-10-06, `d01edd4`), 73G part 1 (2026-10-06, `69a1b46`), 73E part 1 (2026-10-06, `8e02051`), 73F part 3 (2026-10-06, `67fc66c`), 73I (2026-10-06, `56a7c30`) and 73T part 1 (2026-10-07), each approved by name.**
+73F part 1 (2026-10-06, `5e9e17b`), 73A (2026-10-06, `83352d0`), 73F part 2 (2026-10-06, `d01edd4`), 73G part 1 (2026-10-06, `69a1b46`), 73E part 1 (2026-10-06, `8e02051`), 73F part 3 (2026-10-06, `67fc66c`), 73I (2026-10-06, `56a7c30`), 73T part 1 (2026-10-07, `4cae1e7`) and 73T part 2 (2026-10-07), each approved by name.**
 **Approved and not yet built** (2026-10-07, one batch, built in this order
-with a full regression midway and at the end): 73T parts 2–4, 73M (with
+with a full regression midway and at the end): 73T parts 3–4, 73M (with
 74C), 73B (then 74P), 73O part 2 (with 74F), 73G part 2 (with 74H), 73H and
 73S. Nothing else is approved. Building any other item, or any part of a
 split item, needs the requester's named approval of that item or part
@@ -2861,6 +2861,30 @@ and the comments describing the sheet as empty retire (73T-2; practice).
 Imported text keeps `"`, as typing does; `<`, `>` and backticks are still
 removed (73T-3).
 
+*Found while building parts 1 and 2, settled by the requester 2026-10-07:*
+
+- **The B-4 subtotal formulas: correct all 301 cells.** Read with a parser,
+  the Clerk's register pages p2-p19 carry two defects of the kind 73T-1
+  approved correcting: the "Taxes: Intangible" subtotal ignores the page's
+  first payment row on p2, p4-p11 and p13-p19, and the "Utilities" subtotal
+  skips the second payment row on p8 (shifted by one row) and the first on
+  p12. This repo's p20-p51 (copied from p8-p11 by
+  `scripts/extend-annual-b4-blocks.py`) carry them too: 301 cells, each
+  corrected to test its own column's payment row. The office is told about
+  pages 2-19 of its published copy. Built in part 3.
+- **Boxes locked in the Clerk's own workbooks** (A-1, A-2, B-4, C-1, C-4 and
+  C-5 page 3 on the Inventory; D-5 on the Annual): recorded in the contract
+  check, the app keeps filling them, and the office is told.
+- **C-2's first line** splits at the last " / ", only before a case number
+  with a digit (row 12).
+- **The Simplified's Part II blank amounts** join row 13, fixed in part 4.
+- **"Amended " in the Annual's filing-type box** (row 4; Pinellas Clerk
+  practice, as the requester answered for the office): the workbook keeps
+  the type -- Annual, Final or Trust -- in PART I's H4 and the amended answer
+  in "Amended Form?" (J6). An imported H4 of "Amended " is read as an
+  amended filing of the filing's own type (J6 "Yes"), not as an Annual.
+  Built in part 3.
+
 ### Design — part 1: the workbook contract and its checks
 
 A typed **workbook contract** per form replaces the "field → cell" list
@@ -2990,6 +3014,97 @@ browser); the hand-filled check on the Annual's Text-cell dates and its
 **Not run:** the full regression (the batch's mid-batch run covers it);
 `check:types` (no file in its scope); `verify:data-model` (no stored field
 changed).
+
+### Build record, part 2 — BUILT 2026-10-07 (approved by name by the requester, 2026-10-07)
+
+**What changed for a filer, on the Initial Inventory:**
+
+- **Import asks first.** Choosing a workbook shows one confirmation naming
+  what it replaces, a different ward's or another type's workbook, and any
+  shared-record question; **Cancel changes nothing and saves nothing**.
+  Import replaces the workbook's fields in one step, with one save and one
+  Activity Log entry, and then a notice of what was kept and what came back
+  as the workbook holds it (a vehicle as an ordinary item, C-2's claimant
+  and attorney as one name, A-2's Notes blank until 73M). Before, the
+  workbook was applied at once, with no question.
+- **What the workbook can't carry is kept for the same person**, decided by
+  73E's rule (the same name ignoring case, spaces and punctuation; a near
+  match is asked): the guardians' and the attorney's emails, signature
+  choices and stamps, "prepared this filing" (by person now, not by
+  position -- row 19), and the certificate's signature.
+- **Rows 6, 7, 9, 11, 12, 14, 15, 16, 17 and 19, fixed:**
+  - 6: D-2 keeps its own attorney -- name, emails and stamp -- when the
+    Cover's "Attorney for Guardian" names someone else; a blank D-2 takes the
+    Cover's name. The Clerk's I26 link is untouched.
+  - 7: a B-4 creditor with a $0 or blank balance, or with no lender, comes
+    back, as every other schedule's row does.
+  - 9: an outside-preparer block left blank (the export leaves it blank while
+    a guardian or the attorney is the preparer) keeps the filing's preparer;
+    one that names a preparer still clears the ticks (Milestone 67A).
+  - 11: imported text keeps its quotation marks (`30" Flat screen TV`), as
+    typing does (73T-3); `<`, `>` and backticks are still removed.
+  - 12: C-2's first line splits at the last " / ", and only when what follows
+    has a digit, as a case number does -- "Foreclosure / Lien" returns whole
+    (the requester's choice, 2026-10-07). C-3's first line keeps the form's
+    own "defendant / action" order, split at the first " / "; a workbook
+    from before Milestone 72A, whose first line is "action / case number",
+    is read by C-2's rule.
+  - 14: "no recipients are required" survives an import; a "Yes" that the
+    workbook contradicts by listing recipients goes back to unanswered.
+  - 15: the safe-deposit answer also goes to Part V's own box (H12) -- the
+    app's D-3 asks the question in Part V's words -- and is read from there
+    when the Cover's is blank; "Inventory filed?" (SUMMARY I H26) is written
+    blank for a ward with no box, where the Clerk's form pre-fills "Yes".
+  - 16: the bond block shows what the chosen arrangement shows, as the PDF
+    does: the bond details for bond only, bond and depository, or no answer;
+    the waiver order's date for a waived bond. The filing keeps a hidden
+    value, and a blank box on import leaves it alone.
+  - 17: the apostrophe the export puts before text starting = + - @ (so
+    Excel shows it as text) comes off on import.
+  - 19: the import formats only the fields typing formats (C-4's trust and
+    trustee names and C-5's owner, typed as entered, used to be re-cased); a
+    date cell holding text no reader understands (a free-text date from
+    before Milestone 67B) comes back as a date still being typed -- shown in
+    its box and named at Preview -- instead of blank.
+
+**How:** the Inventory's exporter writes, and its importer reads, its
+workbook contract (`src/core/excel/workbook-contract/guardian.js`);
+`src/features/guardian-inventory/excel.js` keeps only the export's checks and
+pruning and the import's file handling. The import's text passes, a
+fill-blank-only field, the slot each kept guardian came from and unreadable
+dates come from `readWorkbookDraft()` (`workbook-contract/index.js`). 73E's
+transaction (`import-transaction.js`) learned three things the Inventory
+needs: a nested record (attorney, preparer, certificate attorney) takes only
+the fields the workbook carries; a different person's uncarried details are
+cleared by dotted path; rows that move up past a skipped slot keep their
+person's link and stamp (73V's remap, now inside the transaction).
+
+**Left to the items that own them:** 73B's blank dropdowns (the
+contract still fills A-2's, B-4's, C-1's and C-4's type when blank), 73M's
+A-2 Notes (kept on import there) and the import-only bond guess.
+
+**Tests:**
+
+- `tests/unit/workbook-contract.spec.js`: checks 3 and 4 now import as the
+  app does and apply the draft as the transaction commits it; a case for each
+  fixed row, from one export of a filing showing every case. **Red-first:**
+  with part 1's contract in place, all eleven row cases fail, each for its
+  row's reason (D-2's name replaced; both creditors dropped; the hidden
+  preparer replaced; the quotation mark stripped; "Foreclosure / Lien" split;
+  the answer cleared; H12 empty; the hidden bond details filed; the
+  apostrophe kept; the trust names re-cased; the date blank).
+- `tests/unit/import-transaction.spec.js`: nested records, dotted-path
+  clearing, rows past a skipped slot. **Red-first:** all three fail on part
+  1's engine.
+- New `tests/e2e/import-confirm.spec.ts`: the real Import control -- the
+  confirmation, Cancel changing and saving nothing, Import saving and
+  logging once with its notice.
+- `export-manifests.ts`: H12 shares the safe-deposit answer, H26 only with
+  a box, G15 empty for a "bond only" filing. Eight browser specs that import
+  an Inventory workbook answer the confirmation: six through the new
+  `importWorkbookConfirmed()` (`support/target.ts`), and two shared import
+  helpers now wait until the import has finished, its notice dismissed.
+- **Browser specs: 17 files, 103 tests, all passed** (18.3 min on D:): the new spec, the transaction's dialog spec, and every spec that exports or imports an Inventory workbook (the export guard, mount, page pruning, schedule layout, bond, Ward's %, certificates, links following rows, signatures kept, preparer, B-2 vehicles, date cells, defined names, export buttons). **Red-first:** with the Inventory's Excel module set aside, the new spec fails waiting for the confirmation -- the workbook is applied at once. Full unit suite: 2,828 passed, after six source-scanning guards were brought to the new shape (the write-target guard now reads the Inventory's targets from its contract -- every address, so its old blind spot is gone for this form -- and lists PART III F8, Guardian #1's name over the Cover link, decided 2026-10-01); `check:types` clean. Full regression: the batch's mid-batch run.
 
 ---
 

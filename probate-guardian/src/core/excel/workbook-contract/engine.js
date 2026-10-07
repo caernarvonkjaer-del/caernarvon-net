@@ -36,6 +36,7 @@
 // workbook-contract.spec.js proves each contract writes exactly what its
 // exporter writes.
 import { setCell as engineSetCell, setDateCell as engineSetDateCell } from '../excel-engine.js';
+import { unwrapCellValue } from '../cell-reader.js';
 
 export function getPath(obj, dotted) {
   return String(dotted).split('.').reduce((v, k) => (v == null ? undefined : v[k]), obj);
@@ -121,18 +122,32 @@ export function writeContract(workbook, contract, filing, ctx = {}, io = { setCe
   }
 }
 
-function readField(workbook, entry) {
+const blank = (v) => v === '' || v == null;
+
+// Milestone 73T part 2: a date cell holding text no reader understands (a
+// legacy free-text date) -- reported, so the import brings it back as a date
+// still being typed, visible to the filer, rather than as a blank.
+function noteUnreadableDate(report, codec, cell, value, path) {
+  if (!report || codec.kind !== 'date' || !blank(value)) return;
+  const raw = unwrapCellValue(cell ? cell.value : null);
+  if (typeof raw === 'string' && raw.trim()) report.unreadableDates.push({ path, text: raw.trim() });
+}
+
+function readField(workbook, entry, report) {
   const ws = workbook.getWorksheet(entry.sheet);
   if (!ws) return { present: false };
-  let v = entry.codec.read(ws.getCell(entry.cell));
+  let cell = ws.getCell(entry.cell);
+  let v = entry.codec.read(cell);
   for (const f of entry.fallback || []) {
-    if (v !== '' && v != null) break;
+    if (!blank(v)) break;
     const fws = workbook.getWorksheet(f.sheet || entry.sheet);
     if (!fws) continue;
-    const cell = fws.getCell(f.cell);
-    if (f.unless && f.unless(cell)) continue;
-    v = (f.codec || entry.codec).read(cell);
+    const fcell = fws.getCell(f.cell);
+    if (f.unless && f.unless(fcell)) continue;
+    cell = fcell;
+    v = (f.codec || entry.codec).read(fcell);
   }
+  noteUnreadableDate(report, entry.codec, cell, v, entry.path);
   return { present: true, value: v };
 }
 
@@ -140,14 +155,19 @@ function readField(workbook, entry) {
  * Reads `workbook` into a detached draft by the contract: the filing's
  * fields as the workbook has them, nothing more. A sheet the workbook
  * doesn't have contributes nothing.
+ *
+ * `report`, when given, collects what the draft alone can't say:
+ * `rowSources` -- for a slots list that skipped an empty slot, the slot each
+ * kept row came from -- and `unreadableDates`, [{ path, text }].
  */
-export function readContract(workbook, contract, ctx = {}) {
+export function readContract(workbook, contract, ctx = {}, report = null) {
   const draft = {};
+  if (report) { report.rowSources = report.rowSources || {}; report.unreadableDates = report.unreadableDates || []; }
   for (const entry of contract.entries) {
     if (!imports(entry.dir)) continue;
     if (entry.kind === 'field') {
-      const r = readField(workbook, entry);
-      if (!r.present || (entry.keepIfBlank && (r.value === '' || r.value == null))) continue;
+      const r = readField(workbook, entry, report);
+      if (!r.present || (entry.keepIfBlank && blank(r.value))) continue;
       setPath(draft, entry.path, entry.readAs ? entry.readAs(r.value, draft) : r.value);
     } else if (entry.kind === 'constant') {
       setPath(draft, entry.path, entry.value);
@@ -155,23 +175,32 @@ export function readContract(workbook, contract, ctx = {}) {
       const ws = workbook.getWorksheet(entry.sheet);
       if (!ws) continue;
       const rows = [];
+      const sources = [];
       entry.slots.forEach((cells, i) => {
         const row = {};
+        const dates = [];
         for (const [field, addr] of Object.entries(cells)) {
           const spec = entry.fields[field];
           if (!imports(perSlot(spec.dir, i))) continue;
-          let v = spec.codec.read(ws.getCell(addr));
+          let cell = ws.getCell(addr);
+          let v = spec.codec.read(cell);
           for (const f of (spec.fallback ? spec.fallback(i) : [])) {
-            if (v !== '' && v != null) break;
-            const cell = ws.getCell(f.cell);
-            if (f.unless && f.unless(cell)) continue;
-            v = spec.codec.read(cell);
+            if (!blank(v)) break;
+            const fcell = ws.getCell(f.cell);
+            if (f.unless && f.unless(fcell)) continue;
+            cell = fcell;
+            v = spec.codec.read(fcell);
           }
           row[field] = v;
+          dates.push([spec.codec, cell, v, field]);
         }
-        if (!entry.keep || entry.keep(row, i)) rows.push(row);
+        if (entry.keep && !entry.keep(row, i)) return;
+        for (const [codec, cell, v, field] of dates) noteUnreadableDate(report, codec, cell, v, `${entry.path}.${rows.length}.${field}`);
+        rows.push(row);
+        sources.push(i);
       });
       setPath(draft, entry.path, rows);
+      if (report && sources.some((s, k) => s !== k)) report.rowSources[entry.path] = sources;
     } else if (entry.kind === 'rows') {
       const out = [];
       let any = false;
@@ -181,21 +210,25 @@ export function readContract(workbook, contract, ctx = {}) {
         any = true;
         for (const r of page.rows) {
           const row = {};
+          const dates = [];
           for (const c of entry.columns) {
             if (!imports(c.dir)) continue;
-            let v = c.codec.read(ws.getCell(cellRef(c.col, r + (c.line || 0))));
+            const cell = ws.getCell(cellRef(c.col, r + (c.line || 0)));
+            let v = c.codec.read(cell);
             // An older line the field used to be written on (Inventory B-4's
             // account number, before Milestone 60K).
             for (const f of c.fallback || []) {
-              if (v !== '' && v != null) break;
+              if (!blank(v)) break;
               v = c.codec.read(ws.getCell(cellRef(f.col || c.col, r + (f.line || 0))));
             }
             row[c.field] = v;
+            dates.push([c.codec, cell, v, c.field]);
           }
           for (const x of entry.combined || []) {
             Object.assign(row, x.split(x.codec.read(ws.getCell(cellRef(x.col, r + (x.line || 0)))), { sheet: ws, row: r }));
           }
           if (!entry.present(row, { sheet: ws, row: r })) continue;
+          for (const [codec, cell, v, field] of dates) noteUnreadableDate(report, codec, cell, v, `${entry.path}.${out.length}.${field}`);
           out.push(entry.finish ? entry.finish(row) : row);
         }
       }

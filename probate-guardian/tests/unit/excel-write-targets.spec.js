@@ -1,6 +1,11 @@
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { templateSheets } from './support/template-cells.js';
+
+vi.mock('../../src/core/navigation/router.js', () => ({ navigate: () => {}, renderPage: () => {}, getCurrentPage: () => '/' }));
+globalThis.window = globalThis.window || globalThis;
+const { contractTargets } = await import('../../src/core/excel/workbook-contract/engine.js');
+const { GUARDIAN_CONTRACT } = await import('../../src/core/excel/workbook-contract/guardian.js');
 
 // Every setCell() target in every exporter, checked against the court's
 // template. This is the guard for a defect class that shipped three times.
@@ -34,6 +39,12 @@ import { templateSheets } from './support/template-cells.js';
 // fifteen of the form's captions for its whole life with this test passing.
 // tests/e2e/excel-form-field-placement.spec.ts closes the gap: it checks every
 // write the exporters make, however its address is built, in the exported file.
+//
+// Milestone 73T part 2: an exporter that writes through its workbook contract
+// (src/core/excel/workbook-contract/) is read from the contract instead --
+// every address it can write, the built ones included, so for those forms the
+// blind spot is gone. The Inventory's is the first.
+const CONTRACT_EXPORTERS = { guardian: GUARDIAN_CONTRACT };
 
 const EXPORTERS = [
   ['annual', 'src/features/annual-accounting/excel.js'],
@@ -54,6 +65,11 @@ const ALLOWED = new Map([
   ['guardian|SUMMARY I |I8', 'amended form: dropdown default'],
   ['guardian|SUMMARY I |D26', 'safe deposit box: dropdown default'],
   ['guardian|SUMMARY I |H26', 'safe deposit box filed: dropdown default'],
+  // Guardian #1's name box is the form's own ='SUMMARY I '!D23. DECIDED
+  // 2026-10-01: written over, as the Annual's F25 is, with the same advisory
+  // when the two differ. Invisible here until 73T part 2 read the Inventory
+  // from its contract (the PART III loop built its addresses).
+  ['guardian|PART III|F8', 'guardian 1 name: form links it to the Cover; overwrite allowed (2026-10-01), advisory on divergence'],
   // The one cell the court's form computes for itself that the app still
   // writes a literal over. DECIDED 2026-09-19 (Alan, by name): conform to the
   // form, allow the overwrite, warn on it -- src/core/filing/form-derived-
@@ -75,7 +91,10 @@ const ALLOWED = new Map([
  * string writer used to, so it is policed the same way -- a date written
  * onto a caption or a formula is no less a defect for being a real date.
  */
-function writeTargets(jsPath) {
+function writeTargets(jsPath, tpl) {
+  if (CONTRACT_EXPORTERS[tpl]) {
+    return contractTargets(CONTRACT_EXPORTERS[tpl]).filter((t) => t.dir !== 'import').map((t) => ({ sheet: t.sheet, cell: t.cell, line: t.path }));
+  }
   const src = readFileSync(jsPath, 'utf8');
   const varSheet = new Map();
   for (const m of src.matchAll(/(?:const|let)\s+(\w+)\s*=\s*workbook\.getWorksheet\(\s*'([^']+)'\s*\)/g)) {
@@ -94,7 +113,7 @@ describe.each(EXPORTERS)('%s exporter write targets', (tpl, jsPath) => {
   test('never write onto a label, a formula, or a covered merge cell', async () => {
     const sheets = await templateSheets(tpl);
     const offences = [];
-    for (const { sheet, cell, line } of writeTargets(jsPath)) {
+    for (const { sheet, cell, line } of writeTargets(jsPath, tpl)) {
       if (ALLOWED.has(`${tpl}|${sheet}|${cell}`)) continue;
       const info = sheets.get(sheet);
       if (!info) {
@@ -123,7 +142,7 @@ describe('the exceptions list itself', () => {
   test('every entry names a target the exporter still writes', async () => {
     const written = new Set();
     for (const [tpl, jsPath] of EXPORTERS) {
-      for (const { sheet, cell } of writeTargets(jsPath)) written.add(`${tpl}|${sheet}|${cell}`);
+      for (const { sheet, cell } of writeTargets(jsPath, tpl)) written.add(`${tpl}|${sheet}|${cell}`);
     }
     const stale = [...ALLOWED.keys()].filter((k) => !written.has(k));
     expect(stale, 'allowances kept for writes that no longer happen').toEqual([]);

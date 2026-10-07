@@ -2,7 +2,7 @@ import { test, expect, type Page, type Locator } from '@playwright/test';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { freshStartNoPassword, createWard, fillMinimalValidGuardianWard, fillMinimalValidAnnualWard, dismissScheduleDocPrompt, acceptDynDialog } from './support/target';
+import { freshStartNoPassword, createWard, fillMinimalValidGuardianWard, fillMinimalValidAnnualWard, dismissScheduleDocPrompt, acceptDynDialog, importWorkbookConfirmed } from './support/target';
 import { readAll } from './support/stream';
 
 // Milestone 71C. Every share field was a money field: 150 was accepted (the
@@ -165,7 +165,7 @@ test.describe('Milestone 71C: a share is a percentage from 0 to 100', () => {
     await exportExcelWithOverride(page, '[data-inventory-action="save-excel"]', inventoryFile);
     await createWard(page, 'Percent Inventory Import', 'guardian');
     await navigate(page, '/');
-    await page.setInputFiles('input[type="file"][accept=".xlsx"]', inventoryFile);
+    await importWorkbookConfirmed(page, inventoryFile);
     await page.waitForFunction(() => ((window as any).GuardianForms.testing.field('scheduleA1') || []).length === 2, undefined, { timeout: 20_000 });
     expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('scheduleA1').map((r: any) => r.wardPercent))).toEqual([150, -10]);
     expect(await issues(page)).toContain("A-1 row 1 — Ward's % must be between 0 and 100.");

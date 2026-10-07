@@ -32,6 +32,8 @@ async function importWorkbook(page: Page, bytes: Buffer, until: () => Promise<bo
   await page.setInputFiles('input[type="file"][accept=".xlsx"]', file);
   await expect.poll(() => field(page, 'wardName'), { timeout: 30_000 }).not.toBe('Import Pending');
   await expect.poll(until, { timeout: 30_000 }).toBe(true);
+  // Milestone 73T part 2: finished, its notice dismissed -- the importer empties the file box last.
+  await expect.poll(() => page.evaluate(() => !(document.querySelector('input[type="file"][accept=".xlsx"]') as HTMLInputElement | null)?.files?.length), { timeout: 30_000 }).toBe(true);
   dialogs.stop();
 }
 

@@ -21,9 +21,15 @@
 //      are not always the app's (`handFilledBoxes`) -- none in a locked box or
 //      a formula box, which holds what Excel computes; saved, opened and read.
 //
-// Where today's mapping still loses or misplaces something, the 73T row and
-// the part that fixes it are listed below. Each listed case must still
-// happen: the part that fixes one removes it from here.
+// Where a mapping still loses or misplaces something, the 73T row and the
+// part that fixes it are listed below. Each listed case must still happen:
+// the part that fixes one removes it from here. Checks 3 and 4 import the way
+// the app does (workbook-contract/index.js's readWorkbookDraft(), its text
+// passes included) and apply the draft as 73E's transaction commits it, so a
+// field the workbook has no box for is kept, not lost.
+//
+// Milestone 73T part 2: the Inventory runs on its contract; its fixed rows
+// have cases of their own at the end.
 import { beforeAll, describe, expect, test, vi } from 'vitest';
 
 vi.mock('../../src/core/navigation/router.js', () => ({ navigate: () => {}, renderPage: () => {}, getCurrentPage: () => '/' }));
@@ -36,6 +42,10 @@ const { writeContract, readContract, contractTargets, getPath, setPath } = await
 const { GUARDIAN_CONTRACT } = await import('../../src/core/excel/workbook-contract/guardian.js');
 const { ANNUAL_CONTRACT } = await import('../../src/core/excel/workbook-contract/annual.js');
 const { SIMPLIFIED_CONTRACT } = await import('../../src/core/excel/workbook-contract/simplified.js');
+const contractIndex = await import('../../src/core/excel/workbook-contract/index.js');
+const { partIIIGuardianCells } = await import('../../src/core/excel/guardian-inventory-pages.js');
+const partIIINameBox = (i) => partIIIGuardianCells(i).find((f) => f.key === 'name').box;
+const { sameName } = await import('../../src/core/excel/import-keep.js');
 const manifests = await import('../e2e/support/export-manifests.ts');
 const fixtures = await import('../e2e/support/fixtures.ts');
 
@@ -70,6 +80,33 @@ function cellValue(cell) {
 }
 const same = (a, b) => (typeof a === 'number' && typeof b === 'number' ? Math.abs(a - b) < 1e-9 : a === b);
 
+// A draft applied as 73E's transaction commits it (import-transaction.js's
+// commitImport()): the filing's rows first lined up with the rows the draft's
+// came from; a nested record takes only the fields the draft carries; a
+// guardian row of the same person keeps what the workbook can't carry.
+function applyDraft(filing, draft, rowSources = {}) {
+  const out = json(filing);
+  const isRec = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
+  for (const [list, sources] of Object.entries(rowSources || {})) out[list] = sources.map((i) => (out[list] || [])[i]);
+  for (const [k, v] of Object.entries(draft)) {
+    if (k === 'guardians' && Array.isArray(v)) {
+      out[k] = v.map((row, i) => { const old = (out[k] || [])[i]; return old && sameName(old.name, row.name) ? { ...old, ...row } : row; });
+    } else out[k] = isRec(v) && isRec(out[k]) ? { ...out[k], ...v } : v;
+  }
+  return out;
+}
+
+// A saved workbook, opened and imported into `filing` as the app does.
+function importInto(workbook, form, ctx, filing) {
+  const { draft, rowSources } = contractIndex.readWorkbookDraft(workbook, form, { filing, ctx });
+  return applyDraft(filing, draft, rowSources);
+}
+async function reopened(workbook) {
+  const back = new (loadExcelJS().Workbook)();
+  await back.xlsx.load(await workbook.xlsx.writeBuffer());
+  return back;
+}
+
 function recordingIO(writes) {
   return {
     setCell(ws, addr, value) {
@@ -101,24 +138,23 @@ const FORMS = [
     // told so its published copy can unlock them (requester, 2026-10-07).
     // Each must still be locked: once the office's copy unlocks one, remove it.
     lockedInClerkForm: [
-      { path: 'scheduleA1.*.residence', why: "A-1's \"Residence?\" column, all three pages" },
-      { path: 'scheduleA1.*.income', why: "A-1's \"Income?\" column, all three pages" },
-      { path: 'scheduleA2.*.liabilityType', why: "A-2's liability \"Type\" column, all three pages" },
-      { path: 'scheduleB4.*.liabilityType', why: "B-4's liability \"Type\" column, all four pages" },
-      { path: 'scheduleC1.*.frequencyOfPayment', why: "C-1's \"Frequency\" column, all three pages" },
-      { path: 'scheduleC4.*.trustType', why: "C-4's \"Type of Trust\" column, both pages" },
-      { path: 'scheduleC5.*.relationshipToWard', sheet: 'C-5 JOINT OWNERS pg 3', why: 'C-5 page 3 only (page 2 unlocks it)' },
-      { path: 'scheduleC5.*.totalAssetValue', sheet: 'C-5 JOINT OWNERS pg 3', why: 'C-5 page 3 only (page 2 unlocks it)' },
-      { path: 'scheduleC5.*.jointOwnerPercent', sheet: 'C-5 JOINT OWNERS pg 3', why: 'C-5 page 3 only (page 2 unlocks it)' },
+      { path: 'scheduleA1.*.residence', why: 'A-1\'s "Personal Residence?" column, all three pages' },
+      { path: 'scheduleA1.*.income', why: 'A-1\'s "Income Property?" column, all three pages' },
+      { path: 'scheduleA2.*.liabilityType', why: 'A-2\'s "Type?" column, all three pages' },
+      { path: 'scheduleB4.*.liabilityType', why: 'B-4\'s "Type?" column, all four pages' },
+      { path: 'scheduleC1.*.frequencyOfPayment', why: 'C-1\'s "Frequency of payment?" column, all three pages' },
+      { path: 'scheduleC4.*.trustType', why: 'C-4\'s "Type?" column, both pages' },
+      { path: 'scheduleC5.*.relationshipToWard', sheet: 'C-5 JOINT OWNERS pg 3', why: 'C-5 page 3\'s "Relationship to Ward?" (page 2 unlocks it)' },
+      { path: 'scheduleC5.*.totalAssetValue', sheet: 'C-5 JOINT OWNERS pg 3', why: 'C-5 page 3\'s "Jointly Owned Asset Value" (page 2 unlocks it)' },
+      { path: 'scheduleC5.*.jointOwnerPercent', sheet: 'C-5 JOINT OWNERS pg 3', why: 'C-5 page 3\'s "Joint Owners\' %" (page 2 unlocks it)' },
     ],
     // Round-trip differences today's mapping still has: path -> [73T row, part, why].
     roundTripLosses: new Map([
       ['scheduleC2.*.claimantName', [null, null, 'by decision (2026-09-22): the claimant and their attorney share one line, read back as the claimant']],
       ['scheduleC2.*.claimantAttorney', [null, null, 'by decision (2026-09-22): not split back from the claimant line']],
-      ['serviceNoRecipients', [14, 2, '"no recipients are required" is cleared by import']],
-      ['attorney.name', [6, 2, "D-2's own name is replaced by the Cover's Attorney for Guardian"]],
     ]),
-    // A filing that answers "no recipients are required", to show it lost (73T row 14).
+    // A filing that answers "no recipients are required" and whose D-2 names
+    // its own attorney: both survive since 73T part 2 (rows 14 and 6).
     roundTripSetup: (f) => { f.serviceNoRecipients = 'No'; },
     roundTripExtraPaths: ['serviceNoRecipients', 'attorney.name'],
     // Where a person filling in the Clerk's form puts a value the app puts elsewhere.
@@ -222,7 +258,7 @@ describe.each(FORMS)('the $form workbook contract', ({ form, contract, manifest:
     for (let run = 0; run < coding.runs; run++) {
       const f = json(filing);
       for (const box of manifest.finite) setPath(f, box.path, coding.answer(box, run));
-      const finite = manifest.finite.map((box) => ({ sheet: box.sheet, cell: box.cell, value: coding.answer(box, run), path: box.path }));
+      const finite = manifest.finite.map((box) => ({ sheet: box.sheet, cell: box.cell, value: manifests.finiteExpected(manifest.finite, coding, box, run), path: box.path }));
       const expectations = [...manifest.expectations, ...finite];
       const writes = [];
       writeContract(working, contract, f, ctx, recordingIO(writes));
@@ -267,9 +303,7 @@ describe.each(FORMS)('the $form workbook contract', ({ form, contract, manifest:
     roundTripSetup(f);
     const out = await templateWorkbook(form);
     writeContract(out, contract, f, ctx);
-    const back = new (loadExcelJS().Workbook)();
-    await back.xlsx.load(await out.xlsx.writeBuffer());
-    const draft = readContract(back, contract, ctx);
+    const draft = importInto(await reopened(out), form, ctx, f);
     const kinds = new Map(contractTargets(contract, ctx).map((t) => [t.path, t.kind]));
     const paths = [...new Set([...manifest.expectations.map((e) => e.path), ...manifest.finite.map((x) => x.path)])]
       .flatMap((p) => p.split('+').map((part, i) => (i === 0 ? part : p.slice(0, p.lastIndexOf('.') + 1) + part)))
@@ -334,9 +368,8 @@ describe.each(FORMS)('the $form workbook contract', ({ form, contract, manifest:
       hand.getWorksheet(c.sheet).getCell(c.cell).value = { formula: c.formula, result: ref.value };
       setPath(truth, c.path, getPath(truth, ref.path));
     }
-    const back = new (loadExcelJS().Workbook)();
-    await back.xlsx.load(await hand.xlsx.writeBuffer());
-    const draft = readContract(back, contract, ctx);
+    // Into a new filing of the form, as a filer starting from the Clerk's form would.
+    const draft = importInto(await reopened(hand), form, ctx, { ...json(initializeEmptyData(form)), inventoryType: form });
 
     const paths = [...new Set([...boxes.map((b) => b.path), ...importFormulas.map((c) => c.path)])]
       .flatMap((p) => p.split('+').map((part, i) => (i === 0 ? part : p.slice(0, p.lastIndexOf('.') + 1) + part)))
@@ -353,8 +386,7 @@ describe.each(FORMS)('the $form workbook contract', ({ form, contract, manifest:
 });
 
 describe('the import adapter (workbook-contract/index.js)', () => {
-  let index;
-  beforeAll(async () => { index = await import('../../src/core/excel/workbook-contract/index.js'); });
+  const index = contractIndex;
 
   test('each filing type with a court workbook has its contract; the Plans have none', () => {
     expect(index.contractFor('guardian')).toBe(GUARDIAN_CONTRACT);
@@ -377,5 +409,125 @@ describe('the import adapter (workbook-contract/index.js)', () => {
     const draft = index.draftFromWorkbook(wb, 'simplified');
     expect(draft.wardName).not.toContain('"');
     expect(draft.wardName.startsWith('Jane')).toBe(true);
+  });
+});
+
+// Milestone 73T part 2: the Inventory's rows of the 73T table, fixed. One
+// export of a filing showing every case, saved and opened again, then the
+// import cases the export can't produce, made in the opened workbook.
+describe("the Inventory's 73T rows, fixed in part 2", () => {
+  const STAMP = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAAAAonXk=';
+  let wrote, back;
+  const filingOf = (patch) => merge(merge({ ...json(initializeEmptyData('guardian')), inventoryType: 'guardian' }, json(fixtures.MINIMAL_VALID_GUARDIAN)), json(patch));
+  const cell = (sheet, ref) => cellValue(back.getWorksheet(sheet).getCell(ref));
+  const read = (filing) => contractIndex.readWorkbookDraft(back, 'guardian', { filing });
+
+  beforeAll(async () => {
+    wrote = filingOf({
+      attorneyForGuardian: 'Cover Attorney',
+      attorney: { name: 'Dee Two', email: 'dee@example.com', signatureState: 'stamp', signatureImage: STAMP },
+      guardians: [{ name: 'Ann Guardian', isPreparer: true, email: 'ann@example.com' }],
+      preparer: { name: 'Hidden Preparer', phone: '555-0100' },
+      hasSafeDepositBox: 'No', safeDepositBoxFiled: 'Yes',
+      bondDepositoryState: 'bond-waived', bondAmount: 50000, bondingCompany: 'Old Surety', bondWaivedDate: '2026-03-04',
+      serviceNoRecipients: 'Yes', serviceRecipients: [{ name: '', address: '', cityStateZip: '' }],
+      scheduleB2: [{ description: '30" Flat screen TV', fullAssetValue: 300, wardPercent: 100 }],
+      scheduleB4: [{ lenderName: 'Zero Bank', fullLiabilityBalance: 0, wardPercent: 100 }, { lenderName: '', fullLiabilityBalance: 500, wardPercent: 100 }],
+      scheduleC1: [{ payerName: 'social security', typeOfIncome: '=Pension', annualIncomeAmount: 1200, wardPercent: 100 }],
+      scheduleC2: [{ lawsuitDescription: 'Foreclosure / Lien', caseNumber: '', amountOfClaim: 10, wardPercent: 100 },
+        { lawsuitDescription: 'Foreclosure / Lien', caseNumber: '2024-CA-000123', amountOfClaim: 20, wardPercent: 100 }],
+      scheduleC4: [{ trustName: 'the smith family trust', trusteeName: 'jane doe', trustAmount: 5, wardPercent: 100 }],
+      scheduleC5: [{ assetDescription: 'house', ownerName: 'van der berg', totalAssetValue: 7, jointOwnerPercent: 50 }],
+    });
+    const wb = await templateWorkbook('guardian');
+    writeContract(wb, GUARDIAN_CONTRACT, wrote, {});
+    back = await reopened(wb);
+  }, 240_000);
+
+  test("row 6: D-2 keeps its own attorney -- name, emails and stamp -- when the Cover names someone else; a blank D-2 takes the Cover's", () => {
+    const result = applyDraft(wrote, read(wrote).draft);
+    expect(result.attorney).toMatchObject({ name: 'Dee Two', email: 'dee@example.com', signatureState: 'stamp', signatureImage: STAMP });
+    const blankD2 = { ...json(wrote), attorney: { ...wrote.attorney, name: '' } };
+    expect(applyDraft(blankD2, read(blankD2).draft).attorney.name).toBe('Cover Attorney');
+  });
+
+  test('row 7: a B-4 creditor with a $0 balance, and one with no lender, both come back', () => {
+    expect(read(wrote).draft.scheduleB4.map((r) => [r.lenderName, r.fullLiabilityBalance])).toEqual([['Zero Bank', 0], ['', 500]]);
+  });
+
+  test("row 9: an outside-preparer block the export left blank -- a guardian is the preparer -- keeps the filing's preparer and the guardian's tick", () => {
+    expect(cell('PART IV', 'I13')).toBe(null);
+    const { draft } = read(wrote);
+    expect('preparer' in draft).toBe(false);
+    const result = applyDraft(wrote, draft);
+    expect(result.preparer).toMatchObject({ name: 'Hidden Preparer', phone: '555-0100' });
+    expect(result.guardians[0].isPreparer).toBe(true);
+  });
+
+  test("row 11: a quotation mark survives the import, as typing keeps it (decision 73T-3); < > and backticks still don't", () => {
+    expect(read(wrote).draft.scheduleB2[0].description).toBe('30" Flat Screen TV');
+    back.getWorksheet('B-2 PER PROP pg 1').getCell('C33').value = '<b>`30" TV`</b>';
+    const stripped = read(wrote).draft.scheduleB2[0].description;
+    expect(stripped).not.toMatch(/[<>`]/);
+    expect(stripped).toContain('30" TV');
+    back.getWorksheet('B-2 PER PROP pg 1').getCell('C33').value = '30" Flat screen TV';
+  });
+
+  test('row 12: "Foreclosure / Lien" comes back whole; a case number after the last " / " is split off', () => {
+    expect(read(wrote).draft.scheduleC2.map((r) => [r.lawsuitDescription, r.caseNumber])).toEqual([['Foreclosure / Lien', ''], ['Foreclosure / Lien', '2024-CA-000123']]);
+  });
+
+  test('row 14: "no recipients are required" survives an import; a "Yes" the workbook contradicts by listing recipients goes back to unanswered, a "No" stays', () => {
+    expect(applyDraft(wrote, read(wrote).draft).serviceNoRecipients).toBe('Yes');
+    back.getWorksheet('PART VI').getCell('B13').value = 'Pat Recipient';
+    expect(applyDraft(wrote, read(wrote).draft).serviceNoRecipients).toBe('');
+    const answeredNo = { ...json(wrote), serviceNoRecipients: 'No' };
+    expect(applyDraft(answeredNo, read(answeredNo).draft).serviceNoRecipients).toBe('No');
+    back.getWorksheet('PART VI').getCell('B13').value = null;
+  });
+
+  test('row 15: Part V\'s own safe-deposit box gets the answer; "Inventory filed?" is blank -- not the Clerk\'s pre-filled "Yes" -- for a ward with no box', () => {
+    expect(cell('PART V', 'H12')).toBe('No');
+    expect(cell('SUMMARY I ', 'D26')).toBe('No');
+    expect(cell('SUMMARY I ', 'H26')).toBe(null);
+  });
+
+  test('row 16: a waived bond files the waiver date and no bond details; the hidden details stay in the filing', () => {
+    expect(['G26', 'E27', 'G27', 'D28'].map((ref) => cell('PART V', ref))).toEqual([null, null, null, null]);
+    expect(cell('PART V', 'G15')).toBe(Date.UTC(2026, 2, 4) / 86400000 + 25569);
+    const result = applyDraft(wrote, read(wrote).draft);
+    expect([result.bondAmount, result.bondingCompany, result.bondWaivedDate]).toEqual([50000, 'Old Surety', '2026-03-04']);
+  });
+
+  test('row 17: the apostrophe the export puts before "=Pension" (so Excel shows it as text) comes off again', () => {
+    expect(cell('C-1 INCOME pg 1', 'E29')).toBe("'=Pension");
+    expect(read(wrote).draft.scheduleC1[0].typeOfIncome).toBe('=Pension');
+  });
+
+  test("row 19: names typed as entered come back as entered -- only the fields typing formats are formatted", () => {
+    const { draft } = read(wrote);
+    expect([draft.scheduleC4[0].trustName, draft.scheduleC4[0].trusteeName, draft.scheduleC5[0].ownerName]).toEqual(['the smith family trust', 'jane doe', 'van der berg']);
+    // Typing formats these as names, so the import does too.
+    expect([draft.scheduleC1[0].payerName, draft.scheduleC5[0].assetDescription]).toEqual(['Social Security', 'House']);
+  });
+
+  test('row 19: a date cell holding text no reader understands comes back as a date still being typed, not as a blank', () => {
+    back.getWorksheet('PART V').getCell('G15').value = 'per order of March 2019';
+    back.getWorksheet('C-2 LAWSUIT AGAINST 1').getCell('E24').value = 'spring 2019';
+    const { draft, dateDrafts } = read(wrote);
+    expect('bondWaivedDate' in draft).toBe(false);
+    expect(dateDrafts).toEqual([{ path: 'bondWaivedDate', text: 'per order of March 2019' }, { path: 'scheduleC2.1.dateFiled', text: 'spring 2019' }]);
+    back.getWorksheet('PART V').getCell('G15').value = new Date(Date.UTC(2026, 2, 4));
+    back.getWorksheet('C-2 LAWSUIT AGAINST 1').getCell('E24').value = null;
+  });
+
+  test("a guardian after a blank slot keeps their place's person: the import says which slot each row came from", () => {
+    const p3 = back.getWorksheet('PART III');
+    const name = (i) => partIIINameBox(i);
+    p3.getCell(name(2)).value = 'Cy Guardian';
+    const { draft, rowSources } = read(wrote);
+    expect(draft.guardians.map((g) => g.name)).toEqual(['Ann Guardian', 'Cy Guardian']);
+    expect(rowSources).toEqual({ guardians: [0, 2] });
+    p3.getCell(name(2)).value = null;
   });
 });

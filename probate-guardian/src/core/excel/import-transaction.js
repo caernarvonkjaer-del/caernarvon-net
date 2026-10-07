@@ -40,6 +40,7 @@ import {
 import { sameName, samePerson as containsName } from './import-keep.js';
 import { noItemsKeyFor } from '../form/no-items-keys.js';
 import { rowStarted } from '../validation/row-started.js';
+import { keepRows, LINKED_ID_ARRAYS } from '../form/row-links.js';
 
 // Never taken from a draft: what the filing is, and what this app keeps that
 // no source carries -- its identity, its type (a filing keeps its own type,
@@ -52,6 +53,39 @@ const ROLES = Object.freeze(['ward', 'guardian', 'attorney', 'preparer']);
 const filingLabel = (type) => resolveDescriptorForInventoryType(type)?.displayName || type || 'filing';
 const json = (x) => (x === undefined ? undefined : JSON.parse(JSON.stringify(x)));
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+const isRecord = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
+
+// Milestone 73T part 2: a nested record (the Inventory's attorney, preparer
+// and certificate attorney) takes only the fields the draft carries; the rest
+// are what the workbook has no box for, kept as the filing has them.
+const merged = (current, value) => (isRecord(value) && isRecord(current) ? { ...current, ...value } : value);
+
+/**
+ * Milestone 73T part 2: the filing as the draft's rows line up with it. A
+ * source that skips an empty slot (a workbook's Guardian #2 left blank)
+ * moves the rows after it up; `rowSources` gives, per list, the filing row
+ * each draft row came from, and the plan compares each draft row with that
+ * row and its shared-record link -- as the importers' own 73V remap did.
+ */
+function alignedView(filing, rowSources) {
+  if (!rowSources) return filing;
+  const view = { ...filing };
+  for (const [list, sources] of Object.entries(rowSources)) {
+    view[list] = sources.map((s) => (filing[list] || [])[s]);
+    const linked = LINKED_ID_ARRAYS[list];
+    if (linked && Array.isArray(filing[linked])) view[linked] = sources.map((s) => filing[linked][s] || null);
+  }
+  return view;
+}
+
+/** Clears a field the workbook can't carry -- top-level or a dotted path into a nested record. */
+function clearField(filing, path) {
+  const keys = String(path).split('.');
+  let t = filing;
+  for (const k of keys.slice(0, -1)) { if (!isRecord(t[k])) return; t = t[k]; }
+  const last = keys[keys.length - 1];
+  if (last in t) t[last] = '';
+}
 
 // The same person: the same name ignoring case, spaces and punctuation
 // (import-keep.js's sameName(), the requester's decision of 2026-10-05).
@@ -98,25 +132,26 @@ function partyValuesFor(filing, role, index, party) {
  *
  * @param {Record<string, any>} filing  the filing the import replaces
  * @param {Record<string, any>} draft   the filing's fields as the source has them
- * @param {{ workbookType?: string, caseFile?: Record<string, any> }} [options]
+ * @param {{ workbookType?: string, caseFile?: Record<string, any>, rowSources?: Record<string, number[]> }} [options]
  */
-export function planImport(filing, draft, { workbookType, caseFile = getCaseFile() } = {}) {
+export function planImport(filing, draft, { workbookType, caseFile = getCaseFile(), rowSources } = {}) {
   const incoming = { ...json(draft), inventoryType: filing.inventoryType };
+  const base = alignedView(filing, rowSources);
   const fieldChanges = Object.keys(draft)
-    .filter((key) => !KEPT_KEYS.includes(key) && !same(filing[key], draft[key]))
-    .map((key) => ({ path: key, before: json(filing[key]), after: json(draft[key]) }));
+    .filter((key) => !KEPT_KEYS.includes(key) && !same(base[key], merged(base[key], draft[key])))
+    .map((key) => ({ path: key, before: json(base[key]), after: json(merged(base[key], draft[key])) }));
 
   const people = [];
   const list = Array.isArray(filing.planGuardians) ? 'planGuardians' : 'guardians';
-  for (const [role, index] of slotsOf(filing, incoming)) {
-    const had = readRoleFields(filing, role, index);
+  for (const [role, index] of slotsOf(base, incoming)) {
+    const had = readRoleFields(base, role, index);
     // Only what the draft carries: a field it doesn't carry is kept, never
     // read as a blank to write over the shared record.
     const gets = readRoleFields(incoming, role, index, { presentOnly: true });
     // A guardian row the draft's list no longer has is a person removed.
     const removed = role === 'guardian' && Array.isArray(incoming[list]) && index >= incoming[list].length;
     if (!Object.keys(gets).length && !removed) continue; // the draft says nothing about this person
-    const partyId = getPartyIdForSlot(filing, role, index);
+    const partyId = getPartyIdForSlot(base, role, index);
     const party = partyId ? resolveParty(partyId) : null;
     const before = String(had.name || '');
     const after = removed ? '' : ('name' in gets ? String(gets.name || '') : before);
@@ -126,7 +161,7 @@ export function planImport(filing, draft, { workbookType, caseFile = getCaseFile
     const otherFilings = party ? (caseFile?.wards || [])
       .filter((other) => other !== filing && !isFilingClosed(other) && slotsReferencing(other, partyId).length)
       .map((other) => ({ wardId: other.wardId, wardName: other.wardName || '', type: other.inventoryType })) : [];
-    const theirs = party ? partyValuesFor(filing, role, index, party) : null;
+    const theirs = party ? partyValuesFor(base, role, index, party) : null;
     const differences = theirs ? Object.keys(gets)
       .filter((key) => String(gets[key] || '') !== String(theirs[key] || ''))
       .map((key) => ({ key, shared: theirs[key] || '', incoming: gets[key] || '' })) : [];
@@ -183,10 +218,13 @@ export function conflictApplies(conflict, choices) {
  * one synchronous step -- nothing renders or saves between them. Returns
  * what changed, for the notice.
  */
-function commitImport(filing, draft, plan, choices, { unboxed = {} } = {}) {
+function commitImport(filing, draft, plan, choices, { unboxed = {}, rowSources } = {}) {
   const incoming = json(draft);
   const people = plan.people.map((p) => ({ ...p, outcome: slotOutcome(p, choices) }));
   const list = Array.isArray(filing.planGuardians) ? 'planGuardians' : 'guardians';
+  // The filing's rows (and their links and dates still being typed) to the
+  // places the draft's rows came from, as the plan compared them.
+  for (const [key, sources] of Object.entries(rowSources || {})) keepRows(filing, key, sources);
 
   for (const [key, value] of Object.entries(incoming)) {
     if (KEPT_KEYS.includes(key)) continue;
@@ -201,7 +239,7 @@ function commitImport(filing, draft, plan, choices, { unboxed = {} } = {}) {
       });
       continue;
     }
-    filing[key] = value;
+    filing[key] = merged(filing[key], value);
   }
 
   const updated = [], unlinked = [];
@@ -209,7 +247,7 @@ function commitImport(filing, draft, plan, choices, { unboxed = {} } = {}) {
     if (!p.outcome.isSame) {
       // A different person in a role kept outside the source's rows: the
       // details the source can't carry belonged to the one before.
-      for (const key of unboxed[p.role] || []) if (key in filing) filing[key] = '';
+      for (const key of unboxed[p.role] || []) clearField(filing, key);
     }
     if (p.outcome.link === 'unlink') { setPartyIdForSlot(filing, p.role, p.index, null); unlinked.push(p); }
     if (p.outcome.link === 'update') {
@@ -233,7 +271,7 @@ function commitImport(filing, draft, plan, choices, { unboxed = {} } = {}) {
   return { updated, unlinked, cleared, people };
 }
 
-function describeNotice(plan, result, { sourceName, notCarried }) {
+function describeNotice(plan, result, { sourceName, notCarried, importedAs }) {
   const lines = [`Imported ${sourceName || 'the workbook'} into ${plan.filingName || 'this filing'}.`];
   if (result.updated.length) lines.push(`Shared records updated: ${result.updated.map((p) => p.after || p.before).join(', ')}.`);
   if (result.unlinked.length) lines.push(`No longer shared on this filing: ${result.unlinked.map((p) => `${p.label} (${p.sharedName || p.before})`).join(', ')}.`);
@@ -241,6 +279,8 @@ function describeNotice(plan, result, { sourceName, notCarried }) {
   const kept = ['the signature rule', 'the signature choices and stamps of the same people'];
   if (notCarried && notCarried.length) kept.push(...notCarried);
   lines.push(`Kept as they were: ${kept.join('; ')}.`);
+  // Milestone 73T part 2: what the workbook holds differently, so it came back changed.
+  if (importedAs && importedAs.length) lines.push(`Brought back as the workbook holds it: ${importedAs.join('; ')}.`);
   return lines.join('\n');
 }
 
@@ -249,7 +289,7 @@ function describeNotice(plan, result, { sourceName, notCarried }) {
  *
  * @param {object} options
  * @param {Record<string, any>} options.filing  the filing the import replaces (the live object)
- * @param {() => Promise<{ draft: Record<string, any>, sourceName?: string, workbookType?: string, notCarried?: string[], unboxed?: Record<string, string[]> }>} options.adapter
+ * @param {() => Promise<{ draft: Record<string, any>, sourceName?: string, workbookType?: string, notCarried?: string[], importedAs?: string[], unboxed?: Record<string, string[]>, rowSources?: Record<string, number[]> }>} options.adapter
  * @param {(plan: ReturnType<typeof planImport>) => Promise<Record<string, string> | null>} options.confirmChoices
  *   the one confirmation: the filer's choice for each conflict, or null for Cancel
  * @param {() => Promise<void>|void} [options.redraw]  redraws the page after the commit
@@ -260,13 +300,13 @@ function describeNotice(plan, result, { sourceName, notCarried }) {
 export async function runImportTransaction({ filing, adapter, confirmChoices, redraw, notify, afterCommit }) {
   const read = await adapter();
   const draft = json(read.draft || {});
-  const plan = planImport(filing, draft, { workbookType: read.workbookType });
+  const plan = planImport(filing, draft, { workbookType: read.workbookType, rowSources: read.rowSources });
   const choices = await confirmChoices(plan);
   if (!choices) return { committed: false, plan };
   const unanswered = plan.conflicts.filter((c) => conflictApplies(c, choices) && !c.options.some((o) => o.value === choices[c.id]));
   if (unanswered.length) throw new Error(`Import not applied: no choice for ${unanswered.map((c) => c.id).join(', ')}.`);
 
-  const result = commitImport(filing, draft, plan, choices, { unboxed: read.unboxed });
+  const result = commitImport(filing, draft, plan, choices, { unboxed: read.unboxed, rowSources: read.rowSources });
   normalizeWardData(filing);
   afterCommit?.(filing);
   commitModelChange('excel-import', ['*']);
@@ -274,7 +314,7 @@ export async function runImportTransaction({ filing, adapter, confirmChoices, re
     + (result.updated.length ? `; shared records updated: ${result.updated.length}` : '')
     + (result.unlinked.length ? `; unlinked: ${result.unlinked.length}` : ''), true, filing.wardId || null);
   await redraw?.();
-  const notice = describeNotice(plan, result, { sourceName: read.sourceName, notCarried: read.notCarried });
+  const notice = describeNotice(plan, result, { sourceName: read.sourceName, notCarried: read.notCarried, importedAs: read.importedAs });
   await notify?.(notice);
   return { committed: true, plan, notice };
 }

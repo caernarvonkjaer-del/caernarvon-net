@@ -2,7 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 import path from 'node:path';
 import os from 'node:os';
 import fs from 'node:fs';
-import { freshStartNoPassword, createWard, fillMinimalValidGuardianWard } from './support/target';
+import { freshStartNoPassword, createWard, fillMinimalValidGuardianWard, importWorkbookConfirmed } from './support/target';
 import {
   SCHEDULE_A1_PAGES, SCHEDULE_B2_PAGES, SCHEDULE_B3_PAGES, SCHEDULE_B4_PAGES, SCHEDULE_C2_PAGES,
 } from '../../src/core/excel/guardian-inventory-pages.js';
@@ -130,7 +130,7 @@ test.describe('Guardian Inventory Excel schedule layout (Milestone 52K)', () => 
 
     const errors: string[] = [];
     page.on('pageerror', (e) => errors.push(e.message));
-    await page.setInputFiles('input[type="file"][accept=".xlsx"]', xlsxPath);
+    await importWorkbookConfirmed(page, xlsxPath);
     await page.waitForFunction(
       (k) => { const rows = (window as any).GuardianForms.testing.field(k); return Array.isArray(rows) && rows.length > 0; },
       'scheduleA1',
@@ -337,7 +337,7 @@ test.describe('Guardian Inventory Excel export writes what the court form comput
 
     await createWard(page, 'Legacy Import Target', 'guardian');
     await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
-    await page.setInputFiles('input[type="file"][accept=".xlsx"]', legacyPath);
+    await importWorkbookConfirmed(page, legacyPath);
     await page.waitForFunction(() => Array.isArray((window as any).GuardianForms.testing.field('scheduleA1')) && (window as any).GuardianForms.testing.field('scheduleA1.length') > 0, undefined, { timeout: 15_000 });
 
     const imported = await page.evaluate(() => {

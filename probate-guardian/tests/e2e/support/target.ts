@@ -609,6 +609,35 @@ export async function fillDynPrompt(page: Page, value: string | null): Promise<v
  * watcher's loop a turn to run; without one, a fast sequence of foreground
  * calls can outrun it for the rest of the test.
  */
+/**
+ * Milestone 73T part 2: imports a workbook through an importer that runs on the
+ * import transaction (src/core/excel/import-transaction.js) -- the Inventory's,
+ * and the Annual family's and the Simplified's from 73T parts 3 and 4. Sets
+ * the file on the page's Import control, answers the one confirmation (each
+ * question with its first choice), dismisses the notice that follows, and
+ * resolves once the import has finished: the importer empties the file box as
+ * its last step. Returns the notice's text.
+ */
+export async function importWorkbookConfirmed(page: Page, file: string): Promise<string> {
+  await page.setInputFiles('input[type="file"][accept=".xlsx"]', file);
+  const box = page.locator(DYN_DIALOG);
+  const confirm = box.locator('[data-dyn-action="confirm"]');
+  await confirm.waitFor({ timeout: 30_000 });
+  // A question can open another (a near match's shared-record question).
+  for (let pass = 0; pass < 3 && !(await confirm.isEnabled()); pass++) {
+    for (const q of await box.locator('fieldset[data-dyn-question]').all()) {
+      if (await q.isVisible() && !(await q.locator('input[type="radio"]:checked').count())) await q.locator('input[type="radio"]').first().check();
+    }
+  }
+  await confirm.click();
+  const ok = page.locator(DYN_DIALOG).locator('[data-dyn-action="ok"]');
+  await ok.waitFor({ timeout: 30_000 });
+  const notice = (await page.locator(DYN_DIALOG).textContent()) ?? '';
+  await ok.click();
+  await page.waitForFunction(() => !(document.querySelector('input[type="file"][accept=".xlsx"]') as HTMLInputElement | null)?.files?.length, undefined, { timeout: 30_000 });
+  return notice;
+}
+
 export function autoAcceptDynDialogs(page: Page, { promptValue }: { promptValue?: string } = {}): { stop: () => void; messages: string[] } {
   let stopped = false;
   const messages: string[] = [];

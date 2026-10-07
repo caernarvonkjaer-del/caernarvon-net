@@ -1,12 +1,13 @@
 // Milestone 73T part 1: the Initial Inventory's workbook contract
-// (templates/guardian-template.js) -- every field the Inventory's exporter
-// writes and its importer reads, as src/features/guardian-inventory/excel.js
-// does today. 73T part 2 moves that exporter and importer onto this contract
-// and fixes the entries marked `defect`.
+// (templates/guardian-template.js) -- every field the Inventory writes to the
+// Clerk's workbook and reads back. Since 73T part 2 the Inventory's exporter
+// and importer (src/features/guardian-inventory/excel.js) run on it, and the
+// import goes through 73E's transaction (src/core/excel/import-transaction.js).
 import { codecs } from './codecs.js';
 import { readCellText, unwrapCellValue } from '../cell-reader.js';
 import { hasIdentifiedPreparer } from '../../form/preparer-flag.js';
-import { bondAmountFromCell } from '../../filing/bond-depository.js';
+import { bondAmountFromCell, inferBondDepositoryState, revealsBond, revealsWaiver } from '../../filing/bond-depository.js';
+import { rowStarted } from '../../validation/row-started.js';
 import { compareImportedCertificate } from '../../filing/certificate-migrations.js';
 import { b2ItemDescription, mk } from '../../filing/models/guardian.js';
 import {
@@ -29,6 +30,25 @@ const present = (...keys) => (r) => keys.some((k) => !!r[k]);
 
 const bondAmount = Object.freeze({ kind: 'amount', write: (v) => amountRaw.write(v), read: (cell) => bondAmountFromCell(amountRaw.read(cell)) });
 const dateOrBlank = Object.freeze({ kind: 'date', write: (v) => date.write(v), read: (cell) => date.read(cell) || '' });
+const isYes = (v) => v === 'Yes' || v === true;
+
+// Milestone 73T part 2 (row 16): the bond block shows what the chosen
+// arrangement shows, as the PDF does -- the bond details for "bond only",
+// "bond and depository" or an unanswered arrangement, the waiver order's
+// date for "bond waived". The filing keeps a hidden value, and a blank box
+// on import leaves it alone (keepIfBlank): the workbook doesn't say it went.
+const showsBond = (f) => { const state = inferBondDepositoryState(f); return revealsBond(state) || !state; };
+const showsWaiver = (f) => revealsWaiver(inferBondDepositoryState(f));
+
+// Milestone 73T part 2 (row 12, the requester's choice 2026-10-07): a line
+// holding "description / case number" is split at the last " / ", and only
+// when what follows it has a digit, as a case number does -- so "Foreclosure /
+// Lien" returns whole.
+function splitCaseNumber(line) {
+  const cut = line.lastIndexOf(' / ');
+  const tail = cut < 0 ? '' : line.slice(cut + 3);
+  return /\d/.test(tail) ? { description: line.slice(0, cut), caseNumber: tail } : { description: line, caseNumber: '' };
+}
 
 // C-2's first and third lines (Milestone 64A-2): the description with the case
 // number after " / ", and "Atty X for Y". Neither is split exactly on import.
@@ -64,8 +84,13 @@ export const GUARDIAN_CONTRACT = Object.freeze({
     field('guardianName', SI, 'D23', text),
     field('attorneyForGuardian', SI, 'D24', text),
     field('typeOfGuardianship', SI, 'D25', text),
-    field('hasSafeDepositBox', SI, 'D26', yesNo),
-    field('safeDepositBoxFiled', SI, 'H26', yesNo, { defect: { row: 15, part: 2, note: 'written even when the ward has no box' } }),
+    // Milestone 73T part 2 (row 15): the app's D-3 asks the safe-deposit
+    // question in Part V's words, so the answer goes to Part V's own box H12
+    // too (read from there when the Cover's is blank); "Inventory filed?" is
+    // written only when the ward has a box -- the Clerk's form pre-fills it
+    // "Yes", which used to stand for a ward with none.
+    field('hasSafeDepositBox', SI, 'D26', yesNo, { fallback: [{ sheet: 'PART V', cell: 'H12' }] }),
+    field('safeDepositBoxFiled', SI, 'H26', yesNo, { value: (f) => (isYes(f.hasSafeDepositBox) ? f.safeDepositBoxFiled : '') }),
     field('amendedForm', SI, 'I8', yesNo, { value: alias('amendedForm', 'isAmended') }),
 
     // PART III -- up to three guardians. Guardian #1's name box F8 is the
@@ -89,21 +114,23 @@ export const GUARDIAN_CONTRACT = Object.freeze({
       ['preparer.ssnEin', 'B15', text], ['preparer.streetAddress', 'I15', text], ['preparer.phone', 'B17', text],
       ['preparer.cityStateZip', 'I17', text]].map(([path, cell, codec]) => field(path, 'PART IV', cell, codec, { exportIf: (f) => !hasIdentifiedPreparer(f) })),
     // The attorney. I26 is the workbook's own link to the Cover's D24, so the
-    // attorney's name comes from there.
+    // workbook has no box for D-2's own name. Milestone 73T part 2 (row 6): a
+    // D-2 with a name keeps it; a blank one takes the Cover's (fillBlankOnly).
     field('attorney.filingDate', 'PART IV', 'C21', date),
     field('attorney.signatureDate', 'PART IV', 'G26', date),
-    field('attorney.name', SI, 'D24', text, { dir: 'import', defect: { row: 6, part: 2, note: "D-2's own name is replaced by the Cover's Attorney for Guardian" } }),
+    field('attorney.name', SI, 'D24', text, { dir: 'import', fillBlankOnly: true }),
     field('attorney.barNumber', 'PART IV', 'B28', text),
     field('attorney.streetAddress', 'PART IV', 'I28', text),
     field('attorney.phone', 'PART IV', 'B30', text),
     field('attorney.cityStateZip', 'PART IV', 'I30', text),
 
-    // PART V -- the bond and the waiver order.
-    field('bondAmount', 'PART V', 'G26', bondAmount, { defect: { row: 16, part: 2, note: 'bond fields hidden by the chosen arrangement are written' } }),
-    field('bondPeriodFrom', 'PART V', 'E27', date),
-    field('bondPeriodTo', 'PART V', 'G27', date),
-    field('bondingCompany', 'PART V', 'D28', text),
-    field('bondWaivedDate', 'PART V', 'G15', dateOrBlank),
+    // PART V -- the safe-deposit question, the bond and the waiver order.
+    field('hasSafeDepositBox', 'PART V', 'H12', yesNo, { dir: 'export' }),
+    field('bondAmount', 'PART V', 'G26', bondAmount, { exportIf: showsBond, keepIfBlank: true }),
+    field('bondPeriodFrom', 'PART V', 'E27', date, { exportIf: showsBond, keepIfBlank: true }),
+    field('bondPeriodTo', 'PART V', 'G27', date, { exportIf: showsBond, keepIfBlank: true }),
+    field('bondingCompany', 'PART V', 'D28', text, { exportIf: showsBond, keepIfBlank: true }),
+    field('bondWaivedDate', 'PART V', 'G15', dateOrBlank, { exportIf: showsWaiver, keepIfBlank: true }),
 
     // PART VI -- the certificate of service.
     {
@@ -112,11 +139,11 @@ export const GUARDIAN_CONTRACT = Object.freeze({
       exportIf: (row) => row != null,
       keep: (row) => !!(row.name || row.address || row.cityStateZip),
     },
-    { kind: 'constant', path: 'serviceNoRecipients', value: '', defect: { row: 14, part: 2, note: '"no recipients are required" is cleared by import' } },
+    // "No recipients are required" has no box: kept, unless the workbook lists
+    // recipients (afterRead). Milestone 73T part 2 (row 14).
     field('serviceDate', 'PART VI', 'G25', date),
     field('serviceIndicateIf', 'PART VI', 'J25', text),
     field('serviceAttorney.signatureDate', 'PART VI', 'G27', date),
-    { kind: 'constant', path: 'serviceAttorney.name', value: '' },
     // Milestone 72H: the certificate's attorney is D-2's; its boxes repeat
     // PART IV's, and an older workbook's differing details are compared on
     // import (afterRead below).
@@ -158,9 +185,10 @@ export const GUARDIAN_CONTRACT = Object.freeze({
     {
       // Milestone 60K: the account number on the fifth line, the fourth left
       // blank; an older workbook's fourth line is read as a fallback.
-      kind: 'rows', path: 'scheduleB4', pages: pages(SCHEDULE_B4_PAGES),
-      present: (r) => !!String(r.lenderName || '').trim() && !!r.fullLiabilityBalance,
-      presentDefect: { row: 7, part: 2, note: 'a creditor with a $0 or blank balance, or no lender, is dropped' },
+      // Milestone 73T part 2 (row 7): a creditor is kept by its lender or its
+      // balance, as every other schedule's row is -- one with a $0 or blank
+      // balance, or no lender, used to be dropped.
+      kind: 'rows', path: 'scheduleB4', pages: pages(SCHEDULE_B4_PAGES), present: present('lenderName', 'fullLiabilityBalance'),
       columns: [col('lenderName', 'C', text), lineCol('lenderAddress', 'C', 1, text), lineCol('relatedProperty', 'C', 2, text),
         lineCol('accountNumber', 'C', 4, text, { fallback: [{ line: 3 }] }),
         col('liabilityType', 'E', text, { value: withDefault('liabilityType', 'Loan') }), col('fullLiabilityBalance', 'F', amountRaw), col('wardPercent', 'G', share)],
@@ -182,8 +210,7 @@ export const GUARDIAN_CONTRACT = Object.freeze({
       combined: [
         { col: 'C', fields: ['lawsuitDescription', 'caseNumber'], codec: text,
           join: (r) => `${r.lawsuitDescription || ''}${r.caseNumber ? ' / ' + r.caseNumber : ''}`,
-          split: (s) => { const parts = s.split(' / '); return { __line1: s, lawsuitDescription: parts[0] || s, caseNumber: parts[1] || '' }; },
-          defect: { row: 12, part: 2, note: 'text containing " / " splits back wrongly' } },
+          split: (s) => { const { description, caseNumber } = splitCaseNumber(s); return { __line1: s, lawsuitDescription: description, caseNumber }; } },
         // The claimant and their attorney share one line, by the form's own
         // example; it is deliberately not split (decided 2026-09-22).
         { col: 'C', line: 2, fields: ['claimantName', 'claimantAttorney'], codec: text, join: c2ClaimantLine, split: (s) => ({ claimantName: s }) },
@@ -205,8 +232,8 @@ export const GUARDIAN_CONTRACT = Object.freeze({
         split: (first, { sheet, row }) => {
           const lineNo = unwrapCellValue(sheet.getCell(`B${row}`).value);
           if (!(typeof lineNo === 'number' || /^\d+$/.test(String(lineNo ?? '').trim()))) {
-            const parts = first.split(' / ');
-            return { __line1: first, defendantName: readCellText(sheet.getCell(`B${row}`)), actionDescription: parts[0] || first, caseNumber: parts[1] || '' };
+            const { description, caseNumber } = splitCaseNumber(first);
+            return { __line1: first, defendantName: readCellText(sheet.getCell(`B${row}`)), actionDescription: description, caseNumber };
           }
           const cut = first.indexOf(' / ');
           return { __line1: first, defendantName: cut < 0 ? first : first.slice(0, cut), actionDescription: cut < 0 ? '' : first.slice(cut + 3) };
@@ -232,23 +259,70 @@ export const GUARDIAN_CONTRACT = Object.freeze({
   // blank (73E's transaction and 73M's notices read this list).
   notCarried: Object.freeze([
     'the guardians\' and the attorney\'s email addresses',
-    'the signature choices and stamps',
     'which guardian or the attorney prepared this filing',
-    'the bond and restricted-depository arrangement',
-    'a vehicle\'s year, make, model, VIN and odometer reading (B-2 files its description)',
-    'the claimant\'s attorney on Schedule C-2 (the form gives them one line with the claimant)',
+    'the bond and restricted-depository arrangement, and any bond detail it hides',
+    'the outside preparer, when the workbook leaves that block blank',
+    '"No recipients are required" (a "Yes" goes back to unanswered when the workbook lists recipients)',
+  ]),
+  // What the workbook holds differently, so an import brings it back changed.
+  importedAs: Object.freeze([
+    'a vehicle on B-2 comes back as an ordinary item with its description (the workbook has no year, make, model, VIN or odometer)',
+    'on C-2 the claimant and their attorney come back as one claimant name (the form gives them one line)',
+    'A-2\'s Notes come back blank (the workbook has no box for them)',
   ]),
   // Fields kept from the filing for the same person, by role (73E's
   // transaction clears them for a different person).
   preserve: Object.freeze({
     guardian: ['email', 'signatureState', 'signatureImage', 'certifiesService', 'isPreparer'],
-    attorney: ['attorney.email', 'attorney.secondaryEmail', 'attorney.signatureState', 'attorney.signatureImage', 'attorney.isPreparer'],
+    attorney: ['attorney.email', 'attorney.secondaryEmail', 'attorney.signatureState', 'attorney.signatureImage', 'attorney.isPreparer',
+      'serviceAttorney.signatureState', 'serviceAttorney.signatureImage'],
     preparer: ['preparer.signatureState', 'preparer.signatureImage'],
   }),
+  // Milestone 73T part 2 (row 19): what typing formats, field by field -- the
+  // fields the Inventory's pages give a name, address or city/state/ZIP box
+  // (guardian-inventory/index.js). An import formats these and only these;
+  // everything else comes back as the workbook holds it, as typing keeps it
+  // (C-4's trust and trustee names, C-5's owner, used to be re-cased).
+  casing: Object.freeze({
+    name: ['wardName', 'guardianName', 'attorneyForGuardian', 'bondingCompany', 'guardians.*.name', 'preparer.name', 'attorney.name',
+      'serviceRecipients.*.name', 'scheduleA1.*.propertyDescription', 'scheduleA2.*.lenderName', 'scheduleB1.*.institutionName',
+      'scheduleB1.*.accountType', 'scheduleB2.*.description', 'scheduleB3.*.description', 'scheduleB4.*.lenderName',
+      'scheduleC1.*.payerName', 'scheduleC2.*.claimantName', 'scheduleC2.*.claimantAttorney', 'scheduleC2.*.lawsuitDescription',
+      'scheduleC3.*.defendantName', 'scheduleC3.*.actionDescription', 'scheduleC5.*.assetDescription'],
+    address: ['attorney.streetAddress', 'preparer.streetAddress', 'guardians.*.streetAddress', 'serviceRecipients.*.address',
+      'scheduleA1.*.streetAddress', 'scheduleA2.*.lenderAddress', 'scheduleB1.*.streetAddress', 'scheduleB2.*.streetAddress',
+      'scheduleB3.*.streetAddress', 'scheduleB4.*.lenderAddress', 'scheduleC1.*.payerAddress', 'scheduleC2.*.claimantAddress',
+      'scheduleC4.*.trusteeAddress', 'scheduleC5.*.ownerAddress'],
+    zip: ['attorney.cityStateZip', 'preparer.cityStateZip', 'guardians.*.cityStateZip', 'serviceRecipients.*.cityStateZip',
+      'scheduleA1.*.cityStateZip', 'scheduleA2.*.lenderCityStateZip', 'scheduleB1.*.cityStateZip', 'scheduleB2.*.cityStateZip',
+      'scheduleB3.*.cityStateZip', 'scheduleC1.*.payerCityStateZip', 'scheduleC2.*.claimantCityStateZip',
+      'scheduleC4.*.trusteeCityStateZip', 'scheduleC5.*.ownerCityStateZip'],
+  }),
+
+  // Against the filing the import goes into (workbook-contract/index.js).
+  // Milestone 73T part 2 (row 14): "no recipients are required" has no box,
+  // so the filing keeps its answer -- except a "Yes" the workbook contradicts
+  // by listing recipients, which goes back to unanswered.
+  reconcile(draft, filing) {
+    if (filing?.serviceNoRecipients === 'Yes' && (draft.serviceRecipients || []).some((r) => rowStarted(r))) draft.serviceNoRecipients = '';
+  },
 
   afterRead(draft) {
     if (!draft.guardians || !draft.guardians.length) draft.guardians = [mk.guardian()];
     if (!draft.serviceRecipients || !draft.serviceRecipients.length) draft.serviceRecipients = [mk.recipient()];
+    // Milestone 73T part 2 (row 9): an outside-preparer block left blank says
+    // nothing -- the export leaves it blank while a guardian or the attorney is
+    // the preparer -- so the filing keeps the preparer it has. One that names a
+    // preparer is the stronger statement and clears the guardians' and the
+    // attorney's "prepared this filing" (Milestone 67A); each keeps it
+    // otherwise, as the same person (73E's transaction).
+    if (draft.preparer) {
+      if (!Object.values(draft.preparer).some((v) => v != null && String(v).trim() !== '')) delete draft.preparer;
+      else if (String(draft.preparer.name || '').trim()) {
+        for (const g of draft.guardians) g.isPreparer = false;
+        if (draft.attorney) draft.attorney.isPreparer = false;
+      }
+    }
     // Milestone 72H, step 8: a blank D-2 box is filled from the
     // certificate's; a certificate detail that differs is kept as an old
     // detail, shown on D-5 with "Discard old details".

@@ -286,7 +286,9 @@ describe('Excel Engine unit tests', () => {
       for (const file of ['src/features/annual-accounting/excel.js', 'src/features/guardian-inventory/excel.js', 'src/features/simplified-accounting/excel.js']) {
         const src = fs.readFileSync(path.resolve(process.cwd(), file), 'utf8');
         expect(src, `${file} still declares or calls fD()/fmtD()`).not.toMatch(/\b(fD|fmtD)\s*=|\b(fD|fmtD)\s*\(/);
-        expect(src, `${file} writes dates through setDateCell()`).toContain('setDateCell(');
+        // Milestone 73T part 2: the Inventory writes through its workbook
+        // contract, handing it setDateCell (writeContract(..., { setCell, setDateCell })).
+        expect(src, `${file} writes dates through setDateCell()`).toMatch(/setDateCell\(|writeContract\([^)]*\bsetDateCell\b/);
       }
     });
   });

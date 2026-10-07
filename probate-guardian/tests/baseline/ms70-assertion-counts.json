@@ -2,8 +2,8 @@
  "generatedBy": "node scripts/ms70-assertion-counts.mjs --write-baseline",
  "note": "Milestone 70 per-spec assertion counts (static expect calls). tests/unit/ms70-assertion-counts.spec.js fails when a spec falls below its count; lowering it requires --reason, recorded in dropLog. A tripwire, not proof of equivalence (decision D9).",
  "totals": {
-  "expects": 8338,
-  "tests": 2363
+  "expects": 8388,
+  "tests": 2379
  },
  "counts": {
   "tests/e2e/amounts-keep-their-sign.spec.ts": {
@@ -103,11 +103,11 @@
    "tests": 2
   },
   "tests/e2e/certificate-old-details.spec.ts": {
-   "expects": 25,
+   "expects": 26,
    "tests": 3
   },
   "tests/e2e/certificate-service-method.spec.ts": {
-   "expects": 21,
+   "expects": 22,
    "tests": 4
   },
   "tests/e2e/closed-filing-sync.spec.ts": {
@@ -269,6 +269,10 @@
   "tests/e2e/highlight-toolbar-style.spec.ts": {
    "expects": 37,
    "tests": 4
+  },
+  "tests/e2e/import-confirm.spec.ts": {
+   "expects": 14,
+   "tests": 1
   },
   "tests/e2e/import-keeps-signatures.spec.ts": {
    "expects": 13,
@@ -915,7 +919,7 @@
    "tests": 9
   },
   "tests/unit/guardian-inventory-date-roundtrip.spec.js": {
-   "expects": 10,
+   "expects": 9,
    "tests": 3
   },
   "tests/unit/guardian-inventory-pdf-model.spec.js": {
@@ -955,8 +959,8 @@
    "tests": 4
   },
   "tests/unit/import-transaction.spec.js": {
-   "expects": 74,
-   "tests": 14
+   "expects": 81,
+   "tests": 17
   },
   "tests/unit/inventory-required-share-and-email.spec.js": {
    "expects": 12,
@@ -1383,8 +1387,8 @@
    "tests": 6
   },
   "tests/unit/workbook-contract.spec.js": {
-   "expects": 19,
-   "tests": 7
+   "expects": 47,
+   "tests": 19
   },
   "tests/unit/workbook-recalc-on-open.spec.js": {
    "expects": 3,
@@ -1546,6 +1550,13 @@
    "now": 27,
    "reason": "Milestone 73F part 3 (2026-10-06): annual-schedule-consistency.spec.ts's Part VIII test no longer ticks the \"no trusts\" box (decision 73F-5 removed it) -- it checks the box is gone and the page asks the question, one assertion fewer",
    "date": "2026-10-06"
+  },
+  {
+   "file": "tests/unit/guardian-inventory-date-roundtrip.spec.js",
+   "was": 10,
+   "now": 9,
+   "reason": "73T part 2: guardian-inventory-date-roundtrip.spec.js no longer slices dt() out of the Inventory importer's source -- the reader is the workbook contract's exported date codec -- so its 'dt found in the source' check went; every date assertion stays",
+   "date": "2026-10-07"
   }
  ]
 }
