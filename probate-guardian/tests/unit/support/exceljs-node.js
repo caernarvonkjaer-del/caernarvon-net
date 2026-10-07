@@ -13,8 +13,11 @@ let excel = null;
 
 export function loadExcelJS() {
   if (excel) return excel;
+  // Date is this realm's: a date ExcelJS reads from a file must be a Date to
+  // the app's own readers (`instanceof Date`), as it is in the browser, where
+  // there is one realm.
   const ctx = {
-    console, setTimeout, clearTimeout, setImmediate, Buffer, TextEncoder, TextDecoder, Promise, Uint8Array, ArrayBuffer, DataView,
+    console, setTimeout, clearTimeout, setImmediate, Buffer, TextEncoder, TextDecoder, Promise, Uint8Array, ArrayBuffer, DataView, Date,
   };
   ctx.window = ctx;
   ctx.self = ctx;

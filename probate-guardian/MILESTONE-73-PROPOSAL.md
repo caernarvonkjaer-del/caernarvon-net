@@ -6,9 +6,13 @@
 far: 73U (2026-10-04, `5b8849b`), 73V (2026-10-05, `8b96aa3`), 73C
 (2026-10-05, `861b6a9`, brought forward from its place in the build order at the
 requester's choice) 73D (2026-10-05, `c8e84fe`, likewise), 73J part 1 (2026-10-05, `d819c4a`),
-73F part 1 (2026-10-06, `5e9e17b`), 73A (2026-10-06, `83352d0`), 73F part 2 (2026-10-06, `d01edd4`), 73G part 1 (2026-10-06, `69a1b46`), 73E part 1 (2026-10-06, `8e02051`) and 73F part 3 (2026-10-06, `67fc66c`) and 73I (2026-10-06), each approved by name.** Nothing else is approved.
-Building any other item, or any part of a split item, needs the requester's
-named approval of that item or part (AGENTS.md §3).
+73F part 1 (2026-10-06, `5e9e17b`), 73A (2026-10-06, `83352d0`), 73F part 2 (2026-10-06, `d01edd4`), 73G part 1 (2026-10-06, `69a1b46`), 73E part 1 (2026-10-06, `8e02051`), 73F part 3 (2026-10-06, `67fc66c`), 73I (2026-10-06, `56a7c30`) and 73T part 1 (2026-10-07), each approved by name.**
+**Approved and not yet built** (2026-10-07, one batch, built in this order
+with a full regression midway and at the end): 73T parts 2–4, 73M (with
+74C), 73B (then 74P), 73O part 2 (with 74F), 73G part 2 (with 74H), 73H and
+73S. Nothing else is approved. Building any other item, or any part of a
+split item, needs the requester's named approval of that item or part
+(AGENTS.md §3).
 
 How this document got here:
 
@@ -2822,7 +2826,7 @@ Case #. `verify:data-model`.
 | 10 | Simplified | Part V's attorney date never reaches its box (`PARTS V, VI`!H17); the certificate's box (H41) falls back to it; import copies H41 into both | Parser, code |
 | 11 | All three | Import strips `"`, `<`, `>` and backticks from text: the Clerk's own example `30" Flat screen TV` returns as `30 Flat screen TV` | Code |
 | 12 | Inventory | C-2 and C-3 text containing " / " splits back wrongly ("Foreclosure / Lien" → description "Foreclosure", case number "Lien") | Code |
-| 13 | Annual family | Blank amounts are written as 0: a blank Starting Balance returns as $0.00, silencing "required"; an untouched card returns as a $0.00 row with errors | Code |
+| 13 | Annual family, Simplified | Blank amounts are written as 0: a blank Starting Balance returns as $0.00, silencing "required"; an untouched card returns as a $0.00 row with errors. The Simplified's five Part II amounts do the same (found building part 1; added to part 4 by the requester, 2026-10-07) | Code |
 | 14 | Inventory, Simplified | The Inventory's "no recipients are required" answer is cleared by import; the Simplified's workbook lists recipients the PDF suppresses when it is Yes | Code |
 | 15 | Inventory | Part V's own safe-deposit box (H12) is never written; "inventory filed?" (H26) is written when the ward has no box | Parser, code |
 | 16 | Inventory, Annual | Bond fields hidden by the chosen arrangement are written (73M) | Code |
@@ -2900,8 +2904,9 @@ onto the contract, fixing its rows above:
   rule like the other capacity rules), 9, 13 (blank written blank), 16, 17;
   Part XI's lines (73T-2); the B-4 formula (73T-1).
 - **Part 4, the Simplified:** rows 1 (Guardian #1 kept from the filing; the
-  Clerk's F15 link stays), 2, 8, 10 (H17 written), 14, 18; the remuneration
-  Amount through 73G's codec.
+  Clerk's F15 link stays), 2, 8, 10 (H17 written), 13 (Part II's blank
+  amounts written blank; the requester, 2026-10-07), 14, 18; the
+  remuneration Amount through 73G's codec.
 
 ### Tests and checklist
 
@@ -2912,6 +2917,79 @@ fallback; values lost on an earlier import can't be recovered. **Data model:**
 none (cells live in the contract). **Security:** the import filter matches
 typing (73T-3). **Legal framing:** Part XI touches §744.367(3)(a)'s
 declaration; recorded as practice.
+
+### Build record, part 1 — BUILT 2026-10-07 (approved by name by the requester, 2026-10-07)
+
+**What changed for a filer:** nothing yet. Part 1 writes down, form by form,
+exactly where the app's workbooks put every field and how each comes back on
+import, and checks that against the Clerk's own workbooks. Parts 2–4 move
+each form's export and import onto it and fix the rows above.
+
+**What it is** (`src/core/excel/workbook-contract/`): `codecs.js` (how a
+value goes into a cell and comes back -- text, date, amount, share, Yes/No,
+list -- in the variants each form uses today); `engine.js` (write a filing,
+read a workbook into a detached draft, list every cell a contract names);
+one contract per form -- `guardian.js`, `annual.js`, `simplified.js` --
+describing today's exporter and importer exactly, each known defect marked
+with its row above and the part that fixes it, with what the workbook doesn't
+carry and what is kept for the same person; and `index.js`, the contract for
+a filing type and the adapter 73E's transaction takes (not connected; browser
+tests reach it as `GuardianForms.testing.importTransaction.readWorkbook()`,
+as they reach 73E part 1's engine).
+
+**Checks** (`tests/unit/workbook-contract.spec.js`), for each form:
+
+1. The contract writes what the exporter writes: every box of the export
+   guard's manifest (`export-manifests.ts`, which
+   `excel-form-field-placement.spec.ts` holds the real exporter to), with
+   the value it expects, and nothing else.
+2. Every cell it writes is the Clerk's input box: no caption, no formula
+   (except the recorded approvals, the Inventory's F8 and the Annual's F25),
+   no covered merge member, and unlocked on a protected sheet.
+3. A round trip through a saved workbook, a distinct value in every field,
+   returns each field; the losses still open are listed with their row.
+4. A workbook filled in by hand on the Clerk's own form imports field by
+   field: typed as Excel stores typed values, in the boxes a person uses,
+   nothing in a locked or formula box (a formula box holds what Excel
+   computes).
+5. The adapter's filing-type mapping and today's text passes.
+
+Every listed loss, locked box and defect must still happen; the part that
+fixes one removes it from the list.
+
+**What the checks found**, beyond the table above:
+
+- **Boxes locked in the Clerk's own workbooks.** On protected sheets the
+  Clerk's Inventory leaves locked A-1's "Residence?" and "Income?" columns,
+  A-2's and B-4's liability "Type", C-1's "Frequency", C-4's "Type of Trust",
+  and C-5 page 3's relationship, value and share (page 2 unlocks the same
+  three; the rows and borders match, so the app's placement is right). The
+  Annual leaves D-5's "Type?" locked. A person completing the form by hand
+  can't type there; the app's exports fill them, since protection doesn't
+  stop a program. Recorded in the check, and the office told so its
+  published copies can unlock them (the requester, 2026-10-07).
+- **The Simplified's Part II writes a blank amount as $0**, as row 13 does
+  for the Annual: added to row 13 and to part 4 (the requester, 2026-10-07).
+- **Three of the Annual's date boxes are Text cells** in the Clerk's
+  workbook -- the attorney's signature date (`PART IV, V`!H31) and the court
+  order dates on B-1, B-2 (J) and B-3 (H). A date typed there by hand is
+  stored as text ("1/5/2001"), which the importer reads; the app writes a
+  real date.
+- Confirmed in a hand-filled workbook: rows 3 (Part VIII's H boxes) and 10
+  (the Simplified's H17); in the round trip: row 1 (the Simplified's
+  Guardian #1 name).
+
+**Seen failing while built:** the input-box check on the 160 Inventory
+boxes and seven D-5 boxes locked in the Clerk's form before they were
+recorded; the round trip on every date until the test harness shared its
+Date with the vendored ExcelJS (`tests/unit/support/exceljs-node.js`, so a
+date read from a saved file is a Date to the app's readers, as in the
+browser); the hand-filled check on the Annual's Text-cell dates and its
+`=Guardian` link until the simulation typed and computed them as Excel does.
+
+**Not run:** the full regression (the batch's mid-batch run covers it);
+`check:types` (no file in its scope); `verify:data-model` (no stored field
+changed).
 
 ---
 

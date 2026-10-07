@@ -41,6 +41,7 @@ import { updateSidebar } from '../shell/sidebar.js';
 import { filingLifecycle } from '../navigation/filing-lifecycle.js';
 import { describeConversion } from '../filing/conversion.js';
 import { planImport, runImportTransaction } from '../excel/import-transaction.js';
+import { workbookAdapter } from '../excel/workbook-contract/index.js';
 import { confirmImport } from '../excel/import-confirm.js';
 import { alertModal } from '../ui/dialogs.js';
 import { getRecentlyOpenedWards } from '../filing/recent-filings.js';
@@ -360,11 +361,18 @@ export function createTestingAdapter(w, impl = applicationImplementations()) {
      * filing would change and ask, as a copy; `confirm` shows a plan's
      * confirmation and resolves the filer's choices, or null; `run` imports
      * `draft` into the open filing through the whole transaction -- the
-     * confirmation, the commit, the redraw and the notice.
+     * confirmation, the commit, the redraw and the notice. Milestone 73T part
+     * 1: `readWorkbook` reads a workbook's bytes by the open filing's
+     * workbook contract (src/core/excel/workbook-contract/) and returns what
+     * the adapter hands the transaction -- the draft, the workbook's own
+     * filing type, what it doesn't carry -- as a copy.
      */
     importTransaction: Object.freeze({
       plan: (draft, options) => copy(planImport(requireActive('importTransaction.plan'), draft, options)),
       confirm: (plan, options) => confirmImport(plan, options),
+      readWorkbook: async (bytes, { sourceName = '' } = {}) => copy(await workbookAdapter({
+        data: new Uint8Array(bytes), sourceName, inventoryType: requireActive('importTransaction.readWorkbook').inventoryType,
+      })()),
       run: async (draft, { sourceName = '', workbookType = '', notCarried = [] } = {}) => copy(await runImportTransaction({
         filing: requireActive('importTransaction.run'),
         adapter: async () => ({ draft, sourceName, workbookType, notCarried }),
