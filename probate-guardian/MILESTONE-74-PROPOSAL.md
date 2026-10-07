@@ -3,9 +3,12 @@
 ## Status
 
 **Draft.** Every decision for 74A and 74B is settled (2026-10-05). **Built so
-far: 74A (2026-10-05) and 74B (2026-10-06), each approved by name.**
-Nothing else is approved: building any of 74C–74S needs the requester's
-named approval of that item (AGENTS.md §3). **Every decision in 74C–74S is settled
+far: 74A (2026-10-05), 74B (2026-10-06) and 74Q (2026-10-07), each approved by
+name.** **Approved and not yet built** (2026-10-07, with Milestone 73's batch:
+73T parts 1–4, 73M, 73B, 73O part 2, 73G part 2, 73H and 73S): 74C with 73M,
+74F with 73O part 2, 74H with 73G part 2, and 74P after 73B. Nothing else is
+approved: building any other of 74D–74S needs the requester's named approval
+of that item (AGENTS.md §3). **Every decision in 74C–74S is settled
 (2026-10-06)**, each recorded under its item and gathered in
 [Appendix B](#appendix-b--every-decision-in-74c74s-as-asked-and-settled): the
 27 ordinary ones as recommended, taken together; the 18 questions of Clerk
@@ -2418,6 +2421,28 @@ before writing, for all three workbooks. Proof by reading the exported file's
 
 **73T part 1** (the workbook contract) changes `excel-engine.js`. **Build 74Q
 alongside 73T part 1** (73's row 7).
+
+### Build record — BUILT 2026-10-07 (approved by name by the requester, 2026-10-07)
+
+**What changed for a filer:** an exported Inventory, Annual, Final, Trust or
+Simplified workbook is marked "recalculate on open", so a previewer, an
+e-filing viewer or a script that honours the flag shows the Clerk's formulas'
+totals instead of $0. Excel itself already recalculated on opening.
+
+**How:** `saveWorkbookFile()` (`src/core/excel/excel-engine.js`), the one
+save every export goes through, sets `workbook.calcProperties.fullCalcOnLoad`
+before writing. No formula and no stored result is written (AGENTS.md §5,
+§10 P1).
+
+**Tests:** new `tests/unit/workbook-recalc-on-open.spec.js` in place of the
+design's browser spec, as the requester asked for unit tests as the work goes:
+each of the three court workbooks is opened with the app's own vendored
+ExcelJS (new `tests/unit/support/exceljs-node.js`), saved through
+`saveWorkbookFile()` itself, and the written file's `xl/workbook.xml` read
+back -- `<calcPr fullCalcOnLoad="1">`. **Red-first:** with the change set
+aside, all three saved workbooks lack the flag. The workbook-versus-template
+guard (`excel-form-field-placement.spec.ts`, formulas unchanged in the
+exported file) runs in the batch's full regression.
 
 ---
 

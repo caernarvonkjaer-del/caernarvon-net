@@ -356,6 +356,13 @@ export async function saveWorkbookFile(workbook, filename) {
     }
   } catch (e) {}
 
+  // Milestone 74Q: the totals are the Clerk's formulas, and the file stores
+  // no computed result for them (the templates hold 0), so a previewer, an
+  // e-filing viewer or a script that doesn't recalculate showed $0 in every
+  // total. Ask the opening program to recompute them. This writes no formula
+  // and no result (AGENTS.md section 5); it only sets <calcPr fullCalcOnLoad>.
+  workbook.calcProperties = { ...(workbook.calcProperties || {}), fullCalcOnLoad: true };
+
   const outBuf = await workbook.xlsx.writeBuffer();
   const blob = new Blob([outBuf], {
     type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
