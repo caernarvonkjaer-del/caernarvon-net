@@ -2069,6 +2069,44 @@ kept basis); `dashboard/index.js` (the deadline cell); `readiness-config.js`;
   Plan's date can no longer always be put within two weeks); both pass.
 - Full unit suite: 188 files, 2,795 tests pass; `check:types` clean.
 
+**Full regression for the batch** (74B, 73G part 1, 73E part 1, 73F part 3
+and 73I; `npm test` once, as approved, on a copy on C:, 2026-10-07): unit,
+188 files and 2,795 tests, all passed; browser, 1,095 tests -- 1,065 passed,
+16 skipped, 14 failed. All 14 were tests of behaviour this batch changed on
+purpose, and are updated:
+
+- `excel-form-field-placement.spec.ts` (8 cases): its manifest wrote the probe
+  "V0010" into County, which 73F part 3 now names as not a Florida county, so
+  every export after the first stopped for an override. The County box now
+  holds "Pinellas" (`named()` in `export-manifests.ts`).
+- `form-entry-ux.spec.ts`: an empty Inventory schedule is its page's question
+  ("Schedule A-1: add an entry, or tick ..."), not the export block's wording.
+- `legacy-ward-data-normalization.spec.ts`: two B-2 rows holding nothing are
+  no rows; they now carry a description, and the test still reads their blank
+  answers.
+- `pdf-form-specific.spec.ts` (19C) and `pdf-structure-tags.spec.ts` (19D):
+  their Simplified fixtures' remuneration line had no Amount, now required;
+  each fixture's own completeness check named it. (The fixture audit missed
+  these and the placement manifest.)
+- `plan-simplified-mount.spec.ts`: the Signatures snapshot carries the
+  guardian's Phone Number and Mailing Address asterisks.
+- `year-rollover.characterization.spec.ts` (guardian): the fixture answers
+  "Amended Form?", which a new year clears; only that moved in its record.
+
+Rerun on D: all 14 pass (the 8 Excel cases again after the follow-up below was taken out). The run itself
+finished its tests but hung at shutdown, as did the reruns: Windows'
+management service stopped answering, so the `taskkill` Playwright uses to
+close its browsers never returned; the results were read from the per-test
+log and the processes stopped by hand.
+
+**Found by the regression, left to 73M and 74C** (the requester,
+2026-10-07): a filer who clicks "Continue despite outstanding requirements",
+saves, leaves Preview and comes back without changing anything sees Save as
+Excel enabled, and the click only redraws Preview, saving nothing. Recorded in
+73M's tests and 74C's, whose settled design (clickable, says why) covers it.
+A fix that greyed the buttons out was built and taken back out, as it
+contradicts that design.
+
 ---
 
 ## 73J — Pages that keep up with a change (P5)
@@ -2359,7 +2397,8 @@ now go on Part XI's lines (73T-2), so its Excel block goes.
 ### Tests and checklist
 
 `bond-depository.spec.js` (the import-only guess), `import-keep.spec.js`
-(notes), e2e for the Save as Excel explanations. **18 specs** wait for Save as
+(notes), e2e for the Save as Excel explanations -- including **coming back to
+Preview**: a filer who clicked "Continue despite outstanding requirements", saved, left Preview and came back without changing anything sees Save as Excel enabled -- opening Preview clears the earlier override (`beginFreshPreview()` in `mountPdfPreview()`) after the page drew the button from it -- and the click only redraws Preview, saving nothing and saying nothing (`excel.js`'s acknowledgement-required branch calls `renderPage('/print')`). Found by the batch regression, 2026-10-07; a fix that greyed the buttons out was built and taken back out at the requester's choice, as it contradicts this design. **18 specs** wait for Save as
 Excel to become enabled as a "ready" signal and change. No data-model change;
 the workbook is never written in a cell the Clerk didn't define.
 

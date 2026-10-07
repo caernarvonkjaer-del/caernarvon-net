@@ -90,7 +90,9 @@ test.describe('Milestone 24: Form Entry UX, Dates, Preservation, and Guidance', 
 
     const guidance = page.locator('#page-local-guidance');
     await expect(guidance).toBeVisible();
-    await expect(guidance).toContainText('Add at least one entry, or check the box verifying there are none');
+    // Milestone 73F part 3 (73F-4): an empty Inventory schedule is the page's
+    // own question, no longer an export block.
+    await expect(guidance).toContainText('Schedule A-1: add an entry, or tick "I verify there are no items to report"');
 
     // Add an entry with empty required fields to test field-level jump links
     await addBtn.click();

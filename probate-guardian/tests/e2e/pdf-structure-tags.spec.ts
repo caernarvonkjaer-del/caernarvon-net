@@ -397,7 +397,8 @@ test.describe('PDF Accessibility: Tagged Structure, StructTreeRoot & Marked Cont
         depositsSettlement: 0,
         serviceCharges: 95,
         federalIncomeTax: 1200,
-        remuneration: [{ guardian: 'Eleanor Vance Bennett', type: 'Guardian Fee', description: 'Statutory fee per court order' }],
+        // Milestone 73F part 3 (73F-7): a remuneration line needs its Amount.
+        remuneration: [{ guardian: 'Eleanor Vance Bennett', type: 'Guardian Fee', description: 'Statutory fee per court order', amount: 1800 }],
       });
 
       const invModel = buildVerifiedInventoryModel(mockInventoryData, { signatureStyle: 'typed', printDate: '2026-09-03' });

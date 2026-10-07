@@ -586,6 +586,8 @@ if the selector helper moves there.
   disabled); the other eight pass both ways.
 - In the same spec: before Continue, the reason line names what blocks the
   PDF and the button is described by it (red-first: no such text today).
+- In the same spec, **coming back to Preview**: a filer who clicked "Continue despite outstanding requirements", saved, left Preview and came back without changing anything sees Save as Excel enabled -- opening Preview clears the earlier override (`beginFreshPreview()` in `mountPdfPreview()`) after the page drew the button from it -- and the click only redraws Preview, saving nothing and saying nothing (`excel.js`'s acknowledgement-required branch calls `renderPage('/print')`). Found by the batch regression, 2026-10-07; a fix that greyed the buttons out was built and taken back out at the requester's choice, as it contradicts this design. Both buttons
+  must either save or say why on that click.
 - New unit case in `tests/unit/pdf-preview-print.spec.js` (new): Print calls
   `window.open` with `noopener` (red-first: it doesn't).
 - Changed: every spec that waits for Save as PDF to become enabled as a

@@ -69,6 +69,8 @@ test.describe('PDF Accessibility: Accounting & Inventory Filing-Specific Coverag
             guardian: 'Eleanor Vance Bennett',
             type: 'Guardian Fee',
             description: 'Statutory guardian fee approved per court order dated 06/15/2025',
+            // Milestone 73F part 3 (73F-7): a remuneration line needs its Amount.
+            amount: 1800,
           },
         ],
       });

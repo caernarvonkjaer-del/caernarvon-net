@@ -103,6 +103,17 @@ class Builder {
     this.finite.push({ sheet, cell, path, options });
   }
 
+  /**
+   * Milestone 73F part 3: a box that must hold a real value, not a probe --
+   * the county has to be a Florida county, or every export of the filing
+   * stops for an override. Expects the value as given.
+   */
+  named(path: string, sheet: string, cell: string, value: string) {
+    this.set(path, value);
+    this.expectedByPath.set(path, value);
+    this.expectations.push({ sheet, cell, value, path });
+  }
+
   /** A cell the exporter fills from something other than one field (the filing type, say). */
   fixed(path: string, sheet: string, cell: string, value: string | number | null) {
     this.expectations.push({ sheet, cell, value, path });
@@ -229,7 +240,7 @@ export function inventoryManifest(): Manifest {
   const b = new Builder();
   const SI = 'SUMMARY I ';
   b.box('wardName', SI, 'C7', 'text'); b.box('caseNumber', SI, 'H7', 'text'); b.box('gid', SI, 'F7', 'date');
-  b.box('county', SI, 'G3', 'text'); b.box('guardianName', SI, 'D23', 'text'); b.box('attorneyForGuardian', SI, 'D24', 'text');
+  b.named('county', SI, 'G3', 'Pinellas'); b.box('guardianName', SI, 'D23', 'text'); b.box('attorneyForGuardian', SI, 'D24', 'text');
   b.box('typeOfGuardianship', SI, 'D25', 'text');
   b.choice('hasSafeDepositBox', SI, 'D26', YES_NO); b.choice('safeDepositBoxFiled', SI, 'H26', YES_NO); b.choice('amendedForm', SI, 'I8', YES_NO);
 
@@ -374,7 +385,7 @@ export function annualManifest(filingTypeValue = 'Annual'): Manifest {
   b.choice('amendedForm', P1, 'J6', YES_NO);
   b.fixed('(filing type, from the filing descriptor)', P1, 'H4', filingTypeValue);
   // The county box is the "Select County" dropdown, H2; Part V's "Name of county" reads it.
-  b.box('relatedCaseNumbers', P1, 'I13', 'text'); b.box('county', P1, 'H2', 'text');
+  b.box('relatedCaseNumbers', P1, 'I13', 'text'); b.named('county', P1, 'H2', 'Pinellas');
 
   // PART II, III: three guardian blocks ten rows apart.
   [25, 35, 45].forEach((r, i) => {
@@ -504,7 +515,7 @@ export function simplifiedManifest(): Manifest {
   b.box('wardName', P1, 'C4', 'text'); b.box('caseNumber', P1, 'H4', 'text');
   b.box('periodFrom', P1, 'E13', 'date'); b.box('periodTo', P1, 'H13', 'date');
   b.box('attorney', P1, 'D15', 'text'); b.box('guardian', P1, 'D16', 'text'); b.box('typeOfGuardianship', P1, 'D17', 'text');
-  b.box('gid', P1, 'F4', 'date'); b.box('county', P1, 'G2', 'text');
+  b.box('gid', P1, 'F4', 'date'); b.named('county', P1, 'G2', 'Pinellas');
   b.choice('amendedForm', P1, 'I5', YES_NO);
   b.box('startingBalance', P1, 'H19', 'money'); b.box('interestIncome', P1, 'G22', 'money');
   b.box('depositsSettlement', P1, 'G23', 'money'); b.box('serviceCharges', P1, 'G27', 'money');

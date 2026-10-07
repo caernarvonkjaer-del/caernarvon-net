@@ -100,7 +100,10 @@ test.describe('legacy boolean -> tri-state ward data normalization (Guardian Inv
     const d = await reopenFilingWithStoredShape(page, {
       scheduleA1: [{ residence: 'No', isPersonalResidence: true, income: '', isIncomeProperty: null }],
       scheduleB1: [{ restricted: 'No', isRestricted: true }],
-      scheduleB2: [{ inSafeDepositBox: '' }, { inSafeDepositBox: null }, {}],
+      // Milestone 73F part 3: a row holding nothing is no row (the clean-up
+      // removes it), so each row carries a description; what is read here is
+      // its unanswered safe-deposit question.
+      scheduleB2: [{ description: 'Watch', inSafeDepositBox: '' }, { description: 'Ring', inSafeDepositBox: null }, { description: 'Coins' }],
       scheduleB3: [{ restricted: '', isRestricted: null, inSafeDepositBox: 'No' }],
       hasSafeDepositBox: 'No',
       safeDepositBoxFiled: '',
