@@ -7,8 +7,8 @@ far: 73U (2026-10-04, `5b8849b`), 73V (2026-10-05, `8b96aa3`), 73C
 (2026-10-05, `861b6a9`, brought forward from its place in the build order at the
 requester's choice) 73D (2026-10-05, `c8e84fe`, likewise), 73J part 1 (2026-10-05, `d819c4a`),
 73F part 1 (2026-10-06, `5e9e17b`), 73A (2026-10-06, `83352d0`), 73F part 2 (2026-10-06, `d01edd4`), 73G part 1 (2026-10-06, `69a1b46`), 73E part 1 (2026-10-06, `8e02051`), 73F part 3 (2026-10-06, `67fc66c`), 73I (2026-10-06, `56a7c30`), 73T part 1 (2026-10-07, `4cae1e7`), 73T part 2 (2026-10-07, `2a1cbc5`), 73T part 3 (2026-10-07, `9d2bc72`), 73T part 4 (2026-10-07, `b70a944`), 73M with 74C (2026-10-07, `a0e987b`), 73B (2026-10-07, `86547da`), 73O part 2 with 74F (2026-10-08, `fa9625e`), 73G part 2 with 74H (2026-10-08, `f85e862`, `78b5770`), 73H (2026-10-08, `631f898`) and 73S (2026-10-08), each approved by name; 74P, built after 73B, is recorded in Milestone 74.**
-**The 2026-10-07 batch is built**; its closing full regression is recorded
-below when it has run. Nothing else is approved. Building any other item, or any part of a
+**The 2026-10-07 batch is built**, and its closing full regression has run
+(recorded below, after the mid-batch one). Nothing else is approved. Building any other item, or any part of a
 split item, needs the requester's named approval of that item or part
 (AGENTS.md §3).
 
@@ -2368,6 +2368,19 @@ none failed (1.3 h). The skips are the tests that belong to other profiles --
 the web build's hashed-chunk case, the hosted offline cache (5), the portable
 build's HTTP parity -- and the pre-merge comparison (9), which runs only when
 asked for. Nothing to fix; the batch goes on to 73O part 2 with 74F.
+
+**Closing full regression** (the same batch, after 73O part 2 with 74F, 73G
+part 2 with 74H, 73H and 73S; `npm test` once, as approved, on a copy on C: at
+`3cf1d9d`, 2026-10-08): unit, 200 files and 2,977 tests, all passed; browser,
+1,138 tests -- 1,121 passed, 16 skipped (the same profile-bound tests and the
+pre-merge comparison), **one failed** (1.5 h in all). The failure was the New
+Year record for the Plan for Minors: 73S gave that form's browser fixture its
+now-required Case #, so the archived year's `ref` holds "2026-CP-000987"
+where the record held "" -- one value, recorded data, no behaviour. That
+entry alone was regenerated (its note says why) and the year-rollover spec
+re-run: 9 of 9 passed. 73S's targeted browser run had left the
+characterization specs out, which is why it surfaced here. The batch is
+complete.
 
 ---
 
