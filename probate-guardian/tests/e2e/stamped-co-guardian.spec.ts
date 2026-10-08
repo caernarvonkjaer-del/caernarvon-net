@@ -2,6 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 import {
   freshStartNoPassword, createWard, createSimplifiedWard, fillMinimalValidAnnualWard, fillMinimalValidSimplifiedWard,
   fillMinimalValidGuardianWard, fillMinimalValidPlanAnnualWard, acceptDynDialog, dismissDynDialog,
+  expectExportReady, clickExport,
 } from './support/target';
 import { readAll } from './support/stream';
 import { extractPdfText } from './support/pdf-extract';
@@ -48,9 +49,8 @@ async function previewOverrideAndSave(page: Page, saveSelector: string) {
   await page.locator('#print-doc-container [data-preview-action="override"]').click();
   await acceptDynDialog(page);
   const button = page.locator(saveSelector);
-  await expect(button).toBeEnabled({ timeout: 60_000 });
-  const dl = page.waitForEvent('download', { timeout: 120_000 });
-  await button.click();
+  await expectExportReady(button, 60_000);
+  const dl = clickExport(button, 120_000);
   const text = (await extractPdfText(await readAll(await (await dl).createReadStream()))).replace(/\s+/g, ' ');
   return { listed: String(listed || ''), text };
 }

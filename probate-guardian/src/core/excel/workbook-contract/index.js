@@ -90,6 +90,17 @@ export function readWorkbookDraft(workbook, inventoryType, { filing = null, ctx 
   return { draft, rowSources: report.rowSources, dateDrafts: report.unreadableDates, workbookType: workbookTypeOf(typeBox, inventoryType) };
 }
 
+/**
+ * Milestone 73M: what this filing holds that its court workbook has no box
+ * for -- [{ text, warn }], from the contract's excelOmits(). `warn` marks what
+ * the filer must file another way, which Save as Excel asks about (73M-1 and
+ * 73M-2); the rest is said beside the export buttons.
+ */
+export function excelOmissions(filing) {
+  const contract = contractFor(filing?.inventoryType);
+  return contract?.excelOmits ? contract.excelOmits(filing) : [];
+}
+
 /** The draft alone (readWorkbookDraft()'s), for callers that need nothing else. */
 export function draftFromWorkbook(workbook, inventoryType, ctx = {}) {
   return readWorkbookDraft(workbook, inventoryType, { ctx }).draft;

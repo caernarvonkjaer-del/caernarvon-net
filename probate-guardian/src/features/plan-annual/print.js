@@ -16,7 +16,7 @@ import { finalizeCourtFormPdf, saveFinalizedPdf } from '../../core/pdf/pdf-final
 import { mountPdfPreview, printGeneratedPdf, setPrintCurrentFiling } from '../../core/pdf/pdf-preview.js';
 import { getSupplementalAccessibilityWarning, getSupplementalFilingIssues } from '../../core/pdf/supplemental-pdf.js';
 import { prepareFilingOutput, previewStatusHtml } from '../../core/filing/output-preflight.js';
-import { authorizeFilingOutput } from '../../core/filing/output-authorization.js';
+import { authorizeFilingOutput, beginFreshPreview } from '../../core/filing/output-authorization.js';
 import { renderOutputAdvisories } from '../../core/filing/output-advisories.js';
 import { renderReadinessCard } from '../../core/filing/readiness-card.js';
 import { alertModal } from '../../core/ui/dialogs.js';
@@ -25,12 +25,20 @@ import { getD } from '../../core/state.js';
 import { highlightErrors, validationPanel } from '../../core/validation/validation-panel.js';
 import { queueAllScheduleDocValidations } from '../../core/filing/schedule-docs.js';
 import { renderPage } from '../../core/navigation/router.js';
+import { exportReasonHtml, outputRefusal } from '../../core/filing/output-reasons.js';
 
 
 // Milestone 44C: this Plan's readiness predicates live in
 // src/core/filing/readiness-config.js (getFilingReadiness('planAnnual')),
 // rendered by the shared readiness card below.
 export function pagePrintPlanAnnual(){
+  // Milestone 73M / 74C: opening Preview judges the filing afresh -- an earlier
+  // "Continue despite outstanding requirements" covered that visit only.
+  // mountPdfPreview() clears it once this page is drawn; clearing it first
+  // makes the banner and the reason line beside the buttons say what a click
+  // will do (coming back to Preview, they said nothing stood in the way and
+  // Save as Excel then refused).
+  beginFreshPreview();
   queueAllScheduleDocValidations?.();
   const baseIssues=()=>[...validatePlanAnnual(), ...getSupplementalFilingIssues(getD())];
   const preflight=prepareFilingOutput(getD(),baseIssues);
@@ -39,7 +47,9 @@ export function pagePrintPlanAnnual(){
   // actually blocks the pdf capability, via authorizeFilingOutput() -- the
   // banner/panel below stays driven by the full, capability-agnostic
   // preflight so every outstanding requirement is still visible.
-  const pdfBlocked=authorizeFilingOutput(getD(),baseIssues,{capability:'pdf'}).status!=='allowed';
+  // Milestone 74C: Save as PDF stays clickable; the reason line beside it says
+  // what stops it (the Simplified Plan's used to stay greyed out after Continue).
+  const pdfAuthorization=authorizeFilingOutput(getD(),baseIssues,{capability:'pdf'});
   const supplementalWarning=getSupplementalAccessibilityWarning(getD());
   highlightErrors(errors);
   return `<div>
@@ -48,10 +58,11 @@ export function pagePrintPlanAnnual(){
       <div><strong>Preview &amp; Export</strong> ${previewStatusHtml(preflight)}</div>
       <div class="d-flex gap-2 flex-wrap">
         <span id="export-status" style="font-size:.8rem;color:var(--ink-3);"></span>
-        <button class="btn btn-primary btn-sm" data-form-action="save-pdf-plan-annual" ${pdfBlocked?'disabled':''}>Save as PDF</button>
+        <button class="btn btn-primary btn-sm" data-form-action="save-pdf-plan-annual" data-output-action="save-pdf" aria-describedby="export-reason">Save as PDF</button>
         <button class="btn btn-outline-secondary btn-sm" data-form-action="print">Print</button>
         <button class="btn btn-outline-secondary btn-sm" data-form-action="open-court-portal" title="Opens the Florida Courts E-Filing Portal in a new tab"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M14.2 4.4h5.4v5.4"/><path d="m19.6 4.4-8 8"/><path d="M17.4 13.6v6H4.6V6.8h6"/></svg> Florida E-Filing Portal</button><span data-preview-shell-actions></span>
       </div>
+      <div class="w-100">${exportReasonHtml({ pdf: pdfAuthorization })}</div>
     </div>
     ${errors.length?validationPanel(errors):''}
     ${renderOutputAdvisories(preflight.advisories)}
@@ -72,7 +83,7 @@ export async function doSavePdf(){
   const authorization = authorizeFilingOutput(getD(), baseIssues, { capability: 'pdf' });
   if (authorization.status !== 'allowed') {
     renderPage('/print');
-    await alertModal(`Cannot export — ${authorization.issues.length} required field${authorization.issues.length === 1 ? '' : 's'} missing. See the list on this page.`);
+    await alertModal(outputRefusal(authorization, 'PDF'));
     return;
   }
   // Milestone 67: disables the button for the export's duration, so a second

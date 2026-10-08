@@ -3,6 +3,7 @@ import {
   freshStartNoPassword, createWard,
   fillMinimalValidPlanAnnualWard, fillMinimalValidPlanSimplifiedWard, fillMinimalValidPlanMinorWard, fillMinimalValidPlanInitialWard,
   fillMinimalValidAnnualWard,
+  expectExportReady,
 } from './support/target';
 
 // Milestone 68A. A guardian filing an Annual Guardianship Plan for the coming
@@ -65,7 +66,7 @@ for (const form of [
     for (const key of form.keys) expect(checks[key], `${form.label}: sidebar ${key} stays complete`).toBe(true);
 
     await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
-    await expect(page.locator(form.pdfButton), `${form.label}: Save as PDF is enabled`).toBeEnabled({ timeout: 20_000 });
+    await expectExportReady(page.locator(form.pdfButton), 20_000, `${form.label}: nothing stops Save as PDF`);
   });
 }
 

@@ -1438,7 +1438,7 @@ function reconcileBlockAnnual(t){
       placeholder="Explain why Net Assets from Changes and Net Assets from Balances differ (for example: a correcting entry from a prior period, or an asset discovered after the period closed)."
       data-annual-path="reconcileExplanation"
       >${esc(st.explanation)}</textarea>
-    <div style="font-size:.78rem;color:var(--ink-3);margin-top:.35rem;">This explanation is included on the exported document.</div>
+    <div style="font-size:.78rem;color:var(--ink-3);margin-top:.35rem;" data-explanation-where>This explanation prints on the PDF. The court's Excel workbook has no box for it: file the PDF, or file the explanation separately.</div>
   </div>`;
 }
 

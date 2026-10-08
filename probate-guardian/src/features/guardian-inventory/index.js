@@ -1218,8 +1218,10 @@ function pageD4(){
           // export; the print preview warns instead, and the sidebar asks.
           // The per-row Restricted? flags on B-1/B-3 still feed the bond
           // calculation above; this records the arrangement only. The radio
-          // is routed (67F) so the reveal appears on the click.
-          const state=inferBondDepositoryState(D);
+          // is routed (67F) so the reveal appears on the click. The filing
+          // itself, not the D proxy: since 73M the reading asks whether the
+          // filing has the field at all, and the proxy does not forward `in`.
+          const state=inferBondDepositoryState(getD());
           return renderRadioGroupField({ path:'bondDepositoryState', id:'bondDepositoryState', label:BOND_DEPOSITORY_QUESTION, value:state, options:BOND_DEPOSITORY_OPTIONS, hint:'Not required to file. Each answer shows only the fields it needs.', route:'/d4' })
             +(revealsDepository(state)?formRow(col(6,optLabel('Date of most recent restricted depository receipt')+dateInput('restrictedDepositoryReceiptDate','Date of most recent restricted depository receipt'))):'')
             +(revealsBond(state)?formRow(col(4,optLabel('Bond Amount')+numInput('bondAmount')),col(3,optLabel('Bond Period – From')+dateInput('bondPeriodFrom','Bond Period – From')),col(3,optLabel('Bond Period – To')+dateInput('bondPeriodTo','Bond Period – To')))

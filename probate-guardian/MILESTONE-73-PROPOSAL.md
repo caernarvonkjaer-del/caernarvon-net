@@ -6,11 +6,10 @@
 far: 73U (2026-10-04, `5b8849b`), 73V (2026-10-05, `8b96aa3`), 73C
 (2026-10-05, `861b6a9`, brought forward from its place in the build order at the
 requester's choice) 73D (2026-10-05, `c8e84fe`, likewise), 73J part 1 (2026-10-05, `d819c4a`),
-73F part 1 (2026-10-06, `5e9e17b`), 73A (2026-10-06, `83352d0`), 73F part 2 (2026-10-06, `d01edd4`), 73G part 1 (2026-10-06, `69a1b46`), 73E part 1 (2026-10-06, `8e02051`), 73F part 3 (2026-10-06, `67fc66c`), 73I (2026-10-06, `56a7c30`), 73T part 1 (2026-10-07, `4cae1e7`), 73T part 2 (2026-10-07, `2a1cbc5`), 73T part 3 (2026-10-07, `9d2bc72`) and 73T part 4 (2026-10-07), each approved by name.**
+73F part 1 (2026-10-06, `5e9e17b`), 73A (2026-10-06, `83352d0`), 73F part 2 (2026-10-06, `d01edd4`), 73G part 1 (2026-10-06, `69a1b46`), 73E part 1 (2026-10-06, `8e02051`), 73F part 3 (2026-10-06, `67fc66c`), 73I (2026-10-06, `56a7c30`), 73T part 1 (2026-10-07, `4cae1e7`), 73T part 2 (2026-10-07, `2a1cbc5`), 73T part 3 (2026-10-07, `9d2bc72`), 73T part 4 (2026-10-07, `b70a944`) and 73M with 74C (2026-10-07), each approved by name.**
 **Approved and not yet built** (2026-10-07, one batch, built in this order
-with a full regression midway and at the end): 73M (with
-74C), 73B (then 74P), 73O part 2 (with 74F), 73G part 2 (with 74H), 73H and
-73S. Nothing else is approved. Building any other item, or any part of a
+with a full regression midway and at the end): 73B (then 74P), 73O part 2
+(with 74F), 73G part 2 (with 74H), 73H and 73S. Nothing else is approved. Building any other item, or any part of a
 split item, needs the requester's named approval of that item or part
 (AGENTS.md §3).
 
@@ -2406,6 +2405,106 @@ Preview**: a filer who clicked "Continue despite outstanding requirements", save
 Excel to become enabled as a "ready" signal and change. No data-model change;
 the workbook is never written in a cell the Clerk didn't define.
 
+### Build record — BUILT 2026-10-07 with 74C (approved by name by the requester, 2026-10-07)
+
+**What changed for a filer:**
+
+- **The bond answer after an import.** An Inventory or Annual-family
+  workbook answers "Which applies to this guardianship?" only where one
+  arrangement alone could have produced it: a waiver date means "Bond waived
+  by court order"; an Annual workbook's receipt date means "Restricted
+  depository only", or "Bond and restricted depository" when the bond details
+  are filled in. Bond details alone are left for the filer to choose -- an
+  Inventory with a bond and a restricted depository used to come back as
+  "Bond only" (the Inventory's workbook has no depository box). An answer the
+  filing already had still stands.
+- **Opening the page no longer guesses for a current filing** (decision
+  73M-3, below). Design step 2 kept the guess made on opening unchanged, but
+  that guess runs every time the bond page opens, and the import redraws the
+  page, so it would have filled the blank straight back in. The guess on
+  opening is now made only for a file saved before the four-way question
+  existed (it carries the retired Yes/No fields, or no question at all). A
+  current filing whose answer is blank stays blank: a filer who typed bond
+  details but never answered is asked, never guessed for; the page, the PDF
+  and the Preview's reminders read it the same way.
+- **The workbook's bond block** writes only the fields the chosen arrangement
+  shows (73M-N1) -- built with 73T parts 2 and 3.
+- **A-2's Notes** stay out of the workbook (73M-1). An import keeps each
+  row's Notes for the same lender in the same place, counted among the rows
+  the workbook carries, as people are matched; it used to erase them. Save as
+  Excel asks first: *"The court's Excel workbook has no box for A-2's Notes.
+  The PDF includes it; file the PDF, or file it separately. Save the workbook
+  without it?"*
+- **The Parts VI & VII explanation** (73M-2): Save as Excel asks the same
+  question when Lines 20 and 30 differ -- the PDF prints the explanation only
+  then -- and the page's sentence now reads *"This explanation prints on the
+  PDF. The court's Excel workbook has no box for it: file the PDF, or file
+  the explanation separately."*
+- **What the workbook has no box for** is said beside the export buttons on
+  the three accountings' Preview -- e.g. *"Not in the Excel workbook (it has
+  no box for them; the PDF includes them): A-2's Notes; the method of
+  service; the UCN."* -- from one list per form in its workbook contract
+  (`excelOmits`, design step 1). 73E's after-import notice already names what
+  the workbook doesn't carry; A-2's Notes moved there from "brought back
+  changed".
+- **Save as Excel stays clickable and says why it can't go on** (step 5,
+  built with 74C): a capacity limit names the schedules as before; requirements
+  still outstanding give *"Cannot export to Excel — N required fields
+  missing. See the list on this page, or choose “Continue despite outstanding
+  requirements” to export anyway."* The reason line beside the buttons says
+  the same before the click. Part XI's Excel limit went with 73T part 3.
+- **Coming back to Preview** after a Continue (found by the batch
+  regression): opening Preview judges the filing afresh, and now does so
+  before the page draws its banner and reason line, so they say what a click
+  will do, and Save as Excel's click explains itself instead of redrawing the
+  page.
+
+**Tests:**
+
+- `tests/unit/bond-depository.spec.js`: a current filing's blank answer stays
+  blank whatever its fields hold (page, PDF lines, advisories); files saved
+  under the old shape are still read as before; `bondStateFromWorkbook()` for
+  each workbook. **Red-first:** with the fix set aside, a current filing with
+  bond details is guessed "Bond only".
+- `tests/unit/workbook-contract.spec.js`: A-2's Notes kept on import, past a
+  row the workbook doesn't carry, and not carried to another lender; each
+  form's "no box for it" list. **Red-first:** with the Inventory contract set
+  aside, the Notes come back blank and the list is empty.
+- New `tests/unit/output-reasons.spec.js`: the reason line, the click's
+  message, the "no box" line and question.
+- `bond-depository.spec.ts`: a bond-only workbook imported into an unanswered
+  filing leaves the question unanswered, also after the page is opened again.
+  **Red-first** (on a copy, with the bond module, both importers and the
+  Inventory page as they were): both forms fail -- the answer comes back
+  "Bond only".
+- Save as Excel's half of `output-buttons-after-override.spec.ts` (74C's
+  record).
+- 34 existing browser specs changed: where one waited for an export button
+  to turn enabled, or checked it disabled, it now reads the reason line
+  (`expectExportReady()`, `expectExportStopped()`, `exportStopped()` in
+  `support/target.ts`), and its Save as Excel clicks go through
+  `clickExport()`, which answers the new question when it is asked (the
+  minimal Annual fixture carries a Lines 20/30 explanation). Seven specs that
+  forced a disabled button enabled to reach the refusal message now click it
+  (one of them among the 34). The assertion-count baseline records the moved
+  checks.
+- **Browser specs: 52 files, 512 tests -- 503 passed, 9 skipped (the
+  pre-merge comparison, which runs only when asked for), none failed** (42.8
+  min on a copy on C:): every changed spec, the new one, and the specs that
+  share the Preview, the export buttons, the bond question or the import.
+  Full unit suite: 2,873 passed; `check:types` clean. Full regression: the
+  batch's mid-batch run, after 73B and 74P.
+
+### Decision raised while building (the requester, 2026-10-07)
+
+- **73M-3. The bond guess on opening the page.** Asked because design step 2
+  (keep the guess on opening, change only the import) could not work: the
+  import redraws the page and the guess on opening would fill the blank back
+  in. (1) *Recommended, chosen:* only for files saved before the four-way
+  question; a current filing's blank answer stays blank until the filer
+  chooses. (2) Keep guessing on every opening, which leaves 73M's import
+  change with no effect a filer can see.
+
 ---
 
 ## 73N — The PDF: line wrapping and the court's wording (D19, D8)
@@ -4090,6 +4189,12 @@ Raised by the review:
     the fields the chosen arrangement shows, as the PDF does; the filing keeps
     the hidden values. (2) As today: everything typed, so a workbook can show
     a waiver date beside a bond.
+
+Raised while building (settled 2026-10-07):
+
+- **73M-3. The bond guess on opening the page.** (1) *Recommended, chosen:*
+  only for files saved before the four-way question. (2) Keep guessing on
+  every opening. See 73M's build record.
 
 #### 73N
 

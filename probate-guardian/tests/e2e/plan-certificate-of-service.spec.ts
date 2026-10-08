@@ -2,6 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 import {
   freshStartNoPassword, createWard,
   fillMinimalValidPlanAnnualWard, fillMinimalValidPlanSimplifiedWard, fillMinimalValidPlanMinorWard, fillMinimalValidPlanInitialWard,
+  expectExportReady, clickExport,
 } from './support/target';
 import { readAll } from './support/stream';
 import { extractPdfText } from './support/pdf-extract';
@@ -46,9 +47,8 @@ async function download(page: Page, selector: string) {
   await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
   await go(page, '/print');
   const button = page.locator(selector);
-  await expect(button).toBeEnabled({ timeout: 20_000 });
-  const dl = page.waitForEvent('download', { timeout: 40_000 });
-  await button.click();
+  await expectExportReady(button, 20_000);
+  const dl = clickExport(button, 40_000);
   return readAll(await (await dl).createReadStream());
 }
 
@@ -85,7 +85,7 @@ for (const form of FORMS) {
         expect(await certIssues(page), `${form.label} ${label}: the export gate says nothing`).toEqual([]);
       }
       await go(page, '/print');
-      await expect(page.locator(form.pdfButton), 'Save as PDF stays enabled with a half-finished certificate').toBeEnabled();
+      await expectExportReady(page.locator(form.pdfButton), 20_000, 'nothing stops Save as PDF with a half-finished certificate');
     });
 
     test('the attestation hides the cards without deleting them, and the sidebar asks until someone is listed or the attestation is Yes', async ({ page }) => {
@@ -209,7 +209,7 @@ for (const form of FORMS) {
         await expect(page.locator('#page-next-btn'), 'untouched: the way on to Preview & Export is open').toBeEnabled();
         await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
         await go(page, '/print');
-        await expect(page.locator(form.pdfButton)).toBeEnabled({ timeout: 20_000 });
+        await expectExportReady(page.locator(form.pdfButton), 20_000);
         await expect(advisory, 'untouched: Preview & Export says nothing about it').toHaveCount(0);
 
         // Entering anything starts it; from then on it is asked like any Plan's.
@@ -222,7 +222,7 @@ for (const form of FORMS) {
         await expect(guidance, 'started: the page says what it still wants').toHaveCount(1);
         await expect(page.locator('#page-next-btn'), 'started and marked: the way on is still open').toBeEnabled();
         await go(page, '/print');
-        await expect(page.locator(form.pdfButton), 'still never blocks export').toBeEnabled({ timeout: 20_000 });
+        await expectExportReady(page.locator(form.pdfButton), 20_000, 'still never blocks export');
         await expect(advisory.first(), 'started: Preview & Export says what is blank').toBeVisible();
         await expect(advisory.filter({ hasText: 'No recipient is listed' })).toHaveCount(1);
       });

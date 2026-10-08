@@ -18,11 +18,12 @@ import { getExcelCapacityIssues } from '../../core/excel/excel-capacity.js';
 import { getExcelJS, saveWorkbookFile, setCell, setDateCell } from '../../core/excel/excel-engine.js';
 import { writeContract } from '../../core/excel/workbook-contract/engine.js';
 import { SIMPLIFIED_CONTRACT } from '../../core/excel/workbook-contract/simplified.js';
-import { workbookAdapter } from '../../core/excel/workbook-contract/index.js';
+import { excelOmissions, workbookAdapter } from '../../core/excel/workbook-contract/index.js';
+import { excelOmissionsQuestion, outputRefusal } from '../../core/filing/output-reasons.js';
 import { runImportTransaction } from '../../core/excel/import-transaction.js';
 import { confirmImport } from '../../core/excel/import-confirm.js';
 import { recordDateDraft } from '../../core/form/commit-coordinator.js';
-import { alertModal } from '../../core/ui/dialogs.js';
+import { alertModal, confirmModal } from '../../core/ui/dialogs.js';
 import { setStatus, scheduleStatusClear } from '../../core/ui/transient-status.js';
 import { beginExport } from '../../core/ui/export-guard.js';
 import { getImportProgressEl, validateImportFile } from '../../core/security/input-hardening.js';
@@ -41,19 +42,25 @@ export async function doSaveExcel(){
     additionalIssues: capacityIssues,
   });
   if (authorization.status !== 'allowed') {
-    if (authorization.status === 'blocked') {
-      const capIssues = authorization.issues.filter(i => i.code?.startsWith('excel.capacity.'));
-      if (capIssues.length) {
-        await alertModal('Cannot export to Excel — these sections have more entries than the court\'s Excel template can hold:\n\n'
-          + capIssues.map(o => `• ${o.message}`).join('\n')
-          + '\n\nSave as PDF instead — the PDF includes every entry.');
-      } else {
-        await alertModal(`Cannot export to Excel: ${authorization.issues.length} blocking issue(s) remain.`);
-      }
+    // Milestone 73M step 5 / 74C: Save as Excel stays clickable and the click
+    // says why it can't go on -- a capacity limit, or requirements still
+    // outstanding (it used to redraw Preview and say nothing).
+    const capIssues = authorization.issues.filter(i => i.code?.startsWith('excel.capacity.'));
+    if (capIssues.length) {
+      await alertModal('Cannot export to Excel — these sections have more entries than the court\'s Excel template can hold:\n\n'
+        + capIssues.map(o => `• ${o.message}`).join('\n')
+        + '\n\nSave as PDF instead — the PDF includes every entry.');
+    } else {
+      await alertModal(outputRefusal(authorization, 'Excel'));
     }
     renderPage('/print');
     return;
   }
+  // Milestone 73M (decisions 73M-1 and 73M-2): what the filer must file
+  // another way -- A-2's Notes, the Lines 20/30 explanation -- is asked about
+  // here; the rest of what the workbook has no box for is said on the page.
+  const fileElsewhere = excelOmissions(getD()).filter((o) => o.warn);
+  if (fileElsewhere.length && !(await confirmModal({ title: 'Not in the Excel workbook', message: excelOmissionsQuestion(fileElsewhere), confirmLabel: 'Save the workbook' }))) return;
   // Milestone 67: disables the button for the export's duration, so a second
   // click while it's still generating can't fire a second download and get
   // both blocked by the browser as "multiple files."

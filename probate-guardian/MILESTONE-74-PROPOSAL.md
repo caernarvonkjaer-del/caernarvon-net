@@ -3,10 +3,10 @@
 ## Status
 
 **Draft.** Every decision for 74A and 74B is settled (2026-10-05). **Built so
-far: 74A (2026-10-05), 74B (2026-10-06) and 74Q (2026-10-07), each approved by
-name.** **Approved and not yet built** (2026-10-07, with Milestone 73's batch:
-73T parts 1–4, 73M, 73B, 73O part 2, 73G part 2, 73H and 73S): 74C with 73M,
-74F with 73O part 2, 74H with 73G part 2, and 74P after 73B. Nothing else is
+far: 74A (2026-10-05), 74B (2026-10-06), 74Q (2026-10-07) and 74C (2026-10-07,
+with 73M), each approved by name.** **Approved and not yet built** (2026-10-07,
+with Milestone 73's batch: 73B, 73O part 2, 73G part 2, 73H and 73S): 74F with
+73O part 2, 74H with 73G part 2, and 74P after 73B. Nothing else is
 approved: building any other of 74D–74S needs the requester's named approval
 of that item (AGENTS.md §3). **Every decision in 74C–74S is settled
 (2026-10-06)**, each recorded under its item and gathered in
@@ -622,6 +622,56 @@ if the selector helper moves there.
   previews in the same nine `print.js`; **73F part 2** changes the Preview's
   counts and banner in `pdf-preview.js`; **73R part 3** changes
   `pdf-preview.js` for zoom. Sequence, not side by side.
+
+### Build record — BUILT 2026-10-07 with 73M (approved by name by the requester, 2026-10-07)
+
+**What changed for a filer, on all nine forms:**
+
+- **Save as PDF and Save as Excel can always be clicked.** A click either
+  saves or says why it can't: *"Cannot export — N required fields missing.
+  See the list on this page, or choose “Continue despite outstanding
+  requirements” to export anyway."* (or *"…; they can't be overridden."*).
+- **A reason line beside the buttons** says the same before the click -- e.g.
+  *"Save as PDF and Save as Excel: 3 requirements outstanding — see the list
+  on this page, or choose “Continue despite outstanding requirements”."* --
+  and each button's `aria-describedby` points to it, so a screen reader reads
+  it with the button. Continue removes what it acknowledged; a capacity limit
+  stays.
+- **The Simplified Annual Plan's Save as PDF works after Continue** (QA
+  report BUG-11). Every export button carries `data-output-action`; the
+  Preview no longer re-enables buttons by per-form selectors or tooltip
+  wording, because none is ever disabled for this.
+- **Print** opens the PDF in a new tab that has no handle back to the app
+  (QA report UX-38). **Design step 3 changed:** it asked for
+  `window.open(url, '_blank', 'noopener')` after a browser check that a
+  `blob:` PDF opened that way still loads. That check -- a throwaway
+  Playwright script in Chromium, Firefox, WebKit and Edge -- was
+  inconclusive in all four, so Print opens the tab exactly as before and then
+  cuts the link (`tab.opener = null`), which needs no such check.
+- **Coming back to Preview** after a Continue now says what a click will do
+  (73M's record).
+
+**Tests:**
+
+- New `tests/e2e/output-buttons-after-override.spec.ts`, on each of the nine
+  forms with a new, empty filing: after Continue, Save as PDF downloads the
+  PDF; before Continue, the reason line names what stops each button, each
+  button is described by it and carries `data-output-action`, the click says
+  why and saves nothing, and Continue clears the reason; on the five
+  accountings, coming back to Preview after a Continue and a save, Save as
+  Excel's click says why and saves nothing. All 23 pass. **Red-first** (on a
+  copy, with the nine Preview pages, the Preview module and the three Save as
+  Excel handlers as they were): 15 of 23 fail, each for its reason -- the
+  Simplified Annual Plan's Save as PDF stayed disabled after Continue, so the
+  click never came; on every form the buttons were greyed out before Continue
+  with no reason line; and coming back to Preview, Save as Excel's click said
+  nothing. The other eight forms' first case passed both ways, as predicted.
+- New `tests/unit/pdf-preview-print.spec.js`: Print's tab has its opener cut;
+  a blocked pop-up is not an error; nothing opens when the filing can't be
+  printed. **Red-first:** with `pdf-preview.js` set aside, the tab keeps its
+  opener.
+- New `tests/unit/output-reasons.spec.js` (73M's record) and the browser specs
+  that read the reason line instead of a disabled button (73M's record).
 
 ---
 

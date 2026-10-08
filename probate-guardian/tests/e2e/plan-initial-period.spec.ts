@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { freshStartNoPassword, createWard, fillMinimalValidPlanInitialWard, crossCheckNavAndSummaryStatus } from './support/target';
+import { freshStartNoPassword, createWard, fillMinimalValidPlanInitialWard, crossCheckNavAndSummaryStatus, expectExportReady, clickExport, expectExportStopped } from './support/target';
 import { readAll } from './support/stream';
 import { extractPdfText } from './support/pdf-extract';
 
@@ -53,10 +53,12 @@ test('an Initial Plan with no reporting period is stopped, and told where, until
   expect.soft(cover.sidebarComplete, 'the sidebar dot agrees').toBe(false);
   expect.soft(cover.summaryComplete, 'the Summary line agrees').not.toBe(true);
 
-  // The readiness card carries it as its own item, and the button is off.
+  // The readiness card carries it as its own item, and the reason line beside
+  // Save as PDF says it can't export yet (Milestone 74C: the button itself
+  // stays clickable).
   await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
   await expect.soft(page.locator('#filing-readiness-card [data-readiness-id="cover.period"]'), 'the readiness card has a period item').toHaveCount(1);
-  await expect(page.locator(PDF), 'Save as PDF is disabled while the period is blank').toBeDisabled();
+  await expectExportStopped(page.locator(PDF));
 
   // A backwards period is ordered the way the other Plans order theirs.
   await setPeriod(page, '2026-06-01', '2026-01-01');
@@ -68,9 +70,8 @@ test('an Initial Plan with no reporting period is stopped, and told where, until
   expect(await page.evaluate(() => (window as any).GuardianForms.testing.status.navChecks().checks['pi-cover'])).toBe(true);
   await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
   const button = page.locator(PDF);
-  await expect(button).toBeEnabled({ timeout: 20_000 });
-  const dl = page.waitForEvent('download', { timeout: 40_000 });
-  await button.click();
+  await expectExportReady(button, 20_000);
+  const dl = clickExport(button, 40_000);
   const text = (await extractPdfText(await readAll(await (await dl).createReadStream()))).replace(/\s+/g, ' ');
   expect(text).toContain('01/01/2026 through 12/31/2026');
 });

@@ -3,7 +3,7 @@ import {
   BOND_DEPOSITORY_OPTIONS, BOND_DEPOSITORY_STATES, normalizeBondDepositoryState,
   revealsBond, revealsDepository, revealsWaiver, hasBondDetails,
   inferBondDepositoryState, migrateBondDepository, bondDepositoryAdvisories, bondDepositoryPdfLines,
-  bondAmountCellValue, bondAmountFromCell,
+  bondAmountCellValue, bondAmountFromCell, bondStateFromWorkbook,
 } from '../../src/core/filing/bond-depository.js';
 
 // Milestone 67B. One four-state question -- restricted depository only, bond
@@ -118,6 +118,66 @@ describe('reading a filing saved under the old shape (the migration table)', () 
     const f = { bondDepositoryState: 'waived', bondWaivedDate: '2026-03-03' };
     migrateBondDepository(f);
     expect(f.bondDepositoryState).toBe('bond-waived');
+  });
+
+  // Milestone 73M, decided 2026-10-07: only a file saved under the old shape
+  // is guessed for. A current filing -- it has the question, unanswered --
+  // stays unanswered whatever its fields hold, so a filer who typed bond
+  // details is asked, and an import that left the answer blank is not
+  // guessed again when the page redraws. Until 73M each of these was guessed.
+  test('a current filing whose answer is blank stays blank, whatever its fields hold', () => {
+    const current = [
+      { bondDepositoryState: '', bondAmount: '5000', bondingCompany: 'Gulf Surety' },
+      { bondDepositoryState: '', restrictedDepositoryReceiptDate: '2026-02-02' },
+      { bondDepositoryState: '', bondWaivedDate: '2026-03-03' },
+    ];
+    for (const f of current) {
+      expect(inferBondDepositoryState(f), JSON.stringify(f)).toBe('');
+      expect(migrateBondDepository(f), JSON.stringify(f)).toBe(false);
+      expect(bondDepositoryPdfLines(f, fmt), JSON.stringify(f)).toEqual([]);
+      expect(bondDepositoryAdvisories(f).map((a) => a.code), JSON.stringify(f)).toEqual(['bond-depository.unanswered']);
+    }
+    // A null answer is unanswered too: tidied to '', never guessed.
+    const nulled = { bondDepositoryState: null, bondAmount: '5000' };
+    expect(inferBondDepositoryState(nulled)).toBe('');
+    migrateBondDepository(nulled);
+    expect(nulled.bondDepositoryState).toBe('');
+    // Saved under the old shape -- a retired Yes/No present, even blank, or
+    // no question at all -- is still read as before.
+    expect(inferBondDepositoryState({ bondDepositoryState: '', bondWaived: '', bondWaivedDate: '2026-03-03' })).toBe('bond-waived');
+    expect(inferBondDepositoryState({ bondDepositoryState: '', restrictedDepository: '', bondAmount: '5000' })).toBe('bond-only');
+    expect(inferBondDepositoryState({ bondAmount: '5000' })).toBe('bond-only');
+    // A stored answer always wins.
+    expect(inferBondDepositoryState({ bondDepositoryState: 'bond-only', restrictedDepositoryReceiptDate: '2026-02-02' })).toBe('bond-only');
+  });
+});
+
+// Milestone 73M: an imported workbook answers the question only where one
+// arrangement alone could have produced what it carries. The Inventory's
+// workbook has no depository box, so its bond details fit "bond only" and
+// "bond and restricted depository" alike (it used to come back as "Bond
+// only"); the Annual's bond details alone fit "bond only" and an unanswered
+// filing alike.
+describe('the arrangement an imported workbook shows', () => {
+  test('the Inventory: a waiver date means bond waived; bond details alone are left for the filer', () => {
+    expect(bondStateFromWorkbook({ bondWaivedDate: '2026-03-03' }, 'guardian')).toBe('bond-waived');
+    expect(bondStateFromWorkbook({ bondAmount: 5000, bondingCompany: 'Gulf Surety' }, 'guardian')).toBe('');
+    expect(bondStateFromWorkbook({}, 'guardian')).toBe('');
+  });
+
+  test('the Annual family: the receipt date with or without bond details; bond details alone are left for the filer', () => {
+    expect(bondStateFromWorkbook({ restrictedDepositoryReceiptDate: '2026-02-02' }, 'annual')).toBe('depository-only');
+    expect(bondStateFromWorkbook({ restrictedDepositoryReceiptDate: '2026-02-02', bondAmount: 5000 }, 'annual')).toBe('bond-and-depository');
+    expect(bondStateFromWorkbook({ restrictedDepositoryReceiptDate: '2026-02-02', bondingCompany: 'Gulf Surety' }, 'annual')).toBe('bond-and-depository');
+    expect(bondStateFromWorkbook({ bondAmount: 5000, bondingCompany: 'Gulf Surety' }, 'annual')).toBe('');
+    // The bond period alone is the accounting period, and a 0 amount is a
+    // blank cell (67D, 2026-09-24): neither is a bond.
+    expect(bondStateFromWorkbook({ restrictedDepositoryReceiptDate: '2026-02-02', bondAmount: 0, bondPeriodFrom: '2026-01-01' }, 'annual')).toBe('depository-only');
+  });
+
+  test('no draft, or a form with no bond block, answers nothing', () => {
+    expect(bondStateFromWorkbook(null, 'annual')).toBe('');
+    expect(bondStateFromWorkbook({ bondWaivedDate: '2026-03-03' }, 'simplified')).toBe('');
   });
 });
 

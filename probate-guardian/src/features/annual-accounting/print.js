@@ -17,7 +17,7 @@ import { finalizeCourtFormPdf, saveFinalizedPdf } from '../../core/pdf/pdf-final
 import { mountPdfPreview, printGeneratedPdf, setPrintCurrentFiling } from '../../core/pdf/pdf-preview.js';
 import { getSupplementalAccessibilityWarning, getSupplementalFilingIssues } from '../../core/pdf/supplemental-pdf.js';
 import { prepareFilingOutput, previewStatusHtml } from '../../core/filing/output-preflight.js';
-import { authorizeFilingOutput } from '../../core/filing/output-authorization.js';
+import { authorizeFilingOutput, beginFreshPreview } from '../../core/filing/output-authorization.js';
 import { renderReadinessCard } from '../../core/filing/readiness-card.js';
 import { renderOutputAdvisories } from '../../core/filing/output-advisories.js';
 import { alertModal } from '../../core/ui/dialogs.js';
@@ -28,6 +28,8 @@ import { excelCapacityPanel } from '../../core/excel/excel-capacity.js';
 import { highlightErrors, validationPanel } from '../../core/validation/validation-panel.js';
 import { queueAllScheduleDocValidations } from '../../core/filing/schedule-docs.js';
 import { renderPage } from '../../core/navigation/router.js';
+import { exportReasonHtml, excelOmissionsHtml, outputRefusal } from '../../core/filing/output-reasons.js';
+import { excelOmissions } from '../../core/excel/workbook-contract/index.js';
 
 function buildModelForPreview(D){
   return buildAnnualAccountingModel(D, { printDate: new Date().toISOString().slice(0, 10) });
@@ -35,15 +37,24 @@ function buildModelForPreview(D){
 
 
 export function pagePrintAnnual(capOver){
+  // Milestone 73M / 74C: opening Preview judges the filing afresh -- an earlier
+  // "Continue despite outstanding requirements" covered that visit only.
+  // mountPdfPreview() clears it once this page is drawn; clearing it first
+  // makes the banner and the reason line beside the buttons say what a click
+  // will do (coming back to Preview, they said nothing stood in the way and
+  // Save as Excel then refused).
+  beginFreshPreview();
   queueAllScheduleDocValidations?.();
   const baseIssues=()=>[...validateAnnual(), ...getSupplementalFilingIssues(getD())];
   const preflight=prepareFilingOutput(getD(),baseIssues);
   const errors=preflight.messages;
-  // Milestone 38D/44B: Save as PDF's disabled state reflects only what
-  // actually blocks the pdf capability, via authorizeFilingOutput() -- the
-  // banner/panel below stays driven by the full, capability-agnostic
-  // preflight so every outstanding requirement is still visible.
-  const pdfBlocked=authorizeFilingOutput(getD(),baseIssues,{capability:'pdf'}).status!=='allowed';
+  // Milestone 38D/44B: what blocks each output comes from
+  // authorizeFilingOutput() for that capability -- the banner/panel below
+  // stays driven by the full, capability-agnostic preflight so every
+  // outstanding requirement is still visible. Milestone 74C / 73M: the buttons
+  // stay clickable; the reason line beside them says what stops each one.
+  const pdfAuthorization=authorizeFilingOutput(getD(),baseIssues,{capability:'pdf'});
+  const excelAuthorization=authorizeFilingOutput(getD(),baseIssues,{capability:'excel'});
   const supplementalWarning=getSupplementalAccessibilityWarning(getD());
   highlightErrors(errors);
   return `<div>
@@ -52,10 +63,11 @@ export function pagePrintAnnual(capOver){
       <div><strong>Preview &amp; Export</strong> ${previewStatusHtml(preflight, capOver.length?`<span style="color:var(--danger-text)"> — too many entries for Excel; use PDF</span>`:' — Ready to export')}</div>
       <div class="d-flex gap-2 flex-wrap">
         <span id="export-status" style="font-size:.8rem;color:var(--ink-3);"></span>
-        <button class="btn btn-outline-primary btn-sm" data-annual-action="save-pdf" ${pdfBlocked?'disabled':''}>Save as PDF</button>
-        <button class="btn btn-primary btn-sm" data-annual-action="save-excel" ${errors.length||capOver.length?'disabled':''} ${capOver.length?'title="Some schedules have more entries than the Excel template can hold — save as PDF instead"':''}>Save as Excel</button>
+        <button class="btn btn-outline-primary btn-sm" data-annual-action="save-pdf" data-output-action="save-pdf" aria-describedby="export-reason">Save as PDF</button>
+        <button class="btn btn-primary btn-sm" data-annual-action="save-excel" data-output-action="save-excel" aria-describedby="export-reason">Save as Excel</button>
         <button class="btn btn-outline-secondary btn-sm" data-form-action="open-court-portal" title="Opens the Florida Courts E-Filing Portal in a new tab"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M14.2 4.4h5.4v5.4"/><path d="m19.6 4.4-8 8"/><path d="M17.4 13.6v6H4.6V6.8h6"/></svg> Florida E-Filing Portal</button><span data-preview-shell-actions></span>
       </div>
+      <div class="w-100">${exportReasonHtml({ pdf: pdfAuthorization, excel: { authorization: excelAuthorization, capacity: capOver } })}${excelOmissionsHtml(excelOmissions(getD()))}</div>
     </div>
     <div class="accordion mb-3 no-print">
       <div class="accordion-item">
@@ -96,7 +108,7 @@ export async function doSavePdf(){
   const authorization = authorizeFilingOutput(getD(), baseIssues, { capability: 'pdf' });
   if (authorization.status !== 'allowed') {
     renderPage('/print');
-    await alertModal(`Cannot export — ${authorization.issues.length} required field${authorization.issues.length === 1 ? '' : 's'} missing. See the list on this page.`);
+    await alertModal(outputRefusal(authorization, 'PDF'));
     return;
   }
   // Milestone 67: disables the button for the export's duration, so a second

@@ -2,7 +2,7 @@ import path from 'node:path';
 import os from 'node:os';
 import fs from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { expect, type Locator, type Page } from '@playwright/test';
+import { expect, type Download, type Locator, type Page } from '@playwright/test';
 import { currentTarget } from './target-profile';
 import { installFixtureSupport } from './fixture-completeness';
 import {
@@ -636,6 +636,66 @@ export async function importWorkbookConfirmed(page: Page, file: string): Promise
   await ok.click();
   await page.waitForFunction(() => !(document.querySelector('input[type="file"][accept=".xlsx"]') as HTMLInputElement | null)?.files?.length, undefined, { timeout: 30_000 });
   return notice;
+}
+
+// Milestone 74C / 73M step 5: Save as PDF and Save as Excel are always
+// clickable on all nine forms. What stops one now is said in the reason line
+// beside them (#export-reason, one sentence per output --
+// src/core/filing/output-reasons.js); these read that line where a test used
+// to read a greyed-out button.
+const OUTPUT_NAMES: Record<string, string> = { 'save-pdf': 'Save as PDF', 'save-excel': 'Save as Excel' };
+async function outputName(button: Locator): Promise<string> {
+  return OUTPUT_NAMES[(await button.getAttribute('data-output-action')) ?? ''] ?? 'Save as PDF';
+}
+
+/**
+ * Waits for an export button to be drawn with nothing in the reason line
+ * stopping it -- the "ready to save" signal a greyed-out button turning
+ * enabled used to give.
+ */
+export async function expectExportReady(button: Locator, timeout = 20_000, message?: string): Promise<void> {
+  await expect(button).toBeVisible({ timeout });
+  const name = await outputName(button);
+  await expect(button.page().locator('#export-reason'), message ?? `nothing stops ${name}`).not.toContainText(name, { timeout });
+}
+
+/**
+ * Waits for the reason line to say what stops an export button -- what a
+ * greyed-out button used to signal -- and checks the button stays clickable.
+ */
+export async function expectExportStopped(button: Locator, timeout = 20_000): Promise<void> {
+  await expect(button).toBeVisible({ timeout });
+  const name = await outputName(button);
+  await expect(button.page().locator('#export-reason'), `the reason line says what stops ${name}`).toContainText(name, { timeout });
+  await expect(button, `${name} stays clickable`).toBeEnabled();
+}
+
+/**
+ * Whether the reason line says something stops this export button now: of one
+ * kind ('outstanding' is what "Continue despite outstanding requirements"
+ * acknowledges), or of any.
+ */
+export async function exportStopped(button: Locator, kind?: 'outstanding' | 'blocked' | 'capacity'): Promise<boolean> {
+  const name = await outputName(button);
+  const reasons = await button.page().locator(`#export-reason [data-export-reason${kind ? `="${kind}"` : ''}]`).allTextContents();
+  return reasons.some((text) => text.includes(name));
+}
+
+/**
+ * Clicks an export button and returns its download. Milestone 73M: Save as
+ * Excel first asks about anything the filing holds that the court's workbook
+ * has no box for and the filer must file another way (the Lines 20/30
+ * explanation -- the minimal Annual fixture has one -- or A-2's Notes); this
+ * answers "Save the workbook".
+ */
+export async function clickExport(button: Locator, timeout = 60_000): Promise<Download> {
+  const page = button.page();
+  const download = page.waitForEvent('download', { timeout });
+  await button.click();
+  const save = page.locator(DYN_DIALOG).filter({ hasText: 'Not in the Excel workbook' }).locator('[data-dyn-action="confirm"]');
+  const asked = await Promise.race([download.then(() => false, () => false), save.waitFor({ timeout }).then(() => true, () => false)]);
+  if (asked) await save.click();
+  return download;
 }
 
 export function autoAcceptDynDialogs(page: Page, { promptValue }: { promptValue?: string } = {}): { stop: () => void; messages: string[] } {

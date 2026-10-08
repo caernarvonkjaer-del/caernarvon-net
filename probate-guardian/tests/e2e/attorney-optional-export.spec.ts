@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { freshStartNoPassword, createWard, createSimplifiedWard, fillMinimalValidGuardianWard, fillMinimalValidAnnualWard, fillMinimalValidSimplifiedWard } from './support/target';
+import { freshStartNoPassword, createWard, createSimplifiedWard, fillMinimalValidGuardianWard, fillMinimalValidAnnualWard, fillMinimalValidSimplifiedWard, expectExportReady, clickExport } from './support/target';
 import { readAll } from './support/stream';
 import { extractPdfText } from './support/pdf-extract';
 
@@ -36,9 +36,8 @@ async function downloadPdf(page: Page, selector: string) {
   await openPrint(page);
   await expect(page.locator('#main-content .print-preview-banner'), 'no issues: exported without any override').not.toContainText('issue(s)');
   const button = page.locator(selector);
-  await expect(button).toBeEnabled({ timeout: 20_000 });
-  const dl = page.waitForEvent('download', { timeout: 40_000 });
-  await button.click();
+  await expectExportReady(button, 20_000);
+  const dl = clickExport(button, 40_000);
   return (await extractPdfText(await readAll(await (await dl).createReadStream()))).replace(/\s+/g, ' ');
 }
 

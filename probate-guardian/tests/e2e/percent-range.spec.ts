@@ -2,7 +2,7 @@ import { test, expect, type Page, type Locator } from '@playwright/test';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { freshStartNoPassword, createWard, fillMinimalValidGuardianWard, fillMinimalValidAnnualWard, dismissScheduleDocPrompt, acceptDynDialog, importWorkbookConfirmed } from './support/target';
+import { freshStartNoPassword, createWard, fillMinimalValidGuardianWard, fillMinimalValidAnnualWard, dismissScheduleDocPrompt, acceptDynDialog, importWorkbookConfirmed, expectExportReady, clickExport } from './support/target';
 import { readAll } from './support/stream';
 
 // Milestone 71C. Every share field was a money field: 150 was accepted (the
@@ -51,9 +51,8 @@ async function exportExcelWithOverride(page: Page, selector: string, file: strin
   await override.click();
   await acceptDynDialog(page);
   const button = page.locator(selector);
-  await expect(button).toBeEnabled({ timeout: 20_000 });
-  const dl = page.waitForEvent('download', { timeout: 40_000 });
-  await button.click();
+  await expectExportReady(button, 20_000);
+  const dl = clickExport(button, 40_000);
   fs.writeFileSync(file, await readAll(await (await dl).createReadStream()));
 }
 

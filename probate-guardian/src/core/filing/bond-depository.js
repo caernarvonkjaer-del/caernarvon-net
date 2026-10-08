@@ -112,9 +112,28 @@ export function bondAmountFromCell(value) {
 }
 
 /**
+ * Milestone 73M (decided 2026-10-07): a filing is read under the old shape --
+ * and its answer guessed from its fields -- only when it is one: it still
+ * carries a retired Yes/No (bondWaived, restrictedDepository), it has no
+ * bondDepositoryState at all (saved before Milestone 67B), or the stored value
+ * is not one of the four states. A current filing whose answer is blank stays
+ * blank until the filer chooses: one who typed bond details but never
+ * answered is asked, never guessed for, and an import that leaves the answer
+ * blank (bondStateFromWorkbook(), below) is not guessed again when the page
+ * redraws. Until 73M every blank answer was guessed on every open.
+ */
+function savedUnderOldShape(filing) {
+  if ('bondWaived' in filing || 'restrictedDepository' in filing) return true;
+  if (!('bondDepositoryState' in filing)) return true;
+  const stored = filing.bondDepositoryState;
+  return stored != null && stored !== '' && !normalizeBondDepositoryState(stored);
+}
+
+/**
  * The state a filing saved under the old shape is read as -- the migration
  * table from MILESTONE-67-PROPOSAL.md, 67B section 8.2. A stored state wins.
- * Otherwise the facts the filer already supplied are kept rather than dropped
+ * Otherwise, for a filing saved under the old shape only (savedUnderOldShape(),
+ * above), the facts the filer already supplied are kept rather than dropped
  * to "unanswered":
  *
  *   Inventory bondWaived Yes, or a bondWaivedDate            -> bond-waived
@@ -132,6 +151,7 @@ export function inferBondDepositoryState(filing) {
   if (!filing) return '';
   const stored = normalizeBondDepositoryState(filing.bondDepositoryState);
   if (stored) return stored;
+  if (!savedUnderOldShape(filing)) return '';
   if (isYes(filing.bondWaived) || text(filing.bondWaivedDate)) return 'bond-waived';
   const depository = isYes(filing.restrictedDepository) || text(filing.restrictedDepositoryReceiptDate);
   const bond = hasBondDetails(filing);
@@ -141,12 +161,42 @@ export function inferBondDepositoryState(filing) {
 }
 
 /**
+ * Milestone 73M: the arrangement an imported court workbook shows -- read on
+ * import only, from what the workbook itself carried (the draft), and set
+ * only where exactly one arrangement could have produced it; otherwise ''
+ * for the filer to choose. The guess on opening a file saved under the old
+ * shape (inferBondDepositoryState(), above) is unchanged, and no longer
+ * reaches a current filing, so it does not undo this answer on the redraw.
+ *
+ * Since 73T parts 2 and 3 a workbook shows only what the arrangement shows:
+ *   - the Inventory has no depository box, so its bond details mean "bond
+ *     only" or "bond and depository" -- left blank (it used to come back as
+ *     "Bond only"); its waiver date (PART V G15) means "bond waived";
+ *   - the Annual family's receipt date (PART IX G9) is shown for a
+ *     restricted depository and its bond amount and company for a bond (or
+ *     no answer): both mean "bond and depository", the receipt date alone
+ *     "depository only", the bond details alone are left blank.
+ *
+ * @param {Record<string, any>} draft  the import's draft (workbook-contract/index.js)
+ * @param {string} form  the contract's form: 'guardian' or 'annual'
+ */
+export function bondStateFromWorkbook(draft, form) {
+  if (!draft) return '';
+  if (form === 'guardian') return text(draft.bondWaivedDate) ? 'bond-waived' : '';
+  if (form !== 'annual') return '';
+  const depository = text(draft.restrictedDepositoryReceiptDate) !== '';
+  if (depository && hasBondDetails(draft)) return 'bond-and-depository';
+  return depository ? 'depository-only' : '';
+}
+
+/**
  * Brings a filing to the current shape in place: sets bondDepositoryState
  * from the old fields when it has none, and removes the two retired
  * tri-states. Idempotent; returns true when anything changed. Called on every
- * mount of either form and after every Excel import, so a .sav from before
- * this milestone -- or a workbook that carries only the dates -- reads back
- * with the answer it already implied.
+ * mount of either form, so a .sav from before this milestone reads back with
+ * the answer it already implied; a current filing's blank answer stays blank
+ * (Milestone 73M). An Excel import answers from the workbook instead
+ * (bondStateFromWorkbook(), above).
  */
 export function migrateBondDepository(filing) {
   if (!filing || typeof filing !== 'object') return false;

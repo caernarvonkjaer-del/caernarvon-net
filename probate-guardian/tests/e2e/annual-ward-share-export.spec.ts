@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { freshStartNoPassword, createWard, fillMinimalValidAnnualWard, dismissScheduleDocPrompt } from './support/target';
+import { freshStartNoPassword, createWard, fillMinimalValidAnnualWard, dismissScheduleDocPrompt, expectExportReady, clickExport } from './support/target';
 
 // A Schedule D ward's share typed as 1% was counted as 100% -- on screen, in
 // the PDF and in the court workbook -- because the Annual Accounting read any
@@ -57,15 +57,14 @@ test('Schedule D-1 ward shares are written to the court workbook as percentages,
 
   await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
   const excel = page.locator('[data-annual-action="save-excel"]');
-  await expect(excel, 'the notes never block export').toBeEnabled({ timeout: 20_000 });
+  await expectExportReady(excel, 20_000, 'the notes never block export');
   const notes = await page.locator('.alert-warning li', { hasText: "Ward's % reads as" }).allInnerTexts();
   expect(notes).toEqual([
     "Schedule D-1 — Line 1 — Ward's % reads as 1%. If the ward's share is the whole amount, enter 100.",
     "Schedule D-1 — Line 3 — Ward's % reads as 0.5%. If the ward's share is the whole amount, enter 100.",
   ]);
 
-  const download = page.waitForEvent('download', { timeout: 30_000 });
-  await excel.click();
+  const download = clickExport(excel, 30_000);
   const chunks: Buffer[] = [];
   for await (const c of await (await download).createReadStream()) chunks.push(c as Buffer);
   const bytes = [...Buffer.concat(chunks)];

@@ -16,6 +16,7 @@ import { bondAmountCellValue, bondAmountFromCell, inferBondDepositoryState, reve
 import { readIndicateIfBox } from '../../filing/certificate-migrations.js';
 import { rowStarted } from '../../validation/row-started.js';
 import { createBankAccountId } from '../../accounting/bank-accounts.js';
+import { annualReconcileState } from '../../accounting/annual-totals.js';
 import { planSchB4Export } from '../b4-export-plan.js';
 import { SCH_B4_ACCOUNT_BLOCKS, B4_REGISTER_PREFIX } from '../b4-register-pages.js';
 
@@ -363,6 +364,15 @@ export const ANNUAL_CONTRACT = Object.freeze({
     'the explanation of a difference between Lines 20 and 30',
     'the UCN',
   ]),
+  // Milestone 73M: what this filing holds that the workbook has no box for.
+  excelOmits(f) {
+    const out = [];
+    // Only when Lines 20 and 30 differ: the PDF prints it then, and only then.
+    if (annualReconcileState(undefined, f).explained) out.push({ text: 'the explanation of the difference between Lines 20 and 30', warn: true });
+    if (String(f.certIndicator ?? '').trim()) out.push({ text: 'the method of service' });
+    if (String(f.ucn ?? '').trim()) out.push({ text: 'the UCN' });
+    return out;
+  },
   // What the workbook holds differently, so an import brings it back changed.
   importedAs: Object.freeze([
     'the bond period comes back as the accounting period (the form fills it from there)',

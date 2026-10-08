@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { freshStartNoPassword, createWard, createSimplifiedWard, fillMinimalValidAnnualWard } from './support/target';
+import { freshStartNoPassword, createWard, createSimplifiedWard, fillMinimalValidAnnualWard, expectExportReady, clickExport } from './support/target';
 import { FILING_MATRIX } from './support/filing-matrix';
 import { readAll } from './support/stream';
 import { extractPdfText } from './support/pdf-extract';
@@ -93,14 +93,12 @@ test('Preview & Export shows the warning in its banner; the downloaded PDF and w
   expect((await titleText(page))!.startsWith(`${PREFIX}Preview & Export`)).toBe(true);
 
   const pdfButton = page.locator('[data-annual-action="save-pdf"]');
-  await expect(pdfButton).toBeEnabled({ timeout: 20_000 });
-  const pdfDl = page.waitForEvent('download', { timeout: 40_000 });
-  await pdfButton.click();
+  await expectExportReady(pdfButton, 20_000);
+  const pdfDl = clickExport(pdfButton, 40_000);
   const pdf = (await extractPdfText(await readAll(await (await pdfDl).createReadStream())));
   expect(pdf).not.toContain('TEST SYSTEM');
 
-  const xlsxDl = page.waitForEvent('download', { timeout: 40_000 });
-  await page.locator('[data-annual-action="save-excel"]').click();
+  const xlsxDl = clickExport(page.locator('[data-annual-action="save-excel"]'), 40_000);
   const xlsx = await readAll(await (await xlsxDl).createReadStream());
   const JSZip = (await import('jszip')).default;
   const zip = await JSZip.loadAsync(xlsx);

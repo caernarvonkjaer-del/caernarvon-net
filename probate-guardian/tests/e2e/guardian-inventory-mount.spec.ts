@@ -119,10 +119,7 @@ test.describe('guardian-inventory feature module', () => {
     await createWard(page, 'Incomplete Guardian Ward', 'guardian');
     await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
 
-    await page.locator('[data-inventory-action="save-pdf"]').evaluate((button: HTMLButtonElement) => {
-      button.disabled = false;
-      button.click();
-    });
+    await page.locator('[data-inventory-action="save-pdf"]').click();
     const alertMessage = await acceptDynDialog(page);
 
     expect(alertMessage).toContain('Cannot export');

@@ -3,7 +3,7 @@ import JSZip from 'jszip';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { freshStartNoPassword, createWard, fillMinimalValidGuardianWard, fillMinimalValidAnnualWard, importWorkbookConfirmed } from './support/target';
+import { freshStartNoPassword, createWard, fillMinimalValidGuardianWard, fillMinimalValidAnnualWard, importWorkbookConfirmed, expectExportReady, clickExport, expectExportStopped } from './support/target';
 import { readAll } from './support/stream';
 import { extractPdfText } from './support/pdf-extract';
 
@@ -71,9 +71,8 @@ async function download(page: Page, selector: string) {
   // the blocked wording is asserted against.)
   await expect(page.locator('#main-content .print-preview-banner')).not.toContainText('issue(s)');
   const button = page.locator(selector);
-  await expect(button).toBeEnabled({ timeout: 20_000 });
-  const dl = page.waitForEvent('download', { timeout: 40_000 });
-  await button.click();
+  await expectExportReady(button, 20_000);
+  const dl = clickExport(button, 40_000);
   return readAll(await (await dl).createReadStream());
 }
 
@@ -95,7 +94,8 @@ test.describe('Milestone 67A: a guardian or attorney can be the preparer', () =>
     const issues = () => page.evaluate(async () => (await (window as any).GuardianForms.testing.validate.open()).map((e: any) => String(e.message ?? e)));
     expect((await issues()).filter((m) => m.startsWith('D-2 Preparer')).length, 'before: the preparer block blocks').toBeGreaterThan(0);
     await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
-    await expect(page.locator('[data-inventory-action="save-pdf"]'), 'before: export is disabled').toBeDisabled();
+    // Milestone 74C: the button stays clickable; the reason line says what stops it.
+    await expectExportStopped(page.locator('[data-inventory-action="save-pdf"]'));
 
     // Tick the box on Guardian #1's card.
     await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/d1'));

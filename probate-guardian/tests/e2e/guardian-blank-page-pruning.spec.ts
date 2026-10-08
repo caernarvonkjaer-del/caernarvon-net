@@ -2,7 +2,7 @@ import { test as base, expect } from '@playwright/test';
 import JSZip from 'jszip';
 import path from 'node:path';
 import os from 'node:os';
-import { freshStartNoPassword, createWard, fillMinimalValidGuardianWard, importWorkbookConfirmed } from './support/target';
+import { freshStartNoPassword, createWard, fillMinimalValidGuardianWard, importWorkbookConfirmed, expectExportReady, clickExport } from './support/target';
 import { extractXlsx } from './support/xlsx-extract';
 import { readAll } from './support/stream';
 
@@ -178,9 +178,8 @@ async function exportGuardianXlsx(
   await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
   await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
   const excel = page.locator('[data-inventory-action="save-excel"]');
-  await expect(excel).toBeEnabled({ timeout: 20_000 });
-  const download = page.waitForEvent('download', { timeout: 40_000 });
-  await excel.click();
+  await expectExportReady(excel, 20_000);
+  const download = clickExport(excel, 40_000);
   return { bytes: await readAll(await (await download).createReadStream()), download: await download };
 }
 

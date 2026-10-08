@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { freshStartNoPassword, createWard, fillMinimalValidPlanInitialWard } from './support/target';
+import { freshStartNoPassword, createWard, fillMinimalValidPlanInitialWard, expectExportReady, clickExport } from './support/target';
 import { readAll } from './support/stream';
 import { extractPdfText } from './support/pdf-extract';
 
@@ -54,9 +54,8 @@ test('questions 2, 4 and 5 hold several answers, and every ticked box reaches th
   await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
   await go(page, '/print');
   const button = page.locator('[data-form-action="save-pdf-plan-initial"]');
-  await expect(button).toBeEnabled({ timeout: 20_000 });
-  const dl = page.waitForEvent('download', { timeout: 40_000 });
-  await button.click();
+  await expectExportReady(button, 20_000);
+  const dl = clickExport(button, 40_000);
   const text = (await extractPdfText(await readAll(await (await dl).createReadStream()))).replace(/\s+/g, ' ');
   for (const label of ['Assisted Living (ALF)', 'Group Home', 'Routine examination by Psychiatrist/Psychologist', 'Ongoing Treatment Outpatient', 'Care Facility', 'Family and Friends']) {
     expect(text, `${label} is printed ticked`).toContain(`Yes — ${label}`);

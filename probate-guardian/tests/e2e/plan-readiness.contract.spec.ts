@@ -3,6 +3,7 @@ import {
   freshStartNoPassword, createWard,
   fillMinimalValidPlanAnnualWard, fillMinimalValidPlanInitialWard,
   fillMinimalValidPlanMinorWard, fillMinimalValidPlanSimplifiedWard,
+  expectExportReady, expectExportStopped,
 } from './support/target';
 
 // Milestone 34-1A, Item 1: readiness status must reflect export eligibility.
@@ -84,7 +85,7 @@ for (const { featureName, filingType, fill, blankPromotedField, readinessRowLabe
       await expect(page.locator('.print-preview-banner')).toContainText('Ready to export');
       await expect(page.locator('.readiness-panel .validation-title')).toContainText('Automated checks passed; manual review remains');
       await expect(page.locator('.readiness-panel .readiness-mark.pending')).toHaveCount(0);
-      await expect(page.locator(saveButtonSelector)).toBeEnabled();
+      await expectExportReady(page.locator(saveButtonSelector));
     });
 
     test('blanking a newly-promoted field blocks export AND the readiness panel agrees', async ({ page }) => {
@@ -98,7 +99,8 @@ for (const { featureName, filingType, fill, blankPromotedField, readinessRowLabe
       // issues) -- it must report at least one issue now.
       const bannerText = await page.locator('.print-preview-banner').innerText();
       expect(bannerText).toMatch(/\d+\s+issue/);
-      await expect(page.locator(saveButtonSelector)).toBeDisabled();
+      // Milestone 74C: Save as PDF stays clickable; the reason line says what stops it.
+      await expectExportStopped(page.locator(saveButtonSelector));
 
       // The readiness panel's own independently-computed check for this
       // same field must show it pending, not silently agree with "ready"
@@ -164,7 +166,7 @@ test.describe('Plan Annual physician-statement reminder (DECISION: manual, not b
     // unverifiable-by-software fact.
     await expect(page.locator('.print-preview-banner')).toContainText('Ready to export');
     await expect(page.locator('.readiness-panel .validation-title')).toContainText('Automated checks passed; manual review remains');
-    await expect(page.locator('[data-form-action="save-pdf-plan-annual"]')).toBeEnabled();
+    await expectExportReady(page.locator('[data-form-action="save-pdf-plan-annual"]'));
 
     const manualList = page.locator('.readiness-panel .validation-group', { hasText: "can't verify" });
     await expect(manualList).toContainText("physician's statement");

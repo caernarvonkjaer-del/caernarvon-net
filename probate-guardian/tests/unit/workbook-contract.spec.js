@@ -790,3 +790,48 @@ describe("the Simplified's casing table matches the fields its pages format", ()
     expect(Object.fromEntries(Object.entries(found).map(([k, v]) => [k, [...v].sort()]))).toEqual(table);
   });
 });
+
+// Milestone 73M: what the court's workbook has no box for -- said beside the
+// export buttons and asked about at Save as Excel (excelOmissions()) -- and
+// A-2's Notes, which the import used to erase (decision 73M-1).
+describe('73M: what the workbook has no box for', () => {
+  const inventory = (patch) => merge(merge({ ...json(initializeEmptyData('guardian')), inventoryType: 'guardian' }, json(fixtures.MINIMAL_VALID_GUARDIAN)), json(patch));
+
+  test("A-2's Notes are kept on import for the same lender in the same place; a row now naming another lender gets none", async () => {
+    const filing = inventory({
+      scheduleA2: [
+        { lenderName: 'First Bank', fullDebtBalance: 100, wardPercent: 100, notes: 'paid monthly' },
+        // A row the workbook doesn't carry (no lender, no balance) does not
+        // shift the rows after it.
+        { lenderName: '', fullDebtBalance: '', wardPercent: '', notes: '' },
+        { lenderName: 'Second Bank', fullDebtBalance: 200, wardPercent: 100, notes: 'in dispute' },
+      ],
+    });
+    const wb = await templateWorkbook('guardian');
+    writeContract(wb, GUARDIAN_CONTRACT, filing, {});
+    const back = await reopened(wb);
+    const { draft } = contractIndex.readWorkbookDraft(back, 'guardian', { filing });
+    expect(draft.scheduleA2.map((r) => [r.lenderName, r.notes])).toEqual([['First Bank', 'paid monthly'], ['Second Bank', 'in dispute']]);
+    expect(applyDraft(filing, draft).scheduleA2.map((r) => r.notes)).toEqual(['paid monthly', 'in dispute']);
+    const renamed = json(filing);
+    renamed.scheduleA2[2].lenderName = 'Third Bank';
+    expect(contractIndex.readWorkbookDraft(back, 'guardian', { filing: renamed }).draft.scheduleA2.map((r) => r.notes)).toEqual(['paid monthly', '']);
+  }, 240_000);
+
+  test("each form names what its workbook has no box for; what must be filed another way is marked to be asked about", () => {
+    const omits = (type, patch) => contractIndex.excelOmissions({ ...json(initializeEmptyData(type)), inventoryType: type, ...patch });
+    expect(omits('guardian', {})).toEqual([]);
+    expect(omits('guardian', { scheduleA2: [{ lenderName: 'First Bank', notes: 'paid monthly' }], serviceMethod: 'Mail', ucn: '522024GA000123XXXXNO' }))
+      .toEqual([{ text: "A-2's Notes", warn: true }, { text: 'the method of service' }, { text: 'the UCN' }]);
+    // Line 20 is $500 (an income entry), Line 30 is $0 (no Schedule D): out of balance.
+    const outOfBalance = { schA: [{ payer: 'Social Security', amount: '500' }] };
+    expect(omits('annual', { ...outOfBalance, reconcileExplanation: 'A prior-period correction.', certIndicator: 'Mail', ucn: '522024GA000123XXXXNO' }))
+      .toEqual([{ text: 'the explanation of the difference between Lines 20 and 30', warn: true }, { text: 'the method of service' }, { text: 'the UCN' }]);
+    // In balance, the explanation prints nowhere -- the PDF neither -- so it isn't named.
+    expect(omits('annual', { reconcileExplanation: 'Left over from an earlier draft.' })).toEqual([]);
+    expect(omits('simplified', { certIndicator: 'Mail', ucn: '522024GA000123XXXXNO' })).toEqual([{ text: 'the method of service' }, { text: 'the UCN' }]);
+    // Whitespace is nothing typed; the Plans have no workbook at all.
+    expect(omits('annual', { reconcileExplanation: '   ' })).toEqual([]);
+    expect(contractIndex.excelOmissions({ inventoryType: 'plan-annual', ucn: '522024GA000123XXXXNO' })).toEqual([]);
+  });
+});

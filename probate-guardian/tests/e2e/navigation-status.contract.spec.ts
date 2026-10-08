@@ -89,10 +89,7 @@ const CONFIGS: NavStatusConfig[] = [
     // closure-private _printModule.doSavePdf(), reachable only through the
     // delegated click handler, same as annual-mount.spec.ts's own
     // blocked-export test.
-    triggerBlockedExport: (page) => page.locator('[data-annual-action="save-pdf"]').evaluate((button: HTMLButtonElement) => {
-      button.disabled = false;
-      button.click();
-    }),
+    triggerBlockedExport: (page) => page.locator('[data-annual-action="save-pdf"]').click(),
   },
   {
     // finalAccounting/trustAccounting are formEngine()==='annual' aliases --
@@ -106,10 +103,7 @@ const CONFIGS: NavStatusConfig[] = [
     validateFnName: 'validateAnnual',
     jumpTestFieldPath: 'caseNumber',
     nonCoverRoute: '/p2',
-    triggerBlockedExport: (page) => page.locator('[data-annual-action="save-pdf"]').evaluate((button: HTMLButtonElement) => {
-      button.disabled = false;
-      button.click();
-    }),
+    triggerBlockedExport: (page) => page.locator('[data-annual-action="save-pdf"]').click(),
   },
   {
     featureName: 'Trust Accounting',
@@ -117,10 +111,7 @@ const CONFIGS: NavStatusConfig[] = [
     validateFnName: 'validateAnnual',
     jumpTestFieldPath: 'caseNumber',
     nonCoverRoute: '/p2',
-    triggerBlockedExport: (page) => page.locator('[data-annual-action="save-pdf"]').evaluate((button: HTMLButtonElement) => {
-      button.disabled = false;
-      button.click();
-    }),
+    triggerBlockedExport: (page) => page.locator('[data-annual-action="save-pdf"]').click(),
   },
   {
     featureName: 'Simplified',
@@ -133,10 +124,7 @@ const CONFIGS: NavStatusConfig[] = [
     // eligibility-modal flow first (see createSimplifiedWard()'s own doc
     // comment in support/target.ts).
     createFiling: (page, name) => createSimplifiedWard(page, name),
-    triggerBlockedExport: (page) => page.locator('[data-simplified-action="save-pdf"]').evaluate((button: HTMLButtonElement) => {
-      button.disabled = false;
-      button.click();
-    }),
+    triggerBlockedExport: (page) => page.locator('[data-simplified-action="save-pdf"]').click(),
   },
   {
     featureName: 'Plan Annual',
@@ -171,13 +159,9 @@ const CONFIGS: NavStatusConfig[] = [
     validateFnName: 'validatePlanSimplified',
     jumpTestFieldPath: 'caseNumber',
     nonCoverRoute: '/p2',
-    // Same reasoning as plan-simplified-mount.spec.ts: this filing type's
-    // export button is disabled/enabled rather than an alert-only guard, so
-    // the blocked path has to force it enabled before clicking.
-    triggerBlockedExport: (page) => page.locator('[data-plan-simplified-action="save-pdf"]').evaluate((button: HTMLButtonElement) => {
-      button.disabled = false;
-      button.click();
-    }),
+    // Milestone 74C: a real click, as on every form -- the button is
+    // clickable on an incomplete filing and the click says why.
+    triggerBlockedExport: (page) => page.locator('[data-plan-simplified-action="save-pdf"]').click(),
   },
 ];
 
@@ -537,10 +521,7 @@ test.describe('Guardian Inventory navigation/status contract', () => {
     const expectedCount = Number(match![1]);
     expect(expectedCount).toBeGreaterThan(0);
 
-    await page.locator('[data-inventory-action="save-pdf"]').evaluate((button: HTMLButtonElement) => {
-      button.disabled = false;
-      button.click();
-    });
+    await page.locator('[data-inventory-action="save-pdf"]').click();
     const alertMessage = await acceptDynDialog(page);
 
     expect(alertMessage).toContain(`${expectedCount} required field`);

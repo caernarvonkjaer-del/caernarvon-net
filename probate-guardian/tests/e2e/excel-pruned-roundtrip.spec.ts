@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import { freshStartNoPassword, createWard, fillMinimalValidAnnualWard, importWorkbookConfirmed } from './support/target';
+import { freshStartNoPassword, createWard, fillMinimalValidAnnualWard, importWorkbookConfirmed, expectExportReady, clickExport } from './support/target';
 import { readAll } from './support/stream';
 
 // Pruning blank pages out of the exported workbook is only half a contract.
@@ -50,9 +50,8 @@ async function exportWith(page: import('@playwright/test').Page, incomeRows: num
   await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
   await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
   const excel = page.locator('[data-annual-action="save-excel"]');
-  await expect(excel).toBeEnabled({ timeout: 20_000 });
-  const download = page.waitForEvent('download', { timeout: 40_000 });
-  await excel.click();
+  await expectExportReady(excel, 20_000);
+  const download = clickExport(excel, 40_000);
   const bytes = await readAll(await (await download).createReadStream());
   const file = path.join(os.tmpdir(), `pg-roundtrip-${Date.now()}-${incomeRows}.xlsx`);
   fs.writeFileSync(file, bytes);

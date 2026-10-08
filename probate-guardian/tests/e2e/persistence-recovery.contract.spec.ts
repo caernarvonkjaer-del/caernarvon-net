@@ -83,10 +83,7 @@ test.describe('Persistence and recovery contract', () => {
       // Milestone 50G: the export-blocked alert is now an awaitable
       // alertModal() DOM dialog, not a blocking native one -- trigger first,
       // then wait for it, rather than pre-arming a listener.
-      await reopenPage.locator('[data-inventory-action="save-pdf"]').evaluate((button: HTMLButtonElement) => {
-        button.disabled = false;
-        button.click();
-      });
+      await reopenPage.locator('[data-inventory-action="save-pdf"]').click();
       const alertMessage = await acceptDynDialog(reopenPage);
       expect(alertMessage).toContain('Cannot export — 1 required field missing');
     } finally {

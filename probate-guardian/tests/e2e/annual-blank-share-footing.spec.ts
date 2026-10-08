@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { freshStartNoPassword, createWard, fillMinimalValidAnnualWard, acceptDynDialog, dismissScheduleDocPrompt } from './support/target';
+import { freshStartNoPassword, createWard, fillMinimalValidAnnualWard, acceptDynDialog, dismissScheduleDocPrompt, expectExportReady, clickExport } from './support/target';
 import { readAll } from './support/stream';
 import { extractPdfText } from './support/pdf-extract';
 
@@ -39,9 +39,8 @@ test('Annual D-1 with a blank share: the exported column adds up, and the blank 
   await page.locator('#print-doc-container .pdf-preview-blocked [data-preview-action="override"]').click();
   await acceptDynDialog(page);
   const button = page.locator('[data-annual-action="save-pdf"]');
-  await expect(button).toBeEnabled({ timeout: 20_000 });
-  const dl = page.waitForEvent('download', { timeout: 40_000 });
-  await button.click();
+  await expectExportReady(button, 20_000);
+  const dl = clickExport(button, 40_000);
   const pdf = (await extractPdfText(await readAll(await (await dl).createReadStream()))).replace(/\s+/g, ' ');
 
   // Each row prints its own Ward's Amount; they add up to the printed total.

@@ -147,8 +147,16 @@ export const SIMPLIFIED_CONTRACT = Object.freeze({
     "the attorney's Part V date, when the workbook leaves it blank",
     "old certificate details not yet discarded, unless the workbook's differ",
     'guardians after the third',
+    'the UCN',
   ]),
   importedAs: Object.freeze([]),
+  // Milestone 73M: what this filing holds that the workbook has no box for.
+  excelOmits(f) {
+    const out = [];
+    if (String(f.certIndicator ?? '').trim()) out.push({ text: 'the method of service' });
+    if (String(f.ucn ?? '').trim()) out.push({ text: 'the UCN' });
+    return out;
+  },
   // Fields a filing keeps when it has them (73T part 4, row 1).
   fillBlankOnly: Object.freeze(['guardians.0.name']),
   preserve: Object.freeze({

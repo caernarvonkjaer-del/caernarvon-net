@@ -1,6 +1,6 @@
 import { test as base, expect } from '@playwright/test';
 import JSZip from 'jszip';
-import { freshStartNoPassword, createWard, fillMinimalValidAnnualWard } from './support/target';
+import { freshStartNoPassword, createWard, fillMinimalValidAnnualWard, expectExportReady, clickExport } from './support/target';
 import { extractXlsx } from './support/xlsx-extract';
 import { readAll } from './support/stream';
 
@@ -98,9 +98,8 @@ async function exportAnnualXlsx(
   // Annual's Print/Export page exposes the Excel action as
   // data-annual-action="save-excel" -- the same hook output-semantics uses.
   const excel = page.locator('[data-annual-action="save-excel"]');
-  await expect(excel).toBeEnabled({ timeout: 20_000 });
-  const download = page.waitForEvent('download', { timeout: 40_000 });
-  await excel.click();
+  await expectExportReady(excel, 20_000);
+  const download = clickExport(excel, 40_000);
   return readAll(await (await download).createReadStream());
 }
 

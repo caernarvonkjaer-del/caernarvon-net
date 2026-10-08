@@ -2,7 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 import path from 'node:path';
 import os from 'node:os';
 import fs from 'node:fs';
-import { freshStartNoPassword, createWard, fillMinimalValidGuardianWard, importWorkbookConfirmed } from './support/target';
+import { freshStartNoPassword, createWard, fillMinimalValidGuardianWard, importWorkbookConfirmed, clickExport, exportStopped } from './support/target';
 import {
   SCHEDULE_A1_PAGES, SCHEDULE_B2_PAGES, SCHEDULE_B3_PAGES, SCHEDULE_B4_PAGES, SCHEDULE_C2_PAGES,
 } from '../../src/core/excel/guardian-inventory-pages.js';
@@ -118,8 +118,7 @@ test.describe('Guardian Inventory Excel schedule layout (Milestone 52K)', () => 
     await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
     await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
 
-    const downloadPromise = page.waitForEvent('download', { timeout: 30_000 });
-    await page.locator('[data-inventory-action="save-excel"]').click();
+    const downloadPromise = clickExport(page.locator('[data-inventory-action="save-excel"]'), 30_000);
     const download = await downloadPromise;
     expect(download.suggestedFilename()).toMatch(/\.xlsx$/i);
     const xlsxPath = path.join(os.tmpdir(), `pg-52k-schedule-layout-${Date.now()}.xlsx`);
@@ -214,16 +213,15 @@ async function exportGuardianWorkbook(page: Page, overlay: Record<string, unknow
   await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
   const saveExcel = page.locator('[data-inventory-action="save-excel"]');
   await saveExcel.waitFor({ state: 'visible', timeout: 15_000 });
-  if (await saveExcel.isDisabled()) {
+  if (await exportStopped(saveExcel)) {
     // Say WHY the gate is closed rather than timing out on a download that
-    // can never start.
+    // can never start (Milestone 74C: the reason line beside the buttons says
+    // so; the button itself stays clickable).
     const issues = await page.evaluate(() => [...document.querySelectorAll('#print-doc-container ~ *, .validation-panel, [class*="validation"], [class*="readiness"]')]
       .map((el) => (el as HTMLElement).innerText).filter(Boolean).join('\n'));
     throw new Error(`Save as Excel is disabled for this fixture. Export gate said:\n${issues}`);
   }
-  const downloadPromise = page.waitForEvent('download', { timeout: 30_000 });
-  await saveExcel.click();
-  const download = await downloadPromise;
+  const download = await clickExport(saveExcel, 30_000);
   const xlsxPath = path.join(os.tmpdir(), `${stem}-${Date.now()}.xlsx`);
   await download.saveAs(xlsxPath);
   return xlsxPath;

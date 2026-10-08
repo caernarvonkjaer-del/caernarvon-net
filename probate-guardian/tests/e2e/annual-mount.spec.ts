@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import path from 'node:path';
 import os from 'node:os';
-import { freshStartNoPassword, createWard, fillMinimalValidAnnualWard, crossCheckNavAndSummaryStatus, extractFormContentSnapshot, acceptDynDialog, importWorkbookConfirmed } from './support/target';
+import { freshStartNoPassword, createWard, fillMinimalValidAnnualWard, crossCheckNavAndSummaryStatus, extractFormContentSnapshot, acceptDynDialog, importWorkbookConfirmed, clickExport } from './support/target';
 import { dismissScheduleDocPrompt } from './support/target';
 
 // Annual Accounting is the sixth feature extraction (Milestone 7 of
@@ -42,10 +42,7 @@ test.describe('annual-accounting feature module', () => {
     await createWard(page, 'Incomplete Annual Ward', 'annual');
     await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
 
-    await page.locator('[data-annual-action="save-pdf"]').evaluate((button: HTMLButtonElement) => {
-      button.disabled = false;
-      button.click();
-    });
+    await page.locator('[data-annual-action="save-pdf"]').click();
     const alertMessage = await acceptDynDialog(page);
 
     expect(alertMessage).toContain('Cannot export');
@@ -76,8 +73,7 @@ test.describe('annual-accounting feature module', () => {
     await fillMinimalValidAnnualWard(page);
     await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
 
-    const downloadPromise = page.waitForEvent('download', { timeout: 20_000 });
-    await page.locator('[data-annual-action="save-excel"]').click();
+    const downloadPromise = clickExport(page.locator('[data-annual-action="save-excel"]'), 20_000);
     const download = await downloadPromise;
     expect(download.suggestedFilename()).toMatch(/\.xlsx$/i);
     const xlsxPath = path.join(os.tmpdir(), `pg-annual-excel-${Date.now()}.xlsx`);

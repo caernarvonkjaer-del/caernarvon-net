@@ -4,6 +4,7 @@ import {
   fillMinimalValidGuardianWard, fillMinimalValidSimplifiedWard,
   fillMinimalValidPlanSimplifiedWard, fillMinimalValidPlanAnnualWard,
   fillMinimalValidPlanInitialWard, fillMinimalValidPlanMinorWard,
+  expectExportReady,
 } from './support/target';
 import { extractPdfText, getPdfMetadata } from './support/pdf-extract';
 import { filingCapabilities, type FilingType } from './support/filing-matrix';
@@ -165,7 +166,7 @@ test.describe('Filing identity contract', () => {
 
       // Surface 3: export gate agrees this valid filing is allowed to export.
       await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
-      await expect(page.locator(pdfActionSelector)).toBeEnabled();
+      await expectExportReady(page.locator(pdfActionSelector));
 
       // Surface 4: the real generated PDF -- metadata and visible legal copy.
       const pdfDownloadPromise = page.waitForEvent('download', { timeout: 20_000 });

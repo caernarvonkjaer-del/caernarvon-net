@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { extract } from '../../scripts/ms70-sav-corpus.mjs';
 // @ts-ignore -- plain .mjs tooling, no types
 import { startServer } from '../../scripts/serve-portable-http.mjs';
-import { enableTestMode } from './support/target';
+import { enableTestMode, clickExport } from './support/target';
 import { currentBuild, type AppDriver } from './support/app-driver';
 import { pre70Build } from './support/pre-70-build';
 import { COMPLETE_CASE, PREMERGE_SHA, saveCompleteCase } from './support/pre-merge-case';
@@ -80,10 +80,9 @@ async function openApp(page: Page, v: Version) {
 
 async function download(page: Page, button: string) {
   const control = page.locator(button);
+  // Enabled, not expectExportReady(): the older build has no reason line.
   await expect(control, `${button} ready`).toBeEnabled({ timeout: 30_000 });
-  const pending = page.waitForEvent('download', { timeout: 60_000 });
-  await control.click();
-  const d = await pending;
+  const d = await clickExport(control, 60_000);
   const chunks: Buffer[] = [];
   for await (const c of await d.createReadStream()) chunks.push(c as Buffer);
   return { name: d.suggestedFilename(), bytes: Buffer.concat(chunks) };

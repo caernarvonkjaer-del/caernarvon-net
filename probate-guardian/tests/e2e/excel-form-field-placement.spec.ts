@@ -6,6 +6,7 @@ import path from 'node:path';
 import {
   freshStartNoPassword, createWard, createSimplifiedWard,
   fillMinimalValidGuardianWard, fillMinimalValidSimplifiedWard, fillMinimalValidAnnualWard, importWorkbookConfirmed,
+  expectExportReady, clickExport,
 } from './support/target';
 import { readAll } from './support/stream';
 import {
@@ -86,9 +87,8 @@ async function exportSimplified(page: import('@playwright/test').Page) {
   await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
   await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
   const excel = page.locator('[data-simplified-action="save-excel"]');
-  await expect(excel).toBeEnabled({ timeout: 20_000 });
-  const dl = page.waitForEvent('download', { timeout: 40_000 });
-  await excel.click();
+  await expectExportReady(excel, 20_000);
+  const dl = clickExport(excel, 40_000);
   return readAll(await (await dl).createReadStream());
 }
 
@@ -185,9 +185,8 @@ async function exportGuardian(page: import('@playwright/test').Page) {
   await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
   await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
   const excel = page.locator('[data-inventory-action="save-excel"]');
-  await expect(excel).toBeEnabled({ timeout: 20_000 });
-  const dl = page.waitForEvent('download', { timeout: 40_000 });
-  await excel.click();
+  await expectExportReady(excel, 20_000);
+  const dl = clickExport(excel, 40_000);
   return readAll(await (await dl).createReadStream());
 }
 

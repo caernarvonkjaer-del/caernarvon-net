@@ -459,11 +459,12 @@ export async function mountPdfPreview(buildModel, D, baseIssues = [], containerI
         if (authorization.status === 'blocked') return;
         if (!(await confirmModal('Requirements remain outstanding. Continue with ordinary preview and output?'))) return;
         if (acknowledgeOutstandingRequirements(D, baseIssues)) {
-          document.querySelectorAll('[data-form-action*="save"], [data-simplified-action^="save"], [data-annual-action^="save"], [data-inventory-action^="save"]').forEach((control) => {
-            // Format-capacity controls carry their own explicit explanation and
-            // remain unavailable because their output would omit data.
-            if (!String(control.title || '').toLowerCase().includes('template can hold')) control.disabled = false;
-          });
+          // Milestone 74C / 73M step 5: the export buttons are always clickable,
+          // so nothing is re-enabled here (this used to re-enable the save
+          // buttons its per-form selectors matched -- the Simplified Plan's
+          // never was -- and skip one by its tooltip's wording). The reason
+          // line drops what the acknowledgement covers; a capacity limit stays.
+          document.querySelectorAll('[data-export-reason="outstanding"]').forEach((reason) => reason.remove());
           // Milestone 73F part 2: the banner says what is still outstanding --
           // it kept the count it was drawn with, and a later redraw said
           // "Ready to export".
@@ -501,7 +502,12 @@ export async function printGeneratedPdf(buildModel, D, baseIssues = []) {
     const doc = await generateCourtFormPdf(model);
     const pdfBytes = await finalizeCourtFormPdf(doc);
     const blobUrl = URL.createObjectURL(new Blob([pdfBytes], { type: 'application/pdf' }));
-    window.open(blobUrl, '_blank');
+    // Milestone 74C: the new tab gets no handle back to the app (as the court
+    // portal's link already has). Cut after opening rather than with the
+    // 'noopener' feature: a blob: URL opened with it could not be confirmed to
+    // load in every browser, and this opens the tab exactly as before.
+    const tab = window.open(blobUrl, '_blank');
+    if (tab) tab.opener = null;
   } catch (e) {
     console.error('PDF print failed', e);
     await alertModal(`PDF print failed: ${e.message || e}`);

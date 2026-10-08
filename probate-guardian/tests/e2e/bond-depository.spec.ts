@@ -3,7 +3,7 @@ import JSZip from 'jszip';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { freshStartNoPassword, createWard, fillMinimalValidGuardianWard, fillMinimalValidAnnualWard, importWorkbookConfirmed } from './support/target';
+import { freshStartNoPassword, createWard, fillMinimalValidGuardianWard, fillMinimalValidAnnualWard, importWorkbookConfirmed, expectExportReady, clickExport } from './support/target';
 import { readAll } from './support/stream';
 import { extractPdfText } from './support/pdf-extract';
 
@@ -64,9 +64,8 @@ async function download(page: Page, selector: string) {
   await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
   await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
   const button = page.locator(selector);
-  await expect(button).toBeEnabled({ timeout: 20_000 });
-  const dl = page.waitForEvent('download', { timeout: 40_000 });
-  await button.click();
+  await expectExportReady(button, 20_000);
+  const dl = clickExport(button, 40_000);
   return readAll(await (await dl).createReadStream());
 }
 
@@ -105,11 +104,12 @@ for (const form of [
           expect(await sectionIssues(page, form.section), `state=${JSON.stringify(state)} fields=${fields === BLANK_BOND ? 'blank' : 'filled'}`).toEqual([]);
         }
       }
-      // And the buttons agree with the validator.
+      // And the buttons agree with the validator: nothing in the reason line
+      // beside them stops either (Milestone 74C).
       await setFields(page, { bondDepositoryState: '', ...BLANK_BOND });
       await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
-      await expect(page.locator(form.pdfButton)).toBeEnabled();
-      await expect(page.locator(form.excelButton)).toBeEnabled();
+      await expectExportReady(page.locator(form.pdfButton));
+      await expectExportReady(page.locator(form.excelButton));
     });
 
     test('each state reveals only its fields, on the click, and switching states keeps what was typed', async ({ page }) => {
@@ -170,7 +170,7 @@ for (const form of [
       await setFields(page, { bondDepositoryState: 'bond-only', bondAmount: '5000', bondingCompany: 'Gulf Surety' });
       await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
       await expect(advisories(page).filter({ hasText: `${form.section} —` })).toHaveCount(0);
-      await expect(page.locator(form.pdfButton)).toBeEnabled();
+      await expectExportReady(page.locator(form.pdfButton));
     });
 
     test('a filing saved under the old shape reads back with the answer it implied, and the old fields are gone', async ({ page }) => {
@@ -306,6 +306,26 @@ for (const form of [
       await importWorkbookConfirmed(page, file);
       await page.waitForFunction((cn) => (window as any).GuardianForms.testing.field('caseNumber') === cn, caseNumber, { timeout: 20_000 });
       expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('bondDepositoryState')), 'a stored answer survives the import').toBe('bond-and-depository');
+
+      // Milestone 73M: a workbook whose bond details fit more than one
+      // arrangement leaves the question for the filer -- on the Inventory
+      // "bond only" and "bond and restricted depository" (it has no depository
+      // box), on the Annual "bond only" and no answer. Until 73M the import,
+      // and every later opening of the page, guessed "Bond only". Decided
+      // 2026-10-07: only a file saved before the question existed is guessed
+      // for on opening.
+      await setFields(page, { bondDepositoryState: 'bond-only', ...BLANK_BOND, bondAmount: '5000', bondingCompany: 'Gulf Surety' });
+      const bondOnly = path.join(os.tmpdir(), `pg-bond-only-${form.type}-${Date.now()}.xlsx`);
+      fs.writeFileSync(bondOnly, await download(page, form.excelButton));
+      await setFields(page, { bondDepositoryState: '', ...BLANK_BOND, caseNumber: '' });
+      await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
+      await importWorkbookConfirmed(page, bondOnly);
+      await page.waitForFunction((cn) => (window as any).GuardianForms.testing.field('caseNumber') === cn, caseNumber, { timeout: 20_000 });
+      expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('bondingCompany')), 'the bond details come back').toBe('Gulf Surety');
+      await page.evaluate((r) => (window as any).GuardianForms.testing.navigate(r), form.route);
+      await expect(page.locator('input[name="radio_bondDepositoryState"]').first()).toBeVisible();
+      expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('bondDepositoryState')), 'the question is left for the filer, not guessed').toBe('');
+      await expect(page.locator('input[name="radio_bondDepositoryState"]:checked'), 'no arrangement is shown as chosen').toHaveCount(0);
     });
   });
 }

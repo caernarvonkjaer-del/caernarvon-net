@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { freshStartNoPassword, createWard, fillMinimalValidPlanAnnualWard } from './support/target';
+import { freshStartNoPassword, createWard, fillMinimalValidPlanAnnualWard, expectExportReady, clickExport } from './support/target';
 import { readAll } from './support/stream';
 import { extractPdfText } from './support/pdf-extract';
 
@@ -52,9 +52,8 @@ test('question 6 shows the court form\'s four columns, "No" is a stored answer, 
   await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
   await go(page, '/print');
   const button = page.locator('[data-form-action="save-pdf-plan-annual"]');
-  await expect(button).toBeEnabled({ timeout: 20_000 });
-  const dl = page.waitForEvent('download', { timeout: 40_000 });
-  await button.click();
+  await expectExportReady(button, 20_000);
+  const dl = clickExport(button, 40_000);
   const text = (await extractPdfText(await readAll(await (await dl).createReadStream()))).replace(/\s+/g, ' ');
   expect(text).toContain('Right to marry No');
   expect(text).toContain('Right to vote Yes');

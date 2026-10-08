@@ -1,5 +1,5 @@
 import { test, expect, type Page, type Locator } from '@playwright/test';
-import { freshStartNoPassword, createWard, createSimplifiedWard, fillMinimalValidAnnualWard, fillMinimalValidGuardianWard, fillMinimalValidSimplifiedWard, acceptDynDialog, dismissScheduleDocPrompt } from './support/target';
+import { freshStartNoPassword, createWard, createSimplifiedWard, fillMinimalValidAnnualWard, fillMinimalValidGuardianWard, fillMinimalValidSimplifiedWard, acceptDynDialog, dismissScheduleDocPrompt, expectExportReady, clickExport } from './support/target';
 import { readAll } from './support/stream';
 import { extractPdfText } from './support/pdf-extract';
 import { DECIDED_OVERWRITES } from './support/workbook-vs-template';
@@ -59,9 +59,8 @@ async function download(page: Page, selector: string): Promise<Buffer> {
   const override = page.locator('#print-doc-container .pdf-preview-blocked [data-preview-action="override"]');
   if (await override.count()) { await override.click(); await acceptDynDialog(page); }
   const button = page.locator(selector);
-  await expect(button).toBeEnabled({ timeout: 20_000 });
-  const dl = page.waitForEvent('download', { timeout: 40_000 });
-  await button.click();
+  await expectExportReady(button, 20_000);
+  const dl = clickExport(button, 40_000);
   return readAll(await (await dl).createReadStream());
 }
 

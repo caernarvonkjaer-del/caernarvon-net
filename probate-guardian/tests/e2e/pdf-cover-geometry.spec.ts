@@ -5,6 +5,7 @@ import {
   freshStartNoPassword, createWard, createSimplifiedWard,
   fillMinimalValidAnnualWard, fillMinimalValidSimplifiedWard,
   fillMinimalValidPlanInitialWard, fillMinimalValidPlanAnnualWard, fillMinimalValidPlanMinorWard,
+  expectExportReady, clickExport,
 } from './support/target';
 import { readAll } from './support/stream';
 import { extractPdfTextRuns, type PdfTextRun } from './support/pdf-extract';
@@ -52,9 +53,8 @@ async function download(page: Page, selector: string) {
   await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
   await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
   const button = page.locator(selector);
-  await expect(button).toBeEnabled({ timeout: 20_000 });
-  const dl = page.waitForEvent('download', { timeout: 40_000 });
-  await button.click();
+  await expectExportReady(button, 20_000);
+  const dl = clickExport(button, 40_000);
   return readAll(await (await dl).createReadStream());
 }
 

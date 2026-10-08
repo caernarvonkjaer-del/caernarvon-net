@@ -3,7 +3,7 @@ import JSZip from 'jszip';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { freshStartNoPassword, createWard, fillMinimalValidAnnualWard, importWorkbookConfirmed } from './support/target';
+import { freshStartNoPassword, createWard, fillMinimalValidAnnualWard, importWorkbookConfirmed, expectExportReady, clickExport } from './support/target';
 import { readAll } from './support/stream';
 import { extractPdfTextItems } from './support/pdf-extract';
 
@@ -74,9 +74,8 @@ async function annualWard(page: Page, name: string, bond: Record<string, string>
 async function download(page: Page, action: 'save-excel' | 'save-pdf') {
   await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
   const button = page.locator(`[data-annual-action="${action}"]`);
-  await expect(button).toBeEnabled({ timeout: 20_000 });
-  const dl = page.waitForEvent('download', { timeout: 40_000 });
-  await button.click();
+  await expectExportReady(button, 20_000);
+  const dl = clickExport(button, 40_000);
   return readAll(await (await dl).createReadStream());
 }
 

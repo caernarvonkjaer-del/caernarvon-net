@@ -2,7 +2,7 @@ import { test as base, expect } from '@playwright/test';
 import JSZip from 'jszip';
 import path from 'node:path';
 import os from 'node:os';
-import { freshStartNoPassword, createSimplifiedWard, fillMinimalValidSimplifiedWard, importWorkbookConfirmed } from './support/target';
+import { freshStartNoPassword, createSimplifiedWard, fillMinimalValidSimplifiedWard, importWorkbookConfirmed, expectExportReady, clickExport } from './support/target';
 import { readAll } from './support/stream';
 
 // Simplified Annual Accounting's Part I identity block, checked against the
@@ -99,9 +99,8 @@ async function exportSimplified(page: import('@playwright/test').Page) {
   await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
   await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
   const excel = page.locator('[data-simplified-action="save-excel"]');
-  await expect(excel).toBeEnabled({ timeout: 20_000 });
-  const dl = page.waitForEvent('download', { timeout: 40_000 });
-  await excel.click();
+  await expectExportReady(excel, 20_000);
+  const dl = clickExport(excel, 40_000);
   const download = await dl;
   return { bytes: await readAll(await download.createReadStream()), download };
 }

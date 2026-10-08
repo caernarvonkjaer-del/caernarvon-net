@@ -2,6 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 import {
   freshStartNoPassword, createWard, createSimplifiedWard, fillMinimalValidAnnualWard, fillMinimalValidPlanAnnualWard,
   reopenFilingWithStoredShape, acceptDynDialog, autoAcceptDynDialogs,
+  exportStopped, expectExportReady, clickExport,
 } from './support/target';
 import { readAll } from './support/stream';
 import { extractPdfText } from './support/pdf-extract';
@@ -41,13 +42,12 @@ async function pdfText(page: Page, selector: string): Promise<string> {
   await go(page, '/print');
   const button = page.locator(selector);
   await expect(button).toBeAttached({ timeout: 60_000 });
-  if (await button.isDisabled()) {
+  if (await exportStopped(button, 'outstanding')) {
     await page.locator('#print-doc-container [data-preview-action="override"]').click();
     await acceptDynDialog(page);
   }
-  await expect(button).toBeEnabled({ timeout: 60_000 });
-  const dl = page.waitForEvent('download', { timeout: 120_000 });
-  await button.click();
+  await expectExportReady(button, 60_000);
+  const dl = clickExport(button, 120_000);
   return (await extractPdfText(await readAll(await (await dl).createReadStream()))).replace(/\s+/g, ' ');
 }
 

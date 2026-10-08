@@ -20,16 +20,17 @@ import { validateGuardian } from './index.js';
 import { authorizeFilingOutput } from '../../core/filing/output-authorization.js';
 import { getExcelCapacityIssues } from '../../core/excel/excel-capacity.js';
 import { getExcelJS, saveWorkbookFile, setCell, setDateCell } from '../../core/excel/excel-engine.js';
-import { migrateBondDepository } from '../../core/filing/bond-depository.js';
+import { bondStateFromWorkbook, normalizeBondDepositoryState } from '../../core/filing/bond-depository.js';
 import { pruneSheets } from '../../core/excel/sheet-pruning.js';
 import { unusedGuardianContinuationSheets } from '../../core/excel/guardian-inventory-pages.js';
 import { writeContract } from '../../core/excel/workbook-contract/engine.js';
 import { GUARDIAN_CONTRACT } from '../../core/excel/workbook-contract/guardian.js';
-import { workbookAdapter } from '../../core/excel/workbook-contract/index.js';
+import { excelOmissions, workbookAdapter } from '../../core/excel/workbook-contract/index.js';
+import { excelOmissionsQuestion, outputRefusal } from '../../core/filing/output-reasons.js';
 import { runImportTransaction } from '../../core/excel/import-transaction.js';
 import { confirmImport } from '../../core/excel/import-confirm.js';
 import { recordDateDraft } from '../../core/form/commit-coordinator.js';
-import { alertModal } from '../../core/ui/dialogs.js';
+import { alertModal, confirmModal } from '../../core/ui/dialogs.js';
 import { setStatus, scheduleStatusClear } from '../../core/ui/transient-status.js';
 import { beginExport } from '../../core/ui/export-guard.js';
 import { getImportProgressEl, validateImportFile } from '../../core/security/input-hardening.js';
@@ -48,19 +49,25 @@ export async function doSaveExcel(){
     additionalIssues: capacityIssues,
   });
   if (authorization.status !== 'allowed') {
-    if (authorization.status === 'blocked') {
-      const capIssues = authorization.issues.filter(i => i.code?.startsWith('excel.capacity.'));
-      if (capIssues.length) {
-        await alertModal('Cannot export to Excel — these schedules have more entries than the court\'s Excel template can hold:\n\n'
-          + capIssues.map(o => `• ${o.message}`).join('\n')
-          + '\n\nSave as PDF instead — the PDF includes every entry.');
-      } else {
-        await alertModal(`Cannot export to Excel: ${authorization.issues.length} blocking issue(s) remain.`);
-      }
+    // Milestone 73M step 5 / 74C: Save as Excel stays clickable and the click
+    // says why it can't go on -- a capacity limit, or requirements still
+    // outstanding (it used to redraw Preview and say nothing).
+    const capIssues = authorization.issues.filter(i => i.code?.startsWith('excel.capacity.'));
+    if (capIssues.length) {
+      await alertModal('Cannot export to Excel — these schedules have more entries than the court\'s Excel template can hold:\n\n'
+        + capIssues.map(o => `• ${o.message}`).join('\n')
+        + '\n\nSave as PDF instead — the PDF includes every entry.');
+    } else {
+      await alertModal(outputRefusal(authorization, 'Excel'));
     }
     renderPage('/print');
     return;
   }
+  // Milestone 73M (decisions 73M-1 and 73M-2): what the filer must file
+  // another way -- A-2's Notes, the Lines 20/30 explanation -- is asked about
+  // here; the rest of what the workbook has no box for is said on the page.
+  const fileElsewhere = excelOmissions(getD()).filter((o) => o.warn);
+  if (fileElsewhere.length && !(await confirmModal({ title: 'Not in the Excel workbook', message: excelOmissionsQuestion(fileElsewhere), confirmLabel: 'Save the workbook' }))) return;
   // Milestone 67: disables the button for the export's duration, so a second
   // click while it's still generating can't fire a second download and get
   // both blocked by the browser as "multiple files."
@@ -144,10 +151,12 @@ export async function importExcel(input){
         for (const d of read?.dateDrafts || []) recordDateDraft({ data: f, path: d.path, rawValue: d.text, section: 'Imported from Excel' });
         // Milestone 67B: the workbook has no cell for the bond / restricted
         // depository arrangement, so an answer this filing already had stands.
-        // A blank one is read from what the workbook did carry (the G15
-        // waiver date, the bond details) -- otherwise the page would show the
-        // answer those imply while the sidebar kept asking for it.
-        migrateBondDepository(f);
+        // Milestone 73M: a blank one is read from what the workbook carried
+        // (the G15 waiver date) only where one arrangement alone could
+        // have produced it; otherwise it stays blank for the filer to choose
+        // (it used to be guessed -- an Inventory with a bond and a restricted
+        // depository came back as "Bond only").
+        if (!normalizeBondDepositoryState(f.bondDepositoryState)) f.bondDepositoryState = bondStateFromWorkbook(read?.draft, 'guardian');
       },
     });
     if(!result.committed){setStatus(prog,'Import cancelled — nothing was changed.');scheduleStatusClear(prog);}

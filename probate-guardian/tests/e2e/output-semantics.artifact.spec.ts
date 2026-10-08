@@ -4,6 +4,7 @@ import {
   fillMinimalValidGuardianWard, fillMinimalValidSimplifiedWard,
   fillMinimalValidPlanSimplifiedWard, fillMinimalValidPlanAnnualWard,
   fillMinimalValidPlanInitialWard, fillMinimalValidPlanMinorWard,
+  expectExportReady, clickExport,
 } from './support/target';
 import { inspectPdf, extractPdfText } from './support/pdf-extract';
 import { extractXlsx } from './support/xlsx-extract';
@@ -164,11 +165,9 @@ test.describe('Output semantics artifact contract (Milestone 33, Phase 3)', () =
       if (expected.exports.xlsx) {
         expect(saveExcelValue).not.toBeNull();
         const excelActionSelector = `[${exportActionAttr}="${saveExcelValue}"]`;
-        await expect(page.locator(excelActionSelector)).toBeEnabled();
+        await expectExportReady(page.locator(excelActionSelector));
 
-        const xlsxDownloadPromise = page.waitForEvent('download', { timeout: 25_000 });
-        await page.locator(excelActionSelector).click();
-        const xlsxDownload = await xlsxDownloadPromise;
+        const xlsxDownload = await clickExport(page.locator(excelActionSelector), 25_000);
 
         // Layer 1: Transport
         expect(xlsxDownload.suggestedFilename()).toMatch(/\.xlsx$/i);

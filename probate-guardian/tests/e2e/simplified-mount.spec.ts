@@ -35,10 +35,7 @@ test.describe('simplified-accounting feature module', () => {
     await createSimplifiedWard(page, 'Incomplete Simplified Ward');
     await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
 
-    await page.locator('[data-simplified-action="save-pdf"]').evaluate((button: HTMLButtonElement) => {
-      button.disabled = false;
-      button.click();
-    });
+    await page.locator('[data-simplified-action="save-pdf"]').click();
     const alertMessage = await acceptDynDialog(page);
 
     expect(alertMessage).toContain('Cannot export');

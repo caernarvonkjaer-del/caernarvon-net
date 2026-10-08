@@ -5,6 +5,7 @@ import path from 'node:path';
 import {
   freshStartNoPassword, createWard, createSimplifiedWard, reopenFilingWithStoredShape, autoAcceptDynDialogs,
   fillMinimalValidGuardianWard, fillMinimalValidAnnualWard, fillMinimalValidSimplifiedWard, fillMinimalValidPlanAnnualWard,
+  expectExportReady, clickExport,
 } from './support/target';
 import { readAll } from './support/stream';
 import { extractPdfText } from './support/pdf-extract';
@@ -34,9 +35,8 @@ async function pdfText(page: Page, selector: string) {
   await go(page, '/');
   await go(page, '/print');
   const button = page.locator(selector);
-  await expect(button).toBeEnabled({ timeout: 30_000 });
-  const dl = page.waitForEvent('download', { timeout: 60_000 });
-  await button.click();
+  await expectExportReady(button, 30_000);
+  const dl = clickExport(button, 60_000);
   return (await extractPdfText(await readAll(await (await dl).createReadStream()))).replace(/\s+/g, ' ');
 }
 

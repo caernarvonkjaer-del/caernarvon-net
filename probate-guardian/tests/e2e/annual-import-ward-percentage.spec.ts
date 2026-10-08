@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import path from 'node:path';
 import os from 'node:os';
-import { freshStartNoPassword, createWard, fillMinimalValidAnnualWard, importWorkbookConfirmed } from './support/target';
+import { freshStartNoPassword, createWard, fillMinimalValidAnnualWard, importWorkbookConfirmed, clickExport } from './support/target';
 
 // Importing an Annual Accounting workbook stopped at the first ward
 // percentage on Schedules D-1 to D-5: "Import failed: r2 is not a function".
@@ -36,8 +36,7 @@ test('an Annual workbook with ward percentages on Schedules D-1 to D-5 re-import
   }, ROWS);
 
   await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
-  const download = page.waitForEvent('download', { timeout: 30_000 });
-  await page.locator('[data-annual-action="save-excel"]').click();
+  const download = clickExport(page.locator('[data-annual-action="save-excel"]'), 30_000);
   const xlsxPath = path.join(os.tmpdir(), `pg-annual-ward-pct-${Date.now()}.xlsx`);
   await (await download).saveAs(xlsxPath);
 

@@ -2,8 +2,8 @@
  "generatedBy": "node scripts/ms70-assertion-counts.mjs --write-baseline",
  "note": "Milestone 70 per-spec assertion counts (static expect calls). tests/unit/ms70-assertion-counts.spec.js fails when a spec falls below its count; lowering it requires --reason, recorded in dropLog. A tripwire, not proof of equivalence (decision D9).",
  "totals": {
-  "expects": 8472,
-  "tests": 2406
+  "expects": 8508,
+  "tests": 2429
  },
  "counts": {
   "tests/e2e/amounts-keep-their-sign.spec.ts": {
@@ -15,11 +15,11 @@
    "tests": 3
   },
   "tests/e2e/annual-blank-share-footing.spec.ts": {
-   "expects": 9,
+   "expects": 8,
    "tests": 1
   },
   "tests/e2e/annual-bond-period.spec.ts": {
-   "expects": 19,
+   "expects": 18,
    "tests": 3
   },
   "tests/e2e/annual-field-formatting.spec.ts": {
@@ -39,7 +39,7 @@
    "tests": 4
   },
   "tests/e2e/annual-ward-share-export.spec.ts": {
-   "expects": 7,
+   "expects": 6,
    "tests": 1
   },
   "tests/e2e/asterisks-follow-rules.spec.ts": {
@@ -47,7 +47,7 @@
    "tests": 1
   },
   "tests/e2e/attorney-optional-export.spec.ts": {
-   "expects": 35,
+   "expects": 34,
    "tests": 3
   },
   "tests/e2e/b2-vehicle-toggle.spec.ts": {
@@ -67,7 +67,7 @@
    "tests": 6
   },
   "tests/e2e/carry-balance-matches-prior.spec.ts": {
-   "expects": 42,
+   "expects": 41,
    "tests": 5
   },
   "tests/e2e/carryover-workflow.spec.ts": {
@@ -107,7 +107,7 @@
    "tests": 3
   },
   "tests/e2e/certificate-service-method.spec.ts": {
-   "expects": 22,
+   "expects": 21,
    "tests": 4
   },
   "tests/e2e/closed-filing-sync.spec.ts": {
@@ -151,23 +151,23 @@
    "tests": 18
   },
   "tests/e2e/excel-b4-multi-account.spec.ts": {
-   "expects": 16,
+   "expects": 15,
    "tests": 3
   },
   "tests/e2e/excel-blank-page-pruning.spec.ts": {
-   "expects": 17,
+   "expects": 16,
    "tests": 4
   },
   "tests/e2e/excel-date-cells.spec.ts": {
-   "expects": 16,
+   "expects": 15,
    "tests": 3
   },
   "tests/e2e/excel-defined-names.spec.ts": {
-   "expects": 17,
+   "expects": 15,
    "tests": 6
   },
   "tests/e2e/excel-form-field-placement.spec.ts": {
-   "expects": 96,
+   "expects": 94,
    "tests": 15
   },
   "tests/e2e/excel-import-cell-shapes.spec.ts": {
@@ -175,7 +175,7 @@
    "tests": 2
   },
   "tests/e2e/excel-pruned-roundtrip.spec.ts": {
-   "expects": 12,
+   "expects": 11,
    "tests": 2
   },
   "tests/e2e/export-button-guard.spec.ts": {
@@ -195,7 +195,7 @@
    "tests": 1
   },
   "tests/e2e/filing-identity.contract.spec.ts": {
-   "expects": 10,
+   "expects": 9,
    "tests": 1
   },
   "tests/e2e/first-guardian-stays.spec.ts": {
@@ -223,11 +223,11 @@
    "tests": 1
   },
   "tests/e2e/guardian-blank-page-pruning.spec.ts": {
-   "expects": 23,
+   "expects": 22,
    "tests": 6
   },
   "tests/e2e/guardian-email-advisory.spec.ts": {
-   "expects": 38,
+   "expects": 32,
    "tests": 7
   },
   "tests/e2e/guardian-inventory-collection-controls.spec.ts": {
@@ -306,8 +306,12 @@
    "expects": 26,
    "tests": 5
   },
+  "tests/e2e/output-buttons-after-override.spec.ts": {
+   "expects": 16,
+   "tests": 3
+  },
   "tests/e2e/output-semantics.artifact.spec.ts": {
-   "expects": 38,
+   "expects": 37,
    "tests": 2
   },
   "tests/e2e/page-structure.spec.ts": {
@@ -335,7 +339,7 @@
    "tests": 12
   },
   "tests/e2e/pdf-cover-geometry.spec.ts": {
-   "expects": 5,
+   "expects": 4,
    "tests": 1
   },
   "tests/e2e/pdf-evidence-lab.spec.ts": {
@@ -367,7 +371,7 @@
    "tests": 2
   },
   "tests/e2e/percent-range.spec.ts": {
-   "expects": 24,
+   "expects": 23,
    "tests": 3
   },
   "tests/e2e/persistence-recovery.contract.spec.ts": {
@@ -383,7 +387,7 @@
    "tests": 2
   },
   "tests/e2e/plan-annual-rights-no.spec.ts": {
-   "expects": 13,
+   "expects": 12,
    "tests": 2
   },
   "tests/e2e/plan-benefits-tristate.spec.ts": {
@@ -391,7 +395,7 @@
    "tests": 2
   },
   "tests/e2e/plan-certificate-of-service.spec.ts": {
-   "expects": 52,
+   "expects": 48,
    "tests": 8
   },
   "tests/e2e/plan-directive-cards.spec.ts": {
@@ -411,11 +415,11 @@
    "tests": 3
   },
   "tests/e2e/plan-initial-multiselect.spec.ts": {
-   "expects": 32,
+   "expects": 31,
    "tests": 5
   },
   "tests/e2e/plan-initial-period.spec.ts": {
-   "expects": 13,
+   "expects": 11,
    "tests": 1
   },
   "tests/e2e/plan-minor-mount.spec.ts": {
@@ -427,11 +431,11 @@
    "tests": 1
   },
   "tests/e2e/plan-readiness.contract.spec.ts": {
-   "expects": 17,
+   "expects": 14,
    "tests": 5
   },
   "tests/e2e/plan-signature-date.spec.ts": {
-   "expects": 5,
+   "expects": 4,
    "tests": 2
   },
   "tests/e2e/plan-simplified-mount.spec.ts": {
@@ -451,7 +455,7 @@
    "tests": 1
   },
   "tests/e2e/preparer-flag.spec.ts": {
-   "expects": 43,
+   "expects": 41,
    "tests": 3
   },
   "tests/e2e/preparer-note-placement.spec.ts": {
@@ -547,7 +551,7 @@
    "tests": 5
   },
   "tests/e2e/signature-by-hand.spec.ts": {
-   "expects": 38,
+   "expects": 37,
    "tests": 7
   },
   "tests/e2e/signature-capture.contract.spec.ts": {
@@ -571,7 +575,7 @@
    "tests": 8
   },
   "tests/e2e/simplified-part1-identity-cells.spec.ts": {
-   "expects": 28,
+   "expects": 27,
    "tests": 6
   },
   "tests/e2e/simplified-remuneration.spec.ts": {
@@ -579,7 +583,7 @@
    "tests": 5
   },
   "tests/e2e/stamped-co-guardian.spec.ts": {
-   "expects": 16,
+   "expects": 15,
    "tests": 3
   },
   "tests/e2e/startup.spec.ts": {
@@ -599,7 +603,7 @@
    "tests": 2
   },
   "tests/e2e/test-system-title-prefix.spec.ts": {
-   "expects": 25,
+   "expects": 24,
    "tests": 6
   },
   "tests/e2e/testing-adapter.spec.ts": {
@@ -715,8 +719,8 @@
    "tests": 5
   },
   "tests/unit/bond-depository.spec.js": {
-   "expects": 67,
-   "tests": 20
+   "expects": 87,
+   "tests": 24
   },
   "tests/unit/boot-ordering.spec.js": {
    "expects": 9,
@@ -1050,6 +1054,10 @@
    "expects": 18,
    "tests": 5
   },
+  "tests/unit/output-reasons.spec.js": {
+   "expects": 26,
+   "tests": 11
+  },
   "tests/unit/output-revision-wiring.spec.js": {
    "expects": 18,
    "tests": 10
@@ -1076,6 +1084,10 @@
   },
   "tests/unit/pdf-model-column-integrity.spec.js": {
    "expects": 4,
+   "tests": 3
+  },
+  "tests/unit/pdf-preview-print.spec.js": {
+   "expects": 7,
    "tests": 3
   },
   "tests/unit/percent-field.spec.js": {
@@ -1391,8 +1403,8 @@
    "tests": 6
   },
   "tests/unit/workbook-contract.spec.js": {
-   "expects": 110,
-   "tests": 42
+   "expects": 120,
+   "tests": 44
   },
   "tests/unit/workbook-recalc-on-open.spec.js": {
    "expects": 3,
@@ -1561,6 +1573,209 @@
    "now": 9,
    "reason": "73T part 2: guardian-inventory-date-roundtrip.spec.js no longer slices dt() out of the Inventory importer's source -- the reader is the workbook contract's exported date codec -- so its 'dt found in the source' check went; every date assertion stays",
    "date": "2026-10-07"
+  },
+  {
+   "file": "tests/e2e/annual-blank-share-footing.spec.ts",
+   "was": 9,
+   "now": 8,
+   "reason": "Milestone 74C / 73M (2026-10-07): the export buttons are always clickable, so a spec's inline expect(button).toBeEnabled() / toBeDisabled() moved into tests/e2e/support/target.ts's expectExportReady() / expectExportStopped(), which read the reason line beside the buttons instead (two checks each); one inline expect per moved call. No check was removed.",
+   "date": "2026-10-08"
+  },
+  {
+   "file": "tests/e2e/annual-bond-period.spec.ts",
+   "was": 19,
+   "now": 18,
+   "reason": "Milestone 74C / 73M (2026-10-07): the export buttons are always clickable, so a spec's inline expect(button).toBeEnabled() / toBeDisabled() moved into tests/e2e/support/target.ts's expectExportReady() / expectExportStopped(), which read the reason line beside the buttons instead (two checks each); one inline expect per moved call. No check was removed.",
+   "date": "2026-10-08"
+  },
+  {
+   "file": "tests/e2e/annual-ward-share-export.spec.ts",
+   "was": 7,
+   "now": 6,
+   "reason": "Milestone 74C / 73M (2026-10-07): the export buttons are always clickable, so a spec's inline expect(button).toBeEnabled() / toBeDisabled() moved into tests/e2e/support/target.ts's expectExportReady() / expectExportStopped(), which read the reason line beside the buttons instead (two checks each); one inline expect per moved call. No check was removed.",
+   "date": "2026-10-08"
+  },
+  {
+   "file": "tests/e2e/attorney-optional-export.spec.ts",
+   "was": 35,
+   "now": 34,
+   "reason": "Milestone 74C / 73M (2026-10-07): the export buttons are always clickable, so a spec's inline expect(button).toBeEnabled() / toBeDisabled() moved into tests/e2e/support/target.ts's expectExportReady() / expectExportStopped(), which read the reason line beside the buttons instead (two checks each); one inline expect per moved call. No check was removed.",
+   "date": "2026-10-08"
+  },
+  {
+   "file": "tests/e2e/carry-balance-matches-prior.spec.ts",
+   "was": 42,
+   "now": 41,
+   "reason": "Milestone 74C / 73M (2026-10-07): the export buttons are always clickable, so a spec's inline expect(button).toBeEnabled() / toBeDisabled() moved into tests/e2e/support/target.ts's expectExportReady() / expectExportStopped(), which read the reason line beside the buttons instead (two checks each); one inline expect per moved call. No check was removed.",
+   "date": "2026-10-08"
+  },
+  {
+   "file": "tests/e2e/certificate-service-method.spec.ts",
+   "was": 22,
+   "now": 21,
+   "reason": "Milestone 74C / 73M (2026-10-07): the export buttons are always clickable, so a spec's inline expect(button).toBeEnabled() / toBeDisabled() moved into tests/e2e/support/target.ts's expectExportReady() / expectExportStopped(), which read the reason line beside the buttons instead (two checks each); one inline expect per moved call. No check was removed.",
+   "date": "2026-10-08"
+  },
+  {
+   "file": "tests/e2e/excel-b4-multi-account.spec.ts",
+   "was": 16,
+   "now": 15,
+   "reason": "Milestone 74C / 73M (2026-10-07): the export buttons are always clickable, so a spec's inline expect(button).toBeEnabled() / toBeDisabled() moved into tests/e2e/support/target.ts's expectExportReady() / expectExportStopped(), which read the reason line beside the buttons instead (two checks each); one inline expect per moved call. No check was removed.",
+   "date": "2026-10-08"
+  },
+  {
+   "file": "tests/e2e/excel-blank-page-pruning.spec.ts",
+   "was": 17,
+   "now": 16,
+   "reason": "Milestone 74C / 73M (2026-10-07): the export buttons are always clickable, so a spec's inline expect(button).toBeEnabled() / toBeDisabled() moved into tests/e2e/support/target.ts's expectExportReady() / expectExportStopped(), which read the reason line beside the buttons instead (two checks each); one inline expect per moved call. No check was removed.",
+   "date": "2026-10-08"
+  },
+  {
+   "file": "tests/e2e/excel-date-cells.spec.ts",
+   "was": 16,
+   "now": 15,
+   "reason": "Milestone 74C / 73M (2026-10-07): the export buttons are always clickable, so a spec's inline expect(button).toBeEnabled() / toBeDisabled() moved into tests/e2e/support/target.ts's expectExportReady() / expectExportStopped(), which read the reason line beside the buttons instead (two checks each); one inline expect per moved call. No check was removed.",
+   "date": "2026-10-08"
+  },
+  {
+   "file": "tests/e2e/excel-defined-names.spec.ts",
+   "was": 17,
+   "now": 15,
+   "reason": "Milestone 74C / 73M (2026-10-07): the export buttons are always clickable, so a spec's inline expect(button).toBeEnabled() / toBeDisabled() moved into tests/e2e/support/target.ts's expectExportReady() / expectExportStopped(), which read the reason line beside the buttons instead (two checks each); one inline expect per moved call. No check was removed.",
+   "date": "2026-10-08"
+  },
+  {
+   "file": "tests/e2e/excel-form-field-placement.spec.ts",
+   "was": 96,
+   "now": 94,
+   "reason": "Milestone 74C / 73M (2026-10-07): the export buttons are always clickable, so a spec's inline expect(button).toBeEnabled() / toBeDisabled() moved into tests/e2e/support/target.ts's expectExportReady() / expectExportStopped(), which read the reason line beside the buttons instead (two checks each); one inline expect per moved call. No check was removed.",
+   "date": "2026-10-08"
+  },
+  {
+   "file": "tests/e2e/excel-pruned-roundtrip.spec.ts",
+   "was": 12,
+   "now": 11,
+   "reason": "Milestone 74C / 73M (2026-10-07): the export buttons are always clickable, so a spec's inline expect(button).toBeEnabled() / toBeDisabled() moved into tests/e2e/support/target.ts's expectExportReady() / expectExportStopped(), which read the reason line beside the buttons instead (two checks each); one inline expect per moved call. No check was removed.",
+   "date": "2026-10-08"
+  },
+  {
+   "file": "tests/e2e/filing-identity.contract.spec.ts",
+   "was": 10,
+   "now": 9,
+   "reason": "Milestone 74C / 73M (2026-10-07): the export buttons are always clickable, so a spec's inline expect(button).toBeEnabled() / toBeDisabled() moved into tests/e2e/support/target.ts's expectExportReady() / expectExportStopped(), which read the reason line beside the buttons instead (two checks each); one inline expect per moved call. No check was removed.",
+   "date": "2026-10-08"
+  },
+  {
+   "file": "tests/e2e/guardian-blank-page-pruning.spec.ts",
+   "was": 23,
+   "now": 22,
+   "reason": "Milestone 74C / 73M (2026-10-07): the export buttons are always clickable, so a spec's inline expect(button).toBeEnabled() / toBeDisabled() moved into tests/e2e/support/target.ts's expectExportReady() / expectExportStopped(), which read the reason line beside the buttons instead (two checks each); one inline expect per moved call. No check was removed.",
+   "date": "2026-10-08"
+  },
+  {
+   "file": "tests/e2e/guardian-email-advisory.spec.ts",
+   "was": 38,
+   "now": 32,
+   "reason": "Milestone 74C / 73M (2026-10-07): the export buttons are always clickable, so a spec's inline expect(button).toBeEnabled() / toBeDisabled() moved into tests/e2e/support/target.ts's expectExportReady() / expectExportStopped(), which read the reason line beside the buttons instead (two checks each); one inline expect per moved call. No check was removed.",
+   "date": "2026-10-08"
+  },
+  {
+   "file": "tests/e2e/output-semantics.artifact.spec.ts",
+   "was": 38,
+   "now": 37,
+   "reason": "Milestone 74C / 73M (2026-10-07): the export buttons are always clickable, so a spec's inline expect(button).toBeEnabled() / toBeDisabled() moved into tests/e2e/support/target.ts's expectExportReady() / expectExportStopped(), which read the reason line beside the buttons instead (two checks each); one inline expect per moved call. No check was removed.",
+   "date": "2026-10-08"
+  },
+  {
+   "file": "tests/e2e/pdf-cover-geometry.spec.ts",
+   "was": 5,
+   "now": 4,
+   "reason": "Milestone 74C / 73M (2026-10-07): the export buttons are always clickable, so a spec's inline expect(button).toBeEnabled() / toBeDisabled() moved into tests/e2e/support/target.ts's expectExportReady() / expectExportStopped(), which read the reason line beside the buttons instead (two checks each); one inline expect per moved call. No check was removed.",
+   "date": "2026-10-08"
+  },
+  {
+   "file": "tests/e2e/percent-range.spec.ts",
+   "was": 24,
+   "now": 23,
+   "reason": "Milestone 74C / 73M (2026-10-07): the export buttons are always clickable, so a spec's inline expect(button).toBeEnabled() / toBeDisabled() moved into tests/e2e/support/target.ts's expectExportReady() / expectExportStopped(), which read the reason line beside the buttons instead (two checks each); one inline expect per moved call. No check was removed.",
+   "date": "2026-10-08"
+  },
+  {
+   "file": "tests/e2e/plan-annual-rights-no.spec.ts",
+   "was": 13,
+   "now": 12,
+   "reason": "Milestone 74C / 73M (2026-10-07): the export buttons are always clickable, so a spec's inline expect(button).toBeEnabled() / toBeDisabled() moved into tests/e2e/support/target.ts's expectExportReady() / expectExportStopped(), which read the reason line beside the buttons instead (two checks each); one inline expect per moved call. No check was removed.",
+   "date": "2026-10-08"
+  },
+  {
+   "file": "tests/e2e/plan-certificate-of-service.spec.ts",
+   "was": 52,
+   "now": 48,
+   "reason": "Milestone 74C / 73M (2026-10-07): the export buttons are always clickable, so a spec's inline expect(button).toBeEnabled() / toBeDisabled() moved into tests/e2e/support/target.ts's expectExportReady() / expectExportStopped(), which read the reason line beside the buttons instead (two checks each); one inline expect per moved call. No check was removed.",
+   "date": "2026-10-08"
+  },
+  {
+   "file": "tests/e2e/plan-initial-multiselect.spec.ts",
+   "was": 32,
+   "now": 31,
+   "reason": "Milestone 74C / 73M (2026-10-07): the export buttons are always clickable, so a spec's inline expect(button).toBeEnabled() / toBeDisabled() moved into tests/e2e/support/target.ts's expectExportReady() / expectExportStopped(), which read the reason line beside the buttons instead (two checks each); one inline expect per moved call. No check was removed.",
+   "date": "2026-10-08"
+  },
+  {
+   "file": "tests/e2e/plan-initial-period.spec.ts",
+   "was": 13,
+   "now": 11,
+   "reason": "Milestone 74C / 73M (2026-10-07): the export buttons are always clickable, so a spec's inline expect(button).toBeEnabled() / toBeDisabled() moved into tests/e2e/support/target.ts's expectExportReady() / expectExportStopped(), which read the reason line beside the buttons instead (two checks each); one inline expect per moved call. No check was removed.",
+   "date": "2026-10-08"
+  },
+  {
+   "file": "tests/e2e/plan-readiness.contract.spec.ts",
+   "was": 17,
+   "now": 14,
+   "reason": "Milestone 74C / 73M (2026-10-07): the export buttons are always clickable, so a spec's inline expect(button).toBeEnabled() / toBeDisabled() moved into tests/e2e/support/target.ts's expectExportReady() / expectExportStopped(), which read the reason line beside the buttons instead (two checks each); one inline expect per moved call. No check was removed.",
+   "date": "2026-10-08"
+  },
+  {
+   "file": "tests/e2e/plan-signature-date.spec.ts",
+   "was": 5,
+   "now": 4,
+   "reason": "Milestone 74C / 73M (2026-10-07): the export buttons are always clickable, so a spec's inline expect(button).toBeEnabled() / toBeDisabled() moved into tests/e2e/support/target.ts's expectExportReady() / expectExportStopped(), which read the reason line beside the buttons instead (two checks each); one inline expect per moved call. No check was removed.",
+   "date": "2026-10-08"
+  },
+  {
+   "file": "tests/e2e/preparer-flag.spec.ts",
+   "was": 43,
+   "now": 41,
+   "reason": "Milestone 74C / 73M (2026-10-07): the export buttons are always clickable, so a spec's inline expect(button).toBeEnabled() / toBeDisabled() moved into tests/e2e/support/target.ts's expectExportReady() / expectExportStopped(), which read the reason line beside the buttons instead (two checks each); one inline expect per moved call. No check was removed.",
+   "date": "2026-10-08"
+  },
+  {
+   "file": "tests/e2e/signature-by-hand.spec.ts",
+   "was": 38,
+   "now": 37,
+   "reason": "Milestone 74C / 73M (2026-10-07): the export buttons are always clickable, so a spec's inline expect(button).toBeEnabled() / toBeDisabled() moved into tests/e2e/support/target.ts's expectExportReady() / expectExportStopped(), which read the reason line beside the buttons instead (two checks each); one inline expect per moved call. No check was removed.",
+   "date": "2026-10-08"
+  },
+  {
+   "file": "tests/e2e/simplified-part1-identity-cells.spec.ts",
+   "was": 28,
+   "now": 27,
+   "reason": "Milestone 74C / 73M (2026-10-07): the export buttons are always clickable, so a spec's inline expect(button).toBeEnabled() / toBeDisabled() moved into tests/e2e/support/target.ts's expectExportReady() / expectExportStopped(), which read the reason line beside the buttons instead (two checks each); one inline expect per moved call. No check was removed.",
+   "date": "2026-10-08"
+  },
+  {
+   "file": "tests/e2e/stamped-co-guardian.spec.ts",
+   "was": 16,
+   "now": 15,
+   "reason": "Milestone 74C / 73M (2026-10-07): the export buttons are always clickable, so a spec's inline expect(button).toBeEnabled() / toBeDisabled() moved into tests/e2e/support/target.ts's expectExportReady() / expectExportStopped(), which read the reason line beside the buttons instead (two checks each); one inline expect per moved call. No check was removed.",
+   "date": "2026-10-08"
+  },
+  {
+   "file": "tests/e2e/test-system-title-prefix.spec.ts",
+   "was": 25,
+   "now": 24,
+   "reason": "Milestone 74C / 73M (2026-10-07): the export buttons are always clickable, so a spec's inline expect(button).toBeEnabled() / toBeDisabled() moved into tests/e2e/support/target.ts's expectExportReady() / expectExportStopped(), which read the reason line beside the buttons instead (two checks each); one inline expect per moved call. No check was removed.",
+   "date": "2026-10-08"
   }
  ]
 }

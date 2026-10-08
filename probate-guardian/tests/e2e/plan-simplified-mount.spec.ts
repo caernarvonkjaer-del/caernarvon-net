@@ -15,14 +15,10 @@ registerPlanMountTests({
   routes: ['/', '/summary', '/p2', '/p3', '/print'],
   fillValidWard: fillMinimalValidPlanSimplifiedWard,
   triggerExport: (page) => page.locator('[data-plan-simplified-action="save-pdf"]').click(),
-  // Unlike the other three plan types, Plan Simplified's export button is
-  // driven by disabled/enabled state rather than an alert-only guard -- an
-  // incomplete filing leaves the button disabled, so exercising the blocked
-  // path has to force it enabled before clicking, not just trigger the click.
-  triggerBlockedExport: (page) => page.locator('[data-plan-simplified-action="save-pdf"]').evaluate((button: HTMLButtonElement) => {
-    button.disabled = false;
-    button.click();
-  }),
+  // Milestone 74C: Save as PDF is clickable on an incomplete filing, as on
+  // every form, and the click says why it can't export. (It used to be the one
+  // Plan whose button was drawn disabled, so this forced it enabled first.)
+  triggerBlockedExport: (page) => page.locator('[data-plan-simplified-action="save-pdf"]').click(),
   navChecks: [
     { route: '/', key: 'ps-cover' },
     { route: '/p2', key: 'ps-p2' },

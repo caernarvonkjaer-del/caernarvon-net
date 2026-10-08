@@ -18,7 +18,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { expect, type Page } from '@playwright/test';
 import { readAll } from './stream';
-import { acceptDynDialog } from './target';
+import { acceptDynDialog, clickExport, expectExportReady, exportStopped } from './target';
 import type { TestWindow } from './window-api';
 
 export type FormName = 'guardian' | 'annual' | 'simplified';
@@ -79,27 +79,27 @@ export async function exportWithWrites(page: Page, form: FormName): Promise<{ by
   // is judged afresh: an earlier override covered the earlier revision only.
   await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
   await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
-  // The page draws Save as Excel disabled while requirements are outstanding
-  // (each form's print.js); the preview panel then offers the override, which
-  // re-enables it (pdf-preview.js). A filing over the workbook's capacity stays
-  // disabled for good -- the guard's filings stay at capacity, never over.
+  // While requirements are outstanding the reason line beside Save as Excel
+  // says so (each form's print.js; Milestone 74C / 73M -- the button stays
+  // clickable); the preview panel then offers the override, which clears
+  // that reason (pdf-preview.js). A filing over the workbook's capacity is
+  // stopped for good -- the guard's filings stay at capacity, never over.
   const button = page.locator(SAVE_EXCEL[form]);
   await expect(button).toBeAttached({ timeout: 60_000 });
-  if (await button.isDisabled()) {
+  if (await exportStopped(button, 'outstanding')) {
     const override = page.locator('#print-doc-container [data-preview-action="override"]');
     await expect(override).toBeVisible({ timeout: 120_000 });
     await override.click();
     await acceptDynDialog(page);
   }
-  // Enabled, and still enabled a moment later: a page redrawn after the
-  // override (a late save, a status refresh) would otherwise leave the click
-  // waiting on a button that has gone back to disabled.
-  await expect(button).toBeEnabled({ timeout: 60_000 });
+  // Ready, and still ready a moment later: a page redrawn after the override
+  // (a late save, a status refresh) opens Preview afresh, which clears the
+  // override, and the click would then be refused.
+  await expectExportReady(button, 60_000);
   await page.waitForTimeout(500);
-  await expect(button, 'Save as Excel stayed enabled after the override').toBeEnabled({ timeout: 1_000 });
+  await expectExportReady(button, 1_000, 'Save as Excel still has nothing in its way after the override');
   await page.evaluate(() => (window as unknown as TestWindow).GuardianForms.testing.excelWrites.start());
-  const download = page.waitForEvent('download', { timeout: 180_000 });
-  await button.click();
+  const download = clickExport(button, 180_000);
   const bytes = await readAll(await (await download).createReadStream());
   const writes: Write[] = await page.evaluate(() => (window as unknown as TestWindow).GuardianForms.testing.excelWrites.stop());
   return { bytes, writes };

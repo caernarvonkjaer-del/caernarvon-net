@@ -8,6 +8,7 @@ import { readCellText, unwrapCellValue } from '../cell-reader.js';
 import { hasIdentifiedPreparer } from '../../form/preparer-flag.js';
 import { bondAmountFromCell, inferBondDepositoryState, revealsBond, revealsWaiver } from '../../filing/bond-depository.js';
 import { rowStarted } from '../../validation/row-started.js';
+import { sameName } from '../import-keep.js';
 import { compareImportedCertificate } from '../../filing/certificate-migrations.js';
 import { b2ItemDescription, mk } from '../../filing/models/guardian.js';
 import {
@@ -31,6 +32,7 @@ const present = (...keys) => (r) => keys.some((k) => !!r[k]);
 const bondAmount = Object.freeze({ kind: 'amount', write: (v) => amountRaw.write(v), read: (cell) => bondAmountFromCell(amountRaw.read(cell)) });
 const dateOrBlank = Object.freeze({ kind: 'date', write: (v) => date.write(v), read: (cell) => date.read(cell) || '' });
 const isYes = (v) => v === 'Yes' || v === true;
+const filled = (v) => String(v ?? '').trim() !== '';
 
 // Milestone 73T part 2 (row 16): the bond block shows what the chosen
 // arrangement shows, as the PDF does -- the bond details for "bond only",
@@ -161,7 +163,8 @@ export const GUARDIAN_CONTRACT = Object.freeze({
       kind: 'rows', path: 'scheduleA2', pages: pages(SCHEDULE_A2_PAGES), present: present('lenderName', 'fullDebtBalance'),
       columns: [col('lenderName', 'C', text), lineCol('lenderAddress', 'C', 1, text), lineCol('lenderCityStateZip', 'C', 2, text), lineCol('accountNumber', 'C', 3, text),
         col('liabilityType', 'E', text, { value: withDefault('liabilityType', 'Mortgage') }), col('fullDebtBalance', 'F', amountRaw), col('wardPercent', 'G', share)],
-      finish: (r) => ({ ...r, notes: '', liabilityType: r.liabilityType || 'Mortgage' }),
+      // Milestone 73M (73M-1): A-2's Notes have no box; the import keeps them (reconcile).
+      finish: (r) => ({ ...r, liabilityType: r.liabilityType || 'Mortgage' }),
     },
     {
       kind: 'rows', path: 'scheduleB1', pages: pages(SCHEDULE_B1_PAGES), present: present('institutionName', 'fullAssetAmount'),
@@ -263,13 +266,23 @@ export const GUARDIAN_CONTRACT = Object.freeze({
     'the bond and restricted-depository arrangement, and any bond detail it hides',
     'the outside preparer, when the workbook leaves that block blank',
     '"No recipients are required" (a "Yes" goes back to unanswered when the workbook lists recipients)',
+    "A-2's Notes, for the same lender in the same place",
+    'the method of service (printed on the PDF only)',
+    'the UCN',
   ]),
   // What the workbook holds differently, so an import brings it back changed.
   importedAs: Object.freeze([
     'a vehicle on B-2 comes back as an ordinary item with its description (the workbook has no year, make, model, VIN or odometer)',
     'on C-2 the claimant and their attorney come back as one claimant name (the form gives them one line)',
-    'A-2\'s Notes come back blank (the workbook has no box for them)',
   ]),
+  // Milestone 73M: what this filing holds that the workbook has no box for.
+  excelOmits(f) {
+    const out = [];
+    if ((f.scheduleA2 || []).some((r) => filled(r?.notes))) out.push({ text: "A-2's Notes", warn: true });
+    if (filled(f.serviceMethod)) out.push({ text: 'the method of service' });
+    if (filled(f.ucn)) out.push({ text: 'the UCN' });
+    return out;
+  },
   // Fields kept from the filing for the same person, by role (73E's
   // transaction clears them for a different person).
   preserve: Object.freeze({
@@ -305,6 +318,16 @@ export const GUARDIAN_CONTRACT = Object.freeze({
   // by listing recipients, which goes back to unanswered.
   reconcile(draft, filing) {
     if (filing?.serviceNoRecipients === 'Yes' && (draft.serviceRecipients || []).some((r) => rowStarted(r))) draft.serviceNoRecipients = '';
+    // Milestone 73M (73M-1): A-2's Notes have no box in the workbook, so the
+    // import keeps each row's Notes for the same lender in the same place, as
+    // people are matched (it used to erase them). The place is counted among
+    // the rows the workbook carries: the export writes every row, and the
+    // import skips one with no lender and no balance.
+    const carried = (filing?.scheduleA2 || []).filter((r) => r && (filled(r.lenderName) || (filled(r.fullDebtBalance) && Number(r.fullDebtBalance) !== 0)));
+    (draft.scheduleA2 || []).forEach((row, i) => {
+      const had = carried[i];
+      row.notes = had && sameName(had.lenderName, row.lenderName) ? (had.notes || '') : '';
+    });
   },
 
   afterRead(draft) {

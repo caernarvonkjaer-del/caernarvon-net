@@ -2,6 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 import {
   freshStartNoPassword, createWard, createSimplifiedWard, reopenFilingWithStoredShape,
   fillMinimalValidGuardianWard, fillMinimalValidSimplifiedWard, fillMinimalValidPlanSimplifiedWard,
+  expectExportReady, clickExport,
 } from './support/target';
 import { readAll } from './support/stream';
 import { extractPdfText } from './support/pdf-extract';
@@ -65,13 +66,13 @@ test.describe('Milestone 72C: a guardian with no email', () => {
     await openPrint(page);
     await expect(warning(page, 'Part IV — Guardian #1 has no email address')).toBeVisible({ timeout: 20_000 });
     await expect(page.locator('#main-content .print-preview-banner')).not.toContainText('issue(s)');
-    await expect(page.locator('[data-simplified-action="save-pdf"]'), 'a warning, never a blocker').toBeEnabled({ timeout: 20_000 });
+    await expectExportReady(page.locator('[data-simplified-action="save-pdf"]'), 20_000, 'a warning, never a blocker');
     expect(await page.evaluate(() => (window as any).GuardianForms.testing.status.navChecks().checks['s-p4']), 'the sidebar does not hold Part IV back for it').toBe(true);
 
     await go(page, '/p4');
     await type(page, 'guardians.0.email', 'pat@example.com');
     await openPrint(page);
-    await expect(page.locator('[data-simplified-action="save-pdf"]')).toBeEnabled({ timeout: 20_000 });
+    await expectExportReady(page.locator('[data-simplified-action="save-pdf"]'));
     await expect(warning(page, 'has no email address')).toHaveCount(0);
   });
 
@@ -85,18 +86,18 @@ test.describe('Milestone 72C: a guardian with no email', () => {
 
     await openPrint(page);
     await expect(warning(page, 'Signatures — Guardian #1 has no email address')).toBeVisible({ timeout: 20_000 });
-    await expect(page.locator('[data-plan-simplified-action="save-pdf"]'), 'it used to block here').toBeEnabled({ timeout: 20_000 });
+    await expectExportReady(page.locator('[data-plan-simplified-action="save-pdf"]'), 20_000, 'it used to block here');
 
     await go(page, '/p3');
     await type(page, 'attorney_name', 'Rachel Lawyer, Esq.');
     await openPrint(page);
-    await expect(page.locator('[data-plan-simplified-action="save-pdf"]')).toBeEnabled({ timeout: 20_000 });
+    await expectExportReady(page.locator('[data-plan-simplified-action="save-pdf"]'));
     await expect(warning(page, 'Guardian #1 has no email address'), 'a name alone is not an attorney anyone can serve').toHaveCount(1);
 
     await go(page, '/p3');
     await type(page, 'attorney_email', 'rachel@law.example');
     await openPrint(page);
-    await expect(page.locator('[data-plan-simplified-action="save-pdf"]')).toBeEnabled({ timeout: 20_000 });
+    await expectExportReady(page.locator('[data-plan-simplified-action="save-pdf"]'));
     await expect(warning(page, 'has no email address')).toHaveCount(0);
   });
 
@@ -133,9 +134,8 @@ test.describe('Milestone 72C: a guardian with no email', () => {
     await type(page, 'guardians.0.email', 'pat.rivera@example.com');
     await openPrint(page);
     const button = page.locator('[data-inventory-action="save-pdf"]');
-    await expect(button).toBeEnabled({ timeout: 20_000 });
-    const dl = page.waitForEvent('download', { timeout: 40_000 });
-    await button.click();
+    await expectExportReady(button);
+    const dl = clickExport(button, 40_000);
     const text = (await extractPdfText(await readAll(await (await dl).createReadStream()))).replace(/\s+/g, ' ');
     expect(text).toContain('pat.rivera@example.com');
   });
