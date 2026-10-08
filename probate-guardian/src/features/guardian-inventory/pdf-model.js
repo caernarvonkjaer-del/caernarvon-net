@@ -149,7 +149,8 @@ export function buildVerifiedInventoryModel(D, options = {}) {
           { label: 'County', value: county },
           { label: 'Guardian Name(s)', value: d.guardianName || '' },
           { label: 'Attorney for Guardian', value: d.attorneyForGuardian || '' },
-          { label: 'Type of Guardianship', value: d.typeOfGuardianship || 'Plenary' },
+          // Milestone 73B: a blank prints blank -- it used to print "Plenary".
+          { label: 'Type of Guardianship', value: d.typeOfGuardianship || '' },
           { label: 'Amended Form?', value: triText(d.amendedForm, d.isAmended) },
           // Milestone 64A-2, item 2.3. Form SUMMARY I B26/E26 -- these never
           // printed on Part I before, only on Part V (Schedule D-3), and only

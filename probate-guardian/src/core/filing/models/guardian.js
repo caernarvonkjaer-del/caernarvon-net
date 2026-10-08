@@ -89,6 +89,16 @@ export const PAGES_GUARDIAN=[
 // The Inventory's blank party cards and schedule rows, as its +Add buttons,
 // the Excel importer and the blank-card clean-up
 // (src/core/form/prune-cards.js) build them.
+//
+// Milestone 73B (decisions 73B-3, 73B-4): a new row carries no answer the
+// filer didn't give. Shares start blank, as the Clerk's workbook's share cells
+// are (they used to start at 100%, C-5's joint owner's at 50% -- the
+// workbook's printed example row), and so do A-2's and B-4's Type, C-1's
+// Frequency and C-4's Type of Trust (they used to start at the first item of
+// each Clerk list: Mortgage, Loan, Monthly, Pooled). A blank share is listed
+// as missing (Milestone 72B) and its row's ward amount shows $0 until
+// entered; the four are required on a row (73B-N1). Rows saved with the old
+// defaults and nothing else are still untouched (blank-rows.js).
 export const mk = {
   // isPreparer: Milestone 67A, "This person prepared this filing" -- see
   // src/core/form/preparer-flag.js.
@@ -97,22 +107,22 @@ export const mk = {
   preparer:()=>({name:'',ssnEin:'',phone:'',streetAddress:'',cityStateZip:'',signatureDate:null,signatureState:'',signatureImage:''}),
   attorney:()=>({name:'',barNumber:'',phone:'',streetAddress:'',cityStateZip:'',signatureDate:null,filingDate:null,signatureState:'',signatureImage:''}),
   recipient:()=>({name:'',address:'',cityStateZip:''}),
-  a1:()=>({propertyDescription:'',streetAddress:'',cityStateZip:'',notes:'',residence:'',income:'',fullAssetValue:0,wardPercent:100}),
-  a2:()=>({lenderName:'',lenderAddress:'',lenderCityStateZip:'',accountNumber:'',notes:'',liabilityType:'Mortgage',fullDebtBalance:0,wardPercent:100}),
-  b1:()=>({institutionName:'',restricted:'',accountType:'',accountNumber:'',streetAddress:'',cityStateZip:'',fullAssetAmount:0,wardPercent:100}),
+  a1:()=>({propertyDescription:'',streetAddress:'',cityStateZip:'',notes:'',residence:'',income:'',fullAssetValue:0,wardPercent:''}),
+  a2:()=>({lenderName:'',lenderAddress:'',lenderCityStateZip:'',accountNumber:'',notes:'',liabilityType:'',fullDebtBalance:0,wardPercent:''}),
+  b1:()=>({institutionName:'',restricted:'',accountType:'',accountNumber:'',streetAddress:'',cityStateZip:'',fullAssetAmount:0,wardPercent:''}),
   // Milestone 60K: no stored amountInSDB -- the workbook derives it from the
   // Yes/No answer and the ward share, and so does guardian-inventory/totals.js.
-  b2:()=>({description:'',streetAddress:'',cityStateZip:'',valuationMethod:'',fullAssetValue:0,wardPercent:100,inSafeDepositBox:'',isVehicle:false,vehicleYear:'',vehicleMake:'',vehicleModel:'',vehicleVin:'',odometerMileage:''}),
-  b3:()=>({description:'',streetAddress:'',cityStateZip:'',restricted:'',fullAssetValue:0,wardPercent:100,inSafeDepositBox:''}),
-  b4:()=>({lenderName:'',relatedProperty:'',accountNumber:'',lenderAddress:'',liabilityType:'Loan',fullLiabilityBalance:0,wardPercent:100}),
-  c1:()=>({payerName:'',payerAddress:'',payerCityStateZip:'',typeOfIncome:'',frequencyOfPayment:'Monthly',paymentBasis:'',annualIncomeAmount:0,wardPercent:100}),
+  b2:()=>({description:'',streetAddress:'',cityStateZip:'',valuationMethod:'',fullAssetValue:0,wardPercent:'',inSafeDepositBox:'',isVehicle:false,vehicleYear:'',vehicleMake:'',vehicleModel:'',vehicleVin:'',odometerMileage:''}),
+  b3:()=>({description:'',streetAddress:'',cityStateZip:'',restricted:'',fullAssetValue:0,wardPercent:'',inSafeDepositBox:''}),
+  b4:()=>({lenderName:'',relatedProperty:'',accountNumber:'',lenderAddress:'',liabilityType:'',fullLiabilityBalance:0,wardPercent:''}),
+  c1:()=>({payerName:'',payerAddress:'',payerCityStateZip:'',typeOfIncome:'',frequencyOfPayment:'',paymentBasis:'',annualIncomeAmount:0,wardPercent:''}),
   // Milestone 64A-2, item 3.4: claimantAttorney -- form C-2 C7 asks for the
   // claimant AND their attorney; optional, since not every claim has counsel
   // of record.
-  c2:()=>({claimantName:'',claimantAttorney:'',lawsuitDescription:'',courtJurisdiction:'',caseNumber:'',claimantAddress:'',claimantCityStateZip:'',dateFiled:null,amountOfClaim:0,wardPercent:100}),
-  c3:()=>({defendantName:'',actionDescription:'',status:'',courtJurisdiction:'',caseNumber:'',actionDate:null,estimatedSettlement:0,wardPercent:100}),
-  c4:()=>({trustName:'',trusteeName:'',trusteeAddress:'',trusteeCityStateZip:'',dateCreated:null,accountNumber:'',trustType:'Pooled',trustAmount:0,wardPercent:100}),
-  c5:()=>({assetDescription:'',ownerName:'',ownerAddress:'',ownerCityStateZip:'',relationshipToWard:'',totalAssetValue:0,jointOwnerPercent:50}),
+  c2:()=>({claimantName:'',claimantAttorney:'',lawsuitDescription:'',courtJurisdiction:'',caseNumber:'',claimantAddress:'',claimantCityStateZip:'',dateFiled:null,amountOfClaim:0,wardPercent:''}),
+  c3:()=>({defendantName:'',actionDescription:'',status:'',courtJurisdiction:'',caseNumber:'',actionDate:null,estimatedSettlement:0,wardPercent:''}),
+  c4:()=>({trustName:'',trusteeName:'',trusteeAddress:'',trusteeCityStateZip:'',dateCreated:null,accountNumber:'',trustType:'',trustAmount:0,wardPercent:''}),
+  c5:()=>({assetDescription:'',ownerName:'',ownerAddress:'',ownerCityStateZip:'',relationshipToWard:'',totalAssetValue:0,jointOwnerPercent:''}),
 };
 
 // Milestone 73D: a Schedule B-2 vehicle's description, built from its Year,

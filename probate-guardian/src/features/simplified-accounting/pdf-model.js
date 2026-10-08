@@ -83,7 +83,8 @@ export function buildSimplifiedAccountingModel(D, options = {}) {
     { label: 'Accounting Period', value: `From: ${fmtDate(d.periodFrom)}  To: ${fmtDate(d.periodTo)}` },
     { label: 'Guardian', value: d.guardian || '' },
     { label: 'Attorney for Guardian', value: d.attorney || '' },
-    { label: 'Type of Guardianship', value: d.typeOfGuardianship || 'Plenary' },
+    // Milestone 73B: a blank prints blank -- it used to print "Plenary".
+    { label: 'Type of Guardianship', value: d.typeOfGuardianship || '' },
     { label: 'County', value: county },
     { label: 'Amended Form?', value: yesNoText(d.amendedForm, '') },
   ];

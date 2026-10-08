@@ -93,6 +93,7 @@ import { auditLog } from '../../core/activity/audit-log.js';
 import { watchAttorneyRequiredMarkers } from '../../core/form/attorney-required-markers.js';
 import { commitModelChange } from '../../core/model-change.js';
 import { collectAnnualIssues, RECIPIENT_STARTED_FIELDS, annualDescriptor, fmtAnnual } from '../../core/validation/engines/annual.js';
+import { GUARDIAN_RELATIONSHIPS } from '../../core/filing/guardian-relationship.js';
 
 // Milestone 71B: the Part V fields that become required once an attorney is
 // started (and only then) -- the live markers and validateAnnual() share it.
@@ -612,7 +613,7 @@ function getSummaryConfigAnnual(){
 // statically imported back from here, same pattern as fmtAnnual/fmtD above.
 export const DISB_CATS=['Accounting','Bank Service Charges','Care Facility','Clothing / Personal Needs','Entertainment / Travel','Food / Meals','Insurance: Automobile / Property','Insurance: Health / Life','Medical / Pharmacy','Mortgage','Nurse / Care Giver / Employer Tax','Other Legal Expenses','Rent','Repairs / Maintenance','Taxes: Income','Taxes: Intangible','Utilities','Other'];
 const LIAB_TYPES=['Mortgage','Note','Loan','Other'];
-const GUARDIAN_REL=['Professional Guardian','Family/Non-Professional Guardian','Other/Non-Professional Guardian'];
+const GUARDIAN_REL=GUARDIAN_RELATIONSHIPS;
 
 function pagePart1Annual(){
   const d=getD(); const t=calcTotalsAnnual();

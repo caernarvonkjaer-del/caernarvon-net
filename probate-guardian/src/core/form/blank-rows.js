@@ -10,9 +10,10 @@ import { SCHEDULE_SCHEMAS } from './schedule-schemas.js';
 // it on leaving a page), keyed by their property on D, each mapped to the exact blank
 // object its own +Add button pushes. These need a deep compare against that
 // template rather than a generic emptiness test, because several of their
-// fields default to something other than '' -- Guardian's wardPercent
-// starts at 100, Annual's Yes/No fields start at 'No' -- and a generic test
-// would never recognize those as untouched. Party and plan cards, whose
+// fields default to something other than '' -- the Inventory's amounts start
+// at 0 -- and a generic test would never recognize those as untouched. (Until
+// Milestone 73B the Inventory's shares started at 100 and the Annual's Yes/No
+// fields at 'No'; FORMER_DEFAULTS below.) Party and plan cards, whose
 // fields are all seeded empty, use BLANK_CARD_COLLECTIONS below instead.
 export const BLANK_SCHEDULE_ENTRY = {
   // Guardian form (Initial Inventory) -- same factory addEntry() already uses.
@@ -68,21 +69,41 @@ export function isBlankCard(card) {
   return values.every(v => v === null || v === undefined || v === '' || v === false || (Array.isArray(v) && !v.length));
 }
 
+// Milestone 73B: the defaults "+ Add" used to fill in for the filer, which a
+// row saved before 73B can still hold untouched -- the Inventory's 100% share
+// (C-5's joint owner's 50%), A-2's Mortgage, B-4's Loan, C-1's Monthly, C-4's
+// Pooled, and the Annual family's "No" on D-1, D-2 and D-4. A row holding
+// nothing else is still untouched (design step 7).
+const INVENTORY_SHARE = { wardPercent: [100] };
+export const FORMER_DEFAULTS = {
+  scheduleA1: INVENTORY_SHARE, scheduleA2: { wardPercent: [100], liabilityType: ['Mortgage'] },
+  scheduleB1: INVENTORY_SHARE, scheduleB2: INVENTORY_SHARE, scheduleB3: INVENTORY_SHARE,
+  scheduleB4: { wardPercent: [100], liabilityType: ['Loan'] },
+  scheduleC1: { wardPercent: [100], frequencyOfPayment: ['Monthly'] },
+  scheduleC2: INVENTORY_SHARE, scheduleC3: INVENTORY_SHARE,
+  scheduleC4: { wardPercent: [100], trustType: ['Pooled'] },
+  scheduleC5: { jointOwnerPercent: [50] },
+  schD1: { restricted: ['No'] }, schD2: { residence: ['No'], income: ['No'] }, schD4: { restricted: ['No'] },
+};
+
 /**
  * Whether a schedule row is untouched: every field still blank, or still at
  * the default its "+ Add" row starts with (BLANK_SCHEDULE_ENTRY). Milestone
  * 73F part 3: a blank field counts as untouched whatever the template holds,
  * so a row saved under an older template shape (no "No" defaults) is
  * recognised too, and "a blank row counts as no row" everywhere it is asked.
+ * Milestone 73B: so is a field still at a default "+ Add" used to fill in
+ * (FORMER_DEFAULTS).
  */
 export function isBlankScheduleEntry(key, entry, registry = BLANK_SCHEDULE_ENTRY) {
   if (!registry) return false;
   const template = registry[key];
   if (!template || !entry || typeof entry !== 'object') return false;
   const blank = template();
+  const former = FORMER_DEFAULTS[key] || {};
   const isEmpty = (v) => v === '' || v === null || v === undefined;
   for (const k of new Set([...Object.keys(blank), ...Object.keys(entry)])) {
-    if (entry[k] !== blank[k] && !isEmpty(entry[k])) return false;
+    if (entry[k] !== blank[k] && !isEmpty(entry[k]) && !(former[k] || []).includes(entry[k])) return false;
   }
   return true;
 }

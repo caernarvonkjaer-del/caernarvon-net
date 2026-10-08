@@ -38,6 +38,10 @@ export function collectAnnualIssues(d){
   req(d.periodFrom,'Part I — Accounting Period From','periodFrom');
   req(d.periodTo,'Part I — Accounting Period To','periodTo');
   req(d.gid,'Part I — Guardianship Inception Date (GID)','gid');
+  // Milestone 73B (73B-1): required, as on the Inventory and the Simplified
+  // and under the workbook's "REQUIRED INFORMATION" heading (PART I B22). The
+  // PDF used to print "Plenary" for a blank, and nothing asked for it.
+  req(d.typeOfGuardianship,'Part I — Type of Guardianship','typeOfGuardianship');
   // Milestone 73F part 3 (73F-2): a Florida county, not only a non-blank one.
   {const county=countyProblem(d.county);if(county==='blank')errs.push(issue('Part I — County','county'));else if(county)errs.push(issue(notFloridaCountyMessage('Part I',county),'county'));}
   req(d.filingType,'Part I — Filing Type','filingType');

@@ -377,6 +377,11 @@ test.describe('Milestone 41-3: Guardian Inventory Tier 1 delegation', () => {
     await desc.dispatchEvent('input');
     expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('scheduleA1')?.[0]?.propertyDescription)).toBe('Delegated Homestead');
 
+    // Milestone 73B: a new row's share starts blank (it started at 100%), so
+    // the filer's share is entered first; the ward's total is full x share.
+    const share = page.locator('[data-bind^="scheduleA1."][data-bind$=".wardPercent"]').first();
+    await share.fill('100');
+    await share.dispatchEvent('input');
     // The live total must track the amount as it is typed -- afterChange()'s
     // extra work, which the shared write tail does not perform.
     const amount = page.locator('[data-bind^="scheduleA1."][data-bind$=".fullAssetValue"]').first();

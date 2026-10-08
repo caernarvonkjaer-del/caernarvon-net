@@ -26,7 +26,6 @@ const col = (field, c, codec, more = {}) => ({ field, col: c, codec, ...more });
 const lineCol = (field, c, line, codec, more = {}) => ({ field, col: c, line, codec, ...more });
 /** A legacy boolean alias read when the tri-state answer is blank (AGENTS.md section 4). */
 const alias = (key, legacy) => (r) => (r[key] != null && r[key] !== '' ? r[key] : r[legacy]);
-const withDefault = (key, fallback) => (r) => r[key] || fallback;
 const present = (...keys) => (r) => keys.some((k) => !!r[k]);
 
 const bondAmount = Object.freeze({ kind: 'amount', write: (v) => amountRaw.write(v), read: (cell) => bondAmountFromCell(amountRaw.read(cell)) });
@@ -162,9 +161,11 @@ export const GUARDIAN_CONTRACT = Object.freeze({
     {
       kind: 'rows', path: 'scheduleA2', pages: pages(SCHEDULE_A2_PAGES), present: present('lenderName', 'fullDebtBalance'),
       columns: [col('lenderName', 'C', text), lineCol('lenderAddress', 'C', 1, text), lineCol('lenderCityStateZip', 'C', 2, text), lineCol('accountNumber', 'C', 3, text),
-        col('liabilityType', 'E', text, { value: withDefault('liabilityType', 'Mortgage') }), col('fullDebtBalance', 'F', amountRaw), col('wardPercent', 'G', share)],
+        col('liabilityType', 'E', text), col('fullDebtBalance', 'F', amountRaw), col('wardPercent', 'G', share)],
       // Milestone 73M (73M-1): A-2's Notes have no box; the import keeps them (reconcile).
-      finish: (r) => ({ ...r, liabilityType: r.liabilityType || 'Mortgage' }),
+      // Milestone 73B: Type is written and read as it is -- a blank stays blank
+      // (it used to be written, and read back, as "Mortgage"); likewise B-4's
+      // Type, C-1's Frequency and C-4's Type of Trust below.
     },
     {
       kind: 'rows', path: 'scheduleB1', pages: pages(SCHEDULE_B1_PAGES), present: present('institutionName', 'fullAssetAmount'),
@@ -194,16 +195,14 @@ export const GUARDIAN_CONTRACT = Object.freeze({
       kind: 'rows', path: 'scheduleB4', pages: pages(SCHEDULE_B4_PAGES), present: present('lenderName', 'fullLiabilityBalance'),
       columns: [col('lenderName', 'C', text), lineCol('lenderAddress', 'C', 1, text), lineCol('relatedProperty', 'C', 2, text),
         lineCol('accountNumber', 'C', 4, text, { fallback: [{ line: 3 }] }),
-        col('liabilityType', 'E', text, { value: withDefault('liabilityType', 'Loan') }), col('fullLiabilityBalance', 'F', amountRaw), col('wardPercent', 'G', share)],
+        col('liabilityType', 'E', text), col('fullLiabilityBalance', 'F', amountRaw), col('wardPercent', 'G', share)],
       blankLines: [{ col: 'C', line: 3, why: 'fourth line, blank by decision (60K)' }],
-      finish: (r) => ({ ...r, liabilityType: r.liabilityType || 'Loan' }),
     },
     {
       kind: 'rows', path: 'scheduleC1', pages: pages(SCHEDULE_C1_PAGES), present: present('payerName', 'annualIncomeAmount'),
       columns: [col('payerName', 'C', text), lineCol('payerAddress', 'C', 1, text), lineCol('payerCityStateZip', 'C', 2, text),
-        col('typeOfIncome', 'E', text), col('frequencyOfPayment', 'G', text, { value: withDefault('frequencyOfPayment', 'Monthly') }), lineCol('paymentBasis', 'E', 2, text),
+        col('typeOfIncome', 'E', text), col('frequencyOfPayment', 'G', text), lineCol('paymentBasis', 'E', 2, text),
         col('annualIncomeAmount', 'H', amountRaw), col('wardPercent', 'I', share)],
-      finish: (r) => ({ ...r, frequencyOfPayment: r.frequencyOfPayment || 'Monthly' }),
     },
     {
       kind: 'rows', path: 'scheduleC2', pages: pages(SCHEDULE_C2_PAGES),
@@ -247,9 +246,8 @@ export const GUARDIAN_CONTRACT = Object.freeze({
     {
       kind: 'rows', path: 'scheduleC4', pages: pages(SCHEDULE_C4_PAGES), present: present('trustName', 'trustAmount'),
       columns: [col('trustName', 'C', text), lineCol('trusteeName', 'C', 1, text), lineCol('trusteeAddress', 'C', 2, text), lineCol('trusteeCityStateZip', 'C', 3, text),
-        col('dateCreated', 'E', date), col('accountNumber', 'F', text), col('trustType', 'H', text, { value: withDefault('trustType', 'Pooled') }),
+        col('dateCreated', 'E', date), col('accountNumber', 'F', text), col('trustType', 'H', text),
         col('trustAmount', 'I', amountRaw), col('wardPercent', 'J', share)],
-      finish: (r) => ({ ...r, trustType: r.trustType || 'Pooled' }),
     },
     {
       kind: 'rows', path: 'scheduleC5', pages: pages(SCHEDULE_C5_PAGES), present: present('assetDescription', 'totalAssetValue'),

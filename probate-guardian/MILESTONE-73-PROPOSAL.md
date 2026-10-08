@@ -6,9 +6,9 @@
 far: 73U (2026-10-04, `5b8849b`), 73V (2026-10-05, `8b96aa3`), 73C
 (2026-10-05, `861b6a9`, brought forward from its place in the build order at the
 requester's choice) 73D (2026-10-05, `c8e84fe`, likewise), 73J part 1 (2026-10-05, `d819c4a`),
-73F part 1 (2026-10-06, `5e9e17b`), 73A (2026-10-06, `83352d0`), 73F part 2 (2026-10-06, `d01edd4`), 73G part 1 (2026-10-06, `69a1b46`), 73E part 1 (2026-10-06, `8e02051`), 73F part 3 (2026-10-06, `67fc66c`), 73I (2026-10-06, `56a7c30`), 73T part 1 (2026-10-07, `4cae1e7`), 73T part 2 (2026-10-07, `2a1cbc5`), 73T part 3 (2026-10-07, `9d2bc72`), 73T part 4 (2026-10-07, `b70a944`) and 73M with 74C (2026-10-07), each approved by name.**
+73F part 1 (2026-10-06, `5e9e17b`), 73A (2026-10-06, `83352d0`), 73F part 2 (2026-10-06, `d01edd4`), 73G part 1 (2026-10-06, `69a1b46`), 73E part 1 (2026-10-06, `8e02051`), 73F part 3 (2026-10-06, `67fc66c`), 73I (2026-10-06, `56a7c30`), 73T part 1 (2026-10-07, `4cae1e7`), 73T part 2 (2026-10-07, `2a1cbc5`), 73T part 3 (2026-10-07, `9d2bc72`), 73T part 4 (2026-10-07, `b70a944`), 73M with 74C (2026-10-07, `a0e987b`) and 73B (2026-10-07), each approved by name.**
 **Approved and not yet built** (2026-10-07, one batch, built in this order
-with a full regression midway and at the end): 73B (then 74P), 73O part 2
+with a full regression midway and at the end): 74P (after 73B), 73O part 2
 (with 74F), 73G part 2 (with 74H), 73H and 73S. Nothing else is approved. Building any other item, or any part of a
 split item, needs the requester's named approval of that item or part
 (AGENTS.md §3).
@@ -619,6 +619,76 @@ with the change stated. Red-first.
 7. **UI/UX:** dropdowns show "— select —", as unanswered ones do elsewhere.
 8. **Legal framing:** the workbook's own heading is cited; nothing decided.
 9. **Cross-form:** the fallback was on three forms; the Plans have no field.
+
+### Build record — BUILT 2026-10-07 (approved by name by the requester, 2026-10-07)
+
+**What changed for a filer:**
+
+- **Type of Guardianship.** A blank one prints blank on the Inventory,
+  Annual, Final, Trust and Simplified PDFs; it used to print "Plenary". The
+  Annual, Final and Trust Accounting now require it on Part I, as the
+  Inventory and Simplified do (73B-1), so the sidebar and Preview list it
+  while blank; Continue still passes it, as with every required field.
+- **Part IX's relationship.** A new Annual-family filing no longer says
+  "Professional Guardian". A blank prints blank -- it printed "None", not one
+  of the Clerk's three choices -- and Preview says, under "Review recommended
+  before filing": *"Part IX — Guardian's Relationship to Ward is not stated
+  (Professional, Family/Non-Professional or Other/Non-Professional Guardian).
+  The filing can be filed without it; it prints blank."* (73B-2). A blank
+  PART IX G8 imports as blank. A blank restricted-depository receipt date
+  prints blank too, not "None" (73B-N2).
+- **"+ Add" on the Annual's D-1, D-2 and D-4** gives a row with
+  "Restricted?", "Personal Residence?" and "Income Property?" unanswered; they
+  arrived answered No.
+- **New Inventory rows** start with a blank share (73B-3; they started at
+  100%, C-5's joint owner's at 50%) and a blank A-2 and B-4 Type, C-1
+  Frequency and C-4 Type of Trust (73B-4; they started as Mortgage, Loan,
+  Monthly and Pooled). The four are required on a row (73B-N1), and the
+  Inventory's dropdowns gain "— select —", so an unanswered one looks
+  unanswered (Type of Guardianship read "Plenary" with nothing chosen). The
+  Excel export writes the four as they are -- it wrote Mortgage, Loan, Monthly
+  and Pooled for a blank -- and the import reads a blank back as blank.
+- **The Annual Plan's Q11** left unanswered prints neither sworn sentence; it
+  printed "I … declare that I have received the monies … from …" (73B-N2).
+- **Rows saved before this change** with only the old defaults and nothing
+  else are still untouched, so leaving the page clears them as before
+  (design step 7). Filings already saved keep "Professional Guardian" and
+  their 100% shares (test-only data, checklist item 2).
+
+**Already done before this build:** an untouched Annual-family B-3 or B-4 row,
+which 73V's record left to 73B, has been cleaned up since 73F part 3 (the
+clean-up reads the rows "+ Add" itself makes).
+
+**Tests:**
+
+- New `tests/unit/no-invented-answers.spec.js` (11): a new filing on all nine
+  forms carries only bookkeeping; every "+ Add" row on every form is blank
+  but for a generated id; the old-default rows are still untouched; the four
+  PDF blanks; Q11; the new checks and the warning; the Inventory workbook's
+  four blanks, written and read back. **Red-first:** with 73B's source set
+  aside, 9 fail, each for its finding ("Plenary", "Professional Guardian",
+  the sworn sentence, Mortgage/Loan/Monthly/Pooled, the missing checks); the
+  old-default clean-up and the new warning module pass both ways.
+- Goldens, each regenerated and read for what changed, with the reason in its
+  note: the validator record (the Annual family adds "Part I — Type of
+  Guardianship" where it is blank, the Inventory its rows' three fields;
+  nothing removed -- compared issue by issue, as its index shifts every
+  line), the sidebar record (clearing Type of Guardianship leaves Part I
+  unfinished; no result changed), the blank-filing shapes, and the
+  conversion and New Year records (no "Professional Guardian"; the fixture's
+  new Type of Guardianship).
+- Fixtures (AGENTS.md section 8.3): the minimal Annual fixture states a Type of
+  Guardianship and its relationship. The asterisk check's five 73B
+  exemptions are gone.
+- **Browser specs: 105 files, 761 tests** -- every spec that creates an
+  Inventory, Annual-family or Annual Plan filing or names their schedule
+  rows -- on a copy on C:: 756 passed at once. Five relied on the old
+  defaults and were corrected: an Annual cover snapshot (the fixture's new
+  Type of Guardianship), an Inventory totals test that typed an amount into
+  a new row (it now enters the share first), and three PDF fixtures whose
+  A-2 and C-1 rows never stated a Type or Frequency; their four files then
+  passed (39 tests). Full unit suite: 2,884 passed; `check:types` clean;
+  `verify:data-model` OK. Full regression: the mid-batch run, after 74P.
 
 ---
 

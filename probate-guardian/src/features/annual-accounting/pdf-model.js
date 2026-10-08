@@ -95,7 +95,8 @@ export function buildAnnualAccountingModel(D, options = {}) {
     { label: 'For the Period', value: `From: ${fmtD(d.periodFrom)}   To: ${fmtD(d.periodTo)}` },
     { label: 'Guardian', value: d.guardian || '' },
     { label: 'Attorney for Guardian', value: d.attorney || '' },
-    { label: 'Type of Guardianship', value: d.typeOfGuardianship || 'Plenary' },
+    // Milestone 73B: a blank prints blank -- it used to print "Plenary".
+    { label: 'Type of Guardianship', value: d.typeOfGuardianship || '' },
     { label: 'County', value: county },
     { label: 'Filing Type', value: descriptor.displayName },
     { label: 'Amended Form?', value: yesNoText(d.amendedForm, '') },
@@ -1055,8 +1056,11 @@ export function buildAnnualAccountingModel(D, options = {}) {
         tag: 'Table',
         title: 'Depository and Relationship Information',
         items: [
-          { label: "Guardian's Relationship to Ward", value: d.guardianRelationship || 'None' },
-          { label: 'Date of Restricted Depository Receipt', value: fmtD(d.restrictedDepositoryReceiptDate) || 'None' },
+          // Milestone 73B (73B-2, 73B-N2): a blank prints blank -- "None" is
+          // not one of the Clerk's three relationships, and a receipt date
+          // left blank is not a statement that there is none.
+          { label: "Guardian's Relationship to Ward", value: d.guardianRelationship || '' },
+          { label: 'Date of Restricted Depository Receipt', value: fmtD(d.restrictedDepositoryReceiptDate) || '' },
         ],
       },
       {

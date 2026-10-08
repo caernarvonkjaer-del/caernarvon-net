@@ -84,7 +84,10 @@ export function emptyDataAnnual() {
       emptyRowAnnual('trust')
     ],
     // Part IX – Bond
-    guardianRelationship:'Professional Guardian',
+    // Milestone 73B (73B-2): no relationship is chosen for the filer -- every
+    // new filing used to say "Professional Guardian". A blank one prints
+    // blank, with a Preview warning (guardian-relationship.js).
+    guardianRelationship:'',
     // bondDepositoryState (Milestone 67B): which arrangement applies --
     // restricted depository only, bond and depository, bond only, or bond
     // waived by court order; '' is unanswered and is never coerced. It

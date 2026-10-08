@@ -94,14 +94,17 @@ export const SCHEDULE_SCHEMAS = {
     floor: 0,
     max: Infinity,
   },
+  // Milestone 73B: "Restricted?", "Personal Residence?" and "Income
+  // Property?" start unanswered (AGENTS.md section 4), as the data model
+  // always said; they used to arrive answered No.
   schD1: {
-    factory: () => ({ description: '', accountNo: '', restricted: 'No', type: '', fullAmount: '', wardPct: '', restrictedAmt: '' }),
+    factory: () => ({ description: '', accountNo: '', restricted: '', type: '', fullAmount: '', wardPct: '', restrictedAmt: '' }),
     label: 'Schedule D-1 Bank Account',
     floor: 0,
     max: Infinity,
   },
   schD2: {
-    factory: () => ({ description: '', residence: 'No', income: 'No', fullValue: '', wardPct: '', carryingValue: '', wardValue: '' }),
+    factory: () => ({ description: '', residence: '', income: '', fullValue: '', wardPct: '', carryingValue: '', wardValue: '' }),
     label: 'Schedule D-2 Securities Entry',
     floor: 0,
     max: Infinity,
@@ -113,7 +116,7 @@ export const SCHEDULE_SCHEMAS = {
     max: Infinity,
   },
   schD4: {
-    factory: () => ({ description: '', restricted: 'No', fullAmount: '', wardPct: '', carryingValue: '', wardValue: '', restrictedAmt: '' }),
+    factory: () => ({ description: '', restricted: '', fullAmount: '', wardPct: '', carryingValue: '', wardValue: '', restrictedAmt: '' }),
     label: 'Schedule D-4 Personal Property Entry',
     floor: 0,
     max: Infinity,

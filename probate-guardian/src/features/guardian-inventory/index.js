@@ -527,6 +527,10 @@ function selectInput(bind,opts,currentVal){
   if(currentVal!==undefined&&currentVal!==null&&currentVal!==''&&!opts.some(([v])=>v===currentVal)){
     list=[[currentVal,currentVal],...opts];
   }
+  // Milestone 73B: an unanswered dropdown says so. With no blank option a
+  // blank field showed its list's first item as though chosen (Type of
+  // Guardianship read "Plenary"; A-2's Type "Mortgage").
+  if(!list.some(([v])=>v==='')) list=[['','— select —'],...list];
   const options=list.map(([v,t])=>`<option value="${esc(v)}">${esc(t)}</option>`).join('');
   return `<select class="custom-select form-select" data-bind="${bind}">${options}</select>`;
 }

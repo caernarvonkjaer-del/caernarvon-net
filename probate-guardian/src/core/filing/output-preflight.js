@@ -14,6 +14,7 @@ import { guardianEmailAdvisories } from './guardian-email.js';
 import { serviceMethodAdvisories } from './service-method.js';
 import { amountFieldIssues } from './amount-fields.js';
 import { periodDateAdvisories, trustCreatedAfterGidAdvisories } from './date-advisories.js';
+import { guardianRelationshipAdvisories } from './guardian-relationship.js';
 
 // Milestone 71B. Where each accounting form asks why there is no attorney,
 // and where its certificate of service is, by the registry's engine id.
@@ -83,6 +84,9 @@ export function collectOutputIssues(target, baseIssues = []) {
     // answered No to "created after the GID?", and transactions dated outside
     // the accounting period -- warned, never blocked.
     ...(identity.descriptor?.engineId === 'annual' ? [...trustCreatedAfterGidAdvisories(target), ...periodDateAdvisories(target)] : []),
+    // Milestone 73B (73B-2): an unanswered Part IX relationship prints blank;
+    // it is pointed out, never blocked.
+    ...(identity.descriptor?.engineId === 'annual' ? guardianRelationshipAdvisories(target) : []),
     // Milestone 71B: a filing with no attorney is never blocked for it; the
     // unanswered basis and the Excel certificate's attorney-only line are
     // said here instead.

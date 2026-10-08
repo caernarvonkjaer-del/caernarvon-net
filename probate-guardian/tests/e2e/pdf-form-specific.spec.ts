@@ -634,7 +634,7 @@ test.describe('PDF Accessibility: Accounting & Inventory Filing-Specific Coverag
           { propertyDescription: 'Primary Residence', streetAddress: '1420 5th Ave N', cityStateZip: 'St. Petersburg, FL 33705', valuationMethod: 'Appraisal', fullAssetValue: 250000, wardPercent: 100 },
         ],
         scheduleA2: [
-          { lenderName: 'Wells Fargo Home Mortgage', lenderAddress: 'PO Box 10335', lenderCityStateZip: 'Des Moines, IA 50306', relatedProperty: '1420 5th Ave N', fullDebtBalance: 45000, wardPercent: 100 },
+          { lenderName: 'Wells Fargo Home Mortgage', lenderAddress: 'PO Box 10335', lenderCityStateZip: 'Des Moines, IA 50306', relatedProperty: '1420 5th Ave N', liabilityType: 'Mortgage', fullDebtBalance: 45000, wardPercent: 100 },
         ],
         scheduleB1: [
           { institutionName: 'Raymond James Bank', accountType: 'Checking', accountNumber: '***4821', streetAddress: '880 Carillon Pkwy', cityStateZip: 'St. Petersburg, FL 33716', fullAssetAmount: 38250, wardPercent: 100 },
@@ -645,7 +645,7 @@ test.describe('PDF Accessibility: Accounting & Inventory Filing-Specific Coverag
         scheduleB3: [],
         scheduleB4: [],
         scheduleC1: [
-          { payerName: 'Social Security Administration', payerAddress: '1 Lemon St, Clearwater, FL 33756', typeOfIncome: 'Retirement', paymentBasis: 'Monthly ($1,850/mo)', annualIncomeAmount: 22200, wardPercent: 100 },
+          { payerName: 'Social Security Administration', payerAddress: '1 Lemon St, Clearwater, FL 33756', typeOfIncome: 'Retirement', frequencyOfPayment: 'Monthly', paymentBasis: 'Monthly ($1,850/mo)', annualIncomeAmount: 22200, wardPercent: 100 },
         ],
         scheduleC2: [],
         scheduleC3: [],

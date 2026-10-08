@@ -91,6 +91,11 @@ export const MINIMAL_VALID_ANNUAL = {
   periodTo: '2026-12-31',
   gid: '2025-01-01',
   county: 'Pinellas',
+  // Milestone 73B: Type of Guardianship is required on the Annual family, and
+  // nothing is chosen for a new filing -- the relationship used to start as
+  // "Professional Guardian", which this fixture's exports carried.
+  typeOfGuardianship: 'Plenary',
+  guardianRelationship: 'Professional Guardian',
   amendedForm: 'No',
   startingBalance: '10000',
   bondAmount: '5000',

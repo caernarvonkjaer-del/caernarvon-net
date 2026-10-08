@@ -496,6 +496,7 @@ export function buildPlanAnnualModel(D) {
   });
 
   // Page 11: Q11 remuneration
+  const q11Received = !!(d.q11ReceivedName || d.q11Amount || d.q11From);
   sections.push({
     id: 'q11',
     title: 'Question 11',
@@ -509,10 +510,15 @@ export function buildPlanAnnualModel(D) {
         title: '11. Declaration of Remuneration',
         text: 'Each guardian must declare any remuneration from any source for services rendered to or on behalf of the ward. Remuneration means any payment or other benefit made directly or indirectly, overtly or covertly, or in cash or in kind to the guardian. F.S. 744.367(3)(a).',
       },
-      d.q11NoRemuneration
-        ? { type: 'notice', text: `I, ${d.q11NoRemunerationName || ''}, declare that I have received NO remuneration from any source for services rendered to or on behalf of the ward.` }
-        : { type: 'notice', text: `I, ${d.q11ReceivedName || ''}, declare that I have received the monies ${d.q11Amount || ''} from ${d.q11From || ''} for services rendered on behalf of the ward.` },
-      ...(!d.q11NoRemuneration ? [{
+      // Milestone 73B (73B-N2): an unanswered question prints neither sworn
+      // sentence -- it used to print "I have received the monies … from …"
+      // whenever "no remuneration" wasn't ticked.
+      ...(d.q11NoRemuneration
+        ? [{ type: 'notice', text: `I, ${d.q11NoRemunerationName || ''}, declare that I have received NO remuneration from any source for services rendered to or on behalf of the ward.` }]
+        : q11Received
+          ? [{ type: 'notice', text: `I, ${d.q11ReceivedName || ''}, declare that I have received the monies ${d.q11Amount || ''} from ${d.q11From || ''} for services rendered on behalf of the ward.` }]
+          : []),
+      ...(!d.q11NoRemuneration && (q11Received || d.q11SubmittedToCourt) ? [{
         type: 'checklist',
         items: [{ checked: !!d.q11SubmittedToCourt, label: 'All requests for reimbursement or fees have been submitted to the court for review and approval.' }],
       }] : []),

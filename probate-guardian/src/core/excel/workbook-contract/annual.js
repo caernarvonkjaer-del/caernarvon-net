@@ -324,7 +324,9 @@ export const ANNUAL_CONTRACT = Object.freeze({
     // PART IX -- the bond. The Bond Period boxes E21/G21 are the form's own
     // =From_Date/=To_Date (Milestone 67D), never written; the import takes
     // the bond period from the accounting period (afterRead).
-    field('guardianRelationship', 'PART IX ', 'G8', text, { keepIfBlank: true }),
+    // Milestone 73B: a blank G8 imports as blank. It was kept because every
+    // filing held "Professional Guardian", which a filer never chose.
+    field('guardianRelationship', 'PART IX ', 'G8', text),
     field('restrictedDepositoryReceiptDate', 'PART IX ', 'G9', date, { exportIf: showsDepository, keepIfBlank: true }),
     field('bondAmount', 'PART IX ', 'H20', bondAmount, { exportIf: showsBond, keepIfBlank: true }),
     field('bondingCompany', 'PART IX ', 'D22', text, { exportIf: showsBond, keepIfBlank: true }),

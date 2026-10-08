@@ -40,17 +40,13 @@ const FORMS: Array<[string, (p: Page) => Promise<void>]> = [
 // must still turn up, so one that stops disagreeing is removed from here
 // rather than left.
 //  - Either-or pairs: each is half of a pair, and the pair is required.
-//  - Fields 73B will require (decided): kept starred until it adds the
-//    checks, by the requester's choice (2026-10-06).
+// (Milestone 73B added the checks for the five fields kept starred here until
+// it did -- A-2's and B-4's Type, C-1's Frequency, C-4's Type of Trust and the
+// Annual family's Type of Guardianship -- so they left this list.)
 const EXEMPT: Array<{ form: string; path: RegExp; why: string }> = [
   { form: 'annual', path: /^schC\.\d+\.(gain|loss)$/, why: 'Schedule C: a gain or a loss' },
   { form: 'annual', path: /^schE\.\d+\.transfer(In|Out)(Date|Amt)$/, why: 'Schedule E: a transfer in or a transfer out' },
   { form: 'planMinor', path: /^ucn$/, why: 'the Plan for Minors case number: Milestone 73S settles it' },
-  { form: 'guardian', path: /^scheduleA2\.\d+\.liabilityType$/, why: 'A-2 liability Type: 73B will require it' },
-  { form: 'guardian', path: /^scheduleB4\.\d+\.liabilityType$/, why: 'B-4 liability Type: 73B will require it' },
-  { form: 'guardian', path: /^scheduleC1\.\d+\.frequencyOfPayment$/, why: 'C-1 payment Frequency: 73B will require it' },
-  { form: 'guardian', path: /^scheduleC4\.\d+\.trustType$/, why: 'C-4 Type of Trust: 73B will require it' },
-  { form: 'annual', path: /^typeOfGuardianship$/, why: 'Type of Guardianship on the Annual family: 73B will require it' },
 ];
 
 // In the page: each visible, editable control with a path, and the element
