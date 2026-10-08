@@ -84,6 +84,11 @@ const ALLOWED = {
   // capacity checks and sidebar-only prompts -- per-engine behaviour, not a
   // second listing of filing identity.
   'src/core/validation/engines/index.js': "the export-check engines, keyed by engine id, with each engine's capacity checks and prompts (MS 73F part 1)",
+  // Milestone 74H: which within-filing contradictions each engine checks --
+  // per-engine behaviour by engine id, as above. It cannot live in the
+  // engines' own table: that module judges a filing through
+  // output-preflight.js, which reads these.
+  'src/core/filing/consistency-advisories.js': "the within-filing contradiction checks, by engine id (MS 74H)",
   // Per-type dashboard presentation/derived-stat logic (headline figures,
   // deadlines) -- behavior that depends on filing type, not a second
   // listing of the identity registry itself.

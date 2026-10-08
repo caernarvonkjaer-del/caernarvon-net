@@ -95,7 +95,8 @@ export function amountFieldsFor(type) {
 }
 
 // Every stored amount of a filing, as { entry, path, value, index, holder, key }.
-function* storedAmounts(d) {
+// (Milestone 73G part 2: sign-advisories.js reads it too.)
+export function* storedAmounts(d) {
   if (!d || typeof d !== 'object') return;
   for (const entry of amountFieldsFor(d.inventoryType)) {
     if (entry.path) {
@@ -110,6 +111,17 @@ function* storedAmounts(d) {
       yield { entry, path: `${entry.list}.${i}.${entry.field}`, value: row[entry.field], index: i, holder: row, key: entry.field };
     }
   }
+}
+
+/**
+ * Milestone 73G part 2: the amount entry a box's path names on a filing type
+ * ("schC.0.loss" on an Annual is Schedule C's Loss / Reduction), or null.
+ * @param {string} type
+ * @param {string} path
+ */
+export function amountEntryFor(type, path) {
+  const m = /^(\w+)\.\d+\.(\w+)$/.exec(path || '');
+  return amountFieldsFor(type).find((entry) => (entry.path ? entry.path === path : !!m && entry.list === m[1] && entry.field === m[2])) || null;
 }
 
 /**

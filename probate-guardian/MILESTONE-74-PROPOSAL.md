@@ -4,10 +4,9 @@
 
 **Draft.** Every decision for 74A and 74B is settled (2026-10-05). **Built so
 far: 74A (2026-10-05), 74B (2026-10-06), 74Q (2026-10-07), 74C (2026-10-07,
-with 73M, `a0e987b`), 74P (2026-10-07, after 73B, `645fe35`) and 74F (2026-10-08,
-with 73O part 2), each approved by name.** **Approved and not yet built**
-(2026-10-07, with Milestone 73's batch: 73G part 2, 73H and 73S): 74H with 73G
-part 2. Nothing else is
+with 73M, `a0e987b`), 74P (2026-10-07, after 73B, `645fe35`), 74F (2026-10-08,
+with 73O part 2, `fa9625e`) and 74H (2026-10-08, with 73G part 2), each
+approved by name.** Nothing else is
 approved: building any other of 74D–74S needs the requester's named approval
 of that item (AGENTS.md §3). **Every decision in 74C–74S is settled
 (2026-10-06)**, each recorded under its item and gathered in
@@ -1419,6 +1418,72 @@ New `src/core/filing/consistency-advisories.js`; `src/core/filing/output-preflig
 - **73F parts 2–3** change `output-preflight.js` and the advisories' display;
   **73M** changes the bond block's export. Sequence.
 - Part 2 (decision 3) depends on **73F part 2**.
+
+### Build record — BUILT 2026-10-08 with 73G part 2 (approved by name by the requester, 2026-10-07)
+
+**What changed for a filer:** each contradiction below is named in Preview's
+"Review recommended before filing", both answers quoted and where they are;
+none blocks, none changes a figure, none says which answer is right
+(decision 1). The PDF and the workbook save as before.
+
+| | Where | The warning, as it reads |
+| --- | --- | --- |
+| a | Inventory | D-3 — "Does the ward have a safe deposit box…?" is answered No, while B-2 row 1 is marked "In Safe Deposit Box?" Yes. Review both before filing. |
+| b | Inventory D-4, Annual Part IX | Bond Amount ($1,000.00) is below the bond requirement this filing calculates ($52,500.00). The Clerk's workbook says: "…" The filing can be filed as it is. |
+| c | Inventory A-1, Annual D-2 | A-1 — Rows 1 and 3 are both marked "Personal Residence?" Yes. Review them before filing. |
+| e | Initial Plan | 2–3. Setting & Medical Care — Question 2 ticks only "Private Residence", while the Cover says the ward is living "In a facility (Skilled Nursing, Assisted Living, etc.)". Review both before filing. |
+| g | Initial Plan, Plan for Minors | Signatures — Both "The Ward was declared totally incapacitated …" and "The Ward is a minor under the age of 14 …" are ticked. Review both before filing. |
+| h | Annual Plan | 2–3. Residence & Care — Question 2 is ticked "N/A — the ward has not moved since the last plan was filed", while question 1 lists 2 residences. Review both before filing. |
+| j | Annual family | Part XI — No remuneration is declared, while Schedule B-2 lists guardian fees and costs of $1,250.00 (3 entries). The app does not decide whether those fees are remuneration Part XI must declare (§744.367(3)(a)); review both before filing. *(The wording the requester reviewed, 2026-10-08.)* |
+| — | Annual family, Sch E | Schedule E — Transfers in add up to $5,000.00 and transfers out to $4,000.00, so they don't balance. The Clerk's workbook says: "Each transfer should be listed twice. Once going out of an account and again going into another account." Review them before filing. |
+| — | Simplified | Part II — Line 8 — Remaining Assets On Hand is below zero (-$1,999.13). Review the amounts in Part II before filing. |
+
+- **b, any shortfall** (decision 2, Pinellas Clerk practice, the threshold
+  approved by name under AGENTS.md §5), compared in cents, only when the
+  arrangement includes a bond and the Bond Amount is a readable number. **Each
+  form quotes its own workbook:** the Inventory's `PART V` prints the
+  decision's sentence, "The court often requires a bond in the amount of the
+  Ward's liquid assets."; the Annual workbook does not print it (read with a
+  parser), so the Annual quotes its own, "Guardianship bond amount should be
+  the amount of all liquid assets less those in a restricted depository or
+  frozen account." The requirement is the form's own figure (Annual
+  `calcTotalsAnnual().bondReq`, Inventory `bondRequired`); no number changed.
+- **Schedule E** compares the transfers by size, so an out entered without
+  its minus is 73G part 2's sign note, not a second "don't balance".
+- **j** counts the B-2 rows holding an amount other than 0, and totals them.
+- **Not built:** f, i and k (decision 3: a second part after 73F part 2);
+  **d is not checkable** -- 74P's decision 2 chose no link from a C-5 row to
+  its asset, so there is nothing to compare its share with.
+
+**How:** new `src/core/filing/consistency-advisories.js`, one function per
+engine in the shape `bondDepositoryAdvisories()` uses; b joined
+`bondDepositoryAdvisories()`, which now takes the form's requirement.
+`output-preflight.js` passes each form's own totals (the Annual's from core,
+the Inventory's and the Simplified's through the feature services) and adds
+both to the advisories, so they reach 73F part 1's
+`evaluate<Engine>().advisories`. The sidebar reads no advisory, so no mark
+moved. `filing-type-enumeration-guard.spec.js` lists the new module as a
+documented exception (per-engine behaviour by engine id, as the export-check
+engines are).
+
+**Tests:**
+
+- New `tests/unit/consistency-advisories.spec.js` (21): each contradiction
+  with both answers named, its consistent cases silent, each engine only its
+  own; through `evaluateFiling()` every warning (the bond shortfall too)
+  reaches the advisories and none is a blocker; a blank filing of every type
+  raises none. **Red-first:** the module doesn't exist.
+- `tests/unit/bond-depository.spec.js` (+3): the shortfall on both forms with
+  each workbook's sentence; any shortfall, to the cent; nothing for a waived
+  bond, a depository only, a blank or unreadable amount. **Red-first:** no
+  such advisory.
+- New `tests/e2e/contradiction-warnings.spec.ts` (2): an Inventory answered
+  "no safe deposit box" with a B-2 item marked in one and a bond below the
+  requirement its B-1 and B-2 rows produce; an Annual Plan "has not moved"
+  with a second residence added -- each warned, and the PDF saves.
+- Fixtures (checklist 3): no minimal valid fixture holds a contradiction (the
+  Annual's bond has no Schedule D behind it; its Part XI tick has no B-2
+  fee), so no spec's count of warnings changed.
 
 ---
 

@@ -908,6 +908,9 @@ export function buildAnnualAccountingModel(D, options = {}) {
           title: 'Schedule E: Bank Transfers During Period',
           headers: ['#', 'Bank Name / Account #', 'Transfer In Date', 'Transfer In Amt', 'Transfer Out Date', 'Transfer Out Amt'],
           rows: schERows.length ? schERows : [['—', 'No entries', '—', '—', '—', '—']],
+          // Milestone 73G part 2: the totals the screen and the workbook show
+          // (`SCH E BANK TRANS p1` F42 and H42); the PDF had none.
+          totals: { label: 'Schedule E Totals (Transfers In / Transfers Out)', value: `${fmtS(t.schE_in)} / ${fmtS(t.schE_out)}` },
           colWidths: [6, 34, 15, 15, 15, 15],
           colAlign: ['center', 'left', 'left', 'right', 'left', 'right'],
         },

@@ -16,17 +16,18 @@ import { isAttorneyStarted } from '../attorney-block.js';
 import { issueFactory } from '../validation-issue.js';
 import { percentProblem } from '../percent-range.js';
 import { RECIPIENT_FIELDS } from '../../filing/recipient-shape.js';
+import { INVENTORY_SHARE_FIELDS } from '../../filing/ward-share-advisories.js';
 
-export const INVENTORY_SHARE_FIELDS = [
-  ['scheduleA1', 'A-1', 'wardPercent', "Ward's %"], ['scheduleA2', 'A-2', 'wardPercent', "Ward's %"],
-  ['scheduleB1', 'B-1', 'wardPercent', "Ward's %"], ['scheduleB2', 'B-2', 'wardPercent', "Ward's %"],
-  ['scheduleB3', 'B-3', 'wardPercent', "Ward's %"], ['scheduleB4', 'B-4', 'wardPercent', "Ward's %"],
-  ['scheduleC1', 'C-1', 'wardPercent', "Ward's %"], ['scheduleC2', 'C-2', 'wardPercent', "Ward's %"],
-  ['scheduleC3', 'C-3', 'wardPercent', "Ward's %"], ['scheduleC4', 'C-4', 'wardPercent', "Ward's %"],
-  ['scheduleC5', 'C-5', 'jointOwnerPercent', "Joint Owner's %"],
-];
+// Moved to ward-share-advisories.js by Milestone 73G part 2, which reads it too.
+export { INVENTORY_SHARE_FIELDS };
 // Milestone 73O part 2: every field of the one recipient shape.
 export const RECIPIENT_STARTED_FIELDS = RECIPIENT_FIELDS;
+// Milestone 73G part 2 (decision 73G-N1): a schedule amount that is blank or
+// 0 is still reported ("must be > 0", as before); a negative one no longer
+// is -- the Clerk's workbooks accept a minus in every amount, and Preview's
+// "Review recommended" notes it instead (src/core/filing/sign-advisories.js).
+// Unreadable text reads as neither and is named by the amount check.
+const zeroOrBlank = (v) => v <= 0 && !(Number(v) < 0);
 export const sdbIsYes = (v) => v === true || v === 'Yes';
 export const sdbIsNo = (v) => v === false || v === 'No';
 export const sdbAnswered = (v) => sdbIsYes(v) || sdbIsNo(v);
@@ -69,33 +70,33 @@ export function collectGuardianIssues(d){
   // Type of Trust are required on a row. They start blank since 73B (they
   // were pre-chosen as Mortgage, Loan, Monthly and Pooled); the page always
   // starred them and the workbook's instructions say "Indicate...".
-  d.scheduleA1.forEach((e,i)=>{const p=`A-1 row ${i+1}`,k=`scheduleA1.${i}`;req(e.propertyDescription,`${p} — Property Description`,`${k}.propertyDescription`);req(e.streetAddress,`${p} — Street Address`,`${k}.streetAddress`);req(e.cityStateZip,`${p} — City/State/Zip`,`${k}.cityStateZip`);if(e.fullAssetValue<=0)push(`${p} — Full Asset Value must be > 0.`,`${k}.fullAssetValue`);if(e.wardPercent<=0)push(`${p} — Ward's % must be > 0.`,`${k}.wardPercent`);});
-  d.scheduleA2.forEach((e,i)=>{const p=`A-2 row ${i+1}`,k=`scheduleA2.${i}`;req(e.lenderName,`${p} — Lender Name`,`${k}.lenderName`);req(e.lenderAddress,`${p} — Lender Address`,`${k}.lenderAddress`);req(e.lenderCityStateZip,`${p} — Lender City/State/Zip`,`${k}.lenderCityStateZip`);req(e.liabilityType,`${p} — Type`,`${k}.liabilityType`);if(e.fullDebtBalance<=0)push(`${p} — Full Debt Balance must be > 0.`,`${k}.fullDebtBalance`);});
-  d.scheduleB1.forEach((e,i)=>{const p=`B-1 row ${i+1}`,k=`scheduleB1.${i}`;req(e.institutionName,`${p} — Institution Name`,`${k}.institutionName`);req(e.accountType,`${p} — Account Type`,`${k}.accountType`);req(e.streetAddress,`${p} — Street Address`,`${k}.streetAddress`);req(e.cityStateZip,`${p} — City/State/Zip`,`${k}.cityStateZip`);if(e.fullAssetAmount<=0)push(`${p} — Full Asset Amount must be > 0.`,`${k}.fullAssetAmount`);});
+  d.scheduleA1.forEach((e,i)=>{const p=`A-1 row ${i+1}`,k=`scheduleA1.${i}`;req(e.propertyDescription,`${p} — Property Description`,`${k}.propertyDescription`);req(e.streetAddress,`${p} — Street Address`,`${k}.streetAddress`);req(e.cityStateZip,`${p} — City/State/Zip`,`${k}.cityStateZip`);if(zeroOrBlank(e.fullAssetValue))push(`${p} — Full Asset Value must be > 0.`,`${k}.fullAssetValue`);if(e.wardPercent<=0)push(`${p} — Ward's % must be > 0.`,`${k}.wardPercent`);});
+  d.scheduleA2.forEach((e,i)=>{const p=`A-2 row ${i+1}`,k=`scheduleA2.${i}`;req(e.lenderName,`${p} — Lender Name`,`${k}.lenderName`);req(e.lenderAddress,`${p} — Lender Address`,`${k}.lenderAddress`);req(e.lenderCityStateZip,`${p} — Lender City/State/Zip`,`${k}.lenderCityStateZip`);req(e.liabilityType,`${p} — Type`,`${k}.liabilityType`);if(zeroOrBlank(e.fullDebtBalance))push(`${p} — Full Debt Balance must be > 0.`,`${k}.fullDebtBalance`);});
+  d.scheduleB1.forEach((e,i)=>{const p=`B-1 row ${i+1}`,k=`scheduleB1.${i}`;req(e.institutionName,`${p} — Institution Name`,`${k}.institutionName`);req(e.accountType,`${p} — Account Type`,`${k}.accountType`);req(e.streetAddress,`${p} — Street Address`,`${k}.streetAddress`);req(e.cityStateZip,`${p} — City/State/Zip`,`${k}.cityStateZip`);if(zeroOrBlank(e.fullAssetAmount))push(`${p} — Full Asset Amount must be > 0.`,`${k}.fullAssetAmount`);});
   d.scheduleB2.forEach((e,i)=>{const p=`B-2 row ${i+1}`,k=`scheduleB2.${i}`;
     if(e.isVehicle){
       req(e.vehicleYear,`${p} — Year`,`b2-vehicle-year-${i}`);req(e.vehicleMake,`${p} — Make`,`b2-vehicle-make-${i}`);req(e.vehicleModel,`${p} — Model`,`b2-vehicle-model-${i}`);req(e.vehicleVin,`${p} — VIN`,`b2-vehicle-vin-${i}`);req(e.odometerMileage,`${p} — Odometer Mileage`,`b2-vehicle-mileage-${i}`);
     }else{
       req(e.description,`${p} — Description`,`${k}.description`);
     }
-    req(e.streetAddress,`${p} — Street Address`,`${k}.streetAddress`);req(e.cityStateZip,`${p} — City/State/Zip`,`${k}.cityStateZip`);req(e.valuationMethod,`${p} — Valuation Method`,`${k}.valuationMethod`);if(e.fullAssetValue<=0)push(`${p} — Full Asset Value must be > 0.`,`${k}.fullAssetValue`);});
-  d.scheduleB3.forEach((e,i)=>{const p=`B-3 row ${i+1}`,k=`scheduleB3.${i}`;req(e.description,`${p} — Description`,`${k}.description`);req(e.streetAddress,`${p} — Street Address`,`${k}.streetAddress`);req(e.cityStateZip,`${p} — City/State/Zip`,`${k}.cityStateZip`);if(e.fullAssetValue<=0)push(`${p} — Full Asset Value must be > 0.`,`${k}.fullAssetValue`);});
+    req(e.streetAddress,`${p} — Street Address`,`${k}.streetAddress`);req(e.cityStateZip,`${p} — City/State/Zip`,`${k}.cityStateZip`);req(e.valuationMethod,`${p} — Valuation Method`,`${k}.valuationMethod`);if(zeroOrBlank(e.fullAssetValue))push(`${p} — Full Asset Value must be > 0.`,`${k}.fullAssetValue`);});
+  d.scheduleB3.forEach((e,i)=>{const p=`B-3 row ${i+1}`,k=`scheduleB3.${i}`;req(e.description,`${p} — Description`,`${k}.description`);req(e.streetAddress,`${p} — Street Address`,`${k}.streetAddress`);req(e.cityStateZip,`${p} — City/State/Zip`,`${k}.cityStateZip`);if(zeroOrBlank(e.fullAssetValue))push(`${p} — Full Asset Value must be > 0.`,`${k}.fullAssetValue`);});
   // Milestone 64A-1, item 3.2. Form B-4 (C6/C7) lists unsecured debts --
   // credit cards, medical/facility bills, notes, tax and judgment liens --
   // and secured ones separately; the form never requires every B-4 entry to
   // name a related asset, so relatedProperty is optional. Print shows
   // "Unsecured" when it's blank (pdf-model.js).
-  d.scheduleB4.forEach((e,i)=>{const p=`B-4 row ${i+1}`,k=`scheduleB4.${i}`;req(e.lenderName,`${p} — Lender Name`,`${k}.lenderName`);req(e.lenderAddress,`${p} — Lender Address`,`${k}.lenderAddress`);req(e.liabilityType,`${p} — Type`,`${k}.liabilityType`);if(e.fullLiabilityBalance<=0)push(`${p} — Full Liability Balance must be > 0.`,`${k}.fullLiabilityBalance`);});
-  d.scheduleC1.forEach((e,i)=>{const p=`C-1 row ${i+1}`,k=`scheduleC1.${i}`;req(e.payerName,`${p} — Payer Name`,`${k}.payerName`);req(e.typeOfIncome,`${p} — Type of Income`,`${k}.typeOfIncome`);req(e.frequencyOfPayment,`${p} — Frequency`,`${k}.frequencyOfPayment`);req(e.payerAddress,`${p} — Payer Address`,`${k}.payerAddress`);req(e.paymentBasis,`${p} — Basis for Payment`,`${k}.paymentBasis`);if(e.annualIncomeAmount<=0)push(`${p} — Annual Income Amount must be > 0.`,`${k}.annualIncomeAmount`);});
-  d.scheduleC2.forEach((e,i)=>{const p=`C-2 row ${i+1}`,k=`scheduleC2.${i}`;req(e.claimantName,`${p} — Claimant Name`,`${k}.claimantName`);req(e.lawsuitDescription,`${p} — Lawsuit Description`,`${k}.lawsuitDescription`);req(e.courtJurisdiction,`${p} — Court/Jurisdiction`,`${k}.courtJurisdiction`);req(e.caseNumber,`${p} — Case Number`,`${k}.caseNumber`);if(!e.dateFiled)push(`${p} — Date Filed is required.`,`${k}.dateFiled`);if(e.amountOfClaim<=0)push(`${p} — Amount of Claim must be > 0.`,`${k}.amountOfClaim`);});
+  d.scheduleB4.forEach((e,i)=>{const p=`B-4 row ${i+1}`,k=`scheduleB4.${i}`;req(e.lenderName,`${p} — Lender Name`,`${k}.lenderName`);req(e.lenderAddress,`${p} — Lender Address`,`${k}.lenderAddress`);req(e.liabilityType,`${p} — Type`,`${k}.liabilityType`);if(zeroOrBlank(e.fullLiabilityBalance))push(`${p} — Full Liability Balance must be > 0.`,`${k}.fullLiabilityBalance`);});
+  d.scheduleC1.forEach((e,i)=>{const p=`C-1 row ${i+1}`,k=`scheduleC1.${i}`;req(e.payerName,`${p} — Payer Name`,`${k}.payerName`);req(e.typeOfIncome,`${p} — Type of Income`,`${k}.typeOfIncome`);req(e.frequencyOfPayment,`${p} — Frequency`,`${k}.frequencyOfPayment`);req(e.payerAddress,`${p} — Payer Address`,`${k}.payerAddress`);req(e.paymentBasis,`${p} — Basis for Payment`,`${k}.paymentBasis`);if(zeroOrBlank(e.annualIncomeAmount))push(`${p} — Annual Income Amount must be > 0.`,`${k}.annualIncomeAmount`);});
+  d.scheduleC2.forEach((e,i)=>{const p=`C-2 row ${i+1}`,k=`scheduleC2.${i}`;req(e.claimantName,`${p} — Claimant Name`,`${k}.claimantName`);req(e.lawsuitDescription,`${p} — Lawsuit Description`,`${k}.lawsuitDescription`);req(e.courtJurisdiction,`${p} — Court/Jurisdiction`,`${k}.courtJurisdiction`);req(e.caseNumber,`${p} — Case Number`,`${k}.caseNumber`);if(!e.dateFiled)push(`${p} — Date Filed is required.`,`${k}.dateFiled`);if(zeroOrBlank(e.amountOfClaim))push(`${p} — Amount of Claim must be > 0.`,`${k}.amountOfClaim`);});
   // Milestone 64A-1, item 3.1. Form C-3 (C6) includes lawsuits "intended to
   // be brought, even if not yet filed", and C8/C11 ask for the Action Date
   // and Case Number only "if filed" -- so a not-yet-filed action, which the
   // form explicitly anticipates, has neither. Both are optional; print shows
   // "Not yet filed" for a blank Action Date (pdf-model.js).
-  d.scheduleC3.forEach((e,i)=>{const p=`C-3 row ${i+1}`,k=`scheduleC3.${i}`;req(e.defendantName,`${p} — Defendant Name`,`${k}.defendantName`);req(e.actionDescription,`${p} — Action Description`,`${k}.actionDescription`);req(e.status,`${p} — Status`,`${k}.status`);req(e.courtJurisdiction,`${p} — Court/Jurisdiction`,`${k}.courtJurisdiction`);if(e.estimatedSettlement<=0)push(`${p} — Estimated Settlement must be > 0.`,`${k}.estimatedSettlement`);});
-  d.scheduleC4.forEach((e,i)=>{const p=`C-4 row ${i+1}`,k=`scheduleC4.${i}`;req(e.trustName,`${p} — Trust Name`,`${k}.trustName`);req(e.trusteeName,`${p} — Trustee Name`,`${k}.trusteeName`);req(e.trusteeAddress,`${p} — Trustee Address`,`${k}.trusteeAddress`);req(e.trusteeCityStateZip,`${p} — Trustee City/State/Zip`,`${k}.trusteeCityStateZip`);req(e.trustType,`${p} — Type of Trust`,`${k}.trustType`);if(!e.dateCreated)push(`${p} — Date Created is required.`,`${k}.dateCreated`);if(e.trustAmount<=0)push(`${p} — Trust Amount must be > 0.`,`${k}.trustAmount`);});
-  d.scheduleC5.forEach((e,i)=>{const p=`C-5 row ${i+1}`,k=`scheduleC5.${i}`;req(e.assetDescription,`${p} — Asset Description`,`${k}.assetDescription`);req(e.ownerName,`${p} — Owner Name`,`${k}.ownerName`);req(e.ownerAddress,`${p} — Owner Address`,`${k}.ownerAddress`);req(e.ownerCityStateZip,`${p} — Owner City/State/Zip`,`${k}.ownerCityStateZip`);req(e.relationshipToWard,`${p} — Relationship to Ward`,`${k}.relationshipToWard`);if(e.totalAssetValue<=0)push(`${p} — Total Asset Value must be > 0.`,`${k}.totalAssetValue`);});
+  d.scheduleC3.forEach((e,i)=>{const p=`C-3 row ${i+1}`,k=`scheduleC3.${i}`;req(e.defendantName,`${p} — Defendant Name`,`${k}.defendantName`);req(e.actionDescription,`${p} — Action Description`,`${k}.actionDescription`);req(e.status,`${p} — Status`,`${k}.status`);req(e.courtJurisdiction,`${p} — Court/Jurisdiction`,`${k}.courtJurisdiction`);if(zeroOrBlank(e.estimatedSettlement))push(`${p} — Estimated Settlement must be > 0.`,`${k}.estimatedSettlement`);});
+  d.scheduleC4.forEach((e,i)=>{const p=`C-4 row ${i+1}`,k=`scheduleC4.${i}`;req(e.trustName,`${p} — Trust Name`,`${k}.trustName`);req(e.trusteeName,`${p} — Trustee Name`,`${k}.trusteeName`);req(e.trusteeAddress,`${p} — Trustee Address`,`${k}.trusteeAddress`);req(e.trusteeCityStateZip,`${p} — Trustee City/State/Zip`,`${k}.trusteeCityStateZip`);req(e.trustType,`${p} — Type of Trust`,`${k}.trustType`);if(!e.dateCreated)push(`${p} — Date Created is required.`,`${k}.dateCreated`);if(zeroOrBlank(e.trustAmount))push(`${p} — Trust Amount must be > 0.`,`${k}.trustAmount`);});
+  d.scheduleC5.forEach((e,i)=>{const p=`C-5 row ${i+1}`,k=`scheduleC5.${i}`;req(e.assetDescription,`${p} — Asset Description`,`${k}.assetDescription`);req(e.ownerName,`${p} — Owner Name`,`${k}.ownerName`);req(e.ownerAddress,`${p} — Owner Address`,`${k}.ownerAddress`);req(e.ownerCityStateZip,`${p} — Owner City/State/Zip`,`${k}.ownerCityStateZip`);req(e.relationshipToWard,`${p} — Relationship to Ward`,`${k}.relationshipToWard`);if(zeroOrBlank(e.totalAssetValue))push(`${p} — Total Asset Value must be > 0.`,`${k}.totalAssetValue`);});
   // Milestone 71C: every share is a percentage from 0 to 100 (percent-range.js).
   // An out-of-range or unreadable share is an ordinary, bypassable issue (D7).
   // A-1's own "must be > 0" above already speaks for a blank, zero or negative

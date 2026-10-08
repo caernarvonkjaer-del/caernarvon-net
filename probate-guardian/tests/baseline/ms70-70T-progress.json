@@ -31,6 +31,7 @@
   "tests/e2e/combobox-keyboard-nav.spec.ts",
   "tests/e2e/conditional-reveal-routes.spec.ts",
   "tests/e2e/continue-prompt-banner.spec.ts",
+  "tests/e2e/contradiction-warnings.spec.ts",
   "tests/e2e/convert-ward.spec.ts",
   "tests/e2e/cover-county.spec.ts",
   "tests/e2e/dashboard-backup.spec.ts",

@@ -6,10 +6,9 @@
 far: 73U (2026-10-04, `5b8849b`), 73V (2026-10-05, `8b96aa3`), 73C
 (2026-10-05, `861b6a9`, brought forward from its place in the build order at the
 requester's choice) 73D (2026-10-05, `c8e84fe`, likewise), 73J part 1 (2026-10-05, `d819c4a`),
-73F part 1 (2026-10-06, `5e9e17b`), 73A (2026-10-06, `83352d0`), 73F part 2 (2026-10-06, `d01edd4`), 73G part 1 (2026-10-06, `69a1b46`), 73E part 1 (2026-10-06, `8e02051`), 73F part 3 (2026-10-06, `67fc66c`), 73I (2026-10-06, `56a7c30`), 73T part 1 (2026-10-07, `4cae1e7`), 73T part 2 (2026-10-07, `2a1cbc5`), 73T part 3 (2026-10-07, `9d2bc72`), 73T part 4 (2026-10-07, `b70a944`), 73M with 74C (2026-10-07, `a0e987b`), 73B (2026-10-07, `86547da`) and 73O part 2 with 74F (2026-10-08), each approved by name; 74P, built after 73B, is recorded in Milestone 74.**
+73F part 1 (2026-10-06, `5e9e17b`), 73A (2026-10-06, `83352d0`), 73F part 2 (2026-10-06, `d01edd4`), 73G part 1 (2026-10-06, `69a1b46`), 73E part 1 (2026-10-06, `8e02051`), 73F part 3 (2026-10-06, `67fc66c`), 73I (2026-10-06, `56a7c30`), 73T part 1 (2026-10-07, `4cae1e7`), 73T part 2 (2026-10-07, `2a1cbc5`), 73T part 3 (2026-10-07, `9d2bc72`), 73T part 4 (2026-10-07, `b70a944`), 73M with 74C (2026-10-07, `a0e987b`), 73B (2026-10-07, `86547da`), 73O part 2 with 74F (2026-10-08, `fa9625e`) and 73G part 2 with 74H (2026-10-08), each approved by name; 74P, built after 73B, is recorded in Milestone 74.**
 **Approved and not yet built** (2026-10-07, one batch, built in this order
-with a full regression midway and at the end): 73G part 2 (with 74H), 73H
-and 73S. Nothing else is approved. Building any other item, or any part of a
+with a full regression midway and at the end): 73H and 73S. Nothing else is approved. Building any other item, or any part of a
 split item, needs the requester's named approval of that item or part
 (AGENTS.md §3).
 
@@ -1906,6 +1905,82 @@ numbers), `percent-field.spec.js`, `carried-balance.spec.js`. Red-first.
    **Security:** none. 7. **UI/UX:** inline field feedback and the advisory
    box. 8. **Legal framing:** the workbooks' instructions are followed. 9.
    **Cross-form:** all three accountings and the Inventory.
+
+### Build record, part 2 — BUILT 2026-10-08 with 74H (approved by name by the requester, 2026-10-07)
+
+**What changed for a filer:**
+
+- **A positive Schedule C Loss or Schedule E Transfer Out** (73G-1) gets a
+  note beside the box as soon as the filer leaves it, and the same in
+  Preview's "Review recommended", quoting the Clerk's workbook (read with a
+  parser): *"Losses should be entered as negative numbers, e.g., -2500."*
+  (`SCH C CAPITAL ADJ p1`!C17) and *"Transfers out should be entered as
+  negative numbers."* (`SCH E BANK TRANS p1`!C8). The figure stays as typed
+  and is filed as typed; a positive loss still raises the Net Capital
+  Adjustments, as in the workbook.
+- **A negative where one is unusual** (73G-N1) gets a note beside the box and
+  in Preview -- on every amount box except the Starting Balance (71E: an
+  overdrawn account carries forward negative) and Schedule C's Gain (the rule
+  is "Gain or Loss"; a negative gain sums as a loss). That is an asset, an
+  income line, a debt, a payment out, a bond or a remuneration amount, on all
+  three accountings, the Inventory and the Annual Plan's remuneration
+  amount. **Read wider than the decision's two examples** (an asset or
+  income): a negative debt or payment out is as unusual, and on the
+  Inventory a negative liability is negated again by the form. Nothing is
+  blocked or changed.
+- **The Inventory no longer reports a negative schedule amount** as "must be
+  > 0" (bypassable, part 1's finding); a blank or 0 one still is, in the
+  same words. A negative gets the note above instead.
+- **The 0.5% share note reaches the Inventory** -- every Ward's % and C-5's
+  Joint Owner's % ("enter a share as a percentage: 50 for half") -- in
+  Preview, and **beside the box** on both the Inventory and the Annual
+  family's Schedule D, when the page is drawn and when the filer leaves the
+  box.
+- **The Loss and Transfer Out boxes** are drawn by the shared field builder
+  as signed amounts (they were written out by hand). Loss is not starred, as
+  the design says; Gain keeps its star, and the asterisk spec's either-or
+  exemption for the pair still holds through it. Transfer Out's label reads
+  "Transfer Out Amount (enter as negative)", as Loss's does.
+- **The Schedule E PDF** prints the totals row the screen and the workbook
+  have: "Schedule E Totals (Transfers In / Transfers Out)" (`SCH E BANK TRANS
+  p1` F42 and H42, read with a parser).
+
+**How:** new `src/core/filing/sign-advisories.js` decides, from part 1's
+amount list (`amount-fields.js`, which now also finds the entry a box's path
+names), which amounts must be negative, which may be either, and where a
+negative is unusual; it gives the note beside a box and Preview's notes, in
+each form's own words. `ward-share-advisories.js` gains the Inventory's
+shares (the share list moved there; the Inventory's checks read the same
+one) and the note beside a share box. `form-contract.js`'s new
+`setFieldNote()` draws a non-error note after the box and after its own
+error message, tied in through `aria-describedby`; leaving an amount box,
+writing a share and drawing a page call it, as does the Inventory's own
+binding. Preview gathers both through `output-preflight.js`. Data model: the
+Loss, Transfer Out and eleven Inventory schedule amount rows say so;
+`verify:data-model` passes.
+
+**Tests:**
+
+- New `tests/unit/sign-advisories.spec.js` (17): each kind of amount on every
+  form that has one, the Clerk's wording, blank/0/unreadable, text saved
+  before; the note beside each kind of box; the small-share note in Preview
+  and beside the box; the Inventory's checks. **Red-first:** the module
+  doesn't exist; with only the Inventory's checks set aside, -5 is "must be >
+  0" and the share list is a copy.
+- `tests/unit/signed-amount-keypad.spec.js`: Loss and Transfer Out are drawn
+  by the shared builder (red-first: the old page source).
+- `tests/e2e/signed-amount-keypad.spec.ts` (+2): a positive loss's note
+  beside the box, tied to it, cleared by -250; the Inventory's -5 and 0.5
+  notes on leaving the box and on the page drawn again.
+- `filing-type-enumeration-guard.spec.js`: the Annual family is read from the
+  descriptor registry, not listed.
+- The validator and sidebar records did not change (no variant holds a
+  negative Inventory amount); the conversion and New Year records did not
+  either.
+- Full unit suite: 2,951 passed before the three bookkeeping guards were
+  brought up to date (assertion counts, the 70T list, TEST-INDEX), which then
+  passed; `check:types` clean; `verify:data-model` OK. **Browser specs:
+  40 files, 376 tests, all passed (33.3 min on a copy on C:) -- every spec that touches an amount box, a share, Schedule C or E, the bond block, the advisory box, the asterisks, the PDFs' tables, conversion and New Year. Red-first there: with the source set aside, the four new browser cases fail (no warning in Preview; no note beside the box).**
 
 ---
 

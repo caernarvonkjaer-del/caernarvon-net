@@ -41,6 +41,7 @@
 // gated (bondWaivedDate, restrictedDepositoryReceiptDate) stay.
 
 import { amountForStore } from '../form/amount-codec.js';
+import { formatMoney, roundCents } from '../format/money.js';
 
 export const BOND_DEPOSITORY_STATES = Object.freeze(['depository-only', 'bond-and-depository', 'bond-only', 'bond-waived']);
 
@@ -221,7 +222,27 @@ export function migrateBondDepository(filing) {
  * the other. `section` is the form's own label for the page ("D-4" or
  * "Part IX").
  */
-export function bondDepositoryAdvisories(filing, { section = 'Bond' } = {}) {
+// Milestone 74H (decision 74H-2, the requester by name under AGENTS.md
+// section 5, 2026-10-06; Pinellas Clerk practice): a Bond Amount below the
+// bond requirement the filing itself calculates is pointed out -- any
+// shortfall, never blocked, no number changed. Each form quotes its own
+// workbook, read with a parser: the Inventory's `PART V` and the Annual's
+// `PART IX` compute the requirement and compare nothing with it. The
+// Annual's workbook does not print the Inventory's sentence; it prints its
+// own, quoted for it here.
+export const BOND_REQUIREMENT_WORDS = Object.freeze({
+  guardian: "The court often requires a bond in the amount of the Ward's liquid assets.",
+  annual: 'Guardianship bond amount should be the amount of all liquid assets less those in a restricted depository or frozen account.',
+});
+
+/**
+ * @param {Record<string, any>} filing
+ * @param {{ section?: string, form?: 'guardian' | 'annual', requirement?: number | null }} [options]
+ *   `requirement` is the bond requirement the form calculates for this filing
+ *   (Annual calcTotalsAnnual().bondReq, Inventory calcTotalsGuardian().bondRequired);
+ *   without it no shortfall is judged.
+ */
+export function bondDepositoryAdvisories(filing, { section = 'Bond', form = 'annual', requirement = null } = {}) {
   if (!filing) return [];
   // Inferred, not read raw: a filing not yet migrated on mount (a model
   // builder handed an old-shape object, say) reads the same way the UI does.
@@ -236,6 +257,12 @@ export function bondDepositoryAdvisories(filing, { section = 'Bond' } = {}) {
   if (revealsBond(state)) {
     if (!text(filing.bondAmount)) advise('bond-amount', 'bondAmount', 'Bond Amount is blank. The filing can be filed without it.');
     if (!text(filing.bondingCompany)) advise('bonding-company', 'bondingCompany', 'Name of Bonding Company is blank. The filing can be filed without it.');
+    const bond = text(filing.bondAmount) === '' ? '' : (typeof filing.bondAmount === 'number' ? filing.bondAmount : amountForStore(String(filing.bondAmount)));
+    if (typeof bond === 'number' && Number.isFinite(bond) && Number.isFinite(requirement) && roundCents(bond) < roundCents(requirement)) {
+      const money = (v) => formatMoney(v, { style: 'signFirst' });
+      advise('bond-shortfall', 'bondAmount',
+        `Bond Amount (${money(bond)}) is below the bond requirement this filing calculates (${money(requirement)}). The Clerk's workbook says: "${BOND_REQUIREMENT_WORDS[form] || BOND_REQUIREMENT_WORDS.annual}" The filing can be filed as it is.`);
+    }
   }
   if (revealsDepository(state) && !text(filing.restrictedDepositoryReceiptDate)) {
     advise('receipt-date', 'restrictedDepositoryReceiptDate', 'The date of the most recent restricted depository receipt is blank. The filing can be filed without it.');

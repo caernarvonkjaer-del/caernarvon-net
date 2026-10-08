@@ -66,7 +66,6 @@ import { renderReportingPeriodFields } from '../../core/form/cards/ward-demograp
 import { esc } from '../../core/filing/escape-html.js';
 import { ic } from '../../core/ui/icons.js';
 import { syncPercentFeedback } from '../../core/form/form-contract.js';
-import { amountBoxText } from '../../core/form/amount-codec.js';
 import { rowStarted } from '../../core/validation/row-started.js';
 import { formDisplayName } from '../../core/filing/filing-registry.js';
 import { sectionMarks } from '../../core/status/section-marks.js';
@@ -1084,6 +1083,9 @@ function pageSchB4Annual(){
 // Milestone 72E: the Loss / Reduction box is a signed amount, so it asks for
 // inputmode="text" -- a phone's "decimal" keypad has no minus key -- as the
 // shared field builder already does for every signed kind.
+// Milestone 73G part 2: it is drawn by that builder now (it was written out
+// by hand), and is not starred: the rule is "Gain or Loss". A positive loss
+// gets a note beside it (sign-advisories.js).
 function pageSchCAnnual(){
   const d=getD(); const t=calcTotalsAnnual();
   let rows='';
@@ -1094,7 +1096,7 @@ function pageSchCAnnual(){
         <div class="col-md-5">${inpD('Full Description and Identification',r.description,`D.schC[${i}].description=this.value`,true)}</div>
         <div class="col-md-2">${inpD('Date of Adjustment',r.date,`D.schC[${i}].date=this.value`,true,'date')}</div>
         <div class="col-md-2">${inpD('Gain / Addition',r.gain,`D.schC[${i}].gain=this.value`,true,'number')}</div>
-        <div class="col-md-3"><label class="form-label">Loss / Reduction <span class="req">*</span> <small>(enter as negative)</small></label><div class="input-group"><span class="input-group-text">$</span><input type="text" inputmode="text" class="form-control" value="${esc(amountBoxText(r.loss,{blankZero:true}))}" data-annual-path="schC.${i}.loss" data-annual-format="signed-decimal"></div></div>
+        <div class="col-md-3">${inpD('Loss / Reduction (enter as negative)',r.loss,`D.schC[${i}].loss=this.value`,false,'number',{kind:'signed-money'})}</div>
       </div></div>
     </div></div>`).join('')+'</div>';
   } else {
@@ -1298,6 +1300,8 @@ function pageSchD5Annual(){
 // Milestone 72E: the Transfer Out Amt box is a signed amount, so it asks for
 // inputmode="text" -- a phone's "decimal" keypad has no minus key -- as the
 // shared field builder already does for every signed kind.
+// Milestone 73G part 2: drawn by that builder now (it was written out by
+// hand); a positive transfer out gets a note beside it (sign-advisories.js).
 function pageSchEAnnual(){
   const d=getD(); const t=calcTotalsAnnual();
   let rows='';
@@ -1309,7 +1313,7 @@ function pageSchEAnnual(){
         <div class="col-md-2">${inpD('Transfer In Date',r.transferInDate,`D.schE[${i}].transferInDate=this.value`,true,'date')}</div>
         <div class="col-md-2">${inpD('Transfer In Amount',r.transferInAmt,`D.schE[${i}].transferInAmt=this.value`,true,'number')}</div>
         <div class="col-md-2">${inpD('Transfer Out Date',r.transferOutDate,`D.schE[${i}].transferOutDate=this.value`,true,'date')}</div>
-        <div class="col-md-2"><label class="form-label">Transfer Out Amt (negative)</label><div class="input-group"><span class="input-group-text">$</span><input type="text" inputmode="text" class="form-control" value="${esc(amountBoxText(r.transferOutAmt,{blankZero:true}))}" data-annual-path="schE.${i}.transferOutAmt" data-annual-format="signed-decimal"></div></div>
+        <div class="col-md-2">${inpD('Transfer Out Amount (enter as negative)',r.transferOutAmt,`D.schE[${i}].transferOutAmt=this.value`,false,'number',{kind:'signed-money'})}</div>
       </div></div>
     </div></div>`).join('')+'</div>';
   } else {

@@ -7,7 +7,11 @@ import { countyDriftWarnings } from '../case-county-drift.js';
 import { formDerivedOverwriteWarnings } from './form-derived-fields.js';
 import { bondDepositoryAdvisories } from './bond-depository.js';
 import { planCertificateAdvisories, certificateOptional } from './plan-certificate-of-service.js';
-import { wardShareAdvisories } from './ward-share-advisories.js';
+import { inventoryShareAdvisories, wardShareAdvisories } from './ward-share-advisories.js';
+import { signAdvisories } from './sign-advisories.js';
+import { consistencyAdvisories } from './consistency-advisories.js';
+import { calcTotalsAnnual } from '../accounting/annual-totals.js';
+import { features, hasFeatureServices } from '../runtime/features.js';
 import { unrepresentedAdvisories } from './unrepresented-filing.js';
 import { startingBalanceNotes } from './starting-balance-carry.js';
 import { guardianEmailAdvisories } from './guardian-email.js';
@@ -29,6 +33,20 @@ const UNREPRESENTED_SECTIONS = Object.freeze({
 // one); every other type has no bond block and gets no advisory.
 const bondSectionFor = (descriptor) => (
   descriptor?.engineId === 'guardian' ? 'D-4' : descriptor?.engineId === 'annual' ? 'Part IX' : ''
+);
+
+// Milestone 74H: the form's own totals, where a warning reads one -- the bond
+// requirement (b) and the Simplified's Line 8. The Annual's are core; the
+// Inventory's and the Simplified's live in their features, reached through
+// the feature services (a unit test that runs core alone has none, and gets
+// no such warning).
+function formTotals(engineId, target) {
+  if (engineId === 'annual') return calcTotalsAnnual(target);
+  if (!hasFeatureServices() || !['guardian', 'simplified'].includes(engineId)) return null;
+  return features().totals[engineId](target);
+}
+const bondRequirementOf = (engineId, totals) => (
+  engineId === 'annual' ? totals?.bondReq : engineId === 'guardian' ? totals?.bondRequired : null
 );
 import {
   commitStoredDateDrafts,
@@ -61,6 +79,8 @@ export function collectOutputIssues(target, baseIssues = []) {
   // the impossible dates -- one check for every form.
   const structuredIssues = [...base, ...getFieldDraftIssues(target).map(normalizeIssue), ...amountFieldIssues(target).map(normalizeIssue), ...identity.issues.map(normalizeIssue)];
   const bondSection = bondSectionFor(identity.descriptor);
+  const engineId = identity.descriptor?.engineId;
+  const totals = formTotals(engineId, target);
   const advisories = [
     ...countyDriftWarnings(target),
     // Cells the court's form computes for itself that this filing overwrites
@@ -69,7 +89,8 @@ export function collectOutputIssues(target, baseIssues = []) {
     ...formDerivedOverwriteWarnings(target, identity.descriptor),
     // Milestone 67B: nothing in the bond block gates export on either form;
     // what it still wants is said here, in the same non-blocking channel.
-    ...(bondSection ? bondDepositoryAdvisories(target, { section: bondSection }) : []),
+    // Milestone 74H (b): and a Bond Amount below the requirement the form calculates.
+    ...(bondSection ? bondDepositoryAdvisories(target, { section: bondSection, form: engineId, requirement: bondRequirementOf(engineId, totals) ?? null }) : []),
     // Milestone 68C: the Plans' Certificate of Service gates nothing; what it
     // still wants is said here. Not required at all on the Simplified Plan,
     // per the Clerk's own checklist, so an untouched one says nothing there.
@@ -80,6 +101,13 @@ export function collectOutputIssues(target, baseIssues = []) {
     // Accountings: Ward's % now reads as a percentage everywhere, so a share
     // typed as a fraction under the old reading is pointed out, never blocked.
     ...(identity.descriptor?.engineId === 'annual' ? wardShareAdvisories(target) : []),
+    // Milestone 73G part 2: the Inventory's shares the same way, and every
+    // amount whose sign is unexpected -- a positive loss or transfer out, or
+    // a negative where one is unusual -- filed as entered.
+    ...(engineId === 'guardian' ? inventoryShareAdvisories(target) : []),
+    ...signAdvisories(target),
+    // Milestone 74H: answers within the filing that contradict each other.
+    ...consistencyAdvisories(target, engineId, { totals }),
     // Milestone 73F part 3 (73F-6, 73F-8): a trust dated after the GID but
     // answered No to "created after the GID?", and transactions dated outside
     // the accounting period -- warned, never blocked.

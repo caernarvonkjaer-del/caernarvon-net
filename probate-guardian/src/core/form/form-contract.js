@@ -22,6 +22,8 @@ import { identitySlotForPath, syncIdentityField } from '../party-resolver.js';
 import { maybeCommitCoverCounty } from '../navigation/ward-county.js';
 import { getCurrentPage } from '../navigation/route-state.js';
 import { announceModelChange, commitModelChange } from '../model-change.js';
+import { amountSignNote } from '../filing/sign-advisories.js';
+import { smallShareNote } from '../filing/ward-share-advisories.js';
 
 // The filing each field is being edited in: bound when the field takes focus
 // (form-events.js) or on its first write. Switching the open filing while a
@@ -530,6 +532,7 @@ export function finalizeFieldValue(control, options = {}) {
     const stored = parseStoredDecimal(cleaned);
     if (setPath) setPath(getD(), path, stored);
     setPercentFeedback(control, percentProblem(stored));
+    setFieldNote(control, smallShareNote(filingType(), path, stored));
   } else if (kind === 'money' || kind === 'signed-money') {
     // Milestone 73G part 1: one rule for every amount box (finalizeAmountControl()).
     // A box left as it was drawn writes nothing.
@@ -634,13 +637,59 @@ export function finalizeAmountControl(control, path = getControlPath(control), {
   const current = getPath ? getPath(getD(), path) : undefined;
   if (control.value === amountBoxText(current, { blankZero: !keepBlank })) {
     setAmountFeedback(control, isUnreadableAmount(current));
+    setFieldNote(control, amountSignNote(filingType(), path, current));
     return false;
   }
   const stored = amountForStore(control.value, { blank: keepBlank ? '' : 0 });
   if (setPath) setPath(getD(), path, stored);
   control.value = amountBoxText(stored, { blankZero: !keepBlank });
   setAmountFeedback(control, isUnreadableAmount(stored));
+  setFieldNote(control, amountSignNote(filingType(), path, stored));
   return true;
+}
+
+const filingType = () => getD()?.inventoryType || '';
+
+/**
+ * Milestone 73G part 2: a note beside a box that is not an error -- an amount
+ * whose sign is unexpected (src/core/filing/sign-advisories.js), a share that
+ * reads as 1% or less (ward-share-advisories.js). It sits after the box and
+ * after the box's own error message, if any, tied in through
+ * aria-describedby; '' removes it. Preview names the same things.
+ * @param {any} control
+ * @param {string} note
+ */
+export function setFieldNote(control, note) {
+  if (!control || typeof control.insertAdjacentElement !== 'function') return;
+  const anchor = control.closest?.('.input-group') || control;
+  let after = anchor;
+  let existing = null;
+  for (let el = anchor.nextElementSibling; el?.dataset && ['amountFeedback', 'percentFeedback', 'fieldNote'].some((k) => el.dataset[k] === 'true'); el = el.nextElementSibling) {
+    if (el.dataset.fieldNote === 'true') { existing = el; break; }
+    after = el;
+  }
+  const ids = new Set(String(control.getAttribute('aria-describedby') || '').split(/\s+/).filter(Boolean));
+  if (note) {
+    if (!existing) {
+      if (typeof document === 'undefined') return;
+      existing = document.createElement('div');
+      existing.className = 'form-text';
+      existing.style.color = 'var(--warn-text)';
+      existing.setAttribute('role', 'note');
+      existing.dataset.fieldNote = 'true';
+      existing.id = `field_note_${Math.random().toString(36).slice(2, 9)}`;
+      after.insertAdjacentElement('afterend', existing);
+    }
+    existing.textContent = note;
+    ids.add(existing.id);
+  } else if (existing) {
+    ids.delete(existing.id);
+    existing.remove();
+  } else {
+    return;
+  }
+  if (ids.size) control.setAttribute('aria-describedby', [...ids].join(' '));
+  else control.removeAttribute('aria-describedby');
 }
 
 // Inline feedback for an amount box holding text that can't be read -- the
@@ -690,7 +739,9 @@ export function syncAmountFeedback(container = document) {
     if (!isAmount) return;
     const path = el.dataset.bind || getControlPath(el);
     if (!path) return;
-    setAmountFeedback(el, isUnreadableAmount(getPath(getD(), path)));
+    const value = getPath(getD(), path);
+    setAmountFeedback(el, isUnreadableAmount(value));
+    setFieldNote(el, amountSignNote(filingType(), path, value));
   });
 }
 
@@ -737,7 +788,9 @@ export function syncPercentFeedback(container) {
   container.querySelectorAll('input[data-field-kind="percent"]').forEach((el) => {
     const path = getControlPath(el);
     if (!path || !getPath) return;
-    setPercentFeedback(el, percentProblem(getPath(getD(), path)));
+    const value = getPath(getD(), path);
+    setPercentFeedback(el, percentProblem(value));
+    setFieldNote(el, smallShareNote(filingType(), path, value));
   });
 }
 

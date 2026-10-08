@@ -228,6 +228,40 @@ describe('what the print preview warns about -- advisory, never blocking', () =>
     expect(codes({ bondDepositoryState: 'bond-waived', bondWaivedDate: '2026-03-03' }, 'D-4')).toEqual([]);
   });
 
+  // Milestone 74H (decision 74H-2, any shortfall -- Pinellas Clerk practice,
+  // the threshold approved by name under AGENTS.md section 5): a Bond Amount
+  // below the requirement the form calculates, quoting each form's own
+  // workbook. Red-first: no such advisory existed.
+  test('a bond below the requirement is pointed out, quoting the form\'s own workbook', () => {
+    const bond = { bondDepositoryState: 'bond-only', bondAmount: 10000, bondingCompany: 'Gulf Surety' };
+    const [inventory, ...rest] = bondDepositoryAdvisories(bond, { section: 'D-4', form: 'guardian', requirement: 50100 });
+    expect(rest).toEqual([]);
+    expect(inventory).toEqual({
+      code: 'bond-depository.bond-shortfall', severity: 'advisory', field: 'bondAmount',
+      message: 'D-4 — Bond Amount ($10,000.00) is below the bond requirement this filing calculates ($50,100.00). The Clerk\'s workbook says: "The court often requires a bond in the amount of the Ward\'s liquid assets." The filing can be filed as it is.',
+    });
+    expect(bondDepositoryAdvisories({ ...bond, bondAmount: '10000' }, { section: 'Part IX', form: 'annual', requirement: 20000 })[0].message)
+      .toBe('Part IX — Bond Amount ($10,000.00) is below the bond requirement this filing calculates ($20,000.00). The Clerk\'s workbook says: "Guardianship bond amount should be the amount of all liquid assets less those in a restricted depository or frozen account." The filing can be filed as it is.');
+  });
+
+  test('any shortfall, to the cent; a bond at or above the requirement says nothing', () => {
+    const bond = (bondAmount) => ({ bondDepositoryState: 'bond-and-depository', bondAmount, bondingCompany: 'Gulf Surety', restrictedDepositoryReceiptDate: '2026-02-02' });
+    expect(codes(bond(19999.99), 'Part IX')).toEqual([]);
+    expect(bondDepositoryAdvisories(bond(19999.99), { section: 'Part IX', requirement: 20000 }).map((a) => a.code)).toEqual(['bond-depository.bond-shortfall']);
+    expect(bondDepositoryAdvisories(bond(20000), { section: 'Part IX', requirement: 20000 })).toEqual([]);
+    expect(bondDepositoryAdvisories(bond(25000), { section: 'Part IX', requirement: 20000 })).toEqual([]);
+    expect(bondDepositoryAdvisories(bond(20000), { section: 'Part IX', requirement: 20000.004 }), 'compared in cents').toEqual([]);
+  });
+
+  test('no shortfall is judged without a bond: a waived bond, a depository only, a blank or unreadable amount, or no requirement given', () => {
+    const judged = (f) => bondDepositoryAdvisories(f, { section: 'D-4', form: 'guardian', requirement: 50000 }).map((a) => a.code);
+    expect(judged({ bondDepositoryState: 'bond-waived', bondWaivedDate: '2026-03-03', bondAmount: 1 })).toEqual([]);
+    expect(judged({ bondDepositoryState: 'depository-only', restrictedDepositoryReceiptDate: '2026-02-02', bondAmount: 1 })).toEqual([]);
+    expect(judged({ bondDepositoryState: 'bond-only', bondingCompany: 'Gulf Surety', bondAmount: '' })).toEqual(['bond-depository.bond-amount']);
+    expect(judged({ bondDepositoryState: 'bond-only', bondingCompany: 'Gulf Surety', bondAmount: 'N/A' })).toEqual([]);
+    expect(bondDepositoryAdvisories({ bondDepositoryState: 'bond-only', bondingCompany: 'Gulf Surety', bondAmount: 1 }, { section: 'D-4' })).toEqual([]);
+  });
+
   test('the section label leads every message, so the filer knows which page', () => {
     for (const a of bondDepositoryAdvisories({ bondDepositoryState: 'bond-and-depository' }, { section: 'D-4' })) {
       expect(a.message.startsWith('D-4 — ')).toBe(true);

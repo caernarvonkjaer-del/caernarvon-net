@@ -2,8 +2,8 @@
  "generatedBy": "node scripts/ms70-assertion-counts.mjs --write-baseline",
  "note": "Milestone 70 per-spec assertion counts (static expect calls). tests/unit/ms70-assertion-counts.spec.js fails when a spec falls below its count; lowering it requires --reason, recorded in dropLog. A tripwire, not proof of equivalence (decision D9).",
  "totals": {
-  "expects": 8641,
-  "tests": 2467
+  "expects": 8765,
+  "tests": 2511
  },
  "counts": {
   "tests/e2e/amounts-keep-their-sign.spec.ts": {
@@ -125,6 +125,10 @@
   "tests/e2e/continue-prompt-banner.spec.ts": {
    "expects": 14,
    "tests": 4
+  },
+  "tests/e2e/contradiction-warnings.spec.ts": {
+   "expects": 7,
+   "tests": 2
   },
   "tests/e2e/convert-ward.spec.ts": {
    "expects": 28,
@@ -571,8 +575,8 @@
    "tests": 1
   },
   "tests/e2e/signed-amount-keypad.spec.ts": {
-   "expects": 11,
-   "tests": 3
+   "expects": 21,
+   "tests": 5
   },
   "tests/e2e/simplified-mount.spec.ts": {
    "expects": 23,
@@ -723,8 +727,8 @@
    "tests": 5
   },
   "tests/unit/bond-depository.spec.js": {
-   "expects": 87,
-   "tests": 24
+   "expects": 100,
+   "tests": 27
   },
   "tests/unit/boot-ordering.spec.js": {
    "expects": 9,
@@ -773,6 +777,10 @@
   "tests/unit/completion-parity.spec.js": {
    "expects": 11,
    "tests": 3
+  },
+  "tests/unit/consistency-advisories.spec.js": {
+   "expects": 46,
+   "tests": 21
   },
   "tests/unit/content-corrections.spec.js": {
    "expects": 12,
@@ -1294,6 +1302,10 @@
    "expects": 8,
    "tests": 3
   },
+  "tests/unit/sign-advisories.spec.js": {
+   "expects": 45,
+   "tests": 15
+  },
   "tests/unit/signature-block-fields.spec.js": {
    "expects": 12,
    "tests": 10
@@ -1315,8 +1327,8 @@
    "tests": 11
   },
   "tests/unit/signed-amount-keypad.spec.js": {
-   "expects": 6,
-   "tests": 3
+   "expects": 9,
+   "tests": 4
   },
   "tests/unit/simplified-no-blank-pages.spec.js": {
    "expects": 5,

@@ -6,7 +6,8 @@
 // (or no inputmode) gives the full keyboard. The Annual's Schedule C "Loss /
 // Reduction (enter as negative)" and Schedule E "Transfer Out Amt (negative)"
 // boxes asked for "decimal". The browser round trip is
-// tests/e2e/signed-amount-keypad.spec.ts.
+// tests/e2e/signed-amount-keypad.spec.ts. (Since Milestone 73G part 2 the
+// shared builder draws both.)
 //
 // Two places build such a box: the shared field builder, by kind
 // ('signed-money'), and boxes written out by hand in a page's markup, which
@@ -54,12 +55,20 @@ describe('boxes written out by hand in a page', () => {
     expect(decimalOnly, 'boxes for a negative amount that ask for a keypad with no minus key').toEqual([]);
   });
 
-  test('the scan finds the boxes it is meant to: Schedule C, Schedule E and the Simplified\'s Starting Balance', () => {
+  test('the scan finds the box it is meant to: the Simplified\'s Starting Balance', () => {
     const where = signedBoxes.map((b) => `${b.file} ${b.path}`);
     expect(where).toEqual(expect.arrayContaining([
-      expect.stringMatching(/annual-accounting\/index\.js schC\.\$\{i\}\.loss$/),
-      expect.stringMatching(/annual-accounting\/index\.js schE\.\$\{i\}\.transferOutAmt$/),
       expect.stringMatching(/simplified-accounting\/index\.js startingBalance$/),
     ]));
+  });
+
+  // Milestone 73G part 2: the Annual's Schedule C Loss and Schedule E Transfer
+  // Out were written out by hand; the shared builder draws them now, as signed
+  // amounts, so the builder's own case above covers their keyboard.
+  test('the Annual\'s Loss and Transfer Out boxes are drawn by the shared builder as signed amounts', () => {
+    const page = readRepoSource('src/features/annual-accounting/index.js');
+    expect(page).toContain("inpD('Loss / Reduction (enter as negative)',r.loss,`D.schC[${i}].loss=this.value`,false,'number',{kind:'signed-money'})");
+    expect(page).toContain("inpD('Transfer Out Amount (enter as negative)',r.transferOutAmt,`D.schE[${i}].transferOutAmt=this.value`,false,'number',{kind:'signed-money'})");
+    expect(signedBoxes.filter((b) => b.file.endsWith('annual-accounting/index.js')), 'no Annual box is written out by hand any more').toEqual([]);
   });
 });

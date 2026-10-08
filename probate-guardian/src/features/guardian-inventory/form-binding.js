@@ -7,9 +7,11 @@
 import { getFieldDraftDisplay } from '../../core/form/commit-coordinator.js';
 import { filterCountyDropdown } from '../../core/form/county-autocomplete.js';
 import { formatDisplayDate } from '../../core/form/date-parser.js';
-import { applyZipLimit, displayDecimal, finalizeAmountControl, finalizeCaseNumber, formatAccountNumber, formatAddress, formatBarNumber, formatCaseNumber, formatCheckNumber, formatCityStateZip, formatName, formatPhone, formatSSN, parseStoredDecimal, runFieldWriteSideEffects, sanitizeDecimal, setAmountFeedback, setPercentFeedback } from '../../core/form/form-contract.js';
+import { applyZipLimit, displayDecimal, finalizeAmountControl, finalizeCaseNumber, formatAccountNumber, formatAddress, formatBarNumber, formatCaseNumber, formatCheckNumber, formatCityStateZip, formatName, formatPhone, formatSSN, parseStoredDecimal, runFieldWriteSideEffects, sanitizeDecimal, setAmountFeedback, setFieldNote, setPercentFeedback } from '../../core/form/form-contract.js';
 import { amountBoxText, filterAmountTyping, isUnreadableAmount, liveAmountValue } from '../../core/form/amount-codec.js';
 import { percentProblem } from '../../core/validation/percent-range.js';
+import { amountSignNote } from '../../core/filing/sign-advisories.js';
+import { smallShareNote } from '../../core/filing/ward-share-advisories.js';
 import { getPath, setPath } from '../../core/form/paths.js';
 import { fmt } from '../../core/format/money.js';
 import { getD } from '../../core/state.js';
@@ -106,6 +108,9 @@ export function bindForms(){
         // it holds text that can't be read as an amount.
         el.value=amountBoxText(cur,{blankZero:true});
         setAmountFeedback(el,isUnreadableAmount(cur));
+        // Milestone 73G part 2: and a note when its sign is unusual (leaving
+        // the box is finalizeAmountControl(), which does the same).
+        setFieldNote(el,amountSignNote('guardian',path,cur));
       }else{
         el.value=cur||'';
       }
@@ -221,11 +226,16 @@ export function bindForms(){
       // Milestone 71C: a share outside 0-100 is shown on the field as soon as
       // the filer leaves it (the validator reports it too), and again on
       // render so a reopened filing shows what is wrong.
+      // Milestone 73G part 2: a share of 1% or less gets a note beside it, as
+      // on the Annual's Schedule D (ward-share-advisories.js).
       if(inputType==='percent'){
         setPercentFeedback(el,percentProblem(cur));
+        setFieldNote(el,smallShareNote('guardian',path,cur));
         el.addEventListener('blur',()=>{
           if(getD()!==boundD)return;
-          setPercentFeedback(el,percentProblem(getPath(getD(),path)));
+          const v=getPath(getD(),path);
+          setPercentFeedback(el,percentProblem(v));
+          setFieldNote(el,smallShareNote('guardian',path,v));
         });
       }
       // Name/address formatting is finalize-only, same reasoning as modal-events.js's
