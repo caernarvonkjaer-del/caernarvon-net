@@ -1924,10 +1924,10 @@ numbers), `percent-field.spec.js`, `carried-balance.spec.js`. Red-first.
   is "Gain or Loss"; a negative gain sums as a loss). That is an asset, an
   income line, a debt, a payment out, a bond or a remuneration amount, on all
   three accountings, the Inventory and the Annual Plan's remuneration
-  amount. **Read wider than the decision's two examples** (an asset or
-  income): a negative debt or payment out is as unusual, and on the
-  Inventory a negative liability is negated again by the form. Nothing is
-  blocked or changed.
+  amount -- wider than the decision's two examples (an asset or income),
+  as the requester chose (73G-N3, below): a negative debt or payment out is
+  as unusual, and on the Inventory a negative liability is negated again by
+  the form. Nothing is blocked or changed.
 - **The Inventory no longer reports a negative schedule amount** as "must be
   > 0" (bypassable, part 1's finding); a blank or 0 one still is, in the
   same words. A negative gets the note above instead.
@@ -1937,9 +1937,9 @@ numbers), `percent-field.spec.js`, `carried-balance.spec.js`. Red-first.
   family's Schedule D, when the page is drawn and when the filer leaves the
   box.
 - **The Loss and Transfer Out boxes** are drawn by the shared field builder
-  as signed amounts (they were written out by hand). Loss is not starred, as
-  the design says; Gain keeps its star, and the asterisk spec's either-or
-  exemption for the pair still holds through it. Transfer Out's label reads
+  as signed amounts (they were written out by hand). **Neither Gain nor Loss
+  is starred** (73G-N4, below): neither is required on its own; the export
+  check asks for one of them, as before. Transfer Out's label reads
   "Transfer Out Amount (enter as negative)", as Loss's does.
 - **The Schedule E PDF** prints the totals row the screen and the workbook
   have: "Schedule E Totals (Transfers In / Transfers Out)" (`SCH E BANK TRANS
@@ -1958,6 +1958,19 @@ writing a share and drawing a page call it, as does the Inventory's own
 binding. Preview gathers both through `output-preflight.js`. Data model: the
 Loss, Transfer Out and eleven Inventory schedule amount rows say so;
 `verify:data-model` passes.
+
+**Decisions raised while building (settled 2026-10-08 by the requester):**
+
+- **73G-N3. Which boxes show the note for a negative.** (1) *Recommended,
+  chosen:* every amount box but the Starting Balance and Schedule C's Gain --
+  assets and income, and debts, payments out, the bond and remuneration. (2)
+  Assets and income only.
+- **73G-N4. The stars on Schedule C's Gain and Loss.** (1) *Recommended:*
+  Gain starred, Loss not, as the design said. (2) Both, as halves of a
+  required pair. (3) *Chosen:* neither -- neither is required on its own.
+  Built in a follow-up commit; the asterisk spec's exemption for the pair
+  went with it (red-first: with Gain still starred and no exemption, the
+  spec fails).
 
 **Tests:**
 

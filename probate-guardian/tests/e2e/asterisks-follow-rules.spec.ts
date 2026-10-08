@@ -43,8 +43,9 @@ const FORMS: Array<[string, (p: Page) => Promise<void>]> = [
 // (Milestone 73B added the checks for the five fields kept starred here until
 // it did -- A-2's and B-4's Type, C-1's Frequency, C-4's Type of Trust and the
 // Annual family's Type of Guardianship -- so they left this list.)
+// (Milestone 73G part 2: Schedule C's Gain and Loss carry no star -- the
+// requester, 2026-10-08 -- so that pair left this list too.)
 const EXEMPT: Array<{ form: string; path: RegExp; why: string }> = [
-  { form: 'annual', path: /^schC\.\d+\.(gain|loss)$/, why: 'Schedule C: a gain or a loss' },
   { form: 'annual', path: /^schE\.\d+\.transfer(In|Out)(Date|Amt)$/, why: 'Schedule E: a transfer in or a transfer out' },
   { form: 'planMinor', path: /^ucn$/, why: 'the Plan for Minors case number: Milestone 73S settles it' },
 ];

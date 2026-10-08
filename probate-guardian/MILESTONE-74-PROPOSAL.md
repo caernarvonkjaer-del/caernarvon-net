@@ -1448,6 +1448,9 @@ none blocks, none changes a figure, none says which answer is right
   the amount of all liquid assets less those in a restricted depository or
   frozen account." The requirement is the form's own figure (Annual
   `calcTotalsAnnual().bondReq`, Inventory `bondRequired`); no number changed.
+  **Decision 74H-5** (raised while building, settled 2026-10-08 by the
+  requester): (1) *Recommended, chosen:* each form quotes its own workbook.
+  (2) The Inventory's sentence on both.
 - **Schedule E** compares the transfers by size, so an out entered without
   its minus is 73G part 2's sign note, not a second "don't balance".
 - **j** counts the B-2 rows holding an amount other than 0, and totals them.

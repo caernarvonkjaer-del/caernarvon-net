@@ -1084,8 +1084,10 @@ function pageSchB4Annual(){
 // inputmode="text" -- a phone's "decimal" keypad has no minus key -- as the
 // shared field builder already does for every signed kind.
 // Milestone 73G part 2: it is drawn by that builder now (it was written out
-// by hand), and is not starred: the rule is "Gain or Loss". A positive loss
-// gets a note beside it (sign-advisories.js).
+// by hand). Neither Gain nor Loss is starred (the requester, 2026-10-08):
+// neither is required on its own -- the rule is "Gain or Loss", which the
+// export check asks for. A positive loss gets a note beside it
+// (sign-advisories.js).
 function pageSchCAnnual(){
   const d=getD(); const t=calcTotalsAnnual();
   let rows='';
@@ -1095,7 +1097,7 @@ function pageSchCAnnual(){
       <div class="entry-card-body"><div class="row g-2">
         <div class="col-md-5">${inpD('Full Description and Identification',r.description,`D.schC[${i}].description=this.value`,true)}</div>
         <div class="col-md-2">${inpD('Date of Adjustment',r.date,`D.schC[${i}].date=this.value`,true,'date')}</div>
-        <div class="col-md-2">${inpD('Gain / Addition',r.gain,`D.schC[${i}].gain=this.value`,true,'number')}</div>
+        <div class="col-md-2">${inpD('Gain / Addition',r.gain,`D.schC[${i}].gain=this.value`,false,'number')}</div>
         <div class="col-md-3">${inpD('Loss / Reduction (enter as negative)',r.loss,`D.schC[${i}].loss=this.value`,false,'number',{kind:'signed-money'})}</div>
       </div></div>
     </div></div>`).join('')+'</div>';
