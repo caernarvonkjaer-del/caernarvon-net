@@ -13,7 +13,7 @@
 // Everything the live toggle needs rides on the row's own data attributes, so no
 // page has to bind anything and nothing outlives a page: one document-level
 // subscription, added once, that does nothing when the row is absent.
-import { attestationRelevant } from '../validation/service-recipients.js';
+import { NO_RECIPIENTS_HINT, attestationRelevant } from '../validation/service-recipients.js';
 import { getD } from '../state.js';
 
 const ROW_SELECTOR = '[data-service-attestation]';
@@ -27,7 +27,7 @@ const attr = (value) => String(value).replace(/&/g, '&amp;').replace(/"/g, '&quo
  * @param {string}   args.html            The attestation control, as the page already renders it.
  * @param {any[]}    args.rows            The recipient collection.
  * @param {string}   args.attestation     The tri-state: '' | 'Yes' | 'No'.
- * @param {string[]} args.startedFields   Fields that make a recipient row "started".
+ * @param {readonly string[]} args.startedFields   Fields that make a recipient row "started".
  * @param {string}   args.recipientsPath  Top-level key of the recipient collection on D.
  * @param {string}   args.attestationPath Top-level key of the attestation on D.
  */
@@ -36,7 +36,7 @@ export function renderServiceAttestationRow({ html, rows, attestation, startedFi
   return `<div class="row g-3 mb-3${shown ? '' : ' d-none'}" data-service-attestation`
     + ` data-recipients-path="${attr(recipientsPath)}" data-attestation-path="${attr(attestationPath)}"`
     + ` data-started-fields="${attr(startedFields.join(','))}">`
-    + `<div class="col-12">${html}</div></div>`;
+    + `<div class="col-12">${html}<div class="form-text">${NO_RECIPIENTS_HINT}</div></div></div>`;
 }
 
 /** Re-evaluates the row in place, from the live model. A no-op when the page has none. */

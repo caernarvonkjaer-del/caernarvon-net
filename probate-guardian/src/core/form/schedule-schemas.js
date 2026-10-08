@@ -8,6 +8,7 @@
 // finds a list's rules by (filing type, list key) through collections.js.
 // This object keeps exactly what it held before, for the callers and tests
 // that read it.
+import { emptyRecipient } from '../filing/recipient-shape.js';
 
 export const SCHEDULE_SCHEMAS = {
   // Parties & Service
@@ -40,7 +41,8 @@ export const SCHEDULE_SCHEMAS = {
     syncPartyIds: 'guardianPartyIds',
   },
   certRecipients: {
-    factory: () => ({ name: '', line2: '', line3: '', line4: '' }),
+    // Milestone 73O part 2: a name and four address lines (recipient-shape.js).
+    factory: () => emptyRecipient(),
     label: 'Service Recipient',
     floor: 1,
     max: Infinity,

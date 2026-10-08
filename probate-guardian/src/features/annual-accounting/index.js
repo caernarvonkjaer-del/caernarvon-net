@@ -19,13 +19,14 @@ import { fmtDate as fmtD } from '../../core/excel/cell-reader.js';
 import { filingCopy, resolveFilingDescriptor } from '../../core/filing/filing-descriptor.js';
 import { renderCheckboxField, renderFormField, renderSelectField } from '../../core/form/form-fields.js';
 import { issueFactory } from '../../core/validation/validation-issue.js';
-import { serviceRecipientIssues, RECIPIENTS_OR_ATTESTATION } from '../../core/validation/service-recipients.js';
+import { serviceRecipientIssues, RECIPIENTS_OR_ATTESTATION, NO_RECIPIENTS_QUESTION } from '../../core/validation/service-recipients.js';
 import { renderServiceAttestationRow } from '../../core/form/service-attestation-visibility.js';
 // Milestone 57B: carried verbatim from MILESTONE-57-PROPOSAL.md section 57B.
 // The wording is load bearing -- it keeps the app on the right side of
 // asserting a legal conclusion for the filer (section 8 #8). Do not
 // paraphrase, shorten, or re-voice it.
-const ATTESTATION_57B = 'No recipients are required for this certificate (filer attestation - app does not determine legal necessity)';
+// Milestone 74F: the certificate's question is the one constant (service-recipients.js).
+const ATTESTATION_57B = NO_RECIPIENTS_QUESTION;
 // Milestone 63B: what makes a Part X recipient card "started". One list for the
 // validator and for the page, which shows the attestation only while Recipient 1
 // is not started, so the two read the same data the same way.
@@ -1544,6 +1545,7 @@ function pagePart10Annual(){
         <div class="col-12">${inpD('Line 2',r.line2,`D.certRecipients[${i}].line2=this.value`,false)}</div>
         <div class="col-12">${inpD('Line 3',r.line3,`D.certRecipients[${i}].line3=this.value`,false)}</div>
         <div class="col-12">${inpD('Line 4',r.line4,`D.certRecipients[${i}].line4=this.value`,false)}</div>
+        <div class="col-12">${inpD('Line 5',r.line5,`D.certRecipients[${i}].line5=this.value`,false)}</div>
       </div></div>
     </div></div>`;
   }).join('');

@@ -16,9 +16,13 @@ import { methodOfServiceLine } from '../../core/filing/service-method.js';
 import { inferBondDepositoryState, bondDepositoryPdfLines, revealsBond } from '../../core/filing/bond-depository.js';
 import { resolveSignatureModes } from '../../core/pdf/signature-modes.js';
 import { rowStarted } from '../../core/validation/row-started.js';
+import { recipientAddressLines, recipientListed } from '../../core/filing/recipient-shape.js';
+import { noRecipientsLine } from '../../core/validation/service-recipients.js';
 
 export function buildVerifiedInventoryModel(D, options = {}) {
   const d = D || {};
+  // Milestone 73O part 2: the certificate's listed recipients (a blank card is none).
+  const serviceRecipients = (d.serviceRecipients || []).filter(recipientListed);
   const wardName = (d.wardName || 'Ward').trim();
   const caseNumber = (d.caseNumber || '').trim();
   // Milestone 40C-A item 6: output must never invent a county. A blank one
@@ -849,20 +853,23 @@ export function buildVerifiedInventoryModel(D, options = {}) {
         tag: 'P',
         text: `Pursuant to the Florida Statute 744.362(1), I hereby certify that a copy of this inventory has been furnished to the following persons on this date, ${fmtDate(d.serviceDate) || 'the date indicated below'}:`,
       },
-      ...(d.serviceRecipients && d.serviceRecipients.length && d.serviceNoRecipients !== 'Yes' ? [
+      // Milestone 73O part 2: the recipients listed -- a blank card prints no
+      // row -- each with its name and four address lines.
+      ...(serviceRecipients.length && d.serviceNoRecipients !== 'Yes' ? [
         {
           type: 'table',
           tag: 'Table',
           title: 'Service Recipients',
           headers: ['Recipient Name', 'Address', 'Date Served'],
-          rows: d.serviceRecipients.map(r => [r.name || '', composePdfAddressLines(r.address, r.cityStateZip), fmtDate(r.dateServed || d.serviceDate)]),
+          rows: serviceRecipients.map(r => [r.name || '', recipientAddressLines(r), fmtDate(r.dateServed || d.serviceDate)]),
           colWidths: [35, 45, 20],
         }
       ] : [
         {
+          // Milestone 74F: one wording on all seven certificates.
           type: 'notice',
           tag: 'P',
-          text: 'None listed.',
+          text: noRecipientsLine(d.serviceNoRecipients),
         }
       ]),
       {

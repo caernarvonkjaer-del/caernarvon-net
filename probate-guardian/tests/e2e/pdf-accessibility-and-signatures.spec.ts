@@ -109,7 +109,7 @@ test.describe('Non-Raster PDF Generation, Signatures & Bookmarks', () => {
           cityStateZip: 'St. Petersburg, FL 33701',
         },
         serviceRecipients: [
-          { name: 'Sarah Bennett', address: '1420 5th Ave N', cityStateZip: 'St. Petersburg, FL 33705', method: 'E-Portal' },
+          { name: 'Sarah Bennett', line2: '1420 5th Ave N', line3: 'St. Petersburg, FL 33705', method: 'E-Portal' },
         ],
         // Milestone 60: real schedule fields only. A-1 has no valuationMethod
         // (that is B-2's), A-2's related property is its `notes` field, and

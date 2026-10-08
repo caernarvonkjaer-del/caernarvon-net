@@ -280,19 +280,20 @@ const GUIDE_CONTROLS = {
     ],
   },
   'service-no-recipients-attestation': {
-    label: 'No recipients are required for this certificate',
+    label: 'Are you certifying that no one needs to be served with a copy of this filing?',
     // Three surfaces, all required (per the rule above): Initial Inventory
-    // D-5, Annual/Final/Trust Part X, Simplified Part VI. Each file declares
-    // its own ATTESTATION_57B constant rather than importing a shared one.
+    // D-5, Annual/Final/Trust Part X, Simplified Part VI. Milestone 74F: the
+    // words are declared once (service-recipients.js) and each page uses them.
     evidence: [
-      { file: 'src/features/guardian-inventory/index.js', pattern: /const ATTESTATION_57B\s*=\s*'No recipients are required for this certificate/ },
-      { file: 'src/features/annual-accounting/index.js', pattern: /const ATTESTATION_57B\s*=\s*'No recipients are required for this certificate/ },
-      { file: 'src/features/simplified-accounting/index.js', pattern: /const ATTESTATION_57B\s*=\s*'No recipients are required for this certificate/ },
+      { file: 'src/core/validation/service-recipients.js', pattern: /export const NO_RECIPIENTS_QUESTION = 'Are you certifying that no one needs to be served with a copy of this filing\?'/ },
+      { file: 'src/features/guardian-inventory/index.js', pattern: /const ATTESTATION_57B\s*=\s*NO_RECIPIENTS_QUESTION/ },
+      { file: 'src/features/annual-accounting/index.js', pattern: /const ATTESTATION_57B\s*=\s*NO_RECIPIENTS_QUESTION/ },
+      { file: 'src/features/simplified-accounting/index.js', pattern: /const ATTESTATION_57B\s*=\s*NO_RECIPIENTS_QUESTION/ },
       // Milestone 68C: the four Plans render the same control through one
       // shared module -- the words are declared there once and each Plan's
       // page calls its renderer, so the evidence is the declaration plus the
       // call in each form (the 67B bond-question pattern).
-      { file: 'src/core/filing/plan-certificate-of-service.js', pattern: /export const ATTESTATION_57B\s*=\s*'No recipients are required for this certificate/ },
+      { file: 'src/core/filing/plan-certificate-of-service.js', pattern: /export const ATTESTATION_57B\s*=\s*NO_RECIPIENTS_QUESTION/ },
       { file: 'src/core/form/plan-certificate-of-service-page.js', pattern: /label: ATTESTATION_57B/ },
       { file: 'src/features/plan-annual/index.js', pattern: /renderPlanCertificateOfServicePage\(/ },
       { file: 'src/features/plan-simplified/index.js', pattern: /renderPlanCertificateOfServicePage\(/ },

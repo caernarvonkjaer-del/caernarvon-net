@@ -15,6 +15,7 @@ import { hasIdentifiedPreparer } from '../../form/preparer-flag.js';
 import { isAttorneyStarted } from '../attorney-block.js';
 import { issueFactory } from '../validation-issue.js';
 import { percentProblem } from '../percent-range.js';
+import { RECIPIENT_FIELDS } from '../../filing/recipient-shape.js';
 
 export const INVENTORY_SHARE_FIELDS = [
   ['scheduleA1', 'A-1', 'wardPercent', "Ward's %"], ['scheduleA2', 'A-2', 'wardPercent', "Ward's %"],
@@ -24,7 +25,8 @@ export const INVENTORY_SHARE_FIELDS = [
   ['scheduleC3', 'C-3', 'wardPercent', "Ward's %"], ['scheduleC4', 'C-4', 'wardPercent', "Ward's %"],
   ['scheduleC5', 'C-5', 'jointOwnerPercent', "Joint Owner's %"],
 ];
-export const RECIPIENT_STARTED_FIELDS = ['name', 'address', 'cityStateZip'];
+// Milestone 73O part 2: every field of the one recipient shape.
+export const RECIPIENT_STARTED_FIELDS = RECIPIENT_FIELDS;
 export const sdbIsYes = (v) => v === true || v === 'Yes';
 export const sdbIsNo = (v) => v === false || v === 'No';
 export const sdbAnswered = (v) => sdbIsYes(v) || sdbIsNo(v);
@@ -175,19 +177,22 @@ export function collectGuardianIssues(d){
   // validate() through errorRoute(), and a section beginning "D-5" buckets onto
   // /d5 automatically.
   {
-    const RECIPIENT_FIELDS=[['name','Name'],['address','Address'],['cityStateZip','City/State/Zip']];
+    // Milestone 73O part 2 (decision 73O-N3, the requester, 2026-10-08): a
+    // listed recipient needs a name, as on the other six certificates; the
+    // address lines are optional. (The Inventory required a street address
+    // and a city/state/ZIP too.)
     const rec=serviceRecipientIssues({
       rows:d.serviceRecipients,
       attestation:d.serviceNoRecipients,
       startedFields:RECIPIENT_STARTED_FIELDS,
-      missingFields:(r)=>RECIPIENT_FIELDS.filter(([k])=>!String(r[k]||'').trim()).map(([,label])=>label),
+      missingFields:(r)=>(String(r?.name||'').trim()?[]:['Name']),
     });
     // Milestone 72J: say what to do, not the checkbox's caption; the path
     // still lands "Go to field" on the checkbox.
     if(rec.needsAttestation)req('',`D-5 — ${RECIPIENTS_OR_ATTESTATION}`,'serviceNoRecipients');
-    rec.firstRowMissing.forEach(f=>req('',`D-5 Recipient 1 — ${f}`,`serviceRecipients.0.${f==='Name'?'name':f==='Address'?'address':'cityStateZip'}`));
+    rec.firstRowMissing.forEach(f=>req('',`D-5 Recipient 1 — ${f}`,'serviceRecipients.0.name'));
     rec.extraRows.forEach(({index,missing})=>missing.forEach(f=>
-      req('',`D-5 Recipient ${index+1} — ${f}`,`serviceRecipients.${index}.${f==='Name'?'name':f==='Address'?'address':'cityStateZip'}`)));
+      req('',`D-5 Recipient ${index+1} — ${f}`,`serviceRecipients.${index}.name`)));
   }
   if(!d.serviceDate)push('D-5 — Service Date is required.','serviceDate');
   // Milestone 64A-2, item 2.4. Form PART VI J24/J25: 'Indicate if:' Ward is

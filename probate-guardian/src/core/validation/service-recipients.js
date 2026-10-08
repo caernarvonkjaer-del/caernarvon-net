@@ -37,6 +37,31 @@
  */
 export const RECIPIENTS_OR_ATTESTATION = 'List at least one recipient who was served, or state that no recipients are required';
 
+// Milestone 74F (decision 74F-1, the requester, 2026-10-06): the question on
+// all seven certificates, asked plainly. It read "No recipients are required
+// for this certificate (filer attestation - app does not determine legal
+// necessity)" -- a double negative with the app's own disclaimer inside it;
+// the disclaimer is now the hint beneath. The stored answer keeps its meaning:
+// Yes = no one needs to be served.
+export const NO_RECIPIENTS_QUESTION = 'Are you certifying that no one needs to be served with a copy of this filing?';
+export const NO_RECIPIENTS_HINT = 'The app does not decide who must be served.';
+
+// Milestone 74F (decision 74F-2, Pinellas Clerk practice): what every filed
+// certificate says in place of a recipient table -- one wording on all seven,
+// and never the question or its disclaimer (a Plan printed both). The Clerk's
+// workbooks have no such sentence; both are the app's.
+export const NO_RECIPIENTS_LISTED_LINE = 'No service recipients are listed.';
+export const NO_RECIPIENTS_REQUIRED_LINE = 'No service recipients are required.';
+
+/**
+ * The certificate's line when no recipient is printed: "required" when the
+ * filer answered Yes to the question, "listed" otherwise.
+ * @param {string} attestation  the stored answer: '' | 'Yes' | 'No'
+ */
+export function noRecipientsLine(attestation) {
+  return attestation === 'Yes' ? NO_RECIPIENTS_REQUIRED_LINE : NO_RECIPIENTS_LISTED_LINE;
+}
+
 export function recipientRowStarted(row, fields) {
   if (!row) return false;
   return fields.some((f) => {
@@ -51,7 +76,7 @@ export function recipientRowStarted(row, fields) {
  * @param {object}   args
  * @param {any[]}    args.rows          The recipient collection.
  * @param {string}   args.attestation   The tri-state: '' | 'Yes' | 'No'.
- * @param {string[]} args.startedFields Fields that make a row "started".
+ * @param {readonly string[]} args.startedFields Fields that make a row "started".
  * @param {(row:any)=>string[]} args.missingFields
  *        Family-owned: the required fields this row is missing, by label.
  * @returns {{ needsAttestation: boolean, firstRowMissing: string[],
@@ -108,7 +133,7 @@ export function serviceRecipientIssues({ rows, attestation, startedFields, missi
  * @param {object}   args
  * @param {any[]}    args.rows           The recipient collection.
  * @param {string}   args.attestation    The tri-state: '' | 'Yes' | 'No'.
- * @param {string[]} args.startedFields  Fields that make a row "started".
+ * @param {readonly string[]} args.startedFields  Fields that make a row "started".
  * @returns {boolean}
  */
 export function attestationRelevant({ rows, attestation, startedFields }) {

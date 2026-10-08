@@ -3,6 +3,7 @@
 // src/core/filing/filing-registry.js's formEngine()). The blank row per
 // schedule (emptyRowAnnual(), moved from legacy-app.js) and the blank filing
 // (emptyDataAnnual(), moved from src/core/state.js). Pure data, loaded eagerly.
+import { emptyRecipient } from '../recipient-shape.js';
 
 export function emptyRowAnnual(type){
   switch(type){
@@ -113,7 +114,8 @@ export function emptyDataAnnual() {
     // recipient is listed (D16), and reset to '' by every filing
     // conversion (D7) -- it is this filer's assertion about this filing.
     certNoRecipients:'',
-    certRecipients:[{name:'',line2:'',line3:'',line4:''},{name:'',line2:'',line3:'',line4:''},{name:'',line2:'',line3:'',line4:''},{name:'',line2:'',line3:'',line4:''}],
+    // Milestone 73O part 2: a name and four address lines (recipient-shape.js).
+    certRecipients:[emptyRecipient(),emptyRecipient(),emptyRecipient(),emptyRecipient()],
     // Part XI – Remuneration.
     //
     // Milestone 58D: starts EMPTY, not with one blank placeholder row. The

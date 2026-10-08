@@ -80,6 +80,7 @@
  * @property {string} [line2] - Address line 2 (e.g. street address).
  * @property {string} [line3] - Address line 3 (e.g. city, state, zip).
  * @property {string} [line4] - Address line 4 or email.
+ * @property {string} [line5] - Address line 5 (Milestone 73O part 2: every recipient has a name and four lines).
  * @property {string} [address] - Combined address string.
  * @property {string} [serviceMethod] - Method of service (e.g. 'e-portal', 'mail').
  * @property {string} [email] - Service email address.

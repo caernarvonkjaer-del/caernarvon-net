@@ -34,7 +34,7 @@ import { renderReportingPeriodFields } from '../../core/form/cards/ward-demograp
 // same constant the PDF prints, so the page a filer reads and the document
 // they sign cannot drift apart.
 import { REMUNERATION_DECLARATION } from '../../core/filing/statutory-text.js';
-import { serviceRecipientIssues, RECIPIENTS_OR_ATTESTATION } from '../../core/validation/service-recipients.js';
+import { serviceRecipientIssues, RECIPIENTS_OR_ATTESTATION, NO_RECIPIENTS_QUESTION } from '../../core/validation/service-recipients.js';
 import { renderServiceAttestationRow } from '../../core/form/service-attestation-visibility.js';
 import { esc } from '../../core/filing/escape-html.js';
 import { ic } from '../../core/ui/icons.js';
@@ -79,7 +79,8 @@ import { commitModelChange } from '../../core/model-change.js';
 import { collectSimplifiedIssues, RECIPIENT_STARTED_FIELDS } from '../../core/validation/engines/simplified.js';
 // Milestone 57B: carried verbatim from MILESTONE-57-PROPOSAL.md section 57B.
 // The wording is load bearing (section 8 #8). Do not paraphrase or re-voice it.
-const ATTESTATION_57B = 'No recipients are required for this certificate (filer attestation - app does not determine legal necessity)';
+// Milestone 74F: the certificate's question is the one constant (service-recipients.js).
+const ATTESTATION_57B = NO_RECIPIENTS_QUESTION;
 // Milestone 63B: what makes a Part VI recipient card "started". One list for the
 // validator and for the page, which shows the attestation only while Recipient 1
 // is not started, so the two read the same data the same way.
@@ -642,7 +643,10 @@ function pagePart5(){
 function pagePart6(){
   const d=getD();
   const cards=(d.certRecipients||[]).map((r,i)=>{
-    const req='<span class="req">*</span>';
+    // Milestone 73O part 2: the name is starred where a name is owed --
+    // Recipient 1, and a card the filer has started -- not on every blank
+    // card (Recipient 3's had no rule behind it).
+    const req=i===0||rowStarted(r)?'<span class="req">*</span>':'';
     const removeBtn=i===0?'':`<button type="button" class="btn btn-outline-danger btn-sm" data-simplified-action="remove-recipient" data-index="${i}">✕ Remove</button>`;
     return `<div class="col-12 col-lg-6"><div class="entry-card mb-0 h-100">
       <div class="entry-card-header d-flex justify-content-between align-items-center gap-2"><span>Recipient ${i+1}</span><span class="entry-card-actions">${removeBtn}</span></div>
@@ -651,6 +655,8 @@ function pagePart6(){
           <div class="col-12"><label class="form-label">Name and Address Line 1${req}</label><input type="text" class="form-control" value="${esc(formatName(r.name||''))}" data-form-path="certRecipients.${i}.name" data-form-format="name"></div>
           <div class="col-12"><label class="form-label">Line 2</label><input type="text" class="form-control" value="${esc(formatAddress(r.line2||''))}" data-form-path="certRecipients.${i}.line2" data-form-format="address"></div>
           <div class="col-12"><label class="form-label">Line 3</label><input type="text" class="form-control" value="${esc(formatAddress(r.line3||''))}" data-form-path="certRecipients.${i}.line3" data-form-format="address"></div>
+          <div class="col-12"><label class="form-label">Line 4</label><input type="text" class="form-control" value="${esc(formatAddress(r.line4||''))}" data-form-path="certRecipients.${i}.line4" data-form-format="address"></div>
+          <div class="col-12"><label class="form-label">Line 5</label><input type="text" class="form-control" value="${esc(formatAddress(r.line5||''))}" data-form-path="certRecipients.${i}.line5" data-form-format="address"></div>
         </div>
       </div>
     </div></div>`;

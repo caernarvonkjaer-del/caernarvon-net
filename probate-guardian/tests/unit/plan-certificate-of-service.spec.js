@@ -122,19 +122,23 @@ describe('the PDF section', () => {
     expect(sig).toMatchObject({ type: 'signature-block', role: 'Certified by (Attorney)', signerName: 'Jordan Reyes, Esq.', signatureDate: '03/02/2026', signatureState: 'typed' });
   });
 
-  test('a Yes attestation prints the attestation instead of the recipients, keeping the cards\' data out of the filed certificate', () => {
+  // Milestone 74F (74F-2): a Yes prints "No service recipients are required." -- never the question or
+  // its disclaimer, which it used to print onto the filed certificate.
+  test('a Yes attestation prints "No service recipients are required." instead of the recipients, keeping the cards\' data out of the filed certificate', () => {
     const f = { ...emptyCertificateOfService(), planGuardians: [{ name: 'Pat Rivera' }], certRecipients: [{ name: 'Typed Then Attested', line2: '', line3: '', line4: '' }], certNoRecipients: 'Yes' };
     const s = planCertificateOfServiceSection(f, cfg, fmt);
     expect(s.blocks.some((b) => b.type === 'table')).toBe(false);
-    expect(s.blocks[1].text).toBe(ATTESTATION_57B);
+    expect(s.blocks[1].text).toBe('No service recipients are required.');
+    expect(JSON.stringify(s.blocks)).not.toContain(ATTESTATION_57B);
+    expect(JSON.stringify(s.blocks)).not.toMatch(/filer attestation|determine legal necessity/);
     expect(JSON.stringify(s.blocks)).not.toContain('Typed Then Attested');
     expect(s.blocks[3]).toMatchObject({ role: 'Certified by (Guardian)', signerName: 'Pat Rivera' });
     expect(s.blocks[2].text).toBe('on this date: the date indicated below');
   });
 
-  test('nothing entered prints "No service recipients listed." rather than an empty table', () => {
+  test('nothing entered prints "No service recipients are listed." rather than an empty table (74F-2)', () => {
     const s = planCertificateOfServiceSection(emptyCertificateOfService(), cfg, fmt);
-    expect(s.blocks[1]).toMatchObject({ type: 'notice', text: 'No service recipients listed.' });
+    expect(s.blocks[1]).toMatchObject({ type: 'notice', text: 'No service recipients are listed.' });
   });
 });
 

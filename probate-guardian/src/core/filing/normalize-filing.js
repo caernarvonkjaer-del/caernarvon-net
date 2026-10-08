@@ -8,6 +8,7 @@
 import { normalizeScheduleDocsAck } from './schedule-doc-ack.js';
 import { normalizeAmountFields } from './amount-fields.js';
 import { canonicalFloridaCounty } from '../pdf/circuit-lookup.js';
+import { normalizeRecipientShape } from './recipient-shape.js';
 
 export function normalizeWardData(d){
   if(!d||typeof d!=='object'||Object.keys(d).length===0)return d;
@@ -20,6 +21,10 @@ export function normalizeWardData(d){
   // numbers ("$1,234.56" is 1234.56); text that is not an amount is kept
   // for the export checks to name. Nothing is zeroed or cut short.
   try{ normalizeAmountFields(d); }catch(e){}
+  // Milestone 73O part 2: one recipient shape on every certificate -- an
+  // Inventory saved before it keeps its street address and city/state/ZIP as
+  // the first two of four address lines (recipient-shape.js).
+  try{ normalizeRecipientShape(d); }catch(e){}
   // Milestone 73F part 3 (73F-N3): a county saved as a common variant ("St
   // Lucie", "Pinellas County") reads as its official name; anything that is
   // not a Florida county is left as written, for the checks to name.

@@ -8,6 +8,7 @@ import { rowStarted } from '../../validation/row-started.js';
 import { emptyPlanResidence, emptyPlanProvider, emptyPlanDirective } from './plan-annual.js';
 import { emptyInitialProvider } from './plan-initial.js';
 import { emptyMinorResidence, emptyMinorProvider, emptyMinorGuardianSig } from './plan-minor.js';
+import { emptyRecipient } from '../recipient-shape.js';
 
 export function planGuardianBlank(type){
   // Milestone 39-C: every Plan type's guardian row now carries signatureState/
@@ -65,6 +66,7 @@ export function planEmptyRow(kind){
   if(kind==='minorResidence')return emptyMinorResidence();
   if(kind==='minorProvider')return emptyMinorProvider();
   // Milestone 68C: the Plans' Certificate of Service recipient card.
-  if(kind==='certRecipient')return {name:'',line2:'',line3:'',line4:''};
+  // Milestone 73O part 2 (73O-N2): the accountings' recipient, four address lines.
+  if(kind==='certRecipient')return emptyRecipient();
   return {};
 }

@@ -234,8 +234,8 @@ test('capture: D-5 Certificate of Service with Indicate if Ward is', async ({ pa
     attorneyForGuardian: 'Daniel R. Okafor, Esq.',
     'attorney.name': 'Daniel R. Okafor, Esq.', 'attorney.barNumber': '00123456',
     serviceRecipients: [
-      { name: 'Harold J. Whitfield', address: '1850 Coffee Pot Blvd NE', cityStateZip: 'St. Petersburg, FL 33704' },
-      { name: 'Clerk of the Circuit Court, Probate Division', address: '315 Court St, Room 106', cityStateZip: 'Clearwater, FL 33756' },
+      { name: 'Harold J. Whitfield', line2: '1850 Coffee Pot Blvd NE', line3: 'St. Petersburg, FL 33704' },
+      { name: 'Clerk of the Circuit Court, Probate Division', line2: '315 Court St, Room 106', line3: 'Clearwater, FL 33756' },
     ],
     serviceNoRecipients: '',
     serviceDate: '2026-05-04',

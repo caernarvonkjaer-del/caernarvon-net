@@ -11,6 +11,8 @@ import { isUnrepresented, resolveServiceCertifier } from '../../core/filing/unre
 import { methodOfServiceLine } from '../../core/filing/service-method.js';
 import { resolveSignatureModes } from '../../core/pdf/signature-modes.js';
 import { rowStarted } from '../../core/validation/row-started.js';
+import { recipientAddressLines, recipientListed } from '../../core/filing/recipient-shape.js';
+import { noRecipientsLine } from '../../core/validation/service-recipients.js';
 
 export function buildSimplifiedAccountingModel(D, options = {}) {
   const d = D || {};
@@ -256,7 +258,7 @@ export function buildSimplifiedAccountingModel(D, options = {}) {
   // recipient whose only populated field was line4 out of the certificate of
   // service entirely -- no row at all, rather than a truncated address.
   // Annual Accounting's equivalent filter already included it.
-  const certRecipients = (d.certRecipients || []).filter(r => r && (r.name || r.line2 || r.line3 || r.line4));
+  const certRecipients = (d.certRecipients || []).filter(recipientListed);
 
   // Milestone 71B: with no attorney, the guardian who served the copies signs,
   // with the name and contact details from their Part IV card.
@@ -305,15 +307,16 @@ export function buildSimplifiedAccountingModel(D, options = {}) {
             // model's matching comment. This also restores line4, which the
             // old space-join omitted outright: any recipient needing a fourth
             // address line had it silently missing from the filed document.
-            [r.line2, r.line3, r.line4].filter(Boolean),
+            recipientAddressLines(r),
           ]),
           colWidths: [10, 45, 45],
         }
       ] : [
         {
+          // Milestone 74F: one wording on all seven certificates.
           type: 'notice',
           tag: 'P',
-          text: 'None listed.',
+          text: noRecipientsLine(d.certNoRecipients),
         }
       ]),
       // Milestone 72G: the method on its own line (omitted when none is

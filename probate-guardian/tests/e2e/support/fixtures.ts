@@ -75,7 +75,7 @@ export const MINIMAL_VALID_GUARDIAN = {
     streetAddress: '123 Main St', cityStateZip: 'Clearwater, FL 33755',
     signatureDate: '2026-01-02', filingDate: '2026-01-02',
   },
-  serviceRecipients: [{ name: 'Sample Recipient', address: '123 Main St', cityStateZip: 'Clearwater, FL 33755' }],
+  serviceRecipients: [{ name: 'Sample Recipient', line2: '123 Main St', line3: 'Clearwater, FL 33755' }],
   serviceAttorney: {
     name: 'Sample Attorney', barNumber: '123456', phone: '555-555-5557',
     streetAddress: '123 Main St', cityStateZip: 'Clearwater, FL 33755', signatureDate: '2026-01-02',

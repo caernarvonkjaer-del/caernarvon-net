@@ -20,6 +20,7 @@ import { annualReconcileState } from '../../accounting/annual-totals.js';
 import { filedOffice } from '../../form/same-address.js';
 import { planSchB4Export } from '../b4-export-plan.js';
 import { SCH_B4_ACCOUNT_BLOCKS, B4_REGISTER_PREFIX } from '../b4-register-pages.js';
+import { RECIPIENT_FIELDS, emptyRecipient, recipientSlots } from '../../filing/recipient-shape.js';
 
 const { text, dateOrBlank: date, amountNumber: amount, share, listText: list } = codecs;
 const field = (path, sheet, cell, codec, more = {}) => ({ kind: 'field', path, sheet, cell, codec, ...more });
@@ -101,7 +102,8 @@ const oldTrustCell = (key, codec) => (i) => [{ cell: `D${TRUST_ROWS[i][OLD_TRUST
 // PART X: four recipient blocks. Milestone 73T part 3 (row 8): more than four
 // stops Save as Excel, as any schedule over the workbook's room does
 // (excel-caps.js); the import brings back the recipients the workbook lists.
-const RECIPIENT_SLOTS = [['B', 11], ['I', 11], ['B', 17], ['I', 17]].map(([c, r]) => ({ name: `${c}${r}`, line2: `${c}${r + 1}`, line3: `${c}${r + 2}`, line4: `${c}${r + 3}` }));
+// Milestone 73O part 2: each box's five lines (B11:H15, I11:L15, B17:H21, I17:L21).
+const RECIPIENT_SLOTS = recipientSlots([['B', 11], ['I', 11], ['B', 17], ['I', 17]]);
 
 // Schedule B-4: one bank account per block of register pages, its bank and
 // account number at the top of the block's first page (D6, H6).
@@ -337,7 +339,7 @@ export const ANNUAL_CONTRACT = Object.freeze({
     // PART X -- the certificate of service: up to four recipients.
     {
       kind: 'slots', path: 'certRecipients', sheet: 'PART X', slots: RECIPIENT_SLOTS,
-      fields: { name: { codec: text }, line2: { codec: text }, line3: { codec: text }, line4: { codec: text } },
+      fields: Object.fromEntries(RECIPIENT_FIELDS.map((k) => [k, { codec: text }])),
       exportFilter: (r) => rowStarted(r),
       keep: (row) => rowStarted(row),
     },
@@ -432,7 +434,7 @@ export const ANNUAL_CONTRACT = Object.freeze({
         draft.attorney_isPreparer = false;
       }
     }
-    if (draft.certRecipients && !draft.certRecipients.length) draft.certRecipients = [{ name: '', line2: '', line3: '', line4: '' }];
+    if (draft.certRecipients && !draft.certRecipients.length) draft.certRecipients = [emptyRecipient()];
     // "Amended " in the filing-type box: an amended filing of this filing's type.
     if (/^amended$/i.test(String(draft[WORKBOOK_FILING_TYPE] || '').trim())) draft.amendedForm = 'Yes';
     if (workbook.getWorksheet('PART IX ')) {

@@ -423,7 +423,7 @@ describe("the Inventory's 73T rows, fixed in part 2", () => {
       preparer: { name: 'Hidden Preparer', phone: '555-0100' },
       hasSafeDepositBox: 'No', safeDepositBoxFiled: 'Yes',
       bondDepositoryState: 'bond-waived', bondAmount: 50000, bondingCompany: 'Old Surety', bondWaivedDate: '2026-03-04',
-      serviceNoRecipients: 'Yes', serviceRecipients: [{ name: '', address: '', cityStateZip: '' }],
+      serviceNoRecipients: 'Yes', serviceRecipients: [{ name: '', line2: '', line3: '' }],
       scheduleB2: [{ description: '30" Flat screen TV', fullAssetValue: 300, wardPercent: 100 }],
       scheduleB4: [{ lenderName: 'Zero Bank', fullLiabilityBalance: 0, wardPercent: 100 }, { lenderName: '', fullLiabilityBalance: 500, wardPercent: 100 }],
       scheduleC1: [{ payerName: 'social security', typeOfIncome: '=Pension', annualIncomeAmount: 1200, wardPercent: 100 }],
@@ -593,7 +593,8 @@ describe("the Annual family's 73T rows, fixed in part 3", () => {
 
   test('row 8: the started recipients are written in order and come back; more than four stops Save as Excel', () => {
     expect([cell('PART X', 'B11'), cell('PART X', 'B12'), cell('PART X', 'I11')]).toEqual(['Pat Recipient', '1 Main St', null]);
-    expect(read(wrote).draft.certRecipients).toEqual([{ name: 'Pat Recipient', line2: '1 Main St', line3: '', line4: '' }]);
+    // Milestone 73O part 2: a name and four address lines.
+    expect(read(wrote).draft.certRecipients).toEqual([{ name: 'Pat Recipient', line2: '1 Main St', line3: '', line4: '', line5: '' }]);
     const five = Array.from({ length: 5 }, (_, i) => ({ name: `R${i}` }));
     expect(checkExcelCapacity(ANNUAL_EXCEL_CAPS, { certRecipients: five }).map((o) => [o.key, o.count, o.cap])).toEqual([['certRecipients', 5, 4]]);
     expect(checkExcelCapacity(ANNUAL_EXCEL_CAPS, { certRecipients: [...five.slice(0, 4), { name: '' }] })).toEqual([]);
@@ -707,7 +708,8 @@ describe("the Simplified's 73T rows, fixed in part 4", () => {
 
   test('row 8: the started recipients are written in order and come back; more than four stops Save as Excel', () => {
     expect([cell(P56, 'B27'), cell(P56, 'B28'), cell(P56, 'I27')]).toEqual(['Pat Recipient', '1 Main St', null]);
-    expect(read(wrote).draft.certRecipients).toEqual([{ name: 'Pat Recipient', line2: '1 Main St', line3: '' }]);
+    // Milestone 73O part 2: a name and four address lines.
+    expect(read(wrote).draft.certRecipients).toEqual([{ name: 'Pat Recipient', line2: '1 Main St', line3: '', line4: '', line5: '' }]);
     const five = Array.from({ length: 5 }, (_, i) => ({ name: `R${i}` }));
     expect(checkExcelCapacity(SIMPLIFIED_EXCEL_CAPS, { certRecipients: five }).map((o) => [o.key, o.count, o.cap])).toEqual([['certRecipients', 5, 4]]);
   });

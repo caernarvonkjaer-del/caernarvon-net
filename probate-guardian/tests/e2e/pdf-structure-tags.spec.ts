@@ -89,7 +89,7 @@ test.describe('PDF Accessibility: Tagged Structure, StructTreeRoot & Marked Cont
           cityStateZip: 'St. Petersburg, FL 33701',
         },
         serviceRecipients: [
-          { name: 'Sarah Bennett', address: '1420 5th Ave N', cityStateZip: 'St. Petersburg, FL 33705', method: 'E-Portal' },
+          { name: 'Sarah Bennett', line2: '1420 5th Ave N', line3: 'St. Petersburg, FL 33705', method: 'E-Portal' },
         ],
         scheduleA1: [
           { propertyDescription: 'Primary Residence', streetAddress: '1420 5th Ave N', cityStateZip: 'St. Petersburg, FL 33705', valuationMethod: 'Appraisal', fullAssetValue: 250000, wardPercent: 100 },
@@ -361,7 +361,7 @@ test.describe('PDF Accessibility: Tagged Structure, StructTreeRoot & Marked Cont
         preparer: { name: 'Marcus Thorne', signatureDate: '2026-02-28', phone: '727-555-0188' },
         attorney: { name: 'Robert Vance, Esq.', barNumber: '0184920', signatureDate: '2026-03-01' },
         serviceAttorney: { name: 'Elena Rostova', barNumber: '0293841', signatureDate: '2026-03-01' },
-        serviceRecipients: [{ name: 'Sarah Bennett', address: '1420 5th Ave N', cityStateZip: 'St. Petersburg, FL', method: 'E-Portal' }],
+        serviceRecipients: [{ name: 'Sarah Bennett', line2: '1420 5th Ave N', line3: 'St. Petersburg, FL', method: 'E-Portal' }],
         scheduleA1: [{ propertyDescription: 'Primary Residence', streetAddress: '1420 5th Ave N', cityStateZip: 'St. Petersburg, FL', valuationMethod: 'Appraisal', fullAssetValue: 250000, wardPercent: 100 }],
         scheduleA2: [{ lenderName: 'Wells Fargo', lenderAddress: 'PO Box 10335', lenderCityStateZip: 'Des Moines, IA', relatedProperty: '1420 5th Ave N', liabilityType: 'Mortgage', fullDebtBalance: 45000, wardPercent: 100 }],
         scheduleB1: [{ institutionName: 'Raymond James', accountType: 'Checking', accountNumber: '***4821', streetAddress: '880 Carillon', cityStateZip: 'St. Pete', fullAssetAmount: 38250, wardPercent: 100 }],

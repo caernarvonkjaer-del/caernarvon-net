@@ -16,6 +16,8 @@ import { inferBondDepositoryState, bondDepositoryPdfLines, revealsBond } from '.
 import { resolveSignatureModes } from '../../core/pdf/signature-modes.js';
 import { rowStarted } from '../../core/validation/row-started.js';
 import { withSameAddresses } from '../../core/form/same-address.js';
+import { recipientAddressLines, recipientListed } from '../../core/filing/recipient-shape.js';
+import { noRecipientsLine } from '../../core/validation/service-recipients.js';
 
 export const DISB_CATS = [
   'Accounting',
@@ -1113,7 +1115,7 @@ export function buildAnnualAccountingModel(D, options = {}) {
   });
 
   // ── Part X: Certificate of Service ────────────────────────────────────────
-  const certRecipients = (d.certRecipients || []).filter(r => r && (r.name || r.line2 || r.line3 || r.line4));
+  const certRecipients = (d.certRecipients || []).filter(recipientListed);
   const certBlocks = [
     {
       type: 'notice',
@@ -1140,16 +1142,17 @@ export function buildAnnualAccountingModel(D, options = {}) {
         // string: the table cell forces one line each and wraps each to the
         // column. Joining them gave the renderer a single run with no known
         // break points, which overflowed into the right margin.
-        [r.line2, r.line3, r.line4].filter(Boolean),
+        recipientAddressLines(r),
       ]),
       colWidths: [6, 44, 50],
       colAlign: ['center', 'left', 'left'],
     });
   } else {
+    // Milestone 74F: one wording on all seven certificates.
     certBlocks.push({
       type: 'notice',
       tag: 'P',
-      text: 'No service recipients listed.',
+      text: noRecipientsLine(d.certNoRecipients),
     });
   }
 

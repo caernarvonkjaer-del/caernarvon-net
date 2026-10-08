@@ -17,6 +17,7 @@ import {
   SCHEDULE_C3_PAGES, SCHEDULE_C4_PAGES, SCHEDULE_C5_PAGES,
   partIIIGuardianCells, isPrintedCaption,
 } from '../guardian-inventory-pages.js';
+import { RECIPIENT_FIELDS, recipientListed, recipientSlots } from '../../filing/recipient-shape.js';
 
 const { text, date, amountRaw, share, yesNo } = codecs;
 const SI = 'SUMMARY I ';
@@ -71,7 +72,10 @@ const captionFallback = (key) => (i) => {
 };
 
 // PART VI: the four recipient blocks.
-const RECIPIENT_SLOTS = [['B', 13], ['H', 13], ['B', 19], ['H', 19]].map(([c, r]) => ({ name: `${c}${r}`, address: `${c}${r + 1}`, cityStateZip: `${c}${r + 2}` }));
+// Milestone 73O part 2: each box's five lines -- the name and four address lines
+// (B13:G17, H13:L17, B19:G23, H19:L23); a workbook from before 73O holds the
+// street address and city/state/ZIP on the first two, so it reads the same.
+const RECIPIENT_SLOTS = recipientSlots([['B', 13], ['H', 13], ['B', 19], ['H', 19]]);
 
 export const GUARDIAN_CONTRACT = Object.freeze({
   form: 'guardian',
@@ -136,9 +140,9 @@ export const GUARDIAN_CONTRACT = Object.freeze({
     // PART VI -- the certificate of service.
     {
       kind: 'slots', path: 'serviceRecipients', sheet: 'PART VI', slots: RECIPIENT_SLOTS,
-      fields: { name: { codec: text }, address: { codec: text }, cityStateZip: { codec: text } },
+      fields: Object.fromEntries(RECIPIENT_FIELDS.map((k) => [k, { codec: text }])),
       exportIf: (row) => row != null,
-      keep: (row) => !!(row.name || row.address || row.cityStateZip),
+      keep: (row) => recipientListed(row),
     },
     // "No recipients are required" has no box: kept, unless the workbook lists
     // recipients (afterRead). Milestone 73T part 2 (row 14).
@@ -300,11 +304,12 @@ export const GUARDIAN_CONTRACT = Object.freeze({
       'scheduleB1.*.accountType', 'scheduleB2.*.description', 'scheduleB3.*.description', 'scheduleB4.*.lenderName',
       'scheduleC1.*.payerName', 'scheduleC2.*.claimantName', 'scheduleC2.*.claimantAttorney', 'scheduleC2.*.lawsuitDescription',
       'scheduleC3.*.defendantName', 'scheduleC3.*.actionDescription', 'scheduleC5.*.assetDescription'],
-    address: ['attorney.streetAddress', 'preparer.streetAddress', 'guardians.*.streetAddress', 'serviceRecipients.*.address',
+    address: ['attorney.streetAddress', 'preparer.streetAddress', 'guardians.*.streetAddress',
+      'serviceRecipients.*.line2', 'serviceRecipients.*.line3', 'serviceRecipients.*.line4', 'serviceRecipients.*.line5',
       'scheduleA1.*.streetAddress', 'scheduleA2.*.lenderAddress', 'scheduleB1.*.streetAddress', 'scheduleB2.*.streetAddress',
       'scheduleB3.*.streetAddress', 'scheduleB4.*.lenderAddress', 'scheduleC1.*.payerAddress', 'scheduleC2.*.claimantAddress',
       'scheduleC4.*.trusteeAddress', 'scheduleC5.*.ownerAddress'],
-    zip: ['attorney.cityStateZip', 'preparer.cityStateZip', 'guardians.*.cityStateZip', 'serviceRecipients.*.cityStateZip',
+    zip: ['attorney.cityStateZip', 'preparer.cityStateZip', 'guardians.*.cityStateZip',
       'scheduleA1.*.cityStateZip', 'scheduleA2.*.lenderCityStateZip', 'scheduleB1.*.cityStateZip', 'scheduleB2.*.cityStateZip',
       'scheduleB3.*.cityStateZip', 'scheduleC1.*.payerCityStateZip', 'scheduleC2.*.claimantCityStateZip',
       'scheduleC4.*.trusteeCityStateZip', 'scheduleC5.*.ownerCityStateZip'],

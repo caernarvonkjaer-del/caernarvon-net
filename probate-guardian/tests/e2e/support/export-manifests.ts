@@ -297,8 +297,8 @@ export function inventoryManifest(): Manifest {
   // PART VI: four recipient blocks, then the certificate's own boxes.
   ([['B', 13], ['H', 13], ['B', 19], ['H', 19]] as const).forEach(([c, r], i) => {
     b.box(`serviceRecipients.${i}.name`, 'PART VI', `${c}${r}`, 'text');
-    b.box(`serviceRecipients.${i}.address`, 'PART VI', `${c}${r + 1}`, 'text');
-    b.box(`serviceRecipients.${i}.cityStateZip`, 'PART VI', `${c}${r + 2}`, 'text');
+    // Milestone 73O part 2: a name and four address lines -- each box's five rows.
+    for (const [n, k] of ['line2', 'line3', 'line4', 'line5'].entries()) b.box(`serviceRecipients.${i}.${k}`, 'PART VI', `${c}${r + 1 + n}`, 'text');
   });
   b.box('serviceDate', 'PART VI', 'G25', 'date');
   b.choice('serviceIndicateIf', 'PART VI', 'J25', INDICATE_IF);
@@ -530,6 +530,8 @@ export function annualManifest(filingTypeValue = 'Annual'): Manifest {
   ([['B', 11], ['I', 11], ['B', 17], ['I', 17]] as const).forEach(([c, r], i) => {
     b.box(`certRecipients.${i}.name`, 'PART X', `${c}${r}`, 'text'); b.box(`certRecipients.${i}.line2`, 'PART X', `${c}${r + 1}`, 'text');
     b.box(`certRecipients.${i}.line3`, 'PART X', `${c}${r + 2}`, 'text'); b.box(`certRecipients.${i}.line4`, 'PART X', `${c}${r + 3}`, 'text');
+    // Milestone 73O part 2: the box's fifth row.
+    b.box(`certRecipients.${i}.line5`, 'PART X', `${c}${r + 4}`, 'text');
   });
   b.box('certDate', 'PART X', 'G23', 'date');
   // Milestone 72G: "Indicate if:" is the ward's status (a dropdown on the
@@ -581,6 +583,8 @@ export function simplifiedManifest(): Manifest {
   ([['B', 27], ['I', 27], ['B', 33], ['I', 33]] as const).forEach(([c, r], i) => {
     b.box(`certRecipients.${i}.name`, P56, `${c}${r}`, 'text'); b.box(`certRecipients.${i}.line2`, P56, `${c}${r + 1}`, 'text');
     b.box(`certRecipients.${i}.line3`, P56, `${c}${r + 2}`, 'text');
+    // Milestone 73O part 2: the box's fourth and fifth rows (the third address line had no box on screen).
+    b.box(`certRecipients.${i}.line4`, P56, `${c}${r + 3}`, 'text'); b.box(`certRecipients.${i}.line5`, P56, `${c}${r + 4}`, 'text');
   });
   b.box('certAttySignDate', P56, 'H41', 'date');
   // Milestone 73T part 4 (row 10): Part V's own date box, H17, beneath its "Date" caption.

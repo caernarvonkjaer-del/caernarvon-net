@@ -98,7 +98,7 @@ describe('the PDF: the method on its own line, omitted when blank; the ward\'s s
 
 describe('the warning: someone listed, no "no recipients" answer, no method -- never an export issue', () => {
   test.each([
-    ['guardian', () => ({ ...emptyDataGuardian(), serviceRecipients: [{ name: 'Sam Lee', address: '', cityStateZip: '' }] }), 'D-5', 'serviceMethod'],
+    ['guardian', () => ({ ...emptyDataGuardian(), serviceRecipients: [{ name: 'Sam Lee', line2: '', line3: '' }] }), 'D-5', 'serviceMethod'],
     ['annual', () => ({ ...emptyDataAnnual(), certRecipients: [RECIPIENT] }), 'Part X', 'certIndicator'],
     ['simplified', () => ({ ...emptyDataSimplified(), certRecipients: [RECIPIENT] }), 'Part VI', 'certIndicator'],
   ])('%s', (engine, make, section, field) => {
@@ -215,7 +215,7 @@ describe('the lifecycle: a same-period conversion carries the recipients and the
 describe('the lifecycle: a later filing carries only the recipients', () => {
   test('Inventory -> Annual and -> Simplified', () => {
     const src = { ...emptyDataGuardian(), inventoryType: 'guardian', serviceDate: '2026-01-02', serviceMethod: 'mail', serviceNoRecipients: 'No', serviceIndicateIf: 'N/A',
-      serviceRecipients: [{ name: 'Sam Lee', address: '1 Main St', cityStateZip: 'Clearwater, FL 33755' }] };
+      serviceRecipients: [{ name: 'Sam Lee', line2: '1 Main St', line3: 'Clearwater, FL 33755' }] };
     const toAnnual = { ...emptyDataAnnual(), inventoryType: 'annual' };
     conv.convertGuardianExtrasToAnnual(src, toAnnual);
     expect(toAnnual.certRecipients[0].name).toBe('Sam Lee');
@@ -255,7 +255,7 @@ describe('the lifecycle: a new year keeps the recipients for review and blanks e
     const d = { ...emptyDataGuardian(), inventoryType: 'guardian', serviceDate: '2026-01-02', serviceMethod: 'mail', serviceNoRecipients: 'No', serviceIndicateIf: 'N/A',
       serviceAttorney: { ...emptyDataGuardian().serviceAttorney, signatureDate: '2026-01-02', signatureState: 'typed', signatureImage: 'x' },
       serviceGuardian: { signatureDate: '2026-01-02', signatureState: 'stamp', signatureImage: 'y' },
-      serviceRecipients: [{ name: 'Sam Lee', address: '1 Main St', cityStateZip: 'Clearwater' }] };
+      serviceRecipients: [{ name: 'Sam Lee', line2: '1 Main St', line3: 'Clearwater' }] };
     years.resetYearlyFieldsForNewYear(d, 'guardian');
     expect(d.serviceRecipients[0].name).toBe('Sam Lee');
     expect(d).toMatchObject({ serviceDate: null, serviceMethod: '', serviceNoRecipients: '', serviceIndicateIf: '' });

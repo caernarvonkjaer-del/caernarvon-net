@@ -3,6 +3,7 @@
 // Excel importer use (mk), and its page list. Moved from legacy-app.js; pure
 // data, loaded eagerly so a filing can be created, hydrated and routed before
 // the feature itself is ever imported.
+import { emptyRecipient } from '../recipient-shape.js';
 
 export function emptyDataGuardian(){
   return {
@@ -40,7 +41,8 @@ export function emptyDataGuardian(){
     // recipient is listed (D16), and reset to '' by every filing
     // conversion (D7) -- it is this filer's assertion about this filing.
     serviceNoRecipients:'',
-    serviceRecipients:[{name:'',address:'',cityStateZip:''},{name:'',address:'',cityStateZip:''}],
+    // Milestone 73O part 2: a name and four address lines, as on every certificate (recipient-shape.js).
+    serviceRecipients:[emptyRecipient(),emptyRecipient()],
     // Milestone 72H: the certificate's attorney is D-2's; serviceAttorney's
     // name and contact fields only hold details typed on D-5 before, until the
     // filer discards them. certAttorneyMigrated marks the once-only fill of
@@ -106,7 +108,7 @@ export const mk = {
   guardian:()=>({name:'',ssnEin:'',phone:'',email:'',streetAddress:'',cityStateZip:'',signatureDate:null,signatureState:'',signatureImage:'',isPreparer:false,certifiesService:false}),
   preparer:()=>({name:'',ssnEin:'',phone:'',streetAddress:'',cityStateZip:'',signatureDate:null,signatureState:'',signatureImage:''}),
   attorney:()=>({name:'',barNumber:'',phone:'',streetAddress:'',cityStateZip:'',signatureDate:null,filingDate:null,signatureState:'',signatureImage:''}),
-  recipient:()=>({name:'',address:'',cityStateZip:''}),
+  recipient:()=>emptyRecipient(),
   a1:()=>({propertyDescription:'',streetAddress:'',cityStateZip:'',notes:'',residence:'',income:'',fullAssetValue:0,wardPercent:''}),
   a2:()=>({lenderName:'',lenderAddress:'',lenderCityStateZip:'',accountNumber:'',notes:'',liabilityType:'',fullDebtBalance:0,wardPercent:''}),
   b1:()=>({institutionName:'',restricted:'',accountType:'',accountNumber:'',streetAddress:'',cityStateZip:'',fullAssetAmount:0,wardPercent:''}),

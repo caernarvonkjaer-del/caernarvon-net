@@ -31,6 +31,7 @@ export function renderPlanCertificateOfServicePage({ filing, route, cfg = {} }) 
         <div class="col-12">${renderFormField({ path: `certRecipients.${i}.line2`, label: 'Line 2', value: r?.line2 || '', id: `certRecipients_${i}_line2` })}</div>
         <div class="col-12">${renderFormField({ path: `certRecipients.${i}.line3`, label: 'Line 3', value: r?.line3 || '', id: `certRecipients_${i}_line3` })}</div>
         <div class="col-12">${renderFormField({ path: `certRecipients.${i}.line4`, label: 'Line 4', value: r?.line4 || '', id: `certRecipients_${i}_line4` })}</div>
+        <div class="col-12">${renderFormField({ path: `certRecipients.${i}.line5`, label: 'Line 5', value: r?.line5 || '', id: `certRecipients_${i}_line5` })}</div>
       </div></div>
     </div></div>`).join('');
   const lead = cfg.optional

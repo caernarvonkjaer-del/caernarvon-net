@@ -157,8 +157,9 @@ test.describe('PDF Accessibility: Table Semantics, ColSpan & Multi-Page Continua
         scheduleNoItems: { a1: false },
         serviceRecipients: [], // verifies fallback row for empty service recipients
         // Milestone 57B: an empty D-5 is only fileable once the filer says so.
-        // 'Yes' leaves the list empty, so the "None listed." fallback below is
-        // still the branch under test.
+        // 'Yes' leaves the list empty, so the no-recipients line below is
+        // still the branch under test (Milestone 74F: "No service recipients
+        // are required." for a Yes; it was "None listed.").
         serviceNoRecipients: 'Yes',
       });
 
@@ -202,8 +203,8 @@ test.describe('PDF Accessibility: Table Semantics, ColSpan & Multi-Page Continua
     // list on purpose: validateGuardian() requires a recipient's details only
     // once a recipient row exists, and since Milestone 57B an empty D-5 is a
     // fileable state as soon as the filer attests to it, which the fixture
-    // above does. The "None listed." fallback asserted below is a real
-    // document, not a test-only one.
+    // above does. The no-recipients line asserted below is a real document,
+    // not a test-only one.
     expectFileableFixture(inspection.fixtureIssues, 'the Initial Inventory table-semantics fixture');
 
     const {
@@ -255,6 +256,6 @@ test.describe('PDF Accessibility: Table Semantics, ColSpan & Multi-Page Continua
 
     // Verify neutral notice when service recipients list is empty (no empty-table shell or procedural claims)
     const extractedText19B = await extractPdfText(rawPdfString);
-    expect(extractedText19B).toContain('None listed.');
+    expect(extractedText19B).toContain('No service recipients are required.');
   });
 });

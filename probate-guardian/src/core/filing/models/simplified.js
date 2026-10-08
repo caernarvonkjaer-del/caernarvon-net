@@ -3,6 +3,7 @@
 // the lazily imported feature loads -- still the reason it is its own small
 // module). Blank-data factories never default `county` (Milestone 40C-A): see
 // src/core/filing/filing-registry.js's initializeEmptyData().
+import { emptyRecipient } from '../recipient-shape.js';
 
 // Blank-ward data factory for the Simplified Accounting feature (Milestone 2,
 // Phase D). Pure data -- no DOM, no calls to any other function -- kept out
@@ -58,12 +59,8 @@ export function emptyDataSimplified() {
     // recipient is listed (D16), and reset to '' by every filing
     // conversion (D7) -- it is this filer's assertion about this filing.
     certNoRecipients:'',
-    certRecipients:[
-      {name:'',line2:'',line3:''},
-      {name:'',line2:'',line3:''},
-      {name:'',line2:'',line3:''},
-      {name:'',line2:'',line3:''}
-    ],
+    // Milestone 73O part 2: a name and four address lines (recipient-shape.js).
+    certRecipients:[emptyRecipient(),emptyRecipient(),emptyRecipient(),emptyRecipient()],
     // Milestone 72G: certIndicator is the method of service (PDF only);
     // certWardStatus is the workbook's "Indicate if:" (J39), required.
     // certIndicatorMigrated marks the once-only move (certificate-migrations.js).

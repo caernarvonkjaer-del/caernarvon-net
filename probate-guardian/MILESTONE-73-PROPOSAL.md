@@ -6,10 +6,10 @@
 far: 73U (2026-10-04, `5b8849b`), 73V (2026-10-05, `8b96aa3`), 73C
 (2026-10-05, `861b6a9`, brought forward from its place in the build order at the
 requester's choice) 73D (2026-10-05, `c8e84fe`, likewise), 73J part 1 (2026-10-05, `d819c4a`),
-73F part 1 (2026-10-06, `5e9e17b`), 73A (2026-10-06, `83352d0`), 73F part 2 (2026-10-06, `d01edd4`), 73G part 1 (2026-10-06, `69a1b46`), 73E part 1 (2026-10-06, `8e02051`), 73F part 3 (2026-10-06, `67fc66c`), 73I (2026-10-06, `56a7c30`), 73T part 1 (2026-10-07, `4cae1e7`), 73T part 2 (2026-10-07, `2a1cbc5`), 73T part 3 (2026-10-07, `9d2bc72`), 73T part 4 (2026-10-07, `b70a944`), 73M with 74C (2026-10-07, `a0e987b`) and 73B (2026-10-07, `86547da`), each approved by name; 74P, built after 73B, is recorded in Milestone 74.**
+73F part 1 (2026-10-06, `5e9e17b`), 73A (2026-10-06, `83352d0`), 73F part 2 (2026-10-06, `d01edd4`), 73G part 1 (2026-10-06, `69a1b46`), 73E part 1 (2026-10-06, `8e02051`), 73F part 3 (2026-10-06, `67fc66c`), 73I (2026-10-06, `56a7c30`), 73T part 1 (2026-10-07, `4cae1e7`), 73T part 2 (2026-10-07, `2a1cbc5`), 73T part 3 (2026-10-07, `9d2bc72`), 73T part 4 (2026-10-07, `b70a944`), 73M with 74C (2026-10-07, `a0e987b`), 73B (2026-10-07, `86547da`) and 73O part 2 with 74F (2026-10-08), each approved by name; 74P, built after 73B, is recorded in Milestone 74.**
 **Approved and not yet built** (2026-10-07, one batch, built in this order
-with a full regression midway and at the end): 73O part 2
-(with 74F), 73G part 2 (with 74H), 73H and 73S. Nothing else is approved. Building any other item, or any part of a
+with a full regression midway and at the end): 73G part 2 (with 74H), 73H
+and 73S. Nothing else is approved. Building any other item, or any part of a
 split item, needs the requester's named approval of that item or part
 (AGENTS.md §3).
 
@@ -2781,6 +2781,61 @@ console holds no ward name after Create; new
 `ms70-completion-golden.json`, `ms70-70C-filing-shapes.json`. Red-first.
 Security: the console line is the one privacy change.
 
+### Build record, part 2 — BUILT 2026-10-08 with 74F (approved by name by the requester, 2026-10-07)
+
+**What changed for a filer, on all seven certificates of service:**
+
+- **A recipient is a name and four address lines** (73O-3, 73O-N2), as each
+  of the Clerk's workbooks gives a recipient a five-line box (read with a
+  parser: Inventory `PART VI` B13:G17 and three more boxes, Annual `PART X`
+  B11:H15, Simplified `PARTS V, VI ` B27:H31 -- every cell open, none a
+  formula). The pages show "Name" then "Line 2" to "Line 5"; the PDF prints
+  every line; the workbooks fill all five rows and read them back. The
+  Inventory's Street Address and City / State / Zip became its first two
+  lines -- a filing saved before is moved when it is opened, losing nothing,
+  and an older Inventory workbook reads the same, its two lines being the
+  box's second and third rows. **The Simplified's third address line**, which
+  was stored, printed and counted but had no box, has one, and reaches the
+  workbook with the fourth.
+- **What a listed recipient needs** (decision 73O-N3, below): a name, on every
+  form. The Inventory also required the street address and city/state/ZIP.
+- **Conversion** copies a recipient whole between forms; the Annual's fourth
+  line is no longer folded onto the Simplified's third, nor the Simplified's
+  dropped going to the Annual.
+- The Inventory's certificate no longer prints a row for a blank card, so
+  with nobody listed it says so (74F).
+- The Inventory's grey "U.S. Mail" placeholder in "How were the copies
+  served?", which read as an answer, is gone; the Simplified stars a
+  recipient's name only where a name is owed -- Recipient 1, and a card the
+  filer has started -- not on every blank card.
+
+**Not changed:** more than four recipients on an accounting still stops Save
+as Excel (73T).
+
+**Tests:**
+
+- New `tests/unit/certificate-recipients.spec.js` (9, with 74F's): the shape
+  on every certificate's new and "+ Add" cards, the open-time move, the
+  name-only rule and a card started by its last line, every line on all nine
+  filing types' PDFs, the blank Inventory row, conversion, and 74F's question
+  and lines. **Red-first:** with the source set aside, all 9 fail.
+- The export guard's manifest names each box's five rows on all three
+  workbooks (`workbook-contract.spec.js` and the browser placement spec hold
+  the exporters to it). Fixtures and tests that built Inventory recipients
+  with the old keys use the new ones.
+- Goldens regenerated and read for what changed, reason in each note: the
+  blank-filing shapes (the one recipient shape), the validator record (the
+  Inventory's address/city variants replaced by the new lines'; two "only
+  name" variants no longer report an address -- 73O-N3), the sidebar record
+  (a named Inventory recipient completes D-5), conversion and New Year (keys
+  only, no value changed).
+- **Browser specs: 39 files, 426 tests, all passed** (34.3 min on a copy on
+  C:) -- every spec that touches a certificate, its recipients or the
+  supporting-documents reminder, the export guard, the import, asterisks,
+  labels, readiness, conversion and New Year. The reminder's red-first ran
+  there too ("Schedule A1" with the old code). Full unit suite: 2,912
+  passed; `check:types` clean; `verify:data-model` OK.
+
 ---
 
 ## 73P — Small fixes (D14, D22–D27, D32, the Help panel)
@@ -4335,6 +4390,13 @@ Raised by the review:
   - **73O-N2. The fourth address line on the Plans' certificates.** (1)
     *Recommended:* yes, one shape and rule for every certificate. (2) The
     accountings only.
+
+Raised while building part 2 (settled 2026-10-08):
+
+- **73O-N3. What a listed recipient needs, once every certificate has one
+  shape.** (1) *Recommended:* keep the Inventory's rule -- name, street
+  address and city/state/ZIP. (2) *Chosen:* a name, on every form, as the
+  other six already required.
 
 #### 73P
 

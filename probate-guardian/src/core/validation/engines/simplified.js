@@ -15,8 +15,10 @@ import { getSimplifiedGuardianAddressConflicts } from '../../filing/models/simpl
 import { rowStarted } from '../row-started.js';
 import { isAttorneyStarted } from '../attorney-block.js';
 import { issueFactory } from '../validation-issue.js';
+import { RECIPIENT_FIELDS } from '../../filing/recipient-shape.js';
 
-export const RECIPIENT_STARTED_FIELDS = ['name', 'line2', 'line3', 'line4'];
+// Milestone 73O part 2: every field of the one recipient shape.
+export const RECIPIENT_STARTED_FIELDS = RECIPIENT_FIELDS;
 
 export function collectSimplifiedIssues(d){
   const errs=[];

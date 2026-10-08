@@ -18,7 +18,7 @@ import { renderFormField, renderRadioGroupField } from '../../core/form/form-fie
 import { renderSignatureStateControl, mountSignatureStateControls, signatureDateRequired } from '../../core/signature/signature-state-control.js';
 import { preparerNoteHTML } from '../../core/signature/preparer-note.js';
 import { hasIdentifiedPreparer, preparerFlagCheckboxHTML, preparerWaivedNoticeHTML } from '../../core/form/preparer-flag.js';
-import { serviceRecipientIssues, RECIPIENTS_OR_ATTESTATION } from '../../core/validation/service-recipients.js';
+import { serviceRecipientIssues, RECIPIENTS_OR_ATTESTATION, NO_RECIPIENTS_QUESTION } from '../../core/validation/service-recipients.js';
 import { renderServiceAttestationRow } from '../../core/form/service-attestation-visibility.js';
 import { esc } from '../../core/filing/escape-html.js';
 import { ic } from '../../core/ui/icons.js';
@@ -67,7 +67,8 @@ import { commitModelChange } from '../../core/model-change.js';
 import { collectGuardianIssues, INVENTORY_SHARE_FIELDS, RECIPIENT_STARTED_FIELDS, sdbIsYes, sdbIsNo, sdbAnswered } from '../../core/validation/engines/guardian.js';
 // Milestone 57B: carried verbatim from MILESTONE-57-PROPOSAL.md section 57B.
 // The wording is load bearing (section 8 #8). Do not paraphrase or re-voice it.
-const ATTESTATION_57B = 'No recipients are required for this certificate (filer attestation - app does not determine legal necessity)';
+// Milestone 74F: the certificate's question is the one constant (service-recipients.js).
+const ATTESTATION_57B = NO_RECIPIENTS_QUESTION;
 // Milestone 63B: what makes a D-5 recipient card "started". One list for the
 // validator and for the page, which shows the attestation only while Recipient 1
 // is not started, so the two read the same data the same way.
@@ -1322,7 +1323,7 @@ function pageD5(){
     // Milestone 72G: the ward's status is the workbook's "Indicate if:"; how
     // the copies were served is its own box, printed on the PDF only.
     const serviceRow=formRow(col(4,reqLabel('Service Date (on this date)')+dateInput('serviceDate','Service Date (on this date)')),col(8,reqLabel('Indicate if Ward is:')+selectInput('serviceIndicateIf',[['','— Select —'],...WARD_STATUS_VALUES.map(v=>[v,v])],D.serviceIndicateIf)))
-      +formRow(col(12,optLabel(SERVICE_METHOD_LABEL)+textInput('serviceMethod','U.S. Mail')));
+      +formRow(col(12,optLabel(SERVICE_METHOD_LABEL)+textInput('serviceMethod','')));
     // Milestone 72H: the certificate's attorney is D-2's, as the Clerk's
     // workbook links it -- its name, Florida Bar number, phone and address
     // are no longer asked again here. The certificate keeps its own signature
@@ -1364,8 +1365,7 @@ function pageD5(){
       <div class="entry-card-header"><span>Recipient ${i+1}</span>${removeBtn}</div>
       <div class="entry-card-body">
         ${formRow(col(12,reqLabel('Name')+textInput(`serviceRecipients.${i}.name`,'','name')))}
-        ${formRow(col(12,reqLabel('Street Address')+textInput(`serviceRecipients.${i}.address`,'','address')))}
-        ${formRow(col(12,reqLabel('City / State / Zip')+textInput(`serviceRecipients.${i}.cityStateZip`,'','zip')))}
+        ${['line2','line3','line4','line5'].map((k,n)=>formRow(col(12,optLabel(`Line ${n+2}`)+textInput(`serviceRecipients.${i}.${k}`,'','address')))).join('')}
       </div>
     </div></div>`;
   }).join('');

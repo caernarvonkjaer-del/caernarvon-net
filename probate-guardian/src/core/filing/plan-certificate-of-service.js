@@ -18,14 +18,16 @@
 // is signed by "the attorney or party". NOTHING here gates export on any
 // Plan; the Simplified Plan's certificate is offered as not required (the
 // Clerk's own Simplified Plan checklist says so).
-import { serviceRecipientIssues } from '../validation/service-recipients.js';
+import { NO_RECIPIENTS_QUESTION, noRecipientsLine, serviceRecipientIssues } from '../validation/service-recipients.js';
 import { inferLegacySignatureState, signaturePolicyOf, SIGNATURE_POLICIES } from '../validation/signature-state.js';
 import { methodOfServiceLine, methodMissingMessage } from './service-method.js';
+import { RECIPIENT_FIELDS, emptyRecipient, recipientAddressLines, recipientListed } from './recipient-shape.js';
 
-// The same words the three accounting-family pages declare for themselves
-// (tests/unit/user-guide-drift-guard.spec.js lists every surface).
-export const ATTESTATION_57B = 'No recipients are required for this certificate (filer attestation - app does not determine legal necessity)';
-export const CERT_RECIPIENT_STARTED_FIELDS = ['name', 'line2', 'line3', 'line4'];
+// Milestone 74F: the certificate's question is the one constant on all seven
+// certificates (service-recipients.js); this name is kept for its importers.
+export const ATTESTATION_57B = NO_RECIPIENTS_QUESTION;
+// Milestone 73O part 2: every field of the one recipient shape (recipient-shape.js).
+export const CERT_RECIPIENT_STARTED_FIELDS = RECIPIENT_FIELDS;
 export const CERT_SIGNER_OPTIONS = [
   { value: 'guardian', label: 'Guardian' },
   { value: 'attorney', label: 'Attorney' },
@@ -33,7 +35,7 @@ export const CERT_SIGNER_OPTIONS = [
 
 const text = (v) => String(v ?? '').trim();
 
-export const emptyCertRecipient = () => ({ name: '', line2: '', line3: '', line4: '' });
+export const emptyCertRecipient = emptyRecipient;
 
 /** The certificate's fields, as every Plan's empty-data factory carries them. */
 export function emptyCertificateOfService() {
@@ -179,7 +181,7 @@ export function planCertificateAdvisories(filing, { section = 'Certificate of Se
  */
 export function planCertificateOfServiceSection(filing, cfg = {}, fmtDate = (v) => v || '') {
   const d = filing || {};
-  const recipients = (d.certRecipients || []).filter((r) => r && (r.name || r.line2 || r.line3 || r.line4));
+  const recipients = (d.certRecipients || []).filter(recipientListed);
   const signer = resolveCertSigner(d, cfg);
   // Heterogeneous PDF blocks (notice, table, signature-block): typed as such
   // so tsc, which reaches this file through state.js, does not infer the
@@ -192,11 +194,13 @@ export function planCertificateOfServiceSection(filing, cfg = {}, fmtDate = (v) 
     blocks.push({
       type: 'table', tag: 'Table', title: 'Certificate of Service Recipients',
       headers: ['#', 'Recipient Name', 'Address Details'],
-      rows: recipients.map((r, i) => [String(i + 1), r.name || '', [r.line2, r.line3, r.line4].filter(Boolean)]),
+      rows: recipients.map((r, i) => [String(i + 1), r.name || '', recipientAddressLines(r)]),
       colWidths: [6, 44, 50], colAlign: ['center', 'left', 'left'],
     });
   } else {
-    blocks.push({ type: 'notice', tag: 'P', text: d.certNoRecipients === 'Yes' ? ATTESTATION_57B : 'No service recipients listed.' });
+    // Milestone 74F: the one line, never the question (it printed the
+    // question and its disclaimer when the filer answered Yes).
+    blocks.push({ type: 'notice', tag: 'P', text: noRecipientsLine(d.certNoRecipients) });
   }
   // Milestone 72G: the method on its own line, omitted when none is entered.
   blocks.push({ type: 'notice', tag: 'P', text: `on this date: ${fmtDate(d.certDate) || 'the date indicated below'}` });

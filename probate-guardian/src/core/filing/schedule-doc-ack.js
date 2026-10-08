@@ -185,7 +185,9 @@ export async function promptScheduleAckIfNeeded(data, inventoryType, route, conf
   const key = scheduleKeyForRoute(inventoryType, route);
   const visit = getPageVisit();
   if (declinedOnVisit.get(declineKey(data, key)) === visit) return false;
-  const label = String(key).replace(/^sch/i, '').toUpperCase();
+  // Milestone 74F: as the form names it -- a letter and a digit take a
+  // hyphen ("A1" is A-1, the Annual's "B1" B-1); a letter alone stays ("A").
+  const label = String(key).replace(/^sch/i, '').toUpperCase().replace(/^([A-Z])(\d)$/, '$1-$2');
   promptInFlight = true;
   let confirmed = false;
   try {

@@ -10,6 +10,7 @@ import { remunerationEntered, remunerationLine, splitRemuneration } from './remu
 import { compareImportedCertificate, readIndicateIfBox } from '../../filing/certificate-migrations.js';
 import { rowStarted } from '../../validation/row-started.js';
 import { sameName } from '../import-keep.js';
+import { RECIPIENT_FIELDS, emptyRecipient, recipientSlots } from '../../filing/recipient-shape.js';
 
 // Dates: Milestone 73T part 4 -- read as the Inventory reads them (the
 // requester's choice, 2026-10-07); they used to be the cell's text cut to ten
@@ -35,7 +36,10 @@ const guardianSlots = [15, 25, 35].map((r) => Object.fromEntries(Object.entries(
 
 // PART VI: four recipient blocks of three lines. The right-hand boxes are the
 // merges I27:L27, I28:L28 ...; I is each box's own cell (Milestone 72A).
-const RECIPIENT_SLOTS = [['B', 27], ['I', 27], ['B', 33], ['I', 33]].map(([c, r]) => ({ name: `${c}${r}`, line2: `${c}${r + 1}`, line3: `${c}${r + 2}` }));
+// Milestone 73O part 2: each box's five lines (B27:H31, I27:L31, B33:H37,
+// I33:L37); the third address line, which had no box on screen, now has one and
+// reaches the workbook, as does the fourth.
+const RECIPIENT_SLOTS = recipientSlots([['B', 27], ['I', 27], ['B', 33], ['I', 33]]);
 
 // PART VII: one free-text line per remuneration entry (remuneration-line.js).
 
@@ -119,7 +123,7 @@ export const SIMPLIFIED_CONTRACT = Object.freeze({
     // "no recipients are required" is answered Yes, as the PDF prints none.
     {
       kind: 'slots', path: 'certRecipients', sheet: P56, slots: RECIPIENT_SLOTS,
-      fields: { name: { codec: text }, line2: { codec: text }, line3: { codec: text } },
+      fields: Object.fromEntries(RECIPIENT_FIELDS.map((k) => [k, { codec: text }])),
       exportFilter: (r) => rowStarted(r),
       exportIf: (row, i, f) => f.certNoRecipients !== 'Yes',
       keep: (row) => rowStarted(row),
@@ -172,7 +176,7 @@ export const SIMPLIFIED_CONTRACT = Object.freeze({
   // tests/unit/workbook-contract.spec.js checks the table against the pages.
   casing: Object.freeze({
     name: ['wardName', 'guardian', 'attorney', 'guardians.*.name', 'certRecipients.*.name', 'remuneration.*.guardian', 'remuneration.*.type'],
-    address: ['attorney_street', 'guardians.*.mailingStreet', 'guardians.*.residenceStreet', 'certRecipients.*.line2', 'certRecipients.*.line3'],
+    address: ['attorney_street', 'guardians.*.mailingStreet', 'guardians.*.residenceStreet', 'certRecipients.*.line2', 'certRecipients.*.line3', 'certRecipients.*.line4', 'certRecipients.*.line5'],
     zip: ['attorney_cityStateZip', 'guardians.*.mailingCityStateZip', 'guardians.*.residenceCityStateZip'],
   }),
 
@@ -207,6 +211,6 @@ export const SIMPLIFIED_CONTRACT = Object.freeze({
         if (cmp.old[k]) draft[c] = cmp.old[k]; else delete draft[c];
       }
     }
-    if (draft.certRecipients && !draft.certRecipients.length) draft.certRecipients = [{ name: '', line2: '', line3: '' }];
+    if (draft.certRecipients && !draft.certRecipients.length) draft.certRecipients = [emptyRecipient()];
   },
 });

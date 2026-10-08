@@ -22,6 +22,7 @@ import { INITIAL_ADLS } from '../filing/models/plan-initial.js';
 import { rowStarted } from '../validation/row-started.js';
 import { isPlanInitialAttorneyStarted, isAttorneyStarted } from '../validation/attorney-block.js';
 import { certificateStarted as planCertificateStarted } from '../filing/plan-certificate-of-service.js';
+import { recipientListed } from '../filing/recipient-shape.js';
 
 const filledText = (v) => v !== '' && v !== null && v !== undefined;
 const filledPlan = (v) => v !== '' && v !== null && v !== undefined && v !== false;
@@ -108,7 +109,7 @@ export function planAnnualStarted(D) {
     'pa-p10': anyOf(D.q11NoRemuneration, D.q11ReceivedName, D.q11Amount, D.q11From),
     // Milestone 72C: an attorney started on its own also marks the page begun.
     'pa-p11': hasAny(g0.name, g0.signatureDate, g0.phone, g0.email, g0.ssn) || isAttorneyStarted(D, 'planAnnual'),
-    'pa-p12': (D.certRecipients || []).some((r) => r && hasAny(r.name, r.line2, r.line3, r.line4)) || filledPlan(D.certNoRecipients) || filledPlan(D.certDate),
+    'pa-p12': (D.certRecipients || []).some(recipientListed) || filledPlan(D.certNoRecipients) || filledPlan(D.certDate),
   };
 }
 
@@ -130,7 +131,7 @@ export function planInitialStarted(D) {
     'pi-p9': hasAny(g0.name, g0.signatureDate, g0.phone, g0.ssn),
     // Milestone 58C: the shared attorney-started predicate, not a third list.
     'pi-p10': isPlanInitialAttorneyStarted(D),
-    'pi-p11': (D.certRecipients || []).some((r) => r && hasAny(r.name, r.line2, r.line3, r.line4)) || filledPlan(D.certNoRecipients) || filledPlan(D.certDate),
+    'pi-p11': (D.certRecipients || []).some(recipientListed) || filledPlan(D.certNoRecipients) || filledPlan(D.certDate),
   };
 }
 
@@ -147,7 +148,7 @@ export function planMinorStarted(D) {
     'pm-p6': hasAny(g0.name, g0.signatureDate, g0.phone, g0.tin),
     // Milestone 72C: any attorney field begins the page, as it begins the attorney.
     'pm-p7': hasAny(D.preparer_name) || isAttorneyStarted(D, 'planMinor'),
-    'pm-p8': (D.certRecipients || []).some((r) => r && hasAny(r.name, r.line2, r.line3, r.line4)) || filledPlan(D.certNoRecipients) || filledPlan(D.certDate),
+    'pm-p8': (D.certRecipients || []).some(recipientListed) || filledPlan(D.certNoRecipients) || filledPlan(D.certDate),
   };
 }
 

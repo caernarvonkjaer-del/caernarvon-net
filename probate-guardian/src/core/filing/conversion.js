@@ -16,6 +16,16 @@ import { withOldCertificateFilled, wardStatusAsMigrated } from './certificate-mi
 import { getCaseFile } from '../state.js';
 import { alertModal } from '../ui/dialogs.js';
 import { recordModelChange } from '../model-change.js';
+import { RECIPIENT_FIELDS, normalizeRecipientShape } from './recipient-shape.js';
+
+// Milestone 73O part 2: a recipient copied into another filing, in the one
+// shape; a source saved before 73O is read in it first (an Inventory's street
+// and city/state/ZIP as its first two lines).
+function copyRecipient(r){
+  const row={...(r||{})};
+  normalizeRecipientShape({serviceRecipients:[row]});
+  return Object.fromEntries(RECIPIENT_FIELDS.map((k)=>[k,row[k]||'']));
+}
 
 // One human-readable description per source→target pair, shown before
 // converting and reused in the confirmation alert afterward — so the
@@ -193,13 +203,9 @@ export function convertGuardianExtrasToAnnual(src,dest){
   // silently defaulted to Pinellas. It carries over only an existing
   // attorney_county, and otherwise stays blank for the filer to supply.
   dest.attorney_county=dest.attorney_county||src.attorney_county||'';
-  // Initial Inventory recipients are name / address / cityStateZip; the
-  // Annual form gives each recipient four lines, so they map straight over
-  // with the fourth left free.
-  (src.serviceRecipients||[]).slice(0,4).forEach((r,i)=>{
-    if(!dest.certRecipients[i])dest.certRecipients[i]={name:'',line2:'',line3:'',line4:''};
-    dest.certRecipients[i]={name:r.name||'',line2:r.address||'',line3:r.cityStateZip||'',line4:''};
-  });
+  // Milestone 73O part 2: every certificate's recipient is one shape -- a name
+  // and four address lines -- so each copies over whole.
+  (src.serviceRecipients||[]).slice(0,4).forEach((r,i)=>{dest.certRecipients[i]=copyRecipient(r);});
 }
 
 // Everything that has a genuine counterpart on the Simplified Accounting.
@@ -238,9 +244,7 @@ export function convertToSimplified(src,srcType,dest){
     // Part V's, so a converted filing starts with nothing to note.
     // Milestone 72G: a later filing -- only the recipients carry; the
     // service date, method and ward's status start blank.
-    (src.serviceRecipients||[]).slice(0,4).forEach((r,i)=>{
-      dest.certRecipients[i]={name:r.name||'',line2:r.address||'',line3:r.cityStateZip||''};
-    });
+    (src.serviceRecipients||[]).slice(0,4).forEach((r,i)=>{dest.certRecipients[i]=copyRecipient(r);});
     return;
   }
 
@@ -264,14 +268,9 @@ export function convertToSimplified(src,srcType,dest){
   dest.certWardStatus=wardStatusAsMigrated(src);
   // Milestone 72H: no certAtty... details (Part V's attorney is the
   // certificate's).
-  // The Annual gives each recipient a 4th line the Simplified form lacks —
-  // fold it onto line 3 rather than silently dropping an address line.
-  (src.certRecipients||[]).slice(0,4).forEach((r,i)=>{
-    dest.certRecipients[i]={
-      name:r.name||'', line2:r.line2||'',
-      line3:[r.line3,r.line4].filter(Boolean).join(', ')
-    };
-  });
+  // Milestone 73O part 2: the Simplified now has the Annual's lines (it folded
+  // the Annual's fourth line onto its third), so each recipient copies whole.
+  (src.certRecipients||[]).slice(0,4).forEach((r,i)=>{dest.certRecipients[i]=copyRecipient(r);});
   const rem=(src.remuneration||[]).filter(r=>r.guardian||r.type||r.description||r.amount);
   if(rem.length){
     dest.remuneration=rem.map(r=>({guardian:r.guardian||'',type:r.type||'',
@@ -321,9 +320,7 @@ export function convertSimplifiedToAnnual(src,dest){
   // the method, every certificate signature and the attorney's own Part V
   // signature date blank: the new filing is signed and served on its own date.
   dest.certWardStatus=wardStatusAsMigrated(src);
-  (src.certRecipients||[]).slice(0,4).forEach((r,i)=>{
-    dest.certRecipients[i]={name:r.name||'',line2:r.line2||'',line3:r.line3||'',line4:''};
-  });
+  (src.certRecipients||[]).slice(0,4).forEach((r,i)=>{dest.certRecipients[i]=copyRecipient(r);});
   const rem=(src.remuneration||[]).filter(r=>r.guardian||r.type||r.description||r.amount);
   if(rem.length){
     dest.remuneration=rem.map(r=>({guardian:r.guardian||'',type:r.type||'',

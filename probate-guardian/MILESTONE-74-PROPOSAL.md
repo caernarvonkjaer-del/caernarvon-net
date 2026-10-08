@@ -4,9 +4,10 @@
 
 **Draft.** Every decision for 74A and 74B is settled (2026-10-05). **Built so
 far: 74A (2026-10-05), 74B (2026-10-06), 74Q (2026-10-07), 74C (2026-10-07,
-with 73M, `a0e987b`) and 74P (2026-10-07, after 73B), each approved by name.**
-**Approved and not yet built** (2026-10-07, with Milestone 73's batch: 73O
-part 2, 73G part 2, 73H and 73S): 74F with 73O part 2 and 74H with 73G part 2. Nothing else is
+with 73M, `a0e987b`), 74P (2026-10-07, after 73B, `645fe35`) and 74F (2026-10-08,
+with 73O part 2), each approved by name.** **Approved and not yet built**
+(2026-10-07, with Milestone 73's batch: 73G part 2, 73H and 73S): 74H with 73G
+part 2. Nothing else is
 approved: building any other of 74D–74S needs the requester's named approval
 of that item (AGENTS.md §3). **Every decision in 74C–74S is settled
 (2026-10-06)**, each recorded under its item and gathered in
@@ -1048,6 +1049,35 @@ Simplified `index.js` and `pdf-model.js`; `src/core/filing/schedule-doc-ack.js`.
 - **73N part 2** restores court wording in the same PDF models; sequence.
 - **73L** changes `schedule-doc-ack.js` (the reminder's timing); the label
   fix is one line in the same file — build them together.
+
+### Build record — BUILT 2026-10-08 with 73O part 2 (approved by name by the requester, 2026-10-07)
+
+**What changed for a filer, on all seven certificates:**
+
+- **The question** reads "Are you certifying that no one needs to be served
+  with a copy of this filing?", with "The app does not decide who must be
+  served." beneath it (decision 1). Answers already given keep their meaning
+  (Yes = no one needs to be served). It is one constant
+  (`service-recipients.js`); the four copies are gone.
+- **The filed certificate**, with nobody listed, says "No service recipients
+  are listed."; when the filer answered Yes, "No service recipients are
+  required." (decision 2, Pinellas Clerk practice). It said "None listed."
+  (Inventory, Simplified) or "No service recipients listed." (Annual family,
+  Plans), and **a Plan printed the question and its disclaimer** onto the
+  court's page. The workbooks have no such line and are unchanged.
+- **The supporting-documents reminder** names the schedule as the form does:
+  "Schedule A-1", "Schedule B-1" (it said "A1", "B1"); the Annual's single
+  letters are unchanged.
+
+**Tests:** the question, the hint and the lines are in
+`tests/unit/certificate-recipients.spec.js` (73O part 2's record) -- one spec
+for both items, in place of the separate `certificate-no-recipients-line.spec.js`
+the design named, since every case runs over the same seven certificates;
+`plan-certificate-of-service.spec.js` holds the Plans' two lines;
+`user-guide-drift-guard.spec.js` ties the guide's quotation to the constant;
+`schedule-doc-ack.spec.ts` reads "Schedule A-1" (red-first: "Schedule A1");
+`pdf-table-semantics.spec.ts` reads the new line. **Red-first:** with the
+source set aside the certificate cases fail -- a Plan printed the disclaimer.
 
 ---
 

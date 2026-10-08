@@ -365,8 +365,8 @@ test('attestation cards use two columns on desktop and stack on narrow screens',
       { name: 'Witness Two', address: '2 Main Street', occupation: 'Agent' },
     ];
     data.serviceRecipients = [
-      { name: 'Recipient One', address: '1 Main Street', cityStateZip: 'Tampa, FL' },
-      { name: 'Recipient Two', address: '2 Main Street', cityStateZip: 'Tampa, FL' },
+      { name: 'Recipient One', line2: '1 Main Street', line3: 'Tampa, FL' },
+      { name: 'Recipient Two', line2: '2 Main Street', line3: 'Tampa, FL' },
     ];
     (window as any).GuardianForms.testing.replaceFiling(data); // setup (D9)
   });
@@ -415,7 +415,7 @@ test('attestation cards use two columns on desktop and stack on narrow screens',
   await expect(recipientGrid).toBeVisible();
   const recipientColumns = await recipientGrid.locator(':scope > .col-lg-6 > .entry-card').evaluateAll(elements => new Set(elements.map(element => (element as HTMLElement).getBoundingClientRect().x)).size);
   expect(recipientColumns).toBe(2);
-  await expect(recipientGrid.locator('input[data-bind="serviceRecipients.0.address"]')).toBeVisible();
+  await expect(recipientGrid.locator('input[data-bind="serviceRecipients.0.line2"]')).toBeVisible();
   const certification = page.locator('.attorney-certification-card');
   const certificationWidth = await certification.evaluate(element => (element as HTMLElement).getBoundingClientRect().width);
   expect(certificationWidth).toBeLessThan(700);

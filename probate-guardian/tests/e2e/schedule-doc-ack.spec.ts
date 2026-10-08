@@ -70,6 +70,8 @@ test.describe('Milestone 57C-R: supplemental-documentation acknowledgement', () 
     const message = await acceptDynDialog(page);
     expect(message).toMatch(/supporting documentation/i);
     expect(message).toMatch(/does not collect/i);
+    // Milestone 74F: the schedule is named as the form names it (it said "Schedule A1").
+    expect(message).toContain('You have entered items on Schedule A-1.');
 
     // Acknowledged: silent from here, including on re-entry.
     await goto(page, '/summary');

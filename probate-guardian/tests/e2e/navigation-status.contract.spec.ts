@@ -478,7 +478,7 @@ test.describe('Guardian Inventory navigation/status contract', () => {
       // of demanding Recipient 1's fields — so a blank row no longer produces
       // a "D-5 Recipient 1 — Name" issue for this test to resolve. Starting
       // the row is what makes it owed, which is the shape being tested here.
-      (window as any).GuardianForms.testing.patchFiling({ 'serviceRecipients': [{ name: '', address: '100 2nd Ave S', cityStateZip: '' }] });
+      (window as any).GuardianForms.testing.patchFiling({ 'serviceRecipients': [{ name: '', line2: '100 2nd Ave S', line3: '' }] });
       // Milestone 71B: attorney fields raise issues only once an attorney is
       // started, so start one -- the paths under test are the attorney issues'.
       (window as any).GuardianForms.testing.patchFiling({ 'attorneyForGuardian': 'Sample Attorney' });
@@ -1437,8 +1437,8 @@ test.describe('Milestone 57B: service recipients, one rule and no carry-over', (
       const first = { ...(w.GuardianForms.testing.field('serviceRecipients')?.[0] || {}) };
       // A complete Recipient 1, then an empty card added by a stray click.
       w.GuardianForms.testing.patchFiling({ 'serviceRecipients': [
-        { name: first.name || 'A Person', address: first.address || '1 Main St', cityStateZip: first.cityStateZip || 'Clearwater, FL 33755' },
-        { name: '', address: '', cityStateZip: '' },
+        { name: first.name || 'A Person', line2: first.line2 || '1 Main St', line3: first.line3 || 'Clearwater, FL 33755' },
+        { name: '', line2: '', line3: '' },
       ] });
       return (await w.GuardianForms.testing.validate.open()).filter((m: any) => /Recipient 2/.test(String(m.message))).map((m: any) => String(m.message));
     });
@@ -1477,7 +1477,7 @@ test.describe('Milestone 57B: service recipients, one rule and no carry-over', (
       t.patchFiling({
         serviceNoRecipients: 'Yes',
         certNoRecipients: 'Yes',
-        serviceRecipients: [{ name: 'Kept Person', address: '1 Main St', cityStateZip: 'Clearwater, FL 33755' }],
+        serviceRecipients: [{ name: 'Kept Person', line2: '1 Main St', line3: 'Clearwater, FL 33755' }],
         certRecipients: [{ name: 'Kept Person', line2: '1 Main St' }],
       });
       return t.snapshot().filing.wardId;

@@ -23,6 +23,7 @@
 //   - a certificate describes one filing being served, so a new year, a
 //     conversion or a new filing starts its answers blank (only the
 //     recipients, and on a same-period conversion the ward's status, carry).
+import { RECIPIENT_FIELDS } from './recipient-shape.js';
 
 const text = (v) => String(v ?? '').trim();
 
@@ -59,9 +60,9 @@ export function methodOfServiceLine(method) {
 
 /** Each accounting engine's certificate: where its recipients, attestation and method live. */
 const CERTIFICATES = Object.freeze({
-  guardian: Object.freeze({ section: 'D-5', recipients: 'serviceRecipients', recipientFields: ['name', 'address', 'cityStateZip'], noRecipients: 'serviceNoRecipients', method: 'serviceMethod' }),
-  annual: Object.freeze({ section: 'Part X', recipients: 'certRecipients', recipientFields: ['name', 'line2', 'line3', 'line4'], noRecipients: 'certNoRecipients', method: 'certIndicator' }),
-  simplified: Object.freeze({ section: 'Part VI', recipients: 'certRecipients', recipientFields: ['name', 'line2', 'line3', 'line4'], noRecipients: 'certNoRecipients', method: 'certIndicator' }),
+  guardian: Object.freeze({ section: 'D-5', recipients: 'serviceRecipients', recipientFields: RECIPIENT_FIELDS, noRecipients: 'serviceNoRecipients', method: 'serviceMethod' }),
+  annual: Object.freeze({ section: 'Part X', recipients: 'certRecipients', recipientFields: RECIPIENT_FIELDS, noRecipients: 'certNoRecipients', method: 'certIndicator' }),
+  simplified: Object.freeze({ section: 'Part VI', recipients: 'certRecipients', recipientFields: RECIPIENT_FIELDS, noRecipients: 'certNoRecipients', method: 'certIndicator' }),
 });
 
 /** The warning's text, shared with the Plans' (plan-certificate-of-service.js). */

@@ -628,7 +628,7 @@ test.describe('PDF Accessibility: Accounting & Inventory Filing-Specific Coverag
           cityStateZip: 'St. Petersburg, FL 33701',
         },
         serviceRecipients: [
-          { name: 'Sarah Bennett', address: '1420 5th Ave N', cityStateZip: 'St. Petersburg, FL 33705', method: 'E-Portal' },
+          { name: 'Sarah Bennett', line2: '1420 5th Ave N', line3: 'St. Petersburg, FL 33705', method: 'E-Portal' },
         ],
         scheduleA1: [
           { propertyDescription: 'Primary Residence', streetAddress: '1420 5th Ave N', cityStateZip: 'St. Petersburg, FL 33705', valuationMethod: 'Appraisal', fullAssetValue: 250000, wardPercent: 100 },
