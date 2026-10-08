@@ -22,7 +22,7 @@
 // guardian/attorney on Plan Annual), they're plain free-text fields rather
 // than the structured per-guardian rows guardian-attorney-card.js handles,
 // and they are already on Tier 1 via inpS()'s Milestone 41-1 delegation.
-import { renderFormField, renderRadioGroupField } from '../form-fields.js';
+import { renderCheckboxField, renderFormField, renderRadioGroupField } from '../form-fields.js';
 
 export function renderResidenceFields({
   wardLiving = '',
@@ -39,13 +39,22 @@ export function renderResidenceFields({
   mailingAddressLabel = 'Mailing Address (if different)',
   mailingCityStateZip = '',
   mailingCityStateZipLabel = 'Mailing City / State / ZIP',
+  // Milestone 74P: "Mailing address same as residence" -- offered when the
+  // caller passes a route to redraw on; ticked, the mailing fields are hidden
+  // and the residence is filed as the mailing address (same-address.js).
+  mailingSameAsResidence = false,
+  sameAsRoute = '',
 } = {}) {
+  const sameAs = sameAsRoute
+    ? `<div class="col-12">${renderCheckboxField({ path: 'mailingSameAsResidence', id: 'mailingSameAsResidence', label: 'Mailing address same as residence', checked: mailingSameAsResidence, route: sameAsRoute })}</div>`
+    : '';
+  const mailing = sameAsRoute && mailingSameAsResidence ? '' : `
+            <div class="col-12">${renderFormField({ path: 'mailingAddress', label: mailingAddressLabel, value: mailingAddress, id: 'mailingAddress' })}</div>
+            <div class="col-12">${renderFormField({ path: 'mailingCityStateZip', label: mailingCityStateZipLabel, value: mailingCityStateZip, id: 'mailingCityStateZip' })}</div>`;
   return `<div class="col-12 mt-3">
               ${renderRadioGroupField({ path: 'wardLiving', label: wardLivingLabel, value: wardLiving, options: wardLivingOptions, required: wardLivingRequired, hint: '', id: 'wardLiving' })}
             </div>
             <div class="col-12">${renderFormField({ path: 'residenceAddress', label: residenceAddressLabel, value: residenceAddress, required: true, id: 'residenceAddress' })}</div>
             <div class="col-md-7">${renderFormField({ path: 'residenceCityStateZip', label: residenceCityStateZipLabel, value: residenceCityStateZip, required: true, id: 'residenceCityStateZip' })}</div>
-            <div class="col-md-5">${renderFormField({ path: 'residencePhone', label: residencePhoneLabel, value: residencePhone, id: 'residencePhone' })}</div>
-            <div class="col-12">${renderFormField({ path: 'mailingAddress', label: mailingAddressLabel, value: mailingAddress, id: 'mailingAddress' })}</div>
-            <div class="col-12">${renderFormField({ path: 'mailingCityStateZip', label: mailingCityStateZipLabel, value: mailingCityStateZip, id: 'mailingCityStateZip' })}</div>`;
+            <div class="col-md-5">${renderFormField({ path: 'residencePhone', label: residencePhoneLabel, value: residencePhone, id: 'residencePhone' })}</div>${sameAs}${mailing}`;
 }

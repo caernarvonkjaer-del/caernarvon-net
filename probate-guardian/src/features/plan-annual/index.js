@@ -28,7 +28,7 @@ import { renderResidenceFields } from '../../core/form/cards/residence-facility-
 // which is no abstraction at all -- so this page's guardian fields go
 // straight to Tier 1 instead. Confirmed fit: 3 of 4 Plan types for that
 // card, not 4 of 4.
-import { renderFormField } from '../../core/form/form-fields.js';
+import { renderCheckboxField, renderFormField } from '../../core/form/form-fields.js';
 import { esc } from '../../core/filing/escape-html.js';
 import { ic } from '../../core/ui/icons.js';
 import { formatDisplayDate } from '../../core/form/date-parser.js';
@@ -260,6 +260,8 @@ function pagePlanACover(){
               residencePhone: d.residencePhone,
               mailingAddress: d.mailingAddress,
               mailingCityStateZip: d.mailingCityStateZip,
+              mailingSameAsResidence: d.mailingSameAsResidence === true,
+              sameAsRoute: '/',
             })}
           </div>
         </div>
@@ -618,8 +620,9 @@ function pagePlanASignatures(){
           <div class="col-12">${renderFormField({ path: `planGuardians.${i}.email`, label: 'Email Address', value: p.email })}</div>
           <div class="col-12">${renderFormField({ path: `planGuardians.${i}.mailingStreet`, label: 'Mailing Street Address', value: p.mailingStreet, required: true })}</div>
           <div class="col-12">${renderFormField({ path: `planGuardians.${i}.mailingCityStateZip`, label: 'Mailing City / State / ZIP', value: p.mailingCityStateZip })}</div>
-          <div class="col-12">${renderFormField({ path: `planGuardians.${i}.officeStreet`, label: 'Residence or Office Street Address', value: p.officeStreet })}</div>
-          <div class="col-12">${renderFormField({ path: `planGuardians.${i}.officeCityStateZip`, label: 'Residence or Office City / State / ZIP', value: p.officeCityStateZip })}</div>
+          <div class="col-12">${renderCheckboxField({ path: `planGuardians.${i}.officeSameAsMailing`, id: `planGuardians_${i}_officeSameAsMailing`, label: 'Residence or office address same as mailing address', checked: p.officeSameAsMailing === true, route: '/p11' })}</div>
+          ${p.officeSameAsMailing === true ? '' : `<div class="col-12">${renderFormField({ path: `planGuardians.${i}.officeStreet`, label: 'Residence or Office Street Address', value: p.officeStreet })}</div>
+          <div class="col-12">${renderFormField({ path: `planGuardians.${i}.officeCityStateZip`, label: 'Residence or Office City / State / ZIP', value: p.officeCityStateZip })}</div>`}
           <div class="col-12">${renderFormField({ path: `planGuardians.${i}.relationship`, label: 'Relationship to Ward', value: p.relationship })}</div>
         </div>
       </div>

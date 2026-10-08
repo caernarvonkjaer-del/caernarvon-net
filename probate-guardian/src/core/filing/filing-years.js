@@ -141,7 +141,7 @@ export function resetYearlyFieldsForNewYear(data,type){
     data.periodFrom='';data.periodTo='';
     data.inceptionDate='';data.lettersSignedDate='';data.successorGuardianship='';
     data.wardLiving='';data.residenceAddress='';data.residenceCityStateZip='';data.residencePhone='';
-    data.mailingAddress='';data.mailingCityStateZip='';data.q1PreexistingDirectives='';
+    data.mailingAddress='';data.mailingCityStateZip='';data.mailingSameAsResidence=false;data.q1PreexistingDirectives='';
     data.q2ALF=false;data.q2GroupHome=false;data.q2Intermediate=false;data.q2PrivateResidence=false;data.q2SkilledNursing=false;data.q2Specialized=false;data.q2StateHospital=false;data.q2Other=false;data.q2Explain='';
     data.q3MedPrimary=false;data.q3MedDentist=false;data.q3MedOphthalmologist=false;
     data.q3MedSpecialist=false;data.q3MedSpecialistArea='';data.q3MedPT=false;

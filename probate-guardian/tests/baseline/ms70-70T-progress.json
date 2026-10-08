@@ -37,6 +37,7 @@
   "tests/e2e/dashboard-due-dates.spec.ts",
   "tests/e2e/dashboard-visual.spec.ts",
   "tests/e2e/date-validation.contract.spec.ts",
+  "tests/e2e/entry-helpers.spec.ts",
   "tests/e2e/excel-b4-multi-account.spec.ts",
   "tests/e2e/excel-blank-page-pruning.spec.ts",
   "tests/e2e/excel-date-cells.spec.ts",

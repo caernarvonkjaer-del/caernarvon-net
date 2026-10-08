@@ -15,6 +15,7 @@ import { methodOfServiceLine } from '../../core/filing/service-method.js';
 import { inferBondDepositoryState, bondDepositoryPdfLines, revealsBond } from '../../core/filing/bond-depository.js';
 import { resolveSignatureModes } from '../../core/pdf/signature-modes.js';
 import { rowStarted } from '../../core/validation/row-started.js';
+import { withSameAddresses } from '../../core/form/same-address.js';
 
 export const DISB_CATS = [
   'Accounting',
@@ -38,7 +39,8 @@ export const DISB_CATS = [
 ];
 
 export function buildAnnualAccountingModel(D, options = {}) {
-  const d = D || {};
+  // Milestone 74P: a ticked "same as" files the first address in the second.
+  const d = withSameAddresses(D || {});
   const wardName = (d.wardName || 'Ward').trim();
   const caseNumber = (d.caseNumber || '').trim();
   // Milestone 40C-A item 6: output must never invent a county. A blank one

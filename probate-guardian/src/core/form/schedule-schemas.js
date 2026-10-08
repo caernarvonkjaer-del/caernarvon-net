@@ -21,6 +21,8 @@ export const SCHEDULE_SCHEMAS = {
       mailingCityStateZip: '',
       officeStreet: '',
       officeCityStateZip: '',
+      // Milestone 74P: "Residence / office address same as mailing address".
+      officeSameAsMailing: false,
       signatureDate: '',
       // Milestone 39-C
       signatureState: '',

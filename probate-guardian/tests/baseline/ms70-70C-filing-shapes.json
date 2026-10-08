@@ -1,5 +1,5 @@
 {
- "generatedFrom": "Milestone 70, 70C: captured from src/legacy-app.js and src/core/state.js at the 70B tree, BEFORE 70C moved anything (the declarations sliced out and evaluated with state.js and schedule-doc-ack.js loaded as the app loads them). tests/unit/filing-registry.spec.js requires the moved modules to reproduce every value here. Regenerate only for a deliberate, recorded change to a blank filing. Changed by Milestone 71B (2026-09-29, attorney optional when none is entered): added attorneyWaiverBasis, attorneyWaiverOrderDate, guardians[].certifiesService, serviceGuardian, certGuardianSignDate, certGuardianSignatureState, certGuardianSignatureImage, row.certifiesService. Changed by Milestone 72B (2026-10-02, the attorney's emails on every form): guardian attorney.email and attorney.secondaryEmail; attorney_secondaryEmail on the Annual family, the Simplified and the Initial Plan; attorney_secondary_email on the Annual Plan and the Plan for Minors -- each form already collected them on screen. Changed by Milestone 72C (2026-10-02, guardian emails a warning on every form; the Simplified Plan's certificate finds its attorney): added guardians[].email to the Initial Inventory's guardian row and its blank filing's Guardian 1 (D-1 collects it now), planGuardians[].email to the Initial Plan's guardian block and blank filing (its signature blocks had no email field), and certSignerMigrated:false to the Simplified Plan's blank filing (the once-only certificate signer pin in certificate-migrations.js). Changed by Milestone 72H (2026-10-02, the certificate's attorney is the filing's): added certAttorneyMigrated:false to the Initial Inventory's and the Simplified Accounting's blank filings (the once-only fill of the filing attorney's blank fields from an old certificate's details, certificate-migrations.js). Changed by Milestone 72G (2026-10-02, the method of service and the ward's status kept apart): added certWardStatus:'' and certIndicatorMigrated:false to the Annual, Final, Trust and Simplified blank filings, and serviceMethod:'' to the Initial Inventory's. Changed deliberately by Milestone 73A (2026-10-06): every blank filing, and so every normalized one, carries signaturePolicy 2 -- guardians sign by hand or with a stamp (src/core/validation/signature-state.js); nothing else changed. Changed deliberately by Milestone 73B (2026-10-07, no answer the filer didn't give): the Annual, Final and Trust blank filings start with no guardianRelationship (it was 'Professional Guardian'), and the Initial Inventory's schedule rows start with a blank share (it was 100; C-5's joint owner's 50) and a blank A-2 and B-4 Type, C-1 Frequency and C-4 Type of Trust (they were Mortgage, Loan, Monthly and Pooled); nothing else changed.",
+ "generatedFrom": "Milestone 70, 70C: captured from src/legacy-app.js and src/core/state.js at the 70B tree, BEFORE 70C moved anything (the declarations sliced out and evaluated with state.js and schedule-doc-ack.js loaded as the app loads them). tests/unit/filing-registry.spec.js requires the moved modules to reproduce every value here. Regenerate only for a deliberate, recorded change to a blank filing. Changed by Milestone 71B (2026-09-29, attorney optional when none is entered): added attorneyWaiverBasis, attorneyWaiverOrderDate, guardians[].certifiesService, serviceGuardian, certGuardianSignDate, certGuardianSignatureState, certGuardianSignatureImage, row.certifiesService. Changed by Milestone 72B (2026-10-02, the attorney's emails on every form): guardian attorney.email and attorney.secondaryEmail; attorney_secondaryEmail on the Annual family, the Simplified and the Initial Plan; attorney_secondary_email on the Annual Plan and the Plan for Minors -- each form already collected them on screen. Changed by Milestone 72C (2026-10-02, guardian emails a warning on every form; the Simplified Plan's certificate finds its attorney): added guardians[].email to the Initial Inventory's guardian row and its blank filing's Guardian 1 (D-1 collects it now), planGuardians[].email to the Initial Plan's guardian block and blank filing (its signature blocks had no email field), and certSignerMigrated:false to the Simplified Plan's blank filing (the once-only certificate signer pin in certificate-migrations.js). Changed by Milestone 72H (2026-10-02, the certificate's attorney is the filing's): added certAttorneyMigrated:false to the Initial Inventory's and the Simplified Accounting's blank filings (the once-only fill of the filing attorney's blank fields from an old certificate's details, certificate-migrations.js). Changed by Milestone 72G (2026-10-02, the method of service and the ward's status kept apart): added certWardStatus:'' and certIndicatorMigrated:false to the Annual, Final, Trust and Simplified blank filings, and serviceMethod:'' to the Initial Inventory's. Changed deliberately by Milestone 73A (2026-10-06): every blank filing, and so every normalized one, carries signaturePolicy 2 -- guardians sign by hand or with a stamp (src/core/validation/signature-state.js); nothing else changed. Changed deliberately by Milestone 73B (2026-10-07, no answer the filer didn't give): the Annual, Final and Trust blank filings start with no guardianRelationship (it was 'Professional Guardian'), and the Initial Inventory's schedule rows start with a blank share (it was 100; C-5's joint owner's 50) and a blank A-2 and B-4 Type, C-1 Frequency and C-4 Type of Trust (they were Mortgage, Loan, Monthly and Pooled); nothing else changed. Changed by Milestone 74P (2026-10-07, 'same as' for an address typed twice): added officeSameAsMailing:false to the Annual, Final and Trust blank filings' Guardian 1 and the Annual Plan's guardian block, and mailingSameAsResidence:false to the Annual and Initial Plans' blank filings -- unticked boxes; nothing else changed.",
  "types": [
   "guardian",
   "simplified",
@@ -247,7 +247,8 @@
      "signatureState": "",
      "signatureImage": "",
      "isPreparer": false,
-     "certifiesService": false
+     "certifiesService": false,
+     "officeSameAsMailing": false
     }
    ],
    "preparer": {
@@ -408,7 +409,8 @@
      "signatureState": "",
      "signatureImage": "",
      "isPreparer": false,
-     "certifiesService": false
+     "certifiesService": false,
+     "officeSameAsMailing": false
     }
    ],
    "preparer": {
@@ -569,7 +571,8 @@
      "signatureState": "",
      "signatureImage": "",
      "isPreparer": false,
-     "certifiesService": false
+     "certifiesService": false,
+     "officeSameAsMailing": false
     }
    ],
    "preparer": {
@@ -1042,7 +1045,8 @@
      "officeCityStateZip": "",
      "relationship": "",
      "signatureState": "",
-     "signatureImage": ""
+     "signatureImage": "",
+     "officeSameAsMailing": false
     }
    ],
    "attorney_signatureDate": "",
@@ -1059,7 +1063,8 @@
    "preparerPartyId": null,
    "caseId": null,
    "attorney_secondary_email": "",
-   "signaturePolicy": 2
+   "signaturePolicy": 2,
+   "mailingSameAsResidence": false
   },
   "planInitial": {
    "planTriStateSchemaVersion": 2,
@@ -1264,7 +1269,8 @@
    "preparerPartyId": null,
    "caseId": null,
    "attorney_secondaryEmail": "",
-   "signaturePolicy": 2
+   "signaturePolicy": 2,
+   "mailingSameAsResidence": false
   },
   "planMinor": {
    "planTriStateSchemaVersion": 2,
@@ -1658,7 +1664,8 @@
      "signatureState": "",
      "signatureImage": "",
      "isPreparer": false,
-     "certifiesService": false
+     "certifiesService": false,
+     "officeSameAsMailing": false
     }
    ],
    "preparer": {
@@ -1835,7 +1842,8 @@
      "signatureState": "",
      "signatureImage": "",
      "isPreparer": false,
-     "certifiesService": false
+     "certifiesService": false,
+     "officeSameAsMailing": false
     }
    ],
    "preparer": {
@@ -2012,7 +2020,8 @@
      "signatureState": "",
      "signatureImage": "",
      "isPreparer": false,
-     "certifiesService": false
+     "certifiesService": false,
+     "officeSameAsMailing": false
     }
    ],
    "preparer": {
@@ -2518,7 +2527,8 @@
      "officeCityStateZip": "",
      "relationship": "",
      "signatureState": "",
-     "signatureImage": ""
+     "signatureImage": "",
+     "officeSameAsMailing": false
     }
    ],
    "attorney_signatureDate": "",
@@ -2552,7 +2562,8 @@
    "q7Trusts": "",
    "q7PendingBenefits": "",
    "attorney_secondary_email": "",
-   "signaturePolicy": 2
+   "signaturePolicy": 2,
+   "mailingSameAsResidence": false
   },
   "planInitial": {
    "planTriStateSchemaVersion": 2,
@@ -2761,7 +2772,8 @@
    "safeDepositBoxFiled": "",
    "amendedForm": "",
    "attorney_secondaryEmail": "",
-   "signaturePolicy": 2
+   "signaturePolicy": 2,
+   "mailingSameAsResidence": false
   },
   "planMinor": {
    "planTriStateSchemaVersion": 2,
@@ -3590,7 +3602,8 @@
     "officeCityStateZip": "",
     "relationship": "",
     "signatureState": "",
-    "signatureImage": ""
+    "signatureImage": "",
+    "officeSameAsMailing": false
    },
    "guardianMax": 3
   },

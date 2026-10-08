@@ -14,7 +14,8 @@ export function planGuardianBlank(type){
   // signatureImage (39-B piloted planSimplified's only).
   // Milestone 72C: the Initial Plan's guardian gains an email, as the other three Plans' have.
   if(type==='planInitial')return {name:'',ssn:'',street:'',phone:'',email:'',cityStateZip:'',signatureDate:'',relationship:'',signatureState:'',signatureImage:''};
-  if(type==='planAnnual')return {name:'',ssn:'',phone:'',email:'',signatureDate:'',mailingStreet:'',mailingCityStateZip:'',officeStreet:'',officeCityStateZip:'',relationship:'',signatureState:'',signatureImage:''};
+  // Milestone 74P: officeSameAsMailing -- "Residence or office address same as mailing address".
+  if(type==='planAnnual')return {name:'',ssn:'',phone:'',email:'',signatureDate:'',mailingStreet:'',mailingCityStateZip:'',officeStreet:'',officeCityStateZip:'',officeSameAsMailing:false,relationship:'',signatureState:'',signatureImage:''};
   if(type==='planMinor')return emptyMinorGuardianSig();
   return {name:'',signatureDate:'',email:'',phone:'',mailingAddress:'',signatureState:'',signatureImage:''};
 }

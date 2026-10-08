@@ -238,6 +238,9 @@ export function carryOverFieldsForPlan(sourceWard, planType) {
           mailingCityStateZip: g.mailingCityStateZip || g.cityStateZip || '',
           officeStreet: g.officeStreet || '',
           officeCityStateZip: g.officeCityStateZip || '',
+          // Milestone 74P: "same as mailing" travels with the addresses, so a
+          // hidden office address never surfaces unticked in the new filing.
+          officeSameAsMailing: g.officeSameAsMailing === true,
           relationship: g.relationship || '',
         };
       }),
@@ -361,6 +364,7 @@ export function carryOverFieldsForAccounting(sourceWard, accountingType) {
           mailingCityStateZip: g.mailingCityStateZip || g.cityStateZip || '',
           officeStreet: g.officeStreet || '',
           officeCityStateZip: g.officeCityStateZip || '',
+          officeSameAsMailing: g.officeSameAsMailing === true,
           signatureDate: '',
           signatureDateLabel: '',
         };
@@ -479,6 +483,7 @@ export function carryOverAccountingToAccounting(src,targetType){
         mailingStreet:g.mailingStreet||g.streetAddress||'',
         mailingCityStateZip:g.mailingCityStateZip||g.cityStateZip||'',
         officeStreet:g.officeStreet||'', officeCityStateZip:g.officeCityStateZip||'',
+        officeSameAsMailing:g.officeSameAsMailing===true,
         signatureDate:'', signatureDateLabel:''};
     })};
 }

@@ -12,9 +12,11 @@ import { rowStarted, startedRows } from '../../core/validation/row-started.js';
 import { INITIAL_ADLS } from '../../core/filing/models/plan-initial.js';
 import { PLAN_INITIAL_EXPLANATIONS, shownExplanation } from '../../core/filing/plan-explanations.js';
 import { resolveSignatureModes } from '../../core/pdf/signature-modes.js';
+import { withSameAddresses } from '../../core/form/same-address.js';
 
 export function buildPlanInitialModel(D, options) {
-  const d = D || {};
+  // Milestone 74P: a ticked "same as" files the first address in the second.
+  const d = withSameAddresses(D || {});
   const signatureStyle = (options && options.signatureStyle) || d.signatureStyle || 'typed';
   const wardName = (d.wardName || 'Ward').trim();
   const caseNumber = (d.caseNumber || '').trim();

@@ -35,6 +35,8 @@ export function emptyDataPlanInitial() {
     guardianNames:'', attorneyName:'',
     wardLiving:'', residenceAddress:'', residenceCityStateZip:'', residencePhone:'',
     mailingAddress:'', mailingCityStateZip:'',
+    // Milestone 74P: "Mailing address same as residence".
+    mailingSameAsResidence:false,
     q1PreexistingDirectives:'',
     // Q2 — residential setting best suited to the ward
     q2Explain:'',

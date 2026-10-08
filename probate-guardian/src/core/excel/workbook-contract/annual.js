@@ -17,6 +17,7 @@ import { readIndicateIfBox } from '../../filing/certificate-migrations.js';
 import { rowStarted } from '../../validation/row-started.js';
 import { createBankAccountId } from '../../accounting/bank-accounts.js';
 import { annualReconcileState } from '../../accounting/annual-totals.js';
+import { filedOffice } from '../../form/same-address.js';
 import { planSchB4Export } from '../b4-export-plan.js';
 import { SCH_B4_ACCOUNT_BLOCKS, B4_REGISTER_PREFIX } from '../b4-register-pages.js';
 
@@ -213,6 +214,8 @@ export const ANNUAL_CONTRACT = Object.freeze({
       fields: Object.fromEntries(Object.keys(GUARDIAN_FIELDS).map((k) => [k, {
         codec: k === 'signatureDate' ? date : text,
         formula: k === 'name' ? (i) => (i === 0 ? 'Guardian #1 name over the Part I link (2026-09-19)' : undefined) : undefined,
+        // Milestone 74P: "same as mailing" ticked files the mailing address here.
+        value: k === 'officeStreet' ? (row) => filedOffice(row).street : k === 'officeCityStateZip' ? (row) => filedOffice(row).cityStateZip : undefined,
       }])),
       // Milestone 74B: a co-guardian's slot is filled by rowStarted() (a stamp
       // counts) -- so a slot the workbook shows blank still holds the filing's
@@ -400,6 +403,18 @@ export const ANNUAL_CONTRACT = Object.freeze({
     zip: ['attorney_cityStateZip', 'guardians.*.mailingCityStateZip', 'guardians.*.officeCityStateZip', 'preparer.cityStateZip'],
   }),
 
+  // Milestone 74P: the import reads both addresses as the workbook holds them.
+  // A guardian whose "same as mailing" box is ticked keeps it while the
+  // workbook's office address is the mailing address (what the export
+  // writes); one that shows a different office address unticks it, so the
+  // address the workbook carries is the one filed.
+  reconcile(draft, filing) {
+    const same = (a, b) => String(a ?? '').trim() === String(b ?? '').trim();
+    (draft.guardians || []).forEach((row, i) => {
+      if (filing?.guardians?.[i]?.officeSameAsMailing !== true) return;
+      if (!same(row.officeStreet, row.mailingStreet) || !same(row.officeCityStateZip, row.mailingCityStateZip)) row.officeSameAsMailing = false;
+    });
+  },
   afterRead(draft, workbook) {
     if (draft.guardians) {
       for (const g of draft.guardians) g.signatureDateLabel = '';

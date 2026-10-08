@@ -11,9 +11,11 @@ import { startedRows } from '../../core/validation/row-started.js';
 import { PLAN_ADLS, PLAN_BENEFITS, PLAN_RIGHTS, planRightLabel } from '../../core/filing/models/plan-annual.js';
 import { PLAN_ANNUAL_EXPLANATIONS, shownExplanation } from '../../core/filing/plan-explanations.js';
 import { resolveSignatureModes } from '../../core/pdf/signature-modes.js';
+import { withSameAddresses } from '../../core/form/same-address.js';
 
 export function buildPlanAnnualModel(D) {
-  const d = D || {};
+  // Milestone 74P: a ticked "same as" files the first address in the second.
+  const d = withSameAddresses(D || {});
   const wardName = (d.wardName || 'Ward').trim();
   const caseNumber = (d.caseNumber || '').trim();
   // Milestone 40C-A item 6: output must never invent a county. A blank one

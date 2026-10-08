@@ -176,7 +176,7 @@ const ANNOUNCEMENTS = {
   'src/core/excel/import-transaction.js': 1,        // an import as one transaction (73E part 1): every Excel import since 73T parts 2-4
   'src/features/annual-accounting/filing-type.js': 1, // Annual/Final/Trust
   'src/features/annual-accounting/index.js': 6,     // no-items; add/remove/duplicate row; add/remove B-4 account
-  'src/features/guardian-inventory/index.js': 13,   // rows, guardians, recipients, witnesses, the vehicle box and fields, old D-5 details
+  'src/features/guardian-inventory/index.js': 15,   // rows, guardians, recipients, witnesses, the vehicle box and fields, old D-5 details; 74P's C-5 joint owner and C-1 yearly total
   'src/features/simplified-accounting/index.js': 9, // guardians, recipients, remuneration, no-items, the address conflict, old certificate details
 };
 

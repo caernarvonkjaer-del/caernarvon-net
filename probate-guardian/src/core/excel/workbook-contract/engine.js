@@ -96,7 +96,9 @@ export function writeContract(workbook, contract, filing, ctx = {}, io = { setCe
         for (const [field, addr] of Object.entries(cells)) {
           const spec = entry.fields[field];
           if (!exports(perSlot(spec.dir, i))) continue;
-          writeCell(workbook, io, entry.sheet, addr, spec.codec, (row || {})[field], filing);
+          // Milestone 74P: a slot field may say what it files (spec.value) --
+          // a guardian's office address while "same as mailing" is ticked.
+          writeCell(workbook, io, entry.sheet, addr, spec.codec, spec.value ? spec.value(row || {}, i) : (row || {})[field], filing);
         }
       });
     } else if (entry.kind === 'rows') {

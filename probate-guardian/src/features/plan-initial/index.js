@@ -334,6 +334,8 @@ function pagePlanICover(){
               mailingAddress: d.mailingAddress,
               mailingAddressLabel: 'Mailing Address for Ward (if different from above)',
               mailingCityStateZip: d.mailingCityStateZip,
+              mailingSameAsResidence: d.mailingSameAsResidence === true,
+              sameAsRoute: '/',
             })}
           </div>
         </div>

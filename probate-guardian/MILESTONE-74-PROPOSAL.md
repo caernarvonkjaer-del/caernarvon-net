@@ -3,10 +3,10 @@
 ## Status
 
 **Draft.** Every decision for 74A and 74B is settled (2026-10-05). **Built so
-far: 74A (2026-10-05), 74B (2026-10-06), 74Q (2026-10-07) and 74C (2026-10-07,
-with 73M), each approved by name.** **Approved and not yet built** (2026-10-07,
-with Milestone 73's batch: 73B, 73O part 2, 73G part 2, 73H and 73S): 74F with
-73O part 2, 74H with 73G part 2, and 74P after 73B. Nothing else is
+far: 74A (2026-10-05), 74B (2026-10-06), 74Q (2026-10-07), 74C (2026-10-07,
+with 73M, `a0e987b`) and 74P (2026-10-07, after 73B), each approved by name.**
+**Approved and not yet built** (2026-10-07, with Milestone 73's batch: 73O
+part 2, 73G part 2, 73H and 73S): 74F with 73O part 2 and 74H with 73G part 2. Nothing else is
 approved: building any other of 74D–74S needs the requester's named approval
 of that item (AGENTS.md §3). **Every decision in 74C–74S is settled
 (2026-10-06)**, each recorded under its item and gathered in
@@ -2397,6 +2397,73 @@ address.
   `index.js`. **Build 74P after 73B** (73's row 16).
 - **73G part 1** supplies the amount box the C-1 helper uses.
 - **74H (d)** depends on decision 2.
+
+### Build record — BUILT 2026-10-07 (approved by name by the requester, 2026-10-07)
+
+**What changed for a filer:**
+
+- **C-1's yearly total** (decision 1, approved by name under AGENTS.md §5).
+  Once a Frequency other than Other is chosen, an optional "Work out the
+  yearly total" box under the amounts takes one payment ("$1,850") and shows
+  the yearly figure as it is typed -- "× 12 payments a year = $22,200.00"
+  (Quarterly 4, Semi-Annually 2, Annually 1). It fills the Annual Income
+  Amount only when the filer presses **Use**; nothing is stored for the
+  payment, and for Other, or no frequency, it is not offered. The Clerk's
+  form still gets the filer's own figure.
+- **A C-5 joint owner from the asset** (decision 2). An A-1 to B-4 entry
+  whose Ward's % is below 100 shows "+ Add a joint owner for this asset",
+  which adds a C-5 entry naming the source as the workbook's example does --
+  "Schedule A-1, Item 1 — Family Home" (a vehicle as the filing describes
+  it) -- with the full value; the owner, relationship and share are left for
+  the filer (the share blank, 73B), and nothing links the two entries
+  afterwards. The button shows and hides as the share is typed.
+- **"Same as" for an address typed twice** (decision 3). "Residence / office
+  address same as mailing address" on each Annual, Final and Trust guardian
+  (Part III) and Annual Plan guardian (Signatures), and "Mailing address
+  same as residence" on the Initial and Annual Plans' covers. Ticked, the
+  second address is hidden and filed as the first on the PDF -- and, for the
+  Annual family, in the workbook's PART II, III office boxes; what was typed
+  there stays in the filing and comes back when unticked (AGENTS.md §4). An
+  import reads both addresses as the workbook holds them: a ticked box stays
+  ticked while the workbook's office address is the mailing address (what
+  the export writes), and unticks when it shows a different one, so the
+  address the workbook carries is the one filed. Converting a filing carries
+  the box with the addresses; the Initial Plan's New Year clears it with the
+  ward's addresses, as it clears them.
+
+No other check reads these addresses -- none is required -- so the PDFs and
+the workbook are where "same as" applies.
+
+**Data model:** `guardians[].officeSameAsMailing` (Annual family),
+`planGuardians[].officeSameAsMailing` (Annual Plan) and
+`mailingSameAsResidence` (Annual and Initial Plans), booleans, false by
+default (checklist item 1; `verify:data-model` OK). **Legacy data:** none --
+a filing saved before has no box, which reads as unticked.
+
+**Tests:**
+
+- New `tests/unit/entry-helpers.spec.js` (14): the yearly total's
+  arithmetic and what it won't propose; the joint-owner offer and each source
+  schedule's C-5 row; "same as" on the three PDFs and the Annual workbook,
+  the import's untick, conversion. **Red-first:** the helper modules are new;
+  with 74P's wiring set aside, the 7 wiring cases fail.
+- New `tests/e2e/entry-helpers.spec.ts` (4): one case per helper through the
+  real pages, the C-1 helper writing only on Use.
+- Goldens regenerated, reason in each note: the blank-filing shapes (the
+  unticked boxes), the validator and sidebar records (21 new variants for the
+  new fields; no existing outcome changed), conversion and New Year (new
+  keys, false). `model-change-event.spec.js` counts the two new changes.
+- **Browser specs: 14 files, 144 tests** on a copy on C: -- the new spec, the
+  three forms' page snapshots, the specs that read these pages' labels,
+  asterisks and reveals, the export guard, conversion and New Year: 139
+  passed at once. The three page snapshots gained the new boxes and were
+  updated; the new spec's two Inventory cases first stopped behind the
+  supporting-documents prompt (the spec now dismisses it, as other specs
+  do) and on capitalization -- C-5's description box shows "Item 1",
+  the Clerk's example says "item 1", so the row is now written "Item 1"
+  and the box and the filed text agree. Those three files then passed (23
+  tests). Full unit suite: 2,903 passed; `check:types` clean;
+  `verify:data-model` OK. Full regression: next, the mid-batch run.
 
 ---
 

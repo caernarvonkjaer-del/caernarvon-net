@@ -47,7 +47,7 @@ export function emptyDataAnnual() {
     // Part III – guardians (up to 3)
     // isPreparer: Milestone 67A -- "This person prepared this filing"; at
     // most one guardian/attorney flag is true (src/core/form/preparer-flag.js).
-    guardians:[{name:'',ssn:'',phone:'',email:'',mailingStreet:'',mailingCityStateZip:'',officeStreet:'',officeCityStateZip:'',signatureDate:'',signatureDateLabel:'',signatureState:'',signatureImage:'',isPreparer:false,certifiesService:false}],
+    guardians:[{name:'',ssn:'',phone:'',email:'',mailingStreet:'',mailingCityStateZip:'',officeStreet:'',officeCityStateZip:'',officeSameAsMailing:false,signatureDate:'',signatureDateLabel:'',signatureState:'',signatureImage:'',isPreparer:false,certifiesService:false}],
     // Part IV – preparer
     preparer:{name:'',ssn:'',phone:'',street:'',cityStateZip:'',signatureDate:'',signatureState:'',signatureImage:''},
     // Part V – attorney

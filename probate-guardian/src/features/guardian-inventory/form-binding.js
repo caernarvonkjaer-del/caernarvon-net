@@ -14,6 +14,31 @@ import { getPath, setPath } from '../../core/form/paths.js';
 import { fmt } from '../../core/format/money.js';
 import { getD } from '../../core/state.js';
 import { calc } from './totals.js';
+import { JOINT_OWNER_SOURCES, offersJointOwner, paymentsPerYear, yearlyTotal } from '../../core/form/entry-helpers.js';
+
+// Milestone 74P: a share on A-1 to B-4 decides whether "Add a joint owner for
+// this asset" shows; C-1's Frequency decides whether the yearly-total helper
+// shows and what it multiplies by. Neither writes anything.
+function syncEntryHelpers(path){
+  const share=/^(schedule[AB][1-4])\.(\d+)\.wardPercent$/.exec(path||'');
+  if(share&&JOINT_OWNER_SOURCES[share[1]]){
+    const offer=document.querySelector(`[data-joint-owner-offer="${share[1]}.${share[2]}"]`);
+    if(offer)offer.hidden=!offersJointOwner(getD()[share[1]]?.[Number(share[2])]);
+  }
+  const freq=/^scheduleC1\.(\d+)\.frequencyOfPayment$/.exec(path||'');
+  if(freq){
+    const i=freq[1];
+    const frequency=getD().scheduleC1?.[Number(i)]?.frequencyOfPayment;
+    const times=paymentsPerYear(frequency);
+    const helper=document.querySelector(`[data-c1-helper="${i}"]`);
+    if(helper)helper.hidden=!times;
+    const label=document.querySelector(`[data-c1-times="${i}"]`);
+    if(label)label.textContent=`× ${times} payments a year`;
+    const input=document.querySelector(`[data-c1-payment="${i}"]`);
+    const out=document.querySelector(`[data-c1-result="${i}"]`);
+    if(out){const total=input?yearlyTotal(input.value,frequency):null;out.textContent=total===null?'—':fmt(total);}
+  }
+}
 
 export function bindForms(){
   document.querySelectorAll('[data-bind]:not([data-bound])').forEach(el=>{
@@ -247,6 +272,8 @@ export function afterChange(path){
     const el=document.getElementById(id);
     if(el)el.textContent=fmt(val);
   }
+  // Milestone 74P: the entry helpers follow what was just typed.
+  syncEntryHelpers(path);
   // Conditional SDB field
   const sdbContainer=document.getElementById('sdb-filed-row');
   if(sdbContainer)sdbContainer.style.display=(getD().hasSafeDepositBox==='Yes'||getD().hasSafeDepositBox===true)?'':'none';

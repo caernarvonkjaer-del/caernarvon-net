@@ -17,7 +17,7 @@ import { checkExcelCapacity } from '../../core/excel/excel-capacity.js';
 // both reach it by that name.
 import { fmtDate as fmtD } from '../../core/excel/cell-reader.js';
 import { filingCopy, resolveFilingDescriptor } from '../../core/filing/filing-descriptor.js';
-import { renderFormField, renderSelectField } from '../../core/form/form-fields.js';
+import { renderCheckboxField, renderFormField, renderSelectField } from '../../core/form/form-fields.js';
 import { issueFactory } from '../../core/validation/validation-issue.js';
 import { serviceRecipientIssues, RECIPIENTS_OR_ATTESTATION } from '../../core/validation/service-recipients.js';
 import { renderServiceAttestationRow } from '../../core/form/service-attestation-visibility.js';
@@ -758,8 +758,9 @@ function pagePart3Annual(){
           <div class="col-md-8">${inpD('Email Address',g.email,`D.guardians[${i}].email=this.value`,false,'email')}</div>
           <div class="col-md-6">${inpD('Mailing Street Address',g.mailingStreet,`D.guardians[${i}].mailingStreet=this.value`,true)}</div>
           <div class="col-md-6">${inpD('Mailing City / State / Zip',g.mailingCityStateZip,`D.guardians[${i}].mailingCityStateZip=this.value`,true)}</div>
-          <div class="col-md-6">${inpD('Residence / Office Street Address',g.officeStreet,`D.guardians[${i}].officeStreet=this.value`,false)}</div>
-          <div class="col-md-6">${inpD('Residence / Office City / State / Zip',g.officeCityStateZip,`D.guardians[${i}].officeCityStateZip=this.value`,false)}</div>
+          <div class="col-12">${renderCheckboxField({ path: `guardians.${i}.officeSameAsMailing`, id: `guardians_${i}_officeSameAsMailing`, label: 'Residence / office address same as mailing address', checked: g.officeSameAsMailing === true, route: '/p3' })}</div>
+          ${g.officeSameAsMailing === true ? '' : `<div class="col-md-6">${inpD('Residence / Office Street Address',g.officeStreet,`D.guardians[${i}].officeStreet=this.value`,false)}</div>
+          <div class="col-md-6">${inpD('Residence / Office City / State / Zip',g.officeCityStateZip,`D.guardians[${i}].officeCityStateZip=this.value`,false)}</div>`}
         </div>
       </div>
     </div></div>`;

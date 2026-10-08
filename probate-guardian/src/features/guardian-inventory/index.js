@@ -59,6 +59,7 @@ import { initPrintPager } from '../../core/ui/print-pager.js';
 import { renderScheduleDocsSection } from '../../core/filing/schedule-docs.js';
 import { setPath } from '../../core/form/paths.js';
 import { appendRow, duplicateRowAt, removeRowAt } from '../../core/form/collections.js';
+import { jointOwnerRowFrom, offersJointOwner, paymentsPerYear, yearlyTotal } from '../../core/form/entry-helpers.js';
 import { showPickPartyModal } from '../../core/modals/pick-record-dialogs.js';
 import { getCurrentPage, navigate, renderPage } from '../../core/navigation/router.js';
 import { computeNavChecks, updateNavDots } from '../../core/status/nav-marks.js';
@@ -263,6 +264,8 @@ function bindEvents(container) {
     const index = Number.parseInt(control.dataset.index, 10);
     switch (control.dataset.inventoryAction) {
       case 'add-entry': addEntry(control.dataset.schedule); break;
+      case 'add-joint-owner': addJointOwner(control.dataset.list, index); break;
+      case 'c1-use-yearly': useYearlyTotal(index); break;
       case 'add-guardian': addGuardian(); break;
       case 'add-recipient': addRecipient(); break;
       case 'add-witness': addWitness(); break;
@@ -300,6 +303,10 @@ function bindEvents(container) {
 
   container.addEventListener('input', (event) => {
     const control = event.target;
+    if (control instanceof HTMLInputElement && control.dataset.c1Payment !== undefined) {
+      showYearlyTotal(Number.parseInt(control.dataset.c1Payment, 10));
+      return;
+    }
     if (!(control instanceof HTMLInputElement) || control.dataset.inventoryInput !== 'vehicle') return;
     if (control.dataset.inventoryFormat === 'year') control.value = control.value.replace(/[^0-9]/g, '').slice(0, 4);
     if (control.dataset.inventoryFormat === 'vin') control.value = control.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 17);
@@ -572,6 +579,34 @@ function entryCard(title,idx,schedule,bodyHtml,footerHtml=''){
     ${footerHtml?`<div class="entry-card-footer">${footerHtml}</div>`:''}
   </div></div>`;
 }
+// Milestone 74P (decision 74P-2): on an A-1 to B-4 card whose ward's share is
+// below 100%, a button that adds a C-5 joint-owner row for the asset
+// (entry-helpers.js). Drawn at the foot of every card and shown while the share qualifies,
+// so typing a share shows or hides it at once (form-binding.js).
+function jointOwnerFooter(listKey,e,i){
+  return `<div class="joint-owner-offer no-print" data-joint-owner-offer="${listKey}.${i}"${offersJointOwner(e)?'':' hidden'}>
+    <button type="button" class="btn btn-sm btn-outline-primary" data-inventory-action="add-joint-owner" data-list="${listKey}" data-index="${i}">+ Add a joint owner for this asset</button>
+    <span class="small text-muted ms-2" data-joint-owner-status="${listKey}.${i}" role="status" aria-live="polite"></span>
+  </div>`;
+}
+// Milestone 74P (decision 74P-1, approved by name under AGENTS.md section 5):
+// C-1's yearly total. The Clerk's form asks for the Annual Income Amount and
+// computes none, so the helper proposes payment x payments a year and fills
+// the box only on "Use"; the filer's own figure stays theirs. Shown for the
+// four frequencies it can count, hidden for Other or none.
+function yearlyTotalHelper(e,i){
+  const times=paymentsPerYear(e.frequencyOfPayment);
+  return `<div class="c1-yearly-helper no-print border rounded p-2 mt-1" data-c1-helper="${i}"${times?'':' hidden'}>
+    <div class="small fw-semibold mb-1">Work out the yearly total (optional)</div>
+    <div class="d-flex flex-wrap align-items-center gap-2">
+      <label class="small mb-0" for="c1-payment-${i}">Each payment ($)</label>
+      <input type="text" inputmode="decimal" class="form-control form-control-sm" style="max-width:9rem" id="c1-payment-${i}" data-c1-payment="${i}" autocomplete="off">
+      <span class="small" data-c1-times="${i}">× ${times} payments a year</span>
+      <span class="small">= <span data-c1-result="${i}">—</span></span>
+      <button type="button" class="btn btn-sm btn-outline-primary" data-inventory-action="c1-use-yearly" data-index="${i}" aria-label="Use as the Annual Income Amount">Use</button>
+    </div>
+  </div>`;
+}
 function scheduleCards(entries){
   return entries?`<div class="row g-3 schedule-entry-grid">${entries}</div>`:'';
 }
@@ -595,6 +630,40 @@ export function addEntry(schedule){
   const key=map[schedule];
   appendRow(getD(),key);
   commitModelChange('collection-add',[key]);
+  renderPage(getCurrentPage());
+}
+// Milestone 74P: a C-5 row for the asset on row `idx` of `listKey` -- its
+// description and full value, nothing else; nothing links the two afterwards.
+function addJointOwner(listKey,idx){
+  const source=getD()[listKey]?.[idx];
+  const fields=jointOwnerRowFrom(listKey,source,idx);
+  if(!fields)return;
+  appendRow(getD(),'scheduleC5',{factory:()=>({...mk.c5(),...fields})});
+  commitModelChange('collection-add',['scheduleC5']);
+  const status=document.querySelector(`[data-joint-owner-status="${listKey}.${idx}"]`);
+  if(status)status.textContent=`Added to Schedule C-5 as Joint Owner ${getD().scheduleC5.length}: "${fields.assetDescription}". Add the owner's details there.`;
+}
+// Milestone 74P: what the C-1 helper would put in the Annual Income Amount.
+function showYearlyTotal(idx){
+  const input=document.querySelector(`[data-c1-payment="${idx}"]`);
+  const out=document.querySelector(`[data-c1-result="${idx}"]`);
+  if(!input||!out)return;
+  const total=yearlyTotal(input.value,getD().scheduleC1?.[idx]?.frequencyOfPayment);
+  out.textContent=total===null?'—':fmt(total);
+}
+// Milestone 74P: "Use" -- the only way the helper writes the Annual Income Amount.
+function useYearlyTotal(idx){
+  const row=getD().scheduleC1?.[idx];
+  const input=document.querySelector(`[data-c1-payment="${idx}"]`);
+  const total=row&&input?yearlyTotal(input.value,row.frequencyOfPayment):null;
+  if(total===null){
+    const out=document.querySelector(`[data-c1-result="${idx}"]`);
+    if(out)out.textContent='Enter an amount first';
+    input?.focus();
+    return;
+  }
+  row.annualIncomeAmount=total;
+  commitModelChange('field-write',[`scheduleC1.${idx}.annualIncomeAmount`]);
   renderPage(getCurrentPage());
 }
 function removeEntry(schedule,idx){
@@ -850,6 +919,7 @@ function pageScheduleA1(){
     ${formRow(col(12,reqLabel('Street Address')+textInput(`scheduleA1.${i}.streetAddress`,'','address')))}
     ${formRow(col(6,reqLabel('City / State / Zip')+textInput(`scheduleA1.${i}.cityStateZip`,'','zip')),col(6,optLabel('Notes (joint ownership, etc.)')+textInput(`scheduleA1.${i}.notes`)))}
     ${formRow(col(4,reqLabel('Full Asset Value as of GID ($)')+numInput(`scheduleA1.${i}.fullAssetValue`)),col(4,reqLabel("Ward's Ownership % (0-100)")+numInput(`scheduleA1.${i}.wardPercent`)),col(4,optLabel("Ward's Value (calculated)")+calcInput(`scheduleA1.${i}.wardValue`)))}
+    ${jointOwnerFooter('scheduleA1',e,i)}
   `)).join('');
   return `<div class="schedule-page">
   <h1>Schedule A-1: Real Estate / Real Property</h1>
@@ -870,6 +940,7 @@ function pageScheduleA2(){
       ${formRow(col(12,optLabel('Notes (related property, etc.)')+textInput(`scheduleA2.${i}.notes`)))}
       ${formRow(col(4,reqLabel('Full Debt Balance as of GID ($)')+numInput(`scheduleA2.${i}.fullDebtBalance`)),col(4,reqLabel("Ward's % (0-100)")+numInput(`scheduleA2.${i}.wardPercent`)),col(4,optLabel("Ward's Debt Balance (calculated)")+calcInput(`scheduleA2.${i}.wardDebt`)))}
     </div>
+    ${jointOwnerFooter('scheduleA2',e,i)}
   `)).join('');
   return `<div class="schedule-page">
   <h1>Schedule A-2: Real Estate Liabilities (Mortgages / Notes / Loans)</h1>
@@ -885,6 +956,7 @@ function pageScheduleB1(){
     ${formRow(col(5,reqLabel('Financial Institution / Description')+textInput(`scheduleB1.${i}.institutionName`,'','name')),col(3,reqLabel('Account Type')+textInput(`scheduleB1.${i}.accountType`,'Checking, Savings, CD…','name')),col(2,yesNoRadioHTML(`schB1_rest_${i}`,'Restricted?',e.restricted||(e.isRestricted?'Yes':(e.isRestricted===false?'No':'')),`scheduleB1.${i}.restricted`)),col(2,optLabel('Account #')+textInput(`scheduleB1.${i}.accountNumber`,'','accountNumber')))}
     ${formRow(col(6,reqLabel('Street Address of Institution')+textInput(`scheduleB1.${i}.streetAddress`,'','address')),col(6,reqLabel('City / State / Zip')+textInput(`scheduleB1.${i}.cityStateZip`,'','zip')))}
     ${formRow(col(4,reqLabel('Full Asset Amount ($)')+numInput(`scheduleB1.${i}.fullAssetAmount`)),col(4,reqLabel("Ward's % (0-100)")+numInput(`scheduleB1.${i}.wardPercent`)),col(4,optLabel("Ward's Amount (calculated)")+calcInput(`scheduleB1.${i}.wardAmt`)))}
+    ${jointOwnerFooter('scheduleB1',e,i)}
   `)).join('');
   return `<div class="schedule-page">
   <h1>Schedule B-1: Cash Assets / Cash Equivalent Assets</h1>
@@ -957,6 +1029,7 @@ function pageScheduleB2(){
     ${formRow(col(6,reqLabel('Location – Street Address')+textInput(`scheduleB2.${i}.streetAddress`,'','address')),col(6,reqLabel('City / State / Zip')+textInput(`scheduleB2.${i}.cityStateZip`,'','zip')))}
     ${formRow(col(6,reqLabel('Valuation Method &amp; Condition')+textInput(`scheduleB2.${i}.valuationMethod`,'e.g., Kelly Blue Book — fair condition')))}
     ${valueRow}
+    ${jointOwnerFooter('scheduleB2',e,i)}
   `);
   }).join('');
   return `<div class="schedule-page">
@@ -974,6 +1047,7 @@ function pageScheduleB3(){
     ${formRow(col(6,reqLabel('Street Address / Custodian Address')+textInput(`scheduleB3.${i}.streetAddress`,'','address')),col(6,reqLabel('City / State / Zip')+textInput(`scheduleB3.${i}.cityStateZip`,'','zip')))}
     ${formRow(col(3,yesNoRadioHTML(`schB3_rest_${i}`,'Restricted?',e.restricted||(e.isRestricted?'Yes':(e.isRestricted===false?'No':'')),`scheduleB3.${i}.restricted`)),col(3,yesNoRadioHTML(`schB3_sdb_${i}`,'In Safe Deposit Box?',e.inSafeDepositBox===true?'Yes':(e.inSafeDepositBox===false?'No':(e.inSafeDepositBox||'')),`scheduleB3.${i}.inSafeDepositBox`)))}
     ${formRow(col(4,reqLabel('Full Asset Value ($)')+numInput(`scheduleB3.${i}.fullAssetValue`)),col(4,reqLabel("Ward's % (0-100)")+numInput(`scheduleB3.${i}.wardPercent`)),col(4,optLabel("Ward's Value (calculated)")+calcInput(`scheduleB3.${i}.wardB3`)))}
+    ${jointOwnerFooter('scheduleB3',e,i)}
   `)).join('');
   return `<div class="schedule-page">
   <h1>Schedule B-3: Intangible Assets</h1>
@@ -990,6 +1064,7 @@ function pageScheduleB4(){
     ${formRow(col(12,optLabel('Related Personal Property Asset (if secured)')+textInput(`scheduleB4.${i}.relatedProperty`,'e.g., 1992 Toyota Corolla (B-2, Item 2)')))}
     ${formRow(col(12,reqLabel('Lender Street Address / City / State / Zip')+textInput(`scheduleB4.${i}.lenderAddress`,'','address')))}
     ${formRow(col(4,reqLabel('Full Liability Balance ($)')+numInput(`scheduleB4.${i}.fullLiabilityBalance`)),col(4,reqLabel("Ward's % (0-100)")+numInput(`scheduleB4.${i}.wardPercent`)),col(4,optLabel("Ward's Liability Balance (calculated)")+calcInput(`scheduleB4.${i}.wardB4`)))}
+    ${jointOwnerFooter('scheduleB4',e,i)}
   `)).join('');
   return `<div class="schedule-page">
   <h1>Schedule B-4: Liabilities / Secured and Unsecured Debts / Notes / Loans</h1>
@@ -1006,6 +1081,7 @@ function pageScheduleC1(){
     ${formRow(col(6,reqLabel('Payer Street Address')+textInput(`scheduleC1.${i}.payerAddress`,'','address')),col(6,optLabel('Payer City / State / Zip')+textInput(`scheduleC1.${i}.payerCityStateZip`,'','zip')))}
     ${formRow(col(4,reqLabel('Basis for Payment')+textInput(`scheduleC1.${i}.paymentBasis`,'e.g., $600/month')))}
     ${formRow(col(3,reqLabel('Annual Income Amount ($)')+numInput(`scheduleC1.${i}.annualIncomeAmount`)),col(3,reqLabel("Ward's % (0-100)")+numInput(`scheduleC1.${i}.wardPercent`)),col(3,optLabel("Ward's Annual Income (calculated)")+calcInput(`scheduleC1.${i}.wardC1`)))}
+    ${yearlyTotalHelper(e,i)}
   `)).join('');
   return `<div class="schedule-page">
   <h1>Schedule C-1: Income (Annualized)</h1>
