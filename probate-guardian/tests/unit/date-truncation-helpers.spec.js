@@ -3,7 +3,9 @@ import path from 'node:path';
 import { describe, expect, test } from 'vitest';
 
 globalThis.window = globalThis.window || {};
-const { fmtD } = await import('../../src/features/annual-accounting/index.js');
+// Milestone 73H: the Annual's screens show dates through displayDate(); the
+// re-export of the importer's fmtDate as fmtD, which this spec reached, is gone.
+const { displayDate } = await import('../../src/core/form/date-parser.js');
 const { fmtDate } = await import('../../src/core/excel/cell-reader.js');
 
 // Milestone 51's fmtDate audit found thirteen date-truncating copies in this app,
@@ -28,21 +30,20 @@ describe('Group A date-truncation helpers: Date objects', () => {
   // a classic-script global before and could only be source-scanned. The other
   // three were closures local to their excel.js writers until Milestone 67E
   // retired them (see the source-scan block below).
-  test('fmtD() normalizes a Date through toISOString(), not Date#toString()', () => {
-    expect(fmtD(new Date('2026-05-20T00:00:00Z'))).toBe('2026-05-20');
+  test('displayDate() normalizes a Date through toISOString(), not Date#toString()', () => {
+    expect(displayDate(new Date('2026-05-20T00:00:00Z'))).toBe('05/20/2026');
     // A timestamp late in the UTC day is the case a local-timezone conversion
     // would shift backwards a day.
-    expect(fmtD(new Date('2026-01-01T23:59:59Z'))).toBe('2026-01-01');
+    expect(displayDate(new Date('2026-01-01T23:59:59Z'))).toBe('01/01/2026');
   });
 
-  test('fmtD() still behaves as before for every non-Date input', () => {
-    expect(fmtD('2026-09-15')).toBe('2026-09-15');
-    expect(fmtD('2026-09-15T14:30:00Z')).toBe('2026-09-15');
-    expect(fmtD('')).toBe('');
-    expect(fmtD(null)).toBe('');
-    expect(fmtD(undefined)).toBe('');
-    expect(fmtD(0)).toBe('');
-    expect(fmtD('abc')).toBe('abc');
+  test('displayDate() for every non-Date input: MM/DD/YYYY, blank empty, other text as it is', () => {
+    expect(displayDate('2026-09-15')).toBe('09/15/2026');
+    expect(displayDate('2026-09-15T14:30:00Z')).toBe('09/15/2026');
+    expect(displayDate('')).toBe('');
+    expect(displayDate(null)).toBe('');
+    expect(displayDate(undefined)).toBe('');
+    expect(displayDate('abc')).toBe('abc');
   });
 
   test('fmtDate() normalizes a Date through toISOString(), not Date#toString()', () => {
@@ -60,14 +61,14 @@ describe('Group A date-truncation helpers: Date objects', () => {
     expect(fmtDate('abc')).toBe('abc');
   });
 
-  // Milestone 53C: annual-accounting's fmtD is a RE-EXPORT of cell-reader.js's
-  // fmtDate, not a second implementation. Object identity is the strongest
-  // available assertion of that -- two separately-declared copies could pass
-  // every behavioural test above and still drift later; the same function
-  // object cannot. This is what replaces the source scan for a fmtD body in
-  // annual-accounting/index.js, which no longer has one.
-  test('fmtD IS fmtDate -- a re-export, not a copy', () => {
-    expect(fmtD).toBe(fmtDate);
+  // Milestone 53C made annual-accounting's fmtD a RE-EXPORT of cell-reader.js's
+  // fmtDate, not a second implementation. Milestone 73H: that form's screens
+  // show dates through displayDate() (MM/DD/YYYY, the guard above), so it keeps
+  // no date reader of its own at all -- no fmtD, no copy that could drift.
+  test('annual-accounting/index.js keeps no date reader of its own; it shows dates through displayDate()', () => {
+    const source = fs.readFileSync(path.resolve('src/features/annual-accounting/index.js'), 'utf8');
+    expect(source, 'no call, binding or re-export of fmtD').not.toMatch(/\bfmtD\s*\(|import \{[^}]*\bas fmtD\b|export \{ fmtD/);
+    expect(source).toContain('displayDate(d.periodFrom)');
   });
 });
 

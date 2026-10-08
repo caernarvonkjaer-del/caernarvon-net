@@ -1,5 +1,5 @@
 import { renderSummaryPage, navStatus, formatSummaryDate } from '../../core/summary-renderer.js';
-import { formatDisplayDate } from '../../core/form/date-parser.js';
+import { displayDate, formatDisplayDate } from '../../core/form/date-parser.js';
 import { renderLocalSectionGuidance } from '../../core/status/section-status.js';
 import { checkDateOrder } from '../../core/validation/date-rules.js';
 // Milestone 51F: the capacity rule has ONE implementation. This used to come
@@ -7,15 +7,10 @@ import { checkDateOrder } from '../../core/validation/date-rules.js';
 // (remuneration-filtering comment included), so the print-page capacity panel
 // and the export gate ran two separate copies of the same court-facing rule.
 import { checkExcelCapacity } from '../../core/excel/excel-capacity.js';
-// Milestone 53C: fmtD was a character-identical twin of the fmtDate Milestone
-// 53B moved into cell-reader.js (Milestone 51's audit grouped the two as "A1"
-// and left them only because they sat on opposite sides of the script
-// boundary). Imported under the local name fmtD -- NOT
-// `import { fmtDate } ... ; export { fmtDate as fmtD }`, which would re-export
-// correctly but leave no local fmtD binding for this file's own call sites --
-// and re-exported below, since print.js and date-truncation-helpers.spec.js
-// both reach it by that name.
-import { fmtDate as fmtD } from '../../core/excel/cell-reader.js';
+// Milestone 73H: the dates this form shows go through displayDate()
+// (date-parser.js), MM/DD/YYYY as on its PDF. It used cell-reader.js's
+// fmtDate -- the importer's ISO reader -- under the name fmtD, so the sworn
+// statements on Parts III to V read "2025-01-01" on screen.
 import { filingCopy, resolveFilingDescriptor } from '../../core/filing/filing-descriptor.js';
 import { renderCheckboxField, renderFormField, renderSelectField } from '../../core/form/form-fields.js';
 import { issueFactory } from '../../core/validation/validation-issue.js';
@@ -84,7 +79,6 @@ import { navigate } from '../../core/navigation/router.js';
 import { calcTotalsAnnual, annualReconcileState, n, pct } from './totals.js';
 import { isAttorneyStarted } from '../../core/validation/attorney-block.js';
 import { startingBalanceNotesHTML } from '../../core/filing/starting-balance-carry.js';
-import { formatMoney } from '../../core/format/money.js';
 import { percentProblem } from '../../core/validation/percent-range.js';
 import { resolveServiceCertifier, certifierChoiceNeeded, certifyingCandidates, serviceCertifierChoiceHTML, waiverBasisQuestionHTML, watchWaiverAdvocateHint } from '../../core/filing/unrepresented-filing.js';
 import { WARD_STATUS_VALUES, SERVICE_METHOD_LABEL, SERVICE_METHOD_KIND } from '../../core/filing/service-method.js';
@@ -93,6 +87,11 @@ import { auditLog } from '../../core/activity/audit-log.js';
 import { watchAttorneyRequiredMarkers } from '../../core/form/attorney-required-markers.js';
 import { commitModelChange } from '../../core/model-change.js';
 import { collectAnnualIssues, RECIPIENT_STARTED_FIELDS, annualDescriptor, fmtAnnual } from '../../core/validation/engines/annual.js';
+import { withMinusCue } from '../../core/form/amount-codec.js';
+// Milestone 73H: an amount as a screen shows it -- $5,000.00 / ($5,000.00), a
+// negative also read as "minus" (withMinusCue()). fmtAnnual() alone where
+// HTML can't go: a read-only box's value.
+const fmtA=(v)=>withMinusCue(fmtAnnual(v));
 import { GUARDIAN_RELATIONSHIPS } from '../../core/filing/guardian-relationship.js';
 
 // Milestone 71B: the Part V fields that become required once an attorney is
@@ -282,7 +281,7 @@ function refreshAnnualTotals() {
   const t = calcTotalsAnnual();
   cells.forEach((cell) => {
     const key = cell.dataset.annualTotal;
-    if (key in t) cell.textContent = fmtAnnual(t[key]);
+    if (key in t) cell.innerHTML = fmtA(t[key]);
   });
 
   const d = getD() || {};
@@ -470,19 +469,13 @@ function buildNavAnnual(container){
     </div>
   `;
 }
-// Exported (not just module-local) because print.js also needs these --
-// statically imported back from here rather than duplicated, same
-// safe-circularity pattern as validateAnnual.
-// Milestone 71E: formatMoney() -- the Clerk's workbook's own rounding; (1,234.56) for a negative.
-// The `instanceof Date` guard matters here more than anywhere: this helper feeds
-// pdf-model.js's Part I period line, every signature date, and the
-// under-penalties-of-perjury attestation's "from X through Y". Without it,
+// The `instanceof Date` guard on a date this form shows matters more than
+// anywhere: the under-penalties-of-perjury attestation's "from X through Y".
 // String(dateObj).substring(0,10) gives "Tue May 19" for a 2026-05-20T00:00:00Z
 // date -- wrong format and a day early, inside a sworn statement. See
-// tests/unit/date-truncation-helpers.spec.js. Milestone 53C: the guard now
-// lives in cell-reader.js's fmtDate (imported above as fmtD); this is a
-// re-export of that one function object, not a second copy.
-export { fmtD };
+// tests/unit/date-truncation-helpers.spec.js. Milestone 73H: displayDate()
+// (date-parser.js) carries that guard for this form's screens; the re-export
+// of the importer's fmtDate as fmtD, which did, is gone.
 // securitySanitize: this family's plain free-text fields keep running
 // validateSecurityInput() (src/core/security/input-hardening.js) on blur
 // (see the option's own
@@ -550,7 +543,7 @@ function getSummaryConfigAnnual(){
   // checks, src/core/status/section-marks.js; 70D's per-type evaluator before).
   const nav=sectionMarks(d);
   const t=calcTotalsAnnual();
-  const f=v=>fmtAnnual(v)||'—';
+  const f=v=>fmtA(v)||'—';
   return {
     formTitle:`${descriptor?.displayName||'Annual Accounting'} — Summary`,
     infoRows:[
@@ -568,7 +561,7 @@ function getSummaryConfigAnnual(){
         lines:[
           {label:'Starting Balance',value:f(d.startingBalance)},
           {label:'Sch A — Income',value:f(t.schA)},
-          {label:'Total Disbursements (B-1 thru B-4)',value:f(t.totalDisb)},
+          {label:'Total Disbursements (B-1 thru B-4)',value:f(-t.totalDisb)},
           {label:'Sch C — Capital Adj. Net',value:f(t.schC_net)},
           {label:'Net Assets at End of Period',value:f(t.netAssets),isTotal:true},
           {label:'Net Assets from Sch D (should match)',value:f(t.netAssetsFromD)},
@@ -610,7 +603,7 @@ function getSummaryConfigAnnual(){
 }
 // Exported (not just module-local) because print.js's buildPrintHTMLAnnual()
 // also needs it, for the same Schedule B-4 category-total table --
-// statically imported back from here, same pattern as fmtAnnual/fmtD above.
+// statically imported back from here, same pattern as fmtAnnual above.
 export const DISB_CATS=['Accounting','Bank Service Charges','Care Facility','Clothing / Personal Needs','Entertainment / Travel','Food / Meals','Insurance: Automobile / Property','Insurance: Health / Life','Medical / Pharmacy','Mortgage','Nurse / Care Giver / Employer Tax','Other Legal Expenses','Rent','Repairs / Maintenance','Taxes: Income','Taxes: Intangible','Utilities','Other'];
 const LIAB_TYPES=['Mortgage','Note','Loan','Other'];
 const GUARDIAN_REL=GUARDIAN_RELATIONSHIPS;
@@ -702,12 +695,12 @@ function pagePart1Annual(){
   ${isAttorneyStarted(d,'annual')?'':waiverBasisQuestionHTML(d,{route:'/',dateField:(path,label)=>inpD(label,d[path],`D.${path}=this.value`,false,'date')})}
   <div class="summary-box mt-3">
     <h2 class="subsection-heading">Quick Summary (auto-calculated)</h2>
-    <div class="summary-line"><span>Starting Balance</span><span>${fmtAnnual(d.startingBalance)||'—'}</span></div>
-    <div class="summary-line"><span>Sch A — Income</span><span>${fmtAnnual(t.schA)}</span></div>
-    <div class="summary-line"><span>Total Disbursements (B-1 thru B-4)</span><span>${fmtAnnual(t.totalDisb)}</span></div>
-    <div class="summary-line"><span>Sch C — Capital Adj. Net</span><span>${fmtAnnual(t.schC_net)}</span></div>
-    <div class="summary-line total"><span>Net Assets at End of Period</span><span>${fmtAnnual(t.netAssets)}</span></div>
-    <div class="summary-line" style="margin-top:.35rem;"><span>Net Assets from Sch D (should match above)</span><span>${fmtAnnual(t.netAssetsFromD)}</span></div>
+    <div class="summary-line"><span>Starting Balance</span><span>${fmtA(d.startingBalance)||'—'}</span></div>
+    <div class="summary-line"><span>Sch A — Income</span><span>${fmtA(t.schA)}</span></div>
+    <div class="summary-line"><span>Total Disbursements (B-1 thru B-4)</span><span>${fmtA(-t.totalDisb)}</span></div>
+    <div class="summary-line"><span>Sch C — Capital Adj. Net</span><span>${fmtA(t.schC_net)}</span></div>
+    <div class="summary-line total"><span>Net Assets at End of Period</span><span>${fmtA(t.netAssets)}</span></div>
+    <div class="summary-line" style="margin-top:.35rem;"><span>Net Assets from Sch D (should match above)</span><span>${fmtA(t.netAssetsFromD)}</span></div>
   </div>
   ${pageNavAnnual(null,'/summary')}
   </div>`;
@@ -726,7 +719,7 @@ function pagePart2Annual(){
     <div class="summary-line"><span>From $25,000.01 up to and including $100,000</span><span>$85.00</span></div>
     <div class="summary-line"><span>From $100,000.01 up to and including $500,000</span><span>$170.00</span></div>
     <div class="summary-line"><span>In excess of $500,000</span><span>$250.00</span></div>
-    <div class="summary-line total"><span>Applicable Fee (based on total assets ${fmtAnnual(t.netAssetsFromD)})</span><span><strong>${formatMoney(fee)}</strong></span></div>
+    <div class="summary-line total"><span>Applicable Fee — Estate value (Net Assets, Line 30): ${fmtA(t.netAssetsFromD)}</span><span><strong>${fmtA(fee)}</strong></span></div>
   </div>
   <div class="row g-2">
     <div class="col-md-4">${inpD('Starting Balance (Net Assets per Prior Report)',d.startingBalance,"D.startingBalance=this.value",true,'number',{kind:'signed-money',keepBlank:true})}</div>
@@ -769,7 +762,7 @@ function pagePart3Annual(){
   return `<div class="schedule-page">
   <h1>Part III — Guardian(s) Signature &amp; Declaration</h1>
   ${preparerNoteHTML()}
-  <div class="attestation-text">UNDER PENALTIES OF PERJURY, I declare that I have read and examined the foregoing return and that, to the best of my knowledge and belief, it constitutes a full and correct account of all the ward's property of which this guardian has control, and is a complete report of all cash and property transactions and of all receipts and any disbursements by me from <strong>${fmtD(d.periodFrom)||'[from date]'}</strong> through <strong>${fmtD(d.periodTo)||'[to date]'}</strong>.</div>
+  <div class="attestation-text">UNDER PENALTIES OF PERJURY, I declare that I have read and examined the foregoing return and that, to the best of my knowledge and belief, it constitutes a full and correct account of all the ward's property of which this guardian has control, and is a complete report of all cash and property transactions and of all receipts and any disbursements by me from <strong>${displayDate(d.periodFrom)||'—'}</strong> through <strong>${displayDate(d.periodTo)||'—'}</strong>.</div>
   <div class="row g-3 card-grid-2col mb-3">${cards}</div>
   ${addCoBtn}
   ${pageNavAnnual('/p2','/p4')}
@@ -796,7 +789,7 @@ function pagePart4Annual(){
   return `<div class="schedule-page">
   <h1>Part IV — Preparer Attestation</h1>
   ${preparerNoteHTML()}
-  <div class="attestation-text">${esc(copy.preparerStatement(d.wardName||'[ward]',fmtD(d.periodFrom),fmtD(d.periodTo))).replace(/\n/g,'<br>')}</div>
+  <div class="attestation-text">${esc(copy.preparerStatement(d.wardName||'[ward]',displayDate(d.periodFrom)||'—',displayDate(d.periodTo)||'—')).replace(/\n/g,'<br>')}</div>
   <div style="color:var(--brand-text);font-size:.8rem;font-weight:700;margin-bottom:.75rem;">*** If you are the Guardian, Co-Guardian, or Guardian Attorney — DO NOT SIGN HERE. ***</div>
   <div class="row g-3 card-grid-2col">
     <div class="col-12 col-lg-6">
@@ -837,7 +830,7 @@ function pagePart5Annual(){
   <h1>Part V — Guardian Attorney Signature</h1>
   ${preparerNoteHTML()}
   ${noAttorney}
-  <div class="attestation-text">${esc(copy.attorneyStatement(d.wardName||'[ward]',fmtD(d.periodFrom),fmtD(d.periodTo),d.attorney_county||d.county||'[county]'))}</div>
+  <div class="attestation-text">${esc(copy.attorneyStatement(d.wardName||'[ward]',displayDate(d.periodFrom)||'—',displayDate(d.periodTo)||'—',d.attorney_county||d.county||'[county]'))}</div>
   <div class="row g-3 card-grid-2col">
     <div class="col-12 col-lg-6">
       <div class="entry-card mb-0 h-100">
@@ -909,7 +902,7 @@ function pageSchAAnnual(){
   <div class="schedule-instructions">Include all types of income such as SSI, Retirement, Disability benefits, interest or rental income. Do NOT include receipts from sale/disposal of principal assets (those go in Schedule C).</div>
   ${rows}
   <button class="btn btn-outline-primary btn-sm mb-2" data-annual-action="add-row" data-collection="schA" data-route="/scha">+ Add Income Line</button>
-  <div class="schedule-totals"><div class="tbl"><div class="tr"><div class="td">Schedule A Total — Income/Receipts Received During Period</div><div class="td" data-annual-total="schA">${fmtAnnual(t.schA)}</div></div></div></div>
+  <div class="schedule-totals"><div class="tbl"><div class="tr"><div class="td">Schedule A Total — Income/Receipts Received During Period</div><div class="td" data-annual-total="schA">${fmtA(t.schA)}</div></div></div></div>
   ${renderScheduleDocsSection('schA')}
   ${pageNavAnnual('/p5','/schb1')}
   </div>`;
@@ -941,7 +934,7 @@ function pageSchB1Annual(){
   <div class="schedule-instructions">Bank Account Number = The Financial Institution's Account Number (NOT its Routing Number).</div>
   ${rows}
   <button class="btn btn-outline-primary btn-sm mb-2" data-annual-action="add-row" data-collection="schB1" data-route="/schb1">+ Add Entry</button>
-  <div class="schedule-totals"><div class="tbl"><div class="tr"><div class="td">Schedule B-1 Total — Attorney Fees and Costs</div><div class="td" data-annual-total="schB1">${fmtAnnual(t.schB1)}</div></div></div></div>
+  <div class="schedule-totals"><div class="tbl"><div class="tr"><div class="td">Schedule B-1 Total — Attorney Fees and Costs</div><div class="td" data-annual-total="schB1">${fmtA(t.schB1)}</div></div></div></div>
   ${renderScheduleDocsSection('schB1')}
   ${pageNavAnnual('/scha','/schb2')}
   </div>`;
@@ -973,7 +966,7 @@ function pageSchB2Annual(){
   <div class="schedule-instructions">Bank Account Number = The Financial Institution's Account Number (NOT its Routing Number).</div>
   ${rows}
   <button class="btn btn-outline-primary btn-sm mb-2" data-annual-action="add-row" data-collection="schB2" data-route="/schb2">+ Add Entry</button>
-  <div class="schedule-totals"><div class="tbl"><div class="tr"><div class="td">Schedule B-2 Total — Guardian Fees and Costs</div><div class="td" data-annual-total="schB2">${fmtAnnual(t.schB2)}</div></div></div></div>
+  <div class="schedule-totals"><div class="tbl"><div class="tr"><div class="td">Schedule B-2 Total — Guardian Fees and Costs</div><div class="td" data-annual-total="schB2">${fmtA(t.schB2)}</div></div></div></div>
   ${renderScheduleDocsSection('schB2')}
   ${pageNavAnnual('/schb1','/schb3')}
   </div>`;
@@ -1003,7 +996,7 @@ function pageSchB3Annual(){
   <div class="schedule-instructions">Bank Account Number = The Financial Institution's Account Number (NOT its Routing Number).</div>
   ${rows}
   <button class="btn btn-outline-primary btn-sm mb-2" data-annual-action="add-row" data-collection="schB3" data-route="/schb3">+ Add Entry</button>
-  <div class="schedule-totals"><div class="tbl"><div class="tr"><div class="td">Schedule B-3 Total — Other Court-Ordered Disbursements</div><div class="td" data-annual-total="schB3">${fmtAnnual(t.schB3)}</div></div></div></div>
+  <div class="schedule-totals"><div class="tbl"><div class="tr"><div class="td">Schedule B-3 Total — Other Court-Ordered Disbursements</div><div class="td" data-annual-total="schB3">${fmtA(t.schB3)}</div></div></div></div>
   ${renderScheduleDocsSection('schB3')}
   ${pageNavAnnual('/schb2','/schb4')}
   </div>`;
@@ -1072,7 +1065,7 @@ function pageSchB4Annual(){
   ${accountsSection}
   ${rows}
   <button class="btn btn-outline-primary btn-sm mb-2" data-annual-action="add-row" data-collection="schB4" data-route="/schb4">+ Add Entry</button>
-  <div class="schedule-totals mb-2"><div class="tbl"><div class="tr"><div class="td">Schedule B-4 Total — All Other Disbursements</div><div class="td" data-annual-total="schB4">${fmtAnnual(t.schB4)}</div></div></div></div>
+  <div class="schedule-totals mb-2"><div class="tbl"><div class="tr"><div class="td">Schedule B-4 Total — All Other Disbursements</div><div class="td" data-annual-total="schB4">${fmtA(t.schB4)}</div></div></div></div>
   <div class="summary-box"><h2 class="subsection-heading">Category Summary</h2>${catSummary}</div>
   ${renderScheduleDocsSection('schB4')}
   ${pageNavAnnual('/schb3','/schc')}
@@ -1110,9 +1103,9 @@ function pageSchCAnnual(){
   ${rows}
   <button class="btn btn-outline-primary btn-sm mb-2" data-annual-action="add-row" data-collection="schC" data-route="/schc">+ Add Entry</button>
   <div class="schedule-totals"><div class="tbl">
-    <div class="tr"><div class="td">Total Gains / Additions</div><div class="td" data-annual-total="schC_gains">${fmtAnnual(t.schC_gains)}</div></div>
-    <div class="tr"><div class="td">Total Losses / Reductions</div><div class="td" data-annual-total="schC_losses">${fmtAnnual(t.schC_losses)}</div></div>
-    <div class="tr"><div class="td"><strong>Net Capital Adjustments</strong></div><div class="td"><strong data-annual-total="schC_net">${fmtAnnual(t.schC_net)}</strong></div></div>
+    <div class="tr"><div class="td">Total Gains / Additions</div><div class="td" data-annual-total="schC_gains">${fmtA(t.schC_gains)}</div></div>
+    <div class="tr"><div class="td">Total Losses / Reductions</div><div class="td" data-annual-total="schC_losses">${fmtA(t.schC_losses)}</div></div>
+    <div class="tr"><div class="td"><strong>Net Capital Adjustments</strong></div><div class="td"><strong data-annual-total="schC_net">${fmtA(t.schC_net)}</strong></div></div>
   </div></div>
   ${renderScheduleDocsSection('schC')}
   ${pageNavAnnual('/schb4','/schd1')}
@@ -1148,8 +1141,8 @@ function pageSchD1Annual(){
   ${rows}
   <button class="btn btn-outline-primary btn-sm mb-2" data-annual-action="add-row" data-collection="schD1" data-route="/schd1">+ Add Account</button>
   <div class="schedule-totals"><div class="tbl">
-    <div class="tr"><div class="td">Cash Assets in Restricted Depository</div><div class="td" data-annual-total="schD1_restricted">${fmtAnnual(t.schD1_restricted)}</div></div>
-    <div class="tr"><div class="td"><strong>Total Cash Assets (Ward's Amount)</strong></div><div class="td"><strong data-annual-total="schD1_total">${fmtAnnual(t.schD1_total)}</strong></div></div>
+    <div class="tr"><div class="td">Cash Assets in Restricted Depository</div><div class="td" data-annual-total="schD1_restricted">${fmtA(t.schD1_restricted)}</div></div>
+    <div class="tr"><div class="td"><strong>Total Cash Assets (Ward's Amount)</strong></div><div class="td"><strong data-annual-total="schD1_total">${fmtA(t.schD1_total)}</strong></div></div>
   </div></div>
   ${renderScheduleDocsSection('schD1')}
   ${pageNavAnnual('/schc','/schd2')}
@@ -1185,8 +1178,8 @@ function pageSchD2Annual(){
   ${rows}
   <button class="btn btn-outline-primary btn-sm mb-2" data-annual-action="add-row" data-collection="schD2" data-route="/schd2">+ Add Property</button>
   <div class="schedule-totals"><div class="tbl">
-    <div class="tr"><div class="td">Carrying Value Total</div><div class="td" data-annual-total="schD2_carrying">${fmtAnnual(t.schD2_carrying)}</div></div>
-    <div class="tr"><div class="td"><strong>Total Value</strong></div><div class="td"><strong data-annual-total="schD2_ward">${fmtAnnual(t.schD2_ward)}</strong></div></div>
+    <div class="tr"><div class="td">Carrying Value Total</div><div class="td" data-annual-total="schD2_carrying">${fmtA(t.schD2_carrying)}</div></div>
+    <div class="tr"><div class="td"><strong>Total Value</strong></div><div class="td"><strong data-annual-total="schD2_ward">${fmtA(t.schD2_ward)}</strong></div></div>
   </div></div>
   ${renderScheduleDocsSection('schD2')}
   ${pageNavAnnual('/schd1','/schd3')}
@@ -1220,8 +1213,8 @@ function pageSchD3Annual(){
   ${rows}
   <button class="btn btn-outline-primary btn-sm mb-2" data-annual-action="add-row" data-collection="schD3" data-route="/schd3">+ Add Property</button>
   <div class="schedule-totals"><div class="tbl">
-    <div class="tr"><div class="td">Carrying Value Total</div><div class="td" data-annual-total="schD3_carrying">${fmtAnnual(t.schD3_carrying)}</div></div>
-    <div class="tr"><div class="td"><strong>Ward's Amount Total</strong></div><div class="td"><strong data-annual-total="schD3_ward">${fmtAnnual(t.schD3_ward)}</strong></div></div>
+    <div class="tr"><div class="td">Carrying Value Total</div><div class="td" data-annual-total="schD3_carrying">${fmtA(t.schD3_carrying)}</div></div>
+    <div class="tr"><div class="td"><strong>Ward's Amount Total</strong></div><div class="td"><strong data-annual-total="schD3_ward">${fmtA(t.schD3_ward)}</strong></div></div>
   </div></div>
   ${renderScheduleDocsSection('schD3')}
   ${pageNavAnnual('/schd2','/schd4')}
@@ -1256,9 +1249,9 @@ function pageSchD4Annual(){
   ${rows}
   <button class="btn btn-outline-primary btn-sm mb-2" data-annual-action="add-row" data-collection="schD4" data-route="/schd4">+ Add Asset</button>
   <div class="schedule-totals"><div class="tbl">
-    <div class="tr"><div class="td">Restricted Intangible Assets</div><div class="td" data-annual-total="schD4_restricted">${fmtAnnual(t.schD4_restricted)}</div></div>
-    <div class="tr"><div class="td">Carrying Value Total</div><div class="td" data-annual-total="schD4_carrying">${fmtAnnual(t.schD4_carrying)}</div></div>
-    <div class="tr"><div class="td"><strong>Total Value</strong></div><div class="td"><strong data-annual-total="schD4_ward">${fmtAnnual(t.schD4_ward)}</strong></div></div>
+    <div class="tr"><div class="td">Restricted Intangible Assets</div><div class="td" data-annual-total="schD4_restricted">${fmtA(t.schD4_restricted)}</div></div>
+    <div class="tr"><div class="td">Carrying Value Total</div><div class="td" data-annual-total="schD4_carrying">${fmtA(t.schD4_carrying)}</div></div>
+    <div class="tr"><div class="td"><strong>Total Value</strong></div><div class="td"><strong data-annual-total="schD4_ward">${fmtA(t.schD4_ward)}</strong></div></div>
   </div></div>
   ${renderScheduleDocsSection('schD4')}
   ${pageNavAnnual('/schd3','/schd5')}
@@ -1292,7 +1285,7 @@ function pageSchD5Annual(){
   <div class="schedule-instructions">Include mortgages, second mortgages, judgment liens, tax liens, credit cards, vehicle loans, unpaid medical/facility bills, promissory notes. Type: M=Mortgage, N=Note, L=Loan, O=Other.</div>
   ${rows}
   <button class="btn btn-outline-primary btn-sm mb-2" data-annual-action="add-row" data-collection="schD5" data-route="/schd5">+ Add Liability</button>
-  <div class="schedule-totals"><div class="tbl"><div class="tr"><div class="td"><strong>Schedule D-5 Total — Ward's Balance Due</strong></div><div class="td"><strong data-annual-total="schD5_total">${fmtAnnual(t.schD5_total)}</strong></div></div></div></div>
+  <div class="schedule-totals"><div class="tbl"><div class="tr"><div class="td"><strong>Schedule D-5 Total — Ward's Balance Due</strong></div><div class="td"><strong data-annual-total="schD5_total">${fmtA(t.schD5_total)}</strong></div></div></div></div>
   ${renderScheduleDocsSection('schD5')}
   ${pageNavAnnual('/schd4','/sche')}
   </div>`;
@@ -1327,8 +1320,8 @@ function pageSchEAnnual(){
   ${rows}
   <button class="btn btn-outline-primary btn-sm mb-2" data-annual-action="add-row" data-collection="schE" data-route="/sche">+ Add Transfer</button>
   <div class="schedule-totals"><div class="tbl">
-    <div class="tr"><div class="td">Total Transfers In</div><div class="td" data-annual-total="schE_in">${fmtAnnual(t.schE_in)}</div></div>
-    <div class="tr"><div class="td">Total Transfers Out</div><div class="td" data-annual-total="schE_out">${fmtAnnual(t.schE_out)}</div></div>
+    <div class="tr"><div class="td">Total Transfers In</div><div class="td" data-annual-total="schE_in">${fmtA(t.schE_in)}</div></div>
+    <div class="tr"><div class="td">Total Transfers Out</div><div class="td" data-annual-total="schE_out">${fmtA(t.schE_out)}</div></div>
   </div></div>
   ${renderScheduleDocsSection('schE')}
   ${pageNavAnnual('/schd5','/schf1')}
@@ -1358,7 +1351,7 @@ function pageSchF1Annual(){
   <div class="schedule-instructions">Attach a copy of the closing statement. Gains or losses from the sale should also be noted in Schedule C. Provide the court order date approving the sale.</div>
   ${rows}
   <button class="btn btn-outline-primary btn-sm mb-2" data-annual-action="add-row" data-collection="schF1" data-route="/schf1">+ Add Sale</button>
-  <div class="schedule-totals"><div class="tbl"><div class="tr"><div class="td">Schedule F-1 Total — Sales of Real Property</div><div class="td" data-annual-total="schF1">${fmtAnnual(t.schF1)}</div></div></div></div>
+  <div class="schedule-totals"><div class="tbl"><div class="tr"><div class="td">Schedule F-1 Total — Sales of Real Property</div><div class="td" data-annual-total="schF1">${fmtA(t.schF1)}</div></div></div></div>
   ${renderScheduleDocsSection('schF1')}
   ${pageNavAnnual('/sche','/schf2')}
   </div>`;
@@ -1387,7 +1380,7 @@ function pageSchF2Annual(){
   <div class="schedule-instructions">Gains or losses from the sale of personal property should also be noted in Schedule C. Attach proof of proceeds deposited.</div>
   ${rows}
   <button class="btn btn-outline-primary btn-sm mb-2" data-annual-action="add-row" data-collection="schF2" data-route="/schf2">+ Add Sale</button>
-  <div class="schedule-totals"><div class="tbl"><div class="tr"><div class="td">Schedule F-2 Total — Sales of Personal Property</div><div class="td" data-annual-total="schF2">${fmtAnnual(t.schF2)}</div></div></div></div>
+  <div class="schedule-totals"><div class="tbl"><div class="tr"><div class="td">Schedule F-2 Total — Sales of Personal Property</div><div class="td" data-annual-total="schF2">${fmtA(t.schF2)}</div></div></div></div>
   ${renderScheduleDocsSection('schF2')}
   ${pageNavAnnual('/schf1','/p67')}
   </div>`;
@@ -1401,25 +1394,25 @@ function pagePart67Annual(){
   <div class="schedule-instructions">This page is auto-calculated from all schedules. Net Assets from Changes (Part VI, below) should equal Net Assets from Balances (Part VII, below). If they differ, verify individual schedules.</div>
   <div class="summary-box">
     <h2 class="subsection-heading">Part VI — Changes in Net Assets</h2>
-    <div class="summary-line"><span>Starting Balance (Net Assets per Prior Report)</span><span>${fmtAnnual(d.startingBalance)}</span></div>
-    <div class="summary-line"><span><a href="#" data-annual-action="navigate" data-route="/scha">Schedule A — Income/Receipts</a></span><span>${fmtAnnual(t.schA)}</span></div>
+    <div class="summary-line"><span>Starting Balance (Net Assets per Prior Report)</span><span>${fmtA(d.startingBalance)}</span></div>
+    <div class="summary-line"><span><a href="#" data-annual-action="navigate" data-route="/scha">Schedule A — Income/Receipts</a></span><span>${fmtA(t.schA)}</span></div>
     <div style="padding:.1rem 0;font-size:.7rem;color:var(--ink-3);font-style:italic;">Disbursements:</div>
-    <div class="summary-line"><span><a href="#" data-annual-action="navigate" data-route="/schb1">Schedule B-1 — Attorney Fees</a></span><span>(${fmtAnnual(t.schB1)})</span></div>
-    <div class="summary-line"><span><a href="#" data-annual-action="navigate" data-route="/schb2">Schedule B-2 — Guardian Fees</a></span><span>(${fmtAnnual(t.schB2)})</span></div>
-    <div class="summary-line"><span><a href="#" data-annual-action="navigate" data-route="/schb3">Schedule B-3 — Court-Ordered Disb.</a></span><span>(${fmtAnnual(t.schB3)})</span></div>
-    <div class="summary-line"><span><a href="#" data-annual-action="navigate" data-route="/schb4">Schedule B-4 — All Other Disb.</a></span><span>(${fmtAnnual(t.schB4)})</span></div>
-    <div class="summary-line total"><span>Total Disbursements</span><span>(${fmtAnnual(t.totalDisb)})</span></div>
-    <div class="summary-line"><span><a href="#" data-annual-action="navigate" data-route="/schc">Schedule C — Capital Adj. Net</a></span><span>${fmtAnnual(t.schC_net)}</span></div>
-    <div class="summary-line grand"><span>Line 20 — Net Assets at End of Period</span><span>${fmtAnnual(t.netAssets)}</span></div>
+    <div class="summary-line"><span><a href="#" data-annual-action="navigate" data-route="/schb1">Schedule B-1 — Attorney Fees</a></span><span>${fmtA(-t.schB1)}</span></div>
+    <div class="summary-line"><span><a href="#" data-annual-action="navigate" data-route="/schb2">Schedule B-2 — Guardian Fees</a></span><span>${fmtA(-t.schB2)}</span></div>
+    <div class="summary-line"><span><a href="#" data-annual-action="navigate" data-route="/schb3">Schedule B-3 — Court-Ordered Disb.</a></span><span>${fmtA(-t.schB3)}</span></div>
+    <div class="summary-line"><span><a href="#" data-annual-action="navigate" data-route="/schb4">Schedule B-4 — All Other Disb.</a></span><span>${fmtA(-t.schB4)}</span></div>
+    <div class="summary-line total"><span>Total Disbursements</span><span>${fmtA(-t.totalDisb)}</span></div>
+    <div class="summary-line"><span><a href="#" data-annual-action="navigate" data-route="/schc">Schedule C — Capital Adj. Net</a></span><span>${fmtA(t.schC_net)}</span></div>
+    <div class="summary-line grand"><span>Line 20 — Net Assets at End of Period</span><span>${fmtA(t.netAssets)}</span></div>
   </div>
   <div class="summary-box">
     <h2 class="subsection-heading">Part VII — Assets &amp; Liabilities at End of Period</h2>
-    <div class="summary-line"><span><a href="#" data-annual-action="navigate" data-route="/schd1">Schedule D-1 — Cash Assets</a></span><span>${fmtAnnual(t.schD1_total)}</span></div>
-    <div class="summary-line"><span><a href="#" data-annual-action="navigate" data-route="/schd2">Schedule D-2 — Real Estate (Total Value)</a></span><span>${fmtAnnual(t.schD2_ward)}</span></div>
-    <div class="summary-line"><span><a href="#" data-annual-action="navigate" data-route="/schd3">Schedule D-3 — Personal Property (Ward's Amount)</a></span><span>${fmtAnnual(t.schD3_ward)}</span></div>
-    <div class="summary-line"><span><a href="#" data-annual-action="navigate" data-route="/schd4">Schedule D-4 — Intangibles (Total Value)</a></span><span>${fmtAnnual(t.schD4_ward)}</span></div>
-    <div class="summary-line"><span><a href="#" data-annual-action="navigate" data-route="/schd5">Schedule D-5 — Liabilities (Ward's Balance)</a></span><span>(${fmtAnnual(t.schD5_total)})</span></div>
-    <div class="summary-line grand"><span>Line 30 — Net Assets at End of Period</span><span>${fmtAnnual(t.netAssetsFromD)}</span></div>
+    <div class="summary-line"><span><a href="#" data-annual-action="navigate" data-route="/schd1">Schedule D-1 — Cash Assets</a></span><span>${fmtA(t.schD1_total)}</span></div>
+    <div class="summary-line"><span><a href="#" data-annual-action="navigate" data-route="/schd2">Schedule D-2 — Real Estate (Total Value)</a></span><span>${fmtA(t.schD2_ward)}</span></div>
+    <div class="summary-line"><span><a href="#" data-annual-action="navigate" data-route="/schd3">Schedule D-3 — Personal Property (Ward's Amount)</a></span><span>${fmtA(t.schD3_ward)}</span></div>
+    <div class="summary-line"><span><a href="#" data-annual-action="navigate" data-route="/schd4">Schedule D-4 — Intangibles (Total Value)</a></span><span>${fmtA(t.schD4_ward)}</span></div>
+    <div class="summary-line"><span><a href="#" data-annual-action="navigate" data-route="/schd5">Schedule D-5 — Liabilities (Ward's Balance)</a></span><span>${fmtA(-t.schD5_total)}</span></div>
+    <div class="summary-line grand"><span>Line 30 — Net Assets at End of Period</span><span>${fmtA(t.netAssetsFromD)}</span></div>
   </div>
   ${reconcileBlockAnnual(t)}
   ${pageNavAnnual('/schf2','/p8')}
@@ -1433,11 +1426,11 @@ function pagePart67Annual(){
 function reconcileBlockAnnual(t){
   const st=annualReconcileState(t);
   if(!st.outOfBalance){
-    return `<div class="alert alert-success mt-2" style="font-size:.8rem;">&#10003; Net Assets from Changes (${fmtAnnual(t.netAssets)}) equals Net Assets from Balances (${fmtAnnual(t.netAssetsFromD)}) — the accounting balances.</div>`;
+    return `<div class="alert alert-success mt-2" style="font-size:.8rem;">&#10003; Net Assets from Changes, ${fmtA(t.netAssets)}, equals Net Assets from Balances, ${fmtA(t.netAssetsFromD)} — the accounting balances.</div>`;
   }
   return `<div class="alert alert-warning mt-2" style="font-size:.8rem;">
-    &#9888; <strong>Net Assets from Changes (${fmtAnnual(t.netAssets)}) does not equal Net Assets from Balances (${fmtAnnual(t.netAssetsFromD)}).</strong>
-    Difference: ${fmtAnnual(st.diff)}.
+    &#9888; <strong>Net Assets from Changes, ${fmtA(t.netAssets)}, does not equal Net Assets from Balances, ${fmtA(t.netAssetsFromD)}.</strong>
+    Difference: ${fmtA(st.diff)}.
     Check your schedules first — most differences are a missing or mistyped entry.
     If the difference is correct as filed, explain it below; an explanation is required before you can export.
   </div>
@@ -1499,12 +1492,12 @@ function pagePart9Annual(){
     <div class="col-12 col-lg-6">
       <div class="summary-box h-100 mb-0">
         <h2 class="subsection-heading">Bond Calculation (auto-calculated)</h2>
-        <div class="summary-line"><span>Sch D-1 — Cash Assets in Restricted Depository</span><span>${fmtAnnual(t.schD1_restricted)}</span></div>
-        <div class="summary-line"><span>Sch D-4 — Intangible Assets RESTRICTED</span><span>${fmtAnnual(t.schD4_restricted)}</span></div>
-        <div class="summary-line"><span>Sch D-1 — Cash Assets NOT in Restricted Depository</span><span>${fmtAnnual(t.schD1_total-t.schD1_restricted)}</span></div>
-        <div class="summary-line"><span>Sch D-3 — Personal Property Assets</span><span>${fmtAnnual(t.schD3_ward)}</span></div>
-        <div class="summary-line"><span>Sch D-4 — Intangible Assets (Unrestricted)</span><span>${fmtAnnual(t.schD4_ward-t.schD4_restricted)}</span></div>
-        <div class="summary-line total"><span>Total for BOND REQUIREMENT</span><span>${fmtAnnual(t.bondReq)}</span></div>
+        <div class="summary-line"><span>Sch D-1 — Cash Assets in Restricted Depository</span><span>${fmtA(t.schD1_restricted)}</span></div>
+        <div class="summary-line"><span>Sch D-4 — Intangible Assets RESTRICTED</span><span>${fmtA(t.schD4_restricted)}</span></div>
+        <div class="summary-line"><span>Sch D-1 — Cash Assets NOT in Restricted Depository</span><span>${fmtA(t.schD1_total-t.schD1_restricted)}</span></div>
+        <div class="summary-line"><span>Sch D-3 — Personal Property Assets</span><span>${fmtA(t.schD3_ward)}</span></div>
+        <div class="summary-line"><span>Sch D-4 — Intangible Assets (Unrestricted)</span><span>${fmtA(t.schD4_ward-t.schD4_restricted)}</span></div>
+        <div class="summary-line total"><span>Total for BOND REQUIREMENT</span><span>${fmtA(t.bondReq)}</span></div>
       </div>
     </div>
     <div class="col-12 col-lg-6">

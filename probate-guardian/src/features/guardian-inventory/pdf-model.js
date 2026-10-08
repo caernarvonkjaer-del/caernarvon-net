@@ -10,7 +10,8 @@ import { maskSSN } from '../../core/pdf/ssn-format.js';
 import { calcTotalsGuardian, makeGuardianCalc, isRestrictedAnswer, isInSafeDepositBox, AUDIT_FEE_THRESHOLD, AUDIT_FEE_OVER_THRESHOLD } from './totals.js';
 import { b2ItemDescription } from '../../core/filing/models/guardian.js';
 import { preparedByLine } from '../../core/form/preparer-flag.js';
-import { formatMoney } from '../../core/format/money.js';
+import { presentAmount } from '../../core/form/amount-codec.js';
+import { BLANK_DATE_LINE, dateOrLine, displayDate } from '../../core/form/date-parser.js';
 import { isUnrepresented, resolveServiceCertifier } from '../../core/filing/unrepresented-filing.js';
 import { methodOfServiceLine } from '../../core/filing/service-method.js';
 import { inferBondDepositoryState, bondDepositoryPdfLines, revealsBond } from '../../core/filing/bond-depository.js';
@@ -37,9 +38,11 @@ export function buildVerifiedInventoryModel(D, options = {}) {
   // Format currency. This is the ONE place a figure is rounded to cents
   // (totals.js's rounding contract: sums are unrounded until display). A
   // negative net -- debts above assets in Summary I, which the workbook prints
-  // rather than clamping -- reads "-$4,000.00", sign first.
+  // rather than clamping -- reads "($4,000.00)".
   // Milestone 71E: formatMoney() (src/core/format/money.js) -- the Clerk's workbook's own rounding.
-  const fmt = (v) => formatMoney(v, { style: 'signFirst' });
+  // Milestone 73H (decision 73H-1): presentAmount(), the one style on every
+  // screen and PDF; it read "-$4,000.00", sign first.
+  const fmt = presentAmount;
   // A blank Ward's % is 0% in the calculation (as in the workbook) and prints
   // as unanswered, never as "100%" -- the two must not disagree on the page.
   const fmtPct = (p) => {
@@ -49,12 +52,12 @@ export function buildVerifiedInventoryModel(D, options = {}) {
   const triText = (value, legacyValue) => triStateText(value) || triStateText(legacyValue) || '—';
   const triIsYes = (value, legacyValue) => triText(value, legacyValue) === 'Yes';
 
-  const fmtDate = (iso) => {
-    if (!iso) return '';
-    const [y, m, day] = String(iso).split('-');
-    if (!y || !m || !day) return iso;
-    return `${m}/${day}/${y}`;
-  };
+  // Milestone 73H: a date as every screen and PDF shows it (displayDate());
+  // in a sentence or a labelled field a blank date prints a line to write it
+  // on (dateOrLine(), decision 73H-2). The bond status line keeps its
+  // approved "[date]" (Milestone 67D); a table cell and a signature block's
+  // date stay blank (73H-N2).
+  const fmtDate = displayDate;
 
   // Calculations -- Milestone 60A: all from the shared Guardian calculator,
   // the same implementation the live UI's sidebar and calculated fields use.
@@ -149,7 +152,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
         items: [
           { label: 'Name of Ward', value: wardName },
           { label: 'Case Number', value: caseNumber },
-          { label: 'Guardianship Inception Date (GID)', value: fmtDate(gid) },
+          { label: 'Guardianship Inception Date (GID)', value: dateOrLine(gid) },
           { label: 'County', value: county },
           { label: 'Guardian Name(s)', value: d.guardianName || '' },
           { label: 'Attorney for Guardian', value: d.attorneyForGuardian || '' },
@@ -627,7 +630,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
   const unrepresented = isUnrepresented(d, 'guardian');
   const attorneyDetails = {
     'Florida Bar #': attorney.barNumber || '',
-    'Filing Date': fmtDate(attorney.filingDate),
+    'Filing Date': dateOrLine(attorney.filingDate),
     'Phone': attorney.phone || '',
     'Primary Email': attorney.email || '',
     ...(attorney.secondaryEmail ? { 'Secondary Email': attorney.secondaryEmail } : {}),
@@ -664,7 +667,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
         type: 'notice',
         tag: 'P',
         title: 'PREPARER SIGNATURE',
-        text: `I have compiled the accompanying Verified Initial Inventory of assets and liabilities arising from cash transactions, current market valuation, and current estimated market valuation of the guardianship of ${wardName || '[Ward]'} as of ${preparerAsOf || '[date]'}.`,
+        text: `I have compiled the accompanying Verified Initial Inventory of assets and liabilities arising from cash transactions, current market valuation, and current estimated market valuation of the guardianship of ${wardName || '[Ward]'} as of ${preparerAsOf || BLANK_DATE_LINE}.`,
       },
       {
         type: 'notice',
@@ -692,7 +695,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
       {
         type: 'notice',
         tag: 'P',
-        text: `The undersigned Attorney hereby notifies the Court of the filing of the Verified Initial Inventory as of ${fmtDate(attorney.filingDate) || '[date]'}.`,
+        text: `The undersigned Attorney hereby notifies the Court of the filing of the Verified Initial Inventory as of ${dateOrLine(attorney.filingDate)}.`,
       },
       {
         type: 'notice',
@@ -801,7 +804,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
           const state = inferBondDepositoryState(d);
           const details = (revealsBond(state) || !state) ? [
             { label: 'Bond Amount', value: fmt(d.bondAmount) },
-            { label: 'Bond Period', value: `${fmtDate(d.bondPeriodFrom)} to ${fmtDate(d.bondPeriodTo)}` },
+            { label: 'Bond Period', value: `${dateOrLine(d.bondPeriodFrom)} to ${dateOrLine(d.bondPeriodTo)}` },
             { label: 'Bonding Company', value: d.bondingCompany || '' },
           ] : [];
           return [

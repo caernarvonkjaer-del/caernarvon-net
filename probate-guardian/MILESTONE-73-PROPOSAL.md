@@ -6,9 +6,9 @@
 far: 73U (2026-10-04, `5b8849b`), 73V (2026-10-05, `8b96aa3`), 73C
 (2026-10-05, `861b6a9`, brought forward from its place in the build order at the
 requester's choice) 73D (2026-10-05, `c8e84fe`, likewise), 73J part 1 (2026-10-05, `d819c4a`),
-73F part 1 (2026-10-06, `5e9e17b`), 73A (2026-10-06, `83352d0`), 73F part 2 (2026-10-06, `d01edd4`), 73G part 1 (2026-10-06, `69a1b46`), 73E part 1 (2026-10-06, `8e02051`), 73F part 3 (2026-10-06, `67fc66c`), 73I (2026-10-06, `56a7c30`), 73T part 1 (2026-10-07, `4cae1e7`), 73T part 2 (2026-10-07, `2a1cbc5`), 73T part 3 (2026-10-07, `9d2bc72`), 73T part 4 (2026-10-07, `b70a944`), 73M with 74C (2026-10-07, `a0e987b`), 73B (2026-10-07, `86547da`), 73O part 2 with 74F (2026-10-08, `fa9625e`) and 73G part 2 with 74H (2026-10-08), each approved by name; 74P, built after 73B, is recorded in Milestone 74.**
+73F part 1 (2026-10-06, `5e9e17b`), 73A (2026-10-06, `83352d0`), 73F part 2 (2026-10-06, `d01edd4`), 73G part 1 (2026-10-06, `69a1b46`), 73E part 1 (2026-10-06, `8e02051`), 73F part 3 (2026-10-06, `67fc66c`), 73I (2026-10-06, `56a7c30`), 73T part 1 (2026-10-07, `4cae1e7`), 73T part 2 (2026-10-07, `2a1cbc5`), 73T part 3 (2026-10-07, `9d2bc72`), 73T part 4 (2026-10-07, `b70a944`), 73M with 74C (2026-10-07, `a0e987b`), 73B (2026-10-07, `86547da`), 73O part 2 with 74F (2026-10-08, `fa9625e`), 73G part 2 with 74H (2026-10-08, `f85e862`, `78b5770`) and 73H (2026-10-08), each approved by name; 74P, built after 73B, is recorded in Milestone 74.**
 **Approved and not yet built** (2026-10-07, one batch, built in this order
-with a full regression midway and at the end): 73H and 73S. Nothing else is approved. Building any other item, or any part of a
+with a full regression midway and at the end): 73S. Nothing else is approved. Building any other item, or any part of a
 split item, needs the requester's named approval of that item or part
 (AGENTS.md §3).
 
@@ -2078,6 +2078,98 @@ today's formats are updated with the change stated. No calculation change.
 
 Presentation only (§5 doesn't apply). No data model or legacy change. All
 nine forms.
+
+### Build record — BUILT 2026-10-08 (approved by name by the requester, 2026-10-07)
+
+**What changed for a filer:**
+
+- **Every amount, on every screen and PDF, is $5,000.00, and a negative
+  ($5,000.00)** (73H-1), the Clerk's workbooks' own format. It printed
+  "$-5,000.00" (Annual and Simplified PDFs), "-$5,000.00" (Inventory screens
+  and PDF), "(5,000.00)" (Annual screens) and hand-wrapped "($-250.00)" or
+  "((5,000.00))". **The Annual, Final and Trust Accounting screens gain the
+  dollar sign on every amount** (73H-N1, below).
+- **A subtracted figure is the negated one, as the workbook holds it**: Part
+  VI's disbursements, Part VII's liabilities, and Total Disbursements on the
+  Cover's Quick Summary and the Summary page show ($750.00) for $750 paid out,
+  and a net refund shows positive -- on screen and PDF. The Inventory's Summary
+  screen shows A-2, B-4 and C-2 negated, as its PDF and workbook do (the
+  schedule pages keep their own totals positive). The Simplified's
+  disbursements stay positive, as its workbook holds them.
+- **A screen reader hears "minus"** before an amount in parentheses (visually
+  hidden text), on the three accountings' pages, their live totals and the
+  sidebar.
+- **Every date shown is MM/DD/YYYY**: the summary pages' period, the Annual's
+  sworn statements on Parts III to V, the bond-period note, the Inventory
+  Summary's GID, the dashboard's due dates (they read "Apr 1, 2028"), the
+  shared-record merge date (the browser's own format) and the Starting
+  Balance notes. The importers, the workbooks and every comparison keep the
+  stored form.
+- **A blank date on a PDF prints a line to write it on** (73H-2) -- in a
+  sentence ("for the period __________ through __________.", where it read
+  "for the period  through .") and in a labelled field: the period, the GID,
+  the Initial Plan's letters date, a directive's date signed, the Inventory's
+  attorney Filing Date and the preparer's "as of" (it printed "[date]"), the
+  bond period. **Not** in a table cell; **not** the bond lines' approved
+  "[date]" (Milestone 67D); **not** a signature block, which still leaves its
+  date line out (73H-N2, below); and **not** Part IX's "Date of Restricted
+  Depository Receipt", which prints on every filing, depository or not, and
+  73B-N2 settled that a blank there is blank.
+- **The Annual Plan's Q11** prints the amount received as currency
+  ("$1,259.59"; it printed the stored "1259.59"), and a blank one as a line.
+  **A blank remuneration amount** on the Annual family and the Simplified
+  prints blank, not $0.00.
+- **The fee line** reads "Applicable Fee — Estate value (Net Assets, Line
+  30): $3,118.17", on screen and PDF ("based on total assets" / "Total
+  Assets:" before), and the screen's fee carries its "$".
+- No sentence puts an amount inside parentheses any more, where a positive
+  ($1,000.00) would read as negative: the reconciliation lines ("Net Assets
+  from Changes, $X, equals ..."), the Lines 20/30 issue ("don't match, off
+  by $X"), the Starting Balance note, and 73G part 2's and 74H's warnings
+  ("is negative: ($200.00)", "Bond Amount, $1,000.00, is below ...").
+- **The narrowest money columns hold the wider figure**: Schedule E's two
+  amount columns and every Inventory schedule table print ($1,234,567.89)
+  whole, overlapping nothing (read from the generated PDF).
+
+**Not changed** (outside the design's list, recorded): the activity log's
+date-and-time stamps; the PDF's document title "Printed 2026-10-08"
+(metadata, pinned by the PDF specs); the Simplified's blank Part II lines and
+a blank Bond Amount still print $0.00 (the design named the remuneration
+amounts only); the Simplified's Part VII Excel text keeps its format (design
+6). No calculation, data-model row or stored value changed.
+
+**How:** `amount-codec.js` gains the presentation it left to 73H --
+`presentAmount()` and `withMinusCue()`; `date-parser.js` gains
+`displayDate()`, `dateOrLine()`/`BLANK_DATE_LINE` and `displayLocalDate()`.
+`fmt`, `fmtAnnual` and every PDF model's own money and date copies use them
+(seven local date helpers retired; the Annual's re-export of the importer's
+date reader went with them).
+
+**Decisions raised while building (settled 2026-10-08 by the requester):**
+
+- **73H-N1. A dollar sign on the Annual screens.** (1) *Recommended,
+  chosen:* yes, on every amount, as every other screen and the workbook. (2)
+  Negatives only. (3) No dollar sign there.
+- **73H-N2. A signature block with no date.** (1) *Recommended, chosen:*
+  leave its date line out, as now. (2) Print "Date: ______".
+
+**Tests:**
+
+- New `tests/unit/display-formats.spec.js` (15): the helpers; every form's
+  PDF model -- Part VI and VII negated (a refund and a credit print
+  positive), the fee line, the blank period's line, blank remuneration, the
+  Simplified's and Inventory's negatives, the Inventory's blank GID and "as
+  of", Q11, each Plan's period. **Red-first:** with only the two helper
+  modules kept, the ten model and formatter cases fail on the old styles.
+- New `tests/e2e/negative-amount-columns.spec.ts` (2): the narrow columns.
+- Changed to the new display, the change stated in each: the Inventory PDF
+  model, carried-balance, form-derived-fields, no-invented-answers (Q11),
+  date-truncation-helpers (the retired re-export), 73G part 2's and 74H's
+  specs; browser: annual-field-formatting, annual-mount, annual-schedule-
+  consistency, carry-balance-matches-prior, dashboard-due-dates,
+  annual-bond-period, contradiction-warnings. The validator record is
+  regenerated: only the Lines 20/30 issue's wording (9 variants).
+- Full unit suite: 2,969 passed; `check:types` clean. **Browser specs: 55 files, 452 tests, all passed (31.3 min on a copy on C:) -- every spec that reads an amount, a date or a PDF's text on any form, the summaries, the dashboard, the shared-record merge. Red-first there: with the source set aside, both narrow-column cases fail (no figure prints in parentheses).**
 
 ---
 

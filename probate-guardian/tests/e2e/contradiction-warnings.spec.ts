@@ -45,7 +45,7 @@ test('Inventory: no safe deposit box while a B-2 item is in one, and a bond belo
 
   await openPrint(page);
   await expect(warning(page, 'D-3 — "Does the ward have a safe deposit box…?" is answered No, while B-2 row 1 is marked "In Safe Deposit Box?" Yes.')).toBeVisible({ timeout: 20_000 });
-  await expect(warning(page, 'D-4 — Bond Amount ($1,000.00) is below the bond requirement this filing calculates ($52,500.00).')).toBeVisible();
+  await expect(warning(page, 'D-4 — Bond Amount, $1,000.00, is below the bond requirement this filing calculates, $52,500.00.')).toBeVisible();
   await expect(warning(page, 'The court often requires a bond in the amount of the Ward\'s liquid assets.')).toBeVisible();
 
   const save = page.locator('[data-inventory-action="save-pdf"]');

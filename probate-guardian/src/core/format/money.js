@@ -121,10 +121,13 @@ export function formatShare(v) {
 }
 
 /**
- * US-dollar display ($1,234.56, negatives -$1,234.56); blank and null print as
+ * US-dollar display ($1,234.56, negatives ($1,234.56)); blank and null print as
  * $0.00. Milestone 71E: rounded by formatMoney()'s rule, not Intl's.
+ * Milestone 73H (decision 73H-1): the one negative style -- it printed
+ * -$1,234.56 on the Inventory's screens. amount-codec.js's presentAmount() is
+ * the same thing under the codec's name.
  */
-export const fmt = (v)=>formatMoney(v, { style: 'signFirst' });
+export const fmt = (v)=>formatMoney(v, { style: 'dollarParens' });
 
 /** The dashboard's and sidebar's figure: ($1,234.56) for a negative, "—" for none. */
 export function formatDashboardCurrency(v){

@@ -27,6 +27,8 @@
  * including guardian-inventory (the handler calls the router's navigate()).
  */
 
+import { displayDate } from './form/date-parser.js';
+
 /**
  * Maps one or more computeNavChecks() keys to the 3-value status string
  * renderStatusBadge()/SummaryCardLine.status expects, so a Summary page's
@@ -70,7 +72,9 @@ export function navStatus(nav, keys) {
  * @returns {string}
  */
 export function formatSummaryDate(value) {
-  return value ? String(value).substring(0, 10) : '—';
+  // Milestone 73H: MM/DD/YYYY, as every screen and PDF shows a date
+  // (displayDate()); it showed "2025-01-01". Blank is still "—".
+  return displayDate(value) || '—';
 }
 
 export function renderStatusBadge(status) {

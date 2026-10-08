@@ -120,7 +120,8 @@ describe('a blank prints blank', () => {
     expect(blank).not.toContain('declare that I have received the monies');
     expect(blank).not.toContain('declare that I have received NO remuneration');
     const received = modelText(buildPlanAnnualModel({ ...initializeEmptyData('planAnnual'), q11ReceivedName: 'Pat Guardian', q11Amount: '$500', q11From: 'the ward' }));
-    expect(received).toContain('I, Pat Guardian, declare that I have received the monies $500 from the ward');
+    // Milestone 73H (design 3): Q11 prints as currency (it printed the stored "$500" as typed).
+    expect(received).toContain('I, Pat Guardian, declare that I have received the monies $500.00 from the ward');
     const none = modelText(buildPlanAnnualModel({ ...initializeEmptyData('planAnnual'), q11NoRemuneration: true, q11NoRemunerationName: 'Pat Guardian' }));
     expect(none).toContain('I, Pat Guardian, declare that I have received NO remuneration');
     expect(none).not.toContain('received the monies');

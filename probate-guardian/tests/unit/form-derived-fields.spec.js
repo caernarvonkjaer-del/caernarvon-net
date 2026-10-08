@@ -52,8 +52,9 @@ describe('form-derived cells the filing overwrites', () => {
   test('the message says, in the approved words, that the Excel will show the accounting period, and names both values', () => {
     const [w] = formDerivedOverwriteWarnings(annual({ bondPeriodFrom: '2025-07-01' }));
     expect(w.message).toContain('The bond period entered differs from the accounting period. The filed Excel will show the accounting period.');
-    expect(w.message).toContain('2025-07-01');
-    expect(w.message).toContain('2026-01-01');
+    // Milestone 73H: MM/DD/YYYY, as every date is shown (they read 2025-07-01).
+    expect(w.message).toContain('Bond period start entered: 07/01/2025;');
+    expect(w.message).toContain('Accounting Period From: 01/01/2026.');
     expect(w.severity).toBe('advisory');
   });
 

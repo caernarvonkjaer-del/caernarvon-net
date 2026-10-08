@@ -19,11 +19,12 @@
 //   -  Simplified: Line 8, Remaining Assets On Hand, below zero
 // The bond below its requirement (74H b) is with the bond block's own notes
 // (bond-depository.js).
-import { amountForStore } from '../form/amount-codec.js';
-import { formatMoney, roundCents } from '../format/money.js';
+import { amountForStore, presentAmount } from '../form/amount-codec.js';
+import { roundCents } from '../format/money.js';
 import { startedRows } from '../validation/row-started.js';
 
-const money = (v) => formatMoney(v, { style: 'signFirst' });
+// Milestone 73H: the one amount style, $1,000.00 / ($1,000.00).
+const money = presentAmount;
 const yes = (v) => v === true || v === 'Yes';
 const no = (v) => v === false || v === 'No';
 const rowsOf = (d, key) => (Array.isArray(d?.[key]) ? d[key] : []);
@@ -102,7 +103,7 @@ export function annualConsistencyAdvisories(d) {
 export function simplifiedConsistencyAdvisories(d, totals) {
   if (!d || !totals || !Number.isFinite(totals.remaining) || roundCents(totals.remaining) >= 0) return [];
   return [advisory('remaining-below-zero', 'startingBalance',
-    `Part II — Line 8 — Remaining Assets On Hand is below zero (${money(totals.remaining)}). Review the amounts in Part II before filing.`)];
+    `Part II — Line 8 — Remaining Assets On Hand is below zero: ${money(totals.remaining)}. Review the amounts in Part II before filing.`)];
 }
 
 const FACILITY = 'In a facility (Skilled Nursing, Assisted Living, etc.)';

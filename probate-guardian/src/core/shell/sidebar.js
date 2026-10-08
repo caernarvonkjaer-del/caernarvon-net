@@ -3,6 +3,7 @@
 // Milestone 70, 70H: the sidebar -- the open filing's card, the ward and
 // guardian names shown, the save controls and their collapse, and the
 // copyright line. Moved from legacy-app.js.
+import { withMinusCue } from '../form/amount-codec.js';
 import { esc } from '../filing/escape-html.js';
 import { formEngine, INVENTORY_TYPE_META, INVENTORY_TYPES, typeIcon } from '../filing/filing-registry.js';
 import { formatDashboardCurrency } from '../format/money.js';
@@ -75,7 +76,7 @@ export function refreshWardInfoCard(){
   // dollar lines are dropped rather than shown as an empty "—".
   const totalHTML=meta.financial===false?''
     :`<div class="ward-info-total-label">${esc(meta.totalLabel)}</div>
-      <div class="ward-info-total">${formatDashboardCurrency(headline)}</div>`;
+      <div class="ward-info-total">${withMinusCue(formatDashboardCurrency(headline))}</div>`;
   wardInfo.innerHTML=`<div class="ward-info-head">
       <span class="ward-info-icon" style="color:${meta.accentText}">${typeIcon(ward.inventoryType,16)}</span>
       <span class="ward-info-type" style="color:${meta.accentText}">${esc(typeName)}</span>

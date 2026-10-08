@@ -28,7 +28,9 @@
 // The source is read as it stands when the carry runs, never a snapshot, so
 // an accounting amended in place carries its amended figures.
 
-import { roundCents, formatMoney } from '../format/money.js';
+import { roundCents } from '../format/money.js';
+import { presentAmount } from '../form/amount-codec.js';
+import { displayDate } from '../form/date-parser.js';
 import { formEngine, INVENTORY_TYPES } from './filing-registry.js';
 import { features } from '../runtime/features.js';
 import { hasScheduleDFigure } from './schedule-d-figure.js';
@@ -39,10 +41,9 @@ const isTrust = (type) => type === 'trustAccounting';
 /** True when a carry from `srcType` to `targetType` crosses the Trust Accounting boundary (nothing is carried). */
 export const crossesTrustBoundary = (srcType, targetType) => isTrust(srcType) !== isTrust(targetType);
 
-const fmtDate = (iso) => {
-  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || ''));
-  return m ? `${m[2]}/${m[3]}/${m[1]}` : '';
-};
+// Milestone 73H: the one date display (displayDate()), which this module's
+// own copy matched; a carry's timestamp shows its date.
+const fmtDate = displayDate;
 
 /** "Annual Accounting 03/15/2026–08/31/2026" -- form type and period, no names. */
 export function carrySourceLabel(src) {
@@ -95,7 +96,8 @@ export function applyCarriedStartingBalance(dest, src, targetType = dest?.invent
   return carried;
 }
 
-const money = (v) => formatMoney(v, { style: 'dollarParens' });
+// Milestone 73H: the one amount style (presentAmount()), $1,000.00 / ($1,000.00).
+const money = presentAmount;
 
 /**
  * Non-blocking notes about the Starting Balance, for the page beside it and
@@ -118,7 +120,7 @@ export function startingBalanceNotes(filing, { wards = null, section = 'Part II'
   }
   const current = filing.startingBalance;
   if (carry.value !== '' && current !== '' && current !== null && current !== undefined && roundCents(current) !== roundCents(carry.value)) {
-    note('starting-balance.changed-since-carry', `Starting Balance (${money(current)}) differs from the prior filing's ending balance (${money(carry.value)}), carried ${fmtDate(carry.carriedAt)} from the ${carry.sourceLabel}.`);
+    note('starting-balance.changed-since-carry', `Starting Balance, ${money(current)}, differs from the prior filing's ending balance, ${money(carry.value)}, carried ${fmtDate(carry.carriedAt)} from the ${carry.sourceLabel}.`);
   }
   if (Array.isArray(wards) && carry.sourceWardId) {
     const src = wards.find((w) => w && w.wardId === carry.sourceWardId);

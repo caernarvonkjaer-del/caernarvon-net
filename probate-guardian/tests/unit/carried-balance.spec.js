@@ -171,7 +171,8 @@ describe('the provenance record, and the notes that read it', () => {
     dest.startingBalance = 1000;
     const notes = carry.startingBalanceNotes(dest);
     expect(notes.map((n) => n.code)).toEqual(['starting-balance.prior-unbalanced', 'starting-balance.changed-since-carry']);
-    expect(notes[1].message).toContain('Starting Balance ($1,000.00) differs from the prior filing\'s ending balance ($1,100.00)');
+    // Milestone 73H: no amount in parentheses, where a positive $1,000.00 read as negative.
+    expect(notes[1].message).toContain('Starting Balance, $1,000.00, differs from the prior filing\'s ending balance, $1,100.00,');
     expect(notes.every((n) => n.severity === 'advisory')).toBe(true);
   });
 

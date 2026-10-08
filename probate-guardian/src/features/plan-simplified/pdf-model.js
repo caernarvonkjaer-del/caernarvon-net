@@ -5,6 +5,7 @@
 // raster html2pdf/html2canvas export with a tagged, accessible,
 // non-raster PDF.
 
+import { dateOrLine, displayDate } from '../../core/form/date-parser.js';
 import { resolveDescriptorForInventoryType } from '../../core/filing/filing-descriptor.js';
 import { planCertificateOfServiceSection } from '../../core/filing/plan-certificate-of-service.js';
 import { triStateText } from '../../core/form/form-contract.js';
@@ -21,12 +22,11 @@ export function buildPlanSimplifiedModel(D) {
   const county = d.county || '';
   const descriptor = resolveDescriptorForInventoryType('planSimplified');
 
-  const fmtDate = (iso) => {
-    if (!iso) return '';
-    const [y, m, day] = String(iso).split('-');
-    if (!y || !m || !day) return iso;
-    return `${m}/${day}/${y}`;
-  };
+  // Milestone 73H: a date as every screen and PDF shows it (displayDate());
+  // in a sentence or a labelled field a blank date prints a line to write it
+  // on (dateOrLine(), decision 73H-2). A table cell and a signature block's
+  // date stay blank (73H-N2).
+  const fmtDate = displayDate;
 
   const metadata = {
     title: `${wardName} - ${caseNumber} - Simplified Annual Plan`,
@@ -67,7 +67,7 @@ export function buildPlanSimplifiedModel(D) {
       {
         type: 'key-value-grid',
         items: [
-          { label: 'For the Period', value: `From: ${fmtDate(d.periodFrom)}   To: ${fmtDate(d.periodTo)}` },
+          { label: 'For the Period', value: `From: ${dateOrLine(d.periodFrom)}   To: ${dateOrLine(d.periodTo)}` },
         ],
       },
       { type: 'key-value-grid', items: [{ label: '1. The name and address of all places the ward has resided during the preceding year.', value: d.q1Residences || '' }] },

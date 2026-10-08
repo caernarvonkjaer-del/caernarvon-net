@@ -27,7 +27,10 @@ export const RECIPIENT_STARTED_FIELDS = RECIPIENT_FIELDS;
 export function annualDescriptor(data = getD()) {
   return resolveFilingDescriptor(data).descriptor;
 }
-export function fmtAnnual(v){if(v===''||v===null||v===undefined)return '';const x=parseFloat(v);if(isNaN(x))return '';return formatMoney(x,{style:'parens'});}
+// Milestone 73H (decision 73H-1, and 73H-N1: a dollar sign on every amount):
+// $5,000.00 and ($5,000.00), as on every screen and PDF -- the Annual's
+// screens showed 5,000.00 and (5,000.00). Blank and unreadable stay ''.
+export function fmtAnnual(v){if(v===''||v===null||v===undefined)return '';const x=parseFloat(v);if(isNaN(x))return '';return formatMoney(x,{style:'dollarParens'});}
 
 export function collectAnnualIssues(d){
   const errs=[];
@@ -343,8 +346,9 @@ export function collectAnnualIssues(d){
   // filing when the checks could only judge that one).
   const _rec=annualReconcileState(null,d);
   if(_rec.outOfBalance&&!_rec.explained){
-    errs.push(issue('Parts VI & VII — Net Assets from Changes and Net Assets from Balances don\'t match (off by '
-      +fmtAnnual(_rec.diff)+'): correct the schedules or explain the difference','reconcileExplanation'));
+    // Milestone 73H: the difference as a size ("off by $0.01"); it read "(off by (0.01))".
+    errs.push(issue('Parts VI & VII — Net Assets from Changes and Net Assets from Balances don\'t match, off by '
+      +fmtAnnual(Math.abs(_rec.diff))+': correct the schedules or explain the difference','reconcileExplanation'));
   }
 
   return errs;

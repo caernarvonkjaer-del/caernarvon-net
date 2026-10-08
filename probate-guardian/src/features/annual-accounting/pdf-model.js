@@ -2,7 +2,9 @@
 // Maps window.D into the unified, accessible court document model (WCAG 2.1 Level AA).
 
 import { calcTotalsAnnual, annualReconcileState, n as toAmount, scheduleDRow } from './totals.js';
-import { wardShare, formatShare, formatMoney } from '../../core/format/money.js';
+import { wardShare, formatShare } from '../../core/format/money.js';
+import { presentAmount } from '../../core/form/amount-codec.js';
+import { dateOrLine, displayDate } from '../../core/form/date-parser.js';
 import { REMUNERATION_DECLARATION, REMUNERATION_NONE_REPORTED } from '../../core/filing/statutory-text.js';
 import { yesNoText } from '../../core/form/form-contract.js';
 import { filingCopy, resolveFilingDescriptor } from '../../core/filing/filing-descriptor.js';
@@ -55,14 +57,16 @@ export function buildAnnualAccountingModel(D, options = {}) {
   const copy = filingCopy(descriptor);
 
   // Milestone 71E: formatMoney() (src/core/format/money.js) -- the Clerk's workbook's own rounding.
-  const fmtS = (v) => formatMoney(v, { style: 'dollar' });
+  // Milestone 73H (decision 73H-1): $5,000.00 and ($5,000.00), as on every
+  // screen and PDF (presentAmount()); a negative printed $-5,000.00 here.
+  const fmtS = presentAmount;
 
-  const fmtD = (iso) => {
-    if (!iso) return '';
-    const parts = String(iso).split('-');
-    if (parts.length < 3) return iso;
-    return `${parts[1]}/${parts[2]}/${parts[0]}`;
-  };
+  // Milestone 73H: a date as every screen and PDF shows it (displayDate(),
+  // which this form's own copy of it matched for a stored date); in a
+  // sentence or a labelled field a blank date prints a line to write it on
+  // (dateOrLine(), decision 73H-2) -- "for the period  through ." before. A
+  // table cell and a signature block's date stay blank (73H-N2).
+  const fmtD = displayDate;
 
   const formatSig = (name) => {
     const str = (name || '').trim();
@@ -96,7 +100,7 @@ export function buildAnnualAccountingModel(D, options = {}) {
   const caseInfoItems = [
     { label: 'Name of Ward', value: wardName },
     { label: 'Case Number', value: caseNumber },
-    { label: 'For the Period', value: `From: ${fmtD(d.periodFrom)}   To: ${fmtD(d.periodTo)}` },
+    { label: 'For the Period', value: `From: ${dateOrLine(d.periodFrom)}   To: ${dateOrLine(d.periodTo)}` },
     { label: 'Guardian', value: d.guardian || '' },
     { label: 'Attorney for Guardian', value: d.attorney || '' },
     // Milestone 73B: a blank prints blank -- it used to print "Plenary".
@@ -152,8 +156,8 @@ export function buildAnnualAccountingModel(D, options = {}) {
           ['In excess of $500,000', '$250.00'],
         ],
         totals: {
-          label: `Applicable Audit Fee (Total Assets: ${fmtS(t.netAssetsFromD)})`,
-          value: formatMoney(t.auditFee, { style: 'dollar' }),
+          label: `Applicable Audit Fee — Estate value (Net Assets, Line 30): ${fmtS(t.netAssetsFromD)}`,
+          value: fmtS(t.auditFee),
         },
         colWidths: [75, 25],
         colAlign: ['left', 'right'],
@@ -178,11 +182,11 @@ export function buildAnnualAccountingModel(D, options = {}) {
         rows: [
           ['Starting Balance [Net Assets per Prior Report]', fmtS(d.startingBalance)],
           ['Schedule A — Income/Receipts', fmtS(t.schA)],
-          ['Schedule B-1 — Attorney Fees and Costs', `(${fmtS(t.schB1)})`],
-          ['Schedule B-2 — Guardian Fees and Costs', `(${fmtS(t.schB2)})`],
-          ['Schedule B-3 — Other Court-Ordered Disbursements', `(${fmtS(t.schB3)})`],
-          ['Schedule B-4 — All Other Disbursements', `(${fmtS(t.schB4)})`],
-          ['Total Disbursements (B-1 through B-4)', `(${fmtS(t.totalDisb)})`],
+          ['Schedule B-1 — Attorney Fees and Costs', fmtS(-t.schB1)],
+          ['Schedule B-2 — Guardian Fees and Costs', fmtS(-t.schB2)],
+          ['Schedule B-3 — Other Court-Ordered Disbursements', fmtS(-t.schB3)],
+          ['Schedule B-4 — All Other Disbursements', fmtS(-t.schB4)],
+          ['Total Disbursements (B-1 through B-4)', fmtS(-t.totalDisb)],
           ['Schedule C — Capital Adjustments Net', fmtS(t.schC_net)],
         ],
         totals: {
@@ -207,7 +211,7 @@ export function buildAnnualAccountingModel(D, options = {}) {
         ['Schedule D-2 — Real Estate', fmtS(t.schD2_carrying), fmtS(t.schD2_ward)],
         ['Schedule D-3 — Personal Property', fmtS(t.schD3_carrying), fmtS(t.schD3_ward)],
         ['Schedule D-4 — Intangible Assets', fmtS(t.schD4_carrying), fmtS(t.schD4_ward)],
-        ['Schedule D-5 — Mortgages / Liabilities', '—', `(${fmtS(t.schD5_total)})`],
+        ['Schedule D-5 — Mortgages / Liabilities', '—', fmtS(-t.schD5_total)],
       ],
       totals: {
         label: 'Line 30 — Net Assets at End of Accounting Period',
@@ -285,7 +289,7 @@ export function buildAnnualAccountingModel(D, options = {}) {
       {
         type: 'notice',
         tag: 'P',
-        text: `UNDER PENALTIES OF PERJURY, I declare that I have read and examined the foregoing return and that, to the best of my knowledge and belief, it constitutes a full and correct account of all the ward's property of which this guardian has control, and is a complete report of all cash and property transactions and of all receipts and any disbursements by me from ${fmtD(d.periodFrom)} through ${fmtD(d.periodTo)}.`,
+        text: `UNDER PENALTIES OF PERJURY, I declare that I have read and examined the foregoing return and that, to the best of my knowledge and belief, it constitutes a full and correct account of all the ward's property of which this guardian has control, and is a complete report of all cash and property transactions and of all receipts and any disbursements by me from ${dateOrLine(d.periodFrom)} through ${dateOrLine(d.periodTo)}.`,
       },
       ...guardianSigBlocks,
     ],
@@ -312,7 +316,7 @@ export function buildAnnualAccountingModel(D, options = {}) {
       {
         type: 'notice',
         tag: 'P',
-        text: copy.preparerStatement(wardName, fmtD(d.periodFrom), fmtD(d.periodTo)),
+        text: copy.preparerStatement(wardName, dateOrLine(d.periodFrom), dateOrLine(d.periodTo)),
       },
       {
         type: 'signature-block',
@@ -351,7 +355,7 @@ export function buildAnnualAccountingModel(D, options = {}) {
       {
         type: 'notice',
         tag: 'P',
-        text: copy.attorneyStatement(wardName, fmtD(d.periodFrom), fmtD(d.periodTo), d.attorney_county || county),
+        text: copy.attorneyStatement(wardName, dateOrLine(d.periodFrom), dateOrLine(d.periodTo), d.attorney_county || county),
       },
       {
         type: 'signature-block',
@@ -1067,7 +1071,9 @@ export function buildAnnualAccountingModel(D, options = {}) {
           // not one of the Clerk's three relationships, and a receipt date
           // left blank is not a statement that there is none.
           { label: "Guardian's Relationship to Ward", value: d.guardianRelationship || '' },
-          { label: 'Date of Restricted Depository Receipt', value: fmtD(d.restrictedDepositoryReceiptDate) || '' },
+          // Milestone 73H: no line here -- the row prints on every filing, with or
+          // without a depository, and 73B-N2 settled that a blank is blank.
+          { label: 'Date of Restricted Depository Receipt', value: fmtD(d.restrictedDepositoryReceiptDate) },
         ],
       },
       {
@@ -1105,7 +1111,7 @@ export function buildAnnualAccountingModel(D, options = {}) {
             // accounting period by formula; when the app's own boxes are blank
             // the PDF says the same, so the two documents agree. A typed value
             // still prints, and the print page warns when it differs.
-            { label: 'Bond Period', value: `From: ${fmtD(d.bondPeriodFrom || d.periodFrom)}   To: ${fmtD(d.bondPeriodTo || d.periodTo)}` },
+            { label: 'Bond Period', value: `From: ${dateOrLine(d.bondPeriodFrom || d.periodFrom)}   To: ${dateOrLine(d.bondPeriodTo || d.periodTo)}` },
             { label: 'Name of Bonding Company', value: d.bondingCompany || '' },
           ] : [];
           return [
@@ -1259,7 +1265,7 @@ export function buildAnnualAccountingModel(D, options = {}) {
             r.guardian || '',
             r.type || '',
             r.description || '',
-            fmtS(r.amount),
+            r.amount === '' || r.amount == null ? '' : fmtS(r.amount),
           ]),
           colWidths: [6, 22, 18, 38, 16],
           colAlign: ['center', 'left', 'left', 'left', 'right'],

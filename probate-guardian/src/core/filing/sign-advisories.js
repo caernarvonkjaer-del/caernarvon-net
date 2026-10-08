@@ -19,8 +19,7 @@
 //     there -- a negative asset, income, debt, disbursement, bond or
 //     remuneration.
 import { amountEntryFor, storedAmounts } from './amount-fields.js';
-import { amountForStore } from '../form/amount-codec.js';
-import { formatMoney } from '../format/money.js';
+import { amountForStore, presentAmount } from '../form/amount-codec.js';
 import { resolveDescriptorForInventoryType } from './filing-descriptor.js';
 
 // The Annual, Final and Trust Accountings: one engine.
@@ -86,10 +85,12 @@ export function signAdvisories(filing) {
     if (!problem) continue;
     // The Inventory's checks say "A-1 row 2"; the others "Schedule A — Line 2".
     const where = index === undefined ? entry.section : `${entry.section}${entry.inline ? ` row ${index + 1}` : ` — ${entry.row} ${index + 1}`}`;
-    const figure = formatMoney(problem.amount, { style: 'signFirst' });
+    // Milestone 73H: the one amount style, after a colon -- never inside
+    // parentheses, where a positive $250.00 would read as negative.
+    const figure = presentAmount(problem.amount);
     const message = problem.code === 'amount.negative-unusual'
-      ? `${where} — ${entry.label} is negative (${figure}). ${NEGATIVE_NOTE}`
-      : `${where} — ${entry.label} is positive (${figure})${problem.effect ? `, ${problem.effect}` : ''}. The Clerk's workbook says: "${problem.instruction}" It is filed as entered.`;
+      ? `${where} — ${entry.label} is negative: ${figure}. ${NEGATIVE_NOTE}`
+      : `${where} — ${entry.label} is positive: ${figure}${problem.effect ? `, ${problem.effect}` : ''}. The Clerk's workbook says: "${problem.instruction}" It is filed as entered.`;
     out.push({ code: problem.code, severity: 'advisory', field: path, message });
   }
   return out;

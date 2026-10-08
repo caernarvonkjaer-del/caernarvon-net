@@ -2,8 +2,8 @@
  "generatedBy": "node scripts/ms70-assertion-counts.mjs --write-baseline",
  "note": "Milestone 70 per-spec assertion counts (static expect calls). tests/unit/ms70-assertion-counts.spec.js fails when a spec falls below its count; lowering it requires --reason, recorded in dropLog. A tripwire, not proof of equivalence (decision D9).",
  "totals": {
-  "expects": 8765,
-  "tests": 2511
+  "expects": 8820,
+  "tests": 2528
  },
  "counts": {
   "tests/e2e/amounts-keep-their-sign.spec.ts": {
@@ -309,6 +309,10 @@
   "tests/e2e/navigation-status.contract.spec.ts": {
    "expects": 143,
    "tests": 55
+  },
+  "tests/e2e/negative-amount-columns.spec.ts": {
+   "expects": 3,
+   "tests": 2
   },
   "tests/e2e/offline.spec.ts": {
    "expects": 26,
@@ -829,6 +833,10 @@
   "tests/unit/delete-confirmation.spec.js": {
    "expects": 17,
    "tests": 8
+  },
+  "tests/unit/display-formats.spec.js": {
+   "expects": 52,
+   "tests": 15
   },
   "tests/unit/drafts-follow-rows.spec.js": {
    "expects": 13,
@@ -1803,6 +1811,13 @@
    "was": 25,
    "now": 24,
    "reason": "Milestone 74C / 73M (2026-10-07): the export buttons are always clickable, so a spec's inline expect(button).toBeEnabled() / toBeDisabled() moved into tests/e2e/support/target.ts's expectExportReady() / expectExportStopped(), which read the reason line beside the buttons instead (two checks each); one inline expect per moved call. No check was removed.",
+   "date": "2026-10-08"
+  },
+  {
+   "file": "tests/unit/form-derived-fields.spec.js",
+   "was": 46,
+   "now": 45,
+   "reason": "Milestone 73H (2026-10-08): display-formats and negative-amount-columns counted; date-truncation-helpers' fmtD cases became displayDate's.",
    "date": "2026-10-08"
   }
  ]

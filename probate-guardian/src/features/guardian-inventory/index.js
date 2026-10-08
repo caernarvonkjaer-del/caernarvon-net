@@ -23,6 +23,11 @@ import { renderServiceAttestationRow } from '../../core/form/service-attestation
 import { esc } from '../../core/filing/escape-html.js';
 import { ic } from '../../core/ui/icons.js';
 import { fmt } from '../../core/format/money.js';
+import { withMinusCue } from '../../core/form/amount-codec.js';
+import { displayDate } from '../../core/form/date-parser.js';
+// Milestone 73H: an amount as a screen shows it -- $5,000.00 / ($5,000.00)
+// (it showed -$5,000.00), a negative also read as "minus" (withMinusCue()).
+const fmtH=(v)=>withMinusCue(fmt(v));
 import { applyZipLimit, finalizeCaseNumber, formatAccountNumber, formatAddress, formatBarNumber, formatCaseNumber, formatCheckNumber, formatName, formatPhone, formatSSN, sanitizeNonNegativeDecimal } from '../../core/form/form-contract.js';
 import { amountForStore } from '../../core/form/amount-codec.js';
 import { calc } from './totals.js';
@@ -615,7 +620,7 @@ function addBtn(schedule,label){
   return `<button class="btn btn-primary btn-sm mb-3 no-print" data-inventory-action="add-entry" data-schedule="${schedule}">+ Add ${label}</button>`;
 }
 function totalsBox(rows){
-  const trs=rows.map(([label,id])=>`<div class="tr"><div class="td">${label}</div><div class="td" id="${id}">${fmt(0)}</div></div>`).join('');
+  const trs=rows.map(([label,id])=>`<div class="tr"><div class="td">${label}</div><div class="td" id="${id}">${fmtH(0)}</div></div>`).join('');
   return `<div class="schedule-totals"><div class="tbl">${trs}</div></div>`;
 }
 
@@ -650,7 +655,7 @@ function showYearlyTotal(idx){
   const out=document.querySelector(`[data-c1-result="${idx}"]`);
   if(!input||!out)return;
   const total=yearlyTotal(input.value,getD().scheduleC1?.[idx]?.frequencyOfPayment);
-  out.textContent=total===null?'—':fmt(total);
+  out.innerHTML=total===null?'—':fmtH(total);
 }
 // Milestone 74P: "Use" -- the only way the helper writes the Annual Income Amount.
 function useYearlyTotal(idx){
@@ -847,36 +852,36 @@ function getSummaryConfigGuardian(){
     infoRows:[
       {label:'Ward Name',value:esc(D.wardName)},
       {label:'Case Number',value:esc(D.caseNumber)},
-      {label:'GID',value:esc(D.gid)},
+      {label:'GID',value:esc(displayDate(D.gid))},
       {label:'County',value:esc(D.county)},
     ],
     leftCards:[
       {
         heading:'Summary I — Schedule A: Real Estate',
         lines:[
-          {label:'Schedule A-1 — Real Estate Assets',route:'/a1',value:fmt(calc.totalA1()),id:'totalA1'},
-          {label:'Schedule A-2 — Real Estate Liabilities',route:'/a2',value:fmt(calc.totalA2()),id:'totalA2'},
-          {label:'Real Estate, Net of Liabilities',value:fmt(calc.netA()),id:'netA',isTotal:true},
+          {label:'Schedule A-1 — Real Estate Assets',route:'/a1',value:fmtH(calc.totalA1()),id:'totalA1'},
+          {label:'Schedule A-2 — Real Estate Liabilities',route:'/a2',value:fmtH(-calc.totalA2()),id:'summaryTotalA2'},
+          {label:'Real Estate, Net of Liabilities',value:fmtH(calc.netA()),id:'netA',isTotal:true},
         ],
       },
       {
         heading:'Summary I — Schedule B: Cash / Personal Property',
         lines:[
-          {label:'Schedule B-1 — Cash &amp; Cash Equivalents',route:'/b1',value:fmt(calc.totalB1()),id:'totalB1'},
-          {label:'Schedule B-2 — Personal Property Assets',route:'/b2',value:fmt(calc.totalB2()),id:'totalB2'},
-          {label:'Schedule B-3 — Intangible Assets',route:'/b3',value:fmt(calc.totalB3()),id:'totalB3'},
-          {label:'Schedule B-4 — Personal Property Liabilities',route:'/b4',value:fmt(calc.totalB4()),id:'totalB4'},
-          {label:'Cash / Pers. Property, Net of Liabilities',value:fmt(calc.netB()),id:'netB',isTotal:true},
+          {label:'Schedule B-1 — Cash &amp; Cash Equivalents',route:'/b1',value:fmtH(calc.totalB1()),id:'totalB1'},
+          {label:'Schedule B-2 — Personal Property Assets',route:'/b2',value:fmtH(calc.totalB2()),id:'totalB2'},
+          {label:'Schedule B-3 — Intangible Assets',route:'/b3',value:fmtH(calc.totalB3()),id:'totalB3'},
+          {label:'Schedule B-4 — Personal Property Liabilities',route:'/b4',value:fmtH(-calc.totalB4()),id:'summaryTotalB4'},
+          {label:'Cash / Pers. Property, Net of Liabilities',value:fmtH(calc.netB()),id:'netB',isTotal:true},
         ],
       },
       {
         heading:'Summary II — Schedule C: Other Financial Information',
         lines:[
-          {label:'Schedule C-1 — Income (Annualized)',route:'/c1',value:fmt(calc.totalC1()),id:'totalC1'},
-          {label:'Schedule C-2 — Lawsuits Against Ward',route:'/c2',value:fmt(calc.totalC2()),id:'totalC2'},
-          {label:'Schedule C-3 — Lawsuits by Ward',route:'/c3',value:fmt(calc.totalC3()),id:'totalC3'},
-          {label:'Schedule C-4 — Trusts',route:'/c4',value:fmt(calc.totalC4()),id:'totalC4'},
-          {label:'Schedule C-5 — Joint Owners',route:'/c5',value:fmt(calc.totalC5()),id:'totalC5'},
+          {label:'Schedule C-1 — Income (Annualized)',route:'/c1',value:fmtH(calc.totalC1()),id:'totalC1'},
+          {label:'Schedule C-2 — Lawsuits Against Ward',route:'/c2',value:fmtH(-calc.totalC2()),id:'summaryTotalC2'},
+          {label:'Schedule C-3 — Lawsuits by Ward',route:'/c3',value:fmtH(calc.totalC3()),id:'totalC3'},
+          {label:'Schedule C-4 — Trusts',route:'/c4',value:fmtH(calc.totalC4()),id:'totalC4'},
+          {label:'Schedule C-5 — Joint Owners',route:'/c5',value:fmtH(calc.totalC5()),id:'totalC5'},
         ],
       },
     ],
@@ -884,13 +889,13 @@ function getSummaryConfigGuardian(){
       {
         heading:'Part V — Audit Fee &amp; Bond Calculation',
         lines:[
-          {label:'Audit Fee (inventory &gt; $25,000)',value:fmt(calc.auditFee()),id:'auditFee'},
-          {label:'Restricted Cash (B-1)',value:fmt(calc.restrictedCash()),id:'restrictedCash'},
-          {label:'Restricted Intangibles (B-3)',value:fmt(calc.restrictedIntang()),id:'restrictedIntang'},
-          {label:'Unrestricted Cash (B-1)',value:fmt(calc.unrestrictedCash()),id:'unrestrictedCash'},
-          {label:'Personal Property (B-2)',value:fmt(calc.totalB2()),id:'personalPropertyB2Home'},
-          {label:'Unrestricted Intangibles (B-3)',value:fmt(calc.unrestrictedIntang()),id:'unrestrictedIntang'},
-          {label:'Bond Requirement (liquid, unrestricted)',value:fmt(calc.bondRequired()),id:'bondRequired',isTotal:true},
+          {label:'Audit Fee (inventory &gt; $25,000)',value:fmtH(calc.auditFee()),id:'auditFee'},
+          {label:'Restricted Cash (B-1)',value:fmtH(calc.restrictedCash()),id:'restrictedCash'},
+          {label:'Restricted Intangibles (B-3)',value:fmtH(calc.restrictedIntang()),id:'restrictedIntang'},
+          {label:'Unrestricted Cash (B-1)',value:fmtH(calc.unrestrictedCash()),id:'unrestrictedCash'},
+          {label:'Personal Property (B-2)',value:fmtH(calc.totalB2()),id:'personalPropertyB2Home'},
+          {label:'Unrestricted Intangibles (B-3)',value:fmtH(calc.unrestrictedIntang()),id:'unrestrictedIntang'},
+          {label:'Bond Requirement (liquid, unrestricted)',value:fmtH(calc.bondRequired()),id:'bondRequired',isTotal:true},
         ],
         footerAction:{label:'Complete Bond &amp; Surety Info (D-4)',route:'/d4'},
       },
@@ -905,7 +910,7 @@ function getSummaryConfigGuardian(){
         ],
       },
     ],
-    banner:{title:'VERIFIED INITIAL INVENTORY TOTAL',value:fmt(calc.total()),id:'totalInventory'},
+    banner:{title:'VERIFIED INITIAL INVENTORY TOTAL',value:fmtH(calc.total()),id:'totalInventory'},
     nextRoute:'/a1',
   };
 }
@@ -1255,8 +1260,8 @@ function pageD3(){
           Inventories with total property value at or below $25,000: <strong>$0.00</strong>
         </p>
         <div class="summary-line total">
-          <span>Calculated Audit Fee (based on total inventory of <strong id="auditFeeBase">${fmt(calc.total())}</strong>)</span>
-          <span id="auditFee">${fmt(calc.auditFee())}</span>
+          <span>Calculated Audit Fee (based on total inventory of <strong id="auditFeeBase">${fmtH(calc.total())}</strong>)</span>
+          <span id="auditFee">${fmtH(calc.auditFee())}</span>
         </div>
       </div>
     </div>
@@ -1281,12 +1286,12 @@ function pageD4(){
       <div class="summary-box h-100 mb-0">
         <h2 class="subsection-heading">Bond Calculation</h2>
     <p style="font-size:.8rem;margin-bottom:.6rem;">Bond amount = all liquid assets less those in a restricted depository. Only real property is excluded.</p>
-    <div class="summary-line"><span>B-1 — Cash in Restricted Depository</span><span id="restrictedCash">${fmt(calc.restrictedCash())}</span></div>
-    <div class="summary-line"><span>B-3 — Intangible Assets (Restricted)</span><span id="restrictedIntang">${fmt(calc.restrictedIntang())}</span></div>
-    <div class="summary-line"><span>B-1 — Cash NOT in Restricted Depository</span><span id="unrestrictedCash">${fmt(calc.unrestrictedCash())}</span></div>
-    <div class="summary-line"><span>B-2 — Personal Property Assets</span><span id="totalB2">${fmt(calc.totalB2())}</span></div>
-    <div class="summary-line"><span>B-3 — Intangible Assets (Unrestricted)</span><span id="unrestrictedIntang">${fmt(calc.unrestrictedIntang())}</span></div>
-        <div class="summary-line total"><span>Total for Bond Requirement (calculated)</span><span id="bondRequired">${fmt(calc.bondRequired())}</span></div>
+    <div class="summary-line"><span>B-1 — Cash in Restricted Depository</span><span id="restrictedCash">${fmtH(calc.restrictedCash())}</span></div>
+    <div class="summary-line"><span>B-3 — Intangible Assets (Restricted)</span><span id="restrictedIntang">${fmtH(calc.restrictedIntang())}</span></div>
+    <div class="summary-line"><span>B-1 — Cash NOT in Restricted Depository</span><span id="unrestrictedCash">${fmtH(calc.unrestrictedCash())}</span></div>
+    <div class="summary-line"><span>B-2 — Personal Property Assets</span><span id="totalB2">${fmtH(calc.totalB2())}</span></div>
+    <div class="summary-line"><span>B-3 — Intangible Assets (Unrestricted)</span><span id="unrestrictedIntang">${fmtH(calc.unrestrictedIntang())}</span></div>
+        <div class="summary-line total"><span>Total for Bond Requirement (calculated)</span><span id="bondRequired">${fmtH(calc.bondRequired())}</span></div>
       </div>
     </div>
     <div class="col-12 col-lg-6">

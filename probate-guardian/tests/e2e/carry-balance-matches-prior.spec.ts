@@ -127,7 +127,7 @@ test.describe('Milestone 71E: figures that match the Clerk\'s workbook, and carr
       const sourceId = await activeId(page);
 
       await navigate(page, '/p67');
-      await expect(page.locator('#main-content .alert-success')).toContainText('Net Assets from Changes (797,229.19) equals Net Assets from Balances (797,229.19)');
+      await expect(page.locator('#main-content .alert-success')).toContainText('Net Assets from Changes, $797,229.19, equals Net Assets from Balances, $797,229.19');
       const pdf = await pdfText(page, '[data-annual-action="save-pdf"]');
       expect(pdf).toContain('797,229.19');
       expect(pdf, 'no line prints the other rounding').not.toContain('797,229.18');
@@ -170,7 +170,7 @@ test.describe('Milestone 71E: figures that match the Clerk\'s workbook, and carr
       await navigate(page, '/p2');
       await expect(box(), 'still -5000 after the filing is closed and reopened (it used to become 0)').toHaveValue('-5000');
 
-      expect(await pdfText(page, '[data-annual-action="save-pdf"]'), "the Annual PDF's negative style").toContain('Starting Balance [Net Assets per Prior Report] $-5,000.00');
+      expect(await pdfText(page, '[data-annual-action="save-pdf"]'), "the Annual PDF's negative style").toContain('Starting Balance [Net Assets per Prior Report] ($5,000.00)'); // Milestone 73H: it printed $-5,000.00
       const wb = await readWorkbook(page, await download(page, '[data-annual-action="save-excel"]'), annualTemplate, [['PART VI, VII ', 'I8']]);
       expect(wb.values, "'PART VI, VII '!I8 holds the negative number").toEqual([-5000]);
       expect(wb.checked, 'the template has formulas to check').toBeGreaterThan(100);
@@ -224,7 +224,7 @@ test.describe('Milestone 71E: figures that match the Clerk\'s workbook, and carr
     await navigate(page, '/p2');
     await expect(box(), 'still negative after the filing is closed and reopened').toHaveValue('-250.5');
 
-    expect(await pdfText(page, '[data-simplified-action="save-pdf"]'), "the Simplified PDF's negative style").toContain('Line 1 Starting Balance [Net Assets per the Prior Report] $-250.50');
+    expect(await pdfText(page, '[data-simplified-action="save-pdf"]'), "the Simplified PDF's negative style").toContain('Line 1 Starting Balance [Net Assets per the Prior Report] ($250.50)'); // Milestone 73H: it printed $-250.50
     const wb = await readWorkbook(page, await download(page, '[data-simplified-action="save-excel"]'), simplifiedTemplate, [['PARTS I, II ', 'H19']]);
     expect(wb.values, "'PARTS I, II '!H19 holds the negative number").toEqual([-250.5]);
     expect(wb.checked).toBeGreaterThan(5);

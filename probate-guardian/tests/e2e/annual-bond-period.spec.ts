@@ -140,8 +140,9 @@ test.describe('Milestone 67D: the Bond Period is the accounting period', () => {
     await expect(advisory, 'one line per differing edge').toHaveCount(2);
     await expect(advisory.first()).toContainText('The filed Excel will show the accounting period.');
     // Values are named so the filer can see which is which.
-    await expect(advisory.first()).toContainText('2026-03-01');
-    await expect(advisory.first()).toContainText('2026-01-01');
+    // Milestone 73H: MM/DD/YYYY, as every date is shown (they read 2026-03-01).
+    await expect(advisory.first()).toContainText('03/01/2026');
+    await expect(advisory.first()).toContainText('01/01/2026');
 
     // Bond period equal to the accounting period: nothing to say.
     await page.evaluate((b) => { (window as any).GuardianForms.testing.patchFiling(b); }, ACCOUNTING);

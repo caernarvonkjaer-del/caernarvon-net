@@ -4,6 +4,8 @@
 // tagged/vector PDF engine's block vocabulary, replacing the raster
 // html2pdf/html2canvas export with a tagged, accessible, non-raster PDF.
 
+import { BLANK_DATE_LINE, dateOrLine, displayDate } from '../../core/form/date-parser.js';
+import { amountForStore, presentAmount } from '../../core/form/amount-codec.js';
 import { resolveDescriptorForInventoryType } from '../../core/filing/filing-descriptor.js';
 import { planCertificateOfServiceSection } from '../../core/filing/plan-certificate-of-service.js';
 import { maskSSN } from '../../core/pdf/ssn-format.js';
@@ -25,12 +27,11 @@ export function buildPlanAnnualModel(D) {
   const attorneySecondaryEmail = d.attorney_secondary_email || d.attorney_secondaryEmail || '';
   const descriptor = resolveDescriptorForInventoryType('planAnnual');
 
-  const fmtDate = (iso) => {
-    if (!iso) return '';
-    const [y, m, day] = String(iso).split('-');
-    if (!y || !m || !day) return iso;
-    return `${m}/${day}/${y}`;
-  };
+  // Milestone 73H: a date as every screen and PDF shows it (displayDate());
+  // in a sentence or a labelled field a blank date prints a line to write it
+  // on (dateOrLine(), decision 73H-2). A table cell and a signature block's
+  // date stay blank (73H-N2).
+  const fmtDate = displayDate;
 
   const metadata = {
     title: `${wardName} - ${caseNumber} - Annual Guardianship Plan`,
@@ -78,8 +79,8 @@ export function buildPlanAnnualModel(D) {
         type: 'key-value-grid',
         items: [
           { label: 'Social Security Number', value: maskSSN(d.ssn || '') },
-          { label: 'Guardianship Inception Date', value: fmtDate(d.gid) },
-          { label: 'For the period', value: `${fmtDate(d.periodFrom)} through ${fmtDate(d.periodTo)}` },
+          { label: 'Guardianship Inception Date', value: dateOrLine(d.gid) },
+          { label: 'For the period', value: `${dateOrLine(d.periodFrom)} through ${dateOrLine(d.periodTo)}` },
           { label: 'Guardian Name(s)', value: d.guardian || '' },
           { label: 'Attorney Name', value: d.attorney || '' },
         ],
@@ -485,7 +486,7 @@ export function buildPlanAnnualModel(D) {
         title: `Directive ${i + 1}`,
         items: [
           { label: 'Title of order or directive', value: r.title || '' },
-          { label: 'Date executed / signed', value: fmtDate(r.dateSigned) },
+          { label: 'Date executed / signed', value: dateOrLine(r.dateSigned) },
           { label: 'Name of person who signed', value: r.signedBy || '' },
           { label: 'Designated agent(s) / surrogate(s)', value: r.agents || '' },
           { label: 'Alternate agent(s) / surrogate(s)', value: r.alternates || '' },
@@ -499,6 +500,14 @@ export function buildPlanAnnualModel(D) {
 
   // Page 11: Q11 remuneration
   const q11Received = !!(d.q11ReceivedName || d.q11Amount || d.q11From);
+  // Milestone 73H (design 3): the amount received prints as currency, as
+  // the original form's "monies of $___" asks; it printed as stored
+  // ("1259.59"). Blank, a line to write it on; text that can't be read,
+  // as typed (the export checks name it).
+  const q11Money = (v) => {
+    const amount = amountForStore(v, { blank: '' });
+    return typeof amount === 'number' ? presentAmount(amount) : (amount || BLANK_DATE_LINE);
+  };
   sections.push({
     id: 'q11',
     title: 'Question 11',
@@ -518,7 +527,7 @@ export function buildPlanAnnualModel(D) {
       ...(d.q11NoRemuneration
         ? [{ type: 'notice', text: `I, ${d.q11NoRemunerationName || ''}, declare that I have received NO remuneration from any source for services rendered to or on behalf of the ward.` }]
         : q11Received
-          ? [{ type: 'notice', text: `I, ${d.q11ReceivedName || ''}, declare that I have received the monies ${d.q11Amount || ''} from ${d.q11From || ''} for services rendered on behalf of the ward.` }]
+          ? [{ type: 'notice', text: `I, ${d.q11ReceivedName || ''}, declare that I have received the monies ${q11Money(d.q11Amount)} from ${d.q11From || ''} for services rendered on behalf of the ward.` }]
           : []),
       ...(!d.q11NoRemuneration && (q11Received || d.q11SubmittedToCourt) ? [{
         type: 'checklist',
@@ -606,7 +615,7 @@ export function buildPlanAnnualModel(D) {
     blocks: [
       {
         type: 'notice',
-        text: `The undersigned hereby notifies the court of the filing of the annual guardianship plan for the period ${fmtDate(d.periodFrom)} through ${fmtDate(d.periodTo)}. This annual guardianship plan is the representation of the guardian. I have not audited the accompanying annual plan. The undersigned attorney represents that he/she has examined the contents of the annual guardianship plan and that it conforms to the requirements of the Florida Guardianship Law and the standards for plans in ${county} County.`,
+        text: `The undersigned hereby notifies the court of the filing of the annual guardianship plan for the period ${dateOrLine(d.periodFrom)} through ${dateOrLine(d.periodTo)}. This annual guardianship plan is the representation of the guardian. I have not audited the accompanying annual plan. The undersigned attorney represents that he/she has examined the contents of the annual guardianship plan and that it conforms to the requirements of the Florida Guardianship Law and the standards for plans in ${county} County.`,
       },
       {
         type: 'signature-block',

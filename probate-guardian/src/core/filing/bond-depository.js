@@ -41,7 +41,8 @@
 // gated (bondWaivedDate, restrictedDepositoryReceiptDate) stay.
 
 import { amountForStore } from '../form/amount-codec.js';
-import { formatMoney, roundCents } from '../format/money.js';
+import { roundCents } from '../format/money.js';
+import { presentAmount } from '../form/amount-codec.js';
 
 export const BOND_DEPOSITORY_STATES = Object.freeze(['depository-only', 'bond-and-depository', 'bond-only', 'bond-waived']);
 
@@ -259,9 +260,8 @@ export function bondDepositoryAdvisories(filing, { section = 'Bond', form = 'ann
     if (!text(filing.bondingCompany)) advise('bonding-company', 'bondingCompany', 'Name of Bonding Company is blank. The filing can be filed without it.');
     const bond = text(filing.bondAmount) === '' ? '' : (typeof filing.bondAmount === 'number' ? filing.bondAmount : amountForStore(String(filing.bondAmount)));
     if (typeof bond === 'number' && Number.isFinite(bond) && Number.isFinite(requirement) && roundCents(bond) < roundCents(requirement)) {
-      const money = (v) => formatMoney(v, { style: 'signFirst' });
       advise('bond-shortfall', 'bondAmount',
-        `Bond Amount (${money(bond)}) is below the bond requirement this filing calculates (${money(requirement)}). The Clerk's workbook says: "${BOND_REQUIREMENT_WORDS[form] || BOND_REQUIREMENT_WORDS.annual}" The filing can be filed as it is.`);
+        `Bond Amount, ${presentAmount(bond)}, is below the bond requirement this filing calculates, ${presentAmount(requirement)}. The Clerk's workbook says: "${BOND_REQUIREMENT_WORDS[form] || BOND_REQUIREMENT_WORDS.annual}" The filing can be filed as it is.`);
     }
   }
   if (revealsDepository(state) && !text(filing.restrictedDepositoryReceiptDate)) {

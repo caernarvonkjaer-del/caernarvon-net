@@ -128,6 +128,53 @@ export function formatDisplayDate(canonicalStr) {
   return canonicalStr;
 }
 
+/**
+ * Milestone 73H: a stored date as every screen and PDF shows it --
+ * MM/DD/YYYY, through formatDisplayDate(). A stored timestamp
+ * ("2026-10-08T14:03:00.000Z", or a Date) shows its date, its first ten
+ * characters, as the PDFs' own copies of this used to; other text is shown as
+ * it is. Blank is ''. For showing only: comparisons, the importers and the
+ * workbooks keep the stored form.
+ *
+ * @param {unknown} value
+ * @returns {string}
+ */
+export function displayDate(value) {
+  if (value === null || value === undefined || value === '') return '';
+  const text = value instanceof Date ? (Number.isNaN(value.getTime()) ? '' : value.toISOString()) : String(value);
+  const day = /^(\d{4}-\d{2}-\d{2})(?:T|$)/.exec(text);
+  return formatDisplayDate(day ? day[1] : text);
+}
+
+/**
+ * Milestone 73H (decision 73H-2): what a PDF prints for a blank date in a
+ * sentence or a labelled field -- a line to write it on, never "for the
+ * period  through ." The bond lines keep their "[date]" (Milestone 67D's
+ * approved wording), and a signature block with no date still leaves its
+ * date line out (decision 73H-N2).
+ */
+export const BLANK_DATE_LINE = '__________';
+
+/**
+ * Milestone 73H: a moment held as a local Date -- the dashboard's deadlines, a
+ * shared-record merge's time -- shown as MM/DD/YYYY by its own calendar day
+ * (displayDate() reads a Date by its UTC day, as a stored date is). They
+ * showed "Apr 1, 2028" and the browser's own format ("10/8/2026").
+ *
+ * @param {unknown} date
+ * @returns {string}
+ */
+export function displayLocalDate(date) {
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) return '';
+  const two = (n) => String(n).padStart(2, '0');
+  return `${two(date.getMonth() + 1)}/${two(date.getDate())}/${date.getFullYear()}`;
+}
+
+/** displayDate(), or the blank line for a blank date (see BLANK_DATE_LINE). */
+export function dateOrLine(value) {
+  return displayDate(value) || BLANK_DATE_LINE;
+}
+
 // Milestone 51C/51B removed dateInputHTML() from here. It had zero references
 // anywhere -- not even in date-parser.spec.js -- and was superseded rather than
 // merely unused: its data-field-kind="date" / data-field-format-policy markup

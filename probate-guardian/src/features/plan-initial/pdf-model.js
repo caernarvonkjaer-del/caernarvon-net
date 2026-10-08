@@ -4,6 +4,7 @@
 // tagged/vector PDF engine's block vocabulary, replacing the raster
 // html2pdf/html2canvas export with a tagged, accessible, non-raster PDF.
 
+import { dateOrLine, displayDate } from '../../core/form/date-parser.js';
 import { resolveDescriptorForInventoryType } from '../../core/filing/filing-descriptor.js';
 import { planCertificateOfServiceSection } from '../../core/filing/plan-certificate-of-service.js';
 import { triStateText } from '../../core/form/form-contract.js';
@@ -26,12 +27,11 @@ export function buildPlanInitialModel(D, options) {
   const county = d.county || '';
   const descriptor = resolveDescriptorForInventoryType('planInitial');
 
-  const fmtDate = (iso) => {
-    if (!iso) return '';
-    const [y, m, day] = String(iso).split('-');
-    if (!y || !m || !day) return iso;
-    return `${m}/${day}/${y}`;
-  };
+  // Milestone 73H: a date as every screen and PDF shows it (displayDate());
+  // in a sentence or a labelled field a blank date prints a line to write it
+  // on (dateOrLine(), decision 73H-2). A table cell and a signature block's
+  // date stay blank (73H-N2).
+  const fmtDate = displayDate;
 
   const metadata = {
     title: `${wardName} - ${caseNumber} - Initial Guardianship Plan`,
@@ -74,9 +74,9 @@ export function buildPlanInitialModel(D, options) {
         items: [
           { label: 'Case Number', value: caseNumber },
           { label: 'Successor Guardianship', value: d.successorGuardianship || '' },
-          { label: 'Guardianship Inception Date', value: fmtDate(d.inceptionDate) },
-          { label: 'Date Letters Were Signed', value: fmtDate(d.lettersSignedDate) },
-          { label: 'For the period', value: `${fmtDate(d.periodFrom)} through ${fmtDate(d.periodTo)}` },
+          { label: 'Guardianship Inception Date', value: dateOrLine(d.inceptionDate) },
+          { label: 'Date Letters Were Signed', value: dateOrLine(d.lettersSignedDate) },
+          { label: 'For the period', value: `${dateOrLine(d.periodFrom)} through ${dateOrLine(d.periodTo)}` },
           { label: 'Guardian Name(s)', value: d.guardianNames || '' },
           { label: 'Attorney Name', value: d.attorneyName || '' },
         ],
@@ -432,7 +432,7 @@ export function buildPlanInitialModel(D, options) {
       title: `Directive ${i + 1}`,
       items: [
         { label: 'Title of order or directive', value: r.title || '' },
-        { label: 'Date executed / signed', value: fmtDate(r.dateSigned) },
+        { label: 'Date executed / signed', value: dateOrLine(r.dateSigned) },
         { label: 'Name of person who signed', value: r.signedBy || '' },
         { label: 'Designated agent(s) / surrogate(s)', value: r.agents || '' },
         { label: 'Alternate agent(s) / surrogate(s)', value: r.alternates || '' },
@@ -528,7 +528,7 @@ export function buildPlanInitialModel(D, options) {
     blocks: [
       {
         type: 'notice',
-        text: `The undersigned hereby notifies the court of the filing of the initial guardianship plan for the period ${fmtDate(d.periodFrom)} through ${fmtDate(d.periodTo)}. This initial guardianship plan is the representation of the guardian. I have not audited the accompanying initial plan. The undersigned attorney represents that he/she has examined the contents of the initial guardianship plan and that it conforms to the requirements of the Florida Guardianship Law and the standards for the plans in ${county} County.`,
+        text: `The undersigned hereby notifies the court of the filing of the initial guardianship plan for the period ${dateOrLine(d.periodFrom)} through ${dateOrLine(d.periodTo)}. This initial guardianship plan is the representation of the guardian. I have not audited the accompanying initial plan. The undersigned attorney represents that he/she has examined the contents of the initial guardianship plan and that it conforms to the requirements of the Florida Guardianship Law and the standards for the plans in ${county} County.`,
       },
       {
         type: 'signature-block',

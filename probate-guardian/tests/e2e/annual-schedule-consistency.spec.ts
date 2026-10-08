@@ -160,26 +160,27 @@ test.describe('annual accounting schedule consistency', () => {
     // hook of its own at all before this pass.
     await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/schb1'));
     const total = page.locator('[data-annual-total="schB1"]');
-    await expect(total).toHaveText('0.00');
+    // Milestone 73H: a dollar sign on every amount (73H-N1).
+    await expect(total).toHaveText('$0.00');
 
     // Schedules start with no rows at all, so add one before typing in it.
     await page.locator('[data-annual-action="add-row"][data-collection="schB1"]').click();
     await dismissScheduleDocPrompt(page); // Milestone 57C-R advisory modal
     const amount = page.locator('input[data-annual-path^="schB1."][data-annual-path$=".amount"]').first();
     await amount.fill('1250.50');
-    await expect(total, 'Schedule B-1 total should follow the row being typed in').toHaveText('1,250.50');
+    await expect(total, 'Schedule B-1 total should follow the row being typed in').toHaveText('$1,250.50');
 
     await amount.fill('2000');
-    await expect(total).toHaveText('2,000.00');
+    await expect(total).toHaveText('$2,000.00');
 
     // Schedule A still works -- it used to be the only one that did, via a
     // one-off hook this pass replaced with the shared mechanism.
     await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/scha'));
     const schATotal = page.locator('[data-annual-total="schA"]');
-    await expect(schATotal).toHaveText('0.00');
+    await expect(schATotal).toHaveText('$0.00');
     await page.locator('[data-annual-action="add-row"][data-collection="schA"]').click();
     await dismissScheduleDocPrompt(page); // Milestone 57C-R advisory modal
     await page.locator('input[data-annual-path^="schA."][data-annual-path$=".amount"]').first().fill('750');
-    await expect(schATotal).toHaveText('750.00');
+    await expect(schATotal).toHaveText('$750.00');
   });
 });

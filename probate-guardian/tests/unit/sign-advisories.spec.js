@@ -46,11 +46,11 @@ describe('Preview: the Annual family', () => {
       expect(notes).toEqual([
         {
           code: 'amount.loss-positive', severity: 'advisory', field: 'schC.0.loss',
-          message: 'Schedule C — Line 1 — Loss / Reduction is positive ($250.00), so it raises the Net Capital Adjustments. The Clerk\'s workbook says: "Losses should be entered as negative numbers, e.g., -2500." It is filed as entered.',
+          message: 'Schedule C — Line 1 — Loss / Reduction is positive: $250.00, so it raises the Net Capital Adjustments. The Clerk\'s workbook says: "Losses should be entered as negative numbers, e.g., -2500." It is filed as entered.',
         },
         {
           code: 'amount.transfer-out-positive', severity: 'advisory', field: 'schE.0.transferOutAmt',
-          message: 'Schedule E — Line 1 — Transfer Out Amount is positive ($500.00). The Clerk\'s workbook says: "Transfers out should be entered as negative numbers." It is filed as entered.',
+          message: 'Schedule E — Line 1 — Transfer Out Amount is positive: $500.00. The Clerk\'s workbook says: "Transfers out should be entered as negative numbers." It is filed as entered.',
         },
       ]);
     });
@@ -76,8 +76,8 @@ describe('Preview: the Annual family', () => {
       ['amount.negative-unusual', 'bondAmount'],
       ['amount.negative-unusual', 'remuneration.0.amount'],
     ]);
-    expect(notes[2].message).toBe('Schedule D-1 — Line 1 — Full Asset Amount is negative (-$200.00). A negative amount is unusual here; check its sign. It is filed as entered.');
-    expect(notes[5].message).toBe('Part IX — Bond Amount is negative (-$1,000.00). A negative amount is unusual here; check its sign. It is filed as entered.');
+    expect(notes[2].message).toBe('Schedule D-1 — Line 1 — Full Asset Amount is negative: ($200.00). A negative amount is unusual here; check its sign. It is filed as entered.');
+    expect(notes[5].message).toBe('Part IX — Bond Amount is negative: ($1,000.00). A negative amount is unusual here; check its sign. It is filed as entered.');
     expect(notes.every((a) => a.severity === 'advisory')).toBe(true);
   });
 
@@ -99,7 +99,7 @@ describe('Preview: the Simplified, the Inventory and the Annual Plan', () => {
   test('Simplified: a negative Starting Balance is ordinary; a negative income, disbursement or remuneration is noted', () => {
     const notes = signAdvisories({ inventoryType: 'simplified', startingBalance: -5, interestIncome: -12.5, federalIncomeTax: -1, remuneration: [{ amount: -2 }] });
     expect(notes.map((a) => a.field)).toEqual(['interestIncome', 'federalIncomeTax', 'remuneration.0.amount']);
-    expect(notes[0].message).toBe('Part II — Interest Income is negative (-$12.50). A negative amount is unusual here; check its sign. It is filed as entered.');
+    expect(notes[0].message).toBe('Part II — Interest Income is negative: ($12.50). A negative amount is unusual here; check its sign. It is filed as entered.');
     expect(notes[2].message).toMatch(/^Part VII — Remuneration 1 — Amount is negative/);
   });
 
@@ -112,7 +112,7 @@ describe('Preview: the Simplified, the Inventory and the Annual Plan', () => {
       bondAmount: -1,
     });
     expect(notes.map((a) => a.field)).toEqual(['scheduleA1.1.fullAssetValue', 'scheduleA2.0.fullDebtBalance', 'scheduleC1.0.annualIncomeAmount', 'bondAmount']);
-    expect(notes[0].message).toBe('A-1 row 2 — Full Asset Value is negative (-$5.00). A negative amount is unusual here; check its sign. It is filed as entered.');
+    expect(notes[0].message).toBe('A-1 row 2 — Full Asset Value is negative: ($5.00). A negative amount is unusual here; check its sign. It is filed as entered.');
     expect(notes[3].message).toMatch(/^D-4 — Bond Amount is negative/);
   });
 

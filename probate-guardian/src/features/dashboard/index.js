@@ -6,6 +6,7 @@
 // window.createFeatureBridge() until Milestone 70's 70K).
 import { compareDashboardColumn, compareDashboardPriority, getDashboardMetrics, normalizeDashboardWorkflow, projectDashboardWard } from './view-model.js';
 import { caseNumberOf, countyOf } from '../../core/case-resolver.js';
+import { displayLocalDate } from '../../core/form/date-parser.js';
 import { normalizeCountyName } from '../../core/navigation/ward-county.js';
 import { deriveDefaultCircuit, groupsForCircuit, resourcesPanelHTML, getDefaultCircuitPreference, setDefaultCircuitPreference } from './resources.js';
 import { alertModal, confirmModal } from '../../core/ui/dialogs.js';
@@ -212,7 +213,8 @@ function deadlineDisplay(row) {
 }
 
 function deadlineStatusHTML(row) {
-  const date = row.deadlineDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  // Milestone 73H: MM/DD/YYYY, as every screen and PDF shows a date (it showed "Apr 1, 2028").
+  const date = displayLocalDate(row.deadlineDate);
   if (!row.isDeadlineActionable) return `<span class="dashboard-triage-muted">${esc(date)}</span>`;
   if (row.workflowStatus === 'disapproved-needs-correction') return `${priorityBadgeHTML(row)}<strong class="dashboard-priority-reason">Needs correction</strong>`;
   if (row.deadlineBucket === 'overdue') return `${priorityBadgeHTML(row)}<strong class="dashboard-priority-reason deadline-overdue">${Math.abs(row.daysUntilDeadline)} day${Math.abs(row.daysUntilDeadline) === 1 ? '' : 's'} overdue</strong>`;

@@ -6,7 +6,8 @@ import { resolveDescriptorForInventoryType } from '../../core/filing/filing-desc
 import { composePdfAddressLines } from '../../core/pdf/address-format.js';
 import { maskSSN } from '../../core/pdf/ssn-format.js';
 import { REMUNERATION_DECLARATION, REMUNERATION_NONE_REPORTED } from '../../core/filing/statutory-text.js';
-import { formatMoney } from '../../core/format/money.js';
+import { presentAmount } from '../../core/form/amount-codec.js';
+import { dateOrLine, displayDate } from '../../core/form/date-parser.js';
 import { isUnrepresented, resolveServiceCertifier } from '../../core/filing/unrepresented-filing.js';
 import { methodOfServiceLine } from '../../core/filing/service-method.js';
 import { resolveSignatureModes } from '../../core/pdf/signature-modes.js';
@@ -27,14 +28,16 @@ export function buildSimplifiedAccountingModel(D, options = {}) {
   const descriptor = resolveDescriptorForInventoryType('simplified');
 
   // Milestone 71E: formatMoney() (src/core/format/money.js) -- the Clerk's workbook's own rounding.
-  const fmtS = (v) => formatMoney(v, { style: 'dollar' });
+  // Milestone 73H (decision 73H-1): $5,000.00 and ($5,000.00), as on every
+  // screen and PDF (presentAmount()); a negative printed $-5,000.00 here.
+  // Disbursements stay positive: the Simplified workbook holds them so
+  // (PARTS I, II H29 =SUM(G27:G28)).
+  const fmtS = presentAmount;
 
-  const fmtDate = (iso) => {
-    if (!iso) return '';
-    const parts = String(iso).split('-');
-    if (parts.length < 3) return iso;
-    return `${parts[1]}/${parts[2]}/${parts[0]}`;
-  };
+  // Milestone 73H: a date as every screen and PDF shows it (displayDate());
+  // in a sentence or a labelled field a blank date prints a line to write it
+  // on (dateOrLine(), decision 73H-2). A signature block's stays blank (73H-N2).
+  const fmtDate = displayDate;
 
   const formatSig = (name) => {
     const n = (name || '').trim();
@@ -82,7 +85,7 @@ export function buildSimplifiedAccountingModel(D, options = {}) {
     { label: 'Name of Ward', value: wardName },
     { label: 'Case Number', value: caseNumber },
     { label: 'Social Security Number', value: maskSSN(d.ssn || '') },
-    { label: 'Accounting Period', value: `From: ${fmtDate(d.periodFrom)}  To: ${fmtDate(d.periodTo)}` },
+    { label: 'Accounting Period', value: `From: ${dateOrLine(d.periodFrom)}  To: ${dateOrLine(d.periodTo)}` },
     { label: 'Guardian', value: d.guardian || '' },
     { label: 'Attorney for Guardian', value: d.attorney || '' },
     // Milestone 73B: a blank prints blank -- it used to print "Plenary".
@@ -159,7 +162,7 @@ export function buildSimplifiedAccountingModel(D, options = {}) {
       {
         type: 'notice',
         tag: 'P',
-        text: `Under penalties of perjury, I declare that I have read and examined the foregoing return and that, to the best of my knowledge and belief, it constitutes a full and correct account of all the ward's property of which this guardian has control, and is a complete report of all cash and property transactions and of all receipts and disbursements by me from ${fmtDate(d.periodFrom)} through ${fmtDate(d.periodTo)}.`,
+        text: `Under penalties of perjury, I declare that I have read and examined the foregoing return and that, to the best of my knowledge and belief, it constitutes a full and correct account of all the ward's property of which this guardian has control, and is a complete report of all cash and property transactions and of all receipts and disbursements by me from ${dateOrLine(d.periodFrom)} through ${dateOrLine(d.periodTo)}.`,
       },
     ],
   });
@@ -230,7 +233,7 @@ export function buildSimplifiedAccountingModel(D, options = {}) {
       {
         type: 'notice',
         tag: 'P',
-        text: `The undersigned Attorney hereby notifies the Court of the filing of the simplified annual accounting of the Guardian ${wardName} for the period ${fmtDate(d.periodFrom)} through ${fmtDate(d.periodTo)}. This simplified annual accounting is the representation of the guardian. The undersigned attorney represents that he/she has examined the contents of the accounting and that it conforms to the requirements of the Florida Guardianship Law and the standards for accountings in ${county} County, Florida.`,
+        text: `The undersigned Attorney hereby notifies the Court of the filing of the simplified annual accounting of the Guardian ${wardName} for the period ${dateOrLine(d.periodFrom)} through ${dateOrLine(d.periodTo)}. This simplified annual accounting is the representation of the guardian. The undersigned attorney represents that he/she has examined the contents of the accounting and that it conforms to the requirements of the Florida Guardianship Law and the standards for accountings in ${county} County, Florida.`,
       },
       {
         type: 'signature-block',
@@ -394,7 +397,7 @@ export function buildSimplifiedAccountingModel(D, options = {}) {
             r.guardian || '',
             r.type || '',
             r.description || '',
-            fmtS(r.amount),
+            r.amount === '' || r.amount == null ? '' : fmtS(r.amount),
           ]),
           colWidths: [6, 22, 18, 38, 16],
           colAlign: ['center', 'left', 'left', 'left', 'right'],

@@ -19,9 +19,11 @@
 //
 // Four operations, kept apart: parse (text to a signed number), store (the
 // number, or the text kept when it can't be read), show in the box (as
-// stored, minus included), and present court-style (Milestone 73H, not
-// here). What a sign MEANS -- the Inventory's negated liabilities, Part VI's
-// subtracted disbursements -- belongs to each form, never to this module.
+// stored, minus included), and present court-style (Milestone 73H:
+// presentAmount() below). What a sign MEANS -- the Inventory's negated
+// liabilities, Part VI's subtracted disbursements -- belongs to each form,
+// never to this module.
+import { formatMoney } from '../format/money.js';
 
 // The minus signs a pasted amount may carry: hyphen-minus, the minus sign
 // (U+2212), the figure dash, the en dash (U+2013), the small and full-width
@@ -150,3 +152,31 @@ export function liveAmountValue(text) {
 
 /** The message an amount box shows, and the export checks repeat, for text it can't read. */
 export const UNREADABLE_AMOUNT_HINT = 'Enter it as a number, such as 1234.56, -1234.56 or (1234.56).';
+
+/**
+ * Milestone 73H (decision 73H-1): how an amount is shown on every screen and
+ * PDF -- $5,000.00, and a negative ($5,000.00) -- the Clerk's workbooks' own
+ * number format ("$"#,##0.00_);("$"#,##0.00)) and their instruction ("$2,500.50
+ * or ($2,500.50)"). Rounded by money.js's rule; blank shows $0.00, so a caller
+ * that shows a blank as blank checks for it first. A sign's meaning is the
+ * caller's: Part VI passes a disbursement negated, as the workbook does.
+ *
+ * @param {unknown} value
+ * @returns {string}
+ */
+export function presentAmount(value) {
+  return formatMoney(value, { style: 'dollarParens' });
+}
+
+/**
+ * For a screen: a presented amount in parentheses also says "minus" to a
+ * screen reader, which does not read the parentheses as a sign. Takes
+ * presentAmount()'s text (digits, "$", ",", ".", parentheses only) and returns
+ * HTML; anything else comes back as it was.
+ *
+ * @param {string} text
+ * @returns {string}
+ */
+export function withMinusCue(text) {
+  return /^\(\$[\d,.]+\)$/.test(String(text ?? '')) ? `<span class="visually-hidden">minus </span>${text}` : String(text ?? '');
+}

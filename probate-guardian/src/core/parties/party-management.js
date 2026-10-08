@@ -4,6 +4,7 @@
 // possible-duplicate queue, merging and unmerging, and the closed-filing
 // sync notices. Moved from legacy-app.js's PARTY MANAGEMENT.
 import { esc } from '../filing/escape-html.js';
+import { displayLocalDate } from '../form/date-parser.js';
 import { INVENTORY_TYPES } from '../filing/filing-registry.js';
 import { wardCountyMergeConflict } from '../navigation/ward-county.js';
 import { closedFilingDrift, dismissPartyPair, filingDriftFromParties, findDuplicateCandidates, mergeParties, referenceCountForParty, resolveParty, slotsReferencing, subPartiesOf, syncFilingSlotWithParty, unmergeParty } from '../party-resolver.js';
@@ -233,7 +234,8 @@ export async function doFilingSyncClosed(role,index){
 
 export function partySubRowHTML(sub){
   const checked=_partyUnmergeIds.includes(sub.id);
-  const mergedAt=sub.mergeRecord?.mergedAt?new Date(sub.mergeRecord.mergedAt).toLocaleDateString():'';
+  // Milestone 73H: MM/DD/YYYY, as every date is shown (it took the browser's own format).
+  const mergedAt=sub.mergeRecord?.mergedAt?displayLocalDate(new Date(sub.mergeRecord.mergedAt)):'';
   return `<div class="ms-3 ps-3 mt-2 border-start"><div class="form-check mb-0">
     <input class="form-check-input" type="checkbox" id="party-unmerge-${esc(sub.id)}" title="Select to unmerge" data-form-action="party-unmerge-toggle" data-party-id="${esc(sub.id)}"${checked?' checked':''}>
     <label class="form-check-label" for="party-unmerge-${esc(sub.id)}" style="font-size:.85rem;">${esc(sub.name)||'(unnamed)'} ${partyRoleBadgesHTML(sub)} <span style="font-size:.78rem;color:var(--ink-3);">merged into this record${mergedAt?' on '+esc(mergedAt):''}</span></label>

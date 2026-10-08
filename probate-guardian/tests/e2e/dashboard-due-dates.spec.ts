@@ -29,6 +29,6 @@ test('a Final Accounting says when it is due; a due date on a Saturday carries t
   await expect(row('Final Due Ward').locator('[data-deadline-basis]')).toHaveText('Due promptly; within 45 days after being served with letters of administration or curatorship if the ward has died; within 20 days after removal (F.S. 744.527(1), 744.511)');
   await expect(row('Final Due Ward')).not.toContainText('overdue');
 
-  await expect(row('Saturday Due Ward')).toContainText('Apr 1, 2028');
+  await expect(row('Saturday Due Ward')).toContainText('04/01/2028'); // Milestone 73H: MM/DD/YYYY, as every date is shown (it read Apr 1, 2028)
   await expect(row('Saturday Due Ward').locator('[data-deadline-note]')).toHaveText('Falls on a weekend or legal holiday: check whether the next business day applies (Rule 2.514).');
 });

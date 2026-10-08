@@ -104,10 +104,10 @@ describe('Schedule E: transfers in and out that don\'t balance', () => {
 });
 
 describe('the Simplified\'s Line 8', () => {
-  test('below zero: the report\'s -$1,999.13', () => {
+  test('below zero: the report\'s ($1,999.13)', () => {
     expect(simplifiedConsistencyAdvisories({}, { remaining: -1999.13 })).toEqual([{
       code: 'consistency.remaining-below-zero', severity: 'advisory', field: 'startingBalance',
-      message: 'Part II — Line 8 — Remaining Assets On Hand is below zero (-$1,999.13). Review the amounts in Part II before filing.',
+      message: 'Part II — Line 8 — Remaining Assets On Hand is below zero: ($1,999.13). Review the amounts in Part II before filing.',
     }]);
   });
 

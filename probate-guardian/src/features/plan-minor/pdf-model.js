@@ -4,6 +4,7 @@
 // tagged/vector PDF engine's block vocabulary, replacing the raster
 // html2pdf/html2canvas export with a tagged, accessible, non-raster PDF.
 
+import { dateOrLine, displayDate } from '../../core/form/date-parser.js';
 import { resolveDescriptorForInventoryType } from '../../core/filing/filing-descriptor.js';
 import { planCertificateOfServiceSection } from '../../core/filing/plan-certificate-of-service.js';
 import { caseNumberOf } from '../../core/case-resolver.js';
@@ -41,12 +42,11 @@ export function buildPlanMinorModel(D) {
   const county = d.county || '';
   const descriptor = resolveDescriptorForInventoryType('planMinor');
 
-  const fmtDate = (iso) => {
-    if (!iso) return '';
-    const [y, m, day] = String(iso).split('-');
-    if (!y || !m || !day) return iso;
-    return `${m}/${day}/${y}`;
-  };
+  // Milestone 73H: a date as every screen and PDF shows it (displayDate());
+  // in a sentence or a labelled field a blank date prints a line to write it
+  // on (dateOrLine(), decision 73H-2). A table cell and a signature block's
+  // date stay blank (73H-N2).
+  const fmtDate = displayDate;
 
   const metadata = {
     title: `${wardName} - ${identityNumber} - Annual Plan (Minor)`,
@@ -91,7 +91,7 @@ export function buildPlanMinorModel(D) {
         items: [
           { label: 'UCN', value: d.ucn || '' },
           { label: 'Case #', value: d.ref || '' },
-          { label: 'For the period', value: `${fmtDate(d.periodFrom)} to ${fmtDate(d.periodTo)}` },
+          { label: 'For the period', value: `${dateOrLine(d.periodFrom)} to ${dateOrLine(d.periodTo)}` },
           { label: 'Guardian Name(s)', value: d.guardianName || '' },
           { label: 'Amended Form?', value: triStateText(d.amendedForm) },
           { label: 'Professional Guardian?', value: triStateText(d.professionalGuardian) },

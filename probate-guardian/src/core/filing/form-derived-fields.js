@@ -45,6 +45,7 @@
 // false one teaches the filer to ignore the panel.
 
 import { resolveDescriptorForInventoryType } from './filing-descriptor.js';
+import { displayDate } from '../form/date-parser.js';
 
 /** The form engine a filing type runs on ('annual' for Final and Trust too), from the registry. */
 const engineOf = (type) => resolveDescriptorForInventoryType(type)?.engineId || '';
@@ -111,10 +112,10 @@ export function formDerivedOverwriteWarnings(filing, descriptor = null) {
       derived: b,
       // Wording approved by the requester 2026-09-23 (Milestone 67D); the two
       // sentences ship verbatim, then the values so the filer sees which is
-      // which.
+      // which -- MM/DD/YYYY since Milestone 73H (they read "2026-03-01").
       message: 'Part IX — The bond period entered differs from the accounting period. '
         + 'The filed Excel will show the accounting period. '
-        + `${label} entered: ${a}; ${derivedLabel}: ${b}.`,
+        + `${label} entered: ${displayDate(a)}; ${derivedLabel}: ${displayDate(b)}.`,
     });
   }
 

@@ -238,10 +238,10 @@ describe('what the print preview warns about -- advisory, never blocking', () =>
     expect(rest).toEqual([]);
     expect(inventory).toEqual({
       code: 'bond-depository.bond-shortfall', severity: 'advisory', field: 'bondAmount',
-      message: 'D-4 — Bond Amount ($10,000.00) is below the bond requirement this filing calculates ($50,100.00). The Clerk\'s workbook says: "The court often requires a bond in the amount of the Ward\'s liquid assets." The filing can be filed as it is.',
+      message: 'D-4 — Bond Amount, $10,000.00, is below the bond requirement this filing calculates, $50,100.00. The Clerk\'s workbook says: "The court often requires a bond in the amount of the Ward\'s liquid assets." The filing can be filed as it is.',
     });
     expect(bondDepositoryAdvisories({ ...bond, bondAmount: '10000' }, { section: 'Part IX', form: 'annual', requirement: 20000 })[0].message)
-      .toBe('Part IX — Bond Amount ($10,000.00) is below the bond requirement this filing calculates ($20,000.00). The Clerk\'s workbook says: "Guardianship bond amount should be the amount of all liquid assets less those in a restricted depository or frozen account." The filing can be filed as it is.');
+      .toBe('Part IX — Bond Amount, $10,000.00, is below the bond requirement this filing calculates, $20,000.00. The Clerk\'s workbook says: "Guardianship bond amount should be the amount of all liquid assets less those in a restricted depository or frozen account." The filing can be filed as it is.');
   });
 
   test('any shortfall, to the cent; a bond at or above the requirement says nothing', () => {

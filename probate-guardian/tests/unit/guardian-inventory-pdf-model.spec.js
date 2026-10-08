@@ -11,6 +11,8 @@ import { buildVerifiedInventoryModel } from '../../src/features/guardian-invento
 // through B-4, a second net line, and the grand total) -- this pins that the
 // print now matches, using the same schedule totals as the on-screen
 // Summary and the individual schedule tables elsewhere on the page.
+// Milestone 73H (decision 73H-1): a negative prints ($20,000.00), as on every
+// PDF and screen; these figures read -$20,000.00 before.
 describe('Milestone 64A-2, item 2.1: Summary I lists every schedule individually, not two collapsed rows', () => {
   const base = (extra = {}) => ({
     wardName: 'Harold Thomas Bennett', caseNumber: '26-002487-GD', county: 'Pasco',
@@ -33,12 +35,12 @@ describe('Milestone 64A-2, item 2.1: Summary I lists every schedule individually
     expect(summary.headers).toEqual(['Schedule', 'Title', 'Amount']);
     expect(summary.rows).toEqual([
       ['A-1', 'Real Estate / Real Property', '$100,000.00'],
-      ['A-2', 'Real Estate Liabilities', '-$20,000.00'],
+      ['A-2', 'Real Estate Liabilities', '($20,000.00)'],
       ['', 'Real Estate Assets, Net of Liabilities', '$80,000.00'],
       ['B-1', 'Cash Assets / Cash Equivalent Assets', '$5,000.00'],
       ['B-2', 'Personal Property Assets', '$3,000.00'],
       ['B-3', 'Intangible Assets', '$2,000.00'],
-      ['B-4', 'Liabilities / Secured and Unsecured Debt / Notes / Loans', '-$1,000.00'],
+      ['B-4', 'Liabilities / Secured and Unsecured Debt / Notes / Loans', '($1,000.00)'],
       ['', 'Cash / Personal Property / Intangible Assets, Net of Liabilities', '$9,000.00'],
     ]);
     expect(summary.totals).toEqual({ label: 'VERIFIED INITIAL INVENTORY OF GUARDIAN', value: '$89,000.00' });
@@ -82,7 +84,7 @@ describe('Milestone 64A-2, item 2.2: Summary II prints C-2 negative and the form
       'Value of Trusts for the Ward',
       "Joint Owners of Ward's Assets",
     ]);
-    expect(summaryII.rows[1][2]).toBe('-$1,000.00');
+    expect(summaryII.rows[1][2]).toBe('($1,000.00)');
   });
 });
 
@@ -585,11 +587,11 @@ describe('Milestone 60A: PDF totals come from the shared Guardian calculator', (
     // And the summaries read the same figures. Milestone 64A-2, item 2.1:
     // Summary I now lists A-2 and B-4 individually (negative, as liabilities)
     // rather than a "Schedule A"/"Schedule B" debts column.
-    expect(summaryI(model).rows[1]).toEqual(['A-2', 'Real Estate Liabilities', '-$500.00']);
-    expect(summaryI(model).rows[6]).toEqual(['B-4', 'Liabilities / Secured and Unsecured Debt / Notes / Loans', '-$500.00']);
+    expect(summaryI(model).rows[1]).toEqual(['A-2', 'Real Estate Liabilities', '($500.00)']);
+    expect(summaryI(model).rows[6]).toEqual(['B-4', 'Liabilities / Secured and Unsecured Debt / Notes / Loans', '($500.00)']);
     // Milestone 64A-2, item 2.2: C-2 (Lawsuits Pending Against the Ward)
     // prints negative on Summary II, matching the form's own H9 = -'C-2'!H50.
-    expect(summaryII(model).rows.map(r => r[2])).toEqual(['$500.00', '-$500.00', '$500.00', '$500.00', '$500.00']);
+    expect(summaryII(model).rows.map(r => r[2])).toEqual(['$500.00', '($500.00)', '$500.00', '$500.00', '$500.00']);
   });
 
   test('a blank Ward\'s % is 0%, as in the workbook, and is printed as unanswered rather than as 100%', () => {
@@ -610,8 +612,8 @@ describe('Milestone 60A: PDF totals come from the shared Guardian calculator', (
     // Milestone 64A-2, item 2.1: the net-of-liabilities line is now its own
     // row ("Real Estate Assets, Net of Liabilities"), not column 4 of a
     // "Schedule A" rollup row.
-    expect(summaryI(model).rows[2]).toEqual(['', 'Real Estate Assets, Net of Liabilities', '-$4,000.00']);
-    expect(summaryI(model).totals.value).toBe('-$4,000.00');
+    expect(summaryI(model).rows[2]).toEqual(['', 'Real Estate Assets, Net of Liabilities', '($4,000.00)']);
+    expect(summaryI(model).totals.value).toBe('($4,000.00)');
   });
 });
 

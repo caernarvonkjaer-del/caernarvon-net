@@ -14,6 +14,7 @@ import { amountSignNote } from '../../core/filing/sign-advisories.js';
 import { smallShareNote } from '../../core/filing/ward-share-advisories.js';
 import { getPath, setPath } from '../../core/form/paths.js';
 import { fmt } from '../../core/format/money.js';
+import { withMinusCue } from '../../core/form/amount-codec.js';
 import { getD } from '../../core/state.js';
 import { calc } from './totals.js';
 import { JOINT_OWNER_SOURCES, offersJointOwner, paymentsPerYear, yearlyTotal } from '../../core/form/entry-helpers.js';
@@ -38,7 +39,7 @@ function syncEntryHelpers(path){
     if(label)label.textContent=`× ${times} payments a year`;
     const input=document.querySelector(`[data-c1-payment="${i}"]`);
     const out=document.querySelector(`[data-c1-result="${i}"]`);
-    if(out){const total=input?yearlyTotal(input.value,frequency):null;out.textContent=total===null?'—':fmt(total);}
+    if(out){const total=input?yearlyTotal(input.value,frequency):null;out.innerHTML=total===null?'—':withMinusCue(fmt(total));}
   }
 }
 
@@ -277,10 +278,13 @@ export function afterChange(path){
     'restrictedCash':calc.restrictedCash(),'unrestrictedCash':calc.unrestrictedCash(),
     'restrictedIntang':calc.restrictedIntang(),'unrestrictedIntang':calc.unrestrictedIntang(),
     'bondRequired':calc.bondRequired(),'auditFee':calc.auditFee(),
+    // Milestone 73H: the Summary's liabilities, negated as its PDF shows them.
+    'summaryTotalA2':-calc.totalA2(),'summaryTotalB4':-calc.totalB4(),'summaryTotalC2':-calc.totalC2(),
   };
   for(const[id,val] of Object.entries(els)){
     const el=document.getElementById(id);
-    if(el)el.textContent=fmt(val);
+    // Milestone 73H: HTML, so a negative also says "minus" to a screen reader.
+    if(el)el.innerHTML=withMinusCue(fmt(val));
   }
   // Milestone 74P: the entry helpers follow what was just typed.
   syncEntryHelpers(path);

@@ -1,4 +1,5 @@
 import { renderSummaryPage, navStatus, formatSummaryDate } from '../../core/summary-renderer.js';
+import { withMinusCue } from '../../core/form/amount-codec.js';
 import { renderFormField, renderSelectField } from '../../core/form/form-fields.js';
 import { GUARDIANSHIP_TYPE_OPTIONS, optionsWithLegacyValue } from '../../core/form/guardianship-options.js';
 import { checkDateOrder } from '../../core/validation/date-rules.js';
@@ -295,6 +296,9 @@ export function mountNav(container) {
 // export until a function body actually runs, well after both are loaded).
 // Milestone 71E: formatMoney() -- the Clerk's workbook's own rounding; ($1,234.56) for a negative.
 export function fmtS(n){if(n===''||n===null||n===undefined)return '';const v=parseFloat(n);if(isNaN(v))return '';return formatMoney(v,{style:'dollarParens'});}
+// Milestone 73H: on a screen a negative also says "minus" to a screen reader
+// (withMinusCue()); the figures are as before, the one style every form uses.
+const fmtH=(v)=>withMinusCue(fmtS(v));
 
 function inpSWithTooltip(id,label,tooltipKey,val,req=false,type='text'){
   const html=inpS(id,label,val,req,type);
@@ -330,7 +334,7 @@ function getSummaryConfigSimplified(){
   // checks, src/core/status/section-marks.js; 70D's per-type evaluator before).
   const nav=sectionMarks(d);
   const t=calcTotals();
-  const f=v=>fmtS(v)||'—';
+  const f=v=>fmtH(v)||'—';
   return {
     formTitle:'Simplified Annual Accounting — Summary',
     infoRows:[
@@ -465,14 +469,14 @@ function pageCover(){
     <div style="position:relative;min-height:200px;">
       <div class="summary-box mt-3">
         <h2 class="subsection-heading">Part II — Accounting Summary</h2>
-        <div class="summary-line"><span>Starting Balance (Line 1)</span><span>${fmtS(d.startingBalance)||'—'}</span></div>
-      <div class="summary-line"><span>Interest Income (Line 2)</span><span>${fmtS(d.interestIncome)||'—'}</span></div>
-      <div class="summary-line"><span>Deposits from Settlement (Line 3)</span><span>${fmtS(d.depositsSettlement)||'—'}</span></div>
-      <div class="summary-line"><span>Total Income (Line 4)</span><span>${fmtS(t.totalIncome)}</span></div>
-      <div class="summary-line"><span>Service Charges (Line 5)</span><span>${fmtS(d.serviceCharges)||'—'}</span></div>
-      <div class="summary-line"><span>Federal Income Tax (Line 6)</span><span>${fmtS(d.federalIncomeTax)||'—'}</span></div>
-      <div class="summary-line"><span>Total Disbursements (Line 7)</span><span>${fmtS(t.totalDisbursements)}</span></div>
-      <div class="summary-line total"><span>Remaining Assets On Hand (Line 8)</span><span>${fmtS(t.remaining)}</span></div>
+        <div class="summary-line"><span>Starting Balance (Line 1)</span><span>${fmtH(d.startingBalance)||'—'}</span></div>
+      <div class="summary-line"><span>Interest Income (Line 2)</span><span>${fmtH(d.interestIncome)||'—'}</span></div>
+      <div class="summary-line"><span>Deposits from Settlement (Line 3)</span><span>${fmtH(d.depositsSettlement)||'—'}</span></div>
+      <div class="summary-line"><span>Total Income (Line 4)</span><span>${fmtH(t.totalIncome)}</span></div>
+      <div class="summary-line"><span>Service Charges (Line 5)</span><span>${fmtH(d.serviceCharges)||'—'}</span></div>
+      <div class="summary-line"><span>Federal Income Tax (Line 6)</span><span>${fmtH(d.federalIncomeTax)||'—'}</span></div>
+      <div class="summary-line"><span>Total Disbursements (Line 7)</span><span>${fmtH(t.totalDisbursements)}</span></div>
+      <div class="summary-line total"><span>Remaining Assets On Hand (Line 8)</span><span>${fmtH(t.remaining)}</span></div>
     </div>
     </div>
     ${pageNavS(null,'/summary')}
@@ -512,7 +516,7 @@ function pagePart2(){
         <div class="line-row total-line">
           <span class="line-tag">Line 4</span>
           <span class="line-label">Total Income</span>
-          <span class="line-val" id="line4">${fmtS(t.totalIncome)}</span>
+          <span class="line-val" id="line4">${fmtH(t.totalIncome)}</span>
         </div>
       </div>
     </div>
@@ -532,12 +536,12 @@ function pagePart2(){
         <div class="line-row total-line">
           <span class="line-tag">Line 7</span>
           <span class="line-label">Total Disbursements</span>
-          <span class="line-val" id="line7">${fmtS(t.totalDisbursements)}</span>
+          <span class="line-val" id="line7">${fmtH(t.totalDisbursements)}</span>
         </div>
       </div>
     </div>
     <div class="schedule-totals">
-      <div class="tbl"><div class="tr"><div class="td"><strong>Line 8 — Remaining Assets On Hand</strong></div><div class="td" id="line8">${fmtS(t.remaining)}</div></div></div>
+      <div class="tbl"><div class="tr"><div class="td"><strong>Line 8 — Remaining Assets On Hand</strong></div><div class="td" id="line8">${fmtH(t.remaining)}</div></div></div>
     </div>
     ${renderScheduleDocsSection('p2')}
     ${pageNavS('/summary','/p3')}
@@ -549,9 +553,9 @@ function refreshPart2(){
   const l4=document.getElementById('line4');
   const l7=document.getElementById('line7');
   const l8=document.getElementById('line8');
-  if(l4)l4.textContent=fmtS(t.totalIncome);
-  if(l7)l7.textContent=fmtS(t.totalDisbursements);
-  if(l8)l8.textContent=fmtS(t.remaining);
+  if(l4)l4.innerHTML=fmtH(t.totalIncome);
+  if(l7)l7.innerHTML=fmtH(t.totalDisbursements);
+  if(l8)l8.innerHTML=fmtH(t.remaining);
 }
 
 // ── Part III – Declaration ──────────────────────────────

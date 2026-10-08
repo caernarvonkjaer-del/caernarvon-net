@@ -103,13 +103,15 @@ test.describe('Annual Accounting on the shared write path', () => {
     // filing holds the number read so far.
     await loss.fill('-1,250');
     await expect(loss).toHaveValue('-1,250');
-    await expect(page.locator('[data-annual-total="schC_losses"]')).toHaveText('(1,250.00)');
+    // Milestone 73H: the one amount style, a dollar sign on every amount (73H-N1);
+    // a negative is ($1,250.00), and says "minus" to a screen reader first.
+    await expect(page.locator('[data-annual-total="schC_losses"]')).toHaveText('minus ($1,250.00)');
     expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('schC.0.loss'))).toBe(-1250);
 
     await loss.blur();
     expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('schC.0.loss'))).toBe(-1250);
     await expect(loss).toHaveValue('-1250');
-    await expect(page.locator('[data-annual-total="schC_net"]')).toHaveText('(1,250.00)');
+    await expect(page.locator('[data-annual-total="schC_net"]')).toHaveText('minus ($1,250.00)');
   });
 
   test('an amount filters live as typed, so "1,000" never reaches the running total as 1', async ({ page }) => {
@@ -123,7 +125,7 @@ test.describe('Annual Accounting on the shared write path', () => {
 
     await amount.fill('1,000');
     await expect(amount).toHaveValue('1,000');
-    await expect(page.locator('[data-annual-total="schA"]')).toHaveText('1,000.00');
+    await expect(page.locator('[data-annual-total="schA"]')).toHaveText('$1,000.00');
     expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('schA.0.amount'))).toBe(1000);
     await amount.blur();
     expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('schA.0.amount'))).toBe(1000);

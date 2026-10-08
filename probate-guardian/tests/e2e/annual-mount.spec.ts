@@ -309,13 +309,14 @@ test.describe('annual-accounting feature module', () => {
     await dismissScheduleDocPrompt(page); // Milestone 57C-R advisory modal
 
     const totalCell = page.locator('[data-annual-total="schF1"]');
-    await expect(totalCell).toHaveText('0.00');
+    // Milestone 73H: a dollar sign on every amount (73H-N1).
+    await expect(totalCell).toHaveText('$0.00');
 
     const salePriceInput = page.locator('[data-annual-path="schF1.0.salePrice"]');
     await salePriceInput.fill('402000');
     await salePriceInput.blur();
 
-    await expect(totalCell).toHaveText('402,000.00');
+    await expect(totalCell).toHaveText('$402,000.00');
   });
 
   test('Final and Trust aliases use their own legal copy and PDF identity', async ({ page }) => {
@@ -409,7 +410,7 @@ test('Cover page renders byte-identical visible text and control values through 
   // Milestone 72C: this filing names an attorney, so Attorney for Guardian is marked required (*).
   // Milestone 73F part 3: asterisks follow the checks -- Filing Type, Amended Form? and County are required (*).
   // Milestone 73B: the fixture states its Type of Guardianship (now required here), so the select shows Plenary.
-  expect(snapshot).toBe("TEST SYSTEM - Do not use for filing - Cover & Part I — Required Information\nAll Filings\n?\nGeneral Instructions\nImport Excel File (existing annual accounting template)\nREQUIRED INFORMATION\nName of Ward\n*\nCase Number\n?\n*\nGuardianship Inception Date (GID)\n*\nUse MM/DD/YYYY\nUCN\nPeriod From\n*\nUse MM/DD/YYYY\nPeriod To\n*\nUse MM/DD/YYYY\nFiling Type\n*\n— select —\nAnnual\nFinal\nTrust\nAmended Form?\n*\nYes\nNo\nGUARDIAN & ATTORNEY\nGuardian\n*\nAttorney for Guardian\n*\nCounty\n*\nType of Guardianship\n*\n— select —\nPlenary\nLimited\nGuardian Advocate\nVoluntary\nMinor - Person\nMinor - Property\nMinor - Person - Property\nRelated Case Numbers (siblings/relatives with guardianships)\nQUICK SUMMARY (AUTO-CALCULATED)\nStarting Balance\n10,000.00\nSch A — Income\n500.00\nTotal Disbursements (B-1 thru B-4)\n0.00\nSch C — Capital Adj. Net\n0.00\nNet Assets at End of Period\n10,500.00\nNet Assets from Sch D (should match above)\n0.00\nNext →\n---CONTROL VALUES---\n[input:]\n[input:Acct Diff Ward]\n[input:26-000789]\n[input:01/01/2025]\n[input:]\n[input:01/01/2026]\n[input:12/31/2026]\n[select:Annual]\n[radio:yesno_amendedForm=unchecked]\n[radio:yesno_amendedForm=checked]\n[input:Sample Guardian]\n[input:Sample Attorney]\n[input:Pinellas]\n[select:Plenary]\n[input:]");
+  expect(snapshot).toBe("TEST SYSTEM - Do not use for filing - Cover & Part I — Required Information\nAll Filings\n?\nGeneral Instructions\nImport Excel File (existing annual accounting template)\nREQUIRED INFORMATION\nName of Ward\n*\nCase Number\n?\n*\nGuardianship Inception Date (GID)\n*\nUse MM/DD/YYYY\nUCN\nPeriod From\n*\nUse MM/DD/YYYY\nPeriod To\n*\nUse MM/DD/YYYY\nFiling Type\n*\n— select —\nAnnual\nFinal\nTrust\nAmended Form?\n*\nYes\nNo\nGUARDIAN & ATTORNEY\nGuardian\n*\nAttorney for Guardian\n*\nCounty\n*\nType of Guardianship\n*\n— select —\nPlenary\nLimited\nGuardian Advocate\nVoluntary\nMinor - Person\nMinor - Property\nMinor - Person - Property\nRelated Case Numbers (siblings/relatives with guardianships)\nQUICK SUMMARY (AUTO-CALCULATED)\nStarting Balance\n$10,000.00\nSch A — Income\n$500.00\nTotal Disbursements (B-1 thru B-4)\n$0.00\nSch C — Capital Adj. Net\n$0.00\nNet Assets at End of Period\n$10,500.00\nNet Assets from Sch D (should match above)\n$0.00\nNext →\n---CONTROL VALUES---\n[input:]\n[input:Acct Diff Ward]\n[input:26-000789]\n[input:01/01/2025]\n[input:]\n[input:01/01/2026]\n[input:12/31/2026]\n[select:Annual]\n[radio:yesno_amendedForm=unchecked]\n[radio:yesno_amendedForm=checked]\n[input:Sample Guardian]\n[input:Sample Attorney]\n[input:Pinellas]\n[select:Plenary]\n[input:]");
 });
 
 for (const alias of ['finalAccounting', 'trustAccounting']) {
