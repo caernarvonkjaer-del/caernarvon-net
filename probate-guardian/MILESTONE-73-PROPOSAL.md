@@ -2180,6 +2180,15 @@ Excel enabled, and the click only redraws Preview, saving nothing. Recorded in
 A fix that greyed the buttons out was built and taken back out, as it
 contradicts that design.
 
+**Mid-batch full regression** (the second batch, approved 2026-10-07: 73T
+parts 1-4 with 74Q, 73M with 74C, 73B, then 74P; `npm test` once, as
+approved, on a copy on C: at `645fe35`, 2026-10-08): unit, 195 files and
+2,903 tests, all passed; browser, 1,125 tests -- 1,109 passed, 16 skipped,
+none failed (1.3 h). The skips are the tests that belong to other profiles --
+the web build's hashed-chunk case, the hosted offline cache (5), the portable
+build's HTTP parity -- and the pre-merge comparison (9), which runs only when
+asked for. Nothing to fix; the batch goes on to 73O part 2 with 74F.
+
 ---
 
 ## 73J — Pages that keep up with a change (P5)
