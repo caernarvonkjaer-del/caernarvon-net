@@ -119,8 +119,11 @@ describe('Plan - Minors (D9): the UCN slot is the UCN, the Case # slot is the Ca
     expect(headerIdentityLines(metadata).firstPage).toBe('CASE #: REF-77');
   });
 
-  test('the document title still names the filing by its one identifying number (ucn || ref), unchanged', () => {
+  // Milestone 73S (73S-N2): the one identifying number is the Case # first
+  // (ref || ucn); it was the UCN first.
+  test('the document title names the filing by its one identifying number: the Case #, else the UCN', () => {
     const { metadata } = buildPlanMinorModel({ inventoryType: 'planMinor', wardName: 'M', ucn: '2024-MN-042', ref: 'REF-77' });
-    expect(metadata.title).toContain('2024-MN-042');
+    expect(metadata.title).toContain('REF-77');
+    expect(buildPlanMinorModel({ inventoryType: 'planMinor', wardName: 'M', ucn: '2024-MN-042', ref: '' }).metadata.title).toContain('2024-MN-042');
   });
 });

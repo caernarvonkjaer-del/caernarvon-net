@@ -57,3 +57,54 @@ for (const { label, type } of TYPES) {
     await expect(ucnInput(page)).toHaveValue(UCN);
   });
 }
+
+// Milestone 73S (decisions 73S-1, 73S-2, 73S-4, 73S-N1; the requester,
+// 2026-10-04): every cover stars the UCN as a reminder -- the star hidden from
+// a screen reader, which hears the box's hint instead, and nothing marks it
+// required -- and Preview's "Review recommended" box reminds while it is blank
+// or not in the UCN's 20-character shape. It never blocks and never changes a
+// sidebar mark, in every county. Red-first: no star, no hint, no reminder.
+const go = (page: Page, route: string) => page.evaluate((r) => (window as any).GuardianForms.testing.navigate(r), route);
+const reminder = (page: Page) => page.locator('#main-content .alert-warning li', { hasText: 'The UCN' });
+const marks = (page: Page) => page.evaluate(() => JSON.stringify((window as any).GuardianForms.testing.status.navChecks().checks));
+
+for (const { label, type } of TYPES) {
+  test(`${label}: the UCN is starred as a reminder, Preview reminds while it is blank or out of shape, and it never blocks`, async ({ page }) => {
+    test.setTimeout(120_000);
+    await freshStartNoPassword(page);
+    await page.evaluate(([t]) => (window as any).GuardianForms.testing.createFiling.add(`Ucn Star ${t}`, t), [type]);
+    await go(page, '/');
+
+    const input = ucnInput(page);
+    const id = await input.getAttribute('id');
+    const star = page.locator(`#main-content label[for="${id}"] .req`);
+    await expect(star, 'the UCN is starred').toHaveCount(1);
+    await expect(star, 'the star is hidden from a screen reader').toHaveAttribute('aria-hidden', 'true');
+    expect(await input.getAttribute('aria-required'), 'nothing marks it required').toBeNull();
+    expect(await input.getAttribute('data-field-required')).toBeNull();
+    const hint = await input.getAttribute('aria-describedby');
+    await expect(page.locator(`[id="${hint}"]`), 'a screen reader hears what the star means').toHaveText('Starred as a reminder: export never stops for a blank UCN.');
+    const blankMarks = await marks(page);
+
+    await go(page, '/print');
+    await expect(reminder(page), 'a blank UCN is a reminder').toContainText("The UCN is blank. Enter it from the Clerk's case record.");
+    const missing: string[] = await page.evaluate(async () => (await (window as any).GuardianForms.testing.validate.open()).map((e: any) => String(e?.message ?? e)));
+    expect(missing.filter((t) => /\bUCN\b/.test(t)), 'never a missing item').toEqual([]);
+
+    await go(page, '/');
+    await ucnInput(page).fill('26-000123-GD');
+    await ucnInput(page).blur();
+    await go(page, '/print');
+    await expect(reminder(page), 'a Case Number in the UCN box is out of shape').toContainText(`The UCN "26-000123-GD" isn't in the UCN's 20-character shape`);
+
+    await go(page, '/');
+    await ucnInput(page).fill(UCN);
+    await ucnInput(page).blur();
+    await go(page, '/print');
+    // The print page is drawn (every form's has the export reason line) before "no reminder" is judged.
+    await expect(page.locator('#export-reason')).toBeAttached({ timeout: 20_000 });
+    await expect(reminder(page), 'in shape: no reminder').toHaveCount(0);
+    await go(page, '/');
+    expect(await marks(page), 'the UCN never changes a sidebar mark').toBe(blankMarks);
+  });
+}

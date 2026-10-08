@@ -10,6 +10,7 @@ import { planCertificateAdvisories, certificateOptional } from './plan-certifica
 import { inventoryShareAdvisories, wardShareAdvisories } from './ward-share-advisories.js';
 import { signAdvisories } from './sign-advisories.js';
 import { consistencyAdvisories } from './consistency-advisories.js';
+import { ucnAdvisories } from './ucn-reminder.js';
 import { calcTotalsAnnual } from '../accounting/annual-totals.js';
 import { features, hasFeatureServices } from '../runtime/features.js';
 import { unrepresentedAdvisories } from './unrepresented-filing.js';
@@ -108,6 +109,10 @@ export function collectOutputIssues(target, baseIssues = []) {
     ...signAdvisories(target),
     // Milestone 74H: answers within the filing that contradict each other.
     ...consistencyAdvisories(target, engineId, { totals }),
+    // Milestone 73S: a blank or misshapen UCN, on every form and in every
+    // county -- a reminder, never a missing item (73S-1, 73S-2). The three
+    // forms with a court workbook also say it has no UCN box.
+    ...ucnAdvisories(target, { excel: ['guardian', 'annual', 'simplified'].includes(engineId) }),
     // Milestone 73F part 3 (73F-6, 73F-8): a trust dated after the GID but
     // answered No to "created after the GID?", and transactions dated outside
     // the accounting period -- warned, never blocked.

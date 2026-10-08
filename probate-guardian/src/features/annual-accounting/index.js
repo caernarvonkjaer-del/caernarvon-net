@@ -1,4 +1,5 @@
 import { renderSummaryPage, navStatus, formatSummaryDate } from '../../core/summary-renderer.js';
+import { renderUcnField } from '../../core/form/cards/case-caption-card.js';
 import { displayDate, formatDisplayDate } from '../../core/form/date-parser.js';
 import { renderLocalSectionGuidance } from '../../core/status/section-status.js';
 import { checkDateOrder } from '../../core/validation/date-rules.js';
@@ -628,7 +629,7 @@ function pagePart1Annual(){
         <div id="instructionsZoneAnnual" class="accordion-collapse collapse">
           <div class="accordion-body" style="padding:1rem 1.25rem;">
             <ul style="margin:0;padding-left:1.4rem;font-size:.8rem;">
-              <li>Fields marked with an asterisk (<span class="req">*</span>) are required before export.</li>
+              <li>Fields marked with an asterisk (<span class="req">*</span>) are required before export; the UCN is starred as a reminder and never blocks.</li>
               <li>Ward Name and Case Number auto-populate all schedule headers.</li>
               <li><strong style="color:var(--danger-text);">CAUTION on Ward's % fields:</strong> Enter percentages as plain digits (70, not 0.70).</li>
               <li>Use Print Preview to save as PDF or Excel for filing.</li>
@@ -668,7 +669,7 @@ function pagePart1Annual(){
           <div class="col-md-6">${inpD('Guardianship Inception Date (GID)',d.gid,"D.gid=this.value",true,'date')}</div>
         </div>
         <div class="row g-2">
-          <div class="col-md-6">${inpD('UCN',d.ucn,"D.ucn=this.value")}</div>
+          <div class="col-md-6">${renderUcnField(d.ucn,{securitySanitize:true})}</div>
         </div>
         <div class="row g-2">
           ${renderReportingPeriodFields({ periodFrom: d.periodFrom, periodTo: d.periodTo, fromLabel: 'Period From', toLabel: 'Period To' })}

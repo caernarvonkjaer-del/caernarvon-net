@@ -126,6 +126,11 @@ export function renderFormField({
   // Milestone 73F part 3: the field's name for messages (data-field-label)
   // when its visible label is drawn separately, as the Inventory's are.
   dataLabel = '',
+  // Milestone 73S (decision 73S-N1): a star that marks a reminder, not a
+  // requirement -- the UCN's. It draws the same red star but sets nothing
+  // that says "required" (no data-field-required), hides the star from a
+  // screen reader, and leaves `hint` to say what it means.
+  reminderStar = false,
 } = {}) {
   const inputId = id || `inp_${(path || 'field').replace(/[^a-zA-Z0-9_]/g, '_')}_${Math.random().toString(36).slice(2, 7)}`;
   const fieldKind = kind || inferFieldKind(label, type);
@@ -261,7 +266,7 @@ export function renderFormField({
     ? tooltip(tooltipKey)
     : '';
 
-  const reqMark = required ? '<span class="req">*</span>' : '';
+  const reqMark = required ? '<span class="req">*</span>' : reminderStar ? '<span class="req" aria-hidden="true">*</span>' : '';
   const labelHtml = label ? `<label class="form-label" for="${inputId}">${esc(label)}${tooltipHtml}${reqMark}</label>` : '';
 
   return `<div class="${wrapperClass}">${labelHtml}${wrappedInput}${hintHtml}</div>`;

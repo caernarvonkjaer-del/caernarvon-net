@@ -1,4 +1,5 @@
 import { renderSummaryPage, navStatus, formatSummaryDate } from '../../core/summary-renderer.js';
+import { renderUcnField } from '../../core/form/cards/case-caption-card.js';
 import { withMinusCue } from '../../core/form/amount-codec.js';
 import { renderFormField, renderSelectField } from '../../core/form/form-fields.js';
 import { GUARDIANSHIP_TYPE_OPTIONS, optionsWithLegacyValue } from '../../core/form/guardianship-options.js';
@@ -393,7 +394,7 @@ function pageCover(){
           <div id="instructionsZoneSimplified" class="accordion-collapse collapse">
             <div class="accordion-body" style="padding:1rem 1.25rem;">
               <ul style="margin:0;padding-left:1.4rem;font-size:.8rem;">
-                <li>Fields marked with an asterisk (<span class="req">*</span>) are required before export.</li>
+                <li>Fields marked with an asterisk (<span class="req">*</span>) are required before export; the UCN is starred as a reminder and never blocks.</li>
                 <li>Ward Name and Case Number auto-populate all form pages.</li>
                 <li>Verify that this guardianship meets the designated depository criteria under Fla. Stat. § 744.3679.</li>
                 <li>Complete Parts I through VII, including the guardians' signatures; Part V only if an attorney represents the guardian.</li>
@@ -443,7 +444,7 @@ function pageCover(){
             <div class="col-md-6">${inpS('ssn','Social Security Number',d.ssn,true)}</div>
           </div>
           <div class="row g-2">
-            <div class="col-md-6">${inpS('ucn','UCN',d.ucn)}</div>
+            <div class="col-md-6">${renderUcnField(d.ucn,{id:'ucn'})}</div>
           </div>
           <div class="row g-2">
             <div class="col-md-6">${inpS('gid','Guardianship Inception Date (GID)',d.gid,true,'date')}</div>

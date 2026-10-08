@@ -2,8 +2,8 @@
  "generatedBy": "node scripts/ms70-assertion-counts.mjs --write-baseline",
  "note": "Milestone 70 per-spec assertion counts (static expect calls). tests/unit/ms70-assertion-counts.spec.js fails when a spec falls below its count; lowering it requires --reason, recorded in dropLog. A tripwire, not proof of equivalence (decision D9).",
  "totals": {
-  "expects": 8820,
-  "tests": 2528
+  "expects": 8861,
+  "tests": 2537
  },
  "counts": {
   "tests/e2e/amounts-keep-their-sign.spec.ts": {
@@ -627,8 +627,8 @@
    "tests": 5
   },
   "tests/e2e/ucn-cover-field.spec.ts": {
-   "expects": 6,
-   "tests": 1
+   "expects": 17,
+   "tests": 2
   },
   "tests/e2e/unlock.spec.ts": {
    "expects": 9,
@@ -1395,8 +1395,12 @@
    "tests": 1
   },
   "tests/unit/ucn-header.spec.js": {
-   "expects": 25,
+   "expects": 26,
    "tests": 12
+  },
+  "tests/unit/ucn-reminder.spec.js": {
+   "expects": 29,
+   "tests": 8
   },
   "tests/unit/unticked-boxes-keep-text.spec.js": {
    "expects": 15,

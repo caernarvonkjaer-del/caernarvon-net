@@ -281,6 +281,8 @@ export async function fillMinimalValidPlanMinorWard(page: Page): Promise<void> {
     Object.assign(d, {
       wardName: d.wardName || 'Plan Minor Export Test Ward',
       ucn: d.ucn || '2026-CP-000987',
+      // Milestone 73S (73S-3): the Plan for Minors' Case # is required; the UCN no longer stands in for it.
+      ref: d.ref || '2026-CP-000987',
       caseNumber: d.caseNumber || '2026-CP-000987',
       county: 'Pinellas',
       amendedForm: 'No',

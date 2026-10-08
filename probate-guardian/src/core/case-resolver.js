@@ -26,13 +26,13 @@ export function resolveCase(caseId) {
   return caseFile.cases.find(c => c.id === caseId) || null;
 }
 
-/** planMinor alone stores its case number as `ucn`, with `ref` (a distinct, independently-editable
- * secondary reference) as fallback -- matching dashboard/view-model.js's own `caseNumber || ucn || ref`
- * precedence -- so a filing that only has `ref` filled in still resolves to a case. Every other type uses
- * `caseNumber`. */
+/** planMinor alone has no `caseNumber`: its cover's "Case #" is `ref`, and its UCN is `ucn`. Milestone 73S
+ * (decision 73S-N2, the requester's named approval, which changed AGENTS.md section 6's rule): the Case #
+ * first, now that it is required (73S-3), with the UCN as fallback -- so a Plan for Minors matches its sibling
+ * filings' "26-001234-GD" rather than its UCN. It was `ucn || ref`. Every other type uses `caseNumber`. */
 export function caseNumberOf(ward) {
   if (!ward) return '';
-  return ward.inventoryType === 'planMinor' ? (ward.ucn || ward.ref || '') : (ward.caseNumber || '');
+  return ward.inventoryType === 'planMinor' ? (ward.ref || ward.ucn || '') : (ward.caseNumber || '');
 }
 
 export function countyOf(ward) {

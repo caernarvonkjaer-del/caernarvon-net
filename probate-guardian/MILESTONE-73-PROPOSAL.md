@@ -6,9 +6,9 @@
 far: 73U (2026-10-04, `5b8849b`), 73V (2026-10-05, `8b96aa3`), 73C
 (2026-10-05, `861b6a9`, brought forward from its place in the build order at the
 requester's choice) 73D (2026-10-05, `c8e84fe`, likewise), 73J part 1 (2026-10-05, `d819c4a`),
-73F part 1 (2026-10-06, `5e9e17b`), 73A (2026-10-06, `83352d0`), 73F part 2 (2026-10-06, `d01edd4`), 73G part 1 (2026-10-06, `69a1b46`), 73E part 1 (2026-10-06, `8e02051`), 73F part 3 (2026-10-06, `67fc66c`), 73I (2026-10-06, `56a7c30`), 73T part 1 (2026-10-07, `4cae1e7`), 73T part 2 (2026-10-07, `2a1cbc5`), 73T part 3 (2026-10-07, `9d2bc72`), 73T part 4 (2026-10-07, `b70a944`), 73M with 74C (2026-10-07, `a0e987b`), 73B (2026-10-07, `86547da`), 73O part 2 with 74F (2026-10-08, `fa9625e`), 73G part 2 with 74H (2026-10-08, `f85e862`, `78b5770`) and 73H (2026-10-08), each approved by name; 74P, built after 73B, is recorded in Milestone 74.**
-**Approved and not yet built** (2026-10-07, one batch, built in this order
-with a full regression midway and at the end): 73S. Nothing else is approved. Building any other item, or any part of a
+73F part 1 (2026-10-06, `5e9e17b`), 73A (2026-10-06, `83352d0`), 73F part 2 (2026-10-06, `d01edd4`), 73G part 1 (2026-10-06, `69a1b46`), 73E part 1 (2026-10-06, `8e02051`), 73F part 3 (2026-10-06, `67fc66c`), 73I (2026-10-06, `56a7c30`), 73T part 1 (2026-10-07, `4cae1e7`), 73T part 2 (2026-10-07, `2a1cbc5`), 73T part 3 (2026-10-07, `9d2bc72`), 73T part 4 (2026-10-07, `b70a944`), 73M with 74C (2026-10-07, `a0e987b`), 73B (2026-10-07, `86547da`), 73O part 2 with 74F (2026-10-08, `fa9625e`), 73G part 2 with 74H (2026-10-08, `f85e862`, `78b5770`), 73H (2026-10-08, `631f898`) and 73S (2026-10-08), each approved by name; 74P, built after 73B, is recorded in Milestone 74.**
+**The 2026-10-07 batch is built**; its closing full regression is recorded
+below when it has run. Nothing else is approved. Building any other item, or any part of a
 split item, needs the requester's named approval of that item or part
 (AGENTS.md §3).
 
@@ -3218,6 +3218,71 @@ and identity. **Legacy:** no filing turns incomplete for a missing UCN; a
 Plan for Minors saved with only a UCN now lists the Case # as missing
 (visible). **Fixtures:** Plan for Minors fixtures that give only a UCN gain a
 Case #. `verify:data-model`.
+
+### Build record — BUILT 2026-10-08 (approved by name by the requester, 2026-10-07)
+
+**What changed for a filer:**
+
+- **Every one of the nine covers stars the UCN as a reminder** (73S-1, 73S-N1).
+  The star is hidden from a screen reader, which hears the box's hint
+  instead -- "Starred as a reminder: export never stops for a blank UCN." --
+  and nothing marks the box required. The three accountings' covers say so:
+  "Fields marked with an asterisk (*) are required before export; the UCN is
+  starred as a reminder and never blocks." The UCN is kept exactly as typed,
+  as before (63E).
+- **Preview's "Review recommended" box reminds** while the UCN is blank
+  ("The UCN is blank. Enter it from the Clerk's case record.", the decided
+  words) or isn't 20 characters once hyphens and spaces are set aside
+  (73S-4), quoting it as typed; on the Inventory and the two accountings it
+  adds "The court's Excel workbook has no UCN box; the UCN prints on the PDF."
+  It is never a missing item, never blocks and changes no sidebar mark, in
+  every county (73S-2). Save as Excel already says the workbook has no box
+  for an entered UCN (Milestone 73M), which is design point 4.
+- **The Plan for Minors' Case # is required** (73S-3) and starred, as every
+  other form's case number; a UCN no longer stands in for it. Its readiness
+  item reads "Case # is on the plan".
+- **The Plan for Minors is identified by its Case # first** (73S-N2): the
+  dashboard's case-number column, the case a judge is shared across, the
+  delete confirmation, and the PDF's title and file name use the Case #, then
+  the UCN (it was the UCN first); the Summary banner shows "Case # ...".
+  AGENTS.md section 6's rule is edited to say so, with the requester's named
+  approval.
+- The guide says all of this.
+
+**Legacy and fixtures:** no filing turns incomplete for a missing UCN. A Plan
+for Minors saved with only a UCN now lists its Case # as missing (visible,
+bypassable) and is named by its UCN until a Case # is entered -- the design's
+stated cost. The Plan for Minors' browser fixture and its parity fixture
+carry a Case #.
+
+**Flagged, not resolved:** the statewide UCN format isn't sourced in
+`reference/`; the 20-character check is a reminder to check, never a verdict,
+and requires no court code.
+
+**How:** new `src/core/filing/ucn-reminder.js` (the shape check and the
+reminder), `renderUcnField()` in the caption card (one box for all nine
+covers, on each cover's own binding), and a `reminderStar` option on the
+shared field renderer (a star that sets no "required"). Data model: the UCN
+row's note, and the Plan for Minors' `ref` row is "Case #", required.
+`verify:data-model` passes.
+
+**Tests:**
+
+- New `tests/unit/ucn-reminder.spec.js` (8): the shape check, the reminder's
+  words, the box's markup on both bindings, the Plan for Minors' rule,
+  readiness item and identity. **Red-first:** with the module kept and the
+  other changes set aside, the five box and Plan for Minors cases fail.
+- `tests/e2e/ucn-cover-field.spec.ts` (+7): on every filing type, the star,
+  the hint read out, no "required", the reminder for blank and out of shape,
+  none in shape, never missing, no sidebar mark changed.
+- Changed, each saying why: the asterisk spec (the UCN exempt on every form
+  as a starred reminder; the Plan for Minors' placeholder entry gone), the
+  sidebar-agreement spec, the Plan for Minors' parity, readiness source map,
+  UCN header and delete-confirmation specs. The validator record is
+  regenerated: "Cover — Case # is required" at `ref` replaces "Case Number"
+  at `ucn` (134 variants), and the two variants holding a UCN but no Case #
+  now report it.
+- Full unit suite: 2,977 passed; `check:types` clean. **Browser specs: 54 files, 614 tests on a copy on C: (43.3 min): 603 passed and 5 skipped (other profiles' tests) on the first run; the 6 failures were the six cover snapshots, which now show the UCN's star and hint (and the Plan for Minors' starred Case #), updated and re-run: all pass. Red-first there: with the source set aside, all seven new cover cases fail (no star).**
 
 ---
 

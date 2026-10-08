@@ -1,4 +1,5 @@
 import { confirmModal } from '../../core/ui/dialogs.js';
+import { renderUcnField } from '../../core/form/cards/case-caption-card.js';
 import { promptScheduleAckIfNeeded } from '../../core/filing/schedule-doc-ack.js';
 import { renderSummaryPage, navStatus } from '../../core/summary-renderer.js';
 import { renderLocalSectionGuidance } from '../../core/status/section-status.js';
@@ -777,7 +778,7 @@ function pageHome(){
         <div id="instructionsZone" class="accordion-collapse collapse">
           <div class="accordion-body" style="padding:1rem 1.25rem;">
             <ul style="margin:0;padding-left:1.4rem;font-size:.8rem;">
-              <li>Fields marked with an asterisk (<span class="req">*</span>) are required before export.</li>
+              <li>Fields marked with an asterisk (<span class="req">*</span>) are required before export; the UCN is starred as a reminder and never blocks.</li>
               <li>All values must be as of the <strong>Guardianship Inception Date (GID)</strong>.</li>
               <li><strong style="color:var(--danger-text);">CAUTION on Ward's % fields:</strong> Enter percentages as plain digits (70, not 0.70).</li>
               <li>Complete all Required Information fields (Ward Name, Case Number, GID, Guardian, County). An attorney is optional; if one represents the guardian, enter them here and on D-2.</li>
@@ -814,7 +815,7 @@ function pageHome(){
         <h2 class="subsection-heading">Required Information</h2>
         ${formRow(col(12,reqLabel('Name of Ward')+textInput('wardName','Full legal name of ward','name')))}
         ${formRow(col(12,reqLabel('Case Number')+textInput('caseNumber','','caseNumber')))}
-        ${formRow(col(12,optLabel('UCN')+textInput('ucn','')))}
+        ${formRow(col(12,renderUcnField('',{binding:'bind',inputType:'text',wrapperClass:''})))}
         ${formRow(col(12,reqLabel('Guardianship Inception Date (GID)')+dateInput('gid','Guardianship Inception Date (GID)')))}
         ${formRow(col(6,reqLabel('County')+countyInputBind('county')))}
       </div>

@@ -29,8 +29,8 @@ import { formatDisplayDate } from '../form/date-parser.js';
  *   completed. Neither prints "through" with nothing around it.
  * - An unrecognized legacy `inventoryType` falls back to "this form" rather
  *   than printing `undefined` at the filer.
- * - `caseNumberOf()` supplies the case number, so Plan Minor's ucn-then-ref
- *   precedence is honoured here without this file knowing that rule exists.
+ * - `caseNumberOf()` supplies the case number, so Plan Minor's Case #-then-UCN
+ *   precedence (Milestone 73S) is honoured here without this file knowing that rule exists.
  *
  * @param {object} ward The filing being deleted.
  * @returns {string} A complete sentence, ending in the irreversibility warning.

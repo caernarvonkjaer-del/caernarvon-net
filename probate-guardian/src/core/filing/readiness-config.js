@@ -274,7 +274,8 @@ function planMinorAutomatic(d) {
   return [
     { id: 'cover.amendedForm', label: 'Amended Form? is answered', ok: isTriStateAnswer(d.amendedForm) },
     { id: 'cover.wardCountyPeriod', label: "Minor's name, county, and reporting period are on the plan", ok: has(d.wardName) && isFloridaCounty(d.county) && has(d.periodFrom) && has(d.periodTo) },
-    { id: 'cover.caseNumber', label: 'Case number (UCN or Case #) is on the plan', ok: has(d.ucn) || has(d.ref) },
+    // Milestone 73S (73S-3): the Case #, as the export check requires; the UCN is a reminder.
+    { id: 'cover.caseNumber', label: 'Case # is on the plan', ok: has(d.ref) },
     { id: 'cover.guardianName', label: 'Guardian Name is on the plan', ok: has(d.guardianName) },
     { id: 'cover.residence', label: 'Current residence and address stated', ok: has(d.q1ResidenceName) && has(d.q1Street) },
     { id: 'signatures.guardian1.core', label: "Guardian's signature block complete (signed by hand or stamped)", ok: has(g0.name) && signedAndDated({
@@ -553,7 +554,7 @@ const PLAN_PREDICATE_ISSUE_PATHS = Object.freeze({
   planMinor: {
     'cover.amendedForm': ['amendedForm'],
     'cover.wardCountyPeriod': ['wardName', 'county', 'periodFrom', 'periodTo'],
-    'cover.caseNumber': ['ucn'],
+    'cover.caseNumber': ['ref'],
     'cover.guardianName': ['guardianName'],
     'cover.residence': ['q1ResidenceName', 'q1Street'],
     'plan.q3providers': ['q3Providers[].last'],
@@ -664,7 +665,7 @@ export const PLAN_PREDICATE_ROUTES = Object.freeze({
   planMinor: {
     'cover.amendedForm': { route: '/', path: 'amendedForm' },
     'cover.wardCountyPeriod': { route: '/', path: 'wardName' },
-    'cover.caseNumber': { route: '/', path: 'ucn' },
+    'cover.caseNumber': { route: '/', path: 'ref' },
     'cover.guardianName': { route: '/', path: 'guardianName' },
     'cover.residence': { route: '/', path: 'q1ResidenceName' },
     'plan.q3providers': { route: '/p3', path: 'q3Providers.0.last' },

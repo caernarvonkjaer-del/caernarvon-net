@@ -255,7 +255,9 @@ export function projectDashboardWard(ward, { displayType, total, progress, today
     wardName: ward.wardName || '',
     inventoryType: ward.inventoryType,
     displayType: displayType || ward.inventoryType || '',
-    caseNumber: ward.caseNumber || ward.ucn || ward.ref || '',
+    // Milestone 73S (73S-N2): the Plan for Minors by its Case # (`ref`) first,
+    // as case-resolver.js's caseNumberOf() (this module imports nothing).
+    caseNumber: (ward.inventoryType === 'planMinor' ? (ward.ref || ward.ucn) : (ward.caseNumber || ward.ucn || ward.ref)) || '',
     isArchived: !!ward.archived,
     total,
     progress,

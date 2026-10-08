@@ -18,7 +18,8 @@ export function buildPlanMinorModel(D) {
   const d = D || {};
   const wardName = (d.wardName || 'Ward').trim();
   // Milestone 58B-1: the app's one rule for this filing type's case number,
-  // `ucn || ref || ''`, not a local copy. This used to glue both cover fields
+  // not a local copy -- `ref || ucn || ''` since Milestone 73S (73S-N2; it was
+  // `ucn || ref`). This used to glue both cover fields
   // together, so a Minor Plan with UCN and Case # both filled printed a header
   // naming neither -- "2024-MN-042 REF-77" is nothing the clerk can match.
   //
@@ -32,8 +33,8 @@ export function buildPlanMinorModel(D) {
   // longer prints the UCN in the Case # slot: the Case # slot is the Case # (`ref`,
   // the cover's "Case #" field) and the UCN slot is the UCN. A Minor plan with only
   // a UCN prints "UCN: ..." and "CASE #: Pending". The document TITLE keeps using
-  // identityNumber (ucn || ref, the app's one rule for what identifies this filing)
-  // so file names and the metadata title are unchanged.
+  // identityNumber (the app's one rule for what identifies this filing: the
+  // Case # first since Milestone 73S, so the file name and title follow it).
   const caseNumber = (d.ref || '').trim();
   const ucn = (d.ucn || '').trim();
   // Milestone 40C-A item 6: output must never invent a county. A blank one

@@ -16,6 +16,7 @@
 // does, rather than inventing a new Tier 1 shape for it.
 import { renderFormField } from '../form-fields.js';
 import { countyInputS } from '../field-html.js';
+import { UCN_HINT } from '../../filing/ucn-reminder.js';
 
 export function renderCaseCaptionFields({
   caseNumber = '',
@@ -28,5 +29,20 @@ export function renderCaseCaptionFields({
 } = {}) {
   return `<div class="col-md-6">${renderFormField({ path: 'caseNumber', label: 'Case Number', value: caseNumber, required: caseNumberRequired, id: 'caseNumber' })}</div>
     <div class="col-md-6">${countyInputS('county', 'County', county, countyRequired)}</div>${ucn === undefined ? '' : `
-    <div class="col-md-6">${renderFormField({ path: 'ucn', label: 'UCN', value: ucn, required: false, id: 'ucn' })}</div>`}`;
+    <div class="col-md-6">${renderUcnField(ucn, { id: 'ucn' })}</div>`}`;
+}
+
+/**
+ * Milestone 73S: the UCN box on every one of the nine covers -- starred as a
+ * reminder (73S-N1: no "required" for a screen reader, which hears the hint
+ * instead), kept exactly as typed (Milestone 63E: text, never the Case
+ * Number formatter). Preview's reminder is src/core/filing/ucn-reminder.js.
+ * `options` passes the cover's own binding through (the Inventory's data-bind,
+ * the Annual's security sanitizing).
+ *
+ * @param {unknown} value
+ * @param {Record<string, any>} [options] renderFormField() options
+ */
+export function renderUcnField(value, options = {}) {
+  return renderFormField({ path: 'ucn', label: 'UCN', value: value ?? '', kind: 'text', policy: 'preserve', reminderStar: true, hint: UCN_HINT, ...options });
 }

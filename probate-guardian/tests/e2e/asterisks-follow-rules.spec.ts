@@ -47,7 +47,12 @@ const FORMS: Array<[string, (p: Page) => Promise<void>]> = [
 // requester, 2026-10-08 -- so that pair left this list too.)
 const EXEMPT: Array<{ form: string; path: RegExp; why: string }> = [
   { form: 'annual', path: /^schE\.\d+\.transfer(In|Out)(Date|Amt)$/, why: 'Schedule E: a transfer in or a transfer out' },
-  { form: 'planMinor', path: /^ucn$/, why: 'the Plan for Minors case number: Milestone 73S settles it' },
+  // Milestone 73S (73S-N1): the UCN is starred on every cover as a reminder
+  // and never blocks -- the covers' own sentence says so, and its box tells a
+  // screen reader. (The Plan for Minors' Case # is required since 73S, and
+  // starred, so its entry here went.)
+  ...['guardian', 'annual', 'simplified', 'planAnnual', 'planInitial', 'planMinor', 'planSimplified']
+    .map((form) => ({ form, path: /^ucn$/, why: 'the UCN: starred as a reminder that never blocks (73S-N1)' })),
 ];
 
 // In the page: each visible, editable control with a path, and the element

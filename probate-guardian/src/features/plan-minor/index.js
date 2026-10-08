@@ -1,4 +1,5 @@
 import { renderSummaryPage, navStatus, formatSummaryDate } from '../../core/summary-renderer.js';
+import { renderUcnField } from '../../core/form/cards/case-caption-card.js';
 import { checkDateOrder } from '../../core/validation/date-rules.js';
 import { isTriStateAnswer } from '../../core/form/form-contract.js';
 import { checkSignatureState, inferLegacySignatureState } from '../../core/validation/signature-state.js';
@@ -220,7 +221,7 @@ function getSummaryConfigPlanMinor(){
       },
     ],
     rightCards:[],
-    banner:{title:'ANNUAL PLAN — MINORS',value:(d.wardName?esc(d.wardName):"Minor")+' — '+(d.ucn?('UCN '+esc(d.ucn)):'Pending')},
+    banner:{title:'ANNUAL PLAN — MINORS',value:(d.wardName?esc(d.wardName):"Minor")+' — '+(d.ref?('Case # '+esc(d.ref)):d.ucn?('UCN '+esc(d.ucn)):'Pending')},
     nextRoute:'/p2',
   };
 }
@@ -237,8 +238,8 @@ function pagePlanMCover(){
           <div class="row g-2">
             <div class="col-12">${inpS('wardName',"Minor's Name",d.wardName,true)}</div>
             <div class="col-md-6">${countyInputS('county','County',d.county,true)}</div>
-            <div class="col-md-6">${inpS('ucn','UCN',d.ucn)}</div>
-            <div class="col-12">${inpS('ref','Case #',d.ref)}</div>
+            <div class="col-md-6">${renderUcnField(d.ucn,{id:'ucn'})}</div>
+            <div class="col-12">${inpS('ref','Case #',d.ref,true)}</div>
             ${renderReportingPeriodFields({ periodFrom: d.periodFrom, periodTo: d.periodTo, fromLabel: 'For the Period From', toLabel: 'To' })}
             <!-- Milestone 73I (73I-N3): the plan covers the coming year. --><div class="col-12"><div class="plan-field-hint" data-plan-year-hint>Enter the coming plan year: it begins the day after the anniversary month of the Letters of Guardianship ends, and ends on the last day of that month a year later (F.S. 744.367(1)). For calendar-year filing, January 1 to December 31.</div></div>
             <div class="col-md-6 mt-2">${yesNoCheckboxS('amendedForm','Amended Form?',d.amendedForm,true,'/')}</div>

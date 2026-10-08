@@ -45,11 +45,12 @@ describe('deleteFilingConfirmation()', () => {
     expect(msg).not.toContain('01/01/2025');
   });
 
-  // Plan Minor stores its case number as ucn, with ref as the fallback --
-  // caseNumberOf()'s rule, which this builder must not re-implement.
-  test('Plan Minor resolves its case number by ucn, then ref', () => {
-    expect(deleteFilingConfirmation({ inventoryType: 'planMinor', wardName: 'M', ucn: 'UCN-1', ref: 'REF-9' })).toContain('case UCN-1');
-    expect(deleteFilingConfirmation({ inventoryType: 'planMinor', wardName: 'M', ucn: '', ref: 'REF-9' })).toContain('case REF-9');
+  // Plan Minor's case number is its Case # (ref), with the UCN as the
+  // fallback -- caseNumberOf()'s rule, which this builder must not
+  // re-implement. Milestone 73S (73S-N2): the Case # first; it was the UCN.
+  test('Plan Minor resolves its case number by its Case #, then its UCN', () => {
+    expect(deleteFilingConfirmation({ inventoryType: 'planMinor', wardName: 'M', ucn: 'UCN-1', ref: 'REF-9' })).toContain('case REF-9');
+    expect(deleteFilingConfirmation({ inventoryType: 'planMinor', wardName: 'M', ucn: 'UCN-1', ref: '' })).toContain('case UCN-1');
   });
 
   test('keeps the prior-year warning, before the irreversibility sentence', () => {

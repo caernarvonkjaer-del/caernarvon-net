@@ -32,7 +32,10 @@ export function collectPlanMinorIssues(d){
     sectionLabel:'Cover',earlierLabel:'Reporting Period From',laterLabel:'Reporting Period To',allowSameDay:false,
     filingType:T,laterPath:'periodTo',
   }));
-  req(d.ucn||d.ref,'Cover — Case Number is required','ucn');
+  // Milestone 73S (decision 73S-3): the Case # is required, as every other
+  // form's case number is; a UCN no longer stands in for it (the UCN is a
+  // reminder only, src/core/filing/ucn-reminder.js).
+  req(d.ref,'Cover — Case # is required','ref');
   req(d.guardianName,'Cover — Guardian Name(s) is required','guardianName');
   req(d.q1ResidenceName,'Cover — Current Residence Name is required','q1ResidenceName');
   req(d.q1Street,'Cover — Current Residence Street Address is required','q1Street');

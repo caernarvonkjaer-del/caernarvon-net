@@ -860,7 +860,7 @@ test.describe('Plan types field-path accuracy (Milestone 33, Item 3, sub-phase 3
 //    all looked complete while validatePlanAnnual() blocked with "at least one
 //    provider must be listed". The readiness panel already agreed with the
 //    validator, so the sidebar was the odd one out.
-//  - Plan Minor Cover: validatePlanMinor() requires case identity (ucn || ref)
+//  - Plan Minor Cover: validatePlanMinor() requires the Case # (ref) -- Milestone 73S; it took ucn || ref
 //    and an ANSWERED "Amended Form?", neither of which pm-cover tracked.
 test.describe('Milestone 40C-E: sidebar section status agrees with the export blocker', () => {
   test('Plan Annual: no providers leaves Question 4 incomplete and blocks export', async ({ page }) => {
@@ -909,30 +909,31 @@ test.describe('Milestone 40C-E: sidebar section status agrees with the export bl
       const w = window as any;
       return {
         navComplete: w.GuardianForms.testing.status.navChecks().checks['pm-cover'],
-        caseBlocked: (await w.GuardianForms.testing.validate.open()).some((m: ValidatorIssue) => m.message.includes('Cover — Case Number is required')),
+        caseBlocked: (await w.GuardianForms.testing.validate.open()).some((m: ValidatorIssue) => m.message.includes('Cover — Case # is required')),
         amendedBlocked: (await w.GuardianForms.testing.validate.open()).some((m: ValidatorIssue) => m.message.includes('Cover — Amended Form? must be answered')),
       };
     });
     expect(baseline).toEqual({ navComplete: true, caseBlocked: false, amendedBlocked: false });
 
-    // Case identity: ucn OR ref satisfies it, so both must be cleared.
+    // Milestone 73S (73S-3): the Case # is required; a UCN alone no longer
+    // satisfies it, for the sidebar as for the validator.
     const noCaseIdentity = await page.evaluate(async () => {
       const w = window as any;
-      w.GuardianForms.testing.patchFiling({ 'ucn': '' }); w.GuardianForms.testing.patchFiling({ 'ref': '' });
+      w.GuardianForms.testing.patchFiling({ 'ucn': '522026GA001234XXXXXX' }); w.GuardianForms.testing.patchFiling({ 'ref': '' });
       return {
         navComplete: w.GuardianForms.testing.status.navChecks().checks['pm-cover'],
-        blocked: (await w.GuardianForms.testing.validate.open()).some((m: ValidatorIssue) => m.message.includes('Cover — Case Number is required')),
+        blocked: (await w.GuardianForms.testing.validate.open()).some((m: ValidatorIssue) => m.message.includes('Cover — Case # is required')),
       };
     });
     expect(noCaseIdentity).toEqual({ navComplete: false, blocked: true });
 
-    // Either field on its own is enough, for the sidebar as for the validator.
+    // The Case # on its own is enough; a blank UCN is a reminder in Preview, never a missing item.
     const refOnly = await page.evaluate(async () => {
       const w = window as any;
       w.GuardianForms.testing.patchFiling({ 'ucn': '' }); w.GuardianForms.testing.patchFiling({ 'ref': '26-000123-GD' });
       return {
         navComplete: w.GuardianForms.testing.status.navChecks().checks['pm-cover'],
-        blocked: (await w.GuardianForms.testing.validate.open()).some((m: ValidatorIssue) => m.message.includes('Cover — Case Number is required')),
+        blocked: (await w.GuardianForms.testing.validate.open()).some((m: ValidatorIssue) => m.message.includes('Cover — Case # is required')),
       };
     });
     expect(refOnly).toEqual({ navComplete: true, blocked: false });
