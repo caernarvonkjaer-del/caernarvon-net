@@ -81,8 +81,33 @@ export function updateCurrentScheduleNextButton(judged=computeNavChecks()){
     // checks' prompts) -- so an incomplete page always names what it needs.
     const owed=judged?judged.pageIssues(route):{blockers:[],prompts:[]};
     const wants=owed.prompts.map(p=>({label:p.label,path:p.path}));
-    guidanceContainer.innerHTML=incomplete?renderLocalSectionGuidance(route,owed.blockers,Infinity,{message:advice,wants},type):'';
+    drawGuidance(guidanceContainer,incomplete?renderLocalSectionGuidance(route,owed.blockers,Infinity,{message:advice,wants},type):'');
   }
+}
+
+// The list of what the page still needs is redrawn on every change. Pressing one of its
+// links moves the cursor out of the box the filer was in, that box's write redraws the
+// list, and the link pressed was replaced before the release: the click did nothing (since
+// "+ Add" puts the cursor in the new row, the first click on the list after an Add). So the
+// list is left as it is when nothing in it changed, and a changed list waits for a press on
+// it to finish -- the click's own events run first (as router.js's waitForTyping()).
+const drawnGuidance=new WeakMap();
+let pressedOn=null;
+let guidanceWaiting=false;
+if(typeof document!=='undefined'&&typeof document.addEventListener==='function'){
+  document.addEventListener('pointerdown',(event)=>{pressedOn=event.target;},{capture:true});
+  document.addEventListener('pointerup',()=>{setTimeout(()=>{pressedOn=null;},0);},{capture:true});
+}
+function drawGuidance(container,html){
+  if(drawnGuidance.get(container)===html)return;
+  if(pressedOn&&container.contains(pressedOn)){
+    if(guidanceWaiting)return;
+    guidanceWaiting=true;
+    document.addEventListener('pointerup',()=>setTimeout(()=>{guidanceWaiting=false;updateCurrentScheduleNextButton();},0),{capture:true,once:true});
+    return;
+  }
+  container.innerHTML=html;
+  drawnGuidance.set(container,html);
 }
 
 export function applyNavChecks(checks,incomplete={}){

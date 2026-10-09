@@ -6,7 +6,7 @@
 far: 73U (2026-10-04, `5b8849b`), 73V (2026-10-05, `8b96aa3`), 73C
 (2026-10-05, `861b6a9`, brought forward from its place in the build order at the
 requester's choice) 73D (2026-10-05, `c8e84fe`, likewise), 73J part 1 (2026-10-05, `d819c4a`),
-73F part 1 (2026-10-06, `5e9e17b`), 73A (2026-10-06, `83352d0`), 73F part 2 (2026-10-06, `d01edd4`), 73G part 1 (2026-10-06, `69a1b46`), 73E part 1 (2026-10-06, `8e02051`), 73F part 3 (2026-10-06, `67fc66c`), 73I (2026-10-06, `56a7c30`), 73T part 1 (2026-10-07, `4cae1e7`), 73T part 2 (2026-10-07, `2a1cbc5`), 73T part 3 (2026-10-07, `9d2bc72`), 73T part 4 (2026-10-07, `b70a944`), 73M with 74C (2026-10-07, `a0e987b`), 73B (2026-10-07, `86547da`), 73O part 2 with 74F (2026-10-08, `fa9625e`), 73G part 2 with 74H (2026-10-08, `f85e862`, `78b5770`), 73H (2026-10-08, `631f898`), 73S (2026-10-08, `3cf1d9d`), 73K part 1 (2026-10-08, `4268c45`), 73E part 2 (2026-10-08, `5e26e57`, `ea78dd4`), 73J part 2 (2026-10-08, `3648706`), 73K part 2 (2026-10-08, `79a8875`), 73L with 74D's reproduction (2026-10-09, `43081f2`), 73N part 1 (2026-10-09, `ab8068e`), 73N part 2 (2026-10-09, `01a9610`), 73N part 3 (2026-10-09, `987daaf`) and 73O part 1 with 74O (2026-10-09), each approved by name; 74P, built after 73B, is recorded in Milestone 74.**
+73F part 1 (2026-10-06, `5e9e17b`), 73A (2026-10-06, `83352d0`), 73F part 2 (2026-10-06, `d01edd4`), 73G part 1 (2026-10-06, `69a1b46`), 73E part 1 (2026-10-06, `8e02051`), 73F part 3 (2026-10-06, `67fc66c`), 73I (2026-10-06, `56a7c30`), 73T part 1 (2026-10-07, `4cae1e7`), 73T part 2 (2026-10-07, `2a1cbc5`), 73T part 3 (2026-10-07, `9d2bc72`), 73T part 4 (2026-10-07, `b70a944`), 73M with 74C (2026-10-07, `a0e987b`), 73B (2026-10-07, `86547da`), 73O part 2 with 74F (2026-10-08, `fa9625e`), 73G part 2 with 74H (2026-10-08, `f85e862`, `78b5770`), 73H (2026-10-08, `631f898`), 73S (2026-10-08, `3cf1d9d`), 73K part 1 (2026-10-08, `4268c45`), 73E part 2 (2026-10-08, `5e26e57`, `ea78dd4`), 73J part 2 (2026-10-08, `3648706`), 73K part 2 (2026-10-08, `79a8875`), 73L with 74D's reproduction (2026-10-09, `43081f2`), 73N part 1 (2026-10-09, `ab8068e`), 73N part 2 (2026-10-09, `01a9610`), 73N part 3 (2026-10-09, `987daaf`) and 73O part 1 with 74O (2026-10-09, `487e247`), each approved by name; 74P, built after 73B, is recorded in Milestone 74.**
 **The 2026-10-07 batch is built**, and its closing full regression has run
 (recorded below, after the mid-batch one). **Approved and not yet built**
 (2026-10-08, one batch in this order, light tests between deliveries and a
@@ -2871,6 +2871,30 @@ the import dialog, lock and save state, prior-year delete, terms, unlock,
 the filing lock, security, routes, the reminder, Link Person, the blank-card
 clean-up, the Plans' co-guardian, keeping the place, and this spec: 136
 passed. Full unit suite 3,014 passed; `check:types` clean.
+
+**Found after the build, fixed 2026-10-09 (own commit, after 73O part 1).**
+On an Inventory schedule, the first click on a link in the page's list of
+what it still needs did nothing when the cursor was in a box -- which, since
+73K part 2 puts the cursor in a new row's first box, is the first click after
+"+ Add". Pressing the link moves the cursor out of the box; the box's write
+redraws the list; the link pressed was replaced before the button was
+released, so the click was lost (a second click worked). The list has been
+redrawn on every change for a long time; before 73L the documents reminder
+opened right after "+ Add" and took the cursor out of the new row, which hid
+it. Found by `navigation-status.contract.spec.ts` in 73O part 1's light
+regression (9 Inventory tests; bisected to `43081f2`).
+
+The fix (`src/core/status/nav-marks.js`): the list is left as it is when
+nothing in it changed, and a changed list waits for a press on it to finish
+-- the click's own events run first, as 73K part 2's background redraw
+already does (`router.js`'s `waitForTyping()`). One test step updated, not a
+defect: the vehicle-jump test dismissed the reminder after "+ Add", where it
+no longer opens; it opens when the vehicle tick makes the row an entry, and a
+jump waits behind an open dialog (`validation-adapter.js`). **Tests:** a new
+case -- type in a box, then click another missing item's link: the cursor
+lands there on the first click. **Red-first:** with the previous
+`nav-marks.js` it and the 8 schedule-page link tests fail (the cursor goes
+nowhere); with the fix all 16 Inventory navigation tests pass.
 
 ---
 

@@ -305,6 +305,28 @@ test.describe('Guardian Inventory navigation/status contract', () => {
     await expect(page.locator(`[data-bind="${targetPath}"]`)).toBeFocused();
   });
 
+  // Typing in a box and then pressing one of the list's links writes the box
+  // as the cursor leaves it, and the write changes the list. The list used to
+  // be redrawn between the press and the release, replacing the link pressed:
+  // the click did nothing. It now waits for the click (nav-marks.js).
+  test('a link in the list of what the page needs works on the first click, straight from a box just typed in', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Guardian Nav Guidance Ward', 'guardian');
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/a1'));
+    await page.locator('[data-inventory-action="add-entry"][data-schedule="a1"]').click();
+    await dismissScheduleDocPrompt(page);
+
+    const typed = page.locator('[data-bind="scheduleA1.0.propertyDescription"]');
+    await typed.click();
+    await typed.pressSequentially('Single Family Home');
+    const other = page.locator('#page-local-guidance [data-form-action="jump-to-field"]:not([data-field-path="scheduleA1.0.propertyDescription"])').first();
+    const otherPath = await other.getAttribute('data-field-path');
+    expect(otherPath).toBeTruthy();
+    await other.click();
+    await expect(page.locator(`[data-bind="${otherPath}"]`)).toBeFocused();
+    expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('scheduleA1.0.propertyDescription'))).toBe('Single Family Home');
+  });
+
   // Milestone 33, Item 3 (sub-phase 3a): Schedules B-2 through C-5 share the
   // exact same "row + dot-path" shape A-1/A-2/B-1 already proved above, so
   // one config-driven loop covers all eight rather than eight near-identical
@@ -355,11 +377,14 @@ test.describe('Guardian Inventory navigation/status contract', () => {
     await createWard(page, 'Guardian B-2 Vehicle Ward', 'guardian');
     await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/b2'));
     await page.locator('[data-inventory-action="add-entry"][data-schedule="b2"]').click();
-    await dismissScheduleDocPrompt(page); // Milestone 57C-R advisory modal
     // renderB2Fields() renders Year/Make/Model/VIN/Odometer as raw inputs
     // with no data-bind at all once a row is marked a vehicle -- their only
     // focusable selector is the input's own literal id.
     await page.locator('[data-inventory-change="toggle-vehicle"][data-index="0"]').check();
+    // Milestone 57C-R advisory modal. Since 73L it waits for an entry: the
+    // vehicle tick makes the row one, so it opens here, not after "+ Add"
+    // (a jump waits behind an open dialog, validation-adapter.js).
+    await dismissScheduleDocPrompt(page);
 
     const yearPath = await page.evaluate(async () => {
       const structured = await (window as any).GuardianForms.testing.validate.structured();

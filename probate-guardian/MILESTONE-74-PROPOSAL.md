@@ -7,7 +7,7 @@ far: 74A (2026-10-05), 74B (2026-10-06), 74Q (2026-10-07), 74C (2026-10-07,
 with 73M, `a0e987b`), 74P (2026-10-07, after 73B, `645fe35`), 74F (2026-10-08,
 with 73O part 2, `fa9625e`), 74H (2026-10-08, with 73G part 2, `f85e862`) and
 74D's reproduction with its UX-07 rewording (2026-10-09, with 73L) and 74O
-(2026-10-09, with 73O part 1), each approved by name.** **Approved and not yet
+(2026-10-09, with 73O part 1, `487e247`), each approved by name.** **Approved and not yet
 built** (2026-10-08, with Milestone 73's batch):
 74L (with 73O part 3), 74J (with 73O part 4) and 74S (with 73P). Nothing else is
 approved: building any other of 74D–74S needs the requester's named approval
