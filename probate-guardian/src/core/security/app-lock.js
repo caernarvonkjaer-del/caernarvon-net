@@ -15,7 +15,7 @@ import { handleHash, setRouteHash } from '../navigation/router.js';
 import { sanitizeObjectData } from './input-hardening.js';
 import { updateSidebar } from '../shell/sidebar.js';
 import { blankCaseFile, getActiveWard, getCaseFile, replaceCaseFile } from '../state.js';
-import { alertModal } from '../ui/dialogs.js';
+import { alertModal, closeAllPopups } from '../ui/dialogs.js';
 import { releaseWardLock } from '../ward-lock.js';
 
 // Decides whether the user needs to create a master password (fresh install,
@@ -318,6 +318,10 @@ export async function submitUnlockForm(){
 // snapshot held only the filings and the guardian.
 export async function lockApp(){
   if(_autoLockTimer){clearTimeout(_autoLockTimer);_autoLockTimer=null;}
+  // Milestone 73L: every pop-up closes first, each with its own "no" -- one
+  // stood above the lock screen, showing any names in its text, and acted on
+  // the cleared data if clicked.
+  closeAllPopups();
   await flushPendingSave();
   await releaseWardLock();
   const handleToReload=await loadCaseFileHandle();

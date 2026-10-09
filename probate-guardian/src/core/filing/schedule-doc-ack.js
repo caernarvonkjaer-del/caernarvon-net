@@ -1,6 +1,7 @@
 import { resolveDescriptorForInventoryType } from './filing-descriptor.js';
 import { resolveActiveDocPeriod } from './doc-period.js';
 import { getPageVisit } from '../navigation/route-state.js';
+import { isBlankScheduleEntry } from '../form/blank-rows.js';
 
 // Milestone 57C-R: the supplemental-documentation acknowledgement.
 //
@@ -83,12 +84,18 @@ export function isFinancialSchedule(inventoryType, scheduleKey) {
   return Boolean(canonicalKey(scheduleAckFamily(inventoryType), scheduleKey));
 }
 
+/**
+ * Whether a schedule holds an entry. Milestone 73L: a row still as "+ Add"
+ * made it is no entry (the clean-up's own test, blank-rows.js) -- the
+ * reminder used to fire right after "+ Add Entry", before anything was typed.
+ */
 export function isSchedulePopulated(data, inventoryType, scheduleKey) {
   const family = scheduleAckFamily(inventoryType);
   const key = canonicalKey(family, scheduleKey);
   if (!key) return false;
-  const rows = data?.[FINANCIAL_SCHEDULE_COLLECTIONS[family][key]];
-  return Array.isArray(rows) && rows.length > 0;
+  const listKey = FINANCIAL_SCHEDULE_COLLECTIONS[family][key];
+  const rows = data?.[listKey];
+  return Array.isArray(rows) && rows.some((row) => !isBlankScheduleEntry(listKey, row));
 }
 
 // The acknowledgement is nested by period and then by schedule:
@@ -157,6 +164,10 @@ export function needsScheduleAck(data, inventoryType, route) {
  * @param {string} inventoryType
  * @param {string} route the page just mounted, e.g. '/a1'
  * @param {(opts: object) => Promise<boolean>} confirmFn injected for testing
+ * @param {{ openFiling?: () => object }} [options] Milestone 73L: the filing
+ *   open when the question's turn comes; the question is dropped if it is
+ *   another, or the filer has moved to another page, while it waited behind
+ *   another pop-up
  * @returns {Promise<boolean>} whether an acknowledgement was recorded
  */
 let promptInFlight = false;
@@ -170,7 +181,8 @@ let promptInFlight = false;
 const declinedOnVisit = new Map();
 const declineKey = (data, key) => `${data?.wardId ?? ''}|${scheduleAckPeriod(data)}|${key}`;
 
-export async function promptScheduleAckIfNeeded(data, inventoryType, route, confirmFn) {
+export async function promptScheduleAckIfNeeded(data, inventoryType, route, confirmFn, options = {}) {
+  const { openFiling } = options;
   // Re-entrancy guard. The caller does not await this (see the feature
   // modules' notes on why awaiting it wedges the router), and a single filer
   // action can re-render a page more than once -- addEntry() ends with
@@ -182,6 +194,9 @@ export async function promptScheduleAckIfNeeded(data, inventoryType, route, conf
   // schedule is still unacknowledged.
   if (promptInFlight) return false;
   if (!needsScheduleAck(data, inventoryType, route)) return false;
+  // Milestone 73L: not while another dialog is open (Add Form, the
+  // eligibility questions, a pop-up) -- it is asked on the next arrival.
+  if (typeof document !== 'undefined' && document.querySelector('.modal-overlay.show')) return false;
   const key = scheduleKeyForRoute(inventoryType, route);
   const visit = getPageVisit();
   if (declinedOnVisit.get(declineKey(data, key)) === visit) return false;
@@ -200,6 +215,7 @@ export async function promptScheduleAckIfNeeded(data, inventoryType, route, conf
         + 'file them separately, whichever your circuit requires.',
       confirmLabel: 'I understand',
       cancelLabel: 'Not now',
+      stillWanted: () => getPageVisit() === visit && (!openFiling || openFiling() === data),
     });
   } finally {
     promptInFlight = false;

@@ -236,7 +236,7 @@ export async function mount(container, page, { signal } = {}) {
   // floating call and must not be awaited. window.D.inventoryType rather than
   // a literal, because this one module serves annual, finalAccounting and
   // trustAccounting.
-  void promptScheduleAckIfNeeded(getD(), getD()?.inventoryType || 'annual', page, confirmModal).catch(() => {});
+  void promptScheduleAckIfNeeded(getD(), getD()?.inventoryType || 'annual', page, confirmModal, { openFiling: getD }).catch(() => {});
 }
 
 export function dispose(container) {

@@ -5,9 +5,10 @@
 **Draft.** Every decision for 74A and 74B is settled (2026-10-05). **Built so
 far: 74A (2026-10-05), 74B (2026-10-06), 74Q (2026-10-07), 74C (2026-10-07,
 with 73M, `a0e987b`), 74P (2026-10-07, after 73B, `645fe35`), 74F (2026-10-08,
-with 73O part 2, `fa9625e`) and 74H (2026-10-08, with 73G part 2, `f85e862`), each
+with 73O part 2, `fa9625e`), 74H (2026-10-08, with 73G part 2, `f85e862`) and
+74D's reproduction with its UX-07 rewording (2026-10-09, with 73L), each
 approved by name.** **Approved and not yet built** (2026-10-08, with
-Milestone 73's batch): 74D's reproduction (with 73L), 74O (with 73O part 1),
+Milestone 73's batch): 74O (with 73O part 1),
 74L (with 73O part 3), 74J (with 73O part 4) and 74S (with 73P). Nothing else is
 approved: building any other of 74D–74S needs the requester's named approval
 of that item (AGENTS.md §3). **Every decision in 74C–74S is settled
@@ -18,8 +19,9 @@ practice, law, re-asks and new filed figures one by one, all as recommended
 except **Bar numbers, kept padded to eight digits** (Milestone 36's rule), and
 **the SSN, answered as Pinellas Clerk practice**: PDFs keep the last four
 digits and the workbooks the full number. The questions marked for a
-qualified person stay flagged; nothing here settles a legal reading. 74D has
-no decision until its reports are reproduced, and 74M has nothing to build.
+qualified person stay flagged; nothing here settles a legal reading. 74D's
+reports are reproduced (2026-10-09): four are not, and UX-07's rewording was
+approved and built; 74M has nothing to build.
 
 74A and 74B were found on 2026-10-05 while building Milestone 73's 73C (the
 Plans' "+ Add Co-Guardian"), recorded in 73C's build record as found and not
@@ -790,6 +792,55 @@ fixes: BUG-10 with **73F part 2** (the Preview banner); BUG-12 with **73M**
 (Save as Excel) or **73R part 3** (the preview's rendering); BUG-19 with
 **73L** (the eligibility dialog's order of closing); A11Y-06 with **73L** or
 **73O part 3**.
+
+
+### Reproduction record — 2026-10-09, with 73L (approved by name by the requester, 2026-10-08)
+
+Each report was followed in Chromium by a script taking the plan's steps,
+against master at `79a8875` -- the build the test system runs -- before any of
+73L's changes.
+
+1. **BUG-10, export gating by entry point: not reproduced; fixed on current
+   code.** A Simplified Annual Plan missing Guardian 1's phone and mailing
+   address. Preview opened inside the filing said "2 issues", with "Save as
+   PDF: 2 requirements outstanding" beside the button; after Continue,
+   "Continuing with 2 items outstanding". Then from the dashboard's PDF
+   button -- with no edit, after an edit, and without the Continue -- it said
+   "2 issues" again each time, with the same reason line. The stale Continue
+   the evidence suspected is cleared before the page is drawn since 73M with
+   74C (`a0e987b`, "opening Preview judges the filing afresh"). The readiness
+   card's "1 item outstanding" beside "2 issues" is the card counting the
+   guardian's contact details as one item; both say the filing is not ready.
+2. **BUG-12, Save as Excel hanging: not reproduced.** An Initial Inventory with
+   a saved note annotation: Save as Excel five times, each finished in
+   3.5-4.1 seconds; five more without annotations, the same; once while the
+   preview was still drawing, 3.6 seconds. No page or console errors. The
+   evidence's gaps stand as written -- no time limit on loading ExcelJS or
+   reading the template, and no Activity Log entry on a failure -- a
+   hardening question, not a defect seen; nothing changed.
+3. **BUG-19, New Form pointing at another ward: not reproduced.** A Simplified
+   created through the Start New Form picker's card with a "Load Ward Info
+   From" source, both qualifying and not, and through New Form with
+   Simplified chosen and a source: the next New Form, from the dashboard and
+   from the picker, opened on Initial Inventory with "— Start Blank —", and
+   another ward's name typed set no source. (The closed New Form keeps the
+   last type and source until it is next opened; both ways of opening it
+   reset them, so nothing shows.)
+4. **A11Y-06, a stale screen-reader message: not reproduced.** "Preview is
+   blocked. N required items are still missing." is announced from inside the
+   page shown (`#main-content`); once the dashboard opens it is gone, also
+   after pressing the dashboard's PDF button and going straight back.
+5. **UX-07, "No other forms yet to pull from": reproduced as described, and
+   changed.** With only Initial Inventories on file, starting another, the
+   list said "— No other forms yet to pull from —", though other forms were
+   on file: an Initial Inventory can't be filled in from another Inventory.
+   Every other form, with any form on file, already listed it. **Approved by
+   the requester, 2026-10-09 ("Reword it now"):** the list now says "— None of
+   the forms on file can fill in an Initial Inventory —" (the form's own name,
+   for whichever form is being made), and "No other forms yet to pull from"
+   stays for a case with nothing else on file. `carry-over.js`'s
+   `noCarrySourceText()`; tested in `tests/e2e/dialog-order.spec.ts`
+   (red-first: fails on the old wording).
 
 ---
 

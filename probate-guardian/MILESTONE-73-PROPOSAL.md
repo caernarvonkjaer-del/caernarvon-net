@@ -6,12 +6,11 @@
 far: 73U (2026-10-04, `5b8849b`), 73V (2026-10-05, `8b96aa3`), 73C
 (2026-10-05, `861b6a9`, brought forward from its place in the build order at the
 requester's choice) 73D (2026-10-05, `c8e84fe`, likewise), 73J part 1 (2026-10-05, `d819c4a`),
-73F part 1 (2026-10-06, `5e9e17b`), 73A (2026-10-06, `83352d0`), 73F part 2 (2026-10-06, `d01edd4`), 73G part 1 (2026-10-06, `69a1b46`), 73E part 1 (2026-10-06, `8e02051`), 73F part 3 (2026-10-06, `67fc66c`), 73I (2026-10-06, `56a7c30`), 73T part 1 (2026-10-07, `4cae1e7`), 73T part 2 (2026-10-07, `2a1cbc5`), 73T part 3 (2026-10-07, `9d2bc72`), 73T part 4 (2026-10-07, `b70a944`), 73M with 74C (2026-10-07, `a0e987b`), 73B (2026-10-07, `86547da`), 73O part 2 with 74F (2026-10-08, `fa9625e`), 73G part 2 with 74H (2026-10-08, `f85e862`, `78b5770`), 73H (2026-10-08, `631f898`), 73S (2026-10-08, `3cf1d9d`), 73K part 1 (2026-10-08, `4268c45`), 73E part 2 (2026-10-08, `5e26e57`, `ea78dd4`), 73J part 2 (2026-10-08, `3648706`) and 73K part 2 (2026-10-08), each approved by name; 74P, built after 73B, is recorded in Milestone 74.**
+73F part 1 (2026-10-06, `5e9e17b`), 73A (2026-10-06, `83352d0`), 73F part 2 (2026-10-06, `d01edd4`), 73G part 1 (2026-10-06, `69a1b46`), 73E part 1 (2026-10-06, `8e02051`), 73F part 3 (2026-10-06, `67fc66c`), 73I (2026-10-06, `56a7c30`), 73T part 1 (2026-10-07, `4cae1e7`), 73T part 2 (2026-10-07, `2a1cbc5`), 73T part 3 (2026-10-07, `9d2bc72`), 73T part 4 (2026-10-07, `b70a944`), 73M with 74C (2026-10-07, `a0e987b`), 73B (2026-10-07, `86547da`), 73O part 2 with 74F (2026-10-08, `fa9625e`), 73G part 2 with 74H (2026-10-08, `f85e862`, `78b5770`), 73H (2026-10-08, `631f898`), 73S (2026-10-08, `3cf1d9d`), 73K part 1 (2026-10-08, `4268c45`), 73E part 2 (2026-10-08, `5e26e57`, `ea78dd4`), 73J part 2 (2026-10-08, `3648706`), 73K part 2 (2026-10-08, `79a8875`) and 73L with 74D's reproduction (2026-10-09), each approved by name; 74P, built after 73B, is recorded in Milestone 74.**
 **The 2026-10-07 batch is built**, and its closing full regression has run
 (recorded below, after the mid-batch one). **Approved and not yet built**
 (2026-10-08, one batch in this order, light tests between deliveries and a
-full regression at the end): 73L (with
-Milestone 74's 74D reproduction), 73N parts 1-3, 73O part 1 (with 74O), 73O
+full regression at the end): 73N parts 1-3, 73O part 1 (with 74O), 73O
 part 3 (with 74L), 73O part 4 (with 74J), 73P (with 74S) and 73R parts 1-3.
 Nothing else is approved. Building any other item, or any part of a
 split item, needs the requester's named approval of that item or part
@@ -2800,6 +2799,78 @@ recommended** (every dialog goes through `dialogs.js`). Files: `dialogs.js`,
 `modal-events.js`, `filing-dialogs.js`, `schedule-doc-ack.js`, `app-lock.js`,
 `help-panel.js`, `shell.css` (and `pdf-preview.js` only per step 7). Security:
 step 6 stops names showing over the lock screen.
+
+
+### Build record — BUILT 2026-10-09, with 74D's reproduction (approved by name by the requester, 2026-10-08)
+
+**What changed for a filer:**
+
+- **One Escape closes only the dialog on top.** On "Please enter a ward name"
+  over New Form, Escape closes the notice and New Form stays open.
+- **Pop-ups wait their turn.** One is on screen at a time; the next appears
+  when it is answered. Each shows, and takes the cursor, as soon as it is
+  asked for -- it waited for an animation frame, which a hidden browser tab
+  never runs -- and answering it puts the cursor back where it was when the
+  pop-up appeared.
+- **The Simplified eligibility questions close as soon as the filing is
+  made**, before the carry-over note, "source not found" or "does not
+  qualify"; they stood open behind each of them.
+- **Locking closes every pop-up**, each as a "no": nothing stands over the
+  lock screen showing names, and a "Remove co-guardian ...?" left open is not
+  carried out.
+- **The documents reminder waits for an entry.** "Supporting documentation --
+  You have entered items on Schedule X" no longer appears on "+ Add" alone; it
+  is asked the next time the page is drawn with something in a row (the next
+  arrival, or another "+ Add"). It is not asked while another dialog is open
+  -- the next arrival asks -- and is dropped unseen if, by its turn, the filer
+  has moved to another page or filing.
+- **The Help panel moves the page over** on a window about 1,000px or wider,
+  so the dashboard's toolbar and Actions column stay in view; on a narrower
+  one it lies over the page, as before (73L-1).
+- With 74D: the empty "Load Ward Info From" list says "None of the forms on
+  file can fill in an Initial Inventory" when other forms are on file (UX-07,
+  recorded in Milestone 74).
+
+**How:** `dialogs.js`: every pop-up goes through one first-in, first-out
+queue (`popup()`), is labelled, shown and focused as it is built, records the
+focus to return to when it is shown, and on closing shows the next; its
+Escape acts only while it is the dialog on top and stops there (it carried on
+to `modal-events.js`, which closed the dialog beneath). Add Form and the
+eligibility dialog are not queued. `closeAllPopups()` settles the pop-up on
+screen and every one waiting with its "no"; `lockApp()` calls it first.
+`schedule-doc-ack.js`: a schedule holds an entry only when a row is not still
+as "+ Add" made it (the clean-up's `isBlankScheduleEntry()`); the question is
+skipped while any dialog is shown, and is still wanted only on the same visit
+to the same filing (the two schedule features pass the open filing).
+`filing-dialogs.js` closes the eligibility dialog once the filing exists.
+`help-panel.js` marks the page while the panel is open; `shell.css` makes
+room for it at 1,000px and wider.
+
+**Step 7, the background tab:** checked in Chromium, headless and in a
+visible window. Playwright opens each page as its own window, so neither was
+ever hidden: animation frames kept running, and Preview drew its pages and
+said "Preview ready." both while behind and on coming back. A hidden tab
+could not be made here, so, as the design says, Preview's drawing is
+unchanged; pop-ups no longer need a frame either way.
+
+**Tests:** new `tests/e2e/dialog-order.spec.ts` -- Escape, shown at once,
+one at a time, the eligibility notices (qualifying with a source, and not),
+the lock screen, the Help panel at 1,400px and 900px, and 74D's UX-07 list.
+`tests/e2e/schedule-doc-ack.spec.ts`: the cases that added a row now type into
+it and come back (`enterRow()`), since "+ Add" alone no longer asks, and two
+new cases (a row still empty asks nothing however often the page is drawn;
+nothing while another dialog is open). `tests/unit/schedule-doc-ack.spec.js`:
+three new cases (an untouched row is no entry; not asked while a dialog is
+open, and not recorded as declined; still wanted only on the same visit and
+filing). **Red-first:** with the source set aside every dialog-order case
+fails, every browser reminder case that adds a row fails (it asked at once)
+and the open-dialog case shows two dialogs; the three unit cases fail.
+Light regression on a C: copy, 20 specs -- the carry-over workflow, combobox
+keys, the dashboard (backup, look), entry helpers, the Help panel's state,
+the import dialog, lock and save state, prior-year delete, terms, unlock,
+the filing lock, security, routes, the reminder, Link Person, the blank-card
+clean-up, the Plans' co-guardian, keeping the place, and this spec: 136
+passed. Full unit suite 3,014 passed; `check:types` clean.
 
 ---
 

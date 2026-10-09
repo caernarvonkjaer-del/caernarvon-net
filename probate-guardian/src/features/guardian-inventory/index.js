@@ -244,7 +244,7 @@ export async function mount(container, page, { signal } = {}) {
   // schedule-doc-ack.spec.ts, where three cases timed out inside navigate()
   // before this was a floating call. Detection is on the DATA, not on the Add
   // button, so rows from an Excel import or New Filing from Existing count.
-  void promptScheduleAckIfNeeded(getD(), 'guardian', page, confirmModal).catch(() => {});
+  void promptScheduleAckIfNeeded(getD(), 'guardian', page, confirmModal, { openFiling: getD }).catch(() => {});
 }
 
 export function dispose(container) {

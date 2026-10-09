@@ -13,11 +13,12 @@ import {
 // appears on navigation, at the right moments and no others.
 //
 // TIMING, established by running it rather than by reading it: addEntry() ends
-// with renderPage(getCurrentPage()), so adding a row re-runs mount() and the
-// prompt fires IMMEDIATELY. The filer is asked the moment the schedule becomes
-// populated, which is both better than waiting for a later visit and closer to
-// how the behavior was specified. An earlier draft of this spec assumed the
-// prompt waited for a re-entry and failed on every case.
+// with renderPage(getCurrentPage()), so adding a row re-runs mount(), and the
+// question is asked whenever the page is drawn with an entry on it.
+// Milestone 73L: a row still as "+ Add" made it is no entry, so "+ Add" alone
+// asks nothing (it used to ask at once, before anything was typed); the
+// question comes the next time the page is drawn with something in a row --
+// the next arrival, or another "+ Add".
 //
 // Read src/core/filing/schedule-doc-ack.js's header for why this feature
 // deliberately gates nothing. The last test here is the one that would have
@@ -48,6 +49,28 @@ async function giveA1RowContent(page: Page) {
   await description.blur();
 }
 
+/** A box in each schedule's first row the filer types into. */
+const FIRST_TEXT: Record<string, string> = {
+  a1: 'scheduleA1.0.propertyDescription',
+  b1: 'scheduleB1.0.institutionName',
+  b2: 'scheduleB2.0.description',
+};
+
+/**
+ * Milestone 73L: what a filer does to be asked -- "+ Add", which asks nothing
+ * while the row is empty, then something typed into it, then the page drawn
+ * again (here, leaving it and coming back).
+ */
+async function enterRow(page: Page, schedule: string) {
+  await addGuardianRow(page, schedule);
+  await expectNoDialog(page, 'a row still empty asks nothing');
+  const box = page.locator(`#main-content [data-bind="${FIRST_TEXT[schedule]}"]`);
+  await box.fill('Entered');
+  await box.blur();
+  await goto(page, '/summary');
+  await goto(page, `/${schedule}`);
+}
+
 /** No dialog should appear; allow the mount hook time to have fired if it were going to. */
 async function expectNoDialog(page: Page, why: string) {
   await page.waitForTimeout(400);
@@ -57,7 +80,7 @@ async function expectNoDialog(page: Page, why: string) {
 const ackState = (page: Page) => page.evaluate(() => JSON.stringify((window as any).GuardianForms.testing.field('scheduleDocsAck') ?? null));
 
 test.describe('Milestone 57C-R: supplemental-documentation acknowledgement', () => {
-  test('an empty schedule prompts nothing; populating one prompts once', async ({ page }) => {
+  test('an empty schedule, or a row still empty, prompts nothing; an entry prompts once', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Ack Ward', 'guardian');
 
@@ -66,7 +89,7 @@ test.describe('Milestone 57C-R: supplemental-documentation acknowledgement', () 
     await goto(page, '/a1');
     await expectNoDialog(page, 'empty Schedule A-1 must not prompt');
 
-    await addGuardianRow(page, 'a1');
+    await enterRow(page, 'a1');
     const message = await acceptDynDialog(page);
     expect(message).toMatch(/supporting documentation/i);
     expect(message).toMatch(/does not collect/i);
@@ -84,12 +107,12 @@ test.describe('Milestone 57C-R: supplemental-documentation acknowledgement', () 
     await createWard(page, 'Per Schedule Ward', 'guardian');
 
     await goto(page, '/a1');
-    await addGuardianRow(page, 'a1');
+    await enterRow(page, 'a1');
     await acceptDynDialog(page);
 
     // B-1 is a different schedule and has not been acknowledged.
     await goto(page, '/b1');
-    await addGuardianRow(page, 'b1');
+    await enterRow(page, 'b1');
     await acceptDynDialog(page);
 
     const state = await ackState(page);
@@ -105,10 +128,9 @@ test.describe('Milestone 57C-R: supplemental-documentation acknowledgement', () 
     await createWard(page, 'Decline Ward', 'guardian');
     await goto(page, '/a1');
 
-    await addGuardianRow(page, 'a1');
+    await enterRow(page, 'a1');
     await dismissDynDialog(page);
     expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('scheduleA1.length')), 'Cancel must not discard the row').toBe(1);
-    await giveA1RowContent(page);
 
     await goto(page, '/summary');
     await goto(page, '/a1');
@@ -132,7 +154,7 @@ test.describe('Milestone 57C-R: supplemental-documentation acknowledgement', () 
       await createWard(page, 'Stay Ward', 'guardian');
       await goto(page, '/b2');
 
-      await addGuardianRow(page, 'b2');
+      await enterRow(page, 'b2');
       await answer(page);
       await page.locator('[data-inventory-change="toggle-vehicle"][data-index="0"]').check();
       await expectNoDialog(page, 'marking the row a vehicle redraws the page, and must not ask again');
@@ -188,7 +210,7 @@ test.describe('Milestone 57C-R: supplemental-documentation acknowledgement', () 
     await freshStartNoPassword(page);
     await createWard(page, 'Roundtrip Ward', 'guardian');
     await goto(page, '/a1');
-    await addGuardianRow(page, 'a1');
+    await enterRow(page, 'a1');
     await acceptDynDialog(page);
     expect(await ackState(page)).toContain('a1');
 
@@ -216,6 +238,44 @@ test.describe('Milestone 57C-R: supplemental-documentation acknowledgement', () 
     }
   });
 
+  // Milestone 73L: "Supporting documentation -- You have entered items on
+  // Schedule X" fired right after "+ Add Entry", before anything was typed.
+  test('a row still empty asks nothing, however often the page is drawn; the first entry asks on the next drawing', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Empty Row Ward', 'guardian');
+    await goto(page, '/a1');
+    await addGuardianRow(page, 'a1');
+    await expectNoDialog(page, '"+ Add" alone asks nothing');
+    await addGuardianRow(page, 'a1');
+    await expectNoDialog(page, 'a second empty row, and the page drawn again, ask nothing');
+    await giveA1RowContent(page);
+    await expectNoDialog(page, 'typing into a row does not draw the page');
+    await addGuardianRow(page, 'a1');
+    expect(await acceptDynDialog(page), 'the page drawn with an entry on it asks').toMatch(/supporting documentation/i);
+  });
+
+  // Milestone 73L: nothing while another dialog is open -- it stacked on top
+  // of it ("Seen once inside Add Form" in the 2026-09-29 review).
+  test('nothing is asked while another dialog is open; the next arrival asks', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Busy Ward', 'guardian');
+    await page.evaluate(() => { (window as any).GuardianForms.testing.patchFiling({ scheduleA1: [{ propertyDescription: 'Family home' }] }); });
+    await goto(page, '/summary');
+    await page.evaluate(async () => {
+      const dialogs = await import('/probate-guardian/src/core/ui/dialogs.js');
+      void dialogs.alertModal('Another dialog');
+    });
+    await expect(page.locator(DYN_DIALOG)).toContainText('Another dialog');
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/a1'));
+    await page.waitForTimeout(400);
+    await expect(page.locator(DYN_DIALOG), 'one dialog at a time, and not the question').toHaveCount(1);
+    await page.locator(`${DYN_DIALOG} [data-dyn-action="ok"]`).click();
+    await expectNoDialog(page, 'the question was not asked on that arrival');
+    await goto(page, '/summary');
+    await goto(page, '/a1');
+    expect(await acceptDynDialog(page), 'the next arrival asks').toMatch(/supporting documentation/i);
+  });
+
   // THE REGRESSION CASE. Milestone 57's first attempt made this same condition
   // raise a validation issue and drive computeNavChecks(), so no filing was
   // ever "clean" -- 46 e2e failures across 16 specs. 57C-R must leave both
@@ -231,7 +291,7 @@ test.describe('Milestone 57C-R: supplemental-documentation acknowledgement', () 
     }));
 
     await addGuardianRow(page, 'a1');
-    await dismissDynDialog(page);
+    await expectNoDialog(page, 'a row still empty asks nothing');
     await giveA1RowContent(page);
     const unacknowledged = await snapshot();
 

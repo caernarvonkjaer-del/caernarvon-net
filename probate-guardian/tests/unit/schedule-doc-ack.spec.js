@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   FINANCIAL_SCHEDULE_COLLECTIONS,
   scheduleAckFamily,
@@ -237,6 +237,46 @@ describe('promptScheduleAckIfNeeded(): a declined question returns on the next v
     setCurrentPage('/a1');
     await promptScheduleAckIfNeeded(d, 'guardian', '/a1', yes);
     expect(yes.asked).toBe(1);
+  });
+});
+
+// Milestone 73L: the question waits for an entry, never stacks on another
+// dialog, and is dropped if the filer has moved on before its turn.
+describe('promptScheduleAckIfNeeded(): asked only for an entry, and in its turn', () => {
+  beforeEach(() => { __resetScheduleAckPrompt(); setCurrentPage('/summary'); });
+  afterEach(() => vi.unstubAllGlobals());
+  const asker = (answer) => { const fn = async (opts) => { fn.asked += 1; fn.opts = opts; return answer; }; fn.asked = 0; return fn; };
+
+  it('a row still as "+ Add" made it is no entry; one with something in it is', () => {
+    expect(isSchedulePopulated(guardianData({ scheduleA1: [{ propertyDescription: '', fullValue: '' }] }), 'guardian', 'a1')).toBe(false);
+    expect(isSchedulePopulated(annualData({ schA: [{ payer: '', description: '', bank: '', accountNo: '', amount: '' }] }), 'annual', 'schA')).toBe(false);
+    expect(isSchedulePopulated(annualData({ schA: [{ payer: '' }, { payer: 'Social Security' }] }), 'annual', 'schA')).toBe(true);
+  });
+
+  it('not asked while another dialog is open; asked once none is', async () => {
+    const d = guardianData({ wardId: 'w1', scheduleA1: [{ desc: 'x' }] });
+    const yes = asker(true);
+    setCurrentPage('/a1');
+    vi.stubGlobal('document', { querySelector: () => ({ id: 'addWardModal' }) });
+    expect(await promptScheduleAckIfNeeded(d, 'guardian', '/a1', yes)).toBe(false);
+    expect(yes.asked).toBe(0);
+    vi.stubGlobal('document', { querySelector: () => null });
+    expect(await promptScheduleAckIfNeeded(d, 'guardian', '/a1', yes), 'not recorded as declined: asked on the next drawing').toBe(true);
+  });
+
+  it('still wanted only on the same visit to the same filing', async () => {
+    const d = guardianData({ wardId: 'w1', scheduleA1: [{ desc: 'x' }] });
+    let open = d;
+    const no = asker(false);
+    setCurrentPage('/a1');
+    await promptScheduleAckIfNeeded(d, 'guardian', '/a1', no, { openFiling: () => open });
+    const { stillWanted } = no.opts;
+    expect(stillWanted()).toBe(true);
+    open = guardianData({ wardId: 'w2' });
+    expect(stillWanted(), 'another filing is open').toBe(false);
+    open = d;
+    setCurrentPage('/summary');
+    expect(stillWanted(), 'the filer has moved to another page').toBe(false);
   });
 });
 

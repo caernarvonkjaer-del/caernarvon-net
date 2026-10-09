@@ -22,6 +22,10 @@ export function toggleHelpPanel(){
   // (master ae9ecdc, carried.)
   const btns=document.querySelectorAll('[aria-controls="help-panel"]');
   panel.style.display=helpPanelOpen?'flex':'none';
+  // Milestone 73L (decision 73L-1): on a window wide enough, the page moves
+  // over to make room (shell.css); the panel covered the dashboard's toolbar
+  // and Actions column. Narrower, it still lies over the page.
+  document.body.classList.toggle('help-panel-open',helpPanelOpen);
   btns.forEach(btn=>btn.setAttribute('aria-expanded',String(helpPanelOpen)));
   if(helpPanelOpen){
     updateHelpContext();

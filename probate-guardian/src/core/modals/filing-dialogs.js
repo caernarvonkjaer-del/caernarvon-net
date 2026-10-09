@@ -139,6 +139,11 @@ export async function doConfirmSimplifiedEligibility(){
   try{
     if(qualifies){
       const wardId=await filingLifecycle.create(name,'simplified');
+      // Milestone 73L: the questions close as soon as the filing exists. They
+      // stayed open behind every notice that follows (the carry-over note,
+      // "source not found", "does not qualify"), so two dialogs stood on top
+      // of each other and the filer could answer the questions again.
+      closeModal('simplifiedEligibilityModal');
       getD().eligDepository='Yes';
       getD().eligOnlyTransactions='Yes';
       let carryNote='';
@@ -166,6 +171,7 @@ export async function doConfirmSimplifiedEligibility(){
       if(carryNote)await alertModal(carryNote);
     }else{
       await filingLifecycle.create(name,'annual');
+      closeModal('simplifiedEligibilityModal');
       // Carry over to the Annual too — the guardian picked a source ward
       // before answering the eligibility questions, and that choice still
       // applies to the form they actually end up with.
@@ -190,7 +196,6 @@ export async function doConfirmSimplifiedEligibility(){
       await alertModal('This guardianship does not qualify for the simplified form under § 744.3679, so a standard Annual Accounting was created instead.'
         +(carryNote?`\n\n${carryNote}`:''));
     }
-    closeModal('simplifiedEligibilityModal');
   }catch(e){
     console.error('Failed to add ward',e);
     await alertModal('Failed to add form. Check console.');

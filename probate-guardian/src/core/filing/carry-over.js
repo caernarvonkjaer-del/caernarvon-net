@@ -535,6 +535,21 @@ export function carryOverFields(sourceWard,targetType){
   return fields;
 }
 
+/**
+ * Milestone 74D (UX-07, approved 2026-10-09): what the empty "Load Ward Info
+ * From" list says. It said "No other forms yet to pull from" even with other
+ * filings on file -- an Initial Inventory can't be filled in from another
+ * Inventory, so a case holding only Inventories offered nothing, and the note
+ * read as if the case were empty.
+ * @param {string} type the form being made
+ */
+export function noCarrySourceText(type){
+  if(!(getCaseFile().wards||[]).length)return 'No other forms yet to pull from';
+  const name=INVENTORY_TYPES[type]?.name||'this form';
+  const article=/^[aeiou]/i.test(name)?'an':'a';
+  return `None of the forms on file can fill in ${INVENTORY_TYPES[type]?`${article} ${name}`:name}`;
+}
+
 // Populates the "Load Ward Info From" picker in the Add Ward modal based on
 // the currently-selected Inventory Type, showing it only when that type has
 // a carry-over source AND at least one matching ward already exists.
@@ -554,7 +569,7 @@ export function refreshCarrySourceSelect(sel,wrap,type,name,autonoteEl){
   // control that says why is discoverable instead.
   wrap.style.display='block';
   if(!allMatches.length){
-    sel.innerHTML='<option value="">— No other forms yet to pull from —</option>';
+    sel.innerHTML=`<option value="">— ${esc(noCarrySourceText(type))} —</option>`;
     sel.disabled=true;
     if(autonoteEl)autonoteEl.style.display='none';
     return;
