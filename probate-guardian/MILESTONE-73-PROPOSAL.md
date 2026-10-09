@@ -6,11 +6,11 @@
 far: 73U (2026-10-04, `5b8849b`), 73V (2026-10-05, `8b96aa3`), 73C
 (2026-10-05, `861b6a9`, brought forward from its place in the build order at the
 requester's choice) 73D (2026-10-05, `c8e84fe`, likewise), 73J part 1 (2026-10-05, `d819c4a`),
-73F part 1 (2026-10-06, `5e9e17b`), 73A (2026-10-06, `83352d0`), 73F part 2 (2026-10-06, `d01edd4`), 73G part 1 (2026-10-06, `69a1b46`), 73E part 1 (2026-10-06, `8e02051`), 73F part 3 (2026-10-06, `67fc66c`), 73I (2026-10-06, `56a7c30`), 73T part 1 (2026-10-07, `4cae1e7`), 73T part 2 (2026-10-07, `2a1cbc5`), 73T part 3 (2026-10-07, `9d2bc72`), 73T part 4 (2026-10-07, `b70a944`), 73M with 74C (2026-10-07, `a0e987b`), 73B (2026-10-07, `86547da`), 73O part 2 with 74F (2026-10-08, `fa9625e`), 73G part 2 with 74H (2026-10-08, `f85e862`, `78b5770`), 73H (2026-10-08, `631f898`), 73S (2026-10-08, `3cf1d9d`), 73K part 1 (2026-10-08, `4268c45`), 73E part 2 (2026-10-08, `5e26e57`, `ea78dd4`), 73J part 2 (2026-10-08, `3648706`), 73K part 2 (2026-10-08, `79a8875`), 73L with 74D's reproduction (2026-10-09, `43081f2`), 73N part 1 (2026-10-09, `ab8068e`) and 73N part 2 (2026-10-09), each approved by name; 74P, built after 73B, is recorded in Milestone 74.**
+73F part 1 (2026-10-06, `5e9e17b`), 73A (2026-10-06, `83352d0`), 73F part 2 (2026-10-06, `d01edd4`), 73G part 1 (2026-10-06, `69a1b46`), 73E part 1 (2026-10-06, `8e02051`), 73F part 3 (2026-10-06, `67fc66c`), 73I (2026-10-06, `56a7c30`), 73T part 1 (2026-10-07, `4cae1e7`), 73T part 2 (2026-10-07, `2a1cbc5`), 73T part 3 (2026-10-07, `9d2bc72`), 73T part 4 (2026-10-07, `b70a944`), 73M with 74C (2026-10-07, `a0e987b`), 73B (2026-10-07, `86547da`), 73O part 2 with 74F (2026-10-08, `fa9625e`), 73G part 2 with 74H (2026-10-08, `f85e862`, `78b5770`), 73H (2026-10-08, `631f898`), 73S (2026-10-08, `3cf1d9d`), 73K part 1 (2026-10-08, `4268c45`), 73E part 2 (2026-10-08, `5e26e57`, `ea78dd4`), 73J part 2 (2026-10-08, `3648706`), 73K part 2 (2026-10-08, `79a8875`), 73L with 74D's reproduction (2026-10-09, `43081f2`), 73N part 1 (2026-10-09, `ab8068e`), 73N part 2 (2026-10-09, `01a9610`) and 73N part 3 (2026-10-09), each approved by name; 74P, built after 73B, is recorded in Milestone 74.**
 **The 2026-10-07 batch is built**, and its closing full regression has run
 (recorded below, after the mid-batch one). **Approved and not yet built**
 (2026-10-08, one batch in this order, light tests between deliveries and a
-full regression at the end): 73N part 3, 73O part 1 (with 74O), 73O
+full regression at the end): 73O part 1 (with 74O), 73O
 part 3 (with 74L), 73O part 4 (with 74J), 73P (with 74S) and 73R parts 1-3.
 Nothing else is approved. Building any other item, or any part of a
 split item, needs the requester's named approval of that item or part
@@ -3268,6 +3268,43 @@ passed; the other three were the page-text pins in `plan-annual-mount.spec.ts`
 and `plan-initial-mount.spec.ts`, which differed only in the reworded lines --
 each read before the pin was regenerated -- and pass with the new text (both
 specs, 15 passed). Full unit suite passes; `check:types` clean.
+
+
+### Build record, part 3 — BUILT 2026-10-09 (approved by name by the requester, 2026-10-08)
+
+**What changed for a filer:**
+
+- **The dashboard** names a Simplified Annual Plan's preparer and attorney; it
+  said "No filing contact" for every one. On the Initial Inventory and the
+  Annual, Final and Trust Accountings, a guardian or the attorney ticked "This
+  person prepared this filing" is listed as the preparer -- in place of the
+  outside preparer's block, which the form hides (and keeps) while one is
+  ticked; the dashboard listed no preparer at all. The other forms have no such
+  tick.
+- **The Simplified Annual Plan's preparer and attorney cards** say: "The
+  court's Simplified Plan has no place for this; it is kept for your records.
+  The attorney's name prints on the certificate of service if the attorney
+  certifies it." Their old instructions read like certifications the court's
+  form doesn't have.
+- **Questions 7-9 are numbered 7, 8, 9** -- done with part 2, since the text
+  now comes from the original.
+
+**How:** `dashboard/view-model.js`'s `deriveFilingContacts()` reads the
+Simplified Plan's `preparer_name` and `attorney_name`, and the preparer
+through `preparer-flag.js`'s `resolvePreparer()` before the outside
+preparer's name. `plan-simplified/index.js`: the two cards' note.
+
+**Tests:** `tests/unit/dashboard-view-model.spec.js` gains the case (the
+Simplified Plan's contacts; a ticked guardian, a ticked attorney on both
+attorney shapes; nobody ticked, the outside preparer). **Red-first:** it fails
+on the old view model. `tests/e2e/pdf-form-specific.spec.ts` gains the
+Simplified Plan's numbering and full Questions 7-9 read from the generated
+PDF; **red-first**, it fails on the model before part 2 ("Q7.", a bare
+"Explanation"). `plan-simplified-mount.spec.ts`'s Signatures pin carries the
+note (the only difference, read before updating). Light regression on a C:
+copy: the PDF form-specific spec, the Simplified Plan's mount spec and the
+three dashboard specs, 49 passed after the pin's update. Unit suite passes;
+`check:types` clean.
 
 ---
 

@@ -1103,3 +1103,27 @@ test.describe('PDF Accessibility: Accounting & Inventory Filing-Specific Coverag
     expect(ucnOnly, 'a Minor plan with only a UCN no longer prints it as the Case #').toContain('UCN: 2024-MN-042 CASE #: Pending');
   });
 });
+
+// Milestone 73N parts 2-3: the Simplified Annual Plan's questions print as the
+// court's form words and numbers them -- 7, 8, 9 (it printed "Q7.", "Q8.",
+// "Q9."), with Question 8's "(attach and file copies ...)" and Question 9's
+// "(this does NOT include payments ... from a government benefits program
+// ...)" in full. Read from the generated PDF itself.
+test('Milestone 73N: the Simplified Annual Plan prints Questions 7-9 numbered and in full', async ({ page }) => {
+  await freshStartNoPassword(page);
+  await createWard(page, 'Court Wording Ward', 'planSimplified');
+  const raw = await page.evaluate(async () => {
+    const t = (window as any).GuardianForms.testing;
+    const { buildPlanSimplifiedModel, generateCourtFormPdf } = await t.generateOutput.planSimplifiedPdf();
+    const d = { ...t.snapshot().filing, county: 'Pinellas', q7RestoreRights: 'Yes', q7RestoreExplain: 'To vote.', q8DNR: true, q9Remuneration: 'No' };
+    const doc = await generateCourtFormPdf(buildPlanSimplifiedModel(d));
+    return doc.output();
+  });
+  const text = (await extractPdfText(raw)).replace(/\s+/g, ' ');
+  expect(text).toContain('7. Should any of the rights previously delegated to the guardian advocate(s)/guardian(s) be restored to the ward at this time?');
+  expect(text).toContain('Yes. If Yes, identify the specific right(s) (such as to consent to medical treatment, to determine residence, to manage property, etc.) and explain why it should be restored.');
+  expect(text).toContain('8. Since the guardianship was established or the last annual guardianship report, the following was executed by or on behalf of the Ward (attach and file copies of the documents referenced below if not previously filed with the Court):');
+  expect(text).toContain('(this does NOT include payments, goods, or services received from a government benefits program such as Social Security, Medicaid, Medicare, and/or Agency for Persons with Disabilities)?');
+  expect(text).toMatch(/9\. As the Guardian Advocate\(s\)\/Guardian\(s\) have you received/);
+  expect(text, 'no "Q7." numbering').not.toMatch(/\bQ[789]\./);
+});

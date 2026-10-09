@@ -1,3 +1,5 @@
+import { resolvePreparer } from '../../core/form/preparer-flag.js';
+
 export const EXPLICIT_WORKFLOW_STATUSES = new Set([
   'not-started',
   'draft',
@@ -44,15 +46,20 @@ export function deriveFilingContacts(ward) {
     if (contacts.some(item => item.filterKey === next.filterKey && item.role === next.role)) return;
     contacts.push(next);
   };
+  // Milestone 73N part 3: "This person prepared this filing" names the
+  // preparer -- a guardian or the attorney -- in place of the outside
+  // preparer's block, which the form hides (and keeps) while one is ticked.
+  // The dashboard listed no preparer for such a filing.
+  const preparerName = () => resolvePreparer(ward)?.name ?? ward.preparer?.name;
 
   if (ward.inventoryType === 'guardian') {
-    add(ward.preparer?.name, 'preparer');
+    add(preparerName(), 'preparer');
     add(ward.attorney?.name, 'attorney');
     add(ward.attorneyForGuardian, 'attorney');
   } else if (ward.inventoryType === 'simplified') {
     add(ward.attorney, 'attorney');
   } else if (ANNUAL_ACCOUNTING_TYPES.has(ward.inventoryType)) {
-    add(ward.preparer?.name, 'preparer');
+    add(preparerName(), 'preparer');
     add(ward.attorney, 'attorney');
   } else if (ward.inventoryType === 'planInitial') {
     add(ward.attorneyName, 'attorney');
@@ -60,6 +67,10 @@ export function deriveFilingContacts(ward) {
   } else if (ward.inventoryType === 'planAnnual') {
     add(ward.attorney, 'attorney');
   } else if (ward.inventoryType === 'planMinor') {
+    add(ward.preparer_name, 'preparer');
+    add(ward.attorney_name, 'attorney');
+  } else if (ward.inventoryType === 'planSimplified') {
+    // Milestone 73N part 3: every Simplified Annual Plan said "No filing contact".
     add(ward.preparer_name, 'preparer');
     add(ward.attorney_name, 'attorney');
   }

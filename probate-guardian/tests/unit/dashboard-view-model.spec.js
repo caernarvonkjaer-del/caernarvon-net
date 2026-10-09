@@ -154,6 +154,22 @@ describe('dashboard view model', () => {
     ]);
   });
 
+  // Milestone 73N part 3: every Simplified Annual Plan said "No filing contact",
+  // and a filing whose guardian or attorney ticked "This person prepared this
+  // filing" listed no preparer.
+  test("reads the Simplified Annual Plan's contacts, and names the guardian or attorney ticked as the preparer", () => {
+    expect(deriveFilingContacts({ inventoryType: 'planSimplified', preparer_name: 'Pat Preparer', attorney_name: 'Rob Attorney' })).toEqual([
+      { name: 'Pat Preparer', role: 'preparer', filterKey: 'pat preparer' },
+      { name: 'Rob Attorney', role: 'attorney', filterKey: 'rob attorney' },
+    ]);
+    const annual = { inventoryType: 'annual', preparer: { name: 'Outside Accountant' }, attorney: 'Rob Attorney', guardians: [{ name: 'Gail Guardian', isPreparer: true }] };
+    expect(deriveFilingContacts(annual).filter((c) => c.role === 'preparer').map((c) => c.name), 'the ticked guardian, not the hidden block').toEqual(['Gail Guardian']);
+    expect(deriveFilingContacts({ ...annual, guardians: [{ name: 'Gail Guardian' }], attorney_isPreparer: true }).filter((c) => c.role === 'preparer').map((c) => c.name)).toEqual(['Rob Attorney']);
+    const inventory = { inventoryType: 'guardian', preparer: { name: 'Outside Accountant' }, attorney: { name: 'Ann Attorney', isPreparer: true }, guardians: [{ name: 'Gail Guardian' }] };
+    expect(deriveFilingContacts(inventory).filter((c) => c.role === 'preparer').map((c) => c.name)).toEqual(['Ann Attorney']);
+    expect(deriveFilingContacts({ ...annual, guardians: [{ name: 'Gail Guardian' }] }).filter((c) => c.role === 'preparer').map((c) => c.name), 'no one ticked: the outside preparer').toEqual(['Outside Accountant']);
+  });
+
   test('uses only valid explicit workflow statuses', () => {
     const explicit = projectDashboardWard({
       wardId: 'explicit', inventoryType: 'guardian', dashboardWorkflow: { status: 'approved' },

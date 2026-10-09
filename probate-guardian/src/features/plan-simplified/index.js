@@ -307,7 +307,7 @@ function pagePlanSSignatures(){
         <div class="entry-card mb-0 h-100">
           <div class="entry-card-header d-flex justify-content-between align-items-center gap-2"><span>Certification and Signature of Preparer</span><button type="button" class="btn btn-outline-secondary btn-sm" data-form-action="link-party" data-role="preparer" data-index="0">Link Person</button></div>
           <div class="entry-card-body">
-            <div class="schedule-instructions mb-3">The preparation of this form is based upon information provided by the guardian(s). The preparer has not audited or reviewed the plan or supporting documents.</div>
+            <div class="schedule-instructions mb-3" data-not-filed-note>The court&rsquo;s Simplified Plan has no place for this; it is kept for your records. The attorney&rsquo;s name prints on the certificate of service if the attorney certifies it.</div>
             <div class="row g-2">
               <div class="col-12">${inpS('preparer_name','Preparer Name',d.preparer_name)}</div>
               <div class="col-md-6">${inpS('preparer_signatureDate','Date Signed',d.preparer_signatureDate,false,'date')}</div>
@@ -323,7 +323,7 @@ function pagePlanSSignatures(){
         <div class="entry-card mb-0 h-100">
           <div class="entry-card-header d-flex justify-content-between align-items-center gap-2"><span>Certification and Signature of Guardian's Attorney</span><button type="button" class="btn btn-outline-secondary btn-sm" data-form-action="link-party" data-role="attorney" data-index="0">Link Person</button></div>
           <div class="entry-card-body">
-            <div class="schedule-instructions mb-3">The undersigned notifies the Court of the filing of this plan and represents that it conforms to the requirements of Florida Guardianship Law. Leave blank if no attorney is involved.</div>
+            <div class="schedule-instructions mb-3" data-not-filed-note>The court&rsquo;s Simplified Plan has no place for this; it is kept for your records. The attorney&rsquo;s name prints on the certificate of service if the attorney certifies it.</div>
             <div class="row g-2">
               <div class="col-md-7">${inpS('attorney_name','Attorney Name',d.attorney_name)}</div>
               <div class="col-md-5">${inpS('attorney_bar','Florida Bar Number',d.attorney_bar)}</div>
