@@ -39,9 +39,6 @@ test('ticking and unticking "This item is a vehicle" keeps the Description and t
   await page.locator('[data-inventory-action="add-entry"][data-schedule="b2"]').click();
   await dismissScheduleDocPrompt(page);
   await type(page, '#b2-description-0', 'Grandfather Clock');
-  // Entering the row raises the supporting-documents reminder (Milestone
-  // 57C-R); it is not what this test is about.
-  await dismissScheduleDocPrompt(page);
   const safeDeposit = page.locator('#main-content').getByRole('group', { name: /In Safe Deposit Box\?/ });
   await safeDeposit.getByLabel('Yes').check();
   expect(await field(page, 'scheduleB2.0.inSafeDepositBox')).toBe('Yes');
@@ -49,6 +46,10 @@ test('ticking and unticking "This item is a vehicle" keeps the Description and t
   // A vehicle: the safe-deposit question is hidden, its answer kept.
   const vehicleBox = page.getByLabel('This item is a vehicle');
   await vehicleBox.check();
+  // The supporting-documents reminder (Milestone 57C-R) asks when the page is
+  // next drawn with an entry on it (73L) -- this tick's redraw, not the typing
+  // above, which draws nothing. It is not what this test is about.
+  await dismissScheduleDocPrompt(page);
   await expect(page.locator('#b2-vehicle-year-0')).toBeVisible();
   await expect(safeDeposit).toHaveCount(0);
   await type(page, '#b2-vehicle-year-0', '2019');
