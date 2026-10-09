@@ -292,6 +292,33 @@ export async function generateCourtFormPdf(model, options = {}) {
   const contentWidth = pageWidth - (margin * 2); // 468 pt
   const pageBottom = pageHeight - margin - 24; // Reserve the one-inch bottom margin for the footer.
 
+  // Milestone 73N part 1: titles wrap. Every heading and title was drawn on
+  // one line, so a long one ran into the margin and off the paper: the
+  // Simplified Annual Plan's Question 8, once a box is ticked, is about 625pt
+  // wide in this 468pt column, and typed text -- a long ward name in the
+  // caption, a long B-4 account title, a "Subtotal -- ..." label beside its
+  // amount -- did the same. Each now wraps to the width it is drawn in, and
+  // every space check counts the lines it wraps to. One line is drawn, and
+  // measured, exactly as before.
+  const TITLE_LINE_FACTOR = 1.2;
+  const wrapTitle = (text, size, width = contentWidth, style = 'bold') => {
+    doc.setFont('PGSans', style);
+    doc.setFontSize(size);
+    const lines = doc.splitTextToSize(String(text ?? ''), width);
+    return lines.length ? lines : [''];
+  };
+  /** What a wrapped title adds to the height of its first line. */
+  const extraLinesHeight = (lines, size) => (lines.length - 1) * size * TITLE_LINE_FACTOR;
+  const SUB_HEADING_SIZE = 9.5;
+  const SUB_HEADING_PT = 16;
+  /** A block's sub-heading (9.5pt bold): its lines and the height it takes. */
+  const subHeading = (title) => {
+    const lines = wrapTitle(title, SUB_HEADING_SIZE);
+    return { lines, height: SUB_HEADING_PT + extraLinesHeight(lines, SUB_HEADING_SIZE) };
+  };
+  // A table's header row and first row (checkPageSpace(headerHeight + 25), below).
+  const TABLE_FIRST_UNIT_PT = 43;
+
   let curY = margin;
   let pageNum = 1;
   let forcePageBreakBeforeNextSection = false;
@@ -300,6 +327,8 @@ export async function generateCourtFormPdf(model, options = {}) {
   const attachmentPageNumbers = new Set();
   const nativePdfAttachments = [];
 
+  // Milestone 73N part 1: what a wrapped caption pushes the rest of page 1 down by.
+  let firstPageHeaderExtra = 0;
   const drawFirstPagePleadingHeader = () => {
     writeArtifactStart(doc, 'Pagination', 'Header');
     const caption = getFloridaCircuitCourtCaption(county);
@@ -323,17 +352,18 @@ export async function generateCourtFormPdf(model, options = {}) {
     doc.text(headerIdentity.firstPage, pageWidth / 2, 122, { align: 'center' });
 
     const caseCaption = getCaseCaptionTitle(wardName, metadata.wardType);
-    doc.setFontSize(11);
-    doc.text(caseCaption, margin, 142);
+    const captionLines = wrapTitle(caseCaption, 11);
+    doc.text(captionLines, margin, 142, { lineHeightFactor: TITLE_LINE_FACTOR });
+    firstPageHeaderExtra = extraLinesHeight(captionLines, 11);
 
     const formTitle = (metadata.formName || metadata.title || 'VERIFIED INITIAL INVENTORY').toUpperCase();
     doc.setFontSize(12.5);
-    doc.text(formTitle, pageWidth / 2, 162, { align: 'center' });
+    doc.text(formTitle, pageWidth / 2, 162 + firstPageHeaderExtra, { align: 'center' });
 
     const titleW = doc.getTextWidth(formTitle);
     doc.setDrawColor(0, 0, 0);
     doc.setLineWidth(0.75);
-    doc.line((pageWidth - titleW) / 2, 165, (pageWidth + titleW) / 2, 165);
+    doc.line((pageWidth - titleW) / 2, 165 + firstPageHeaderExtra, (pageWidth + titleW) / 2, 165 + firstPageHeaderExtra);
     writeArtifactEnd(doc);
   };
 
@@ -417,8 +447,18 @@ export async function generateCourtFormPdf(model, options = {}) {
     doc.line(margin, pageHeight - margin - 16, pageWidth - margin, pageHeight - margin - 16);
 
     const footerSubtitle = metadata.formSubtitle || metadata.formName || 'Florida Guardianship Report';
-    doc.text(`${footerSubtitle} — ${wardName}`, margin, pageHeight - margin - 4);
-    doc.text(`Page ${currentP} of ${totalP}`, pageWidth - margin, pageHeight - margin - 4, { align: 'right' });
+    const pageLabel = `Page ${currentP} of ${totalP}`;
+    // Milestone 73N part 1: a long ward name is cut to the room left of the
+    // page number, with an ellipsis (the header names the ward in full); it
+    // ran on into "Page 1 of 9".
+    const footerRoom = contentWidth - doc.getTextWidth(pageLabel) - 12;
+    let footerText = `${footerSubtitle} — ${wardName}`;
+    if (doc.getTextWidth(footerText) > footerRoom) {
+      while (footerText.length > 1 && doc.getTextWidth(`${footerText}…`) > footerRoom) footerText = footerText.slice(0, -1);
+      footerText = `${footerText.trimEnd()}…`;
+    }
+    doc.text(footerText, margin, pageHeight - margin - 4);
+    doc.text(pageLabel, pageWidth - margin, pageHeight - margin - 4, { align: 'right' });
     writeArtifactEnd(doc);
   };
 
@@ -735,7 +775,8 @@ export async function generateCourtFormPdf(model, options = {}) {
     const comment = String(block.comment || '').trim();
     if (!files.length && !comment) return;
 
-    checkPageSpace(36, sectionTitle);
+    const docsHeading = subHeading(block.title || 'Supporting Documents');
+    checkPageSpace(36 + docsHeading.height - SUB_HEADING_PT, sectionTitle);
     const headingNode = structureTree.addStructureElement({
       tag: 'H3',
       title: block.title || 'Supporting Documents',
@@ -745,11 +786,11 @@ export async function generateCourtFormPdf(model, options = {}) {
     });
     writeMarkedContentStart(doc, 'H3', headingNode.mcid);
     doc.setFont('PGSans', 'bold');
-    doc.setFontSize(9.5);
+    doc.setFontSize(SUB_HEADING_SIZE);
     doc.setTextColor(26, 45, 74);
-    doc.text(block.title || 'Supporting Documents', margin, curY + 10);
+    doc.text(docsHeading.lines, margin, curY + 10, { lineHeightFactor: TITLE_LINE_FACTOR });
     writeMarkedContentEnd(doc);
-    curY += 16;
+    curY += docsHeading.height;
 
     if (comment) {
       doc.setFont('PGSans', 'normal');
@@ -778,7 +819,7 @@ export async function generateCourtFormPdf(model, options = {}) {
 
   // Draw initial first page header
   drawHeader(sections[0]?.title || 'Part I — Required Information');
-  curY = 175;
+  curY = 175 + firstPageHeaderExtra;
 
   // 2. Render each section in order with semantic structure tagging
   for (let sIdx = 0; sIdx < sections.length; sIdx++) {
@@ -803,7 +844,10 @@ export async function generateCourtFormPdf(model, options = {}) {
     // triggers a page break, pageNum increments and the heading lands on
     // the new page. Registering the bookmark before this check would stamp
     // it to the old page, making it jump one page short.
-    checkPageSpace(SECTION_HEADING_PT + firstUnitHeight(sec, sections[sIdx + 1]), sec.title);
+    const hSize = sec.level === 2 ? 11 : 12;
+    const headingLines = wrapTitle(sec.title, hSize);
+    const headingExtra = extraLinesHeight(headingLines, hSize);
+    checkPageSpace(SECTION_HEADING_PT + headingExtra + firstUnitHeight(sec, sections[sIdx + 1]), sec.title);
 
     // Register Outline / Bookmarks after the heading's page is settled
     if (doc.outline && typeof doc.outline.add === 'function') {
@@ -838,11 +882,11 @@ export async function generateCourtFormPdf(model, options = {}) {
     if (hTag === 'H1') {
       doc.setFontSize(12);
       doc.setTextColor(0, 0, 0); // Bold Black for H1
-      doc.text(sec.title, margin, curY + 12);
+      doc.text(headingLines, margin, curY + 12, { lineHeightFactor: TITLE_LINE_FACTOR });
     } else {
       doc.setFontSize(11);
       doc.setTextColor(26, 45, 74); // Court Navy for H2
-      doc.text(sec.title, margin, curY + 10);
+      doc.text(headingLines, margin, curY + 10, { lineHeightFactor: TITLE_LINE_FACTOR });
     }
     writeMarkedContentEnd(doc);
 
@@ -850,11 +894,11 @@ export async function generateCourtFormPdf(model, options = {}) {
       writeArtifactStart(doc, 'Layout');
       doc.setDrawColor(180, 190, 205);
       doc.setLineWidth(0.75);
-      doc.line(margin, curY + 16, pageWidth - margin, curY + 16);
+      doc.line(margin, curY + 16 + headingExtra, pageWidth - margin, curY + 16 + headingExtra);
       writeArtifactEnd(doc);
-      curY += 24;
+      curY += 24 + headingExtra;
     } else {
-      curY += 18;
+      curY += 18 + headingExtra;
     }
 
     // Render Blocks in this Section
@@ -883,7 +927,8 @@ export async function generateCourtFormPdf(model, options = {}) {
         const lineHeight = fs * 1.35;
         const lines = hasNoticeBody ? doc.splitTextToSize(noticeBody, contentWidth - 16) : [];
         const boxHeight = hasNoticeBody ? (lines.length * lineHeight) + 12 : 0;
-        const titleHeight = noticeTitle ? 16 : 0;
+        const noticeHeading = noticeTitle ? subHeading(noticeTitle) : null;
+        const titleHeight = noticeHeading ? noticeHeading.height : 0;
         checkPageSpace(titleHeight + boxHeight, sec.title);
 
         if (noticeTitle) {
@@ -896,9 +941,9 @@ export async function generateCourtFormPdf(model, options = {}) {
           });
           writeMarkedContentStart(doc, subHTag, noticeHNode.mcid);
           doc.setFont('PGSans', 'bold');
-          doc.setFontSize(9.5);
+          doc.setFontSize(SUB_HEADING_SIZE);
           doc.setTextColor(26, 45, 74);
-          doc.text(noticeTitle, margin, curY + 10);
+          doc.text(noticeHeading.lines, margin, curY + 10, { lineHeightFactor: TITLE_LINE_FACTOR });
           writeMarkedContentEnd(doc);
           curY += titleHeight;
         }
@@ -942,7 +987,8 @@ export async function generateCourtFormPdf(model, options = {}) {
         // writer did the same; Milestone 40A removed that format.)
         const shouldRenderKvTitle = !!(block.title && block.title.trim().toLowerCase() !== (sec.title || '').trim().toLowerCase());
         if (shouldRenderKvTitle) {
-          checkPageSpace(20, sec.title);
+          const kvHeading = subHeading(block.title);
+          checkPageSpace(20 + kvHeading.height - SUB_HEADING_PT, sec.title);
           const subHNode = structureTree.addStructureElement({
             tag: subHTag,
             title: block.title,
@@ -952,11 +998,11 @@ export async function generateCourtFormPdf(model, options = {}) {
           });
           writeMarkedContentStart(doc, subHTag, subHNode.mcid);
           doc.setFont('PGSans', 'bold');
-          doc.setFontSize(9.5);
+          doc.setFontSize(SUB_HEADING_SIZE);
           doc.setTextColor(26, 45, 74);
-          doc.text(block.title, margin, curY + 10);
+          doc.text(kvHeading.lines, margin, curY + 10, { lineHeightFactor: TITLE_LINE_FACTOR });
           writeMarkedContentEnd(doc);
-          curY += 16;
+          curY += kvHeading.height;
         }
 
         const tableNode = structureTree.addStructureElement({
@@ -1134,7 +1180,8 @@ export async function generateCourtFormPdf(model, options = {}) {
         const items = block.items || [];
         const shouldRenderChecklistTitle = !!(block.title && block.title.trim().toLowerCase() !== (sec.title || '').trim().toLowerCase());
         if (shouldRenderChecklistTitle) {
-          checkPageSpace(20, sec.title);
+          const checklistHeading = subHeading(block.title);
+          checkPageSpace(20 + checklistHeading.height - SUB_HEADING_PT, sec.title);
           const chHNode = structureTree.addStructureElement({
             tag: subHTag,
             title: block.title,
@@ -1144,11 +1191,11 @@ export async function generateCourtFormPdf(model, options = {}) {
           });
           writeMarkedContentStart(doc, subHTag, chHNode.mcid);
           doc.setFont('PGSans', 'bold');
-          doc.setFontSize(9.5);
+          doc.setFontSize(SUB_HEADING_SIZE);
           doc.setTextColor(26, 45, 74);
-          doc.text(block.title, margin, curY + 10);
+          doc.text(checklistHeading.lines, margin, curY + 10, { lineHeightFactor: TITLE_LINE_FACTOR });
           writeMarkedContentEnd(doc);
-          curY += 16;
+          curY += checklistHeading.height;
         }
 
         const CHECK_LINE_H = 11;
@@ -1200,7 +1247,13 @@ export async function generateCourtFormPdf(model, options = {}) {
         // 'Schedule A: Income' count as the same heading.
         const shouldRenderTblTitle = !!(tblTitle && tblTitle.trim().toLowerCase() !== (sec.title || '').trim().toLowerCase());
         if (shouldRenderTblTitle) {
-          checkPageSpace(20, sec.title);
+          const tblHeading = subHeading(tblTitle);
+          // Milestone 73N part 1 (decision 73O-6): a table that asks keeps its
+          // title with its header and first row -- the certificates' recipient
+          // tables. Opt-in: the Inventory's schedule tables keep today's rule,
+          // and its page count with it (Milestone 64 measured the cost).
+          const keepWithTable = block.keepTitleWithTable ? TABLE_FIRST_UNIT_PT : 20 - SUB_HEADING_PT;
+          checkPageSpace(tblHeading.height + keepWithTable, sec.title);
           const tblHNode = structureTree.addStructureElement({
             tag: subHTag,
             title: tblTitle,
@@ -1210,11 +1263,11 @@ export async function generateCourtFormPdf(model, options = {}) {
           });
           writeMarkedContentStart(doc, subHTag, tblHNode.mcid);
           doc.setFont('PGSans', 'bold');
-          doc.setFontSize(9.5);
+          doc.setFontSize(SUB_HEADING_SIZE);
           doc.setTextColor(26, 45, 74);
-          doc.text(tblTitle, margin, curY + 10);
+          doc.text(tblHeading.lines, margin, curY + 10, { lineHeightFactor: TITLE_LINE_FACTOR });
           writeMarkedContentEnd(doc);
-          curY += 16;
+          curY += tblHeading.height;
         }
 
         const calculatedColWidths = (colWidths || headers.map(() => 100 / headers.length)).map(pct => (pct / 100) * contentWidth);
@@ -1421,7 +1474,7 @@ export async function generateCourtFormPdf(model, options = {}) {
           doc.setTextColor(17, 24, 39);
         };
 
-        checkPageSpace(headerHeight + 25, sec.title);
+        checkPageSpace(TABLE_FIRST_UNIT_PT, sec.title); // headerHeight (18) + 25
         drawTableHeader(false);
 
         // Draw Table Rows
@@ -1496,7 +1549,16 @@ export async function generateCourtFormPdf(model, options = {}) {
 
         // Totals Row if present
         if (totals) {
-          const totalHeight = 18;
+          // Milestone 73N part 1: the label wraps within the columns it spans
+          // ("Subtotal -- <a long account title>"), and the row grows with it.
+          const totalValues = Array.isArray(totals.values) && totals.values.length
+            ? totals.values
+            : [{ value: totals.value }];
+          const labelColSpan = Math.max(1, headers.length - totalValues.length);
+          let labelSpanWidth = 0;
+          for (let k = 0; k < labelColSpan && k < calculatedColWidths.length; k++) labelSpanWidth += calculatedColWidths[k];
+          const totalLabelLines = wrapTitle(totals.label, 8.5, Math.max(20, labelSpanWidth - 12));
+          const totalHeight = 18 + extraLinesHeight(totalLabelLines, 8.5);
           if (checkPageSpace(totalHeight, sec.title)) {
             drawTableHeader(true);
           }
@@ -1522,12 +1584,7 @@ export async function generateCourtFormPdf(model, options = {}) {
           // B-1's "Total" and "Restricted Amt" columns), which the
           // previous single-{label,value} shape had no way to express and
           // callers silently omitted the second figure to work around.
-          const totalValues = Array.isArray(totals.values) && totals.values.length
-            ? totals.values
-            : [{ value: totals.value }];
-          const labelColSpan = Math.max(1, headers.length - totalValues.length);
-          let labelSpanWidth = 0;
-          for (let k = 0; k < labelColSpan && k < calculatedColWidths.length; k++) labelSpanWidth += calculatedColWidths[k];
+          // (Measured above, before the row's space check.)
 
           const totalLabelTd = structureTree.addStructureElement({
             tag: 'TD',
@@ -1540,7 +1597,7 @@ export async function generateCourtFormPdf(model, options = {}) {
           doc.setFont('PGSans', 'bold');
           doc.setFontSize(8.5);
           doc.setTextColor(17, 24, 39);
-          doc.text(totals.label, margin + 6, curY + 12);
+          doc.text(totalLabelLines, margin + 6, curY + 12, { lineHeightFactor: TITLE_LINE_FACTOR });
           writeMarkedContentEnd(doc);
 
           let valX = margin + labelSpanWidth;

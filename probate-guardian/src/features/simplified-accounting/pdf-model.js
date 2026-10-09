@@ -302,6 +302,7 @@ export function buildSimplifiedAccountingModel(D, options = {}) {
           type: 'table',
           tag: 'Table',
           title: 'Service Recipients',
+          keepTitleWithTable: true, // Milestone 73N part 1 (73O-6): the title stays with the table.
           headers: ['#', 'Recipient Name', 'Address / Details'],
           rows: certRecipients.map((r, i) => [
             String(i + 1),

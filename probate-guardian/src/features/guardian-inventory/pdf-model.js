@@ -863,6 +863,7 @@ export function buildVerifiedInventoryModel(D, options = {}) {
           type: 'table',
           tag: 'Table',
           title: 'Service Recipients',
+          keepTitleWithTable: true, // Milestone 73N part 1 (73O-6): the title stays with the table.
           headers: ['Recipient Name', 'Address', 'Date Served'],
           rows: serviceRecipients.map(r => [r.name || '', recipientAddressLines(r), fmtDate(r.dateServed || d.serviceDate)]),
           colWidths: [35, 45, 20],

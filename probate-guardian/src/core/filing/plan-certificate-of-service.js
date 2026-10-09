@@ -193,6 +193,8 @@ export function planCertificateOfServiceSection(filing, cfg = {}, fmtDate = (v) 
   if (recipients.length > 0 && d.certNoRecipients !== 'Yes') {
     blocks.push({
       type: 'table', tag: 'Table', title: 'Certificate of Service Recipients',
+      // Milestone 73N part 1 (73O-6): the title stays with the table.
+      keepTitleWithTable: true,
       headers: ['#', 'Recipient Name', 'Address Details'],
       rows: recipients.map((r, i) => [String(i + 1), r.name || '', recipientAddressLines(r)]),
       colWidths: [6, 44, 50], colAlign: ['center', 'left', 'left'],

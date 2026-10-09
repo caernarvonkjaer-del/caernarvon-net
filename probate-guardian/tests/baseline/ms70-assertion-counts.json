@@ -2,8 +2,8 @@
  "generatedBy": "node scripts/ms70-assertion-counts.mjs --write-baseline",
  "note": "Milestone 70 per-spec assertion counts (static expect calls). tests/unit/ms70-assertion-counts.spec.js fails when a spec falls below its count; lowering it requires --reason, recorded in dropLog. A tripwire, not proof of equivalence (decision D9).",
  "totals": {
-  "expects": 9071,
-  "tests": 2600
+  "expects": 9075,
+  "tests": 2601
  },
  "counts": {
   "tests/e2e/amounts-keep-their-sign.spec.ts": {
@@ -385,6 +385,10 @@
   "tests/e2e/pdf-preview-viewer.spec.ts": {
    "expects": 35,
    "tests": 6
+  },
+  "tests/e2e/pdf-right-margin.spec.ts": {
+   "expects": 3,
+   "tests": 1
   },
   "tests/e2e/pdf-structure-tags.spec.ts": {
    "expects": 70,
@@ -1143,7 +1147,7 @@
    "tests": 9
   },
   "tests/unit/pdf-engine-notice-title.spec.js": {
-   "expects": 14,
+   "expects": 15,
    "tests": 7
   },
   "tests/unit/pdf-model-column-integrity.spec.js": {

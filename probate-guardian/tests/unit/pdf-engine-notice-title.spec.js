@@ -40,7 +40,11 @@ describe('Milestone 61G: a notice block\'s title reaches the page', () => {
     // first (as the implementation does) still counts.
     const local = branch.match(/const\s+(\w+)\s*=\s*block\.title/);
     expect(local, 'the branch should derive the title from block.title').toBeTruthy();
-    expect(branch).toMatch(new RegExp(`doc\\.text\\(\\s*(?:${local[1]}|block\\.title)`));
+    // Milestone 73N part 1: the title is drawn wrapped -- the lines of
+    // subHeading(<title>) -- so a long one no longer runs off the page.
+    const wrapped = branch.match(new RegExp(`const\\s+(\\w+)\\s*=\\s*${local[1]}\\s*\\?\\s*subHeading\\(\\s*${local[1]}\\s*\\)`));
+    expect(wrapped, 'the title is wrapped by subHeading()').toBeTruthy();
+    expect(branch).toMatch(new RegExp(`doc\\.text\\(\\s*${wrapped[1]}\\.lines`));
   });
 
   test('a title with no body text renders as a heading without an empty box', () => {

@@ -96,6 +96,7 @@
   "tests/e2e/pdf-form-specific.spec.ts",
   "tests/e2e/pdf-notice-title.spec.ts",
   "tests/e2e/pdf-preview-viewer.spec.ts",
+  "tests/e2e/pdf-right-margin.spec.ts",
   "tests/e2e/pdf-structure-tags.spec.ts",
   "tests/e2e/pdf-table-semantics.spec.ts",
   "tests/e2e/percent-range.spec.ts",

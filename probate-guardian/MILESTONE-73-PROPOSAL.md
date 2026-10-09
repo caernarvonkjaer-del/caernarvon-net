@@ -6,11 +6,11 @@
 far: 73U (2026-10-04, `5b8849b`), 73V (2026-10-05, `8b96aa3`), 73C
 (2026-10-05, `861b6a9`, brought forward from its place in the build order at the
 requester's choice) 73D (2026-10-05, `c8e84fe`, likewise), 73J part 1 (2026-10-05, `d819c4a`),
-73F part 1 (2026-10-06, `5e9e17b`), 73A (2026-10-06, `83352d0`), 73F part 2 (2026-10-06, `d01edd4`), 73G part 1 (2026-10-06, `69a1b46`), 73E part 1 (2026-10-06, `8e02051`), 73F part 3 (2026-10-06, `67fc66c`), 73I (2026-10-06, `56a7c30`), 73T part 1 (2026-10-07, `4cae1e7`), 73T part 2 (2026-10-07, `2a1cbc5`), 73T part 3 (2026-10-07, `9d2bc72`), 73T part 4 (2026-10-07, `b70a944`), 73M with 74C (2026-10-07, `a0e987b`), 73B (2026-10-07, `86547da`), 73O part 2 with 74F (2026-10-08, `fa9625e`), 73G part 2 with 74H (2026-10-08, `f85e862`, `78b5770`), 73H (2026-10-08, `631f898`), 73S (2026-10-08, `3cf1d9d`), 73K part 1 (2026-10-08, `4268c45`), 73E part 2 (2026-10-08, `5e26e57`, `ea78dd4`), 73J part 2 (2026-10-08, `3648706`), 73K part 2 (2026-10-08, `79a8875`) and 73L with 74D's reproduction (2026-10-09), each approved by name; 74P, built after 73B, is recorded in Milestone 74.**
+73F part 1 (2026-10-06, `5e9e17b`), 73A (2026-10-06, `83352d0`), 73F part 2 (2026-10-06, `d01edd4`), 73G part 1 (2026-10-06, `69a1b46`), 73E part 1 (2026-10-06, `8e02051`), 73F part 3 (2026-10-06, `67fc66c`), 73I (2026-10-06, `56a7c30`), 73T part 1 (2026-10-07, `4cae1e7`), 73T part 2 (2026-10-07, `2a1cbc5`), 73T part 3 (2026-10-07, `9d2bc72`), 73T part 4 (2026-10-07, `b70a944`), 73M with 74C (2026-10-07, `a0e987b`), 73B (2026-10-07, `86547da`), 73O part 2 with 74F (2026-10-08, `fa9625e`), 73G part 2 with 74H (2026-10-08, `f85e862`, `78b5770`), 73H (2026-10-08, `631f898`), 73S (2026-10-08, `3cf1d9d`), 73K part 1 (2026-10-08, `4268c45`), 73E part 2 (2026-10-08, `5e26e57`, `ea78dd4`), 73J part 2 (2026-10-08, `3648706`), 73K part 2 (2026-10-08, `79a8875`), 73L with 74D's reproduction (2026-10-09, `43081f2`) and 73N part 1 (2026-10-09), each approved by name; 74P, built after 73B, is recorded in Milestone 74.**
 **The 2026-10-07 batch is built**, and its closing full regression has run
 (recorded below, after the mid-batch one). **Approved and not yet built**
 (2026-10-08, one batch in this order, light tests between deliveries and a
-full regression at the end): 73N parts 1-3, 73O part 1 (with 74O), 73O
+full regression at the end): 73N parts 2-3, 73O part 1 (with 74O), 73O
 part 3 (with 74L), 73O part 4 (with 74J), 73P (with 74S) and 73R parts 1-3.
 Nothing else is approved. Building any other item, or any part of a
 split item, needs the requester's named approval of that item or part
@@ -3134,6 +3134,42 @@ The right-margin check; the text-parity spec; `pdf-form-specific.spec.ts`
 (numbering, full Q8 and Q9); `dashboard-view-model.spec.js` (contacts).
 Red-first. No data change. Restoring court wording is matching the Clerk's
 instruments (§5), not a legal reading.
+
+
+### Build record, part 1 — BUILT 2026-10-09 (approved by name by the requester, 2026-10-08)
+
+**What changed for a filer:** no heading or title runs into the margin or
+off the paper. A long ward name in the page-1 caption, a section heading, a
+block's title, Schedule B-4's account title and its "Subtotal -- ..." label,
+and the Simplified Annual Plan's Question 8 with a box ticked each wrap to
+the column they are drawn in, and the space each takes is counted before the
+page decides whether it fits. The certificates' recipient tables keep their
+title with the table. The footer cuts a very long ward name, with an
+ellipsis, before it reaches "Page N of M" (the header names the ward in full).
+One-line titles are drawn and measured as before: the nine forms' standard
+fixtures have the same page counts as before (Inventory 6, Simplified 4,
+Annual, Final and Trust 13 each, the Plans 4, 15, 11 and 7).
+
+**How:** `pdf-engine.js`: `wrapTitle()` and `subHeading()` wrap the caption,
+section headings, supporting-documents titles, notice, key-value, checklist
+and table titles, and a table's totals label; each space check adds the extra
+lines. A table carrying `keepTitleWithTable` reserves its header and first
+row with its title -- set on the four certificate recipient tables (Annual
+family, Inventory, Simplified, and the Plans' shared certificate); other
+tables keep Milestone 64's rule.
+
+**Tests:** new `tests/e2e/pdf-right-margin.spec.ts`: on all nine forms, with
+a long ward name -- and on the Annual family a long B-4 bank name, on the
+Simplified Plan Question 8 ticked -- no ink past the right margin on any page
+(read off the canvas). **Red-first:** all nine fail on the old engine (the
+caption at 606pt, B-4's title at 600.7pt, Question 8 at 576pt, against the
+540pt edge). `pdf-engine-notice-title.spec.js` (reads the engine's source)
+now looks for the wrapped title, as the design said it would. Light
+regression on a C: copy: the 13 PDF specs (the Inventory's schedule layout,
+accessibility and signatures, cover geometry, evidence lab, form-specific,
+notice titles, structure tags, table semantics, the Plans' WCAG checks,
+signature-block margins, supplemental PDFs, this spec), 54 passed, 9 skipped
+(the pre-merge comparison, which runs only against a named earlier build).
 
 ---
 
