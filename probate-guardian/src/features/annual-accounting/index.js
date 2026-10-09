@@ -1429,7 +1429,7 @@ function pagePart67Annual(){
     <h2 class="subsection-heading">Part VI — Changes in Net Assets</h2>
     <div class="summary-line"><span>Starting Balance (Net Assets per Prior Report)</span><span>${fmtA(d.startingBalance)}</span></div>
     <div class="summary-line"><span><a href="#" data-annual-action="navigate" data-route="/scha">Schedule A — Income/Receipts</a></span><span>${fmtA(t.schA)}</span></div>
-    <div style="padding:.1rem 0;font-size:.7rem;color:var(--ink-3);font-style:italic;">Disbursements:</div>
+    <div style="padding:.1rem 0;font-size:.75rem;color:var(--ink-3);font-style:italic;">Disbursements:</div>
     <div class="summary-line"><span><a href="#" data-annual-action="navigate" data-route="/schb1">Schedule B-1 — Attorney Fees</a></span><span>${fmtA(-t.schB1)}</span></div>
     <div class="summary-line"><span><a href="#" data-annual-action="navigate" data-route="/schb2">Schedule B-2 — Guardian Fees</a></span><span>${fmtA(-t.schB2)}</span></div>
     <div class="summary-line"><span><a href="#" data-annual-action="navigate" data-route="/schb3">Schedule B-3 — Court-Ordered Disb.</a></span><span>${fmtA(-t.schB3)}</span></div>

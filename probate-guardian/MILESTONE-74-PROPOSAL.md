@@ -6,10 +6,10 @@
 far: 74A (2026-10-05), 74B (2026-10-06), 74Q (2026-10-07), 74C (2026-10-07,
 with 73M, `a0e987b`), 74P (2026-10-07, after 73B, `645fe35`), 74F (2026-10-08,
 with 73O part 2, `fa9625e`), 74H (2026-10-08, with 73G part 2, `f85e862`) and
-74D's reproduction with its UX-07 rewording (2026-10-09, with 73L) and 74O
-(2026-10-09, with 73O part 1, `487e247`), each approved by name.** **Approved and not yet
-built** (2026-10-08, with Milestone 73's batch):
-74L (with 73O part 3), 74J (with 73O part 4) and 74S (with 73P). Nothing else is
+74D's reproduction with its UX-07 rewording (2026-10-09, with 73L), 74O
+(2026-10-09, with 73O part 1, `487e247`) and 74L (2026-10-09, with 73O part
+3), each approved by name.** **Approved and not yet built** (2026-10-08, with
+Milestone 73's batch): 74J (with 73O part 4) and 74S (with 73P). Nothing else is
 approved: building any other of 74D–74S needs the requester's named approval
 of that item (AGENTS.md §3). **Every decision in 74C–74S is settled
 (2026-10-06)**, each recorded under its item and gathered in
@@ -2028,6 +2028,58 @@ title shares its prefix); `src/styles/*.css`.
   **73F parts 2–3** change the page checklist and the date messages; **73R
   part 1** reshapes the sidebar's heights in `shell.css`; **73J part 2**
   changes `dashboard/index.js`. Sequence.
+
+### Build record — BUILT 2026-10-09 with 73O part 3 (approved by name by the requester, 2026-10-08)
+
+**What changed for a filer:**
+
+- **An impossible date is read with its box:** "Enter a real date as
+  MM/DD/YYYY, with a four-digit year." appears under it and is part of its
+  description beside the hint, as the percentage and City/State/Zip boxes'
+  errors are; it also shows when the page is drawn again with the date still
+  there (it showed nothing at all then), and goes once the date is real. One
+  helper, `setFieldMessage()` (`form-contract.js`), now draws both the
+  percentage error and this one.
+- **The Plans' "check all that apply" groups are groups** (`<fieldset>`):
+  the caption names the group, not its first checkbox ("Check all that apply:
+  The Ward was declared..."); a group with no caption of its own -- twelve
+  on the Initial Plan, one on the Plan for Minors -- is named by its question's
+  heading.
+- **The dashboard's Judge box is named "Judge for <ward>"** (decision 1), as
+  its column, sort and confirmation say; it said "Assignee for <ward>".
+- **The browser tab names the page and the filing type** (decision 2):
+  "Schedule B-1: Cash Assets / Cash Equivalent Assets — Initial Inventory —
+  Guardian Forms", the
+  test system's warning first while it is on; a heading that already names
+  the form isn't repeated, and a long Plan question is cut at 80 characters.
+  Never the ward's name -- no page heading holds anything typed. It read
+  "Guardian Forms App" everywhere; `index.html` now starts at "Guardian
+  Forms".
+- **No app text is smaller than 0.75rem (12px)** (decision 3): 44 sizes from
+  0.6rem to 0.74rem raised -- the dashboard's labels, badges and table
+  headers, the sidebar's section names, help panel, card headings, question
+  numbers, the Preview's labels. Some rows grow.
+
+**How:** `form-contract.js` (`setFieldMessage()`, `syncDateFeedback()`,
+run after every draw with the amount check), `field-html.js`
+(`planCheckGroup()` a fieldset; `planQ()` gives its heading an id and names
+its captionless groups), `dashboard/index.js`, new `src/core/ui/page-name.js`
+with `router.js` (each draw names the page), `test-system-title.js`
+(`testSystemTitlePrefix()`; its note that the warning never reaches the tab
+corrected), seven stylesheets and one inline style.
+
+**Tests:** new `tests/e2e/accessible-errors-and-groups.spec.ts` (3: the date
+error described and kept on redraw, the groups, the Judge box) and
+`tests/e2e/page-title.spec.ts` (3); new `tests/unit/minimum-text-size.spec.js`
+(stylesheets, inline styles, and a sample proving the check finds one).
+**Red-first:** all six browser cases fail on the previous source, and both
+size checks on the previous stylesheets. `offline.spec.ts` matches the
+offline reload's title as ending "Guardian Forms". Light regression on a C: copy: 30 browser specs, 341 tests -- 334 passed, 5
+skipped (classified skips); the 2 failures were tests left behind by earlier
+commits (the vehicle-toggle test since 73L's reminder timing, the Initial
+Plan's cover pin since `97a0754`'s star), updated in their own commit
+(`ed1b491`) and then passing. Full unit suite: 3,057 passed; `check:types`
+clean.
 
 ---
 

@@ -4,7 +4,7 @@
 // linked to their inputs, accordions, unreadable amounts marked, the SSN
 // reveal and the browser notice. Moved from legacy-app.js's FORM BINDING
 // ENGINE and neighbours.
-import { syncAmountFeedback } from './form-contract.js';
+import { syncAmountFeedback, syncDateFeedback } from './form-contract.js';
 import { ic } from '../ui/icons.js';
 
 // Milestone 73G part 1: every amount box accepts a minus (decision 73G-N1,
@@ -14,9 +14,11 @@ import { ic } from '../ui/icons.js';
 // "1,234.56" to 1 -- on every page drawn (sanitizeNegativeAmounts()). Amounts
 // saved as text are now read once, losslessly, when a filing opens
 // (src/core/filing/amount-fields.js). What runs after a page is drawn is the
-// marking of any amount box whose stored amount can't be read.
+// marking of any amount box whose stored amount can't be read -- and, since
+// Milestone 74L, of any date box still holding an impossible date.
 export function setupAmountFieldValidation(container = document) {
   syncAmountFeedback(container);
+  syncDateFeedback(container);
 }
 
 export function toggleSsnReveal(btn){
@@ -100,13 +102,14 @@ export function linkLabelsToInputs(){
     if(control.type==='hidden' || control.type==='file' || control.hasAttribute('aria-label') || control.hasAttribute('aria-labelledby'))return;
     const hasAssociatedLabel=control.id&&[...document.querySelectorAll('label[for]')].some(label=>label.htmlFor===control.id);
     if(hasAssociatedLabel || control.closest('label'))return;
+    // Milestone 73O part 3: never an internal name (a data path, an id) and
+    // never the required star -- a screen reader said "startingBalance".
     const labelText=control.closest('.mb-2, .col-12, .col-md-2, .col-md-3, .col-md-4, .col-md-5, .col-md-6, .col-md-8, .col-md-12')?.querySelector('label')?.textContent
       || control.getAttribute('placeholder')
       || control.getAttribute('title')
       || control.dataset.annualLabel
-      || control.dataset.formPath
-      || control.dataset.bind
-      || control.id;
-    if(labelText)control.setAttribute('aria-label',labelText.replace(/\s+/g,' ').trim());
+      || control.dataset.fieldLabel;
+    const name=String(labelText||'').replace(/\*/g,' ').replace(/\s+/g,' ').trim();
+    if(name)control.setAttribute('aria-label',name);
   });
 }

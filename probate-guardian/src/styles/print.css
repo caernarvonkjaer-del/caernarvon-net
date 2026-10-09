@@ -8,7 +8,7 @@
 
 .pv-bar{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;background:rgba(255,255,255,.92);-webkit-backdrop-filter:saturate(180%) blur(12px);backdrop-filter:saturate(180%) blur(12px);border:1px solid var(--line);border-radius:var(--r-sm);padding:.55rem .8rem;margin-bottom:1rem;box-shadow:var(--sh-2);position:sticky;top:.75rem;z-index:100;}
 [data-theme="dark"] .pv-bar{background:rgba(16,21,29,.92);}
-.pv-label{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-4);white-space:nowrap;}
+.pv-label{font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-4);white-space:nowrap;}
 .pv-select{min-width:15rem;max-width:32rem;font-size:.85rem;}
 .pv-count{font-size:.78rem;color:var(--ink-3);font-variant-numeric:tabular-nums;white-space:nowrap;}
 .pv-viewing,.pv-navigation{display:flex;align-items:center;gap:.6rem;min-width:0;}
@@ -40,7 +40,7 @@
 .pdf-preview-blocked-group{display:grid;grid-template-columns:1fr auto;gap:.15rem .6rem;padding:.5rem 0;border-bottom:1px solid var(--line-2);}
 .pdf-preview-blocked-group:last-child{border-bottom:0;}
 .pdf-preview-blocked-section{font-size:.84rem;font-weight:700;color:var(--ink);}
-.pdf-preview-blocked-count{align-self:start;min-width:1.5rem;padding:.05rem .4rem;border-radius:999px;background:var(--line);color:var(--ink-3);font-size:.72rem;font-weight:700;text-align:center;font-variant-numeric:tabular-nums;}
+.pdf-preview-blocked-count{align-self:start;min-width:1.5rem;padding:.05rem .4rem;border-radius:999px;background:var(--line);color:var(--ink-3);font-size:.75rem;font-weight:700;text-align:center;font-variant-numeric:tabular-nums;}
 .pdf-preview-blocked-group>ul{grid-column:1/-1;margin:.2rem 0 0;padding-left:1.1rem;font-size:.82rem;color:var(--ink-3);}
 .pdf-preview-blocked-single{grid-column:1/-1;font-size:.82rem;color:var(--ink-3);}
 .pdf-preview-blocked-group>ul>li{margin:.12rem 0;}
@@ -285,8 +285,8 @@
 .pdf-annotate-toolbar button[aria-pressed="true"]{background:var(--brand);color:#fff;border-color:var(--brand);}
 
 /* ── Court Document Tables ────────────────────────────── */
-.doc-table{width:100%;border-collapse:collapse;font-size:.73rem;}
-.doc-table th{background:#820024;color:#fff;padding:.28rem .38rem;text-align:left;font-size:.7rem;font-weight:600;}
+.doc-table{width:100%;border-collapse:collapse;font-size:.75rem;}
+.doc-table th{background:#820024;color:#fff;padding:.28rem .38rem;text-align:left;font-size:.75rem;font-weight:600;}
 .doc-table th.right,.doc-table td.right{text-align:right;}
 .doc-table td{padding:.28rem .38rem;border-bottom:1px solid #ddd;vertical-align:top;}
 .doc-table tr:nth-child(even) td{background:#f9f9f9;}

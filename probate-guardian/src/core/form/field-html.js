@@ -122,23 +122,30 @@ export function tdSig(label,val){return td(label,val);}
 export const REQ_MARK = '<span class="req">*</span>';
 
 export function planQ(num,title,body,intro){
+  // Milestone 74L: a check group in the question with no label of its own is
+  // named by the question's heading (planCheckGroup()'s data-plan-q-group).
+  const headingId=`plan-q-${String(num).toLowerCase().replace(/[^a-z0-9]+/g,'-')}-heading`;
   return `<div class="plan-question">
     <div class="plan-question-num">Question ${num}</div>
-    <h2 style="font-size:.95rem;font-weight:650;color:var(--ink);margin-bottom:.7rem;line-height:1.45;">${title}</h2>
+    <h2 id="${headingId}" style="font-size:.95rem;font-weight:650;color:var(--ink);margin-bottom:.7rem;line-height:1.45;">${title}</h2>
     ${intro?`<div class="plan-field-hint" style="margin-bottom:.7rem;">${intro}</div>`:''}
-    ${body}
+    ${String(body).split('data-plan-q-group>').join(`aria-labelledby="${headingId}">`)}
   </div>`;
 }
 
 // "Check all that apply" group with an optional free-text explanation that
 // only appears once a box requiring one is ticked.
+// Milestone 74L: a fieldset, so the group's caption names the group and not
+// its first checkbox (the label linker bound a caption with no `for` to the
+// first box: "Check all that apply: The Ward was declared..."). A group with
+// no caption is named by its question's heading (planQ()).
 export function planCheckGroup(label,boxes,explainId,explainVal,explainWhen,hint){
-  return `<div class="mb-3">
-    <label class="form-label">${label}</label>
+  return `<fieldset class="mb-3" ${label?'':'data-plan-q-group'}>
+    ${label?`<legend class="form-label">${label}</legend>`:''}
     ${hint?`<div class="plan-field-hint">${hint}</div>`:''}
     <div class="plan-check-grid">${boxes}</div>
     ${explainWhen?`<div class="plan-conditional mt-2">${txtP(explainId,'Explanation',explainVal,3)}</div>`:''}
-  </div>`;
+  </fieldset>`;
 }
 
 // td() emits display:table-row divs (not real <table> markup) — used only

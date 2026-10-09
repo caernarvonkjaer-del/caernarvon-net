@@ -143,8 +143,14 @@ export async function createJsPdfInstance() {
     return pdf;
   }
   if (typeof window.html2pdf === 'function') {
+    // html2pdf's bundle exposes no jsPDF of its own, so each PDF borrows one
+    // through an empty render. Milestone 73O part 3: html2canvas logged six
+    // lines to the console for it, every Preview. Keeping the constructor to
+    // skip the render was tried and can't work: this jsPDF builds each
+    // document as a plain object (its constructor is Object), checked in a
+    // browser 2026-10-09.
     const dummy = document.createElement('div');
-    const worker = window.html2pdf().from(dummy).set({ jsPDF: { unit: 'pt', format: 'letter', orientation: 'portrait' } });
+    const worker = window.html2pdf().from(dummy).set({ html2canvas: { logging: false }, jsPDF: { unit: 'pt', format: 'letter', orientation: 'portrait' } });
     const pdf = await worker.toPdf().get('pdf');
     if (pdf && typeof pdf.setFont === 'function') {
       patchOutlineDestinations(pdf);

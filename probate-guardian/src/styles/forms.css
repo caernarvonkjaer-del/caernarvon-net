@@ -156,7 +156,7 @@
 .validation-group:last-child{border-bottom:none;}
 .validation-group-head{display:flex;align-items:center;gap:.5rem;}
 .validation-group-name{font-weight:650;font-size:.83rem;color:var(--ink);}
-.validation-count{font-size:.68rem;font-weight:700;color:#8a0f28;background:#fdeaee;border:1px solid #f0cdd5;border-radius:999px;padding:.06rem .45rem;line-height:1.5;}
+.validation-count{font-size:.75rem;font-weight:700;color:#8a0f28;background:#fdeaee;border:1px solid #f0cdd5;border-radius:999px;padding:.06rem .45rem;line-height:1.5;}
 [data-theme="dark"] .validation-count{color:var(--danger-text);background:var(--brand-100);border-color:var(--brand-200);}
 .validation-go{margin-left:auto;display:inline-flex;align-items:center;gap:.25rem;font-size:.75rem;font-weight:600;color:var(--accent-text);background:none;border:none;cursor:pointer;padding:.15rem .25rem;border-radius:var(--r-xs);font-family:inherit;}
 .validation-go:hover{color:#174470;text-decoration:underline;}
@@ -187,7 +187,7 @@
 .plan-check{margin-bottom:.3rem;}
 .plan-check .form-check-label{font-size:.88rem;color:var(--ink-2);}
 .plan-question{border:1px solid var(--line);border-radius:var(--r);padding:1rem 1.1rem;margin-bottom:1rem;background:var(--surface);}
-.plan-question-num{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-4);margin-bottom:.5rem;}
+.plan-question-num{font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-4);margin-bottom:.5rem;}
 .plan-conditional{margin-left:1.1rem;padding-left:.9rem;border-left:2px solid var(--line);}
 
 /* ── Milestone 39-B: Signature State Control & Capture Pad ────────── */

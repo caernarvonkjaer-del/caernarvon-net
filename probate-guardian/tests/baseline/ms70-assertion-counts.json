@@ -2,10 +2,18 @@
  "generatedBy": "node scripts/ms70-assertion-counts.mjs --write-baseline",
  "note": "Milestone 70 per-spec assertion counts (static expect calls). tests/unit/ms70-assertion-counts.spec.js fails when a spec falls below its count; lowering it requires --reason, recorded in dropLog. A tripwire, not proof of equivalence (decision D9).",
  "totals": {
-  "expects": 9209,
-  "tests": 2646
+  "expects": 9246,
+  "tests": 2660
  },
  "counts": {
+  "tests/e2e/accessible-errors-and-groups.spec.ts": {
+   "expects": 14,
+   "tests": 3
+  },
+  "tests/e2e/accessible-names.spec.ts": {
+   "expects": 8,
+   "tests": 5
+  },
   "tests/e2e/amounts-keep-their-sign.spec.ts": {
    "expects": 20,
    "tests": 5
@@ -345,6 +353,10 @@
   "tests/e2e/page-structure.spec.ts": {
    "expects": 4,
    "tests": 1
+  },
+  "tests/e2e/page-title.spec.ts": {
+   "expects": 11,
+   "tests": 3
   },
   "tests/e2e/party-dedupe.spec.ts": {
    "expects": 48,
@@ -1057,6 +1069,10 @@
   "tests/unit/live-region.spec.js": {
    "expects": 9,
    "tests": 2
+  },
+  "tests/unit/minimum-text-size.spec.js": {
+   "expects": 4,
+   "tests": 3
   },
   "tests/unit/model-change-event.spec.js": {
    "expects": 17,

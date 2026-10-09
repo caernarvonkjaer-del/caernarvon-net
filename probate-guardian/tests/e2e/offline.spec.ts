@@ -75,7 +75,8 @@ test.describe('hosted offline cache', { tag: '@origin-state' }, () => {
 
     await context.setOffline(true);
     await page.reload({ waitUntil: 'domcontentloaded' });
-    await expect(page).toHaveTitle('Guardian Forms App');
+    // Milestone 74L: the tab names the page drawn, ending "Guardian Forms".
+    await expect(page).toHaveTitle(/Guardian Forms$/);
     await context.setOffline(false);
   });
 

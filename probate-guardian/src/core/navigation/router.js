@@ -22,6 +22,7 @@ import { FILING_ENGINE_IDS } from '../filing/filing-descriptor.js';
 import { resetReadinessCardState } from '../filing/readiness-card.js';
 import { saveLastPosition } from '../persistence/recovery-cache.js';
 import { decorateTestSystemTitles } from '../ui/test-system-title.js';
+import { namePage } from '../ui/page-name.js';
 import { ic } from '../ui/icons.js';
 import { pruneBlankCards } from '../form/prune-cards.js';
 import { FILING_PAGES, formEngine } from '../filing/filing-registry.js';
@@ -260,7 +261,12 @@ export async function renderPage(page, { reason = DRAW.NAVIGATION, focus = null 
 
   // Milestone 73K part 2: where the filer is, taken before the page is cleared.
   const place = rememberPlace(el);
-  const settle = () => settlePlace(el, place, { reason: samePage ? reason : DRAW.NAVIGATION, focus, data: getD() });
+  // Milestone 74L: every draw ends by naming the page (the tab title; the
+  // documents controls), with the filing's type on a filing's own pages.
+  const settle = (filingType = null) => {
+    namePage(el, filingType);
+    settlePlace(el, place, { reason: samePage ? reason : DRAW.NAVIGATION, focus, data: getD() });
+  };
 
   disposeActiveFeature(el);
 
@@ -339,7 +345,7 @@ export async function renderPage(page, { reason = DRAW.NAVIGATION, focus = null 
   else updateNavDots();
   initPrintPager();
   attachFormHeaderActions(el);
-  settle();
+  settle(activeType);
 }
 
 // No filing to show, or no filing in the case at all: the Start New Form

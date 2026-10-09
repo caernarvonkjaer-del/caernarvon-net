@@ -497,8 +497,8 @@ function pagePart2(){
       <div class="entry-card-body">
         <div class="line-row">
           <span class="line-tag">Line 1</span>
-          <span class="line-label">Starting Balance — Net Assets per Prior Report<span class="req">*</span></span>
-          <div class="line-input"><div class="input-group"><span class="input-group-text">$</span><input type="text" inputmode="text" class="form-control" id="startingBalance" value="${esc(amountBoxText(d.startingBalance))}" data-form-path="startingBalance" data-form-format="signed-decimal" data-field-blank="keep" data-simplified-refresh="part2"></div>${startingBalanceNotesHTML(d,{wards:getCaseFile()?.wards||null})}</div>
+          <span class="line-label" id="startingBalance_label">Starting Balance — Net Assets per Prior Report<span class="req">*</span></span>
+          <div class="line-input"><div class="input-group"><span class="input-group-text">$</span><input type="text" inputmode="text" class="form-control" id="startingBalance" aria-labelledby="startingBalance_label" value="${esc(amountBoxText(d.startingBalance))}" data-form-path="startingBalance" data-form-format="signed-decimal" data-field-blank="keep" data-simplified-refresh="part2"></div>${startingBalanceNotesHTML(d,{wards:getCaseFile()?.wards||null})}</div>
         </div>
       </div>
     </div>
@@ -507,13 +507,13 @@ function pagePart2(){
       <div class="entry-card-body">
         <div class="line-row">
           <span class="line-tag">Line 2</span>
-          <span class="line-label">Interest Income<span class="req">*</span></span>
-          <div class="line-input"><div class="input-group"><span class="input-group-text">$</span><input type="text" inputmode="decimal" class="form-control" id="interestIncome" value="${esc(amountBoxText(d.interestIncome,{blankZero:true}))}" data-form-path="interestIncome" data-form-format="decimal" data-simplified-refresh="part2"></div></div>
+          <span class="line-label" id="interestIncome_label">Interest Income<span class="req">*</span></span>
+          <div class="line-input"><div class="input-group"><span class="input-group-text">$</span><input type="text" inputmode="decimal" class="form-control" id="interestIncome" aria-labelledby="interestIncome_label" value="${esc(amountBoxText(d.interestIncome,{blankZero:true}))}" data-form-path="interestIncome" data-form-format="decimal" data-simplified-refresh="part2"></div></div>
         </div>
         <div class="line-row">
           <span class="line-tag">Line 3</span>
-          <span class="line-label">Deposits Pursuant to Settlement<span class="req">*</span></span>
-          <div class="line-input"><div class="input-group"><span class="input-group-text">$</span><input type="text" inputmode="decimal" class="form-control" id="depositsSettlement" value="${esc(amountBoxText(d.depositsSettlement,{blankZero:true}))}" data-form-path="depositsSettlement" data-form-format="decimal" data-simplified-refresh="part2"></div></div>
+          <span class="line-label" id="depositsSettlement_label">Deposits Pursuant to Settlement<span class="req">*</span></span>
+          <div class="line-input"><div class="input-group"><span class="input-group-text">$</span><input type="text" inputmode="decimal" class="form-control" id="depositsSettlement" aria-labelledby="depositsSettlement_label" value="${esc(amountBoxText(d.depositsSettlement,{blankZero:true}))}" data-form-path="depositsSettlement" data-form-format="decimal" data-simplified-refresh="part2"></div></div>
         </div>
         <div class="line-row total-line">
           <span class="line-tag">Line 4</span>
@@ -527,13 +527,13 @@ function pagePart2(){
       <div class="entry-card-body">
         <div class="line-row">
           <span class="line-tag">Line 5</span>
-          <span class="line-label">Financial Institution Service Charges<span class="req">*</span></span>
-          <div class="line-input"><div class="input-group"><span class="input-group-text">$</span><input type="text" inputmode="decimal" class="form-control" id="serviceCharges" value="${esc(amountBoxText(d.serviceCharges,{blankZero:true}))}" data-form-path="serviceCharges" data-form-format="decimal" data-simplified-refresh="part2"></div></div>
+          <span class="line-label" id="serviceCharges_label">Financial Institution Service Charges<span class="req">*</span></span>
+          <div class="line-input"><div class="input-group"><span class="input-group-text">$</span><input type="text" inputmode="decimal" class="form-control" id="serviceCharges" aria-labelledby="serviceCharges_label" value="${esc(amountBoxText(d.serviceCharges,{blankZero:true}))}" data-form-path="serviceCharges" data-form-format="decimal" data-simplified-refresh="part2"></div></div>
         </div>
         <div class="line-row">
           <span class="line-tag">Line 6</span>
-          <span class="line-label">Federal Income Tax<span class="req">*</span></span>
-          <div class="line-input"><div class="input-group"><span class="input-group-text">$</span><input type="text" inputmode="decimal" class="form-control" id="federalIncomeTax" value="${esc(amountBoxText(d.federalIncomeTax,{blankZero:true}))}" data-form-path="federalIncomeTax" data-form-format="decimal" data-simplified-refresh="part2"></div></div>
+          <span class="line-label" id="federalIncomeTax_label">Federal Income Tax<span class="req">*</span></span>
+          <div class="line-input"><div class="input-group"><span class="input-group-text">$</span><input type="text" inputmode="decimal" class="form-control" id="federalIncomeTax" aria-labelledby="federalIncomeTax_label" value="${esc(amountBoxText(d.federalIncomeTax,{blankZero:true}))}" data-form-path="federalIncomeTax" data-form-format="decimal" data-simplified-refresh="part2"></div></div>
         </div>
         <div class="line-row total-line">
           <span class="line-tag">Line 7</span>

@@ -36,7 +36,6 @@ export async function doAddWard(){
   const name=document.getElementById('new-ward-name').value.trim();
   const type=document.getElementById('new-ward-type').value;
   const carrySourceId=document.getElementById('carry-source-ward').value;
-  console.log('doAddWard - name:',name,'type:',type,'carrySourceId:',carrySourceId);
   if(!name){await alertModal('Please enter a ward name');return;}
   if(type==='planMinor'){
     const candidateSource=carrySourceId?getCaseFile().wards.find(w=>w.wardId===carrySourceId):null;

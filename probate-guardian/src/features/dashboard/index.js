@@ -232,7 +232,7 @@ function workflowStatusControl(row) {
 }
 
 function assignmentControl(row) {
-  return `<input type="text" class="form-control form-control-sm dashboard-assignee-input" maxlength="120" value="${esc(row.assigneeName)}" placeholder="Unassigned" data-dashboard-change="assignee" data-ward-id="${esc(row.wardId)}" aria-label="Assignee for ${esc(row.wardName || 'ward')}">`;
+  return `<input type="text" class="form-control form-control-sm dashboard-assignee-input" maxlength="120" value="${esc(row.assigneeName)}" placeholder="Unassigned" data-dashboard-change="assignee" data-ward-id="${esc(row.wardId)}" aria-label="Judge for ${esc(row.wardName || 'ward')}">`;
 }
 
 function triageActionButtons(row) {

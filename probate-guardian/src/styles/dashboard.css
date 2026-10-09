@@ -18,7 +18,7 @@
 .dashboard-stat-num{font-size:1.75rem;font-weight:700;line-height:1.1;letter-spacing:-.025em;}
 .dashboard-type-chips{display:flex;flex-wrap:wrap;justify-content:center;gap:.4rem;padding-top:.3rem;}
 .dashboard-type-chip{display:inline-flex;align-items:center;gap:.3rem;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.16);border-radius:999px;padding:.22rem .62rem;font-size:.78rem;font-weight:600;white-space:nowrap;}
-.dashboard-stat-label{font-size:.68rem;text-transform:uppercase;letter-spacing:0;font-weight:700;color:var(--ink-4);margin-top:.35rem;}
+.dashboard-stat-label{font-size:.75rem;text-transform:uppercase;letter-spacing:0;font-weight:700;color:var(--ink-4);margin-top:.35rem;}
 .dashboard-metric-alert{color:var(--danger-text);}
 .dashboard-metric-warn{color:var(--warn-text);}
 .dashboard-metric-pending{color:var(--accent-text);}
@@ -37,18 +37,18 @@
 .dashboard-worklist-tab{background:none;border:none;border-bottom:2px solid transparent;padding:.35rem .2rem .5rem;margin-bottom:-1px;font-size:.82rem;font-weight:600;color:var(--ink-3);cursor:pointer;display:flex;align-items:center;gap:.35rem;transition:color .15s,border-color .15s;}
 .dashboard-worklist-tab:hover{color:var(--ink);}
 .dashboard-worklist-tab.active{color:var(--accent-text);border-bottom-color:var(--accent);}
-.dashboard-worklist-tab-count{font-size:.7rem;font-weight:700;color:var(--ink-4);background:var(--surface-2);border-radius:999px;padding:.05rem .45rem;}
+.dashboard-worklist-tab-count{font-size:.75rem;font-weight:700;color:var(--ink-4);background:var(--surface-2);border-radius:999px;padding:.05rem .45rem;}
 .dashboard-worklist-tab.active .dashboard-worklist-tab-count{color:var(--accent-text);}
 .dashboard-deadlines-list{display:flex;flex-direction:column;gap:.3rem;}
 .dashboard-deadline-row{display:flex;align-items:center;gap:.6rem;width:100%;text-align:left;background:none;border:1px solid transparent;border-radius:var(--r-sm);padding:.4rem .5rem;cursor:pointer;color:inherit;transition:background .15s,border-color .15s;}
 .dashboard-deadline-row:hover{background:var(--surface-2);border-color:var(--line);}
 .dashboard-deadline-icon{color:var(--ink-4);display:inline-flex;flex-shrink:0;}
 .dashboard-deadline-name{flex:1;min-width:0;font-size:.86rem;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.dashboard-deadline-type{display:block;font-size:.72rem;font-weight:500;color:var(--ink-4);}
+.dashboard-deadline-type{display:block;font-size:.75rem;font-weight:500;color:var(--ink-4);}
 .dashboard-deadlines-more{font-size:.76rem;color:var(--ink-3);text-align:center;padding-top:.5rem;}
 
 /* ── Priority Badges & Flags ──────────────────────────── */
-.dashboard-priority-badge{display:inline-flex;align-items:center;width:max-content;max-width:100%;border:1px solid var(--line);border-radius:4px;padding:.15rem .4rem;font-size:.66rem;font-weight:800;line-height:1.2;white-space:nowrap;}
+.dashboard-priority-badge{display:inline-flex;align-items:center;width:max-content;max-width:100%;border:1px solid var(--line);border-radius:4px;padding:.15rem .4rem;font-size:.75rem;font-weight:800;line-height:1.2;white-space:nowrap;}
 .dashboard-priority-badge-urgent{color:var(--danger-text);border-color:color-mix(in srgb,var(--danger-text) 38%,var(--line));background:color-mix(in srgb,var(--danger-text) 10%,var(--surface));}
 .dashboard-priority-badge-warning{color:var(--warn-text);border-color:color-mix(in srgb,var(--warn-text) 38%,var(--line));background:color-mix(in srgb,var(--warn-text) 10%,var(--surface));}
 .dashboard-priority-badge-pending{color:var(--accent-text);border-color:color-mix(in srgb,var(--accent-text) 38%,var(--line));background:color-mix(in srgb,var(--accent-text) 9%,var(--surface));}
@@ -98,10 +98,10 @@
    different, non-subgrid layout for cards), which is an ordinary cascade
    override, not a subgrid concern. */
 .dashboard-triage-header,.dashboard-triage-row{display:grid;grid-template-columns:subgrid;grid-column:1/-1;align-items:center;gap:.7rem;padding:.65rem .75rem;}
-.dashboard-triage-header{background:var(--surface-2);border-bottom:1px solid var(--line);font-size:.67rem;font-weight:700;text-transform:uppercase;color:var(--ink-4);}
+.dashboard-triage-header{background:var(--surface-2);border-bottom:1px solid var(--line);font-size:.75rem;font-weight:700;text-transform:uppercase;color:var(--ink-4);}
 .dashboard-sort-btn{background:none;border:none;font:inherit;color:inherit;text-transform:inherit;font-weight:inherit;font-size:inherit;padding:0;display:inline-flex;align-items:center;gap:.25rem;cursor:pointer;text-align:left;}
 .dashboard-sort-btn:hover{color:var(--ink);}
-.dashboard-sort-indicator{font-size:.65rem;color:var(--brand-text);}
+.dashboard-sort-indicator{font-size:.75rem;color:var(--brand-text);}
 .dashboard-triage-row{border-bottom:1px solid var(--line-2);font-size:.8rem;}
 .dashboard-triage-row:last-child{border-bottom:0;}
 .dashboard-triage-row:hover{background:var(--surface-2);}
@@ -120,24 +120,24 @@
    when Prior years is an empty placeholder cell. Column 5 is locked to 66px
    so that subsequent action columns (Archive, Delete) align identically. */
 .dashboard-triage-actions{display:grid;grid-template-columns:repeat(4,max-content) 66px repeat(2,max-content);gap:.25rem;align-items:center;}
-.dashboard-triage-actions .btn{font-size:.68rem;padding:.22rem .38rem;white-space:nowrap;}
+.dashboard-triage-actions .btn{font-size:.75rem;padding:.22rem .38rem;white-space:nowrap;}
 .dashboard-triage-actions [data-dashboard-action="prior-years"]{width:66px;padding-left:0;padding-right:0;text-align:center;box-sizing:border-box;}
 .dashboard-action-empty{display:inline-block;width:66px;box-sizing:border-box;}
-.dashboard-workflow-select{font-size:.74rem;font-weight:600;min-width:0;max-width:100%;}
+.dashboard-workflow-select{font-size:.75rem;font-weight:600;min-width:0;max-width:100%;}
 .dashboard-workflow-disapproved-needs-correction{color:var(--danger-text);border-color:color-mix(in srgb,var(--danger-text) 44%,var(--field));background-color:color-mix(in srgb,var(--danger-text) 8%,var(--surface));font-weight:700;}
 .dashboard-workflow-pending-court-review{color:var(--accent-text);border-color:color-mix(in srgb,var(--accent-text) 42%,var(--field));background-color:color-mix(in srgb,var(--accent-text) 7%,var(--surface));font-weight:700;}
 .dashboard-workflow-ready-to-file,.dashboard-workflow-approved{color:var(--ok-text);border-color:color-mix(in srgb,var(--ok-text) 38%,var(--field));background-color:color-mix(in srgb,var(--ok-text) 7%,var(--surface));font-weight:700;}
 
 /* ── Dashboard Grid & Filing Cards ────────────────────── */
-.badge{font-size:.72rem;font-weight:600;letter-spacing:.02em;padding:.32em .6em;}
-.ward-card-badge{align-self:flex-start;font-size:.68rem;}
+.badge{font-size:.75rem;font-weight:600;letter-spacing:.02em;padding:.32em .6em;}
+.ward-card-badge{align-self:flex-start;font-size:.75rem;}
 
 /* ── Dashboard Page Header & Controls ─────────────────── */
 .dashboard-page-header{display:flex;align-items:flex-end;justify-content:space-between;gap:1.25rem;margin-bottom:1rem;}
 .dashboard-page-title{min-width:0;}
 .dashboard-page-title h1{margin:0;color:var(--ink);}
 .dashboard-page-title p{margin:.3rem 0 0;color:var(--ink-3);font-size:.86rem;}
-.dashboard-page-kicker{margin-bottom:.2rem;color:var(--brand-text);font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:0;}
+.dashboard-page-kicker{margin-bottom:.2rem;color:var(--brand-text);font-size:.75rem;font-weight:800;text-transform:uppercase;letter-spacing:0;}
 .dashboard-header-actions{display:flex;align-items:flex-end;justify-content:flex-end;gap:.6rem;flex-wrap:wrap;}
 .dashboard-header-actions .dashboard-control{margin:0;}
 .dashboard-header-btn{white-space:nowrap;min-height:31px;}
@@ -153,7 +153,7 @@
 [data-theme="dark"] .dashboard-search-input{background-color:transparent!important;color:#000000!important;border:none!important;}
 [data-theme="dark"] .dashboard-search-input:focus{background-color:transparent!important;color:#000000!important;border:none!important;box-shadow:none!important;}
 [data-theme="dark"] .dashboard-search-input::placeholder{color:#556275!important;}
-.dashboard-control{display:flex;flex-direction:column;gap:.2rem;min-width:150px;font-size:.68rem;font-weight:700;text-transform:uppercase;color:var(--ink-4);}
+.dashboard-control{display:flex;flex-direction:column;gap:.2rem;min-width:150px;font-size:.75rem;font-weight:700;text-transform:uppercase;color:var(--ink-4);}
 .dashboard-control select{height:36px;box-sizing:border-box;}
 .dashboard-control span{padding-left:.1rem;}
 .dashboard-toolbar-actions{margin-left:auto;display:inline-flex;align-items:center;gap:.45rem;flex-shrink:0;}
@@ -185,15 +185,15 @@
 .recent-ward-icon{flex:0 0 auto;color:var(--accent-text);display:inline-flex;}
 .recent-ward-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:.1rem;}
 .recent-ward-name{font-size:.88rem;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.recent-ward-type{font-size:.74rem;color:var(--ink-3);}
-.recent-ward-time{font-size:.72rem;color:var(--ink-4);flex:0 0 auto;font-variant-numeric:tabular-nums;}
+.recent-ward-type{font-size:.75rem;color:var(--ink-3);}
+.recent-ward-time{font-size:.75rem;color:var(--ink-4);flex:0 0 auto;font-variant-numeric:tabular-nums;}
 
 .continue-prompt-banner{background:linear-gradient(135deg,var(--brand-050),var(--surface));border:1px solid var(--brand-200);border-radius:var(--r-lg);padding:.85rem 1.15rem;margin:0 0 1.25rem;box-shadow:var(--sh-1);}
 [data-theme="dark"] .continue-prompt-banner{background:linear-gradient(135deg,var(--brand-100),var(--surface));}
 .continue-prompt-content{display:flex;align-items:center;gap:.85rem;}
 .continue-prompt-icon{flex:0 0 auto;color:var(--accent-text);display:inline-flex;}
 .continue-prompt-text{flex:1;min-width:0;display:flex;flex-direction:column;gap:.15rem;}
-.continue-prompt-label{font-size:.74rem;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:.04em;}
+.continue-prompt-label{font-size:.75rem;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:.04em;}
 .continue-prompt-ward-name{font-size:.95rem;font-weight:700;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .continue-prompt-meta{font-size:.78rem;color:var(--ink-4);}
 .continue-prompt-btn{flex:0 0 auto;padding:.45rem 1rem;font-size:.82rem;font-weight:600;border-radius:var(--r);border:1px solid var(--brand-200);background:var(--brand-100);color:var(--brand-text);cursor:pointer;transition:background .15s,border-color .15s;}
@@ -230,7 +230,7 @@
 .dashboard-closed-toggle:focus-visible{outline:2px solid var(--brand-text);outline-offset:2px;}
 .dashboard-closed-chevron{display:inline-flex;justify-content:center;width:.9rem;color:var(--ink-4);flex-shrink:0;}
 .dashboard-closed-label{font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.02em;}
-.dashboard-closed-count{margin-left:auto;min-width:1.5rem;padding:.05rem .4rem;border-radius:999px;background:var(--line);color:var(--ink-3);font-size:.72rem;font-weight:700;text-align:center;font-variant-numeric:tabular-nums;}
+.dashboard-closed-count{margin-left:auto;min-width:1.5rem;padding:.05rem .4rem;border-radius:999px;background:var(--line);color:var(--ink-3);font-size:.75rem;font-weight:700;text-align:center;font-variant-numeric:tabular-nums;}
 #dashboard-closed-queue{margin-top:.6rem;}
 /* Stated rather than left to the UA sheet: .dashboard-triage-queue sets
    display on the child, and a stylesheet that re-declares display on a
@@ -280,7 +280,7 @@
   }
   .dashboard-triage-row:last-child{margin-bottom:0;}
   .dashboard-triage-cell{padding:.6rem .8rem;min-width:0;}
-  .dashboard-triage-cell:before{content:attr(data-label);display:block;margin-bottom:.24rem;color:var(--ink-4);font-size:.63rem;font-weight:800;text-transform:uppercase;letter-spacing:.03em;}
+  .dashboard-triage-cell:before{content:attr(data-label);display:block;margin-bottom:.24rem;color:var(--ink-4);font-size:.75rem;font-weight:800;text-transform:uppercase;letter-spacing:.03em;}
 
   /* Explicit placement, not source order: the flow puts Contacts between
      Deadline and Judge, which strands Judge alone on a half-empty line. */
@@ -318,7 +318,7 @@
      cell fell, which is what made the cluster look broken. */
   .dashboard-triage-actions{display:flex;flex-wrap:wrap;gap:.4rem;padding:.65rem .8rem;background:var(--surface-2);border-top:1px solid var(--line);}
   .dashboard-triage-actions:before{flex:0 0 100%;margin-bottom:.1rem;}
-  .dashboard-triage-actions .btn{flex:1 1 auto;min-width:104px;padding:.35rem .5rem;font-size:.72rem;}
+  .dashboard-triage-actions .btn{flex:1 1 auto;min-width:104px;padding:.35rem .5rem;font-size:.75rem;}
   /* Nothing left to align between cards, so the reserved cells become nothing. */
   .dashboard-action-empty{display:none;}
 
@@ -371,5 +371,5 @@
   .dashboard-header-actions{display:grid;grid-template-columns:1fr;gap:.4rem;}
   .dashboard-header-actions>.btn{width:100%;}
   .dashboard-summary-strip{gap:.45rem;grid-template-columns:repeat(2,minmax(0,1fr));}
-  .dashboard-stat-label{font-size:.62rem;}
+  .dashboard-stat-label{font-size:.75rem;}
 }

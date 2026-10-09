@@ -28,7 +28,7 @@ export async function showPickPartyModal(role,index){
   await ensureFragment('common-modals');
   _pickPartySlot={role,index:Number(index)||0};
   const currentName=(readRoleFields(getD(),role,_pickPartySlot.index)||{}).name;
-  document.getElementById('pick-party-slot-label').textContent=currentName?`"${esc(currentName)}"`:`this ${partyRoleLabel(role)}`;
+  document.getElementById('pick-party-slot-label').textContent=currentName?`"${currentName}"`:`this ${partyRoleLabel(role)}`;
   const sel=document.getElementById('pick-party-existing');
   const matches=(getCaseFile().parties||[]).filter(p=>!p.mergedInto&&p.roles.includes(role));
   sel.innerHTML='<option value="">— Select —</option>'
@@ -101,7 +101,7 @@ export async function showPickCaseModal(wardId){
   const ward=getCaseFile().wards.find(w=>w.wardId===wardId);
   if(!ward)return;
   _pickCaseWardId=wardId;
-  document.getElementById('pick-case-ward-name').textContent=ward.wardName?`"${esc(ward.wardName)}"`:'this filing';
+  document.getElementById('pick-case-ward-name').textContent=ward.wardName?`"${ward.wardName}"`:'this filing';
   const sel=document.getElementById('pick-case-existing');
   const cases=getCaseFile().cases||[];
   sel.innerHTML='<option value="">— Select —</option>'

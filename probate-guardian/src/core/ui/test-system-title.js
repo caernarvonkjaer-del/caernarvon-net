@@ -8,8 +8,10 @@
 // shown; nothing else in the app owns a copy. The warning is real DOM text,
 // not CSS `content`, so it is part of the heading's accessible name, is
 // copyable, and tests can read the exact words. It is never added to a PDF,
-// a workbook, a .sav file, metadata, a filename or the browser-tab title --
-// this module only touches the live page -- and print CSS hides it.
+// a workbook, a .sav file, metadata or a filename -- this module only touches
+// the live page -- and print CSS hides it. Since Milestone 74L (decision
+// 74L-2) it also leads the browser-tab title (page-name.js), so a tab, a
+// history entry or a window list can't be mistaken for a filing system.
 //
 // To remove the warning everywhere, set the switch to false. It is a build
 // decision, not a user preference: a tester must not be able to switch it
@@ -92,6 +94,11 @@ export function decorateTestSystemTitles(root = (typeof document !== 'undefined'
  * screen, so a test can prove that "off" leaves every title exactly as it
  * was. A reload returns to TEST_SYSTEM_TITLE_WARNING_ENABLED.
  */
+/** Milestone 74L: what the browser-tab title starts with -- the warning, while it is on. */
+export function testSystemTitlePrefix() {
+  return enabled ? `${TEST_SYSTEM_TITLE_WARNING} - ` : '';
+}
+
 export function setTestSystemTitleWarningEnabledForTest(value) {
   enabled = !!value;
   return decorateTestSystemTitles();

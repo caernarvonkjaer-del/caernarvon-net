@@ -1,6 +1,8 @@
 {
  "note": "Milestone 70, 70T: which browser specs reach the app only through window.GuardianForms.testing (or the real UI), checked by tests/unit/ms70-70T-guard.spec.js, and what converting them found. A write moved from a raw patch to setField() or the real UI may make a test fail that passed before: that is a finding about today's test, recorded here with its resolution, never suppressed (decision D9).",
  "converted": [
+  "tests/e2e/accessible-errors-and-groups.spec.ts",
+  "tests/e2e/accessible-names.spec.ts",
   "tests/e2e/amounts-keep-their-sign.spec.ts",
   "tests/e2e/annotation-toolbar-containment.spec.ts",
   "tests/e2e/annual-blank-share-footing.spec.ts",
@@ -86,6 +88,7 @@
   "tests/e2e/output-buttons-after-override.spec.ts",
   "tests/e2e/output-semantics.artifact.spec.ts",
   "tests/e2e/page-structure.spec.ts",
+  "tests/e2e/page-title.spec.ts",
   "tests/e2e/party-dedupe.spec.ts",
   "tests/e2e/party-resolver.spec.ts",
   "tests/e2e/party-write-through.spec.ts",

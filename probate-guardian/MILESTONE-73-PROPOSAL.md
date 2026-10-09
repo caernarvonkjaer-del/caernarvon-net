@@ -6,12 +6,11 @@
 far: 73U (2026-10-04, `5b8849b`), 73V (2026-10-05, `8b96aa3`), 73C
 (2026-10-05, `861b6a9`, brought forward from its place in the build order at the
 requester's choice) 73D (2026-10-05, `c8e84fe`, likewise), 73J part 1 (2026-10-05, `d819c4a`),
-73F part 1 (2026-10-06, `5e9e17b`), 73A (2026-10-06, `83352d0`), 73F part 2 (2026-10-06, `d01edd4`), 73G part 1 (2026-10-06, `69a1b46`), 73E part 1 (2026-10-06, `8e02051`), 73F part 3 (2026-10-06, `67fc66c`), 73I (2026-10-06, `56a7c30`), 73T part 1 (2026-10-07, `4cae1e7`), 73T part 2 (2026-10-07, `2a1cbc5`), 73T part 3 (2026-10-07, `9d2bc72`), 73T part 4 (2026-10-07, `b70a944`), 73M with 74C (2026-10-07, `a0e987b`), 73B (2026-10-07, `86547da`), 73O part 2 with 74F (2026-10-08, `fa9625e`), 73G part 2 with 74H (2026-10-08, `f85e862`, `78b5770`), 73H (2026-10-08, `631f898`), 73S (2026-10-08, `3cf1d9d`), 73K part 1 (2026-10-08, `4268c45`), 73E part 2 (2026-10-08, `5e26e57`, `ea78dd4`), 73J part 2 (2026-10-08, `3648706`), 73K part 2 (2026-10-08, `79a8875`), 73L with 74D's reproduction (2026-10-09, `43081f2`), 73N part 1 (2026-10-09, `ab8068e`), 73N part 2 (2026-10-09, `01a9610`), 73N part 3 (2026-10-09, `987daaf`) and 73O part 1 with 74O (2026-10-09, `487e247`), each approved by name; 74P, built after 73B, is recorded in Milestone 74.**
+73F part 1 (2026-10-06, `5e9e17b`), 73A (2026-10-06, `83352d0`), 73F part 2 (2026-10-06, `d01edd4`), 73G part 1 (2026-10-06, `69a1b46`), 73E part 1 (2026-10-06, `8e02051`), 73F part 3 (2026-10-06, `67fc66c`), 73I (2026-10-06, `56a7c30`), 73T part 1 (2026-10-07, `4cae1e7`), 73T part 2 (2026-10-07, `2a1cbc5`), 73T part 3 (2026-10-07, `9d2bc72`), 73T part 4 (2026-10-07, `b70a944`), 73M with 74C (2026-10-07, `a0e987b`), 73B (2026-10-07, `86547da`), 73O part 2 with 74F (2026-10-08, `fa9625e`), 73G part 2 with 74H (2026-10-08, `f85e862`, `78b5770`), 73H (2026-10-08, `631f898`), 73S (2026-10-08, `3cf1d9d`), 73K part 1 (2026-10-08, `4268c45`), 73E part 2 (2026-10-08, `5e26e57`, `ea78dd4`), 73J part 2 (2026-10-08, `3648706`), 73K part 2 (2026-10-08, `79a8875`), 73L with 74D's reproduction (2026-10-09, `43081f2`), 73N part 1 (2026-10-09, `ab8068e`), 73N part 2 (2026-10-09, `01a9610`), 73N part 3 (2026-10-09, `987daaf`), 73O part 1 with 74O (2026-10-09, `487e247`, `97a0754`) and 73O part 3 with 74L (2026-10-09), each approved by name; 74P, built after 73B, is recorded in Milestone 74.**
 **The 2026-10-07 batch is built**, and its closing full regression has run
 (recorded below, after the mid-batch one). **Approved and not yet built**
 (2026-10-08, one batch in this order, light tests between deliveries and a
-full regression at the end): 73O
-part 3 (with 74L), 73O part 4 (with 74J), 73P (with 74S) and 73R parts 1-3.
+full regression at the end): 73O part 4 (with 74J), 73P (with 74S) and 73R parts 1-3.
 Nothing else is approved. Building any other item, or any part of a
 split item, needs the requester's named approval of that item or part
 (AGENTS.md §3).
@@ -3567,6 +3566,51 @@ the cover too. Found by `asterisks-follow-rules.spec.ts` while testing 73O
 part 3 -- 73O part 1's light regression hadn't included it. **Red-first** on
 `487e247`'s tree: the Initial Plan case fails ("Attorney Name attorney_name:
 required, but has no asterisk") and passes with the fix; all 7 cases pass.
+
+### Build record, part 3 — BUILT 2026-10-09 with 74L (approved by name by the requester, 2026-10-08)
+
+**What changed for a filer using a screen reader:**
+
+- **The Simplified's five Part II boxes are named by their lines' captions**
+  ("Interest Income"); a screen reader said "startingBalance". The fallback
+  that names a box with no label of its own now uses only words the filer can
+  read -- a nearby label, the placeholder, the box's field label -- never a
+  data path or an id, and never the required star.
+- **Every Comments box and upload is named by its page's heading** ("Comments
+  on Schedule A — Income Received During Period"), on every page that has
+  them; it said "Comments about schA".
+- **The ward's name is no longer written to the browser console** when a form
+  is created (the one place it was).
+- **The PDF engine's six console lines per Preview are gone** (html2canvas's
+  logging, through the empty render that borrows a jsPDF). Keeping the PDF
+  constructor after the first build, to skip that render, was tried in a
+  browser and can't work: this jsPDF builds each document as a plain object,
+  so a document's constructor is `Object`, which builds no PDF. Recorded in
+  the code.
+- **The Start New Form cards are named by what they show** ("Initial
+  Inventory: Create Form for a Ward"); they said "Create Initial Inventory
+  ward". **Link Person and Link to Case show "O'Brien"**, not "O&#39;Brien".
+
+**How:** `form-runtime.js` (the fallback name), `simplified-accounting/index.js`
+(each caption an id, each box `aria-labelledby` it -- a `<label>` would have
+taken the global label style and changed how Part II looks),
+`schedule-docs.js` (the controls drawn "... this page"), new
+`src/core/ui/page-name.js` (the page's heading names them after each draw,
+with 74L's tab title), `filing-dialogs.js`, `pdf-engine.js`,
+`start-new-form.js`, `pick-record-dialogs.js`.
+
+**Tests:** new `tests/e2e/accessible-names.spec.ts` (5): no control on any
+page of the nine forms, Start New Form or the dashboard is named by an
+internal name, read from Chromium's accessibility tree -- a trial scan of the
+previous source flagged exactly the Part II boxes and every "Comments about"
+box, with no false alarm; every page's documents controls named by its
+heading; Part II; the cards; "O'Brien"; the console. **Red-first:** all five
+fail on the previous source. Light regression on a C: copy: 30 browser specs, 341 tests -- 334 passed, 5
+skipped (classified skips); the 2 failures were tests left behind by earlier
+commits (the vehicle-toggle test since 73L's reminder timing, the Initial
+Plan's cover pin since `97a0754`'s star), updated in their own commit
+(`ed1b491`) and then passing. Full unit suite: 3,057 passed; `check:types`
+clean.
 
 ---
 

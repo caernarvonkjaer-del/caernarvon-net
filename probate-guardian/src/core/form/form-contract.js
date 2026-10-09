@@ -440,16 +440,15 @@ export function finalizeFieldValue(control, options = {}) {
     const parsed = parseFlexibleDate(rawValue);
     if (parsed === '') {
       // Empty date
-      control.removeAttribute('aria-invalid');
-      control.classList.remove('is-invalid');
+      setFieldMessage(control, 'date', '');
       clearFieldDraft(path, getD());
       if (setPath) setPath(getD(), path, '');
     } else if (parsed === null) {
       // Invalid date text: retain both the visible draft and the previously
       // committed canonical value. Clearing the model here caused a blurred
       // or rapidly-entered date to disappear before export.
-      control.setAttribute('aria-invalid', 'true');
-      control.classList.add('is-invalid');
+      // Milestone 74L: the error is said, and read with the box.
+      setFieldMessage(control, 'date', IMPOSSIBLE_DATE_MESSAGE);
       recordDateDraft({
         data: getD(),
         path,
@@ -460,8 +459,7 @@ export function finalizeFieldValue(control, options = {}) {
       });
     } else {
       // Valid canonical date: update display & model
-      control.removeAttribute('aria-invalid');
-      control.classList.remove('is-invalid');
+      setFieldMessage(control, 'date', '');
       control.value = formatDisplayDate(parsed);
       clearFieldDraft(path, getD());
       if (setPath) setPath(getD(), path, parsed);
@@ -664,7 +662,7 @@ export function setFieldNote(control, note) {
   const anchor = control.closest?.('.input-group') || control;
   let after = anchor;
   let existing = null;
-  for (let el = anchor.nextElementSibling; el?.dataset && ['amountFeedback', 'percentFeedback', 'fieldNote'].some((k) => el.dataset[k] === 'true'); el = el.nextElementSibling) {
+  for (let el = anchor.nextElementSibling; el?.dataset && ['amountFeedback', 'percentFeedback', 'dateFeedback', 'fieldNote'].some((k) => el.dataset[k] === 'true'); el = el.nextElementSibling) {
     if (el.dataset.fieldNote === 'true') { existing = el; break; }
     after = el;
   }
@@ -749,8 +747,22 @@ export function syncAmountFeedback(container = document) {
 // setCityStateZipFeedback() above (is-invalid, aria-invalid, and an
 // .invalid-feedback message tied in through aria-describedby).
 export function setPercentFeedback(control, problem) {
+  setFieldMessage(control, 'percent', problem ? `The percentage ${problem}.` : '');
+}
+
+/**
+ * Milestone 74L: an error message under a box, read with it. `key` names the
+ * kind ('percent', 'date'; one message of each kind per box). `text` draws or
+ * updates the message, marks the box invalid and adds the message to the
+ * box's description beside its hint; '' takes the message and the mark away.
+ * A plain object without the DOM (the unit harness) gets the mark only.
+ * @param {any} control
+ * @param {string} key
+ * @param {string} text
+ */
+export function setFieldMessage(control, key, text) {
   if (!control) return;
-  if (problem) {
+  if (text) {
     control.classList.add('is-invalid');
     control.setAttribute('aria-invalid', 'true');
   } else {
@@ -758,25 +770,48 @@ export function setPercentFeedback(control, problem) {
     control.removeAttribute('aria-invalid');
   }
   if (typeof control.insertAdjacentElement !== 'function') return;
-  let feedback = control.parentElement?.querySelector?.('[data-percent-feedback="true"]') || null;
-  if (problem) {
-    if (!feedback) {
-      feedback = document.createElement('div');
-      feedback.className = 'invalid-feedback d-block';
-      feedback.dataset.percentFeedback = 'true';
-      feedback.id = `pct_feedback_${Math.random().toString(36).slice(2, 9)}`;
-      (control.closest?.('.input-group') || control).insertAdjacentElement('afterend', feedback);
-    }
-    feedback.textContent = `The percentage ${problem}.`;
-    const ids = new Set(String(control.getAttribute('aria-describedby') || '').split(/\s+/).filter(Boolean));
-    ids.add(feedback.id);
-    control.setAttribute('aria-describedby', [...ids].join(' '));
-  } else if (feedback) {
-    const ids = String(control.getAttribute('aria-describedby') || '').split(/\s+/).filter((id) => id && id !== feedback.id);
-    if (ids.length) control.setAttribute('aria-describedby', ids.join(' '));
-    else control.removeAttribute('aria-describedby');
-    feedback.remove();
+  const flag = `${key}Feedback`;
+  const anchor = control.closest?.('.input-group') || control;
+  let message = null;
+  for (let el = anchor.nextElementSibling; el; el = el.nextElementSibling) {
+    if (el.dataset?.[flag] === 'true') { message = el; break; }
   }
+  const ids = new Set(String(control.getAttribute('aria-describedby') || '').split(/\s+/).filter(Boolean));
+  if (text) {
+    if (!message) {
+      if (typeof document === 'undefined') return;
+      message = document.createElement('div');
+      message.className = 'invalid-feedback d-block';
+      message.dataset[flag] = 'true';
+      message.id = `${key}_feedback_${Math.random().toString(36).slice(2, 9)}`;
+      anchor.insertAdjacentElement('afterend', message);
+    }
+    message.textContent = text;
+    ids.add(message.id);
+  } else if (message) {
+    ids.delete(message.id);
+    message.remove();
+  } else {
+    return;
+  }
+  if (ids.size) control.setAttribute('aria-describedby', [...ids].join(' '));
+  else control.removeAttribute('aria-describedby');
+}
+
+/** Milestone 74L: what a date box holding an impossible date says. */
+export const IMPOSSIBLE_DATE_MESSAGE = 'Enter a real date as MM/DD/YYYY, with a four-digit year.';
+
+/**
+ * Milestone 74L: on a drawn page, a date box still holding an impossible date
+ * (its kept draft, commit-coordinator.js) says so, as it did when the filer
+ * left it.
+ */
+export function syncDateFeedback(container = document) {
+  if (!container || typeof container.querySelectorAll !== 'function') return;
+  /** @type {NodeListOf<HTMLInputElement>} */ (container.querySelectorAll('input[data-field-kind="date"]')).forEach((el) => {
+    const typed = String(el.value || '').trim();
+    setFieldMessage(el, 'date', typed && parseFlexibleDate(typed) === null ? IMPOSSIBLE_DATE_MESSAGE : '');
+  });
 }
 
 // Milestone 71C: on render, every percent field shows whether the share it
