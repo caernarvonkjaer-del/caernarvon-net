@@ -77,6 +77,7 @@ import { tooltip } from '../../core/help/tooltips.js';
 import { syncActiveWardNameDisplay, syncGuardianNameDisplay } from '../../core/shell/sidebar.js';
 import { setAccountingFilingType } from './filing-type.js';
 import { navigate } from '../../core/navigation/router.js';
+import { afterAdd, afterDuplicate, afterRemove, onChange } from '../../core/navigation/draw-reason.js';
 import { calcTotalsAnnual, annualReconcileState, n, pct } from './totals.js';
 import { isAttorneyStarted } from '../../core/validation/attorney-block.js';
 import { startingBalanceNotesHTML } from '../../core/filing/starting-balance-carry.js';
@@ -371,7 +372,7 @@ export function mountNav(container) {
 function duplicateAnnualRow(arrName, idx, route) {
   if (duplicateCollectionRow(arrName, idx, getD())) {
     commitModelChange('collection-duplicate', [arrName]);
-    navigate(route);
+    navigate(route, onChange(afterDuplicate(getD(), arrName, idx)));
   }
 }
 
@@ -388,7 +389,7 @@ async function addB4Account(route) {
   // Milestone 73V: the account row (a new id, no bank yet) is the list rules'.
   appendRow(d, 'schB4Accounts');
   commitModelChange('collection-add', ['schB4Accounts']);
-  navigate(route);
+  navigate(route, onChange(afterAdd(d, 'schB4Accounts')));
 }
 
 // Deleting an account never deletes money. Its disbursements are unassigned
@@ -407,7 +408,7 @@ async function removeB4Account(index, route) {
   for (const row of orphans) row.bankAccountId = '';
   removeRowAt(d, 'schB4Accounts', index);
   commitModelChange('collection-remove', ['schB4Accounts', 'schB4']);
-  navigate(route);
+  navigate(route, onChange(afterRemove(d, 'schB4Accounts', index)));
 }
 
 function addAnnualRow(collection, route) {
@@ -417,14 +418,14 @@ function addAnnualRow(collection, route) {
   // appendRow() under the key the page's box writes (no-items-keys.js).
   if (addCollectionRow(collection, getD())) {
     commitModelChange('collection-add', [collection, 'scheduleNoItems']);
-    navigate(route);
+    navigate(route, onChange(afterAdd(getD(), collection)));
   }
 }
 async function removeAnnualRow(collection, index, route) {
   if (collection === 'guardians' && index > 0 && rowStarted(getD().guardians?.[index]) && !(await confirmModal(`Remove co-guardian ${getD().guardians[index].name || `#${index + 1}`}? This will delete the entered signature information.`))) return;
   if (removeCollectionRow(collection, index, getD())) {
     commitModelChange('collection-remove', [collection]);
-    navigate(route);
+    navigate(route, onChange(afterRemove(getD(), collection, index)));
   }
 }
 

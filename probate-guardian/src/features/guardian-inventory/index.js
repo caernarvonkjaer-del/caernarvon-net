@@ -68,6 +68,7 @@ import { appendRow, duplicateRowAt, removeRowAt } from '../../core/form/collecti
 import { jointOwnerRowFrom, offersJointOwner, paymentsPerYear, yearlyTotal } from '../../core/form/entry-helpers.js';
 import { showPickPartyModal } from '../../core/modals/pick-record-dialogs.js';
 import { getCurrentPage, navigate, renderPage } from '../../core/navigation/router.js';
+import { afterAdd, afterDuplicate, afterRemove, fieldTarget, onChange } from '../../core/navigation/draw-reason.js';
 import { computeNavChecks, updateNavDots } from '../../core/status/nav-marks.js';
 import { commitModelChange } from '../../core/model-change.js';
 import { collectGuardianIssues, INVENTORY_SHARE_FIELDS, RECIPIENT_STARTED_FIELDS, sdbIsYes, sdbIsNo, sdbAnswered } from '../../core/validation/engines/guardian.js';
@@ -283,7 +284,7 @@ function bindEvents(container) {
       case 'remove-guardian': removeGuardian(index); break;
       case 'remove-recipient': removeRecipient(index); break;
       // Milestone 72H: the filer's explicit deletion of the old D-5 details.
-      case 'discard-old-certificate-details': if (discardOldCertificateDetails(getD(), 'guardian')) commitModelChange('certificate-details-discarded'); renderPage('/d5'); break;
+      case 'discard-old-certificate-details': if (discardOldCertificateDetails(getD(), 'guardian')) commitModelChange('certificate-details-discarded'); renderPage('/d5', onChange()); break;
       case 'remove-witness': removeWitness(index); break;
       case 'save-excel': _excelModule.doSaveExcel(); break;
       case 'save-pdf': _printModule.doSavePdf(); break;
@@ -637,7 +638,7 @@ export function addEntry(schedule){
   const key=map[schedule];
   appendRow(getD(),key);
   commitModelChange('collection-add',[key]);
-  renderPage(getCurrentPage());
+  renderPage(getCurrentPage(),onChange(afterAdd(getD(),key)));
 }
 // Milestone 74P: a C-5 row for the asset on row `idx` of `listKey` -- its
 // description and full value, nothing else; nothing links the two afterwards.
@@ -671,7 +672,7 @@ function useYearlyTotal(idx){
   }
   row.annualIncomeAmount=total;
   commitModelChange('field-write',[`scheduleC1.${idx}.annualIncomeAmount`]);
-  renderPage(getCurrentPage());
+  renderPage(getCurrentPage(),onChange(fieldTarget(`scheduleC1.${idx}.annualIncomeAmount`)));
 }
 function removeEntry(schedule,idx){
   const map={
@@ -681,7 +682,7 @@ function removeEntry(schedule,idx){
   const key=map[schedule];
   removeRowAt(getD(),key,idx);
   commitModelChange('collection-remove',[key]);
-  renderPage(getCurrentPage());
+  renderPage(getCurrentPage(),onChange(afterRemove(getD(),key,idx)));
 }
 // Empty-state for a schedule with zero rows: a checkbox the filer checks
 // to affirmatively state there's nothing to report, replacing the old
@@ -723,19 +724,19 @@ export function duplicateEntry(schedule,idx){
   if(!list||!list[idx])return;
   duplicateRowAt(getD(),key,idx);
   commitModelChange('collection-duplicate',[key]);
-  renderPage(getCurrentPage());
+  renderPage(getCurrentPage(),onChange(afterDuplicate(getD(),key,idx)));
 }
 // Same idea for the Annual Accounting schedules, which store their rows in
 // D.schA / D.schB1 / … and are rendered inline rather than through
 
-function addGuardian(){appendRow(D,'guardians');commitModelChange('collection-add',['guardians']);renderPage('/d1');}
+function addGuardian(){appendRow(D,'guardians');commitModelChange('collection-add',['guardians']);renderPage('/d1',onChange(afterAdd(D,'guardians')));}
 function removeGuardian(i){
   removeRowAt(D,'guardians',i);
   commitModelChange('collection-remove',['guardians']);
-  renderPage('/d1');
+  renderPage('/d1',onChange(afterRemove(D,'guardians',i)));
 }
-function addRecipient(){appendRow(D,'serviceRecipients');commitModelChange('collection-add',['serviceRecipients']);renderPage('/d5');}
-function removeRecipient(i){removeRowAt(D,'serviceRecipients',i);commitModelChange('collection-remove',['serviceRecipients']);renderPage('/d5');}
+function addRecipient(){appendRow(D,'serviceRecipients');commitModelChange('collection-add',['serviceRecipients']);renderPage('/d5',onChange(afterAdd(D,'serviceRecipients')));}
+function removeRecipient(i){removeRowAt(D,'serviceRecipients',i);commitModelChange('collection-remove',['serviceRecipients']);renderPage('/d5',onChange(afterRemove(D,'serviceRecipients',i)));}
 
 // Witnesses present during the physical inventory of the ward's personal
 // effects (Cover page reminder). Kept separate from the entryCard()/
@@ -743,8 +744,8 @@ function removeRecipient(i){removeRowAt(D,'serviceRecipients',i);commitModelChan
 // witnesses aren't a "schedule" in that sense (no dollar total, not part
 // of the schedule/route map those helpers key off of).
 // The witness row lives with the list rules (src/core/form/collections.js).
-function addWitness(){appendRow(D,'witnesses');commitModelChange('collection-add',['witnesses']);renderPage('/');}
-function removeWitness(i){if(!D.witnesses)return;removeRowAt(D,'witnesses',i);commitModelChange('collection-remove',['witnesses']);renderPage('/');}
+function addWitness(){appendRow(D,'witnesses');commitModelChange('collection-add',['witnesses']);renderPage('/',onChange(afterAdd(D,'witnesses')));}
+function removeWitness(i){if(!D.witnesses)return;removeRowAt(D,'witnesses',i);commitModelChange('collection-remove',['witnesses']);renderPage('/',onChange(afterRemove(D,'witnesses',i)));}
 function witnessCardsHTML(){
   const list=D.witnesses||[];
   return list.map((w,i)=>`<div class="col-12 col-lg-6"><div class="entry-card mb-0 h-100">
@@ -1011,7 +1012,7 @@ function toggleB2Vehicle(i,checked){
   if(!e)return;
   e.isVehicle=checked;
   commitModelChange('field-write',[`scheduleB2.${i}.isVehicle`]);
-  renderPage(getCurrentPage());
+  renderPage(getCurrentPage(),onChange(fieldTarget(`scheduleB2.${i}.isVehicle`)));
 }
 function pageScheduleB2(){
   const entries=D.scheduleB2.map((e,i)=>{

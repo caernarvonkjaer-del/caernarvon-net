@@ -3,6 +3,7 @@
 import { getOrCreateCaseForWard } from '../case-resolver.js';
 import { esc } from '../filing/escape-html.js';
 import { renderPage } from '../navigation/router.js';
+import { onChange } from '../navigation/draw-reason.js';
 import { createParty, dehydrateIntoParty, hydrateFromParty, readRoleFields, resolveParty, setPartyIdForSlot } from '../party-resolver.js';
 import { getCurrentPage } from '../navigation/route-state.js';
 import { getCaseFile, getD } from '../state.js';
@@ -48,7 +49,7 @@ export async function doPickParty(){
   setPartyIdForSlot(getD(),role,index,partyId);
   hydrateFromParty(party,getD(),role,index);
   commitModelChange('link-person');
-  renderPage(getCurrentPage());
+  renderPage(getCurrentPage(),onChange());
   updateNavDots();
 }
 
@@ -65,7 +66,7 @@ export async function doCreatePartyFromSlot(){
   // syncIdentityField() is a no-op -- seed the record directly either way.
   dehydrateIntoParty(getD(),role,index,party);
   commitModelChange('new-shared-record');
-  renderPage(getCurrentPage());
+  renderPage(getCurrentPage(),onChange());
   updateNavDots();
 }
 
@@ -103,7 +104,7 @@ export async function doPickCase(){
   closeModal('pickCaseModal');
   ward.caseId=caseId;
   await saveWardToState(ward);
-  renderPage(getCurrentPage());
+  renderPage(getCurrentPage(),onChange());
 }
 
 // "+ New Case" — creates a brand-new Case seeded from this filing's own
@@ -116,5 +117,5 @@ export async function doCreateCaseFromWard(){
   const kase=getOrCreateCaseForWard(ward);
   ward.caseId=kase.id;
   await saveWardToState(ward);
-  renderPage(getCurrentPage());
+  renderPage(getCurrentPage(),onChange());
 }

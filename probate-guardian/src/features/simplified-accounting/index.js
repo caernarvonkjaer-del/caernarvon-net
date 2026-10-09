@@ -77,6 +77,7 @@ import { setPath } from '../../core/form/paths.js';
 import { tooltip } from '../../core/help/tooltips.js';
 import { openFloridaCourtPortal } from '../../core/shell/court-portal.js';
 import { navigate } from '../../core/navigation/router.js';
+import { afterAdd, afterRemove, onChange, rowTarget } from '../../core/navigation/draw-reason.js';
 import { commitModelChange } from '../../core/model-change.js';
 import { collectSimplifiedIssues, RECIPIENT_STARTED_FIELDS } from '../../core/validation/engines/simplified.js';
 // Milestone 57B: carried verbatim from MILESTONE-57-PROPOSAL.md section 57B.
@@ -126,7 +127,7 @@ function bindEvents(container) {
       case 'add-guardian': {
         if (addCollectionRow('guardians', getD(), createSimplifiedGuardian)) {
           commitModelChange('collection-add', ['guardians']);
-          navigate('/p4');
+          navigate('/p4', onChange(afterAdd(getD(), 'guardians')));
         }
         break;
       }
@@ -134,21 +135,21 @@ function bindEvents(container) {
         if (index > 0 && rowStarted(getD().guardians?.[index]) && !(await confirmModal(`Remove co-guardian ${getD().guardians[index].name || `#${index + 1}`}? This will delete the entered signature information.`))) break;
         if (removeCollectionRow('guardians', index, getD())) {
           commitModelChange('collection-remove', ['guardians']);
-          navigate('/p4');
+          navigate('/p4', onChange(afterRemove(getD(), 'guardians', index)));
         }
         break;
       }
       case 'add-recipient': {
         if (addCollectionRow('certRecipients', getD())) {
           commitModelChange('collection-add', ['certRecipients']);
-          navigate('/p6');
+          navigate('/p6', onChange(afterAdd(getD(), 'certRecipients')));
         }
         break;
       }
       case 'remove-recipient': {
         if (removeCollectionRow('certRecipients', index, getD())) {
           commitModelChange('collection-remove', ['certRecipients']);
-          navigate('/p6');
+          navigate('/p6', onChange(afterRemove(getD(), 'certRecipients', index)));
         }
         break;
       }
@@ -159,7 +160,7 @@ function bindEvents(container) {
         // (appendRow() does it, for every form, since 73F part 3).
         if (addCollectionRow('remuneration', getD())) {
           commitModelChange('collection-add', ['remuneration', 'scheduleNoItems.remuneration']);
-          navigate('/p7');
+          navigate('/p7', onChange(afterAdd(getD(), 'remuneration')));
         }
         break;
       }
@@ -167,14 +168,14 @@ function bindEvents(container) {
       // Milestone 72H: the filer's explicit deletion of the old Part VI details.
       case 'discard-old-certificate-details': {
         if (discardOldCertificateDetails(getD(), 'simplified')) commitModelChange('certificate-details-discarded');
-        navigate('/p6');
+        navigate('/p6', onChange());
         break;
       }
       case 'open-court-portal': openFloridaCourtPortal(); break;
       case 'remove-remuneration': {
         if (removeCollectionRow('remuneration', index, getD())) {
           commitModelChange('collection-remove', ['remuneration']);
-          navigate('/p7');
+          navigate('/p7', onChange(afterRemove(getD(), 'remuneration', index)));
         }
         break;
       }
@@ -183,7 +184,7 @@ function bindEvents(container) {
       case 'resolve-guardian-address-conflict': {
         if (resolveSimplifiedGuardianAddressConflict(getD(), index, actionElement.dataset.field, actionElement.dataset.choice)) {
           commitModelChange('address-conflict-resolved', ['guardians']);
-          navigate('/p4');
+          navigate('/p4', onChange(rowTarget('guardians', getD().guardians?.[index])));
         }
         break;
       }

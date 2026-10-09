@@ -15,6 +15,7 @@ import { handleScheduleDocUpload, removeScheduleDoc, updateScheduleComment } fro
 import { toggleSsnReveal } from './core/form/form-runtime.js';
 import { filterCountyDropdown, hideCountyDropdown, onCountyKeydown, selectCountyOption } from './core/form/county-autocomplete.js';
 import { getCurrentPage, navigate, renderPage } from './core/navigation/router.js';
+import { fieldTarget, onChange } from './core/navigation/draw-reason.js';
 import { confirmDeleteWardYear, editPriorYear } from './core/modals/year-dialogs.js';
 import { clearPartyCompareSelection, doFilingSyncClosed, doPartyDismissPair, doPartyMergeKeep, doPartySyncClosed, doPartySyncClosedAll, doPartyUnmergeSelected, renderPartyDirectoryRows, togglePartyCompareSelection, togglePartyUnmergeSelection } from './core/parties/party-management.js';
 import { showPickPartyModal } from './core/modals/pick-record-dialogs.js';
@@ -63,8 +64,8 @@ on('click', (event) => {
     case 'confirm-delete-ward-year': confirmDeleteWardYear(actionElement.dataset.wardId, actionElement.dataset.yearKey); break;
     case 'edit-prior-year': editPriorYear(actionElement.dataset.wardId, actionElement.dataset.yearKey); break;
     case 'export-activity-log': exportActivityLog(); break;
-    case 'filing-sync-closed': void doFilingSyncClosed(actionElement.dataset.role, actionElement.dataset.index).then(() => renderPage(getCurrentPage())); break;
-    case 'filing-sync-closed-all': void doFilingSyncClosed().then(() => renderPage(getCurrentPage())); break;
+    case 'filing-sync-closed': void doFilingSyncClosed(actionElement.dataset.role, actionElement.dataset.index).then(() => renderPage(getCurrentPage(), onChange())); break;
+    case 'filing-sync-closed-all': void doFilingSyncClosed().then(() => renderPage(getCurrentPage(), onChange())); break;
     case 'link-party': showPickPartyModal(actionElement.dataset.role, actionElement.dataset.index); break;
     // summary-renderer.js's Section Completion / footer links are <a href="#">
     // (not <button>, so they read as links, not controls). Without this, the
@@ -153,7 +154,7 @@ on('change', (event) => {
       applyExclusiveChoice(getD(), control);
     }
     if (control.dataset.formRoute && renderPage) {
-      renderPage(control.dataset.formRoute);
+      renderPage(control.dataset.formRoute, onChange(fieldTarget(control.dataset.formPath || control.dataset.fieldPath || '')));
     }
   }
   if (control instanceof HTMLSelectElement && control.dataset.formChange === 'preview-page') pvSelect(control.value);

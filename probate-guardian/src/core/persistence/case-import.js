@@ -7,6 +7,7 @@
 // them.
 import { auditLog } from '../activity/audit-log.js';
 import { navigate } from '../navigation/router.js';
+import { DRAW } from '../navigation/draw-reason.js';
 import { backfillWardPartyCounties } from '../navigation/ward-county.js';
 import { filingLifecycle } from '../navigation/filing-lifecycle.js';
 import { notifyProbateGuardianTabStateChanged } from '../navigation/tab-state.js';
@@ -211,7 +212,7 @@ export async function importSavArchiveOrWard(file, options = {}) {
     // because a plain import relied on the switchWard() call removed above to
     // move the user somewhere; without it an import would silently leave them
     // on whatever page they were editing.
-    await navigate('/dashboard');
+    await navigate('/dashboard', { reason: DRAW.SWITCH });
 
     if (isBackupFlow) {
       if (typeof window !== 'undefined') {

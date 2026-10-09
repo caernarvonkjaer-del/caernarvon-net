@@ -25,6 +25,7 @@ import { getD } from '../../core/state.js';
 import { highlightErrors, validationPanel } from '../../core/validation/validation-panel.js';
 import { queueAllScheduleDocValidations } from '../../core/filing/schedule-docs.js';
 import { renderPage } from '../../core/navigation/router.js';
+import { DRAW } from '../../core/navigation/draw-reason.js';
 import { exportReasonHtml, outputRefusal } from '../../core/filing/output-reasons.js';
 
 
@@ -85,7 +86,7 @@ export async function doSavePdf(){
   const baseIssues = () => [...validatePlanSimplified(), ...getSupplementalFilingIssues(getD())];
   const authorization = authorizeFilingOutput(getD(), baseIssues, { capability: 'pdf' });
   if (authorization.status !== 'allowed') {
-    renderPage('/print');
+    renderPage('/print', { reason: DRAW.PREVIEW });
     await alertModal(outputRefusal(authorization, 'PDF'));
     return;
   }

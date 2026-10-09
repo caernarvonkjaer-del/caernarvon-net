@@ -11,6 +11,7 @@ import { refreshCarrySourceSelect, updateCarrySourcePicker } from '../filing/car
 import { deleteFilingConfirmation } from '../filing/delete-confirmation.js';
 import { formDisplayName } from '../filing/filing-registry.js';
 import { navigate, renderPage } from '../navigation/router.js';
+import { DRAW } from '../navigation/draw-reason.js';
 import { normalizeCountyName } from '../navigation/ward-county.js';
 import { filingLifecycle } from '../navigation/filing-lifecycle.js';
 import { getCurrentPage } from '../navigation/route-state.js';
@@ -69,7 +70,7 @@ export async function doAddWard(){
         const kase=getOrCreateCaseForWard(src);
         ward.caseId=kase.id;
         await saveWardToState(ward);
-        renderPage('/');
+        renderPage('/',{reason:DRAW.SWITCH});
         updateSidebar();
       }
     }
@@ -160,7 +161,7 @@ export async function doConfirmSimplifiedEligibility(){
       // repaints on its own, so without this the filer sees blank fields
       // while carryNote (below) claims details were carried over. Mirrors
       // doAddWard()'s own render tail after its carry-over Object.assign().
-      renderPage('/');
+      renderPage('/',{reason:DRAW.SWITCH});
       updateSidebar();
       if(carryNote)await alertModal(carryNote);
     }else{
@@ -181,7 +182,7 @@ export async function doConfirmSimplifiedEligibility(){
       }
       // Milestone 50B: same re-render this branch's own carry-over mutation
       // needs -- see the comment on the qualifying branch above.
-      renderPage('/');
+      renderPage('/',{reason:DRAW.SWITCH});
       updateSidebar();
       // Milestone 40C-F item 4: one message, and it names what actually
       // happened to the carryover and the county rather than leaving the filer

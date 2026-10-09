@@ -20,6 +20,7 @@ import {
 import { features } from '../runtime/features.js';
 import { enterDashboardEditingFocus } from './leave-filing.js';
 import { closeMobileSidebar, navigate, renderPage, setCurrentPage, setRouteHash } from './router.js';
+import { DRAW } from './draw-reason.js';
 
 export { enterDashboardEditingFocus } from './leave-filing.js';
 
@@ -99,7 +100,7 @@ export async function addWard(wardName, inventoryType) {
   setDirtySinceExport(true);
   updateLastSavedIndicator();
   if (isFirstWardEver) setAppState('firstLaunchSeen', false);
-  await navigate('/');
+  await navigate('/', { reason: DRAW.SWITCH });
   if (isFirstWardEver && !getLastExportAt()) showAutoExportReminder(true);
   return wardId;
 }
@@ -117,7 +118,7 @@ export async function switchWard(wardId) {
   // cleared then drew the Cover a second time).
   setCurrentPage('/');
   setRouteHash('');
-  await renderPage('/');
+  await renderPage('/', { reason: DRAW.SWITCH });
   closeMobileSidebar();
   return true;
 }

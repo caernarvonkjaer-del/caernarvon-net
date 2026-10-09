@@ -3,6 +3,7 @@
 import { esc } from '../filing/escape-html.js';
 import { describeYearLabel } from '../filing/filing-years.js';
 import { navigate, renderPage } from '../navigation/router.js';
+import { DRAW, onChange } from '../navigation/draw-reason.js';
 import { filingLifecycle } from '../navigation/filing-lifecycle.js';
 import { getCurrentPage } from '../navigation/route-state.js';
 import { getCaseFile } from '../state.js';
@@ -30,7 +31,7 @@ export async function confirmStartNewYear(){
   closeModal('startNewYearModal');
   await filingLifecycle.switchTo(wardId);
   await filingLifecycle.newYear(wardId);
-  navigate('/');
+  navigate('/',{reason:DRAW.SWITCH});
 }
 
 export function renderPriorYearsList(ward){
@@ -61,7 +62,7 @@ export async function editPriorYear(wardId,key){
   closeModal('priorYearsModal');
   await filingLifecycle.switchTo(wardId);
   await filingLifecycle.switchYear(wardId,key);
-  navigate('/');
+  navigate('/',{reason:DRAW.SWITCH});
 }
 
 export let _pendingDeleteYear=null;
@@ -88,7 +89,7 @@ export async function doDeleteWardYear(){
     // page redraws it. renderDashboardGrid() was never a global, so this line
     // threw after every deletion made from the dashboard, and the filer was
     // told the year had not been deleted when it had (Milestone 70, 70I).
-    if(getCurrentPage()==='/dashboard')renderPage('/dashboard');
+    if(getCurrentPage()==='/dashboard')renderPage('/dashboard',onChange());
   }catch(e){
     console.error('Failed to delete year',e);
     await alertModal('Failed to delete year. Check console.');

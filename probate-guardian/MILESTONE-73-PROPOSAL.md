@@ -6,9 +6,14 @@
 far: 73U (2026-10-04, `5b8849b`), 73V (2026-10-05, `8b96aa3`), 73C
 (2026-10-05, `861b6a9`, brought forward from its place in the build order at the
 requester's choice) 73D (2026-10-05, `c8e84fe`, likewise), 73J part 1 (2026-10-05, `d819c4a`),
-73F part 1 (2026-10-06, `5e9e17b`), 73A (2026-10-06, `83352d0`), 73F part 2 (2026-10-06, `d01edd4`), 73G part 1 (2026-10-06, `69a1b46`), 73E part 1 (2026-10-06, `8e02051`), 73F part 3 (2026-10-06, `67fc66c`), 73I (2026-10-06, `56a7c30`), 73T part 1 (2026-10-07, `4cae1e7`), 73T part 2 (2026-10-07, `2a1cbc5`), 73T part 3 (2026-10-07, `9d2bc72`), 73T part 4 (2026-10-07, `b70a944`), 73M with 74C (2026-10-07, `a0e987b`), 73B (2026-10-07, `86547da`), 73O part 2 with 74F (2026-10-08, `fa9625e`), 73G part 2 with 74H (2026-10-08, `f85e862`, `78b5770`), 73H (2026-10-08, `631f898`) and 73S (2026-10-08), each approved by name; 74P, built after 73B, is recorded in Milestone 74.**
+73F part 1 (2026-10-06, `5e9e17b`), 73A (2026-10-06, `83352d0`), 73F part 2 (2026-10-06, `d01edd4`), 73G part 1 (2026-10-06, `69a1b46`), 73E part 1 (2026-10-06, `8e02051`), 73F part 3 (2026-10-06, `67fc66c`), 73I (2026-10-06, `56a7c30`), 73T part 1 (2026-10-07, `4cae1e7`), 73T part 2 (2026-10-07, `2a1cbc5`), 73T part 3 (2026-10-07, `9d2bc72`), 73T part 4 (2026-10-07, `b70a944`), 73M with 74C (2026-10-07, `a0e987b`), 73B (2026-10-07, `86547da`), 73O part 2 with 74F (2026-10-08, `fa9625e`), 73G part 2 with 74H (2026-10-08, `f85e862`, `78b5770`), 73H (2026-10-08, `631f898`), 73S (2026-10-08, `3cf1d9d`) and 73K part 1 (2026-10-08), each approved by name; 74P, built after 73B, is recorded in Milestone 74.**
 **The 2026-10-07 batch is built**, and its closing full regression has run
-(recorded below, after the mid-batch one). Nothing else is approved. Building any other item, or any part of a
+(recorded below, after the mid-batch one). **Approved and not yet built**
+(2026-10-08, one batch in this order, light tests between deliveries and a
+full regression at the end): 73E part 2, 73J part 2, 73K part 2, 73L (with
+Milestone 74's 74D reproduction), 73N parts 1-3, 73O part 1 (with 74O), 73O
+part 3 (with 74L), 73O part 4 (with 74J), 73P (with 74S) and 73R parts 1-3.
+Nothing else is approved. Building any other item, or any part of a
 split item, needs the requester's named approval of that item or part
 (AGENTS.md §3).
 
@@ -2537,6 +2542,39 @@ New `tests/e2e/redraw-keeps-scroll.spec.ts` (one accounting, one Plan; Remove
 when the page shortens; Add brings the entry into view; focus after a
 confirmation); red-first. `npm run check:types`; **`npm test` recommended**
 (every page redraw goes through the router). No data or export change.
+
+### Build record, part 1 — BUILT 2026-10-08 (approved by name by the requester, 2026-10-08)
+
+**What changed for a filer:** nothing yet, as the design says. Part 2 uses
+what this adds to keep the filer's place.
+
+**How:** new `src/core/navigation/draw-reason.js` names the five reasons a
+page is drawn -- arriving at it (`navigation`), the page shown drawn again
+after a change made on it (`change`), another filing, year, conversion or
+replacing import (`switch`), work that finished on its own (`background`),
+and Preview drawing itself again (`preview`) -- and the focus target: a
+field by its path, or a row by 73V's row identity (`rowIdentity()`), with
+`afterAdd()`, `afterDuplicate()` and `afterRemove()` naming the new row, the
+copy, or the row that took a removed one's place (else the one above, else
+the list). `renderPage(page, { reason, focus })` refuses a reason that isn't
+one, records the draw (`getLastDraw()`) and hands both to the feature's
+`mountPage()`; `navigate()` passes them through and means "arriving" unless
+told otherwise. Every caller says why: the seven Previews and three Excel
+exports (`preview`); the three Excel imports' redraws, opening, creating,
+converting a filing, New Year and a year switch (`switch`); the
+supporting-document checks finishing (`background`); and every Add, Remove,
+Duplicate, Use, vehicle tick, signature stamp, Link Person, Sync, route-redrawing
+answer and certificate clean-up on all nine forms (`change`, with its field
+or row).
+
+**Tests:** new `tests/unit/draw-reason.spec.js` (11): the reasons, the
+targets (a row's identity survives a Remove above it), the router's record,
+an unknown reason refused, and source scans that every `renderPage()` call
+names a reason and every `navigate()` right after a committed change says it
+is one. **Red-first:** with the callers set aside, the three scans fail;
+without the module, nothing loads. `router.spec.js` unchanged. Full unit
+suite passes (2,986 before the bookkeeping guards); `check:types` clean.
+Light browser check: 6 files, 62 tests on a copy on C: (routes, the Plans' co-guardian Add, the Annual's live totals over Add, the Inventory's entries and documents prompt, the entry helpers, the Simplified's remuneration rows), all passed.
 
 ---
 

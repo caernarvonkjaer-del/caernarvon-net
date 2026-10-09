@@ -5,6 +5,7 @@ import { esc } from './escape-html.js';
 import { formatDisplayDate } from '../form/date-parser.js';
 import * as SupplementalPdf from '../pdf/supplemental-pdf.js';
 import { renderPage } from '../navigation/router.js';
+import { DRAW, fieldTarget, onChange } from '../navigation/draw-reason.js';
 import { getCurrentPage } from '../navigation/route-state.js';
 import { getActiveInventoryType, getD, requestSave } from '../state.js';
 import { alertModal } from '../ui/dialogs.js';
@@ -98,9 +99,9 @@ export async function handleScheduleDocUpload(scheduleKey,fileList){
   const results=await Promise.all(readers);
   results.filter(Boolean).forEach(r=>{slot.files.push(r);added.push(r);});
   if(rejected.length)await alertModal(`Some supporting documents were not attached: ${rejected.join(', ')}`);
-  if(!added.length){renderPage(getCurrentPage());return;}
+  if(!added.length){renderPage(getCurrentPage(),onChange(fieldTarget(`scheduleDocs.${scheduleKey}`)));return;}
   commitModelChange('supporting-documents',[`scheduleDocs.${scheduleKey}`]);
-  renderPage(getCurrentPage());
+  renderPage(getCurrentPage(),onChange(fieldTarget(`scheduleDocs.${scheduleKey}`)));
 
   for(const record of added){
     const currentSlot=getScheduleDocSlot(scheduleKey);
@@ -123,7 +124,7 @@ export async function handleScheduleDocUpload(scheduleKey,fileList){
       }
     }
     requestSave();
-    renderPage(getCurrentPage());
+    renderPage(getCurrentPage(),{reason:DRAW.BACKGROUND});
   }
 }
 
@@ -131,7 +132,7 @@ export function removeScheduleDoc(scheduleKey,idx){
   const slot=getScheduleDocSlot(scheduleKey);
   slot.files.splice(idx,1);
   commitModelChange('supporting-documents',[`scheduleDocs.${scheduleKey}`]);
-  renderPage(getCurrentPage());
+  renderPage(getCurrentPage(),onChange(fieldTarget(`scheduleDocs.${scheduleKey}`)));
 }
 
 export async function prepareScheduleDocForValidation(file,tools){
@@ -182,7 +183,7 @@ export function queueScheduleDocValidation(scheduleKey,slot){
       try{
         const tools=await getSupplementalPdfTools();
         const prepared=await prepareScheduleDocForValidation(file,tools);
-        if(prepared){requestSave();renderPage(getCurrentPage());}
+        if(prepared){requestSave();renderPage(getCurrentPage(),{reason:DRAW.BACKGROUND});}
         if(file.technicalStatus==='blocked'){file.__validationQueued=false;return;}
         const attempt=file.validationAttempt||1;
         const digest=file.contentDigest;
@@ -193,7 +194,7 @@ export function queueScheduleDocValidation(scheduleKey,slot){
         Object.assign(latest,validation);
         latest.__validationQueued=false;
         requestSave();
-        renderPage(getCurrentPage());
+        renderPage(getCurrentPage(),{reason:DRAW.BACKGROUND});
       }catch(e){
         file.__validationQueued=false;
       }

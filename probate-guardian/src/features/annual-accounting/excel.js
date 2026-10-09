@@ -44,6 +44,7 @@ import { formDisplayName } from '../../core/filing/filing-registry.js';
 import { getD } from '../../core/state.js';
 import { ensureTemplate } from '../../core/persistence/templates.js';
 import { getCurrentPage, renderPage } from '../../core/navigation/router.js';
+import { DRAW } from '../../core/navigation/draw-reason.js';
 // Milestone 73F part 1: the capacity limits live in core (excel-caps.js) so the
 // shared export checks can say what the workbook can't hold.
 import { ANNUAL_EXCEL_CAPS } from '../../core/excel/excel-caps.js';
@@ -124,7 +125,7 @@ export async function doSaveExcel(){
     } else {
       await alertModal(outputRefusal(authorization, 'Excel'));
     }
-    renderPage('/print');
+    renderPage('/print', { reason: DRAW.PREVIEW });
     return;
   }
   // Milestone 73M (decisions 73M-1 and 73M-2): what the filer must file
@@ -201,7 +202,7 @@ export async function importExcel(input){
       filing,
       adapter: async () => (read = await adapter()),
       confirmChoices: (plan) => { setStatus(prog,''); return confirmImport(plan, { sourceName: file.name }); },
-      redraw: () => renderPage(getCurrentPage()),
+      redraw: () => renderPage(getCurrentPage(), { reason: DRAW.SWITCH }),
       notify: (notice) => alertModal({ title: 'Import complete', message: notice }),
       afterCommit: (f) => {
         // Milestone 73T: a date cell holding text no reader understands comes

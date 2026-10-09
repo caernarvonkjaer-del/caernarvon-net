@@ -9,6 +9,7 @@ import { formEngine, initializeEmptyData, INVENTORY_TYPES } from './filing-regis
 import { emptyRowAnnual } from './models/annual.js';
 import { b2ItemDescription } from './models/guardian.js';
 import { navigate } from '../navigation/router.js';
+import { DRAW } from '../navigation/draw-reason.js';
 import { activateWard, createWardId } from '../navigation/ward-lifecycle.js';
 import { saveWardToState, setDirtySinceExport, updateLastSavedIndicator } from '../persistence/case-file.js';
 import { applyCarriedStartingBalance, crossesTrustBoundary as crossesTrust } from './starting-balance-carry.js';
@@ -382,6 +383,6 @@ export async function convertExistingWard(sourceWardId,targetType){
   setDirtySinceExport(true);
   updateLastSavedIndicator();
   recordModelChange('conversion');
-  navigate('/');
+  navigate('/', { reason: DRAW.SWITCH });
   await alertModal(`Converted "${sourceWard.wardName}" into a new ${INVENTORY_TYPES[targetType].name} form.\n\n${describeConversion(srcType,targetType)}`);
 }

@@ -12,6 +12,7 @@ import { confirmModal } from '../ui/dialogs.js';
 import { getD } from '../state.js';
 import { markDirtySinceExport } from '../persistence/case-file.js';
 import { renderPage } from '../navigation/router.js';
+import { fieldTarget, onChange } from '../navigation/draw-reason.js';
 import { commitModelChange } from '../model-change.js';
 
 /**
@@ -142,7 +143,7 @@ export function mountSignatureStateControls(container, { setImage, route }) {
       setImage(imagePath, dataUrl);
       markDirtySinceExport();
       commitModelChange('signature-image', [imagePath]);
-      if (route) renderPage(route);
+      if (route) renderPage(route, onChange(fieldTarget(path)));
     };
 
     mountSavedStampAffordance(mountEl, path, commitImage);

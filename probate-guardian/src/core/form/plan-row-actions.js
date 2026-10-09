@@ -8,6 +8,7 @@
 import { normalizePlanGuardians } from '../filing/models/plan-rows.js';
 import { rowStarted } from '../validation/row-started.js';
 import { navigate } from '../navigation/router.js';
+import { afterAdd, afterDuplicate, afterRemove, onChange } from '../navigation/draw-reason.js';
 import { getD } from '../state.js';
 import { confirmModal } from '../ui/dialogs.js';
 import { appendRow, duplicateRowAt, removeRowAt } from './collections.js';
@@ -16,7 +17,7 @@ import { commitModelChange } from '../model-change.js';
 export function addPlanGuardian(route){
   const d=getD(); normalizePlanGuardians(d);
   if(!appendRow(d,'planGuardians'))return false;
-  commitModelChange('collection-add', ['planGuardians']); navigate(route); return true;
+  commitModelChange('collection-add', ['planGuardians']); navigate(route, onChange(afterAdd(d, 'planGuardians'))); return true;
 }
 
 export async function removePlanGuardian(index,route){
@@ -25,7 +26,7 @@ export async function removePlanGuardian(index,route){
   const row=rows[index];
   if(rowStarted(row)&&!(await confirmModal(`Remove co-guardian ${row.name||`#${index+1}`}? This will delete the entered signature information.`)))return false;
   removeRowAt(d,'planGuardians',index);
-  commitModelChange('collection-remove', ['planGuardians']); navigate(route); return true;
+  commitModelChange('collection-remove', ['planGuardians']); navigate(route, onChange(afterRemove(d, 'planGuardians', index))); return true;
 }
 
 // Row add/remove/duplicate for the Plan's repeating tables. Generic over the
@@ -36,19 +37,19 @@ export async function removePlanGuardian(index,route){
 // buttons that pass it.
 export function addPlanRow(arrName,kind,route){
   appendRow(getD(),arrName);
-  commitModelChange('collection-add', [arrName]);navigate(route);
+  commitModelChange('collection-add', [arrName]);navigate(route, onChange(afterAdd(getD(), arrName)));
 }
 
 export function removePlanRow(arrName,idx,route){
   const list=getD()[arrName];
   if(!list||!list[idx])return;
   removeRowAt(getD(),arrName,idx);
-  commitModelChange('collection-remove', [arrName]);navigate(route);
+  commitModelChange('collection-remove', [arrName]);navigate(route, onChange(afterRemove(getD(), arrName, idx)));
 }
 
 export function duplicatePlanRow(arrName,idx,route){
   const list=getD()[arrName];
   if(!list||!list[idx])return;
   duplicateRowAt(getD(),arrName,idx);
-  commitModelChange('collection-duplicate', [arrName]);navigate(route);
+  commitModelChange('collection-duplicate', [arrName]);navigate(route, onChange(afterDuplicate(getD(), arrName, idx)));
 }

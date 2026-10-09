@@ -23,6 +23,7 @@ import { highlightErrors, validationPanel } from '../../core/validation/validati
 import { excelCapacityPanel } from '../../core/excel/excel-capacity.js';
 import { queueAllScheduleDocValidations } from '../../core/filing/schedule-docs.js';
 import { renderPage } from '../../core/navigation/router.js';
+import { DRAW } from '../../core/navigation/draw-reason.js';
 import { exportReasonHtml, excelOmissionsHtml, outputRefusal } from '../../core/filing/output-reasons.js';
 import { excelOmissions } from '../../core/excel/workbook-contract/index.js';
 
@@ -106,7 +107,7 @@ export async function doSavePdf(){
   const baseIssues = () => [...validateSimplified(), ...getSupplementalFilingIssues(getD())];
   const authorization = authorizeFilingOutput(getD(), baseIssues, { capability: 'pdf' });
   if (authorization.status !== 'allowed') {
-    renderPage('/print');
+    renderPage('/print', { reason: DRAW.PREVIEW });
     await alertModal(outputRefusal(authorization, 'PDF'));
     return;
   }

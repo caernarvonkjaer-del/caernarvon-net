@@ -61,6 +61,7 @@ import { lockApp } from '../security/app-lock.js';
 // Milestone 70, 70K: what the members ran through window by name.
 import { features } from '../runtime/features.js';
 import { getCurrentPage, navigate } from '../navigation/router.js';
+import { DRAW } from '../navigation/draw-reason.js';
 import {
   buildCaseFileBlob, buildSingleWardExportBlob, exportCaseFileZip, finishSingleWardExport, loadCaseFileHandle,
   markDirtySinceExport, rememberCaseFileHandle, saveBackupNow, saveBlobAs,
@@ -377,7 +378,7 @@ export function createTestingAdapter(w, impl = applicationImplementations()) {
         filing: requireActive('importTransaction.run'),
         adapter: async () => ({ draft, sourceName, workbookType, notCarried }),
         confirmChoices: (plan) => confirmImport(plan, { sourceName }),
-        redraw: () => navigate(getCurrentPage() || '/'),
+        redraw: () => navigate(getCurrentPage() || '/', { reason: DRAW.SWITCH }),
         notify: (notice) => alertModal({ title: 'Import complete', message: notice }),
       })),
     }),

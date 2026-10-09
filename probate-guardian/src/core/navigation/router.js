@@ -30,6 +30,7 @@ import { linkLabelsToInputs, setupAmountFieldValidation } from '../form/form-run
 import { commitPendingFieldValues } from '../form/form-contract.js';
 import { resetNavSectionExpanded, updateNavDots } from '../status/nav-marks.js';
 import { refreshWardInfoCard } from '../shell/sidebar.js';
+import { DRAW, isDrawReason } from './draw-reason.js';
 import { initPrintPager } from '../ui/print-pager.js';
 import { pagePartyManagement, renderClosedFilingSyncNotice, renderPartyManagementBody } from '../parties/party-management.js';
 import { updateHelpContext } from '../help/help-panel.js';
@@ -103,7 +104,25 @@ export function closeMobileSidebar() {
   if (btn) btn.setAttribute('aria-expanded', 'false');
 }
 
-export async function navigate(page, { updateHash = true } = {}) {
+/**
+ * Milestone 73K part 1: the last page drawn, why, and what should hold the
+ * cursor -- what 73K part 2 reads to keep the filer's place. In memory only.
+ * @type {{ page: string, reason: import('./draw-reason.js').DrawReason, focus: import('./draw-reason.js').FocusTarget | null } | null}
+ */
+let lastDraw = null;
+/** The last page drawn, why, and its focus target (a copy). */
+export function getLastDraw() {
+  return lastDraw ? { ...lastDraw, focus: lastDraw.focus ? { ...lastDraw.focus } : null } : null;
+}
+
+/**
+ * Show a page. Milestone 73K part 1: `reason` says why (draw-reason.js's
+ * DRAW; arriving at a page unless the caller says otherwise) and `focus` what
+ * the filer was working on, passed on to renderPage().
+ * @param {string} page
+ * @param {{ updateHash?: boolean } & import('./draw-reason.js').DrawOptions} [options]
+ */
+export async function navigate(page, { updateHash = true, reason = DRAW.NAVIGATION, focus = null } = {}) {
   const previousPage = getCurrentPage();
   if (page !== previousPage && typeof window !== 'undefined') {
     // Leaving a page forgets a hand-opened sidebar nav section, so the section
@@ -124,14 +143,25 @@ export async function navigate(page, { updateHash = true } = {}) {
   setCurrentPage(page);
   if (updateHash) setRouteHash(page);
 
-  await renderPage(page);
+  await renderPage(page, { reason, focus });
   closeMobileSidebar();
 
   return true;
 }
 provideNavigate(navigate);
 
-export async function renderPage(page) {
+/**
+ * Draw a page into #main-content. Milestone 73K part 1: every caller says why
+ * (`reason`, draw-reason.js's DRAW) and, for a change made on the page, which
+ * field or row the filer was working on (`focus`); both are recorded
+ * (getLastDraw()) and handed to the feature's mount. Nothing reads them yet:
+ * 73K part 2 keeps the filer's place with them.
+ * @param {string} page
+ * @param {import('./draw-reason.js').DrawOptions} [options]
+ */
+export async function renderPage(page, { reason = DRAW.NAVIGATION, focus = null } = {}) {
+  if (!isDrawReason(reason)) throw new Error(`renderPage: "${reason}" is not a reason a page is drawn (draw-reason.js)`);
+  lastDraw = { page, reason, focus: focus || null };
   const signal = beginNavigation();
   // Milestone 38C: entering the dashboard ends editing focus -- commit pending
   // values, release the ward lock, close the filing. navigate() above already
@@ -200,7 +230,7 @@ export async function renderPage(page) {
 
   const engine = formEngine(activeType);
   if (FILING_ENGINE_IDS.includes(engine)) {
-    await features().mountPage(engine, el, page, { signal, filing: activeWard });
+    await features().mountPage(engine, el, page, { signal, filing: activeWard, reason, focus: focus || null });
     // A newer navigation, or another filing opened meanwhile, owns the page.
     if (signal.aborted || getActiveWard() !== activeWard) return;
   }
@@ -254,7 +284,7 @@ export async function handleHash() {
   if (SPECIAL_PAGES.includes(h) && getCurrentPage() === h) return;
   const page = routeForHash(h);
   setCurrentPage(page);
-  const rendered = renderPage(page);
+  const rendered = renderPage(page, { reason: DRAW.NAVIGATION });
   updateNavActive(page);
   await rendered;
 }

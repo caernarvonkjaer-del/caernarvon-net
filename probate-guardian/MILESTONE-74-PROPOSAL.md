@@ -6,7 +6,9 @@
 far: 74A (2026-10-05), 74B (2026-10-06), 74Q (2026-10-07), 74C (2026-10-07,
 with 73M, `a0e987b`), 74P (2026-10-07, after 73B, `645fe35`), 74F (2026-10-08,
 with 73O part 2, `fa9625e`) and 74H (2026-10-08, with 73G part 2, `f85e862`), each
-approved by name.** Nothing else is
+approved by name.** **Approved and not yet built** (2026-10-08, with
+Milestone 73's batch): 74D's reproduction (with 73L), 74O (with 73O part 1),
+74L (with 73O part 3), 74J (with 73O part 4) and 74S (with 73P). Nothing else is
 approved: building any other of 74D–74S needs the requester's named approval
 of that item (AGENTS.md §3). **Every decision in 74C–74S is settled
 (2026-10-06)**, each recorded under its item and gathered in
