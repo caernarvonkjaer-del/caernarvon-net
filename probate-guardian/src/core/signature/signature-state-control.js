@@ -143,7 +143,8 @@ export function mountSignatureStateControls(container, { setImage, route }) {
       setImage(imagePath, dataUrl);
       markDirtySinceExport();
       commitModelChange('signature-image', [imagePath]);
-      if (route) renderPage(route, onChange(fieldTarget(path)));
+      // Milestone 73K part 2: the cursor goes back to this signature's choice.
+      if (route) renderPage(route, onChange(fieldTarget(checkedRadio.dataset.formPath || path)));
     };
 
     mountSavedStampAffordance(mountEl, path, commitImage);

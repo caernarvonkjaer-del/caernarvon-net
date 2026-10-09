@@ -30,11 +30,11 @@ describe('the reasons and targets', () => {
     const d = { rows: [{ a: 1 }, { a: 2 }, { a: 3 }] };
     const third = d.rows[2];
     const added = afterAdd(d, 'rows');
-    expect(added).toEqual({ list: 'rows', row: rowIdentity(third) });
+    expect(added).toEqual({ list: 'rows', row: rowIdentity(third), reveal: true });
     d.rows.splice(0, 1); // a Remove above it
     expect(rowIdentity(d.rows[1]), 'the same row, now at index 1').toBe(added.row);
     const copy = { a: 9 };
-    expect(afterDuplicate({ rows: [d.rows[0], copy] }, 'rows', 0), 'the copy, just below the row duplicated').toEqual({ list: 'rows', row: rowIdentity(copy) });
+    expect(afterDuplicate({ rows: [d.rows[0], copy] }, 'rows', 0), 'the copy, just below the row duplicated').toEqual({ list: 'rows', row: rowIdentity(copy), reveal: true });
   });
 
   test('after a Remove: the row that took its place, else the one above, else the list', () => {
@@ -42,7 +42,7 @@ describe('the reasons and targets', () => {
     expect(afterRemove({ rows: [a, b] }, 'rows', 0)).toEqual({ list: 'rows', row: rowIdentity(a) });
     expect(afterRemove({ rows: [a] }, 'rows', 1)).toEqual({ list: 'rows', row: rowIdentity(a) });
     expect(afterRemove({ rows: [] }, 'rows', 0)).toEqual({ list: 'rows' });
-    expect(afterAdd({}, 'rows')).toEqual({ list: 'rows' });
+    expect(afterAdd({}, 'rows')).toEqual({ list: 'rows', reveal: true });
   });
 
   test('a field by its path; a change carries its target', () => {

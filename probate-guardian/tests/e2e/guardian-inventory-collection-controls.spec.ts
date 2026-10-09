@@ -25,6 +25,15 @@ async function goto(page: import('@playwright/test').Page, route: string) {
   await page.evaluate((r) => (window as any).GuardianForms.testing.navigate(r), route);
 }
 
+// Milestone 73K part 2: after "+ Add" the cursor is in the new card's first
+// box, which is empty. These tests then set names behind the page (setup,
+// D9); the box would write its empty value back over them when the page is
+// next drawn. A filer types into the box itself, so the two never disagree --
+// the cursor is taken out first, as a click elsewhere would.
+async function releaseCursor(page: import('@playwright/test').Page) {
+  await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+}
+
 test.describe('Milestone 51E: Initial Inventory collection Add/Remove controls', () => {
   test('co-guardians: adding accumulates rows once each is given data, up to the maximum of three', async ({ page }) => {
     await freshStartNoPassword(page);
@@ -46,6 +55,7 @@ test.describe('Milestone 51E: Initial Inventory collection Add/Remove controls',
     // must be given data before the next one is added. This is the ordinary user
     // flow (type a name, then add another), and asserting it here pins the
     // pruning rule alongside the Add/Remove handlers it interacts with.
+    await releaseCursor(page);
     await page.evaluate(() => { (window as any).GuardianForms.testing.patchFiling({ 'guardians.1.name': 'Second Guardian' }); });
     await goto(page, GUARDIAN_ROUTE);
 
@@ -113,9 +123,11 @@ test.describe('Milestone 51E: Initial Inventory collection Add/Remove controls',
 
     // Build three guardians that all carry data, so none is pruned.
     await page.locator('[data-inventory-action="add-guardian"]').click();
+    await releaseCursor(page);
     await page.evaluate(() => { (window as any).GuardianForms.testing.patchFiling({ 'guardians.1.name': 'Second Guardian' }); });
     await goto(page, GUARDIAN_ROUTE);
     await page.locator('[data-inventory-action="add-guardian"]').click();
+    await releaseCursor(page);
     await page.evaluate(() => {
       const d = (window as any).GuardianForms.testing.snapshot().filing;
       d.guardians[0].name = 'First Guardian';
@@ -141,11 +153,13 @@ test.describe('Milestone 51E: Initial Inventory collection Add/Remove controls',
     await goto(page, GUARDIAN_ROUTE);
 
     await page.locator('[data-inventory-action="add-guardian"]').click();
+    await releaseCursor(page);
     await page.evaluate(() => { (window as any).GuardianForms.testing.patchFiling({ 'guardians.1.name': 'Second Guardian' }); });
     await goto(page, GUARDIAN_ROUTE);
     await page.locator('[data-inventory-action="add-guardian"]').click();
     // AGENTS.md section 6: deleting a guardian must cleanly unlink its partyId
     // rather than leave the array shifted against the rows.
+    await releaseCursor(page);
     await page.evaluate(() => {
       const d = (window as any).GuardianForms.testing.snapshot().filing;
       d.guardians[2].name = 'Third Guardian';
@@ -182,6 +196,7 @@ test.describe('Milestone 51E: Initial Inventory collection Add/Remove controls',
     await addRecipient.click();
     await expect(removeRecipient).toHaveCount(3);
 
+    await releaseCursor(page);
     await page.evaluate(() => {
       const d = (window as any).GuardianForms.testing.snapshot().filing;
       d.serviceRecipients[0].name = 'Recipient One';
@@ -233,6 +248,7 @@ test.describe('Milestone 51E: Initial Inventory collection Add/Remove controls',
     await addWitness.click();
     await expect(removeWitness).toHaveCount(2);
 
+    await releaseCursor(page);
     await page.evaluate(() => {
       const d = (window as any).GuardianForms.testing.snapshot().filing;
       d.witnesses[0].name = 'Witness One';

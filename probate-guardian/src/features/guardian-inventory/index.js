@@ -206,7 +206,6 @@ export async function mount(container, page, { signal } = {}) {
   bindEvents(container);
   bindForms();
   afterChange('');
-  container.scrollTop = 0;
   if(page==='/')linkAccordions('instructionsZone','importZone');
   signatureHandles.get(container)?.forEach((h) => h.destroy());
   signatureHandles.delete(container);
@@ -1049,7 +1048,7 @@ function pageScheduleB2(){
           col(3,yesNoRadioHTML(`schB2_sdb_${i}`,'In Safe Deposit Box?',e.inSafeDepositBox===true?'Yes':(e.inSafeDepositBox===false?'No':(e.inSafeDepositBox||'')),`scheduleB2.${i}.inSafeDepositBox`))
         );
     return entryCard(`Item ${i+1}`,i,'b2',`
-    ${formRow(col(12,`<label class="form-check"><input class="form-check-input" type="checkbox" ${e.isVehicle?'checked':''} aria-label="This item is a vehicle" data-inventory-change="toggle-vehicle" data-index="${i}"><span class="form-check-label">This item is a vehicle (car, truck, motorcycle, boat, RV, etc.)</span></label>`))}
+    ${formRow(col(12,`<label class="form-check"><input class="form-check-input" type="checkbox" ${e.isVehicle?'checked':''} aria-label="This item is a vehicle" data-inventory-change="toggle-vehicle" data-index="${i}" data-focus-path="scheduleB2.${i}.isVehicle"><span class="form-check-label">This item is a vehicle (car, truck, motorcycle, boat, RV, etc.)</span></label>`))}
     <div id="b2-fields-${i}">
       ${renderB2Fields(e, i)}
     </div>

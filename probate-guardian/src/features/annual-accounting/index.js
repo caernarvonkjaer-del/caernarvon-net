@@ -199,7 +199,6 @@ export async function mount(container, page, { signal } = {}) {
   container.innerHTML = html;
   bindEvents(container);
   syncPercentFeedback(container);
-  container.scrollTop = 0;
   if (page === '/' || !page || page === '/p1') linkAccordions('instructionsZoneAnnual', 'importZonePart1');
   signatureHandles.get(container)?.forEach((h) => h.destroy());
   signatureHandles.delete(container);

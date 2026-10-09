@@ -29,10 +29,11 @@ export const DRAW = Object.freeze({
 
 /** @typedef {'navigation'|'change'|'switch'|'background'|'preview'} DrawReason */
 /**
- * @typedef {{ path?: string, list?: string, row?: number }} FocusTarget
+ * @typedef {{ path?: string, list?: string, row?: number, reveal?: boolean }} FocusTarget
  * `path`: a field, as its data-form-path / data-annual-path / data-bind names it.
  * `list` + `row`: a row of that list, by its row identity. `list` alone: the
- * list itself (its Add button), when no row is left to name.
+ * list itself (its Add button), when no row is left to name. `reveal`: a new
+ * entry (Add, Duplicate), brought into view if it is off-screen (73K part 2).
  */
 /** @typedef {{ reason?: DrawReason, focus?: FocusTarget | null }} DrawOptions */
 
@@ -63,15 +64,15 @@ export function rowTarget(list, row) {
 /** @param {any} data @param {string} list @returns {any[]} */
 const rowsOf = (data, list) => (Array.isArray(data?.[list]) ? data[list] : []);
 
-/** After an Add: the new row, the list's last. @param {any} data @param {string} list */
+/** After an Add: the new row, the list's last, to bring into view. @param {any} data @param {string} list */
 export function afterAdd(data, list) {
   const rows = rowsOf(data, list);
-  return rowTarget(list, rows[rows.length - 1]);
+  return { ...rowTarget(list, rows[rows.length - 1]), reveal: true };
 }
 
-/** After a Duplicate of row `index`: the copy, just below it. @param {any} data @param {string} list @param {number|string} index */
+/** After a Duplicate of row `index`: the copy, just below it, to bring into view. @param {any} data @param {string} list @param {number|string} index */
 export function afterDuplicate(data, list, index) {
-  return rowTarget(list, rowsOf(data, list)[Number(index) + 1]);
+  return { ...rowTarget(list, rowsOf(data, list)[Number(index) + 1]), reveal: true };
 }
 
 /**

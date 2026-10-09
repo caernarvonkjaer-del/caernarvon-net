@@ -115,7 +115,6 @@ export async function mount(container, page, { signal } = {}) {
   }
   container.innerHTML = html;
   bindEvents(container);
-  container.scrollTop = 0;
   signatureHandles.get(container)?.forEach((h) => h.destroy());
   signatureHandles.delete(container);
   if (page === '/p3' || page === '/p4') {

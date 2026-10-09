@@ -17,7 +17,7 @@
 // filing did the same); a hash change that names the page already shown is
 // now ignored, so one is only acted on when it is the filer's -- the Back
 // button, or a link.
-import { getActiveInventoryType, getActiveWard, getCaseFile } from '../state.js';
+import { getActiveInventoryType, getActiveWard, getCaseFile, getD } from '../state.js';
 import { FILING_ENGINE_IDS } from '../filing/filing-descriptor.js';
 import { resetReadinessCardState } from '../filing/readiness-card.js';
 import { saveLastPosition } from '../persistence/recovery-cache.js';
@@ -31,6 +31,7 @@ import { commitPendingFieldValues } from '../form/form-contract.js';
 import { resetNavSectionExpanded, updateNavDots } from '../status/nav-marks.js';
 import { refreshWardInfoCard } from '../shell/sidebar.js';
 import { DRAW, isDrawReason } from './draw-reason.js';
+import { isTypingIn, rememberPlace, settlePlace } from './keep-place.js';
 import { initPrintPager } from '../ui/print-pager.js';
 import { pagePartyManagement, renderClosedFilingSyncNotice, renderPartyManagementBody } from '../parties/party-management.js';
 import { updateHelpContext } from '../help/help-panel.js';
@@ -115,6 +116,13 @@ export function getLastDraw() {
   return lastDraw ? { ...lastDraw, focus: lastDraw.focus ? { ...lastDraw.focus } : null } : null;
 }
 
+/** Takes the cursor out of a box on the page shown; its blur writes it, as leaving it by hand would. */
+function releaseFocusedBox() {
+  const main = document.getElementById('main-content');
+  const active = document.activeElement;
+  if (main && active instanceof HTMLElement && active !== main && main.contains(active)) active.blur();
+}
+
 /**
  * Show a page. Milestone 73K part 1: `reason` says why (draw-reason.js's
  * DRAW; arriving at a page unless the caller says otherwise) and `focus` what
@@ -128,6 +136,12 @@ export async function navigate(page, { updateHash = true, reason = DRAW.NAVIGATI
     // Leaving a page forgets a hand-opened sidebar nav section, so the section
     // holding the new page expands itself.
     resetNavSectionExpanded();
+    // Milestone 73K part 2: the box holding the cursor is let go first, as a
+    // click on the sidebar does, so its own write runs while its row is still
+    // there -- before the clean-up below. Left to the page's removal, the
+    // write ran after the clean-up and put back part of a row it had just
+    // removed (after "+ Add", the cursor is in the new row's first box).
+    releaseFocusedBox();
     commitPendingFieldValues();
     // Milestone 44C: leaving Preview forgets the readiness card's hand
     // toggle, so the next entry recomputes its default; a same-route
@@ -151,16 +165,80 @@ export async function navigate(page, { updateHash = true, reason = DRAW.NAVIGATI
 provideNavigate(navigate);
 
 /**
+ * Milestone 73K part 2: a background redraw (a supporting-document check
+ * finishing) waits while the filer is typing in a box on the page, and runs
+ * once the cursor leaves it -- after that box's own change has been written.
+ * Any other draw meanwhile drops it: that draw shows the filing as it is.
+ * @type {{ page: string, stop: () => void } | null}
+ */
+let waitingBackground = null;
+/** Set for the one draw a wait releases: the filer has left the box, so it runs even if the cursor went straight into another. */
+let backgroundReleased = false;
+
+function dropWaitingBackground() {
+  waitingBackground?.stop();
+  waitingBackground = null;
+}
+
+/**
+ * Whether a background redraw of `page` must wait for the filer; if so, it is
+ * set to run when they leave the box. Leaving it with a click waits for the
+ * click to finish: the page drawn between the press and the release would
+ * replace the button pressed, and the click ("+ Add", Remove) would be lost.
+ * A draw the click makes itself drops the wait.
+ * @param {string} page
+ */
+function waitForTyping(page) {
+  if (typeof document === 'undefined') return false;
+  const el = document.getElementById('main-content');
+  const active = document.activeElement;
+  if (!el || !active || !el.contains(active) || !isTypingIn(active)) return false;
+  if (waitingBackground?.page === page) return true;
+  dropWaitingBackground();
+  const controller = new AbortController();
+  const { signal } = controller;
+  let timer = 0;
+  waitingBackground = { page, stop: () => { controller.abort(); clearTimeout(timer); } };
+  const redraw = () => {
+    timer = window.setTimeout(() => {
+      controller.abort();
+      waitingBackground = null;
+      if (getCurrentPage() !== page) return;
+      backgroundReleased = true;
+      renderPage(page, { reason: DRAW.BACKGROUND });
+    }, 0);
+  };
+  let pressed = false;
+  document.addEventListener('pointerdown', () => { pressed = true; }, { capture: true, signal });
+  document.addEventListener('pointerup', () => { pressed = false; }, { capture: true, signal });
+  active.addEventListener('focusout', () => {
+    // The click's own events (pointerup, mouseup, click) run in one task; the
+    // redraw is queued behind them.
+    if (pressed) document.addEventListener('pointerup', redraw, { capture: true, once: true, signal });
+    else redraw();
+  }, { once: true, signal });
+  return true;
+}
+
+/**
  * Draw a page into #main-content. Milestone 73K part 1: every caller says why
  * (`reason`, draw-reason.js's DRAW) and, for a change made on the page, which
  * field or row the filer was working on (`focus`); both are recorded
- * (getLastDraw()) and handed to the feature's mount. Nothing reads them yet:
- * 73K part 2 keeps the filer's place with them.
+ * (getLastDraw()) and handed to the feature's mount. Part 2: a change made on
+ * the page, or a background redraw, keeps the filer's place and puts the
+ * cursor back (keep-place.js); arriving at a page, a switch and Preview start
+ * at the top. A background redraw waits while the filer types.
  * @param {string} page
  * @param {import('./draw-reason.js').DrawOptions} [options]
  */
 export async function renderPage(page, { reason = DRAW.NAVIGATION, focus = null } = {}) {
   if (!isDrawReason(reason)) throw new Error(`renderPage: "${reason}" is not a reason a page is drawn (draw-reason.js)`);
+  const released = backgroundReleased;
+  backgroundReleased = false;
+  if (reason === DRAW.BACKGROUND && !released && waitForTyping(page)) return;
+  dropWaitingBackground();
+  // A change that lands on another page starts that page at its top.
+  const samePage = lastDraw?.page === page;
   lastDraw = { page, reason, focus: focus || null };
   const signal = beginNavigation();
   // Milestone 38C: entering the dashboard ends editing focus -- commit pending
@@ -180,6 +258,10 @@ export async function renderPage(page, { reason = DRAW.NAVIGATION, focus = null 
   const el = document.getElementById('main-content');
   if (!el) return;
 
+  // Milestone 73K part 2: where the filer is, taken before the page is cleared.
+  const place = rememberPlace(el);
+  const settle = () => settlePlace(el, place, { reason: samePage ? reason : DRAW.NAVIGATION, focus, data: getD() });
+
   disposeActiveFeature(el);
 
   const caseFile = getCaseFile();
@@ -188,12 +270,14 @@ export async function renderPage(page, { reason = DRAW.NAVIGATION, focus = null 
     updateHelpContext('default');
     if (!caseFile.wards || caseFile.wards.length === 0) {
       showInventorySelector(el);
+      settle();
       return;
     }
     await features().mountPage('dashboard', el, page, { signal });
     if (signal.aborted) return;
     // Milestone 68¾A: the dashboard's title carries the test-system warning too.
     decorateTestSystemTitles(el);
+    settle();
     return;
   }
 
@@ -201,6 +285,7 @@ export async function renderPage(page, { reason = DRAW.NAVIGATION, focus = null 
     updateHelpContext('inventory-select');
     el.innerHTML = pageInventorySelector();
     linkLabelsToInputs();
+    settle();
     return;
   }
 
@@ -208,6 +293,7 @@ export async function renderPage(page, { reason = DRAW.NAVIGATION, focus = null 
     updateHelpContext('default');
     el.innerHTML = pageActivityLog();
     loadAndRenderActivityLog();
+    settle();
     return;
   }
 
@@ -215,6 +301,7 @@ export async function renderPage(page, { reason = DRAW.NAVIGATION, focus = null 
     updateHelpContext('default');
     el.innerHTML = pagePartyManagement();
     renderPartyManagementBody();
+    settle();
     return;
   }
 
@@ -223,6 +310,7 @@ export async function renderPage(page, { reason = DRAW.NAVIGATION, focus = null 
 
   if (!activeType) {
     showInventorySelector(el);
+    settle();
     return;
   }
 
@@ -251,6 +339,7 @@ export async function renderPage(page, { reason = DRAW.NAVIGATION, focus = null 
   else updateNavDots();
   initPrintPager();
   attachFormHeaderActions(el);
+  settle();
 }
 
 // No filing to show, or no filing in the case at all: the Start New Form

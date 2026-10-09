@@ -125,6 +125,7 @@
   "tests/e2e/pwa-registration.spec.ts",
   "tests/e2e/readiness-card.contract.spec.ts",
   "tests/e2e/recovery-cache.spec.ts",
+  "tests/e2e/redraw-keeps-scroll.spec.ts",
   "tests/e2e/rollback.contract.spec.ts",
   "tests/e2e/routes.spec.ts",
   "tests/e2e/rules-follow-rows.spec.ts",

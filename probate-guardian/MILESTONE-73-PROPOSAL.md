@@ -6,11 +6,11 @@
 far: 73U (2026-10-04, `5b8849b`), 73V (2026-10-05, `8b96aa3`), 73C
 (2026-10-05, `861b6a9`, brought forward from its place in the build order at the
 requester's choice) 73D (2026-10-05, `c8e84fe`, likewise), 73J part 1 (2026-10-05, `d819c4a`),
-73F part 1 (2026-10-06, `5e9e17b`), 73A (2026-10-06, `83352d0`), 73F part 2 (2026-10-06, `d01edd4`), 73G part 1 (2026-10-06, `69a1b46`), 73E part 1 (2026-10-06, `8e02051`), 73F part 3 (2026-10-06, `67fc66c`), 73I (2026-10-06, `56a7c30`), 73T part 1 (2026-10-07, `4cae1e7`), 73T part 2 (2026-10-07, `2a1cbc5`), 73T part 3 (2026-10-07, `9d2bc72`), 73T part 4 (2026-10-07, `b70a944`), 73M with 74C (2026-10-07, `a0e987b`), 73B (2026-10-07, `86547da`), 73O part 2 with 74F (2026-10-08, `fa9625e`), 73G part 2 with 74H (2026-10-08, `f85e862`, `78b5770`), 73H (2026-10-08, `631f898`), 73S (2026-10-08, `3cf1d9d`), 73K part 1 (2026-10-08, `4268c45`), 73E part 2 (2026-10-08, `5e26e57`, `ea78dd4`) and 73J part 2 (2026-10-08), each approved by name; 74P, built after 73B, is recorded in Milestone 74.**
+73F part 1 (2026-10-06, `5e9e17b`), 73A (2026-10-06, `83352d0`), 73F part 2 (2026-10-06, `d01edd4`), 73G part 1 (2026-10-06, `69a1b46`), 73E part 1 (2026-10-06, `8e02051`), 73F part 3 (2026-10-06, `67fc66c`), 73I (2026-10-06, `56a7c30`), 73T part 1 (2026-10-07, `4cae1e7`), 73T part 2 (2026-10-07, `2a1cbc5`), 73T part 3 (2026-10-07, `9d2bc72`), 73T part 4 (2026-10-07, `b70a944`), 73M with 74C (2026-10-07, `a0e987b`), 73B (2026-10-07, `86547da`), 73O part 2 with 74F (2026-10-08, `fa9625e`), 73G part 2 with 74H (2026-10-08, `f85e862`, `78b5770`), 73H (2026-10-08, `631f898`), 73S (2026-10-08, `3cf1d9d`), 73K part 1 (2026-10-08, `4268c45`), 73E part 2 (2026-10-08, `5e26e57`, `ea78dd4`), 73J part 2 (2026-10-08, `3648706`) and 73K part 2 (2026-10-08), each approved by name; 74P, built after 73B, is recorded in Milestone 74.**
 **The 2026-10-07 batch is built**, and its closing full regression has run
 (recorded below, after the mid-batch one). **Approved and not yet built**
 (2026-10-08, one batch in this order, light tests between deliveries and a
-full regression at the end): 73K part 2, 73L (with
+full regression at the end): 73L (with
 Milestone 74's 74D reproduction), 73N parts 1-3, 73O part 1 (with 74O), 73O
 part 3 (with 74L), 73O part 4 (with 74J), 73P (with 74S) and 73R parts 1-3.
 Nothing else is approved. Building any other item, or any part of a
@@ -2656,6 +2656,79 @@ is one. **Red-first:** with the callers set aside, the three scans fail;
 without the module, nothing loads. `router.spec.js` unchanged. Full unit
 suite passes (2,986 before the bookkeeping guards); `check:types` clean.
 Light browser check: 6 files, 62 tests on a copy on C: (routes, the Plans' co-guardian Add, the Annual's live totals over Add, the Inventory's entries and documents prompt, the entry helpers, the Simplified's remuneration rows), all passed.
+
+
+### Build record, part 2 — BUILT 2026-10-08 (approved by name by the requester, 2026-10-08)
+
+**What changed for a filer:** a change made on the page no longer throws the
+filer back to the top of it. A signature choice, the vehicle box, a Yes/No
+answer that reveals boxes, Add, Remove and Duplicate keep the page where it
+was, and the cursor goes back to what the filer was working on -- the
+answer given, the box ticked, or, after Remove, the entry that took the
+removed one's place (else the one above, else the list's "+ Add"). After "+
+Add" or Duplicate the new entry is brought into view if it is off-screen and
+its first box takes the cursor (73K-N1). After a confirmation ("Remove
+co-guardian ...?") the cursor goes to the card that is left, not the top of
+the document. Arriving at a page, opening another filing or year, and Preview
+start at the top, as before. A supporting-document check that finishes while
+the filer is typing waits until they leave the box; leaving it with a click
+waits for the click to finish, so the button clicked is still there to
+receive it.
+
+**How:** new `src/core/navigation/keep-place.js`. The router takes the scroll
+position and the box holding the cursor before the page is cleared, and after
+drawing restores them for a change or a background redraw of the same page,
+else starts at the top; the seven mounts' `scrollTop = 0` are gone. A field
+target is found by its path (of a Yes/No pair, the answer given); a row
+target by its row identity, at its first box the filer types in (ahead of a
+button carrying the row's path). The cursor is only moved when it was on the
+page, or had fallen to the document; a filer working in the sidebar or a
+dialog keeps it. `afterAdd()` and `afterDuplicate()` mark the new entry to
+bring into view. Two controls written by their own handlers name their path
+for this (`data-focus-path`): the Inventory's vehicle box and the supporting
+documents' Upload; a stamp applied names its signature choice.
+
+**Found while building, and fixed:** with the cursor now in a new entry's
+first box, leaving the page put part of an untouched entry back. The
+clean-up removed the empty row, then the page's removal let go of the box,
+and the box's own write re-created the row with that one field -- an entry
+the filer never made, surviving to the summary and the export checks.
+Leaving a page now lets go of the box first, as a click on the sidebar
+does, so its write runs while the row is still there and the clean-up sees
+it as it is. The existing `blank-card-pruning.spec.ts` caught it: its Annual
+and Plan cases fail without this and pass with it. Three cases in
+`guardian-inventory-collection-controls.spec.ts` set names behind the page
+right after "+ Add", while the cursor sat in the new card's empty box, which
+then wrote its empty value back; they now take the cursor out first, as a
+filer typing into the box would never meet this.
+
+**Left for 73L:** the supporting-documents reminder that opens after "+ Add"
+on an empty schedule row records where the cursor was while the page is
+still being drawn, so answering it leaves the cursor at the top of the
+document. 73L's design already covers both halves -- no reminder for rows
+still empty, and focus recorded when a pop-up is shown -- so `dialogs.js` is
+unchanged here.
+
+**Tests:** new `tests/unit/keep-place.spec.js` and
+`tests/e2e/redraw-keeps-scroll.spec.ts` (an Annual signature choice, a Plan's
+"+ Add" five times, Remove when the page shortens, focus after a
+confirmation, the Inventory's vehicle box, arriving still at the top, a
+background redraw waiting for the filer and not swallowing the click that
+ends the typing). `draw-reason.spec.js` updated for the marked new entry.
+**Red-first:** with the source set aside, seven of the eight browser cases
+fail for the reason each names (arriving at the top passes either way, by
+design). The click case passes in Chromium without the wait -- Chromium
+gives the click to the redrawn button at the same spot -- but fails in
+Firefox ("+ Add" added nothing), and passes there with it. A throwaway probe
+clicked every "+ Add" on every page of seven forms (the Final and Trust
+Accountings share the Annual's pages) at a window 600px tall: each put the
+cursor in the new entry's first box, on screen.
+Light regression on a C: copy, 20 specs -- the Inventory's and Plans' Add
+and Remove controls, the blank-card clean-up, conditional reveals, entry
+helpers, form entry, live page parts, routes, the documents reminder and
+its periods, the sidebar total, signatures by hand and by stamp, the
+Simplified's remuneration, Preview and its signature jump, and this spec:
+151 passed. Full unit suite 3,011 passed; `check:types` clean.
 
 ---
 
