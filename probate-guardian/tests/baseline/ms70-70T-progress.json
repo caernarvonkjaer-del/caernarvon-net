@@ -74,6 +74,7 @@
   "tests/e2e/import-transaction-dialog.spec.ts",
   "tests/e2e/legacy-ward-data-normalization.spec.ts",
   "tests/e2e/link-and-merge.spec.ts",
+  "tests/e2e/live-page-parts.spec.ts",
   "tests/e2e/lock-and-save-state.contract.spec.ts",
   "tests/e2e/mixed-version.characterization.spec.ts",
   "tests/e2e/navigation-race.spec.ts",

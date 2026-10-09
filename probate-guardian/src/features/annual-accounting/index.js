@@ -79,7 +79,8 @@ import { setAccountingFilingType } from './filing-type.js';
 import { navigate } from '../../core/navigation/router.js';
 import { afterAdd, afterDuplicate, afterRemove, onChange } from '../../core/navigation/draw-reason.js';
 import { calcTotalsAnnual, annualReconcileState, n, pct } from './totals.js';
-import { isAttorneyStarted } from '../../core/validation/attorney-block.js';
+import { attorneyEntryPaths, isAttorneyStarted } from '../../core/validation/attorney-block.js';
+import { defineLivePart, livePartHtml } from '../../core/ui/live-parts.js';
 import { startingBalanceNotesHTML } from '../../core/filing/starting-balance-carry.js';
 import { percentProblem } from '../../core/validation/percent-range.js';
 import { resolveServiceCertifier, certifierChoiceNeeded, certifyingCandidates, serviceCertifierChoiceHTML, waiverBasisQuestionHTML, watchWaiverAdvocateHint } from '../../core/filing/unrepresented-filing.js';
@@ -694,7 +695,7 @@ function pagePart1Annual(){
       </div>
     </div>
   </div>
-  ${isAttorneyStarted(d,'annual')?'':waiverBasisQuestionHTML(d,{route:'/',dateField:(path,label)=>inpD(label,d[path],`D.${path}=this.value`,false,'date')})}
+  ${livePartHtml('annual-waiver-question')}
   <div class="summary-box mt-3">
     <h2 class="subsection-heading">Quick Summary (auto-calculated)</h2>
     <div class="summary-line"><span>Starting Balance</span><span>${fmtA(d.startingBalance)||'—'}</span></div>
@@ -818,6 +819,53 @@ function pagePart4Annual(){
   </div>`;
 }
 
+// ── Live page parts (Milestone 73J part 2) ───────────────
+// Each redraws itself when a change touches the paths it names
+// (src/core/ui/live-parts.js), so it never shows a figure or a note from
+// before the change the filer just made.
+// Schedule B-4's Category Summary: the categories' totals.
+defineLivePart('annual-b4-categories',{
+  paths:['schB4'],
+  render:(d)=>{
+    const cats={};
+    DISB_CATS.forEach(c=>cats[c]=0);
+    (d.schB4||[]).forEach(r=>{if(r.category&&cats[r.category]!==undefined)cats[r.category]+=n(r.amount);});
+    let cNum=1;
+    return '<table class="doc-table mt-2"><thead><tr><th>#</th><th>Category</th><th class="right">Amount</th></tr></thead><tbody>'
+      +DISB_CATS.map(c=>`<tr><td>${cNum++}</td><td>${c}</td><td class="right">${cats[c]>0?fmtA(cats[c]):'—'}</td></tr>`).join('')
+      +'</tbody></table>';
+  },
+});
+// A B-4 row's bank-account picker and its "Assign a bank account" warning.
+// Named by bank AND number: two accounts at the same bank are a normal
+// guardianship (an operating account and a reserve), and a picker showing
+// only the bank name would make them indistinguishable at the one moment the
+// filer is deciding which one the money left.
+defineLivePart('annual-b4-account',{
+  paths:(key)=>['schB4Accounts',`schB4.${key}.bankAccountId`],
+  render:(d,key)=>{
+    const i=Number(key);
+    const r=(d.schB4||[])[i]||{};
+    const opts=(d.schB4Accounts||[]).map((a,ai)=>({value:a.id,label:b4AccountHeading(a,ai)}));
+    const known=opts.some(o=>o.value===r.bankAccountId);
+    const warn=!known?'<div class="form-text text-danger">Assign a bank account — Excel export is blocked until every disbursement has one.</div>':'';
+    return `${selD('Bank Account',known?r.bankAccountId:'',`D.schB4[${i}].bankAccountId=this.value`,opts,true)}${warn}`;
+  },
+});
+// Part V's "No attorney is entered" notice, gone once an attorney is.
+defineLivePart('annual-no-attorney',{
+  paths:attorneyEntryPaths('annual'),
+  render:(d)=>isAttorneyStarted(d,'annual')?'':`<div class="alert alert-secondary" role="status" data-no-attorney-notice>
+    <strong>No attorney is entered</strong>, so this part is not required. The filed PDF prints this attestation with the attorney's signature block blank, as the Clerk's form does. If an attorney represents the guardian, enter them below and this part becomes required.
+  </div>`,
+});
+// The cover's "Why is this guardian filing without an attorney?", gone once
+// an attorney is typed -- as the question itself says it will.
+defineLivePart('annual-waiver-question',{
+  paths:attorneyEntryPaths('annual'),
+  render:(d)=>isAttorneyStarted(d,'annual')?'':waiverBasisQuestionHTML(d,{route:'/',dateField:(path,label)=>inpD(label,d[path],`D.${path}=this.value`,false,'date')}),
+});
+
 // ── Part V ───────────────────────────────────────────────
 function pagePart5Annual(){
   const d=getD();
@@ -825,9 +873,8 @@ function pagePart5Annual(){
   // Milestone 71B: required only once an attorney is started; the markers
   // then follow live (watchAttorneyRequiredMarkers() in mount()).
   const started=isAttorneyStarted(d,'annual');
-  const noAttorney=started?'':`<div class="alert alert-secondary" role="status" data-no-attorney-notice>
-    <strong>No attorney is entered</strong>, so this part is not required. The filed PDF prints this attestation with the attorney's signature block blank, as the Clerk's form does. If an attorney represents the guardian, enter them below and this part becomes required.
-  </div>`;
+  // Milestone 73J part 2: a live part (above), so it goes once an attorney is typed.
+  const noAttorney=livePartHtml('annual-no-attorney');
   return `<div class="schedule-page">
   <h1>Part V — Guardian Attorney Signature</h1>
   ${preparerNoteHTML()}
@@ -1011,17 +1058,9 @@ function pageSchB4Annual(){
   // The account picker only appears once accounts exist: a single-account
   // filing has nothing to choose between, and showing an empty dropdown on
   // every row would imply an assignment is missing when none is required.
-  const accountPicker=(r,i)=>{
-    if(!accounts.length)return '';
-    // Named by bank AND number: two accounts at the same bank are a normal
-    // guardianship (an operating account and a reserve), and a picker showing
-    // only the bank name would make them indistinguishable at the one moment
-    // the filer is deciding which one the money left.
-    const opts=accounts.map((a,ai)=>({value:a.id,label:b4AccountHeading(a,ai)}));
-    const known=opts.some(o=>o.value===r.bankAccountId);
-    const warn=!known?'<div class="form-text text-danger">Assign a bank account — Excel export is blocked until every disbursement has one.</div>':'';
-    return `<div class="col-md-4">${selD('Bank Account',known?r.bankAccountId:'',`D.schB4[${i}].bankAccountId=this.value`,opts,true)}${warn}</div>`;
-  };
+  // Milestone 73J part 2: a live part, so naming an account relabels every
+  // row's picker and assigning one clears its warning, without a redraw.
+  const accountPicker=(r,i)=>accounts.length?livePartHtml('annual-b4-account',{key:i,className:'col-md-4'}):'';
   const accountCards=accounts.map((a,i)=>`<div class="col-12 col-lg-6"><div class="entry-card mb-2">
     <div class="entry-card-header"><span>Bank Account ${i+1}</span>
       <button class="btn btn-link btn-sm text-danger p-0" data-annual-action="remove-b4-account" data-index="${i}" data-route="/schb4">Remove</button>
@@ -1037,10 +1076,6 @@ function pageSchB4Annual(){
     ${accounts.length?`<div class="row g-3 schedule-entry-grid">${accountCards}</div>`:''}
     <button class="btn btn-outline-primary btn-sm mt-2" data-annual-action="add-b4-account" data-route="/schb4">+ Add Bank Account</button>
   </div>`;
-  // Category summary
-  const cats={};
-  DISB_CATS.forEach(c=>cats[c]=0);
-  d.schB4.forEach(r=>{if(r.category&&cats[r.category]!==undefined)cats[r.category]+=n(r.amount);});
   let rows='';
   if(d.schB4 && d.schB4.length>0){
     rows='<div class="row g-3 schedule-entry-grid">'+d.schB4.map((r,i)=>`<div class="col-12 col-lg-6"><div class="entry-card mb-2">
@@ -1057,10 +1092,6 @@ function pageSchB4Annual(){
   } else {
     rows=scheduleEmptyHTMLAnnual('schb4','other disbursements','schB4');
   }
-  let catSummary='<table class="doc-table mt-2"><thead><tr><th>#</th><th>Category</th><th class="right">Amount</th></tr></thead><tbody>';
-  let cNum=1;
-  DISB_CATS.forEach(c=>{catSummary+=`<tr><td>${cNum++}</td><td>${c}</td><td class="right">${cats[c]>0?fmtAnnual(cats[c]):'—'}</td></tr>`;});
-  catSummary+=`</tbody></table>`;
   return `<div class="schedule-page">
   <h1>Schedule B-4 — All Other Disbursements</h1>
   <div class="schedule-instructions">Receipts, checks, and substantiating papers need not be filed with the court but shall be made available for inspection. List disbursements in check number order. If category is "Other," provide details in payee field.</div>
@@ -1068,7 +1099,7 @@ function pageSchB4Annual(){
   ${rows}
   <button class="btn btn-outline-primary btn-sm mb-2" data-annual-action="add-row" data-collection="schB4" data-route="/schb4">+ Add Entry</button>
   <div class="schedule-totals mb-2"><div class="tbl"><div class="tr"><div class="td">Schedule B-4 Total — All Other Disbursements</div><div class="td" data-annual-total="schB4">${fmtA(t.schB4)}</div></div></div></div>
-  <div class="summary-box"><h2 class="subsection-heading">Category Summary</h2>${catSummary}</div>
+  <div class="summary-box"><h2 class="subsection-heading">Category Summary</h2>${livePartHtml('annual-b4-categories')}</div>
   ${renderScheduleDocsSection('schB4')}
   ${pageNavAnnual('/schb3','/schc')}
   </div>`;

@@ -217,6 +217,15 @@ function deadlineState(deadlineDate, today) {
   return { deadlineBucket: 'future', daysUntilDeadline };
 }
 
+// Milestone 73J part 2: what "Automatic" means for a filing -- shown in the
+// status picker's Automatic option even while an override is chosen (it
+// showed the override there, so the filer couldn't see what Automatic would
+// give back).
+function automaticWorkflowStatus(ward, progressPercent) {
+  if (ward.archived) return 'closed';
+  return progressPercent >= 100 ? 'ready-to-file' : 'draft';
+}
+
 function workflowState(ward, dashboardWorkflow, progressPercent) {
   if (ward.archived) return { workflowStatus: 'closed', workflowSource: 'presentation' };
   const explicitStatus = dashboardWorkflow.status;
@@ -224,7 +233,7 @@ function workflowState(ward, dashboardWorkflow, progressPercent) {
     return { workflowStatus: explicitStatus, workflowSource: 'explicit' };
   }
   return {
-    workflowStatus: progressPercent >= 100 ? 'ready-to-file' : 'draft',
+    workflowStatus: automaticWorkflowStatus(ward, progressPercent),
     workflowSource: 'derived',
   };
 }
@@ -245,6 +254,7 @@ export function projectDashboardWard(ward, { displayType, total, progress, today
   const progressPercent = Number.isFinite(progress?.pct) ? progress.pct : 0;
   const dashboardWorkflow = normalizeDashboardWorkflow(ward.dashboardWorkflow);
   const { workflowStatus, workflowSource } = workflowState(ward, dashboardWorkflow, progressPercent);
+  const automaticStatus = automaticWorkflowStatus(ward, progressPercent);
   const { deadlineDate, deadlineBasis, basisWithoutDate } = deriveWardDeadline(ward);
   const { deadlineBucket, daysUntilDeadline } = deadlineState(deadlineDate, today);
   const isDeadlineActionable = !ward.archived && ACTIONABLE_DEADLINE_STATUSES.has(workflowStatus);
@@ -259,6 +269,7 @@ export function projectDashboardWard(ward, { displayType, total, progress, today
     // as case-resolver.js's caseNumberOf() (this module imports nothing).
     caseNumber: (ward.inventoryType === 'planMinor' ? (ward.ref || ward.ucn) : (ward.caseNumber || ward.ucn || ward.ref)) || '',
     isArchived: !!ward.archived,
+    automaticStatus,
     total,
     progress,
     progressPercent,

@@ -37,7 +37,8 @@ import { SCHEDULE_NAV_KEYS } from '../../core/filing/models/guardian.js';
 import { getD, requestSave } from '../../core/state.js';
 import { saveData } from '../../core/persistence/case-file.js';
 import { afterChange, bindForms } from './form-binding.js';
-import { isAttorneyStarted } from '../../core/validation/attorney-block.js';
+import { defineLivePart, livePartHtml } from '../../core/ui/live-parts.js';
+import { attorneyEntryPaths, isAttorneyStarted } from '../../core/validation/attorney-block.js';
 import { percentProblem } from '../../core/validation/percent-range.js';
 
 // Milestone 71C: the 17 share fields' Inventory half -- every schedule's
@@ -831,7 +832,7 @@ function pageHome(){
       </div>
     </div>
   </div>
-  ${isAttorneyStarted(D,'guardian')?'':waiverBasisQuestionHTML(D,{route:'/',dateField:(path,label)=>optLabel(label)+dateInput(path,label)})}
+  ${livePartHtml('inventory-waiver-question')}
   <div class="summary-box mb-3">
     <h2 class="subsection-heading">Inventory Witnesses</h2>
     <div class="schedule-instructions">A personal property inventory must include the names, addresses, and occupations of witnesses present during the physical inventory of the ward's personal effects.</div>
@@ -843,6 +844,23 @@ function pageHome(){
   </div>
 </div>`;
 }
+
+// ── Live page parts (Milestone 73J part 2) ───────────────
+// Each redraws itself when a change touches the paths it names
+// (src/core/ui/live-parts.js). The cover's question holds a date box this
+// form binds itself, so a redraw binds it again.
+defineLivePart('inventory-waiver-question',{
+  paths:attorneyEntryPaths('guardian'),
+  render:(d)=>isAttorneyStarted(d,'guardian')?'':waiverBasisQuestionHTML(d,{route:'/',dateField:(path,label)=>optLabel(label)+dateInput(path,label)}),
+  afterRender:()=>bindForms(),
+});
+// D-2's "No attorney is entered" notice, gone once an attorney is.
+defineLivePart('inventory-no-attorney',{
+  paths:attorneyEntryPaths('guardian'),
+  render:(d)=>isAttorneyStarted(d,'guardian')?'':`<div class="alert alert-secondary" role="status" data-no-attorney-notice>
+    <strong>No attorney is entered</strong>, so the attorney attestation is not required. The filed PDF prints the attestation with the attorney's signature block blank, as the Clerk's form does. If an attorney represents the guardian, enter them here and it becomes required.
+  </div>`,
+});
 
 // ═══════════════════════════════════════════════════════
 // PAGE: SUMMARY
@@ -899,7 +917,8 @@ function getSummaryConfigGuardian(){
           {label:'Unrestricted Intangibles (B-3)',value:fmtH(calc.unrestrictedIntang()),id:'unrestrictedIntang'},
           {label:'Bond Requirement (liquid, unrestricted)',value:fmtH(calc.bondRequired()),id:'bondRequired',isTotal:true},
         ],
-        footerAction:{label:'Complete Bond &amp; Surety Info (D-4)',route:'/d4'},
+        // Milestone 73J part 2: the link is a to-do, so it goes once D-4 is complete.
+        footerAction:navStatus(nav,'d4')==='complete'?null:{label:'Complete Bond &amp; Surety Info (D-4)',route:'/d4'},
       },
       {
         heading:'Attestations &amp; Filings Completion',
@@ -1227,9 +1246,7 @@ function pageD2(){
   </div>
   <div class="col-12 col-lg-6">
   <h2 style="color:var(--ink);margin:.75rem 0 .4rem;font-size:.95rem;">Guardian Attorney Signature</h2>
-  ${isAttorneyStarted(D,'guardian')?'':`<div class="alert alert-secondary" role="status" data-no-attorney-notice>
-    <strong>No attorney is entered</strong>, so the attorney attestation is not required. The filed PDF prints the attestation with the attorney's signature block blank, as the Clerk's form does. If an attorney represents the guardian, enter them here and it becomes required.
-  </div>`}
+  ${livePartHtml('inventory-no-attorney')}
   <p style="font-size:.78rem;font-style:italic;color:var(--ink-3);">The attorney may use an electronic signature "/s/".</p>
   <div class="entry-card mb-0 h-100">
     <div class="entry-card-header d-flex justify-content-between align-items-center">

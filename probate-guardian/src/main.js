@@ -35,6 +35,8 @@ import { installWardNameComboboxDismiss } from './core/modals/filing-dialogs.js'
 import { markFilingRevisionChanged, clearOutputAcknowledgement } from './core/filing/output-authorization.js';
 import { bindReadinessCard } from './core/filing/readiness-card.js';
 import { startGuardianForms } from './core/startup/bootstrap.js';
+import { installLiveParts } from './core/ui/live-parts.js';
+import { installSidebarFollowsChanges } from './core/shell/sidebar.js';
 import { featureServices } from './features-loader.js';
 
 // window.GuardianForms, before anything else in this file runs: its version
@@ -61,6 +63,11 @@ installShellEvents();
 installModalEvents();
 installFormEvents();
 installStartupEvents();
+
+// Milestone 73J part 2: page parts and the sidebar's names follow every
+// announced change (src/core/model-change.js).
+installLiveParts();
+installSidebarFollowsChanges();
 
 // Milestone 70, 70E: a store transaction's side effects -- the filing's
 // revision marked changed, then the save scheduled. This file used to put

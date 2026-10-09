@@ -226,7 +226,7 @@ function deadlineStatusHTML(row) {
 function workflowStatusControl(row) {
   const selectedStatus = row.workflowSource === 'explicit' ? row.workflowStatus : 'auto';
   return `<select class="form-select form-select-sm dashboard-workflow-select dashboard-workflow-${esc(row.workflowStatus)}" data-dashboard-change="workflow-status" data-ward-id="${esc(row.wardId)}" aria-label="Workflow status for ${esc(row.wardName || 'ward')}">
-    ${option('auto', `Automatic (${WORKFLOW_LABELS[row.workflowStatus] || row.workflowStatus})`, selectedStatus)}
+    ${option('auto', `Automatic (${WORKFLOW_LABELS[row.automaticStatus] || row.automaticStatus})`, selectedStatus)}
     ${Object.entries(WORKFLOW_LABELS).filter(([key]) => key !== 'closed').map(([key, label]) => option(key, label, selectedStatus)).join('')}
   </select>`;
 }

@@ -11,6 +11,7 @@ import { features } from '../runtime/features.js';
 import { FILING_ENGINE_IDS } from '../filing/filing-descriptor.js';
 import { getActiveInventoryType, getActiveWard, getCaseFile, getD } from '../state.js';
 import { updateNavDots } from '../status/nav-marks.js';
+import { onModelChange } from '../model-change.js';
 
 // Populates the sidebar's active-ward info card (icon, type, live headline
 // total) from the currently active ward. Shared by updateSidebar() (on load
@@ -54,6 +55,22 @@ export function getPrimaryGuardianDisplayName(){
 export function syncGuardianNameDisplay(){
   const el=document.getElementById('guardian-name-display');
   if(el)el.textContent=`Guardian: ${getPrimaryGuardianDisplayName()||'—'}`;
+}
+
+/**
+ * Milestone 73J part 2: the "Guardian: ..." line and the filing picker's name
+ * follow every change, not only a name typed into a field -- an Excel import,
+ * Link Person or Sync changes them too, and left them stale until the next
+ * full sidebar rebuild. The picker's box is left alone while the filer types
+ * in it. Installed once at startup.
+ * @param {{ signal?: AbortSignal }} [options]
+ */
+export function installSidebarFollowsChanges({ signal } = {}){
+  return onModelChange(()=>{
+    syncGuardianNameDisplay();
+    const picker=document.getElementById('ward-selector');
+    if(!picker||document.activeElement!==picker)syncActiveWardNameDisplay();
+  },{ signal });
 }
 
 export function refreshWardInfoCard(){

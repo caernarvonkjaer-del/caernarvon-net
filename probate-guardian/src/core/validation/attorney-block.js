@@ -154,6 +154,17 @@ export function isPlanSimplifiedRepresented(d) {
  * Advocate filing. An unknown engine answers true, so a caller that asks
  * about a form this module does not know keeps its attorney requirements.
  */
+/**
+ * Milestone 73J part 2: every path isAttorneyStarted() reads for an engine --
+ * what a live page part that shows or hides with the attorney depends on.
+ * @param {string} engineId
+ * @returns {string[]}
+ */
+export function attorneyEntryPaths(engineId) {
+  const entry = ATTORNEY_ENTRY[engineId];
+  return entry ? [...new Set([...entry.fields, ...entry.signature])] : [];
+}
+
 export function isAttorneyStarted(d, engineId) {
   if (!d) return false;
   const entry = ATTORNEY_ENTRY[engineId];

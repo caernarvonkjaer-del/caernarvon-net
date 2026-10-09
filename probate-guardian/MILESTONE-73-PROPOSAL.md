@@ -6,11 +6,11 @@
 far: 73U (2026-10-04, `5b8849b`), 73V (2026-10-05, `8b96aa3`), 73C
 (2026-10-05, `861b6a9`, brought forward from its place in the build order at the
 requester's choice) 73D (2026-10-05, `c8e84fe`, likewise), 73J part 1 (2026-10-05, `d819c4a`),
-73F part 1 (2026-10-06, `5e9e17b`), 73A (2026-10-06, `83352d0`), 73F part 2 (2026-10-06, `d01edd4`), 73G part 1 (2026-10-06, `69a1b46`), 73E part 1 (2026-10-06, `8e02051`), 73F part 3 (2026-10-06, `67fc66c`), 73I (2026-10-06, `56a7c30`), 73T part 1 (2026-10-07, `4cae1e7`), 73T part 2 (2026-10-07, `2a1cbc5`), 73T part 3 (2026-10-07, `9d2bc72`), 73T part 4 (2026-10-07, `b70a944`), 73M with 74C (2026-10-07, `a0e987b`), 73B (2026-10-07, `86547da`), 73O part 2 with 74F (2026-10-08, `fa9625e`), 73G part 2 with 74H (2026-10-08, `f85e862`, `78b5770`), 73H (2026-10-08, `631f898`), 73S (2026-10-08, `3cf1d9d`), 73K part 1 (2026-10-08, `4268c45`) and 73E part 2 (2026-10-08), each approved by name; 74P, built after 73B, is recorded in Milestone 74.**
+73F part 1 (2026-10-06, `5e9e17b`), 73A (2026-10-06, `83352d0`), 73F part 2 (2026-10-06, `d01edd4`), 73G part 1 (2026-10-06, `69a1b46`), 73E part 1 (2026-10-06, `8e02051`), 73F part 3 (2026-10-06, `67fc66c`), 73I (2026-10-06, `56a7c30`), 73T part 1 (2026-10-07, `4cae1e7`), 73T part 2 (2026-10-07, `2a1cbc5`), 73T part 3 (2026-10-07, `9d2bc72`), 73T part 4 (2026-10-07, `b70a944`), 73M with 74C (2026-10-07, `a0e987b`), 73B (2026-10-07, `86547da`), 73O part 2 with 74F (2026-10-08, `fa9625e`), 73G part 2 with 74H (2026-10-08, `f85e862`, `78b5770`), 73H (2026-10-08, `631f898`), 73S (2026-10-08, `3cf1d9d`), 73K part 1 (2026-10-08, `4268c45`), 73E part 2 (2026-10-08, `5e26e57`, `ea78dd4`) and 73J part 2 (2026-10-08), each approved by name; 74P, built after 73B, is recorded in Milestone 74.**
 **The 2026-10-07 batch is built**, and its closing full regression has run
 (recorded below, after the mid-batch one). **Approved and not yet built**
 (2026-10-08, one batch in this order, light tests between deliveries and a
-full regression at the end): 73J part 2, 73K part 2, 73L (with
+full regression at the end): 73K part 2, 73L (with
 Milestone 74's 74D reproduction), 73N parts 1-3, 73O part 1 (with 74O), 73O
 part 3 (with 74L), 73O part 4 (with 74J), 73P (with 74S) and 73R parts 1-3.
 Nothing else is approved. Building any other item, or any part of a
@@ -2530,6 +2530,46 @@ write's own save; the repairs forms make on opening; test hooks.
   approved 2026-10-05) at this commit, which also carries 73D and 74A, from a
   copy on C::** all unit tests passed (2,606); browser 1,037 passed, 16
   skipped, none failed, flaky or left unrun, of 1,053 (1.2 h).
+
+
+### Build record, part 2 — BUILT 2026-10-08 (approved by name by the requester, 2026-10-08)
+
+**What changed for a filer** -- each of these follows the change just made,
+on the page, without leaving it:
+
+- **Annual Schedule B-4:** the Category Summary's totals follow an amount or
+  category typed; a row's bank-account picker relabels as an account is
+  named, and its "Assign a bank account" warning clears once one is chosen.
+- **"No attorney is entered"** on Annual Part V and Inventory D-2 goes as soon
+  as an attorney detail is typed, and comes back if it is cleared. (The
+  Simplified's Part V has no such notice, so there was nothing to make live
+  there.)
+- **The cover's "Why is this guardian filing without an attorney?"** (Annual
+  Part I, Inventory Cover) goes once an attorney is typed there, as it says it
+  will.
+- **The sidebar's "Guardian: ..." line and the filing picker's name** follow
+  every change -- an Excel import, Link Person, Sync -- not only a name typed
+  into a field. The picker's box is left alone while the filer types in it.
+- **The Inventory Summary's "Complete Bond & Surety Info (D-4)"** link shows
+  only while D-4 is still to do.
+- **The dashboard's status picker:** its "Automatic (...)" option says what
+  Automatic would give -- it showed the override chosen.
+
+**How:** new `src/core/ui/live-parts.js`: a part declares the paths it
+depends on and how it draws; every announced change (part 1's event) redraws
+the parts it touches and no others; a part holding the cursor waits until the
+cursor leaves it. `attorney-block.js`'s `attorneyEntryPaths()` names each
+form's attorney fields. The sidebar listens through
+`installSidebarFollowsChanges()`; both are installed once at startup
+(`main.js`). The D-4 link and the dashboard label are drawn from the
+current state (`automaticStatus` in the dashboard's projection).
+
+**Tests:** new `tests/unit/live-parts.spec.js` (6) and
+`tests/e2e/live-page-parts.spec.ts` (6, one per stale part). **Red-first:**
+with the source set aside, all six browser cases fail. Light regression on a
+C: copy: the Annual and Inventory mounts, the attorney-optional export,
+routes, the dashboard's backup round trip, the sidebar total and the Annual's
+field formatting -- 83 passed. `check:types` clean.
 
 ---
 
