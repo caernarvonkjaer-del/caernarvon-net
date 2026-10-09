@@ -77,6 +77,28 @@ describe('Link Person fills blanks and asks before replacing what was typed', ()
   });
 });
 
+// The requester, 2026-10-08 (found while building 73E part 2): the guardian's
+// e-mail -- every form has had the box since Milestone 72C -- is part of the
+// shared record on every form. The Initial Inventory's and the Initial Plan's
+// was not, so it was neither shared with the guardian's other filings nor
+// filled by Link Person. Red-first: those two forms read no e-mail.
+describe("every form's guardian e-mail is part of the shared record", () => {
+  test('all seven forms read and write it', async () => {
+    const { initializeEmptyData } = await import('../../src/core/filing/filing-registry.js');
+    const { FILING_TYPE_KEYS } = await import('../../src/core/filing/filing-descriptor.js');
+    const { writeRoleFields } = await import('../../src/core/party-resolver.js');
+    for (const type of FILING_TYPE_KEYS) {
+      const d = { ...JSON.parse(JSON.stringify(initializeEmptyData(type))), inventoryType: type };
+      const list = Array.isArray(d.planGuardians) ? 'planGuardians' : 'guardians';
+      if (!Array.isArray(d[list]) || !d[list].length) d[list] = [{}];
+      d[list][0].email = 'pat@example.com';
+      expect(readRoleFields(d, 'guardian', 0).email, `${type} reads the guardian's e-mail`).toBe('pat@example.com');
+      writeRoleFields(d, 'guardian', 0, { email: 'lee@example.com' });
+      expect(d[list][0].email, `${type} writes it`).toBe('lee@example.com');
+    }
+  });
+});
+
 describe('Merge names the open filings whose typed details it will change', () => {
   test('each open filing linked to the record merged away, with the details that change; a closed one keeps its copy and is not listed', () => {
     const keep = guardianParty({ name: 'Mary J. Smith', phone: '727-555-0100' });

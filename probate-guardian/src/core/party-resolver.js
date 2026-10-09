@@ -149,8 +149,10 @@ export function addSignatureImage(party, imageData, { capturedAt = null } = {}) 
 const ROLE_FIELD_MAPS = {
   guardian: { // Initial Inventory
     ward: { container: { type: 'flat' }, keys: { name: 'wardName' } },
+    // Milestone 73E part 2 follow-up (the requester, 2026-10-08): the e-mail
+    // Milestone 72C gave the guardian is shared, as on every other form.
     guardian: { container: { type: 'array', field: 'guardians' },
-      keys: { name: 'name', taxId: 'ssnEin', phone: 'phone', street: 'streetAddress', cityStateZip: 'cityStateZip' } },
+      keys: { name: 'name', taxId: 'ssnEin', phone: 'phone', email: 'email', street: 'streetAddress', cityStateZip: 'cityStateZip' } },
     attorney: { container: { type: 'object', field: 'attorney' },
       keys: { name: 'name', barNumber: 'barNumber', phone: 'phone', email: 'email', secondaryEmail: 'secondaryEmail', street: 'streetAddress', cityStateZip: 'cityStateZip' } },
     preparer: { container: { type: 'object', field: 'preparer' },
@@ -176,8 +178,9 @@ const ROLE_FIELD_MAPS = {
   planInitial: {
     ward: { container: { type: 'flat' },
       keys: { name: 'wardName', phone: 'residencePhone', street: 'residenceAddress', cityStateZip: 'residenceCityStateZip', mailingStreet: 'mailingAddress', mailingCityStateZip: 'mailingCityStateZip' } },
+    // Milestone 73E part 2 follow-up (2026-10-08): the guardian's e-mail (72C), shared as on every other form.
     guardian: { container: { type: 'array', field: 'planGuardians' },
-      keys: { name: 'name', taxId: 'ssn', phone: 'phone', street: 'street', cityStateZip: 'cityStateZip' } },
+      keys: { name: 'name', taxId: 'ssn', phone: 'phone', email: 'email', street: 'street', cityStateZip: 'cityStateZip' } },
     attorney: { container: { type: 'flat' },
       keys: { name: 'attorney_name', barNumber: 'attorney_bar', phone: 'attorney_phone', email: 'attorney_email', secondaryEmail: 'attorney_secondaryEmail', street: 'attorney_street', cityStateZip: 'attorney_cityStateZip' } },
     preparer: null,

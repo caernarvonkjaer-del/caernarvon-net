@@ -1163,10 +1163,14 @@ will change (`party-resolver.js` near 868).
   form, the guardian or role, and the details. A blank being filled is not
   listed; a closed filing keeps its copy, as before.
 
-**Found while building, not changed:** the Initial Plan's guardian e-mail
-(the box Milestone 72C added) is not part of that form's shared-record
-mapping, so it is neither shared nor filled by Link Person there. A
-cross-form gap (AGENTS.md section 8 item 9), reported for a decision.
+**Found while building, fixed in a follow-up** (the requester, 2026-10-08:
+"Fix it now", then "Yes, both forms"): the guardian's e-mail -- the box
+Milestone 72C added on every form -- was not part of the shared record on the
+Initial Plan or the Initial Inventory, so it was neither shared with the
+guardian's other filings nor filled by Link Person there. It is now, as on
+the other five forms. An e-mail already typed stays on its filing until the
+filer edits it or links again. A unit case reads and writes it on all seven
+forms (red-first: the Inventory reads none).
 
 **How:** `party-resolver.js` gains `linkConflicts()`, `linkSlotToParty()`
 and `mergeFilingChanges()`; the merge's adoption of blank fields moved into

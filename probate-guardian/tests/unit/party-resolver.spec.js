@@ -133,7 +133,8 @@ describe('party-resolver (unwired hydration/dehydration core)', () => {
       const w = api;
       const filing = { inventoryType: 'guardian', wardName: 'Test Ward', guardians: [{}], attorney: {}, preparer: {} };
 
-      w.writeRoleFields(filing, 'guardian', 0, { name: 'Jane Guardian', taxId: '123-45-6789', phone: '555-0100', street: '1 Main St', cityStateZip: 'Tampa, FL 33602' });
+      // The guardian's e-mail is shared since 2026-10-08 (73E part 2 follow-up).
+      w.writeRoleFields(filing, 'guardian', 0, { name: 'Jane Guardian', taxId: '123-45-6789', phone: '555-0100', email: 'jane@example.com', street: '1 Main St', cityStateZip: 'Tampa, FL 33602' });
       w.writeRoleFields(filing, 'attorney', 0, { name: 'Rob Atty', barNumber: '998877', phone: '555-0200', email: 'rob@law.example', secondaryEmail: 'rob2@law.example', street: '2 Law Ave', cityStateZip: 'Tampa, FL 33602' });
       w.writeRoleFields(filing, 'preparer', 0, { name: 'Pat Preparer', taxId: '111-22-3333', phone: '555-0300', street: '3 Prep Rd', cityStateZip: 'Tampa, FL 33602' });
 
@@ -147,10 +148,10 @@ describe('party-resolver (unwired hydration/dehydration core)', () => {
       };
     })();
 
-    expect(result.guardianRow).toEqual({ name: 'Jane Guardian', ssnEin: '123-45-6789', phone: '555-0100', streetAddress: '1 Main St', cityStateZip: 'Tampa, FL 33602' });
+    expect(result.guardianRow).toEqual({ name: 'Jane Guardian', ssnEin: '123-45-6789', phone: '555-0100', email: 'jane@example.com', streetAddress: '1 Main St', cityStateZip: 'Tampa, FL 33602' });
     expect(result.attorneyObj).toEqual({ name: 'Rob Atty', barNumber: '998877', phone: '555-0200', email: 'rob@law.example', secondaryEmail: 'rob2@law.example', streetAddress: '2 Law Ave', cityStateZip: 'Tampa, FL 33602' });
     expect(result.preparerObj).toEqual({ name: 'Pat Preparer', ssnEin: '111-22-3333', phone: '555-0300', streetAddress: '3 Prep Rd', cityStateZip: 'Tampa, FL 33602' });
-    expect(result.readGuardian).toEqual({ name: 'Jane Guardian', taxId: '123-45-6789', phone: '555-0100', street: '1 Main St', cityStateZip: 'Tampa, FL 33602' });
+    expect(result.readGuardian).toEqual({ name: 'Jane Guardian', taxId: '123-45-6789', phone: '555-0100', email: 'jane@example.com', street: '1 Main St', cityStateZip: 'Tampa, FL 33602' });
     expect(result.readAttorney).toEqual({ name: 'Rob Atty', barNumber: '998877', phone: '555-0200', email: 'rob@law.example', secondaryEmail: 'rob2@law.example', street: '2 Law Ave', cityStateZip: 'Tampa, FL 33602' });
     expect(result.readPreparer).toEqual({ name: 'Pat Preparer', taxId: '111-22-3333', phone: '555-0300', street: '3 Prep Rd', cityStateZip: 'Tampa, FL 33602' });
   });
