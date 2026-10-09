@@ -12,7 +12,7 @@ import { deriveDefaultCircuit, groupsForCircuit, resourcesPanelHTML, getDefaultC
 import { alertModal, confirmModal } from '../../core/ui/dialogs.js';
 import { esc } from '../../core/filing/escape-html.js';
 import { ic } from '../../core/ui/icons.js';
-import { INVENTORY_TYPES, formEngine, typeIcon } from '../../core/filing/filing-registry.js';
+import { INVENTORY_TYPES, formDisplayName, formEngine, typeIcon } from '../../core/filing/filing-registry.js';
 import { getCaseFile } from '../../core/state.js';
 import { getRecentlyOpenedWards } from '../../core/filing/recent-filings.js';
 import { showPriorYearsModal, showStartNewYearModal } from '../../core/modals/year-dialogs.js';
@@ -99,7 +99,7 @@ function dashboardHeaderHTML() {
   const wards = getCaseFile().wards;
   // All three header actions share a unified primary button style on purpose.
   const newFormBtn = `<button type="button" class="btn btn-sm btn-primary dashboard-header-btn dashboard-new-form" id="new-ward-btn" data-dashboard-action="add-ward">${ic('plus', 14)} New Form</button>`;
-  const exportAllBtn = wards.length > 0 ? `<button type="button" class="btn btn-sm btn-primary dashboard-header-btn dashboard-export-all" data-dashboard-action="export-all" title="Export all filings into a single combined .sav archive">${ic('archive', 14)} Export All Filings</button>` : '';
+  const exportAllBtn = wards.length > 0 ? `<button type="button" class="btn btn-sm btn-primary dashboard-header-btn dashboard-export-all" data-dashboard-action="export-all" title="Save the whole case -- every filing -- as a .sav file under a name you choose; that file becomes this case's file">${ic('archive', 14)} Save case file as…</button>` : '';
   const newExistingBtn = `<button type="button" class="btn btn-sm btn-primary dashboard-header-btn dashboard-new-existing" data-dashboard-action="select-existing">${ic('copy', 14)} New Filing from Existing</button>`;
 
   return `<header class="dashboard-page-header">
@@ -435,6 +435,9 @@ async function toggleDashboardWardArchived(wardId) {
   // moves to signature policy 2 and a guardian's saved "/s/" is asked again.
   if (!ward.archived) upgradeSignaturePolicy(ward, { force: true });
   await saveWardToState(ward);
+  // Milestone 74S (74S-4): Mark Closed / Mark Open is recorded.
+  await auditLog(ward.archived ? 'FILING_CLOSED' : 'FILING_REOPENED',
+    `${ward.archived ? 'Marked closed' : 'Marked open'}: the ${formDisplayName(ward.inventoryType)} for ${ward.wardName || '(unnamed)'}`, true, ward.wardId);
   markDirtySinceExport();
   updateLastSavedIndicator();
   renderDashboardSummary();
@@ -460,6 +463,11 @@ async function updateDashboardWorkflow(wardId, field, value) {
   if (Object.keys(workflow).length) ward.dashboardWorkflow = workflow;
   else delete ward.dashboardWorkflow;
   await saveWardToState(ward);
+  // Milestone 74S (74S-4): a status change is recorded (the Judge box is not).
+  if (field === 'workflow-status') {
+    const label = value === 'auto' ? 'Automatic' : (WORKFLOW_LABELS[value] || value);
+    await auditLog('STATUS_CHANGED', `Status of the ${formDisplayName(ward.inventoryType)} for ${ward.wardName || '(unnamed)'} set to ${label}`, true, ward.wardId);
+  }
 
   // Judge propagation across case siblings on assignee commit
   if (field === 'assignee') {

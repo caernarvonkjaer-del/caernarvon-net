@@ -24,6 +24,12 @@ export const ACTIVITY_EVENT_META={
   CERTIFICATE_MIGRATION: {label:'Certificate of service details moved', iconName:'swap'},
   // Milestone 74J: an accounting's Filing Type changed, after the filer said yes.
   FILING_TYPE_CHANGED: {label:'Filing type changed', iconName:'swap'},
+  // Milestone 74S (74S-4): what was done to a filing, naming it -- never its contents.
+  FILING_DELETED:   {label:'Filing deleted',           iconName:'trash'},
+  YEAR_DELETED:     {label:'Prior year deleted',       iconName:'trash'},
+  FILING_CLOSED:    {label:'Filing marked closed',     iconName:'archive'},
+  FILING_REOPENED:  {label:'Filing marked open',       iconName:'archive'},
+  STATUS_CHANGED:   {label:'Filing status changed',    iconName:'swap'},
 };
 
 export let _activityLogEntries=[];

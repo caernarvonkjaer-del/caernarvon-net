@@ -60,6 +60,7 @@ import { promptScheduleAckIfNeeded } from '../../core/filing/schedule-doc-ack.js
 // do so by [data-field-path], not by id.
 import { renderReportingPeriodFields } from '../../core/form/cards/ward-demographics-card.js';
 import { esc } from '../../core/filing/escape-html.js';
+import { okToRemove } from '../../core/form/remove-confirm.js';
 import { pageNavS } from '../../core/form/field-html.js';
 import { ic } from '../../core/ui/icons.js';
 import { syncPercentFeedback } from '../../core/form/form-contract.js';
@@ -427,7 +428,8 @@ function addAnnualRow(collection, route) {
   }
 }
 async function removeAnnualRow(collection, index, route) {
-  if (collection === 'guardians' && index > 0 && rowStarted(getD().guardians?.[index]) && !(await confirmModal(`Remove co-guardian ${getD().guardians[index].name || `#${index + 1}`}? This will delete the entered signature information.`))) return;
+  // Milestone 73P (73P-1): every card asks first when it holds anything.
+  if (!(await okToRemove(getD().inventoryType, collection, getD()[collection]?.[index], index))) return;
   if (removeCollectionRow(collection, index, getD())) {
     commitModelChange('collection-remove', [collection]);
     navigate(route, onChange(afterRemove(getD(), collection, index)));

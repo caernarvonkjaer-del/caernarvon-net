@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { acceptDynDialog, createWard, dismissScheduleDocPrompt, freshStartNoPassword } from './support/target';
+import { acceptDynDialog, createWard, dismissScheduleDocPrompt, freshStartNoPassword, confirmRemoveIfAsked } from './support/target';
 
 // Milestone 73K part 2: the page stays where the filer was. A change made on
 // the page -- a signature choice, Add, Remove, the vehicle box -- used to
@@ -79,6 +79,7 @@ test.describe('Milestone 73K part 2: the page stays where the filer was', () => 
     const heightBefore = await main(page).evaluate((el) => el.scrollHeight);
     expect(before).toBeGreaterThan(200);
     await page.click(remove);
+    await confirmRemoveIfAsked(page); // 73P: Remove asks first
     await expect.poll(() => field(page, 'schA.length')).toBe(9);
     expect(await main(page).evaluate((el) => el.scrollHeight), 'the page is shorter by the row removed').toBeLessThan(heightBefore);
     expect(await scrollTop(page), 'the page stays where it was').toBe(before);

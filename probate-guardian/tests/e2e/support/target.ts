@@ -741,6 +741,24 @@ export function autoAcceptDynDialogs(page: Page, { promptValue }: { promptValue?
  * this helper. Suppressing it everywhere would leave nothing asserting it
  * still fires.
  */
+/**
+ * Milestone 73P (decision 73P-1): Remove asks first when the card holds
+ * anything. For a test whose subject is not that question: answers Remove if
+ * it is asked, and does nothing if it isn't (an untouched card goes at once).
+ * tests/e2e/remove-asks-first.spec.ts holds the question itself.
+ */
+export async function confirmRemoveIfAsked(page: Page): Promise<boolean> {
+  const confirm = page.locator(`${DYN_DIALOG} [data-dyn-action="confirm"]`);
+  try {
+    await confirm.waitFor({ state: 'visible', timeout: 1500 });
+  } catch {
+    return false;
+  }
+  await confirm.click();
+  await page.locator(DYN_DIALOG).waitFor({ state: 'hidden' }).catch(() => {});
+  return true;
+}
+
 export async function dismissScheduleDocPrompt(page: Page): Promise<boolean> {
   const cancel = page.locator(`${DYN_DIALOG} [data-dyn-action="cancel"]`);
   try {

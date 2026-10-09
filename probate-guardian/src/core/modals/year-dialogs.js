@@ -9,17 +9,27 @@ import { getCurrentPage } from '../navigation/route-state.js';
 import { getCaseFile } from '../state.js';
 import { alertModal, closeModal, ensureFragment, showModal } from '../ui/dialogs.js';
 import { ic } from '../ui/icons.js';
+import { formDisplayName, formEngine } from '../filing/filing-registry.js';
+import { auditLog } from '../activity/audit-log.js';
 
 export let _yearModalWardId=null;
+
+// Milestone 73P (D23): what each type's new year starts from
+// (filing-years.js's resetYearlyFieldsForNewYear()). The Plans were told of a
+// Starting Balance they don't have.
+function newYearNote(type){
+  if(type==='guardian')return "The new year opens with a copy of this year's schedules (A-1 through C-5) so you can edit down what's changed, instead of re-entering everything. Signatures and dates are cleared for the new filing.";
+  if(type==='simplified')return "The new year opens with Starting Balance pre-filled from this year's Remaining Assets On Hand. Part II's receipts and disbursements, signatures, and the accounting period are cleared for the new filing.";
+  if(formEngine(type)==='annual')return "The new year opens with Starting Balance pre-filled from this year's ending total and Schedule D's holdings carried forward. The income, disbursement, capital-change and transfer schedules, signatures, and the accounting period are cleared for the new filing.";
+  return "The new year keeps the ward's and the guardians' details. The plan's answers, signatures and dates are cleared for the new filing: each describes one year.";
+}
 
 export async function showStartNewYearModal(wardId){
   const ward=getCaseFile().wards.find(w=>w.wardId===wardId);
   if(!ward)return;
   await ensureFragment('common-modals');
   _yearModalWardId=wardId;
-  const note=ward.inventoryType==='guardian'
-    ?"The new year opens with a copy of this year's schedules (A-1 through C-5) so you can edit down what's changed, instead of re-entering everything. Signatures and dates are cleared for the new filing."
-    :"The new year opens with Starting Balance pre-filled from this year's ending total. Schedule entries, signatures, and the accounting period are cleared for the new filing.";
+  const note=newYearNote(ward.inventoryType);
   document.getElementById('new-year-ward-name').textContent=ward.wardName||'(unnamed ward)';
   document.getElementById('new-year-note').textContent=note;
   showModal('startNewYearModal');
@@ -82,6 +92,9 @@ export async function doDeleteWardYear(){
   const {wardId,yearKey}=_pendingDeleteYear;
   try{
     await filingLifecycle.removeYear(wardId,yearKey);
+    // Milestone 74S (74S-4): recorded, naming the filing and the year.
+    const named=getCaseFile().wards.find(w=>w.wardId===wardId);
+    await auditLog('YEAR_DELETED',`Deleted ${yearKey} of the ${formDisplayName(named?.inventoryType)} for ${named?.wardName||'(unnamed)'}`,true,wardId);
     closeModal('deleteYearModal');
     const ward=getCaseFile().wards.find(w=>w.wardId===wardId);
     if(ward)renderPriorYearsList(ward);

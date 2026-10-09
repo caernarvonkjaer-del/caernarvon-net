@@ -5,7 +5,7 @@
 // copyright line. Moved from legacy-app.js.
 import { withMinusCue } from '../form/amount-codec.js';
 import { esc } from '../filing/escape-html.js';
-import { formEngine, INVENTORY_TYPE_META, INVENTORY_TYPES, typeIcon } from '../filing/filing-registry.js';
+import { formDisplayName, formEngine, INVENTORY_TYPE_META, INVENTORY_TYPES, typeIcon } from '../filing/filing-registry.js';
 import { formatDashboardCurrency } from '../format/money.js';
 import { features } from '../runtime/features.js';
 import { FILING_ENGINE_IDS } from '../filing/filing-descriptor.js';
@@ -27,7 +27,23 @@ import { onModelChange } from '../model-change.js';
 // keep one text input in sync, so this only touches that one input.
 export function syncActiveWardNameDisplay(){
   const inp=document.getElementById('ward-selector');
-  if(inp&&getD())inp.value=getD().wardName||'';
+  if(inp&&getD()){inp.value=getD().wardName||'';describeActiveFiling(inp,getD());}
+}
+
+// Milestone 74S (UX-27): a long name is cut off in the box; its tooltip and
+// its accessible description give the whole name and the filing type.
+function describeActiveFiling(input,filing){
+  const full=filing&&filing.inventoryType?`${filing.wardName||'(unnamed)'} — ${formDisplayName(filing.inventoryType)}`:'';
+  let desc=document.getElementById('ward-selector-full');
+  if(!desc&&typeof document.createElement==='function'){
+    desc=document.createElement('span');
+    desc.id='ward-selector-full';
+    desc.className='visually-hidden';
+    input.insertAdjacentElement?.('afterend',desc);
+  }
+  if(desc)desc.textContent=full;
+  if(full){input.title=full;input.setAttribute('aria-describedby','ward-selector-full');}
+  else{input.removeAttribute('title');input.removeAttribute('aria-describedby');}
 }
 
 // The header's "Guardian: —" line used to show only caseFile.guardianName
@@ -167,6 +183,7 @@ export function updateSidebar(){
   const activeWard=getCaseFile().wards.find(w=>w.wardId===activeWardId);
   selector.value=activeWard?activeWard.wardName:'';
   selector.dataset.wardId=activeWardId||'';
+  describeActiveFiling(selector,activeWard);
 
   // Show ward info if active
   refreshWardInfoCard();

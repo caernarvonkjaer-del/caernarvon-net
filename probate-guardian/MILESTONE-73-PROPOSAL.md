@@ -6,11 +6,11 @@
 far: 73U (2026-10-04, `5b8849b`), 73V (2026-10-05, `8b96aa3`), 73C
 (2026-10-05, `861b6a9`, brought forward from its place in the build order at the
 requester's choice) 73D (2026-10-05, `c8e84fe`, likewise), 73J part 1 (2026-10-05, `d819c4a`),
-73F part 1 (2026-10-06, `5e9e17b`), 73A (2026-10-06, `83352d0`), 73F part 2 (2026-10-06, `d01edd4`), 73G part 1 (2026-10-06, `69a1b46`), 73E part 1 (2026-10-06, `8e02051`), 73F part 3 (2026-10-06, `67fc66c`), 73I (2026-10-06, `56a7c30`), 73T part 1 (2026-10-07, `4cae1e7`), 73T part 2 (2026-10-07, `2a1cbc5`), 73T part 3 (2026-10-07, `9d2bc72`), 73T part 4 (2026-10-07, `b70a944`), 73M with 74C (2026-10-07, `a0e987b`), 73B (2026-10-07, `86547da`), 73O part 2 with 74F (2026-10-08, `fa9625e`), 73G part 2 with 74H (2026-10-08, `f85e862`, `78b5770`), 73H (2026-10-08, `631f898`), 73S (2026-10-08, `3cf1d9d`), 73K part 1 (2026-10-08, `4268c45`), 73E part 2 (2026-10-08, `5e26e57`, `ea78dd4`), 73J part 2 (2026-10-08, `3648706`), 73K part 2 (2026-10-08, `79a8875`), 73L with 74D's reproduction (2026-10-09, `43081f2`), 73N part 1 (2026-10-09, `ab8068e`), 73N part 2 (2026-10-09, `01a9610`), 73N part 3 (2026-10-09, `987daaf`), 73O part 1 with 74O (2026-10-09, `487e247`, `97a0754`), 73O part 3 with 74L (2026-10-09, `67e13b8`) and 73O part 4 with 74J (2026-10-09), each approved by name; 74P, built after 73B, is recorded in Milestone 74.**
+73F part 1 (2026-10-06, `5e9e17b`), 73A (2026-10-06, `83352d0`), 73F part 2 (2026-10-06, `d01edd4`), 73G part 1 (2026-10-06, `69a1b46`), 73E part 1 (2026-10-06, `8e02051`), 73F part 3 (2026-10-06, `67fc66c`), 73I (2026-10-06, `56a7c30`), 73T part 1 (2026-10-07, `4cae1e7`), 73T part 2 (2026-10-07, `2a1cbc5`), 73T part 3 (2026-10-07, `9d2bc72`), 73T part 4 (2026-10-07, `b70a944`), 73M with 74C (2026-10-07, `a0e987b`), 73B (2026-10-07, `86547da`), 73O part 2 with 74F (2026-10-08, `fa9625e`), 73G part 2 with 74H (2026-10-08, `f85e862`, `78b5770`), 73H (2026-10-08, `631f898`), 73S (2026-10-08, `3cf1d9d`), 73K part 1 (2026-10-08, `4268c45`), 73E part 2 (2026-10-08, `5e26e57`, `ea78dd4`), 73J part 2 (2026-10-08, `3648706`), 73K part 2 (2026-10-08, `79a8875`), 73L with 74D's reproduction (2026-10-09, `43081f2`), 73N part 1 (2026-10-09, `ab8068e`), 73N part 2 (2026-10-09, `01a9610`), 73N part 3 (2026-10-09, `987daaf`), 73O part 1 with 74O (2026-10-09, `487e247`, `97a0754`), 73O part 3 with 74L (2026-10-09, `67e13b8`) and 73O part 4 with 74J (2026-10-09, `cc90279`) and 73P with 74S (2026-10-09), each approved by name; 74P, built after 73B, is recorded in Milestone 74.**
 **The 2026-10-07 batch is built**, and its closing full regression has run
 (recorded below, after the mid-batch one). **Approved and not yet built**
 (2026-10-08, one batch in this order, light tests between deliveries and a
-full regression at the end): 73P (with 74S) and 73R parts 1-3.
+full regression at the end): 73R parts 1-3.
 Nothing else is approved. Building any other item, or any part of a
 split item, needs the requester's named approval of that item or part
 (AGENTS.md §3).
@@ -3704,6 +3704,70 @@ residence carried, living choice mapped); then all passed. Full unit suite:
 | Help panel | "Choose your inventory type (Initial, Simplified, or Annual)"; "the sun/moon button in the sidebar"; "Three Types of Inventory"; amounts "rounded to nearest dollar" (`help-content.js` near 10, 16, 19–27, 79) | Nine filing types; the toolbar; cents |
 
 `npm run check:types` (`case-file.js` is persistence).
+
+### Build record — BUILT 2026-10-09 with 74S (approved by name by the requester, 2026-10-08)
+
+**What changed for a filer:**
+
+- **Removing a card asks first when it holds anything** (D14, 73P-1): every
+  schedule entry, recipient, witness, Plan row and co-guardian, on every
+  form -- "Remove this entry (1)? What is entered on it is deleted." (Keep it
+  / Remove); a co-guardian keeps the question most forms already asked, and
+  the Inventory's D-1 now asks it too. An untouched card -- a mistaken
+  "+ Add" -- goes at once. Schedule B-4's bank account keeps its own
+  question about the disbursements assigned to it.
+- **Link to Case names each ward once** (D22); a ward with three filings was
+  listed three times.
+- **Start New Year says what the new year starts from** (D23): "opens the
+  next year for this ward, starting from what the note below says" (it said
+  "a new blank year"), and each type's note is its own -- the Annual family
+  names Schedule D's holdings carried and the transaction schedules cleared,
+  the Simplified its Remaining Assets On Hand, and the Plans say their
+  answers clear (they were told of a Starting Balance they don't have).
+- **"Save case file as…"** (D24, 73P-2) on the dashboard, behaviour kept: it
+  saves the whole case under a name the filer chooses, and that file becomes
+  the case's file. It said "Export All Filings".
+- **The supporting-documents note says "encrypted" only on an encrypted
+  case** (D25); a case with no password is said to have none (§8.6: it
+  overstated the protection).
+- **Enter in the Active Filing box opens the one filing the typed text
+  leaves in the list** (D26); it did nothing unless the whole name was typed.
+- **The dashboard's search box fills its place** (D27). The browser check
+  at 1280px and 2,200px found it 147px wide, centred in a 380px slot, its
+  placeholder cut off ("Search by ward, case #,"): the control is a
+  `<label>`, and the app's global label style centres its contents. Now it
+  stretches; the placeholder shows whole at both widths.
+- **The Simplified's eligibility dialog says what its Load Ward Info list
+  carries** (D32), as New Form's does; it said "from an existing Simplified
+  Annual Plan" while the list offers every filing.
+- **The Help panel** lists the nine filing types from the registry (it said
+  "Three Types of Inventory"), puts the theme button beside each page's title
+  and in the dashboard's toolbar (it said "in the sidebar"), and says amounts
+  are in dollars and cents (it said "rounded to nearest dollar"). The guide's
+  mentions follow.
+
+**Found, not changed:** the shared list descriptions' labels for the Annual's
+D-2 to D-5 are shifted by one ("Schedule D-2 Securities Entry" on D-2, which
+is Real Estate in the workbook, and so on). Nothing shows them -- the removal
+question deliberately says "this entry" for schedules -- so no filer sees it.
+Reported at the batch's end.
+
+**How:** new `src/core/form/remove-confirm.js` (`okToRemove()`), with
+`collections.js`'s `confirmRemove` policy switched on and every removal
+(Inventory, Plans, Annual family, Simplified) awaiting it;
+`pick-record-dialogs.js`; `year-dialogs.js` (`newYearNote()`) and
+`common-modals.html`; `dashboard/index.js`; `schedule-docs.js`;
+`filing-switcher.js`; `dashboard.css`; `help-content.js`; the guide.
+
+**Tests:** new `tests/e2e/remove-asks-first.spec.ts` (3) and
+`tests/e2e/small-fixes.spec.ts` (8, with 74S's two); `collection-descriptors`
+and `model-change-event` follow the policy (a Plan row's Remove is awaited).
+**Red-first:** all eleven browser cases fail on the previous source. Light regression on a C: copy: 34 browser specs, 310 tests -- 297 passed;
+the 13 failures were tests that remove a card holding data, which now asks
+first (73P-1): each now answers Remove if asked (`confirmRemoveIfAsked()`,
+tests/e2e/support), and the page-position test confirms the page still holds
+its place and puts the cursor on the row above after a confirmed Remove; then
+all passed. Full unit suite: 3,060 passed; `check:types` clean.
 
 ---
 

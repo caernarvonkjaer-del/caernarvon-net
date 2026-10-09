@@ -137,9 +137,11 @@ describe("73V: each form's rows, floors and limits are what it used before", () 
 
   // Milestone 73C retired keepBlankUntilLeave: a new row staying until the filer
   // leaves the page is now the rule on every list.
-  it('nothing reads the inactive policies yet (73K part 2, 73P)', () => {
+  // Milestone 73P (73P-1): every list asks before removing a card that holds
+  // anything (remove-confirm.js); 73K part 2's cursor is keep-place.js's.
+  it('every list asks before removing a card that holds anything (73P)', () => {
     for (const [type, list] of registeredCollections()) {
-      expect(getCollection(type, list).policies).toEqual({ confirmRemove: null, focusAfterAction: null });
+      expect(getCollection(type, list).policies).toEqual({ confirmRemove: true, focusAfterAction: null });
     }
   });
 

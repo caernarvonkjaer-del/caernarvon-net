@@ -3,7 +3,7 @@ import JSZip from 'jszip';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { freshStartNoPassword, createWard, fillMinimalValidGuardianWard, fillMinimalValidAnnualWard, importWorkbookConfirmed, expectExportReady, clickExport, expectExportStopped } from './support/target';
+import { freshStartNoPassword, createWard, fillMinimalValidGuardianWard, fillMinimalValidAnnualWard, importWorkbookConfirmed, expectExportReady, clickExport, expectExportStopped, confirmRemoveIfAsked } from './support/target';
 import { readAll } from './support/stream';
 import { extractPdfText } from './support/pdf-extract';
 
@@ -155,6 +155,7 @@ test.describe('Milestone 67A: a guardian or attorney can be the preparer', () =>
       w.GuardianForms.testing.save.auto();
     });
     await page.locator('[data-inventory-action="remove-guardian"][data-index="1"]').click();
+    await confirmRemoveIfAsked(page); // 73P: Remove asks first
     expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('guardians.length'))).toBe(1);
     expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('guardians').map((g: any) => !!g.isPreparer)), 'no flag survives').toEqual([false]);
     expect((await issues()).filter((m) => m.startsWith('D-2 Preparer')).length, 'the block is required again').toBeGreaterThan(0);

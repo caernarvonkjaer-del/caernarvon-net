@@ -113,13 +113,15 @@ describe('73J part 1: the real entry points announce once, after the change', ()
     expect(events).toEqual([]);
   });
 
-  it("a Plan's row actions: add, duplicate and remove each announce their list once, and save", () => {
+  it("a Plan's row actions: add, duplicate and remove each announce their list once, and save", async () => {
     const filing = { wardId: 'w2', ...initializeEmptyData('planAnnual'), inventoryType: 'planAnnual' };
     getCaseFile().wards.push(filing); // the open filing is the case's, found by id
     setActiveFiling(filing);
     addPlanRow('q1Residences', 'residence', '/p4');
     duplicatePlanRow('q1Residences', 0, '/p4');
-    removePlanRow('q1Residences', 1, '/p4');
+    // Milestone 73P: Remove asks first when the card holds anything (an
+    // untouched copy goes at once), so it is awaited.
+    await removePlanRow('q1Residences', 1, '/p4');
     expect(events).toEqual([
       { reason: 'collection-add', paths: ['q1Residences'] },
       { reason: 'collection-duplicate', paths: ['q1Residences'] },

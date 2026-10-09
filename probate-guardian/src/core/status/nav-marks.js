@@ -212,11 +212,11 @@ export function renderProgressSummary(checks){
       <span class="ward-progress-label">Filing Progress</span>
       <span class="ward-progress-pct">${pct}%</span>
     </div>
-    <div class="ward-progress-bar" role="progressbar" aria-label="Filing progress: ${complete} of ${total} sections complete"
+    <div class="ward-progress-bar" role="progressbar" aria-label="Filing progress: ${complete} of ${total} pages to fill in complete"
          aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100">
       <div class="ward-progress-fill${done?' ward-progress-done':''}" style="width:${pct}%"></div>
     </div>
-    <div class="ward-progress-count">${complete} of ${total} sections complete</div>
+    <div class="ward-progress-count">${complete} of ${total} pages to fill in complete</div>
     ${nextRoute?`<button type="button" class="ward-progress-jump" data-form-action="navigate" data-route="${esc(nextRoute)}">${ic('external',13)} Jump to ${esc(jumpLabel)}</button>`:''}`;
 }
 

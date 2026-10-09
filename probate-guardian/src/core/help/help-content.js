@@ -1,5 +1,8 @@
 import { hasSixthCircuitLocalGuidance } from '../filing/county-guidance.js';
 import { getD } from '../state.js';
+import { FILING_TYPE_KEYS } from '../filing/filing-descriptor.js';
+import { INVENTORY_TYPES } from '../filing/filing-registry.js';
+import { esc } from '../filing/escape-html.js';
 
 export const HELP_CONTENT = Object.freeze({
   'default': {
@@ -7,24 +10,22 @@ export const HELP_CONTENT = Object.freeze({
     content: `<p><strong>Guardian Forms</strong> helps you prepare court-required guardianship documents for Florida probate court.</p>
     <div class="help-section-title">Getting Started</div>
     <p>1. Create a new form using the <strong>+ New Form</strong> button</p>
-    <p>2. Choose your filing type (Initial, Simplified, or Annual)</p>
+    <p>2. Choose one of the nine filing types: the Initial Inventory, the accountings, or the plans</p>
     <p>3. Fill out each section using the sidebar navigation</p>
     <p>4. Look for the <strong>green checkmarks</strong> — they indicate completed sections</p>
     <p>5. Export to PDF or Excel when ready to file. (The optional UCN prints on the PDF but is not carried in Excel — none of the court's workbooks has a place for it.)</p>
     <div class="help-section-title">Along the Way</div>
     <p><strong>Filing progress:</strong> The bar near the top of the sidebar tracks how much of the current ward's filing is complete, with a "Jump to…" link straight to the next incomplete section.</p>
-    <p><strong>Light &amp; dark mode:</strong> Use the sun/moon button in the sidebar to switch appearance. It's remembered per device.</p>
+    <p><strong>Light &amp; dark mode:</strong> Use the moon/sun button beside each page's title (and in the dashboard's toolbar) to switch appearance. It's remembered per device.</p>
     <p><strong>Activity Log:</strong> Every unlock and manual backup on this device is recorded (automatic saves are not) — open it from the link at the bottom of this help panel.</p>`
   },
   'inventory-select': {
     title: 'Choose Filing Type',
-    content: `<div class="help-section-title">Three Types of Inventory</div>
-    <h4><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 4.6H7.2a1.6 1.6 0 0 0-1.6 1.6V19a1.6 1.6 0 0 0 1.6 1.6h9.6A1.6 1.6 0 0 0 18.4 19V6.2a1.6 1.6 0 0 0-1.6-1.6H15"/><rect x="9" y="3" width="6" height="3.4" rx="1.1"/></svg> Initial Inventory</h4>
-    <p>Filed at the start of guardianship. Lists all assets as of the "Guardianship Inception Date".</p>
-    <h4><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 3.6h12v17l-3-1.8-3 1.8-3-1.8-3 1.8Z"/><path d="M9.2 8.4h5.6M9.2 12.4h5.6"/></svg> Simplified Annual Accounting</h4>
-    <p>For cases where estate property is held in a <strong>designated depository</strong> and transactions are limited to interest, settlement deposits, and service charges. Much simpler than full accounting.</p>
-    <h4><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4.2 20h15.6"/><path d="M7.4 20v-6.4M12 20V5.6M16.6 20v-9.2"/></svg> Annual Accounting (Full)</h4>
-    <p>Complete annual accounting showing all income, expenses, assets, and liabilities. Required when simplified criteria aren't met.</p>`
+    // Milestone 73P: the nine filing types, from the registry -- it said
+    // "Three Types of Inventory" and listed three.
+    content: () => `<div class="help-section-title">Nine filing types</div>
+    ${FILING_TYPE_KEYS.map((type) => `<h4>${esc(INVENTORY_TYPES[type].name)}</h4>
+    <p>${INVENTORY_TYPES[type].description}</p>`).join('')}`
   },
   'guardian-inventory': {
     title: 'Initial Inventory Guide',
@@ -76,7 +77,7 @@ export const HELP_CONTENT = Object.freeze({
     <li><strong>Schedule F:</strong> Sale details</li>
     </ul>
     <div class="help-section-title">Important Notes</div>
-    <p>All values should be rounded to nearest dollar. Beginning balance must equal prior year ending balance.</p>
+    <p>Enter amounts in dollars and cents; totals are rounded to the cent, as the Clerk's workbook displays them. Beginning balance must equal prior year ending balance.</p>
     <p>The <strong>filing progress bar</strong> in the sidebar tracks completion for you, with a "Jump to…" link to the next incomplete section. Parts VI &amp; VII also check that your accounting's net assets reconcile with your Schedule D listings before you can export.</p>`
   },
   'plan-simplified': {

@@ -2,8 +2,8 @@
  "generatedBy": "node scripts/ms70-assertion-counts.mjs --write-baseline",
  "note": "Milestone 70 per-spec assertion counts (static expect calls). tests/unit/ms70-assertion-counts.spec.js fails when a spec falls below its count; lowering it requires --reason, recorded in dropLog. A tripwire, not proof of equivalence (decision D9).",
  "totals": {
-  "expects": 9299,
-  "tests": 2673
+  "expects": 9352,
+  "tests": 2688
  },
  "counts": {
   "tests/e2e/accessible-errors-and-groups.spec.ts": {
@@ -13,6 +13,10 @@
   "tests/e2e/accessible-names.spec.ts": {
    "expects": 8,
    "tests": 5
+  },
+  "tests/e2e/activity-log-actions.spec.ts": {
+   "expects": 6,
+   "tests": 1
   },
   "tests/e2e/amounts-keep-their-sign.spec.ts": {
    "expects": 20,
@@ -542,6 +546,10 @@
    "expects": 32,
    "tests": 8
   },
+  "tests/e2e/remove-asks-first.spec.ts": {
+   "expects": 11,
+   "tests": 3
+  },
   "tests/e2e/rollback.contract.spec.ts": {
    "expects": 8,
    "tests": 1
@@ -641,6 +649,10 @@
   "tests/e2e/simplified-remuneration.spec.ts": {
    "expects": 31,
    "tests": 5
+  },
+  "tests/e2e/small-fixes.spec.ts": {
+   "expects": 27,
+   "tests": 8
   },
   "tests/e2e/stamped-co-guardian.spec.ts": {
    "expects": 15,
@@ -1501,6 +1513,10 @@
   "tests/unit/validator-engines.spec.js": {
    "expects": 32,
    "tests": 6
+  },
+  "tests/unit/vehicle-checks.spec.js": {
+   "expects": 9,
+   "tests": 3
   },
   "tests/unit/waiver-advocate-hint.spec.js": {
    "expects": 16,

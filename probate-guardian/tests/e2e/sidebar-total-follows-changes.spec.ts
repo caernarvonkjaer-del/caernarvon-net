@@ -4,7 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import {
   freshStartNoPassword, createWard, fillMinimalValidAnnualWard, fillMinimalValidGuardianWard,
-  dismissScheduleDocPrompt, autoAcceptDynDialogs,
+  dismissScheduleDocPrompt, autoAcceptDynDialogs, confirmRemoveIfAsked,
 } from './support/target';
 import { exportWithWrites } from './support/workbook-vs-template';
 
@@ -46,6 +46,7 @@ test('annual: Remove and Duplicate on Schedule B-4 keep the sidebar\'s Net Asset
   await dismissScheduleDocPrompt(page);
   const before = await annualNet(page);
   await page.locator('[data-annual-action="remove-row"][data-collection="schB4"]').first().click();
+  await confirmRemoveIfAsked(page); // 73P: Remove asks first
   await expect.poll(() => annualNet(page)).not.toBe(before);
   expect(await card(page), 'after Remove').toBe(money(await annualNet(page)));
 
@@ -70,6 +71,7 @@ test('guardian: Remove on Schedule B-1 keeps the sidebar\'s Total Value current'
   await typeInto(page, 'input[data-bind="scheduleB1.0.accountNumber"]', '11');
   const typed = await card(page);
   await page.locator('[data-inventory-action="remove-entry"][data-schedule="b1"]').first().click();
+  await confirmRemoveIfAsked(page); // 73P: Remove asks first
   await page.waitForTimeout(500);
   expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('scheduleB1').length)).toBe(1);
   expect(await card(page), 'after Remove the card no longer shows the removed account').not.toBe(typed);

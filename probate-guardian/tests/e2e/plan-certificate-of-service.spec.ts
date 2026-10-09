@@ -2,7 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 import {
   freshStartNoPassword, createWard,
   fillMinimalValidPlanAnnualWard, fillMinimalValidPlanSimplifiedWard, fillMinimalValidPlanMinorWard, fillMinimalValidPlanInitialWard,
-  expectExportReady, clickExport,
+  expectExportReady, clickExport, confirmRemoveIfAsked,
 } from './support/target';
 import { readAll } from './support/stream';
 import { extractPdfText } from './support/pdf-extract';
@@ -71,6 +71,7 @@ for (const form of FORMS) {
       await nameInput(page, 1).blur();
       expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('certRecipients.1.name'))).toBe('Second Recipient');
       await page.locator('#main-content [data-form-action="remove-plan-row"][data-collection="certRecipients"][data-index="1"]').click();
+      await confirmRemoveIfAsked(page); // 73P: Remove asks first
       await expect(nameInput(page, 1)).toHaveCount(0);
       expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('certRecipients.length'))).toBe(1);
 

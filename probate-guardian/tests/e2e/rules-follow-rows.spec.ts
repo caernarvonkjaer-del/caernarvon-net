@@ -1,7 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
 import {
   freshStartNoPassword, createWard, createSimplifiedWard, dismissScheduleDocPrompt,
-  fillMinimalValidGuardianWard, fillMinimalValidAnnualWard, fillMinimalValidSimplifiedWard,
+  fillMinimalValidGuardianWard, fillMinimalValidAnnualWard, fillMinimalValidSimplifiedWard, confirmRemoveIfAsked,
 } from './support/target';
 
 // Milestone 73F part 3, through the real pages:
@@ -104,6 +104,7 @@ test('a date still being typed moves with its row on Remove, is named by its new
 
   // Remove the first row: the second, with its date, becomes Line 1.
   await page.locator('#main-content [data-annual-action="remove-row"][data-collection="schB1"][data-index="0"]').click();
+  await confirmRemoveIfAsked(page); // 73P: Remove asks first
   await expect.poll(() => field(page, 'schB1.0.payee')).toBe('Second Payee');
   await expect(page.locator('input[data-field-path="schB1.0.datePaid"]')).toHaveValue('02/30/2026');
   await expect(draftItem(1)).toHaveCount(1);
@@ -111,6 +112,7 @@ test('a date still being typed moves with its row on Remove, is named by its new
 
   // Remove it too: nothing is left that nobody can see or clear.
   await page.locator('#main-content [data-annual-action="remove-row"][data-collection="schB1"][data-index="0"]').click();
+  await confirmRemoveIfAsked(page); // 73P: Remove asks first
   await expect.poll(() => field(page, 'schB1')).toHaveLength(0);
   await expect(draftItem(1)).toHaveCount(0);
   expect(await page.evaluate(() => Object.keys((window as any).GuardianForms.testing.snapshot().filing.__fieldDrafts || {}))).toEqual([]);

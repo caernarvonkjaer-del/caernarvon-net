@@ -3,6 +3,7 @@
  "converted": [
   "tests/e2e/accessible-errors-and-groups.spec.ts",
   "tests/e2e/accessible-names.spec.ts",
+  "tests/e2e/activity-log-actions.spec.ts",
   "tests/e2e/amounts-keep-their-sign.spec.ts",
   "tests/e2e/annotation-toolbar-containment.spec.ts",
   "tests/e2e/annual-blank-share-footing.spec.ts",
@@ -135,6 +136,7 @@
   "tests/e2e/readiness-card.contract.spec.ts",
   "tests/e2e/recovery-cache.spec.ts",
   "tests/e2e/redraw-keeps-scroll.spec.ts",
+  "tests/e2e/remove-asks-first.spec.ts",
   "tests/e2e/rollback.contract.spec.ts",
   "tests/e2e/routes.spec.ts",
   "tests/e2e/rules-follow-rows.spec.ts",
@@ -160,6 +162,7 @@
   "tests/e2e/simplified-mount.spec.ts",
   "tests/e2e/simplified-part1-identity-cells.spec.ts",
   "tests/e2e/simplified-remuneration.spec.ts",
+  "tests/e2e/small-fixes.spec.ts",
   "tests/e2e/stamped-co-guardian.spec.ts",
   "tests/e2e/startup.spec.ts",
   "tests/e2e/supplemental-pdf-accounting.spec.ts",

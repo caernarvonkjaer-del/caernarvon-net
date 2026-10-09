@@ -15,7 +15,7 @@
 // renderPage(), so a card container is rebuilt on every add/remove), and the
 // documented maximums and the protected first row behave as the source says.
 import { test, expect } from '@playwright/test';
-import { freshStartNoPassword, createWard } from './support/target';
+import { freshStartNoPassword, createWard, confirmRemoveIfAsked } from './support/target';
 
 const GUARDIAN_ROUTE = '/d1';
 const RECIPIENT_ROUTE = '/d5';
@@ -141,6 +141,7 @@ test.describe('Milestone 51E: Initial Inventory collection Add/Remove controls',
     // Remove buttons render for every card but the first, so the first button
     // belongs to guardians[1].
     await page.locator('[data-inventory-action="remove-guardian"]').first().click();
+    await confirmRemoveIfAsked(page); // 73P: Remove asks first
 
     const names = await page.evaluate(() => (window as any).GuardianForms.testing.field('guardians').map((g: any) => g.name));
     expect(names).toEqual(['First Guardian', 'Third Guardian']);
@@ -169,6 +170,7 @@ test.describe('Milestone 51E: Initial Inventory collection Add/Remove controls',
     await goto(page, GUARDIAN_ROUTE);
 
     await page.locator('[data-inventory-action="remove-guardian"]').first().click();
+    await confirmRemoveIfAsked(page); // 73P: Remove asks first
 
     expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('guardianPartyIds'))).toEqual(['p-zero', 'p-two']);
   });
@@ -209,6 +211,7 @@ test.describe('Milestone 51E: Initial Inventory collection Add/Remove controls',
     // Named rows survive the re-render each handler triggers; the clean-up
     // only ever removes rows nobody typed into.
     await removeRecipient.nth(1).click();
+    await confirmRemoveIfAsked(page); // 73P: Remove asks first
 
     const names = await page.evaluate(() => (window as any).GuardianForms.testing.field('serviceRecipients').map((r: any) => r.name));
     expect(names).toEqual(['Recipient One', 'Recipient Three']);
@@ -262,6 +265,7 @@ test.describe('Milestone 51E: Initial Inventory collection Add/Remove controls',
     expect(before).toEqual(['Witness One', 'Witness Two']);
 
     await removeWitness.first().click();
+    await confirmRemoveIfAsked(page); // 73P: Remove asks first
 
     const after = await page.evaluate(() => (window as any).GuardianForms.testing.field('witnesses').map((w: any) => w.name));
     expect(after).toEqual(['Witness Two']);

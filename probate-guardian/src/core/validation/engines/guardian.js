@@ -75,7 +75,9 @@ export function collectGuardianIssues(d){
   d.scheduleB1.forEach((e,i)=>{const p=`B-1 row ${i+1}`,k=`scheduleB1.${i}`;req(e.institutionName,`${p} — Institution Name`,`${k}.institutionName`);req(e.accountType,`${p} — Account Type`,`${k}.accountType`);req(e.streetAddress,`${p} — Street Address`,`${k}.streetAddress`);req(e.cityStateZip,`${p} — City/State/Zip`,`${k}.cityStateZip`);if(zeroOrBlank(e.fullAssetAmount))push(`${p} — Full Asset Amount must be > 0.`,`${k}.fullAssetAmount`);});
   d.scheduleB2.forEach((e,i)=>{const p=`B-2 row ${i+1}`,k=`scheduleB2.${i}`;
     if(e.isVehicle){
-      req(e.vehicleYear,`${p} — Year`,`b2-vehicle-year-${i}`);req(e.vehicleMake,`${p} — Make`,`b2-vehicle-make-${i}`);req(e.vehicleModel,`${p} — Model`,`b2-vehicle-model-${i}`);req(e.vehicleVin,`${p} — VIN`,`b2-vehicle-vin-${i}`);req(e.odometerMileage,`${p} — Odometer Mileage`,`b2-vehicle-mileage-${i}`);
+      req(e.vehicleYear,`${p} — Year`,`b2-vehicle-year-${i}`);
+      // Milestone 74S (74S-1): "19" is not a year.
+      if(String(e.vehicleYear??'').trim()&&!/^\d{4}$/.test(String(e.vehicleYear).trim()))push(`${p} — Year must be four digits (for example 2019)`,`b2-vehicle-year-${i}`);req(e.vehicleMake,`${p} — Make`,`b2-vehicle-make-${i}`);req(e.vehicleModel,`${p} — Model`,`b2-vehicle-model-${i}`);req(e.vehicleVin,`${p} — VIN`,`b2-vehicle-vin-${i}`);req(e.odometerMileage,`${p} — Odometer Mileage`,`b2-vehicle-mileage-${i}`);
     }else{
       req(e.description,`${p} — Description`,`${k}.description`);
     }

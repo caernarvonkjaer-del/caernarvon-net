@@ -81,6 +81,7 @@ import { afterAdd, afterRemove, onChange, rowTarget } from '../../core/navigatio
 import { commitModelChange } from '../../core/model-change.js';
 import { collectSimplifiedIssues, RECIPIENT_STARTED_FIELDS } from '../../core/validation/engines/simplified.js';
 import { ATTORNEY_NOT_AUDITED } from '../../core/filing/court-text/accountings.js';
+import { okToRemove } from '../../core/form/remove-confirm.js';
 // Milestone 57B: carried verbatim from MILESTONE-57-PROPOSAL.md section 57B.
 // The wording is load bearing (section 8 #8). Do not paraphrase or re-voice it.
 // Milestone 74F: the certificate's question is the one constant (service-recipients.js).
@@ -133,7 +134,7 @@ function bindEvents(container) {
         break;
       }
       case 'remove-guardian': {
-        if (index > 0 && rowStarted(getD().guardians?.[index]) && !(await confirmModal(`Remove co-guardian ${getD().guardians[index].name || `#${index + 1}`}? This will delete the entered signature information.`))) break;
+        if (!(await okToRemove('simplified', 'guardians', getD().guardians?.[index], index))) break;
         if (removeCollectionRow('guardians', index, getD())) {
           commitModelChange('collection-remove', ['guardians']);
           navigate('/p4', onChange(afterRemove(getD(), 'guardians', index)));
@@ -148,6 +149,8 @@ function bindEvents(container) {
         break;
       }
       case 'remove-recipient': {
+        // Milestone 73P (73P-1): asked first when the card holds anything.
+        if (!(await okToRemove('simplified', 'certRecipients', getD().certRecipients?.[index], index))) break;
         if (removeCollectionRow('certRecipients', index, getD())) {
           commitModelChange('collection-remove', ['certRecipients']);
           navigate('/p6', onChange(afterRemove(getD(), 'certRecipients', index)));
@@ -174,6 +177,7 @@ function bindEvents(container) {
       }
       case 'open-court-portal': openFloridaCourtPortal(); break;
       case 'remove-remuneration': {
+        if (!(await okToRemove('simplified', 'remuneration', getD().remuneration?.[index], index))) break;
         if (removeCollectionRow('remuneration', index, getD())) {
           commitModelChange('collection-remove', ['remuneration']);
           navigate('/p7', onChange(afterRemove(getD(), 'remuneration', index)));

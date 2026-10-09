@@ -37,11 +37,11 @@ import { BLANK_SCHEDULE_ENTRY, isBlankCard, isBlankScheduleEntry } from './blank
 import { LINKED_ID_ARRAYS, keepRows, remapFieldDrafts } from './row-links.js';
 import { noItemsKeyFor } from './no-items-keys.js';
 
-// Named for the deliveries that will use them; nothing reads these yet.
-// (Clearing a list's "no items" tick on "+ Add" is appendRow()'s since 73F part 3.)
+// The lists' shared policies. (Clearing a list's "no items" tick on "+ Add"
+// is appendRow()'s since 73F part 3.)
 const INACTIVE_POLICIES = Object.freeze({
-  confirmRemove: null,      // 73P: ask before removing a card that holds anything
-  focusAfterAction: null,   // 73K part 2: where the cursor goes after an action
+  confirmRemove: true,      // 73P (73P-1): ask before removing a card that holds anything (remove-confirm.js)
+  focusAfterAction: null,   // 73K part 2: where the cursor goes after an action (keep-place.js does it)
 });
 
 /**

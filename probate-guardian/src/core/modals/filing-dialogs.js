@@ -10,6 +10,7 @@ import { getOrCreateCaseForWard } from '../case-resolver.js';
 import { refreshCarrySourceSelect, updateCarrySourcePicker } from '../filing/carry-over.js';
 import { deleteFilingConfirmation } from '../filing/delete-confirmation.js';
 import { formDisplayName } from '../filing/filing-registry.js';
+import { auditLog } from '../activity/audit-log.js';
 import { navigate, renderPage } from '../navigation/router.js';
 import { DRAW } from '../navigation/draw-reason.js';
 import { normalizeCountyName } from '../navigation/ward-county.js';
@@ -225,8 +226,11 @@ export async function confirmDeleteWard(wardId){
 export async function doDeleteWard(){
   const wardId=_pendingDeleteWardId||getCaseFile().activeWardId;
   const wasOnDashboard=getCurrentPage()==='/dashboard';
+  const doomed=getCaseFile().wards.find(w=>w.wardId===wardId);
   try{
     await filingLifecycle.remove(wardId);
+    // Milestone 74S (74S-4): the deletion is recorded, naming the filing.
+    if(doomed)await auditLog('FILING_DELETED',`Deleted the ${formDisplayName(doomed.inventoryType)} for ${doomed.wardName||'(unnamed)'}`,true,wardId);
     closeModal('deleteWardModal');
     if(wasOnDashboard)navigate('/dashboard');
   }catch(e){

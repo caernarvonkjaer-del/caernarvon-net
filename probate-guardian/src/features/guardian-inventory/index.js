@@ -22,6 +22,7 @@ import { hasIdentifiedPreparer, preparerFlagCheckboxHTML, preparerWaivedNoticeHT
 import { serviceRecipientIssues, RECIPIENTS_OR_ATTESTATION, NO_RECIPIENTS_QUESTION } from '../../core/validation/service-recipients.js';
 import { renderServiceAttestationRow } from '../../core/form/service-attestation-visibility.js';
 import { esc } from '../../core/filing/escape-html.js';
+import { okToRemove } from '../../core/form/remove-confirm.js';
 import { ic } from '../../core/ui/icons.js';
 import { fmt } from '../../core/format/money.js';
 import { withMinusCue } from '../../core/form/amount-codec.js';
@@ -693,12 +694,14 @@ function useYearlyTotal(idx){
   commitModelChange('field-write',[`scheduleC1.${idx}.annualIncomeAmount`]);
   renderPage(getCurrentPage(),onChange(fieldTarget(`scheduleC1.${idx}.annualIncomeAmount`)));
 }
-function removeEntry(schedule,idx){
+async function removeEntry(schedule,idx){
   const map={
     a1:'scheduleA1',a2:'scheduleA2',b1:'scheduleB1',b2:'scheduleB2',b3:'scheduleB3',
     b4:'scheduleB4',c1:'scheduleC1',c2:'scheduleC2',c3:'scheduleC3',c4:'scheduleC4',c5:'scheduleC5'
   };
   const key=map[schedule];
+  // Milestone 73P (73P-1): asked first when the card holds anything.
+  if(!(await okToRemove('guardian',key,getD()[key]?.[idx],idx)))return;
   removeRowAt(getD(),key,idx);
   commitModelChange('collection-remove',[key]);
   renderPage(getCurrentPage(),onChange(afterRemove(getD(),key,idx)));
@@ -749,13 +752,15 @@ export function duplicateEntry(schedule,idx){
 // D.schA / D.schB1 / … and are rendered inline rather than through
 
 function addGuardian(){appendRow(D,'guardians');commitModelChange('collection-add',['guardians']);renderPage('/d1',onChange(afterAdd(D,'guardians')));}
-function removeGuardian(i){
+async function removeGuardian(i){
+  // Milestone 73P (D14): D-1's co-guardian asks first, as the other forms' do.
+  if(!(await okToRemove('guardian','guardians',D.guardians?.[i],i)))return;
   removeRowAt(D,'guardians',i);
   commitModelChange('collection-remove',['guardians']);
   renderPage('/d1',onChange(afterRemove(D,'guardians',i)));
 }
 function addRecipient(){appendRow(D,'serviceRecipients');commitModelChange('collection-add',['serviceRecipients']);renderPage('/d5',onChange(afterAdd(D,'serviceRecipients')));}
-function removeRecipient(i){removeRowAt(D,'serviceRecipients',i);commitModelChange('collection-remove',['serviceRecipients']);renderPage('/d5',onChange(afterRemove(D,'serviceRecipients',i)));}
+async function removeRecipient(i){if(!(await okToRemove('guardian','serviceRecipients',D.serviceRecipients?.[i],i)))return;removeRowAt(D,'serviceRecipients',i);commitModelChange('collection-remove',['serviceRecipients']);renderPage('/d5',onChange(afterRemove(D,'serviceRecipients',i)));}
 
 // Witnesses present during the physical inventory of the ward's personal
 // effects (Cover page reminder). Kept separate from the entryCard()/
@@ -764,7 +769,7 @@ function removeRecipient(i){removeRowAt(D,'serviceRecipients',i);commitModelChan
 // of the schedule/route map those helpers key off of).
 // The witness row lives with the list rules (src/core/form/collections.js).
 function addWitness(){appendRow(D,'witnesses');commitModelChange('collection-add',['witnesses']);renderPage('/',onChange(afterAdd(D,'witnesses')));}
-function removeWitness(i){if(!D.witnesses)return;removeRowAt(D,'witnesses',i);commitModelChange('collection-remove',['witnesses']);renderPage('/',onChange(afterRemove(D,'witnesses',i)));}
+async function removeWitness(i){if(!D.witnesses)return;if(!(await okToRemove('guardian','witnesses',D.witnesses[i],i)))return;removeRowAt(D,'witnesses',i);commitModelChange('collection-remove',['witnesses']);renderPage('/',onChange(afterRemove(D,'witnesses',i)));}
 function witnessCardsHTML(){
   const list=D.witnesses||[];
   return list.map((w,i)=>`<div class="col-12 col-lg-6"><div class="entry-card mb-0 h-100">

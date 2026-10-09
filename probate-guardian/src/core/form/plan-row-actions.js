@@ -11,6 +11,8 @@ import { navigate } from '../navigation/router.js';
 import { afterAdd, afterDuplicate, afterRemove, onChange } from '../navigation/draw-reason.js';
 import { getD } from '../state.js';
 import { confirmModal } from '../ui/dialogs.js';
+import { okToRemove } from './remove-confirm.js';
+import { getActiveInventoryType } from '../state.js';
 import { appendRow, duplicateRowAt, removeRowAt } from './collections.js';
 import { commitModelChange } from '../model-change.js';
 
@@ -24,7 +26,7 @@ export async function removePlanGuardian(index,route){
   const d=getD(); const rows=normalizePlanGuardians(d);
   if(index<=0||index>=rows.length)return false;
   const row=rows[index];
-  if(rowStarted(row)&&!(await confirmModal(`Remove co-guardian ${row.name||`#${index+1}`}? This will delete the entered signature information.`)))return false;
+  if(!(await okToRemove(getActiveInventoryType(),'planGuardians',row,index)))return false;
   removeRowAt(d,'planGuardians',index);
   commitModelChange('collection-remove', ['planGuardians']); navigate(route, onChange(afterRemove(d, 'planGuardians', index))); return true;
 }
@@ -40,9 +42,11 @@ export function addPlanRow(arrName,kind,route){
   commitModelChange('collection-add', [arrName]);navigate(route, onChange(afterAdd(getD(), arrName)));
 }
 
-export function removePlanRow(arrName,idx,route){
+export async function removePlanRow(arrName,idx,route){
   const list=getD()[arrName];
   if(!list||!list[idx])return;
+  // Milestone 73P (73P-1): asked first when the card holds anything.
+  if(!(await okToRemove(getActiveInventoryType(),arrName,list[idx],idx)))return;
   removeRowAt(getD(),arrName,idx);
   commitModelChange('collection-remove', [arrName]);navigate(route, onChange(afterRemove(getD(), arrName, idx)));
 }

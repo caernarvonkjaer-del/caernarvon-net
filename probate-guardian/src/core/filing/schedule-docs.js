@@ -11,6 +11,7 @@ import { getActiveInventoryType, getD, requestSave } from '../state.js';
 import { alertModal } from '../ui/dialogs.js';
 import { ic } from '../ui/icons.js';
 import { commitModelChange } from '../model-change.js';
+import { getSecurityMode } from '../persistence/crypto.js';
 
 // Every schedule (across all three inventory types) can carry uploaded
 // supporting documents and a free-text comment. Guardianships are re-filed
@@ -253,7 +254,7 @@ export function renderScheduleDocsSection(scheduleKey){
   const inputId=`sched-doc-input-${scheduleKey}`;
   return `<div class="schedule-docs-section no-print">
     <h2>Supporting Documents${periodNote}</h2>
-    <p class="schedule-docs-hint">Upload PDF supplemental documents only. Supplemental PDFs are inserted as uploaded; Guardian Forms does not certify or remediate uploaded documents for accessibility. Stored on this device only, encrypted with the rest of this ward's data.</p>
+    <p class="schedule-docs-hint">Upload PDF supplemental documents only. Supplemental PDFs are inserted as uploaded; Guardian Forms does not certify or remediate uploaded documents for accessibility. ${getSecurityMode()==='encrypted'?'Stored on this device only, encrypted with the rest of this case.':'Stored on this device only, in this case file, which has no password.'}</p>
     <input type="file" id="${inputId}" multiple accept="application/pdf,.pdf" aria-label="Upload PDF supporting documents for this page" data-page-named="Upload PDF supporting documents for" class="d-none" data-form-change="schedule-doc-upload" data-schedule-key="${esc(scheduleKey)}">
     <button type="button" class="btn btn-outline-primary btn-sm mb-2" data-form-action="choose-schedule-docs" data-input-id="${esc(inputId)}" data-focus-path="scheduleDocs.${esc(scheduleKey)}">+ Upload PDF(s)</button>
     <div class="sched-doc-list">${filesHtml}</div>

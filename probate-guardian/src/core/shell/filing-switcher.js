@@ -76,8 +76,12 @@ export async function handleSwitchWardClick(){
     // if exactly one ward matches; otherwise show the dropdown to disambiguate.
     const q=input.value.trim().toLowerCase();
     const matches=getCaseFile().wards.filter(w=>(w.wardName||'').trim().toLowerCase()===q);
+    // Milestone 73P (D26): or the one filing the typed text leaves in the list.
+    const shown=comboboxFilterItems(wardSelectorItems(),input.value);
     if(matches.length===1){
       wardId=matches[0].wardId;
+    }else if(shown.length===1){
+      wardId=shown[0].wardId;
     }else{
       wardSelectorShowDropdown(input.value);
       return;

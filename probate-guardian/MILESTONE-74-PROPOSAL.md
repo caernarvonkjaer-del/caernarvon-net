@@ -8,10 +8,8 @@ with 73M, `a0e987b`), 74P (2026-10-07, after 73B, `645fe35`), 74F (2026-10-08,
 with 73O part 2, `fa9625e`), 74H (2026-10-08, with 73G part 2, `f85e862`) and
 74D's reproduction with its UX-07 rewording (2026-10-09, with 73L), 74O
 (2026-10-09, with 73O part 1, `487e247`), 74L (2026-10-09, with 73O part 3,
-`67e13b8`) and 74J (2026-10-09, with 73O part 4), each approved by name.**
-**Approved and not yet built** (2026-10-08, with Milestone 73's batch): 74S
-(with 73P). Nothing else is
-approved: building any other of 74D–74S needs the requester's named approval
+`67e13b8`), 74J (2026-10-09, with 73O part 4, `cc90279`) and 74S (2026-10-09,
+with 73P), each approved by name.** Nothing else is approved: building any other of 74D–74S needs the requester's named approval
 of that item (AGENTS.md §3). **Every decision in 74C–74S is settled
 (2026-10-06)**, each recorded under its item and gathered in
 [Appendix B](#appendix-b--every-decision-in-74c74s-as-asked-and-settled): the
@@ -3099,6 +3097,43 @@ Remove's confirmation) touches `filing-switcher.js` and `year-dialogs.js`;
 **73R part 1** reshapes the sidebar's progress card; **73F parts 2–3** change
 `nav-marks.js` and the Inventory's validator; **73L** changes
 `filing-dialogs.js`. **Build 74S alongside 73P** (73's row 32).
+
+### Build record — BUILT 2026-10-09 with 73P (approved by name by the requester, 2026-10-08)
+
+**What changed for a filer:**
+
+- **A vehicle's Year must be four digits** (UX-10, decision 1): "19" is an
+  ordinary export error the filer can correct or override ("Year must be four
+  digits (for example 2019)"). **A VIN that isn't 17 characters gets a
+  "Review recommended" note**, as an older vehicle's can be shorter (the
+  Clerk's own example has ten). No vehicle subtypes. A filing saved with a
+  two-digit Year now shows the error -- visible, overridable (checklist 2).
+- **The progress card says what it counts** (UX-13, decision 2): "16 of 17
+  pages to fill in complete", in the text and the bar's name.
+- **The Active Filing box gives the full name and type** (UX-27) as its
+  tooltip and accessible description ("QA Rosalind Pemberton — Initial
+  Inventory").
+- **The Activity Log records what is done to a filing** (UX-28, decision
+  4): deleting a filing or a prior year, Mark Closed, Mark Open and a status
+  change, each naming the action and the filing, never its contents.
+- **UX-25:** no change (decision 3, Pinellas Clerk practice).
+
+**How:** `engines/guardian.js` (the Year); `consistency-advisories.js` (the
+VIN note); `nav-marks.js`; `sidebar.js` (`describeActiveFiling()`);
+`filing-dialogs.js`, `year-dialogs.js`, `dashboard/index.js` (`auditLog()`);
+`activity-log-view.js` (five labels).
+
+**Tests:** new `tests/unit/vehicle-checks.spec.js` (3) and
+`tests/e2e/activity-log-actions.spec.ts` (1); the progress card and the
+switcher in 73P's `tests/e2e/small-fixes.spec.ts`. **Red-first:** the Year
+and VIN cases fail on the previous engine and advisories; the Activity Log,
+progress and switcher cases on the previous source. Fixtures checked: none
+built a vehicle with a short Year. Light regression on a C: copy: 34 browser specs, 310 tests -- 297 passed;
+the 13 failures were tests that remove a card holding data, which now asks
+first (73P-1): each now answers Remove if asked (`confirmRemoveIfAsked()`,
+tests/e2e/support), and the page-position test confirms the page still holds
+its place and puts the cursor on the row above after a confirmed Remove; then
+all passed. Full unit suite: 3,060 passed; `check:types` clean.
 
 ---
 

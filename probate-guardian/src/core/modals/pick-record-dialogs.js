@@ -106,7 +106,8 @@ export async function showPickCaseModal(wardId){
   const cases=getCaseFile().cases||[];
   sel.innerHTML='<option value="">— Select —</option>'
     +cases.map(c=>{
-      const refs=getCaseFile().wards.filter(w=>w.caseId===c.id).map(w=>w.wardName||'(unnamed)');
+      // Milestone 73P (D22): each name once -- a ward with three filings was listed three times.
+      const refs=[...new Set(getCaseFile().wards.filter(w=>w.caseId===c.id).map(w=>w.wardName||'(unnamed)'))];
       const label=[c.caseNumber||'(no case number)',c.county,refs.length?`— ${refs.join(', ')}`:''].filter(Boolean).join(' ');
       return `<option value="${c.id}">${esc(label)}</option>`;
     }).join('');

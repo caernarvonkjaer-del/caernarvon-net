@@ -65,6 +65,15 @@ export function guardianConsistencyAdvisories(d) {
     }
   }
   out.push(...twoResidences(d, 'scheduleA1', 'A-1', 'Rows'));
+  // Milestone 74S (74S-1): a VIN is usually 17 characters; an older vehicle's
+  // can be shorter (the Clerk's own example has ten), so this only asks.
+  rowsOf(d, 'scheduleB2').forEach((row, i) => {
+    const vin = String(row?.vehicleVin ?? '').trim();
+    if (row?.isVehicle && vin && vin.length !== 17) {
+      out.push(advisory('vin-length', `b2-vehicle-vin-${i}`,
+        `B-2 — Row ${i + 1} — the VIN has ${vin.length} character${vin.length === 1 ? '' : 's'}; most have 17. An older vehicle's can be shorter — check it against the title.`));
+    }
+  });
   return out;
 }
 
