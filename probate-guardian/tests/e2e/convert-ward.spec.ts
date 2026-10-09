@@ -202,3 +202,46 @@ test.describe('Convert Ward / "New Filing from Existing"', () => {
     expect(toFinal).toContain('Starting Balance is set to this filing\'s ending net assets');
   });
 });
+
+// Milestone 74J (decision 74J-3): New Filing from Existing offered only the
+// Initial Inventory from an Initial Guardianship Plan -- never the Annual
+// Guardianship Plan that follows it, which New Form's Load Ward Info already
+// made. And its notice said "Converted ... into a new ... form", though the
+// source is untouched.
+test.describe('74J: the next form from an Initial Plan', () => {
+  test('an Initial Plan offers the Annual Guardianship Plan, which arrives with the ward, guardian, attorney and residence; the notice says the source is unchanged', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Next Plan Ward', 'planInitial');
+    const sourceId = await page.evaluate(async () => {
+      const t = (window as any).GuardianForms.testing;
+      t.patchFiling({ // setup (D9)
+        caseNumber: '26-0777-GD', guardianNames: 'Pat Guardian', attorney_name: 'Robin Counsel',
+        'planGuardians.0.name': 'Pat Guardian', residenceAddress: '14 Palm Court', residenceCityStateZip: 'Clearwater, FL 33755',
+      });
+      await t.save.flush();
+      return t.snapshot().filing.wardId;
+    });
+
+    await page.evaluate(() => (window as any).GuardianForms.testing.convertFiling.openDialog());
+    await page.locator('#convertWardModal.show').waitFor({ state: 'visible' });
+    const offered = await page.locator('#convert-target-type option').evaluateAll((opts) => opts.map((o) => (o as HTMLOptionElement).value));
+    expect(offered).toContain('planAnnual');
+    expect(offered).toContain('guardian');
+    await page.keyboard.press('Escape');
+
+    await page.evaluate((id) => {
+      (window as any).__made = (window as any).GuardianForms.testing.convertFiling.convert(id, 'planAnnual')
+        .then(() => (window as any).GuardianForms.testing.snapshot().filing);
+    }, sourceId);
+    const notice = await acceptDynDialog(page);
+    expect(notice).toContain('Created a new Annual Guardianship Plan for Next Plan Ward from their Initial Guardianship Plan. The Initial Guardianship Plan is unchanged.');
+    expect(notice).toContain('where the ward lives');
+    expect(notice).not.toContain('Converted');
+    const made = await page.evaluate(() => (window as any).__made);
+    expect(made).toMatchObject({
+      inventoryType: 'planAnnual', wardName: 'Next Plan Ward', caseNumber: '26-0777-GD',
+      guardian: 'Pat Guardian', attorney: 'Robin Counsel', residenceAddress: '14 Palm Court',
+    });
+    expect(made.planGuardians[0].name).toBe('Pat Guardian');
+  });
+});

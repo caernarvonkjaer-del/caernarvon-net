@@ -113,7 +113,8 @@ export function validatorFnName(engineId) {
 const CONVERT_SOURCE_TYPE = {
   planInitial: ['guardian'],
   planSimplified: ['simplified'],
-  planAnnual: ['annual'],
+  // Milestone 74J (decision 74J-3): the plan that follows the Initial Plan.
+  planAnnual: ['annual', 'planInitial'],
   planMinor: ['guardian'],
   guardian: ['planInitial'],
   simplified: ['planSimplified', 'guardian', 'annual', 'finalAccounting', 'trustAccounting'],

@@ -7,7 +7,7 @@ export const HELP_CONTENT = Object.freeze({
     content: `<p><strong>Guardian Forms</strong> helps you prepare court-required guardianship documents for Florida probate court.</p>
     <div class="help-section-title">Getting Started</div>
     <p>1. Create a new form using the <strong>+ New Form</strong> button</p>
-    <p>2. Choose your inventory type (Initial, Simplified, or Annual)</p>
+    <p>2. Choose your filing type (Initial, Simplified, or Annual)</p>
     <p>3. Fill out each section using the sidebar navigation</p>
     <p>4. Look for the <strong>green checkmarks</strong> — they indicate completed sections</p>
     <p>5. Export to PDF or Excel when ready to file. (The optional UCN prints on the PDF but is not carried in Excel — none of the court's workbooks has a place for it.)</p>
@@ -17,7 +17,7 @@ export const HELP_CONTENT = Object.freeze({
     <p><strong>Activity Log:</strong> Every unlock and manual backup on this device is recorded (automatic saves are not) — open it from the link at the bottom of this help panel.</p>`
   },
   'inventory-select': {
-    title: 'Choose Inventory Type',
+    title: 'Choose Filing Type',
     content: `<div class="help-section-title">Three Types of Inventory</div>
     <h4><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 4.6H7.2a1.6 1.6 0 0 0-1.6 1.6V19a1.6 1.6 0 0 0 1.6 1.6h9.6A1.6 1.6 0 0 0 18.4 19V6.2a1.6 1.6 0 0 0-1.6-1.6H15"/><rect x="9" y="3" width="6" height="3.4" rx="1.1"/></svg> Initial Inventory</h4>
     <p>Filed at the start of guardianship. Lists all assets as of the "Guardianship Inception Date".</p>
@@ -44,7 +44,7 @@ export const HELP_CONTENT = Object.freeze({
     <p>The <strong>filing progress bar</strong> in the sidebar tracks all of this for you, with a "Jump to…" link to the next incomplete section.</p>`
   },
   'simplified-accounting': {
-    title: 'Simplified Accounting Guide',
+    title: 'Simplified Annual Accounting Guide',
     content: `<div class="help-section-title">Eligibility Requirements</div>
     <p>Simplified accounting is only available when:</p>
     <ul>

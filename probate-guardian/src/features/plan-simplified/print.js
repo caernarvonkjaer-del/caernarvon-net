@@ -20,7 +20,7 @@ import { authorizeFilingOutput, beginFreshPreview } from '../../core/filing/outp
 import { renderOutputAdvisories } from '../../core/filing/output-advisories.js';
 import { renderReadinessCard } from '../../core/filing/readiness-card.js';
 import { alertModal } from '../../core/ui/dialogs.js';
-import { beginExport } from '../../core/ui/export-guard.js';
+import { beginExport, exportFinished, exportStarted } from '../../core/ui/export-guard.js';
 import { getD } from '../../core/state.js';
 import { highlightErrors, validationPanel } from '../../core/validation/validation-panel.js';
 import { queueAllScheduleDocValidations } from '../../core/filing/schedule-docs.js';
@@ -95,16 +95,20 @@ export async function doSavePdf(){
   // both blocked by the browser as "multiple files."
   const btn = beginExport('[data-plan-simplified-action="save-pdf"]');
   if (!btn) return;
+  exportStarted('pdf');
+  let saved = false;
   const ward=(getD().wardName||'SimplifiedAnnualPlan').replace(/[^a-z0-9]/gi,'_');
   try{
     const model = buildPlanSimplifiedModel(getD());
     const doc = await generateCourtFormPdf(model);
     await saveFinalizedPdf(await finalizeCourtFormPdf(doc), `${ward}_SimplifiedAnnualPlan.pdf`);
+    saved = true;
   }catch(e){
     console.error('PDF export failed',e);
     await alertModal('PDF export failed: '+e.message);
   }finally{
     btn.disabled = false;
+    exportFinished(saved);
   }
 }
 

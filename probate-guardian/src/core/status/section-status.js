@@ -61,7 +61,7 @@ export function renderLocalSectionGuidance(currentRoute, rawErrors = [], maxItem
   if (localErrors.length === 0) {
     if (options && options.message) {
       return `<div class="section-local-guidance alert alert-warning py-2 px-3 mt-2 mb-0" role="status" style="font-size:0.85rem;">
-    <div class="fw-bold mb-1"><svg class="ic me-1" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Required to continue:</div>
+    <div class="fw-bold mb-1"><svg class="ic me-1" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>This page still needs:</div>
     <div class="ps-2 text-dark" style="font-size:0.85rem;">${options.message}</div>
   </div>`;
     }
@@ -96,7 +96,7 @@ export function renderLocalSectionGuidance(currentRoute, rawErrors = [], maxItem
     : '';
 
   return `<div class="section-local-guidance alert alert-warning py-2 px-3 mt-2 mb-0" role="status" style="font-size:0.85rem;">
-    <div class="fw-bold mb-1"><svg class="ic me-1" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Complete these items before continuing:</div>
+    <div class="fw-bold mb-1"><svg class="ic me-1" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>This page still needs:</div>
     <ul class="mb-0 ps-3" style="margin-top:0.25rem;">
       ${itemsHtml}
       ${remainingHtml}

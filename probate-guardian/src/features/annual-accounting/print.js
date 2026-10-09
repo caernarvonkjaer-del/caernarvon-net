@@ -21,7 +21,9 @@ import { authorizeFilingOutput, beginFreshPreview } from '../../core/filing/outp
 import { renderReadinessCard } from '../../core/filing/readiness-card.js';
 import { renderOutputAdvisories } from '../../core/filing/output-advisories.js';
 import { alertModal } from '../../core/ui/dialogs.js';
-import { beginExport } from '../../core/ui/export-guard.js';
+import { beginExport, exportFinished, exportStarted } from '../../core/ui/export-guard.js';
+import { annualImportHint } from './filing-type.js';
+import { esc } from '../../core/filing/escape-html.js';
 import { formDisplayName } from '../../core/filing/filing-registry.js';
 import { getD } from '../../core/state.js';
 import { excelCapacityPanel } from '../../core/excel/excel-capacity.js';
@@ -66,6 +68,7 @@ export function pagePrintAnnual(capOver){
         <span id="export-status" style="font-size:.8rem;color:var(--ink-3);"></span>
         <button class="btn btn-outline-primary btn-sm" data-annual-action="save-pdf" data-output-action="save-pdf" aria-describedby="export-reason">Save as PDF</button>
         <button class="btn btn-primary btn-sm" data-annual-action="save-excel" data-output-action="save-excel" aria-describedby="export-reason">Save as Excel</button>
+        <button class="btn btn-outline-secondary btn-sm" data-form-action="print">Print</button>
         <button class="btn btn-outline-secondary btn-sm" data-form-action="open-court-portal" title="Opens the Florida Courts E-Filing Portal in a new tab"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M14.2 4.4h5.4v5.4"/><path d="m19.6 4.4-8 8"/><path d="M17.4 13.6v6H4.6V6.8h6"/></svg> Florida E-Filing Portal</button><span data-preview-shell-actions></span>
       </div>
       <div class="w-100">${exportReasonHtml({ pdf: pdfAuthorization, excel: { authorization: excelAuthorization, capacity: capOver } })}${excelOmissionsHtml(excelOmissions(getD()))}</div>
@@ -83,7 +86,7 @@ export function pagePrintAnnual(capOver){
               <svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3.4 6.4h5.6l2 2.2h7.6v2.2"/><path d="M3.4 8.6 5.6 19h13.2l2.2-8.2H5.6Z"/></svg> Select File
               <input type="file" accept=".xlsx" class="d-none" data-annual-change="import-excel">
             </label>
-            <p class="mt-2 mb-0" style="color:var(--ink-3);font-size:.8rem;">Select the previously exported Annual Accounting Excel file</p>
+            <p class="mt-2 mb-0" style="color:var(--ink-3);font-size:.8rem;">${esc(annualImportHint(getD().inventoryType))}</p>
             <div id="import-progress-annual" class="mt-2" style="font-size:.8rem;"></div>
           </div>
         </div>
@@ -117,6 +120,8 @@ export async function doSavePdf(){
   // both blocked by the browser as "multiple files."
   const btn = beginExport('[data-annual-action="save-pdf"]');
   if (!btn) return;
+  exportStarted('pdf');
+  let saved = false;
   const preflight=prepareFilingOutput(getD(), baseIssues);
   const ward=(getD().wardName||'AnnualAccounting').trim().replace(/[^a-z0-9]/gi,'_');
   const formSlug=(preflight.descriptor?.displayName||formDisplayName(getD().inventoryType)).replace(/[^a-z0-9]/gi,'');
@@ -128,11 +133,13 @@ export async function doSavePdf(){
     });
     const doc = await generateCourtFormPdf(model);
     await saveFinalizedPdf(await finalizeCourtFormPdf(doc), filename);
+    saved = true;
   }catch(e){
     console.error('PDF export failed',e);
     await alertModal('PDF export failed: '+e.message);
   }finally{
     btn.disabled = false;
+    exportFinished(saved);
   }
 }
 

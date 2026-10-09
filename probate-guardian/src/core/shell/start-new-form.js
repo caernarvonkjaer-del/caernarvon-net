@@ -33,8 +33,8 @@ export function pageInventorySelector({ showCommentCardLink = SHOW_COMMENT_CARD_
       <p>${INVENTORY_TYPES.guardian.description}</p>
       <span class="btn btn-primary btn-sm" aria-hidden="true">Create Form for a Ward</span>
     </div>
-    <div class="inventory-card" data-form-action="add-ward-type" data-inventory-type="simplified" role="button" tabindex="0" aria-label="Simplified Accounting: Create Form for a Ward">
-      <h2><svg class="ic" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 3.6h12v17l-3-1.8-3 1.8-3-1.8-3 1.8Z"/><path d="M9.2 8.4h5.6M9.2 12.4h5.6"/></svg> Simplified Accounting</h2>
+    <div class="inventory-card" data-form-action="add-ward-type" data-inventory-type="simplified" role="button" tabindex="0" aria-label="Simplified Annual Accounting: Create Form for a Ward">
+      <h2><svg class="ic" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 3.6h12v17l-3-1.8-3 1.8-3-1.8-3 1.8Z"/><path d="M9.2 8.4h5.6M9.2 12.4h5.6"/></svg> Simplified Annual Accounting</h2>
       <p>${INVENTORY_TYPES.simplified.description}</p>
       <span class="btn btn-primary btn-sm" aria-hidden="true">Create Form for a Ward</span>
     </div>

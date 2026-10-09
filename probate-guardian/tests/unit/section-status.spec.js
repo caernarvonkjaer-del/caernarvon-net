@@ -30,7 +30,10 @@ describe('section-status', () => {
     ];
 
     const html = renderLocalSectionGuidance('/', rawErrors, 6);
-    expect(html).toContain('Complete these items before continuing:');
+    // Milestone 73O part 4 (the requester, 2026-10-09): one heading, true
+    // whether or not Next is blocked.
+    expect(html).toContain('This page still needs:');
+    expect(html).not.toContain('before continuing');
     expect(html).toContain('Item 1');
     expect(html).toContain('Item 6');
     expect(html).toContain('...and 2 more required items');

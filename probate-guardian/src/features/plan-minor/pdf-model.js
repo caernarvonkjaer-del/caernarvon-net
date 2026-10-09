@@ -50,7 +50,7 @@ export function buildPlanMinorModel(D) {
   const fmtDate = displayDate;
 
   const metadata = {
-    title: `${wardName} - ${identityNumber} - Annual Plan (Minor)`,
+    title: `${wardName} - ${identityNumber} - Annual Plan — Minors`,
     subject: 'Annual Guardianship Plan — Minor',
     author: 'Guardian Forms',
     creator: 'Guardian Forms',

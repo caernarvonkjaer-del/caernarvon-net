@@ -7,9 +7,10 @@ far: 74A (2026-10-05), 74B (2026-10-06), 74Q (2026-10-07), 74C (2026-10-07,
 with 73M, `a0e987b`), 74P (2026-10-07, after 73B, `645fe35`), 74F (2026-10-08,
 with 73O part 2, `fa9625e`), 74H (2026-10-08, with 73G part 2, `f85e862`) and
 74D's reproduction with its UX-07 rewording (2026-10-09, with 73L), 74O
-(2026-10-09, with 73O part 1, `487e247`) and 74L (2026-10-09, with 73O part
-3), each approved by name.** **Approved and not yet built** (2026-10-08, with
-Milestone 73's batch): 74J (with 73O part 4) and 74S (with 73P). Nothing else is
+(2026-10-09, with 73O part 1, `487e247`), 74L (2026-10-09, with 73O part 3,
+`67e13b8`) and 74J (2026-10-09, with 73O part 4), each approved by name.**
+**Approved and not yet built** (2026-10-08, with Milestone 73's batch): 74S
+(with 73P). Nothing else is
 approved: building any other of 74D–74S needs the requester's named approval
 of that item (AGENTS.md §3). **Every decision in 74C–74S is settled
 (2026-10-06)**, each recorded under its item and gathered in
@@ -1777,6 +1778,48 @@ part 3** (73's row 18).
 - **73E part 1 / 73T part 3** keep a filing's type on import (Annual `excel.js`);
   **73I** gives the Final its due date. No shared lines with 74J's select, but
   the same subject: sequence after 73T part 3.
+
+### Build record — BUILT 2026-10-09 with 73O part 4 (approved by name by the requester, 2026-10-08)
+
+**What changed for a filer:**
+
+- **The Filing Type box asks before it changes an accounting's type**
+  (decision 1): "Change this Final Accounting into an Annual Accounting? Its
+  title, PDF and workbook will say Annual." "Keep Final Accounting" puts the
+  box back; "Change to Annual Accounting" changes it, and the Activity Log
+  records "Filing type changed from Final Accounting to Annual Accounting"
+  (the types only, no values). A change into or out of Trust also says the
+  Starting Balance in Part II stays as entered, as a trust accounting does
+  not start from the guardianship's net assets (71E). The app's general
+  field writer no longer stores the new type while the question is open.
+- **From an Initial Guardianship Plan, New Filing from Existing offers the
+  Annual Guardianship Plan** (decision 3), carrying the ward, case number,
+  guardian, attorney and -- 74O's carry -- where the ward lives; the notice
+  says so (it said the residence "starts blank").
+- **The notice says what happened:** "Created a new Annual Guardianship Plan
+  for <ward> from their Initial Guardianship Plan. The Initial Guardianship
+  Plan is unchanged." It said "Converted ... into a new ... form".
+- **Final-specific content:** no change (decision 2, for a qualified person
+  and the Clerk).
+
+**How:** `annual-accounting/filing-type.js`'s `confirmFilingTypeChange()`
+(the Annual's change handler stops the event and calls it);
+`activity-log-view.js` (the entry's label); `filing-descriptor.js`
+(`planAnnual: ['annual', 'planInitial']`); `conversion.js` (the notice; the
+pair's description through `carry-over.js`'s `carriesResidence()`, the one
+rule 74O's carry also uses).
+
+**Tests:** new `tests/e2e/filing-type-change.spec.ts` (2: Keep and Change,
+and the Trust note); `convert-ward.spec.ts` gains the Initial Plan's next
+form, its carry and the notice; `convert-targets.spec.js`. **Red-first:** the
+three browser cases fail on the previous source, the unit case on the
+previous table. No spec picked a Filing Type in the box before (checked).
+Light regression on a C: copy: 29 browser specs, 336 tests -- 324 passed;
+the 12 failures were read and updated: eleven page pins differing only by the
+shared footer and the documents headings' small capitals, and the conversion
+golden gaining the Initial Plan -> Annual Plan record (additions only, the
+residence carried, living choice mapped); then all passed. Full unit suite:
+3,057 passed; `check:types` clean.
 
 ---
 

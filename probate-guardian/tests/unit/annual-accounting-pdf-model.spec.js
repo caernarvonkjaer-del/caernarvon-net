@@ -71,7 +71,9 @@ describe('Milestone 64B-1: printed Carrying Value is unscaled; D-4 Restricted Am
     });
     const schD2 = model.sections.find((s) => s.id === 'schD2').blocks[0];
     const row = schD2.rows[0];
-    // headers: ['#', 'Description / Address', 'Residence?', 'Income?', 'Full Value', "Ward's %", 'Carrying Value', 'Total Value']
+    // Milestone 73O part 4: the ward's share takes the workbook's header,
+    // "Ward's Value of Ownership" (SCH D-2 J15), not "Total Value".
+    expect(schD2.headers[7]).toBe("Ward's Value of Ownership");
     expect(row[6]).toBe('$82,500.00');
     expect(row[7]).toBe('$95,000.00');
     expect(schD2.totals.value).toBe('$82,500.00 / $95,000.00');
@@ -97,9 +99,11 @@ describe('Milestone 64B-1: printed Carrying Value is unscaled; D-4 Restricted Am
     });
     const schD4 = model.sections.find((s) => s.id === 'schD4').blocks[0];
     const row = schD4.rows[0];
-    // headers: ['#', 'Description', 'Restricted?', 'Full Amount', "Ward's %", 'Carrying Value', 'Total Value', 'Restricted Amt']
+    // Milestone 73O part 4: the workbook's header (SCH D-4 J13, which prints
+    // "Ward's Value Ownership" -- its slip, corrected as 73N's are).
+    expect(schD4.headers[6]).toBe("Ward's Value of Ownership");
     expect(row[5]).toBe('$80,000.00'); // Carrying Value, unscaled
-    expect(row[6]).toBe('$50,000.00'); // Total Value = Ward's Value = Full x Ward's %
+    expect(row[6]).toBe('$50,000.00'); // Ward's Value of Ownership = Full x Ward's %
     expect(row[7]).toBe('$50,000.00'); // Restricted Amt = Full x Ward's %, matching the workbook's K = IF(F="Yes", G*H, 0) -- not $40,000 (Carrying x Ward's %)
     expect(schD4.totals.value).toBe('$80,000.00 / $50,000.00');
   });

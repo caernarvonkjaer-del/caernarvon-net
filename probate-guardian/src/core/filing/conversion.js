@@ -4,7 +4,7 @@
 // carries over, how the Inventory's schedules become the accounting's, and
 // the conversion itself. Moved from legacy-app.js's CONVERT EXISTING WARD.
 import { getOrCreateCaseForWard } from '../case-resolver.js';
-import { carryOverFields, carrySourcesFor } from './carry-over.js';
+import { carriesResidence, carryOverFields, carrySourcesFor } from './carry-over.js';
 import { formEngine, initializeEmptyData, INVENTORY_TYPES } from './filing-registry.js';
 import { emptyRowAnnual } from './models/annual.js';
 import { b2ItemDescription } from './models/guardian.js';
@@ -49,13 +49,13 @@ export function describeConversion(srcType,destType){
     return (crossesTrust(srcType,destType)
       ?'The reporting period, attorney block, certificate-of-service recipients and the ward\'s status, and any remuneration are carried over. Starting Balance is left blank: a trust accounting\'s ending balance is not the guardianship\'s, so enter it yourself.'
       :'The Annual Accounting\'s net asset total becomes the Starting Balance, and the reporting period, attorney block, certificate-of-service recipients and the ward\'s status, and any remuneration are carried over too.')
-      +' Simplified Accounting has no asset schedules, so itemised schedule data collapses into that single figure rather than transferring line by line.';
+      +' The Simplified Annual Accounting has no asset schedules, so itemised schedule data collapses into that single figure rather than transferring line by line.';
   }
   if(srcType==='simplified'&&formEngine(destType)==='annual'){
     return (crossesTrust(srcType,destType)
       ?'The reporting period, attorney block, certificate-of-service recipients and the ward\'s status, and any remuneration are carried over.'+TRUST_NO_CARRY
-      :'The Simplified Accounting\'s Ending Balance becomes the Starting Balance, and the reporting period, attorney block, certificate-of-service recipients and the ward\'s status, and any remuneration are carried over too.')
-      +' Since Simplified Accounting doesn\'t track itemized assets, the new Annual Accounting\'s schedules start blank for you to complete.';
+      :'The Simplified Annual Accounting\'s Remaining Assets On Hand (Line 8) becomes the Starting Balance, and the reporting period, attorney block, certificate-of-service recipients and the ward\'s status, and any remuneration are carried over too.')
+      +' Since the Simplified Annual Accounting doesn\'t track itemized assets, the new Annual Accounting\'s schedules start blank for you to complete.';
   }
   // Milestone 40H-I: same-family accounting-to-accounting (e.g. Annual ->
   // Final/Trust) -- checked ahead of the generic fallback below, which would
@@ -70,6 +70,11 @@ export function describeConversion(srcType,destType){
       ?`Starting Balance is left blank: a trust accounting and a guardianship accounting do not share an ending balance, so enter it yourself.`
       :`Starting Balance is set to this filing's ending net assets (Line 30, or Line 20 if it has no Schedule D figures), rounded to cents.`;
     return `The ward's name, case number, guardian, and attorney details are carried over. ${balance} Certificate-of-service recipients are carried too. County is restored from this ward's case record rather than copied from this filing. The accounting period and every schedule start blank for you to complete.`;
+  }
+  // Milestone 74O / 74J: an Annual Plan made from a plan carries where the
+  // ward lives too (carry-over.js's planResidenceCarry()).
+  if(carriesResidence(srcType,destType)){
+    return `This creates a new ${INVENTORY_TYPES[destType].name} for the same ward. The ward's name, case number, county, guardian contact details, the attorney's details and where the ward lives -- the residence and mailing address -- are carried over exactly as entered. The plan's own answers (care, services, ratings, signatures) start blank for you to complete.`;
   }
   if(carrySourcesFor(destType).includes(srcType)){
     return `This creates a new ${INVENTORY_TYPES[destType].name} for the same ward. The ward's name, case number, county, guardian contact details and the attorney's details are carried over exactly as entered — nothing is renamed. Everything specific to this new filing (residence and care details, schedules, signatures, etc.) starts blank for you to complete.`;
@@ -333,7 +338,7 @@ export async function convertExistingWard(sourceWardId,targetType){
   const sourceWard=getCaseFile().wards.find(w=>w.wardId===sourceWardId);
   if(!sourceWard)return;
   const srcType=sourceWard.inventoryType;
-  if(srcType===targetType){await alertModal('Please choose a different inventory type to convert to.');return;}
+  if(srcType===targetType){await alertModal('Please choose a different filing type.');return;}
 
   // Milestone 72H (decided at the Antigravity review): a source not opened
   // since 72H has not had its once-only certificate fill, so every mapper
@@ -384,5 +389,6 @@ export async function convertExistingWard(sourceWardId,targetType){
   updateLastSavedIndicator();
   recordModelChange('conversion');
   navigate('/', { reason: DRAW.SWITCH });
-  await alertModal(`Converted "${sourceWard.wardName}" into a new ${INVENTORY_TYPES[targetType].name} form.\n\n${describeConversion(srcType,targetType)}`);
+  // Milestone 74J: nothing is converted -- a new filing is made from this one.
+  await alertModal(`Created a new ${INVENTORY_TYPES[targetType].name} for ${sourceWard.wardName} from their ${INVENTORY_TYPES[srcType].name}. The ${INVENTORY_TYPES[srcType].name} is unchanged.\n\n${describeConversion(srcType,targetType)}`);
 }

@@ -122,8 +122,8 @@
 .vehicle-value-links{font-size:.79rem;color:var(--ink-3);line-height:1.55;background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-sm);padding:.6rem .8rem;margin:.2rem 0 .75rem;}
 
 .schedule-docs-section{margin-top:1.5rem;padding-top:1.1rem;border-top:1px solid var(--line);}
-.schedule-docs-section h4{font-size:.75rem;font-weight:700;color:var(--ink-4);text-transform:uppercase;letter-spacing:.1em;margin:0 0 .45rem;}
-.schedule-docs-section h4.mt{margin-top:1.2rem;}
+.schedule-docs-section h2{font-size:.75rem;font-weight:700;color:var(--ink-4);text-transform:uppercase;letter-spacing:.1em;margin:0 0 .45rem;}
+.schedule-docs-section h2.mt{margin-top:1.2rem;}
 .schedule-docs-hint{color:var(--ink-3);font-size:.82rem;margin-bottom:.65rem;}
 .sched-doc-row{display:flex;align-items:center;gap:.5rem;padding:.4rem .65rem;border:1px solid var(--line);border-radius:var(--r-sm);margin-bottom:.4rem;background:var(--surface);}
 .sched-doc-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.85rem;color:var(--ink);}

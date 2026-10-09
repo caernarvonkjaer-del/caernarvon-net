@@ -2,8 +2,8 @@
  "generatedBy": "node scripts/ms70-assertion-counts.mjs --write-baseline",
  "note": "Milestone 70 per-spec assertion counts (static expect calls). tests/unit/ms70-assertion-counts.spec.js fails when a spec falls below its count; lowering it requires --reason, recorded in dropLog. A tripwire, not proof of equivalence (decision D9).",
  "totals": {
-  "expects": 9246,
-  "tests": 2660
+  "expects": 9299,
+  "tests": 2673
  },
  "counts": {
   "tests/e2e/accessible-errors-and-groups.spec.ts": {
@@ -143,8 +143,8 @@
    "tests": 2
   },
   "tests/e2e/convert-ward.spec.ts": {
-   "expects": 28,
-   "tests": 6
+   "expects": 35,
+   "tests": 7
   },
   "tests/e2e/cover-county.spec.ts": {
    "expects": 28,
@@ -222,6 +222,10 @@
    "expects": 9,
    "tests": 1
   },
+  "tests/e2e/filing-type-change.spec.ts": {
+   "expects": 13,
+   "tests": 2
+  },
   "tests/e2e/first-guardian-stays.spec.ts": {
    "expects": 6,
    "tests": 1
@@ -241,6 +245,10 @@
   "tests/e2e/form-runtime-lifecycle.contract.spec.ts": {
    "expects": 14,
    "tests": 4
+  },
+  "tests/e2e/form-wording.spec.ts": {
+   "expects": 22,
+   "tests": 7
   },
   "tests/e2e/guardian-advocate-hint.spec.ts": {
    "expects": 8,
@@ -506,6 +514,10 @@
    "expects": 5,
    "tests": 1
   },
+  "tests/e2e/preview-print-button.spec.ts": {
+   "expects": 8,
+   "tests": 3
+  },
   "tests/e2e/print-preview-signature-jump.spec.ts": {
    "expects": 6,
    "tests": 2
@@ -707,7 +719,7 @@
    "tests": 5
   },
   "tests/unit/annual-accounting-pdf-model.spec.js": {
-   "expects": 43,
+   "expects": 45,
    "tests": 12
   },
   "tests/unit/annual-accounting-totals.spec.js": {
@@ -1339,7 +1351,7 @@
    "tests": 24
   },
   "tests/unit/section-status.spec.js": {
-   "expects": 10,
+   "expects": 11,
    "tests": 4
   },
   "tests/unit/security-source-audit.spec.js": {

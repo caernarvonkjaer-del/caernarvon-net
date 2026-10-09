@@ -16,6 +16,8 @@
 // once here instead of copied into ten handlers (seven Save as PDF, three
 // Save as Excel).
 
+import { clearStatusNow, scheduleStatusClear, setStatus } from './transient-status.js';
+
 /**
  * Call right after a handler's own authorization check passes. Disables
  * `selector`'s button and returns it, or returns `null` -- meaning the
@@ -40,4 +42,27 @@ export function beginExport(selector) {
   if (!btn || btn.disabled) return null;
   btn.disabled = true;
   return btn;
+}
+
+// Milestone 73O part 4: what the Preview's status line says while a file is
+// made, and after -- the Inventory's words, on every form. "Generating PDF…"
+// or "Preparing Excel export…" as it starts, "✓ Exported!" when the file is
+// saved, cleared a moment later; a failure is said by the handler's own
+// dialog, and the line is cleared.
+const statusLine = () => (typeof document !== 'undefined' ? document.getElementById('export-status') : null);
+
+/** @param {'pdf' | 'excel'} kind */
+export function exportStarted(kind) {
+  setStatus(statusLine(), kind === 'excel' ? 'Preparing Excel export…' : 'Generating PDF…');
+}
+
+/** @param {boolean} saved */
+export function exportFinished(saved) {
+  const el = statusLine();
+  if (saved) {
+    setStatus(el, '✓ Exported!');
+    scheduleStatusClear(el);
+  } else {
+    clearStatusNow(el);
+  }
 }

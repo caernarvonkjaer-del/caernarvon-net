@@ -2,6 +2,8 @@
 // Plan pages share (text, checkbox, Yes/No, radio, county, question and page
 // navigation rows). Moved from legacy-app.js.
 import { esc } from '../filing/escape-html.js';
+import { FILING_PAGES } from '../filing/filing-registry.js';
+import { getActiveInventoryType } from '../state.js';
 import { countyAutocompleteHTML } from './county-autocomplete.js';
 import { renderCheckboxField, renderFormField, renderRadioGroupField, renderTextareaField, renderYesNoField } from './form-fields.js';
 
@@ -96,13 +98,21 @@ export function radioP(id,label,val,options=['Yes','No'],req=false,hint='',route
   return renderRadioGroupField({ path: id, label, value: val, options, required: req, hint, id, route });
 }
 
+// Milestone 73O part 4 (decision 73O-4): every form's footer is the
+// Inventory's -- "← Previous: <page>", "Page n of N", "Next: <page> →" --
+// named from the filing's own page list (the sidebar's labels). `prev` and
+// `next` are the neighbouring routes; a last page's Next goes to Preview.
 export function pageNavS(prev,next){
   const targetRoute=next||'/print';
-  const label=next?'Next →':'Preview & Export →';
+  const pages=FILING_PAGES[getActiveInventoryType()]||[];
+  const at=(route)=>pages.findIndex((p)=>p.id===route);
+  const here=next?at(next)-1:prev?at(prev)+1:-1;
+  const labelOf=(route,fallback)=>pages[at(route)]?.label||fallback;
   return `<div class="page-nav-wrap no-print">
     <div class="page-nav d-flex justify-content-between align-items-center">
-      ${prev?`<button class="btn btn-outline-primary btn-sm" data-form-action="navigate" data-route="${esc(prev)}">← Back</button>`:'<span></span>'}
-      <button id="page-next-btn" class="btn btn-primary btn-sm" data-form-action="navigate" data-route="${esc(targetRoute)}">${label}</button>
+      <div>${prev?`<button class="btn btn-outline-primary btn-sm" data-form-action="navigate" data-route="${esc(prev)}">← Previous: ${esc(labelOf(prev,'Back'))}</button>`:'&nbsp;'}</div>
+      ${here>=0&&pages.length?`<small style="color:var(--ink-3);">Page ${here+1} of ${pages.length}</small>`:''}
+      <div><button id="page-next-btn" class="btn btn-primary btn-sm" data-form-action="navigate" data-route="${esc(targetRoute)}">Next: ${esc(labelOf(targetRoute,'Preview & Export'))} →</button></div>
     </div>
     <div id="page-local-guidance"></div>
   </div>`;

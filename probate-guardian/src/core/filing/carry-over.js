@@ -179,8 +179,13 @@ const ANNUAL_PLAN_LIVING = Object.freeze({
   'in a facility (skilled nursing, assisted living, etc.)': 'In a facility (skilled nursing, assisted living, etc.)',
 });
 
+/** Milestone 74O / 74J: whether a new `destType` filing carries the ward's residence from a `srcType` one. */
+export function carriesResidence(srcType, destType) {
+  return destType === 'planAnnual' && (srcType === 'planInitial' || srcType === 'planAnnual');
+}
+
 function planResidenceCarry(src) {
-  if (src.inventoryType !== 'planInitial' && src.inventoryType !== 'planAnnual') return {};
+  if (!carriesResidence(src.inventoryType, 'planAnnual')) return {};
   return {
     wardLiving: ANNUAL_PLAN_LIVING[String(src.wardLiving || '').trim().toLowerCase()] || '',
     residenceAddress: src.residenceAddress || '',

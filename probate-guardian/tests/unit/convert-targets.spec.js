@@ -25,8 +25,10 @@ describe('convertTargetsFor()', () => {
     expect(convertTargetsFor('trustAccounting')).toEqual(['simplified', 'annual', 'finalAccounting']);
   });
 
-  it('pairs each Plan only with its own Accounting counterpart', () => {
-    expect(convertTargetsFor('planInitial')).toEqual(['guardian']);
+  it('pairs each Plan with its own Accounting counterpart; an Initial Plan also offers the Annual Plan that follows it', () => {
+    // Milestone 74J (decision 74J-3): New Filing from Existing offers the
+    // Annual Guardianship Plan from an Initial Plan, as New Form already did.
+    expect(convertTargetsFor('planInitial')).toEqual(['planAnnual', 'guardian']);
     expect(convertTargetsFor('planSimplified')).toEqual(['simplified']);
     expect(convertTargetsFor('planAnnual')).toEqual(['annual', 'finalAccounting', 'trustAccounting']);
     expect(convertTargetsFor('guardian')).toContain('planInitial');

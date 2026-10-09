@@ -59,7 +59,7 @@ export function buildSimplifiedAccountingModel(D, options = {}) {
   const remaining = starting + totalIncome - totalDisbursements;
 
   const metadata = {
-    title: `${wardName} - ${caseNumber} - Simplified Accounting - Printed ${printDate}`,
+    title: `${wardName} - ${caseNumber} - Simplified Annual Accounting - Printed ${printDate}`,
     subject: 'Simplified Annual Accounting of Guardian of the Property (§ 744.3679)',
     author: 'Guardian Forms',
     creator: 'Guardian Forms',

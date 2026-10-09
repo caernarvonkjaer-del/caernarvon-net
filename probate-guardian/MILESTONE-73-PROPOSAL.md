@@ -6,11 +6,11 @@
 far: 73U (2026-10-04, `5b8849b`), 73V (2026-10-05, `8b96aa3`), 73C
 (2026-10-05, `861b6a9`, brought forward from its place in the build order at the
 requester's choice) 73D (2026-10-05, `c8e84fe`, likewise), 73J part 1 (2026-10-05, `d819c4a`),
-73F part 1 (2026-10-06, `5e9e17b`), 73A (2026-10-06, `83352d0`), 73F part 2 (2026-10-06, `d01edd4`), 73G part 1 (2026-10-06, `69a1b46`), 73E part 1 (2026-10-06, `8e02051`), 73F part 3 (2026-10-06, `67fc66c`), 73I (2026-10-06, `56a7c30`), 73T part 1 (2026-10-07, `4cae1e7`), 73T part 2 (2026-10-07, `2a1cbc5`), 73T part 3 (2026-10-07, `9d2bc72`), 73T part 4 (2026-10-07, `b70a944`), 73M with 74C (2026-10-07, `a0e987b`), 73B (2026-10-07, `86547da`), 73O part 2 with 74F (2026-10-08, `fa9625e`), 73G part 2 with 74H (2026-10-08, `f85e862`, `78b5770`), 73H (2026-10-08, `631f898`), 73S (2026-10-08, `3cf1d9d`), 73K part 1 (2026-10-08, `4268c45`), 73E part 2 (2026-10-08, `5e26e57`, `ea78dd4`), 73J part 2 (2026-10-08, `3648706`), 73K part 2 (2026-10-08, `79a8875`), 73L with 74D's reproduction (2026-10-09, `43081f2`), 73N part 1 (2026-10-09, `ab8068e`), 73N part 2 (2026-10-09, `01a9610`), 73N part 3 (2026-10-09, `987daaf`), 73O part 1 with 74O (2026-10-09, `487e247`, `97a0754`) and 73O part 3 with 74L (2026-10-09), each approved by name; 74P, built after 73B, is recorded in Milestone 74.**
+73F part 1 (2026-10-06, `5e9e17b`), 73A (2026-10-06, `83352d0`), 73F part 2 (2026-10-06, `d01edd4`), 73G part 1 (2026-10-06, `69a1b46`), 73E part 1 (2026-10-06, `8e02051`), 73F part 3 (2026-10-06, `67fc66c`), 73I (2026-10-06, `56a7c30`), 73T part 1 (2026-10-07, `4cae1e7`), 73T part 2 (2026-10-07, `2a1cbc5`), 73T part 3 (2026-10-07, `9d2bc72`), 73T part 4 (2026-10-07, `b70a944`), 73M with 74C (2026-10-07, `a0e987b`), 73B (2026-10-07, `86547da`), 73O part 2 with 74F (2026-10-08, `fa9625e`), 73G part 2 with 74H (2026-10-08, `f85e862`, `78b5770`), 73H (2026-10-08, `631f898`), 73S (2026-10-08, `3cf1d9d`), 73K part 1 (2026-10-08, `4268c45`), 73E part 2 (2026-10-08, `5e26e57`, `ea78dd4`), 73J part 2 (2026-10-08, `3648706`), 73K part 2 (2026-10-08, `79a8875`), 73L with 74D's reproduction (2026-10-09, `43081f2`), 73N part 1 (2026-10-09, `ab8068e`), 73N part 2 (2026-10-09, `01a9610`), 73N part 3 (2026-10-09, `987daaf`), 73O part 1 with 74O (2026-10-09, `487e247`, `97a0754`), 73O part 3 with 74L (2026-10-09, `67e13b8`) and 73O part 4 with 74J (2026-10-09), each approved by name; 74P, built after 73B, is recorded in Milestone 74.**
 **The 2026-10-07 batch is built**, and its closing full regression has run
 (recorded below, after the mid-batch one). **Approved and not yet built**
 (2026-10-08, one batch in this order, light tests between deliveries and a
-full regression at the end): 73O part 4 (with 74J), 73P (with 74S) and 73R parts 1-3.
+full regression at the end): 73P (with 74S) and 73R parts 1-3.
 Nothing else is approved. Building any other item, or any part of a
 split item, needs the requester's named approval of that item or part
 (AGENTS.md §3).
@@ -3611,6 +3611,81 @@ commits (the vehicle-toggle test since 73L's reminder timing, the Initial
 Plan's cover pin since `97a0754`'s star), updated in their own commit
 (`ed1b491`) and then passing. Full unit suite: 3,057 passed; `check:types`
 clean.
+
+### Build record, part 4 — BUILT 2026-10-09 with 74J (approved by name by the requester, 2026-10-08)
+
+**What changed for a filer:**
+
+- **A Print button on every Preview.** The Annual, Final and Trust
+  Accountings' and the Simplified's never had one; the action was already
+  registered. One banner wording, "Preview & Export", on every form (the
+  Inventory's read "Print Preview — use Save as PDF, Save as Excel, or
+  Print.").
+- **"Generating PDF…" / "Preparing Excel export…" and "✓ Exported!"** beside
+  the buttons on every form, cleared a moment after; only the Inventory said
+  anything. A failure is still said by its own dialog.
+- **The Inventory's footer on every form** (decision 73O-4): "← Previous:
+  <page>", "Page n of N", "Next: <page> →", named from the filing's own page
+  list (the sidebar's labels); the others said "← Back" and "Next →".
+- **One heading on each page's list of what it still needs:** "This page
+  still needs:" (decision 73O-N4, below). It said "Required to continue:" or
+  "Complete these items before continuing:", untrue where Next isn't blocked.
+- **No "($)"** on the twelve Inventory amount labels whose boxes show "$"
+  (the C-1 helper's "Each payment ($)" box shows no "$" and keeps it).
+- **The Simplified's sidebar card** calls its figure "Remaining Assets On
+  Hand", its workbook's words for Line 8 (`PARTS I, II `!C31, read with a
+  parser); it said "Ending Balance". The conversion notices say the same.
+- **The Annual's D-2 and D-4 ward's share** is "Ward's Value of Ownership",
+  the workbook's header (`SCH D-2 REAL ESTATE p1`!J15; `SCH D-4 INTANGIBLE
+  p1 `!J13 prints "Ward's Value Ownership", its own slip, corrected as 73N's
+  are), on the pages, their totals, the PDF's column headers and the summary
+  on Parts VI & VII. The proposal said "the Summary page": the Summary page
+  shows neither figure; Parts VI & VII's summary is where they are listed.
+  It said "Total Value".
+- **Filing-type names from the registry:** "Simplified Annual Accounting" on
+  the Start New Form card, the help title, the import hints, the conversion
+  notices and the PDF's document properties; the Plan for Minors' PDF
+  properties say "Annual Plan — Minors" (they said "Annual Plan (Minor)").
+  "Inventory type" became "filing type" in New Filing from Existing, its
+  alert and the help.
+- **The supporting-documents headings** are their section's 12px small
+  capitals again: the style still targeted the `h4` they stopped being in
+  `26a6a9f`.
+- **A Final's or Trust's import hint** names its workbook: "...the Annual
+  workbook, Filing Type: Trust".
+
+**Decision raised during the build:**
+
+- **73O-N4. One heading for each page's list of what it still needs** (the
+  requester, 2026-10-09). (1) *Recommended and chosen:* "This page still
+  needs:" -- true whether or not Next is blocked. (2) "Complete these items
+  before continuing:" everywhere.
+
+**Found, not changed:** the Simplified's Part II puts its Line 1 (Starting
+Balance) under a card headed "Assets On Hand"; in the workbook "Assets On
+Hand" heads Line 8 (`PARTS I, II `!B30), and Line 1 sits directly under
+Part II's heading. Reported at the batch's end.
+
+**How:** `field-html.js`'s `pageNavS()` (the Annual's footer now calls it);
+`section-status.js`; the Previews' `print.js` (banner, Print);
+`export-guard.js`'s `exportStarted()`/`exportFinished()` in every save;
+`filing-registry.js` (the card label); `annual-accounting` index, PDF model,
+`filing-type.js` (`annualImportHint()`); `conversion.js`;
+`start-new-form.js`, the Simplified's import hints and PDF model, the Minors'
+PDF model, `help-content.js`, `common-modals.html`, `cards.css`, and the
+guide's two quotes of changed wording.
+
+**Tests:** new `tests/e2e/preview-print-button.spec.ts` (3) and
+`tests/e2e/form-wording.spec.ts` (7); `section-status.spec.js` and
+`annual-accounting-pdf-model.spec.js` (the D-2/D-4 headers). **Red-first:**
+all ten browser cases fail on the previous source; the unit cases fail on the
+previous `section-status.js` and PDF model. The blank-filing shapes record
+the Simplified's card label. Light regression on a C: copy: 29 browser specs, 336 tests -- 324 passed;
+the 12 failures were read and updated: eleven page pins differing only by the
+shared footer and the documents headings' small capitals, and the conversion
+golden gaining the Initial Plan -> Annual Plan record (additions only, the
+residence carried, living choice mapped); then all passed. Full unit suite:
+3,057 passed; `check:types` clean.
 
 ---
 

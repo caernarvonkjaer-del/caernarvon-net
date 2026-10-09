@@ -60,6 +60,7 @@ import { promptScheduleAckIfNeeded } from '../../core/filing/schedule-doc-ack.js
 // do so by [data-field-path], not by id.
 import { renderReportingPeriodFields } from '../../core/form/cards/ward-demographics-card.js';
 import { esc } from '../../core/filing/escape-html.js';
+import { pageNavS } from '../../core/form/field-html.js';
 import { ic } from '../../core/ui/icons.js';
 import { syncPercentFeedback } from '../../core/form/form-contract.js';
 import { rowStarted } from '../../core/validation/row-started.js';
@@ -75,7 +76,7 @@ import { setPath } from '../../core/form/paths.js';
 import { showPickPartyModal } from '../../core/modals/pick-record-dialogs.js';
 import { tooltip } from '../../core/help/tooltips.js';
 import { syncActiveWardNameDisplay, syncGuardianNameDisplay } from '../../core/shell/sidebar.js';
-import { setAccountingFilingType } from './filing-type.js';
+import { annualImportHint, confirmFilingTypeChange } from './filing-type.js';
 import { navigate } from '../../core/navigation/router.js';
 import { afterAdd, afterDuplicate, afterRemove, onChange } from '../../core/navigation/draw-reason.js';
 import { calcTotalsAnnual, annualReconcileState, n, pct } from './totals.js';
@@ -333,7 +334,10 @@ function bindEvents(container) {
   container.addEventListener('change', (event) => {
     const control = event.target;
     if (control instanceof HTMLSelectElement && control.dataset.annualPath === 'filingType') {
-      setAccountingFilingType(control.value);
+      // Milestone 74J (decision 74J-1): asked first; the shared field writer
+      // (form-events.js, on the document) must not store it meanwhile.
+      event.stopPropagation();
+      void confirmFilingTypeChange(control);
       return;
     }
     if (control instanceof HTMLInputElement && control.dataset.annualChange === 'schedule-no-items') {
@@ -528,16 +532,9 @@ function inpDWithTooltip(label,tooltipKey,val,setter,req=false,type='text',kind=
     securitySanitize: true,
   });
 }
+// Milestone 73O part 4 (decision 73O-4): the shared footer, as every form's.
 function pageNavAnnual(prev,next){
-  const targetRoute=next||'/print';
-  const label=next?'Next →':'Preview & Export →';
-  return `<div class="page-nav-wrap no-print">
-    <div class="page-nav d-flex justify-content-between align-items-center">
-      ${prev?`<button class="btn btn-outline-primary btn-sm" data-form-action="navigate" data-route="${prev}">← Back</button>`:'<span></span>'}
-      <button id="page-next-btn" class="btn btn-primary btn-sm" data-form-action="navigate" data-route="${targetRoute}">${label}</button>
-    </div>
-    <div id="page-local-guidance"></div>
-  </div>`;
+  return pageNavS(prev,next);
 }
 function getSummaryConfigAnnual(){
   const d=getD();
@@ -654,7 +651,7 @@ function pagePart1Annual(){
               <svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3.4 6.4h5.6l2 2.2h7.6v2.2"/><path d="M3.4 8.6 5.6 19h13.2l2.2-8.2H5.6Z"/></svg> Select File
               <input type="file" accept=".xlsx" class="d-none" data-annual-change="import-excel">
             </label>
-            <p class="mt-2 mb-0" style="color:var(--ink-3);font-size:.8rem;">Select the previously exported Annual Accounting Excel file</p>
+            <p class="mt-2 mb-0" style="color:var(--ink-3);font-size:.8rem;">${esc(annualImportHint(d.inventoryType))}</p>
             <div id="import-progress" class="mt-2" style="font-size:.8rem;"></div>
           </div>
         </div>
@@ -1198,7 +1195,7 @@ function pageSchD2Annual(){
           <div class="col-md-2">${inpDWithTooltip("Ward's % ",'ward_pct',r.wardPct,`D.schD2[${i}].wardPct=this.value`,true,'number','percent')}</div>
           <div class="col-md-3">${inpD('Full Asset Value',r.fullValue,`D.schD2[${i}].fullValue=this.value`,true,'number')}</div>
           <div class="col-md-3">${inpDWithTooltip('Carrying Value','carrying_value',r.carryingValue,`D.schD2[${i}].carryingValue=this.value`,true,'number')}</div>
-          <div class="col-md-3"><label class="form-label">Total Value</label><input class="form-control" readonly value="${fmtAnnual(wardVal)}" data-annual-calc="schD2.${i}.wardVal"></div>
+          <div class="col-md-3"><label class="form-label">Ward's Value of Ownership</label><input class="form-control" readonly value="${fmtAnnual(wardVal)}" data-annual-calc="schD2.${i}.wardVal"></div>
         </div></div>
       </div></div>`;
     }).join('')+'</div>';
@@ -1212,7 +1209,7 @@ function pageSchD2Annual(){
   <button class="btn btn-outline-primary btn-sm mb-2" data-annual-action="add-row" data-collection="schD2" data-route="/schd2">+ Add Property</button>
   <div class="schedule-totals"><div class="tbl">
     <div class="tr"><div class="td">Carrying Value Total</div><div class="td" data-annual-total="schD2_carrying">${fmtA(t.schD2_carrying)}</div></div>
-    <div class="tr"><div class="td"><strong>Total Value</strong></div><div class="td"><strong data-annual-total="schD2_ward">${fmtA(t.schD2_ward)}</strong></div></div>
+    <div class="tr"><div class="td"><strong>Total Ward's Value of Ownership</strong></div><div class="td"><strong data-annual-total="schD2_ward">${fmtA(t.schD2_ward)}</strong></div></div>
   </div></div>
   ${renderScheduleDocsSection('schD2')}
   ${pageNavAnnual('/schd1','/schd3')}
@@ -1269,7 +1266,7 @@ function pageSchD4Annual(){
           <div class="col-md-2">${inpD('Full Asset Amount',r.fullAmount,`D.schD4[${i}].fullAmount=this.value`,true,'number')}</div>
           <div class="col-md-2">${inpDWithTooltip("Ward's % ",'ward_pct',r.wardPct,`D.schD4[${i}].wardPct=this.value`,true,'number','percent')}</div>
           <div class="col-md-2">${inpDWithTooltip('Carrying Value','carrying_value',r.carryingValue,`D.schD4[${i}].carryingValue=this.value`,true,'number')}</div>
-          <div class="col-md-2"><label class="form-label">Total Value</label><input class="form-control" readonly value="${fmtAnnual(wardVal)}" data-annual-calc="schD4.${i}.wardVal"></div>
+          <div class="col-md-2"><label class="form-label">Ward's Value of Ownership</label><input class="form-control" readonly value="${fmtAnnual(wardVal)}" data-annual-calc="schD4.${i}.wardVal"></div>
         </div></div>
       </div></div>`;
     }).join('')+'</div>';
@@ -1284,7 +1281,7 @@ function pageSchD4Annual(){
   <div class="schedule-totals"><div class="tbl">
     <div class="tr"><div class="td">Restricted Intangible Assets</div><div class="td" data-annual-total="schD4_restricted">${fmtA(t.schD4_restricted)}</div></div>
     <div class="tr"><div class="td">Carrying Value Total</div><div class="td" data-annual-total="schD4_carrying">${fmtA(t.schD4_carrying)}</div></div>
-    <div class="tr"><div class="td"><strong>Total Value</strong></div><div class="td"><strong data-annual-total="schD4_ward">${fmtA(t.schD4_ward)}</strong></div></div>
+    <div class="tr"><div class="td"><strong>Total Ward's Value of Ownership</strong></div><div class="td"><strong data-annual-total="schD4_ward">${fmtA(t.schD4_ward)}</strong></div></div>
   </div></div>
   ${renderScheduleDocsSection('schD4')}
   ${pageNavAnnual('/schd3','/schd5')}
@@ -1441,9 +1438,9 @@ function pagePart67Annual(){
   <div class="summary-box">
     <h2 class="subsection-heading">Part VII — Assets &amp; Liabilities at End of Period</h2>
     <div class="summary-line"><span><a href="#" data-annual-action="navigate" data-route="/schd1">Schedule D-1 — Cash Assets</a></span><span>${fmtA(t.schD1_total)}</span></div>
-    <div class="summary-line"><span><a href="#" data-annual-action="navigate" data-route="/schd2">Schedule D-2 — Real Estate (Total Value)</a></span><span>${fmtA(t.schD2_ward)}</span></div>
+    <div class="summary-line"><span><a href="#" data-annual-action="navigate" data-route="/schd2">Schedule D-2 — Real Estate (Ward's Value of Ownership)</a></span><span>${fmtA(t.schD2_ward)}</span></div>
     <div class="summary-line"><span><a href="#" data-annual-action="navigate" data-route="/schd3">Schedule D-3 — Personal Property (Ward's Amount)</a></span><span>${fmtA(t.schD3_ward)}</span></div>
-    <div class="summary-line"><span><a href="#" data-annual-action="navigate" data-route="/schd4">Schedule D-4 — Intangibles (Total Value)</a></span><span>${fmtA(t.schD4_ward)}</span></div>
+    <div class="summary-line"><span><a href="#" data-annual-action="navigate" data-route="/schd4">Schedule D-4 — Intangibles (Ward's Value of Ownership)</a></span><span>${fmtA(t.schD4_ward)}</span></div>
     <div class="summary-line"><span><a href="#" data-annual-action="navigate" data-route="/schd5">Schedule D-5 — Liabilities (Ward's Balance)</a></span><span>${fmtA(-t.schD5_total)}</span></div>
     <div class="summary-line grand"><span>Line 30 — Net Assets at End of Period</span><span>${fmtA(t.netAssetsFromD)}</span></div>
   </div>

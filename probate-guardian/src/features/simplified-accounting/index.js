@@ -419,7 +419,7 @@ function pageCover(){
                 <svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3.4 6.4h5.6l2 2.2h7.6v2.2"/><path d="M3.4 8.6 5.6 19h13.2l2.2-8.2H5.6Z"/></svg> Select File
                 <input type="file" accept=".xlsx" class="d-none" data-simplified-change="import-excel">
               </label>
-              <p class="mt-2 mb-0" style="color:var(--ink-3);font-size:.8rem;">Select the previously exported Simplified Accounting Excel file</p>
+              <p class="mt-2 mb-0" style="color:var(--ink-3);font-size:.8rem;">Select the previously exported Simplified Annual Accounting Excel file</p>
               <div id="import-progress" class="mt-2" style="font-size:.8rem;"></div>
             </div>
           </div>

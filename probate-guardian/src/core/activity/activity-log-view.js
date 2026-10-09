@@ -22,6 +22,8 @@ export const ACTIVITY_EVENT_META={
   // Milestone 72H: the once-only fill of the filing attorney's blank fields
   // from an old certificate's details (field names only, never values).
   CERTIFICATE_MIGRATION: {label:'Certificate of service details moved', iconName:'swap'},
+  // Milestone 74J: an accounting's Filing Type changed, after the filer said yes.
+  FILING_TYPE_CHANGED: {label:'Filing type changed', iconName:'swap'},
 };
 
 export let _activityLogEntries=[];

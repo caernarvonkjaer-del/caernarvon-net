@@ -25,7 +25,7 @@ import { confirmImport } from '../../core/excel/import-confirm.js';
 import { recordDateDraft } from '../../core/form/commit-coordinator.js';
 import { alertModal, confirmModal } from '../../core/ui/dialogs.js';
 import { setStatus, scheduleStatusClear } from '../../core/ui/transient-status.js';
-import { beginExport } from '../../core/ui/export-guard.js';
+import { beginExport, exportFinished, exportStarted } from '../../core/ui/export-guard.js';
 import { getImportProgressEl, validateImportFile } from '../../core/security/input-hardening.js';
 import { getD } from '../../core/state.js';
 import { ensureTemplate } from '../../core/persistence/templates.js';
@@ -67,6 +67,8 @@ export async function doSaveExcel(){
   // both blocked by the browser as "multiple files."
   const btn = beginExport('[data-simplified-action="save-excel"]');
   if (!btn) return;
+  exportStarted('excel');
+  let saved = false;
   try{
     const inv=getD();
     const templateB64=await ensureTemplate('simplified');
@@ -86,11 +88,13 @@ export async function doSaveExcel(){
 
     const ward2=(inv.wardName||'SimplifiedAccounting').replace(/[^a-z0-9]/gi,'_');
     await saveWorkbookFile(workbook, `${ward2}_SimplifiedAccounting.xlsx`);
+    saved = true;
   }catch(err){
     console.error('Excel export failed:',err);
     await alertModal('Excel export failed: '+err.message);
   }finally{
     btn.disabled = false;
+    exportFinished(saved);
   }
 }
 

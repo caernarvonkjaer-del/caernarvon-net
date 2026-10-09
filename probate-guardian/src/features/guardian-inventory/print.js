@@ -20,8 +20,7 @@ import { authorizeFilingOutput, beginFreshPreview } from '../../core/filing/outp
 import { renderReadinessCard } from '../../core/filing/readiness-card.js';
 import { renderOutputAdvisories } from '../../core/filing/output-advisories.js';
 import { alertModal } from '../../core/ui/dialogs.js';
-import { setStatus, clearStatusNow } from '../../core/ui/transient-status.js';
-import { beginExport } from '../../core/ui/export-guard.js';
+import { beginExport, exportFinished, exportStarted } from '../../core/ui/export-guard.js';
 import { getD } from '../../core/state.js';
 import { highlightErrors, validationPanel } from '../../core/validation/validation-panel.js';
 import { excelCapacityPanel } from '../../core/excel/excel-capacity.js';
@@ -65,7 +64,7 @@ export function pagePrint(capOver){
   return `<div>
   <h1 class="visually-hidden">Print Preview</h1>
   <div class="print-preview-banner no-print">
-    <span><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6.4 3.4h7l4.2 4.2v13H6.4Z"/><path d="M13.2 3.4v4.4h4.4"/><path d="M9.2 12.6h5.6M9.2 16h5.6"/></svg> Print Preview — use <strong>Save as PDF</strong>, <strong>Save as Excel</strong>, or <strong>Print</strong>.${previewStatusHtml(preflight,'')}</span>
+    <div><strong>Preview &amp; Export</strong> ${previewStatusHtml(preflight)}</div>
     <div class="d-flex gap-2 align-items-center flex-wrap">
       <span id="export-status" style="font-size:.8rem;color:var(--ink-3);"></span>
       <button class="btn btn-outline-primary btn-sm" data-inventory-action="save-pdf" data-output-action="save-pdf" aria-describedby="export-reason"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6.4 3.4h7l4.2 4.2v13H6.4Z"/><path d="M13.2 3.4v4.4h4.4"/><path d="M9.2 12.6h5.6M9.2 16h5.6"/></svg> Save as PDF</button>
@@ -107,8 +106,8 @@ export async function doSavePdf(){
   // download and get both blocked by the browser as "multiple files."
   const btn = beginExport('[data-inventory-action="save-pdf"]');
   if (!btn) return;
-  const stat=document.getElementById('export-status');
-  setStatus(stat,'Generating PDF…');
+  exportStarted('pdf');
+  let saved = false;
   const stem=(getD().wardName||'GuardianInventory').trim().replace(/\s+/g,'_');
   const filename=`${stem}_InitialInventory.pdf`;
 
@@ -118,16 +117,16 @@ export async function doSavePdf(){
     });
     const doc = await generateVerifiedInventoryPdf(model);
     await saveFinalizedPdf(await finalizeCourtFormPdf(doc), filename);
+    saved = true;
   }catch(e){
     console.error('PDF export failed',e);
     await alertModal('PDF export failed: '+e.message);
   }finally{
     btn.disabled = false;
-    // Immediate, not scheduled: the PDF action has no success
-    // message of its own to leave on screen. Going through setStatus still
-    // cancels any clear an earlier Excel export scheduled, so this element
-    // is never left with a timer belonging to a message that is gone.
-    clearStatusNow(stat);
+    // Milestone 73O part 4: "✓ Exported!" after a PDF too, as on every form;
+    // going through the status helpers cancels any clear an earlier Excel
+    // export scheduled.
+    exportFinished(saved);
   }
 }
 
