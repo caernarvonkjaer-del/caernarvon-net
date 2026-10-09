@@ -3559,6 +3559,15 @@ bisecting; fixed in their own commit, next). Then the conversion, New Year
 cover-pin specs: all 97 passed. Full unit suite: 3,054 passed; `check:types`
 clean; `verify:data-model` OK.
 
+**Found after the build, fixed 2026-10-09 (own commit).** The cover's
+Attorney Name box, now the plan's one attorney name, had no asterisk while an
+attorney was started: the star followed the attorney block on the
+certification page only (Milestone 58C's sync, run on `/p10`). It now runs on
+the cover too. Found by `asterisks-follow-rules.spec.ts` while testing 73O
+part 3 -- 73O part 1's light regression hadn't included it. **Red-first** on
+`487e247`'s tree: the Initial Plan case fails ("Attorney Name attorney_name:
+required, but has no asterisk") and passes with the fix; all 7 cases pass.
+
 ---
 
 ## 73P — Small fixes (D14, D22–D27, D32, the Help panel)

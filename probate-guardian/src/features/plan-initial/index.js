@@ -250,10 +250,12 @@ export async function mount(container, page, { signal } = {}) {
   }
   attorneyMarkerAborts.get(container)?.abort();
   attorneyMarkerAborts.delete(container);
-  if (page === '/p10') {
+  if (page === '/p10' || page === '/') {
     // Milestone 58C: keep Primary Email's required marker in step with the
     // attorney block as it is filled in. The AbortController ends with the
     // page, so nothing dangles after dispose() -- the 40F/40H-A/43G bug class.
+    // Milestone 73O part 1: the cover shows the same attorney name, so it is
+    // starred there too while an attorney is started.
     const controller = new AbortController();
     attorneyMarkerAborts.set(container, controller);
     window.addEventListener('pg:field-written', (event) => {
