@@ -15,10 +15,12 @@ import { emptyCertificateOfService } from '../plan-certificate-of-service.js';
 // The rights and ADL lists are declared once as constants and reused by
 // the page renderer, the validator, and the print builder, so the three
 // can't drift out of order — the printed court document has to list them
-// in exactly the sequence the form does.
+// in exactly the sequence the form does. Milestone 73N part 2: worded as the
+// court's form words them (tests/unit/court-text-parity.spec.js); "gift of
+// disposition" and "char/bed" are the form's typing errors, corrected.
 export const PLAN_RIGHTS=[
   ['marry','Right to marry'],
-  ['vote','Right to vote'],
+  ['vote','Right to Vote'],
   ['govBenefits','Right to personally apply for government benefits'],
   ['driver',"Right to have a driver's license"],
   ['travel','Right to travel'],
@@ -49,12 +51,12 @@ export const PLAN_RIGHT_STATES=[
 export const planRightLabel=(value)=>{const s=PLAN_RIGHT_STATES.find(x=>x.value===value);return s?s.label:(value||'');};
 
 export const PLAN_ADLS=[
-  ['eating','Eating'],['prepareMeals','Prepare meals'],
-  ['heavyChores','Heavy chores (e.g. vacuuming)'],['lightHousekeeping','Light housekeeping'],
-  ['managingMoney','Managing money'],['dressing','Dressing'],
-  ['transportation','Transportation ability'],['walking','Walking / mobility'],
-  ['toileting','Toileting'],['stairs','Climbing stairs'],
-  ['transferring','Transferring (wheelchair to chair/bed)'],['laundry','Doing laundry'],
+  ['eating','Eating'],['prepareMeals','Prepare Meals'],
+  ['heavyChores','Heavy Chores (e.g., vacuuming)'],['lightHousekeeping','Light Housekeeping'],
+  ['managingMoney','Managing Money'],['dressing','Dressing'],
+  ['transportation','Transportation Ability'],['walking','Walking/Mobility'],
+  ['toileting','Toileting'],['stairs','Climbing Stairs'],
+  ['transferring','Transferring (from wheelchair to chair/bed)'],['laundry','Doing Laundry'],
   ['shopping','Shopping'],['bathing','Bathing'],
   ['grooming','Grooming'],['medication','Administration of medication'],
 ];

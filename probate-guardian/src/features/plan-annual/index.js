@@ -41,6 +41,9 @@ import { renderScheduleDocsSection } from '../../core/filing/schedule-docs.js';
 import { setPath } from '../../core/form/paths.js';
 import { PLAN_ANNUAL_EXPLANATIONS, explanationShown } from '../../core/filing/plan-explanations.js';
 import { collectPlanAnnualIssues } from '../../core/validation/engines/plan-annual.js';
+import { hasSixthCircuitLocalGuidance } from '../../core/filing/county-guidance.js';
+import { PLAN_ANNUAL_CHOICES as C, PLAN_ANNUAL_DEVICES, PLAN_ANNUAL_TEXT as T, numbered, planAnnualAttorneyCertification, planAnnualMoveChoices, planAnnualNoRemuneration } from '../../core/filing/court-text/plan-annual.js';
+import { displayDate } from '../../core/form/date-parser.js';
 // Annual Guardianship Plan — the third feature extraction (Milestone 4,
 // Phases A and B of INDEX-SPLIT-PLAN.md's migration sequence). Loaded only when one of its pages
 // is shown, through src/features-loader.js's feature services
@@ -294,7 +297,7 @@ function pagePlanAResidences(){
     </div></div>`;
   }).join('');
   return `<div class="schedule-page">
-    <h1>1. Places the Ward Has Lived</h1>
+    <h1>${numbered(1,T.q1)}</h1>
     <div class="schedule-instructions">List every place the ward resided during the prior 12 months, earliest first. The court checks this against the address on file — if the ward moved, question 2 on the next page asks how that move was handled.</div>
     ${rows?`<div class="row g-3 schedule-entry-grid">${rows}</div>`:`<div class="schedule-empty">${ic('folder',17)}<span>No residences listed yet.</span></div>`}
     <button class="btn btn-outline-primary btn-sm mb-2" data-form-action="add-plan-row" data-collection="q1Residences" data-row-type="residence" data-route="/p2">+ Add Residence</button>
@@ -306,55 +309,57 @@ function pagePlanAResidences(){
 function pagePlanACarePlan(){
   const d=getD();
   const cb=(id,label,route='')=>chkP(id,label,d[id],route);
+  // Milestone 73N part 2: the counties only on a Pinellas or Pasco filing.
+  const moves=planAnnualMoveChoices(hasSixthCircuitLocalGuidance(d.county));
   return `<div class="schedule-page">
     <h1>2–3. Residence Change &amp; Care Plan</h1>
-    ${planQ(2,"If the ward's address has changed since the last plan was filed"+REQ_MARK,
+    ${planQ(2,T.q2+REQ_MARK,
       `<div class="plan-check-grid">
-        ${cb('q2NoMove','N/A — the ward has not moved since the last plan was filed')}
-        ${cb('q2WithinCounty','The move was within this county and a change of address was provided to the court')}
-        ${cb('q2WithinCircuit','The move was within this Circuit and notice was provided to the court within 15 days')}
-        ${cb('q2OutsideApproved','The move was outside this Circuit and prior court approval was obtained')}
-        ${cb('q2OutsideVenuePetition','The move was outside this Circuit and a petition to change venue is filed with this plan')}
-      </div>`,'Check all that apply.')}
-    ${planQ(3,'For the best welfare of the ward, the guardian plans as follows',
-      planCheckGroup("The residential setting best suited to the ward's needs is:"+REQ_MARK,
-        [cb('q3SettingALF','Assisted Living (ALF)'),cb('q3SettingGroupHome','Group Home'),
-         cb('q3SettingIntermediate','Intermediate'),cb('q3SettingPrivate','Private Residence'),
-         cb('q3SettingSkilled','Skilled Nursing'),cb('q3SettingSpecialized','Specialized'),
-         cb('q3SettingStateHospital','State Hospital'),cb('q3SettingOther','Other','/p3')].join(''),
+        ${cb('q2NoMove',T.q2NoMove)}
+        ${cb('q2WithinCounty',T.q2WithinCounty)}
+        ${cb('q2WithinCircuit',moves.q2WithinCircuit)}
+        ${cb('q2OutsideApproved',moves.q2OutsideApproved)}
+        ${cb('q2OutsideVenuePetition',moves.q2OutsideVenuePetition)}
+      </div>`)}
+    ${planQ(3,T.q3,
+      planCheckGroup(T.q3A+REQ_MARK,
+        [cb('q3SettingALF',C.q3SettingALF),cb('q3SettingGroupHome',C.q3SettingGroupHome),
+         cb('q3SettingIntermediate',C.q3SettingIntermediate),cb('q3SettingPrivate',C.q3SettingPrivate),
+         cb('q3SettingSkilled',C.q3SettingSkilled),cb('q3SettingSpecialized',C.q3SettingSpecialized),
+         cb('q3SettingStateHospital',C.q3SettingStateHospital),cb('q3SettingOther',C.q3SettingOther,'/p3')].join(''),
         'q3SettingExplain',d.q3SettingExplain,explanationShown(PLAN_ANNUAL_EXPLANATIONS,d,'q3SettingExplain'))
-      +planCheckGroup('The guardian will ensure this remains the best setting by:',
-        [cb('q3EnsureAssessing','Periodically assessing needs'),
-         cb('q3EnsureWardDecides','The ward retains the right to decide'),
-         cb('q3EnsureNoChange','No change, unless required by medical condition')].join(''),'','',false)
-      +planCheckGroup('Provision for medical care services:',
-        [cb('q3MedPrimary','Routine examination by primary care physician'),
-         cb('q3MedDentist','Routine examination by dentist'),
-         cb('q3MedOphthalmologist','Routine examination by ophthalmologist'),
-         cb('q3MedSpecialist','Routine examination by specialist','/p3'),
-         cb('q3MedPhysicalTherapy','Physical therapy'),cb('q3MedSpeechTherapy','Speech therapy'),
-         cb('q3MedOccupationalTherapy','Occupational therapy'),
-         cb('q3MedWardDecides','The ward retains the right to make their own decision'),
-         cb('q3MedNone','None','/p3'),cb('q3MedOther','Other','/p3')].join(''),
+      +planCheckGroup(T.q3B,
+        [cb('q3EnsureAssessing',C.q3EnsureAssessing),
+         cb('q3EnsureWardDecides',C.q3EnsureWardDecides),
+         cb('q3EnsureNoChange',C.q3EnsureNoChange)].join(''),'','',false)
+      +planCheckGroup(`${T.q3C} ${T.checkAll}`,
+        [cb('q3MedPrimary',C.q3MedPrimary),
+         cb('q3MedDentist',C.q3MedDentist),
+         cb('q3MedOphthalmologist',C.q3MedOphthalmologist),
+         cb('q3MedSpecialist',C.q3MedSpecialist,'/p3'),
+         cb('q3MedPhysicalTherapy',C.q3MedPhysicalTherapy),cb('q3MedSpeechTherapy',C.q3MedSpeechTherapy),
+         cb('q3MedOccupationalTherapy',C.q3MedOccupationalTherapy),
+         cb('q3MedWardDecides',C.q3MedWardDecides),
+         cb('q3MedNone',C.q3MedNone,'/p3'),cb('q3MedOther',C.q3MedOther,'/p3')].join(''),
         'q3MedExplain',d.q3MedExplain,explanationShown(PLAN_ANNUAL_EXPLANATIONS,d,'q3MedExplain'))
       +(d.q3MedSpecialist?`<div class="plan-conditional mb-3">${inpS('q3MedSpecialistArea','Area of specialty',d.q3MedSpecialistArea,true)}</div>`:'')
-      +planCheckGroup('Provision for mental health services:',
-        [cb('q3MentalPsych','Routine examination by psychiatrist / psychologist'),
-         cb('q3MentalWardDecides','Ward retains the right to make own decisions'),
-         cb('q3MentalOutpatient','Ongoing treatment — outpatient'),
-         cb('q3MentalInpatient','Ongoing treatment — inpatient'),
-         cb('q3MentalNone','None','/p3'),cb('q3MentalOther','Other','/p3')].join(''),
+      +planCheckGroup(`${T.q3D} ${T.checkAll}`,
+        [cb('q3MentalPsych',C.q3MentalPsych),
+         cb('q3MentalWardDecides',C.q3MentalWardDecides),
+         cb('q3MentalOutpatient',C.q3MentalOutpatient),
+         cb('q3MentalInpatient',C.q3MentalInpatient),
+         cb('q3MentalNone',C.q3MentalNone,'/p3'),cb('q3MentalOther',C.q3MentalOther,'/p3')].join(''),
         'q3MentalExplain',d.q3MentalExplain,explanationShown(PLAN_ANNUAL_EXPLANATIONS,d,'q3MentalExplain'))
-      +planCheckGroup('Provision for personal care (bathing, grooming, feeding):',
-        [cb('q3PersonalFacility','Care facility'),cb('q3PersonalNurses','Nurses and aides'),
-         cb('q3PersonalFamily','Family and friends'),cb('q3PersonalWithout','Ward does without assistance'),
-         cb('q3PersonalNone','None; ward can provide own personal care','/p3'),cb('q3PersonalOther','Other','/p3')].join(''),
+      +planCheckGroup(`${T.q3E} ${T.checkAll}`,
+        [cb('q3PersonalFacility',C.q3PersonalFacility),cb('q3PersonalNurses',C.q3PersonalNurses),
+         cb('q3PersonalFamily',C.q3PersonalFamily),cb('q3PersonalWithout',C.q3PersonalWithout),
+         cb('q3PersonalNone',C.q3PersonalNone,'/p3'),cb('q3PersonalOther',C.q3PersonalOther,'/p3')].join(''),
         'q3PersonalExplain',d.q3PersonalExplain,explanationShown(PLAN_ANNUAL_EXPLANATIONS,d,'q3PersonalExplain'))
-      +planCheckGroup('Provision for socialization and recreational activities:',
-        [cb('q3SocialFacility','Care facility'),cb('q3SocialNurses','Nurses and aides'),
-         cb('q3SocialFamily','Family and friends'),
-         cb('q3SocialWardDecides','The ward retains the right to make their own decision'),
-         cb('q3SocialNone','None','/p3'),cb('q3SocialOther','Other','/p3')].join(''),
+      +planCheckGroup(`${T.q3F} ${T.checkAll}`,
+        [cb('q3SocialFacility',C.q3SocialFacility),cb('q3SocialNurses',C.q3SocialNurses),
+         cb('q3SocialFamily',C.q3SocialFamily),
+         cb('q3SocialWardDecides',C.q3SocialWardDecides),
+         cb('q3SocialNone',C.q3SocialNone,'/p3'),cb('q3SocialOther',C.q3SocialOther,'/p3')].join(''),
         'q3SocialExplain',d.q3SocialExplain,explanationShown(PLAN_ANNUAL_EXPLANATIONS,d,'q3SocialExplain')))}
     ${renderScheduleDocsSection('planACarePlan')}
     ${pageNavS('/p2','/p4')}
@@ -374,14 +379,15 @@ function pagePlanABenefits(){
   }).join('');
   return `<div class="schedule-page">
     <h1>3G. Insurance &amp; Benefits</h1>
+    <h2 class="plan-question-text">${T.q3G}</h2>
     <div class="schedule-instructions">Health and accident insurance, and any private or governmental benefits the ward receives toward the cost of medical, mental health or related services. Mark whether the ward is <strong>eligible</strong> for each, and whether you have <strong>applied</strong> for it.</div>
     <table class="table plan-benefits-table">
       <thead><tr><th>Benefit</th><th class="text-center">Eligible</th><th class="text-center">Applied for</th></tr></thead>
       <tbody>${rows}</tbody>
     </table>
     <div class="plan-check-grid mt-3">
-      ${chkP('q3BenefitsNone','None of the above',d.q3BenefitsNone,'/p4')}
-      ${chkP('q3BenefitsOther','Other (explain below)',d.q3BenefitsOther,'/p4')}
+      ${chkP('q3BenefitsNone',C.q3BenefitsNone,d.q3BenefitsNone,'/p4')}
+      ${chkP('q3BenefitsOther',C.q3BenefitsOther,d.q3BenefitsOther,'/p4')}
     </div>
     ${explanationShown(PLAN_ANNUAL_EXPLANATIONS,d,'q3BenefitsExplain')?`<div class="plan-conditional mt-2">${txtP('q3BenefitsExplain','Explanation',d.q3BenefitsExplain,3)}</div>`:''}
     ${renderScheduleDocsSection('planABenefits')}
@@ -411,7 +417,7 @@ function pagePlanAProviders(){
     </div></div>`;
   }).join('');
   return `<div class="schedule-page">
-    <h1>4. Professional Medical Treatment</h1>
+    <h1>${numbered(4,T.q4)}</h1>
     <div class="schedule-instructions">Every professional who treated the ward during the prior 12 months — physicians, dentists, therapists, mental health providers. Include how many visits there were; the court uses this to see whether the ward is actually receiving the care the plan promises.</div>
     ${rows?`<div class="row g-3 schedule-entry-grid">${rows}</div>`:`<div class="schedule-empty">${ic('folder',17)}<span>No providers listed yet.</span></div>`}
     <button class="btn btn-outline-primary btn-sm mb-2" data-form-action="add-plan-row" data-collection="q4Providers" data-row-type="provider" data-route="/p5">+ Add Provider</button>
@@ -433,18 +439,16 @@ function pagePlanARights(){
   const anyRestorable=PLAN_RIGHTS.some(([k])=>r[k]==='Capable of restoration');
   return `<div class="schedule-page">
     <h1>5–7. Social Skills &amp; Rights</h1>
-    ${planQ(5,'Social skills, abilities and activities of the ward',
-      txtP('q5SocialSkills',"Describe the ward's social skills and abilities",d.q5SocialSkills,4,true,
-        'For example: the ward communicates well; communicates with gestures; cannot communicate at all. Also describe any change from the previous plan period.')
-      +txtP('q5Activities',"Activities undertaken to increase the ward's capacity",d.q5Activities,4,true,
-        'For example: encouragement, physical or mental therapy, rehabilitative services. Say whether these activities were effective.'))}
-    ${planQ(6,'Is the ward now capable of having any of these rights restored?'+REQ_MARK,
+    ${planQ(5,T.q5,
+      txtP('q5SocialSkills',T.q5A,d.q5SocialSkills,4,true)
+      +txtP('q5Activities',T.q5B,d.q5Activities,4,true))}
+    ${planQ(6,T.q6+REQ_MARK,
       `<table class="table plan-rights-table">
         <thead><tr><th>Right</th>${PLAN_RIGHT_STATES.map(s=>`<th class="text-center" style="width:9rem">${esc(s.label)}</th>`).join('')}</tr></thead>
         <tbody>${rows}</tbody>
       </table>`,
       'Mark each right with its current status, in the court form\'s four columns. <strong>"Yes" (capable of restoration) is a formal statement</strong> — if the physician\'s report agrees, you must file a separate petition to restore that right. This plan does not restore anything on its own.')}
-    ${planQ(7,"Disagreement with the physician's report",
+    ${planQ(7,T.q7,
       txtP('q7RightsExplain','Explanation',d.q7RightsExplain,4,false,
         "Required only if you marked a right as capable of restoration but disagree with what the physician's report says about it."),
       anyRestorable?"You marked at least one right as capable of restoration. If the physician's report does not agree, explain here."
@@ -478,31 +482,27 @@ function pagePlanAADLs(){
 function pagePlanADisabilities(){
   const d=getD();
   const cb=(id,label,route='')=>chkP(id,label,d[id],route);
-  const devices=(prefix)=>[
-    cb(prefix+'Dentures','Dentures'),cb(prefix+'HearingAid','Hearing aid'),
-    cb(prefix+'Wheelchair','Wheelchair'),cb(prefix+'Walker','Walker / cane'),
-    cb(prefix+'Crutches','Crutches'),cb(prefix+'Prosthetics','Prosthetics'),
-    cb(prefix+'Glasses','Glasses'),cb(prefix+'None','None'),cb(prefix+'Other','Other','/p8')].join('');
+  const devices=(prefix)=>PLAN_ANNUAL_DEVICES.map(([suffix,label])=>cb(prefix+suffix,label,suffix==='Other'?'/p8':'')).join('');
   return `<div class="schedule-page">
     <h1>9. Disabilities &amp; Assistive Devices</h1>
-    ${planQ(9,'Disabilities and assistive devices',
-      planCheckGroup('The mental disabilities of the ward are:'+REQ_MARK,
-        [cb('q9MentalDementia','Dementia'),cb('q9MentalAlzheimers',"Alzheimer's type of dementia"),
-         cb('q9MentalAutism','Autism spectrum disorders'),cb('q9MentalHeadInjury','Closed head injury'),
-         cb('q9MentalDevelopmental','Developmental disabilities'),cb('q9MentalIntellectual','Intellectual disability'),
-         cb('q9MentalSchizophrenia','Schizophrenia or related disorders'),cb('q9MentalDepression','Depression'),
-         cb('q9MentalSubstance','Induced by substance abuse'),
-         cb('q9MentalNone','Ward has no mental disabilities'),cb('q9MentalOther','Other','/p8')].join(''),
+    ${planQ(9,T.q9,
+      planCheckGroup(T.q9A+REQ_MARK,
+        [cb('q9MentalDementia',C.q9MentalDementia),cb('q9MentalAlzheimers',C.q9MentalAlzheimers),
+         cb('q9MentalAutism',C.q9MentalAutism),cb('q9MentalHeadInjury',C.q9MentalHeadInjury),
+         cb('q9MentalDevelopmental',C.q9MentalDevelopmental),cb('q9MentalIntellectual',C.q9MentalIntellectual),
+         cb('q9MentalSchizophrenia',C.q9MentalSchizophrenia),cb('q9MentalDepression',C.q9MentalDepression),
+         cb('q9MentalSubstance',C.q9MentalSubstance),
+         cb('q9MentalNone',C.q9MentalNone),cb('q9MentalOther',C.q9MentalOther,'/p8')].join(''),
         'q9MentalExplain',d.q9MentalExplain,explanationShown(PLAN_ANNUAL_EXPLANATIONS,d,'q9MentalExplain'))
-      +planCheckGroup('The physical disabilities of the ward are:'+REQ_MARK,
-        [cb('q9PhysMobility','Mobility'),cb('q9PhysBlindness','Blindness'),
-         cb('q9PhysDeafness','Deafness'),cb('q9PhysDiabetic','Diabetic'),
-         cb('q9PhysParkinsons',"Parkinson's disease"),cb('q9PhysArthritis','Severe arthritis'),
-         cb('q9PhysNone','Ward has no physical disabilities'),cb('q9PhysOther','Other','/p8')].join(''),
+      +planCheckGroup(`${T.q9B} ${T.checkAll}`+REQ_MARK,
+        [cb('q9PhysMobility',C.q9PhysMobility),cb('q9PhysBlindness',C.q9PhysBlindness),
+         cb('q9PhysDeafness',C.q9PhysDeafness),cb('q9PhysDiabetic',C.q9PhysDiabetic),
+         cb('q9PhysParkinsons',C.q9PhysParkinsons),cb('q9PhysArthritis',C.q9PhysArthritis),
+         cb('q9PhysNone',C.q9PhysNone),cb('q9PhysOther',C.q9PhysOther,'/p8')].join(''),
         'q9PhysExplain',d.q9PhysExplain,explanationShown(PLAN_ANNUAL_EXPLANATIONS,d,'q9PhysExplain'))
-      +planCheckGroup('Assistive devices the ward currently uses:',devices('q9Uses'),
+      +planCheckGroup(`${T.q9C} ${T.checkAll}`,devices('q9Uses'),
         'q9UsesExplain',d.q9UsesExplain,explanationShown(PLAN_ANNUAL_EXPLANATIONS,d,'q9UsesExplain'))
-      +planCheckGroup('Assistive devices the ward needs but does not yet have:',devices('q9Needs'),
+      +planCheckGroup(`${T.q9D} ${T.checkAll}`,devices('q9Needs'),
         'q9NeedsExplain',d.q9NeedsExplain,explanationShown(PLAN_ANNUAL_EXPLANATIONS,d,'q9NeedsExplain')))}
     ${renderScheduleDocsSection('planADisabilities')}
     ${pageNavS('/p7','/p9')}
@@ -522,7 +522,7 @@ function pagePlanADirectives(){
   // being pre-seeded.
   const q10ExecutedCb=`<div class="form-check plan-check">
     <input class="form-check-input" type="checkbox" id="q10Executed" ${d.q10Executed?'checked':''} data-form-path="q10Executed" data-form-value="boolean" data-form-route="/p9" data-form-change="ensure-directive-row" data-collection="q10Directives">
-    <label class="form-check-label" for="q10Executed">The ward executed the following advance directives</label>
+    <label class="form-check-label" for="q10Executed">${T.q10Executed}</label>
   </div>`;
   const blocks=(d.q10Directives||[]).map((r,i)=>{
     return `<div class="col-12"><div class="entry-card mb-2">
@@ -549,27 +549,26 @@ function pagePlanADirectives(){
   }).join('');
   return `<div class="schedule-page">
     <h1>10. Advance Directives</h1>
-    ${planQ(10,'Pre-existing orders and advance directives',
-      `<div class="plan-check-grid">${cb('q10NoDirectives','There are NO pre-existing DNR orders or other advance directives','/p9')}</div>
+    ${planQ(10,'Advance directives',
+      `<div class="plan-check-grid">${cb('q10NoDirectives',T.q10NoDirectives,'/p9')}</div>
       ${d.q10NoDirectives?`<div class="plan-conditional mt-2 mb-3">
-        <label class="form-label">Steps taken to verify there are none:</label>
         <div class="plan-check-grid">
-          ${cb('q10StepResidence',"Search of ward's prior and current residence")}
-          ${cb('q10StepSafeDeposit',"Inventory of ward's safe deposit box")}
-          ${cb('q10StepInterviewed','Interviewed family and friends')}
-          ${cb('q10StepMedicalProviders',"Requested documents from the ward's medical providers")}
-          ${cb('q10StepAttorney',"Requested documents from the ward's attorney")}
+          ${cb('q10StepResidence',C.q10StepResidence)}
+          ${cb('q10StepSafeDeposit',C.q10StepSafeDeposit)}
+          ${cb('q10StepInterviewed',C.q10StepInterviewed)}
+          ${cb('q10StepMedicalProviders',C.q10StepMedicalProviders)}
+          ${cb('q10StepAttorney',C.q10StepAttorney)}
         </div></div>`:''}
       <div class="plan-check-grid mt-2">${q10ExecutedCb}</div>
       ${d.q10Executed?`<div class="plan-conditional mt-2">
         <div class="plan-check-grid">
-          ${cb('q10ExecDNR','Order Not to Resuscitate (DNR), F.S. 401.45(3)')}
-          ${cb('q10ExecHealthcare','Advance Directive for Healthcare (surrogate, living will, anatomical gift)')}
-          ${cb('q10ExecPOA','Durable Power of Attorney, F.S. Chapter 709')}
-          ${cb('q10ExecOther','Other','/p9')}
+          ${cb('q10ExecDNR',C.q10ExecDNR)}
+          ${cb('q10ExecHealthcare',C.q10ExecHealthcare)}
+          ${cb('q10ExecPOA',C.q10ExecPOA)}
+          ${cb('q10ExecOther',C.q10ExecOther,'/p9')}
         </div>
         ${d.q10ExecOther?`<div class="mt-2">${inpS('q10ExecOtherText','Describe the other directive',d.q10ExecOtherText,true)}</div>`:''}
-        <h3 style="font-size:.85rem;font-weight:650;margin:1rem 0 .5rem;">Details for each directive</h3>
+        <h3 style="font-size:.85rem;font-weight:650;margin:1rem 0 .5rem;">${T.q10ForAny}</h3>
         ${blocks?`<div class="row g-3 schedule-entry-grid">${blocks}</div>`:''}
         <button class="btn btn-outline-primary btn-sm" data-form-action="add-plan-row" data-collection="q10Directives" data-row-type="directive" data-route="/p9">+ Add Directive</button>
       </div>`:''}`,
@@ -583,8 +582,8 @@ function pagePlanARemuneration(){
   const d=getD();
   return `<div class="schedule-page">
     <h1>11. Remuneration</h1>
-    ${planQ(11,'Declaration of remuneration'+REQ_MARK,
-      `<div class="plan-check-grid">${chkP('q11NoRemuneration','I have received NO remuneration from any source for services rendered to or on behalf of the ward',d.q11NoRemuneration,'/p10')}</div>
+    ${planQ(11,T.q11+REQ_MARK,
+      `<div class="plan-check-grid">${chkP('q11NoRemuneration',planAnnualNoRemuneration('____________'),d.q11NoRemuneration,'/p10')}</div>
       ${d.q11NoRemuneration
         ? `<div class="plan-conditional mt-2">${inpS('q11NoRemunerationName',"Declaring guardian's name",d.q11NoRemunerationName,true)}</div>`
         : `<div class="plan-conditional mt-2">
@@ -593,9 +592,9 @@ function pagePlanARemuneration(){
               <div class="col-md-4">${inpS('q11Amount','Amount received',d.q11Amount,false,'number')}</div>
               <div class="col-md-4">${inpS('q11From','Received from (person or company)',d.q11From)}</div>
             </div>
-            <div class="plan-check-grid mt-2">${chkP('q11SubmittedToCourt','All requests for reimbursement or fees have been submitted to the court for review and approval',d.q11SubmittedToCourt)}</div>
+            <div class="plan-check-grid mt-2">${chkP('q11SubmittedToCourt',T.q11Submitted,d.q11SubmittedToCourt)}</div>
           </div>`}`,
-      'Remuneration means any payment or benefit made directly or indirectly, overtly or covertly, in cash or in kind, to the guardian — F.S. 744.367(3)(a). If you received nothing, check the box; otherwise fill in the details below it.')}
+      'If you received nothing, check the box; otherwise fill in the details below it.')}
     ${renderScheduleDocsSection('planARemuneration')}
     ${pageNavS('/p9','/p11')}
   </div>`;
@@ -630,25 +629,26 @@ function pagePlanASignatures(){
   return `<div class="schedule-page">
     <h1>Signatures</h1>
   ${preparerNoteHTML()}
-    <h2 class="subsection-heading">Certification of Guardian(s)</h2>
-    <div class="schedule-instructions">Check each statement that applies. If the ward's ability to exercise rights has changed since the order appointing you, you must either file a petition to remove or restore rights, or explain below why no change should be made.</div>
+    <h2 class="subsection-heading">${T.certTitle}</h2>
+    <div class="schedule-instructions">${T.certCheckAll} ${T.certPreamble}</div>
     <div class="plan-check-grid mb-3">
-      ${cb('certIncapacitatedNoCopy','The ward was declared totally incapacitated and has not been given a copy of this plan')}
-      ${cb('certMinorNoCopy','The ward is a minor and has not been given a copy of this plan')}
-      ${cb('certConsulted',"The guardian has consulted with the ward, honored their wishes, and the plan accords with them to the maximum extent possible")}
-      ${cb('certNoRestriction',"The plan does not restrict the ward's physical liberty except as necessary to prevent serious injury, illness or disease")}
-      ${cb('certProvidesMedical',"The plan provides for the ward's medical care and mental health treatment")}
-      ${cb('certPhysicianAttached',"The physician's statement of an examination within 90 days before the plan period is attached")}
-      ${cb('certRecognizeRights','In exercising their powers, the guardian recognizes any rights retained by the ward (F.S. 744.363(6))')}
+      ${cb('certIncapacitatedNoCopy',C.certIncapacitatedNoCopy)}
+      ${cb('certMinorNoCopy',C.certMinorNoCopy)}
+      ${cb('certConsulted',C.certConsulted)}
+      ${cb('certNoRestriction',C.certNoRestriction)}
+      ${cb('certProvidesMedical',C.certProvidesMedical)}
+      ${cb('certPhysicianAttached',C.certPhysicianAttached)}
+      ${cb('certRecognizeRights',C.certRecognizeRights)}
     </div>
     ${txtP('certRightsChangedExplain','If rights have changed and no petition is being filed, explain why',d.certRightsChangedExplain,3)}
-    <div class="attestation-text mb-3">Under penalties of perjury, I declare that I have read and examined the foregoing plan, and the facts alleged are true, to the best of my knowledge and belief.</div>
+    <div class="attestation-text mb-3">${T.perjury}</div>
     <div class="row g-3 card-grid-2col mb-4">
       ${g.map((_,i)=>block(i,i?'Co-Guardian':'Guardian')).join('')}
     </div>
     ${g.length<3?'<button type="button" class="btn btn-outline-secondary btn-sm mb-3 no-print" data-form-action="add-plan-guardian" data-route="/p11">+ Add Co-Guardian</button>':''}
-    <h2 class="subsection-heading mt-4">Certification of Guardian's Attorney</h2>
-    <div class="schedule-instructions">The attorney notifies the court of this filing and represents that the plan conforms to Florida Guardianship Law. Leave blank if no attorney is involved.</div>
+    <h2 class="subsection-heading mt-4">${T.attorneyTitle}</h2>
+    <div class="schedule-instructions">Leave blank if no attorney is involved.</div>
+    <div class="attestation-text mb-3">${esc(planAnnualAttorneyCertification(displayDate(d.periodFrom)||'—',displayDate(d.periodTo)||'—',d.county||'—'))}</div>
     <div class="row g-3 card-grid-2col mb-3">
       <div class="col-12 col-lg-6">
         <div class="entry-card mb-0 h-100">

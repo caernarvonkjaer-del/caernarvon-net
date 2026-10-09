@@ -14,6 +14,7 @@ import { resolveSignatureModes } from '../../core/pdf/signature-modes.js';
 import { rowStarted } from '../../core/validation/row-started.js';
 import { recipientAddressLines, recipientListed } from '../../core/filing/recipient-shape.js';
 import { noRecipientsLine } from '../../core/validation/service-recipients.js';
+import { ATTORNEY_NOT_AUDITED } from '../../core/filing/court-text/accountings.js';
 
 export function buildSimplifiedAccountingModel(D, options = {}) {
   const d = D || {};
@@ -233,7 +234,7 @@ export function buildSimplifiedAccountingModel(D, options = {}) {
       {
         type: 'notice',
         tag: 'P',
-        text: `The undersigned Attorney hereby notifies the Court of the filing of the simplified annual accounting of the Guardian ${wardName} for the period ${dateOrLine(d.periodFrom)} through ${dateOrLine(d.periodTo)}. This simplified annual accounting is the representation of the guardian. The undersigned attorney represents that he/she has examined the contents of the accounting and that it conforms to the requirements of the Florida Guardianship Law and the standards for accountings in ${county} County, Florida.`,
+        text: `The undersigned Attorney hereby notifies the Court of the filing of the simplified annual accounting of the Guardian ${wardName} for the period ${dateOrLine(d.periodFrom)} through ${dateOrLine(d.periodTo)}. This simplified annual accounting is the representation of the guardian. ${ATTORNEY_NOT_AUDITED} The undersigned attorney represents that he/she has examined the contents of the accounting and that it conforms to the requirements of the Florida Guardianship Law and the standards for accountings in ${county} County, Florida.`,
       },
       {
         type: 'signature-block',

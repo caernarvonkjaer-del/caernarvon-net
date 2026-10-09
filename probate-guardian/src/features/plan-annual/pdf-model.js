@@ -14,6 +14,11 @@ import { PLAN_ADLS, PLAN_BENEFITS, PLAN_RIGHTS, planRightLabel } from '../../cor
 import { PLAN_ANNUAL_EXPLANATIONS, shownExplanation } from '../../core/filing/plan-explanations.js';
 import { resolveSignatureModes } from '../../core/pdf/signature-modes.js';
 import { withSameAddresses } from '../../core/form/same-address.js';
+import { hasSixthCircuitLocalGuidance } from '../../core/filing/county-guidance.js';
+import {
+  PLAN_ANNUAL_CHOICES as C, PLAN_ANNUAL_DEVICES, PLAN_ANNUAL_DIRECTIVE_LABELS as DL, PLAN_ANNUAL_TEXT as T,
+  numbered, planAnnualAttorneyCertification, planAnnualMoveChoices, planAnnualNoRemuneration, planAnnualReceived,
+} from '../../core/filing/court-text/plan-annual.js';
 
 export function buildPlanAnnualModel(D) {
   // Milestone 74P: a ticked "same as" files the first address in the second.
@@ -55,6 +60,9 @@ export function buildPlanAnnualModel(D) {
   metadata.filingId = descriptor.id;
 
   const sections = [];
+  // Milestone 73N part 2: Question 2 names the Sixth Circuit's counties only
+  // on a Pinellas or Pasco filing (decided 2026-10-09).
+  const moves = planAnnualMoveChoices(hasSixthCircuitLocalGuidance(county));
   // Milestone 73D: an Explanation is filed only while the page shows its box
   // (plan-explanations.js); hidden text is kept, not filed.
   const explainNotice = (id) => {
@@ -73,7 +81,7 @@ export function buildPlanAnnualModel(D) {
     blocks: [
       {
         type: 'notice',
-        text: 'Pursuant to F.S. 744.367, this report with original signatures is due within 90 days after the last day of the anniversary month that the letters of guardianship were signed.',
+        text: T.due,
       },
       {
         type: 'key-value-grid',
@@ -87,16 +95,16 @@ export function buildPlanAnnualModel(D) {
       },
       {
         type: 'checklist',
-        title: 'The Ward Is Living',
+        title: T.wardLiving,
         items: [
-          { checked: d.wardLiving === 'In a private residence leased or owned by them', label: 'In a private residence leased or owned by them (house, condo, apartment).' },
-          { checked: d.wardLiving === 'In a private residence not leased or owned by them', label: 'In a private residence not leased or owned by them (such as a family member).' },
-          { checked: d.wardLiving === 'In a facility (skilled nursing, assisted living, etc.)', label: 'In a facility (skilled nursing, assisted living, etc.).' },
+          { checked: d.wardLiving === 'In a private residence leased or owned by them', label: T.livingOwned },
+          { checked: d.wardLiving === 'In a private residence not leased or owned by them', label: T.livingNotOwned },
+          { checked: d.wardLiving === 'In a facility (skilled nursing, assisted living, etc.)', label: T.livingFacility },
         ],
       },
       {
         type: 'key-value-grid',
-        title: 'Address Where Ward Currently Resides',
+        title: T.residence,
         items: [
           { label: 'Address', value: d.residenceAddress || '' },
           { label: 'City, State, ZIP', value: d.residenceCityStateZip || '' },
@@ -107,7 +115,7 @@ export function buildPlanAnnualModel(D) {
       },
       {
         type: 'notice',
-        text: "Filed separately is the Annual Physician's Report. Together these are the Annual Report of the Guardian of the Person.",
+        text: T.submits,
       },
       // Milestone 61D. "Note 1" on the court's own form
       // (reference/plan-forms/plan-annual-original.txt:46-49), which this
@@ -118,7 +126,7 @@ export function buildPlanAnnualModel(D) {
       // Administrative Orders out of generated documents entirely.
       {
         type: 'notice',
-        text: "Note: The rights on the physician's report should match the Order Determining Incapacity and/or Order Appointing Guardian (signed when Letters were issued), or the guardian must either file a petition to remove or restore rights as appropriate, or provide an explanation for why no change should be made.",
+        text: T.note1,
       },
     ],
   });
@@ -138,7 +146,7 @@ export function buildPlanAnnualModel(D) {
     blocks: [
       resRows.length ? {
         type: 'table',
-        title: '1. Places the Ward Has Resided During the Prior 12 Months',
+        title: numbered(1, T.q1),
         headers: ['#', 'Facility / Residence', 'Type', 'From', 'To'],
         colWidths: [6, 44, 20, 15, 15],
         colAlign: ['left', 'left', 'left', 'left', 'left'],
@@ -146,7 +154,7 @@ export function buildPlanAnnualModel(D) {
           const sub = [r.street, r.cityStateZip, r.phone].filter(Boolean).map(text => ({ text }));
           return [String(i + 1), sub.length ? { main: r.name || '', sub } : (r.name || ''), r.facilityType || '', fmtDate(r.from), fmtDate(r.to)];
         }),
-      } : { type: 'notice', title: '1. Places the Ward Has Resided During the Prior 12 Months', text: 'No residences listed.' },
+      } : { type: 'notice', title: numbered(1, T.q1), text: 'No residences listed.' },
     ],
   });
 
@@ -161,92 +169,93 @@ export function buildPlanAnnualModel(D) {
     blocks: [
       {
         type: 'checklist',
-        title: "2. If the Ward's Address Has Changed Since the Last Plan",
+        title: numbered(2, T.q2),
         items: [
-          { checked: !!d.q2NoMove, label: 'N/A — the ward has not moved since the last plan was filed.' },
-          { checked: !!d.q2WithinCounty, label: 'The move was within this county and a change of address was provided to the court.' },
-          { checked: !!d.q2WithinCircuit, label: 'The move was within this Circuit and notice was provided to the court within 15 days.' },
-          { checked: !!d.q2OutsideApproved, label: 'The move was not within this Circuit and prior court approval was obtained.' },
-          { checked: !!d.q2OutsideVenuePetition, label: 'The move was not within this Circuit and a petition to change venue is filed with this plan.' },
+          { checked: !!d.q2NoMove, label: T.q2NoMove },
+          { checked: !!d.q2WithinCounty, label: T.q2WithinCounty },
+          { checked: !!d.q2WithinCircuit, label: moves.q2WithinCircuit },
+          { checked: !!d.q2OutsideApproved, label: moves.q2OutsideApproved },
+          { checked: !!d.q2OutsideVenuePetition, label: moves.q2OutsideVenuePetition },
         ],
       },
+      { type: 'notice', title: numbered(3, T.q3), text: '' },
       {
         type: 'checklist',
-        title: "3. Plan for the Best Welfare of the Ward — Residential setting best suited to the ward's needs",
+        title: T.q3A,
         items: [
-          { checked: !!d.q3SettingALF, label: 'Assisted Living (ALF)' },
-          { checked: !!d.q3SettingGroupHome, label: 'Group Home' },
-          { checked: !!d.q3SettingIntermediate, label: 'Intermediate' },
-          { checked: !!d.q3SettingPrivate, label: 'Private Residence' },
-          { checked: !!d.q3SettingSkilled, label: 'Skilled Nursing' },
-          { checked: !!d.q3SettingSpecialized, label: 'Specialized' },
-          { checked: !!d.q3SettingStateHospital, label: 'State Hospital' },
-          { checked: !!d.q3SettingOther, label: 'Other' },
+          { checked: !!d.q3SettingALF, label: C.q3SettingALF },
+          { checked: !!d.q3SettingGroupHome, label: C.q3SettingGroupHome },
+          { checked: !!d.q3SettingIntermediate, label: C.q3SettingIntermediate },
+          { checked: !!d.q3SettingPrivate, label: C.q3SettingPrivate },
+          { checked: !!d.q3SettingSkilled, label: C.q3SettingSkilled },
+          { checked: !!d.q3SettingSpecialized, label: C.q3SettingSpecialized },
+          { checked: !!d.q3SettingStateHospital, label: C.q3SettingStateHospital },
+          { checked: !!d.q3SettingOther, label: C.q3SettingOther },
         ],
       },
       ...explainNotice('q3SettingExplain'),
       {
         type: 'checklist',
-        title: 'The guardian will ensure this remains the best setting by',
+        title: T.q3B,
         items: [
-          { checked: !!d.q3EnsureAssessing, label: 'Periodically assessing needs' },
-          { checked: !!d.q3EnsureWardDecides, label: 'The ward retains the right to decide' },
-          { checked: !!d.q3EnsureNoChange, label: 'No change, unless required by medical condition' },
+          { checked: !!d.q3EnsureAssessing, label: C.q3EnsureAssessing },
+          { checked: !!d.q3EnsureWardDecides, label: C.q3EnsureWardDecides },
+          { checked: !!d.q3EnsureNoChange, label: C.q3EnsureNoChange },
         ],
       },
       {
         type: 'checklist',
-        title: 'Provision for medical care services',
+        title: `${T.q3C} ${T.checkAll}`,
         items: [
-          { checked: !!d.q3MedPrimary, label: 'Routine examination by primary care physician' },
-          { checked: !!d.q3MedDentist, label: 'Routine examination by dentist' },
-          { checked: !!d.q3MedOphthalmologist, label: 'Routine examination by ophthalmologist' },
-          { checked: !!d.q3MedSpecialist, label: `Routine examination by specialist${d.q3MedSpecialistArea ? ' — ' + d.q3MedSpecialistArea : ''}` },
-          { checked: !!d.q3MedPhysicalTherapy, label: 'Physical therapy' },
-          { checked: !!d.q3MedSpeechTherapy, label: 'Speech therapy' },
-          { checked: !!d.q3MedOccupationalTherapy, label: 'Occupational therapy' },
-          { checked: !!d.q3MedWardDecides, label: 'The ward retains the right to make their own decision' },
-          { checked: !!d.q3MedNone, label: 'None' },
-          { checked: !!d.q3MedOther, label: 'Other' },
+          { checked: !!d.q3MedPrimary, label: C.q3MedPrimary },
+          { checked: !!d.q3MedDentist, label: C.q3MedDentist },
+          { checked: !!d.q3MedOphthalmologist, label: C.q3MedOphthalmologist },
+          { checked: !!d.q3MedSpecialist, label: `${C.q3MedSpecialist}${d.q3MedSpecialistArea ? ': ' + d.q3MedSpecialistArea : ''}` },
+          { checked: !!d.q3MedPhysicalTherapy, label: C.q3MedPhysicalTherapy },
+          { checked: !!d.q3MedSpeechTherapy, label: C.q3MedSpeechTherapy },
+          { checked: !!d.q3MedOccupationalTherapy, label: C.q3MedOccupationalTherapy },
+          { checked: !!d.q3MedWardDecides, label: C.q3MedWardDecides },
+          { checked: !!d.q3MedNone, label: C.q3MedNone },
+          { checked: !!d.q3MedOther, label: C.q3MedOther },
         ],
       },
       ...explainNotice('q3MedExplain'),
       {
         type: 'checklist',
-        title: 'Provision for mental health services',
+        title: `${T.q3D} ${T.checkAll}`,
         items: [
-          { checked: !!d.q3MentalPsych, label: 'Routine examination by psychiatrist / psychologist' },
-          { checked: !!d.q3MentalWardDecides, label: 'Ward retains the right to make own decisions' },
-          { checked: !!d.q3MentalOutpatient, label: 'Ongoing treatment — outpatient' },
-          { checked: !!d.q3MentalInpatient, label: 'Ongoing treatment — inpatient' },
-          { checked: !!d.q3MentalNone, label: 'None' },
-          { checked: !!d.q3MentalOther, label: 'Other' },
+          { checked: !!d.q3MentalPsych, label: C.q3MentalPsych },
+          { checked: !!d.q3MentalWardDecides, label: C.q3MentalWardDecides },
+          { checked: !!d.q3MentalOutpatient, label: C.q3MentalOutpatient },
+          { checked: !!d.q3MentalInpatient, label: C.q3MentalInpatient },
+          { checked: !!d.q3MentalNone, label: C.q3MentalNone },
+          { checked: !!d.q3MentalOther, label: C.q3MentalOther },
         ],
       },
       ...explainNotice('q3MentalExplain'),
       {
         type: 'checklist',
-        title: 'Provision for personal care (bathing, grooming, feeding)',
+        title: `${T.q3E} ${T.checkAll}`,
         items: [
-          { checked: !!d.q3PersonalFacility, label: 'Care facility' },
-          { checked: !!d.q3PersonalNurses, label: 'Nurses and aides' },
-          { checked: !!d.q3PersonalFamily, label: 'Family and friends' },
-          { checked: !!d.q3PersonalWithout, label: 'Ward does without assistance' },
-          { checked: !!d.q3PersonalNone, label: 'None; ward can provide own personal care' },
-          { checked: !!d.q3PersonalOther, label: 'Other' },
+          { checked: !!d.q3PersonalFacility, label: C.q3PersonalFacility },
+          { checked: !!d.q3PersonalNurses, label: C.q3PersonalNurses },
+          { checked: !!d.q3PersonalFamily, label: C.q3PersonalFamily },
+          { checked: !!d.q3PersonalWithout, label: C.q3PersonalWithout },
+          { checked: !!d.q3PersonalNone, label: C.q3PersonalNone },
+          { checked: !!d.q3PersonalOther, label: C.q3PersonalOther },
         ],
       },
       ...explainNotice('q3PersonalExplain'),
       {
         type: 'checklist',
-        title: 'Provision for socialization and recreational activities',
+        title: `${T.q3F} ${T.checkAll}`,
         items: [
-          { checked: !!d.q3SocialFacility, label: 'Care facility' },
-          { checked: !!d.q3SocialNurses, label: 'Nurses and aides' },
-          { checked: !!d.q3SocialFamily, label: 'Family and friends' },
-          { checked: !!d.q3SocialWardDecides, label: 'The ward retains the right to make their own decision' },
-          { checked: !!d.q3SocialNone, label: 'None' },
-          { checked: !!d.q3SocialOther, label: 'Other' },
+          { checked: !!d.q3SocialFacility, label: C.q3SocialFacility },
+          { checked: !!d.q3SocialNurses, label: C.q3SocialNurses },
+          { checked: !!d.q3SocialFamily, label: C.q3SocialFamily },
+          { checked: !!d.q3SocialWardDecides, label: C.q3SocialWardDecides },
+          { checked: !!d.q3SocialNone, label: C.q3SocialNone },
+          { checked: !!d.q3SocialOther, label: C.q3SocialOther },
         ],
       },
       ...explainNotice('q3SocialExplain'),
@@ -266,8 +275,8 @@ export function buildPlanAnnualModel(D) {
     blocks: [
       {
         type: 'notice',
-        title: '3G. Insurance and Benefits',
-        text: 'Health and accident insurance and other private or governmental benefits the ward receives toward the cost of medical, mental health or related services.',
+        title: T.q3G,
+        text: T.checkAll,
       },
       {
         type: 'table',
@@ -283,8 +292,8 @@ export function buildPlanAnnualModel(D) {
       {
         type: 'checklist',
         items: [
-          { checked: !!d.q3BenefitsNone, label: 'None of the above' },
-          { checked: !!d.q3BenefitsOther, label: 'Other' },
+          { checked: !!d.q3BenefitsNone, label: C.q3BenefitsNone },
+          { checked: !!d.q3BenefitsOther, label: C.q3BenefitsOther },
         ],
       },
       ...explainNotice('q3BenefitsExplain'),
@@ -305,7 +314,7 @@ export function buildPlanAnnualModel(D) {
     blocks: [
       provRows.length ? {
         type: 'table',
-        title: '4. Professional Medical Treatment During the Prior 12 Months',
+        title: numbered(4, T.q4),
         headers: ['#', 'Provider', 'Type', 'Visits'],
         colWidths: [8, 47, 25, 20],
         colAlign: ['left', 'left', 'left', 'left'],
@@ -313,7 +322,7 @@ export function buildPlanAnnualModel(D) {
           const sub = [r.street, r.cityStateZip, r.phone].filter(Boolean).map(text => ({ text }));
           return [String(i + 1), sub.length ? { main: r.name || '', sub } : (r.name || ''), r.providerType || '', r.visits || ''];
         }),
-      } : { type: 'notice', title: '4. Professional Medical Treatment During the Prior 12 Months', text: 'No providers listed.' },
+      } : { type: 'notice', title: numbered(4, T.q4), text: 'No providers listed.' },
     ],
   });
 
@@ -328,17 +337,12 @@ export function buildPlanAnnualModel(D) {
     level: 1,
     pageBreakBefore: true,
     blocks: [
-      {
-        type: 'key-value-grid',
-        title: '5. Social Skills, Abilities and Activities',
-        items: [
-          { label: 'Social skills and abilities of the ward', value: d.q5SocialSkills || '' },
-          { label: "Activities to increase the ward's capacity, and their effectiveness", value: d.q5Activities || '' },
-        ],
-      },
+      { type: 'notice', title: numbered(5, T.q5), text: '' },
+      { type: 'question', question: T.q5A, answer: d.q5SocialSkills || '' },
+      { type: 'question', question: T.q5B, answer: d.q5Activities || '' },
       {
         type: 'table',
-        title: '6. Rights Assessment',
+        title: numbered(6, T.q6),
         headers: ['Right', 'Status'],
         colWidths: [65, 35],
         colAlign: ['left', 'left'],
@@ -346,13 +350,7 @@ export function buildPlanAnnualModel(D) {
         // 'Capable of restoration'): planRightLabel() from the Plan model.
         rows: planRights.map(([k, label]) => [label, planRightLabel(rights[k])]),
       },
-      {
-        type: 'key-value-grid',
-        title: "7. Disagreement With the Physician's Report",
-        items: [
-          { label: 'Explanation', value: d.q7RightsExplain || '' },
-        ],
-      },
+      { type: 'question', question: numbered(7, T.q7), answer: d.q7RightsExplain || '' },
     ],
   });
 
@@ -369,7 +367,7 @@ export function buildPlanAnnualModel(D) {
     blocks: [
       {
         type: 'table',
-        title: '8. Activities of Daily Living',
+        title: numbered(8, T.q8),
         headers: ['Activity', 'Rating'],
         colWidths: [70, 30],
         colAlign: ['left', 'left'],
@@ -379,17 +377,7 @@ export function buildPlanAnnualModel(D) {
   });
 
   // Page 9: Q9 disabilities & assistive devices
-  const deviceItems = (pfx) => ([
-    { checked: !!d[pfx + 'Dentures'], label: 'Dentures' },
-    { checked: !!d[pfx + 'HearingAid'], label: 'Hearing aid' },
-    { checked: !!d[pfx + 'Wheelchair'], label: 'Wheelchair' },
-    { checked: !!d[pfx + 'Walker'], label: 'Walker / cane' },
-    { checked: !!d[pfx + 'Crutches'], label: 'Crutches' },
-    { checked: !!d[pfx + 'Prosthetics'], label: 'Prosthetics' },
-    { checked: !!d[pfx + 'Glasses'], label: 'Glasses' },
-    { checked: !!d[pfx + 'None'], label: 'None' },
-    { checked: !!d[pfx + 'Other'], label: 'Other' },
-  ]);
+  const deviceItems = (pfx) => PLAN_ANNUAL_DEVICES.map(([suffix, label]) => ({ checked: !!d[pfx + suffix], label }));
   sections.push({
     id: 'q9',
     title: 'Question 9',
@@ -398,42 +386,43 @@ export function buildPlanAnnualModel(D) {
     level: 1,
     pageBreakBefore: true,
     blocks: [
+      { type: 'notice', title: numbered(9, T.q9), text: '' },
       {
         type: 'checklist',
-        title: '9. Disabilities and Assistive Devices — Mental disabilities of the ward',
+        title: T.q9A,
         items: [
-          { checked: !!d.q9MentalDementia, label: 'Dementia' },
-          { checked: !!d.q9MentalAlzheimers, label: "Alzheimer's type of dementia" },
-          { checked: !!d.q9MentalAutism, label: 'Autism spectrum disorders' },
-          { checked: !!d.q9MentalHeadInjury, label: 'Closed head injury' },
-          { checked: !!d.q9MentalDevelopmental, label: 'Developmental disabilities' },
-          { checked: !!d.q9MentalIntellectual, label: 'Intellectual disability' },
-          { checked: !!d.q9MentalSchizophrenia, label: 'Schizophrenia or related disorders' },
-          { checked: !!d.q9MentalDepression, label: 'Depression' },
-          { checked: !!d.q9MentalSubstance, label: 'Induced by substance abuse' },
-          { checked: !!d.q9MentalNone, label: 'Ward has no mental disabilities' },
-          { checked: !!d.q9MentalOther, label: 'Other' },
+          { checked: !!d.q9MentalDementia, label: C.q9MentalDementia },
+          { checked: !!d.q9MentalAlzheimers, label: C.q9MentalAlzheimers },
+          { checked: !!d.q9MentalAutism, label: C.q9MentalAutism },
+          { checked: !!d.q9MentalHeadInjury, label: C.q9MentalHeadInjury },
+          { checked: !!d.q9MentalDevelopmental, label: C.q9MentalDevelopmental },
+          { checked: !!d.q9MentalIntellectual, label: C.q9MentalIntellectual },
+          { checked: !!d.q9MentalSchizophrenia, label: C.q9MentalSchizophrenia },
+          { checked: !!d.q9MentalDepression, label: C.q9MentalDepression },
+          { checked: !!d.q9MentalSubstance, label: C.q9MentalSubstance },
+          { checked: !!d.q9MentalNone, label: C.q9MentalNone },
+          { checked: !!d.q9MentalOther, label: C.q9MentalOther },
         ],
       },
       ...explainNotice('q9MentalExplain'),
       {
         type: 'checklist',
-        title: 'Physical disabilities of the ward',
+        title: `${T.q9B} ${T.checkAll}`,
         items: [
-          { checked: !!d.q9PhysMobility, label: 'Mobility' },
-          { checked: !!d.q9PhysBlindness, label: 'Blindness' },
-          { checked: !!d.q9PhysDeafness, label: 'Deafness' },
-          { checked: !!d.q9PhysDiabetic, label: 'Diabetic' },
-          { checked: !!d.q9PhysParkinsons, label: "Parkinson's disease" },
-          { checked: !!d.q9PhysArthritis, label: 'Severe arthritis' },
-          { checked: !!d.q9PhysNone, label: 'Ward has no physical disabilities' },
-          { checked: !!d.q9PhysOther, label: 'Other' },
+          { checked: !!d.q9PhysMobility, label: C.q9PhysMobility },
+          { checked: !!d.q9PhysBlindness, label: C.q9PhysBlindness },
+          { checked: !!d.q9PhysDeafness, label: C.q9PhysDeafness },
+          { checked: !!d.q9PhysDiabetic, label: C.q9PhysDiabetic },
+          { checked: !!d.q9PhysParkinsons, label: C.q9PhysParkinsons },
+          { checked: !!d.q9PhysArthritis, label: C.q9PhysArthritis },
+          { checked: !!d.q9PhysNone, label: C.q9PhysNone },
+          { checked: !!d.q9PhysOther, label: C.q9PhysOther },
         ],
       },
       ...explainNotice('q9PhysExplain'),
-      { type: 'checklist', title: 'Assistive devices currently used', items: deviceItems('q9Uses') },
+      { type: 'checklist', title: `${T.q9C} ${T.checkAll}`, items: deviceItems('q9Uses') },
       ...explainNotice('q9UsesExplain'),
-      { type: 'checklist', title: 'Assistive devices needed but not yet obtained', items: deviceItems('q9Needs') },
+      { type: 'checklist', title: `${T.q9D} ${T.checkAll}`, items: deviceItems('q9Needs') },
       ...explainNotice('q9NeedsExplain'),
     ],
   });
@@ -454,45 +443,45 @@ export function buildPlanAnnualModel(D) {
     blocks: [
       {
         type: 'checklist',
-        title: '10. Advance Directives',
-        items: [{ checked: !!d.q10NoDirectives, label: 'There are NO pre-existing DNR orders or other advance directives.' }],
+        items: [{ checked: !!d.q10NoDirectives, label: numbered(10, T.q10NoDirectives) }],
       },
       ...(d.q10NoDirectives ? [{
         type: 'checklist',
-        title: 'Steps taken to verify',
         items: [
-          { checked: !!d.q10StepResidence, label: "Search of ward's prior and current residence" },
-          { checked: !!d.q10StepSafeDeposit, label: "Inventory of ward's safe deposit box" },
-          { checked: !!d.q10StepInterviewed, label: 'Interviewed family and friends' },
-          { checked: !!d.q10StepMedicalProviders, label: "Requested documents from the ward's medical providers" },
-          { checked: !!d.q10StepAttorney, label: "Requested documents from the ward's attorney" },
+          { checked: !!d.q10StepResidence, label: C.q10StepResidence },
+          { checked: !!d.q10StepSafeDeposit, label: C.q10StepSafeDeposit },
+          { checked: !!d.q10StepInterviewed, label: C.q10StepInterviewed },
+          { checked: !!d.q10StepMedicalProviders, label: C.q10StepMedicalProviders },
+          { checked: !!d.q10StepAttorney, label: C.q10StepAttorney },
         ],
       }] : []),
       {
         type: 'checklist',
-        items: [{ checked: !!d.q10Executed, label: 'The ward executed the following advance directives:' }],
+        items: [{ checked: !!d.q10Executed, label: T.q10Executed }],
       },
       ...(d.q10Executed ? [{
         type: 'checklist',
         items: [
-          { checked: !!d.q10ExecDNR, label: 'Order Not to Resuscitate (DNR), F.S. 401.45(3)' },
-          { checked: !!d.q10ExecHealthcare, label: 'Advance Directive for Healthcare (surrogate, living will, anatomical gift)' },
-          { checked: !!d.q10ExecPOA, label: 'Durable Power of Attorney, F.S. Chapter 709' },
-          { checked: !!d.q10ExecOther, label: `Other${d.q10ExecOtherText ? ' — ' + d.q10ExecOtherText : ''}` },
+          { checked: !!d.q10ExecDNR, label: C.q10ExecDNR },
+          { checked: !!d.q10ExecHealthcare, label: C.q10ExecHealthcare },
+          { checked: !!d.q10ExecPOA, label: C.q10ExecPOA },
+          { checked: !!d.q10ExecOther, label: `${C.q10ExecOther}${d.q10ExecOtherText ? ' ' + d.q10ExecOtherText : ''}` },
         ],
       }] : []),
+      ...(dirs.length ? [{ type: 'notice', title: T.q10ForAny, text: '' }] : []),
       ...(dirs.length ? dirs.map((r, i) => ({
         type: 'key-value-grid',
         title: `Directive ${i + 1}`,
         items: [
-          { label: 'Title of order or directive', value: r.title || '' },
-          { label: 'Date executed / signed', value: dateOrLine(r.dateSigned) },
-          { label: 'Name of person who signed', value: r.signedBy || '' },
-          { label: 'Designated agent(s) / surrogate(s)', value: r.agents || '' },
-          { label: 'Alternate agent(s) / surrogate(s)', value: r.alternates || '' },
-          { label: 'Relationship to the ward', value: r.relationship || '' },
-          { label: 'Contact information', value: r.contact || '' },
-          { label: 'Suspended or revoked by a court?', value: `${r.courtRevoked || ''}${r.orderDate ? ' — ' + fmtDate(r.orderDate) : ''}${r.orderCounty ? ', ' + r.orderCounty : ''}` },
+          { label: DL.title, value: r.title || '' },
+          { label: DL.dateSigned, value: dateOrLine(r.dateSigned) },
+          { label: DL.signedBy, value: r.signedBy || '' },
+          { label: DL.agents, value: r.agents || '' },
+          { label: DL.alternates, value: r.alternates || '' },
+          { label: DL.relationship, value: r.relationship || '' },
+          { label: DL.contact, value: r.contact || '' },
+          { label: DL.courtRevoked, value: r.courtRevoked || '' },
+          ...(r.orderDate || r.orderCounty ? [{ label: DL.orderDate, value: `${r.orderDate ? fmtDate(r.orderDate) : BLANK_DATE_LINE}${r.orderCounty ? ' entered ' + r.orderCounty : ''}` }] : []),
         ],
       })) : []),
     ],
@@ -518,20 +507,20 @@ export function buildPlanAnnualModel(D) {
     blocks: [
       {
         type: 'notice',
-        title: '11. Declaration of Remuneration',
-        text: 'Each guardian must declare any remuneration from any source for services rendered to or on behalf of the ward. Remuneration means any payment or other benefit made directly or indirectly, overtly or covertly, or in cash or in kind to the guardian. F.S. 744.367(3)(a).',
+        title: numbered(11, T.q11),
+        text: '',
       },
       // Milestone 73B (73B-N2): an unanswered question prints neither sworn
       // sentence -- it used to print "I have received the monies … from …"
       // whenever "no remuneration" wasn't ticked.
       ...(d.q11NoRemuneration
-        ? [{ type: 'notice', text: `I, ${d.q11NoRemunerationName || ''}, declare that I have received NO remuneration from any source for services rendered to or on behalf of the ward.` }]
+        ? [{ type: 'notice', text: planAnnualNoRemuneration(d.q11NoRemunerationName || '') }]
         : q11Received
-          ? [{ type: 'notice', text: `I, ${d.q11ReceivedName || ''}, declare that I have received the monies ${q11Money(d.q11Amount)} from ${d.q11From || ''} for services rendered on behalf of the ward.` }]
+          ? [{ type: 'notice', text: planAnnualReceived(d.q11ReceivedName || '', q11Money(d.q11Amount), d.q11From || '') }]
           : []),
       ...(!d.q11NoRemuneration && (q11Received || d.q11SubmittedToCourt) ? [{
         type: 'checklist',
-        items: [{ checked: !!d.q11SubmittedToCourt, label: 'All requests for reimbursement or fees have been submitted to the court for review and approval.' }],
+        items: [{ checked: !!d.q11SubmittedToCourt, label: T.q11Submitted }],
       }] : []),
     ],
   });
@@ -563,23 +552,26 @@ export function buildPlanAnnualModel(D) {
     level: 1,
     pageBreakBefore: true,
     blocks: [
+      // Milestone 73N part 2: the form's preamble on changed capacity prints
+      // above the statements, as the original has it.
+      { type: 'notice', title: T.certTitle, text: T.certPreamble },
       {
         type: 'checklist',
-        title: 'Certification and Signature of Guardian(s)',
+        title: T.certCheckAll,
         items: [
-          { checked: !!d.certIncapacitatedNoCopy, label: 'The ward was declared totally incapacitated and has not been given a copy of this plan.' },
-          { checked: !!d.certMinorNoCopy, label: 'The ward is a minor and has not been given a copy of this plan.' },
-          { checked: !!d.certConsulted, label: "The guardian has consulted with the ward, to the extent reasonable, has honored the ward's wishes, and to the maximum extent possible the plan is in accordance with them." },
-          { checked: !!d.certNoRestriction, label: 'The plan does not restrict the physical liberty of the ward except as necessary to protect the ward and others from serious physical injury, illness, or disease.' },
-          { checked: !!d.certProvidesMedical, label: "The plan provides for the ward's medical care and mental health treatment." },
-          { checked: !!d.certPhysicianAttached, label: "The physician's statement of an examination of the ward no more than 90 days before the beginning of the plan period is attached." },
-          { checked: !!d.certRecognizeRights, label: 'In exercising his or her powers, the guardian shall recognize any rights retained by the ward [F.S. 744.363(6)].' },
+          { checked: !!d.certIncapacitatedNoCopy, label: C.certIncapacitatedNoCopy },
+          { checked: !!d.certMinorNoCopy, label: C.certMinorNoCopy },
+          { checked: !!d.certConsulted, label: C.certConsulted },
+          { checked: !!d.certNoRestriction, label: C.certNoRestriction },
+          { checked: !!d.certProvidesMedical, label: C.certProvidesMedical },
+          { checked: !!d.certPhysicianAttached, label: C.certPhysicianAttached },
+          { checked: !!d.certRecognizeRights, label: C.certRecognizeRights },
         ],
       },
       ...(d.certRightsChangedExplain ? [{ type: 'notice', text: `Explanation for no change in rights: ${d.certRightsChangedExplain}` }] : []),
       {
         type: 'notice',
-        text: 'UNDER PENALTIES OF PERJURY, I declare that I have read and examined the foregoing plan, and the facts alleged are true, to the best of my knowledge and belief.',
+        text: T.perjury,
       },
       makeSigBlock('Guardian', g[0] || {}),
     ],
@@ -615,7 +607,7 @@ export function buildPlanAnnualModel(D) {
     blocks: [
       {
         type: 'notice',
-        text: `The undersigned hereby notifies the court of the filing of the annual guardianship plan for the period ${dateOrLine(d.periodFrom)} through ${dateOrLine(d.periodTo)}. This annual guardianship plan is the representation of the guardian. I have not audited the accompanying annual plan. The undersigned attorney represents that he/she has examined the contents of the annual guardianship plan and that it conforms to the requirements of the Florida Guardianship Law and the standards for plans in ${county} County.`,
+        text: planAnnualAttorneyCertification(dateOrLine(d.periodFrom), dateOrLine(d.periodTo), county),
       },
       {
         type: 'signature-block',

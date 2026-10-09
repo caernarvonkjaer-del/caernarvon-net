@@ -56,7 +56,7 @@ test('question 6 shows the court form\'s four columns, "No" is a stored answer, 
   const dl = clickExport(button, 40_000);
   const text = (await extractPdfText(await readAll(await (await dl).createReadStream()))).replace(/\s+/g, ' ');
   expect(text).toContain('Right to marry No');
-  expect(text).toContain('Right to vote Yes');
+  expect(text).toContain('Right to Vote Yes');
   expect(text).not.toContain('Capable of restoration');
 });
 

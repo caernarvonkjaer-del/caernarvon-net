@@ -20,6 +20,7 @@ import { rowStarted } from '../../core/validation/row-started.js';
 import { withSameAddresses } from '../../core/form/same-address.js';
 import { recipientAddressLines, recipientListed } from '../../core/filing/recipient-shape.js';
 import { noRecipientsLine } from '../../core/validation/service-recipients.js';
+import { ANNUAL_RECEIPTS_CERTIFICATION, annualDeclaration } from '../../core/filing/court-text/accountings.js';
 
 export const DISB_CATS = [
   'Accounting',
@@ -142,7 +143,8 @@ export function buildAnnualAccountingModel(D, options = {}) {
       {
         type: 'notice',
         tag: 'P',
-        text: 'The undersigned guardian certifies that said guardian has obtained a receipt or canceled check for all expenditures and disbursements made on behalf of the ward, which said guardian will preserve along with other substantiating papers for a three (3) year period after discharge.',
+        // Milestone 73N part 2: in full, as the workbook words it.
+        text: ANNUAL_RECEIPTS_CERTIFICATION,
       },
       {
         type: 'table',
@@ -289,7 +291,7 @@ export function buildAnnualAccountingModel(D, options = {}) {
       {
         type: 'notice',
         tag: 'P',
-        text: `UNDER PENALTIES OF PERJURY, I declare that I have read and examined the foregoing return and that, to the best of my knowledge and belief, it constitutes a full and correct account of all the ward's property of which this guardian has control, and is a complete report of all cash and property transactions and of all receipts and any disbursements by me from ${dateOrLine(d.periodFrom)} through ${dateOrLine(d.periodTo)}.`,
+        text: annualDeclaration(dateOrLine(d.periodFrom), dateOrLine(d.periodTo)),
       },
       ...guardianSigBlocks,
     ],

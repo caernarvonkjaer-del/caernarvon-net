@@ -96,6 +96,7 @@ import { withMinusCue } from '../../core/form/amount-codec.js';
 // HTML can't go: a read-only box's value.
 const fmtA=(v)=>withMinusCue(fmtAnnual(v));
 import { GUARDIAN_RELATIONSHIPS } from '../../core/filing/guardian-relationship.js';
+import { ANNUAL_DECLARATION, ANNUAL_RECEIPTS_CERTIFICATION } from '../../core/filing/court-text/accountings.js';
 
 // Milestone 71B: the Part V fields that become required once an attorney is
 // started (and only then) -- the live markers and validateAnnual() share it.
@@ -714,7 +715,7 @@ function pagePart2Annual(){
   const fee=t.auditFee;
   return `<div class="schedule-page">
   <h1>Part II — Guardian Certification &amp; Audit Fee</h1>
-  <div class="attestation-text">The undersigned guardian certifies that said guardian has obtained a receipt or canceled check for all expenditures and disbursements made on behalf of the ward, which said guardian will preserve along with other substantiating papers for a three (3) year period after discharge and will upon request make available for inspection as the court may order. (As per F.S. 744.3678 (3).)</div>
+  <div class="attestation-text">${ANNUAL_RECEIPTS_CERTIFICATION}</div>
   <div class="summary-box">
     <h2 class="subsection-heading">Audit Fee Schedule — Annual Accountings per FS 744.3678</h2>
     <div class="summary-line"><span>Estates with value of $25,000 or less</span><span>$20.00</span></div>
@@ -764,7 +765,7 @@ function pagePart3Annual(){
   return `<div class="schedule-page">
   <h1>Part III — Guardian(s) Signature &amp; Declaration</h1>
   ${preparerNoteHTML()}
-  <div class="attestation-text">UNDER PENALTIES OF PERJURY, I declare that I have read and examined the foregoing return and that, to the best of my knowledge and belief, it constitutes a full and correct account of all the ward's property of which this guardian has control, and is a complete report of all cash and property transactions and of all receipts and any disbursements by me from <strong>${displayDate(d.periodFrom)||'—'}</strong> through <strong>${displayDate(d.periodTo)||'—'}</strong>.</div>
+  <div class="attestation-text">${ANNUAL_DECLARATION.before} <strong>${displayDate(d.periodFrom)||'—'}</strong> through <strong>${displayDate(d.periodTo)||'—'}</strong> ${ANNUAL_DECLARATION.after}</div>
   <div class="row g-3 card-grid-2col mb-3">${cards}</div>
   ${addCoBtn}
   ${pageNavAnnual('/p2','/p4')}

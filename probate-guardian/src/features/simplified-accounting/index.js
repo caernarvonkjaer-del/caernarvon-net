@@ -80,6 +80,7 @@ import { navigate } from '../../core/navigation/router.js';
 import { afterAdd, afterRemove, onChange, rowTarget } from '../../core/navigation/draw-reason.js';
 import { commitModelChange } from '../../core/model-change.js';
 import { collectSimplifiedIssues, RECIPIENT_STARTED_FIELDS } from '../../core/validation/engines/simplified.js';
+import { ATTORNEY_NOT_AUDITED } from '../../core/filing/court-text/accountings.js';
 // Milestone 57B: carried verbatim from MILESTONE-57-PROPOSAL.md section 57B.
 // The wording is load bearing (section 8 #8). Do not paraphrase or re-voice it.
 // Milestone 74F: the certificate's question is the one constant (service-recipients.js).
@@ -619,7 +620,7 @@ function pagePart5(){
     ${isAttorneyStarted(d,'simplified')?'':`<div class="alert alert-secondary" role="status" data-no-attorney-notice>
       <strong>No attorney is entered</strong>, so this part is not required: a guardian need not be represented by an attorney to file a simplified annual accounting (§744.3679(3), Florida Statutes). The filed PDF prints this attestation with the attorney's signature block blank, as the Clerk's form does. If an attorney represents the guardian, enter them below and this part becomes required.
     </div>`}
-    <div class="attestation-text">The undersigned Attorney hereby notifies the Court of the filing of the simplified annual accounting of the Guardian. This simplified annual accounting is the representation of the guardian. The undersigned attorney represents that he/she has examined the contents of the accounting and that it conforms to the requirements of the Florida Guardianship Law.</div>
+    <div class="attestation-text">The undersigned Attorney hereby notifies the Court of the filing of the simplified annual accounting of the Guardian. This simplified annual accounting is the representation of the guardian. ${ATTORNEY_NOT_AUDITED} The undersigned attorney represents that he/she has examined the contents of the accounting and that it conforms to the requirements of the Florida Guardianship Law.</div>
     <div class="row g-3 card-grid-2col">
       <div class="col-12 col-lg-6">
         <div class="entry-card mb-0 h-100">

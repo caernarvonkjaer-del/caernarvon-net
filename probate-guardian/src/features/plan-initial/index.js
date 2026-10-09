@@ -61,6 +61,13 @@ import { renderScheduleDocsSection } from '../../core/filing/schedule-docs.js';
 import { setPath } from '../../core/form/paths.js';
 import { PLAN_INITIAL_EXPLANATIONS, explanationShown } from '../../core/filing/plan-explanations.js';
 import { collectPlanInitialIssues } from '../../core/validation/engines/plan-initial.js';
+import { PLAN_INITIAL_BENEFITS, PLAN_INITIAL_CHOICES as C, PLAN_INITIAL_DEVICES, PLAN_INITIAL_TEXT as T, numbered, planInitialAttorneyCertification } from '../../core/filing/court-text/plan-initial.js';
+import { displayDate } from '../../core/form/date-parser.js';
+// Milestone 73N part 2: the court's wording, by field, for the boxes built from shared lists.
+const DEVICE=Object.fromEntries(PLAN_INITIAL_DEVICES);
+const BENEFIT=Object.fromEntries(PLAN_INITIAL_BENEFITS);
+/** A lettered sub-question without its letter: the screen shows "Question B" above it. */
+const unlettered=(text)=>text.replace(/^[A-F]\. /,'');
 // Initial Guardianship Plan — the fourth feature extraction (Milestone 5,
 // Phases A and B of INDEX-SPLIT-PLAN.md's migration sequence: data/
 // validation/pages/nav, and print/PDF export). Loaded only when one of its pages
@@ -340,7 +347,7 @@ function pagePlanICover(){
         </div>
       </div>
     </div>
-    ${txtP('q1PreexistingDirectives','List any preexisting orders not to resuscitate or preexisting advance directives, the date signed, whether suspended by the court, and the steps taken to identify and locate them. Attach a copy of any directives to the plan.',d.q1PreexistingDirectives,5)}
+    ${txtP('q1PreexistingDirectives',numbered(1,T.q1),d.q1PreexistingDirectives,5)}
     ${renderScheduleDocsSection('planICover')}
     ${pageNavS(null,'/summary')}
   </div>`;
@@ -351,23 +358,23 @@ function pagePlanISettingMedical(){
   const cb=(id,label,route='')=>chkP(id,label,d[id],route);
   return `<div class="schedule-page">
     <h1>2–3. Residential Setting &amp; Medical Services</h1>
-    ${planQ('2','The guardian states the place and kind of residential setting best suited for the needs of the Ward is:'+REQ_MARK,
+    ${planQ('2',T.q2+REQ_MARK,
       // Milestone 68E: a checkbox list, as on the court's form (page 2); Other
       // reveals its explanation on the click (67F).
       planCheckGroup('',
-        Q2_OPTIONS.map((o)=>renderCheckboxField({ path:o.key, label:o.label, checked:!!d[o.key], id:o.key, route:o.key==='q2Other'?'/p2':'' })).join(''),
+        Q2_OPTIONS.map((o)=>renderCheckboxField({ path:o.key, label:C[o.key], checked:!!d[o.key], id:o.key, route:o.key==='q2Other'?'/p2':'' })).join(''),
         'q2Explain',d.q2Explain,explanationShown(PLAN_INITIAL_EXPLANATIONS,d,'q2Explain')))}
-    ${planQ('3','For the plan period, the guardian proposes the following as to the provision of medical services for the Ward:'+REQ_MARK,
+    ${planQ('3',T.q3+REQ_MARK,
       planCheckGroup('',
-        cb('q3MedPrimary','Routine examination by primary care physician')
-        +cb('q3MedDentist','Routine examination by dentist')
-        +cb('q3MedOphthalmologist','Routine examination by Ophthalmologist')
-        +cb('q3MedSpecialist','Routine examination by Specialist','/p2')
-        +cb('q3MedPT','Physical Therapy')
-        +cb('q3MedST','Speech Therapy')
-        +cb('q3MedOT','Occupational Therapy')
-        +cb('q3MedWardDecides','The ward retains the right to make their own decision')
-        +cb('q3MedOther','Other','/p2'),
+        cb('q3MedPrimary',C.q3MedPrimary)
+        +cb('q3MedDentist',C.q3MedDentist)
+        +cb('q3MedOphthalmologist',C.q3MedOphthalmologist)
+        +cb('q3MedSpecialist',C.q3MedSpecialist,'/p2')
+        +cb('q3MedPT',C.q3MedPT)
+        +cb('q3MedST',C.q3MedST)
+        +cb('q3MedOT',C.q3MedOT)
+        +cb('q3MedWardDecides',C.q3MedWardDecides)
+        +cb('q3MedOther',C.q3MedOther,'/p2'),
         'q3MedExplain',d.q3MedExplain,explanationShown(PLAN_INITIAL_EXPLANATIONS,d,'q3MedExplain'))
       +(d.q3MedSpecialist?`<div class="plan-conditional mt-2">${inpS('q3MedSpecialistArea','Specialist — area of specialty',d.q3MedSpecialistArea)}</div>`:''))}
     ${renderScheduleDocsSection('planISettingMedical')}
@@ -379,15 +386,15 @@ function pagePlanIMentalPersonal(){
   const d=getD();
   return `<div class="schedule-page">
     <h1>4–5. Mental Health &amp; Personal Care</h1>
-    ${planQ('4','For the plan period, the guardian proposes the following as to the provision of mental health services for the Ward:'+REQ_MARK,
+    ${planQ('4',T.q4+REQ_MARK,
       // Milestone 68E: a checkbox list, as on the court's form; None is
       // exclusive with the other boxes and, like Other, reveals the explanation.
       planCheckGroup('',
-        Q4_OPTIONS.map((o)=>renderCheckboxField({ path:o.key, label:o.label, checked:!!d[o.key], id:o.key, route:(o.key==='q4Other'||o.key==='q4None')?'/p3':'', exclusiveGroup:'q4', exclusiveRole:o.key==='q4None'?'none':'member' })).join(''),
+        Q4_OPTIONS.map((o)=>renderCheckboxField({ path:o.key, label:C[o.key], checked:!!d[o.key], id:o.key, route:(o.key==='q4Other'||o.key==='q4None')?'/p3':'', exclusiveGroup:'q4', exclusiveRole:o.key==='q4None'?'none':'member' })).join(''),
         'q4Explain',d.q4Explain,explanationShown(PLAN_INITIAL_EXPLANATIONS,d,'q4Explain')))}
-    ${planQ('5','For the plan period, the guardian proposes the following as to the provision of personal care of the ward, such as bathing, grooming and feeding:'+REQ_MARK,
+    ${planQ('5',T.q5+REQ_MARK,
       planCheckGroup('',
-        Q5_OPTIONS.map((o)=>renderCheckboxField({ path:o.key, label:o.label, checked:!!d[o.key], id:o.key, route:o.key==='q5Other'?'/p3':'' })).join(''),
+        Q5_OPTIONS.map((o)=>renderCheckboxField({ path:o.key, label:C[o.key], checked:!!d[o.key], id:o.key, route:o.key==='q5Other'?'/p3':'' })).join(''),
         'q5Explain',d.q5Explain,explanationShown(PLAN_INITIAL_EXPLANATIONS,d,'q5Explain')))}
     ${renderScheduleDocsSection('planIMentalPersonal')}
     ${pageNavS('/p2','/p4')}
@@ -399,31 +406,31 @@ function pagePlanISocialBenefits(){
   const cb=(id,label,route='')=>chkP(id,label,d[id],route);
   return `<div class="schedule-page">
     <h1>6–7. Socialization &amp; Benefits</h1>
-    ${planQ('6','For the plan period, the guardian proposes the following to provide for socialization and/or recreational services for the Ward (e.g.: arranging friends and family to visit, encourage participation in facility or day program activities):'+REQ_MARK,
+    ${planQ('6',T.q6+REQ_MARK,
       planCheckGroup('',
-        cb('q6CareFacility','Care Facility')
-        +cb('q6NursesAides','Nurses and Aides')
-        +cb('q6FamilyFriends','Family and Friends')
-        +cb('q6DayProgram','Day Program')
-        +cb('q6WardDecides','The Ward retains the right to make their own decision')
-        +cb('q6Other','Other','/p4'),
+        cb('q6CareFacility',C.q6CareFacility)
+        +cb('q6NursesAides',C.q6NursesAides)
+        +cb('q6FamilyFriends',C.q6FamilyFriends)
+        +cb('q6DayProgram',C.q6DayProgram)
+        +cb('q6WardDecides',C.q6WardDecides)
+        +cb('q6Other',C.q6Other,'/p4'),
         'q6Explain',d.q6Explain,explanationShown(PLAN_INITIAL_EXPLANATIONS,d,'q6Explain')))}
-    ${planQ('7','The Ward has the following health insurance, accident insurance, private benefits, or governmental benefits received to meet any part of the costs of medical, mental health or related services:',
+    ${planQ('7',T.q7,
       planCheckGroup('',
-        yesNoCheckboxS('q7SocialSecurity','Social Security',d.q7SocialSecurity)
-        +yesNoCheckboxS('q7Ssdi','Social Security Disability Income (SSDI)',d.q7Ssdi)
-        +yesNoCheckboxS('q7Hmo','Health Maintenance Organization (HMO)',d.q7Hmo)
-        +yesNoCheckboxS('q7Ssi','Supplemental Security Income (SSI)',d.q7Ssi)
-        +yesNoCheckboxS('q7StateSupplement','Optional State Supplement',d.q7StateSupplement)
-        +yesNoCheckboxS('q7InstitutionalCare','Institutional Care Program',d.q7InstitutionalCare)
-        +yesNoCheckboxS('q7SupplementalIns','Supplemental Insurance',d.q7SupplementalIns)
-        +yesNoCheckboxS('q7Pension','Pension',d.q7Pension)
-        +yesNoCheckboxS('q7Medicare','Medicare',d.q7Medicare)
-        +yesNoCheckboxS('q7Medicaid','Medicaid',d.q7Medicaid)
-        +yesNoCheckboxS('q7Va','VA',d.q7Va)
-        +yesNoCheckboxS('q7Trusts','Trusts (explain type and how it covers costs below)',d.q7Trusts,false,'/p4')
-        +yesNoCheckboxS('q7PendingBenefits','Pending Benefits (explain why not yet receiving, or date applied, below)',d.q7PendingBenefits,false,'/p4')
-        +cb('q7Other','Other','/p4'),
+        yesNoCheckboxS('q7SocialSecurity',BENEFIT.q7SocialSecurity,d.q7SocialSecurity)
+        +yesNoCheckboxS('q7Ssdi',BENEFIT.q7Ssdi,d.q7Ssdi)
+        +yesNoCheckboxS('q7Hmo',BENEFIT.q7Hmo,d.q7Hmo)
+        +yesNoCheckboxS('q7Ssi',BENEFIT.q7Ssi,d.q7Ssi)
+        +yesNoCheckboxS('q7StateSupplement',BENEFIT.q7StateSupplement,d.q7StateSupplement)
+        +yesNoCheckboxS('q7InstitutionalCare',BENEFIT.q7InstitutionalCare,d.q7InstitutionalCare)
+        +yesNoCheckboxS('q7SupplementalIns',BENEFIT.q7SupplementalIns,d.q7SupplementalIns)
+        +yesNoCheckboxS('q7Pension',BENEFIT.q7Pension,d.q7Pension)
+        +yesNoCheckboxS('q7Medicare',BENEFIT.q7Medicare,d.q7Medicare)
+        +yesNoCheckboxS('q7Medicaid',BENEFIT.q7Medicaid,d.q7Medicaid)
+        +yesNoCheckboxS('q7Va',BENEFIT.q7Va,d.q7Va)
+        +yesNoCheckboxS('q7Trusts',BENEFIT.q7Trusts,d.q7Trusts,false,'/p4')
+        +yesNoCheckboxS('q7PendingBenefits',BENEFIT.q7PendingBenefits,d.q7PendingBenefits,false,'/p4')
+        +cb('q7Other',C.q7Other,'/p4'),
         // Milestone 40C-H: same predicate as validatePlanInitial() and
         // computeNavChecks() so all three agree. Milestone 73D moved it to
         // plan-explanations.js, which the PDF also reads.
@@ -456,7 +463,7 @@ function pagePlanIProviders(){
     </div></div>`;
   }).join('');
   return `<div class="schedule-page">
-    <h1>9. Examinations to Determine Treatment Needs</h1>
+    <h1>${numbered(9,T.q9)}</h1>
     <div class="schedule-instructions">List every physical and/or mental examination the guardian will secure or has secured to determine the Ward's medical and mental health treatment needs.</div>
     ${rows?`<div class="row g-3 schedule-entry-grid">${rows}</div>`:`<div class="schedule-empty">${ic('folder',17)}<span>No providers listed yet.</span></div>`}
     <button class="btn btn-outline-primary btn-sm mb-2" data-form-action="add-plan-row" data-collection="q9Providers" data-row-type="initialProvider" data-route="/p5">+ Add Provider</button>
@@ -479,6 +486,7 @@ function pagePlanIADLs(){
   }).join('');
   return `<div class="schedule-page">
     <h1>10A. Activities of Daily Living</h1>
+    <h2 class="plan-question-text">${numbered(10,T.q10)} ${T.q10A}</h2>
     <div class="schedule-instructions">To assist the Court with review of the initial plan, rate the ability of the Ward to engage in each activity of daily living honestly — these ratings become the baseline that future Annual Plans are compared against.</div>
     <div class="table-responsive"><table class="table plan-adl-table"><caption>Rate every activity${REQ_MARK}</caption><thead><tr><th style="width:45%;">Activity</th><th>Rating</th></tr></thead><tbody>${rows}</tbody></table></div>
     ${renderScheduleDocsSection('planIADLs')}
@@ -491,40 +499,40 @@ function pagePlanIDisabilities(){
   const cb=(id,label,route='')=>chkP(id,label,d[id],route);
   return `<div class="schedule-page">
     <h1>10B–D. Disabilities &amp; Assistive Devices</h1>
-    ${planQ('B','The mental disabilities of the Ward are:',
+    ${planQ('B',unlettered(T.q10B),
       planCheckGroup('',
-        cb('mentalAlzheimers',"Alzheimer's type of dementia")
-        +cb('mentalAutism','Autism Spectrum Disorders')
-        +cb('mentalClosedHeadInjury','Closed Head Injury')
-        +cb('mentalDementia','Dementia')
-        +cb('mentalDepression','Depression')
-        +cb('mentalDevelopmental','Developmental Disabilities')
-        +cb('mentalSubstance','Induced by substance abuse')
-        +cb('mentalSchizophrenia','Schizophrenia or related disorders')
-        +cb('mentalOther','Other','/p7'),
+        cb('mentalAlzheimers',C.mentalAlzheimers)
+        +cb('mentalAutism',C.mentalAutism)
+        +cb('mentalClosedHeadInjury',C.mentalClosedHeadInjury)
+        +cb('mentalDementia',C.mentalDementia)
+        +cb('mentalDepression',C.mentalDepression)
+        +cb('mentalDevelopmental',C.mentalDevelopmental)
+        +cb('mentalSubstance',C.mentalSubstance)
+        +cb('mentalSchizophrenia',C.mentalSchizophrenia)
+        +cb('mentalOther',C.mentalOther,'/p7'),
         'mentalExplain',d.mentalExplain,explanationShown(PLAN_INITIAL_EXPLANATIONS,d,'mentalExplain')))}
-    ${planQ('C','The physical disabilities of the Ward are:'+REQ_MARK,
+    ${planQ('C',unlettered(T.q10C)+REQ_MARK,
       planCheckGroup('',
-        cb('physMobility','Mobility')
-        +cb('physBlindness','Blindness')
-        +cb('physDeafness','Deafness')
-        +cb('physDiabetic','Diabetic')
-        +cb('physParkinsons',"Parkinson's disease")
-        +cb('physArthritis','Severe arthritis')
-        +cb('physOther','Other','/p7'),
+        cb('physMobility',C.physMobility)
+        +cb('physBlindness',C.physBlindness)
+        +cb('physDeafness',C.physDeafness)
+        +cb('physDiabetic',C.physDiabetic)
+        +cb('physParkinsons',C.physParkinsons)
+        +cb('physArthritis',C.physArthritis)
+        +cb('physOther',C.physOther,'/p7'),
         'physExplain',d.physExplain,explanationShown(PLAN_INITIAL_EXPLANATIONS,d,'physExplain')))}
-    ${planQ('D','The assistive devices currently used by the Ward are:',
+    ${planQ('D',unlettered(T.q10D),
       planCheckGroup('',
         // Milestone 68F: "None" clears the devices and a device clears "None".
-        exclusiveBox(d,'usesDentures','Dentures','uses')
-        +exclusiveBox(d,'usesHearingAid','Hearing Aid','uses')
-        +exclusiveBox(d,'usesWheelchair','Wheelchair','uses')
-        +exclusiveBox(d,'usesWalker','Walker/Cane','uses')
-        +exclusiveBox(d,'usesCrutches','Crutches','uses')
-        +exclusiveBox(d,'usesProsthetics','Prosthetics','uses')
-        +exclusiveBox(d,'usesGlasses','Glasses','uses')
-        +exclusiveBox(d,'usesNone','None','uses','none')
-        +exclusiveBox(d,'usesOther','Other','uses','member','/p7'),
+        exclusiveBox(d,'usesDentures',DEVICE.Dentures,'uses')
+        +exclusiveBox(d,'usesHearingAid',DEVICE.HearingAid,'uses')
+        +exclusiveBox(d,'usesWheelchair',DEVICE.Wheelchair,'uses')
+        +exclusiveBox(d,'usesWalker',DEVICE.Walker,'uses')
+        +exclusiveBox(d,'usesCrutches',DEVICE.Crutches,'uses')
+        +exclusiveBox(d,'usesProsthetics',DEVICE.Prosthetics,'uses')
+        +exclusiveBox(d,'usesGlasses',DEVICE.Glasses,'uses')
+        +exclusiveBox(d,'usesNone',DEVICE.None,'uses','none')
+        +exclusiveBox(d,'usesOther',DEVICE.Other,'uses','member','/p7'),
         'usesExplain',d.usesExplain,explanationShown(PLAN_INITIAL_EXPLANATIONS,d,'usesExplain')))}
     ${renderScheduleDocsSection('planIDisabilities')}
     ${pageNavS('/p6','/p8')}
@@ -558,16 +566,16 @@ function pagePlanIDirectives(){
   }).join('');
   return `<div class="schedule-page">
     <h1>11. Advance Directives</h1>
-    ${planQ('11a','There are NO pre-existing orders Not To Resuscitate ("DNR") or any other advance directive, and I have taken the following steps to verify there are none:',
+    ${planQ('11a',T.q11NoDirectives,
       chkP('q11NoDirectives','There are no pre-existing orders or advance directives',d.q11NoDirectives)
       +planCheckGroup('',
-        cb('q11StepResidence',"Search of ward's prior and current residence")
-        +cb('q11StepSafeDeposit',"Inventory of ward's safe deposit box")
-        +cb('q11StepInterviewed','Interviewed family and friends')
-        +cb('q11StepMedicalProviders',"Requested documents from the ward's medical providers")
-        +cb('q11StepAttorney',"Requested documents from the ward's attorney"),
+        cb('q11StepResidence',C.q11StepResidence)
+        +cb('q11StepSafeDeposit',C.q11StepSafeDeposit)
+        +cb('q11StepInterviewed',C.q11StepInterviewed)
+        +cb('q11StepMedicalProviders',C.q11StepMedicalProviders)
+        +cb('q11StepAttorney',C.q11StepAttorney),
         null,null,false))}
-    ${planQ('11b','The ward executed the following advance directives:',
+    ${planQ('11b',T.q11Executed,
       // Milestone 37-4: a plain chkP() checkbox doesn't re-render this page
       // on change (no data-form-route), which is fine for most checkboxes
       // here but not this one -- the type controls, cards, and Add Directive
@@ -581,28 +589,28 @@ function pagePlanIDirectives(){
         <label class="form-check-label" for="q11Executed">The ward executed advance directives (complete below)</label>
       </div>`
       +(d.q11Executed?planCheckGroup('',
-        cb('q11ExecDNR','Order Not to Resuscitate, F.S. 401.45(3) ("DNR")')
-        +cb('q11ExecHealthcare','Advance Directive for Healthcare (healthcare surrogate, living will, or anatomical gift)')
-        +cb('q11ExecPOA','Durable Power of Attorney, F.S. Chapter 709')
-        +cb('q11ExecOther','Other','/p8'),
+        cb('q11ExecDNR',C.q11ExecDNR)
+        +cb('q11ExecHealthcare',C.q11ExecHealthcare)
+        +cb('q11ExecPOA',C.q11ExecPOA)
+        +cb('q11ExecOther',C.q11ExecOther,'/p8'),
         'q11ExecOtherText',d.q11ExecOtherText,explanationShown(PLAN_INITIAL_EXPLANATIONS,d,'q11ExecOtherText'),'Describe the "Other" directive.')
       +(dirs?`<div class="row g-3 schedule-entry-grid">${dirs}</div>`:'')
       +`<button class="btn btn-outline-primary btn-sm mt-2" data-form-action="add-plan-row" data-collection="q11Directives" data-row-type="directive" data-route="/p8">+ Add Directive</button>`
       :''))}
-    ${planQ('E','The assistive devices needed by the Ward (devices needed but not currently owned) are:',
+    ${planQ('E',unlettered(T.q10E),
       planCheckGroup('',
         // Milestone 68F: "None" clears the devices and a device clears "None".
-        exclusiveBox(d,'needsDentures','Dentures','needs')
-        +exclusiveBox(d,'needsHearingAid','Hearing Aid','needs')
-        +exclusiveBox(d,'needsWheelchair','Wheelchair','needs')
-        +exclusiveBox(d,'needsWalker','Walker/Cane','needs')
-        +exclusiveBox(d,'needsCrutches','Crutches','needs')
-        +exclusiveBox(d,'needsProsthetics','Prosthetics','needs')
-        +exclusiveBox(d,'needsGlasses','Glasses','needs')
-        +exclusiveBox(d,'needsNone','None','needs','none')
-        +exclusiveBox(d,'needsOther','Other','needs','member','/p8'),
+        exclusiveBox(d,'needsDentures',DEVICE.Dentures,'needs')
+        +exclusiveBox(d,'needsHearingAid',DEVICE.HearingAid,'needs')
+        +exclusiveBox(d,'needsWheelchair',DEVICE.Wheelchair,'needs')
+        +exclusiveBox(d,'needsWalker',DEVICE.Walker,'needs')
+        +exclusiveBox(d,'needsCrutches',DEVICE.Crutches,'needs')
+        +exclusiveBox(d,'needsProsthetics',DEVICE.Prosthetics,'needs')
+        +exclusiveBox(d,'needsGlasses',DEVICE.Glasses,'needs')
+        +exclusiveBox(d,'needsNone',DEVICE.None,'needs','none')
+        +exclusiveBox(d,'needsOther',DEVICE.Other,'needs','member','/p8'),
         'needsExplain',d.needsExplain,explanationShown(PLAN_INITIAL_EXPLANATIONS,d,'needsExplain')))}
-    ${planQ('F','Are the recommendations of the examining committee incorporated into this plan?',
+    ${planQ('F',unlettered(T.q10F),
       yesNoCheckboxS('committeeIncorporated','Recommendations of the examining committee are incorporated into this plan',d.committeeIncorporated,true,'/p8')
       +(explanationShown(PLAN_INITIAL_EXPLANATIONS,d,'committeeExplain')?`<div class="plan-conditional mt-2">${txtP('committeeExplain','Explanation',d.committeeExplain,3)}</div>`:''))}
     ${renderScheduleDocsSection('planIDirectives')}
@@ -636,18 +644,18 @@ function pagePlanISignatures(){
     </div></div>`;
   };
   return `<div class="schedule-page">
-    <h1>Certification and Signature of Guardian(s)</h1>
+    <h1>${T.certTitle}</h1>
   ${preparerNoteHTML()}
-    <div class="schedule-instructions">If the Ward's ability to exercise rights has changed since the Order Determining Capacity and Appointing Guardian, the guardian must file a Petition to Remove or Petition to Restore Rights, as appropriate.</div>
-    ${planCheckGroup('Check all that apply:',
-      cb('certIncapacitatedNoCopy','The Ward was declared totally incapacitated and has not been given a copy of this plan')
-      +cb('certMinorNoCopy','The Ward is a minor under the age of 14 and has not been given a copy of this plan')
-      +cb('certConsulted',"The guardian has consulted with the Ward, to the extent reasonable, has honored the Ward's wishes, and to the maximum extent possible the plan is in accordance with the Ward's wishes or consistent with the rights retained by the Ward")
-      +cb('certRecognizeRights','In exercising his or her powers, the guardian shall recognize any rights retained by the ward (F.S. 744.363(6))')
-      +cb('certNoRestriction','The plan does not restrict the physical liberty of the Ward except as necessary to protect the Ward and others from serious physical injury, illness, or disease')
-      +cb('certProvidesCare',"The plan provides for the Ward's medical care and mental health treatment"),
+    <div class="schedule-instructions">${T.certPreamble}</div>
+    ${planCheckGroup(T.certCheckAll,
+      cb('certIncapacitatedNoCopy',C.certIncapacitatedNoCopy)
+      +cb('certMinorNoCopy',C.certMinorNoCopy)
+      +cb('certConsulted',C.certConsulted)
+      +cb('certRecognizeRights',C.certRecognizeRights)
+      +cb('certNoRestriction',C.certNoRestriction)
+      +cb('certProvidesCare',C.certProvidesCare),
       null,null,false)}
-    <p class="mt-2 mb-3" style="font-size:.85rem;color:var(--ink-3);">Under penalties of perjury, each signing guardian declares they have read and examined the foregoing plan, and the facts alleged are true, to the best of their knowledge and belief.</p>
+    <div class="attestation-text mt-2 mb-3">${T.perjury}</div>
     <div class="row g-3 card-grid-2col mb-4">
       ${normalizePlanGuardians(d).map((_,i)=>g(i,i?'Co-Guardian':'Guardian')).join('')}
     </div>
@@ -661,9 +669,9 @@ function pagePlanISignatures(){
 function pagePlanIAttorney(){
   const d=getD();
   return `<div class="schedule-page">
-    <h1>Certification and Signature of Guardian's Attorney</h1>
+    <h1>${T.attorneyTitle}</h1>
   ${preparerNoteHTML()}
-    <div class="schedule-instructions">The undersigned notifies the Court of the filing of the initial guardianship plan for the stated period. This is the representation of the guardian; the attorney has not audited the accompanying plan, but represents that they have examined its contents and that it conforms to the requirements of Florida Guardianship Law and the standards for plans in the selected county.</div>
+    <div class="attestation-text mb-3">${esc(planInitialAttorneyCertification(displayDate(d.periodFrom)||'—',displayDate(d.periodTo)||'—',d.county||'—'))}</div>
     <div class="row g-3 card-grid-2col mb-3">
       <div class="col-12 col-lg-6">
         <div class="entry-card mb-0 h-100">

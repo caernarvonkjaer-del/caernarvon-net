@@ -124,9 +124,11 @@ describe('the Annual family\'s PDF', () => {
   test('a blank period prints a line in every sentence and labelled field; a filled one MM/DD/YYYY', () => {
     const blank = text(m.annual.buildAnnualAccountingModel(filing({ periodFrom: '', periodTo: '' })));
     expect(blank).not.toMatch(/for the period\s+through \./);
-    expect(blank).toContain(`from ${BLANK_DATE_LINE} through ${BLANK_DATE_LINE}.`);
+    // Milestone 73N part 2: the declaration continues past the period, as the
+    // workbook's does ("... and includes a statement of the ward's assets").
+    expect(blank).toContain(`from ${BLANK_DATE_LINE} through ${BLANK_DATE_LINE} and includes a statement`);
     expect(blank).toContain(`From: ${BLANK_DATE_LINE}   To: ${BLANK_DATE_LINE}`);
-    expect(text(m.annual.buildAnnualAccountingModel(filing()))).toContain('from 01/01/2026 through 12/31/2026.');
+    expect(text(m.annual.buildAnnualAccountingModel(filing()))).toContain('from 01/01/2026 through 12/31/2026 and includes a statement');
   });
 
   test('a blank remuneration amount prints blank, not $0.00', () => {
@@ -169,8 +171,9 @@ describe('the Inventory\'s PDF', () => {
 describe('the Plans\' PDFs', () => {
   test('Annual Plan: Q11 prints as currency (it printed "1259.59"); blank, a line', () => {
     const base = { q11ReceivedName: 'Pat', q11From: 'the estate' };
-    expect(text(m.planAnnual.buildPlanAnnualModel({ ...base, q11Amount: 1259.59 }))).toContain('I have received the monies $1,259.59 from the estate');
-    expect(text(m.planAnnual.buildPlanAnnualModel({ ...base, q11Amount: '' }))).toContain(`I have received the monies ${BLANK_DATE_LINE} from the estate`);
+    // Milestone 73N part 2: the court's "the monies of $___".
+    expect(text(m.planAnnual.buildPlanAnnualModel({ ...base, q11Amount: 1259.59 }))).toContain('I have received the monies of $1,259.59 from the estate');
+    expect(text(m.planAnnual.buildPlanAnnualModel({ ...base, q11Amount: '' }))).toContain(`I have received the monies of ${BLANK_DATE_LINE} from the estate`);
   });
 
   test('each Plan\'s period prints a line when blank, MM/DD/YYYY when filled', () => {

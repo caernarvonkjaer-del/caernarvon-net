@@ -513,6 +513,7 @@ export async function generateCourtFormPdf(model, options = {}) {
     'key-value-grid': 20,      // one label/value row
     checklist: 20,             // one checklist line
     notice: 14,                // one line of body text
+    question: 26,              // the question's first line and the answer's
     'signature-block': 20,     // the role line
     'supporting-documents': 20,
   };
@@ -1166,6 +1167,74 @@ export async function generateCourtFormPdf(model, options = {}) {
           curY += rowHeight;
         }
         curY += 8;
+      }
+
+      else if (block.type === 'question') {
+        // Milestone 73N part 2: a question printed as the court's forms print
+        // it -- its full text as a heading across the page, the answer beneath.
+        // In a key-value grid's 98pt label column the Simplified Annual Plan's
+        // Question 9 would be sixteen lines tall. A blank answer prints a line
+        // to write on, as the original does; a long one continues onto the next
+        // page, one line at a time.
+        const QUESTION_SIZE = 9;
+        const ANSWER_SIZE = 9;
+        const ANSWER_LINE_H = ANSWER_SIZE * 1.35;
+        const ANSWER_INDENT = 12;
+        const questionLines = wrapTitle(block.question, QUESTION_SIZE);
+        const questionHeight = 12 + extraLinesHeight(questionLines, QUESTION_SIZE) + 2;
+        const answerText = String(block.answer ?? '').trim();
+        doc.setFont('PGSans', 'normal');
+        doc.setFontSize(ANSWER_SIZE);
+        const answerLines = answerText ? doc.splitTextToSize(answerText, contentWidth - ANSWER_INDENT) : [];
+        // The question never stands alone at a page's foot: it keeps its
+        // answer's first line (or the blank line) with it.
+        checkPageSpace(questionHeight + ANSWER_LINE_H + 4, sec.title);
+
+        const questionNode = structureTree.addStructureElement({
+          tag: subHTag,
+          title: String(block.question || ''),
+          pageNumber: pageNum,
+          isLeaf: true,
+          parent: partNode,
+        });
+        writeMarkedContentStart(doc, subHTag, questionNode.mcid);
+        doc.setFont('PGSans', 'bold');
+        doc.setFontSize(QUESTION_SIZE);
+        doc.setTextColor(17, 24, 39);
+        doc.text(questionLines, margin, curY + 10, { lineHeightFactor: TITLE_LINE_FACTOR });
+        writeMarkedContentEnd(doc);
+        curY += questionHeight;
+
+        if (!answerLines.length) {
+          writeArtifactStart(doc, 'Layout');
+          doc.setDrawColor(120, 130, 145);
+          doc.setLineWidth(0.5);
+          doc.line(margin + ANSWER_INDENT, curY + ANSWER_LINE_H, pageWidth - margin, curY + ANSWER_LINE_H);
+          writeArtifactEnd(doc);
+          curY += ANSWER_LINE_H + 8;
+        } else {
+          let at = 0;
+          while (at < answerLines.length) {
+            const room = Math.max(1, Math.floor((pageBottom - curY - 4) / ANSWER_LINE_H));
+            const chunk = answerLines.slice(at, at + room);
+            const answerNode = structureTree.addStructureElement({
+              tag: 'P',
+              pageNumber: pageNum,
+              isLeaf: true,
+              parent: partNode,
+            });
+            writeMarkedContentStart(doc, 'P', answerNode.mcid);
+            doc.setFont('PGSans', 'normal');
+            doc.setFontSize(ANSWER_SIZE);
+            doc.setTextColor(30, 35, 45);
+            doc.text(chunk, margin + ANSWER_INDENT, curY + ANSWER_SIZE, { lineHeightFactor: 1.35 });
+            writeMarkedContentEnd(doc);
+            curY += chunk.length * ANSWER_LINE_H;
+            at += chunk.length;
+            if (at < answerLines.length) startNewPage(sec.title);
+          }
+          curY += 8;
+        }
       }
 
       else if (block.type === 'checklist') {

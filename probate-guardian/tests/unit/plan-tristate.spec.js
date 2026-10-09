@@ -46,9 +46,12 @@ describe('Plan tri-state migration', () => {
 
 describe('Plan tri-state PDF output', () => {
   test('renders explicit legacy No values rather than blanking them', () => {
-    const simplified = gridValues(buildPlanSimplifiedModel({ q7RestoreRights: false, q9Remuneration: false }));
-    expect(simplified.find((item) => item.label.startsWith('Q7.')).value).toBe('No');
-    expect(simplified.find((item) => item.label.startsWith('Q9.')).value).toBe('No');
+    // Milestone 73N: the Simplified Plan prints each question in full above its
+    // answer (a `question` block), numbered as the court's form is.
+    const simplified = buildPlanSimplifiedModel({ q7RestoreRights: false, q9Remuneration: false }).sections
+      .flatMap((section) => section.blocks || []).filter((block) => block.type === 'question');
+    expect(simplified.find((block) => block.question.startsWith('7.')).answer).toBe('No');
+    expect(simplified.find((block) => block.question.startsWith('9.')).answer).toBe('No');
 
     const minor = gridValues(buildPlanMinorModel({ amendedForm: false }));
     expect(minor.find((item) => item.label === 'Amended Form?').value).toBe('No');
@@ -57,7 +60,7 @@ describe('Plan tri-state PDF output', () => {
   test('marks an Initial Plan legacy false committee answer as No', () => {
     const model = buildPlanInitialModel({ committeeIncorporated: false });
     const committee = model.sections.flatMap((section) => section.blocks || [])
-      .find((block) => block.type === 'checklist' && block.title?.includes('Committee Recommendations'));
+      .find((block) => block.type === 'checklist' && block.title?.includes('recommendations of the examining committee'));
     expect(committee.items).toEqual(expect.arrayContaining([
       expect.objectContaining({ label: 'No', checked: true }),
       expect.objectContaining({ label: 'Yes', checked: false }),
@@ -67,7 +70,7 @@ describe('Plan tri-state PDF output', () => {
   test('marks an Initial Plan explicit Yes and No committee answers accurately', () => {
     const modelYes = buildPlanInitialModel({ committeeIncorporated: 'Yes' });
     const committeeYes = modelYes.sections.flatMap((section) => section.blocks || [])
-      .find((block) => block.type === 'checklist' && block.title?.includes('Committee Recommendations'));
+      .find((block) => block.type === 'checklist' && block.title?.includes('recommendations of the examining committee'));
     expect(committeeYes.items).toEqual(expect.arrayContaining([
       expect.objectContaining({ label: 'Yes', checked: true }),
       expect.objectContaining({ label: 'No', checked: false }),
@@ -75,7 +78,7 @@ describe('Plan tri-state PDF output', () => {
 
     const modelNo = buildPlanInitialModel({ committeeIncorporated: 'No', committeeExplain: 'Awaiting updated report' });
     const committeeNo = modelNo.sections.flatMap((section) => section.blocks || [])
-      .find((block) => block.type === 'checklist' && block.title?.includes('Committee Recommendations'));
+      .find((block) => block.type === 'checklist' && block.title?.includes('recommendations of the examining committee'));
     expect(committeeNo.items).toEqual(expect.arrayContaining([
       expect.objectContaining({ label: 'No', checked: true }),
       expect.objectContaining({ label: 'Yes', checked: false }),
@@ -90,12 +93,13 @@ describe('Plan tri-state PDF output', () => {
       q7PendingBenefits: '',
     });
     const q7 = model.sections.flatMap(section => section.blocks || [])
-      .find(block => block.type === 'table' && block.title === '7. Insurance / Governmental Benefits');
+      .find(block => block.type === 'table' && block.title?.startsWith('7. The Ward has the following health insurance'));
 
     expect(q7.rows).toContainEqual(['Social Security', 'Yes']);
     expect(q7.rows).toContainEqual(['Social Security Disability Income (SSDI)', 'No']);
-    expect(q7.rows).toContainEqual(['Trusts', 'No']);
-    expect(q7.rows).toContainEqual(['Pending Benefits', '—']);
+    // Milestone 73N part 2: the form's own wording for these two.
+    expect(q7.rows).toContainEqual(['Trusts (Please explain the type of Trust and how it covers costs below)', 'No']);
+    expect(q7.rows).toContainEqual(['Pending Benefits (Please explain why ward is not yet receiving or provide date applied for below)', '—']);
   });
 
   test('prints Annual Plan eligibility and application answers from the tri-state model', () => {

@@ -45,9 +45,12 @@ describe('Plan Initial PDF/Word model gates directive detail on q11Executed', ()
   test('executed checked with populated data renders the detail card', () => {
     const model = buildPlanInitialModel({ q11Executed: true, q11Directives: [POPULATED_DIRECTIVE] });
     const section = findSection(model, 'directive-detail');
-    expect(section.blocks).toHaveLength(1);
-    expect(section.blocks[0].title).toBe('Directive 1');
-    expect(section.blocks[0].items[0]).toEqual({ label: 'Title of order or directive', value: 'Healthcare Surrogate' });
+    // Milestone 73N part 2: under the form's "For ANY advanced directive listed
+    // above:", each line as the form words it.
+    expect(section.blocks).toHaveLength(2);
+    expect(section.blocks[0]).toEqual({ type: 'notice', title: 'For ANY advanced directive listed above:', text: '' });
+    expect(section.blocks[1].title).toBe('Directive 1');
+    expect(section.blocks[1].items[0]).toEqual({ label: 'Title of the order or directive:', value: 'Healthcare Surrogate' });
   });
 
   test('executed checked but no populated rows shows the empty notice, not a blank card', () => {

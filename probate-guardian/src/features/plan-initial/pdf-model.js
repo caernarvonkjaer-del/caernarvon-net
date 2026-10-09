@@ -4,7 +4,7 @@
 // tagged/vector PDF engine's block vocabulary, replacing the raster
 // html2pdf/html2canvas export with a tagged, accessible, non-raster PDF.
 
-import { dateOrLine, displayDate } from '../../core/form/date-parser.js';
+import { BLANK_DATE_LINE, dateOrLine, displayDate } from '../../core/form/date-parser.js';
 import { resolveDescriptorForInventoryType } from '../../core/filing/filing-descriptor.js';
 import { planCertificateOfServiceSection } from '../../core/filing/plan-certificate-of-service.js';
 import { triStateText } from '../../core/form/form-contract.js';
@@ -14,6 +14,10 @@ import { INITIAL_ADLS } from '../../core/filing/models/plan-initial.js';
 import { PLAN_INITIAL_EXPLANATIONS, shownExplanation } from '../../core/filing/plan-explanations.js';
 import { resolveSignatureModes } from '../../core/pdf/signature-modes.js';
 import { withSameAddresses } from '../../core/form/same-address.js';
+import {
+  PLAN_INITIAL_BENEFITS, PLAN_INITIAL_CHOICES as C, PLAN_INITIAL_DEVICES, PLAN_INITIAL_DIRECTIVE_LABELS as DL, PLAN_INITIAL_TEXT as T,
+  numbered, planInitialAttorneyCertification,
+} from '../../core/filing/court-text/plan-initial.js';
 
 export function buildPlanInitialModel(D, options) {
   // Milestone 74P: a ticked "same as" files the first address in the second.
@@ -83,16 +87,16 @@ export function buildPlanInitialModel(D, options) {
       },
       {
         type: 'checklist',
-        title: 'The Ward Is Living',
+        title: T.wardLiving,
         items: [
-          { checked: d.wardLiving === 'In a private residence leased or owned by them (house, condo or apartment)', label: 'In a private residence leased or owned by them (house, condo or apartment).' },
-          { checked: d.wardLiving === 'In a private residence not leased or owned by them (such as family member)', label: 'In a private residence not leased or owned by them (such as family member).' },
-          { checked: d.wardLiving === 'In a facility (Skilled Nursing, Assisted Living, etc.)', label: 'In a facility (Skilled Nursing, Assisted Living, etc.).' },
+          { checked: d.wardLiving === 'In a private residence leased or owned by them (house, condo or apartment)', label: T.livingOwned },
+          { checked: d.wardLiving === 'In a private residence not leased or owned by them (such as family member)', label: T.livingNotOwned },
+          { checked: d.wardLiving === 'In a facility (Skilled Nursing, Assisted Living, etc.)', label: T.livingFacility },
         ],
       },
       {
         type: 'key-value-grid',
-        title: 'Address Where Ward Currently Resides',
+        title: T.residence,
         items: [
           { label: 'Address', value: d.residenceAddress || '' },
           { label: 'City, State, ZIP', value: d.residenceCityStateZip || '' },
@@ -101,12 +105,9 @@ export function buildPlanInitialModel(D, options) {
           { label: 'Mailing City, State, ZIP', value: d.mailingCityStateZip || '' },
         ],
       },
-      {
-        type: 'key-value-grid',
-        items: [
-          { label: 'Pre-existing Orders Not to Resuscitate / Advance Directives', value: d.q1PreexistingDirectives || '' },
-        ],
-      },
+      { type: 'notice', text: T.submits },
+      // Milestone 73N part 2: Question 1 in full, across the page.
+      { type: 'question', question: numbered(1, T.q1), answer: d.q1PreexistingDirectives || '' },
     ],
   });
 
@@ -127,55 +128,55 @@ export function buildPlanInitialModel(D, options) {
     blocks: [
       {
         type: 'checklist',
-        title: "2. Residential Setting Best Suited to the Ward's Needs",
+        title: numbered(2, T.q2),
         items: [
-          { checked: !!d.q2ALF, label: 'Assisted Living (ALF)' },
-          { checked: !!d.q2GroupHome, label: 'Group Home' },
-          { checked: !!d.q2Intermediate, label: 'Intermediate' },
-          { checked: !!d.q2PrivateResidence, label: 'Private Residence' },
-          { checked: !!d.q2SkilledNursing, label: 'Skilled Nursing' },
-          { checked: !!d.q2Specialized, label: 'Specialized' },
-          { checked: !!d.q2StateHospital, label: 'State Hospital' },
-          { checked: !!d.q2Other, label: 'Other' },
+          { checked: !!d.q2ALF, label: C.q2ALF },
+          { checked: !!d.q2GroupHome, label: C.q2GroupHome },
+          { checked: !!d.q2Intermediate, label: C.q2Intermediate },
+          { checked: !!d.q2PrivateResidence, label: C.q2PrivateResidence },
+          { checked: !!d.q2SkilledNursing, label: C.q2SkilledNursing },
+          { checked: !!d.q2Specialized, label: C.q2Specialized },
+          { checked: !!d.q2StateHospital, label: C.q2StateHospital },
+          { checked: !!d.q2Other, label: C.q2Other },
         ],
       },
       ...explainNotice('q2Explain'),
       {
         type: 'checklist',
-        title: '3. Provision of Medical Services',
+        title: numbered(3, T.q3),
         items: [
-          { checked: !!d.q3MedPrimary, label: 'Routine examination by primary care physician' },
-          { checked: !!d.q3MedDentist, label: 'Routine examination by dentist' },
-          { checked: !!d.q3MedOphthalmologist, label: 'Routine examination by Ophthalmologist' },
-          { checked: !!d.q3MedSpecialist, label: `Routine examination by specialist${d.q3MedSpecialistArea ? ' — ' + d.q3MedSpecialistArea : ''}` },
-          { checked: !!d.q3MedPT, label: 'Physical Therapy' },
-          { checked: !!d.q3MedST, label: 'Speech Therapy' },
-          { checked: !!d.q3MedOT, label: 'Occupational Therapy' },
-          { checked: !!d.q3MedWardDecides, label: 'The ward retains the right to make their own decision' },
-          { checked: !!d.q3MedOther, label: 'Other' },
+          { checked: !!d.q3MedPrimary, label: C.q3MedPrimary },
+          { checked: !!d.q3MedDentist, label: C.q3MedDentist },
+          { checked: !!d.q3MedOphthalmologist, label: C.q3MedOphthalmologist },
+          { checked: !!d.q3MedSpecialist, label: `${C.q3MedSpecialist}${d.q3MedSpecialistArea ? ' ' + d.q3MedSpecialistArea : ''}` },
+          { checked: !!d.q3MedPT, label: C.q3MedPT },
+          { checked: !!d.q3MedST, label: C.q3MedST },
+          { checked: !!d.q3MedOT, label: C.q3MedOT },
+          { checked: !!d.q3MedWardDecides, label: C.q3MedWardDecides },
+          { checked: !!d.q3MedOther, label: C.q3MedOther },
         ],
       },
       ...explainNotice('q3MedExplain'),
       {
         type: 'checklist',
-        title: '4. Provision of Mental Health Services',
+        title: numbered(4, T.q4),
         items: [
-          { checked: !!d.q4Psych, label: 'Routine examination by Psychiatrist/Psychologist' },
-          { checked: !!d.q4Outpatient, label: 'Ongoing Treatment Outpatient' },
-          { checked: !!d.q4Inpatient, label: 'Ongoing Treatment Inpatient' },
-          { checked: !!d.q4None, label: 'None' },
-          { checked: !!d.q4Other, label: 'Other' },
+          { checked: !!d.q4Psych, label: C.q4Psych },
+          { checked: !!d.q4Outpatient, label: C.q4Outpatient },
+          { checked: !!d.q4Inpatient, label: C.q4Inpatient },
+          { checked: !!d.q4None, label: C.q4None },
+          { checked: !!d.q4Other, label: C.q4Other },
         ],
       },
       ...explainNotice('q4Explain'),
       {
         type: 'checklist',
-        title: '5. Provision of Personal Care',
+        title: numbered(5, T.q5),
         items: [
-          { checked: !!d.q5CareFacility, label: 'Care Facility' },
-          { checked: !!d.q5NursesAides, label: 'Nurses and Aides' },
-          { checked: !!d.q5FamilyFriends, label: 'Family and Friends' },
-          { checked: !!d.q5Other, label: 'Other' },
+          { checked: !!d.q5CareFacility, label: C.q5CareFacility },
+          { checked: !!d.q5NursesAides, label: C.q5NursesAides },
+          { checked: !!d.q5FamilyFriends, label: C.q5FamilyFriends },
+          { checked: !!d.q5Other, label: C.q5Other },
         ],
       },
       ...explainNotice('q5Explain'),
@@ -193,40 +194,26 @@ export function buildPlanInitialModel(D, options) {
     blocks: [
       {
         type: 'checklist',
-        title: '6. Socialization / Recreational Services',
+        title: numbered(6, T.q6),
         items: [
-          { checked: !!d.q6CareFacility, label: 'Care Facility' },
-          { checked: !!d.q6NursesAides, label: 'Nurses and Aides' },
-          { checked: !!d.q6FamilyFriends, label: 'Family and Friends' },
-          { checked: !!d.q6DayProgram, label: 'Day Program' },
-          { checked: !!d.q6WardDecides, label: 'The Ward retains the right to make their own decision' },
-          { checked: !!d.q6Other, label: 'Other' },
+          { checked: !!d.q6CareFacility, label: C.q6CareFacility },
+          { checked: !!d.q6NursesAides, label: C.q6NursesAides },
+          { checked: !!d.q6FamilyFriends, label: C.q6FamilyFriends },
+          { checked: !!d.q6DayProgram, label: C.q6DayProgram },
+          { checked: !!d.q6WardDecides, label: C.q6WardDecides },
+          { checked: !!d.q6Other, label: C.q6Other },
         ],
       },
       ...explainNotice('q6Explain'),
       {
         type: 'table',
-        title: '7. Insurance / Governmental Benefits',
+        title: numbered(7, T.q7),
         headers: ['Benefit', 'Status'],
         colWidths: [78, 22],
         colAlign: ['left', 'center'],
-        rows: [
-          ['Social Security', triStateText(d.q7SocialSecurity) || '—'],
-          ['Social Security Disability Income (SSDI)', triStateText(d.q7Ssdi) || '—'],
-          ['Health Maintenance Organization (HMO)', triStateText(d.q7Hmo) || '—'],
-          ['Supplemental Security Income (SSI)', triStateText(d.q7Ssi) || '—'],
-          ['Optional State Supplement', triStateText(d.q7StateSupplement) || '—'],
-          ['Institutional Care Program', triStateText(d.q7InstitutionalCare) || '—'],
-          ['Supplemental Insurance', triStateText(d.q7SupplementalIns) || '—'],
-          ['Pension', triStateText(d.q7Pension) || '—'],
-          ['Medicare', triStateText(d.q7Medicare) || '—'],
-          ['Medicaid', triStateText(d.q7Medicaid) || '—'],
-          ['VA', triStateText(d.q7Va) || '—'],
-          ['Trusts', triStateText(d.q7Trusts) || '—'],
-          ['Pending Benefits', triStateText(d.q7PendingBenefits) || '—'],
-        ],
+        rows: PLAN_INITIAL_BENEFITS.map(([key, label]) => [label, triStateText(d[key]) || '—']),
       },
-      { type: 'checklist', items: [{ checked: !!d.q7Other, label: 'Other' }] },
+      { type: 'checklist', items: [{ checked: !!d.q7Other, label: C.q7Other }] },
       ...explainNotice('q7Explain'),
     ],
   });
@@ -244,7 +231,7 @@ export function buildPlanInitialModel(D, options) {
     blocks: [
       provRows.length ? {
         type: 'table',
-        title: '9. Examinations to Determine Treatment Needs',
+        title: numbered(9, T.q9),
         headers: ['#', 'Provider', 'Type', 'Exam Date'],
         colWidths: [8, 47, 25, 20],
         colAlign: ['left', 'left', 'left', 'left'],
@@ -259,7 +246,7 @@ export function buildPlanInitialModel(D, options) {
         }),
       } : {
         type: 'notice',
-        title: '9. Examinations to Determine Treatment Needs',
+        title: numbered(9, T.q9),
         text: 'No providers listed.',
       },
     ],
@@ -276,9 +263,10 @@ export function buildPlanInitialModel(D, options) {
     level: 1,
     pageBreakBefore: true,
     blocks: [
+      { type: 'notice', title: numbered(10, T.q10), text: '' },
       {
         type: 'table',
-        title: '10A. Activities of Daily Living',
+        title: T.q10A,
         headers: ['Activity', 'Rating'],
         colWidths: [70, 30],
         colAlign: ['left', 'left'],
@@ -287,130 +275,104 @@ export function buildPlanInitialModel(D, options) {
     ],
   });
 
-  // Page 6: Q10B-D
+  // Page 6: Q10B-F
+  const devices = (prefix) => PLAN_INITIAL_DEVICES.map(([suffix, label]) => ({ checked: !!d[prefix + suffix], label }));
   sections.push({
     id: 'q10b-d',
-    title: 'Question 10B–D',
-    bookmarkTitle: 'Question 10B-D',
+    title: 'Question 10B–F',
+    bookmarkTitle: 'Question 10B-F',
     parentBookmark: null,
     level: 1,
     pageBreakBefore: true,
     blocks: [
       {
         type: 'checklist',
-        title: 'B. Mental Disabilities of the Ward',
+        title: T.q10B,
         items: [
-          { checked: !!d.mentalAlzheimers, label: "Alzheimer's type of dementia" },
-          { checked: !!d.mentalAutism, label: 'Autism Spectrum Disorders' },
-          { checked: !!d.mentalClosedHeadInjury, label: 'Closed Head Injury' },
-          { checked: !!d.mentalDementia, label: 'Dementia' },
-          { checked: !!d.mentalDepression, label: 'Depression' },
-          { checked: !!d.mentalDevelopmental, label: 'Developmental Disabilities' },
-          { checked: !!d.mentalSubstance, label: 'Induced by substance abuse' },
-          { checked: !!d.mentalSchizophrenia, label: 'Schizophrenia or related disorders' },
-          { checked: !!d.mentalOther, label: 'Other' },
+          { checked: !!d.mentalAlzheimers, label: C.mentalAlzheimers },
+          { checked: !!d.mentalAutism, label: C.mentalAutism },
+          { checked: !!d.mentalClosedHeadInjury, label: C.mentalClosedHeadInjury },
+          { checked: !!d.mentalDementia, label: C.mentalDementia },
+          { checked: !!d.mentalDepression, label: C.mentalDepression },
+          { checked: !!d.mentalDevelopmental, label: C.mentalDevelopmental },
+          { checked: !!d.mentalSubstance, label: C.mentalSubstance },
+          { checked: !!d.mentalSchizophrenia, label: C.mentalSchizophrenia },
+          { checked: !!d.mentalOther, label: C.mentalOther },
         ],
       },
       ...explainNotice('mentalExplain'),
       {
         type: 'checklist',
-        title: 'C. Physical Disabilities of the Ward',
+        title: T.q10C,
         items: [
-          { checked: !!d.physMobility, label: 'Mobility' },
-          { checked: !!d.physBlindness, label: 'Blindness' },
-          { checked: !!d.physDeafness, label: 'Deafness' },
-          { checked: !!d.physDiabetic, label: 'Diabetic' },
-          { checked: !!d.physParkinsons, label: "Parkinson's disease" },
-          { checked: !!d.physArthritis, label: 'Severe arthritis' },
-          { checked: !!d.physOther, label: 'Other' },
+          { checked: !!d.physMobility, label: C.physMobility },
+          { checked: !!d.physBlindness, label: C.physBlindness },
+          { checked: !!d.physDeafness, label: C.physDeafness },
+          { checked: !!d.physDiabetic, label: C.physDiabetic },
+          { checked: !!d.physParkinsons, label: C.physParkinsons },
+          { checked: !!d.physArthritis, label: C.physArthritis },
+          { checked: !!d.physOther, label: C.physOther },
         ],
       },
       ...explainNotice('physExplain'),
-      {
-        type: 'checklist',
-        title: 'D. Assistive Devices Currently Used',
-        items: [
-          { checked: !!d.usesDentures, label: 'Dentures' },
-          { checked: !!d.usesHearingAid, label: 'Hearing Aid' },
-          { checked: !!d.usesWheelchair, label: 'Wheelchair' },
-          { checked: !!d.usesWalker, label: 'Walker/Cane' },
-          { checked: !!d.usesCrutches, label: 'Crutches' },
-          { checked: !!d.usesProsthetics, label: 'Prosthetics' },
-          { checked: !!d.usesGlasses, label: 'Glasses' },
-          { checked: !!d.usesNone, label: 'None' },
-          { checked: !!d.usesOther, label: 'Other' },
-        ],
-      },
+      { type: 'checklist', title: T.q10D, items: devices('uses') },
       ...explainNotice('usesExplain'),
-    ],
-  });
-
-  // Page 7: Q11 & Q10E-F
-  sections.push({
-    id: 'q11-10ef',
-    title: 'Question 11 & 10E–F',
-    bookmarkTitle: 'Question 11 & 10E-F',
-    parentBookmark: null,
-    level: 1,
-    pageBreakBefore: true,
-    blocks: [
-      {
-        type: 'checklist',
-        title: '11. Pre-existing Orders / Advance Directives',
-        items: [
-          { checked: !!d.q11NoDirectives, label: 'There are NO pre-existing orders Not To Resuscitate (DNR) or any other advance directive, and I have taken the following steps to verify there are none:' },
-        ],
-      },
-      ...(d.q11NoDirectives ? [{
-        type: 'checklist',
-        items: [
-          { checked: !!d.q11StepResidence, label: "Search of ward's prior and current residence" },
-          { checked: !!d.q11StepSafeDeposit, label: "Inventory of ward's safe deposit box" },
-          { checked: !!d.q11StepInterviewed, label: 'Interviewed family and friends' },
-          { checked: !!d.q11StepMedicalProviders, label: "Requested documents from the ward's medical providers" },
-          { checked: !!d.q11StepAttorney, label: "Requested documents from the ward's attorney" },
-        ],
-      }] : []),
-      {
-        type: 'checklist',
-        items: [
-          { checked: !!d.q11Executed, label: 'The ward executed the following advance directives:' },
-        ],
-      },
-      ...(d.q11Executed ? [{
-        type: 'checklist',
-        items: [
-          { checked: !!d.q11ExecDNR, label: 'Order Not to Resuscitate (DNR), F.S. 401.45(3)' },
-          { checked: !!d.q11ExecHealthcare, label: 'Advance Directive for Healthcare (surrogate, living will, anatomical gift)' },
-          { checked: !!d.q11ExecPOA, label: 'Durable Power of Attorney, F.S. Chapter 709' },
-          { checked: !!d.q11ExecOther, label: `Other${shownExplanation(PLAN_INITIAL_EXPLANATIONS, d, 'q11ExecOtherText') ? ' — ' + d.q11ExecOtherText : ''}` },
-        ],
-      }] : []),
-      {
-        type: 'checklist',
-        title: 'E. Assistive Devices Needed But Not Currently Owned',
-        items: [
-          { checked: !!d.needsDentures, label: 'Dentures' },
-          { checked: !!d.needsHearingAid, label: 'Hearing Aid' },
-          { checked: !!d.needsWheelchair, label: 'Wheelchair' },
-          { checked: !!d.needsWalker, label: 'Walker/Cane' },
-          { checked: !!d.needsCrutches, label: 'Crutches' },
-          { checked: !!d.needsProsthetics, label: 'Prosthetics' },
-          { checked: !!d.needsGlasses, label: 'Glasses' },
-          { checked: !!d.needsNone, label: 'None' },
-          { checked: !!d.needsOther, label: 'Other' },
-        ],
-      },
+      // Milestone 73N part 2: 10E and 10F follow 10D, as the form has them;
+      // they printed after Question 11.
+      { type: 'checklist', title: T.q10E, items: devices('needs') },
       ...explainNotice('needsExplain'),
       {
         type: 'checklist',
-        title: 'F. Examining Committee Recommendations Incorporated?',
+        title: T.q10F,
         items: [
           { checked: triStateText(d.committeeIncorporated) === 'Yes', label: 'Yes' },
           { checked: triStateText(d.committeeIncorporated) === 'No', label: 'No' },
         ],
       },
       ...explainNotice('committeeExplain'),
+    ],
+  });
+
+  // Page 7: Q11 (the id is the one supporting documents are filed under)
+  sections.push({
+    id: 'q11-10ef',
+    title: 'Question 11',
+    bookmarkTitle: 'Question 11',
+    parentBookmark: null,
+    level: 1,
+    pageBreakBefore: true,
+    blocks: [
+      {
+        type: 'checklist',
+        items: [
+          { checked: !!d.q11NoDirectives, label: numbered(11, T.q11NoDirectives) },
+        ],
+      },
+      ...(d.q11NoDirectives ? [{
+        type: 'checklist',
+        items: [
+          { checked: !!d.q11StepResidence, label: C.q11StepResidence },
+          { checked: !!d.q11StepSafeDeposit, label: C.q11StepSafeDeposit },
+          { checked: !!d.q11StepInterviewed, label: C.q11StepInterviewed },
+          { checked: !!d.q11StepMedicalProviders, label: C.q11StepMedicalProviders },
+          { checked: !!d.q11StepAttorney, label: C.q11StepAttorney },
+        ],
+      }] : []),
+      {
+        type: 'checklist',
+        items: [
+          { checked: !!d.q11Executed, label: T.q11Executed },
+        ],
+      },
+      ...(d.q11Executed ? [{
+        type: 'checklist',
+        items: [
+          { checked: !!d.q11ExecDNR, label: C.q11ExecDNR },
+          { checked: !!d.q11ExecHealthcare, label: C.q11ExecHealthcare },
+          { checked: !!d.q11ExecPOA, label: C.q11ExecPOA },
+          { checked: !!d.q11ExecOther, label: `${C.q11ExecOther}${shownExplanation(PLAN_INITIAL_EXPLANATIONS, d, 'q11ExecOtherText') ? ' ' + d.q11ExecOtherText : ''}` },
+        ],
+      }] : []),
     ],
   });
 
@@ -427,20 +389,21 @@ export function buildPlanInitialModel(D, options) {
     parentBookmark: null,
     level: 1,
     pageBreakBefore: true,
-    blocks: dirs.length ? dirs.map((r, i) => ({
+    blocks: dirs.length ? [{ type: 'notice', title: T.q11ForAny, text: '' }, ...dirs.map((r, i) => ({
       type: 'key-value-grid',
       title: `Directive ${i + 1}`,
       items: [
-        { label: 'Title of order or directive', value: r.title || '' },
-        { label: 'Date executed / signed', value: dateOrLine(r.dateSigned) },
-        { label: 'Name of person who signed', value: r.signedBy || '' },
-        { label: 'Designated agent(s) / surrogate(s)', value: r.agents || '' },
-        { label: 'Alternate agent(s) / surrogate(s)', value: r.alternates || '' },
-        { label: 'Relationship to the ward', value: r.relationship || '' },
-        { label: 'Contact information', value: r.contact || '' },
-        { label: 'Suspended or revoked by a court?', value: `${r.courtRevoked || ''}${r.orderDate ? ' — ' + fmtDate(r.orderDate) : ''}${r.orderCounty ? ', ' + r.orderCounty : ''}` },
+        { label: DL.title, value: r.title || '' },
+        { label: DL.dateSigned, value: dateOrLine(r.dateSigned) },
+        { label: DL.signedBy, value: r.signedBy || '' },
+        { label: DL.agents, value: r.agents || '' },
+        { label: DL.alternates, value: r.alternates || '' },
+        { label: DL.relationship, value: r.relationship || '' },
+        { label: DL.contact, value: r.contact || '' },
+        { label: DL.courtRevoked, value: r.courtRevoked || '' },
+        ...(r.orderDate || r.orderCounty ? [{ label: DL.orderDate, value: `${r.orderDate ? fmtDate(r.orderDate) : BLANK_DATE_LINE}${r.orderCounty ? ' entered ' + r.orderCounty : ''}` }] : []),
       ],
-    })) : [{ type: 'notice', text: 'No advance directives on file.' }],
+    }))] : [{ type: 'notice', text: 'No advance directives on file.' }],
   });
 
   const makeSigBlock = (role, p) => {
@@ -473,21 +436,23 @@ export function buildPlanInitialModel(D, options) {
     level: 1,
     pageBreakBefore: true,
     blocks: [
+      // Milestone 73N part 2: the form's preamble prints above the statements.
+      { type: 'notice', title: T.certTitle, text: T.certPreamble },
       {
         type: 'checklist',
-        title: 'Certification and Signature of Guardian(s)',
+        title: T.certCheckAll,
         items: [
-          { checked: !!d.certIncapacitatedNoCopy, label: 'The Ward was declared totally incapacitated and has not been given a copy of this plan.' },
-          { checked: !!d.certMinorNoCopy, label: 'The Ward is a minor under the age of 14 and has not been given a copy of this plan.' },
-          { checked: !!d.certConsulted, label: "The guardian has consulted with the Ward, to the extent reasonable, has honored the Ward's wishes, and to the maximum extent possible the plan is in accordance with them." },
-          { checked: !!d.certRecognizeRights, label: 'In exercising his or her powers, the guardian shall recognize any rights retained by the ward [F.S. 744.363(6)].' },
-          { checked: !!d.certNoRestriction, label: 'The plan does not restrict the physical liberty of the Ward except as necessary to protect the Ward and others from serious physical injury, illness, or disease.' },
-          { checked: !!d.certProvidesCare, label: "The plan provides for the Ward's medical care and mental health treatment." },
+          { checked: !!d.certIncapacitatedNoCopy, label: C.certIncapacitatedNoCopy },
+          { checked: !!d.certMinorNoCopy, label: C.certMinorNoCopy },
+          { checked: !!d.certConsulted, label: C.certConsulted },
+          { checked: !!d.certRecognizeRights, label: C.certRecognizeRights },
+          { checked: !!d.certNoRestriction, label: C.certNoRestriction },
+          { checked: !!d.certProvidesCare, label: C.certProvidesCare },
         ],
       },
       {
         type: 'notice',
-        text: 'UNDER PENALTIES OF PERJURY, I declare that I have read and examined the foregoing plan, and the facts alleged are true, to the best of my knowledge and belief.',
+        text: T.perjury,
       },
       makeSigBlock('Guardian', g[0] || {}),
       // Optional co-guardian placeholders are editor affordances, not signed
@@ -528,7 +493,7 @@ export function buildPlanInitialModel(D, options) {
     blocks: [
       {
         type: 'notice',
-        text: `The undersigned hereby notifies the court of the filing of the initial guardianship plan for the period ${dateOrLine(d.periodFrom)} through ${dateOrLine(d.periodTo)}. This initial guardianship plan is the representation of the guardian. I have not audited the accompanying initial plan. The undersigned attorney represents that he/she has examined the contents of the initial guardianship plan and that it conforms to the requirements of the Florida Guardianship Law and the standards for the plans in ${county} County.`,
+        text: planInitialAttorneyCertification(dateOrLine(d.periodFrom), dateOrLine(d.periodTo), county),
       },
       {
         type: 'signature-block',

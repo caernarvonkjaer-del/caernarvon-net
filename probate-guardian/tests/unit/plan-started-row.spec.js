@@ -83,7 +83,7 @@ describe('Milestone 61B: secondary-only rows reach the filed PDF', () => {
   test('Annual Q1 residence with only a phone number', () => {
     const model = buildPlanAnnualModel({ q1Residences: [{ name: '', street: '', cityStateZip: '', phone: '(727) 555-0100' }] });
     expect(renderedText(model)).toContain('(727) 555-0100');
-    expect(countTableRows(model, 'Places the Ward Has Resided')).toBe(1);
+    expect(countTableRows(model, 'The places the ward has lived (resided)')).toBe(1);
   });
 
   test('Annual Q4 provider with only an address', () => {

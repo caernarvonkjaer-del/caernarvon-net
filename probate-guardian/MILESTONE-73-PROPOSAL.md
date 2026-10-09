@@ -6,11 +6,11 @@
 far: 73U (2026-10-04, `5b8849b`), 73V (2026-10-05, `8b96aa3`), 73C
 (2026-10-05, `861b6a9`, brought forward from its place in the build order at the
 requester's choice) 73D (2026-10-05, `c8e84fe`, likewise), 73J part 1 (2026-10-05, `d819c4a`),
-73F part 1 (2026-10-06, `5e9e17b`), 73A (2026-10-06, `83352d0`), 73F part 2 (2026-10-06, `d01edd4`), 73G part 1 (2026-10-06, `69a1b46`), 73E part 1 (2026-10-06, `8e02051`), 73F part 3 (2026-10-06, `67fc66c`), 73I (2026-10-06, `56a7c30`), 73T part 1 (2026-10-07, `4cae1e7`), 73T part 2 (2026-10-07, `2a1cbc5`), 73T part 3 (2026-10-07, `9d2bc72`), 73T part 4 (2026-10-07, `b70a944`), 73M with 74C (2026-10-07, `a0e987b`), 73B (2026-10-07, `86547da`), 73O part 2 with 74F (2026-10-08, `fa9625e`), 73G part 2 with 74H (2026-10-08, `f85e862`, `78b5770`), 73H (2026-10-08, `631f898`), 73S (2026-10-08, `3cf1d9d`), 73K part 1 (2026-10-08, `4268c45`), 73E part 2 (2026-10-08, `5e26e57`, `ea78dd4`), 73J part 2 (2026-10-08, `3648706`), 73K part 2 (2026-10-08, `79a8875`), 73L with 74D's reproduction (2026-10-09, `43081f2`) and 73N part 1 (2026-10-09), each approved by name; 74P, built after 73B, is recorded in Milestone 74.**
+73F part 1 (2026-10-06, `5e9e17b`), 73A (2026-10-06, `83352d0`), 73F part 2 (2026-10-06, `d01edd4`), 73G part 1 (2026-10-06, `69a1b46`), 73E part 1 (2026-10-06, `8e02051`), 73F part 3 (2026-10-06, `67fc66c`), 73I (2026-10-06, `56a7c30`), 73T part 1 (2026-10-07, `4cae1e7`), 73T part 2 (2026-10-07, `2a1cbc5`), 73T part 3 (2026-10-07, `9d2bc72`), 73T part 4 (2026-10-07, `b70a944`), 73M with 74C (2026-10-07, `a0e987b`), 73B (2026-10-07, `86547da`), 73O part 2 with 74F (2026-10-08, `fa9625e`), 73G part 2 with 74H (2026-10-08, `f85e862`, `78b5770`), 73H (2026-10-08, `631f898`), 73S (2026-10-08, `3cf1d9d`), 73K part 1 (2026-10-08, `4268c45`), 73E part 2 (2026-10-08, `5e26e57`, `ea78dd4`), 73J part 2 (2026-10-08, `3648706`), 73K part 2 (2026-10-08, `79a8875`), 73L with 74D's reproduction (2026-10-09, `43081f2`), 73N part 1 (2026-10-09, `ab8068e`) and 73N part 2 (2026-10-09), each approved by name; 74P, built after 73B, is recorded in Milestone 74.**
 **The 2026-10-07 batch is built**, and its closing full regression has run
 (recorded below, after the mid-batch one). **Approved and not yet built**
 (2026-10-08, one batch in this order, light tests between deliveries and a
-full regression at the end): 73N parts 2-3, 73O part 1 (with 74O), 73O
+full regression at the end): 73N part 3, 73O part 1 (with 74O), 73O
 part 3 (with 74L), 73O part 4 (with 74J), 73P (with 74S) and 73R parts 1-3.
 Nothing else is approved. Building any other item, or any part of a
 split item, needs the requester's named approval of that item or part
@@ -3170,6 +3170,104 @@ accessibility and signatures, cover geometry, evidence lab, form-specific,
 notice titles, structure tags, table semantics, the Plans' WCAG checks,
 signature-block margins, supplemental PDFs, this spec), 54 passed, 9 skipped
 (the pre-merge comparison, which runs only against a named earlier build).
+
+
+### Build record, part 2 — BUILT 2026-10-09 (approved by name by the requester, 2026-10-08; two decisions 2026-10-09)
+
+**What changed for a filer:** every question, choice and certification on the
+Simplified, Annual and Initial Plans and the accountings now reads as the
+court's own form or the Clerk's workbook words it -- in the filed PDF and on
+the screen, which read the same text.
+
+- **Simplified Annual Plan:** Questions 3 and 5-9 keep their parentheticals --
+  Question 9's "(this does NOT include payments, goods, or services received
+  from a government benefits program such as Social Security, Medicaid,
+  Medicare, and/or Agency for Persons with Disabilities)" among them -- so the
+  question answered on screen is the question filed. Each prints in full
+  across the page with the answer beneath (in the old 98pt label column
+  Question 9 would have been sixteen lines tall). Questions 7-9 are numbered
+  "7.", "8.", "9." (part 3's numbering, done here since the text now comes
+  from the original).
+- **Annual Plan:** the "consulted" certification ends "...or consistent with
+  the rights retained by the Ward"; Question 2 prints the form's full sentences
+  (the 15-day notice "stated the compelling reasons for, and expected duration
+  of, the move"; "is or has been filed"); Question 10's statement reads "and I
+  have taken the following steps to verify there are none: (check all that
+  apply)"; the directive choices say "(including but not limited to:
+  healthcare surrogate, living will or anatomical gift)"; the certification's
+  preamble on changed capacity prints above the statements; the attorney's
+  certification is the form's, both sentences. Questions 5A, 5B and 7 print in
+  full across the page.
+- **Question 2's counties (decided by the requester, 2026-10-09):** "(Pinellas
+  to Pasco or Pasco to Pinellas)" and "(Pasco/Pinellas)" print only on a
+  Pinellas or Pasco filing; every other county gets the same sentences
+  without them (AGENTS.md §5).
+- **Initial Plan:** the same restoration, Question 1 in full across the page,
+  Question 7's Trusts and Pending Benefits with their instructions -- and 10E
+  and 10F now print after 10D, before Question 11.
+- **Annual, Final and Trust Accountings:** the receipts certification ends "and
+  will upon request make available for inspection as the court may order. (As
+  per F.S. 744.3678 (3).)"; the guardian's declaration continues "and includes
+  a statement of the ward's assets at the close of said period. I also certify
+  that any and all annual investigatory forms and fees have been filed and
+  paid, unless exempt by Florida Statute or Court Order."; the attorney
+  statement includes "I have not audited the accompanying guardianship
+  accounting." The Simplified Accounting's attorney statement too.
+- **The forms' plain typing errors print corrected (decided by the requester,
+  2026-10-09)**, each named in the parity test: "UNDER PENALITIES", "l have"
+  (lower-case L), "F.S.744.3678", "this plan. plan.", "A The guardian",
+  "Other(Please", "Guardians(s)", "are( devices", "( a/k/a", "char/bed", "gift of
+  disposition", "the Ward and other from", "the Wards' wishes",
+  "{FS 744.363(6)}", "Walking Mobility" -- and the Annual Plan's Question 7,
+  which said "any right in question 5" when the rights are Question 6.
+
+**How:** new `src/core/filing/court-text/` -- `plan-simplified.js`,
+`plan-annual.js`, `plan-initial.js` (the Initial reuses the Annual's
+identical directive and device wording) and `accountings.js` -- read by the
+five PDF models and their screens; the Plans' rights and daily-living lists
+(`models/plan-annual.js`, `models/plan-initial.js`) take the forms' wording.
+The engine's new `question` block prints a question's full text across the
+page with the answer beneath; a blank answer prints a line to write on, a
+long one continues on the next page. Screen hints that only repeated a
+parenthetical are gone, the question carrying it now.
+
+**Kept as it was, and why:** the Initial Plan's screen keeps 10E and 10F on
+its directives page -- the order fixed is the filed document's, and moving
+them on screen would change its page list and sidebar marks. The Initial
+Plan's option lists that older saves are read by keep their labels ("Other",
+"None"); the screen shows the court's wording by field. A filled-in sentence
+does not print the caption under a blank ("(name of person/company)"), and
+Question 11's "received" sentence keeps the declaring guardian's name the
+screen asks for, in the form's "I, ___ declare" pattern.
+
+**Found, not fixed (reported for the requester's decision):**
+- The court's Annual Plan lists **VA** among Question 3G's benefits; the app
+  has no VA row there (the Initial Plan has one). Adding it is a new stored
+  answer, a data-model change.
+- On the **Initial Plan**, each screen page's supporting documents attach to
+  the PDF section after the one they belong to: the Questions 4-5 page's
+  documents print after Questions 6-7, the 10A page's after 10B-F, and so on
+  (`pdf-engine.js`'s section aliases look one section off).
+- As the design noted, for a qualified person: no PDF's caption says "A MINOR"
+  or "GUARDIAN ADVOCACY".
+
+**Tests:** new `tests/unit/court-text-parity.spec.js` (10): every court-text
+entry against `reference/plan-forms/*.txt` and the workbooks' strings, with
+the corrections named; Question 2's county rule; each PDF model printing the
+entries with every box ticked; each screen importing its text. **Red-first:**
+with the models and screens set aside (the text modules kept), seven fail --
+every model and screen check; the three checking the modules against the
+originals pass either way. Updated for the court's wording:
+`plan-tristate.spec.js`, `plan-directive-cards.spec.js`,
+`display-formats.spec.js`, `plan-started-row.spec.js`,
+`no-invented-answers.spec.js`, `filing-registry.spec.js` (with
+`tests/baseline/ms70-70C-filing-shapes.json`), `plan-annual-rights-no.spec.ts`.
+Light regression on a C: copy, 29 specs (the Plans' and accountings' pages,
+certificates, the PDF specs including the right-margin check): 162 of 165
+passed; the other three were the page-text pins in `plan-annual-mount.spec.ts`
+and `plan-initial-mount.spec.ts`, which differed only in the reworded lines --
+each read before the pin was regenerated -- and pass with the new text (both
+specs, 15 passed). Full unit suite passes; `check:types` clean.
 
 ---
 

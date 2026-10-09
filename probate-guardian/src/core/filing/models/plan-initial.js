@@ -12,7 +12,7 @@ export const INITIAL_ADLS=[
   ['shopping','Shopping'],['laundry','Doing Laundry'],
   ['toileting','Toileting'],['dressing','Dressing'],
   ['transferring','Transferring (from wheelchair to chair/bed)'],['eating','Eating'],
-  ['walking','Walking / Mobility'],['grooming','Grooming'],
+  ['walking','Walking/Mobility'],['grooming','Grooming'],
   ['heavyChores','Heavy Chores'],
 ];
 

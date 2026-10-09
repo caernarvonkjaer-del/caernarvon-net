@@ -1,6 +1,8 @@
 // Canonical filing identity. Keep names, output copy, and engine routing in
 // one place so a filing cannot present itself differently across UI and export.
 
+import { ATTORNEY_NOT_AUDITED } from './court-text/accountings.js';
+
 const DESCRIPTORS = {
   guardian: {
     id: 'initial-inventory', family: 'inventory', engineId: 'guardian',
@@ -197,7 +199,9 @@ export function filingCopy(descriptor) {
     subject: `${accountingName} of Guardian of the Property (Section 744.3678)`,
     keywords: `Florida, Probate, Guardianship, ${accountingName}`,
     preparerStatement: (wardName, from, to) => `I have compiled the accompanying ${accountingName} of assets and liabilities arising from cash transactions, current market valuation, and current estimated market valuation of the guardianship of ${wardName} for the period ${from} through ${to}. This compilation is limited to presenting information in the form of a ${accountingName} and is the representation of the guardian. I have not audited or reviewed the accompanying guardianship accounting and, accordingly, do not express an opinion or any other form of assurance on it.\n\nNOTICE: If you are the Guardian, Co-Guardian, or Guardian Attorney - DO NOT SIGN HERE.`,
-    attorneyStatement: (wardName, from, to, county) => `The undersigned Attorney hereby notifies the Court of the filing of the ${lowerAccountingName} of the Guardian ${wardName} for the period ${from} through ${to}. This ${lowerAccountingName} is the representation of the guardian. The undersigned attorney represents that he/she has examined the contents of the accounting and that it conforms to the requirements of the Florida Guardianship Law and the standards for accountings in ${county} County, Florida.`,
+    // Milestone 73N part 2: with the workbook's "I have not audited the
+    // accompanying guardianship accounting" ('PART IV, V'!B27).
+    attorneyStatement: (wardName, from, to, county) => `The undersigned Attorney hereby notifies the Court of the filing of the ${lowerAccountingName} of the Guardian ${wardName} for the period ${from} through ${to}. This ${lowerAccountingName} is the representation of the guardian. ${ATTORNEY_NOT_AUDITED} The undersigned attorney represents that he/she has examined the contents of the accounting and that it conforms to the requirements of the Florida Guardianship Law and the standards for accountings in ${county} County, Florida.`,
   };
 }
 

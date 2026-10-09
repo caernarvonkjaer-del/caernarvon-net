@@ -11,6 +11,7 @@ import { planCertificateOfServiceSection } from '../../core/filing/plan-certific
 import { triStateText } from '../../core/form/form-contract.js';
 import { resolveSignatureModes } from '../../core/pdf/signature-modes.js';
 import { rowStarted } from '../../core/validation/row-started.js';
+import { PLAN_SIMPLIFIED_TEXT as T, numbered } from '../../core/filing/court-text/plan-simplified.js';
 
 export function buildPlanSimplifiedModel(D) {
   const d = D || {};
@@ -62,7 +63,7 @@ export function buildPlanSimplifiedModel(D) {
     blocks: [
       {
         type: 'notice',
-        text: 'The undersigned, as the Guardian Advocate(s) or Guardian(s) of the above-named ward, report(s) to the court as follows:',
+        text: T.intro,
       },
       {
         type: 'key-value-grid',
@@ -70,10 +71,12 @@ export function buildPlanSimplifiedModel(D) {
           { label: 'For the Period', value: `From: ${dateOrLine(d.periodFrom)}   To: ${dateOrLine(d.periodTo)}` },
         ],
       },
-      { type: 'key-value-grid', items: [{ label: '1. The name and address of all places the ward has resided during the preceding year.', value: d.q1Residences || '' }] },
-      { type: 'key-value-grid', items: [{ label: '2. Why is this the best placement for the ward?', value: d.q2BestPlacement || '' }] },
-      { type: 'key-value-grid', items: [{ label: '3. List all professional medical/mental health treatment the ward has received during the past year.', value: d.q3MedicalTreatment || '' }] },
-      { type: 'key-value-grid', items: [{ label: "4. What is/are the ward's current diagnosis and condition(s) which cause(s) him/her to continue to need a guardian advocate/guardian?", value: d.q4Diagnosis || '' }] },
+      // Milestone 73N part 2: each question as the court's form words and
+      // lays it out -- in full, across the page, the answer beneath.
+      { type: 'question', question: numbered(1, T.q1), answer: d.q1Residences || '' },
+      { type: 'question', question: numbered(2, T.q2), answer: d.q2BestPlacement || '' },
+      { type: 'question', question: numbered(3, T.q3), answer: d.q3MedicalTreatment || '' },
+      { type: 'question', question: numbered(4, T.q4), answer: d.q4Diagnosis || '' },
     ],
   });
 
@@ -95,25 +98,16 @@ export function buildPlanSimplifiedModel(D) {
     level: 1,
     pageBreakBefore: true,
     blocks: [
-      { type: 'key-value-grid', items: [{ label: '5. What personal and social services were provided for the ward in the past year?', value: d.q5SocialServices || '' }] },
-      { type: 'key-value-grid', items: [{ label: '6. In the past year, how has the ward interacted with others, including the guardian advocate(s)/guardian(s) and family members?', value: d.q6Interaction || '' }] },
-      {
-        type: 'key-value-grid',
-        items: [
-          { label: 'Q7. Should any of the rights previously delegated to the guardian advocate(s)/guardian(s) be restored to the ward at this time?', value: triStateText(d.q7RestoreRights) },
-          ...(d.q7RestoreRights === 'Yes' ? [{ label: 'Explanation', value: d.q7RestoreExplain || '' }] : []),
-        ],
-      },
+      { type: 'question', question: numbered(5, T.q5), answer: d.q5SocialServices || '' },
+      { type: 'question', question: numbered(6, T.q6), answer: d.q6Interaction || '' },
+      // Milestone 73N part 3: numbered 7, 8, 9 as the original is ("Q7." ...).
+      { type: 'question', question: numbered(7, T.q7), answer: triStateText(d.q7RestoreRights) },
+      ...(d.q7RestoreRights === 'Yes' ? [{ type: 'question', question: T.q7Yes, answer: d.q7RestoreExplain || '' }] : []),
       directives.length
-        ? { type: 'checklist', title: 'Q8. Since the guardianship was established or the last annual guardianship report, the following was executed by or on behalf of the Ward', items: directives.map(label => ({ checked: true, label })) }
-        : { type: 'key-value-grid', items: [{ label: 'Q8. Since the guardianship was established or the last annual guardianship report, the following was executed by or on behalf of the Ward', value: '' }] },
-      {
-        type: 'key-value-grid',
-        items: [
-          { label: 'Q9. As the Guardian Advocate(s)/Guardian(s) have you received any payments, goods, or services for work or care provided on behalf of the ward?', value: triStateText(d.q9Remuneration) },
-          ...(d.q9Remuneration === 'Yes' ? [{ label: 'Explanation', value: d.q9RemunerationExplain || '' }] : []),
-        ],
-      },
+        ? { type: 'checklist', title: numbered(8, T.q8), items: directives.map(label => ({ checked: true, label })) }
+        : { type: 'question', question: numbered(8, T.q8), answer: '' },
+      { type: 'question', question: numbered(9, T.q9), answer: triStateText(d.q9Remuneration) },
+      ...(d.q9Remuneration === 'Yes' ? [{ type: 'question', question: T.q9Yes, answer: d.q9RemunerationExplain || '' }] : []),
     ],
   });
 
@@ -162,7 +156,7 @@ export function buildPlanSimplifiedModel(D) {
       {
         type: 'notice',
         title: 'CERTIFICATION AND SIGNATURE OF GUARDIAN(S) / GUARDIAN ADVOCATE(S)',
-        text: 'Under penalty of perjury, I declare that I have read the foregoing and the facts alleged are true to the best of my knowledge and belief.',
+        text: T.declaration,
       },
       ...(hasSigData(g[0]) ? [makeSigBlock('Guardian / Guardian Advocate', g[0])] : [{ type: 'notice', text: 'No signature entered.' }]),
       ...(hasSigData(g[1]) ? [makeSigBlock('Guardian / Guardian Advocate', g[1])] : []),

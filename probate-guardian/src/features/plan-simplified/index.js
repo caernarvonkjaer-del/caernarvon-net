@@ -37,6 +37,7 @@ import { setPath } from '../../core/form/paths.js';
 import { openFloridaCourtPortal } from '../../core/shell/court-portal.js';
 import { printCurrentFilingPdf } from '../../core/pdf/print-current.js';
 import { collectPlanSimplifiedIssues } from '../../core/validation/engines/plan-simplified.js';
+import { PLAN_SIMPLIFIED_TEXT as T } from '../../core/filing/court-text/plan-simplified.js';
 // Simplified Annual Plan — the second feature extraction (Milestone 3,
 // Phase B/C of INDEX-SPLIT-PLAN.md's migration sequence). Loaded only when one of its pages
 // is shown, through src/features-loader.js's feature services
@@ -233,31 +234,30 @@ function pagePlanSQuestions(){
     <h1>The Plan — Questions 1–9</h1>
     <div class="schedule-instructions">Answer in plain, specific language. "Saw Dr. Alvarez for a check-up in March and a follow-up in September" tells the court far more than "routine care."</div>
 
-    ${q(1,'The name and address of all places the ward has resided during the preceding year.',
+    ${q(1,T.q1,
       txtP('q1Residences','Places resided',d.q1Residences,4,true,'List each residence with its address. Include the dates if the ward moved during the year.'))}
 
-    ${q(2,'Why is this the best placement for the ward?',
+    ${q(2,T.q2,
       txtP('q2BestPlacement','Why this placement',d.q2BestPlacement,4,true))}
 
-    ${q(3,'List all professional medical / mental health treatment the ward has received during the past year.',
-      txtP('q3MedicalTreatment','Medical and mental health treatment',d.q3MedicalTreatment,5,true,'Did the ward see a doctor, dentist, or mental health professional — and if so, when?'))}
+    ${q(3,T.q3,
+      txtP('q3MedicalTreatment','Medical and mental health treatment',d.q3MedicalTreatment,5,true))}
 
-    ${q(4,"What is the ward's current diagnosis and the conditions which cause them to continue to need a guardian advocate / guardian?",
+    ${q(4,T.q4,
       txtP('q4Diagnosis','Current diagnosis and conditions',d.q4Diagnosis,5,true))}
 
-    ${q(5,'What personal and social services were provided for the ward in the past year?',
-      txtP('q5SocialServices','Personal and social services',d.q5SocialServices,4,true,'Programs attended, vacations, in-home and out-of-home activities, and what the ward likes to do for entertainment or in their free time.'))}
+    ${q(5,T.q5,
+      txtP('q5SocialServices','Personal and social services',d.q5SocialServices,4,true))}
 
-    ${q(6,'In the past year, how has the ward interacted with others, including the guardian(s) and family members?',
-      txtP('q6Interaction','Interaction with others',d.q6Interaction,4,true,'If the ward is not able to interact, state why.'))}
+    ${q(6,T.q6,
+      txtP('q6Interaction','Interaction with others',d.q6Interaction,4,true))}
 
-    ${q(7,'Should any of the rights previously delegated to the guardian advocate(s) / guardian(s) be restored to the ward at this time?',
+    ${q(7,T.q7,
       yesNoCheckboxS('q7RestoreRights','Restore any rights?',d.q7RestoreRights,true,'/p2')
-      +(d.q7RestoreRights==='Yes'?`<div class="plan-conditional">${txtP('q7RestoreExplain','Identify the specific right(s) and explain why they should be restored',d.q7RestoreExplain,4,true,'For example: to consent to medical treatment, to determine residence, to manage property.')}</div>`:''))}
+      +(d.q7RestoreRights==='Yes'?`<div class="plan-conditional">${txtP('q7RestoreExplain',T.q7Yes,d.q7RestoreExplain,4,true)}</div>`:''))}
 
-    ${q(8,'Since the guardianship was established or the last annual report, the following was executed by or on behalf of the ward:',
-      `<div class="plan-field-hint">Attach and file copies of any documents referenced below if not previously filed with the Court.</div>`
-      +chkP('q8DNR','Do Not Resuscitate ("DNR")',d.q8DNR)
+    ${q(8,T.q8,
+      chkP('q8DNR','Do Not Resuscitate ("DNR")',d.q8DNR)
       +chkP('q8LivingWill','Living Will / Anatomical Gift',d.q8LivingWill)
       +chkP('q8Surrogate','Healthcare Surrogate Designation',d.q8Surrogate)
       +chkP('q8POA','Power of Attorney',d.q8POA)
@@ -265,10 +265,9 @@ function pagePlanSQuestions(){
       +(d.q8Other?`<div class="plan-conditional mt-2">${inpS('q8OtherText','Describe the other advance directive',d.q8OtherText,true)}</div>`:'')
       +chkP('q8None','NONE',d.q8None))}
 
-    ${q(9,'As the guardian advocate(s) / guardian(s), have you received any payments, goods, or services for work or care provided on behalf of the ward?',
-      `<div class="plan-field-hint">This does <strong>not</strong> include payments, goods, or services received from a government benefits program such as Social Security, Medicaid, Medicare, or the Agency for Persons with Disabilities.</div>`
-      +yesNoCheckboxS('q9Remuneration','Received any payments, goods, or services?',d.q9Remuneration,true,'/p2')
-      +(d.q9Remuneration==='Yes'?`<div class="plan-conditional">${txtP('q9RemunerationExplain','Please explain',d.q9RemunerationExplain,3,true)}</div>`:''))}
+    ${q(9,T.q9,
+      yesNoCheckboxS('q9Remuneration','Received any payments, goods, or services?',d.q9Remuneration,true,'/p2')
+      +(d.q9Remuneration==='Yes'?`<div class="plan-conditional">${txtP('q9RemunerationExplain',T.q9Yes,d.q9RemunerationExplain,3,true)}</div>`:''))}
 
     ${renderScheduleDocsSection('planQuestions')}
     ${pageNavS('/summary','/p3')}
@@ -297,7 +296,7 @@ function pagePlanSSignatures(){
   return `<div class="schedule-page">
     <h1>Signatures</h1>
   ${preparerNoteHTML()}
-    <div class="attestation-text mb-3">Under penalty of perjury, I declare that I have read the foregoing and the facts alleged are true to the best of my knowledge and belief.</div>
+    <div class="attestation-text mb-3">${T.declaration}</div>
     <div class="schedule-instructions mb-3">The form provides space for two guardians or guardian advocates. Fill in the second block only if there is a co-guardian.</div>
     <div class="row g-3 card-grid-2col mb-4">
       ${g.map((_,i)=>block(i,i?'Co-Guardian':'Guardian / Guardian Advocate')).join('')}
