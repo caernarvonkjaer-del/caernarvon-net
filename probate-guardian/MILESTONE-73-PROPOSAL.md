@@ -6,11 +6,11 @@
 far: 73U (2026-10-04, `5b8849b`), 73V (2026-10-05, `8b96aa3`), 73C
 (2026-10-05, `861b6a9`, brought forward from its place in the build order at the
 requester's choice) 73D (2026-10-05, `c8e84fe`, likewise), 73J part 1 (2026-10-05, `d819c4a`),
-73F part 1 (2026-10-06, `5e9e17b`), 73A (2026-10-06, `83352d0`), 73F part 2 (2026-10-06, `d01edd4`), 73G part 1 (2026-10-06, `69a1b46`), 73E part 1 (2026-10-06, `8e02051`), 73F part 3 (2026-10-06, `67fc66c`), 73I (2026-10-06, `56a7c30`), 73T part 1 (2026-10-07, `4cae1e7`), 73T part 2 (2026-10-07, `2a1cbc5`), 73T part 3 (2026-10-07, `9d2bc72`), 73T part 4 (2026-10-07, `b70a944`), 73M with 74C (2026-10-07, `a0e987b`), 73B (2026-10-07, `86547da`), 73O part 2 with 74F (2026-10-08, `fa9625e`), 73G part 2 with 74H (2026-10-08, `f85e862`, `78b5770`), 73H (2026-10-08, `631f898`), 73S (2026-10-08, `3cf1d9d`), 73K part 1 (2026-10-08, `4268c45`), 73E part 2 (2026-10-08, `5e26e57`, `ea78dd4`), 73J part 2 (2026-10-08, `3648706`), 73K part 2 (2026-10-08, `79a8875`), 73L with 74D's reproduction (2026-10-09, `43081f2`), 73N part 1 (2026-10-09, `ab8068e`), 73N part 2 (2026-10-09, `01a9610`) and 73N part 3 (2026-10-09), each approved by name; 74P, built after 73B, is recorded in Milestone 74.**
+73F part 1 (2026-10-06, `5e9e17b`), 73A (2026-10-06, `83352d0`), 73F part 2 (2026-10-06, `d01edd4`), 73G part 1 (2026-10-06, `69a1b46`), 73E part 1 (2026-10-06, `8e02051`), 73F part 3 (2026-10-06, `67fc66c`), 73I (2026-10-06, `56a7c30`), 73T part 1 (2026-10-07, `4cae1e7`), 73T part 2 (2026-10-07, `2a1cbc5`), 73T part 3 (2026-10-07, `9d2bc72`), 73T part 4 (2026-10-07, `b70a944`), 73M with 74C (2026-10-07, `a0e987b`), 73B (2026-10-07, `86547da`), 73O part 2 with 74F (2026-10-08, `fa9625e`), 73G part 2 with 74H (2026-10-08, `f85e862`, `78b5770`), 73H (2026-10-08, `631f898`), 73S (2026-10-08, `3cf1d9d`), 73K part 1 (2026-10-08, `4268c45`), 73E part 2 (2026-10-08, `5e26e57`, `ea78dd4`), 73J part 2 (2026-10-08, `3648706`), 73K part 2 (2026-10-08, `79a8875`), 73L with 74D's reproduction (2026-10-09, `43081f2`), 73N part 1 (2026-10-09, `ab8068e`), 73N part 2 (2026-10-09, `01a9610`), 73N part 3 (2026-10-09, `987daaf`) and 73O part 1 with 74O (2026-10-09), each approved by name; 74P, built after 73B, is recorded in Milestone 74.**
 **The 2026-10-07 batch is built**, and its closing full regression has run
 (recorded below, after the mid-batch one). **Approved and not yet built**
 (2026-10-08, one batch in this order, light tests between deliveries and a
-full regression at the end): 73O part 1 (with 74O), 73O
+full regression at the end): 73O
 part 3 (with 74L), 73O part 4 (with 74J), 73P (with 74S) and 73R parts 1-3.
 Nothing else is approved. Building any other item, or any part of a
 split item, needs the requester's named approval of that item or part
@@ -3462,6 +3462,78 @@ as Excel (73T).
   labels, readiness, conversion and New Year. The reminder's red-first ran
   there too ("Schedule A1" with the old code). Full unit suite: 2,912
   passed; `check:types` clean; `verify:data-model` OK.
+
+### Build record, part 1 — BUILT 2026-10-09 with 74O (approved by name by the requester, 2026-10-08)
+
+**What changed for a filer:**
+
+- **The Initial Guardianship Plan keeps one attorney name** (73O-2), shown on
+  the cover and in the attorney's certification and printed in both places.
+  It held two, typed separately, printed in different places and free to name
+  different people. A plan saved with both is folded together when it is
+  opened, wherever nothing can be lost: the cover's name when the
+  certification's is blank, the certification's when both name the same
+  person ("Robert T. Nguyen" and "Robert T. Nguyen, Esq."). A plan naming two
+  different people asks **"Which attorney?"**, showing both names, and keeps
+  the one chosen; "Not now" asks again on arriving at another page, and the
+  question never opens over another dialog (73L). **Visible side effect, as
+  the design said:** a plan whose cover alone named an attorney now has a
+  started attorney, so the certification's Bar number, signature and email
+  are required.
+- **The Simplified Accounting's guardian name** (73O-1): when the Cover's
+  Guardian and Part IV's Guardian #1 differ, a warning says so, and that the
+  Excel workbook prints the Cover's name in Part IV -- the Clerk's link,
+  `PARTS III, IV`!F15 `='PARTS I, II '!D16`, never written -- while the PDF
+  prints Part IV's. The same person, a Cover naming co-guardians, or a blank
+  side: silent. An import keeps Part IV's own name, taking the Cover's only
+  when Part IV is blank -- already so since 73T part 4 (its "fill only when
+  blank" rule); now pinned for two different names.
+- **The Plans' guardian names** (73O-N1): the Initial, Annual and Minors
+  Plans' covers keep their list; a signer the cover doesn't name gets a
+  warning, as 72A does for the Inventory. A blank cover or signer: silent.
+- When a page is redrawn behind an open dialog, the cursor is no longer put
+  back into a box on the page beneath it, so the "Which attorney?" question
+  keeps the keyboard.
+
+**How:** new `src/core/filing/plan-initial-attorney.js`
+(`migratePlanInitialAttorney()`, `planInitialAttorneyConflict()`,
+`keepPlanInitialAttorney()`, comparing names with `nameAmong()` both ways
+round). Initial Plan `index.js`: the fold on opening, `askWhichAttorney()`
+through `choicesModal()`, the cover's box bound to `attorney_name`;
+`pdf-model.js` prints `attorney_name` on the cover; `models/plan-initial.js`
+has no `attorneyName`; `carry-over.js` no longer carries it;
+`dashboard/view-model.js` lists a second name until the filer chooses.
+`form-derived-fields.js`: `simplifiedWarnings()`, `planSignerWarnings()`.
+`keep-place.js`: no focus while a dialog is open. CSV: `attorneyName`'s row
+removed, `attorney_name`'s notes updated (1,067 rows).
+
+**Legacy data (AGENTS.md §8.2):** a migration, losing nothing: a plan with two
+different names keeps both until the filer chooses, and the dashboard lists
+both meanwhile. `extractCarryIdentity()` still reads an unfolded
+`attorneyName` as its last fallback, so a plan never opened since carries its
+attorney.
+
+**Tests:** `tests/unit/form-derived-fields.spec.js` (the Simplified's warning
+and the three Plans' signers; **red-first:** all three fail on the previous
+`form-derived-fields.js`); new `tests/unit/plan-initial-attorney.spec.js` (6:
+the fold, the same person either way round, two people never chosen between,
+the choice); `ward-carryover.spec.js` (no `attorneyName` carried);
+`workbook-contract.spec.js` (73O-1's import with two different names);
+`model-change-event.spec.js` (the fold is a listed repair on opening; the
+choice announces). The browser half is in 74O's new
+`tests/e2e/carry-forward-hints.spec.ts`: "Which attorney?" asked and the
+choice kept; a cover-only attorney folded in without asking (**red-first:**
+both fail on the previous source). Goldens regenerated, each differing only
+by the Initial Plan's `attorneyName`: the blank-filing shapes, the sidebar
+and validator records, conversion and New Year. Light regression on a C: copy: 19 browser specs, 260 tests -- 248 passed;
+the 12 failures were each read: the conversion golden (the retired field
+only, regenerated), the Initial Plan's cover pin and cover-geometry test (the
+cover now shows the one attorney name; both updated), and 9 Inventory
+"missing item" link tests that had failed since 73L (`43081f2`, found by
+bisecting; fixed in their own commit, next). Then the conversion, New Year
+(regenerated: the retired field only), saved-file corpus, cover-geometry and
+cover-pin specs: all 97 passed. Full unit suite: 3,054 passed; `check:types`
+clean; `verify:data-model` OK.
 
 ---
 

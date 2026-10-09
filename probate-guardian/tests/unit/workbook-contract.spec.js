@@ -698,6 +698,16 @@ describe("the Simplified's 73T rows, fixed in part 4", () => {
     expect(result.guardians[0]).toMatchObject({ name: 'Ann Guardian', signatureState: 'stamp', signatureImage: STAMP, certifiesService: true });
     const blank = { ...json(wrote), guardians: [{ name: '' }] };
     expect(applyDraft(blank, read(blank).draft).guardians[0].name).toBe('Ann Guardian');
+    // Milestone 73O part 1 (73O-1): a Part IV naming someone other than the
+    // Cover keeps its own name; the workbook's Part IV shows the Cover's.
+    const cover = back.getWorksheet('PARTS I, II ').getCell('D16');
+    cover.value = 'Cover Person';
+    try {
+      const result = applyDraft(wrote, read(wrote).draft);
+      expect([result.guardian, result.guardians[0].name]).toEqual(['Cover Person', 'Ann Guardian']);
+    } finally {
+      cover.value = 'Ann Guardian';
+    }
   });
 
   test("row 2: the attorney's signature choice is never re-cased", () => {

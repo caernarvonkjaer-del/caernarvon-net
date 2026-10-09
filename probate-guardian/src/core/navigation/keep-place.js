@@ -156,7 +156,9 @@ export function settlePlace(container, place, { reason, focus = null, data = nul
     return null;
   }
   container.scrollTop = place.scrollTop;
-  if (!place.mayFocus) return null;
+  // Milestone 73O part 1: a dialog the page opened as it was drawn (the
+  // documents reminder, a question about the filing) keeps the cursor.
+  if (!place.mayFocus || (typeof document !== 'undefined' && document.querySelector?.('.modal-overlay.show'))) return null;
   const target = elementForTarget(container, focus, data, place.value)
     || (place.path ? boxForPath(container, place.path, place.value) : null);
   if (!target) {

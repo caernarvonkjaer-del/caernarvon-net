@@ -102,7 +102,7 @@ const pdfOut = process.env.PG_PDF_OUT;
 for (const form of [
   { label: 'Annual Accounting', type: 'annual', fill: fillMinimalValidAnnualWard, pdfButton: '[data-annual-action="save-pdf"]', attorneyPath: 'attorney', wardInGrid: true },
   { label: 'Simplified Accounting', type: 'simplified', fill: fillMinimalValidSimplifiedWard, pdfButton: '[data-simplified-action="save-pdf"]', attorneyPath: 'attorney', wardInGrid: true },
-  { label: 'Initial Plan', type: 'planInitial', fill: fillMinimalValidPlanInitialWard, pdfButton: '[data-form-action="save-pdf-plan-initial"]', attorneyPath: 'attorneyName', wardInGrid: false },
+  { label: 'Initial Plan', type: 'planInitial', fill: fillMinimalValidPlanInitialWard, pdfButton: '[data-form-action="save-pdf-plan-initial"]', attorneyPath: 'attorney_name', wardInGrid: false }, // 73O part 1: the one attorney name
   { label: 'Annual Plan', type: 'planAnnual', fill: fillMinimalValidPlanAnnualWard, pdfButton: '[data-form-action="save-pdf-plan-annual"]', attorneyPath: '', wardInGrid: false },
   { label: 'Minor Plan', type: 'planMinor', fill: fillMinimalValidPlanMinorWard, pdfButton: '[data-form-action="save-pdf-plan-minor"]', attorneyPath: '', wardInGrid: false },
 ]) {

@@ -96,9 +96,11 @@ describe('form-derived cells the filing overwrites', () => {
     // The Initial Inventory's bond cells are real input boxes in its own
     // template, so there is no derived value to disagree with; its Guardian #1
     // rule reads the Cover's Guardian Name(s), not Part I's Guardian (below).
-    for (const type of ['guardian', 'simplified', 'planAnnual', 'planInitial', 'planMinor', 'planSimplified']) {
+    for (const type of ['guardian', 'planAnnual', 'planInitial', 'planMinor', 'planSimplified']) {
       expect(codes(annual({ ...divergent, inventoryType: type })), type).toEqual([]);
     }
+    // Milestone 73O part 1: the Simplified's Part IV against its Cover (below).
+    expect(codes(annual({ ...divergent, inventoryType: 'simplified' }))).toEqual(['form-derived.guardian-name']);
   });
 
   // Milestone 72A: listing co-guardians in Part I is not a disagreement. The
@@ -170,4 +172,40 @@ describe("the Inventory's Guardian #1 against the Cover's Guardian Name(s)", () 
     expect(codes({ inventoryType: 'guardian', guardianName: 'Jane Doe' })).toEqual([]);
   });
 
+});
+
+// Milestone 73O part 1 (73O-1): the Simplified's workbook keeps the Clerk's
+// link from Part IV's name box to the Cover's Guardian, so the workbook prints
+// the Cover's name and the PDF Part IV's -- said, never blocked.
+describe("the Simplified's Guardian #1 against its Cover", () => {
+  const simplified = (cover, partFour) => ({ inventoryType: 'simplified', guardian: cover, guardians: [{ name: partFour }] });
+  test('differing names warn, saying which output prints which', () => {
+    const [w] = formDerivedOverwriteWarnings(simplified('Rachel Alvarez', 'Tom Alvarez'));
+    expect(w).toMatchObject({ code: 'form-derived.guardian-name', severity: 'advisory', field: 'guardians.0.name' });
+    expect(w.message).toContain("The Excel workbook prints the Cover's name in Part IV; the PDF prints Part IV's.");
+  });
+  test('the same person, a Cover naming co-guardians, or a blank side: silent', () => {
+    expect(codes(simplified('Rachel Alvarez', 'Rachel Alvarez'))).toEqual([]);
+    expect(codes(simplified('Rachel Alvarez and Tom Alvarez', 'Tom Alvarez'))).toEqual([]);
+    expect(codes(simplified('', 'Tom Alvarez'))).toEqual([]);
+    expect(codes(simplified('Rachel Alvarez', ''))).toEqual([]);
+  });
+});
+
+// Milestone 73O part 1 (73O-N1): each Plan's cover keeps its list of
+// guardians; a signer it doesn't name is said, as 72A does for the Inventory.
+describe("the Plans' signers against the cover's guardians", () => {
+  test('a signer the cover does not name warns, on each of the three Plans; one it names does not', () => {
+    for (const [type, field] of [['planInitial', 'guardianNames'], ['planAnnual', 'guardian'], ['planMinor', 'guardianName']]) {
+      const filing = { inventoryType: type, [field]: 'Jane Doe and John Doe', planGuardians: [{ name: 'Jane Doe' }, { name: 'Pat Smith' }] };
+      const warnings = formDerivedOverwriteWarnings(filing);
+      expect(warnings.map((w) => w.field), type).toEqual(['planGuardians.1.name']);
+      expect(warnings[0].message, type).toContain('Co-guardian Pat Smith signs this plan but is not among');
+    }
+  });
+  test('a blank cover, or a blank signer, says nothing; the Simplified Plan has no cover list', () => {
+    expect(codes({ inventoryType: 'planAnnual', guardian: '', planGuardians: [{ name: 'Pat Smith' }] })).toEqual([]);
+    expect(codes({ inventoryType: 'planAnnual', guardian: 'Jane Doe', planGuardians: [{ name: '' }] })).toEqual([]);
+    expect(codes({ inventoryType: 'planSimplified', guardian: 'Jane Doe', planGuardians: [{ name: 'Pat Smith' }] })).toEqual([]);
+  });
 });

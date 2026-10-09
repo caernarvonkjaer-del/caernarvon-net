@@ -32,7 +32,10 @@ export function emptyDataPlanInitial() {
     // Cover
     wardName:'', caseNumber:'', ucn:'', county:'', periodFrom:'', periodTo:'',
     inceptionDate:'', lettersSignedDate:'', successorGuardianship:'',
-    guardianNames:'', attorneyName:'',
+    // Milestone 73O part 1 (73O-2): the attorney is attorney_name (below),
+    // shown on the cover and the certification; the cover's own attorneyName
+    // is folded into it (plan-initial-attorney.js).
+    guardianNames:'',
     wardLiving:'', residenceAddress:'', residenceCityStateZip:'', residencePhone:'',
     mailingAddress:'', mailingCityStateZip:'',
     // Milestone 74P: "Mailing address same as residence".

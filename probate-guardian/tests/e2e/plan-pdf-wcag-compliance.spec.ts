@@ -67,7 +67,6 @@ const CONFIGS: WcagConfig[] = [
       periodFrom: '2026-01-12',
       periodTo: '2026-03-12',
       guardianNames: 'Jordan Alvarez',
-      attorneyName: 'Casey Nolan, Esq.',
       wardLiving: 'In a private residence leased or owned by them (house, condo or apartment)',
       residenceAddress: '10 Bay St',
       residenceCityStateZip: 'Clearwater, FL 33755',

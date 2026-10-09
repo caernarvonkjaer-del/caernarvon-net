@@ -2,8 +2,8 @@
  "generatedBy": "node scripts/ms70-assertion-counts.mjs --write-baseline",
  "note": "Milestone 70 per-spec assertion counts (static expect calls). tests/unit/ms70-assertion-counts.spec.js fails when a spec falls below its count; lowering it requires --reason, recorded in dropLog. A tripwire, not proof of equivalence (decision D9).",
  "totals": {
-  "expects": 9112,
-  "tests": 2613
+  "expects": 9206,
+  "tests": 2645
  },
  "counts": {
   "tests/e2e/amounts-keep-their-sign.spec.ts": {
@@ -69,6 +69,10 @@
   "tests/e2e/carry-balance-matches-prior.spec.ts": {
    "expects": 41,
    "tests": 5
+  },
+  "tests/e2e/carry-forward-hints.spec.ts": {
+   "expects": 26,
+   "tests": 6
   },
   "tests/e2e/carryover-workflow.spec.ts": {
    "expects": 34,
@@ -762,6 +766,10 @@
    "expects": 47,
    "tests": 21
   },
+  "tests/unit/carry-forward-hints.spec.js": {
+   "expects": 26,
+   "tests": 12
+  },
   "tests/unit/case-county-drift.spec.js": {
    "expects": 15,
    "tests": 6
@@ -943,8 +951,8 @@
    "tests": 43
   },
   "tests/unit/form-derived-fields.spec.js": {
-   "expects": 46,
-   "tests": 18
+   "expects": 58,
+   "tests": 22
   },
   "tests/unit/form-fields-legacy-delegation.spec.js": {
    "expects": 15,
@@ -1197,6 +1205,10 @@
   "tests/unit/plan-directive-cards.spec.js": {
    "expects": 11,
    "tests": 7
+  },
+  "tests/unit/plan-initial-attorney.spec.js": {
+   "expects": 19,
+   "tests": 6
   },
   "tests/unit/plan-initial-multiselect.spec.js": {
    "expects": 31,
@@ -1467,8 +1479,8 @@
    "tests": 7
   },
   "tests/unit/ward-carryover.spec.js": {
-   "expects": 83,
-   "tests": 19
+   "expects": 93,
+   "tests": 23
   },
   "tests/unit/ward-lock.spec.js": {
    "expects": 27,
@@ -1483,7 +1495,7 @@
    "tests": 6
   },
   "tests/unit/workbook-contract.spec.js": {
-   "expects": 120,
+   "expects": 121,
    "tests": 44
   },
   "tests/unit/workbook-recalc-on-open.spec.js": {

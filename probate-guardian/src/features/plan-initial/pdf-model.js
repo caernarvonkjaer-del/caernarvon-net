@@ -82,7 +82,8 @@ export function buildPlanInitialModel(D, options) {
           { label: 'Date Letters Were Signed', value: dateOrLine(d.lettersSignedDate) },
           { label: 'For the period', value: `${dateOrLine(d.periodFrom)} through ${dateOrLine(d.periodTo)}` },
           { label: 'Guardian Name(s)', value: d.guardianNames || '' },
-          { label: 'Attorney Name', value: d.attorneyName || '' },
+          // Milestone 73O part 1: the plan's one attorney name (73O-2).
+          { label: 'Attorney Name', value: d.attorney_name || '' },
         ],
       },
       {

@@ -60,7 +60,9 @@ describe('ward-carryover', () => {
       expect(result.county).toBe('');
       expect(result.inceptionDate).toBe('2024-01-15');
       expect(result.guardianNames).toBe('John Guardian');
-      expect(result.attorneyName).toBe('Alice Attorney');
+      // Milestone 73O part 1 (73O-2): the Initial Plan keeps one attorney
+      // name; the cover's retired attorneyName is no longer carried.
+      expect(result).not.toHaveProperty('attorneyName');
       expect(result.attorney_name).toBe('Alice Attorney');
       expect(result.attorney_bar).toBe('1234567');
       expect(result.attorney_phone).toBe('555-111-2222');
@@ -224,6 +226,46 @@ describe('ward-carryover', () => {
     it('produces a blank, never an invented facility, when the source has none', () => {
       const src = { inventoryType: 'guardian', wardName: 'Minor Doe' };
       expect(carryOverFieldsForPlan(src, 'planMinor').q1ResidenceName).toBe('');
+    });
+  });
+
+  // Milestone 74O (decision 74O-3). Where the ward lives -- the living
+  // choice, the residence address and phone, the mailing address -- was typed
+  // again on every Annual Plan made from the ward's previous Plan.
+  describe('74O: an Annual Plan carries the residence from the previous Plan', () => {
+    const residence = {
+      residenceAddress: '14 Palm Court',
+      residenceCityStateZip: 'Clearwater, FL 33755',
+      residencePhone: '727-555-0101',
+      mailingAddress: 'PO Box 12',
+      mailingCityStateZip: 'Clearwater, FL 33757',
+    };
+
+    it('carries the residence and mailing address from an Initial Plan', () => {
+      const out = carryOverFieldsForPlan({ inventoryType: 'planInitial', wardName: 'Ward Doe', ...residence }, 'planAnnual');
+      for (const [field, value] of Object.entries(residence)) expect(out[field], field).toBe(value);
+    });
+
+    it("maps the Initial Plan's living choices onto the Annual Plan's wording", () => {
+      const living = (wardLiving, inventoryType = 'planInitial') => carryOverFieldsForPlan({ inventoryType, wardLiving }, 'planAnnual').wardLiving;
+      expect(living('In a private residence leased or owned by them (house, condo or apartment)')).toBe('In a private residence leased or owned by them');
+      expect(living('In a private residence not leased or owned by them (such as family member)')).toBe('In a private residence not leased or owned by them');
+      expect(living('In a facility (Skilled Nursing, Assisted Living, etc.)')).toBe('In a facility (skilled nursing, assisted living, etc.)');
+      expect(living('In a facility (skilled nursing, assisted living, etc.)', 'planAnnual')).toBe('In a facility (skilled nursing, assisted living, etc.)');
+      // An answer neither form offers carries blank, never as a choice the
+      // Annual Plan cannot show.
+      expect(living('Somewhere else')).toBe('');
+    });
+
+    it('carries "mailing same as residence" with the addresses', () => {
+      expect(carryOverFieldsForPlan({ inventoryType: 'planAnnual', ...residence, mailingSameAsResidence: true }, 'planAnnual').mailingSameAsResidence).toBe(true);
+      expect(carryOverFieldsForPlan({ inventoryType: 'planAnnual', ...residence }, 'planAnnual').mailingSameAsResidence).toBe(false);
+    });
+
+    it('carries no residence from a filing that records none', () => {
+      const out = carryOverFieldsForPlan({ inventoryType: 'guardian', wardName: 'Ward Doe', residenceAddress: 'not a plan field' }, 'planAnnual');
+      expect(out).not.toHaveProperty('residenceAddress');
+      expect(out).not.toHaveProperty('wardLiving');
     });
   });
 

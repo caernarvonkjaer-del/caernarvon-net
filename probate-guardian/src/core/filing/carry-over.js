@@ -153,13 +153,43 @@ export function attorneyCarryFields(type, id) {
     case 'planAnnual':
       return { attorney: attyName, attorney_bar: attyBar, attorney_phone: attyPhone, attorney_email: attyEmail, attorney_secondary_email: attySecondaryEmail, attorney_street: attyStreet, attorney_cityStateZip: attyCityStateZip };
     case 'planInitial':
-      return { attorneyName: attyName, attorney_name: attyName, attorney_bar: attyBar, attorney_phone: attyPhone, attorney_email: attyEmail, attorney_secondaryEmail: attySecondaryEmail, attorney_street: attyStreet, attorney_cityStateZip: attyCityStateZip };
+      return { attorney_name: attyName, attorney_bar: attyBar, attorney_phone: attyPhone, attorney_email: attyEmail, attorney_secondaryEmail: attySecondaryEmail, attorney_street: attyStreet, attorney_cityStateZip: attyCityStateZip };
     case 'planMinor':
     case 'planSimplified':
       return { attorney_name: attyName, attorney_bar: attyBar, attorney_phone: attyPhone, attorney_email: attyEmail, attorney_secondary_email: attySecondaryEmail, attorney_street: attyStreet, attorney_cityStateZip: attyCityStateZip };
     default:
       return {};
   }
+}
+
+// Milestone 74O (decision 74O-3): where the ward lives carries from an
+// Initial or Annual Plan into the next Annual Plan, as the guardians and the
+// attorney already do; a filer changes what changed. The two Plans' court
+// forms word the living choices differently, so the Initial Plan's three map
+// onto the Annual Plan's by meaning; an answer that matches neither list
+// carries blank rather than as a choice the Annual Plan can't show. "Same as
+// residence" travels with the addresses (as 74P's office box does), so a
+// hidden mailing address never surfaces unticked. Any other source -- an
+// Inventory, an accounting -- records no residence, and carries none.
+const ANNUAL_PLAN_LIVING = Object.freeze({
+  'in a private residence leased or owned by them (house, condo or apartment)': 'In a private residence leased or owned by them',
+  'in a private residence leased or owned by them': 'In a private residence leased or owned by them',
+  'in a private residence not leased or owned by them (such as family member)': 'In a private residence not leased or owned by them',
+  'in a private residence not leased or owned by them': 'In a private residence not leased or owned by them',
+  'in a facility (skilled nursing, assisted living, etc.)': 'In a facility (skilled nursing, assisted living, etc.)',
+});
+
+function planResidenceCarry(src) {
+  if (src.inventoryType !== 'planInitial' && src.inventoryType !== 'planAnnual') return {};
+  return {
+    wardLiving: ANNUAL_PLAN_LIVING[String(src.wardLiving || '').trim().toLowerCase()] || '',
+    residenceAddress: src.residenceAddress || '',
+    residenceCityStateZip: src.residenceCityStateZip || '',
+    residencePhone: src.residencePhone || '',
+    mailingAddress: src.mailingAddress || '',
+    mailingCityStateZip: src.mailingCityStateZip || '',
+    mailingSameAsResidence: src.mailingSameAsResidence === true,
+  };
 }
 
 export function carryOverFieldsForPlan(sourceWard, planType) {
@@ -226,6 +256,7 @@ export function carryOverFieldsForPlan(sourceWard, planType) {
       gid: src.gid || src.inceptionDate || '',
       guardian: gName,
       ...attorney,
+      ...planResidenceCarry(src),
       planGuardians: [0, 1, 2].map((i) => {
         const g = gs[i] || (i === 0 ? { name: gName } : {});
         return {

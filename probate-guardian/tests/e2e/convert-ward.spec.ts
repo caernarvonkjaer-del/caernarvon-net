@@ -123,6 +123,8 @@ test.describe('Convert Ward / "New Filing from Existing"', () => {
 
     const sourceWardId = await page.evaluate(() => {
       const d = (window as any).GuardianForms.testing.snapshot().filing;
+      // A plan saved before Milestone 73O part 1, its attorney on the cover
+      // alone: the carry still finds it (extractCarryIdentity()'s fallback).
       d.attorneyName = 'Zensiqua Okaforsson';
       (window as any).GuardianForms.testing.replaceFiling(d); // setup (D9)
       return d.wardId;

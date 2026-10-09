@@ -62,8 +62,10 @@ export function deriveFilingContacts(ward) {
     add(preparerName(), 'preparer');
     add(ward.attorney, 'attorney');
   } else if (ward.inventoryType === 'planInitial') {
-    add(ward.attorneyName, 'attorney');
+    // Milestone 73O part 1: one attorney name (attorney_name); a plan still
+    // holding a second, different one until its filer chooses lists both.
     add(ward.attorney_name, 'attorney');
+    add(ward.attorneyName, 'attorney');
   } else if (ward.inventoryType === 'planAnnual') {
     add(ward.attorney, 'attorney');
   } else if (ward.inventoryType === 'planMinor') {

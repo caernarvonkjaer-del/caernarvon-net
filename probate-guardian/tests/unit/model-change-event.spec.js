@@ -156,7 +156,7 @@ const SAVES_THAT_ANNOUNCE_NOTHING = {
   'src/features/annual-accounting/index.js': [2, 'repairs on opening the page (the bond answer, the ward status)'],
   'src/features/guardian-inventory/index.js': [1, 'a filing with no guardian card gets one when D-1 is drawn'],
   'src/features/plan-annual/index.js': [1, 'a repair on opening the page'],
-  'src/features/plan-initial/index.js': [2, 'repairs on opening the page'],
+  'src/features/plan-initial/index.js': [3, 'repairs on opening the page (73O part 1: the one attorney name)'],
   'src/features/plan-minor/index.js': [1, 'a repair on opening the page'],
   'src/features/plan-simplified/index.js': [2, 'repairs on opening the page'],
   'src/features/simplified-accounting/index.js': [2, 'repairs on opening the page (the certificate details, the ward status)'],
@@ -176,7 +176,8 @@ const ANNOUNCEMENTS = {
   'src/core/excel/import-transaction.js': 1,        // an import as one transaction (73E part 1): every Excel import since 73T parts 2-4
   'src/features/annual-accounting/filing-type.js': 1, // Annual/Final/Trust
   'src/features/annual-accounting/index.js': 6,     // no-items; add/remove/duplicate row; add/remove B-4 account
-  'src/features/guardian-inventory/index.js': 15,   // rows, guardians, recipients, witnesses, the vehicle box and fields, old D-5 details; 74P's C-5 joint owner and C-1 yearly total
+  'src/features/guardian-inventory/index.js': 16,   // rows, guardians, recipients, witnesses, the vehicle box and fields, old D-5 details; 74P's C-5 joint owner and C-1 yearly total; 74O's "Use the Cover's name"
+  'src/features/plan-initial/index.js': 1,          // 73O part 1: which attorney the filer keeps
   'src/features/simplified-accounting/index.js': 9, // guardians, recipients, remuneration, no-items, the address conflict, old certificate details
 };
 

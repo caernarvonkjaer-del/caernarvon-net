@@ -274,6 +274,7 @@ function bindEvents(container) {
       case 'add-entry': addEntry(control.dataset.schedule); break;
       case 'add-joint-owner': addJointOwner(control.dataset.list, index); break;
       case 'c1-use-yearly': useYearlyTotal(index); break;
+      case 'use-cover-name': useCoverName(control.dataset.path); break;
       case 'add-guardian': addGuardian(); break;
       case 'add-recipient': addRecipient(); break;
       case 'add-witness': addWitness(); break;
@@ -414,6 +415,24 @@ function formRow(...cols){
   return `<div class="row g-2 mb-1">${cols.join('')}</div>`;
 }
 function col(n,html){return `<div class="col-md-${n}">${html}</div>`;}
+// Milestone 74O (decision 74O-1): a D-1 or D-2 name box the Cover already
+// answers gets a button that copies the Cover's text into it. Nothing is
+// filled unasked -- a Cover listing two guardians must not put both names in
+// one card unless the filer chooses to -- and the button goes once the box
+// holds a name.
+const COVER_NAME_SOURCE=Object.freeze({ 'attorney.name':'attorneyForGuardian' });
+function useCoverNameButton(path,current,cover){
+  const text=String(cover??'').trim();
+  if(String(current??'').trim()||!text)return '';
+  return `<button type="button" class="btn btn-link btn-sm px-0 no-print" data-inventory-action="use-cover-name" data-path="${esc(path)}">Use the Cover's name: ${esc(text)}</button>`;
+}
+function useCoverName(path){
+  const text=String(getD()[COVER_NAME_SOURCE[path]||'guardianName']??'').trim();
+  if(!text||!/^(guardians\.\d+\.name|attorney\.name)$/.test(path))return;
+  setPath(getD(),path,text);
+  commitModelChange('field-write',[path]);
+  renderPage(getCurrentPage(),onChange(fieldTarget(path)));
+}
 function textInput(bind,placeholder='',type=''){
   const inputId='txt_'+Math.random().toString(36).slice(2,9);
   const dataType=type?` data-input-type="${type}"`:' data-input-type="text"';
@@ -1195,7 +1214,7 @@ function pageD1(){
     return `<div class="col-12 col-lg-6"><div class="entry-card mb-0 h-100">
       <div class="entry-card-header d-flex justify-content-between align-items-center"><span>${title}</span><div class="d-flex align-items-center gap-2">${linkBtn}${removeBtn}</div></div>
       <div class="entry-card-body">
-        ${formRow(col(5,reqLabel("Guardian's Full Name")+textInput(`guardians.${i}.name`,'','name')),col(3,(signatureDateRequired({ path: `guardians.${i}`, state: g.signatureState })?reqLabel:optLabel)('Signature Date')+dateInput(`guardians.${i}.signatureDate`,'Signature Date')),col(4,reqLabel('SSN / EIN')+textInput(`guardians.${i}.ssnEin`,'','ssn')))}
+        ${formRow(col(5,reqLabel("Guardian's Full Name")+textInput(`guardians.${i}.name`,'','name')+useCoverNameButton(`guardians.${i}.name`,g.name,D.guardianName)),col(3,(signatureDateRequired({ path: `guardians.${i}`, state: g.signatureState })?reqLabel:optLabel)('Signature Date')+dateInput(`guardians.${i}.signatureDate`,'Signature Date')),col(4,reqLabel('SSN / EIN')+textInput(`guardians.${i}.ssnEin`,'','ssn')))}
         ${formRow(col(4,reqLabel('Phone Number')+textInput(`guardians.${i}.phone`,'','phone')),col(8,reqLabel('Street Address')+textInput(`guardians.${i}.streetAddress`,'','address')))}
         ${formRow(col(6,reqLabel('City / State / Zip')+textInput(`guardians.${i}.cityStateZip`,'','zip')),col(6,optLabel('Email Address')+textInput(`guardians.${i}.email`,'name@example.com','email')))}
         ${renderSignatureStateControl({ path: `guardians.${i}`, state: g.signatureState, date: g.signatureDate, route: '/d1', signatureImage: g.signatureImage })}
@@ -1253,7 +1272,7 @@ function pageD2(){
       <button class="btn btn-sm btn-outline-secondary no-print" data-inventory-action="link-party" data-role="attorney" data-index="0">Link Person</button>
     </div>
     <div class="entry-card-body">
-      ${formRow(col(5,attyLabel("Attorney's Name")+textInput('attorney.name','','name')),col(3,(signatureDateRequired({ path: 'attorney', state: D.attorney.signatureState })?reqLabel:optLabel)('Signature Date')+dateInput('attorney.signatureDate','Signature Date')),col(4,attyLabel('Filing Date (as of)')+dateInput('attorney.filingDate','Filing Date (as of)')))}
+      ${formRow(col(5,attyLabel("Attorney's Name")+textInput('attorney.name','','name')+useCoverNameButton('attorney.name',D.attorney.name,D.attorneyForGuardian)),col(3,(signatureDateRequired({ path: 'attorney', state: D.attorney.signatureState })?reqLabel:optLabel)('Signature Date')+dateInput('attorney.signatureDate','Signature Date')),col(4,attyLabel('Filing Date (as of)')+dateInput('attorney.filingDate','Filing Date (as of)')))}
       ${formRow(col(4,attyLabel('Florida Bar Number')+textInput('attorney.barNumber','','barNumber')),col(4,attyLabel('Phone Number')+textInput('attorney.phone','','phone')))}
       ${formRow(col(6,attyLabel('Primary Email (e-filing)')+textInput('attorney.email','name@lawfirm.com','email')),col(6,optLabel('Secondary Email (optional)')+textInput('attorney.secondaryEmail','assistant@lawfirm.com','email')))}
       ${formRow(col(8,attyLabel('Street Address')+textInput('attorney.streetAddress','','address')),col(6,attyLabel('City / State / Zip')+textInput('attorney.cityStateZip','','zip')))}

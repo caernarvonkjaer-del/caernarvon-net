@@ -6,9 +6,9 @@
 far: 74A (2026-10-05), 74B (2026-10-06), 74Q (2026-10-07), 74C (2026-10-07,
 with 73M, `a0e987b`), 74P (2026-10-07, after 73B, `645fe35`), 74F (2026-10-08,
 with 73O part 2, `fa9625e`), 74H (2026-10-08, with 73G part 2, `f85e862`) and
-74D's reproduction with its UX-07 rewording (2026-10-09, with 73L), each
-approved by name.** **Approved and not yet built** (2026-10-08, with
-Milestone 73's batch): 74O (with 73O part 1),
+74D's reproduction with its UX-07 rewording (2026-10-09, with 73L) and 74O
+(2026-10-09, with 73O part 1), each approved by name.** **Approved and not yet
+built** (2026-10-08, with Milestone 73's batch):
 74L (with 73O part 3), 74J (with 73O part 4) and 74S (with 73P). Nothing else is
 approved: building any other of 74D–74S needs the requester's named approval
 of that item (AGENTS.md §3). **Every decision in 74C–74S is settled
@@ -2427,6 +2427,87 @@ XI entries.
 - **73N part 2** rewrites the Plans' question wording on the same pages;
   sequence.
 
+### Build record — BUILT 2026-10-09 with 73O part 1 (approved by name by the requester, 2026-10-08)
+
+**What changed for a filer:**
+
+- **Inventory D-1 and D-2** (74O-1): beside an empty guardian or attorney name
+  box whose Cover holds a name, a **"Use the Cover's name: <name>"** button
+  copies the Cover's text in; it goes once the box holds a name. Nothing is
+  filled unasked.
+- **The Plans' benefits question** (the Initial Plan's Question 7, the Annual
+  Plan's 3G) (74O-2): a note from the ward's Inventory -- "The Initial
+  Inventory lists: Social Security Administration (C-1); Pemberton Family
+  Revocable Trust (C-4)." No answer is filled (73B).
+- **An Annual Plan made from the ward's Initial or Annual Plan** (74O-3)
+  arrives with where the ward lives: the living choice (the Initial Plan's
+  three, in the Annual Plan's wording; an answer neither form offers comes
+  blank), the residence address and phone, the mailing address and "same as
+  residence". One made from an Inventory or an accounting, which record no
+  residence, starts blank as before.
+- **The Annual Plan's daily-living page** (74O-4) shows "Last plan: <rating>"
+  under each activity the previous plan rated -- the filing's latest earlier
+  year by number, else the case's newest other Annual or Initial Plan,
+  matched by name across the two Plans' lists. The new rating is never
+  filled.
+- **The Annual Plan's Question 11** (74O-5) shows, for reference, the Part XI
+  the ward's newest Annual, Final or Trust Accounting declares, with its
+  period: each entry, or that the guardian verified none. No warning either
+  way: **which accounting period a plan's remuneration declaration should
+  match is for a qualified person**, and the app doesn't compare them.
+- **Which filings are the ward's** (74O-N1, below): those linked to the same
+  case, or showing the same Case # when either is unlinked.
+
+**Decision raised during the build:**
+
+- **74O-N1. Which of a ward's filings the notes read** (the requester,
+  2026-10-09). (1) *Recommended and chosen:* a filing linked to the same
+  case, or showing the same Case # when either isn't linked; filings linked
+  to different cases stay apart. (2) Only as the dashboard's "Grouped by
+  Case" view puts them together. It came up when the browser test built the
+  usual order -- the Inventory, an Annual Accounting carried from it (which
+  links the two to one case), then the Plans typed fresh: the dashboard's
+  grouping keeps a linked and an unlinked filing apart, so the Plans showed
+  no notes. A note only reads: it never links a filing (case linking stays
+  the filer's act, `case-resolver.js`) and never fills an answer. If two
+  wards' filings were typed with the same Case # by mistake, one ward's
+  details could show in the other's note, read only.
+
+**Not changed:** the Plan for Minors (its residence fields differ; left for a
+later item, as the checklist said); the Initial Plan's own daily-living page
+(decision 4 names the Annual Plan's).
+
+**How:** new `src/core/filing/carry-forward-hints.js` -- `caseFilings()`,
+`inventoryBenefitsNote()`, `previousPlanRatings()` with `lastPlanRating()`,
+`accountingRemuneration()`, and their page HTML in the pages' instruction
+style; it asks the registry's `formEngine()` for the accounting family rather
+than listing it. `carry-over.js`: `planResidenceCarry()` in the Annual Plan's
+carry. Inventory `index.js`: `useCoverNameButton()` and its action, a
+committed change. Initial and Annual Plan `index.js`: the notes. CSV: the
+Annual Plan's residence rows' notes say they carry; no field added.
+
+**Tests:** new `tests/unit/carry-forward-hints.spec.js` (12: the case's
+filings and 74O-N1's rule, the note, "Last plan:" by year number and across
+the two lists, Part XI); `ward-carryover.spec.js` (4: the residence and
+mailing address, the living choices' mapping, "same as residence", nothing
+from an Inventory; **red-first:** three fail on the previous
+`carry-over.js`, the residence fields missing). New
+`tests/e2e/carry-forward-hints.spec.ts` (6, two of them 73O part 1's): the
+D-1 and D-2 button, the Initial Plan's Question 7 note, the Annual Plan's 3G
+note, "Last plan:" and the Part XI reference with the Inventory and
+accounting linked and the Plans typed (74O-N1), and the residence on a
+converted Annual Plan, ticked on its Cover. **Red-first:** all six fail on the
+previous source -- no button, no notes, the residence blank, no question, the
+cover name not folded. The conversion golden: see part 1's. Light regression on a C: copy: 19 browser specs, 260 tests -- 248 passed;
+the 12 failures were each read: the conversion golden (the retired field
+only, regenerated), the Initial Plan's cover pin and cover-geometry test (the
+cover now shows the one attorney name; both updated), and 9 Inventory
+"missing item" link tests that had failed since 73L (`43081f2`, found by
+bisecting; fixed in their own commit, next). Then the conversion, New Year
+(regenerated: the retired field only), saved-file corpus, cover-geometry and
+cover-pin specs: all 97 passed. Full unit suite: 3,054 passed; `check:types`
+clean; `verify:data-model` OK.
+
 ---
 
 ## 74P — Entry helpers on the Inventory and the address cards
@@ -3079,6 +3160,11 @@ re-ask, or a new filed number under AGENTS.md §5 (named approval):
 
 45 decisions: 18 one by one, 27 ordinary. 74D has none until its reports are
 reproduced.
+
+**Raised during the build:** 74O-N1 (2026-10-09), which of a ward's filings
+74O's notes read -- the same linked case, or the same Case # when either
+filing is unlinked (recommended, chosen); recorded in
+[74O's build record](#74o--more-carried-forward-from-the-wards-other-filings).
 
 ---
 

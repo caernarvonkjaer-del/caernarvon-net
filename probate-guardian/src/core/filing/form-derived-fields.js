@@ -92,6 +92,8 @@ export function formDerivedOverwriteWarnings(filing, descriptor = null) {
   const type = descriptor?.inventoryType || filing?.inventoryType || '';
   const engine = engineOf(type);
   if (engine === 'guardian') return inventoryWarnings(filing);
+  if (engine === 'simplified') return simplifiedWarnings(filing);
+  if (PLAN_COVER_GUARDIANS[engine]) return planSignerWarnings(filing, engine);
   if (engine !== 'annual') return [];
 
   const out = [];
@@ -175,6 +177,64 @@ function inventoryWarnings(filing) {
         + 'Confirm which is right before filing.',
     });
   }
+  return out;
+}
+
+/**
+ * Milestone 73O part 1 (decision 73O-1): the Simplified Accounting's Guardian
+ * #1 in Part IV and the Guardian on its Cover. The Clerk's workbook keeps its
+ * own link -- Part IV's name box ('PARTS III, IV'!F15) is ='PARTS I, II '!D16,
+ * never written -- so the workbook prints the Cover's name while the PDF
+ * prints Part IV's. Warned, never blocked, as 72H warns for the Inventory's
+ * attorney.
+ */
+function simplifiedWarnings(filing) {
+  const partFour = asName(filing?.guardians?.[0]?.name);
+  const cover = asName(filing?.guardian);
+  if (!partFour || !cover || nameAmong(partFour, cover)) return [];
+  return [{
+    code: 'form-derived.guardian-name',
+    severity: 'advisory',
+    field: 'guardians.0.name',
+    entered: partFour,
+    derived: cover,
+    message: `Part IV — Guardian #1 (${partFour}) is not among the Guardian named on the Cover (${cover}). `
+      + "The Excel workbook prints the Cover's name in Part IV; the PDF prints Part IV's. "
+      + 'Confirm which is right before filing.',
+  }];
+}
+
+/** Each Plan's cover list of guardians: the field, and what the cover calls it. */
+const PLAN_COVER_GUARDIANS = Object.freeze({
+  planInitial: ['guardianNames', 'Guardian Name(s)'],
+  planAnnual: ['guardian', 'Guardian Name(s)'],
+  planMinor: ['guardianName', 'Guardian Name'],
+});
+
+/**
+ * Milestone 73O part 1 (decision 73O-N1): on the Initial, Annual and Minors
+ * Plans the cover keeps its own list of guardians, and each signer is checked
+ * against it, as 72A checks the Inventory's Guardian #1 -- a signer the cover
+ * doesn't name is said, never blocked.
+ */
+function planSignerWarnings(filing, engine) {
+  const [field, coverLabel] = PLAN_COVER_GUARDIANS[engine];
+  const cover = asName(filing?.[field]);
+  if (!cover) return [];
+  const out = [];
+  (Array.isArray(filing?.planGuardians) ? filing.planGuardians : []).forEach((g, i) => {
+    const signer = asName(g?.name);
+    if (!signer || nameAmong(signer, cover)) return;
+    out.push({
+      code: 'form-derived.plan-signer',
+      severity: 'advisory',
+      field: `planGuardians.${i}.name`,
+      entered: signer,
+      derived: cover,
+      message: `Signatures — ${i ? `Co-guardian ${signer}` : signer} signs this plan but is not among the ${coverLabel} on the cover (${cover}). `
+        + 'Confirm which is right before filing.',
+    });
+  });
   return out;
 }
 

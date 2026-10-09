@@ -35,7 +35,9 @@ import { formatDisplayDate } from '../../core/form/date-parser.js';
 import { PLAN_ADLS, PLAN_ADL_RATINGS, PLAN_BENEFITS, PLAN_RIGHTS, PLAN_RIGHT_STATES } from '../../core/filing/models/plan-annual.js';
 import { normalizePlanGuardians } from '../../core/filing/models/plan-rows.js';
 import { sectionMarks } from '../../core/status/section-marks.js';
-import { getD, requestSave } from '../../core/state.js';
+import { getCaseFile, getD, requestSave } from '../../core/state.js';
+import { INITIAL_ADLS } from '../../core/filing/models/plan-initial.js';
+import { accountingRemunerationHTML, inventoryBenefitsNoteHTML, lastPlanRating, previousPlanRatings } from '../../core/filing/carry-forward-hints.js';
 import { REQ_MARK, chkP, inpS, pageNavS, planCheckGroup, planQ, txtP, yesNoCheckboxS, yesNoRadioHTML } from '../../core/form/field-html.js';
 import { renderScheduleDocsSection } from '../../core/filing/schedule-docs.js';
 import { setPath } from '../../core/form/paths.js';
@@ -381,6 +383,7 @@ function pagePlanABenefits(){
     <h1>3G. Insurance &amp; Benefits</h1>
     <h2 class="plan-question-text">${T.q3G}</h2>
     <div class="schedule-instructions">Health and accident insurance, and any private or governmental benefits the ward receives toward the cost of medical, mental health or related services. Mark whether the ward is <strong>eligible</strong> for each, and whether you have <strong>applied</strong> for it.</div>
+    ${inventoryBenefitsNoteHTML(d,getCaseFile().wards)}
     <table class="table plan-benefits-table">
       <thead><tr><th>Benefit</th><th class="text-center">Eligible</th><th class="text-center">Applied for</th></tr></thead>
       <tbody>${rows}</tbody>
@@ -461,11 +464,15 @@ function pagePlanARights(){
 function pagePlanAADLs(){
   const d=getD();
   const a=d.adls||{};
-  const rows=PLAN_ADLS.map(([k,label])=>
-    `<tr><td>${label}</td><td style="width:16rem">
+  // Milestone 74O (74O-4): the previous plan's rating beside each activity,
+  // matched by name across the two Plans' lists; never filled in.
+  const last=previousPlanRatings(d,getCaseFile().wards,{planAnnual:PLAN_ADLS,planInitial:INITIAL_ADLS});
+  const rows=PLAN_ADLS.map(([k,label])=>{
+    const was=lastPlanRating(last,label);
+    return `<tr><td>${label}${was?`<div class="plan-field-hint" data-last-plan="${esc(k)}">${esc(was)}</div>`:''}</td><td style="width:16rem">
       <select class="form-select form-select-sm" data-form-path="adls.${k}" aria-label="${esc(label)}">
         ${PLAN_ADL_RATINGS.map(o=>`<option value="${esc(o)}" ${a[k]===o?'selected':''}>${o||'— select —'}</option>`).join('')}
-      </select></td></tr>`).join('');
+      </select></td></tr>`;}).join('');
   return `<div class="schedule-page">
     <h1>8. Activities of Daily Living</h1>
     <div class="schedule-instructions">Rate all sixteen honestly, including the ones that haven't changed. The court compares these year over year to see whether the ward's independence is improving or declining, so a blank row is a gap in the record rather than a neutral answer.</div>
@@ -583,7 +590,11 @@ function pagePlanARemuneration(){
   return `<div class="schedule-page">
     <h1>11. Remuneration</h1>
     ${planQ(11,T.q11+REQ_MARK,
-      `<div class="plan-check-grid">${chkP('q11NoRemuneration',planAnnualNoRemuneration('____________'),d.q11NoRemuneration,'/p10')}</div>
+      // Milestone 74O (74O-5): the accounting's Part XI for reference only, no
+      // warning -- which period a plan's declaration covers is for a
+      // qualified person.
+      `${accountingRemunerationHTML(d,getCaseFile().wards)}
+      <div class="plan-check-grid">${chkP('q11NoRemuneration',planAnnualNoRemuneration('____________'),d.q11NoRemuneration,'/p10')}</div>
       ${d.q11NoRemuneration
         ? `<div class="plan-conditional mt-2">${inpS('q11NoRemunerationName',"Declaring guardian's name",d.q11NoRemunerationName,true)}</div>`
         : `<div class="plan-conditional mt-2">

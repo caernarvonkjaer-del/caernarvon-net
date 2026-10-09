@@ -31,7 +31,7 @@ import { preparerNoteHTML } from '../../core/signature/preparer-note.js';
 // two independently-required ones) -- only periodFrom/periodTo (not
 // required on this page, unlike Plan Simplified/Minor) are wired below.
 // The "Guardian, Attorney & Residence" box's own fields (guardianNames,
-// attorneyName, wardLiving, residence/mailing address) are ALL already on
+// attorney_name, wardLiving, residence/mailing address) are ALL already on
 // Tier 1 via inpS()/radioP() too -- there is no adoption gap here to
 // justify building the milestone's fourth named card (Residence & Facility
 // Profile) yet. Building it now, with only this one type's shape in hand,
@@ -55,7 +55,8 @@ import { formatDisplayDate } from '../../core/form/date-parser.js';
 import { INITIAL_ADLS, INITIAL_ADL_RATINGS } from '../../core/filing/models/plan-initial.js';
 import { normalizePlanGuardians } from '../../core/filing/models/plan-rows.js';
 import { sectionMarks } from '../../core/status/section-marks.js';
-import { getD, requestSave } from '../../core/state.js';
+import { getCaseFile, getD, requestSave } from '../../core/state.js';
+import { inventoryBenefitsNoteHTML } from '../../core/filing/carry-forward-hints.js';
 import { REQ_MARK, chkP, inpS, pageNavS, planCheckGroup, planQ, radioP, txtP, yesNoCheckboxS } from '../../core/form/field-html.js';
 import { renderScheduleDocsSection } from '../../core/filing/schedule-docs.js';
 import { setPath } from '../../core/form/paths.js';
@@ -63,6 +64,12 @@ import { PLAN_INITIAL_EXPLANATIONS, explanationShown } from '../../core/filing/p
 import { collectPlanInitialIssues } from '../../core/validation/engines/plan-initial.js';
 import { PLAN_INITIAL_BENEFITS, PLAN_INITIAL_CHOICES as C, PLAN_INITIAL_DEVICES, PLAN_INITIAL_TEXT as T, numbered, planInitialAttorneyCertification } from '../../core/filing/court-text/plan-initial.js';
 import { displayDate } from '../../core/form/date-parser.js';
+import { keepPlanInitialAttorney, migratePlanInitialAttorney, planInitialAttorneyConflict } from '../../core/filing/plan-initial-attorney.js';
+import { choicesModal } from '../../core/ui/dialogs.js';
+import { getPageVisit } from '../../core/navigation/route-state.js';
+import { commitModelChange } from '../../core/model-change.js';
+import { getCurrentPage, renderPage } from '../../core/navigation/router.js';
+import { fieldTarget, onChange } from '../../core/navigation/draw-reason.js';
 // Milestone 73N part 2: the court's wording, by field, for the boxes built from shared lists.
 const DEVICE=Object.fromEntries(PLAN_INITIAL_DEVICES);
 const BENEFIT=Object.fromEntries(PLAN_INITIAL_BENEFITS);
@@ -160,6 +167,43 @@ function ensurePrintModule() {
   return _printModulePromise;
 }
 
+// Milestone 73O part 1 (73O-2): a plan that names two different attorneys --
+// the cover's and the certification's -- asks which to keep. Never over
+// another dialog (73L); "Not now" waits for the next arrival at a page.
+let attorneyQuestionOpen = false;
+let attorneyDeclinedVisit = -1;
+async function askWhichAttorney() {
+  const d = getD();
+  const conflict = planInitialAttorneyConflict(d);
+  if (!conflict || attorneyQuestionOpen || document.querySelector('.modal-overlay.show')) return;
+  const visit = getPageVisit();
+  if (attorneyDeclinedVisit === visit) return;
+  attorneyQuestionOpen = true;
+  try {
+    const answer = await choicesModal({
+      title: 'Which attorney?',
+      message: `This plan names two attorneys: ${conflict.cover} on its cover, and ${conflict.certification} in the attorney's certification. `
+        + 'A plan now keeps one attorney name, shown and printed in both places. Which is right?',
+      questions: [{
+        id: 'keep',
+        prompt: "The plan's attorney",
+        options: [
+          { value: 'certification', label: `${conflict.certification} (the attorney's certification)` },
+          { value: 'cover', label: `${conflict.cover} (the cover)` },
+        ],
+      }],
+      confirmLabel: 'Keep this name',
+      cancelLabel: 'Not now',
+    });
+    if (!answer || getD() !== d) { attorneyDeclinedVisit = visit; return; }
+    keepPlanInitialAttorney(d, answer.keep);
+    commitModelChange('field-write', ['attorney_name']);
+    renderPage(getCurrentPage(), onChange(fieldTarget('attorney_name')));
+  } finally {
+    attorneyQuestionOpen = false;
+  }
+}
+
 export async function mount(container, page, { signal } = {}) {
   // Milestone 68C: a plan saved before the Certificate of Service existed
   // gains its fields on load. Idempotent, so every mount may call it.
@@ -167,6 +211,9 @@ export async function mount(container, page, { signal } = {}) {
   // Milestone 68E: questions 2, 4 and 5 saved as one string read back as
   // their boxes. Idempotent, so every mount may call it.
   if (migratePlanInitialMultiselect(getD())) requestSave();
+  // Milestone 73O part 1 (73O-2): one attorney name. Two different people
+  // are asked about once the page is drawn (askWhichAttorney()).
+  if (migratePlanInitialAttorney(getD())) requestSave();
   let html;
   let isPrint = false;
   if (page === '/print') {
@@ -216,6 +263,7 @@ export async function mount(container, page, { signal } = {}) {
     syncAttorneyEmailRequired(container);
   }
   if (isPrint) await _printModule.mountPreview();
+  if (!isPrint) void askWhichAttorney();
 }
 
 export function dispose(container) {
@@ -269,7 +317,7 @@ function getSummaryConfigPlanInitial(){
       {label:'Inception Date',value:formatSummaryDate(d.inceptionDate)},
       {label:'Period',value:formatSummaryDate(d.periodFrom)+' – '+formatSummaryDate(d.periodTo)},
       {label:'Guardian',value:esc(d.guardianNames)},
-      {label:'Attorney',value:esc(d.attorneyName)},
+      {label:'Attorney',value:esc(d.attorney_name)},
     ],
     leftCards:[
       {
@@ -326,7 +374,7 @@ function pagePlanICover(){
           <h2 class="subsection-heading">Guardian, Attorney &amp; Residence</h2>
           <div class="row g-2">
             <div class="col-12">${inpS('guardianNames','Guardian Name(s)',d.guardianNames,true)}</div>
-            <div class="col-12">${inpS('attorneyName','Attorney Name',d.attorneyName)}</div>
+            <div class="col-12">${inpS('attorney_name','Attorney Name',d.attorney_name)}</div>
             ${renderResidenceFields({
               wardLiving: d.wardLiving,
               wardLivingOptions: [
@@ -416,7 +464,10 @@ function pagePlanISocialBenefits(){
         +cb('q6Other',C.q6Other,'/p4'),
         'q6Explain',d.q6Explain,explanationShown(PLAN_INITIAL_EXPLANATIONS,d,'q6Explain')))}
     ${planQ('7',T.q7,
-      planCheckGroup('',
+      // Milestone 74O (74O-2): what the ward's Inventory lists, as a note --
+      // never an answer (73B).
+      inventoryBenefitsNoteHTML(d,getCaseFile().wards)
+      +planCheckGroup('',
         yesNoCheckboxS('q7SocialSecurity',BENEFIT.q7SocialSecurity,d.q7SocialSecurity)
         +yesNoCheckboxS('q7Ssdi',BENEFIT.q7Ssdi,d.q7Ssdi)
         +yesNoCheckboxS('q7Hmo',BENEFIT.q7Hmo,d.q7Hmo)

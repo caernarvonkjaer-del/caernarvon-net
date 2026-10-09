@@ -768,8 +768,8 @@ test.describe('Plan types field-path accuracy (Milestone 33, Item 3, sub-phase 3
     await page.evaluate(() => { (window as any).GuardianForms.testing.patchFiling({ 'attorney_bar': '123456' }); });
     const attorneyPath = await page.evaluate(async () => {
       const structured = await (window as any).GuardianForms.testing.validate.structured();
-      // attorney_name here, not the separate, cosmetic-only, never-validated
-      // attorneyName field this type also shows on its Cover page.
+      // attorney_name: since Milestone 73O part 1 the plan's one attorney
+      // name, shown on the Cover and in the certification.
       return structured.find((e: any) => e.section === 'Attorney Certification' && e.label.includes('Attorney name'))?.path;
     });
     expect(attorneyPath).toBe('attorney_name');
