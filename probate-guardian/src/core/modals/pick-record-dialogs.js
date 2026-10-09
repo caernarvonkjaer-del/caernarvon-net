@@ -4,11 +4,11 @@ import { getOrCreateCaseForWard } from '../case-resolver.js';
 import { esc } from '../filing/escape-html.js';
 import { renderPage } from '../navigation/router.js';
 import { onChange } from '../navigation/draw-reason.js';
-import { createParty, dehydrateIntoParty, hydrateFromParty, readRoleFields, resolveParty, setPartyIdForSlot } from '../party-resolver.js';
+import { createParty, dehydrateIntoParty, LINK_FIELD_LABELS, linkConflicts, linkSlotToParty, readRoleFields, resolveParty, setPartyIdForSlot } from '../party-resolver.js';
 import { getCurrentPage } from '../navigation/route-state.js';
 import { getCaseFile, getD } from '../state.js';
 import { updateNavDots } from '../status/nav-marks.js';
-import { closeModal, ensureFragment, showModal } from '../ui/dialogs.js';
+import { closeModal, confirmModal, ensureFragment, showModal } from '../ui/dialogs.js';
 import { saveWardToState } from '../persistence/case-file.js';
 import { commitModelChange } from '../model-change.js';
 
@@ -36,9 +36,15 @@ export async function showPickPartyModal(role,index){
   showModal('pickPartyModal');
 }
 
-// "Link" — attaches the chosen existing party to the open slot, then
-// hydrates that party's current data into the slot, overwriting whatever
-// was there (matching today's carry-over overwrite behavior).
+// An SSN/EIN shown in a question: its last four digits only, as the PDFs print it.
+const shownDetail=(key,value)=>key==='taxId'?`***-**-${String(value).replace(/\D/g,'').slice(-4)}`:value;
+
+// "Link" — attaches the chosen existing party to the open slot. Milestone 73E
+// part 2 (decision 73E-N3): the shared record fills only what the slot leaves
+// blank; where the slot has typed a detail the record holds differently, the
+// filer is asked which to keep, before anything changes, and a typed detail
+// is never blanked. It used to overwrite every field with the record's,
+// blanks included.
 export async function doPickParty(){
   const partyId=document.getElementById('pick-party-existing').value;
   if(!partyId||!_pickPartySlot)return;
@@ -46,8 +52,20 @@ export async function doPickParty(){
   if(!party)return;
   const {role,index}=_pickPartySlot;
   closeModal('pickPartyModal');
+  const conflicts=linkConflicts(party,getD(),role,index);
+  let replace=false;
+  if(conflicts.length){
+    const lines=conflicts.map(c=>`• ${LINK_FIELD_LABELS[c.key]||c.key}: typed "${shownDetail(c.key,c.typed)}"; shared record "${shownDetail(c.key,c.shared)}"`);
+    // Escape or "Keep" changes nothing typed: the link is made and only blanks are filled.
+    replace=await confirmModal({
+      title:'Typed details differ from the shared record',
+      message:`"${party.name||'This record'}" holds different details from what is typed here:\n\n${lines.join('\n')}\n\nUse the shared record's details in this filing, or keep what is typed here? Blank boxes are filled from the shared record either way.`,
+      confirmLabel:"Use the shared record's",
+      cancelLabel:'Keep what is typed here',
+    });
+  }
   setPartyIdForSlot(getD(),role,index,partyId);
-  hydrateFromParty(party,getD(),role,index);
+  linkSlotToParty(party,getD(),role,index,{replace});
   commitModelChange('link-person');
   renderPage(getCurrentPage(),onChange());
   updateNavDots();

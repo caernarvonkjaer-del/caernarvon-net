@@ -2,8 +2,8 @@
  "generatedBy": "node scripts/ms70-assertion-counts.mjs --write-baseline",
  "note": "Milestone 70 per-spec assertion counts (static expect calls). tests/unit/ms70-assertion-counts.spec.js fails when a spec falls below its count; lowering it requires --reason, recorded in dropLog. A tripwire, not proof of equivalence (decision D9).",
  "totals": {
-  "expects": 8884,
-  "tests": 2548
+  "expects": 8916,
+  "tests": 2557
  },
  "counts": {
   "tests/e2e/amounts-keep-their-sign.spec.ts": {
@@ -293,6 +293,10 @@
   "tests/e2e/legacy-ward-data-normalization.spec.ts": {
    "expects": 16,
    "tests": 4
+  },
+  "tests/e2e/link-and-merge.spec.ts": {
+   "expects": 12,
+   "tests": 3
   },
   "tests/e2e/lock-and-save-state.contract.spec.ts": {
    "expects": 12,
@@ -1009,6 +1013,10 @@
   "tests/unit/issue-registry.spec.js": {
    "expects": 35,
    "tests": 15
+  },
+  "tests/unit/link-and-merge.spec.js": {
+   "expects": 20,
+   "tests": 6
   },
   "tests/unit/live-region.spec.js": {
    "expects": 9,

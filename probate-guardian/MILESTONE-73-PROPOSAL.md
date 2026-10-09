@@ -6,11 +6,11 @@
 far: 73U (2026-10-04, `5b8849b`), 73V (2026-10-05, `8b96aa3`), 73C
 (2026-10-05, `861b6a9`, brought forward from its place in the build order at the
 requester's choice) 73D (2026-10-05, `c8e84fe`, likewise), 73J part 1 (2026-10-05, `d819c4a`),
-73F part 1 (2026-10-06, `5e9e17b`), 73A (2026-10-06, `83352d0`), 73F part 2 (2026-10-06, `d01edd4`), 73G part 1 (2026-10-06, `69a1b46`), 73E part 1 (2026-10-06, `8e02051`), 73F part 3 (2026-10-06, `67fc66c`), 73I (2026-10-06, `56a7c30`), 73T part 1 (2026-10-07, `4cae1e7`), 73T part 2 (2026-10-07, `2a1cbc5`), 73T part 3 (2026-10-07, `9d2bc72`), 73T part 4 (2026-10-07, `b70a944`), 73M with 74C (2026-10-07, `a0e987b`), 73B (2026-10-07, `86547da`), 73O part 2 with 74F (2026-10-08, `fa9625e`), 73G part 2 with 74H (2026-10-08, `f85e862`, `78b5770`), 73H (2026-10-08, `631f898`), 73S (2026-10-08, `3cf1d9d`) and 73K part 1 (2026-10-08), each approved by name; 74P, built after 73B, is recorded in Milestone 74.**
+73F part 1 (2026-10-06, `5e9e17b`), 73A (2026-10-06, `83352d0`), 73F part 2 (2026-10-06, `d01edd4`), 73G part 1 (2026-10-06, `69a1b46`), 73E part 1 (2026-10-06, `8e02051`), 73F part 3 (2026-10-06, `67fc66c`), 73I (2026-10-06, `56a7c30`), 73T part 1 (2026-10-07, `4cae1e7`), 73T part 2 (2026-10-07, `2a1cbc5`), 73T part 3 (2026-10-07, `9d2bc72`), 73T part 4 (2026-10-07, `b70a944`), 73M with 74C (2026-10-07, `a0e987b`), 73B (2026-10-07, `86547da`), 73O part 2 with 74F (2026-10-08, `fa9625e`), 73G part 2 with 74H (2026-10-08, `f85e862`, `78b5770`), 73H (2026-10-08, `631f898`), 73S (2026-10-08, `3cf1d9d`), 73K part 1 (2026-10-08, `4268c45`) and 73E part 2 (2026-10-08), each approved by name; 74P, built after 73B, is recorded in Milestone 74.**
 **The 2026-10-07 batch is built**, and its closing full regression has run
 (recorded below, after the mid-batch one). **Approved and not yet built**
 (2026-10-08, one batch in this order, light tests between deliveries and a
-full regression at the end): 73E part 2, 73J part 2, 73K part 2, 73L (with
+full regression at the end): 73J part 2, 73K part 2, 73L (with
 Milestone 74's 74D reproduction), 73N parts 1-3, 73O part 1 (with 74O), 73O
 part 3 (with 74L), 73O part 4 (with 74J), 73P (with 74S) and 73R parts 1-3.
 Nothing else is approved. Building any other item, or any part of a
@@ -1143,6 +1143,43 @@ included, through `partyToFlatFields`/`writeRoleFields`); the existing
 `reconcileSlotWithParty()` already does "shared record wins only where it has
 a value". Merge's confirmation names the open filings whose typed details
 will change (`party-resolver.js` near 868).
+
+### Build record, part 2 — BUILT 2026-10-08 (approved by name by the requester, 2026-10-08)
+
+**What changed for a filer:**
+
+- **Link Person fills only what the slot leaves blank** (73E-N3). Where the
+  slot has typed a detail the shared record holds differently, a question
+  comes first -- "Typed details differ from the shared record" -- listing
+  each one, typed beside shared (an SSN/EIN by its last four digits), with
+  "Use the shared record's" and "Keep what is typed here". Keeping (or
+  Escape) links and fills only the blanks; nothing typed is ever blanked.
+  The shared record takes the details it lacked from the slot. It used to
+  overwrite every field with the record's, blanks included -- a typed phone
+  the record lacked was erased. Details that differ only in case, spaces or
+  punctuation are the same.
+- **Merge's confirmation names the open filings it will change**: "These
+  open filings' typed details will change to match ..." -- each filing, its
+  form, the guardian or role, and the details. A blank being filled is not
+  listed; a closed filing keeps its copy, as before.
+
+**Found while building, not changed:** the Initial Plan's guardian e-mail
+(the box Milestone 72C added) is not part of that form's shared-record
+mapping, so it is neither shared nor filled by Link Person there. A
+cross-form gap (AGENTS.md section 8 item 9), reported for a decision.
+
+**How:** `party-resolver.js` gains `linkConflicts()`, `linkSlotToParty()`
+and `mergeFilingChanges()`; the merge's adoption of blank fields moved into
+one function both the merge and its preview use, so they can't disagree.
+`pick-record-dialogs.js` asks; `party-management.js` names the filings.
+
+**Tests:** new `tests/unit/link-and-merge.spec.js` (6) and
+`tests/e2e/link-and-merge.spec.ts` (3). **Red-first:** the unit cases fail
+with the source set aside (the functions don't exist); in the browser, the
+two Link cases wait for a question that never comes and the Merge message
+names no filing. `party-resolver.spec.js`, `party-dedupe.spec.ts`,
+`party-write-through.spec.ts` and `signature-stamp-reuse.spec.ts` pass
+unchanged. `check:types` clean.
 
 ### Tests
 

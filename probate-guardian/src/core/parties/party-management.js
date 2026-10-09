@@ -7,7 +7,7 @@ import { esc } from '../filing/escape-html.js';
 import { displayLocalDate } from '../form/date-parser.js';
 import { INVENTORY_TYPES } from '../filing/filing-registry.js';
 import { wardCountyMergeConflict } from '../navigation/ward-county.js';
-import { closedFilingDrift, dismissPartyPair, filingDriftFromParties, findDuplicateCandidates, mergeParties, referenceCountForParty, resolveParty, slotsReferencing, subPartiesOf, syncFilingSlotWithParty, unmergeParty } from '../party-resolver.js';
+import { closedFilingDrift, dismissPartyPair, filingDriftFromParties, findDuplicateCandidates, LINK_FIELD_LABELS, mergeFilingChanges, mergeParties, referenceCountForParty, resolveParty, slotsReferencing, subPartiesOf, syncFilingSlotWithParty, unmergeParty } from '../party-resolver.js';
 import { getCaseFile, getD } from '../state.js';
 import { confirmModal } from '../ui/dialogs.js';
 import { auditLog } from '../activity/audit-log.js';
@@ -264,6 +264,8 @@ export function togglePartyUnmergeSelection(partyId,checked){
 // backfilled onto the primary record from the sub (blank-on-primary,
 // present-on-sub) so nothing is adopted silently. Cancelling aborts the
 // whole merge -- there's no partial-adopt state to manage.
+const mergeSlotLabel=(role,index)=>role==='guardian'?`guardian ${Number(index)+1}`:role;
+
 export async function doPartyMergeKeep(keepId,discardId){
   const keep=resolveParty(keepId),discard=resolveParty(discardId);
   if(!keep||!discard)return;
@@ -275,6 +277,12 @@ export async function doPartyMergeKeep(keepId,discardId){
   }
   if(adoptable.length){
     message+=`\n\nAlso fill in these currently-blank fields on "${keep.name}" from "${discard.name}":\n`+adoptable.map(([path,label])=>`• ${label}: ${partyFieldValue(discard,path)}`).join('\n');
+  }
+  // Milestone 73E part 2 (decision 73E-N3): the open filings whose typed
+  // details the merge replaces with "${keep.name}"'s are named before it runs.
+  const changes=mergeFilingChanges(keepId,discardId,{adoptBlankFields:adoptable.length>0});
+  if(changes.length){
+    message+=`\n\nThese open filings' typed details will change to match "${keep.name}":\n`+changes.map(c=>`• ${c.filing.wardName||'(unnamed)'} — ${INVENTORY_TYPES[c.filing.inventoryType]?.name||c.filing.inventoryType} (${mergeSlotLabel(c.role,c.index)}): ${c.fields.map(k=>LINK_FIELD_LABELS[k]||k).join(', ')}`).join('\n');
   }
   if(!(await confirmModal(message)))return;
   mergeParties(keepId,discardId,{adoptBlankFields:adoptable.length>0});

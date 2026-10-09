@@ -539,6 +539,67 @@ export function syncFilingSlotWithParty(filing, role, index = 0) {
   return true;
 }
 
+// ── Link Person (Milestone 73E part 2, decision 73E-N3) ───────────────────
+// Link Person used to hydrate the slot from the shared record wholesale --
+// every field, blanks included -- so a phone typed on this filing was
+// replaced, and one the record lacked was blanked. Now it fills only what the
+// slot leaves blank, and asks before replacing what was typed; a typed value
+// is never blanked. Values are compared as the same when they differ only in
+// case, spaces or punctuation ("555-0100" and "(555) 0100").
+
+/** What Link Person and Merge call each detail, for the filer. */
+export const LINK_FIELD_LABELS = Object.freeze({
+  name: 'Name', taxId: 'SSN/EIN', barNumber: 'Florida Bar number', phone: 'Phone', email: 'Email',
+  secondaryEmail: 'Secondary email', street: 'Street address', cityStateZip: 'City/State/ZIP',
+  officeStreet: 'Office street address', officeCityStateZip: 'Office city/state/ZIP',
+  mailingStreet: 'Mailing street address', mailingCityStateZip: 'Mailing city/state/ZIP',
+});
+
+const detailText = (v) => String(v ?? '').trim();
+const sameDetail = (a, b) => detailText(a).toLowerCase().replace(/[^a-z0-9]/g, '') === detailText(b).toLowerCase().replace(/[^a-z0-9]/g, '');
+
+/**
+ * The details this slot has typed that the shared record holds differently --
+ * what Link Person asks about before linking. Blank on either side is not a
+ * difference.
+ * @returns {Array<{ key: string, typed: string, shared: string }>}
+ */
+export function linkConflicts(party, filing, role, index = 0) {
+  if (!party || !filing) return [];
+  const shared = partyToFlatFields(party);
+  const typed = readRoleFields(filing, role, index);
+  return Object.keys(typed)
+    .filter((key) => detailText(typed[key]) && detailText(shared[key]) && !sameDetail(typed[key], shared[key]))
+    .map((key) => ({ key, typed: detailText(typed[key]), shared: detailText(shared[key]) }));
+}
+
+/**
+ * Link Person's fill: the slot's blank details come from the shared record; a
+ * typed detail the record holds differently is replaced only when `replace`
+ * (the filer chose the record's); and the record takes the details it lacks
+ * from the slot, so the two agree from here on. Nothing typed is blanked.
+ */
+export function linkSlotToParty(party, filing, role, index = 0, { replace = false } = {}) {
+  if (!party || !filing) return;
+  const shared = partyToFlatFields(party);
+  const typed = readRoleFields(filing, role, index);
+  const out = {};
+  const adopt = {};
+  for (const key of Object.keys(typed)) {
+    const t = typed[key] ?? '';
+    const s = shared[key] ?? '';
+    if (!detailText(t)) out[key] = s;
+    else if (replace && detailText(s) && !sameDetail(t, s)) out[key] = s;
+    else out[key] = t;
+    if (!detailText(s) && detailText(out[key])) adopt[key] = out[key];
+  }
+  writeRoleFields(filing, role, index, out);
+  if (Object.keys(adopt).length) {
+    mergeFlatFieldsIntoParty(party, adopt);
+    party.updatedAt = new Date().toISOString();
+  }
+}
+
 /**
  * Hydrate direction: party -> filing. Overwrites this role's fields on the
  * filing with the party's current values.
@@ -847,6 +908,63 @@ export function referenceCountForParty(partyId) {
  * Does not call autoSave() -- same convention as syncIdentityField(), the
  * caller (doPartyMergeKeep(), src/core/parties/party-management.js) already does.
  */
+// Fills the primary's blank details from the sub's -- never the reverse --
+// and lists each one adopted (mergeRecord.adoptedFields, for unmergeParty()).
+// Shared by the merge and its preview, so the two cannot disagree.
+function adoptBlankPartyFields(keep, discard, adopted) {
+  for (const field of PARTY_COMPARE_FIELDS) {
+    if (!keep[field] && discard[field]) { keep[field] = discard[field]; adopted.push(field); }
+  }
+  for (const field of ['taxId', 'barNumber']) {
+    keep.identifiers = keep.identifiers || { taxId: null, barNumber: null };
+    if (!keep.identifiers[field] && discard.identifiers?.[field]) { keep.identifiers[field] = discard.identifiers[field]; adopted.push(`identifiers.${field}`); }
+  }
+  for (const field of ['street', 'cityStateZip']) {
+    if (discard.address?.[field] && !keep.address?.[field]) {
+      keep.address = keep.address || { street: '', cityStateZip: '' };
+      keep.address[field] = discard.address[field];
+      adopted.push(`address.${field}`);
+    }
+    if (discard.officeAddress?.[field] && !keep.officeAddress?.[field]) {
+      keep.officeAddress = keep.officeAddress || { street: '', cityStateZip: '' };
+      keep.officeAddress[field] = discard.officeAddress[field];
+      adopted.push(`officeAddress.${field}`);
+    }
+    if (discard.mailingAddress?.[field] && !keep.mailingAddress?.[field]) {
+      keep.mailingAddress = keep.mailingAddress || { street: '', cityStateZip: '' };
+      keep.mailingAddress[field] = discard.mailingAddress[field];
+      adopted.push(`mailingAddress.${field}`);
+    }
+  }
+}
+
+/**
+ * Milestone 73E part 2 (decision 73E-N3): what a merge will change on the
+ * open filings linked to the sub -- each slot whose typed details the merge
+ * replaces with the primary's (a closed filing keeps its copy). A typed value
+ * the primary holds differently, or doesn't hold at all, is listed; a blank
+ * one being filled is not. Changes nothing.
+ * @returns {Array<{ filing: any, role: string, index: number, fields: string[] }>}
+ */
+export function mergeFilingChanges(keepId, discardId, { adoptBlankFields = false } = {}) {
+  const keep = resolveParty(keepId);
+  const discard = resolveParty(discardId);
+  if (!keep || !discard || keep === discard) return [];
+  const after = JSON.parse(JSON.stringify(keep));
+  if (adoptBlankFields) adoptBlankPartyFields(after, discard, []);
+  const shared = partyToFlatFields(after);
+  const out = [];
+  for (const filing of getCaseFile()?.wards || []) {
+    if (isFilingClosed(filing)) continue;
+    for (const slot of slotsReferencing(filing, discardId)) {
+      const typed = readRoleFields(filing, slot.role, slot.index);
+      const fields = Object.keys(typed).filter((key) => detailText(typed[key]) && detailText(typed[key]) !== detailText(shared[key]));
+      if (fields.length) out.push({ filing, role: slot.role, index: slot.index, fields });
+    }
+  }
+  return out;
+}
+
 export function mergeParties(keepId, discardId, { adoptBlankFields = false } = {}) {
   const keep = resolveParty(keepId);
   const discard = resolveParty(discardId);
@@ -856,32 +974,7 @@ export function mergeParties(keepId, discardId, { adoptBlankFields = false } = {
   const now = new Date().toISOString();
   const record = { mergedAt: now, adoptedFields: [], adoptedRoles: [], repointedSlots: [], repointedCases: [] };
 
-  if (adoptBlankFields) {
-    for (const field of PARTY_COMPARE_FIELDS) {
-      if (!keep[field] && discard[field]) { keep[field] = discard[field]; record.adoptedFields.push(field); }
-    }
-    for (const field of ['taxId', 'barNumber']) {
-      keep.identifiers = keep.identifiers || { taxId: null, barNumber: null };
-      if (!keep.identifiers[field] && discard.identifiers?.[field]) { keep.identifiers[field] = discard.identifiers[field]; record.adoptedFields.push(`identifiers.${field}`); }
-    }
-    for (const field of ['street', 'cityStateZip']) {
-      if (discard.address?.[field] && !keep.address?.[field]) {
-        keep.address = keep.address || { street: '', cityStateZip: '' };
-        keep.address[field] = discard.address[field];
-        record.adoptedFields.push(`address.${field}`);
-      }
-      if (discard.officeAddress?.[field] && !keep.officeAddress?.[field]) {
-        keep.officeAddress = keep.officeAddress || { street: '', cityStateZip: '' };
-        keep.officeAddress[field] = discard.officeAddress[field];
-        record.adoptedFields.push(`officeAddress.${field}`);
-      }
-      if (discard.mailingAddress?.[field] && !keep.mailingAddress?.[field]) {
-        keep.mailingAddress = keep.mailingAddress || { street: '', cityStateZip: '' };
-        keep.mailingAddress[field] = discard.mailingAddress[field];
-        record.adoptedFields.push(`mailingAddress.${field}`);
-      }
-    }
-  }
+  if (adoptBlankFields) adoptBlankPartyFields(keep, discard, record.adoptedFields);
 
   record.adoptedRoles = (discard.roles || []).filter(r => !(keep.roles || []).includes(r));
   keep.roles = [...new Set([...(keep.roles || []), ...(discard.roles || [])])];
