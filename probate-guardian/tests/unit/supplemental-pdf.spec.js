@@ -37,6 +37,26 @@ describe('resolveActiveDocPeriod', () => {
     expect(resolveActiveDocPeriod({})).toBe('initial');
     expect(resolveActiveDocPeriod(null)).toBe('initial');
   });
+
+  // Found 2026-10-10: Start New Year gives every filing an activeYearKey, and
+  // the Accountings' and Plans' documents -- filed by their dates -- were then
+  // looked up under "Year 2". A filing's own type now decides, as the screen
+  // files them (schedule-docs.js's scheduleDocPeriodKey()).
+  test('an Accounting or Plan in its second year reads its dates, not its year', () => {
+    for (const inventoryType of ['annual', 'finalAccounting', 'trustAccounting', 'simplified', 'planAnnual', 'planInitial', 'planMinor', 'planSimplified']) {
+      expect(resolveActiveDocPeriod({ inventoryType, activeYearKey: 'Year 2', periodFrom: '2027-01-01', periodTo: '2027-12-31' }), inventoryType).toBe('2027-01-01__2027-12-31');
+    }
+  });
+
+  test('an Accounting or Plan with no dates yet reads the bucket the screen files under', () => {
+    expect(resolveActiveDocPeriod({ inventoryType: 'planAnnual' })).toBe('__');
+    expect(resolveActiveDocPeriod({ inventoryType: 'annual', periodFrom: '2027-01-01' })).toBe('2027-01-01__');
+  });
+
+  test('the Initial Inventory reads its year', () => {
+    expect(resolveActiveDocPeriod({ inventoryType: 'guardian', activeYearKey: 'Year 2', periodFrom: '2027-01-01' })).toBe('Year 2');
+    expect(resolveActiveDocPeriod({ inventoryType: 'guardian' })).toBe('initial');
+  });
 });
 
 describe('supplemental PDF filing eligibility', () => {

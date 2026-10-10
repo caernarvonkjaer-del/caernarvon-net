@@ -44,10 +44,10 @@
   "target.ts::fillMinimalValidGuardianWard (44 specs)",
   "target.ts::fillMinimalValidSimplifiedWard (30 specs)",
   "target.ts::fillMinimalValidPlanSimplifiedWard (21 specs)",
-  "target.ts::fillMinimalValidPlanAnnualWard (23 specs)",
+  "target.ts::fillMinimalValidPlanAnnualWard (24 specs)",
   "target.ts::fillMinimalValidPlanMinorWard (18 specs)",
   "target.ts::fillMinimalValidPlanInitialWard (20 specs)",
-  "target.ts::fillMinimalValidAnnualWard (49 specs)"
+  "target.ts::fillMinimalValidAnnualWard (50 specs)"
  ],
  "helpers": [
   {
@@ -509,7 +509,7 @@
    "module": "tests/e2e/support/target.ts",
    "name": "fillMinimalValidPlanAnnualWard",
    "kind": "function",
-   "specFiles": 23,
+   "specFiles": 24,
    "factory": true
   },
   {
@@ -530,7 +530,7 @@
    "module": "tests/e2e/support/target.ts",
    "name": "fillMinimalValidAnnualWard",
    "kind": "function",
-   "specFiles": 49,
+   "specFiles": 50,
    "factory": true
   },
   {

@@ -420,3 +420,27 @@ document correctly.
 **Tests:** `tests/e2e/supporting-documents-reach-pdf.spec.ts` (3) and
 `tests/unit/document-sections.spec.js` (13); red-first, both. Light
 regression: 28 specs, 201 tests, all passed; unit suite 3,084 passed.
+
+### Found starting 75A, built at the requester's named approval (2026-10-10: "Fix now, own commit")
+
+**What a filer sees now:** a supporting document attached on an Accounting or
+a Plan in its second year or later reaches the PDF. Before, it showed on its
+screen and never reached the PDF -- nor did the export checks look at it, so a
+broken one didn't stop the export either.
+
+**Why it happened:** Start New Year gives every filing type a year key
+("Year 2"). The PDF's lookup (`resolveActiveDocPeriod()`,
+`src/core/filing/doc-period.js`) read that key first for every type, while the
+screen files the Accountings' and Plans' documents by the year's dates. The
+lookup now follows the filing's type: the Initial Inventory by its year, every
+other filing by its dates -- the empty "no dates yet" bucket included, which
+the old lookup also missed. Older at least than `1db1882` (2026-08-29).
+
+**On the test system:** a year-2 filing's "I understand" answers to the
+documents reminder were recorded under the year key and will be asked once
+more (AGENTS.md §8.2: visible, one-time, not worth a migration).
+
+**Tests:** `supporting-documents-reach-pdf.spec.ts` gains the Annual
+Accounting's and the Annual Plan's second years; `supplemental-pdf.spec.js`
+the typed cases. Red-first: both browser cases and both new unit cases fail on
+the year-first lookup.

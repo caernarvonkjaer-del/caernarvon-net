@@ -3,6 +3,7 @@ import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs';
 import {
   freshStartNoPassword, createWard, createSimplifiedWard, dismissScheduleDocPrompt, expectExportReady, clickExport,
   fillMinimalValidPlanMinorWard, fillMinimalValidSimplifiedWard, fillMinimalValidPlanInitialWard,
+  fillMinimalValidAnnualWard, fillMinimalValidPlanAnnualWard,
 } from './support/target';
 import { buildSupplementalAttachmentFixture } from './support/supplemental-pdf-fixture';
 import { readAll } from './support/stream';
@@ -45,12 +46,38 @@ const FORMS: Array<{ name: string; make: (page: Page) => Promise<void>; screens:
       { route: '/p7', key: 'p7', section: 'Part VII - Remuneration' },
     ],
   },
+  // Found 2026-10-10: after Start New Year every filing has a year key, and
+  // the PDF looked the Accountings' and Plans' documents up under it while
+  // the screen files them by the year's dates -- none reached the PDF.
+  {
+    name: 'Annual Accounting, second year',
+    make: async (page) => { await createWard(page, 'Docs Year Two', 'annual'); await fillMinimalValidAnnualWard(page); await secondYear(page, fillMinimalValidAnnualWard); },
+    screens: [{ route: '/scha', key: 'schA', section: 'Schedule A - Income' }],
+  },
+  {
+    name: 'Annual Plan, second year',
+    make: async (page) => { await createWard(page, 'Docs Plan Year Two', 'planAnnual'); await fillMinimalValidPlanAnnualWard(page); await secondYear(page, fillMinimalValidPlanAnnualWard); },
+    screens: [{ route: '/p2', key: 'planAResidences', section: 'Question 1' }],
+  },
   {
     name: 'Initial Plan (Attorney screen)',
     make: async (page) => { await createWard(page, 'Docs Initial', 'planInitial'); await fillMinimalValidPlanInitialWard(page); },
     screens: [{ route: '/p10', key: 'planIAttorney', section: 'Attorney Certification' }],
   },
 ];
+
+/**
+ * Start New Year on the open filing and fill the new year, which a new year
+ * clears (setup). The fixture's own dates: what matters here is the year key.
+ */
+async function secondYear(page: Page, fill: (page: Page) => Promise<void>) {
+  await page.evaluate(async () => {
+    const t = (window as any).GuardianForms.testing;
+    await t.year.startNew(t.snapshot().activeFilingId);
+  });
+  await fill(page);
+  expect(await page.evaluate(() => (window as any).GuardianForms.testing.snapshot().filing.activeYearKey), 'in its second year').toBe('Year 2');
+}
 
 /** Attaches one PDF on the screen through its own Upload button, and types a comment naming the screen. */
 async function attachOn(page: Page, screen: Screen) {
