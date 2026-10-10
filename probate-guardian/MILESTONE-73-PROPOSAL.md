@@ -6,11 +6,12 @@
 far: 73U (2026-10-04, `5b8849b`), 73V (2026-10-05, `8b96aa3`), 73C
 (2026-10-05, `861b6a9`, brought forward from its place in the build order at the
 requester's choice) 73D (2026-10-05, `c8e84fe`, likewise), 73J part 1 (2026-10-05, `d819c4a`),
-73F part 1 (2026-10-06, `5e9e17b`), 73A (2026-10-06, `83352d0`), 73F part 2 (2026-10-06, `d01edd4`), 73G part 1 (2026-10-06, `69a1b46`), 73E part 1 (2026-10-06, `8e02051`), 73F part 3 (2026-10-06, `67fc66c`), 73I (2026-10-06, `56a7c30`), 73T part 1 (2026-10-07, `4cae1e7`), 73T part 2 (2026-10-07, `2a1cbc5`), 73T part 3 (2026-10-07, `9d2bc72`), 73T part 4 (2026-10-07, `b70a944`), 73M with 74C (2026-10-07, `a0e987b`), 73B (2026-10-07, `86547da`), 73O part 2 with 74F (2026-10-08, `fa9625e`), 73G part 2 with 74H (2026-10-08, `f85e862`, `78b5770`), 73H (2026-10-08, `631f898`), 73S (2026-10-08, `3cf1d9d`), 73K part 1 (2026-10-08, `4268c45`), 73E part 2 (2026-10-08, `5e26e57`, `ea78dd4`), 73J part 2 (2026-10-08, `3648706`), 73K part 2 (2026-10-08, `79a8875`), 73L with 74D's reproduction (2026-10-09, `43081f2`), 73N part 1 (2026-10-09, `ab8068e`), 73N part 2 (2026-10-09, `01a9610`), 73N part 3 (2026-10-09, `987daaf`), 73O part 1 with 74O (2026-10-09, `487e247`, `97a0754`), 73O part 3 with 74L (2026-10-09, `67e13b8`) and 73O part 4 with 74J (2026-10-09, `cc90279`) and 73P with 74S (2026-10-09, `09cef26`) 73R part 1 (2026-10-09, `15784dc`), 73R part 2 (2026-10-09, `62fdf85`) and 73R part 3 (2026-10-09), each approved by name; 74P, built after 73B, is recorded in Milestone 74.**
+73F part 1 (2026-10-06, `5e9e17b`), 73A (2026-10-06, `83352d0`), 73F part 2 (2026-10-06, `d01edd4`), 73G part 1 (2026-10-06, `69a1b46`), 73E part 1 (2026-10-06, `8e02051`), 73F part 3 (2026-10-06, `67fc66c`), 73I (2026-10-06, `56a7c30`), 73T part 1 (2026-10-07, `4cae1e7`), 73T part 2 (2026-10-07, `2a1cbc5`), 73T part 3 (2026-10-07, `9d2bc72`), 73T part 4 (2026-10-07, `b70a944`), 73M with 74C (2026-10-07, `a0e987b`), 73B (2026-10-07, `86547da`), 73O part 2 with 74F (2026-10-08, `fa9625e`), 73G part 2 with 74H (2026-10-08, `f85e862`, `78b5770`), 73H (2026-10-08, `631f898`), 73S (2026-10-08, `3cf1d9d`), 73K part 1 (2026-10-08, `4268c45`), 73E part 2 (2026-10-08, `5e26e57`, `ea78dd4`), 73J part 2 (2026-10-08, `3648706`), 73K part 2 (2026-10-08, `79a8875`), 73L with 74D's reproduction (2026-10-09, `43081f2`), 73N part 1 (2026-10-09, `ab8068e`), 73N part 2 (2026-10-09, `01a9610`), 73N part 3 (2026-10-09, `987daaf`), 73O part 1 with 74O (2026-10-09, `487e247`, `97a0754`), 73O part 3 with 74L (2026-10-09, `67e13b8`) and 73O part 4 with 74J (2026-10-09, `cc90279`) and 73P with 74S (2026-10-09, `09cef26`) 73R part 1 (2026-10-09, `15784dc`), 73R part 2 (2026-10-09, `62fdf85`) and 73R part 3 (2026-10-09, `9d72f4e`), each approved by name; 74P, built after 73B, is recorded in Milestone 74.**
 **The 2026-10-07 batch is built**, and its closing full regression has run
-(recorded below, after the mid-batch one). **Approved and not yet built**
-(2026-10-08, one batch in this order, light tests between deliveries and a
-full regression at the end): nothing -- the batch is built; its closing full regression is still to run.
+(recorded below, after the mid-batch one). **The 2026-10-08 batch is built**
+(light tests between deliveries), and its closing full regression has run
+(recorded after the 2026-10-07 batch's). **Approved and not yet built:**
+nothing.
 Nothing else is approved. Building any other item, or any part of a
 split item, needs the requester's named approval of that item or part
 (AGENTS.md §3).
@@ -2425,6 +2426,27 @@ entry alone was regenerated (its note says why) and the year-rollover spec
 re-run: 9 of 9 passed. 73S's targeted browser run had left the
 characterization specs out, which is why it surfaced here. The batch is
 complete.
+
+**Closing full regression of the 2026-10-08 batch** (73K parts 1-2, 73E part
+2, 73J part 2, 73L with 74D's reproduction, 73N parts 1-3, 73O parts 1, 3 and
+4 with 74O, 74L and 74J, 73P with 74S, 73R parts 1-3; `npm test` once, as
+approved, on a copy on C: at `9d72f4e`, 2026-10-09): unit, 211 files and
+3,071 tests, all passed; browser, 1,226 tests -- 1,201 passed, 16 skipped
+(the same profile-bound tests and the pre-merge comparison), **nine failed**
+(1 h 33 min in all). All nine were the recorded copies of a page's text in
+the mount specs (`plan-annual-mount`, `plan-initial-mount`,
+`plan-minor-mount`, `plan-simplified-mount` -- the Cover and Signatures
+pages of each -- and `simplified-mount`'s Part III), each differing in one
+sentence: the supporting-documents note, which since 73P (D25) says
+"encrypted" only on a case file with a password -- "Stored on this device
+only, in this case file, which has no password." These test filings have
+none, so the new sentence is the right one; 73P's light run had left the
+mount specs out. The nine copies were updated, each with a note saying why,
+and the five specs re-run: 37 of 37 passed. **Portable build**
+(`npm run test:e2e:portable`, for 73R part 2's icons, AGENTS.md section 9):
+20 passed, 12 skipped -- the tests that need a hosted site (tab locks, the
+update banner, a remembered case file), as in every earlier portable run;
+the built package carries the new icons. The batch is complete.
 
 ---
 
