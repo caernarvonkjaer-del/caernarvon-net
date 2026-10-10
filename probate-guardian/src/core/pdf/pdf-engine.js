@@ -21,6 +21,7 @@ import {
   getCaseCaptionTitle,
 } from './circuit-lookup.js';
 import { ensurePdfjs } from './pdfjs-loader.js';
+import { supportingDocSections } from './document-sections.js';
 import { headerIdentityLines } from './header-identity.js';
 import {
   assertFilingEligibleSupplement,
@@ -193,76 +194,60 @@ export async function generateCourtFormPdf(model, options = {}) {
   // gets no county here, and the caption helper returns null for it (item 7).
   const county = (metadata.county || '').toUpperCase();
 
-  const scheduleSectionAliases = {
-    'ANNUAL GUARDIANSHIP PLAN': {
-      planACover: 'cover', planAResidences: 'q1', planACarePlan: 'q2-q3', planABenefits: 'q3g',
-      planAProviders: 'q4', planARights: 'q5-q7', planAADLs: 'q8', planADisabilities: 'q9',
-      planADirectives: 'q10', planARemuneration: 'q11', planASignatures: 'certification',
-    },
-    'INITIAL GUARDIANSHIP PLAN': {
-      planICover: 'cover', planISettingMedical: 'q2-q5', planIMentalPersonal: 'q6-q7',
-      planISocialBenefits: 'q9', planIProviders: 'q10a', planIADLs: 'q10b-d',
-      planIDisabilities: 'q11-10ef', planIDirectives: 'directive-detail', planISignatures: 'certification',
-    },
-    'ANNUAL GUARDIANSHIP PLAN — MINOR': {
-      planMCover: 'cover', planMResidences: 'q2-q3', planMProviders: 'q4', planMMedical: 'q5',
-      planMEducation: 'certification', planMSignatures: 'preparer-attorney',
-    },
-    'SIMPLIFIED ANNUAL PLAN': { planCover: 'plan-1', planQuestions: 'plan-2', planSignatures: 'signatures' },
-  };
-
+  // Supporting documents print after the section their screen belongs to
+  // (document-sections.js). A screen whose section isn't drawn -- the
+  // Simplified Accounting's Part VII before remuneration is answered -- prints
+  // its documents at the end, so an attached document never drops out of the
+  // filing; two screens sharing a section print theirs there in screen order.
   const attachSourceDocuments = () => {
     const scheduleDocs = sourceData?.scheduleDocs;
     if (!scheduleDocs || typeof scheduleDocs !== 'object') return;
-    const aliases = scheduleSectionAliases[metadata.formName] || {};
-    const usedSections = new Set();
-    const entries = Object.entries(scheduleDocs);
+    const table = supportingDocSections(metadata.formName, sourceData.inventoryType);
+    const screenOrder = Object.keys(table);
+    // A section the model already gave its documents (the Initial Inventory's) is left as it is.
+    const placedByModel = new Set(sections.filter((section) => (section.blocks || []).some((block) => block.type === 'supporting-documents')));
     const activePeriod = resolveActiveDocPeriod(sourceData);
     const getSlot = (value) => {
       if (!value || typeof value !== 'object') return { comment: '', files: [] };
       if (Array.isArray(value.files) || value.comment) return value;
       return value[activePeriod] || value.initial || { comment: '', files: [] };
     };
-    const addBlock = (section, slot) => {
-      if (!section || usedSections.has(section) || (!slot.files?.length && !String(slot.comment || '').trim())) return;
-      if ((section.blocks || []).some(block => block.type === 'supporting-documents')) {
-        usedSections.add(section);
-        return;
-      }
-      section.blocks = section.blocks || [];
-      section.blocks.push({
-        type: 'supporting-documents',
-        tag: 'Part',
-        title: 'Supporting Documents',
-        comment: slot.comment || '',
-        files: (slot.files || []).filter(file => file && file.dataUrl).map(file => ({
-          name: file.name || 'Supporting document',
-          type: file.type || '',
-          size: file.size || 0,
-          dataUrl: file.dataUrl,
-          id: file.id || '',
-          contentDigest: file.contentDigest || '',
-          technicalStatus: file.technicalStatus || 'pending',
-          technicalWarnings: file.technicalWarnings || [],
-          pageCount: file.pageCount || 0,
-          encrypted: !!file.encrypted,
-          corrupt: !!file.corrupt,
-          removed: !!file.removed,
-          stale: !!file.stale,
-        })),
-      });
-      usedSections.add(section);
-    };
-    entries.forEach(([key, value], index) => {
-      const slot = getSlot(value);
-      const exact = sections.find(section => section.id === key);
-      if (exact) {
-        addBlock(exact, slot);
-        return;
-      }
-      const aliasId = aliases[key];
-      addBlock(sections.find(section => section.id === aliasId), slot);
+    const documentsBlock = (slot) => ({
+      type: 'supporting-documents',
+      tag: 'Part',
+      title: 'Supporting Documents',
+      comment: slot.comment || '',
+      files: (slot.files || []).filter(file => file && file.dataUrl).map(file => ({
+        name: file.name || 'Supporting document',
+        type: file.type || '',
+        size: file.size || 0,
+        dataUrl: file.dataUrl,
+        id: file.id || '',
+        contentDigest: file.contentDigest || '',
+        technicalStatus: file.technicalStatus || 'pending',
+        technicalWarnings: file.technicalWarnings || [],
+        pageCount: file.pageCount || 0,
+        encrypted: !!file.encrypted,
+        corrupt: !!file.corrupt,
+        removed: !!file.removed,
+        stale: !!file.stale,
+      })),
     });
+    const rank = (key) => {
+      const i = screenOrder.indexOf(key);
+      return i < 0 ? screenOrder.length : i;
+    };
+    Object.entries(scheduleDocs)
+      .map(([key, value]) => ({ key, slot: getSlot(value) }))
+      .sort((a, b) => rank(a.key) - rank(b.key))
+      .forEach(({ key, slot }) => {
+        if (!slot.files?.length && !String(slot.comment || '').trim()) return;
+        let section = sections.find(s => s.id === key) || sections.find(s => s.id === table[key]);
+        if (!section && key in table) section = sections[sections.length - 1];
+        if (!section || placedByModel.has(section)) return;
+        section.blocks = section.blocks || [];
+        section.blocks.push(documentsBlock(slot));
+      });
   };
 
   attachSourceDocuments();
@@ -910,6 +895,11 @@ export async function generateCourtFormPdf(model, options = {}) {
 
     // Render Blocks in this Section
     for (const block of (sec.blocks || sec.renderBlocks || [])) {
+      // An attached document's pages are placeholders the finalizer replaces
+      // with the uploaded file's own pages; anything drawn on one is lost with
+      // it. A block that follows them in the same section -- the second of two
+      // screens' documents sharing a section -- starts its own page.
+      if (attachmentPageNumbers.has(pageNum)) startNewPage(sec.title);
       if (block.type === 'notice') {
         // Milestone 61G: a notice's `title` used to be read by nothing. Models
         // across both form families set one -- certification headings, the
