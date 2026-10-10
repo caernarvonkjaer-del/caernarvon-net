@@ -6,11 +6,11 @@
 far: 73U (2026-10-04, `5b8849b`), 73V (2026-10-05, `8b96aa3`), 73C
 (2026-10-05, `861b6a9`, brought forward from its place in the build order at the
 requester's choice) 73D (2026-10-05, `c8e84fe`, likewise), 73J part 1 (2026-10-05, `d819c4a`),
-73F part 1 (2026-10-06, `5e9e17b`), 73A (2026-10-06, `83352d0`), 73F part 2 (2026-10-06, `d01edd4`), 73G part 1 (2026-10-06, `69a1b46`), 73E part 1 (2026-10-06, `8e02051`), 73F part 3 (2026-10-06, `67fc66c`), 73I (2026-10-06, `56a7c30`), 73T part 1 (2026-10-07, `4cae1e7`), 73T part 2 (2026-10-07, `2a1cbc5`), 73T part 3 (2026-10-07, `9d2bc72`), 73T part 4 (2026-10-07, `b70a944`), 73M with 74C (2026-10-07, `a0e987b`), 73B (2026-10-07, `86547da`), 73O part 2 with 74F (2026-10-08, `fa9625e`), 73G part 2 with 74H (2026-10-08, `f85e862`, `78b5770`), 73H (2026-10-08, `631f898`), 73S (2026-10-08, `3cf1d9d`), 73K part 1 (2026-10-08, `4268c45`), 73E part 2 (2026-10-08, `5e26e57`, `ea78dd4`), 73J part 2 (2026-10-08, `3648706`), 73K part 2 (2026-10-08, `79a8875`), 73L with 74D's reproduction (2026-10-09, `43081f2`), 73N part 1 (2026-10-09, `ab8068e`), 73N part 2 (2026-10-09, `01a9610`), 73N part 3 (2026-10-09, `987daaf`), 73O part 1 with 74O (2026-10-09, `487e247`, `97a0754`), 73O part 3 with 74L (2026-10-09, `67e13b8`) and 73O part 4 with 74J (2026-10-09, `cc90279`) and 73P with 74S (2026-10-09, `09cef26`) and 73R part 1 (2026-10-09), each approved by name; 74P, built after 73B, is recorded in Milestone 74.**
+73F part 1 (2026-10-06, `5e9e17b`), 73A (2026-10-06, `83352d0`), 73F part 2 (2026-10-06, `d01edd4`), 73G part 1 (2026-10-06, `69a1b46`), 73E part 1 (2026-10-06, `8e02051`), 73F part 3 (2026-10-06, `67fc66c`), 73I (2026-10-06, `56a7c30`), 73T part 1 (2026-10-07, `4cae1e7`), 73T part 2 (2026-10-07, `2a1cbc5`), 73T part 3 (2026-10-07, `9d2bc72`), 73T part 4 (2026-10-07, `b70a944`), 73M with 74C (2026-10-07, `a0e987b`), 73B (2026-10-07, `86547da`), 73O part 2 with 74F (2026-10-08, `fa9625e`), 73G part 2 with 74H (2026-10-08, `f85e862`, `78b5770`), 73H (2026-10-08, `631f898`), 73S (2026-10-08, `3cf1d9d`), 73K part 1 (2026-10-08, `4268c45`), 73E part 2 (2026-10-08, `5e26e57`, `ea78dd4`), 73J part 2 (2026-10-08, `3648706`), 73K part 2 (2026-10-08, `79a8875`), 73L with 74D's reproduction (2026-10-09, `43081f2`), 73N part 1 (2026-10-09, `ab8068e`), 73N part 2 (2026-10-09, `01a9610`), 73N part 3 (2026-10-09, `987daaf`), 73O part 1 with 74O (2026-10-09, `487e247`, `97a0754`), 73O part 3 with 74L (2026-10-09, `67e13b8`) and 73O part 4 with 74J (2026-10-09, `cc90279`) and 73P with 74S (2026-10-09, `09cef26`) 73R part 1 (2026-10-09, `15784dc`) and 73R part 2 (2026-10-09), each approved by name; 74P, built after 73B, is recorded in Milestone 74.**
 **The 2026-10-07 batch is built**, and its closing full regression has run
 (recorded below, after the mid-batch one). **Approved and not yet built**
 (2026-10-08, one batch in this order, light tests between deliveries and a
-full regression at the end): 73R parts 2-3.
+full regression at the end): 73R part 3.
 Nothing else is approved. Building any other item, or any part of a
 split item, needs the requester's named approval of that item or part
 (AGENTS.md §3).
@@ -3925,6 +3925,31 @@ protection specs, lock and save state, the ward lock), the card's
 structure, startup, the navigation contract and accessible names -- 228
 tests; the one failure was `routes.spec.ts`'s strip check, updated, then all
 passed. Unit suite: 3,060 passed; `check:types` clean.
+
+### Build record, part 2 — BUILT 2026-10-09 (approved by name by the requester, 2026-10-08)
+
+**What changed for a filer:** "GF" -- Guardian Forms -- for "PG" on the
+sidebar's shield, the Terms of Use dialog, the guide's header and the app
+icons (browser tab, home screen, installed app).
+
+**Decision 73R-4 (the requester, 2026-10-09):** two icons were drawn to
+match today's and shown side by side with it, at 192px and at browser-tab
+size: (A) today's two-tone maroon square with "GF"; (B) the same square with
+the sidebar's white shield outline and "GF" inside. **Chosen: B.** (A was
+recommended for its larger letters at tab size.) Drawn in a browser canvas
+from today's icon's measured colours (#820024 over #5C001A from 54.9% down,
+corner radius 16.2%) and the sidebar's shield path.
+
+**Not changed:** the internal `pg-` names (renaming the theme key would
+reset every filer's light/dark choice once, as Milestone 62 found).
+Installed copies may show the old icon until they refresh. The guide's
+full-window figures are re-shot with 73Q.
+
+**Tests:** new `tests/unit/brand-letters.spec.js` (2). **Red-first:** both
+fail on the previous files. In a browser on a C: copy: startup and Terms,
+unlock, offline, PWA registration, the dashboard's look and the sidebar --
+29 passed, 5 classified skips. Packaging changed (icons): `npm run
+test:e2e:portable` belongs in the batch's closing run (§9).
 
 ---
 
