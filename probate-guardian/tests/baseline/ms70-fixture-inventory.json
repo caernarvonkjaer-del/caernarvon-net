@@ -44,7 +44,7 @@
   "target.ts::fillMinimalValidGuardianWard (44 specs)",
   "target.ts::fillMinimalValidSimplifiedWard (30 specs)",
   "target.ts::fillMinimalValidPlanSimplifiedWard (21 specs)",
-  "target.ts::fillMinimalValidPlanAnnualWard (25 specs)",
+  "target.ts::fillMinimalValidPlanAnnualWard (26 specs)",
   "target.ts::fillMinimalValidPlanMinorWard (18 specs)",
   "target.ts::fillMinimalValidPlanInitialWard (20 specs)",
   "target.ts::fillMinimalValidAnnualWard (51 specs)"
@@ -348,7 +348,7 @@
    "module": "tests/e2e/support/stream.ts",
    "name": "readAll",
    "kind": "function",
-   "specFiles": 30,
+   "specFiles": 31,
    "factory": false
   },
   {
@@ -446,7 +446,7 @@
    "module": "tests/e2e/support/target.ts",
    "name": "freshStartNoPassword",
    "kind": "function",
-   "specFiles": 159,
+   "specFiles": 160,
    "factory": false
   },
   {
@@ -460,7 +460,7 @@
    "module": "tests/e2e/support/target.ts",
    "name": "createWard",
    "kind": "function",
-   "specFiles": 144,
+   "specFiles": 145,
    "factory": false
   },
   {
@@ -509,7 +509,7 @@
    "module": "tests/e2e/support/target.ts",
    "name": "fillMinimalValidPlanAnnualWard",
    "kind": "function",
-   "specFiles": 25,
+   "specFiles": 26,
    "factory": true
   },
   {
@@ -607,7 +607,7 @@
    "module": "tests/e2e/support/target.ts",
    "name": "expectExportReady",
    "kind": "function",
-   "specFiles": 35,
+   "specFiles": 36,
    "factory": false
   },
   {
@@ -628,7 +628,7 @@
    "module": "tests/e2e/support/target.ts",
    "name": "clickExport",
    "kind": "function",
-   "specFiles": 36,
+   "specFiles": 37,
    "factory": false
   },
   {
@@ -649,7 +649,7 @@
    "module": "tests/e2e/support/target.ts",
    "name": "dismissScheduleDocPrompt",
    "kind": "function",
-   "specFiles": 30,
+   "specFiles": 31,
    "factory": false
   },
   {

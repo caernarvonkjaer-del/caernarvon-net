@@ -129,6 +129,7 @@
   "tests/e2e/pre-merge-output.characterization.spec.ts",
   "tests/e2e/preparer-flag.spec.ts",
   "tests/e2e/preparer-note-placement.spec.ts",
+  "tests/e2e/plan-annual-benefits.spec.ts",
   "tests/e2e/preview-print-button.spec.ts",
   "tests/e2e/preview-zoom.spec.ts",
   "tests/e2e/print-preview-signature-jump.spec.ts",

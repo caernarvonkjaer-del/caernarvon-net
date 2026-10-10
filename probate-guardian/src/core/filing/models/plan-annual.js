@@ -68,7 +68,8 @@ export const PLAN_BENEFITS=[
   ['hmo','Health Maintenance Organization (HMO)'],['ssi','Supplemental Security Income (SSI)'],
   ['stateSupplement','Optional State Supplement'],['institutionalCare','Institutional Care Program'],
   ['supplementalIns','Supplemental Insurance'],['pension','Pension'],
-  ['medicare','Medicare'],['medicaid','Medicaid'],['trusts','Trusts'],['other','Other'],
+  // Milestone 75C: VA between Medicaid and Trusts, as the court's form lists it.
+  ['medicare','Medicare'],['medicaid','Medicaid'],['va','VA'],['trusts','Trusts'],['other','Other'],
 ];
 
 export function emptyPlanResidence(){return {name:'',street:'',cityStateZip:'',phone:'',facilityType:'',from:'',to:''};}

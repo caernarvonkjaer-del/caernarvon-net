@@ -4211,6 +4211,14 @@
      "from": null,
      "to": "\"\""
     },
+    "years.0.data.benefits.va.appliedFor": {
+     "from": null,
+     "to": "\"\""
+    },
+    "years.0.data.benefits.va.eligible": {
+     "from": null,
+     "to": "\"\""
+    },
     "years.0.data.caseId": {
      "from": null,
      "to": "null"

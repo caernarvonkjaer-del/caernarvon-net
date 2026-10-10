@@ -8,7 +8,7 @@ is settled (the requester, 2026-10-10), each as recommended:** 75A-1 join and
 offer, 75B-1 after Question 11's detail, 75D-1 the workbook's headings, 75E-1
 correct and pin. **Approved to build, all five** (the requester, 2026-10-10:
 "Do them all. Light unit testing between sections, full regression at the
-end.") Built so far: 75A, 75B (2026-10-10).
+end.") Built so far: 75A, 75B, 75C (2026-10-10).
 
 **Already built, ahead of this proposal** (2026-10-10, `fe2f9fc`, at the
 requester's named approval: "Fix the dropped docs now"; for the Plan for
@@ -331,6 +331,32 @@ Applied for?), labelled "VA" as the court's form has it.
    nothing about benefits.
 9. **Cross-form:** the Initial Plan already has VA; the Minors' and
    Simplified Plan's forms have no list.
+
+### Build record — BUILT 2026-10-10 (approved by name by the requester, 2026-10-10)
+
+**What changed for a filer:** Question 3G of the Annual Guardianship Plan
+has a VA row between Medicaid and Trusts, with "Eligible?" and "Applied
+for?", unanswered until answered; the answer prints in the PDF's 3G table. A
+plan saved before shows the VA row unanswered.
+
+**How:** `PLAN_BENEFITS` (`src/core/filing/models/plan-annual.js`) -- the
+screen, the blank filing and the PDF all read it; two rows in
+`probate-guardian-data-model.csv` (`verify:data-model` OK, 1,069 rows).
+
+**Records regenerated, each diff read:** `ms70-70C-filing-shapes.json` (the
+blank and normalized Annual Plan's `benefits.va` and the list -- added by hand,
+in the file's layout, with a note), `ms70-completion-golden.json` and
+`ms73-validator-golden.json` (five VA variants each, results as their
+neighbours'), `ms70-year-rollover-golden.json` (the two fields) and
+`ms70-conversion-golden.json` (the two fields, and -- from 75A -- the empty
+documents slots a converted filing's Cover now leaves when its section
+redraws for the new filing's dates; they hold nothing).
+
+**Tests:** new `tests/e2e/plan-annual-benefits.spec.ts` (1) and
+`tests/unit/plan-annual-benefits.spec.js` (3). **Red-first:** on the previous
+list the screen has no VA row, and the unit VA case fails. In a browser on a
+C: copy: the new spec and the two characterization specs passed. Unit suite
+3,104 passed.
 
 ---
 

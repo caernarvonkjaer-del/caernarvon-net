@@ -393,6 +393,14 @@
      "q7Va": "",
      "remuneration": [],
      "safeDepositBoxFiled": "",
+     "scheduleDocs": {
+      "planICover": {
+       "__": {
+        "comment": "",
+        "files": []
+       }
+      }
+     },
      "scheduleDocsAck": {},
      "serviceCharges": "",
      "serviceNoRecipients": "",
@@ -1350,6 +1358,14 @@
      "schD4": [],
      "schD5": [],
      "schE": [],
+     "scheduleDocs": {
+      "planCover": {
+       "2026-01-01__2026-12-31": {
+        "comment": "",
+        "files": []
+       }
+      }
+     },
      "scheduleDocsAck": {},
      "schF1": [],
      "schF2": [],
@@ -1935,6 +1951,10 @@
       "trusts": {
        "appliedFor": "",
        "eligible": ""
+      },
+      "va": {
+       "appliedFor": "",
+       "eligible": ""
       }
      },
      "caseId": "<id>",
@@ -2331,6 +2351,14 @@
      "q7Va": "",
      "remuneration": [],
      "safeDepositBoxFiled": "",
+     "scheduleDocs": {
+      "planACover": {
+       "2026-01-01__2026-12-31": {
+        "comment": "",
+        "files": []
+       }
+      }
+     },
      "scheduleDocsAck": {},
      "serviceCharges": "",
      "serviceNoRecipients": "",
@@ -3988,6 +4016,14 @@
      "q7Va": "",
      "remuneration": [],
      "safeDepositBoxFiled": "",
+     "scheduleDocs": {
+      "planCover": {
+       "2026-01-01__2026-12-31": {
+        "comment": "",
+        "files": []
+       }
+      }
+     },
      "scheduleDocsAck": {},
      "serviceCharges": "",
      "serviceNoRecipients": "",
@@ -4176,6 +4212,14 @@
      "schD4": [],
      "schD5": [],
      "schE": [],
+     "scheduleDocs": {
+      "planACover": {
+       "__": {
+        "comment": "",
+        "files": []
+       }
+      }
+     },
      "scheduleDocsAck": {},
      "schF1": [],
      "schF2": [],
@@ -4729,6 +4773,10 @@
       "trusts": {
        "appliedFor": "",
        "eligible": ""
+      },
+      "va": {
+       "appliedFor": "",
+       "eligible": ""
       }
      },
      "caseId": "<id>",
@@ -4987,6 +5035,12 @@
         "comment": "",
         "files": []
        }
+      },
+      "planICover": {
+       "__": {
+        "comment": "",
+        "files": []
+       }
       }
      },
      "scheduleDocsAck": {},
@@ -5083,6 +5137,14 @@
      "scheduleC3": [],
      "scheduleC4": [],
      "scheduleC5": [],
+     "scheduleDocs": {
+      "planACover": {
+       "initial": {
+        "comment": "",
+        "files": []
+       }
+      }
+     },
      "scheduleDocsAck": {},
      "scheduleNoItems": {},
      "serviceAttorney": {
