@@ -8,7 +8,16 @@ is settled (the requester, 2026-10-10), each as recommended:** 75A-1 join and
 offer, 75B-1 after Question 11's detail, 75D-1 the workbook's headings, 75E-1
 correct and pin. **Approved to build, all five** (the requester, 2026-10-10:
 "Do them all. Light unit testing between sections, full regression at the
-end.") **All five built** (2026-10-10): 75A, 75B, 75C, 75D, 75E; the closing full regression is still to run.
+end.") **All five built** (2026-10-10): 75A, 75B, 75C, 75D, 75E -- with three
+defects found while building and fixed at the requester's named approval
+(the year-2 documents, `b9fb068`; Part II's lagging totals, `8146cfa`; and,
+ahead of the proposal, the dropped documents, `fe2f9fc`). **Closing full
+regression** (`npm test` once, as approved, on a copy on C: at `6cb305b`,
+2026-10-10): unit, 215 files and 3,119 tests, all passed; browser, 1,237
+tests -- 1,221 passed, 16 skipped (the web build's hashed-chunk case, the
+hosted offline cache (5), the portable build's HTTP parity, and the pre-merge
+comparison (9), as in every source run), none failed, none flaky (1 h 35 min
+in all). The milestone is complete.
 
 **Already built, ahead of this proposal** (2026-10-10, `fe2f9fc`, at the
 requester's named approval: "Fix the dropped docs now"; for the Plan for
