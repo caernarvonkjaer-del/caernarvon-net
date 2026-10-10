@@ -3,8 +3,10 @@
 ## Status
 
 **Draft. Authorizes no change.** Building any item, or any part of one, needs
-the requester's named approval of that item (AGENTS.md §3). Every decision
-below is open until the requester answers it.
+the requester's named approval of that item (AGENTS.md §3). **Every decision
+is settled (the requester, 2026-10-10), each as recommended:** 75A-1 join and
+offer, 75B-1 after Question 11's detail, 75D-1 the workbook's headings, 75E-1
+correct and pin. Nothing is approved to build.
 
 **Already built, ahead of this proposal** (2026-10-10, `fe2f9fc`, at the
 requester's named approval: "Fix the dropped docs now"; for the Plan for
@@ -100,6 +102,11 @@ this period":
 
 ### Decision 75A-1 — how documents follow the dates
 
+**Settled 2026-10-10 (the requester): option 1, join and offer.** This changes
+Milestone 40C-D's settled behaviour for documents attached before any dates
+(they now join the dates); for a date correction 40C-D's round trip still
+holds, with the offer added. The options as asked:
+
 1. *Recommended:* **join and offer.** No-dates documents join the first dates
    typed; after a correction, each section offers to move documents filed
    under the earlier dates, one click, nothing moved without it. 40C-D's round
@@ -178,6 +185,9 @@ Two screens -- Questions 2–3 and 4–5 -- belong in one PDF section; since
 | 11. Advance Directives (with 10E–F) | Advance Directive Detail | see 75B-1 |
 
 ### Decision 75B-1 — the Advance Directives screen
+
+**Settled 2026-10-10 (the requester): option 1, after Question 11's Advance
+Directive Detail.** The options as asked:
 
 That screen holds Question 11 and also 10E–F, which the PDF prints under
 "Question 10B–F".
@@ -304,6 +314,9 @@ affected. No figure, formula or stored value changes.
 
 ### Decision 75D-1 — Part II's headings
 
+**Settled 2026-10-10 (the requester): option 1, the workbook's.** The options
+as asked:
+
 1. *Recommended:* **the workbook's.** Line 1's card headed "Starting Balance",
    directly under Part II's heading; "Income — Only the following receipts
    qualify" as now; "Less Disbursements — Only the following qualify";
@@ -357,7 +370,10 @@ Schedules A, B-4, C, D-1 and E are right. The screens, the workbook
 capacity table (`src/core/excel/excel-caps.js`) and the Clerk's sheets agree
 with each other; only these labels are wrong.
 
-### Decision 75E-1
+### Decision 75E-1 — the labels
+
+**Settled 2026-10-10 (the requester): option 1, correct all nine and pin
+them.** The options as asked:
 
 1. *Recommended:* **correct all nine**, and pin every Annual schedule's label to
    its screen's own heading in a unit test, so they can't drift apart again.
