@@ -96,3 +96,27 @@ test.describe('73O part 4: one wording', () => {
     await expect(page.locator('#convertWardModal.show')).toContainText('of a different filing type');
   });
 });
+
+// Milestone 75D (decision 75D-1): the Simplified's Part II heads its lines as
+// the Clerk's workbook does (PARTS I, II -- Line 1 under Part II's heading,
+// "Income", "Less Disbursements", and "Assets On Hand" over Line 8, B30). It
+// had "Assets On Hand" over Line 1.
+test("the Simplified's Part II has the workbook's headings, each over its own lines", async ({ page }) => {
+  await freshStartNoPassword(page);
+  await createSimplifiedWard(page, 'Part II Headings');
+  await page.evaluate(() => (window as any).GuardianForms.testing.patchFiling({ startingBalance: 100 }));
+  await navigate(page, '/p2');
+  await dismissScheduleDocPrompt(page);
+  const cards = await page.locator('#main-content .entry-card').evaluateAll((els) => els.map((card) => ({
+    heading: card.querySelector('.entry-card-header')?.textContent?.trim(),
+    lines: [...card.querySelectorAll('.line-tag')].map((tag) => tag.textContent?.trim()),
+  })));
+  expect(cards).toEqual([
+    { heading: 'Starting Balance', lines: ['Line 1'] },
+    { heading: 'Income — Only the following receipts qualify', lines: ['Line 2', 'Line 3', 'Line 4'] },
+    { heading: 'Less Disbursements — Only the following qualify', lines: ['Line 5', 'Line 6', 'Line 7'] },
+    { heading: 'Assets On Hand', lines: ['Line 8'] },
+  ]);
+  // Line 8 in its new card still shows the remaining assets.
+  await expect(page.locator('#line8')).toHaveText('$100.00');
+});

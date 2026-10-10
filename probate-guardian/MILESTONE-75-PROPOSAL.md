@@ -8,7 +8,7 @@ is settled (the requester, 2026-10-10), each as recommended:** 75A-1 join and
 offer, 75B-1 after Question 11's detail, 75D-1 the workbook's headings, 75E-1
 correct and pin. **Approved to build, all five** (the requester, 2026-10-10:
 "Do them all. Light unit testing between sections, full regression at the
-end.") Built so far: 75A, 75B, 75C (2026-10-10).
+end.") Built so far: 75A, 75B, 75C, 75D (2026-10-10).
 
 **Already built, ahead of this proposal** (2026-10-10, `fe2f9fc`, at the
 requester's named approval: "Fix the dropped docs now"; for the Plan for
@@ -419,6 +419,27 @@ as asked:
 8. **Legal framing:** wording only, matched to the Clerk's own instrument (§5).
 9. **Cross-form:** the Annual family's summary pages are laid out by their own
    workbooks' parts and are not this pattern.
+
+### Build record — BUILT 2026-10-10 (approved by name by the requester, 2026-10-10)
+
+**What changed for a filer:** the Simplified Accounting's Part II reads as
+the Clerk's workbook does: Line 1 in a card headed "Starting Balance";
+"Income — Only the following receipts qualify" (Lines 2–4); "Less
+Disbursements — Only the following qualify" (Lines 5–7); and Line 8, the
+Remaining Assets On Hand, in its own card headed "Assets On Hand". No figure,
+stored value, workbook cell or PDF line changed.
+
+**How:** `src/features/simplified-accounting/index.js`'s Part II page; Line
+8 keeps its `line8` box, which the totals refresh writes.
+
+**Found while building, fixed in its own commit next** (the requester's
+named approval): Part II's Lines 4, 7 and 8 lag one edit behind what the
+filer types -- recorded with that commit.
+
+**Tests:** `tests/e2e/form-wording.spec.ts` gains the Part II headings, in
+order, each over its own lines. **Red-first:** on the previous page Line 1
+sits under "Assets On Hand", the card says "Disbursements", and Line 8 has no
+card. In a browser on a C: copy: `form-wording` and `simplified-mount` passed.
 
 ---
 

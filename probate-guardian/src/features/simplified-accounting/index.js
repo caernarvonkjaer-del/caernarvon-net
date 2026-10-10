@@ -496,8 +496,11 @@ function pagePart2(){
   return `<div class="schedule-page">
     <h1>Part II — Accounting Summary &amp; Remaining Assets On Hand</h1>
     <div class="schedule-instructions">Only interest income, deposits from settlement, financial institution service charges, and payment of federal income tax qualify for this simplified form.</div>
+    <!-- Milestone 75D (decision 75D-1): the Clerk's workbook's headings --
+         Line 1 directly under Part II's heading, "Income", "Less
+         Disbursements", and "Assets On Hand" over Line 8 (PARTS I, II B30). -->
     <div class="entry-card">
-      <div class="entry-card-header">Assets On Hand</div>
+      <div class="entry-card-header">Starting Balance</div>
       <div class="entry-card-body">
         <div class="line-row">
           <span class="line-tag">Line 1</span>
@@ -527,7 +530,7 @@ function pagePart2(){
       </div>
     </div>
     <div class="entry-card">
-      <div class="entry-card-header">Disbursements — Only the following qualify</div>
+      <div class="entry-card-header">Less Disbursements — Only the following qualify</div>
       <div class="entry-card-body">
         <div class="line-row">
           <span class="line-tag">Line 5</span>
@@ -546,8 +549,15 @@ function pagePart2(){
         </div>
       </div>
     </div>
-    <div class="schedule-totals">
-      <div class="tbl"><div class="tr"><div class="td"><strong>Line 8 — Remaining Assets On Hand</strong></div><div class="td" id="line8">${fmtH(t.remaining)}</div></div></div>
+    <div class="entry-card">
+      <div class="entry-card-header">Assets On Hand</div>
+      <div class="entry-card-body">
+        <div class="line-row total-line">
+          <span class="line-tag">Line 8</span>
+          <span class="line-label">Remaining Assets On Hand</span>
+          <span class="line-val" id="line8">${fmtH(t.remaining)}</span>
+        </div>
+      </div>
     </div>
     ${renderScheduleDocsSection('p2')}
     ${pageNavS('/summary','/p3')}
