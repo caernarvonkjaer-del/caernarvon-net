@@ -41,9 +41,9 @@
   "fixtures.ts::MINIMAL_VALID_PLAN_ANNUAL (1 specs)",
   "plan-fixture.ts::registerPlanMountTests (4 specs)",
   "supplemental-pdf-fixture.ts::buildSupplementalAttachmentFixture (4 specs)",
-  "target.ts::fillMinimalValidGuardianWard (43 specs)",
+  "target.ts::fillMinimalValidGuardianWard (44 specs)",
   "target.ts::fillMinimalValidSimplifiedWard (29 specs)",
-  "target.ts::fillMinimalValidPlanSimplifiedWard (20 specs)",
+  "target.ts::fillMinimalValidPlanSimplifiedWard (21 specs)",
   "target.ts::fillMinimalValidPlanAnnualWard (23 specs)",
   "target.ts::fillMinimalValidPlanMinorWard (17 specs)",
   "target.ts::fillMinimalValidPlanInitialWard (19 specs)",
@@ -446,7 +446,7 @@
    "module": "tests/e2e/support/target.ts",
    "name": "freshStartNoPassword",
    "kind": "function",
-   "specFiles": 155,
+   "specFiles": 157,
    "factory": false
   },
   {
@@ -460,7 +460,7 @@
    "module": "tests/e2e/support/target.ts",
    "name": "createWard",
    "kind": "function",
-   "specFiles": 140,
+   "specFiles": 142,
    "factory": false
   },
   {
@@ -481,7 +481,7 @@
    "module": "tests/e2e/support/target.ts",
    "name": "fillMinimalValidGuardianWard",
    "kind": "function",
-   "specFiles": 43,
+   "specFiles": 44,
    "factory": true
   },
   {
@@ -502,7 +502,7 @@
    "module": "tests/e2e/support/target.ts",
    "name": "fillMinimalValidPlanSimplifiedWard",
    "kind": "function",
-   "specFiles": 20,
+   "specFiles": 21,
    "factory": true
   },
   {

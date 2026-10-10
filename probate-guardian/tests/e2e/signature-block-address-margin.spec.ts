@@ -74,7 +74,9 @@ async function openSimplifiedPreview(page: Page, cityStateZip: string = LONG_CIT
  * Locate the rows a piece of text occupies, then measure the real ink on those
  * canvas rows. Returns one entry per matching run.
  */
-function measureInkOnRowsContaining(page: Page, needle: string) {
+async function measureInkOnRowsContaining(page: Page, needle: string) {
+  // Milestone 73R part 3: the Preview draws only the pages on screen; this reads every page.
+  await page.evaluate(() => (window as any).GuardianForms.testing.preview.drawAll());
   return page.evaluate(([text, pageW]) => {
     const results: Array<{ page: number; yTop: number; yBot: number; rightPt: number; clearBeforeValuePt: number }> = [];
     const pages = [...document.querySelectorAll('#print-doc-container .pdf-page')];

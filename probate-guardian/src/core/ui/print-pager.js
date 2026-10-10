@@ -5,6 +5,7 @@
 // legacy-app.js's PRINT-PREVIEW PAGER.
 import { esc } from '../filing/escape-html.js';
 import { ic } from './icons.js';
+import { refreshPreviewPages, syncZoomButtons } from '../pdf/preview-zoom.js';
 
 export let _pvSelection='1';
 
@@ -64,6 +65,7 @@ export function pvApply(){
   const n=parseInt(_pvSelection,10);
   if(prev)prev.disabled=(_pvSelection==='all'||n<=1);
   if(next)next.disabled=(_pvSelection==='all'||n>=pages.length);
+  refreshPreviewPages();
 }
 
 export function pvSelect(v){
@@ -110,7 +112,9 @@ export function initPrintPager(options={}){
     shellActions.innerHTML=`<button type="button" class="topnav-btn" data-shell-action="dashboard">${ic('home',16)} All Filings</button><button type="button" class="topnav-btn topnav-theme" id="theme-toggle-btn" data-shell-action="toggle-theme" title="Switch theme" aria-label="Switch to ${isDark?'light':'dark'} theme" aria-pressed="${isDark}">${ic(isDark?'sun':'moon',16)}</button><button type="button" class="topnav-btn topnav-help" id="help-toggle-btn" data-shell-action="toggle-help" title="Help: open the user guide for this page (new tab)" aria-label="Help: open the user guide for this page (new tab)">?</button>`;
     destination.appendChild(shellActions);
   }
-  if(pages.length<2)return;                       // nothing to page through
+  // Milestone 73R part 3 (73R-6): a one-page Preview gets the bar too -- its
+  // size buttons are useful even with nothing to page through.
+  if(!pages.length)return;
   const existing=document.getElementById('pv-bar');
   if(existing){
     if(!options.refresh)return;
@@ -141,7 +145,12 @@ export function initPrintPager(options={}){
         <button type="button" class="btn btn-sm btn-outline-secondary" id="pv-prev" data-form-action="preview-step" data-step="-1">← Prev</button>
         <button type="button" class="btn btn-sm btn-outline-secondary" id="pv-next" data-form-action="preview-step" data-step="1">Next →</button>
       </span>
+      <span class="pv-zoom" role="group" aria-label="Page size">
+        <button type="button" class="btn btn-sm btn-outline-secondary" id="pv-fit-height" data-form-action="preview-zoom" data-zoom="fit-height" aria-pressed="false">Fit height</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary" id="pv-full-width" data-form-action="preview-zoom" data-zoom="full-width" aria-pressed="false">Full width</button>
+      </span>
     </span>`;
   cont.parentNode.insertBefore(bar,cont);
   pvApply();
+  syncZoomButtons();
 }

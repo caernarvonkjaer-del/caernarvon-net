@@ -11,6 +11,7 @@ import { emptyPlanDirective } from './core/filing/models/plan-annual.js';
 import { getD } from './core/state.js';
 import { addPlanGuardian, addPlanRow, duplicatePlanRow, removePlanGuardian, removePlanRow } from './core/form/plan-row-actions.js';
 import { pvSelect, pvStep } from './core/ui/print-pager.js';
+import { togglePreviewZoom } from './core/pdf/preview-zoom.js';
 import { handleScheduleDocUpload, removeScheduleDoc, updateScheduleComment } from './core/filing/schedule-docs.js';
 import { toggleSsnReveal } from './core/form/form-runtime.js';
 import { filterCountyDropdown, hideCountyDropdown, onCountyKeydown, selectCountyOption } from './core/form/county-autocomplete.js';
@@ -94,6 +95,7 @@ on('click', (event) => {
     case 'save-pdf-plan-initial': features().run('planInitial', 'doSavePdfPlanInitial'); break;
     case 'save-pdf-plan-minor': features().run('planMinor', 'doSavePdfPlanMinor'); break;
     case 'preview-step': pvStep(Number.parseInt(actionElement.dataset.step, 10)); break;
+    case 'preview-zoom': togglePreviewZoom(actionElement.dataset.zoom); break;
     case 'remove-schedule-doc': removeScheduleDoc(actionElement.dataset.scheduleKey, Number.parseInt(actionElement.dataset.documentIndex, 10)); break;
     case 'toggle-ssn': toggleSsnReveal(actionElement); break;
   }

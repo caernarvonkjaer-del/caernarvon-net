@@ -6,11 +6,11 @@
 far: 73U (2026-10-04, `5b8849b`), 73V (2026-10-05, `8b96aa3`), 73C
 (2026-10-05, `861b6a9`, brought forward from its place in the build order at the
 requester's choice) 73D (2026-10-05, `c8e84fe`, likewise), 73J part 1 (2026-10-05, `d819c4a`),
-73F part 1 (2026-10-06, `5e9e17b`), 73A (2026-10-06, `83352d0`), 73F part 2 (2026-10-06, `d01edd4`), 73G part 1 (2026-10-06, `69a1b46`), 73E part 1 (2026-10-06, `8e02051`), 73F part 3 (2026-10-06, `67fc66c`), 73I (2026-10-06, `56a7c30`), 73T part 1 (2026-10-07, `4cae1e7`), 73T part 2 (2026-10-07, `2a1cbc5`), 73T part 3 (2026-10-07, `9d2bc72`), 73T part 4 (2026-10-07, `b70a944`), 73M with 74C (2026-10-07, `a0e987b`), 73B (2026-10-07, `86547da`), 73O part 2 with 74F (2026-10-08, `fa9625e`), 73G part 2 with 74H (2026-10-08, `f85e862`, `78b5770`), 73H (2026-10-08, `631f898`), 73S (2026-10-08, `3cf1d9d`), 73K part 1 (2026-10-08, `4268c45`), 73E part 2 (2026-10-08, `5e26e57`, `ea78dd4`), 73J part 2 (2026-10-08, `3648706`), 73K part 2 (2026-10-08, `79a8875`), 73L with 74D's reproduction (2026-10-09, `43081f2`), 73N part 1 (2026-10-09, `ab8068e`), 73N part 2 (2026-10-09, `01a9610`), 73N part 3 (2026-10-09, `987daaf`), 73O part 1 with 74O (2026-10-09, `487e247`, `97a0754`), 73O part 3 with 74L (2026-10-09, `67e13b8`) and 73O part 4 with 74J (2026-10-09, `cc90279`) and 73P with 74S (2026-10-09, `09cef26`) 73R part 1 (2026-10-09, `15784dc`) and 73R part 2 (2026-10-09), each approved by name; 74P, built after 73B, is recorded in Milestone 74.**
+73F part 1 (2026-10-06, `5e9e17b`), 73A (2026-10-06, `83352d0`), 73F part 2 (2026-10-06, `d01edd4`), 73G part 1 (2026-10-06, `69a1b46`), 73E part 1 (2026-10-06, `8e02051`), 73F part 3 (2026-10-06, `67fc66c`), 73I (2026-10-06, `56a7c30`), 73T part 1 (2026-10-07, `4cae1e7`), 73T part 2 (2026-10-07, `2a1cbc5`), 73T part 3 (2026-10-07, `9d2bc72`), 73T part 4 (2026-10-07, `b70a944`), 73M with 74C (2026-10-07, `a0e987b`), 73B (2026-10-07, `86547da`), 73O part 2 with 74F (2026-10-08, `fa9625e`), 73G part 2 with 74H (2026-10-08, `f85e862`, `78b5770`), 73H (2026-10-08, `631f898`), 73S (2026-10-08, `3cf1d9d`), 73K part 1 (2026-10-08, `4268c45`), 73E part 2 (2026-10-08, `5e26e57`, `ea78dd4`), 73J part 2 (2026-10-08, `3648706`), 73K part 2 (2026-10-08, `79a8875`), 73L with 74D's reproduction (2026-10-09, `43081f2`), 73N part 1 (2026-10-09, `ab8068e`), 73N part 2 (2026-10-09, `01a9610`), 73N part 3 (2026-10-09, `987daaf`), 73O part 1 with 74O (2026-10-09, `487e247`, `97a0754`), 73O part 3 with 74L (2026-10-09, `67e13b8`) and 73O part 4 with 74J (2026-10-09, `cc90279`) and 73P with 74S (2026-10-09, `09cef26`) 73R part 1 (2026-10-09, `15784dc`), 73R part 2 (2026-10-09, `62fdf85`) and 73R part 3 (2026-10-09), each approved by name; 74P, built after 73B, is recorded in Milestone 74.**
 **The 2026-10-07 batch is built**, and its closing full regression has run
 (recorded below, after the mid-batch one). **Approved and not yet built**
 (2026-10-08, one batch in this order, light tests between deliveries and a
-full regression at the end): 73R part 3.
+full regression at the end): nothing -- the batch is built; its closing full regression is still to run.
 Nothing else is approved. Building any other item, or any part of a
 split item, needs the requester's named approval of that item or part
 (AGENTS.md §3).
@@ -3950,6 +3950,71 @@ fail on the previous files. In a browser on a C: copy: startup and Terms,
 unlock, offline, PWA registration, the dashboard's look and the sidebar --
 29 passed, 5 classified skips. Packaging changed (icons): `npm run
 test:e2e:portable` belongs in the batch's closing run (§9).
+
+### Build record, part 3 — BUILT 2026-10-09 (approved by name by the requester, 2026-10-08)
+
+**What changed for a filer:** Print Preview has **"Fit height"** and **"Full
+width"** beside Prev / Next. Fit height shows a whole page in the window --
+below the bar, where Prev / Next brings it -- and Full width spans the page
+across the Preview, its 9.5in cap lifted. The button that is on reads as
+pressed; pressing it again returns to the usual size. The choice is
+remembered on this device, never in the case file. Pages are drawn for the
+screen: a Letter page is 1,836 pixels wide on a screen of pixel ratio 2,
+where it was 918 on any screen. A one-page Preview gets the bar too (73R-6),
+though no form prints a single page today (each prints four or more).
+
+**Notes (decision 73R-5):** unsaved notes stay where they were, at the new
+size; a new note lands at the click; Save Annotated PDF carries both where
+they were put.
+
+**Where the build differs from the design, and why:**
+
+- *Design item 5* asked for the notes to be serialized before a re-render
+  and restored after. Built instead: the notes layer is never torn down --
+  it is re-scaled in place, as pdf.js's own viewer does on zoom. The outcome
+  73R-5 decided is the same; nothing is saved or re-read, so there is no
+  round trip to lose a note in.
+- *Lazy drawing:* at most **four** pages are drawn at once -- those on screen
+  and the next and previous, the next first -- and every other canvas is
+  released. Each canvas is capped at 16 million pixels and at a quarter of
+  what drawing every page at 1.5x took (never below one page at 1.5x on a
+  pixel-ratio-2 screen), the pixel ratio lowered first. The design's "one
+  page either side", capped per canvas alone, could hold five canvases when
+  three pages are partly on screen -- about 5% past the acceptance limit.
+  While no page is on screen yet (a long "Review recommended" list above the
+  Preview), the first page shown and the next are drawn ahead, so scrolling
+  down does not meet a blank page.
+- *The acceptance test's "19-page Inventory":* 19 is the Inventory's screens
+  in the app (Milestone 74's UX-13 counts them), not PDF pages -- a minimal
+  Inventory prints 6. The test uses an Inventory whose Schedule B-1 lists 200
+  accounts, which prints 20 pages.
+
+**Measured** (the acceptance test, a 2,560x1,440 window at pixel ratio 2, on
+a C: copy): drawing every page at 1.5x, as before, takes 21,811,680 canvas
+pixels; now at most 16,350,336 at any point measured (each size change, and
+four places down a Full width Preview). Size changes settled in 0.51 s (Fit
+height), 0.51 s (Full width) and 0.74 s (back to the usual size), against the
+2-second limit.
+
+**How:** new `src/core/pdf/preview-zoom.js`; `pdf-preview.js` (pages built at
+the remembered size, canvases left empty; the manager starts once the notes
+toolbar is in place, so Fit height allows for it); `pdf-annotate.js`
+(`rescale()`); `print-pager.js`; `form-events.js`; `print.css`; the testing
+adapter's `preview` member -- `state()`, and `drawAll()` for the three specs
+that read ink off every page (`pdf-right-margin`,
+`guardian-inventory-schedule-layout`, `signature-block-address-margin`).
+
+**Tests:** new `tests/e2e/preview-zoom.spec.ts` (5) and
+`tests/unit/preview-zoom.spec.js` (9). **Red-first:** all five browser tests
+fail on the previous source -- no size buttons (three), no bar on a one-page
+Preview, the page drawn 918px wide at pixel ratio 2; the unit four-canvas
+bound fails with a one-third cap. Light regression on a C: copy: the
+19 browser specs that touch Print Preview (the notes, the viewer, the three
+that read ink off every page, signatures, section marks and the rest), with
+the Preview's Print button, the forms' wording, accessible names, routes and
+startup -- 24 specs, 233 tests, all passed. Unit suite: 3,071 passed.
+`check:types` (the new module joins the checked program through the pager):
+one error, in the new module, fixed -- then clean.
 
 ---
 

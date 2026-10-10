@@ -275,6 +275,24 @@ export class AnnotationSession {
     this.uiManager.updateMode(mode);
   }
 
+  /**
+   * Milestone 73R part 3 (decision 73R-5): a new Preview size. The notes are
+   * re-scaled where they are, as pdf.js's own viewer does on zoom -- unsaved
+   * notes are kept and redrawn at the new size. `viewports` maps a page index
+   * to its viewport at `scale`.
+   */
+  rescale(scale, viewports) {
+    const cssUnits = this.pdfjsLib.PixelsPerInch?.PDF_TO_CSS_UNITS || 96 / 72;
+    this.uiManager.onScaleChanging({ scale: scale / cssUnits });
+    for (const [pageIndex, { layer, div }] of this.layers) {
+      const viewport = viewports.get(pageIndex);
+      if (!viewport) continue;
+      div.style.width = `${viewport.width}px`;
+      div.style.height = `${viewport.height}px`;
+      layer.update({ viewport: viewport.clone({ dontFlip: true }) });
+    }
+  }
+
   undo() {
     this.uiManager.undo();
   }

@@ -48,7 +48,9 @@ const FORMS: Array<{ type: string; make: (page: Page) => Promise<void>; long?: R
 ];
 
 /** The rightmost inked point on each rendered page, and where on the page it is. */
-function inkPastRightEdge(page: Page) {
+async function inkPastRightEdge(page: Page) {
+  // Milestone 73R part 3: the Preview draws only the pages on screen; this reads every page.
+  await page.evaluate(() => (window as any).GuardianForms.testing.preview.drawAll());
   return page.evaluate(([pageW, edge]) => {
     const out: Array<{ page: number; xPt: number; yPt: number }> = [];
     [...document.querySelectorAll('#print-doc-container .pdf-page')].forEach((host, idx) => {

@@ -80,6 +80,7 @@ import { adaptValidationErrors } from '../validation/validation-adapter.js';
 import { prepareFilingOutput } from '../filing/output-preflight.js';
 import { evaluateFiling } from '../validation/engines/index.js';
 import { excelWriteRecorder } from '../excel/excel-engine.js';
+import { currentPreview } from '../pdf/preview-zoom.js';
 
 export const TEST_MODE_FLAG = '__GUARDIAN_FORMS_TEST_MODE__';
 
@@ -392,6 +393,16 @@ export function createTestingAdapter(w, impl = applicationImplementations()) {
     /** Appends an Activity Log entry (auditLog()). */
     recordActivity: (type, details, success = true, filingId = null) => auditLog(type, details, success, filingId),
     refreshStatus() { updateNavDots(); updateSidebar(); },
+    /**
+     * Milestone 73R part 3: the Print Preview on screen. `state` is its size
+     * and how far drawing has caught up (a copy), or null; `drawAll` draws
+     * every page and keeps them drawn, for the specs that read ink off every
+     * page -- a filer's Preview draws only the pages on screen and beside them.
+     */
+    preview: Object.freeze({
+      state: () => copy(currentPreview()?.state() ?? null),
+      drawAll: async () => { await currentPreview()?.drawAll(); },
+    }),
 
     // ── Queries (copies) ────────────────────────────────────────────────────
     /** The case and the open filing, as copies. */

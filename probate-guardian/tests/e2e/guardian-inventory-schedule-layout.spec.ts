@@ -125,7 +125,9 @@ function collectRuns(page: Page): Promise<Run[]> {
 }
 
 /** The rightmost inked pixel, in points, on the canvas rows a text run occupies. */
-function inkRightEdgeOnRowsContaining(page: Page, needle: string) {
+async function inkRightEdgeOnRowsContaining(page: Page, needle: string) {
+  // Milestone 73R part 3: the Preview draws only the pages on screen; this reads every page.
+  await page.evaluate(() => (window as any).GuardianForms.testing.preview.drawAll());
   return page.evaluate(([text, pageW]) => {
     const out: Array<{ page: number; yTop: number; rightPt: number }> = [];
     [...document.querySelectorAll('#print-doc-container .pdf-page')].forEach((host, idx) => {

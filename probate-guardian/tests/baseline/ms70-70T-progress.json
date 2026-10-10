@@ -130,6 +130,7 @@
   "tests/e2e/preparer-flag.spec.ts",
   "tests/e2e/preparer-note-placement.spec.ts",
   "tests/e2e/preview-print-button.spec.ts",
+  "tests/e2e/preview-zoom.spec.ts",
   "tests/e2e/print-preview-signature-jump.spec.ts",
   "tests/e2e/prior-year-delete.spec.ts",
   "tests/e2e/pwa-registration.spec.ts",

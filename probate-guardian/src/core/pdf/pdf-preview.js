@@ -22,6 +22,7 @@
 import { generateCourtFormPdf } from './pdf-engine.js';
 import { finalizeCourtFormPdf, saveFinalizedPdf } from './pdf-finalizer.js';
 import { ensurePdfjs } from './pdfjs-loader.js';
+import { currentPreview, PreviewPages, scaleFor, storedZoomMode } from './preview-zoom.js';
 import { AnnotationSession, computeContentFingerprint } from './pdf-annotate.js';
 import { base64ToBytes } from '../images/png-dimensions.js';
 import { announceStatus } from '../status/live-region.js';
@@ -228,24 +229,36 @@ function escapeHtml(s) {
 // preview's lifetime (annotation editing and Save Annotated PDF both act on
 // this same parsed document), where every prior caller only needed the DOM
 // result and let pdf/page go out of scope on return.
+// Milestone 73R part 3: every page's box, text layer (and, by the caller,
+// notes layer) is built at once, at the remembered size; its canvas is left
+// empty for the PreviewPages manager (preview-zoom.js), which the caller
+// starts once the notes toolbar is in place, to draw only when the page is on
+// or near the screen.
 async function renderPagesInto(container, pdfBytes) {
   const pdfjsLib = await ensurePdfjs();
   const pdfDocument = await pdfjsLib.getDocument({ data: pdfBytes }).promise;
   container.innerHTML = '';
-  const scale = 1.5;
+  const mode = storedZoomMode();
+  container.classList.toggle('pv-zoom-full-width', mode === 'full-width');
+  const firstPage = await pdfDocument.getPage(1);
+  const unit = firstPage.getViewport({ scale: 1 });
+  const scale = scaleFor(mode, unit.width, unit.height, container);
   const pages = [];
   for (let pageNum = 1; pageNum <= pdfDocument.numPages; pageNum++) {
-    const page = await pdfDocument.getPage(pageNum);
+    const page = pageNum === 1 ? firstPage : await pdfDocument.getPage(pageNum);
     const viewport = page.getViewport({ scale });
 
     const pageWrap = document.createElement('div');
     pageWrap.className = 'pdf-page';
     pageWrap.style.width = `${viewport.width}px`;
     pageWrap.style.height = `${viewport.height}px`;
+    pageWrap.style.setProperty('--total-scale-factor', String(scale));
 
     const canvas = document.createElement('canvas');
-    canvas.width = viewport.width;
-    canvas.height = viewport.height;
+    canvas.width = 0;
+    canvas.height = 0;
+    canvas.style.width = `${viewport.width}px`;
+    canvas.style.height = `${viewport.height}px`;
     pageWrap.appendChild(canvas);
 
     const textLayerDiv = document.createElement('div');
@@ -254,12 +267,12 @@ async function renderPagesInto(container, pdfBytes) {
 
     container.appendChild(pageWrap);
 
-    await page.render({ canvasContext: canvas.getContext('2d'), viewport, canvas }).promise;
     const textContent = await page.getTextContent();
-    await new pdfjsLib.TextLayer({ textContentSource: textContent, container: textLayerDiv, viewport }).render();
-    pages.push({ pageIndex: pageNum - 1, page, viewport, pageWrap, textLayerDiv });
+    const textLayer = new pdfjsLib.TextLayer({ textContentSource: textContent, container: textLayerDiv, viewport });
+    await textLayer.render();
+    pages.push({ pageIndex: pageNum - 1, page, viewport, pageWrap, textLayerDiv, canvas, textLayer });
   }
-  return { pdfjsLib, pdfDocument, pages, scale };
+  return { pdfjsLib, pdfDocument, pages, scale, mode };
 }
 
 function refreshPreviewPager() {
@@ -383,7 +396,7 @@ async function renderPreviewInto(container, buildModel, D, options = {}) {
       }
     }
 
-    const { pdfjsLib, pdfDocument, pages, scale } = await renderPagesInto(container, bytesToRender);
+    const { pdfjsLib, pdfDocument, pages, scale, mode } = await renderPagesInto(container, bytesToRender);
 
     if (options.annotate) {
       const session = new AnnotationSession(pdfjsLib, container, pdfDocument, scale);
@@ -393,6 +406,14 @@ async function renderPreviewInto(container, buildModel, D, options = {}) {
       _annotationSession = session;
       mountAnnotateToolbar(container, session, pdfjsLib, D, fingerprint);
     }
+    // The pages' size is worked out again now the notes toolbar sits above
+    // them -- Fit height leaves room for it.
+    const preview = new PreviewPages(
+      container,
+      pages.map(({ page, pageWrap, canvas, textLayer }) => ({ page, wrap: pageWrap, canvas, textLayer })),
+      { mode, scale, annotations: _annotationSession },
+    );
+    preview.applyMode(mode, { remember: false });
 
     refreshPreviewPager();
     announceStatus('Preview ready.', { containerId: 'print-preview-status' });
@@ -441,6 +462,7 @@ export async function mountPdfPreview(buildModel, D, baseIssues = [], containerI
   if (!container) return;
   beginFreshPreview();
   destroyAnnotationSession();
+  currentPreview()?.destroy();
   const authorization = authorizeFilingOutput(D, baseIssues, { capability: 'preview' });
   if (authorization.status !== 'allowed') {
     // Announce the count, not the list -- an assertive region reading fifty
