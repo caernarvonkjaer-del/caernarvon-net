@@ -59,10 +59,24 @@ const FORMS: Array<{ name: string; make: (page: Page) => Promise<void>; screens:
     make: async (page) => { await createWard(page, 'Docs Plan Year Two', 'planAnnual'); await fillMinimalValidPlanAnnualWard(page); await secondYear(page, fillMinimalValidPlanAnnualWard); },
     screens: [{ route: '/p2', key: 'planAResidences', section: 'Question 1' }],
   },
+  // Milestone 75B: from Questions 4-5 on, each screen's documents printed
+  // after the next section; Questions 2-3 and 4-5 share "Questions 2-5", in
+  // screen order (decision 75B-1 keeps Advance Directives' after its detail).
   {
-    name: 'Initial Plan (Attorney screen)',
+    name: 'Initial Plan',
     make: async (page) => { await createWard(page, 'Docs Initial', 'planInitial'); await fillMinimalValidPlanInitialWard(page); },
-    screens: [{ route: '/p10', key: 'planIAttorney', section: 'Attorney Certification' }],
+    screens: [
+      { route: '/', key: 'planICover', section: 'Cover' },
+      { route: '/p2', key: 'planISettingMedical', section: 'Questions 2-5' },
+      { route: '/p3', key: 'planIMentalPersonal', section: 'Questions 2-5' },
+      { route: '/p4', key: 'planISocialBenefits', section: 'Questions 6-7' },
+      { route: '/p5', key: 'planIProviders', section: 'Question 9' },
+      { route: '/p6', key: 'planIADLs', section: 'Question 10A' },
+      { route: '/p7', key: 'planIDisabilities', section: 'Question 10B-F' },
+      { route: '/p8', key: 'planIDirectives', section: 'Advance Directive Detail' },
+      { route: '/p9', key: 'planISignatures', section: 'Certification' },
+      { route: '/p10', key: 'planIAttorney', section: 'Attorney Certification' },
+    ],
   },
 ];
 
@@ -133,8 +147,10 @@ test.describe('Supporting documents reach the saved PDF, after their own section
         // The PDF's Supporting Documents block prints the filer's comment, not the file's name.
         const listed = saved.pages.findIndex((text, i) => i + 1 >= start && text.includes(`Comment for ${screen.key}`)) + 1;
         expect(listed, `${screen.key}: listed under ${screen.section}`).toBeGreaterThanOrEqual(start);
-        expect(listed, `${screen.key}: listed under ${screen.section}, before the next section`).toBeLessThanOrEqual(next);
         expect(attached, `${screen.key}: its pages follow its section's list`).toBeGreaterThan(listed);
+        // After attached pages the next section always starts a page of its
+        // own (pdf-engine.js), so a document of this section comes before it.
+        expect(attached, `${screen.key}: its pages come before the section after ${screen.section}`).toBeLessThan(next);
         attachedAt.push(attached);
       }
       // Screens sharing a section, and screens in order: their documents in screen order.

@@ -8,7 +8,7 @@ is settled (the requester, 2026-10-10), each as recommended:** 75A-1 join and
 offer, 75B-1 after Question 11's detail, 75D-1 the workbook's headings, 75E-1
 correct and pin. **Approved to build, all five** (the requester, 2026-10-10:
 "Do them all. Light unit testing between sections, full regression at the
-end.") Built so far: 75A (2026-10-10).
+end.") Built so far: 75A, 75B (2026-10-10).
 
 **Already built, ahead of this proposal** (2026-10-10, `fe2f9fc`, at the
 requester's named approval: "Fix the dropped docs now"; for the Plan for
@@ -249,6 +249,26 @@ That screen holds Question 11 and also 10E–F, which the PDF prints under
 9. **Cross-form:** checked 2026-10-10 -- the Annual Plan, Simplified Plan,
    Plan for Minors (since `fe2f9fc`), the Accountings and the Inventory place
    every screen's documents after their own section.
+
+### Build record — BUILT 2026-10-10 (approved by name by the requester, 2026-10-10)
+
+**What changed for a filer:** every Initial Plan screen's supporting
+documents print after its own question -- Questions 4–5's with 2–3's under
+"Questions 2–5" (2–3's first), 6–7's under "Questions 6–7", 9's under
+"Question 9", 10A's under "Question 10A", 10B–D's under "Question 10B–F" -- and
+the Advance Directives screen's after Question 11's detail, as before
+(decision 75B-1).
+
+**How:** `src/core/pdf/document-sections.js`'s `planInitial` entries, as the
+table above proposed.
+
+**Tests:** `tests/e2e/supporting-documents-reach-pdf.spec.ts`'s Initial
+Plan case covers every screen, and every case now requires a screen's
+attached pages to come before the next section begins (after attached pages
+the next section always starts a page of its own) -- the looser check let a
+document listed on the next section's first page pass. **Red-first:** on the
+previous table, Questions 4–5's pages come after "Questions 6–7" begins. In a
+browser on a C: copy: the spec's five cases passed. Unit suite 3,101 passed.
 
 ---
 

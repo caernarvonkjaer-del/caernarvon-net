@@ -10,7 +10,8 @@
 // "ANNUAL GUARDIANSHIP PLAN - MINOR" (a hyphen) on 2026-09-07, so none of its
 // documents reached the PDF; the Simplified Accounting had no entry at all;
 // and the Initial Plan's Attorney screen had none. The Initial Plan's other
-// screens still point one section late -- Milestone 75's proposal.
+// screens pointed one section late from Questions 4-5 on, until Milestone
+// 75's 75B.
 import { FILING_TYPE_KEYS, resolveDescriptorForInventoryType } from '../filing/filing-descriptor.js';
 
 export const SUPPORTING_DOC_SECTIONS = Object.freeze({
@@ -19,10 +20,13 @@ export const SUPPORTING_DOC_SECTIONS = Object.freeze({
     planAProviders: 'q4', planARights: 'q5-q7', planAADLs: 'q8', planADisabilities: 'q9',
     planADirectives: 'q10', planARemuneration: 'q11', planASignatures: 'certification',
   }),
+  // Questions 2-3 and 4-5 are one PDF section, "Questions 2–5". The Advance
+  // Directives screen (Question 11, with 10E-F) prints after Question 11's
+  // Advance Directive Detail (decision 75B-1).
   planInitial: Object.freeze({
-    planICover: 'cover', planISettingMedical: 'q2-q5', planIMentalPersonal: 'q6-q7',
-    planISocialBenefits: 'q9', planIProviders: 'q10a', planIADLs: 'q10b-d',
-    planIDisabilities: 'q11-10ef', planIDirectives: 'directive-detail', planISignatures: 'certification',
+    planICover: 'cover', planISettingMedical: 'q2-q5', planIMentalPersonal: 'q2-q5',
+    planISocialBenefits: 'q6-q7', planIProviders: 'q9', planIADLs: 'q10a',
+    planIDisabilities: 'q10b-d', planIDirectives: 'directive-detail', planISignatures: 'certification',
     planIAttorney: 'attorney-certification',
   }),
   // Questions 2 and 3 are one PDF section, "Questions 2–3".
