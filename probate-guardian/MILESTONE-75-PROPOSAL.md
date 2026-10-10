@@ -8,7 +8,7 @@ is settled (the requester, 2026-10-10), each as recommended:** 75A-1 join and
 offer, 75B-1 after Question 11's detail, 75D-1 the workbook's headings, 75E-1
 correct and pin. **Approved to build, all five** (the requester, 2026-10-10:
 "Do them all. Light unit testing between sections, full regression at the
-end.") Built so far: 75A, 75B, 75C, 75D (2026-10-10).
+end.") **All five built** (2026-10-10): 75A, 75B, 75C, 75D, 75E; the closing full regression is still to run.
 
 **Already built, ahead of this proposal** (2026-10-10, `fe2f9fc`, at the
 requester's named approval: "Fix the dropped docs now"; for the Plan for
@@ -496,6 +496,30 @@ Initial Inventory's lists are labelled from their own schedule keys
 shared lists' labels in `schedule-schemas.js` ("Co-Guardian", "Plan
 Residence", "Service Recipient" and the rest) name what they hold -- checked
 2026-10-10.
+
+### Build record — BUILT 2026-10-10 (approved by name by the requester, 2026-10-10)
+
+**What changed:** nothing a filer sees. Ten Annual schedule list labels now
+name their own schedule: "Schedule B-1 Attorney Fee", "B-2 Guardian Fee",
+"B-3 Other Court-Ordered Disbursement", "D-1 Cash Asset", "D-2 Real Estate
+Entry", "D-3 Personal Property Entry", "D-4 Intangible Asset Entry", "D-5
+Mortgage / Loan / Liability Entry", "F-1 Sale of Real Property", "F-2 Sale of
+Personal Property".
+
+**Decision 75E-2 (the requester, 2026-10-10), asked while building:** D-1's
+"Bank Account" shares no word with its heading, "Cash Assets" -- its one
+heading word, "Bank", is Schedule E's -- so the pin could not hold for it. The
+options as asked: (1) *recommended:* relabel D-1 "Schedule D-1 Cash Asset", so
+all fourteen pin by one rule; (2) keep it and exempt it by name. **Chosen: 1**
+-- a tenth label, still unseen.
+
+**How:** `src/core/form/schedule-schemas.js`.
+
+**Tests:** new `tests/unit/schedule-labels.spec.js` (15): each label carries
+its own code and shares at least as many of its screen heading's words as any
+other schedule's heading does (generic words such as "other", "all" and
+"asset" aside), so a swap or a shift fails. **Red-first:** on the previous
+labels exactly the ten fail and the five right ones pass.
 
 ---
 

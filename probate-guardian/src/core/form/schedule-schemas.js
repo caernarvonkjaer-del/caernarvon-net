@@ -55,6 +55,12 @@ export const SCHEDULE_SCHEMAS = {
   },
 
   // Annual Accounting Schedules
+  // Milestone 75E (decision 75E-1): each Annual schedule's label names its
+  // own schedule, pinned to the screen's heading by
+  // tests/unit/schedule-labels.spec.js. Ten named the wrong one (B-1/B-2
+  // swapped, B-3, D-2 to D-5 shifted, F-1, F-2) or none of its heading's
+  // words (D-1); nothing showed them -- the Remove question says "this entry"
+  // for a schedule.
   schA: {
     factory: () => ({ payer: '', description: '', bank: '', accountNo: '', amount: '' }),
     label: 'Schedule A Income Entry',
@@ -63,19 +69,19 @@ export const SCHEDULE_SCHEMAS = {
   },
   schB1: {
     factory: () => ({ bankAcct: '', checkNo: '', periodFrom: '', periodTo: '', datePaid: '', payee: '', courtOrderDate: '', amount: '' }),
-    label: 'Schedule B-1 Guardian Fee',
+    label: 'Schedule B-1 Attorney Fee',
     floor: 0,
     max: Infinity,
   },
   schB2: {
     factory: () => ({ bankAcct: '', checkNo: '', periodFrom: '', periodTo: '', datePaid: '', payee: '', courtOrderDate: '', amount: '' }),
-    label: 'Schedule B-2 Attorney Fee',
+    label: 'Schedule B-2 Guardian Fee',
     floor: 0,
     max: Infinity,
   },
   schB3: {
     factory: () => ({ bankAcct: '', checkNo: '', periodFrom: '', periodTo: '', datePaid: '', payee: '', courtOrderDate: '', amount: '' }),
-    label: 'Schedule B-3 Other Professional Fee',
+    label: 'Schedule B-3 Other Court-Ordered Disbursement',
     floor: 0,
     max: Infinity,
   },
@@ -103,31 +109,31 @@ export const SCHEDULE_SCHEMAS = {
   // always said; they used to arrive answered No.
   schD1: {
     factory: () => ({ description: '', accountNo: '', restricted: '', type: '', fullAmount: '', wardPct: '', restrictedAmt: '' }),
-    label: 'Schedule D-1 Bank Account',
+    label: 'Schedule D-1 Cash Asset',
     floor: 0,
     max: Infinity,
   },
   schD2: {
     factory: () => ({ description: '', residence: '', income: '', fullValue: '', wardPct: '', carryingValue: '', wardValue: '' }),
-    label: 'Schedule D-2 Securities Entry',
+    label: 'Schedule D-2 Real Estate Entry',
     floor: 0,
     max: Infinity,
   },
   schD3: {
     factory: () => ({ description: '', fullAmount: '', wardPct: '', carryingValue: '', wardAmount: '' }),
-    label: 'Schedule D-3 Real Estate Entry',
+    label: 'Schedule D-3 Personal Property Entry',
     floor: 0,
     max: Infinity,
   },
   schD4: {
     factory: () => ({ description: '', restricted: '', fullAmount: '', wardPct: '', carryingValue: '', wardValue: '', restrictedAmt: '' }),
-    label: 'Schedule D-4 Personal Property Entry',
+    label: 'Schedule D-4 Intangible Asset Entry',
     floor: 0,
     max: Infinity,
   },
   schD5: {
     factory: () => ({ description: '', loanNo: '', loanType: '', fullDebt: '', wardPct: '', wardBalance: '' }),
-    label: 'Schedule D-5 Other Asset Entry',
+    label: 'Schedule D-5 Mortgage / Loan / Liability Entry',
     floor: 0,
     max: Infinity,
   },
@@ -139,13 +145,13 @@ export const SCHEDULE_SCHEMAS = {
   },
   schF1: {
     factory: () => ({ description: '', bank: '', accountNo: '', courtOrderDate: '', salePrice: '' }),
-    label: 'Schedule F-1 Outstanding Claim',
+    label: 'Schedule F-1 Sale of Real Property',
     floor: 0,
     max: Infinity,
   },
   schF2: {
     factory: () => ({ description: '', bank: '', accountNo: '', courtOrderDate: '', salePrice: '' }),
-    label: 'Schedule F-2 Contingent Liability',
+    label: 'Schedule F-2 Sale of Personal Property',
     floor: 0,
     max: Infinity,
   },
