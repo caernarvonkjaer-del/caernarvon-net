@@ -433,8 +433,14 @@ stored value, workbook cell or PDF line changed.
 8 keeps its `line8` box, which the totals refresh writes.
 
 **Found while building, fixed in its own commit next** (the requester's
-named approval): Part II's Lines 4, 7 and 8 lag one edit behind what the
-filer types -- recorded with that commit.
+named approval, 2026-10-10: "Fix now, own commit"): Part II's Lines 4, 7 and
+8 lagged one edit behind what the filer typed -- type $100 as the Starting
+Balance and Line 8 still said $0.00; type $5 of interest next and it said
+$100.00. The page repainted them from its own input listener, which runs
+before the app records the figure; they now repaint after it, on the shared
+`pg:field-written` signal, as the Annual's live totals do. The stored figures
+and the PDF were always right. New `tests/e2e/simplified-part2-totals.spec.ts`;
+red-first: on the previous page Line 8 says $0.00 after $100 is typed.
 
 **Tests:** `tests/e2e/form-wording.spec.ts` gains the Part II headings, in
 order, each over its own lines. **Red-first:** on the previous page Line 1

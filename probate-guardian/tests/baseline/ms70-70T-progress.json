@@ -163,6 +163,7 @@
   "tests/e2e/signature-style-removal.spec.ts",
   "tests/e2e/signed-amount-keypad.spec.ts",
   "tests/e2e/simplified-mount.spec.ts",
+  "tests/e2e/simplified-part2-totals.spec.ts",
   "tests/e2e/simplified-part1-identity-cells.spec.ts",
   "tests/e2e/simplified-remuneration.spec.ts",
   "tests/e2e/small-fixes.spec.ts",

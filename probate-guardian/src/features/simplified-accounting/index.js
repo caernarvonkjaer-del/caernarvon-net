@@ -206,9 +206,12 @@ function bindEvents(container) {
     }
     if (input instanceof HTMLInputElement && input.dataset.simplifiedChange === 'import-excel') _excelModule.importExcel(input);
   }, options);
-  container.addEventListener('input', (event) => {
-    if (event.target instanceof HTMLElement && event.target.dataset.simplifiedRefresh === 'part2') queueMicrotask(refreshPart2);
-  }, options);
+  // Part II's Lines 4, 7 and 8 repaint once each typed amount is recorded:
+  // the shared write tail's `pg:field-written` (form-contract.js), as the
+  // Annual's live totals do. They used to repaint on this page's own input
+  // listener, which runs before the app's writer -- so they showed the figure
+  // from one keystroke, or one box, before (found 2026-10-10 building 75D).
+  window.addEventListener('pg:field-written', () => refreshPart2(), options);
 }
 
 function ensureLazyModules() {
@@ -505,7 +508,7 @@ function pagePart2(){
         <div class="line-row">
           <span class="line-tag">Line 1</span>
           <span class="line-label" id="startingBalance_label">Starting Balance — Net Assets per Prior Report<span class="req">*</span></span>
-          <div class="line-input"><div class="input-group"><span class="input-group-text">$</span><input type="text" inputmode="text" class="form-control" id="startingBalance" aria-labelledby="startingBalance_label" value="${esc(amountBoxText(d.startingBalance))}" data-form-path="startingBalance" data-form-format="signed-decimal" data-field-blank="keep" data-simplified-refresh="part2"></div>${startingBalanceNotesHTML(d,{wards:getCaseFile()?.wards||null})}</div>
+          <div class="line-input"><div class="input-group"><span class="input-group-text">$</span><input type="text" inputmode="text" class="form-control" id="startingBalance" aria-labelledby="startingBalance_label" value="${esc(amountBoxText(d.startingBalance))}" data-form-path="startingBalance" data-form-format="signed-decimal" data-field-blank="keep"></div>${startingBalanceNotesHTML(d,{wards:getCaseFile()?.wards||null})}</div>
         </div>
       </div>
     </div>
@@ -515,12 +518,12 @@ function pagePart2(){
         <div class="line-row">
           <span class="line-tag">Line 2</span>
           <span class="line-label" id="interestIncome_label">Interest Income<span class="req">*</span></span>
-          <div class="line-input"><div class="input-group"><span class="input-group-text">$</span><input type="text" inputmode="decimal" class="form-control" id="interestIncome" aria-labelledby="interestIncome_label" value="${esc(amountBoxText(d.interestIncome,{blankZero:true}))}" data-form-path="interestIncome" data-form-format="decimal" data-simplified-refresh="part2"></div></div>
+          <div class="line-input"><div class="input-group"><span class="input-group-text">$</span><input type="text" inputmode="decimal" class="form-control" id="interestIncome" aria-labelledby="interestIncome_label" value="${esc(amountBoxText(d.interestIncome,{blankZero:true}))}" data-form-path="interestIncome" data-form-format="decimal"></div></div>
         </div>
         <div class="line-row">
           <span class="line-tag">Line 3</span>
           <span class="line-label" id="depositsSettlement_label">Deposits Pursuant to Settlement<span class="req">*</span></span>
-          <div class="line-input"><div class="input-group"><span class="input-group-text">$</span><input type="text" inputmode="decimal" class="form-control" id="depositsSettlement" aria-labelledby="depositsSettlement_label" value="${esc(amountBoxText(d.depositsSettlement,{blankZero:true}))}" data-form-path="depositsSettlement" data-form-format="decimal" data-simplified-refresh="part2"></div></div>
+          <div class="line-input"><div class="input-group"><span class="input-group-text">$</span><input type="text" inputmode="decimal" class="form-control" id="depositsSettlement" aria-labelledby="depositsSettlement_label" value="${esc(amountBoxText(d.depositsSettlement,{blankZero:true}))}" data-form-path="depositsSettlement" data-form-format="decimal"></div></div>
         </div>
         <div class="line-row total-line">
           <span class="line-tag">Line 4</span>
@@ -535,12 +538,12 @@ function pagePart2(){
         <div class="line-row">
           <span class="line-tag">Line 5</span>
           <span class="line-label" id="serviceCharges_label">Financial Institution Service Charges<span class="req">*</span></span>
-          <div class="line-input"><div class="input-group"><span class="input-group-text">$</span><input type="text" inputmode="decimal" class="form-control" id="serviceCharges" aria-labelledby="serviceCharges_label" value="${esc(amountBoxText(d.serviceCharges,{blankZero:true}))}" data-form-path="serviceCharges" data-form-format="decimal" data-simplified-refresh="part2"></div></div>
+          <div class="line-input"><div class="input-group"><span class="input-group-text">$</span><input type="text" inputmode="decimal" class="form-control" id="serviceCharges" aria-labelledby="serviceCharges_label" value="${esc(amountBoxText(d.serviceCharges,{blankZero:true}))}" data-form-path="serviceCharges" data-form-format="decimal"></div></div>
         </div>
         <div class="line-row">
           <span class="line-tag">Line 6</span>
           <span class="line-label" id="federalIncomeTax_label">Federal Income Tax<span class="req">*</span></span>
-          <div class="line-input"><div class="input-group"><span class="input-group-text">$</span><input type="text" inputmode="decimal" class="form-control" id="federalIncomeTax" aria-labelledby="federalIncomeTax_label" value="${esc(amountBoxText(d.federalIncomeTax,{blankZero:true}))}" data-form-path="federalIncomeTax" data-form-format="decimal" data-simplified-refresh="part2"></div></div>
+          <div class="line-input"><div class="input-group"><span class="input-group-text">$</span><input type="text" inputmode="decimal" class="form-control" id="federalIncomeTax" aria-labelledby="federalIncomeTax_label" value="${esc(amountBoxText(d.federalIncomeTax,{blankZero:true}))}" data-form-path="federalIncomeTax" data-form-format="decimal"></div></div>
         </div>
         <div class="line-row total-line">
           <span class="line-tag">Line 7</span>
