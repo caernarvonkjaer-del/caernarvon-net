@@ -10,8 +10,10 @@ import { getCurrentPage } from '../navigation/route-state.js';
 import { getActiveInventoryType, getD, requestSave } from '../state.js';
 import { alertModal } from '../ui/dialogs.js';
 import { ic } from '../ui/icons.js';
-import { commitModelChange } from '../model-change.js';
+import { commitModelChange, onModelChange } from '../model-change.js';
 import { getSecurityMode } from '../persistence/crypto.js';
+import { changeTouches, defineLivePart, livePartHtml } from '../ui/live-parts.js';
+import { documentsUnderOtherDates, joinUndatedDocuments, moveDocumentsToCurrentDates } from './doc-dates.js';
 
 // Every schedule (across all three inventory types) can carry uploaded
 // supporting documents and a free-text comment. Guardianships are re-filed
@@ -221,7 +223,60 @@ export function updateScheduleComment(scheduleKey,value){
   commitModelChange('supporting-documents',[`scheduleDocs.${scheduleKey}`]);
 }
 
+/**
+ * Milestone 75A (decision 75A-1): the filer's "Move them to these dates" --
+ * documents filed under other dates join the filing's (doc-dates.js).
+ */
+export function moveScheduleDocs(scheduleKey,fromKey){
+  const d=getD();
+  if(!d||!moveDocumentsToCurrentDates(d,scheduleKey,fromKey))return;
+  commitModelChange('supporting-documents',[`scheduleDocs.${scheduleKey}`,'scheduleDocsAck']);
+  renderPage(getCurrentPage(),onChange(fieldTarget(`scheduleDocs.${scheduleKey}`)));
+}
+
+/**
+ * Installed once at startup, before the live parts (main.js), so the
+ * documents sections redraw with what moved: when the reporting dates change
+ * -- typed, imported, or the whole filing -- documents attached before both
+ * dates were set join them (doc-dates.js). A new year or a switch between
+ * years never moves documents: each year keeps its own.
+ * @param {{ signal?: AbortSignal }} [options]
+ */
+export function installDocumentsFollowDates({ signal } = {}){
+  return onModelChange((change)=>{
+    if(['supporting-documents','new-year','year-switch'].includes(change.reason))return;
+    if(!changeTouches(['periodFrom','periodTo'],change.paths||[]))return;
+    const d=getD();
+    if(d&&joinUndatedDocuments(d))commitModelChange('supporting-documents',['scheduleDocs','scheduleDocsAck']);
+  },{ signal });
+}
+
+/** What a section says about documents filed under other dates, with its Move button. */
+function otherDatesHtml(scheduleKey,periodWord){
+  return documentsUnderOtherDates(getD(),scheduleKey).map((bucket)=>{
+    const what=bucket.files&&bucket.comment?`${bucket.files} document${bucket.files===1?'':'s'} and a comment are`
+      :bucket.files?`${bucket.files} document${bucket.files===1?' is':'s are'}`:'A comment is';
+    const when=bucket.from&&bucket.to
+      ?`under ${esc(formatDisplayDate(bucket.from)||bucket.from)} to ${esc(formatDisplayDate(bucket.to)||bucket.to)}`
+      :`from before the ${periodWord} was set`;
+    const them=bucket.files+(bucket.comment?1:0)>1?'them':'it';
+    return `<div class="sched-doc-elsewhere">${what} attached ${when}. <button type="button" class="btn btn-sm btn-outline-primary" data-form-action="move-schedule-docs" data-schedule-key="${esc(scheduleKey)}" data-from-period="${esc(bucket.key)}">Move ${them} to these dates</button></div>`;
+  }).join('');
+}
+
+// Milestone 75A: the section is a live part, redrawn when the reporting dates
+// change, so its heading, its list and what it offers follow them at once --
+// on a Plan's Cover the dates and the section share the page.
+defineLivePart('schedule-docs',{
+  paths:['periodFrom','periodTo'],
+  render:(d,scheduleKey)=>scheduleDocsSectionInner(scheduleKey),
+});
+
 export function renderScheduleDocsSection(scheduleKey){
+  return livePartHtml('schedule-docs',{ key:scheduleKey, className:'schedule-docs-section no-print' });
+}
+
+function scheduleDocsSectionInner(scheduleKey){
   const slot=getScheduleDocSlot(scheduleKey);
   queueScheduleDocValidation(scheduleKey,slot);
   const period=scheduleDocPeriodKey();
@@ -252,13 +307,13 @@ export function renderScheduleDocsSection(scheduleKey){
       <button type="button" class="btn btn-sm btn-outline-danger" aria-label="Remove supporting document ${esc(f.name)}" data-form-action="remove-schedule-doc" data-schedule-key="${esc(scheduleKey)}" data-document-index="${i}">×</button>
     </div>`;}).join(''):`<div class="sched-doc-empty">No supporting documents uploaded${getActiveInventoryType()==='guardian'?'':' for this period'}.</div>`;
   const inputId=`sched-doc-input-${scheduleKey}`;
-  return `<div class="schedule-docs-section no-print">
+  return `
     <h2>Supporting Documents${periodNote}</h2>
     <p class="schedule-docs-hint">Upload PDF supplemental documents only. Supplemental PDFs are inserted as uploaded; Guardian Forms does not certify or remediate uploaded documents for accessibility. ${getSecurityMode()==='encrypted'?'Stored on this device only, encrypted with the rest of this case.':'Stored on this device only, in this case file, which has no password.'}</p>
     <input type="file" id="${inputId}" multiple accept="application/pdf,.pdf" aria-label="Upload PDF supporting documents for this page" data-page-named="Upload PDF supporting documents for" class="d-none" data-form-change="schedule-doc-upload" data-schedule-key="${esc(scheduleKey)}">
     <button type="button" class="btn btn-outline-primary btn-sm mb-2" data-form-action="choose-schedule-docs" data-input-id="${esc(inputId)}" data-focus-path="scheduleDocs.${esc(scheduleKey)}">+ Upload PDF(s)</button>
     <div class="sched-doc-list">${filesHtml}</div>
+    ${getActiveInventoryType()==='guardian'?'':otherDatesHtml(scheduleKey,periodWord)}
     <h2 class="mt">Comments</h2>
-    <textarea class="form-control" rows="3" aria-label="Comments on this page" data-page-named="Comments on" placeholder="Notes about this schedule…" data-form-input="schedule-comment" data-schedule-key="${esc(scheduleKey)}">${esc(slot.comment)}</textarea>
-  </div>`;
+    <textarea class="form-control" rows="3" aria-label="Comments on this page" data-page-named="Comments on" placeholder="Notes about this schedule…" data-form-input="schedule-comment" data-schedule-key="${esc(scheduleKey)}">${esc(slot.comment)}</textarea>`;
 }

@@ -6,7 +6,9 @@
 the requester's named approval of that item (AGENTS.md §3). **Every decision
 is settled (the requester, 2026-10-10), each as recommended:** 75A-1 join and
 offer, 75B-1 after Question 11's detail, 75D-1 the workbook's headings, 75E-1
-correct and pin. Nothing is approved to build.
+correct and pin. **Approved to build, all five** (the requester, 2026-10-10:
+"Do them all. Light unit testing between sections, full regression at the
+end.") Built so far: 75A (2026-10-10).
 
 **Already built, ahead of this proposal** (2026-10-10, `fe2f9fc`, at the
 requester's named approval: "Fix the dropped docs now"; for the Plan for
@@ -147,6 +149,39 @@ holds, with the offer added. The options as asked:
 9. **Cross-form:** the Initial Inventory keys by year and is unaffected; the
    acknowledgement records (`scheduleDocsAck`, Milestone 57C-R) are keyed the
    same way as the documents and move with them.
+
+### Build record — BUILT 2026-10-10 (approved by name by the requester, 2026-10-10)
+
+**What changed for a filer:** a document attached before the reporting
+dates are typed stays where it is when they are -- listed, filed under the
+dates, in the Preview and the saved PDF. After a date is corrected, each
+documents section holding nothing for the new dates says what is filed
+under the old ones, "1 document is attached under 01/01/2026 to 12/31/2026.
+**Move it to these dates**", and moves it -- files, comment and the documents
+reminder's "I understand" -- only on that click. The section's heading and
+list follow the dates at once, on the page where they are typed (a Plan's
+Cover holds both). A new year still starts every section empty and offers
+nothing of the year before.
+
+**How:** new `src/core/filing/doc-dates.js` (the join, the offer and the
+move, pure); `schedule-docs.js` (the section is a live part redrawn when
+`periodFrom`/`periodTo` change; the offer; `moveScheduleDocs()`;
+`installDocumentsFollowDates()`, installed in `main.js` before the live parts
+so they redraw with what joined); `normalize-filing.js` (older files join
+when opened); `form-events.js` (the Move action); `cards.css`.
+
+**Found while building, fixed in its own commit first** (`b9fb068`, the
+requester's named approval): from a filing's second year on, the Accountings'
+and Plans' documents never reached the PDF -- recorded in Appendix A.
+
+**Tests:** new `tests/e2e/supporting-documents-follow-dates.spec.ts` (3) and
+`tests/unit/doc-dates.spec.js` (14). **Red-first:** on the previous source
+the first browser test fails with the document left under no dates and the
+second finds no offer; the third guards what was already true (a new year
+starts empty). 40C-D's `schedule-docs-period-key.spec.ts` passes unchanged
+-- its change and change back still restores everything. In a browser on a C:
+copy: the new spec, 40C-D's, the documents-reach and the reminder specs -- 25
+passed. Unit suite 3,101 passed; `check:types` clean.
 
 ---
 

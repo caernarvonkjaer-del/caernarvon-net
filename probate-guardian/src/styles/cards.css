@@ -129,6 +129,8 @@
 .sched-doc-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.85rem;color:var(--ink);}
 .sched-doc-meta{color:var(--ink-3);font-size:.78rem;flex-shrink:0;}
 .sched-doc-empty{color:var(--ink-3);font-style:italic;font-size:.85rem;margin-bottom:.5rem;}
+/* Milestone 75A: documents filed under other dates, with their Move button. */
+.sched-doc-elsewhere{display:flex;align-items:center;flex-wrap:wrap;gap:.5rem;color:var(--ink-2);font-size:.85rem;margin-bottom:.5rem;}
 
 .prior-year-row{display:flex;align-items:center;justify-content:space-between;gap:.6rem;padding:.55rem .7rem;border:1px solid var(--line);border-radius:6px;margin-bottom:.4rem;font-size:.85rem;}
 .prior-year-current{color:var(--ink-3);font-style:italic;background:var(--surface-2);}

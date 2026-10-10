@@ -168,6 +168,7 @@
   "tests/e2e/stamped-co-guardian.spec.ts",
   "tests/e2e/startup.spec.ts",
   "tests/e2e/supplemental-pdf-accounting.spec.ts",
+  "tests/e2e/supporting-documents-follow-dates.spec.ts",
   "tests/e2e/supporting-documents-reach-pdf.spec.ts",
   "tests/e2e/support/app-driver.ts",
   "tests/e2e/support/case-file-shape.contract.ts",

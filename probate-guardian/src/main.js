@@ -36,6 +36,7 @@ import { markFilingRevisionChanged, clearOutputAcknowledgement } from './core/fi
 import { bindReadinessCard } from './core/filing/readiness-card.js';
 import { startGuardianForms } from './core/startup/bootstrap.js';
 import { installLiveParts } from './core/ui/live-parts.js';
+import { installDocumentsFollowDates } from './core/filing/schedule-docs.js';
 import { installSidebarFollowsChanges } from './core/shell/sidebar.js';
 import { featureServices } from './features-loader.js';
 
@@ -63,6 +64,10 @@ installShellEvents();
 installModalEvents();
 installFormEvents();
 installStartupEvents();
+
+// Milestone 75A: documents attached before the reporting dates join them
+// when they're typed -- installed first, so the parts below redraw with them.
+installDocumentsFollowDates();
 
 // Milestone 73J part 2: page parts and the sidebar's names follow every
 // announced change (src/core/model-change.js).

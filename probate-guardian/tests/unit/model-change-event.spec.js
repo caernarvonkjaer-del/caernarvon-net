@@ -172,7 +172,7 @@ const ANNOUNCEMENTS = {
   'src/core/modals/pick-record-dialogs.js': 2,      // Link Person; a new shared record from a slot
   'src/core/signature/signature-state-control.js': 1, // a signature stamp
   'src/core/parties/party-management.js': 6,        // Sync (3), Merge, Dismiss, Unmerge
-  'src/core/filing/schedule-docs.js': 3,            // a supporting document added, removed, its comment
+  'src/core/filing/schedule-docs.js': 5,            // a supporting document added, removed, its comment; 75A: moved to the dates, joined to them
   'src/core/filing/filing-years.js': 2,             // New Year; a switch to another year
   'src/core/filing/conversion.js': 1,               // a conversion
   'src/core/excel/import-transaction.js': 1,        // an import as one transaction (73E part 1): every Excel import since 73T parts 2-4

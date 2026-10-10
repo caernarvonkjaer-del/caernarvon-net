@@ -6,6 +6,7 @@
 // reached it through window. Running it twice gives the same filing as once
 // (tests/unit/filing-registry.spec.js).
 import { normalizeScheduleDocsAck } from './schedule-doc-ack.js';
+import { joinUndatedDocuments } from './doc-dates.js';
 import { normalizeAmountFields } from './amount-fields.js';
 import { canonicalFloridaCounty } from '../pdf/circuit-lookup.js';
 import { normalizeRecipientShape } from './recipient-shape.js';
@@ -17,6 +18,9 @@ export function normalizeWardData(d){
   // read as "already acknowledged", since that would silently retire a prompt
   // the filer never saw.
   try{ normalizeScheduleDocsAck(d); }catch(e){}
+  // Milestone 75A: an older file's documents attached before the reporting
+  // dates were set join the dates (doc-dates.js); idempotent.
+  try{ joinUndatedDocuments(d); }catch(e){}
   // Milestone 73G part 1: amounts saved as readable text become their
   // numbers ("$1,234.56" is 1234.56); text that is not an amount is kept
   // for the export checks to name. Nothing is zeroed or cut short.
