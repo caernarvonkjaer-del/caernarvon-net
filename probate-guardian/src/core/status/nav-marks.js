@@ -210,7 +210,7 @@ export function renderProgressSummary(checks){
   host.innerHTML=`
     <div class="ward-progress-head">
       <span class="ward-progress-label">Filing Progress</span>
-      <span class="ward-progress-pct">${pct}%</span>
+      <span class="ward-progress-pct">${pct}%<span class="ward-progress-count-inline" aria-hidden="true"> · ${complete} of ${total}</span></span>
     </div>
     <div class="ward-progress-bar" role="progressbar" aria-label="Filing progress: ${complete} of ${total} pages to fill in complete"
          aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100">

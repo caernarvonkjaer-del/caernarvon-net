@@ -69,7 +69,10 @@ test.describe('routes', () => {
 
     const ctx = page.locator('#sidebar-context');
     const nav = page.locator('#nav-sections');
-    await expect(ctx).toBeVisible();
+    // Milestone 73R part 1 (73R-2): the filing type shows once, on the card;
+    // the strip under the header stays hidden inside a filing too.
+    await expect(ctx).toBeHidden();
+    await expect(page.locator('#ward-info-display .ward-info-type')).toHaveText('Initial Inventory');
     await expect(nav.locator('.nav-section')).not.toHaveCount(0);
 
     await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/dashboard'));

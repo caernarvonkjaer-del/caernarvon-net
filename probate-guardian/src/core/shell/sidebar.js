@@ -108,8 +108,8 @@ export function refreshWardInfoCard(){
   // bar rendered just below already is the meaningful headline, so the
   // dollar lines are dropped rather than shown as an empty "—".
   const totalHTML=meta.financial===false?''
-    :`<div class="ward-info-total-label">${esc(meta.totalLabel)}</div>
-      <div class="ward-info-total">${withMinusCue(formatDashboardCurrency(headline))}</div>`;
+    :`<div class="ward-info-total-row"><div class="ward-info-total-label">${esc(meta.totalLabel)}</div>
+      <div class="ward-info-total">${withMinusCue(formatDashboardCurrency(headline))}</div></div>`;
   wardInfo.innerHTML=`<div class="ward-info-head">
       <span class="ward-info-icon" style="color:${meta.accentText}">${typeIcon(ward.inventoryType,16)}</span>
       <span class="ward-info-type" style="color:${meta.accentText}">${esc(typeName)}</span>
@@ -221,16 +221,11 @@ export function updateSidebar(){
     if(staleNav)staleNav.innerHTML='';
     return;
   }
-  const typeConfig=INVENTORY_TYPES[getActiveInventoryType()];
-  // The header keeps the product name; the active form type gets its own
-  // strip beneath it so the app is always identifiable.
+  // Milestone 73R part 1 (73R-2): the filing type shows once, on the filing
+  // card below the Active Filing box; the strip that repeated it under the
+  // header stays hidden, giving its height to the section list.
   const ctx=document.getElementById('sidebar-context');
-  if(ctx){
-    ctx.style.display='flex';
-    document.getElementById('sidebar-context-icon').innerHTML=
-      typeIcon(getActiveInventoryType(),13);
-    document.getElementById('sidebar-context-label').textContent=typeConfig.name;
-  }
+  if(ctx)ctx.style.display='none';
   const navContainer=document.getElementById('nav-sections');
 
   // The open filing's own sidebar sections, drawn by its feature (Milestone
@@ -245,4 +240,7 @@ export function renderCopyrightNotice(){
   const el=document.getElementById('sidebar-copyright');
   if(!el)return;
   el.textContent=`© Copyright ${new Date().getFullYear()} Pinellas County Clerk of the Circuit Court and Comptroller`;
+  // Milestone 73R part 1 (73R-1): drawn on one line; the whole notice on hover
+  // (and to a screen reader, which reads the text whole).
+  el.title=el.textContent;
 }

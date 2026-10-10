@@ -196,6 +196,8 @@ export async function refreshAutoSaveArmedStatus() {
         el.textContent = 'Auto-save: not available in this browser — use Save/Export before closing this tab';
         el.style.color = 'var(--warn-text)';
       }
+      // Milestone 73R part 1: a short window cuts the line; the whole on hover.
+      el.title = el.textContent;
     }
   }
 }
@@ -406,6 +408,7 @@ export function updateLastSavedIndicator() {
     el.textContent = 'No backup saved yet';
     el.style.color = 'var(--ink-3)';
   }
+  el.title = el.textContent; // Milestone 73R part 1: whole on hover when cut
 }
 
 // `log: false` still advances the save clock (the "Last backup" indicator

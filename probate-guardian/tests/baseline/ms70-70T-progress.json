@@ -152,6 +152,7 @@
   "tests/e2e/security.spec.ts",
   "tests/e2e/service-attestation-visibility.spec.ts",
   "tests/e2e/sidebar-only-wants.spec.ts",
+  "tests/e2e/sidebar-room.spec.ts",
   "tests/e2e/sidebar-total-follows-changes.spec.ts",
   "tests/e2e/signature-block-address-margin.spec.ts",
   "tests/e2e/signature-by-hand.spec.ts",

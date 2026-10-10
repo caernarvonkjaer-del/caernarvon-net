@@ -6,11 +6,11 @@
 far: 73U (2026-10-04, `5b8849b`), 73V (2026-10-05, `8b96aa3`), 73C
 (2026-10-05, `861b6a9`, brought forward from its place in the build order at the
 requester's choice) 73D (2026-10-05, `c8e84fe`, likewise), 73J part 1 (2026-10-05, `d819c4a`),
-73F part 1 (2026-10-06, `5e9e17b`), 73A (2026-10-06, `83352d0`), 73F part 2 (2026-10-06, `d01edd4`), 73G part 1 (2026-10-06, `69a1b46`), 73E part 1 (2026-10-06, `8e02051`), 73F part 3 (2026-10-06, `67fc66c`), 73I (2026-10-06, `56a7c30`), 73T part 1 (2026-10-07, `4cae1e7`), 73T part 2 (2026-10-07, `2a1cbc5`), 73T part 3 (2026-10-07, `9d2bc72`), 73T part 4 (2026-10-07, `b70a944`), 73M with 74C (2026-10-07, `a0e987b`), 73B (2026-10-07, `86547da`), 73O part 2 with 74F (2026-10-08, `fa9625e`), 73G part 2 with 74H (2026-10-08, `f85e862`, `78b5770`), 73H (2026-10-08, `631f898`), 73S (2026-10-08, `3cf1d9d`), 73K part 1 (2026-10-08, `4268c45`), 73E part 2 (2026-10-08, `5e26e57`, `ea78dd4`), 73J part 2 (2026-10-08, `3648706`), 73K part 2 (2026-10-08, `79a8875`), 73L with 74D's reproduction (2026-10-09, `43081f2`), 73N part 1 (2026-10-09, `ab8068e`), 73N part 2 (2026-10-09, `01a9610`), 73N part 3 (2026-10-09, `987daaf`), 73O part 1 with 74O (2026-10-09, `487e247`, `97a0754`), 73O part 3 with 74L (2026-10-09, `67e13b8`) and 73O part 4 with 74J (2026-10-09, `cc90279`) and 73P with 74S (2026-10-09), each approved by name; 74P, built after 73B, is recorded in Milestone 74.**
+73F part 1 (2026-10-06, `5e9e17b`), 73A (2026-10-06, `83352d0`), 73F part 2 (2026-10-06, `d01edd4`), 73G part 1 (2026-10-06, `69a1b46`), 73E part 1 (2026-10-06, `8e02051`), 73F part 3 (2026-10-06, `67fc66c`), 73I (2026-10-06, `56a7c30`), 73T part 1 (2026-10-07, `4cae1e7`), 73T part 2 (2026-10-07, `2a1cbc5`), 73T part 3 (2026-10-07, `9d2bc72`), 73T part 4 (2026-10-07, `b70a944`), 73M with 74C (2026-10-07, `a0e987b`), 73B (2026-10-07, `86547da`), 73O part 2 with 74F (2026-10-08, `fa9625e`), 73G part 2 with 74H (2026-10-08, `f85e862`, `78b5770`), 73H (2026-10-08, `631f898`), 73S (2026-10-08, `3cf1d9d`), 73K part 1 (2026-10-08, `4268c45`), 73E part 2 (2026-10-08, `5e26e57`, `ea78dd4`), 73J part 2 (2026-10-08, `3648706`), 73K part 2 (2026-10-08, `79a8875`), 73L with 74D's reproduction (2026-10-09, `43081f2`), 73N part 1 (2026-10-09, `ab8068e`), 73N part 2 (2026-10-09, `01a9610`), 73N part 3 (2026-10-09, `987daaf`), 73O part 1 with 74O (2026-10-09, `487e247`, `97a0754`), 73O part 3 with 74L (2026-10-09, `67e13b8`) and 73O part 4 with 74J (2026-10-09, `cc90279`) and 73P with 74S (2026-10-09, `09cef26`) and 73R part 1 (2026-10-09), each approved by name; 74P, built after 73B, is recorded in Milestone 74.**
 **The 2026-10-07 batch is built**, and its closing full regression has run
 (recorded below, after the mid-batch one). **Approved and not yet built**
 (2026-10-08, one batch in this order, light tests between deliveries and a
-full regression at the end): 73R parts 1-3.
+full regression at the end): 73R parts 2-3.
 Nothing else is approved. Building any other item, or any part of a
 split item, needs the requester's named approval of that item or part
 (AGENTS.md §3).
@@ -3891,6 +3891,40 @@ settles within 2 seconds on the reference workstation.
 
 **Tests:** new `tests/e2e/preview-zoom.spec.ts` (including the acceptance
 test); `pdf-annotate.spec.ts` near 103–110.
+
+### Build record, part 1 — BUILT 2026-10-09 (approved by name by the requester, 2026-10-08)
+
+**What changed for a filer:** at a 768px-tall window the sidebar's section
+list has **347px, with the save controls closed or open** -- it had 176px
+closed and 15px open (measured in a browser, a 1366x768 window, before and
+after; the proposal estimated about 250px more).
+
+- The filing type shows once, on the filing card (73R-2); the strip that
+  repeated it under the header is gone.
+- The copyright notice is one line, its whole text on hover and to a screen
+  reader (73R-1).
+- The open save controls lie over the section list (73R-3) instead of
+  pushing it shut.
+- Below 900px of height: the card's label and total share a line, so do its
+  percent and count ("0% · 0 of 17"), and the backup status sits on its
+  toggle's line with the auto-save status one line below, each cut short with
+  its whole text on hover. A taller window keeps the card as it was.
+
+**How:** `sidebar.js` (the strip stays hidden; the label and total in one
+block; the notice's title), `nav-marks.js` (the count beside the percent),
+`case-file.js` (the status lines' titles), `index.html` (one wrapper round
+the two status lines), `shell.css`.
+
+**Tests:** new `tests/e2e/sidebar-room.spec.ts` (3); `routes.spec.ts`'s
+strip check follows 73R-2. **Red-first:** all three fail on the previous
+source (176px; the strip shown; label and total 20px apart). Light
+regression on a C: copy: the save-controls toggle's specs the proposal lists
+(dashboard backup, backup restore, the case file's damaged, newer-format and
+protection specs, lock and save state, the ward lock), the card's
+(annual mount, the sidebar total), the tour, routes, small fixes, page
+structure, startup, the navigation contract and accessible names -- 228
+tests; the one failure was `routes.spec.ts`'s strip check, updated, then all
+passed. Unit suite: 3,060 passed; `check:types` clean.
 
 ---
 

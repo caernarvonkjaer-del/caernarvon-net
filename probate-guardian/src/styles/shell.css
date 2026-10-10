@@ -193,6 +193,33 @@ body{margin:0;font-family:'Segoe UI Variable Text','Segoe UI',system-ui,-apple-s
 #auto-export-interval-select{font-size:.75rem;}
 .hidden-file-input{display:none;}
 .sidebar-copyright{padding:.6rem .8rem;font-size:.75rem;line-height:1.3;color:var(--ink-4);text-align:center;}
+/* Milestone 73R part 1 (73R-1): the notice on one line, its whole text on hover. */
+.sidebar-copyright{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+/* 73R-3: the open save controls float over the section list rather than
+   pushing it shut (at a 768px window it fell to 15px). */
+.sidebar-save-section{position:relative;}
+#save-controls-body{position:absolute;left:0;right:0;bottom:100%;z-index:40;padding:.7rem .8rem .8rem;background:var(--surface-2);border-top:1px solid var(--line);box-shadow:0 -6px 16px rgba(15,23,42,.12);}
+.ward-progress-count-inline{display:none;}
+/* 73R part 1: a short window gives the section list the height. The card's
+   label and total share a line, so do its percent and count; the backup
+   status sits on its toggle's line and the auto-save status on one line
+   below it, each cut short with its full text on hover. */
+@media (max-height: 900px){
+  .ward-info-head{margin-bottom:.35rem;}
+  .ward-info-total-row{display:flex;align-items:baseline;justify-content:space-between;gap:.5rem;}
+  .ward-info-total-label{margin-bottom:0;}
+  .ward-info-total{font-size:1.1rem;}
+  .ward-progress{margin-top:.45rem;padding-top:.4rem;}
+  .ward-progress-count{display:none;}
+  .ward-progress-count-inline{display:inline;font-weight:600;color:var(--ink-3);}
+  .sidebar-save-section{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;column-gap:.4rem;padding:.4rem .8rem;}
+  .save-status-line{display:contents;}
+  #last-saved-indicator,#auto-save-armed-indicator{margin-bottom:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  #last-saved-indicator{grid-column:1;grid-row:1;}
+  #save-controls-toggle-btn{grid-column:2;grid-row:1;width:auto!important;}
+  #auto-save-armed-indicator{grid-column:1 / -1;grid-row:2;}
+  .sidebar-copyright{padding:.35rem .8rem;}
+}
 
 .ward-info-card{background:linear-gradient(180deg,var(--surface-2),var(--surface-3));border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:var(--r);padding:.75rem .85rem;}
 .ward-info-head{display:flex;align-items:center;gap:.45rem;margin-bottom:.6rem;}

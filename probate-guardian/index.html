@@ -64,8 +64,10 @@
     <div class="nav-section sidebar-scroll" id="nav-sections"></div>
     <div class="nav-section sidebar-scroll sidebar-resources" id="sidebar-resources" hidden></div>
     <div class="nav-section sidebar-save-section">
-      <small id="last-saved-indicator" role="status" aria-live="polite">No backup saved yet</small>
-      <small id="auto-save-armed-indicator" role="status" aria-live="polite">Auto-save: needs one manual save first</small>
+      <div class="save-status-line">
+        <small id="last-saved-indicator" role="status" aria-live="polite">No backup saved yet</small>
+        <small id="auto-save-armed-indicator" role="status" aria-live="polite">Auto-save: needs one manual save first</small>
+      </div>
       <button type="button" class="btn btn-sm btn-link w-100 save-controls-toggle" id="save-controls-toggle-btn" data-shell-action="toggle-save-controls" aria-expanded="true">Hide save controls ▴</button>
       <!-- A plain block-level wrapper, toggled as one unit, rather than
            setting style.display on each child directly -- several of them
