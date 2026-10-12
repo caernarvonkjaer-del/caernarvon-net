@@ -27,12 +27,25 @@ describe('guided tour content', () => {
     ]) {
       const body = source.match(new RegExp(`const ${name}=\\[(.*?)]\\;`, 's'))?.[1] || '';
       expect(body, `${name} exists`).not.toBe('');
-      for (const selector of ['#help-toggle-btn', '.ward-picker-select', '#theme-toggle-btn', '.ward-progress', '[data-page="/"]', '[data-page="/print"]']) {
+      // Milestone 73Q: '#ward-selector', the sidebar's box itself -- '.ward-picker-select'
+      // also matched the Convert dialog's hidden ward box.
+      for (const selector of ['#help-toggle-btn', '#ward-selector', '#theme-toggle-btn', '.ward-progress', '[data-page="/"]', '[data-page="/print"]']) {
         expect(body, `${name} contains ${selector}`).toContain(selector);
       }
     }
     expect(source).toContain('[data-nav="d5"]');
     expect(source).toContain('Certificate of Service');
+  });
+
+  // Milestone 73Q: the Simplified Accounting's tour said it had no Excel output
+  // (it has the Clerk's workbook) and sent its Signatures stop to Part III, the
+  // declaration; its guardians sign in Part IV. No tour names a hidden box.
+  test('the Simplified Accounting tour: Signatures is Part IV, and Excel is offered', () => {
+    const body = source.match(/const WALKTHROUGH_SIMPLIFIED=\[(.*?)]\;/s)?.[1] || '';
+    expect(body).toMatch(/\{element:'\[data-page="\/p4"\]',title:'7\. Signatures'/);
+    expect(body).not.toMatch(/no(?:t offer)? Excel/i);
+    expect(body).toContain('Excel workbook');
+    expect(source).not.toContain("element:'.ward-picker-select'");
   });
 
   test('tour copy does not manufacture legal conclusions or browser guarantees', () => {

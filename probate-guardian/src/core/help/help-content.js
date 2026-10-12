@@ -13,7 +13,7 @@ export const HELP_CONTENT = Object.freeze({
     <p>2. Choose one of the nine filing types: the Initial Inventory, the accountings, or the plans</p>
     <p>3. Fill out each section using the sidebar navigation</p>
     <p>4. Look for the <strong>green checkmarks</strong> — they indicate completed sections</p>
-    <p>5. Export to PDF or Excel when ready to file. (The optional UCN prints on the PDF but is not carried in Excel — none of the court's workbooks has a place for it.)</p>
+    <p>5. Export to PDF or Excel when ready to file. (The UCN, starred as a reminder only, prints on the PDF but is not carried in Excel — none of the court's workbooks has a place for it.)</p>
     <div class="help-section-title">Along the Way</div>
     <p><strong>Filing progress:</strong> The bar near the top of the sidebar tracks how much of the current ward's filing is complete, with a "Jump to…" link straight to the next incomplete section.</p>
     <p><strong>Light &amp; dark mode:</strong> Use the moon/sun button beside each page's title (and in the dashboard's toolbar) to switch appearance. It's remembered per device.</p>
@@ -148,46 +148,8 @@ export const HELP_CONTENT = Object.freeze({
     <p>Unlike the other Plans, this form has a separate <strong>Preparer certification</strong> block in addition to the guardian and attorney certifications — fill it in with whoever actually prepared the filing (which may or may not be the guardian).</p>
     <div class="help-section-title">Before You File</div>
     <p>Print Preview includes a <strong>readiness check</strong> — a general filing checklist, since this form's official Clerk's Review checklist was not available to build the check against. Export as PDF when done; this form has no Excel version.</p>`
-  },
-  'cover': {
-    title: 'Cover & Summary Page',
-    content: `<div class="help-section-title">Ward Information</div>
-    <p>Basic information about the ward (the person for whom you are guardian) and the guardianship case.</p>
-    <h4>Key Fields:</h4>
-    <ul>
-    <li><strong>Ward Name:</strong> Full legal name</li>
-    <li><strong>Case Number:</strong> From the court order appointing you guardian</li>
-    <li><strong>UCN (optional):</strong> The Uniform Case Number, if the court has assigned one. It prints in the page header beside Case #.</li>
-    <li><strong>Guardianship Inception Date:</strong> When the guardianship was established</li>
-    <li><strong>County:</strong> Where the court case is filed</li>
-    </ul>
-    <div class="help-section-title">Summary Section</div>
-    <p>A preview of your accounting totals. Review to ensure amounts are correct before filing.</p>`
-  },
-  'field-help': {
-    title: 'Common Field Definitions',
-    content: `<div class="help-section-title">Ward's %</div>
-    <p>The percentage of an asset that belongs to the ward. For example, if the ward owns 50% of a property, enter 50.</p>
-    <div class="help-section-title">Restricted Assets</div>
-    <p>Assets that cannot be used without court permission (e.g., real estate that must be sold through court process).</p>
-    <div class="help-section-title">Carrying Value</div>
-    <p>The depreciated value of an asset for accounting purposes (not necessarily the market value).</p>
-    <div class="help-section-title">Personal Residence</div>
-    <p>The primary home where the ward lives. Required to mark for asset classification.</p>
-    <div class="help-section-title">SSN / EIN</div>
-    <p><strong>SSN:</strong> Social Security Number (for individuals). <strong>EIN:</strong> Employer Identification Number (for businesses/trusts).</p>`
-  },
-  'saving': {
-    title: 'Backup & Saving',
-    content: `<div class="help-section-title">How Saving Works</div>
-    <p>Your data is saved automatically to this device as you type. You can see the save status in the sidebar.</p>
-    <div class="help-section-title">Creating a Backup</div>
-    <p>Use the <strong>Save Backup (.sav)</strong> button to download an encrypted backup. Store this file safely—it's your safeguard if your device is lost or damaged.</p>
-    <div class="help-section-title">Auto-Save</div>
-    <p>Adjust the Auto-Save interval (5 min, 10 min, 30 min, or Off) to control how often backups are created.</p>
-    <div class="help-section-title">Restoring from Backup</div>
-    <p>Use <strong>Open Backup (.sav)</strong> to restore from a backup file you previously saved.</p>
-    <div class="help-section-title">Activity Log</div>
-    <p>Every unlock and manual backup made on this device is recorded in the Activity Log, linked at the bottom of this help panel — useful for confirming a backup actually ran. Automatic saves are not logged.</p>`
   }
+  // Milestone 73Q: 'cover', 'field-help' and 'saving' were removed -- nothing
+  // selects them (help-panel.js's updateHelpContext()), and 'saving' said data
+  // is saved to this device as you type and every backup is encrypted.
 });
