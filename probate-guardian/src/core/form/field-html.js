@@ -149,12 +149,14 @@ export function planQ(num,title,body,intro){
 // its first checkbox (the label linker bound a caption with no `for` to the
 // first box: "Check all that apply: The Ward was declared..."). A group with
 // no caption is named by its question's heading (planQ()).
-export function planCheckGroup(label,boxes,explainId,explainVal,explainWhen,hint){
+// Milestone 73Q: `explainLabel` labels the explanation box itself. It was a
+// hint printed above the boxes, asking for a description before any box that
+// needs one was ticked.
+export function planCheckGroup(label,boxes,explainId,explainVal,explainWhen,explainLabel){
   return `<fieldset class="mb-3" ${label?'':'data-plan-q-group'}>
     ${label?`<legend class="form-label">${label}</legend>`:''}
-    ${hint?`<div class="plan-field-hint">${hint}</div>`:''}
     <div class="plan-check-grid">${boxes}</div>
-    ${explainWhen?`<div class="plan-conditional mt-2">${txtP(explainId,'Explanation',explainVal,3)}</div>`:''}
+    ${explainWhen?`<div class="plan-conditional mt-2">${txtP(explainId,explainLabel||'Explanation',explainVal,3)}</div>`:''}
   </fieldset>`;
 }
 

@@ -53,14 +53,16 @@ function describeActiveFiling(input,filing){
 // guardian, guardianName, or guardianNames -- see each emptyDataXxx()), so
 // that's tried first, in the order it's most likely to already be filled
 // in (the simple Cover-page field, before the more detailed guardians[]
-// signature-page array some types also have); the app-level name is still
-// the fallback for a form with nothing entered yet, or the rare type
-// (Simplified Plan) that never asks for a guardian name at all.
+// signature-page array some types also have, then the Plans' planGuardians[]
+// signature blocks -- the only place the Simplified Plan names a guardian,
+// Milestone 73Q); the app-level name is still the fallback for a form with
+// nothing entered yet. carry-over.js likewise looks at planGuardians[] last.
 export function getPrimaryGuardianDisplayName(){
   const d=getD();
   if(!d)return getCaseFile().guardianName||'';
   return d.guardian||d.guardianName||d.guardianNames
     ||(Array.isArray(d.guardians)&&d.guardians[0]&&d.guardians[0].name)
+    ||(Array.isArray(d.planGuardians)&&d.planGuardians[0]&&d.planGuardians[0].name)
     ||getCaseFile().guardianName||'';
 }
 

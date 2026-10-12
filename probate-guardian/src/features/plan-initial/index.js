@@ -646,7 +646,7 @@ function pagePlanIDirectives(){
         +cb('q11ExecHealthcare',C.q11ExecHealthcare)
         +cb('q11ExecPOA',C.q11ExecPOA)
         +cb('q11ExecOther',C.q11ExecOther,'/p8'),
-        'q11ExecOtherText',d.q11ExecOtherText,explanationShown(PLAN_INITIAL_EXPLANATIONS,d,'q11ExecOtherText'),'Describe the "Other" directive.')
+        'q11ExecOtherText',d.q11ExecOtherText,explanationShown(PLAN_INITIAL_EXPLANATIONS,d,'q11ExecOtherText'),'Describe the "Other" directive')
       +(dirs?`<div class="row g-3 schedule-entry-grid">${dirs}</div>`:'')
       +`<button class="btn btn-outline-primary btn-sm mt-2" data-form-action="add-plan-row" data-collection="q11Directives" data-row-type="directive" data-route="/p8">+ Add Directive</button>`
       :''))}

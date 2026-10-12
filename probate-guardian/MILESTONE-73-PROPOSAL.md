@@ -3886,15 +3886,18 @@ panel say what the app does, as built through Milestone 75.
   height, Full width, the Initial Plan's "+ Add Directive", Remove's "Keep
   it", and "Move ... to these dates".
 
-**Found, not fixed** (outside the guide; reported for a decision):
+**Found along the way** (outside the guide; reported, and the first two
+fixed at the requester's choice, 2026-10-12, in their own commit):
 
-- The Simplified Annual Plan's sidebar header always reads "Guardian: —": the
-  header looks for a guardian name in four places, and the Simplified Plan
-  keeps its guardians in a fifth (its signature blocks). The code's comment
-  says this plan never asks for a guardian name; it does.
-- The Initial Plan's Question 11B shows "Describe the "Other" directive." above
-  its four boxes even when Other is not ticked.
-- In the capture browser the save status reads "Auto-save: not available in
+- *Fixed:* the Simplified Annual Plan's sidebar header always read "Guardian:
+  —": it looked for a guardian name in four places, and the Simplified Plan
+  keeps its guardians in a fifth (its signature blocks). It now looks there
+  too, last, as carry-over already did.
+- *Fixed:* the Initial Plan's Question 11B showed "Describe the "Other"
+  directive." above its four boxes even when Other was not ticked. It now
+  labels the box that appears when Other is ticked, as the Annual Plan's
+  Question 10 already did.
+- *Left as it is:* in the capture browser the save status reads "Auto-save: not available in
   this browser" in every figure, as it has since the figures were first shot:
   the headless browser that takes them lacks Chrome's file-saving interface.
   Chrome and Edge filers see "Auto-save: needs manual save (...)" until they

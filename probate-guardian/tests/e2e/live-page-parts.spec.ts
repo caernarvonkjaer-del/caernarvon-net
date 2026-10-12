@@ -91,6 +91,19 @@ test.describe('Milestone 73J part 2: page parts that keep up', () => {
     await expect(page.locator('#guardian-name-display')).toHaveText('Guardian: Mary J. Smith');
   });
 
+  // Milestone 73Q, found while checking the guide's figures: the Simplified
+  // Annual Plan has no guardian box on its cover -- its guardians are named in
+  // their signature blocks -- and the header never looked there, so it read
+  // "Guardian: —" however much was filled in.
+  test("the Simplified Annual Plan's header names the guardian typed in its signature block", async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Live Plan Header Ward', 'planSimplified');
+    await go(page, '/p3');
+    await expect(page.locator('#guardian-name-display')).toHaveText('Guardian: —');
+    await type(page, '[data-form-path="planGuardians.0.name"]', 'Mary J. Smith');
+    await expect(page.locator('#guardian-name-display')).toHaveText('Guardian: Mary J. Smith');
+  });
+
   test("the Inventory Summary's D-4 link shows only while D-4 is still to do", async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Live D4 Blank', 'guardian');
