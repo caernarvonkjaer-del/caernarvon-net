@@ -185,6 +185,22 @@ async function dismissFloatingToasts(page: import('@playwright/test').Page) {
     const d = toast.getByRole('button', { name: 'Dismiss', exact: true });
     if (await d.isVisible().catch(() => false)) await d.click();
   }
+  // Milestone 73Q: the sidebar as a filer sees it once the case is open --
+  // the testing interface's setup writes skip the refresh a real edit makes,
+  // which left the header reading "Guardian: —" in every figure. Refreshed,
+  // then the page drawn again, in the order opening a filing does both: the
+  // refresh alone leaves the section list unmarked and unfolded. And no
+  // pointer left over a control by the last click, and no focus left on one:
+  // the redraw puts focus back where it was, and Annual Schedule A's "+ Add
+  // Income Line" was shot in its focused colour.
+  await page.evaluate(async () => {
+    const t = (window as any).GuardianForms.testing;
+    t.refreshStatus();
+    if (t.snapshot().filing) await t.navigate(location.hash.replace(/^#/, '') || '/');
+    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+    (document.activeElement as HTMLElement | null)?.blur();
+  });
+  await page.mouse.move(1279, 1);
   await page.waitForTimeout(300);
 }
 
@@ -251,7 +267,7 @@ test('capture: D-5 Certificate of Service with Indicate if Ward is', async ({ pa
   await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
   await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/d5'));
   await page.waitForURL(/#\/d5$/);
-  await page.waitForTimeout(300);
+  await dismissFloatingToasts(page);
 
   // The fields this figure exists to show: the ward's status (Milestone
   // 64A-2/65A), how the copies were served (72G), and the attorney taken from
@@ -349,6 +365,9 @@ test.describe('Milestone 66 Finding 9: re-shoot every stale-branding figure', ()
     // Landing state before any ward exists is the "Start New Form" selector
     // itself -- matches the stale figure's own composition (no sidebar).
     await page.getByRole('heading', { name: 'Start New Form' }).waitFor({ state: 'visible' });
+    // Not over a form card, which lifts when pointed at.
+    await page.mouse.move(1279, 1);
+    await page.waitForTimeout(200);
     await page.screenshot({ path: path.join(OUT, 'start-new-form.jpg'), quality: 82, type: 'jpeg' });
 
     // All three filings deliberately share GUARDIAN_WARD's name -- matches
@@ -620,10 +639,9 @@ test.describe('Milestone 66 Finding 9: re-shoot every stale-branding figure', ()
   });
 
   test('capture: Print Preview page (Guardian Inventory)', async ({ page }) => {
-    await freshStartNoPassword(page);
-    await createWard(page, GUARDIAN_WARD, 'guardian');
-    await dismissFloatingToasts(page);
-    await fillMinimalValidGuardianWard(page);
+    // Milestone 73Q: the example case of the figures before it, so the
+    // preview's caption carries the same case number as its cover.
+    await inventoryExample(page);
     await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
     await page.waitForURL(/#\/print$/);
     await dismissFloatingToasts(page);
@@ -644,13 +662,18 @@ test.describe('Milestone 66 Finding 9: re-shoot every stale-branding figure', ()
     // shot an entirely blank cover for both figures below.
     await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
     await page.waitForURL(/#\/$/);
+    await dismissFloatingToasts(page);
 
     await page.click('#save-controls-toggle-btn');
     await page.locator('#save-controls-body').waitFor({ state: 'visible' });
+    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+    await page.mouse.move(1279, 1);
     await page.waitForTimeout(200);
     await page.screenshot({ path: path.join(OUT, 'sidebar-save-controls.jpg'), quality: 82, type: 'jpeg' });
 
     await page.click('[data-shell-action="toggle-theme"]');
+    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+    await page.mouse.move(1279, 1);
     await page.waitForTimeout(300);
     await page.screenshot({ path: path.join(OUT, 'dark-mode.jpg'), quality: 82, type: 'jpeg' });
   });
@@ -759,7 +782,8 @@ test.describe('User guide 2026-10-03: corrected dialogs and the no-attorney ques
     const x = Math.min(a.x, b.x) - 8;
     const y = Math.min(a.y, b.y) - 8;
     const clip = { x, y, width: Math.max(a.x + a.width, b.x + b.width) - x + 8, height: Math.max(a.y + a.height, b.y + b.height) - y + 8 };
-    await page.screenshot({ path: path.join(OUT, 'inventory-instructions.jpg'), quality: 82, type: 'jpeg', clip });
+    // Milestone 73Q: q74 -- the two panels' text came out just over the 150 KiB budget at q82.
+    await page.screenshot({ path: path.join(OUT, 'inventory-instructions.jpg'), quality: 74, type: 'jpeg', clip });
   });
 
   test('capture: Create New Form for Existing Ward dialog', async ({ page }) => {
@@ -804,6 +828,186 @@ test.describe('User guide 2026-10-03: corrected dialogs and the no-attorney ques
   });
 });
 
+// ═══════════════════════════════════════════════════════════════════════
+// Milestone 73Q: the guide's other figures. Until 73Q the harness shot 67 of
+// the guide's 84 images; these are the remaining sixteen (the seventeenth,
+// the workspace overview, is the Inventory cover above, used twice). The
+// same example case as the figures above.
+
+/** The Inventory example case of the figures above (cover, every schedule). */
+async function inventoryExample(page: import('@playwright/test').Page) {
+  await freshStartNoPassword(page);
+  await createWard(page, GUARDIAN_WARD, 'guardian');
+  await dismissFloatingToasts(page);
+  await fillMinimalValidGuardianWard(page);
+  await page.evaluate(([a1, a2, b1, b2]) => {
+    const t = (window as any).GuardianForms.testing;
+    const d = t.snapshot().filing;
+    Object.assign(d, {
+      caseNumber: '26-001234-GD', gid: '2026-03-15', county: 'Pinellas',
+      guardianName: 'Margaret Whitfield-Harris', attorneyForGuardian: 'Daniel R. Okafor, Esq.',
+      // Consistent with the schedules: B-2's ring is in a safe deposit box,
+      // and the bond covers the $39,550.42 this case calculates -- else
+      // Preview lists both as "Review recommended" in its figure.
+      hasSafeDepositBox: 'Yes', safeDepositBoxFiled: 'Yes', bondAmount: '40000',
+    });
+    d.guardians = [{ name: 'Margaret Whitfield-Harris', ssnEin: '123-45-6789', phone: '(727) 555-0142', email: 'mwhitfield@example.com', streetAddress: '220 12th Ave NE', cityStateZip: 'St. Petersburg, FL 33701', signatureDate: '2026-05-01' }];
+    d.preparer = { ...d.preparer, name: 'Lisa Chen, Paralegal', ssnEin: '987-65-4321', phone: '(727) 555-0199', streetAddress: '150 2nd Ave N, Suite 800', cityStateZip: 'St. Petersburg, FL 33701', signatureDate: '2026-05-01' };
+    d.attorney = { ...d.attorney, name: 'Daniel R. Okafor, Esq.', barNumber: '00123456', phone: '(727) 555-0188', email: 'dokafor@example.com', streetAddress: '150 2nd Ave N, Suite 800', cityStateZip: 'St. Petersburg, FL 33701', signatureDate: '2026-05-01', filingDate: '2026-05-04' };
+    d.scheduleA1 = [a1]; d.scheduleA2 = [a2]; d.scheduleB1 = b1; d.scheduleB2 = b2;
+    Object.assign(d.scheduleNoItems, { a1: false, a2: false, b1: false, b2: false });
+    t.replaceFiling(d);
+  }, [A1_ROW, A2_ROW, B1_ROWS, B2_ROWS]);
+  await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
+}
+
+async function goTo(page: import('@playwright/test').Page, route: string) {
+  await page.evaluate((r) => (window as any).GuardianForms.testing.navigate(r), route);
+  await dismissFloatingToasts(page);
+  await dismissScheduleDocPrompt(page);
+}
+
+const shot = (file: string) => ({ path: path.join(OUT, file), quality: 82, type: 'jpeg' as const });
+
+test.describe('Milestone 73Q: the figures the harness did not yet shoot', () => {
+  test('capture: Create a Master Password screen', async ({ page }) => {
+    await gotoApp(page);
+    await startNewCase(page);
+    await page.locator('#security-choice-overlay.show').waitFor({ state: 'visible' });
+    await page.click('#security-choice-overlay [data-startup-action="select-security"][data-security-mode="encrypted"]');
+    await page.locator('#unlock-overlay.show').waitFor({ state: 'visible' });
+    await expect(page.locator('#unlock-title')).toHaveText('Create a Master Password');
+    // The boxes show "Loading..." for a moment while the encryption tools load.
+    await page.waitForTimeout(1500);
+    await page.screenshot(shot('create-password.jpg'));
+  });
+
+  test('capture: Offline access available notice', async ({ page }) => {
+    await gotoApp(page);
+    const notice = page.locator('#pwa-status-notice');
+    await notice.waitFor({ state: 'visible', timeout: 20_000 });
+    await expect(notice).toContainText('Offline access available');
+    await notice.screenshot(shot('offline-notice.jpg'));
+  });
+
+  test('capture: Simplified Annual Accounting eligibility dialog', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await page.evaluate(() => (window as any).GuardianForms.testing.createFiling.openDialog('simplified'));
+    await page.locator('#simplifiedEligibilityModal.show').waitFor({ state: 'visible' });
+    await page.fill('#elig-ward-name', GUARDIAN_WARD);
+    await page.selectOption('#elig-depository', 'Yes');
+    await page.selectOption('#elig-only-transactions', 'Yes');
+    // Close the ward-name suggestions the typing opened; they cover the note.
+    await page.locator('#simplifiedEligibilityModal .modal-box-title').click();
+    await page.waitForTimeout(200);
+    await page.locator('#simplifiedEligibilityModal .modal-box').screenshot(shot('simplified-eligibility.jpg'));
+  });
+
+  test('capture: Inventory close-ups -- entry card, totals, SSN, County, vehicle, Link Person', async ({ page }) => {
+    await inventoryExample(page);
+
+    await goTo(page, '/a1');
+    const card = page.locator('#main-content .entry-card').first();
+    await expect(card.locator('input[type="text"]').first()).toHaveValue('Single Family Home');
+    await card.screenshot(shot('entry-card.jpg'));
+
+    await goTo(page, '/b1');
+    const totals = page.locator('#main-content .schedule-totals').first();
+    await expect(totals).toContainText('Restricted');
+    await totals.scrollIntoViewIfNeeded();
+    await totals.screenshot(shot('b1-totals.jpg'));
+
+    await goTo(page, '/b2');
+    const vehicle = page.locator('#main-content .entry-card').first();
+    await expect(vehicle).toContainText('VIN');
+    await vehicle.screenshot(shot('b2-vehicle.jpg'));
+
+    await goTo(page, '/d1');
+    const ssnBox = page.locator('[data-bind="guardians.0.ssnEin"]').first();
+    const ssnField = ssnBox.locator('xpath=ancestor::div[contains(@class,"col")][1]');
+    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+    await ssnField.screenshot(shot('ssn-masked.jpg'));
+    await ssnField.getByRole('button', { name: 'Show SSN/EIN' }).click();
+    await page.waitForTimeout(300);
+    await ssnField.screenshot(shot('ssn-revealed.jpg'));
+
+    await page.getByRole('button', { name: 'Link Person' }).first().click();
+    await page.locator('#pickPartyModal.show').waitFor({ state: 'visible' });
+    await page.locator('#pickPartyModal .modal-box').screenshot(shot('link-person.jpg'));
+    await page.keyboard.press('Escape');
+    await page.locator('#pickPartyModal').waitFor({ state: 'hidden' });
+
+    await goTo(page, '/');
+    const county = page.locator('[data-form-control="county"]').first();
+    await county.fill('P');
+    const list = page.locator('.county-combobox-dropdown [role="option"]').first();
+    await list.waitFor({ state: 'visible' });
+    const a = await county.boundingBox();
+    const b = await page.locator('.county-combobox-dropdown').first().boundingBox();
+    if (!a || !b) throw new Error('County box or list not found');
+    const x = Math.min(a.x, b.x) - 8;
+    const y = Math.min(a.y, b.y) - 30;
+    await page.screenshot({ ...shot('county-dropdown.jpg'), clip: { x, y, width: Math.max(a.x + a.width, b.x + b.width) - x + 8, height: Math.max(a.y + a.height, b.y + b.height) - y + 8 } });
+  });
+
+  test('capture: the Clerk\'s Review Readiness panel, expanded', async ({ page }) => {
+    await inventoryExample(page);
+    await goTo(page, '/print');
+    const panel = page.locator('#filing-readiness-card');
+    await panel.waitFor({ state: 'visible', timeout: 60_000 });
+    if (!(await panel.evaluate((el) => (el as HTMLDetailsElement).open))) await panel.locator('summary').click();
+    await expect(panel).toContainText("Clerk's Review Readiness");
+    await panel.screenshot(shot('readiness-panel.jpg'));
+  });
+
+  test('capture: the dashboard row, Start New Year, Prior Years, Link to Case, Closed Filings', async ({ page }) => {
+    await inventoryExample(page);
+    const dialogs = autoAcceptDynDialogs(page);
+    // The year figures use an Annual Accounting, whose years are its periods
+    // (an Inventory's two years would both read "2026").
+    await createWard(page, GUARDIAN_WARD, 'annual');
+    await fillMinimalValidAnnualWard(page);
+    await createWard(page, MINOR_WARD, 'planMinor');
+    await fillMinimalValidPlanMinorWard(page);
+    dialogs.stop();
+    await goTo(page, '/dashboard');
+    const row = page.locator('.dashboard-triage-row', { hasText: 'Verified Initial Inventory' }).first();
+    await row.waitFor({ state: 'visible' });
+    await row.screenshot(shot('dashboard-row.jpg'));
+
+    const annual = page.locator('.dashboard-triage-row', { hasText: 'Annual Accounting' }).first();
+    await annual.locator('[data-dashboard-action="new-year"]').click();
+    await page.locator('#startNewYearModal.show').waitFor({ state: 'visible' });
+    await page.locator('#startNewYearModal .modal-box').screenshot(shot('start-new-year.jpg'));
+    await page.locator('#startNewYearModal').getByRole('button', { name: 'Start New Year' }).click();
+    await page.locator('#startNewYearModal').waitFor({ state: 'hidden' });
+    await goTo(page, '/dashboard');
+
+    const again = page.locator('.dashboard-triage-row', { hasText: 'Annual Accounting' }).first();
+    await again.locator('[data-dashboard-action="prior-years"]').click();
+    await page.locator('#priorYearsModal.show').waitFor({ state: 'visible' });
+    await page.locator('#priorYearsModal .modal-box').screenshot(shot('prior-years.jpg'));
+    await page.keyboard.press('Escape');
+    await page.locator('#priorYearsModal').waitFor({ state: 'hidden' });
+
+    await row.locator('[data-dashboard-action="link-case"]').click();
+    await page.locator('#pickCaseModal.show').waitFor({ state: 'visible' });
+    await page.locator('#pickCaseModal .modal-box').screenshot(shot('link-case.jpg'));
+    await page.keyboard.press('Escape');
+    await page.locator('#pickCaseModal').waitFor({ state: 'hidden' });
+
+    const minor = page.locator('.dashboard-triage-row', { hasText: MINOR_WARD }).first();
+    await minor.locator('[data-dashboard-action="archive"]').click();
+    const closed = page.locator('.dashboard-closed-section');
+    await closed.waitFor({ state: 'visible' });
+    if (!(await closed.locator('.dashboard-triage-row').first().isVisible().catch(() => false))) {
+      await closed.locator('.dashboard-closed-toggle').click();
+    }
+    await expect(closed.locator('.dashboard-triage-row', { hasText: MINOR_WARD })).toBeVisible();
+    await closed.screenshot(shot('closed-filings.jpg'));
+  });
+});
+
 test.afterAll(() => {
   const expectedFiles = [
     'signature-draw.jpg',
@@ -840,6 +1044,10 @@ test.afterAll(() => {
     'sidebar-save-controls.jpg', 'manage-shared-records.jpg', 'guided-tour-step.jpg',
     'activity-log.jpg', 'dark-mode.jpg',
     'add-new-form.jpg', 'inventory-instructions.jpg', 'new-filing-from-existing.jpg', 'no-attorney-question.jpg',
+    // Milestone 73Q: the sixteen figures not shot before.
+    'create-password.jpg', 'offline-notice.jpg', 'simplified-eligibility.jpg',
+    'entry-card.jpg', 'b1-totals.jpg', 'b2-vehicle.jpg', 'ssn-masked.jpg', 'ssn-revealed.jpg', 'link-person.jpg', 'county-dropdown.jpg',
+    'readiness-panel.jpg', 'dashboard-row.jpg', 'start-new-year.jpg', 'prior-years.jpg', 'link-case.jpg', 'closed-filings.jpg',
   ];
 
   const actualFiles = fs.readdirSync(OUT).filter((f) => fs.statSync(path.join(OUT, f)).isFile());

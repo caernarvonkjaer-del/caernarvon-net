@@ -311,6 +311,31 @@ const GUIDE_CONTROLS = {
     // Guardian Inventory D-2 only (64A-2, item 2.5's second half).
     evidence: [{ file: 'src/features/guardian-inventory/index.js', pattern: /optLabel\('Compilation "as of" date/ }],
   },
+  // Milestone 73Q: the controls the guide began naming when it was brought
+  // up to date with Milestones 73 to 75.
+  'preview-fit-height': {
+    label: 'Fit height',
+    evidence: [{ file: 'src/core/ui/print-pager.js', pattern: /data-form-action="preview-zoom" data-zoom="fit-height"/ }],
+  },
+  'preview-full-width': {
+    label: 'Full width',
+    evidence: [{ file: 'src/core/ui/print-pager.js', pattern: /data-form-action="preview-zoom" data-zoom="full-width"/ }],
+  },
+  'plan-initial-add-directive': {
+    label: '+ Add Directive',
+    evidence: [{ file: 'src/features/plan-initial/index.js', pattern: /data-form-action="add-plan-row" data-collection="q11Directives" data-row-type="directive"/ }],
+  },
+  'remove-confirm-keep': {
+    label: 'Keep it',
+    evidence: [{ file: 'src/core/form/remove-confirm.js', pattern: /cancelLabel: 'Keep it'/ }],
+  },
+  'schedule-docs-move': {
+    label: 'Move it to these dates',
+    evidence: [
+      { file: 'src/core/filing/schedule-docs.js', pattern: /data-form-action="move-schedule-docs"/ },
+      { file: 'src/form-events.js', pattern: /case 'move-schedule-docs': moveScheduleDocs\(/ },
+    ],
+  },
   'dashboard-test-system-label': {
     label: 'TEST SYSTEM - Do not use for filing',
     // Milestone 68¾A: one shared constant now puts the warning at the start
