@@ -3911,6 +3911,13 @@ guard pass: 6 files, 52 tests. The capture harness: 27 passed, 83 files, each
 checked for size. The guide opened in a browser: all 84 figures decode, with
 no page errors.
 
+**Closing full regression** (`npm test` once, at the requester's choice, on
+a copy on C: at `a5833f5`, 2026-10-12): unit, 216 files and 3,128 tests, all
+passed; browser, 1,238 tests -- 1,222 passed, 16 skipped (the web build's
+hashed-chunk case, the hosted offline cache (5), the portable build's HTTP
+parity, and the pre-merge comparison (9), as in every source run), none
+failed, none flaky (1 h 50 min in all). Milestone 73 is complete.
+
 ---
 
 ## 73R — The requester's change requests R1–R3
