@@ -6,7 +6,7 @@
 far: 73U (2026-10-04, `5b8849b`), 73V (2026-10-05, `8b96aa3`), 73C
 (2026-10-05, `861b6a9`, brought forward from its place in the build order at the
 requester's choice) 73D (2026-10-05, `c8e84fe`, likewise), 73J part 1 (2026-10-05, `d819c4a`),
-73F part 1 (2026-10-06, `5e9e17b`), 73A (2026-10-06, `83352d0`), 73F part 2 (2026-10-06, `d01edd4`), 73G part 1 (2026-10-06, `69a1b46`), 73E part 1 (2026-10-06, `8e02051`), 73F part 3 (2026-10-06, `67fc66c`), 73I (2026-10-06, `56a7c30`), 73T part 1 (2026-10-07, `4cae1e7`), 73T part 2 (2026-10-07, `2a1cbc5`), 73T part 3 (2026-10-07, `9d2bc72`), 73T part 4 (2026-10-07, `b70a944`), 73M with 74C (2026-10-07, `a0e987b`), 73B (2026-10-07, `86547da`), 73O part 2 with 74F (2026-10-08, `fa9625e`), 73G part 2 with 74H (2026-10-08, `f85e862`, `78b5770`), 73H (2026-10-08, `631f898`), 73S (2026-10-08, `3cf1d9d`), 73K part 1 (2026-10-08, `4268c45`), 73E part 2 (2026-10-08, `5e26e57`, `ea78dd4`), 73J part 2 (2026-10-08, `3648706`), 73K part 2 (2026-10-08, `79a8875`), 73L with 74D's reproduction (2026-10-09, `43081f2`), 73N part 1 (2026-10-09, `ab8068e`), 73N part 2 (2026-10-09, `01a9610`), 73N part 3 (2026-10-09, `987daaf`), 73O part 1 with 74O (2026-10-09, `487e247`, `97a0754`), 73O part 3 with 74L (2026-10-09, `67e13b8`) and 73O part 4 with 74J (2026-10-09, `cc90279`) and 73P with 74S (2026-10-09, `09cef26`) 73R part 1 (2026-10-09, `15784dc`), 73R part 2 (2026-10-09, `62fdf85`) and 73R part 3 (2026-10-09, `9d72f4e`), each approved by name; 74P, built after 73B, is recorded in Milestone 74.**
+73F part 1 (2026-10-06, `5e9e17b`), 73A (2026-10-06, `83352d0`), 73F part 2 (2026-10-06, `d01edd4`), 73G part 1 (2026-10-06, `69a1b46`), 73E part 1 (2026-10-06, `8e02051`), 73F part 3 (2026-10-06, `67fc66c`), 73I (2026-10-06, `56a7c30`), 73T part 1 (2026-10-07, `4cae1e7`), 73T part 2 (2026-10-07, `2a1cbc5`), 73T part 3 (2026-10-07, `9d2bc72`), 73T part 4 (2026-10-07, `b70a944`), 73M with 74C (2026-10-07, `a0e987b`), 73B (2026-10-07, `86547da`), 73O part 2 with 74F (2026-10-08, `fa9625e`), 73G part 2 with 74H (2026-10-08, `f85e862`, `78b5770`), 73H (2026-10-08, `631f898`), 73S (2026-10-08, `3cf1d9d`), 73K part 1 (2026-10-08, `4268c45`), 73E part 2 (2026-10-08, `5e26e57`, `ea78dd4`), 73J part 2 (2026-10-08, `3648706`), 73K part 2 (2026-10-08, `79a8875`), 73L with 74D's reproduction (2026-10-09, `43081f2`), 73N part 1 (2026-10-09, `ab8068e`), 73N part 2 (2026-10-09, `01a9610`), 73N part 3 (2026-10-09, `987daaf`), 73O part 1 with 74O (2026-10-09, `487e247`, `97a0754`), 73O part 3 with 74L (2026-10-09, `67e13b8`) and 73O part 4 with 74J (2026-10-09, `cc90279`) and 73P with 74S (2026-10-09, `09cef26`) 73R part 1 (2026-10-09, `15784dc`), 73R part 2 (2026-10-09, `62fdf85`), 73R part 3 (2026-10-09, `9d72f4e`) and 73Q (2026-10-12, `337afcf`, `eee1116`, `46ed290`), each approved by name; 74P, built after 73B, is recorded in Milestone 74. With 73Q, every item of Milestone 73 is built.**
 **The 2026-10-07 batch is built**, and its closing full regression has run
 (recorded below, after the mid-batch one). **The 2026-10-08 batch is built**
 (light tests between deliveries), and its closing full regression has run
@@ -3834,6 +3834,79 @@ Rewritten against the finished app, figures re-shot with
   not two-across thumbnails.
 
 `user-guide-drift-guard.spec.js` registers any new control the guide names.
+
+### Build record — BUILT 2026-10-12 (approved by name by the requester, 2026-10-12)
+
+**What changed for a filer:** the user guide, the guided tour and the Help
+panel say what the app does, as built through Milestone 75.
+
+- **Protection, first** (`337afcf`): the guide no longer says only an SSN's
+  last four digits appear on exported documents. The PDF shows the last four;
+  the Excel workbooks carry the full number, as the Clerk's own workbooks ask
+  (Pinellas Clerk practice, 74M). Supporting documents are encrypted only in a
+  password-protected case, and a filer's work is safe once it is in the .sav
+  file -- the browser's recovery copy has limits the guide now names.
+- **The text** (`eee1116`): about fifty statements brought into line with the
+  app, each checked against the code first -- among them the sidebar, Next,
+  Remove asking first, County, the Ward's %, Comments printing, supporting
+  documents following the reporting dates (75A), who may sign "/s/",
+  co-guardians, D-5's Yes/No question, the UCN, VA on 3G (75C), the fee from
+  Line 30, Print Preview's Fit height and Full width, the save-status lines,
+  the Activity Log's newer events and the quick reference. Text is about 75
+  characters wide; figures show at their natural size, one under another.
+- **The guided tour and Help panel** (`eee1116`): the Active Filing stop names
+  the sidebar's box (it could land on a hidden box in the Convert dialog); the
+  Simplified Accounting's Signatures stop is Part IV, and it no longer says
+  there is no Excel output. Three Help entries nothing could ever show are
+  removed -- one said every backup is encrypted.
+- **The figures** (`46ed290`): all 84 re-shot with `npm run capture:guide` and
+  checked one by one. The harness now shoots the sixteen it never had, on
+  the Inventory figures' example case. The two figure contradictions
+  this item named are gone: the workspace's sidebar reads "Guardian: Margaret
+  Whitfield-Harris", not "Guardian: —", and Print Preview shows case
+  26-001234-GD, not 2026-CP-000123. Four captions or alt texts that described
+  something their figure does not show are corrected (Part II, Part VII,
+  C-2, B-4).
+
+**Where the build differs from the design, and why:**
+
+- *"Guardian: —"* was not the app: the harness's setup writes skip the
+  sidebar refresh a real edit makes. Before each shot the harness now
+  refreshes the sidebar and draws the page again -- the order opening a
+  filing uses -- and moves the pointer and focus off every control (Annual
+  Schedule A's "+ Add Income Line" had been shot in its focused colour since
+  Milestone 66).
+- *The example case* agrees with itself: its B-2 ring is in a safe deposit
+  box and its bond covers the $39,550.42 the case calculates. Otherwise
+  Preview listed both as "Review recommended" in its figure.
+- *Four close-ups* shot at pixel ratio 2 in 2026-10-03 are shown at half
+  their pixel width, so at natural size they read at the size the app draws
+  them.
+- *The drift guard* registers five controls the 73Q text newly names: Fit
+  height, Full width, the Initial Plan's "+ Add Directive", Remove's "Keep
+  it", and "Move ... to these dates".
+
+**Found, not fixed** (outside the guide; reported for a decision):
+
+- The Simplified Annual Plan's sidebar header always reads "Guardian: —": the
+  header looks for a guardian name in four places, and the Simplified Plan
+  keeps its guardians in a fifth (its signature blocks). The code's comment
+  says this plan never asks for a guardian name; it does.
+- The Initial Plan's Question 11B shows "Describe the "Other" directive." above
+  its four boxes even when Other is not ticked.
+- In the capture browser the save status reads "Auto-save: not available in
+  this browser" in every figure, as it has since the figures were first shot:
+  the headless browser that takes them lacks Chrome's file-saving interface.
+  Chrome and Edge filers see "Auto-save: needs manual save (...)" until they
+  save. The guide's text gives both.
+
+**Tests:** red-first for the drift guard's registrations -- with the Fit
+height button's marker taken out of the source, the guard fails naming it;
+restored, 34 pass. The guide's unit checks (drift guard, brand letters, the
+orphaned PDF guide, the tour's content, the app's text) and the test-index
+guard pass: 6 files, 52 tests. The capture harness: 27 passed, 83 files, each
+checked for size. The guide opened in a browser: all 84 figures decode, with
+no page errors.
 
 ---
 
