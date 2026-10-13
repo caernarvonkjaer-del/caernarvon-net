@@ -34,12 +34,24 @@ non-zero, so a later stage never runs against a broken prerequisite.
 | `npm run test:quick` | all unit specs + 4 browser smoke specs (startup, form-entry.contract, routes, readiness-card.contract) | source / chromium | ~2.2 min | **No** — convenience only |
 | `npm test` | all unit specs + the complete source E2E suite | source / chromium | ~25.7 min | Full regression — **ask first (§2)** |
 | `npm run test:verify` | `check:types` → `verify:data-model` → `npm test` | source / chromium | ~26 min | Full regression — **ask first (§2)** |
-| `npm run test:release` | `check:types` → `verify:data-model` → unit → `test:e2e:all-profiles` | source, web, portable / chromium + firefox, webkit, edge | longest | **Yes** — release gate |
+| `npm run test:release` | `check:types` → `verify:data-model` → unit → `test:e2e:all-profiles` | source, web, portable, portable-http / chromium + firefox, webkit, edge | longest | **Yes** — release gate |
 
 - **`npm test` is unchanged and stays unchanged.** It is the full regression
   §2 governs. `test:quick` is not a substitute for it and is not a merge gate:
-  it runs 69 of the suite's 1,032 browser tests (counted with `--list`,
-  2026-10-02).
+  it runs 69 of the suite's 1,238 browser tests (counted with `--list`,
+  2026-10-12).
+- **Both named tiers go through `scripts/run-e2e-profile.mjs`** (since
+  2026-10-13: `test:e2e` is its `source` profile, `test:e2e:quick` its
+  `quick` profile, and `test:quick` is unit + `test:e2e:quick`). The runner
+  sets `PG_TARGET=source` and `PG_BROWSER=chromium` for the Playwright it
+  launches, so a value left in the shell cannot change what they run; a
+  direct `npx playwright test` still reads the shell, so set both values
+  for one. `test:e2e:all-profiles` runs the runner's explicit release list
+  (the seven profiles, never `quick`). No profile starts while the port its
+  server needs is held: `playwright.config.ts` no longer reuses a listening
+  server, so two browser runs at once refuse rather than share one tree's
+  server, and the runner prints what holds the port and how to look.
+  `tests/unit/test-profile-runner.spec.js` pins all of this.
 - **`test:release` deliberately does not compose `test:verify` or `npm test`.**
   `test:e2e:all-profiles` already runs the complete source profile, so
   composing either would run the entire source suite twice. It also builds web

@@ -58,9 +58,15 @@ Lite by default (see `AGENTS.md` §2):
 npx vitest run tests/unit/<spec>.spec.js
 npx playwright test tests/e2e/<spec>.spec.ts
 npm run verify:data-model
+npm run test:quick   # unit + four browser smoke specs, source/Chromium
 npm test             # full unit + e2e regression -- ask before running
 ```
 
-Playwright runs against one of four targets (`PG_TARGET=source|dev|web|portable`);
-`playwright.config.ts` explains each. CI runs the source suite plus a
-security/route matrix across the release targets.
+Playwright runs against one of five targets
+(`PG_TARGET=source|dev|web|portable|portable-http`); `playwright.config.ts`
+explains each. `npm test`, `test:quick` and the `test:e2e:*` profiles set the
+target and browser themselves (`scripts/run-e2e-profile.mjs`), so a value left
+in the shell cannot change what they run, and each refuses to start while the
+port its server needs is held by another process. Nothing runs automatically
+on a push: the GitHub workflow at the repository root runs only when started
+by hand, and has not been run since 2026-09-13.

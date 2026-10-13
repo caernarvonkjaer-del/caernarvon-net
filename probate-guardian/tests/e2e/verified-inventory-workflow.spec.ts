@@ -95,29 +95,33 @@ test.describe('Verified Initial Inventory Workflow & Usability Improvements', ()
     // Backup (.sav)" -- the same text the auto-export-reminder toast's own
     // save-backup button already used, so a text-based OR-selector here now
     // matches both. Target the sidebar action specifically.
+    //
+    // TEST-REVIEW.md Delivery 1 (T3): the button sits in the save controls,
+    // collapsed by default, so `if (await saveBtn.isVisible())` was false
+    // and everything below it never ran -- no click, no listener, no
+    // assertion, and a green result. Now the controls are opened, the button
+    // is required, and the event is asserted unconditionally; the listener
+    // gives up after 15 s so a save that fires nothing fails here, not at
+    // the test timeout with a page.evaluate() left waiting.
+    await page.click('#save-controls-toggle-btn');
     const saveBtn = page.locator('[data-shell-action="backup-all-wards"]');
-    if (await saveBtn.isVisible()) {
-      // Registered only once the button is confirmed visible, so a
-      // not-visible button (this `if` guard's whole point) never leaves an
-      // unawaited page.evaluate() listener dangling into test teardown.
-      const savePromise = page.evaluate(() => {
-        return new Promise((resolve) => {
-          window.addEventListener('pg:backup-saved', (e) => {
-            resolve((e as CustomEvent).detail);
-          }, { once: true });
-        });
+    await expect(saveBtn).toBeVisible();
+    const savePromise = page.evaluate(() => {
+      return new Promise((resolve) => {
+        window.addEventListener('pg:backup-saved', (e) => {
+          resolve((e as CustomEvent).detail);
+        }, { once: true });
+        setTimeout(() => resolve(null), 15_000);
       });
-      // Mock window.alert so it doesn't block
-      await page.evaluate(() => { window.alert = () => {}; });
-      await saveBtn.click();
-      const saveDetail: any = await savePromise;
-      expect(saveDetail).toBeDefined();
-      // Under the unified case-file model, the first save of a brand-new
-      // case defaults to a generic filename -- there is no more per-ward
-      // naming convention for the PRIMARY save file (only the separate
-      // single-ward "share a copy" export still names itself after the ward).
-      expect(saveDetail.fileName).toBe('guardianshipwarddata.sav');
-    }
+    });
+    await saveBtn.click();
+    const saveDetail: any = await savePromise;
+    expect(saveDetail, 'pg:backup-saved fired within 15 s of the click').not.toBeNull();
+    // Under the unified case-file model, the first save of a brand-new
+    // case defaults to a generic filename -- there is no more per-ward
+    // naming convention for the PRIMARY save file (only the separate
+    // single-ward "share a copy" export still names itself after the ward).
+    expect(saveDetail.fileName).toBe('guardianshipwarddata.sav');
   });
 
   test('Schedule B-2 vehicle fields appear in-place without a page crash', async ({ page }) => {

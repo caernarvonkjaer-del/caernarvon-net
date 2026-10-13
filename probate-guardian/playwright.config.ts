@@ -3,12 +3,16 @@ import os from 'node:os';
 import path from 'node:path';
 import { chromium, defineConfig, devices } from '@playwright/test';
 
-// PG_TARGET selects which of Milestone 1's four parity targets the suite
-// runs against (see INDEX-SPLIT-PLAN.md / tests/e2e/support/target.ts):
-//   source   - today's raw index.html, served statically, unmodified (default)
-//   dev      - vite dev server against the same unmodified source
-//   web      - built dist/web, served (the chunked/PWA target)
-//   portable - built dist/portable/index.html opened via a literal file:// URL
+// PG_TARGET selects which target the suite runs against (see
+// INDEX-SPLIT-PLAN.md / tests/e2e/support/target.ts):
+//   source        - today's raw index.html, served statically, unmodified (default)
+//   dev           - vite dev server against the same unmodified source
+//   web           - built dist/web, served (the chunked/PWA target)
+//   portable      - built dist/portable/index.html opened via a literal file:// URL
+//   portable-http - the same build served from a subfolder over http (Milestone 70, 70A)
+// The named commands (`npm test`, `test:quick`, `test:e2e:*`) set both
+// variables themselves through scripts/run-e2e-profile.mjs; a direct
+// `npx playwright test` reads whatever the shell carries.
 const target = process.env.PG_TARGET || 'source';
 const browser = process.env.PG_BROWSER || 'chromium';
 
@@ -75,7 +79,10 @@ function defaultChromiumExecutablePath() {
 
 const chromiumExecutablePath = defaultChromiumExecutablePath();
 
-const TARGETS = {
+// Exported (TEST-REVIEW.md Delivery 1) so scripts/run-e2e-profile.mjs can
+// read each target's port for its collision check; this table stays the one
+// owner of server commands and URLs.
+export const TARGETS = {
   source:   { command: 'npx vite preview --outDir . --port 4321 --strictPort', url: 'http://localhost:4321/index.html', baseURL: 'http://localhost:4321/index.html' },
   dev:      { command: 'npx vite --port 5173 --strictPort', url: 'http://localhost:5173/', baseURL: 'http://localhost:5173/' },
   web:      { command: 'npx vite preview --outDir dist/web --port 4173 --strictPort', url: 'http://localhost:4173/probate-guardian/', baseURL: 'http://localhost:4173/probate-guardian/' },
@@ -85,8 +92,14 @@ const TARGETS = {
   'portable-http': { command: 'node scripts/serve-portable-http.mjs --port=4341', url: 'http://localhost:4341/Portals/0/Guardian-Forms/index.html', baseURL: 'http://localhost:4341/Portals/0/Guardian-Forms/index.html' },
 };
 
+// TEST-REVIEW.md Delivery 1 (T2): never reuse a server already answering on
+// the port. It may serve another checkout or a stale build, and a green run
+// would then say nothing about this tree -- on 2026-10-07 a second run beside
+// a first would have tested the first run's tree. Playwright fails instead
+// with "is already used"; scripts/run-e2e-profile.mjs checks the port first
+// and explains what to do. Before 2026-10-13 this was `!process.env.CI`.
 const webServer = TARGETS[target]
-  ? { command: TARGETS[target].command, url: TARGETS[target].url, reuseExistingServer: !process.env.CI }
+  ? { command: TARGETS[target].command, url: TARGETS[target].url, reuseExistingServer: false }
   : undefined;
 
 const BROWSERS = {

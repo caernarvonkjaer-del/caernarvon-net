@@ -51,23 +51,33 @@ SOURCE / DEVELOPMENT MODE:
 BUILD AND VALIDATION COMMANDS (maintainers):
 - Build both releases: npm run build
 - Run the default source/Chromium suite: npm test
-- Milestone 33, Phase 5's distribution/browser execution profiles (each sets
-  PG_TARGET/PG_BROWSER itself via scripts/run-e2e-profile.mjs -- no manual
-  $env: needed, and web/portable rebuild dist/ first automatically):
-  npm run test:e2e:source     # Core full: source/Chromium, the whole suite
-  npm run test:e2e:web        # Hosted parity: web/Chromium, distribution-sensitive specs only
-  npm run test:e2e:portable   # Portable parity: portable/Chromium, distribution-sensitive specs only
-  npm run test:e2e:firefox    # Cross-browser smoke: source/Firefox
-  npm run test:e2e:webkit     # Cross-browser smoke: source/WebKit
-  npm run test:e2e:edge       # Cross-browser smoke: source/Edge
-  npm run test:e2e:all-profiles  # all six, one at a time (release validation)
-- For anything outside those six profiles (e.g. PG_TARGET='dev', or a custom
-  spec subset), select a target/browser manually in PowerShell, then run
-  Playwright directly:
-  $env:PG_TARGET='source'     # source, dev, web, or portable
-  npx playwright test
-  $env:PG_BROWSER='firefox'   # chromium, edge, firefox, or webkit
-  npx playwright test
+  (the unit tests, then the whole browser suite through the "source" profile
+  below -- source/Chromium whatever PG_TARGET or PG_BROWSER the shell carries)
+- Quick check: npm run test:quick  (unit tests + four browser smoke specs,
+  source/Chromium; not a substitute for npm test)
+- The distribution/browser execution profiles (each sets PG_TARGET/PG_BROWSER
+  itself via scripts/run-e2e-profile.mjs -- no manual $env: needed, and the
+  web/portable profiles rebuild dist/ first automatically):
+  npm run test:e2e:source        # Core full: source/Chromium, the whole suite
+  npm run test:e2e:quick         # the four smoke specs only, source/Chromium
+  npm run test:e2e:web           # Hosted parity: web/Chromium, distribution-sensitive specs only
+  npm run test:e2e:portable      # Portable parity: portable/Chromium (file://), distribution-sensitive specs only
+  npm run test:e2e:portable-http # Portable as production serves it: from a subfolder over http://localhost
+  npm run test:e2e:firefox       # Cross-browser smoke: source/Firefox
+  npm run test:e2e:webkit        # Cross-browser smoke: source/WebKit
+  npm run test:e2e:edge          # Cross-browser smoke: source/Edge
+  npm run test:e2e:all-profiles  # the seven release profiles above (not quick), one at a time
+- A profile refuses to start while the port its server needs (4321 for
+  source, 4173 for web, 4341 for portable-http) is held by another process,
+  and prints how to see what holds it. Nothing is reused or stopped for you:
+  finish or stop the other run first.
+- For anything outside those profiles (e.g. PG_TARGET='dev', or a custom
+  spec subset), set BOTH values in PowerShell, then run Playwright directly --
+  a value left over from an earlier session would otherwise pick the target
+  or browser for you:
+  $env:PG_TARGET='source'     # source, dev, web, portable, or portable-http
+  $env:PG_BROWSER='chromium'  # chromium, edge, firefox, or webkit
+  npx playwright test tests/e2e/<spec>.spec.ts
 - Measure final startup and lifecycle behavior:
   node scripts/measure-baseline.mjs --target=source
   node scripts/measure-baseline.mjs --target=web
