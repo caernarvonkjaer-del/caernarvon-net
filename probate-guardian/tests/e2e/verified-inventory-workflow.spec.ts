@@ -13,8 +13,15 @@ async function openGuardianWard(page: Page, name: string) {
   await page.evaluate(() => (window as any).GuardianForms.testing.createFiling.openDialog('guardian'));
   const addWardModal = page.locator('#addWardModal');
   await expect(addWardModal).toBeVisible();
-  await page.locator('#new-ward-name').fill(name);
+  const nameBox = page.locator('#new-ward-name');
+  await nameBox.fill(name);
   await page.locator('#new-ward-type').selectOption('guardian');
+  // Typing opens the name box's suggestion list over the buttons below it
+  // (TEST-REVIEW.md Delivery 1M, 2026-10-13: the Create Form click sometimes
+  // found it still there and the dialog stayed open); leave the box so the
+  // list closes, and be sure the name is still there.
+  await nameBox.evaluate((el) => (el as HTMLInputElement).blur());
+  await expect(nameBox).toHaveValue(name);
   await page.locator('[data-modal-action="add-ward"]').click();
   await expect(addWardModal).toBeHidden();
 }

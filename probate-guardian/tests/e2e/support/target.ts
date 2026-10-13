@@ -37,10 +37,26 @@ export async function gotoApp(page: Page, options: { acceptTerms?: boolean; test
   }, acceptTerms);
   if (target === 'portable') {
     const filePath = path.resolve(__dirname, '../../../dist/portable/index.html');
-    await page.goto(pathToFileURL(filePath).href, { waitUntil: 'networkidle' });
+    await page.goto(pathToFileURL(filePath).href, { waitUntil: 'load' });
   } else {
-    await page.goto('/', { waitUntil: 'networkidle' });
+    await page.goto('/', { waitUntil: 'load' });
   }
+  await awaitAppReady(page);
+}
+
+/**
+ * The app is ready for a test when it is waiting for the filer: the terms
+ * dialog, the start dialog, the unlock screen, the "another tab holds this
+ * filing" dialog or, after a silent reopen of a plain case, a drawn page
+ * (every page has an h1). TEST-REVIEW.md Delivery
+ * 1M (2026-10-13): this replaced `waitUntil: 'networkidle'`, which went on
+ * waiting for 500 ms of network silence after the app was up -- about 1.1 s
+ * of every page load, 22 minutes across the suite (the start dialog is up
+ * about 0.35 s after `load`; network idle came at about 1.43 s).
+ */
+export async function awaitAppReady(page: Page): Promise<void> {
+  await page.locator('#pg-terms-overlay.show, #startup-choice-overlay.show, #unlock-overlay.show, #ward-locked-overlay.show, #main-content h1')
+    .first().waitFor({ state: 'visible' });
 }
 
 /**
@@ -89,16 +105,44 @@ export async function freshStartNoPassword(page: Page): Promise<void> {
 export const freshStartWardNoPassword = freshStartNoPassword;
 
 /**
+ * Creates a filing as setup. TEST-REVIEW.md Delivery 1M (2026-10-13): seeded
+ * through the testing interface (`createFiling.add`, the same
+ * filingLifecycle.create() the New Form dialog calls) in 0.1 s, where the
+ * dialog took 0.85 s. The dialog is driven only where it would do something
+ * the seed does not: a 'simplified' filing (its eligibility questions come
+ * first) or a name an existing filing already carries (the dialog then
+ * offers that filing as a carry-over source, and for a Minors plan may ask
+ * about an adult's records). A spec whose subject is the dialog itself uses
+ * createWardViaDialog().
+ */
+export async function createWard(page: Page, name: string, type = 'guardian'): Promise<void> {
+  const needsDialog = type === 'simplified' || await page.evaluate((n) => {
+    const wards = (window as any).GuardianForms.testing.snapshot().caseFile?.wards || [];
+    return wards.some((w: any) => (w.wardName || '').trim().toLowerCase() === n.trim().toLowerCase());
+  }, name);
+  if (needsDialog) return createWardViaDialog(page, name, type);
+  await page.evaluate(([n, t]) => (window as any).GuardianForms.testing.createFiling.add(n, t), [name, type]);
+  await expect(page.locator('#ward-selector')).toHaveValue(name);
+}
+
+/**
  * Creates a ward via the Add Ward modal (index.html: showAddWardModal() /
  * doAddWard()). Works from any page the modal is reachable from — the
  * inventory-select cards and the sidebar's "+ Add Ward" both just call
  * showAddWardModal()/showAddWardModalForType(type) then doAddWard().
  * 'simplified' has its own eligibility modal first and isn't handled here.
  */
-export async function createWard(page: Page, name: string, type = 'guardian'): Promise<void> {
+export async function createWardViaDialog(page: Page, name: string, type = 'guardian'): Promise<void> {
   await page.evaluate((t) => (window as any).GuardianForms.testing.createFiling.openDialog(t), type);
   await page.locator('#addWardModal.show').waitFor({ state: 'visible' });
-  await page.fill('#new-ward-name', name);
+  const nameBox = page.locator('#new-ward-name');
+  await nameBox.fill(name);
+  // Typing opens the name box's suggestion list over the buttons below it;
+  // leave the box so the list closes before Create Form is clicked, and be
+  // sure the name is still there (the dialog refuses a blank name with an
+  // alert, which would leave it open).
+  await nameBox.evaluate((el) => (el as HTMLInputElement).blur());
+  await expect(nameBox).toHaveValue(name);
   await page.click('#addWardModal [data-modal-action="add-ward"]');
   await page.locator('#addWardModal').waitFor({ state: 'hidden' });
 }
