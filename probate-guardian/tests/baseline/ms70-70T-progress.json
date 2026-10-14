@@ -52,6 +52,7 @@
   "tests/e2e/excel-import-cell-shapes.spec.ts",
   "tests/e2e/excel-pruned-roundtrip.spec.ts",
   "tests/e2e/export-button-guard.spec.ts",
+  "tests/e2e/export-helper.contract.spec.ts",
   "tests/e2e/feature-lazy-boundary.spec.ts",
   "tests/e2e/feature-load-failure.spec.ts",
   "tests/e2e/filing-conversion.characterization.spec.ts",

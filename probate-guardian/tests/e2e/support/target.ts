@@ -7,6 +7,7 @@ import { currentTarget } from './target-profile';
 import { installFixtureSupport } from './fixture-completeness';
 import {
   MINIMAL_VALID_GUARDIAN, MINIMAL_VALID_ANNUAL, MINIMAL_VALID_SIMPLIFIED, MINIMAL_VALID_PLAN_ANNUAL,
+  MINIMAL_VALID_PLAN_SIMPLIFIED, MINIMAL_VALID_PLAN_MINOR, MINIMAL_VALID_PLAN_INITIAL,
 } from './fixtures';
 
 // package.json has "type": "module", so this file runs as ESM under
@@ -265,6 +266,36 @@ export async function fillMinimalValidSimplifiedWard(page: Page): Promise<void> 
 }
 
 /**
+ * Writes one of fixtures.ts's Plan overlays onto the open filing the way the
+ * inline literals used to -- Object.assign of the fields, then the guardian
+ * rows -- keeping what the filing already holds for the fields in `keep`
+ * (the ward's name; the Plan for Minors' identifiers). `adlsFromList` answers
+ * every ADL from the app's own INITIAL_ADLS list, which a static overlay
+ * cannot carry. TEST-REVIEW.md Delivery 3 (2026-10-14): the data moved to
+ * fixtures.ts so tests/unit/fixture-contract.spec.js can judge it against
+ * the export checks; what reaches the filing is unchanged.
+ */
+async function applyPlanOverlay(page: Page, overlay: Record<string, unknown>, keep: readonly string[], adlsFromList = false): Promise<void> {
+  await page.evaluate(([o, keepKeys, withAdls]) => {
+    // Milestone 70, 70T: setup (D9) on a copy of the open filing, written back below.
+    const t = (window as any).GuardianForms.testing;
+    const d = t.snapshot().filing;
+    const { planGuardians, ...fields } = o as Record<string, unknown>;
+    const kept: Record<string, unknown> = {};
+    for (const k of keepKeys as string[]) if (d[k]) kept[k] = d[k];
+    Object.assign(d, fields, kept);
+    if (withAdls) {
+      const adls: Record<string, string> = {};
+      for (const [k] of t.constants('INITIAL_ADLS')) adls[k] = 'Ward needs no help';
+      d.adls = adls;
+    }
+    if (planGuardians) d.planGuardians = planGuardians;
+    t.replaceFiling(d);
+  }, [overlay, keep, adlsFromList] as const);
+  await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
+}
+
+/**
  * Plan Simplified has no eligibility redirect like Simplified Accounting --
  * showAddWardModalForType('planSimplified') goes straight to the generic
  * Add Ward modal (confirmed by reading that function: only 'simplified' is
@@ -278,34 +309,7 @@ export async function fillMinimalValidSimplifiedWard(page: Page): Promise<void> 
  * fields are required on top of the base set.
  */
 export async function fillMinimalValidPlanSimplifiedWard(page: Page): Promise<void> {
-  await page.evaluate(() => {
-    // Milestone 70, 70T: setup (D9) on a copy of the open filing, written back below.
-    const t = (window as any).GuardianForms.testing;
-    const d = t.snapshot().filing;
-    Object.assign(d, {
-      wardName: d.wardName || 'Plan Simplified Export Test Ward',
-      caseNumber: '2026-CP-000789',
-      county: 'Pinellas',
-      periodFrom: '2026-01-01',
-      periodTo: '2026-12-31',
-      q1Residences: '123 Main St, Clearwater, FL 33755 (all year)',
-      q2BestPlacement: 'Familiar setting close to family and medical providers.',
-      q3MedicalTreatment: 'Annual check-up with Dr. Alvarez in March.',
-      q4Diagnosis: 'Stable; continues to require assistance with daily decisions.',
-      q5SocialServices: 'Weekly day program and family visits.',
-      q6Interaction: 'Regular positive contact with guardian and family.',
-      q7RestoreRights: 'No',
-      q8DNR: false, q8LivingWill: false, q8Surrogate: false, q8POA: false, q8Other: false, q8None: true,
-      q9Remuneration: 'No',
-    });
-    // Milestone 68A: signed at the start of the plan year (see fixtures.ts).
-    d.planGuardians = [
-      { name: 'Sample Guardian', signatureDate: '2026-01-05', email: 'guardian@example.com', phone: '555-555-5555', mailingAddress: '123 Main St, Clearwater, FL 33755' },
-      { name: '', signatureDate: '', email: '', phone: '', mailingAddress: '' },
-    ];
-    t.replaceFiling(d);
-  });
-  await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
+  await applyPlanOverlay(page, MINIMAL_VALID_PLAN_SIMPLIFIED, ['wardName']);
 }
 
 /**
@@ -326,100 +330,11 @@ export async function fillMinimalValidPlanAnnualWard(page: Page): Promise<void> 
 }
 
 export async function fillMinimalValidPlanMinorWard(page: Page): Promise<void> {
-  await page.evaluate(() => {
-    // Milestone 70, 70T: setup (D9) on a copy of the open filing, written back below.
-    const t = (window as any).GuardianForms.testing;
-    const d = t.snapshot().filing;
-    Object.assign(d, {
-      wardName: d.wardName || 'Plan Minor Export Test Ward',
-      ucn: d.ucn || '2026-CP-000987',
-      // Milestone 73S (73S-3): the Plan for Minors' Case # is required; the UCN no longer stands in for it.
-      ref: d.ref || '2026-CP-000987',
-      caseNumber: d.caseNumber || '2026-CP-000987',
-      county: 'Pinellas',
-      amendedForm: 'No',
-      periodFrom: '2026-01-01',
-      periodTo: '2026-12-31',
-      guardianName: 'Sample Guardian',
-      q1ResidenceName: 'Sample Residence',
-      q1Street: '123 Main St',
-      q1City: 'Clearwater',
-      q1State: 'FL',
-      q1Zip: '33755',
-      q3Providers: [{ first: 'Sample', mi: '', last: 'Provider', street: '', city: '', state: '', zip: '', phone: '', providerType: 'Primary Care Physician', visits: '4' }],
-      q4Primary: true,
-      q5SchoolProgress: 'Progressing well in all subjects.',
-      q5SocialDevelopment: 'Age-appropriate social development.',
-      q5Communicates: 'Communicates clearly with peers and adults.',
-      q5Interpersonal: 'Maintains healthy relationships with family and friends.',
-      q5NoUnmetNeeds: true,
-      certConsulted: true,
-      // Milestone 68A: signed at the start of the plan year (see fixtures.ts).
-      preparer_name: 'Sample Preparer',
-      preparer_signatureDate: '2026-01-12',
-      attorney_name: 'Sample Attorney',
-      attorney_email: 'attorney@example.com', // Milestone 72C: required once an attorney is started, as on every other form
-      attorney_signatureDate: '2026-01-12',
-    });
-    d.planGuardians = [
-      { name: 'Sample Guardian', tin: '123-45-6789', phone: '555-555-5555', mailingStreet: '123 Main St', mailingCityStateZip: 'Clearwater, FL 33755', relationship: 'Parent', email: 'guardian@example.com', signatureDate: '2026-01-11' },
-      { name: '', tin: '', phone: '', mailingStreet: '', mailingCityStateZip: '', relationship: '', email: '', signatureDate: '' },
-    ];
-    t.replaceFiling(d);
-  });
-  await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
+  await applyPlanOverlay(page, MINIMAL_VALID_PLAN_MINOR, ['wardName', 'ucn', 'ref', 'caseNumber']);
 }
 
 export async function fillMinimalValidPlanInitialWard(page: Page): Promise<void> {
-  await page.evaluate(() => {
-    // Milestone 70, 70T: setup (D9) on a copy of the open filing, written back below.
-    const t = (window as any).GuardianForms.testing;
-    const d = t.snapshot().filing;
-    const adls: Record<string, string> = {};
-    for (const [k] of t.constants('INITIAL_ADLS')) adls[k] = 'Ward needs no help';
-    Object.assign(d, {
-      wardName: d.wardName || 'Plan Initial Export Test Ward',
-      caseNumber: '2026-CP-000654',
-      county: 'Pinellas',
-      // Milestone 68B: the reporting period is required on this Plan now.
-      periodFrom: '2026-01-01',
-      periodTo: '2026-12-31',
-      inceptionDate: '2026-01-05',
-      lettersSignedDate: '2026-01-06',
-      guardianNames: 'Sample Guardian',
-      wardLiving: 'In a facility (Skilled Nursing, Assisted Living, etc.)',
-      residenceAddress: '123 Main St',
-      residenceCityStateZip: 'Clearwater, FL 33755',
-      q2ALF: true, // Milestone 68E: checkbox lists, one boolean per option
-      q3MedPrimary: true,
-      q4Psych: true,
-      q5CareFacility: true,
-      q6CareFacility: true,
-      q9Providers: [{ name: 'Dr. Sample Provider', providerType: 'Primary Care Physician', examDate: '2026-01-10', street: '', cityStateZip: '', phone: '' }],
-      adls,
-      mentalDementia: true,
-      physMobility: true,
-      usesNone: true,
-      needsNone: true,
-      q11NoDirectives: false,
-      q11Executed: true,
-      q11ExecDNR: true,
-      q11Directives: [{ title: 'Do Not Resuscitate Order', dateSigned: '2025-06-01', signedBy: 'Sample Guardian', agents: '', alternates: '', relationship: '', contact: '', courtRevoked: 'No', orderDate: '', orderCounty: '' }],
-      committeeIncorporated: 'Yes',
-      certConsulted: true,
-      attorney_name: 'Sample Attorney',
-      attorney_email: 'attorney@example.com', // Milestone 55D: now required once attorney info is "started"
-      attorney_signatureDate: '2026-01-12',
-    });
-    d.planGuardians = [
-      { name: 'Sample Guardian', ssn: '123-45-6789', street: '123 Main St', phone: '555-555-5555', cityStateZip: 'Clearwater, FL 33755', signatureDate: '2026-01-11', relationship: 'Parent' },
-      { name: '', ssn: '', street: '', phone: '', cityStateZip: '', signatureDate: '', relationship: '' },
-      { name: '', ssn: '', street: '', phone: '', cityStateZip: '', signatureDate: '', relationship: '' },
-      { name: '', ssn: '', street: '', phone: '', cityStateZip: '', signatureDate: '', relationship: '' },
-    ];
-    t.replaceFiling(d);
-  });
-  await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
+  await applyPlanOverlay(page, MINIMAL_VALID_PLAN_INITIAL, ['wardName'], true);
 }
 
 /**
@@ -741,15 +656,87 @@ export async function exportStopped(button: Locator, kind?: 'outstanding' | 'blo
  * has no box for and the filer must file another way (the Lines 20/30
  * explanation -- the minimal Annual fixture has one -- or A-2's Notes); this
  * answers "Save the workbook".
+ *
+ * TEST-REVIEW.md Delivery 3 (N1, 2026-10-14): the app's refusal -- the
+ * "Cannot export ..." dialog it draws when the filing is blocked or needs an
+ * acknowledgement -- wins the race against the download wait, so the error
+ * names the refusal at once instead of the download timing out minutes
+ * later. A test that has not read the gate itself uses exportOutput() below.
  */
 export async function clickExport(button: Locator, timeout = 60_000): Promise<Download> {
   const page = button.page();
+  const name = await outputName(button);
   const download = page.waitForEvent('download', { timeout });
   await button.click();
   const save = page.locator(DYN_DIALOG).filter({ hasText: 'Not in the Excel workbook' }).locator('[data-dyn-action="confirm"]');
-  const asked = await Promise.race([download.then(() => false, () => false), save.waitFor({ timeout }).then(() => true, () => false)]);
-  if (asked) await save.click();
+  const refusal = page.locator(DYN_DIALOG).filter({ hasText: 'Cannot export' });
+  const outcome = await Promise.race([
+    download.then(() => 'download' as const, () => 'download' as const),
+    save.waitFor({ timeout }).then(() => 'omission' as const, () => 'download' as const),
+    refusal.waitFor({ timeout }).then(() => 'refused' as const, () => 'download' as const),
+  ]);
+  if (outcome === 'refused') {
+    const said = ((await refusal.locator('.modal-box-intro').textContent()) ?? '').trim();
+    await refusal.locator('[data-dyn-action="ok"], [data-dyn-action="confirm"]').click();
+    download.catch(() => {});
+    throw new Error(`${name} was refused: ${said}`);
+  }
+  if (outcome === 'omission') await save.click();
   return download;
+}
+
+export type ExportGate = 'allowed' | 'acknowledgement-required' | 'blocked';
+
+/**
+ * What the reason line says of this export button now, in the gate's own
+ * words (src/core/filing/output-authorization.js): nothing stopping it,
+ * requirements outstanding that "Continue despite outstanding requirements"
+ * acknowledges, or stopped for good (a blocker, or the workbook's capacity).
+ */
+export async function exportState(button: Locator): Promise<ExportGate> {
+  if (await exportStopped(button, 'blocked') || await exportStopped(button, 'capacity')) return 'blocked';
+  if (await exportStopped(button, 'outstanding')) return 'acknowledgement-required';
+  return 'allowed';
+}
+
+/**
+ * TEST-REVIEW.md Delivery 3 (N1, 2026-10-14): the positive export. Reads the
+ * gate from the reason line BEFORE arming any download wait and fails at
+ * once -- naming the gate it found, the reason line and what the checks say
+ * the filing still needs -- when the gate is not the one the test expects.
+ * `gate: 'acknowledgement-required'` is the explicit opt-in for the override
+ * path: it clicks the real "Continue despite outstanding requirements",
+ * confirms the dialog, and only then proves the download. A fixture that
+ * quietly needs an override is a finding, never a green test.
+ */
+export async function exportOutput(
+  button: Locator,
+  { gate = 'allowed', timeout = 60_000 }: { gate?: 'allowed' | 'acknowledgement-required'; timeout?: number } = {},
+): Promise<Download> {
+  const page = button.page();
+  const name = await outputName(button);
+  await expect(button).toBeVisible({ timeout: 60_000 });
+  const found = await exportState(button);
+  if (found !== gate) {
+    const line = (await page.locator('#export-reason').allTextContents()).join(' ').replace(/\s+/g, ' ').trim();
+    const needs: string[] = await page.evaluate(() => ((window as any).GuardianForms.testing.validate.evaluate()?.blockers || [])
+      .map((b: any) => `${b.code}: ${b.message}`));
+    throw new Error(`${name}: expected the gate "${gate}", found "${found}". The reason line: "${line}". The checks say the filing still needs:\n  ${needs.join('\n  ') || '(nothing)'}`);
+  }
+  if (found === 'acknowledgement-required') {
+    const override = page.locator('#print-doc-container [data-preview-action="override"]');
+    await expect(override, 'the Preview offers "Continue despite outstanding requirements"').toBeVisible({ timeout: 60_000 });
+    await override.click();
+    const asked = await acceptDynDialog(page);
+    if (!/Requirements remain outstanding/.test(asked)) throw new Error(`the override asked something else: ${asked}`);
+    // Ready, and still ready a moment later: a page redrawn after the
+    // override (a late save, a status refresh) opens Preview afresh, which
+    // clears the override, and the click would then be refused.
+    await expectExportReady(button, 60_000, `${name}: nothing in its way after the override`);
+    await page.waitForTimeout(500);
+    await expectExportReady(button, 1_000, `${name}: still nothing in its way after the override`);
+  }
+  return clickExport(button, timeout);
 }
 
 export function autoAcceptDynDialogs(page: Page, { promptValue }: { promptValue?: string } = {}): { stop: () => void; messages: string[] } {

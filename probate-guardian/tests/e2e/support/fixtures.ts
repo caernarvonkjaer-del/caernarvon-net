@@ -239,6 +239,119 @@ export const MINIMAL_VALID_PLAN_ANNUAL = {
   ],
 } as const;
 
+/**
+ * Applied over initializeEmptyData('planSimplified'). What fillMinimalValidPlanSimplifiedWard() writes --
+ * the literal that lived in target.ts until TEST-REVIEW.md Delivery 3 (2026-10-14), moved here so
+ * tests/unit/fixture-contract.spec.js can judge it against the export checks.
+ */
+export const MINIMAL_VALID_PLAN_SIMPLIFIED = {
+  wardName: 'Plan Simplified Export Test Ward',
+  caseNumber: '2026-CP-000789',
+  county: 'Pinellas',
+  periodFrom: '2026-01-01',
+  periodTo: '2026-12-31',
+  q1Residences: '123 Main St, Clearwater, FL 33755 (all year)',
+  q2BestPlacement: 'Familiar setting close to family and medical providers.',
+  q3MedicalTreatment: 'Annual check-up with Dr. Alvarez in March.',
+  q4Diagnosis: 'Stable; continues to require assistance with daily decisions.',
+  q5SocialServices: 'Weekly day program and family visits.',
+  q6Interaction: 'Regular positive contact with guardian and family.',
+  q7RestoreRights: 'No',
+  q8DNR: false, q8LivingWill: false, q8Surrogate: false, q8POA: false, q8Other: false, q8None: true,
+  q9Remuneration: 'No',
+  planGuardians: [
+    { name: 'Sample Guardian', signatureDate: '2026-01-05', email: 'guardian@example.com', phone: '555-555-5555', mailingAddress: '123 Main St, Clearwater, FL 33755' },
+    { name: '', signatureDate: '', email: '', phone: '', mailingAddress: '' },
+  ],
+} as const;
+
+/**
+ * Applied over initializeEmptyData('planMinor'). What fillMinimalValidPlanMinorWard() writes --
+ * the literal that lived in target.ts until TEST-REVIEW.md Delivery 3 (2026-10-14), moved here so
+ * tests/unit/fixture-contract.spec.js can judge it against the export checks.
+ */
+export const MINIMAL_VALID_PLAN_MINOR = {
+  wardName: 'Plan Minor Export Test Ward',
+  ucn: '2026-CP-000987',
+  // Milestone 73S (73S-3): the Plan for Minors' Case # is required; the UCN no longer stands in for it.
+  ref: '2026-CP-000987',
+  caseNumber: '2026-CP-000987',
+  county: 'Pinellas',
+  amendedForm: 'No',
+  periodFrom: '2026-01-01',
+  periodTo: '2026-12-31',
+  guardianName: 'Sample Guardian',
+  q1ResidenceName: 'Sample Residence',
+  q1Street: '123 Main St',
+  q1City: 'Clearwater',
+  q1State: 'FL',
+  q1Zip: '33755',
+  q3Providers: [{ first: 'Sample', mi: '', last: 'Provider', street: '', city: '', state: '', zip: '', phone: '', providerType: 'Primary Care Physician', visits: '4' }],
+  q4Primary: true,
+  q5SchoolProgress: 'Progressing well in all subjects.',
+  q5SocialDevelopment: 'Age-appropriate social development.',
+  q5Communicates: 'Communicates clearly with peers and adults.',
+  q5Interpersonal: 'Maintains healthy relationships with family and friends.',
+  q5NoUnmetNeeds: true,
+  certConsulted: true,
+  // Milestone 68A: signed at the start of the plan year (see fixtures.ts).
+  preparer_name: 'Sample Preparer',
+  preparer_signatureDate: '2026-01-12',
+  attorney_name: 'Sample Attorney',
+  attorney_email: 'attorney@example.com', // Milestone 72C: required once an attorney is started, as on every other form
+  attorney_signatureDate: '2026-01-12',
+  planGuardians: [
+    { name: 'Sample Guardian', tin: '123-45-6789', phone: '555-555-5555', mailingStreet: '123 Main St', mailingCityStateZip: 'Clearwater, FL 33755', relationship: 'Parent', email: 'guardian@example.com', signatureDate: '2026-01-11' },
+    { name: '', tin: '', phone: '', mailingStreet: '', mailingCityStateZip: '', relationship: '', email: '', signatureDate: '' },
+  ],
+} as const;
+
+/**
+ * Applied over initializeEmptyData('planInitial'). What fillMinimalValidPlanInitialWard() writes --
+ * the literal that lived in target.ts until TEST-REVIEW.md Delivery 3 (2026-10-14), moved here so
+ * tests/unit/fixture-contract.spec.js can judge it against the export checks. `adls` is not here: the helper and the contract answer the app's own
+ * INITIAL_ADLS list 'Ward needs no help', which a static overlay cannot carry.
+ */
+export const MINIMAL_VALID_PLAN_INITIAL = {
+  wardName: 'Plan Initial Export Test Ward',
+  caseNumber: '2026-CP-000654',
+  county: 'Pinellas',
+  // Milestone 68B: the reporting period is required on this Plan now.
+  periodFrom: '2026-01-01',
+  periodTo: '2026-12-31',
+  inceptionDate: '2026-01-05',
+  lettersSignedDate: '2026-01-06',
+  guardianNames: 'Sample Guardian',
+  wardLiving: 'In a facility (Skilled Nursing, Assisted Living, etc.)',
+  residenceAddress: '123 Main St',
+  residenceCityStateZip: 'Clearwater, FL 33755',
+  q2ALF: true, // Milestone 68E: checkbox lists, one boolean per option
+  q3MedPrimary: true,
+  q4Psych: true,
+  q5CareFacility: true,
+  q6CareFacility: true,
+  q9Providers: [{ name: 'Dr. Sample Provider', providerType: 'Primary Care Physician', examDate: '2026-01-10', street: '', cityStateZip: '', phone: '' }],
+  mentalDementia: true,
+  physMobility: true,
+  usesNone: true,
+  needsNone: true,
+  q11NoDirectives: false,
+  q11Executed: true,
+  q11ExecDNR: true,
+  q11Directives: [{ title: 'Do Not Resuscitate Order', dateSigned: '2025-06-01', signedBy: 'Sample Guardian', agents: '', alternates: '', relationship: '', contact: '', courtRevoked: 'No', orderDate: '', orderCounty: '' }],
+  committeeIncorporated: 'Yes',
+  certConsulted: true,
+  attorney_name: 'Sample Attorney',
+  attorney_email: 'attorney@example.com', // Milestone 55D: now required once attorney info is "started"
+  attorney_signatureDate: '2026-01-12',
+  planGuardians: [
+    { name: 'Sample Guardian', ssn: '123-45-6789', street: '123 Main St', phone: '555-555-5555', cityStateZip: 'Clearwater, FL 33755', signatureDate: '2026-01-11', relationship: 'Parent' },
+    { name: '', ssn: '', street: '', phone: '', cityStateZip: '', signatureDate: '', relationship: '' },
+    { name: '', ssn: '', street: '', phone: '', cityStateZip: '', signatureDate: '', relationship: '' },
+    { name: '', ssn: '', street: '', phone: '', cityStateZip: '', signatureDate: '', relationship: '' },
+  ],
+} as const;
+
 export const MINIMAL_VALID: Record<string, Record<string, unknown>> = {
   guardian: MINIMAL_VALID_GUARDIAN,
   annual: MINIMAL_VALID_ANNUAL,
@@ -246,4 +359,24 @@ export const MINIMAL_VALID: Record<string, Record<string, unknown>> = {
   trustAccounting: MINIMAL_VALID_ANNUAL,
   simplified: MINIMAL_VALID_SIMPLIFIED,
   planAnnual: MINIMAL_VALID_PLAN_ANNUAL,
+  planSimplified: MINIMAL_VALID_PLAN_SIMPLIFIED,
+  planMinor: MINIMAL_VALID_PLAN_MINOR,
+  planInitial: MINIMAL_VALID_PLAN_INITIAL,
 };
+
+/**
+ * Merges an overlay onto a base filing: objects key by key, a scalar always
+ * winning, and an overlay array deciding the list's length with each entry
+ * merged onto the base entry at the same index -- the same rule the page-side
+ * __pgMergeFixture applies (fixture-completeness.ts), for Node-side callers
+ * such as tests/unit/fixture-contract.spec.js.
+ */
+export function mergeFixture(base: unknown, overlay: unknown): unknown {
+  if (Array.isArray(overlay)) return overlay.map((v, i) => mergeFixture(Array.isArray(base) ? base[i] : undefined, v));
+  if (overlay && typeof overlay === 'object') {
+    const out: Record<string, unknown> = base && typeof base === 'object' && !Array.isArray(base) ? { ...(base as Record<string, unknown>) } : {};
+    for (const k of Object.keys(overlay as Record<string, unknown>)) out[k] = mergeFixture(out[k], (overlay as Record<string, unknown>)[k]);
+    return out;
+  }
+  return overlay;
+}

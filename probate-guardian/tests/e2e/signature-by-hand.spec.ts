@@ -168,7 +168,10 @@ test('New Year clears every signer\'s choice and stamp, and an Excel import keep
 
   // A year marked 1 stays 1 through an export and re-import of its workbook.
   await patch(page, { signaturePolicy: 1 });
-  const { bytes } = await exportWithWrites(page, 'annual');
+  // The new year's filing is just reset (its period, Amended Form and
+  // certificate blank), deliberately incomplete for this export: it says so
+  // (TEST-REVIEW.md Delivery 3) and takes the real override.
+  const { bytes } = await exportWithWrites(page, 'annual', { override: true });
   const file = path.join(os.tmpdir(), `pg-sig-policy-${Date.now()}.xlsx`);
   fs.writeFileSync(file, bytes);
   await patch(page, { wardName: 'Import Pending' });

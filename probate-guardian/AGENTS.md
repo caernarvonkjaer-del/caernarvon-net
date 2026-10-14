@@ -445,6 +445,21 @@ Tier 3  Declarative Form Composition (pages assemble sequences of cards)
   found only by `playwright.historical.config.ts` (`npm run
   test:e2e:historical`); the Milestone 70 ledger guard is retired
   (`MILESTONE-70-FIX-LEDGER.md` stays as a record).
+- **Positive fixtures and positive exports** (TEST-REVIEW.md Delivery 3,
+  2026-10-14). A fixture that stands for a complete filing -- fixtures.ts's
+  `MINIMAL_VALID_*` overlays, the placement manifests -- passes the app's own
+  export checks with the identity it claims and answers every enum field from
+  the data model's domain; `tests/unit/fixture-contract.spec.js` holds it to
+  that without a browser. A browser export goes through `exportOutput()`
+  (`exportWithWrites()` for workbooks), which reads the gate from the reason
+  line before arming any download wait and fails at once, naming what the
+  filing still needs, when the gate is not the one expected;
+  `gate: 'acknowledgement-required'` (`override: true`) is the explicit opt-in
+  that clicks the real "Continue despite outstanding requirements". A fixture
+  that quietly needs an override is a finding (N1: a county of `V0010` rode
+  into a court workbook that way), never something to override on the way to
+  a green test. `clickExport()` ends with the app's refusal text, not a
+  download timeout.
 
 ---
 

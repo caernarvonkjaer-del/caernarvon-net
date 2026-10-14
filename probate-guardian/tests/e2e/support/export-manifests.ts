@@ -35,6 +35,13 @@ export type Finite = { sheet: string; cell: string; path: string; options: reado
 export type Manifest = { patch: Record<string, unknown>; expectations: Expectation[]; finite: Finite[] };
 
 export const YES_NO = Object.freeze(['Yes', 'No']);
+/**
+ * TEST-REVIEW.md Delivery 3 (N1): a constrained field takes a value of its
+ * domain, never a probe. The data model's domain for typeOfGuardianship
+ * (probate-guardian-data-model.csv; src/core/form/guardianship-options.js's
+ * GUARDIANSHIP_TYPE_OPTIONS, pinned equal by tests/unit/fixture-contract.spec.js).
+ */
+export const GUARDIANSHIP_TYPES = Object.freeze(['Plenary', 'Limited', 'Guardian Advocate', 'Voluntary', 'Minor - Person', 'Minor - Property', 'Minor - Person - Property']);
 export const INDICATE_IF = Object.freeze(['Ward is totally incapacitated', 'Ward is under 14 years old', 'N/A']);
 /** Schedule B-4's categories, exactly as the Annual workbook's summary formulas test for them. */
 export const DISB_CATEGORIES = Object.freeze(['Accounting', 'Bank Service Charges', 'Care Facility', 'Clothing / Personal Needs', 'Entertainment / Travel', 'Food / Meals', 'Insurance: Automobile / Property', 'Insurance: Health / Life', 'Medical / Pharmacy', 'Mortgage', 'Nurse / Care Giver / Employer Tax', 'Other Legal Expenses', 'Rent', 'Repairs / Maintenance', 'Taxes: Income', 'Taxes: Intangible', 'Utilities', 'Other']);
@@ -259,7 +266,7 @@ export function inventoryManifest(): Manifest {
   const SI = 'SUMMARY I ';
   b.box('wardName', SI, 'C7', 'text'); b.box('caseNumber', SI, 'H7', 'text'); b.box('gid', SI, 'F7', 'date');
   b.named('county', SI, 'G3', 'Pinellas'); b.box('guardianName', SI, 'D23', 'text'); b.box('attorneyForGuardian', SI, 'D24', 'text');
-  b.box('typeOfGuardianship', SI, 'D25', 'text');
+  b.choice('typeOfGuardianship', SI, 'D25', GUARDIANSHIP_TYPES);
   // Milestone 73T part 2 (row 15): "Inventory filed?" is written only when the
   // ward has a box, and empty otherwise -- the Clerk's form pre-fills it "Yes".
   b.choice('hasSafeDepositBox', SI, 'D26', YES_NO);
@@ -407,7 +414,7 @@ export function annualManifest(filingTypeValue = 'Annual'): Manifest {
   const P1 = 'PART I';
   b.box('wardName', P1, 'C5', 'text'); b.box('caseNumber', P1, 'I5', 'text'); b.box('gid', P1, 'F5', 'date');
   b.box('periodFrom', P1, 'E18', 'date'); b.box('periodTo', P1, 'H18', 'date');
-  b.box('guardian', P1, 'D20', 'text'); b.box('attorney', P1, 'D21', 'text'); b.box('typeOfGuardianship', P1, 'D22', 'text');
+  b.box('guardian', P1, 'D20', 'text'); b.box('attorney', P1, 'D21', 'text'); b.choice('typeOfGuardianship', P1, 'D22', GUARDIANSHIP_TYPES);
   b.choice('amendedForm', P1, 'J6', YES_NO);
   b.fixed('(filing type, from the filing descriptor)', P1, 'H4', filingTypeValue);
   // The county box is the "Select County" dropdown, H2; Part V's "Name of county" reads it.
@@ -554,9 +561,14 @@ export function simplifiedManifest(): Manifest {
   const b = new Builder();
   const P1 = 'PARTS I, II ';
   b.box('wardName', P1, 'C4', 'text'); b.box('caseNumber', P1, 'H4', 'text');
+  // The GID first: dates rise in declaration order, and the Cover requires the
+  // accounting period to start on or after the GID. Declared after the period
+  // until TEST-REVIEW.md Delivery 3 (2026-10-14), this filing needed an
+  // override on every export, which the helper then took silently (N1).
+  b.box('gid', P1, 'F4', 'date');
   b.box('periodFrom', P1, 'E13', 'date'); b.box('periodTo', P1, 'H13', 'date');
-  b.box('attorney', P1, 'D15', 'text'); b.box('guardian', P1, 'D16', 'text'); b.box('typeOfGuardianship', P1, 'D17', 'text');
-  b.box('gid', P1, 'F4', 'date'); b.named('county', P1, 'G2', 'Pinellas');
+  b.box('attorney', P1, 'D15', 'text'); b.box('guardian', P1, 'D16', 'text'); b.choice('typeOfGuardianship', P1, 'D17', GUARDIANSHIP_TYPES);
+  b.named('county', P1, 'G2', 'Pinellas');
   b.choice('amendedForm', P1, 'I5', YES_NO);
   b.box('startingBalance', P1, 'H19', 'money'); b.box('interestIncome', P1, 'G22', 'money');
   b.box('depositsSettlement', P1, 'G23', 'money'); b.box('serviceCharges', P1, 'G27', 'money');

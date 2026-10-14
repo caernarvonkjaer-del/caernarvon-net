@@ -61,7 +61,10 @@ test("the Annual's Excel import: an empty middle slot no longer moves slot 3's g
   await fillMinimalValidAnnualWard(page);
   const first = (await field(page, 'guardians'))[0];
   await patch(page, {
-    guardians: [first, { name: 'Bob Second', phone: '(727) 555-0102', mailingStreet: '2 Second St', mailingCityStateZip: 'Clearwater, FL 33755' }, { name: 'Carol Third', phone: '(727) 555-0103', mailingStreet: '3 Third St', mailingCityStateZip: 'Clearwater, FL 33755' }],
+    // Complete cards (an SSN each): the slot that empties is emptied in the
+    // workbook below, not by leaving a card short -- a short card needed an
+    // override, which the helper took silently until TEST-REVIEW.md Delivery 3.
+    guardians: [first, { name: 'Bob Second', ssn: '222-33-4444', phone: '(727) 555-0102', mailingStreet: '2 Second St', mailingCityStateZip: 'Clearwater, FL 33755' }, { name: 'Carol Third', ssn: '333-44-5555', phone: '(727) 555-0103', mailingStreet: '3 Third St', mailingCityStateZip: 'Clearwater, FL 33755' }],
     guardianPartyIds: ['party-first', 'party-bob', 'party-carol'],
   });
   const { bytes } = await exportWithWrites(page, 'annual');
@@ -97,7 +100,9 @@ test("the Inventory's Excel import: a slot with no name no longer moves slot 3's
     guardians: [first, { name: '', phone: '(727) 555-0102' }, { name: 'Carol Third', phone: '(727) 555-0103' }],
     guardianPartyIds: ['party-first', 'party-noname', 'party-carol'],
   });
-  const { bytes } = await exportWithWrites(page, 'guardian');
+  // Slot 2 has no name by design, so the filing is deliberately incomplete:
+  // the export says so (TEST-REVIEW.md Delivery 3) and takes the real override.
+  const { bytes } = await exportWithWrites(page, 'guardian', { override: true });
   expect((await field(page, 'guardians')).length, 'the filing still has three guardian rows when it is exported').toBe(3);
   await importWorkbook(page, bytes);
   expect((await field(page, 'guardians')).map((g: any) => g.name)).toEqual([first.name, 'Carol Third']);

@@ -72,6 +72,9 @@ test('ticking and unticking "This item is a vehicle" keeps the Description and t
   await patch(page, {
     'scheduleB2.0.streetAddress': '1 Main St', 'scheduleB2.0.cityStateZip': 'Clearwater, FL 33755',
     'scheduleB2.0.valuationMethod': 'Kelley Blue Book', 'scheduleB2.0.fullAssetValue': 15000,
+    // The ward's share completes the row: without it the export needed an
+    // override, which the helper took silently until TEST-REVIEW.md Delivery 3.
+    'scheduleB2.0.wardPercent': 100,
   });
   const { bytes } = await exportWithWrites(page, 'guardian');
   const sheet = (await loadWorkbook(bytes)).getWorksheet('B-2 PER PROP pg 1');

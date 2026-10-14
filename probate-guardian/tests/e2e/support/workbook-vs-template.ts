@@ -18,7 +18,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { expect, type Page } from '@playwright/test';
 import { readAll } from './stream';
-import { acceptDynDialog, clickExport, expectExportReady, exportStopped } from './target';
+import { exportOutput } from './target';
 import type { TestWindow } from './window-api';
 
 export type FormName = 'guardian' | 'annual' | 'simplified';
@@ -70,10 +70,18 @@ export function templateWorkbook(form: FormName): Promise<any> {
 
 /**
  * Saves the open filing as Excel the way a filer does -- the Preview page's
- * real button, past the outstanding-requirements override when a test filing
- * has some -- with the write recorder on. Returns the file and every write.
+ * real button -- with the write recorder on. Returns the file and every write.
+ *
+ * TEST-REVIEW.md Delivery 3 (N1, 2026-10-14): the gate is read before any
+ * download wait (exportOutput()). A filing with requirements outstanding
+ * fails at once, naming them: a positive fixture carrying an out-of-domain
+ * value -- a county of "V0010" -- is a finding, not something to override on
+ * its way to a green test. `override: true` is the explicit opt-in for the
+ * acknowledgement path, which clicks the real "Continue despite outstanding
+ * requirements" and confirms it. Until this delivery every outstanding state
+ * was overridden here silently.
  */
-export async function exportWithWrites(page: Page, form: FormName): Promise<{ bytes: Buffer; writes: Write[] }> {
+export async function exportWithWrites(page: Page, form: FormName, { override = false }: { override?: boolean } = {}): Promise<{ bytes: Buffer; writes: Write[] }> {
   await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
   // Leave and come back, so a filing changed while Preview & Export was open
   // is judged afresh: an earlier override covered the earlier revision only.
@@ -86,20 +94,8 @@ export async function exportWithWrites(page: Page, form: FormName): Promise<{ by
   // stopped for good -- the guard's filings stay at capacity, never over.
   const button = page.locator(SAVE_EXCEL[form]);
   await expect(button).toBeAttached({ timeout: 60_000 });
-  if (await exportStopped(button, 'outstanding')) {
-    const override = page.locator('#print-doc-container [data-preview-action="override"]');
-    await expect(override).toBeVisible({ timeout: 120_000 });
-    await override.click();
-    await acceptDynDialog(page);
-  }
-  // Ready, and still ready a moment later: a page redrawn after the override
-  // (a late save, a status refresh) opens Preview afresh, which clears the
-  // override, and the click would then be refused.
-  await expectExportReady(button, 60_000);
-  await page.waitForTimeout(500);
-  await expectExportReady(button, 1_000, 'Save as Excel still has nothing in its way after the override');
   await page.evaluate(() => (window as unknown as TestWindow).GuardianForms.testing.excelWrites.start());
-  const download = clickExport(button, 180_000);
+  const download = exportOutput(button, { gate: override ? 'acknowledgement-required' : 'allowed', timeout: 180_000 });
   const bytes = await readAll(await (await download).createReadStream());
   const writes: Write[] = await page.evaluate(() => (window as unknown as TestWindow).GuardianForms.testing.excelWrites.stop());
   return { bytes, writes };
