@@ -3,7 +3,7 @@ import { gotoApp, startNewCase, chooseNoPassword, createWard, freshStartNoPasswo
 import { currentTargetProfile, skipExpectedTargetExclusion, skipEnvironmentLimitation } from './support/target-profile';
 
 test.describe('startup', { tag: '@origin-state' }, () => {
-  test('fresh install shows the startup-choice screen, no console errors', async ({ page }) => {
+  test('fresh install shows the startup-choice screen, no console errors', { tag: ['@cross-browser', '@edge-smoke'], annotation: { type: 'browser risk', description: 'boot: module loading, the pre-paint theme script and the first overlay, in every engine' } }, async ({ page }) => {
     const errors: string[] = [];
     page.on('pageerror', (e) => errors.push(e.message));
 
@@ -17,7 +17,7 @@ test.describe('startup', { tag: '@origin-state' }, () => {
     expect(errors).toEqual([]);
   });
 
-  test('Start a New Case -> No Password reaches the inventory selector', async ({ page }) => {
+  test('Start a New Case -> No Password reaches the inventory selector', { tag: '@cross-browser', annotation: { type: 'browser risk', description: 'the startup choice\'s overlays and the session cache in IndexedDB, in every engine' } }, async ({ page }) => {
     await gotoApp(page);
     await startNewCase(page);
     await chooseNoPassword(page);
@@ -39,7 +39,7 @@ test.describe('startup', { tag: '@origin-state' }, () => {
     await expect(page.locator('#unlock-password-confirm')).toBeVisible(); // confirm row only shown when creating
   });
 
-  test('a deleted remembered case file falls back without poisoning later launches', async ({ page, browserName }) => {
+  test('a deleted remembered case file falls back without poisoning later launches', { tag: '@edge-smoke', annotation: { type: 'browser risk', description: 'a remembered FileSystemFileHandle from OPFS round-tripped through IndexedDB: the File System Access path Firefox and WebKit skip' } }, async ({ page, browserName }) => {
     // The "remembered file handle" launch-preference mechanism (pg-launch-pref)
     // stores a real FileSystemFileHandle, which requires the File System
     // Access API -- target-profile.ts's supportsFileSystemAccessAutomation
@@ -130,7 +130,7 @@ test.describe('startup', { tag: '@origin-state' }, () => {
   // one from the dashboard feature bridge, one from the save pipeline -- both
   // of which only fire once startup gets far enough to render a real page.
   // This covers the path that actually mounts the dashboard.
-  test('reaching the dashboard mounts it with no uncaught exception', async ({ page }) => {
+  test('reaching the dashboard mounts it with no uncaught exception', { tag: ['@cross-browser', '@edge-smoke'], annotation: { type: 'browser risk', description: 'the dashboard\'s lazy modules and layout mounting in every engine' } }, async ({ page }) => {
     const errors: string[] = [];
     page.on('pageerror', (e) => errors.push(`${e.name}: ${e.message}`));
 

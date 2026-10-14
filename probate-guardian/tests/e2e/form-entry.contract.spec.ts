@@ -49,7 +49,7 @@ test.describe('Form entry contract', () => {
     expect(storedNotes).toBe(pasteText);
   });
 
-  test('a synthetic compositionend commits a value the same way input does', async ({ page }) => {
+  test('a synthetic compositionend commits a value the same way input does', { tag: '@cross-browser', annotation: { type: 'browser risk', description: 'composition (IME) events commit the way input does in every engine' } }, async ({ page }) => {
     // Playwright has no native IME automation primitive, and nothing else in
     // this suite exercises composition events -- this dispatches a synthetic
     // compositionstart/compositionupdate/compositionend sequence to prove
@@ -74,7 +74,7 @@ test.describe('Form entry contract', () => {
     expect(storedNotes).toBe('Composed Value');
   });
 
-  test('a real Tab keypress commits a field the same way blur does', async ({ page }) => {
+  test('a real Tab keypress commits a field the same way blur does', { tag: '@cross-browser', annotation: { type: 'browser risk', description: 'a real Tab keypress: focus order and blur timing differ by engine' } }, async ({ page }) => {
     // Every existing test drives finalization via .blur() directly -- none
     // press a real Tab key between two actual filing-form fields. A field
     // losing focus because the user tabbed away must finalize identically.
@@ -94,7 +94,7 @@ test.describe('Form entry contract', () => {
     expect(storedWardName).toBe('Harold Example');
   });
 
-  test('rapid multi-field date entry commits every value before immediate navigation, on a Plan type', async ({ page }) => {
+  test('rapid multi-field date entry commits every value before immediate navigation, on a Plan type', { tag: '@cross-browser', annotation: { type: 'browser risk', description: 'fast typing across fields: input and change event timing by engine' } }, async ({ page }) => {
     // annual-mount.spec.ts already proves this pattern for Annual's Schedule
     // B-2 dates; plan-fixture.ts (the four Plan types' shared mount tests)
     // never touches date fields at all, so this closes the "zero date-field
@@ -174,7 +174,7 @@ test.describe('Form entry contract', () => {
     expect(await cityStateZipInput.inputValue()).toBe('Orlando FL 32801');
   });
 
-  test('a malformed city/state/zip entry is flagged to the filer on blur, and the flag clears once corrected', async ({ page }) => {
+  test('a malformed city/state/zip entry is flagged to the filer on blur, and the flag clears once corrected', { tag: '@cross-browser', annotation: { type: 'browser risk', description: 'blur-time validation and its live text in every engine' } }, async ({ page }) => {
     // Milestone 50C's decision (2026-09-15): a combined entry the formatter
     // has no word-boundary to work with (no separator before the state code,
     // e.g. "St.Petersburg,FL33704") is flagged rather than silently repaired

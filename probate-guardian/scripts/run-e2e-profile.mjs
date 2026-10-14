@@ -64,14 +64,25 @@ const PORTABLE_PARITY_SPECS = [
   'tests/e2e/tab-and-update.spec.ts',
 ];
 
-const CROSS_BROWSER_SMOKE_SPECS = [
+// TEST-REVIEW.md Delivery 1M (2026-10-13): the extra-browser legs run only
+// the cases tagged for them in these files -- @cross-browser for Firefox and
+// WebKit (boot, crypto, downloads and the file-input fallback, real Tab and
+// focus, live input masking, pdf.js canvas, the WebKit-flagged focus race)
+// and @edge-smoke for Edge (boot, the FSA/OPFS handle Firefox skips, crypto,
+// a download, one output smoke) -- each tagged case carrying a "browser
+// risk" annotation that says why it runs there. They ran these files whole
+// before (120 cases per browser, then 56 after the consolidations).
+export const CROSS_BROWSER_SMOKE_SPECS = [
   'tests/e2e/form-entry-ux.spec.ts',
   'tests/e2e/form-entry.contract.spec.ts',
   'tests/e2e/case-file-roundtrip.spec.ts',
   'tests/e2e/navigation-status.contract.spec.ts',
+  'tests/e2e/pdf-preview-viewer.spec.ts',
   'tests/e2e/startup.spec.ts',
   'tests/e2e/unlock.spec.ts',
 ];
+export const CROSS_BROWSER_TAG = '@cross-browser';
+export const EDGE_SMOKE_TAG = '@edge-smoke';
 
 // The quick tier's browser smoke: the four specs AGENTS.md section 1 names.
 // Owned here; package.json composes `test:quick` from `test:e2e:quick` and
@@ -95,9 +106,9 @@ export const PROFILES = {
   // startup take the branches file:// skips. The production gate at MS 70's
   // checkpoints and merge.
   'portable-http': { target: 'portable-http', browser: 'chromium', build: 'build:portable', specs: [...PORTABLE_PARITY_SPECS, 'tests/e2e/portable-http-parity.spec.ts'] },
-  firefox: { target: 'source', browser: 'firefox', build: null, specs: CROSS_BROWSER_SMOKE_SPECS },
-  webkit: { target: 'source', browser: 'webkit', build: null, specs: CROSS_BROWSER_SMOKE_SPECS },
-  edge: { target: 'source', browser: 'edge', build: null, specs: CROSS_BROWSER_SMOKE_SPECS },
+  firefox: { target: 'source', browser: 'firefox', build: null, specs: CROSS_BROWSER_SMOKE_SPECS, grep: CROSS_BROWSER_TAG },
+  webkit: { target: 'source', browser: 'webkit', build: null, specs: CROSS_BROWSER_SMOKE_SPECS, grep: CROSS_BROWSER_TAG },
+  edge: { target: 'source', browser: 'edge', build: null, specs: CROSS_BROWSER_SMOKE_SPECS, grep: EDGE_SMOKE_TAG },
 };
 
 // What `all` (release validation, `npm run test:release`) runs, one profile
@@ -114,7 +125,7 @@ export function profileEnv(profile, baseEnv = process.env) {
 }
 
 export function playwrightArgs(profile) {
-  return ['playwright', 'test', ...(profile.specs || [])];
+  return ['playwright', 'test', ...(profile.specs || []), ...(profile.grep ? ['--grep', profile.grep] : [])];
 }
 
 /**
@@ -210,6 +221,9 @@ export async function run(command, args, env, { spawn: spawner = defaultSpawn, o
  * profile's target and browser pinned. Refuses, before Playwright starts,
  * when the target's port is held. `options` exist for the unit spec: a fake
  * `spawn`, a fixed `env`, a `serverUrl` lookup and a `checkPort` probe.
+ * `built` is the set of build scripts already run in this invocation --
+ * `all` passes one set through every profile, so an artifact two profiles
+ * share (dist/portable, for portable and portable-http) is built once.
  */
 export async function runProfile(name, options = {}) {
   const {
@@ -218,6 +232,7 @@ export async function runProfile(name, options = {}) {
     log = console.log,
     serverUrl = serverUrlForTarget,
     checkPort = portInUse,
+    built = new Set(),
   } = options;
   const profile = PROFILES[name];
   if (!profile) throw new Error(`Unknown profile: ${name}. Expected one of: ${Object.keys(PROFILES).join(', ')}, all`);
@@ -228,9 +243,12 @@ export async function runProfile(name, options = {}) {
   const label = `${profile.target}/${profile.browser}`;
   log(`\n=== profile: ${name} (${label}) ===`);
 
-  if (profile.build) {
+  if (profile.build && built.has(profile.build)) {
+    log(`Built earlier in this run (npm run ${profile.build}); reusing it.`);
+  } else if (profile.build) {
     log(`Building (npm run ${profile.build})...`);
     await run('npm', ['run', profile.build], env, { spawn: spawner });
+    built.add(profile.build);
   }
 
   const url = await serverUrl(profile.target);
@@ -258,7 +276,8 @@ export async function runProfile(name, options = {}) {
 }
 
 export async function runRelease(options = {}) {
-  for (const name of RELEASE_PROFILES) await runProfile(name, options);
+  const built = new Set();
+  for (const name of RELEASE_PROFILES) await runProfile(name, { ...options, built });
 }
 
 function isEntryPoint() {

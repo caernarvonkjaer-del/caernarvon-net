@@ -54,7 +54,14 @@ test.describe('Milestone 19-3: shared PDF preview/print viewer', () => {
     // (Milestones 38B, 44C and 54) and pdf-annotate.spec.ts for the annotate
     // toolbar's rollout (45B). One Preview per print.js host now carries all
     // three; the Final and Trust Accountings share the Annual's.
-    test(`${feature.name}: Preview renders the real generated PDF via canvas + selectable text layer, with exactly one readiness card and the annotate toolbar`, async ({ page }) => {
+    // The Guardian host's Preview also runs on the release's extra browsers
+    // (Delivery 1M): pdf.js canvas and text-layer rendering in every engine,
+    // and Edge's one output smoke.
+    const extraBrowsers = feature.key === 'guardian';
+    test(`${feature.name}: Preview renders the real generated PDF via canvas + selectable text layer, with exactly one readiness card and the annotate toolbar`, {
+      tag: extraBrowsers ? ['@cross-browser', '@edge-smoke'] : [],
+      annotation: extraBrowsers ? { type: 'browser risk', description: 'pdf.js canvas and text-layer rendering in every engine; the one output smoke on Edge' } : [],
+    }, async ({ page }) => {
       const errors: string[] = [];
       page.on('pageerror', (e) => errors.push(e.message));
       page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });

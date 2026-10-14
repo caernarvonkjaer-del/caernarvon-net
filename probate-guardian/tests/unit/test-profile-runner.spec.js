@@ -4,8 +4,8 @@ import path from 'node:path';
 import { describe, expect, test } from 'vitest';
 import config, { TARGETS, workersFor } from '../../playwright.config.ts';
 import {
-  PROFILES, QUICK_SPECS, RELEASE_PROFILES, collisionDiagnostic, mentionsPortCollision,
-  playwrightArgs, profileEnv, root, run, runProfile, runRelease,
+  CROSS_BROWSER_SMOKE_SPECS, CROSS_BROWSER_TAG, EDGE_SMOKE_TAG, PROFILES, QUICK_SPECS, RELEASE_PROFILES,
+  collisionDiagnostic, mentionsPortCollision, playwrightArgs, profileEnv, root, run, runProfile, runRelease,
 } from '../../scripts/run-e2e-profile.mjs';
 
 // TEST-REVIEW.md Delivery 1 (T1, T2): what the named test commands actually
@@ -101,12 +101,22 @@ describe('`all` is the explicit release list', () => {
       expect(Object.keys(PROFILES)).toContain('quick');
       const quickLaunches = calls.filter((c) => c.command === 'npx' && c.args.slice(2).join(' ') === QUICK_SPECS.join(' '));
       expect(quickLaunches).toHaveLength(0);
-      // Built profiles still build their own artifact, as before this delivery.
+      // Each artifact is built once per `all` (TEST-REVIEW.md Delivery 1M):
+      // dist/portable serves both portable and portable-http. Until
+      // 2026-10-14 the release built it twice.
       const builds = calls.filter((c) => c.command === 'npm').map((c) => c.args.join(' '));
-      expect(builds).toEqual(['run build:web', 'run build:portable', 'run build:portable']);
+      expect(builds).toEqual(['run build:web', 'run build:portable']);
+      const portableLaunches = calls.filter((c) => c.command === 'npx' && /^portable/.test(c.env.PG_TARGET));
+      expect(portableLaunches).toHaveLength(2);
     } finally {
       delete PROFILES.__diagnostic;
     }
+  });
+
+  test('a built profile run on its own still builds its artifact', async () => {
+    const { spawn, calls } = fakeSpawn();
+    await runProfile('portable-http', { spawn, env: polluted, serverUrl: noServer, log: quiet });
+    expect(calls.filter((c) => c.command === 'npm').map((c) => c.args.join(' '))).toEqual(['run build:portable']);
   });
 });
 
@@ -192,4 +202,43 @@ describe('workers (TEST-REVIEW.md Delivery 1M)', () => {
     expect(workersFor('NTFS', { PG_WORKERS: '1' })).toBe(1);
     expect([1, 2, 4]).toContain(config.workers);
   });
+});
+
+// TEST-REVIEW.md Delivery 1M (2026-10-14): the Firefox, WebKit and Edge legs
+// of the release run only the cases tagged for them, each saying why it runs
+// there; the Chromium profiles select by file alone.
+describe('the extra-browser legs run their tagged cases', () => {
+  const listed = async (tag) => {
+    let out = '';
+    await run('npx', ['playwright', 'test', ...CROSS_BROWSER_SMOKE_SPECS, '--list', '--grep', tag],
+      { ...process.env, PG_TARGET: 'source', PG_BROWSER: 'chromium' }, { onOutput: (text) => { out += text; } });
+    return out.split('\n').filter((line) => line.includes('›')).map((line) => line.trim());
+  };
+
+  test('firefox and webkit launch with --grep @cross-browser, edge with --grep @edge-smoke, the Chromium profiles with no grep', () => {
+    for (const name of ['firefox', 'webkit']) expect(playwrightArgs(PROFILES[name]).slice(-2), name).toEqual(['--grep', CROSS_BROWSER_TAG]);
+    expect(playwrightArgs(PROFILES.edge).slice(-2)).toEqual(['--grep', EDGE_SMOKE_TAG]);
+    for (const name of ['source', 'quick', 'web', 'portable', 'portable-http']) expect(playwrightArgs(PROFILES[name]), name).not.toContain('--grep');
+    expect(CROSS_BROWSER_TAG.startsWith('@') && EDGE_SMOKE_TAG.startsWith('@')).toBe(true);
+  });
+
+  test('every listed file exists, carries a tagged case, and every tagged case names its browser risk', () => {
+    for (const spec of CROSS_BROWSER_SMOKE_SPECS) {
+      const file = path.join(root, spec);
+      expect(fs.existsSync(file), spec).toBe(true);
+      const lines = fs.readFileSync(file, 'utf8').split('\n');
+      const tagged = lines.filter((line) => line.includes(CROSS_BROWSER_TAG) || line.includes(EDGE_SMOKE_TAG));
+      expect(tagged.length, `${spec} tags a case`).toBeGreaterThan(0);
+      for (const line of tagged) {
+        if (/^\s*\/\//.test(line)) continue; // a comment naming the tag
+        const call = lines.slice(Math.max(0, lines.indexOf(line) - 3), lines.indexOf(line) + 3).join('\n');
+        expect(call, `${spec}: ${line.trim().slice(0, 70)}`).toMatch(/annotation: .*type: 'browser risk'/);
+      }
+    }
+  });
+
+  test('Playwright selects 17 @cross-browser cases and 6 @edge-smoke cases from those files', async () => {
+    expect((await listed(CROSS_BROWSER_TAG)).length).toBe(17);
+    expect((await listed(EDGE_SMOKE_TAG)).length).toBe(6);
+  }, 180_000);
 });

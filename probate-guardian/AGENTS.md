@@ -34,7 +34,7 @@ non-zero, so a later stage never runs against a broken prerequisite.
 | `npm run test:quick` | all unit specs + 4 browser smoke specs (startup, form-entry.contract, routes, readiness-card.contract) | source / chromium | ~2.2 min | **No** — convenience only |
 | `npm test` | all unit specs + the complete source E2E suite | source / chromium | ~25.7 min | Full regression — **ask first (§2)** |
 | `npm run test:verify` | `check:types` → `verify:data-model` → `npm test` | source / chromium | ~26 min | Full regression — **ask first (§2)** |
-| `npm run test:release` | `check:types` → `verify:data-model` → unit → `test:e2e:all-profiles` | source, web, portable, portable-http / chromium + firefox, webkit, edge | longest | **Yes** — release gate |
+| `npm run test:release` | `check:types` → `verify:data-model` → unit → `test:e2e:all-profiles` | source, web, portable, portable-http / chromium; the `@cross-browser` cases / firefox, webkit; the `@edge-smoke` cases / edge | longest | **Yes** — release gate |
 
 - **`npm test` is unchanged and stays unchanged.** It is the full regression
   §2 governs. `test:quick` is not a substitute for it and is not a merge gate:
@@ -54,6 +54,16 @@ non-zero, so a later stage never runs against a broken prerequisite.
   server, so two browser runs at once refuse rather than share one tree's
   server, and the runner prints what holds the port and how to look.
   `tests/unit/test-profile-runner.spec.js` pins all of this.
+- **The extra-browser legs run tagged cases** (TEST-REVIEW.md Delivery 1M,
+  2026-10-14): Firefox and WebKit run the 17 cases tagged `@cross-browser`
+  (boot, crypto, downloads and the file-input fallback, real Tab and focus,
+  live input masking, pdf.js canvas, the WebKit-flagged focus race) and Edge
+  the 6 tagged `@edge-smoke`, out of the seven files
+  `CROSS_BROWSER_SMOKE_SPECS` names in the runner; every tagged case carries
+  a `browser risk` annotation saying why it runs there, and the runner spec
+  counts the selection with `--list`. A case that should run on another
+  engine gets the tag and the annotation, not a new profile. `all` also
+  builds `dist/portable` once for its two portable profiles.
 - **`test:release` deliberately does not compose `test:verify` or `npm test`.**
   `test:e2e:all-profiles` already runs the complete source profile, so
   composing either would run the entire source suite twice. It also builds web

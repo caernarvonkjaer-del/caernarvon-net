@@ -176,7 +176,7 @@ for (const { featureName, filingType, validateFnName, jumpTestFieldPath, nonCove
 
     // Two field conventions carry focus (data-annual-path, data-form-path);
     // one case each since Delivery 1M, where every type ran it.
-    if (jumpFocus) test('a jump link moves focus to the field it names', async ({ page }) => {
+    if (jumpFocus) test('a jump link moves focus to the field it names', { tag: '@cross-browser', annotation: { type: 'browser risk', description: 'focus() after a route change in every engine' } }, async ({ page }) => {
       await freshStartNoPassword(page);
       await makeFiling(page, `${featureName} Jump Link Ward`);
       await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
@@ -568,7 +568,7 @@ test.describe('Annual/Final/Trust field-path accuracy (Milestone 33, Item 3, sub
     await expect(page.locator('#sigstate_guardians_1_none')).toBeFocused();
   });
 
-  test('Schedule B-1 row resolves via the detail-side "Line N" ordinal, not the section', async ({ page }) => {
+  test('Schedule B-1 row resolves via the detail-side "Line N" ordinal, not the section', { tag: '@cross-browser', annotation: { type: 'browser risk', description: 'the focus race this test documents (4 of 10 WebKit runs before dismissScheduleDocPrompt)' } }, async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Annual Schedule B-1 Ward', 'annual');
     await page.evaluate(() => {

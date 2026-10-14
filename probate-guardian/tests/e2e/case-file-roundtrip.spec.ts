@@ -3,7 +3,7 @@ import fs from 'node:fs/promises';
 import { gotoApp, startNewCase, chooseNoPassword, chooseEncrypted, createWard, exportAndCapture, acceptDynDialog } from './support/target';
 
 test.describe('Case file .sav round-trip: unencrypted, encrypted, and corrupted paths', () => {
-  test('unencrypted export then open round-trips ward data', async ({ browser }) => {
+  test('unencrypted export then open round-trips ward data', { tag: ['@cross-browser', '@edge-smoke'], annotation: { type: 'browser risk', description: 'a .sav download and the file-input open -- the fallback Firefox and WebKit always take; Edge\'s download path' } }, async ({ browser }) => {
     const context = await browser.newContext();
     let savPath = '';
     try {
@@ -46,7 +46,7 @@ test.describe('Case file .sav round-trip: unencrypted, encrypted, and corrupted 
     }
   });
 
-  test('encrypted export then open: wrong password rejected, correct password round-trips data', async ({ browser }) => {
+  test('encrypted export then open: wrong password rejected, correct password round-trips data', { tag: '@cross-browser', annotation: { type: 'browser risk', description: 'an encrypted .sav: WebCrypto on export, and open through the file input' } }, async ({ browser }) => {
     const password = 'sav-roundtrip-password-42';
     const context = await browser.newContext();
     let savPath = '';
@@ -102,7 +102,7 @@ test.describe('Case file .sav round-trip: unencrypted, encrypted, and corrupted 
     }
   });
 
-  test('a corrupted .sav file is rejected with an error, not a crash', async ({ browser }) => {
+  test('a corrupted .sav file is rejected with an error, not a crash', { tag: '@cross-browser', annotation: { type: 'browser risk', description: 'a corrupted file read through the file input fails with a message, not an exception, in every engine' } }, async ({ browser }) => {
     const context = await browser.newContext();
     let goodPath = '';
     try {

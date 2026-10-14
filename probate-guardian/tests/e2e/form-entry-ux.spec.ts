@@ -3,7 +3,7 @@ import { createWard, freshStartNoPassword } from './support/target';
 import { dismissScheduleDocPrompt } from './support/target';
 
 test.describe('Milestone 24: Form Entry UX, Dates, Preservation, and Guidance', () => {
-  test('forgiving date normalization and invalid date retention', async ({ page }) => {
+  test('forgiving date normalization and invalid date retention', { tag: '@cross-browser', annotation: { type: 'browser risk', description: 'date normalization over each engine\'s own input value handling' } }, async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Harold Test Ward', 'guardian');
 
@@ -126,7 +126,7 @@ test.describe('Milestone 24: Form Entry UX, Dates, Preservation, and Guidance', 
     await expect(liveRegion).toContainText('Preview is blocked.');
   });
 
-  test('8-digit unpunctuated date input auto-masks on typing and commits valid canonical date on blur across forms', async ({ page }) => {
+  test('8-digit unpunctuated date input auto-masks on typing and commits valid canonical date on blur across forms', { tag: '@cross-browser', annotation: { type: 'browser risk', description: 'live input masking: caret and selection handling while typing differ by engine' } }, async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Harold Annual Date Ward', 'annual');
 

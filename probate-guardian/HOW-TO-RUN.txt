@@ -63,9 +63,9 @@ BUILD AND VALIDATION COMMANDS (maintainers):
   npm run test:e2e:web           # Hosted parity: web/Chromium, distribution-sensitive specs only
   npm run test:e2e:portable      # Portable parity: portable/Chromium (file://), distribution-sensitive specs only
   npm run test:e2e:portable-http # Portable as production serves it: from a subfolder over http://localhost
-  npm run test:e2e:firefox       # Cross-browser smoke: source/Firefox
-  npm run test:e2e:webkit        # Cross-browser smoke: source/WebKit
-  npm run test:e2e:edge          # Cross-browser smoke: source/Edge
+  npm run test:e2e:firefox       # source/Firefox, the @cross-browser cases
+  npm run test:e2e:webkit        # source/WebKit, the @cross-browser cases
+  npm run test:e2e:edge          # source/Edge, the @edge-smoke cases
   npm run test:e2e:all-profiles  # the seven release profiles above (not quick), one at a time
 - A profile refuses to start while the port its server needs (4321 for
   source, 4173 for web, 4341 for portable-http) is held by another process,

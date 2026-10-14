@@ -13,7 +13,7 @@ import { gotoApp, startNewCase, chooseEncrypted, createWard } from './support/ta
 // lockApp() directly (the same global the button's onclick calls) rather
 // than depending on that panel's expand/collapse state.
 test.describe('unlock', () => {
-  test('wrong password is rejected, correct password re-enters', async ({ page }) => {
+  test('wrong password is rejected, correct password re-enters', { tag: ['@cross-browser', '@edge-smoke'], annotation: { type: 'browser risk', description: 'WebCrypto PBKDF2 and AES-GCM unlocking a saved case in every engine' } }, async ({ page }) => {
     const password = 'correct-horse-battery-staple';
     await gotoApp(page);
     await startNewCase(page);
