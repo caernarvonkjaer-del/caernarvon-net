@@ -109,6 +109,11 @@ export const PROFILES = {
   firefox: { target: 'source', browser: 'firefox', build: null, specs: CROSS_BROWSER_SMOKE_SPECS, grep: CROSS_BROWSER_TAG },
   webkit: { target: 'source', browser: 'webkit', build: null, specs: CROSS_BROWSER_SMOKE_SPECS, grep: CROSS_BROWSER_TAG },
   edge: { target: 'source', browser: 'edge', build: null, specs: CROSS_BROWSER_SMOKE_SPECS, grep: EDGE_SMOKE_TAG },
+  // TEST-REVIEW.md Delivery 2 (T6): comparisons against an older build, by
+  // their own config (testDir tests/historical; the spec serves both builds
+  // itself, so no server to wait for or to refuse on), on demand -- never in
+  // `all`, which lists its profiles by name.
+  historical: { target: 'source', browser: 'chromium', build: null, specs: null, config: 'playwright.historical.config.ts', server: false },
 };
 
 // What `all` (release validation, `npm run test:release`) runs, one profile
@@ -125,7 +130,7 @@ export function profileEnv(profile, baseEnv = process.env) {
 }
 
 export function playwrightArgs(profile) {
-  return ['playwright', 'test', ...(profile.specs || []), ...(profile.grep ? ['--grep', profile.grep] : [])];
+  return ['playwright', 'test', ...(profile.config ? [`--config=${profile.config}`] : []), ...(profile.specs || []), ...(profile.grep ? ['--grep', profile.grep] : [])];
 }
 
 /**
@@ -251,7 +256,7 @@ export async function runProfile(name, options = {}) {
     built.add(profile.build);
   }
 
-  const url = await serverUrl(profile.target);
+  const url = profile.server === false ? null : await serverUrl(profile.target);
   if (url && await checkPort(Number(new URL(url).port))) {
     const error = new Error(collisionDiagnostic(name, url));
     error.portCollision = true;

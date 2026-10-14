@@ -2,14 +2,25 @@
 // 70T rewrites most of the browser suite onto the GuardianForms.testing
 // adapter, and later deliveries convert unit tests from source slicing to
 // direct imports. A rewritten test that quietly lost an assertion would go
-// green exactly when it matters most. This records how many assertions each
-// spec makes, so a drop is visible and has to be explained.
+// green exactly when it matters most. This records how many assertions and
+// how many test declarations each spec makes, so a drop in either is visible
+// and has to be explained.
 //
-// The count is static: every expect(...), expect.soft(...), expect.poll(...)
-// and expect.element(...) call in the file's source, found by parsing (the
-// TypeScript specs are stripped to JavaScript with Vite's own oxc transform,
-// then parsed with acorn). An assertion inside a loop counts once. It is a
-// tripwire, not proof that a converted test still means what it meant (D9).
+// The counts are static: every expect(...), expect.soft(...), expect.poll(...)
+// and expect.element(...) call, and every test(...)/it(...) declaration (with
+// or without a modifier such as .skip or .only), found in the file's syntax
+// tree (scripts/test-source-analysis.mjs: the TypeScript specs are stripped
+// to JavaScript with Vite's own oxc transform, then parsed with acorn). A
+// call inside a loop counts once however many cases the loop makes, so a
+// matrix that shrinks with its counts unchanged is caught by other evidence
+// (membership checks, review, fault tests), not here. It is a tripwire, not
+// proof that a converted test still means what it meant (D9).
+//
+// TEST-REVIEW.md Delivery 2 (T9, 2026-10-14): test declarations are compared
+// as well as assertions, and a drop in either, or a vanished file, needs a
+// reason. A refactor that folds several declarations into one loop lowers
+// the declaration count legitimately -- record why, and keep the before and
+// after selection and the assertion evidence in the commit.
 //
 // Usage (from probate-guardian/):
 //   node scripts/ms70-assertion-counts.mjs                 summary + drops
@@ -19,63 +30,20 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { parse } from 'acorn';
-import { transformWithOxc } from 'vite';
+import { countCalls, discoverSpecs, testApiBindings, testApiCalls, toAst } from './test-source-analysis.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 export const COUNTS_PATH = 'tests/baseline/ms70-assertion-counts.json';
-const SPEC_DIRS = ['tests/unit', 'tests/e2e'];
+export const SPEC_DIRS = ['tests/unit', 'tests/e2e', 'tests/historical'];
 
-function walk(node, visit) {
-  if (!node || typeof node !== 'object') return;
-  if (Array.isArray(node)) { for (const c of node) walk(c, visit); return; }
-  if (typeof node.type === 'string') visit(node);
-  for (const key in node) {
-    if (key === 'type' || key === 'start' || key === 'end' || key === 'loc') continue;
-    const v = node[key];
-    if (v && typeof v === 'object') walk(v, visit);
-  }
-}
-
-const EXPECT_MEMBERS = new Set(['soft', 'poll', 'element']);
-
-/** Count assertions and test declarations in one spec's JavaScript source. */
-export function countInJs(js) {
-  const ast = parse(js, { ecmaVersion: 'latest', sourceType: 'module', allowAwaitOutsideFunction: true, allowHashBang: true });
-  let expects = 0;
-  let tests = 0;
-  walk(ast, (node) => {
-    if (node.type !== 'CallExpression') return;
-    const c = node.callee;
-    if (c.type === 'Identifier' && c.name === 'expect') expects++;
-    else if (c.type === 'MemberExpression' && !c.computed && c.object.type === 'Identifier' && c.object.name === 'expect'
-      && c.property.type === 'Identifier' && EXPECT_MEMBERS.has(c.property.name)) expects++;
-    const isTestName = (n) => n.type === 'Identifier' && (n.name === 'test' || n.name === 'it');
-    if (isTestName(c)) tests++;
-    else if (c.type === 'MemberExpression' && !c.computed && isTestName(c.object)
-      && c.property.type === 'Identifier' && ['only', 'skip', 'fixme', 'fail', 'concurrent'].includes(c.property.name)) tests++;
-  });
-  return { expects, tests };
-}
-
-/** Count one spec file, TypeScript or JavaScript. */
+/** Count one spec file, TypeScript or JavaScript: { expects, tests }. */
 export async function countSpec(file, source) {
-  let js = source;
-  if (/\.tsx?$/.test(file)) js = (await transformWithOxc(source, file, { lang: 'ts' })).code;
-  return countInJs(js);
+  const ast = await toAst(file, source);
+  return countCalls(testApiCalls(ast, testApiBindings(ast).bindings));
 }
 
 export function listSpecs(root = ROOT) {
-  const out = [];
-  const visit = (dir) => {
-    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
-      const p = path.join(dir, e.name);
-      if (e.isDirectory()) { if (e.name !== 'fixtures' && e.name !== 'support') visit(p); }
-      else if (/\.spec\.(js|ts)$/.test(e.name)) out.push(path.relative(root, p).replace(/\\/g, '/'));
-    }
-  };
-  for (const d of SPEC_DIRS) visit(path.join(root, d));
-  return out.sort();
+  return discoverSpecs(SPEC_DIRS, { rootDir: root });
 }
 
 export async function countAll(root = ROOT) {
@@ -84,17 +52,37 @@ export async function countAll(root = ROOT) {
   return counts;
 }
 
-/** Files whose assertion count fell below the baseline, and baseline files that no longer exist. */
+/** Files whose assertion or declaration count fell below the baseline, baseline files that no longer exist, and files not yet counted. */
 export function compareCounts(current, baseline) {
   const drops = [];
   const missing = [];
   for (const [file, was] of Object.entries(baseline || {})) {
     const now = current[file];
-    if (!now) missing.push(file);
-    else if (now.expects < was.expects) drops.push({ file, was: was.expects, now: now.expects });
+    if (!now) { missing.push(file); continue; }
+    if (now.expects < was.expects) drops.push({ file, kind: 'expects', was: was.expects, now: now.expects });
+    if (now.tests < (was.tests ?? 0)) drops.push({ file, kind: 'tests', was: was.tests, now: now.tests });
   }
   const added = Object.keys(current).filter((f) => !(baseline || {})[f]);
   return { drops, missing, added };
+}
+
+/** The next baseline: the counts as they are, the drop log extended with every drop and vanished file under `reason`. */
+export function nextBaseline(existing, current, reason, date = new Date().toISOString().slice(0, 10)) {
+  const cmp = compareCounts(current, existing?.counts);
+  if ((cmp.drops.length || cmp.missing.length) && !reason) {
+    throw new Error('Counts fell or files disappeared: pass --reason="..." so the drop log says why.');
+  }
+  const dropLog = [...(existing?.dropLog || [])];
+  for (const d of cmp.drops) dropLog.push({ file: d.file, kind: d.kind, was: d.was, now: d.now, reason, date });
+  for (const m of cmp.missing) dropLog.push({ file: m, kind: 'file', was: existing.counts[m].expects, now: 0, reason, date });
+  const totals = Object.values(current).reduce((a, c) => ({ expects: a.expects + c.expects, tests: a.tests + c.tests }), { expects: 0, tests: 0 });
+  return {
+    generatedBy: 'node scripts/ms70-assertion-counts.mjs --write-baseline',
+    note: 'Milestone 70 per-spec static counts of expect calls and test declarations. tests/unit/ms70-assertion-counts.spec.js fails when a spec falls below either count; lowering one requires --reason, recorded in dropLog (kind: expects, tests or file). A tripwire, not proof of equivalence (decision D9); a loop counts once (TEST-REVIEW.md Delivery 2, T9).',
+    totals,
+    counts: current,
+    dropLog,
+  };
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
@@ -104,25 +92,15 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   const cmp = compareCounts(current, existing?.counts);
   const total = Object.values(current).reduce((a, c) => ({ expects: a.expects + c.expects, tests: a.tests + c.tests }), { expects: 0, tests: 0 });
   console.log(`${Object.keys(current).length} spec files; ${total.expects} expect calls; ${total.tests} test declarations`);
-  for (const d of cmp.drops) console.log(`  DROP ${d.file}: ${d.was} -> ${d.now}`);
+  for (const d of cmp.drops) console.log(`  DROP ${d.file} (${d.kind}): ${d.was} -> ${d.now}`);
   for (const m of cmp.missing) console.log(`  GONE ${m}`);
+  for (const a of cmp.added) console.log(`  NEW  ${a}`);
   if (process.argv.includes('--write-baseline')) {
     const reason = (process.argv.find((a) => a.startsWith('--reason=')) || '').slice('--reason='.length);
-    if ((cmp.drops.length || cmp.missing.length) && !reason) {
-      console.error('Counts fell or files disappeared: pass --reason="..." so the drop log says why.');
-      process.exit(1);
-    }
-    const dropLog = [...(existing?.dropLog || [])];
-    for (const d of cmp.drops) dropLog.push({ file: d.file, was: d.was, now: d.now, reason, date: new Date().toISOString().slice(0, 10) });
-    for (const m of cmp.missing) dropLog.push({ file: m, was: existing.counts[m].expects, now: 0, reason, date: new Date().toISOString().slice(0, 10) });
+    let next;
+    try { next = nextBaseline(existing, current, reason); } catch (error) { console.error(error.message); process.exit(1); }
     fs.mkdirSync(path.dirname(target), { recursive: true });
-    fs.writeFileSync(target, JSON.stringify({
-      generatedBy: 'node scripts/ms70-assertion-counts.mjs --write-baseline',
-      note: 'Milestone 70 per-spec assertion counts (static expect calls). tests/unit/ms70-assertion-counts.spec.js fails when a spec falls below its count; lowering it requires --reason, recorded in dropLog. A tripwire, not proof of equivalence (decision D9).',
-      totals: total,
-      counts: current,
-      dropLog,
-    }, null, 1) + '\n');
+    fs.writeFileSync(target, JSON.stringify(next, null, 1) + '\n');
     console.log(`wrote ${COUNTS_PATH}`);
   }
 }

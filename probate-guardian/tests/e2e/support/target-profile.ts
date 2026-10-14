@@ -1,4 +1,8 @@
 import { test } from '@playwright/test';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { isoToday, temporaryGapProblem, type TemporaryGap } from './temporary-gap';
 
 // The single source of truth for distribution-target names and their
 // properties (Milestone 31, Phase 0). playwright.config.ts, target.ts, and
@@ -62,8 +66,9 @@ export function targetProfile(target: DistributionTarget): TargetProfile {
 // Skip classification (Phase 0.3). Every dynamic test.skip() in the E2E
 // suite must go through one of these three, so the reason is both visible in
 // the test name/output and machine-classifiable. A static audit
-// (skip-classification-audit.spec.ts) rejects bare test.skip() calls in
-// tests/e2e/*.spec.ts outside this module.
+// (tests/unit/skip-classification-audit.spec.js, over every test file's
+// syntax tree since TEST-REVIEW.md Delivery 2) rejects any skip, fixme, only
+// or todo outside this module.
 
 /** A capability cannot exist on the given target -- e.g. service-worker
  * testing on a file:// portable build. Not a gap; nothing to fix. */
@@ -77,10 +82,17 @@ export function skipEnvironmentLimitation(condition: boolean, detail: string): v
   test.skip(condition, `[environment-limitation] ${detail}`);
 }
 
-/** Intentionally deferred coverage. `owningMilestone` must name an existing
+const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
+
+/** Intentionally deferred coverage. `gap.proposal` must name an existing
  * MILESTONE-N-PROPOSAL.md in this repository -- that document's own
  * acceptance criteria is what un-skips this test, not a separate issue
- * tracker this project doesn't use. */
-export function skipTemporaryGap(condition: boolean, owningMilestone: string, detail: string): void {
-  test.skip(condition, `[temporary-gap: ${owningMilestone}] ${detail}`);
+ * tracker this project doesn't use -- with who owns closing it and the date
+ * it must be back by. TEST-REVIEW.md Delivery 2 (T6): a gap that names no
+ * such proposal, or has lapsed, fails the test it would have hidden, here at
+ * run time and in tests/unit/skip-classification-audit.spec.js statically. */
+export function skipTemporaryGap(condition: boolean, gap: TemporaryGap, detail: string): void {
+  const problem = temporaryGapProblem(gap, isoToday(), (file) => fs.existsSync(path.join(REPO_ROOT, file)));
+  if (problem) throw new Error(`skipTemporaryGap: ${problem} -- ${detail}`);
+  test.skip(condition, `[temporary-gap: ${gap.proposal}, ${gap.owner}, until ${gap.until}] ${detail}`);
 }

@@ -152,6 +152,9 @@ if (!(browser in BROWSERS)) throw new Error(`Unknown PG_BROWSER: ${browser}`);
 
 export default defineConfig({
   testDir: 'tests/e2e',
+  // TEST-REVIEW.md Delivery 2 (T6): a `.only` left in a spec fails the run instead of silently narrowing it -- the
+  // runtime backstop for tests/unit/skip-classification-audit.spec.js, which reads the sources.
+  forbidOnly: true,
   fullyParallel: false, // fullyParallel only affects tests within one file; workers below is what parallelizes across files
   workers: workersFor(volumeFileSystem(process.cwd())), // see workersFor()
   retries: process.env.CI ? 1 : 0,

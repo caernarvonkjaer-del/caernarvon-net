@@ -1,1618 +1,1618 @@
 {
  "generatedBy": "node scripts/ms70-assertion-counts.mjs --write-baseline",
- "note": "Milestone 70 per-spec assertion counts (static expect calls). tests/unit/ms70-assertion-counts.spec.js fails when a spec falls below its count; lowering it requires --reason, recorded in dropLog. A tripwire, not proof of equivalence (decision D9).",
+ "note": "Milestone 70 per-spec static counts of expect calls and test declarations. tests/unit/ms70-assertion-counts.spec.js fails when a spec falls below either count; lowering one requires --reason, recorded in dropLog (kind: expects, tests or file). A tripwire, not proof of equivalence (decision D9); a loop counts once (TEST-REVIEW.md Delivery 2, T9).",
  "totals": {
-  "expects": 9390,
-  "tests": 2687
+  "expects": 9442,
+  "tests": 2771
  },
  "counts": {
   "tests/e2e/accessible-errors-and-groups.spec.ts": {
-   "expects": 14,
-   "tests": 3
+   "tests": 3,
+   "expects": 14
   },
   "tests/e2e/accessible-names.spec.ts": {
-   "expects": 8,
-   "tests": 5
+   "tests": 5,
+   "expects": 8
   },
   "tests/e2e/activity-log-actions.spec.ts": {
-   "expects": 6,
-   "tests": 1
+   "tests": 1,
+   "expects": 6
   },
   "tests/e2e/amounts-keep-their-sign.spec.ts": {
-   "expects": 20,
-   "tests": 5
+   "tests": 5,
+   "expects": 20
   },
   "tests/e2e/annotation-toolbar-containment.spec.ts": {
-   "expects": 21,
-   "tests": 3
+   "tests": 3,
+   "expects": 21
   },
   "tests/e2e/annual-blank-share-footing.spec.ts": {
-   "expects": 8,
-   "tests": 1
+   "tests": 1,
+   "expects": 8
   },
   "tests/e2e/annual-bond-period.spec.ts": {
-   "expects": 18,
-   "tests": 3
+   "tests": 3,
+   "expects": 18
   },
   "tests/e2e/annual-field-formatting.spec.ts": {
-   "expects": 27,
-   "tests": 7
+   "tests": 7,
+   "expects": 27
   },
   "tests/e2e/annual-import-ward-percentage.spec.ts": {
-   "expects": 4,
-   "tests": 1
+   "tests": 1,
+   "expects": 4
   },
   "tests/e2e/annual-mount.spec.ts": {
-   "expects": 38,
-   "tests": 11
+   "tests": 11,
+   "expects": 38
   },
   "tests/e2e/annual-schedule-consistency.spec.ts": {
-   "expects": 27,
-   "tests": 4
+   "tests": 4,
+   "expects": 27
   },
   "tests/e2e/annual-ward-share-export.spec.ts": {
-   "expects": 6,
-   "tests": 1
+   "tests": 1,
+   "expects": 6
   },
   "tests/e2e/asterisks-follow-rules.spec.ts": {
-   "expects": 3,
-   "tests": 1
+   "tests": 1,
+   "expects": 3
   },
   "tests/e2e/attorney-optional-export.spec.ts": {
-   "expects": 34,
-   "tests": 3
+   "tests": 3,
+   "expects": 34
   },
   "tests/e2e/b2-vehicle-toggle.spec.ts": {
-   "expects": 13,
-   "tests": 1
+   "tests": 1,
+   "expects": 13
   },
   "tests/e2e/backup-restore-sav.spec.ts": {
-   "expects": 29,
-   "tests": 6
+   "tests": 6,
+   "expects": 29
   },
   "tests/e2e/blank-card-pruning.spec.ts": {
-   "expects": 12,
-   "tests": 4
+   "tests": 4,
+   "expects": 12
   },
   "tests/e2e/bond-depository.spec.ts": {
-   "expects": 49,
-   "tests": 5
+   "tests": 5,
+   "expects": 49
   },
   "tests/e2e/carry-balance-matches-prior.spec.ts": {
-   "expects": 41,
-   "tests": 5
+   "tests": 5,
+   "expects": 41
   },
   "tests/e2e/carry-forward-hints.spec.ts": {
-   "expects": 26,
-   "tests": 6
+   "tests": 6,
+   "expects": 26
   },
   "tests/e2e/carryover-workflow.spec.ts": {
-   "expects": 34,
-   "tests": 5
+   "tests": 5,
+   "expects": 34
   },
   "tests/e2e/case-file-core-fields-roundtrip.spec.ts": {
-   "expects": 6,
-   "tests": 2
+   "tests": 2,
+   "expects": 6
   },
   "tests/e2e/case-file-damaged-open.spec.ts": {
-   "expects": 24,
-   "tests": 4
+   "tests": 4,
+   "expects": 24
   },
   "tests/e2e/case-file-manifest-privacy.spec.ts": {
-   "expects": 5,
-   "tests": 2
+   "tests": 2,
+   "expects": 5
   },
   "tests/e2e/case-file-newer-format.spec.ts": {
-   "expects": 10,
-   "tests": 3
+   "tests": 3,
+   "expects": 10
   },
   "tests/e2e/case-file-protection.spec.ts": {
-   "expects": 11,
-   "tests": 4
+   "tests": 4,
+   "expects": 11
   },
   "tests/e2e/case-file-roundtrip.spec.ts": {
-   "expects": 14,
-   "tests": 3
+   "tests": 3,
+   "expects": 14
   },
   "tests/e2e/case-write-through.spec.ts": {
-   "expects": 5,
-   "tests": 2
+   "tests": 2,
+   "expects": 5
   },
   "tests/e2e/certificate-old-details.spec.ts": {
-   "expects": 26,
-   "tests": 3
+   "tests": 3,
+   "expects": 26
   },
   "tests/e2e/certificate-service-method.spec.ts": {
-   "expects": 18,
-   "tests": 3
+   "tests": 3,
+   "expects": 18
   },
   "tests/e2e/closed-filing-sync.spec.ts": {
-   "expects": 21,
-   "tests": 1
+   "tests": 1,
+   "expects": 21
   },
   "tests/e2e/combobox-keyboard-nav.spec.ts": {
-   "expects": 22,
-   "tests": 3
+   "tests": 3,
+   "expects": 22
   },
   "tests/e2e/conditional-reveal-routes.spec.ts": {
-   "expects": 23,
-   "tests": 6
+   "tests": 6,
+   "expects": 23
   },
   "tests/e2e/continue-prompt-banner.spec.ts": {
-   "expects": 14,
-   "tests": 4
+   "tests": 4,
+   "expects": 14
   },
   "tests/e2e/contradiction-warnings.spec.ts": {
-   "expects": 7,
-   "tests": 2
+   "tests": 2,
+   "expects": 7
   },
   "tests/e2e/convert-ward.spec.ts": {
-   "expects": 35,
-   "tests": 7
+   "tests": 7,
+   "expects": 35
   },
   "tests/e2e/cover-county.spec.ts": {
-   "expects": 28,
-   "tests": 7
+   "tests": 7,
+   "expects": 28
   },
   "tests/e2e/dashboard-backup.spec.ts": {
-   "expects": 51,
-   "tests": 9
+   "tests": 9,
+   "expects": 51
   },
   "tests/e2e/dashboard-due-dates.spec.ts": {
-   "expects": 4,
-   "tests": 1
+   "tests": 1,
+   "expects": 4
   },
   "tests/e2e/dashboard-visual.spec.ts": {
-   "expects": 37,
-   "tests": 6
+   "tests": 6,
+   "expects": 37
   },
   "tests/e2e/date-validation.contract.spec.ts": {
-   "expects": 33,
-   "tests": 18
+   "tests": 18,
+   "expects": 33
   },
   "tests/e2e/dialog-order.spec.ts": {
-   "expects": 26,
-   "tests": 7
+   "tests": 7,
+   "expects": 26
   },
   "tests/e2e/entry-helpers.spec.ts": {
-   "expects": 26,
-   "tests": 4
+   "tests": 4,
+   "expects": 26
   },
   "tests/e2e/excel-b4-multi-account.spec.ts": {
-   "expects": 15,
-   "tests": 3
+   "tests": 3,
+   "expects": 15
   },
   "tests/e2e/excel-blank-page-pruning.spec.ts": {
-   "expects": 16,
-   "tests": 4
+   "tests": 4,
+   "expects": 16
   },
   "tests/e2e/excel-date-cells.spec.ts": {
-   "expects": 15,
-   "tests": 3
+   "tests": 3,
+   "expects": 15
   },
   "tests/e2e/excel-defined-names.spec.ts": {
-   "expects": 15,
-   "tests": 6
+   "tests": 6,
+   "expects": 15
   },
   "tests/e2e/excel-form-field-placement.spec.ts": {
-   "expects": 24,
-   "tests": 6
+   "tests": 6,
+   "expects": 24
   },
   "tests/e2e/excel-import-cell-shapes.spec.ts": {
-   "expects": 11,
-   "tests": 2
+   "tests": 2,
+   "expects": 11
   },
   "tests/e2e/excel-pruned-roundtrip.spec.ts": {
-   "expects": 11,
-   "tests": 2
+   "tests": 2,
+   "expects": 11
   },
   "tests/e2e/export-button-guard.spec.ts": {
-   "expects": 9,
-   "tests": 2
+   "tests": 2,
+   "expects": 9
   },
   "tests/e2e/feature-lazy-boundary.spec.ts": {
-   "expects": 8,
-   "tests": 1
+   "tests": 1,
+   "expects": 8
   },
   "tests/e2e/feature-load-failure.spec.ts": {
-   "expects": 18,
-   "tests": 3
+   "tests": 3,
+   "expects": 18
   },
   "tests/e2e/filing-conversion.characterization.spec.ts": {
-   "expects": 2,
-   "tests": 1
+   "tests": 1,
+   "expects": 2
   },
   "tests/e2e/filing-identity.contract.spec.ts": {
-   "expects": 9,
-   "tests": 1
+   "tests": 1,
+   "expects": 9
   },
   "tests/e2e/filing-type-change.spec.ts": {
-   "expects": 13,
-   "tests": 2
+   "tests": 2,
+   "expects": 13
   },
   "tests/e2e/first-guardian-stays.spec.ts": {
-   "expects": 6,
-   "tests": 1
+   "tests": 1,
+   "expects": 6
   },
   "tests/e2e/form-entry-ux.spec.ts": {
-   "expects": 35,
-   "tests": 5
+   "tests": 5,
+   "expects": 35
   },
   "tests/e2e/form-entry.contract.spec.ts": {
-   "expects": 26,
-   "tests": 8
+   "tests": 8,
+   "expects": 26
   },
   "tests/e2e/form-field-labels.spec.ts": {
-   "expects": 4,
-   "tests": 2
+   "tests": 2,
+   "expects": 4
   },
   "tests/e2e/form-runtime-lifecycle.contract.spec.ts": {
-   "expects": 14,
-   "tests": 4
+   "tests": 4,
+   "expects": 14
   },
   "tests/e2e/form-wording.spec.ts": {
-   "expects": 24,
-   "tests": 8
+   "tests": 8,
+   "expects": 24
   },
   "tests/e2e/guardian-advocate-hint.spec.ts": {
-   "expects": 8,
-   "tests": 1
+   "tests": 1,
+   "expects": 8
   },
   "tests/e2e/guardian-blank-page-pruning.spec.ts": {
-   "expects": 22,
-   "tests": 6
+   "tests": 6,
+   "expects": 22
   },
   "tests/e2e/guardian-email-advisory.spec.ts": {
-   "expects": 32,
-   "tests": 7
+   "tests": 7,
+   "expects": 32
   },
   "tests/e2e/guardian-inventory-collection-controls.spec.ts": {
-   "expects": 29,
-   "tests": 7
+   "tests": 7,
+   "expects": 29
   },
   "tests/e2e/guardian-inventory-excel-schedule-layout.spec.ts": {
-   "expects": 17,
-   "tests": 2
+   "tests": 2,
+   "expects": 17
   },
   "tests/e2e/guardian-inventory-mount.spec.ts": {
-   "expects": 50,
-   "tests": 9
+   "tests": 9,
+   "expects": 50
   },
   "tests/e2e/guardian-inventory-schedule-layout.spec.ts": {
-   "expects": 41,
-   "tests": 7
+   "tests": 7,
+   "expects": 41
   },
   "tests/e2e/guardian-inventory-tri-state-radios.spec.ts": {
-   "expects": 9,
-   "tests": 2
+   "tests": 2,
+   "expects": 9
   },
   "tests/e2e/guardian-links-follow-rows.spec.ts": {
-   "expects": 9,
-   "tests": 2
+   "tests": 2,
+   "expects": 9
   },
   "tests/e2e/guardianship-selection-controls.spec.ts": {
-   "expects": 8,
-   "tests": 1
+   "tests": 1,
+   "expects": 8
   },
   "tests/e2e/guided-tour-navigation.spec.ts": {
-   "expects": 9,
-   "tests": 2
+   "tests": 2,
+   "expects": 9
   },
   "tests/e2e/help-panel-state.spec.ts": {
-   "expects": 6,
-   "tests": 1
+   "tests": 1,
+   "expects": 6
   },
   "tests/e2e/highlight-toolbar-style.spec.ts": {
-   "expects": 37,
-   "tests": 4
+   "tests": 4,
+   "expects": 37
   },
   "tests/e2e/import-confirm.spec.ts": {
-   "expects": 28,
-   "tests": 3
+   "tests": 3,
+   "expects": 28
   },
   "tests/e2e/import-keeps-signatures.spec.ts": {
-   "expects": 13,
-   "tests": 2
+   "tests": 2,
+   "expects": 13
   },
   "tests/e2e/import-transaction-dialog.spec.ts": {
-   "expects": 24,
-   "tests": 3
+   "tests": 3,
+   "expects": 24
   },
   "tests/e2e/legacy-ward-data-normalization.spec.ts": {
-   "expects": 16,
-   "tests": 4
+   "tests": 4,
+   "expects": 16
   },
   "tests/e2e/link-and-merge.spec.ts": {
-   "expects": 12,
-   "tests": 3
+   "tests": 3,
+   "expects": 12
   },
   "tests/e2e/live-page-parts.spec.ts": {
-   "expects": 21,
-   "tests": 7
+   "tests": 7,
+   "expects": 21
   },
   "tests/e2e/lock-and-save-state.contract.spec.ts": {
-   "expects": 12,
-   "tests": 5
+   "tests": 5,
+   "expects": 12
   },
   "tests/e2e/mixed-version.characterization.spec.ts": {
-   "expects": 32,
-   "tests": 8
+   "tests": 8,
+   "expects": 32
   },
   "tests/e2e/navigation-race.spec.ts": {
-   "expects": 13,
-   "tests": 3
+   "tests": 3,
+   "expects": 13
   },
   "tests/e2e/navigation-status.contract.spec.ts": {
-   "expects": 62,
-   "tests": 20
+   "tests": 20,
+   "expects": 62
   },
   "tests/e2e/negative-amount-columns.spec.ts": {
-   "expects": 3,
-   "tests": 2
+   "tests": 2,
+   "expects": 3
   },
   "tests/e2e/offline.spec.ts": {
-   "expects": 26,
-   "tests": 5
+   "tests": 5,
+   "expects": 26
   },
   "tests/e2e/output-buttons-after-override.spec.ts": {
-   "expects": 24,
-   "tests": 3
+   "tests": 3,
+   "expects": 24
   },
   "tests/e2e/output-semantics.artifact.spec.ts": {
-   "expects": 32,
-   "tests": 1
+   "tests": 1,
+   "expects": 32
   },
   "tests/e2e/page-structure.spec.ts": {
-   "expects": 4,
-   "tests": 1
+   "tests": 1,
+   "expects": 4
   },
   "tests/e2e/page-title.spec.ts": {
-   "expects": 11,
-   "tests": 3
+   "tests": 3,
+   "expects": 11
   },
   "tests/e2e/party-dedupe.spec.ts": {
-   "expects": 48,
-   "tests": 3
+   "tests": 3,
+   "expects": 48
   },
   "tests/e2e/party-resolver.spec.ts": {
-   "expects": 13,
-   "tests": 3
+   "tests": 3,
+   "expects": 13
   },
   "tests/e2e/party-write-through.spec.ts": {
-   "expects": 4,
-   "tests": 1
+   "tests": 1,
+   "expects": 4
   },
   "tests/e2e/pdf-accessibility-and-signatures.spec.ts": {
-   "expects": 59,
-   "tests": 4
+   "tests": 4,
+   "expects": 59
   },
   "tests/e2e/pdf-annotate.spec.ts": {
-   "expects": 70,
-   "tests": 11
+   "tests": 11,
+   "expects": 70
   },
   "tests/e2e/pdf-cover-geometry.spec.ts": {
-   "expects": 4,
-   "tests": 1
+   "tests": 1,
+   "expects": 4
   },
   "tests/e2e/pdf-evidence-lab.spec.ts": {
-   "expects": 4,
-   "tests": 1
+   "tests": 1,
+   "expects": 4
   },
   "tests/e2e/pdf-fonts-and-xmp.spec.ts": {
-   "expects": 17,
-   "tests": 3
+   "tests": 3,
+   "expects": 17
   },
   "tests/e2e/pdf-form-specific.spec.ts": {
-   "expects": 138,
-   "tests": 9
+   "tests": 9,
+   "expects": 138
   },
   "tests/e2e/pdf-notice-title.spec.ts": {
-   "expects": 4,
-   "tests": 2
+   "tests": 2,
+   "expects": 4
   },
   "tests/e2e/pdf-preview-viewer.spec.ts": {
-   "expects": 53,
-   "tests": 5
+   "tests": 5,
+   "expects": 53
   },
   "tests/e2e/pdf-right-margin.spec.ts": {
-   "expects": 3,
-   "tests": 1
+   "tests": 1,
+   "expects": 3
   },
   "tests/e2e/pdf-structure-tags.spec.ts": {
-   "expects": 70,
-   "tests": 3
+   "tests": 3,
+   "expects": 70
   },
   "tests/e2e/pdf-table-semantics.spec.ts": {
-   "expects": 23,
-   "tests": 2
+   "tests": 2,
+   "expects": 23
   },
   "tests/e2e/percent-range.spec.ts": {
-   "expects": 23,
-   "tests": 3
+   "tests": 3,
+   "expects": 23
   },
   "tests/e2e/persistence-recovery.contract.spec.ts": {
-   "expects": 16,
-   "tests": 4
+   "tests": 4,
+   "expects": 16
   },
   "tests/e2e/plan-add-co-guardian.spec.ts": {
-   "expects": 18,
-   "tests": 2
+   "tests": 2,
+   "expects": 18
   },
   "tests/e2e/plan-annual-benefits.spec.ts": {
-   "expects": 5,
-   "tests": 1
+   "tests": 1,
+   "expects": 5
   },
   "tests/e2e/plan-annual-mount.spec.ts": {
-   "expects": 2,
-   "tests": 2
+   "tests": 2,
+   "expects": 2
   },
   "tests/e2e/plan-annual-rights-no.spec.ts": {
-   "expects": 12,
-   "tests": 2
+   "tests": 2,
+   "expects": 12
   },
   "tests/e2e/plan-benefits-tristate.spec.ts": {
-   "expects": 11,
-   "tests": 2
+   "tests": 2,
+   "expects": 11
   },
   "tests/e2e/plan-certificate-of-service.spec.ts": {
-   "expects": 48,
-   "tests": 8
+   "tests": 8,
+   "expects": 48
   },
   "tests/e2e/plan-directive-cards.spec.ts": {
-   "expects": 19,
-   "tests": 2
+   "tests": 2,
+   "expects": 19
   },
   "tests/e2e/plan-initial-assistive-none.spec.ts": {
-   "expects": 8,
-   "tests": 1
+   "tests": 1,
+   "expects": 8
   },
   "tests/e2e/plan-initial-dates-explained.spec.ts": {
-   "expects": 4,
-   "tests": 1
+   "tests": 1,
+   "expects": 4
   },
   "tests/e2e/plan-initial-mount.spec.ts": {
-   "expects": 10,
-   "tests": 3
+   "tests": 3,
+   "expects": 10
   },
   "tests/e2e/plan-initial-multiselect.spec.ts": {
-   "expects": 31,
-   "tests": 5
+   "tests": 5,
+   "expects": 31
   },
   "tests/e2e/plan-initial-period.spec.ts": {
-   "expects": 11,
-   "tests": 1
+   "tests": 1,
+   "expects": 11
   },
   "tests/e2e/plan-minor-mount.spec.ts": {
-   "expects": 2,
-   "tests": 2
+   "tests": 2,
+   "expects": 2
   },
   "tests/e2e/plan-pdf-wcag-compliance.spec.ts": {
-   "expects": 6,
-   "tests": 1
+   "tests": 1,
+   "expects": 6
   },
   "tests/e2e/plan-readiness.contract.spec.ts": {
-   "expects": 10,
-   "tests": 3
+   "tests": 3,
+   "expects": 10
   },
   "tests/e2e/plan-signature-date.spec.ts": {
-   "expects": 4,
-   "tests": 2
+   "tests": 2,
+   "expects": 4
   },
   "tests/e2e/plan-simplified-mount.spec.ts": {
-   "expects": 2,
-   "tests": 2
+   "tests": 2,
+   "expects": 2
   },
   "tests/e2e/plan-started-row.spec.ts": {
-   "expects": 4,
-   "tests": 2
+   "tests": 2,
+   "expects": 4
   },
   "tests/e2e/portable-http-parity.spec.ts": {
-   "expects": 13,
-   "tests": 1
-  },
-  "tests/e2e/pre-merge-output.characterization.spec.ts": {
-   "expects": 15,
-   "tests": 1
+   "tests": 1,
+   "expects": 13
   },
   "tests/e2e/preparer-flag.spec.ts": {
-   "expects": 38,
-   "tests": 2
+   "tests": 2,
+   "expects": 38
   },
   "tests/e2e/preparer-note-placement.spec.ts": {
-   "expects": 5,
-   "tests": 1
+   "tests": 1,
+   "expects": 5
   },
   "tests/e2e/preview-print-button.spec.ts": {
-   "expects": 8,
-   "tests": 3
+   "tests": 3,
+   "expects": 8
   },
   "tests/e2e/preview-zoom.spec.ts": {
-   "expects": 50,
-   "tests": 5
+   "tests": 5,
+   "expects": 50
   },
   "tests/e2e/print-preview-signature-jump.spec.ts": {
-   "expects": 6,
-   "tests": 2
+   "tests": 2,
+   "expects": 6
   },
   "tests/e2e/prior-year-delete.spec.ts": {
-   "expects": 5,
-   "tests": 1
+   "tests": 1,
+   "expects": 5
   },
   "tests/e2e/pwa-registration.spec.ts": {
-   "expects": 2,
-   "tests": 1
+   "tests": 1,
+   "expects": 2
   },
   "tests/e2e/readiness-card.contract.spec.ts": {
-   "expects": 13,
-   "tests": 3
+   "tests": 3,
+   "expects": 13
   },
   "tests/e2e/recovery-cache.spec.ts": {
-   "expects": 9,
-   "tests": 3
+   "tests": 3,
+   "expects": 9
   },
   "tests/e2e/redraw-keeps-scroll.spec.ts": {
-   "expects": 32,
-   "tests": 8
+   "tests": 8,
+   "expects": 32
   },
   "tests/e2e/remove-asks-first.spec.ts": {
-   "expects": 11,
-   "tests": 3
+   "tests": 3,
+   "expects": 11
   },
   "tests/e2e/rollback.contract.spec.ts": {
-   "expects": 8,
-   "tests": 1
+   "tests": 1,
+   "expects": 8
   },
   "tests/e2e/routes.spec.ts": {
-   "expects": 146,
-   "tests": 16
+   "tests": 16,
+   "expects": 146
   },
   "tests/e2e/rules-follow-rows.spec.ts": {
-   "expects": 20,
-   "tests": 3
+   "tests": 3,
+   "expects": 20
   },
   "tests/e2e/sav-corpus.characterization.spec.ts": {
-   "expects": 18,
-   "tests": 3
+   "tests": 3,
+   "expects": 18
   },
   "tests/e2e/save-pipeline-boot.spec.ts": {
-   "expects": 4,
-   "tests": 2
+   "tests": 2,
+   "expects": 4
   },
   "tests/e2e/schb4-bank-accounts-ui.spec.ts": {
-   "expects": 17,
-   "tests": 3
+   "tests": 3,
+   "expects": 17
   },
   "tests/e2e/schedule-card-layout.spec.ts": {
-   "expects": 76,
-   "tests": 15
+   "tests": 15,
+   "expects": 76
   },
   "tests/e2e/schedule-doc-ack.spec.ts": {
-   "expects": 23,
-   "tests": 10
+   "tests": 10,
+   "expects": 23
   },
   "tests/e2e/schedule-docs-period-key.spec.ts": {
-   "expects": 26,
-   "tests": 4
+   "tests": 4,
+   "expects": 26
   },
   "tests/e2e/section-guidance-invariant.spec.ts": {
-   "expects": 2,
-   "tests": 1
+   "tests": 1,
+   "expects": 2
   },
   "tests/e2e/section-marks-follow-export.spec.ts": {
-   "expects": 23,
-   "tests": 5
+   "tests": 5,
+   "expects": 23
   },
   "tests/e2e/security-contract.spec.ts": {
-   "expects": 21,
-   "tests": 3
+   "tests": 3,
+   "expects": 21
   },
   "tests/e2e/security.spec.ts": {
-   "expects": 5,
-   "tests": 2
+   "tests": 2,
+   "expects": 5
   },
   "tests/e2e/service-attestation-visibility.spec.ts": {
-   "expects": 10,
-   "tests": 3
+   "tests": 3,
+   "expects": 10
   },
   "tests/e2e/sidebar-only-wants.spec.ts": {
-   "expects": 27,
-   "tests": 5
+   "tests": 5,
+   "expects": 27
   },
   "tests/e2e/sidebar-room.spec.ts": {
-   "expects": 16,
-   "tests": 3
+   "tests": 3,
+   "expects": 16
   },
   "tests/e2e/sidebar-total-follows-changes.spec.ts": {
-   "expects": 11,
-   "tests": 3
+   "tests": 3,
+   "expects": 11
   },
   "tests/e2e/signature-block-address-margin.spec.ts": {
-   "expects": 20,
-   "tests": 5
+   "tests": 5,
+   "expects": 20
   },
   "tests/e2e/signature-by-hand.spec.ts": {
-   "expects": 29,
-   "tests": 5
+   "tests": 5,
+   "expects": 29
   },
   "tests/e2e/signature-capture.contract.spec.ts": {
-   "expects": 102,
-   "tests": 28
+   "tests": 28,
+   "expects": 102
   },
   "tests/e2e/signature-stamp-reuse.spec.ts": {
-   "expects": 14,
-   "tests": 4
+   "tests": 4,
+   "expects": 14
   },
   "tests/e2e/signature-style-removal.spec.ts": {
-   "expects": 2,
-   "tests": 1
+   "tests": 1,
+   "expects": 2
   },
   "tests/e2e/signed-amount-keypad.spec.ts": {
-   "expects": 21,
-   "tests": 5
+   "tests": 5,
+   "expects": 21
   },
   "tests/e2e/simplified-mount.spec.ts": {
-   "expects": 19,
-   "tests": 6
+   "tests": 6,
+   "expects": 19
   },
   "tests/e2e/simplified-part1-identity-cells.spec.ts": {
-   "expects": 27,
-   "tests": 6
+   "tests": 6,
+   "expects": 27
   },
   "tests/e2e/simplified-part2-totals.spec.ts": {
-   "expects": 8,
-   "tests": 1
+   "tests": 1,
+   "expects": 8
   },
   "tests/e2e/simplified-remuneration.spec.ts": {
-   "expects": 31,
-   "tests": 5
+   "tests": 5,
+   "expects": 31
   },
   "tests/e2e/small-fixes.spec.ts": {
-   "expects": 27,
-   "tests": 8
+   "tests": 8,
+   "expects": 27
   },
   "tests/e2e/stamped-co-guardian.spec.ts": {
-   "expects": 15,
-   "tests": 3
+   "tests": 3,
+   "expects": 15
   },
   "tests/e2e/startup.spec.ts": {
-   "expects": 24,
-   "tests": 7
+   "tests": 7,
+   "expects": 24
   },
   "tests/e2e/supplemental-pdf-accounting.spec.ts": {
-   "expects": 19,
-   "tests": 4
+   "tests": 4,
+   "expects": 19
   },
   "tests/e2e/supporting-documents-follow-dates.spec.ts": {
-   "expects": 14,
-   "tests": 3
+   "tests": 3,
+   "expects": 14
   },
   "tests/e2e/supporting-documents-reach-pdf.spec.ts": {
-   "expects": 8,
-   "tests": 1
+   "tests": 1,
+   "expects": 8
   },
   "tests/e2e/tab-and-update.spec.ts": {
-   "expects": 11,
-   "tests": 5
+   "tests": 5,
+   "expects": 11
   },
   "tests/e2e/terms-acceptance.spec.ts": {
-   "expects": 12,
-   "tests": 2
+   "tests": 2,
+   "expects": 12
   },
   "tests/e2e/test-system-title-prefix.spec.ts": {
-   "expects": 24,
-   "tests": 6
+   "tests": 6,
+   "expects": 24
   },
   "tests/e2e/testing-adapter.spec.ts": {
-   "expects": 7,
-   "tests": 4
+   "tests": 4,
+   "expects": 7
   },
   "tests/e2e/theme-prepaint.spec.ts": {
-   "expects": 15,
-   "tests": 5
+   "tests": 5,
+   "expects": 15
   },
   "tests/e2e/ucn-cover-field.spec.ts": {
-   "expects": 17,
-   "tests": 2
+   "tests": 2,
+   "expects": 17
   },
   "tests/e2e/unlock.spec.ts": {
-   "expects": 9,
-   "tests": 1
+   "tests": 1,
+   "expects": 9
   },
   "tests/e2e/user-guide-wiring.spec.ts": {
-   "expects": 15,
-   "tests": 7
+   "tests": 7,
+   "expects": 15
   },
   "tests/e2e/validation-structured-paths.spec.ts": {
-   "expects": 6,
-   "tests": 1
+   "tests": 1,
+   "expects": 6
   },
   "tests/e2e/vendor-loader-retry.spec.ts": {
-   "expects": 6,
-   "tests": 1
+   "tests": 1,
+   "expects": 6
   },
   "tests/e2e/verified-inventory-workflow.spec.ts": {
-   "expects": 28,
-   "tests": 7
+   "tests": 7,
+   "expects": 28
   },
   "tests/e2e/ward-lock.spec.ts": {
-   "expects": 41,
-   "tests": 8
+   "tests": 8,
+   "expects": 41
   },
   "tests/e2e/year-rollover.characterization.spec.ts": {
-   "expects": 2,
-   "tests": 1
+   "tests": 1,
+   "expects": 2
+  },
+  "tests/historical/pre-merge-output.characterization.spec.ts": {
+   "tests": 1,
+   "expects": 15
   },
   "tests/unit/amended-form-line.spec.js": {
-   "expects": 8,
-   "tests": 5
+   "tests": 5,
+   "expects": 8
   },
   "tests/unit/amount-codec.spec.js": {
-   "expects": 45,
-   "tests": 9
+   "tests": 9,
+   "expects": 45
   },
   "tests/unit/amount-fields.spec.js": {
-   "expects": 21,
-   "tests": 5
+   "tests": 5,
+   "expects": 21
   },
   "tests/unit/annual-accounting-pdf-model.spec.js": {
-   "expects": 45,
-   "tests": 12
+   "tests": 14,
+   "expects": 45
   },
   "tests/unit/annual-accounting-totals.spec.js": {
-   "expects": 21,
-   "tests": 11
+   "tests": 11,
+   "expects": 21
   },
   "tests/unit/annual-b4-subtotals.spec.js": {
-   "expects": 4,
-   "tests": 2
+   "tests": 2,
+   "expects": 4
   },
   "tests/unit/annual-pdf-schb4-attribution.spec.js": {
-   "expects": 32,
-   "tests": 15
+   "tests": 15,
+   "expects": 32
   },
   "tests/unit/annual-pdf-share-rows.spec.js": {
-   "expects": 17,
-   "tests": 3
+   "tests": 4,
+   "expects": 17
   },
   "tests/unit/annual-trust-and-remuneration-rules.spec.js": {
-   "expects": 19,
-   "tests": 8
+   "tests": 8,
+   "expects": 19
   },
   "tests/unit/annual-ward-percentage.spec.js": {
-   "expects": 24,
-   "tests": 7
+   "tests": 7,
+   "expects": 24
   },
   "tests/unit/app-text-accuracy.spec.js": {
-   "expects": 11,
-   "tests": 8
+   "tests": 8,
+   "expects": 11
   },
   "tests/unit/attorney-block.spec.js": {
-   "expects": 19,
-   "tests": 6
+   "tests": 8,
+   "expects": 19
   },
   "tests/unit/attorney-emails-carry.spec.js": {
-   "expects": 8,
-   "tests": 7
+   "tests": 7,
+   "expects": 8
   },
   "tests/unit/attorney-optional.spec.js": {
-   "expects": 69,
-   "tests": 22
+   "tests": 23,
+   "expects": 69
   },
   "tests/unit/audit-log-filing.spec.js": {
-   "expects": 5,
-   "tests": 4
+   "tests": 4,
+   "expects": 5
   },
   "tests/unit/b4-block-map.spec.js": {
-   "expects": 9,
-   "tests": 2
+   "tests": 2,
+   "expects": 9
   },
   "tests/unit/b4-export-plan.spec.js": {
-   "expects": 48,
-   "tests": 15
+   "tests": 17,
+   "expects": 48
   },
   "tests/unit/b4-register-pages.spec.js": {
-   "expects": 17,
-   "tests": 9
+   "tests": 11,
+   "expects": 17
   },
   "tests/unit/bar-number.spec.js": {
-   "expects": 10,
-   "tests": 5
+   "tests": 5,
+   "expects": 10
   },
   "tests/unit/bond-depository.spec.js": {
-   "expects": 100,
-   "tests": 27
+   "tests": 27,
+   "expects": 100
   },
   "tests/unit/boot-ordering.spec.js": {
-   "expects": 9,
-   "tests": 4
+   "tests": 4,
+   "expects": 9
   },
   "tests/unit/brand-letters.spec.js": {
-   "expects": 8,
-   "tests": 2
+   "tests": 2,
+   "expects": 8
   },
   "tests/unit/carried-balance.spec.js": {
-   "expects": 47,
-   "tests": 21
+   "tests": 22,
+   "expects": 47
   },
   "tests/unit/carry-forward-hints.spec.js": {
-   "expects": 26,
-   "tests": 12
+   "tests": 12,
+   "expects": 26
   },
   "tests/unit/case-county-drift.spec.js": {
-   "expects": 15,
-   "tests": 6
+   "tests": 6,
+   "expects": 15
   },
   "tests/unit/case-file.spec.js": {
-   "expects": 74,
-   "tests": 22
+   "tests": 22,
+   "expects": 74
   },
   "tests/unit/case-resolver.spec.js": {
-   "expects": 18,
-   "tests": 5
+   "tests": 5,
+   "expects": 18
   },
   "tests/unit/cell-reader.spec.js": {
-   "expects": 15,
-   "tests": 4
+   "tests": 7,
+   "expects": 15
   },
   "tests/unit/certificate-attorney.spec.js": {
-   "expects": 45,
-   "tests": 12
+   "tests": 12,
+   "expects": 45
   },
   "tests/unit/certificate-recipients.spec.js": {
-   "expects": 28,
-   "tests": 9
+   "tests": 9,
+   "expects": 28
   },
   "tests/unit/circuit-lookup.spec.js": {
-   "expects": 51,
-   "tests": 9
+   "tests": 9,
+   "expects": 51
   },
   "tests/unit/collection-descriptors.spec.js": {
-   "expects": 65,
-   "tests": 18
+   "tests": 18,
+   "expects": 65
   },
   "tests/unit/comment-card-hide.spec.js": {
-   "expects": 9,
-   "tests": 5
+   "tests": 5,
+   "expects": 9
   },
   "tests/unit/completion-parity.spec.js": {
-   "expects": 11,
-   "tests": 3
+   "tests": 3,
+   "expects": 11
   },
   "tests/unit/consistency-advisories.spec.js": {
-   "expects": 46,
-   "tests": 21
+   "tests": 21,
+   "expects": 46
   },
   "tests/unit/content-corrections.spec.js": {
-   "expects": 12,
-   "tests": 4
+   "tests": 4,
+   "expects": 12
   },
   "tests/unit/convert-targets.spec.js": {
-   "expects": 19,
-   "tests": 5
+   "tests": 5,
+   "expects": 19
   },
   "tests/unit/county-guidance.spec.js": {
-   "expects": 16,
-   "tests": 3
+   "tests": 3,
+   "expects": 16
   },
   "tests/unit/county-rule.spec.js": {
-   "expects": 19,
-   "tests": 5
+   "tests": 5,
+   "expects": 19
   },
   "tests/unit/court-text-parity.spec.js": {
-   "expects": 25,
-   "tests": 10
+   "tests": 10,
+   "expects": 25
   },
   "tests/unit/crypto-contract.spec.js": {
-   "expects": 27,
-   "tests": 8
+   "tests": 8,
+   "expects": 27
   },
   "tests/unit/dashboard-resources.spec.js": {
-   "expects": 69,
-   "tests": 26
+   "tests": 26,
+   "expects": 69
   },
   "tests/unit/dashboard-view-model.spec.js": {
-   "expects": 51,
-   "tests": 12
+   "tests": 16,
+   "expects": 51
   },
   "tests/unit/date-parser.spec.js": {
-   "expects": 56,
-   "tests": 13
+   "tests": 13,
+   "expects": 56
   },
   "tests/unit/date-range-no-mutation.spec.js": {
-   "expects": 15,
-   "tests": 8
+   "tests": 8,
+   "expects": 15
   },
   "tests/unit/date-rules.spec.js": {
-   "expects": 11,
-   "tests": 7
+   "tests": 7,
+   "expects": 11
   },
   "tests/unit/date-truncation-helpers.spec.js": {
-   "expects": 25,
-   "tests": 6
+   "tests": 7,
+   "expects": 25
   },
   "tests/unit/delete-confirmation.spec.js": {
-   "expects": 17,
-   "tests": 8
+   "tests": 8,
+   "expects": 17
   },
   "tests/unit/display-formats.spec.js": {
-   "expects": 52,
-   "tests": 15
+   "tests": 15,
+   "expects": 52
   },
   "tests/unit/doc-dates.spec.js": {
-   "expects": 31,
-   "tests": 14
+   "tests": 14,
+   "expects": 31
   },
   "tests/unit/document-sections.spec.js": {
-   "expects": 10,
-   "tests": 5
+   "tests": 5,
+   "expects": 10
   },
   "tests/unit/drafts-follow-rows.spec.js": {
-   "expects": 13,
-   "tests": 7
+   "tests": 7,
+   "expects": 13
   },
   "tests/unit/draw-reason.spec.js": {
-   "expects": 23,
-   "tests": 11
+   "tests": 11,
+   "expects": 23
   },
   "tests/unit/entry-helpers.spec.js": {
-   "expects": 45,
-   "tests": 14
+   "tests": 14,
+   "expects": 45
   },
   "tests/unit/excel-capacity-issues.spec.js": {
-   "expects": 32,
-   "tests": 7
+   "tests": 7,
+   "expects": 32
   },
   "tests/unit/excel-engine.spec.js": {
-   "expects": 59,
-   "tests": 22
+   "tests": 22,
+   "expects": 59
   },
   "tests/unit/excel-write-targets.spec.js": {
-   "expects": 3,
-   "tests": 3
+   "tests": 3,
+   "expects": 3
   },
   "tests/unit/export-guard.spec.js": {
-   "expects": 5,
-   "tests": 3
+   "tests": 3,
+   "expects": 5
   },
   "tests/unit/feature-bridge.spec.js": {
-   "expects": 28,
-   "tests": 10
+   "tests": 12,
+   "expects": 28
   },
   "tests/unit/feature-exports.spec.js": {
-   "expects": 1,
-   "tests": 1
+   "tests": 1,
+   "expects": 1
   },
   "tests/unit/feature-services.spec.js": {
-   "expects": 28,
-   "tests": 8
+   "tests": 8,
+   "expects": 28
   },
   "tests/unit/feedback-message.spec.js": {
-   "expects": 9,
-   "tests": 3
+   "tests": 3,
+   "expects": 9
   },
   "tests/unit/field-kind-inference.spec.js": {
-   "expects": 6,
-   "tests": 5
+   "tests": 5,
+   "expects": 6
   },
   "tests/unit/filing-capability-matrix.spec.js": {
-   "expects": 14,
-   "tests": 4
+   "tests": 4,
+   "expects": 14
   },
   "tests/unit/filing-county-defaults.spec.js": {
-   "expects": 52,
-   "tests": 21
+   "tests": 21,
+   "expects": 52
   },
   "tests/unit/filing-descriptor.spec.js": {
-   "expects": 17,
-   "tests": 6
+   "tests": 6,
+   "expects": 17
   },
   "tests/unit/filing-lifecycle.spec.js": {
-   "expects": 18,
-   "tests": 5
+   "tests": 5,
+   "expects": 18
   },
   "tests/unit/filing-registry.spec.js": {
-   "expects": 57,
-   "tests": 9
+   "tests": 12,
+   "expects": 57
   },
   "tests/unit/filing-type-enumeration-guard.spec.js": {
-   "expects": 3,
-   "tests": 2
+   "tests": 2,
+   "expects": 3
   },
   "tests/unit/form-cards.spec.js": {
-   "expects": 42,
-   "tests": 15
+   "tests": 15,
+   "expects": 42
   },
   "tests/unit/form-contract.spec.js": {
-   "expects": 159,
-   "tests": 43
+   "tests": 43,
+   "expects": 159
   },
   "tests/unit/form-derived-fields.spec.js": {
-   "expects": 58,
-   "tests": 22
+   "tests": 22,
+   "expects": 58
   },
   "tests/unit/form-fields-legacy-delegation.spec.js": {
-   "expects": 15,
-   "tests": 7
+   "tests": 7,
+   "expects": 15
   },
   "tests/unit/form-fields.spec.js": {
-   "expects": 96,
-   "tests": 29
+   "tests": 29,
+   "expects": 96
   },
   "tests/unit/form-services-import.spec.js": {
-   "expects": 3,
-   "tests": 1
+   "tests": 1,
+   "expects": 3
   },
   "tests/unit/form-write-side-effects.spec.js": {
-   "expects": 24,
-   "tests": 10
+   "tests": 10,
+   "expects": 24
   },
   "tests/unit/fragment-loader.spec.js": {
-   "expects": 4,
-   "tests": 1
+   "tests": 2,
+   "expects": 4
   },
   "tests/unit/guardian-blank-page-pruning.spec.js": {
-   "expects": 24,
-   "tests": 10
+   "tests": 11,
+   "expects": 24
   },
   "tests/unit/guardian-bond-amount.spec.js": {
-   "expects": 6,
-   "tests": 6
+   "tests": 6,
+   "expects": 6
   },
   "tests/unit/guardian-email-advisory.spec.js": {
-   "expects": 25,
-   "tests": 15
+   "tests": 15,
+   "expects": 25
   },
   "tests/unit/guardian-inventory-64a1-validation.spec.js": {
-   "expects": 18,
-   "tests": 9
+   "tests": 10,
+   "expects": 18
   },
   "tests/unit/guardian-inventory-date-roundtrip.spec.js": {
-   "expects": 9,
-   "tests": 3
+   "tests": 3,
+   "expects": 9
   },
   "tests/unit/guardian-inventory-pdf-model.spec.js": {
-   "expects": 142,
-   "tests": 48
+   "tests": 51,
+   "expects": 142
   },
   "tests/unit/guardian-inventory-totals.spec.js": {
-   "expects": 75,
-   "tests": 21
+   "tests": 22,
+   "expects": 75
   },
   "tests/unit/guardian-inventory-yes-no-radio.spec.js": {
-   "expects": 12,
-   "tests": 5
+   "tests": 5,
+   "expects": 12
   },
   "tests/unit/guardian-page-map.spec.js": {
-   "expects": 22,
-   "tests": 9
+   "tests": 9,
+   "expects": 22
   },
   "tests/unit/guardianship-options.spec.js": {
-   "expects": 9,
-   "tests": 5
+   "tests": 5,
+   "expects": 9
   },
   "tests/unit/guided-tour-content.spec.js": {
-   "expects": 16,
-   "tests": 4
+   "tests": 4,
+   "expects": 16
   },
   "tests/unit/help-guide-pdf-orphan.spec.js": {
-   "expects": 2,
-   "tests": 2
+   "tests": 2,
+   "expects": 2
   },
   "tests/unit/help-panel.spec.js": {
-   "expects": 4,
-   "tests": 4
+   "tests": 4,
+   "expects": 4
   },
   "tests/unit/import-keep.spec.js": {
-   "expects": 6,
-   "tests": 4
+   "tests": 5,
+   "expects": 6
   },
   "tests/unit/import-transaction.spec.js": {
-   "expects": 81,
-   "tests": 17
+   "tests": 17,
+   "expects": 81
   },
   "tests/unit/inventory-required-share-and-email.spec.js": {
-   "expects": 12,
-   "tests": 8
+   "tests": 8,
+   "expects": 12
   },
   "tests/unit/issue-registry.spec.js": {
-   "expects": 35,
-   "tests": 15
+   "tests": 15,
+   "expects": 35
   },
   "tests/unit/keep-place.spec.js": {
-   "expects": 39,
-   "tests": 10
+   "tests": 10,
+   "expects": 39
   },
   "tests/unit/link-and-merge.spec.js": {
-   "expects": 22,
-   "tests": 7
+   "tests": 7,
+   "expects": 22
   },
   "tests/unit/live-parts.spec.js": {
-   "expects": 24,
-   "tests": 6
+   "tests": 6,
+   "expects": 24
   },
   "tests/unit/live-region.spec.js": {
-   "expects": 9,
-   "tests": 2
+   "tests": 2,
+   "expects": 9
   },
   "tests/unit/minimum-text-size.spec.js": {
-   "expects": 4,
-   "tests": 3
+   "tests": 3,
+   "expects": 4
   },
   "tests/unit/model-change-event.spec.js": {
-   "expects": 17,
-   "tests": 9
+   "tests": 9,
+   "expects": 17
   },
   "tests/unit/money-rounding.spec.js": {
-   "expects": 21,
-   "tests": 5
+   "tests": 6,
+   "expects": 21
   },
   "tests/unit/ms70-70T-guard.spec.js": {
-   "expects": 9,
-   "tests": 6
+   "tests": 6,
+   "expects": 9
   },
   "tests/unit/ms70-assertion-counts.spec.js": {
-   "expects": 6,
-   "tests": 4
+   "tests": 8,
+   "expects": 14
   },
   "tests/unit/ms70-case-authority.spec.js": {
-   "expects": 55,
-   "tests": 11
+   "tests": 11,
+   "expects": 55
   },
   "tests/unit/ms70-declaration-dispositions.spec.js": {
-   "expects": 15,
-   "tests": 7
+   "tests": 7,
+   "expects": 15
   },
   "tests/unit/ms70-dependency-ratchet.spec.js": {
-   "expects": 25,
-   "tests": 14
+   "tests": 14,
+   "expects": 25
   },
   "tests/unit/ms70-e2e-global-inventory.spec.js": {
-   "expects": 8,
-   "tests": 4
+   "tests": 4,
+   "expects": 8
   },
   "tests/unit/ms70-fixture-inventory.spec.js": {
-   "expects": 4,
-   "tests": 2
-  },
-  "tests/unit/ms70-ledger-guard.spec.js": {
-   "expects": 15,
-   "tests": 8
+   "tests": 2,
+   "expects": 4
   },
   "tests/unit/ms70-monolith-deleted.spec.js": {
-   "expects": 11,
-   "tests": 7
+   "tests": 7,
+   "expects": 11
   },
   "tests/unit/ms70-state-seam.spec.js": {
-   "expects": 50,
-   "tests": 12
+   "tests": 12,
+   "expects": 50
   },
   "tests/unit/ms70-testing-adapter-design.spec.js": {
-   "expects": 18,
-   "tests": 6
+   "tests": 6,
+   "expects": 18
   },
   "tests/unit/native-dialog-guard.spec.js": {
-   "expects": 1,
-   "tests": 1
+   "tests": 1,
+   "expects": 1
   },
   "tests/unit/no-invented-answers.spec.js": {
-   "expects": 30,
-   "tests": 11
+   "tests": 11,
+   "expects": 30
   },
   "tests/unit/offline-access-preference.spec.js": {
-   "expects": 19,
-   "tests": 10
+   "tests": 10,
+   "expects": 19
   },
   "tests/unit/output-authorization.spec.js": {
-   "expects": 25,
-   "tests": 10
+   "tests": 10,
+   "expects": 25
   },
   "tests/unit/output-gate-inventory.spec.js": {
-   "expects": 24,
-   "tests": 4
+   "tests": 4,
+   "expects": 24
   },
   "tests/unit/output-preflight-typed.spec.js": {
-   "expects": 18,
-   "tests": 5
+   "tests": 5,
+   "expects": 18
   },
   "tests/unit/output-reasons.spec.js": {
-   "expects": 26,
-   "tests": 11
+   "tests": 11,
+   "expects": 26
   },
   "tests/unit/output-revision-wiring.spec.js": {
-   "expects": 18,
-   "tests": 10
+   "tests": 10,
+   "expects": 18
   },
   "tests/unit/part-xi-remuneration.spec.js": {
-   "expects": 23,
-   "tests": 11
+   "tests": 11,
+   "expects": 23
   },
   "tests/unit/party-resolver.spec.js": {
-   "expects": 165,
-   "tests": 26
+   "tests": 26,
+   "expects": 165
   },
   "tests/unit/pdf-address-format.spec.js": {
-   "expects": 4,
-   "tests": 3
+   "tests": 4,
+   "expects": 4
   },
   "tests/unit/pdf-cert-service-address.spec.js": {
-   "expects": 13,
-   "tests": 9
+   "tests": 9,
+   "expects": 13
   },
   "tests/unit/pdf-engine-notice-title.spec.js": {
-   "expects": 15,
-   "tests": 7
+   "tests": 7,
+   "expects": 15
   },
   "tests/unit/pdf-model-column-integrity.spec.js": {
-   "expects": 4,
-   "tests": 3
+   "tests": 3,
+   "expects": 4
   },
   "tests/unit/pdf-preview-print.spec.js": {
-   "expects": 7,
-   "tests": 3
+   "tests": 3,
+   "expects": 7
   },
   "tests/unit/percent-field.spec.js": {
-   "expects": 36,
-   "tests": 8
+   "tests": 12,
+   "expects": 36
   },
   "tests/unit/persistence-owners.spec.js": {
-   "expects": 19,
-   "tests": 5
+   "tests": 5,
+   "expects": 19
   },
   "tests/unit/plan-annual-benefits.spec.js": {
-   "expects": 7,
-   "tests": 3
+   "tests": 3,
+   "expects": 7
   },
   "tests/unit/plan-annual-parity.spec.js": {
-   "expects": 23,
-   "tests": 6
+   "tests": 7,
+   "expects": 23
   },
   "tests/unit/plan-annual-pdf-model.spec.js": {
-   "expects": 2,
-   "tests": 2
+   "tests": 2,
+   "expects": 2
   },
   "tests/unit/plan-annual-source-notes.spec.js": {
-   "expects": 4,
-   "tests": 3
+   "tests": 3,
+   "expects": 4
   },
   "tests/unit/plan-attorney-started.spec.js": {
-   "expects": 21,
-   "tests": 5
+   "tests": 7,
+   "expects": 21
   },
   "tests/unit/plan-certificate-of-service.spec.js": {
-   "expects": 66,
-   "tests": 14
+   "tests": 15,
+   "expects": 66
   },
   "tests/unit/plan-check-group.spec.js": {
-   "expects": 5,
-   "tests": 3
+   "tests": 3,
+   "expects": 5
   },
   "tests/unit/plan-co-guardian-pdf.spec.js": {
-   "expects": 8,
-   "tests": 4
+   "tests": 4,
+   "expects": 8
   },
   "tests/unit/plan-directive-cards.spec.js": {
-   "expects": 11,
-   "tests": 7
+   "tests": 7,
+   "expects": 11
   },
   "tests/unit/plan-initial-attorney.spec.js": {
-   "expects": 19,
-   "tests": 6
+   "tests": 6,
+   "expects": 19
   },
   "tests/unit/plan-initial-multiselect.spec.js": {
-   "expects": 31,
-   "tests": 6
+   "tests": 6,
+   "expects": 31
   },
   "tests/unit/plan-initial-parity.spec.js": {
-   "expects": 32,
-   "tests": 12
+   "tests": 13,
+   "expects": 32
   },
   "tests/unit/plan-minor-parity.spec.js": {
-   "expects": 23,
-   "tests": 6
+   "tests": 7,
+   "expects": 23
   },
   "tests/unit/plan-readiness-county.spec.js": {
-   "expects": 18,
-   "tests": 8
+   "tests": 8,
+   "expects": 18
   },
   "tests/unit/plan-simplified-certification-pages.spec.js": {
-   "expects": 12,
-   "tests": 4
+   "tests": 4,
+   "expects": 12
   },
   "tests/unit/plan-simplified-certification-schema.spec.js": {
-   "expects": 6,
-   "tests": 3
+   "tests": 3,
+   "expects": 6
   },
   "tests/unit/plan-simplified-filing-help.spec.js": {
-   "expects": 10,
-   "tests": 4
+   "tests": 4,
+   "expects": 10
   },
   "tests/unit/plan-simplified-parity.spec.js": {
-   "expects": 20,
-   "tests": 5
+   "tests": 6,
+   "expects": 20
   },
   "tests/unit/plan-started-row.spec.js": {
-   "expects": 20,
-   "tests": 15
+   "tests": 15,
+   "expects": 20
   },
   "tests/unit/plan-tristate.spec.js": {
-   "expects": 30,
-   "tests": 13
+   "tests": 13,
+   "expects": 30
   },
   "tests/unit/preparer-flag-validation.spec.js": {
-   "expects": 12,
-   "tests": 5
+   "tests": 5,
+   "expects": 12
   },
   "tests/unit/preparer-flag.spec.js": {
-   "expects": 43,
-   "tests": 15
+   "tests": 15,
+   "expects": 43
   },
   "tests/unit/preparer-note.spec.js": {
-   "expects": 11,
-   "tests": 3
+   "tests": 7,
+   "expects": 11
   },
   "tests/unit/preview-zoom.spec.js": {
-   "expects": 17,
-   "tests": 9
+   "tests": 9,
+   "expects": 17
   },
   "tests/unit/print-annotation-persistence.spec.js": {
-   "expects": 9,
-   "tests": 8
+   "tests": 8,
+   "expects": 9
   },
   "tests/unit/prune-cards.spec.js": {
-   "expects": 48,
-   "tests": 18
+   "tests": 18,
+   "expects": 48
   },
   "tests/unit/readiness-card.spec.js": {
-   "expects": 52,
-   "tests": 18
+   "tests": 18,
+   "expects": 52
   },
   "tests/unit/readiness-predicate-coverage.spec.js": {
-   "expects": 19,
-   "tests": 10
+   "tests": 10,
+   "expects": 19
   },
   "tests/unit/readiness-source-map.spec.js": {
-   "expects": 47,
-   "tests": 12
+   "tests": 12,
+   "expects": 47
   },
   "tests/unit/recovery-cache-last-position.spec.js": {
-   "expects": 9,
-   "tests": 7
+   "tests": 7,
+   "expects": 9
   },
   "tests/unit/removed-window-bridges.spec.js": {
-   "expects": 9,
-   "tests": 2
+   "tests": 3,
+   "expects": 9
   },
   "tests/unit/remuneration-declaration.spec.js": {
-   "expects": 22,
-   "tests": 11
+   "tests": 11,
+   "expects": 22
   },
   "tests/unit/router.spec.js": {
-   "expects": 7,
-   "tests": 3
+   "tests": 3,
+   "expects": 7
   },
   "tests/unit/rules-and-warnings.spec.js": {
-   "expects": 16,
-   "tests": 6
+   "tests": 6,
+   "expects": 16
   },
   "tests/unit/sanitize-keeps-stored-files.spec.js": {
-   "expects": 19,
-   "tests": 6
+   "tests": 6,
+   "expects": 19
   },
   "tests/unit/schedule-definitions.spec.js": {
-   "expects": 23,
-   "tests": 6
+   "tests": 6,
+   "expects": 23
   },
   "tests/unit/schedule-doc-ack.spec.js": {
-   "expects": 75,
-   "tests": 35
+   "tests": 37,
+   "expects": 75
   },
   "tests/unit/schedule-docs.spec.js": {
-   "expects": 1,
-   "tests": 1
+   "tests": 1,
+   "expects": 1
   },
   "tests/unit/schedule-labels.spec.js": {
-   "expects": 5,
-   "tests": 2
+   "tests": 2,
+   "expects": 5
   },
   "tests/unit/section-guidance-policy.spec.js": {
-   "expects": 54,
-   "tests": 24
+   "tests": 25,
+   "expects": 54
   },
   "tests/unit/section-status.spec.js": {
-   "expects": 11,
-   "tests": 4
+   "tests": 4,
+   "expects": 11
   },
   "tests/unit/security-source-audit.spec.js": {
-   "expects": 10,
-   "tests": 3
+   "tests": 3,
+   "expects": 10
   },
   "tests/unit/serve-portable-http.spec.js": {
-   "expects": 14,
-   "tests": 4
+   "tests": 4,
+   "expects": 14
   },
   "tests/unit/service-attestation-visibility.spec.js": {
-   "expects": 13,
-   "tests": 7
+   "tests": 7,
+   "expects": 13
   },
   "tests/unit/service-method.spec.js": {
-   "expects": 63,
-   "tests": 16
+   "tests": 20,
+   "expects": 63
   },
   "tests/unit/service-recipients.spec.js": {
-   "expects": 31,
-   "tests": 17
+   "tests": 18,
+   "expects": 31
   },
   "tests/unit/share-zero-paths.spec.js": {
-   "expects": 21,
-   "tests": 9
+   "tests": 9,
+   "expects": 21
   },
   "tests/unit/sheet-pruning.spec.js": {
-   "expects": 30,
-   "tests": 15
+   "tests": 16,
+   "expects": 30
   },
   "tests/unit/shell-surfaces.spec.js": {
-   "expects": 6,
-   "tests": 3
+   "tests": 3,
+   "expects": 6
   },
   "tests/unit/sidebar-export-parity.spec.js": {
-   "expects": 8,
-   "tests": 3
+   "tests": 3,
+   "expects": 8
   },
   "tests/unit/sign-advisories.spec.js": {
-   "expects": 45,
-   "tests": 15
+   "tests": 15,
+   "expects": 45
   },
   "tests/unit/signature-block-fields.spec.js": {
-   "expects": 12,
-   "tests": 10
+   "tests": 10,
+   "expects": 12
   },
   "tests/unit/signature-by-hand.spec.js": {
-   "expects": 56,
-   "tests": 18
+   "tests": 18,
+   "expects": 56
   },
   "tests/unit/signature-capture.spec.js": {
-   "expects": 47,
-   "tests": 27
+   "tests": 27,
+   "expects": 47
   },
   "tests/unit/signature-completeness.spec.js": {
-   "expects": 20,
-   "tests": 8
+   "tests": 8,
+   "expects": 20
   },
   "tests/unit/signature-stamp-history.spec.js": {
-   "expects": 26,
-   "tests": 11
+   "tests": 11,
+   "expects": 26
   },
   "tests/unit/signed-amount-keypad.spec.js": {
-   "expects": 9,
-   "tests": 4
+   "tests": 4,
+   "expects": 9
   },
   "tests/unit/simplified-no-blank-pages.spec.js": {
-   "expects": 5,
-   "tests": 4
+   "tests": 4,
+   "expects": 5
   },
   "tests/unit/skip-classification-audit.spec.js": {
-   "expects": 1,
-   "tests": 1
+   "tests": 8,
+   "expects": 18
   },
   "tests/unit/ssn-format.spec.js": {
-   "expects": 15,
-   "tests": 8
+   "tests": 8,
+   "expects": 15
   },
   "tests/unit/started-guardian.spec.js": {
-   "expects": 14,
-   "tests": 4
+   "tests": 4,
+   "expects": 14
   },
   "tests/unit/startup-flow.spec.js": {
-   "expects": 19,
-   "tests": 5
+   "tests": 5,
+   "expects": 19
   },
   "tests/unit/startup-import-graph.spec.js": {
-   "expects": 4,
-   "tests": 3
+   "tests": 3,
+   "expects": 4
   },
   "tests/unit/supplemental-pdf.spec.js": {
-   "expects": 23,
-   "tests": 13
+   "tests": 13,
+   "expects": 23
   },
   "tests/unit/tab-state.spec.js": {
-   "expects": 12,
-   "tests": 3
+   "tests": 3,
+   "expects": 12
   },
   "tests/unit/template-print-areas.spec.js": {
-   "expects": 6,
-   "tests": 3
+   "tests": 3,
+   "expects": 6
   },
   "tests/unit/test-index-guard.spec.js": {
-   "expects": 3,
-   "tests": 2
+   "tests": 8,
+   "expects": 15
   },
   "tests/unit/test-profile-runner.spec.js": {
-   "expects": 55,
-   "tests": 13
+   "tests": 18,
+   "expects": 66
+  },
+  "tests/unit/test-source-analysis.spec.js": {
+   "tests": 8,
+   "expects": 19
   },
   "tests/unit/testing-adapter.spec.js": {
-   "expects": 64,
-   "tests": 18
+   "tests": 18,
+   "expects": 64
   },
   "tests/unit/theme-persistence.spec.js": {
-   "expects": 43,
-   "tests": 20
+   "tests": 20,
+   "expects": 43
   },
   "tests/unit/transient-status.spec.js": {
-   "expects": 13,
-   "tests": 6
+   "tests": 6,
+   "expects": 13
   },
   "tests/unit/types-contract.spec.js": {
-   "expects": 12,
-   "tests": 1
+   "tests": 1,
+   "expects": 12
   },
   "tests/unit/ucn-header.spec.js": {
-   "expects": 26,
-   "tests": 12
+   "tests": 12,
+   "expects": 26
   },
   "tests/unit/ucn-reminder.spec.js": {
-   "expects": 29,
-   "tests": 8
+   "tests": 8,
+   "expects": 29
   },
   "tests/unit/unticked-boxes-keep-text.spec.js": {
-   "expects": 15,
-   "tests": 5
+   "tests": 5,
+   "expects": 15
   },
   "tests/unit/user-guide-drift-guard.spec.js": {
-   "expects": 8,
-   "tests": 3
+   "tests": 5,
+   "expects": 8
   },
   "tests/unit/validation-adapter.spec.js": {
-   "expects": 21,
-   "tests": 7
+   "tests": 7,
+   "expects": 21
   },
   "tests/unit/validation-issue.spec.js": {
-   "expects": 31,
-   "tests": 9
+   "tests": 9,
+   "expects": 31
   },
   "tests/unit/validator-engines.spec.js": {
-   "expects": 32,
-   "tests": 6
+   "tests": 6,
+   "expects": 32
   },
   "tests/unit/vehicle-checks.spec.js": {
-   "expects": 9,
-   "tests": 3
+   "tests": 3,
+   "expects": 9
   },
   "tests/unit/waiver-advocate-hint.spec.js": {
-   "expects": 16,
-   "tests": 7
+   "tests": 7,
+   "expects": 16
   },
   "tests/unit/ward-carryover.spec.js": {
-   "expects": 93,
-   "tests": 23
+   "tests": 23,
+   "expects": 93
   },
   "tests/unit/ward-lock.spec.js": {
-   "expects": 27,
-   "tests": 10
+   "tests": 10,
+   "expects": 27
   },
   "tests/unit/ward-share-advisories.spec.js": {
-   "expects": 8,
-   "tests": 2
+   "tests": 2,
+   "expects": 8
   },
   "tests/unit/window-bridge.spec.js": {
-   "expects": 11,
-   "tests": 6
+   "tests": 7,
+   "expects": 11
   },
   "tests/unit/workbook-contract.spec.js": {
-   "expects": 125,
-   "tests": 46
+   "tests": 46,
+   "expects": 125
   },
   "tests/unit/workbook-recalc-on-open.spec.js": {
-   "expects": 3,
-   "tests": 1
+   "tests": 1,
+   "expects": 3
   },
   "tests/unit/xlsx-extract.spec.js": {
-   "expects": 22,
-   "tests": 4
+   "tests": 4,
+   "expects": 22
   },
   "tests/unit/yes-no-radio-migration.spec.js": {
-   "expects": 14,
-   "tests": 3
+   "tests": 3,
+   "expects": 14
   }
  },
  "dropLog": [
@@ -2104,6 +2104,22 @@
    "was": 23,
    "now": 19,
    "reason": "TEST-REVIEW.md Delivery 1M (2026-10-13): browser cases whose proof moved to tests/unit or to one sibling case were cut; see TEST-INDEX.md's rows",
+   "date": "2026-10-14"
+  },
+  {
+   "file": "tests/e2e/pre-merge-output.characterization.spec.ts",
+   "kind": "file",
+   "was": 15,
+   "now": 0,
+   "reason": "TEST-REVIEW.md Delivery 2 (T6, 2026-10-14): the pre-merge output comparison moved from tests/e2e to tests/historical, where only playwright.historical.config.ts finds it",
+   "date": "2026-10-14"
+  },
+  {
+   "file": "tests/unit/ms70-ledger-guard.spec.js",
+   "kind": "file",
+   "was": 15,
+   "now": 0,
+   "reason": "TEST-REVIEW.md Delivery 2 (T6, 2026-10-14): the pre-merge output comparison moved from tests/e2e to tests/historical, where only playwright.historical.config.ts finds it",
    "date": "2026-10-14"
   }
  ]

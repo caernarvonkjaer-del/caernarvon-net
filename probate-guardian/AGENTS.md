@@ -419,6 +419,27 @@ Tier 3  Declarative Form Composition (pages assemble sequences of cards)
 
 - **`TEST-INDEX.md` sync is mandatory, same commit**: any test file add/delete/rename/repurpose/rescope updates its row. `tests/unit/test-index-guard.spec.js` enforces this mechanically — it fails on a spec with zero rows, more than one row, or a row naming a file that no longer exists.
 - **Red-first verification** (§2) is the required proof standard for any test claiming to catch a regression — a green test alone is not evidence.
+- **The guards read the suite, not its basenames** (TEST-REVIEW.md Delivery 2,
+  2026-10-14). `tests/unit/test-index-guard.spec.js` discovers specs
+  recursively under `tests/unit`, `tests/e2e` and `tests/historical`, compares
+  paths (a nested spec is listed under its root folder's heading with the path
+  below it), and checks every spec the index's category tables and lite-subset
+  commands name. `tests/unit/skip-classification-audit.spec.js` reads every
+  test file's syntax tree: no `skip`, `only`, `fixme` or `todo` on `test`, `it`
+  or `describe` outside the three helpers in
+  `tests/e2e/support/target-profile.ts`; anything disabling-looking outside its
+  grammar is a review item, not a pass; and every `skipTemporaryGap()` names
+  an existing proposal, an owner and a date not yet past -- the helper makes
+  the same check at run time and fails the test rather than skipping it.
+  `scripts/ms70-assertion-counts.mjs` holds test declarations to the same rule
+  as assertions (a loop counts once; a reason is recorded for either drop).
+  All three share `scripts/test-source-analysis.mjs` -- discovery, the
+  TypeScript transform with its source map applied back, the call grammar --
+  and nothing else; `forbidOnly` in `playwright.config.ts` is the runtime
+  backstop. Comparisons against an older build live in `tests/historical`,
+  found only by `playwright.historical.config.ts` (`npm run
+  test:e2e:historical`); the Milestone 70 ledger guard is retired
+  (`MILESTONE-70-FIX-LEDGER.md` stays as a record).
 
 ---
 

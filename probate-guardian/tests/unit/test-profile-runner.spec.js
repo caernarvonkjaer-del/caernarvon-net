@@ -242,3 +242,34 @@ describe('the extra-browser legs run their tagged cases', () => {
     expect((await listed(EDGE_SMOKE_TAG)).length).toBe(6);
   }, 180_000);
 });
+
+// TEST-REVIEW.md Delivery 2 (T6): the historical comparisons are a profile
+// of their own, found by their own config and by nothing the everyday or
+// release commands run.
+describe('the historical profile runs by its own config and is outside the release', () => {
+  const list = async (args) => {
+    let out = '';
+    await run('npx', ['playwright', 'test', ...args, '--list'], { ...process.env, PG_TARGET: 'source', PG_BROWSER: 'chromium' }, { onOutput: (text) => { out += text; } });
+    return out.split('\n').filter((line) => line.includes('›')).map((line) => line.trim());
+  };
+
+  test('historical names playwright.historical.config.ts, waits for no server, and is not in the release list', async () => {
+    expect(playwrightArgs(PROFILES.historical).slice(0, 3)).toEqual(['playwright', 'test', '--config=playwright.historical.config.ts']);
+    expect(PROFILES.historical.server).toBe(false);
+    expect(RELEASE_PROFILES).not.toContain('historical');
+    const { spawn, calls } = fakeSpawn();
+    await runProfile('historical', { spawn, env: polluted, log: quiet, checkPort: async () => { throw new Error('must not probe a port'); } });
+    expect(calls.map((c) => c.args.slice(0, 3))).toEqual([['playwright', 'test', '--config=playwright.historical.config.ts']]);
+    const failing = fakeSpawn(2);
+    await expect(runProfile('historical', { spawn: failing.spawn, env: polluted, log: quiet })).rejects.toMatchObject({ exitCode: 2 });
+  });
+
+  test('the historical config finds the pre-merge comparison and the base config does not', async () => {
+    const historical = await list(['--config=playwright.historical.config.ts']);
+    expect(historical.length).toBeGreaterThan(0);
+    expect(historical.every((line) => line.includes('pre-merge-output.characterization.spec.ts'))).toBe(true);
+    const everyday = await list(['tests/e2e/startup.spec.ts', 'tests/historical']);
+    expect(everyday.some((line) => line.includes('pre-merge-output'))).toBe(false);
+    expect(everyday.some((line) => line.includes('startup.spec.ts'))).toBe(true);
+  }, 180_000);
+});

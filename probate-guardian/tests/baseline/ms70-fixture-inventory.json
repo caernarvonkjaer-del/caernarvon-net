@@ -2,8 +2,8 @@
  "generatedBy": "node scripts/ms70-fixture-inventory.mjs --write",
  "note": "Milestone 70, 70A: every export of the browser test support layer, which specs use it, and which are fixture factories that must change with the application factories 70C moves (AGENTS.md section 8.3). Informational.",
  "summary": {
-  "supportModules": 17,
-  "exports": 101,
+  "supportModules": 18,
+  "exports": 104,
   "factories": 16,
   "unusedExports": [
    "case-file-shape.contract.ts::validParty",
@@ -28,6 +28,9 @@
    "target.ts::createWardViaDialog",
    "target.ts::readDynDialogMessage",
    "target.ts::fillDynPrompt",
+   "temporary-gap.ts::PROPOSAL_PATTERN",
+   "temporary-gap.ts::temporaryGapProblem",
+   "temporary-gap.ts::isoToday",
    "window-api.ts::testing",
    "workbook-vs-template.ts::excel",
    "workbook-vs-template.ts::formulaAfterPruning"
@@ -56,7 +59,7 @@
    "module": "tests/e2e/support/app-driver.ts",
    "name": "currentBuild",
    "kind": "value",
-   "specFiles": 3,
+   "specFiles": 2,
    "factory": false
   },
   {
@@ -273,7 +276,7 @@
    "module": "tests/e2e/support/pdf-extract.ts",
    "name": "extractPdfTextRuns",
    "kind": "function",
-   "specFiles": 6,
+   "specFiles": 5,
    "factory": false
   },
   {
@@ -294,7 +297,7 @@
    "module": "tests/e2e/support/pdf-extract.ts",
    "name": "getPdfMetadata",
    "kind": "function",
-   "specFiles": 2,
+   "specFiles": 1,
    "factory": false
   },
   {
@@ -315,21 +318,21 @@
    "module": "tests/e2e/support/pre-70-build.ts",
    "name": "pre70Build",
    "kind": "value",
-   "specFiles": 3,
+   "specFiles": 2,
    "factory": false
   },
   {
    "module": "tests/e2e/support/pre-merge-case.ts",
    "name": "PREMERGE_SHA",
    "kind": "value",
-   "specFiles": 2,
+   "specFiles": 1,
    "factory": false
   },
   {
    "module": "tests/e2e/support/pre-merge-case.ts",
    "name": "COMPLETE_CASE",
    "kind": "value",
-   "specFiles": 2,
+   "specFiles": 1,
    "factory": false
   },
   {
@@ -343,7 +346,7 @@
    "module": "tests/e2e/support/pre-merge-case.ts",
    "name": "saveCompleteCase",
    "kind": "function",
-   "specFiles": 2,
+   "specFiles": 1,
    "factory": false
   },
   {
@@ -385,7 +388,7 @@
    "module": "tests/e2e/support/target-profile.ts",
    "name": "skipExpectedTargetExclusion",
    "kind": "function",
-   "specFiles": 6,
+   "specFiles": 5,
    "factory": false
   },
   {
@@ -420,7 +423,7 @@
    "module": "tests/e2e/support/target.ts",
    "name": "enableTestMode",
    "kind": "function",
-   "specFiles": 3,
+   "specFiles": 2,
    "factory": false
   },
   {
@@ -644,7 +647,7 @@
    "module": "tests/e2e/support/target.ts",
    "name": "clickExport",
    "kind": "function",
-   "specFiles": 36,
+   "specFiles": 35,
    "factory": false
   },
   {
@@ -666,6 +669,27 @@
    "name": "dismissScheduleDocPrompt",
    "kind": "function",
    "specFiles": 32,
+   "factory": false
+  },
+  {
+   "module": "tests/e2e/support/temporary-gap.ts",
+   "name": "PROPOSAL_PATTERN",
+   "kind": "value",
+   "specFiles": 0,
+   "factory": false
+  },
+  {
+   "module": "tests/e2e/support/temporary-gap.ts",
+   "name": "temporaryGapProblem",
+   "kind": "function",
+   "specFiles": 0,
+   "factory": false
+  },
+  {
+   "module": "tests/e2e/support/temporary-gap.ts",
+   "name": "isoToday",
+   "kind": "function",
+   "specFiles": 0,
    "factory": false
   },
   {

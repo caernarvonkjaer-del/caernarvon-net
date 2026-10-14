@@ -126,7 +126,6 @@
   "tests/e2e/plan-simplified-mount.spec.ts",
   "tests/e2e/plan-started-row.spec.ts",
   "tests/e2e/portable-http-parity.spec.ts",
-  "tests/e2e/pre-merge-output.characterization.spec.ts",
   "tests/e2e/preparer-flag.spec.ts",
   "tests/e2e/preparer-note-placement.spec.ts",
   "tests/e2e/plan-annual-benefits.spec.ts",
@@ -188,6 +187,7 @@
   "tests/e2e/support/window-api.ts",
   "tests/e2e/support/workbook-vs-template.ts",
   "tests/e2e/support/xlsx-extract.ts",
+  "tests/e2e/support/temporary-gap.ts",
   "tests/e2e/tab-and-update.spec.ts",
   "tests/e2e/terms-acceptance.spec.ts",
   "tests/e2e/test-system-title-prefix.spec.ts",
@@ -200,15 +200,15 @@
   "tests/e2e/vendor-loader-retry.spec.ts",
   "tests/e2e/verified-inventory-workflow.spec.ts",
   "tests/e2e/ward-lock.spec.ts",
-  "tests/e2e/year-rollover.characterization.spec.ts"
+  "tests/e2e/year-rollover.characterization.spec.ts",
+  "tests/historical/pre-merge-output.characterization.spec.ts"
  ],
  "exempt": [
   {
    "file": "tests/e2e/support/pre-70-build.ts",
-   "why": "Drives a Guardian Forms build from before Milestone 70, which has no GuardianForms namespace, through that build's own window globals: the mixed-version characterization runs such a build beside this tree on purpose, and the merge gate's rollback test and output comparison open this tree's case file in the pre-merge build. Used by those three alone; removed once production runs a post-70 build.",
+   "why": "Drives a Guardian Forms build from before Milestone 70, which has no GuardianForms namespace, through that build's own window globals: the mixed-version characterization runs such a build beside this tree on purpose, and the merge gate's rollback test and output comparison open this tree's case file in the pre-merge build. Used by those three alone (the output comparison lives in tests/historical since TEST-REVIEW.md Delivery 2 and is not walked here); removed once production runs a post-70 build.",
    "usedBy": [
     "tests/e2e/mixed-version.characterization.spec.ts",
-    "tests/e2e/pre-merge-output.characterization.spec.ts",
     "tests/e2e/rollback.contract.spec.ts"
    ]
   }

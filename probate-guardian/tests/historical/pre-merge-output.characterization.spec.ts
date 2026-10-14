@@ -1,5 +1,4 @@
 import { test, expect, type Browser, type Page } from '@playwright/test';
-import { skipExpectedTargetExclusion } from './support/target-profile';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -7,11 +6,11 @@ import { fileURLToPath } from 'node:url';
 import { extract } from '../../scripts/ms70-sav-corpus.mjs';
 // @ts-ignore -- plain .mjs tooling, no types
 import { startServer } from '../../scripts/serve-portable-http.mjs';
-import { enableTestMode, clickExport } from './support/target';
-import { currentBuild, type AppDriver } from './support/app-driver';
-import { pre70Build } from './support/pre-70-build';
-import { COMPLETE_CASE, PREMERGE_SHA, saveCompleteCase } from './support/pre-merge-case';
-import { extractPdfTextRuns, getPdfMetadata } from './support/pdf-extract';
+import { enableTestMode, clickExport } from '../e2e/support/target';
+import { currentBuild, type AppDriver } from '../e2e/support/app-driver';
+import { pre70Build } from '../e2e/support/pre-70-build';
+import { COMPLETE_CASE, PREMERGE_SHA, saveCompleteCase } from '../e2e/support/pre-merge-case';
+import { extractPdfTextRuns, getPdfMetadata } from '../e2e/support/pdf-extract';
 
 // Milestone 70, the merge gate's output comparison (MILESTONE-70-PROPOSAL.md,
 // "Reconstitution and merge", step 4: "for each filing type, the generated PDF
@@ -49,11 +48,16 @@ test.describe.configure({ mode: 'serial' });
 // only for that migration. Milestones 71 and 72 change court output on purpose
 // (72A's Inventory and Annual workbook boxes, 72C's guardian emails on the
 // Inventory PDF, 72D, 72G and 72H's certificates), each pinned by its own
-// tests, so against the pre-70 build it can only fail -- and, being serial,
-// its first failure stopped the other eight forms from running at all. It now
-// runs when a merge gate pins the build to compare against on purpose:
-// PG_PREMERGE_SHA=<sha> (support/pre-merge-case.ts).
-skipExpectedTargetExclusion(!process.env.PG_PREMERGE_SHA, 'a merge-gate comparison, run only with PG_PREMERGE_SHA set to the build to compare against');
+// tests, so against the pre-70 build it can only fail. It runs when a merge
+// gate pins the build to compare against on purpose: PG_PREMERGE_SHA=<sha>
+// (../e2e/support/pre-merge-case.ts).
+//
+// TEST-REVIEW.md Delivery 2 (T6, 2026-10-14): until then it sat in tests/e2e
+// behind a skip classified as an expected target exclusion, which it was not
+// -- a missing input is not a target's missing capability -- and every run
+// reported its nine cases as skipped. It lives here now, found only by
+// playwright.historical.config.ts (the runner's `historical` profile), so
+// nothing in `npm test` or the release's `all` sees it, and nothing skips.
 
 let server: any;
 let caseFile = '';
