@@ -29,8 +29,9 @@ const CONTINUE = 'Continue despite outstanding requirements';
 const FORMS: Array<{ label: string; create: (page: Page, name: string) => Promise<void>; pdf: string; excel: string | null }> = [
   { label: 'Initial Inventory', create: (page, name) => createWard(page, name, 'guardian'), pdf: '[data-inventory-action="save-pdf"]', excel: '[data-inventory-action="save-excel"]' },
   { label: 'Annual Accounting', create: (page, name) => createWard(page, name, 'annual'), pdf: '[data-annual-action="save-pdf"]', excel: '[data-annual-action="save-excel"]' },
-  { label: 'Final Accounting', create: (page, name) => createWard(page, name, 'finalAccounting'), pdf: '[data-annual-action="save-pdf"]', excel: '[data-annual-action="save-excel"]' },
-  { label: 'Trust Accounting', create: (page, name) => createWard(page, name, 'trustAccounting'), pdf: '[data-annual-action="save-pdf"]', excel: '[data-annual-action="save-excel"]' },
+  // The Final and Trust Accountings share the Annual's print.js, buttons and
+  // reason line (74C's defect was per-form selectors); they ran every case
+  // here until Delivery 1M (2026-10-13).
   { label: 'Simplified Accounting', create: (page, name) => createSimplifiedWard(page, name), pdf: '[data-simplified-action="save-pdf"]', excel: '[data-simplified-action="save-excel"]' },
   { label: 'Annual Plan', create: (page, name) => createWard(page, name, 'planAnnual'), pdf: '[data-form-action="save-pdf-plan-annual"]', excel: null },
   { label: 'Initial Plan', create: (page, name) => createWard(page, name, 'planInitial'), pdf: '[data-form-action="save-pdf-plan-initial"]', excel: null },
@@ -49,7 +50,7 @@ async function openEmptyPreview(page: Page, form: (typeof FORMS)[number]) {
 
 async function choose(page: Page) {
   await page.locator(OVERRIDE).click();
-  await acceptDynDialog(page);
+  return acceptDynDialog(page);
 }
 
 for (const form of FORMS) {
@@ -59,10 +60,34 @@ for (const form of FORMS) {
     // The QA report's case. Red-first: before 74C the Simplified Annual
     // Plan's button stayed disabled after Continue, so the click never came;
     // the other eight forms passed both ways.
-    test('after "Continue despite outstanding requirements", Save as PDF downloads the PDF', async ({ page }) => {
+    // Until TEST-REVIEW.md Delivery 1M (2026-10-13) pdf-preview-viewer.spec.ts
+    // opened the same empty Preview per type for the blocked panel, the
+    // override's confirm and the banner after it; one visit carries both.
+    test('the empty filing\'s preview is blocked, not silently rendered; after "Continue despite outstanding requirements" it renders under the banner, and Save as PDF downloads the PDF', async ({ page }) => {
       test.setTimeout(240_000);
       await openEmptyPreview(page, form);
-      await choose(page);
+      const blocked = page.locator('#print-doc-container .pdf-preview-blocked');
+      await expect(blocked).toContainText('Preview blocked');
+      // The list is behind a disclosure rather than printed as one paragraph.
+      await expect(blocked.locator('.pdf-preview-blocked-summary')).toContainText(/\d+ required items? still missing/);
+      await expect(blocked.locator('.pdf-preview-blocked-list')).not.toBeVisible();
+      await expect(page.locator('#print-doc-container .pdf-page')).toHaveCount(0);
+
+      // The override renders the draft and says so; it does not lift the gate.
+      // Milestone 38D (b0321dd) made the override an affirmative act: it asks
+      // via confirmModal() first, and a dismissed dialog renders nothing --
+      // accept it, and assert it was asked, since the confirm IS the guarantee.
+      expect(await choose(page)).toContain('Requirements remain outstanding');
+      await page.locator('#print-doc-container .pdf-page').first().waitFor({ state: 'visible', timeout: 15000 });
+      // 38D's replacement guarantee (AGENTS.md section 4): after an affirmative
+      // override the output renders faithfully -- no draft watermark -- and
+      // the validation issues stay visible in the UI. The print page's own
+      // banner is that UI; it must survive the override. Every print page
+      // also renders the shared readiness card, which reuses the
+      // .validation-title class -- filter to the export-blocker banner itself.
+      const banner = page.locator('#main-content .validation-panel .validation-title').filter({ hasText: /required field/ }).first();
+      await expect(banner).toBeVisible();
+      await expect(blocked).toHaveCount(0);
       const pdf = await clickExport(page.locator(PDF), 120_000);
       expect(pdf.suggestedFilename()).toMatch(/\.pdf$/i);
       expect((await readAll(await pdf.createReadStream())).subarray(0, 5).toString('latin1')).toBe('%PDF-');

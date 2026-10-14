@@ -243,60 +243,10 @@ test.describe('Milestone 18: Multi-Ward Backup & Save Controls Restore', { tag: 
     }
   });
 
-  test('Open Backup merges a case file that happens to contain just one ward', async ({ browser }) => {
-    // Under the unified case-file model there is no separate "single-ward"
-    // file shape to special-case -- a case file with one ward (e.g. from
-    // Save Data File) and one with many (Backup All Wards) are the exact
-    // same manifest format, so Open Backup treats them identically.
-    const context1 = await browser.newContext();
-    let singleWardPath = '';
-    try {
-      const page = await context1.newPage();
-      await gotoApp(page);
-      await startNewCase(page);
-      await chooseNoPassword(page);
-      await createWard(page, 'Single Ward Solo');
-
-      await ensureSaveControlsOpen(page);
-      const saveWardBtn = page.locator('button[data-shell-action="backup-all-wards"]');
-      const res = await captureDownload(page, async () => {
-        await saveWardBtn.click();
-      });
-      singleWardPath = res.path;
-    } finally {
-      await context1.close();
-    }
-
-    const context2 = await browser.newContext();
-    try {
-      const page = await context2.newPage();
-      await gotoApp(page);
-      await startNewCase(page);
-      await chooseNoPassword(page);
-      await createWard(page, 'Host Ward');
-
-      const dialogs = autoAcceptDynDialogs(page);
-
-      await page.setInputFiles('#backup-import-input', singleWardPath);
-      // pg:backup-restored fires before the completion alert(), so waiting on
-      // it risks checking dialogs.messages before the 2nd dialog is recorded --
-      // poll the exact value under test instead.
-      await expect.poll(() => dialogs.messages.length).toBe(2);
-      dialogs.stop();
-
-      // One confirmation dialog, then the completion alert -- same flow as
-      // restoring a many-ward backup, just with "1 ward(s)".
-      expect(dialogs.messages[0]).toContain('Restore backup containing 1 ward(s)');
-      expect(dialogs.messages[1]).toContain('Backup restored');
-
-      // Both the pre-existing host ward and the merged one are present.
-      const wardNames = await page.evaluate(() => (window as any).GuardianForms.testing.snapshot().caseFile.wards.map((w: any) => w.wardName));
-      expect(wardNames).toContain('Host Ward');
-      expect(wardNames).toContain('Single Ward Solo');
-    } finally {
-      await context2.close();
-    }
-  });
+  // 'Open Backup merges a case file that happens to contain just one ward'
+  // ran here until TEST-REVIEW.md Delivery 1M (2026-10-13): its own note
+  // said a one-ward file is the same manifest and flow as the multi-ward
+  // restore above.
 
   // Milestone 38C renamed the hazard rather than removing it. Restore no longer
   // rebinds window.D to the restored ward, because it no longer opens any ward
@@ -389,95 +339,10 @@ test.describe('Milestone 18: Multi-Ward Backup & Save Controls Restore', { tag: 
     }
   });
 
-  // Milestone 38C: restore itself no longer calls switchWard/activateWard, so
-  // contention is no longer reached by restoring -- it is reached when the user
-  // explicitly opens the ward afterwards. The lock behaviour under contention
-  // is the part worth covering and is unchanged.
-  test('after Open Backup, explicitly opening a ward respects cross-tab lock contention', async ({ browser }) => {
-    // Same exclusion ward-lock.spec.ts's own describe-level guard already
-    // documents: src/core/ward-lock.js explicitly bypasses the Web Locks API
-    // on file:// origins, which is how the portable target is served.
-    skipExpectedTargetExclusion(currentTarget === 'portable', 'Web Locks API is bypassed on file:// protocol (src/core/ward-lock.js), which is how the portable target is served');
-    const context = await browser.newContext();
-    try {
-      const tab1 = await context.newPage();
-      await gotoApp(tab1);
-      await startNewCase(tab1);
-      await chooseNoPassword(tab1);
-      await createWard(tab1, 'Lock Contention Ward');
-
-      const targetWardId = await tab1.evaluate(() => (window as any).GuardianForms.testing.snapshot().caseFile.activeWardId);
-      expect(targetWardId).toBeTruthy();
-
-      await ensureSaveControlsOpen(tab1);
-
-      // Export backup containing this ward
-      const res = await captureDownload(tab1, async () => {
-        await tab1.click('button[data-shell-action="backup-all-wards"]');
-      });
-      const backupPath = res.path;
-
-      // Verify Tab 1 holds the lock
-      const tab1Locks = await tab1.evaluate(async () => (await navigator.locks.query()).held?.map(l => l.name) || []);
-      expect(tab1Locks).toContain(`pg-ward-${targetWardId}`);
-
-      // Tab 1's ward creation autosaved a session-restore snapshot to their
-      // shared (same-origin) pg-session-cache IndexedDB database, since the
-      // File System Access API's real handle-based export (the one branch
-      // that clears it) is force-disabled for every test target -- left in
-      // place, Tab 2's own boot would find it and show a "restore previous
-      // session?" confirmModal() before it ever reaches the startup-choice
-      // screen startNewCase() expects, well before this test's own dialog
-      // watcher is armed for what it actually came here to test. A real
-      // successful Save-As clears this same cache (see exportCaseFileZip()),
-      // so this is exactly that cleanup, done explicitly since the fallback
-      // download path this suite exercises doesn't get to do it itself.
-      await tab1.evaluate(async () => {
-        await (window as any).GuardianForms.testing.recoveryCache.clear();
-        (window as any).GuardianForms.testing.save.markClean();
-      });
-
-      // Now open Tab 2 in the same browser context (shares that same
-      // IndexedDB, hence the cleanup above, and the Web Locks API manager
-      // this test is actually about).
-      const tab2 = await context.newPage();
-      await gotoApp(tab2);
-      await startNewCase(tab2);
-      await chooseNoPassword(tab2);
-      // Tab 2 starts fresh with no existing wards
-
-      const tab2Dialogs = autoAcceptDynDialogs(tab2);
-
-      // Restore the backup in Tab 2. This loads the ward but opens nothing.
-      await tab2.setInputFiles('#backup-import-input', backupPath);
-      await tab2.waitForFunction(() => ((window as any).GuardianForms.testing.snapshot().caseFile?.wards || []).length >= 1, { timeout: 10_000 });
-      expect(await tab2.evaluate(() => (window as any).GuardianForms.testing.snapshot().caseFile.activeWardId)).toBe(null);
-      // Two dialogs (restore confirm, then the trailing completion alert)
-      // -- wait for both before proceeding, same reasoning as the other
-      // restore flows above.
-      await expect.poll(() => tab2Dialogs.messages.length).toBe(2);
-      tab2Dialogs.stop();
-
-      // The user then chooses Edit, which is where contention now surfaces.
-      await tab2.evaluate((id) => (window as any).GuardianForms.testing.activateFiling.open(id), targetWardId);
-
-      // switchWard -> activateWard hit contention and triggered ward locked modal on Tab 2.
-      // expect(...).toBeVisible() already auto-retries precisely on this element;
-      // a fixed wait beforehand would be pure redundancy on top of it.
-      const lockedModal = tab2.locator('#ward-locked-overlay');
-      await expect(lockedModal).toBeVisible();
-
-      // Tab 2 must not hold the lock on targetWardId
-      const tab2HeldId = await tab2.evaluate(() => (window as any).GuardianForms.testing.persistenceState.lockedFilingId());
-      expect(tab2HeldId).toBe(null);
-
-      // Tab 1 must still hold the lock on targetWardId
-      const tab1HeldId = await tab1.evaluate(() => (window as any).GuardianForms.testing.persistenceState.lockedFilingId());
-      expect(tab1HeldId).toBe(targetWardId);
-    } finally {
-      await context.close();
-    }
-  });
+  // 'after Open Backup, explicitly opening a ward respects cross-tab lock
+  // contention' ran here until TEST-REVIEW.md Delivery 1M (2026-10-13):
+  // its own note said contention is reached on the explicit open and
+  // unchanged by the restore, and ward-lock.spec.ts proves that handover.
 
   // Milestone 41B, Step 6: the one real behavioral change introduced by
   // re-pointing Save Backup at saveBackupNow() -- a second click, once a

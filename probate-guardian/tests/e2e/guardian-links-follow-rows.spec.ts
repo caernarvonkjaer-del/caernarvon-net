@@ -46,37 +46,12 @@ async function importWorkbook(page: Page, bytes: Buffer) {
   await page.waitForTimeout(300);
 }
 
-test('a Plan: dropping a blank co-guardian keeps the next guardian on its own shared record', async ({ page }) => {
-  test.setTimeout(120_000);
-  const errors = watchErrors(page);
-  await freshStartNoPassword(page);
-  await createWard(page, 'Links Plan', 'planAnnual');
-  await patch(page, {
-    planGuardians: [{ name: 'Ann First', phone: '(727) 555-0101' }, { name: '' }, { name: 'Carol Third', phone: '(727) 555-0103' }],
-    guardianPartyIds: ['party-ann', 'party-blank', 'party-carol'],
-  });
-  await go(page, '/p11'); // leaving the Cover runs the clean-up; the Signatures page draws what is left
-  expect((await field(page, 'planGuardians')).map((g: any) => g.name)).toEqual(['Ann First', 'Carol Third']);
-  expect(await field(page, 'guardianPartyIds')).toEqual(['party-ann', 'party-carol']);
-  expect(errors).toEqual([]);
-});
-
-test('the Inventory D-1: dropping a co-guardian with no details keeps the next guardian on its own shared record', async ({ page }) => {
-  test.setTimeout(120_000);
-  const errors = watchErrors(page);
-  await freshStartNoPassword(page);
-  await createWard(page, 'Links Inventory', 'guardian');
-  await patch(page, {
-    // A card with only a signature choice: no name or details, so D-1's own
-    // rule -- which the clean-up on leaving a page uses since 73C -- drops it.
-    guardians: [{ name: 'Ann First', phone: '(727) 555-0101' }, { name: '', signatureState: 'none' }, { name: 'Carol Third', phone: '(727) 555-0103' }],
-    guardianPartyIds: ['party-ann', 'party-blank', 'party-carol'],
-  });
-  await go(page, '/d1');
-  expect((await field(page, 'guardians')).map((g: any) => g.name)).toEqual(['Ann First', 'Carol Third']);
-  expect(await field(page, 'guardianPartyIds')).toEqual(['party-ann', 'party-carol']);
-  expect(errors).toEqual([]);
-});
+// 'a Plan: dropping a blank co-guardian keeps the next guardian on its own
+// shared record' and 'the Inventory D-1: dropping a co-guardian with no
+// details keeps the next guardian on its own shared record' ran here until
+// TEST-REVIEW.md Delivery 1M (2026-10-13): both drove the testing interface
+// alone, and tests/unit/prune-cards.spec.js pins that a dropped blank card
+// takes its own link with it and no other.
 
 test("the Annual's Excel import: an empty middle slot no longer moves slot 3's guardian onto slot 2's shared record", async ({ page }) => {
   test.setTimeout(240_000);
@@ -103,31 +78,11 @@ test("the Annual's Excel import: an empty middle slot no longer moves slot 3's g
   expect(errors).toEqual([]);
 });
 
-// Milestone 74B: a co-guardian holding only a stamp is started. The workbook
-// has no box for a stamp, so its slot goes out empty and the import carries
-// the stamp back from the filing (import-keep.js); the old rule then dropped
-// the card, stamp and link, because it did not count a stamp.
-test("the Annual's Excel import: a co-guardian holding only a stamp keeps its place, its stamp and its shared record", async ({ page }) => {
-  test.setTimeout(240_000);
-  const errors = watchErrors(page);
-  await freshStartNoPassword(page);
-  await createWard(page, 'Links Annual Stamp', 'annual');
-  await fillMinimalValidAnnualWard(page);
-  const first = (await field(page, 'guardians'))[0];
-  const stamp = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAAAAonXk=';
-  await patch(page, {
-    guardians: [first, { name: '', signatureState: 'stamp', signatureImage: stamp }, { name: 'Carol Third', phone: '(727) 555-0103', mailingStreet: '3 Third St', mailingCityStateZip: 'Clearwater, FL 33755' }],
-    guardianPartyIds: ['party-first', 'party-stamp', 'party-carol'],
-  });
-  const { bytes } = await exportWithWrites(page, 'annual');
-  expect((await field(page, 'guardians')).length, 'the filing still has three guardian rows when it is exported').toBe(3);
-  await importWorkbook(page, bytes);
-  const after = await field(page, 'guardians');
-  expect(after.map((g: any) => g.name)).toEqual([first.name, '', 'Carol Third']);
-  expect(after[1].signatureImage, 'the stamp stays').toBe(stamp);
-  expect(await field(page, 'guardianPartyIds')).toEqual(['party-first', 'party-stamp', 'party-carol']);
-  expect(errors).toEqual([]);
-});
+// "the Annual's Excel import: a co-guardian holding only a stamp keeps its
+// place, its stamp and its shared record" ran here until TEST-REVIEW.md
+// Delivery 1M (2026-10-13): tests/unit/workbook-contract.spec.js's Annual
+// guardian rows pin a stamp-only slot's place on the Clerk's template; the
+// two real-Import cases above and below keep the control itself under test.
 
 test("the Inventory's Excel import: a slot with no name no longer moves slot 3's guardian onto slot 2's shared record", async ({ page }) => {
   test.setTimeout(240_000);

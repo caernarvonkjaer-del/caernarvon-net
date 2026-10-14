@@ -1,18 +1,18 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 import {
   freshStartNoPassword, createWard, createSimplifiedWard,
   fillMinimalValidGuardianWard, fillMinimalValidAnnualWard, fillMinimalValidSimplifiedWard,
   fillMinimalValidPlanInitialWard, fillMinimalValidPlanAnnualWard,
   fillMinimalValidPlanMinorWard, fillMinimalValidPlanSimplifiedWard,
-  acceptDynDialog,
 } from './support/target';
 
-// Milestone 43E: this feature list previously had no Trust Accounting entry
-// at all -- the only e2e coverage of Trust's own preview/pager was
-// pdf-evidence-lab.spec.ts's Milestone 34-1D evidence test (folded into the
-// loop below instead, per that item's own finding that no Trust-specific
-// code exists anywhere -- Trust shares Annual's engine, so this closes a
-// real gap rather than just deduplicating).
+// Milestone 43E added a Trust Accounting entry here (from pdf-evidence-lab's
+// Milestone 34-1D evidence test), on its own finding that no Trust-specific
+// code exists anywhere -- Trust shares Annual's engine. TEST-REVIEW.md
+// Delivery 1M (2026-10-13) took it out again on the same finding: the Final
+// and Trust Accountings are the Annual's print.js host, and
+// output-semantics.artifact.spec.ts keeps their legal copy and identity under
+// test on a real download.
 
 // Milestone 19-3: Preview and Print now render the actual generated PDF
 // (pdf.js canvas + TextLayer) instead of each feature's own buildPrintHTML()
@@ -23,28 +23,38 @@ import {
 // logic beyond getting to a valid /print page.
 
 const FEATURES: Array<{
+  key: string;
   name: string;
-  create: (page: import('@playwright/test').Page, name: string) => Promise<void>;
-  fill: (page: import('@playwright/test').Page) => Promise<void>;
+  create: (page: Page, name: string) => Promise<void>;
+  fill: (page: Page) => Promise<void>;
 }> = [
-  { name: 'Guardian Inventory', create: (p, n) => createWard(p, n, 'guardian'), fill: fillMinimalValidGuardianWard },
-  { name: 'Annual Accounting', create: (p, n) => createWard(p, n, 'annual'), fill: fillMinimalValidAnnualWard },
-  // Trust Accounting is formEngine()==='annual' -- same module, same
-  // validateAnnual(), same pdf-model.js, just different legal copy.
-  { name: 'Trust Accounting', create: (p, n) => createWard(p, n, 'trustAccounting'), fill: fillMinimalValidAnnualWard },
+  { key: 'guardian', name: 'Guardian Inventory', create: (p, n) => createWard(p, n, 'guardian'), fill: fillMinimalValidGuardianWard },
+  { key: 'annual', name: 'Annual Accounting', create: (p, n) => createWard(p, n, 'annual'), fill: fillMinimalValidAnnualWard },
   // Simplified Accounting has its own eligibility-modal creation flow --
   // createWard()'s generic "Add Ward" modal doesn't apply (see
   // createSimplifiedWard()'s own header comment in support/target.ts).
-  { name: 'Simplified Accounting', create: createSimplifiedWard, fill: fillMinimalValidSimplifiedWard },
-  { name: 'Plan Initial', create: (p, n) => createWard(p, n, 'planInitial'), fill: fillMinimalValidPlanInitialWard },
-  { name: 'Plan Annual', create: (p, n) => createWard(p, n, 'planAnnual'), fill: fillMinimalValidPlanAnnualWard },
-  { name: 'Plan Minor', create: (p, n) => createWard(p, n, 'planMinor'), fill: fillMinimalValidPlanMinorWard },
-  { name: 'Plan Simplified', create: (p, n) => createWard(p, n, 'planSimplified'), fill: fillMinimalValidPlanSimplifiedWard },
+  { key: 'simplified', name: 'Simplified Accounting', create: createSimplifiedWard, fill: fillMinimalValidSimplifiedWard },
+  { key: 'planInitial', name: 'Plan Initial', create: (p, n) => createWard(p, n, 'planInitial'), fill: fillMinimalValidPlanInitialWard },
+  { key: 'planAnnual', name: 'Plan Annual', create: (p, n) => createWard(p, n, 'planAnnual'), fill: fillMinimalValidPlanAnnualWard },
+  { key: 'planMinor', name: 'Plan Minor', create: (p, n) => createWard(p, n, 'planMinor'), fill: fillMinimalValidPlanMinorWard },
+  { key: 'planSimplified', name: 'Plan Simplified', create: (p, n) => createWard(p, n, 'planSimplified'), fill: fillMinimalValidPlanSimplifiedWard },
 ];
+
+const card = (page: Page) => page.locator('#filing-readiness-card');
+const isOpen = (page: Page) => card(page).evaluate((el: HTMLDetailsElement) => el.open);
+const setCounty = (page: Page, county: string) => page.evaluate((c) => { (window as any).GuardianForms.testing.patchFiling({ 'county': c }); }, county);
+// Also a same-route re-render, the way a filer gets one: navigating to the page again.
+const goPreview = (page: Page) => page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
 
 test.describe('Milestone 19-3: shared PDF preview/print viewer', () => {
   for (const feature of FEATURES) {
-    test(`${feature.name}: Preview renders the real generated PDF via canvas + selectable text layer`, async ({ page }) => {
+    // Until TEST-REVIEW.md Delivery 1M (2026-10-13) three specs each built a
+    // complete filing of every type and opened Preview: this one for the
+    // viewer, readiness-card.contract.spec.ts for the shared readiness card
+    // (Milestones 38B, 44C and 54) and pdf-annotate.spec.ts for the annotate
+    // toolbar's rollout (45B). One Preview per print.js host now carries all
+    // three; the Final and Trust Accountings share the Annual's.
+    test(`${feature.name}: Preview renders the real generated PDF via canvas + selectable text layer, with exactly one readiness card and the annotate toolbar`, async ({ page }) => {
       const errors: string[] = [];
       page.on('pageerror', (e) => errors.push(e.message));
       page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
@@ -52,7 +62,8 @@ test.describe('Milestone 19-3: shared PDF preview/print viewer', () => {
       await freshStartNoPassword(page);
       await feature.create(page, `${feature.name} Preview Ward`);
       await feature.fill(page);
-      await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
+      await setCounty(page, 'Pinellas');
+      await goPreview(page);
 
       // The viewer replaces #print-doc-container's content with one
       // .pdf-page (canvas + .textLayer) per generated PDF page -- wait for
@@ -71,6 +82,65 @@ test.describe('Milestone 19-3: shared PDF preview/print viewer', () => {
       await expect
         .poll(async () => (await textLayer.innerText()).trim().length, { timeout: 10000 })
         .toBeGreaterThan(0);
+
+      // The shared readiness card: exactly one, a real <details> with a
+      // <summary> first child, the Clerk's title with local context for
+      // Pinellas/Pasco, collapsed with the manual-review sentence when the
+      // automatic checks pass, and manual rows never shown as automatic
+      // passes. Milestone 54's banner shell controls, on every type.
+      await expect(card(page)).toHaveCount(1);
+      await expect(page.locator('.readiness-panel')).toHaveCount(1);
+      const previewShellActions = page.locator('.print-preview-banner [data-preview-shell-actions] .pv-shell-actions');
+      await expect(previewShellActions).toHaveCount(1);
+      await expect(previewShellActions).toContainText('All Filings');
+      await expect(previewShellActions.locator('[data-shell-action="toggle-theme"]')).toBeVisible();
+      await expect(previewShellActions.locator('[data-shell-action="toggle-help"]')).toBeVisible();
+      await expect(card(page)).toHaveAttribute('data-readiness-filing', feature.key);
+      const tags = await card(page).evaluate((el) => ({ self: el.tagName, first: el.firstElementChild?.tagName }));
+      expect(tags).toEqual({ self: 'DETAILS', first: 'SUMMARY' });
+      await expect(card(page).locator('.validation-title')).toContainText("Clerk's Review Readiness");
+      await expect(card(page).locator('.validation-title')).toContainText('Automated checks passed; manual review remains.');
+      expect(await isOpen(page)).toBe(false);
+      await expect(card(page).locator('.readiness-mark.pending')).toHaveCount(0);
+      const manualGroup = card(page).locator('.validation-group', { hasText: "can't verify" });
+      await expect(manualGroup).toHaveCount(1);
+      await expect(manualGroup.locator('.readiness-mark.ok, .readiness-mark.pending')).toHaveCount(0);
+      await expect(manualGroup.locator('.readiness-mark.manual').first()).toBeAttached();
+
+      // Milestone 45B: every host mounts the annotate toolbar, and (39-A's
+      // Non-Goal #2) the toolbar never writes into validated form data.
+      await expect(page.locator('[data-annotate-action="toggle"]')).toHaveCount(1);
+      expect(await page.evaluate(() => JSON.stringify((window as any).GuardianForms.testing.snapshot().filing).includes('freeTextEditor'))).toBe(false);
+
+      // Elsewhere than Pinellas/Pasco the card is Filing Readiness, with no
+      // local context.
+      await setCounty(page, 'Orange');
+      await goPreview(page);
+      await expect(card(page)).toHaveCount(1);
+      await expect(card(page).locator('.validation-title')).toContainText('Filing Readiness');
+      await expect(card(page)).not.toContainText(/Pinellas|Pasco|Sixth (Judicial )?Circuit/);
+
+      // A hand toggle survives a same-route rerender and resets on fresh
+      // Preview entry. Native disclosure semantics: keyboard-operable via the
+      // summary. The `toggle` event is dispatched on a later task; wait for
+      // it before rerendering so the test doesn't race its own event queue
+      // (a real rerender never follows a click within the same task).
+      expect(await isOpen(page)).toBe(false);
+      await card(page).evaluate((el) => {
+        (window as any).__readinessToggled = false;
+        el.addEventListener('toggle', () => { (window as any).__readinessToggled = true; }, { once: true });
+      });
+      await card(page).locator('summary').focus();
+      await page.keyboard.press('Enter');
+      await expect.poll(() => isOpen(page)).toBe(true);
+      await page.waitForFunction(() => (window as any).__readinessToggled === true);
+      await goPreview(page);
+      await expect(card(page)).toHaveCount(1);
+      await expect.poll(() => isOpen(page)).toBe(true);
+      await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
+      await goPreview(page);
+      await expect(card(page)).toHaveCount(1);
+      expect(await isOpen(page)).toBe(false);
 
       expect(errors, `console/page errors rendering ${feature.name} preview: ${errors.join('\n')}`).toEqual([]);
     });
@@ -121,41 +191,11 @@ test.describe('Milestone 19-3: shared PDF preview/print viewer', () => {
   // on the very same page whose own banner reported N required fields
   // missing and disabled the export buttons. A brand-new, unfilled ward
   // reliably has validator issues for every one of these seven types.
-  for (const feature of FEATURES) {
-    test(`${feature.name}: an incomplete filing's embedded preview is blocked, not silently rendered`, async ({ page }) => {
-      await freshStartNoPassword(page);
-      await feature.create(page, `${feature.name} Blocked Preview Ward`);
-      await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
-
-      const blocked = page.locator('#print-doc-container .pdf-preview-blocked');
-      await expect(blocked).toBeVisible();
-      await expect(blocked).toContainText('Preview blocked');
-      // The list is behind a disclosure rather than printed as one paragraph.
-      await expect(blocked.locator('.pdf-preview-blocked-summary')).toContainText(/\d+ required items? still missing/);
-      await expect(blocked.locator('.pdf-preview-blocked-list')).not.toBeVisible();
-      await expect(page.locator('#print-doc-container .pdf-page')).toHaveCount(0);
-
-      // The override renders the draft and says so; it does not lift the gate.
-      // Milestone 38D (b0321dd) made the override an affirmative act: it asks
-      // via confirmModal() first (a native window.confirm() before Milestone
-      // 50G), and a dismissed dialog renders nothing -- accept it, and assert
-      // it was asked, since the confirm IS the guarantee.
-      await blocked.locator('[data-preview-action="override"]').click();
-      const confirmMessage = await acceptDynDialog(page);
-      expect(confirmMessage).toContain('Requirements remain outstanding');
-      await page.locator('#print-doc-container .pdf-page').first().waitFor({ state: 'visible', timeout: 15000 });
-      // 38D's replacement guarantee (AGENTS.md section 4): after an affirmative
-      // override the output renders faithfully -- no draft watermark, which
-      // is why the old .pdf-preview-draft-notice assertion here could never
-      // pass again -- and the validation issues stay visible in the UI. The
-      // print page's own banner is that UI; it must survive the override.
-      // Every print page also renders the shared readiness card, which reuses
-      // the .validation-title class -- filter to the export-blocker banner itself.
-      const banner = page.locator('#main-content .validation-panel .validation-title').filter({ hasText: /required field/ }).first();
-      await expect(banner).toBeVisible();
-      await expect(page.locator('#print-doc-container .pdf-preview-blocked')).toHaveCount(0);
-    });
-  }
+  // "<type>: an incomplete filing's embedded preview is blocked, not silently
+  // rendered" ran here for every type until TEST-REVIEW.md Delivery 1M
+  // (2026-10-13): output-buttons-after-override.spec.ts opens the same empty
+  // Preview per print.js host and carries the blocked panel, the override's
+  // confirm and the banner after it, on its way to a real Save as PDF.
 
   test('Print opens the generated PDF as a same-origin blob: URL, never touching app chrome', async ({ page, context }) => {
     await freshStartNoPassword(page);

@@ -49,13 +49,11 @@ async function expectGuardianSignsByHandOrStamp(
 }
 
 test.describe('Milestone 39-B: signature state control (pilot: Plan Simplified Guardian)', () => {
-  test('a guardian with a date and no choice is Unsigned, is never offered "/s/", and a saved "/s/" is asked again (Milestone 73A)', async ({ page }) => {
-    await freshStartNoPassword(page);
-    await createWard(page, 'Sig Legacy Ward', 'planSimplified');
-    await fillMinimalValidPlanSimplifiedWard(page); // sets signatureDate, never signatureState
-    await gotoSignaturesPage(page);
-    await expectGuardianSignsByHandOrStamp(page, 'planGuardians.0', () => gotoSignaturesPage(page));
-  });
+  // The by-hand case ran here until TEST-REVIEW.md Delivery 1M
+  // (2026-10-13): one shared control; it stays for the Plan Annual (a
+  // Plan's collection row), the Annual (an accounting) and the Inventory,
+  // and signature-by-hand.spec.ts checks the choices offered on all nine
+  // forms.
 
   test('Unsigned validates and exports cleanly with no date required', async ({ page }) => {
     await freshStartNoPassword(page);
@@ -399,14 +397,10 @@ test.describe('Milestone 39-C: signature state control rollout -- Plan Annual', 
     expect(await paintedImageFor(page, 'plan-annual', 'buildPlanAnnualModel')).toBe(true);
   });
 
-  test('Attorney card left entirely blank does not block ("leave blank if no attorney involved")', async ({ page }) => {
-    await freshStartNoPassword(page);
-    await createWard(page, 'PA Sig Attorney Blank Ward', 'planAnnual');
-    await fillMinimalValidPlanAnnualWard(page); // never sets any attorney_* field
-    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
-    await expect(page.locator('#print-doc-container .pdf-page').first()).toBeVisible({ timeout: 15000 });
-    await expect(page.locator('.print-preview-banner')).toContainText('Ready to export');
-  });
+  // 'Attorney card left entirely blank does not block' ran here until
+  // TEST-REVIEW.md Delivery 1M (2026-10-13):
+  // tests/unit/attorney-block.spec.js, attorney-optional.spec.js and
+  // plan-attorney-started.spec.js pin the rule for every engine.
 
   test('Attorney Signature Stamp applied paints an image', async ({ page }) => {
     await freshStartNoPassword(page);
@@ -444,13 +438,8 @@ test.describe('Milestone 39-C: signature state control rollout -- Plan Initial',
   // real export path with no test-only data manipulation, which was 40C-H's
   // own item 4.
 
-  test('Guardian signs by hand or by stamp: Unsigned chosen, no "/s/", exports; a saved "/s/" is asked again (Milestone 73A)', async ({ page }) => {
-    await freshStartNoPassword(page);
-    await createWard(page, 'PI Sig Ward', 'planInitial');
-    await fillMinimalValidPlanInitialWard(page); // sets signatureDate, never signatureState
-    await gotoGuardianPage(page);
-    await expectGuardianSignsByHandOrStamp(page, 'planGuardians.0', () => gotoGuardianPage(page));
-  });
+  // The by-hand case ran here until TEST-REVIEW.md Delivery 1M
+  // (2026-10-13); see the pilot block's note.
 
   test('Guardian Signature Stamp: draw, apply, unblocks export, and paints an image', async ({ page }) => {
     await freshStartNoPassword(page);
@@ -484,33 +473,9 @@ test.describe('Milestone 39-C: signature state control rollout -- Plan Initial',
     expect(await paintedImageFor(page, 'plan-initial', 'buildPlanInitialModel')).toBe(true);
   });
 
-  test('Attorney card left entirely blank does not block (pro se / Guardian Advocate exemption)', async ({ page }) => {
-    await freshStartNoPassword(page);
-    await createWard(page, 'PI Sig Attorney Blank Ward', 'planInitial');
-    await fillMinimalValidPlanInitialWard(page);
-    await page.evaluate(() => {
-      const d = (window as any).GuardianForms.testing.snapshot().filing;
-      // Milestone 58C: clear the WHOLE block, which is what this test's title
-      // has always claimed. It used to clear only attorney_name and
-      // attorney_signatureDate, leaving the fixture's
-      // attorney_email: 'attorney@example.com' behind -- so the "entirely
-      // blank" card still carried an attorney's email address. That passed
-      // only because the old "started" predicate did not count email as
-      // attorney entry, which was the defect 58C fixed: an email with no name
-      // is a half-entered attorney, and the court would receive a
-      // certification naming someone with no way to serve them.
-      //
-      // The pro se / Guardian Advocate exemption this test guards is
-      // unchanged and still proven here -- a genuinely blank card exports.
-      for (const key of ['attorney_name', 'attorney_bar', 'attorney_email', 'attorney_secondaryEmail',
-        'attorney_street', 'attorney_cityStateZip', 'attorney_phone',
-        'attorney_signatureDate', 'attorney_signatureState']) d[key] = '';
-      (window as any).GuardianForms.testing.replaceFiling(d); // setup (D9)
-    });
-    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
-    await expect(page.locator('#print-doc-container .pdf-page').first()).toBeVisible({ timeout: 15000 });
-    await expect(page.locator('.print-preview-banner')).toContainText('Ready to export');
-  });
+  // 'Attorney card left entirely blank does not block' ran here until
+  // TEST-REVIEW.md Delivery 1M (2026-10-13): see the unit specs named in
+  // the Plan Annual block.
 
   test('Attorney Signature Stamp applied paints an image', async ({ page }) => {
     await freshStartNoPassword(page);
@@ -538,13 +503,8 @@ test.describe('Milestone 39-C: signature state control rollout -- Plan Minor', (
     await page.locator('[data-signature-state-group="preparer"]').waitFor({ state: 'visible' });
   }
 
-  test('Guardian signs by hand or by stamp: Unsigned chosen, no "/s/", exports; a saved "/s/" is asked again (Milestone 73A)', async ({ page }) => {
-    await freshStartNoPassword(page);
-    await createWard(page, 'PM Sig Ward', 'planMinor');
-    await fillMinimalValidPlanMinorWard(page); // sets signatureDate, never signatureState
-    await gotoGuardianPage(page);
-    await expectGuardianSignsByHandOrStamp(page, 'planGuardians.0', () => gotoGuardianPage(page));
-  });
+  // The by-hand case ran here until TEST-REVIEW.md Delivery 1M
+  // (2026-10-13); see the pilot block's note.
 
   test('Guardian Signature Stamp: draw, apply, unblocks export, and paints an image', async ({ page }) => {
     await freshStartNoPassword(page);
@@ -578,22 +538,9 @@ test.describe('Milestone 39-C: signature state control rollout -- Plan Minor', (
     expect(await paintedImageFor(page, 'plan-minor', 'buildPlanMinorModel')).toBe(true);
   });
 
-  test('Preparer and Attorney cards left entirely blank do not block (pro se / Guardian Advocate exemption)', async ({ page }) => {
-    await freshStartNoPassword(page);
-    await createWard(page, 'PM Sig Blank Ward', 'planMinor');
-    await fillMinimalValidPlanMinorWard(page); // sets preparer_*/attorney_* by default
-    await page.evaluate(() => {
-      const d = (window as any).GuardianForms.testing.snapshot().filing;
-      d.preparer_name = ''; d.preparer_signatureDate = '';
-      // Milestone 72C: any attorney field starts an attorney now, so "entirely
-      // blank" includes the email the fixture fills.
-      d.attorney_name = ''; d.attorney_signatureDate = ''; d.attorney_email = '';
-      (window as any).GuardianForms.testing.replaceFiling(d); // setup (D9)
-    });
-    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
-    await expect(page.locator('#print-doc-container .pdf-page').first()).toBeVisible({ timeout: 15000 });
-    await expect(page.locator('.print-preview-banner')).toContainText('Ready to export');
-  });
+  // 'Preparer and Attorney cards left entirely blank do not block' ran
+  // here until TEST-REVIEW.md Delivery 1M (2026-10-13): see the unit specs
+  // named in the Plan Annual block.
 
   test('Preparer Signature Stamp applied paints an image', async ({ page }) => {
     await freshStartNoPassword(page);
@@ -639,13 +586,8 @@ test.describe('Milestone 39-C: signature state control rollout -- Simplified Acc
     await page.locator(`[data-signature-state-group="${groupPath}"]`).waitFor({ state: 'visible' });
   }
 
-  test('Guardian signs by hand or by stamp: Unsigned chosen, no "/s/", exports; a saved "/s/" is asked again (Milestone 73A)', async ({ page }) => {
-    await freshStartNoPassword(page);
-    await createSimplifiedWard(page, 'SA Sig Ward');
-    await fillMinimalValidSimplifiedWard(page); // sets signatureDate, never signatureState
-    await gotoPage(page, '/p4', 'guardians.0');
-    await expectGuardianSignsByHandOrStamp(page, 'guardians.0', () => gotoPage(page, '/p4', 'guardians.0'));
-  });
+  // The by-hand case ran here until TEST-REVIEW.md Delivery 1M
+  // (2026-10-13); see the pilot block's note.
 
   test('Guardian Signature Stamp: draw, apply, unblocks export, and paints an image', async ({ page }) => {
     await freshStartNoPassword(page);
@@ -698,14 +640,10 @@ test.describe('Milestone 39-C: signature state control rollout -- Simplified Acc
     expect(await paintedImageFor(page, 'simplified-accounting', 'buildSimplifiedAccountingModel')).toBe(true);
   });
 
-  test('Attorney Certificate of Service left entirely blank does not block (previously unvalidated card)', async ({ page }) => {
-    await freshStartNoPassword(page);
-    await createSimplifiedWard(page, 'SA Sig CoS Blank Ward');
-    await fillMinimalValidSimplifiedWard(page); // never sets certAttySignDate/certAttySignatureState
-    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
-    await expect(page.locator('#print-doc-container .pdf-page').first()).toBeVisible({ timeout: 15000 });
-    await expect(page.locator('.print-preview-banner')).toContainText('Ready to export');
-  });
+  // 'Attorney Certificate of Service left entirely blank does not block'
+  // ran here until TEST-REVIEW.md Delivery 1M (2026-10-13): see the unit
+  // specs named in the Plan Annual block.
+
 });
 
 test.describe('Milestone 39-C: signature state control rollout -- Annual Accounting (also Final/Trust)', () => {

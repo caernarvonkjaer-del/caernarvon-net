@@ -37,35 +37,12 @@ test.describe('annual-accounting feature module', () => {
     expect(errors, `console/page errors while navigating Annual pages: ${errors.join('\n')}`).toEqual([]);
   });
 
-  test('an incomplete filing is blocked from export with a clear error', async ({ page }) => {
-    await freshStartNoPassword(page);
-    await createWard(page, 'Incomplete Annual Ward', 'annual');
-    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
-
-    await page.locator('[data-annual-action="save-pdf"]').click();
-    const alertMessage = await acceptDynDialog(page);
-
-    expect(alertMessage).toContain('Cannot export');
-  });
-
-  test('a fully completed filing exports a real PDF', async ({ page }) => {
-    await freshStartNoPassword(page);
-    await createWard(page, 'Complete Annual PDF Ward', 'annual');
-    await fillMinimalValidAnnualWard(page);
-    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
-
-    const downloadPromise = page.waitForEvent('download', { timeout: 20_000 });
-    await page.locator('[data-annual-action="save-pdf"]').click();
-    const download = await downloadPromise;
-
-    expect(download.suggestedFilename()).toMatch(/\.pdf$/i);
-    const stream = await download.createReadStream();
-    const chunks: Buffer[] = [];
-    for await (const chunk of stream) chunks.push(chunk as Buffer);
-    const bytes = Buffer.concat(chunks);
-    expect(bytes.length).toBeGreaterThan(1000);
-    expect(bytes.subarray(0, 5).toString('latin1')).toBe('%PDF-');
-  });
+  // 'an incomplete filing is blocked from export with a clear error' and
+  // 'a fully completed filing exports a real PDF' ran here until
+  // TEST-REVIEW.md Delivery 1M (2026-10-13):
+  // navigation-status.contract.spec.ts and
+  // output-semantics.artifact.spec.ts cover both, more strictly, for the
+  // Annual.
 
   test('exporting to the bundled blank template then re-importing round-trips key fields', async ({ page }) => {
     await freshStartNoPassword(page);
@@ -319,36 +296,12 @@ test.describe('annual-accounting feature module', () => {
     await expect(totalCell).toHaveText('$402,000.00');
   });
 
-  test('Final and Trust aliases use their own legal copy and PDF identity', async ({ page }) => {
-    await freshStartNoPassword(page);
+  // 'Final and Trust aliases use their own legal copy and PDF identity'
+  // ran here until TEST-REVIEW.md Delivery 1M (2026-10-13):
+  // output-semantics.artifact.spec.ts asserts each alias's legal copy and
+  // prohibited statements on a real download, and
+  // tests/unit/filing-descriptor.spec.js their names and titles.
 
-    for (const [inventoryType, label, title] of [
-      ['finalAccounting', 'Final Accounting', 'FINAL GUARDIANSHIP ACCOUNTING'],
-      ['trustAccounting', 'Trust Accounting', 'TRUST GUARDIANSHIP ACCOUNTING'],
-    ]) {
-      await createWard(page, `${label} Identity Ward`, inventoryType);
-      await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/p4'));
-      await expect(page.locator('#main-content')).toContainText(label);
-
-      const identity = await page.evaluate(async () => {
-        const mod = await import('/probate-guardian/src/features/annual-accounting/pdf-model.js');
-        const model = mod.buildAnnualAccountingModel((window as any).GuardianForms.testing.snapshot().filing);
-        return {
-          filingType: (window as any).GuardianForms.testing.field('filingType'),
-          inventoryType: (window as any).GuardianForms.testing.field('inventoryType'),
-          formName: model.metadata.formName,
-          title: model.metadata.title,
-          preparer: model.sections.find((section: any) => section.id === 'part4')?.blocks?.[0]?.text,
-        };
-      });
-
-      expect(identity.filingType).toBe(label.replace(' Accounting', ''));
-      expect(identity.inventoryType).toBe(inventoryType);
-      expect(identity.formName).toBe(title);
-      expect(identity.title).toContain(label);
-      expect(identity.preparer).toContain(label);
-    }
-  });
   test('Summary page completion badges (Parts + Schedules) agree with the sidebar and computeNavChecks(), both blank and fully filled', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Nav Parity Annual Ward', 'annual');

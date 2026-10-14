@@ -1,11 +1,5 @@
 import { test, expect } from '@playwright/test';
-import {
-  freshStartNoPassword, createWard, createSimplifiedWard,
-  fillMinimalValidPlanSimplifiedWard, fillMinimalValidGuardianWard,
-  fillMinimalValidSimplifiedWard, fillMinimalValidAnnualWard,
-  fillMinimalValidPlanAnnualWard, fillMinimalValidPlanInitialWard,
-  fillMinimalValidPlanMinorWard, acceptDynDialog,
-} from './support/target';
+import { freshStartNoPassword, createWard, fillMinimalValidPlanSimplifiedWard, acceptDynDialog } from './support/target';
 
 // Milestone 39-A spike: pdf.js AnnotationEditorLayer integration on Print
 // Preview (src/core/pdf/pdf-annotate.js, src/core/pdf/pdf-preview.js).
@@ -16,40 +10,16 @@ import {
 // out to all nine filing keys (eight hosts; annual/final/trust share one).
 // The toolbar-behavior tests below still drive Plan Simplified because it
 // is the smallest and fastest to render, not because it is the only type
-// that has the toolbar -- the ANNOTATED_TYPES loop covers that.
+// that has the toolbar -- pdf-preview-viewer.spec.ts's one Preview per
+// print.js host checks that every host mounts it.
 
 test.describe('Print Preview annotation (Milestone 39-A mechanism, 45B rollout)', () => {
-  // Milestone 45B: this used to assert the toolbar was absent everywhere
-  // except the Plan Simplified pilot. That gate was the pilot's, not the
-  // end state -- 45B's breadth decision (all eight filing types) supersedes
-  // 39-A's Non-Goal #3, which scoped the pilot rather than the outcome. The
-  // test is inverted rather than deleted: the thing worth guarding now is
-  // that every type actually mounts it, which is also what would catch a
-  // host being missed or regressing back to no options object.
-  const ANNOTATED_TYPES: Array<{ name: string; setup: (page: any) => Promise<void> }> = [
-    { name: 'planSimplified', setup: async (page) => { await createWard(page, 'Ann PS', 'planSimplified'); await fillMinimalValidPlanSimplifiedWard(page); } },
-    { name: 'planMinor', setup: async (page) => { await createWard(page, 'Ann PM', 'planMinor'); await fillMinimalValidPlanMinorWard(page); } },
-    { name: 'planInitial', setup: async (page) => { await createWard(page, 'Ann PI', 'planInitial'); await fillMinimalValidPlanInitialWard(page); } },
-    { name: 'planAnnual', setup: async (page) => { await createWard(page, 'Ann PA', 'planAnnual'); await fillMinimalValidPlanAnnualWard(page); } },
-    { name: 'simplified', setup: async (page) => { await createSimplifiedWard(page, 'Ann SA'); await fillMinimalValidSimplifiedWard(page); } },
-    { name: 'annual', setup: async (page) => { await createWard(page, 'Ann AA', 'annual'); await fillMinimalValidAnnualWard(page); } },
-    { name: 'finalAccounting', setup: async (page) => { await createWard(page, 'Ann FA', 'finalAccounting'); await fillMinimalValidAnnualWard(page); } },
-    { name: 'trustAccounting', setup: async (page) => { await createWard(page, 'Ann TA', 'trustAccounting'); await fillMinimalValidAnnualWard(page); } },
-    { name: 'guardian', setup: async (page) => { await createWard(page, 'Ann GI', 'guardian'); await fillMinimalValidGuardianWard(page); } },
-  ];
-
-  for (const type of ANNOTATED_TYPES) {
-    test(`${type.name}: Print Preview mounts the annotate toolbar (Milestone 45B rollout)`, async ({ page }) => {
-      await freshStartNoPassword(page);
-      await type.setup(page);
-      await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
-      await page.locator('#print-doc-container .pdf-page').first().waitFor({ state: 'visible', timeout: 20000 });
-      await expect(page.locator('[data-annotate-action="toggle"]')).toHaveCount(1);
-      // Non-Goal #2 still holds for every type it rolls out to: the toolbar
-      // must never write into validated form data.
-      expect(await page.evaluate(() => JSON.stringify((window as any).GuardianForms.testing.snapshot().filing).includes('freeTextEditor'))).toBe(false);
-    });
-  }
+  // "<type>: Print Preview mounts the annotate toolbar (Milestone 45B
+  // rollout)" ran here for all nine types until TEST-REVIEW.md Delivery 1M
+  // (2026-10-13): pdf-preview-viewer.spec.ts's one Preview per print.js host
+  // asserts the toolbar mounts and never writes into validated form data.
+  // (45B inverted 39-A's pilot-only gate rather than deleting it: the thing
+  // worth guarding is that every host actually mounts it.)
 
   test('toggle reveals the sub-toolbar; Add Note creates an editable FreeText editor; Undo removes it', async ({ page }) => {
     const errors: string[] = [];

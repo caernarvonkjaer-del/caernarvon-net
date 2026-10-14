@@ -514,6 +514,31 @@ describe("the Inventory's 73T rows, fixed in part 2", () => {
     back.getWorksheet('C-2 LAWSUIT AGAINST 1').getCell('E24').value = null;
   });
 
+  // Milestone 71C (decision D10), moved here from
+  // guardian-inventory-excel-schedule-layout.spec.ts's pre-60K case
+  // (TEST-REVIEW.md Delivery 1M, 2026-10-13): a share cell is read the way
+  // the Clerk's workbook reads it -- 50 in a 0.00% cell is 5,000%, which the
+  // range check then flags -- and a B-4 account number left on the pre-60K
+  // fourth line is still found there.
+  test("71C: 50 in a 0.00% share cell reads as 5,000%, and a B-4 account number on the pre-60K fourth line is found", async () => {
+    const three = filingOf({
+      scheduleA1: [25, 50, 100].map((pct, i) => ({ description: `Parcel ${i + 1}`, fullAssetValue: 1000, wardPercent: pct })),
+      scheduleB4: ['B4-ACCT-0', 'B4-ACCT-1', 'B4-ACCT-2'].map((acct, i) => ({ lenderName: `Lender ${i + 1}`, accountNumber: acct, fullLiabilityBalance: 100, wardPercent: 100 })),
+    });
+    const wb = await templateWorkbook('guardian');
+    writeContract(wb, GUARDIAN_CONTRACT, three, {});
+    const legacy = await reopened(wb);
+    // Rewritten the way the pre-60K exporter wrote it: 50 meant 50%, and the
+    // second row's account number sat on the fourth line of its block.
+    legacy.getWorksheet('A-1-REAL ESTATE pg 1').getCell('H32').value = 50;
+    const b4 = legacy.getWorksheet('B-4 PERS PROP LIAB pg 1');
+    b4.getCell('C31').value = 'LEGACY-ACCT';
+    b4.getCell('C32').value = null;
+    const { draft } = contractIndex.readWorkbookDraft(legacy, 'guardian', { filing: three });
+    expect(draft.scheduleA1.map((r) => r.wardPercent)).toEqual([25, 5000, 100]);
+    expect(draft.scheduleB4.map((r) => r.accountNumber)).toEqual(['B4-ACCT-0', 'LEGACY-ACCT', 'B4-ACCT-2']);
+  }, 120_000);
+
   test("a guardian after a blank slot keeps their place's person: the import says which slot each row came from", () => {
     const p3 = back.getWorksheet('PART III');
     const name = (i) => partIIINameBox(i);
@@ -638,6 +663,21 @@ describe("the Annual family's 73T rows, fixed in part 3", () => {
     expect('remuneration' in read(wrote).draft).toBe(false);
     back.getWorksheet('PART XI').getCell('A6').value = 'Ann Guardian  —  Fee  —  $1500.00  —  Annual fee / Q1';
   });
+
+  // Milestone 67A's other half, moved here from preparer-flag.spec.ts
+  // (TEST-REVIEW.md Delivery 1M, 2026-10-13): row 9 above keeps a guardian's
+  // preparer tick when the workbook's preparer block is blank; a workbook
+  // that names an outside preparer is the stronger statement and clears it.
+  test("row 9, the other way: a workbook that names an outside preparer clears the guardian's preparer tick", async () => {
+    const annualOf = (patch) => merge(merge({ ...json(initializeEmptyData('annual')), inventoryType: 'annual' }, json(fixtures.MINIMAL_VALID_ANNUAL)), json(patch));
+    const named = annualOf({ guardians: [{ name: 'Ann Guardian', isPreparer: false }], preparer: { name: 'Sample Preparer', phone: '555-555-5555' } });
+    const wb = await templateWorkbook('annual');
+    writeContract(wb, ANNUAL_CONTRACT, named, { filingTypeValue: 'Annual' });
+    const flagged = annualOf({ guardians: [{ name: 'Ann Guardian', isPreparer: true }], preparer: { name: '', phone: '' } });
+    const result = importInto(await reopened(wb), 'annual', { filingTypeValue: 'Annual' }, flagged);
+    expect(result.guardians[0].isPreparer).toBe(false);
+    expect(result.preparer.name).toBe('Sample Preparer');
+  }, 120_000);
 
   test('74B kept: a co-guardian slot the workbook shows blank still holds the filing\'s co-guardian who has only a stamp', () => {
     const { draft, rowSources } = read(wrote);

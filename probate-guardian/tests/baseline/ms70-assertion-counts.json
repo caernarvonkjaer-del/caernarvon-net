@@ -2,8 +2,8 @@
  "generatedBy": "node scripts/ms70-assertion-counts.mjs --write-baseline",
  "note": "Milestone 70 per-spec assertion counts (static expect calls). tests/unit/ms70-assertion-counts.spec.js fails when a spec falls below its count; lowering it requires --reason, recorded in dropLog. A tripwire, not proof of equivalence (decision D9).",
  "totals": {
-  "expects": 9600,
-  "tests": 2758
+  "expects": 9390,
+  "tests": 2687
  },
  "counts": {
   "tests/e2e/accessible-errors-and-groups.spec.ts": {
@@ -43,8 +43,8 @@
    "tests": 1
   },
   "tests/e2e/annual-mount.spec.ts": {
-   "expects": 48,
-   "tests": 14
+   "expects": 38,
+   "tests": 11
   },
   "tests/e2e/annual-schedule-consistency.spec.ts": {
    "expects": 27,
@@ -67,16 +67,16 @@
    "tests": 1
   },
   "tests/e2e/backup-restore-sav.spec.ts": {
-   "expects": 41,
-   "tests": 8
+   "expects": 29,
+   "tests": 6
   },
   "tests/e2e/blank-card-pruning.spec.ts": {
    "expects": 12,
    "tests": 4
   },
   "tests/e2e/bond-depository.spec.ts": {
-   "expects": 50,
-   "tests": 6
+   "expects": 49,
+   "tests": 5
   },
   "tests/e2e/carry-balance-matches-prior.spec.ts": {
    "expects": 41,
@@ -123,8 +123,8 @@
    "tests": 3
   },
   "tests/e2e/certificate-service-method.spec.ts": {
-   "expects": 21,
-   "tests": 4
+   "expects": 18,
+   "tests": 3
   },
   "tests/e2e/closed-filing-sync.spec.ts": {
    "expects": 21,
@@ -195,8 +195,8 @@
    "tests": 6
   },
   "tests/e2e/excel-form-field-placement.spec.ts": {
-   "expects": 94,
-   "tests": 15
+   "expects": 24,
+   "tests": 6
   },
   "tests/e2e/excel-import-cell-shapes.spec.ts": {
    "expects": 11,
@@ -271,12 +271,12 @@
    "tests": 7
   },
   "tests/e2e/guardian-inventory-excel-schedule-layout.spec.ts": {
-   "expects": 21,
-   "tests": 3
+   "expects": 17,
+   "tests": 2
   },
   "tests/e2e/guardian-inventory-mount.spec.ts": {
-   "expects": 60,
-   "tests": 13
+   "expects": 50,
+   "tests": 9
   },
   "tests/e2e/guardian-inventory-schedule-layout.spec.ts": {
    "expects": 41,
@@ -287,8 +287,8 @@
    "tests": 2
   },
   "tests/e2e/guardian-links-follow-rows.spec.ts": {
-   "expects": 20,
-   "tests": 5
+   "expects": 9,
+   "tests": 2
   },
   "tests/e2e/guardianship-selection-controls.spec.ts": {
    "expects": 8,
@@ -343,8 +343,8 @@
    "tests": 3
   },
   "tests/e2e/navigation-status.contract.spec.ts": {
-   "expects": 146,
-   "tests": 56
+   "expects": 62,
+   "tests": 20
   },
   "tests/e2e/negative-amount-columns.spec.ts": {
    "expects": 3,
@@ -355,12 +355,12 @@
    "tests": 5
   },
   "tests/e2e/output-buttons-after-override.spec.ts": {
-   "expects": 17,
+   "expects": 24,
    "tests": 3
   },
   "tests/e2e/output-semantics.artifact.spec.ts": {
-   "expects": 37,
-   "tests": 2
+   "expects": 32,
+   "tests": 1
   },
   "tests/e2e/page-structure.spec.ts": {
    "expects": 4,
@@ -387,8 +387,8 @@
    "tests": 4
   },
   "tests/e2e/pdf-annotate.spec.ts": {
-   "expects": 72,
-   "tests": 12
+   "expects": 70,
+   "tests": 11
   },
   "tests/e2e/pdf-cover-geometry.spec.ts": {
    "expects": 4,
@@ -411,8 +411,8 @@
    "tests": 2
   },
   "tests/e2e/pdf-preview-viewer.spec.ts": {
-   "expects": 35,
-   "tests": 6
+   "expects": 53,
+   "tests": 5
   },
   "tests/e2e/pdf-right-margin.spec.ts": {
    "expects": 3,
@@ -491,8 +491,8 @@
    "tests": 1
   },
   "tests/e2e/plan-readiness.contract.spec.ts": {
-   "expects": 14,
-   "tests": 5
+   "expects": 10,
+   "tests": 3
   },
   "tests/e2e/plan-signature-date.spec.ts": {
    "expects": 4,
@@ -515,8 +515,8 @@
    "tests": 1
   },
   "tests/e2e/preparer-flag.spec.ts": {
-   "expects": 41,
-   "tests": 3
+   "expects": 38,
+   "tests": 2
   },
   "tests/e2e/preparer-note-placement.spec.ts": {
    "expects": 5,
@@ -543,8 +543,8 @@
    "tests": 1
   },
   "tests/e2e/readiness-card.contract.spec.ts": {
-   "expects": 37,
-   "tests": 5
+   "expects": 13,
+   "tests": 3
   },
   "tests/e2e/recovery-cache.spec.ts": {
    "expects": 9,
@@ -563,8 +563,8 @@
    "tests": 1
   },
   "tests/e2e/routes.spec.ts": {
-   "expects": 149,
-   "tests": 17
+   "expects": 146,
+   "tests": 16
   },
   "tests/e2e/rules-follow-rows.spec.ts": {
    "expects": 20,
@@ -588,7 +588,7 @@
   },
   "tests/e2e/schedule-doc-ack.spec.ts": {
    "expects": 23,
-   "tests": 11
+   "tests": 10
   },
   "tests/e2e/schedule-docs-period-key.spec.ts": {
    "expects": 26,
@@ -631,12 +631,12 @@
    "tests": 5
   },
   "tests/e2e/signature-by-hand.spec.ts": {
-   "expects": 37,
-   "tests": 7
+   "expects": 29,
+   "tests": 5
   },
   "tests/e2e/signature-capture.contract.spec.ts": {
-   "expects": 110,
-   "tests": 36
+   "expects": 102,
+   "tests": 28
   },
   "tests/e2e/signature-stamp-reuse.spec.ts": {
    "expects": 14,
@@ -651,8 +651,8 @@
    "tests": 5
   },
   "tests/e2e/simplified-mount.spec.ts": {
-   "expects": 23,
-   "tests": 8
+   "expects": 19,
+   "tests": 6
   },
   "tests/e2e/simplified-part1-identity-cells.spec.ts": {
    "expects": 27,
@@ -679,7 +679,7 @@
    "tests": 7
   },
   "tests/e2e/supplemental-pdf-accounting.spec.ts": {
-   "expects": 18,
+   "expects": 19,
    "tests": 4
   },
   "tests/e2e/supporting-documents-follow-dates.spec.ts": {
@@ -731,7 +731,7 @@
    "tests": 1
   },
   "tests/e2e/verified-inventory-workflow.spec.ts": {
-   "expects": 27,
+   "expects": 28,
    "tests": 7
   },
   "tests/e2e/ward-lock.spec.ts": {
@@ -773,6 +773,10 @@
   "tests/unit/annual-pdf-share-rows.spec.js": {
    "expects": 17,
    "tests": 3
+  },
+  "tests/unit/annual-trust-and-remuneration-rules.spec.js": {
+   "expects": 19,
+   "tests": 8
   },
   "tests/unit/annual-ward-percentage.spec.js": {
    "expects": 24,
@@ -1523,8 +1527,8 @@
    "tests": 2
   },
   "tests/unit/test-profile-runner.spec.js": {
-   "expects": 49,
-   "tests": 12
+   "expects": 55,
+   "tests": 13
   },
   "tests/unit/testing-adapter.spec.js": {
    "expects": 64,
@@ -1595,8 +1599,8 @@
    "tests": 6
   },
   "tests/unit/workbook-contract.spec.js": {
-   "expects": 121,
-   "tests": 44
+   "expects": 125,
+   "tests": 46
   },
   "tests/unit/workbook-recalc-on-open.spec.js": {
    "expects": 3,
@@ -1975,6 +1979,132 @@
    "now": 45,
    "reason": "Milestone 73H (2026-10-08): display-formats and negative-amount-columns counted; date-truncation-helpers' fmtD cases became displayDate's.",
    "date": "2026-10-08"
+  },
+  {
+   "file": "tests/e2e/annual-mount.spec.ts",
+   "was": 48,
+   "now": 38,
+   "reason": "TEST-REVIEW.md Delivery 1M (2026-10-13): browser cases whose proof moved to tests/unit or to one sibling case were cut; see TEST-INDEX.md's rows",
+   "date": "2026-10-14"
+  },
+  {
+   "file": "tests/e2e/backup-restore-sav.spec.ts",
+   "was": 41,
+   "now": 29,
+   "reason": "TEST-REVIEW.md Delivery 1M (2026-10-13): browser cases whose proof moved to tests/unit or to one sibling case were cut; see TEST-INDEX.md's rows",
+   "date": "2026-10-14"
+  },
+  {
+   "file": "tests/e2e/bond-depository.spec.ts",
+   "was": 50,
+   "now": 49,
+   "reason": "TEST-REVIEW.md Delivery 1M (2026-10-13): browser cases whose proof moved to tests/unit or to one sibling case were cut; see TEST-INDEX.md's rows",
+   "date": "2026-10-14"
+  },
+  {
+   "file": "tests/e2e/certificate-service-method.spec.ts",
+   "was": 21,
+   "now": 18,
+   "reason": "TEST-REVIEW.md Delivery 1M (2026-10-13): browser cases whose proof moved to tests/unit or to one sibling case were cut; see TEST-INDEX.md's rows",
+   "date": "2026-10-14"
+  },
+  {
+   "file": "tests/e2e/excel-form-field-placement.spec.ts",
+   "was": 94,
+   "now": 24,
+   "reason": "TEST-REVIEW.md Delivery 1M (2026-10-13): browser cases whose proof moved to tests/unit or to one sibling case were cut; see TEST-INDEX.md's rows",
+   "date": "2026-10-14"
+  },
+  {
+   "file": "tests/e2e/guardian-inventory-excel-schedule-layout.spec.ts",
+   "was": 21,
+   "now": 17,
+   "reason": "TEST-REVIEW.md Delivery 1M (2026-10-13): browser cases whose proof moved to tests/unit or to one sibling case were cut; see TEST-INDEX.md's rows",
+   "date": "2026-10-14"
+  },
+  {
+   "file": "tests/e2e/guardian-inventory-mount.spec.ts",
+   "was": 60,
+   "now": 50,
+   "reason": "TEST-REVIEW.md Delivery 1M (2026-10-13): browser cases whose proof moved to tests/unit or to one sibling case were cut; see TEST-INDEX.md's rows",
+   "date": "2026-10-14"
+  },
+  {
+   "file": "tests/e2e/guardian-links-follow-rows.spec.ts",
+   "was": 20,
+   "now": 9,
+   "reason": "TEST-REVIEW.md Delivery 1M (2026-10-13): browser cases whose proof moved to tests/unit or to one sibling case were cut; see TEST-INDEX.md's rows",
+   "date": "2026-10-14"
+  },
+  {
+   "file": "tests/e2e/navigation-status.contract.spec.ts",
+   "was": 146,
+   "now": 62,
+   "reason": "TEST-REVIEW.md Delivery 1M (2026-10-13): browser cases whose proof moved to tests/unit or to one sibling case were cut; see TEST-INDEX.md's rows",
+   "date": "2026-10-14"
+  },
+  {
+   "file": "tests/e2e/output-semantics.artifact.spec.ts",
+   "was": 37,
+   "now": 32,
+   "reason": "TEST-REVIEW.md Delivery 1M (2026-10-13): browser cases whose proof moved to tests/unit or to one sibling case were cut; see TEST-INDEX.md's rows",
+   "date": "2026-10-14"
+  },
+  {
+   "file": "tests/e2e/pdf-annotate.spec.ts",
+   "was": 72,
+   "now": 70,
+   "reason": "TEST-REVIEW.md Delivery 1M (2026-10-13): browser cases whose proof moved to tests/unit or to one sibling case were cut; see TEST-INDEX.md's rows",
+   "date": "2026-10-14"
+  },
+  {
+   "file": "tests/e2e/plan-readiness.contract.spec.ts",
+   "was": 14,
+   "now": 10,
+   "reason": "TEST-REVIEW.md Delivery 1M (2026-10-13): browser cases whose proof moved to tests/unit or to one sibling case were cut; see TEST-INDEX.md's rows",
+   "date": "2026-10-14"
+  },
+  {
+   "file": "tests/e2e/preparer-flag.spec.ts",
+   "was": 41,
+   "now": 38,
+   "reason": "TEST-REVIEW.md Delivery 1M (2026-10-13): browser cases whose proof moved to tests/unit or to one sibling case were cut; see TEST-INDEX.md's rows",
+   "date": "2026-10-14"
+  },
+  {
+   "file": "tests/e2e/readiness-card.contract.spec.ts",
+   "was": 37,
+   "now": 13,
+   "reason": "TEST-REVIEW.md Delivery 1M (2026-10-13): browser cases whose proof moved to tests/unit or to one sibling case were cut; see TEST-INDEX.md's rows",
+   "date": "2026-10-14"
+  },
+  {
+   "file": "tests/e2e/routes.spec.ts",
+   "was": 149,
+   "now": 146,
+   "reason": "TEST-REVIEW.md Delivery 1M (2026-10-13): browser cases whose proof moved to tests/unit or to one sibling case were cut; see TEST-INDEX.md's rows",
+   "date": "2026-10-14"
+  },
+  {
+   "file": "tests/e2e/signature-by-hand.spec.ts",
+   "was": 37,
+   "now": 29,
+   "reason": "TEST-REVIEW.md Delivery 1M (2026-10-13): browser cases whose proof moved to tests/unit or to one sibling case were cut; see TEST-INDEX.md's rows",
+   "date": "2026-10-14"
+  },
+  {
+   "file": "tests/e2e/signature-capture.contract.spec.ts",
+   "was": 110,
+   "now": 102,
+   "reason": "TEST-REVIEW.md Delivery 1M (2026-10-13): browser cases whose proof moved to tests/unit or to one sibling case were cut; see TEST-INDEX.md's rows",
+   "date": "2026-10-14"
+  },
+  {
+   "file": "tests/e2e/simplified-mount.spec.ts",
+   "was": 23,
+   "now": 19,
+   "reason": "TEST-REVIEW.md Delivery 1M (2026-10-13): browser cases whose proof moved to tests/unit or to one sibling case were cut; see TEST-INDEX.md's rows",
+   "date": "2026-10-14"
   }
  ]
 }

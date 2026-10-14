@@ -1,10 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import {
-  freshStartNoPassword, createWard, createSimplifiedWard, fillMinimalValidPlanMinorWard, acceptDynDialog,
-  fillMinimalValidAnnualWard, fillMinimalValidSimplifiedWard, fillMinimalValidPlanAnnualWard, fillMinimalValidPlanSimplifiedWard,
-  fillMinimalValidPlanInitialWard, dismissScheduleDocPrompt, fillMinimalValidGuardianWard, reopenFilingWithStoredShape,
-} from './support/target';
-import type { ValidatorIssue } from './support/window-api';
+import { freshStartNoPassword, createWard, createSimplifiedWard, acceptDynDialog, dismissScheduleDocPrompt } from './support/target';
 
 // Milestone 33, Phase 2.3 -- Migration Sequence step 2 ("shared navigation/
 // status pilot ... then migrate Guardian, Simplified, and Annual only after
@@ -56,6 +51,8 @@ type NavStatusConfig = {
   // Simplified, which requires its own eligibility-modal flow.
   createFiling?: (page: Page, name: string) => Promise<void>;
   triggerBlockedExport: (page: Page) => Promise<void>;
+  // Delivery 1M: the jump-focus case runs for one type per field convention.
+  jumpFocus?: boolean;
 };
 
 /**
@@ -83,6 +80,7 @@ const CONFIGS: NavStatusConfig[] = [
     filingType: 'annual',
     validateFnName: 'validateAnnual',
     jumpTestFieldPath: 'caseNumber',
+    jumpFocus: true, // the Annual family's data-annual-path fields
     // 'Part II — Starting Balance', guaranteed blank on a fresh ward.
     nonCoverRoute: '/p2',
     // No bare window.doSavePdf global exists -- the real handler is a
@@ -91,28 +89,12 @@ const CONFIGS: NavStatusConfig[] = [
     // blocked-export test.
     triggerBlockedExport: (page) => page.locator('[data-annual-action="save-pdf"]').click(),
   },
-  {
-    // finalAccounting/trustAccounting are formEngine()==='annual' aliases --
-    // same module, same validateAnnual(), same rendered print.js markup,
-    // just different displayed legal copy (see annual-mount.spec.ts's
-    // "Final and Trust aliases use their own legal copy" test). isScheduleIncomplete()
-    // used to have no prefixMap entry for either, so their Next-button gate
-    // and guidance panel were bypassed on every page, not just Cover.
-    featureName: 'Final Accounting',
-    filingType: 'finalAccounting',
-    validateFnName: 'validateAnnual',
-    jumpTestFieldPath: 'caseNumber',
-    nonCoverRoute: '/p2',
-    triggerBlockedExport: (page) => page.locator('[data-annual-action="save-pdf"]').click(),
-  },
-  {
-    featureName: 'Trust Accounting',
-    filingType: 'trustAccounting',
-    validateFnName: 'validateAnnual',
-    jumpTestFieldPath: 'caseNumber',
-    nonCoverRoute: '/p2',
-    triggerBlockedExport: (page) => page.locator('[data-annual-action="save-pdf"]').click(),
-  },
+  // finalAccounting/trustAccounting are formEngine()==='annual' aliases --
+  // same module, same validateAnnual(), same rendered print.js markup, just
+  // different displayed legal copy -- and ran every case here until
+  // TEST-REVIEW.md Delivery 1M (2026-10-13). annual-mount.spec.ts's alias
+  // cases and output-semantics.artifact.spec.ts keep their legal copy and
+  // identity under test; the nav gate they once bypassed is one code path.
   {
     featureName: 'Simplified',
     filingType: 'simplified',
@@ -131,6 +113,7 @@ const CONFIGS: NavStatusConfig[] = [
     filingType: 'planAnnual',
     validateFnName: 'validatePlanAnnual',
     jumpTestFieldPath: 'caseNumber',
+    jumpFocus: true, // the data-form-path fields the Simplified and the Plans share (src/core/form/field-html.js)
     nonCoverRoute: '/p2',
     triggerBlockedExport: (page) => page.evaluate(() => (window as any).GuardianForms.testing.saveOutput.pdfPlanAnnual()),
   },
@@ -165,7 +148,7 @@ const CONFIGS: NavStatusConfig[] = [
   },
 ];
 
-for (const { featureName, filingType, validateFnName, jumpTestFieldPath, nonCoverRoute, createFiling, triggerBlockedExport } of CONFIGS) {
+for (const { featureName, filingType, validateFnName, jumpTestFieldPath, nonCoverRoute, createFiling, triggerBlockedExport, jumpFocus } of CONFIGS) {
   const makeFiling = (page: Page, name: string) => (createFiling ? createFiling(page, name) : createWard(page, name, filingType));
 
   test.describe(`${featureName} navigation/status contract`, () => {
@@ -191,7 +174,9 @@ for (const { featureName, filingType, validateFnName, jumpTestFieldPath, nonCove
       await expect(guidance.locator('[data-form-action="jump-to-field"]')).toHaveCount(expectedCoverCount);
     });
 
-    test('a jump link moves focus to the field it names', async ({ page }) => {
+    // Two field conventions carry focus (data-annual-path, data-form-path);
+    // one case each since Delivery 1M, where every type ran it.
+    if (jumpFocus) test('a jump link moves focus to the field it names', async ({ page }) => {
       await freshStartNoPassword(page);
       await makeFiling(page, `${featureName} Jump Link Ward`);
       await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
@@ -203,23 +188,12 @@ for (const { featureName, filingType, validateFnName, jumpTestFieldPath, nonCove
       await expect(page.locator(`[data-form-path="${jumpTestFieldPath}"]`)).toBeFocused();
     });
 
-    test('guidance identifies a missing field while already on its own page, not bucketed onto Cover', async ({ page }) => {
-      await freshStartNoPassword(page);
-      await makeFiling(page, `${featureName} Route Bucketing Ward`);
-      await page.evaluate((r) => (window as any).GuardianForms.testing.navigate(r), nonCoverRoute);
-
-      // Before the section->route resolution fix, every one of this type's
-      // non-Cover section labels fell through to '/' by default -- visiting
-      // this page directly, the guidance panel would show NOTHING (its
-      // filter is an exact currentRoute match unless currentRoute is '/'),
-      // even though computeNavChecks() already knows this page is
-      // incomplete. This is the most direct proof the bucketing bug is
-      // fixed: the item now actually appears while standing on its own page.
-      const guidance = page.locator('#page-local-guidance');
-      await expect(guidance).toBeVisible();
-      const jumpLinks = guidance.locator(`[data-form-action="jump-to-field"][data-route="${nonCoverRoute}"]`);
-      await expect(jumpLinks.first()).toBeVisible();
-    });
+    // 'guidance identifies a missing field while already on its own page, not
+    // bucketed onto Cover' ran here per type until Delivery 1M:
+    // tests/unit/section-status.spec.js and validation-adapter.spec.js pin
+    // the section-to-route resolution, and section-guidance-invariant.spec.ts
+    // walks every incomplete page of seven types for a box that lists
+    // something to jump to.
 
     test('Print Preview banner and the blocked-export alert agree on how many issues remain', async ({ page }) => {
       await freshStartNoPassword(page);
@@ -328,19 +302,14 @@ test.describe('Guardian Inventory navigation/status contract', () => {
   });
 
   // Milestone 33, Item 3 (sub-phase 3a): Schedules B-2 through C-5 share the
-  // exact same "row + dot-path" shape A-1/A-2/B-1 already proved above, so
-  // one config-driven loop covers all eight rather than eight near-identical
-  // copies of the same test. B-2's own vehicle-field ID exception gets its
-  // own dedicated test right after this loop.
+  // exact same "row + dot-path" shape A-1/A-2/B-1 already proved above. All
+  // eight ran this loop until TEST-REVIEW.md Delivery 1M (2026-10-13): one
+  // of each letter stays, and validation-structured-paths.spec.ts proves
+  // every issue of every schedule carries a path. B-2's own vehicle-field ID
+  // exception gets its own dedicated test right after this loop.
   const ROW_SCHEDULES: { key: string; route: string }[] = [
-    { key: 'b2', route: '/b2' },
     { key: 'b3', route: '/b3' },
-    { key: 'b4', route: '/b4' },
-    { key: 'c1', route: '/c1' },
-    { key: 'c2', route: '/c2' },
-    { key: 'c3', route: '/c3' },
     { key: 'c4', route: '/c4' },
-    { key: 'c5', route: '/c5' },
   ];
   for (const { key, route } of ROW_SCHEDULES) {
     test(`disabled Next guidance on Schedule ${key.toUpperCase()} identifies every missing item once a row exists`, async ({ page }) => {
@@ -650,46 +619,11 @@ test.describe('Annual/Final/Trust field-path accuracy (Milestone 33, Item 3, sub
     await expect(page.locator(`[data-form-path="${paths.preparerStreet}"]`)).toBeFocused();
   });
 
-  test('Schedule D-1 "Type" and D-5 "Loan Type" resolve to distinct fields (ordering regression)', async ({ page }) => {
-    // A naive keyword match ("type" before "loan type") would make D-5's
-    // "Loan Type" label resolve to schD5.N.type instead of .loanType, since
-    // "Loan Type" contains "type" as a substring -- caught while writing
-    // this branch, not from a real bug report; still worth a regression
-    // test since it's an easy mistake to reintroduce.
-    await freshStartNoPassword(page);
-    await createWard(page, 'Annual D-1 D-5 Type Ward', 'annual');
-    await page.evaluate(() => {
-      const w = window as any;
-      w.GuardianForms.testing.patchFiling({ 'schD1': [{ description: 'Checking Account', accountNo: '4455', restricted: 'No', type: '', fullAmount: '1000', wardPct: '100' }] });
-      w.GuardianForms.testing.patchFiling({ 'schD5': [{ description: 'Auto Loan', loanNo: '99', loanType: '', fullDebt: '5000', wardPct: '100' }] });
-    });
-    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/schd1'));
-
-    const paths = await page.evaluate(async () => {
-      const structured = await (window as any).GuardianForms.testing.validate.structured();
-      return {
-        d1Type: structured.find((e: any) => e.section === 'Schedule D-1' && e.label.includes('Type') && !e.label.includes('Loan'))?.path,
-        d5LoanType: structured.find((e: any) => e.section === 'Schedule D-5' && e.label.includes('Loan Type'))?.path,
-      };
-    });
-    expect(paths.d1Type).toBe('schD1.0.type');
-    expect(paths.d5LoanType).toBe('schD5.0.loanType');
-  });
-
-  test('Schedule C "Gain or Loss" compound message resolves to the first field of the pair (documented approximation)', async ({ page }) => {
-    await freshStartNoPassword(page);
-    await createWard(page, 'Annual Schedule C Ward', 'annual');
-    await page.evaluate(() => {
-      (window as any).GuardianForms.testing.patchFiling({ 'schC': [{ description: 'Sale of stock', date: '01/01/2024', gain: '', loss: '' }] });
-    });
-    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/schc'));
-
-    const targetPath = await page.evaluate(async () => {
-      const structured = await (window as any).GuardianForms.testing.validate.structured();
-      return structured.find((e: any) => e.section === 'Schedule C' && e.label.includes('Gain or Loss'))?.path;
-    });
-    expect(targetPath).toBe('schC.0.gain');
-  });
+  // 'Schedule D-1 "Type" and D-5 "Loan Type" resolve to distinct fields' and
+  // 'Schedule C "Gain or Loss" compound message resolves to the first field'
+  // ran here until Delivery 1M: both asserted issue paths alone, which
+  // tests/baseline/ms73-validator-golden.json records through
+  // validator-engines.spec.js and validation-structured-paths.spec.ts checks.
 });
 
 test.describe('Simplified field-path accuracy (Milestone 33, Item 3, sub-phase 3c)', () => {
@@ -877,891 +811,13 @@ test.describe('Plan types field-path accuracy (Milestone 33, Item 3, sub-phase 3
   });
 });
 
-// Milestone 40C-E. A sidebar section must not read complete while the export
-// validator blocks on that same section. Two cases where it did:
-//
-//  - Plan Annual Question 4: the check was `provs.every(r => filled(r.name))`,
-//    and .every() is TRUE for an empty array, so a filing with no providers at
-//    all looked complete while validatePlanAnnual() blocked with "at least one
-//    provider must be listed". The readiness panel already agreed with the
-//    validator, so the sidebar was the odd one out.
-//  - Plan Minor Cover: validatePlanMinor() requires the Case # (ref) -- Milestone 73S; it took ucn || ref
-//    and an ANSWERED "Amended Form?", neither of which pm-cover tracked.
-test.describe('Milestone 40C-E: sidebar section status agrees with the export blocker', () => {
-  test('Plan Annual: no providers leaves Question 4 incomplete and blocks export', async ({ page }) => {
-    await freshStartNoPassword(page);
-    await createWard(page, 'Provider Parity Ward', 'planAnnual');
-
-    const state = await page.evaluate(async () => {
-      const w = window as any;
-      return {
-        providerCount: (w.GuardianForms.testing.field('q4Providers') || []).filter((r: any) => r && (r.name || r.providerType || r.visits)).length,
-        navComplete: w.GuardianForms.testing.status.navChecks().checks['pa-p5'],
-        blocked: (await w.GuardianForms.testing.validate.open()).some((m: ValidatorIssue) => m.message.includes('at least one provider must be listed')),
-      };
-    });
-    expect(state.providerCount).toBe(0);
-    expect(state.blocked, 'export must block on the empty provider table').toBe(true);
-    expect(state.navComplete, 'sidebar must not call Question 4 complete while export blocks on it').toBe(false);
-  });
-
-  test('Plan Annual: one named provider satisfies both the sidebar and the validator', async ({ page }) => {
-    await freshStartNoPassword(page);
-    await createWard(page, 'Provider Parity Filled Ward', 'planAnnual');
-    await page.evaluate(() => {
-      const w = window as any;
-      w.GuardianForms.testing.patchFiling({ 'q4Providers': [{ name: 'Dr. Alice Nguyen', providerType: 'Primary Care Physician', visits: '4' }] });
-    });
-
-    const state = await page.evaluate(async () => {
-      const w = window as any;
-      return {
-        navComplete: w.GuardianForms.testing.status.navChecks().checks['pa-p5'],
-        blocked: (await w.GuardianForms.testing.validate.open()).some((m: ValidatorIssue) => m.message.includes('at least one provider must be listed')),
-      };
-    });
-    expect(state.blocked).toBe(false);
-    expect(state.navComplete).toBe(true);
-  });
-
-  test('Plan Minor: Cover tracks case identity and the Amended Form answer', async ({ page }) => {
-    await freshStartNoPassword(page);
-    await createWard(page, 'Minor Cover Parity Ward', 'planMinor');
-    await fillMinimalValidPlanMinorWard(page);
-
-    // Baseline: the fixture is a complete filing, so Cover agrees both ways.
-    const baseline = await page.evaluate(async () => {
-      const w = window as any;
-      return {
-        navComplete: w.GuardianForms.testing.status.navChecks().checks['pm-cover'],
-        caseBlocked: (await w.GuardianForms.testing.validate.open()).some((m: ValidatorIssue) => m.message.includes('Cover — Case # is required')),
-        amendedBlocked: (await w.GuardianForms.testing.validate.open()).some((m: ValidatorIssue) => m.message.includes('Cover — Amended Form? must be answered')),
-      };
-    });
-    expect(baseline).toEqual({ navComplete: true, caseBlocked: false, amendedBlocked: false });
-
-    // Milestone 73S (73S-3): the Case # is required; a UCN alone no longer
-    // satisfies it, for the sidebar as for the validator.
-    const noCaseIdentity = await page.evaluate(async () => {
-      const w = window as any;
-      w.GuardianForms.testing.patchFiling({ 'ucn': '522026GA001234XXXXXX' }); w.GuardianForms.testing.patchFiling({ 'ref': '' });
-      return {
-        navComplete: w.GuardianForms.testing.status.navChecks().checks['pm-cover'],
-        blocked: (await w.GuardianForms.testing.validate.open()).some((m: ValidatorIssue) => m.message.includes('Cover — Case # is required')),
-      };
-    });
-    expect(noCaseIdentity).toEqual({ navComplete: false, blocked: true });
-
-    // The Case # on its own is enough; a blank UCN is a reminder in Preview, never a missing item.
-    const refOnly = await page.evaluate(async () => {
-      const w = window as any;
-      w.GuardianForms.testing.patchFiling({ 'ucn': '' }); w.GuardianForms.testing.patchFiling({ 'ref': '26-000123-GD' });
-      return {
-        navComplete: w.GuardianForms.testing.status.navChecks().checks['pm-cover'],
-        blocked: (await w.GuardianForms.testing.validate.open()).some((m: ValidatorIssue) => m.message.includes('Cover — Case # is required')),
-      };
-    });
-    expect(refOnly).toEqual({ navComplete: true, blocked: false });
-
-    // "Amended Form?" must be answered; blank is unanswered, and an explicit
-    // 'No' is a real answer that must satisfy both.
-    const amendedBlank = await page.evaluate(async () => {
-      const w = window as any;
-      w.GuardianForms.testing.patchFiling({ 'amendedForm': '' });
-      return {
-        navComplete: w.GuardianForms.testing.status.navChecks().checks['pm-cover'],
-        blocked: (await w.GuardianForms.testing.validate.open()).some((m: ValidatorIssue) => m.message.includes('Cover — Amended Form? must be answered')),
-      };
-    });
-    expect(amendedBlank).toEqual({ navComplete: false, blocked: true });
-
-    const amendedNo = await page.evaluate(async () => {
-      const w = window as any;
-      w.GuardianForms.testing.patchFiling({ 'amendedForm': 'No' });
-      return {
-        navComplete: w.GuardianForms.testing.status.navChecks().checks['pm-cover'],
-        blocked: (await w.GuardianForms.testing.validate.open()).some((m: ValidatorIssue) => m.message.includes('Cover — Amended Form? must be answered')),
-      };
-    });
-    expect(amendedNo).toEqual({ navComplete: true, blocked: false });
-
-    // Amended Form 'Yes' additionally requires the version, in both places.
-    const amendedYesNoVersion = await page.evaluate(async () => {
-      const w = window as any;
-      w.GuardianForms.testing.patchFiling({ 'amendedForm': 'Yes' }); w.GuardianForms.testing.patchFiling({ 'amendedVersion': '' });
-      return {
-        navComplete: w.GuardianForms.testing.status.navChecks().checks['pm-cover'],
-        blocked: (await w.GuardianForms.testing.validate.open()).some((m: ValidatorIssue) => m.message.includes('Cover — Amended Form version is required')),
-      };
-    });
-    expect(amendedYesNoVersion).toEqual({ navComplete: false, blocked: true });
-  });
-});
-
-// Milestone 55B. computeNavChecks() hand-writes a presence-only nav-check
-// per filing type, entirely independent of each feature's own validator, for
-// every filing type except Guardian Inventory (whose branch derives its
-// checks directly from validate()'s real errors). Twenty-three
-// checkDateOrder() relationships across five filing types had a
-// presence-only sidebar counterpart with no idea what date ordering the real
-// validator enforces -- a filing could show every section green while
-// Preview & Export still blocked on a signature or certification dated
-// before the period it certifies. This is the runtime venue (not
-// checklist-export-parity.spec.js, which only slices computeNavChecks()'s
-// source into text and can never execute it) -- covering at least one
-// Exact-fit relationship per filing type, plus both Borrowed keys
-// specifically, since those are the ones this milestone's own review caught
-// being silently left unresolved in an earlier draft.
-// Milestone 68A removed the Plans' rule that a signature be dated on or after
-// the reporting period's end -- a plan is written BEFORE the period it plans
-// for, so the only way to satisfy it was a false date on a sworn filing. The
-// two Plan cases below therefore assert the opposite of what they did under
-// 55B: the sidebar and the export gate agree there is NO such rule. A
-// signature dated before the period neither blocks export nor flips the
-// guardian-labeled key; the "Borrowed" keys (pa-p11, ps-p3) still host the
-// preparer's and attorney's presence/signature checks, just not a date order.
-// The accounting case is unchanged: you sign an accounting after the period
-// you are reporting on, and that rule stays.
-test.describe('Milestone 55B: sidebar date-order agrees with the export blocker', () => {
-  test('Plan Annual (68A): a guardian signature dated before the reporting period neither blocks export nor flips pa-p11', async ({ page }) => {
-    await freshStartNoPassword(page);
-    await createWard(page, 'Date Order Parity PA Ward', 'planAnnual');
-    await fillMinimalValidPlanAnnualWard(page);
-
-    const baseline = await page.evaluate(async () => {
-      const w = window as any;
-      return {
-        navComplete: w.GuardianForms.testing.status.navChecks().checks['pa-p11'],
-        blocked: (await w.GuardianForms.testing.validate.open()).some((m: ValidatorIssue) => m.message.includes('date signed must be on or after')),
-      };
-    });
-    expect(baseline).toEqual({ navComplete: true, blocked: false });
-
-    // The reported case: the plan for the coming year, signed today.
-    const signedBefore = await page.evaluate(async () => {
-      const w = window as any;
-      w.GuardianForms.testing.patchFiling({ 'planGuardians.0.signatureDate': '2020-01-01' });
-      return {
-        navComplete: w.GuardianForms.testing.status.navChecks().checks['pa-p11'],
-        blocked: (await w.GuardianForms.testing.validate.open()).some((m: ValidatorIssue) => m.message.includes('date signed must be on or after')),
-      };
-    });
-    expect(signedBefore.blocked, 'a plan signed before its period must export').toBe(false);
-    expect(signedBefore.navComplete, 'and the sidebar must not mark Signatures incomplete for it').toBe(true);
-  });
-
-  test('Plan Annual (68A): the Borrowed attorney date on pa-p11 no longer orders against the period either', async ({ page }) => {
-    await freshStartNoPassword(page);
-    await createWard(page, 'Date Order Parity PA Attorney Ward', 'planAnnual');
-    await fillMinimalValidPlanAnnualWard(page);
-    const state = await page.evaluate(async () => {
-      const w = window as any;
-      w.GuardianForms.testing.patchFiling({ 'attorney': 'Jordan Reyes, Esq.' });
-      w.GuardianForms.testing.patchFiling({ 'attorney_email': 'attorney@example.com' });
-      w.GuardianForms.testing.patchFiling({ 'attorney_signatureDate': '2020-01-01' });
-      return {
-        navComplete: w.GuardianForms.testing.status.navChecks().checks['pa-p11'],
-        blocked: (await w.GuardianForms.testing.validate.open()).some((m: ValidatorIssue) => m.message.includes('date signed must be on or after')),
-      };
-    });
-    expect(state.blocked, 'an attorney signature dated before the period must not block').toBe(false);
-    // pa-p11 is the guardian's own key, borrowed for the attorney because
-    // Plan Annual has no attorney-specific key -- still the named trade-off,
-    // now hosting the attorney's presence checks only.
-    expect(state.navComplete).toBe(true);
-  });
-
-  test('Plan Simplified (68A): preparer and attorney dates before the period neither block nor flip ps-p3', async ({ page }) => {
-    await freshStartNoPassword(page);
-    await createWard(page, 'Date Order Parity PS Ward', 'planSimplified');
-    await fillMinimalValidPlanSimplifiedWard(page);
-
-    const baseline = await page.evaluate(() => (window as any).GuardianForms.testing.status.navChecks().checks['ps-p3']);
-    expect(baseline).toBe(true);
-
-    const state = await page.evaluate(async () => {
-      const w = window as any;
-      w.GuardianForms.testing.patchFiling({ 'preparer_name': 'Sam Okafor' });
-      w.GuardianForms.testing.patchFiling({ 'preparer_signatureDate': '2020-01-01' });
-      w.GuardianForms.testing.patchFiling({ 'attorney': 'Jordan Reyes, Esq.' });
-      w.GuardianForms.testing.patchFiling({ 'attorney_signatureDate': '2020-01-01' });
-      return {
-        navComplete: w.GuardianForms.testing.status.navChecks().checks['ps-p3'],
-        blocked: (await w.GuardianForms.testing.validate.open()).some((m: ValidatorIssue) => m.message.includes('date signed must be on or after')),
-      };
-    });
-    expect(state.blocked, 'preparer and attorney signatures dated before the period must not block').toBe(false);
-    expect(state.navComplete).toBe(true);
-  });
-
-  test('Annual Accounting: attorney signature date (Exact-fit a-p5) and Cover period order (a-p1)', async ({ page }) => {
-    await freshStartNoPassword(page);
-    await createWard(page, 'Date Order Parity Annual Ward', 'annual');
-    await fillMinimalValidAnnualWard(page);
-
-    const baseline = await page.evaluate(() => {
-      const w = window as any;
-      return { p1: w.GuardianForms.testing.status.navChecks().checks['a-p1'], p5: w.GuardianForms.testing.status.navChecks().checks['a-p5'] };
-    });
-    expect(baseline).toEqual({ p1: true, p5: true });
-
-    const attorneyOutOfOrder = await page.evaluate(async () => {
-      const w = window as any;
-      w.GuardianForms.testing.patchFiling({ 'attorney_signatureDate': '2020-01-01' });
-      return {
-        navComplete: w.GuardianForms.testing.status.navChecks().checks['a-p5'],
-        blocked: (await w.GuardianForms.testing.validate.open()).some((m: ValidatorIssue) => m.message.includes('Attorney Signature Date must be on or after')),
-      };
-    });
-    expect(attorneyOutOfOrder.blocked).toBe(true);
-    expect(attorneyOutOfOrder.navComplete).toBe(false);
-
-    const coverOutOfOrder = await page.evaluate(async () => {
-      const w = window as any;
-      w.GuardianForms.testing.patchFiling({ 'periodFrom': '2027-01-01' }); w.GuardianForms.testing.patchFiling({ 'periodTo': '2026-01-01' });
-      return {
-        navComplete: w.GuardianForms.testing.status.navChecks().checks['a-p1'],
-        blocked: (await w.GuardianForms.testing.validate.open()).some((m: ValidatorIssue) => m.message.includes('Accounting Period To must be on or after')),
-      };
-    });
-    expect(coverOutOfOrder.blocked).toBe(true);
-    expect(coverOutOfOrder.navComplete).toBe(false);
-  });
-
-  test('Simplified Accounting: attorney signature date (Exact-fit s-p5) is a real, previously-untracked field', async ({ page }) => {
-    await freshStartNoPassword(page);
-    await createSimplifiedWard(page, 'Date Order Parity Simplified Ward');
-    await fillMinimalValidSimplifiedWard(page);
-
-    const baseline = await page.evaluate(() => (window as any).GuardianForms.testing.status.navChecks().checks['s-p5']);
-    expect(baseline).toBe(true);
-
-    const outOfOrder = await page.evaluate(async () => {
-      const w = window as any;
-      w.GuardianForms.testing.patchFiling({ 'attorney_signatureDate': '2020-01-01' });
-      return {
-        navComplete: w.GuardianForms.testing.status.navChecks().checks['s-p5'],
-        blocked: (await w.GuardianForms.testing.validate.open()).some((m: ValidatorIssue) => m.message.includes('Signature Date must be on or after')),
-      };
-    });
-    expect(outOfOrder.blocked, 'export must block on the out-of-order attorney date').toBe(true);
-    expect(outOfOrder.navComplete, 's-p5 never tracked attorney_signatureDate before this fix').toBe(false);
-  });
-
-  test('Plan Minor (68A): an attorney date before the period neither blocks nor flips the combined pm-p7', async ({ page }) => {
-    await freshStartNoPassword(page);
-    await createWard(page, 'Date Order Parity PM Ward', 'planMinor');
-    await fillMinimalValidPlanMinorWard(page);
-    await page.evaluate(() => {
-      const w = window as any;
-      w.GuardianForms.testing.patchFiling({ 'preparer_name': 'Sam Okafor' });
-      w.GuardianForms.testing.patchFiling({ 'attorney_name': 'Jordan Reyes, Esq.' });
-    });
-
-    const baseline = await page.evaluate(() => (window as any).GuardianForms.testing.status.navChecks().checks['pm-p7']);
-    expect(baseline).toBe(true);
-
-    const signedBefore = await page.evaluate(async () => {
-      const w = window as any;
-      w.GuardianForms.testing.patchFiling({ 'attorney_signatureDate': '2020-01-01' });
-      return {
-        navComplete: w.GuardianForms.testing.status.navChecks().checks['pm-p7'],
-        blocked: (await w.GuardianForms.testing.validate.open()).some((m: ValidatorIssue) => m.message.includes('signature date must be on or after')),
-      };
-    });
-    expect(signedBefore.blocked, 'an attorney signature dated before the period must not block').toBe(false);
-    expect(signedBefore.navComplete).toBe(true);
-  });
-
-  test('every date in valid order leaves all five filing types unaffected', async ({ page }) => {
-    await freshStartNoPassword(page);
-    await createWard(page, 'Date Order Parity Control Ward', 'planAnnual');
-    await fillMinimalValidPlanAnnualWard(page);
-    const stillComplete = await page.evaluate(() => (window as any).GuardianForms.testing.status.navChecks().checks['pa-p11']);
-    expect(stillComplete, 'a filing with every date already in order must not be flipped by this fix').toBe(true);
-  });
-});
-
-// Milestone 55D. Attorney "Primary Email (e-filing)" rendered a required
-// asterisk in four filing types (Annual, Simplified Accounting, Plan Annual,
-// Plan Initial) that no validator enforced. Alan chose Option A: enforce it,
-// per-engine, using each engine's own existing gating shape -- unconditional
-// in Annual/Simplified (matching their sibling bar/phone/street/cityStateZip
-// fields), bare `d.attorney` truthiness in Plan Annual (co-existing with its
-// separate signature-state-triggered name rule), and the exact "started"
-// predicate in Plan Initial (not a new, separately-evaluated condition,
-// which could accidentally narrow the Milestone 35-3 pro se/Guardian
-// Advocate exemption). Plan Initial's own sidebar key, pi-p10, additionally
-// needed replacing outright (Error 4): it was unconditional before this fix,
-// so a blank attorney card already showed incomplete in the sidebar despite
-// the validator requiring nothing -- the same class of defect 55B fixes,
-// inverted.
-test.describe('Milestone 55D: attorney email is required exactly where the UI already promised it is', () => {
-  test('Annual Accounting: blank email blocks (unconditional, matching its sibling fields)', async ({ page }) => {
-    await freshStartNoPassword(page);
-    await createWard(page, 'Attorney Email Annual Ward', 'annual');
-    await fillMinimalValidAnnualWard(page);
-
-    const baseline = await page.evaluate(() => (window as any).GuardianForms.testing.status.navChecks().checks['a-p5']);
-    expect(baseline).toBe(true);
-
-    const blankEmail = await page.evaluate(async () => {
-      const w = window as any;
-      w.GuardianForms.testing.patchFiling({ 'attorney_email': '' });
-      return {
-        navComplete: w.GuardianForms.testing.status.navChecks().checks['a-p5'],
-        blocked: (await w.GuardianForms.testing.validate.open()).some((m: ValidatorIssue) => m.message.includes('Attorney Email')),
-      };
-    });
-    expect(blankEmail.blocked, 'export must now block on the blank attorney email').toBe(true);
-    expect(blankEmail.navComplete, 'a-p5 never tracked attorney_email before this fix').toBe(false);
-  });
-
-  test('Simplified Accounting: blank email blocks (unconditional, matching its sibling fields)', async ({ page }) => {
-    await freshStartNoPassword(page);
-    await createSimplifiedWard(page, 'Attorney Email Simplified Ward');
-    await fillMinimalValidSimplifiedWard(page);
-
-    const baseline = await page.evaluate(() => (window as any).GuardianForms.testing.status.navChecks().checks['s-p5']);
-    expect(baseline).toBe(true);
-
-    const blankEmail = await page.evaluate(async () => {
-      const w = window as any;
-      w.GuardianForms.testing.patchFiling({ 'attorney_email': '' });
-      return {
-        navComplete: w.GuardianForms.testing.status.navChecks().checks['s-p5'],
-        blocked: (await w.GuardianForms.testing.validate.open()).some((m: ValidatorIssue) => m.message.includes('Attorney Email')),
-      };
-    });
-    expect(blankEmail.blocked).toBe(true);
-    expect(blankEmail.navComplete).toBe(false);
-  });
-
-  test('Plan Annual: reported screenshot state -- attorney named, Unsigned selected, email blank now blocks', async ({ page }) => {
-    await freshStartNoPassword(page);
-    await createWard(page, 'Attorney Email PA Ward', 'planAnnual');
-    await fillMinimalValidPlanAnnualWard(page);
-
-    // Unsigned itself requires nothing else on this card -- confirming the
-    // email requirement fires purely from the attorney being named, not
-    // from any signature-state side effect.
-    const state = await page.evaluate(async () => {
-      const w = window as any;
-      w.GuardianForms.testing.patchFiling({ 'attorney': 'David R. Coleman, Esq.' });
-      w.GuardianForms.testing.patchFiling({ 'attorney_signatureState': 'none' });
-      w.GuardianForms.testing.patchFiling({ 'attorney_email': '' });
-      return {
-        navComplete: w.GuardianForms.testing.status.navChecks().checks['pa-p11'],
-        blocked: (await w.GuardianForms.testing.validate.open()).some((m: ValidatorIssue) => m.message.includes('Attorney email is required')),
-      };
-    });
-    expect(state.blocked, 'export must block on the named-but-emailless attorney').toBe(true);
-    expect(state.navComplete).toBe(false);
-  });
-
-  test('Plan Annual: attorney card left entirely blank is unaffected', async ({ page }) => {
-    await freshStartNoPassword(page);
-    await createWard(page, 'Attorney Email PA Blank Ward', 'planAnnual');
-    await fillMinimalValidPlanAnnualWard(page);
-
-    const state = await page.evaluate(async () => {
-      const w = window as any;
-      w.GuardianForms.testing.patchFiling({ 'attorney': '' }); w.GuardianForms.testing.patchFiling({ 'attorney_email': '' }); w.GuardianForms.testing.patchFiling({ 'attorney_signatureDate': '' }); w.GuardianForms.testing.patchFiling({ 'attorney_signatureState': '' });
-      return {
-        navComplete: w.GuardianForms.testing.status.navChecks().checks['pa-p11'],
-        blocked: (await w.GuardianForms.testing.validate.open()).some((m: ValidatorIssue) => m.message.includes('Attorney email is required')),
-      };
-    });
-    expect(state.blocked, 'no attorney named means no email requirement').toBe(false);
-    expect(state.navComplete).toBe(true);
-  });
-
-  test('Plan Initial: attorney "started" via bar number alone (no name) now also requires email', async ({ page }) => {
-    await freshStartNoPassword(page);
-    await createWard(page, 'Attorney Email PI Started Ward', 'planInitial');
-    await fillMinimalValidPlanInitialWard(page);
-    await page.evaluate(() => {
-      const w = window as any;
-      w.GuardianForms.testing.patchFiling({ 'attorney_name': '' }); w.GuardianForms.testing.patchFiling({ 'attorney_email': '' }); w.GuardianForms.testing.patchFiling({ 'attorney_signatureDate': '' }); w.GuardianForms.testing.patchFiling({ 'attorney_signatureState': '' });
-      w.GuardianForms.testing.patchFiling({ 'attorney_bar': '12345' });
-    });
-
-    const state = await page.evaluate(async () => {
-      const w = window as any;
-      return {
-        navComplete: w.GuardianForms.testing.status.navChecks().checks['pi-p10'],
-        blocked: (await w.GuardianForms.testing.validate.open()).some((m: ValidatorIssue) => m.message.includes('Attorney Certification — Attorney email is required')),
-      };
-    });
-    expect(state.blocked, 'bar number alone counts as "started" per the existing predicate').toBe(true);
-    expect(state.navComplete).toBe(false);
-  });
-
-  // Milestone 58C. "Started" used to mean only name, bar number, signature
-  // date, or a non-Unsigned signature choice -- four of the block's eight
-  // entry fields. Type the attorney's phone, address, or either email and both
-  // the validator and the sidebar held that nothing had been started: no
-  // export issue, sidebar green, while Primary Email displayed a required
-  // asterisk with no rule behind it. A half-entered attorney could reach the
-  // court: a certification naming someone with no way to serve them.
-  const NEWLY_STARTING_FIELDS: Array<[string, string]> = [
-    ['attorney_phone', '727-555-0143'],
-    ['attorney_street', '100 2nd Ave S, Suite 400'],
-    ['attorney_cityStateZip', 'St. Petersburg, FL 33701'],
-    ['attorney_email', 'atty@firm.example'],
-    ['attorney_secondaryEmail', 'assistant@firm.example'],
-  ];
-
-  for (const [field, value] of NEWLY_STARTING_FIELDS) {
-    test(`Plan Initial: ${field} alone starts the attorney block, and the sidebar agrees`, async ({ page }) => {
-      await freshStartNoPassword(page);
-      await createWard(page, `Attorney Start ${field} Ward`, 'planInitial');
-      await fillMinimalValidPlanInitialWard(page);
-
-      const state = await page.evaluate(async ([f, v]) => {
-        const w = window as any;
-        // Setup (D9): the attorney block blank but for the one field.
-        const blank: Record<string, string> = {};
-        for (const k of ['attorney_name', 'attorney_bar', 'attorney_email', 'attorney_secondaryEmail',
-          'attorney_street', 'attorney_cityStateZip', 'attorney_phone',
-          'attorney_signatureDate', 'attorney_signatureState']) blank[k] = '';
-        w.GuardianForms.testing.patchFiling({ ...blank, [f]: v });
-        return {
-          navComplete: w.GuardianForms.testing.status.navChecks().checks['pi-p10'],
-          blocked: (await w.GuardianForms.testing.validate.open()).some((m: ValidatorIssue) => m.message.includes('Attorney Certification')),
-        };
-      }, [field, value] as [string, string]);
-
-      // Behaviour first: these are what a filer experiences, and what failed
-      // before Milestone 58C widened the predicate.
-      expect(state.blocked, 'a started attorney block must be completed before export').toBe(true);
-      expect(state.navComplete, 'the sidebar must agree with the export gate').toBe(false);
-      // That the predicate itself counts the field is checked on the module:
-      // tests/unit/attorney-block.spec.js (Milestone 70, 70T). The sidebar
-      // reads it through window, so a missing bridge still fails the line above.
-    });
-  }
-
-  test('Plan Initial: pro se/Guardian Advocate exemption -- attorney card entirely blank still exports cleanly, and pi-p10 agrees (Error 4, red-first)', async ({ page }) => {
-    await freshStartNoPassword(page);
-    await createWard(page, 'Attorney Email PI Exempt Ward', 'planInitial');
-    await fillMinimalValidPlanInitialWard(page);
-
-    const state = await page.evaluate(async () => {
-      const w = window as any;
-      w.GuardianForms.testing.patchFiling({ 'attorney_name': '' }); w.GuardianForms.testing.patchFiling({ 'attorney_bar': '' }); w.GuardianForms.testing.patchFiling({ 'attorney_email': '' });
-      w.GuardianForms.testing.patchFiling({ 'attorney_signatureDate': '' }); w.GuardianForms.testing.patchFiling({ 'attorney_signatureState': '' });
-      return {
-        navComplete: w.GuardianForms.testing.status.navChecks().checks['pi-p10'],
-        blockedOnAttorney: (await w.GuardianForms.testing.validate.open()).some((m: ValidatorIssue) => m.message.includes('Attorney Certification')),
-      };
-    });
-    // This is Error 4's own regression: before the pi-p10 replacement, this
-    // exact fixture (a blank attorney card) reported navComplete: false --
-    // the sidebar disagreeing with the validator's own pro se exemption,
-    // present before Milestone 55D touched anything. Probe-verified
-    // directly against the pre-fix pi-p10 (unconditional
-    // filled(name)&&filled(signatureDate)) to confirm this was really red,
-    // not assumed.
-    expect(state.blockedOnAttorney, 'pro se/Guardian Advocate exemption: no attorney fields required at all').toBe(false);
-    expect(state.navComplete, 'pi-p10 must agree with the exemption on a blank card').toBe(true);
-  });
-
-  // Milestone 72C: `attorney_name`, the Simplified Plan's own field (it has
-  // no `attorney`), and still unaffected -- its attorney fields print nowhere,
-  // so nothing is required of them; and its guardian's email is a warning now.
-  test('Plan Simplified is unaffected', async ({ page }) => {
-    await freshStartNoPassword(page);
-    await createWard(page, 'Attorney Email PS Ward', 'planSimplified');
-    await fillMinimalValidPlanSimplifiedWard(page);
-    const psBaseline = await page.evaluate(async () => {
-      const w = window as any;
-      w.GuardianForms.testing.patchFiling({ 'attorney_name': 'Jordan Reyes, Esq.' }); w.GuardianForms.testing.patchFiling({ 'attorney_email': '' });
-      return (await w.GuardianForms.testing.validate.open()).some((m: ValidatorIssue) => m.message.toLowerCase().includes('email'));
-    });
-    expect(psBaseline, 'Plan Simplified never required attorney_email and this sub-delivery does not add it there').toBe(false);
-  });
-
-  // Milestone 72C: the Plan for Minors joins the rule -- an attorney started
-  // there needs a primary email too, and the sidebar agrees.
-  test('Plan Minor requires it once an attorney is started (Milestone 72C)', async ({ page }) => {
-    await freshStartNoPassword(page);
-    await createWard(page, 'Attorney Email PM Ward', 'planMinor');
-    await fillMinimalValidPlanMinorWard(page);
-    const pm = await page.evaluate(async () => {
-      const w = window as any;
-      w.GuardianForms.testing.patchFiling({ 'attorney_name': 'Jordan Reyes, Esq.' }); w.GuardianForms.testing.patchFiling({ 'attorney_email': '' });
-      return {
-        navComplete: w.GuardianForms.testing.status.navChecks().checks['pm-p7'],
-        blocked: (await w.GuardianForms.testing.validate.open()).some((m: ValidatorIssue) => m.message.includes('Preparer & Attorney — Attorney email is required')),
-      };
-    });
-    expect(pm.blocked, 'an attorney with no email cannot be served (Rule 2.516)').toBe(true);
-    expect(pm.navComplete).toBe(false);
-  });
-});
-
-// ── Milestone 57: Simplified Part V / Part VI signature parity ────────────
-//
-// The defect: select "/s/ Signed" on either attorney card, leave the date
-// blank, and every sidebar marker turns green -- then Print Preview refuses
-// the export. s-p5 reached attorney_signatureDate only through datesOrdered(),
-// which is deliberately blank-tolerant, and s-p6 never looked at the
-// certificate attorney's signature at all, while validateSimplified() ran the
-// full three-state machine for both.
-//
-// These drive the real sidebar against the real validator across the whole
-// finite domain rather than sampling it -- three explicit states, both legacy
-// blank-state inferences, and an unrecognized value. The assertion is
-// agreement: whatever the export gate says, the sidebar must say too.
-// tests/unit/signature-completeness.spec.js pins the rule itself; this pins
-// that the sidebar is actually wired to it.
-// Milestone 58D. Part XI is the guardian's declaration of remuneration, which
-// 744.367(3)(a) requires the annual report to include. An untouched Part XI
-// used to count as complete on both sides, so a filing could be exported
-// having never answered it -- neither "here is what I received" nor "I
-// received none". This is a NEW requirement rather than a parity repair: on
-// Part XI the sidebar and the validator already agreed.
-// Milestone 57E-1. "#1. Does the Ward have one or more Trusts?" answered Yes,
-// every trust card left blank, and the accounting exports clean. The filed
-// document tells the Clerk the ward has trusts and names none -- no trustee,
-// no account number, no value.
-//
-// validateAnnual() filtered trust rows to those carrying content and required
-// createdAfterGID on each. With every row blank the filter yields nothing and
-// the loop body never runs, so the affirmative produced no issue at all. The
-// sidebar disagreed the whole time: a-p8 requires a trust NAME, so Part VIII
-// showed incomplete while the export gate found nothing wrong.
-// Milestone 57B. One recipient rule across all three families, and the D7
-// conversion reset. Two opposite defects closed: the Inventory blocked export
-// on an accidentally-added empty card, and both accountings let a recipient
-// with a name and no address reach the clerk unremarked.
-test.describe('Milestone 57B: service recipients, one rule and no carry-over', () => {
-  test('a started second recipient now blocks the Annual family, and the sidebar agrees', async ({ page }) => {
-    await freshStartNoPassword(page);
-    await createWard(page, 'Recip Annual Ward', 'annual');
-    await fillMinimalValidAnnualWard(page);
-    const out = await page.evaluate(async () => {
-      const w = window as any;
-      w.GuardianForms.testing.patchFiling({ 'certNoRecipients': '' });
-      w.GuardianForms.testing.patchFiling({ 'certRecipients': [{ name: 'A Person', line2: '1 Main St' }, { name: '', line2: 'orphan line' }] });
-      return {
-        blocked: (await w.GuardianForms.testing.validate.open()).some((m: any) => /Recipient 2/.test(String(m.message))),
-        navComplete: w.GuardianForms.testing.status.navChecks().checks['a-p10'],
-      };
-    });
-    expect(out.blocked, 'a half-addressed recipient must not reach the clerk').toBe(true);
-    expect(out.navComplete).toBe(false);
-  });
-
-  test('an untouched extra card no longer blocks the Initial Inventory', async ({ page }) => {
-    await freshStartNoPassword(page);
-    await createWard(page, 'Recip Inventory Ward', 'guardian');
-    await fillMinimalValidGuardianWard(page);
-    const out = await page.evaluate(async () => {
-      const w = window as any;
-      const first = { ...(w.GuardianForms.testing.field('serviceRecipients')?.[0] || {}) };
-      // A complete Recipient 1, then an empty card added by a stray click.
-      w.GuardianForms.testing.patchFiling({ 'serviceRecipients': [
-        { name: first.name || 'A Person', line2: first.line2 || '1 Main St', line3: first.line3 || 'Clearwater, FL 33755' },
-        { name: '', line2: '', line3: '' },
-      ] });
-      return (await w.GuardianForms.testing.validate.open()).filter((m: any) => /Recipient 2/.test(String(m.message))).map((m: any) => String(m.message));
-    });
-    expect(out, 'an empty extra card used to block export until filled or removed').toEqual([]);
-  });
-
-  test('a filer with nobody to serve can say so, and it clears the block', async ({ page }) => {
-    await freshStartNoPassword(page);
-    await createWard(page, 'Recip None Ward', 'annual');
-    await fillMinimalValidAnnualWard(page);
-    const out = await page.evaluate(async () => {
-      const w = window as any;
-      w.GuardianForms.testing.patchFiling({ 'certRecipients': [{ name: '', line2: '', line3: '', line4: '' }] });
-      w.GuardianForms.testing.patchFiling({ 'certNoRecipients': '' });
-      // Milestone 72J: the issue says what to do (service-recipients.js's
-      // RECIPIENTS_OR_ATTESTATION), no longer the checkbox's caption.
-      const unanswered = (await w.GuardianForms.testing.validate.open()).filter((m: any) => /List at least one recipient who was served, or state that no recipients are required/.test(String(m.message))).length;
-      w.GuardianForms.testing.patchFiling({ 'certNoRecipients': 'Yes' });
-      const attested = (await w.GuardianForms.testing.validate.open()).filter((m: any) => /Part X —/.test(String(m.message))).length;
-      return { unanswered, attested, nav: w.GuardianForms.testing.status.navChecks().checks['a-p10'] };
-    });
-    expect(out.unanswered, 'listing nobody must ask the question').toBe(1);
-    expect(out.attested, 'answering it clears Part X').toBe(0);
-    expect(out.nav).toBe(true);
-  });
-
-  // D7. The attestation is this filer's assertion about THIS filing. A new
-  // filing has its own recipients and must answer for itself.
-  test('no conversion path carries the attestation forward, and addresses still migrate', async ({ page }) => {
-    await freshStartNoPassword(page);
-    await createWard(page, 'Convert Source Ward', 'guardian');
-    await fillMinimalValidGuardianWard(page);
-    // Setup (D9): the source's attestations answered "Yes", with a recipient listed.
-    const guardianId = await page.evaluate(() => {
-      const t = (window as any).GuardianForms.testing;
-      t.patchFiling({
-        serviceNoRecipients: 'Yes',
-        certNoRecipients: 'Yes',
-        serviceRecipients: [{ name: 'Kept Person', line2: '1 Main St', line3: 'Clearwater, FL 33755' }],
-        certRecipients: [{ name: 'Kept Person', line2: '1 Main St' }],
-      });
-      return t.snapshot().filing.wardId;
-    });
-
-    // Each real conversion (Convert Filing: convertExistingWard(), which runs
-    // the mappers these three paths use), then the new filing it opens. Until
-    // Milestone 70's 70T the mappers were called directly on hand-built
-    // destination objects.
-    const convert = async (sourceId: string, targetType: string) => {
-      await page.evaluate(({ id, to }) => {
-        (window as any).__converted = (window as any).GuardianForms.testing.convertFiling.convert(id, to)
-          .then(() => (window as any).GuardianForms.testing.snapshot().filing);
-      }, { id: sourceId, to: targetType });
-      await acceptDynDialog(page); // "Converted ... into a new ... form."
-      return page.evaluate(() => (window as any).__converted);
-    };
-    const toAnnual = await convert(guardianId, 'annual');           // convertGuardianSchedulesToAnnual + convertGuardianExtrasToAnnual
-    const toSimplified = await convert(guardianId, 'simplified');   // convertToSimplified
-    // The Simplified filing, now open, with its own attestations answered.
-    await page.evaluate(() => (window as any).GuardianForms.testing.patchFiling({ serviceNoRecipients: 'Yes', certNoRecipients: 'Yes' }));
-    const simplifiedToAnnual = await convert(toSimplified.wardId, 'annual'); // convertSimplifiedToAnnual
-
-    const out: Record<string, { cert: string; service: string }> = {
-      'guardian -> annual': { cert: toAnnual.certNoRecipients, service: toAnnual.serviceNoRecipients },
-      'guardian -> simplified': { cert: toSimplified.certNoRecipients, service: toSimplified.serviceNoRecipients },
-      'simplified -> annual': { cert: simplifiedToAnnual.certNoRecipients, service: simplifiedToAnnual.serviceNoRecipients },
-    };
-    for (const [path, value] of Object.entries(out)) {
-      expect(value, `${path} must reset both attestations to unanswered`)
-        .toMatchObject({ cert: '', service: '' });
-    }
-    // ...while the recipient's name and address still migrate.
-    expect((toSimplified.certRecipients || []).map((r: any) => r.name), 'guardian -> simplified keeps the recipient').toContain('Kept Person');
-  });
-});
-
-test.describe('Milestone 57E-1: an affirmative trust answer must name a trust', () => {
-  async function trustState(page: import('@playwright/test').Page, trusts: unknown[]) {
-    return page.evaluate(async (rows) => {
-      const w = window as any;
-      w.GuardianForms.testing.patchFiling({ 'trusts': rows });
-      const issues = (await w.GuardianForms.testing.validate.open());
-      const partVIII = issues.filter((m: any) => /Part VIII/i.test(String(m.message)));
-      // The export gate's own classification (the issue registry, through
-      // prepareFilingOutput()), judged on a copy of this filing.
-      const gate = await w.GuardianForms.testing.validate.fixture(w.GuardianForms.testing.snapshot().filing);
-      return {
-        navComplete: w.GuardianForms.testing.status.navChecks().checks['a-p8'],
-        messages: partVIII.map((m: any) => String(m.message)),
-        // D9: this offers a clearable acknowledgement at output, never a hard
-        // block. A literal issue-registry key would make it unbypassable.
-        bypassable: gate.filter((g: any) => /Part VIII/i.test(g.message)).map((g: any) => g.bypassable),
-        codes: partVIII.map((m: any) => m.code),
-      };
-    }, trusts);
-  }
-
-  test('Yes with every trust card blank raises an issue, and the sidebar agrees', async ({ page }) => {
-    await freshStartNoPassword(page);
-    await createWard(page, 'Trust Blank Yes Ward', 'annual');
-    await fillMinimalValidAnnualWard(page);
-    const state = await trustState(page, [{ hasTrust: 'Yes' }, {}, {}]);
-    expect(state.messages, 'an affirmative that names no trust must not export clean')
-      .toContain('Part VIII — Trust 1 — Name');
-    expect(state.navComplete, 'the sidebar already said incomplete; the export gate now agrees').toBe(false);
-  });
-
-  test('the issue is bypassable, per D9 -- an acknowledgement, not a hard block', async ({ page }) => {
-    await freshStartNoPassword(page);
-    await createWard(page, 'Trust Bypass Ward', 'annual');
-    await fillMinimalValidAnnualWard(page);
-    const state = await trustState(page, [{ hasTrust: 'Yes' }, {}, {}]);
-    // Asserted non-vacuously: .every() on an empty array is true, so without
-    // this the test would pass while the issue did not exist at all.
-    expect(state.codes.length, 'there must be an issue before its bypassability means anything').toBeGreaterThan(0);
-    expect(state.bypassable.every((b: unknown) => b !== false), `codes: ${state.codes.join(', ')}`).toBe(true);
-  });
-
-  test('one described trust satisfies it', async ({ page }) => {
-    await freshStartNoPassword(page);
-    await createWard(page, 'Trust Named Ward', 'annual');
-    await fillMinimalValidAnnualWard(page);
-    const state = await trustState(page, [{ hasTrust: 'Yes', name: 'Ashford Family Trust', createdAfterGID: 'No' }, {}, {}]);
-    expect(state.messages).not.toContain('Part VIII — Trust 1 — Name');
-    expect(state.navComplete).toBe(true);
-  });
-
-  test('No does not raise it, and neither does the unanswered state raise it twice', async ({ page }) => {
-    await freshStartNoPassword(page);
-    await createWard(page, 'Trust No Ward', 'annual');
-    await fillMinimalValidAnnualWard(page);
-
-    const no = await trustState(page, [{ hasTrust: 'No' }, {}, {}]);
-    expect(no.messages).not.toContain('Part VIII — Trust 1 — Name');
-
-    // Unanswered keeps whatever the existing rule says about it; this delivery
-    // must not add a second issue for the same blank question.
-    const blank = await trustState(page, [{ hasTrust: '' }, {}, {}]);
-    expect(blank.messages).not.toContain('Part VIII — Trust 1 — Name');
-  });
-});
-
-test.describe('Milestone 58D: Part XI must be answered before export', () => {
-  const partXiIssue = (m: ValidatorIssue) => /Part XI/i.test(String(m.message));
-
-  async function partXiState(page: import('@playwright/test').Page) {
-    return page.evaluate(async () => {
-      const w = window as any;
-      return {
-        navComplete: w.GuardianForms.testing.status.navChecks().checks['a-p11'],
-        blocked: (await w.GuardianForms.testing.validate.open()).some((m: any) => /Part XI/i.test(String(m.message))),
-      };
-    });
-  }
-
-  test('unanswered: the sidebar and the export gate both say incomplete', async ({ page }) => {
-    await freshStartNoPassword(page);
-    await createWard(page, 'Part XI Unanswered Ward', 'annual');
-    await fillMinimalValidAnnualWard(page);
-    await page.evaluate(() => {
-      const w = window as any;
-      w.GuardianForms.testing.patchFiling({ 'remuneration': [] });
-      if (w.GuardianForms.testing.field('scheduleNoItems')) w.GuardianForms.testing.patchFiling({ 'scheduleNoItems.remuneration': false });
-    });
-    const state = await partXiState(page);
-    expect(state.blocked, 'an unanswered Part XI must block export').toBe(true);
-    expect(state.navComplete, 'the sidebar must agree').toBe(false);
-  });
-
-  test('declaring none answers it', async ({ page }) => {
-    await freshStartNoPassword(page);
-    await createWard(page, 'Part XI None Ward', 'annual');
-    await fillMinimalValidAnnualWard(page);
-    await page.evaluate(() => {
-      const w = window as any;
-      w.GuardianForms.testing.patchFiling({ 'remuneration': [] });
-      w.GuardianForms.testing.patchFiling({ 'scheduleNoItems': { ...(w.GuardianForms.testing.field('scheduleNoItems') || {}), remuneration: true } });
-    });
-    const state = await partXiState(page);
-    expect(state.blocked).toBe(false);
-    expect(state.navComplete).toBe(true);
-  });
-
-  test('a complete entry answers it; an incomplete one does not', async ({ page }) => {
-    await freshStartNoPassword(page);
-    await createWard(page, 'Part XI Rows Ward', 'annual');
-    await fillMinimalValidAnnualWard(page);
-
-    const complete = await page.evaluate(async () => {
-      const w = window as any;
-      w.GuardianForms.testing.patchFiling({ 'scheduleNoItems': { ...(w.GuardianForms.testing.field('scheduleNoItems') || {}), remuneration: false } });
-      w.GuardianForms.testing.patchFiling({ 'remuneration': [{ guardian: 'Rachel Alvarez', type: 'Guardian Fee', amount: '1200', description: '' }] });
-      return { navComplete: w.GuardianForms.testing.status.navChecks().checks['a-p11'],
-        blocked: (await w.GuardianForms.testing.validate.open()).some((m: any) => /Part XI/i.test(String(m.message))) };
-    });
-    expect(complete.blocked, 'a complete entry answers Part XI').toBe(false);
-    expect(complete.navComplete).toBe(true);
-
-    // Description stays optional -- the data model records it so, and the
-    // editor asterisk claiming otherwise was the actual error.
-    const partial = await page.evaluate(async () => {
-      const w = window as any;
-      w.GuardianForms.testing.patchFiling({ 'remuneration': [{ guardian: 'Rachel Alvarez', type: '', amount: '', description: '' }] });
-      return { navComplete: w.GuardianForms.testing.status.navChecks().checks['a-p11'],
-        blocked: (await w.GuardianForms.testing.validate.open()).some((m: any) => /Part XI/i.test(String(m.message))) };
-    });
-    expect(partial.blocked, 'a half-entered row is not a declaration').toBe(true);
-    expect(partial.navComplete).toBe(false);
-  });
-
-  test('entered rows win over a stale no-items flag, and the rows are kept', async ({ page }) => {
-    await freshStartNoPassword(page);
-    await createWard(page, 'Part XI Stale Flag Ward', 'annual');
-    await fillMinimalValidAnnualWard(page);
-    // Stored as an older save left it, then opened again: the load path
-    // normalizes it (Milestone 70, 70T; it called normalizeWardData() by hand).
-    const scheduleNoItems = await page.evaluate(() => (window as any).GuardianForms.testing.field('scheduleNoItems') || {});
-    const d = await reopenFilingWithStoredShape(page, {
-      scheduleNoItems: { ...scheduleNoItems, remuneration: true },
-      remuneration: [{ guardian: 'G', type: 'Fee', amount: '50', description: '' }],
-    });
-    const out = { flag: d.scheduleNoItems.remuneration, rows: d.remuneration.length };
-    expect(out.flag, 'the contradicted declaration is withdrawn').toBe(false);
-    expect(out.rows, 'entered data is never discarded to resolve the contradiction').toBe(1);
-  });
-
-  test('a legacy filing of only blank rows normalizes so the declaration is reachable', async ({ page }) => {
-    await freshStartNoPassword(page);
-    await createWard(page, 'Part XI Legacy Ward', 'annual');
-    // Stored as a pre-58D save left it, then opened again (Milestone 70, 70T).
-    const d = await reopenFilingWithStoredShape(page, { remuneration: [{ guardian: '', type: '', amount: '', description: '' }] });
-    const out = d.remuneration.length;
-    expect(out, 'the blank placeholder that hid the checkbox is cleared').toBe(0);
-  });
-});
-
-test.describe('Milestone 57: Simplified attorney signature parity, Parts V and VI', () => {
-  type SigCase = { label: string; state: string; date: string; image: string; complete: boolean };
-
-  // periodTo on the shared fixture is 2026-12-31, and s-p5 also date-orders
-  // the signature against it, so every "has a date" case uses a date after
-  // the period closes -- otherwise a case would fail for date order rather
-  // than for the signature rule under test.
-  const SIGNED_DATE = '2027-01-05';
-  const STAMP_IMAGE = 'data:image/png;base64,iVBORw0KGgo=';
-
-  const CASES: SigCase[] = [
-    { label: 'explicit none',              state: 'none',      date: '',          image: '',          complete: true },
-    { label: 'legacy blank, no date',      state: '',          date: '',          image: '',          complete: true },
-    { label: 'legacy blank, with date',    state: '',          date: SIGNED_DATE, image: '',          complete: true },
-    { label: 'typed, date present',        state: 'typed',     date: SIGNED_DATE, image: '',          complete: true },
-    { label: 'typed, NO date',             state: 'typed',     date: '',          image: '',          complete: false },
-    { label: 'stamp, image present',       state: 'stamp',     date: '',          image: STAMP_IMAGE, complete: true },
-    { label: 'stamp, NO image',            state: 'stamp',     date: '',          image: '',          complete: false },
-    { label: 'unrecognized state',         state: 'notarized', date: SIGNED_DATE, image: STAMP_IMAGE, complete: false },
-  ];
-
-  const PARTS = [
-    { part: 'Part V',  navKey: 's-p5', statePath: 'attorney_signatureState',   datePath: 'attorney_signatureDate', imagePath: 'attorney_signatureImage' },
-    { part: 'Part VI', navKey: 's-p6', statePath: 'certAttySignatureState',    datePath: 'certAttySignDate',       imagePath: 'certAttySignatureImage' },
-  ];
-
-  for (const { part, navKey, statePath, datePath, imagePath } of PARTS) {
-    test(`${part}: the sidebar and the export gate agree across all eight signature states`, async ({ page }) => {
-      await freshStartNoPassword(page);
-      await createSimplifiedWard(page, `Signature Parity ${part} Ward`);
-      await fillMinimalValidSimplifiedWard(page);
-
-      const results = await page.evaluate(async ({ cases, navKey, statePath, datePath, imagePath, part }) => {
-        const w = window as any;
-        const out = [];
-        for (const c of cases as any[]) {
-          w.GuardianForms.testing.patchFiling({ [statePath]: c.state, [datePath]: c.date, [imagePath]: c.image });
-          const issues = (await w.GuardianForms.testing.validate.open())
-            .filter((i: any) => String(i.message).startsWith(`${part} —`) && /signature|date signed|stamp/i.test(String(i.message)));
-          out.push({
-            label: c.label,
-            expected: c.complete,
-            navComplete: w.GuardianForms.testing.status.navChecks().checks[navKey],
-            blocked: issues.length > 0,
-            messages: issues.map((i: any) => String(i.message)),
-          });
-        }
-        return out;
-      }, { cases: CASES, navKey, statePath, datePath, imagePath, part });
-
-      const disagreements = results.filter((r) => r.navComplete !== !r.blocked);
-      expect(
-        disagreements.map((r) => `${r.label}: sidebar ${r.navComplete ? 'complete' : 'incomplete'} vs export ${r.blocked ? 'blocked' : 'clean'}`),
-        `${part}: the sidebar disagrees with the export gate`,
-      ).toEqual([]);
-
-      const wrong = results.filter((r) => r.navComplete !== r.expected);
-      expect(
-        wrong.map((r) => `${r.label}: expected ${r.expected ? 'complete' : 'incomplete'}, got the opposite${r.messages.length ? ` (${r.messages[0]})` : ''}`),
-        `${part}: a signature state is judged wrongly`,
-      ).toEqual([]);
-    });
-  }
-});
+// Until TEST-REVIEW.md Delivery 1M (2026-10-13) this file went on with 38
+// cases that patched a filing's data and asked whether the sidebar's mark
+// agreed with the export gate (Milestones 40C-E, 55B, 55D, 57B, 57E-1, 58D
+// and 57's signature parity). Since Milestone 73F part 2 the sidebar's marks
+// are the export checks' own, and tests/unit/sidebar-export-parity.spec.js
+// judges that agreement over every variant of all nine filing types; the
+// rules those cases carried are pinned in tests/unit: attorney-block and
+// plan-attorney-started (55D), service-recipients and service-method (57B),
+// date-rules (55B), signature-completeness (57), and
+// annual-trust-and-remuneration-rules (57E-1, 58D).

@@ -38,8 +38,10 @@ non-zero, so a later stage never runs against a broken prerequisite.
 
 - **`npm test` is unchanged and stays unchanged.** It is the full regression
   §2 governs. `test:quick` is not a substitute for it and is not a merge gate:
-  it runs 69 of the suite's 1,238 browser tests (counted with `--list`,
-  2026-10-12).
+  it runs 35 of the suite's 1,036 browser tests (counted with `--list`,
+  2026-10-14; TEST-REVIEW.md Delivery 1M cut the suite from 1,238 and the
+  tier from 69, the requester choosing to leave the tier's four specs as
+  they are).
 - **Both named tiers go through `scripts/run-e2e-profile.mjs`** (since
   2026-10-13: `test:e2e` is its `source` profile, `test:e2e:quick` its
   `quick` profile, and `test:quick` is unit + `test:e2e:quick`). The runner

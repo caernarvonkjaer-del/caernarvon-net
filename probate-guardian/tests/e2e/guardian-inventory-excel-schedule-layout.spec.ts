@@ -305,59 +305,9 @@ test.describe('Guardian Inventory Excel export writes what the court form comput
     });
   });
 
-  test('a workbook exported before 60K (0-100 percentages, B-4 account on the fourth line) still imports correctly', async ({ page }) => {
-    test.setTimeout(150_000);
-    await freshStartNoPassword(page);
-    await createWard(page, 'Legacy Excel Ward', 'guardian');
-    await fillMinimalValidGuardianWard(page);
-    const xlsxPath = await exportGuardianWorkbook(page, FIXTURE, 'pg-60k-legacy');
+  // 'a workbook exported before 60K ... still imports correctly' ran here
+  // until TEST-REVIEW.md Delivery 1M (2026-10-13):
+  // tests/unit/workbook-contract.spec.js's Inventory rows pin the 71C
+  // share reading and the fourth-line account on a rewritten workbook.
 
-    // Rewrite the file the way the pre-60K exporter did, using the same ExcelJS.
-    await page.addScriptTag({ url: 'lib/exceljs.min.js' });
-    await page.waitForFunction(() => typeof (window as any).ExcelJS !== 'undefined', { timeout: 15_000 });
-    const b64 = fs.readFileSync(xlsxPath).toString('base64');
-    const legacyBytes = await page.evaluate(async ([data, a1Name, a1Row, b4Name, b4Row]) => {
-      const ExcelJS = (window as any).ExcelJS;
-      const wb = new ExcelJS.Workbook();
-      const bin = atob(data as string);
-      const bytes = new Uint8Array(bin.length);
-      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-      await wb.xlsx.load(bytes.buffer);
-      wb.getWorksheet(a1Name as string).getCell(`H${a1Row}`).value = 50;       // legacy: 50 meant 50%
-      const b4 = wb.getWorksheet(b4Name as string);
-      b4.getCell(`C${(b4Row as number) + 3}`).value = 'LEGACY-ACCT';           // legacy: fourth line
-      b4.getCell(`C${(b4Row as number) + 4}`).value = null;
-      const buffer = await wb.xlsx.writeBuffer();
-      return Array.from(new Uint8Array(buffer));
-    }, [b64, a1.name, a1.rows[1], b4.name, b4.rows[1]] as const);
-    const legacyPath = path.join(os.tmpdir(), `pg-60k-legacy-rewritten-${Date.now()}.xlsx`);
-    fs.writeFileSync(legacyPath, Buffer.from(legacyBytes));
-
-    await createWard(page, 'Legacy Import Target', 'guardian');
-    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
-    await importWorkbookConfirmed(page, legacyPath);
-    await page.waitForFunction(() => Array.isArray((window as any).GuardianForms.testing.field('scheduleA1')) && (window as any).GuardianForms.testing.field('scheduleA1.length') > 0, undefined, { timeout: 15_000 });
-
-    const imported = await page.evaluate(() => {
-      const d = (window as any).GuardianForms.testing.snapshot().filing;
-      return {
-        a1Pct: d.scheduleA1.map((r: any) => r.wardPercent),
-        b4Acct: d.scheduleB4.map((r: any) => r.accountNumber),
-        b2Keys: Object.keys(d.scheduleB2[0]),
-        c2City: d.scheduleC2.map((r: any) => r.claimantCityStateZip),
-      };
-    });
-    // Row 2 was rewritten to the legacy 50; rows 1 and 3 keep the fractions 0.25 and 1.
-    // Milestone 71C (decision D10): a share cell is read the way the Clerk's
-    // workbook reads it -- 50 in a 0.00% cell is 5,000% -- so row 2 imports as
-    // 5000 and the range check flags it, instead of the pre-60K reading this
-    // spec used to pin (no such export needs reading: AGENTS.md section 8
-    // item 2, and the change fails visibly).
-    expect(imported.a1Pct).toEqual([25, 5000, 100]);
-    // Row 2's account number was moved to the legacy fourth line; the reader finds it there.
-    expect(imported.b4Acct).toEqual(['B4-ACCT-0', 'LEGACY-ACCT', 'B4-ACCT-100']);
-    // The stored safe-deposit amount is gone from imported rows.
-    expect(imported.b2Keys).not.toContain('amountInSDB');
-    expect(imported.c2City).toEqual(['St Petersburg, FL 33710', 'St Petersburg, FL 33711', 'St Petersburg, FL 33712']);
-  });
 });

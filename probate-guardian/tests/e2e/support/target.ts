@@ -118,7 +118,7 @@ export const freshStartWardNoPassword = freshStartNoPassword;
 export async function createWard(page: Page, name: string, type = 'guardian'): Promise<void> {
   const needsDialog = type === 'simplified' || await page.evaluate((n) => {
     const wards = (window as any).GuardianForms.testing.snapshot().caseFile?.wards || [];
-    return wards.some((w: any) => (w.wardName || '').trim().toLowerCase() === n.trim().toLowerCase());
+    return wards.some((ward: any) => (ward.wardName || '').trim().toLowerCase() === n.trim().toLowerCase());
   }, name);
   if (needsDialog) return createWardViaDialog(page, name, type);
   await page.evaluate(([n, t]) => (window as any).GuardianForms.testing.createFiling.add(n, t), [name, type]);

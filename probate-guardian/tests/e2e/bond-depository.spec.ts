@@ -94,23 +94,11 @@ for (const form of [
     pdfButton: '[data-annual-action="save-pdf"]', excelButton: '[data-annual-action="save-excel"]' },
 ]) {
   test.describe(`Milestone 67B — ${form.label}`, () => {
-    test('the export gate never blocks on the bond block: every state, blank or filled', async ({ page }) => {
-      await freshStartNoPassword(page);
-      await createWard(page, `${form.label} Bond Gate`, form.type);
-      await form.fill(page);
-      for (const state of ['', ...STATES]) {
-        for (const fields of [BLANK_BOND, FULL_BOND]) {
-          await setFields(page, { bondDepositoryState: state, ...fields });
-          expect(await sectionIssues(page, form.section), `state=${JSON.stringify(state)} fields=${fields === BLANK_BOND ? 'blank' : 'filled'}`).toEqual([]);
-        }
-      }
-      // And the buttons agree with the validator: nothing in the reason line
-      // beside them stops either (Milestone 74C).
-      await setFields(page, { bondDepositoryState: '', ...BLANK_BOND });
-      await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
-      await expectExportReady(page.locator(form.pdfButton));
-      await expectExportReady(page.locator(form.excelButton));
-    });
+    // 'the export gate never blocks on the bond block: every state,
+    // blank or filled' ran here for both forms until TEST-REVIEW.md
+    // Delivery 1M (2026-10-13): tests/unit/bond-depository.spec.js
+    // judges every state's advisories as never blocking, and the preview
+    // case below checks both export buttons stay ready.
 
     test('each state reveals only its fields, on the click, and switching states keeps what was typed', async ({ page }) => {
       await freshStartNoPassword(page);
@@ -171,6 +159,7 @@ for (const form of [
       await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
       await expect(advisories(page).filter({ hasText: `${form.section} —` })).toHaveCount(0);
       await expectExportReady(page.locator(form.pdfButton));
+      await expectExportReady(page.locator(form.excelButton));
     });
 
     test('a filing saved under the old shape reads back with the answer it implied, and the old fields are gone', async ({ page }) => {

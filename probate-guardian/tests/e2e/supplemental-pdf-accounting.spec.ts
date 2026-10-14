@@ -64,8 +64,16 @@ test.describe('Supplemental PDF inline rendering for Accounting forms (Annual, T
     expect(result.numPages).toBe(result.basePageCount + 1);
 
     const extractedText = await extractPdfText(result.rawPdfString);
-    expect(extractedText).toContain('SCHEDULE A: Income Received During Period');
-    expect(extractedText).toContain('SCHEDULE A ATTACHMENT: Social Security Benefit Verification Letter');
+    // Milestone 33, Phase 3.2: the attachment follows its Schedule A content
+    // and precedes Schedule B-1 -- not merely somewhere in the file. (Until
+    // TEST-REVIEW.md Delivery 1M, 2026-10-13, output-semantics.artifact.spec.ts
+    // built a second PDF to assert this order.)
+    const schAIndex = extractedText.indexOf('SCHEDULE A: Income Received During Period');
+    const attachmentIndex = extractedText.indexOf('SCHEDULE A ATTACHMENT: Social Security Benefit Verification Letter');
+    const schB1Index = extractedText.indexOf('SCHEDULE B-1: Attorney Fees');
+    expect(schAIndex, 'Schedule A heading').toBeGreaterThan(-1);
+    expect(attachmentIndex, 'the attachment, after Schedule A').toBeGreaterThan(schAIndex);
+    expect(schB1Index, 'Schedule B-1, after the attachment').toBeGreaterThan(attachmentIndex);
     expect(extractedText).toContain('Official SSA Award Letter for 2026-2027.');
   });
 

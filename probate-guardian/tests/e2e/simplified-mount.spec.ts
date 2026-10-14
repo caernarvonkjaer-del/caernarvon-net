@@ -30,35 +30,12 @@ test.describe('simplified-accounting feature module', () => {
     expect(errors, `console/page errors while navigating Simplified pages: ${errors.join('\n')}`).toEqual([]);
   });
 
-  test('an incomplete filing is blocked from export with a clear error', async ({ page }) => {
-    await freshStartNoPassword(page);
-    await createSimplifiedWard(page, 'Incomplete Simplified Ward');
-    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
-
-    await page.locator('[data-simplified-action="save-pdf"]').click();
-    const alertMessage = await acceptDynDialog(page);
-
-    expect(alertMessage).toContain('Cannot export');
-  });
-
-  test('a fully completed filing exports a real PDF', async ({ page }) => {
-    await freshStartNoPassword(page);
-    await createSimplifiedWard(page, 'Complete Simplified PDF Ward');
-    await fillMinimalValidSimplifiedWard(page);
-    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
-
-    const downloadPromise = page.waitForEvent('download', { timeout: 20_000 });
-    await page.locator('[data-simplified-action="save-pdf"]').click();
-    const download = await downloadPromise;
-
-    expect(download.suggestedFilename()).toMatch(/\.pdf$/i);
-    const stream = await download.createReadStream();
-    const chunks: Buffer[] = [];
-    for await (const chunk of stream) chunks.push(chunk as Buffer);
-    const bytes = Buffer.concat(chunks);
-    expect(bytes.length).toBeGreaterThan(1000);
-    expect(bytes.subarray(0, 5).toString('latin1')).toBe('%PDF-');
-  });
+  // 'an incomplete filing is blocked from export with a clear error' and
+  // 'a fully completed filing exports a real PDF' ran here until
+  // TEST-REVIEW.md Delivery 1M (2026-10-13):
+  // navigation-status.contract.spec.ts and
+  // output-semantics.artifact.spec.ts cover both, more strictly, for the
+  // Simplified.
 
   test('exporting to the bundled blank template then re-importing round-trips key fields', async ({ page }) => {
     await freshStartNoPassword(page);

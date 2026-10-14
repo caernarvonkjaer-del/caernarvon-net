@@ -137,16 +137,10 @@ test.describe('Milestone 72G: the method on the PDF, the ward\'s status in the w
     expect(reopened.serviceMethod).toBe('Hand delivery');
   });
 
-  test('a Plan: the relabelled box prints as its own line', async ({ page }) => {
-    test.setTimeout(180_000);
-    await freshStartNoPassword(page);
-    await createWard(page, 'Service Method Plan', 'planAnnual');
-    await fillMinimalValidPlanAnnualWard(page);
-    await go(page, '/p12');
-    await expect(page.locator('#main-content')).toContainText('How were the copies served?');
-    await typeInto(page, 'certIndicator', 'E-mail to the attorney');
-    const text = await pdfText(page, '[data-form-action="save-pdf-plan-annual"]');
-    expect(text).toContain('Method of service: E-mail to the attorney');
-    expect(text).not.toContain('| E-mail to the attorney');
-  });
+  // 'a Plan: the relabelled box prints as its own line' ran here until
+  // TEST-REVIEW.md Delivery 1M (2026-10-13):
+  // tests/unit/service-method.spec.js pins the Plans' line and that it is
+  // no table cell, and plan-certificate-of-service.spec.ts prints it on a
+  // real download.
+
 });

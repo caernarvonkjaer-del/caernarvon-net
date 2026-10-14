@@ -52,9 +52,16 @@ async function download(page: Page, selector: string) {
   return readAll(await (await dl).createReadStream());
 }
 
+// Delivery 1M (2026-10-13): the four shared cases run for one Plan -- the
+// page, the rows, the attestation and the PDF section are shared (form-
+// events.js's add-plan-row/remove-plan-row, plan-certificate-of-service-page.js,
+// planCertificateOfServiceSection); tests/unit/sidebar-export-parity.spec.js,
+// section-guidance-policy.spec.js and certificate-recipients.spec.js pin each
+// Plan's own rule and pdf-model. The Simplified Plan's optional certificate
+// keeps its own cases below.
 for (const form of FORMS) {
   test.describe(`Milestone 68C — ${form.label}`, () => {
-    test('the page exists, recipients add and remove through the real buttons, and export is never blocked', async ({ page }) => {
+    if (form.type === 'planAnnual') test('the page exists, recipients add and remove through the real buttons, and export is never blocked', async ({ page }) => {
       test.setTimeout(120_000);
       await freshStartNoPassword(page);
       await createWard(page, `${form.label} Certificate`, form.type);
@@ -89,7 +96,7 @@ for (const form of FORMS) {
       await expectExportReady(page.locator(form.pdfButton), 20_000, 'nothing stops Save as PDF with a half-finished certificate');
     });
 
-    test('the attestation hides the cards without deleting them, and the sidebar asks until someone is listed or the attestation is Yes', async ({ page }) => {
+    if (form.type === 'planAnnual') test('the attestation hides the cards without deleting them, and the sidebar asks until someone is listed or theattestation is Yes', async ({ page }) => {
       await freshStartNoPassword(page);
       await createWard(page, `${form.label} Certificate Attest`, form.type);
       await form.fill(page);
@@ -133,7 +140,7 @@ for (const form of FORMS) {
       await expect(page.locator('[data-service-attestation]'), 'someone is listed: the question hides').toHaveClass(/d-none/);
     });
 
-    test('clicked for real while the page is marked, the button reaches Preview & Export; leaving removes the untouched card and keeps the named one', async ({ page }) => {
+    if (form.type === 'planAnnual') test('clicked for real while the page is marked, the button reaches Preview & Export; leaving removes the untouched card and keeps the named one', async ({ page }) => {
       await freshStartNoPassword(page);
       await createWard(page, `${form.label} Certificate Click`, form.type);
       await form.fill(page);
@@ -153,7 +160,7 @@ for (const form of FORMS) {
         .toEqual(['Kept Recipient']);
     });
 
-    test('the PDF prints the certificate with its recipients, date, method and the "Certified by" signer', async ({ page }) => {
+    if (form.type === 'planAnnual') test('the PDF prints the certificate with its recipients, date, method and the "Certified by" signer', async ({ page }) => {
       test.setTimeout(120_000);
       await freshStartNoPassword(page);
       await createWard(page, `${form.label} Certificate PDF`, form.type);

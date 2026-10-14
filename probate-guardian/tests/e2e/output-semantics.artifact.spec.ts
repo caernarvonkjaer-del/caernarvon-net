@@ -6,9 +6,8 @@ import {
   fillMinimalValidPlanInitialWard, fillMinimalValidPlanMinorWard,
   expectExportReady, clickExport,
 } from './support/target';
-import { inspectPdf, extractPdfText } from './support/pdf-extract';
+import { inspectPdf } from './support/pdf-extract';
 import { extractXlsx } from './support/xlsx-extract';
-import { buildSupplementalAttachmentFixture } from './support/supplemental-pdf-fixture';
 import {
   filingCapabilities, expectedPdfMetadataTitle, expectedLegalCopy, type FilingType,
 } from './support/filing-matrix';
@@ -213,61 +212,10 @@ test.describe('Output semantics artifact contract (Milestone 33, Phase 3)', () =
     });
   }
 
-  test('PDF Schedule A supplemental document insertion occurs directly after Schedule A content', async ({ page }) => {
-    await freshStartNoPassword(page);
-    await createWard(page, 'Schedule A Supplemental Order Ward', 'annual');
-
-    const fixture = await buildSupplementalAttachmentFixture(page, 'SCHEDULE A ATTACHMENT: Official SSA Award Letter for 2026-2027', {
-      id: 'test-ssa-award-doc', name: 'SSA_Award_Letter_2026.pdf', size: 4200,
-    });
-
-    const result = await page.evaluate(async (file) => {
-      const d = (window as any).GuardianForms.testing.snapshot().filing;
-      d.wardName = 'Sarah Jenkins';
-      d.caseNumber = '26-PR-009123';
-      d.county = 'Pinellas';
-      d.periodFrom = '2026-07-10';
-      d.periodTo = '2027-07-09';
-      d.schA = [
-        { payer: 'Social Security Administration', description: 'Monthly Retirement', bank: 'Chase Bank', accountNo: '1234', amount: '12000.00' },
-      ];
-
-      const { buildAnnualAccountingModel, generateCourtFormPdf } = await (window as any).GuardianForms.testing.generateOutput.annualPdf();
-      const { finalizeCourtFormPdf } = await import('/probate-guardian/src/core/pdf/pdf-finalizer.js');
-
-      const periodKey = `${d.periodFrom}__${d.periodTo}`;
-      d.scheduleDocs = {
-        schA: {
-          [periodKey]: {
-            comment: 'Official SSA Award Letter for 2026-2027.',
-            files: [file],
-          },
-        },
-      };
-
-      const model = buildAnnualAccountingModel(d);
-      const doc = await generateCourtFormPdf(model, { sourceData: d });
-      const rawPdfBytes = await finalizeCourtFormPdf(doc);
-
-      return {
-        rawPdfString: new TextDecoder('latin1').decode(rawPdfBytes),
-      };
-    }, fixture);
-
-    // Milestone 33, Phase 3.2: "The uploaded Schedule A document must occur
-    // immediately after its Schedule A content, not merely be detected in the source data."
-    const fullText = await extractPdfText(result.rawPdfString);
-    const schAIndex = fullText.indexOf('SCHEDULE A: Income Received During Period');
-    const attachmentIndex = fullText.indexOf('SCHEDULE A ATTACHMENT: Official SSA Award Letter for 2026-2027');
-    const schB1Index = fullText.indexOf('SCHEDULE B-1: Attorney Fees');
-
-    expect(schAIndex, 'Schedule A heading must be present').toBeGreaterThan(-1);
-    expect(attachmentIndex, 'Attachment text must be present in output').toBeGreaterThan(-1);
-    expect(schB1Index, 'Schedule B-1 heading must be present').toBeGreaterThan(-1);
-
-    // Attachment occurs after Schedule A and before Schedule B-1
-    expect(attachmentIndex, 'Attachment must occur after Schedule A content').toBeGreaterThan(schAIndex);
-    expect(schB1Index, 'Schedule B-1 must occur after Schedule A attachment').toBeGreaterThan(attachmentIndex);
-  });
+  // 'PDF Schedule A supplemental document insertion occurs directly after
+  // Schedule A content' ran here until TEST-REVIEW.md Delivery 1M
+  // (2026-10-13), building a second PDF with the same attachment that
+  // supplemental-pdf-accounting.spec.ts builds; its ordering assertions
+  // (after Schedule A, before Schedule B-1) live there now.
 });
 

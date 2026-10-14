@@ -111,42 +111,12 @@ for (const { featureName, filingType, fill, blankPromotedField, readinessRowLabe
       await expect(row.locator('.readiness-mark')).toHaveClass(/pending/);
     });
 
-    // Milestone 40H-D: the old planReadinessPanel() opened its head as a
-    // plain <div class="validation-head"> but closed it with </summary> --
-    // an orphan closing tag the browser silently dropped, so the <details>
-    // never got a real <summary> child and lost native disclosure semantics.
-    // Milestone 44C replaced that panel with the shared readiness card; this
-    // keeps the structural guarantee (tag names, not text) for the Plan types.
-    test('readiness panel uses a real <summary> as its first child for native disclosure semantics', async ({ page }) => {
-      await freshStartNoPassword(page);
-      await createWard(page, `${featureName} Readiness Summary Ward`, filingType);
-      await fill(page);
-      await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
+    // 'readiness panel uses a real <summary> as its first child' and
+    // 'exactly one shared card renders' ran here for each Plan until
+    // TEST-REVIEW.md Delivery 1M (2026-10-13):
+    // pdf-preview-viewer.spec.ts's one Preview per print.js host asserts
+    // both, and tests/unit/readiness-card.spec.js the markup.
 
-      const tags = await page.locator('.readiness-panel').evaluate((el) => ({
-        self: el.tagName,
-        firstElementChild: el.firstElementChild?.tagName,
-      }));
-      expect(tags.self).toBe('DETAILS');
-      expect(tags.firstElementChild).toBe('SUMMARY');
-    });
-
-    // Milestone 40H-F guarded the legacy planReadinessChecks() dispatcher
-    // against its per-type window bridge not having loaded yet. Milestone 44C
-    // deleted both the dispatcher and the four bridges (the card reads
-    // readiness-config.js directly), so the dangling-global shape can no
-    // longer exist. Their absence is pinned in tests/unit/removed-window-bridges.spec.js
-    // (Milestone 70, 70T: a browser spec names no app global but GuardianForms);
-    // what a filer sees -- exactly one card -- is pinned here.
-    test('the legacy readiness dispatcher and its window bridge are gone; exactly one shared card renders', async ({ page }) => {
-      await freshStartNoPassword(page);
-      await createWard(page, `${featureName} Readiness Guard Ward`, filingType);
-      await fill(page);
-      await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
-
-      await expect(page.locator('#filing-readiness-card')).toHaveCount(1);
-      await expect(page.locator('#filing-readiness-card')).toHaveAttribute('data-readiness-filing', filingType);
-    });
   });
 }
 

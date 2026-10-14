@@ -48,44 +48,13 @@ export function registerPlanMountTests(config: PlanMountConfig) {
       expect(errors, `console/page errors while navigating ${featureName} pages: ${errors.join('\n')}`).toEqual([]);
     });
 
-    test('an incomplete filing is blocked from export with a clear error', async ({ page }) => {
-      await freshStartNoPassword(page);
-      await makeFiling(page, `Incomplete ${featureName} Ward`);
-      await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
-
-      // Milestone 50G: the export-blocked alert is now an awaitable
-      // alertModal() DOM dialog -- but some triggerBlockedExport configs
-      // call the async doSavePdf* function directly via page.evaluate(),
-      // whose returned promise does not settle until that function's own
-      // internal `await alertModal(...)` resolves. Start the trigger without
-      // awaiting it yet (same reasoning the old dialogPromise/triggerPromise
-      // pair used for native dialogs), wait for the dialog to actually
-      // appear and accept it, then await the trigger to confirm it finished.
-      const triggerPromise = triggerBlockedExport(page);
-      const alertMessage = await acceptDynDialog(page);
-      await triggerPromise;
-
-      expect(alertMessage).toContain('Cannot export');
-    });
-
-    test('a fully completed filing exports a real PDF', async ({ page }) => {
-      await freshStartNoPassword(page);
-      await makeFiling(page, `Complete ${featureName} PDF Ward`);
-      await fillValidWard(page);
-      await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
-
-      const downloadPromise = page.waitForEvent('download', { timeout: 20_000 });
-      await triggerExport(page);
-      const download = await downloadPromise;
-
-      expect(download.suggestedFilename()).toMatch(/\.pdf$/i);
-      const stream = await download.createReadStream();
-      const chunks: Buffer[] = [];
-      for await (const chunk of stream) chunks.push(chunk as Buffer);
-      const bytes = Buffer.concat(chunks);
-      expect(bytes.length).toBeGreaterThan(1000);
-      expect(bytes.subarray(0, 5).toString('latin1')).toBe('%PDF-');
-    });
+    // 'an incomplete filing is blocked from export with a clear error'
+    // and 'a fully completed filing exports a real PDF' ran here for
+    // each Plan until TEST-REVIEW.md Delivery 1M (2026-10-13):
+    // navigation-status.contract.spec.ts drives the same blocked export
+    // per type and holds the alert to the banner's count, and
+    // output-semantics.artifact.spec.ts downloads each type's PDF by a
+    // real click and inspects it.
 
     test('repeated entry/exit does not accumulate stale mounts or console errors', async ({ page }) => {
       const errors: string[] = [];

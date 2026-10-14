@@ -73,17 +73,10 @@ test('the Annual: an Unsigned guardian prints a blank line to sign by hand; the 
   expect(errors).toEqual([]);
 });
 
-test('the Annual Plan: an Unsigned guardian prints a blank line to sign by hand', async ({ page }) => {
-  test.setTimeout(240_000);
-  const errors = watchErrors(page);
-  await freshStartNoPassword(page);
-  await createWard(page, 'By Hand Plan', 'planAnnual');
-  await fillMinimalValidPlanAnnualWard(page);
-  const text = await pdfText(page, '[data-form-action="save-pdf-plan-annual"]');
-  expect(text).toContain('Signature of Sample Guardian');
-  expect(text).not.toContain('/s/ Sample Guardian');
-  expect(errors).toEqual([]);
-});
+// 'the Annual Plan: an Unsigned guardian prints a blank line to sign by
+// hand' ran here until TEST-REVIEW.md Delivery 1M (2026-10-13):
+// tests/unit/signature-by-hand.spec.js pins the Plans' pdf-model line, and
+// the Annual's case above proves the shared print path on a real download.
 
 test('every form: a guardian\'s signature offers Unsigned and Signature Stamp, never "/s/"', async ({ page }) => {
   test.setTimeout(300_000);
@@ -150,38 +143,10 @@ test('a closed filing keeps and reprints its "/s/"; Mark Open asks again', async
   expect(errors).toEqual([]);
 });
 
-test('an archived year switched back in reprints its "/s/", and keeps it after reopening', async ({ page }) => {
-  test.setTimeout(300_000);
-  const errors = watchErrors(page);
-  await freshStartNoPassword(page);
-  await createWard(page, 'Filed Year', 'annual');
-  await fillMinimalValidAnnualWard(page);
-  // Year 1, filed before the guardian rule: its snapshot has no policy and
-  // the guardian's blank choice with a date.
-  const id = await page.evaluate(() => {
-    const T = (window as any).GuardianForms.testing;
-    const f = T.snapshot().filing;
-    const SYSTEM = ['wardId', 'inventoryType', 'createdDate', 'lastModified', 'archived', 'scheduleDocs', 'years', 'activeYearKey', 'yearCounter'];
-    const data = Object.fromEntries(Object.entries(f).filter(([k]) => !SYSTEM.includes(k)));
-    delete (data as any).signaturePolicy;
-    (data as any).guardians = (data as any).guardians.map((g: any) => ({ ...g, signatureState: '' }));
-    T.patchFiling({ years: [{ key: 'Year 1', label: '2025', archivedAt: '2026-01-31T00:00:00.000Z', data }], activeYearKey: 'Year 2', yearCounter: 2 });
-    return f.wardId;
-  });
-  await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
-  await go(page, '/dashboard');
-  await page.locator(`[data-dashboard-action="prior-years"][data-ward-id="${id}"]`).click();
-  await page.locator('[data-form-action="edit-prior-year"][data-year-key="Year 1"]').click();
-  await page.waitForFunction((wid) => (window as any).GuardianForms.testing.snapshot().caseFile.wards.find((w: any) => w.wardId === wid)?.activeYearKey === 'Year 1', id);
-  expect((await t(page)).signaturePolicy, 'a filed year keeps the rule it was filed under').toBe(1);
-  const text = await pdfText(page, '[data-annual-action="save-pdf"]');
-  expect(text).toContain('/s/ Sample Guardian');
-  // Reopened later, still Year 1's rule.
-  const again = await reopenFilingWithStoredShape(page, {});
-  expect(again.signaturePolicy).toBe(1);
-  expect(again.guardians[0].signatureState).toBe('');
-  expect(errors).toEqual([]);
-});
+// 'an archived year switched back in reprints its "/s/", and keeps it after
+// reopening' ran here until TEST-REVIEW.md Delivery 1M (2026-10-13):
+// tests/unit/signature-by-hand.spec.js pins that a closed year's choice is
+// kept, and the closed-filing case above reprints it on a real download.
 
 test('New Year clears every signer\'s choice and stamp, and an Excel import keeps the rule', async ({ page }) => {
   test.setTimeout(300_000);

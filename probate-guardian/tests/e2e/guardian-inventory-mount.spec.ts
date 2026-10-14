@@ -88,61 +88,18 @@ test.describe('guardian-inventory feature module', () => {
     expect(errors, `console/page errors while navigating Guardian pages: ${errors.join('\n')}`).toEqual([]);
   });
 
-  test('duplicateEntry copies a Guardian schedule row through the module global bridge', async ({ page }) => {
-    await freshStartNoPassword(page);
-    await createWard(page, 'Guardian Duplicate Test Ward', 'guardian');
-    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/a1'));
+  // 'duplicateEntry copies a Guardian schedule row' ran here until
+  // TEST-REVIEW.md Delivery 1M (2026-10-13): it drove the testing
+  // interface alone, and tests/unit/collection-descriptors.spec.js pins
+  // duplicateRowAt().
 
-    await page.evaluate(() => {
-      const t = (window as any).GuardianForms.testing;
-      // Setup (D9): one Schedule A-1 row as an older save stored it.
-      t.patchFiling({ scheduleA1: [{
-        propertyDescription: 'Homestead',
-        streetAddress: '123 Main St',
-        cityStateZip: 'Clearwater, FL 33755',
-        notes: '',
-        isPersonalResidence: true,
-        isIncomeProperty: false,
-        fullAssetValue: 100000,
-        wardPercent: 50,
-      }] });
-      t.createFiling.duplicateRow('a1', 0); // duplicateEntry(), the bridge 51E kept
-    });
-
-    const rows = await page.evaluate(() => (window as any).GuardianForms.testing.field('scheduleA1'));
-    expect(rows).toHaveLength(2);
-    expect(rows[1]).toEqual(rows[0]);
-  });
-
-  test('an incomplete filing is blocked from export with a clear error', async ({ page }) => {
-    await freshStartNoPassword(page);
-    await createWard(page, 'Incomplete Guardian Ward', 'guardian');
-    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
-
-    await page.locator('[data-inventory-action="save-pdf"]').click();
-    const alertMessage = await acceptDynDialog(page);
-
-    expect(alertMessage).toContain('Cannot export');
-  });
-
-  test('a fully completed filing exports a real PDF through legacy print/PDF code', async ({ page }) => {
-    await freshStartNoPassword(page);
-    await createWard(page, 'Complete Guardian PDF Ward', 'guardian');
-    await fillMinimalValidGuardianWard(page);
-    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
-
-    const downloadPromise = page.waitForEvent('download', { timeout: 20_000 });
-    await page.locator('[data-inventory-action="save-pdf"]').click();
-    const download = await downloadPromise;
-
-    expect(download.suggestedFilename()).toMatch(/\.pdf$/i);
-    const stream = await download.createReadStream();
-    const chunks: Buffer[] = [];
-    for await (const chunk of stream) chunks.push(chunk as Buffer);
-    const bytes = Buffer.concat(chunks);
-    expect(bytes.length).toBeGreaterThan(1000);
-    expect(bytes.subarray(0, 5).toString('latin1')).toBe('%PDF-');
-  });
+  // 'an incomplete filing is blocked from export with a clear error' and
+  // 'a fully completed filing exports a real PDF through legacy print/PDF
+  // code' ran here until TEST-REVIEW.md Delivery 1M (2026-10-13):
+  // navigation-status.contract.spec.ts holds the Inventory's
+  // blocked-export alert to its panel's count, and
+  // output-semantics.artifact.spec.ts downloads the PDF by a real click
+  // and inspects it (its SUMMARY I cells too).
 
   test('repeated entry/exit does not race post-render binding or leave stale mounts', async ({ page }) => {
     const errors: string[] = [];
@@ -223,39 +180,11 @@ test.describe('guardian-inventory feature module', () => {
     expect(errors, `console/page errors during repeated entry/exit: ${errors.join('\n')}`).toEqual([]);
   });
 
-  test('exporting to the bundled blank template then re-importing round-trips key fields', async ({ page }) => {
-    await freshStartNoPassword(page);
-    await createWard(page, 'Excel Roundtrip Guardian Ward', 'guardian');
-    await fillMinimalValidGuardianWard(page);
-    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
-
-    const downloadPromise = page.waitForEvent('download', { timeout: 20_000 });
-    await page.locator('[data-inventory-action="save-excel"]').click();
-    const download = await downloadPromise;
-    expect(download.suggestedFilename()).toMatch(/\.xlsx$/i);
-    const xlsxPath = path.join(os.tmpdir(), `pg-guardian-excel-${Date.now()}.xlsx`);
-    await download.saveAs(xlsxPath);
-
-    // A second, blank Guardian ward to import into.
-    await createWard(page, 'Blank Guardian Import Target', 'guardian');
-    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
-
-    const errors: string[] = [];
-    page.on('pageerror', (e) => errors.push(e.message));
-    // Milestone 73T part 2: one confirmation, then a notice.
-    await importWorkbookConfirmed(page, xlsxPath);
-    await page.waitForFunction(() => (window as any).GuardianForms.testing.field('caseNumber') === '2026-CP-000123', { timeout: 10_000 });
-
-    const imported = await page.evaluate(() => ({
-      wardName: (window as any).GuardianForms.testing.field('wardName'),
-      caseNumber: (window as any).GuardianForms.testing.field('caseNumber'),
-      county: (window as any).GuardianForms.testing.field('county'),
-      guardianName: (window as any).GuardianForms.testing.field('guardianName'),
-    }));
-    expect(imported.caseNumber).toBe('2026-CP-000123');
-    expect(imported.county).toBe('Pinellas');
-    expect(errors, `console/page errors during Excel import: ${errors.join('\n')}`).toEqual([]);
-  });
+  // 'exporting to the bundled blank template then re-importing round-trips
+  // key fields' ran here until TEST-REVIEW.md Delivery 1M (2026-10-13):
+  // guardian-inventory-excel-schedule-layout.spec.ts drives the same
+  // Import control with every schedule at capacity, and
+  // tests/unit/workbook-contract.spec.js round-trips the Cover's fields.
 
   test('D-3 Audit Fee & Safe Deposit Box tri-state lifecycle and summary completion', async ({ page }) => {
     await freshStartNoPassword(page);

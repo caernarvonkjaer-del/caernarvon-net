@@ -213,63 +213,10 @@ test.describe('Milestone 67A: a guardian or attorney can be the preparer', () =>
     expect(await pdfText(await download(page, '[data-annual-action="save-pdf"]'))).toContain(PREPARED_BY_ATTORNEY);
   });
 
-  // The workbook has no cell for the flag. Importing must not silently drop
-  // it when the workbook names no preparer -- and must clear it when the
-  // workbook does name one, since that is the stronger statement.
-  test('Annual re-import keeps the flag when the workbook names no preparer, and clears it when it does', async ({ page }) => {
-    test.setTimeout(300_000);
-    await freshStartNoPassword(page);
-    await createWard(page, 'Preparer Flag Import', 'annual');
-    await fillMinimalValidAnnualWard(page);
-    await page.evaluate(() => {
-      const w = window as any;
-      w.GuardianForms.testing.patchFiling({ preparer: { ...w.GuardianForms.testing.field('preparer'), ...{ name: '', ssn: '', phone: '', street: '', cityStateZip: '', signatureDate: '' } } });
-      w.GuardianForms.testing.patchFiling({ 'guardians.0.isPreparer': true });
-      w.GuardianForms.testing.save.auto();
-    });
-    // The flag alone must clear the gate; anything left here names itself.
-    // The export boundary is prepareFilingOutput(), not the validator alone
-    // (draft, identity and supplemental issues ride along), so that is what
-    // is asserted clear.
-    expect(await page.evaluate(() => (window as any).GuardianForms.testing.validate.exportGate()))
-      .toEqual({ messages: [], canExport: true });
-    const noPreparer = await download(page, '[data-annual-action="save-excel"]');
-    const noPreparerFile = path.join(os.tmpdir(), `pg-preparer-flag-none-${Date.now()}.xlsx`);
-    fs.writeFileSync(noPreparerFile, noPreparer);
+  // 'Annual re-import keeps the flag when the workbook names no preparer,
+  // and clears it when it does' ran here until TEST-REVIEW.md Delivery 1M
+  // (2026-10-13) (two exports, two real imports):
+  // tests/unit/workbook-contract.spec.js's Annual rows pin both halves on
+  // the Clerk's template.
 
-    // Both workbooks come from this one ward, so the import lands on the
-    // flagged filing itself. The import restores the case number, which is
-    // blanked first so its return is the completion signal -- a field that
-    // is already right cannot tell "imported" from "not yet".
-    const importInto = async (file: string) => {
-      await page.evaluate(() => { const w = window as any; w.GuardianForms.testing.patchFiling({ 'caseNumber': '' }); w.GuardianForms.testing.save.auto(); });
-      await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
-      // Milestone 73T part 3: the import confirms, then gives a notice.
-      await importWorkbookConfirmed(page, file);
-      await page.waitForFunction(() => (window as any).GuardianForms.testing.field('caseNumber') === '2026-CP-000789', undefined, { timeout: 20_000 });
-    };
-
-    await importInto(noPreparerFile);
-    expect(await page.evaluate(() => ({ flagged: !!(window as any).GuardianForms.testing.field('guardians.0.isPreparer'), preparer: (window as any).GuardianForms.testing.field('preparer')?.name })),
-      'a workbook with empty preparer cells does not un-name the guardian').toEqual({ flagged: true, preparer: '' });
-
-    // A workbook that names an outside preparer wins. Produce it from the
-    // same ward with the outside preparer named and nobody flagged.
-    await page.evaluate(() => {
-      const w = window as any;
-      w.GuardianForms.testing.patchFiling({ preparer: { ...w.GuardianForms.testing.field('preparer'), ...{ name: 'Sample Preparer', ssn: '123-45-6789', phone: '555-555-5555', street: '123 Main St', cityStateZip: 'Clearwater, FL 33755', signatureDate: '2027-01-05' } } });
-      w.GuardianForms.testing.patchFiling({ 'guardians.0.isPreparer': false });
-      w.GuardianForms.testing.save.auto();
-    });
-    const withPreparer = await download(page, '[data-annual-action="save-excel"]');
-    const withPreparerFile = path.join(os.tmpdir(), `pg-preparer-flag-named-${Date.now()}.xlsx`);
-    fs.writeFileSync(withPreparerFile, withPreparer);
-
-    // Flag the guardian again, then import the workbook that names an
-    // outside preparer: the workbook's statement is the stronger one.
-    await page.evaluate(() => { const w = window as any; w.GuardianForms.testing.patchFiling({ 'guardians.0.isPreparer': true }); w.GuardianForms.testing.save.auto(); });
-    await importInto(withPreparerFile);
-    expect(await page.evaluate(() => ({ flagged: !!(window as any).GuardianForms.testing.field('guardians.0.isPreparer'), preparer: (window as any).GuardianForms.testing.field('preparer')?.name })),
-      'the named outside preparer clears the flag').toEqual({ flagged: false, preparer: 'Sample Preparer' });
-  });
 });

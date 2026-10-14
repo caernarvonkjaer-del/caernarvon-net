@@ -21,6 +21,11 @@ import simplifiedTemplate from '../../templates/simplified-template.js';
 // (AGENTS.md section 5, P1/P2).
 
 const ANNUAL_FAMILY = ['annual', 'finalAccounting', 'trustAccounting'] as const;
+// Delivery 1M (2026-10-13): the three share the input control, the validator,
+// the pdf-model and the exporter, so the Annual carries the box, PDF and
+// workbook cases; the Trust keeps the first, whose carry goes through its own
+// year.startNew; the Final, with nothing of its own on this path, none.
+// tests/unit/carried-balance.spec.js pins every carry path.
 
 const field = (page: Page, p: string) => page.evaluate((x) => (window as any).GuardianForms.testing.field(x), p);
 const navigate = (page: Page, route: string) => page.evaluate((r) => (window as any).GuardianForms.testing.navigate(r), route);
@@ -113,7 +118,7 @@ async function readWorkbook(page: Page, exported: Buffer, templateB64: string, c
 
 test.describe('Milestone 71E: figures that match the Clerk\'s workbook, and carries that match the prior filing', () => {
   for (const type of ANNUAL_FAMILY) {
-    test(`${type}: the QA figures print $797,229.19 on both lines, balance, and carry as 797229.19`, async ({ page }) => {
+    if (type !== 'finalAccounting') test(`${type}: the QA figures print $797,229.19 on both lines, balance, and carry as 797229.19`, async ({ page }) => {
       test.setTimeout(300_000);
       await freshStartNoPassword(page);
       await createWard(page, 'QA Carry Source', type);
@@ -153,7 +158,7 @@ test.describe('Milestone 71E: figures that match the Clerk\'s workbook, and carr
       }
     });
 
-    test(`${type}: -5000 typed into Starting Balance keeps its minus through reopening, the PDF and the workbook; $0.00 is an answer`, async ({ page }) => {
+    if (type === 'annual') test(`${type}: -5000 typed into Starting Balance keeps its minus through reopening, the PDF and the workbook; $0.00 is an answer`, async ({ page }) => {
       test.setTimeout(300_000);
       await freshStartNoPassword(page);
       await createWard(page, `Negative ${type}`, type);
@@ -185,7 +190,7 @@ test.describe('Milestone 71E: figures that match the Clerk\'s workbook, and carr
       expect(await issues(page)).toContain('Part II — Starting Balance');
     });
 
-    test(`${type}: a negative ending balance carries into the next filing and survives reopening`, async ({ page }) => {
+    if (type === 'annual') test(`${type}: a negative ending balance carries into the next filing and survives reopening`, async ({ page }) => {
       test.setTimeout(300_000);
       await freshStartNoPassword(page);
       await createWard(page, `Debts ${type}`, type);

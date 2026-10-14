@@ -1,11 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import fs from 'node:fs';
-import {
-  freshStartNoPassword, createWard, createSimplifiedWard,
-  fillMinimalValidGuardianWard, fillMinimalValidSimplifiedWard, fillMinimalValidAnnualWard,
-  fillMinimalValidPlanAnnualWard, fillMinimalValidPlanInitialWard,
-  fillMinimalValidPlanMinorWard, fillMinimalValidPlanSimplifiedWard,
-} from './support/target';
+import { freshStartNoPassword, createWard, fillMinimalValidGuardianWard, fillMinimalValidPlanAnnualWard } from './support/target';
 import { extractPdfText } from './support/pdf-extract';
 
 // Milestone 38B / 44C: every one of the nine filing types renders exactly one
@@ -16,111 +11,18 @@ import { extractPdfText } from './support/pdf-extract';
 // trace of the card in court output. Milestone 54's explicitly authorized side
 // edit also pins the Preview & Export banner's filing-level shell controls for
 // every filing type, including previews too short to need the page navigator.
-
-type FilingKey = 'guardian' | 'simplified' | 'annual' | 'finalAccounting' | 'trustAccounting'
-  | 'planSimplified' | 'planAnnual' | 'planInitial' | 'planMinor';
-
-type Config = {
-  key: FilingKey;
-  createFiling: (page: Page, name: string) => Promise<void>;
-  saveButtonSelector: string;
-};
-
-async function annualFamily(page: Page, name: string, key: FilingKey) {
-  await createWard(page, name, key);
-  await fillMinimalValidAnnualWard(page);
-  if (key !== 'annual') {
-    await page.evaluate((v) => { (window as any).GuardianForms.testing.patchFiling({ 'filingType': v }); }, key === 'finalAccounting' ? 'Final' : 'Trust');
-  }
-}
-
-const CONFIGS: Config[] = [
-  { key: 'guardian', createFiling: async (p, n) => { await createWard(p, n, 'guardian'); await fillMinimalValidGuardianWard(p); }, saveButtonSelector: '[data-inventory-action="save-pdf"]' },
-  { key: 'simplified', createFiling: async (p, n) => { await createSimplifiedWard(p, n); await fillMinimalValidSimplifiedWard(p); }, saveButtonSelector: '[data-simplified-action="save-pdf"]' },
-  { key: 'annual', createFiling: (p, n) => annualFamily(p, n, 'annual'), saveButtonSelector: '[data-annual-action="save-pdf"]' },
-  { key: 'finalAccounting', createFiling: (p, n) => annualFamily(p, n, 'finalAccounting'), saveButtonSelector: '[data-annual-action="save-pdf"]' },
-  { key: 'trustAccounting', createFiling: (p, n) => annualFamily(p, n, 'trustAccounting'), saveButtonSelector: '[data-annual-action="save-pdf"]' },
-  { key: 'planSimplified', createFiling: async (p, n) => { await createWard(p, n, 'planSimplified'); await fillMinimalValidPlanSimplifiedWard(p); }, saveButtonSelector: '[data-plan-simplified-action="save-pdf"]' },
-  { key: 'planAnnual', createFiling: async (p, n) => { await createWard(p, n, 'planAnnual'); await fillMinimalValidPlanAnnualWard(p); }, saveButtonSelector: '[data-form-action="save-pdf-plan-annual"]' },
-  { key: 'planInitial', createFiling: async (p, n) => { await createWard(p, n, 'planInitial'); await fillMinimalValidPlanInitialWard(p); }, saveButtonSelector: '[data-form-action="save-pdf-plan-initial"]' },
-  { key: 'planMinor', createFiling: async (p, n) => { await createWard(p, n, 'planMinor'); await fillMinimalValidPlanMinorWard(p); }, saveButtonSelector: '[data-form-action="save-pdf-plan-minor"]' },
-];
+//
+// Since TEST-REVIEW.md Delivery 1M (2026-10-13) the per-type contract (one
+// card, its titles, the collapsed summary, the shell controls, the hand
+// toggle) runs in pdf-preview-viewer.spec.ts's one Preview per print.js host,
+// with the viewer and the annotate toolbar; this file keeps the card's
+// routing and its exclusion from court output.
 
 const card = (page: Page) => page.locator('#filing-readiness-card');
 const isOpen = (page: Page) => card(page).evaluate((el: HTMLDetailsElement) => el.open);
 const pendingIds = (page: Page) => card(page).locator('.readiness-row:has(.readiness-mark.pending)').evaluateAll((els) => els.map((el) => (el as HTMLElement).dataset.readinessId));
 const setCounty = (page: Page, county: string) => page.evaluate((c) => { (window as any).GuardianForms.testing.patchFiling({ 'county': c }); }, county);
-// A same-route re-render, the way a filer gets one: navigating to the page again.
-const rerenderPreview = (page: Page) => page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
 const goPreview = (page: Page) => page.evaluate(() => (window as any).GuardianForms.testing.navigate('/print'));
-
-for (const { key, createFiling } of CONFIGS) {
-  test.describe(`${key}: shared readiness card contract`, () => {
-    test('exactly one card; Clerk title with local context only for Pinellas/Pasco, Filing title elsewhere; collapsed with the manual-review sentence when automatic checks pass', async ({ page }) => {
-      await freshStartNoPassword(page);
-      await createFiling(page, `${key} Readiness Card Ward`);
-      await setCounty(page, 'Pinellas');
-      await goPreview(page);
-
-      await expect(card(page)).toHaveCount(1);
-      await expect(page.locator('.readiness-panel')).toHaveCount(1);
-      const previewShellActions = page.locator('.print-preview-banner [data-preview-shell-actions] .pv-shell-actions');
-      await expect(previewShellActions).toHaveCount(1);
-      await expect(previewShellActions).toContainText('All Filings');
-      await expect(previewShellActions.locator('[data-shell-action="toggle-theme"]')).toBeVisible();
-      await expect(previewShellActions.locator('[data-shell-action="toggle-help"]')).toBeVisible();
-      await expect(card(page)).toHaveAttribute('data-readiness-filing', key);
-      const tags = await card(page).evaluate((el) => ({ self: el.tagName, first: el.firstElementChild?.tagName }));
-      expect(tags).toEqual({ self: 'DETAILS', first: 'SUMMARY' });
-
-      await expect(card(page).locator('.validation-title')).toContainText("Clerk's Review Readiness");
-      await expect(card(page).locator('.validation-title')).toContainText('Automated checks passed; manual review remains.');
-      expect(await card(page).evaluate((el: HTMLDetailsElement) => el.open)).toBe(false);
-      await expect(card(page).locator('.readiness-mark.pending')).toHaveCount(0);
-      // Manual rows are never shown as automatic passes.
-      const manualGroup = card(page).locator('.validation-group', { hasText: "can't verify" });
-      await expect(manualGroup).toHaveCount(1);
-      await expect(manualGroup.locator('.readiness-mark.ok, .readiness-mark.pending')).toHaveCount(0);
-      await expect(manualGroup.locator('.readiness-mark.manual').first()).toBeAttached();
-
-      await setCounty(page, 'Orange');
-      await rerenderPreview(page);
-      await expect(card(page)).toHaveCount(1);
-      await expect(card(page).locator('.validation-title')).toContainText('Filing Readiness');
-      await expect(card(page)).not.toContainText(/Pinellas|Pasco|Sixth (Judicial )?Circuit/);
-    });
-
-    test('a hand toggle survives a same-route rerender and resets on fresh Preview entry', async ({ page }) => {
-      await freshStartNoPassword(page);
-      await createFiling(page, `${key} Readiness Toggle Ward`);
-      await setCounty(page, 'Orange');
-      await goPreview(page);
-      expect(await isOpen(page)).toBe(false);
-
-      // Native disclosure semantics: keyboard-operable via the summary. The
-      // `toggle` event is dispatched on a later task; wait for it before
-      // rerendering so the test doesn't race its own event queue (a real
-      // rerender never follows a click within the same task).
-      await card(page).evaluate((el) => {
-        (window as any).__readinessToggled = false;
-        el.addEventListener('toggle', () => { (window as any).__readinessToggled = true; }, { once: true });
-      });
-      await card(page).locator('summary').focus();
-      await page.keyboard.press('Enter');
-      await expect.poll(() => isOpen(page)).toBe(true);
-      await page.waitForFunction(() => (window as any).__readinessToggled === true);
-
-      await rerenderPreview(page);
-      await expect(card(page)).toHaveCount(1);
-      await expect.poll(() => isOpen(page)).toBe(true);
-
-      await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
-      await goPreview(page);
-      await expect(card(page)).toHaveCount(1);
-      expect(await isOpen(page)).toBe(false);
-    });
-  });
-}
 
 test.describe('automatic failures and routing', () => {
   test('Guardian Inventory: a blocking validator issue opens the card, is listed once, and its jump link focuses the real field', async ({ page }) => {

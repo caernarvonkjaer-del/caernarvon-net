@@ -229,14 +229,9 @@ test.describe('Milestone 57C-R: supplemental-documentation acknowledgement', () 
     await expectNoDialog(page, 'normalization must preserve a recorded acknowledgement');
   });
 
-  test('narrative Plan pages never prompt', async ({ page }) => {
-    await freshStartNoPassword(page);
-    await createWard(page, 'Plan Ward', 'planAnnual');
-    for (const route of ['/', '/p2', '/p3']) {
-      await goto(page, route);
-      await expectNoDialog(page, `Plan route ${route} must not prompt`);
-    }
-  });
+  // 'narrative Plan pages never prompt' ran here until TEST-REVIEW.md
+  // Delivery 1M (2026-10-13): tests/unit/schedule-doc-ack.spec.js pins
+  // that the narrative Plan types have no family.
 
   // Milestone 73L: "Supporting documentation -- You have entered items on
   // Schedule X" fired right after "+ Add Entry", before anything was typed.
