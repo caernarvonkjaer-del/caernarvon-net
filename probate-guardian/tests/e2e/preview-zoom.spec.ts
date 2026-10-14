@@ -260,8 +260,14 @@ test.describe('Milestone 73R part 3 acceptance: a long Inventory on a 2,560px sc
     // Scrolling down a Full width Preview draws each page as it comes and lets the others go.
     for (const index of [4, 9, 14, pages - 1]) {
       await page.locator('#print-doc-container .pdf-page').nth(index).scrollIntoViewIfNeeded();
+      // The viewer learns that a page is on screen from an IntersectionObserver,
+      // a beat after the scroll, and settled() counts only the pages it knows
+      // about -- so a poll for "settled" can win that race and find this page
+      // undrawn (alone on C:, 3 runs of 4; TEST-REVIEW.md Delivery 1M). Wait
+      // for this page's own draw, then for the rest to settle.
+      await expect.poll(() => page.locator('#print-doc-container .pdf-page').nth(index).getAttribute('data-drawn-scale'),
+        { timeout: 20_000, message: `page ${index + 1} is drawn` }).not.toBeNull();
       await waitSettled(page);
-      expect(await page.locator('#print-doc-container .pdf-page').nth(index).getAttribute('data-drawn-scale'), `page ${index + 1} is drawn`).not.toBeNull();
       const live = await liveCanvasPixels(page);
       peak = Math.max(peak, live);
       expect(live, `at page ${index + 1}: canvas memory`).toBeLessThanOrEqual(today);
