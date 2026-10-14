@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import http from 'node:http';
 import path from 'node:path';
 import { describe, expect, test } from 'vitest';
-import config, { TARGETS } from '../../playwright.config.ts';
+import config, { TARGETS, workersFor } from '../../playwright.config.ts';
 import {
   PROFILES, QUICK_SPECS, RELEASE_PROFILES, collisionDiagnostic, mentionsPortCollision,
   playwrightArgs, profileEnv, root, run, runProfile, runRelease,
@@ -175,7 +175,21 @@ describe('a held port is refused, and the listener left alone', () => {
   test('playwright.config.ts never reuses a server already answering, and owns the source URL the runner checks', () => {
     expect(config.webServer.reuseExistingServer).toBe(false);
     expect(TARGETS.source.url).toBe('http://localhost:4321/index.html');
-    expect(config.webServer.url).toBe(TARGETS.source.url);
+    // The config reads the shell's own PG_TARGET (the runner sets its own per
+    // profile, proven above); the unit stage must pass under any shell.
+    const chosen = process.env.PG_TARGET || 'source';
+    expect(config.webServer?.url).toBe(TARGETS[chosen]?.url);
     expect(profileEnv(PROFILES.source, { PG_TARGET: 'web' }).PG_TARGET).toBe('source');
+  });
+});
+
+describe('workers (TEST-REVIEW.md Delivery 1M)', () => {
+  test('four on a fast volume, one on FAT32, and PG_WORKERS over either', () => {
+    expect(workersFor('NTFS', {})).toBe(4);
+    expect(workersFor('', {})).toBe(4);
+    expect(workersFor('FAT32', {})).toBe(1);
+    expect(workersFor('FAT32', { PG_WORKERS: '2' })).toBe(2);
+    expect(workersFor('NTFS', { PG_WORKERS: '1' })).toBe(1);
+    expect([1, 2, 4]).toContain(config.workers);
   });
 });

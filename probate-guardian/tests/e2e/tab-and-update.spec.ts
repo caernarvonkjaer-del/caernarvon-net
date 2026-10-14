@@ -62,9 +62,16 @@ test('warns when another tab reports unsaved changes', { tag: '@origin-state' },
   await context.close();
 });
 
+// TEST-REVIEW.md Delivery 1M (2026-10-13): the messages the fake worker
+// receives are kept in sessionStorage as well as on window, because "Reload
+// now" reloads the page and this init script then ran again with an empty
+// list -- the test below read the list in a race with the navigation and
+// lost it under four parallel workers (the context was destroyed mid-read).
+const SW_MESSAGES = '__swMessages';
+
 async function installServiceWorkerMock(page: any) {
-  await page.addInitScript(() => {
-    (window as any).__swMessages = [];
+  await page.addInitScript((key: string) => {
+    (window as any).__swMessages = JSON.parse(sessionStorage.getItem(key) || '[]');
     const originalQuerySelector = Document.prototype.querySelector;
     Document.prototype.querySelector = function patchedQuerySelector(selector: string) {
       if (selector === 'meta[name="pg-build"][content="web"]') {
@@ -77,6 +84,7 @@ async function installServiceWorkerMock(page: any) {
       state = 'installed';
       postMessage(message: unknown) {
         (window as any).__swMessages.push(message);
+        sessionStorage.setItem(key, JSON.stringify((window as any).__swMessages));
         setTimeout(() => {
           (navigator as any).serviceWorker.dispatchEvent(new Event('controllerchange'));
         }, 25);
@@ -98,7 +106,16 @@ async function installServiceWorkerMock(page: any) {
       configurable: true,
       get: () => serviceWorker,
     });
-  });
+  }, SW_MESSAGES);
+}
+
+/** The messages the fake worker has received, read so that a reload under the read returns [] rather than throwing. */
+async function swMessages(page: any): Promise<unknown[]> {
+  try {
+    return await page.evaluate((key: string) => JSON.parse(sessionStorage.getItem(key) || '[]'), SW_MESSAGES);
+  } catch {
+    return [];
+  }
 }
 
 test('shows a waiting-update banner and sends ACTIVATE_UPDATE on reload', { tag: '@origin-state' }, async ({ page }) => {
@@ -108,7 +125,7 @@ test('shows a waiting-update banner and sends ACTIVATE_UPDATE on reload', { tag:
 
   await expect(page.locator('#pwa-status-notice')).toContainText('A new version of Guardian Forms is available. Save or export your work, then reload.');
   await page.getByRole('button', { name: 'Reload now' }).click();
-  await expect.poll(() => page.evaluate(() => (window as any).__swMessages)).toContainEqual({ type: 'ACTIVATE_UPDATE' });
+  await expect.poll(() => swMessages(page)).toContainEqual({ type: 'ACTIVATE_UPDATE' });
 });
 
 test('confirms before activating an update with unsaved work', { tag: '@origin-state' }, async ({ page }) => {
@@ -123,5 +140,5 @@ test('confirms before activating an update with unsaved work', { tag: '@origin-s
   await page.getByRole('button', { name: 'Reload now' }).click();
   const confirmMessage = await dismissDynDialog(page);
   expect(confirmMessage).toContain('Save or export your work before reloading.');
-  await expect.poll(() => page.evaluate(() => (window as any).__swMessages.length)).toBe(0);
+  await expect.poll(async () => (await swMessages(page)).length).toBe(0);
 });

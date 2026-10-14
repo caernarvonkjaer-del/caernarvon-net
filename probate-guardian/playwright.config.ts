@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -79,6 +80,38 @@ function defaultChromiumExecutablePath() {
 
 const chromiumExecutablePath = defaultChromiumExecutablePath();
 
+/**
+ * The file system of the volume holding `dir`, on Windows, as `fsutil`
+ * reports it without elevation -- "FAT32" for this workstation's D:; the
+ * system drive answers "Access is denied", which reads as '' here. Empty
+ * anywhere the answer is unknown.
+ */
+export function volumeFileSystem(dir: string): string {
+  if (process.platform !== 'win32') return '';
+  try {
+    const out = execFileSync('fsutil', ['fsinfo', 'volumeinfo', dir.slice(0, 2)], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+    return (out.match(/File System Name\s*:\s*(\S+)/) || [])[1] || '';
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * TEST-REVIEW.md Delivery 1M (2026-10-13). Workers were 1 -- "all specs hit
+ * one shared webServer process; concurrent contexts overloaded it". Measured
+ * on C: (NTFS) with the twelve heaviest specs (PDF, Excel, downloads,
+ * cross-tab; 132 cases): serial 15.9 min; two workers 10.2 and 11.1 min, all
+ * passing; four workers 9.3, 7.2 and 7.1 min, the only failure a race in
+ * tab-and-update's own reload test, since fixed. No timeout or server error
+ * in six runs. On the FAT32 drive D:, four workers hung three context
+ * teardowns and truncated two downloads in one run of six specs, and took
+ * longer than one worker (11.4 min against 9.7), so a FAT32 volume keeps one
+ * worker. PG_WORKERS overrides either way. Files still run whole on one worker.
+ */
+export function workersFor(fileSystem: string, env: NodeJS.ProcessEnv = process.env): number {
+  return Number(env.PG_WORKERS) || (fileSystem === 'FAT32' ? 1 : 4);
+}
+
 // Exported (TEST-REVIEW.md Delivery 1) so scripts/run-e2e-profile.mjs can
 // read each target's port for its collision check; this table stays the one
 // owner of server commands and URLs.
@@ -119,8 +152,8 @@ if (!(browser in BROWSERS)) throw new Error(`Unknown PG_BROWSER: ${browser}`);
 
 export default defineConfig({
   testDir: 'tests/e2e',
-  fullyParallel: false, // fullyParallel only affects tests within one file; workers below is what actually serializes across files
-  workers: 1, // all specs hit one shared webServer process (vite preview/dev) -- concurrent contexts overloaded it
+  fullyParallel: false, // fullyParallel only affects tests within one file; workers below is what parallelizes across files
+  workers: workersFor(volumeFileSystem(process.cwd())), // see workersFor()
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [['github'], ['html', { open: 'never' }]] : 'list',
   timeout: 60_000,

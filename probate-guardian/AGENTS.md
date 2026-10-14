@@ -66,6 +66,15 @@ non-zero, so a later stage never runs against a broken prerequisite.
   47–49 s from D: (Milestone 72F). A full `npm test` took 1.7 h for 980
   browser tests on D: (2026-09-29) and 1.3 h for 1,011 from a copy on C:
   (2026-10-02). Re-measure from an NTFS copy before trusting any figure.
+- **Workers follow the volume** (TEST-REVIEW.md Delivery 1M, 2026-10-13):
+  `playwright.config.ts` runs four workers on NTFS and one on FAT32 (asked
+  with `fsutil fsinfo volumeinfo`), because at four workers on D: three
+  browser contexts hung on teardown, two `.sav` downloads came out truncated,
+  and the heavy specs took longer than serially. `PG_WORKERS=n` overrides
+  either. Each spec file still runs whole on one worker, so a case that fails
+  only beside other files is racing shared state, not a neighbour --
+  precedent: `tab-and-update` lost its service-worker messages to its own
+  reload once other files kept the server busy.
 - **A copy on C: can't run git against this repository**: git refuses a
   repository on a drive that records no file ownership ("dubious
   ownership"). `mixed-version.characterization.spec.ts` extracts an old build
