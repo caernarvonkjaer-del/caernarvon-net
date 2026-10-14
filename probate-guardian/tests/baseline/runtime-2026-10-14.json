@@ -1,0 +1,949 @@
+{
+  "note": "TEST-REVIEW.md Delivery 1M, the \"after\" measurement, against runtime-2026-10-12.json (the \"before\"). Per-spec browser-case counts and the sum of each case's own duration as Playwright's list reporter printed it (per-file setup and teardown are not included), from the 2026-10-14 full `npm test` on a copy on C: (NTFS) at dce9dfa2, four workers, source/Chromium. Case seconds add up across the workers, so the wall time, not this sum, is the figure the target (under 45 minutes) is judged on. Written by parsing the run log; re-measure rather than trust it.",
+  "run": {
+    "date": "2026-10-14",
+    "commit": "dce9dfa2",
+    "command": "npm test",
+    "drive": "C: (NTFS)",
+    "workers": 4,
+    "target": "source",
+    "browser": "chromium",
+    "wallMinutes": 43.1,
+    "browserCasesExecuted": 1020,
+    "browserCasesSkipped": 7,
+    "caseSecondsTotal": 8070.2,
+    "specFiles": 184
+  },
+  "before": {
+    "date": "2026-10-12",
+    "commit": "a5833f5",
+    "workers": 1,
+    "wallMinutes": 110,
+    "browserCasesExecuted": 1222,
+    "browserCasesSkipped": 16,
+    "caseSecondsTotal": 6116.6,
+    "specFiles": 185
+  },
+  "specs": {
+    "sav-corpus.characterization.spec.ts": {
+      "cases": 66,
+      "skipped": 0,
+      "seconds": 364.3
+    },
+    "asterisks-follow-rules.spec.ts": {
+      "cases": 7,
+      "skipped": 0,
+      "seconds": 288.1
+    },
+    "signature-capture.contract.spec.ts": {
+      "cases": 28,
+      "skipped": 0,
+      "seconds": 232.7
+    },
+    "output-buttons-after-override.spec.ts": {
+      "cases": 17,
+      "skipped": 0,
+      "seconds": 163.7
+    },
+    "form-runtime-lifecycle.contract.spec.ts": {
+      "cases": 12,
+      "skipped": 0,
+      "seconds": 162.7
+    },
+    "navigation-status.contract.spec.ts": {
+      "cases": 32,
+      "skipped": 0,
+      "seconds": 159.1
+    },
+    "supporting-documents-reach-pdf.spec.ts": {
+      "cases": 5,
+      "skipped": 0,
+      "seconds": 147.9
+    },
+    "output-semantics.artifact.spec.ts": {
+      "cases": 9,
+      "skipped": 0,
+      "seconds": 134.4
+    },
+    "import-keeps-signatures.spec.ts": {
+      "cases": 5,
+      "skipped": 0,
+      "seconds": 130.4
+    },
+    "mixed-version.characterization.spec.ts": {
+      "cases": 15,
+      "skipped": 0,
+      "seconds": 128.3
+    },
+    "bond-depository.spec.ts": {
+      "cases": 10,
+      "skipped": 0,
+      "seconds": 127.4
+    },
+    "pdf-preview-viewer.spec.ts": {
+      "cases": 11,
+      "skipped": 0,
+      "seconds": 120.5
+    },
+    "dashboard-visual.spec.ts": {
+      "cases": 17,
+      "skipped": 0,
+      "seconds": 111.9
+    },
+    "carry-balance-matches-prior.spec.ts": {
+      "cases": 6,
+      "skipped": 0,
+      "seconds": 108.5
+    },
+    "routes.spec.ts": {
+      "cases": 17,
+      "skipped": 0,
+      "seconds": 103.5
+    },
+    "certificate-service-method.spec.ts": {
+      "cases": 5,
+      "skipped": 0,
+      "seconds": 102.6
+    },
+    "excel-form-field-placement.spec.ts": {
+      "cases": 12,
+      "skipped": 0,
+      "seconds": 99.1
+    },
+    "test-system-title-prefix.spec.ts": {
+      "cases": 14,
+      "skipped": 0,
+      "seconds": 98.9
+    },
+    "date-validation.contract.spec.ts": {
+      "cases": 18,
+      "skipped": 0,
+      "seconds": 94.9
+    },
+    "pdf-annotate.spec.ts": {
+      "cases": 11,
+      "skipped": 0,
+      "seconds": 92.8
+    },
+    "schedule-card-layout.spec.ts": {
+      "cases": 15,
+      "skipped": 0,
+      "seconds": 84.7
+    },
+    "schedule-doc-ack.spec.ts": {
+      "cases": 12,
+      "skipped": 0,
+      "seconds": 84.5
+    },
+    "filing-identity.contract.spec.ts": {
+      "cases": 9,
+      "skipped": 0,
+      "seconds": 83.3
+    },
+    "annual-mount.spec.ts": {
+      "cases": 12,
+      "skipped": 0,
+      "seconds": 78.5
+    },
+    "pdf-right-margin.spec.ts": {
+      "cases": 9,
+      "skipped": 0,
+      "seconds": 77.0
+    },
+    "ucn-cover-field.spec.ts": {
+      "cases": 14,
+      "skipped": 0,
+      "seconds": 75.2
+    },
+    "user-guide-wiring.spec.ts": {
+      "cases": 7,
+      "skipped": 0,
+      "seconds": 73.7
+    },
+    "support/plan-fixture.ts": {
+      "cases": 12,
+      "skipped": 0,
+      "seconds": 72.5
+    },
+    "guided-tour-navigation.spec.ts": {
+      "cases": 8,
+      "skipped": 0,
+      "seconds": 69.9
+    },
+    "plan-readiness.contract.spec.ts": {
+      "cases": 9,
+      "skipped": 0,
+      "seconds": 65.3
+    },
+    "ward-lock.spec.ts": {
+      "cases": 8,
+      "skipped": 0,
+      "seconds": 64.8
+    },
+    "import-confirm.spec.ts": {
+      "cases": 3,
+      "skipped": 0,
+      "seconds": 64.3
+    },
+    "percent-range.spec.ts": {
+      "cases": 3,
+      "skipped": 0,
+      "seconds": 62.0
+    },
+    "dashboard-backup.spec.ts": {
+      "cases": 9,
+      "skipped": 0,
+      "seconds": 61.5
+    },
+    "year-rollover.characterization.spec.ts": {
+      "cases": 9,
+      "skipped": 0,
+      "seconds": 61.0
+    },
+    "plan-certificate-of-service.spec.ts": {
+      "cases": 8,
+      "skipped": 0,
+      "seconds": 60.9
+    },
+    "dialog-order.spec.ts": {
+      "cases": 8,
+      "skipped": 0,
+      "seconds": 60.4
+    },
+    "page-structure.spec.ts": {
+      "cases": 9,
+      "skipped": 0,
+      "seconds": 58.5
+    },
+    "pdf-form-specific.spec.ts": {
+      "cases": 9,
+      "skipped": 0,
+      "seconds": 58.3
+    },
+    "excel-b4-multi-account.spec.ts": {
+      "cases": 3,
+      "skipped": 0,
+      "seconds": 57.8
+    },
+    "signature-by-hand.spec.ts": {
+      "cases": 5,
+      "skipped": 0,
+      "seconds": 57.5
+    },
+    "excel-date-cells.spec.ts": {
+      "cases": 3,
+      "skipped": 0,
+      "seconds": 56.7
+    },
+    "preparer-flag.spec.ts": {
+      "cases": 2,
+      "skipped": 0,
+      "seconds": 55.7
+    },
+    "filing-conversion.characterization.spec.ts": {
+      "cases": 9,
+      "skipped": 0,
+      "seconds": 55.4
+    },
+    "guardian-email-advisory.spec.ts": {
+      "cases": 9,
+      "skipped": 0,
+      "seconds": 54.8
+    },
+    "conditional-reveal-routes.spec.ts": {
+      "cases": 11,
+      "skipped": 0,
+      "seconds": 53.7
+    },
+    "accessible-names.spec.ts": {
+      "cases": 5,
+      "skipped": 0,
+      "seconds": 52.7
+    },
+    "verified-inventory-workflow.spec.ts": {
+      "cases": 7,
+      "skipped": 0,
+      "seconds": 52.0
+    },
+    "backup-restore-sav.spec.ts": {
+      "cases": 6,
+      "skipped": 0,
+      "seconds": 51.7
+    },
+    "excel-pruned-roundtrip.spec.ts": {
+      "cases": 2,
+      "skipped": 0,
+      "seconds": 51.4
+    },
+    "redraw-keeps-scroll.spec.ts": {
+      "cases": 8,
+      "skipped": 0,
+      "seconds": 49.9
+    },
+    "certificate-old-details.spec.ts": {
+      "cases": 3,
+      "skipped": 0,
+      "seconds": 49.6
+    },
+    "preview-zoom.spec.ts": {
+      "cases": 5,
+      "skipped": 0,
+      "seconds": 49.4
+    },
+    "guardian-inventory-excel-schedule-layout.spec.ts": {
+      "cases": 2,
+      "skipped": 0,
+      "seconds": 48.9
+    },
+    "form-entry.contract.spec.ts": {
+      "cases": 8,
+      "skipped": 0,
+      "seconds": 48.6
+    },
+    "simplified-mount.spec.ts": {
+      "cases": 6,
+      "skipped": 0,
+      "seconds": 48.4
+    },
+    "section-guidance-invariant.spec.ts": {
+      "cases": 7,
+      "skipped": 0,
+      "seconds": 47.6
+    },
+    "rollback.contract.spec.ts": {
+      "cases": 2,
+      "skipped": 0,
+      "seconds": 47.5
+    },
+    "guardian-links-follow-rows.spec.ts": {
+      "cases": 2,
+      "skipped": 0,
+      "seconds": 47.0
+    },
+    "service-attestation-visibility.spec.ts": {
+      "cases": 9,
+      "skipped": 0,
+      "seconds": 46.7
+    },
+    "stamped-co-guardian.spec.ts": {
+      "cases": 7,
+      "skipped": 0,
+      "seconds": 46.3
+    },
+    "validation-structured-paths.spec.ts": {
+      "cases": 9,
+      "skipped": 0,
+      "seconds": 45.9
+    },
+    "guardian-inventory-mount.spec.ts": {
+      "cases": 9,
+      "skipped": 0,
+      "seconds": 45.8
+    },
+    "annual-bond-period.spec.ts": {
+      "cases": 3,
+      "skipped": 0,
+      "seconds": 45.3
+    },
+    "guardian-inventory-schedule-layout.spec.ts": {
+      "cases": 7,
+      "skipped": 0,
+      "seconds": 45.2
+    },
+    "preview-print-button.spec.ts": {
+      "cases": 3,
+      "skipped": 0,
+      "seconds": 44.9
+    },
+    "form-wording.spec.ts": {
+      "cases": 8,
+      "skipped": 0,
+      "seconds": 44.0
+    },
+    "pdf-cover-geometry.spec.ts": {
+      "cases": 5,
+      "skipped": 0,
+      "seconds": 43.5
+    },
+    "cover-county.spec.ts": {
+      "cases": 7,
+      "skipped": 0,
+      "seconds": 42.9
+    },
+    "signature-block-address-margin.spec.ts": {
+      "cases": 5,
+      "skipped": 0,
+      "seconds": 41.8
+    },
+    "preparer-note-placement.spec.ts": {
+      "cases": 7,
+      "skipped": 0,
+      "seconds": 41.3
+    },
+    "annual-field-formatting.spec.ts": {
+      "cases": 7,
+      "skipped": 0,
+      "seconds": 41.2
+    },
+    "signed-amount-keypad.spec.ts": {
+      "cases": 5,
+      "skipped": 0,
+      "seconds": 40.5
+    },
+    "live-page-parts.spec.ts": {
+      "cases": 7,
+      "skipped": 0,
+      "seconds": 40.3
+    },
+    "sidebar-total-follows-changes.spec.ts": {
+      "cases": 3,
+      "skipped": 0,
+      "seconds": 40.1
+    },
+    "small-fixes.spec.ts": {
+      "cases": 8,
+      "skipped": 0,
+      "seconds": 39.0
+    },
+    "plan-signature-date.spec.ts": {
+      "cases": 5,
+      "skipped": 0,
+      "seconds": 38.5
+    },
+    "supplemental-pdf-accounting.spec.ts": {
+      "cases": 4,
+      "skipped": 0,
+      "seconds": 38.0
+    },
+    "guardian-inventory-collection-controls.spec.ts": {
+      "cases": 7,
+      "skipped": 0,
+      "seconds": 35.9
+    },
+    "section-marks-follow-export.spec.ts": {
+      "cases": 5,
+      "skipped": 0,
+      "seconds": 35.9
+    },
+    "convert-ward.spec.ts": {
+      "cases": 7,
+      "skipped": 0,
+      "seconds": 35.7
+    },
+    "amounts-keep-their-sign.spec.ts": {
+      "cases": 5,
+      "skipped": 0,
+      "seconds": 34.9
+    },
+    "supporting-documents-follow-dates.spec.ts": {
+      "cases": 3,
+      "skipped": 0,
+      "seconds": 34.9
+    },
+    "entry-helpers.spec.ts": {
+      "cases": 4,
+      "skipped": 0,
+      "seconds": 34.8
+    },
+    "highlight-toolbar-style.spec.ts": {
+      "cases": 4,
+      "skipped": 0,
+      "seconds": 34.4
+    },
+    "simplified-remuneration.spec.ts": {
+      "cases": 5,
+      "skipped": 0,
+      "seconds": 34.3
+    },
+    "guardian-blank-page-pruning.spec.ts": {
+      "cases": 6,
+      "skipped": 0,
+      "seconds": 33.8
+    },
+    "persistence-recovery.contract.spec.ts": {
+      "cases": 4,
+      "skipped": 0,
+      "seconds": 33.0
+    },
+    "rules-follow-rows.spec.ts": {
+      "cases": 5,
+      "skipped": 0,
+      "seconds": 32.4
+    },
+    "b2-vehicle-toggle.spec.ts": {
+      "cases": 1,
+      "skipped": 0,
+      "seconds": 31.6
+    },
+    "lock-and-save-state.contract.spec.ts": {
+      "cases": 5,
+      "skipped": 0,
+      "seconds": 31.5
+    },
+    "form-entry-ux.spec.ts": {
+      "cases": 5,
+      "skipped": 0,
+      "seconds": 31.4
+    },
+    "annotation-toolbar-containment.spec.ts": {
+      "cases": 3,
+      "skipped": 0,
+      "seconds": 31.0
+    },
+    "plan-initial-multiselect.spec.ts": {
+      "cases": 5,
+      "skipped": 0,
+      "seconds": 29.7
+    },
+    "schb4-bank-accounts-ui.spec.ts": {
+      "cases": 3,
+      "skipped": 0,
+      "seconds": 29.4
+    },
+    "pdf-accessibility-and-signatures.spec.ts": {
+      "cases": 4,
+      "skipped": 0,
+      "seconds": 29.2
+    },
+    "annual-ward-share-export.spec.ts": {
+      "cases": 1,
+      "skipped": 0,
+      "seconds": 28.7
+    },
+    "export-button-guard.spec.ts": {
+      "cases": 2,
+      "skipped": 0,
+      "seconds": 28.0
+    },
+    "schedule-docs-period-key.spec.ts": {
+      "cases": 4,
+      "skipped": 0,
+      "seconds": 27.5
+    },
+    "remove-asks-first.spec.ts": {
+      "cases": 3,
+      "skipped": 0,
+      "seconds": 27.3
+    },
+    "annual-schedule-consistency.spec.ts": {
+      "cases": 4,
+      "skipped": 0,
+      "seconds": 26.7
+    },
+    "startup.spec.ts": {
+      "cases": 7,
+      "skipped": 0,
+      "seconds": 26.2
+    },
+    "form-field-labels.spec.ts": {
+      "cases": 2,
+      "skipped": 0,
+      "seconds": 25.9
+    },
+    "blank-card-pruning.spec.ts": {
+      "cases": 4,
+      "skipped": 0,
+      "seconds": 25.8
+    },
+    "party-dedupe.spec.ts": {
+      "cases": 3,
+      "skipped": 0,
+      "seconds": 25.8
+    },
+    "sidebar-only-wants.spec.ts": {
+      "cases": 5,
+      "skipped": 0,
+      "seconds": 25.6
+    },
+    "signature-stamp-reuse.spec.ts": {
+      "cases": 4,
+      "skipped": 0,
+      "seconds": 25.6
+    },
+    "attorney-optional-export.spec.ts": {
+      "cases": 3,
+      "skipped": 0,
+      "seconds": 25.5
+    },
+    "case-file-roundtrip.spec.ts": {
+      "cases": 3,
+      "skipped": 0,
+      "seconds": 25.5
+    },
+    "signature-style-removal.spec.ts": {
+      "cases": 1,
+      "skipped": 0,
+      "seconds": 24.7
+    },
+    "case-file-damaged-open.spec.ts": {
+      "cases": 4,
+      "skipped": 0,
+      "seconds": 24.6
+    },
+    "theme-prepaint.spec.ts": {
+      "cases": 5,
+      "skipped": 0,
+      "seconds": 24.6
+    },
+    "plan-add-co-guardian.spec.ts": {
+      "cases": 5,
+      "skipped": 0,
+      "seconds": 23.7
+    },
+    "plan-pdf-wcag-compliance.spec.ts": {
+      "cases": 4,
+      "skipped": 0,
+      "seconds": 23.4
+    },
+    "carryover-workflow.spec.ts": {
+      "cases": 5,
+      "skipped": 0,
+      "seconds": 22.8
+    },
+    "annual-import-ward-percentage.spec.ts": {
+      "cases": 1,
+      "skipped": 0,
+      "seconds": 22.0
+    },
+    "security-contract.spec.ts": {
+      "cases": 3,
+      "skipped": 0,
+      "seconds": 21.9
+    },
+    "tab-and-update.spec.ts": {
+      "cases": 5,
+      "skipped": 0,
+      "seconds": 21.6
+    },
+    "carry-forward-hints.spec.ts": {
+      "cases": 6,
+      "skipped": 0,
+      "seconds": 21.5
+    },
+    "readiness-card.contract.spec.ts": {
+      "cases": 3,
+      "skipped": 0,
+      "seconds": 21.1
+    },
+    "continue-prompt-banner.spec.ts": {
+      "cases": 4,
+      "skipped": 0,
+      "seconds": 20.8
+    },
+    "link-and-merge.spec.ts": {
+      "cases": 3,
+      "skipped": 0,
+      "seconds": 20.6
+    },
+    "pdf-structure-tags.spec.ts": {
+      "cases": 3,
+      "skipped": 0,
+      "seconds": 20.3
+    },
+    "excel-blank-page-pruning.spec.ts": {
+      "cases": 4,
+      "skipped": 0,
+      "seconds": 20.2
+    },
+    "recovery-cache.spec.ts": {
+      "cases": 3,
+      "skipped": 0,
+      "seconds": 19.5
+    },
+    "case-file-protection.spec.ts": {
+      "cases": 4,
+      "skipped": 0,
+      "seconds": 19.0
+    },
+    "excel-defined-names.spec.ts": {
+      "cases": 6,
+      "skipped": 0,
+      "seconds": 18.6
+    },
+    "accessible-errors-and-groups.spec.ts": {
+      "cases": 3,
+      "skipped": 0,
+      "seconds": 18.5
+    },
+    "vendor-loader-retry.spec.ts": {
+      "cases": 1,
+      "skipped": 0,
+      "seconds": 18.3
+    },
+    "guardian-inventory-tri-state-radios.spec.ts": {
+      "cases": 2,
+      "skipped": 0,
+      "seconds": 17.5
+    },
+    "sidebar-room.spec.ts": {
+      "cases": 3,
+      "skipped": 0,
+      "seconds": 17.3
+    },
+    "contradiction-warnings.spec.ts": {
+      "cases": 2,
+      "skipped": 0,
+      "seconds": 17.1
+    },
+    "legacy-ward-data-normalization.spec.ts": {
+      "cases": 4,
+      "skipped": 0,
+      "seconds": 16.9
+    },
+    "first-guardian-stays.spec.ts": {
+      "cases": 3,
+      "skipped": 0,
+      "seconds": 16.7
+    },
+    "case-file-newer-format.spec.ts": {
+      "cases": 3,
+      "skipped": 0,
+      "seconds": 16.4
+    },
+    "import-transaction-dialog.spec.ts": {
+      "cases": 3,
+      "skipped": 0,
+      "seconds": 16.1
+    },
+    "page-title.spec.ts": {
+      "cases": 3,
+      "skipped": 0,
+      "seconds": 16.1
+    },
+    "navigation-race.spec.ts": {
+      "cases": 3,
+      "skipped": 0,
+      "seconds": 15.8
+    },
+    "feature-load-failure.spec.ts": {
+      "cases": 2,
+      "skipped": 1,
+      "seconds": 15.2
+    },
+    "testing-adapter.spec.ts": {
+      "cases": 4,
+      "skipped": 0,
+      "seconds": 14.0
+    },
+    "plan-initial-mount.spec.ts": {
+      "cases": 3,
+      "skipped": 0,
+      "seconds": 13.6
+    },
+    "pdf-fonts-and-xmp.spec.ts": {
+      "cases": 3,
+      "skipped": 0,
+      "seconds": 13.5
+    },
+    "pdf-notice-title.spec.ts": {
+      "cases": 2,
+      "skipped": 0,
+      "seconds": 13.5
+    },
+    "party-resolver.spec.ts": {
+      "cases": 3,
+      "skipped": 0,
+      "seconds": 13.1
+    },
+    "annual-blank-share-footing.spec.ts": {
+      "cases": 1,
+      "skipped": 0,
+      "seconds": 12.4
+    },
+    "plan-annual-rights-no.spec.ts": {
+      "cases": 2,
+      "skipped": 0,
+      "seconds": 12.4
+    },
+    "excel-import-cell-shapes.spec.ts": {
+      "cases": 2,
+      "skipped": 0,
+      "seconds": 12.1
+    },
+    "pdf-table-semantics.spec.ts": {
+      "cases": 2,
+      "skipped": 0,
+      "seconds": 11.4
+    },
+    "simplified-part1-identity-cells.spec.ts": {
+      "cases": 6,
+      "skipped": 0,
+      "seconds": 11.4
+    },
+    "plan-directive-cards.spec.ts": {
+      "cases": 2,
+      "skipped": 0,
+      "seconds": 11.2
+    },
+    "save-pipeline-boot.spec.ts": {
+      "cases": 2,
+      "skipped": 0,
+      "seconds": 11.2
+    },
+    "plan-started-row.spec.ts": {
+      "cases": 2,
+      "skipped": 0,
+      "seconds": 11.1
+    },
+    "negative-amount-columns.spec.ts": {
+      "cases": 2,
+      "skipped": 0,
+      "seconds": 11.0
+    },
+    "filing-type-change.spec.ts": {
+      "cases": 2,
+      "skipped": 0,
+      "seconds": 10.7
+    },
+    "activity-log-actions.spec.ts": {
+      "cases": 1,
+      "skipped": 0,
+      "seconds": 10.6
+    },
+    "plan-benefits-tristate.spec.ts": {
+      "cases": 2,
+      "skipped": 0,
+      "seconds": 10.4
+    },
+    "combobox-keyboard-nav.spec.ts": {
+      "cases": 3,
+      "skipped": 0,
+      "seconds": 10.1
+    },
+    "case-file-core-fields-roundtrip.spec.ts": {
+      "cases": 2,
+      "skipped": 0,
+      "seconds": 10.0
+    },
+    "plan-initial-assistive-none.spec.ts": {
+      "cases": 2,
+      "skipped": 0,
+      "seconds": 9.9
+    },
+    "case-write-through.spec.ts": {
+      "cases": 2,
+      "skipped": 0,
+      "seconds": 9.8
+    },
+    "pdf-evidence-lab.spec.ts": {
+      "cases": 1,
+      "skipped": 0,
+      "seconds": 9.7
+    },
+    "plan-annual-mount.spec.ts": {
+      "cases": 2,
+      "skipped": 0,
+      "seconds": 9.7
+    },
+    "plan-initial-period.spec.ts": {
+      "cases": 1,
+      "skipped": 0,
+      "seconds": 9.6
+    },
+    "plan-annual-benefits.spec.ts": {
+      "cases": 1,
+      "skipped": 0,
+      "seconds": 9.5
+    },
+    "case-file-manifest-privacy.spec.ts": {
+      "cases": 2,
+      "skipped": 0,
+      "seconds": 9.3
+    },
+    "guardian-advocate-hint.spec.ts": {
+      "cases": 2,
+      "skipped": 0,
+      "seconds": 8.9
+    },
+    "plan-simplified-mount.spec.ts": {
+      "cases": 2,
+      "skipped": 0,
+      "seconds": 8.9
+    },
+    "plan-minor-mount.spec.ts": {
+      "cases": 2,
+      "skipped": 0,
+      "seconds": 8.7
+    },
+    "simplified-part2-totals.spec.ts": {
+      "cases": 1,
+      "skipped": 0,
+      "seconds": 8.7
+    },
+    "print-preview-signature-jump.spec.ts": {
+      "cases": 2,
+      "skipped": 0,
+      "seconds": 8.3
+    },
+    "unlock.spec.ts": {
+      "cases": 1,
+      "skipped": 0,
+      "seconds": 7.8
+    },
+    "party-write-through.spec.ts": {
+      "cases": 1,
+      "skipped": 0,
+      "seconds": 7.4
+    },
+    "terms-acceptance.spec.ts": {
+      "cases": 2,
+      "skipped": 0,
+      "seconds": 7.4
+    },
+    "help-panel-state.spec.ts": {
+      "cases": 1,
+      "skipped": 0,
+      "seconds": 7.1
+    },
+    "prior-year-delete.spec.ts": {
+      "cases": 1,
+      "skipped": 0,
+      "seconds": 7.1
+    },
+    "security.spec.ts": {
+      "cases": 2,
+      "skipped": 0,
+      "seconds": 6.4
+    },
+    "dashboard-due-dates.spec.ts": {
+      "cases": 1,
+      "skipped": 0,
+      "seconds": 5.4
+    },
+    "closed-filing-sync.spec.ts": {
+      "cases": 1,
+      "skipped": 0,
+      "seconds": 5.1
+    },
+    "plan-initial-dates-explained.spec.ts": {
+      "cases": 1,
+      "skipped": 0,
+      "seconds": 4.8
+    },
+    "guardianship-selection-controls.spec.ts": {
+      "cases": 1,
+      "skipped": 0,
+      "seconds": 4.3
+    },
+    "feature-lazy-boundary.spec.ts": {
+      "cases": 1,
+      "skipped": 0,
+      "seconds": 3.7
+    },
+    "pwa-registration.spec.ts": {
+      "cases": 1,
+      "skipped": 0,
+      "seconds": 2.8
+    },
+    "offline.spec.ts": {
+      "cases": 0,
+      "skipped": 5,
+      "seconds": 0.0
+    },
+    "portable-http-parity.spec.ts": {
+      "cases": 0,
+      "skipped": 1,
+      "seconds": 0.0
+    }
+  }
+}

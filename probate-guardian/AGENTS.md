@@ -32,8 +32,8 @@ non-zero, so a later stage never runs against a broken prerequisite.
 | Tier | Runs | Target / browser | Cost | Gate? |
 | --- | --- | --- | --- | --- |
 | `npm run test:quick` | all unit specs + 4 browser smoke specs (startup, form-entry.contract, routes, readiness-card.contract) | source / chromium | ~2.2 min | **No** — convenience only |
-| `npm test` | all unit specs + the complete source E2E suite | source / chromium | ~25.7 min | Full regression — **ask first (§2)** |
-| `npm run test:verify` | `check:types` → `verify:data-model` → `npm test` | source / chromium | ~26 min | Full regression — **ask first (§2)** |
+| `npm test` | all unit specs + the complete source E2E suite | source / chromium | ~43.1 min (C:, four workers, 2026-10-14) | Full regression — **ask first (§2)** |
+| `npm run test:verify` | `check:types` → `verify:data-model` → `npm test` | source / chromium | `npm test` plus about a minute | Full regression — **ask first (§2)** |
 | `npm run test:release` | `check:types` → `verify:data-model` → unit → `test:e2e:all-profiles` | source, web, portable, portable-http / chromium; the `@cross-browser` cases / firefox, webkit; the `@edge-smoke` cases / edge | longest | **Yes** — release gate |
 
 - **`npm test` is unchanged and stays unchanged.** It is the full regression
@@ -70,14 +70,19 @@ non-zero, so a later stage never runs against a broken prerequisite.
   and portable inside their own profile steps — do not prepend `npm run build`.
 - Both full-regression tiers (`npm test`, `npm run test:verify`) need explicit
   go-ahead per §2. `test:quick` does not.
-- Timings are from `tests/baseline/milestone-59-runtime.json`, measured
-  2026-09-19 on one workstation; re-measure rather than trusting them.
+- Timings: `npm test`'s is from `tests/baseline/runtime-2026-10-14.json`
+  (TEST-REVIEW.md Delivery 1M's "after" run: 1,020 browser cases
+  executed, 7 skipped, 43.1 min wall on C: at four workers, against
+  `runtime-2026-10-12.json`'s 1,222 cases in 110 min at one worker);
+  `test:quick`'s is from `tests/baseline/milestone-59-runtime.json`
+  (2026-09-19). Both are one workstation; re-measure rather than trusting them.
 - **The repository on this workstation is on a FAT32 drive (D:), and single
   browser tests run about twice as slowly there** -- the summary-page test
   that walked all nine forms took 22–24 s from a copy on C: (NTFS) and
   47–49 s from D: (Milestone 72F). A full `npm test` took 1.7 h for 980
   browser tests on D: (2026-09-29) and 1.3 h for 1,011 from a copy on C:
-  (2026-10-02). Re-measure from an NTFS copy before trusting any figure.
+  (2026-10-02), and 43.1 min for 1,036 at four workers from a copy on C:
+  (2026-10-14). Re-measure from an NTFS copy before trusting any figure.
 - **Workers follow the volume** (TEST-REVIEW.md Delivery 1M, 2026-10-13):
   `playwright.config.ts` runs four workers on NTFS and one on FAT32 (asked
   with `fsutil fsinfo volumeinfo`), because at four workers on D: three
