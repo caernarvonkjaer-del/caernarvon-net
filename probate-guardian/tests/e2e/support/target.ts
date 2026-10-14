@@ -121,8 +121,16 @@ export async function createWard(page: Page, name: string, type = 'guardian'): P
     return wards.some((ward: any) => (ward.wardName || '').trim().toLowerCase() === n.trim().toLowerCase());
   }, name);
   if (needsDialog) return createWardViaDialog(page, name, type);
-  await page.evaluate(([n, t]) => (window as any).GuardianForms.testing.createFiling.add(n, t), [name, type]);
-  await expect(page.locator('#ward-selector')).toHaveValue(name);
+  // The name as the dialog's own box would have left it on blur (the app's
+  // name formatting: "Convert guardian" becomes "Convert Guardian"), so a
+  // seeded filing holds what a typed one holds.
+  const shown: string = await page.evaluate(async ([n, t]) => {
+    const api = (window as any).GuardianForms.testing;
+    const formatted = api.format.name(n);
+    await api.createFiling.add(formatted, t); // the filing is created, opened and normalized before anything reads it
+    return formatted;
+  }, [name, type]);
+  await expect(page.locator('#ward-selector')).toHaveValue(shown);
 }
 
 /**

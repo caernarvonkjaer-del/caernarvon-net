@@ -29,6 +29,7 @@
 //     validation a real edit triggers. Any test whose result depends on what
 //     an edit triggers uses setField() or drives the real control.
 import { formEngine, initializeEmptyData } from '../filing/filing-registry.js';
+import { formatName } from '../form/form-contract.js';
 import { sectionMarks, filingProgress } from '../status/section-marks.js';
 import {
   PLAN_RIGHTS, PLAN_RIGHT_STATES, PLAN_ADLS, PLAN_ADL_RATINGS, PLAN_BENEFITS, emptyPlanDirective,
@@ -420,6 +421,9 @@ export function createTestingAdapter(w, impl = applicationImplementations()) {
     },
     /** One field of the open filing, by dotted path, as a copy. */
     field: (path) => copy(getPath(requireActive('field'), path)),
+    /** The app's own text formatting, for a spec that seeds what a filer would have typed: `name` is what a
+ *  name box (the Add Filing dialog's ward name among them) makes of its value on blur. (TEST-REVIEW.md Delivery 1M.) */
+    format: Object.freeze({ name: (s) => formatName(String(s ?? '')) }),
     /** A copy of one of the app's fixed reference lists (CONSTANTS). */
     constants(name) {
       if (!CONSTANTS.includes(name)) throw new Error(`GuardianForms.testing.constants: ${name} is not a published list`);
