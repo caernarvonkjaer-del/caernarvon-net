@@ -150,8 +150,18 @@ export async function createJsPdfInstance() {
     // skip the render was tried and can't work: this jsPDF builds each
     // document as a plain object (its constructor is Object), checked in a
     // browser 2026-10-09.
+    // The render clones the whole document into a hidden frame, stylesheet
+    // links included, and Firefox's Content-Security-Policy refuses those
+    // links inside the clone (two console errors per PDF; Chromium and WebKit
+    // allow them). Nothing is drawn from the clone -- the PDF is built from
+    // the model below -- so the clone carries no stylesheets at all
+    // (TEST-REVIEW.md Delivery 1M, found by the Firefox release leg,
+    // 2026-10-14).
     const dummy = document.createElement('div');
-    const worker = window.html2pdf().from(dummy).set({ html2canvas: { logging: false }, jsPDF: { unit: 'pt', format: 'letter', orientation: 'portrait' } });
+    const worker = window.html2pdf().from(dummy).set({
+      html2canvas: { logging: false, ignoreElements: (el) => el.tagName === 'LINK' || el.tagName === 'STYLE' },
+      jsPDF: { unit: 'pt', format: 'letter', orientation: 'portrait' },
+    });
     const pdf = await worker.toPdf().get('pdf');
     if (pdf && typeof pdf.setFont === 'function') {
       patchOutlineDestinations(pdf);
