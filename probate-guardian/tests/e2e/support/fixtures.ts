@@ -275,7 +275,6 @@ export const MINIMAL_VALID_PLAN_MINOR = {
   ucn: '2026-CP-000987',
   // Milestone 73S (73S-3): the Plan for Minors' Case # is required; the UCN no longer stands in for it.
   ref: '2026-CP-000987',
-  caseNumber: '2026-CP-000987',
   county: 'Pinellas',
   amendedForm: 'No',
   periodFrom: '2026-01-01',

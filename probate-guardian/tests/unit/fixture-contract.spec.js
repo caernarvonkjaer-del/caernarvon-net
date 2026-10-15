@@ -225,3 +225,95 @@ describe('the faults the contract exists for (synthetic)', () => {
     expect(blockers(d).join('\n')).toMatch(/County: "V0010"/);
   });
 });
+
+// ---- every key a fixture writes is one its form has ----
+// TEST-REVIEW.md Delivery 6, item 1 (2026-10-15): a key the form never reads
+// is inert -- it fills nothing, passes every check above, and rides into the
+// goldens as variants that mean nothing (the Plan for Minors' fixture carried
+// a caseNumber for a form that keeps its Case # in ref). A path is the form's
+// when its blank filing has it, or the data model lists it for that identity
+// by name (a common row does not count: the blank filing is the authority on
+// whether this form has the field), or it lies under a map the model types as
+// an object with no rows of its own (scheduleNoItems, created on demand).
+let modelRows;
+function modelPaths(type) {
+  modelRows ??= parseCsv(fs.readFileSync(path.join(ROOT, 'probate-guardian-data-model.csv'), 'utf8')).filter((r) => r.storage_root === 'D');
+  const rows = modelRows.filter((r) => r.scope === SCOPE[type]);
+  const exact = new Set(rows.map((r) => r.field_path));
+  const maps = rows.filter((r) => r.data_type === 'object' && !rows.some((o) => o.field_path.startsWith(`${r.field_path}.`))).map((r) => r.field_path);
+  return { exact, maps };
+}
+
+/** Every path an object writes, rows as `[]` ('guardians[].name'), each object and array once as itself. */
+function* writtenPaths(obj, at = '') {
+  for (const [k, v] of Object.entries(obj)) {
+    const p = at ? `${at}.${k}` : k;
+    yield p;
+    if (Array.isArray(v)) { for (const item of v) if (item && typeof item === 'object') yield* writtenPaths(item, `${p}[]`); }
+    else if (v && typeof v === 'object') yield* writtenPaths(v, p);
+  }
+}
+
+/** Whether a blank filing has a path; '[]' walks the rows it has (a collection with no seeded row cannot vouch for a row's keys -- the model does). */
+function hasPath(obj, fieldPath) {
+  let current = [obj];
+  for (const seg of fieldPath.split('.')) {
+    const list = seg.endsWith('[]');
+    const key = list ? seg.slice(0, -2) : seg;
+    current = current.flatMap((o) => {
+      if (!o || typeof o !== 'object' || !(key in o)) return [];
+      const v = o[key];
+      return list ? (Array.isArray(v) ? v : []) : [v];
+    });
+    if (!current.length) return false;
+  }
+  return true;
+}
+
+const asRows = (p) => p.replace(/\.\d+(?=\.|$)/g, '[]'); // a manifest's 'scheduleA1.0.residence' is the row path 'scheduleA1[].residence'
+
+function unknownPaths(label, type, paths) {
+  const { exact, maps } = modelPaths(type);
+  const blank = json(m.registry.initializeEmptyData(type));
+  const problems = [];
+  for (const raw of paths) {
+    const p = asRows(raw);
+    if (hasPath(blank, p) || exact.has(p) || maps.some((map) => p.startsWith(`${map}.`))) continue;
+    problems.push(`${label}: ${raw} is not a field of this form (not in its blank filing, nor a ${SCOPE[type]} row of the data model)`);
+  }
+  return problems;
+}
+
+describe('every key a fixture writes is one its form has', () => {
+  test('the model lists rows for every type, and a map created on demand is known as one', () => {
+    for (const type of TYPES) expect(modelPaths(type).exact.size, type).toBeGreaterThan(10);
+    expect(modelPaths('annual').maps).toContain('scheduleNoItems');
+    expect(modelPaths('guardian').exact.has('serviceAttorney.signatureDate'), 'a row the blank filing lacks, which the model vouches for').toBe(true);
+  });
+
+  test('every positive fixture, every manifest patch and every manifest path is a path of its form', () => {
+    const problems = [];
+    for (const type of TYPES) problems.push(...unknownPaths(`${type} fixture`, type, writtenPaths(m.fixtures.MINIMAL_VALID[type])));
+    for (const [type, manifest] of MANIFESTS()) {
+      problems.push(...unknownPaths(`${type} manifest patch`, type, writtenPaths(manifest.patch)));
+      problems.push(...unknownPaths(`${type} manifest`, type, manifest.finite.map((f) => f.path)));
+    }
+    expect(problems).toEqual([]);
+  });
+
+  test('a typo\'d key is named with its form; a row key, a map key and a numbered manifest row are read as the form\'s (synthetic)', () => {
+    expect(unknownPaths('guardian fixture', 'guardian', writtenPaths({ wardname: 'x', guardians: [{ name: 'y', nmae: 'z' }] })))
+      .toEqual([
+        'guardian fixture: wardname is not a field of this form (not in its blank filing, nor a guardian_inventory row of the data model)',
+        'guardian fixture: guardians[].nmae is not a field of this form (not in its blank filing, nor a guardian_inventory row of the data model)',
+      ]);
+    expect(unknownPaths('annual fixture', 'annual', writtenPaths({ scheduleNoItems: { scha: true, anything: true }, guardians: [{ name: 'y' }] }))).toEqual([]);
+    expect(unknownPaths('guardian manifest', 'guardian', ['scheduleA1.3.residence', 'scheduleA1.3.nowhere'])).toEqual([
+      'guardian manifest: scheduleA1.3.nowhere is not a field of this form (not in its blank filing, nor a guardian_inventory row of the data model)',
+    ]);
+    // A common row alone does not make a field the form's: the Plan for Minors has no caseNumber.
+    expect(unknownPaths('planMinor fixture', 'planMinor', ['caseNumber', 'ref'])).toEqual([
+      'planMinor fixture: caseNumber is not a field of this form (not in its blank filing, nor a plan_minor row of the data model)',
+    ]);
+  });
+});

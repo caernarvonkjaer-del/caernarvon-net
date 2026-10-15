@@ -330,7 +330,7 @@ export async function fillMinimalValidPlanAnnualWard(page: Page): Promise<void> 
 }
 
 export async function fillMinimalValidPlanMinorWard(page: Page): Promise<void> {
-  await applyPlanOverlay(page, MINIMAL_VALID_PLAN_MINOR, ['wardName', 'ucn', 'ref', 'caseNumber']);
+  await applyPlanOverlay(page, MINIMAL_VALID_PLAN_MINOR, ['wardName', 'ucn', 'ref']);
 }
 
 export async function fillMinimalValidPlanInitialWard(page: Page): Promise<void> {
