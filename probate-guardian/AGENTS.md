@@ -48,18 +48,33 @@ non-zero, so a later stage never runs against a broken prerequisite.
   sets `PG_TARGET=source` and `PG_BROWSER=chromium` for the Playwright it
   launches, so a value left in the shell cannot change what they run; a
   direct `npx playwright test` still reads the shell, so set both values
-  for one. `test:e2e:all-profiles` runs the runner's explicit release list
-  (the seven profiles, never `quick`). No profile starts while the port its
-  server needs is held: `playwright.config.ts` no longer reuses a listening
-  server, so two browser runs at once refuse rather than share one tree's
-  server, and the runner prints what holds the port and how to look.
-  `tests/unit/test-profile-runner.spec.js` pins all of this.
+  for one. `test:e2e:all-profiles` runs the release's explicit order (the
+  seven profiles, never `quick` or `historical`). No profile starts while
+  the port its server needs is held: `playwright.config.ts` no longer
+  reuses a listening server, so two browser runs at once refuse rather than
+  share one tree's server, and the runner prints what holds the port and
+  how to look. `tests/unit/test-profile-runner.spec.js` pins all of this.
+- **Profiles have two owners, and the runner is neither** (TEST-REVIEW.md
+  Delivery 4, 2026-10-14). `scripts/test-profiles.mjs` is the registry: each
+  profile's id, target, browser, the build it needs first, which curated
+  list it runs, and the release's order. `tests/profile-manifest.json` is
+  the manifest: the curated spec lists (web, portable, portable-http, the
+  extra browsers' files and tags, the quick tier). The source profile is
+  the whole of `tests/e2e` and lists nothing: an ordinary spec needs no
+  registration. `tests/unit/profile-membership.spec.js` holds the manifest
+  to the specs -- every listed path exists once, and a spec that branches
+  on a built target (`currentTarget === 'web'`, an alias, `'portable'`,
+  `'portable-http'`) is in that target's list, read from the specs' syntax
+  trees -- and the runner spec holds the runner to naming no path or
+  profile value of its own; the registry refuses a target, browser, build
+  or selection nothing defines. A new web-only or portable-only case goes
+  into its target's list, or the check says so before any run.
 - **The extra-browser legs run tagged cases** (TEST-REVIEW.md Delivery 1M,
   2026-10-14): Firefox and WebKit run the 17 cases tagged `@cross-browser`
   (boot, crypto, downloads and the file-input fallback, real Tab and focus,
   live input masking, pdf.js canvas, the WebKit-flagged focus race) and Edge
-  the 6 tagged `@edge-smoke`, out of the seven files
-  `CROSS_BROWSER_SMOKE_SPECS` names in the runner; every tagged case carries
+  the 6 tagged `@edge-smoke`, out of the seven files the manifest's
+  `cross-browser` list names; every tagged case carries
   a `browser risk` annotation saying why it runs there, and the runner spec
   counts the selection with `--list`. A case that should run on another
   engine gets the tag and the annotation, not a new profile. `all` also

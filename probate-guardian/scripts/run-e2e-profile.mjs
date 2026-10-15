@@ -21,108 +21,72 @@
 // tests/unit/test-profile-runner.spec.js can drive them with a fake child;
 // the command line below runs only when this file is the entry point.
 //
-// Usage: node scripts/run-e2e-profile.mjs <source|quick|web|portable|portable-http|firefox|webkit|edge|all>
+// Usage: node scripts/run-e2e-profile.mjs <a profile of scripts/test-profiles.mjs|all>
 
 import { spawn } from 'node:child_process';
 import net from 'node:net';
+import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export const root = path.resolve(__dirname, '..');
 
-// MILESTONE-33-PROPOSAL.md, Phase 5 Sec.1: "The hosted and portable profiles
-// run all distribution-sensitive specs, not the whole source suite." These
-// lists are that curated set, mapped directly from the doc's own per-profile
-// prose (verified against tests/e2e/support/target-profile.ts's skip
-// classification -- ward-lock.spec.ts and tab-and-update.spec.ts already
-// self-exclude their Locks-API/service-worker-dependent portions under
-// `portable` via existing skipExpectedTargetExclusion guards, which is the
-// doc's "explicit service-worker exclusions" requirement, exercised for
-// real here rather than assumed).
-const HOSTED_PARITY_SPECS = [
-  'tests/e2e/pwa-registration.spec.ts',
-  'tests/e2e/offline.spec.ts',
-  'tests/e2e/startup.spec.ts',
-  'tests/e2e/case-file-roundtrip.spec.ts',
-  'tests/e2e/backup-restore-sav.spec.ts',
-  'tests/e2e/dashboard-backup.spec.ts',
-  // Milestone 34: the doc's "hosted parity" row names "chunk-load failure";
-  // feature-load-failure.spec.ts now has a web-mode sibling test (manifest-
-  // driven, hashed-chunk interception) alongside its original source-only
-  // test, closing the gap MILESTONE-33-PROPOSAL.md's Phase 5 progress note
-  // recorded.
-  'tests/e2e/feature-load-failure.spec.ts',
-];
+// TEST-REVIEW.md Delivery 4 (T5, 2026-10-14; the 4P prototype first). The
+// profiles come from two owners and nowhere else: scripts/test-profiles.mjs
+// (each profile's id, target, browser, build, manifest selection; the
+// release's order) and tests/profile-manifest.json (the curated spec lists:
+// web, portable, portable-http, the extra browsers' files and tags, the
+// quick tier). This file names no spec path and no profile value of its
+// own; tests/unit/test-profile-runner.spec.js holds it to that, and
+// tests/unit/profile-membership.spec.js holds the manifest to the specs (a
+// spec that branches on a built target must be in that target's list).
+// MILESTONE-33-PROPOSAL.md, Phase 5 Sec.1, is where the curated idea comes
+// from: "The hosted and portable profiles run all distribution-sensitive
+// specs, not the whole source suite."
+import { PROFILE_REGISTRY, RELEASE_ORDER, validateRegistry } from './test-profiles.mjs';
 
-const PORTABLE_PARITY_SPECS = [
-  'tests/e2e/startup.spec.ts',
-  'tests/e2e/case-file-roundtrip.spec.ts',
-  'tests/e2e/backup-restore-sav.spec.ts',
-  'tests/e2e/pwa-registration.spec.ts',
-  'tests/e2e/ward-lock.spec.ts',
-  'tests/e2e/tab-and-update.spec.ts',
-];
+export const MANIFEST_PATH = 'tests/profile-manifest.json';
+export function readManifest() {
+  return JSON.parse(fs.readFileSync(path.join(root, MANIFEST_PATH), 'utf8'));
+}
+/** A manifest profile's specs, with what it extends first (portable-http runs portable's list and its own). */
+export function profileSpecs(manifest, name) {
+  const p = manifest.profiles[name];
+  if (!p) throw new Error(`${MANIFEST_PATH} has no profile "${name}"`);
+  return [...(p.extends ? profileSpecs(manifest, p.extends) : []), ...p.specs];
+}
+/** What a registry selection runs: null for the whole suite (and for a profile with its own config), else the manifest's list. */
+export function selectionSpecs(manifest, selection) {
+  return selection === 'all' || selection === 'historical' ? null : profileSpecs(manifest, selection);
+}
+/** The runnable profiles: the registry's values with the manifest's specs and, for the extra browsers, the manifest's tag. */
+export function composeProfiles(registry = PROFILE_REGISTRY, manifest = readManifest()) {
+  const out = {};
+  for (const [name, entry] of Object.entries(registry)) {
+    const tags = manifest.profiles[entry.selection]?.tags;
+    out[name] = { ...entry, specs: selectionSpecs(manifest, entry.selection), ...(tags?.[entry.browser] ? { grep: tags[entry.browser] } : {}) };
+  }
+  return out;
+}
 
-// TEST-REVIEW.md Delivery 1M (2026-10-13): the extra-browser legs run only
-// the cases tagged for them in these files -- @cross-browser for Firefox and
-// WebKit (boot, crypto, downloads and the file-input fallback, real Tab and
-// focus, live input masking, pdf.js canvas, the WebKit-flagged focus race)
-// and @edge-smoke for Edge (boot, the FSA/OPFS handle Firefox skips, crypto,
-// a download, one output smoke) -- each tagged case carrying a "browser
-// risk" annotation that says why it runs there. They ran these files whole
-// before (120 cases per browser, then 56 after the consolidations).
-export const CROSS_BROWSER_SMOKE_SPECS = [
-  'tests/e2e/form-entry-ux.spec.ts',
-  'tests/e2e/form-entry.contract.spec.ts',
-  'tests/e2e/case-file-roundtrip.spec.ts',
-  'tests/e2e/navigation-status.contract.spec.ts',
-  'tests/e2e/pdf-preview-viewer.spec.ts',
-  'tests/e2e/startup.spec.ts',
-  'tests/e2e/unlock.spec.ts',
-];
-export const CROSS_BROWSER_TAG = '@cross-browser';
-export const EDGE_SMOKE_TAG = '@edge-smoke';
+const MANIFEST = readManifest();
+export const PROFILES = composeProfiles(PROFILE_REGISTRY, MANIFEST);
+export const RELEASE_PROFILES = [...RELEASE_ORDER];
+export const QUICK_SPECS = profileSpecs(MANIFEST, 'quick');
+export const CROSS_BROWSER_SMOKE_SPECS = profileSpecs(MANIFEST, 'cross-browser');
+export const CROSS_BROWSER_TAG = MANIFEST.profiles['cross-browser'].tags.firefox;
+export const EDGE_SMOKE_TAG = MANIFEST.profiles['cross-browser'].tags.edge;
 
-// The quick tier's browser smoke: the four specs AGENTS.md section 1 names.
-// Owned here; package.json composes `test:quick` from `test:e2e:quick` and
-// carries no copy of this list.
-export const QUICK_SPECS = [
-  'tests/e2e/startup.spec.ts',
-  'tests/e2e/form-entry.contract.spec.ts',
-  'tests/e2e/routes.spec.ts',
-  'tests/e2e/readiness-card.contract.spec.ts',
-];
-
-// specs: null means "run the whole tests/e2e/ suite unscoped" -- that IS
-// what "Core full" already means, no new restriction needed.
-export const PROFILES = {
-  source: { target: 'source', browser: 'chromium', build: null, specs: null },
-  quick: { target: 'source', browser: 'chromium', build: null, specs: QUICK_SPECS },
-  web: { target: 'web', browser: 'chromium', build: 'build:web', specs: HOSTED_PARITY_SPECS },
-  portable: { target: 'portable', browser: 'chromium', build: 'build:portable', specs: PORTABLE_PARITY_SPECS },
-  // Milestone 70, 70A (T1): the portable build as production serves it --
-  // from a subfolder over http, where the filing lock, fragment loading and
-  // startup take the branches file:// skips. The production gate at MS 70's
-  // checkpoints and merge.
-  'portable-http': { target: 'portable-http', browser: 'chromium', build: 'build:portable', specs: [...PORTABLE_PARITY_SPECS, 'tests/e2e/portable-http-parity.spec.ts'] },
-  firefox: { target: 'source', browser: 'firefox', build: null, specs: CROSS_BROWSER_SMOKE_SPECS, grep: CROSS_BROWSER_TAG },
-  webkit: { target: 'source', browser: 'webkit', build: null, specs: CROSS_BROWSER_SMOKE_SPECS, grep: CROSS_BROWSER_TAG },
-  edge: { target: 'source', browser: 'edge', build: null, specs: CROSS_BROWSER_SMOKE_SPECS, grep: EDGE_SMOKE_TAG },
-  // TEST-REVIEW.md Delivery 2 (T6): comparisons against an older build, by
-  // their own config (testDir tests/historical; the spec serves both builds
-  // itself, so no server to wait for or to refuse on), on demand -- never in
-  // `all`, which lists its profiles by name.
-  historical: { target: 'source', browser: 'chromium', build: null, specs: null, config: 'playwright.historical.config.ts', server: false },
-};
-
-// What `all` (release validation, `npm run test:release`) runs, one profile
-// at a time -- the same "retain serial execution" discipline workers:1
-// applies within a run, extended across profiles. An explicit list: `quick`
-// is a convenience tier the source profile already contains, and anything
-// added to PROFILES later (a diagnostic, a historical comparison) joins the
-// release only by being named here.
-export const RELEASE_PROFILES = ['source', 'web', 'portable', 'portable-http', 'firefox', 'webkit', 'edge'];
+/** The registry's problems against what playwright.config.ts and the manifest define; empty when it is right. */
+export async function registryProblems(registry = PROFILE_REGISTRY, order = RELEASE_ORDER, manifest = MANIFEST) {
+  const config = await import(pathToFileURL(path.join(root, 'playwright.config.ts')).href);
+  return validateRegistry(registry, order, {
+    targets: Object.keys(config.TARGETS),
+    browsers: Object.keys(config.BROWSERS),
+    selections: Object.keys(manifest.profiles),
+  });
+}
 
 /** The child's environment: the profile's target and browser, over whatever the shell carries. */
 export function profileEnv(profile, baseEnv = process.env) {
@@ -241,6 +205,8 @@ export async function runProfile(name, options = {}) {
   } = options;
   const profile = PROFILES[name];
   if (!profile) throw new Error(`Unknown profile: ${name}. Expected one of: ${Object.keys(PROFILES).join(', ')}, all`);
+  const wrong = await (options.registryProblems ?? registryProblems)();
+  if (wrong.length) throw new Error(`scripts/test-profiles.mjs cannot run as it is:\n  ${wrong.join('\n  ')}`);
   if (Array.isArray(profile.specs) && profile.specs.length === 0) {
     throw new Error(`Profile "${name}" selects no specs; a fixed selection must name at least one.`);
   }

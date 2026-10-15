@@ -68,6 +68,8 @@ BUILD AND VALIDATION COMMANDS (maintainers):
   npm run test:e2e:edge          # source/Edge, the @edge-smoke cases
   npm run test:e2e:historical    # tests/historical by its own config, on demand; never in all
   npm run test:e2e:all-profiles  # the seven release profiles above (not quick), one at a time
+  (the profiles -- id, target, browser, build, which list -- are scripts/test-profiles.mjs's;
+  the curated spec lists are tests/profile-manifest.json's; the runner has neither)
 - A profile refuses to start while the port its server needs (4321 for
   source, 4173 for web, 4341 for portable-http) is held by another process,
   and prints how to see what holds it. Nothing is reused or stopped for you:

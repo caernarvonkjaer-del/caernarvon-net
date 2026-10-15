@@ -135,7 +135,7 @@ const webServer = TARGETS[target]
   ? { command: TARGETS[target].command, url: TARGETS[target].url, reuseExistingServer: false }
   : undefined;
 
-const BROWSERS = {
+export const BROWSERS = {
   chromium: {
     name: 'chromium',
     use: {

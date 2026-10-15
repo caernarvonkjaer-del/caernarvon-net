@@ -4,9 +4,11 @@ import path from 'node:path';
 import { describe, expect, test } from 'vitest';
 import config, { TARGETS, workersFor } from '../../playwright.config.ts';
 import {
-  CROSS_BROWSER_SMOKE_SPECS, CROSS_BROWSER_TAG, EDGE_SMOKE_TAG, PROFILES, QUICK_SPECS, RELEASE_PROFILES,
-  collisionDiagnostic, mentionsPortCollision, playwrightArgs, profileEnv, root, run, runProfile, runRelease,
+  CROSS_BROWSER_SMOKE_SPECS, CROSS_BROWSER_TAG, EDGE_SMOKE_TAG, MANIFEST_PATH, PROFILES, QUICK_SPECS, RELEASE_PROFILES,
+  collisionDiagnostic, composeProfiles, mentionsPortCollision, playwrightArgs, profileEnv, readManifest, registryProblems, root, run,
+  runProfile, runRelease,
 } from '../../scripts/run-e2e-profile.mjs';
+import { BUILDS, NEVER_RELEASED, PROFILE_REGISTRY, RELEASE_ORDER, validateRegistry } from '../../scripts/test-profiles.mjs';
 
 // TEST-REVIEW.md Delivery 1 (T1, T2): what the named test commands actually
 // run. Before 2026-10-13, `npm test`'s browser leg was a bare `playwright
@@ -272,4 +274,73 @@ describe('the historical profile runs by its own config and is outside the relea
     expect(everyday.some((line) => line.includes('pre-merge-output'))).toBe(false);
     expect(everyday.some((line) => line.includes('startup.spec.ts'))).toBe(true);
   }, 180_000);
+});
+
+// TEST-REVIEW.md Delivery 4 (T5, 2026-10-14): the registry is the one owner
+// of profile ids, target/browser/build values and release inclusion; the
+// manifest the one owner of curated paths; the runner holds neither.
+describe('the registry owns the profiles, the manifest the paths, the runner neither', () => {
+  test('every runnable profile is the registry\'s, value for value, and the release list is its order', () => {
+    expect(Object.keys(PROFILES)).toEqual(Object.keys(PROFILE_REGISTRY));
+    for (const [name, entry] of Object.entries(PROFILE_REGISTRY)) {
+      expect([PROFILES[name].target, PROFILES[name].browser, PROFILES[name].build], name).toEqual([entry.target, entry.browser, entry.build]);
+    }
+    expect(RELEASE_PROFILES).toEqual([...RELEASE_ORDER]);
+    for (const never of NEVER_RELEASED) expect(RELEASE_PROFILES).not.toContain(never);
+  });
+
+  test('the runner names no spec path and no profile value of its own', () => {
+    const source = fs.readFileSync(path.join(root, 'scripts/run-e2e-profile.mjs'), 'utf8').replace(/\/\/.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '');
+    expect(source.match(/tests\/e2e\/[\w./-]+\.spec\.ts/g) ?? []).toEqual([]);
+    expect(source.match(/build:(web|portable)/g) ?? []).toEqual([]);
+    expect(source.match(/'(firefox|webkit|edge)'/g) ?? []).toEqual([]);
+  });
+
+  test('the registry as it is passes its own validation against the config and the manifest', async () => {
+    expect(await registryProblems()).toEqual([]);
+    expect(Object.keys(readManifest().profiles)).toContain('quick');
+    expect(QUICK_SPECS).toEqual(readManifest().profiles.quick.specs);
+  });
+
+  test('a profile with an unknown target, browser, build or selection, and a release list naming quick, historical or an unknown profile, are refused by name', () => {
+    const known = { targets: ['source', 'web', 'portable', 'portable-http'], browsers: ['chromium', 'firefox', 'webkit', 'edge'], builds: BUILDS, selections: ['web', 'portable', 'portable-http', 'cross-browser', 'quick'] };
+    const bad = {
+      ...PROFILE_REGISTRY,
+      mars: { target: 'mars', browser: 'chromium', build: null, selection: 'all' },
+      opera: { target: 'source', browser: 'opera', build: null, selection: 'all' },
+      built: { target: 'web', browser: 'chromium', build: 'build:mars', selection: 'web' },
+      listed: { target: 'web', browser: 'chromium', build: 'build:web', selection: 'nowhere' },
+      old: { target: 'source', browser: 'chromium', build: null, selection: 'historical' },
+    };
+    expect(validateRegistry(bad, ['source', 'quick', 'historical', 'ghost', 'source'], known)).toEqual([
+      'mars: target "mars" is not one playwright.config.ts defines (source, web, portable, portable-http)',
+      'opera: browser "opera" is not one playwright.config.ts defines (chromium, firefox, webkit, edge)',
+      'built: build "build:mars" is not a build script (build:web, build:portable)',
+      'listed: selection "nowhere" is not a manifest profile (web, portable, portable-http, cross-browser, quick) nor "all"',
+      'old: a historical profile needs its own config and server: false',
+      'the release order names "quick", which the release never runs',
+      'the release order names "historical", which the release never runs',
+      'the release order names "ghost", which the registry does not define',
+      'the release order repeats source',
+    ]);
+    expect(validateRegistry(PROFILE_REGISTRY, RELEASE_ORDER, known)).toEqual([]);
+  });
+
+  test('a wrong registry stops a profile before its build, its port check and Playwright', async () => {
+    const { spawn, calls } = fakeSpawn();
+    const problems = async () => ['mars: target "mars" is not one playwright.config.ts defines (source)'];
+    await expect(runProfile('web', { spawn, env: polluted, log: quiet, serverUrl: noServer, registryProblems: problems })).rejects.toThrow(/cannot run as it is:\n {2}mars: target "mars"/);
+    expect(calls).toEqual([]);
+  });
+
+  test('composeProfiles reads each selection from the manifest, and a browser\'s tag from its selection', () => {
+    const manifest = { profiles: { quick: { specs: ['tests/e2e/a.spec.ts'] }, web: { target: 'web', specs: ['tests/e2e/b.spec.ts'] }, portable: { target: 'portable', specs: ['tests/e2e/c.spec.ts'] }, 'portable-http': { target: 'portable-http', extends: 'portable', specs: ['tests/e2e/d.spec.ts'] }, 'cross-browser': { specs: ['tests/e2e/e.spec.ts'], tags: { firefox: '@x', webkit: '@x', edge: '@y' } } } };
+    const composed = composeProfiles(PROFILE_REGISTRY, manifest);
+    expect(composed.source.specs).toBeNull();
+    expect(composed.historical.specs).toBeNull();
+    expect(composed.quick.specs).toEqual(['tests/e2e/a.spec.ts']);
+    expect(composed['portable-http'].specs).toEqual(['tests/e2e/c.spec.ts', 'tests/e2e/d.spec.ts']);
+    expect([composed.firefox.grep, composed.edge.grep, composed.web.grep]).toEqual(['@x', '@y', undefined]);
+    expect(MANIFEST_PATH).toBe('tests/profile-manifest.json');
+  });
 });

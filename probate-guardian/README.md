@@ -67,6 +67,10 @@ Playwright runs against one of five targets
 explains each. `npm test`, `test:quick` and the `test:e2e:*` profiles set the
 target and browser themselves (`scripts/run-e2e-profile.mjs`), so a value left
 in the shell cannot change what they run, and each refuses to start while the
+The profiles' values (target, browser, build, which curated list, the release's
+order) are `scripts/test-profiles.mjs`'s and the curated spec lists
+`tests/profile-manifest.json`'s (TEST-REVIEW.md Delivery 4); the source
+profile is the whole suite and lists nothing.
 port its server needs is held by another process. Nothing runs automatically
 on a push: the GitHub workflow at the repository root runs only when started
 by hand, and has not been run since 2026-09-13.
