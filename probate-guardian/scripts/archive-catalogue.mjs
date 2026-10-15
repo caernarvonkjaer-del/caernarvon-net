@@ -37,7 +37,8 @@ export function retiredFiles() {
     if (line.includes('\t')) {
       const [full, , date, subject] = line.split('\t');
       // A fixed seven characters of the full hash: git's own abbreviation grows with
-      // the repository and differs by machine (the Linux runner gave eight).
+      // the repository's objects and so differs by machine (this workstation's had
+      // grown to eight on 2026-10-15 while GitHub's runner still gave seven).
       commit = { short: full.slice(0, 7), date, subject: subject.slice(0, 140) };
     } else if (line.trim() && commit) {
       const full = line.trim();

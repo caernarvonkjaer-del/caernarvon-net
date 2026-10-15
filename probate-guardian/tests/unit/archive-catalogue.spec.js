@@ -35,7 +35,7 @@ describe('archive/testing stays a true catalogue', () => {
     expect(text).toContain(CAPTURE_POINT.download);
   }, 60_000);
 
-  test('the catalogue does not depend on how long git abbreviates a hash (the Linux runner gave eight characters, this workstation seven)', () => {
+  test('the catalogue does not depend on how long git abbreviates a hash (this workstation had grown to eight characters while the Linux runner gave seven)', () => {
     const saved = { count: process.env.GIT_CONFIG_COUNT, key: process.env.GIT_CONFIG_KEY_0, value: process.env.GIT_CONFIG_VALUE_0 };
     Object.assign(process.env, { GIT_CONFIG_COUNT: '1', GIT_CONFIG_KEY_0: 'core.abbrev', GIT_CONFIG_VALUE_0: '11' });
     try {

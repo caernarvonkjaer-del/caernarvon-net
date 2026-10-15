@@ -22,203 +22,203 @@
  "retired": [
   {
    "path": "scripts/ms70-ledger-guard.mjs",
-   "retiredBy": "cc66ae4d",
+   "retiredBy": "cc66ae4",
    "retiredOn": "2026-10-14",
    "subject": "test(protocol 2): the three governance guards read the suite as syntax trees and paths; the pre-merge comparison moves to tests/historical; ",
-   "lastVersion": "cc66ae4d^:probate-guardian/scripts/ms70-ledger-guard.mjs",
-   "readBack": "git show cc66ae4d^:probate-guardian/scripts/ms70-ledger-guard.mjs"
+   "lastVersion": "cc66ae4^:probate-guardian/scripts/ms70-ledger-guard.mjs",
+   "readBack": "git show cc66ae4^:probate-guardian/scripts/ms70-ledger-guard.mjs"
   },
   {
    "path": "tests/unit/ms70-ledger-guard.spec.js",
-   "retiredBy": "cc66ae4d",
+   "retiredBy": "cc66ae4",
    "retiredOn": "2026-10-14",
    "subject": "test(protocol 2): the three governance guards read the suite as syntax trees and paths; the pre-merge comparison moves to tests/historical; ",
-   "lastVersion": "cc66ae4d^:probate-guardian/tests/unit/ms70-ledger-guard.spec.js",
-   "readBack": "git show cc66ae4d^:probate-guardian/tests/unit/ms70-ledger-guard.spec.js"
+   "lastVersion": "cc66ae4^:probate-guardian/tests/unit/ms70-ledger-guard.spec.js",
+   "readBack": "git show cc66ae4^:probate-guardian/tests/unit/ms70-ledger-guard.spec.js"
   },
   {
    "path": "tests/unit/checklist-export-parity.spec.js",
-   "retiredBy": "d01edd45",
+   "retiredBy": "d01edd4",
    "retiredOn": "2026-10-06",
    "subject": "feat(73F part 2): the sidebar, dashboard and Preview read the export checks",
-   "lastVersion": "d01edd45^:probate-guardian/tests/unit/checklist-export-parity.spec.js",
-   "readBack": "git show d01edd45^:probate-guardian/tests/unit/checklist-export-parity.spec.js"
+   "lastVersion": "d01edd4^:probate-guardian/tests/unit/checklist-export-parity.spec.js",
+   "readBack": "git show d01edd4^:probate-guardian/tests/unit/checklist-export-parity.spec.js"
   },
   {
    "path": "tests/baseline/ms70-70D-nav-checks-before.js.txt",
-   "retiredBy": "2c171d50",
+   "retiredBy": "2c171d5",
    "retiredOn": "2026-09-27",
    "subject": "MS 70 70L: the classic monolith is deleted, and nothing loads, copies, caches, reads or records it",
-   "lastVersion": "2c171d50^:probate-guardian/tests/baseline/ms70-70D-nav-checks-before.js.txt",
-   "readBack": "git show 2c171d50^:probate-guardian/tests/baseline/ms70-70D-nav-checks-before.js.txt"
+   "lastVersion": "2c171d5^:probate-guardian/tests/baseline/ms70-70D-nav-checks-before.js.txt",
+   "readBack": "git show 2c171d5^:probate-guardian/tests/baseline/ms70-70D-nav-checks-before.js.txt"
   },
   {
    "path": "tests/unit/fixtures/window-bridge-allowlist.json",
-   "retiredBy": "2c171d50",
+   "retiredBy": "2c171d5",
    "retiredOn": "2026-09-27",
    "subject": "MS 70 70L: the classic monolith is deleted, and nothing loads, copies, caches, reads or records it",
-   "lastVersion": "2c171d50^:probate-guardian/tests/unit/fixtures/window-bridge-allowlist.json",
-   "readBack": "git show 2c171d50^:probate-guardian/tests/unit/fixtures/window-bridge-allowlist.json"
+   "lastVersion": "2c171d5^:probate-guardian/tests/unit/fixtures/window-bridge-allowlist.json",
+   "readBack": "git show 2c171d5^:probate-guardian/tests/unit/fixtures/window-bridge-allowlist.json"
   },
   {
    "path": "tests/unit/support/legacy-source-extract.js",
-   "retiredBy": "2c171d50",
+   "retiredBy": "2c171d5",
    "retiredOn": "2026-09-27",
    "subject": "MS 70 70L: the classic monolith is deleted, and nothing loads, copies, caches, reads or records it",
-   "lastVersion": "2c171d50^:probate-guardian/tests/unit/support/legacy-source-extract.js",
-   "readBack": "git show 2c171d50^:probate-guardian/tests/unit/support/legacy-source-extract.js"
+   "lastVersion": "2c171d5^:probate-guardian/tests/unit/support/legacy-source-extract.js",
+   "readBack": "git show 2c171d5^:probate-guardian/tests/unit/support/legacy-source-extract.js"
   },
   {
    "path": "tests/unit/legacy-bridge.spec.js",
-   "retiredBy": "cc532e84",
+   "retiredBy": "cc532e8",
    "retiredOn": "2026-09-27",
    "subject": "MS 70 70K: the router owns navigation, the features are a service, and the only global is window.GuardianForms",
-   "lastVersion": "cc532e84^:probate-guardian/tests/unit/legacy-bridge.spec.js",
-   "readBack": "git show cc532e84^:probate-guardian/tests/unit/legacy-bridge.spec.js"
+   "lastVersion": "cc532e8^:probate-guardian/tests/unit/legacy-bridge.spec.js",
+   "readBack": "git show cc532e8^:probate-guardian/tests/unit/legacy-bridge.spec.js"
   },
   {
    "path": "tests/unit/monolith-services.spec.js",
-   "retiredBy": "cc532e84",
+   "retiredBy": "cc532e8",
    "retiredOn": "2026-09-27",
    "subject": "MS 70 70K: the router owns navigation, the features are a service, and the only global is window.GuardianForms",
-   "lastVersion": "cc532e84^:probate-guardian/tests/unit/monolith-services.spec.js",
-   "readBack": "git show cc532e84^:probate-guardian/tests/unit/monolith-services.spec.js"
+   "lastVersion": "cc532e8^:probate-guardian/tests/unit/monolith-services.spec.js",
+   "readBack": "git show cc532e8^:probate-guardian/tests/unit/monolith-services.spec.js"
   },
   {
    "path": "tests/e2e/case-resolver.spec.ts",
-   "retiredBy": "e9b8251e",
+   "retiredBy": "e9b8251",
    "retiredOn": "2026-09-25",
    "subject": "feat(ms70-70T): the browser suite reaches the app only through GuardianForms.testing",
-   "lastVersion": "e9b8251e^:probate-guardian/tests/e2e/case-resolver.spec.ts",
-   "readBack": "git show e9b8251e^:probate-guardian/tests/e2e/case-resolver.spec.ts"
+   "lastVersion": "e9b8251^:probate-guardian/tests/e2e/case-resolver.spec.ts",
+   "readBack": "git show e9b8251^:probate-guardian/tests/e2e/case-resolver.spec.ts"
   },
   {
    "path": "tests/e2e/dependent-question-gate.spec.ts",
-   "retiredBy": "1b698069",
+   "retiredBy": "1b69806",
    "retiredOn": "2026-09-23",
    "subject": "fix(milestone-67B): a waived bond or a restricted depository no longer blocks filing; one four-state question replaces the bond block's gate",
-   "lastVersion": "1b698069^:probate-guardian/tests/e2e/dependent-question-gate.spec.ts",
-   "readBack": "git show 1b698069^:probate-guardian/tests/e2e/dependent-question-gate.spec.ts"
+   "lastVersion": "1b69806^:probate-guardian/tests/e2e/dependent-question-gate.spec.ts",
+   "readBack": "git show 1b69806^:probate-guardian/tests/e2e/dependent-question-gate.spec.ts"
   },
   {
    "path": "tests/unit/dependent-question.spec.js",
-   "retiredBy": "1b698069",
+   "retiredBy": "1b69806",
    "retiredOn": "2026-09-23",
    "subject": "fix(milestone-67B): a waived bond or a restricted depository no longer blocks filing; one four-state question replaces the bond block's gate",
-   "lastVersion": "1b698069^:probate-guardian/tests/unit/dependent-question.spec.js",
-   "readBack": "git show 1b698069^:probate-guardian/tests/unit/dependent-question.spec.js"
+   "lastVersion": "1b69806^:probate-guardian/tests/unit/dependent-question.spec.js",
+   "readBack": "git show 1b69806^:probate-guardian/tests/unit/dependent-question.spec.js"
   },
   {
    "path": "tests/e2e/b4-register-page-pruning.spec.ts",
-   "retiredBy": "26ea82d4",
+   "retiredBy": "26ea82d",
    "retiredOn": "2026-09-19",
    "subject": "feat(excel): prune blank pages across every schedule, not just B-4",
-   "lastVersion": "26ea82d4^:probate-guardian/tests/e2e/b4-register-page-pruning.spec.ts",
-   "readBack": "git show 26ea82d4^:probate-guardian/tests/e2e/b4-register-page-pruning.spec.ts"
+   "lastVersion": "26ea82d^:probate-guardian/tests/e2e/b4-register-page-pruning.spec.ts",
+   "readBack": "git show 26ea82d^:probate-guardian/tests/e2e/b4-register-page-pruning.spec.ts"
   },
   {
    "path": "tests/unit/schb4-account-contract.spec.js",
-   "retiredBy": "ecabe69e",
+   "retiredBy": "ecabe69",
    "retiredOn": "2026-09-17",
    "subject": "Revert Milestone 57's implementation, keeping its documents and three fixes",
-   "lastVersion": "ecabe69e^:probate-guardian/tests/unit/schb4-account-contract.spec.js",
-   "readBack": "git show ecabe69e^:probate-guardian/tests/unit/schb4-account-contract.spec.js"
+   "lastVersion": "ecabe69^:probate-guardian/tests/unit/schb4-account-contract.spec.js",
+   "readBack": "git show ecabe69^:probate-guardian/tests/unit/schb4-account-contract.spec.js"
   },
   {
    "path": "tests/unit/schb4-account-export-plan.spec.js",
-   "retiredBy": "ecabe69e",
+   "retiredBy": "ecabe69",
    "retiredOn": "2026-09-17",
    "subject": "Revert Milestone 57's implementation, keeping its documents and three fixes",
-   "lastVersion": "ecabe69e^:probate-guardian/tests/unit/schb4-account-export-plan.spec.js",
-   "readBack": "git show ecabe69e^:probate-guardian/tests/unit/schb4-account-export-plan.spec.js"
+   "lastVersion": "ecabe69^:probate-guardian/tests/unit/schb4-account-export-plan.spec.js",
+   "readBack": "git show ecabe69^:probate-guardian/tests/unit/schb4-account-export-plan.spec.js"
   },
   {
    "path": "tests/unit/schedule-evidence-contract.spec.js",
-   "retiredBy": "ecabe69e",
+   "retiredBy": "ecabe69",
    "retiredOn": "2026-09-17",
    "subject": "Revert Milestone 57's implementation, keeping its documents and three fixes",
-   "lastVersion": "ecabe69e^:probate-guardian/tests/unit/schedule-evidence-contract.spec.js",
-   "readBack": "git show ecabe69e^:probate-guardian/tests/unit/schedule-evidence-contract.spec.js"
+   "lastVersion": "ecabe69^:probate-guardian/tests/unit/schedule-evidence-contract.spec.js",
+   "readBack": "git show ecabe69^:probate-guardian/tests/unit/schedule-evidence-contract.spec.js"
   },
   {
    "path": "tests/unit/combobox-controller.spec.js",
-   "retiredBy": "374dcb1f",
+   "retiredBy": "374dcb1",
    "retiredOn": "2026-09-15",
    "subject": "refactor: delete four dead modules and their specs (Milestone 51A)",
-   "lastVersion": "374dcb1f^:probate-guardian/tests/unit/combobox-controller.spec.js",
-   "readBack": "git show 374dcb1f^:probate-guardian/tests/unit/combobox-controller.spec.js"
+   "lastVersion": "374dcb1^:probate-guardian/tests/unit/combobox-controller.spec.js",
+   "readBack": "git show 374dcb1^:probate-guardian/tests/unit/combobox-controller.spec.js"
   },
   {
    "path": "tests/unit/dashboard-preferences.spec.js",
-   "retiredBy": "374dcb1f",
+   "retiredBy": "374dcb1",
    "retiredOn": "2026-09-15",
    "subject": "refactor: delete four dead modules and their specs (Milestone 51A)",
-   "lastVersion": "374dcb1f^:probate-guardian/tests/unit/dashboard-preferences.spec.js",
-   "readBack": "git show 374dcb1f^:probate-guardian/tests/unit/dashboard-preferences.spec.js"
+   "lastVersion": "374dcb1^:probate-guardian/tests/unit/dashboard-preferences.spec.js",
+   "readBack": "git show 374dcb1^:probate-guardian/tests/unit/dashboard-preferences.spec.js"
   },
   {
    "path": "tests/e2e/attestation-layout.spec.ts",
-   "retiredBy": "889c9599",
+   "retiredBy": "889c959",
    "retiredOn": "2026-09-13",
    "subject": "Land Milestone 43D: split poorly-scoped catch-all test files",
-   "lastVersion": "889c9599^:probate-guardian/tests/e2e/attestation-layout.spec.ts",
-   "readBack": "git show 889c9599^:probate-guardian/tests/e2e/attestation-layout.spec.ts"
+   "lastVersion": "889c959^:probate-guardian/tests/e2e/attestation-layout.spec.ts",
+   "readBack": "git show 889c959^:probate-guardian/tests/e2e/attestation-layout.spec.ts"
   },
   {
    "path": "tests/unit/milestone-38e.spec.js",
-   "retiredBy": "514d0c5f",
+   "retiredBy": "514d0c5",
    "retiredOn": "2026-09-13",
    "subject": "test(milestone-43a): delete a dead spec file, stop a diagnostic masquerading as a test",
-   "lastVersion": "514d0c5f^:probate-guardian/tests/unit/milestone-38e.spec.js",
-   "readBack": "git show 514d0c5f^:probate-guardian/tests/unit/milestone-38e.spec.js"
+   "lastVersion": "514d0c5^:probate-guardian/tests/unit/milestone-38e.spec.js",
+   "readBack": "git show 514d0c5^:probate-guardian/tests/unit/milestone-38e.spec.js"
   },
   {
    "path": "tests/e2e/support/docx-extract.ts",
-   "retiredBy": "ab8d2d16",
+   "retiredBy": "ab8d2d1",
    "retiredOn": "2026-09-13",
    "subject": "feat(milestone-40A)!: remove DOCX export entirely",
-   "lastVersion": "ab8d2d16^:probate-guardian/tests/e2e/support/docx-extract.ts",
-   "readBack": "git show ab8d2d16^:probate-guardian/tests/e2e/support/docx-extract.ts"
+   "lastVersion": "ab8d2d1^:probate-guardian/tests/e2e/support/docx-extract.ts",
+   "readBack": "git show ab8d2d1^:probate-guardian/tests/e2e/support/docx-extract.ts"
   },
   {
    "path": "tests/unit/docx-engine.spec.js",
-   "retiredBy": "ab8d2d16",
+   "retiredBy": "ab8d2d1",
    "retiredOn": "2026-09-13",
    "subject": "feat(milestone-40A)!: remove DOCX export entirely",
-   "lastVersion": "ab8d2d16^:probate-guardian/tests/unit/docx-engine.spec.js",
-   "readBack": "git show ab8d2d16^:probate-guardian/tests/unit/docx-engine.spec.js"
+   "lastVersion": "ab8d2d1^:probate-guardian/tests/unit/docx-engine.spec.js",
+   "readBack": "git show ab8d2d1^:probate-guardian/tests/unit/docx-engine.spec.js"
   },
   {
    "path": "tests/e2e/save-open-sav.spec.ts",
-   "retiredBy": "fbd8fd5e",
+   "retiredBy": "fbd8fd5",
    "retiredOn": "2026-09-08",
    "subject": "feat(milestone-30): fix switchWard() mount race, split monolithic e2e specs, tag origin-state suites",
-   "lastVersion": "fbd8fd5e^:probate-guardian/tests/e2e/save-open-sav.spec.ts",
-   "readBack": "git show fbd8fd5e^:probate-guardian/tests/e2e/save-open-sav.spec.ts"
+   "lastVersion": "fbd8fd5^:probate-guardian/tests/e2e/save-open-sav.spec.ts",
+   "readBack": "git show fbd8fd5^:probate-guardian/tests/e2e/save-open-sav.spec.ts"
   },
   {
    "path": "tests/e2e/legacy-migration.spec.ts",
-   "retiredBy": "a517d73d",
+   "retiredBy": "a517d73",
    "retiredOn": "2026-09-07",
    "subject": "Replace per-ward-file model with a unified single case file (Milestone 1)",
-   "lastVersion": "a517d73d^:probate-guardian/tests/e2e/legacy-migration.spec.ts",
-   "readBack": "git show a517d73d^:probate-guardian/tests/e2e/legacy-migration.spec.ts"
+   "lastVersion": "a517d73^:probate-guardian/tests/e2e/legacy-migration.spec.ts",
+   "readBack": "git show a517d73^:probate-guardian/tests/e2e/legacy-migration.spec.ts"
   },
   {
    "path": "tests/e2e/excel-export-import.spec.ts",
-   "retiredBy": "8c70777c",
+   "retiredBy": "8c70777",
    "retiredOn": "2026-08-29",
    "subject": "Extract Guardian Inventory's print/PDF and Excel import/export (Milestone 8, Phase B)",
-   "lastVersion": "8c70777c^:probate-guardian/tests/e2e/excel-export-import.spec.ts",
-   "readBack": "git show 8c70777c^:probate-guardian/tests/e2e/excel-export-import.spec.ts"
+   "lastVersion": "8c70777^:probate-guardian/tests/e2e/excel-export-import.spec.ts",
+   "readBack": "git show 8c70777^:probate-guardian/tests/e2e/excel-export-import.spec.ts"
   },
   {
    "path": "tests/e2e/pdf-export.spec.ts",
-   "retiredBy": "8c70777c",
+   "retiredBy": "8c70777",
    "retiredOn": "2026-08-29",
    "subject": "Extract Guardian Inventory's print/PDF and Excel import/export (Milestone 8, Phase B)",
-   "lastVersion": "8c70777c^:probate-guardian/tests/e2e/pdf-export.spec.ts",
-   "readBack": "git show 8c70777c^:probate-guardian/tests/e2e/pdf-export.spec.ts"
+   "lastVersion": "8c70777^:probate-guardian/tests/e2e/pdf-export.spec.ts",
+   "readBack": "git show 8c70777^:probate-guardian/tests/e2e/pdf-export.spec.ts"
   }
  ],
  "historicalComparisons": [
