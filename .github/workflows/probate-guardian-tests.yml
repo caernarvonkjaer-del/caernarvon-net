@@ -1,18 +1,50 @@
+# TEST-REVIEW.md Delivery 5 (decided by the requester on 2026-10-15): a
+# lightweight check on every push to master that touches probate-guardian/,
+# and a hand-started run of either that check or the whole source suite.
+# Nothing heavier runs here -- the release gate (npm run test:release, with
+# the Firefox, WebKit and Edge legs and the portable builds) stays on the
+# workstation AGENTS.md section 1 describes. Standard runners are free for
+# this public repository; the token is read-only; no secrets, no deploy.
+# Starting a run by hand needs write access to the repository (GitHub's rule
+# for workflow_dispatch). Each run keeps its Playwright report and
+# test-results as an artifact for 14 days.
 name: probate-guardian tests
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
 on:
+  push:
+    branches: [master]
+    paths:
+      - 'probate-guardian/**'
+      - 'scripts/build-cloudflare-pages.mjs'
+      - '.github/workflows/probate-guardian-tests.yml'
   workflow_dispatch:
+    inputs:
+      profile:
+        description: 'quick: the check every push runs (15-minute limit). source: every spec in tests/e2e on chromium, about 1,020 cases (120-minute limit).'
+        type: choice
+        options:
+          - quick
+          - source
+        default: quick
+permissions:
+  contents: read
+concurrency:
+  # A newer push cancels the quick run of the one before it; hand-started
+  # runs queue behind each other instead of cancelling.
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}-${{ inputs.profile || 'quick' }}
+  cancel-in-progress: ${{ github.event_name == 'push' }}
 defaults:
   run:
     working-directory: probate-guardian
 jobs:
-  test:
+  quick:
+    name: quick check (types, data model, unit, builds, quick browser tier)
+    if: github.event_name == 'push' || inputs.profile == 'quick'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # the old-build comparisons and the archive catalogue read git history
       - uses: actions/setup-node@v4
         with:
           node-version: 24
@@ -20,21 +52,63 @@ jobs:
           cache-dependency-path: probate-guardian/package-lock.json
       - name: Install dependencies
         run: npm ci
-      - name: Install Playwright browsers
+      - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
+      - name: Type check
+        run: npm run check:types
+      - name: Data model
+        run: npm run verify:data-model
+      - name: Unit tests
+        run: npm run test:unit
       - name: Build (web + portable)
         run: npm run build
       - name: Assemble Cloudflare Pages output
         run: node ../scripts/build-cloudflare-pages.mjs
-      - name: Run unit tests
+      - name: Quick browser tier (source, chromium)
+        run: npm run test:e2e:quick
+      - name: Receipts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quick-${{ github.run_number }}
+          path: |
+            probate-guardian/playwright-report
+            probate-guardian/test-results
+          if-no-files-found: ignore
+          retention-days: 14
+  source:
+    name: full source suite (chromium, hand-started)
+    if: github.event_name == 'workflow_dispatch' && inputs.profile == 'source'
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # mixed-version and rollback extract an old build with git archive
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: probate-guardian/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Type check
+        run: npm run check:types
+      - name: Data model
+        run: npm run verify:data-model
+      - name: Unit tests
         run: npm run test:unit
-      - name: Run source Playwright suite
-        run: PG_TARGET=source npx playwright test
-      - name: Run release-target security matrix
-        shell: bash
-        run: |
-          for target in dev web portable; do
-            PG_TARGET="$target" npx playwright test tests/e2e/security.spec.ts tests/e2e/routes.spec.ts
-          done
-      - name: Run hosted offline suite
-        run: PG_TARGET=web npx playwright test tests/e2e/offline.spec.ts
+      - name: Source suite (every spec in tests/e2e, chromium)
+        run: npm run test:e2e
+      - name: Receipts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: source-${{ github.run_number }}
+          path: |
+            probate-guardian/playwright-report
+            probate-guardian/test-results
+          if-no-files-found: ignore
+          retention-days: 14

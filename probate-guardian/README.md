@@ -67,10 +67,20 @@ Playwright runs against one of five targets
 explains each. `npm test`, `test:quick` and the `test:e2e:*` profiles set the
 target and browser themselves (`scripts/run-e2e-profile.mjs`), so a value left
 in the shell cannot change what they run, and each refuses to start while the
-The profiles' values (target, browser, build, which curated list, the release's
-order) are `scripts/test-profiles.mjs`'s and the curated spec lists
+port its server needs is held by another process. The profiles' values
+(target, browser, build, which curated list, the release's order) are
+`scripts/test-profiles.mjs`'s and the curated spec lists
 `tests/profile-manifest.json`'s (TEST-REVIEW.md Delivery 4); the source
 profile is the whole suite and lists nothing.
-port its server needs is held by another process. Nothing runs automatically
-on a push: the GitHub workflow at the repository root runs only when started
-by hand, and has not been run since 2026-09-13.
+
+Every push to master that touches `probate-guardian/` runs a lightweight
+check on GitHub Actions (`.github/workflows/probate-guardian-tests.yml` at
+the repository root; TEST-REVIEW.md Delivery 5, 2026-10-15): type check,
+data model, the unit suite, both builds with the Cloudflare assembly, and
+`test:quick`'s browser tier on Linux Chromium, within 15 minutes, with the
+Playwright report and `test-results` kept 14 days as an artifact. The whole
+source suite runs there only when someone with write access starts it from
+the Actions tab (choose `source`; 120-minute limit). The release gate
+(`npm run test:release`) runs on the workstation only. A green check is
+Linux Chromium on GitHub's runner, not the full regression `AGENTS.md` §2
+governs.

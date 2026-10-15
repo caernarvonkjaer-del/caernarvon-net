@@ -85,6 +85,19 @@ non-zero, so a later stage never runs against a broken prerequisite.
   and portable inside their own profile steps — do not prepend `npm run build`.
 - Both full-regression tiers (`npm test`, `npm run test:verify`) need explicit
   go-ahead per §2. `test:quick` does not.
+- **Automation (TEST-REVIEW.md Delivery 5, decided by the requester
+  2026-10-15):** every push to master that touches `probate-guardian/` runs
+  the GitHub workflow at the repository root
+  (`.github/workflows/probate-guardian-tests.yml`, outside this folder and
+  `file_index.md`): `check:types`, `verify:data-model`, the unit suite, both
+  builds with the Cloudflare assembly, then `test:e2e:quick`, on Linux
+  Chromium with a 15-minute limit; the Playwright report and `test-results`
+  are kept 14 days as the run's artifact. The whole source suite runs there
+  only when started by hand from the Actions tab (`source`, 120-minute
+  limit; starting a run needs write access); the release gate never does.
+  A green run is GitHub's standard Linux runner, not this workstation, and
+  is not the full regression §2 governs. Free for this public repository
+  (standard runners); the token is read-only; nothing is deployed from it.
 - Timings: `npm test`'s is from `tests/baseline/runtime-2026-10-14.json`
   (TEST-REVIEW.md Delivery 1M's "after" run: 1,020 browser cases
   executed, 7 skipped, 43.1 min wall on C: at four workers, against

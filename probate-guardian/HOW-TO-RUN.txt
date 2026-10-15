@@ -36,6 +36,18 @@ to /probate-guardian/. A push to master then builds and deploys automatically.
 Do not configure Pages to publish the repository root: that serves the source
 service-worker template instead of the generated, revisioned worker.
 
+AUTOMATED CHECKS (GitHub Actions):
+Every push to master that touches probate-guardian/ runs a lightweight check
+on GitHub's Linux runners (.github/workflows/probate-guardian-tests.yml at
+the repository root): type check, data model, the unit suite, both builds
+with the Cloudflare assembly, and the quick browser tier on Chromium, within
+15 minutes. A red run shows on the commit and emails whoever pushed; the
+Playwright report is kept 14 days under the run's artifacts. The whole
+source suite runs there only when someone with write access starts it from
+the Actions tab (profile "source"). The release gate (npm run test:release)
+runs on a workstation only. These checks never deploy anything; the Pages
+deployment above is Cloudflare's own build.
+
 LOCAL PREVIEW OF THE HOSTED RELEASE:
 1. Install Node.js, open a terminal in the probate-guardian folder, and run:
     npm install
