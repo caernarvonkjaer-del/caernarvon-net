@@ -12,7 +12,9 @@ import { getActiveInventoryType } from '../state.js';
 // since it's written per schedule group, not per exact page); the four Plan
 // types have no h3 breakdown at all, so every one of their pages maps to the
 // same h2 section -- there simply isn't finer content to jump to yet.
-export const USER_GUIDE_URL='help/';
+// Name the file explicitly. The Pinellas DNN host serves help/index.html but
+// does not resolve the help/ directory URL, so the shorter form returns 404.
+export const USER_GUIDE_URL='help/index.html';
 
 export const USER_GUIDE_ANCHORS={
   guardian:{

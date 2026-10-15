@@ -5,6 +5,9 @@ import { freshStartNoPassword, createWard, createSimplifiedWard } from './suppor
 // part of the app -- opened via window.open(), a same-origin top-level
 // navigation the CSP's script-src/object-src restrictions don't touch (same
 // reasoning as the print-preview PDF blob navigation elsewhere in the app).
+// Keep the filename explicit: the Pinellas DNN host returns 404 for help/
+// even though help/index.html exists, while Vite resolves both and would hide
+// that production-only failure.
 //
 // Two distinct behaviors, per an explicit product decision: on the dashboard
 // (no filing open), "?" still opens the in-app Help panel -- guided tour,
@@ -27,6 +30,7 @@ async function clickAndCaptureGuideTab(page: Page, context: BrowserContext, sele
     page.click(selector),
   ]);
   await guideTab.waitForLoadState();
+  await expect(guideTab).toHaveTitle('Guardian Forms — User Guide');
   const url = guideTab.url();
   await guideTab.close();
   return url;
@@ -47,7 +51,7 @@ test.describe('user guide wiring', () => {
     await expect(page.locator('[data-shell-action="export-help"]')).toHaveText('View User Guide');
 
     const url = await clickAndCaptureGuideTab(page, context, '[data-shell-action="export-help"]');
-    expect(url).toMatch(/help\/$/);
+    expect(url).toMatch(/help\/index\.html$/);
   });
 
   // What "?" announces must match what it does. On the dashboard it is the Help
@@ -108,7 +112,7 @@ test.describe('user guide wiring', () => {
       await page.evaluate((r) => (window as any).GuardianForms.testing.navigate(r), route);
       await page.waitForURL(new RegExp(`#${route.replace('/', '\\/')}$`));
       const url = await clickAndCaptureGuideTab(page, context, '#help-toggle-btn');
-      expect(url, `route ${route}`).toContain(`help/#${anchor}`);
+      expect(url, `route ${route}`).toContain(`help/index.html#${anchor}`);
       await expect(page.locator('#help-panel'), `route ${route} panel`).not.toBeVisible();
     }
   });
@@ -125,7 +129,7 @@ test.describe('user guide wiring', () => {
       await page.evaluate((r) => (window as any).GuardianForms.testing.navigate(r), route);
       await page.waitForURL(new RegExp(`#${route.replace('/', '\\/')}$`));
       const url = await clickAndCaptureGuideTab(page, context, '#help-toggle-btn');
-      expect(url, `route ${route}`).toContain(`help/#${anchor}`);
+      expect(url, `route ${route}`).toContain(`help/index.html#${anchor}`);
     }
   });
 
@@ -142,7 +146,7 @@ test.describe('user guide wiring', () => {
       await page.evaluate((r) => (window as any).GuardianForms.testing.navigate(r), route);
       await page.waitForURL(new RegExp(`#${route.replace('/', '\\/')}$`));
       const url = await clickAndCaptureGuideTab(page, context, '#help-toggle-btn');
-      expect(url, `route ${route}`).toContain(`help/#${anchor}`);
+      expect(url, `route ${route}`).toContain(`help/index.html#${anchor}`);
     }
   });
 
@@ -152,13 +156,13 @@ test.describe('user guide wiring', () => {
     await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/schd2'));
     await page.waitForURL(/#\/schd2$/);
     let url = await clickAndCaptureGuideTab(page, context, '#help-toggle-btn');
-    expect(url).toContain('help/#annual-accounting-schedules');
+    expect(url).toContain('help/index.html#annual-accounting-schedules');
 
     await createWard(page, 'Final Guide Ward', 'finalAccounting');
     await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/p2'));
     await page.waitForURL(/#\/p2$/);
     url = await clickAndCaptureGuideTab(page, context, '#help-toggle-btn');
-    expect(url).toContain('help/#annual-accounting-p2');
+    expect(url).toContain('help/index.html#annual-accounting-p2');
   });
 
   const PLAN_CASES: Array<[string, string, string]> = [
@@ -174,7 +178,7 @@ test.describe('user guide wiring', () => {
       await page.evaluate((r) => (window as any).GuardianForms.testing.navigate(r), route);
       await page.waitForURL(new RegExp(`#${route.replace('/', '\\/')}$`));
       const url = await clickAndCaptureGuideTab(page, context, '#help-toggle-btn');
-      expect(url, `${type} ${route}`).toContain(`help/#${anchor}`);
+      expect(url, `${type} ${route}`).toContain(`help/index.html#${anchor}`);
     }
   });
 });
