@@ -35,6 +35,18 @@ describe('archive/testing stays a true catalogue', () => {
     expect(text).toContain(CAPTURE_POINT.download);
   }, 60_000);
 
+  test('the catalogue does not depend on how long git abbreviates a hash (the Linux runner gave eight characters, this workstation seven)', () => {
+    const saved = { count: process.env.GIT_CONFIG_COUNT, key: process.env.GIT_CONFIG_KEY_0, value: process.env.GIT_CONFIG_VALUE_0 };
+    Object.assign(process.env, { GIT_CONFIG_COUNT: '1', GIT_CONFIG_KEY_0: 'core.abbrev', GIT_CONFIG_VALUE_0: '11' });
+    try {
+      expect(derive().retired, 'retired files with git abbreviating to 11').toEqual(reference.retired);
+    } finally {
+      for (const [k, v] of [['GIT_CONFIG_COUNT', saved.count], ['GIT_CONFIG_KEY_0', saved.key], ['GIT_CONFIG_VALUE_0', saved.value]]) {
+        if (v === undefined) delete process.env[k]; else process.env[k] = v;
+      }
+    }
+  }, 60_000);
+
   test('every retired path is gone, and its cited commit exists and held it', () => {
     expect(reference.retired.length).toBeGreaterThan(5);
     for (const r of reference.retired) {

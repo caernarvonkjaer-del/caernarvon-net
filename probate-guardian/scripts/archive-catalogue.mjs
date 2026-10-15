@@ -35,8 +35,10 @@ export function retiredFiles() {
   let commit = null;
   for (const line of log.split('\n')) {
     if (line.includes('\t')) {
-      const [, short, date, subject] = line.split('\t');
-      commit = { short, date, subject: subject.slice(0, 140) };
+      const [full, , date, subject] = line.split('\t');
+      // A fixed seven characters of the full hash: git's own abbreviation grows with
+      // the repository and differs by machine (the Linux runner gave eight).
+      commit = { short: full.slice(0, 7), date, subject: subject.slice(0, 140) };
     } else if (line.trim() && commit) {
       const full = line.trim();
       if (!full.startsWith(PREFIX)) continue;
