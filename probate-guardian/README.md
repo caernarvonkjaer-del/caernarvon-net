@@ -83,4 +83,4 @@ source suite runs there only when someone with write access starts it from
 the Actions tab (choose `source`; 120-minute limit). The release gate
 (`npm run test:release`) runs on the workstation only. A green check is
 Linux Chromium on GitHub's runner, not the full regression `AGENTS.md` §2
-governs.
+governs. The first run (2026-10-15) took 5 min 24 s.

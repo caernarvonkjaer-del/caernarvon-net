@@ -98,6 +98,10 @@ non-zero, so a later stage never runs against a broken prerequisite.
   A green run is GitHub's standard Linux runner, not this workstation, and
   is not the full regression §2 governs. Free for this public repository
   (standard runners); the token is read-only; nothing is deployed from it.
+  First automatic run (2026-10-15, run 38803541212, at `fb20e4e`): green in
+  5 min 24 s end to end, the unit suite 3 min 52 s and the browser tier
+  49 s of it; the artifact `quick-305` was uploaded and expires after 14
+  days. Re-measure rather than trust it.
 - Timings: `npm test`'s is from `tests/baseline/runtime-2026-10-14.json`
   (TEST-REVIEW.md Delivery 1M's "after" run: 1,020 browser cases
   executed, 7 skipped, 43.1 min wall on C: at four workers, against
