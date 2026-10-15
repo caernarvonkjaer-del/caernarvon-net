@@ -1,7 +1,8 @@
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { describe, expect, test } from 'vitest';
-import { CAPTURE_POINT, HISTORICAL, README_PATH, REFERENCE_PATH, derive, git, readme } from '../../scripts/archive-catalogue.mjs';
+import { CAPTURE_POINT, HISTORICAL, README_PATH, REFERENCE_PATH, derive, git, gitRootFor, readme } from '../../scripts/archive-catalogue.mjs';
 import { discoverSpecs, root } from '../../scripts/test-source-analysis.mjs';
 
 // TEST-REVIEW.md Delivery 7 (2026-10-15): archive/testing is a catalogue of
@@ -46,6 +47,13 @@ describe('archive/testing stays a true catalogue', () => {
       }
     }
   }, 60_000);
+
+  test('git runs in the repository that holds this tree, or where PG_GIT_ROOT points, or says what to set (a copy on C: has no .git)', () => {
+    expect(fs.existsSync(path.join(gitRootFor(), '.git')), 'this tree is in a repository').toBe(true);
+    const nowhere = path.join(os.tmpdir(), 'pg-no-repo');
+    expect(gitRootFor(nowhere, { PG_GIT_ROOT: 'D:/elsewhere' }, () => false)).toBe('D:/elsewhere');
+    expect(() => gitRootFor(nowhere, {}, () => false)).toThrow(/PG_GIT_ROOT/);
+  });
 
   test('every retired path is gone, and its cited commit exists and held it', () => {
     expect(reference.retired.length).toBeGreaterThan(5);

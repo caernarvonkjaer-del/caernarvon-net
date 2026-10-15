@@ -141,6 +141,10 @@ non-zero, so a later stage never runs against a broken prerequisite.
   (`%TEMP%\ms70-sav-corpus\<sha>`), so from a C: copy it fails only when no
   run on D: has extracted that build yet; run it from D: once in that case.
   (The final Milestone 72 regression, 2026-10-03, passed it from C: this way.)
+  `tests/unit/archive-catalogue.spec.js` reads git history too (TEST-REVIEW.md
+  Delivery 7): from a copy, set `PG_GIT_ROOT` to the repository that holds
+  the tree (`PG_GIT_ROOT=D:\caernarvon-net npm test`), or it fails naming
+  the variable -- the closing regression of 2026-10-15 ran from C: that way.
 
 **Stack (Archetype 1 — Client-Side Static PWA, pinned for this repo):**
 Vanilla ES Modules (`src/main.js`, the composition root, with core and

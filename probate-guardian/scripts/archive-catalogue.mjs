@@ -21,8 +21,26 @@ const PREFIX = 'probate-guardian/';
 export const REFERENCE_PATH = 'archive/testing/suite-reference.json';
 export const README_PATH = 'archive/testing/README.md';
 
+/**
+ * The repository that holds this tree: the nearest ancestor of `dir` with a
+ * `.git` entry; else PG_GIT_ROOT (a copy on C: has no .git -- AGENTS.md
+ * section 1 -- so whoever runs from one names the repository it was copied
+ * from); else an error that says what to set. Exported for the spec.
+ */
+export function gitRootFor(dir = ROOT, env = process.env, exists = fs.existsSync) {
+  let d = path.resolve(dir);
+  for (;;) {
+    if (exists(path.join(d, '.git'))) return d;
+    const up = path.dirname(d);
+    if (up === d) break;
+    d = up;
+  }
+  if (env.PG_GIT_ROOT) return env.PG_GIT_ROOT;
+  throw new Error(`archive-catalogue: ${dir} is in no git repository (a copy on C:?); set PG_GIT_ROOT to the repository that holds this tree, e.g. D:/caernarvon-net`);
+}
+
 export function git(...args) {
-  return execFileSync('git', args, { cwd: path.dirname(ROOT), encoding: 'utf8' });
+  return execFileSync('git', args, { cwd: gitRootFor(), encoding: 'utf8' });
 }
 
 const RETIRED_KINDS = /\.(spec\.js|spec\.ts|mjs|js|ts|json|txt)$/;
