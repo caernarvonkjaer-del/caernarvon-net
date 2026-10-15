@@ -92,17 +92,21 @@ describe('Milestone 40C-C: date ranges are validated, never rewritten', () => {
   // (legacy-app.js) that a node unit test could not load. That script is gone
   // (Milestone 70's 70L), so the check reads all of src/: the code must not
   // come back anywhere.
+  // 2026-10-15: the files are read together, not one after another, and the
+  // budget is 30 s -- one by one they took 5.1 s on the FAT32 drive and 5.0 s
+  // on a loaded C: copy, and the default 5 s failed the closing regression.
   test('no From/To input pairing code remains anywhere in src/', async () => {
     const files = (await readdir(new URL('../../src/', import.meta.url), { recursive: true })).filter((f) => f.endsWith('.js'));
     expect(files.length).toBeGreaterThan(100);
-    for (const f of files) {
-      const source = await readFile(new URL(`../../src/${f.split('\\').join('/')}`, import.meta.url), 'utf8');
+    const sources = await Promise.all(files.map((f) => readFile(new URL(`../../src/${f.split('\\').join('/')}`, import.meta.url), 'utf8')));
+    files.forEach((f, i) => {
+      const source = sources[i];
       expect(source, f).not.toMatch(/function\s+wireDateRangePair\s*\(/);
       expect(source, f).not.toMatch(/function\s+enforceDateRanges\s*\(/);
       // And nothing reintroduced the min/max attribute pairing, which
       // separately broke digit-by-digit typing in Chrome.
       expect(source, f).not.toMatch(/toInp\.min\s*=/);
       expect(source, f).not.toMatch(/fromInp\.max\s*=/);
-    }
-  });
+    });
+  }, 30_000);
 });
