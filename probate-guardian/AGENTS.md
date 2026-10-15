@@ -34,7 +34,7 @@ non-zero, so a later stage never runs against a broken prerequisite.
 | `npm run test:quick` | all unit specs + 4 browser smoke specs (startup, form-entry.contract, routes, readiness-card.contract) | source / chromium | ~2.2 min | **No** — convenience only |
 | `npm test` | all unit specs + the complete source E2E suite | source / chromium | ~43.1 min (C:, four workers, 2026-10-14) | Full regression — **ask first (§2)** |
 | `npm run test:verify` | `check:types` → `verify:data-model` → `npm test` | source / chromium | `npm test` plus about a minute | Full regression — **ask first (§2)** |
-| `npm run test:release` | `check:types` → `verify:data-model` → unit → `test:e2e:all-profiles` | source, web, portable, portable-http / chromium; the `@cross-browser` cases / firefox, webkit; the `@edge-smoke` cases / edge | longest | **Yes** — release gate |
+| `npm run test:release` | `check:types` → `verify:data-model` → unit → `test:e2e:all-profiles` | source, web, portable, portable-http / chromium; the `@cross-browser` cases / firefox, webkit; the `@edge-smoke` cases / edge; the hosted offline cases / web, firefox | longest | **Yes** — release gate |
 
 - **`npm test` is unchanged and stays unchanged.** It is the full regression
   §2 governs. `test:quick` is not a substitute for it and is not a merge gate:
@@ -49,7 +49,7 @@ non-zero, so a later stage never runs against a broken prerequisite.
   launches, so a value left in the shell cannot change what they run; a
   direct `npx playwright test` still reads the shell, so set both values
   for one. `test:e2e:all-profiles` runs the release's explicit order (the
-  seven profiles, never `quick` or `historical`). No profile starts while
+  eight profiles, never `quick` or `historical`). No profile starts while
   the port its server needs is held: `playwright.config.ts` no longer
   reuses a listening server, so two browser runs at once refuse rather than
   share one tree's server, and the runner prints what holds the port and
@@ -78,7 +78,17 @@ non-zero, so a later stage never runs against a broken prerequisite.
   a `browser risk` annotation saying why it runs there, and the runner spec
   counts the selection with `--list`. A case that should run on another
   engine gets the tag and the annotation, not a new profile. `all` also
-  builds `dist/portable` once for its two portable profiles.
+  builds `dist/portable` once for its two portable profiles. The one
+  file-selected leg is `offline-firefox` (TEST-REVIEW.md Delivery 6 item 3,
+  2026-10-15): the hosted offline cases on Firefox against the web build,
+  because they need the service worker and the built target, which the
+  source-target legs cannot give them. WebKit is not in it: Playwright's
+  WebKit never completes the offline reload (measured 2026-10-15, the
+  first case fails before the pack is exercised) -- a harness finding, not
+  a product one; whether Safari serves the shell offline is unknown. Run
+  it from an NTFS copy like the rest of the gate: from the FAT32 drive the
+  partial-pack case outran its 5 s toast window (Firefox, 2026-10-15),
+  and passed from C: in 41 s.
 - **`test:release` deliberately does not compose `test:verify` or `npm test`.**
   `test:e2e:all-profiles` already runs the complete source profile, so
   composing either would run the entire source suite twice. It also builds web

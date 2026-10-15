@@ -21,6 +21,12 @@ export const BUILDS = Object.freeze(['build:web', 'build:portable']);
  * selection: a manifest profile's name, or 'all' (the whole of tests/e2e,
  * unscoped -- what "Core full" means). The three extra-browser profiles share
  * the 'cross-browser' selection and take their --grep tag from it, by browser.
+ * TEST-REVIEW.md Delivery 6 item 3 (2026-10-15): offline-firefox runs the
+ * manifest's 'offline' list -- the hosted offline cases -- on Firefox against
+ * the web build, which `all` has already built by then. WebKit is not in it:
+ * Playwright's WebKit never completes the offline reload, so its first case
+ * fails before the pack is exercised (measured 2026-10-15; a finding about
+ * the harness, not a product defect, recorded in TEST-REVIEW.md).
  * config/server: the historical comparisons run by their own config and
  * wait for no server (the spec serves both builds itself).
  */
@@ -36,6 +42,7 @@ export const PROFILE_REGISTRY = Object.freeze({
   firefox: { target: 'source', browser: 'firefox', build: null, selection: 'cross-browser' },
   webkit: { target: 'source', browser: 'webkit', build: null, selection: 'cross-browser' },
   edge: { target: 'source', browser: 'edge', build: null, selection: 'cross-browser' },
+  'offline-firefox': { target: 'web', browser: 'firefox', build: 'build:web', selection: 'offline' },
   // TEST-REVIEW.md Delivery 2 (T6): comparisons against an older build.
   historical: { target: 'source', browser: 'chromium', build: null, selection: 'historical', config: 'playwright.historical.config.ts', server: false },
 });
@@ -46,7 +53,7 @@ export const PROFILE_REGISTRY = Object.freeze({
  * source profile already contains, `historical` runs on demand, and a
  * profile added later joins the release only by being named here.
  */
-export const RELEASE_ORDER = Object.freeze(['source', 'web', 'portable', 'portable-http', 'firefox', 'webkit', 'edge']);
+export const RELEASE_ORDER = Object.freeze(['source', 'web', 'portable', 'portable-http', 'firefox', 'webkit', 'edge', 'offline-firefox']);
 
 /** Profiles the release never runs, whatever RELEASE_ORDER says. */
 export const NEVER_RELEASED = Object.freeze(['quick', 'historical']);

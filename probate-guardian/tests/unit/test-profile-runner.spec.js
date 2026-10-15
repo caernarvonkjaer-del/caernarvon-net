@@ -222,7 +222,7 @@ describe('the extra-browser legs run their tagged cases', () => {
   test('firefox and webkit launch with --grep @cross-browser, edge with --grep @edge-smoke, the Chromium profiles with no grep', () => {
     for (const name of ['firefox', 'webkit']) expect(playwrightArgs(PROFILES[name]).slice(-2), name).toEqual(['--grep', CROSS_BROWSER_TAG]);
     expect(playwrightArgs(PROFILES.edge).slice(-2)).toEqual(['--grep', EDGE_SMOKE_TAG]);
-    for (const name of ['source', 'quick', 'web', 'portable', 'portable-http']) expect(playwrightArgs(PROFILES[name]), name).not.toContain('--grep');
+    for (const name of ['source', 'quick', 'web', 'portable', 'portable-http', 'offline-firefox']) expect(playwrightArgs(PROFILES[name]), name).not.toContain('--grep');
     expect(CROSS_BROWSER_TAG.startsWith('@') && EDGE_SMOKE_TAG.startsWith('@')).toBe(true);
   });
 
@@ -305,7 +305,7 @@ describe('the registry owns the profiles, the manifest the paths, the runner nei
   });
 
   test('a profile with an unknown target, browser, build or selection, and a release list naming quick, historical or an unknown profile, are refused by name', () => {
-    const known = { targets: ['source', 'web', 'portable', 'portable-http'], browsers: ['chromium', 'firefox', 'webkit', 'edge'], builds: BUILDS, selections: ['web', 'portable', 'portable-http', 'cross-browser', 'quick'] };
+    const known = { targets: ['source', 'web', 'portable', 'portable-http'], browsers: ['chromium', 'firefox', 'webkit', 'edge'], builds: BUILDS, selections: ['web', 'portable', 'portable-http', 'cross-browser', 'quick', 'offline'] };
     const bad = {
       ...PROFILE_REGISTRY,
       mars: { target: 'mars', browser: 'chromium', build: null, selection: 'all' },
@@ -318,7 +318,7 @@ describe('the registry owns the profiles, the manifest the paths, the runner nei
       'mars: target "mars" is not one playwright.config.ts defines (source, web, portable, portable-http)',
       'opera: browser "opera" is not one playwright.config.ts defines (chromium, firefox, webkit, edge)',
       'built: build "build:mars" is not a build script (build:web, build:portable)',
-      'listed: selection "nowhere" is not a manifest profile (web, portable, portable-http, cross-browser, quick) nor "all"',
+      'listed: selection "nowhere" is not a manifest profile (web, portable, portable-http, cross-browser, quick, offline) nor "all"',
       'old: a historical profile needs its own config and server: false',
       'the release order names "quick", which the release never runs',
       'the release order names "historical", which the release never runs',
@@ -336,12 +336,13 @@ describe('the registry owns the profiles, the manifest the paths, the runner nei
   });
 
   test('composeProfiles reads each selection from the manifest, and a browser\'s tag from its selection', () => {
-    const manifest = { profiles: { quick: { specs: ['tests/e2e/a.spec.ts'] }, web: { target: 'web', specs: ['tests/e2e/b.spec.ts'] }, portable: { target: 'portable', specs: ['tests/e2e/c.spec.ts'] }, 'portable-http': { target: 'portable-http', extends: 'portable', specs: ['tests/e2e/d.spec.ts'] }, 'cross-browser': { specs: ['tests/e2e/e.spec.ts'], tags: { firefox: '@x', webkit: '@x', edge: '@y' } } } };
+    const manifest = { profiles: { quick: { specs: ['tests/e2e/a.spec.ts'] }, web: { target: 'web', specs: ['tests/e2e/b.spec.ts'] }, portable: { target: 'portable', specs: ['tests/e2e/c.spec.ts'] }, 'portable-http': { target: 'portable-http', extends: 'portable', specs: ['tests/e2e/d.spec.ts'] }, offline: { target: 'web', specs: ['tests/e2e/e.spec.ts'] }, 'cross-browser': { specs: ['tests/e2e/e.spec.ts'], tags: { firefox: '@x', webkit: '@x', edge: '@y' } } } };
     const composed = composeProfiles(PROFILE_REGISTRY, manifest);
     expect(composed.source.specs).toBeNull();
     expect(composed.historical.specs).toBeNull();
     expect(composed.quick.specs).toEqual(['tests/e2e/a.spec.ts']);
     expect(composed['portable-http'].specs).toEqual(['tests/e2e/c.spec.ts', 'tests/e2e/d.spec.ts']);
+    expect([composed['offline-firefox'].specs, composed['offline-firefox'].grep], 'a file-selected leg: its list, no tag').toEqual([['tests/e2e/e.spec.ts'], undefined]);
     expect([composed.firefox.grep, composed.edge.grep, composed.web.grep]).toEqual(['@x', '@y', undefined]);
     expect(MANIFEST_PATH).toBe('tests/profile-manifest.json');
   });

@@ -6,6 +6,13 @@ import { chooseNoPassword, gotoApp, startNewCase } from './support/target';
 import { currentTarget, skipExpectedTargetExclusion } from './support/target-profile';
 
 const webTarget = currentTarget === 'web';
+// TEST-REVIEW.md Delivery 6 item 3 (2026-10-15): these cases also run on
+// Firefox in the release (the offline-firefox profile, the manifest's 'offline'
+// list). Measured that day from an NTFS copy: Chromium and Firefox pass all
+// five (from the FAT32 drive the partial-pack case outruns its 5 s toast
+// window -- the gate runs from C:); Playwright's WebKit never completes the
+// offline reload in the first case, so WebKit is not in the leg -- a harness
+// finding, not a product one.
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 
 type OfflineStatus = {

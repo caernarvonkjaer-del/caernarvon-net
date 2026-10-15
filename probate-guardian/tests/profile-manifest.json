@@ -1,5 +1,5 @@
 {
-  "note": "TEST-REVIEW.md Delivery 4 (T5, 2026-10-14; the 4P prototype first): the curated spec lists the profiles run -- the release's built targets, the extra browsers' files and tags, the quick tier -- in one place the runner reads (scripts/run-e2e-profile.mjs) and tests/unit/profile-membership.spec.js checks. The profiles themselves (id, target, browser, build, which list) are scripts/test-profiles.mjs's. The source profile is the whole of tests/e2e and lists nothing here: an ordinary spec needs no registration. A spec that branches on a built target (currentTarget === 'web', and the like) must be a member of that target's list, or the branch never runs anywhere; the check reads the specs' syntax trees for exactly that.",
+  "note": "TEST-REVIEW.md Delivery 4 (T5, 2026-10-14; the 4P prototype first): the curated spec lists the profiles run -- the release's built targets, the extra browsers' files and tags, the quick tier -- in one place the runner reads (scripts/run-e2e-profile.mjs) and tests/unit/profile-membership.spec.js checks. The profiles themselves (id, target, browser, build, which list) are scripts/test-profiles.mjs's. The source profile is the whole of tests/e2e and lists nothing here: an ordinary spec needs no registration. A spec that branches on a built target (currentTarget === 'web', and the like) must be a member of that target's list, or the branch never runs anywhere; the check reads the specs' syntax trees for exactly that. TEST-REVIEW.md Delivery 6 item 3 (2026-10-15): the 'offline' list is the hosted offline cases the offline-firefox profile runs on Firefox against the web build.",
   "profiles": {
     "quick": {
       "specs": [
@@ -54,6 +54,12 @@
         "webkit": "@cross-browser",
         "edge": "@edge-smoke"
       }
+    },
+    "offline": {
+      "target": "web",
+      "specs": [
+        "tests/e2e/offline.spec.ts"
+      ]
     }
   }
 }
