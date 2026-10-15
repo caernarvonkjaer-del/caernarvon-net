@@ -1,0 +1,402 @@
+{
+ "note": "TEST-REVIEW.md Delivery 7 (2026-10-15): a catalogue, not a copy. Where retired tests and tools last lived and the commit that retired them (read one back with the command given), which comparisons against older builds still run and how, and what each recorded baseline is. Historical evidence is not current coverage: a green run of anything here says nothing about the suite as it is today (TEST-INDEX.md and the live specs say that). Regenerate with node scripts/archive-catalogue.mjs --write; the retired list is derived from git history, so it needs no hand upkeep.",
+ "capturePoint": {
+  "sha": "a5833f5f975b73ac481f0aa2a610c78b67fbba1a",
+  "short": "a5833f5",
+  "date": "2026-10-12",
+  "what": "the tree where the 2026-10-12 full regression passed, before TEST-REVIEW.md's deliveries changed the suite (Milestone 73Q's last fix)",
+  "paths": [
+   "probate-guardian/tests",
+   "probate-guardian/scripts",
+   "probate-guardian/playwright.config.ts",
+   "probate-guardian/vitest.config.ts",
+   "probate-guardian/package-lock.json",
+   "probate-guardian/TEST-INDEX.md",
+   "probate-guardian/AGENTS.md"
+  ],
+  "browse": "https://github.com/caernarvonkjaer-del/caernarvon-net/tree/a5833f5f975b73ac481f0aa2a610c78b67fbba1a/probate-guardian/tests",
+  "download": "https://github.com/caernarvonkjaer-del/caernarvon-net/archive/a5833f5f975b73ac481f0aa2a610c78b67fbba1a.zip",
+  "checkout": "git worktree add ../pg-a5833f5 a5833f5 (from D:/caernarvon-net, the git root), then npm ci in ../pg-a5833f5/probate-guardian; the archived tests need the matching source, which that worktree is",
+  "toolchain": "Node 24 and the lockfile at that commit (package-lock.json pins Playwright, Vitest and Vite); browsers as npx playwright install puts them"
+ },
+ "retired": [
+  {
+   "path": "scripts/ms70-ledger-guard.mjs",
+   "retiredBy": "cc66ae4d",
+   "retiredOn": "2026-10-14",
+   "subject": "test(protocol 2): the three governance guards read the suite as syntax trees and paths; the pre-merge comparison moves to tests/historical; ",
+   "lastVersion": "cc66ae4d^:probate-guardian/scripts/ms70-ledger-guard.mjs",
+   "readBack": "git show cc66ae4d^:probate-guardian/scripts/ms70-ledger-guard.mjs"
+  },
+  {
+   "path": "tests/unit/ms70-ledger-guard.spec.js",
+   "retiredBy": "cc66ae4d",
+   "retiredOn": "2026-10-14",
+   "subject": "test(protocol 2): the three governance guards read the suite as syntax trees and paths; the pre-merge comparison moves to tests/historical; ",
+   "lastVersion": "cc66ae4d^:probate-guardian/tests/unit/ms70-ledger-guard.spec.js",
+   "readBack": "git show cc66ae4d^:probate-guardian/tests/unit/ms70-ledger-guard.spec.js"
+  },
+  {
+   "path": "tests/unit/checklist-export-parity.spec.js",
+   "retiredBy": "d01edd45",
+   "retiredOn": "2026-10-06",
+   "subject": "feat(73F part 2): the sidebar, dashboard and Preview read the export checks",
+   "lastVersion": "d01edd45^:probate-guardian/tests/unit/checklist-export-parity.spec.js",
+   "readBack": "git show d01edd45^:probate-guardian/tests/unit/checklist-export-parity.spec.js"
+  },
+  {
+   "path": "tests/baseline/ms70-70D-nav-checks-before.js.txt",
+   "retiredBy": "2c171d50",
+   "retiredOn": "2026-09-27",
+   "subject": "MS 70 70L: the classic monolith is deleted, and nothing loads, copies, caches, reads or records it",
+   "lastVersion": "2c171d50^:probate-guardian/tests/baseline/ms70-70D-nav-checks-before.js.txt",
+   "readBack": "git show 2c171d50^:probate-guardian/tests/baseline/ms70-70D-nav-checks-before.js.txt"
+  },
+  {
+   "path": "tests/unit/fixtures/window-bridge-allowlist.json",
+   "retiredBy": "2c171d50",
+   "retiredOn": "2026-09-27",
+   "subject": "MS 70 70L: the classic monolith is deleted, and nothing loads, copies, caches, reads or records it",
+   "lastVersion": "2c171d50^:probate-guardian/tests/unit/fixtures/window-bridge-allowlist.json",
+   "readBack": "git show 2c171d50^:probate-guardian/tests/unit/fixtures/window-bridge-allowlist.json"
+  },
+  {
+   "path": "tests/unit/support/legacy-source-extract.js",
+   "retiredBy": "2c171d50",
+   "retiredOn": "2026-09-27",
+   "subject": "MS 70 70L: the classic monolith is deleted, and nothing loads, copies, caches, reads or records it",
+   "lastVersion": "2c171d50^:probate-guardian/tests/unit/support/legacy-source-extract.js",
+   "readBack": "git show 2c171d50^:probate-guardian/tests/unit/support/legacy-source-extract.js"
+  },
+  {
+   "path": "tests/unit/legacy-bridge.spec.js",
+   "retiredBy": "cc532e84",
+   "retiredOn": "2026-09-27",
+   "subject": "MS 70 70K: the router owns navigation, the features are a service, and the only global is window.GuardianForms",
+   "lastVersion": "cc532e84^:probate-guardian/tests/unit/legacy-bridge.spec.js",
+   "readBack": "git show cc532e84^:probate-guardian/tests/unit/legacy-bridge.spec.js"
+  },
+  {
+   "path": "tests/unit/monolith-services.spec.js",
+   "retiredBy": "cc532e84",
+   "retiredOn": "2026-09-27",
+   "subject": "MS 70 70K: the router owns navigation, the features are a service, and the only global is window.GuardianForms",
+   "lastVersion": "cc532e84^:probate-guardian/tests/unit/monolith-services.spec.js",
+   "readBack": "git show cc532e84^:probate-guardian/tests/unit/monolith-services.spec.js"
+  },
+  {
+   "path": "tests/e2e/case-resolver.spec.ts",
+   "retiredBy": "e9b8251e",
+   "retiredOn": "2026-09-25",
+   "subject": "feat(ms70-70T): the browser suite reaches the app only through GuardianForms.testing",
+   "lastVersion": "e9b8251e^:probate-guardian/tests/e2e/case-resolver.spec.ts",
+   "readBack": "git show e9b8251e^:probate-guardian/tests/e2e/case-resolver.spec.ts"
+  },
+  {
+   "path": "tests/e2e/dependent-question-gate.spec.ts",
+   "retiredBy": "1b698069",
+   "retiredOn": "2026-09-23",
+   "subject": "fix(milestone-67B): a waived bond or a restricted depository no longer blocks filing; one four-state question replaces the bond block's gate",
+   "lastVersion": "1b698069^:probate-guardian/tests/e2e/dependent-question-gate.spec.ts",
+   "readBack": "git show 1b698069^:probate-guardian/tests/e2e/dependent-question-gate.spec.ts"
+  },
+  {
+   "path": "tests/unit/dependent-question.spec.js",
+   "retiredBy": "1b698069",
+   "retiredOn": "2026-09-23",
+   "subject": "fix(milestone-67B): a waived bond or a restricted depository no longer blocks filing; one four-state question replaces the bond block's gate",
+   "lastVersion": "1b698069^:probate-guardian/tests/unit/dependent-question.spec.js",
+   "readBack": "git show 1b698069^:probate-guardian/tests/unit/dependent-question.spec.js"
+  },
+  {
+   "path": "tests/e2e/b4-register-page-pruning.spec.ts",
+   "retiredBy": "26ea82d4",
+   "retiredOn": "2026-09-19",
+   "subject": "feat(excel): prune blank pages across every schedule, not just B-4",
+   "lastVersion": "26ea82d4^:probate-guardian/tests/e2e/b4-register-page-pruning.spec.ts",
+   "readBack": "git show 26ea82d4^:probate-guardian/tests/e2e/b4-register-page-pruning.spec.ts"
+  },
+  {
+   "path": "tests/unit/schb4-account-contract.spec.js",
+   "retiredBy": "ecabe69e",
+   "retiredOn": "2026-09-17",
+   "subject": "Revert Milestone 57's implementation, keeping its documents and three fixes",
+   "lastVersion": "ecabe69e^:probate-guardian/tests/unit/schb4-account-contract.spec.js",
+   "readBack": "git show ecabe69e^:probate-guardian/tests/unit/schb4-account-contract.spec.js"
+  },
+  {
+   "path": "tests/unit/schb4-account-export-plan.spec.js",
+   "retiredBy": "ecabe69e",
+   "retiredOn": "2026-09-17",
+   "subject": "Revert Milestone 57's implementation, keeping its documents and three fixes",
+   "lastVersion": "ecabe69e^:probate-guardian/tests/unit/schb4-account-export-plan.spec.js",
+   "readBack": "git show ecabe69e^:probate-guardian/tests/unit/schb4-account-export-plan.spec.js"
+  },
+  {
+   "path": "tests/unit/schedule-evidence-contract.spec.js",
+   "retiredBy": "ecabe69e",
+   "retiredOn": "2026-09-17",
+   "subject": "Revert Milestone 57's implementation, keeping its documents and three fixes",
+   "lastVersion": "ecabe69e^:probate-guardian/tests/unit/schedule-evidence-contract.spec.js",
+   "readBack": "git show ecabe69e^:probate-guardian/tests/unit/schedule-evidence-contract.spec.js"
+  },
+  {
+   "path": "tests/unit/combobox-controller.spec.js",
+   "retiredBy": "374dcb1f",
+   "retiredOn": "2026-09-15",
+   "subject": "refactor: delete four dead modules and their specs (Milestone 51A)",
+   "lastVersion": "374dcb1f^:probate-guardian/tests/unit/combobox-controller.spec.js",
+   "readBack": "git show 374dcb1f^:probate-guardian/tests/unit/combobox-controller.spec.js"
+  },
+  {
+   "path": "tests/unit/dashboard-preferences.spec.js",
+   "retiredBy": "374dcb1f",
+   "retiredOn": "2026-09-15",
+   "subject": "refactor: delete four dead modules and their specs (Milestone 51A)",
+   "lastVersion": "374dcb1f^:probate-guardian/tests/unit/dashboard-preferences.spec.js",
+   "readBack": "git show 374dcb1f^:probate-guardian/tests/unit/dashboard-preferences.spec.js"
+  },
+  {
+   "path": "tests/e2e/attestation-layout.spec.ts",
+   "retiredBy": "889c9599",
+   "retiredOn": "2026-09-13",
+   "subject": "Land Milestone 43D: split poorly-scoped catch-all test files",
+   "lastVersion": "889c9599^:probate-guardian/tests/e2e/attestation-layout.spec.ts",
+   "readBack": "git show 889c9599^:probate-guardian/tests/e2e/attestation-layout.spec.ts"
+  },
+  {
+   "path": "tests/unit/milestone-38e.spec.js",
+   "retiredBy": "514d0c5f",
+   "retiredOn": "2026-09-13",
+   "subject": "test(milestone-43a): delete a dead spec file, stop a diagnostic masquerading as a test",
+   "lastVersion": "514d0c5f^:probate-guardian/tests/unit/milestone-38e.spec.js",
+   "readBack": "git show 514d0c5f^:probate-guardian/tests/unit/milestone-38e.spec.js"
+  },
+  {
+   "path": "tests/e2e/support/docx-extract.ts",
+   "retiredBy": "ab8d2d16",
+   "retiredOn": "2026-09-13",
+   "subject": "feat(milestone-40A)!: remove DOCX export entirely",
+   "lastVersion": "ab8d2d16^:probate-guardian/tests/e2e/support/docx-extract.ts",
+   "readBack": "git show ab8d2d16^:probate-guardian/tests/e2e/support/docx-extract.ts"
+  },
+  {
+   "path": "tests/unit/docx-engine.spec.js",
+   "retiredBy": "ab8d2d16",
+   "retiredOn": "2026-09-13",
+   "subject": "feat(milestone-40A)!: remove DOCX export entirely",
+   "lastVersion": "ab8d2d16^:probate-guardian/tests/unit/docx-engine.spec.js",
+   "readBack": "git show ab8d2d16^:probate-guardian/tests/unit/docx-engine.spec.js"
+  },
+  {
+   "path": "tests/e2e/save-open-sav.spec.ts",
+   "retiredBy": "fbd8fd5e",
+   "retiredOn": "2026-09-08",
+   "subject": "feat(milestone-30): fix switchWard() mount race, split monolithic e2e specs, tag origin-state suites",
+   "lastVersion": "fbd8fd5e^:probate-guardian/tests/e2e/save-open-sav.spec.ts",
+   "readBack": "git show fbd8fd5e^:probate-guardian/tests/e2e/save-open-sav.spec.ts"
+  },
+  {
+   "path": "tests/e2e/legacy-migration.spec.ts",
+   "retiredBy": "a517d73d",
+   "retiredOn": "2026-09-07",
+   "subject": "Replace per-ward-file model with a unified single case file (Milestone 1)",
+   "lastVersion": "a517d73d^:probate-guardian/tests/e2e/legacy-migration.spec.ts",
+   "readBack": "git show a517d73d^:probate-guardian/tests/e2e/legacy-migration.spec.ts"
+  },
+  {
+   "path": "tests/e2e/excel-export-import.spec.ts",
+   "retiredBy": "8c70777c",
+   "retiredOn": "2026-08-29",
+   "subject": "Extract Guardian Inventory's print/PDF and Excel import/export (Milestone 8, Phase B)",
+   "lastVersion": "8c70777c^:probate-guardian/tests/e2e/excel-export-import.spec.ts",
+   "readBack": "git show 8c70777c^:probate-guardian/tests/e2e/excel-export-import.spec.ts"
+  },
+  {
+   "path": "tests/e2e/pdf-export.spec.ts",
+   "retiredBy": "8c70777c",
+   "retiredOn": "2026-08-29",
+   "subject": "Extract Guardian Inventory's print/PDF and Excel import/export (Milestone 8, Phase B)",
+   "lastVersion": "8c70777c^:probate-guardian/tests/e2e/pdf-export.spec.ts",
+   "readBack": "git show 8c70777c^:probate-guardian/tests/e2e/pdf-export.spec.ts"
+  }
+ ],
+ "historicalComparisons": [
+  {
+   "what": "Milestone 70's merge-gate output comparison: every filing type's PDF and court workbook from this tree against a pinned pre-merge build, served side by side",
+   "paths": [
+    "tests/historical/pre-merge-output.characterization.spec.ts",
+    "tests/e2e/support/pre-merge-case.ts",
+    "tests/e2e/support/pre-70-build.ts"
+   ],
+   "runWith": "npm run test:e2e:historical (playwright.historical.config.ts); PG_PREMERGE_SHA pins the build, the default is in tests/e2e/support/pre-merge-case.ts",
+   "pinnedBuild": "44f46ec",
+   "since": "TEST-REVIEW.md Delivery 2, cc66ae4 (2026-10-14); in tests/e2e behind a skip before that"
+  },
+  {
+   "what": "The mixed-version and rollback characterizations: an old tab beside a new one; a file saved by the migrated version opened in the pre-merge one",
+   "paths": [
+    "tests/e2e/mixed-version.characterization.spec.ts",
+    "tests/e2e/rollback.contract.spec.ts",
+    "scripts/ms70-sav-corpus.mjs"
+   ],
+   "runWith": "part of npm test (the source profile); the old build is extracted once with git archive into the temp folder ms70-sav-corpus/<sha> (scripts/ms70-sav-corpus.mjs, extract()); a copy on C: cannot run git, so extract from D: first",
+   "pinnedBuild": "b28bf25 and 44f46ec"
+  },
+  {
+   "what": "The .sav corpus -- every archive version this app has written -- and its golden",
+   "paths": [
+    "tests/fixtures/sav",
+    "tests/baseline/ms70-sav-corpus-golden.json",
+    "tests/e2e/sav-corpus.characterization.spec.ts"
+   ],
+   "runWith": "tests/e2e/sav-corpus.characterization.spec.ts in npm test"
+  }
+ ],
+ "baselines": [
+  {
+   "file": "tests/baseline/2026-08-29-30dc907-source.json",
+   "note": ""
+  },
+  {
+   "file": "tests/baseline/latest.json",
+   "note": ""
+  },
+  {
+   "file": "tests/baseline/milestone-13-lifecycle.json",
+   "note": ""
+  },
+  {
+   "file": "tests/baseline/milestone-13-portable.json",
+   "note": ""
+  },
+  {
+   "file": "tests/baseline/milestone-13-source.json",
+   "note": ""
+  },
+  {
+   "file": "tests/baseline/milestone-13-web.json",
+   "note": ""
+  },
+  {
+   "file": "tests/baseline/milestone-59-runtime.json",
+   "note": ""
+  },
+  {
+   "file": "tests/baseline/ms70-70A-lifecycle.json",
+   "note": ""
+  },
+  {
+   "file": "tests/baseline/ms70-70A-portable-http.json",
+   "note": ""
+  },
+  {
+   "file": "tests/baseline/ms70-70A-portable.json",
+   "note": ""
+  },
+  {
+   "file": "tests/baseline/ms70-70A-source.json",
+   "note": ""
+  },
+  {
+   "file": "tests/baseline/ms70-70A-web.json",
+   "note": ""
+  },
+  {
+   "file": "tests/baseline/ms70-70C-filing-shapes.json",
+   "note": ""
+  },
+  {
+   "file": "tests/baseline/ms70-70L-lifecycle.json",
+   "note": ""
+  },
+  {
+   "file": "tests/baseline/ms70-70L-portable-http.json",
+   "note": ""
+  },
+  {
+   "file": "tests/baseline/ms70-70L-portable.json",
+   "note": ""
+  },
+  {
+   "file": "tests/baseline/ms70-70L-source.json",
+   "note": ""
+  },
+  {
+   "file": "tests/baseline/ms70-70L-web.json",
+   "note": ""
+  },
+  {
+   "file": "tests/baseline/ms70-70T-progress.json",
+   "note": "Milestone 70, 70T: which browser specs reach the app only through window.GuardianForms.testing (or the real UI), checked by tests/unit/ms70-70T-guard.spec.js, and what converting them found. A write moved from a raw patc"
+  },
+  {
+   "file": "tests/baseline/ms70-assertion-counts.json",
+   "note": "Milestone 70 per-spec static counts of expect calls and test declarations. tests/unit/ms70-assertion-counts.spec.js fails when a spec falls below either count; lowering one requires --reason, recorded in dropLog (kind: e"
+  },
+  {
+   "file": "tests/baseline/ms70-classic-state.json",
+   "note": "Milestone 70: every read and write of case state by a classic script index.html loads (bare D, a lexical caseFile or activeInventoryType, window.D and window.caseFile), by file and enclosing top-level declaration. The cl"
+  },
+  {
+   "file": "tests/baseline/ms70-completion-golden.json",
+   "note": "Milestone 70: section completion -- each filing's { checks, incomplete } map and its progress -- for every fixture and variant tests/unit/completion-parity.spec.js builds, all nine filing identities. Recorded in 70L from"
+  },
+  {
+   "file": "tests/baseline/ms70-conversion-golden.json",
+   "note": "Milestone 70, 70G: what converting a filing into each type the app offers produces, recorded from the app before 70G moved conversion out of legacy-app.js by tests/e2e/filing-conversion.characterization.spec.ts. Regenera"
+  },
+  {
+   "file": "tests/baseline/ms70-declaration-dispositions.json",
+   "note": "Milestone 70, 70A: a disposition and target delivery for every top-level declaration of src/legacy-app.js, built from reference evidence and corrected by the owner's review (tests/baseline/ms70-declaration-review.json; r"
+  },
+  {
+   "file": "tests/baseline/ms70-declaration-review.json",
+   "note": "Milestone 70, 70A: the delivery owner's review of tests/baseline/ms70-declaration-dispositions.json. The draft places each declaration by the monolith section it sits in; the review found that rule wrong for 94 declarati"
+  },
+  {
+   "file": "tests/baseline/ms70-dependency-baseline.json",
+   "note": "Milestone 70 ratchet baseline. Every set may only shrink; tests/unit/ms70-dependency-ratchet.spec.js fails on growth and on stale entries. Regenerate only when a delivery removed entries or MILESTONE-70-PROPOSAL.md recor"
+  },
+  {
+   "file": "tests/baseline/ms70-dependency-inventory.json",
+   "note": "Milestone 70 dependency inventory: every edge between application files (import, window property, bare global), with direction. Informational; regenerated with the baseline."
+  },
+  {
+   "file": "tests/baseline/ms70-e2e-globals.json",
+   "note": "Milestone 70, 70A: application names the browser suite reaches through window, and its in-place writes to live case state. GuardianForms.testing (70T) is designed from this. Informational."
+  },
+  {
+   "file": "tests/baseline/ms70-fixture-inventory.json",
+   "note": "Milestone 70, 70A: every export of the browser test support layer, which specs use it, and which are fixture factories that must change with the application factories 70C moves (AGENTS.md section 8.3). Informational."
+  },
+  {
+   "file": "tests/baseline/ms70-sav-corpus-golden.json",
+   "note": "Milestone 70, 70A: what today's reader makes of each tests/fixtures/sav/ case file (a digest of everything loaded), and what a filer sees for a wrong password or a damaged file; written by tests/e2e/sav-corpus.characteri"
+  },
+  {
+   "file": "tests/baseline/ms70-shared-storage-golden.json",
+   "note": "Milestone 70, 70A: the shape of everything two versions of Guardian Forms share in one browser (localStorage, sessionStorage, IndexedDB, the tab message, the filing lock name), written by tests/e2e/mixed-version.characte"
+  },
+  {
+   "file": "tests/baseline/ms70-testing-adapter-design.json",
+   "note": "Milestone 70, 70A: the window.GuardianForms schema -- production members with their named consumer, and GuardianForms.testing designed from the names the browser suite reaches today (tests/baseline/ms70-e2e-globals.json)"
+  },
+  {
+   "file": "tests/baseline/ms70-year-rollover-golden.json",
+   "note": "Milestone 70, 70A: what starting a new year does to each filing identity, recorded from the app before migration by tests/e2e/year-rollover.characterization.spec.ts. Regenerated in 70C for simplified and planMinor only: "
+  },
+  {
+   "file": "tests/baseline/ms73-validator-golden.json",
+   "note": "Milestone 73F part 1: what each export validator returned before the move to src/core/validation/engines/, over tests/unit/support/filing-variants.js's variants, with the clock at 2026-10-05 noon. Changed by Milestone 73"
+  },
+  {
+   "file": "tests/baseline/runtime-2026-10-12.json",
+   "note": "TEST-REVIEW.md Delivery 1M, the \"before\" measurement. Per-spec browser-case counts and the sum of each case's own duration as Playwright's list reporter printed it (per-file setup and teardown are not included), from the"
+  },
+  {
+   "file": "tests/baseline/runtime-2026-10-14.json",
+   "note": "TEST-REVIEW.md Delivery 1M, the \"after\" measurement, against runtime-2026-10-12.json (the \"before\"). Per-spec browser-case counts and the sum of each case's own duration as Playwright's list reporter printed it (per-file"
+  }
+ ]
+}
