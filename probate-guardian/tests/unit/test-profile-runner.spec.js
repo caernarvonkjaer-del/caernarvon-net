@@ -86,7 +86,9 @@ describe('a failing child fails the profile', () => {
   });
 
   test('a real child exiting 3 rejects with 3', async () => {
-    await expect(run('node', ['-e', 'process.exit(3)'], process.env)).rejects.toMatchObject({ exitCode: 3 });
+    // A parenthesis-free expression: the runner spawns through the shell, and
+    // sh (the Linux CI runner's) rejects a bare `(` where cmd.exe passes it on.
+    await expect(run('node', ['-e', 'process.exitCode=3'], process.env)).rejects.toMatchObject({ exitCode: 3 });
   });
 });
 
