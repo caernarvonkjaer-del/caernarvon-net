@@ -3,7 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { expect, test, type Page } from '@playwright/test';
 import { freshStartNoPassword } from './support/target';
-import { currentTarget, skipEnvironmentLimitation } from './support/target-profile';
+import { currentTarget, skipExpectedTargetExclusion } from './support/target-profile';
 
 const sourceTarget = currentTarget === 'source';
 const webTarget = currentTarget === 'web';
@@ -26,7 +26,7 @@ function countLoads(page: Page) {
 const NO_RELOAD_WINDOW_MS = 1500;
 
 test('failed feature chunk shows a reload action instead of a blank view', async ({ page }) => {
-  skipEnvironmentLimitation(!sourceTarget, 'The source target exposes a stable unbundled chunk URL for failure injection');
+  skipExpectedTargetExclusion(!sourceTarget, 'The source target exposes a stable unbundled chunk URL for failure injection');
 
   await freshStartNoPassword(page);
   await page.evaluate(() => (window as any).GuardianForms.testing.createFiling.add('Chunk Retry Ward', 'guardian'));
@@ -66,7 +66,7 @@ test('failed feature chunk shows a reload action instead of a blank view', async
  * The bridge now shows the same panel for a chunk-load failure raised by mount().
  */
 test('a chunk that fails while a feature mounts shows the panel instead of reloading', async ({ page }) => {
-  skipEnvironmentLimitation(!sourceTarget, 'The source target exposes a stable unbundled chunk URL for failure injection');
+  skipExpectedTargetExclusion(!sourceTarget, 'The source target exposes a stable unbundled chunk URL for failure injection');
 
   await freshStartNoPassword(page);
 
@@ -120,7 +120,7 @@ async function dashboardChunkUrl(): Promise<string> {
 }
 
 test('failed feature chunk shows a reload action instead of a blank view (web, hashed build)', async ({ page }) => {
-  skipEnvironmentLimitation(
+  skipExpectedTargetExclusion(
     !webTarget,
     'This test proves failure injection against the built, hashed dist/web chunk URL; other targets serve the chunk at a stable unbundled path already covered by the source-only test above.'
   );

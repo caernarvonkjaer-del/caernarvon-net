@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { freshStartNoPassword } from './support/target';
-import { currentTarget, skipEnvironmentLimitation } from './support/target-profile';
+import { currentTarget, skipExpectedTargetExclusion } from './support/target-profile';
 
 // Milestone 70, 70K gate: "rapid navigation cannot commit stale work". One
 // navigation owns the page at a time (src/core/navigation/router.js): a newer
@@ -64,7 +64,7 @@ test.describe('one navigation owns the page', () => {
   });
 
   test("a filing's slow first page is not drawn over the dashboard the filer went back to", async ({ page }) => {
-    skipEnvironmentLimitation(currentTarget !== 'source', 'The source target exposes a stable unbundled chunk URL to hold back');
+    skipExpectedTargetExclusion(currentTarget !== 'source', 'The source target exposes a stable unbundled chunk URL to hold back');
 
     await freshStartNoPassword(page);
     await page.evaluate(() => (window as any).GuardianForms.testing.createFiling.add('Already Here', 'annual'));
