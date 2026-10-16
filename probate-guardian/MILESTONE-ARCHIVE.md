@@ -2,7 +2,7 @@
 
 This archive consolidates the historic Index Split Plan, Milestone proposals 14 through 75 with their companion documents, and the October 2026 test-suite audit (TEST-SCRIPT-REVIEW.md) with the remediation plan that answered it (TEST-REVIEW.md). Each document is kept verbatim under its own "Archive:" heading, so a citation of one of these file names is found here.
 
-Milestone 74's last items -- 74E, 74G, 74H's second part, 74I, 74K, 74N and 74R -- were approved by the requester by name and built on 2026-10-16, each with its build record, and the milestone came back here that day. Every item is built or decided. Five questions stay open for a qualified person or the Clerk, each recorded where it is asked and in its Appendix B: 74J-2 (a Final Accounting's own content), 74M-1 (account numbers on filed PDFs), 74O-5 (which period a plan's remuneration declaration covers), 74R-2 (section 744.3678(5)) and 74R-3 (the audit-fee base).
+Milestone 74's last items -- 74E, 74G, 74H's second part, 74I, 74K, 74N and 74R -- were approved by the requester by name and built on 2026-10-16, each with its build record, and the milestone came back here that day. Every item is built or decided. Its five open questions were answered by the requester the same day, as Pinellas Clerk practice, and recorded at the end of its Appendix B: three need no change -- 74M-1 (account numbers keep printing in full), 74R-2 (nothing for section 744.3678(5)) and 74R-3 (the fee stays on Line 30) -- and two are new work not yet built, each needing the requester's named approval: 74J-2 (Rule 5.680(c)'s items on a Final Accounting) and 74O-5 (a warning when an Annual Plan's remuneration declaration and the accounting for the year just ended disagree).
 
 ## Table of Contents
 
@@ -65961,6 +65961,26 @@ filing is unlinked (recommended, chosen); recorded in
   §744.3679(1)(a) on the Simplified, §744.3678(2)(b) on the Annual, Final and Trust
   Accountings (the Clerk's forms ask for copies; the Simplified's statute for an original or a
   certified copy).
+
+**Answered 2026-10-16, after the milestone closed** (the requester, a Pinellas Clerk
+representative, each as Pinellas Clerk practice; the legal readings stay flagged for a qualified
+person):
+
+- **74J-2** -- a Final Accounting shows Rule 5.680(c)'s items beyond the Annual workbook: the
+  amounts reserved for unpaid and anticipated costs and fees, and the assets to be turned over
+  and to whom (recommended, chosen). **New work, not built:** building it needs the requester's
+  named approval.
+- **74M-1** -- account numbers keep printing in full on the filed PDFs, as the Clerk's workbooks
+  and audit work slip ask for them (chosen against the recommendation, last four digits on the
+  PDFs). Rule 2.425's reading stays flagged. No change.
+- **74O-5** -- an Annual Plan's remuneration declaration (Question 11) covers the year just ended,
+  the period of the Annual Accounting filed alongside, and the app should warn, never block, when
+  the plan declares none and that accounting lists some, or the reverse (recommended, chosen).
+  **New work, not built:** building it needs the requester's named approval.
+- **74R-2** -- nothing is needed for §744.3678(5): a guardian the court has exempted doesn't file
+  this accounting (recommended, chosen). No change.
+- **74R-3** -- the audit fee's tier is set by Line 30, net assets, as today (recommended,
+  chosen). No change.
 
 ---
 
