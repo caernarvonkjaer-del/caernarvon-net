@@ -57,7 +57,8 @@ test.describe('blank-card clean-up when leaving a page', () => {
     await go(page, '/a2');
     await go(page, '/a1');
     expect(await count(page, 'scheduleA1')).toBe(1);
-    expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('scheduleA1.0.propertyDescription'))).toBe('Family Home');
+    // Milestone 74E: a description keeps what the filer typed.
+    expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('scheduleA1.0.propertyDescription'))).toBe('Family home');
   });
 
   test('Annual Accounting: an untouched Schedule A row and co-guardian card are removed, and Schedule A is not marked unfinished', async ({ page }) => {

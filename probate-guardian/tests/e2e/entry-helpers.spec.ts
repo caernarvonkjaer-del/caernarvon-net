@@ -49,7 +49,7 @@ test.describe('Milestone 74P', () => {
     await createWard(page, 'Helper C-5 Ward', 'guardian');
     await go(page, '/a1');
     await page.locator('[data-inventory-action="add-entry"][data-schedule="a1"]').click();
-    // The description box formats as typed names are formatted: "Family Home".
+    // A description keeps what was typed (Milestone 74E): "Family home".
     await typeInto(page, '[data-bind="scheduleA1.0.propertyDescription"]', 'Family home');
     // The first entry on a schedule asks about supporting documents.
     await dismissScheduleDocPrompt(page);
@@ -65,9 +65,9 @@ test.describe('Milestone 74P', () => {
     await expect(page.locator('[data-joint-owner-status="scheduleA1.0"]')).toContainText('Added to Schedule C-5 as Joint Owner 1');
     const c5 = await field(page, 'scheduleC5');
     expect(c5).toHaveLength(1);
-    expect(c5[0]).toMatchObject({ assetDescription: 'Schedule A-1, Item 1 — Family Home', totalAssetValue: 250000, jointOwnerPercent: '', ownerName: '' });
+    expect(c5[0]).toMatchObject({ assetDescription: 'Schedule A-1, Item 1 — Family home', totalAssetValue: 250000, jointOwnerPercent: '', ownerName: '' });
     await go(page, '/c5');
-    await expect(page.locator('[data-bind="scheduleC5.0.assetDescription"]')).toHaveValue('Schedule A-1, Item 1 — Family Home');
+    await expect(page.locator('[data-bind="scheduleC5.0.assetDescription"]')).toHaveValue('Schedule A-1, Item 1 — Family home');
   });
 
   test('Annual Part III: "same as mailing" hides the residence / office address and keeps what was typed for when it is unticked', async ({ page }) => {
