@@ -251,3 +251,80 @@ describe('in Preview', () => {
     }
   });
 });
+
+// Milestone 74H part 2 (decision 74H-N1, the requester, 2026-10-16): checks
+// that compare a Plan with the ward's other filings -- those of the same
+// linked case, or with the same Case # when one isn't linked (74O-N1). The
+// Plans hold no Type of Guardianship (73B); the newest other filing that
+// answers it is read, and named. Built after 73F part 2, as decision 74H-3
+// set out; the wording was approved as drafted.
+describe('f, i and k: a Plan against the ward\'s other filings', () => {
+  let caseConsistencyAdvisories;
+  beforeAll(async () => {
+    ({ caseConsistencyAdvisories } = await import('../../src/core/filing/consistency-advisories.js'));
+  });
+  const CASE = '26-000123-GD';
+  const inventory = (extra = {}) => ({ wardId: 'inv', inventoryType: 'guardian', caseNumber: CASE, lastModified: '2026-10-01T00:00:00Z', ...extra });
+  const annual = (extra = {}) => ({ wardId: 'ann', inventoryType: 'annual', caseNumber: CASE, lastModified: '2026-10-10T00:00:00Z', ...extra });
+  const plan = (type, extra = {}) => ({ wardId: 'plan', inventoryType: type, caseNumber: CASE, ref: CASE, ...extra });
+  const run = (filing, others) => caseConsistencyAdvisories(filing, filing.inventoryType, [filing, ...others]);
+
+  test('f, the Initial Plan: "retains the right" on a Plenary guardianship, read from the newest filing that answers it', () => {
+    const d = plan('planInitial', { q3MedWardDecides: true, q6WardDecides: true });
+    expect(run(d, [inventory({ typeOfGuardianship: 'Limited' }), annual({ typeOfGuardianship: 'Plenary' })])).toEqual([
+      {
+        code: 'consistency.retains-right-on-plenary', severity: 'advisory', field: 'q3MedWardDecides',
+        message: '2–3. Setting & Medical Care — Question 3 ticks "The ward retains the right to make their own decision", while the ward\'s Annual Accounting records the Type of Guardianship as "Plenary". Review both before filing.',
+      },
+      {
+        code: 'consistency.retains-right-on-plenary', severity: 'advisory', field: 'q6WardDecides',
+        message: '6–7. Socialization & Benefits — Question 6 ticks "The Ward retains the right to make their own decision", while the ward\'s Annual Accounting records the Type of Guardianship as "Plenary". Review both before filing.',
+      },
+    ]);
+  });
+
+  test('f, the Annual Plan: its question-3 boxes in one warning', () => {
+    const d = plan('planAnnual', { q3EnsureWardDecides: true, q3SocialWardDecides: true });
+    expect(messages(run(d, [inventory({ typeOfGuardianship: 'Plenary' })]))).toEqual([
+      '2–3. Residence & Care — Question 3 ticks "The Ward retains the right to decide" and "The ward retains the right to make their own decision", while the ward\'s Verified Initial Inventory records the Type of Guardianship as "Plenary". Review both before filing.',
+    ]);
+  });
+
+  test('f says nothing for a Limited guardianship, an unticked box, another case, or a Plan alone', () => {
+    const d = plan('planInitial', { q3MedWardDecides: true });
+    expect(run(d, [inventory({ typeOfGuardianship: 'Limited' })])).toEqual([]);
+    expect(run(plan('planInitial'), [inventory({ typeOfGuardianship: 'Plenary' })])).toEqual([]);
+    expect(run(d, [inventory({ typeOfGuardianship: 'Plenary', caseNumber: '26-999999-GD' })])).toEqual([]);
+    expect(run(d, [])).toEqual([]);
+    expect(caseConsistencyAdvisories(d, 'planInitial', null)).toEqual([]);
+  });
+
+  test('i: the Initial Plan answers Trusts No while the Inventory\'s C-4 lists one', () => {
+    const d = plan('planInitial', { q7Trusts: 'No' });
+    expect(run(d, [inventory({ scheduleC4: [{ trustName: 'Pemberton Family Revocable Trust' }] })])).toEqual([{
+      code: 'consistency.trusts-no-and-inventory-trust', severity: 'advisory', field: 'q7Trusts',
+      message: '6–7. Socialization & Benefits — Question 7 answers Trusts "No", while the ward\'s Verified Initial Inventory lists a trust on Schedule C-4: Pemberton Family Revocable Trust. Review both before filing.',
+    }]);
+    expect(messages(run(d, [inventory({ scheduleC4: [{ trustName: 'A Trust' }, { trustName: '' }, { trustName: 'B Trust' }] })]))).toEqual([
+      '6–7. Socialization & Benefits — Question 7 answers Trusts "No", while the ward\'s Verified Initial Inventory lists trusts on Schedule C-4: A Trust; B Trust. Review both before filing.',
+    ]);
+    for (const answer of ['Yes', '']) expect(run(plan('planInitial', { q7Trusts: answer }), [inventory({ scheduleC4: [{ trustName: 'A Trust' }] })]), answer).toEqual([]);
+    expect(run(d, [inventory({ scheduleC4: [] })])).toEqual([]);
+  });
+
+  test('k: a Plan for Minors on a Minor - Property guardianship, the question left to a qualified person', () => {
+    const d = plan('planMinor');
+    expect(run(d, [inventory({ typeOfGuardianship: 'Minor - Property' })])).toEqual([{
+      code: 'consistency.minor-plan-on-property-guardianship', severity: 'advisory', field: 'wardName',
+      message: 'Cover — The ward\'s Verified Initial Inventory records the Type of Guardianship as "Minor - Property", while this filing is a Plan for Minors. Section 744.367(1) has each guardian of the person file an annual guardianship plan; the app does not decide whether a guardian of the property alone files one. Review before filing.',
+    }]);
+    for (const type of ['Minor - Person', 'Minor - Person - Property', '']) expect(run(d, [inventory({ typeOfGuardianship: type })]), type).toEqual([]);
+  });
+
+  test('each check is its own Plan\'s: the other forms get none', () => {
+    const others = [inventory({ typeOfGuardianship: 'Plenary', scheduleC4: [{ trustName: 'A Trust' }] })];
+    for (const type of ['guardian', 'annual', 'simplified', 'planSimplified']) {
+      expect(run({ ...plan(type), q3MedWardDecides: true, q7Trusts: 'No' }, others), type).toEqual([]);
+    }
+  });
+});

@@ -78,3 +78,21 @@ test('Annual Plan: "has not moved" while question 1 lists two residences -- warn
   const pdf = await clickExport(save);
   expect(pdf.suggestedFilename()).toMatch(/\.pdf$/i);
 });
+
+// Milestone 74H part 2 (decision 74H-N1, the requester, 2026-10-16): a Plan
+// read against the ward's other filings -- here the Inventory, which shares
+// its Case #. Both warnings sit in Preview's "Review recommended".
+test('Initial Plan: "retains the right" on a Plenary guardianship, and Trusts No beside the Inventory\'s trust -- warned', async ({ page }) => {
+  test.setTimeout(180_000);
+  await freshStartNoPassword(page);
+  await createWard(page, 'Cross Filing Ward', 'guardian');
+  await patch(page, { caseNumber: '26-000321-GD', typeOfGuardianship: 'Plenary', scheduleC4: [{ trustName: 'Pemberton Family Revocable Trust' }] });
+  await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
+  await createWard(page, 'Cross Filing Ward', 'planInitial');
+  await patch(page, { caseNumber: '26-000321-GD', q3MedWardDecides: true, q7Trusts: 'No' });
+  await openPrint(page);
+  await expect(warning(page, 'records the Type of Guardianship as "Plenary"')).toContainText(
+    '2–3. Setting & Medical Care — Question 3 ticks "The ward retains the right to make their own decision", while the ward\'s Verified Initial Inventory records the Type of Guardianship as "Plenary". Review both before filing.');
+  await expect(warning(page, 'lists a trust on Schedule C-4')).toContainText(
+    '6–7. Socialization & Benefits — Question 7 answers Trusts "No", while the ward\'s Verified Initial Inventory lists a trust on Schedule C-4: Pemberton Family Revocable Trust. Review both before filing.');
+});

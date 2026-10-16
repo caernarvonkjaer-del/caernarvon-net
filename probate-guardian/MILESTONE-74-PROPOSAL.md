@@ -9,7 +9,7 @@ with 73O part 2, `fa9625e`), 74H (2026-10-08, with 73G part 2, `f85e862`) and
 74D's reproduction with its UX-07 rewording (2026-10-09, with 73L), 74O
 (2026-10-09, with 73O part 1, `487e247`), 74L (2026-10-09, with 73O part 3,
 `67e13b8`), 74J (2026-10-09, with 73O part 4, `cc90279`) and 74S (2026-10-09,
-with 73P), each approved by name.** **Built 2026-10-16:** 74E, 74G. Nothing else is approved: building any other of 74D–74S needs the requester's named approval
+with 73P), each approved by name.** **Built 2026-10-16:** 74E, 74G, 74H. Nothing else is approved: building any other of 74D–74S needs the requester's named approval
 of that item (AGENTS.md §3). **Approved 2026-10-16 by the requester, by name: 74E, 74G, 74H's second
 part (f, i and k), 74I, 74K, 74N and 74R** ("Let's complete these"), built item by item in
 the build order, each with its build record, and one full regression after the last; the
@@ -73,7 +73,7 @@ the item says so.
 | 5 | 74E | **What a filer types is changed:** "margaret a. collins" files as "Margaret a. Collins", a masked account "xxxx5510" as "Xxxx5510", and descriptions are capitalized word by word | High | **Built** (2026-10-16) |
 | 6 | 74F | The certificate's "no recipients" question is a **double negative**; the Simplified prints **"None listed." then "on this date:"**; the Plans print the app's own disclaimer on the filed page; the documents reminder names "Schedule A1" | Low | One |
 | 7 | 74G | An **18-month or future-dated accounting period**, a line period that runs backwards, Letters signed before the guardianship began, residences dated backwards, and an e-mail address like **"rnguyen@"** are all accepted without a word | Medium | **Built** (2026-10-16) |
-| 8 | 74H | Answers that **contradict each other** are filed without a warning: a safe-deposit box answered No while items are listed in it, a bond below the calculated requirement, two personal residences, transfers that don't balance, a negative Remaining Assets On Hand, and more | Medium | Two |
+| 8 | 74H | Answers that **contradict each other** are filed without a warning: a safe-deposit box answered No while items are listed in it, a bond below the calculated requirement, two personal residences, transfers that don't balance, a negative Remaining Assets On Hand, and more | Medium | **Built** (part 1 2026-10-08, part 2 2026-10-16) |
 | 9 | 74I | The Inventory's Cover says witnesses **"must"** be listed, stars their boxes, and then accepts **none, or a blank card** | Low | One |
 | 10 | 74J | A Final or Trust Accounting's **Filing Type can be switched to Annual silently**; from an Initial Plan, New Filing from Existing **never offers the Annual Plan**; its notice says the source was "converted" | Medium | One |
 | 11 | 74K | **Starting a new year hides an overdue, unfiled year** from the dashboard; the new year's period starts blank | Medium | One |
@@ -1694,6 +1694,54 @@ engines are).
   Annual's bond has no Schedule D behind it; its Part XI tick has no B-2
   fee), so no spec's count of warnings changed.
 
+### Build record, part 2 — BUILT 2026-10-16 (approved by name by the requester, 2026-10-16)
+
+**What changed for a filer:** a Plan is read against the ward's other
+filings, and three contradictions between them are named in Preview's
+"Review recommended before filing" -- none blocks, none says which answer is
+right. "The ward's other filings" are 74O-N1's: those linked to the same
+case, or with the same Case # when one isn't linked (`caseFilings()`,
+`carry-forward-hints.js`). The Plans hold no Type of Guardianship of their own
+(73B), so the newest other filing that answers it is read, and named.
+
+| | Where | The warning, as it reads |
+| --- | --- | --- |
+| f | Initial Plan, questions 3 and 6; Annual Plan, question 3 | 2–3. Setting & Medical Care — Question 3 ticks "The ward retains the right to make their own decision", while the ward's Annual Accounting records the Type of Guardianship as "Plenary". Review both before filing. |
+| i | Initial Plan, question 7 | 6–7. Socialization & Benefits — Question 7 answers Trusts "No", while the ward's Verified Initial Inventory lists a trust on Schedule C-4: Pemberton Family Revocable Trust. Review both before filing. |
+| k | Plan for Minors | Cover — The ward's Verified Initial Inventory records the Type of Guardianship as "Minor - Property", while this filing is a Plan for Minors. Section 744.367(1) has each guardian of the person file an annual guardianship plan; the app does not decide whether a guardian of the property alone files one. Review before filing. |
+
+- **Decided 2026-10-16 (74H-N1), with the approval:** the wording as drafted;
+  f also covers the Annual Plan's four "retains the right" boxes (the same
+  contradiction -- the QA report tested only the Initial Plan), in one
+  warning naming every box ticked. k's "Cover — " is the place the message
+  routes to, as every warning's section does.
+- **k stays a question for a qualified person** (§744.367(1), this item's
+  Authority above): the warning puts the two side by side and decides
+  nothing.
+- Decision 3's condition is met: 73F part 2 gave every filing one set of
+  checks, and these read only the other filings' own answers (their Type of
+  Guardianship, the Inventory's C-4 trust names), never their checks.
+
+**How:** `caseConsistencyAdvisories(filing, engineId, wards)` in
+`consistency-advisories.js`; `output-preflight.js` adds it beside the
+within-filing contradictions with the case file's filings. Nothing stored;
+no data-model change.
+
+**Tests:**
+
+- `tests/unit/consistency-advisories.spec.js` (+6): f on both Plans, from
+  the newest filing that answers (an older Inventory's "Limited" gives way
+  to the Annual Accounting's "Plenary"), the Annual Plan's boxes in one
+  warning; f silent for Limited, an unticked box, another Case # or a Plan
+  alone; i with one trust and with two, silent for Yes, unanswered or an
+  empty C-4; k, silent for the other minor types; none of the three on any
+  other form. **Red-first:** all 6 failed, the check not yet there.
+- `tests/e2e/contradiction-warnings.spec.ts` (+1): an Inventory (Plenary, a
+  C-4 trust) and an Initial Plan sharing its Case # -- f and i both in
+  Preview. **Red-first:** no warning.
+- Green: the two specs above and `carry-forward-hints.spec.ts` in the
+  browser (9), the enumeration guard, the whole unit suite.
+
 ---
 
 ## 74I — Inventory witnesses: what the form asks, said accurately
@@ -3302,7 +3350,7 @@ all passed. Full unit suite: 3,060 passed; `check:types` clean.
 | 5 | 74E | alongside 73G part 1 (row 4) | `form-contract.js`, `form-fields.js`, Inventory `index.js`, `form-binding.js` | new `tests/unit/typed-text-kept.spec.js`; `form-entry.contract.spec.ts` — **Built** 2026-10-16 |
 | 6 | 74F | alongside 73O part 2 (row 29); the reminder label with 73L (row 24) | `service-recipients.js`, `plan-certificate-of-service.js`, three accounting `index.js` and `pdf-model.js`, `schedule-doc-ack.js` | new `tests/unit/certificate-no-recipients-line.spec.js`; `service-recipients.spec.js`, `schedule-doc-ack.spec.ts` |
 | 7 | 74G | alongside 73F part 3 (row 18) | `date-rules.js`, new `email-format.js`, seven engines, `form-contract.js`, CSV | new `tests/unit/date-and-email-checks.spec.js`, new `tests/e2e/email-format.spec.ts`; `date-rules.spec.js`; validator and completion goldens — **Built** 2026-10-16 |
-| 8 | 74H | alongside 73G part 2 (row 19); part 2 after 73F part 2 | new `consistency-advisories.js`, `output-preflight.js`, `bond-depository.js` | new `tests/unit/consistency-advisories.spec.js`, new `tests/e2e/contradiction-warnings.spec.ts`; `bond-depository.spec.js` |
+| 8 | 74H | alongside 73G part 2 (row 19); part 2 after 73F part 2 | new `consistency-advisories.js`, `output-preflight.js`, `bond-depository.js` | new `tests/unit/consistency-advisories.spec.js`, new `tests/e2e/contradiction-warnings.spec.ts`; `bond-depository.spec.js` — **Built** 2026-10-16 |
 | 9 | 74I | alongside 73F part 3 (row 18) | Inventory `index.js`, `engines/guardian.js`, `completion.js` | new `tests/unit/inventory-witnesses.spec.js` |
 | 10 | 74J | alongside 73O part 4 (row 31); after 73T part 3 | Annual `index.js`, `filing-type.js`, `filing-descriptor.js`, `conversion.js` | new `tests/e2e/filing-type-change.spec.ts`; `convert-ward.spec.ts`, `filing-type-enumeration-guard.spec.js` |
 | 11 | 74K | after 73A; alongside 73I (row 21) | `year-dialogs.js`, `common-modals.html`, `filing-years.js`, `dashboard/view-model.js`, `carry-over.js` | new `tests/e2e/new-year-keeps-overdue.spec.ts`; `dashboard-view-model.spec.js`; year-rollover golden |

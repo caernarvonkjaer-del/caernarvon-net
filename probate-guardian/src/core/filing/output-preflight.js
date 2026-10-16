@@ -9,7 +9,7 @@ import { bondDepositoryAdvisories } from './bond-depository.js';
 import { planCertificateAdvisories, certificateOptional } from './plan-certificate-of-service.js';
 import { inventoryShareAdvisories, wardShareAdvisories } from './ward-share-advisories.js';
 import { signAdvisories } from './sign-advisories.js';
-import { consistencyAdvisories } from './consistency-advisories.js';
+import { caseConsistencyAdvisories, consistencyAdvisories } from './consistency-advisories.js';
 import { ucnAdvisories } from './ucn-reminder.js';
 import { calcTotalsAnnual } from '../accounting/annual-totals.js';
 import { features, hasFeatureServices } from '../runtime/features.js';
@@ -109,8 +109,10 @@ export function collectOutputIssues(target, baseIssues = []) {
     // a negative where one is unusual -- filed as entered.
     ...(engineId === 'guardian' ? inventoryShareAdvisories(target) : []),
     ...signAdvisories(target),
-    // Milestone 74H: answers within the filing that contradict each other.
+    // Milestone 74H: answers within the filing that contradict each other,
+    // and (part 2) a Plan's answers against the ward's other filings.
     ...consistencyAdvisories(target, engineId, { totals }),
+    ...caseConsistencyAdvisories(target, engineId, getCaseFile()?.wards),
     // Milestone 73S: a blank or misshapen UCN, on every form and in every
     // county -- a reminder, never a missing item (73S-1, 73S-2). The three
     // forms with a court workbook also say it has no UCN box.

@@ -1,9 +1,10 @@
 // Milestone 74H: answers within one filing that contradict each other, named
 // in Preview's "Review recommended" -- each warning quotes both answers and
 // where they are. None blocks, none changes a figure, and none says which
-// answer is right (decision 74H-1, the requester, 2026-10-06). Checks that
-// compare one filing with another (74H f, i, k) are not built: decision 74H-3,
-// a second part once every filing has one set of checks the others can read.
+// answer is right (decision 74H-1, the requester, 2026-10-06). The checks that
+// compare a Plan with the ward's other filings (f, i, k) are the second part,
+// built after 73F part 2 as decision 74H-3 set out (2026-10-16, decision
+// 74H-N1): caseConsistencyAdvisories() below.
 // A C-5 joint owner's share against its asset's (74H d) is not checkable:
 // nothing links a C-5 row to its asset (74P decision 2 chose no link).
 //
@@ -22,6 +23,10 @@
 import { amountForStore, presentAmount } from '../form/amount-codec.js';
 import { roundCents } from '../format/money.js';
 import { startedRows } from '../validation/row-started.js';
+import { caseFilings } from './carry-forward-hints.js';
+import { resolveDescriptorForInventoryType } from './filing-descriptor.js';
+import { PLAN_INITIAL_CHOICES } from './court-text/plan-initial.js';
+import { PLAN_ANNUAL_CHOICES } from './court-text/plan-annual.js';
 
 // Milestone 73H: the one amount style, $1,000.00 / ($1,000.00).
 const money = presentAmount;
@@ -165,4 +170,88 @@ export function consistencyAdvisories(filing, engineId, { totals = null } = {}) 
     case 'planAnnual': return planAnnualConsistencyAdvisories(filing);
     default: return [];
   }
+}
+
+// ---------------------------------------------------------------------------
+// Part 2 (decision 74H-N1, the requester, 2026-10-16; the wording approved as
+// drafted): a Plan read against the ward's other filings -- those linked to
+// the same case, or with the same Case # when one isn't linked (74O-N1,
+// carry-forward-hints.js's caseFilings()). The Plans hold no Type of
+// Guardianship of their own (73B), so it is read from the newest other filing
+// that answers it, and that filing is named.
+//
+//   f  Initial Plan (questions 3 and 6), Annual Plan (question 3's four
+//      boxes): "the ward retains the right" ticked on a Plenary guardianship
+//      (the Annual Plan's boxes by decision 74H-N1 -- the same contradiction)
+//   i  Initial Plan: question 7 answers Trusts No while the ward's Initial
+//      Inventory lists a trust on C-4
+//   k  Plan for Minors on a Minor - Property guardianship: section 744.367(1)
+//      has each guardian of the person file a plan; whether a guardian of the
+//      property alone files one is for a qualified person, and the warning
+//      decides nothing
+// ---------------------------------------------------------------------------
+
+const text = (v) => String(v ?? '').trim();
+
+/** A filing as a warning names it: "the ward's Annual Accounting". */
+const filingName = (w) => (w.inventoryType === 'guardian'
+  ? 'Verified Initial Inventory'
+  : resolveDescriptorForInventoryType(w.inventoryType)?.displayName || 'other filing');
+
+/** The Type of Guardianship the ward's newest other filing records, and that filing's name; null when none does. */
+function caseGuardianshipType(filing, wards) {
+  const source = caseFilings(filing, wards).find((w) => text(w.typeOfGuardianship));
+  return source ? { type: text(source.typeOfGuardianship), name: filingName(source) } : null;
+}
+
+/** "A", "A" and "B", "A", "B" and "C" -- each quoted. */
+const quotedList = (labels) => {
+  const q = labels.map((l) => `"${l}"`);
+  return q.length < 2 ? q.join('') : `${q.slice(0, -1).join(', ')} and ${q[q.length - 1]}`;
+};
+
+// The "retains the right" boxes, by Plan, grouped by the question they answer.
+const RETAINS = {
+  planInitial: [
+    { section: '2–3. Setting & Medical Care', question: '3', keys: ['q3MedWardDecides'] },
+    { section: '6–7. Socialization & Benefits', question: '6', keys: ['q6WardDecides'] },
+  ],
+  planAnnual: [
+    { section: '2–3. Residence & Care', question: '3', keys: ['q3EnsureWardDecides', 'q3MedWardDecides', 'q3MentalWardDecides', 'q3SocialWardDecides'] },
+  ],
+};
+const RETAINS_LABEL = { planInitial: PLAN_INITIAL_CHOICES, planAnnual: PLAN_ANNUAL_CHOICES };
+
+/**
+ * f, i and k for a Plan: what it says against the ward's other filings.
+ * @param {Record<string, any>} filing
+ * @param {string} engineId the registry's engine id
+ * @param {any[] | null | undefined} wards the case file's filings
+ */
+export function caseConsistencyAdvisories(filing, engineId, wards) {
+  if (!filing || !Array.isArray(wards) || !wards.length) return [];
+  const out = [];
+  const held = caseGuardianshipType(filing, wards);
+  if (held?.type === 'Plenary') {
+    for (const { section, question, keys } of RETAINS[engineId] || []) {
+      const ticks = keys.filter((k) => ticked(filing[k]));
+      if (!ticks.length) continue;
+      const labels = ticks.map((k) => RETAINS_LABEL[engineId][k]);
+      out.push(advisory('retains-right-on-plenary', ticks[0],
+        `${section} — Question ${question} ticks ${quotedList(labels)}, while the ward's ${held.name} records the Type of Guardianship as "Plenary". Review both before filing.`));
+    }
+  }
+  if (engineId === 'planInitial' && no(filing.q7Trusts)) {
+    const inventory = caseFilings(filing, wards).find((w) => w.inventoryType === 'guardian');
+    const trusts = rowsOf(inventory, 'scheduleC4').map((r) => text(r?.trustName)).filter(Boolean);
+    if (trusts.length) {
+      out.push(advisory('trusts-no-and-inventory-trust', 'q7Trusts',
+        `6–7. Socialization & Benefits — Question 7 answers Trusts "No", while the ward's Verified Initial Inventory lists ${trusts.length === 1 ? 'a trust' : 'trusts'} on Schedule C-4: ${trusts.join('; ')}. Review both before filing.`));
+    }
+  }
+  if (engineId === 'planMinor' && held?.type === 'Minor - Property') {
+    out.push(advisory('minor-plan-on-property-guardianship', 'wardName',
+      `Cover — The ward's ${held.name} records the Type of Guardianship as "Minor - Property", while this filing is a Plan for Minors. Section 744.367(1) has each guardian of the person file an annual guardianship plan; the app does not decide whether a guardian of the property alone files one. Review before filing.`));
+  }
+  return out;
 }
