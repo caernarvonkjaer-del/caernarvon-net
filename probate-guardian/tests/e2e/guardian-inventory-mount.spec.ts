@@ -126,12 +126,10 @@ test.describe('guardian-inventory feature module', () => {
     // real row survival, not accidentally relying on pruning not having
     // run yet.
     await page.fill('input[data-bind="scheduleB2.0.description"]', 'Seed row');
-    // This field title-cases as a "name"-type data-bind input, but only on
-    // blur (not live per-keystroke -- see the Initial Inventory's bindForms(), which
-    // would otherwise misread an in-progress 2-letter word as a state
-    // abbreviation and force-uppercase it mid-typing).
+    // A description keeps what was typed, after leaving it too (Milestone
+    // 74E; it was title-cased on blur before).
     await page.locator('input[data-bind="scheduleB2.0.description"]').blur();
-    await expect(page.locator('input[data-bind="scheduleB2.0.description"]')).toHaveValue('Seed Row');
+    await expect(page.locator('input[data-bind="scheduleB2.0.description"]')).toHaveValue('Seed row');
 
     for (let i = 0; i < 15; i++) {
       await page.evaluate((id) => (window as any).GuardianForms.testing.activateFiling.open(id), guardianId);
@@ -319,12 +317,13 @@ test.describe('Milestone 41-3: Guardian Inventory Tier 1 delegation', () => {
     expect(await page.locator('#totalA1').innerText()).toContain('150,000');
 
     // Exactly one write path claims the field, and bindForms()'s own
-    // formatting switch still has the attribute it reads.
+    // formatting switch still has the attribute it reads -- plain text since
+    // Milestone 74E: a description keeps what was typed.
     expect(await desc.evaluate((el) => ({
       hasBind: el.hasAttribute('data-bind'),
       hasFormPath: el.hasAttribute('data-form-path'),
       inputType: el.getAttribute('data-input-type'),
-    }))).toEqual({ hasBind: true, hasFormPath: false, inputType: 'name' });
+    }))).toEqual({ hasBind: true, hasFormPath: false, inputType: 'text' });
   });
 
   // Milestone 41-3: numInput()'s 24 sites and dateInput()'s 13 now delegate

@@ -769,7 +769,7 @@ function pagePart7(){
       <div class="entry-card-body">
         <div class="row g-2">
           <div class="col-md-6"><label class="form-label">Guardian Name <span class="req">*</span></label><input type="text" class="form-control" value="${esc(formatName(r.guardian||''))}" data-form-path="remuneration.${i}.guardian" data-form-format="name"></div>
-          <div class="col-md-6"><label class="form-label">Type <span class="req">*</span></label><input type="text" class="form-control" value="${esc(formatName(r.type||''))}" data-form-path="remuneration.${i}.type" data-form-format="name"></div>
+          <div class="col-md-6"><label class="form-label">Type <span class="req">*</span></label><input type="text" class="form-control" value="${esc(r.type||'')}" data-form-path="remuneration.${i}.type"></div>
           <div class="col-md-8"><label class="form-label">Description</label><input type="text" class="form-control" value="${esc(r.description||'')}" data-form-path="remuneration.${i}.description"></div>
           <div class="col-md-4"><label class="form-label">Amount <span class="req">*</span></label><input type="text" class="form-control" inputmode="decimal" value="${esc(amountBoxText(r.amount))}" data-form-path="remuneration.${i}.amount" data-form-format="currency" data-field-blank="keep"></div>
         </div>

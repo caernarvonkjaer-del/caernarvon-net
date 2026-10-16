@@ -398,10 +398,8 @@ export const ANNUAL_CONTRACT = Object.freeze({
   casing: Object.freeze({
     name: ['wardName', 'guardian', 'attorney', 'relatedCaseNumbers', 'bondingCompany', 'guardians.*.name', 'preparer.name',
       'certRecipients.*.name', 'remuneration.*.guardian', 'schA.*.payer', 'schA.*.bank', 'schB1.*.payee', 'schB2.*.payee',
-      'schB3.*.payee', 'schB4.*.payee', 'schB4Accounts.*.bankName', 'schD5.*.description', 'trusts.*.name', 'trusts.*.trustee',
-      'trusts.*.trustType'],
-    address: ['attorney_street', 'guardians.*.mailingStreet', 'guardians.*.officeStreet', 'preparer.street', 'schD2.*.description',
-      'schF1.*.description'],
+      'schB3.*.payee', 'schB4.*.payee', 'schB4Accounts.*.bankName', 'trusts.*.name', 'trusts.*.trustee'],
+    address: ['attorney_street', 'guardians.*.mailingStreet', 'guardians.*.officeStreet', 'preparer.street'],
     zip: ['attorney_cityStateZip', 'guardians.*.mailingCityStateZip', 'guardians.*.officeCityStateZip', 'preparer.cityStateZip'],
   }),
 

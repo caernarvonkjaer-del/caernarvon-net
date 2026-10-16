@@ -965,7 +965,7 @@ function pageSummary(){ return renderSummaryPage(getSummaryConfigGuardian()); }
 // ═══════════════════════════════════════════════════════
 function pageScheduleA1(){
   const entries=D.scheduleA1.map((e,i)=>entryCard(`Property ${i+1}`,i,'a1',`
-    ${formRow(col(6,reqLabel('Property Description')+textInput(`scheduleA1.${i}.propertyDescription`,'e.g., Single Family Home','name')),col(3,yesNoRadioHTML(`schA1_res_${i}`,'Personal Residence?',e.residence||(e.isPersonalResidence?'Yes':(e.isPersonalResidence===false?'No':'')),`scheduleA1.${i}.residence`)),col(3,yesNoRadioHTML(`schA1_inc_${i}`,'Income Property?',e.income||(e.isIncomeProperty?'Yes':(e.isIncomeProperty===false?'No':'')),`scheduleA1.${i}.income`)))}
+    ${formRow(col(6,reqLabel('Property Description')+textInput(`scheduleA1.${i}.propertyDescription`,'e.g., Single Family Home')),col(3,yesNoRadioHTML(`schA1_res_${i}`,'Personal Residence?',e.residence||(e.isPersonalResidence?'Yes':(e.isPersonalResidence===false?'No':'')),`scheduleA1.${i}.residence`)),col(3,yesNoRadioHTML(`schA1_inc_${i}`,'Income Property?',e.income||(e.isIncomeProperty?'Yes':(e.isIncomeProperty===false?'No':'')),`scheduleA1.${i}.income`)))}
     ${formRow(col(12,reqLabel('Street Address')+textInput(`scheduleA1.${i}.streetAddress`,'','address')))}
     ${formRow(col(6,reqLabel('City / State / Zip')+textInput(`scheduleA1.${i}.cityStateZip`,'','zip')),col(6,optLabel('Notes (joint ownership, etc.)')+textInput(`scheduleA1.${i}.notes`)))}
     ${formRow(col(4,reqLabel('Full Asset Value as of GID')+numInput(`scheduleA1.${i}.fullAssetValue`)),col(4,reqLabel("Ward's Ownership % (0-100)")+numInput(`scheduleA1.${i}.wardPercent`)),col(4,optLabel("Ward's Value (calculated)")+calcInput(`scheduleA1.${i}.wardValue`)))}
@@ -1003,7 +1003,7 @@ function pageScheduleA2(){
 
 function pageScheduleB1(){
   const entries=D.scheduleB1.map((e,i)=>entryCard(`Account ${i+1}`,i,'b1',`
-    ${formRow(col(5,reqLabel('Financial Institution / Description')+textInput(`scheduleB1.${i}.institutionName`,'','name')),col(3,reqLabel('Account Type')+textInput(`scheduleB1.${i}.accountType`,'Checking, Savings, CD…','name')),col(2,yesNoRadioHTML(`schB1_rest_${i}`,'Restricted?',e.restricted||(e.isRestricted?'Yes':(e.isRestricted===false?'No':'')),`scheduleB1.${i}.restricted`)),col(2,optLabel('Account #')+textInput(`scheduleB1.${i}.accountNumber`,'','accountNumber')))}
+    ${formRow(col(5,reqLabel('Financial Institution / Description')+textInput(`scheduleB1.${i}.institutionName`,'','name')),col(3,reqLabel('Account Type')+textInput(`scheduleB1.${i}.accountType`,'Checking, Savings, CD…')),col(2,yesNoRadioHTML(`schB1_rest_${i}`,'Restricted?',e.restricted||(e.isRestricted?'Yes':(e.isRestricted===false?'No':'')),`scheduleB1.${i}.restricted`)),col(2,optLabel('Account #')+textInput(`scheduleB1.${i}.accountNumber`,'','accountNumber')))}
     ${formRow(col(6,reqLabel('Street Address of Institution')+textInput(`scheduleB1.${i}.streetAddress`,'','address')),col(6,reqLabel('City / State / Zip')+textInput(`scheduleB1.${i}.cityStateZip`,'','zip')))}
     ${formRow(col(4,reqLabel('Full Asset Amount')+numInput(`scheduleB1.${i}.fullAssetAmount`)),col(4,reqLabel("Ward's % (0-100)")+numInput(`scheduleB1.${i}.wardPercent`)),col(4,optLabel("Ward's Amount (calculated)")+calcInput(`scheduleB1.${i}.wardAmt`)))}
     ${jointOwnerFooter('scheduleB1',e,i)}
@@ -1037,7 +1037,7 @@ function renderB2Fields(e, i){
     `;
   }
   return `
-  ${formRow(col(12,reqLabel('Description (include model/serial number for non-vehicle items)')+`<input class="form-control" id="b2-description-${i}" value="${esc(e.description)}" data-bind="scheduleB2.${i}.description" data-input-type="name">`))}
+  ${formRow(col(12,reqLabel('Description (include model/serial number for non-vehicle items)')+`<input class="form-control" id="b2-description-${i}" value="${esc(e.description)}" data-bind="scheduleB2.${i}.description" data-input-type="text">`))}
   `;
 }
 
@@ -1093,7 +1093,7 @@ function pageScheduleB2(){
 
 function pageScheduleB3(){
   const entries=D.scheduleB3.map((e,i)=>entryCard(`Asset ${i+1}`,i,'b3',`
-    ${formRow(col(12,reqLabel('Description (include account, policy, or certificate number)')+`<input class="form-control" data-bind="scheduleB3.${i}.description" data-input-type="name">`))}
+    ${formRow(col(12,reqLabel('Description (include account, policy, or certificate number)')+`<input class="form-control" data-bind="scheduleB3.${i}.description" data-input-type="text">`))}
     ${formRow(col(6,reqLabel('Street Address / Custodian Address')+textInput(`scheduleB3.${i}.streetAddress`,'','address')),col(6,reqLabel('City / State / Zip')+textInput(`scheduleB3.${i}.cityStateZip`,'','zip')))}
     ${formRow(col(3,yesNoRadioHTML(`schB3_rest_${i}`,'Restricted?',e.restricted||(e.isRestricted?'Yes':(e.isRestricted===false?'No':'')),`scheduleB3.${i}.restricted`)),col(3,yesNoRadioHTML(`schB3_sdb_${i}`,'In Safe Deposit Box?',e.inSafeDepositBox===true?'Yes':(e.inSafeDepositBox===false?'No':(e.inSafeDepositBox||'')),`scheduleB3.${i}.inSafeDepositBox`)))}
     ${formRow(col(4,reqLabel('Full Asset Value')+numInput(`scheduleB3.${i}.fullAssetValue`)),col(4,reqLabel("Ward's % (0-100)")+numInput(`scheduleB3.${i}.wardPercent`)),col(4,optLabel("Ward's Value (calculated)")+calcInput(`scheduleB3.${i}.wardB3`)))}
@@ -1144,7 +1144,7 @@ function pageScheduleC1(){
 
 function pageScheduleC2(){
   const entries=D.scheduleC2.map((e,i)=>entryCard(`Lawsuit ${i+1}`,i,'c2',`
-    ${formRow(col(6,reqLabel('Claimant / Petitioner Name')+textInput(`scheduleC2.${i}.claimantName`,'','name')),col(6,reqLabel('Type of Lawsuit / Description')+textInput(`scheduleC2.${i}.lawsuitDescription`,'e.g., Mortgage Foreclosure','name')))}
+    ${formRow(col(6,reqLabel('Claimant / Petitioner Name')+textInput(`scheduleC2.${i}.claimantName`,'','name')),col(6,reqLabel('Type of Lawsuit / Description')+textInput(`scheduleC2.${i}.lawsuitDescription`,'e.g., Mortgage Foreclosure')))}
     ${formRow(col(6,optLabel("Claimant's Attorney (if any)")+textInput(`scheduleC2.${i}.claimantAttorney`,'e.g., John Smith','name')))}
     ${formRow(col(6,reqLabel('Court / Jurisdiction')+textInput(`scheduleC2.${i}.courtJurisdiction`,'e.g., Circuit Court / County')),col(6,reqLabel('Case Number')+textInput(`scheduleC2.${i}.caseNumber`)))}
     ${formRow(col(6,optLabel('Claimant / Attorney Street Address')+textInput(`scheduleC2.${i}.claimantAddress`,'','address')),col(6,optLabel('Claimant City / State / Zip')+textInput(`scheduleC2.${i}.claimantCityStateZip`,'','zip')))}
@@ -1160,7 +1160,7 @@ function pageScheduleC2(){
 
 function pageScheduleC3(){
   const entries=D.scheduleC3.map((e,i)=>entryCard(`Action ${i+1}`,i,'c3',`
-    ${formRow(col(6,reqLabel('Defendant / Entity Name')+textInput(`scheduleC3.${i}.defendantName`,'','name')),col(6,reqLabel('Type of Pending Legal Action')+textInput(`scheduleC3.${i}.actionDescription`,'e.g., Negligence, Personal Injury','name')))}
+    ${formRow(col(6,reqLabel('Defendant / Entity Name')+textInput(`scheduleC3.${i}.defendantName`,'','name')),col(6,reqLabel('Type of Pending Legal Action')+textInput(`scheduleC3.${i}.actionDescription`,'e.g., Negligence, Personal Injury')))}
     ${formRow(col(12,reqLabel('Status of Action')+textInput(`scheduleC3.${i}.status`,'e.g., Mediation scheduled for…')))}
     ${formRow(col(6,reqLabel('Court / Jurisdiction / Attorney of Record')+textInput(`scheduleC3.${i}.courtJurisdiction`)),col(6,optLabel('Case Number (if filed)')+textInput(`scheduleC3.${i}.caseNumber`)))}
     ${formRow(col(3,optLabel('Action Date (if filed)')+dateInput(`scheduleC3.${i}.actionDate`,'Action Date (if filed)')),col(3,reqLabel('Estimated Settlement')+numInput(`scheduleC3.${i}.estimatedSettlement`)),col(3,reqLabel("Ward's % (0-100)")+numInput(`scheduleC3.${i}.wardPercent`)),col(3,optLabel("Ward's Share (calculated)")+calcInput(`scheduleC3.${i}.wardC3`)))}
@@ -1190,7 +1190,7 @@ function pageScheduleC4(){
 
 function pageScheduleC5(){
   const entries=D.scheduleC5.map((e,i)=>entryCard(`Joint Owner ${i+1}`,i,'c5',`
-    ${formRow(col(12,reqLabel('Asset Description (cross-ref schedule + item)')+textInput(`scheduleC5.${i}.assetDescription`,'e.g., Single Family Home — Schedule A-1, Item 1','name')))}
+    ${formRow(col(12,reqLabel('Asset Description (cross-ref schedule + item)')+textInput(`scheduleC5.${i}.assetDescription`,'e.g., Single Family Home — Schedule A-1, Item 1')))}
     ${formRow(col(6,reqLabel("Joint Owner's Name")+textInput(`scheduleC5.${i}.ownerName`)),col(6,reqLabel('Relationship to Ward')+textInput(`scheduleC5.${i}.relationshipToWard`,'e.g., Spouse, Child')))}
     ${formRow(col(6,reqLabel("Joint Owner's Street Address")+textInput(`scheduleC5.${i}.ownerAddress`,'','address')),col(6,reqLabel("Joint Owner's City / State / Zip")+textInput(`scheduleC5.${i}.ownerCityStateZip`,'','zip')))}
     ${formRow(col(3,reqLabel('Total Asset Value')+numInput(`scheduleC5.${i}.totalAssetValue`)),col(3,reqLabel("Joint Owner's % (0-100)")+numInput(`scheduleC5.${i}.jointOwnerPercent`)),col(3,optLabel("Joint Owner's Value (calculated)")+calcInput(`scheduleC5.${i}.wardC5`)))}

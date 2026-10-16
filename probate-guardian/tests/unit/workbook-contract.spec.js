@@ -458,7 +458,8 @@ describe("the Inventory's 73T rows, fixed in part 2", () => {
   });
 
   test("row 11: a quotation mark survives the import, as typing keeps it (decision 73T-3); < > and backticks still don't", () => {
-    expect(read(wrote).draft.scheduleB2[0].description).toBe('30" Flat Screen TV');
+    // Milestone 74E: a description comes back as typed, not title-cased.
+    expect(read(wrote).draft.scheduleB2[0].description).toBe('30" Flat screen TV');
     back.getWorksheet('B-2 PER PROP pg 1').getCell('C33').value = '<b>`30" TV`</b>';
     const stripped = read(wrote).draft.scheduleB2[0].description;
     expect(stripped).not.toMatch(/[<>`]/);
@@ -500,8 +501,9 @@ describe("the Inventory's 73T rows, fixed in part 2", () => {
   test("row 19: names typed as entered come back as entered -- only the fields typing formats are formatted", () => {
     const { draft } = read(wrote);
     expect([draft.scheduleC4[0].trustName, draft.scheduleC4[0].trusteeName, draft.scheduleC5[0].ownerName]).toEqual(['the smith family trust', 'jane doe', 'van der berg']);
-    // Typing formats these as names, so the import does too.
-    expect([draft.scheduleC1[0].payerName, draft.scheduleC5[0].assetDescription]).toEqual(['Social Security', 'House']);
+    // Typing formats a name, so the import does too; a description comes back
+    // as typed (Milestone 74E).
+    expect([draft.scheduleC1[0].payerName, draft.scheduleC5[0].assetDescription]).toEqual(['Social Security', 'house']);
   });
 
   test('row 19: a date cell holding text no reader understands comes back as a date still being typed, not as a blank', () => {

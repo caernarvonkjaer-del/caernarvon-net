@@ -174,6 +174,29 @@ test.describe('Form entry contract', () => {
     expect(await cityStateZipInput.inputValue()).toBe('Orlando FL 32801');
   });
 
+  // Milestone 74E (decision 74E-1): a description keeps exactly what the
+  // filer typed -- it used to be capitalized word by word, "xxxx5510" to
+  // "Xxxx5510" -- while a name gets the fixed capitalization: an initial
+  // capitalized, a word holding a digit left alone.
+  test('a description keeps what was typed; a name capitalizes its initial and leaves a number alone', async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Typed Text Ward', 'guardian');
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/b3'));
+    await page.evaluate(() => (window as any).GuardianForms.testing.createFiling.addRow('b3'));
+    const description = page.locator('input[data-bind="scheduleB3.0.description"]');
+    await description.fill('brokerage acct xxxx5510, cert #12');
+    await description.blur();
+    await expect(description).toHaveValue('brokerage acct xxxx5510, cert #12');
+    expect(await page.evaluate(() => (window as any).GuardianForms.testing.field('scheduleB3.0.description'))).toBe('brokerage acct xxxx5510, cert #12');
+
+    await createWard(page, 'Typed Name Ward', 'annual');
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/p4'));
+    const nameInput = page.locator('[data-form-path="preparer.name"]');
+    await nameInput.fill('margaret a. collins');
+    await nameInput.blur();
+    expect(await nameInput.inputValue()).toBe('Margaret A. Collins');
+  });
+
   test('a malformed city/state/zip entry is flagged to the filer on blur, and the flag clears once corrected', { tag: '@cross-browser', annotation: { type: 'browser risk', description: 'blur-time validation and its live text in every engine' } }, async ({ page }) => {
     // Milestone 50C's decision (2026-09-15): a combined entry the formatter
     // has no word-boundary to work with (no separator before the state code,

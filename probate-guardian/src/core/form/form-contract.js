@@ -89,6 +89,10 @@ const TITLE_CASE_STOP_WORDS = new Set(['of', 'and', 'the', 'a', 'an', 'for', 'in
  * Does NOT uppercase 2-letter words (e.g. "Dr." stays "Dr.", "St." stays "St.", "Ed" stays "Ed").
  * Minor connecting words (of/and/the/...) stay lowercase mid-phrase, standard title-case style, but still
  * capitalize as the first word.
+ * Milestone 74E: a word holding a digit ("xxxx5510", "#12", "14th") is the filer's own identifier and stays as
+ * typed; a single letter and a period is an initial ("margaret a. collins" -> "Margaret A. Collins"), capitalized
+ * even where the letter is a connecting word. Only names and addresses come here -- a description or a type
+ * keeps what the filer typed (decision 74E-1).
  */
 export function formatSafeTitleCase(s) {
   if (!s) return '';
@@ -98,6 +102,8 @@ export function formatSafeTitleCase(s) {
     if (word.match(/\s/) || word === '') return word;
     const isFirstWord = !sawFirstWord;
     sawFirstWord = true;
+    if (/\d/.test(word)) return word;
+    if (/^[a-z]\.$/.test(word)) return word.toUpperCase();
     const match = word.match(/^([a-zA-Z]+)([^a-zA-Z]*)$/);
     if (match) {
       const [, alpha, trailingPunct] = match;
@@ -957,7 +963,7 @@ export function capitalizeImportedFields(obj){
         obj[k]=formatCityStateZip(v);
       }else if(kl.includes('street')||(kl.includes('address'))){
         obj[k]=formatAddress(v);
-      }else if(['name','payer','payee','lender','creditor','institution','guardian','attorney','trustee','claimant','description','bonding','company','trust'].some(w=>kl.includes(w))){
+      }else if(['name','payer','payee','lender','creditor','institution','guardian','attorney','trustee','claimant','bonding','company','trust'].some(w=>kl.includes(w))){
         obj[k]=formatName(v);
       }
     }

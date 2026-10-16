@@ -300,10 +300,8 @@ export const GUARDIAN_CONTRACT = Object.freeze({
   // (C-4's trust and trustee names, C-5's owner, used to be re-cased).
   casing: Object.freeze({
     name: ['wardName', 'guardianName', 'attorneyForGuardian', 'bondingCompany', 'guardians.*.name', 'preparer.name', 'attorney.name',
-      'serviceRecipients.*.name', 'scheduleA1.*.propertyDescription', 'scheduleA2.*.lenderName', 'scheduleB1.*.institutionName',
-      'scheduleB1.*.accountType', 'scheduleB2.*.description', 'scheduleB3.*.description', 'scheduleB4.*.lenderName',
-      'scheduleC1.*.payerName', 'scheduleC2.*.claimantName', 'scheduleC2.*.claimantAttorney', 'scheduleC2.*.lawsuitDescription',
-      'scheduleC3.*.defendantName', 'scheduleC3.*.actionDescription', 'scheduleC5.*.assetDescription'],
+      'serviceRecipients.*.name', 'scheduleA2.*.lenderName', 'scheduleB1.*.institutionName', 'scheduleB4.*.lenderName',
+      'scheduleC1.*.payerName', 'scheduleC2.*.claimantName', 'scheduleC2.*.claimantAttorney', 'scheduleC3.*.defendantName'],
     address: ['attorney.streetAddress', 'preparer.streetAddress', 'guardians.*.streetAddress',
       'serviceRecipients.*.line2', 'serviceRecipients.*.line3', 'serviceRecipients.*.line4', 'serviceRecipients.*.line5',
       'scheduleA1.*.streetAddress', 'scheduleA2.*.lenderAddress', 'scheduleB1.*.streetAddress', 'scheduleB2.*.streetAddress',

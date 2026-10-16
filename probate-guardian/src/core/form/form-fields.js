@@ -43,6 +43,10 @@ export function inferFieldKind(label = '', type = 'text') {
   if (lbl.includes('check #')) return 'checkNumber';
   if (!lbl.includes('bank name') && !lbl.includes('loan') && (lbl.includes('account number') || lbl.includes('account #') || lbl.includes('bank account'))) return 'accountNumber';
   if (lbl.includes('zip')) return 'zip';
+  // Milestone 74E (decision 74E-1): a description or a type is the filer's own
+  // text, kept as typed, even when its label also names an address, a lender or
+  // a trust ("Description / Address / Owners", "Type of Trust").
+  if (/^\s*(description|type of)\b/.test(lbl)) return 'text';
   if (lbl.includes('street') || lbl.includes('address') || lbl.includes('city')) return 'address';
   if (!lbl.includes('account') && (
     lbl.includes('name') || lbl.includes('payer') || lbl.includes('payee') || lbl.includes('lender') ||

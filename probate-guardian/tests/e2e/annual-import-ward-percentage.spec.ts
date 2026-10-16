@@ -66,14 +66,14 @@ test('an Annual workbook with ward percentages on Schedules D-1 to D-5 re-import
   expect(imported.caseNumber).toBe('2026-CP-000789');
   expect(imported.pct).toEqual([
     // Milestone 73T part 3: the import formats a description only where the
-    // page formats it when typed -- D-2's is an address field and D-5's a
-    // name field (their labels); D-1's, D-3's and D-4's are kept as typed.
-    // (The old importer title-cased every field whose key held "description".)
+    // page formats it when typed; since Milestone 74E no page formats a
+    // description, so all five come back as typed. (The old importer
+    // title-cased every field whose key held "description".)
     ['schD1', 'Brokerage account', '50'],
-    ['schD2', 'Family Home', '100'],
+    ['schD2', 'Family home', '100'],
     ['schD3', 'Mineral rights', '33.33'],
     ['schD4', 'Certificate of deposit', '12.5'],
-    ['schD5', 'Car Loan', '1'],
+    ['schD5', 'Car loan', '1'],
   ]);
   expect(imported.schE, 'Schedule E, read after D-5, imported too').toBe('First Bank');
 });

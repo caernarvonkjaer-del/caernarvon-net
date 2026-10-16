@@ -175,7 +175,7 @@ export const SIMPLIFIED_CONTRACT = Object.freeze({
   // and every other value come back as the workbook holds them.
   // tests/unit/workbook-contract.spec.js checks the table against the pages.
   casing: Object.freeze({
-    name: ['wardName', 'guardian', 'attorney', 'guardians.*.name', 'certRecipients.*.name', 'remuneration.*.guardian', 'remuneration.*.type'],
+    name: ['wardName', 'guardian', 'attorney', 'guardians.*.name', 'certRecipients.*.name', 'remuneration.*.guardian'],
     address: ['attorney_street', 'guardians.*.mailingStreet', 'guardians.*.residenceStreet', 'certRecipients.*.line2', 'certRecipients.*.line3', 'certRecipients.*.line4', 'certRecipients.*.line5'],
     zip: ['attorney_cityStateZip', 'guardians.*.mailingCityStateZip', 'guardians.*.residenceCityStateZip'],
   }),

@@ -9,7 +9,7 @@ with 73O part 2, `fa9625e`), 74H (2026-10-08, with 73G part 2, `f85e862`) and
 74D's reproduction with its UX-07 rewording (2026-10-09, with 73L), 74O
 (2026-10-09, with 73O part 1, `487e247`), 74L (2026-10-09, with 73O part 3,
 `67e13b8`), 74J (2026-10-09, with 73O part 4, `cc90279`) and 74S (2026-10-09,
-with 73P), each approved by name.** Nothing else is approved: building any other of 74D–74S needs the requester's named approval
+with 73P), each approved by name.** **Built 2026-10-16:** 74E. Nothing else is approved: building any other of 74D–74S needs the requester's named approval
 of that item (AGENTS.md §3). **Approved 2026-10-16 by the requester, by name: 74E, 74G, 74H's second
 part (f, i and k), 74I, 74K, 74N and 74R** ("Let's complete these"), built item by item in
 the build order, each with its build record, and one full regression after the last; the
@@ -70,7 +70,7 @@ the item says so.
 | 2 | 74B | **A co-guardian whose only entry is a signature stamp is left out of the filing**: on the Inventory the PDF drops it; on the Annual family and the Simplified no check, workbook or PDF includes it at all | High | **Built** (2026-10-06) |
 | 3 | 74C | On the Simplified Annual Plan, **Save as PDF stays greyed out after "Continue despite outstanding requirements"**, though Print works; on every form a greyed-out export button gives no reason | High | One |
 | 4 | 74D | Five reports **not yet seen in the code** — two entry points disagreeing on "Ready to export", Save as Excel hanging, the New Form dialog pointing at the wrong ward, a stale screen-reader message, a misleading "no other forms" note — need a reproduction first | Medium | One (investigation) |
-| 5 | 74E | **What a filer types is changed:** "margaret a. collins" files as "Margaret a. Collins", a masked account "xxxx5510" as "Xxxx5510", and descriptions are capitalized word by word | High | One |
+| 5 | 74E | **What a filer types is changed:** "margaret a. collins" files as "Margaret a. Collins", a masked account "xxxx5510" as "Xxxx5510", and descriptions are capitalized word by word | High | **Built** (2026-10-16) |
 | 6 | 74F | The certificate's "no recipients" question is a **double negative**; the Simplified prints **"None listed." then "on this date:"**; the Plans print the app's own disclaimer on the filed page; the documents reminder names "Schedule A1" | Low | One |
 | 7 | 74G | An **18-month or future-dated accounting period**, a line period that runs backwards, Letters signed before the guardianship began, residences dated backwards, and an e-mail address like **"rnguyen@"** are all accepted without a word | Medium | One |
 | 8 | 74H | Answers that **contradict each other** are filed without a warning: a safe-deposit box answered No while items are listed in it, a bond below the calculated requirement, two personal residences, transfers that don't balance, a negative Remaining Assets On Hand, and more | Medium | Two |
@@ -972,6 +972,76 @@ description label is resolved to a name kind there);
   alongside 73G part 1** (73's row 4), one after the other.
 - **73T part 1**'s adapters limit the casing pass to imported values; 74E
   fixes the pass itself. Either order; each changes `capitalizeImportedFields()`.
+
+### Build record — BUILT 2026-10-16 (approved by name by the requester, 2026-10-16)
+
+**What changed for a filer:** a name or an address keeps its capitalization,
+with two fixes, and a description or a type keeps exactly what was typed
+(decision 1).
+
+- "margaret a. collins" files as **"Margaret A. Collins"**: a single letter
+  with a period is an initial and is capitalized, even "a.". A word holding a
+  digit stays as typed: "xxxx5510", "#12", "b12".
+- **Twelve description and type boxes keep what the filer typed,** on the
+  page, when the filing is opened again, and when a workbook is imported: the
+  Inventory's A-1 Property Description, B-1 Account Type, B-2 and B-3
+  Description, C-2 Type of Lawsuit / Description, C-3 Type of Pending Legal
+  Action and C-5 Asset Description; the Annual, Final and Trust Accountings'
+  D-2 "Description / Address / Owners", D-5 "Description / Lender / Related
+  Asset", F-1 "Description of Sale / Address / Parties" and Part VIII's Type
+  of Trust; the Simplified's remuneration Type.
+- **Found while building:** the plan named four Inventory boxes, and read the
+  Annual's descriptions as plain text already (marked unconfirmed). A sweep
+  of every box the pages draw found eight more that were title-cased: three
+  on the Inventory, four on the Annual family whose labels also name an
+  address, a lender or a trust, and the Simplified's Type. Decision 1
+  ("descriptions keep exactly what was typed") covers them, so all twelve
+  changed.
+- Unchanged: every name and address box (the vehicle's Make and Model among
+  them), connecting words ("Sunrise Assisted Living of Clearwater"), mixed
+  case ("McLeod", "iPhone"), capitals ("LLC") and the city line ("St.
+  Petersburg, FL").
+
+**How:** `formatSafeTitleCase()` (`form-contract.js`) leaves a word holding a
+digit as typed and capitalizes a single-letter initial. The Inventory draws
+its seven boxes as plain text. `inferFieldKind()` (`form-fields.js`) reads a
+label that opens with "Description" or "Type of" as plain text, before the
+address and name words, which settles the Annual's four. The Simplified's
+Type box drops its name format. The three import casing tables
+(`workbook-contract/{guardian,annual,simplified}.js`) drop the twelve fields,
+so an import formats only what typing formats; the old pass
+`capitalizeImportedFields()`, which nothing has called since 73T part 1, no
+longer reads "description" as a name.
+
+**Legacy data (checklist 2):** text the app already capitalized stays as
+stored, since the original is gone. The filer sees it and can retype it:
+visible, one time.
+
+**Tests:**
+
+- New `tests/unit/typed-text-kept.spec.js` (15): the QA report's cases, the
+  digit and initial rules, the unchanged cases, each of the Inventory's seven
+  boxes plain text and its names and addresses still formatted, the four
+  Annual labels plain text, the Simplified's Type box, and no import casing a
+  description or a type. **Red-first:** 13 failed for their stated reasons
+  ("Margaret a. Collins", "Unit B12 Holdings", the seven boxes declared
+  names, "Description / Address / Owners" read as an address, the Simplified's
+  name format, the import tables); the 2 that check what must not change
+  passed.
+- `tests/e2e/form-entry.contract.spec.ts` (+1): a B-3 description typed in
+  lower case keeps it after leaving the box, on the page and in the filing;
+  "margaret a. collins" in a name box becomes "Margaret A. Collins".
+  **Red-first:** "Brokerage Acct Xxxx5510, Cert #12".
+- `tests/e2e/guardian-inventory-mount.spec.ts`: its B-2 seed row now keeps
+  "Seed row" (it expected "Seed Row"; red the same way), and A-1's Property
+  Description is drawn as a plain text box (it checked for a name box).
+- `tests/e2e/annual-import-ward-percentage.spec.ts`: the D-2 and D-5
+  descriptions come back from the workbook as typed ("Family home", "Car
+  loan"; 73T part 3 had them title-cased like their pages).
+- `tests/unit/workbook-contract.spec.js`: two Inventory import cases now
+  expect a description back as typed ('30" Flat screen TV', 'house'); the
+  name beside it still comes back "Social Security". The Annual's and the
+  Simplified's casing-table checks pass unchanged against the pages.
 
 ---
 
@@ -3148,7 +3218,7 @@ all passed. Full unit suite: 3,060 passed; `check:types` clean.
 | 2 | 74B | 73A; sequenced with 73F part 1 and 73T parts 2–4 | `row-started.js`, `models/guardian.js`, `collections.js`, `completion.js`, three accounting-type features, four Plans' checks | new `tests/unit/started-guardian.spec.js`, new `tests/e2e/stamped-co-guardian.spec.ts` |
 | 3 | 74C | alongside 73M (73's row 13); sequenced with 73O part 4, 73F part 2, 73R part 3 | `pdf-preview.js`, nine `print.js` | new `tests/e2e/output-buttons-after-override.spec.ts`, new `tests/unit/pdf-preview-print.spec.js` |
 | 4 | 74D | — (no source change) | — | a red-first test per reproduced report, in the item its fix joins |
-| 5 | 74E | alongside 73G part 1 (row 4) | `form-contract.js`, `form-fields.js`, Inventory `index.js`, `form-binding.js` | new `tests/unit/typed-text-kept.spec.js`; `form-entry.contract.spec.ts` |
+| 5 | 74E | alongside 73G part 1 (row 4) | `form-contract.js`, `form-fields.js`, Inventory `index.js`, `form-binding.js` | new `tests/unit/typed-text-kept.spec.js`; `form-entry.contract.spec.ts` — **Built** 2026-10-16 |
 | 6 | 74F | alongside 73O part 2 (row 29); the reminder label with 73L (row 24) | `service-recipients.js`, `plan-certificate-of-service.js`, three accounting `index.js` and `pdf-model.js`, `schedule-doc-ack.js` | new `tests/unit/certificate-no-recipients-line.spec.js`; `service-recipients.spec.js`, `schedule-doc-ack.spec.ts` |
 | 7 | 74G | alongside 73F part 3 (row 18) | `date-rules.js`, new `email-format.js`, seven engines, `form-contract.js`, CSV | new `tests/unit/date-and-email-checks.spec.js`, new `tests/e2e/email-format.spec.ts`; `date-rules.spec.js`; validator and completion goldens |
 | 8 | 74H | alongside 73G part 2 (row 19); part 2 after 73F part 2 | new `consistency-advisories.js`, `output-preflight.js`, `bond-depository.js` | new `tests/unit/consistency-advisories.spec.js`, new `tests/e2e/contradiction-warnings.spec.ts`; `bond-depository.spec.js` |
