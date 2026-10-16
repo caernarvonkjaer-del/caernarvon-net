@@ -259,7 +259,11 @@ commit. Any new statute, administrative order, workslip, or original court-form
 reference belongs under `reference/` rather than at the repository root; update
 `reference/README.md` when its organization changes. Do not move or delete a
 reference document merely to tidy it if a proposal, test, or source path relies
-on its location—update the dependent path and the index together.
+on its location—update the dependent path and the index together. Past
+planning records leave the root for [`MILESTONE-ARCHIVE.md`](MILESTONE-ARCHIVE.md),
+each verbatim under an `Archive: <file name>` heading, so a citation of a
+milestone proposal, `TEST-SCRIPT-REVIEW.md` or `TEST-REVIEW.md` that is not at
+the root is found there (through Milestone 75, archived 2026-10-16).
 
 ---
 
@@ -490,7 +494,7 @@ Tier 3  Declarative Form Composition (pages assemble sequences of cards)
   backstop. Comparisons against an older build live in `tests/historical`,
   found only by `playwright.historical.config.ts` (`npm run
   test:e2e:historical`); the Milestone 70 ledger guard is retired
-  (`MILESTONE-70-FIX-LEDGER.md` stays as a record).
+  (`MILESTONE-70-FIX-LEDGER.md` stays as a record, in `MILESTONE-ARCHIVE.md`).
 - **Positive fixtures and positive exports** (TEST-REVIEW.md Delivery 3,
   2026-10-14). A fixture that stands for a complete filing -- fixtures.ts's
   `MINIMAL_VALID_*` overlays, the placement manifests -- passes the app's own

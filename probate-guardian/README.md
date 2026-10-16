@@ -39,8 +39,10 @@ first. This file is only orientation.
 - `lib/` — vendored runtime libraries; see `lib/VENDORED-LIBRARIES.md`.
 - `probate-guardian-data-model.csv` — the persisted-field dictionary,
   checked by `npm run verify:data-model`.
-- `MILESTONE-*-PROPOSAL.md` — planning and delivery records; `TEST-INDEX.md`
-  — one row per spec file.
+- `MILESTONE-*-PROPOSAL.md` — planning and delivery records; once past, each
+  moves verbatim into `MILESTONE-ARCHIVE.md` (through Milestone 75, with the
+  test-suite review `TEST-SCRIPT-REVIEW.md` and its remediation plan
+  `TEST-REVIEW.md`); `TEST-INDEX.md` — one row per spec file.
 
 ## Run
 
