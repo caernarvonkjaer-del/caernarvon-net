@@ -24,15 +24,15 @@ test.describe('Convert Ward / "New Filing from Existing"', () => {
     await expect(page.locator('#convert-source-ward')).toHaveValue('Second Ward Active');
   });
 
-  test('Annual -> Final Accounting carries starting balance and cert recipients, leaves period and schedules blank', async ({ page }) => {
+  test('Annual -> Final Accounting carries starting balance and cert recipients, starts the day after the Annual period ends, leaves schedules blank', async ({ page }) => {
     await freshStartNoPassword(page);
     await createWard(page, 'Annual Source Ward', 'annual');
 
     const sourceWardId = await page.evaluate(() => {
       const d = (window as any).GuardianForms.testing.snapshot().filing;
       Object.assign(d, {
-        periodFrom: '01/01/2026',
-        periodTo: '12/31/2026',
+        periodFrom: '2026-01-01',
+        periodTo: '2026-12-31',
         schD1: [{ fullAmount: '150000', wardPct: '100', restricted: 'No' }],
         certRecipients: [{ name: 'Jane Interested Party', line2: '100 Main St', line3: 'Tampa, FL 33602', line4: '' }],
       });
@@ -63,10 +63,11 @@ test.describe('Convert Ward / "New Filing from Existing"', () => {
     expect(newWard.certRecipients).toEqual([
       { name: 'Jane Interested Party', line2: '100 Main St', line3: 'Tampa, FL 33602', line4: '' },
     ]);
-    // Period and schedules must NOT carry -- a new accounting period starts
-    // blank, and schedule line-items are this period's own transactions,
-    // not last period's.
-    expect(newWard.periodFrom).toBeFalsy();
+    // Milestone 74K (decision 74K-2): the Final starts the day after the
+    // Annual's period ended; its Period To stays the filer's. Schedules must
+    // NOT carry -- line-items are this period's own transactions, not last
+    // period's.
+    expect(newWard.periodFrom).toBe('2027-01-01');
     expect(newWard.periodTo).toBeFalsy();
     expect(newWard.schD1).toEqual([]);
   });
