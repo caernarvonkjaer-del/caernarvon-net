@@ -204,3 +204,15 @@ describe('retained toggle and reset', () => {
     expect(isOpen(renderReadinessCard({ data: { ...READY_PLAN, wardName: '' }, expanded: false }))).toBe(false);
   });
 });
+
+// Milestone 74R (decision 74R-1): the Simplified's card lists the year-end
+// statement reminder among what the app can't verify, with no pass or
+// pending mark.
+describe('74R: the year-end statement reminder on the card', () => {
+  it("the Simplified's card shows it in the manual group", () => {
+    const html = renderReadinessCard({ data: { wardId: 'w1', inventoryType: 'simplified', county: 'Pinellas' } });
+    const manualGroup = html.slice(html.indexOf("can't verify"));
+    expect(manualGroup).toContain('Confirm the original or a certified copy of the year-end statement of the ward');
+    expect(manualGroup).toContain('s account from the financial institution is attached (§744.3679(1)(a)).');
+  });
+});

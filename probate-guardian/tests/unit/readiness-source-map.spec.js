@@ -198,3 +198,28 @@ describe('5. the DSHP overlay is not a tenth filing and adds no automatic row', 
     expect(reminder[0].classification).toBe('manual');
   });
 });
+
+// Milestone 74R (decision 74R-1, the requester, 2026-10-06; the statutes'
+// words, decision 74R-N1, 2026-10-16; QA report Q-02): a reminder of the
+// year-end statement each accounting attaches, quoting its statute and citing
+// it -- a manual row, never blocking (AGENTS.md section 4). The Simplified's
+// statute asks for an original or a certified copy; the Clerk's forms ask
+// for copies, and the reminder holds in every county. Decisions 74R-2 (the
+// section 744.3678(5) exemption) and 74R-3 (the audit-fee base) change
+// nothing until they are answered.
+describe('74R: the year-end statement reminder', () => {
+  const SIMPLIFIED = "Confirm the original or a certified copy of the year-end statement of the ward's account from the financial institution is attached (§744.3679(1)(a)).";
+  const ANNUAL = "Confirm a copy of the annual or year-end statement of all of the ward's cash accounts from each of the institutions where the cash is deposited is attached (§744.3678(2)(b)).";
+  it.each([
+    ['simplified', SIMPLIFIED], ['annual', ANNUAL], ['finalAccounting', ANNUAL], ['trustAccounting', ANNUAL],
+  ])('%s: a manual row in the statute\'s words, never blocking', (key, label) => {
+    const rows = getFilingReadiness(key, blank(key), []).manual.filter((r) => r.id === `${key}.readiness.year-end-statement`);
+    expect(rows.map((r) => [r.label, r.classification, r.blocking])).toEqual([[label, 'manual', false]]);
+  });
+
+  it('the Inventory and the Plans have none', () => {
+    for (const key of ['guardian', ...PLAN_KEYS]) {
+      expect(getFilingReadiness(key, blank(key), []).manual.some((r) => /year-end statement/.test(r.label)), key).toBe(false);
+    }
+  });
+});

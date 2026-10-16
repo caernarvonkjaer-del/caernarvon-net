@@ -9,7 +9,7 @@ with 73O part 2, `fa9625e`), 74H (2026-10-08, with 73G part 2, `f85e862`) and
 74D's reproduction with its UX-07 rewording (2026-10-09, with 73L), 74O
 (2026-10-09, with 73O part 1, `487e247`), 74L (2026-10-09, with 73O part 3,
 `67e13b8`), 74J (2026-10-09, with 73O part 4, `cc90279`) and 74S (2026-10-09,
-with 73P), each approved by name.** **Built 2026-10-16:** 74E, 74G, 74H, 74I, 74K, 74N. Nothing else is approved: building any other of 74D–74S needs the requester's named approval
+with 73P), each approved by name.** **Built 2026-10-16:** 74E, 74G, 74H, 74I, 74K, 74N, 74R. Nothing else is approved: building any other of 74D–74S needs the requester's named approval
 of that item (AGENTS.md §3). **Approved 2026-10-16 by the requester, by name: 74E, 74G, 74H's second
 part (f, i and k), 74I, 74K, 74N and 74R** ("Let's complete these"), built item by item in
 the build order, each with its build record, and one full regression after the last; the
@@ -83,7 +83,7 @@ the item says so.
 | 15 | 74O | Less is carried forward than the filer already entered elsewhere: the Cover's names into D-1/D-2, the Inventory's income and trusts into the Plans, the ward's residence into the next Plan, last year's daily-living ratings | Low | One |
 | 16 | 74P | The Inventory makes the filer **annualize income by hand**, retype every jointly owned asset on C-5, and retype an address that is the same as another | Low | One |
 | 17 | 74Q | An exported workbook **shows $0 totals** in any viewer that doesn't recalculate on opening | Low | One |
-| 18 | 74R | No reminder of the **year-end statement** the statute and the Clerk's form require; no account of the **§744.3678(5) exemption** — **questions first** | Medium | One (decisions first) |
+| 18 | 74R | No reminder of the **year-end statement** the statute and the Clerk's form require; no account of the **§744.3678(5) exemption** — **questions first** | Medium | **Built** (2026-10-16) |
 | 19 | 74S | Small fixes: vehicle Year and VIN checks; "Page 3 of 19" beside "16 of 17 sections"; no eligibility question on the Simplified Plan; a truncated filing name in the switcher; Delete and Mark Closed missing from the Activity Log | Low | One |
 
 ---
@@ -3385,6 +3385,40 @@ today.
 its labels; **73H design 5** fixes the fee line's label. Decision 1 builds
 **alongside 73F part 2** (73's row 17).
 
+### Build record — BUILT 2026-10-16 (approved by name by the requester, 2026-10-16)
+
+**What changed for a filer** (decision 1, in the statutes' words, 74R-N1):
+the readiness card's list of what the app can't verify gains the year-end
+statement, quoted from each statute and cited, never blocking (AGENTS.md
+§4):
+
+- Simplified Accounting: "Confirm the original or a certified copy of the
+  year-end statement of the ward's account from the financial institution
+  is attached (§744.3679(1)(a))."
+- Annual, Final and Trust Accountings: "Confirm a copy of the annual or
+  year-end statement of all of the ward's cash accounts from each of the
+  institutions where the cash is deposited is attached (§744.3678(2)(b))."
+
+The statute's words hold in every county; the Clerk's forms ask for copies
+(the Simplified's statute for an original or a certified copy), which the
+reminder does not repeat. Decisions 2 (§744.3678(5)) and 3 (the audit-fee
+base) change nothing until they are answered: the fee line and its base are
+as before.
+
+**How:** four `manual` rows in `readiness-config.js`, first in each form's
+manual list. Nothing stored; no data-model change.
+
+**Tests:**
+
+- `tests/unit/readiness-source-map.spec.js` (+5): each of the four forms has
+  the row, in its statute's words, manual and not blocking; the Inventory and
+  the Plans have none. **Red-first:** the four failed, no such row; the
+  "none" case passed.
+- `tests/unit/readiness-card.spec.js` (+1): the Simplified's card shows it in
+  the manual group. **Red-first:** absent.
+- Green: the whole unit suite, and `readiness-card.contract`,
+  `plan-readiness.contract` and `pdf-preview-viewer` in the browser.
+
 ---
 
 ## 74S — Small fixes
@@ -3548,7 +3582,7 @@ all passed. Full unit suite: 3,060 passed; `check:types` clean.
 | 15 | 74O | after 74B; alongside 73O part 1 (row 28) | Inventory `index.js`, `carry-over.js`, Initial and Annual Plan `index.js` | new `tests/e2e/carry-forward-hints.spec.ts`; `ward-carryover.spec.js`; conversion golden |
 | 16 | 74P | after 73B (row 16) and 73G part 1 | Inventory `index.js`, `models/guardian.js`, the Plans' and Annual's `index.js` and `pdf-model.js`, CSV | new `tests/unit/entry-helpers.spec.js`, `tests/e2e/entry-helpers.spec.ts` |
 | 17 | 74Q | alongside 73T part 1 (row 7) | `excel-engine.js` | new `tests/e2e/workbook-recalc-on-open.spec.ts` |
-| 18 | 74R | the questions answered; decision 1 alongside 73F part 2 (row 17) | `readiness-config.js` | `readiness-card.spec.js`, `readiness-source-map.spec.js` |
+| 18 | 74R | the questions answered; decision 1 alongside 73F part 2 (row 17) | `readiness-config.js` | `readiness-card.spec.js`, `readiness-source-map.spec.js` — **Built** 2026-10-16 |
 | 19 | 74S | alongside 73P (row 32) | `engines/guardian.js`, Inventory `index.js`, `nav-marks.js`, `filing-switcher.js`, `index.html`, `filing-dialogs.js`, `year-dialogs.js`, `dashboard/index.js` | new `tests/e2e/activity-log-actions.spec.ts`; vehicle units; `routes.spec.ts` |
 
 74A can be built at any time; 74D changes no source. **Calculations:** none

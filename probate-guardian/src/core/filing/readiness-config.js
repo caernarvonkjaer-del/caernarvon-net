@@ -329,24 +329,33 @@ function planMinorManual(d, local) {
 // typed validator issues; manual rows are the source inventory's grouped
 // reminders, verbatim.
 // ---------------------------------------------------------------------------
+// Milestone 74R (decision 74R-1, the requester, 2026-10-06; the statutes'
+// words, 74R-N1, 2026-10-16): each accounting's year-end statement, quoted
+// from its statute and cited -- a reminder, never a blocker. The Simplified's
+// statute asks for an original or a certified copy where the Clerk's form
+// asks for copies; the statute's words hold in every county.
 const nonPlanManual = {
   guardian: [
     { id: 'guardian.readiness.supporting-records', label: 'Confirm required statements, appraisals, and supporting records are filed or retained as directed by the court.' },
     { id: 'guardian.readiness.service-and-deadline', label: 'Confirm the inventory was filed on time and that any required notice or service is complete.' },
   ],
   simplified: [
+    { id: 'simplified.readiness.year-end-statement', label: "Confirm the original or a certified copy of the year-end statement of the ward's account from the financial institution is attached (§744.3679(1)(a))." },
     { id: 'simplified.readiness.supporting-records', label: 'Confirm statements, receipts, and explanations required for this accounting are available or filed.' },
     { id: 'simplified.readiness.filing-steps', label: 'Confirm filing deadline, service, fees, and any separate plan or financial statement required for this case.' },
   ],
   annual: [
+    { id: 'annual.readiness.year-end-statement', label: "Confirm a copy of the annual or year-end statement of all of the ward's cash accounts from each of the institutions where the cash is deposited is attached (§744.3678(2)(b))." },
     { id: 'annual.readiness.supporting-records', label: 'Confirm required statements and supporting records reconcile to the accounting and are filed or retained as directed.' },
     { id: 'annual.readiness.external-approvals', label: 'Confirm required service, approvals, fee petitions, and other case-specific filing steps are complete.' },
   ],
   finalAccounting: [
+    { id: 'finalAccounting.readiness.year-end-statement', label: "Confirm a copy of the annual or year-end statement of all of the ward's cash accounts from each of the institutions where the cash is deposited is attached (§744.3678(2)(b))." },
     { id: 'finalAccounting.readiness.petition-notice', label: 'Confirm the petition for discharge, required notice/service, objection period, and closing papers are complete.' },
     { id: 'finalAccounting.readiness.distribution', label: 'Confirm final distributions, receipts or releases, and any fee/cost approvals required by the court.' },
   ],
   trustAccounting: [
+    { id: 'trustAccounting.readiness.year-end-statement', label: "Confirm a copy of the annual or year-end statement of all of the ward's cash accounts from each of the institutions where the cash is deposited is attached (§744.3678(2)(b))." },
     { id: 'trustAccounting.readiness.trust-records', label: 'Confirm the trust instrument and required statements and transaction support are available or filed.' },
     { id: 'trustAccounting.readiness.external-approvals', label: 'Confirm required service, compensation or fee approval, distributions, and other court-directed steps.' },
   ],
