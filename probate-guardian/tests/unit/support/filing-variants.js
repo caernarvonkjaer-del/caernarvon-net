@@ -10,6 +10,7 @@
 // the Inventory's model and the browser fixtures, loaded by the caller.
 
 import { amountFieldsFor } from '../../../src/core/filing/amount-fields.js';
+import { isEmailPath } from '../../../src/core/validation/email-format.js';
 
 const json = (x) => JSON.parse(JSON.stringify(x));
 const SAMPLE = { string: 'x', number: 5, boolean: true };
@@ -40,9 +41,12 @@ export function* filingsFor(type, m) {
   // Florida county (73F-2) and an amount a number (73G part 1), so a saturated
   // filing is complete there and clearing one field still isolates one rule;
   // "Yes" in either used to be an issue of its own in every variant.
+  // Milestone 74G: and an e-mail box an address, now that text that isn't one
+  // is an issue of its own (email-fields.js).
   const amounts = new Set(amountFieldsFor(type).map((e) => e.path || e.field));
-  const answerFor = (k) => (isSignatureChoice(k) ? 'none' : k === 'county' ? 'Pinellas' : amounts.has(k) ? 1 : 'Yes');
-  const sampleFor = (k) => (k === 'county' ? 'Pinellas' : amounts.has(k) ? 1 : SAMPLE.string);
+  const EMAIL = 'guardian@example.com';
+  const answerFor = (k) => (isSignatureChoice(k) ? 'none' : k === 'county' ? 'Pinellas' : amounts.has(k) ? 1 : isEmailPath(k) ? EMAIL : 'Yes');
+  const sampleFor = (k) => (k === 'county' ? 'Pinellas' : amounts.has(k) ? 1 : isEmailPath(k) ? EMAIL : SAMPLE.string);
   const saturate = (x, key = '') => {
     if (Array.isArray(x)) return x.map((v) => saturate(v));
     if (x && typeof x === 'object') return Object.fromEntries(Object.entries(x).map(([k, v]) => [k, saturate(v, k)]));
@@ -96,11 +100,11 @@ export function* filingsFor(type, m) {
         yield [`${label}: ${k} one full row and one as seeded`, full];
       } else if (v && typeof v === 'object') {
         for (const f of Object.keys(v)) {
-          const one = base(); one[k] = { ...v, [f]: typeof v[f] === 'boolean' ? !v[f] : (v[f] ? '' : SAMPLE.string) };
+          const one = base(); one[k] = { ...v, [f]: typeof v[f] === 'boolean' ? !v[f] : (v[f] ? '' : sampleFor(f)) };
           yield [`${label}: ${k}.${f} toggled`, one];
         }
       } else {
-        const set = base(); set[k] = typeof v === 'boolean' ? !v : (v === '' || v == null ? (typeof v === 'number' ? 1 : (k === 'county' || amounts.has(k) ? answerFor(k) : 'Yes')) : '');
+        const set = base(); set[k] = typeof v === 'boolean' ? !v : (v === '' || v == null ? (typeof v === 'number' ? 1 : (k === 'county' || amounts.has(k) || isEmailPath(k) ? answerFor(k) : 'Yes')) : '');
         yield [`${label}: ${k} ${v === '' || v == null ? 'answered' : 'cleared'}`, set];
       }
     }

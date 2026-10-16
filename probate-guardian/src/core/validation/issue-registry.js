@@ -14,6 +14,10 @@ const definitions = Object.freeze({
   // Milestone 73G part 1: an amount kept as text it can't be read as
   // (src/core/filing/amount-fields.js) -- bypassable, like an impossible date.
   'field.amount.unreadable': { category: 'validation', bypassable: true, capabilities: ALL_CAPABILITIES, showInReadiness: true },
+  // Milestone 74G (decision 74G-5): an e-mail box holding text that isn't an
+  // address (src/core/filing/email-fields.js) -- an ordinary error the filer
+  // can override.
+  'field.email.malformed': { category: 'validation', bypassable: true, capabilities: ALL_CAPABILITIES, showInReadiness: true },
   'filing.identity.unknown': { category: 'data-integrity', bypassable: false, capabilities: ALL_CAPABILITIES, showInReadiness: false },
   'filing.identity.conflict': { category: 'data-integrity', bypassable: false, capabilities: ALL_CAPABILITIES, showInReadiness: false },
   'simplified.guardian.address-conflict': { category: 'data-integrity', bypassable: false, capabilities: ALL_CAPABILITIES, showInReadiness: true },

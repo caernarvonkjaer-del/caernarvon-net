@@ -43,6 +43,7 @@
   "tests/e2e/dashboard-visual.spec.ts",
   "tests/e2e/date-validation.contract.spec.ts",
   "tests/e2e/dialog-order.spec.ts",
+  "tests/e2e/email-format.spec.ts",
   "tests/e2e/entry-helpers.spec.ts",
   "tests/e2e/excel-b4-multi-account.spec.ts",
   "tests/e2e/excel-blank-page-pruning.spec.ts",

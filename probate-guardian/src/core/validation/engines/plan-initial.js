@@ -35,6 +35,13 @@ export function collectPlanInitialIssues(d){
   }));
   req(d.inceptionDate,'Cover — Guardianship Inception Date is required','inceptionDate');
   req(d.lettersSignedDate,'Cover — Date Letters Were Signed is required','lettersSignedDate');
+  // Milestone 74G (decision 74G-2): the Letters are signed on or after the
+  // day the guardianship began -- the Clerk's workbook takes the Letters'
+  // date as the inception date (GID), so the same day passes.
+  errs.push(...checkDateOrder(d.inceptionDate,d.lettersSignedDate,{
+    sectionLabel:'Cover',earlierLabel:'Guardianship Inception Date',laterLabel:'Date Letters Were Signed',allowSameDay:true,
+    filingType:T,laterPath:'lettersSignedDate',
+  }));
   req(d.guardianNames,'Cover — Guardian Name(s) is required','guardianNames');
   req(d.wardLiving,'Cover — Where the ward is living is required','wardLiving');
   req(d.residenceAddress,'Cover — Address where ward resides is required','residenceAddress');

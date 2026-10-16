@@ -18,7 +18,8 @@ import { startingBalanceNotes } from './starting-balance-carry.js';
 import { guardianEmailAdvisories } from './guardian-email.js';
 import { serviceMethodAdvisories } from './service-method.js';
 import { amountFieldIssues } from './amount-fields.js';
-import { periodDateAdvisories, trustCreatedAfterGidAdvisories } from './date-advisories.js';
+import { emailFieldIssues } from './email-fields.js';
+import { dateAdvisories } from './date-advisories.js';
 import { guardianRelationshipAdvisories } from './guardian-relationship.js';
 
 // Milestone 71B. Where each accounting form asks why there is no attorney,
@@ -77,8 +78,9 @@ export function collectOutputIssues(target, baseIssues = []) {
   const identity = resolveFilingDescriptor(target);
   const base = (baseIssues || []).map(normalizeIssue);
   // Milestone 73G part 1: amounts kept as text that can't be read, beside
-  // the impossible dates -- one check for every form.
-  const structuredIssues = [...base, ...getFieldDraftIssues(target).map(normalizeIssue), ...amountFieldIssues(target).map(normalizeIssue), ...identity.issues.map(normalizeIssue)];
+  // the impossible dates -- one check for every form. Milestone 74G: and an
+  // e-mail box holding text that isn't an address, the same way.
+  const structuredIssues = [...base, ...getFieldDraftIssues(target).map(normalizeIssue), ...amountFieldIssues(target).map(normalizeIssue), ...emailFieldIssues(target).map(normalizeIssue), ...identity.issues.map(normalizeIssue)];
   const bondSection = bondSectionFor(identity.descriptor);
   const engineId = identity.descriptor?.engineId;
   const totals = formTotals(engineId, target);
@@ -115,8 +117,11 @@ export function collectOutputIssues(target, baseIssues = []) {
     ...ucnAdvisories(target, { excel: ['guardian', 'annual', 'simplified'].includes(engineId) }),
     // Milestone 73F part 3 (73F-6, 73F-8): a trust dated after the GID but
     // answered No to "created after the GID?", and transactions dated outside
-    // the accounting period -- warned, never blocked.
-    ...(identity.descriptor?.engineId === 'annual' ? [...trustCreatedAfterGidAdvisories(target), ...periodDateAdvisories(target)] : []),
+    // the accounting period; Milestone 74G (74G-1, 74G-3, 74G-4): a period
+    // longer than a year or ending after today (the Simplified's too), a fee
+    // paid before its order, and the Annual Plan's residences overlapping or
+    // in no date order -- warned, never blocked (date-advisories.js).
+    ...dateAdvisories(target, engineId),
     // Milestone 73B (73B-2): an unanswered Part IX relationship prints blank;
     // it is pointed out, never blocked.
     ...(identity.descriptor?.engineId === 'annual' ? guardianRelationshipAdvisories(target) : []),

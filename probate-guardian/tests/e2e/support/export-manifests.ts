@@ -25,7 +25,7 @@
 
 import type { Expectation } from './workbook-vs-template';
 
-export type Kind = 'text' | 'money' | 'pct' | 'date' | 'blank';
+export type Kind = 'text' | 'email' | 'money' | 'pct' | 'date' | 'blank';
 /**
  * A Yes/No or dropdown box. Milestone 73T part 2: a box that repeats another's
  * answer shares its path (and so its sequence of answers); `onlyIf` is a box
@@ -57,6 +57,9 @@ class Values {
     const n = ++this.n;
     switch (kind) {
       case 'text': { const t = `V${String(n).padStart(4, '0')}`; return [t, t]; }
+      // Milestone 74G: an e-mail box holds an address -- text that isn't one is
+      // an issue of its own now -- still unique to its box.
+      case 'email': { const t = `v${String(n).padStart(4, '0')}@example.com`; return [t, t]; }
       case 'money': { const m = 200000 + n + 0.25; return [m, m]; }
       case 'pct': { const p = Math.round((1 + (n % 9800) * 0.01) * 100) / 100; return [p, p / 100]; }
       case 'date': {
@@ -425,7 +428,7 @@ export function annualManifest(filingTypeValue = 'Annual'): Manifest {
     const g = `guardians.${i}`;
     b.box(`${g}.signatureDate`, 'PART II, III', `D${r}`, 'date'); b.box(`${g}.name`, 'PART II, III', `F${r}`, 'text');
     b.box(`${g}.ssn`, 'PART II, III', `B${r + 2}`, 'text'); b.box(`${g}.phone`, 'PART II, III', `B${r + 4}`, 'text');
-    b.box(`${g}.email`, 'PART II, III', `B${r + 6}`, 'text');
+    b.box(`${g}.email`, 'PART II, III', `B${r + 6}`, 'email');
     b.box(`${g}.mailingStreet`, 'PART II, III', `F${r + 2}`, 'text'); b.box(`${g}.mailingCityStateZip`, 'PART II, III', `F${r + 4}`, 'text');
     b.box(`${g}.officeStreet`, 'PART II, III', `F${r + 6}`, 'text'); b.box(`${g}.officeCityStateZip`, 'PART II, III', `F${r + 8}`, 'text');
   });
@@ -581,7 +584,7 @@ export function simplifiedManifest(): Manifest {
     const g = `guardians.${i}`;
     b.box(`${g}.signatureDate`, P34, `D${r}`, 'date');
     if (i > 0) b.box(`${g}.name`, P34, `F${r}`, 'text');
-    b.box(`${g}.ssn`, P34, `B${r + 2}`, 'text'); b.box(`${g}.phone`, P34, `B${r + 4}`, 'text'); b.box(`${g}.email`, P34, `B${r + 6}`, 'text');
+    b.box(`${g}.ssn`, P34, `B${r + 2}`, 'text'); b.box(`${g}.phone`, P34, `B${r + 4}`, 'text'); b.box(`${g}.email`, P34, `B${r + 6}`, 'email');
     b.box(`${g}.mailingStreet`, P34, `F${r + 2}`, 'text'); b.box(`${g}.mailingCityStateZip`, P34, `F${r + 4}`, 'text');
     b.box(`${g}.residenceStreet`, P34, `F${r + 6}`, 'text'); b.box(`${g}.residenceCityStateZip`, P34, `F${r + 8}`, 'text');
   });

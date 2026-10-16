@@ -9,7 +9,7 @@ with 73O part 2, `fa9625e`), 74H (2026-10-08, with 73G part 2, `f85e862`) and
 74D's reproduction with its UX-07 rewording (2026-10-09, with 73L), 74O
 (2026-10-09, with 73O part 1, `487e247`), 74L (2026-10-09, with 73O part 3,
 `67e13b8`), 74J (2026-10-09, with 73O part 4, `cc90279`) and 74S (2026-10-09,
-with 73P), each approved by name.** **Built 2026-10-16:** 74E. Nothing else is approved: building any other of 74D–74S needs the requester's named approval
+with 73P), each approved by name.** **Built 2026-10-16:** 74E, 74G. Nothing else is approved: building any other of 74D–74S needs the requester's named approval
 of that item (AGENTS.md §3). **Approved 2026-10-16 by the requester, by name: 74E, 74G, 74H's second
 part (f, i and k), 74I, 74K, 74N and 74R** ("Let's complete these"), built item by item in
 the build order, each with its build record, and one full regression after the last; the
@@ -72,7 +72,7 @@ the item says so.
 | 4 | 74D | Five reports **not yet seen in the code** — two entry points disagreeing on "Ready to export", Save as Excel hanging, the New Form dialog pointing at the wrong ward, a stale screen-reader message, a misleading "no other forms" note — need a reproduction first | Medium | One (investigation) |
 | 5 | 74E | **What a filer types is changed:** "margaret a. collins" files as "Margaret a. Collins", a masked account "xxxx5510" as "Xxxx5510", and descriptions are capitalized word by word | High | **Built** (2026-10-16) |
 | 6 | 74F | The certificate's "no recipients" question is a **double negative**; the Simplified prints **"None listed." then "on this date:"**; the Plans print the app's own disclaimer on the filed page; the documents reminder names "Schedule A1" | Low | One |
-| 7 | 74G | An **18-month or future-dated accounting period**, a line period that runs backwards, Letters signed before the guardianship began, residences dated backwards, and an e-mail address like **"rnguyen@"** are all accepted without a word | Medium | One |
+| 7 | 74G | An **18-month or future-dated accounting period**, a line period that runs backwards, Letters signed before the guardianship began, residences dated backwards, and an e-mail address like **"rnguyen@"** are all accepted without a word | Medium | **Built** (2026-10-16) |
 | 8 | 74H | Answers that **contradict each other** are filed without a warning: a safe-deposit box answered No while items are listed in it, a bond below the calculated requirement, two personal residences, transfers that don't balance, a negative Remaining Assets On Hand, and more | Medium | Two |
 | 9 | 74I | The Inventory's Cover says witnesses **"must"** be listed, stars their boxes, and then accepts **none, or a blank card** | Low | One |
 | 10 | 74J | A Final or Trust Accounting's **Filing Type can be switched to Annual silently**; from an Initial Plan, New Filing from Existing **never offers the Annual Plan**; its notice says the source was "converted" | Medium | One |
@@ -1365,6 +1365,87 @@ message); `probate-guardian-data-model.csv` (the e-mail rows' notes).
   out-of-period warning and the impossible-date rule. **Build 74G alongside
   73F part 3** (73's row 18), after 73F part 2.
 - **73G part 1** changes `form-contract.js` (inline feedback); sequence.
+
+### Build record — BUILT 2026-10-16 (approved by name by the requester, 2026-10-16)
+
+**What changed for a filer:** each case the QA report found accepted without
+a word is now named.
+
+| Where | What the filer sees | Kind |
+| --- | --- | --- |
+| Annual, Final, Trust: Schedules B-1, B-2 | "Schedule B-1 — Line 1 — Period To must be on or after Period From" | An error the filer can override (decision 2) |
+| Initial Plan, Cover | "Cover — Date Letters Were Signed must be on or after Guardianship Inception Date"; the same day passes (the workbook's GID is the Letters' date) | Error, overridable (decision 2) |
+| Annual Plan, question 1 | "1. Residences — row 2 — Resided to must be on or after Resided from" | Error, overridable (decision 2) |
+| Every form's e-mail boxes (24) | Beside the box, as the filer leaves it and whenever the page is drawn: "Enter a complete e-mail address, such as name@example.com". Before filing: 'D-2 Attorney — Primary Email: "rnguyen@" is not a complete e-mail address. …' A blank box is judged as before | Error, overridable (decision 5) |
+| Annual, Final, Trust (Part I); Simplified (Cover) | "The accounting period, 03/15/2026 to 09/14/2027, runs past 03/31/2027, the end of the twelfth month after it starts. Review the period before filing." and "Accounting Period To, 12/31/2026, is after today. …" | Warning (decision 1, flagged for a qualified person) |
+| Annual, Final, Trust: B-1, B-2, B-3 | "Schedule B-1 — Line 1 — Date Paid 07/05/2026 is before the Court Order Date 07/20/2026. Review both before filing." | Warning (decision 3, Pinellas Clerk practice) |
+| Annual Plan, question 1 | "Rows 1 and 2 overlap: 01/01/2026 to 06/30/2026, and 06/01/2026 to 12/31/2026." / "The residences are not listed in date order." | Warning (decision 4) |
+
+- **The span rule** (`checkPeriodSpan()`, `date-rules.js`): the limit is the
+  last day of the twelfth month after Period From's month, so the first
+  fiscal-year accounting from the GID to the end of the anniversary month
+  passes (03/15/2026 to 03/31/2027) and an 18-month period does not. The
+  warning says what the dates are and decides nothing about how long a first
+  or final accounting may run.
+- **Residences, settled while building:** "not in date order" means neither
+  oldest first nor newest first, since the court's form asks for neither; a
+  move-out and move-in on the same day is no overlap; a residence with no
+  "to" is not compared.
+- **The e-mail check, settled while building:** the plan had each of the seven
+  validators add the check. It is made once, for every form, the way 73G
+  part 1 checks unreadable amounts: `src/core/filing/email-fields.js` lists
+  each filing type's e-mail boxes in its form's words (held to the data
+  model's 24 filing e-mail rows by a test), and Preview's shared checks add
+  `field.email.malformed` (bypassable) beside the impossible dates and the
+  unreadable amounts. The pattern moved to `src/core/validation/email-format.js`;
+  the feedback form imports it back. The message beside the box is
+  `form-contract.js`'s, on leaving the box and on every page drawn
+  (`setupAmountFieldValidation()`). The case file's own e-mail fields (the
+  dashboard's contacts) are not a filing's and are not checked.
+
+- **One place for the date warnings:** Preview's shared checks take every
+  date warning a form has from one call, `dateAdvisories(filing, engineId)`
+  in `date-advisories.js` (the 73F part 3 pair moved in with the three new
+  ones, in the same order), so `output-preflight.js` names no filing types of
+  its own (`filing-type-enumeration-guard.spec.js`).
+
+**Data model:** the 24 filing e-mail rows' notes say a value that isn't an
+address is an error the filer can override; `verify:data-model` passes.
+
+**Legacy data (checklist 2):** a saved malformed e-mail or backwards date now
+shows an error the filer can correct or override -- visible.
+
+**Fixtures (checklist 3):** no fixture held an e-mail without a domain or a
+backwards B-1/B-2 period. Two shared test fillers did: the golden variants
+(`tests/unit/support/filing-variants.js`) answered every blank e-mail box
+"Yes" or "x", and the placement manifests (`tests/e2e/support/export-manifests.ts`)
+put "V0013" in the Annual's and the Simplified's guardian e-mail cells, so
+the saturated Inventory read D-1 and D-2 incomplete and the Annual manifest
+no longer exported clean. Each now gives an e-mail box an address (the
+manifests one unique to its cell), as 73F part 3 did for the county and the
+amounts. With that, the completion and validator goldens pass unchanged:
+nothing was regenerated.
+
+**Tests:**
+
+- New `tests/unit/date-and-email-checks.spec.js` (41): every case above
+  through the shared checks (`evaluateFiling()`), on every identity it
+  concerns; the warnings with the clock at 2026-10-05, as the validator
+  golden runs, and none of them a blocker; the span rule's boundaries; the
+  e-mail list against the data model, form by form; the address's shape.
+  **Red-first:** 30 failed for their stated reasons (nothing named; the rule
+  and the two modules missing); the 11 that check what must not fire (a
+  blank or complete address, no period warning on the Plans and the
+  Inventory) passed. The span rule's cases are here rather than in
+  `date-rules.spec.js`, as the plan named.
+- New `tests/e2e/email-format.spec.ts` (1): "rnguyen@" in the Inventory's
+  D-2 Primary Email, beside the box on leaving and on drawing again, named
+  before filing on /d2; a complete address clears both. **Red-first:** no
+  message (the box's aria-invalid was empty).
+- Green with the change: the whole unit suite; `excel-form-field-placement`,
+  `contradiction-warnings` and the new spec in the browser (15);
+  `verify:data-model`; `check:types` (the manifests are type-checked). The
+  browser-spec guard lists the new spec as converted.
 
 ---
 
@@ -3220,7 +3301,7 @@ all passed. Full unit suite: 3,060 passed; `check:types` clean.
 | 4 | 74D | — (no source change) | — | a red-first test per reproduced report, in the item its fix joins |
 | 5 | 74E | alongside 73G part 1 (row 4) | `form-contract.js`, `form-fields.js`, Inventory `index.js`, `form-binding.js` | new `tests/unit/typed-text-kept.spec.js`; `form-entry.contract.spec.ts` — **Built** 2026-10-16 |
 | 6 | 74F | alongside 73O part 2 (row 29); the reminder label with 73L (row 24) | `service-recipients.js`, `plan-certificate-of-service.js`, three accounting `index.js` and `pdf-model.js`, `schedule-doc-ack.js` | new `tests/unit/certificate-no-recipients-line.spec.js`; `service-recipients.spec.js`, `schedule-doc-ack.spec.ts` |
-| 7 | 74G | alongside 73F part 3 (row 18) | `date-rules.js`, new `email-format.js`, seven engines, `form-contract.js`, CSV | new `tests/unit/date-and-email-checks.spec.js`, new `tests/e2e/email-format.spec.ts`; `date-rules.spec.js`; validator and completion goldens |
+| 7 | 74G | alongside 73F part 3 (row 18) | `date-rules.js`, new `email-format.js`, seven engines, `form-contract.js`, CSV | new `tests/unit/date-and-email-checks.spec.js`, new `tests/e2e/email-format.spec.ts`; `date-rules.spec.js`; validator and completion goldens — **Built** 2026-10-16 |
 | 8 | 74H | alongside 73G part 2 (row 19); part 2 after 73F part 2 | new `consistency-advisories.js`, `output-preflight.js`, `bond-depository.js` | new `tests/unit/consistency-advisories.spec.js`, new `tests/e2e/contradiction-warnings.spec.ts`; `bond-depository.spec.js` |
 | 9 | 74I | alongside 73F part 3 (row 18) | Inventory `index.js`, `engines/guardian.js`, `completion.js` | new `tests/unit/inventory-witnesses.spec.js` |
 | 10 | 74J | alongside 73O part 4 (row 31); after 73T part 3 | Annual `index.js`, `filing-type.js`, `filing-descriptor.js`, `conversion.js` | new `tests/e2e/filing-type-change.spec.ts`; `convert-ward.spec.ts`, `filing-type-enumeration-guard.spec.js` |

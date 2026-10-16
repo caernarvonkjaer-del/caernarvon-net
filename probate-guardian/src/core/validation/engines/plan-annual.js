@@ -48,6 +48,16 @@ export function collectPlanAnnualIssues(d){
   const res=startedRows(d.q1Residences);
   if(!res.length)errs.push(issue('1. Residences — at least one residence must be listed','q1Residences.0.name'));
   res.forEach((r,i)=>{if(!r.name)errs.push(issue(`1. Residences — row ${i+1} needs a facility or owner name`,`q1Residences.${i}.name`));});
+  // Milestone 74G (decision 74G-2): each residence's own dates run forward
+  // -- an ordinary error the filer can override. Rows that overlap or are in
+  // no date order are a warning (date-advisories.js).
+  (d.q1Residences||[]).forEach((r,i)=>{
+    if(!rowStarted(r))return;
+    errs.push(...checkDateOrder(r.from,r.to,{
+      sectionLabel:`1. Residences — row ${i+1}`,earlierLabel:'Resided from',laterLabel:'Resided to',allowSameDay:true,
+      filingType:T,laterPath:`q1Residences.${i}.to`,
+    }));
+  });
 
   if(!(d.q2NoMove||d.q2WithinCounty||d.q2WithinCircuit||d.q2OutsideApproved||d.q2OutsideVenuePetition)){
     errs.push(issue('2–3. Residence & Care — question 2 (address change) must have at least one box checked','q2NoMove'));

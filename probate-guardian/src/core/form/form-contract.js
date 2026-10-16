@@ -2,6 +2,7 @@
 // Governs storage sanitization, identifier preservation, date normalization, and blur formatting.
 
 import { percentProblem } from '../validation/percent-range.js';
+import { emailProblem, isEmailPath } from '../validation/email-format.js';
 import { amountBoxText, amountForStore, filterAmountTyping, isUnreadableAmount, liveAmountValue, UNREADABLE_AMOUNT_HINT } from './amount-codec.js';
 import { parseFlexibleDate, formatDisplayDate } from './date-parser.js';
 import {
@@ -542,6 +543,10 @@ export function finalizeFieldValue(control, options = {}) {
     // A box left as it was drawn writes nothing.
     if (!finalizeAmountControl(control, path)) return;
   }
+  // Milestone 74G (decision 74G-5): an e-mail box holding text that isn't an
+  // address says so beside it as the filer leaves it; Preview names it too
+  // (src/core/filing/email-fields.js).
+  if (isEmailPath(path)) setFieldMessage(control, 'email', emailProblem(control.value));
 
   runFieldWriteSideEffects(path, control);
 }
@@ -832,6 +837,19 @@ export function syncPercentFeedback(container) {
     const value = getPath(getD(), path);
     setPercentFeedback(el, percentProblem(value));
     setFieldNote(el, smallShareNote(filingType(), path, value));
+  });
+}
+
+// Milestone 74G: on render, every e-mail box shows whether what it holds is
+// an address, so a reopened filing says what is wrong without the filer
+// touching the box first. The Inventory's boxes are found by data-bind.
+export function syncEmailMessages(container) {
+  if (!container || typeof container.querySelectorAll !== 'function' || !getPath) return;
+  const d = getD();
+  if (!d) return;
+  container.querySelectorAll('input').forEach((el) => {
+    const path = getControlPath(el) || el.dataset?.bind || '';
+    if (path && isEmailPath(path)) setFieldMessage(el, 'email', emailProblem(getPath(d, path)));
   });
 }
 

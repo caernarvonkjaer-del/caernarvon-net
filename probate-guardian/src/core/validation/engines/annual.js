@@ -250,6 +250,17 @@ export function collectAnnualIssues(d){
   checkRows(d.schA,[['payer','Income Source / Payer'],['description','Description'],['bank','Bank Name'],['accountNo','Account #'],['amount','Amount']],'Schedule A','schA');
   checkRows(d.schB1,[['bankAcct','Bank Account #'],['checkNo','Check #'],['datePaid','Date Paid'],['payee','Payee'],['amount','Amount']],'Schedule B-1','schB1');
   checkRows(d.schB2,[['bankAcct','Bank Account #'],['checkNo','Check #'],['datePaid','Date Paid'],['payee','Payee'],['amount','Amount']],'Schedule B-2','schB2');
+  // Milestone 74G (decision 74G-2): a B-1 or B-2 line's own period runs
+  // forward -- an ordinary error the filer can override, as every date order.
+  for(const [list,label] of [['schB1','Schedule B-1'],['schB2','Schedule B-2']]){
+    (d[list]||[]).forEach((r,i)=>{
+      if(!rowHasAnyData(list,r))return;
+      errs.push(...checkDateOrder(r.periodFrom,r.periodTo,{
+        sectionLabel:`${label} — Line ${i+1}`,earlierLabel:'Period From',laterLabel:'Period To',allowSameDay:true,
+        filingType:T,laterPath:`${list}.${i}.periodTo`,
+      }));
+    });
+  }
   checkRows(d.schB3,[['bankAcct','Bank Account #'],['checkNo','Check #'],['datePaid','Date Paid'],['payee','Payee'],['amount','Amount']],'Schedule B-3','schB3');
   checkRows(d.schB4,[['checkNo','Check #'],['datePaid','Date Paid'],['category','Category'],['payee','Payee'],['amount','Amount']],'Schedule B-4','schB4');
   checkRows(d.remuneration,[['guardian','Guardian Name'],['type','Type'],['amount','Amount']],'Part XI — Remuneration','remuneration');

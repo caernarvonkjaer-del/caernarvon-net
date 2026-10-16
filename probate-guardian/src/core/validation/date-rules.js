@@ -41,3 +41,19 @@ export function checkDateOrder(earlierValue, laterValue, {
 
   return [];
 }
+
+/**
+ * Milestone 74G (decision 74G-1): how far an accounting period runs. `limit`
+ * is the last day of the twelfth month after `from`'s month (03/15/2026 gives
+ * 03/31/2027): `longerThanAYear` when `to` is after it, `endsAfterToday` when
+ * `to` is after `today`. Canonical YYYY-MM-DD strings; null when either date
+ * is missing or the period runs backwards, which checkDateOrder() reports.
+ */
+export function checkPeriodSpan(from, to, { today = '' } = {}) {
+  const ISO = /^\d{4}-\d{2}-\d{2}$/;
+  if (!ISO.test(from || '') || !ISO.test(to || '') || to < from) return null;
+  const [year, month] = from.split('-').map(Number);
+  const lastDay = new Date(Date.UTC(year + 1, month, 0)).getUTCDate();
+  const limit = `${year + 1}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+  return { limit, longerThanAYear: to > limit, endsAfterToday: !!today && to > today };
+}

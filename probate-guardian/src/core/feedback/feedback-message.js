@@ -1,6 +1,6 @@
 ﻿import { APP_VERSION } from './feedback-config.js';
 
-const EMAIL = /^[^\s@,?&]+@[^\s@,?&]+\.[^\s@,?&]+$/;
+import { EMAIL } from '../validation/email-format.js';
 
 function joinLines(values) {
   return values.filter(Boolean).join('\r\n');
