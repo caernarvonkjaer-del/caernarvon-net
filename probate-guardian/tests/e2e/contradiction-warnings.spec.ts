@@ -96,3 +96,22 @@ test('Initial Plan: "retains the right" on a Plenary guardianship, and Trusts No
   await expect(warning(page, 'lists a trust on Schedule C-4')).toContainText(
     '6–7. Socialization & Benefits — Question 7 answers Trusts "No", while the ward\'s Verified Initial Inventory lists a trust on Schedule C-4: Pemberton Family Revocable Trust. Review both before filing.');
 });
+
+// Milestone 74O-5 (answered 2026-10-16): an Annual Plan declaring no
+// remuneration beside the ward's Annual Accounting for the year just ended,
+// which lists guardian fees in Part XI -- warned in Preview, never blocked.
+test('Annual Plan: no remuneration declared, while the accounting for the year just ended lists some -- warned', async ({ page }) => {
+  test.setTimeout(180_000);
+  await freshStartNoPassword(page);
+  await createWard(page, 'Remuneration Ward', 'annual');
+  await patch(page, {
+    caseNumber: '26-000555-GD', periodFrom: '2025-01-01', periodTo: '2025-12-31',
+    remuneration: [{ guardian: 'Pat Guardian', type: 'Fee', amount: 1200, description: '' }],
+  });
+  await page.evaluate(() => (window as any).GuardianForms.testing.save.flush());
+  await createWard(page, 'Remuneration Ward', 'planAnnual');
+  await patch(page, { caseNumber: '26-000555-GD', periodFrom: '2026-01-01', periodTo: '2026-12-31', q11NoRemuneration: true, q11NoRemunerationName: 'Pat Guardian' });
+  await openPrint(page);
+  await expect(warning(page, 'Question 11 declares that no remuneration was received')).toContainText(
+    "11. Remuneration — Question 11 declares that no remuneration was received, while the ward's Annual Accounting for 01/01/2025 through 12/31/2025 lists $1,200.00 in Part XI (1 entry). Review both before filing.");
+});

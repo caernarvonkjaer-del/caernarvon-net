@@ -24,6 +24,8 @@ import { amountForStore, presentAmount } from '../form/amount-codec.js';
 import { roundCents } from '../format/money.js';
 import { startedRows } from '../validation/row-started.js';
 import { caseFilings } from './carry-forward-hints.js';
+import { formEngine } from './filing-registry.js';
+import { displayDate, nextIsoDay } from '../form/date-parser.js';
 import { resolveDescriptorForInventoryType } from './filing-descriptor.js';
 import { PLAN_INITIAL_CHOICES } from './court-text/plan-initial.js';
 import { PLAN_ANNUAL_CHOICES } from './court-text/plan-annual.js';
@@ -189,6 +191,10 @@ export function consistencyAdvisories(filing, engineId, { totals = null } = {}) 
 //      has each guardian of the person file a plan; whether a guardian of the
 //      property alone files one is for a qualified person, and the warning
 //      decides nothing
+//   74O-5 (answered 2026-10-16: a plan's remuneration declaration covers the
+//      year just ended, Pinellas Clerk practice; 74O-N2): the Annual Plan's
+//      Question 11 against the accounting for that year -- one declaring none
+//      while the other lists some -- in the facts only
 // ---------------------------------------------------------------------------
 
 const text = (v) => String(v ?? '').trim();
@@ -222,6 +228,36 @@ const RETAINS = {
 };
 const RETAINS_LABEL = { planInitial: PLAN_INITIAL_CHOICES, planAnnual: PLAN_ANNUAL_CHOICES };
 
+// 74O-5: the ward's accounting for the year just ended is the one whose period
+// ends the day before the plan year begins -- an Annual, Final or Trust
+// Accounting's Part XI, or the Simplified's Part VII. The warning says what
+// each declares and the accounting's period, and not which period a plan
+// covers (74O-N2), so it asserts nothing a filer elsewhere might read
+// differently.
+function remunerationAgainstAccounting(filing, wards) {
+  const from = text(filing.periodFrom);
+  if (!from) return [];
+  const declares = (w) => ['annual', 'simplified'].includes(formEngine(w.inventoryType));
+  const accounting = caseFilings(filing, wards).find((w) => declares(w) && nextIsoDay(w.periodTo) === from);
+  if (!accounting) return [];
+  const part = formEngine(accounting.inventoryType) === 'simplified' ? 'Part VII' : 'Part XI';
+  const entries = startedRows(accounting.remuneration || []);
+  const accountingNone = !entries.length && accounting.scheduleNoItems?.remuneration === true;
+  const planNone = ticked(filing.q11NoRemuneration);
+  const planSome = !planNone && !!(text(filing.q11ReceivedName) || text(filing.q11Amount) || text(filing.q11From));
+  const where = `the ward's ${filingName(accounting)} for ${displayDate(accounting.periodFrom) || '—'} through ${displayDate(accounting.periodTo) || '—'}`;
+  if (planNone && entries.length) {
+    const total = roundCents(entries.reduce((sum, r) => sum + amount(r.amount), 0));
+    return [advisory('remuneration-plan-and-accounting', 'q11NoRemuneration',
+      `11. Remuneration — Question 11 declares that no remuneration was received, while ${where} lists ${money(total)} in ${part} (${entries.length} ${entries.length === 1 ? 'entry' : 'entries'}). Review both before filing.`)];
+  }
+  if (planSome && accountingNone) {
+    return [advisory('remuneration-plan-and-accounting', 'q11NoRemuneration',
+      `11. Remuneration — Question 11 records remuneration received, while ${where} declares in ${part} that there is none to report. Review both before filing.`)];
+  }
+  return [];
+}
+
 /**
  * f, i and k for a Plan: what it says against the ward's other filings.
  * @param {Record<string, any>} filing
@@ -253,5 +289,6 @@ export function caseConsistencyAdvisories(filing, engineId, wards) {
     out.push(advisory('minor-plan-on-property-guardianship', 'wardName',
       `Cover — The ward's ${held.name} records the Type of Guardianship as "Minor - Property", while this filing is a Plan for Minors. Section 744.367(1) has each guardian of the person file an annual guardianship plan; the app does not decide whether a guardian of the property alone files one. Review before filing.`));
   }
+  if (engineId === 'planAnnual') out.push(...remunerationAgainstAccounting(filing, wards));
   return out;
 }

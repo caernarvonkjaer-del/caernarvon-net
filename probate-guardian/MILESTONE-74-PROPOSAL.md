@@ -9,7 +9,7 @@ with 73O part 2, `fa9625e`), 74H (2026-10-08, with 73G part 2, `f85e862`) and
 74D's reproduction with its UX-07 rewording (2026-10-09, with 73L), 74O
 (2026-10-09, with 73O part 1, `487e247`), 74L (2026-10-09, with 73O part 3,
 `67e13b8`), 74J (2026-10-09, with 73O part 4, `cc90279`) and 74S (2026-10-09,
-with 73P), each approved by name.** **Built 2026-10-16:** 74E, 74G, 74H, 74I, 74K, 74N, 74R. **Closing full regression, 2026-10-16** (`npm test` from a copy on C: at `4378ed9b`, 44 min 48 s): unit 225 files, 3,299 tests passed; browser 1,012 passed, 7 skipped, 4 failed -- two cases still expecting 74E's old capitalization of a typed description (updated in `da3a2fc6`) and the two checks that unpack an older build with git, which a copy on C: can't do until a run on D: has (AGENTS.md §1). All four then passed from D: and again from a fresh copy on C:. **Approved 2026-10-16, after the open questions were answered** (Appendix B): building 74J-2's Rule 5.680(c) section and 74O-5's remuneration warning, then one full regression. Nothing else is approved: building any other of 74D–74S needs the requester's named approval
+with 73P), each approved by name.** **Built 2026-10-16:** 74E, 74G, 74H, 74I, 74K, 74N, 74R. **Closing full regression, 2026-10-16** (`npm test` from a copy on C: at `4378ed9b`, 44 min 48 s): unit 225 files, 3,299 tests passed; browser 1,012 passed, 7 skipped, 4 failed -- two cases still expecting 74E's old capitalization of a typed description (updated in `da3a2fc6`) and the two checks that unpack an older build with git, which a copy on C: can't do until a run on D: has (AGENTS.md §1). All four then passed from D: and again from a fresh copy on C:. **Approved 2026-10-16, after the open questions were answered** (Appendix B): building 74J-2's Rule 5.680(c) section and 74O-5's remuneration warning, then one full regression. **Built:** 74O-5. Nothing else is approved: building any other of 74D–74S needs the requester's named approval
 of that item (AGENTS.md §3). **Approved 2026-10-16 by the requester, by name: 74E, 74G, 74H's second
 part (f, i and k), 74I, 74K, 74N and 74R** ("Let's complete these"), built item by item in
 the build order, each with its build record, and one full regression after the last; the
@@ -2990,6 +2990,45 @@ bisecting; fixed in their own commit, next). Then the conversion, New Year
 (regenerated: the retired field only), saved-file corpus, cover-geometry and
 cover-pin specs: all 97 passed. Full unit suite: 3,054 passed; `check:types`
 clean; `verify:data-model` OK.
+
+### Build record, 74O-5 — BUILT 2026-10-16 (approved by name by the requester, 2026-10-16)
+
+**What changed for a filer:** decision 5 was answered on 2026-10-16: a
+plan's remuneration declaration covers the year just ended (Pinellas Clerk
+practice; the reading stays flagged for a qualified person). So the Annual
+Plan's Question 11 is now compared with the ward's accounting for that year,
+the one whose period ends the day before the plan year begins. Preview's
+"Review recommended" names a disagreement and never blocks:
+
+- "11. Remuneration — Question 11 declares that no remuneration was
+  received, while the ward's Annual Accounting for 01/01/2025 through
+  12/31/2025 lists $1,200.00 in Part XI (2 entries). Review both before
+  filing."
+- "11. Remuneration — Question 11 records remuneration received, while the
+  ward's Annual Accounting for 01/01/2025 through 12/31/2025 declares in
+  Part XI that there is none to report. Review both before filing."
+
+Per 74O-N2, it states the facts only (not which period a plan covers), and
+reads a Simplified Annual Accounting's Part VII as well as an Annual, Final
+or Trust Accounting's Part XI. It is silent when the two agree, when either
+is unanswered, or when no accounting of the same case ends the day before
+the plan year. The reference note beside Question 11 is unchanged.
+
+**How:** `consistency-advisories.js`'s `caseConsistencyAdvisories()` gains
+the Annual Plan's comparison, with 74O-N1's rule for the ward's other
+filings (`caseFilings()`). Nothing stored; no data-model change.
+
+**Tests:**
+
+- `tests/unit/consistency-advisories.spec.js` (+4): both directions on the
+  Annual Accounting, the Simplified's Part VII, every silent case, and no
+  other Plan compared. **Red-first:** the two warning cases failed, nothing
+  named; the silent cases passed.
+- `tests/e2e/contradiction-warnings.spec.ts` (+1): an Annual Accounting
+  listing a fee in Part XI and an Annual Plan for the next year declaring
+  none -- warned in Preview. **Red-first:** no warning.
+- Green: the two specs and `carry-forward-hints.spec.ts` in the browser
+  (10), the enumeration guard.
 
 ---
 

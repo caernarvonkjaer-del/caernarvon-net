@@ -328,3 +328,53 @@ describe('f, i and k: a Plan against the ward\'s other filings', () => {
     }
   });
 });
+
+// Milestone 74O-5 (answered 2026-10-16: a plan's remuneration declaration
+// covers the year just ended; 74O-N2: the facts only, the Simplified too):
+// the Annual Plan's Question 11 against the ward's accounting whose period
+// ends the day before the plan year begins. A warning when one declares none
+// and the other lists some; never a blocker.
+describe('74O-5: the Annual Plan\'s remuneration against the accounting for the year just ended', () => {
+  let caseConsistencyAdvisories;
+  beforeAll(async () => {
+    ({ caseConsistencyAdvisories } = await import('../../src/core/filing/consistency-advisories.js'));
+  });
+  const CASE = '26-000555-GD';
+  const plan = (extra = {}) => ({ wardId: 'plan', inventoryType: 'planAnnual', caseNumber: CASE, periodFrom: '2026-01-01', periodTo: '2026-12-31', ...extra });
+  const accounting = (type, extra = {}) => ({ wardId: `acct-${type}`, inventoryType: type, caseNumber: CASE, periodFrom: '2025-01-01', periodTo: '2025-12-31', ...extra });
+  const fees = [{ guardian: 'Pat Guardian', type: 'Fee', amount: 1000, description: '' }, { guardian: 'Pat Guardian', type: 'Costs', amount: 200, description: '' }];
+  const run = (filing, others) => caseConsistencyAdvisories(filing, 'planAnnual', [filing, ...others]).filter((a) => a.code === 'consistency.remuneration-plan-and-accounting');
+
+  test('the plan declares none, the Annual Accounting lists some', () => {
+    expect(run(plan({ q11NoRemuneration: true }), [accounting('annual', { remuneration: fees })])).toEqual([{
+      code: 'consistency.remuneration-plan-and-accounting', severity: 'advisory', field: 'q11NoRemuneration',
+      message: "11. Remuneration — Question 11 declares that no remuneration was received, while the ward's Annual Accounting for 01/01/2025 through 12/31/2025 lists $1,200.00 in Part XI (2 entries). Review both before filing.",
+    }]);
+  });
+
+  test('the plan records some, the accounting declares none; the Simplified\'s Part VII is read too', () => {
+    expect(messages(run(plan({ q11ReceivedName: 'Pat Guardian', q11Amount: 1200 }), [accounting('annual', { scheduleNoItems: { remuneration: true } })]))).toEqual([
+      "11. Remuneration — Question 11 records remuneration received, while the ward's Annual Accounting for 01/01/2025 through 12/31/2025 declares in Part XI that there is none to report. Review both before filing.",
+    ]);
+    expect(messages(run(plan({ q11NoRemuneration: true }), [accounting('simplified', { remuneration: fees.slice(0, 1) })]))).toEqual([
+      "11. Remuneration — Question 11 declares that no remuneration was received, while the ward's Simplified Annual Accounting for 01/01/2025 through 12/31/2025 lists $1,000.00 in Part VII (1 entry). Review both before filing.",
+    ]);
+  });
+
+  test('silent when they agree, when either is unanswered, or when no accounting ends the day before the plan year', () => {
+    expect(run(plan({ q11NoRemuneration: true }), [accounting('annual', { scheduleNoItems: { remuneration: true } })])).toEqual([]);
+    expect(run(plan({ q11Amount: 1200 }), [accounting('annual', { remuneration: fees })])).toEqual([]);
+    expect(run(plan(), [accounting('annual', { remuneration: fees })])).toEqual([]);
+    expect(run(plan({ q11NoRemuneration: true }), [accounting('annual')])).toEqual([]);
+    expect(run(plan({ q11NoRemuneration: true }), [accounting('annual', { periodTo: '2025-11-30', remuneration: fees })])).toEqual([]);
+    expect(run(plan({ q11NoRemuneration: true, periodFrom: '' }), [accounting('annual', { remuneration: fees })])).toEqual([]);
+    expect(run(plan({ q11NoRemuneration: true }), [accounting('annual', { caseNumber: '26-999999-GD', remuneration: fees })])).toEqual([]);
+  });
+
+  test('only the Annual Plan is compared', () => {
+    for (const type of ['planInitial', 'planMinor', 'planSimplified']) {
+      const d = { ...plan({ q11NoRemuneration: true }), inventoryType: type };
+      expect(caseConsistencyAdvisories(d, type, [d, accounting('annual', { remuneration: fees })]).filter((a) => a.code === 'consistency.remuneration-plan-and-accounting'), type).toEqual([]);
+    }
+  });
+});
