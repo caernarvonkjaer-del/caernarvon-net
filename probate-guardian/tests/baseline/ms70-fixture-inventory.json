@@ -3,8 +3,8 @@
  "note": "Milestone 70, 70A: every export of the browser test support layer, which specs use it, and which are fixture factories that must change with the application factories 70C moves (AGENTS.md section 8.3). Informational.",
  "summary": {
   "supportModules": 18,
-  "exports": 111,
-  "factories": 20,
+  "exports": 112,
+  "factories": 21,
   "unusedExports": [
    "case-file-shape.contract.ts::validParty",
    "case-file-shape.contract.ts::validSharedCase",
@@ -22,6 +22,7 @@
    "fixtures.ts::MINIMAL_VALID_PLAN_SIMPLIFIED",
    "fixtures.ts::MINIMAL_VALID_PLAN_MINOR",
    "fixtures.ts::MINIMAL_VALID_PLAN_INITIAL",
+   "fixtures.ts::MINIMAL_VALID_TRUST",
    "fixtures.ts::MINIMAL_VALID",
    "fixtures.ts::mergeFixture",
    "pre-merge-case.ts::startCase",
@@ -53,6 +54,7 @@
   "fixtures.ts::MINIMAL_VALID_PLAN_SIMPLIFIED (0 specs)",
   "fixtures.ts::MINIMAL_VALID_PLAN_MINOR (0 specs)",
   "fixtures.ts::MINIMAL_VALID_PLAN_INITIAL (0 specs)",
+  "fixtures.ts::MINIMAL_VALID_TRUST (0 specs)",
   "fixtures.ts::mergeFixture (0 specs)",
   "plan-fixture.ts::registerPlanMountTests (4 specs)",
   "supplemental-pdf-fixture.ts::buildSupplementalAttachmentFixture (5 specs)",
@@ -305,6 +307,13 @@
   },
   {
    "module": "tests/e2e/support/fixtures.ts",
+   "name": "MINIMAL_VALID_TRUST",
+   "kind": "value",
+   "specFiles": 0,
+   "factory": true
+  },
+  {
+   "module": "tests/e2e/support/fixtures.ts",
    "name": "MINIMAL_VALID",
    "kind": "value",
    "specFiles": 0,
@@ -433,14 +442,14 @@
    "module": "tests/e2e/support/target-profile.ts",
    "name": "skipExpectedTargetExclusion",
    "kind": "function",
-   "specFiles": 5,
+   "specFiles": 7,
    "factory": false
   },
   {
    "module": "tests/e2e/support/target-profile.ts",
    "name": "skipEnvironmentLimitation",
    "kind": "function",
-   "specFiles": 5,
+   "specFiles": 3,
    "factory": false
   },
   {
@@ -503,7 +512,7 @@
    "module": "tests/e2e/support/target.ts",
    "name": "freshStartNoPassword",
    "kind": "function",
-   "specFiles": 162,
+   "specFiles": 165,
    "factory": false
   },
   {
@@ -517,7 +526,7 @@
    "module": "tests/e2e/support/target.ts",
    "name": "createWard",
    "kind": "function",
-   "specFiles": 146,
+   "specFiles": 148,
    "factory": false
   },
   {
@@ -552,7 +561,7 @@
    "module": "tests/e2e/support/target.ts",
    "name": "createSimplifiedWard",
    "kind": "function",
-   "specFiles": 42,
+   "specFiles": 43,
    "factory": false
   },
   {
@@ -636,7 +645,7 @@
    "module": "tests/e2e/support/target.ts",
    "name": "acceptDynDialog",
    "kind": "function",
-   "specFiles": 26,
+   "specFiles": 27,
    "factory": false
   },
   {

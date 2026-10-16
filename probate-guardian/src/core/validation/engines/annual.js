@@ -42,6 +42,9 @@ export function collectAnnualIssues(d){
   req(d.guardian,'Part I — Guardian','guardian');
   req(d.periodFrom,'Part I — Accounting Period From','periodFrom');
   req(d.periodTo,'Part I — Accounting Period To','periodTo');
+  // Milestone 74N (decision 74N-1): a Trust Accounting names the trust it
+  // reports on -- an ordinary error the filer can override.
+  if(T==='trustAccounting')req(d.trustInfo?.name,'Part I — Name of the Trust','trustInfo.name');
   req(d.gid,'Part I — Guardianship Inception Date (GID)','gid');
   // Milestone 73B (73B-1): required, as on the Inventory and the Simplified
   // and under the workbook's "REQUIRED INFORMATION" heading (PART I B22). The

@@ -3,6 +3,7 @@
 // Clerk's workbook and read back. Since 73T part 3 the Annual family's
 // exporter and importer (src/features/annual-accounting/excel.js) run on it,
 // and the import goes through 73E's transaction.
+import { trustInfoStarted } from '../../filing/trust-identity.js';
 import { codecs } from './codecs.js';
 import { writeCell } from './engine.js';
 import { remunerationEntered, remunerationLine, splitRemuneration } from './remuneration-line.js';
@@ -378,6 +379,8 @@ export const ANNUAL_CONTRACT = Object.freeze({
     if (annualReconcileState(undefined, f).explained) out.push({ text: 'the explanation of the difference between Lines 20 and 30', warn: true });
     if (String(f.certIndicator ?? '').trim()) out.push({ text: 'the method of service' });
     if (String(f.ucn ?? '').trim()) out.push({ text: 'the UCN' });
+    // Milestone 74N: a Trust Accounting's "This accounting reports on" block.
+    if (f.inventoryType === 'trustAccounting' && trustInfoStarted(f)) out.push({ text: 'which trust this accounting reports on' });
     return out;
   },
   // What the workbook holds differently, so an import brings it back changed.
@@ -398,7 +401,8 @@ export const ANNUAL_CONTRACT = Object.freeze({
   casing: Object.freeze({
     name: ['wardName', 'guardian', 'attorney', 'relatedCaseNumbers', 'bondingCompany', 'guardians.*.name', 'preparer.name',
       'certRecipients.*.name', 'remuneration.*.guardian', 'schA.*.payer', 'schA.*.bank', 'schB1.*.payee', 'schB2.*.payee',
-      'schB3.*.payee', 'schB4.*.payee', 'schB4Accounts.*.bankName', 'trusts.*.name', 'trusts.*.trustee'],
+      'schB3.*.payee', 'schB4.*.payee', 'schB4Accounts.*.bankName', 'trusts.*.name', 'trusts.*.trustee', 'trustInfo.name',
+      'trustInfo.trustee'],
     address: ['attorney_street', 'guardians.*.mailingStreet', 'guardians.*.officeStreet', 'preparer.street'],
     zip: ['attorney_cityStateZip', 'guardians.*.mailingCityStateZip', 'guardians.*.officeCityStateZip', 'preparer.cityStateZip'],
   }),

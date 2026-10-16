@@ -9,7 +9,7 @@ with 73O part 2, `fa9625e`), 74H (2026-10-08, with 73G part 2, `f85e862`) and
 74D's reproduction with its UX-07 rewording (2026-10-09, with 73L), 74O
 (2026-10-09, with 73O part 1, `487e247`), 74L (2026-10-09, with 73O part 3,
 `67e13b8`), 74J (2026-10-09, with 73O part 4, `cc90279`) and 74S (2026-10-09,
-with 73P), each approved by name.** **Built 2026-10-16:** 74E, 74G, 74H, 74I, 74K. Nothing else is approved: building any other of 74D–74S needs the requester's named approval
+with 73P), each approved by name.** **Built 2026-10-16:** 74E, 74G, 74H, 74I, 74K, 74N. Nothing else is approved: building any other of 74D–74S needs the requester's named approval
 of that item (AGENTS.md §3). **Approved 2026-10-16 by the requester, by name: 74E, 74G, 74H's second
 part (f, i and k), 74I, 74K, 74N and 74R** ("Let's complete these"), built item by item in
 the build order, each with its build record, and one full regression after the last; the
@@ -79,7 +79,7 @@ the item says so.
 | 11 | 74K | **Starting a new year hides an overdue, unfiled year** from the dashboard; the new year's period starts blank | Medium | **Built** (2026-10-16) |
 | 12 | 74L | Screen readers miss **error messages** and hear **checkbox headings as the first box's name**; the Judge box is announced as "Assignee"; the **browser tab title never changes**; some text is under 10px | Medium | One |
 | 13 | 74M | **Full bank account numbers print** on filed PDFs, Bar numbers are **zero-padded to 8 digits**, and Social Security numbers print in part — each against Rule 2.425's text or unverified | Medium | **Decided 2026-10-06: no change** (account numbers still open for a qualified person) |
-| 14 | 74N | **A Trust Accounting never says which trust it reports on**, and starts with a blank balance | High | One |
+| 14 | 74N | **A Trust Accounting never says which trust it reports on**, and starts with a blank balance | High | **Built** (2026-10-16) |
 | 15 | 74O | Less is carried forward than the filer already entered elsewhere: the Cover's names into D-1/D-2, the Inventory's income and trusts into the Plans, the ward's residence into the next Plan, last year's daily-living ratings | Low | One |
 | 16 | 74P | The Inventory makes the filer **annualize income by hand**, retype every jointly owned asset on C-5, and retype an address that is the same as another | Low | One |
 | 17 | 74Q | An exported workbook **shows $0 totals** in any viewer that doesn't recalculate on opening | Low | One |
@@ -2703,6 +2703,80 @@ rated P0 by the report".)
   Annual's `pdf-model.js`; **73O-5** keeps the title and the guardian as
   signer. Sequence after them.
 
+### Build record — BUILT 2026-10-16 (approved by name by the requester, 2026-10-16)
+
+**What changed for a filer** (decisions 1 and 3; decision 2, the first trust
+accounting's Starting Balance, stays blank with the work slip quoted, as
+before):
+
+- **A Trust Accounting's Cover has a "This accounting reports on" block:**
+  Name of the Trust, Name of the Trustee, Is the trustee the guardian?
+  (tri-state), Trustee Account Number, Date Trust Created and Date the funds
+  were received by the trust -- Part VIII's own labels, plus the trust work
+  slip's two questions. Drawn only on a Trust Accounting; the Annual and the
+  Final don't show it.
+- **Its name is required** -- "Part I — Name of the Trust", an ordinary error
+  the filer can override.
+- **New Filing from Existing, to a Trust Accounting, asks which trust** when
+  the source's Part VIII lists trusts created after the guardianship began
+  (question #1 Yes, the trust's question #2 Yes, the trust named): "Which
+  trust this accounting reports on", one trust each, as the Clerk's workbook
+  says. The chosen trust's name, trustee, date created and account number
+  fill the block; the work slip's two questions start blank. None
+  qualifying: no question, the block starts blank.
+- **The PDF prints the block in Part I**, under the case information, as
+  "This Accounting Reports On" (dates as Part VIII prints them).
+- **The workbook has no cell for it:** the export says "which trust this
+  accounting reports on" among what the workbook doesn't carry, and an
+  import keeps the filing's block (the import changes only what the
+  workbook holds).
+
+**How:** new `src/core/filing/trust-identity.js` (the six fields, the
+qualifying trusts, the block from a chosen trust, and the one Trust
+Accounting test, so the conversion and the dialog name no filing type of
+their own); `models/annual.js` gains the blank `trustInfo`; the Annual's
+Cover, `engines/annual.js`, `pdf-model.js`, `workbook-contract/annual.js`
+(the omission; the casing table lists the two name boxes, as the pages draw
+them); `conversion.js` and `convert-ward-modal.js` with
+`fragments/common-modals.html` (the choice). The data model gains the six
+`trustInfo.*` rows: the name conditional on a Trust Accounting, the account
+number classed `financial` like Part VIII's; `verify:data-model` passes.
+
+**Legacy data (checklist 2):** a saved Trust Accounting shows an empty block
+and the check names the trust -- visible; test-system data only.
+
+**Fixtures (checklist 3):** the Trust Accounting used the Annual's minimal
+fixture, which names no trust, so it no longer passed the export checks
+(`fixture-contract.spec.js` said so). It has its own now, the Annual's plus
+a named trust (`MINIMAL_VALID_TRUST`), and `fillMinimalValidAnnualWard()`
+uses it when the open filing is a Trust Accounting.
+
+**Tests:**
+
+- New `tests/unit/trust-accounting-identity.spec.js` (6): the blank block on
+  every Annual-family filing; which trusts qualify and what the chosen one
+  fills; the name required on a Trust Accounting only, overridable; the PDF's
+  block on a Trust Accounting only; the export's omission note, and a real
+  workbook round trip that brings back no `trustInfo` (so the filing keeps
+  its own). **Red-first:** 5 failed for their stated reasons (no block, no
+  module, no check, no PDF block, no omission); the one that checks the
+  Annual and the Final are not asked passed.
+- New `tests/e2e/trust-accounting-identity.spec.ts` (1): an Annual with two
+  qualifying trusts and one older; the dialog offers the two only (and
+  nothing for a Final), the second is chosen, and the new Trust Accounting's
+  block and Cover hold its details. **Red-first:** no question in the
+  dialog.
+- Records regenerated, each note saying why, each checked path by path:
+  the 70C blank-filing snapshot (the Annual family's blank and normalized
+  filings gain the blank block, nothing else), the fixture inventory
+  (`MINIMAL_VALID_TRUST` joins the support layer), the validator golden (72 new
+  variants toggling the block; the Trust Accounting's variants now name the
+  missing trust), the completion golden (the 72 new variants; nothing
+  changed), and the year-rollover and conversion goldens (only the block).
+- Green: the whole unit suite; `trust-accounting-identity`,
+  `convert-ward`, `filing-type-change`, `annual-mount` and the two goldens in
+  the browser; `verify:data-model`; `check:types`.
+
 ---
 
 ## 74O — More carried forward from the ward's other filings
@@ -3470,7 +3544,7 @@ all passed. Full unit suite: 3,060 passed; `check:types` clean.
 | 11 | 74K | after 73A; alongside 73I (row 21) | `year-dialogs.js`, `common-modals.html`, `filing-years.js`, `dashboard/view-model.js`, `carry-over.js` | new `tests/e2e/new-year-keeps-overdue.spec.ts`; `dashboard-view-model.spec.js`; year-rollover golden — **Built** 2026-10-16 |
 | 12 | 74L | alongside 73O part 3 (row 30); the title after 73K part 1 (row 3) | `form-contract.js`, `field-html.js`, `form-runtime.js`, `dashboard/index.js`, `router.js`, `src/styles/*.css` | new `tests/e2e/accessible-errors-and-groups.spec.ts`, `tests/e2e/page-title.spec.ts`, `tests/unit/minimum-text-size.spec.js`; `check:types` |
 | 13 | 74M | — | — | nothing to build (decided 2026-10-06) |
-| 14 | 74N | after 73T part 3 (row 11), 73B, 73A | `models/annual.js`, Annual `index.js` and `pdf-model.js`, `engines/annual.js`, `conversion.js`, `convert-ward-modal.js`, CSV | new `tests/unit/trust-accounting-identity.spec.js`, `tests/e2e/trust-accounting-identity.spec.ts`; conversion golden |
+| 14 | 74N | after 73T part 3 (row 11), 73B, 73A | `models/annual.js`, Annual `index.js` and `pdf-model.js`, `engines/annual.js`, `conversion.js`, `convert-ward-modal.js`, CSV | new `tests/unit/trust-accounting-identity.spec.js`, `tests/e2e/trust-accounting-identity.spec.ts`; conversion golden — **Built** 2026-10-16 |
 | 15 | 74O | after 74B; alongside 73O part 1 (row 28) | Inventory `index.js`, `carry-over.js`, Initial and Annual Plan `index.js` | new `tests/e2e/carry-forward-hints.spec.ts`; `ward-carryover.spec.js`; conversion golden |
 | 16 | 74P | after 73B (row 16) and 73G part 1 | Inventory `index.js`, `models/guardian.js`, the Plans' and Annual's `index.js` and `pdf-model.js`, CSV | new `tests/unit/entry-helpers.spec.js`, `tests/e2e/entry-helpers.spec.ts` |
 | 17 | 74Q | alongside 73T part 1 (row 7) | `excel-engine.js` | new `tests/e2e/workbook-recalc-on-open.spec.ts` |

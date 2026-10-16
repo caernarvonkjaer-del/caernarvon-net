@@ -6,6 +6,9 @@ import { INVENTORY_TYPES } from '../filing/filing-registry.js';
 import { describeConversion } from '../filing/conversion.js';
 import { filingLifecycle } from '../navigation/filing-lifecycle.js';
 import { bindComboboxKeyboardNav, comboboxAssignOptionIds, comboboxFilterItems, comboboxHide, comboboxRenderDropdown } from '../ui/combobox.js';
+import { formEngine } from '../filing/filing-registry.js';
+import { esc } from '../filing/escape-html.js';
+import { isTrustAccountingType, qualifyingTrusts } from '../filing/trust-identity.js';
 
 export { convertTargetsFor };
 
@@ -56,6 +59,7 @@ export function updateConvertTargetOptions() {
   if (!ward) {
     targetSel.innerHTML = '';
     noteEl.textContent = '';
+    updateConvertTrustOptions(null, '');
     return;
   }
   const targets = convertTargetsFor(ward.inventoryType);
@@ -63,6 +67,7 @@ export function updateConvertTargetOptions() {
   if (!targets.length) {
     targetSel.innerHTML = '';
     noteEl.textContent = `${inventoryTypes[ward.inventoryType]?.name || ward.inventoryType} wards can't be converted to another type.`;
+    updateConvertTrustOptions(null, '');
     return;
   }
   targetSel.innerHTML = targets
@@ -73,7 +78,10 @@ export function updateConvertTargetOptions() {
   // target did nothing. updateConvertNotePreview() below and conversion.js's
   // describeConversion() are the real ones (the same text the post-conversion
   // alert reuses).
-  const preview = () => updateConvertNotePreview(ward.inventoryType, targetSel.value);
+  const preview = () => {
+    updateConvertNotePreview(ward.inventoryType, targetSel.value);
+    updateConvertTrustOptions(ward, targetSel.value);
+  };
   targetSel.onchange = preview;
   preview();
 }
@@ -122,6 +130,20 @@ export function onConvertSourceKeydown(e){
   bindComboboxKeyboardNav(input,dropdown)(e);
 }
 
+// Milestone 74N (decisions 74N-1, 74N-3): to a Trust Accounting, the filer
+// picks which of the source's Part VIII trusts created after the
+// guardianship began the new filing reports on -- one trust each, as the
+// Clerk's workbook asks. None qualifying: the picker stays hidden and the
+// new filing's block starts blank.
+export function updateConvertTrustOptions(ward, targetType) {
+  const wrap = document.getElementById('convert-trust-wrap');
+  const sel = document.getElementById('convert-trust');
+  if (!wrap || !sel) return;
+  const trusts = isTrustAccountingType(targetType) && ward && formEngine(ward.inventoryType) === 'annual' ? qualifyingTrusts(ward) : [];
+  sel.innerHTML = trusts.map(({ trust, index }) => `<option value="${index}">${esc(trust.name)}</option>`).join('');
+  wrap.hidden = !trusts.length;
+}
+
 export function updateConvertNotePreview(srcType,destType){
   const noteEl=document.getElementById('convert-note');
   noteEl.textContent=describeConversion(srcType,destType);
@@ -131,8 +153,10 @@ export async function doConvertWard(){
   const sourceWardId=document.getElementById('convert-source-ward').dataset.wardId||'';
   const targetType=document.getElementById('convert-target-type').value;
   if(!sourceWardId||!targetType)return;
+  const trustWrap=document.getElementById('convert-trust-wrap');
+  const trustIndex=trustWrap&&!trustWrap.hidden?document.getElementById('convert-trust').value:'';
   closeModal('convertWardModal');
-  await filingLifecycle.convert(sourceWardId,targetType);
+  await filingLifecycle.convert(sourceWardId,targetType,{trustIndex});
 }
 
 /** A click outside the source picker closes its list. Installed once by main.js; the signal removes it. */

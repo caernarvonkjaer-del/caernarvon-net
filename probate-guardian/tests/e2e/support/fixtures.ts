@@ -351,11 +351,20 @@ export const MINIMAL_VALID_PLAN_INITIAL = {
   ],
 } as const;
 
+/**
+ * Milestone 74N: a Trust Accounting is the Annual's minimal filing plus the
+ * trust it reports on -- its name is required there (decision 74N-1).
+ */
+export const MINIMAL_VALID_TRUST = {
+  ...MINIMAL_VALID_ANNUAL,
+  trustInfo: { name: 'Sample Special Needs Trust', trustee: 'Sample Trustee', trusteeIsGuardian: 'No', dateCreated: '2026-01-02', dateFunded: '2026-01-03', accountNo: '0000' },
+} as const;
+
 export const MINIMAL_VALID: Record<string, Record<string, unknown>> = {
   guardian: MINIMAL_VALID_GUARDIAN,
   annual: MINIMAL_VALID_ANNUAL,
   finalAccounting: MINIMAL_VALID_ANNUAL,
-  trustAccounting: MINIMAL_VALID_ANNUAL,
+  trustAccounting: MINIMAL_VALID_TRUST,
   simplified: MINIMAL_VALID_SIMPLIFIED,
   planAnnual: MINIMAL_VALID_PLAN_ANNUAL,
   planSimplified: MINIMAL_VALID_PLAN_SIMPLIFIED,

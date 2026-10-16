@@ -41,6 +41,9 @@ export function emptyDataAnnual() {
     wardName:'', caseNumber:'', ucn:'', gid:'', periodFrom:'', periodTo:'',
     guardian:'', attorney:'', typeOfGuardianship:'', county:'',
     amendedForm:'', filingType:'Annual', relatedCaseNumbers:'',
+    // Milestone 74N: the trust a Trust Accounting reports on (trust-identity.js);
+    // drawn and checked only on a Trust Accounting.
+    trustInfo:{name:'', trustee:'', trusteeIsGuardian:'', dateCreated:'', dateFunded:'', accountNo:''},
     // Milestone 71B: why there is no attorney (src/core/filing/unrepresented-filing.js).
     attorneyWaiverBasis:'', attorneyWaiverOrderDate:'',
     // Part II

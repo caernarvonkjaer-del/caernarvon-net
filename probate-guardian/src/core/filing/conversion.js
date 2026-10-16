@@ -18,6 +18,7 @@ import { getCaseFile } from '../state.js';
 import { alertModal } from '../ui/dialogs.js';
 import { recordModelChange } from '../model-change.js';
 import { RECIPIENT_FIELDS, normalizeRecipientShape } from './recipient-shape.js';
+import { isTrustAccountingType, trustInfoFrom } from './trust-identity.js';
 
 // Milestone 73O part 2: a recipient copied into another filing, in the one
 // shape; a source saved before 73O is read in it first (an Inventory's street
@@ -334,7 +335,9 @@ export function convertSimplifiedToAnnual(src,dest){
   }
 }
 
-export async function convertExistingWard(sourceWardId,targetType){
+// Milestone 74N: `trustIndex` names the source's Part VIII trust a Trust
+// Accounting reports on (the dialog's choice); none leaves the block blank.
+export async function convertExistingWard(sourceWardId,targetType,{trustIndex=''}={}){
   const sourceWard=getCaseFile().wards.find(w=>w.wardId===sourceWardId);
   if(!sourceWard)return;
   const srcType=sourceWard.inventoryType;
@@ -359,6 +362,9 @@ export async function convertExistingWard(sourceWardId,targetType){
   }else{
     mapConvertedHeaderFields(source,srcType,newWard,targetType);
   }
+  // Milestone 74N (decisions 74N-1, 74N-3): a Trust Accounting made from an
+  // Annual-family filing reports on the one Part VIII trust the filer chose.
+  if(isTrustAccountingType(targetType)&&formEngine(srcType)==='annual')newWard.trustInfo=trustInfoFrom(source,trustIndex);
 
   // Then the financial mapping, for the pairs whose schedules genuinely
   // correspond. This MUST run after the identity carry above: that carry

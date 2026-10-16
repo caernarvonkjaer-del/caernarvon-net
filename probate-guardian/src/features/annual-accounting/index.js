@@ -694,6 +694,7 @@ function pagePart1Annual(){
       </div>
     </div>
   </div>
+  ${d.filingType==='Trust'?trustInfoBlockHTML(d):''}
   ${livePartHtml('annual-waiver-question')}
   <div class="summary-box mt-3">
     <h2 class="subsection-heading">Quick Summary (auto-calculated)</h2>
@@ -1473,6 +1474,30 @@ function reconcileBlockAnnual(t){
       data-annual-path="reconcileExplanation"
       >${esc(st.explanation)}</textarea>
     <div style="font-size:.78rem;color:var(--ink-3);margin-top:.35rem;" data-explanation-where>This explanation prints on the PDF. The court's Excel workbook has no box for it: file the PDF, or file the explanation separately.</div>
+  </div>`;
+}
+
+// Milestone 74N (decisions 74N-1 and 74N-3): a Trust Accounting names the one
+// trust it reports on, with Part VIII's own labels. Made from an Annual, the
+// filer's chosen Part VIII trust fills it (trust-identity.js). The Clerk's
+// workbook has no cell for it; the PDF prints it under the caption.
+function trustInfoBlockHTML(d){
+  const t=d.trustInfo||{};
+  return `<div class="summary-box mt-3" data-trust-info>
+    <h2 class="subsection-heading">This accounting reports on</h2>
+    <div class="schedule-instructions">The Clerk's form asks for a separate trust accounting for each trust created after the Guardianship Inception Date (Part VIII).</div>
+    <div class="row g-2">
+      <div class="col-md-6">${inpD('Name of the Trust',t.name,"D.trustInfo.name=this.value",true)}</div>
+      <div class="col-md-6">${inpD('Name of the Trustee',t.trustee,"D.trustInfo.trustee=this.value")}</div>
+    </div>
+    <div class="row g-2">
+      <div class="col-md-6">${yesNoCheckboxD('Is the trustee the guardian?',t.trusteeIsGuardian,'trustInfo.trusteeIsGuardian')}</div>
+      <div class="col-md-6">${inpD('Trustee Account Number',t.accountNo,"D.trustInfo.accountNo=this.value")}</div>
+    </div>
+    <div class="row g-2">
+      <div class="col-md-6">${inpD('Date Trust Created',t.dateCreated,"D.trustInfo.dateCreated=this.value",false,'date')}</div>
+      <div class="col-md-6">${inpD('Date the funds were received by the trust',t.dateFunded,"D.trustInfo.dateFunded=this.value",false,'date')}</div>
+    </div>
   </div>`;
 }
 

@@ -114,6 +114,23 @@ export function buildAnnualAccountingModel(D, options = {}) {
     caseInfoItems.push({ label: 'Related Case Numbers', value: d.relatedCaseNumbers });
   }
 
+  // Milestone 74N (decision 74N-1): a Trust Accounting says which trust it
+  // reports on, under the case caption -- the Clerk's workbook has no cell.
+  const ti = d.trustInfo || {};
+  const reportsOnBlocks = descriptor.inventoryType === 'trustAccounting' ? [{
+    type: 'key-value-grid',
+    tag: 'Table',
+    title: 'This Accounting Reports On',
+    items: [
+      { label: 'Name of the Trust', value: ti.name || '' },
+      { label: 'Name of the Trustee', value: ti.trustee || '' },
+      { label: 'Is the Trustee the Guardian?', value: yesNoText(ti.trusteeIsGuardian, '') },
+      { label: 'Date Trust Created', value: fmtD(ti.dateCreated) },
+      { label: 'Date the Funds Were Received by the Trust', value: fmtD(ti.dateFunded) },
+      { label: 'Trustee Account Number', value: ti.accountNo || '' },
+    ],
+  }] : [];
+
   sections.push({
     id: 'part1',
     title: 'Part I — REQUIRED INFORMATION',
@@ -128,6 +145,7 @@ export function buildAnnualAccountingModel(D, options = {}) {
         title: 'Case & Filer Information',
         items: caseInfoItems,
       },
+      ...reportsOnBlocks,
     ],
   });
 

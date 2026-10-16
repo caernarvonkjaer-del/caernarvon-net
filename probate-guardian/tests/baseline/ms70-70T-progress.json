@@ -196,6 +196,7 @@
   "tests/e2e/test-system-title-prefix.spec.ts",
   "tests/e2e/testing-adapter.spec.ts",
   "tests/e2e/theme-prepaint.spec.ts",
+  "tests/e2e/trust-accounting-identity.spec.ts",
   "tests/e2e/ucn-cover-field.spec.ts",
   "tests/e2e/unlock.spec.ts",
   "tests/e2e/user-guide-wiring.spec.ts",

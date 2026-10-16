@@ -6,7 +6,7 @@ import { expect, type Download, type Locator, type Page } from '@playwright/test
 import { currentTarget } from './target-profile';
 import { installFixtureSupport } from './fixture-completeness';
 import {
-  MINIMAL_VALID_GUARDIAN, MINIMAL_VALID_ANNUAL, MINIMAL_VALID_SIMPLIFIED, MINIMAL_VALID_PLAN_ANNUAL,
+  MINIMAL_VALID_GUARDIAN, MINIMAL_VALID_ANNUAL, MINIMAL_VALID_TRUST, MINIMAL_VALID_SIMPLIFIED, MINIMAL_VALID_PLAN_ANNUAL,
   MINIMAL_VALID_PLAN_SIMPLIFIED, MINIMAL_VALID_PLAN_MINOR, MINIMAL_VALID_PLAN_INITIAL,
 } from './fixtures';
 
@@ -347,7 +347,9 @@ export async function fillMinimalValidPlanInitialWard(page: Page): Promise<void>
  * (Simplified Accounting).
  */
 export async function fillMinimalValidAnnualWard(page: Page): Promise<void> {
-  await applyMinimalValid(page, MINIMAL_VALID_ANNUAL);
+  // Milestone 74N: a Trust Accounting also names the trust it reports on.
+  const type = await page.evaluate(() => (window as any).GuardianForms.testing.snapshot().filing?.inventoryType);
+  await applyMinimalValid(page, type === 'trustAccounting' ? MINIMAL_VALID_TRUST : MINIMAL_VALID_ANNUAL);
 }
 
 /**
