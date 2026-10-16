@@ -2,8 +2,8 @@
  "generatedBy": "node scripts/ms70-assertion-counts.mjs --write-baseline",
  "note": "Milestone 70 per-spec static counts of expect calls and test declarations. tests/unit/ms70-assertion-counts.spec.js fails when a spec falls below either count; lowering one requires --reason, recorded in dropLog (kind: expects, tests or file). A tripwire, not proof of equivalence (decision D9); a loop counts once (TEST-REVIEW.md Delivery 2, T9).",
  "totals": {
-  "expects": 9660,
-  "tests": 2847
+  "expects": 9678,
+  "tests": 2852
  },
  "counts": {
   "tests/e2e/accessible-errors-and-groups.spec.ts": {
@@ -357,6 +357,10 @@
   "tests/e2e/negative-amount-columns.spec.ts": {
    "tests": 2,
    "expects": 3
+  },
+  "tests/e2e/new-year-keeps-overdue.spec.ts": {
+   "tests": 1,
+   "expects": 5
   },
   "tests/e2e/offline.spec.ts": {
    "tests": 5,
@@ -843,8 +847,8 @@
    "expects": 8
   },
   "tests/unit/carried-balance.spec.js": {
-   "tests": 22,
-   "expects": 47
+   "tests": 23,
+   "expects": 51
   },
   "tests/unit/carry-forward-hints.spec.js": {
    "tests": 12,
@@ -923,8 +927,8 @@
    "expects": 69
   },
   "tests/unit/dashboard-view-model.spec.js": {
-   "tests": 16,
-   "expects": 51
+   "tests": 19,
+   "expects": 60
   },
   "tests/unit/date-and-email-checks.spec.js": {
    "tests": 15,

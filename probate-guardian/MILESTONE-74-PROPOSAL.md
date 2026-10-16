@@ -9,7 +9,7 @@ with 73O part 2, `fa9625e`), 74H (2026-10-08, with 73G part 2, `f85e862`) and
 74D's reproduction with its UX-07 rewording (2026-10-09, with 73L), 74O
 (2026-10-09, with 73O part 1, `487e247`), 74L (2026-10-09, with 73O part 3,
 `67e13b8`), 74J (2026-10-09, with 73O part 4, `cc90279`) and 74S (2026-10-09,
-with 73P), each approved by name.** **Built 2026-10-16:** 74E, 74G, 74H, 74I. Nothing else is approved: building any other of 74D–74S needs the requester's named approval
+with 73P), each approved by name.** **Built 2026-10-16:** 74E, 74G, 74H, 74I, 74K. Nothing else is approved: building any other of 74D–74S needs the requester's named approval
 of that item (AGENTS.md §3). **Approved 2026-10-16 by the requester, by name: 74E, 74G, 74H's second
 part (f, i and k), 74I, 74K, 74N and 74R** ("Let's complete these"), built item by item in
 the build order, each with its build record, and one full regression after the last; the
@@ -76,7 +76,7 @@ the item says so.
 | 8 | 74H | Answers that **contradict each other** are filed without a warning: a safe-deposit box answered No while items are listed in it, a bond below the calculated requirement, two personal residences, transfers that don't balance, a negative Remaining Assets On Hand, and more | Medium | **Built** (part 1 2026-10-08, part 2 2026-10-16) |
 | 9 | 74I | The Inventory's Cover says witnesses **"must"** be listed, stars their boxes, and then accepts **none, or a blank card** | Low | **Built** (2026-10-16) |
 | 10 | 74J | A Final or Trust Accounting's **Filing Type can be switched to Annual silently**; from an Initial Plan, New Filing from Existing **never offers the Annual Plan**; its notice says the source was "converted" | Medium | One |
-| 11 | 74K | **Starting a new year hides an overdue, unfiled year** from the dashboard; the new year's period starts blank | Medium | One |
+| 11 | 74K | **Starting a new year hides an overdue, unfiled year** from the dashboard; the new year's period starts blank | Medium | **Built** (2026-10-16) |
 | 12 | 74L | Screen readers miss **error messages** and hear **checkbox headings as the first box's name**; the Judge box is announced as "Assignee"; the **browser tab title never changes**; some text is under 10px | Medium | One |
 | 13 | 74M | **Full bank account numbers print** on filed PDFs, Bar numbers are **zero-padded to 8 digits**, and Social Security numbers print in part — each against Rule 2.425's text or unverified | Medium | **Decided 2026-10-06: no change** (account numbers still open for a qualified person) |
 | 14 | 74N | **A Trust Accounting never says which trust it reports on**, and starts with a blank balance | High | One |
@@ -2191,6 +2191,68 @@ filer can change.
   (`common-modals.html` near 107; `year-dialogs.js` near 19–21); **73J part 2**
   changes the dashboard's Automatic label. Sequence.
 
+### Build record — BUILT 2026-10-16 (approved by name by the requester, 2026-10-16)
+
+**What changed for a filer:**
+
+- **The Start New Year dialog says so** when the year being closed isn't
+  marked filed (decision 1): "2023-2024 is still marked Draft and was due
+  10/01/2024. Starting the new year keeps 2023-2024 under Prior years; the
+  dashboard keeps showing it as overdue until it is marked filed." A year not
+  yet due reads "is due …; once it is past due, the dashboard shows it as
+  overdue …". The filer can go ahead; nothing is refused. The labels are the
+  year labels the Prior Years list already shows (its period's years, or
+  "Year 1"), rather than the plan's "Year 1"/"Year 2", which the app shows
+  only when a year has no dates.
+- **The dashboard keeps the old year in view:** an archived year not marked
+  Pending court review or Approved (a year with no status of its own reads as
+  Automatic does), past its own due date, on a filing not closed, is the
+  filing's exception. Its row reads "Earlier year overdue: 2023-2024, due
+  10/01/2024" under the open year's deadline, sorts and colours as overdue,
+  and counts in Action Items (and not also in Approaching Deadlines, so the
+  two counts still don't overlap).
+- **The new period starts the day after the last** (decision 2): New Year
+  prefills Period From from the closing year's Period To plus one day, on
+  every type with a period; Period To stays blank, since it follows the
+  court's fiscal-year order. A Final Accounting made from an Annual through
+  New Filing from Existing starts the same way (Rule 5.680(c): from the date
+  of the previous annual accounting); every other carry still leaves the
+  period blank.
+
+**How:** the due date and the status rules are the dashboard's own
+(`dashboard/view-model.js`: `unfiledEarlierYears()` reads each archived
+year through `deriveWardDeadline()`); the dashboard composes the dialog's
+note from the same projection and hands it to `showStartNewYearModal()`, so
+core reads no dashboard code. `date-parser.js`'s `nextIsoDay()` gives the
+day after; `filing-years.js` and `carry-over.js` use it.
+
+**Legacy data (checklist 2):** saved earlier years that are unfiled and past
+due now appear on the dashboard -- visible, and correct.
+
+**Tests:**
+
+- `tests/unit/dashboard-view-model.spec.js` (+3): a Draft year past due
+  named with its date, sorting first and counted; a year with no status
+  counts; a year marked Pending court review or Approved, a year not yet due,
+  a closed filing and a filing with no years do not. **Red-first:** all
+  three failed, the projection had no such field.
+- `tests/unit/carried-balance.spec.js` (+1): Annual → Final starts the day
+  after (across a year end too); Period To blank; an Annual → Annual carry
+  unchanged. **Red-first:** Period From undefined.
+- New `tests/e2e/new-year-keeps-overdue.spec.ts` (1): through the real New
+  year button on a Simplified Accounting -- the dialog's words, the new
+  Period From, the dashboard row and the Action Items count. **Red-first:**
+  no note in the dialog.
+- The year-rollover golden regenerated (its note): a new year's Period From
+  is the day after on the eight types with a period, the Inventory
+  unchanged; and on the four Plans an empty supporting-documents entry (no
+  comment, no files) now appears under the new period's key, since the
+  Cover files one once a period exists -- nothing lost or filed. The
+  conversion golden regenerated: Annual → Final's Period From only. Each
+  checked path by path against the recorded one.
+- Green: the whole unit suite; the two goldens, the new spec and the
+  dashboard specs in the browser; `check:types`.
+
 ---
 
 ## 74L — Screen readers, page titles and text size
@@ -3405,7 +3467,7 @@ all passed. Full unit suite: 3,060 passed; `check:types` clean.
 | 8 | 74H | alongside 73G part 2 (row 19); part 2 after 73F part 2 | new `consistency-advisories.js`, `output-preflight.js`, `bond-depository.js` | new `tests/unit/consistency-advisories.spec.js`, new `tests/e2e/contradiction-warnings.spec.ts`; `bond-depository.spec.js` — **Built** 2026-10-16 |
 | 9 | 74I | alongside 73F part 3 (row 18) | Inventory `index.js`, `engines/guardian.js`, `completion.js` | new `tests/unit/inventory-witnesses.spec.js` — **Built** 2026-10-16 |
 | 10 | 74J | alongside 73O part 4 (row 31); after 73T part 3 | Annual `index.js`, `filing-type.js`, `filing-descriptor.js`, `conversion.js` | new `tests/e2e/filing-type-change.spec.ts`; `convert-ward.spec.ts`, `filing-type-enumeration-guard.spec.js` |
-| 11 | 74K | after 73A; alongside 73I (row 21) | `year-dialogs.js`, `common-modals.html`, `filing-years.js`, `dashboard/view-model.js`, `carry-over.js` | new `tests/e2e/new-year-keeps-overdue.spec.ts`; `dashboard-view-model.spec.js`; year-rollover golden |
+| 11 | 74K | after 73A; alongside 73I (row 21) | `year-dialogs.js`, `common-modals.html`, `filing-years.js`, `dashboard/view-model.js`, `carry-over.js` | new `tests/e2e/new-year-keeps-overdue.spec.ts`; `dashboard-view-model.spec.js`; year-rollover golden — **Built** 2026-10-16 |
 | 12 | 74L | alongside 73O part 3 (row 30); the title after 73K part 1 (row 3) | `form-contract.js`, `field-html.js`, `form-runtime.js`, `dashboard/index.js`, `router.js`, `src/styles/*.css` | new `tests/e2e/accessible-errors-and-groups.spec.ts`, `tests/e2e/page-title.spec.ts`, `tests/unit/minimum-text-size.spec.js`; `check:types` |
 | 13 | 74M | — | — | nothing to build (decided 2026-10-06) |
 | 14 | 74N | after 73T part 3 (row 11), 73B, 73A | `models/annual.js`, Annual `index.js` and `pdf-model.js`, `engines/annual.js`, `conversion.js`, `convert-ward-modal.js`, CSV | new `tests/unit/trust-accounting-identity.spec.js`, `tests/e2e/trust-accounting-identity.spec.ts`; conversion golden |

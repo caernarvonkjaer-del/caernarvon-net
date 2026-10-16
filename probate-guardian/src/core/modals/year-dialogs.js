@@ -24,7 +24,10 @@ function newYearNote(type){
   return "The new year keeps the ward's and the guardians' details. The plan's answers, signatures and dates are cleared for the new filing: each describes one year.";
 }
 
-export async function showStartNewYearModal(wardId){
+// Milestone 74K (decision 74K-1): `unfiledNote` says the year being closed
+// isn't marked filed (the dashboard's words: it holds the status and the due
+// date); the filer can still go ahead.
+export async function showStartNewYearModal(wardId,{unfiledNote=''}={}){
   const ward=getCaseFile().wards.find(w=>w.wardId===wardId);
   if(!ward)return;
   await ensureFragment('common-modals');
@@ -32,6 +35,8 @@ export async function showStartNewYearModal(wardId){
   const note=newYearNote(ward.inventoryType);
   document.getElementById('new-year-ward-name').textContent=ward.wardName||'(unnamed ward)';
   document.getElementById('new-year-note').textContent=note;
+  const unfiled=document.getElementById('new-year-unfiled');
+  if(unfiled){unfiled.textContent=unfiledNote;unfiled.hidden=!unfiledNote;}
   showModal('startNewYearModal');
 }
 

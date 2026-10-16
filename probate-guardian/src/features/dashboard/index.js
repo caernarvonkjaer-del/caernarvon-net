@@ -16,6 +16,7 @@ import { INVENTORY_TYPES, formDisplayName, formEngine, typeIcon } from '../../co
 import { getCaseFile } from '../../core/state.js';
 import { getRecentlyOpenedWards } from '../../core/filing/recent-filings.js';
 import { showPriorYearsModal, showStartNewYearModal } from '../../core/modals/year-dialogs.js';
+import { describeYearLabel } from '../../core/filing/filing-years.js';
 import { confirmDeleteWard, showAddWardModal } from '../../core/modals/filing-dialogs.js';
 import { showPickCaseModal } from '../../core/modals/pick-record-dialogs.js';
 import { filingLifecycle } from '../../core/navigation/filing-lifecycle.js';
@@ -129,6 +130,7 @@ function toggleClosedSection() {
 function dashboardPriority(row) {
   if (row.isArchived) return 'archived';
   if (row.workflowStatus === 'disapproved-needs-correction') return 'urgent';
+  if (row.earlierYearsOverdue?.length) return 'urgent';
   if (row.isDeadlineActionable && row.deadlineBucket === 'overdue') return 'urgent';
   if (row.isDeadlineActionable && (row.deadlineBucket === 'today' || row.deadlineBucket === 'due-soon')) return 'warning';
   if (row.workflowStatus === 'pending-court-review') return 'pending';
@@ -207,9 +209,27 @@ function showContinuePromptIfNeeded() {
 // its place; a date on a weekend or legal holiday carries a note to check
 // whether the next business day applies.
 function deadlineDisplay(row) {
-  if (!row.deadlineDate) return `<span class="dashboard-triage-muted" data-deadline-basis>${esc(row.deadlineBasis || 'No deadline')}</span>`;
+  // Milestone 74K (74K-1): each earlier year still owed, named under the open year's deadline.
+  const earlier = (row.earlierYearsOverdue || []).map((y) => `<strong class="d-block small deadline-overdue" data-earlier-year-overdue>Earlier year overdue: ${esc(y.label)}, due ${esc(displayLocalDate(y.deadlineDate))}</strong>`).join('');
+  if (!row.deadlineDate) return `<span class="dashboard-triage-muted" data-deadline-basis>${esc(row.deadlineBasis || 'No deadline')}</span>${earlier}`;
   const note = row.deadlineNote ? `<span class="dashboard-triage-muted d-block small" data-deadline-note>${esc(row.deadlineNote)}</span>` : '';
-  return deadlineStatusHTML(row) + note;
+  return deadlineStatusHTML(row) + note + earlier;
+}
+
+// Milestone 74K (decision 74K-1): what the Start New Year dialog says when the
+// year being closed isn't marked filed -- the filer can go ahead; the year
+// stays in view. '' when the year is filed, approved or the filing closed.
+function unfiledYearNote(ward) {
+  const row = projectWard(ward);
+  if (!row.isDeadlineActionable) return '';
+  const label = describeYearLabel(ward, ward);
+  const status = WORKFLOW_LABELS[row.workflowStatus] || row.workflowStatus;
+  const keeps = `Starting the new year keeps ${label} under Prior years`;
+  if (!row.deadlineDate) return `${label} is still marked ${status}. ${keeps} until it is marked filed.`;
+  const due = displayLocalDate(row.deadlineDate);
+  return row.deadlineBucket === 'overdue'
+    ? `${label} is still marked ${status} and was due ${due}. ${keeps}; the dashboard keeps showing it as overdue until it is marked filed.`
+    : `${label} is still marked ${status} and is due ${due}. ${keeps}; once it is past due, the dashboard shows it as overdue until it is marked filed.`;
 }
 
 function deadlineStatusHTML(row) {
@@ -555,7 +575,11 @@ async function handleDashboardClick(event) {
       break;
     case 'dismiss-continue': document.getElementById('continue-prompt-container')?.replaceChildren(); break;
     case 'link-case': showPickCaseModal(wardId); break;
-    case 'new-year': showStartNewYearModal(wardId); break;
+    case 'new-year': {
+      const ward = getCaseFile().wards.find((w) => w.wardId === wardId);
+      showStartNewYearModal(wardId, { unfiledNote: ward ? unfiledYearNote(ward) : '' });
+      break;
+    }
     case 'open-ward': await filingLifecycle.switchTo(wardId); break;
     case 'pdf': quickExportPdf(wardId); break;
     case 'prior-years': showPriorYearsModal(wardId); break;

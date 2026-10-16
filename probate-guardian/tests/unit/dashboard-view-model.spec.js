@@ -312,3 +312,37 @@ describe('dashboard view model', () => {
     expect(compareDashboardColumn(rowD, rowC, 'judge', 'asc')).toBeLessThan(0);
   });
 });
+
+// Milestone 74K (decision 74K-1, the requester, 2026-10-06; QA report
+// BUG-20): starting a new year over an unfiled one keeps the old year in
+// view. An archived year still actionable -- not marked Pending court review
+// or Approved, its filing not closed -- and past its own due date is the
+// filing's exception: named on its row, counted in Action Items, and the row
+// sorts as overdue. It used to vanish into Prior years.
+describe('an earlier year still unfiled (74K)', () => {
+  const year = (label, periodTo, status) => ({ key: label, label, data: { periodFrom: '', periodTo, ...(status ? { dashboardWorkflow: { status } } : {}) } });
+  const simplified = (years, extra = {}) => ({ wardId: 'w1', wardName: 'Ward', inventoryType: 'simplified', periodFrom: '2026-07-01', periodTo: '', years, ...extra });
+  const project = (ward) => projectDashboardWard(ward, { progress: { pct: 0 }, today: new Date('2026-10-02T12:00:00') });
+
+  test('a Draft year past its due date is the filing\'s exception, named with its due date', () => {
+    const row = project(simplified([year('2024-2025', '2025-06-30', 'approved'), year('2025-2026', '2026-06-30', 'draft')]));
+    expect(row.earlierYearsOverdue.map((y) => [y.label, ymd(y.deadlineDate), y.daysOverdue])).toEqual([['2025-2026', '2026-10-01', 1]]);
+    expect(row.priorityRank).toBe(1);
+    expect(getDashboardMetrics([row]).actionItems).toBe(1);
+  });
+
+  test('a year with no status of its own is unfiled (Automatic reads Draft or Ready to file)', () => {
+    expect(project(simplified([year('2025-2026', '2026-06-30')])).earlierYearsOverdue.length).toBe(1);
+  });
+
+  test('not when the year is marked filed, is not yet due, or the filing is closed', () => {
+    for (const status of ['pending-court-review', 'approved']) {
+      const row = project(simplified([year('2025-2026', '2026-06-30', status)]));
+      expect(row.earlierYearsOverdue, status).toEqual([]);
+      expect(getDashboardMetrics([row]).actionItems, status).toBe(0);
+    }
+    expect(project(simplified([year('2025-2026', '2026-07-31', 'draft')])).earlierYearsOverdue).toEqual([]);
+    expect(project(simplified([year('2025-2026', '2026-06-30', 'draft')], { archived: true })).earlierYearsOverdue).toEqual([]);
+    expect(project(simplified(undefined)).earlierYearsOverdue).toEqual([]);
+  });
+});

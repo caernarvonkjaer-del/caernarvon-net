@@ -13,6 +13,7 @@ import { getCaseFile } from '../state.js';
 import { clearCertificateAnswers } from './service-method.js';
 import { notifyProbateGuardianTabStateChanged } from '../navigation/tab-state.js';
 import { recordModelChange } from '../model-change.js';
+import { nextIsoDay } from '../form/date-parser.js';
 import { clearSignaturesForNewYear, keepYearSignaturePolicy } from '../signature/signature-policy.js';
 
 // A ward's flat top-level fields (schedules, balances, signatures, etc.)
@@ -299,7 +300,12 @@ export async function startNewWardYear(wardId){
     &&!!applyCarriedStartingBalance(carried,ward,ward.inventoryType);
   checkInActiveYear(ward);
   const seed=snapshotCurrentYearData(ward);
+  // Milestone 74K (decision 74K-2): the new period starts the day after the
+  // last one ended; Period To stays the filer's, since it follows the
+  // court's fiscal-year order.
+  const nextFrom=nextIsoDay(seed.periodTo);
   resetYearlyFieldsForNewYear(seed,ward.inventoryType);
+  if(nextFrom&&'periodFrom' in seed)seed.periodFrom=nextFrom;
   if(carries){
     seed.startingBalance=carried.startingBalance;
     seed.startingBalanceCarry=carried.startingBalanceCarry;

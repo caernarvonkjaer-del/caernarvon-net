@@ -89,6 +89,7 @@
   "tests/e2e/navigation-race.spec.ts",
   "tests/e2e/navigation-status.contract.spec.ts",
   "tests/e2e/negative-amount-columns.spec.ts",
+  "tests/e2e/new-year-keeps-overdue.spec.ts",
   "tests/e2e/offline.spec.ts",
   "tests/e2e/output-buttons-after-override.spec.ts",
   "tests/e2e/output-semantics.artifact.spec.ts",

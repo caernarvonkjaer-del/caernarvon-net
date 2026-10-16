@@ -229,3 +229,18 @@ describe('the Starting Balance itself', () => {
     expect(st.diff).toBe(0.01);
   });
 });
+
+// Milestone 74K (decision 74K-2, the requester, 2026-10-06; QA report
+// UX-06): a Final Accounting made from an Annual starts the day after the
+// Annual's period ended; Period To stays the filer's. Other carries are
+// unchanged.
+describe('Annual -> Final: Period From is the day after the Annual\'s Period To (74K)', () => {
+  test('prefilled from the Annual; Period To left blank; not on other carries', async () => {
+    const { carryOverFields } = await import('../../src/core/filing/carry-over.js');
+    const final = carryOverFields(annual({ periodTo: '2026-06-30' }), 'finalAccounting');
+    expect([final.periodFrom, final.periodTo ?? '']).toEqual(['2026-07-01', '']);
+    expect(carryOverFields(annual({ periodTo: '2026-12-31' }), 'finalAccounting').periodFrom).toBe('2027-01-01');
+    expect(carryOverFields(annual({ periodTo: '' }), 'finalAccounting').periodFrom ?? '').toBe('');
+    expect(carryOverFields(annual({ periodTo: '2026-06-30' }), 'annual').periodFrom ?? '').toBe('');
+  });
+});

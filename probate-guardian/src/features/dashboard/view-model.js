@@ -251,6 +251,24 @@ function workflowState(ward, dashboardWorkflow, progressPercent) {
   };
 }
 
+// Milestone 74K (decision 74K-1, the requester, 2026-10-06): the archived
+// years a filing still owes -- each one not marked Pending court review or
+// Approved (a year with no status of its own reads as Automatic does, Draft or
+// Ready to file) and past its own due date. Starting a new year used to hide
+// one in Prior years; it stays the filing's exception until it is marked
+// filed. A closed filing owes nothing.
+function unfiledEarlierYears(ward, today) {
+  if (ward.archived || !Array.isArray(ward.years)) return [];
+  return ward.years.flatMap((year) => {
+    const data = year?.data || {};
+    const status = normalizeDashboardWorkflow(data.dashboardWorkflow).status;
+    if (status && !ACTIONABLE_DEADLINE_STATUSES.has(status)) return [];
+    const { deadlineDate } = deriveWardDeadline({ ...data, inventoryType: ward.inventoryType });
+    const { deadlineBucket, daysUntilDeadline } = deadlineState(deadlineDate, today);
+    return deadlineBucket === 'overdue' ? [{ key: year.key, label: year.label || year.key, deadlineDate, daysOverdue: -daysUntilDeadline }] : [];
+  });
+}
+
 function priorityRank(workflowStatus, deadlineBucket, isDeadlineActionable) {
   if (workflowStatus === 'disapproved-needs-correction') return 0;
   if (isDeadlineActionable && deadlineBucket === 'overdue') return 1;
@@ -271,6 +289,7 @@ export function projectDashboardWard(ward, { displayType, total, progress, today
   const { deadlineDate, deadlineBasis, basisWithoutDate } = deriveWardDeadline(ward);
   const { deadlineBucket, daysUntilDeadline } = deadlineState(deadlineDate, today);
   const isDeadlineActionable = !ward.archived && ACTIONABLE_DEADLINE_STATUSES.has(workflowStatus);
+  const earlierYearsOverdue = unfiledEarlierYears(ward, today);
   const assigneeName = dashboardWorkflow.assigneeName || '';
 
   return {
@@ -292,13 +311,15 @@ export function projectDashboardWard(ward, { displayType, total, progress, today
     deadlineBucket,
     daysUntilDeadline,
     isDeadlineActionable,
+    earlierYearsOverdue,
     workflowStatus,
     workflowSource,
     filingContacts: deriveFilingContacts(ward),
     assigneeName,
     assigneeKey: normalizeFilterKey(assigneeName),
     lastModified: ward.lastModified || null,
-    priorityRank: priorityRank(workflowStatus, deadlineBucket, isDeadlineActionable),
+    // An earlier year still owed sorts the filing as overdue (74K-1).
+    priorityRank: Math.min(priorityRank(workflowStatus, deadlineBucket, isDeadlineActionable), earlierYearsOverdue.length ? 1 : Infinity),
     sourceWard: ward,
   };
 }
@@ -354,9 +375,11 @@ export function getDashboardMetrics(projectedWards) {
     actionItems: active.filter(ward => (
       ward.workflowStatus === 'disapproved-needs-correction'
       || (ward.isDeadlineActionable && ward.deadlineBucket === 'overdue')
+      || ward.earlierYearsOverdue?.length > 0
     )).length,
     approachingDeadlines: active.filter(ward => (
       ward.workflowStatus !== 'disapproved-needs-correction'
+      && !(ward.earlierYearsOverdue?.length > 0)
       && ward.isDeadlineActionable
       && (ward.deadlineBucket === 'today' || ward.deadlineBucket === 'due-soon')
     )).length,

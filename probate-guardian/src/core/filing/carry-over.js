@@ -30,6 +30,7 @@ import { reconcileSlotWithParty, resolveParty } from '../party-resolver.js';
 import { getCaseFile } from '../state.js';
 import { applyCarriedStartingBalance } from './starting-balance-carry.js';
 import { withOldCertificateFilled } from './certificate-migrations.js';
+import { nextIsoDay } from '../form/date-parser.js';
 
 export const ACCOUNTING_FORM_TYPES = ['guardian', 'simplified', 'annual', 'finalAccounting', 'trustAccounting'];
 export const PRIOR_ACCOUNTING_SOURCES = ['guardian', 'simplified', 'annual', 'finalAccounting', 'trustAccounting'];
@@ -541,6 +542,14 @@ export function carryOverFields(sourceWard,targetType){
         ? carryOverAccountingToAccounting(sourceWard,targetType)
         : carryOverFieldsForAccounting(sourceWard,formEngine(targetType)))
     : carryOverFieldsForPlan(sourceWard,targetType));
+  // Milestone 74K (decision 74K-2): a Final Accounting made from an Annual
+  // starts the day after the Annual's period ended (Rule 5.680(c): the final
+  // report runs "from the date of the previous annual accounting"); its
+  // Period To stays the filer's. Every other carry leaves the period blank.
+  if(sourceWard.inventoryType==='annual'&&targetType==='finalAccounting'){
+    const from=nextIsoDay(sourceWard.periodTo);
+    if(from)fields.periodFrom=from;
+  }
   // Milestone 40C-A item 3 / 40C-F item 3. Every builder above now leaves
   // `county` blank; this is the one place that fills it, and it takes the value
   // from the source's canonical ward PARTY rather than from the source filing's

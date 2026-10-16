@@ -119,6 +119,17 @@ export function parseFlexibleDate(rawStr) {
 /**
  * Format canonical YYYY-MM-DD as MM/DD/YYYY for user-friendly display.
  */
+/**
+ * Milestone 74K: the day after a YYYY-MM-DD date, as YYYY-MM-DD; '' for
+ * anything that isn't one (a new period starts the day after the last ended).
+ * @param {unknown} value
+ */
+export function nextIsoDay(value) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(value ?? ''));
+  if (!m) return '';
+  return new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]) + 1)).toISOString().slice(0, 10);
+}
+
 export function formatDisplayDate(canonicalStr) {
   if (!canonicalStr) return '';
   const match = String(canonicalStr).match(/^(\d{4})-(\d{2})-(\d{2})$/);
