@@ -9,7 +9,7 @@ with 73O part 2, `fa9625e`), 74H (2026-10-08, with 73G part 2, `f85e862`) and
 74D's reproduction with its UX-07 rewording (2026-10-09, with 73L), 74O
 (2026-10-09, with 73O part 1, `487e247`), 74L (2026-10-09, with 73O part 3,
 `67e13b8`), 74J (2026-10-09, with 73O part 4, `cc90279`) and 74S (2026-10-09,
-with 73P), each approved by name.** **Built 2026-10-16:** 74E, 74G, 74H. Nothing else is approved: building any other of 74D–74S needs the requester's named approval
+with 73P), each approved by name.** **Built 2026-10-16:** 74E, 74G, 74H, 74I. Nothing else is approved: building any other of 74D–74S needs the requester's named approval
 of that item (AGENTS.md §3). **Approved 2026-10-16 by the requester, by name: 74E, 74G, 74H's second
 part (f, i and k), 74I, 74K, 74N and 74R** ("Let's complete these"), built item by item in
 the build order, each with its build record, and one full regression after the last; the
@@ -74,7 +74,7 @@ the item says so.
 | 6 | 74F | The certificate's "no recipients" question is a **double negative**; the Simplified prints **"None listed." then "on this date:"**; the Plans print the app's own disclaimer on the filed page; the documents reminder names "Schedule A1" | Low | One |
 | 7 | 74G | An **18-month or future-dated accounting period**, a line period that runs backwards, Letters signed before the guardianship began, residences dated backwards, and an e-mail address like **"rnguyen@"** are all accepted without a word | Medium | **Built** (2026-10-16) |
 | 8 | 74H | Answers that **contradict each other** are filed without a warning: a safe-deposit box answered No while items are listed in it, a bond below the calculated requirement, two personal residences, transfers that don't balance, a negative Remaining Assets On Hand, and more | Medium | **Built** (part 1 2026-10-08, part 2 2026-10-16) |
-| 9 | 74I | The Inventory's Cover says witnesses **"must"** be listed, stars their boxes, and then accepts **none, or a blank card** | Low | One |
+| 9 | 74I | The Inventory's Cover says witnesses **"must"** be listed, stars their boxes, and then accepts **none, or a blank card** | Low | **Built** (2026-10-16) |
 | 10 | 74J | A Final or Trust Accounting's **Filing Type can be switched to Annual silently**; from an Initial Plan, New Filing from Existing **never offers the Annual Plan**; its notice says the source was "converted" | Medium | One |
 | 11 | 74K | **Starting a new year hides an overdue, unfiled year** from the dashboard; the new year's period starts blank | Medium | One |
 | 12 | 74L | Screen readers miss **error messages** and hear **checkbox headings as the first box's name**; the Judge box is announced as "Assignee"; the **browser tab title never changes**; some text is under 10px | Medium | One |
@@ -1847,6 +1847,58 @@ part 2 if it has landed); `help/index.html` (with 73Q).
 Inventory's validator; **73Q** rewrites the guide. **Build 74I alongside 73F
 part 3** (73's row 18).
 
+### Build record — BUILT 2026-10-16 (approved by name by the requester, 2026-10-16)
+
+**What changed for a filer** (decision 1, optional and said accurately;
+decision 2, listed witnesses keep printing):
+
+- The Cover's sentence quotes the statute instead of saying witnesses "must"
+  be listed: 'Section 744.365(5)(b), Florida Statutes: "As part of the
+  substantiating papers, the guardian must identify by name, address, and
+  occupation, the witness or witnesses, if any, who were present during the
+  initial inventory of the ward's personal property." No witness is required
+  here; a witness card you start needs all three.' (Read from Chapter 744 in
+  `reference/legal/statutes/` with pdf.js; the curly apostrophe is typed
+  straight.)
+- No witness, or a card added and never touched, asks for nothing; an
+  untouched card is still dropped when the filer leaves the page.
+- A card the filer started names each box still empty -- "Cover — Inventory
+  Witness 1 — Address is required." -- an ordinary error the filer can
+  override.
+- A card's Name, Address and Occupation are starred only once it is started,
+  and the stars appear as the filer types (the attorney block's live
+  markers, 71B, now also `watchStartedRowMarkers()`).
+- The user guide's line says the same: optional, the statute's words, and
+  that a started card needs all three.
+
+**How:** `engines/guardian.js` checks each started witness (`rowStarted()`,
+73V's row rule); the sidebar follows through the shared checks (73F part 2).
+`attorney-required-markers.js` gains `watchStartedRowMarkers()`, which the
+Inventory's Cover runs for its witness cards. The data model's three
+`witnesses[]` rows are `conditional`, required for "a started witness card";
+`verify:data-model` passes. The PDF prints listed witnesses as before.
+
+**Legacy data (checklist 2):** a saved half-filled witness now shows an
+error the filer can complete or override -- visible.
+
+**Tests:**
+
+- New `tests/unit/inventory-witnesses.spec.js` (4): no witness and an
+  untouched card ask nothing; a started card names each empty box on its
+  own path; the errors can be overridden; the Cover quotes the statute and
+  stars a card only once started. **Red-first:** 3 failed for their stated
+  reasons (a half-filled card named nothing; the Cover still said "must
+  include"); the no-witness case passed, as it should.
+- `tests/e2e/form-entry.contract.spec.ts` (+1): the Cover's text, no stars on
+  a new card, three once a name is typed, and the missing address and
+  occupation named before filing. **Red-first:** the statute's words absent.
+- The validator and completion goldens regenerated, the reason in each note:
+  only the Inventory's variants that fill a witness's name alone changed
+  (they now also ask for the address and occupation) -- checked variant by
+  variant against the recorded ones.
+- Green: the whole unit suite, the seven browser specs that touch witnesses
+  (51), `verify:data-model`, `check:types`.
+
 ---
 
 ## 74J — A filing keeps its type, and offers the right next form
@@ -3351,7 +3403,7 @@ all passed. Full unit suite: 3,060 passed; `check:types` clean.
 | 6 | 74F | alongside 73O part 2 (row 29); the reminder label with 73L (row 24) | `service-recipients.js`, `plan-certificate-of-service.js`, three accounting `index.js` and `pdf-model.js`, `schedule-doc-ack.js` | new `tests/unit/certificate-no-recipients-line.spec.js`; `service-recipients.spec.js`, `schedule-doc-ack.spec.ts` |
 | 7 | 74G | alongside 73F part 3 (row 18) | `date-rules.js`, new `email-format.js`, seven engines, `form-contract.js`, CSV | new `tests/unit/date-and-email-checks.spec.js`, new `tests/e2e/email-format.spec.ts`; `date-rules.spec.js`; validator and completion goldens — **Built** 2026-10-16 |
 | 8 | 74H | alongside 73G part 2 (row 19); part 2 after 73F part 2 | new `consistency-advisories.js`, `output-preflight.js`, `bond-depository.js` | new `tests/unit/consistency-advisories.spec.js`, new `tests/e2e/contradiction-warnings.spec.ts`; `bond-depository.spec.js` — **Built** 2026-10-16 |
-| 9 | 74I | alongside 73F part 3 (row 18) | Inventory `index.js`, `engines/guardian.js`, `completion.js` | new `tests/unit/inventory-witnesses.spec.js` |
+| 9 | 74I | alongside 73F part 3 (row 18) | Inventory `index.js`, `engines/guardian.js`, `completion.js` | new `tests/unit/inventory-witnesses.spec.js` — **Built** 2026-10-16 |
 | 10 | 74J | alongside 73O part 4 (row 31); after 73T part 3 | Annual `index.js`, `filing-type.js`, `filing-descriptor.js`, `conversion.js` | new `tests/e2e/filing-type-change.spec.ts`; `convert-ward.spec.ts`, `filing-type-enumeration-guard.spec.js` |
 | 11 | 74K | after 73A; alongside 73I (row 21) | `year-dialogs.js`, `common-modals.html`, `filing-years.js`, `dashboard/view-model.js`, `carry-over.js` | new `tests/e2e/new-year-keeps-overdue.spec.ts`; `dashboard-view-model.spec.js`; year-rollover golden |
 | 12 | 74L | alongside 73O part 3 (row 30); the title after 73K part 1 (row 3) | `form-contract.js`, `field-html.js`, `form-runtime.js`, `dashboard/index.js`, `router.js`, `src/styles/*.css` | new `tests/e2e/accessible-errors-and-groups.spec.ts`, `tests/e2e/page-title.spec.ts`, `tests/unit/minimum-text-size.spec.js`; `check:types` |

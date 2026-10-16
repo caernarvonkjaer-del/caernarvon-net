@@ -56,6 +56,17 @@ export function collectGuardianIssues(d){
   // Milestone 73F part 3 (decision 73F-1): "Amended Form?" is required wherever
   // the field exists; the Inventory asked it on its Cover and never checked it.
   req(d.amendedForm,'Cover — Amended Form?','amendedForm');
+  // Milestone 74I (decision 74I-1, the requester, 2026-10-06): no witness is
+  // required -- section 744.365(5)(b) has the guardian identify the witness or
+  // witnesses "if any" -- but a witness card the filer started is complete:
+  // its name, address and occupation, an ordinary error the filer can
+  // override. An untouched card raises nothing and is dropped as before.
+  (d.witnesses||[]).forEach((w,i)=>{
+    if(!rowStarted(w))return;
+    req(w.name,`Cover — Inventory Witness ${i+1} — Name is required.`,`witnesses.${i}.name`);
+    req(w.address,`Cover — Inventory Witness ${i+1} — Address is required.`,`witnesses.${i}.address`);
+    req(w.occupation,`Cover — Inventory Witness ${i+1} — Occupation is required.`,`witnesses.${i}.occupation`);
+  });
   // Milestone 73F part 3 (decision 73F-4): a schedule with no entries and its
   // "I verify there are no items to report" box unticked no longer blocks
   // export; the sidebar asks it as a prompt (engines/index.js), as on the

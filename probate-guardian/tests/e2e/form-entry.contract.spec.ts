@@ -229,6 +229,28 @@ test.describe('Form entry contract', () => {
     await expect(feedback).toHaveCount(0);
   });
 
+  // Milestone 74I (decision 74I-1): the Inventory's Cover quotes section
+  // 744.365(5)(b) -- the witnesses "if any" -- instead of saying they must
+  // be listed; a witness card's boxes are starred once the filer starts it,
+  // and a half-filled card is named before filing.
+  test("the Inventory's witnesses: the statute quoted, the stars once a card is started, a half-filled card named", async ({ page }) => {
+    await freshStartNoPassword(page);
+    await createWard(page, 'Witness Ward', 'guardian');
+    await page.evaluate(() => (window as any).GuardianForms.testing.navigate('/'));
+    await expect(page.locator('#main-content')).toContainText('the witness or witnesses, if any, who were present during the initial inventory');
+    await expect(page.locator('#main-content')).not.toContainText('must include the names, addresses, and occupations of witnesses');
+    await page.locator('[data-inventory-action="add-witness"]').click();
+    const stars = page.locator('#main-content .entry-card', { hasText: 'Inventory Witness 1' }).locator('.req');
+    await expect(stars).toHaveCount(0);
+    const name = page.locator('input[data-bind="witnesses.0.name"]');
+    await name.fill('Jane Witness');
+    await name.blur();
+    await expect(stars).toHaveCount(3);
+    const named = await page.evaluate(async () => (await (window as any).GuardianForms.testing.validate.evaluate()).blockers
+      .filter((i: any) => String(i.path).startsWith('witnesses.')).map((i: any) => i.path));
+    expect(named).toEqual(['witnesses.0.address', 'witnesses.0.occupation']);
+  });
+
   test('an invalid date blocks export immediately, without a reload', async ({ page }) => {
     // The reload-and-still-blocked half of this behavior (Phase 2.4's
     // "invalid input preservation and output blocking") lives in

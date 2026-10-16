@@ -11,6 +11,7 @@
 // validators apply the same rule; this only keeps what the page shows in step
 // with it as the filer types.
 import { isAttorneyStarted } from '../validation/attorney-block.js';
+import { rowStarted } from '../validation/row-started.js';
 import { getD } from '../state.js';
 
 function inputsFor(container, path) {
@@ -69,6 +70,27 @@ export function watchAttorneyRequiredMarkers(container, { engineId, paths, trigg
   window.addEventListener('pg:field-written', (event) => {
     const path = event?.detail?.path;
     if (typeof path === 'string' && (watches.has(path) || [...watches].some((w) => path.startsWith(`${w}.`)))) sync();
+  }, { signal: controller.signal });
+  sync();
+  return controller;
+}
+
+/**
+ * Milestone 74I: a repeating card's markers follow whether the card is
+ * started (rowStarted(), 73V's row rule), live -- the Inventory's witness
+ * cards, whose name, address and occupation are required only once the filer
+ * has begun one. Returns an AbortController; abort it on dispose.
+ * @param {ParentNode} container
+ * @param {{ list: string, fields: string[] }} options
+ */
+export function watchStartedRowMarkers(container, { list, fields }) {
+  const controller = new AbortController();
+  const sync = () => (getD()?.[list] || []).forEach((row, i) => syncRequiredMarkers(container, {
+    required: rowStarted(row), paths: fields.map((f) => `${list}.${i}.${f}`),
+  }));
+  window.addEventListener('pg:field-written', (event) => {
+    const path = event?.detail?.path;
+    if (typeof path === 'string' && path.startsWith(`${list}.`)) sync();
   }, { signal: controller.signal });
   sync();
   return controller;

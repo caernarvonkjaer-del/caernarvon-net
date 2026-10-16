@@ -49,7 +49,8 @@ import { fillAttorneyFromOldCertificate, discardOldCertificateDetails } from '..
 import { WARD_STATUS_VALUES, SERVICE_METHOD_LABEL } from '../../core/filing/service-method.js';
 import { certificateAttorneyLineHTML, oldCertificateDetailsHTML } from '../../core/form/certificate-attorney-note.js';
 import { auditLog } from '../../core/activity/audit-log.js';
-import { watchAttorneyRequiredMarkers } from '../../core/form/attorney-required-markers.js';
+import { watchAttorneyRequiredMarkers, watchStartedRowMarkers } from '../../core/form/attorney-required-markers.js';
+import { rowStarted } from '../../core/validation/row-started.js';
 
 // Milestone 71B: the attorney fields that become required once an attorney is
 // started (and only then), per page -- the live markers and validateGuardian()
@@ -61,6 +62,7 @@ const INVENTORY_ATTORNEY_REQUIRED = {
 const INVENTORY_ATTORNEY_TRIGGERS = ['attorneyForGuardian', 'attorney'];
 const attorneyMarkerAborts = new WeakMap();
 const waiverHintAborts = new WeakMap();
+const witnessMarkerAborts = new WeakMap();
 import { yesNoCheckboxS, yesNoRadioHTML } from '../../core/form/field-html.js';
 import { browserRecommendationNotice, linkAccordions, linkLabelsToInputs, setupAmountFieldValidation } from '../../core/form/form-runtime.js';
 import { initPrintPager } from '../../core/ui/print-pager.js';
@@ -224,6 +226,10 @@ export async function mount(container, page, { signal } = {}) {
   waiverHintAborts.get(container)?.abort();
   waiverHintAborts.delete(container);
   if (!page || page === '/') waiverHintAborts.set(container, watchWaiverAdvocateHint(container, getD));
+  // Milestone 74I: a witness card's stars follow whether the card is started.
+  witnessMarkerAborts.get(container)?.abort();
+  witnessMarkerAborts.delete(container);
+  if (!page || page === '/') witnessMarkerAborts.set(container, watchStartedRowMarkers(container, { list: 'witnesses', fields: ['name', 'address', 'occupation'] }));
   attorneyMarkerAborts.get(container)?.abort();
   attorneyMarkerAborts.delete(container);
   const markerPaths = INVENTORY_ATTORNEY_REQUIRED[page || '/'];
@@ -257,6 +263,8 @@ export function dispose(container) {
   attorneyMarkerAborts.delete(container);
   waiverHintAborts.get(container)?.abort();
   waiverHintAborts.delete(container);
+  witnessMarkerAborts.get(container)?.abort();
+  witnessMarkerAborts.delete(container);
   container.replaceChildren();
 }
 
@@ -770,8 +778,11 @@ async function removeRecipient(i){if(!(await okToRemove('guardian','serviceRecip
 // The witness row lives with the list rules (src/core/form/collections.js).
 function addWitness(){appendRow(D,'witnesses');commitModelChange('collection-add',['witnesses']);renderPage('/',onChange(afterAdd(D,'witnesses')));}
 async function removeWitness(i){if(!D.witnesses)return;if(!(await okToRemove('guardian','witnesses',D.witnesses[i],i)))return;removeRowAt(D,'witnesses',i);commitModelChange('collection-remove',['witnesses']);renderPage('/',onChange(afterRemove(D,'witnesses',i)));}
+// Milestone 74I (decision 74I-1): a witness card's boxes are required only
+// once the card is started; watchStartedRowMarkers() keeps the stars in step.
 function witnessCardsHTML(){
   const list=D.witnesses||[];
+  const label=(w,text)=>rowStarted(w)?reqLabel(text):`<label class="form-label"><strong>${text}</strong></label>`;
   return list.map((w,i)=>`<div class="col-12 col-lg-6"><div class="entry-card mb-0 h-100">
     <div class="entry-card-header">
       <span>Inventory Witness ${i+1}</span>
@@ -780,8 +791,8 @@ function witnessCardsHTML(){
       </span>
     </div>
     <div class="entry-card-body">
-      ${formRow(col(12,reqLabel('Name')+textInput(`witnesses.${i}.name`,'','name')))}
-      ${formRow(col(7,reqLabel('Address')+textInput(`witnesses.${i}.address`,'','address')),col(5,reqLabel('Occupation')+textInput(`witnesses.${i}.occupation`)))}
+      ${formRow(col(12,label(w,'Name')+textInput(`witnesses.${i}.name`,'','name')))}
+      ${formRow(col(7,label(w,'Address')+textInput(`witnesses.${i}.address`,'','address')),col(5,label(w,'Occupation')+textInput(`witnesses.${i}.occupation`)))}
     </div>
   </div></div>`).join('');
 }
@@ -858,7 +869,7 @@ function pageHome(){
   ${livePartHtml('inventory-waiver-question')}
   <div class="summary-box mb-3">
     <h2 class="subsection-heading">Inventory Witnesses</h2>
-    <div class="schedule-instructions">A personal property inventory must include the names, addresses, and occupations of witnesses present during the physical inventory of the ward's personal effects.</div>
+    <div class="schedule-instructions">Section 744.365(5)(b), Florida Statutes: "As part of the substantiating papers, the guardian must identify by name, address, and occupation, the witness or witnesses, if any, who were present during the initial inventory of the ward's personal property." No witness is required here; a witness card you start needs all three.</div>
     <div class="row g-3 card-grid-2col">${witnessCardsHTML()}</div>
     <button class="btn btn-outline-primary btn-sm no-print" data-inventory-action="add-witness">+ Add Witness</button>
   </div>
