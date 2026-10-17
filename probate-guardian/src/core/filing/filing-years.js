@@ -2,6 +2,7 @@
 // year resets and carries, and switching between them. Moved from
 // legacy-app.js's MULTI-YEAR ACCOUNTING.
 import { formEngine } from './filing-registry.js';
+import { noItemsKeyFor } from '../form/no-items-keys.js';
 import { emptyRowAnnual } from './models/annual.js';
 import { emptyPlanProvider, emptyPlanResidence } from './models/plan-annual.js';
 import { emptyInitialProvider } from './models/plan-initial.js';
@@ -57,6 +58,36 @@ export function applyYearData(ward,data){
 //    the schedule-level equivalent of Simplified's starting balance.
 //  - Simplified's Interest/Deposits/Service Charges/Federal Tax: reset —
 //    each is a specific period's transactions, not a standing balance.
+// A new year clears what describes the year just closed and keeps what
+// describes the ward (the requester's rule, 2026-10-17: "basic info that
+// doesn't change should be kept ... Name, address etc should carry over,
+// expenditures should not"). The "I verify there are no items" tick of a
+// list the new year empties declared last year's list, not this one's, so
+// it is asked again -- Part XI's and Part VII's remuneration declarations
+// among them, which the export checks require answered (section
+// 744.367(3)(a)). A list that carries forward keeps its tick with it.
+function clearNoItemsTicks(data,type,lists){
+  if(!data.scheduleNoItems)return;
+  for(const list of lists){
+    const tick=noItemsKeyFor(type,list);
+    if(tick&&data.scheduleNoItems[tick])data.scheduleNoItems[tick]=false;
+  }
+}
+
+// What the Start New Year dialog says each form's new year keeps and clears
+// (Milestone 73P, D23; the Plans' carries since 2026-10-17), beside the
+// reset it describes.
+export function newYearNote(type){
+  if(type==='guardian')return "The new year opens with a copy of this year's schedules (A-1 through C-5) so you can edit down what's changed, instead of re-entering everything. Signatures and dates are cleared for the new filing.";
+  if(type==='simplified')return "The new year opens with Starting Balance pre-filled from this year's Remaining Assets On Hand. Part II's receipts and disbursements, Part VII's remuneration, signatures, and the accounting period are cleared for the new filing, and Part VII's \"I verify there are no items\" answer is asked again.";
+  if(formEngine(type)==='annual')return "The new year opens with Starting Balance pre-filled from this year's ending total and Schedule D's holdings carried forward. The income, disbursement, capital-change and transfer schedules, Part XI's remuneration, signatures, and the accounting period are cleared for the new filing, and their \"I verify there are no items\" answers are asked again.";
+  const cleared="The plan's other answers, signatures and dates are cleared for the new filing: each describes one year.";
+  if(type==='planAnnual')return "The new year keeps the ward's and the guardians' details, where the ward lives, and the answers to Questions 3, 9 and 10 (the care plan, disabilities and advance directives) for you to review. "+cleared;
+  if(type==='planSimplified')return "The new year keeps the ward's and the guardians' details and the answers to Questions 2 and 4 (why this is the best placement, and the ward's diagnosis and conditions) for you to review. "+cleared;
+  if(type==='planMinor')return "The new year keeps the minor's and the guardians' details, the minor's current residence, and Question 4's proposed medical services for you to review. "+cleared;
+  return "The new year keeps the ward's and the guardians' details. The plan's answers, signatures and dates are cleared for the new filing: each describes one year.";
+}
+
 export function resetYearlyFieldsForNewYear(data,type){
   const carriedAssignee=typeof data.dashboardWorkflow?.assigneeName==='string'
     ? data.dashboardWorkflow.assigneeName.trim().replace(/\s+/g,' ').slice(0,120)
@@ -92,13 +123,21 @@ export function resetYearlyFieldsForNewYear(data,type){
     // Milestone 74J-2: the Final Report's lists describe one final report.
     if(Array.isArray(data.finalReserved))data.finalReserved=[];
     if(Array.isArray(data.finalTurnover))data.finalTurnover=[];
+    // (Ticked "none" before any row was added, a Final Report list has a
+    // tick and no array: the tick is cleared all the same.)
+    clearNoItemsTicks(data,type,['schA','schB1','schB2','schB3','schB4','schC','schE','schF1','schF2','finalReserved','finalTurnover']);
+    // An out-of-balance explanation explains that year's figures.
+    data.reconcileExplanation='';
   }else if(type==='planSimplified'){
-    // Every answer on a Plan describes one specific year ("during the
-    // preceding year", "in the past year"), so ALL of them reset — unlike
-    // the accountings, nothing here is a carried-forward balance. Only the
-    // ward's identity and the guardians' contact details survive.
+    // An answer that describes the year ("during the preceding year", "in
+    // the past year") resets. The ward's identity, the guardians' contact
+    // details, and two answers that describe the ward rather than the year
+    // carry forward for the guardian to review (the requester, 2026-10-17):
+    // Q2, why this is the best placement, and Q4, the current diagnosis and
+    // conditions.
     data.periodFrom='';data.periodTo='';
-    data.q1Residences='';data.q2BestPlacement='';data.q3MedicalTreatment='';data.q4Diagnosis='';
+    data.q1Residences='';data.q3MedicalTreatment='';
+    data.preparer_signatureDate='';
     data.q5SocialServices='';data.q6Interaction='';
     data.q7RestoreRights='';data.q7RestoreExplain='';
     data.q8DNR=false;data.q8LivingWill=false;data.q8Surrogate=false;data.q8POA=false;
@@ -108,10 +147,15 @@ export function resetYearlyFieldsForNewYear(data,type){
       data.planGuardians.forEach(g=>{if(g)g.signatureDate='';});
     }
   }else if(type==='planAnnual'){
-    // Same reasoning as the Simplified Plan: every answer describes one
-    // specific reporting year. The two repeating tables reset to a single
-    // blank row rather than being emptied, so the page isn't a bare
-    // "no entries" state when the guardian opens it.
+    // Same reasoning as the Simplified Plan: an answer that describes the
+    // reporting year resets. Where the ward lives, Question 3 (the care
+    // plan, 3G's insurance and benefits table with it), Question 9
+    // (disabilities and assistive devices) and Question 10 (advance
+    // directives, their details with them) describe the ward and carry
+    // forward for the guardian to review (the requester, 2026-10-17). The
+    // two repeating tables reset to a single blank row rather than being
+    // emptied, so the page isn't a bare "no entries" state when the
+    // guardian opens it.
     data.periodFrom='';data.periodTo='';
     data.q1Residences=[emptyPlanResidence()];
     data.q4Providers=[emptyPlanProvider()];
@@ -122,11 +166,6 @@ export function resetYearlyFieldsForNewYear(data,type){
     // last year's forward would defeat the purpose of the annual review.
     if(data.rights)Object.keys(data.rights).forEach(k=>data.rights[k]='');
     if(data.adls)Object.keys(data.adls).forEach(k=>data.adls[k]='');
-    if(data.benefits)Object.values(data.benefits).forEach(benefit=>{
-      if(benefit){benefit.eligible='';benefit.appliedFor='';}
-    });
-    // Milestone 37-4: empty, not pre-seeded -- see state.js's identical note.
-    data.q10Directives=[];
     data.q11NoRemuneration=false;data.q11NoRemunerationName='';
     data.q11ReceivedName='';data.q11Amount='';data.q11From='';data.q11SubmittedToCourt=false;
     data.certIncapacitatedNoCopy=false;data.certMinorNoCopy=false;data.certConsulted=false;
@@ -186,19 +225,16 @@ export function resetYearlyFieldsForNewYear(data,type){
       data.planGuardians.forEach(g=>{if(g)g.signatureDate='';});
     }
   }else if(type==='planMinor'){
-    // Filed annually like the Annual Guardianship Plan — every answer
-    // describes one specific reporting year. Only the minor's identity and
-    // guardian contact details survive; residences/providers reset to a
+    // Filed annually like the Annual Guardianship Plan: an answer that
+    // describes the reporting year resets. The minor's identity, the
+    // guardians' contact details, the minor's current residence (Q1) and
+    // Question 4's proposed medical services carry forward for the guardian
+    // to review (the requester, 2026-10-17); residences/providers reset to a
     // single blank row.
     data.periodFrom='';data.periodTo='';
     data.amendedForm='';data.amendedVersion='';
-    data.q1ResidenceName='';data.q1Street='';data.q1City='';data.q1State='';data.q1Zip='';data.q1Phone='';
     data.q2Residences=[emptyMinorResidence()];
     data.q3Providers=[emptyMinorProvider()];
-    data.q4Primary=false;data.q4PrimaryFreq='';data.q4Dentist=false;data.q4DentistFreq='';
-    data.q4Specialist=false;data.q4SpecialistFreq='';
-    data.q4PT=false;data.q4ST=false;data.q4OT=false;data.q4MinorDecides=false;
-    data.q4Other=false;data.q4Explain='';
     data.q5SchoolProgress='';data.q5SocialDevelopment='';data.q5Communicates='';data.q5Interpersonal='';
     data.q5NoUnmetNeeds=false;data.q5DoesNotCareToSocialize=false;data.q5UnmetNeeds=false;
     data.q5Other=false;data.q5Explain='';
@@ -209,10 +245,12 @@ export function resetYearlyFieldsForNewYear(data,type){
       data.planGuardians.forEach(g=>{if(g)g.signatureDate='';});
     }
   }
-  // Remuneration is a fresh declaration each year, not a running total.
+  // Remuneration is a fresh declaration each year, not a running total --
+  // its "none" tick included.
   if(Array.isArray(data.remuneration)){
     data.remuneration=data.remuneration.map(()=>formEngine(type)==='annual'?emptyRowAnnual('remun'):({guardian:'',type:'',description:''}));
   }
+  clearNoItemsTicks(data,type,['remuneration']);
   // Milestone 72G (decided 2026-10-02): a certificate describes one filing
   // being served, so a new year keeps its recipients for review and starts
   // every answer blank -- date, method, "no recipients are required", the

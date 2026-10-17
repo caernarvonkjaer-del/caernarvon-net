@@ -1,7 +1,7 @@
 // Milestone 70, 70G: the Start New Year and Prior Years dialogs. Moved from
 // legacy-app.js's MULTI-YEAR ACCOUNTING.
 import { esc } from '../filing/escape-html.js';
-import { describeYearLabel } from '../filing/filing-years.js';
+import { describeYearLabel, newYearNote } from '../filing/filing-years.js';
 import { navigate, renderPage } from '../navigation/router.js';
 import { DRAW, onChange } from '../navigation/draw-reason.js';
 import { filingLifecycle } from '../navigation/filing-lifecycle.js';
@@ -9,20 +9,13 @@ import { getCurrentPage } from '../navigation/route-state.js';
 import { getCaseFile } from '../state.js';
 import { alertModal, closeModal, ensureFragment, showModal } from '../ui/dialogs.js';
 import { ic } from '../ui/icons.js';
-import { formDisplayName, formEngine } from '../filing/filing-registry.js';
+import { formDisplayName } from '../filing/filing-registry.js';
 import { auditLog } from '../activity/audit-log.js';
 
 export let _yearModalWardId=null;
 
-// Milestone 73P (D23): what each type's new year starts from
-// (filing-years.js's resetYearlyFieldsForNewYear()). The Plans were told of a
-// Starting Balance they don't have.
-function newYearNote(type){
-  if(type==='guardian')return "The new year opens with a copy of this year's schedules (A-1 through C-5) so you can edit down what's changed, instead of re-entering everything. Signatures and dates are cleared for the new filing.";
-  if(type==='simplified')return "The new year opens with Starting Balance pre-filled from this year's Remaining Assets On Hand. Part II's receipts and disbursements, signatures, and the accounting period are cleared for the new filing.";
-  if(formEngine(type)==='annual')return "The new year opens with Starting Balance pre-filled from this year's ending total and Schedule D's holdings carried forward. The income, disbursement, capital-change and transfer schedules, signatures, and the accounting period are cleared for the new filing.";
-  return "The new year keeps the ward's and the guardians' details. The plan's answers, signatures and dates are cleared for the new filing: each describes one year.";
-}
+// Milestone 73P (D23): what each type's new year starts from -- since
+// 2026-10-17 filing-years.js's newYearNote(), beside the reset it describes.
 
 // Milestone 74K (decision 74K-1): `unfiledNote` says the year being closed
 // isn't marked filed (the dashboard's words: it holds the status and the due

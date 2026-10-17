@@ -12,9 +12,10 @@ import {
 // behavior, which currently lacks a single dedicated contract." Starting a
 // new year archives the current one under the filing and clears what
 // describes one specific period (signatures, dates, the period, Annual's
-// transaction schedules, every Plan answer) while carrying identity,
-// addresses and asset schedules forward, with the ending total becoming the
-// next starting balance on the accountings. resetYearlyFieldsForNewYear()
+// transaction schedules and their "none" answers, a Plan's answers about
+// the year) while carrying identity, addresses, asset schedules and what a
+// Plan says about the ward forward (since 2026-10-17), with the ending total
+// becoming the next starting balance on the accountings. resetYearlyFieldsForNewYear()
 // alone was 154 lines of legacy-app.js, and 70G moved it.
 //
 // This is a characterization, not a specification: it records what the app

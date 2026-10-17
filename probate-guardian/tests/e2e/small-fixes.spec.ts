@@ -27,7 +27,8 @@ test.describe('73P and 74S: small fixes', () => {
     await page.locator('[data-dashboard-action="new-year"]').first().click();
     const modal = page.locator('#startNewYearModal.show');
     await expect(modal).not.toContainText('blank year');
-    await expect(modal.locator('#new-year-note')).toHaveText("The new year keeps the ward's and the guardians' details. The plan's answers, signatures and dates are cleared for the new filing: each describes one year.");
+    // 2026-10-17: the Annual Plan keeps what describes the ward, and says so.
+    await expect(modal.locator('#new-year-note')).toHaveText("The new year keeps the ward's and the guardians' details, where the ward lives, and the answers to Questions 3, 9 and 10 (the care plan, disabilities and advance directives) for you to review. The plan's other answers, signatures and dates are cleared for the new filing: each describes one year.");
     await expect(modal).not.toContainText('Starting Balance');
   });
 
